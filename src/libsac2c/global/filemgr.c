@@ -5,6 +5,7 @@
 #include <dirent.h>
 #include <regex.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
@@ -24,7 +25,7 @@
 #include "tree_basic.h"
 #include "globals.h"
 
-static char path_bufs[4][MAX_PATH_LEN];
+static char path_bufs[4][PATH_MAX];
 static int bufsize[4];
 
 /*
@@ -45,8 +46,8 @@ const char *
 FMGRfindFilePath (pathkind_t p, const char *name)
 {
     FILE *file = NULL;
-    static char buffer[MAX_FILE_NAME];
-    static char buffer2[MAX_PATH_LEN];
+    static char buffer[NAME_MAX];
+    static char buffer2[PATH_MAX];
     char *path;
     char *result = NULL;
 
@@ -84,7 +85,7 @@ FMGRfindFilePath (pathkind_t p, const char *name)
 const char *
 FMGRfindFile (pathkind_t p, const char *name)
 {
-    static char buffer[MAX_FILE_NAME];
+    static char buffer[NAME_MAX];
     const char *result;
 
     DBUG_ENTER ();
@@ -92,7 +93,7 @@ FMGRfindFile (pathkind_t p, const char *name)
     result = FMGRfindFilePath (p, name);
 
     if (result != NULL) {
-        snprintf (buffer, MAX_FILE_NAME - 1, "%s/%s", result, name);
+        snprintf (buffer, NAME_MAX - 1, "%s/%s", result, name);
         result = buffer;
     }
 
@@ -103,12 +104,12 @@ void *
 FMGRmapPath (pathkind_t p, void *(*mapfun) (const char *, void *), void *neutral)
 {
     void *result = neutral;
-    static char buffer[MAX_PATH_LEN];
+    static char buffer[PATH_MAX];
     char *path;
 
     DBUG_ENTER ();
 
-    strncpy (buffer, path_bufs[p], MAX_PATH_LEN);
+    strncpy (buffer, path_bufs[p], PATH_MAX);
     path = strtok (buffer, ":");
 
     while (path != NULL) {
@@ -249,8 +250,8 @@ FMGRappendPath (pathkind_t p, const char *path)
     DBUG_ENTER ();
 
     len = STRlen (path) + 1;
-    if (len + bufsize[p] >= MAX_PATH_LEN) {
-        CTIabort ("MAX_PATH_LEN too low");
+    if (len + bufsize[p] >= PATH_MAX) {
+        CTIabort ("PATH_MAX too low");
     } else {
         strcat (path_bufs[p], ":");
         strcat (path_bufs[p], path);
@@ -286,8 +287,8 @@ AppendEnvVar (pathkind_t p, const char *var)
     buffer = getenv (var);
     if (buffer != NULL) {
         len = (STRlen (buffer) + 1);
-        if (len + bufsize[p] >= MAX_PATH_LEN) {
-            CTIabort ("MAX_PATH_LEN too low");
+        if (len + bufsize[p] >= PATH_MAX) {
+            CTIabort ("PATH_MAX too low");
         } else {
             strcat (path_bufs[p], ":");
             strcat (path_bufs[p], buffer);
@@ -315,7 +316,7 @@ static void
 AppendConfigPaths (pathkind_t pathkind, const char *path)
 {
     char *pathentry;
-    char buffer[MAX_PATH_LEN];
+    char buffer[PATH_MAX];
     char *envvar_end;
     char *envvar;
     char *ptoken;
@@ -422,7 +423,7 @@ FMGRsetupPaths (void)
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : strcpy, strncmp, getcwd, strrchr, strcat
- *  macros        : MAX_PATH_LEN
+ *  macros        : PATH_MAX
  *
  *  remarks       :
  *
@@ -432,14 +433,14 @@ const char *
 FMGRabsolutePathname (const char *path)
 {
     char *tmp, *cwd;
-    static char buffer[MAX_PATH_LEN];
+    static char buffer[PATH_MAX];
 
     DBUG_ENTER ();
 
     if (path[0] == '/') {
         strcpy (buffer, path);
     } else {
-        cwd = getcwd (buffer, MAX_PATH_LEN);
+        cwd = getcwd (buffer, PATH_MAX);
 
         DBUG_ASSERT (cwd == buffer, "Call to getcwd() failed.");
 
@@ -463,7 +464,7 @@ FMGRabsolutePathname (const char *path)
 const char *
 FMGRdirname (const char *path)
 {
-    static char buffer[MAX_PATH_LEN];
+    static char buffer[PATH_MAX];
     const char *last = NULL;
 
     DBUG_ENTER ();
@@ -486,7 +487,7 @@ FMGRdirname (const char *path)
 const char *
 FMGRbasename (const char *path)
 {
-    static char buffer[MAX_PATH_LEN];
+    static char buffer[PATH_MAX];
     const char *last = NULL;
 
     DBUG_ENTER ();
@@ -509,7 +510,7 @@ FMGRbasename (const char *path)
 const char *
 FMGRfile2id (const char *path)
 {
-    static char buffer[MAX_PATH_LEN];
+    static char buffer[PATH_MAX];
     char *current = NULL;
 
     DBUG_ENTER ();
@@ -551,7 +552,7 @@ FILE *
 FMGRwriteOpen (const char *format, ...)
 {
     va_list arg_p;
-    static char buffer[MAX_PATH_LEN];
+    static char buffer[PATH_MAX];
     FILE *file;
 
     DBUG_ENTER ();
@@ -590,7 +591,7 @@ FILE *
 FMGRreadOpen (const char *format, ...)
 {
     va_list arg_p;
-    static char buffer[MAX_PATH_LEN];
+    static char buffer[PATH_MAX];
     FILE *file;
 
     DBUG_ENTER ();
@@ -629,7 +630,7 @@ FILE *
 FMGRwriteOpenExecutable (const char *format, ...)
 {
     va_list arg_p;
-    static char buffer[MAX_PATH_LEN];
+    static char buffer[PATH_MAX];
     FILE *file;
     int fd;
 
@@ -672,7 +673,7 @@ FILE *
 FMGRappendOpen (const char *format, ...)
 {
     va_list arg_p;
-    static char buffer[MAX_PATH_LEN];
+    static char buffer[PATH_MAX];
     FILE *file;
 
     DBUG_ENTER ();

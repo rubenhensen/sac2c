@@ -169,7 +169,7 @@ GLOBAL (int, sac4c_udt_offset, 20, xfree_dummy, )
  * sac4c udt offset, needs to be greater than max( usertype)
  */
 
-GLOBAL (char *, ccflags, (char *)MEMmalloc (MAX_FILE_NAME), xfree_char_ptr, )
+GLOBAL (char *, ccflags, (char *)MEMmalloc (NAME_MAX), xfree_char_ptr, )
 /*
  * Command line arguments
  */
@@ -644,9 +644,9 @@ GLOBAL (cachesim_flags_t, cachesim, cachesim_init, xfree_dummy, )
 GLOBAL (cachesim_flags_t, cachesim_all, cachesim_all_init, xfree_dummy, )
 GLOBAL (cachesim_flags_t, cachesim_none, cachesim_none_init, xfree_dummy, )
 
-GLOBAL (char *, cachesim_host, (char *)MEMmalloc (MAX_FILE_NAME), xfree_char_ptr, )
-GLOBAL (char *, cachesim_file, (char *)MEMmalloc (MAX_FILE_NAME), xfree_char_ptr, )
-GLOBAL (char *, cachesim_dir, (char *)MEMmalloc (MAX_FILE_NAME), xfree_char_ptr, )
+GLOBAL (char *, cachesim_host, (char *)MEMmalloc (NAME_MAX), xfree_char_ptr, )
+GLOBAL (char *, cachesim_file, (char *)MEMmalloc (NAME_MAX), xfree_char_ptr, )
+GLOBAL (char *, cachesim_dir, (char *)MEMmalloc (NAME_MAX), xfree_char_ptr, )
 
 /*
  * Profiling information storage facilities

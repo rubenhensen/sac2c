@@ -1009,7 +1009,7 @@ return_unknown:
 void
 read_line_directive (struct lexer *lex, char digit)
 {
-    char fname[MAXPATHLEN];
+    char fname[PATH_MAX];
     int line = digit - '0';
     bool ret = true;
     int i = 0;

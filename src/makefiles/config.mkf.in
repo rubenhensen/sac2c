@@ -47,8 +47,6 @@ GZIP            := gzip -f
 ECHO            := echo
 GREP            := fgrep
 WC              := wc
-LEX             := @LEX@ -n
-YACC            := @YACC@ -dv
 RANLIB          := @RANLIB@
 TOUCH           := touch
 XSLTENGINE      := @XSLT@
@@ -75,8 +73,6 @@ SHELL=/bin/bash
 #
 
 LIBS            := @LIBS@
-LIBS_LEX        := @LEXLIB@
-
 
 ################################################################################
 #

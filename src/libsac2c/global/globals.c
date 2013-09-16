@@ -45,6 +45,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <sys/param.h>
 
 /*
  * global variable to hold the global variables

@@ -53,19 +53,12 @@ GENERATED_INCLUDE_FILES := $(patsubst %.xsl,%,\
 
 GENERATED_SOURCE_FILES := $(patsubst %.xsl,%,\
                             $(foreach dir,$(MAKE_DIRS),\
-                              $(wildcard $(dir)/*.c.xsl))) \
-                          $(patsubst %.y,%.tab.c,\
-                            $(foreach dir,$(MAKE_DIRS),\
-                              $(wildcard $(dir)/*.y))) \
-                          $(patsubst %.l,%.lex.c,\
-                            $(foreach dir,$(MAKE_DIRS),\
-                              $(wildcard $(dir)/*.l))) \
+                              $(wildcard $(dir)/*.c.xsl)))
 
 GENERATED_FILES  := $(GENERATED_INCLUDE_FILES) $(GENERATED_SOURCE_FILES)
 
 GENERATOR_FILES  := $(foreach dir,$(MAKE_DIRS),\
-                      $(wildcard $(dir)/*.xsl $(dir)/*.mac \
-                                 $(dir)/*.l $(dir)/*.y))
+                      $(wildcard $(dir)/*.xsl $(dir)/*.mac))
 
 REFACTOR_FILES   := $(sort $(filter-out $(GENERATED_FILES),\
                              $(SOURCE_FILES)) \

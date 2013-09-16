@@ -10,6 +10,7 @@
  *
  *****************************************************************************/
 
+#include <sys/param.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <stdio.h>
@@ -480,13 +481,13 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("csdefaults");
 
-    ARGS_OPTION ("csdir", strncpy (global.cachesim_dir, ARG, MAX_FILE_NAME - 1));
+    ARGS_OPTION ("csdir", strncpy (global.cachesim_dir, ARG, NAME_MAX - 1));
 
-    ARGS_OPTION ("csfile", strncpy (global.cachesim_file, ARG, MAX_FILE_NAME - 1));
+    ARGS_OPTION ("csfile", strncpy (global.cachesim_file, ARG, NAME_MAX - 1));
 
-    ARGS_OPTION ("cshost", strncpy (global.cachesim_host, ARG, MAX_FILE_NAME - 1));
+    ARGS_OPTION ("cshost", strncpy (global.cachesim_host, ARG, NAME_MAX - 1));
 
-    ARGS_OPTION ("ccflag", strncpy (global.ccflags, ARG, MAX_FILE_NAME - 1));
+    ARGS_OPTION ("ccflag", strncpy (global.ccflags, ARG, NAME_MAX - 1));
 
     ARGS_FLAG ("cs", global.docachesim = FALSE);
 
@@ -1041,7 +1042,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     /* it is very unfortunate to have two similarly named, but different, options
      * ccflags and ccflag. Can I do something about it? */
-    ARGS_OPTION ("ccflag", strncpy (global.ccflags, ARG, MAX_FILE_NAME - 1));
+    ARGS_OPTION ("ccflag", strncpy (global.ccflags, ARG, NAME_MAX - 1));
 
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 

@@ -68,7 +68,6 @@ clean_sourcedir_all:
 	$(HIDE) $(RM) $(patsubst %.xsl,%,$(wildcard *.xsl))
 	$(HIDE) $(RM) $(patsubst %.m4,%,$(wildcard *.m4))
 	$(HIDE) $(RM) -r .sb SunWS_cache
-	$(HIDE) $(RM) *.lex.c *.tab.c *.tab.h y.output
 	$(HIDE) $(RM) SACbugreport .make_track
 
 clean_sourcedir_%:

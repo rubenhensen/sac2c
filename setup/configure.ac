@@ -203,51 +203,6 @@ case "$GNUINDENT" in
 esac
 AC_SUBST(CB, $CB)
 
-dnl search for bison, byacc or yacc
-AC_PROG_YACC()
-
-dnl check whether yacc really exists
-
-if [ test "$YACC" = "yacc" ]; then
-  AC_CHECK_PROGS(YACCE, [yacc], [!fail])
-  if [ test  "$YACCE" != "yacc" ]; then
-    AC_MSG_ERROR([Cannot find usable bison/yacc.])
-  else 
-    AC_MSG_NOTICE([val: $YACCE])
-  fi
-fi
-
-dnl
-dnl check whether a non yacc works
-dnl
-
-if [ test "$YACC" != "yacc" ]; then
-  AC_MSG_CHECKING([whether $YACC works])
-  mkdir -p .ac_yacc_test
-  cd .ac_yacc_test
-  cp -f ../../src/libsac2c/scanparse/sac.y .
-  if [ $YACC sac.y >/dev/null 2>/dev/null ]; then
-    AC_MSG_RESULT(ok)
-  else
-    AC_MSG_RESULT(failed)
-    AC_CHECK_PROG(YACC, [yacc], [yacc], [!fail])
-    if [ test "$YACC" != "yacc" ]; then
-      AC_MSG_ERROR([cannot find working bison/yacc], 10)
-    else
-      AC_MSG_NOTICE([using yacc instead])
-    fi
-  fi
-  cd ..
-  rm -rf .ac_yacc_test
-fi
-
-dnl search for flex or lex
-AC_PROG_LEX()
-
-dnl check whether lex really exists
-if [ test "$LEX" != "lex" -a "$LEX" != "flex" ]; then
-   AC_MSG_ERROR([Cannot find usable flex/lex.])
-fi
 
 dnl Check that sort and uniq are available.  Should be the case
 dnl for any half-decent unix system.
@@ -514,18 +469,6 @@ else
   AC_MSG_RESULT(no)
 fi
 
-
-dnl
-dnl when not using bison, we need to reference YYLABELS
-dnl 
-
-if test "$YACC" = "obsolete_yacc"; then
-  AC_DEFINE(MUST_REFERENCE_YYLABELS, 1, set to 1 if gcc complains about unused labels)
-fi
-
-if test "$YACC" = "yacc"; then
-  AC_DEFINE(MUST_REFERENCE_YYLABELS, 1, set to 1 if gcc complains about unused labels)
-fi
 
 dnl
 dnl check for pthread flag on gcc
@@ -797,8 +740,8 @@ dnl
 dnl static sac2c settings for config.h
 dnl
 
-AC_DEFINE( MAX_PATH_LEN, 10000, [set to maximum path length])
-AC_DEFINE( MAX_FILE_NAME, 256, [set to maximum file name length])
+dnl AC_DEFINE( MAX_PATH_LEN, 10000, [set to maximum path length])
+dnl AC_DEFINE( MAX_FILE_NAME, 256, [set to maximum file name length])
 AC_DEFINE( PF_MAXFUN, 100, [set to maximum number of sac functions for profiling])
 AC_DEFINE( PF_MAXFUNAP, 100, 
            [set to maximum number of sac function applications for profiling])

@@ -107,8 +107,7 @@ FINGERPRINT_FILE := $(PROJECT_ROOT)/src/include/.fingerprint
 .PHONY: all makesubdir
 
 .PRECIOUS: %.c %.h %.o %.p.o %.d.o %.d.mt.o %.p.mt.o .%.d \
-           %.d.xt.o %.p.xt.o \
-           %.lex.c %.tab.c %.tab.h %.mac \
+           %.d.xt.o %.p.xt.o %.mac \
            %.d.diag.o %.p.diag.o %.d.mt.diag.o %.p.mt.diag.o \
            %.d.xt.diag.o %.p.xt.diag.o
 
@@ -680,55 +679,6 @@ endif
 	@$(ECHO) "  Generating macro file from XML specification:  $(notdir $@)"
 	$(HIDE)$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
 	@$(CLOCK_SKEW_ELIMINATION)  
-
-
-###############################################################################
-#
-# Pattern rules for source code generation with lex and yacc
-#
-
-%.lex.c: %.l 
-	@if [ "generate source $(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "generate source $(dir $*)" > .make_track; \
-              $(ECHO) ""; \
-              $(ECHO) "Generating source files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
-         fi
-	@$(ECHO) "  Generating source code from LEX specification:  $(notdir $@)"
-	$(HIDE) $(LEX) $<
-	$(HIDE) $(MV) lex.yy.c $@
-	@$(CLOCK_SKEW_ELIMINATION) 
-
-%.tab.c: %.y 
-	@if [ "generate source $(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "generate source $(dir $*)" > .make_track; \
-              $(ECHO) ""; \
-              $(ECHO) "Generating source files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
-         fi
-	@$(ECHO) "  Generating source code from YACC specification:  $(notdir $@)"
-	@$(ECHO) "  Generating header file from YACC specification:  $(notdir $@)"
-	$(HIDE)$(YACC) $<
-	$(HIDE)$(GREP) -v "#pragma ident" y.tab.c > $@
-	$(HIDE)$(CP) y.tab.h $(basename $@).h
-	@$(CLOCK_SKEW_ELIMINATION) 
-
-# As the above rule produces %.tab.h just update the time stamp on it
-%.tab.h: %.tab.c
-	$(HIDE) touch $@
-	@$(CLOCK_SKEW_ELIMINATION)
-
-#%.tab.h: %.y 
-#	@if [ "generate header $(dir $*)" != "`cat .make_track`" ] ; \
-#         then $(ECHO) "generate header $(dir $*)" > .make_track; \
-#              $(ECHO) ""; \
-#              $(ECHO) "Generating header files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
-#         fi
-#	@$(ECHO) "  Generating header file from YACC specification:  $(notdir $@)"
-#	$(HIDE)$(YACC) $<
-#	$(HIDE)$(CP) y.tab.h $@
-#	$(HIDE)if [ -f sac.tab.h -a -f sac.tab.c ] ; \
-#               then $(RM) y.tab.h y.tab.c ; \
-#               fi
-#	@$(CLOCK_SKEW_ELIMINATION) 
 
 
 ###############################################################################

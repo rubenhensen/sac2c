@@ -90,17 +90,8 @@
 /* set to 1 if target os is cygwin */
 #undef IS_CYGWIN
 
-/* set to maximum file name length */
-#undef MAX_FILE_NAME
-
-/* set to maximum path length */
-#undef MAX_PATH_LEN
-
 /* cc flags for LPEL */
 #undef MT_CFLAGS_LPEL
-
-/* set to 1 if gcc complains about unused labels */
-#undef MUST_REFERENCE_YYLABELS
 
 /* set to 1 if printf does not print a leading 0x in front of pointers */
 #undef NEED_PTR_PREFIX
@@ -152,7 +143,3 @@
 
 /* define macro for unused variables */
 #undef UNUSED
-
-/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
-   `char[]'. */
-#undef YYTEXT_POINTER
