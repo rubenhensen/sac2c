@@ -49,10 +49,6 @@
  */
 unsigned int SAC_MT_global_threads;
 
-/* number of additional hidden (auxiliary) threads that the
- * heap manager has to deal with */
-unsigned int SAC_MT_hm_aux_threads = 0;
-
 /* Only a single thread in the environment?
  * This is used to optimize the PHM; when executing ST it does not have
  * to take so many precautions (locks).
@@ -169,10 +165,6 @@ SAC_MT_Internal_CurrentThreadId (void)
 unsigned int SAC_MT_global_threads = 0;
 
 unsigned int SAC_MT_globally_single = 1;
-
-/* number of additional hidden (auxiliary) threads that the
- * heap manager has to deal with */
-unsigned int SAC_MT_hm_aux_threads = 0;
 
 #endif /* MT */
 

@@ -367,7 +367,7 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
 #if SAC_DO_MULTITHREAD
 #define SAC_HM_SETUP()                                                                   \
     {                                                                                    \
-        SAC_HM_Setup (SAC_MT_GLOBAL_THREADS () + SAC_MT_HM_AUX_THREADS ());              \
+        SAC_HM_Setup (SAC_MT_GLOBAL_THREADS () + SAC_HM_RTSPEC_THREADS ());              \
     }
 #else /* SAC_DO_MULTITHREAD */
 #define SAC_HM_SETUP()                                                                   \
