@@ -199,7 +199,7 @@ AddPhmLib (str_buf *buffer)
             SBUFprint (buffer, ".seq");
         } else {
             /* multithreaded */
-            if (global.tool == TOOL_sac2c) {
+            if (global.tool == TOOL_sac2c || global.rtspec) {
                 /* standalone; classical mt phm */
                 SBUFprint (buffer, ".mt");
             } else {
