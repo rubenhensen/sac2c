@@ -1049,10 +1049,10 @@ DFMprintMaskDetailed (FILE *handle, mask_t *mask)
         if (mask->mask_base->ids[cnt] != NULL) {
             if (mask->bitfield[i] & access_mask_table[j]) {
                 fprintf (handle, "%s " F_PTR "\n", mask->mask_base->ids[cnt],
-                         mask->mask_base->decls[cnt]);
+                         (void *)mask->mask_base->decls[cnt]);
             } else {
                 fprintf (handle, "[%s] " F_PTR "\n", mask->mask_base->ids[cnt],
-                         mask->mask_base->decls[cnt]);
+                         (void *)mask->mask_base->decls[cnt]);
             }
         }
 

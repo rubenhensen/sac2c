@@ -199,4 +199,6 @@ STRSadd (const char *string, strstype_t kind, stringset_t *set)
 {
     return CALL_FROM_TABLE (STRSadd_fp (string, kind, set));
 }
+#else  /* IS_CYGWIN */
+static UNUSED int dummy; /* Silence empty source file warning. */
 #endif /* IS_CYGWIN */

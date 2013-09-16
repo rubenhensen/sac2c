@@ -186,7 +186,7 @@ node *CHKdoTreeCheck( node *arg_node)
  
   <xsl:template match="nodesets">
     <xsl:value-of select="$newline" />        
-    <xsl:value-of select="'void isDummy()'"/>
+    <xsl:value-of select="'void isDummy(void)'"/>
     <xsl:value-of select="'{'" />
     <xsl:apply-templates select="nodeset" mode="dummy">
       <xsl:sort select="@name"/>

@@ -227,4 +227,6 @@ TIMEtimeReport (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#else
+static UNUSED int dummy_variable; /* Silences empty file warning */
 #endif /* HAVE_GETTIME */

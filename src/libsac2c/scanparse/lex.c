@@ -1172,8 +1172,7 @@ lexer_get_token (struct lexer *lex)
     tok->tok_class = tok_unknown;
 
 return_token:
-    assert (tok->tok_class >= tok_keyword && tok->tok_class <= tok_unknown,
-            "token type was not provided");
+    assert (tok->tok_class <= tok_unknown, "token type was not provided");
 
     /* Check if the standard token definition should be overrtaken
        by the user-operation definition which is stronger.  */
