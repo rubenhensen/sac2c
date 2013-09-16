@@ -95,11 +95,7 @@ AC_CHECK_HEADERS([malloc.h])
 AC_CHECK_FUNCS([mkdtemp])
 AC_SEARCH_LIBS([sqrt], [m])
 AC_CHECK_FUNCS([strtok strrchr])
-
-AC_SEARCH_LIBS([clock_gettime], [rt], [dnl
-  AC_DEFINE([HAVE_GETTIME], 1,
-            [Define is clock_gettime from POSIX RT is available.])
-])
+CHECK_HR_CLOCK
 
 dnl check support for dynamic libraries
 AC_CHECK_HEADER([dlfcn.h], [], [AC_MSG_ERROR([dlfcn.h is required.])])
