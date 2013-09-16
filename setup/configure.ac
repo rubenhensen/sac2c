@@ -298,10 +298,10 @@ case "$target_os" in
     AC_MSG_RESULT([darwin settings])
     ;;
   *bsd*)
-    OSFLAGS=["-fpic"]
-    LD_DYNAMIC=["ld -dy -shared -symbolic"]
-    LD_PATH=["-L -Wl,-rpath,%path%"]
-    LD_FLAGS=""
+    OSFLAGS=["-fPIC -DPIC"]
+    LD_DYNAMIC=["-shared -symbolic -Wl,-allow-shlib-undefined $flags_lto"]
+    LD_PATH=["-L%path% -Wl,-rpath,%path%"]
+    LD_FLAGS=["$flags_lto"]
     AC_MSG_RESULT([BSD settings])
     ;;
   *)
