@@ -47,7 +47,7 @@ AC_PREREQ([2.63])
 
 dnl tell configure who we are
 dnl parameters: package name, version, where to send bugreports
-AC_INIT(sac2c, svn, info@sac-home.org)
+AC_INIT(sac2c, git, info@sac-home.org)
 
 dnl set source directory and scripting directory
 AC_CONFIG_SRCDIR(.)
@@ -130,9 +130,7 @@ else
 fi
 
 
-dnl
 dnl check whether popen is an extension
-dnl
 AC_MSG_CHECKING([need of _EXTENSIONS_ flag])
 AC_TRY_COMPILE([#include <stdio.h>],[popen("rw","testfile")],
 AC_MSG_RESULT(no)
@@ -146,14 +144,11 @@ AC_PROG_RANLIB()
 dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
 
-dnl
-dnl check Cuda architure 
-dnl
 
+dnl check Cuda architure 
 AC_MSG_CHECKING([checking CUDA architecture])
 AC_CHECK_PROG(ENABLE_CUDA,nvcc,"yes","no")
 if [ test "$ENABLE_CUDA" = "yes"]; then
-  #AC_MSG_NOTICE([kfvbkkdfjkl])
   AC_SUBST(NVCC_PATH,`which nvcc`)
   AC_DEFINE(ENABLE_CUDA, 1, set to 1 to enable cuda)
   mkdir -p .ac_cuda_test
@@ -177,10 +172,7 @@ AC_SUBST(ENABLE_CUDA, no)
 fi
 
 
-dnl
 dnl check whether its gnu indent
-dnl
-
 AC_MSG_CHECKING([whether GNU indent works])
 GNUINDENT=$(indent --version 2>/dev/null)
 case "$GNUINDENT" in
@@ -225,14 +217,12 @@ if [ test "$XSLT" = "!fail" ]; then
 fi
 
 dnl search for dot
-AC_CHECK_PROG(DOT, dot, "dot", "no")
+AC_CHECK_PROG(DOT, dot, "yes", "no")
 
 if [ test "$DOT" = "no" ]; then
-  AC_MSG_NOTICE( [Cannot find a usable dot.])
   AC_DEFINE(DOT_FLAG, 0, set to 0 to disable visualization)
   AC_SUBST(DOT_FLAG, no)  
 else
-  AC_MSG_NOTICE( [find a usable dot.])
   AC_DEFINE(DOT_FLAG, 1, set to 1 to enable visualization)
   AC_SUBST(DOT_FLAG, yes)
 fi
@@ -402,8 +392,7 @@ AC_CHECK_FUNCS([strtok strrchr])
 dnl check for sbrk function
 AC_CHECK_FUNC(sbrk, [
 
-dnl if found, check type
-dnl  check definition of sbrk
+dnl if found, check type check definition of sbrk
 AC_MSG_CHECKING(for sbrk argument type)
 include_file_list=`ls -1 /usr/include/*.h`
 sbrk_types=`for name in $include_file_list; do grep sbrk $name 2>/dev/null; done`
@@ -429,10 +418,8 @@ AC_DEFINE(ENABLE_PHM, 1, set to disable private heapmanagement)
 AC_SUBST(ENABLE_PHM, yes)
 ])
 
-dnl
-dnl check if printf generates leading 0x for pointers
-dnl
 
+dnl check if printf generates leading 0x for pointers
 AC_MSG_CHECKING(for 0x prefix when printing pointers)
 AC_EGREP_CPP(0x0*,
 [#include <stdio.h>
@@ -450,10 +437,7 @@ else
 fi
 
 
-dnl
 dnl check if stderr is a constant (needed for dbug.c
-dnl
-
 AC_MSG_CHECKING(whether stderr is a constant)
 AC_TRY_COMPILE([
 #include <stdio.h>
@@ -470,10 +454,7 @@ else
 fi
 
 
-dnl
 dnl check for pthread flag on gcc
-dnl
-
 if test "$GCC" = yes; then
   AC_MSG_CHECKING([existence of pthread flag])
   echo "int main(){return 0;}" > .sac_configure_temp.c
@@ -510,10 +491,8 @@ if [[ "$GCC" = yes -a "$enable_lto" = yes ]]; then
   fi
 fi
 
-dnl
-dnl test for compiler flags for sac2crc
-dnl
 
+dnl test for compiler flags for sac2crc
 AC_MSG_CHECKING([sac2crc compiler flags])
 if [ test "$GCC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -577,7 +556,7 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
-  AC_SUBST(RCCCFLAGS, ["-Wall -no-cpp-precomp -Wno-unused -fno-builtin -std=c99"])
+  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin -std=c99"])
   AC_SUBST(MKCCFLAGS, ["-Wall -std=c99 -g"])
   AC_SUBST(PDCCFLAGS, ["-std=c99"])
   AC_SUBST(GENPIC, [""])
@@ -630,11 +609,8 @@ else
   AC_SUBST(SAC2C_MKCCFLAGS, ["$MKCCFLAGS"])
   AC_SUBST(SAC2C_PDCCFLAGS, ["$PDCCFLAGS"])
 fi
-
-dnl 
-dnl append platform specific files to sac2crc
-dnl 
-
+ 
+# append platform specific files to sac2crc
 AC_SUBST_FILE(RCSUN)
 AC_SUBST_FILE(RCX86)
 AC_SUBST_FILE(RCALPHA)
@@ -645,10 +621,7 @@ RCALPHA=./sac2crc.ALPHA
 RCMAC=./sac2crc.MAC
 
 
-dnl
-dnl generate specific flags for known os
-dnl
-
+# generate specific flags for known os
 AC_MSG_CHECKING([sac2crc system flags])
 
 OSFLAGS=""
@@ -661,14 +634,14 @@ case "$target_os" in
     AC_MSG_RESULT([solaris settings])
     ;;
   *linux*)      
-    OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
+    OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"]
     LD_DYNAMIC=["-shared -Wl,-allow-shlib-undefined -O3 $flags_lto"]
     LD_PATH=["-L%path% -Wl,-rpath,%path%"]
     LD_FLAGS="-Wl,-allow-shlib-undefined $flags_lto"
     AC_MSG_RESULT([linux settings])
     ;;
  *cygwin* | *mingw*)      
-    OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
+    OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"]
     LD_DYNAMIC=["-dy -shared"]
     LD_PATH=["-L%path% -Wl,-rpath,%path%"]
     LD_FLAGS=""
@@ -686,32 +659,12 @@ case "$target_os" in
     AC_DEFINE(ENABLE_PHM, 0)
     AC_SUBST(ENABLE_PHM, no)
     RANLIB="$RANLIB -c"
-    case "$target_os" in
-      [*darwin1[0-2]\.*)]
-        OSFLAGS=["-D_DARWIN_C_SOURCE"]
-        LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
-        LD_PATH=["-L%path% -Wl,-rpath,%path%"]
-        LD_FLAGS=""
-        AC_MSG_RESULT([darwin 10.x/11.x/12.x settings])
-        ;;
-      *darwin9\.*)
-        OSFLAGS=["-Wno-long-double -D_DARWIN_C_SOURCE"]
-        LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
-        LD_PATH=["-L%path% -Wl,-rpath,%path%"]
-        LD_FLAGS=""
-        AC_MSG_RESULT([darwin 9.x settings])
-        ;;
-      [*darwin[6-8]\.*)]
-        OSFLAGS=["-no-cpp-precomp -Wno-long-double -D_DARWIN_C_SOURCE"]
-        LD_DYNAMIC=["-undefined suppress -flat_namespace -bundle"]
-        LD_PATH=["-L%path%"]
-        LD_FLAGS=""
-        AC_MSG_RESULT([darwin 7.x/8.x settings])
-      ;;
-      *)
-      AC_MSG_RESULT([unknown darwin system])
-      esac
-      ;;
+    OSFLAGS=["-D_DARWIN_C_SOURCE"]
+    LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
+    LD_PATH=["-L%path% -Wl,-rpath,%path%"]
+    LD_FLAGS=""
+    AC_MSG_RESULT([darwin settings])
+    ;;
   *bsd*)
     OSFLAGS=["-fpic"]
     LD_DYNAMIC=["ld -dy -shared -symbolic"]
@@ -728,20 +681,16 @@ case "$target_os" in
     ;;
 esac
 
+
 AC_SUBST(OS,$target_os)
 AC_SUBST(ARCH,$target_cpu)
 AC_SUBST(OSFLAGS)
 AC_SUBST(LD_DYNAMIC)
 AC_SUBST(LD_PATH)
 AC_SUBST(LD_FLAGS)
+ 
 
-
-dnl 
-dnl static sac2c settings for config.h
-dnl
-
-dnl AC_DEFINE( MAX_PATH_LEN, 10000, [set to maximum path length])
-dnl AC_DEFINE( MAX_FILE_NAME, 256, [set to maximum file name length])
+# static sac2c settings for config.h
 AC_DEFINE( PF_MAXFUN, 100, [set to maximum number of sac functions for profiling])
 AC_DEFINE( PF_MAXFUNAP, 100, 
            [set to maximum number of sac function applications for profiling])
@@ -751,8 +700,6 @@ AC_DEFINE( PF_MAXFUNNAMELEN, 100,
 AC_DEFINE( SAC_PRELUDE_NAME, "sacprelude", [name of sac prelude])
 AC_DEFINE( UNUSED, __attribute__((unused)), define macro for unused variables)
 
-dnl
-dnl create configure-generated file
-dnl
 
+# create configure-generated file
 AC_OUTPUT()
