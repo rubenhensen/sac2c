@@ -364,17 +364,10 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
  * Definition of general macros.
  */
 
-#if SAC_DO_MULTITHREAD
 #define SAC_HM_SETUP()                                                                   \
     {                                                                                    \
         SAC_HM_Setup (SAC_MT_GLOBAL_THREADS () + SAC_HM_RTSPEC_THREADS ());              \
     }
-#else /* SAC_DO_MULTITHREAD */
-#define SAC_HM_SETUP()                                                                   \
-    {                                                                                    \
-        SAC_HM_Setup (0);                                                                \
-    }
-#endif /* SAC_DO_MULTITHREAD */
 
 /* Pleasing both the C99 and C++ compiler is tiresome. */
 #ifdef __cplusplus

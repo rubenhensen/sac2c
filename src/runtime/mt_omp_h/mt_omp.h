@@ -31,7 +31,7 @@ SAC_C_EXTERN void SAC_OMP_SetupInitial (int argc, char *argv[], unsigned int num
 
 #define SAC_OMP_SET_NUM_THREADS() omp_set_num_threads (SAC_MT_GLOBAL_THREADS ())
 
-#define SAC_HM_RTSPEC_THREADS() 0
+#define SAC_HM_RTSPEC_THREADS() SAC_DO_RTSPEC
 
 #define SAC_OMP_SET_MAX_ACTIVE_LEVEL()                                                   \
     omp_set_max_active_levels (SAC_OMP_MAX_ACTIVE_LEVEL ())
