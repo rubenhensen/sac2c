@@ -1047,7 +1047,7 @@ PrintFunapProps (node *ap, node *spap)
         }
 
     } else {
-        DBUG_ASSERT (spap == NULL, "PrintFunapProps call with 2 non-NULL args");
+        DBUG_ASSERT (spap != NULL, "PrintFunapProps call with 2 NULL args");
         if (SPAP_ISSPAWNED (spap)) {
             fprintf (global.outfile, "spawn ");
         }

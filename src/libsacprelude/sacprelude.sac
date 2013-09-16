@@ -121,7 +121,7 @@ bool eq( a[*] A, a[*] B)                                             \
 BUILT_IN( EQ)
 
 inline  
-int (*) (int a, int b)
+int * (int a, int b)
 {
   return( _mul_SxS_( a, b));
 }
