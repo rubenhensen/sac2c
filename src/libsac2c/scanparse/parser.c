@@ -286,8 +286,9 @@ id_constructor (node *id, node *next)
 }
 #define handle_id_list(parser) handle_generic_list (parser, handle_id, id_constructor)
 
-/* Handle list of type components.  */
-static node *
+/* Handle list of type components.  This is currently unused but it is
+   needed to support proper subtyping with idags from Santanu.  */
+static UNUSED node *
 type_component_constructor (node *id, node *next)
 {
     char *name;

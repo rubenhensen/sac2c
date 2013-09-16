@@ -51,10 +51,10 @@ typedef float __attribute__ ((vector_size (4 * sizeof (float)))) floatvec;
 #define FLOATVEC_IDX(vec, idx) (vec)[(idx)]
 #else
 /* You cannot assign static arrays, so we go with struct.  Stupid C!  */
-typedef union {
-    float __flvec_array[4];
-} floatvec;
-#define FLOATVEC_IDX(vec, idx) (vec).__flvec_array[(idx)]
+typedef struct {
+    float a, b, c, d;
+} __attribute__ ((packed)) floatvec;
+#define FLOATVEC_IDX(vec, idx) ((float *)&(vec))[(idx)]
 #endif
 
 /*
