@@ -3000,7 +3000,7 @@ PRTcast (node *arg_node, info *arg_info)
     }
 
     type_str = TYtype2String (CAST_NTYPE (arg_node), FALSE, 0);
-    fprintf (global.outfile, "(: %s) ", type_str);
+    fprintf (global.outfile, "(%s) ", type_str);
     type_str = MEMfree (type_str);
 
     TRAVdo (CAST_EXPR (arg_node), arg_info);
