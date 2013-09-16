@@ -657,8 +657,9 @@ endif
               $(ECHO) "Generating header files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
 	@$(ECHO) "  Generating header file from XML specification:  $(notdir $@)"
-	$(HIDE)$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
-	@$(CLOCK_SKEW_ELIMINATION)  
+	$(HIDE)$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@.tmp
+	$(HIDE)$(MV) $@.tmp $@
+	@$(CLOCK_SKEW_ELIMINATION)
 
 %.c: %.c.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) 
 	@if [ "generate source $(dir $*)" != "`cat .make_track`" ] ; \
@@ -667,8 +668,9 @@ endif
               $(ECHO) "Generating source files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
 	@$(ECHO) "  Generating source code from XML specification:  $(notdir $@)"
-	$(HIDE)$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
-	@$(CLOCK_SKEW_ELIMINATION)  
+	$(HIDE)$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@.tmp
+	$(HIDE)$(MV) $@.tmp $@
+	@$(CLOCK_SKEW_ELIMINATION)
 
 %.mac: %.mac.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) 
 	@if [ "generate macro $(dir $*)" != "`cat .make_track`" ] ; \
@@ -677,8 +679,9 @@ endif
               $(ECHO) "Generating macro files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
 	@$(ECHO) "  Generating macro file from XML specification:  $(notdir $@)"
-	$(HIDE)$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@
-	@$(CLOCK_SKEW_ELIMINATION)  
+	$(HIDE)$(XSLTENGINE) $< $(XML_DIR)/ast.xml | $(CODE_BEAUTIFIER) >$@.tmp
+	$(HIDE)$(MV) $@.tmp $@
+	@$(CLOCK_SKEW_ELIMINATION)
 
 
 ###############################################################################
@@ -709,7 +712,8 @@ endif
         fi
 	@$(ECHO) "  Checking dependencies of source file: $(notdir $<)"
 	$(HIDE) if $(CC_DEVEL) $(CC_FLAGS_DEPS) $(SETTINGS_DEVEL) $(INCDIRS) $<  > $@d ; \
-	 then $(SED) 's/\($(notdir $*)\)\.o[ :]*/$(subst /,\/,$*)\.o $(subst /,\/,$*)\.p.o $(subst /,\/,$*)\.d.o $(subst /,\/,$*)\.p.mt.o $(subst /,\/,$*)\.d.mt.o $(subst /,\/,$*)\.p.diag.o $(subst /,\/,$*)\.d.diag.o  $(subst /,\/,$*)\.p.mt.diag.o $(subst /,\/,$*)\.d.mt.diag.o $(subst /,\/,$@)\: ..\/makefiles\/config.mkf /'  <$@d >$@; \
+	 then $(SED) 's/\($(notdir $*)\)\.o[ :]*/$(subst /,\/,$*)\.o $(subst /,\/,$*)\.p.o $(subst /,\/,$*)\.d.o $(subst /,\/,$*)\.p.mt.o $(subst /,\/,$*)\.d.mt.o $(subst /,\/,$*)\.p.diag.o $(subst /,\/,$*)\.d.diag.o  $(subst /,\/,$*)\.p.mt.diag.o $(subst /,\/,$*)\.d.mt.diag.o $(subst /,\/,$@)\: ..\/makefiles\/config.mkf /'  <$@d >$@.tmp; \
+              $(MV) $@.tmp $@; \
 	      $(RM) $@d ; \
 	 else $(RM) $@d ; \
 	      exit 1 ;  \
