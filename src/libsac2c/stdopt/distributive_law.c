@@ -376,7 +376,7 @@ normalizePrf (prf prf)
 }
 
 static node *
-LocalSkipControl (void *param, node *expr)
+LocalSkipControl (intptr_t param, node *expr)
 {
     DBUG_ENTER ();
     node *avis;
@@ -395,8 +395,9 @@ LocalSkipControl (void *param, node *expr)
     DBUG_RETURN (expr);
 }
 
-static pm_mode_t dl_pm_mode[3]
-  = {{LocalSkipControl, NULL}, {PMMskipId, NULL}, {NULL, NULL}};
+static pm_mode_t dl_pm_mode[3] = {{LocalSkipControl, (intptr_t)NULL},
+                                  {PMMskipId, (intptr_t)NULL},
+                                  {NULL, (intptr_t)NULL}};
 
 static bool
 compatiblePrf (prf p1, prf p2)

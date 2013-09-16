@@ -240,6 +240,9 @@ version="1.0">
     <xsl:when test="key(&quot;types&quot;, ./type/@name)[@copy = &quot;literal&quot;]">
       <!-- do nothing -->
     </xsl:when>
+    <xsl:when test="key(&quot;types&quot;, ./type/@name)[@copy = &quot;function&quot;]">
+      <!-- do nothing -->
+    </xsl:when>
     <xsl:otherwise>
       <!-- if it is an array, we have to build a for loop over its elements -->
       <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
@@ -247,26 +250,6 @@ version="1.0">
         <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size"/>
         <xsl:value-of select="'; cnt++) { '" />
       </xsl:if>
-      <!-- left side of assignment 
-      <xsl:call-template name="node-access">
-        <xsl:with-param name="node">
-          <xsl:value-of select="'arg_node'" />
-        </xsl:with-param>
-        <xsl:with-param name="nodetype">
-          <xsl:value-of select="../../@name" />
-        </xsl:with-param>
-        <xsl:with-param name="field">
-          <xsl:value-of select="@name" />
-        </xsl:with-param>
-        <- if its is an array, we have to add another parameter ->
-        <xsl:with-param name="index">
-          <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
-            <xsl:value-of select="'cnt'"/>
-          </xsl:if>
-        </xsl:with-param>
-      </xsl:call-template>
-      <xsl:value-of select="' = '" />
-      <- right side of assignment -->
       <xsl:value-of select="'CHKMtouch'"/>
       <xsl:value-of select="'((void*) '"/>
       <xsl:call-template name="node-access">

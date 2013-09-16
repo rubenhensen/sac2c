@@ -148,6 +148,7 @@ typedef int usertype;
     PH_##phase##_##cycle##_##name,
 
 typedef enum {
+    PH_dummy = -1, /* Prevent comparison with >= PH_initial from producing a warning */
     PH_initial = 0,
 #include "phase_sac2c.mac"
     PH_final,
@@ -814,11 +815,11 @@ typedef void *dynfun_t;
  * moved from pattern_match_modes.h
  */
 typedef struct PAT pattern;
-typedef node *skip_fun_t (void *, node *);
+typedef node *skip_fun_t (intptr_t, node *);
 typedef bool prf_match_fun_t (prf);
 typedef struct {
     skip_fun_t *fun;
-    void *param;
+    intptr_t param;
 } pm_mode_t;
 
 /*

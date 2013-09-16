@@ -8,12 +8,12 @@
  *
  * pre-defined skipping functions of type ( skip_fun_t * ) :
  */
-extern node *PMMskipId (void *param, node *expr);
+extern node *PMMskipId (intptr_t param, node *expr);
 /*
  * expects (lut_t*) as parameter
  */
 
-extern node *PMMskipPrf (void *param, node *expr);
+extern node *PMMskipPrf (intptr_t param, node *expr);
 /*
  * expects (prf_match_fun_t *) as parameter
  * pre-defined parameters:

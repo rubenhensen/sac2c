@@ -69,39 +69,39 @@ CHKexistSon (node *son, node *arg_node, char *string)
 
 /** <!--**********************************************************************-->
  *
- * @fn node *CHKexistAttribute( node *attribute, node *arg_node, char *string)
+ * @fn intptr_t CHKexistAttribute( intptr_t attribute, node *arg_node, char *string)
  *
  *******************************************************************************/
-node *
-CHKexistAttribute (void *attribute, node *arg_node, char *string)
+intptr_t
+CHKexistAttribute (intptr_t attribute, node *arg_node, char *string)
 {
     DBUG_ENTER ();
 
-    if (attribute == NULL) {
+    if (attribute == (intptr_t)NULL) {
 
         NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), string);
     }
 
-    DBUG_RETURN ((node *)attribute);
+    DBUG_RETURN (attribute);
 }
 
 /** <!--**********************************************************************-->
  *
- * @fn node *CHKnotExist( node *son_attribute, node *arg_node, char *string)
+ * @fn intptr_t CHKnotExist( intptr_t son_attribute, node *arg_node, char *string)
  *
  *******************************************************************************/
 
-node *
-CHKnotExist (void *son_attribute, node *arg_node, char *string)
+intptr_t
+CHKnotExist (intptr_t son_attribute, node *arg_node, char *string)
 {
     DBUG_ENTER ();
 
-    if (son_attribute != NULL) {
+    if (son_attribute != (intptr_t)NULL) {
 
         NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), string);
     }
 
-    DBUG_RETURN ((node *)son_attribute);
+    DBUG_RETURN (son_attribute);
 }
 
 /** <!--********************************************************************-->

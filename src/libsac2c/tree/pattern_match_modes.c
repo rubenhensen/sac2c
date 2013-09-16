@@ -141,7 +141,7 @@ findCorrespondingArg (node *avis, node *ids, node *exprs)
  *****************************************************************************/
 
 node *
-PMMskipId (void *param, node *expr)
+PMMskipId (intptr_t param, node *expr)
 {
     DBUG_ENTER ();
     lut_t *follow_lut = (lut_t *)param;
@@ -182,7 +182,7 @@ PMMskipId (void *param, node *expr)
  *****************************************************************************/
 
 node *
-PMMskipPrf (void *param, node *expr)
+PMMskipPrf (intptr_t param, node *expr)
 {
     DBUG_ENTER ();
     prf_match_fun_t *prfInspectFun = (prf_match_fun_t *)param;
@@ -248,11 +248,12 @@ PMMisAfterguard (prf prfun)
  * pre-defined modes:
  */
 
-static pm_mode_t pmm_exact[1] = {{NULL, NULL}};
+static pm_mode_t pmm_exact[1] = {{NULL, (intptr_t)NULL}};
 
-static pm_mode_t pmm_flat[2] = {{PMMskipId, NULL}, {NULL, NULL}};
+static pm_mode_t pmm_flat[2] = {{PMMskipId, (intptr_t)NULL}, {NULL, (intptr_t)NULL}};
 
-static pm_mode_t pmm_flatPrf[3] = {{PMMskipPrf, NULL}, {PMMskipId, NULL}, {NULL, NULL}};
+static pm_mode_t pmm_flatPrf[3]
+  = {{PMMskipPrf, (intptr_t)NULL}, {PMMskipId, (intptr_t)NULL}, {NULL, (intptr_t)NULL}};
 
 pm_mode_t *
 PMMexact ()
@@ -263,30 +264,30 @@ PMMexact ()
 pm_mode_t *
 PMMflat ()
 {
-    pmm_flat[0].param = (void *)NULL;
+    pmm_flat[0].param = (intptr_t)NULL;
     return (pmm_flat);
 }
 
 pm_mode_t *
 PMMflatLut (lut_t *f_lut)
 {
-    pmm_flat[0].param = (void *)f_lut;
+    pmm_flat[0].param = (intptr_t)f_lut;
     return (pmm_flat);
 }
 
 pm_mode_t *
 PMMflatPrf (prf_match_fun_t *prfInspectFun)
 {
-    pmm_flatPrf[0].param = (void *)prfInspectFun;
-    pmm_flatPrf[1].param = (void *)NULL;
+    pmm_flatPrf[0].param = (intptr_t)prfInspectFun;
+    pmm_flatPrf[1].param = (intptr_t)NULL;
     return (pmm_flatPrf);
 }
 
 pm_mode_t *
 PMMflatPrfLut (prf_match_fun_t *prfInspectFun, lut_t *f_lut)
 {
-    pmm_flatPrf[0].param = (void *)prfInspectFun;
-    pmm_flatPrf[1].param = (void *)f_lut;
+    pmm_flatPrf[0].param = (intptr_t)prfInspectFun;
+    pmm_flatPrf[1].param = (intptr_t)f_lut;
     return (pmm_flatPrf);
 }
 

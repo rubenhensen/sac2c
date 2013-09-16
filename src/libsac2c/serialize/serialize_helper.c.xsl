@@ -288,9 +288,7 @@ SHLPmakeNode( int _node_type, char* sfile, size_t lineno, size_t col ...)
 </xsl:template>
 
 <xsl:template match="//attributetypes/type[@vtype]" mode="gen-fill-fun">
-  <xsl:value-of select="'('" />
-  <xsl:value-of select="@ctype" />
-  <xsl:value-of select="') va_arg( args, '" />
+  <xsl:value-of select="'va_arg( args, '" />
   <xsl:value-of select="@vtype" />
   <xsl:value-of select="')'" />
 </xsl:template>
