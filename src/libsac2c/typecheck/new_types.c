@@ -5518,7 +5518,7 @@ TYnestTypes (ntype *outer, ntype *inner)
 ntype *
 TYdeNestTypeFromInner (ntype *nested, ntype *inner)
 {
-    ntype *res;
+    ntype *res = NULL;
 
     DBUG_ENTER ();
 

@@ -1580,8 +1580,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     node *arrlb; /* Denormalized */
     node *arrub; /* Denormalized */
     node *nlet;
-    node *zwlb;
-    node *zwub;
+    node *zwlb = NULL;
+    node *zwub = NULL;
     node *zel = NULL;
     node *zeu = NULL;
     node *arriv = NULL;

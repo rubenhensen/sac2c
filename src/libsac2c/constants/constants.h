@@ -42,6 +42,7 @@
 extern constant *COmakeConstant (simpletype type, shape *shp, void *elems);
 extern constant *COmakeConstantFromShape (shape *shp);
 extern constant *COmakeConstantFromInt (int val);
+extern constant *COmakeConstantFromFloat (float val);
 extern constant *COmakeConstantFromDynamicArguments (simpletype type, int dim, ...);
 extern constant *COmakeConstantFromArray (simpletype type, int dim, int *shp,
                                           void *elems);
@@ -140,7 +141,7 @@ extern constant *COsimd_sub (constant *dummy, constant *a, constant *b);
 extern constant *COsimd_mul (constant *dummy, constant *a, constant *b);
 extern constant *COsimd_div (constant *dummy, constant *a, constant *b);
 extern constant *COsimd_sel (constant *simd_length, constant *idx, constant *a);
-extern constant *COsimd_sel_SxS (constant *idx, constant *a);
+extern constant *COsimd_sel_SxS (constant *idx, constant *a, constant *tmp);
 extern constant *COsub (constant *a, constant *b, constant *);
 extern constant *COmul (constant *a, constant *b, constant *);
 extern constant *COdiv (constant *a, constant *b, constant *);

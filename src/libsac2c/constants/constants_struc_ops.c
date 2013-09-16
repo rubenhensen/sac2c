@@ -435,7 +435,8 @@ COsimd_sel (constant *simd_length, constant *idx, constant *a)
                  "idx-vector exceeds dim of array in COSel!");
 
     /* Check that SIMD_LENGTH is a proper constant and grab it's value.  */
-    co = TYgetValue (simd_length);
+    // co = TYgetValue( simd_length);
+    co = simd_length;
     DBUG_ASSERT (COgetType (co) == T_int, "vector length should be of type cosntant int");
     vec_length = ((int *)COgetDataVec (co))[0];
 
@@ -470,7 +471,7 @@ COsimd_sel (constant *simd_length, constant *idx, constant *a)
 }
 
 constant *
-COsimd_sel_SxS (constant *idx, constant *a)
+COsimd_sel_SxS (constant *idx, constant *a, constant *tmp)
 {
     constant *res, *co;
     float fval;
@@ -480,7 +481,7 @@ COsimd_sel_SxS (constant *idx, constant *a)
     DBUG_ASSERT (CONSTANT_TYPE (a) == T_floatvec, "only floatvec can be subscipted");
 
     /* Check that SIMD_LENGTH is a proper constant and grab it's value.  */
-    co = TYgetValue (a);
+    co = a; // co = TYgetValue( a);
     fval = FLOATVEC_IDX (((floatvec *)COgetDataVec (co))[0],
                          ((int *)CONSTANT_ELEMS (idx))[0]);
 
