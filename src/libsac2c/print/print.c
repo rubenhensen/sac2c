@@ -3204,7 +3204,7 @@ PRTspap (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    if (LEXERisOperator (FUNDEF_NAME (AP_FUNDEF (arg_node)))) {
+    if (LEXERisOperator (SPAP_NAME (arg_node))) {
         PrintOperatorAp (NULL, arg_node, arg_info);
     } else {
         PrintFunAp (NULL, arg_node, arg_info);
