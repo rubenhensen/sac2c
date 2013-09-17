@@ -135,23 +135,8 @@ AC_CHECK_FUNCS([strtok strrchr])
 dnl check if printf generates leading 0x for pointers
 CHECK_PTR_PREFIX
 
-dnl check if stderr is a constant (needed for dbug.c
-AC_MSG_CHECKING(whether stderr is a constant)
-AC_TRY_COMPILE([
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-
-FILE *_db_fp_ = stderr;
-],[],stderr_is_constant=yes,stderr_is_constant=no)
-if [ test $stderr_is_constant = yes ];
-then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(STDERR_IS_CONSTANT, 1, set to 1 if stderr is a constant)
-else
-  AC_MSG_RESULT(no)
-fi
-
+dnl check if stderr is a constant (needed for dbug.c)
+CHECK_CONST_STDERR
 
 # Check which GCC warning options are available and 
 # add them later to MKCCFLAGS and PDCCFLAGS
