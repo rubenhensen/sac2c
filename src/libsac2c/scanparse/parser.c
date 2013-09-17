@@ -1827,15 +1827,19 @@ handle_primary_expr (struct parser *parser)
             tok = parser_get_token (parser);
             if (token_is_operator (tok, tv_colon))
                 saw_colon = true;
+            else
+                parser_unget (parser);
 
             /* ::= '[' ':'? type ']'  */
             if (is_type (parser)) {
                 ntype *type;
 
-                if (saw_colon)
-                    warning_loc (token_location (tok),
-                                 "using deprecated type-cast "
-                                 "syntax, please remove the `:' character");
+                /* FIXME We haven't decieded if we want to support [:type]
+                   or [type] syntax, so we do not produce the warning for
+                   the time being.  */
+                /*if (saw_colon)
+                  warning_loc (token_location (tok), "using deprecated type-cast "
+                               "syntax, please remove the `:' character");  */
 
                 type = handle_type (parser);
 
@@ -1853,7 +1857,6 @@ handle_primary_expr (struct parser *parser)
                 node *els;
                 struct token *tok;
 
-                parser_unget (parser);
                 if (saw_colon)
                     parser_unget (parser);
 
