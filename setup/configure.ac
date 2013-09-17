@@ -103,25 +103,8 @@ AC_CHECK_HEADERS(malloc.h)
 dnl check for mkdtemp
 AC_CHECK_FUNCS(mkdtemp)
 
-dnl Set the file extension for shared libs to either .dll for windows or .so
-AC_MSG_CHECKING([for shared lib file extension])
-case "$target_os" in
-  *cygwin* | *windows* | *mingw*)
-    AC_SUBST(SHARED_LIB_EXT, [".dll"])
-    AC_DEFINE(SHARED_LIB_EXT, ".dll", [File extension used for shared library files.])
-    AC_MSG_RESULT([.dll])
-    ;;
-  *darwin*)
-    AC_SUBST(SHARED_LIB_EXT, [".dylib"])
-    AC_DEFINE(SHARED_LIB_EXT, ".dylib", [File extension used for shared library files.])
-    AC_MSG_RESULT([.dylib])
-    ;;
-  *)
-    AC_SUBST(SHARED_LIB_EXT, [".so"])  
-    AC_DEFINE(SHARED_LIB_EXT, ".so", [File extension used for shared library files.])
-    AC_MSG_RESULT([.so])
-    ;;
-esac
+# check DLL extension
+CHECK_DLL_EXT
 
 dnl search for omp.h
 AC_CHECK_HEADER(omp.h,[
