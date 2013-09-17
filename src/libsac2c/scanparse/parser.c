@@ -1567,6 +1567,32 @@ handle_function_call (struct parser *parser)
     return ret;
 }
 
+static inline node *
+handle_id_or_function_call (struct parser *parser)
+{
+    struct identifier *id;
+    struct location loc;
+    node *res;
+
+    loc = token_location (parser_get_token (parser));
+    parser_unget (parser);
+
+    if (is_function_call (parser))
+        res = handle_function_call (parser);
+    else if (NULL != (id = is_ext_id (parser))) {
+        if (id->xnamespace && !is_known (parser, id->xnamespace, id->id))
+            error ("symbol `%s' cannot be found in module `%s'", id->id, id->xnamespace);
+
+        res = handle_ext_id (parser);
+        free (id);
+    } else {
+        error_loc (loc, "id or function call expected");
+        res = error_mark_node;
+    }
+
+    return res;
+}
+
 /* primary-expression:
      constant
      identifier
@@ -1671,22 +1697,8 @@ handle_primary_expr (struct parser *parser)
     /* ::= id | function-call
        Identifier or a function call.  */
     else if (tclass == tok_id || tclass == tok_user_op) {
-        struct identifier *id;
-
         parser_unget (parser);
-        if (is_function_call (parser))
-            res = handle_function_call (parser);
-        else if (NULL != (id = is_ext_id (parser))) {
-            if (id->xnamespace && !is_known (parser, id->xnamespace, id->id))
-                error ("symbol `%s' cannot be found in module `%s'", id->id,
-                       id->xnamespace);
-
-            res = handle_ext_id (parser);
-            free (id);
-        } else {
-            error_loc (loc, "id or function call expected");
-            res = error_mark_node;
-        }
+        res = handle_id_or_function_call (parser);
     } else if (tclass == tok_keyword) {
         /* ::= ( 'spawn' | 'rspawn' ) string function-call
            A function-call prefexid with SPAWN and placement.  */
@@ -1757,12 +1769,12 @@ handle_primary_expr (struct parser *parser)
         } else if (token_is_keyword (tok, ZERO_FLOATVEC)) {
             res = TBmakeFloatvec (((floatvec){0., 0., 0., 0.}));
         }
-        /* ::= function-call
-           Function call where the name of the function is a
-           keyword; e.g. modarray, genarray, etc.  */
+        /* ::= function-call | id
+           Function call or identifier where the name of the function is a
+           keyword; e.g. modarray, genarray, etc. pargmas */
         else if (token_is_reserved (tok)) {
             parser_unget (parser);
-            res = handle_function_call (parser);
+            res = handle_id_or_function_call (parser);
         } else
             parser_unget (parser);
     } else if (tclass == tok_operator) {
