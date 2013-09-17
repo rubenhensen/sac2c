@@ -1,49 +1,45 @@
 /* ../src/include/config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* set to the architecture */
+/* CPU architecture string */
 #undef ARCH
 
-/* set to 1 to enable visualization */
+/* Define to the command to use to invoke graphviz/dot, followed by a space.
+   */
+#undef DOT_CMD
+
+/* Define to 1 to enable graphviz visualization, otherwise 0. */
 #undef DOT_FLAG
 
-/* set to 0 to disable cuda */
+/* Set to 1 if CUDA is enabled, otherwise 0. */
 #undef ENABLE_CUDA
 
-/* set to 0 to disable dynamic linking */
-#undef ENABLE_DL
-
-/* set to 0 to disable multi threading */
+/* Define to 1 if pthreads are available and MT is enabled, otherwise 0. */
 #undef ENABLE_MT
 
-/* set to 0 to disable multi threading via LPEL */
+/* Define to 1 if the MT/LPEL backend is enabled, otherwise 0. */
 #undef ENABLE_MT_LPEL
 
-/* set to 0 to disable mutc */
+/* Define to 1 if the MUTC target is enabled, otherwise 0. */
 #undef ENABLE_MUTC
 
-/* set to 0 to disable OpenMP backend */
+/* Define to 1 if the OpenMP back-end is enabled, otherwise 0. */
 #undef ENABLE_OMP
 
-/* set to disable private heapmanagement */
+/* Define to 1 if the private heap manager is enabled, otherwise 0. */
 #undef ENABLE_PHM
 
-/* runtime specialization disabled */
+/* Define to 1 if runtime specialization is enabled, otherwise 0. */
 #undef ENABLE_RTSPEC
 
-/* set to 0 because you do not have the <dlfcn.h> header file */
-#undef HAVE_DLFCN_H
-
-/* GCC does not support vector operations. */
+/* Set to 1 if compiler supports GNU vector syntax, otherwise 0. */
 #undef HAVE_GCC_SIMD_OPERATIONS
 
-/* set to 1 because you have clock_gettime */
+/* Define is clock_gettime and CLOCK_PROCESS_CPUTIME_ID from POSIX RT are
+   available. */
 #undef HAVE_GETTIME
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
-
-/* set to 0 because you do not have the <lpel.h> header file */
-#undef HAVE_LPEL_H
 
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
@@ -54,11 +50,14 @@
 /* Define to 1 if you have the `mkdtemp' function. */
 #undef HAVE_MKDTEMP
 
-/* set to 0 because you do not have the <omp.h> header file */
-#undef HAVE_OMP_H
+/* Define if OpenMP is enabled */
+#undef HAVE_OPENMP
 
-/* set to 0 because you do not have the <pthread.h> header file */
-#undef HAVE_PTHREAD_H
+/* Define if you have POSIX threads libraries and header files. */
+#undef HAVE_PTHREAD
+
+/* Have PTHREAD_PRIO_INHERIT. */
+#undef HAVE_PTHREAD_PRIO_INHERIT
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -87,16 +86,16 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* set to 1 if target os is cygwin */
+/* Set to 1 if target is Cygwin, otherwise 0. */
 #undef IS_CYGWIN
 
-/* cc flags for LPEL */
-#undef MT_CFLAGS_LPEL
+/* Set to 1 if compiler complains about unused yylabels. */
+#undef MUST_REFERENCE_YYLABELS
 
-/* set to 1 if printf does not print a leading 0x in front of pointers */
+/* Define if printf does not print a leading 0x in %p formats. */
 #undef NEED_PTR_PREFIX
 
-/* set to the os type */
+/* OS string */
 #undef OS
 
 /* Define to the address where bug reports for this package should be sent. */
@@ -126,10 +125,14 @@
 /* set to maximum length of sac function names for profiling */
 #undef PF_MAXFUNNAMELEN
 
-/* name of sac prelude */
+/* Define to necessary symbol if this constant uses a non-standard name on
+   your system. */
+#undef PTHREAD_CREATE_JOINABLE
+
+/* Name of the sac prelude module. */
 #undef SAC_PRELUDE_NAME
 
-/* set to the type of sbrk argument */
+/* Type of the argument of sbrk(). */
 #undef SBRK_T
 
 /* File extension used for shared library files. */
@@ -138,8 +141,44 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* set to 1 if stderr is a constant */
+/* Define if stderr is a constant. */
 #undef STDERR_IS_CONSTANT
 
 /* define macro for unused variables */
 #undef UNUSED
+
+/* Enable extensions on AIX 3, Interix.  */
+#ifndef _ALL_SOURCE
+# undef _ALL_SOURCE
+#endif
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# undef _GNU_SOURCE
+#endif
+/* Enable threading extensions on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+# undef _POSIX_PTHREAD_SEMANTICS
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+# undef _TANDEM_SOURCE
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+# undef __EXTENSIONS__
+#endif
+
+
+/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
+   `char[]'. */
+#undef YYTEXT_POINTER
+
+/* Define to 1 if on MINIX. */
+#undef _MINIX
+
+/* Define to 2 if the system does not provide POSIX.1 features except with
+   this defined. */
+#undef _POSIX_1_SOURCE
+
+/* Define to 1 if you need to in order for `stat' and other things to work. */
+#undef _POSIX_SOURCE
