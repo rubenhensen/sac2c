@@ -45,7 +45,7 @@ AC_ARG_ENABLE([cplusplus],
 dnl Check if C compiler and preprocessor are available
 dnl we force CFLAGS to be empty, so that it does not default to -g -O2
 CFLAGS=" "
-AC_PROG_CC_C99
+AC_PROG_CC_C99 
 AC_PROG_CPP
 
 dnl Enable system extensions when they are disabled by default
@@ -74,9 +74,6 @@ AC_PROG_RANLIB
 
 dnl find a code beautifier.
 CHECK_CODE_BEAUTIFIER
-
-dnl search for lex/flex/yacc/bison
-CHECK_LEX_YACC
 
 dnl search/check various utilities
 CHECK_REQUIRED_TOOL([SORT], [sort])
@@ -108,7 +105,7 @@ if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes; then
   enable_rtspec=yes
 fi
 case $ac_cv_search_dlopen in
-  no | none required) dlopen_libs= ;;
+  no | none*) dlopen_libs= ;;
   * ) dlopen_libs=$ac_cv_search_dlopen ;;
 esac
 have_rtspec=`if test $enable_rtspec = yes; then echo 1; else echo 0; fi`

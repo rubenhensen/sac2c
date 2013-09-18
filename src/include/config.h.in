@@ -89,9 +89,6 @@
 /* Set to 1 if target is Cygwin, otherwise 0. */
 #undef IS_CYGWIN
 
-/* Set to 1 if compiler complains about unused yylabels. */
-#undef MUST_REFERENCE_YYLABELS
-
 /* Define if printf does not print a leading 0x in %p formats. */
 #undef NEED_PTR_PREFIX
 
@@ -168,10 +165,6 @@
 # undef __EXTENSIONS__
 #endif
 
-
-/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
-   `char[]'. */
-#undef YYTEXT_POINTER
 
 /* Define to 1 if on MINIX. */
 #undef _MINIX
