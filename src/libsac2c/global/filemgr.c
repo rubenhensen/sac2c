@@ -565,6 +565,8 @@ FMGRwriteOpen (const char *format, ...)
 
     if (file == NULL) {
         CTIabort ("Unable to write file \"%s\"", buffer);
+    } else {
+        DBUG_PRINT ("Opening file \"%s\" for writing", buffer);
     }
 
     DBUG_RETURN (file);

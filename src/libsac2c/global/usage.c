@@ -244,6 +244,9 @@ PrintGeneralOptions (void)
             "                      Write executable to specified file.\n"
             "                    For compilation of module/class implementations:\n"
             "                      Write library to specified directory.\n"
+            "    -install        Exclusively for compilation of module/class\n"
+            "                    implementations:\n"
+            "                      Write to the central repository.\n"
             "\n"
             "    -c              Generate C-file only; do not invoke C compiler.\n"
             "\n"
@@ -982,7 +985,11 @@ PrintLibraryOptions (void)
             "a\n"
             "                     a single file.\n"
             "\n"
-            "    -noprelude       Do not load the standard prelude library `%s'.\n",
+            "    -noprelude       Do not load the standard prelude library `%s'.\n"
+            "\n"
+            "    -on_demand_lib   Do prepare the library provided as source for on "
+            "demand\n"
+            "                     compilation when needed by other source files.\n",
             global.linksetsize == INT_MAX ? 0 : global.linksetsize, global.preludename);
 
     DBUG_RETURN ();

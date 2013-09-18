@@ -84,6 +84,8 @@ GLOBAL (bool, loadprelude, TRUE, xfree_dummy, )
  */
 
 GLOBAL (FILE *, outfile, NULL, xfree_dummy, )
+GLOBAL (bool, install, FALSE, xfree_dummy, )
+
 /*
  * stream to write result to
  */
@@ -711,6 +713,11 @@ GLOBAL (int, timefreq, 0, xfree_dummy, )
 GLOBAL (bool, use_efence, FALSE, xfree_dummy, )
 /*
  * link executable with ElectricFence (Malloc Debugger)
+ */
+
+GLOBAL (bool, on_demand_lib, FALSE, xfree_dummy, )
+/*
+ * build only the tree file when compiling a module
  */
 
 /* GLOBAL( int, linksetsize,  INT_MAX) */

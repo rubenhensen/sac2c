@@ -605,6 +605,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
      */
 
+    ARGS_FLAG ("install", global.install = TRUE);
     ARGS_OPTION ("initmheap", ARG_NUM (global.initial_master_heapsize));
     ARGS_OPTION ("initwheap", ARG_NUM (global.initial_worker_heapsize));
     ARGS_OPTION ("inituheap", ARG_NUM (global.initial_unified_heapsize));
@@ -775,6 +776,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /*
      * Options starting with ooooooooooooooooooooooooooooooooooooooooooo
      */
+
+    ARGS_FLAG ("on_demand_lib", global.on_demand_lib = TRUE);
 
     ARGS_OPTION ("o", global.outfilename = STRcpy (ARG));
     /*
