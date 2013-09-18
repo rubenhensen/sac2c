@@ -24,6 +24,8 @@
 #include "namespaces.h"
 #include "tree_basic.h"
 #include "globals.h"
+#include "str.h"
+#include "str_buffer.h"
 
 static char path_bufs[4][PATH_MAX];
 static int bufsize[4];
@@ -42,12 +44,13 @@ static int bufsize[4];
  *
  */
 
-const char *
+char *
 FMGRfindFilePath (pathkind_t p, const char *name)
 {
     FILE *file = NULL;
     static char buffer[NAME_MAX];
-    static char buffer2[PATH_MAX];
+    // static char buffer2[PATH_MAX];
+    char *buffer2 = NULL;
     char *path;
     char *result = NULL;
 
@@ -57,7 +60,13 @@ FMGRfindFilePath (pathkind_t p, const char *name)
         file = fopen (name, "r");
         path = "";
     } else {
-        strcpy (buffer2, path_bufs[p]);
+        /* We want to expand shell variables in the path first.  */
+        str_buf *sbuffer = SBUFcreate (128);
+
+        SBUFprintf (sbuffer, "echo -n %s", path_bufs[p]);
+        buffer2 = SYSexec_and_read_output (SBUF2str (sbuffer));
+        SBUFfree (sbuffer);
+
         path = strtok (buffer2, ":");
         while ((file == NULL) && (path != NULL)) {
             if (path[0] != '\0') {
@@ -76,24 +85,27 @@ FMGRfindFilePath (pathkind_t p, const char *name)
     }
     if (file != NULL) {
         fclose (file);
-        result = path;
+        result = STRcpy (path);
+        if (buffer2)
+            MEMfree (buffer2);
     }
 
     DBUG_RETURN (result);
 }
 
-const char *
+char *
 FMGRfindFile (pathkind_t p, const char *name)
 {
-    static char buffer[NAME_MAX];
-    const char *result;
+    static char buffer[PATH_MAX];
+    char *result;
 
     DBUG_ENTER ();
 
     result = FMGRfindFilePath (p, name);
 
     if (result != NULL) {
-        snprintf (buffer, NAME_MAX - 1, "%s/%s", result, name);
+        snprintf (buffer, PATH_MAX - 1, "%s/%s", result, name);
+        MEMfree (result);
         result = buffer;
     }
 
@@ -333,30 +345,35 @@ AppendConfigPaths (pathkind_t pathkind, const char *path)
     pathentry = strtok (ptoken, ":");
 
     while (pathentry != NULL) {
-        if (pathentry[0] == '$') {
-            envvar_end = strchr (pathentry, '/');
-            if (envvar_end == NULL) {
-                envvar = getenv (pathentry);
-                if (envvar != NULL) {
-                    FMGRappendPath (pathkind, envvar);
-                }
-            } else {
-                envvar_length = STRlen (pathentry + 1) - STRlen (envvar_end);
-                strncpy (buffer, pathentry + 1, envvar_length);
-                buffer[envvar_length] = '\0';
-                envvar = getenv (buffer);
-                if (envvar != NULL) {
-                    strcpy (buffer, envvar);
-                    strcat (buffer, envvar_end);
-                } else {
-                    strcpy (buffer, envvar_end);
-                }
-                FMGRappendPath (pathkind, buffer);
-            }
-        } else {
-            FMGRappendPath (pathkind, pathentry);
-        }
+        /*if (pathentry[0]=='$') {
+          envvar_end=strchr(pathentry, '/');
+          if (envvar_end==NULL) {
+            envvar=getenv(pathentry);
+            if (envvar!=NULL) {
+              FMGRappendPath( pathkind, envvar);
 
+            }
+          }
+          else {
+            envvar_length=STRlen(pathentry+1)-STRlen(envvar_end);
+            strncpy(buffer, pathentry+1, envvar_length);
+            buffer[envvar_length] = '\0';
+            envvar=getenv(buffer);
+            if (envvar!=NULL) {
+              strcpy(buffer, envvar);
+              strcat(buffer, envvar_end);
+            }
+            else {
+              strcpy(buffer, envvar_end);
+            }
+            FMGRappendPath(pathkind, buffer);
+          }
+        }
+        else {
+          FMGRappendPath(pathkind, pathentry);
+        }*/
+
+        FMGRappendPath (pathkind, pathentry);
         pathentry = strtok (NULL, ":");
     }
 

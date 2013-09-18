@@ -506,7 +506,7 @@ ParseResourceFiles (void)
     CTIabort ("The prefix is not set, please run ./configure and recompile "
               "sac2c compiler");
 #endif
-    filename = STRcat (PREFIX, "/shared/sac2crc");
+    filename = STRcat (PREFIX, "/share/sac2crc");
     ok = RSCparseResourceFile (filename);
 
     if (!ok) {
