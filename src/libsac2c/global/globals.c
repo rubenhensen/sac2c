@@ -421,7 +421,8 @@ static const char *rename_type_init[] = {
 #define config_init                                                                      \
     (configuration_t)                                                                    \
     {                                                                                    \
-        NULL,   /* cc			  */                                                             \
+        NULL,   /* stlib_prefix   	  */                                                  \
+          NULL, /* cc			  */                                                             \
           NULL, /* ccflags		  */                                                         \
           NULL, /* ccincdir		  */                                                        \
           NULL, /* cclibdir		  */                                                        \

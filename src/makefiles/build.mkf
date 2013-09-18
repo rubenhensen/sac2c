@@ -268,11 +268,17 @@ $(STYLE)/libsacpreludeMod$(CROSS_VARIANT).a \
 $(STYLE)/libsacpreludeMod$(CROSS_VARIANT)$(SHARED_LIB_EXT): \
   $(STYLE)/libsacpreludeTree$(CROSS_VARIANT)$(SHARED_LIB_EXT)
 
+
+fullpath = $(shell cd "$(1)" &>/dev/null; pwd; cd - &>/dev/null)
+
 $(STYLE)/libsacpreludeTree$(CROSS_VARIANT)$(SHARED_LIB_EXT): \
   sacprelude.sac $(FINGERPRINT_FILE)
 	@$(ECHO) "Compiling $< $(CROSS_FOR)"
-	$(HIDE) $(SAC2C) -o $(STYLE) $(CROSS_TARGET) \
-                         $(SAC2CFLAGS_$($(STYLE)_cap)) -noprelude $<
+	$(HIDE) SAC2CRC="$(call fullpath,$(PROJECT_ROOT))/sac2crc" \
+                LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$(call fullpath,$(PROJECT_ROOT))/lib" \
+                PATH="${PATH}:$(call fullpath,$(PROJECT_ROOT))/bin" \
+                $(SAC2C) -ccflag"-I$(call fullpath,$(PROJECT_ROOT))/include" \
+                -o $(STYLE) $(CROSS_TARGET) $(SAC2CFLAGS_$($(STYLE)_cap)) -noprelude $<
 	@$(CLOCK_SKEW_ELIMINATION)
 
 ################################################################################

@@ -433,16 +433,19 @@ InvokeCCModule (char *cccall, char *compilationflags)
         MEMfree (str);
     }
 
-    SYScall ("cd %s; %s %s -c serialize.%s", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccincdir, global.config.tree_cext);
-    SYScall ("cd %s; %s %s -c filenames.%s", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccincdir, global.config.tree_cext);
-    SYScall ("cd %s; %s %s -c namespacemap.%s", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccincdir, global.config.tree_cext);
-    SYScall ("cd %s; %s %s -c symboltable.%s", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccincdir, global.config.tree_cext);
-    SYScall ("cd %s; %s %s -c dependencytable.%s", global.tmp_dirname,
-             global.config.tree_cc, global.config.ccincdir, global.config.tree_cext);
+    SYScall ("cd %s; %s %s %s -c serialize.%s", global.tmp_dirname, global.config.tree_cc,
+             global.config.ccincdir, global.ccflags, global.config.tree_cext);
+    SYScall ("cd %s; %s %s %s -c filenames.%s", global.tmp_dirname, global.config.tree_cc,
+             global.config.ccincdir, global.ccflags, global.config.tree_cext);
+    SYScall ("cd %s; %s %s %s -c namespacemap.%s", global.tmp_dirname,
+             global.config.tree_cc, global.config.ccincdir, global.ccflags,
+             global.config.tree_cext);
+    SYScall ("cd %s; %s %s %s -c symboltable.%s", global.tmp_dirname,
+             global.config.tree_cc, global.config.ccincdir, global.ccflags,
+             global.config.tree_cext);
+    SYScall ("cd %s; %s %s %s -c dependencytable.%s", global.tmp_dirname,
+             global.config.tree_cc, global.config.ccincdir, global.ccflags,
+             global.config.tree_cext);
 
     MEMfree (callstring);
 

@@ -89,6 +89,7 @@ static struct {
     void *store;
 } resource_table[] = {
 
+  {"STDLIB_PREFIX", str, &global.config.stdlib_prefix},
   {"CC", str, &global.config.cc},
   {"CCFLAGS", str, &global.config.ccflags},
   {"CCINCDIR", str, &global.config.ccincdir},
@@ -490,20 +491,22 @@ ParseResourceFiles (void)
 
     DBUG_ENTER ();
 
-    /*
-     * First, the public sac2crc file is read.
-     * This file is mandatory for a correct installation.
-     */
-
-    envvar = getenv ("SAC2CBASE");
-
-    if (envvar == NULL) {
-        CTIabort ("Unable to open public sac2crc file.\n"
-                  "The environment variable SAC2CBASE is not set properly.");
+    /* If the configuration is done via SAC2CRC environment variable we assume
+       that it is a special case, parse the file and do no more file loading.  */
+    envvar = getenv ("SAC2CRC");
+    if (envvar != NULL) {
+        ok = RSCparseResourceFile (envvar);
+        if (!ok)
+            CTIabort ("Unable to open special sac2crc file.\n"
+                      "The environment variable SAC2CRC is not set properly.");
+        DBUG_RETURN ();
     }
 
-    filename = STRcat (envvar, "/sac2crc");
-
+#ifndef PREFIX
+    CTIabort ("The prefix is not set, please run ./configure and recompile "
+              "sac2c compiler");
+#endif
+    filename = STRcat (PREFIX, "/shared/sac2crc");
     ok = RSCparseResourceFile (filename);
 
     if (!ok) {
@@ -517,23 +520,12 @@ ParseResourceFiles (void)
      * Second, the private sac2crc file ist read.
      * This file resides optionally in the user's home directory.
      */
-
     envvar = getenv ("HOME");
 
     if (envvar != NULL) {
         filename = STRcat (envvar, "/.sac2crc");
         ok = RSCparseResourceFile (filename);
         MEMfree (filename);
-    }
-
-    /*
-     * Finally, the environment variable $SAC2CRC is read.
-     */
-
-    envvar = getenv ("SAC2CRC");
-
-    if (envvar != NULL) {
-        ok = RSCparseResourceFile (envvar);
     }
 
     global.filename = global.puresacfilename; /* What is this good for ? */
@@ -755,6 +747,8 @@ RSCevaluateConfiguration ()
 void
 xfree_configuration (configuration_t conf)
 {
+    if (conf.stdlib_prefix)
+        MEMfree (conf.stdlib_prefix);
     if (conf.cc)
         MEMfree (conf.cc);
     if (conf.ccflags)

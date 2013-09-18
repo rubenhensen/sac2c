@@ -18,6 +18,19 @@
 #include <stdlib.h>
 #include <locale.h>
 
+static inline void
+handle_options_before_loading_configuration (void)
+{
+    if (global.printPrefix) {
+#ifndef PREFIX
+        CTIabort ("prefix is not defined, please run ./confiure and "
+                  "rebuild sac2c compiler");
+#endif
+        printf ("%s\n", PREFIX);
+        CTIterminateCompilationSilent ();
+    }
+}
+
 /*
  *  Here we handle special options that do not initiate any
  *  compilation process.
@@ -63,6 +76,8 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
 
     GLOBinitializeGlobal (argc, argv, tool, toolname);
     OPTanalyseCommandline (argc, argv);
+
+    handle_options_before_loading_configuration ();
 
     RSCevaluateConfiguration ();
 

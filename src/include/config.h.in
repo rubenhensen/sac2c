@@ -122,6 +122,8 @@
 /* set to maximum length of sac function names for profiling */
 #undef PF_MAXFUNNAMELEN
 
+#undef PREFIX
+
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */
 #undef PTHREAD_CREATE_JOINABLE

@@ -792,6 +792,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with ppppppppppppppppppppppppppppppppppppppppppp
      */
 
+    ARGS_FLAG ("prefix", global.printPrefix = TRUE);
+
     ARGS_OPTION ("printstart", PHOinterpretStartPhase (ARG))
 
     ARGS_OPTION ("printstop", PHOinterpretStopPhase (ARG))

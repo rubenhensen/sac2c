@@ -751,6 +751,11 @@ GLOBAL (char *, printConfig, NULL, xfree_dummy, )
  * Don't actually compile, but print an entry from the config file
  */
 
+GLOBAL (bool, printPrefix, FALSE, xfree_dummy, )
+/*
+ * Don't actually compile, but print prefix and terminate.
+ */
+
 GLOBAL (bool, gen_cccall, FALSE, xfree_dummy, )
 /*
  * Generate shell script '.sac2c' in current directory

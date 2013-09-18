@@ -35,6 +35,14 @@ dnl set OS and ARCH flags
 AC_DEFINE_UNQUOTED([OS], ["$target_os"], [OS string])
 AC_DEFINE_UNQUOTED([ARCH], ["$target_cpu"], [CPU architecture string])
 
+dnl get prefix and save it in the config.h file
+AH_VERBATIM([PREFIX],                  [#undef PREFIX])
+if test "x$prefix" = "xNONE" ; then
+    prefix="$ac_default_prefix"
+fi
+AC_DEFINE_UNQUOTED(PREFIX, "${prefix}")
+AC_SUBST([PREFIX], ["${prefix}"])
+
 dnl Enable sac2c compilation with C++
 AC_ARG_ENABLE([cplusplus],
               [AS_HELP_STRING([[--enable-cplusplus]],

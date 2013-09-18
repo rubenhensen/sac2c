@@ -687,6 +687,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+PREFIX
 target_os
 target_vendor
 target_cpu
@@ -2381,6 +2382,17 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+
+if test "x$prefix" = "xNONE" ; then
+    prefix="$ac_default_prefix"
+fi
+cat >>confdefs.h <<_ACEOF
+#define PREFIX "${prefix}"
+_ACEOF
+
+PREFIX="${prefix}"
+
+
 # Check whether --enable-cplusplus was given.
 if test "${enable_cplusplus+set}" = set; then :
   enableval=$enable_cplusplus; enable_cplusplus=$enableval
@@ -3492,7 +3504,6 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
 
 
 

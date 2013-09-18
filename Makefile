@@ -234,3 +234,25 @@ config:
           aclocal -I config && \
           autoreconf -v -f -i
 
+listinstfiles = $(shell for f in $$(ls -1 $(1)); do echo "\"$(PREFIX)/$(1)/$$f\"" ; done)
+listfiles = $(shell for f in $$(ls -1 $(1)); do echo "\"$(1)/$$f\"" ; done)
+install:
+	echo $(call listinstfiles,include) > .uninstall
+	echo $(call listinstfiles,lib) >> .uninstall
+	echo $(call listinstfiles,bin) >> .uninstall
+	echo "$(PREFIX)/share/sac2crc" >> .uninstall
+	install -d -m 0755 "$(PREFIX)/bin"
+	install -d -m 0755 "$(PREFIX)/lib"
+	install -d -m 0755 "$(PREFIX)/include"
+	install -d -m 0755 "$(PREFIX)/share"
+	install -m 0755 $(call listfiles,include) "$(PREFIX)/include"
+	install -m 0755 $(call listfiles,lib) "$(PREFIX)/lib"
+	install -m 0755 $(call listfiles,bin) "$(PREFIX)/bin"
+	install -m 0755 sac2crc "$(PREFIX)/share"
+
+uninstall:
+	if [ -f .uninstall ]; then \
+	    for f in $$(cat .uninstall); do \
+	        $(RM) $$f ; \
+	    done \
+	fi

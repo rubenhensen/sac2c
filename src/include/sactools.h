@@ -89,4 +89,57 @@ typedef union {
         }                                                                                \
     }
 
+static inline void
+report_error (void)
+{
+    char *error = dlerror ();
+
+    if (!error)
+        fprintf (stderr,
+                 "The system returned the following error "
+                 "message: \"%s\"\n",
+                 error);
+}
+
+static inline int
+launch_function_from_library (const char *library, const char *mainfun, int argc,
+                              char *argv[])
+{
+    void *libsac2c = dlopen (library, DLOPEN_FLAGS);
+    sacmain_u mainptr;
+    int ret;
+
+    if (!libsac2c) {
+        fprintf (stderr,
+                 "ERROR: cannot load shared library '%s'.  "
+                 "Aborting for now.\n",
+                 library);
+        report_error ();
+        exit (10);
+    }
+
+    mainptr.v = dlsym (libsac2c, mainfun);
+
+    if (!mainptr.f) {
+        fprintf (stderr,
+                 "ERROR: cannot find symbol '%s' in shared "
+                 "library '%s'.  Aborting for now.\n",
+                 mainfun, library);
+        report_error ();
+        exit (10);
+    }
+
+    ret = mainptr.f (argc, argv);
+    if (dlclose (libsac2c) != 0) {
+        fprintf (stderr,
+                 "ERROR: cannot unload shared library '%s'.  "
+                 "Aborting for now.\n",
+                 library);
+        report_error ();
+        exit (10);
+    }
+
+    return ret;
+}
+
 #endif
