@@ -710,7 +710,7 @@ get_terminal_size (void)
         return 80;
 
     ioctl (STDERR_FILENO, TIOCGWINSZ, &ws);
-    return ws.ws_col;
+    return ws.ws_col > 4 ? ws.ws_col - 4 : 1;
 }
 
 /*
