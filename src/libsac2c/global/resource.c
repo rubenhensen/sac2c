@@ -89,56 +89,33 @@ static struct {
     void *store;
 } resource_table[] = {
 
+  /* SBI-independent resources */
   {"STDLIB_PREFIX", str, &global.config.stdlib_prefix},
-  {"CC", str, &global.config.cc},
-  {"CCFLAGS", str, &global.config.ccflags},
-  {"CCINCDIR", str, &global.config.ccincdir},
-  {"CCLIBDIR", str, &global.config.cclibdir},
-  {"LDFLAGS", str, &global.config.ldflags},
-  {"CCLINK", str, &global.config.cclink},
-  {"CCMTLINK", str, &global.config.ccmtlink},
-  {"CCDLLINK", str, &global.config.ccdllink},
-  {"CEXT", str, &global.config.cext},
-  {"RC_METHOD", str, &global.config.rc_method},
-  {"BACKEND", str, &global.config.backend},
-  {"MT_LIB", str, &global.config.mt_lib},
-
-  {"TREE_CC", str, &global.config.tree_cc},
-  {"TREE_LD", str, &global.config.tree_ld},
-  {"TREE_LD_PATH", str, &global.config.tree_ld_path},
-  {"LIB_VARIANT", str, &global.config.lib_variant},
-  {"TREE_CEXT", str, &global.config.tree_cext},
-
-  {"OPT_O0", str, &global.config.opt_O0},
-  {"OPT_O1", str, &global.config.opt_O1},
-  {"OPT_O2", str, &global.config.opt_O2},
-  {"OPT_O3", str, &global.config.opt_O3},
-  {"OPT_g", str, &global.config.opt_g},
-  {"OPT_D", str, &global.config.opt_D},
-  {"OPT_I", str, &global.config.opt_I},
 
   {"CPP_STDIN", str, &global.config.cpp_stdin},
   {"CPP_FILE", str, &global.config.cpp_file},
-  {"TAR_CREATE", str, &global.config.tar_create},
-  {"TAR_EXTRACT", str, &global.config.tar_extract},
-  {"AR_CREATE", str, &global.config.ar_create},
-  {"LD_DYNAMIC", str, &global.config.ld_dynamic},
-  {"GENPIC", str, &global.config.genpic},
-  {"LD_PATH", str, &global.config.ld_path},
-  {"RANLIB", str, &global.config.ranlib},
-  {"MKDIR", str, &global.config.mkdir},
-  {"RMDIR", str, &global.config.rmdir},
-  {"CHDIR", str, &global.config.chdir},
-  {"CAT", str, &global.config.cat},
-  {"MOVE", str, &global.config.move},
-  {"RSH", str, &global.config.rsh},
-  {"DUMP_OUTPUT", str, &global.config.dump_output},
-  {"CUDA_ARCH", str, &global.config.cuda_arch},
 
+  {"TMPDIR", str, &global.config.tmpdir},
   {"LIBPATH", str, &global.config.libpath},
   {"IMPPATH", str, &global.config.imppath},
   {"EXTLIBPATH", str, &global.config.extlibpath},
-  {"TMPDIR", str, &global.config.tmpdir},
+
+  {"RMDIR", str, &global.config.rmdir},
+  {"MKDIR", str, &global.config.mkdir},
+
+  // The tree command variables will likely disappear soon.
+  {"TREE_CC", str, &global.config.tree_cc},
+  {"TREE_LD", str, &global.config.tree_ld},
+  {"TREE_LD_PATH", str, &global.config.tree_ld_path},
+  {"TREE_CEXT", str, &global.config.tree_cext},
+
+  /* SBI-dependent resources */
+
+  // How code is generated.
+  {"BACKEND", str, &global.config.backend},
+  {"RC_METHOD", str, &global.config.rc_method},
+  {"CUDA_ARCH", str, &global.config.cuda_arch},
+  {"USE_PHM_API", num, &global.config.use_phm_api},
 
   {"CACHE1_SIZE", num, &global.config.cache1_size},
   {"CACHE1_LINE", num, &global.config.cache1_line},
@@ -158,7 +135,34 @@ static struct {
   {"CACHE3_WRITEPOL", str, &global.config.cache3_writepol},
   {"CACHE3_MSCA", num, &global.config.cache3_msca_factor},
 
-  {"USE_PHM_API", num, &global.config.use_phm_api},
+  // How code is compiled/linked.
+  {"CEXT", str, &global.config.cext},
+
+  {"CC", str, &global.config.cc},
+  {"CCFLAGS", str, &global.config.ccflags},
+  {"CCINCDIR", str, &global.config.ccincdir},
+
+  {"CCLIBDIR", str, &global.config.cclibdir},
+  {"LDFLAGS", str, &global.config.ldflags},
+
+  {"OPT_O0", str, &global.config.opt_O0},
+  {"OPT_O1", str, &global.config.opt_O1},
+  {"OPT_O2", str, &global.config.opt_O2},
+  {"OPT_O3", str, &global.config.opt_O3},
+  {"OPT_g", str, &global.config.opt_g},
+
+  // The following will likely disappear soon.
+  {"LIB_VARIANT", str, &global.config.lib_variant},
+  {"CCLINK", str, &global.config.cclink},
+  {"CCMTLINK", str, &global.config.ccmtlink},
+  {"CCDLLINK", str, &global.config.ccdllink},
+  {"MT_LIB", str, &global.config.mt_lib},
+
+  {"GENPIC", str, &global.config.genpic},
+  {"LD_DYNAMIC", str, &global.config.ld_dynamic},
+  {"LD_PATH", str, &global.config.ld_path},
+  {"AR_CREATE", str, &global.config.ar_create},
+  {"RANLIB", str, &global.config.ranlib},
 
   {"", (enum tag_t)0, NULL},
 };
@@ -749,42 +753,71 @@ RSCevaluateConfiguration ()
 void
 xfree_configuration (configuration_t conf)
 {
+    /* SBI-independent resources */
     if (conf.stdlib_prefix)
         MEMfree (conf.stdlib_prefix);
-    if (conf.cc)
-        MEMfree (conf.cc);
-    if (conf.ccflags)
-        MEMfree (conf.ccflags);
-    if (conf.ccincdir)
-        MEMfree (conf.ccincdir);
-    if (conf.cclibdir)
-        MEMfree (conf.cclibdir);
-    if (conf.ldflags)
-        MEMfree (conf.ldflags);
-    if (conf.cclink)
-        MEMfree (conf.cclink);
-    if (conf.ccmtlink)
-        MEMfree (conf.ccmtlink);
-    if (conf.ccdllink)
-        MEMfree (conf.ccdllink);
-    if (conf.cext)
-        MEMfree (conf.cext);
-    if (conf.rc_method)
-        MEMfree (conf.rc_method);
-    if (conf.backend)
-        MEMfree (conf.backend);
-    if (conf.mt_lib)
-        MEMfree (conf.mt_lib);
+
+    if (conf.cpp_stdin)
+        MEMfree (conf.cpp_stdin);
+    if (conf.cpp_file)
+        MEMfree (conf.cpp_file);
+
+    if (conf.tmpdir)
+        MEMfree (conf.tmpdir);
+    if (conf.libpath)
+        MEMfree (conf.libpath);
+    if (conf.imppath)
+        MEMfree (conf.imppath);
+    if (conf.extlibpath)
+        MEMfree (conf.extlibpath);
+
+    if (conf.rmdir)
+        MEMfree (conf.rmdir);
+    if (conf.mkdir)
+        MEMfree (conf.mkdir);
+
     if (conf.tree_cc)
         MEMfree (conf.tree_cc);
     if (conf.tree_ld)
         MEMfree (conf.tree_ld);
     if (conf.tree_ld_path)
         MEMfree (conf.tree_ld_path);
-    if (conf.lib_variant)
-        MEMfree (conf.lib_variant);
     if (conf.tree_cext)
         MEMfree (conf.tree_cext);
+
+    /* SBI-dependent resources */
+
+    // How code is generated.
+    if (conf.backend)
+        MEMfree (conf.backend);
+    if (conf.rc_method)
+        MEMfree (conf.rc_method);
+    if (conf.cuda_arch)
+        MEMfree (conf.cuda_arch);
+
+    if (conf.cache1_writepol)
+        MEMfree (conf.cache1_writepol);
+    if (conf.cache2_writepol)
+        MEMfree (conf.cache2_writepol);
+    if (conf.cache3_writepol)
+        MEMfree (conf.cache3_writepol);
+
+    // How code is compiled/linked.
+    if (conf.cext)
+        MEMfree (conf.cext);
+
+    if (conf.cc)
+        MEMfree (conf.cc);
+    if (conf.ccflags)
+        MEMfree (conf.ccflags);
+    if (conf.ccincdir)
+        MEMfree (conf.ccincdir);
+
+    if (conf.cclibdir)
+        MEMfree (conf.cclibdir);
+    if (conf.ldflags)
+        MEMfree (conf.ldflags);
+
     if (conf.opt_O0)
         MEMfree (conf.opt_O0);
     if (conf.opt_O1)
@@ -795,58 +828,29 @@ xfree_configuration (configuration_t conf)
         MEMfree (conf.opt_O3);
     if (conf.opt_g)
         MEMfree (conf.opt_g);
-    if (conf.opt_D)
-        MEMfree (conf.opt_D);
-    if (conf.opt_I)
-        MEMfree (conf.opt_I);
-    if (conf.cpp_stdin)
-        MEMfree (conf.cpp_stdin);
-    if (conf.cpp_file)
-        MEMfree (conf.cpp_file);
-    if (conf.tar_create)
-        MEMfree (conf.tar_create);
-    if (conf.tar_extract)
-        MEMfree (conf.tar_extract);
-    if (conf.ar_create)
-        MEMfree (conf.ar_create);
-    if (conf.ld_dynamic)
-        MEMfree (conf.ld_dynamic);
+
+    // Will disappear soon
+    if (conf.lib_variant)
+        MEMfree (conf.lib_variant);
+    if (conf.cclink)
+        MEMfree (conf.cclink);
+    if (conf.ccmtlink)
+        MEMfree (conf.ccmtlink);
+    if (conf.ccdllink)
+        MEMfree (conf.ccdllink);
+    if (conf.mt_lib)
+        MEMfree (conf.mt_lib);
+
     if (conf.genpic)
         MEMfree (conf.genpic);
+    if (conf.ld_dynamic)
+        MEMfree (conf.ld_dynamic);
     if (conf.ld_path)
         MEMfree (conf.ld_path);
+    if (conf.ar_create)
+        MEMfree (conf.ar_create);
     if (conf.ranlib)
         MEMfree (conf.ranlib);
-    if (conf.mkdir)
-        MEMfree (conf.mkdir);
-    if (conf.rmdir)
-        MEMfree (conf.rmdir);
-    if (conf.chdir)
-        MEMfree (conf.chdir);
-    if (conf.cat)
-        MEMfree (conf.cat);
-    if (conf.move)
-        MEMfree (conf.move);
-    if (conf.rsh)
-        MEMfree (conf.rsh);
-    if (conf.dump_output)
-        MEMfree (conf.dump_output);
-    if (conf.cuda_arch)
-        MEMfree (conf.cuda_arch);
-    if (conf.libpath)
-        MEMfree (conf.libpath);
-    if (conf.imppath)
-        MEMfree (conf.imppath);
-    if (conf.extlibpath)
-        MEMfree (conf.extlibpath);
-    if (conf.tmpdir)
-        MEMfree (conf.tmpdir);
-    if (conf.cache1_writepol)
-        MEMfree (conf.cache1_writepol);
-    if (conf.cache2_writepol)
-        MEMfree (conf.cache2_writepol);
-    if (conf.cache3_writepol)
-        MEMfree (conf.cache3_writepol);
 }
 
 #undef DBUG_PREFIX

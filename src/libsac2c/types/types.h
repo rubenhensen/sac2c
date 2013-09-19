@@ -696,56 +696,32 @@ typedef struct TARGET_LIST_T {
  ******************************************************************************/
 
 typedef struct {
+    /* SBI-independent resources */
     char *stdlib_prefix;
-    char *cc;
-    char *ccflags;
-    char *ccincdir;
-    char *cclibdir;
-    char *ldflags;
-    char *cclink;
-    char *ccmtlink;
-    char *ccdllink;
-    char *cext;
-    char *rc_method;
-    char *backend;
-    char *mt_lib;
+
+    char *cpp_stdin;
+    char *cpp_file;
+
+    char *tmpdir;
+    char *libpath;
+    char *imppath;
+    char *extlibpath;
+
+    char *rmdir;
+    char *mkdir;
 
     char *tree_cc;
     char *tree_ld;
     char *tree_ld_path;
-    char *lib_variant;
     char *tree_cext;
 
-    char *opt_O0;
-    char *opt_O1;
-    char *opt_O2;
-    char *opt_O3;
-    char *opt_g;
-    char *opt_D;
-    char *opt_I;
+    /* SBI-dependent resources */
 
-    char *cpp_stdin;
-    char *cpp_file;
-    char *tar_create;
-    char *tar_extract;
-    char *ar_create;
-    char *ld_dynamic;
-    char *genpic;
-    char *ld_path;
-    char *ranlib;
-    char *mkdir;
-    char *rmdir;
-    char *chdir;
-    char *cat;
-    char *move;
-    char *rsh;
-    char *dump_output;
+    // How code is generated.
+    char *backend;
+    char *rc_method;
     char *cuda_arch;
-
-    char *libpath;
-    char *imppath;
-    char *extlibpath;
-    char *tmpdir;
+    int use_phm_api;
 
     int cache1_size;
     int cache1_line;
@@ -765,7 +741,35 @@ typedef struct {
     char *cache3_writepol;
     int cache3_msca_factor;
 
-    int use_phm_api;
+    // How code is compiled/linked.
+    char *cext;
+
+    char *cc;
+    char *ccflags;
+    char *ccincdir;
+
+    char *cclibdir;
+    char *ldflags;
+
+    char *opt_O0;
+    char *opt_O1;
+    char *opt_O2;
+    char *opt_O3;
+    char *opt_g;
+
+    // Will disappear soon.
+    char *lib_variant;
+    char *cclink;
+    char *ccmtlink;
+    char *ccdllink;
+    char *mt_lib;
+
+    char *genpic;
+    char *ld_dynamic;
+    char *ld_path;
+    char *ar_create;
+    char *ranlib;
+
 } configuration_t;
 
 /*******************************************************************************

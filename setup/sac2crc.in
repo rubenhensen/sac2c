@@ -250,52 +250,15 @@
  */
 
 target default:
+
+/* SBI-independent resources */
 STDLIB_PREFIX    :=  "" 
-CC               :=  "@CC@"
-CCFLAGS          :=  "-pedantic @RCCCFLAGS@"
-CCINCDIR         :=  "-I$(sac2c -prefix)/include/ "
-CCLIBDIR         :=  "-L$(sac2c -prefix)/lib/ "
-LDFLAGS          :=  "@RCLDFLAGS@ -ldl -lpthread"
-CCLINK           :=  ""    
-CCMTLINK         :=  "@CCMTLINK@"
-CCDLLINK         :=  "@CCDLLINK@"
-CEXT             :=  "c"
-TREE_CC          :=  "@CC@ @GENPIC@"
-TREE_LD          :=  "@CC@ @LD_DYNAMIC@"
-TREE_LD_PATH     :=  "@LD_PATH@"
-TREE_CEXT        :=  "c"
 
-RC_METHOD        :=  "local"
-BACKEND          :=  "C99"
-LIB_VARIANT      :=  ""
-MT_LIB           :=  "pthread"
-
-OPT_O0           :=  "@OPT_O0@"
-OPT_O1           :=  "@OPT_O1@"
-OPT_O2           :=  "@OPT_O2@"
-OPT_O3           :=  "@OPT_O3@"
-OPT_g            :=  "@OPT_g@"
- 
 CPP_STDIN        :=  "@CPPFILE@ -"
 CPP_FILE         :=  "@CPPFILE@"
-OPT_D            :=  "-D"
-OPT_I            :=  "-I"
-TAR_CREATE       :=  "tar cf"
-TAR_EXTRACT      :=  "tar xf"
-AR_CREATE        :=  "ar cr"
-LD_DYNAMIC       :=  "@CC@ @LD_DYNAMIC@"
-LD_PATH          :=  "@LD_PATH@"
-GENPIC           :=  "@GENPIC@"
-RANLIB           :=  "@RANLIB@"
-MKDIR            :=  "mkdir"
-RMDIR            :=  "rm -rf"
-CHDIR            :=  "cd"
-CAT              :=  "cat"
-MOVE             :=  "mv"
-RSH              :=  "rsh"
-DUMP_OUTPUT      :=  ">/dev/null 2>&1"
-CUDA_ARCH        :=  "@CUDA_ARCH@"
- 
+
+TMPDIR           :=  "/tmp"
+
 LIBPATH          :=  "$(sac2c -prefix)/lib:"
                      "$(sac2c -CSTDLIB_PREFIX)/shared-libs:"
 IMPPATH          :=  "$(sac2c -CSTDLIB_PREFIX)/modules/structures:"
@@ -311,8 +274,21 @@ IMPPATH          :=  "$(sac2c -CSTDLIB_PREFIX)/modules/structures:"
                      "$(sac2c -CSTDLIB_PREFIX)/classes/random:"
                      "$(sac2c -CSTDLIB_PREFIX)/utrace:"
 EXTLIBPATH       :=  "/usr/local/dislin:/opt/local/lib"
- 
-TMPDIR           :=  "/tmp"
+
+RMDIR            :=  "rm -rf"
+MKDIR            :=  "mkdir"
+
+TREE_CC          :=  "@CC@ @GENPIC@"
+TREE_LD          :=  "@CC@ @LD_DYNAMIC@"
+TREE_LD_PATH     :=  "@LD_PATH@"
+TREE_CEXT        :=  "c"
+
+/* SBI-dependent resources */
+// How C code is generated from SAC.
+BACKEND          :=  "C99"
+RC_METHOD        :=  "local"
+CUDA_ARCH        :=  "@CUDA_ARCH@"
+USE_PHM_API      := @CAN_USE_PHM@
 
 CACHE1_SIZE      :=  0
 CACHE1_LINE      :=  0
@@ -331,8 +307,36 @@ CACHE3_LINE      :=  0
 CACHE3_ASSOC     :=  0
 CACHE3_WRITEPOL  :=  "default"
 CACHE3_MSCA      :=  0
+
+// How C code is compiled/linked.
+CEXT             :=  "c"
+
+CC               :=  "@CC@"
+CCFLAGS          :=  "-pedantic @RCCCFLAGS@"
+CCINCDIR         :=  "-I$(sac2c -prefix)/include/ "
+
+CCLIBDIR         :=  "-L$(sac2c -prefix)/lib/ "
+LDFLAGS          :=  "@RCLDFLAGS@ -ldl -lpthread"
+
+OPT_O0           :=  "@OPT_O0@"
+OPT_O1           :=  "@OPT_O1@"
+OPT_O2           :=  "@OPT_O2@"
+OPT_O3           :=  "@OPT_O3@"
+OPT_g            :=  "@OPT_g@"
+
+// Will disappear soon.
+LIB_VARIANT      :=  ""
+CCLINK           :=  ""    
+CCMTLINK         :=  "@CCMTLINK@"
+CCDLLINK         :=  "@CCDLLINK@"
+MT_LIB           :=  "pthread"
  
-USE_PHM_API      := @CAN_USE_PHM@
+GENPIC           :=  "@GENPIC@"
+LD_DYNAMIC       :=  "@CC@ @LD_DYNAMIC@"
+LD_PATH          :=  "@LD_PATH@"
+AR_CREATE        :=  "ar cr"
+RANLIB           :=  "@RANLIB@"
+  
 
 /*****************************************************************************
  * reference counting method targets
