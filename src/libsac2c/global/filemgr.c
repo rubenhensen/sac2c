@@ -63,7 +63,7 @@ FMGRfindFilePath (pathkind_t p, const char *name)
         /* We want to expand shell variables in the path first.  */
         str_buf *sbuffer = SBUFcreate (128);
 
-        SBUFprintf (sbuffer, "echo -n %s", path_bufs[p]);
+        SBUFprintf (sbuffer, "printf '%%s' %s", path_bufs[p]);
         buffer2 = SYSexec_and_read_output (SBUF2str (sbuffer));
         SBUFfree (sbuffer);
 
