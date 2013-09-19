@@ -1620,16 +1620,8 @@ handle_primary_expr (struct parser *parser)
     do {                                                                                 \
         const char *val = token_as_string (tok);                                         \
         type num;                                                                        \
-        int base = 10;                                                                   \
                                                                                          \
-        if (strlen (val) > 1) {                                                          \
-            if (val[0] == '0' && (val[1] == 'x' || val[1] == 'X'))                       \
-                base = 16;                                                               \
-            else if (val[0] == '0')                                                      \
-                base = 8;                                                                \
-        }                                                                                \
-                                                                                         \
-        num = (type)convert (val, (char **)NULL, base);                                  \
+        num = (type)convert (val, (char **)NULL, 0);                                     \
         if (errno == ERANGE) {                                                           \
             error_loc (token_location (tok),                                             \
                        "value `%s' produces "                                            \
