@@ -4,7 +4,7 @@
 #include "str_buffer.h"
 #include "memory.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "CCM"
 #include "debug.h"
 
 #include "ctinfo.h"
