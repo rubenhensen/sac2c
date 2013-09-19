@@ -81,15 +81,6 @@
  *  CCDLLINK        CCDLLINK specifies the libraries an executable that makes use
  *                  of runtime specialization has to be linked with, additionally. 
  *
- *  TREE_CC         Specifies the C compiler call required to build a component
- *                  of the syntax tree representation used in modules. This 
- *                  needs to be the same as used when compiling the compiler 
- *                  itself.
- *
- *  TREE_LD         Specifies the linker call required to assemble the syntax
- *                  tree part of a compiled module. This needs to be the same
- *                  as used when compiling the compiler itself.
- *
  *  LD_PATH         Defines how to set the search path of the linker when
  *                  linking the tree representation of a module. All 
  *                  occurrences of %path% will be replaced by the path to add.
@@ -250,8 +241,8 @@ EXTLIBPATH       :=  "/usr/local/dislin:/opt/local/lib"
 RMDIR            :=  "rm -rf"
 MKDIR            :=  "mkdir"
 
-TREE_CC          :=  "@CC@ @GENPIC@"
-TREE_LD          :=  "@CC@ @LD_DYNAMIC@"
+COMPILE_TREE     :=  "@CC@ @GENPIC@ %tree_cflags% -c -o %path%/%target% %source%"
+LINK_TREE        :=  "@CC@ @LD_DYNAMIC@ -o %path%/%libname% %objects%"
 
 /* SBI-dependent resources */
 // How C code is generated from SAC.

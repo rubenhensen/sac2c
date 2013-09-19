@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 
 #include "libbuilder.h"
@@ -156,29 +155,34 @@ LIBBcreateLibrary (node *syntax_tree)
     CTInote ("Creating shared SAC library `lib%sTree%s" SHARED_LIB_EXT "'",
              global.modulename, global.config.lib_variant);
 
+    ldCmd = global.config.link_tree;
+    char *tree_objs = STRcatn (10, global.tmp_dirname, "/serialize.o ",
+                               global.tmp_dirname, "/symboltable.o ", global.tmp_dirname,
+                               "/dependencytable.o ", global.tmp_dirname,
+                               "/namespacemap.o ", global.tmp_dirname, "/filenames.o");
     libraryName = STRcatn (5, "lib", global.modulename, "Tree", global.config.lib_variant,
                            SHARED_LIB_EXT);
-    ldCmd = STRsubstToken (global.config.tree_ld, "%libname%", libraryName);
+
+    ldCmd = STRsubstTokend (STRsubstTokend (STRsubstTokend (ldCmd, "%path%",
+                                                            global.targetdir),
+                                            "%libname%", libraryName),
+                            "%objects%", tree_objs);
+    tree_objs = MEMfree (tree_objs);
+    libraryName = MEMfree (libraryName);
 
 #if IS_CYGWIN
     cygdeplibs = CYGHgetCompleteLibString (CYGH_sac2c);
-
     ldDir = CYGHbuildLibDirectoryString ();
-    ldCmd = STRcat (ldCmd, ldDir);
-#endif
-
-    SYScall ("%s -o %s%s %s/serialize.o %s/symboltable.o"
-             " %s/dependencytable.o %s/namespacemap.o %s/filenames.o%s",
-             ldCmd, global.targetdir, libraryName, global.tmp_dirname, global.tmp_dirname,
-             global.tmp_dirname, global.tmp_dirname, global.tmp_dirname, cygdeplibs);
-
-    libraryName = MEMfree (libraryName);
-    ldCmd = MEMfree (ldCmd);
-
-#if IS_CYGWIN
+    char *tmp = STRcatn (5, ldCmd, " ", ldDir, " ", cygdeplibs);
     ldDir = MEMfree (ldDir);
     cygdeplibs = MEMfree (cygdeplibs);
+    ldCmd = MEMfree (ldCmd);
+    ldCmd = tmp;
 #endif
+
+    SYScall ("%s", ldCmd);
+
+    ldCmd = MEMfree (ldCmd);
 
     if (global.gen_cccall) {
         /*

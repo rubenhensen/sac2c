@@ -435,19 +435,30 @@ InvokeCCModule (char *cccall, char *compilationflags)
         CompileOneFilePIC (global.tmp_dirname, str, callstring);
         MEMfree (str);
     }
-
-    SYScall ("cd %s; %s %s %s -c serialize.c", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccincdir, global.ccflags);
-    SYScall ("cd %s; %s %s %s -c filenames.c", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccincdir, global.ccflags);
-    SYScall ("cd %s; %s %s %s -c namespacemap.c", global.tmp_dirname,
-             global.config.tree_cc, global.config.ccincdir, global.ccflags);
-    SYScall ("cd %s; %s %s %s -c symboltable.c", global.tmp_dirname,
-             global.config.tree_cc, global.config.ccincdir, global.ccflags);
-    SYScall ("cd %s; %s %s %s -c dependencytable.c", global.tmp_dirname,
-             global.config.tree_cc, global.config.ccincdir, global.ccflags);
-
     MEMfree (callstring);
+
+    char *compile_tree = STRsubstTokend (STRsubstToken (global.config.compile_tree,
+                                                        "%path%", global.tmp_dirname),
+                                         "%tree_cflags%", global.ccflags);
+
+#define DO_TREE_COMPILE(NAME)                                                            \
+    do {                                                                                 \
+        char *tmp = STRcat (global.tmp_dirname, "/" NAME ".c");                          \
+        char *compile_cmd                                                                \
+          = STRsubstTokend (STRsubstToken (compile_tree, "%target%", NAME ".o"),         \
+                            "%source%", tmp);                                            \
+        SYScall ("%s", compile_cmd);                                                     \
+        compile_cmd = MEMfree (compile_cmd);                                             \
+        tmp = MEMfree (tmp);                                                             \
+    } while (0)
+
+    DO_TREE_COMPILE ("serialize");
+    DO_TREE_COMPILE ("filenames");
+    DO_TREE_COMPILE ("namespacemap");
+    DO_TREE_COMPILE ("symboltable");
+    DO_TREE_COMPILE ("dependencytable");
+
+    MEMfree (compile_tree);
 
     DBUG_RETURN ();
 }

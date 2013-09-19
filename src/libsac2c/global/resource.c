@@ -104,8 +104,8 @@ static struct {
   {"MKDIR", str, &global.config.mkdir},
 
   // The tree command variables will likely disappear soon.
-  {"TREE_CC", str, &global.config.tree_cc},
-  {"TREE_LD", str, &global.config.tree_ld},
+  {"COMPILE_TREE", str, &global.config.compile_tree},
+  {"LINK_TREE", str, &global.config.link_tree},
 
   /* SBI-dependent resources */
 
@@ -774,10 +774,10 @@ xfree_configuration (configuration_t conf)
     if (conf.mkdir)
         MEMfree (conf.mkdir);
 
-    if (conf.tree_cc)
-        MEMfree (conf.tree_cc);
-    if (conf.tree_ld)
-        MEMfree (conf.tree_ld);
+    if (conf.compile_tree)
+        MEMfree (conf.compile_tree);
+    if (conf.link_tree)
+        MEMfree (conf.link_tree);
 
     /* SBI-dependent resources */
 

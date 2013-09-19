@@ -710,10 +710,8 @@ typedef struct {
     char *rmdir;
     char *mkdir;
 
-    char *tree_cc;
-    char *tree_ld;
-    char *tree_ld_path;
-    char *tree_cext;
+    char *compile_tree;
+    char *link_tree;
 
     /* SBI-dependent resources */
 

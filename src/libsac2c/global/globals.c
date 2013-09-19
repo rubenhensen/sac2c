@@ -434,8 +434,8 @@ static const char *rename_type_init[] = {
           NULL, /* rmdir    */                                                           \
           NULL, /* mkdir    */                                                           \
                                                                                          \
-          NULL, /* tree_cc    */                                                         \
-          NULL, /* tree_ld    */                                                         \
+          NULL, /* compile_tree    */                                                    \
+          NULL, /* link_tree    */                                                       \
                                                                                          \
           NULL, /* backend    */                                                         \
           NULL, /* rc_method    */                                                       \
