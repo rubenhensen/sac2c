@@ -106,8 +106,6 @@ static struct {
   // The tree command variables will likely disappear soon.
   {"TREE_CC", str, &global.config.tree_cc},
   {"TREE_LD", str, &global.config.tree_ld},
-  {"TREE_LD_PATH", str, &global.config.tree_ld_path},
-  {"TREE_CEXT", str, &global.config.tree_cext},
 
   /* SBI-dependent resources */
 
@@ -780,10 +778,6 @@ xfree_configuration (configuration_t conf)
         MEMfree (conf.tree_cc);
     if (conf.tree_ld)
         MEMfree (conf.tree_ld);
-    if (conf.tree_ld_path)
-        MEMfree (conf.tree_ld_path);
-    if (conf.tree_cext)
-        MEMfree (conf.tree_cext);
 
     /* SBI-dependent resources */
 

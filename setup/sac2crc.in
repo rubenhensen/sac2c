@@ -280,8 +280,6 @@ MKDIR            :=  "mkdir"
 
 TREE_CC          :=  "@CC@ @GENPIC@"
 TREE_LD          :=  "@CC@ @LD_DYNAMIC@"
-TREE_LD_PATH     :=  "@LD_PATH@"
-TREE_CEXT        :=  "c"
 
 /* SBI-dependent resources */
 // How C code is generated from SAC.
