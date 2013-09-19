@@ -276,6 +276,7 @@ $(STYLE)/libsacpreludeTree$(CROSS_VARIANT)$(SHARED_LIB_EXT): \
 	@$(ECHO) "Compiling $< $(CROSS_FOR)"
 	$(HIDE) SAC2CRC="$(call fullpath,$(PROJECT_ROOT))/sac2crc" \
                 LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$(call fullpath,$(PROJECT_ROOT))/lib" \
+                DYLD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$(call fullpath,$(PROJECT_ROOT))/lib" \
                 PATH="${PATH}:$(call fullpath,$(PROJECT_ROOT))/bin" \
                 $(SAC2C) -ccflag"-I$(call fullpath,$(PROJECT_ROOT))/include" \
                 -o $(STYLE) $(CROSS_TARGET) $(SAC2CFLAGS_$($(STYLE)_cap)) -noprelude $<
