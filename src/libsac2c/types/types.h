@@ -763,6 +763,8 @@ typedef struct {
     int cache3_assoc;
     char *cache3_writepol;
     int cache3_msca_factor;
+
+    int use_phm_api;
 } configuration_t;
 
 /*******************************************************************************
@@ -937,7 +939,9 @@ typedef struct OPTIMIZE_COUNTER_T {
  */
 
 typedef struct OPTIMIZE_FLAGS_T {
-#define OPTIMIZEabbr(abbr) unsigned int do##abbr : 1;
+/* this uses 3-valued logic, to support delaying the configuration until sac2crc is
+ * loaded. */
+#define OPTIMIZEabbr(abbr) unsigned int do##abbr : 2;
 #include "optimize.mac"
 } optimize_flags_t;
 

@@ -191,28 +191,31 @@ AddPhmLib (str_buf *buffer)
 {
     DBUG_ENTER ();
 
-    if (global.optimize.dophm) {
-        SBUFprint (buffer, "-lsacphm");
-        SBUFprint (buffer, global.config.lib_variant);
+    SBUFprint (buffer, "-lsacphm");
+    if (!global.optimize.dophm) {
+        // Compatibility mode.
+        SBUFprint (buffer, "c");
+    }
 
-        if ((global.mtmode == MT_none) && (global.backend != BE_omp)) {
-            SBUFprint (buffer, ".seq");
-        } else {
-            /* multithreaded */
-            if (global.tool == TOOL_sac2c) {
-                /* standalone; classical mt phm */
-                SBUFprint (buffer, ".mt");
-            } else {
-                /* possibly externally multithreaded (xt) */
-                SBUFprint (buffer, ".xt");
-            }
-        }
+    SBUFprint (buffer, global.config.lib_variant);
 
-        if (global.runtimecheck.heap) {
-            SBUFprint (buffer, ".diag ");
+    if ((global.mtmode == MT_none) && (global.backend != BE_omp)) {
+        SBUFprint (buffer, ".seq");
+    } else {
+        /* multithreaded */
+        if (global.tool == TOOL_sac2c) {
+            /* standalone; classical mt phm */
+            SBUFprint (buffer, ".mt");
         } else {
-            SBUFprint (buffer, " ");
+            /* possibly externally multithreaded (xt) */
+            SBUFprint (buffer, ".xt");
         }
+    }
+
+    if (global.runtimecheck.heap) {
+        SBUFprint (buffer, ".diag ");
+    } else {
+        SBUFprint (buffer, " ");
     }
 
     DBUG_RETURN ();

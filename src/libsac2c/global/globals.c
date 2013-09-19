@@ -481,6 +481,7 @@ static const char *rename_type_init[] = {
           0,    /* cache3_assoc	  */                                                     \
           NULL, /* cache3_writepol	  */                                                  \
           0,    /* cache3_msca_factor;  */                                               \
+          1     /* use_phm_api          */                                               \
     }
 /*
  * This is only a dirty trick to fake an a-priori initialization

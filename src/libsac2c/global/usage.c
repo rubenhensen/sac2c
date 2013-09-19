@@ -131,12 +131,6 @@ PrintFeatureSet (void)
     printf ("    OpenMP based parallelization:       disabled\n");
 #endif
 
-#if ENABLE_PHM
-    printf ("    Private heap management:             enabled\n");
-#else
-    printf ("    Private heap management:            disabled\n");
-#endif
-
 #if ENABLE_RTSPEC
     printf ("    Runtime specialization:              enabled\n");
 #else
@@ -388,6 +382,7 @@ PrintOptimisationOptions (void)
       "     (A leading * identifies optimization enabled by default.)\n"
       "\n");
 
+#define DELAYPHM global.config.use_phm_api
 #ifdef PRODUCTION
 #define OPTIMIZE(str, abbr, devl, prod, name)                                            \
     printf ("      %s %-8s%s\n", prod ? "*" : " ", str, name);

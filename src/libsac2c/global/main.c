@@ -66,6 +66,8 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
 
     RSCevaluateConfiguration ();
 
+    OPTcheckPostSetupOptions ();
+
     GLOBsetupBackend ();
 
     FMGRsetupPaths ();

@@ -657,7 +657,7 @@ UNIQ
 SORT
 CB
 RANLIB
-ENABLE_PHM
+CAN_USE_PHM
 ENABLE_OMP
 OPENMP_CFLAGS
 ENABLE_MUTC
@@ -3496,7 +3496,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
 $as_echo_n "checking for grep that handles long lines and -e... " >&6; }
 if ${ac_cv_path_GREP+:} false; then :
@@ -4963,12 +4962,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
    have_phm=`if test x"$enable_phm" = xyes; then echo 1; else echo 0; fi`
-   ENABLE_PHM=$enable_phm
-
-
-cat >>confdefs.h <<_ACEOF
-#define ENABLE_PHM $have_phm
-_ACEOF
+   CAN_USE_PHM=$have_phm
 
 
 
@@ -6221,11 +6215,7 @@ $as_echo "cygwin settings" >&6; }
 $as_echo "OSF settings" >&6; }
     ;;
   *darwin*)
-        $as_echo "#define ENABLE_PHM 0" >>confdefs.h
-
-    ENABLE_PHM=no
-
-    RANLIB="$RANLIB -c"
+        RANLIB="$RANLIB -c"
     OSFLAGS="-D_DARWIN_C_SOURCE"
     LD_DYNAMIC="-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "
     LD_PATH="-L%path% -Wl,-rpath,%path%"

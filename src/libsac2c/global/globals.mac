@@ -1113,6 +1113,13 @@ GLOBAL (configuration_t, config, config_init, xfree_configuration, )
 GLOBAL (stringset_t *, dependencies, NULL, xfree_dummy, )
 
 GLOBAL (bool, debug_rc, FALSE, xfree_dummy, )
+
+/*
+ * Whether to print help and exit.
+ */
+
+GLOBAL (bool, print_help_and_exit, FALSE, xfree_dummy, )
+
 /*
  * MUTC backend options
  */

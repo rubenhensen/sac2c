@@ -25,7 +25,5 @@ AC_DEFUN([CHECK_PHM], dnl
    AC_DEFINE_UNQUOTED([SBRK_T], [$sbrk_arg_type],
                       [Type of the argument of sbrk().])
    have_phm=`if test x"$enable_phm" = xyes; then echo 1; else echo 0; fi`
-   AC_SUBST([ENABLE_PHM], [$enable_phm])
-   AC_DEFINE_UNQUOTED([ENABLE_PHM], [$have_phm],
-                      [Define to 1 if the private heap manager is enabled, otherwise 0.])
+   AC_SUBST([CAN_USE_PHM], [$have_phm])
 ])

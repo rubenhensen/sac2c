@@ -79,9 +79,9 @@ LIBS            := @LIBS@
 # feature setup:
 #
 
+DO_BUILD_PHM    := @CAN_USE_PHM@
 ENABLE_MT       := @ENABLE_MT@
 ENABLE_MT_LPEL  := @ENABLE_MT_LPEL@
-ENABLE_PHM      := @ENABLE_PHM@
 ENABLE_OMP      := @ENABLE_OMP@
 ENABLE_RTSPEC   := @ENABLE_RTSPEC@
 ENABLE_MUTC     := @ENABLE_MUTC@

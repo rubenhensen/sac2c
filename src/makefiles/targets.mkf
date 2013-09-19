@@ -399,9 +399,9 @@ libsac_extraclean_devel    :=
 libsac_extraclean_prod     := 
 
 ifeq  (MUTC, $(CROSS_BACKEND))
-libsac_sourcedirs          := essentials interface mutc phm
+libsac_sourcedirs          := essentials interface mutc
 else
-libsac_sourcedirs          := essentials mt mt_omp mt_beehive mt_pth mt_lpel phm cachesim interface rtspec
+libsac_sourcedirs          := essentials mt mt_omp mt_beehive mt_pth mt_lpel cachesim interface rtspec
 endif
 
 ###############################################################################
@@ -422,11 +422,48 @@ libsac_mt_lpel      := mt_lpel_std mt_lpel_trace
 
 libsac_mt_omp       := mt_omp
 
-libsac_phm          := nophm
-
 libsac_cachesim     := basic access_simple access_detailed
 
 libsac_rtspec       := registry reqqueue controller
+
+###############################################################################
+#
+# Subproject libsacphmc  - libsacphm "compat"
+#
+###############################################################################
+libsacphmc_targets           := libsacphmc$(CROSS_VARIANT).seq.a \
+                                libsacphmc$(CROSS_VARIANT).seq$(SHARED_LIB_EXT) \
+                                libsacphmc$(CROSS_VARIANT).seq.diag.a \
+                                libsacphmc$(CROSS_VARIANT).seq.diag$(SHARED_LIB_EXT) \
+                                libsacphmc$(CROSS_VARIANT).mt.a \
+                                libsacphmc$(CROSS_VARIANT).mt$(SHARED_LIB_EXT) \
+                                libsacphmc$(CROSS_VARIANT).mt.diag.a \
+                                libsacphmc$(CROSS_VARIANT).mt.diag$(SHARED_LIB_EXT) \
+                                libsacphmc$(CROSS_VARIANT).xt.a \
+                                libsacphmc$(CROSS_VARIANT).xt$(SHARED_LIB_EXT) \
+                                libsacphmc$(CROSS_VARIANT).xt.diag.a \
+                                libsacphmc$(CROSS_VARIANT).xt.diag$(SHARED_LIB_EXT)
+
+libsacphmc_targetdir         := lib
+
+libsacphmc_subtarget_suffix  := $(CROSS_VARIANT).o
+libsacphmc_defaultstyle      := prod
+
+libsacphmc_extraclean_all    :=
+libsacphmc_extraclean_devel  :=
+libsacphmc_extraclean_prod   :=
+
+ifeq ($(DO_BUILD_PHM), 1)
+libsacphmc_sourcedirs        := wrappers
+else
+libsacphmc_sourcedirs        := empty
+endif
+
+###############################################################################
+
+libsacphmc_wrappers  := nophm
+
+libsacphmc_empty     := empty
 
 
 ###############################################################################
@@ -434,9 +471,6 @@ libsac_rtspec       := registry reqqueue controller
 # Subproject libsacphm
 #
 ###############################################################################
-ifeq  (MUTC, $(CROSS_BACKEND))
-libsacphm_targets           :=
-else
 libsacphm_targets           := libsacphm$(CROSS_VARIANT).seq.a \
                                libsacphm$(CROSS_VARIANT).seq$(SHARED_LIB_EXT) \
                                libsacphm$(CROSS_VARIANT).seq.diag.a \
@@ -449,17 +483,21 @@ libsacphm_targets           := libsacphm$(CROSS_VARIANT).seq.a \
                                libsacphm$(CROSS_VARIANT).xt$(SHARED_LIB_EXT) \
                                libsacphm$(CROSS_VARIANT).xt.diag.a \
                                libsacphm$(CROSS_VARIANT).xt.diag$(SHARED_LIB_EXT)
-endif
+
 libsacphm_targetdir         := lib
 
 libsacphm_subtarget_suffix  := $(CROSS_VARIANT).o
 libsacphm_defaultstyle      := prod
 
-libsacphm_extraclean_all    := 
-libsacphm_extraclean_devel  := 
-libsacphm_extraclean_prod   := 
+libsacphm_extraclean_all    :=
+libsacphm_extraclean_devel  :=
+libsacphm_extraclean_prod   :=
 
+ifeq ($(DO_BUILD_PHM), 1)
 libsacphm_sourcedirs        := heap diag opt compat
+else
+libsacphm_sourcedirs        := empty
+endif
 
 ###############################################################################
 
@@ -469,7 +507,9 @@ libsacphm_diag      := diagnostics
 
 libsacphm_opt       := placement
 
-libsacphm_compat    := malloc 
+libsacphm_compat    := malloc
+
+libsacphm_empty     := empty
 
 
 
