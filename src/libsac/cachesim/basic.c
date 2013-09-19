@@ -354,10 +354,8 @@ Usage (int is_analyser, char *pureprogname, int cachesim, int cs_global, char *c
           "\tmemory trace file exists, it can be used to simulate different cache\n"
           "\tconfigurations without repeatedly running the application program\n"
           "\titself. The simulation tool for memory access trace files is called\n"
-          "\t\tCacheSimAnalyser\n"
-          "\tand may be found in the directory\n"
-          "\t\t$SACBASE/runtime\n"
-          "\tas part of your SAC installation.\n");
+          "\t\tcsima\n"
+          "\tand should be found in your path as it is part of your SAC installation.\n");
     }
 
     printf ("\n"
@@ -763,7 +761,7 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
                    tWritePolicy writepolicy2, ULINT cachesize3, int cachelinesize3,
                    int associativity3, tWritePolicy writepolicy3)
 {
-    char filename[256], call[1024], *sacbase;
+    char filename[256], call[1024];
 
     profiling_level = profilinglevel;
     global_simulation = cs_global;
@@ -807,20 +805,7 @@ SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
     if ((profilinglevel == SAC_CS_piped_simple)
         || (profilinglevel == SAC_CS_piped_advanced)) {
 
-        /*
-         * Since we want to start an external program, we first check whether it
-         * exists at the location we assume and whether it is actually executbale
-         * in the given context (user/group permissions, etc.).
-         */
-
-        sacbase = getenv ("SACBASE");
-
-        if (sacbase == NULL) {
-            SAC_RuntimeError ("Unable to invoke external cache simulation analyser:\n"
-                              "*** environment variable $SACBASE undefined");
-        }
-
-        sprintf (filename, "%s/runtime/CacheSimAnalyser", sacbase);
+        sprintf (filename, "csima");
 
         if (0 != access (filename, X_OK)) {
             SAC_RuntimeError ("Unable to invoke external cache simulation analyser:\n"

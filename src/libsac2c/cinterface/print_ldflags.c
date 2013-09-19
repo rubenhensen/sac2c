@@ -12,8 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define SAC2CBASEENV "SAC2CBASE"
-
 node *
 PLDFdoPrintLDFlags (node *syntax_tree)
 {

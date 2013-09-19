@@ -217,22 +217,23 @@ tools: checks
 
 ###############################################################################
 #
-# Includes for consistency checking mechanism
-#
-
-include $(MAKEFILE_DIR)/check.mkf
-
-
-
-###############################################################################
-#
-# Rules for configure mechanism
+# Rules to create configure the script. Put it here as a first target.
 #
 
 config:
 	@ cd setup && \
           aclocal -I config && \
           autoreconf -v -f -i
+
+
+###############################################################################
+#
+# Includes for consistency checking mechanism
+#
+
+include $(MAKEFILE_DIR)/check.mkf
+
+
 
 listinstfiles = $(shell for f in $$(ls -1 $(1)); do echo "\"$(PREFIX)/$(1)/$$f\"" ; done)
 listfiles = $(shell for f in $$(ls -1 $(1)); do echo "\"$(1)/$$f\"" ; done)

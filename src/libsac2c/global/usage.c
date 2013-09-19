@@ -1033,7 +1033,7 @@ PrintCustomisationOptions (void)
       "                    compilers.\n"
       "\n"
       "                    The target description is either read from the\n"
-      "                    installation specific file $SACBASE/runtime/sac2crc or\n"
+      "                    installation specific file $PREFIX/share/sac2crc or\n"
       "                    from a file named .sac2crc within the user's home\n"
       "                    directory.\n"
       "\n"
@@ -1056,8 +1056,7 @@ PrintEnvironmentVariables (void)
 
       "    The following environment variables are used by the SAC compiler suite:\n"
       "\n"
-      "    SACBASE         Base directory of SAC standard lib installation.\n"
-      "    SAC2CBASE       Base directory of SAC installation.\n"
+      "    SAC2CRC         Invoke compiler with a specific configuration file.\n"
       "    SAC_PARALLEL    (optional) specifies the number of threads to use.\n"
       "    SAC_NUM_SOCKETS (optional) specifies the number of sockets to use.\n"
       "    SAC_NUM_CORES   (optional) specifies the number of cores per socket to use.\n"

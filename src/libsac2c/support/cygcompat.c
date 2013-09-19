@@ -1,7 +1,7 @@
 
 
 /*
- * This file is used to build libcygcompat.a in $SAC2CBASE/lib. You can find the
+ * This file is used to build libcygcompat.a in ./lib of sac2c. You can find the
  * rule for building this in build.mkv under the rules for libsac2c.
  *
  * The purpose of this library is to allow an interface between sac2c and a

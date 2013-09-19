@@ -14,11 +14,11 @@
  *  configuration files. There is an installation specific configuration
  *  file as well as a user specific on. While the former is mandatory, the
  *  latter is optional. The installation specific configuration file is
- *    $SAC2CBASE/sac2crc ,
- *  the user specific configuration file must be called .sac2crc and ought
+ *  $PREFIX/sac2crc, where PREFIX is given while configuring sac2c.
+ *  The user specific configuration file must be called .sac2crc and ought
  *  to reside in the user's home directory.
- *  Finally the environment variable SAC2CRC can optionally specify
- *  the configuration file.
+ *  Finally the vonfiguration can be given by the variable SAC2CRC which is
+ *  treated as a special case and none of the other configurations are checked.,
  *
  *  Each configuration file defines a sequence of target configuration or
  *  targets for short. A special target named 'default' is required which
@@ -478,7 +478,7 @@ RSCparseResourceFile (char *buffer)
  *  This function does all the file handling. First, the public configuration
  *  file is read and parsed. If existing, the private configuration file is
  *  parsed afterwards.
- *  This depends on the environment variables HOME and SACBASE.
+ *  This depends on the environment variables HOME and SAC2CRC.
  *
  ******************************************************************************/
 
