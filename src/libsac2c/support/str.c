@@ -1320,4 +1320,12 @@ STRsubstToken (const char *str, const char *token, const char *subst)
     DBUG_RETURN (result);
 }
 
+char *
+STRsubstTokend (char *str, const char *token, const char *subst)
+{
+    char *nstr = STRsubstToken (str, token, subst);
+    MEMfree (str);
+    return nstr;
+}
+
 #undef DBUG_PREFIX

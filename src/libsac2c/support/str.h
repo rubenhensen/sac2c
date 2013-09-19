@@ -37,6 +37,7 @@ extern char *STRstring2SafeCEncoding (const char *string);
 extern char *STRcommentify (const char *string);
 extern node *STRstring2Array (const char *string);
 extern char *STRsubstToken (const char *str, const char *token, const char *subst);
+extern char *STRsubstTokend (char *str, const char *token, const char *subst);
 
 /*********************************
  * macro definitions
