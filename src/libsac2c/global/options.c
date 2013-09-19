@@ -96,6 +96,44 @@ powOf2 (int arg)
 /******************************************************************************
  *
  * function:
+ *   void OPTcheckPostSetupOptions(void)
+ *
+ * description:
+ *   This function is called after command line arguments have been
+ *   analysed and sac2crc has been read. It propagates SBI-defined
+ *   defaults and then prints the help text if requested by the user.
+ *
+ ******************************************************************************/
+
+void
+OPTcheckPostSetupOptions (void)
+{
+    DBUG_ENTER ();
+
+    /*
+     * PHM enable/disable.
+     */
+#define CHECKDEFAULT(Opt, Default)                                                       \
+    if (global.optimize.Opt != TRUE && global.optimize.Opt != FALSE) {                   \
+        global.optimize.Opt = Default;                                                   \
+    }
+
+    CHECKDEFAULT (dophm, global.config.use_phm_api);
+    CHECKDEFAULT (doaps, global.config.use_phm_api);
+    CHECKDEFAULT (dodpa, global.config.use_phm_api);
+    CHECKDEFAULT (domsca, global.config.use_phm_api);
+
+    if (global.print_help_and_exit == TRUE) {
+        USGprintUsage ();
+        exit (0);
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void OPTcheckOptionConsistency(void)
  *
  * description:
@@ -109,6 +147,10 @@ void
 OPTcheckOptionConsistency (void)
 {
     DBUG_ENTER ();
+
+    if (global.optimize.dophm && !global.config.use_phm_api) {
+        CTIerror ("Private heap management disabled for this SBI.");
+    }
 
     if (STReq (global.config.backend, "MUTC")) {
 
@@ -132,12 +174,6 @@ OPTcheckOptionConsistency (void)
     /* global.optimize.dorco = FALSE; */
 
 #endif
-
-        if (global.optimize.dophm) {
-            CTInote ("Private heap management has been disabled due to use "
-                     "of the mutc backend.");
-            global.optimize.dophm = FALSE;
-        }
 
         if ((global.mutc_disable_thread_mem == TRUE)
             && (global.mutc_thread_mem == TRUE)) {
@@ -244,13 +280,6 @@ OPTcheckOptionConsistency (void)
         }
 #endif
     }
-
-#if !ENABLE_PHM
-    if (global.optimize.dophm) {
-        CTIerror ("Private heap management not yet available for " ARCH " running " OS
-                  ".");
-    }
-#endif
 
     if (global.mtmode != MT_none) {
         if (global.docachesim) {
@@ -598,13 +627,14 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
      */
 
-    ARGS_FLAG ("h", USGprintUsage (); exit (0));
-    ARGS_FLAG ("help", USGprintUsage (); exit (0));
+    ARGS_FLAG ("h", global.print_help_and_exit = TRUE);
+    ARGS_FLAG ("help", global.print_help_and_exit = TRUE);
 
     /*
      * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
      */
 
+    ARGS_FLAG ("install", global.install = TRUE);
     ARGS_OPTION ("initmheap", ARG_NUM (global.initial_master_heapsize));
     ARGS_OPTION ("initwheap", ARG_NUM (global.initial_worker_heapsize));
     ARGS_OPTION ("inituheap", ARG_NUM (global.initial_unified_heapsize));
@@ -775,6 +805,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /*
      * Options starting with ooooooooooooooooooooooooooooooooooooooooooo
      */
+
+    ARGS_FLAG ("on_demand_lib", global.on_demand_lib = TRUE);
 
     ARGS_OPTION ("o", global.outfilename = STRcpy (ARG));
     /*

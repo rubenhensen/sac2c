@@ -2,15 +2,15 @@
 #
 # Calling conventions:
 #
-#  Start rules: 
-#    default      compile executables as developer code and libraries as product 
+#  Start rules:
+#    default      compile executables as developer code and libraries as product
 #                 code
 #    devel        compile everything as developer code
 #    prod         compile everything as product code
 #
-#    clean        cleanup all derived files 
-#    cleandevel   cleanup only developer compiled files 
-#    cleanprod    cleanup only product compiled files 
+#    clean        cleanup all derived files
+#    cleandevel   cleanup only developer compiled files
+#    cleanprod    cleanup only product compiled files
 #
 #    tidy         cleanup all derived files excluding make tools
 #    tidydevel    cleanup only developer compiled files excluding make tools
@@ -19,7 +19,7 @@
 #    refactor     refactor source code (requires parameters below)
 #
 #  Parameters:
-#    DEPS="no"    de-activate dependency checking meachanism 
+#    DEPS="no"    de-activate dependency checking meachanism
 #    HIDE=""      show important commands issued by make (debugging)
 #
 #  Refactor parameters:
@@ -61,9 +61,9 @@ include $(MAKEFILE_DIR)/settings.mkf
 # Start rules
 #
 # The definition of these rules deliberately enforces a sequence in compilation
-# rather than expressing the dependencies properly by makefile rules. 
+# rather than expressing the dependencies properly by makefile rules.
 #
-# The rationale is that commonlib and maketools rather seldomly require 
+# The rationale is that commonlib and maketools rather seldomly require
 # recompilation. With proper dependencies, however, they would require a
 # dependency from every compilation rule. This would lead to extensive
 # rechecking at compile time that is absolutely superfluous.
@@ -73,7 +73,7 @@ include $(MAKEFILE_DIR)/settings.mkf
 # would lead to a system in which the tools form the main target. This seems
 # unnatural.
 #
-# Furthermore, the current solution allows us to rebuild locally without 
+# Furthermore, the current solution allows us to rebuild locally without
 # enforcing dependency checks.
 #
 
@@ -88,12 +88,12 @@ default devel prod: checks
                         PREFIX_LOCAL="src/libsac2c/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/runtime  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/runtime/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsacphmc  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacphmc/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsac  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsac/"  PREFIX_ROOT="" $@
-	$(HIDE) if [ "$(ENABLE_PHM)" = "yes" ]; then   \
-                  $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                          PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@ ; \
-                fi
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsacprelude  DEPS="$(DEPS)" HIDE="$(HIDE)" \
@@ -105,7 +105,7 @@ default devel prod: checks
 	@$(ECHO) ""
 
 
- 
+
 ###############################################################################
 #
 # Cleaning rules
@@ -130,6 +130,8 @@ clean cleandevel cleanprod: checks
                         PREFIX_LOCAL="src/libsac/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsacphmc  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacphmc/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
 	$(HIDE) $(RM) -rf lib/* bin/*
@@ -147,7 +149,7 @@ tidydevel:
 	$(MAKE) CLEAN_MAKE_TOOLS="no" cleandevel
 
 tidyprod:
-	$(MAKE) CLEAN_MAKE_TOOLS="no" cleanprod 
+	$(MAKE) CLEAN_MAKE_TOOLS="no" cleanprod
 
 
 ###############################################################################
@@ -172,6 +174,8 @@ refactor: checks
                         PREFIX_LOCAL="src/libsac/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsacphmc  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacphmc/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/" PREFIX_ROOT="" $@
 	@$(ECHO) ""
@@ -210,6 +214,10 @@ libsacphm: checks
 	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" default
 
+libsacphmc: checks
+	$(HIDE) $(MAKE) -C src/libsacphmc  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacphmc/"  PREFIX_ROOT="" default
+
 tools: checks
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" default
@@ -222,9 +230,7 @@ tools: checks
 
 config:
 	@ cd setup && \
-          aclocal -I config && \
-          autoreconf -v -f -i
-
+	  autoreconf -v -f -i -I config
 
 ###############################################################################
 #
@@ -232,8 +238,6 @@ config:
 #
 
 include $(MAKEFILE_DIR)/check.mkf
-
-
 
 listinstfiles = $(shell for f in $$(ls -1 $(1)); do echo "\"$(PREFIX)/$(1)/$$f\"" ; done)
 listfiles = $(shell for f in $$(ls -1 $(1)); do echo "\"$(1)/$$f\"" ; done)
@@ -254,6 +258,6 @@ install:
 uninstall:
 	if [ -f .uninstall ]; then \
 	    for f in $$(cat .uninstall); do \
-	        $(RM) $$f ; \
+		$(RM) $$f ; \
 	    done \
 	fi

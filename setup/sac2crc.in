@@ -332,7 +332,7 @@ CACHE3_ASSOC     :=  0
 CACHE3_WRITEPOL  :=  "default"
 CACHE3_MSCA      :=  0
  
-
+USE_PHM_API      := @CAN_USE_PHM@
 
 /*****************************************************************************
  * reference counting method targets

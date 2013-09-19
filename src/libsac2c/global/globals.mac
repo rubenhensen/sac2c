@@ -84,6 +84,8 @@ GLOBAL (bool, loadprelude, TRUE, xfree_dummy, )
  */
 
 GLOBAL (FILE *, outfile, NULL, xfree_dummy, )
+GLOBAL (bool, install, FALSE, xfree_dummy, )
+
 /*
  * stream to write result to
  */
@@ -713,6 +715,11 @@ GLOBAL (bool, use_efence, FALSE, xfree_dummy, )
  * link executable with ElectricFence (Malloc Debugger)
  */
 
+GLOBAL (bool, on_demand_lib, FALSE, xfree_dummy, )
+/*
+ * build only the tree file when compiling a module
+ */
+
 /* GLOBAL( int, linksetsize,  INT_MAX) */
 GLOBAL (int, linksetsize, 10, xfree_dummy, )
 /*
@@ -1111,6 +1118,13 @@ GLOBAL (configuration_t, config, config_init, xfree_configuration, )
 GLOBAL (stringset_t *, dependencies, NULL, xfree_dummy, )
 
 GLOBAL (bool, debug_rc, FALSE, xfree_dummy, )
+
+/*
+ * Whether to print help and exit.
+ */
+
+GLOBAL (bool, print_help_and_exit, FALSE, xfree_dummy, )
+
 /*
  * MUTC backend options
  */

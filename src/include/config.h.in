@@ -25,9 +25,6 @@
 /* Define to 1 if the OpenMP back-end is enabled, otherwise 0. */
 #undef ENABLE_OMP
 
-/* Define to 1 if the private heap manager is enabled, otherwise 0. */
-#undef ENABLE_PHM
-
 /* Define to 1 if runtime specialization is enabled, otherwise 0. */
 #undef ENABLE_RTSPEC
 

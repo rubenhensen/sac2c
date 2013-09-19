@@ -1579,7 +1579,7 @@ handle_id_or_function_call (struct parser *parser)
 
     if (is_function_call (parser))
         res = handle_function_call (parser);
-    else if (NULL != (id = is_ext_id (parser))) {
+    else if (NULL != (id = is_ext_id (parser)) && !id->is_operation) {
         if (id->xnamespace && !is_known (parser, id->xnamespace, id->id))
             error ("symbol `%s' cannot be found in module `%s'", id->id, id->xnamespace);
 
@@ -1620,16 +1620,8 @@ handle_primary_expr (struct parser *parser)
     do {                                                                                 \
         const char *val = token_as_string (tok);                                         \
         type num;                                                                        \
-        int base = 10;                                                                   \
                                                                                          \
-        if (strlen (val) > 1) {                                                          \
-            if (val[0] == '0' && (val[1] == 'x' || val[1] == 'X'))                       \
-                base = 16;                                                               \
-            else if (val[0] == '0')                                                      \
-                base = 8;                                                                \
-        }                                                                                \
-                                                                                         \
-        num = (type)convert (val, (char **)NULL, base);                                  \
+        num = (type)convert (val, (char **)NULL, 0);                                     \
         if (errno == ERANGE) {                                                           \
             error_loc (token_location (tok),                                             \
                        "value `%s' produces "                                            \
@@ -4189,9 +4181,10 @@ handle_rettypes (struct parser *parser, bool vaargs, bool *three_dots_p)
 node *
 handle_argument (struct parser *parser)
 {
-    struct token *tok;
     ntype *type = error_type_node;
     node *ret = error_mark_node;
+    struct identifier *id = NULL;
+    struct token *tok;
     node *var;
     bool ref = false;
 
@@ -4206,22 +4199,43 @@ handle_argument (struct parser *parser)
     else
         parser_unget (parser);
 
-    tok = parser_get_token (parser);
-    if (token_class (tok) != tok_id) {
-        error_loc (token_location (tok), "identifier expected, %s found",
-                   token_as_string (tok));
-        goto error;
-    }
+    if (NULL != (id = is_ext_id (parser))) {
+        struct location loc = token_location (parser_get_token (parser));
+        parser_unget (parser);
 
-    if (is_unary (parser, NULL, token_as_string (tok))) {
+        if (id->is_operation) {
+            error_loc (loc, "%s is not a valid function argument name", id->id);
+            free (id);
+            goto error;
+        } else if (id->xnamespace != NULL) {
+            error_loc (loc, "function argument cannot have a namespace");
+            free (id);
+            goto error;
+        }
+    } else {
+        struct token *tok = parser_get_token (parser);
+        parser_unget (parser);
         error_loc (token_location (tok),
-                   "argument `%s' is called the "
-                   "same as the unary function",
+                   "token %s cannot start a function "
+                   "argument name",
                    token_as_string (tok));
-        goto error;
     }
 
-    var = TBmakeAvis (strdup (token_as_string (tok)), type);
+    /* FIXME this is not relevant anymore, but let's keep it in the code for
+       a while if we would want to rethink this in the future.  */
+    /*if (is_unary (parser, NULL, token_as_string (tok)))
+      {
+        error_loc (token_location (tok), "argument `%s' is called the "
+                   "same as the unary function", token_as_string (tok));
+        goto error;
+      }*/
+
+    DBUG_ASSERT (id, "id cannot be NULL here");
+
+    var = TBmakeAvis (strdup (id->id), type);
+    /* consume the identifier  */
+    parser_get_token (parser);
+    free (id);
     ret = TBmakeArg (var, NULL);
     AVIS_DECLTYPE (ARG_AVIS (ret)) = TYcopyType (type);
     ARG_ISREFERENCE (ret) = ref;

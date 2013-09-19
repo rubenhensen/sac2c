@@ -482,6 +482,7 @@ static const char *rename_type_init[] = {
           0,    /* cache3_assoc	  */                                                     \
           NULL, /* cache3_writepol	  */                                                  \
           0,    /* cache3_msca_factor;  */                                               \
+          1     /* use_phm_api          */                                               \
     }
 /*
  * This is only a dirty trick to fake an a-priori initialization
@@ -711,7 +712,7 @@ get_terminal_size (void)
         return 80;
 
     ioctl (STDERR_FILENO, TIOCGWINSZ, &ws);
-    return ws.ws_col;
+    return ws.ws_col > 4 ? ws.ws_col - 4 : 1;
 }
 
 /*

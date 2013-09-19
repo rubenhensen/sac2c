@@ -158,6 +158,8 @@ static struct {
   {"CACHE3_WRITEPOL", str, &global.config.cache3_writepol},
   {"CACHE3_MSCA", num, &global.config.cache3_msca_factor},
 
+  {"USE_PHM_API", num, &global.config.use_phm_api},
+
   {"", (enum tag_t)0, NULL},
 };
 
