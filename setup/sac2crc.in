@@ -126,11 +126,6 @@
  *                  into the generated machine code for later usage by a debugger.
  *                  This is triggered by the sac2c option -g.
  *                  
- *  OPT_D           OPT_D specifies the C compiler option to define a macro.
- *                  
- *  OPT_I           OPT_I specifies the C compiler option to specify a path for
- *                  include files.
- *                  
  *  CPP_STDIN       CPP_STDIN specifies how to call the C preprocessor if SAC code
  *                  is to be read from stdin. The preprocessed code must be sent
  *                  to stdout.
@@ -140,14 +135,6 @@
  *                  is to be read from a file.The preprocessed code must be sent
  *                  to stdout.
  *                  Usage: <CPP_FILE> <options> <file>
- *                  
- *  TAR_CREATE      TAR_CREATE specifies how to create a SAC library, usually,
- *                  by the help of tar.
- *                  Usage: <TAR_CREATE> <library> <files to be assembled>
- *                  
- *  TAR_EXTRACT     TAR_EXTRACT specifies how to extract files from a SAC library, 
- *                  usually, by the help of tar.
- *                  Usage: <TAR_EXTRACT> <library> <files to be extracted>
  *                  
  *  AR_CREATE       AR_CREATE specifies how to create an archive.
  *                  Usage: <AR_CREATE> <archive> <object files>
@@ -164,21 +151,6 @@
  *  RMDIR           RMDIR specifies how to remove a directory including its contents.
  *                  Usage: <RMDIR> <directory>
  *                  
- *  CHDIR           CHDIR specifies how to switch to a different directory.
- *                  Usage: <CHDIR> <directory>
- *                  
- *  CAT             CAT specifies how to display the contents of a file.
- *                  Usage: <CAT> <file>
- *                  
- *  MOVE            MOVE specifies how to move a file to a new location.
- *                  Usage: <MOVE> <file> <new location>
- *
- *  RSH             RSH specifies how to invoke a remote shell
- *                  Usage: <RSH> <host> <command> [<argument>]*
- *                  
- *  DUMP_OUTPUT     DUMP_OUTPUT specifies how to redirect all output in order to 
- *                  dump it.
- *
  *  STDLIB_DECPATH  STDLIB_DECPATH specifies the directories where sac2c looks for
  *                  declaration files belonging to the SAC standard library.
  *                 
