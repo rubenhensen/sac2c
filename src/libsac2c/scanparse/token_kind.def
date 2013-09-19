@@ -13,9 +13,6 @@
    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.  */
 
 
-/* This file should be sorted by the second parameter of each TOKEN_KIND
-   in order to perfrom a binary search on a resulting array.  */
-
 TOKEN_KIND (tv_not,                   "!")
 TOKEN_KIND (tv_not_eq,                "!=")
 TOKEN_KIND (tv_hash,                  "#")

@@ -4649,6 +4649,18 @@ COMPfloat (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+node *
+COMPfloatvec (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    ret_node = COMPscalar (arg_node, arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPdouble( node *arg_node, info *arg_info)
@@ -6146,6 +6158,152 @@ COMPprfSel (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+/* This is as SIMD version of the selection.  It selects a SIMD verctor,
+ * rathter than a scalar.
+ */
+static node *
+COMPsimd_prfSel (node *arg_node, info *arg_info)
+{
+    node *simd_length, *arg1, *arg2;
+    node *let_ids;
+    node *icm_args;
+    node *ret_node;
+
+    node *base_type_node;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    simd_length = DUPdoDupTree (PRF_ARG1 (arg_node));
+    arg1 = PRF_ARG2 (arg_node);
+    arg2 = PRF_ARG3 (arg_node);
+
+    /*
+     *   B = sel( iv, A);
+     *
+     ****************************************************************************
+     *
+     * For efficiency reasons, constant arrays are excepted as 1st argument of
+     * sel() as well:
+     *
+     *   A = fun( ...);
+     *   B = sel( [3,4], A);
+     *
+     * Here, the backend can avoid the creation of the array containing the shape
+     * [3,4].
+     */
+
+    DBUG_ASSERT (NODE_TYPE (arg2) == N_id, "2nd arg of F_sel_VxA is no N_id!");
+
+    /* Name of the type of the array, to pass it in the macro.  */
+    base_type_node = TCmakeIdCopyString (GetBaseTypeFromExpr (arg2));
+
+    if (NODE_TYPE (arg1) == N_id) {
+        DBUG_ASSERT (TCgetBasetype (ID_TYPE (arg1)) == T_int,
+                     "1st arg of F_sel_VxA is a illegal indexing var!");
+
+        icm_args
+          = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                        FALSE, TBmakeExprs (DUPdupIdNt (arg1), NULL)));
+
+        ret_node
+          = TCmakeAssignIcm5 ("ND_PRF_SIMD_SEL_VxA__DATA_id", DUPdoDupTree (icm_args),
+                              MakeSizeArg (arg1, TRUE),
+                              TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
+                              simd_length, base_type_node, NULL);
+    } else {
+        node *type_args;
+
+        DBUG_ASSERT (NODE_TYPE (arg1) == N_array,
+                     "1st arg of F_sel_VxA is neither N_id nor N_array!");
+
+        type_args
+          = MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE, FALSE,
+                          TBmakeExprs (MakeSizeArg (arg1, TRUE),
+                                       TCappendExprs (DUPdupExprsNt (ARRAY_AELEMS (arg1)),
+                                                      NULL)));
+
+        icm_args = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
+                                 FALSE, type_args);
+
+        ret_node
+          = TCmakeAssignIcm4 ("ND_PRF_SIMD_SEL_VxA__DATA_arr", DUPdoDupTree (icm_args),
+                              TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
+                              simd_length, base_type_node, NULL);
+    }
+
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+COMPsimd_sel_SxS (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2, *arg3;
+    node *let_ids;
+    node *ret_node;
+
+    const char *base_type;
+    node *id_wrapper;
+
+    DBUG_ENTER ();
+
+    /* Assure that the prf has exactly three arguments */
+    // DBUG_ASSERT (prf_arg_number_correct (arg_node, 3),
+    //             "Wrong number of arguments found");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    base_type = GetBaseTypeFromExpr (arg2);
+    id_wrapper = TBmakeSpid (NULL, STRcpy (base_type));
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_SIMD_SELSxS__DATA", DUPdupIdsIdNt (let_ids), id_wrapper,
+                          /*TCmakeIdCopyString(
+                           * prf_ccode_tab[PRF_PRF(arg_node)])*/
+                          TBmakeSpid (NULL, STRcpy ("XXX")),
+                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+COMPsimd_modarray (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2, *arg3;
+    node *let_ids;
+    node *ret_node;
+
+    const char *base_type;
+    node *id_wrapper;
+
+    DBUG_ENTER ();
+
+    /* Assure that the prf has exactly three arguments */
+    // DBUG_ASSERT (prf_arg_number_correct (arg_node, 3),
+    //             "Wrong number of arguments found");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+    arg3 = PRF_ARG3 (arg_node);
+
+    base_type = GetBaseTypeFromExpr (arg1);
+    id_wrapper = TBmakeSpid (NULL, STRcpy (base_type));
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_SIMD_MODARRAY", DUPdupIdsIdNt (let_ids), id_wrapper,
+                          /*TCmakeIdCopyString(
+                           * prf_ccode_tab[PRF_PRF(arg_node)])*/
+                          TBmakeSpid (NULL, STRcpy ("XXX")),
+                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPprfSelI( node *arg_node, info *arg_info)
@@ -6589,6 +6747,34 @@ COMPprfOp_V (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+/* This function suppose to catch all the cases when the binary prf was called
+ * with SIMD arguments.  Hopefully all the cases...
+ */
+static inline bool
+is_simd_type (node *n)
+{
+    if (NODE_TYPE (n) == N_floatvec)
+        return TRUE;
+
+    if (NODE_TYPE (n) == N_exprs)
+        n = EXPRS_EXPR (n);
+
+    if (NODE_TYPE (n) == N_id) {
+        node *av = AVIS_DECL (ID_AVIS (n));
+        types *type;
+        if (NODE_TYPE (av) == N_vardec)
+            type = VARDEC_TYPE (av);
+        else if (NODE_TYPE (av) == N_arg)
+            type = ARG_TYPE (av);
+        else
+            DBUG_ASSERT (FALSE, "unexpected node type of avis");
+        return TCgetBasetype (type) == T_floatvec;
+    }
+
+    DBUG_ASSERT (NODE_TYPE (n) != N_ids, "N_ids in binary prf -- WTF?  O_o");
+    return FALSE;
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPprfOp_SxS( node *arg_node, info *arg_info)
@@ -6608,6 +6794,8 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
     node *arg1, *arg2;
     node *let_ids;
     node *ret_node;
+    char *prf_orig_name = prf_ccode_tab[PRF_PRF (arg_node)];
+    char *prf_name = prf_orig_name;
 
     DBUG_ENTER ();
 
@@ -6629,8 +6817,18 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
                   || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
                  "%s: non-scalar second argument found!",
                  global.prf_name[PRF_PRF (arg_node)]);
+
+    /* Here we have a special case for floatvec.  We are going to append
+     * _SIMD prefix to the name of prf we generate.  The current implementation
+     * is more of a hack.  FIXME implement it properly.
+     */
+    if (is_simd_type (arg1)) {
+        prf_name = MEMmalloc (strlen (prf_orig_name) + strlen ("_SIMD") + 1);
+        sprintf (prf_name, "%s%s", prf_orig_name, "_SIMD");
+    }
+
     ret_node = TCmakeAssignIcm3 ("ND_PRF_SxS__DATA", DUPdupIdsIdNt (let_ids),
-                                 TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                                 TCmakeIdCopyString (prf_name),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
@@ -6755,6 +6953,54 @@ COMPprfOp_VxV (node *arg_node, info *arg_info)
     ret_node = TCmakeAssignIcm3 ("ND_PRF_VxV__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/* FIXME Enforce using of the following function across the entire file.  */
+static inline bool
+prf_arg_number_correct (node *arg_node, size_t num_args)
+{
+    size_t i;
+    node *args = PRF_ARGS (arg_node);
+
+    for (i = 0; i < num_args; i++) {
+        if (!args)
+            return FALSE;
+
+        args = EXPRS_NEXT (args);
+    }
+
+    return args == NULL;
+}
+
+static node *
+COMPprfOp_SMxSM (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2, *arg3;
+    node *let_ids;
+    node *ret_node;
+
+    const char *base_type;
+    node *id_wrapper;
+
+    DBUG_ENTER ();
+
+    /* Assure that the prf has exactly three arguments */
+    DBUG_ASSERT (prf_arg_number_correct (arg_node, 3), "Wrong number of arguments found");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+    arg3 = PRF_ARG3 (arg_node);
+
+    base_type = GetBaseTypeFromExpr (arg2);
+    id_wrapper = TBmakeSpid (NULL, STRcpy (base_type));
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_SMxSM__DATA", DUPdupIdsIdNt (let_ids), id_wrapper,
+                          TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }

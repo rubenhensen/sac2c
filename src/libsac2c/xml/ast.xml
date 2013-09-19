@@ -26,6 +26,7 @@
     <type name="Ulonglong" ctype="unsigned long long" vtype="unsigned long long int" init="0" copy="literal" />
     <type name="Bool" ctype="bool" vtype="int" init="FALSE" copy="literal" />
     <type name="Float" ctype="float" vtype="double" init="0.0" copy="literal" />
+    <type name="Floatvec" ctype="floatvec" vtype="floatvec" init="(floatvec){0., 0., 0., 0.}" copy="literal" />
     <type name="Double" ctype="double" init="0.0" copy="literal" />
     <type name="Char" ctype="unsigned char" vtype="int" init="'\0'" 
           copy="literal" />
@@ -987,6 +988,7 @@
           <node name="Char" />
           <node name="Bool" />
           <node name="Float" />
+          <node name="Floatvec" />
 	    	  <node name="Double" />
     		  <node name="Type" />
 		      <node name="Str" />
@@ -1436,6 +1438,7 @@
 		  <node name="Char" />
 		  <node name="Double" />
           <node name="Float" />
+          <node name="Floatvec" />
           <node name="With" />
           <node name="Generator" />
           <node name="Part" />
@@ -2181,6 +2184,7 @@
   <node name="NumUlong" />
         <node name="NumUlonglong" />
         <node name="Float" />
+        <node name="Floatvec" />
         <node name="Double" />         
       </travuser>
     </traversal>
@@ -2207,6 +2211,7 @@
   <node name="NumUlong" />
         <node name="NumUlonglong" />
         <node name="Float" />
+        <node name="Floatvec" />
         <node name="Double" />         
       </travuser>
     </traversal>
@@ -2641,6 +2646,7 @@
         <node name="Char" />
         <node name="Bool" />
         <node name="Float" />
+        <node name="Floatvec" />
         <node name="Double" />
 
         <node name="Ap" />
@@ -3507,6 +3513,7 @@
         <node name="Char" />
         <node name="Bool" />
         <node name="Float" />
+        <node name="Floatvec" />
         <node name="Double" />
         <node name="With" />
         <node name="Withid" />
@@ -3715,6 +3722,7 @@
         <node name="NumUlonglong" />
         <node name="Double" />
         <node name="Float" />
+        <node name="Floatvec" />
         <node name="Char" />
         <node name="Bool" />
         <node name="Id" />
@@ -7488,6 +7496,30 @@ N_tfarg :
       <attributes>
         <attribute name="Val" inconstructor="yes" >
           <type name="Float">
+            <targets>
+              <target mandatory="yes">
+<!--                <any />-->
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_float_vec :
+
+-->
+    <node name="Floatvec">
+     <description>  Floating-point scalar </description>
+      <sons></sons>
+      <attributes>
+        <attribute name="Val" inconstructor="yes" >
+          <type name="Floatvec">
             <targets>
               <target mandatory="yes">
 <!--                <any />-->

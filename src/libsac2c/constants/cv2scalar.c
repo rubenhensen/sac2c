@@ -123,6 +123,14 @@ COcv2Float (void *elems, int offset)
 }
 
 node *
+COcv2Floatvec (void *elems, int offset)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (TBmakeFloatvec (((floatvec *)elems)[offset]));
+}
+
+node *
 COcv2Char (void *elems, int offset)
 {
     DBUG_ENTER ();

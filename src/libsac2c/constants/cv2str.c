@@ -82,13 +82,35 @@ COcv2StrTEMPLATE (unsigned char, UByte, "%c")
 
                         COcv2StrTEMPLATE (char, Char, "%c")
 
-  /*
-   * Finally, we provide a dummy function which should never be called!
-   * It is defined for being able to make entries for all simpletypes in
-   * type_info.mac!
-   */
+  /* SIMD vectors are kind of special case.
+     FIXME Do the implementation.  */
+  char *COcv2StrFloatvec (void *src, int off, int len, int max_char)
+{
+    char *buf = (char *)MEMmalloc (1024);
 
-  char *COcv2StrDummy (void *src, int off, int len, int max_char)
+    sprintf (buf, "floatvec<%d>[", len);
+
+    for (int i = 0; i < len; i++)
+        if (i < 3)
+            sprintf (buf, "[%f,...]", *(float *)&((floatvec *)src)[i + off]);
+        else {
+            sprintf (buf, "...");
+            break;
+        }
+
+    sprintf (buf, "]", len);
+
+    return buf;
+}
+
+/*
+ * Finally, we provide a dummy function which should never be called!
+ * It is defined for being able to make entries for all simpletypes in
+ * type_info.mac!
+ */
+
+char *
+COcv2StrDummy (void *src, int off, int len, int max_char)
 {
     DBUG_ENTER ();
     DBUG_ASSERT (1 == 0, "COcv2StrDummy called!");

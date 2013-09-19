@@ -224,6 +224,9 @@ FreeMatrix (IntMatrix m)
 {
     DBUG_ENTER ();
 
+    if (!m)
+        DBUG_RETURN ();
+
     MEMfree (m->m_stor);
     MEMfree (m->mtx);
     MEMfree (m);

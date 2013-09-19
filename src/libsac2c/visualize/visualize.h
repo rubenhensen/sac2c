@@ -50,6 +50,7 @@ extern node *VISUALnumuint (node *arg_node, info *arg_info);
 extern node *VISUALnumulong (node *arg_node, info *arg_info);
 extern node *VISUALnumulonglong (node *arg_node, info *arg_info);
 extern node *VISUALfloat (node *arg_node, info *arg_info);
+extern node *VISUALfloatvec (node *arg_node, info *arg_info);
 extern node *VISUALdouble (node *arg_node, info *arg_info);
 extern node *VISUALbool (node *arg_node, info *arg_info);
 extern node *VISUALtype (node *arg_node, info *arg_info);

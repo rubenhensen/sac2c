@@ -407,6 +407,111 @@ PrfSel_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
     DBUG_RETURN ();
 }
 
+/* FIXME, we also want to pass a type and a number of elements
+ * to this macro.
+ */
+static void
+simd_sel_data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
+               int idx_size, void (*idx_size_fun) (void *),
+               void (*idx_read_fun) (void *, char *, int), char *copyfun, int simd_length,
+               char *base_type)
+{
+#ifndef DBUG_OFF
+    int to_dim = DIM_NO_OFFSET (to_sdim);
+#endif
+    int from_dim = DIM_NO_OFFSET (from_sdim);
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (to_dim == 1, "Primitive selection can only 1-d vector results!");
+
+    BLOCK_BEGIN ("int SAC_idx;")
+        ;
+        Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun, idx_read_fun, from_NT,
+                     from_dim);
+        /* Here we don't need any m4 bullshit, as SIMD assignment
+         * is similar to scalar one.  No need to copy anything
+         * always the same.
+         */
+        indout ("SAC_ND_SIDM_ASSIGN (%d, %s, %s, 0, %s, SAC_idx, %s)\n", simd_length,
+                base_type, to_NT, from_NT, copyfun);
+    BLOCK_END ();
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileND_PRF_SIMD_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *from_NT,
+                                        int from_sdim, char *idx_NT, int idx_size,
+                                        char *copyfun, int simd_length, char *base_type)
+{
+    DBUG_ENTER ();
+
+#define ND_PRF_SIMD_SEL_VxA__DATA_id
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_SIMD_SEL_VxA__DATA_id
+
+    indout ("SAC_TR_PRF_PRINT( (\"ND_PRF_SIMD_SEL_VxA__DATA( %s, %d, %s, %d, ...)\"))\n",
+            to_NT, to_sdim, from_NT, from_sdim);
+
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", idx_NT),
+                 ASSURE_TEXT ("1st argument of %s is not a vector!",
+                              global.prf_name[F_simd_sel_VxA]));
+
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == SAC_ND_A_SIZE( %s)", from_NT, idx_NT),
+                 ASSURE_TEXT ("Length of index vector used for %s does not "
+                              "match rank of argument array!",
+                              global.prf_name[F_simd_sel_VxA]));
+
+    simd_sel_data (to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size, SizeId, ReadId,
+                   copyfun, simd_length, base_type);
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileND_PRF_SIMD_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
+                                         int from_sdim, int idx_size, char **idxs_ANY,
+                                         char *copyfun, int simd_length, char *base_type)
+{
+    DBUG_ENTER ();
+
+#define ND_PRF_SIMD_SEL_VxA__DATA_arr
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_SIMD_SEL_VxA__DATA_arr
+
+    /*
+     * CAUTION:
+     * 'idxs_ANY[i]' is either a tagged identifier (representing a scalar)
+     * or a constant scalar!
+     */
+    indout ("SAC_TR_PRF_PRINT( (\"ND_PRF_SIMD_SEL_VxA__DATA( %s, %d, %s, %d, ...)\"))\n",
+            to_NT, to_sdim, from_NT, from_sdim);
+
+    for (int i = 0; i < idx_size; i++) {
+        if (idxs_ANY[i][0] == '(') {
+            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", idxs_ANY[i]),
+                         ASSURE_TEXT ("1st argument of %s is not a vector!",
+                                      global.prf_name[F_simd_sel_VxA]));
+        }
+    }
+
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == %d", from_NT, idx_size),
+                 ASSURE_TEXT ("Length of index vector used for %s does not "
+                              "match rank of argument array!",
+                              global.prf_name[F_simd_sel_VxA]));
+
+    simd_sel_data (to_NT, to_sdim, from_NT, from_sdim, idxs_ANY, idx_size, NULL,
+                   ReadConstArray_Str, copyfun, simd_length, base_type);
+
+    DBUG_RETURN ();
+}
+
+/* End of SIMD selectio.
+ * P.S.  This is all such an incredible mess.  */
+
 /******************************************************************************
  *
  * Function:

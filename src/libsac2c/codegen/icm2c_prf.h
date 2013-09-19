@@ -24,6 +24,17 @@ extern void ICMCompileND_PRF_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *f
 extern void ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
                                                 int from_sdim, int idx_size,
                                                 char **idxs_ANY, char *copyfun);
+extern void ICMCompileND_PRF_SIMD_SEL_VxA__DATA_id (char *to_NT, int to_sdim,
+                                                    char *from_NT, int from_sdim,
+                                                    char *idx_NT, int idx_size,
+                                                    char *copyfun, int simd_length,
+                                                    char *base_type);
+
+extern void ICMCompileND_PRF_SIMD_SEL_VxA__DATA_arr (char *to_NT, int to_sdim,
+                                                     char *from_NT, int from_sdim,
+                                                     int idx_size, char **idxs_ANY,
+                                                     char *copyfun, int simd_length,
+                                                     char *base_type);
 
 extern void ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id (char *to_NT, int to_sdim,
                                                       char *from_NT, int from_sdim,

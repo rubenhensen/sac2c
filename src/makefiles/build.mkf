@@ -61,10 +61,11 @@ SUBTARGETS       := $(addsuffix $($(SUBPROJECT)_subtarget_suffix),\
                       $(addsuffix .$($(STYLE)_short),\
                         $(SUBTARGETS_RAW)))
 
-SUBTARGETS_HEADER   := $(addsuffix .h,\
+SUBTARGETS_HEADER   := $(PROJECT_ROOT)/src/include/config.h \
+                       $(addsuffix .h,\
                          $(foreach srcdir,$(runtime_sourcedirs),\
                            $(addprefix ../runtime/$(srcdir)/,\
-                             $(runtime_$(srcdir)))))
+                             $(runtime_$(srcdir))))) 
 #
 # We must treat the header file targets of the runtime subproject differently
 # because some of the libsac source files include sac.h, which creates a 
@@ -366,8 +367,8 @@ global/build_$(STYLE).c: $(SUBTARGETS) $(PROJECT_ROOT)/.revision.txt
 	@$(CLOCK_SKEW_ELIMINATION)  
 
 # Create an icm_vars file, which could be used by both C and C++ compilers
-codegen/fancy_icm_vars.c: codegen/icm_vars.c
-	$(CPP) $^ -DICM_ALL | $(SORT) | $(UNIQ) > $@
+codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
+	$(CPP) $< -DICM_ALL | $(SORT) | $(UNIQ) > $@
 
 ###############################################################################
 #

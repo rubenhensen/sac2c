@@ -439,6 +439,21 @@ CMPTfloat (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+node *
+CMPTfloatvec (node *arg_node, info *arg_info)
+{
+    floatvec a, b;
+    DBUG_ENTER ();
+
+    a = FLOATVEC_VAL (arg_node);
+    b = FLOATVEC_VAL (INFO_TREE (arg_info));
+
+    INFO_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_EQFLAG (arg_info), memcmp (&a, &b, sizeof (floatvec)) == 0);
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:
