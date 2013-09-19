@@ -239,6 +239,4 @@ include $(MAKEFILE_DIR)/check.mkf
 
 config:
 	@ cd setup && \
-          aclocal -I config && \
-          autoreconf -v -f -i
-
+          autoreconf -v -f -i -I config
