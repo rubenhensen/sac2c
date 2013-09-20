@@ -84,28 +84,18 @@ BuildDepLibsStringMod (const char *lib, strstype_t kind, void *rest)
     DBUG_RETURN (result);
 }
 
-node *
-LIBBcreateLibrary (node *syntax_tree)
+/** <!--********************************************************************-->
+ *
+ * @fn void CreateStaticLibrary( void)
+ *
+ * @brief generates a static library for compiled module code
+ *
+ *****************************************************************************/
+
+static void
+CreateStaticLibrary (char *deplibs)
 {
-    char *deplibs;
-    char *libraryName;
-    char *ldCmd;
-    stringset_t *deps = global.dependencies;
-
-    /* used under cygwin */
-    char *cygdeplibs = "";
-    char *ldDir = "";
-
     DBUG_ENTER ();
-
-    if (global.gen_cccall) {
-        /*
-         * enable system call tracking
-         */
-        SYSstartTracking ();
-    }
-
-    deplibs = (char *)STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
 
     CTInote ("Creating static SAC library `lib%sMod%s.a'", global.modulename,
              global.config.lib_variant);
@@ -113,10 +103,35 @@ LIBBcreateLibrary (node *syntax_tree)
     SYScall ("%s %slib%sMod%s.a %s/fun*_nonpic.o %s/globals_nonpic.o %s",
              global.config.ar_create, global.targetdir, global.modulename,
              global.config.lib_variant, global.tmp_dirname, global.tmp_dirname, deplibs);
+
     if (global.config.ranlib[0] != '\0') {
         SYScall ("%s %slib%sMod%s.a", global.config.ranlib, global.targetdir,
                  global.modulename, global.config.lib_variant);
     }
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CreateDynamicLibrary( void)
+ *
+ * @brief generates a shared library for compiled module code
+ *
+ *****************************************************************************/
+
+static void
+CreateDynamicLibrary (char *deplibs)
+{
+    char *libraryName;
+    char *ldCmd;
+
+#if IS_CYGWIN
+    char *cygdeplibs;
+    char *ldDir;
+#endif
+
+    DBUG_ENTER ();
 
     if (STReq (global.config.ld_dynamic, "")) {
         CTInote ("Shared libraries are not supported by the target.");
@@ -137,9 +152,6 @@ LIBBcreateLibrary (node *syntax_tree)
 
         ldDir = CYGHbuildLibDirectoryString ();
         ldCmd = STRcat (ldCmd, ldDir);
-#else
-        (void)ldDir; /* Surpress unused variable warning. */
-#endif
 
         DBUG_PRINT ("linker command: %s", ldCmd);
 
@@ -147,11 +159,45 @@ LIBBcreateLibrary (node *syntax_tree)
                  global.targetdir, libraryName, global.tmp_dirname, global.tmp_dirname,
                  deplibs, cygdeplibs);
 
+        ldDir = MEMfree (ldDir);
+        cygdeplibs = MEMfree (cygdeplibs);
+
+#else
+
+        DBUG_PRINT ("linker command: %s", ldCmd);
+
+        SYScall ("%s -o %s%s %s/fun*_pic.o %s/globals_pic.o", ldCmd, global.targetdir,
+                 libraryName, global.tmp_dirname, global.tmp_dirname);
+#endif
+
         libraryName = MEMfree (libraryName);
         ldCmd = MEMfree (ldCmd);
     }
 
-    deplibs = MEMfree (deplibs);
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CreateTreeLibrary( void)
+ *
+ * @brief generates the library that (re-)produces the internal ast representation
+ *        of code.
+ *
+ *****************************************************************************/
+
+static void
+CreateTreeLibrary (void)
+{
+    char *libraryName;
+    char *ldCmd;
+
+#if IS_CYGWIN
+    char *cygdeplibs;
+    char *ldDir;
+#endif
+
+    DBUG_ENTER ();
 
     CTInote ("Creating shared SAC library `lib%sTree%s" SHARED_LIB_EXT "'",
              global.modulename, global.config.lib_variant);
@@ -165,20 +211,63 @@ LIBBcreateLibrary (node *syntax_tree)
 
     ldDir = CYGHbuildLibDirectoryString ();
     ldCmd = STRcat (ldCmd, ldDir);
-#endif
 
     SYScall ("%s -o %s%s %s/serialize.o %s/symboltable.o"
              " %s/dependencytable.o %s/namespacemap.o %s/filenames.o%s",
              ldCmd, global.targetdir, libraryName, global.tmp_dirname, global.tmp_dirname,
              global.tmp_dirname, global.tmp_dirname, global.tmp_dirname, cygdeplibs);
 
+    ldDir = MEMfree (ldDir);
+    cygdeplibs = MEMfree (cygdeplibs);
+
+#else
+
+    SYScall ("%s -o %s%s %s/serialize.o %s/symboltable.o"
+             " %s/dependencytable.o %s/namespacemap.o %s/filenames.o",
+             ldCmd, global.targetdir, libraryName, global.tmp_dirname, global.tmp_dirname,
+             global.tmp_dirname, global.tmp_dirname, global.tmp_dirname);
+#endif
+
     libraryName = MEMfree (libraryName);
     ldCmd = MEMfree (ldCmd);
 
-#if IS_CYGWIN
-    ldDir = MEMfree (ldDir);
-    cygdeplibs = MEMfree (cygdeplibs);
-#endif
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *LIBBcreateLibrary( node *syntax_tree)
+ *
+ * @brief Exported function that builds the static and shared libraries
+ *
+ *****************************************************************************/
+
+node *
+LIBBcreateLibrary (node *syntax_tree)
+{
+    char *deplibs;
+
+    DBUG_ENTER ();
+
+    if (global.gen_cccall) {
+        /*
+         * enable system call tracking
+         */
+        SYSstartTracking ();
+    }
+
+    if (global.on_demand_lib) {
+        CreateTreeLibrary ();
+    } else {
+        deplibs
+          = (char *)STRSfold (&BuildDepLibsStringMod, global.dependencies, STRcpy (""));
+
+        CreateStaticLibrary (deplibs);
+        CreateDynamicLibrary (deplibs);
+        CreateTreeLibrary ();
+
+        deplibs = MEMfree (deplibs);
+    }
 
     if (global.gen_cccall) {
         /*
@@ -186,8 +275,17 @@ LIBBcreateLibrary (node *syntax_tree)
          */
         SYSstopTracking ();
     }
+
     DBUG_RETURN (syntax_tree);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *LIBBcreateWrapperLibrary( node *syntax_tree)
+ *
+ * @brief Exported function that builds the wrapper libraries
+ *
+ *****************************************************************************/
 
 node *
 LIBBcreateWrapperLibrary (node *syntax_tree)

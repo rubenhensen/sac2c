@@ -152,89 +152,83 @@ SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optim
 SUBPHASE (ser, "Serializing syntax tree", SERdoSerialize,
           ((global.filetype == FT_modimp) || (global.filetype == FT_classimp)), exp)
 
-SUBPHASE (rgd, "Removing generic function definitions", RGDdoRemoveGenericDefinitions,
-          ALWAYS, exp)
-
-SUBPHASE (iif, "Restoring bodies of imported inline functions", PPIdoPrepareInline,
-          ALWAYS, exp)
-
-SUBPHASE (cspf, "MUTC Creating spawn functions", CSPFdoCreateSpawnFunctions,
-          (global.backend == BE_mutc), exp)
-
 ENDPHASE (exp)
 
 /******************************************************************************/
 
-PHASE (unq, "Checking uniqueness property of objects", ALWAYS)
+PHASE (popt, "Preparing for code optimization", !global.on_demand_lib)
+
+SUBPHASE (rgd, "Removing generic function definitions", RGDdoRemoveGenericDefinitions,
+          ALWAYS, popt)
+
+SUBPHASE (iif, "Restoring bodies of imported inline functions", PPIdoPrepareInline,
+          ALWAYS, popt)
+
+SUBPHASE (cspf, "MUTC Creating spawn functions", CSPFdoCreateSpawnFunctions,
+          (global.backend == BE_mutc), popt)
 
 SUBPHASE (cua, "Checking uniqueness annotations", CUAdoCheckUniquenessAnnotations, ALWAYS,
-          unq)
+          popt)
 
-SUBPHASE (cuq, "Checking uniqueness", CUdoCheckUniqueness, ALWAYS, unq)
-
-ENDPHASE (unq)
-
-/******************************************************************************/
-
-PHASE (cwc, "Creating Wrapper Code and Eliminating User-Defined Types", ALWAYS)
+SUBPHASE (cuq, "Checking uniqueness", CUdoCheckUniqueness, ALWAYS, popt)
 
 #ifdef CG_STRUCT_TRY
 
 SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls, ALWAYS,
-          cwc)
+          popt)
 
 SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optimize.dodfr,
-          cwc)
+          popt)
 
-SUBPHASE (des, "Removing all structs", DESdoDeStruct, ALWAYS, cwc)
+SUBPHASE (des, "Resolving structs", DESdoDeStruct, ALWAYS, popt)
 
-SUBPHASE (ewt, "Extending dispatch information", EWTdoExtendWrapperTypes, ALWAYS, cwc)
+SUBPHASE (ewt, "Extending dispatch information", EWTdoExtendWrapperTypes, ALWAYS, popt)
 
-SUBPHASE (cwb, "Creating Wrapper Bodies", CWCdoCreateWrapperCode, ALWAYS, cwc)
+SUBPHASE (cwb, "Creating Wrapper Bodies", CWCdoCreateWrapperCode, ALWAYS, popt)
 
-SUBPHASE (l2f, "Eliminating conditionals in wrapper code", L2FdoLac2Fun, ALWAYS, cwc)
+SUBPHASE (l2f, "Eliminating conditionals in wrapper code", L2FdoLac2Fun, ALWAYS, popt)
 
 SUBPHASE (ssa, "Establishing static single assignment form in wrapper code",
-          SSATdoTransformAllowGOs, ALWAYS cwc)
+          SSATdoTransformAllowGOs, ALWAYS popt)
 
 #else /*  CG_STRUCT_TRY */
 
-SUBPHASE (cwb, "Creating Wrapper Bodies", CWCdoCreateWrapperCode, ALWAYS, cwc)
+SUBPHASE (cwb, "Creating Wrapper Bodies", CWCdoCreateWrapperCode, ALWAYS, popt)
 
-SUBPHASE (l2f, "Eliminating conditionals in wrapper code", L2FdoLac2Fun, ALWAYS, cwc)
+SUBPHASE (l2f, "Eliminating conditionals in wrapper code", L2FdoLac2Fun, ALWAYS, popt)
 
 SUBPHASE (ssa, "Establishing static single assignment form in wrapper code",
-          SSATdoTransform, ALWAYS, cwc)
+          SSATdoTransform, ALWAYS, popt)
 
 SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls, ALWAYS,
-          cwc)
+          popt)
 
-SUBPHASE (des, "Removing all structs", DESdoDeStruct, ALWAYS, cwc)
+SUBPHASE (des, "Removing all structs", DESdoDeStruct, ALWAYS, popt)
 
 #endif /*  CG_STRUCT_TRY */
 
-SUBPHASE (eudt, "Eliminating User-Defined Types", RCdoRemoveCasts, ALWAYS, cwc)
+SUBPHASE (eudt, "Eliminating User-Defined Types", RCdoRemoveCasts, ALWAYS, popt)
 
 SUBPHASE (cse, "Applying common subexpression elimination",
-          CSEdoCommonSubexpressionElimination, global.optimize.docse, cwc)
+          CSEdoCommonSubexpressionElimination, global.optimize.docse, popt)
 
-SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, cwc)
+SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, popt)
 
 SUBPHASE (icc, "Inserting Conformity Checks", ICCdoInsertConformityChecks,
-          global.insertconformitychecks, cwc)
+          global.insertconformitychecks, popt)
 
 SUBPHASE (ti, "Running type inference system", NTCdoNewReTypeCheckFromScratch, ALWAYS,
-          cwc)
+          popt)
 
-SUBPHASE (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes, ALWAYS, cwc)
+SUBPHASE (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes, ALWAYS, popt)
 
-SUBPHASE (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes, ALWAYS, cwc)
+SUBPHASE (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes, ALWAYS, popt)
 
-ENDPHASE (cwc)
+ENDPHASE (popt)
 
 /******************************************************************************/
 
-PHASE (ewl, "Enhancing with-loops", ALWAYS)
+PHASE (ewl, "Enhancing with-loops", !global.on_demand_lib)
 
 SUBPHASE (accu, "Introducing explicit accumulators", EAdoExplicitAccumulate, ALWAYS, ewl)
 
@@ -256,7 +250,7 @@ ENDPHASE (ewl)
 
 /******************************************************************************/
 
-PHASE (opt, "Running SAC optimizations", ALWAYS)
+PHASE (opt, "Running SAC optimizations", !global.on_demand_lib)
 
 SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optimize.dodfr,
           opt)
@@ -904,7 +898,8 @@ ENDPHASE (opt)
 /******************************************************************************/
 
 PHASE (cuda, "Automatic parallelisation for GPUs",
-       (global.backend == BE_cuda || global.backend == BE_cudahybrid))
+       !global.on_demand_lib
+         && (global.backend == BE_cuda || global.backend == BE_cudahybrid))
 
 SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL, ALWAYS, cuda)
 
@@ -990,7 +985,7 @@ ENDPHASE (cuda)
 
 /******************************************************************************/
 
-PHASE (wlt, "Transforming with-loop representation", ALWAYS)
+PHASE (wlt, "Transforming with-loop representation", !global.on_demand_lib)
 
 SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification, ALWAYS, wlt)
 /*
@@ -1086,26 +1081,27 @@ ENDPHASE (mt3)
 
 /******************************************************************************/
 
-PHASE (fp, "Functional Parallelism", global.fp || global.backend == BE_mutc)
+PHASE (tp, "Introducing task parallelization",
+       !global.on_demand_lib && (global.fp || global.backend == BE_mutc))
 
-SUBPHASE (syn, "Add Sync Statements", SYNdoAddSync, ALWAYS, fp)
+SUBPHASE (syn, "Add sync statements", SYNdoAddSync, ALWAYS, tp)
 
-SUBPHASE (mss, "Move Sync Statements", MSSdoMoveSyncStatement,
-          !global.fpnoopt || global.backend == BE_mutc, fp)
+SUBPHASE (mss, "Move sync statements", MSSdoMoveSyncStatement,
+          !global.fpnoopt || global.backend == BE_mutc, tp)
 
-SUBPHASE (tff, "Tag Fundef Nodes", TFFdoTagFPFundefs, global.fp, fp)
+SUBPHASE (tff, "Tag function definitions", TFFdoTagFPFundefs, global.fp, tp)
 
-SUBPHASE (tfa, "Tag Ap Nodes", TFFdoTagFPAps, global.fp, fp)
+SUBPHASE (tfa, "Tag function applications", TFFdoTagFPAps, global.fp, tp)
 
-SUBPHASE (lva, "Live Variable Analysis", LVAdoLiveVariableAnalysis, global.fp, fp)
+SUBPHASE (lva, "Do live variable analysis", LVAdoLiveVariableAnalysis, global.fp, tp)
 
-SUBPHASE (css, "Count Spawns and Syncs", CSSdoCountSpawnSync, ALWAYS, fp)
+SUBPHASE (css, "Count spawns and syncs", CSSdoCountSpawnSync, ALWAYS, tp)
 
-ENDPHASE (fp)
+ENDPHASE (tp)
 
 /******************************************************************************/
 
-PHASE (mem, "Introducing memory management instructions", ALWAYS)
+PHASE (mem, "Introducing memory management instructions", !global.on_demand_lib)
 
 SUBPHASE (ufiv, "Unshare index vectors in WL-folds", UFIVdoUnshareFoldIV,
           (global.backend == BE_c99), mem)
@@ -1193,7 +1189,7 @@ ENDPHASE (mem)
 
 /******************************************************************************/
 
-PHASE (ussa, "Converting from static single assignment form", ALWAYS)
+PHASE (ussa, "Converting from static single assignment form", !global.on_demand_lib)
 
 SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, ussa)
 
@@ -1221,8 +1217,9 @@ ENDPHASE (ussa)
 /******************************************************************************/
 
 PHASE (mt, "Running automatic parallelisation",
-       (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)
-         || (global.backend == BE_omp))
+       !global.on_demand_lib
+         && ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)
+             || (global.backend == BE_omp)))
 
 SUBPHASE (mtcm, "Running multithreading cost model", MTCMdoRunCostModel, ALWAYS, mt)
 
@@ -1253,7 +1250,7 @@ ENDPHASE (mt)
 
 /******************************************************************************/
 
-PHASE (pc, "Preparing C code generation", ALWAYS)
+PHASE (pc, "Preparing C code generation", !global.on_demand_lib)
 
 SUBPHASE (uw3, "Unroll With3", UW3doUnrollWith3,
           (global.backend == BE_mutc
@@ -1351,7 +1348,7 @@ ENDPHASE (pc)
 
 /******************************************************************************/
 
-PHASE (cg, "Generating Code", ALWAYS)
+PHASE (cg, "Generating Code", !global.on_demand_lib)
 
 SUBPHASE (tp, "Tag preparation", TPdoTagPreparation, ALWAYS, cg)
 
@@ -1365,13 +1362,13 @@ SUBPHASE (pds, "Prepare distributed with-loop schedulers",
 
 SUBPHASE (prt, "Generating C file(s)", PRTdoPrint, ALWAYS, cg)
 
-SUBPHASE (frtr, "De-allocating syntax tree representation", FREEdoFreeTree, ALWAYS, cg)
-
 ENDPHASE (cg)
 
 /******************************************************************************/
 
 PHASE (icc, "Creating binary code", ALWAYS)
+
+SUBPHASE (frtr, "De-allocating syntax tree representation", FREEdoFreeTree, ALWAYS, icc)
 
 SUBPHASE (hdep, "Handling dependencies", DEPdoHandleDependencies, ALWAYS, icc)
 

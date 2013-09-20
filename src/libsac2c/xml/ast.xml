@@ -5225,7 +5225,7 @@ N_tfarg :
               <target mandatory="no" >
                 <node name="Fundef" />
                 <phases>
-                  <range from="exp_cspf" to="final" />
+                  <range from="popt_cspf" to="final" />
                 </phases>
               </target>
             </targets>
@@ -5315,7 +5315,7 @@ N_tfarg :
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="pc_fpc" to="cg_frtr" />
+                  <range from="pc_fpc" to="icc_frtr" />
                 </phases>
               </target>
             </targets>
@@ -5989,7 +5989,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6003,7 +6003,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6017,7 +6017,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6582,7 +6582,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6596,7 +6596,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6610,7 +6610,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6687,7 +6687,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6701,7 +6701,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6715,7 +6715,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -8376,7 +8376,7 @@ N_tfarg :
                 <phases>
                   <phase name="ptc_ssa" />
                   <phase name="wlt_ssa" />
-                  <phase name="cwc_ssa" />
+                  <phase name="popt_ssa" />
                 </phases>
               </target>
             </targets>
@@ -8390,7 +8390,7 @@ N_tfarg :
                 <phases>
                   <phase name="ptc_ssa" />
                   <phase name="wlt_ssa" />
-                  <phase name="cwc_ssa" />
+                  <phase name="popt_ssa" />
                 </phases>
               </target>
             </targets>
@@ -8404,7 +8404,7 @@ N_tfarg :
                 <phases>
                   <phase name="ptc_ssa" />
                   <phase name="wlt_ssa" />
-                  <phase name="cwc_ssa" />
+                  <phase name="popt_ssa" />
                 </phases>
               </target>
             </targets>
@@ -8418,7 +8418,7 @@ N_tfarg :
                 <phases>
                   <phase name="ptc_ssa" />
                   <phase name="wlt_ssa" />
-                  <phase name="cwc_ssa" />
+                  <phase name="popt_ssa" />
                 </phases>
               </target>
             </targets>
@@ -8613,7 +8613,7 @@ N_tfarg :
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="unq" />
+                  <phase name="popt_unq" />
                 </phases>
               </target>
             </targets>
@@ -9100,7 +9100,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -9114,7 +9114,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -9128,7 +9128,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -9788,7 +9788,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -9802,7 +9802,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -9816,7 +9816,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -11929,7 +11929,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -11943,7 +11943,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -11957,7 +11957,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
