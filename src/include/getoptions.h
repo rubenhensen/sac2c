@@ -29,7 +29,6 @@
  *   ARGS_OPTION_BEGIN( "d")
  *   {
  *     ARG_CHOICE_BEGIN();
- *     ARG_CHOICE("efence",    use_efence=1);
  *     ARG_CHOICE("nocleanup", cleanup=0);
  *     ARG_CHOICE("syscall",   show_syscall=1);
  *     ARG_CHOICE("cccall",    gen_cccall=1; cleanup=0);

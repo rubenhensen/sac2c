@@ -688,7 +688,6 @@ PrintDebugOptions (void)
             "    -d lacfuncheck  Check syntax tree for single call property of LaC "
             "functions.\n"
             "    -d nolacinline  Do not inline loop and conditional functions.\n"
-            "    -d efence       Link executable with ElectricFence (malloc debugger).\n"
             "    -d nocleanup    Do not remove temporary files and directories.\n"
             "    -d syscall      Show all system calls during compilation.\n"
             "    -d cccall       Generate shell script \".sac2c\" that contains C "

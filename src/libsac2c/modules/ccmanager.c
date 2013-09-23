@@ -221,26 +221,6 @@ AddPhmLib (str_buf *buffer)
     DBUG_RETURN ();
 }
 
-static void
-AddEfenceLib (str_buf *buffer)
-{
-    DBUG_ENTER ();
-
-    if (global.use_efence) {
-        char *efence;
-
-        efence = STRcpy (FMGRfindFile (PK_extlib_path, "libefence.a"));
-
-        if (efence == NULL) {
-            CTIwarn ("Unable to find `libefence.a' in EXTLIB_PATH");
-        } else {
-            SBUFprintf (buffer, "%s ", efence);
-        }
-    }
-
-    DBUG_RETURN ();
-}
-
 static char *
 GetLibs (void)
 {
@@ -254,7 +234,6 @@ GetLibs (void)
     AddPhmLib (buffer);
     AddSacLib (buffer);
     AddCCLibs (buffer);
-    AddEfenceLib (buffer);
 
     result = SBUF2str (buffer);
     buffer = SBUFfree (buffer);
