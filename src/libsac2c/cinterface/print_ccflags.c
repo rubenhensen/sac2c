@@ -2,7 +2,7 @@
 #include "ccmanager.h"
 #include "memory.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "PCCF"
 #include "debug.h"
 
 #include "str.h"
