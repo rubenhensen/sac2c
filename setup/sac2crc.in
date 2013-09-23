@@ -525,8 +525,6 @@ OPT_O2         :=  "-O4"
 OPT_O3         :=  "-O3"
 
 
-
-
 /*******************************************************************************
  *
  * Target opencc: use the Open64 C compiler instead of gcc
@@ -538,8 +536,6 @@ CC             := "opencc"
 OPT_O3         := "-O3"
 
 
-
-
 /*******************************************************************************
  *
  * Target milepost: use the Milepost Gcc C compiler instead of gcc
@@ -549,9 +545,6 @@ OPT_O3         := "-O3"
 target milepost:
 CC             := "milepost-gcc"
 OPT_O3         := "-O3"
-
-
-
 
 
 /*******************************************************************************

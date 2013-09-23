@@ -162,10 +162,7 @@ PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
     if (kind == STRS_saclib) {
         char *libname;
         char *libfile;
-        /*
-            libname = (char *)MEMmalloc( sizeof( char) * ( STRlen( entry) + 5));
-            sprintf( libname, "%s.sac", entry);
-        */
+
         libname = STRcat (entry, ".sac");
 
         libfile = STRcpy (FMGRfindFile (PK_imp_path, libname));

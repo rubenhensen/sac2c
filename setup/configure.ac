@@ -53,7 +53,7 @@ AC_ARG_ENABLE([cplusplus],
 dnl Check if C compiler and preprocessor are available
 dnl we force CFLAGS to be empty, so that it does not default to -g -O2
 CFLAGS=" "
-AC_PROG_CC_C99 
+AC_PROG_CC_C99
 AC_PROG_CPP
 
 dnl Enable system extensions when they are disabled by default
