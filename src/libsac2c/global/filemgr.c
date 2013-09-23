@@ -135,46 +135,6 @@ FMGRmapPath (pathkind_t p, void *(*mapfun) (const char *, void *), void *neutral
 /******************************************************************************
  *
  * function:
- *   bool FMGRcheckSystemLibrary( const char *name)
- *
- * description:
- *
- *   This function checks whether a given system library is found
- *   by the systems linker (eg ld). It does so by just calling ld
- *   with the given library and a dummy C program.
- *
- ******************************************************************************/
-
-bool
-FMGRcheckSystemLibrary (const char *name)
-{
-    int result;
-
-    DBUG_ENTER ();
-
-    /* remove leading 'lib' */
-    name += 3;
-
-    /* create a dummy C program to compile and link against */
-    /* the library.                                         */
-
-    SYScall ("echo \"int main(){return(0);}\" >%s/SAC_XX_syslibtest.c",
-             global.tmp_dirname);
-
-    result
-      = SYScallNoErr ("%s %s %s %s -l%s -o %s/SAC_XX_syslibtest %s/SAC_XX_syslibtest.c",
-                      global.config.cc, global.config.ccflags, global.ccflags,
-                      global.config.ldflags, name, global.tmp_dirname,
-                      global.tmp_dirname);
-
-    /* reverse result, because a result of 0 means true here. */
-
-    DBUG_RETURN (result != 0);
-}
-
-/******************************************************************************
- *
- * function:
  *   bool FMGRcheckExistFile(const char *dir, const char *name)
  *
  * description:

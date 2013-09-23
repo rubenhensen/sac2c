@@ -32,7 +32,6 @@ extern FILE *FMGRappendOpen (const char *format, ...);
 extern FILE *FMGRclose (FILE *file);
 extern bool FMGRcheckExistFile (const char *dir, const char *name);
 extern bool FMGRcheckExistDir (const char *dir);
-extern bool FMGRcheckSystemLibrary (const char *name);
 extern void FMGRsetFileNames (node *module);
 extern void FMGRdeleteTmpDir (void);
 extern void FMGRcreateTmpDir (void);
