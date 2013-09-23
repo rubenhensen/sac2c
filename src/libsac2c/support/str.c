@@ -1328,4 +1328,58 @@ STRsubstTokend (char *str, const char *token, const char *subst)
     return nstr;
 }
 
+/** <!-- ****************************************************************** -->
+ * @brief Substitute multiple patterns in a string
+ *
+ * @param str The string in which to make substitutions
+ * @param n  The number of substitutions
+ *
+ * @return A new String or NULL if str is NULL
+ ******************************************************************************/
+char *
+STRsubstTokens (const char *str, int n, ...)
+{
+    char *result;
+    va_list arg_list;
+    const char **patterns;
+    const char **values;
+    int *sizes;
+    int i, j;
+
+    DBUG_ENTER ();
+
+    patterns = (const char **)MEMmalloc (n * sizeof (char *));
+    values = (const char **)MEMmalloc (n * sizeof (char *));
+    sizes = (int *)MEMmalloc (n * sizeof (int));
+
+    va_start (arg_list, n);
+
+    for (i = 0; i < n; ++i) {
+        patterns[i] = va_arg (arg_list, const char *);
+        sizes[i] = STRlen (patterns[i]);
+        values[i] = va_arg (arg_list, const char *);
+    }
+
+    va_end (arg_list);
+
+    str_buf *buf = SBUFcreate (1);
+
+    for (i = 0; str[i] != '\0'; ++i) {
+        for (j = 0; j < n; ++j) {
+            if (strncmp (patterns[j], str, sizes[j]) == 0) {
+                SBUFprint (buf, values[j]);
+                i += sizes[j] - 1;
+                break;
+            }
+        }
+        if (j == n)
+            SBUFprintf (buf, "%c", str[i]);
+    }
+
+    result = SBUF2str (buf);
+    buf = SBUFfree (buf);
+
+    DBUG_RETURN (result);
+}
+
 #undef DBUG_PREFIX
