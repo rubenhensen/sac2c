@@ -22,9 +22,11 @@
  *   +) If "C" occurs on a right side, it always looks like
  *          "sel( idx, C)"
  *      where the current index-vector of the potentially nested
- *      withloops is a prefix of idx.
+ *      withloops is a prefix of idx. I.e, the index vector has
+ *      no offset.
  *
  *      [Otherwise reuse might miss data dependencies!]
+ *
  *
  * </pre>
  *
@@ -155,6 +157,7 @@ REUSEdoGetReuseArrays (node *with, node *fundef)
         avis = DFMgetMaskEntryAvisSet (NULL);
     }
 
+    DBUG_PRINT ("Initializing dataflow mask");
     INFO_MASK (info) = DFMremoveMask (INFO_MASK (info));
     INFO_NEGMASK (info) = DFMremoveMask (INFO_NEGMASK (info));
     maskbase = DFMremoveMaskBase (maskbase);
@@ -395,7 +398,7 @@ REUSEwith (node *arg_node, info *arg_info)
  *                        in the current scope
  *   'INFO_IVIDS( arg_info)' contains a set of pointers to the index scalars
  *                           in the current scope
- *
+ e
  *  With the advent of ssaiv, we have to perform this set membership
  *  operation at the partition level, because WITHIDS differ for each of them.
  ******************************************************************************/
@@ -554,14 +557,16 @@ REUSEprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if ((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel)) {
-        DBUG_PRINT ("selection found");
+        DBUG_PRINT ("selection found into %s", AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         if (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id) {
             if (!DFMtestMaskEntry (INFO_NEGMASK (arg_info), NULL,
                                    ID_AVIS (PRF_ARG2 (arg_node)))) {
-                DBUG_PRINT ("not yet in DF mask");
+                DBUG_PRINT ("%s not yet in DF mask",
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
                 if (IsValidIndex (PRF_ARG1 (arg_node), INFO_IV (arg_info),
                                   INFO_IVIDS (arg_info), INFO_PARTN (arg_info))) {
-                    DBUG_PRINT ("valid index; adding to DF mask");
+                    DBUG_PRINT ("%s is valid index; adding to DF mask",
+                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
 
                     /*
                      * 'arg2' is used in a WL-sel that only references
@@ -571,7 +576,12 @@ REUSEprf (node *arg_node, info *arg_info)
                     DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL,
                                         ID_AVIS (PRF_ARG2 (arg_node)));
                 } else {
-                    DBUG_PRINT ("invalid index");
+                    DBUG_PRINT ("%s has invalid index: not suitable for reuse",
+                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+                    DFMsetMaskEntryClear (INFO_MASK (arg_info), NULL,
+                                          ID_AVIS (PRF_ARG2 (arg_node)));
+                    DFMsetMaskEntrySet (INFO_NEGMASK (arg_info), NULL,
+                                        ID_AVIS (PRF_ARG2 (arg_node)));
                 }
             }
         }
@@ -595,6 +605,7 @@ REUSEids (node *arg_node, info *arg_info)
     /*
      * remove left hand side ids from the reuse-mask
      */
+    DBUG_PRINT ("%s is lhs ids: removed from DFM", AVIS_NAME (IDS_AVIS (arg_node)));
     DFMsetMaskEntryClear (INFO_MASK (arg_info), NULL, IDS_AVIS (arg_node));
     DFMsetMaskEntrySet (INFO_NEGMASK (arg_info), NULL, IDS_AVIS (arg_node));
 
@@ -620,6 +631,7 @@ REUSEid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("%s is ref on rhs: removed from DFM", AVIS_NAME (ID_AVIS (arg_node)));
     DFMsetMaskEntryClear (INFO_MASK (arg_info), NULL, ID_AVIS (arg_node));
     DFMsetMaskEntrySet (INFO_NEGMASK (arg_info), NULL, ID_AVIS (arg_node));
 
