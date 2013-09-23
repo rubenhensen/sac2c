@@ -176,6 +176,11 @@ GLOBAL (char *, ccflags, (char *)MEMmalloc (NAME_MAX), xfree_char_ptr, )
  * Command line arguments
  */
 
+GLOBAL (int, num_fun_files, 0, xfree_dummy, )
+/*
+ * Number of funNNN.c files generated.
+ */
+
 GLOBAL (int, argc, 0, xfree_dummy, )
 GLOBAL (char **, argv, NULL, xfree_dummy, )
 

@@ -2164,6 +2164,7 @@ PRTfundef (node *arg_node, info *arg_info)
                                                         INFO_FILECOUNTER (arg_info),
                                                         global.config.cext);
                         INFO_FILECOUNTER (arg_info) += 1;
+                        global.num_fun_files += 1;
                         fprintf (global.outfile, "#include \"header.h\"\n\n");
                         TRAVopt (INFO_SPMDSTORE (arg_info), arg_info);
                     }
