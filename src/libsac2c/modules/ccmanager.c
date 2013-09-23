@@ -393,24 +393,24 @@ InvokeCCModule (char *cccall, char *compilationflags)
     /*
      * compile non-PIC code
      */
-    str = STRcat ("fun.*\\.", global.config.cext);
+    str = STRcat ("fun.*\\", global.config.cext);
     FMGRforEach (global.tmp_dirname, str, callstring,
                  (void (*) (const char *, const char *, void *))CompileOneFile);
     MEMfree (str);
 
-    str = STRcat ("globals.", global.config.cext);
+    str = STRcat ("globals", global.config.cext);
     CompileOneFile (global.tmp_dirname, str, callstring);
     MEMfree (str);
     if (!STReq (global.config.ld_dynamic, "")) {
         /*
          * compile PIC code for shared libs if needed
          */
-        str = STRcat ("fun.*\\.", global.config.cext);
+        str = STRcat ("fun.*\\", global.config.cext);
         FMGRforEach (global.tmp_dirname, str, callstring,
                      (void (*) (const char *, const char *, void *))CompileOneFilePIC);
         MEMfree (str);
 
-        str = STRcat ("globals.", global.config.cext);
+        str = STRcat ("globals", global.config.cext);
         CompileOneFilePIC (global.tmp_dirname, str, callstring);
         MEMfree (str);
     }
@@ -454,48 +454,48 @@ InvokeCCWrapper (char *cccall, char *compileflags)
     /*
      * compile non-PIC code
      */
-    str = STRcat ("fun.*\\.", global.config.cext);
+    str = STRcat ("fun.*\\", global.config.cext);
     FMGRforEach (global.tmp_dirname, str, callstring,
                  (void (*) (const char *, const char *, void *))CompileOneFile);
     MEMfree (str);
 
-    str = STRcat ("globals.", global.config.cext);
+    str = STRcat ("globals", global.config.cext);
     CompileOneFile (global.tmp_dirname, str, callstring);
     MEMfree (str);
 
-    str = STRcat ("interface.", global.config.cext);
+    str = STRcat ("interface", global.config.cext);
     CompileOneFile (global.tmp_dirname, str, callstring);
     MEMfree (str);
 
-    str = STRcat ("sacargcopy.", global.config.cext);
+    str = STRcat ("sacargcopy", global.config.cext);
     CompileOneFile (global.tmp_dirname, str, callstring);
     MEMfree (str);
 
-    str = STRcat ("sacargfree.", global.config.cext);
+    str = STRcat ("sacargfree", global.config.cext);
     CompileOneFile (global.tmp_dirname, str, callstring);
     MEMfree (str);
 
     /*
      * compile PIC code
      */
-    str = STRcat ("fun.*\\.", global.config.cext);
+    str = STRcat ("fun.*\\", global.config.cext);
     FMGRforEach (global.tmp_dirname, str, callstring,
                  (void (*) (const char *, const char *, void *))CompileOneFilePIC);
     MEMfree (str);
 
-    str = STRcat ("globals.", global.config.cext);
+    str = STRcat ("globals", global.config.cext);
     CompileOneFilePIC (global.tmp_dirname, str, callstring);
     MEMfree (str);
 
-    str = STRcat ("interface.", global.config.cext);
+    str = STRcat ("interface", global.config.cext);
     CompileOneFilePIC (global.tmp_dirname, str, callstring);
     MEMfree (str);
 
-    str = STRcat ("sacargcopy.", global.config.cext);
+    str = STRcat ("sacargcopy", global.config.cext);
     CompileOneFilePIC (global.tmp_dirname, str, callstring);
     MEMfree (str);
 
-    str = STRcat ("sacargfree.", global.config.cext);
+    str = STRcat ("sacargfree", global.config.cext);
     CompileOneFilePIC (global.tmp_dirname, str, callstring);
     MEMfree (str);
 

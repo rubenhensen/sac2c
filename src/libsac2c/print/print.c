@@ -1314,7 +1314,7 @@ PRTmodule (node *arg_node, info *arg_info)
         fclose (global.outfile);
 
         global.outfile
-          = FMGRwriteOpen ("%s/globals.%s", global.tmp_dirname, global.config.cext);
+          = FMGRwriteOpen ("%s/globals%s", global.tmp_dirname, global.config.cext);
         fprintf (global.outfile, "#include \"header.h\"\n\n");
         fprintf (global.outfile,
                  "static int SAC__%s__dummy_value_which_is_completely_useless"
@@ -1352,7 +1352,7 @@ PRTmodule (node *arg_node, info *arg_info)
          * when using wildcards like fun*.c
          */
         global.outfile
-          = FMGRwriteOpen ("%s/fundummy.%s", global.tmp_dirname, global.config.cext);
+          = FMGRwriteOpen ("%s/fundummy%s", global.tmp_dirname, global.config.cext);
         fprintf (global.outfile, "#include \"header.h\"\n\n");
         fprintf (global.outfile,
                  "static int SAC__%s__another_dummy_value_which_is_completely_useless"
@@ -2160,7 +2160,7 @@ PRTfundef (node *arg_node, info *arg_info)
                         || (global.printfunsets.wrp && FUNDEF_ISWRAPPERFUN (arg_node)))) {
 
                     if (INFO_SEPARATE (arg_info) && (INFO_FUNCOUNTER (arg_info) == 0)) {
-                        global.outfile = FMGRwriteOpen ("%s/fun%d.%s", global.tmp_dirname,
+                        global.outfile = FMGRwriteOpen ("%s/fun%d%s", global.tmp_dirname,
                                                         INFO_FILECOUNTER (arg_info),
                                                         global.config.cext);
                         INFO_FILECOUNTER (arg_info) += 1;
