@@ -101,6 +101,7 @@ TrackSystemCall (const char *call)
 
     if (syscalltrack != NULL) {
         fprintf (syscalltrack, "%s\n\n", call);
+        fflush (syscalltrack);
     }
 
     DBUG_RETURN ();
