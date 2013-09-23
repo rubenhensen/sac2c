@@ -1317,7 +1317,7 @@ PRTmodule (node *arg_node, info *arg_info)
           = FMGRwriteOpen ("%s/globals.%s", global.tmp_dirname, global.config.cext);
         fprintf (global.outfile, "#include \"header.h\"\n\n");
         fprintf (global.outfile,
-                 "int SAC__%s__dummy_value_which_is_completely_useless"
+                 "static int SAC__%s__dummy_value_which_is_completely_useless"
                  " = 0;\n\n",
                  NSgetName (MODULE_NAMESPACE (arg_node)));
 
