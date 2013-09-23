@@ -8,9 +8,9 @@ src/bin/*
 .revision.txt
 include/sac.h
 sac2crc
-setup/autom4te.cache/
-setup/config.log
-setup/config.status
+autom4te.cache/
+config.log
+config.status
 setup/sac2crc
 src/doc/ast.html
 src/doc/ast.png

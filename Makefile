@@ -229,8 +229,7 @@ tools: checks
 #
 
 config:
-	@ cd setup && \
-	  autoreconf -v -f -i -I config
+	autoreconf -v -f -i -I setup/config
 
 ###############################################################################
 #

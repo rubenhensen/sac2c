@@ -8,15 +8,15 @@ dnl parameters: package name, version, where to send bugreports
 AC_INIT(sac2c, git, info@sac-home.org)
 
 dnl set source directory and scripting directory
-AC_CONFIG_SRCDIR(.)
-AC_CONFIG_AUX_DIR(./config)
+AC_CONFIG_SRCDIR([setup])
+AC_CONFIG_AUX_DIR([setup/config])
 
 dnl we use C as our compiler language
 AC_LANG(C)
 
 dnl and which files to create
-AC_CONFIG_FILES(../src/makefiles/config.mkf sac2crc)
-AC_CONFIG_HEADER(../src/include/config.h)
+AC_CONFIG_FILES([src/makefiles/config.mkf setup/sac2crc])
+AC_CONFIG_HEADER([src/include/config.h])
 
 dnl check for host type
 AC_CANONICAL_BUILD
@@ -246,10 +246,10 @@ AC_SUBST_FILE([RCSUN])
 AC_SUBST_FILE([RCX86])
 AC_SUBST_FILE([RCALPHA])
 AC_SUBST_FILE([RCMAC])
-RCSUN=./sac2crc.SUN
-RCX86=./sac2crc.X86
-RCALPHA=./sac2crc.ALPHA
-RCMAC=./sac2crc.MAC
+RCSUN=setup/sac2crc.SUN
+RCX86=setup/sac2crc.X86
+RCALPHA=setup/sac2crc.ALPHA
+RCMAC=setup/sac2crc.MAC
 
 
 # generate specific flags for known os

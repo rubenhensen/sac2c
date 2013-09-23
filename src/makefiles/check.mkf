@@ -18,7 +18,7 @@ CONFIGURED   := $(PROJECT_ROOT)/src/makefiles/config.mkf \
 
 AUTOHEADERED := $(PROJECT_ROOT)/src/include/config.h.in
 
-AUTOCONFED   := $(PROJECT_ROOT)/setup/configure
+AUTOCONFED   := $(PROJECT_ROOT)/configure
 
 
 #######################################################################################
