@@ -1277,7 +1277,7 @@ STRstring2Array (const char *str)
  * @param token a string to substitute occurrences of in str
  * @param subst a string to substitute tokens with
  *
- * @return A new String or NULL if str is NULL
+ * @return A new String
  ******************************************************************************/
 char *
 STRsubstToken (const char *str, const char *token, const char *subst)
@@ -1319,6 +1319,7 @@ STRsubstToken (const char *str, const char *token, const char *subst)
     DBUG_RETURN (result);
 }
 
+// Same as STRsubstTokend, but deallocate the first argument after substitution.
 char *
 STRsubstTokend (char *str, const char *token, const char *subst)
 {
