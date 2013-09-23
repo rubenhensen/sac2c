@@ -288,11 +288,7 @@ static void
 AppendConfigPaths (pathkind_t pathkind, const char *path)
 {
     char *pathentry;
-    char buffer[PATH_MAX];
-    char *envvar_end;
-    char *envvar;
     char *ptoken;
-    int envvar_length;
 
     DBUG_ENTER ();
 
@@ -305,33 +301,6 @@ AppendConfigPaths (pathkind_t pathkind, const char *path)
     pathentry = strtok (ptoken, ":");
 
     while (pathentry != NULL) {
-        /*if (pathentry[0]=='$') {
-          envvar_end=strchr(pathentry, '/');
-          if (envvar_end==NULL) {
-            envvar=getenv(pathentry);
-            if (envvar!=NULL) {
-              FMGRappendPath( pathkind, envvar);
-
-            }
-          }
-          else {
-            envvar_length=STRlen(pathentry+1)-STRlen(envvar_end);
-            strncpy(buffer, pathentry+1, envvar_length);
-            buffer[envvar_length] = '\0';
-            envvar=getenv(buffer);
-            if (envvar!=NULL) {
-              strcpy(buffer, envvar);
-              strcat(buffer, envvar_end);
-            }
-            else {
-              strcpy(buffer, envvar_end);
-            }
-            FMGRappendPath(pathkind, buffer);
-          }
-        }
-        else {
-          FMGRappendPath(pathkind, pathentry);
-        }*/
 
         FMGRappendPath (pathkind, pathentry);
         pathentry = strtok (NULL, ":");
