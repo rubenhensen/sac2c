@@ -856,11 +856,6 @@ lexer_read_number (struct lexer *lex, char **buf, size_t *size, char c)
     /* first digit  */
     buffer_add_char (buf, &index, size, c);
 
-    if (c == '-' || c == '+') {
-        c = lexer_getch (lex);
-        buffer_add_char (buf, &index, size, c);
-    }
-
     if (c == '0') {
         c = lexer_getch (lex);
 
@@ -1148,20 +1143,6 @@ lexer_get_token (struct lexer *lex)
     if (isalpha (c) || c == '_') {
         lexer_read_id (lex, tok, &buf, &buf_size, c);
         goto return_token;
-    }
-
-    if (c == '-' || c == '+') {
-        char c1 = lexer_getch (lex);
-        if (isspace (c1)) {
-            while (EOF != (c1 = lexer_getch (lex)) && isspace (c1))
-                ;
-        }
-        lexer_ungetch (lex, c1);
-
-        if (isdigit (c1)) {
-            tok->tok_class = lexer_read_number (lex, &buf, &buf_size, c);
-            goto return_token;
-        }
     }
 
     if (isdigit (c)) {
