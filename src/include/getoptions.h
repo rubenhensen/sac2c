@@ -134,6 +134,18 @@
         (void)ARG;        /* Surpress unused var warning */                              \
         while (ARGS_i < ARGS_argc) {
 
+#define ARGS_FIXED(s, action)                                                            \
+    if ((ARGS_argv[ARGS_i][0] == '-') && StringEqual (s, ARGS_argv[ARGS_i] + 1, 1)) {    \
+        if (ARGS_i + 1 >= ARGS_argc) {                                                   \
+            ARGS_ERROR ("Missing argument for option");                                  \
+        }                                                                                \
+        ARG = ARGS_argv[ARGS_i + 1];                                                     \
+        OPT = NULL;                                                                      \
+        action;                                                                          \
+        ARGS_i += 2;                                                                     \
+        continue;                                                                        \
+    }
+
 #define ARGS_FLAG(s, action)                                                             \
     if ((ARGS_argv[ARGS_i][0] == '-') && StringEqual (s, ARGS_argv[ARGS_i] + 1, 1)) {    \
         OPT = ARGS_argv[ARGS_i] + 1;                                                     \

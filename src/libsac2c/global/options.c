@@ -517,6 +517,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION ("cshost", strncpy (global.cachesim_host, ARG, NAME_MAX - 1));
 
     ARGS_OPTION ("ccflag", strncpy (global.ccflags, ARG, NAME_MAX - 1));
+    ARGS_FIXED ("Xc", strncpy (global.ccflags, ARG, NAME_MAX - 1));
 
     ARGS_FLAG ("cs", global.docachesim = FALSE);
 
@@ -1076,6 +1077,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     /* it is very unfortunate to have two similarly named, but different, options
      * ccflags and ccflag. Can I do something about it? */
     ARGS_OPTION ("ccflag", strncpy (global.ccflags, ARG, NAME_MAX - 1));
+    ARGS_FIXED ("Xc", strncpy (global.ccflags, ARG, NAME_MAX - 1));
 
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
