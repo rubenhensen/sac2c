@@ -6,7 +6,7 @@
 
 #include "memory.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "STR"
 #include "debug.h"
 
 #include "math_utils.h"
