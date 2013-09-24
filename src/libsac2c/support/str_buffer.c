@@ -117,6 +117,14 @@ SBUF2str (str_buf *s)
     DBUG_RETURN (STRcpy (s->buf));
 }
 
+int
+SBUFlen (str_buf *s)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (s->pos);
+}
+
 void
 SBUFflush (str_buf *s)
 {
@@ -134,6 +142,14 @@ SBUFisEmpty (str_buf *s)
     DBUG_ENTER ();
 
     DBUG_RETURN (s->pos == 0);
+}
+
+char *
+SBUFgetBuffer (str_buf *s)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (s->buf);
 }
 
 str_buf *
