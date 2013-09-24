@@ -27,78 +27,13 @@ typedef union {
  * difficult to maintain.
  */
 
-#define REPORTEDERROR                                                                    \
-    {                                                                                    \
-        char *error = dlerror ();                                                        \
-                                                                                         \
-        if (error != NULL) {                                                             \
-            printf ("The system returned the following error message: "                  \
-                    "%s\n",                                                              \
-                    error);                                                              \
-        }                                                                                \
-    }
-
-#define LAUNCHFUNCTIONFROMLIB(library, mainfun, argc, argv, result)                      \
-    {                                                                                    \
-        char *sac2cbase;                                                                 \
-        char *libname;                                                                   \
-        void *libsac2c;                                                                  \
-        sacmain_u mainptr;                                                               \
-                                                                                         \
-        sac2cbase = getenv (SAC2CBASEENV);                                               \
-                                                                                         \
-        libname = (char *)malloc (                                                       \
-          sizeof (char)                                                                  \
-          * (strlen (library) + ((sac2cbase == NULL) ? 0 : strlen (sac2cbase)) + 1));    \
-                                                                                         \
-        if (sac2cbase != NULL) {                                                         \
-            libname = strcpy (libname, sac2cbase);                                       \
-        } else {                                                                         \
-            printf ("WARNING: SAC2CBASE is not set.\n");                                 \
-            libname[0] = '\0';                                                           \
-        }                                                                                \
-        libname = strcat (libname, library);                                             \
-                                                                                         \
-        libsac2c = dlopen (libname, DLOPEN_FLAGS);                                       \
-        free (libname);                                                                  \
-                                                                                         \
-        if (libsac2c == NULL) {                                                          \
-            printf ("ERROR: Cannot load shared library '%s'... aborting.\n", libname);   \
-            REPORTEDERROR;                                                               \
-            exit (10);                                                                   \
-        }                                                                                \
-                                                                                         \
-        mainptr.v = dlsym (libsac2c, mainfun);                                           \
-                                                                                         \
-        if (mainptr.f == NULL) {                                                         \
-            printf ("ERROR: Cannot find symbol '%s' in shared library "                  \
-                    "'%s'... aborting.\n",                                               \
-                    mainfun, libname);                                                   \
-            REPORTEDERROR;                                                               \
-            exit (10);                                                                   \
-        }                                                                                \
-                                                                                         \
-        result = mainptr.f (argc, argv);                                                 \
-                                                                                         \
-        if (dlclose (libsac2c) != 0) {                                                   \
-            printf ("ERROR: Cannot unload shared library '%s'... "                       \
-                    "aborting.\n",                                                       \
-                    libname);                                                            \
-            REPORTEDERROR;                                                               \
-            exit (10);                                                                   \
-        }                                                                                \
-    }
-
 static inline void
 report_error (void)
 {
     char *error = dlerror ();
 
-    if (!error)
-        fprintf (stderr,
-                 "The system returned the following error "
-                 "message: \"%s\"\n",
-                 error);
+    if (error)
+        fprintf (stderr, "dlopen: %s\n", error);
 }
 
 static inline int
