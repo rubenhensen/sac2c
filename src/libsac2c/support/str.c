@@ -1366,7 +1366,7 @@ STRsubstTokens (const char *str, int n, ...)
 
     for (i = 0; str[i] != '\0'; ++i) {
         for (j = 0; j < n; ++j) {
-            if (strncmp (patterns[j], str, sizes[j]) == 0) {
+            if (strncmp (patterns[j], str + i, sizes[j]) == 0) {
                 SBUFprint (buf, values[j]);
                 i += sizes[j] - 1;
                 break;
