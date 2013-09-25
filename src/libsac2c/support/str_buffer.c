@@ -152,6 +152,17 @@ SBUFgetBuffer (str_buf *s)
     DBUG_RETURN (s->buf);
 }
 
+char *
+SBUF2strAndFree (str_buf **s)
+{
+    DBUG_ENTER ();
+
+    char *result = (*s)->buf;
+    *s = MEMfree (*s);
+
+    DBUG_RETURN (result);
+}
+
 str_buf *
 SBUFfree (str_buf *s)
 {
