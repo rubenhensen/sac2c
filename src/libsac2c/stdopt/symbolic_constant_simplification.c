@@ -954,21 +954,22 @@ SawingTheBoardInTwo (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *isVal1IsSumOfVal2( node *arg1, node *arg2, info *arg_info)
+ * @fn node *isVal1IsSumOfVal2(,,,)
  *
- * @brief  Return TRUE if arg1 is part of a sum of arg2, and both
- *         arguments are non-negative.
+ * @brief  Return TRUE if arg1 is one argument to a sum on arg2, and
+ *         the sign of the sum's other argument is:
+ *           non-negative, if signum.
+ *           negative,     if !signum.
  *
  *         E.g., we have:
  *
- *             x'  = non_neg( x);
- *             y'  = non_neg( y);
- *             xy  = x' + y;
- *             z   = _min_SxS_( x', xy);
+ *             con'  = non_neg( con);
+ *             arg2  = arg2' + con';
+ *             z   = _min_SxS_( arg1, arg2);
  *
- *         We can use this function to determine that x' <= xy.
+ *         We can thus show that arg1 <= arg2, with signum == TRUE.
  *
- *         Do NOT assume that a FALSE result here means x' > xy; it
+ *         Do NOT assume that a FALSE result here means arg1 > arg2; it
  *         may just mean Do Not Know!
  *
  *         See above SawingTheBoardInTwo for a similar case.
@@ -978,7 +979,7 @@ SawingTheBoardInTwo (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 static bool
-isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info)
+isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info, bool signum)
 {
     bool z;
     pattern *patadd1;
@@ -997,6 +998,11 @@ isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info)
     z = z
         && (PMmatchFlat (patadd1, arg2) || // prf( arg1, arg1 + arg2);
             PMmatchFlat (patadd2, arg2));  // prf( arg1, arg2 + arg1);
+    if (signum) {
+        z = z && SCSisNonneg (v2);
+    } else {
+        z = z && SCSisNegative (v2);
+    }
 
     patadd1 = PMfree (patadd1);
     patadd2 = PMfree (patadd2);
@@ -2431,13 +2437,19 @@ SCSprf_max_SxS (node *arg_node, info *arg_info)
         }
     }
 
-    if ((NULL == res) && // max( x, x+y)
-        (isVal1IsSumOfVal2 (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info))) {
+    if ((NULL == res)
+        && ((isVal1IsSumOfVal2 (PRF_ARG1 (arg_node), // max( x, x+nonneg)
+                                PRF_ARG2 (arg_node), arg_info, TRUE))
+            || (isVal1IsSumOfVal2 (PRF_ARG2 (arg_node), // max( x+neg, x)
+                                   PRF_ARG1 (arg_node), arg_info, FALSE)))) {
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     }
 
-    if ((NULL == res) && // max( x+y, x)
-        (isVal1IsSumOfVal2 (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info))) {
+    if ((NULL == res)
+        && ((isVal1IsSumOfVal2 (PRF_ARG2 (arg_node), // max( x+nonneg, x)
+                                PRF_ARG1 (arg_node), arg_info, TRUE))
+            || (isVal1IsSumOfVal2 (PRF_ARG1 (arg_node), // max( x, x+neg)
+                                   PRF_ARG2 (arg_node), arg_info, FALSE)))) {
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -2505,13 +2517,19 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
         }
     }
 
-    if ((NULL == res) && // min( x, x+y)
-        (isVal1IsSumOfVal2 (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info))) {
+    if ((NULL == res)
+        && ((isVal1IsSumOfVal2 (PRF_ARG1 (arg_node), // min( x, x+nonneg)
+                                PRF_ARG2 (arg_node), arg_info, TRUE))
+            || (isVal1IsSumOfVal2 (PRF_ARG2 (arg_node), // min( x+neg, x)
+                                   PRF_ARG1 (arg_node), arg_info, FALSE)))) {
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
-    if ((NULL == res) && // min( x+y, x)
-        (isVal1IsSumOfVal2 (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info))) {
+    if ((NULL == res)
+        && ((isVal1IsSumOfVal2 (PRF_ARG2 (arg_node), // min( x+nonneg, x)
+                                PRF_ARG1 (arg_node), arg_info, TRUE))
+            || (isVal1IsSumOfVal2 (PRF_ARG1 (arg_node), // min( x, x+neg)
+                                   PRF_ARG2 (arg_node), arg_info, FALSE)))) {
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     }
 
