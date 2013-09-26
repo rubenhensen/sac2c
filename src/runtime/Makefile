@@ -2,9 +2,9 @@
 #
 # Calling conventions:
 #
-#  Start rules: 
+#  Start rules:
 #    default    compile default code (subproject dependent)
-#    devel      compile developer code 
+#    devel      compile developer code
 #    prod       compile product code
 #
 #    clean      cleanup derived files
@@ -31,10 +31,10 @@
 
 PROJECT_ROOT     := ../..
 
-HIDE             := 
+HIDE             :=
 DEPS             := yes
 
-PREFIX_LOCAL     := 
+PREFIX_LOCAL     :=
 PREFIX_ROOT      := $(PROJECT_ROOT)/
 
 MAKEFILE_DIR     := $(PROJECT_ROOT)/src/makefiles
@@ -93,13 +93,13 @@ make_%: checks
                     $(ECHO) "Removing `cat .last_style` targets for $($*_long) targets" ; \
                fi ; \
           fi
-	@$(ECHO) $($*_long) > .last_style; 
+	@$(ECHO) $($*_long) > .last_style;
 	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/build.mkf \
                          DEPS="$(DEPS)" HIDE="$(HIDE)" \
                          PREFIX_LOCAL="$(PREFIX_LOCAL)" \
                          PREFIX_ROOT="$(PREFIX_ROOT)" \
                          SUBPROJECT="$(SUBPROJECT)" \
-                         STYLE="$*" 
+                         STYLE="$*"
 	@$(RM) .make_track
 	@$(ECHO) ""
 
@@ -165,6 +165,3 @@ refactor: $(PROJECT_ROOT)/.revision.txt
 #
 
 include $(MAKEFILE_DIR)/check.mkf
-
-
-

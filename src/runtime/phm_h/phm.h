@@ -551,8 +551,8 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
  * position yields the same assembler code results as the current version
  * in command position, the new form has proved to be more efficient in
  * large applications for a still unknown reason.
- * 
- * The new form, however, is also more handy for introducing combined 
+ *
+ * The new form, however, is also more handy for introducing combined
  * allocation facilities for data structures and their associated descriptors.
  */
 
