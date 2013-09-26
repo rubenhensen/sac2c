@@ -9,6 +9,7 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <ctype.h>
 
 #define DBUG_PREFIX "FMGR"
 #include "debug.h"
@@ -27,12 +28,24 @@
 #include "str.h"
 #include "str_buffer.h"
 
-static char path_bufs[4][PATH_MAX];
-static int bufsize[4];
+static str_buf *path_bufs[PK_LAST];
+
+static void
+FMGRensureInitialized (void)
+{
+    static int FMGRinitDone = 0;
+    if (FMGRinitDone == 0) {
+        int i;
+        for (i = 0; i < PK_LAST; ++i)
+            path_bufs[i] = SBUFcreate (1);
+
+        FMGRinitDone = 1;
+    }
+}
 
 /*
  *
- *  functionname  : FMGRfindFile
+ *  functionname  : FMGRfindFilePath
  *  arguments     :
  *  description   :
  *  global vars   : ---
@@ -48,65 +61,49 @@ char *
 FMGRfindFilePath (pathkind_t p, const char *name)
 {
     FILE *file = NULL;
-    static char buffer[NAME_MAX];
-    // static char buffer2[PATH_MAX];
-    char *buffer2 = NULL;
-    char *path;
-    char *result = NULL;
+    char *path = NULL;
 
     DBUG_ENTER ();
+    FMGRensureInitialized ();
 
     if (name[0] == '/') { /* absolute path specified! */
         file = fopen (name, "r");
-        path = "";
+        path = STRcpy ("");
     } else {
-        /* We want to expand shell variables in the path first.  */
-        str_buf *sbuffer = SBUFcreate (128);
+        char *buffer = SBUF2str (path_bufs[p]);
+        path = strtok (buffer, ":");
 
-        SBUFprintf (sbuffer, "printf '%%s' %s", path_bufs[p]);
-        buffer2 = SYSexec_and_read_output (SBUF2str (sbuffer));
-        SBUFfree (sbuffer);
-
-        path = strtok (buffer2, ":");
-        while ((file == NULL) && (path != NULL)) {
-            if (path[0] != '\0') {
-                strcpy (buffer, path);
-                strcat (buffer, "/");
-                strcat (buffer, name);
-                DBUG_PRINT ("trying file %s\n", buffer);
-                file = fopen (buffer, "r");
-                if (file == NULL) {
-                    path = strtok (NULL, ":");
-                }
-            } else {
-                path = strtok (NULL, ":");
-            }
+        while (path != NULL) {
+            char *fpath = STRcatn (3, path, "/", name);
+            file = fopen (fpath, "r");
+            if (file != NULL)
+                break;
+            path = strtok (NULL, ":");
         }
+        if (path != NULL) {
+            path = STRcpy (path);
+        }
+        buffer = MEMfree (buffer);
     }
+
     if (file != NULL) {
         fclose (file);
-        result = STRcpy (path);
-        if (buffer2)
-            MEMfree (buffer2);
     }
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (path);
 }
 
 char *
 FMGRfindFile (pathkind_t p, const char *name)
 {
-    static char buffer[PATH_MAX];
-    char *result;
-
     DBUG_ENTER ();
 
-    result = FMGRfindFilePath (p, name);
+    char *result = FMGRfindFilePath (p, name);
 
     if (result != NULL) {
-        snprintf (buffer, PATH_MAX - 1, "%s/%s", result, name);
+        char *tmp = STRcatn (3, result, "/", name);
         MEMfree (result);
-        result = buffer;
+        result = tmp;
     }
 
     DBUG_RETURN (result);
@@ -115,65 +112,21 @@ FMGRfindFile (pathkind_t p, const char *name)
 void *
 FMGRmapPath (pathkind_t p, void *(*mapfun) (const char *, void *), void *neutral)
 {
-    void *result = neutral;
-    static char buffer[PATH_MAX];
-    char *path;
-
     DBUG_ENTER ();
+    FMGRensureInitialized ();
 
-    strncpy (buffer, path_bufs[p], PATH_MAX);
-    path = strtok (buffer, ":");
+    void *result = neutral;
+
+    char *buffer = SBUF2str (path_bufs[p]);
+    char *path = strtok (buffer, ":");
 
     while (path != NULL) {
         result = mapfun (path, result);
         path = strtok (NULL, ":");
     }
+    buffer = MEMfree (buffer);
 
     DBUG_RETURN (result);
-}
-
-/******************************************************************************
- *
- * function:
- *   bool FMGRcheckExistFile(const char *dir, const char *name)
- *
- * description:
- *
- *   This function checks whether a given file exists in a given directory.
- *   If the given directory is NULL then the current directory is taken.
- *   More precisely, it is checked whether or not the file may be opened
- *   for reading which in most cases is what we want to know.
- *
- ******************************************************************************/
-
-bool
-FMGRcheckExistFile (const char *dir, const char *name)
-{
-    char *tmp;
-    FILE *file;
-    bool res;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (name != NULL, "Function FMGRcheckExistFile() called with name NULL");
-
-    if (dir == NULL) {
-        dir = "";
-    }
-
-    tmp = STRcatn (3, dir, "/", name);
-
-    file = fopen (tmp, "r");
-    tmp = MEMfree (tmp);
-
-    if (file == NULL) {
-        res = FALSE;
-    } else {
-        res = TRUE;
-        fclose (file);
-    }
-
-    DBUG_RETURN (res);
 }
 
 /** <!-- ****************************************************************** -->
@@ -188,16 +141,21 @@ FMGRcheckExistFile (const char *dir, const char *name)
 bool
 FMGRcheckExistDir (const char *dir)
 {
-    int status;
-    struct stat buffer;
+    bool res;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (dir != NULL, "Function FMGRcheckExistDir() called with dir NULL");
 
-    status = stat (dir, &buffer);
+    DIR *d = opendir (dir);
+    if (d == NULL) {
+        res = FALSE;
+    } else {
+        res = TRUE;
+        closedir (d);
+    }
 
-    DBUG_RETURN ((status == 0));
+    DBUG_RETURN (res);
 }
 
 /*
@@ -217,19 +175,12 @@ FMGRcheckExistDir (const char *dir)
 void
 FMGRappendPath (pathkind_t p, const char *path)
 {
-    int len;
-
     DBUG_ENTER ();
+    FMGRensureInitialized ();
 
-    len = STRlen (path) + 1;
-    if (len + bufsize[p] >= PATH_MAX) {
-        CTIabort ("PATH_MAX too low");
-    } else {
-        strcat (path_bufs[p], ":");
-        strcat (path_bufs[p], path);
-        DBUG_PRINT ("appending \":%s\" to path %d", path, p);
-        bufsize[p] += len;
-    }
+    SBUFprintf (path_bufs[p], ":%s", path);
+
+    DBUG_PRINT ("appending \":%s\" to path %d", path, p);
 
     DBUG_RETURN ();
 }
@@ -251,22 +202,14 @@ FMGRappendPath (pathkind_t p, const char *path)
 static void
 AppendEnvVar (pathkind_t p, const char *var)
 {
-    int len;
-    char *buffer;
-
     DBUG_ENTER ();
+    FMGRensureInitialized ();
 
-    buffer = getenv (var);
+    char *buffer = getenv (var);
     if (buffer != NULL) {
-        len = (STRlen (buffer) + 1);
-        if (len + bufsize[p] >= PATH_MAX) {
-            CTIabort ("PATH_MAX too low");
-        } else {
-            strcat (path_bufs[p], ":");
-            strcat (path_bufs[p], buffer);
-            DBUG_PRINT ("appending \":%s\" to path %d", buffer, p);
-            bufsize[p] += len;
-        }
+        SBUFprintf (path_bufs[p], ":%s", buffer);
+
+        DBUG_PRINT ("appending \":%s\" to path %d", buffer, p);
     }
     DBUG_RETURN ();
 }
@@ -287,25 +230,19 @@ AppendEnvVar (pathkind_t p, const char *var)
 static void
 AppendConfigPaths (pathkind_t pathkind, const char *path)
 {
-    char *pathentry;
-    char *ptoken;
-
     DBUG_ENTER ();
 
     /*
-     * we have to copy path here, as strtok modifies it
+     * since the format of the argument path
+     * is the same as the stored set of paths
+     * (colon-separated strings), we don't have much to do...
      */
-
-    ptoken = STRcpy (path);
-
-    pathentry = strtok (ptoken, ":");
-
+    char *ptoken = STRcpy (path);
+    char *pathentry = strtok (ptoken, ":");
     while (pathentry != NULL) {
-
         FMGRappendPath (pathkind, pathentry);
         pathentry = strtok (NULL, ":");
     }
-
     ptoken = MEMfree (ptoken);
 
     DBUG_RETURN ();
@@ -341,140 +278,85 @@ FMGRsetupPaths (void)
     DBUG_ENTER ();
 
     FMGRappendPath (PK_path, ".");
-    FMGRappendPath (PK_lib_path, ".");
-    FMGRappendPath (PK_imp_path, ".");
-    FMGRappendPath (PK_extlib_path, ".");
-
     AppendEnvVar (PK_path, "SAC_PATH");
-    AppendEnvVar (PK_lib_path, "SAC_LIBRARY_PATH");
-    AppendEnvVar (PK_imp_path, "SAC_IMPLEMENTATION_PATH");
+    DBUG_PRINT ("Source files searched in %s", SBUFgetBuffer (path_bufs[PK_path]));
 
-    AppendConfigPaths (PK_lib_path, global.config.libpath);
-    AppendConfigPaths (PK_imp_path, global.config.imppath);
-    AppendConfigPaths (PK_extlib_path, global.config.extlibpath);
+#define INIT_PATH(Path, RName, Var)                                                      \
+    FMGRappendPath (PK_##Path##_path, ".");                                              \
+    AppendEnvVar (PK_##Path##_path, Var);                                                \
+    AppendConfigPaths (PK_##Path##_path, global.config.Path##path);                      \
+    DBUG_PRINT (#RName "PATH is %s", SBUFgetBuffer (path_bufs[PK_##Path##_path]));
 
-    DBUG_PRINT ("PATH is %s", path_bufs[PK_path]);
-    DBUG_PRINT ("LIB_PATH is %s", path_bufs[PK_lib_path]);
-    DBUG_PRINT ("IMP_PATH is %s", path_bufs[PK_imp_path]);
-    DBUG_PRINT ("EXTLIB_PATH is %s", path_bufs[PK_extlib_path]);
+    INIT_PATH (imp, IMP, "SAC_IMPLEMENTATION_PATH");
+    INIT_PATH (lib, LIB, "SAC_LIBRARY_PATH");
+    INIT_PATH (inc, INC, "SAC_INCLUDES_PATH");
+    INIT_PATH (tree, TREE, "SAC_TREE_PATH");
+    INIT_PATH (extlib, EXTLIB, "SAC_EXTERNAL_LIBRARY_PATH");
 
     DBUG_RETURN ();
 }
 
 /*
- *
- *  functionname  : FMGRabsolutePathname
- *  arguments     : 1) path name
- *  description   : turns relative path names into absolute path names
- *  global vars   : ---
- *  internal funs : ---
- *  external funs : strcpy, strncmp, getcwd, strrchr, strcat
- *  macros        : PATH_MAX
- *
- *  remarks       :
- *
+ * Retrieve the "directory" part of the path.
  */
-
-const char *
-FMGRabsolutePathname (const char *path)
-{
-    char *tmp, *cwd;
-    static char buffer[PATH_MAX];
-
-    DBUG_ENTER ();
-
-    if (path[0] == '/') {
-        strcpy (buffer, path);
-    } else {
-        cwd = getcwd (buffer, PATH_MAX);
-
-        DBUG_ASSERT (cwd == buffer, "Call to getcwd() failed.");
-
-        while (0 == strncmp ("../", path, 3)) {
-            path += 3;
-            tmp = strrchr (buffer, '/');
-            *tmp = 0;
-        }
-
-        if (0 == strncmp ("./", path, 2)) {
-            path += 2;
-        }
-
-        strcat (buffer, "/");
-        strcat (buffer, path);
-    }
-
-    DBUG_RETURN (buffer);
-}
-
-const char *
+char *
 FMGRdirname (const char *path)
 {
-    static char buffer[PATH_MAX];
-    const char *last = NULL;
-
     DBUG_ENTER ();
 
-    last = strrchr (path, '/');
+    const char *last = strrchr (path, '/');
+    char *result;
 
     if (last == NULL) {
         /* No dir */
-        strcpy (buffer, "./");
+        result = STRcpy (".");
     } else {
-        DBUG_ASSERT (last > path, "End is before the beginning");
-        memcpy (buffer, path, last - path);
-        buffer[last - path + 0] = '/';
-        buffer[last - path + 1] = '\0';
+        result = MEMmalloc (last - path + 1);
+        memcpy (result, path, last - path);
+        result[last - path] = '\0';
     }
 
-    DBUG_RETURN (buffer);
+    DBUG_RETURN (result);
 }
 
-const char *
+/*
+ * Retrieve the "basename" part of the path.
+ */
+char *
 FMGRbasename (const char *path)
 {
-    static char buffer[PATH_MAX];
-    const char *last = NULL;
-
     DBUG_ENTER ();
 
-    last = strrchr (path, '/');
-
+    const char *last = strrchr (path, '/');
     if (last == NULL) {
         last = path;
+    } else {
+        ++last;
     }
+    char *result = STRcpy (last);
 
-    strcpy (buffer, last);
-
-    DBUG_RETURN (buffer);
+    DBUG_RETURN (result);
 }
 
 /*
  * Convert file name to identifier
  * Make non alpha numeric '_'
  */
-const char *
+char *
 FMGRfile2id (const char *path)
 {
-    static char buffer[PATH_MAX];
-    char *current = NULL;
-
     DBUG_ENTER ();
 
-    strcpy (buffer, path);
+    char *result = STRcpy (path);
+    char *current = result;
 
-    current = buffer;
-
-    while (current[0] != '\0') {
-        if ((current[0] < 'a' || current[0] > 'z')
-            && (current[0] < 'A' || current[0] > 'Z')
-            && (current[0] < '0' || current[0] > '9')) {
-            current[0] = '_';
-        }
-        current++;
+    while (*current != '\0') {
+        if (!isalnum (*current))
+            *current = '_';
+        ++current;
     }
 
-    DBUG_RETURN (buffer);
+    DBUG_RETURN (result);
 }
 
 /*
@@ -504,7 +386,7 @@ FMGRwriteOpen (const char *format, ...)
     DBUG_ENTER ();
 
     va_start (arg_p, format);
-    vsprintf (buffer, format, arg_p);
+    vsnprintf (buffer, PATH_MAX - 1, format, arg_p);
     va_end (arg_p);
 
     file = fopen (buffer, "w");
@@ -545,7 +427,7 @@ FMGRreadOpen (const char *format, ...)
     DBUG_ENTER ();
 
     va_start (arg_p, format);
-    vsprintf (buffer, format, arg_p);
+    vsnprintf (buffer, PATH_MAX - 1, format, arg_p);
     va_end (arg_p);
 
     file = fopen (buffer, "r");
@@ -585,7 +467,7 @@ FMGRwriteOpenExecutable (const char *format, ...)
     DBUG_ENTER ();
 
     va_start (arg_p, format);
-    vsprintf (buffer, format, arg_p);
+    vsnprintf (buffer, PATH_MAX - 1, format, arg_p);
     va_end (arg_p);
 
     fd = open (buffer, O_CREAT | O_WRONLY | O_TRUNC,
@@ -627,7 +509,7 @@ FMGRappendOpen (const char *format, ...)
     DBUG_ENTER ();
 
     va_start (arg_p, format);
-    vsprintf (buffer, format, arg_p);
+    vsnprintf (buffer, PATH_MAX - 1, format, arg_p);
     va_end (arg_p);
 
     file = fopen (buffer, "a");
@@ -668,7 +550,7 @@ FMGRclose (FILE *file)
  *
  * Description:
  *   Sets the global variables
- *     modulename, modulenamespace, outfilename, cfilename, targetdir
+ *     modulename, modulenamespace, outfilename, targetdir
  *   according to the kind of file and the -o command line option.
  *
  ******************************************************************************/
@@ -689,20 +571,12 @@ FMGRsetFileNames (node *module)
 
         if (global.outfilename == NULL) {
             global.outfilename = STRcpy ("a.out");
-            if (global.backend != BE_cuda && global.backend != BE_cudahybrid) {
-                global.cfilename = STRcpy ("a.out.c");
-            } else {
-                global.cfilename = STRcpy ("a.out.cu");
-            }
-            global.targetdir = "";
-        } else {
-            if (global.backend != BE_cuda && global.backend != BE_cudahybrid) {
-                global.cfilename = STRcat (global.outfilename, ".c");
-            } else {
-                global.cfilename = STRcat (global.outfilename, ".cu");
-            }
-            global.targetdir = "";
         }
+
+        global.targetdir = FMGRdirname (global.outfilename);
+        char *tmp = FMGRbasename (global.outfilename);
+        MEMfree (global.outfilename);
+        global.outfilename = tmp;
     } else {
         if (global.sacfilename != NULL) {
             buffer = STRcat (NSgetName (MODULE_NAMESPACE (module)), ".sac");
@@ -717,9 +591,9 @@ FMGRsetFileNames (node *module)
         }
 
         if (global.outfilename == NULL) {
-            global.targetdir = "";
+            global.targetdir = ".";
         } else {
-            global.targetdir = STRcat (global.outfilename, "/");
+            global.targetdir = global.outfilename;
             if (!FMGRcheckExistDir (global.targetdir)) {
                 CTIabort ("Target directory `%s' does not exist.", global.targetdir);
             }
@@ -727,8 +601,7 @@ FMGRsetFileNames (node *module)
 
         global.modulenamespace = NSdupNamespace (MODULE_NAMESPACE (module));
         global.modulename = STRcpy (NSgetName (MODULE_NAMESPACE (module)));
-        global.cfilename = STRcat (global.modulename, ".c");
-        global.outfilename = STRcat (global.modulename, ".out");
+        global.outfilename = STRcpy (global.modulename);
     }
 
     DBUG_RETURN ();

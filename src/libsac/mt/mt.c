@@ -15,9 +15,7 @@
  *
  *****************************************************************************/
 
-#if ENABLE_MT
-
-#ifdef MT
+#if SAC_MT_MODE > 0
 
 #include <pthread.h>
 #include <stdio.h>
@@ -175,5 +173,3 @@ unsigned int SAC_MT_globally_single = 1;
 unsigned int SAC_MT_hm_aux_threads = 0;
 
 #endif /* MT */
-
-#endif /* ENABLE_MT */

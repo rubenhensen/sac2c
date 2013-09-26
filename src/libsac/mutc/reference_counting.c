@@ -12,7 +12,7 @@
  *   It provides definitions of functions to maintain reference count.
  *
  *****************************************************************************/
-#define SAC_BACKEND MUTC
+#ifdef SAC_BACKEND_MUTC
 #define SAC_DO_COMPILE_MODULE 1
 #include <sac.h>
 
@@ -172,3 +172,4 @@ sl_def (SAC_rc_barrier_w, void, sl_glparm (int *, desc))
     sl_sync ();
 }
 sl_enddef
+#endif

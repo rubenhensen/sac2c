@@ -34,6 +34,7 @@
 #include "phase_info.h"
 #include "resource.h"
 #include "runtime_compiler.h"
+#include "str_buffer.h"
 
 /******************************************************************************
  *
@@ -152,28 +153,28 @@ OPTcheckOptionConsistency (void)
         CTIerror ("Private heap management disabled for this SBI.");
     }
 
+    global.mtmode = MT_none;
+    switch (global.config.mt_mode) {
+    case 0:
+        break;
+    case 1:
+        global.mtmode = MT_createjoin;
+        break;
+    case 2:
+        global.mtmode = MT_startstop;
+        break;
+    case 3:
+        global.mtmode = MT_mtstblock;
+        break;
+    default:
+        CTIerror ("Target MT_MODE has an invalid value.");
+    }
+
     if (STReq (global.config.backend, "MUTC")) {
 
-#if !ENABLE_MUTC
-        CTIerror ("MuTC support disabled in this installation.");
-#endif
-
         if (global.mtmode != MT_none) {
-            CTIerror ("Traditional MT modes are not available for the MUTC "
-                      "backend.");
+            CTIerror ("The MUTC backend only supports MT_MODE = 0.");
         }
-
-#if 0
-    /* This causes fft to fail if removed do not know why.  CAJ 110426*/
-    CTInote( "Disabling reference counting optimisations not suitable "
-             "for mutc backend.");
-    global.optimize.dosrf = FALSE;
-    /* global.optimize.doipc = FALSE; */
-    /* global.optimize.douip = FALSE; */
-    /* global.optimize.dodr = FALSE; */
-    /* global.optimize.dorco = FALSE; */
-
-#endif
 
         if ((global.mutc_disable_thread_mem == TRUE)
             && (global.mutc_thread_mem == TRUE)) {
@@ -247,22 +248,20 @@ OPTcheckOptionConsistency (void)
                  "Insertion of explicit conformity checks has been enabled.");
     }
 
-    /* turn on default multithreading if using cuda hybrid backend */
     if (global.backend == BE_cudahybrid && global.mtmode == MT_none) {
-        global.mtmode = MT_startstop;
-        global.num_threads = 0;
+        CTIerror ("Target MT_MODE must be set with BACKEND CudaHybrid.");
     }
 
-#if !ENABLE_MT
-    if (global.mtmode != MT_none) {
-        global.mtmode = MT_none;
-        global.num_threads = 1;
-        CTIerror ("Code generation for multi-threaded program execution not"
-                  " yet available for " ARCH " running " OS ".");
+    if (global.backend == BE_omp) {
+        if (global.mtmode == MT_none) {
+            CTIerror ("Target MT_MODE must be set with BACKEND omp.");
+        }
+        if (!STReq (global.config.mt_lib, "omp")) {
+            CTIerror ("Target MT_LIB must be set to omp with BACKEND omp.");
+        }
     }
-#endif
 
-    if (global.mtmode != MT_none) {
+    if (global.backend == BE_c99 && global.mtmode != MT_none) {
         /* multithreading requested */
         /* check the mt_lib spec */
         if (!(STReq (global.config.mt_lib, "lpel")
@@ -271,14 +270,11 @@ OPTcheckOptionConsistency (void)
             global.num_threads = 1;
             CTIerror ("The MT_LIB specification can be either 'pthread' or 'lpel'.");
         }
-#if !ENABLE_MT_LPEL
-        if (STReq (global.config.mt_lib, "lpel")) {
-            global.mtmode = MT_none;
-            global.num_threads = 1;
-            CTIerror ("Code generation for LPEL-base multi-threaded program execution not"
-                      " configured during compiler build.");
-        }
-#endif
+    }
+
+    if (global.config.rtspec != 0 && global.maxspec > 0) {
+        CTIwarn ("RTSPEC set by target, forcing -maxspec 0.");
+        global.maxspec = 0;
     }
 
     if (global.mtmode != MT_none) {
@@ -341,28 +337,8 @@ OPTcheckOptionConsistency (void)
         CTIwarn ("AWLF is enabled: -maxoptcyc=%d", global.max_optcycles);
     }
 
-#if !ENABLE_RTSPEC || !ENABLE_MT
-    if (global.rtspec) {
-        CTIerror ("Runtime specialization (-rtspec) not supported by this installation.");
-    }
-#endif
-
-#if !ENABLE_OMP
-    if (STReq (global.config.backend, "omp")) {
-        CTIerror ("OpenMP backend (-target) not supported by this installation.");
-    }
-#endif
-
-    if ((global.mtmode != MT_none) && (global.num_threads == 1)) {
-        CTIwarn ("Multithreading activated but number of threads set to 1."
-                 "Compiling in sequential mode");
-        global.mtmode = MT_none;
-    }
-
     if ((global.mtmode == MT_none) && (global.num_threads != 1)) {
-        CTIwarn ("Number of threads set via -num_threads option, "
-                 "but multithreading not activated. "
-                 "Compiling in sequential mode");
+        CTIwarn ("MT_MODE = 0 in target, forcing -numthreads to 1.");
         global.num_threads = 1;
     }
 
@@ -373,36 +349,40 @@ OPTcheckOptionConsistency (void)
     } else if (STReq (global.config.rc_method, "async")) {
     } else if (STReq (global.config.rc_method, "local_norc_desc")) {
         if (global.backend != BE_mutc) {
-            CTIerror ("Specified reference counting method is currently only "
-                      "supported for the backend BE_mutc!");
+            CTIerror ("Specified reference counting method %s is currently only "
+                      "supported for the backend BE_mutc!",
+                      global.config.rc_method);
         }
     } else if (STReq (global.config.rc_method, "local_norc_ptr")) {
         if (global.backend != BE_mutc) {
-            CTIerror ("Specified reference counting method is currently only "
-                      "supported for the backend BE_mutc!");
+            CTIerror ("Specified reference counting method %s is currently only "
+                      "supported for the backend BE_mutc!",
+                      global.config.rc_method);
         }
     } else if (STReq (global.config.rc_method, "async_norc_copy_desc")) {
         if (global.backend != BE_mutc) {
-            CTIerror ("Specified reference counting method is currently only "
-                      "supported for the backend BE_mutc!");
+            CTIerror ("Specified reference counting method %s is currently only "
+                      "supported for the backend BE_mutc!",
+                      global.config.rc_method);
         }
     } else if (STReq (global.config.rc_method, "async_norc_two_descs")) {
-        CTIerror ("Specified reference counting method is currently not supported!");
+        CTIerror ("Specified reference counting method %s is currently not supported!",
+                  global.config.rc_method);
     } else if (STReq (global.config.rc_method, "async_norc_ptr")) {
         if (global.backend != BE_mutc) {
-            CTIerror ("Specified reference counting method is currently only "
-                      "supported for the backend BE_mutc!");
+            CTIerror ("Specified reference counting method %s is currently only "
+                      "supported for the backend BE_mutc!",
+                      global.config.rc_method);
         }
     } else if (STReq (global.config.rc_method, "local_pasync_norc_desc")) {
-#if 0
-    if( global.backend != BE_mutc){
-      CTIwarn( "Specified reference counting method is experimental!");
-    }
-#endif
+        CTIwarn ("Specified reference counting method %s is a work in progress!",
+                 global.config.rc_method);
     } else if (STReq (global.config.rc_method, "local_async_norc_ptr")) {
-        CTIwarn ("Specified reference counting method is a work in progress!");
+        CTIwarn ("Specified reference counting method %s is a work in progress!",
+                 global.config.rc_method);
     } else if (STReq (global.config.rc_method, "local_pasync")) {
-        CTIwarn ("Specified reference counting method is a work in progress!");
+        CTIwarn ("Specified reference counting method %s is a work in progress!",
+                 global.config.rc_method);
     } else {
         CTIerror ("Illegal reference counting method specified RC_METHOD == %s !",
                   global.config.rc_method);
@@ -434,9 +414,13 @@ static void
 AnalyseCommandlineSac2c (int argc, char *argv[])
 {
     int store_num_threads = 0;
-    mtmode_t store_mtmode = MT_none;
 
     DBUG_ENTER ();
+
+    str_buf *cflags_buf = SBUFcreate (1);
+    str_buf *ldflags_buf = SBUFcreate (1);
+    str_buf *tree_cflags_buf = SBUFcreate (1);
+    str_buf *tree_ldflags_buf = SBUFcreate (1);
 
     ARGS_BEGIN (argc, argv);
 
@@ -516,12 +500,28 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("cshost", strncpy (global.cachesim_host, ARG, NAME_MAX - 1));
 
-    ARGS_OPTION ("ccflag", strncpy (global.ccflags, ARG, NAME_MAX - 1));
-    ARGS_FIXED ("Xc", strncpy (global.ccflags, ARG, NAME_MAX - 1));
+    ARGS_OPTION ("ccflag",
+                 CTIwarn ("Option -ccflag is deprecated, consider using -Xc instead.");
+                 SBUFprintf (cflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xc", SBUFprintf (cflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xl", SBUFprintf (ldflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xtc", SBUFprintf (tree_cflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xtl", SBUFprintf (tree_ldflags_buf, " %s", ARG));
 
     ARGS_FLAG ("cs", global.docachesim = FALSE);
 
     ARGS_FLAG ("c", global.break_after_phase = PH_cg);
+
+    ARGS_OPTION_BEGIN ("cc")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("ldprog", global.do_clink = DO_C_prog);
+        ARG_CHOICE ("ldmod", global.do_clink = DO_C_mod);
+        ARG_CHOICE ("ccprog", global.do_ccompile = DO_C_prog);
+        ARG_CHOICE ("ccmod", global.do_ccompile = DO_C_mod);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("cc");
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
@@ -595,7 +595,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("E")
     {
-        FMGRappendPath (PK_extlib_path, FMGRabsolutePathname (ARG));
+        FMGRappendPath (PK_extlib_path, ARG);
     }
     ARGS_OPTION_END ("E");
 
@@ -644,7 +644,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("I")
     {
-        FMGRappendPath (PK_imp_path, FMGRabsolutePathname (ARG));
+        FMGRappendPath (PK_imp_path, ARG);
     }
     ARGS_OPTION_END ("I");
 
@@ -658,7 +658,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("L")
     {
-        FMGRappendPath (PK_lib_path, FMGRabsolutePathname (ARG));
+        FMGRappendPath (PK_lib_path, ARG);
     }
     ARGS_OPTION_END ("L");
 
@@ -676,28 +676,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /*
      * Options starting with mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
      */
-
-    ARGS_FLAG ("mt", {
-        if (store_mtmode == MT_none) {
-            global.mtmode = MT_startstop; /*default*/
-        } else {
-            global.mtmode = store_mtmode;
-        }
-
-        if (store_num_threads > 0) {
-            global.num_threads = store_num_threads;
-        } else {
-            global.num_threads = 0;
-        }
-    });
-
-    ARGS_OPTION_BEGIN ("mtmode")
-    {
-        ARG_RANGE (store_mtmode, (int)MT_createjoin, (int)MT_mtstblock);
-        if (global.mtmode != MT_none)
-            global.mtmode = store_mtmode;
-    }
-    ARGS_OPTION_END ("mtmode");
 
     ARGS_OPTION ("maxnewgens", ARG_NUM (global.max_newgens));
 
@@ -780,9 +758,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("numthreads")
     {
         ARG_RANGE (store_num_threads, 1, global.max_threads);
-        if (global.mtmode != MT_none) {
-            global.num_threads = store_num_threads;
-        }
+        global.num_threads = store_num_threads;
     }
     ARGS_OPTION_END ("numthreads");
 
@@ -823,8 +799,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /*
      * Options starting with ppppppppppppppppppppppppppppppppppppppppppp
      */
-
-    ARGS_FLAG ("prefix", global.printPrefix = TRUE);
 
     ARGS_OPTION ("printstart", PHOinterpretStartPhase (ARG))
 
@@ -891,14 +865,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      */
 
     /* -- Runtime Specialization -- */
-
-    /* Specialization has to be turned of otherwise the compiler will pick the
-     * most generic function instead of the wrapper entry function.
-     */
-    ARGS_FLAG ("rtspec", {
-        global.rtspec = TRUE;
-        global.maxspec = 0;
-    });
 
     ARGS_FLAG ("runtime", global.runtime = TRUE);
 
@@ -979,6 +945,12 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("t", global.target_name = ARG);
 
+    ARGS_OPTION_BEGIN ("T")
+    {
+        FMGRappendPath (PK_tree_path, ARG);
+    }
+    ARGS_OPTION_END ("T");
+
     /*
      * Options starting with uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
      */
@@ -1029,13 +1001,11 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         if (global.sacfilename == NULL) {
             global.sacfilename = STRcpy (ARG);
 
-            global.puresacfilename = strrchr (global.sacfilename, '/');
-
-            if (global.puresacfilename == NULL) {
-                global.puresacfilename = global.sacfilename;
-            } else {
-                global.puresacfilename += 1;
-            }
+            global.puresacfilename = FMGRbasename (global.sacfilename);
+        } else if (global.do_clink) {
+            char *tmp = STRcatn (3, global.sacfilename, " ", ARG);
+            MEMfree (global.sacfilename);
+            global.sacfilename = tmp;
         } else {
             ARGS_ERROR ("Too many source files specified");
         }
@@ -1045,6 +1015,11 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_END ();
 
+    global.cflags = SBUF2strAndFree (&cflags_buf);
+    global.ldflags = SBUF2strAndFree (&ldflags_buf);
+    global.tree_cflags = SBUF2strAndFree (&tree_cflags_buf);
+    global.tree_ldflags = SBUF2strAndFree (&tree_ldflags_buf);
+
     DBUG_RETURN ();
 }
 
@@ -1052,7 +1027,10 @@ static void
 AnalyseCommandlineSac4c (int argc, char *argv[])
 {
     int store_num_threads = 0;
-    mtmode_t store_mtmode = MT_none;
+    str_buf *cflags_buf = SBUFcreate (1);
+    str_buf *ldflags_buf = SBUFcreate (1);
+    str_buf *tree_cflags_buf = SBUFcreate (1);
+    str_buf *tree_ldflags_buf = SBUFcreate (1);
 
     DBUG_ENTER ();
 
@@ -1074,10 +1052,13 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_FLAG ("ccflags", global.printccflags = TRUE;);
 
-    /* it is very unfortunate to have two similarly named, but different, options
-     * ccflags and ccflag. Can I do something about it? */
-    ARGS_OPTION ("ccflag", strncpy (global.ccflags, ARG, NAME_MAX - 1));
-    ARGS_FIXED ("Xc", strncpy (global.ccflags, ARG, NAME_MAX - 1));
+    ARGS_OPTION ("ccflag",
+                 CTIwarn ("Option -ccflag is deprecated, consider using -Xc instead.");
+                 SBUFprintf (cflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xc", SBUFprintf (cflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xl", SBUFprintf (ldflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xtc", SBUFprintf (tree_cflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xtl", SBUFprintf (tree_ldflags_buf, " %s", ARG));
 
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
@@ -1101,7 +1082,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("E")
     {
-        FMGRappendPath (PK_extlib_path, FMGRabsolutePathname (ARG));
+        FMGRappendPath (PK_extlib_path, ARG);
     }
     ARGS_OPTION_END ("E");
 
@@ -1126,7 +1107,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("I")
     {
-        FMGRappendPath (PK_imp_path, FMGRabsolutePathname (ARG));
+        FMGRappendPath (PK_imp_path, ARG);
     }
     ARGS_OPTION_END ("I");
 
@@ -1142,40 +1123,18 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("libdir")
     global.lib_dirname = STRcpy (ARG);
-    FMGRappendPath (PK_extlib_path, FMGRabsolutePathname (ARG));
+    FMGRappendPath (PK_extlib_path, ARG);
     ARGS_OPTION_END ("libdir");
 
     ARGS_OPTION_BEGIN ("L")
     {
-        FMGRappendPath (PK_lib_path, FMGRabsolutePathname (ARG));
+        FMGRappendPath (PK_lib_path, ARG);
     }
     ARGS_OPTION_END ("L");
 
     /*
      * Options starting with mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
      */
-
-    ARGS_FLAG ("mt", {
-        if (store_mtmode == MT_none) {
-            global.mtmode = MT_startstop; /*default*/
-        } else {
-            global.mtmode = store_mtmode;
-        }
-
-        if (store_num_threads > 0) {
-            global.num_threads = store_num_threads;
-        } else {
-            global.num_threads = 0;
-        }
-    });
-
-    ARGS_OPTION_BEGIN ("mtmode")
-    {
-        ARG_RANGE (store_mtmode, MT_createjoin, MT_mtstblock);
-        if (global.mtmode != MT_none)
-            global.mtmode = store_mtmode;
-    }
-    ARGS_OPTION_END ("mtmode");
 
     /*
      * Options starting with nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
@@ -1184,9 +1143,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("numthreads")
     {
         ARG_RANGE (store_num_threads, 1, global.max_threads);
-        if (global.mtmode != MT_none) {
-            global.num_threads = store_num_threads;
-        }
+        global.num_threads = store_num_threads;
     }
     ARGS_OPTION_END ("numthreads");
 
@@ -1214,8 +1171,27 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      * Options starting with ttttttttttttttttttttttttttttttttttttttttttt
      */
 
-    ARGS_OPTION ("target", global.target_name = ARG);
-    ARGS_OPTION ("t", global.target_name = ARG);
+    ARGS_OPTION_BEGIN ("target")
+    {
+        if (global.target_name != NULL)
+            CTIabort ("-target specified more than once.");
+        global.target_name = ARG;
+    }
+    ARGS_OPTION_END ("target");
+
+    ARGS_OPTION_BEGIN ("t")
+    {
+        if (global.target_name != NULL)
+            CTIabort ("-target specified more than once.");
+        global.target_name = ARG;
+    }
+    ARGS_OPTION_END ("t");
+
+    ARGS_OPTION_BEGIN ("T")
+    {
+        FMGRappendPath (PK_tree_path, ARG);
+    }
+    ARGS_OPTION_END ("T");
 
     /*
      * Options starting with vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -1263,6 +1239,11 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_UNKNOWN (ARGS_ERROR ("Invalid command line entry"));
 
     ARGS_END ();
+
+    global.cflags = SBUF2strAndFree (&cflags_buf);
+    global.ldflags = SBUF2strAndFree (&ldflags_buf);
+    global.tree_cflags = SBUF2strAndFree (&tree_cflags_buf);
+    global.tree_ldflags = SBUF2strAndFree (&tree_ldflags_buf);
 
     /*
      * set defaults not altered by arguments
@@ -1325,7 +1306,7 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("I")
     {
-        FMGRappendPath (PK_imp_path, FMGRabsolutePathname (ARG));
+        FMGRappendPath (PK_imp_path, ARG);
     }
     ARGS_OPTION_END ("I");
 
@@ -1343,7 +1324,7 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("L")
     {
-        FMGRappendPath (PK_lib_path, FMGRabsolutePathname (ARG));
+        FMGRappendPath (PK_lib_path, ARG);
     }
     ARGS_OPTION_END ("L");
 
@@ -1352,6 +1333,16 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
      */
 
     ARGS_OPTION ("o", global.outfilename = STRcpy (ARG));
+
+    /*
+     * Options starting with ttttttttttttttttttttttttttttttttttttttttttt
+     */
+
+    ARGS_OPTION_BEGIN ("T")
+    {
+        FMGRappendPath (PK_tree_path, ARG);
+    }
+    ARGS_OPTION_END ("T");
 
     /*
      * Options starting with vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -1397,13 +1388,7 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
         if (global.sacfilename == NULL) {
             global.sacfilename = STRcpy (ARG);
 
-            global.puresacfilename = strrchr (global.sacfilename, '/');
-
-            if (global.puresacfilename == NULL) {
-                global.puresacfilename = global.sacfilename;
-            } else {
-                global.puresacfilename += 1;
-            }
+            global.puresacfilename = FMGRbasename (global.sacfilename);
         } else {
             ARGS_ERROR ("Too many source files specified");
         }

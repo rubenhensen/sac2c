@@ -28,27 +28,20 @@ SETTINGS_PROD          := -DDBUG_OFF \
                           -DTSI_DEACTIVATED \
                           -DPADT_DEACTIVATED 
 
-SETTINGS_MT            := -DMT 
-
-SETTINGS_PTH           := -DPTH
-
-SETTINGS_LPEL          := -DLPEL
-
-SETTINGS_OMP           := -DOMP 
-
-SETTINGS_DIAG          := -DDIAG
-
-SETTINGS_XT            := -DMT -DPHM_XT
-
+################################################################################
+#
+# Targets to initially generate libsac/libsacphm/libsacprelude for
+#
+BUILD_TARGETS          := seq mt_pth
 
 ################################################################################
 #
 # internal directories and other settings:
 #
 
-LIBDIRS                := -L../../lib
+LIBDIRS                :=
 LIB_MAKETOOLS          := 
-LIB_TOOLS              := -lsac.seq
+LIB_TOOLS              :=
 
 XML_DIR                := $(PROJECT_ROOT)/src/libsac2c/xml
 XML_COMMONS            := $(wildcard $(XML_DIR)/common_*.xsl)
@@ -78,33 +71,6 @@ HEADER_ZIPPER          := $(PROJECT_ROOT)/src/bin/hzip
 
 FINGERPRINTER_CALL     := $(XSLTENGINE) $(XML_DIR)/ast2fingerprint.xsl \
                            $(XML_DIR)/ast.xml | $(FINGERPRINTER)
-
-
-################################################################################
-#
-# definitions for makefile CROSS compilation mechanism
-#
-
-ifdef CROSS
-  CROSS_TARGET     := -target $(CROSS)
-  CROSS_VARIANT    := $(shell $(SAC2C) $(CROSS_TARGET) -CLIB_VARIANT)
-  CROSS_CC         := $(shell $(SAC2C) $(CROSS_TARGET) -CCC)
-  CROSS_AR         := $(shell $(SAC2C) $(CROSS_TARGET) -CAR_CREATE)
-  CROSS_RANLIB     := $(shell $(SAC2C) $(CROSS_TARGET) -CRANLIB)
-  CROSS_LD_DYNAMIC := $(shell $(SAC2C) $(CROSS_TARGET) -CLD_DYNAMIC)
-  CROSS_FOR        := for $(CROSS_VARIANT)
-  CROSS_BACKEND    := $(shell $(SAC2C) $(CROSS_TARGET) -CBACKEND)
-  CROSS_RC_METHOD  := $(shell $(SAC2C) $(CROSS_TARGET) -CRC_METHOD)
-  CC_FLAGS_PROD    += -DSAC_BACKEND_$(CROSS_BACKEND) -DSAC_RC_METHOD=SAC_RCM_$(CROSS_RC_METHOD)
-  CC_FLAGS_DEVEL   += -DSAC_BACKEND_$(CROSS_BACKEND) -DSAC_RC_METHOD=SAC_RCM_$(CROSS_RC_METHOD)
-else
-  CROSS_CC         := $(CC_$($(STYLE)_cap))
-  CROSS_AR         := $(AR)
-  CROSS_RANLIB     := $(RANLIB)
-  CROSS_LD_DYNAMIC := $(LD_DYNAMIC)
-  CC_FLAGS_PROD    += -DSAC_BACKEND_C99 -DSAC_RC_METHOD=SAC_RCM_local
-  CC_FLAGS_DEVEL   += -DSAC_BACKEND_C99 -DSAC_RC_METHOD=SAC_RCM_local
-endif
 
 
 ################################################################################

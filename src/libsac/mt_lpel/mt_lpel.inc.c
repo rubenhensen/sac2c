@@ -17,10 +17,8 @@
 /* ensure the file is not empty when mt lpel is disabled */
 static UNUSED int dummy_mt_lpel;
 
-#if ENABLE_MT && ENABLE_MT_LPEL
-
 /* the code is only loaded into libsac.mt.lpel */
-#if defined(LPEL)
+#if defined(SAC_MT_LIB_lpel)
 
 #include <pthread.h>
 #include <stdio.h>
@@ -860,5 +858,3 @@ SAC_MT_LPEL_SetupAndRunStandalone (SAC_main_fun_t main_fn, int *main_arg,
 #else /* defined(LPEL) else */
 
 #endif /* defined(LPEL) */
-
-#endif /* ENABLE_MT */

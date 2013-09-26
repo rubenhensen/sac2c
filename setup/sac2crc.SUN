@@ -6,11 +6,15 @@
 
 target sunfire_x4100:
 
+VARIANT        +=  "-sfx4100"
+
 CACHE1_SIZE    :=   64
 CACHE2_SIZE    := 1024
 
 
 target sparc_4:
+
+VARIANT        +=  "-s4"
 
 CACHE1_SIZE    :=  8
 CACHE1_LINE    :=  16
@@ -19,6 +23,8 @@ CACHE1_ASSOC   :=  1
 
 target sparc_5:
 
+VARIANT        +=  "-s5"
+
 CACHE1_SIZE    :=  8
 CACHE1_LINE    :=  16
 CACHE1_ASSOC   :=  1
@@ -26,12 +32,16 @@ CACHE1_ASSOC   :=  1
 
 target sparc_20_61:
 
+VARIANT        +=  "-s20-61"
+
 CACHE1_SIZE    :=  16
 CACHE1_LINE    :=  32
 CACHE1_ASSOC   :=  4
 
 
 target sparc_20_71:
+
+VARIANT        +=  "-s20-71"
 
 CACHE1_SIZE    :=  16
 CACHE1_LINE    :=  32
@@ -44,6 +54,8 @@ CACHE2_ASSOC   :=  1
 
 target ultra2:
 
+VARIANT        +=  "-u2"
+
 CACHE1_SIZE    :=  16
 CACHE1_LINE    :=  32
 CACHE1_ASSOC   :=  1
@@ -53,6 +65,8 @@ CACHE2_LINE    :=  64
 CACHE2_ASSOC   :=  1
 
 target ultra2i:
+
+VARIANT        +=  "-u2i"
 
 CACHE1_SIZE    :=  16
 CACHE1_LINE    :=  32
@@ -65,6 +79,8 @@ CACHE2_ASSOC   :=  1
 
 target ultra3:
 
+VARIANT        +=  "-u3"
+
 CACHE1_SIZE    :=  64
 CACHE1_LINE    :=  32
 CACHE1_ASSOC   :=  4
@@ -76,6 +92,8 @@ CACHE2_ASSOC   :=  1
 
 target ultra_entr3000:
 
+VARIANT        +=  "-u2-e3k"
+
 CACHE1_SIZE    :=  16
 CACHE1_LINE    :=  32
 CACHE1_ASSOC   :=  1
@@ -86,6 +104,8 @@ CACHE2_ASSOC   :=  1
 
 
 target ultra2_entr4000:
+
+VARIANT        +=  "-u2-e4k"
 
 CACHE1_SIZE    :=  16
 CACHE1_LINE    :=  32
@@ -100,6 +120,8 @@ CACHE2_MSCA    :=  3
 
 target ultra2_entr450:
 
+VARIANT        +=  "-u2-e450"
+
 CACHE1_SIZE     :=  16
 CACHE1_LINE     :=  32
 CACHE1_ASSOC    :=  1
@@ -111,7 +133,9 @@ CACHE2_ASSOC    :=  1
 CACHE2_WRITEPOL :=  "write_around"
 
 
-target ultrat3::suncc:
+target ultrat3 :: suncc:
+
+VARIANT         +=  "-t3"
 
 CACHE1_SIZE     :=  8 
 CACHE1_LINE     :=  16

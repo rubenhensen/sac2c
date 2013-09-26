@@ -695,79 +695,72 @@ typedef struct TARGET_LIST_T {
  *
  ******************************************************************************/
 
+#define DEF_RESOURCES_ALL                                                                \
+    DEF_RESOURCE (CPP_STDIN, cpp_stdin, char *, str)                                     \
+    DEF_RESOURCE (CPP_FILE, cpp_file, char *, str)                                       \
+    DEF_RESOURCE (TMPDIR, tmpdir, char *, str)                                           \
+    DEF_RESOURCE (LIBPATH, libpath, char *, str)                                         \
+    DEF_RESOURCE (IMPPATH, imppath, char *, str)                                         \
+    DEF_RESOURCE (EXTLIBPATH, extlibpath, char *, str)                                   \
+    DEF_RESOURCE (INCPATH, incpath, char *, str)                                         \
+    DEF_RESOURCE (TREEPATH, treepath, char *, str)                                       \
+    DEF_RESOURCE (RMDIR, rmdir, char *, str)                                             \
+    DEF_RESOURCE (MKDIR, mkdir, char *, str)                                             \
+    DEF_RESOURCE (SACINCLUDES, sacincludes, char *, str)                                 \
+    DEF_RESOURCE (TREE_CEXT, tree_cext, char *, str)                                     \
+    DEF_RESOURCE (TREE_OBJEXT, tree_objext, char *, str)                                 \
+    DEF_RESOURCE (TREE_DLLEXT, tree_dllext, char *, str)                                 \
+    DEF_RESOURCE (COMPILE_TREE, compile_tree, char *, str)                               \
+    DEF_RESOURCE (LINK_TREE, link_tree, char *, str)                                     \
+    DEF_RESOURCE (TARGET_ENV, target_env, char *, str)                                   \
+    DEF_RESOURCE (SBI, sbi, char *, str)                                                 \
+    DEF_RESOURCE (VARIANT, variant, char *, str)                                         \
+    DEF_RESOURCE (BACKEND, backend, char *, str)                                         \
+    DEF_RESOURCE (RC_METHOD, rc_method, char *, str)                                     \
+    DEF_RESOURCE (CUDA_ARCH, cuda_arch, char *, str)                                     \
+    DEF_RESOURCE (USE_PHM_API, use_phm_api, int, num)                                    \
+    DEF_RESOURCE (RTSPEC, rtspec, int, num)                                              \
+    DEF_RESOURCE (MT_LIB, mt_lib, char *, str)                                           \
+    DEF_RESOURCE (MT_MODE, mt_mode, int, num)                                            \
+    DEF_RESOURCE (CACHE1_SIZE, cache1_size, int, num)                                    \
+    DEF_RESOURCE (CACHE1_LINE, cache1_line, int, num)                                    \
+    DEF_RESOURCE (CACHE1_ASSOC, cache1_assoc, int, num)                                  \
+    DEF_RESOURCE (CACHE1_WRITEPOL, cache1_writepol, char *, str)                         \
+    DEF_RESOURCE (CACHE1_MSCA, cache1_msca_factor, int, num)                             \
+    DEF_RESOURCE (CACHE2_SIZE, cache2_size, int, num)                                    \
+    DEF_RESOURCE (CACHE2_LINE, cache2_line, int, num)                                    \
+    DEF_RESOURCE (CACHE2_ASSOC, cache2_assoc, int, num)                                  \
+    DEF_RESOURCE (CACHE2_WRITEPOL, cache2_writepol, char *, str)                         \
+    DEF_RESOURCE (CACHE2_MSCA, cache2_msca_factor, int, num)                             \
+    DEF_RESOURCE (CACHE3_SIZE, cache3_size, int, num)                                    \
+    DEF_RESOURCE (CACHE3_LINE, cache3_line, int, num)                                    \
+    DEF_RESOURCE (CACHE3_ASSOC, cache3_assoc, int, num)                                  \
+    DEF_RESOURCE (CACHE3_WRITEPOL, cache3_writepol, char *, str)                         \
+    DEF_RESOURCE (CACHE3_MSCA, cache3_msca_factor, int, num)                             \
+    DEF_RESOURCE (CEXT, cext, char *, str)                                               \
+    DEF_RESOURCE (OBJEXT, objext, char *, str)                                           \
+    DEF_RESOURCE (MODEXT, modext, char *, str)                                           \
+    DEF_RESOURCE (EXEEXT, exeext, char *, str)                                           \
+    DEF_RESOURCE (CC, cc, char *, str)                                                   \
+    DEF_RESOURCE (CFLAGS, cflags, char *, str)                                           \
+    DEF_RESOURCE (LD, ld, char *, str)                                                   \
+    DEF_RESOURCE (LIBS, libs, char *, str)                                               \
+    DEF_RESOURCE (LDPATH, ldpath, char *, str)                                           \
+    DEF_RESOURCE (LDFLAGS, ldflags, char *, str)                                         \
+    DEF_RESOURCE (OPT_O0, opt_o0, char *, str)                                           \
+    DEF_RESOURCE (OPT_O1, opt_o1, char *, str)                                           \
+    DEF_RESOURCE (OPT_O2, opt_o2, char *, str)                                           \
+    DEF_RESOURCE (OPT_O3, opt_o3, char *, str)                                           \
+    DEF_RESOURCE (OPT_g, opt_g, char *, str)                                             \
+    DEF_RESOURCE (COMPILE_MOD, compile_mod, char *, str)                                 \
+    DEF_RESOURCE (COMPILE_PROG, compile_prog, char *, str)                               \
+    DEF_RESOURCE (LINK_MOD, link_mod, char *, str)                                       \
+    DEF_RESOURCE (LINK_PROG, link_prog, char *, str)
+
 typedef struct {
-    /* SBI-independent resources */
-    char *stdlib_prefix;
-
-    char *cpp_stdin;
-    char *cpp_file;
-
-    char *tmpdir;
-    char *libpath;
-    char *imppath;
-    char *extlibpath;
-
-    char *rmdir;
-    char *mkdir;
-
-    char *compile_tree;
-    char *link_tree;
-
-    /* SBI-dependent resources */
-
-    // How code is generated.
-    char *backend;
-    char *rc_method;
-    char *cuda_arch;
-    int use_phm_api;
-
-    int cache1_size;
-    int cache1_line;
-    int cache1_assoc;
-    char *cache1_writepol;
-    int cache1_msca_factor;
-
-    int cache2_size;
-    int cache2_line;
-    int cache2_assoc;
-    char *cache2_writepol;
-    int cache2_msca_factor;
-
-    int cache3_size;
-    int cache3_line;
-    int cache3_assoc;
-    char *cache3_writepol;
-    int cache3_msca_factor;
-
-    // How code is compiled/linked.
-    char *cext;
-
-    char *cc;
-    char *ccflags;
-    char *ccincdir;
-
-    char *cclibdir;
-    char *ldflags;
-
-    char *opt_O0;
-    char *opt_O1;
-    char *opt_O2;
-    char *opt_O3;
-    char *opt_g;
-
-    // Will disappear soon.
-    char *lib_variant;
-    char *cclink;
-    char *ccmtlink;
-    char *ccdllink;
-    char *mt_lib;
-
-    char *genpic;
-    char *ld_dynamic;
-    char *ld_path;
-    char *ar_create;
-    char *ranlib;
-
+#define DEF_RESOURCE(Name, Attr, Type1, Type2) Type1 Attr;
+    DEF_RESOURCES_ALL
+#undef DEF_RESOURCE
 } configuration_t;
 
 /*******************************************************************************
@@ -807,7 +800,10 @@ typedef enum {
     PK_path = 0,
     PK_lib_path = 1,
     PK_imp_path = 2,
-    PK_extlib_path = 3
+    PK_extlib_path = 3,
+    PK_tree_path = 4,
+    PK_inc_path = 5,
+    PK_LAST = 6
 } pathkind_t;
 
 /*
@@ -901,6 +897,16 @@ typedef struct ST_SYMBOLITERATOR_T stsymboliterator_t;
 typedef struct ST_ENTRYITERATOR_T stentryiterator_t;
 typedef struct ST_SYMBOLTABLE_T sttable_t;
 typedef struct ST_SYMBOL_T stsymbol_t;
+
+typedef enum { DO_C_none = 0, DO_C_prog, DO_C_mod } do_c_type_t;
+
+typedef enum {
+    CCT_doall,        // regular compile/link for SAC programs/modules
+    CCT_linkflags,    // just return %linkflags%
+    CCT_compileflags, // just return %compileflags%
+    CCT_clinkonly,    // just link C objects
+    CCT_ccompileonly  // just compile one C source
+} ccm_task_t;
 
 /*
  * moved from modulemanager.h

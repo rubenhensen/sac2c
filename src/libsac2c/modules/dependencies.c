@@ -66,7 +66,6 @@ static void
 GenerateDependencyTableEntries (stringset_t *deps, FILE *file)
 {
     str_buf *buffer;
-    char *string;
 
     DBUG_ENTER ();
 
@@ -74,11 +73,8 @@ GenerateDependencyTableEntries (stringset_t *deps, FILE *file)
 
     buffer = (str_buf *)STRSfold (&TableEntriesFoldFun, deps, buffer);
 
-    string = SBUF2str (buffer);
+    fprintf (file, "%s", SBUFgetBuffer (buffer));
 
-    fprintf (file, "%s", string);
-
-    string = MEMfree (string);
     buffer = SBUFfree (buffer);
 
     DBUG_RETURN ();
@@ -182,8 +178,8 @@ PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
              * alldeps rules, in particular, the empty rule in
              * doPrintLibDependencies
              */
-            printf ("%s :\n\t( cd %s; $(MAKE) lib%sTree%s" SHARED_LIB_EXT ")\n\n", entry,
-                    libdir, entry, global.config.lib_variant);
+            printf ("%s :\n\t( cd %s; $(MAKE) tree/%s/lib%sTree%s)\n\n", entry, libdir,
+                    global.config.target_env, entry, global.config.tree_dllext);
         }
 
         libfile = MEMfree (libfile);
@@ -226,15 +222,10 @@ PrintSACLib (const char *name)
     /*
      * first try to find the shared library file
      */
-    /*  filename = (char *)MEMmalloc( sizeof( char) *
-                            ( STRlen( name) + 11 +
-                              STRlen( global.config.lib_variant)));
-      sprintf( filename, "lib%sTree%s" SHARED_LIB_EXT, name, global.config.lib_variant);
-    */
-    filename
-      = STRcatn (5, "lib", name, "Tree", global.config.lib_variant, SHARED_LIB_EXT);
+    filename = STRcatn (6, "tree/", global.config.target_env, "/lib", name, "Tree",
+                        global.config.tree_dllext);
 
-    result = STRcpy (FMGRfindFile (PK_lib_path, filename));
+    result = STRcpy (FMGRfindFile (PK_tree_path, filename));
 
     filename = MEMfree (filename);
 
@@ -242,34 +233,16 @@ PrintSACLib (const char *name)
         /*
          * now try to find the .sac file
          */
-        /*
-            filename = (char *) MEMmalloc( sizeof( char) * ( STRlen( name) + 5));
-            sprintf( filename, "%s.sac", name);
-        */
         filename = STRcat (name, ".sac");
 
-        result = STRcpy (FMGRdirname (FMGRfindFile (PK_imp_path, filename)));
+        result = FMGRfindFilePath (PK_imp_path, filename);
 
         filename = MEMfree (filename);
 
         if (result != NULL) {
-#if 0
-      filename = (char *)MEMmalloc( sizeof( char) *
-                            ( STRlen( result) +
-                              16 + /* $(LIBTARGETDIR)/ */
-  //                            3 + /* lib */
-  //                            4 + /* Tree */
- //                             STRlen( SHARED_LIB_EXT) + 2 + /* .so\0 */
- //                             1024 +
- //                             STRlen( global.config.lib_variant)));
-        sprintf( filename,
-               "%s$(LIBTARGETDIR)/lib%sTree%s" SHARED_LIB_EXT, 
-               result, 
-               name,
-               global.config.lib_variant);
-#endif
-            filename = STRcatn (6, result, "$(LIBTARGETDIR)/lib", name, "Tree",
-                                global.config.lib_variant, SHARED_LIB_EXT);
+            filename
+              = STRcatn (7, result, " $(LIBTARGETDIR)/tree/", global.config.target_env,
+                         "/lib", name, "Tree", global.config.tree_dllext);
 
             result = MEMfree (result);
             result = filename;
@@ -281,15 +254,8 @@ PrintSACLib (const char *name)
         /*
          * otherwise use the pure filename
          */
-
-        /*    result = (char *)MEMmalloc( sizeof( char) *
-                                ( STRlen( name) + 11 +
-                                  STRlen( global.config.lib_variant)));
-            sprintf( result, "lib%sTree%s" SHARED_LIB_EXT, name,
-           global.config.lib_variant);
-            */
-        result
-          = STRcatn (5, "lib", name, "Tree", global.config.lib_variant, SHARED_LIB_EXT);
+        result = STRcatn (6, "tree/", global.config.target_env, "/lib", name, "Tree",
+                          global.config.tree_dllext);
     }
 
     printf (" \\\n  %s", result);
@@ -298,62 +264,28 @@ PrintSACLib (const char *name)
 
     DBUG_RETURN ();
 }
-#if 0
-static void PrintSACLibInclude( const char *name)
-{
-  char *filename;
-  const char *dir;
-  char *cwd="./";
-
-  DBUG_ENTER ();
-/*
-  filename = MEMmalloc( sizeof( char) * ( STRlen( name) + 5));
-  sprintf( filename, "%s.sac", name);
-*/
-  filename = STRcat( name, ".sac");
-
-  dir = FMGRdirname( FMGRfindFile( PK_imp_path, filename));
-
-  filename = MEMfree( filename);
-
-  if (dir == NULL) {
-    dir = cwd;
-  }
-
-  printf( "FILE_%s%s%s_d := yes\n",
-          FMGRfile2id( dir),
-          name,
-          global.config.lib_variant);
-  printf( "ifneq ($(FILE_%s%s%s_d),yes)\n",
-          FMGRfile2id( dir),
-          name,
-          global.config.lib_variant);
-  printf( "-include %s.%s%s.d\n", dir, name, global.config.lib_variant);
-  printf( "endif\n");
-
-  DBUG_RETURN ();
-}
-#endif
 
 static void
 PrintObjFileInclude (const char *name)
 {
-    char *oName = NULL;
-    char *dirName = NULL;
     DBUG_ENTER ();
 
-    oName = STRncpy (name, STRlen (name) - 2);
-    dirName = STRcpy (FMGRdirname (global.sacfilename));
+    char *oName = STRncpy (name, STRlen (name) - 2);
+    char *dirName = FMGRdirname (global.sacfilename);
+    char *odirName = FMGRdirname (oName);
+    char *obaseName = FMGRbasename (oName);
+    char *id = FMGRfile2id (oName);
 
-    printf ("ifneq ($(FILE_%s%s_d),yes)\n", FMGRfile2id (oName),
-            global.config.lib_variant);
-    printf ("FILE_%s%s_d := yes\n", FMGRfile2id (oName), global.config.lib_variant);
-    printf ("-include  %s%s.%s%s.d\n", dirName, FMGRdirname (oName), FMGRbasename (oName),
-            global.config.lib_variant);
+    printf ("ifneq ($(FILE_%s_d),yes)\n", id);
+    printf ("FILE_%s_d := yes\n", id);
+    printf ("-include  %s/%s/.%s.d\n", dirName, odirName, obaseName);
     printf ("endif\n");
 
     oName = MEMfree (oName);
     dirName = MEMfree (dirName);
+    odirName = MEMfree (odirName);
+    obaseName = MEMfree (obaseName);
+    id = MEMfree (id);
 
     DBUG_RETURN ();
 }
@@ -361,13 +293,12 @@ PrintObjFileInclude (const char *name)
 static void
 PrintObjFile (const char *name)
 {
-    char *oName = NULL;
     DBUG_ENTER ();
 
-    oName = STRncpy (name, STRlen (name) - 2);
-
-    printf (" \\\n  %s%s%s.o", FMGRdirname (global.sacfilename), oName,
-            global.config.lib_variant);
+    char *oName = STRncpy (name, STRlen (name) - 2);
+    char *dirName = FMGRdirname (global.sacfilename);
+    // FIXME: check path with new layout
+    printf (" \\\n  %s/%s.o", dirName, oName);
 
     oName = MEMfree (oName);
 
@@ -425,13 +356,15 @@ PrintTargetName (node *tree)
         break;
     case FT_modimp:
     case FT_classimp:
-        printf ("%slib%sTree%s" SHARED_LIB_EXT
-                " %slib%sMod%s.a %slib%sMod%s" SHARED_LIB_EXT ":",
-                (global.targetdir), NSgetName (MODULE_NAMESPACE (tree)),
-                global.config.lib_variant, (global.targetdir),
-                NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant,
-                (global.targetdir), NSgetName (MODULE_NAMESPACE (tree)),
-                global.config.lib_variant);
+        printf ("%s/tree/%s/lib%sTree%s %s/%s/%s", global.targetdir,
+                global.config.target_env, NSgetName (MODULE_NAMESPACE (tree)),
+                global.config.tree_dllext, global.targetdir, global.config.target_env,
+                global.config.sbi);
+
+        if (STRlen (global.config.variant) > 0)
+            printf ("/%s", global.config.variant);
+
+        printf ("lib%sMod%s:", NSgetName (MODULE_NAMESPACE (tree)), global.config.modext);
         break;
     default:
         DBUG_ASSERT (0, "unknown file type found!");

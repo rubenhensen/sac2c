@@ -7,6 +7,8 @@
 
 target dec_3000_800:
 
+VARIANT          +=  "-dec3k-800"
+
 CACHE1_SIZE      :=  8
 CACHE1_LINE      :=  32
 CACHE1_ASSOC     :=  1
@@ -18,6 +20,8 @@ CACHE2_ASSOC     :=  1
 
 
 target axp_8200:
+
+VARIANT          +=  "-axp8200"
 
 CACHE1_SIZE      :=  8
 CACHE1_LINE      :=  32

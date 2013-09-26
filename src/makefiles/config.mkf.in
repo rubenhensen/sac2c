@@ -3,62 +3,84 @@
 # system setup:
 #
 
-OS              := @OS@
-ARCH            := @ARCH@
-PREFIX          := @PREFIX@
+# needed to detect cygwin
+OS              = @OS@
 
+# the following must be defined with =, not :=, since they may be
+# expanded with substitutions depending on generated targets.
+prefix          = @prefix@
+exec_prefix     = @exec_prefix@
+bindir          = @bindir@
+libdir          = @libdir@
+libexecdir      = @libexecdir@
+includedir      = @includedir@
+datarootdir     = @datarootdir@
+datadir         = @datadir@
+RTPATH_CONF     = $(libdir)/sac2c/$(shell cat $(PROJECT_ROOT)/.revision.txt)/rt
+MODPATH_CONF    = $(libdir)/sac2c/$(shell cat $(PROJECT_ROOT)/.revision.txt)/modlibs
+INCPATH_CONF    = $(includedir)/sac2c/$(shell cat $(PROJECT_ROOT)/.revision.txt)
+DLL_DIR         = $(libexecdir)/sac2c/$(shell cat $(PROJECT_ROOT)/.revision.txt)
+TREEPATH_CONF   = $(DLL_DIR)
+SAC2CRC_DIR     = $(datadir)/sac2c/$(shell cat $(PROJECT_ROOT)/.revision.txt)
+SAC2CRC_CONF    = $(SAC2CRC_DIR)/sac2crc
 
 ################################################################################
 #
 # compiler and linker setup:
 #
 
-CC_DEVEL        := @SAC2C_CC@
-CC_PROD         := @SAC2C_CC@
+CC_DEVEL        = @SAC2C_CC@
+CC_PROD         = @SAC2C_CC@
 
-CC_FLAGS        := @CPPFLAGS@ @CFLAGS@ @OSFLAGS@ -D_POSIX_C_SOURCE=200809L
+CPPFLAGS        = @CPPFLAGS@ -DSAC2CRC_CONF=\""$(SAC2CRC_CONF)"\" -DDLL_DIR=\""$(DLL_DIR)"\"
 
-CC_FLAGS_DEVEL  := @SAC2C_MKCCFLAGS@ $(CC_FLAGS)
-CC_FLAGS_PROD   := @SAC2C_PDCCFLAGS@ $(CC_FLAGS)
+CC_FLAGS        = $(CPPFLAGS) @CFLAGS@ @OSFLAGS@ -D_POSIX_C_SOURCE=200809L
 
-CC_FLAGS_DEPS   := @CPPFLAGS@ @DEPSFLAG@ 
+CC_FLAGS_DEVEL  = @SAC2C_MKCCFLAGS@ $(CC_FLAGS)
+CC_FLAGS_PROD   = @SAC2C_PDCCFLAGS@ $(CC_FLAGS)
 
-CC_FLAGS_MT     := -D_REENTRANT @PTHREAD_CFLAGS@ @MT_CFLAGS_LPEL@
-CC_FLAGS_YY     := -DYYLMAX=8192
+CC_FLAGS_DEPS   = $(CPPFLAGS) @DEPSFLAG@
 
-LD              := @SAC2C_CC@
-LD_FLAGS        := @LDFLAGS@ @LD_FLAGS@
-LD_DYNAMIC      := @SAC2C_CC@ @LD_DYNAMIC@
-LD_PATH         := @LD_PATH@
+CC_FLAGS_MT     = -D_REENTRANT @PTHREAD_CFLAGS@ @MT_CFLAGS_LPEL@
+CC_FLAGS_YY     = -DYYLMAX=8192
 
-SHARED_LIB_EXT  := @SHARED_LIB_EXT@
+LD              = @SAC2C_CC@
+LD_FLAGS        = @LDFLAGS@ @LD_FLAGS@
+LD_DYNAMIC      = @SAC2C_CC@ @LD_DYNAMIC@
+LD_PATH         = @LD_PATH@
+
+SHARED_LIB_EXT  = @SHARED_LIB_EXT@
 
 ################################################################################
 #
 # tool setup:
 #
 
-TAR             := tar
-AR              := ar rc
-RM              := rm -f
-MV              := mv -f
-CP              := cp -f
-SED             := sed
-GZIP            := gzip -f
-ECHO            := echo
-GREP            := fgrep
-WC              := wc
-RANLIB          := @RANLIB@
-TOUCH           := touch
-XSLTENGINE      := @XSLT@
-DOT		:= @DOT@
-M4PROC          := @M4@
-CODE_BEAUTIFIER := @CB@
-SLC_PATH        := @SLC_PATH@
-CPP		:= @CPP@
-SORT		:= @SORT@
-UNIQ		:= @UNIQ@
-LN              := ln -s -f
+TAR             = tar
+AR              = ar rc
+RM              = rm -f
+MV              = mv -f
+CP              = cp -f
+SED             = @SED@
+GZIP            = gzip -f
+ECHO            = echo
+FGREP           = @FGREP@
+WC              = wc
+RANLIB          = @RANLIB@
+TOUCH           = touch
+XSLTENGINE      = @XSLT@
+DOT		= @DOT@
+M4PROC          = @M4@
+CODE_BEAUTIFIER = @CB@
+SLC_PATH        = @SLC_PATH@
+CPP		= @CPP@
+SORT		= @SORT@
+UNIQ		= @UNIQ@
+LN              = @LN_S@
+MKDIR_P         = @MKDIR_P@
+INSTALL         = @INSTALL@
+INSTALL_DATA    = @INSTALL_DATA@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
 
 ################################################################################
 #
@@ -74,19 +96,4 @@ SHELL = @BASH@
 #
 
 LIBS            := @LIBS@
-
-################################################################################
-#
-# feature setup:
-#
-
-DO_BUILD_PHM    := @CAN_USE_PHM@
-ENABLE_MT       := @ENABLE_MT@
-ENABLE_MT_LPEL  := @ENABLE_MT_LPEL@
-ENABLE_OMP      := @ENABLE_OMP@
-ENABLE_RTSPEC   := @ENABLE_RTSPEC@
-ENABLE_MUTC     := @ENABLE_MUTC@
-
-
-
 

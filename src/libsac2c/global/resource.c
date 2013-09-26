@@ -89,78 +89,9 @@ static struct {
     void *store;
 } resource_table[] = {
 
-  /* SBI-independent resources */
-  {"STDLIB_PREFIX", str, &global.config.stdlib_prefix},
-
-  {"CPP_STDIN", str, &global.config.cpp_stdin},
-  {"CPP_FILE", str, &global.config.cpp_file},
-
-  {"TMPDIR", str, &global.config.tmpdir},
-  {"LIBPATH", str, &global.config.libpath},
-  {"IMPPATH", str, &global.config.imppath},
-  {"EXTLIBPATH", str, &global.config.extlibpath},
-
-  {"RMDIR", str, &global.config.rmdir},
-  {"MKDIR", str, &global.config.mkdir},
-
-  // The tree command variables will likely disappear soon.
-  {"COMPILE_TREE", str, &global.config.compile_tree},
-  {"LINK_TREE", str, &global.config.link_tree},
-
-  /* SBI-dependent resources */
-
-  // How code is generated.
-  {"BACKEND", str, &global.config.backend},
-  {"RC_METHOD", str, &global.config.rc_method},
-  {"CUDA_ARCH", str, &global.config.cuda_arch},
-  {"USE_PHM_API", num, &global.config.use_phm_api},
-
-  {"CACHE1_SIZE", num, &global.config.cache1_size},
-  {"CACHE1_LINE", num, &global.config.cache1_line},
-  {"CACHE1_ASSOC", num, &global.config.cache1_assoc},
-  {"CACHE1_WRITEPOL", str, &global.config.cache1_writepol},
-  {"CACHE1_MSCA", num, &global.config.cache1_msca_factor},
-
-  {"CACHE2_SIZE", num, &global.config.cache2_size},
-  {"CACHE2_LINE", num, &global.config.cache2_line},
-  {"CACHE2_ASSOC", num, &global.config.cache2_assoc},
-  {"CACHE2_WRITEPOL", str, &global.config.cache2_writepol},
-  {"CACHE2_MSCA", num, &global.config.cache2_msca_factor},
-
-  {"CACHE3_SIZE", num, &global.config.cache3_size},
-  {"CACHE3_LINE", num, &global.config.cache3_line},
-  {"CACHE3_ASSOC", num, &global.config.cache3_assoc},
-  {"CACHE3_WRITEPOL", str, &global.config.cache3_writepol},
-  {"CACHE3_MSCA", num, &global.config.cache3_msca_factor},
-
-  // How code is compiled/linked.
-  {"CEXT", str, &global.config.cext},
-
-  {"CC", str, &global.config.cc},
-  {"CCFLAGS", str, &global.config.ccflags},
-  {"CCINCDIR", str, &global.config.ccincdir},
-
-  {"CCLIBDIR", str, &global.config.cclibdir},
-  {"LDFLAGS", str, &global.config.ldflags},
-
-  {"OPT_O0", str, &global.config.opt_O0},
-  {"OPT_O1", str, &global.config.opt_O1},
-  {"OPT_O2", str, &global.config.opt_O2},
-  {"OPT_O3", str, &global.config.opt_O3},
-  {"OPT_g", str, &global.config.opt_g},
-
-  // The following will likely disappear soon.
-  {"LIB_VARIANT", str, &global.config.lib_variant},
-  {"CCLINK", str, &global.config.cclink},
-  {"CCMTLINK", str, &global.config.ccmtlink},
-  {"CCDLLINK", str, &global.config.ccdllink},
-  {"MT_LIB", str, &global.config.mt_lib},
-
-  {"GENPIC", str, &global.config.genpic},
-  {"LD_DYNAMIC", str, &global.config.ld_dynamic},
-  {"LD_PATH", str, &global.config.ld_path},
-  {"AR_CREATE", str, &global.config.ar_create},
-  {"RANLIB", str, &global.config.ranlib},
+#define DEF_RESOURCE(Name, Attr, Type1, Type2) {#Name, Type2, &global.config.Attr},
+  DEF_RESOURCES_ALL
+#undef DEF_RESOURCE
 
   {"", (enum tag_t)0, NULL},
 };
@@ -500,25 +431,21 @@ ParseResourceFiles (void)
     envvar = getenv ("SAC2CRC");
     if (envvar != NULL) {
         ok = RSCparseResourceFile (envvar);
-        if (!ok)
-            CTIabort ("Unable to open special sac2crc file.\n"
-                      "The environment variable SAC2CRC is not set properly.");
+        if (!ok) {
+            CTIabort ("Error while parsing '%s' (via SAC2CRC).", envvar);
+        }
         DBUG_RETURN ();
     }
 
-#ifndef PREFIX
-    CTIabort ("The prefix is not set, please run ./configure and recompile "
-              "sac2c compiler");
+#ifndef SAC2CRC_CONF
+#error SAC2CRC_CONF not set, please check flags in config.mkf
 #endif
-    filename = STRcat (PREFIX, "/share/sac2crc");
-    ok = RSCparseResourceFile (filename);
+
+    ok = RSCparseResourceFile (SAC2CRC_CONF);
 
     if (!ok) {
-        CTIabort ("Unable to parse public sac2crc file.\n"
-                  "Somewhat, your installation is corrupted.");
+        CTIabort ("Error while parsing '%s'.", SAC2CRC_CONF);
     }
-
-    MEMfree (filename);
 
     /*
      * Second, the private sac2crc file ist read.
@@ -530,6 +457,10 @@ ParseResourceFiles (void)
         filename = STRcat (envvar, "/.sac2crc");
         ok = RSCparseResourceFile (filename);
         MEMfree (filename);
+
+        if (!ok) {
+            CTIwarn ("Warning: '%s' does not exist.", filename);
+        }
     }
 
     global.filename = global.puresacfilename; /* What is this good for ? */
@@ -751,100 +682,15 @@ RSCevaluateConfiguration ()
 void
 xfree_configuration (configuration_t conf)
 {
-    /* SBI-independent resources */
-    if (conf.stdlib_prefix)
-        MEMfree (conf.stdlib_prefix);
-
-    if (conf.cpp_stdin)
-        MEMfree (conf.cpp_stdin);
-    if (conf.cpp_file)
-        MEMfree (conf.cpp_file);
-
-    if (conf.tmpdir)
-        MEMfree (conf.tmpdir);
-    if (conf.libpath)
-        MEMfree (conf.libpath);
-    if (conf.imppath)
-        MEMfree (conf.imppath);
-    if (conf.extlibpath)
-        MEMfree (conf.extlibpath);
-
-    if (conf.rmdir)
-        MEMfree (conf.rmdir);
-    if (conf.mkdir)
-        MEMfree (conf.mkdir);
-
-    if (conf.compile_tree)
-        MEMfree (conf.compile_tree);
-    if (conf.link_tree)
-        MEMfree (conf.link_tree);
-
-    /* SBI-dependent resources */
-
-    // How code is generated.
-    if (conf.backend)
-        MEMfree (conf.backend);
-    if (conf.rc_method)
-        MEMfree (conf.rc_method);
-    if (conf.cuda_arch)
-        MEMfree (conf.cuda_arch);
-
-    if (conf.cache1_writepol)
-        MEMfree (conf.cache1_writepol);
-    if (conf.cache2_writepol)
-        MEMfree (conf.cache2_writepol);
-    if (conf.cache3_writepol)
-        MEMfree (conf.cache3_writepol);
-
-    // How code is compiled/linked.
-    if (conf.cext)
-        MEMfree (conf.cext);
-
-    if (conf.cc)
-        MEMfree (conf.cc);
-    if (conf.ccflags)
-        MEMfree (conf.ccflags);
-    if (conf.ccincdir)
-        MEMfree (conf.ccincdir);
-
-    if (conf.cclibdir)
-        MEMfree (conf.cclibdir);
-    if (conf.ldflags)
-        MEMfree (conf.ldflags);
-
-    if (conf.opt_O0)
-        MEMfree (conf.opt_O0);
-    if (conf.opt_O1)
-        MEMfree (conf.opt_O1);
-    if (conf.opt_O2)
-        MEMfree (conf.opt_O2);
-    if (conf.opt_O3)
-        MEMfree (conf.opt_O3);
-    if (conf.opt_g)
-        MEMfree (conf.opt_g);
-
-    // Will disappear soon
-    if (conf.lib_variant)
-        MEMfree (conf.lib_variant);
-    if (conf.cclink)
-        MEMfree (conf.cclink);
-    if (conf.ccmtlink)
-        MEMfree (conf.ccmtlink);
-    if (conf.ccdllink)
-        MEMfree (conf.ccdllink);
-    if (conf.mt_lib)
-        MEMfree (conf.mt_lib);
-
-    if (conf.genpic)
-        MEMfree (conf.genpic);
-    if (conf.ld_dynamic)
-        MEMfree (conf.ld_dynamic);
-    if (conf.ld_path)
-        MEMfree (conf.ld_path);
-    if (conf.ar_create)
-        MEMfree (conf.ar_create);
-    if (conf.ranlib)
-        MEMfree (conf.ranlib);
+#define str(X)                                                                           \
+    if (X)                                                                               \
+        MEMfree (X);
+#define num(X) /*nothing*/
+#define DEF_RESOURCE(Name, Attr, Type1, Type2) Type2 (conf.Attr)
+    DEF_RESOURCES_ALL
+#undef DEF_RESOURCE
+#undef str
+#undef num
 }
 
 #undef DBUG_PREFIX

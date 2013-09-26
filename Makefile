@@ -88,16 +88,11 @@ default devel prod: checks
                         PREFIX_LOCAL="src/libsac2c/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/runtime  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/runtime/"  PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsacphmc  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacphmc/"  PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsac  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsac/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsacprelude  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacprelude/"  PREFIX_ROOT="" $@
+	$(HIDE) for t in $(BUILD_TARGETS); do \
+	  $(MAKE) -f $(MAKEFILE_DIR)/rtlibs.mkf HIDE="$(HIDE)" TARGET=$$t all || exit 1; \
+	done
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Building $(PROJECT_NAME) completed"
@@ -124,16 +119,11 @@ clean cleandevel cleanprod: checks
                         PREFIX_LOCAL="src/libsac2c/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/runtime  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/runtime/"  PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsacprelude  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacprelude/"  PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsac  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsac/"  PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsacphmc  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacphmc/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
+	$(HIDE) for t in $(BUILD_TARGETS); do \
+	    $(MAKE) -f $(MAKEFILE_DIR)/rtlibs.mkf HIDE="$(HIDE)" TARGET=$$t clean || exit 1; \
+	done
 	$(HIDE) $(RM) -rf lib/* bin/*
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
@@ -168,14 +158,6 @@ refactor: checks
                         PREFIX_LOCAL="src/libsac2c/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/runtime  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/runtime/"  PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsacprelude  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacprelude/"  PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsac  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsac/"  PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
-	$(HIDE) $(MAKE) -C src/libsacphmc  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacphmc/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/" PREFIX_ROOT="" $@
 	@$(ECHO) ""
@@ -202,26 +184,14 @@ runtime: checks
 	$(HIDE) $(MAKE) -C src/runtime  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/runtime/"  PREFIX_ROOT="" default
 
-libsacprelude: checks
-	$(HIDE) $(MAKE) -C src/libsacprelude  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacprelude/"  PREFIX_ROOT="" default
-
-libsac: checks
-	$(HIDE) $(MAKE) -C src/libsac  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsac/"  PREFIX_ROOT="" default
-
-libsacphm: checks
-	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" default
-
-libsacphmc: checks
-	$(HIDE) $(MAKE) -C src/libsacphmc  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacphmc/"  PREFIX_ROOT="" default
-
 tools: checks
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" default
 
+rtlibs: checks
+	$(HIDE) for t in $(BUILD_TARGETS); do \
+	   $(MAKE) -f $(MAKEFILE_DIR)/rtlibs.mkf HIDE="$(HIDE)" TARGET=$$t || exit 1; \
+	done
 
 ###############################################################################
 #
@@ -238,25 +208,34 @@ config:
 
 include $(MAKEFILE_DIR)/check.mkf
 
-listinstfiles = $(shell for f in $$(ls -1 $(1)); do echo "\"$(PREFIX)/$(1)/$$f\"" ; done)
-listfiles = $(shell for f in $$(ls -1 $(1)); do echo "\"$(1)/$$f\"" ; done)
-install:
-	echo $(call listinstfiles,include) > .uninstall
-	echo $(call listinstfiles,lib) >> .uninstall
-	echo $(call listinstfiles,bin) >> .uninstall
-	echo "$(PREFIX)/share/sac2crc" >> .uninstall
-	install -d -m 0755 "$(PREFIX)/bin"
-	install -d -m 0755 "$(PREFIX)/lib"
-	install -d -m 0755 "$(PREFIX)/include"
-	install -d -m 0755 "$(PREFIX)/share"
-	install -m 0755 $(call listfiles,include) "$(PREFIX)/include"
-	install -m 0755 $(call listfiles,lib) "$(PREFIX)/lib"
-	install -m 0755 $(call listfiles,bin) "$(PREFIX)/bin"
-	install -m 0755 sac2crc "$(PREFIX)/share"
+install: checks
+	$(INSTALL) -d "$(INCPATH_CONF)"
+	$(INSTALL) -d "$(SAC2CRC_DIR)"
+	$(INSTALL) -d "$(bindir)"
+	$(INSTALL) -d $(DLL_DIR)
+	$(RM) .uninstall
+	for i in include/*.h; do \
+	  dst="$(INCPATH_CONF)"/`basename $$i`; \
+	  $(ECHO) "$$dst" >>.uninstall; \
+	  $(INSTALL_DATA) $$i "$$dst"; \
+	done
+	$(ECHO) "$(SAC2CRC_CONF)" >>.uninstall
+	$(INSTALL_DATA) setup/sac2crc "$(SAC2CRC_CONF)"
+	for i in bin/*; do \
+	  dst="$(bindir)"/`basename $$i`; \
+	  $(ECHO) "$$dst" >>.uninstall; \
+	  $(INSTALL_PROGRAM) $$i "$$dst"; \
+	done
+	for i in lib/*.*; do \
+	  dst="$(DLL_DIR)"/`basename $$i`; \
+	  $(ECHO) "$$dst" >>.uninstall; \
+	  $(INSTALL_PROGRAM) $$i "$$dst"; \
+	done
+	for t in $(BUILD_TARGETS); do \
+	  $(MAKE) -f $(MAKEFILE_DIR)/rtlibs.mkf HIDE="$(HIDE)" TARGET=$$t install; \
+	done
 
 uninstall:
-	if [ -f .uninstall ]; then \
-	    for f in $$(cat .uninstall); do \
-		$(RM) $$f ; \
-	    done \
-	fi
+	if test -r .uninstall; then \
+	  $(CAT) .uninstall | while read f; do $(RM) "$$f"; done; \
+	done

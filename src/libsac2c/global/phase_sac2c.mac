@@ -1323,7 +1323,7 @@ SUBPHASE (cfp, "MUTC create function pairs", CFPdoCreateFunctionPairs,
 
 /* TVD: Runtime Specialization */
 SUBPHASE (rtspec, "Runtime Specialization create wrapper entry functions",
-          RTSPECdoCreateWrapperEntries, global.rtspec, pc)
+          RTSPECdoCreateWrapperEntries, global.config.rtspec, pc)
 
 SUBPHASE (msc, "Make Slow Clones", MSCdoMakeSlowClones, global.fp, pc)
 /*
@@ -1376,9 +1376,7 @@ PHASE (icc, "Creating binary code", ALWAYS)
 
 SUBPHASE (hdep, "Handling dependencies", DEPdoHandleDependencies, ALWAYS, icc)
 
-SUBPHASE (ivcc, "Invoking C compiler", CCMinvokeCC, ALWAYS, icc)
-
-SUBPHASE (crl, "Creating SAC library", LIBBcreateLibrary, global.filetype != FT_prog, icc)
+SUBPHASE (ivcc, "Invoking C compiler", CCTrunTools, ALWAYS, icc)
 
 ENDPHASE (icc)
 

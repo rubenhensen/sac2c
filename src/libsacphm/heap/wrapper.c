@@ -109,7 +109,7 @@ SAC_HM_MallocAnyChunk_st (SAC_HM_size_byte_t size)
  *
  ******************************************************************************/
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 
 void *
 SAC_HM_MallocAnyChunk_mt (SAC_HM_size_byte_t size, unsigned int thread_id)
@@ -196,7 +196,7 @@ SAC_HM_MallocAnyChunk_mt (SAC_HM_size_byte_t size, unsigned int thread_id)
  *
  ******************************************************************************/
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 
 void *
 SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size, unsigned int thread_id)
@@ -301,7 +301,7 @@ SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size, unsigned int thread_id)
  *
  ******************************************************************************/
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 
 void *
 SAC_HM_MallocSmallChunk_at (SAC_HM_size_unit_t units, int arena_num)
@@ -353,7 +353,7 @@ SAC_HM_MallocSmallChunk_at (SAC_HM_size_unit_t units, int arena_num)
  *
  ******************************************************************************/
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 
 void *
 SAC_HM_MallocLargeChunk_at (SAC_HM_size_unit_t units, int arena_num)
@@ -405,7 +405,7 @@ SAC_HM_MallocLargeChunk_at (SAC_HM_size_unit_t units, int arena_num)
  *
  ******************************************************************************/
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 
 void *
 SAC_HM_MallocTopArena_at (SAC_HM_size_unit_t units)
@@ -453,7 +453,7 @@ SAC_HM_MallocTopArena_at (SAC_HM_size_unit_t units)
  *
  ******************************************************************************/
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 
 void *
 SAC_HM_MallocTopArena_mt (SAC_HM_size_unit_t units)
@@ -495,7 +495,7 @@ SAC_HM_MallocTopArena_mt (SAC_HM_size_unit_t units)
  *
  ******************************************************************************/
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 
 void
 SAC_HM_FreeTopArena_mt (SAC_HM_header_t *addr)
@@ -551,7 +551,7 @@ SAC_HM_FreeTopArena_mt (SAC_HM_header_t *addr)
  *
  ******************************************************************************/
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 
 void
 SAC_HM_FreeTopArena_at (SAC_HM_header_t *addr)

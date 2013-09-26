@@ -24,21 +24,19 @@ extern void *FMGRmapPath (pathkind_t p, void *(*mapfun) (const char *, void *),
                           void *neutral);
 extern void FMGRappendPath (pathkind_t p, const char *path);
 extern void FMGRsetupPaths (void);
-extern const char *FMGRabsolutePathname (const char *path);
 extern FILE *FMGRwriteOpen (const char *format, ...);
 extern FILE *FMGRreadOpen (const char *format, ...);
 extern FILE *FMGRwriteOpenExecutable (const char *format, ...);
 extern FILE *FMGRappendOpen (const char *format, ...);
 extern FILE *FMGRclose (FILE *file);
-extern bool FMGRcheckExistFile (const char *dir, const char *name);
 extern bool FMGRcheckExistDir (const char *dir);
 extern void FMGRsetFileNames (node *module);
 extern void FMGRdeleteTmpDir (void);
 extern void FMGRcreateTmpDir (void);
 extern void FMGRforEach (const char *path, const char *fileexpr, void *funargs,
                          void(const char *path, const char *file, void *params));
-extern const char *FMGRdirname (const char *path);
-extern const char *FMGRbasename (const char *path);
-extern const char *FMGRfile2id (const char *path);
+extern char *FMGRdirname (const char *path);
+extern char *FMGRbasename (const char *path);
+extern char *FMGRfile2id (const char *path);
 
 #endif /* _SAC_FILEMGR_H_ */

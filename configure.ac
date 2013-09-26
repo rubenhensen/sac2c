@@ -11,11 +11,14 @@ dnl set source directory and scripting directory
 AC_CONFIG_SRCDIR([setup])
 AC_CONFIG_AUX_DIR([setup/config])
 
+dnl where to find the SAC standard library sources
+CHECK_STDLIB([modules/structures/ArrayBasics.sac])
+
 dnl we use C as our compiler language
 AC_LANG(C)
 
 dnl and which files to create
-AC_CONFIG_FILES([src/makefiles/config.mkf setup/sac2crc])
+AC_CONFIG_FILES([src/makefiles/config.mkf setup/sac2crc.pre])
 AC_CONFIG_HEADER([src/include/config.h])
 
 dnl check for host type
@@ -34,14 +37,6 @@ AC_DEFINE_UNQUOTED([IS_CYGWIN], [$is_cygwin],
 dnl set OS and ARCH flags
 AC_DEFINE_UNQUOTED([OS], ["$target_os"], [OS string])
 AC_DEFINE_UNQUOTED([ARCH], ["$target_cpu"], [CPU architecture string])
-
-dnl get prefix and save it in the config.h file
-AH_VERBATIM([PREFIX],                  [#undef PREFIX])
-if test "x$prefix" = "xNONE" ; then
-    prefix="$ac_default_prefix"
-fi
-AC_DEFINE_UNQUOTED(PREFIX, "${prefix}")
-AC_SUBST([PREFIX], ["${prefix}"])
 
 dnl Enable sac2c compilation with C++
 AC_ARG_ENABLE([cplusplus],
@@ -80,6 +75,13 @@ CHECK_PHM
 dnl check for ranlib
 AC_PROG_RANLIB
 
+dnl check for some standard tools
+AC_PROG_LN_S
+AC_PROG_SED
+AC_PROG_FGREP
+AC_PROG_INSTALL
+AC_PROG_MKDIR_P
+
 dnl find a code beautifier.
 CHECK_CODE_BEAUTIFIER
 
@@ -107,19 +109,11 @@ AC_CHECK_HEADER([dlfcn.h], [], [AC_MSG_ERROR([dlfcn.h is required.])])
 AC_SEARCH_LIBS([dlopen], [dl])
 CHECK_DLL_EXT
 
-dnl set rtspec flag
-enable_rtspec=no
-if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes; then
-  enable_rtspec=yes
-fi
+dnl canonicalize dlopen_libs
 case $ac_cv_search_dlopen in
   no | none*) dlopen_libs= ;;
   * ) dlopen_libs=$ac_cv_search_dlopen ;;
 esac
-have_rtspec=`if test $enable_rtspec = yes; then echo 1; else echo 0; fi`
-AC_DEFINE_UNQUOTED([ENABLE_RTSPEC], [$have_rtspec],
-                   [Define to 1 if runtime specialization is enabled, otherwise 0.])
-AC_SUBST([ENABLE_RTSPEC], [$enable_rtspec])
 
 dnl Check which GCC warning options are available and
 dnl add them later to MKCCFLAGS and PDCCFLAGS
@@ -311,7 +305,6 @@ case "$target_os" in
 esac
 
 AC_SUBST([OS], [$target_os])
-AC_SUBST([ARCH], [$target_cpu])
 AC_SUBST([OSFLAGS])
 AC_SUBST([CFLAGS])
 AC_SUBST([CPPFLAGS])
@@ -341,15 +334,5 @@ cat <<EOF
 * Configuration done.
 *
 * Detected OS string:      $target_os
-* Detected CPU string:     $target_cpu
-*
-* Run-time specialization: $enable_rtspec
-* Private heap manager:    $enable_phm
-* Back-ends:
-* - MT/pthread:            $enable_mt
-* - MT/LPEL:               $enable_mt_lpel
-* - CUDA:                  $enable_cuda
-* - OpenMP:                $enable_omp
-* - SL:                    $enable_sl
 *
 EOF

@@ -16,10 +16,8 @@
 
 static UNUSED int _dummy_mt_beehive;
 
-#if ENABLE_MT
-
 /* the code is only loaded into libsac.mt.pth and libsac.lpel.pth */
-#if defined(PTH) || defined(LPEL)
+#if defined(SAC_MT_LIB_pthread) || defined(SAC_MT_LIB_lpel)
 
 #include <pthread.h>
 #include <stdio.h>
@@ -340,32 +338,6 @@ volatile unsigned int SAC_MT_cnt_worker_bees = 0; /* dummy */
 volatile unsigned int SAC_MT_cnt_queen_bees = 0;  /* dummy */
 void *SAC_MT_singleton_queen = 0;                 /* dummy */
 
-#ifdef ENABLE_MT_LPEL
-/**
- * If MT_LPEL is enabled in SAC, and the stdlib is compiled to use it,
- * but the actual program is SEQ, then we need to stub those Lpel functions
- * linked in the stdlib. The functions will not be used.
- */
-
-#include "sac.h" /* for SAC_RuntimeError() */
-
-#define STUB(fname)                                                                      \
-    void fname (void)                                                                    \
-    {                                                                                    \
-        SAC_RuntimeError (                                                               \
-          "Stub " #fname                                                                 \
-          " called! You must not link against libsac.seq.so when using LPEL!");          \
-    }
-
-STUB (LpelTaskYield)
-STUB (LpelBiSemaCountWaiting)
-STUB (LpelBiSemaWait)
-STUB (LpelBiSemaSignal)
-
-#endif
-
 #endif /* !TRACE */
 
 #endif /* defined(PTH) || defined(LPEL) */
-
-#endif /* ENABLE_MT */

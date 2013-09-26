@@ -18,9 +18,4 @@ AC_DEFUN([CHECK_SL],dnl
   AC_SUBST([SLC])
   AC_SUBST([SLAR])
   AC_SUBST([SLRANLIB])
-  AC_SUBST([ENABLE_MUTC], [$enable_sl])
-  have_sl=`if test "x$enable_sl" = xno; then echo 0; else echo 1; fi`
-  AC_DEFINE_UNQUOTED([ENABLE_MUTC],
-                     [$have_sl],
-                     [Define to 1 if the MUTC target is enabled, otherwise 0.])
 ])

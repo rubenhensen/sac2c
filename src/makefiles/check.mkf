@@ -66,6 +66,14 @@ checks: $(CONFIGURED) $(PROJECT_ROOT)/.revision.txt
 	@echo ""
 	@ exit 1
 
+$(PROJECT_ROOT)/setup/sac2crc: $(PROJECT_ROOT)/setup/sac2crc.pre
+	rm -f $@ $@.tmp
+	sed -e 's|@RTPATH_CONF[@]|$(RTPATH_CONF)|g' \
+	    -e 's|@MODPATH_CONF[@]|$(MODPATH_CONF)|g' \
+	    -e 's|@INCPATH_CONF[@]|$(INCPATH_CONF)|g' \
+	    -e 's|@TREEPATH_CONF[@]|$(TREEPATH_CONF)|g' $< >$@.tmp
+	mv $@.tmp $@
+
 #$(PROJECT_ROOT)/.revision.txt:
 #	@ if which svn > /dev/null ;  \
 #          then svn info | grep Revision: | sed -e 's/Revision: //g' > $@ ; \
@@ -97,7 +105,7 @@ $(PROJECT_ROOT)/.revision.txt: $(PROJECT_ROOT)/.revision.txt.PHONY
             else                                 \
               rm $@.new;                         \
             fi                                   \
-          fi          
+          fi
 # This code merely counts the number of GIT commits, and
 # used that to fake a revision number.
 # #
@@ -113,5 +121,4 @@ $(PROJECT_ROOT)/.revision.txt: $(PROJECT_ROOT)/.revision.txt.PHONY
             else                                                        \
               rm $@.new;                                                \
             fi                                                          \
-          fi          
-
+          fi

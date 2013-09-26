@@ -35,8 +35,4 @@ AC_DEFUN([CHECK_CUDA],dnl
   fi
   AC_SUBST([CUDA_ARCH])
   AC_SUBST([NVCC_PATH])
-  have_cuda=`if test "x$enable_cuda" != xno; then echo 1; else echo 0; fi`
-  AC_DEFINE_UNQUOTED([ENABLE_CUDA],
-                     [$have_cuda],
-                     [Set to 1 if CUDA is enabled, otherwise 0.])
 ])

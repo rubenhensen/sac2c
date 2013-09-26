@@ -360,7 +360,7 @@ SAC_HM_ShowDiagnostics ()
     int i, t;
     unsigned int num_threads;
 
-#ifdef MT
+#if SAC_MT_MODE > 0
     num_threads = SAC_MT_global_threads;
 #else
     num_threads = 1;

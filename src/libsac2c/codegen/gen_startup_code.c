@@ -88,9 +88,6 @@ PrintGlobalSwitches (void)
                              "/*\n"
                              " *  Global Switches\n */\n\n");
 
-    fprintf (global.outfile, "#define SAC_DO_RTSPEC          %d\n",
-             (global.rtspec) ? 1 : 0);
-
     fprintf (global.outfile, "#define SAC_DO_CHECK           %d\n",
              (global.doruntimecheck) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_CHECK_TYPE      %d\n",
@@ -191,9 +188,6 @@ PrintGlobalSwitches (void)
                              "/*\n"
                              " *  Global Settings\n */\n\n");
 
-    fprintf (global.outfile, "#define SAC_RC_METHOD SAC_RCM_%s\n",
-             global.config.rc_method);
-
     fprintf (global.outfile, "#define SAC_FORCE_DESC_SIZE %d\n", global.force_desc_size);
 
     /* MUTC Switches */
@@ -231,31 +225,6 @@ PrintGlobalSwitches (void)
     fprintf (global.outfile, "#define SAC_OMP_MACROS  %d\n",
              (global.backend == BE_omp) ? 1 : 0);
 
-    fprintf (global.outfile, "\n");
-
-    /* Expose backend mode to backend */
-    switch (global.backend) {
-    case BE_mutc:
-        fprintf (global.outfile, "#define SAC_BACKEND MUTC\n");
-        fprintf (global.outfile, "#define SAC_BACKEND_MUTC\n");
-        break;
-    case BE_c99:
-        fprintf (global.outfile, "#define SAC_BACKEND_C99\n");
-        break;
-    case BE_cuda:
-        fprintf (global.outfile, "#define SAC_BACKEND CUDA\n");
-        break;
-    case BE_cudahybrid:
-        fprintf (global.outfile, "#define SAC_BACKEND CUDA\n");
-        fprintf (global.outfile, "#define SAC_BACKEND_C99\n");
-        break;
-    case BE_omp:
-        fprintf (global.outfile, "#define SAC_BACKEND OMP\n");
-        break;
-    default:
-        DBUG_ASSERT (FALSE, "Unknown backend");
-        break;
-    }
     fprintf (global.outfile, "\n");
 
     fprintf (global.outfile, "#define SAC_DO_COMPILE_MODULE  %d\n",

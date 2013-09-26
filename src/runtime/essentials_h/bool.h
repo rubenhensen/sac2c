@@ -15,7 +15,7 @@
 #define _SAC_BOOL_H
 
 #define MUTC 1
-#if SAC_BACKEND == MUTC
+#ifdef SAC_BACKEND_MUTC
 #include "stdbool.h"
 #else
 

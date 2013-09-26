@@ -131,7 +131,7 @@ libsac2c_types       :=
 
 
 libsac2c_modules     := symboltable stringset libstat modulemanager libmanager \
-                        export ccmanager libbuilder resolveall \
+                        export cctools resolveall \
                         annotatenamespace usesymbols prepareinline dependencies \
                         importsymbols gatherdependencies namespaces addspecialfuns
 
@@ -337,189 +337,11 @@ runtime_nested_h       := nested nested_gen
 
 ###############################################################################
 #
-# Subproject libsacprelude
-#
-###############################################################################
-
-libsacprelude_targets           := libsacpreludeTree$(CROSS_VARIANT)$(SHARED_LIB_EXT) \
-                                   libsacpreludeMod$(CROSS_VARIANT).a
-libsacprelude_targetdir         := lib
-
-libsacprelude_subtarget_suffix  := .sac
-libsacprelude_defaultstyle      := prod
-
-libsacprelude_extraclean_all    := 
-libsacprelude_extraclean_devel  := 
-libsacprelude_extraclean_prod   := 
-
-libsacprelude_sourcedirs        := .
-
-###############################################################################
-
-
-
-
-###############################################################################
-#
-# Subproject libsac
-#
-###############################################################################
-
-ifeq  (MUTC, $(CROSS_BACKEND))
-libsac_targets             := libsac$(CROSS_VARIANT).seq.a
-else
-ifeq ($(OS),cygwin)
-libsac_targets := libsac$(CROSS_VARIANT).seq.a                   \
-                  libsac$(CROSS_VARIANT).seq$(SHARED_LIB_EXT)    \
-                  libsac$(CROSS_VARIANT).mt.pth.a                \
-                  libsac$(CROSS_VARIANT).mt.pth$(SHARED_LIB_EXT) \
-#                  libsac$(CROSS_VARIANT).mt.lpel.a               \
-#                  libsac$(CROSS_VARIANT).mt.lpel$(SHARED_LIB_EXT)\
-                  libsac$(CROSS_VARIANT).mt.omp.a                \
-                  libsac$(CROSS_VARIANT).mt.omp$(SHARED_LIB_EXT) 
-else
-libsac_targets := libsac$(CROSS_VARIANT).seq.a                   \
-                  libsac$(CROSS_VARIANT).seq$(SHARED_LIB_EXT)    \
-                  libsac$(CROSS_VARIANT).mt.pth.a                \
-                  libsac$(CROSS_VARIANT).mt.pth$(SHARED_LIB_EXT) \
-                  libsac$(CROSS_VARIANT).mt.lpel.a               \
-                  libsac$(CROSS_VARIANT).mt.lpel$(SHARED_LIB_EXT)\
-                  libsac$(CROSS_VARIANT).mt.omp.a                \
-                  libsac$(CROSS_VARIANT).mt.omp$(SHARED_LIB_EXT)
-endif
-endif
-
-libsac_targetdir           := lib
-
-libsac_subtarget_suffix    := $(CROSS_VARIANT).o
-libsac_defaultstyle        := prod
-
-libsac_extraclean_all      := 
-libsac_extraclean_devel    := 
-libsac_extraclean_prod     := 
-
-ifeq  (MUTC, $(CROSS_BACKEND))
-libsac_sourcedirs          := essentials interface mutc
-else
-libsac_sourcedirs          := essentials mt mt_omp mt_beehive mt_pth mt_lpel cachesim interface rtspec
-endif
-
-###############################################################################
-
-libsac_essentials   := commandline message misc profile trace
-
-libsac_interface    := sacarg sacargconvert sacmt
-
-libsac_mutc         := reference_counting
-
-libsac_mt           := mt
-
-libsac_mt_beehive   := mt_beehive
-
-libsac_mt_pth       := mt_pth_std mt_pth_trace
-
-libsac_mt_lpel      := mt_lpel_std mt_lpel_trace
-
-libsac_mt_omp       := mt_omp
-
-libsac_cachesim     := basic access_simple access_detailed
-
-libsac_rtspec       := registry reqqueue controller
-
-###############################################################################
-#
-# Subproject libsacphmc  - libsacphm "compat"
-#
-###############################################################################
-libsacphmc_targets           := libsacphmc$(CROSS_VARIANT).seq.a \
-                                libsacphmc$(CROSS_VARIANT).seq$(SHARED_LIB_EXT) \
-                                libsacphmc$(CROSS_VARIANT).seq.diag.a \
-                                libsacphmc$(CROSS_VARIANT).seq.diag$(SHARED_LIB_EXT) \
-                                libsacphmc$(CROSS_VARIANT).mt.a \
-                                libsacphmc$(CROSS_VARIANT).mt$(SHARED_LIB_EXT) \
-                                libsacphmc$(CROSS_VARIANT).mt.diag.a \
-                                libsacphmc$(CROSS_VARIANT).mt.diag$(SHARED_LIB_EXT) \
-                                libsacphmc$(CROSS_VARIANT).xt.a \
-                                libsacphmc$(CROSS_VARIANT).xt$(SHARED_LIB_EXT) \
-                                libsacphmc$(CROSS_VARIANT).xt.diag.a \
-                                libsacphmc$(CROSS_VARIANT).xt.diag$(SHARED_LIB_EXT)
-
-libsacphmc_targetdir         := lib
-
-libsacphmc_subtarget_suffix  := $(CROSS_VARIANT).o
-libsacphmc_defaultstyle      := prod
-
-libsacphmc_extraclean_all    :=
-libsacphmc_extraclean_devel  :=
-libsacphmc_extraclean_prod   :=
-
-ifeq ($(DO_BUILD_PHM), 1)
-libsacphmc_sourcedirs        := wrappers
-else
-libsacphmc_sourcedirs        := empty
-endif
-
-###############################################################################
-
-libsacphmc_wrappers  := nophm
-
-libsacphmc_empty     := empty
-
-
-###############################################################################
-#
-# Subproject libsacphm
-#
-###############################################################################
-libsacphm_targets           := libsacphm$(CROSS_VARIANT).seq.a \
-                               libsacphm$(CROSS_VARIANT).seq$(SHARED_LIB_EXT) \
-                               libsacphm$(CROSS_VARIANT).seq.diag.a \
-                               libsacphm$(CROSS_VARIANT).seq.diag$(SHARED_LIB_EXT) \
-                               libsacphm$(CROSS_VARIANT).mt.a \
-                               libsacphm$(CROSS_VARIANT).mt$(SHARED_LIB_EXT) \
-                               libsacphm$(CROSS_VARIANT).mt.diag.a \
-                               libsacphm$(CROSS_VARIANT).mt.diag$(SHARED_LIB_EXT) \
-                               libsacphm$(CROSS_VARIANT).xt.a \
-                               libsacphm$(CROSS_VARIANT).xt$(SHARED_LIB_EXT) \
-                               libsacphm$(CROSS_VARIANT).xt.diag.a \
-                               libsacphm$(CROSS_VARIANT).xt.diag$(SHARED_LIB_EXT)
-
-libsacphm_targetdir         := lib
-
-libsacphm_subtarget_suffix  := $(CROSS_VARIANT).o
-libsacphm_defaultstyle      := prod
-
-libsacphm_extraclean_all    :=
-libsacphm_extraclean_devel  :=
-libsacphm_extraclean_prod   :=
-
-ifeq ($(DO_BUILD_PHM), 1)
-libsacphm_sourcedirs        := heap diag opt compat
-else
-libsacphm_sourcedirs        := empty
-endif
-
-###############################################################################
-
-libsacphm_heap      := internal setup wrapper small_chunks large_chunks thread_ids
-
-libsacphm_diag      := diagnostics
-
-libsacphm_opt       := placement
-
-libsacphm_compat    := malloc
-
-libsacphm_empty     := empty
-
-
-
-###############################################################################
-#
 # Subproject tools
 #
 ###############################################################################
 
-tools_targets           := csimt csima ctest sac2c sac2c-p sac2c-d sac4c \
+tools_targets           := ctest sac2c sac2c-p sac2c-d sac4c \
                            sac2tex comslc
 tools_targetdir         := bin
 
@@ -530,7 +352,7 @@ tools_extraclean_all    :=
 tools_extraclean_devel  := 
 tools_extraclean_prod   := 
 
-tools_sourcedirs        := csimt csima ctest sac2c sac2c-p sac2c-d sac4c \
+tools_sourcedirs        := ctest sac2c sac2c-p sac2c-d sac4c \
                            sac2tex
 
 ###############################################################################

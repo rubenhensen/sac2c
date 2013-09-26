@@ -1347,19 +1347,6 @@ PRTmodule (node *arg_node, info *arg_info)
              */
         }
 
-        /*
-         * finally create a dummy funfile, so we can rely on one to exist
-         * when using wildcards like fun*.c
-         */
-        global.outfile
-          = FMGRwriteOpen ("%s/fundummy%s", global.tmp_dirname, global.config.cext);
-        fprintf (global.outfile, "#include \"header.h\"\n\n");
-        fprintf (global.outfile,
-                 "static int SAC__%s__another_dummy_value_which_is_completely_useless"
-                 " = 0;\n\n",
-                 NSgetName (MODULE_NAMESPACE (arg_node)));
-        fclose (global.outfile);
-        global.outfile = NULL;
     } else {
         switch (global.filetype) {
         case FT_modimp:
@@ -5999,8 +5986,10 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
              * The current file is a SAC program.
              * Therefore, the C file is generated within the target directory.
              */
-            global.outfile = FMGRwriteOpen ("%s%s", global.targetdir, global.cfilename);
-            CTInote ("Writing file \"%s%s\"", global.targetdir, global.cfilename);
+            global.outfile = FMGRwriteOpen ("%s/%s%s", global.targetdir,
+                                            global.outfilename, global.config.cext);
+            CTInote ("Writing file \"%s/%s%s\"", global.targetdir, global.outfilename,
+                     global.config.cext);
 
             GSCprintFileHeader (syntax_tree);
             syntax_tree = TRAVdo (syntax_tree, arg_info);

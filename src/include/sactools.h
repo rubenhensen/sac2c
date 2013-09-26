@@ -45,31 +45,33 @@ launch_function_from_library (const char *library, const char *mainfun, int argc
     int ret;
 
     if (!libsac2c) {
-        fprintf (stderr,
-                 "ERROR: cannot load shared library '%s'.  "
-                 "Aborting for now.\n",
-                 library);
-        report_error ();
-        exit (10);
+        char *tmp = malloc (strlen (DLL_DIR) + strlen (library) + 2);
+        strcpy (tmp, DLL_DIR);
+        strcat (tmp, "/");
+        strcat (tmp, library);
+        libsac2c = dlopen (tmp, DLOPEN_FLAGS);
+        free (tmp);
+        if (!libsac2c) {
+            fprintf (stderr, "ERROR: library '%s' not found, also not as '%s'.\n",
+                     library, tmp);
+            report_error ();
+            exit (10);
+        }
     }
 
     mainptr.v = dlsym (libsac2c, mainfun);
 
     if (!mainptr.f) {
-        fprintf (stderr,
-                 "ERROR: cannot find symbol '%s' in shared "
-                 "library '%s'.  Aborting for now.\n",
-                 mainfun, library);
+        fprintf (stderr, "ERROR: symbol '%s' not found in library '%s'.\n", mainfun,
+                 library);
         report_error ();
         exit (10);
     }
 
     ret = mainptr.f (argc, argv);
+
     if (dlclose (libsac2c) != 0) {
-        fprintf (stderr,
-                 "ERROR: cannot unload shared library '%s'.  "
-                 "Aborting for now.\n",
-                 library);
+        fprintf (stderr, "ERROR: cannot unload library '%s'.\n", library);
         report_error ();
         exit (10);
     }

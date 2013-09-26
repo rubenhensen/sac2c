@@ -119,7 +119,7 @@ SAC_HM_AllocateNewBinInArenaOfArenas (SAC_HM_size_unit_t units, SAC_HM_arena_t *
      * We will only return to this point if the additional allocation succeeds.
      */
 
-#ifdef MT
+#if SAC_MT_MODE > 0
     if (SAC_MT_globally_single) {
         freep = (SAC_HM_header_t *)
           SAC_HM_MallocLargeChunk (arena->binsize + 2,

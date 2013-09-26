@@ -585,7 +585,7 @@ PACKAGE_STRING='sac2c git'
 PACKAGE_BUGREPORT='info@sac-home.org'
 PACKAGE_URL=''
 
-ac_unique_file="."
+ac_unique_file="setup"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -628,7 +628,6 @@ LD_FLAGS
 LD_PATH
 LD_DYNAMIC
 OSFLAGS
-ARCH
 OS
 SAC2C_PDCCFLAGS
 SAC2C_MKCCFLAGS
@@ -641,13 +640,11 @@ GENPIC
 PDCCFLAGS
 MKCCFLAGS
 RCCCFLAGS
-RCLDFLAGS
 OPT_g
 OPT_O3
 OPT_O2
 OPT_O1
 OPT_O0
-ENABLE_RTSPEC
 SHARED_LIB_EXT
 DOT
 BASH
@@ -656,11 +653,16 @@ M4
 UNIQ
 SORT
 CB
+MKDIR_P
+INSTALL_DATA
+INSTALL_SCRIPT
+INSTALL_PROGRAM
+FGREP
+SED
+LN_S
 RANLIB
 CAN_USE_PHM
-ENABLE_OMP
 OPENMP_CFLAGS
-ENABLE_MUTC
 SLRANLIB
 SLAR
 SLC
@@ -669,10 +671,8 @@ CUDA_ARCH
 NVCC
 MT_LDFLAGS_LPEL
 MT_CFLAGS_LPEL
-ENABLE_MT_LPEL
 LPEL_LIBS
 LPEL_CFLAGS
-ENABLE_MT
 PTHREAD_CFLAGS
 PTHREAD_LIBS
 PTHREAD_CC
@@ -687,7 +687,6 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
-PREFIX
 target_os
 target_vendor
 target_cpu
@@ -700,6 +699,7 @@ build_os
 build_vendor
 build_cpu
 build
+STDLIB_SOURCES
 target_alias
 host_alias
 build_alias
@@ -744,6 +744,7 @@ RCALPHA
 RCMAC'
 ac_user_opts='
 enable_option_checking
+with_stdlib_sources
 enable_cplusplus
 enable_lto
 enable_mt
@@ -1400,6 +1401,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-stdlib-sources   Where to find the SAC standard library sources.
   --with-lpel-includes=DIR
                           look up lpel.h in DIR
   --with-lpel-libs=DIR    look up liblpel in DIR
@@ -2209,7 +2211,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 ac_aux_dir=
-for ac_dir in ./config "$srcdir"/./config; do
+for ac_dir in setup/config "$srcdir"/setup/config; do
   if test -f "$ac_dir/install-sh"; then
     ac_aux_dir=$ac_dir
     ac_install_sh="$ac_aux_dir/install-sh -c"
@@ -2225,7 +2227,7 @@ for ac_dir in ./config "$srcdir"/./config; do
   fi
 done
 if test -z "$ac_aux_dir"; then
-  as_fn_error $? "cannot find install-sh, install.sh, or shtool in ./config \"$srcdir\"/./config" "$LINENO" 5
+  as_fn_error $? "cannot find install-sh, install.sh, or shtool in setup/config \"$srcdir\"/setup/config" "$LINENO" 5
 fi
 
 # These three variables are undocumented and unsupported,
@@ -2238,6 +2240,28 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+
+
+# Check whether --with-stdlib-sources was given.
+if test "${with_stdlib_sources+set}" = set; then :
+  withval=$with_stdlib_sources; with_stdlib_sources=$withval
+else
+  with_stdlib_sources=
+fi
+
+  if test x"$with_stdlib_sources" = x; then
+     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-stdlib-sources is not set; do not forget to edit sac2crc with the final location." >&5
+$as_echo "$as_me: WARNING: --with-stdlib-sources is not set; do not forget to edit sac2crc with the final location." >&2;}
+  else
+     if ! test -r "$with_stdlib_sources/modules/structures/ArrayBasics.sac"; then
+        as_fn_error $? "Cannot find $with_stdlib_sources/modules/structures/ArrayBasics.sac. Is --with-stdlib-sources correct?" "$LINENO" 5
+     fi
+     with_stdlib_sources=`(cd "$with_stdlib_sources" && pwd)`
+  fi
+  STDLIB_SOURCES=$with_stdlib_sources
+
+
+
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -2245,9 +2269,9 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-ac_config_files="$ac_config_files ../src/makefiles/config.mkf sac2crc"
+ac_config_files="$ac_config_files src/makefiles/config.mkf setup/sac2crc.pre"
 
-ac_config_headers="$ac_config_headers ../src/include/config.h"
+ac_config_headers="$ac_config_headers src/include/config.h"
 
 
 # Make sure we can run config.sub.
@@ -2380,17 +2404,6 @@ _ACEOF
 cat >>confdefs.h <<_ACEOF
 #define ARCH "$target_cpu"
 _ACEOF
-
-
-
-if test "x$prefix" = "xNONE" ; then
-    prefix="$ac_default_prefix"
-fi
-cat >>confdefs.h <<_ACEOF
-#define PREFIX "${prefix}"
-_ACEOF
-
-PREFIX="${prefix}"
 
 
 # Check whether --enable-cplusplus was given.
@@ -4464,14 +4477,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
         enable_mt=no
      fi
   fi
-  have_pthread=`if test x"$enable_mt" != xno; then echo 1; else echo 0; fi`
-
-cat >>confdefs.h <<_ACEOF
-#define ENABLE_MT $have_pthread
-_ACEOF
-
-  ENABLE_MT=$have_pthread
-
 
 
    # Check whether --enable-mt-lpel was given.
@@ -4571,18 +4576,10 @@ fi
    fi
 
    # inform configuration
-   have_lpel=`if test $enable_mt_lpel = yes; then echo 1; else echo 0; fi`
-   ENABLE_MT_LPEL=$enable_mt_lpel
-
    MT_CFLAGS_LPEL=$LPEL_CFLAGS
 
    LPEL_LIBS="$LPEL_LIBS -llpel"
    MT_LDFLAGS_LPEL=$LPEL_LIBS
-
-
-cat >>confdefs.h <<_ACEOF
-#define ENABLE_MT_LPEL $have_lpel
-_ACEOF
 
 
 
@@ -4663,12 +4660,6 @@ $as_echo "$enable_cuda" >&6; }
       fi
   fi
 
-
-  have_cuda=`if test "x$enable_cuda" != xno; then echo 1; else echo 0; fi`
-
-cat >>confdefs.h <<_ACEOF
-#define ENABLE_CUDA $have_cuda
-_ACEOF
 
 
 
@@ -4816,14 +4807,6 @@ test -n "$SLRANLIB" || SLRANLIB="no"
 
 
 
-  ENABLE_MUTC=$enable_sl
-
-  have_sl=`if test "x$enable_sl" = xno; then echo 0; else echo 1; fi`
-
-cat >>confdefs.h <<_ACEOF
-#define ENABLE_MUTC $have_sl
-_ACEOF
-
 
 
    # Check whether --enable-omp was given.
@@ -4912,16 +4895,6 @@ fi
 
       CFLAGS=$save_CFLAGS
    fi
-
-
-   have_omp=`if test x"$enable_omp" != xno; then echo 1; else echo 0; fi`
-
-cat >>confdefs.h <<_ACEOF
-#define ENABLE_OMP $have_omp
-_ACEOF
-
-   ENABLE_OMP=$enable_omp
-
 
 
 
@@ -5069,6 +5042,289 @@ esac
 else
   RANLIB="$ac_cv_prog_RANLIB"
 fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
+$as_echo_n "checking whether ln -s works... " >&6; }
+LN_S=$as_ln_s
+if test "$LN_S" = "ln -s"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, using $LN_S" >&5
+$as_echo "no, using $LN_S" >&6; }
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for a sed that does not truncate output" >&5
+$as_echo_n "checking for a sed that does not truncate output... " >&6; }
+if ${ac_cv_path_SED+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+            ac_script=s/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/
+     for ac_i in 1 2 3 4 5 6 7; do
+       ac_script="$ac_script$as_nl$ac_script"
+     done
+     echo "$ac_script" 2>/dev/null | sed 99q >conftest.sed
+     { ac_script=; unset ac_script;}
+     if test -z "$SED"; then
+  ac_path_SED_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in sed gsed; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_SED="$as_dir/$ac_prog$ac_exec_ext"
+      as_fn_executable_p "$ac_path_SED" || continue
+# Check for GNU ac_path_SED and select it if it is found.
+  # Check for GNU $ac_path_SED
+case `"$ac_path_SED" --version 2>&1` in
+*GNU*)
+  ac_cv_path_SED="$ac_path_SED" ac_path_SED_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo '' >> "conftest.nl"
+    "$ac_path_SED" -f conftest.sed < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    as_fn_arith $ac_count + 1 && ac_count=$as_val
+    if test $ac_count -gt ${ac_path_SED_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_SED="$ac_path_SED"
+      ac_path_SED_max=$ac_count
+    fi
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_SED_found && break 3
+    done
+  done
+  done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_SED"; then
+    as_fn_error $? "no acceptable sed could be found in \$PATH" "$LINENO" 5
+  fi
+else
+  ac_cv_path_SED=$SED
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_SED" >&5
+$as_echo "$ac_cv_path_SED" >&6; }
+ SED="$ac_cv_path_SED"
+  rm -f conftest.sed
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for fgrep" >&5
+$as_echo_n "checking for fgrep... " >&6; }
+if ${ac_cv_path_FGREP+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if echo 'ab*c' | $GREP -F 'ab*c' >/dev/null 2>&1
+   then ac_cv_path_FGREP="$GREP -F"
+   else
+     if test -z "$FGREP"; then
+  ac_path_FGREP_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in fgrep; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_FGREP="$as_dir/$ac_prog$ac_exec_ext"
+      as_fn_executable_p "$ac_path_FGREP" || continue
+# Check for GNU ac_path_FGREP and select it if it is found.
+  # Check for GNU $ac_path_FGREP
+case `"$ac_path_FGREP" --version 2>&1` in
+*GNU*)
+  ac_cv_path_FGREP="$ac_path_FGREP" ac_path_FGREP_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo 'FGREP' >> "conftest.nl"
+    "$ac_path_FGREP" FGREP < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    as_fn_arith $ac_count + 1 && ac_count=$as_val
+    if test $ac_count -gt ${ac_path_FGREP_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_FGREP="$ac_path_FGREP"
+      ac_path_FGREP_max=$ac_count
+    fi
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_FGREP_found && break 3
+    done
+  done
+  done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_FGREP"; then
+    as_fn_error $? "no acceptable fgrep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" "$LINENO" 5
+  fi
+else
+  ac_cv_path_FGREP=$FGREP
+fi
+
+   fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_FGREP" >&5
+$as_echo "$ac_cv_path_FGREP" >&6; }
+ FGREP="$ac_cv_path_FGREP"
+
+
+# Find a good install program.  We prefer a C program (faster),
+# so one script is as good as another.  But avoid the broken or
+# incompatible versions:
+# SysV /etc/install, /usr/sbin/install
+# SunOS /usr/etc/install
+# IRIX /sbin/install
+# AIX /bin/install
+# AmigaOS /C/install, which installs bootblocks on floppy discs
+# AIX 4 /usr/bin/installbsd, which doesn't work without a -g flag
+# AFS /usr/afsws/bin/install, which mishandles nonexistent args
+# SVR4 /usr/ucb/install, which tries to use the nonexistent group "staff"
+# OS/2's system install, which has a completely different semantic
+# ./install, which can be erroneously created by make from ./install.sh.
+# Reject install programs that cannot install multiple files.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for a BSD-compatible install" >&5
+$as_echo_n "checking for a BSD-compatible install... " >&6; }
+if test -z "$INSTALL"; then
+if ${ac_cv_path_install+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    # Account for people who put trailing slashes in PATH elements.
+case $as_dir/ in #((
+  ./ | .// | /[cC]/* | \
+  /etc/* | /usr/sbin/* | /usr/etc/* | /sbin/* | /usr/afsws/bin/* | \
+  ?:[\\/]os2[\\/]install[\\/]* | ?:[\\/]OS2[\\/]INSTALL[\\/]* | \
+  /usr/ucb/* ) ;;
+  *)
+    # OSF1 and SCO ODT 3.0 have their own names for install.
+    # Don't use installbsd from OSF since it installs stuff as root
+    # by default.
+    for ac_prog in ginstall scoinst install; do
+      for ac_exec_ext in '' $ac_executable_extensions; do
+	if as_fn_executable_p "$as_dir/$ac_prog$ac_exec_ext"; then
+	  if test $ac_prog = install &&
+	    grep dspmsg "$as_dir/$ac_prog$ac_exec_ext" >/dev/null 2>&1; then
+	    # AIX install.  It has an incompatible calling convention.
+	    :
+	  elif test $ac_prog = install &&
+	    grep pwplus "$as_dir/$ac_prog$ac_exec_ext" >/dev/null 2>&1; then
+	    # program-specific install script used by HP pwplus--don't use.
+	    :
+	  else
+	    rm -rf conftest.one conftest.two conftest.dir
+	    echo one > conftest.one
+	    echo two > conftest.two
+	    mkdir conftest.dir
+	    if "$as_dir/$ac_prog$ac_exec_ext" -c conftest.one conftest.two "`pwd`/conftest.dir" &&
+	      test -s conftest.one && test -s conftest.two &&
+	      test -s conftest.dir/conftest.one &&
+	      test -s conftest.dir/conftest.two
+	    then
+	      ac_cv_path_install="$as_dir/$ac_prog$ac_exec_ext -c"
+	      break 3
+	    fi
+	  fi
+	fi
+      done
+    done
+    ;;
+esac
+
+  done
+IFS=$as_save_IFS
+
+rm -rf conftest.one conftest.two conftest.dir
+
+fi
+  if test "${ac_cv_path_install+set}" = set; then
+    INSTALL=$ac_cv_path_install
+  else
+    # As a last resort, use the slow shell script.  Don't cache a
+    # value for INSTALL within a source directory, because that will
+    # break other packages using the cache if that directory is
+    # removed, or if the value is a relative name.
+    INSTALL=$ac_install_sh
+  fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $INSTALL" >&5
+$as_echo "$INSTALL" >&6; }
+
+# Use test -z because SunOS4 sh mishandles braces in ${var-val}.
+# It thinks the first close brace ends the variable substitution.
+test -z "$INSTALL_PROGRAM" && INSTALL_PROGRAM='${INSTALL}'
+
+test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
+
+test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for a thread-safe mkdir -p" >&5
+$as_echo_n "checking for a thread-safe mkdir -p... " >&6; }
+if test -z "$MKDIR_P"; then
+  if ${ac_cv_path_mkdir+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/opt/sfw/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in mkdir gmkdir; do
+	 for ac_exec_ext in '' $ac_executable_extensions; do
+	   as_fn_executable_p "$as_dir/$ac_prog$ac_exec_ext" || continue
+	   case `"$as_dir/$ac_prog$ac_exec_ext" --version 2>&1` in #(
+	     'mkdir (GNU coreutils) '* | \
+	     'mkdir (coreutils) '* | \
+	     'mkdir (fileutils) '4.1*)
+	       ac_cv_path_mkdir=$as_dir/$ac_prog$ac_exec_ext
+	       break 3;;
+	   esac
+	 done
+       done
+  done
+IFS=$as_save_IFS
+
+fi
+
+  test -d ./--version && rmdir ./--version
+  if test "${ac_cv_path_mkdir+set}" = set; then
+    MKDIR_P="$ac_cv_path_mkdir -p"
+  else
+    # As a last resort, use the slow shell script.  Don't cache a
+    # value for MKDIR_P within a source directory, because that will
+    # break other packages using the cache if that directory is
+    # removed, or if the value is a relative name.
+    MKDIR_P="$ac_install_sh -d"
+  fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $MKDIR_P" >&5
+$as_echo "$MKDIR_P" >&6; }
 
 
 
@@ -5772,22 +6028,10 @@ _ACEOF
 $as_echo "$dll_ext" >&6; }
 
 
-enable_rtspec=no
-if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes; then
-  enable_rtspec=yes
-fi
 case $ac_cv_search_dlopen in
   no | none*) dlopen_libs= ;;
   * ) dlopen_libs=$ac_cv_search_dlopen ;;
 esac
-have_rtspec=`if test $enable_rtspec = yes; then echo 1; else echo 0; fi`
-
-cat >>confdefs.h <<_ACEOF
-#define ENABLE_RTSPEC $have_rtspec
-_ACEOF
-
-ENABLE_RTSPEC=$enable_rtspec
-
 
 gcc_options=
 if test "$GCC" = yes ; then
@@ -5992,8 +6236,6 @@ if  test "$GCC" = yes ; then
 
   OPT_g=-g
 
-  RCLDFLAGS=""
-
   RCCCFLAGS="-Wall -Wno-unused -fno-builtin $flags_lto"
 
   MKCCFLAGS="$gcc_options -pedantic -g $flags_lto"
@@ -6026,8 +6268,6 @@ elif  test "$SUNC" = yes ; then
 
   OPT_g=-g
 
-  RCLDFLAGS=""
-
   RCCCFLAGS="-dalign -fsimple -xsafe=mem"
 
   MKCCFLAGS="-erroff=E_CAST_DOESNT_YIELD_LVALUE -g"
@@ -6054,8 +6294,6 @@ elif  test "$DECC" = yes ; then
   OPT_O3=-O3
 
   OPT_g=-g
-
-  RCLDFLAGS=""
 
   RCCCFLAGS=""
 
@@ -6084,8 +6322,6 @@ elif  test "$MACC" = yes ; then
 
   OPT_g=-g
 
-  RCLDFLAGS=""
-
   RCCCFLAGS="-Wall -Wno-unused -fno-builtin"
 
   MKCCFLAGS="-Wall -g"
@@ -6112,8 +6348,6 @@ else
   OPT_O3=""
 
   OPT_g=""
-
-  RCLDFLAGS=""
 
   RCCCFLAGS=""
 
@@ -6150,8 +6384,6 @@ if [ "$GXX" = yes -a "$enable_cplusplus" = yes ]; then
 
   OPT_g=-g
 
-  RCLDFLAGS=""
-
   RCCCFLAGS="-Wall -Wno-unused -fno-builtin"
 
   SAC2C_MKCCFLAGS="-Wno-write-strings -g"
@@ -6182,10 +6414,10 @@ fi
 
 
 
-RCSUN=./sac2crc.SUN
-RCX86=./sac2crc.X86
-RCALPHA=./sac2crc.ALPHA
-RCMAC=./sac2crc.MAC
+RCSUN=setup/sac2crc.SUN
+RCX86=setup/sac2crc.X86
+RCALPHA=setup/sac2crc.ALPHA
+RCMAC=setup/sac2crc.MAC
 
 
 # generate specific flags for known os
@@ -6254,8 +6486,6 @@ $as_echo "unknown" >&6; }
 esac
 
 OS=$target_os
-
-ARCH=$target_cpu
 
 
 
@@ -6862,6 +7092,8 @@ gives unlimited permission to copy, distribute and modify it."
 
 ac_pwd='$ac_pwd'
 srcdir='$srcdir'
+INSTALL='$INSTALL'
+MKDIR_P='$MKDIR_P'
 test -n "\$AWK" || AWK=awk
 _ACEOF
 
@@ -6973,9 +7205,9 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "../src/makefiles/config.mkf") CONFIG_FILES="$CONFIG_FILES ../src/makefiles/config.mkf" ;;
-    "sac2crc") CONFIG_FILES="$CONFIG_FILES sac2crc" ;;
-    "../src/include/config.h") CONFIG_HEADERS="$CONFIG_HEADERS ../src/include/config.h" ;;
+    "src/makefiles/config.mkf") CONFIG_FILES="$CONFIG_FILES src/makefiles/config.mkf" ;;
+    "setup/sac2crc.pre") CONFIG_FILES="$CONFIG_FILES setup/sac2crc.pre" ;;
+    "src/include/config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/include/config.h" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -7453,6 +7685,15 @@ ac_abs_srcdir=$ac_abs_top_srcdir$ac_dir_suffix
   # CONFIG_FILE
   #
 
+  case $INSTALL in
+  [\\/$]* | ?:[\\/]* ) ac_INSTALL=$INSTALL ;;
+  *) ac_INSTALL=$ac_top_build_prefix$INSTALL ;;
+  esac
+  ac_MKDIR_P=$MKDIR_P
+  case $MKDIR_P in
+  [\\/$]* | ?:[\\/]* ) ;;
+  */*) ac_MKDIR_P=$ac_top_build_prefix$MKDIR_P ;;
+  esac
 _ACEOF
 
 cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
@@ -7506,6 +7747,8 @@ s&@abs_top_srcdir@&$ac_abs_top_srcdir&;t t
 s&@builddir@&$ac_builddir&;t t
 s&@abs_builddir@&$ac_abs_builddir&;t t
 s&@abs_top_builddir@&$ac_abs_top_builddir&;t t
+s&@INSTALL@&$ac_INSTALL&;t t
+s&@MKDIR_P@&$ac_MKDIR_P&;t t
 $ac_datarootdir_hack
 "
 eval sed \"\$ac_sed_extra\" "$ac_file_inputs" |
@@ -7602,15 +7845,5 @@ cat <<EOF
 * Configuration done.
 *
 * Detected OS string:      $target_os
-* Detected CPU string:     $target_cpu
-*
-* Run-time specialization: $enable_rtspec
-* Private heap manager:    $enable_phm
-* Back-ends:
-* - MT/pthread:            $enable_mt
-* - MT/LPEL:               $enable_mt_lpel
-* - CUDA:                  $enable_cuda
-* - OpenMP:                $enable_omp
-* - SL:                    $enable_sl
 *
 EOF

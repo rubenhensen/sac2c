@@ -246,7 +246,7 @@
 
 #include "config.h"
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_THREADS_STATIC 1
@@ -388,7 +388,7 @@ memset_words (void *s, unsigned c, size_t nw)
 #define DIAG_ADD(cnt, val) (cnt) += (val)
 #define DIAG_SET(cnt, val) (cnt) = (val)
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 #define DIAG_INC_LOCK(cnt)                                                               \
     {                                                                                    \
         SAC_MT_ACQUIRE_LOCK (SAC_HM_diag_counter_lock);                                  \

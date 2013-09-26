@@ -23,7 +23,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_THREADS_STATIC 1
 #define SAC_DO_MT_PTHREAD 1

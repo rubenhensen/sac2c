@@ -81,7 +81,7 @@ malloc (size_t sz) __throw
     const SAC_HM_size_byte_t size = (SAC_HM_size_byte_t)sz;
     SAC_HM_size_unit_t units;
     void *mem;
-#ifdef MT
+#if SAC_MT_MODE > 0
     /* unsigned int thread_id, *thread_id_ptr; */
     unsigned int thread_id;
     const int multi_threaded = !SAC_MT_globally_single;
@@ -95,7 +95,7 @@ malloc (size_t sz) __throw
         SAC_HM_SetupMaster ();
     }
 
-#ifdef MT
+#if SAC_MT_MODE > 0
     if (multi_threaded) {
         /*
          * OpenMP mt solution and Pthread solution
@@ -163,7 +163,7 @@ malloc (size_t sz) __throw
                 DIAG_INC (SAC_HM_arenas[thread_id][7].cnt_alloc_var_size);
                 return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[thread_id][7])));
             } else {
-#ifdef MT
+#if SAC_MT_MODE > 0
                 if (multi_threaded) {
                     SAC_MT_ACQUIRE_LOCK (SAC_HM_top_arena_lock);
                     DIAG_INC (SAC_HM_acquire_top_arena_lock);
@@ -228,7 +228,7 @@ free (void *addr)
                 return;
             }
 
-#ifdef MT
+#if SAC_MT_MODE > 0
             if (arena->num < SAC_HM_TOP_ARENA) {
                 SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr, arena);
             } else {

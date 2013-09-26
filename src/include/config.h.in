@@ -1,4 +1,4 @@
-/* ../src/include/config.h.in.  Generated from configure.ac by autoheader.  */
+/* src/include/config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* CPU architecture string */
 #undef ARCH
@@ -9,24 +9,6 @@
 
 /* Define to 1 to enable graphviz visualization, otherwise 0. */
 #undef DOT_FLAG
-
-/* Set to 1 if CUDA is enabled, otherwise 0. */
-#undef ENABLE_CUDA
-
-/* Define to 1 if pthreads are available and MT is enabled, otherwise 0. */
-#undef ENABLE_MT
-
-/* Define to 1 if the MT/LPEL backend is enabled, otherwise 0. */
-#undef ENABLE_MT_LPEL
-
-/* Define to 1 if the MUTC target is enabled, otherwise 0. */
-#undef ENABLE_MUTC
-
-/* Define to 1 if the OpenMP back-end is enabled, otherwise 0. */
-#undef ENABLE_OMP
-
-/* Define to 1 if runtime specialization is enabled, otherwise 0. */
-#undef ENABLE_RTSPEC
 
 /* Set to 1 if compiler supports GNU vector syntax, otherwise 0. */
 #undef HAVE_GCC_SIMD_OPERATIONS
@@ -118,8 +100,6 @@
 
 /* set to maximum length of sac function names for profiling */
 #undef PF_MAXFUNNAMELEN
-
-#undef PREFIX
 
 /* Define to necessary symbol if this constant uses a non-standard name on
    your system. */

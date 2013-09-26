@@ -42,9 +42,7 @@ static UNUSED int dummy_mt_pth;
  * is disabled!
  */
 
-#if ENABLE_MT
-
-#ifdef PTH /* the code is only loaded into libsac.mt.pth */
+#if defined(SAC_MT_LIB_pthread) /* the code is only loaded into libsac.mt.pth */
 
 #include <pthread.h>
 #include <stdio.h>
@@ -848,5 +846,3 @@ int SAC_MT_self_bee_key; /* dummy */
 #endif /* TRACE */
 
 #endif /* PTH */
-
-#endif /* ENABLE_MT */

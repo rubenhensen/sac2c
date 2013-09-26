@@ -31,9 +31,7 @@ static UNUSED int dummy_mt_omp;
  * is disabled!
  */
 
-#if ENABLE_MT && ENABLE_OMP
-
-#ifdef OMP /* the code is only loaded into libsac.mt.omp */
+#ifdef SAC_BACKEND_omp /* the code is only loaded into libsac.mt.omp */
 
 #include <pthread.h>
 /* #include <omp.h> */
@@ -80,7 +78,3 @@ SAC_MT_Internal_CurrentThreadId (void)
 }
 
 #endif /* OMP */
-
-#else /* ENABLE_MT && ENABLE_OMP */
-
-#endif /*  ENABLE_MT && ENABLE_OMP  */

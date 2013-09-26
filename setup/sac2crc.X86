@@ -7,6 +7,8 @@
 
 target pentium_II_PE:
 
+VARIANT          +=  "-p2"
+
 CACHE1_SIZE      :=  16
 CACHE1_LINE      :=  32
 CACHE1_ASSOC     :=  4
@@ -18,6 +20,8 @@ CACHE2_ASSOC     :=  4
 
 target pentium_III_mob:
 
+VARIANT          +=  "-p3"
+
 CACHE1_SIZE      :=  16
 CACHE1_LINE      :=  32
 CACHE1_ASSOC     :=  4
@@ -28,6 +32,8 @@ CACHE2_ASSOC     :=  32
 
 
 target pentium_IV:
+
+VARIANT          +=  "-p4"
 
 CACHE1_SIZE      :=  8
 CACHE1_LINE      :=  64

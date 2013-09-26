@@ -1,5 +1,5 @@
 #include "print_ldflags.h"
-#include "ccmanager.h"
+#include "cctools.h"
 #include "memory.h"
 
 #define DBUG_PREFIX "PLDF"
@@ -19,8 +19,8 @@ PLDFdoPrintLDFlags (node *syntax_tree)
 
     DBUG_ENTER ();
 
-    flags = CCMgetLinkerFlags (syntax_tree);
-    printf ("-l%s %s", global.outfilename, flags);
+    flags = CCTperformTask (CCT_linkflags);
+    printf ("%s", flags);
     flags = MEMfree (flags);
 
     CTIterminateCompilation (syntax_tree);

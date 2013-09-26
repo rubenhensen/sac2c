@@ -244,7 +244,6 @@ static module_t *
 AddModuleToPool (const char *name)
 {
     module_t *result;
-    char *tmp;
 
     DBUG_ENTER ();
 
@@ -260,19 +259,17 @@ AddModuleToPool (const char *name)
 
     result = (module_t *)MEMmalloc (sizeof (module_t));
 
-    tmp = (char *)MEMmalloc (sizeof (char)
-                             * (STRlen (name) + STRlen (global.config.lib_variant)
-                                + sizeof (SHARED_LIB_EXT) + 7));
-    sprintf (tmp, "lib%sTree%s" SHARED_LIB_EXT, name, global.config.lib_variant);
+    char *treerelpath = STRcatn (6, "tree/", global.config.target_env, "/lib", name,
+                                 "Tree", global.config.tree_dllext);
 
-    result->sofile = STRcpy (FMGRfindFile (PK_lib_path, tmp));
+    result->sofile = STRcpy (FMGRfindFile (PK_tree_path, treerelpath));
 
     if (result->sofile == NULL)
-        CTIabort ("Cannot find library `%s' for module `%s'", tmp, name);
+        CTIabort ("Cannot find library `%s' for module `%s'", treerelpath, name);
+
+    MEMfree (treerelpath);
 
     DBUG_PRINT ("Found library file '%s'.", result->sofile);
-
-    tmp = MEMfree (tmp);
 
     result->name = STRcpy (name);
     result->lib = LIBMloadLibrary (result->sofile);

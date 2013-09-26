@@ -8,7 +8,7 @@
 
 #include "config.h"
 
-#if ENABLE_RTSPEC
+#if SAC_DO_RTSPEC
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -25,7 +25,7 @@
  * Heap management configuration data.
  */
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 
 static const SAC_HM_size_unit_t min_chunk_size[]
   = {SAC_HM_ARENA_0_MINCS, SAC_HM_ARENA_1_MINCS, SAC_HM_ARENA_2_MINCS,
@@ -222,7 +222,7 @@ SAC_HM_SetupMaster ()
  *
  ******************************************************************************/
 
-#ifdef MT
+#if SAC_MT_MODE > 0
 
 void
 SAC_HM_SetupWorkers (unsigned int num_threads)
@@ -345,7 +345,7 @@ SAC_HM_Setup (unsigned int threads)
         SAC_HM_SetupMaster ();
     }
 
-#ifdef MT
+#if SAC_MT_MODE > 0
     if (threads) {
         SAC_HM_SetupWorkers (threads);
     }

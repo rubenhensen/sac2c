@@ -25,10 +25,8 @@ PrintToolName (void)
             "\n"
             "\n"
             "NAME:          %s\n"
-            "VERSION:       %s\n"
-            "PLATFORM:      %s\n",
-            global.toolname, (global.version_id[0] == '\0') ? "???" : global.version_id,
-            (global.target_platform[0] == '\0') ? "???" : global.target_platform);
+            "VERSION:       %s\n",
+            global.toolname, (global.version_id[0] == '\0') ? "???" : global.version_id);
 
     DBUG_RETURN ();
 }
@@ -111,43 +109,10 @@ PrintFeatureSet (void)
 {
     DBUG_ENTER ();
 
-    printf ("\n\nINSTALLATION-SPECIFIC FEATURE SET:\n\n");
+    printf ("\n\nINSTALLATION-SPECIFIC FEATURE SET:\n\n"
+            " - default path to sac2crc: " SAC2CRC_CONF "\n"
+            " - default path to libsac2c: " DLL_DIR "\n\n");
 
-#if ENABLE_MT
-    printf ("    Posix Thread based parallelization:  enabled\n");
-#else
-    printf ("    Posix Thread based parallelization: disabled\n");
-#endif
-
-#if ENABLE_MT_LPEL
-    printf ("    LPEL based parallelization:          enabled\n");
-#else
-    printf ("    LPEL based parallelization:         disabled\n");
-#endif
-
-#if ENABLE_OMP
-    printf ("    OpenMP based parallelization:        enabled\n");
-#else
-    printf ("    OpenMP based parallelization:       disabled\n");
-#endif
-
-#if ENABLE_RTSPEC
-    printf ("    Runtime specialization:              enabled\n");
-#else
-    printf ("    Runtime specialization:             disabled\n");
-#endif
-
-#if ENABLE_MUTC
-    printf ("    MuTC support:                        enabled\n");
-#else
-    printf ("    MuTC support:                       disabled\n");
-#endif
-
-#if ENABLE_HWLOC
-    printf ("    hwloc thread binding:                enabled\n");
-#else
-    printf ("    hwloc thread binding:               disabled\n");
-#endif
     DBUG_RETURN ();
 }
 
@@ -191,13 +156,19 @@ PrintOptionsSac4c (void)
 
     printf ("\n\nGENERAL OPTIONS:\n\n"
 
-            "    -L <path>       Specify additional SAC library file path.\n"
             "    -I <path>       Specify additional SAC library source file path.\n"
+            "    -L <path>       Specify additional SAC library module path.\n"
+            "    -T <path>       Specify additional SAC library tree path.\n"
             "    -E <path>       Specify additional C library file path.\n"
-            "    -Xc <flags>     Extra flags to pass to the C compiler.\n"
+            "    -Xc <flags>     Extra flags to pass to the C compiler for "
+            "program/module code.\n"
+            "    -Xl <flags>     Extra flags to pass to the C linker for program/module "
+            "code.\n"
+            "    -Xtc <flags>    Extra flags to pass to the C compiler for tree code.\n"
+            "    -Xtl <flags>    Extra flags to pass to the C linker for tree code.\n"
             "\n"
             "    -o <name>       Write external declarations to file <name>.h and\n"
-            "                    wrapper library to file lib<name>.a/lib<name>/so.\n"
+            "                    wrapper library to file lib<name>.EXT.\n"
             "\n"
             "    -ldflags        Print linker flags to stdout\n"
             "    -ccflags        Print C compiler flags to stdout\n"
@@ -230,11 +201,16 @@ PrintGeneralOptions (void)
             "    -D <var>=<val>  Set preprocessor variable <var> to <val>.\n"
             "    -cppI <path>    Specify path for preprocessor includes.\n"
             "\n"
-            "    -L <path>       Specify additional SAC library file path.\n"
             "    -I <path>       Specify additional SAC library source file path.\n"
             "    -E <path>       Specify additional C library file path.\n"
-            "    -ccflag<flags>  Extra flags to give to C compiler.\n"
-            "    -Xc <flags>     Extra flags to pass to the C compiler.\n"
+            "    -L <path>       Specify additional SAC library module path.\n"
+            "    -T <path>       Specify additional SAC library tree path.\n"
+            "    -Xc <flags>     Extra flags to pass to the C compiler for "
+            "program/module code.\n"
+            "    -Xl <flags>     Extra flags to pass to the C linker for program/module "
+            "code.\n"
+            "    -Xtc <flags>    Extra flags to pass to the C compiler for tree code.\n"
+            "    -Xtl <flags>    Extra flags to pass to the C linker for tree code.\n"
             "\n"
             "    -o <name>       For compilation of programs:\n"
             "                      Write executable to specified file.\n"
@@ -566,32 +542,6 @@ PrintMultithreadOptions (void)
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
-            "    -mt             Compile program for multi-threaded execution,\n"
-            "                    e.g. implicitly parallelize the code for "
-            "non-sequential\n"
-            "                    execution on shared memory multiprocessors.\n"
-            "\n"
-            "                    NOTE:\n"
-            "                    The number of threads to be used can either be "
-            "specified\n"
-            "                    statically using the option \"-numthreads\" or "
-            "dynamically\n"
-            "                    upon application startup using the generic command "
-            "line\n"
-            "                    option \"-mt <n>\" or by setting the SAC_PARALLEL "
-            "environment\n"
-            "                    variable.\n"
-            "\n"
-            "    -mtmode <n>     Enable a explicit organization scheme for "
-            "multi-threaded program\n"
-            "                    execution.\n"
-            "                    Legal values:\n"
-            "                      1: with thread creation/termination\n"
-            "                      2: with start/stop barriers\n"
-            "                      3: with magical new techniques, WARNING: UNDER "
-            "CONSTRUCTION!!!\n"
-            "                      (default: %d)\n"
-            "\n"
             "    -numthreads <n> Specify at compile time the exact number of threads to "
             "be\n"
             "                    used for parallel execution.\n"
@@ -613,11 +563,8 @@ PrintMultithreadOptions (void)
             "\n"
             "    -maxrepsize <n> Specify maximum size for arrays to be replicated as\n"
             "                    private data of multiple threads.\n"
-            "                      (default: %d)\n"
-            "                    Option applies to \"-mtn\" style parallelization "
-            "only.\n",
-            (int)MT_startstop, global.max_threads, global.min_parallel_size,
-            global.max_replication_size);
+            "                      (default: %d)\n",
+            global.max_threads, global.min_parallel_size, global.max_replication_size);
 
     DBUG_RETURN ();
 }
@@ -1209,11 +1156,10 @@ USGprintVersion ()
 {
     DBUG_ENTER ();
 
-    printf ("%s %s\n %s rev %s %s\n (%s by %s)\n", global.toolname,
+    printf ("%s %s\n %s rev %s\n (%s by %s)\n", global.toolname,
             (global.version_id[0] == '\0') ? "???" : global.version_id,
             (build_style[0] == '\0') ? "" : build_style,
             (build_rev[0] == '\0') ? "???" : build_rev,
-            (global.target_platform[0] == '\0') ? "???" : global.target_platform,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user);
 

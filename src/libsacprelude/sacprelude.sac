@@ -11,7 +11,7 @@ provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          partitionIntersectMax, partitionIntersectMin,
          SACarg, prod, partitionSlicer, gridFiller, ++
 #define MUTC 1
-#if SAC_BACKEND != MUTC
+#ifndef SAC_BACKEND_MUTC
          , unwrapInt, unwrapBool, unwrapFloat, unwrapDouble, unwrapChar, 
            isInt, isBool, isFloat, isDouble, isChar, isUdt, wrap
 #ifdef SANTANU
@@ -315,7 +315,7 @@ int[.] partitionIntersectMin( int[.] PWLbound2, int[.] ivmax)
 }
 
 #define MUTC 1
-#if SAC_BACKEND!=MUTC
+#ifndef SAC_BACKEND_MUTC
 
 external int[*] unwrapInt( SACarg arg);
   #pragma linkname "SACARGunwrapInt"

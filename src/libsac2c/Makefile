@@ -83,7 +83,6 @@ make_%: checks
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Building $(PROJECT_NAME) $(SUBPROJECT) ($($*_long) version)"
 	@$(ECHO) "* revision "`cat $(PROJECT_ROOT)/.revision.txt`
-	@$(ECHO) "* on $(OS) for $(ARCH)"
 	@$(ECHO) "************************************************************"
 	@$(TOUCH) .make_track
 	@ if [ -f .last_style ] ; \
@@ -116,7 +115,6 @@ clean_%: $(PROJECT_ROOT)/.revision.txt
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Cleaning $(PROJECT_NAME) $(SUBPROJECT)"
 	@$(ECHO) "* revision "`cat $(PROJECT_ROOT)/.revision.txt`
-	@$(ECHO) "* on $(OS) for $(ARCH)"
 	@$(ECHO) "************************************************************"
 	@$(ECHO) ""
 	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/clean.mkf \
@@ -144,7 +142,6 @@ refactor: $(PROJECT_ROOT)/.revision.txt
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Refactoring $(PROJECT_NAME) $(SUBPROJECT)"
 	@$(ECHO) "* revision "`cat $(PROJECT_ROOT)/.revision.txt`
-	@$(ECHO) "* on $(OS) for $(ARCH)"
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* \"$(PATTERN)\""
 	@$(ECHO) "*   -> \"$(OUTPUT)\""

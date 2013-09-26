@@ -45,12 +45,7 @@ AC_DEFUN([CHECK_LPEL],dnl
    fi
 
    # inform configuration
-   have_lpel=`if test $enable_mt_lpel = yes; then echo 1; else echo 0; fi`
-   AC_SUBST([ENABLE_MT_LPEL], [$enable_mt_lpel])
    AC_SUBST([MT_CFLAGS_LPEL], [$LPEL_CFLAGS])
    LPEL_LIBS="$LPEL_LIBS -llpel"
    AC_SUBST([MT_LDFLAGS_LPEL], [$LPEL_LIBS])
-   AC_DEFINE_UNQUOTED([ENABLE_MT_LPEL],
-                      [$have_lpel],
-                      [Define to 1 if the MT/LPEL backend is enabled, otherwise 0.])
 ])

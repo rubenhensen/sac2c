@@ -463,11 +463,9 @@ InternalCompilerErrorBreak (int sig)
         error_file = fopen (error_file_name, "a");
 
         fprintf (error_file, " *\n");
-        fprintf (error_file, " * using sac2c %s rev %s for %s\n", global.version_id,
-                 build_rev, global.target_platform);
+        fprintf (error_file, " * using sac2c %s rev %s\n", global.version_id, build_rev);
         fprintf (error_file, " * built %s.\n", build_date);
-        fprintf (error_file, " * by user %s on host %s for %s.\n", build_user, build_host,
-                 build_os);
+        fprintf (error_file, " * by user %s on host %s.\n", build_user, build_host);
         fprintf (error_file, " *\n");
 
         fprintf (error_file, " * The compiler was called by\n");

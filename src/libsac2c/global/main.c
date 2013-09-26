@@ -7,6 +7,7 @@
 #include "phase_drivers.h"
 #include "options.h"
 #include "ctinfo.h"
+#include "cctools.h"
 #include "globals.h"
 #include "resource.h"
 #include "libstat.h"
@@ -17,19 +18,6 @@
 
 #include <stdlib.h>
 #include <locale.h>
-
-static inline void
-handle_options_before_loading_configuration (void)
-{
-    if (global.printPrefix) {
-#ifndef PREFIX
-        CTIabort ("prefix is not defined, please run ./confiure and "
-                  "rebuild sac2c compiler");
-#endif
-        printf ("%s\n", PREFIX);
-        CTIterminateCompilationSilent ();
-    }
-}
 
 /*
  *  Here we handle special options that do not initiate any
@@ -46,6 +34,12 @@ HandleSpecialOptions (void)
         CTIterminateCompilationSilent ();
     } else if (global.libstat) {
         LIBSprintLibStat ();
+        CTIterminateCompilationSilent ();
+    } else if (global.do_clink != DO_C_none) {
+        CCTperformTask (CCT_clinkonly);
+        CTIterminateCompilationSilent ();
+    } else if (global.do_ccompile != DO_C_none) {
+        CCTperformTask (CCT_ccompileonly);
         CTIterminateCompilationSilent ();
     }
 
@@ -77,8 +71,6 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
     GLOBinitializeGlobal (argc, argv, tool, toolname);
     OPTanalyseCommandline (argc, argv);
 
-    handle_options_before_loading_configuration ();
-
     RSCevaluateConfiguration ();
 
     OPTcheckPostSetupOptions ();
@@ -88,8 +80,8 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
     FMGRsetupPaths ();
     FMGRcreateTmpDir ();
 
-    HandleSpecialOptions ();
     OPTcheckOptionConsistency ();
+    HandleSpecialOptions ();
 
     CTIabortOnError ();
 

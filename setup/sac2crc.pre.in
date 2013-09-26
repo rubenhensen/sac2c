@@ -1,0 +1,767 @@
+/******************************************************************************
+ *
+ * file:  sac2crc
+ *
+ ******************************************************************************
+ *
+ * description:
+ *
+ *  sac2c public configuration file generated from sac2crc.in by configure & make.
+ *
+ *  This file allows to customize sac2c for specific target systems.
+ *  Here are the definitions of the targets which can be specified
+ *  using the -target option when calling sac2c.
+ *
+ *  There are two special targets:
+ *  - the target named "default_sbi" is used automatically when -target
+ *    is not passed on the command line.
+ *  - the target named "default" is inherited by all other targets, including
+ *    "default_sbi".
+ *
+ *  The value of an entry is always a string. Quotation marks are only
+ *  required if a value contains whitespaces or special characters.
+ *  Once a single entry string becomes lengthy, it may easily be cut
+ *  into several substrings and written in consecutive lines.
+ *
+ *  Targets other than default implicitly inherit all settings from the
+ *  default target. Selected entries may then be updated for the specific
+ *  needs of a particular target system. Strings may also be extended rather
+ *  than updated by writing "+=" instead of ":=".
+ *
+ *  Each target may inherit settings from other targets. This is simply
+ *  specified by "::<name>" follwing directly behind the name of the new
+ *  target. Multiple inheritence is possible and will be resolved in the
+ *  same sequence as the inherited targets appear.
+ *
+ ******************************************************************************
+ *
+ * caution:
+ *
+ *  sac2c will not check for recursively inheriting targets. This may cause
+ *  non-terminating compiler runs.
+ *
+ ******************************************************************************/
+
+/******************************************************************************
+ *
+ * description of command substitutions:
+ *
+ ******************************************************************************
+ *
+ * The entries COMPILE_xxx and LINK_xxx below undergo a string substition
+ * before they are executed during compilation.
+ *
+ * The following substitutions are relevant in all cases:
+ *
+ * %sacincludes%   Current value of SACINCLUDES
+ *
+ * %target%        File name of target:
+ *                 - for COMPILE_PROG, COMPILE_MOD: full object name with path
+ *                 - for LINK_MOD: full library name with path
+ *                 - for LINK_PROG: program file name
+ *
+ * %objects%       List of objects to link for the target:
+ *                 - Objects corresponding to generated C files
+ *                 - Additional objects specified as pragmas in the SAC source.
+ *
+ * %source%        Source file name for COMPILE commands.
+ *
+ * The following substitutions are relevant mostly when compiling/linkin
+ * Tree files:
+ *
+ * %tree_cflags%   Value(s) of -Xtc on the command line.
+ *
+ * %tree_ldflags%  Value(s) of -Xtl on the command line.
+ *
+ * The following substitutions are relevant mostly when compiling
+ * Module or Program objects (ie not Tree files):
+ *
+ * %cc%            Current value of CC
+ *
+ * %opt%           Which OPT_Ox  value was selected with -O on the sac2c command line
+ *
+ * %dbg%           OPT_g if -g was provided on the sac2c command line, empty otherwise
+ *
+ * %cflags%        Concatenation of:
+ *                 - current value of CFLAGS
+ *                 - "-I<D>" for each <D> in INCPATH
+ *                 - value(s) of -ccflag / -Xc on the command-line
+ *                 - additional macro definitions for SAC_RC_METHOD, SAC_BACKEND_xxx, SAC_MT_LIB_xxx
+ *
+ * %compileflags%  Same as: %opt% %dbg% %cflags% %sacincludes%
+ *
+ * The following substitutions are relevant when linking Module or
+ * Program objects (ie not Tree dynamically loadable modules):
+ *
+ * %ld%            Current value of LD
+ *
+ * %ldflags%       Concatenation of:
+ *                 - current value of LDFLAGS
+ *                 - value(s) of -Xl on the command-line
+ *
+ * %modlibdirs%    Concatenation of:
+ *                 - LDPATH/%path%=<X>/$TARGET_ENV/$SBI for every -L <X> on the command line
+ *                 - LDPATH/%path%=<X>/$TARGET_ENV/$SBI for every <X> in LIBPATH
+ *
+ * %modlibs%       Concatenation of:
+ *                 - "-llib<X>Mod" for each module dependency <X>
+ *                 - "-l<X>" for each <X> declared as external library dependency via pragma in SAC source
+ *
+ * %extlibdirs%    Concatenation of:
+ *                 - LDPATH/%path%=<X> for every -E <X> on the command line
+ *                 - LDPATH/%path%=<X> for every path <X> in EXTLIBPATH
+ *
+ * %saclibs%       Concatenation of:
+ *                 - "-lphm.XXX" (depending on PHM selection)
+ *                 - "-lsac"
+ *
+ * %libs%          Current value of LIBS
+ *
+ * %linkflags%     Same as: %ldflags% %modlibdirs% %modlibs% %extlibdirs% %saclibs% %libs%
+ *
+ * %libname%       In LINK_MOD only: Module library name without extension
+ *
+ * %path%          Destination directory (useful for LDPATH substitutions)
+ *
+ */
+
+/******************************************************************************
+ *
+ * description of configuration entries:
+ *
+ ******************************************************************************
+ *
+ *  *** SBI-independent entries ***
+ *      These settings do not specialize the generated code to a target
+ *      execution environment; ie they are general to the compilation
+ *      process.
+ *
+ *  MKDIR           MKDIR specifies how to create a directory recursively.
+ *                  Usage: <MKDIR> <directory>
+ *
+ *  RMDIR           RMDIR specifies how to remove a directory including its contents.
+ *                  Usage: <RMDIR> <directory>
+ *
+ *  CPP_STDIN       CPP_STDIN specifies how to call the C preprocessor if SAC code
+ *                  is to be read from stdin. The preprocessed code must be sent
+ *                  to stdout.
+ *                  Usage: <CPP_STDIN> <options>
+ *
+ *  CPP_FILE        CPP_FILE specifies how to call the C preprocessor if SAC code
+ *                  is to be read from a file.The preprocessed code must be sent
+ *                  to stdout.
+ *                  Usage: <CPP_FILE> <options> <file>
+ *
+ *  TMPDIR          TMPDIR specifies a directory where temporary files can be created.
+ *                  Ensure that you have write permission to that directory
+ *                  as well as sufficient space.
+ *
+ * ***
+ *
+ *  TREE_CEXT       File name extension for generated Tree C source files.
+ *
+ *  TREE_OBJEXT     File name extension for compiled Tree object files.
+ *
+ *  TREE_DLLEXT     File name extension for Tree dynamically loadable objects.
+ *
+ *  COMPILE_TREE    Command line to compile a Tree C source to object binary. Performs
+ *                  string substitutions as documented above.
+ *
+ *  LINK_TREE       Command line to link Tree objects into a dynamically loadable module.
+ *                  Performs string substitutions as documented above.
+ *
+ * ***
+ *
+ *  IMPPATH         Search path for SAC module sources. This is a colon-
+ *                  separated list of directories.
+ *
+ *  TREEPATH        Search path for compiled SAC tree code. This is a colon-
+ *                  separated list of directories. For each directory <D> in this
+ *                  list, tree files are searched in <D>/tree/$TARGET_ENV.
+ *
+ *  LIBPATH         Search path for compiled SAC module code. This is a colon-
+ *                  separated list of directories. For each directory <D> in this list,
+ *                  modules are searched in <D>/$TARGET_ENV/$SBI/$VARIANT, then
+ *                  <D>/$TARGET_ENV/$SBI.
+ *                  Used to populate %modlibdirs% with LDPATH.
+ *
+ *  INCPATH         Extra paths to pass via -I to the compiler to generated C code.
+ *                  This is a colon-separated list of directories.
+ *                  Used to populate %cflags%.
+ *
+ *  EXTLIBPATH      Search path for external, non-SAC libraries. This is
+ *                  a colon-separated list of directories.
+ *                  Used to populate %extlibdirs% with LDPATH.
+ *
+ *  *** SBI-dependent entries ***
+ *      These settings specialize the generated code to a target
+ *      execution environment and may break interoperability between
+ *      code compiled with different SBIs.
+ *
+ *  TARGET_ENV      The target platform environment. Contract: Tree
+ *                  files are shared between all SBIs within a target
+ *                  environment.
+ *
+ *  SBI             The SAC binary interface. Contract: compiled code within
+ *                  the same SBI is interoperable.
+ *
+ *  VARIANT         Gives a tag that will be introduced as a sub-directory
+ *                  for produced Module libraries. Useful to keep multiple
+ *                  versions of modules with different optimization flags.
+ *
+ *  BACKEND         Defines which SAC code generation backend to use.
+ *
+ *  RC_METHOD       Defines which reference counting implementation to use.
+ *                  For the list of the reference counting methods
+ *                  see the file doc/ref-counting-methods.txt
+ *
+ *  RTSPEC          Instrument the code for run-time generation of specialized
+ *                  functions.
+ *
+ *  MT_MODE         Multithreading "mode" to use for the "MT" back-end
+ *                  Values: 1 = createjoin, 2 = startstop, 3 = mtstblock
+ *
+ *  MT_LIB          Back-end threading system to use for the "MT" back-end.
+ *
+ *  CUDA_ARCH       CUDA architecture flag (only used by the "Cuda" back-end)
+ *
+ * ***
+ *
+ *  CACHE1_SIZE     CACHE1_SIZE specifies the size of the L1 (data) cache in kb.
+ *                  A size of 0 means that the system has no L1 cache or its
+ *                  characteristics are unknown.
+ *
+ *  CACHE1_LINE     CACHE1_LINE specifies the length of a L1 cache line in bytes.
+ *
+ *  CACHE1_ASSOC    CACHE1_ASSOC specifies the set associativity of the L1 cache.
+ *
+ *  CACHE1_WRITEPOL CACHE1_WRITEPOL specifies the write policy of the L1 cache.
+ *                  Supported policies are "default", "fetch_on_write",
+ *                  "write_validate", and "write_around".
+ *
+ *  CACHE1_MSCA     CACHE1_MSCA specifies the memory size cache adjustment factor
+ *                  for the L1 cache given in percentage. This entry refers to
+ *                  the MSCA optimization technique.
+ *
+ *  CACHE2_SIZE     CACHE2_SIZE specifies the size of the L2 (data) cache in kb.
+ *                  A size of 0 means that the system has no L2 cache or its
+ *                  characteristics are unknown.
+ *
+ *  CACHE2_LINE     CACHE2_LINE specifies the length of a L2 cache line in bytes.
+ *
+ *  CACHE2_ASSOC    CACHE2_ASSOC specifies the set associativity of the L2 cache.
+ *
+ *  CACHE2_WRITEPOL CACHE2_WRITEPOL specifies the write policy of the L2 cache.
+ *                  Supported policies are "default", "fetch_on_write",
+ *                  "write_validate", and "write_around".
+ *
+ *  CACHE2_MSCA     CACHE2_MSCA specifies the memory size cache adjustment factor
+ *                  for the L1 cache given in percentage. This entry refers to
+ *                  the MSCA optimization technique.
+ *
+ *  CACHE3_SIZE     CACHE3_SIZE specifies the size of the L3 (data) cache in kb.
+ *                  A size of 0 means that the system has no L3 cache or its
+ *                  characteristics are unknown.
+ *
+ *  CACHE3_LINE     CACHE3_LINE specifies the length of a L3 cache line in bytes.
+ *
+ *  CACHE3_ASSOC    CACHE3_ASSOC specifies the set associativity of the L3 cache.
+ *
+ *  CACHE3_WRITEPOL CACHE3_WRITEPOL specifies the write policy of the L3 cache.
+ *                  Supported policies are "default", "fetch_on_write",
+ *                  "write_validate", and "write_around".
+ *
+ *  CACHE3_MSCA     CACHE3_MSCA specifies the memory size cache adjustment factor
+ *                  for the L3 cache given in percentage. This entry refers to
+ *                  the MSCA optimization technique.
+ *
+ * ***
+ *
+ *  OPT_O0          OPT_O0 specifies the C compiler option to disable optimizations.
+ *                  This is triggered by the sac2c option -O0.
+ *
+ *  OPT_O1          OPT_O1 specifies the C compiler option to enable minor
+ *                  optimization. This is triggered by the sac2c option -O1.
+ *
+ *  OPT_O2          OPT_O2 specifies the C compiler option to enable medium
+ *                  optimization. This is triggered by the sac2c option -O2.
+ *
+ *  OPT_O3          OPT_O3 specifies the C compiler option to enable full
+ *                  optimization. This is triggered by the sac2c option -O3.
+ *
+ *  OPT_g           OPT_g specifies the C compiler option to add debug information
+ *                  into the generated machine code for later usage by a debugger.
+ *                  This is triggered by the sac2c option -g.
+ *
+ *  CEXT            File name extension for generated Module/Program C source files.
+ *
+ *  OBJEXT          File name extension for Module/Program object files.
+ *
+ *  MODEXT          File name extension for Module library files.
+ *
+ *  EXEEXT          File name extension for program executables.
+ *
+ *  CC              Compiler command to use for Module/Program C code (via %cc%).
+ *
+ *  CFLAGS          Additional flags to pass to the C compiler (via %cflags%)
+ *
+ *  LD              Linker command to use for Modules/Programs (via %ld%).
+ *
+ *  LIBS            Additional libraries to link against (via %libs%).
+ *
+ *  LDPATH          How to add one directory to the linker search path.
+ *                  The directory name is substituted via %path%.
+ *                  This may be set to -L%path" or a more complex string
+ *                  for systems with dynamic libraries and run-time paths.
+ *
+ *  LDFLAGS         Additional flags to pass to the linker (via %ldflags%).
+ *
+ *  COMPILE_MOD     Command line to compile a Module C source to object binary. Performs
+ *                  string substitutions as documented above.
+ *  COMPILE_PROG    Command line to compile a Program C source to object binary. Performs
+ *                  string substitutions as documented above.
+ *
+ *  LINK_MOD        Command line to link Module objects into a module library.
+ *                  Performs string substitutions as documented above.
+ *  LINK_PROG       Command line to link Program objects into a program executable.
+ *                  Performs string substitutions as documented above.
+ *
+ *
+ ******************************************************************************/
+
+
+
+/*******************************************************************************
+ *
+ * Target default: default settings for all configuration entries
+ *
+ */
+
+target default:
+
+/* SBI-independent resources */
+RMDIR            :=  "rm -rf"
+MKDIR            :=  "mkdir -p"
+
+CPP_STDIN        :=  "@CPPFILE@ -"
+CPP_FILE         :=  "@CPPFILE@"
+
+TMPDIR           :=  "/tmp"
+
+SACINCLUDES      :=  "-I@INCPATH_CONF@"
+TREE_CEXT        :=  ".c"
+TREE_OBJEXT      :=  ".o"
+TREE_DLLEXT      :=  "@SHARED_LIB_EXT@"
+COMPILE_TREE     :=  "@CC@ @GENPIC@ %tree_cflags% %sacincludes% -c -o %target% %source%"
+LINK_TREE        :=  "@CC@ @LD_DYNAMIC@ %tree_ldflags% -o %target% %objects%"
+
+
+LIBPATH          :=  "@RTPATH_CONF@:"
+                     "@MODPATH_CONF@:"
+                     "@STDLIB_SOURCES@/shared-libs:"
+TREEPATH         :=  "@TREEPATH_CONF@:"
+IMPPATH          :=  "@STDLIB_SOURCES@/modules/structures:"
+                     "@STDLIB_SOURCES@/modules/numerical:"
+                     "@STDLIB_SOURCES@/modules/numerical/blas:"
+                     "@STDLIB_SOURCES@/modules/unibench:"
+                     "@STDLIB_SOURCES@/modules/auxiliary:"
+                     "@STDLIB_SOURCES@/world/system:"
+                     "@STDLIB_SOURCES@/world/stdio:"
+                     "@STDLIB_SOURCES@/world/stdio/dislin:"
+                     "@STDLIB_SOURCES@/world/stdio/gnuplot:"
+                     "@STDLIB_SOURCES@/auxiliary/random:"
+                     "@STDLIB_SOURCES@/classes/random:"
+                     "@STDLIB_SOURCES@/utrace:"
+EXTLIBPATH       :=  "/usr/local/dislin:/opt/local/lib"
+INCPATH          :=  ""
+
+CACHE1_SIZE      :=  0
+CACHE1_LINE      :=  0
+CACHE1_ASSOC     :=  0
+CACHE1_WRITEPOL  :=  "default"
+CACHE1_MSCA      :=  0
+
+CACHE2_SIZE      :=  0
+CACHE2_LINE      :=  0
+CACHE2_ASSOC     :=  0
+CACHE2_WRITEPOL  :=  "default"
+CACHE2_MSCA      :=  0
+
+CACHE3_SIZE      :=  0
+CACHE3_LINE      :=  0
+CACHE3_ASSOC     :=  0
+CACHE3_WRITEPOL  :=  "default"
+CACHE3_MSCA      :=  0
+
+CEXT             :=  ".c"
+OBJEXT           :=  ".o"
+
+VARIANT          :=  ""
+CUDA_ARCH        :=  ""
+MT_LIB           :=  ""
+MT_MODE          :=  0
+
+COMPILE_MOD      := "%cc% %compileflags% -c -o %target% %source%"
+COMPILE_PROG     := "%cc% %compileflags% -c -o %target% %source%"
+LINK_PROG        := "%ld% %objects% %linkflags% -o %target%"
+
+CFLAGS           :=  ""
+LIBS             :=  ""
+LDFLAGS          :=  ""
+
+TARGET_ENV       :=  "XXXXX"
+SBI              :=  "XXXXX"
+BACKEND          :=  "XXXXX"
+RC_METHOD        :=  "XXXXX"
+USE_PHM_API      :=  0
+RTSPEC           :=  0
+MODEXT           :=  "XXXXX"
+EXEEXT           :=  "XXXXX"
+CC               :=  "XXXXX"
+LD               :=  "XXXXX"
+OPT_O0           :=  "XXXXX"
+OPT_O1           :=  "XXXXX"
+OPT_O2           :=  "XXXXX"
+OPT_O3           :=  "XXXXX"
+OPT_g            :=  "XXXXX"
+LDPATH           :=  "XXXXX"
+LINK_MOD         :=  "XXXXX"
+
+target default_sbi:
+
+TARGET_ENV       :=  "host"
+
+/* SBI-dependent resources */
+BACKEND          :=  "C99"
+RC_METHOD        :=  "local"
+
+MODEXT           :=  "@SHARED_LIB_EXT@"
+EXEEXT           :=  "@EXEEXT@"
+
+CC               :=  "@CC@"
+CFLAGS           :=  "-pedantic @GENPIC@ @RCCCFLAGS@"
+
+LD               :=  "@CC@"
+LDPATH           :=  "@LD_PATH@"
+
+OPT_O0           :=  "@OPT_O0@"
+OPT_O1           :=  "@OPT_O1@"
+OPT_O2           :=  "@OPT_O2@"
+OPT_O3           :=  "@OPT_O3@"
+OPT_g            :=  "@OPT_g@"
+
+LINK_MOD         :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %target%"
+
+target static_link:
+
+LINK_MOD         :=  "rm -f %target% && ar cru %target% %objects% && @RANLIB@ %target%"
+
+
+target seq :: default_sbi:
+SBI              :=  "seq"
+MT_MODE          :=  0
+
+target mt :: default_sbi:
+LIBS             +=  " @CCMTLINK@"
+MT_MODE          :=  1
+USE_PHM_API      :=  @CAN_USE_PHM@
+
+target mt_pth :: mt:
+SBI              :=  "mt-pth"
+MT_LIB           :=  "pthread"
+
+target mt_lpel :: mt:
+SBI              :=  "mt-lpel"
+MT_LIB           :=  "lpel"
+CFLAGS           +=  " @MT_CFLAGS_LPEL@"
+LIBS             :=  " @MT_LDFLAGS_LPEL@ @CCMTLINK@"
+RC_METHOD        :=  "local_pasync_norc_desc"
+
+
+/*****************************************************************************
+ * reference counting method targets
+ */
+target rcm_local:
+RC_METHOD        := "local"
+SBI              += "-rcm-local"
+
+target rcm_norc:
+RC_METHOD        := "norc"
+SBI              += "-rcm-norc"
+
+target rcm_async:
+RC_METHOD        := "async"
+SBI              += "-rcm-async"
+
+target rcm_local_norc_desc:
+RC_METHOD        := "local_norc_desc"
+SBI              += "-rcm-local-norc-desc"
+
+target rcm_local_norc_ptr:
+RC_METHOD        := "local_norc_ptr"
+SBI              += "-rcm-local-norc-ptr"
+
+target rcm_async_norc_copy_desc:
+RC_METHOD        := "async_norc_copy_desc"
+SBI              += "-rcm-async-norc-copy-desc"
+
+target rcm_async_norc_two_descs:
+RC_METHOD        := "async_norc_two_descs"
+SBI              += "-rcm-async-norc-two-descs"
+
+target rcm_async_norc_ptr:
+RC_METHOD        := "async_norc_ptr"
+SBI              += "-rcm-async-norc-ptr"
+
+target rcm_local_pasync_norc_desc:
+RC_METHOD        := "local_pasync_norc_desc"
+SBI              += "-rcm-local-pasync-norc-desc"
+
+target rcm_local_async_norc_ptr:
+RC_METHOD        := "local_async_norc_ptr"
+SBI              += "-rcm-local-async-norc-ptr"
+
+target rcm_local_pasync:
+RC_METHOD        := "local_pasync"
+SBI              += "-rcm-local-pasync"
+
+
+/*****************************************************************************
+ * sl targets
+ */
+target sl:
+
+BACKEND          :=  "MUTC"
+RC_METHOD        :=  "local_pasync_norc_desc"
+IMPPATH          :=  "@STDLIB_SOURCES@/modules/structures:"
+                     "@STDLIB_SOURCES@/modules/numerical:"
+                     "@STDLIB_SOURCES@/modules/auxiliary:"
+                     "@STDLIB_SOURCES@/modules/mutc:"
+                     "@STDLIB_SOURCES@/world/mutc:"
+                     "@STDLIB_SOURCES@/world/system:"
+                     "@STDLIB_SOURCES@/classes/random:"
+USE_PHM_API      := 0
+MODEXT           :=  ".a"
+EXEEXT           :=  ""
+
+CC               :=  "@SLC@"
+CFLAGS           :=  "-Wall -Wno-unused"
+LD               :=  "@SLC@"
+LIBS             :=  ""
+LDFLAGS          :=  ""
+LDPATH           :=  "-L%path%"
+OPT_g            :=  ""
+
+OPT_O0           :=  "-O1"
+OPT_O1           :=  "-O1"
+OPT_O2           :=  "-O2"
+OPT_O3           :=  "-O2"
+
+target sl_host :: sl:
+TARGET_ENV       :=  "host"
+SBI              :=  "sl-seqc"
+CFLAGS           +=  " -b seqc"
+LDFLAGS          +=  " -b seqc"
+LINK_MOD         :=  "rm -f %target% && @SLAR@ seqc cr %target% %objects% && @SLRANLIB@ seqc %target%"
+
+
+target sl_mta :: sl:
+TARGET_ENV       :=  "mtalpha-mgsim"
+SBI              :=  "mta"
+CFLAGS           +=  " -b mta"
+LDFLAGS          +=  " -b mta"
+LINK_MOD         :=  "rm -f %target% && @SLAR@ mta cr %target% %objects% && @SLRANLIB@ mta %target%"
+
+/*
+ * New ppp that does not use tls
+ */
+target sl_mtantls :: sl_mta:
+LIBS             += " -lmalloc_notls"
+
+
+/*****************************************************************************
+ * OpenMP targets
+ */
+target omp :: default_sbi:
+SBI              := "omp"
+BACKEND          := "omp"
+MT_MODE          :=  2
+MT_LIB           := "omp"
+CFLAGS           += " @OPENMP_CFLAGS@"
+LDFLAGS          += " @OPENMP_CFLAGS@"
+
+/*****************************************************************************
+ * cuda targets
+ */
+target cuda :: default_sbi:
+SBI              += "-cuda"
+BACKEND          :=  "Cuda"
+
+CUDA_ARCH        :=  "@CUDA_ARCH@"
+
+CEXT             :=  ".cu"
+CC               :=  "@NVCC_PATH@"
+CFLAGS           :=  "@CUDA_ARCH@ --maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
+                     "-Xcompiler -fno-builtin -Xcompiler -std=c99 "
+                     " -I$CUTIL "
+LIBS             :=  " @CCDLLINK@ -lcutil_i386 -lcudart -lcublas"
+EXTLIBPATH       +=  "$CUTIL_LIB:"
+
+target cuda_fixed :: cuda:
+CFLAGS           :=  "--maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
+                     "-Xcompiler -fno-builtin -Xcompiler -std=c99"
+
+target cuda64 :: cuda:
+LIBS             :=  " @CCDLLINK@ -lcutil_x86_64 -lcudart -lcublas"
+
+target cudahybrid :: cuda:
+BACKEND          :=  "CudaHybrid"
+MT_MODE          :=  2
+
+target cudahybrid64 :: cuda64:
+BACKEND          :=  "CudaHybrid"
+
+/*******************************************************************************
+ *  TARGETS  for Alternate Compilers:
+ */
+
+/*******************************************************************************
+ *
+ * Target suncc: use the Sun C compiler instead of gcc
+ *
+ */
+
+target suncc:
+
+CC             :=  "cc"
+CFLAGS         :=  "-KPIC -dalign -xsafe=mem"
+LDFLAGS        :=  "-lpthread -mt"
+
+OPT_O0         :=  ""
+OPT_O1         :=  "-xO2"
+OPT_O2         :=  "-xO4"
+OPT_O3         :=  "-fast"
+
+
+/*******************************************************************************
+ *
+ * Target intelcc: use the Intel C compiler instead of gcc
+ *
+ */
+
+target intelcc:
+
+CC             := "icc"
+CFLAGS         := " @GENPIC@ -shared-intel -xsse4.2"
+
+target intelcc_sse2 :: intelcc:
+
+CFLAGS         += " -msse2"
+
+target intelcc_fast :: intelcc:
+
+CFLAGS         += " -fast"
+
+
+
+/*******************************************************************************
+ *
+ * Target clang: use the LLVM CLang compiler instead of gcc
+ *
+ */
+
+target clang:
+CC             := "clang"
+OPT_O2         :=  "-O4"
+OPT_O3         :=  "-O3"
+
+
+/*******************************************************************************
+ *
+ * Target opencc: use the Open64 C compiler instead of gcc
+ *
+ */
+
+target opencc:
+CC             := "opencc"
+OPT_O3         := "-O3"
+
+
+/*******************************************************************************
+ *
+ * Target milepost: use the Milepost Gcc C compiler instead of gcc
+ *
+ */
+
+target milepost:
+CC             := "milepost-gcc"
+OPT_O3         := "-O3"
+
+
+/*******************************************************************************
+ *******************************************************************************
+ *******************************************************************************
+ ***
+ ***  TARGETS  for Alternate Memory Allocators:
+ ***
+ ***/
+
+ /*******************************************************************************
+ *
+ * Target hoard: use the Hoard memory allocator instead of regular malloc
+ *
+ * NOTE: This requires the proper installation of the Hoard memory allocator!
+ */
+
+target hoard:
+
+LIBS        +=  "-lhoard -lpthread -lthread -lrt"
+
+
+/*******************************************************************************
+ *
+ * Target ptmalloc: use the ptmalloc implementation instead of regular malloc
+ *
+ * NOTE: This requires the proper installation of the PTmalloc memory allocator!
+ */
+
+target ptmalloc:
+
+LIBS        +=  " -lptmalloc"
+
+
+/*******************************************************************************
+ *
+ * Target mtmalloc: use the Sun mtmalloc library instead of regular malloc
+ *
+ */
+
+target mtmalloc:
+
+LIBS       +=  " -lmtmalloc"
+
+
+/*******************************************************************************
+ *
+ * Target gnumalloc: use the GNU glibc library instead of Solaris libc
+ *
+ * NOTE: This is mostly intended to test the GNU memory allocator!
+ */
+
+target gnumalloc:
+
+LIBS      +=  " -lglib"
+
+
+/*******************************************************************************
+ *******************************************************************************
+ *******************************************************************************
+ ***
+ ***  TARGETS  for Individual Architectures / Machines:
+ ***
+ ***/
+
+@RCSUN@
+@RCX86@
+@RCALPHA@
+@RCMAC@

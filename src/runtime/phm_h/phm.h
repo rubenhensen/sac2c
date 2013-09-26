@@ -31,7 +31,7 @@ typedef long int SAC_HM_size_unit_t;
 #if !SAC_MUTC_MACROS
 
 #define MUTC 1
-#if SAC_BACKEND != MUTC
+#ifndef SAC_BACKEND_MUTC
 #include <sys/types.h> /* typedef unsigned int size_t;  */
 #else
 #include "stddef.h"

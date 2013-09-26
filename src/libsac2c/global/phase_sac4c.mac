@@ -131,9 +131,7 @@ ENDPHASE (ccg)
 
 PHASE (cicc, "Creating binary code", ALWAYS)
 
-SUBPHASE (ivcc, "Invoking C compiler", CCMinvokeCC, ALWAYS, cicc)
-
-SUBPHASE (crl, "Creating wrapper library", LIBBcreateWrapperLibrary, ALWAYS, cicc)
+SUBPHASE (ivcc, "Invoking C compiler", CCTrunTools, ALWAYS, cicc)
 
 ENDPHASE (cicc)
 
