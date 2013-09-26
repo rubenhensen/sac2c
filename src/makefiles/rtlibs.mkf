@@ -209,12 +209,13 @@ install:
 	$(INSTALL) -d "$(RTPATH_CONF)"
 	$(INSTALL) -d "$(TREEPATH_CONF)"
 	for i in $(SACLIBS) $(PRELUDELIBS); do \
-	   $(INSTALL) -d "$(RTPATH_CONF)"/`dirname $$i` && \
 	   if test -r $(LIBBASE)/$$i; then \
 	      dst="$(RTPATH_CONF)"/$$i && \
+	      $(INSTALL) -d "$(RTPATH_CONF)"/`dirname $$i` && \
 	      $(INSTALL_PROGRAM) $(LIBBASE)/$$i "$(RTPATH_CONF)"/$$i; \
 	   else \
 	      dst="$(MODPATH_CONF)"/$$i && \
+	      $(INSTALL) -d "$(MODPATH_CONF)"/`dirname $$i` && \
 	      $(INSTALL_PROGRAM) $(PRELUDEBASE)/$$i "$(MODPATH_CONF)"/$$i; \
 	   fi && \
 	   $(ECHO) "$$dst" >>.uninstall; \
