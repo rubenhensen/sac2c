@@ -17,7 +17,7 @@
 
 #include "config.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "OPT"
 #include "debug.h"
 
 #include "getoptions.h"

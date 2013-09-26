@@ -12,7 +12,7 @@
 #include "libstat.h"
 #include "filemgr.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "SAC"
 #include "debug.h"
 
 #include <stdlib.h>

@@ -17,8 +17,8 @@
  *  $PREFIX/sac2crc, where PREFIX is given while configuring sac2c.
  *  The user specific configuration file must be called .sac2crc and ought
  *  to reside in the user's home directory.
- *  Finally the vonfiguration can be given by the variable SAC2CRC which is
- *  treated as a special case and none of the other configurations are checked.,
+ *  Finally the configuration can be given by the variable SAC2CRC which is
+ *  treated as a special case and none of the other configurations are checked.
  *
  *  Each configuration file defines a sequence of target configuration or
  *  targets for short. A special target named 'default' is required which
@@ -49,7 +49,7 @@
 
 #include "types.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "RSC"
 #include "debug.h"
 
 #include "resource.h"
