@@ -86,6 +86,12 @@
  * </pre>
  *
  *
+ * NB. Some of the functions of WLS are now handled by IPC,
+ *     but WLS still enables WLF/AWLF to do more work, so
+ *     IPC is not a complete replacement for WLS.
+ *     See Bug #1086 for an example of this, or look at
+ *     ~/sac/testsuite/optimizations/ipc/bug1086.sac.
+ *
  * @ingroup opt
  *
  * @{
