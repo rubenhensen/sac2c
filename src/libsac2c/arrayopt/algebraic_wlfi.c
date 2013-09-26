@@ -1881,10 +1881,6 @@ AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
  *        and   int2 evaluates to the upper bound of the intersection
  *        and p0, p1... are the partitions of the producerWL.
  *
- *
- *        NB. ALL lower bounds precede all upper bounds in the
- *            _attach_extrema_arguments.
- *
  *        NB. We need the producerWL partition bounds in the noteintersect
  *            for at least two reasons: a producerWL partition may be split
  *            between the time we build this code and the time
