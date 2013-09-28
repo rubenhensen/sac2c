@@ -264,7 +264,7 @@ SYSexec_and_read_output (char *cmd)
         bufsz += sz;
         curpos += sz;
         /* We don't have bloody realloc! :(  */
-        bb = MEMmalloc (bufsz + 1);
+        bb = MEMmalloc (bufsz + bs + 1);
         memcpy (bb, b, bufsz);
         MEMfree (b);
         b = bb;
