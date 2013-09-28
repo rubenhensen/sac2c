@@ -222,9 +222,12 @@ install: checks
 	$(ECHO) "$(SAC2CRC_CONF)" >>.uninstall
 	$(INSTALL_DATA) setup/sac2crc "$(SAC2CRC_CONF)"
 	for i in bin/*; do \
-	  dst="$(bindir)"/`basename $$i`; \
-	  $(ECHO) "$$dst" >>.uninstall; \
-	  $(INSTALL_PROGRAM) $$i "$$dst"; \
+	  dst1="$(DLL_DIR)"/`basename $$i`; \
+	  $(ECHO) "$$dst1" >>.uninstall; \
+	  $(INSTALL_PROGRAM) $$i "$$dst1"; \
+	  dst2="$(bindir)"/`basename $$i`; \
+	  $(ECHO) "$$dst2" >>.uninstall; \
+	  $(RM) "$$dst2"; $(LN) "$$dst1" "$$dst2"; \
 	done
 	for i in lib/*.*; do \
 	  dst="$(DLL_DIR)"/`basename $$i`; \
