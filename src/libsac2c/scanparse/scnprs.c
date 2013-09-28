@@ -10,6 +10,7 @@
 #include "filemgr.h"
 #include "handle_dots.h"
 #include "build.h"
+#include "system.h"
 
 static const char *pathname;
 
@@ -54,8 +55,6 @@ CreateInfoMacroCommandLine (void)
 node *
 SPdoRunPreProcessor (node *syntax_tree)
 {
-    int err;
-    char *tmp, *cppcallstr;
     char *define;
 
     DBUG_ENTER ();
@@ -63,37 +62,13 @@ SPdoRunPreProcessor (node *syntax_tree)
     global.filename = global.puresacfilename;
     define = CreateInfoMacroCommandLine ();
 
-    if (pathname == NULL) {
-        cppcallstr = STRcatn (3, global.config.cpp_stdin, define,
-                              global.cpp_options == NULL ? " " : global.cpp_options);
-    } else {
-        cppcallstr = STRcatn (5, global.config.cpp_file, define,
-                              global.cpp_options == NULL ? " " : global.cpp_options, " ",
-                              pathname);
-#if 0
-    pathname = MEMfree( pathname);
-#endif
-    }
-
     /* The sed command is needed to remove a pragma that is inserted by the
        Apple GCC 3.3 on Panther   */
-    tmp = STRcatn (4, cppcallstr, " | sed '/^#pragma GCC set_debug_pwd/d' > ",
-                   global.tmp_dirname, "/source");
 
-    cppcallstr = MEMfree (cppcallstr);
-    cppcallstr = tmp;
-
-    if (global.show_syscall) {
-        CTInote ("err = system( \"%s\")", cppcallstr);
-    }
-
-    err = system (cppcallstr);
-
-    cppcallstr = MEMfree (cppcallstr);
-
-    if (err) {
-        CTIabort ("Unable to run C preprocessor");
-    }
+    SYScall ("%s %s %s %s | sed '/^#pragma GCC set_debug_pwd/d' > '%s'/source",
+             (pathname == NULL) ? global.config.cpp_stdin : global.config.cpp_file,
+             define, (global.cpp_options == NULL) ? " " : global.cpp_options,
+             (pathname == NULL) ? " " : pathname, global.tmp_dirname);
 
     DBUG_RETURN (syntax_tree);
 }
