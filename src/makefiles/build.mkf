@@ -241,6 +241,18 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 # Building tools
 #
 
+# FIXME Check this via configure script.
+POLYLIB_SUPPORTED := no
+
+ifneq ("$(POLYLIB_SUPPORTED)", "no")
+POLYINC := /usr/local/include/polylib
+$(PROJECT_ROOT)/bin/polyhedral: cuda/polyhedral.c
+	$(CC) -o $@ -I $(POLYINC) $^ -DLINEAR_VALUE_IS_LONGLONG -lpolylib64
+else
+$(PROJECT_ROOT)/bin/polyhedral: cuda/polyhedral.c
+	@echo "Skipping polyhedra compilation is polylib is not supported"
+endif
+
 $(PROJECT_ROOT)/bin/comslc: comslc/comslc
 	$(HIDE) $(CP) $(PROJECT_ROOT)/src/tools/comslc/comslc $(PROJECT_ROOT)/bin/
 
