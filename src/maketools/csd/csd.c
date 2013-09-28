@@ -40,7 +40,7 @@ main (void)
     sti = time (NULL);
 
     fclose (f);
-    ignore = system ("rm -f .clock_screw_detection");
+    ignore = unlink (".clock_screw_detection");
 
 #ifdef VERBOSE
     print_time ("last access", buf->st_atime);
