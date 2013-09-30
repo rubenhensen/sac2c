@@ -2829,7 +2829,7 @@ SCCFprf_idxs2offset (node *arg_node, info *arg_info)
 
     n = TCcountExprs (PRF_ARGS (arg_node));
 
-    if ((1 == n) && (SCSmatchConstantZero (PRF_ARG1 (arg_node)))) {
+    if ((1 == n) && (SCSisConstantZero (PRF_ARG1 (arg_node)))) {
         res = TBmakeNum (0); /* Case 1 */
     }
 

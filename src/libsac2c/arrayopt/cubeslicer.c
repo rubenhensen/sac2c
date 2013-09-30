@@ -496,9 +496,9 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
         cwlpb1 = NULL;
         cwlpb2 = NULL;
         cwlpstepok = (NULL == GENERATOR_STEP (producerWLGenerator))
-                     || (SCSmatchConstantOne (GENERATOR_STEP (producerWLGenerator)));
+                     || (SCSisConstantOne (GENERATOR_STEP (producerWLGenerator)));
         cwlpwidthok = (NULL == GENERATOR_WIDTH (producerWLGenerator))
-                      || (SCSmatchConstantOne (GENERATOR_WIDTH (producerWLGenerator)));
+                      || (SCSisConstantOne (GENERATOR_WIDTH (producerWLGenerator)));
     }
 
     intersectListNo = 0;
@@ -1041,8 +1041,8 @@ IntersectExactPresent (node *arg_node)
                                      PRF_ARGS (arg_node));
         isnull
           = TCgetNthExprsExpr (WLINTERSECTIONNULL (intersectListNo), PRF_ARGS (arg_node));
-        z = SCSmatchConstantOne (onepart);
-        // DEADCODE && SCSmatchConstantZero( isnull);
+        z = SCSisConstantOne (onepart);
+        // DEADCODE && SCSisConstantZero( isnull);
         intersectListNo++;
     }
 
