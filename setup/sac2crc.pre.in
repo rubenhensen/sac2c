@@ -455,6 +455,8 @@ LINK_MOD         :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %targ
 
 target static_link:
 
+SBI              +=  "-static"
+MODEXT           :=  ".a"
 LINK_MOD         :=  "rm -f %target% && ar cru %target% %objects% && @RANLIB@ %target%"
 
 
