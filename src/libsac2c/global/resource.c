@@ -458,8 +458,10 @@ ParseResourceFiles (void)
         ok = RSCparseResourceFile (filename);
         MEMfree (filename);
 
+        // We do not warn/err about an error here, because
+        // it's perfectly OK that ~/.sac2crc does not exist.
         if (!ok) {
-            CTIwarn ("Warning: '%s' does not exist.", filename);
+            CTInote ("'%s' not found or not readable, skipping.", filename);
         }
     }
 
