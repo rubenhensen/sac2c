@@ -185,6 +185,21 @@ FMGRappendPath (pathkind_t p, const char *path)
     DBUG_RETURN ();
 }
 
+void
+FMGRprependPath (pathkind_t p, const char *path)
+{
+    DBUG_ENTER ();
+    FMGRensureInitialized ();
+
+    char *tmp = SBUF2str (path_bufs[p]);
+    SBUFflush (path_bufs[p]);
+    SBUFprintf (path_bufs[p], "%s:%s", path, tmp);
+
+    DBUG_PRINT ("prepending \"%s:\" to path %d", path, p);
+
+    DBUG_RETURN ();
+}
+
 /*
  *
  *  functionname  : AppendEnvVar
@@ -282,16 +297,22 @@ FMGRsetupPaths (void)
     DBUG_PRINT ("Source files searched in %s", SBUFgetBuffer (path_bufs[PK_path]));
 
 #define INIT_PATH(Path, RName, Var)                                                      \
-    FMGRappendPath (PK_##Path##_path, ".");                                              \
     AppendEnvVar (PK_##Path##_path, Var);                                                \
     AppendConfigPaths (PK_##Path##_path, global.config.Path##path);                      \
     DBUG_PRINT (#RName "PATH is %s", SBUFgetBuffer (path_bufs[PK_##Path##_path]));
 
     INIT_PATH (imp, IMP, "SAC_IMPLEMENTATION_PATH");
-    INIT_PATH (lib, LIB, "SAC_LIBRARY_PATH");
     INIT_PATH (inc, INC, "SAC_INCLUDES_PATH");
-    INIT_PATH (tree, TREE, "SAC_TREE_PATH");
     INIT_PATH (extlib, EXTLIB, "SAC_EXTERNAL_LIBRARY_PATH");
+
+#define INIT_PATH2(Path, RName, Var)                                                     \
+    AppendEnvVar (PK_##Path##_path, Var);                                                \
+    AppendConfigPaths (PK_##Path##_path, global.config.Path##_outputdir);                \
+    AppendConfigPaths (PK_##Path##_path, global.config.Path##path);                      \
+    DBUG_PRINT (#RName "PATH is %s", SBUFgetBuffer (path_bufs[PK_##Path##_path]));
+
+    INIT_PATH2 (lib, LIB, "SAC_LIBRARY_PATH");
+    INIT_PATH2 (tree, TREE, "SAC_TREE_PATH");
 
     DBUG_RETURN ();
 }
@@ -591,7 +612,7 @@ FMGRsetFileNames (node *module)
         }
 
         if (global.outfilename == NULL) {
-            global.targetdir = ".";
+            global.targetdir = global.install ? global.config.tree_outputdir : ".";
         } else {
             global.targetdir = global.outfilename;
             if (!FMGRcheckExistDir (global.targetdir)) {
@@ -603,6 +624,10 @@ FMGRsetFileNames (node *module)
         global.modulename = STRcpy (NSgetName (MODULE_NAMESPACE (module)));
         global.outfilename = STRcpy (global.modulename);
     }
+
+    if (global.target_modlibdir == NULL)
+        global.target_modlibdir = global.install ? STRcpy (global.config.lib_outputdir)
+                                                 : STRcpy (global.targetdir);
 
     DBUG_RETURN ();
 }

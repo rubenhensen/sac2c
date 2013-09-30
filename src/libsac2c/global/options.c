@@ -388,6 +388,22 @@ OPTcheckOptionConsistency (void)
                   global.config.rc_method);
     }
 
+    /* Setup paths:
+     * if compiling a module, -o/-olib point to directories that must be searched first.
+     * TREE_OUTPUTDIR and LIB_OUTPUTDIR must be searched second.
+     */
+    FMGRprependPath (PK_tree_path, global.config.tree_outputdir);
+    FMGRprependPath (PK_lib_path, global.config.lib_outputdir);
+
+    if (global.outfilename != NULL) {
+        FMGRprependPath (PK_tree_path, global.outfilename);
+        FMGRprependPath (PK_lib_path, global.outfilename);
+    }
+
+    if (global.target_modlibdir != NULL) {
+        FMGRprependPath (PK_lib_path, global.target_modlibdir);
+    }
+
     DBUG_RETURN ();
 }
 
@@ -784,15 +800,29 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("on_demand_lib", global.on_demand_lib = TRUE);
 
-    ARGS_OPTION ("o", global.outfilename = STRcpy (ARG));
     /*
-     * The option is only stored in outfilename,
+     * -o / -olib The option is only stored in outfilename,
      * the correct settings of the global variables
-     * outfilename, cfilename, and targetdir will be done
-     * in SetFileNames() in scnprs.c. This cannot be done here
+     * outfilename and targetdir will be done
+     * in FMGRsetFileNames() in filemgr.c. This cannot be done here
      * because you have to know the kind of file (program
      * or module/class implementation).
      */
+    ARGS_OPTION_BEGIN ("o")
+    {
+        if (global.outfilename != NULL)
+            CTIabort ("-o cannot be specified multiple times.");
+        global.outfilename = STRcpy (ARG);
+    }
+    ARGS_OPTION_END ("o");
+
+    ARGS_OPTION_BEGIN ("olib")
+    {
+        if (global.target_modlibdir != NULL)
+            CTIabort ("-olib cannot be specified multiple times.");
+        global.target_modlibdir = STRcpy (ARG);
+    }
+    ARGS_OPTION_END ("olib");
 
     ARGS_OPTION ("O", ARG_RANGE (global.cc_optimize, 0, 3));
 

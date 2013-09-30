@@ -97,7 +97,12 @@ GLOBAL (char *, puresacfilename, "stdin", xfree_dummy, )
 
 GLOBAL (char *, outfilename, NULL, xfree_char_ptr, )
 /*
- * name of executable
+ * name of executable / target base directory for module tree files
+ */
+
+GLOBAL (char *, target_modlibdir, NULL, xfree_char_ptr, )
+/*
+ * target base directory for module lib files
  */
 
 GLOBAL (char *, modulename, NULL, xfree_char_ptr, )

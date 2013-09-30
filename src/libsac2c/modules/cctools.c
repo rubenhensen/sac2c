@@ -283,38 +283,38 @@ CCTperformTask (ccm_task_t task)
         link_cmd = MEMfree (link_cmd);                                                   \
     } while (0)
 
-    if (task == CCT_ccompileonly) {
-        // Special case: we arrive here directly after options.c,
-        // before any SAC compilation and thus before FMGRsetFileNames.
-        char *path_subst = FMGRdirname (global.outfilename);
-        const char *source_subst = global.sacfilename;
-        const char *target_subst = global.outfilename;
-        const char *objects_subst = "";
-        const char *str = global.do_ccompile == DO_C_mod ? global.config.compile_mod
-                                                         : global.config.compile_prog;
-        char *compile_cmd = DO_SUBST (str);
-        CTInote ("Compiling C source \"%s\"", source_subst);
-        DBUG_PRINT (" compile command: %s", compile_cmd);
-        SYScall ("%s", compile_cmd);
-        compile_cmd = MEMfree (compile_cmd);
-        path_subst = MEMfree (path_subst);
-    } else if (task == CCT_clinkonly) {
+    if (task == CCT_ccompileonly || task == CCT_clinkonly) {
         // Special case: we arrive here directly after options.c,
         // before any SAC compilation and thus before FMGRsetFileNames.
         if (global.sacfilename == NULL) {
-            CTIabort ("Cannot link: no target specified with -o");
+            CTIabort ("Cannot proceed: no input file(s) specified");
         }
+        if (global.outfilename == NULL) {
+            CTIabort ("Cannot proceed: no output file specified");
+        }
+
         char *path_subst = FMGRdirname (global.outfilename);
-        const char *source_subst = "";
         const char *target_subst = global.outfilename;
-        const char *objects_subst = global.sacfilename;
-        const char *str = global.do_clink == DO_C_mod ? global.config.link_mod
-                                                      : global.config.link_prog;
-        char *link_cmd = DO_SUBST (str);
-        CTInote ("Linking C objects \"%s\"", objects_subst);
-        DBUG_PRINT ("link command: %s", link_cmd);
-        SYScall ("%s", link_cmd);
-        link_cmd = MEMfree (link_cmd);
+        const char *source_subst, *objects_subst;
+        char *cmd;
+
+        if (task == CCT_ccompileonly) {
+            source_subst = global.sacfilename;
+            objects_subst = "";
+            cmd = global.do_ccompile == DO_C_mod ? global.config.compile_mod
+                                                 : global.config.compile_prog;
+            CTInote ("Compiling C source \"%s\"", source_subst);
+        } else { // task == CCT_clinkonly
+            source_subst = "";
+            objects_subst = global.sacfilename;
+            cmd = global.do_clink == DO_C_mod ? global.config.link_mod
+                                              : global.config.link_prog;
+            CTInote ("Linking C objects \"%s\"", objects_subst);
+        }
+        cmd = DO_SUBST (cmd);
+        DBUG_PRINT (" command: %s", cmd);
+        SYScall ("%s", cmd);
+        cmd = MEMfree (cmd);
         path_subst = MEMfree (path_subst);
     } else {
 
@@ -380,7 +380,7 @@ CCTperformTask (ccm_task_t task)
                 path_subst = STRonNull (".", global.lib_dirname);
             } else {
                 str_buf *path_buf = SBUFcreate (1);
-                SBUFprintf (path_buf, "%s/%s/%s", global.targetdir,
+                SBUFprintf (path_buf, "%s/%s/%s", global.target_modlibdir,
                             global.config.target_env, global.config.sbi);
 
                 if (STRlen (global.config.variant) > 0)

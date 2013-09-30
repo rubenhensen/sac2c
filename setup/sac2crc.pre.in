@@ -179,11 +179,19 @@
  *                  separated list of directories. For each directory <D> in this
  *                  list, tree files are searched in <D>/tree/$TARGET_ENV.
  *
+ *  TREE_OUTPUTDIR  If -o is not specified but -install is, place the SAC
+ *                  tree code in $TREE_OUTPUTDIR/tree/$TARGET_ENV.
+ *                  This directory is prepended to TREEPATH automatically.
+ *
  *  LIBPATH         Search path for compiled SAC module code. This is a colon-
  *                  separated list of directories. For each directory <D> in this list,
  *                  modules are searched in <D>/$TARGET_ENV/$SBI/$VARIANT, then
  *                  <D>/$TARGET_ENV/$SBI.
  *                  Used to populate %modlibdirs% with LDPATH.
+ *
+ *  LIB_OUTPUTDIR   If -o/-olib is not specified but -install is, place the
+ *                  SAC module code in $LIB_OUTPUTDIR/$TARGET_ENV/$SBI/$VARIANT.
+ *                  This directory is prepended to LIBPATH automatically.
  *
  *  INCPATH         Extra paths to pass via -I to the compiler to generated C code.
  *                  This is a colon-separated list of directories.
@@ -355,12 +363,14 @@ TREE_DLLEXT      :=  "@SHARED_LIB_EXT@"
 COMPILE_TREE     :=  "@CC@ @GENPIC@ %tree_cflags% %sacincludes% -c -o %target% %source%"
 LINK_TREE        :=  "@CC@ @LD_DYNAMIC@ %tree_ldflags% -o %target% %objects%"
 
-
-LIBPATH          :=  "@RTPATH_CONF@:"
-                     "@MODPATH_CONF@:"
+LIB_OUTPUTDIR    :=  "@MODPATH_CONF@"
+LIBPATH          :=  ".:"
+                     "@RTPATH_CONF@:"
                      "@STDLIB_SOURCES@/shared-libs:"
-TREEPATH         :=  "@TREEPATH_CONF@:"
-IMPPATH          :=  "@STDLIB_SOURCES@/modules/structures:"
+TREE_OUTPUTDIR   :=  "@TREEPATH_CONF@"
+TREEPATH         :=  ".:"
+IMPPATH          :=  ".:"
+                     "@STDLIB_SOURCES@/modules/structures:"
                      "@STDLIB_SOURCES@/modules/numerical:"
                      "@STDLIB_SOURCES@/modules/numerical/blas:"
                      "@STDLIB_SOURCES@/modules/unibench:"
@@ -373,7 +383,7 @@ IMPPATH          :=  "@STDLIB_SOURCES@/modules/structures:"
                      "@STDLIB_SOURCES@/classes/random:"
                      "@STDLIB_SOURCES@/utrace:"
 EXTLIBPATH       :=  "/usr/local/dislin:/opt/local/lib"
-INCPATH          :=  ""
+INCPATH          :=  ".:"
 
 CACHE1_SIZE      :=  0
 CACHE1_LINE      :=  0
