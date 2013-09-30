@@ -357,10 +357,6 @@ tools_sourcedirs        := ctest sac2c sac2c-p sac2c-d sac4c \
 
 ###############################################################################
 
-tools_csima           := csima
-
-tools_csimt           := csimt
-
 tools_ctest           := accesstime bits ctest l1 l2 verbose
 
 tools_sac2c           := sac2c
