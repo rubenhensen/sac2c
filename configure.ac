@@ -283,7 +283,7 @@ case "$target_os" in
     dnl darwin needs some extra flags
     RANLIB="$RANLIB -c"
     OSFLAGS=["-D_DARWIN_C_SOURCE"]
-    LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
+    LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%.dylib' "]
     LD_PATH=["-L%path% -Wl,-rpath,%path%"]
     LD_FLAGS=""
     AC_MSG_RESULT([darwin settings])

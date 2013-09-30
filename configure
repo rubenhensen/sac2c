@@ -6456,7 +6456,7 @@ $as_echo "OSF settings" >&6; }
   *darwin*)
         RANLIB="$RANLIB -c"
     OSFLAGS="-D_DARWIN_C_SOURCE"
-    LD_DYNAMIC="-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "
+    LD_DYNAMIC="-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%.dylib' "
     LD_PATH="-L%path% -Wl,-rpath,%path%"
     LD_FLAGS=""
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: darwin settings" >&5
