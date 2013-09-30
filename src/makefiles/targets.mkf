@@ -342,7 +342,7 @@ runtime_nested_h       := nested nested_gen
 ###############################################################################
 
 tools_targets           := ctest sac2c sac2c-p sac2c-d sac4c \
-                           sac2tex comslc polyhedral
+                           sac2tex comslc polyhedral saccc
 tools_targetdir         := bin
 
 tools_subtarget_suffix  := .o

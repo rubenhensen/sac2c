@@ -14,6 +14,7 @@
 
 CONFIGURED   := $(PROJECT_ROOT)/src/makefiles/config.mkf \
                 $(PROJECT_ROOT)/src/include/config.h \
+                $(PROJECT_ROOT)/src/tools/saccc \
                 $(PROJECT_ROOT)/setup/sac2crc
 
 AUTOHEADERED := $(PROJECT_ROOT)/src/include/config.h.in

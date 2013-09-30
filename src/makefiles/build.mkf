@@ -256,6 +256,10 @@ endif
 $(PROJECT_ROOT)/bin/comslc: comslc/comslc
 	$(HIDE) $(CP) $(PROJECT_ROOT)/src/tools/comslc/comslc $(PROJECT_ROOT)/bin/
 
+$(PROJECT_ROOT)/bin/saccc: saccc
+	$(HIDE) $(CP) $^ $@
+	$(HIDE) chmod +x $@
+
 $(PROJECT_ROOT)/bin/%: $(SUBTARGETS)
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)bin/$* ($($(STYLE)_long) version)"

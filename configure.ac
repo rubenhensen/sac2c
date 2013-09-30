@@ -18,7 +18,7 @@ dnl we use C as our compiler language
 AC_LANG(C)
 
 dnl and which files to create
-AC_CONFIG_FILES([src/makefiles/config.mkf setup/sac2crc.pre])
+AC_CONFIG_FILES([src/makefiles/config.mkf setup/sac2crc.pre src/tools/saccc])
 AC_CONFIG_HEADER([src/include/config.h])
 
 dnl check for host type

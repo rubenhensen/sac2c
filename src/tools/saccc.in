@@ -1,0 +1,92 @@
+#! @BASH@
+
+basename=`basename "$0"`
+die() {
+    echo "$basename:" "$@" >&2
+    exit 1
+}
+
+if test $# -lt 3; then
+   echo "usage: $0 <sac2c> <prog|mod> <target> ..." >&2; exit 1
+fi
+
+sac2c=${1:?}
+kind=${2:?}
+target=${3:?}
+shift 3
+
+if ! test -x "$sac2c"; then
+    die "$sac2c is not found or not executable"
+fi
+
+cmdline=("$sac2c" -target "$target")
+firstfile=
+prev_arg=
+outfile=
+mode=ld
+asm=
+preproc=
+for arg in "$@"; do
+  # if the previous option needs an argument, assign it
+  if test -n "$prev_arg"; then
+     eval "$prev_arg=\$arg"
+     prev_arg=
+     continue
+  fi
+  if test -n "$followaction"; then
+     act=$followaction
+     followaction=
+     case $act in
+        ccarg)  cmdline+=(-Xc "$ccarg $arg" -Xl "$ccarg $arg"); continue;;
+        ldarg)  cmdline+=(-Xl "$ldarg $arg"); continue;;
+     esac
+  fi
+
+  case $arg in
+      -c) mode=cc ;;
+      -S) mode=cc; asm=1 ;;
+      -E) mode=cc; preproc=1 ;;
+  esac
+
+  case $arg in
+      -g*) cmdline+=(-g -Xc "$arg" -Xl "$arg") ;;
+      -O[0-3]) cmdline+=($arg -Xc "$arg" -Xl "$arg") ;;
+      -o) prev_arg=outfile ;;
+      -save-temps) cmdline+=(-d nocleanup -Xc -save-temps -Xl -save-temps) ;;
+      -i*|-MF|-MT|-MQ)    followaction=ccarg; ccarg=$arg ;;
+      -W*|-d*|-pedantic*|-ansi|-std*|-S|-E|-I*|-P|-A*|-D*|-U*|-C*|-H|-M*) cmdline+=(-Xc "$arg" -Xl "$arg") ;;
+      -L*|-Wl,*|-l*)      cmdline+=(-Xl "$arg");;
+      -Xc)    followaction=ccarg; ccarg=$arg ;;
+      -Xl)    followaction=ldarg; ldarg=$arg ;;
+      -)     ;;
+      -c)    ;;
+      --version|-v|-V|-qversion)  "$sac2c" -v0 -target "$target" -cc ccprog -o /dev/stdout /dev/stdin -Xc "$arg"; exit 0 ;;
+      -*)    cmdline+=(-Xc "$arg") ;;
+
+      *.c)  if test x"$firstfile" = x; then firstfile=$arg; fi; cmdline+=("$arg") ;;
+      *)  cmdline+=("$arg") ;;
+  esac
+done
+if test -n "${prev_arg:-}"; then die "argument to \`$arg' is missing"; fi
+
+if test -n "$outfile"; then
+   cmdline+=(-o "$outfile")
+else
+    if test -n "$preproc"; then
+        cmdline+=(-o /dev/stdout)
+    elif test $mode = ld; then
+        cmdline+=(-o a.out)
+    elif test x"$firstfile" != x; then
+        base=`basename "$firstfile" .c`
+        if test -n "$asm"; then
+            cmdline+=(-o "$base".s)
+        else
+            cmdline+=(-o "$base"$("$sac2c" -target "$target" -v0 -COBJEXT))
+        fi
+    else
+        die "can't determine output file name for -c/-S"
+    fi
+fi
+
+cmdline+=(-noprelude -cc $mode$kind)
+exec "${cmdline[@]}"
