@@ -431,7 +431,8 @@ target default_sbi:
 
 TARGET_ENV       :=  "host"
 
-/* SBI-dependent resources */
+SBI              :=  "seq"
+MT_MODE          :=  0
 BACKEND          :=  "C99"
 RC_METHOD        :=  "local"
 
@@ -458,8 +459,6 @@ LINK_MOD         :=  "rm -f %target% && ar cru %target% %objects% && @RANLIB@ %t
 
 
 target seq :: default_sbi:
-SBI              :=  "seq"
-MT_MODE          :=  0
 
 target mt :: default_sbi:
 LIBS             +=  " @CCMTLINK@"
