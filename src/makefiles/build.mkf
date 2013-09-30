@@ -2,7 +2,7 @@
 #
 # Comment:
 #
-# This makefile is never called directly by the user nor is it included by other 
+# This makefile is never called directly by the user nor is it included by other
 # makefiles. Instead, it is used in recursive calls to make by both the top-level
 # makefile and the local src directory makefile.
 #
@@ -36,7 +36,7 @@ SUBPROJECT_DIRS  := $($(SUBPROJECT)_sourcedirs)
 MAKE_DIRS        := $(SUBPROJECT_DIRS)
 
 #
-# preset by source.mkf to specific directory 
+# preset by source.mkf to specific directory
 #
 
 INCDIRS          := -I../../include -I../include \
@@ -65,10 +65,10 @@ SUBTARGETS_HEADER   := $(PROJECT_ROOT)/src/include/config.h \
                        $(addsuffix .h,\
                          $(foreach srcdir,$(runtime_sourcedirs),\
                            $(addprefix ../runtime/$(srcdir)/,\
-                             $(runtime_$(srcdir))))) 
+                             $(runtime_$(srcdir)))))
 #
 # We must treat the header file targets of the runtime subproject differently
-# because some of the libsac source files include sac.h, which creates a 
+# because some of the libsac source files include sac.h, which creates a
 # dependency that we don't desire but which we cannot avoid either. However,
 # we must formulate the dependencies of sac.h in a way that works both when
 # making the runtime subproject and when doing the libsac subproject.
@@ -128,8 +128,8 @@ all: $(TARGETS)
 #
 
 tutu:
-	@$(ECHO) $(TARGETS) 
-	@$(ECHO) $(SUBTARGETS) 
+	@$(ECHO) $(TARGETS)
+	@$(ECHO) $(SUBTARGETS)
 	@$(ECHO) $(DEPENDENCY_FILES)
 
 
@@ -147,7 +147,7 @@ makesubdir: $(SUBTARGETS)
 # Building make tools
 #
 
-$(PROJECT_ROOT)/src/bin/%: $(SUBTARGETS) 
+$(PROJECT_ROOT)/src/bin/%: $(SUBTARGETS)
 	@$(ECHO) ""
 	@$(ECHO) "Linking $(PREFIX_ROOT)src/bin/$* ($($(STYLE)_long) version)"
 	$(HIDE) $(LD) $(LD_FLAGS) -o $@ \
@@ -155,7 +155,7 @@ $(PROJECT_ROOT)/src/bin/%: $(SUBTARGETS)
                 $(LIBDIRS) $(LIBS) $(LIB_MAKETOOLS) \
                 $(foreach dir, $(realpath $(subst -L,,$(LIBDIRS))), $(subst %path%,$(dir),$(LD_PATH)))
 	@$(TOUCH) .done
-	@$(CLOCK_SKEW_ELIMINATION)  
+	@$(CLOCK_SKEW_ELIMINATION)
 
 
 ################################################################################
@@ -174,7 +174,7 @@ $(PROJECT_ROOT)/lib/libsac2c$(SHARED_LIB_EXT): $(PROJECT_ROOT)/lib/libsac2c.$($(
 		else \
 			$(CP) $< $@ ;\
 		fi
-  
+
 # This rule filters out cygcompat.o because it is not part of libsac2c but still belongs in the sub project.
 # cygcompat.o belongs in libcygcompat.a which will only be built under cygwin. See the rule bellow.
 $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short)$(SHARED_LIB_EXT): global/build_$(STYLE).$($(STYLE)_short).o
@@ -209,7 +209,7 @@ $(PROJECT_ROOT)/src/doc/%.html: xml/%2html.xsl xml/%.xml
 #
 # Building PNG documentation of abstract syntax tree
 #
-						
+
 $(PROJECT_ROOT)/src/doc/%.png: xml/%2png.xsl xml/%.xml
 	@$(ECHO) ""
 	@if [ $(DOT) = "no" ]; \
@@ -220,7 +220,7 @@ $(PROJECT_ROOT)/src/doc/%.png: xml/%2png.xsl xml/%.xml
 				$(XSLTENGINE) $^ > xml/ast.dot; \
 				dot xml/ast.dot -Tpng -o $@ ;\
 				$(RM)  xml/ast.dot ; \
-			fi		
+			fi
 
 
 ################################################################################
@@ -228,13 +228,13 @@ $(PROJECT_ROOT)/src/doc/%.png: xml/%2png.xsl xml/%.xml
 # Building runtime header file
 #
 
-$(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER) 
+$(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)include/sac.h"
 	$(HIDE) $(HEADER_ZIPPER) $^ > $@
 	@$(TOUCH) .done
 	@$(TOUCH) $(FINGERPRINT_FILE)
-	@$(CLOCK_SKEW_ELIMINATION)  
+	@$(CLOCK_SKEW_ELIMINATION)
 
 ################################################################################
 #
@@ -264,8 +264,7 @@ $(PROJECT_ROOT)/bin/%: $(SUBTARGETS)
                       $(LIBDIRS) $(LIBS) $(LIB_TOOLS) \
                       $(foreach dir, $(realpath $(subst -L,,$(LIBDIRS))), $(subst %path%,$(dir),$(LD_PATH)))
 	@$(TOUCH) .done
-	@$(CLOCK_SKEW_ELIMINATION)  
-
+	@$(CLOCK_SKEW_ELIMINATION)
 
 ###############################################################################
 #
@@ -294,7 +293,7 @@ global/build_$(STYLE).c: $(SUBTARGETS) $(PROJECT_ROOT)/.revision.txt
 	@$(ECHO) "char build_rev[]   = \"`cat $(PROJECT_ROOT)/.revision.txt`\";"               >> $@
 	@$(ECHO) "char build_srev[]  = \"`$(SED) -e 's/:.*//g' $(PROJECT_ROOT)/.revision.txt`\";" >> $@
 	@$(ECHO) "char build_ast[]   = \"`cat .fingerprint`\";"                                >> $@
-	@$(CLOCK_SKEW_ELIMINATION)  
+	@$(CLOCK_SKEW_ELIMINATION)
 
 # Create an icm_vars file, which could be used by both C and C++ compilers
 codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
@@ -305,7 +304,7 @@ codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
 # Pattern rules for compilation
 #
 
-%.$($(STYLE)_short).o: %.c 
+%.$($(STYLE)_short).o: %.c
 	@if [ "compile $(dir $*)" != "`cat .make_track`" ] ; \
          then $(ECHO) "compile $(dir $*)" > .make_track; \
               $(ECHO) ""; \
@@ -316,7 +315,7 @@ codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
                   $(CC_FLAGS_$($(STYLE)_cap)) $(SETTINGS_$($(STYLE)_cap)) \
                   $(CC_FLAGS_YY) \
                   $(INCDIRS) -o $@ -c $<
-	@$(CLOCK_SKEW_ELIMINATION) 
+	@$(CLOCK_SKEW_ELIMINATION)
 
 
 ###############################################################################
@@ -324,7 +323,7 @@ codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
 # Pattern rules for source code generation with xml and xslt
 #
 
-%.h: %.h.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) 
+%.h: %.h.xsl $(XML_DIR)/ast.xml $(XML_COMMONS)
 	@if [ "generate header $(dir $*)" != "`cat .make_track`" ] ; \
          then $(ECHO) "generate header $(dir $*)" > .make_track; \
               $(ECHO) ""; \
@@ -335,7 +334,7 @@ codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
 	$(HIDE)$(MV) $@.tmp $@
 	@$(CLOCK_SKEW_ELIMINATION)
 
-%.c: %.c.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) 
+%.c: %.c.xsl $(XML_DIR)/ast.xml $(XML_COMMONS)
 	@if [ "generate source $(dir $*)" != "`cat .make_track`" ] ; \
          then $(ECHO) "generate source $(dir $*)" > .make_track; \
               $(ECHO) ""; \
@@ -346,7 +345,7 @@ codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
 	$(HIDE)$(MV) $@.tmp $@
 	@$(CLOCK_SKEW_ELIMINATION)
 
-%.mac: %.mac.xsl $(XML_DIR)/ast.xml $(XML_COMMONS) 
+%.mac: %.mac.xsl $(XML_DIR)/ast.xml $(XML_COMMONS)
 	@if [ "generate macro $(dir $*)" != "`cat .make_track`" ] ; \
          then $(ECHO) "generate macro $(dir $*)" > .make_track; \
               $(ECHO) ""; \
@@ -370,7 +369,7 @@ codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
               $(ECHO) "Generating header files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
 	@$(ECHO) "  Generating header file from M4 macro specification: $(notdir $@)"
-	$(HIDE) $(M4PROC) -I $(M4_DIR) $< > $@	
+	$(HIDE) $(M4PROC) -I $(M4_DIR) $< > $@
 
 
 #######################################################################################
@@ -378,7 +377,7 @@ codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
 # Pattern rules for dependency tracking mechanism:
 #
 
-.%.d: %.c $(GENERATED_FILES) 
+.%.d: %.c $(GENERATED_FILES)
 	@if [ "dependency $(dir $*)" != "`cat .make_track`" ] ; \
         then $(ECHO) "dependency $(dir $*)" > .make_track; \
              $(ECHO) ""; \
@@ -392,7 +391,7 @@ codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
 	 else $(RM) $@d ; \
 	      exit 1 ;  \
 	 fi
-	@$(CLOCK_SKEW_ELIMINATION) 
+	@$(CLOCK_SKEW_ELIMINATION)
 
 
 ###############################################################################
@@ -405,5 +404,3 @@ ifeq ($(DEPS),yes)
     -include $(DEPENDENCY_FILES)
   endif
 endif
-
-
