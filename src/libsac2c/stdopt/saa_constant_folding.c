@@ -851,7 +851,7 @@ isEqExtrema (node *arg_node1, node *arg_node2)
         && (TUeqShapes (AVIS_TYPE (ID_AVIS (arg_node1)),
                         AVIS_TYPE (ID_AVIS (arg_node2))))) {
         pat = PMvar (1, PMAisVar (&arg_node1), 0);
-        res = PMmatchFlat (pat, arg_node2);
+        res = PMmatchFlatSkipExtrema (pat, arg_node2);
         DBUG_PRINT ("comparing %s and %s gave %d", AVIS_NAME (ID_AVIS (arg_node1)),
                     AVIS_NAME (ID_AVIS (arg_node2)), res);
         pat = PMfree (pat);
@@ -1300,6 +1300,109 @@ SAACFprf_le_VxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = SAACFprf_le_SxS (arg_node, arg_info);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * All the _eq_ and _neq_ cases
+ *
+ *****************************************************************************/
+node *
+SAACFprf_eq_SxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
+
+    DBUG_RETURN (res);
+}
+
+node *
+SAACFprf_eq_SxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    res = SAACFprf_eq_SxS (arg_node, arg_info);
+
+    DBUG_RETURN (res);
+}
+
+node *
+SAACFprf_eq_VxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    res = SAACFprf_eq_SxS (arg_node, arg_info);
+
+    DBUG_RETURN (res);
+}
+
+node *
+SAACFprf_eq_VxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    res = SAACFprf_eq_SxS (arg_node, arg_info);
+
+    DBUG_RETURN (res);
+}
+
+node *
+SAACFprf_neq_SxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
+
+    DBUG_RETURN (res);
+}
+
+node *
+SAACFprf_neq_SxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    res = SAACFprf_neq_SxS (arg_node, arg_info);
+
+    DBUG_RETURN (res);
+}
+
+node *
+SAACFprf_neq_VxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    res = SAACFprf_neq_SxS (arg_node, arg_info);
+
+    DBUG_RETURN (res);
+}
+
+node *
+SAACFprf_neq_VxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    res = SAACFprf_neq_SxS (arg_node, arg_info);
 
     DBUG_RETURN (res);
 }

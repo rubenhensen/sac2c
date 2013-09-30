@@ -19,9 +19,9 @@ extern void SCSfinalizeSymbolicConstantSimplification (void);
 extern node *SCSmakeTrue (node *prfarg);
 extern node *SCSmakeFalse (node *prfarg);
 extern node *SCSmakeZero (node *prfarg);
-extern bool SCSmatchConstantZero (node *arg_node);
-extern bool SCSmatchConstantNonZero (node *arg_node);
-extern bool SCSmatchConstantOne (node *arg_node);
+extern bool SCSisConstantZero (node *arg_node);
+extern bool SCSisConstantNonZero (node *arg_node);
+extern bool SCSisConstantOne (node *arg_node);
 extern simpletype SCSgetBasetypeOfExpr (node *expr);
 extern node *SCSrecurseWithExtrema (node *arg_node, info *arg_info, node *arg1,
                                     node *arg2, node *(*fun) (node *, info *));

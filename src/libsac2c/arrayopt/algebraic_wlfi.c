@@ -1124,7 +1124,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
                         DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
                         DBUG_ASSERT (N_id == NODE_TYPE (ivarg), "Expected N_id ivarg");
                         // Check for multiply by zero, just in case.
-                        if (SCSmatchConstantZero (xarg)) {
+                        if (SCSisConstantZero (xarg)) {
                             DBUG_PRINT ("multiply by zero has no inverse");
                         } else {
                             resavis = TBmakeAvis (TRAVtmpVarName ("tismul"),
