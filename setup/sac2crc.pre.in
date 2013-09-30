@@ -470,6 +470,10 @@ target mt_pth :: mt:
 SBI              :=  "mt-pth"
 MT_LIB           :=  "pthread"
 
+target mt_pth_rt :: mt_pth:
+SBI              +=  "-rtspec"
+RTSPEC           :=  1
+
 target mt_lpel :: mt:
 SBI              :=  "mt-lpel"
 MT_LIB           :=  "lpel"

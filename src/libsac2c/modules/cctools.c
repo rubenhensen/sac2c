@@ -129,13 +129,19 @@ CCTperformTask (ccm_task_t task)
     FMGRmapPath (PK_inc_path, AddIncPath, cflags_buf);
     SBUFprintf (cflags_buf, " %s", global.cflags);
     SBUFprintf (cflags_buf,
+                " -DSAC_TARGET_STRING=\\\"%s\\\""
+                " -DSAC_MODEXT_STRING=\\\"%s\\\""
+                " -DSAC_TARGET_ENV_STRING=\\\"%s\\\""
+                " -DSAC_SBI_STRING=\\\"%s\\\""
                 " -DSAC_RC_METHOD=SAC_RCM_%s"
                 " -DSAC_BACKEND_%s"
                 " -DSAC_MT_LIB_%s"
                 " -DSAC_MT_MODE=%d"
                 " -DSAC_DO_RTSPEC=%d",
-                global.config.rc_method, global.backend_string[global.backend],
-                global.config.mt_lib, global.config.mt_mode, global.config.rtspec);
+                global.target_name, global.config.modext, global.config.target_env,
+                global.config.sbi, global.config.rc_method,
+                global.backend_string[global.backend], global.config.mt_lib,
+                global.config.mt_mode, global.config.rtspec);
     char *cflags_subst = SBUF2strAndFree (&cflags_buf);
 
     // %tree_cflags%

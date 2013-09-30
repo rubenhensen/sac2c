@@ -370,11 +370,12 @@ SAC_handleRequest (queue_node_t *request)
         SAC_TR_Print ("Runtime specialization: Handling new specialization request.");
     }
 
-    static char *call_format = "sac2c -v%i -noprelude -runtime "
-                               "-rt_old_mod %s -rt_new_mod %s "
-                               "-rtfunname %s -rtnewname %s "
-                               "-rttypeinfo %s -rtshapeinfo %s "
-                               "-L %s -o %s";
+    static char *call_format
+      = "sac2c -v%i -target " SAC_TARGET_STRING " -noprelude -runtime "
+        "-rt_old_mod %s -rt_new_mod %s "
+        "-rtfunname %s -rtnewname %s "
+        "-rttypeinfo %s -rtshapeinfo %s "
+        "-L %s -T %s -o %s";
 
     char syscall[MAX_SYS_CALL] = "";
     char filename[MAX_STRING_LENGTH] = "";
@@ -406,7 +407,7 @@ SAC_handleRequest (queue_node_t *request)
     /* Build the system call. */
     sprintf (syscall, call_format, (do_trace == 1) ? 3 : 0, request->module_name,
              new_module, request->func_name, new_func_name, request->type_info,
-             shape_info, tmpdir_name, tmpdir_name);
+             shape_info, tmpdir_name, tmpdir_name, tmpdir_name);
 
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Calling runtime compiler with:");
@@ -414,7 +415,9 @@ SAC_handleRequest (queue_node_t *request)
     }
 
     /* The path to the new library. */
-    sprintf (filename, "%s/lib%sMod.so", tmpdir_name, new_module);
+    sprintf (filename,
+             "%s/" SAC_TARGET_ENV_STRING "/" SAC_SBI_STRING "/lib%sMod" SAC_MODEXT_STRING,
+             tmpdir_name, new_module);
 
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Generating specialized library at:");
