@@ -1122,8 +1122,7 @@ SUBPHASE (asd, "AUD/SCL distinction", ASDdoAudSclDistinction, ALWAYS, mem)
 SUBPHASE (copy, "Making copy operations explicit", EMECdoExplicitCopy, ALWAYS, mem)
 
 SUBPHASE (racc, "Removing alias results from conformity checks",
-          EMRACCdoRemoveAliasResultsFromConformityChecks,
-          global.runtimecheck.conformity &&global.insertconformitychecks, mem)
+          EMRACCdoRemoveAliasResultsFromConformityChecks, ALWAYS, mem)
 
 SUBPHASE (alloc, "Introducing explicit allocation statements ", EMALdoAlloc, ALWAYS, mem)
 
