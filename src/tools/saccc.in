@@ -37,8 +37,9 @@ for arg in "$@"; do
      act=$followaction
      followaction=
      case $act in
-        ccarg)  cmdline+=(-Xc "$ccarg $arg" -Xl "$ccarg $arg"); continue;;
-        ldarg)  cmdline+=(-Xl "$ldarg $arg"); continue;;
+        ccarg)  cmdline+=(-Xc "$arg" -Xl "$arg"); continue;;
+        ldarg)  cmdline+=(-Xl "$arg"); continue;;
+        sacarg) cmdline+=("$arg"); continue;;
      esac
   fi
 
@@ -56,8 +57,9 @@ for arg in "$@"; do
       -i*|-MF|-MT|-MQ)    followaction=ccarg; ccarg=$arg ;;
       -W*|-d*|-pedantic*|-ansi|-std*|-S|-E|-I*|-P|-A*|-D*|-U*|-C*|-H|-M*) cmdline+=(-Xc "$arg" -Xl "$arg") ;;
       -L*|-Wl,*|-l*)      cmdline+=(-Xl "$arg");;
-      -Xc)    followaction=ccarg; ccarg=$arg ;;
-      -Xl)    followaction=ldarg; ldarg=$arg ;;
+      -Xs)    followaction=sacarg ;;
+      -Xc)    followaction=ccarg  ;;
+      -Xl)    followaction=ldarg  ;;
       -)     ;;
       -c)    ;;
       --version|-v|-V|-qversion)  "$sac2c" -v0 -target "$target" -cc ccprog -o /dev/stdout /dev/stdin -Xc "$arg"; exit 0 ;;
