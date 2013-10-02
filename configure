@@ -2253,8 +2253,8 @@ fi
      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-stdlib-sources is not set; do not forget to edit sac2crc with the final location." >&5
 $as_echo "$as_me: WARNING: --with-stdlib-sources is not set; do not forget to edit sac2crc with the final location." >&2;}
   else
-     if ! test -r "$with_stdlib_sources/modules/structures/ArrayBasics.sac"; then
-        as_fn_error $? "Cannot find $with_stdlib_sources/modules/structures/ArrayBasics.sac. Is --with-stdlib-sources correct?" "$LINENO" 5
+     if ! test -r "$with_stdlib_sources/modules/structures/ArrayBasics.xsac"; then
+        as_fn_error $? "Cannot find $with_stdlib_sources/modules/structures/ArrayBasics.xsac. Is --with-stdlib-sources correct?" "$LINENO" 5
      fi
      with_stdlib_sources=`(cd "$with_stdlib_sources" && pwd)`
   fi

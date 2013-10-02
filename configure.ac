@@ -12,7 +12,7 @@ AC_CONFIG_SRCDIR([setup])
 AC_CONFIG_AUX_DIR([setup/config])
 
 dnl where to find the SAC standard library sources
-CHECK_STDLIB([modules/structures/ArrayBasics.sac])
+CHECK_STDLIB([modules/structures/ArrayBasics.xsac])
 
 dnl we use C as our compiler language
 AC_LANG(C)
