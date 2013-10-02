@@ -39,6 +39,7 @@
 #include "identify_noop_branch.h"
 #include "filemgr.h"
 #include "reusewithoffset.h"
+#include "sacdirs.h"
 
 #define LOWER_BOUND 0
 #define UPPER_BOUND 1

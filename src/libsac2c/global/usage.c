@@ -10,6 +10,7 @@
 #include "usage.h"
 #include "phase_options.h"
 #include "config.h"
+#include "sacdirs.h"
 
 static void
 PrintToolName (void)

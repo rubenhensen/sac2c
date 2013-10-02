@@ -58,6 +58,7 @@
 #include "ctinfo.h"
 #include "str.h"
 #include "memory.h"
+#include "sacdirs.h"
 
 //#include "sac.tab.h"
 

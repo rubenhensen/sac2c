@@ -14,6 +14,7 @@
 
 CONFIGURED   := $(PROJECT_ROOT)/src/makefiles/config.mkf \
                 $(PROJECT_ROOT)/src/include/config.h \
+                $(PROJECT_ROOT)/src/include/sacdirs.h \
                 $(PROJECT_ROOT)/src/tools/saccc \
                 $(PROJECT_ROOT)/setup/sac2crc
 
@@ -27,8 +28,7 @@ AUTOCONFED   := $(PROJECT_ROOT)/configure
 # Dummy rules:
 #
 
-.PHONY: checks $(PROJECT_ROOT)/.revision.txt.PHONY
-
+.PHONY: checks $(PROJECT_ROOT)/.revision.txt
 
 #######################################################################################
 #
@@ -67,13 +67,13 @@ checks: $(CONFIGURED) $(PROJECT_ROOT)/.revision.txt
 	@echo ""
 	@ exit 1
 
-$(PROJECT_ROOT)/setup/sac2crc: $(PROJECT_ROOT)/setup/sac2crc.pre
-	rm -f $@ $@.tmp
-	sed -e 's|@RTPATH_CONF[@]|$(RTPATH_CONF)|g' \
+$(PROJECT_ROOT)/setup/sac2crc: $(PROJECT_ROOT)/setup/sac2crc.pre $(PROJECT_ROOT)/.revision.txt
+	@sed -e 's|@RTPATH_CONF[@]|$(RTPATH_CONF)|g' \
 	    -e 's|@MODPATH_CONF[@]|$(MODPATH_CONF)|g' \
 	    -e 's|@INCPATH_CONF[@]|$(INCPATH_CONF)|g' \
 	    -e 's|@TREEPATH_CONF[@]|$(TREEPATH_CONF)|g' $< >$@.tmp
-	mv $@.tmp $@
+	@ if ! test -r "$@"; then mv $@.tmp $@; else \
+             if ! cmp $@.tmp $@ >/dev/null 2>&1; then mv $@.tmp $@; else rm $@.tmp; fi; fi
 
 #$(PROJECT_ROOT)/.revision.txt:
 #	@ if which svn > /dev/null ;  \
@@ -83,11 +83,9 @@ $(PROJECT_ROOT)/setup/sac2crc: $(PROJECT_ROOT)/setup/sac2crc.pre
 #               fi ; \
 #          fi
 
-$(PROJECT_ROOT)/.revision.txt.PHONY:
-
 # Use indirect phony and non mod time changing rule ( when version unchanged)
 # to prevent needless rebuilds of the compiler.
-$(PROJECT_ROOT)/.revision.txt: $(PROJECT_ROOT)/.revision.txt.PHONY
+$(PROJECT_ROOT)/.revision.txt:
 	@ if [ ! -f $@ ];                        \
 	  then                                   \
 	    echo "?????" >$@;                    \
@@ -123,3 +121,10 @@ $(PROJECT_ROOT)/.revision.txt: $(PROJECT_ROOT)/.revision.txt.PHONY
               rm $@.new;                                                \
             fi                                                          \
           fi
+
+.PHONY: $(PROJECT_ROOT)/src/include/sacdirs.h
+$(PROJECT_ROOT)/src/include/sacdirs.h:
+	@ echo '#define SAC2CRC_CONF "$(SAC2CRC_CONF)"' >$@.tmp
+	@ echo '#define DLL_DIR "$(DLL_DIR)"' >>$@.tmp
+	@ if ! test -r "$@"; then mv $@.tmp $@; else \
+             if ! cmp $@.tmp $@ >/dev/null 2>&1; then mv $@.tmp $@; else rm $@.tmp; fi; fi
