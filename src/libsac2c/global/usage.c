@@ -4,7 +4,7 @@
 #include "globals.h"
 #include "build.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "USG"
 #include "debug.h"
 
 #include "usage.h"

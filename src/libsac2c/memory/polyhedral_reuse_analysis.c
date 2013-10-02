@@ -16,7 +16,7 @@
  */
 #include "polyhedral_reuse_analysis.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "PRA"
 #include "debug.h"
 
 #include "globals.h"
