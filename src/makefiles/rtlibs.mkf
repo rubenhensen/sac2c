@@ -161,6 +161,8 @@ HIDEat_@ = @
 SAC2C = $(SAC2C_T) -Xc "$(EXTRAINC)" -Xtc "$(EXTRAINC)"
 SAC2C_NOTARGET = $(SAC2C_BASE) -Xc "$(EXTRAINC)" -Xtc "$(EXTRAINC)"
 
+.PRECIOUS: %-$(TARGET)$(OBJEXT) %-$(TARGET).diag$(OBJEXT)
+
 %-$(TARGET)$(OBJEXT): %.c $(CDEPS)
 	$(HIDEc)$(SAC2C) $(HIDEv) -noprelude -cc ccmod -o $@ $<
 
