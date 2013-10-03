@@ -234,6 +234,10 @@ CCTperformTask (ccm_task_t task)
         }
     } else if (task == CCT_clinkonly) {
         libname_subst = FMGRbasename (global.outfilename);
+        // Strip extension if present
+        char *ppos = strrchr (libname_subst, '.');
+        if (ppos != NULL)
+            *ppos = '\0';
     } else {
         libname_subst = STRcpy ("");
     }
