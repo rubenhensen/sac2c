@@ -687,6 +687,12 @@ ReplaceNarrayElementHelper (node *X, int offset, node *val, info *arg_info)
     z = DUPdoDupNode (X);
     ARRAY_AELEMS (z) = FLATGflattenExprsChain (ARRAY_AELEMS (z), &INFO_VARDECS (arg_info),
                                                &INFO_PREASSIGN (arg_info), NULL);
+    if ((offset < 0) || (offset >= TCcountExprs (ARRAY_AELEMS (z)))) {
+        DBUG_PRINT ("index error performing indexed assign into %s",
+                    AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
+        DBUG_ASSERT (FALSE, "Index error performing indexed assign into N_array");
+    }
+
     exprs = TCgetNthExprs (offset, ARRAY_AELEMS (z));
     EXPRS_EXPR (exprs) = DUPdoDupNode (val);
 
@@ -2823,7 +2829,7 @@ SCCFprf_idxs2offset (node *arg_node, info *arg_info)
 
     n = TCcountExprs (PRF_ARGS (arg_node));
 
-    if ((1 == n) && (SCSmatchConstantZero (PRF_ARG1 (arg_node)))) {
+    if ((1 == n) && (SCSisConstantZero (PRF_ARG1 (arg_node)))) {
         res = TBmakeNum (0); /* Case 1 */
     }
 

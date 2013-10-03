@@ -39,6 +39,11 @@ extern node *SAACFprf_le_SxV (node *arg_node, info *arg_info);
 extern node *SAACFprf_le_VxS (node *arg_node, info *arg_info);
 extern node *SAACFprf_le_VxV (node *arg_node, info *arg_info);
 
+extern node *SAACFprf_eq_SxS (node *arg_node, info *arg_info);
+extern node *SAACFprf_eq_SxV (node *arg_node, info *arg_info);
+extern node *SAACFprf_eq_VxS (node *arg_node, info *arg_info);
+extern node *SAACFprf_eq_VxV (node *arg_node, info *arg_info);
+
 extern node *SAACFprf_ge_SxS (node *arg_node, info *arg_info);
 extern node *SAACFprf_ge_SxV (node *arg_node, info *arg_info);
 extern node *SAACFprf_ge_VxS (node *arg_node, info *arg_info);
@@ -48,6 +53,11 @@ extern node *SAACFprf_gt_SxS (node *arg_node, info *arg_info);
 extern node *SAACFprf_gt_SxV (node *arg_node, info *arg_info);
 extern node *SAACFprf_gt_VxS (node *arg_node, info *arg_info);
 extern node *SAACFprf_gt_VxV (node *arg_node, info *arg_info);
+
+extern node *SAACFprf_neq_SxS (node *arg_node, info *arg_info);
+extern node *SAACFprf_neq_SxV (node *arg_node, info *arg_info);
+extern node *SAACFprf_neq_VxS (node *arg_node, info *arg_info);
+extern node *SAACFprf_neq_VxV (node *arg_node, info *arg_info);
 
 extern constant *SAACFchaseMinMax (node *arg_node, bool minmax);
 #define SAACFCHASEMIN FALSE

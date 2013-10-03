@@ -1124,7 +1124,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
                         DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
                         DBUG_ASSERT (N_id == NODE_TYPE (ivarg), "Expected N_id ivarg");
                         // Check for multiply by zero, just in case.
-                        if (SCSmatchConstantZero (xarg)) {
+                        if (SCSisConstantZero (xarg)) {
                             DBUG_PRINT ("multiply by zero has no inverse");
                         } else {
                             resavis = TBmakeAvis (TRAVtmpVarName ("tismul"),
@@ -1880,10 +1880,6 @@ AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
  *        where int1 evaluates to the lower bound of the intersection,
  *        and   int2 evaluates to the upper bound of the intersection
  *        and p0, p1... are the partitions of the producerWL.
- *
- *
- *        NB. ALL lower bounds precede all upper bounds in the
- *            _attach_extrema_arguments.
  *
  *        NB. We need the producerWL partition bounds in the noteintersect
  *            for at least two reasons: a producerWL partition may be split

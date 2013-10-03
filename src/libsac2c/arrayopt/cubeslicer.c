@@ -496,9 +496,9 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
         cwlpb1 = NULL;
         cwlpb2 = NULL;
         cwlpstepok = (NULL == GENERATOR_STEP (producerWLGenerator))
-                     || (SCSmatchConstantOne (GENERATOR_STEP (producerWLGenerator)));
+                     || (SCSisConstantOne (GENERATOR_STEP (producerWLGenerator)));
         cwlpwidthok = (NULL == GENERATOR_WIDTH (producerWLGenerator))
-                      || (SCSmatchConstantOne (GENERATOR_WIDTH (producerWLGenerator)));
+                      || (SCSisConstantOne (GENERATOR_WIDTH (producerWLGenerator)));
     }
 
     intersectListNo = 0;
@@ -1041,8 +1041,8 @@ IntersectExactPresent (node *arg_node)
                                      PRF_ARGS (arg_node));
         isnull
           = TCgetNthExprsExpr (WLINTERSECTIONNULL (intersectListNo), PRF_ARGS (arg_node));
-        z = SCSmatchConstantOne (onepart);
-        // DEADCODE && SCSmatchConstantZero( isnull);
+        z = SCSisConstantOne (onepart);
+        // DEADCODE && SCSisConstantZero( isnull);
         intersectListNo++;
     }
 
@@ -1306,6 +1306,7 @@ CUBSLprf (node *arg_node, info *arg_info)
     node *pwl = NULL;
     node *pwlid = NULL;
     node *noteint = NULL;
+    int noteintinsertcycle;
 
     DBUG_ENTER ();
 
@@ -1338,11 +1339,13 @@ CUBSLprf (node *arg_node, info *arg_info)
              * Side effect of call is to set INFO_CONSUMERPART and
              * INFO_INTERSECTTYPE.
              */
+            noteintinsertcycle = PRF_NOTEINTERSECTINSERTIONCYCLE (noteint);
             INFO_NOTEINTERSECT (arg_info) = noteint;
             INFO_INTERSECTTYPE (arg_info)
               = CUBSLfindMatchingPart (arg_node, INFO_CONSUMERPART (arg_info), pwl,
                                        arg_info, &INFO_PRODUCERPART (arg_info));
             if ((INTERSECT_exact != INFO_INTERSECTTYPE (arg_info)) && (NULL != noteint)
+                && ((global.cycle_counter - noteintinsertcycle) > 3)
                 && (AWLFIisHasAllInverseProjections (noteint))) {
                 DBUG_ASSERT (!INFO_CUTNOW (arg_info), "CUTNOW error");
                 INFO_CUTNOW (arg_info) = TRUE;

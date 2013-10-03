@@ -2236,7 +2236,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
          */
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
 
-        if ((NULL != AVIS_MIN (lhsavis)) && (SCSmatchConstantNonZero (AVIS_MIN (lhsavis)))
+        if ((NULL != AVIS_MIN (lhsavis)) && (SCSisConstantNonZero (AVIS_MIN (lhsavis)))
             && (SCSisNonPositive (AVIS_MIN (lhsavis)))) {
             // Case 1
             AVIS_MIN (lhsavis) = FREEdoFreeNode (AVIS_MIN (lhsavis));
