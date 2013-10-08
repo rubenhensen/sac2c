@@ -672,6 +672,7 @@ RCIprf (node *arg_node, info *arg_info)
 
     case F_accu:
     case F_prop_obj_in:
+    case F_noop:
         /*
          * do not visit any of the arguments
          */
