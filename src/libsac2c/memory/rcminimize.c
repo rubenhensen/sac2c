@@ -751,6 +751,7 @@ RCMprf (node *arg_node, info *arg_info)
     case F_prop_obj_out:
     case F_accu:
     case F_suballoc:
+    case F_noop:
         /*
          * Do nothing for these PRFs as the IV must not be artificially kept
          * alive
