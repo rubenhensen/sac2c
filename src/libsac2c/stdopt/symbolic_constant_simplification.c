@@ -2530,6 +2530,17 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
+    // Do TC's job: this is needed for call from IVEXP.
+    if (NULL == res) {
+        restype = NTCnewTypeCheck_Expr (arg_node);
+        // DBUG_ASSERT( !TYisProd( restype), "expected one result type");
+        restype = TYgetProductMember (restype, 0);
+        if (TYisAKV (restype)) {
+            res = CFcreateConstExprsFromType (restype);
+        }
+        restype = TYfreeType (restype);
+    }
+
     /* Case 4 */
     if ((NULL == res) && (NULL != AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))))
         && (ID_AVIS (PRF_ARG1 (arg_node))
