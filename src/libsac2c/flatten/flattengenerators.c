@@ -136,9 +136,16 @@ FLATGexpression2Avis (node *arg_node, node **vardecs, node **preassigns, ntype *
 
     DBUG_ENTER ();
 
-    if (N_id == NODE_TYPE (arg_node)) {
+    switch (NODE_TYPE (arg_node)) {
+    case N_id:
         avis = ID_AVIS (arg_node);
-    } else {
+        break;
+
+    case N_avis:
+        avis = arg_node;
+        break;
+
+    default:
         if (NULL == restype) {
             restype = NTCnewTypeCheck_Expr (arg_node);
             // This may be a product type or a simple type. Disambiguate here.
@@ -153,6 +160,7 @@ FLATGexpression2Avis (node *arg_node, node **vardecs, node **preassigns, ntype *
         *preassigns = TCappendAssign (*preassigns, nas);
         AVIS_SSAASSIGN (avis) = nas;
         DBUG_PRINT ("Generated assign for %s", AVIS_NAME (avis));
+        break;
     }
 
     DBUG_RETURN (avis);

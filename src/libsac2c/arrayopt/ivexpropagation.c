@@ -82,6 +82,7 @@
 #include "constant_folding.h"
 #include "algebraic_wlfi.h"
 #include "set_withloop_depth.h"
+#include "new_typecheck.h"
 
 #include "string.h" /* BobboBreaker */
 
@@ -1470,7 +1471,7 @@ GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
  * @params arg1avis: an N_avis
  *         arg2: an N_id
  *
- * @return N_id node for flattened N_array result.
+ * @return N_avis node for flattened N_array result.
  *         If arg2 is scalar, N_id for arg1avis.
  *
  ******************************************************************************/
@@ -1497,6 +1498,131 @@ ScalarExtend (node *arg1avis, node *arg2, info *arg_info)
     DBUG_RETURN (z);
 }
 
+/** <!--********************************************************************-->
+ *
+ * Description: Attempt to compute AVIS_MAX for min( a, b).
+ *
+ * Generate combos of argument and extrema and see if CF can
+ * simplify it.
+ *
+ * @params:
+ *
+ *
+ ******************************************************************************/
+static node *
+MinOnExtrema (node *arg_node, info *arg_info)
+{
+    node *z = NULL;
+    node *zavis;
+    node *arg1;
+    node *arg2;
+    node *marg1;
+    node *marg2;
+    node *mprf;
+
+    DBUG_ENTER ();
+
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+    marg1 = AVIS_MAX (ID_AVIS (arg1));
+    marg2 = AVIS_MAX (ID_AVIS (arg2));
+
+    if (NULL != marg2) {
+        mprf = DUPdoDupTree (arg_node);
+        PRF_ARG2 (mprf) = FREEdoFreeNode (PRF_ARG2 (mprf));
+        PRF_ARG2 (mprf) = DUPdoDupNode (marg2);
+        z = SCSprf_min_SxS (mprf, arg_info);
+        mprf = FREEdoFreeTree (mprf);
+    }
+
+    if (NULL == z) {
+        if (NULL != marg1) {
+            mprf = DUPdoDupTree (arg_node);
+            PRF_ARG1 (mprf) = FREEdoFreeNode (PRF_ARG1 (mprf));
+            PRF_ARG1 (mprf) = DUPdoDupNode (marg1);
+            z = SCSprf_min_SxS (mprf, arg_info);
+            mprf = FREEdoFreeTree (mprf);
+        }
+    }
+
+    // INFO_MAXVAL wants N_avis, not N_id
+    if ((NULL != z) && (N_id == NODE_TYPE (z))) {
+        zavis = ID_AVIS (z);
+        z = FREEdoFreeNode (z);
+        z = zavis;
+    }
+
+    // Flatten any result
+    if (NULL != z) {
+        z = FLATGexpression2Avis (z, &INFO_VARDECS (arg_info),
+                                  &INFO_PREASSIGNS (arg_info), NULL);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * Description: Attempt to compute AVIS_MIN for max( a, b).
+ *
+ * Generate combos of argument and extrema and see if CF can
+ * simplify it.
+ *
+ * @params:
+ *
+ *
+ ******************************************************************************/
+static node *
+MaxOnExtrema (node *arg_node, info *arg_info)
+{
+    node *z = NULL;
+    node *zavis;
+    node *arg1;
+    node *arg2;
+    node *marg1;
+    node *marg2;
+    node *mprf;
+
+    DBUG_ENTER ();
+
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+    marg1 = AVIS_MIN (ID_AVIS (arg1));
+    marg2 = AVIS_MIN (ID_AVIS (arg2));
+
+    if (NULL != marg2) {
+        mprf = DUPdoDupTree (arg_node);
+        PRF_ARG2 (mprf) = FREEdoFreeNode (PRF_ARG2 (mprf));
+        PRF_ARG2 (mprf) = DUPdoDupNode (marg2);
+        z = SCSprf_max_SxS (mprf, arg_info);
+        mprf = FREEdoFreeTree (mprf);
+    }
+
+    if (NULL == z) {
+        if (NULL != marg1) {
+            mprf = DUPdoDupTree (arg_node);
+            PRF_ARG1 (mprf) = FREEdoFreeNode (PRF_ARG1 (mprf));
+            PRF_ARG1 (mprf) = DUPdoDupNode (marg1);
+            z = SCSprf_max_SxS (mprf, arg_info);
+            mprf = FREEdoFreeTree (mprf);
+        }
+    }
+
+    // INFO_MINVAL wants N_avis, not N_id
+    if ((NULL != z) && (N_id == NODE_TYPE (z))) {
+        zavis = ID_AVIS (z);
+        z = FREEdoFreeNode (z);
+        z = zavis;
+    }
+
+    // Flatten any result
+    if (NULL != z) {
+        z = FLATGexpression2Avis (z, &INFO_VARDECS (arg_info),
+                                  &INFO_PREASSIGNS (arg_info), NULL);
+    }
+
+    DBUG_RETURN (z);
+}
 /** <!--********************************************************************-->
  *
  * Description:
@@ -1531,6 +1657,7 @@ GenerateExtremaForMin (node *lhsavis, node *rhs, info *arg_info)
     bool c2;
     bool e1;
     bool e2;
+    bool z = FALSE;
 
     DBUG_ENTER ();
 
@@ -1546,14 +1673,30 @@ GenerateExtremaForMin (node *lhsavis, node *rhs, info *arg_info)
         e1 = NULL != AVIS_MAX (arg1avis);
         e2 = NULL != AVIS_MAX (arg2avis);
 
+        // Case 5: constant vs extrema present
+        INFO_MAXVAL (arg_info) = MinOnExtrema (rhs, arg_info);
+
+        // Case 5: constant vs extrema present
+        if ((c1 && e2) && (NULL == INFO_MAXVAL (arg_info))
+            && (SCSisRelationalOnDyadicFn (F_min_SxS, PRF_ARG1 (rhs), AVIS_MAX (arg2avis),
+                                           arg_info, &z))) {
+            INFO_MAXVAL (arg_info) = z ? arg1avis : ID_AVIS (AVIS_MAX (arg2avis));
+        }
+
+        if ((c2 && e1) && (NULL == INFO_MAXVAL (arg_info))
+            && (SCSisRelationalOnDyadicFn (F_min_SxS, PRF_ARG2 (rhs), AVIS_MAX (arg1avis),
+                                           arg_info, &z))) {
+            INFO_MAXVAL (arg_info) = z ? arg2avis : ID_AVIS (AVIS_MAX (arg1avis));
+        }
+
         // Case 1: max( constant, nonconstant-without-maxval),
         //    or   max( nonconstant-without-maxval, constant):
         //    the constant becomes the result maxval.
-        if (c1 && (!c2) && (!e2) && (NULL == INFO_MINVAL (arg_info))) {
+        if (c1 && (!c2) && (!e2) && (NULL == INFO_MAXVAL (arg_info))) {
             INFO_MAXVAL (arg_info) = ScalarExtend (arg1avis, PRF_ARG2 (rhs), arg_info);
         }
         // Case 2:
-        if (c2 && (!c1) && (!e1) && (NULL == INFO_MINVAL (arg_info))) {
+        if (c2 && (!c1) && (!e1) && (NULL == INFO_MAXVAL (arg_info))) {
             INFO_MAXVAL (arg_info) = ScalarExtend (arg2avis, PRF_ARG1 (rhs), arg_info);
         }
 
@@ -1562,6 +1705,8 @@ GenerateExtremaForMin (node *lhsavis, node *rhs, info *arg_info)
             INFO_MAXVAL (arg_info)
               = ScalarExtend (ID_AVIS (AVIS_MAX (arg2avis)), PRF_ARG1 (rhs), arg_info);
         }
+
+        // Case 4:
         if ((!c2) && (!c1) && (e1) && (NULL == INFO_MAXVAL (arg_info))) {
             INFO_MAXVAL (arg_info)
               = ScalarExtend (ID_AVIS (AVIS_MAX (arg1avis)), PRF_ARG2 (rhs), arg_info);
@@ -1610,11 +1755,12 @@ GenerateExtremaForMax (node *lhsavis, node *rhs, info *arg_info)
     bool c2;
     bool e1;
     bool e2;
+    bool z = FALSE;
 
     DBUG_ENTER ();
 
     arg1avis = ID_AVIS (PRF_ARG1 (rhs));
-    arg2avis = ID_AVIS (PRF_ARG1 (rhs));
+    arg2avis = ID_AVIS (PRF_ARG2 (rhs));
 
     if ((!IVEXPisAvisHasMin (lhsavis))
         && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))
@@ -1622,31 +1768,38 @@ GenerateExtremaForMax (node *lhsavis, node *rhs, info *arg_info)
 
         c1 = COisConstant (PRF_ARG1 (rhs)); // Could use TYisAKV here,
         c2 = COisConstant (PRF_ARG2 (rhs)); // if flatness guaranteed.
-        e1 = NULL != AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs)));
-        e2 = NULL != AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs)));
+        e1 = NULL != AVIS_MIN (arg1avis);
+        e2 = NULL != AVIS_MIN (arg2avis);
+
+        // Case 5: constant vs extrema present
+        INFO_MINVAL (arg_info) = MaxOnExtrema (rhs, arg_info);
+
+        if ((c2 && e1) && (NULL == INFO_MINVAL (arg_info))
+            && (SCSisRelationalOnDyadicFn (F_max_SxS, PRF_ARG2 (rhs), AVIS_MIN (arg1avis),
+                                           arg_info, &z))) {
+            INFO_MINVAL (arg_info) = z ? arg2avis : ID_AVIS (AVIS_MIN (arg1avis));
+        }
 
         // Case 1:
         if (c1 && (!c2) && (!e2) && (NULL == INFO_MINVAL (arg_info))) {
-            INFO_MINVAL (arg_info)
-              = ScalarExtend (ID_AVIS (PRF_ARG1 (rhs)), PRF_ARG2 (rhs), arg_info);
+            INFO_MINVAL (arg_info) = ScalarExtend (arg1avis, PRF_ARG2 (rhs), arg_info);
         }
 
         // Case 2:
         if (c2 && (!c1) && (!e1) && (NULL == INFO_MINVAL (arg_info))) {
-            INFO_MINVAL (arg_info)
-              = ScalarExtend (ID_AVIS (PRF_ARG2 (rhs)), PRF_ARG1 (rhs), arg_info);
+            INFO_MINVAL (arg_info) = ScalarExtend (arg2avis, PRF_ARG1 (rhs), arg_info);
         }
 
         // Case 3:
         if ((!c1) && (!c2) && (e2) && (NULL == INFO_MINVAL (arg_info))) {
             INFO_MINVAL (arg_info)
-              = ScalarExtend (ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs)))),
-                              PRF_ARG1 (rhs), arg_info);
+              = ScalarExtend (ID_AVIS (AVIS_MIN (arg2avis)), PRF_ARG1 (rhs), arg_info);
         }
+
+        // Case 4:
         if ((!c2) && (!c1) && (e1) && (NULL == INFO_MINVAL (arg_info))) {
             INFO_MINVAL (arg_info)
-              = ScalarExtend (ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs)))),
-                              PRF_ARG2 (rhs), arg_info);
+              = ScalarExtend (ID_AVIS (AVIS_MIN (arg1avis)), PRF_ARG2 (rhs), arg_info);
         }
     }
 
@@ -2312,29 +2465,39 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
         }
         break;
 
-    case F_max_SxS:
-    case F_max_VxV:
-        /* If either argument has a maxval, propagate it */
-        maxv = AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs)));
-        if (NULL != maxv) {
-            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (maxv));
-        }
-        maxv = AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs)));
-        if (NULL != maxv) {
-            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (maxv));
+    case F_min_SxS:
+    case F_min_VxV:
+        /* If either argument has a maxval, propagate it, but
+         * do not override an extant value  */
+        if (NULL == AVIS_MAX (lhsavis)) {
+
+            maxv = AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs)));
+            if (NULL != maxv) {
+                IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (maxv));
+            }
+
+            maxv = AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs)));
+            if (NULL != maxv) {
+                IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (maxv));
+            }
         }
         break;
 
-    case F_min_SxS:
-    case F_min_VxV:
-        /* If either argument has a minval, propagate it */
-        minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs)));
-        if (NULL != minv) {
-            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (minv));
-        }
-        minv = AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs)));
-        if (NULL != minv) {
-            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (minv));
+    case F_max_SxS:
+    case F_max_VxV:
+        /* If either argument has a minval, propagate it, but
+         * do not override an extant value  */
+        if (NULL == AVIS_MIN (lhsavis)) {
+
+            minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs)));
+            if (NULL != minv) {
+                IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (minv));
+            }
+
+            minv = AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs)));
+            if (NULL != minv) {
+                IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (minv));
+            }
         }
         break;
 

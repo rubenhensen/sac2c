@@ -13,6 +13,7 @@
 extern node *CFdoConstantFolding (node *fundef);
 extern bool CFisFullyConstantNode (node *arg_node);
 extern node *CFunflattenSimpleScalars (node *arg_node);
+extern node *CFcreateConstExprsFromType (ntype *type);
 
 extern node *CFfundef (node *arg_node, info *arg_info);
 extern node *CFblock (node *arg_node, info *arg_info);

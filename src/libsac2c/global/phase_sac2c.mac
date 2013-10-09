@@ -656,9 +656,6 @@ SUBPHASE (uctz, "Eliminating comparisons to zero", UCZCdoUndoCondZeroCmp,
 SUBPHASE (wlbscnf2, "Unflattening WL-partition structural constants",
           WLBSCdoWlbounds2nonFlatStructConsts, ALWAYS, opt)
 
-SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCleanup,
-          ALWAYS, opt)
-
 SUBPHASE (rgs, "Remove guard solvers", GGSdoRemoveGuardSolvers, global.optimize.doggs,
           opt)
 
@@ -715,6 +712,9 @@ SUBPHASE (wlpg2, "Generating full with-loop partitions", WLPGdoWlPartitionGenera
 
 SUBPHASE (wrci, "Inferencing with-loop reuse candidates",
           WRCIdoWithloopReuseCandidateInference, global.optimize.douip, opt)
+
+SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCleanup,
+          ALWAYS, opt)
 
 SUBPHASE (wlidx, "Annotating offset variable at with-loops", WLIDXdoAnnotateWithloopIdxs,
           ALWAYS, opt)

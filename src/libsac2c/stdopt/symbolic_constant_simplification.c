@@ -94,6 +94,7 @@
 #include "constant_folding_info.h"
 #include "phase.h"
 #include "flattengenerators.h"
+#include "constant_folding.h"
 #include "saa_constant_folding.h"
 #include "ivexpropagation.h"
 
@@ -2432,10 +2433,22 @@ SCSprf_max_SxS (node *arg_node, info *arg_info)
     node *res = NULL;
     node *res2 = NULL;
     bool z = FALSE;
+    ntype *restype;
 
     DBUG_ENTER ();
     if (isMatchPrfargs (arg_node, arg_info)) { /* max ( X, X) */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
+    }
+
+    // Do TC's job: this is needed for call from IVEXP.
+    if (NULL == res) {
+        restype = NTCnewTypeCheck_Expr (arg_node);
+        // DBUG_ASSERT( !TYisProd( restype), "expected one result type");
+        restype = TYgetProductMember (restype, 0);
+        if (TYisAKV (restype)) {
+            res = CFcreateConstExprsFromType (restype);
+        }
+        restype = TYfreeType (restype);
     }
 
     /* Case 2 */

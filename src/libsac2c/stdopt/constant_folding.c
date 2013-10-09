@@ -128,6 +128,7 @@
 #include "compare_tree.h"
 #include "namespaces.h"
 #include "remove_vardecs.h"
+#include "constant_folding.h"
 #include "saa_constant_folding.h"
 #include "symbolic_constant_simplification.h"
 #include "structural_constant_constant_folding.h"
@@ -383,13 +384,13 @@ CFunflattenSimpleScalars (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn node* CreateConstExprsFromType( ntype *type)
+ * @fn node* CFcreateConstExprsFromType( ntype *type)
  *
  * @brief Create AST exprs node for "type", which is known to be AKV.
  *
  *****************************************************************************/
-static node *
-CreateConstExprsFromType (ntype *type)
+node *
+CFcreateConstExprsFromType (ntype *type)
 {
     node *res = NULL;
     int i;
@@ -397,7 +398,7 @@ CreateConstExprsFromType (ntype *type)
 
     if (TYisProd (type)) {
         for (i = TYgetProductSize (type) - 1; i >= 0; i--) {
-            res = TBmakeExprs (CreateConstExprsFromType (TYgetProductMember (type, i)),
+            res = TBmakeExprs (CFcreateConstExprsFromType (TYgetProductMember (type, i)),
                                res);
         }
     } else {
@@ -964,10 +965,11 @@ CFlet (node *arg_node, info *arg_info)
                         AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
             LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
             if (TYgetProductSize (INFO_LHSTYPE (arg_info)) == 1) {
-                LET_EXPR (arg_node) = CreateConstExprsFromType (
+                LET_EXPR (arg_node) = CFcreateConstExprsFromType (
                   TYgetProductMember (INFO_LHSTYPE (arg_info), 0));
             } else {
-                LET_EXPR (arg_node) = CreateConstExprsFromType (INFO_LHSTYPE (arg_info));
+                LET_EXPR (arg_node)
+                  = CFcreateConstExprsFromType (INFO_LHSTYPE (arg_info));
             }
             global.optcounters.cf_expr += TYgetProductSize (INFO_LHSTYPE (arg_info));
         }
