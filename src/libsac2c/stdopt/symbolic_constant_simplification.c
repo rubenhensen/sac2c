@@ -2524,6 +2524,7 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
     node *res = NULL;
     node *res2 = NULL;
     bool z = FALSE;
+    ntype *restype;
 
     DBUG_ENTER ();
     if (isMatchPrfargs (arg_node, arg_info)) { /* min( X, X) */
