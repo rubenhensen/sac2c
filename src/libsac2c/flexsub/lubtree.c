@@ -340,8 +340,7 @@ LUBcreatePartitions (dynarray *eulertour)
         if (index > oldsize - 1) {
 
             void *_temp
-              = MEMrealloc (LUBINFO_INTRAMATS (lub), ((index + 1) * sizeof (matrix *)),
-                            (oldsize * sizeof (matrix *)));
+              = MEMrealloc (LUBINFO_INTRAMATS (lub), (index + 1) * sizeof (matrix *));
             if (!_temp) {
                 CTIabort ("LUBcreatePartitions couldn't realloc memory!\n");
             }

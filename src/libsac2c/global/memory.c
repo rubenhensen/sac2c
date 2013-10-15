@@ -232,6 +232,10 @@ MEMreport (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/*
+ * XXX Why this function (argument-wise) is different from the memcpy?
+ * Can we unify them?
+ */
 void *
 MEMcopy (int size, void *mem)
 {

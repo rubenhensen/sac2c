@@ -69,16 +69,14 @@ int
 addToArray (dynarray *arrayd, elem *item)
 {
 
-    int pos, oldsize;
+    int pos;
 
     if (DYNARRAY_TOTALELEMS (arrayd) == DYNARRAY_ALLOCELEMS (arrayd)) {
 
-        oldsize = DYNARRAY_ALLOCELEMS (arrayd);
         DYNARRAY_ALLOCELEMS (arrayd) += 3;
 
         void *_temp = MEMrealloc (DYNARRAY_ELEMS (arrayd),
-                                  (DYNARRAY_ALLOCELEMS (arrayd) * sizeof (elem *)),
-                                  oldsize * sizeof (elem *));
+                                  DYNARRAY_ALLOCELEMS (arrayd) * sizeof (elem *));
         if (!_temp) {
             CTIabort ("addToArray couldn't realloc memory!\n");
         }
@@ -116,13 +114,10 @@ addToArrayAtPos (dynarray *arrayd, elem *item, int pos)
 
     if (pos >= DYNARRAY_ALLOCELEMS (arrayd)) {
 
-        int oldsize = DYNARRAY_ALLOCELEMS (arrayd);
         DYNARRAY_ALLOCELEMS (arrayd) = pos + 1;
 
         void *_temp = MEMrealloc (DYNARRAY_ELEMS (arrayd),
-                                  (DYNARRAY_ALLOCELEMS (arrayd) * sizeof (elem *)),
-                                  oldsize * sizeof (elem *));
-
+                                  DYNARRAY_ALLOCELEMS (arrayd) * sizeof (elem *));
         if (!_temp) {
             CTIabort ("addToArrayAtPos couldn't realloc memory!\n");
         }

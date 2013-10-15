@@ -19,13 +19,8 @@
 #undef exit
 
 #define malloc(x) MEMmalloc (x)
-#define realloc(x, y) __MEMrealloc (x, y)
-
-#ifdef __cplusplus
-#define free(x) __MEMfree ((void *)x)
-#else
-#define free(x) __MEMfree (x)
-#endif
+#define realloc(x, y) MEMrealloc (x, y)
+#define free(x) MEMfree (x)
 
 #define strdup(x) STRcpy (x)
 #define exit(x) CTIexit (x)
