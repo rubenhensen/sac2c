@@ -25,20 +25,6 @@
 #include "graphtypes.h"
 #include "graphutils.h"
 
-/* FIXME: What the hell is that?  Why it is not in the memory routines?  */
-void *
-MEMrealloc (void *src, int allocsize, int oldsize)
-{
-
-    void *p = MEMmalloc (allocsize);
-    memset (p, 0, allocsize);
-
-    if (src != NULL)
-        memcpy (p, src, oldsize);
-
-    return p;
-}
-
 bool
 GUvertInList (node *n, nodelist *nl)
 {
