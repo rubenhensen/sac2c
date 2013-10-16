@@ -3979,7 +3979,7 @@
           </type>
         </attribute>
       </attributes>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4037,7 +4037,7 @@ N_structdef :
           </type>
         </attribute>
       </attributes>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4072,7 +4072,7 @@ N_tfspec :
           </targets>
         </son>
       </sons>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4133,7 +4133,7 @@ N_tfdag :
           </targets>
         </son>
       </sons>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4444,7 +4444,7 @@ N_tfrel :
           </targets>
         </son>
       </sons>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4513,7 +4513,7 @@ N_tfexpr :
           </targets>
         </son>
       </sons>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4609,7 +4609,7 @@ N_tfarg :
           </targets>
         </son>
       </sons>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6095,8 +6095,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags>
-      </flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6433,7 +6432,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6467,7 +6466,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6501,7 +6500,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6535,7 +6534,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!-- 
   N_cond :
@@ -6801,7 +6800,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6848,7 +6847,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6994,7 +6993,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7038,7 +7037,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7117,7 +7116,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags />
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7219,7 +7218,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7243,7 +7242,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7267,7 +7266,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7291,7 +7290,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7315,7 +7314,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7339,7 +7338,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7363,7 +7362,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7387,7 +7386,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7411,7 +7410,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7435,7 +7434,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7459,7 +7458,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7483,7 +7482,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7507,7 +7506,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7531,7 +7530,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7555,7 +7554,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7579,7 +7578,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7590,7 +7589,7 @@ N_tfarg :
      <description>Nested init value</description>
       <sons/>
       <attributes/>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 
 <!--
@@ -7619,7 +7618,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7642,6 +7641,7 @@ N_tfarg :
           </type>
 	</attribute>
       </attributes>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7756,7 +7756,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7793,7 +7793,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -8087,7 +8087,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -8947,7 +8947,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -8969,7 +8969,7 @@ N_tfarg :
       </sons>
       <attributes>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -8991,7 +8991,7 @@ N_tfarg :
       </sons>
       <attributes>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
     
 <!--
@@ -9014,7 +9014,7 @@ N_tfarg :
       </sons>
       <attributes>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
     
 <!--
@@ -9572,7 +9572,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -9582,7 +9582,7 @@ N_tfarg :
     <node name="Default">
       <sons></sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10027,7 +10027,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10122,7 +10122,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10217,7 +10217,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10357,7 +10357,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10389,7 +10389,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10663,7 +10663,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10759,7 +10759,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10776,7 +10776,7 @@ N_tfarg :
       </sons>
       <attributes>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11195,7 +11195,7 @@ N_tfarg :
 	  </type>
 	</attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11427,7 +11427,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11472,7 +11472,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11563,7 +11563,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11598,8 +11598,7 @@ N_tfarg :
           </type>
 	</attribute>
       </attributes>
-      <flags>
-      </flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11623,8 +11622,7 @@ N_tfarg :
           </type>
 	</attribute>
       </attributes>
-      <flags>
-      </flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11665,7 +11663,7 @@ N_tfarg :
           </type>
 	</attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11699,7 +11697,7 @@ N_tfarg :
           </type>
 	</attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11798,7 +11796,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
   
@@ -12200,7 +12198,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -12266,7 +12264,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -12322,7 +12320,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -12359,7 +12357,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -12396,7 +12394,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
         <!--
          
@@ -12432,7 +12430,7 @@ N_tfarg :
           </sons>
           <attributes>
           </attributes>
-          <flags></flags>
+          <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
         </node>
   </syntaxtree>
 </definition>
