@@ -221,7 +221,7 @@ IsNodeLiteralZero (node *node)
     DBUG_RETURN (res);
 }
 
-/**<!--***************************************************************-->
+/** <!--***************************************************************-->
  *
  * @fn UCZCblock(node *arg_node, info *arg_info)
  *
@@ -347,7 +347,7 @@ UCZCprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--**************************************************************-->
+/** <!--**************************************************************-->
  *
  * @fn node *UCZCdoUndoCondZeroCmp(node *fundef)
  *
@@ -377,7 +377,7 @@ UCZCdoUndoCondZeroCmp (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--**************************************************************-->
+/** <!--**************************************************************-->
  *
  * @fn node *UCZCfundef(node arg_node, info *arg_info)
  *
