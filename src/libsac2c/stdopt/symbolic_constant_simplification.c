@@ -3820,7 +3820,7 @@ SCSprf_prod_matches_prod_shape_VxA (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *SCSprf_shape(node *arg_node, info *arg_info)
  *

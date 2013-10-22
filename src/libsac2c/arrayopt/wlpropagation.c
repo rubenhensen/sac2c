@@ -1,4 +1,4 @@
-/**<!--******************************************************************-->
+/** <!--******************************************************************-->
  *
  * @file wlpropagation.c
  *
@@ -156,7 +156,7 @@ FreeInfo (info *arg_info)
  *-- Local Helper Functions ---------------------------------------
  */
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn static bool IdIsDefinedByWL(node *arg_node)
  *
@@ -189,7 +189,7 @@ IdIsDefinedByWL (node *arg_node)
     DBUG_RETURN (result);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn static lut_t*  insertNameIntoArgAndSig( node *origin, lut_t *lut...
  *
@@ -261,7 +261,7 @@ insertNameIntoArgAndSig (node *oldname, lut_t *lut, info *arg_info)
  *--Global traversal functions -------------------------------
  */
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *WLPROPdoWithloopPropagation(node *arg_node)
  *
@@ -292,7 +292,7 @@ WLPROPdoWithloopPropagation (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *WLPROPfundef(node *arg_node, info *arg_info)
  *
@@ -348,7 +348,7 @@ WLPROPfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *WLPROPassign(node *arg_node, info *arg_info)
  *
@@ -373,7 +373,7 @@ WLPROPassign (node *arg_node, info *arg_info)
 
 #ifdef DEADCODE2
 // the idea here is to handle AVIS son nodes cleanly. FIXME
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *WLPROPavis(node *arg_node, info *arg_info)
  *
@@ -398,7 +398,7 @@ WLPROPavis (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *WLPROPids(node *arg_node, info *arg_info)
  *
@@ -424,7 +424,7 @@ WLPROPavis (node *arg_node, info *arg_info)
 }
 
 #endif // DEADCODE2
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *WLPROPap(node *arg_node, info *arg_info)
  *
@@ -518,7 +518,7 @@ WLPROPap (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *WLPROPexprs(node *arg_node, info *arg_info)
  *
@@ -561,7 +561,7 @@ WLPROPexprs (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *CopyWL(node *arg_node, info *arg_info)
  *
@@ -698,7 +698,7 @@ CopyWL (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *WLPROPid(node *arg_node, info *arg_info)
  *
