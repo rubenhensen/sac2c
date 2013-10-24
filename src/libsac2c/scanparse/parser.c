@@ -2054,6 +2054,10 @@ handle_postfix_expr (struct parser *parser)
                 /* Set location for every internal function-call.  */
                 NODE_LOCATION (res) = loc;
             } else {
+                error_loc (token_location (tok),
+                           "identifier expected after "
+                           "structure dot, `%s' found instead",
+                           token_as_string (tok));
                 parser_unget (parser);
                 return error_mark_node;
             }
