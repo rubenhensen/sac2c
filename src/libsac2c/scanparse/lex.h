@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <stdint.h>
 #endif
 
 static inline int xfprintf (FILE *f, const char *fmt, ...);
@@ -268,9 +269,9 @@ LEXERisOperator (const char *name)
 {
     for (size_t i = 0; i < strlen (name); i++)
         if (!is_operator_symbol (name[i]))
-            return FALSE;
+            return false;
 
-    return TRUE;
+    return true;
 }
 
 /* If the value of the token needs a character buffer or it is
