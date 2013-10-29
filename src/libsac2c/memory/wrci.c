@@ -292,7 +292,7 @@ WRCIwith (node *arg_node, info *arg_info)
     if (global.optimize.dorip) {
         DBUG_PRINT ("Looking for A[iv] only use...");
         INFO_RC (arg_info) = REUSEdoGetReuseArrays (arg_node, INFO_FUNDEF (arg_info));
-        DBUG_PRINT ("candidates now: ");
+        DBUG_PRINT ("candidates after conventional reuse: ");
         DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
             PRTdoPrintFile (stderr, INFO_RC (arg_info));
         });
@@ -306,7 +306,7 @@ WRCIwith (node *arg_node, info *arg_info)
         INFO_RC (arg_info)
           = TCappendExprs (INFO_RC (arg_info),
                            RWOdoOffsetAwareReuseCandidateInference (arg_node));
-        DBUG_PRINT ("candidates now: ");
+        DBUG_PRINT ("candidates after reuse-with-offset: ");
         DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
             PRTdoPrintFile (stderr, INFO_RC (arg_info));
         });
@@ -321,7 +321,7 @@ WRCIwith (node *arg_node, info *arg_info)
           = TCappendExprs (INFO_RC (arg_info),
                            PRAdoPolyhedralReuseAnalysis (arg_node,
                                                          INFO_FUNDEF (arg_info)));
-        DBUG_PRINT ("candidates now: ");
+        DBUG_PRINT ("candidates after polyhedral reuse analysis: ");
         DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
             PRTdoPrintFile (stderr, INFO_RC (arg_info));
         });
