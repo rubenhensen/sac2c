@@ -53,8 +53,8 @@ static int count = 0;
  *   - A constraint matrix derived from the withloop bounds and
  *     predicates of conditionals;
  *   - A write access matrix representing the transformation from
- *     withloop iteration space to the wrtie data space;
- *   - A read access matrix representing the trasformation from
+ *     withloop iteration space to the write data space;
+ *   - A read access matrix representing the transformation from
  *     withloop iteration space to the read data space.
  */
 static const char *outfile = "polyhedral";
