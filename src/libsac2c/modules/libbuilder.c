@@ -166,8 +166,8 @@ CreateDynamicLibrary (char *deplibs)
 
         DBUG_PRINT ("linker command: %s", ldCmd);
 
-        SYScall ("%s -o %s%s %s/fun*_pic.o %s/globals_pic.o", ldCmd, global.targetdir,
-                 libraryName, global.tmp_dirname, global.tmp_dirname);
+        SYScall ("%s -o %s%s %s/fun*_pic.o %s/globals_pic.o %s", ldCmd, global.targetdir,
+                 libraryName, global.tmp_dirname, global.tmp_dirname, deplibs);
 #endif
 
         libraryName = MEMfree (libraryName);
