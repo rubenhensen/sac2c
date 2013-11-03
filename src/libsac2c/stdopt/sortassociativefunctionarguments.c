@@ -128,7 +128,7 @@ SAFAmodule (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--**************************************************************-->
+/** <!--**************************************************************-->
  *
  * @fn node *SAFAdoSortAssociativeFunctionArguments( node *arg_node)
  *
@@ -156,7 +156,7 @@ SAFAdoSortAssociativeFunctionArguments (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--**************************************************************-->
+/** <!--**************************************************************-->
  *
  * @fn node *SAFAfundef(node arg_node, info *arg_info)
  *
@@ -190,7 +190,7 @@ SAFAfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--***************************************************************-->
+/** <!--***************************************************************-->
  *
  * @fn SAFAblock(node *arg_node, info *arg_info)
  *
@@ -212,7 +212,7 @@ SAFAblock (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--***************************************************************-->
+/** <!--***************************************************************-->
  *
  * @fn SAFAassign(node *arg_node, info *arg_info)
  *
@@ -235,7 +235,7 @@ SAFAassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn SAFAlet(node *arg_node, info *arg_info)
  *
@@ -259,7 +259,7 @@ SAFAlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/**<!--**************************************************************-->
+/** <!--**************************************************************-->
  *
  * @fn SAFAprf(node *arg_node, info *arg_info)
  *

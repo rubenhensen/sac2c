@@ -167,7 +167,7 @@ ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **v
     DBUG_RETURN ();
 }
 
-/**<!--*********************************************************************-->
+/** <!--*********************************************************************-->
  *
  * @fn void ICMCompileMUTC_THREADFUN_DECL( char *name, char *rettype_NT,
  *                                         int vararg_cnt, char **vararg)
@@ -220,7 +220,7 @@ ICMCompileMUTC_THREADFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt
     DBUG_RETURN ();
 }
 
-/**<!--*********************************************************************-->
+/** <!--*********************************************************************-->
  *
  * @fn void ICMCompileMUTC_SPAWNFUN_DECL( char *name, char *rettype_NT,
  *                                         int vararg_cnt, char **vararg)
@@ -471,7 +471,7 @@ ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
     DBUG_RETURN ();
 }
 
-/**<!--*********************************************************************-->
+/** <!--*********************************************************************-->
  *
  * function:
  *   void ICMCompileMUTC_THREADFUN_RET( char *retname,

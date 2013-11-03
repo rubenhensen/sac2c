@@ -399,6 +399,25 @@ CompileOneFilePIC (const char *dir, const char *file, const char *callstring)
 }
 
 static void
+InvokeCCModTree (void)
+{
+    DBUG_ENTER ();
+
+    SYScall ("cd %s; %s %s -c serialize.%s", global.tmp_dirname, global.config.tree_cc,
+             global.config.ccincdir, global.config.tree_cext);
+    SYScall ("cd %s; %s %s -c filenames.%s", global.tmp_dirname, global.config.tree_cc,
+             global.config.ccincdir, global.config.tree_cext);
+    SYScall ("cd %s; %s %s -c namespacemap.%s", global.tmp_dirname, global.config.tree_cc,
+             global.config.ccincdir, global.config.tree_cext);
+    SYScall ("cd %s; %s %s -c symboltable.%s", global.tmp_dirname, global.config.tree_cc,
+             global.config.ccincdir, global.config.tree_cext);
+    SYScall ("cd %s; %s %s -c dependencytable.%s", global.tmp_dirname,
+             global.config.tree_cc, global.config.ccincdir, global.config.tree_cext);
+
+    DBUG_RETURN ();
+}
+
+static void
 InvokeCCModule (char *cccall, char *compilationflags)
 {
     char *str;
@@ -433,16 +452,9 @@ InvokeCCModule (char *cccall, char *compilationflags)
         MEMfree (str);
     }
 
-    SYScall ("cd %s; %s %s -c serialize.%s", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccincdir, global.config.tree_cext);
-    SYScall ("cd %s; %s %s -c filenames.%s", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccincdir, global.config.tree_cext);
-    SYScall ("cd %s; %s %s -c namespacemap.%s", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccincdir, global.config.tree_cext);
-    SYScall ("cd %s; %s %s -c symboltable.%s", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccincdir, global.config.tree_cext);
-    SYScall ("cd %s; %s %s -c dependencytable.%s", global.tmp_dirname,
-             global.config.tree_cc, global.config.ccincdir, global.config.tree_cext);
+    if (!global.on_demand_lib) {
+        InvokeCCModTree ();
+    }
 
     MEMfree (callstring);
 
@@ -454,6 +466,7 @@ InvokeCCWrapper (char *cccall, char *compileflags)
 {
     char *str;
     char *callstring;
+
     DBUG_ENTER ();
 
     callstring = STRcat (cccall, compileflags);
@@ -529,23 +542,27 @@ CCMinvokeCC (node *syntax_tree)
         SYSstartTracking ();
     }
 
-    cccall = GetCCCall ();
-    compileflags = GetCompilationFlags ();
-    linkflags = GetLinkingFlags ();
-    libs = GetLibs ();
-
-    if (global.filetype == FT_prog) {
-        InvokeCCProg (cccall, global.config.ccincdir, linkflags, libs, deps);
-    } else if (global.filetype == FT_cmod) {
-        InvokeCCWrapper (cccall, compileflags);
+    if (global.on_demand_lib) {
+        InvokeCCModTree ();
     } else {
-        InvokeCCModule (cccall, compileflags);
-    }
+        cccall = GetCCCall ();
+        compileflags = GetCompilationFlags ();
+        linkflags = GetLinkingFlags ();
+        libs = GetLibs ();
 
-    cccall = MEMfree (cccall);
-    compileflags = MEMfree (compileflags);
-    linkflags = MEMfree (linkflags);
-    libs = MEMfree (libs);
+        if (global.filetype == FT_prog) {
+            InvokeCCProg (cccall, global.config.ccincdir, linkflags, libs, deps);
+        } else if (global.filetype == FT_cmod) {
+            InvokeCCWrapper (cccall, compileflags);
+        } else {
+            InvokeCCModule (cccall, compileflags);
+        }
+
+        cccall = MEMfree (cccall);
+        compileflags = MEMfree (compileflags);
+        linkflags = MEMfree (linkflags);
+        libs = MEMfree (libs);
+    }
 
     if (global.gen_cccall) {
         /*

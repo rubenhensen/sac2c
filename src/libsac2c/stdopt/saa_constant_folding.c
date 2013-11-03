@@ -212,7 +212,7 @@ SAACFprf_reshape (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *SAACFprf_dim(node *arg_node, info *arg_info)
  *
@@ -243,7 +243,7 @@ SAACFprf_dim (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *SAACFprf_shape(node *arg_node, info *arg_info)
  *
@@ -306,7 +306,7 @@ SAACFprf_shape (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *SAACFprf_shape_sel(node *arg_node, info *arg_info)
  *
@@ -355,7 +355,7 @@ SAACFprf_idx_shape_sel (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *SAACFprf_take_SxV(node *arg_node, info *arg_info)
  *
@@ -424,7 +424,7 @@ SAACFprf_take_SxV (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *SAACFprf_drop_SxV(node *arg_node, info *arg_info)
  *
@@ -526,7 +526,7 @@ SAACFprf_drop_SxV (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *SAACFprf_non_neg_val_V(node *arg_node, info *arg_info)
  *
@@ -567,7 +567,7 @@ SAACFprf_non_neg_val_V (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
-/**<!--*************************************************************-->
+/** <!--*************************************************************-->
  *
  * @fn node *SAACFprf_non_neg_val_S(node *arg_node, info *arg_info)
  *

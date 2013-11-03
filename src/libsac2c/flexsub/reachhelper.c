@@ -85,7 +85,7 @@ buildTransitiveLinkTable (dynarray *arrayd)
                 e = (elem *)MEMmalloc (sizeof (elem));
                 ELEM_IDX (e) = ELEM_IDX (DYNARRAY_ELEMS_POS (arrayd, i));
                 ELEM_DATA (e) = MEMrealloc (ELEM_DATA (DYNARRAY_ELEMS_POS (arrayd, j)),
-                                            2 * sizeof (int), 2 * sizeof (int));
+                                            2 * sizeof (int));
                 addToArray (arrayd, e);
             }
         }

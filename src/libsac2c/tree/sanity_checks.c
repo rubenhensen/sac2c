@@ -90,7 +90,7 @@ SANCHKdoSanityChecksPreTraversal (node *arg_node, info *arg_info, void *travstac
             }
         } else {
             if (!below_module_node && (global.compiler_anyphase > PH_scp_prs)
-                && (global.compiler_anyphase < PH_cg_frtr)) {
+                && (global.compiler_anyphase < PH_icc_frtr)) {
 #if 0
         CTIerrorInternal( "Pre Traversal Sanity Check:\n"
                           "Reached %s node without having passed N_module node!\n"
