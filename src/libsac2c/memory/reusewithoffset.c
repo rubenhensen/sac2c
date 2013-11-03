@@ -128,42 +128,19 @@ node *
 RWOidentifyNoopArray (node *wl)
 {
     node *res = NULL;
-    node *ivavis;
-    node *expr;
-    node *withid;
     node *part;
     node *srcwl;
 
     DBUG_ENTER ();
 
-    ivavis = IDS_AVIS (WITH_VEC (wl));
     part = WITH_PART (wl);
-    while (part != NULL) {
-        withid = PART_WITHID (part);
-        expr = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (part)));
-        srcwl = CWLEfindCopyPartitionSrcWl (withid, expr);
+    while ((NULL == res) && (part != NULL)) {
+        srcwl = WLUTfindCopyPartition (part);
         if (NULL != srcwl) {
             res = TBmakeId (srcwl);
-            break;
         }
         part = PART_NEXT (part);
     }
-    DBUG_RETURN (res);
-}
-
-bool
-RWOisNoopPart (node *part, node *rc, node *withid)
-{
-    bool res = FALSE;
-    node *srcwl;
-    node *expr;
-
-    DBUG_ENTER ();
-
-    expr = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (part)));
-    srcwl = CWLEfindCopyPartitionSrcWl (withid, expr);
-    res = (NULL != srcwl);
-
     DBUG_RETURN (res);
 }
 
@@ -172,14 +149,12 @@ RWOidentifyOtherPart (node *with, node *rc)
 {
     node *hotpart = NULL;
     node *part;
-    node *withid;
 
     DBUG_ENTER ();
 
     part = WITH_PART (with);
     while (part != NULL) {
-        withid = PART_WITHID (part);
-        if (!RWOisNoopPart (part, rc, withid)) {
+        if (!WLUTisCopyPartition (part)) {
             if (hotpart == NULL) {
                 hotpart = part;
             } else {
@@ -213,13 +188,7 @@ RWOannotateCopyPart (node *with, node *rc)
 
     part = WITH_PART (with);
     while (part != NULL) {
-        withid = PART_WITHID (part);
-        if (RWOisNoopPart (part, rc, withid)) {
-            PART_ISCOPY (part) = TRUE;
-        } else {
-            PART_ISCOPY (part) = FALSE;
-        }
-
+        PART_ISCOPY (part) = WLUTisCopyPartition (part);
         part = PART_NEXT (part);
     }
 

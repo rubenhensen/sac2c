@@ -2638,6 +2638,7 @@ AWLFIisUsualWL (int cwllevel, int pwllevel)
 
     DBUG_RETURN (z);
 }
+
 /** <!--********************************************************************-->
  *
  * @fn bool AWLFIcheckBothFoldable( node *pwlid, node *cwlavis, int cwllevel)
