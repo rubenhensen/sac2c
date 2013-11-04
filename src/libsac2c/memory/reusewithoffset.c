@@ -31,7 +31,7 @@
 #include "constants.h"
 #include "copywlelim.h"
 #include "pattern_match.h"
-#include "indexvectorutils.h"
+#include "with_loop_utilities.h"
 
 /*
  * INFO structure
@@ -182,7 +182,6 @@ node *
 RWOannotateCopyPart (node *with, node *rc)
 {
     node *part;
-    node *withid;
 
     DBUG_ENTER ();
 
