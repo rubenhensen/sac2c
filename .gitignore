@@ -21,6 +21,7 @@ src/libsac2c/.fingerprint
 src/libsac2c/.last_style
 src/libsac2c/codegen/fancy_icm_vars.c
 src/libsac2c/global/build_devel.c
+src/libsac2c/global/build_prod.c
 src/libsac2c/global/node_info.mac
 src/libsac2c/serialize/serialize_attribs.h
 src/libsac2c/serialize/serialize_buildstack.c
@@ -52,12 +53,10 @@ src/libsac2c/types/types_nodetype.h
 src/libsac2c/types/types_trav.h
 src/libsacphm/.last_style
 src/libsacprelude/.last_style
-src/libsacprelude/devel/libsacpreludeMod.a
-src/libsacprelude/devel/libsacpreludeMod.so
-src/libsacprelude/devel/libsacpreludeTree.so
-src/libsacprelude/prod/libsacpreludeMod.a
-src/libsacprelude/prod/libsacpreludeMod.so
-src/libsacprelude/prod/libsacpreludeTree.so
+src/libsacprelude/devel/libsacpreludeMod.*
+src/libsacprelude/devel/libsacpreludeTree.*
+src/libsacprelude/prod/libsacpreludeMod.*
+src/libsacprelude/prod/libsacpreludeTree.*
 src/makefiles/config.mkf
 src/maketools/.last_style
 src/runtime/.last_style
