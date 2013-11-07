@@ -336,8 +336,8 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 }
 
 static void
-InvokeCCProg (char *cccall, char *incflags, char *linkflags, char *libs,
-              stringset_t *deps)
+InvokeCCProg (char *cccall, char *compileflags, char *incflags, char *linkflags,
+              char *libs, stringset_t *deps)
 {
     char *libpath;
     char *deplibs;
@@ -356,8 +356,8 @@ InvokeCCProg (char *cccall, char *incflags, char *linkflags, char *libs,
     deplibs = (char *)STRSfold (&BuildDepLibsStringProg, deps, STRcpy (""));
 #endif
 
-    SYScall ("%s %s -o %s %s %s %s %s %s", cccall, incflags, global.outfilename,
-             global.cfilename, linkflags, libpath, deplibs, libs);
+    SYScall ("%s %s %s -o %s %s %s %s %s %s", cccall, compileflags, incflags,
+             global.outfilename, global.cfilename, linkflags, libpath, deplibs, libs);
 
     libpath = MEMfree (libpath);
     deplibs = MEMfree (deplibs);
@@ -551,7 +551,8 @@ CCMinvokeCC (node *syntax_tree)
         libs = GetLibs ();
 
         if (global.filetype == FT_prog) {
-            InvokeCCProg (cccall, global.config.ccincdir, linkflags, libs, deps);
+            InvokeCCProg (cccall, compileflags, global.config.ccincdir, linkflags, libs,
+                          deps);
         } else if (global.filetype == FT_cmod) {
             InvokeCCWrapper (cccall, compileflags);
         } else {
