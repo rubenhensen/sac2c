@@ -1218,10 +1218,11 @@ BuildSubcubes (node *arg_node, info *arg_info)
     width = GENERATOR_WIDTH (PART_GENERATOR (arg_node));
     withid = PART_WITHID (arg_node);
 
-    if (partlim != 1) { // Do not slice simple compositions
+    if (partlim == 1) { // Do not slice simple compositions
+        newpartns = performFold (DUPdoDupNode (arg_node), partno, arg_info);
+    } else {
         DBUG_PRINT ("Slicing partition %s into %d pieces",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), partlim);
-        global.optcounters.cubsl_expr++;
         while (partno < partlim) {
             PMmatchFlat (patlb, TCgetNthExprsExpr (WLPROJECTION1 (partno),
                                                    PRF_ARGS (noteintersect)));
@@ -1232,13 +1233,8 @@ BuildSubcubes (node *arg_node, info *arg_info)
             newpartns = TCappendPart (newpartns, newcwlpart);
             partno++;
         }
-    } else {
-#ifdef DEADCODEIHOPE
-        // Simple composition merely gets marked for folding
-        newpartns = DUPdoDupNode (arg_node);
-        newpartns = BuildNewNoteintersect (newpartns, partno, noteintersect, arg_info);
-#endif // DEADCODEIHOPE
     }
+    global.optcounters.cubsl_expr++;
 
     patlb = PMfree (patlb);
     patub = PMfree (patub);
