@@ -12,8 +12,6 @@ typedef union {
     int (*f) (int, char **);
 } sacmain_u;
 
-#define SAC2CBASEENV "SAC2CBASE"
-
 #ifdef DBUG_OFF
 #define DLOPEN_FLAGS RTLD_GLOBAL | RTLD_LAZY
 #else /* DBUG_OFF */
