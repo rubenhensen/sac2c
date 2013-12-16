@@ -10,7 +10,10 @@ include src/makefiles/config.mkf
 # Common tool definitions
 #
 
-SAC2C_BASE = bin/sac2c
+SAC2C_BASE = SAC2CRC=$${SAC2CRC:-setup/sac2crc} \
+	     LD_LIBRARY_PATH=lib$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} \
+	     DYLD_LIBRARY_PATH=lib$${DYLD_LIBRARY_PATH:+:$$DYLD_LIBRARY_PATH} \
+	     bin/sac2c
 SAC2C_T = $(SAC2C_BASE) -target $(TARGET)
 
 TARGET_ENV := $(shell $(SAC2C_T) -CTARGET_ENV)
