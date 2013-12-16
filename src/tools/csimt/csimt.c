@@ -53,3 +53,15 @@ main (void)
 
     return (0);
 }
+
+/* some dummy functions to keep libsac happy. */
+
+void
+SACARGfreeDataUdt (int size, void *data)
+{
+}
+void *
+SACARGcopyDataUdt (int type, int size, void *data)
+{
+    return ((void *)0x0);
+}

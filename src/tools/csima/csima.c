@@ -171,3 +171,15 @@ main (int argc, char *argv[])
     }
     return (0);
 } /* main */
+
+/* some dummy functions to keep libsac happy. */
+
+void
+SACARGfreeDataUdt (int size, void *data)
+{
+}
+void *
+SACARGcopyDataUdt (int type, int size, void *data)
+{
+    return ((void *)0x0);
+}
