@@ -457,13 +457,13 @@ ParseResourceFiles (void)
     if (envvar != NULL) {
         filename = STRcat (envvar, "/.sac2crc");
         ok = RSCparseResourceFile (filename);
-        MEMfree (filename);
 
         // We do not warn/err about an error here, because
         // it's perfectly OK that ~/.sac2crc does not exist.
         if (!ok) {
             CTInote ("'%s' not found or not readable, skipping.", filename);
         }
+        MEMfree (filename);
     }
 
     global.filename = global.puresacfilename; /* What is this good for ? */

@@ -49,13 +49,13 @@ launch_function_from_library (const char *library, const char *mainfun, int argc
         strcat (tmp, "/");
         strcat (tmp, library);
         libsac2c = dlopen (tmp, DLOPEN_FLAGS);
-        free (tmp);
         if (!libsac2c) {
             fprintf (stderr, "ERROR: library '%s' not found, also not as '%s'.\n",
                      library, tmp);
             report_error ();
             exit (10);
         }
+        free (tmp);
     }
 
     mainptr.v = dlsym (libsac2c, mainfun);
