@@ -432,20 +432,19 @@ ParseResourceFiles (void)
     envvar = getenv ("SAC2CRC");
     if (envvar != NULL) {
         ok = RSCparseResourceFile (envvar);
+
         if (!ok) {
             CTIabort ("Error while parsing '%s' (via SAC2CRC).", envvar);
         }
-        DBUG_RETURN ();
-    }
-
+    } else {
 #ifndef SAC2CRC_CONF
 #error SAC2CRC_CONF not set, please check flags in config.mkf
 #endif
+        ok = RSCparseResourceFile (SAC2CRC_CONF);
 
-    ok = RSCparseResourceFile (SAC2CRC_CONF);
-
-    if (!ok) {
-        CTIabort ("Error while parsing '%s'.", SAC2CRC_CONF);
+        if (!ok) {
+            CTIabort ("Error while parsing '%s'.", SAC2CRC_CONF);
+        }
     }
 
     /*
