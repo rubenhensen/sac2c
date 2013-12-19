@@ -34,7 +34,7 @@
 #include "traverse.h"
 #include "free.h"
 
-#define DBUG_PREFIX "WLtrans"
+#define DBUG_PREFIX "WLTRA"
 #include "debug.h"
 
 #include "DupTree.h"
@@ -6772,16 +6772,19 @@ WLTRAwith (node *arg_node, info *arg_info)
     arg_info = FreeInfo (arg_info);
     arg_info = info_tmp;
 
+    DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
     arg_node = CheckWith (arg_node, INFO_WL_LHS (arg_info));
 
     idx_type = TYeliminateAKV (IDS_NTYPE (WITH_VEC (arg_node)));
 
     if (!TYisAKS (idx_type)) {
 
+        DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
         DBUG_EXECUTE (
-          CTInote ("With-loop without full partition found (line %d)", global.linenum));
+          CTInote ("found With-loop s without full partition (line %d)", global.linenum));
         new_node = arg_node;
     } else if (WITH_CUDARIZABLE (arg_node)) {
+        DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
         DBUG_EXECUTE (CTInote ("Cudarizable with-loop found (line %d). Won't touch.",
                                global.linenum));
         new_node = arg_node;
@@ -6794,6 +6797,7 @@ WLTRAwith (node *arg_node, info *arg_info)
         int iter_dims;   /* >= 0 */
         shape *iter_shp; /* may be NULL! */
 
+        DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
         DBUG_EXECUTE (
           CTInote ("with-loop with AKS withid found (line %d)", global.linenum));
 
@@ -6805,9 +6809,9 @@ WLTRAwith (node *arg_node, info *arg_info)
          * check whether WITHID_VEC, WITHID_IDS of all parts have identical
          * names
          */
+        DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
         DBUG_ASSERT (CheckWithids (WITH_PART (arg_node)),
-                     "Not all N_withid nodes of the with-loop have identical"
-                     " names!\n"
+                     "Not all N_withid nodes of the with-loop have identical names!\n"
                      "This is probably due to an error during with-loop-folding.");
 
         iter_shp = GetWlIterShape (arg_node, INFO_WL_LHS (arg_info));
@@ -6820,6 +6824,7 @@ WLTRAwith (node *arg_node, info *arg_info)
              * this shouldn`t happen for multioperator with-loops,
              * because with-loops with empty iteration space are not fused
              */
+            DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
             DBUG_ASSERT (FALSE, "with-loop with empty iteration space found!\n");
         } else {
             node *cubes = NULL;
@@ -6835,6 +6840,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             /*
              * consistence check: ensures that the strides are pairwise disjoint
              */
+            DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
             DBUG_EXECUTE (CTInote ("step 1.2: check disjointness of strides"));
             DBUG_ASSERT (CheckDisjointness (strides),
                          "Consistence check failed:"
@@ -6843,7 +6849,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 
             new_node = ConvertWith (arg_node, iter_dims);
 
-            DBUG_ASSERT (strides != NULL, "No unempty strides found.");
+            DBUG_ASSERT (strides != NULL, "No non-empty strides found.");
 
             do_naive_comp
               = ExtractNaiveCompPragma (WITH_PRAGMA (arg_node), global.linenum);
