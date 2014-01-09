@@ -6520,10 +6520,12 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("split", stop = 1;);
+#ifndef DBUG_OFF
         if (stop == 1) {
             stop = 0;
             goto DONE;
         }
+#endif
 #endif
 
         /*
@@ -6548,10 +6550,12 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("block", stop = 1;);
+#ifndef DBUG_OFF
         if (stop == 1) {
             stop = 0;
             goto DONE;
         }
+#endif
 #endif
 
         /*
@@ -6570,10 +6574,12 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("ublock", stop = 1;);
+#ifndef DBUG_OFF
         if (stop == 1) {
             stop = 0;
             goto DONE;
         }
+#endif
 #endif
 
         /*
@@ -6591,10 +6597,12 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("merge", stop = 1;);
+#ifndef DBUG_OFF
         if (stop == 1) {
             stop = 0;
             goto DONE;
         }
+#endif
 #endif
 
         /*
@@ -6612,10 +6620,12 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("opt", stop = 1;);
+#ifndef DBUG_OFF
         if (stop == 1) {
             stop = 0;
             goto DONE;
         }
+#endif
 #endif
 
         /*
@@ -6633,10 +6643,12 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("fit", stop = 1;);
+#ifndef DBUG_OFF
         if (stop == 1) {
             stop = 0;
             goto DONE;
         }
+#endif
 #endif
 
         /*
@@ -6655,10 +6667,12 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("norm", stop = 1;);
+#ifndef DBUG_OFF
         if (stop == 1) {
             stop = 0;
             goto DONE;
         }
+#endif
 #endif
 
         /*
@@ -6675,13 +6689,17 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 
 #else
         DBUG_EXECUTE_TAG ("fill2", stop = 1;);
+#ifndef DBUG_OFF
         if (stop == 1) {
             stop = 0;
             goto DONE;
         }
 #endif
+#endif
 
+#ifndef DBUG_OFF
     DONE:
+#endif
 
         /* compute GRIDX_FITTED */
         WLSEG_CONTENTS (seg) = InferFitted (WLSEG_CONTENTS (seg));
@@ -6973,10 +6991,12 @@ WLTRAwith (node *arg_node, info *arg_info)
             }
 #else
             DBUG_EXECUTE_TAG ("conv", stop = 1;);
+#ifndef DBUG_OFF
             if (stop == 1) {
                 stop = 0;
                 goto DONE;
             }
+#endif
 #endif
 
             /*
@@ -6993,10 +7013,12 @@ WLTRAwith (node *arg_node, info *arg_info)
             }
 #else
             DBUG_EXECUTE_TAG ("cubes", stop = 1;);
+#ifndef DBUG_OFF
             if (stop == 1) {
                 stop = 0;
                 goto DONE;
             }
+#endif
 #endif
 
             DBUG_EXECUTE (if (do_naive_comp) {
@@ -7016,10 +7038,12 @@ WLTRAwith (node *arg_node, info *arg_info)
             }
 #else
             DBUG_EXECUTE_TAG ("fill1", stop = 1;);
+#ifndef DBUG_OFF
             if (stop == 1) {
                 stop = 0;
                 goto DONE;
             }
+#endif
 #endif
 
             DBUG_EXECUTE (CTInote ("step 4: choose segments"));
@@ -7053,10 +7077,12 @@ WLTRAwith (node *arg_node, info *arg_info)
             }
 #else
             DBUG_EXECUTE_TAG ("segs", stop = 1;);
+#ifndef DBUG_OFF
             if (stop == 1) {
                 stop = 0;
                 goto DONE;
             }
+#endif
 #endif
 
             /*
@@ -7064,7 +7090,9 @@ WLTRAwith (node *arg_node, info *arg_info)
              */
             segs = ProcessSegments (segs, iter_dims, iter_shp, do_naive_comp);
 
+#ifndef DBUG_OFF
         DONE:
+#endif
 
             if (segs == NULL) {
                 segs = WLCOMP_All (NULL, NULL, (cubes == NULL) ? strides : cubes,
