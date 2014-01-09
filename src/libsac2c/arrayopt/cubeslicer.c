@@ -612,7 +612,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                 SetWLProjections (noteint, intersectListNo, arg_info);
             }
 
-            if (int1part && (NULL == cwlpb1)) {
+            if (int1part && (NULL == cwlpb1) && global.optimize.doscwlf) {
                 DBUG_PRINT ("Naked consumer detected");
                 z = INTERSECT_exact;
                 SetWLProjections (noteint, intersectListNo, arg_info);

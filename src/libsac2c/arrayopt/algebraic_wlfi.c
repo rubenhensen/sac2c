@@ -2588,7 +2588,8 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info)
  * @param  cwllevel: INFO_DEFDEPTH of CWL (or naked sel())
  *         pwllevel: AVIS_DEFDEPTH of PWL
  *
- * @result True if the CWL and PWL (even though there is not a PWL...)
+ * @result True if we are allowing naked AWLF and
+ *         the CWL and PWL (even though there is not a PWL...)
  *         are at the same level. I.e., we
  *         have this sort of code layout:
  *
@@ -2603,7 +2604,7 @@ AWLFIisNakedWL (int cwllevel, int pwllevel)
     bool z;
 
     DBUG_ENTER ();
-    z = cwllevel == pwllevel;
+    z = (cwllevel == pwllevel) && global.optimize.doscwlf;
 
     DBUG_RETURN (z);
 }
