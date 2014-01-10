@@ -638,8 +638,9 @@ HWLGspfold (node *arg_node, info *arg_info)
         }
 
         new_withop = TBmakeSpfold (DUPdoDupTree (SPFOLD_NEUTRAL (arg_node)));
-        SPFOLD_FN (new_withop) = DUPspfold (SPFOLD_FN (arg_node), arg_info);
+        SPFOLD_FN (new_withop) = DUPdoDupTree (SPFOLD_FN (arg_node));
         SPFOLD_GUARD (new_withop) = DUPdoDupTree (SPFOLD_GUARD (arg_node));
+        SPFOLD_ARGS (new_withop) = DUPdoDupTree (SPFOLD_ARGS (arg_node));
 
         SPFOLD_NEXT (new_withop) = INFO_HWLG_NEW_WITHOPS (arg_info);
         INFO_HWLG_NEW_WITHOPS (arg_info) = new_withop;
