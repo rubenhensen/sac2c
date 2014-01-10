@@ -270,8 +270,8 @@ HWLGassign (node *arg_node, info *arg_info)
  *
  * @fn node *InsertInitial(node *fun, char *var)
  *
- * @brief given a chain of 2 argument functions where the function chain
- *        continues on the second argument of the function place the var
+ * @brief given a chain of n-argument functions where the function chain
+ *        continues on the last argument of the function place the var
  *        as the initial value of the chain
  *
  *        f( ..., f( ..., f( ..., NULL);
@@ -284,14 +284,16 @@ static node *
 InsertInitial (node *fun, char *var)
 {
     DBUG_ENTER ();
+    node *last_arg;
 
-    if (fun != NULL) {
-        if (EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (fun))) == NULL) {
-            EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (fun))) = TBmakeSpid (NULL, var);
-        } else {
-            EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (fun)))
-              = InsertInitial (EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (fun))), var);
+    if (fun == NULL) {
+        fun = TBmakeSpid (NULL, var);
+    } else {
+        last_arg = SPAP_ARGS (fun);
+        while (EXPRS_NEXT (last_arg) != NULL) {
+            last_arg = EXPRS_NEXT (last_arg);
         }
+        EXPRS_EXPR (last_arg) = InsertInitial (EXPRS_EXPR (last_arg), var);
     }
 
     DBUG_RETURN (fun);
@@ -334,6 +336,8 @@ RenameLhs (node *arg_node, info *arg_info)
             node *next = SPIDS_NEXT (arg_node);
             INFO_FOLD (arg_info) = FREEdoFreeNode (INFO_FOLD (arg_info));
 
+            DBUG_ASSERT ((fun != NULL) && (NODE_TYPE (fun) == N_spap),
+                         "fun should be an N_spap node");
             fun = InsertInitial (fun, newVar);
 
             SPIDS_NEXT (arg_node) = NULL;
@@ -658,7 +662,10 @@ HWLGspfold (node *arg_node, info *arg_info)
             node *var = TBmakeSpid (NULL, STRcpy (tmp));
 
             INFO_FOLD (arg_info)
-              = TBmakeExprs (TBmakeSpap (funName, TBmakeExprs (var, exprRight)),
+              = TBmakeExprs (TBmakeSpap (funName,
+                                         TCappendExprs (DUPdoDupTree (
+                                                          SPFOLD_ARGS (arg_node)),
+                                                        TBmakeExprs (var, exprRight))),
                              exprDown);
         }
     }
