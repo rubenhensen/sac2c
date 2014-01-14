@@ -642,7 +642,7 @@ isMatchGenwidth1Partition (node *arg1, node *arg2, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isMatchPrfrgs( node *arg_node, arg_info)
+ * @fn bool SCSisMatchPrfrgs( node *arg_node, arg_info)
  *
  * @brief Predicate for PRF_ARG1 matching PRF_ARG2
  *
@@ -651,8 +651,8 @@ isMatchGenwidth1Partition (node *arg1, node *arg2, info *arg_info)
  *        do NOT assume that FALSE means not-equal!
  *
  *****************************************************************************/
-static bool
-isMatchPrfargs (node *arg_node, info *arg_info)
+bool
+SCSisMatchPrfargs (node *arg_node, info *arg_info)
 {
     pattern *pat1;
     pattern *pat2;
@@ -1529,7 +1529,7 @@ SCSprf_sub (node *arg_node, info *arg_info)
 
     if (SCSisConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
-    } else if (isMatchPrfargs (arg_node, arg_info)) { /* X - X */
+    } else if (SCSisMatchPrfargs (arg_node, arg_info)) { /* X - X */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
     }
 
@@ -1552,7 +1552,7 @@ SCSprf_sub_VxV (node *arg_node, info *arg_info)
 
     if (SCSisConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
-    } else if (isMatchPrfargs (arg_node, arg_info)) { /* X - X */
+    } else if (SCSisMatchPrfargs (arg_node, arg_info)) { /* X - X */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -1829,7 +1829,7 @@ SCSprf_or_SxS (node *arg_node, info *arg_info)
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
 
         /* S | S */
-    } else if (isMatchPrfargs (arg_node, arg_info)) {
+    } else if (SCSisMatchPrfargs (arg_node, arg_info)) {
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -1896,7 +1896,7 @@ SCSprf_or_VxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (isMatchPrfargs (arg_node, arg_info)) { /*  X | X */
+    if (SCSisMatchPrfargs (arg_node, arg_info)) { /*  X | X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else if (isMatchPrfShapes (arg_node)) {
         res = SCSprf_or_SxS (arg_node, arg_info);
@@ -1933,7 +1933,7 @@ SCSprf_and_SxS (node *arg_node, info *arg_info)
     } else if (SCSisConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
         res = SCSmakeFalse (PRF_ARG2 (arg_node));
 
-    } else if (isMatchPrfargs (arg_node, arg_info)) { /* X & X */
+    } else if (SCSisMatchPrfargs (arg_node, arg_info)) { /* X & X */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -1996,7 +1996,7 @@ SCSprf_and_VxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (isMatchPrfargs (arg_node, arg_info)) { /*  X & X */
+    if (SCSisMatchPrfargs (arg_node, arg_info)) { /*  X & X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else if (isMatchPrfShapes (arg_node)) {
         res = SCSprf_and_SxS (arg_node, arg_info);
@@ -2436,7 +2436,7 @@ SCSprf_max_SxS (node *arg_node, info *arg_info)
     ntype *restype;
 
     DBUG_ENTER ();
-    if (isMatchPrfargs (arg_node, arg_info)) { /* max ( X, X) */
+    if (SCSisMatchPrfargs (arg_node, arg_info)) { /* max ( X, X) */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -2527,7 +2527,7 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
     ntype *restype;
 
     DBUG_ENTER ();
-    if (isMatchPrfargs (arg_node, arg_info)) { /* min( X, X) */
+    if (SCSisMatchPrfargs (arg_node, arg_info)) { /* min( X, X) */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -2632,7 +2632,7 @@ SCSprf_lege (node *arg_node, info *arg_info)
     bool z = FALSE;
 
     DBUG_ENTER ();
-    if (isMatchPrfargs (arg_node, arg_info)) {
+    if (SCSisMatchPrfargs (arg_node, arg_info)) {
         res = SCSmakeTrue (PRF_ARG1 (arg_node));
     }
 
@@ -2672,7 +2672,7 @@ SCSprf_nlege (node *arg_node, info *arg_info)
     bool z = FALSE;
 
     DBUG_ENTER ();
-    if (isMatchPrfargs (arg_node, arg_info)) {
+    if (SCSisMatchPrfargs (arg_node, arg_info)) {
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
     }
 
@@ -3087,7 +3087,7 @@ SCSprf_same_shape_AxA (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     arg1type = ID_NTYPE (PRF_ARG1 (arg_node));
     arg2type = ID_NTYPE (PRF_ARG2 (arg_node));
-    if (isMatchPrfargs (arg_node, arg_info) /* same_shape(X, X) */
+    if (SCSisMatchPrfargs (arg_node, arg_info) /* same_shape(X, X) */
         || (TUshapeKnown (arg1type) && TUshapeKnown (arg2type)
             && TUeqShapes (arg1type, arg2type))) { /* AKS & shapes match */
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),

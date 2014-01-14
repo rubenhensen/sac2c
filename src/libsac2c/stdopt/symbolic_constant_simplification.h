@@ -29,6 +29,7 @@ extern node *SCSmakeVectorArray (shape *shp, node *scalarval);
 extern bool SCSisRelationalOnMinMax (prf fun, node *arg1, node *arg2, info *arg_info);
 extern bool SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info,
                                        bool *res);
+extern bool SCSisMatchPrfargs (node *arg_node, info *arg_info);
 
 extern node *SCSprf_tobool_S (node *arg_node, info *arg_info);
 extern node *SCSprf_toc_S (node *arg_node, info *arg_info);

@@ -1190,6 +1190,43 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * Description: Conditionally set AVIS_MIN(z ) = 0
+ *              for z = mul( x, x);
+ *
+ * @params arg_node: N_let node for mul()
+ *
+ * @return N_let node, with possible side effect on AVIS_MIN( z)
+ *
+ ******************************************************************************/
+static node *
+XtimesX (node *arg_node, info *arg_info)
+{
+    node *rhs;
+    node *lhsavis;
+    node *arg;
+    node *minv;
+
+    DBUG_ENTER ();
+
+    rhs = LET_EXPR (arg_node);
+    lhsavis = IDS_AVIS (LET_IDS (arg_node));
+    if ((!IVEXPisAvisHasMin (lhsavis)) && (SCSisMatchPrfargs (rhs, NULL))) {
+        if (F_mul_SxV == PRF_PRF (rhs)) {
+            arg = PRF_ARG2 (rhs);
+        } else { // SxS VxS VxS
+            arg = PRF_ARG1 (rhs);
+        }
+        minv = SCSmakeZero (arg);
+        minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info), NULL);
+        IVEXPsetMinvalIfNotNull (lhsavis, minv);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function: node *GenerateExtremaComputationsMultiply(node *arg_node, info *arg_info)
@@ -1223,7 +1260,6 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
  *           Case 42: If we have no extrema, but
  *           have ( N times non_negative_even_const),
  *           then minval = 0.
- *
  *
  * @note: See note in previous section re WITHID.
  *
@@ -1345,6 +1381,8 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
     }
 
     GenExCalc (rhs, minarg1, minarg2, maxarg1, maxarg2, lhsavis, arg_info);
+
+    arg_node = XtimesX (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
