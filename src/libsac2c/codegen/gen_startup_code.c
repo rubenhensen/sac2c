@@ -406,6 +406,11 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (global.outfile, "#define SAC_SET_INITIAL_UNIFIED_HEAPSIZE     %d\n\n",
              global.initial_unified_heapsize * 1024);
 
+    fprintf (global.outfile, "#ifndef SAC_SET_RTSPEC_THREADS\n");
+    fprintf (global.outfile, "#define SAC_SET_RTSPEC_THREADS              %d\n",
+             global.num_rtspec_threads);
+    fprintf (global.outfile, "#endif\n\n");
+
     fprintf (global.outfile, "#ifndef SAC_SET_MTMODE\n");
     fprintf (global.outfile, "#define SAC_SET_MTMODE               %d\n",
              (int)global.mtmode);
@@ -635,6 +640,11 @@ GSCprintMainBegin (void)
     INDENT;
     fprintf (global.outfile, "SAC_MT_SETUP_INITIAL();\n");
     INDENT;
+
+    if (global.backend != BE_cuda) {
+        fprintf (global.outfile, "SAC_RTSPEC_SETUP_INITIAL();\n");
+    }
+
     fprintf (global.outfile, "SAC_PF_SETUP();\n");
     INDENT;
     fprintf (global.outfile, "SAC_HM_SETUP();\n");

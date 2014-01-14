@@ -158,7 +158,7 @@ unsigned int
 SAC_MT_Internal_CurrentThreadId (void)
 {
     /* this actually won't be used, but satisfy the linker */
-    return 0;
+    return SAC_RTSPEC_CurrentThreadId ();
 }
 
 /* global (maximal) number of threads in the environment */

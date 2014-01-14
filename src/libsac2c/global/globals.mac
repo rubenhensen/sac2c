@@ -371,6 +371,11 @@ GLOBAL (int, max_threads, 32, xfree_dummy, )
  * Maximum number of threads if exact number is determined dynamically.
  */
 
+GLOBAL (int, num_rtspec_threads, 1, xfree_dummy, )
+/*
+ * Number of rtspec controller threads to be generated.
+ */
+
 GLOBAL (int, min_parallel_size, 250, xfree_dummy, )
 /*
  * Minimum generator size for parallel execution of with-loops.

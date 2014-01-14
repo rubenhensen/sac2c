@@ -31,11 +31,19 @@
 #define MAX_SYS_CALL 512
 #define MAX_STRING_LENGTH 256
 
+#define SAC_RTC_ENV_VAR_NAME "SAC_RTSPEC_CONTROLLER"
+
 static int running = 1;
 static int do_trace;
 static char *tmpdir_name = NULL;
 static char *rtspec_syscall = NULL;
 static list_t *processed;
+
+/* TLS key to retrieve the Thread Self ID Ptr */
+pthread_key_t SAC_RTSPEC_self_id_key;
+
+/* The number of controller threads used for runtime specialization. */
+unsigned int SAC_RTSPEC_controller_threads;
 
 /** <!--*******************************************************************-->
  *
@@ -85,6 +93,82 @@ CreateTmpDir (char *dir)
 
 #endif /* HAVE_MKDTEMP */
 
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_RTSPEC_SetupInitial( int argc, char *argv[],
+ *                                    unsigned int num_threads)
+ *
+ * description:
+ *  Parse the command line and determine the number of rtspec controller threads.
+ *  Looks for the -rtc cmdline option, sets SAC_RTSPEC_controller_threads.
+ *
+ ******************************************************************************/
+void
+SAC_RTSPEC_SetupInitial (int argc, char *argv[], unsigned int num_threads, int trace)
+{
+    do_trace = trace;
+
+    int i;
+    bool rtc_option_exists = FALSE;
+    char *rtc_parallel = NULL;
+
+    if (argv) {
+        for (i = 1; i < argc - 1; i++) {
+            if ((argv[i][0] == '-') && (argv[i][1] == 'r') && (argv[i][2] == 't')
+                && (argv[i][3] == 'c') && (argv[i][4] == '\0')) {
+                SAC_RTSPEC_controller_threads = atoi (argv[i + 1]);
+                rtc_option_exists = TRUE;
+                break;
+            }
+        }
+    }
+    if (!rtc_option_exists) {
+        rtc_parallel = getenv (SAC_RTC_ENV_VAR_NAME);
+        SAC_RTSPEC_controller_threads = (rtc_parallel != NULL) ? atoi (rtc_parallel) : 0;
+    }
+
+    if (SAC_RTSPEC_controller_threads == 0) {
+        SAC_RTSPEC_controller_threads = num_threads;
+    }
+
+    if (SAC_RTSPEC_controller_threads <= 0) {
+        SAC_RuntimeError (
+          "Number of rtspec controller threads is unspecified or exceeds legal"
+          " range (>0).\n"
+          "    Use the '%s' environment variable or the option"
+          " -rtc <num>' (which override the environment variable).",
+          SAC_RTC_ENV_VAR_NAME);
+    }
+
+    if (do_trace == 1) {
+        SAC_TR_PRINT (
+          ("Number of threads determined as %u.", SAC_RTSPEC_controller_threads));
+    }
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   unsigned int SAC_RTSPEC_CurrentThreadId(void)
+ *
+ * description:
+ *
+ *  Return the Thread ID of the current rtspec controller thread.
+ *
+ ******************************************************************************/
+unsigned int
+SAC_RTSPEC_CurrentThreadId (void)
+{
+    void *thread_id = pthread_getspecific (SAC_RTSPEC_self_id_key);
+
+    if (thread_id == NULL) {
+        return 0;
+    } else {
+        return *(unsigned int *)thread_id;
+    }
+}
+
 /** <!--*******************************************************************-->
  *
  * @fn SAC_setupController(void)
@@ -95,9 +179,8 @@ CreateTmpDir (char *dir)
  ****************************************************************************/
 
 void
-SAC_setupController (char *dir, int trace)
+SAC_setupController (char *dir)
 {
-    do_trace = trace;
 
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Setup controller.");
@@ -108,8 +191,18 @@ SAC_setupController (char *dir, int trace)
     char *tmpdir_name;
 
     result = 0;
+    unsigned int rtspeac_thread_ids[SAC_HM_RTSPEC_THREADS ()];
 
-    SAC_initializeQueue (trace);
+    for (int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
+        rtspeac_thread_ids[i] = SAC_MT_GLOBAL_THREADS () + i;
+    }
+
+    if (0 != pthread_key_create (&SAC_RTSPEC_self_id_key, NULL)) {
+        SAC_RuntimeError (
+          "Unable to create thread specific data key (SAC_RTSPEC_self_id_key).");
+    }
+
+    SAC_initializeQueue (do_trace);
 
     tmpdir_name = CreateTmpDir (dir);
 
@@ -120,10 +213,13 @@ SAC_setupController (char *dir, int trace)
         SAC_TR_Print (tmpdir_name);
     }
 
-    result = pthread_create (&controller_thread, NULL, SAC_runController, NULL);
+    for (int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
+        result = pthread_create (&controller_thread, NULL, SAC_runController,
+                                 &rtspeac_thread_ids[i]);
 
-    if (result != 0) {
-        SAC_RuntimeError ("Runtime specialization controller could not be launched");
+        if (result != 0) {
+            SAC_RuntimeError ("Runtime specialization controller could not be launched");
+        }
     }
 
     processed = (list_t *)malloc (sizeof (list_t));
@@ -146,6 +242,8 @@ SAC_setupController (char *dir, int trace)
 void *
 SAC_runController (void *param)
 {
+    pthread_setspecific (SAC_RTSPEC_self_id_key, param);
+
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Starting controller.");
     }

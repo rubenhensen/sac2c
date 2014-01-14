@@ -1,6 +1,6 @@
 /**<!--*********************************************************************-->
  *
- * @file  dynspec.h
+ * @file  rtspec.h
  *
  * @brief Contains the ICMs for the creation of wrapper entry functions.
  *
@@ -13,12 +13,15 @@
 
 #if SAC_DO_RTSPEC
 
+#define SAC_RTSPEC_SETUP_INITIAL()                                                       \
+    SAC_RTSPEC_SetupInitial (__argc, __argv, SAC_SET_RTSPEC_THREADS, SAC_DO_TRACE_RTSPEC);
+
 /*
  * Print the code necessary to setup the optimization controller.
  */
 #define SAC_RTSPEC_SETUP()                                                               \
     {                                                                                    \
-        SAC_setupController (SAC_SET_TMPDIR, SAC_DO_TRACE_RTSPEC);                       \
+        SAC_setupController (SAC_SET_TMPDIR);                                            \
     }
 
 /*
@@ -160,6 +163,7 @@
 #else /* SAC_DO_RTSPEC */
 
 #define SAC_RTSPEC_SETUP()
+#define SAC_RTSPEC_SETUP_INITIAL()
 #define SAC_RTSPEC_FINALIZE()
 
 #endif /* SAC_DO_RTSPEC */
