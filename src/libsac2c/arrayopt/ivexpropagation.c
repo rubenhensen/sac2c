@@ -895,18 +895,18 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * Description:  Generate extrema for C99 modulus, and for
- *               modulus extended to support
+ * Description:  Generate extrema for C99 mod, and for
+ *               aplmod, extended to support
  *               negative arg1 values and zero arg2 values,
  *               per the APL ISO N8485 standard.
  *
  *               For C99, if (arg1 >=0 ) && ( arg2 > 0):
- *
- *               For APL modulus,
- *               if( arg2 > 0), then we set:
- *
  *                 AVIS_MIN( res) = 0
- *                 AVIS_MAX( normalize( arg2 - 1));
+ *                 AVIS_MAX( res) = normalize( arg2 - 1);
+ *
+ *               For APL, if (arg1 >=0 ) && ( arg2 >= 0):
+ *                 AVIS_MIN( res) = 0
+ *                 AVIS_MAX( res) = normalize( arg2 - 1);
  *
  * @params arg_node: Your basic N_let node.
  *         arg_info: As usual.
@@ -935,7 +935,9 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
     DBUG_ENTER ();
 
     rhs = LET_EXPR (arg_node);
-    if ((SCSisPositive (PRF_ARG2 (rhs))) && (aplmod || SCSisNonneg (PRF_ARG1 (rhs)))) {
+    if ((SCSisNonneg (PRF_ARG1 (rhs)))
+        && ((aplmod && SCSisNonneg (PRF_ARG2 (rhs)))
+            || ((!aplmod) && SCSisPositive (PRF_ARG2 (rhs))))) {
         lhsavis = IDS_AVIS (LET_IDS (arg_node));
         arg1avis = ID_AVIS (PRF_ARG1 (rhs));
         arg2avis = ID_AVIS (PRF_ARG2 (rhs));
