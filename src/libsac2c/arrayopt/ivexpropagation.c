@@ -907,18 +907,19 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
  *
  *               For aplmod modulus,
  *                    count           modulus
- *               if ( arg1 >= 0) && ( arg2 >= 0), then we set:
- *                 AVIS_MIN( res) = 0
+ *               if ( arg1 >= 0) && ( arg2 >= 0), or
+ *                                  ( arg2 >= 1)
+ *                 then AVIS_MIN( res) = 0
  *
  *                    count          modulus
- *               if ( arg1 > 0) && ( arg2 > 0), then we set:
+ *               if ( arg1 > 0) && ( arg2 > 0), then
  *                 AVIS_MAX( normalize( arg2 - 1));
  *
  *               This is wrong if the modulus is 1, but I think
  *               that is harmless.
  *
  *               If the count may be zero, then we must not
- *               set AV)S_MAX, because that will definitely break things,
+ *               set AVIS_MAX, because that will definitely break things,
  *               such as AWLF unit test rotateAKSAKVEmpty.sac.
  *
  * @params arg_node: Your basic N_let node.
@@ -944,6 +945,7 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
     node *nsa;
     bool arg1scalar;
     bool arg2scalar;
+    bool isok;
 
     DBUG_ENTER ();
 
@@ -958,18 +960,20 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
 
     // MINVAL
     if ((!IVEXPisAvisHasMin (lhsavis))
-        && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))
-        && (SCSisNonneg (PRF_ARG1 (rhs)))
-        && (((!aplmod) && SCSisPositive (PRF_ARG2 (rhs)))
-            || ((aplmod) && SCSisNonneg (PRF_ARG2 (rhs))))) {
-
-        zr = SCSmakeZero (nsa); /* Create zero minval */
-        if (NULL != zr) {       // nsa may not be AKS
-            zr = FLATGexpression2Avis (zr, &INFO_VARDECS (arg_info),
-                                       &INFO_PREASSIGNS (arg_info),
-                                       TYeliminateAKV (AVIS_TYPE (lhsavis)));
-            AVIS_ISMINHANDLED (zr) = TRUE;
-            INFO_MINVAL (arg_info) = zr;
+        && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))) {
+        isok = (SCSisNonneg (PRF_ARG1 (rhs)))
+               && (((!aplmod) && SCSisPositive (PRF_ARG2 (rhs)))
+                   || ((aplmod) && SCSisNonneg (PRF_ARG2 (rhs))));
+        isok = isok || (aplmod && SCSisPositive (PRF_ARG2 (rhs)));
+        if (isok) {
+            zr = SCSmakeZero (nsa); /* Create zero minval */
+            if (NULL != zr) {       // nsa may not be AKS
+                zr = FLATGexpression2Avis (zr, &INFO_VARDECS (arg_info),
+                                           &INFO_PREASSIGNS (arg_info),
+                                           TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                AVIS_ISMINHANDLED (zr) = TRUE;
+                INFO_MINVAL (arg_info) = zr;
+            }
         }
     }
 
