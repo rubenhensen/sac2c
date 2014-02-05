@@ -194,6 +194,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize      \
                         wlpropagation                                       \
                         narray_utilities                                    \
                         set_withloop_depth                                  \
+                        polyhedral_utilities                                \
                         eliminate_duplicate_fundef_args
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \
@@ -267,6 +268,7 @@ libsac2c_cinterface  := load_module_contents construct_bundles \
                         print_ccflags generate_copy_and_free
 
 libsac2c_constraints := insert_domain_constraints insert_conformity_checks \
+                        polyhedral_guard_optimization                      \
                         generate_guard_solvers                             \
                         strip_conformity_checks constraint_statistics
 

@@ -754,6 +754,13 @@
           <node name="Prf" />
         </travuser>
       </traversal> 
+      <traversal id="POGO" name="Polyhedral Guard Optimization" default="sons" include="polyhedral_guard_optimization.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Prf" />
+        </travuser>
+      </traversal> 
       <traversal id="GLF" name="Group Local functions" default="sons" include="group_local_funs.h" >
         <travuser>
           <node name="Module" />

@@ -445,6 +445,9 @@ FUNBEGIN (saacyc, opt, saacyc)
 CYCLEPHASEFUNOLD (isaa, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
                   global.optimize.dosaa, opt, saacyc)
 
+CYCLEPHASEFUN (pogo, "Polyhedral guard optimization", POGOdoPolyhedralGuardOptimization,
+               global.optimize.dopogo, opt, saacyc)
+
 CYCLEPHASEFUN (ggs, "Generate guard solvers", GGSdoGenerateGuardSolvers,
                global.optimize.doggs, opt, saacyc)
 
