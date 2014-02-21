@@ -544,7 +544,7 @@ FLATexprs (node *arg_node, info *arg_info)
         break;
 #endif // FIXME
     default:
-        DBUG_ASSERT (0, "illegal context !");
+        DBUG_UNREACHABLE ("illegal context !");
         /* the following assignment is used only for convincing the C compiler
          * that abstract will be initialized in any case!
          */

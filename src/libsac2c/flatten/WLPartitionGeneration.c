@@ -253,8 +253,8 @@ CreateMaxFrameShapeAvis (node *withop, int fdim, info *arg_info)
         break;
     default:
         res_avis = NULL;
-        DBUG_ASSERT (FALSE, "CreateMaxFrameShapeAvis called on other than"
-                            " genarray or modarray WL!");
+        DBUG_UNREACHABLE ("CreateMaxFrameShapeAvis called on other than"
+                          " genarray or modarray WL!");
     }
 
     DBUG_RETURN (res_avis);
@@ -706,8 +706,8 @@ WLPGwith (node *arg_node, info *arg_info)
                 arg_node = FREEdoFreeTree (arg_node);
                 arg_node = res;
             } else {
-                DBUG_ASSERT (FALSE, "default partition in non genarray/modarray WL "
-                                    "encountered!");
+                DBUG_UNREACHABLE (
+                  "default partition in non genarray/modarray WL encountered!");
             }
 
         } else if (num_parts == 2) {
@@ -729,7 +729,7 @@ WLPGwith (node *arg_node, info *arg_info)
             WITH_CODE (arg_node) = RemoveUnusedCodes (WITH_CODE (arg_node));
 
         } else {
-            DBUG_ASSERT (FALSE, "more than one partition alongside a default partition!");
+            DBUG_UNREACHABLE ("more than one partition alongside a default partition!");
         }
     }
 

@@ -554,7 +554,7 @@ ICMCompileWL_MODARRAY_SUBSHAPE (char *sub_NT, char *idx_NT, int dims, char *to_N
         break;
 
     default:
-        DBUG_ASSERT (0, "unknown shape class found!");
+        DBUG_UNREACHABLE ("unknown shape class found!");
     }
 
     DBUG_RETURN ();

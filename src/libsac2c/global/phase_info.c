@@ -43,7 +43,7 @@ DummyPhaseFun (node *syntax_tree)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (FALSE, "This function should never be called.");
+    DBUG_UNREACHABLE ("This function should never be called.");
 
     DBUG_RETURN (syntax_tree);
 }

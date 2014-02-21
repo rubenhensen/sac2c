@@ -175,7 +175,7 @@ GetContraryOperator (prf op)
         result = F_eq_SxV;
         break;
     default:
-        DBUG_ASSERT (0, "Illegal argument, must be a gt/ge operator");
+        DBUG_UNREACHABLE ("Illegal argument, must be a gt/ge operator");
         result = F_unknown;
     }
 

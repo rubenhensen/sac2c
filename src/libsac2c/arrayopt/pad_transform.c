@@ -421,7 +421,7 @@ AddDummyCode (node *wl)
         break;
 
     default:
-        DBUG_ASSERT (0, "unsupported type in with-loop!");
+        DBUG_UNREACHABLE ("unsupported type in with-loop!");
         expr = NULL; /* just to avoid compiler warnings */
         break;
     }

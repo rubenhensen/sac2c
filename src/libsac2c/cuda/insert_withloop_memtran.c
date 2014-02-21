@@ -297,7 +297,7 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
             }
         }
     } else {
-        DBUG_ASSERT (0, "Neither N_id nor N_ids found in TypeConvert!");
+        DBUG_UNREACHABLE ("Neither N_id nor N_ids found in TypeConvert!");
     }
 
     DBUG_RETURN (dev_type);
@@ -648,8 +648,8 @@ IWLMEMfuncond (node *arg_node, info *arg_info)
                     IDS_NAME (ids) = TRAVtmpVarName ("dev");
                 } else {
                     // .... TODO ...
-                    DBUG_ASSERT (0, "Found arrays of unequal types while not one host "
-                                    "type and one device type!");
+                    DBUG_UNREACHABLE ("Found arrays of unequal types while not one host "
+                                      "type and one device type!");
                 }
 
                 AVIS_ISCUDALOCAL (IDS_AVIS (ids)) = TRUE;

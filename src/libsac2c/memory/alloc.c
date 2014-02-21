@@ -375,12 +375,12 @@ MakeDimArg (node *arg)
 
     case N_typedef:
     case N_type:
-        DBUG_ASSERT (0, "typedef");
+        DBUG_UNREACHABLE ("typedef");
         break;
 
     default:
         DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg));
-        DBUG_ASSERT (0, "Invalid argument");
+        DBUG_UNREACHABLE ("Invalid argument");
     }
 
     DBUG_RETURN (arg);
@@ -432,7 +432,7 @@ MakeShapeArg (node *arg)
 
     default:
         DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg));
-        DBUG_ASSERT (0, "Invalid argument");
+        DBUG_UNREACHABLE ("Invalid argument");
     }
 
     DBUG_RETURN (arg);
@@ -475,7 +475,7 @@ MakeSizeArg (node *arg)
 
     default:
         DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg));
-        DBUG_ASSERT (0, "Invalid argument");
+        DBUG_UNREACHABLE ("Invalid argument");
     }
 
     DBUG_RETURN (arg);
@@ -1504,7 +1504,7 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     case F_sel_VxIA:
-        // DBUG_ASSERT (FALSE, "IMPLEMENT THIS");
+        // DBUG_UNREACHABLE ("IMPLEMENT THIS");
         als->dim = TCmakePrf2 (F_sub_SxS,
                                TCmakePrf1 (F_dim_A, DUPdoDupNode (PRF_ARG2 (arg_node))),
                                MakeSizeArg (PRF_ARG1 (arg_node)));
@@ -1893,7 +1893,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_run_mt_modarray:
     case F_run_mt_fold:
 
-        DBUG_ASSERT (0, "invalid prf found!");
+        DBUG_UNREACHABLE ("invalid prf found!");
         break;
 
     case F_sync:
@@ -1917,7 +1917,7 @@ EMALprf (node *arg_node, info *arg_info)
 
     default:
         DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
-        DBUG_ASSERT (FALSE, "unknown prf found!");
+        DBUG_UNREACHABLE ("unknown prf found!");
         break;
     }
 

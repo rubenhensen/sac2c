@@ -437,7 +437,7 @@ PrintTargetName (node *tree)
                 global.config.lib_variant);
         break;
     default:
-        DBUG_ASSERT (0, "unknown file type found!");
+        DBUG_UNREACHABLE ("unknown file type found!");
         break;
     }
 

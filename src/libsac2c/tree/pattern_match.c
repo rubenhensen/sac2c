@@ -642,7 +642,7 @@ getInner (node *arg_node)
         break;
     default:
         inner = arg_node;
-        DBUG_ASSERT (FALSE, "getInner applied to unexpected NODE_TYPE!");
+        DBUG_UNREACHABLE ("getInner applied to unexpected NODE_TYPE!");
         break;
     }
 

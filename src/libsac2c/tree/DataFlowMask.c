@@ -443,7 +443,7 @@ DFMupdateMaskBaseAfterCompiling (mask_base_t *mask_base, node *arguments, node *
             }
         }
 
-        DBUG_ASSERT (0, "Variable declration removed during compilation");
+        DBUG_UNREACHABLE ("Variable declration removed during compilation");
 
     vardec_found:
         tmp = VARDEC_NEXT (tmp);

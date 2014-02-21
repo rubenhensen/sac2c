@@ -256,8 +256,8 @@ DISTNtypeConversion (ntype *dist_type, bool to_dev_type)
                 break;
             default:
                 res = scalar_simple_type;
-                DBUG_ASSERT (0,
-                             "Simple type conversion found undefined dist simple type!");
+                DBUG_UNREACHABLE (
+                  "Simple type conversion found undefined dist simple type!");
             }
         } else {
             switch (scalar_simple_type) {

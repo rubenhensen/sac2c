@@ -1408,8 +1408,8 @@ WLAAprf (node *arg_node, info *arg_info)
                  * vector elimination.
                  */
                 DBUG_PRINT ("primitive function F_idx_sel | F_idx_modarray");
-                DBUG_ASSERT (0, "primitive function idx_sel or idx_modarray found "
-                                "during tile size selection");
+                DBUG_UNREACHABLE ("primitive function idx_sel or idx_modarray found "
+                                  "during tile size selection");
                 break;
 
             default:

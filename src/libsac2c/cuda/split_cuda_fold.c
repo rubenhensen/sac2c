@@ -308,7 +308,7 @@ SCUFpart (node *arg_node, info *arg_info)
         PART_CODE (arg_node) = new_code;
         WITH_CODE (INFO_FOLDWL (arg_info)) = new_code;
     } else {
-        DBUG_ASSERT (0, "Wrong traverse mode in SCUFpart!");
+        DBUG_UNREACHABLE ("Wrong traverse mode in SCUFpart!");
     }
 
     DBUG_RETURN (arg_node);
@@ -358,9 +358,9 @@ SCUFgenerator (node *arg_node, info *arg_info)
                               SHarray2Shape (shape_expr));
         }
     } else if (NODE_TYPE (shape_expr) == N_id) {
-        DBUG_ASSERT (0, "We are not supporting N_id bound2 yet!");
+        DBUG_UNREACHABLE ("We are not supporting N_id bound2 yet!");
     } else {
-        DBUG_ASSERT (0, "Bound2 is of wrong node type!");
+        DBUG_UNREACHABLE ("Bound2 is of wrong node type!");
     }
 
     avis = TBmakeAvis (TRAVtmpVar (), type);

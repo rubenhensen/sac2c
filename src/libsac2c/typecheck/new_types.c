@@ -1489,7 +1489,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
         break;
 
     default:
-        DBUG_ASSERT (0, "argument type not yet supported");
+        DBUG_UNREACHABLE ("argument type not yet supported");
     }
 
     IBASE_GEN (base) = res;
@@ -1646,7 +1646,7 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
         case TC_alpha:
             break;
         default:
-            DBUG_ASSERT (0, "FilterFundefs called with illegal funtype!");
+            DBUG_UNREACHABLE ("FilterFundefs called with illegal funtype!");
         }
     }
 
@@ -2104,7 +2104,7 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
             overload_pos++;
             break;
         default:
-            DBUG_ASSERT (0, "TYmakeOverloadFunType called with illegal funtype!");
+            DBUG_UNREACHABLE ("TYmakeOverloadFunType called with illegal funtype!");
         }
         fun1 = TYfreeTypeConstructor (fun1);
     }
@@ -2170,8 +2170,8 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
             break;
 
         default:
-            DBUG_ASSERT (0, "mapFunctionInstances reached a type-constructur it never "
-                            "was intended to reach!");
+            DBUG_UNREACHABLE ("mapFunctionInstances reached a type-constructur it never "
+                              "was intended to reach!");
         }
     }
 
@@ -2255,8 +2255,9 @@ foldFunctionInstances (ntype *type, void *(*foldfun) (node *, void *), void *res
             break;
 
         default:
-            DBUG_ASSERT (0, "foldFunctionInstances passed a typeconstructur it never was "
-                            "intended to pass!");
+            DBUG_UNREACHABLE (
+              "foldFunctionInstances passed a typeconstructur it never was "
+              "intended to pass!");
 
             result = NULL;
         }
@@ -2324,7 +2325,7 @@ TYgetArity (ntype *fun)
     } else if (FUN_UPOLY (fun) != NULL) {
         next = IRES_TYPE (IBASE_GEN (FUN_UPOLY (fun)));
     } else {
-        DBUG_ASSERT (FALSE, "TC_fun without bases found!");
+        DBUG_UNREACHABLE ("TC_fun without bases found!");
         next = NULL;
     }
 
@@ -3249,7 +3250,7 @@ TYcontainsAlpha (ntype *type)
             break;
 
         default:
-            DBUG_ASSERT (0, "found unhandeled type constructor!");
+            DBUG_UNREACHABLE ("found unhandeled type constructor!");
         }
     }
 
@@ -3980,7 +3981,7 @@ TYcmpTypes (ntype *t1, ntype *t2)
         }
         break;
     default:
-        DBUG_ASSERT (0, "Type comparison for non-array types not yet implemented!");
+        DBUG_UNREACHABLE ("Type comparison for non-array types not yet implemented!");
     }
 
     DBUG_PRINT_TAG ("NTY_CMP", "result: %d", res);
@@ -4076,11 +4077,11 @@ TYlubOfTypes (ntype *t1, ntype *t2)
             new_t1 = TYfreeTypeConstructor (new_t1);
             break;
         case TC_aud:
-            DBUG_ASSERT (0, "Cannot compute LUB!");
+            DBUG_UNREACHABLE ("Cannot compute LUB!");
             res = NULL;
             break;
         default:
-            DBUG_ASSERT (0, "Cannot compute LUB!");
+            DBUG_UNREACHABLE ("Cannot compute LUB!");
             res = NULL;
             break;
         }
@@ -4382,7 +4383,7 @@ TYfreeTypeConstructor (ntype *type)
     case TC_user:
         break;
     default:
-        DBUG_ASSERT (0, "trying to free illegal type constructor!");
+        DBUG_UNREACHABLE ("trying to free illegal type constructor!");
     }
     if (NTYPE_CON (type) == TC_simple) {
         type = NULL;
@@ -4472,7 +4473,7 @@ TYtouchTypeConstructor (ntype *type, info *arg_info)
     case TC_user:
         break;
     default:
-        DBUG_ASSERT (0, "trying to free illegal type constructor!");
+        DBUG_UNREACHABLE ("trying to free illegal type constructor!");
     }
     CHKMtouch (type, arg_info);
 
@@ -4779,7 +4780,7 @@ ScalarType2String (ntype *type)
                           POLYUSER_INNER (type), POLYUSER_SHAPE (type));
         break;
     default:
-        DBUG_ASSERT (0, "ScalarType2String called with non-scalar type!");
+        DBUG_UNREACHABLE ("ScalarType2String called with non-scalar type!");
     }
 
     res = SBUF2str (buf);
@@ -4841,7 +4842,7 @@ ArrayType2String (ntype *type)
         buf = SBUFprintf (buf, "[*]");
         break;
     default:
-        DBUG_ASSERT (0, "ArrayType2String called with non-array type!");
+        DBUG_UNREACHABLE ("ArrayType2String called with non-array type!");
     }
 
     tmp_str = SBUF2str (buf);
@@ -5017,7 +5018,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
         tmp_str = MEMfree (tmp_str);
         break;
     default:
-        DBUG_ASSERT (0, "FunType2String called with non-legal type!");
+        DBUG_UNREACHABLE ("FunType2String called with non-legal type!");
         break;
     }
 
@@ -5078,7 +5079,7 @@ TYtype2String (ntype *type, bool multiline, int offset)
             res = ScalarType2String (type);
             break;
         default:
-            DBUG_ASSERT (0, "TYtype2String applied to non-SAC type!");
+            DBUG_UNREACHABLE ("TYtype2String applied to non-SAC type!");
             res = NULL;
             break;
         }
@@ -5889,11 +5890,11 @@ TYoldType2ScalarType (types *old)
         break;
     case T_dots:
         res = NULL;
-        DBUG_ASSERT (0, "TYoldType2Type applied to T_dots");
+        DBUG_UNREACHABLE ("TYoldType2Type applied to T_dots");
         break;
     default:
         res = NULL;
-        DBUG_ASSERT (0, "TYoldType2Type applied to illegal type");
+        DBUG_UNREACHABLE ("TYoldType2Type applied to illegal type");
     }
 
     DBUG_EXECUTE (tmp = CVtype2String (old, 3, TRUE);
@@ -6063,7 +6064,7 @@ Type2OldType (ntype *xnew)
         TYPES_TDEF (res) = UTgetTdef (USER_TYPE (xnew));
         break;
     default:
-        DBUG_ASSERT (0, "Type2OldType not yet entirely implemented!");
+        DBUG_UNREACHABLE ("Type2OldType not yet entirely implemented!");
         res = NULL;
         break;
     }
@@ -6847,7 +6848,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
         } break;
 
         default:
-            DBUG_ASSERT (0, "illegal prf found!");
+            DBUG_UNREACHABLE ("illegal prf found!");
             assigns = NULL;
             break;
         }
@@ -6961,7 +6962,7 @@ IsRelevant (ntype *type)
         break;
 
     default:
-        DBUG_ASSERT (0, "illegal ntype constructor found!");
+        DBUG_UNREACHABLE ("illegal ntype constructor found!");
         ires = NULL;
         break;
     }
@@ -7155,7 +7156,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
         break;
 
     default:
-        DBUG_ASSERT (0, "illegal ntype constructor found!");
+        DBUG_UNREACHABLE ("illegal ntype constructor found!");
         assigns = NULL;
         break;
     }
@@ -7884,7 +7885,7 @@ TYdeserializeType (int _con, ...)
         IRES_TYPE (result) = va_arg (args, ntype *);
     } break;
     case TC_alpha: {
-        DBUG_ASSERT (0, "Cannot deserialize alpha types");
+        DBUG_UNREACHABLE ("Cannot deserialize alpha types");
 
         result = NULL;
     } break;

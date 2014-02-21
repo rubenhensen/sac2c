@@ -853,7 +853,7 @@ TUcontainsUser (ntype *type)
             res = res || TUcontainsUser (TYgetProductMember (type, cnt));
         }
     } else {
-        DBUG_ASSERT (0, "type not implemented yet");
+        DBUG_UNREACHABLE ("type not implemented yet");
     }
 
     DBUG_RETURN (res);
@@ -1024,7 +1024,7 @@ TUleShapeInfo (ntype *a, ntype *b)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "illegal argument");
+        DBUG_UNREACHABLE ("illegal argument");
         result = FALSE;
         break;
     }

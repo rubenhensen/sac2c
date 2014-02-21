@@ -477,7 +477,7 @@ NormalizePrf (prf p)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "Illegal prf!");
+        DBUG_UNREACHABLE ("Illegal prf!");
         break;
     }
 
@@ -871,7 +871,7 @@ MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node 
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "Missed a case!");
+        DBUG_UNREACHABLE ("Missed a case!");
         break;
     }
 

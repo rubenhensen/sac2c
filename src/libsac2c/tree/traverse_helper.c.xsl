@@ -55,7 +55,7 @@ node *TRAVnone(node *arg_node, info *arg_info)
 
 node *TRAVerror(node *arg_node, info *arg_info)
 {
-  DBUG_ASSERT (FALSE, "Illegal node type found.");
+  DBUG_UNREACHABLE ("Illegal node type found.");
 
   return( arg_node);
 }
@@ -69,7 +69,7 @@ node *TRAVsons(node *arg_node, info *arg_info)
   <xsl:apply-templates select="/definition/syntaxtree" mode="travsons" />
   <xsl:text>
     default:
-      DBUG_ASSERT (FALSE, "Illegal nodetype found!");
+      DBUG_UNREACHABLE ("Illegal nodetype found!");
       break;
   }
 
@@ -87,7 +87,7 @@ int TRAVnumSons( node *node)
   <xsl:apply-templates select="/definition/syntaxtree" mode="travnumsons" />
   <xsl:text>
     default:
-      DBUG_ASSERT (FALSE, "Illegal nodetype found!");
+      DBUG_UNREACHABLE ("Illegal nodetype found!");
       break;
   }
 
@@ -105,7 +105,7 @@ node *TRAVgetSon( int no, node *parent)
   <xsl:apply-templates select="/definition/syntaxtree" mode="travgetson" />
   <xsl:text>
     default:
-      DBUG_ASSERT (FALSE,  "Illegal nodetype found!");
+      DBUG_UNREACHABLE ("Illegal nodetype found!");
       break;
   }
 
@@ -159,7 +159,7 @@ node *TRAVgetSon( int no, node *parent)
     </xsl:call-template>
     <xsl:value-of select="': switch (no) { '" />
     <xsl:apply-templates select="sons/son" mode="travgetson" />
-    <xsl:value-of select="'default: DBUG_ASSERT (FALSE, &quot;index out of range!&quot;); break; } break;'" />
+    <xsl:value-of select="'default: DBUG_UNREACHABLE (&quot;index out of range!&quot;); break; } break;'" />
   </xsl:template>
 
   <xsl:template match="son" mode="travgetson" >

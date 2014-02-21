@@ -144,7 +144,7 @@ parseArguments (char *type_info, char *shape_info)
         /* Get the number of dimensions of the current argument. */
 
         if ((stoken = strtok_r (NULL, SHAPE_DELIM, &shp_saveptr)) == NULL) {
-            DBUG_ASSERT (0, "SHAPE_INFO: format error, missing dimension information!");
+            DBUG_UNREACHABLE ("SHAPE_INFO: format error, missing dimension information!");
         }
 
         dims = atoi (stoken);

@@ -731,7 +731,7 @@ GetName (node *assign)
     } else if (NODE_TYPE (instr) == N_cond) {
         return_value = STRcpy ("DF__conditional");
     } else {
-        DBUG_ASSERT (0, "GetName was called with an invalid assignment");
+        DBUG_UNREACHABLE ("GetName was called with an invalid assignment");
     }
     DBUG_RETURN (return_value);
 }

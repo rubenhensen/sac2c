@@ -240,8 +240,8 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
             break;
 
         case 'v':
-            DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet"
-                            " implemented");
+            DBUG_UNREACHABLE ("Vector arguments for scheduling disciplines not yet"
+                              " implemented");
             break;
 
         default:
@@ -353,8 +353,8 @@ SCHmakeScheduling (char *discipline, ...)
             break;
 
         case 'v':
-            DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet"
-                            " implemented");
+            DBUG_UNREACHABLE ("Vector arguments for scheduling disciplines not yet"
+                              " implemented");
             break;
 
         default:
@@ -848,8 +848,8 @@ CompileSchedulingArgs (int seg_id, sched_t *sched, node *args)
 
             default:
                 new_arg = NULL;
-                DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet"
-                                " implemented");
+                DBUG_UNREACHABLE ("Vector arguments for scheduling disciplines not yet"
+                                  " implemented");
             }
 
             args = TBmakeExprs (new_arg, args);
@@ -1021,7 +1021,7 @@ CompileScheduling (int seg_id, node *wl_ids, sched_t *sched, node *arg_node, cha
 
     default:
         general_args = NULL;
-        DBUG_ASSERT (0, "wrong node type found");
+        DBUG_UNREACHABLE ("wrong node type found");
     }
 
     icm = TBmakeIcm (name, CompileSchedulingArgs (seg_id, sched, general_args));
@@ -1526,8 +1526,8 @@ CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel
 
             default:
                 new_arg = NULL;
-                DBUG_ASSERT (0, "Vector arguments for scheduling disciplines not yet"
-                                " implemented");
+                DBUG_UNREACHABLE ("Vector arguments for scheduling disciplines not yet"
+                                  " implemented");
             }
 
             args = TBmakeExprs (new_arg, args);
@@ -1749,7 +1749,7 @@ CompileSchedulingWithTasksel (int seg_id, node *wl_ids, sched_t *sched,
 
     default:
         general_args = NULL;
-        DBUG_ASSERT (0, "wrong node type found");
+        DBUG_UNREACHABLE ("wrong node type found");
     }
 
     icm = TBmakeIcm (name, CompileSchedulingWithTaskselArgs (seg_id, sched, tasksel,

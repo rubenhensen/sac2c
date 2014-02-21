@@ -200,9 +200,9 @@ InsertCell (node *act_assign)
         new_assign = TBmakeAssign (TBmakeMt (TBmakeBlock (act_assign, NULL)), NULL);
         break;
     case MUTH_MULTI_SPECIALIZED:
-        DBUG_ASSERT (FALSE, "MUTH_MULTI_SPECIALIZED is impossible here");
+        DBUG_UNREACHABLE ("MUTH_MULTI_SPECIALIZED is impossible here");
     case MUTH_ANY:
-        DBUG_ASSERT (FALSE, "MUTH_ANY is impossible here");
+        DBUG_UNREACHABLE ("MUTH_ANY is impossible here");
     }
 
     ASSIGN_EXECMODE (new_assign) = ASSIGN_EXECMODE (act_assign);

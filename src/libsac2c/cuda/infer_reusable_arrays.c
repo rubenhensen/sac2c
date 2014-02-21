@@ -180,7 +180,7 @@ ConsolidateRcs (rc_t *rc_list, info *arg_info)
         } else if (dim == 2) {
             block_sz = 16;
         } else {
-            DBUG_ASSERT (0, "Reusable array with dimension greater than 2!");
+            DBUG_UNREACHABLE ("Reusable array with dimension greater than 2!");
         }
 
         for (i = dim - 1; i >= 0; i--) {

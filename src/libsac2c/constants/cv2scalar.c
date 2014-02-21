@@ -141,7 +141,7 @@ COcv2Char (void *elems, int offset)
 node *
 COcv2ScalarDummy (void *elems, int offset)
 {
-    DBUG_ASSERT (1 == 0, "COCv2SCalarDummy called!");
+    DBUG_UNREACHABLE ("COCv2SCalarDummy called!");
     return (NULL);
 }
 

@@ -189,8 +189,8 @@ ANSntype (ntype *arg_ntype, info *arg_info)
     }
 #ifndef DBUG_OFF
     else {
-        DBUG_ASSERT (0, "ask the guy who implemented the type system what has "
-                        "happened...");
+        DBUG_UNREACHABLE ("ask the guy who implemented the type system what has "
+                          "happened...");
     }
 #endif
 

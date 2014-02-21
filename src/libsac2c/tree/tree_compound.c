@@ -452,7 +452,7 @@ TCgetShapeDim (types *type)
             dim = impl_dim + base_dim - KNOWN_DIM_OFFSET;
         } else {
             dim = 0;
-            DBUG_ASSERT (0, "illegal shape/dim information found!");
+            DBUG_UNREACHABLE ("illegal shape/dim information found!");
         }
     } else {
         /*
@@ -1417,7 +1417,7 @@ TCgetNthArg (int n, node *args)
     DBUG_ASSERT (n >= 0, "n<0");
     for (cnt = 0; cnt < n; cnt++) {
         if (NULL == args) {
-            DBUG_ASSERT (FALSE, "n > N_arg chain length.");
+            DBUG_UNREACHABLE ("n > N_arg chain length.");
         }
 
         args = ARG_NEXT (args);
@@ -2359,7 +2359,7 @@ TCgetNthExprs (int n, node *exprs)
     DBUG_ASSERT (n >= 0, "n<0");
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
-            DBUG_ASSERT (FALSE, "n > N_exprs chain length.");
+            DBUG_UNREACHABLE ("n > N_exprs chain length.");
         }
 
         exprs = EXPRS_NEXT (exprs);
@@ -2393,7 +2393,7 @@ TCputNthExprs (int n, node *oldexprs, node *val)
 
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
-            DBUG_ASSERT (FALSE, "n > N_exprs chain length.");
+            DBUG_UNREACHABLE ("n > N_exprs chain length.");
             break;
         }
 
@@ -2847,7 +2847,7 @@ TCcreateZeroScalar (simpletype btype)
         break;
     default:
         ret_node = NULL;
-        DBUG_ASSERT (0, "unkown basetype found");
+        DBUG_UNREACHABLE ("unkown basetype found");
     }
 
     DBUG_RETURN (ret_node);

@@ -1437,7 +1437,7 @@ WLTRAallStridesAreConstant (node *wlnode, bool trav_cont, bool trav_nextdim)
             break;
 
         default:
-            DBUG_ASSERT (0, "illegal stride/grid node found!");
+            DBUG_UNREACHABLE ("illegal stride/grid node found!");
             break;
         }
     }
@@ -1661,7 +1661,7 @@ CompareWlNode (node *node1, node *node2, bool outline)
 
             default:
                 result = 0;
-                DBUG_ASSERT (0, "wrong node type");
+                DBUG_UNREACHABLE ("wrong node type");
                 break;
             }
 
@@ -2044,7 +2044,7 @@ GetLcmUnroll (node *nodes, int dim, bool include_blocks)
                 break;
 
             default:
-                DBUG_ASSERT (0, "wrong node type");
+                DBUG_UNREACHABLE ("wrong node type");
                 break;
             }
         }
@@ -2160,7 +2160,7 @@ GenerateNodeForGap (node *wlnode, node *bound1, node *bound2, bool is_noop)
             break;
 
         default:
-            DBUG_ASSERT (0, "illegal node type found!");
+            DBUG_UNREACHABLE ("illegal node type found!");
             break;
         }
     }
@@ -2400,7 +2400,7 @@ GetWlIterShape (node *wl, node *res_ids)
             break;
 
         default:
-            DBUG_ASSERT (FALSE, "non initialised WithopType found.");
+            DBUG_UNREACHABLE ("non initialised WithopType found.");
             break;
         }
 
@@ -3221,13 +3221,11 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                  *         of 'ComputeCubes()' !!!
                  */
 
-                DBUG_ASSERT (0,
-                             "must resign:"
-                             " intersection of outline(stride1) and outline(stride2) is"
-                             " non-empty, while intersection of outline(stride1) and "
-                             "stride2,"
-                             " or intersection of stride1 and outline(stride2) is empty "
-                             ":-(");
+                DBUG_UNREACHABLE (
+                  "must resign:"
+                  " intersection of outline(stride1) and outline(stride2) is"
+                  " non-empty, while intersection of outline(stride1) and stride2,"
+                  " or intersection of stride1 and outline(stride2) is empty :-(");
             }
 
             /* intersect 'stride1' with the outline of 'stride2' */
@@ -4640,7 +4638,7 @@ BlockWl (node *stride, int iter_dims, node *bv, bool unroll)
              * unrolling-blocking is allowed only once after all conventional
              *  blocking!!
              */
-            DBUG_ASSERT (0, "data of unrolling-blocking found while blocking");
+            DBUG_UNREACHABLE ("data of unrolling-blocking found while blocking");
             break;
 
         case N_wlstride:
@@ -4750,7 +4748,7 @@ BlockWl (node *stride, int iter_dims, node *bv, bool unroll)
             break;
 
         default:
-            DBUG_ASSERT (0, "wrong node type");
+            DBUG_UNREACHABLE ("wrong node type");
             break;
         }
     }
@@ -5080,7 +5078,7 @@ MergeWl (node *nodes)
             break;
 
         default:
-            DBUG_ASSERT (0, "wrong node type");
+            DBUG_UNREACHABLE ("wrong node type");
             break;
         }
 
@@ -5205,7 +5203,7 @@ CompareWlTrees (node *tree1, node *tree2)
                     break;
 
                 default:
-                    DBUG_ASSERT (0, "wrong node type");
+                    DBUG_UNREACHABLE ("wrong node type");
                     break;
                 }
             } else {
@@ -5307,7 +5305,7 @@ OptWl (node *nodes)
 
         default:
             cont1 = nextdim1 = NULL;
-            DBUG_ASSERT (0, "wrong node type");
+            DBUG_UNREACHABLE ("wrong node type");
             break;
         }
 
@@ -5570,7 +5568,7 @@ FitWl (node *wlnode)
 
         default:
             unroll = 0;
-            DBUG_ASSERT (0, "wrong node type");
+            DBUG_UNREACHABLE ("wrong node type");
             break;
         }
 
@@ -5751,7 +5749,7 @@ DoNormalize (node *nodes, node *width)
                 break;
 
             default:
-                DBUG_ASSERT (0, "wrong node type");
+                DBUG_UNREACHABLE ("wrong node type");
                 break;
             }
 
@@ -6035,7 +6033,7 @@ InsertNoopNodes (node *wlnode)
             break;
 
         default:
-            DBUG_ASSERT (0, "illegal node type found!");
+            DBUG_UNREACHABLE ("illegal node type found!");
             is_noop = FALSE;
             break;
         }
@@ -6139,7 +6137,7 @@ ComputeIndexMinMax (node *wlseg, shape *iter_shp, node *wlnode)
             break;
 
         default:
-            DBUG_ASSERT (0, "illegal node type found!");
+            DBUG_UNREACHABLE ("illegal node type found!");
             dim = (-1);
             min = max = NULL;
             break;
@@ -6309,7 +6307,7 @@ IsHomSV (node *nodes, int dim, int sv, bool include_blocks)
                 break;
 
             default:
-                DBUG_ASSERT (0, "wrong node type");
+                DBUG_UNREACHABLE ("wrong node type");
                 break;
             }
         }
@@ -6464,7 +6462,7 @@ InferFitted (node *wlnode)
             break;
 
         default:
-            DBUG_ASSERT (0, "wrong node type found!");
+            DBUG_UNREACHABLE ("wrong node type found!");
             break;
         }
     }
@@ -6855,7 +6853,7 @@ CheckWith (node *arg_node, node *res_ids)
             break;
 
         default:
-            DBUG_ASSERT (0, "illegal WITHOP_TYPE found");
+            DBUG_UNREACHABLE ("illegal WITHOP_TYPE found");
         }
 
         cexprs = EXPRS_NEXT (cexprs);
@@ -6953,7 +6951,7 @@ WLTRAwith (node *arg_node, info *arg_info)
              * because with-loops with empty iteration space are not fused
              */
             DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
-            DBUG_ASSERT (FALSE, "with-loop with empty iteration space found!\n");
+            DBUG_UNREACHABLE ("with-loop with empty iteration space found!\n");
         } else {
             node *cubes = NULL;
             node *segs = NULL;

@@ -285,7 +285,7 @@ AltPrf (prf op)
         break;
     default:
         res = F_noop;
-        DBUG_ASSERT (FALSE, "We should never get here.");
+        DBUG_UNREACHABLE ("We should never get here.");
     }
 
     DBUG_RETURN (res);
@@ -716,7 +716,7 @@ getPrf (prf prf, node *e1, node *e2)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "Illegal prf!");
+        DBUG_UNREACHABLE ("Illegal prf!");
     }
 
     DBUG_RETURN (prf);
@@ -1059,7 +1059,7 @@ ALassign (node *arg_node, info *arg_info)
             INFO_MODE (arg_info) = MODE_transform;
             break;
         default:
-            DBUG_ASSERT (FALSE, "Illegal mode encountered at end of assign chain.");
+            DBUG_UNREACHABLE ("Illegal mode encountered at end of assign chain.");
             break;
         }
         DBUG_PRINT ("Reaching end of assignment chain, new mode %d",

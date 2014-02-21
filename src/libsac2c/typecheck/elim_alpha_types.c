@@ -425,7 +425,7 @@ EATarray (node *arg_node, info *arg_info)
             if (!TYleTypes (elemtype, arrayelem)) {
                 DBUG_PRINT ("new element type of array does not match old type of LHS!",
                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-                DBUG_ASSERT (FALSE, "new element type of array does not match old type!");
+                DBUG_UNREACHABLE ("new element type of array does not match old type!");
             }
         }
 #endif

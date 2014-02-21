@@ -1080,7 +1080,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
                             nprf = F_add_SxS;
                             id1 = NULL;
                             id2 = NULL;
-                            DBUG_ASSERT (FALSE, "ivarg confusion");
+                            DBUG_UNREACHABLE ("ivarg confusion");
                         }
 
                         ids = TBmakeIds (resavis, NULL);
@@ -1154,11 +1154,11 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
             case N_array:
                 DBUG_ASSERT (1 == SHgetUnrLen (ARRAY_FRAMESHAPE (idx)),
                              "Expected 1-element N_array");
-                DBUG_ASSERT (FALSE, "We are confused");
+                DBUG_UNREACHABLE ("We are confused");
                 break;
 
             default:
-                DBUG_ASSERT (FALSE, "Cannot chase iv'");
+                DBUG_UNREACHABLE ("Cannot chase iv'");
                 break;
             }
         }
@@ -2358,7 +2358,7 @@ AWLFIisSingleOpWL (node *arg_node)
     switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
     default:
         z = FALSE;
-        DBUG_ASSERT (FALSE, "WITHOP confusion");
+        DBUG_UNREACHABLE ("WITHOP confusion");
         break;
     case N_genarray:
         z = (NULL == GENARRAY_NEXT (WITH_WITHOP (arg_node)));

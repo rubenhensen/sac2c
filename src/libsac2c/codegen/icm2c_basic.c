@@ -413,7 +413,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -578,8 +578,8 @@ ReadConstArray_Str (void *v, char *idx_str, int idx)
     DBUG_ENTER ();
 
     if (idx_str != NULL) {
-        DBUG_ASSERT (0, "illegal argument for "
-                        "ReadConstArray_Str() found!");
+        DBUG_UNREACHABLE ("illegal argument for "
+                          "ReadConstArray_Str() found!");
     } else {
         DBUG_ASSERT (idx >= 0, "illegal index for "
                                "ReadConstArray_Str() found!");

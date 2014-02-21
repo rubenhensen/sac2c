@@ -86,7 +86,7 @@ ICMCompileND_PRF_SHAPE_A__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -261,7 +261,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_id (char *to_NT, int to_sdim, char *from_NT,
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -360,7 +360,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT,
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -1003,11 +1003,11 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
         /*
          * F_idx_sel works only for arrays with known dimension!
          */
-        DBUG_ASSERT (0, "F_idx_sel with unknown dimension found!");
+        DBUG_UNREACHABLE ("F_idx_sel with unknown dimension found!");
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 

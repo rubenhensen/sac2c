@@ -1469,7 +1469,7 @@ DUPblock (node *arg_node, info *arg_info)
             } else if (N_num == NODE_TYPE (AVIS_DIM (avis))) {
                 AVIS_DIM (avis) = DUPCONT (AVIS_DIM (avis));
             } else {
-                DBUG_ASSERT (FALSE, "found oddball AVIS_DIM node type");
+                DBUG_UNREACHABLE ("found oddball AVIS_DIM node type");
             }
         }
 
@@ -1488,7 +1488,7 @@ DUPblock (node *arg_node, info *arg_info)
             } else if (N_array == NODE_TYPE (AVIS_SHAPE (avis))) {
                 AVIS_SHAPE (avis) = DUPCONT (AVIS_SHAPE (avis));
             } else {
-                DBUG_ASSERT (FALSE, "found oddball AVIS_SHAPE node type");
+                DBUG_UNREACHABLE ("found oddball AVIS_SHAPE node type");
             }
         }
 
@@ -1508,7 +1508,7 @@ DUPblock (node *arg_node, info *arg_info)
             } else if (N_array == NODE_TYPE (AVIS_SCALARS (avis))) {
                 AVIS_SCALARS (avis) = DUPCONT (AVIS_SCALARS (avis));
             } else {
-                DBUG_ASSERT (FALSE, "found oddball AVIS_SCALARS node type");
+                DBUG_UNREACHABLE ("found oddball AVIS_SCALARS node type");
             }
         }
         /* AVIS_MIN and AVIS_MAX are restricted to N_id nodes, but
@@ -1530,7 +1530,7 @@ DUPblock (node *arg_node, info *arg_info)
             } else if (N_array == NODE_TYPE (AVIS_MIN (avis))) {
                 AVIS_MIN (avis) = DUPCONT (AVIS_MIN (avis));
             } else {
-                DBUG_ASSERT (FALSE, "found oddball AVIS_MIN node type");
+                DBUG_UNREACHABLE ("found oddball AVIS_MIN node type");
             }
         }
 
@@ -1549,7 +1549,7 @@ DUPblock (node *arg_node, info *arg_info)
             } else if (N_array == NODE_TYPE (AVIS_MAX (avis))) {
                 AVIS_MAX (avis) = DUPCONT (AVIS_MAX (avis));
             } else {
-                DBUG_ASSERT (FALSE, "found oddball AVIS_MAX node type");
+                DBUG_UNREACHABLE ("found oddball AVIS_MAX node type");
             }
         }
 
@@ -2142,7 +2142,7 @@ DUPdataflowgraph (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (FALSE, "DUPdataflowgraph until now not implemented!! :-(");
+    DBUG_UNREACHABLE ("DUPdataflowgraph until now not implemented!! :-(");
     DBUG_RETURN ((node *)NULL);
 }
 
@@ -2153,7 +2153,7 @@ DUPdataflownode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (FALSE, "DUPdataflownode until now not implemented!! :-(");
+    DBUG_UNREACHABLE ("DUPdataflownode until now not implemented!! :-(");
 
     DBUG_RETURN ((node *)NULL);
 }

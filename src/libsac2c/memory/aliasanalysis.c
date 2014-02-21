@@ -309,7 +309,7 @@ EMAAarg (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal context!");
+        DBUG_UNREACHABLE ("Illegal context!");
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -649,7 +649,7 @@ EMAAid (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal context");
+        DBUG_UNREACHABLE ("Illegal context");
         break;
     }
 

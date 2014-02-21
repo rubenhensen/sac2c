@@ -91,7 +91,7 @@ MatchScalar (ntype *type)
         res = TRUE;
         break;
     default:
-        DBUG_ASSERT (FALSE, "MatchScalar applied to non-array type");
+        DBUG_UNREACHABLE ("MatchScalar applied to non-array type");
         res = FALSE; /* just to please gcc 8-) */
     }
 
@@ -115,7 +115,7 @@ MatchVect (ntype *type)
         res = TRUE;
         break;
     default:
-        DBUG_ASSERT (FALSE, "MatchVect applied to non-array type");
+        DBUG_UNREACHABLE ("MatchVect applied to non-array type");
     }
 
     DBUG_RETURN (res);
@@ -140,7 +140,7 @@ MatchVectLengthOne (ntype *type)
         res = TRUE;
         break;
     default:
-        DBUG_ASSERT (FALSE, "MatchVect applied to non-array type");
+        DBUG_UNREACHABLE ("MatchVect applied to non-array type");
     }
 
     DBUG_RETURN (res);
@@ -386,7 +386,7 @@ TEgetNumRets (te_info *info)
         num_res = 1;
         break;
     default:
-        DBUG_ASSERT (FALSE, "illegal TI_KIND in info!");
+        DBUG_UNREACHABLE ("illegal TI_KIND in info!");
         num_res = 0; /* just to please gcc 8-) */
         break;
     }
@@ -1530,7 +1530,7 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
             res = TYcopyType (type1);
             break;
         default:
-            DBUG_ASSERT (FALSE, "AssureSameShape applied to non-array type");
+            DBUG_UNREACHABLE ("AssureSameShape applied to non-array type");
         }
         break;
 
@@ -1551,7 +1551,7 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
             res = TYcopyType (type1);
             break;
         default:
-            DBUG_ASSERT (FALSE, "AssureSameShape applied to non-array type");
+            DBUG_UNREACHABLE ("AssureSameShape applied to non-array type");
         }
         break;
 
@@ -1568,7 +1568,7 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
             res = TYcopyType (type1);
             break;
         default:
-            DBUG_ASSERT (FALSE, "AssureSameShape applied to non-array type");
+            DBUG_UNREACHABLE ("AssureSameShape applied to non-array type");
         }
         break;
 
@@ -1577,7 +1577,7 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "AssureSameShape applied to non-array type");
+        DBUG_UNREACHABLE ("AssureSameShape applied to non-array type");
     }
 
     if (pend1 != NULL) {

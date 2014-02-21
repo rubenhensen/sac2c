@@ -480,7 +480,7 @@ TULSisFullGenerator (node *generator, node *op)
     case N_spfold:
     case N_break:
         z = FALSE;
-        DBUG_ASSERT (FALSE, "Should not exist here.");
+        DBUG_UNREACHABLE ("Should not exist here.");
         break;
 
     case N_fold:
