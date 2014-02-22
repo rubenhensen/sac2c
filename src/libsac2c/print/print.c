@@ -2020,9 +2020,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 node *
 PRTfundef (node *arg_node, info *arg_info)
 {
-#ifndef DBUG_OFF
     int old_indent = global.indent;
-#endif
 
     bool is_userdefined_function = FALSE;
 
@@ -2685,9 +2683,7 @@ PRTvardec (node *arg_node, info *arg_info)
 node *
 PRTblock (node *arg_node, info *arg_info)
 {
-#ifndef DBUG_OFF
     int old_indent = global.indent;
-#endif
 
     DBUG_ENTER ();
 

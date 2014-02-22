@@ -2264,7 +2264,7 @@ FillGapSucc (node **new_node, /* a return value!! */
  *
  ******************************************************************************/
 
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
 static int stop = 0;
 
 /*
@@ -2324,7 +2324,7 @@ CheckWithids (node *part)
     DBUG_RETURN (res);
 }
 
-#endif /* ! DBUG_OFF */
+#endif /* ! NO_DEBUGGING */
 
 /**
  **
@@ -2724,7 +2724,7 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
  ******************************************************************************
  ******************************************************************************/
 
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
 /******************************************************************************
  ******************************************************************************
  **
@@ -6518,7 +6518,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("split", stop = 1;);
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
         if (stop == 1) {
             stop = 0;
             goto DONE;
@@ -6548,7 +6548,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("block", stop = 1;);
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
         if (stop == 1) {
             stop = 0;
             goto DONE;
@@ -6572,7 +6572,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("ublock", stop = 1;);
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
         if (stop == 1) {
             stop = 0;
             goto DONE;
@@ -6595,7 +6595,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("merge", stop = 1;);
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
         if (stop == 1) {
             stop = 0;
             goto DONE;
@@ -6618,7 +6618,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("opt", stop = 1;);
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
         if (stop == 1) {
             stop = 0;
             goto DONE;
@@ -6641,7 +6641,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("fit", stop = 1;);
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
         if (stop == 1) {
             stop = 0;
             goto DONE;
@@ -6665,7 +6665,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         }
 #else
         DBUG_EXECUTE_TAG ("norm", stop = 1;);
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
         if (stop == 1) {
             stop = 0;
             goto DONE;
@@ -6687,7 +6687,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 
 #else
         DBUG_EXECUTE_TAG ("fill2", stop = 1;);
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
         if (stop == 1) {
             stop = 0;
             goto DONE;
@@ -6695,7 +6695,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 #endif
 #endif
 
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
     DONE:
 #endif
 
@@ -6989,7 +6989,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             }
 #else
             DBUG_EXECUTE_TAG ("conv", stop = 1;);
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
             if (stop == 1) {
                 stop = 0;
                 goto DONE;
@@ -7011,7 +7011,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             }
 #else
             DBUG_EXECUTE_TAG ("cubes", stop = 1;);
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
             if (stop == 1) {
                 stop = 0;
                 goto DONE;
@@ -7036,7 +7036,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             }
 #else
             DBUG_EXECUTE_TAG ("fill1", stop = 1;);
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
             if (stop == 1) {
                 stop = 0;
                 goto DONE;
@@ -7075,7 +7075,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             }
 #else
             DBUG_EXECUTE_TAG ("segs", stop = 1;);
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
             if (stop == 1) {
                 stop = 0;
                 goto DONE;
@@ -7088,7 +7088,7 @@ WLTRAwith (node *arg_node, info *arg_info)
              */
             segs = ProcessSegments (segs, iter_dims, iter_shp, do_naive_comp);
 
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
         DONE:
 #endif
 

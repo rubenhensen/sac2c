@@ -2399,8 +2399,6 @@ MakeFPAp (node *let, node *icm, info *arg_info)
     DBUG_RETURN (assign);
 }
 
-#ifndef DBUG_OFF
-
 /** <!--********************************************************************-->
  *
  * @fn  bool CheckAp( node *ap, info *arg_info)
@@ -2453,8 +2451,6 @@ CheckAp (node *ap, info *arg_info)
 
     DBUG_RETURN (ok);
 }
-
-#endif
 
 /** <!--********************************************************************-->
  *

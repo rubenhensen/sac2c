@@ -439,17 +439,14 @@ ntype *
 TUtype2alphaAUDMax (ntype *type)
 {
     ntype *xnew, *scalar;
-#ifndef DBUG_OFF
-    tvar *tv;
-#endif
 
     DBUG_ENTER ();
 
     if (TYisAlpha (type)) {
         xnew = TYcopyType (type);
-#ifndef DBUG_OFF
-        tv = TYgetAlpha (type);
-#endif
+
+        tvar *tv = TYgetAlpha (type);
+
         DBUG_ASSERT (SSIgetMax (tv) != NULL,
                      "trying to TUtype2alphaAUDMax alpha without max!");
         DBUG_ASSERT (TYisAUD (SSIgetMax (tv)),

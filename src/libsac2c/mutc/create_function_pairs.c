@@ -59,6 +59,7 @@
 #include "tree_basic.h"
 #include "memory.h"
 #include "DupTree.h"
+#include "globals.h"
 
 /** <!--********************************************************************-->
  *

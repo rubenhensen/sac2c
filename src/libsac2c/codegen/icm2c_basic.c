@@ -436,10 +436,8 @@ WriteScalar (char *scl)
     DBUG_ENTER ();
 
     if (scl[0] == '(') {
-/* 'scl' is a tagged id */
-#ifndef DBUG_OFF
+        /* 'scl' is a tagged id */
         shape_class_t dc = ICUGetShapeClass (scl);
-#endif
 
         DBUG_ASSERT (dc == C_scl || dc == C_aud, "tagged id is no scalar!");
         out ("SAC_ND_WRITE( %s, 0)", scl);
@@ -499,10 +497,8 @@ ReadScalar (void *scl, char *idx_str, int idx)
                 idx);
 
     if (((char *)scl)[0] == '(') {
-/* 'scl' is a tagged id */
-#ifndef DBUG_OFF
+        /* 'scl' is a tagged id */
         shape_class_t sc = ICUGetShapeClass ((char *)scl);
-#endif
 
         DBUG_ASSERT (sc == C_scl || sc == C_aud, "tagged id is no scalar!");
         ReadId (scl, idx_str, idx);

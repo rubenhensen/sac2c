@@ -1470,9 +1470,8 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_NT, int to_sdim, int dim, int *shp,
 {
     bool entries_are_scalars;
     int i;
-#ifndef DBUG_OFF
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
-#endif
+
     int val0_dim = DIM_NO_OFFSET (val0_sdim);
 
     DBUG_ENTER ();
