@@ -631,6 +631,37 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
 
 /** <!--********************************************************************-->
  *
+ * @fn static void CopyWithPragma(...)
+ *
+ * @brief If the producer-WL has a WITH_PRAGMA, and the consumer-WL does not,
+ *        copy the pwl pragma to the cwl.
+ *
+ *        We introduced this for ~/sac/demos/applications/numerical/misc/matmul.sac.
+ *        When modified to do sum(matmul()), the pragma on the matmul
+ *        was lost. This is an attempt to propagate it into the cwl.
+ *
+ * @params pwl: producer N_with
+ *         cwl: consumer N_with
+
+ * @result:  none. Side effect on cwl N_with
+ *
+ *****************************************************************************/
+static void
+CopyWithPragma (node *pwl, node *cwl)
+{
+
+    DBUG_ENTER ();
+
+    if ((NULL != pwl) && (NULL != cwl) && (NULL == WITH_PRAGMA (cwl))
+        && (NULL != WITH_PRAGMA (pwl))) {
+        WITH_PRAGMA (cwl) = DUPdoDupNode (WITH_PRAGMA (pwl));
+    }
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *AWLFperformFold( ... )
  *
  * @brief
@@ -663,14 +694,22 @@ AWLFperformFold (node *arg_node, node *producerWLPart, info *arg_info)
     node *newsel;
     node *idxassigns;
     node *cellexpr;
+    node *pwl;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Replacing code block in CWL=%s",
                 AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_ASSIGN (arg_info))))));
 
-    /* Generate iv=[i,j] assigns, then do renames. */
     arg_node = BypassNoteintersect (arg_node);
+
+    pwl = AWLFIfindWlId (PRF_ARG2 (LET_EXPR (ASSIGN_STMT (arg_node))));
+    if (NULL != pwl) {
+        pwl = AWLFIfindWL (pwl); /* Now the N_with */
+    }
+
+    CopyWithPragma (pwl, LET_EXPR (INFO_LET (arg_info)));
+    /* Generate iv=[i,j] assigns, then do renames. */
     idxassigns = makeIdxAssigns (arg_node, arg_info, producerWLPart);
 
     cellexpr = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (producerWLPart))));
