@@ -813,7 +813,13 @@ SAC_MT_PTH_SetupStandalone (int num_schedulers)
 struct sac_bee_common_t *
 SAC_MT_CurrentBee ()
 {
-    return &SAC_MT_PTH_determine_self ()->c;
+    struct sac_bee_pth_t *bee = SAC_MT_PTH_determine_self ();
+
+    if (bee == NULL) {
+        return NULL;
+    } else {
+        return &bee->c;
+    }
 }
 
 /******************************************************************************
@@ -831,9 +837,15 @@ unsigned int
 SAC_MT_Internal_CurrentThreadId (void)
 {
     if (SAC_MT_globally_single) {
-        return 0;
+        return SAC_RTSPEC_CurrentThreadId ();
     } else {
-        return SAC_MT_CurrentBee ()->thread_id;
+        struct sac_bee_common_t *bee = SAC_MT_CurrentBee ();
+
+        if (bee == NULL) {
+            return SAC_RTSPEC_CurrentThreadId ();
+        } else {
+            return SAC_MT_CurrentBee ()->thread_id;
+        }
     }
 }
 

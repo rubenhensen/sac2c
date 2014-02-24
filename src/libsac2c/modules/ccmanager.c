@@ -195,11 +195,11 @@ AddPhmLib (str_buf *buffer)
         SBUFprint (buffer, "-lsacphm");
         SBUFprint (buffer, global.config.lib_variant);
 
-        if ((global.mtmode == MT_none) && (global.backend != BE_omp)) {
+        if ((global.mtmode == MT_none) && (global.backend != BE_omp) && !global.rtspec) {
             SBUFprint (buffer, ".seq");
         } else {
             /* multithreaded */
-            if (global.tool == TOOL_sac2c) {
+            if (global.tool == TOOL_sac2c || global.rtspec) {
                 /* standalone; classical mt phm */
                 SBUFprint (buffer, ".mt");
             } else {

@@ -107,7 +107,7 @@ extern void *memcpy (void *dest, const void *src, size_t n);
 
 #define SAC_MT_GLOBAL_THREADS() SAC_SET_THREADS
 
-#define SAC_MT_HM_AUX_THREADS() 0
+#define SAC_HM_RTSPEC_THREADS() SAC_RTSPEC_controller_threads
 
 #else /* SAC_DO_THREADS_STATIC */
 
@@ -119,16 +119,15 @@ extern void *memcpy (void *dest, const void *src, size_t n);
 // #define SAC_MT_THREADS()
 #define SAC_MT_GLOBAL_THREADS() SAC_MT_global_threads
 
-#define SAC_MT_HM_AUX_THREADS() SAC_MT_hm_aux_threads
+#define SAC_HM_RTSPEC_THREADS() SAC_RTSPEC_controller_threads
 
 #endif /* SAC_DO_THREADS_STATIC */
 
 /* number of total threads in the environment */
 SAC_C_EXTERN unsigned int SAC_MT_global_threads;
 
-/* number of additional hidden (auxiliary) threads that the
- * heap manager has to deal with */
-SAC_C_EXTERN unsigned int SAC_MT_hm_aux_threads;
+/* number of runtime specialization controller threads in the environment */
+SAC_C_EXTERN unsigned int SAC_RTSPEC_controller_threads;
 
 /* Only a single thread in the environment?
  * Used for PHM optimizations.
@@ -149,12 +148,17 @@ SAC_C_EXTERN unsigned int SAC_MT_Internal_CurrentThreadId (void);
 /* only a single thread in the environment? */
 SAC_C_EXTERN unsigned int SAC_MT_globally_single;
 
+/* number of runtime specialization controller threads in the environment */
+SAC_C_EXTERN unsigned int SAC_RTSPEC_controller_threads;
+
 /***
  ***   Definitions and declarations for sequential execution (dummies)
  ***/
 
 /* total number of threads in the environment */
 #define SAC_MT_GLOBAL_THREADS() 1
+
+#define SAC_HM_RTSPEC_THREADS() SAC_RTSPEC_controller_threads
 
 #define SAC_MT_SETUP()
 #define SAC_MT_SETUP_INITIAL()

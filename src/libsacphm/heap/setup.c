@@ -25,8 +25,6 @@
  * Heap management configuration data.
  */
 
-#ifdef MT
-
 static const SAC_HM_size_unit_t min_chunk_size[]
   = {SAC_HM_ARENA_0_MINCS, SAC_HM_ARENA_1_MINCS, SAC_HM_ARENA_2_MINCS,
      SAC_HM_ARENA_3_MINCS, SAC_HM_ARENA_4_MINCS, SAC_HM_ARENA_5_MINCS,
@@ -38,8 +36,6 @@ static const SAC_HM_size_unit_t binsize[]
      SAC_HM_ARENA_6_BINSIZE, SAC_HM_ARENA_7_BINSIZE, SAC_HM_ARENA_8_BINSIZE};
 
 void SAC_HM_SetupWorkers (unsigned int num_threads);
-
-#endif
 
 /*
  * Configuration variables for heap setup.
@@ -222,8 +218,6 @@ SAC_HM_SetupMaster ()
  *
  ******************************************************************************/
 
-#ifdef MT
-
 void
 SAC_HM_SetupWorkers (unsigned int num_threads)
 {
@@ -303,8 +297,6 @@ SAC_HM_SetupWorkers (unsigned int num_threads)
     }
 }
 
-#endif /* MT */
-
 #ifndef DIAG
 
 /*
@@ -339,16 +331,14 @@ SAC_HM_Setup (unsigned int threads)
       "    Statically configured for %d threads.",
       SAC_HM_ASSUME_THREADS_MAX);
 
-#else /* SAC_DO_HM_AUTONOMOUS */
+#else  /* SAC_DO_HM_AUTONOMOUS */
     /* normal code */
     if (SAC_HM_GetInitialized ()) {
         SAC_HM_SetupMaster ();
     }
 
-#ifdef MT
-    if (threads) {
+    if (threads > 1) {
         SAC_HM_SetupWorkers (threads);
     }
-#endif /* MT */
 #endif /* SAC_DO_HM_AUTONOMOUS */
 }

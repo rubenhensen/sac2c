@@ -18,7 +18,10 @@ typedef struct list {
     struct list *next;
 } list_t;
 
-extern void SAC_setupController (char *dir, int trace);
+extern void SAC_RTSPEC_SetupInitial (int argc, char *argv[], unsigned int num_threads,
+                                     int trace);
+
+extern void SAC_setupController (char *dir);
 
 extern void *SAC_runController (void);
 
