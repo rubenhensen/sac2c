@@ -32,6 +32,8 @@
         SAC_finalizeController ();                                                       \
     }
 
+#define SAC_RTSPEC_CURRENT_THREAD_ID() SAC_RTSPEC_CurrentThreadId ();
+
 /*
  * Wrapper entry begin
  */
@@ -165,5 +167,7 @@
 #define SAC_RTSPEC_SETUP()
 #define SAC_RTSPEC_SETUP_INITIAL()
 #define SAC_RTSPEC_FINALIZE()
+
+#define SAC_RTSPEC_CURRENT_THREAD_ID() 0;
 
 #endif /* SAC_DO_RTSPEC */

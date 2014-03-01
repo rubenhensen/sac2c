@@ -146,6 +146,8 @@ SAC_COMMON_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 #else /* MT */
 /* !MT */
 
+#include "sac.h"
+
 /******************************************************************************
  * function:
  *   unsigned int SAC_MT_Internal_CurrentThreadId(void)
@@ -158,7 +160,7 @@ unsigned int
 SAC_MT_Internal_CurrentThreadId (void)
 {
     /* this actually won't be used, but satisfy the linker */
-    return SAC_RTSPEC_CurrentThreadId ();
+    return SAC_RTSPEC_CURRENT_THREAD_ID ();
 }
 
 /* global (maximal) number of threads in the environment */
