@@ -758,6 +758,7 @@
         <travuser>
           <node name="Fundef" />
           <node name="Assign" />
+          <node name="Let" />
           <node name="Prf" />
         </travuser>
       </traversal> 
@@ -8699,7 +8700,23 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-
+	<attribute name="PolylibColumnIndex" default="-1" >
+	  <description> 
+	  This is used by PHUTcollectAffineExprs to assign an
+	  origin-1 column number to each distinct name found in
+	  any particular affine expression tree.
+	  </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                 <range name="opt_saacyc_pogo" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>	 
       </attributes>
 
       <flags>
@@ -8915,6 +8932,12 @@ N_tfarg :
 	  argument or result has been scalarized. Its only
 	  function is to prevent us from doing the scalarization
 	  more than once.
+	  </description>
+        </flag>	 
+	<flag name="IsAffineHandled" default="FALSE" >
+	  <description> 
+	  Used by PHUT to mark N_avis nodes whose values have
+	  been traversed.
 	  </description>
         </flag>	 
       </flags>

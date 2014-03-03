@@ -1659,4 +1659,31 @@ TUgetBaseSimpleType (ntype *type)
     DBUG_RETURN (TYgetSimpleType (TYgetScalar (type)));
 }
 
+/** <!-- ****************************************************************** -->
+ *
+ * @fn int TUtype2Int( ntype *ty)
+ *
+ * @brief: Extract integer scalar constant from an AKV integer scalar ntype
+ *
+ * @param: ty: ntype
+ *
+ * @return the integer value
+ *
+ ******************************************************************************/
+int
+TUtype2Int (ntype *ty)
+{
+    int z;
+    constant *con = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (TYisAKV (ty) && TUisIntScalar (ty), "Expected integer scalar constant");
+    con = TYgetValue (ty);
+    z = COconst2Int (con);
+    con = COfreeConstant (con);
+
+    DBUG_RETURN (z);
+}
+
 #undef DBUG_PREFIX

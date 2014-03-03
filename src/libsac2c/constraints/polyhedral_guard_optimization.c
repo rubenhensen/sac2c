@@ -41,6 +41,7 @@
 #include "tree_compound.h"
 #include "polyhedral_guard_optimization.h"
 #include "polyhedral_utilities.h"
+#include "print.h"
 
 /** <!--********************************************************************-->
  *
@@ -98,14 +99,14 @@ FreeInfo (info *info)
  * @{
  *
  *****************************************************************************/
-
+#ifdef CRUD
 /** <!--*******************************************************************-->
  *
  * @fn node *CollectAffineExprs( node *arg_node, info *arg_info)
  *
  *
  *****************************************************************************/
-node *
+static node *
 CollectAffineExprs (node *arg_node, info *arg_info)
 {
     node *exprs = NULL;
@@ -114,6 +115,8 @@ CollectAffineExprs (node *arg_node, info *arg_info)
 
     DBUG_RETURN (exprs);
 }
+
+#endif // CRUD
 
 /** <!--*******************************************************************-->
  *
@@ -197,6 +200,9 @@ POGOprf (node *arg_node, info *arg_info)
 {
     node *exprs1 = NULL;
     node *exprs2 = NULL;
+    node *idlist1 = NULL;
+    node *idlist2 = NULL;
+    int numids;
 
     DBUG_ENTER ();
 
@@ -205,8 +211,39 @@ POGOprf (node *arg_node, info *arg_info)
     case F_val_lt_val_SxS:
         DBUG_PRINT ("Looking at N_prf for %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-        exprs1 = CollectAffineExprs (PRF_ARG1 (arg_node), arg_info);
-        exprs2 = CollectAffineExprs (PRF_ARG2 (arg_node), arg_info);
+
+        PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
+        PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
+
+        idlist1 = PHUTcollectAffineNids (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), 0);
+        numids = TCcountExprs (idlist1);
+
+        idlist2
+          = PHUTcollectAffineNids (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), numids);
+        numids = numids + TCcountExprs (idlist2);
+
+        exprs1
+          = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), numids);
+        exprs2
+          = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), numids);
+
+        PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
+        PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
+
+        if (NULL != idlist1) {
+            PRTdoPrint (idlist1);
+        }
+        if (NULL != exprs1) {
+            PRTdoPrint (exprs1);
+        }
+
+        if (NULL != idlist2) {
+            PRTdoPrint (idlist2);
+        }
+        if (NULL != exprs2) {
+            PRTdoPrint (exprs2);
+        }
+
         break;
 
     default:
