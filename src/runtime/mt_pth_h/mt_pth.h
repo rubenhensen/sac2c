@@ -306,6 +306,9 @@ SAC_C_EXTERN void SAC_MT_SetupAsLibraryInitial (void);
 
 SAC_C_EXTERN unsigned int SAC_Get_CurrentBee_GlobalID (void);
 
+/*  Called from PHM if it does not maintain its own thread ids. */
+SAC_C_EXTERN unsigned int SAC_MT_Internal_CurrentThreadId (void);
+
 #endif /* SAC_DO_MULTITHREAD && SAC_DO_MULTITHREAD && SAC_DO_MT_PTHREAD */
 
 #endif /* SAC_SIMD_COMPILATION */
