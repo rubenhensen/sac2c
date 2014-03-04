@@ -203,6 +203,7 @@ POGOprf (node *arg_node, info *arg_info)
     node *idlist1 = NULL;
     node *idlist2 = NULL;
     int numids;
+    bool z;
 
     DBUG_ENTER ();
 
@@ -227,21 +228,22 @@ POGOprf (node *arg_node, info *arg_info)
         exprs2
           = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), numids);
 
+        idlist1 = TCappendExprs (idlist1, idlist2);
+        exprs1 = TCappendExprs (exprs1, exprs2);
+        // FIXMEfixexprs2;
+        z = PHUTcheckIntersection (exprs1, exprs2, idlist1);
+
         PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
         PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
 
         if (NULL != idlist1) {
             PRTdoPrint (idlist1);
-        }
-        if (NULL != exprs1) {
-            PRTdoPrint (exprs1);
+            idlist1 = FREEdoFreeTree (idlist1);
         }
 
-        if (NULL != idlist2) {
-            PRTdoPrint (idlist2);
-        }
-        if (NULL != exprs2) {
-            PRTdoPrint (exprs2);
+        if (NULL != exprs1) {
+            PRTdoPrint (exprs1);
+            exprs1 = FREEdoFreeTree (exprs1);
         }
 
         break;

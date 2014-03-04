@@ -35,10 +35,9 @@
 #include "DupTree.h"
 #include "polyhedral_utilities.h"
 #include "print.h"
-
-#ifdef UNDERCONSTRUCTION
-#include "/usr/local/include/polylib/polyhedron.h"
-#endif // UNDERCONSTRUCTION
+#include "system.h"
+#include "filemgr.h"
+#include "sys/param.h"
 
 /** <!--********************************************************************-->
  *
@@ -173,13 +172,14 @@ GenerateZeroExprs (int polylibcols, int relat)
  *
  * @fn node *AddValueToColumn()
  *
- * @brief Perform matrix[ col] = val, where col is a previously assigned
+ * @brief Perform matrix[ col]+ = incr, where col is a previously assigned
  *        column index in the arg_node's N_avis. If col is -1, then
- *        the arg_node is a constant, and we assign the constant's value
- *        to the last column of matrix;
+ *        the arg_node is a constant, and we add the constant's value,
+ *        times incr, to the last column of matrix;
  *
  * @param arg_node: An N_id node or an N_ids node
- *        val: The value to be set for non-constants
+ *        incr: The value to be added for non-constants, or the multiplier for
+ *              constants.
  *        matrix: The N_exprs chain row of interest
  *        arg_info: as usual.
  *
@@ -187,7 +187,7 @@ GenerateZeroExprs (int polylibcols, int relat)
  *
  ******************************************************************************/
 static node *
-AddValueToColumn (node *arg_node, int val, node *matrix, info *arg_info)
+AddValueToColumn (node *arg_node, int incr, node *matrix, info *arg_info)
 {
     node *z = NULL;
     int col;
@@ -205,12 +205,12 @@ AddValueToColumn (node *arg_node, int val, node *matrix, info *arg_info)
     col = AVIS_POLYLIBCOLUMNINDEX (avis);
     if (-1 == col) {
         DBUG_ASSERT (TYisAKV (AVIS_TYPE (avis)), "Failure to assign column index");
-        val = val * TUtype2Int (AVIS_TYPE (avis));
+        incr = incr * TUtype2Int (AVIS_TYPE (avis));
         col = 1 + INFO_POLYLIBNUMIDS (arg_info); // The (last) column, for constants
     }
 
-    val = val + NUM_VAL (TCgetNthExprsExpr (col, matrix));
-    z = TCputNthExprs (col, matrix, TBmakeNum (val));
+    incr = incr + NUM_VAL (TCgetNthExprsExpr (col, matrix));
+    z = TCputNthExprs (col, matrix, TBmakeNum (incr));
 
     CheckExprsChain (z, arg_info);
 
@@ -315,86 +315,74 @@ collectAvisMax (node *arg_node, info *arg_info)
     DBUG_RETURN (z);
 }
 
-#ifdef UNDERCONSTRUCTION
 /** <!-- ****************************************************************** -->
- * @fn Matrix *PHUTcreateMatrix( unsigned rows, unsigned cols, int[] vals)
+ * @fn void ( node *exprs, node *idlist)
  *
- * @brief Create polylib matrix of shape [rows, cols], with ravel
- *        values of vals.
+ * @brief Append  one polyhedron to polylib input file, from exprs and idlist
  *
- * @param See above.
+ * @param handle: output file handle
+ * @param exprs: N_exprs chain of N_num nodes to be appended
+ * @param idlist N_exprs chain of N_id nodes
  *
- * @return The new Matrix
+ * @return void
  *
  ******************************************************************************/
-Matrix *
-PHUTcreateMatrix (unsigned rows, unsigned cols, int[] vals)
+static void
+Exprs2File (FILE *handle, node *exprs, node *idlist)
 {
-    Matrix *m;
-    unsigned i, j, indx;
+    int i;
+    int j;
+    int rows;
+    int cols;
+    int indx;
+    int val;
+    char *id;
+    node *avis;
 
     DBUG_ENTER ();
 
-    m = Matrix_Alloc (rows, cols);
+    cols = TCcountExprs (idlist);
+    cols = cols + 2; // polylib function column and constants column
+    rows = TCcountExprs (exprs) / cols;
+    DBUG_PRINT ("Writing %d rows and %d columns", rows, cols);
+
+    fprintf (handle, "%d %d\n", rows, cols); // polyhedron descriptor
 
     for (i = 0; i < rows; i++) {
+
+        // human-readable form
+        fprintf (handle, "#  ");
+        for (j = 1; j < cols - 1; j++) {
+            indx = j + (cols * i);
+            val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
+            avis = ID_AVIS (TCgetNthExprsExpr (j - 1, idlist));
+            id = AVIS_NAME (avis);
+            DBUG_ASSERT (j == AVIS_POLYLIBCOLUMNINDEX (avis), "column index confusion");
+            if (0 != val) {
+                fprintf (handle, "(%d*%s) + ", val, id);
+            }
+
+            // The constant
+            val = NUM_VAL (TCgetNthExprsExpr (((cols - 1) + (cols * i)), exprs));
+            if (0 != val) {
+                fprintf (handle, "(%d) ", val);
+            }
+
+            // The relational
+            val = NUM_VAL (TCgetNthExprsExpr ((cols * i), exprs));
+            fprintf (handle, "%s\n", (0 == val) ? "== 0" : ">= 0");
+        }
+
+        // machine-readable form
         for (j = 0; j < cols; j++) {
             indx = j + (cols * i);
-            value_assign (m->p[i][j], vals[indx]);
+            val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
+            fprintf (handle, "%d ", val);
         }
+        fprintf (handle, "\n"); // make reading easier
     }
 
-    DBUG_RETURN (z);
-}
-#endif // UNDERCONSTRUCTION
-
-/** <!-- ****************************************************************** -->
- * @fn node *PHUTnormalizeAffineExprs( node *exprs)
- *
- * @brief From an N_exprs chain of affine expressions,
- *        generate a normalized N_exprs chain suitable for
- *        input to polylib.
- *
- *        The transformations made are as follows, to bring
- *        into the polylib canonical input format:
- *
- *          AVIS_MIN( z) = mn;   --->    z >= mn
- *                                       ( z - mn) >= 0
- *
- *          AVIS_MAX( z) = mx;   --->    z  <  mx
- *                                        mx > z
- *                                       (mx - z) > 0
- *                                       (mx - z) - 1 >= 0
- *
- *          z = x + y;           --->    z = x + y
- *                                       z - ( x + y) == 0
- *                                       z + ( -x) + ( -y) == 0
- *
- *          z = x - y;           --->    z = x - y
- *                                       z - ( x - y) == 0
- *                                       z + y - x    == 0
- *
- *          z = x * y;           --->    z = x * y
- *          We need x or y to be constant
- *                                       z - ( x * y) == 0
- *
- *          z =   - y;           --->    z = -y
- *                                       z + y == 0
- *
- * @param See above.
- *
- * @return
- *
- *
- ******************************************************************************/
-node *
-PHUTnormalizeAffineExprs (node *exprs)
-{
-    node *z = NULL;
-
-    DBUG_ENTER ();
-
-    DBUG_RETURN (z);
+    DBUG_RETURN ();
 }
 
 /** <!-- ****************************************************************** -->
@@ -860,94 +848,61 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, int firstindex)
     DBUG_RETURN (res);
 }
 
-#ifdef DEADCODE
-/** <!-- ****************************************************************** -->
- * @fn node *PHUTgenerateAffinesExprsLocal( node *arg_node, info *arg_info)
- *
- * @brief Does a recursive search, starting at arg_node,
- *        for a maximal chain of affine instructions.
- *
- * @param arg_node: an N_id node or...
- *
- * @return A maximal N_exprs chain of expressions. E.g.:
- *
- * This is from AWLF unit test time2code.sac. If compiled with -doawlf -nowlf,
- * it generates this code:
- *
- *     p = _aplmod_SxS_( -1, m);   NB. AVIS_MIN(p) = 0;
- *     iv2 = _notemaxval( iv1, m); NB. aka AVIS_MAX( iv2) = m;
- *     iv3 = iv2 - p;
- *     iv4, p = _val_lt_val_SxS_( iv3, m);
- *
- *  What we want to generate for this, eventually, is two sets
- *  of constraints:
- *
- * Set A:
- *   AVIS_MIN(p)                  -->   p   >= 0
- *   iv3 = iv2 - p;               -->   iv3 = iv2 - p
- *   iv2 = _notemaxval( iv1, m);  -->   m   >= iv2 + 1
- *
- * Set B:
- *   val_lt_val_SxS_( iv3, m)     -->   iv3 >= m    NB. Must prove converse
- *
- ******************************************************************************/
-static node *
-PHUTgenerateAffinesExprsLocal (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_id, "Expected N_id node");
-
-    res = PHUTcollectAffineExprsLocal (arg_node, arg_info);
-
-    DBUG_RETURN (res);
-}
-#endif // DEADCODE
-
-#ifdef UNDERCONSTRUCTION
-
 /** <!--********************************************************************-->
  *
  * @fn node
  *
  * @brief
  *
+ * NB. FIXME: This code leaves the arg and res files for Polylib lying around until
+ *     end of compilation. Since we expect this function to be called
+ *     repeatedly in CYC and SAACYC, this is not such a great idea.
+ *
  *
  *****************************************************************************/
 bool
-CheckIntersection (IntMatrix constraints, IntMatrix write_fas, IntMatrix read_fas)
+PHUTcheckIntersection (node *exprs1, node *exprs2, node *idlist)
 {
+#define MAXLINE 100
     bool res;
-    FILE *matrix_file, *res_file;
+    int polyres;
+    FILE *matrix_file;
+    FILE *res_file;
+    char polyhedral_arg_filename[PATH_MAX];
+    char polyhedral_res_filename[PATH_MAX];
+    static const char *argfile = "polyhedral_args";
+    static const char *resfile = "polyhedral_res";
     char buffer[MAXLINE];
-    char polyhedral_filename[MAXLINE];
-    char result_filename[MAXLINE];
 
     DBUG_ENTER ();
 
-    count++;
-    sprintf (polyhedral_filename, "%s%d.out", outfile, count);
-    sprintf (result_filename, "%s%d.out", infile, count);
+    global.polylib_filenumber++;
+    sprintf (polyhedral_arg_filename, "%s/%s%d.arg", global.tmp_dirname, argfile,
+             global.polylib_filenumber);
+    sprintf (polyhedral_res_filename, "%s/%s%d.res", global.tmp_dirname, resfile,
+             global.polylib_filenumber);
 
-    matrix_file = FMGRwriteOpen (polyhedral_filename, "w");
-    MatrixToFile (constraints, matrix_file);
-    MatrixToFile (write_fas, matrix_file);
-    MatrixToFile (read_fas, matrix_file);
+    DBUG_PRINT ("Polylib arg filename: %s", polyhedral_arg_filename);
+    DBUG_PRINT ("Polylib res filename: %s", polyhedral_res_filename);
+    matrix_file = FMGRwriteOpen (polyhedral_arg_filename, "w");
+
+    Exprs2File (matrix_file, exprs1, idlist);
+    Exprs2File (matrix_file, exprs2, idlist);
+
     FMGRclose (matrix_file);
 
-    SYScall ("$SAC2CBASE/src/tools/cuda/polyhedral < %s > %s\n", polyhedral_filename,
-             result_filename);
+    //  SYScall("$SAC2CBASE/src/tools/cuda/polyhedral < %s > %s\n",
+    // Here, we depend on PATH to find the binary.
+    SYScall ("sacpolylibintersect < %s > %s\n", polyhedral_arg_filename,
+             polyhedral_res_filename);
 
-    res_file = FMGRreadOpen (result_filename);
-    res = atoi (fgets (buffer, MAXLINE, res_file)) == 0 ? FALSE : TRUE;
+    res_file = FMGRreadOpen (polyhedral_res_filename);
+    polyres = atoi (fgets (buffer, MAXLINE, res_file));
+    res = (0 == polyres) ? FALSE : TRUE;
+    DBUG_PRINT ("intersection result is %d", polyres);
     FMGRclose (res_file);
-
-    // SYScall("rm -f *.out\n");
 
     DBUG_RETURN (res);
 }
-#endif // UNDERCONSTRUCTION
 
 #undef DBUG_PREFIX
