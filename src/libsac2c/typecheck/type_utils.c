@@ -19,6 +19,7 @@
 #include "globals.h"
 #include "traverse.h"
 #include "ctinfo.h"
+#include "constants.h"
 
 /** <!--********************************************************************-->
  *
