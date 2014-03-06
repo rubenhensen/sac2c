@@ -18,6 +18,7 @@
 #include "globals.h"
 
 #define DBUG_PREFIX "PHUT"
+#include <stdlib.h>
 #include "debug.h"
 #include "memory.h"
 #include "traverse.h"
@@ -346,20 +347,23 @@ Exprs2File (FILE *handle, node *exprs, node *idlist)
     rows = TCcountExprs (exprs) / cols;
     DBUG_PRINT ("Writing %d rows and %d columns", rows, cols);
 
-    fprintf (handle, "%d %d\n", rows, cols); // polyhedron descriptor
+    if (0 != rows) {                             // Ignore empty polyhedra
+        fprintf (handle, "%d %d\n", rows, cols); // polyhedron descriptor
 
-    for (i = 0; i < rows; i++) {
+        for (i = 0; i < rows; i++) {
 
-        // human-readable form
-        fprintf (handle, "#  ");
-        for (j = 1; j < cols - 1; j++) {
-            indx = j + (cols * i);
-            val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
-            avis = ID_AVIS (TCgetNthExprsExpr (j - 1, idlist));
-            id = AVIS_NAME (avis);
-            DBUG_ASSERT (j == AVIS_POLYLIBCOLUMNINDEX (avis), "column index confusion");
-            if (0 != val) {
-                fprintf (handle, "(%d*%s) + ", val, id);
+            // human-readable form
+            fprintf (handle, "#  ");
+            for (j = 1; j < cols - 1; j++) {
+                indx = j + (cols * i);
+                val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
+                avis = ID_AVIS (TCgetNthExprsExpr (j - 1, idlist));
+                id = AVIS_NAME (avis);
+                DBUG_ASSERT (j == AVIS_POLYLIBCOLUMNINDEX (avis),
+                             "column index confusion");
+                if (0 != val) {
+                    fprintf (handle, "(%d*%s) + ", val, id);
+                }
             }
 
             // The constant
@@ -371,15 +375,15 @@ Exprs2File (FILE *handle, node *exprs, node *idlist)
             // The relational
             val = NUM_VAL (TCgetNthExprsExpr ((cols * i), exprs));
             fprintf (handle, "%s\n", (0 == val) ? "== 0" : ">= 0");
-        }
 
-        // machine-readable form
-        for (j = 0; j < cols; j++) {
-            indx = j + (cols * i);
-            val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
-            fprintf (handle, "%d ", val);
+            // machine-readable form
+            for (j = 0; j < cols; j++) {
+                indx = j + (cols * i);
+                val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
+                fprintf (handle, "%d ", val);
+            }
+            fprintf (handle, "\n"); // make reading easier
         }
-        fprintf (handle, "\n"); // make reading easier
     }
 
     DBUG_RETURN ();
@@ -430,8 +434,8 @@ isCompatibleAffinePrf (prf nprf)
     DBUG_ENTER ();
 
     switch (nprf) {
-    case F_val_lt_val_SxS:
-    case F_val_le_val_SxS:
+        // case F_val_lt_val_SxS: Perhaps we can follow PRF_ARG1?
+        // case F_val_le_val_SxS:
     case F_add_SxS:
     case F_sub_SxS:
     case F_mul_SxS:
@@ -519,8 +523,8 @@ HandleNprf (node *arg_node, info *arg_info)
                                       arg_info); // -z
                 break;
 
-            case F_val_lt_val_SxS:
-            case F_val_le_val_SxS:
+            // case F_val_lt_val_SxS: Perhaps we can follow PRF_ARG1?
+            // case F_val_le_val_SxS:
             case F_mul_SxS:
             case F_min_SxS:
             case F_max_SxS:
@@ -848,15 +852,70 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, int firstindex)
     DBUG_RETURN (res);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *PHUTgenerateAffineExprsForGuard( node *arg_node, node *fundef)
+ *
+ * @brief Construct a Polylib matrix for an N_prf guard.
+ *        We build this as an inverted relational, so that
+ *        the intersect of the guard polyhedron and the polyhedron of its
+ *        arguments will be NULL if the guard is valid.
+ *
+ *        There might be a more sensible way to do this, but I think
+ *        this will work.
+ *
+ * @param arg_node: an N_prf for a guard primitive
+ * @param fundef: The N_fundef for the current function.
+ *                Used only for debugging.
+ * @param firstindex: 1+the number of distinct N_id nodes in the affine chain.
+ *
+ * @return A maximal N_exprs chain of expressions for the guard.
+ *
+ ******************************************************************************/
+node *
+PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int firstindex)
+{
+    node *z = NULL;
+    info *arg_info;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_prf, "Expected N_prf node");
+
+    arg_info = MakeInfo ();
+    INFO_FUNDEF (arg_info) = fundef; // debug only. Not really needed.
+    INFO_POLYLIBNUMIDS (arg_info) = firstindex;
+
+    INFO_MODE (arg_info) = MODE_generatematrix;
+    DBUG_PRINT ("Entering MODE_generatematrix");
+
+    z = GenerateZeroExprs (INFO_POLYLIBNUMIDS (arg_info), PLINEQUALITY);
+
+    switch (PRF_PRF (arg_node)) {
+
+    case F_val_lt_val_SxS:
+        // val_lt_val_SxS( x, y) -->   ( x - y) >= 0
+        z = AddValueToColumn (PRF_ARG1 (arg_node), 1, z, arg_info);
+        z = AddValueToColumn (PRF_ARG2 (arg_node), -1, z, arg_info);
+        break;
+
+    default:
+        DBUG_ASSERT (FALSE, "Coding time for guard polyhedron");
+        break;
+    }
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (z);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node
  *
- * @brief
+ * @brief Compute the intersection between two Polylib polyhedra,
+ *        represented by exprs1 and exprs2.
  *
- * NB. FIXME: This code leaves the arg and res files for Polylib lying around until
- *     end of compilation. Since we expect this function to be called
- *     repeatedly in CYC and SAACYC, this is not such a great idea.
+ *        If the intersect is NULL, return TRUE; else FALSE.
  *
  *
  *****************************************************************************/
@@ -873,6 +932,7 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *idlist)
     static const char *argfile = "polyhedral_args";
     static const char *resfile = "polyhedral_res";
     char buffer[MAXLINE];
+    int exit_code;
 
     DBUG_ENTER ();
 
@@ -893,13 +953,16 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *idlist)
 
     //  SYScall("$SAC2CBASE/src/tools/cuda/polyhedral < %s > %s\n",
     // Here, we depend on PATH to find the binary.
-    SYScall ("sacpolylibintersect < %s > %s\n", polyhedral_arg_filename,
-             polyhedral_res_filename);
-
+    exit_code = SYScallNoErr ("sacpolylibintersect < %s > %s\n", polyhedral_arg_filename,
+                              polyhedral_res_filename);
+    DBUG_PRINT ("exit_code=%d, WIFEXITED=%d, WIFSIGNALED=%d, WEXITSTATUS=%d", exit_code,
+                WIFEXITED (exit_code), WIFSIGNALED (exit_code), WEXITSTATUS (exit_code));
     res_file = FMGRreadOpen (polyhedral_res_filename);
     polyres = atoi (fgets (buffer, MAXLINE, res_file));
-    res = (0 == polyres) ? FALSE : TRUE;
     DBUG_PRINT ("intersection result is %d", polyres);
+    res = (0 == polyres) ? FALSE : TRUE;
+    DBUG_ASSERT (exit_code == WEXITSTATUS (exit_code),
+                 "exit code vs result file confusion");
     FMGRclose (res_file);
 
     DBUG_RETURN (res);

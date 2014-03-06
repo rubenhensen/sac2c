@@ -52,10 +52,12 @@
 struct INFO {
     node *fundef;
     node *lhs;
+    node *preassigns;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
 
 static info *
 MakeInfo (void)
@@ -68,6 +70,7 @@ MakeInfo (void)
 
     INFO_FUNDEF (result) = NULL;
     INFO_LHS (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -161,6 +164,11 @@ POGOassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
+    }
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -200,12 +208,18 @@ POGOprf (node *arg_node, info *arg_info)
 {
     node *exprs1 = NULL;
     node *exprs2 = NULL;
+    node *exprs3 = NULL;
     node *idlist1 = NULL;
     node *idlist2 = NULL;
     int numids;
-    bool z;
+    bool z = FALSE;
+    node *res;
+    node *resp;
+    node *guardp;
 
     DBUG_ENTER ();
+
+    res = arg_node;
 
     switch (PRF_PRF (arg_node)) {
 
@@ -227,34 +241,45 @@ POGOprf (node *arg_node, info *arg_info)
           = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), numids);
         exprs2
           = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), numids);
+        exprs3
+          = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info), numids);
 
         idlist1 = TCappendExprs (idlist1, idlist2);
         exprs1 = TCappendExprs (exprs1, exprs2);
-        // FIXMEfixexprs2;
-        z = PHUTcheckIntersection (exprs1, exprs2, idlist1);
+
+        // Don't bother calling Polylib if it can't do anything for us.
+        z = (NULL != exprs1) && (NULL != exprs3) && (NULL != idlist1);
+        z = z && PHUTcheckIntersection (exprs1, exprs3, idlist1);
 
         PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
         PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
 
-        if (NULL != idlist1) {
-            PRTdoPrint (idlist1);
-            idlist1 = FREEdoFreeTree (idlist1);
-        }
+        idlist1 = (NULL != idlist1) ? FREEdoFreeTree (idlist1) : NULL;
+        exprs1 = (NULL != exprs1) ? FREEdoFreeTree (exprs1) : NULL;
+        exprs3 = (NULL != exprs3) ? FREEdoFreeTree (exprs3) : NULL;
+        if (0 == z) { // guard can be removed
+            DBUG_PRINT ("Guard for %s removed",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+            res = DUPdoDupNode (PRF_ARG1 (arg_node));
+            resp = TBmakeBool (TRUE);
+            arg_node = FREEdoFreeNode (arg_node);
 
-        if (NULL != exprs1) {
-            PRTdoPrint (exprs1);
-            exprs1 = FREEdoFreeTree (exprs1);
+            guardp = IDS_NEXT (INFO_LHS (arg_info));
+            resp = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
+            AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resp;
+            IDS_NEXT (INFO_LHS (arg_info)) = NULL;
+            INFO_PREASSIGNS (arg_info)
+              = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
         }
-
         break;
 
     default:
         break;
     }
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    res = TRAVcont (res, arg_info);
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->

@@ -15,6 +15,8 @@ extern bool *PHUTcreateMatrix (unsigned rows, unsigned cols, bool vals);
 extern void PHUTclearColumnIndices (node *arg_node, node *fundef);
 extern node *PHUTcollectAffineNids (node *arg_node, node *fundef, int firstindex);
 extern node *PHUTgenerateAffineExprs (node *arg_node, node *fundef, int firstindex);
+extern node *PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef,
+                                              int firstindex);
 extern node *PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info);
 extern bool PHUTcheckIntersection (node *exprs1, node *exprs2, node *idlist);
 
