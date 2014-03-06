@@ -1680,9 +1680,8 @@ TUtype2Int (ntype *ty)
     DBUG_ENTER ();
 
     DBUG_ASSERT (TYisAKV (ty) && TUisIntScalar (ty), "Expected integer scalar constant");
-    con = TYgetValue (ty);
+    con = TYgetValue (ty); // This is NOT a copy!
     z = COconst2Int (con);
-    con = COfreeConstant (con);
 
     DBUG_RETURN (z);
 }
