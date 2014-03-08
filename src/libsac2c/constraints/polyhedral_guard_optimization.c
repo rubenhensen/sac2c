@@ -224,6 +224,7 @@ POGOprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
 
     case F_val_lt_val_SxS:
+    case F_val_le_val_SxS:
         DBUG_PRINT ("Looking at N_prf for %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 

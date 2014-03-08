@@ -104,11 +104,14 @@ FreeInfo (info *info)
 static void
 CheckExprsChain (node *exprs, info *arg_info)
 {
+#ifdef PARANOIA
     node *tmp;
     node *el;
+#endif // PARANOIA
 
     DBUG_ENTER ();
 
+#ifdef PARANOIA
     tmp = exprs;
     if (MODE_generatematrix == INFO_MODE (arg_info)) {
         while (tmp != NULL) {
@@ -120,6 +123,7 @@ CheckExprsChain (node *exprs, info *arg_info)
             ;
         }
     }
+#endif // PARANOIA
 
     DBUG_RETURN ();
 }
@@ -165,6 +169,39 @@ GenerateZeroExprs (int polylibcols, int relat)
         val = 0;
         cnt--;
     }
+
+    DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *AddIntegerToConstantColumn()
+ *
+ * @brief Perform matrix[ constantcol]+ = val, where constantcol
+ *        is the last column of the Polylib row, indicating a constant.
+ *
+ * @param val: An integer to be added to the constant column of matrix.
+ * @param matrix: An N_exprs chain representing a row of a Polylib constraint.
+ * @param arg_info: as usual.
+ *
+ * @return The updated matrix
+ *
+ ******************************************************************************/
+static node *
+AddIntegerToConstantColumn (int val, node *matrix, info *arg_info)
+{
+    node *z = NULL;
+    int col;
+
+    DBUG_ENTER ();
+
+    CheckExprsChain (matrix, arg_info);
+
+    col = 1 + INFO_POLYLIBNUMIDS (arg_info); // The (last) column, for constants
+    val = val + NUM_VAL (TCgetNthExprsExpr (col, matrix));
+    z = TCputNthExprs (col, matrix, TBmakeNum (val));
+
+    CheckExprsChain (z, arg_info);
 
     DBUG_RETURN (z);
 }
@@ -319,7 +356,7 @@ collectAvisMax (node *arg_node, info *arg_info)
 /** <!-- ****************************************************************** -->
  * @fn void ( node *exprs, node *idlist)
  *
- * @brief Append  one polyhedron to polylib input file, from exprs and idlist
+ * @brief Append one polyhedron to polylib input file, from exprs and idlist
  *
  * @param handle: output file handle
  * @param exprs: N_exprs chain of N_num nodes to be appended
@@ -410,6 +447,12 @@ collectAffineNid (node *arg_node, info *arg_info)
     z = TCappendExprs (collectAvisMin (arg_node, arg_info),
                        collectAvisMax (arg_node, arg_info));
 
+#ifdef WRONG
+    defintely wrong loop // probably wrong
+      z
+      = TCappendExprs (z, PHUTcollectAffineExprsLocal (arg_node, arg_info));
+#endif // WRONG
+
     CheckExprsChain (z, arg_info);
 
     DBUG_RETURN (z);
@@ -445,7 +488,7 @@ isCompatibleAffinePrf (prf nprf)
     case F_min_SxS:
     case F_max_SxS:
     case F_mod_SxS:
-    case F_aplmod_SxS:
+    // case F_aplmod_SxS: // probably wrong
     case F_abs_S:
     case F_neg_S:
         z = TRUE;
@@ -490,46 +533,96 @@ HandleNprf (node *arg_node, info *arg_info)
     node *right = NULL;
     node *assgn;
     node *rhs;
+    node *ids;
+    node *avis;
+    int val;
 
     DBUG_ENTER ();
 
     assgn = AVIS_SSAASSIGN (ID_AVIS (arg_node));
     rhs = LET_EXPR (ASSIGN_STMT (assgn));
+    ids = LET_IDS (ASSIGN_STMT (assgn));
 
     if (isCompatibleAffinePrf (PRF_PRF (rhs))) {
         if (MODE_generatematrix == INFO_MODE (arg_info)) {
-            z = GenerateZeroExprs (INFO_POLYLIBNUMIDS (arg_info), PLEQUALITY);
             switch (PRF_PRF (rhs)) {
             case F_add_SxS: // z = x + y;    -->   x + y  + (-z) == 0
+                z = GenerateZeroExprs (INFO_POLYLIBNUMIDS (arg_info), PLEQUALITY);
                 z = AddValueToColumn (PRF_ARG1 (rhs), 1, z, arg_info); //  x
                 z = AddValueToColumn (PRF_ARG2 (rhs), 1, z, arg_info); //  +y
-                z = AddValueToColumn (LET_IDS (ASSIGN_STMT (assgn)), -1, z,
-                                      arg_info); // -z
+                z = AddValueToColumn (ids, -1, z, arg_info);           // -z
                 break;
 
-            case F_non_neg_val_S:
-                z = AddValueToColumn (LET_IDS (ASSIGN_STMT (assgn)), 1, z, arg_info); // z
+            case F_non_neg_val_S: // z = nonneg( y) -->  (z == y) && ( z >= 0)
+                z = GenerateZeroExprs (INFO_POLYLIBNUMIDS (arg_info), PLEQUALITY);
+                z = AddValueToColumn (ids, 1, z, arg_info);             // z
                 z = AddValueToColumn (PRF_ARG1 (rhs), -1, z, arg_info); // -y
 
                 z2 = GenerateZeroExprs (INFO_POLYLIBNUMIDS (arg_info), PLINEQUALITY);
-                z2 = AddValueToColumn (PRF_ARG1 (rhs), 1, z2, arg_info); //  y >= 0
+                z2 = AddValueToColumn (ids, 1, z2, arg_info); //  z >= 0
                 z = TCappendExprs (z, z2);
                 break;
 
             case F_sub_SxS: // z = x - y;       -->   x + (-y) +    (-z) == 0
-                z = AddValueToColumn (PRF_ARG1 (rhs), 1, z, arg_info);  //    x
+                z = GenerateZeroExprs (INFO_POLYLIBNUMIDS (arg_info), PLEQUALITY);
+                z = AddValueToColumn (PRF_ARG1 (rhs), 1, z, arg_info);  //   x
                 z = AddValueToColumn (PRF_ARG2 (rhs), -1, z, arg_info); //  -y
-                z = AddValueToColumn (LET_IDS (ASSIGN_STMT (assgn)), -1, z,
-                                      arg_info); // -z
+                z = AddValueToColumn (ids, -1, z, arg_info);            //  -z
+                break;
+
+            case F_max_SxS: // z = max( x, y)
+                            //  -->  ( z >= x)        && ( z >= y)
+                            //  -->  (( z - x) >= 0)  && ( z - y) >= 0
+                z = GenerateZeroExprs (INFO_POLYLIBNUMIDS (arg_info), PLINEQUALITY);
+                z = AddValueToColumn (ids, 1, z, arg_info);             // z
+                z = AddValueToColumn (PRF_ARG1 (rhs), -1, z, arg_info); //  -x
+
+                z2 = GenerateZeroExprs (INFO_POLYLIBNUMIDS (arg_info), PLINEQUALITY);
+                z = AddValueToColumn (ids, 1, z, arg_info);             // z
+                z = AddValueToColumn (PRF_ARG2 (rhs), -1, z, arg_info); //  -y
+                z = TCappendExprs (z, z2);
+                break;
+
+            case F_min_SxS: // z = min( x, y)
+                            //  -->  ( z <= x)        && ( z <= y)
+                            //  -->  ( x >= z)        && ( y >= z)
+                            //  -->  (( x - z) >= 0)  && ( y - z) >= 0
+                z = GenerateZeroExprs (INFO_POLYLIBNUMIDS (arg_info), PLINEQUALITY);
+                z = AddValueToColumn (PRF_ARG1 (rhs), 1, z, arg_info); //  x
+                z = AddValueToColumn (ids, -1, z, arg_info);           // -z
+
+                z2 = GenerateZeroExprs (INFO_POLYLIBNUMIDS (arg_info), PLINEQUALITY);
+                z = AddValueToColumn (PRF_ARG2 (rhs), 1, z, arg_info); //  y
+                z = AddValueToColumn (ids, -1, z, arg_info);           // -z
+                z = TCappendExprs (z, z2);
+                break;
+
+            case F_mul_SxS: // We need one constant argument
+                avis = ID_AVIS (PRF_ARG1 (rhs));
+                if (TYisAKV (AVIS_TYPE (avis))) {
+                    // z = ( const * y)  -->  (const * y) + (-z) == 0
+                    val = TUtype2Int (AVIS_TYPE (avis));
+                    z = GenerateZeroExprs (INFO_POLYLIBNUMIDS (arg_info), PLEQUALITY);
+                    z = AddValueToColumn (PRF_ARG2 (rhs), val, z, arg_info); //  const*y
+                    z = AddValueToColumn (ids, -1, z, arg_info);             // -z
+                    break;
+                }
+
+                avis = ID_AVIS (PRF_ARG2 (rhs));
+                if (TYisAKV (AVIS_TYPE (avis))) {
+                    // z = ( x * const)  -->  ( x * const) + (-z) == 0
+                    val = TUtype2Int (AVIS_TYPE (avis));
+                    z = GenerateZeroExprs (INFO_POLYLIBNUMIDS (arg_info), PLEQUALITY);
+                    z = AddValueToColumn (PRF_ARG1 (rhs), val, z, arg_info); //  const*x
+                    z = AddValueToColumn (ids, -1, z, arg_info);             // -z
+                    break;
+                }
                 break;
 
             // case F_val_lt_val_SxS: Perhaps we can follow PRF_ARG1?
             // case F_val_le_val_SxS:
-            case F_mul_SxS:
-            case F_min_SxS:
-            case F_max_SxS:
             case F_mod_SxS:
-            case F_aplmod_SxS:
+            // case F_aplmod_SxS: // probably wrong
             case F_abs_S:
             case F_neg_S:
 
@@ -538,6 +631,8 @@ HandleNprf (node *arg_node, info *arg_info)
                 break;
             }
         }
+
+        // Deal with PRF_ARGs
         res = PHUTcollectAffineExprsLocal (PRF_ARG1 (rhs), arg_info);
         if ((F_non_neg_val_S != PRF_PRF (rhs)) && (F_neg_S != PRF_PRF (rhs))) {
             right = PHUTcollectAffineExprsLocal (PRF_ARG2 (rhs), arg_info);
@@ -572,27 +667,28 @@ HandleNprf (node *arg_node, info *arg_info)
 static node *
 assignPolylibColumnIndex (node *arg_node, info *arg_info, node *res)
 {
+    node *avis;
 
     DBUG_ENTER ();
 
+    avis = ID_AVIS (arg_node);
     switch (INFO_MODE (arg_info)) {
     case MODE_enumeratevars:
 
-        if ((-1 == AVIS_POLYLIBCOLUMNINDEX (ID_AVIS (arg_node)))
-            && (!TYisAKV (ID_NTYPE (arg_node)))) {
+        if ((-1 == AVIS_POLYLIBCOLUMNINDEX (avis)) && (!TYisAKV (ID_NTYPE (arg_node)))) {
             INFO_POLYLIBNUMIDS (arg_info)++;
-            AVIS_POLYLIBCOLUMNINDEX (ID_AVIS (arg_node)) = INFO_POLYLIBNUMIDS (arg_info);
-            DBUG_PRINT ("%d is polylib index for %s",
-                        AVIS_POLYLIBCOLUMNINDEX (ID_AVIS (arg_node)),
-                        AVIS_NAME (ID_AVIS (arg_node)));
+            AVIS_POLYLIBCOLUMNINDEX (avis) = INFO_POLYLIBNUMIDS (arg_info);
+            DBUG_PRINT ("Assigned %d as polylib index for %s",
+                        AVIS_POLYLIBCOLUMNINDEX (avis), AVIS_NAME (avis));
+            AVIS_ISAFFINEHANDLED (avis) = TRUE;
             res = TCappendExprs (res, TBmakeExprs (DUPdoDupNode (arg_node), NULL));
         }
         break;
 
     case MODE_clearindices:
-        AVIS_POLYLIBCOLUMNINDEX (ID_AVIS (arg_node)) = -1;
-        AVIS_ISAFFINEHANDLED (ID_AVIS (arg_node)) = FALSE;
-        DBUG_PRINT ("cleared polylib index for %s", AVIS_NAME (ID_AVIS (arg_node)));
+        AVIS_POLYLIBCOLUMNINDEX (avis) = -1;
+        AVIS_ISAFFINEHANDLED (avis) = FALSE;
+        DBUG_PRINT ("cleared polylib index for %s", AVIS_NAME (avis));
         break;
 
     case MODE_generatematrix:
@@ -646,9 +742,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info)
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_id, "Expected N_id node");
     DBUG_PRINT ("Looking at %s", AVIS_NAME (ID_AVIS (arg_node)));
 
-    res = assignPolylibColumnIndex (arg_node, arg_info, res);
-    res = TCappendExprs (res, collectAffineNid (arg_node, arg_info)); // AVIS_MIN/MAX
-
+    // Handle RHS
     assgn = AVIS_SSAASSIGN (ID_AVIS (arg_node));
     if ((NULL != assgn) && (!AVIS_ISAFFINEHANDLED (ID_AVIS (arg_node)))
         && (N_let == NODE_TYPE (ASSIGN_STMT (assgn)))) {
@@ -675,9 +769,17 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info)
         }
     }
 
+    // Handle extrema
+    res = TCappendExprs (res, collectAffineNid (arg_node, arg_info)); // AVIS_MIN/MAX
+
+    // Handle arg_node
+    res = assignPolylibColumnIndex (arg_node, arg_info, res);
+
+#ifdef FISHY
     if (MODE_enumeratevars == INFO_MODE (arg_info)) {
         AVIS_ISAFFINEHANDLED (ID_AVIS (arg_node)) = FALSE;
     }
+#endif // FISHY
 
     if (MODE_clearindices == INFO_MODE (arg_info)) {
         AVIS_POLYLIBCOLUMNINDEX (ID_AVIS (arg_node)) = -1;
@@ -893,9 +995,18 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int firstindex)
     switch (PRF_PRF (arg_node)) {
 
     case F_val_lt_val_SxS:
-        // val_lt_val_SxS( x, y) -->   ( x - y) >= 0
+        // z = val_lt_val_SxS( x, y) -->   ( x - y) >= 0
         z = AddValueToColumn (PRF_ARG1 (arg_node), 1, z, arg_info);
         z = AddValueToColumn (PRF_ARG2 (arg_node), -1, z, arg_info);
+        break;
+
+    case F_val_le_val_SxS:
+        // z = val_le_val_SxS( x, y) -->   ( x - y) > 0
+        //                             ( x - y) - 1 >= 0
+        //
+        z = AddValueToColumn (PRF_ARG1 (arg_node), 1, z, arg_info);  //  x
+        z = AddValueToColumn (PRF_ARG2 (arg_node), -1, z, arg_info); // -y
+        z = AddIntegerToConstantColumn (-1, z, arg_info);            // - 1
         break;
 
     default:
@@ -961,8 +1072,6 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *idlist)
     polyres = atoi (fgets (buffer, MAXLINE, res_file));
     DBUG_PRINT ("intersection result is %d", polyres);
     res = (0 == polyres) ? FALSE : TRUE;
-    DBUG_ASSERT (exit_code == WEXITSTATUS (exit_code),
-                 "exit code vs result file confusion");
     FMGRclose (res_file);
 
     DBUG_RETURN (res);
