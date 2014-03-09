@@ -447,12 +447,6 @@ collectAffineNid (node *arg_node, info *arg_info)
     z = TCappendExprs (collectAvisMin (arg_node, arg_info),
                        collectAvisMax (arg_node, arg_info));
 
-#ifdef WRONG
-    defintely wrong loop // probably wrong
-      z
-      = TCappendExprs (z, PHUTcollectAffineExprsLocal (arg_node, arg_info));
-#endif // WRONG
-
     CheckExprsChain (z, arg_info);
 
     DBUG_RETURN (z);
@@ -489,7 +483,7 @@ isCompatibleAffinePrf (prf nprf)
     case F_max_SxS:
     case F_mod_SxS:
     // case F_aplmod_SxS: // probably wrong
-    case F_abs_S:
+    // case F_abs_S:
     case F_neg_S:
         z = TRUE;
         break;
@@ -623,7 +617,7 @@ HandleNprf (node *arg_node, info *arg_info)
             // case F_val_le_val_SxS:
             case F_mod_SxS:
             // case F_aplmod_SxS: // probably wrong
-            case F_abs_S:
+            // case F_abs_S:
             case F_neg_S:
 
             default:
@@ -774,12 +768,6 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info)
 
     // Handle arg_node
     res = assignPolylibColumnIndex (arg_node, arg_info, res);
-
-#ifdef FISHY
-    if (MODE_enumeratevars == INFO_MODE (arg_info)) {
-        AVIS_ISAFFINEHANDLED (ID_AVIS (arg_node)) = FALSE;
-    }
-#endif // FISHY
 
     if (MODE_clearindices == INFO_MODE (arg_info)) {
         AVIS_POLYLIBCOLUMNINDEX (ID_AVIS (arg_node)) = -1;

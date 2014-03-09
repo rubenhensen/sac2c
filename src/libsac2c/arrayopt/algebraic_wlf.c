@@ -634,7 +634,8 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
  * @fn static void CopyWithPragma(...)
  *
  * @brief If the producer-WL has a WITH_PRAGMA, and the consumer-WL does not,
- *        copy the pwl pragma to the cwl.
+ *        copy the pwl pragma to the cwl, unless cwl is a naked-cosumer,
+ *        in which case, do nothing.
  *
  *        We introduced this for ~/sac/demos/applications/numerical/misc/matmul.sac.
  *        When modified to do sum(matmul()), the pragma on the matmul
@@ -652,8 +653,8 @@ CopyWithPragma (node *pwl, node *cwl)
 
     DBUG_ENTER ();
 
-    if ((NULL != pwl) && (NULL != cwl) && (NULL == WITH_PRAGMA (cwl))
-        && (NULL != WITH_PRAGMA (pwl))) {
+    if ((NULL != pwl) && (NULL != cwl) && (N_with == NODE_TYPE (cwl))
+        && (NULL == WITH_PRAGMA (cwl)) && (NULL != WITH_PRAGMA (pwl))) {
         WITH_PRAGMA (cwl) = DUPdoDupNode (WITH_PRAGMA (pwl));
     }
 
@@ -708,7 +709,7 @@ AWLFperformFold (node *arg_node, node *producerWLPart, info *arg_info)
         pwl = AWLFIfindWL (pwl); /* Now the N_with */
     }
 
-    CopyWithPragma (pwl, LET_EXPR (INFO_LET (arg_info)));
+    CopyWithPragma (pwl, LET_EXPR (ASSIGN_STMT (arg_node)));
     /* Generate iv=[i,j] assigns, then do renames. */
     idxassigns = makeIdxAssigns (arg_node, arg_info, producerWLPart);
 
