@@ -258,7 +258,7 @@ POGOprf (node *arg_node, info *arg_info)
         idlist1 = (NULL != idlist1) ? FREEdoFreeTree (idlist1) : NULL;
         exprs1 = (NULL != exprs1) ? FREEdoFreeTree (exprs1) : NULL;
         exprs3 = (NULL != exprs3) ? FREEdoFreeTree (exprs3) : NULL;
-        if (0 == z) { // guard can be removed
+        if (z) { // guard can be removed
             DBUG_PRINT ("Guard for %s removed",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             res = DUPdoDupNode (PRF_ARG1 (arg_node));
@@ -271,6 +271,9 @@ POGOprf (node *arg_node, info *arg_info)
             IDS_NEXT (INFO_LHS (arg_info)) = NULL;
             INFO_PREASSIGNS (arg_info)
               = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
+        } else {
+            DBUG_PRINT ("Unable to remove guard for %s",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
         }
         break;
 

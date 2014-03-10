@@ -441,11 +441,14 @@ static node *
 collectAffineNid (node *arg_node, info *arg_info)
 {
     node *z;
+    node *mn;
+    node *mx;
 
     DBUG_ENTER ();
 
-    z = TCappendExprs (collectAvisMin (arg_node, arg_info),
-                       collectAvisMax (arg_node, arg_info));
+    mn = collectAvisMin (arg_node, arg_info);
+    mx = collectAvisMax (arg_node, arg_info);
+    z = TCappendExprs (mn, mx);
 
     CheckExprsChain (z, arg_info);
 
@@ -674,7 +677,6 @@ assignPolylibColumnIndex (node *arg_node, info *arg_info, node *res)
             AVIS_POLYLIBCOLUMNINDEX (avis) = INFO_POLYLIBNUMIDS (arg_info);
             DBUG_PRINT ("Assigned %d as polylib index for %s",
                         AVIS_POLYLIBCOLUMNINDEX (avis), AVIS_NAME (avis));
-            AVIS_ISAFFINEHANDLED (avis) = TRUE;
             res = TCappendExprs (res, TBmakeExprs (DUPdoDupNode (arg_node), NULL));
         }
         break;
@@ -719,9 +721,6 @@ assignPolylibColumnIndex (node *arg_node, info *arg_info, node *res)
  *     MODE_clearindices:  This restores the N_avis nodes to their
  *     pristine values.
  *
- * FIXME blah blah
- *
- *
  *
  ******************************************************************************/
 node *
@@ -738,8 +737,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info)
 
     // Handle RHS
     assgn = AVIS_SSAASSIGN (ID_AVIS (arg_node));
-    if ((NULL != assgn) && (!AVIS_ISAFFINEHANDLED (ID_AVIS (arg_node)))
-        && (N_let == NODE_TYPE (ASSIGN_STMT (assgn)))) {
+    if ((NULL != assgn) && (N_let == NODE_TYPE (ASSIGN_STMT (assgn)))) {
 
         rhs = LET_EXPR (ASSIGN_STMT (assgn));
         switch (NODE_TYPE (rhs)) {
@@ -760,6 +758,9 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info)
 
         default:
             break;
+        }
+        if (MODE_generatematrix == INFO_MODE (arg_info)) {
+            AVIS_ISAFFINEHANDLED (ID_AVIS (arg_node)) = TRUE;
         }
     }
 
@@ -1016,7 +1017,6 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int firstindex)
  *
  *        If the intersect is NULL, return TRUE; else FALSE.
  *
- *
  *****************************************************************************/
 bool
 PHUTcheckIntersection (node *exprs1, node *exprs2, node *idlist)
@@ -1059,7 +1059,7 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *idlist)
     res_file = FMGRreadOpen (polyhedral_res_filename);
     polyres = atoi (fgets (buffer, MAXLINE, res_file));
     DBUG_PRINT ("intersection result is %d", polyres);
-    res = (0 == polyres) ? FALSE : TRUE;
+    res = (0 == polyres) ? TRUE : FALSE;
     FMGRclose (res_file);
 
     DBUG_RETURN (res);
