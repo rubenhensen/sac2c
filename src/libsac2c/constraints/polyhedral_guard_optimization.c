@@ -23,6 +23,13 @@
  * NB. This traversal runs within SAACYC, because PRFUNR and friends
  *     may create new guards on the fly.
  *
+ * NB. In removing guards, we want to be sure that we have
+ *     extrema on the guard result, based on the guard itself.
+ *     For that reason, I moved the POGO traversal to follow
+ *     IVEXP. I hope that is adequate. Before that change,
+ *     the AWLF unit test nakedConsumerAndSumAKD.sac would fail to
+ *     fold the naked consumer if -dopogo was active.
+ *
  */
 
 #define DBUG_PREFIX "POGO"

@@ -2561,9 +2561,9 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info)
                     avis = ID_AVIS (elem);
                     DBUG_PRINT ("Looking at elem %s", AVIS_NAME (avis));
                     z = z
-                        && ((TYisAKV (AVIS_TYPE (ID_AVIS (elem))))
-                            || (IVEXPisAvisHasBothExtrema (ID_AVIS (elem)))
-                            || (!SWLDisDefinedInThisBlock (ID_AVIS (elem),
+                        && ((TYisAKV (AVIS_TYPE (avis)))
+                            || (IVEXPisAvisHasBothExtrema (avis))
+                            || (!SWLDisDefinedInThisBlock (avis,
                                                            INFO_DEFDEPTH (arg_info))));
                 }
             }
