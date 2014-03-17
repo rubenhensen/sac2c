@@ -105,18 +105,15 @@ RTFILTERarg (node *arg_node, info *arg_info)
     /*
      * Check if the base types match.
      */
-    if (TYisSimple (local)) {
-        if (TYgetSimpleType (TYgetScalar (local))
-            == TYgetSimpleType (TYgetScalar (global))) {
-            /*
-             * Count the number of matching arguments.
-             */
-            INFO_ARGSFOUND (arg_info)++;
+    if (TYgetSimpleType (TYgetScalar (local)) == TYgetSimpleType (TYgetScalar (global))) {
+        /*
+         * Count the number of matching arguments.
+         */
+        INFO_ARGSFOUND (arg_info)++;
 
-            if (ARG_NEXT (INFO_ARGS (arg_info)) != NULL && ARG_NEXT (arg_node) != NULL) {
-                INFO_ARGS (arg_info) = ARG_NEXT (INFO_ARGS (arg_info));
-                ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-            }
+        if (ARG_NEXT (INFO_ARGS (arg_info)) != NULL && ARG_NEXT (arg_node) != NULL) {
+            INFO_ARGS (arg_info) = ARG_NEXT (INFO_ARGS (arg_info));
+            ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
         }
     }
 
