@@ -468,7 +468,7 @@ SAC_handleRequest (queue_node_t *request)
         SAC_TR_Print ("Runtime specialization: Handling new specialization request.");
     }
 
-    static char *call_format = "sac2c -v%i -noprelude -runtime "
+    static char *call_format = "sac2c -v%i -runtime "
                                "-rt_old_mod %s -rt_new_mod %s "
                                "-rtfunname %s -rtnewname %s "
                                "-rttypeinfo %s -rtshapeinfo %s "
