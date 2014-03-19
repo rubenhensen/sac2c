@@ -114,6 +114,20 @@
  *
  * Then lines 1-5 are removed by DCR(Dead Code Removal).
  *
+ * NB. This code supports "naked-consumer WLF", which is where we
+ *     have code such as:
+ *
+ *            pwl = with(...);
+ *            iv = 23;
+ *            nakedconsumer = pwl[ iv];
+ *
+ *     We need to know the value of iv, or at very least, its extrema,
+ *     so that we can deduce which partition of pwl to use for folding.
+ *     This restriction could be lifted by generating code to select from
+ *     each of the partitions, with the code chosen at run time (or
+ *     eliminated by optimizations earlier) based on the value of iv
+ *     and each of the pwl partition bounds.
+ *
  *  TODO:
  *   1. At present, AWLF does not occur unless ALL references
  *      to the PWL are in the consumerWL, or unless the

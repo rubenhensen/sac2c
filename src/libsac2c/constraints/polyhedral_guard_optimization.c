@@ -30,6 +30,10 @@
  *     the AWLF unit test nakedConsumerAndSumAKD.sac would fail to
  *     fold the naked consumer if -dopogo was active.
  *
+ *     A better approach would be to make POGO operate only
+ *     on nodes where the lhs (e.g., iv4 in the above example) has
+ *     its appropriate extrema present.
+ *
  */
 
 #define DBUG_PREFIX "POGO"
