@@ -448,9 +448,6 @@ FUNBEGIN (saacyc, opt, saacyc)
 CYCLEPHASEFUNOLD (isaa, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
                   global.optimize.dosaa, opt, saacyc)
 
-CYCLEPHASEFUN (pogo, "Polyhedral guard optimization", POGOdoPolyhedralGuardOptimization,
-               global.optimize.dopogo, opt, saacyc)
-
 CYCLEPHASEFUN (ggs, "Generate guard solvers", GGSdoGenerateGuardSolvers,
                global.optimize.doggs, opt, saacyc)
 
@@ -530,6 +527,10 @@ CYCLEPHASEFUN (ivexi, "Inserting index vector extrema", IVEXIdoInsertIndexVector
 
 CYCLEPHASEFUN (ivexp, "Propagating index vector extrema", IVEXPdoIndexVectorExtremaProp,
                global.doivext, opt, saacyc)
+
+// We need extrema on guard results. This may be a lousy way to get this effect.
+CYCLEPHASEFUN (pogo, "Polyhedral guard optimization", POGOdoPolyhedralGuardOptimization,
+               global.optimize.dopogo, opt, saacyc)
 
 CYCLEPHASEFUN (petl, "Propagate extrema thru lacfuns", PETLdoPropagateExtremaThruLacfuns,
                global.optimize.dopetl, opt, saacyc)

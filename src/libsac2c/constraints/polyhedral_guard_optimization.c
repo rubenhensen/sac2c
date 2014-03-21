@@ -23,6 +23,17 @@
  * NB. This traversal runs within SAACYC, because PRFUNR and friends
  *     may create new guards on the fly.
  *
+ * NB. In removing guards, we want to be sure that we have
+ *     extrema on the guard result, based on the guard itself.
+ *     For that reason, I moved the POGO traversal to follow
+ *     IVEXP. I hope that is adequate. Before that change,
+ *     the AWLF unit test nakedConsumerAndSumAKD.sac would fail to
+ *     fold the naked consumer if -dopogo was active.
+ *
+ *     A better approach would be to make POGO operate only
+ *     on nodes where the lhs (e.g., iv4 in the above example) has
+ *     its appropriate extrema present.
+ *
  */
 
 #define DBUG_PREFIX "POGO"
@@ -41,6 +52,7 @@
 #include "tree_compound.h"
 #include "polyhedral_guard_optimization.h"
 #include "polyhedral_utilities.h"
+#include "print.h"
 
 /** <!--********************************************************************-->
  *
@@ -51,10 +63,12 @@
 struct INFO {
     node *fundef;
     node *lhs;
+    node *preassigns;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
 
 static info *
 MakeInfo (void)
@@ -67,6 +81,7 @@ MakeInfo (void)
 
     INFO_FUNDEF (result) = NULL;
     INFO_LHS (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -98,14 +113,14 @@ FreeInfo (info *info)
  * @{
  *
  *****************************************************************************/
-
+#ifdef CRUD
 /** <!--*******************************************************************-->
  *
  * @fn node *CollectAffineExprs( node *arg_node, info *arg_info)
  *
  *
  *****************************************************************************/
-node *
+static node *
 CollectAffineExprs (node *arg_node, info *arg_info)
 {
     node *exprs = NULL;
@@ -114,6 +129,8 @@ CollectAffineExprs (node *arg_node, info *arg_info)
 
     DBUG_RETURN (exprs);
 }
+
+#endif // CRUD
 
 /** <!--*******************************************************************-->
  *
@@ -158,6 +175,11 @@ POGOassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
+    }
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -197,25 +219,82 @@ POGOprf (node *arg_node, info *arg_info)
 {
     node *exprs1 = NULL;
     node *exprs2 = NULL;
+    node *exprs3 = NULL;
+    node *idlist1 = NULL;
+    node *idlist2 = NULL;
+    int numids;
+    bool z = FALSE;
+    node *res;
+    node *resp;
+    node *guardp;
 
     DBUG_ENTER ();
+
+    res = arg_node;
 
     switch (PRF_PRF (arg_node)) {
 
     case F_val_lt_val_SxS:
+    case F_val_le_val_SxS:
         DBUG_PRINT ("Looking at N_prf for %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-        exprs1 = CollectAffineExprs (PRF_ARG1 (arg_node), arg_info);
-        exprs2 = CollectAffineExprs (PRF_ARG2 (arg_node), arg_info);
+
+        PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
+        PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
+
+        idlist1 = PHUTcollectAffineNids (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), 0);
+        numids = TCcountExprs (idlist1);
+
+        idlist2
+          = PHUTcollectAffineNids (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), numids);
+        numids = numids + TCcountExprs (idlist2);
+
+        exprs1
+          = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), numids);
+        exprs2
+          = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), numids);
+        exprs3
+          = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info), numids);
+
+        idlist1 = TCappendExprs (idlist1, idlist2);
+        exprs1 = TCappendExprs (exprs1, exprs2);
+
+        // Don't bother calling Polylib if it can't do anything for us.
+        z = (NULL != exprs1) && (NULL != exprs3) && (NULL != idlist1);
+        z = z && PHUTcheckIntersection (exprs1, exprs3, idlist1);
+
+        PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
+        PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
+
+        idlist1 = (NULL != idlist1) ? FREEdoFreeTree (idlist1) : NULL;
+        exprs1 = (NULL != exprs1) ? FREEdoFreeTree (exprs1) : NULL;
+        exprs3 = (NULL != exprs3) ? FREEdoFreeTree (exprs3) : NULL;
+        if (z) { // guard can be removed
+            DBUG_PRINT ("Guard for %s removed",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+            res = DUPdoDupNode (PRF_ARG1 (arg_node));
+            resp = TBmakeBool (TRUE);
+            arg_node = FREEdoFreeNode (arg_node);
+
+            guardp = IDS_NEXT (INFO_LHS (arg_info));
+            resp = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
+            AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resp;
+            IDS_NEXT (INFO_LHS (arg_info)) = NULL;
+            INFO_PREASSIGNS (arg_info)
+              = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
+        } else {
+            DBUG_PRINT ("Unable to remove guard for %s",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+        }
         break;
 
     default:
         break;
     }
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    res = TRAVcont (res, arg_info);
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->

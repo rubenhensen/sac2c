@@ -105,18 +105,15 @@ RTFILTERarg (node *arg_node, info *arg_info)
     /*
      * Check if the base types match.
      */
-    if (TYisSimple (local)) {
-        if (TYgetSimpleType (TYgetScalar (local))
-            == TYgetSimpleType (TYgetScalar (global))) {
-            /*
-             * Count the number of matching arguments.
-             */
-            INFO_ARGSFOUND (arg_info)++;
+    if (TYgetSimpleType (TYgetScalar (local)) == TYgetSimpleType (TYgetScalar (global))) {
+        /*
+         * Count the number of matching arguments.
+         */
+        INFO_ARGSFOUND (arg_info)++;
 
-            if (ARG_NEXT (INFO_ARGS (arg_info)) != NULL && ARG_NEXT (arg_node) != NULL) {
-                INFO_ARGS (arg_info) = ARG_NEXT (INFO_ARGS (arg_info));
-                ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-            }
+        if (ARG_NEXT (INFO_ARGS (arg_info)) != NULL && ARG_NEXT (arg_node) != NULL) {
+            INFO_ARGS (arg_info) = ARG_NEXT (INFO_ARGS (arg_info));
+            ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
         }
     }
 
@@ -144,7 +141,7 @@ RTFILTERarg (node *arg_node, info *arg_info)
 node *
 RTFILTERfundef (node *arg_node, info *arg_info)
 {
-    node *funspec;
+    node *funspec = NULL;
 
     DBUG_ENTER ();
     DBUG_PRINT (">>>> Checking function ...");
@@ -166,7 +163,7 @@ RTFILTERfundef (node *arg_node, info *arg_info)
               = TBmakeFundef (STRcpy (FUNDEF_NAME (arg_node)),
                               NSdupNamespace (MODULE_NAMESPACE (INFO_MODULE (arg_info))),
                               DUPdoDupNode (FUNDEF_RETS (arg_node)), global.rt_args, NULL,
-                              NULL);
+                              funspec);
 
             /* Designate the fundef for specialization. */
             MODULE_FUNSPECS (INFO_MODULE (arg_info)) = funspec;

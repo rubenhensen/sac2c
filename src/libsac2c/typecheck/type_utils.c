@@ -19,6 +19,7 @@
 #include "globals.h"
 #include "traverse.h"
 #include "ctinfo.h"
+#include "constants.h"
 
 /** <!--********************************************************************-->
  *
@@ -1657,6 +1658,32 @@ TUgetBaseSimpleType (ntype *type)
     DBUG_ASSERT (TYisArray (type), "Non array type found!");
     DBUG_ASSERT (TYisSimple (TYgetScalar (type)), "non simple type as base!");
     DBUG_RETURN (TYgetSimpleType (TYgetScalar (type)));
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn int TUtype2Int( ntype *ty)
+ *
+ * @brief: Extract integer scalar constant from an AKV integer scalar ntype
+ *
+ * @param: ty: ntype
+ *
+ * @return the integer value
+ *
+ ******************************************************************************/
+int
+TUtype2Int (ntype *ty)
+{
+    int z;
+    constant *con = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (TYisAKV (ty) && TUisIntScalar (ty), "Expected integer scalar constant");
+    con = TYgetValue (ty); // This is NOT a copy!
+    z = COconst2Int (con);
+
+    DBUG_RETURN (z);
 }
 
 #undef DBUG_PREFIX

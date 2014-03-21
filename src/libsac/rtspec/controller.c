@@ -193,7 +193,7 @@ SAC_setupController (char *dir)
     result = 0;
     unsigned int rtspeac_thread_ids[SAC_HM_RTSPEC_THREADS ()];
 
-    for (int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
+    for (unsigned int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
         rtspeac_thread_ids[i] = SAC_MT_GLOBAL_THREADS () + i;
     }
 
@@ -213,7 +213,7 @@ SAC_setupController (char *dir)
         SAC_TR_Print (tmpdir_name);
     }
 
-    for (int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
+    for (unsigned int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
         result = pthread_create (&controller_thread, NULL, SAC_runController,
                                  &rtspeac_thread_ids[i]);
 
@@ -468,7 +468,7 @@ SAC_handleRequest (queue_node_t *request)
         SAC_TR_Print ("Runtime specialization: Handling new specialization request.");
     }
 
-    static char *call_format = "sac2c -v%i -noprelude -runtime "
+    static char *call_format = "sac2c -v%i -runtime "
                                "-rt_old_mod %s -rt_new_mod %s "
                                "-rtfunname %s -rtnewname %s "
                                "-rttypeinfo %s -rtshapeinfo %s "

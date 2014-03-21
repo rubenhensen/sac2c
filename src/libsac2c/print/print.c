@@ -2494,6 +2494,10 @@ PRTarg (node *arg_node, info *arg_info)
               = TRAVdo (AVIS_LACSO (ARG_AVIS (arg_node)), arg_info);
         }
 
+        if (AVIS_ISDEAD (ARG_AVIS (arg_node)) != 0) {
+            fprintf (global.outfile, ", ISDEAD");
+        }
+
         fprintf (global.outfile, " } "); /* end of avis info */
     }
     TRAVdo (ARG_AVIS (arg_node), arg_info);
@@ -2601,6 +2605,10 @@ PRTvardec (node *arg_node, info *arg_info)
                 fprintf (global.outfile, ", lacso: ");
                 AVIS_LACSO (VARDEC_AVIS (arg_node))
                   = TRAVdo (AVIS_LACSO (VARDEC_AVIS (arg_node)), arg_info);
+            }
+
+            if (AVIS_ISDEAD (VARDEC_AVIS (arg_node)) != 0) {
+                fprintf (global.outfile, ", ISDEAD");
             }
 
             if (AVIS_SUBALLOC (VARDEC_AVIS (arg_node))) {
@@ -5812,6 +5820,11 @@ PRTavis (node *arg_node, info *arg_info)
     if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
         && AVIS_ISCUDALOCAL (arg_node)) {
         fprintf (global.outfile, " /* CUDA local */");
+    }
+
+    if (global.optimize.dopogo && (-1 != AVIS_POLYLIBCOLUMNINDEX (arg_node))) {
+        fprintf (global.outfile, " /* POLYLIBCOLUMNINDEX = %d */ ",
+                 AVIS_POLYLIBCOLUMNINDEX (arg_node));
     }
 
     DBUG_RETURN (arg_node);

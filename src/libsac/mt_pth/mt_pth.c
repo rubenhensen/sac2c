@@ -837,12 +837,12 @@ unsigned int
 SAC_MT_Internal_CurrentThreadId (void)
 {
     if (SAC_MT_globally_single) {
-        return SAC_RTSPEC_CurrentThreadId ();
+        return SAC_RTSPEC_CURRENT_THREAD_ID ();
     } else {
         struct sac_bee_common_t *bee = SAC_MT_CurrentBee ();
 
         if (bee == NULL) {
-            return SAC_RTSPEC_CurrentThreadId ();
+            return SAC_RTSPEC_CURRENT_THREAD_ID ();
         } else {
             return SAC_MT_CurrentBee ()->thread_id;
         }

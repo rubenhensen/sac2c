@@ -14,12 +14,10 @@ provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
 #if SAC_BACKEND != MUTC
          , unwrapInt, unwrapBool, unwrapFloat, unwrapDouble, unwrapChar, 
            isInt, isBool, isFloat, isDouble, isChar, isUdt, wrap
-#ifdef SANTANU
          , unwrapByte, unwrapShort, unwrapInt, unwrapLong, unwrapLonglong,
            unwrapUbyte, unwrapUshort, unwrapUint, unwrapUlong, unwrapUlonglong,
            isByte, isShort, isInt, isLong, isLonglong,
            isUbyte, isUshort, isUint, isUlong, isUlonglong
-#endif
 #endif
 #undef MUTC
 };
@@ -28,7 +26,6 @@ external typedef SACarg;
   #pragma freefun "SACARGfree"
   #pragma copyfun "SACARGcopy"
 
-#ifdef SANTANU
 #define BUILT_IN( fun)    \
 fun( int)                 \
 fun( float)               \
@@ -44,14 +41,6 @@ fun( ushort)              \
 fun( uint)                \
 fun( ulong)               \
 fun( ulonglong)           
-#else
-#define BUILT_IN( fun)    \
-fun( int)                 \
-fun( float)               \
-fun( double)              \
-fun( bool)                \
-fun( char)                  
-#endif
 
 #define SEL_VxA( a)                                                      \
 inline                                                                   \
@@ -84,7 +73,6 @@ ZERO( double, 0d)
 ZERO( float, 0f)
 ZERO( char, ' ')
 ZERO( bool, false)
-#ifdef SANTANU
 ZERO( byte, 0b)
 ZERO( short, 0s)
 ZERO( long, 0l)
@@ -94,7 +82,6 @@ ZERO( ushort, 0us)
 ZERO( uint, 0ui)
 ZERO( ulong, 0ul)
 ZERO( ulonglong, 0ull)
-#endif
 
 int ++ (int a)
 {
@@ -391,8 +378,6 @@ external bool isUdt( int base, SACarg a);
   #pragma linkname "SACARGisUdt"
   #pragma linksign [0,1,2]
 
-#ifdef SANTANU
-
 external byte[*] unwrapByte( SACarg arg);
   #pragma linkname "SACARGunwrapByte"
   #pragma linksign [1,2]
@@ -519,7 +504,6 @@ external bool isUlonglong( SACarg a);
   #pragma linkname "SACARGisUlonglong"
   #pragma linksign [0,1]
 
-#endif
 
 #endif
 #undef MUTC

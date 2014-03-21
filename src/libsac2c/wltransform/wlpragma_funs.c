@@ -2,7 +2,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "WLTRA"
 #include "debug.h"
 
 #include "free.h"
