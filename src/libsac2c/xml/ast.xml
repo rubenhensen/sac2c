@@ -102,6 +102,15 @@
            error TravError
          include the include file needed for the traversal
     -->
+
+   <!-- Added by Fangyong -->
+    <traversal id="IUCFB" name="Insert user-defined constraint to function body" default="sons" include="insert_udc_funbody.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="Udcs" />
+        </travuser>
+      </traversal>
+
     <traversal id="ARMP" name="Add RC Mode PRF" default="sons" include="add_rc_mode_prf.h">
         <travuser>
           <node name="With3" />
@@ -4999,6 +5008,17 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="Asserts"  default="NULL" >
+          <!--Fangyong: Assert expression. Means user defined constraints. -->
+          <targets>
+            <target mandatory="no">
+              <node name="Udcs" /> <!--Fangyong:Udcs-User-defined constraints. -->
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="Body">
           <targets>
             <target mandatory="no">
@@ -5899,7 +5919,40 @@ N_tfarg :
     <checks>
       <check name="CHKisNullSsaassign" />
     </checks>
-    </node>
+  </node>
+
+
+<!--
+
+  N_udcs :usr-defined constraints  Fangyong add
+
+-->
+
+  <node name="Udcs">
+      <sons>
+        <son name="Udc">
+           <targets>
+            <target mandatory="no">
+              <set name="Expr" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="Udcs" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+  </node>
+
 <!--
 
   N_block :

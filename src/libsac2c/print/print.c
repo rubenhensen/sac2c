@@ -1958,6 +1958,11 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 
         fprintf (global.outfile, ")");
 
+        if (FUNDEF_ASSERTS (arg_node) != NULL) {
+            fprintf (global.outfile, "\nAssert");
+            TRAVdo (FUNDEF_ASSERTS (arg_node), arg_info); /* print args of function */
+        }
+
         if (print_c) {
             fprintf (global.outfile, "\n");
             INDENT;
@@ -2499,6 +2504,28 @@ PRTarg (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PRTudcs( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRTudcs (node *arg_node, info *arg_info)
+{
+    TRAVdo (UDCS_UDC (arg_node), arg_info);
+
+    if (NULL != UDCS_NEXT (arg_node)) {
+        fprintf (global.outfile, ", ");
+        TRAVdo (UDCS_NEXT (arg_node), arg_info);
+    }
+    return (arg_node);
 }
 
 /******************************************************************************

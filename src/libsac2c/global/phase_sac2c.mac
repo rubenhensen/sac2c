@@ -71,6 +71,9 @@ PHASE (sim, "Simplifying source code", ALWAYS)
 SUBPHASE (w2d, "Transforming while-loops into do-loops", W2DdoTransformWhile2Do, ALWAYS,
           sim)
 
+SUBPHASE (iucfb, "Insert user-defined constraint to function body",
+          IUCFBdoInsertUdc2Funbody, ALWAYS, sim)
+
 SUBPHASE (ece, "Eliminating conditional expressions", HCEdoHandleConditionalExpressions,
           ALWAYS, sim)
 

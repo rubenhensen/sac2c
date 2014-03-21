@@ -105,7 +105,7 @@ libsac2c_scanparse   := trie lex parser scnprs handle_dots resolvepragma \
                         handle_zero_generator_with_loops \
                         introduce_user_tracing_calls hidestructs
 
-libsac2c_flatten     := flatten lac2fun fun2lac insert_vardec \
+libsac2c_flatten     := insert_udc_funbody flatten lac2fun fun2lac insert_vardec \
                         handle_mops UndoSSATransform SSATransform \
                         WLPartitionGeneration ExplicitAccumulate \
                         wlanalysis lacinlining wldefaultpartition \

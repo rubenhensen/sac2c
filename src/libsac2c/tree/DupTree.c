@@ -1285,6 +1285,18 @@ DUPfundef (node *arg_node, info *arg_info)
 }
 
 /******************************************************************************/
+// Fangyong add: user-defined constraints, not finish yet.
+node *
+DUPudcs (node *arg_node, info *arg_info)
+{
+    // node *new_node;
+
+    DBUG_ENTER ();
+
+    //  new_node = TBmakeUdcs(DUPTRAV(UDCS_UDC( arg_node)),NULL);
+
+    DBUG_RETURN (arg_node);
+}
 
 node *
 DUParg (node *arg_node, info *arg_info)
