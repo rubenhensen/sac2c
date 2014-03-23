@@ -37,13 +37,14 @@ static int running = 1;
 static int do_trace;
 static char *tmpdir_name = NULL;
 static char *rtspec_syscall = NULL;
-static list_t *processed;
 
 /* TLS key to retrieve the Thread Self ID Ptr */
 pthread_key_t SAC_RTSPEC_self_id_key;
 
 /* The number of controller threads used for runtime specialization. */
 unsigned int SAC_RTSPEC_controller_threads;
+
+pthread_t *controller_threads;
 
 /** <!--*******************************************************************-->
  *
@@ -186,15 +187,14 @@ SAC_setupController (char *dir)
         SAC_TR_Print ("Runtime specialization: Setup controller.");
     }
 
-    pthread_t controller_thread;
     int result;
     char *tmpdir_name;
-
+    pthread_t controller_thread;
     result = 0;
-    unsigned int rtspeac_thread_ids[SAC_HM_RTSPEC_THREADS ()];
+    unsigned int rtspec_thread_ids[SAC_HM_RTSPEC_THREADS ()];
 
     for (unsigned int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
-        rtspeac_thread_ids[i] = SAC_MT_GLOBAL_THREADS () + i;
+        rtspec_thread_ids[i] = SAC_MT_GLOBAL_THREADS () + i;
     }
 
     if (0 != pthread_key_create (&SAC_RTSPEC_self_id_key, NULL)) {
@@ -213,16 +213,18 @@ SAC_setupController (char *dir)
         SAC_TR_Print (tmpdir_name);
     }
 
+    controller_threads = malloc (sizeof (pthread_t) * SAC_HM_RTSPEC_THREADS ());
+
     for (unsigned int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
         result = pthread_create (&controller_thread, NULL, SAC_runController,
-                                 &rtspeac_thread_ids[i]);
+                                 &rtspec_thread_ids[i]);
 
         if (result != 0) {
             SAC_RuntimeError ("Runtime specialization controller could not be launched");
         }
-    }
 
-    processed = (list_t *)malloc (sizeof (list_t));
+        controller_threads[i] = controller_thread;
+    }
 }
 
 /** <!--*******************************************************************-->
@@ -262,9 +264,15 @@ SAC_runController (void *param)
 
         pthread_mutex_unlock (&empty_queue_mutex);
 
-        current = SAC_dequeueRequest ();
+        if (running) {
+            current = SAC_dequeueRequest ();
 
-        SAC_handleRequest (current);
+            SAC_handleRequest (current);
+        }
+    }
+
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Exiting controller.");
     }
 
     pthread_exit (NULL);
@@ -366,88 +374,6 @@ encodeShapes (int *shapes, char *result)
             k++;
         }
     }
-}
-
-/** <!--*******************************************************************-->
- *
- * @fn  wasProcessed( char *module, char *function, char *shape_info)
- *
- * @brief Iterates over all the nodes in the list of processed requests and
- * returns TRUE if a node contains the same information as the current request
- * and FALSE otherwise.
- *
- * @param  module  The module for which the request was made.
- * @param  function  The function for which the request was made.
- * @param  shape_info  The encoded shapes that were part of the request.
- *
- * @return  TRUE if the request was allready handled, FALSE otherwise.
- *
- ****************************************************************************/
-static int
-wasProcessed (char *function, char *shape_info)
-{
-    char compare[256];
-    list_t *current;
-
-    if (strlen (processed->request) == 0) {
-        return 0;
-    }
-
-    sprintf (compare, "%s_%s", function, shape_info);
-
-    current = processed;
-    while (current != NULL) {
-        if (strlen (current->request) != 0) {
-            if (strcmp (current->request, compare) == 0) {
-                return 1;
-            }
-        } else {
-            return 0;
-        }
-
-        current = current->next;
-    }
-
-    return 0;
-}
-
-/** <!--*******************************************************************-->
- *
- * @fn  addProcessed( char *module, char *function, char *shape_info)
- *
- * @brief Adds a new node to the list of processed requests.
- *
- * @param  module  The module for which the request was made.
- * @param  function  The function for which the request was made.
- * @param  shape_info  The encoded shapes that were part of the request.
- *
- ****************************************************************************/
-static void
-addProcessed (char *function, char *shape_info)
-{
-    list_t *xnew;
-    char request[256];
-
-    sprintf (request, "%s_%s", function, shape_info);
-
-    xnew = (list_t *)malloc (sizeof (list_t));
-
-    if (xnew == NULL) {
-        fprintf (stderr, "Could not allocate new processed request node!");
-
-        exit (EXIT_FAILURE);
-    }
-
-    strcpy (xnew->request, request);
-
-    /* Add the new processed request at the beginning of the list, this is
-     * cheaper than at the end.
-     */
-    if (strlen (processed->request) != 0) {
-        xnew->next = processed;
-    }
-
-    processed = xnew;
 }
 
 /** <!--*******************************************************************-->
@@ -595,6 +521,13 @@ SAC_finalizeController (void)
         SAC_TR_Print ("Runtime specialization: Finalize controller!");
     }
 
+    running = 0;
+
+    for (unsigned int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
+        pthread_cond_broadcast (&empty_queue_cond);
+        pthread_join (controller_threads[i], NULL);
+    }
+
     int success;
 
     if (tmpdir_name != NULL) {
@@ -609,8 +542,6 @@ SAC_finalizeController (void)
 
         free (rtspec_syscall);
     }
-
-    running = 0;
 }
 
 #endif /* ENABLE_RTSPEC */
