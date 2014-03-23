@@ -445,6 +445,10 @@ SAC_handleRequest (queue_node_t *request)
         SAC_TR_Print (filename);
     }
 
+    // Mark specialization as processed early to avoid concurrently processing
+    // it twice by two individual controllers
+    addProcessed (request->func_name, shape_info);
+
     /* Execute the system call and act according to the return value. */
     switch (system (syscall)) {
     default:
@@ -499,11 +503,6 @@ SAC_handleRequest (queue_node_t *request)
             exit (EXIT_FAILURE);
         }
     }
-
-    /*
-     * Add this request to the list of processed requests.
-     */
-    addProcessed (request->func_name, shape_info);
 }
 
 /** <!--*******************************************************************-->
