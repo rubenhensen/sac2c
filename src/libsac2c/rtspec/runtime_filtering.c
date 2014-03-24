@@ -162,7 +162,7 @@ RTFILTERfundef (node *arg_node, info *arg_info)
             funspec
               = TBmakeFundef (STRcpy (FUNDEF_NAME (arg_node)),
                               NSdupNamespace (MODULE_NAMESPACE (INFO_MODULE (arg_info))),
-                              DUPdoDupNode (FUNDEF_RETS (arg_node)), global.rt_args, NULL,
+                              DUPdoDupTree (FUNDEF_RETS (arg_node)), global.rt_args, NULL,
                               funspec);
 
             /* Designate the fundef for specialization. */
