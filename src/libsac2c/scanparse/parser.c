@@ -38,29 +38,42 @@
 #define error_mark_node ((node *)0x1)
 #define error_type_node ((ntype *)0x2)
 
-node *MakeIncDecLet (node *, char *);
-ntype *Exprs2NType (ntype *, node *);
-int CountDotsInExprs (node *);
-shape *Exprs2Shape (node *);
+static node *MakeIncDecLet (node *, char *);
+static ntype *Exprs2NType (ntype *, node *);
+static int CountDotsInExprs (node *);
+static shape *Exprs2Shape (node *);
 
-node *
+/* Helper function to annotate a node with location and return it.  */
+static inline node *
+loc_annotated (struct location loc, node *n)
+{
+    NODE_LOCATION (n) = loc;
+    return n;
+}
+
+/* FIXME: This function is unused -- delete it.
+   Build a function call: <OP> (<EXP>, 1).  Propagate locations from
+   EXP to all the nodes of the resulting function-call AST.  */
+UNUSED static node *
 MakeIncDecLet (node *exp, char *op)
 {
-    node *let, *ap;
+    node *ap, *args, *num;
+    struct location loc = NODE_LOCATION (exp);
 
     DBUG_ENTER ();
 
     /* FIXME May be we want to apply not '1', but '1', depending on the
        type of the expression.  Probably some pre-defined one funcction
        call.  */
-    ap = TBmakeSpap (TBmakeSpid (NULL, op),
-                     TBmakeExprs (exp, TBmakeExprs (TBmakeNum (1), NULL)));
-    let = ap;
+    num = TBmakeExprs (loc_annotated (loc, TBmakeNum (1)), NULL);
+    args = TBmakeExprs (exp, loc_annotated (loc, num));
+    ap = TBmakeSpap (loc_annotated (loc, TBmakeSpid (NULL, op)),
+                     loc_annotated (loc, args));
 
-    DBUG_RETURN (let);
+    DBUG_RETURN (loc_annotated (loc, ap));
 }
 
-ntype *
+static ntype *
 Exprs2NType (ntype *basetype, node *exprs)
 {
     int n;
@@ -118,7 +131,7 @@ Exprs2NType (ntype *basetype, node *exprs)
     DBUG_RETURN (result);
 }
 
-int
+static int
 CountDotsInExprs (node *exprs)
 {
     int result = 0;
@@ -135,7 +148,7 @@ CountDotsInExprs (node *exprs)
     DBUG_RETURN (result);
 }
 
-shape *
+static shape *
 Exprs2Shape (node *exprs)
 {
     shape *result;
@@ -167,11 +180,12 @@ SetClassType (node *module, ntype *type, node *pragmas)
 
     DBUG_ENTER ();
 
-    tdef = TBmakeTypedef (STRcpy (NSgetModule (MODULE_NAMESPACE (module))),
+    tdef = TBmakeTypedef (strdup (NSgetModule (MODULE_NAMESPACE (module))),
                           NSdupNamespace (MODULE_NAMESPACE (module)),
-                          STRcpy (global.default_component_name), type, NULL,
+                          strdup (global.default_component_name), type, NULL,
                           MODULE_TYPES (module));
 
+    NODE_LOCATION (tdef) = NODE_LOCATION (module);
     TYPEDEF_ISUNIQUE (tdef) = TRUE;
     TYPEDEF_PRAGMA (tdef) = pragmas;
     MODULE_TYPES (module) = tdef;
@@ -267,7 +281,7 @@ void cache_module (struct parser *, const char *);
 static node *
 expr_constructor (node *a, node *b)
 {
-    return TBmakeExprs (a, b);
+    return loc_annotated (NODE_LOCATION (a), TBmakeExprs (a, b));
 }
 #define handle_expr_list(parser)                                                         \
     handle_generic_list (parser, handle_expr, expr_constructor)
@@ -277,12 +291,15 @@ static node *
 id_constructor (node *id, node *next)
 {
     char *name;
+    struct location loc;
+
     assert (id && NODE_TYPE (id) == N_spid, 0);
 
+    loc = NODE_LOCATION (id);
     name = strdup (SPID_NAME (id));
     id = free_tree (id);
 
-    return TBmakeSpids (name, next);
+    return loc_annotated (loc, TBmakeSpids (name, next));
 }
 #define handle_id_list(parser) handle_generic_list (parser, handle_id, id_constructor)
 
@@ -292,12 +309,14 @@ static UNUSED node *
 type_component_constructor (node *id, node *next)
 {
     char *name;
+    struct location loc;
 
     assert (id && NODE_TYPE (id) == N_spid, 0);
+    loc = NODE_LOCATION (id);
     name = strdup (SPID_NAME (id));
     id = free_tree (id);
 
-    return TBmakeTypecomponentarg (name, NULL, next);
+    return loc_annotated (loc, TBmakeTypecomponentarg (name, NULL, next));
 }
 #define handle_typecomponent_list(parser)                                                \
     handle_generic_list (parser, handle_id, id_constructor)
@@ -306,7 +325,7 @@ type_component_constructor (node *id, node *next)
 static node *
 assign_constructor (node *a, node *b)
 {
-    return TBmakeAssign (a, b);
+    return loc_annotated (NODE_LOCATION (a), TBmakeAssign (a, b));
 }
 #define handle_assign_list(parser)                                                       \
     handle_generic_list (parser, handle_assign, assign_constructor)
@@ -316,11 +335,15 @@ assign_constructor (node *a, node *b)
 static node *
 rettype_constructor (node *a, node *b)
 {
+    /* FIXME types do not have location for the time
+       being, so we cannot set it here.  */
     return TBmakeRet ((ntype *)a, b);
 }
 static node *
 __handle_type (struct parser *parser)
 {
+    /* FIXME types do not have location for the time
+       being, so we cannot set it here.  */
     return (node *)handle_type (parser);
 }
 #define handle_rettype_list(parser)                                                      \
@@ -390,7 +413,8 @@ handle_symbol_list (struct parser *parser, const char *modname, bool except)
             goto cleanup;
         }
 
-        ret = TBmakeSymbol (strdup (token_as_string (tok)), ret);
+        ret = loc_annotated (token_location (tok),
+                             TBmakeSymbol (strdup (token_as_string (tok)), ret));
 
         if (modname && except) {
             /* If we use/import all except this set, we accumulate a set in
@@ -498,9 +522,11 @@ static node *
 handle_type_subscript_expr (struct parser *parser)
 {
     struct token *tok;
+    struct location loc;
     node *t;
 
     tok = parser_get_token (parser);
+    loc = token_location (tok);
 
     if (token_is_operator (tok, tv_dot))
         t = TBmakeDot (1);
@@ -518,9 +544,7 @@ handle_type_subscript_expr (struct parser *parser)
         return error_mark_node;
     }
 
-    NODE_LOCATION (t) = token_location (tok);
-
-    return t;
+    return loc_annotated (loc, t);
 }
 #define handle_type_subscript_list(parser)                                               \
     handle_generic_list (parser, handle_type_subscript_expr, expr_constructor)
@@ -544,12 +568,15 @@ static node *
 num_constructor (node *a, node *b)
 {
     int value;
+    struct location loc;
+
     assert (NODE_TYPE (a) == N_num, "number expected");
 
     value = NUM_VAL (a);
+    loc = NODE_LOCATION (a);
     free_node (a);
 
-    return TBmakeNums (value, b);
+    return loc_annotated (loc, TBmakeNums (value, b));
 }
 #define handle_num_list(parser) handle_generic_list (parser, handle_num, num_constructor)
 
@@ -1437,6 +1464,7 @@ node *
 handle_id (struct parser *parser)
 {
     struct identifier *id = is_id (parser);
+    struct location loc;
     node *ret = error_mark_node;
 
     if (!id) {
@@ -1448,10 +1476,10 @@ handle_id (struct parser *parser)
         return error_mark_node;
     }
 
-    parser_get_token (parser);
+    loc = token_location (parser_get_token (parser));
     assert (id->id, "identifier field id must not be empty");
 
-    ret = TBmakeSpid (NULL, id->id);
+    ret = loc_annotated (loc, TBmakeSpid (NULL, id->id));
     free (id);
 
     return ret;
@@ -1461,6 +1489,7 @@ node *
 handle_ext_id (struct parser *parser)
 {
     struct identifier *id = is_ext_id (parser);
+    struct location loc;
 
     if (!id) {
         struct token *tok = parser_get_token (parser);
@@ -1471,17 +1500,20 @@ handle_ext_id (struct parser *parser)
         return error_mark_node;
     }
 
+    /* get the first token preserving its location.  */
+    loc = token_location (parser_get_token (parser));
     if (id->xnamespace) {
-        node *ret = TBmakeSpid (NSgetNamespace (id->xnamespace), id->id);
-        parser_get_token (parser), parser_get_token (parser), parser_get_token (parser);
+        node *ret
+          = loc_annotated (loc, TBmakeSpid (NSgetNamespace (id->xnamespace), id->id));
+        /* eat two more tokens: '::' and ID  */
+        parser_get_token (parser), parser_get_token (parser);
         free (id);
 
         return ret;
     }
 
     if (!id->xnamespace && id->id) {
-        node *ret = TBmakeSpid (NULL, id->id);
-        parser_get_token (parser);
+        node *ret = loc_annotated (loc, TBmakeSpid (NULL, id->id));
         free (id);
 
         return ret;
@@ -1545,9 +1577,7 @@ handle_function_call (struct parser *parser)
             return error_mark_node;
 
         /* FIXME: check the number of arguments.  */
-        ret = TBmakePrf (to_prf (tkind), args);
-        NODE_LOCATION (ret) = loc;
-        return ret;
+        return loc_annotated (loc, TBmakePrf (to_prf (tkind), args));
     } else
         parser_unget (parser);
 
@@ -1562,9 +1592,7 @@ handle_function_call (struct parser *parser)
         return error_mark_node;
     }
 
-    ret = TBmakeSpap (ret, args);
-    NODE_LOCATION (ret) = loc;
-    return ret;
+    return loc_annotated (loc, TBmakeSpap (ret, args));
 }
 
 static inline node *
@@ -2057,7 +2085,7 @@ handle_postfix_expr (struct parser *parser)
 
                 struct_id = STRcat (STRUCT_GET, struct_id);
                 id_node = TBmakeSpid (NULL, struct_id);
-                res = TBmakeSpap (id_node, TBmakeExprs (res, NULL));
+                res = TBmakeSpap (id_node, expr_constructor (res, NULL));
 
                 /* Set location for every internal function-call.  */
                 NODE_LOCATION (res) = loc;
@@ -2153,6 +2181,10 @@ handle_unary_expr (struct parser *parser)
 {
     struct pre_post_expr res;
     struct identifier *id;
+    struct location loc;
+
+    loc = token_location (parser_get_token (parser));
+    parser_unget (parser);
 
     /* It is not even an extended id, so it cannot be unary operation.  */
     id = is_ext_id (parser);
@@ -2194,8 +2226,10 @@ handle_unary_expr (struct parser *parser)
     if (res.expr == error_mark_node || res.expr == NULL)
         goto error_return;
 
-    res.expr = TCmakeSpap1 (id->xnamespace ? NSgetNamespace (id->xnamespace) : NULL,
-                            strdup (id->id), res.expr);
+    res.expr
+      = loc_annotated (loc, TCmakeSpap1 (id->xnamespace ? NSgetNamespace (id->xnamespace)
+                                                        : NULL,
+                                         strdup (id->id), res.expr));
 
     /* Set the argument once, and leave it untouched
        in the outer recursicve calls.  */
@@ -2230,6 +2264,7 @@ struct pre_post_expr
 handle_cast_expr (struct parser *parser)
 {
     struct token *tok = parser_get_token (parser);
+    struct location loc = token_location (tok);
 
     if (token_is_operator (tok, tv_lparen)) {
         bool saw_colon = false;
@@ -2274,7 +2309,9 @@ handle_cast_expr (struct parser *parser)
             if (ret.expr == error_mark_node || type == error_type_node)
                 return (struct pre_post_expr){error_mark_node, NULL};
 
-            return (struct pre_post_expr){TBmakeCast (type, ret.expr), ret.parent_exprs};
+            return (
+              struct pre_post_expr){loc_annotated (loc, TBmakeCast (type, ret.expr)),
+                                    ret.parent_exprs};
         } else {
             if (saw_colon)
                 parser_unget (parser);
@@ -2511,7 +2548,10 @@ handle_binary_expr (struct parser *parser, bool no_relop)
                 parser_get_token (parser), parser_get_token (parser);
         }
 
+        /* NOTE: body of this loop must be equivalent to the code at lable OUT.  */
         while (oprec <= stack[sp].prec) {
+            struct location loc_sp_prev = NODE_LOCATION (stack[sp - 1].expr.expr);
+
             if (!strcmp (stack[sp].op, "&&"))
                 stack[sp - 1].expr.expr
                   = TBmakeFuncond (stack[sp - 1].expr.expr, stack[sp].expr.expr,
@@ -2523,11 +2563,14 @@ handle_binary_expr (struct parser *parser, bool no_relop)
             else {
                 node *args;
 
-                args = TBmakeExprs (stack[sp - 1].expr.expr,
-                                    TBmakeExprs (stack[sp].expr.expr, NULL));
+                args = expr_constructor (stack[sp - 1].expr.expr,
+                                         expr_constructor (stack[sp].expr.expr, NULL));
+
                 stack[sp - 1].expr.expr
                   = TBmakeSpap (TBmakeSpid (stack[sp].xnamespace, stack[sp].op), args);
             }
+
+            NODE_LOCATION (stack[sp - 1].expr.expr) = loc_sp_prev;
             sp--;
         }
 
@@ -2553,6 +2596,8 @@ handle_binary_expr (struct parser *parser, bool no_relop)
 
 out:
     while (sp > 0) {
+        struct location loc_sp_prev = NODE_LOCATION (stack[sp - 1].expr.expr);
+
         if (!strcmp (stack[sp].op, "&&"))
             stack[sp - 1].expr.expr = TBmakeFuncond (stack[sp - 1].expr.expr,
                                                      stack[sp].expr.expr, TBmakeBool (0));
@@ -2562,11 +2607,14 @@ out:
         else {
             node *args;
 
-            args = TBmakeExprs (stack[sp - 1].expr.expr,
-                                TBmakeExprs (stack[sp].expr.expr, NULL));
+            args = expr_constructor (stack[sp - 1].expr.expr,
+                                     expr_constructor (stack[sp].expr.expr, NULL));
+
             stack[sp - 1].expr.expr
               = TBmakeSpap (TBmakeSpid (stack[sp].xnamespace, stack[sp].op), args);
         }
+
+        NODE_LOCATION (stack[sp - 1].expr.expr) = loc_sp_prev;
         sp--;
     }
 
@@ -2624,7 +2672,7 @@ out:
         free_node (elseexp);
         return error_mark_node;
     } else {
-        return TBmakeFuncond (cond, ifexp, elseexp);
+        return loc_annotated (NODE_LOCATION (cond), TBmakeFuncond (cond, ifexp, elseexp));
     }
 }
 
@@ -2662,6 +2710,7 @@ handle_generator (struct parser *parser)
 {
     struct token *tok;
     struct location loc;
+    struct location generator_loc;
     node *gen_start = error_mark_node;
     node *gen_end = error_mark_node;
     node *gen_idx = error_mark_node;
@@ -2669,16 +2718,16 @@ handle_generator (struct parser *parser)
     node *width = NULL;
     prf gen_first_op, gen_last_op;
 
-    /* eat '('  */
+    /* eat '(' and save its location.  */
     if (parser_expect_tval (parser, tv_lparen))
-        parser_get_token (parser);
+        generator_loc = token_location (parser_get_token (parser));
     else
         goto error;
 
     /* '.' | expr  */
     tok = parser_get_token (parser);
     if (token_is_operator (tok, tv_dot))
-        gen_start = TBmakeDot (1);
+        gen_start = loc_annotated (token_location (tok), TBmakeDot (1));
     else {
         parser_unget (parser);
         gen_start = handle_conditional_expr (parser, true);
@@ -2699,6 +2748,7 @@ handle_generator (struct parser *parser)
     }
 
     tok = parser_get_token (parser);
+    loc = token_location (tok);
     if (token_is_operator (tok, tv_lsquare)) {
         node *ids;
 
@@ -2707,7 +2757,7 @@ handle_generator (struct parser *parser)
         if (ids == error_mark_node)
             goto error;
 
-        gen_idx = TBmakeWithid (NULL, ids);
+        gen_idx = loc_annotated (loc, TBmakeWithid (NULL, ids));
     } else {
         node *id;
 
@@ -2724,11 +2774,11 @@ handle_generator (struct parser *parser)
             if (ids == error_mark_node)
                 goto error;
 
-            gen_idx = TBmakeWithid (id, ids);
+            gen_idx = loc_annotated (loc, TBmakeWithid (id, ids));
         } else {
             parser_unget (parser);
 
-            gen_idx = TBmakeWithid (id, NULL);
+            gen_idx = loc_annotated (loc, TBmakeWithid (id, NULL));
         }
     }
 
@@ -2746,7 +2796,7 @@ handle_generator (struct parser *parser)
 
     tok = parser_get_token (parser);
     if (token_is_operator (tok, tv_dot))
-        gen_end = TBmakeDot (1);
+        gen_end = loc_annotated (token_location (tok), TBmakeDot (1));
     else {
         parser_unget (parser);
         if (error_mark_node == (gen_end = handle_expr (parser)))
@@ -2782,9 +2832,13 @@ handle_generator (struct parser *parser)
     else
         goto error;
 
-    return TBmakePart (NULL, gen_idx,
-                       TBmakeGenerator (gen_first_op, gen_last_op, gen_start, gen_end,
-                                        step, width));
+    return loc_annotated (generator_loc,
+                          TBmakePart (NULL, gen_idx,
+                                      loc_annotated (generator_loc,
+                                                     TBmakeGenerator (gen_first_op,
+                                                                      gen_last_op,
+                                                                      gen_start, gen_end,
+                                                                      step, width))));
 
 error:
     free_node (gen_start);
@@ -2864,7 +2918,7 @@ handle_npart (struct parser *parser)
         }
 
         if (NODE_TYPE (exprs) != N_exprs)
-            exprs = TBmakeExprs (exprs, NULL);
+            exprs = expr_constructor (exprs, NULL);
 
     } else
         parser_unget (parser);
@@ -2874,7 +2928,11 @@ handle_npart (struct parser *parser)
     else
         goto error;
 
-    ret = TBmakeWith (generator, TBmakeCode (block, exprs), NULL);
+    ret = loc_annotated (NODE_LOCATION (generator),
+                         TBmakeWith (generator,
+                                     loc_annotated (NODE_LOCATION (block),
+                                                    TBmakeCode (block, exprs)),
+                                     NULL));
     CODE_USED (WITH_CODE (ret))++;
     PART_CODE (generator) = WITH_CODE (ret);
     return ret;
@@ -2952,11 +3010,13 @@ node *
 handle_withop (struct parser *parser)
 {
     struct token *tok;
+    struct location loc;
     node *exp1 = NULL;
     node *exp2 = NULL;
     node *exp3 = NULL;
 
     tok = parser_get_token (parser);
+    loc = token_location (tok);
 
     if (token_is_keyword (tok, GENARRAY)) {
         if (parser_expect_tval (parser, tv_lparen))
@@ -2983,7 +3043,7 @@ handle_withop (struct parser *parser)
         else
             goto error;
 
-        return TBmakeGenarray (exp1, exp2);
+        return loc_annotated (loc, TBmakeGenarray (exp1, exp2));
     } else if (token_is_keyword (tok, MODARRAY)) {
         if (parser_expect_tval (parser, tv_lparen))
             parser_get_token (parser);
@@ -2998,7 +3058,7 @@ handle_withop (struct parser *parser)
         else
             goto error;
 
-        return TBmakeModarray (exp1);
+        return loc_annotated (loc, TBmakeModarray (exp1));
     } else if (token_is_keyword (tok, PROPAGATE)) {
         if (parser_expect_tval (parser, tv_lparen))
             parser_get_token (parser);
@@ -3013,7 +3073,7 @@ handle_withop (struct parser *parser)
         else
             goto error;
 
-        return TBmakePropagate (exp1);
+        return loc_annotated (loc, TBmakePropagate (exp1));
     } else if (token_is_keyword (tok, FOLD) || token_is_keyword (tok, FOLDFIX)) {
         bool foldfix_p = token_value (tok) == FOLDFIX;
         struct token *tok;
@@ -3098,7 +3158,7 @@ handle_withop (struct parser *parser)
         else
             goto error;
 
-        ret = TBmakeSpfold (exp2);
+        ret = loc_annotated (loc, TBmakeSpfold (exp2));
         SPFOLD_FN (ret) = exp1;
         SPFOLD_ARGS (ret) = args;
 
@@ -3124,13 +3184,14 @@ node *
 handle_with (struct parser *parser)
 {
     struct token *tok;
+    struct location with_loc;
     node *nparts = error_mark_node;
     node *withop = error_mark_node;
     node *pragma_expr = NULL;
 
-    /* `with'  */
+    /* eat `with' and save its location.  */
     if (parser_expect_tval (parser, NWITH))
-        parser_get_token (parser);
+        with_loc = token_location (parser_get_token (parser));
     else
         goto error;
 
@@ -3144,9 +3205,10 @@ handle_with (struct parser *parser)
     tok = parser_get_token (parser);
     if (token_is_operator (tok, tv_hash)) {
         node *t = error_mark_node;
+        struct location pragma_loc;
 
         if (parser_expect_tval (parser, PRAGMA))
-            parser_get_token (parser);
+            pragma_loc = token_location (parser_get_token (parser));
         else
             goto error;
 
@@ -3159,8 +3221,8 @@ handle_with (struct parser *parser)
         if (pragma_expr == error_mark_node)
             goto error;
 
-        t = TBmakePragma ();
-        PRAGMA_WLCOMP_APS (t) = TBmakeExprs (pragma_expr, NULL);
+        t = loc_annotated (pragma_loc, TBmakePragma ());
+        PRAGMA_WLCOMP_APS (t) = expr_constructor (pragma_expr, NULL);
         pragma_expr = t;
     } else
         parser_unget (parser);
@@ -3179,7 +3241,7 @@ handle_with (struct parser *parser)
         else
             goto error;
     } else
-        nparts = TBmakeWith (NULL, NULL, NULL);
+        nparts = loc_annotated (with_loc, TBmakeWith (NULL, NULL, NULL));
 
     /* ':'  */
     if (parser_expect_tval (parser, tv_colon))
@@ -3297,7 +3359,7 @@ handle_assign (struct parser *parser)
            needs to check if '++' is not a concatenation. */
         else if (token_is_operator (tok, tv_plus_plus)) {
             node *id = DUPdoDupTree (lhs);
-            node *args = TBmakeExprs (lhs, NULL);
+            node *args = expr_constructor (lhs, NULL);
 
             lhs = TBmakeSpap (TBmakeSpid (NULL, strdup ("++")), args);
             ret = TBmakeLet (id_constructor (id, NULL), lhs);
@@ -3305,7 +3367,7 @@ handle_assign (struct parser *parser)
             return ret;
         } else if (token_is_operator (tok, tv_minus_minus)) {
             node *id = DUPdoDupTree (lhs);
-            node *args = TBmakeExprs (lhs, NULL);
+            node *args = expr_constructor (lhs, NULL);
 
             lhs = TBmakeSpap (TBmakeSpid (NULL, strdup ("--")), args);
             ret = TBmakeLet (id_constructor (id, NULL), lhs);
@@ -3381,20 +3443,19 @@ handle_assign (struct parser *parser)
                 /* If we had a situation A[expr] += expr1, we transform it into
                    modarray (A, expr, + (A[expr], expr1))  */
                 if (op != NULL) {
-                    ret = TBmakeSpap (TBmakeSpid (NULL, op),
-                                      TBmakeExprs (ret, TBmakeExprs (cpy, NULL)));
+                    ret
+                      = TBmakeSpap (TBmakeSpid (NULL, op),
+                                    expr_constructor (ret, expr_constructor (cpy, NULL)));
                     NODE_LOCATION (ret) = loc;
                 }
 
-                node *ap
-                  = TBmakeSpap (TBmakeSpid (NULL, strdup ("modarray")),
-                                TBmakeExprs (id, TBmakeExprs (args,
-                                                              TBmakeExprs (ret, NULL))));
+                node *ap = TBmakeSpap (
+                  TBmakeSpid (NULL, strdup ("modarray")),
+                  expr_constructor (id, expr_constructor (args,
+                                                          expr_constructor (ret, NULL))));
                 NODE_LOCATION (ap) = loc;
                 free_node (lhs);
-                ret = TBmakeLet (ids, ap);
-                NODE_LOCATION (ret) = loc;
-                return ret;
+                return loc_annotated (loc, TBmakeLet (ids, ap));
             }
         }
         /* convert   ++ (id)  or -- (id) into  id = ++/-- (id)
@@ -3410,25 +3471,21 @@ handle_assign (struct parser *parser)
                 return error_mark_node;
             }
 
-            ret = TBmakeLet (id_constructor (DUPdoDupTree (id), NULL), lhs);
-            NODE_LOCATION (ret) = loc;
-            return ret;
+            return loc_annotated (loc,
+                                  TBmakeLet (id_constructor (DUPdoDupTree (id), NULL),
+                                             lhs));
         }
 
         /* ... fallthrough ...  */
     case N_with:
-        ret = TBmakeLet (NULL, lhs);
-        NODE_LOCATION (ret) = loc;
-        return ret;
+        return loc_annotated (loc, TBmakeLet (NULL, lhs));
 
     case N_spids:
         break;
 
     default:
         warning_loc (loc, "unsupported expression in assignment lhs");
-        ret = TBmakeLet (NULL, lhs);
-        NODE_LOCATION (ret) = loc;
-        return ret;
+        return loc_annotated (loc, TBmakeLet (NULL, lhs));
     }
 
     tok = parser_get_token (parser);
@@ -3442,8 +3499,9 @@ handle_assign (struct parser *parser)
         assert (NODE_TYPE (lhs) == N_spid, "op-equal does not support "                  \
                                            "lists on left-hand side ");                  \
         __ap = TBmakeSpap (TBmakeSpid (NULL, strdup (op)),                               \
-                           TBmakeExprs (lhs, TBmakeExprs (rhs, NULL)));                  \
-        ret = TBmakeLet (id_constructor (DUPdoDupTree (lhs), NULL), __ap);               \
+                           expr_constructor (lhs, expr_constructor (rhs, NULL)));        \
+        ret = TBmakeLet (id_constructor (DUPdoDupTree (lhs), NULL),                      \
+                         loc_annotated (NODE_LOCATION (lhs), __ap));                     \
     } while (0)
 
 #define get_rhs_convert_plusop(parser, lhs, op)                                          \
@@ -3519,7 +3577,6 @@ handle_if_stmt (struct parser *parser)
     node *cond = error_mark_node;
     node *if_branch = error_mark_node;
     node *else_branch = error_mark_node;
-    node *ret;
 
     tok = parser_get_token (parser);
     loc = token_location (tok);
@@ -3556,9 +3613,7 @@ handle_if_stmt (struct parser *parser)
         else_branch = MAKE_EMPTY_BLOCK ();
     }
 
-    ret = TBmakeCond (cond, if_branch, else_branch);
-    NODE_LOCATION (ret) = loc;
-    return ret;
+    return loc_annotated (loc, TBmakeCond (cond, if_branch, else_branch));
 
 error:
     free_node (cond);
@@ -3575,7 +3630,6 @@ handle_while_stmt (struct parser *parser)
     struct location loc;
     node *cond = error_mark_node;
     node *stmts = error_mark_node;
-    node *ret;
 
     tok = parser_get_token (parser);
     loc = token_location (tok);
@@ -3602,9 +3656,7 @@ handle_while_stmt (struct parser *parser)
     if (stmts == error_mark_node)
         goto error;
 
-    ret = TBmakeWhile (cond, stmts);
-    NODE_LOCATION (ret) = loc;
-    return ret;
+    return loc_annotated (loc, TBmakeWhile (cond, stmts));
 
 error:
     free_node (cond);
@@ -3620,7 +3672,6 @@ handle_do_stmt (struct parser *parser)
     struct location loc;
     node *cond = error_mark_node;
     node *stmts = error_mark_node;
-    node *ret;
 
     tok = parser_get_token (parser);
     loc = token_location (tok);
@@ -3652,9 +3703,7 @@ handle_do_stmt (struct parser *parser)
     else
         goto error;
 
-    ret = TBmakeDo (cond, stmts);
-    NODE_LOCATION (ret) = loc;
-    return ret;
+    return loc_annotated (loc, TBmakeDo (cond, stmts));
 
 error:
     free_node (cond);
@@ -3735,8 +3784,10 @@ handle_for_stmt (struct parser *parser)
         goto error;
 
     BLOCK_ASSIGNS (stmts) = TCappendAssign (BLOCK_ASSIGNS (stmts), cond_exp3);
-    ret = TBmakeAssign (TBmakeWhile (cond_exp2, stmts), NULL);
-    NODE_LOCATION (ret) = loc;
+    ret
+      = loc_annotated (loc,
+                       TBmakeAssign (loc_annotated (loc, TBmakeWhile (cond_exp2, stmts)),
+                                     NULL));
     ret = TCappendAssign (cond_exp1, ret);
     return ret;
 
@@ -3792,13 +3843,7 @@ handle_stmt (struct parser *parser)
 
     if (ret != error_mark_node) {
         NODE_LOCATION (ret) = loc;
-        if (for_loop_p)
-            return ret;
-        else {
-            node *assign_ret = TBmakeAssign (ret, NULL);
-            NODE_LOCATION (assign_ret) = loc;
-            return assign_ret;
-        }
+        return for_loop_p ? ret : loc_annotated (loc, TBmakeAssign (ret, NULL));
     } else
         goto error;
 
@@ -3879,12 +3924,15 @@ handle_var_id_list (struct parser *parser)
 
     while (is_id (parser)) {
         struct token *tok = parser_get_token (parser);
+        struct location loc = token_location (tok);
 
         if (!head && !tail) {
-            tail = TBmakeSpids (strdup (token_as_string (tok)), NULL);
+            tail
+              = loc_annotated (loc, TBmakeSpids (strdup (token_as_string (tok)), NULL));
             head = tail;
         } else {
-            node *t = TBmakeSpids (strdup (token_as_string (tok)), NULL);
+            node *t
+              = loc_annotated (loc, TBmakeSpids (strdup (token_as_string (tok)), NULL));
             SPIDS_NEXT (tail) = t;
             tail = t;
         }
@@ -3932,13 +3980,18 @@ handle_vardecl_list (struct parser *parser)
 
                     avis = TBmakeAvis (strdup (SPIDS_NAME (ids)), TYcopyType (type));
                     ret = TBmakeVardec (avis, ret);
+                    NODE_LOCATION (avis) = NODE_LOCATION (ret) = NODE_LOCATION (ids);
                     AVIS_DECLTYPE (VARDEC_AVIS (ret)) = TYcopyType (type);
                     ids_tmp = SPIDS_NEXT (ids);
                     free_node (ids);
                     ids = ids_tmp;
                 }
 
-                ret = TBmakeVardec (TBmakeAvis (strdup (SPIDS_NAME (ids)), type), ret);
+                ret = TBmakeVardec (loc_annotated (NODE_LOCATION (ids),
+                                                   TBmakeAvis (strdup (SPIDS_NAME (ids)),
+                                                               type)),
+                                    ret);
+                NODE_LOCATION (ret) = NODE_LOCATION (ids);
                 AVIS_DECLTYPE (VARDEC_AVIS (ret)) = TYcopyType (type);
                 free_node (ids);
                 continue;
@@ -3979,11 +4032,10 @@ handle_return (struct parser *parser)
 
         tok = parser_get_token (parser);
         /* return ';'  */
-        if (token_is_operator (tok, tv_semicolon)) {
-            exprs = TBmakeAssign (TBmakeReturn (NULL), NULL);
-            NODE_LOCATION (exprs) = loc;
-            return exprs;
-        }
+        if (token_is_operator (tok, tv_semicolon))
+            return loc_annotated (loc,
+                                  TBmakeAssign (loc_annotated (loc, TBmakeReturn (NULL)),
+                                                NULL));
         /* return '(' ')'  */
         else if (token_is_operator (tok, tv_lparen)) {
             tok = parser_get_token (parser);
@@ -3993,9 +4045,10 @@ handle_return (struct parser *parser)
 
                 /* eat-up ';'  */
                 parser_get_token (parser);
-                exprs = TBmakeAssign (TBmakeReturn (NULL), NULL);
-                NODE_LOCATION (exprs) = loc;
-                return exprs;
+                return loc_annotated (loc,
+                                      TBmakeAssign (loc_annotated (loc,
+                                                                   TBmakeReturn (NULL)),
+                                                    NULL));
             } else
                 parser_unget2 (parser);
         } else
@@ -4011,18 +4064,19 @@ handle_return (struct parser *parser)
         }
 
         if (NODE_TYPE (exprs) != N_exprs)
-            exprs = TBmakeExprs (exprs, NULL);
+            exprs = expr_constructor (exprs, NULL);
 
         if (!parser_expect_tval (parser, tv_semicolon))
             return error_mark_node;
 
         /* eat ';'  */
         parser_get_token (parser);
-        exprs = TBmakeAssign (TBmakeReturn (exprs), NULL);
-        NODE_LOCATION (exprs) = loc;
-        return exprs;
+        return loc_annotated (loc,
+                              TBmakeAssign (loc_annotated (loc, TBmakeReturn (exprs)),
+                                            NULL));
     } else {
         parser_unget (parser);
+        /* NOTE: we are not setting a location here.  */
         return TBmakeAssign (TBmakeReturn (NULL), NULL);
     }
 }
@@ -4042,23 +4096,18 @@ handle_stmt_list (struct parser *parser, unsigned flags)
     loc = token_location (tok);
 
     if (flags & STMT_BLOCK_SEMICOLON_F) {
-        if (token_is_operator (tok, tv_semicolon)) {
-            ret = MAKE_EMPTY_BLOCK ();
-            NODE_LOCATION (ret) = token_location (tok);
-            return ret;
-        }
+        if (token_is_operator (tok, tv_semicolon))
+            return loc_annotated (loc, MAKE_EMPTY_BLOCK ());
     }
 
-    if (token_is_operator (tok, tv_lbrace)) // funbody {
-    {
+    /* '{' starting a body of the block.  */
+    if (token_is_operator (tok, tv_lbrace)) {
         /* FIXME pragma cachesim  */
         tok = parser_get_token (parser);
 
-        if (token_is_operator (tok, tv_rbrace)) {
-            ret = MAKE_EMPTY_BLOCK ();
-            NODE_LOCATION (ret) = loc;
-            return ret;
-        } else
+        if (token_is_operator (tok, tv_rbrace))
+            return loc_annotated (loc, MAKE_EMPTY_BLOCK ());
+        else
             parser_unget (parser);
 
         if (flags & STMT_BLOCK_VAR_DECLS_F) {
@@ -4092,9 +4141,7 @@ handle_stmt_list (struct parser *parser, unsigned flags)
         if (flags & STMT_BLOCK_RETURN_F)
             ret = TCappendAssign (ret, ret_stmt);
 
-        ret = TBmakeBlock (ret, NULL);
-        NODE_LOCATION (ret) = loc;
-
+        ret = loc_annotated (loc, TBmakeBlock (ret, NULL));
         if ((flags & STMT_BLOCK_RETURN_F) && !parse_error) {
             BLOCK_VARDECS (ret) = vardecl;
         }
@@ -4114,9 +4161,7 @@ handle_stmt_list (struct parser *parser, unsigned flags)
             goto error;
         }
 
-        ret = TBmakeBlock (ret, NULL);
-        NODE_LOCATION (ret) = loc;
-        return ret;
+        return loc_annotated (loc, TBmakeBlock (ret, NULL));
     }
 
 error:
@@ -4222,6 +4267,12 @@ handle_argument (struct parser *parser)
     node *var;
     bool ref = false;
 
+    struct location type_loc;
+    struct location var_loc;
+
+    type_loc = token_location (parser_get_token (parser));
+    parser_unget (parser);
+
     type = handle_type (parser);
 
     if (type == NULL || type == error_type_node)
@@ -4233,16 +4284,15 @@ handle_argument (struct parser *parser)
     else
         parser_unget (parser);
 
+    var_loc = token_location (parser_get_token (parser));
+    parser_unget (parser);
     if (NULL != (id = is_ext_id (parser))) {
-        struct location loc = token_location (parser_get_token (parser));
-        parser_unget (parser);
-
         if (id->is_operation) {
-            error_loc (loc, "%s is not a valid function argument name", id->id);
+            error_loc (var_loc, "%s is not a valid function argument name", id->id);
             free (id);
             goto error;
         } else if (id->xnamespace != NULL) {
-            error_loc (loc, "function argument cannot have a namespace");
+            error_loc (var_loc, "function argument cannot have a namespace");
             free (id);
             goto error;
         }
@@ -4266,11 +4316,11 @@ handle_argument (struct parser *parser)
 
     DBUG_ASSERT (id, "id cannot be NULL here");
 
-    var = TBmakeAvis (strdup (id->id), type);
+    var = loc_annotated (type_loc, TBmakeAvis (strdup (id->id), type));
     /* consume the identifier  */
     parser_get_token (parser);
     free (id);
-    ret = TBmakeArg (var, NULL);
+    ret = loc_annotated (var_loc, TBmakeArg (var, NULL));
     AVIS_DECLTYPE (ARG_AVIS (ret)) = TYcopyType (type);
     ARG_ISREFERENCE (ret) = ref;
 
@@ -4520,7 +4570,7 @@ handle_pragmas (struct parser *parser, enum pragma_type ptype)
     if (!token_is_operator (tok, tv_hash))
         return NULL;
 
-    pragmas = TBmakePragma ();
+    pragmas = loc_annotated (token_location (tok), TBmakePragma ());
 
     while (true) {
         struct location loc;
@@ -4857,7 +4907,8 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
         parser->lex->is_read_user_op = false;
 
         if (token_is_reserved (tok) || token_class (tok) == tok_user_op)
-            fname = TBmakeSpid (NULL, strdup (token_as_string (tok)));
+            fname = loc_annotated (token_location (tok),
+                                   TBmakeSpid (NULL, strdup (token_as_string (tok))));
         else {
             error_loc (token_location (tok), "invalid function name `%s'",
                        token_as_string (tok));
@@ -4876,12 +4927,14 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
             warning_loc (token_location (tok), "making main function inline "
                                                "doesn't have any effect");
 
-        fname = TBmakeSpid (NULL, strdup (token_as_string (tok)));
+        fname = loc_annotated (token_location (tok),
+                               TBmakeSpid (NULL, strdup (token_as_string (tok))));
 
         is_main = true;
     } else {
         if (token_is_reserved (tok) || token_class (tok) == tok_user_op)
-            fname = TBmakeSpid (NULL, strdup (token_as_string (tok)));
+            fname = loc_annotated (token_location (tok),
+                                   TBmakeSpid (NULL, strdup (token_as_string (tok))));
         else {
             error_loc (token_location (tok), "invalid function name `%s'",
                        token_as_string (tok));
@@ -5022,7 +5075,7 @@ pragmas:
             symbol_set_binary (ks);
     }
 
-    ret = TBmakeFundef (NULL, NULL, NULL, NULL, NULL, NULL);
+    ret = loc_annotated (loc, TBmakeFundef (NULL, NULL, NULL, NULL, NULL, NULL));
     FUNDEF_BODY (ret) = body;
     FUNDEF_ARGS (ret) = args;
     if (udcs != NULL && udcs != error_mark_node)
@@ -5049,7 +5102,6 @@ pragmas:
             *ftype = fun_extern_fundec;
     }
 
-    NODE_LOCATION (ret) = loc;
     return ret;
 }
 
@@ -5233,6 +5285,7 @@ handle_interface (struct parser *parser, enum interface_kind interface)
     bool except_p = false;
     node *symbols = NULL;
     node *ret = error_mark_node;
+    struct location loc;
 
     enum token_kind tkind;
 
@@ -5247,9 +5300,11 @@ handle_interface (struct parser *parser, enum interface_kind interface)
     else
         unreachable ("unknown interface kind passed");
 
-    if (parser_expect_tval (parser, tkind))
-        parser_get_token (parser);
-    else
+    if (parser_expect_tval (parser, tkind)) {
+        /* eat TKIND and set its location to LOC.  */
+        tok = parser_get_token (parser);
+        loc = token_location (tok);
+    } else
         goto skip_error;
 
     if (interface == int_import || interface == int_use) {
@@ -5364,7 +5419,7 @@ handle_interface (struct parser *parser, enum interface_kind interface)
             unreachable ("unknown interface specified");
     }
 
-    return ret;
+    return loc_annotated (loc, ret);
 
 skip_error:
     parser_get_until_tval (parser, tv_semicolon);
@@ -5398,12 +5453,14 @@ handle_typedef (struct parser *parser)
     char *name = NULL;
     char *component_name = NULL;
     struct known_symbol *ks;
+    struct location loc;
 
     tok = parser_get_token (parser);
     if (token_is_keyword (tok, EXTERN)) {
         extern_p = true;
         if (parser_expect_tval (parser, TYPEDEF))
-            parser_get_token (parser);
+            /* eat TYPEDEF and save its location.  */
+            loc = token_location (parser_get_token (parser));
         else {
             parser_unget (parser);
             goto skip_error;
@@ -5411,15 +5468,16 @@ handle_typedef (struct parser *parser)
     } else if (token_is_keyword (tok, BUILTIN)) {
         builtin_p = true;
         if (parser_expect_tval (parser, TYPEDEF))
-            parser_get_token (parser);
+            /* eat TYPEDEF and save its location.  */
+            loc = token_location (parser_get_token (parser));
         else {
             parser_unget (parser);
             goto skip_error;
         }
     } else if (token_is_keyword (tok, TYPEDEF))
-        ;
+        loc = token_location (tok);
     else if (token_is_keyword (tok, NESTED))
-        nested = true;
+        loc = token_location (tok), nested = true;
     else {
         error_loc (token_location (tok), "`%s' or `%s %s' expected, `%s' found",
                    token_kind_as_string (TYPEDEF), token_kind_as_string (EXTERN),
@@ -5524,7 +5582,7 @@ handle_typedef (struct parser *parser)
             TYPEDEF_ISABSTRACT (ret) = true;
     }
 
-    return ret;
+    return loc_annotated (loc, ret);
 
 skip_error:
     parser_get_until_tval (parser, tv_semicolon);
@@ -5548,9 +5606,11 @@ handle_struct_def (struct parser *parser)
     bool parse_error = false;
     node *ret = NULL;
     node *ret_tail = NULL;
+    struct location struct_loc;
 
     if (parser_expect_tval (parser, STRUCT))
-        parser_get_token (parser);
+        /* eat STRUCT and save its location.  */
+        struct_loc = token_location (parser_get_token (parser));
     else
         goto error;
 
@@ -5603,6 +5663,7 @@ handle_struct_def (struct parser *parser)
 
                     se = TBmakeStructelem (strdup (SPIDS_NAME (ids)), TYcopyType (type),
                                            NULL);
+                    NODE_LOCATION (se) = NODE_LOCATION (ids);
                     if (ret == NULL) {
                         ret = se;
                         ret_tail = ret;
@@ -5643,7 +5704,7 @@ handle_struct_def (struct parser *parser)
 
     ret = TBmakeStructdef (id->id, ret, NULL);
     free (id);
-    return ret;
+    return loc_annotated (struct_loc, ret);
 
 error:
     /* FIXME: try to skip until the ';'?  */
@@ -5664,17 +5725,20 @@ handle_objdef (struct parser *parser)
     char *name = NULL;
     bool extern_p = false;
 
+    struct location objdef_loc;
+
     tok = parser_get_token (parser);
     if (token_is_keyword (tok, EXTERN)) {
         extern_p = true;
         if (parser_expect_tval (parser, OBJDEF))
-            parser_get_token (parser);
+            /* eat OBJDEF and save its location.  */
+            objdef_loc = token_location (parser_get_token (parser));
         else {
             parser_unget (parser);
             goto skip_error;
         }
     } else if (token_is_keyword (tok, OBJDEF))
-        ;
+        objdef_loc = token_location (tok);
     else {
         error_loc (token_location (tok), "`%s' or `%s %s' expected, `%s' found",
                    token_kind_as_string (OBJDEF), token_kind_as_string (EXTERN),
@@ -5739,9 +5803,10 @@ handle_objdef (struct parser *parser)
         if (extern_p) {
             node *ret = TBmakeObjdef (type, NULL, name, NULL, NULL);
             OBJDEF_ISEXTERN (ret) = true;
-            return ret;
+            return loc_annotated (objdef_loc, ret);
         } else
-            return TBmakeObjdef (type, NULL, name, expr, NULL);
+            return loc_annotated (objdef_loc,
+                                  TBmakeObjdef (type, NULL, name, expr, NULL));
     }
 
 skip_error:
@@ -6063,18 +6128,6 @@ parse (struct parser *parser)
             global.syntax_tree = defs;
         }
     }
-
-#if 0
-  // The code below (as large parts of this parser ignore the SAC coding
-  // guidelines and compiler infrastructure. The code below is obsolete
-  // as the phase mechanism is responsible for notification of passes and
-  // the cti module for any output produced by the compiler.
-#ifndef DBUG_OFF
-  printf ("note: finished parsing.\n");
-#endif
-  if (error_count != 0)
-    printf ("note: %i error(s) found.\n", error_count);
-#endif
 
     return 0;
 }
