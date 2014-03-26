@@ -7,7 +7,7 @@
  *
  *****************************************************************************/
 
-#ifndef _GRPAHUTILS_H_
+#ifndef _GRAPHUTILS_H_
 #define _GRAPHUTILS_H_
 
 #include <string.h>

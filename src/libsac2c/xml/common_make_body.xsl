@@ -129,8 +129,8 @@
   </xsl:call-template>
   <xsl:value-of select="';'" />
   <!-- set lineno -->
-  <xsl:value-of select="'DBUG_PRINT (&quot;setting lineno to %d&quot;, 0);'"/>
-  <xsl:value-of select="'NODE_LINE( xthis) = 0;'" />
+  <xsl:value-of select="'DBUG_PRINT (&quot;setting lineno to %d&quot;, global.linenum);'"/>
+  <xsl:value-of select="'NODE_LINE( xthis) = global.linenum;'" />
   <xsl:value-of select="'NODE_COL( xthis) = 0;'" />
   <xsl:value-of select="'NODE_ERROR( xthis) = NULL;'" />
   <!-- set filename -->
