@@ -3300,13 +3300,17 @@ handle_assign (struct parser *parser)
             node *args = TBmakeExprs (lhs, NULL);
 
             lhs = TBmakeSpap (TBmakeSpid (NULL, strdup ("++")), args);
-            return TBmakeLet (id_constructor (id, NULL), lhs);
+            ret = TBmakeLet (id_constructor (id, NULL), lhs);
+            NODE_LOCATION (ret) = NODE_LOCATION (lhs) = loc;
+            return ret;
         } else if (token_is_operator (tok, tv_minus_minus)) {
             node *id = DUPdoDupTree (lhs);
             node *args = TBmakeExprs (lhs, NULL);
 
             lhs = TBmakeSpap (TBmakeSpid (NULL, strdup ("--")), args);
-            return TBmakeLet (id_constructor (id, NULL), lhs);
+            ret = TBmakeLet (id_constructor (id, NULL), lhs);
+            NODE_LOCATION (ret) = NODE_LOCATION (lhs) = loc;
+            return ret;
         } else
             /* In this case we assume that the expression is followed
                by the operation-equal operator like +=, -=, ... and
@@ -3376,16 +3380,21 @@ handle_assign (struct parser *parser)
 
                 /* If we had a situation A[expr] += expr1, we transform it into
                    modarray (A, expr, + (A[expr], expr1))  */
-                if (op != NULL)
+                if (op != NULL) {
                     ret = TBmakeSpap (TBmakeSpid (NULL, op),
                                       TBmakeExprs (ret, TBmakeExprs (cpy, NULL)));
+                    NODE_LOCATION (ret) = loc;
+                }
 
                 node *ap
                   = TBmakeSpap (TBmakeSpid (NULL, strdup ("modarray")),
                                 TBmakeExprs (id, TBmakeExprs (args,
                                                               TBmakeExprs (ret, NULL))));
+                NODE_LOCATION (ap) = loc;
                 free_node (lhs);
-                return TBmakeLet (ids, ap);
+                ret = TBmakeLet (ids, ap);
+                NODE_LOCATION (ret) = loc;
+                return ret;
             }
         }
         /* convert   ++ (id)  or -- (id) into  id = ++/-- (id)
@@ -3401,19 +3410,25 @@ handle_assign (struct parser *parser)
                 return error_mark_node;
             }
 
-            return TBmakeLet (id_constructor (DUPdoDupTree (id), NULL), lhs);
+            ret = TBmakeLet (id_constructor (DUPdoDupTree (id), NULL), lhs);
+            NODE_LOCATION (ret) = loc;
+            return ret;
         }
 
         /* ... fallthrough ...  */
     case N_with:
-        return TBmakeLet (NULL, lhs);
+        ret = TBmakeLet (NULL, lhs);
+        NODE_LOCATION (ret) = loc;
+        return ret;
 
     case N_spids:
         break;
 
     default:
         warning_loc (loc, "unsupported expression in assignment lhs");
-        return TBmakeLet (NULL, lhs);
+        ret = TBmakeLet (NULL, lhs);
+        NODE_LOCATION (ret) = loc;
+        return ret;
     }
 
     tok = parser_get_token (parser);
@@ -3777,7 +3792,13 @@ handle_stmt (struct parser *parser)
 
     if (ret != error_mark_node) {
         NODE_LOCATION (ret) = loc;
-        return for_loop_p ? ret : TBmakeAssign (ret, NULL);
+        if (for_loop_p)
+            return ret;
+        else {
+            node *assign_ret = TBmakeAssign (ret, NULL);
+            NODE_LOCATION (assign_ret) = loc;
+            return assign_ret;
+        }
     } else
         goto error;
 
