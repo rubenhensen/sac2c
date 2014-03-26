@@ -2557,6 +2557,9 @@ PRTvardec (node *arg_node, info *arg_info)
 
     INDENT;
 
+    DBUG_EXECUTE_TAG ("PRINT_LINENO", fprintf (global.outfile, "\n#line %d \"%s\"\n",
+                                               global.linenum, global.filename););
+
     if ((VARDEC_ICM (arg_node) == NULL) || (NODE_TYPE (VARDEC_ICM (arg_node)) != N_icm)) {
         /* print mutc index specifier */
         if (AVIS_ISTHREADINDEX (VARDEC_AVIS (arg_node))) {
@@ -2655,7 +2658,8 @@ PRTvardec (node *arg_node, info *arg_info)
         if (global.cc_debug
             && ((global.compiler_subphase == PH_cg_prt)
                 || (global.compiler_subphase == PH_ccg_prt))) {
-            fprintf (global.outfile, "\n# %d \"%s\"\n", global.linenum, global.filename);
+            fprintf (global.outfile, "\n#line %d \"%s\"\n", global.linenum,
+                     global.filename);
         }
         TRAVdo (VARDEC_ICM (arg_node), arg_info);
         fprintf (global.outfile, "\n");
@@ -2797,11 +2801,13 @@ PRTassign (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "\n# %d \"%s\"\n", global.linenum, global.filename);
+    DBUG_EXECUTE_TAG ("PRINT_LINENO", fprintf (global.outfile, "\n#line %d \"%s\"\n",
+                                               global.linenum, global.filename););
+
     if (global.cc_debug
         && ((global.compiler_subphase == PH_cg_prt)
             || (global.compiler_subphase == PH_ccg_prt))) {
-        fprintf (global.outfile, "\n# %d \"%s\"\n", global.linenum, global.filename);
+        fprintf (global.outfile, "\n#line %d \"%s\"\n", global.linenum, global.filename);
     }
 
     instr = ASSIGN_STMT (arg_node);
