@@ -126,7 +126,7 @@ ExtractTopFrame (node *stack, node **top)
     DBUG_ENTER ();
 
     if ((stack != NULL) && (NODE_TYPE (stack) == N_set)
-        && (NODE_TYPE (SET_MEMBER (stack)) = N_exprs)) {
+        && (NODE_TYPE (SET_MEMBER (stack)) == N_exprs)) {
         *top = SET_MEMBER (stack);
         stack = FREEdoFreeNode (stack);
     } else {
