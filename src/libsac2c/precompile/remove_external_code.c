@@ -50,7 +50,7 @@ RECdoRemoveExternalCode (node *tree)
 
     DBUG_PRINT (">>> starting to remove unused external code");
 
-    DBUG_ASSERT (NODE_TYPE (tree) = N_module,
+    DBUG_ASSERT (NODE_TYPE (tree) == N_module,
                  "RECdoRemoveExternalCode is intended to be called on modules");
 
     TRAVpush (TR_rec);

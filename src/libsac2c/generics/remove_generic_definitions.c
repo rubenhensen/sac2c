@@ -78,7 +78,7 @@ RGDdoRemoveGenericDefinitions (node *syntax_tree)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) = N_module,
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module,
                  "RGDdoRemoveGenericDefinitions expects a module node as argument!");
 
     MODULE_FUNS (syntax_tree)

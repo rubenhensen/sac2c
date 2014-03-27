@@ -1339,7 +1339,7 @@ PFDgenerator (node *arg_node, info *arg_info)
     INFO_PARTSHP (arg_info)
       = COconstant2AST (COsub (COaST2Constant (bound2), COaST2Constant (bound1), NULL));
 
-    DBUG_ASSERT (NODE_TYPE (INFO_PARTSHP (arg_info)) = N_array,
+    DBUG_ASSERT (NODE_TYPE (INFO_PARTSHP (arg_info)) == N_array,
                  "Partition shape is not an array!");
 
     DBUG_RETURN (arg_node);
