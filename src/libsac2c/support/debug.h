@@ -38,6 +38,8 @@ exit_func (int status)
         fprintf (f, "Please file a bug at: "                                             \
                     "http://bugs.sac-home.org\n");                                       \
         exit_func (EXIT_FAILURE);                                                        \
+        /* Use abort to ensure non-return nature of the macro.  */                       \
+        abort ();                                                                        \
     } while (0)
 
 /*! This macro handles the case when a code fails to pass

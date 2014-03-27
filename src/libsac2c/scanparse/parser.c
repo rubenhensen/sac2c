@@ -37,7 +37,6 @@
 #define error_mark_node ((node *)0x1)
 #define error_type_node ((ntype *)0x2)
 
-static node *MakeIncDecLet (node *, char *);
 static ntype *Exprs2NType (ntype *, node *);
 static int CountDotsInExprs (node *);
 static shape *Exprs2Shape (node *);
@@ -270,7 +269,7 @@ id_constructor (node *id, node *next)
     char *name;
     struct location loc;
 
-    assert (id && NODE_TYPE (id) == N_spid, 0);
+    assert (id && NODE_TYPE (id) == N_spid, "invalid identifier node");
 
     loc = NODE_LOCATION (id);
     name = strdup (SPID_NAME (id));
@@ -288,7 +287,7 @@ type_component_constructor (node *id, node *next)
     char *name;
     struct location loc;
 
-    assert (id && NODE_TYPE (id) == N_spid, 0);
+    assert (id && NODE_TYPE (id) == N_spid, "invalid identifier node");
     loc = NODE_LOCATION (id);
     name = strdup (SPID_NAME (id));
     id = free_tree (id);
@@ -359,7 +358,7 @@ handle_symbol_list (struct parser *parser, const char *modname, bool except)
 
     if (modname) {
         HASH_FIND_STR (parser->used_modules, modname, mod);
-        assert (mod, "module `%s' has to be cached first");
+        assert (mod, "module `%s' has to be cached first", modname);
     } else
         parser->lex->is_read_user_op = true;
 
@@ -590,7 +589,7 @@ parser_get_token (struct parser *parser)
         do {
             /* Return a token from the buffer.  */
             assert (parser->unget_idx < parser->buf_size,
-                    "parser buffer holds only up to %i values.", parser->buf_size);
+                    "parser buffer holds only up to %zu values.", parser->buf_size);
 
             s = parser->buf_end - parser->unget_idx;
             idx = s < 0 ? (size_t) (parser->buf_size + s) : (size_t)s;
@@ -667,7 +666,7 @@ parser_unget (struct parser *parser)
     do {
         parser->unget_idx++;
         assert (parser->unget_idx < parser->buf_size,
-                "parser buffer holds only up to %i values.", parser->buf_size);
+                "parser buffer holds only up to %zu values.", parser->buf_size);
         s = parser->buf_end - parser->unget_idx;
         idx = s < 0 ? (size_t) (parser->buf_size + s) : (size_t)s;
         tok = parser->token_buffer[idx];
@@ -1067,7 +1066,7 @@ is_type (struct parser *parser)
             struct known_symbol *symb;
 
             HASH_FIND_STR (parser->used_modules, tval, mod);
-            assert (mod, "module `%s' must be cached first");
+            assert (mod, "module `%s' must be cached first", tval);
 
             HASH_FIND_STR (mod->symbols, token_as_string (tok), symb);
             ret = symb && !!symbol_is_type (symb);
@@ -5828,7 +5827,7 @@ handle_definitions (struct parser *parser)
                     PROVIDE_NEXT (interfaces_tail) = exp;                                \
                     break;                                                               \
                 default:                                                                 \
-                    unreachable (0);                                                     \
+                    unreachable ("invalid interface type");                              \
                 }                                                                        \
                 interfaces_tail = exp;                                                   \
             }                                                                            \

@@ -5,6 +5,12 @@
 #include <ctype.h>
 #include <err.h>
 
+#ifndef LEXER_BINARY
+#include "types.h"
+#define DBUG_PREFIX "LEXER"
+#include "debug.h"
+#endif
+
 #include "lex.h"
 
 #define TOKEN_KIND(a, b) b,
