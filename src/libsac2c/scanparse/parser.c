@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <errno.h>
 
-/* From sac.y  */
 #include "config.h"
 #include "types.h"
 #include "tree_basic.h"
@@ -49,28 +48,6 @@ loc_annotated (struct location loc, node *n)
 {
     NODE_LOCATION (n) = loc;
     return n;
-}
-
-/* FIXME: This function is unused -- delete it.
-   Build a function call: <OP> (<EXP>, 1).  Propagate locations from
-   EXP to all the nodes of the resulting function-call AST.  */
-UNUSED static node *
-MakeIncDecLet (node *exp, char *op)
-{
-    node *ap, *args, *num;
-    struct location loc = NODE_LOCATION (exp);
-
-    DBUG_ENTER ();
-
-    /* FIXME May be we want to apply not '1', but '1', depending on the
-       type of the expression.  Probably some pre-defined one funcction
-       call.  */
-    num = TBmakeExprs (loc_annotated (loc, TBmakeNum (1)), NULL);
-    args = TBmakeExprs (exp, loc_annotated (loc, num));
-    ap = TBmakeSpap (loc_annotated (loc, TBmakeSpid (NULL, op)),
-                     loc_annotated (loc, args));
-
-    DBUG_RETURN (loc_annotated (loc, ap));
 }
 
 static ntype *
@@ -2113,7 +2090,6 @@ handle_postfix_expr (struct parser *parser)
 
             if (TCcountExprs (args) == 1) {
                 res = TCmakeSpap2 (NULL, strdup ("sel"), EXPRS_EXPR (args), res);
-                // args = FREEdoFreeNode (args);
             } else {
                 node *vec;
                 ntype *type;
@@ -5130,7 +5106,6 @@ cache_module (struct parser *parser, const char *modname)
          2)  The parser-internals would not be freed.  */
     module = MODMloadModule (modname);
     table = STcopy (MODMgetSymbolTable (module));
-    // STprint (table);
     iterator = STsymbolIteratorGet (table);
 
     used_module = (struct used_module *)malloc (sizeof (struct used_module));
@@ -5770,7 +5745,6 @@ handle_objdef (struct parser *parser)
         }
 
         tok = parser_get_token (parser);
-        /* fprintf (stderr, "--- token here [%s]\n", token_as_string (tok));  */
         loc = token_location (tok);
         parser_unget (parser);
 
@@ -5907,7 +5881,6 @@ handle_definitions (struct parser *parser)
     while (token_class (tok) != tok_eof) {
         node *exp;
 
-        /*  fprintf (stdout, "--- starting with token %s\n", token_as_string (tok));  */
         if (token_is_keyword (tok, IMPORT)) {
             exp = handle_interface (parser, int_import);
             INTERFACE_ADD (exp, interfaces, interfaces_tail);
@@ -5966,7 +5939,6 @@ handle_definitions (struct parser *parser)
             }
         }
 
-        /* fprintf (stdout, "--- parse_error = %i\n", parse_error);  */
         tok = parser_get_token (parser);
         parser_unget (parser);
     }
@@ -6263,8 +6235,6 @@ parse_rcfile (struct parser *parser)
     struct token *tok;
     target_list_t *tl = NULL;
 
-    // error_count = warning_count = 0;
-
     while (token_class (tok = parser_get_token (parser)) != tok_eof) {
         switch (token_class (tok)) {
         case tok_keyword:
@@ -6288,17 +6258,9 @@ SPmyYyparse (void)
 {
     struct lexer *lex = (struct lexer *)malloc (sizeof (struct lexer));
     struct parser *parser = (struct parser *)malloc (sizeof (struct parser));
-    /* char *  tmp;  */
     int ret = 0;
 
     DBUG_ENTER ();
-
-    /* make a copy of the actual filename, which will
-       be used for all subsequent nodes.  */
-    /*tmp = (char *) MEMmalloc ((STRlen(global.filename)+1) * sizeof (char));
-    CHKMdoNotReport (tmp);
-    strcpy (tmp, global.filename);
-    global.filename = tmp;*/
 
     memset (lex, 0, sizeof (*lex));
     if (!lexer_init_file (lex, yyin, global.filename)) {
@@ -6307,7 +6269,6 @@ SPmyYyparse (void)
         goto cleanup;
     } else
 
-        // fprintf (stderr, "-- about to parse file %s\n", global.filename);
         parser_init (parser, lex);
 
     if (global.start_token == PARSE_RC)
@@ -6315,9 +6276,6 @@ SPmyYyparse (void)
     else
         parse (parser);
 
-    // fprintf (stderr, "-- finsihed parsing --\n");
-    // if (error_count != 0)
-    //  global.syntax_tree = NULL;
 cleanup:
     parser_finalize (parser);
 
@@ -6330,7 +6288,6 @@ cleanup:
 
         /* Before finalizing lexer dump the list of the files in the
            global.file_table to keep token file links alive.  */
-
         HASH_ITER (hh, lex->file_names, f, tmp)
             sz++;
 
