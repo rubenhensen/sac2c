@@ -47,14 +47,17 @@ PHASE (mod, "Running module system", ALWAYS)
 SUBPHASE (prcl, "Parse runtime optimization commandline", RTsetupRuntimeCompiler,
           global.runtime, mod)
 
-SUBPHASE (rsa, "Processing use and import statements", RSAdoResolveAll, !global.makedeps,
-          mod)
+SUBPHASE (rsa, "Processing use and import statements", RSAdoResolveAll, ALWAYS, mod)
 
-SUBPHASE (ans, "Annotating namespaces", ANSdoAnnotateNamespace, !global.makedeps, mod)
+SUBPHASE (ans, "Annotating namespaces", ANSdoAnnotateNamespace, ALWAYS, mod)
 
 SUBPHASE (gdp, "Gathering dependencies", GDPdoGatherDependencies, ALWAYS, mod)
 
-SUBPHASE (pdp, "Printing dependencies", DEPdoPrintDependencies, global.makedeps, mod)
+/*SUBPHASE( pdp,
+          "Printing dependencies",
+          DEPdoPrintDependencies,
+          global.makedeps,
+          mod)*/
 
 SUBPHASE (imp, "Retrieving imported symbols", IMPdoImportSymbols, ALWAYS, mod)
 
