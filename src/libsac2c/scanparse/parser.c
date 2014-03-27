@@ -2297,7 +2297,7 @@ handle_cast_expr (struct parser *parser)
     return handle_unary_expr (parser);
 }
 
-static inline bool
+UNUSED static inline bool
 ends_with_binary (struct parser *parser, struct pre_post_expr e)
 {
     node *t = NULL;
@@ -2320,7 +2320,7 @@ ends_with_binary (struct parser *parser, struct pre_post_expr e)
     return false;
 }
 
-static inline struct identifier *
+UNUSED static inline struct identifier *
 get_binary_op (struct pre_post_expr *e)
 {
     struct identifier *id;
