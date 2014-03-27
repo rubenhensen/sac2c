@@ -2988,7 +2988,7 @@ TYdispatchFunType (ntype *fun, ntype *args)
     DBUG_ENTER ();
 
     DBUG_ASSERT (fun != NULL, "first arg of TYDispatchFunType is NULL funtype !");
-    DBUG_ASSERT (NTYPE_CON (args) = TC_prod,
+    DBUG_ASSERT (NTYPE_CON (args) == TC_prod,
                  "second arg of TYDispatchFunType non-product type!");
 
     n = NTYPE_ARITY (args);

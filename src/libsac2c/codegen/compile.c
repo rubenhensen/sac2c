@@ -7132,7 +7132,7 @@ COMPprfDispatchError (node *arg_node, info *arg_info)
      */
     args = PRF_ARGS (arg_node);
 
-    DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (args)) = N_num, "N_num expected as 1st arg!");
+    DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (args)) == N_num, "N_num expected as 1st arg!");
 
     skip = NUM_VAL (EXPRS_EXPR (args)) + 1;
 
