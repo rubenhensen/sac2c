@@ -318,7 +318,7 @@ FLATGflattenBound (node *arg_node, info *arg_info)
         case N_id:
             break;
         default:
-            DBUG_ASSERT (FALSE, "FLATGflattenBound expected N_array or N_id");
+            DBUG_UNREACHABLE ("FLATGflattenBound expected N_array or N_id");
         }
     }
 

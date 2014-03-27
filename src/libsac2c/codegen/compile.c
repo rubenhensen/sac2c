@@ -445,7 +445,7 @@ MakeDimArg (node *arg, bool int_only)
     } else if (NODE_TYPE (arg) == N_char) {
         ret = TBmakeNum (0);
     } else {
-        DBUG_ASSERT (0, "not yet implemented");
+        DBUG_UNREACHABLE ("not yet implemented");
         ret = NULL;
     }
 
@@ -489,7 +489,7 @@ MakeSizeArg (node *arg, bool int_only)
     } else if (NODE_TYPE (arg) == N_char) {
         ret = TBmakeNum (1);
     } else {
-        DBUG_ASSERT (0, "not yet implemented");
+        DBUG_UNREACHABLE ("not yet implemented");
         ret = NULL;
     }
 
@@ -1204,12 +1204,12 @@ MakeGetDimIcm (node *arg_node)
             break;
 
         default:
-            DBUG_ASSERT (0, "Unrecognized dim descriptor");
+            DBUG_UNREACHABLE ("Unrecognized dim descriptor");
             break;
         }
         break;
     default:
-        DBUG_ASSERT (0, "Unrecognized dim descriptor");
+        DBUG_UNREACHABLE ("Unrecognized dim descriptor");
         break;
     }
 
@@ -1450,7 +1450,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                         break;
 
                     default:
-                        DBUG_ASSERT (0, "Unrecognized shape descriptor");
+                        DBUG_UNREACHABLE ("Unrecognized shape descriptor");
                         break;
                     }
                     break;
@@ -1520,7 +1520,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                         break;
 
                     default:
-                        DBUG_ASSERT (0, "Unrecognized shape descriptor");
+                        DBUG_UNREACHABLE ("Unrecognized shape descriptor");
                         break;
                     }
                     break;
@@ -1565,7 +1565,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                                                       FALSE, TRUE, FALSE, NULL));
                         break;
                     default:
-                        DBUG_ASSERT (0, "Unrecognized shape descriptor!");
+                        DBUG_UNREACHABLE ("Unrecognized shape descriptor!");
                         break;
                     }
 
@@ -1580,13 +1580,13 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                     break;
 
                 default:
-                    DBUG_ASSERT (0, "Unrecognized shape descriptor");
+                    DBUG_UNREACHABLE ("Unrecognized shape descriptor");
                     break;
                 }
                 break;
 
             default:
-                DBUG_ASSERT (0, "Unrecognized shape descriptor");
+                DBUG_UNREACHABLE ("Unrecognized shape descriptor");
                 break;
             }
             break;
@@ -1634,19 +1634,19 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                 break;
 
             default:
-                DBUG_ASSERT (0, "Unrecognized shape descriptor");
+                DBUG_UNREACHABLE ("Unrecognized shape descriptor");
                 break;
             }
             break;
 
         default:
-            DBUG_ASSERT (0, "Unrecognized shape descriptor");
+            DBUG_UNREACHABLE ("Unrecognized shape descriptor");
             break;
         }
         break;
 
     default:
-        DBUG_ASSERT (0, "Unrecognized shape descriptor");
+        DBUG_UNREACHABLE ("Unrecognized shape descriptor");
         break;
     }
 
@@ -1947,7 +1947,7 @@ GetBaseTypeFromAvis (node *in)
     } else if (NODE_TYPE (in) == N_arg) {
         type = ARG_TYPE (in);
     } else {
-        DBUG_ASSERT (FALSE, "Illegal node type found!");
+        DBUG_UNREACHABLE ("Illegal node type found!");
     }
 
     DBUG_RETURN (STRcpy (GetBasetypeStr (type)));
@@ -1982,7 +1982,7 @@ GetBaseTypeFromExpr (node *in)
         in = GLOBOBJ_OBJDEF (in);
         ret = GetBasetypeStr (TYtype2OldType (OBJDEF_TYPE (in)));
     } else {
-        DBUG_ASSERT (FALSE, "Unexpected node type found!");
+        DBUG_UNREACHABLE ("Unexpected node type found!");
     }
 
     DBUG_RETURN (ret);
@@ -2209,7 +2209,8 @@ MakeFunApArgs (node *ap)
                                      exprs);
 #ifndef DBUG_OFF
             } else {
-                DBUG_ASSERT (0, "arguments of N_ap should be either N_id or N_globobj!");
+                DBUG_UNREACHABLE (
+                  "arguments of N_ap should be either N_id or N_globobj!");
 #endif
             }
         }
@@ -2398,8 +2399,6 @@ MakeFPAp (node *let, node *icm, info *arg_info)
     DBUG_RETURN (assign);
 }
 
-#ifndef DBUG_OFF
-
 /** <!--********************************************************************-->
  *
  * @fn  bool CheckAp( node *ap, info *arg_info)
@@ -2452,8 +2451,6 @@ CheckAp (node *ap, info *arg_info)
 
     DBUG_RETURN (ok);
 }
-
-#endif
 
 /** <!--********************************************************************-->
  *
@@ -3939,7 +3936,7 @@ GetType (node *arg_node)
     } else if (NODE_TYPE (arg_node) == N_id) {
         decl = ID_DECL (arg_node);
     } else {
-        DBUG_ASSERT (0 == 1, "Unexpected node type\n");
+        DBUG_UNREACHABLE ("Unexpected node type\n");
     }
 
     if (NODE_TYPE (decl) == N_vardec) {
@@ -3947,7 +3944,7 @@ GetType (node *arg_node)
     } else if (NODE_TYPE (decl) == N_arg) {
         type = ARG_TYPE (decl);
     } else {
-        DBUG_ASSERT (0 == 1, "Unexpected node type\n");
+        DBUG_UNREACHABLE ("Unexpected node type\n");
     }
 
     DBUG_RETURN (type);
@@ -4820,7 +4817,7 @@ COMPprfIncRC (node *arg_node, info *arg_info)
         type = FREEfreeAllTypes (type);
         break;
     default:
-        DBUG_ASSERT (FALSE, "1. Argument of inc_rc has wrong node type.");
+        DBUG_UNREACHABLE ("1. Argument of inc_rc has wrong node type.");
     }
 
     DBUG_RETURN (ret_node);
@@ -4867,7 +4864,7 @@ COMPprfDecRC (node *arg_node, info *arg_info)
         type = FREEfreeAllTypes (type);
         break;
     default:
-        DBUG_ASSERT (FALSE, "1. Argument of dec_rc has wrong node type.");
+        DBUG_UNREACHABLE ("1. Argument of dec_rc has wrong node type.");
     }
 
     DBUG_RETURN (ret_node);
@@ -6347,7 +6344,7 @@ COMPprfSelI (node *arg_node, info *arg_info)
                               NULL);
     } else {
         ret_node = (node *)NULL;
-        DBUG_ASSERT (FALSE, "Not an N_id!!");
+        DBUG_UNREACHABLE ("Not an N_id!!");
     }
     DBUG_RETURN (ret_node);
 }
@@ -6523,7 +6520,7 @@ COMPprfGenarray (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT (0, "prf F_genarray not implemented yet!");
+    DBUG_UNREACHABLE ("prf F_genarray not implemented yet!");
 
     ret_node = NULL;
 
@@ -6767,7 +6764,7 @@ is_simd_type (node *n)
         else if (NODE_TYPE (av) == N_arg)
             type = ARG_TYPE (av);
         else
-            DBUG_ASSERT (FALSE, "unexpected node type of avis");
+            DBUG_UNREACHABLE ("unexpected node type of avis");
         return TCgetBasetype (type) == T_floatvec;
     }
 
@@ -7262,7 +7259,7 @@ COMPprfIdxs2Offset (node *arg_node, info *arg_info)
                         DUPdupIdNt (PRF_ARG1 (arg_node)));
 #ifndef DBUG_OFF
     } else {
-        DBUG_ASSERT (0, "unexpected 1st arg to idxs2offset");
+        DBUG_UNREACHABLE ("unexpected 1st arg to idxs2offset");
 #endif
     }
 
@@ -7379,7 +7376,7 @@ COMPprfVect2Offset (node *arg_node, info *arg_info)
                           DUPdupIdNt (PRF_ARG1 (arg_node)));
 #ifndef DBUG_OFF
     } else {
-        DBUG_ASSERT (0, "unexpected 1st arg to vect2offset");
+        DBUG_UNREACHABLE ("unexpected 1st arg to vect2offset");
 #endif
     }
 
@@ -7724,7 +7721,7 @@ COMPprfTypeConstraint (node *arg_node, info *arg_info)
     arg_type = TYPE_TYPE (PRF_ARG1 (arg_node));
 
     if (TYisAKV (arg_type)) {
-        DBUG_ASSERT (FALSE, "Type constraint with AKV type not implemented");
+        DBUG_UNREACHABLE ("Type constraint with AKV type not implemented");
 
         ret_node = NULL;
     } else if (TYisAKS (arg_type)) {
@@ -8148,7 +8145,7 @@ COMPprfShmemBoundaryLoad (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (0, "Illegal primitive function found!");
+    DBUG_UNREACHABLE ("Illegal primitive function found!");
 
     DBUG_RETURN (arg_node);
 }
@@ -9384,8 +9381,8 @@ COMPwith (node *arg_node, info *arg_info)
                     icm_chain = TBmakeAssign (sub_set_shape, icm_chain);
 
                 } else {
-                    DBUG_ASSERT (0, "no default value found! "
-                                    "cannot create subvar shape");
+                    DBUG_UNREACHABLE ("no default value found! "
+                                      "cannot create subvar shape");
                 }
             } else if ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_modarray)
                        && (!KNOWN_SHAPE (TCgetShapeDim (ID_TYPE (sub_id))))) {
@@ -9666,8 +9663,8 @@ COMPwith2 (node *arg_node, info *arg_info)
                         alloc_icms = TBmakeAssign (sub_set_shape, alloc_icms);
 
                     } else {
-                        DBUG_ASSERT (0, "no default value found! "
-                                        "cannot create subvar shape");
+                        DBUG_UNREACHABLE ("no default value found! "
+                                          "cannot create subvar shape");
                     }
                 } else if ((NODE_TYPE (withop) == N_modarray)
                            && (!KNOWN_SHAPE (TCgetShapeDim (ID_TYPE (sub_id))))) {
@@ -9749,10 +9746,10 @@ COMPwith2 (node *arg_node, info *arg_info)
             break;
 
         case N_break:
-            DBUG_ASSERT (0, "Break must not appear as a first withop");
+            DBUG_UNREACHABLE ("Break must not appear as a first withop");
 
         default:
-            DBUG_ASSERT (0, "illegal withop type found");
+            DBUG_UNREACHABLE ("illegal withop type found");
             break;
         }
     }
@@ -9888,7 +9885,7 @@ COMPwith3 (node *arg_node, info *arg_info)
     } else if (global.backend == BE_cuda || global.backend == BE_cudahybrid) {
         arg_node = TRAVopt (WITH3_RANGES (arg_node), arg_info);
     } else {
-        DBUG_ASSERT (FALSE, "With3 not defined for this backend");
+        DBUG_UNREACHABLE ("With3 not defined for this backend");
     }
 
     DBUG_RETURN (arg_node);
@@ -10032,7 +10029,7 @@ COMPrange (node *arg_node, info *arg_info)
         next = TRAVopt (RANGE_NEXT (arg_node), arg_info);
         res = TCappendAssign (loopnests, next);
     } else {
-        DBUG_ASSERT (FALSE, "N_range not defined in this backend");
+        DBUG_UNREACHABLE ("N_range not defined in this backend");
         res = NULL;
     }
 
@@ -10619,7 +10616,7 @@ COMPwlgrid (node *arg_node, info *arg_info)
                     break;
 
                 default:
-                    DBUG_ASSERT (0, "illegal withop type found");
+                    DBUG_UNREACHABLE ("illegal withop type found");
                     icm_name = NULL;
                     icm_args = NULL;
                     break;

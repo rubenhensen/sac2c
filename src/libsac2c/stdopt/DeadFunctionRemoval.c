@@ -232,7 +232,8 @@ tagWrapperAsNeeded (node *wrapper, info *info)
                                         info);
 #ifndef DBUG_OFF
         } else {
-            DBUG_ASSERT (0, "found a wrapper with neither FUNDEF_IMPL, nor wrappertype");
+            DBUG_UNREACHABLE (
+              "found a wrapper with neither FUNDEF_IMPL, nor wrappertype");
 #endif
         }
     }

@@ -253,7 +253,7 @@ PrintGlobalSwitches (void)
         fprintf (global.outfile, "#define SAC_BACKEND OMP\n");
         break;
     default:
-        DBUG_ASSERT (FALSE, "Unknown backend");
+        DBUG_UNREACHABLE ("Unknown backend");
         break;
     }
     fprintf (global.outfile, "\n");
@@ -841,7 +841,7 @@ GSCprintMain (void)
         GSCprintMainC99 ();
         break;
     default:
-        DBUG_ASSERT (FALSE, "unknown backend");
+        DBUG_UNREACHABLE ("unknown backend");
     }
 
     DBUG_RETURN ();

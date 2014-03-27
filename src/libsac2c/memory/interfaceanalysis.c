@@ -307,7 +307,7 @@ EMIAarg (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal context");
+        DBUG_UNREACHABLE ("Illegal context");
         break;
     }
 
@@ -533,7 +533,7 @@ EMIAid (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal context");
+        DBUG_UNREACHABLE ("Illegal context");
         break;
     }
 
@@ -702,7 +702,7 @@ EMIAvardec (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal context");
+        DBUG_UNREACHABLE ("Illegal context");
         break;
     }
 

@@ -297,7 +297,7 @@ CUSKCassign (node *arg_node, info *arg_info)
               = TCnodeListAppend (INFO_NLIST (arg_info), arg_node, NULL);
         }
     } else {
-        DBUG_ASSERT (0, "Unknown traverse mode!");
+        DBUG_UNREACHABLE ("Unknown traverse mode!");
     }
 
     DBUG_RETURN (arg_node);

@@ -357,7 +357,7 @@ EMRIprf (node *arg_node, info *arg_info)
         break;
 
     case F_reshape_VxA:
-        DBUG_ASSERT (0, "Illegal prf!");
+        DBUG_UNREACHABLE ("Illegal prf!");
         break;
 
     case F_alloc_or_reshape:

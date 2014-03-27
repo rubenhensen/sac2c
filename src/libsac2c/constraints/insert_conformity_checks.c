@@ -223,7 +223,7 @@ ArgEncodingToTypeConstraint (prf fun, int argno, ntype *scalartype)
         /* nothing to be done here */
         break;
     default:
-        DBUG_ASSERT (0, "unknown arg encoding found!");
+        DBUG_UNREACHABLE ("unknown arg encoding found!");
     }
 
     DBUG_RETURN (result);

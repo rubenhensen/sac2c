@@ -550,7 +550,7 @@ CSGDarg (node *arg_node, info *arg_info)
         }
         break;
     default:
-        DBUG_ASSERT (0, "unknown traversal mode!");
+        DBUG_UNREACHABLE ("unknown traversal mode!");
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -644,7 +644,7 @@ CSGDret (node *arg_node, info *arg_info)
         }
         break;
     default:
-        DBUG_ASSERT (0, "unknown traversal mode.");
+        DBUG_UNREACHABLE ("unknown traversal mode.");
     }
 
     if (INFO_RETEXPRS (arg_info) != NULL) {

@@ -359,7 +359,7 @@ IRAprintRcs (node *arg_node, info *arg_info)
                 } else if (NODE_TYPE (RC_ARRAYSHP (rcs)) == N_array) {
                     PRTarray (RC_ARRAYSHP (rcs), arg_info);
                 } else {
-                    DBUG_ASSERT (0, "Wrong node type found for resuable array shape!");
+                    DBUG_UNREACHABLE ("Wrong node type found for resuable array shape!");
                 }
                 fprintf (global.outfile, "\n");
 
@@ -2020,9 +2020,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 node *
 PRTfundef (node *arg_node, info *arg_info)
 {
-#ifndef DBUG_OFF
     int old_indent = global.indent;
-#endif
 
     bool is_userdefined_function = FALSE;
 
@@ -2380,7 +2378,7 @@ PRTannotate (node *arg_node, info *arg_info)
             sprintf (strbuffer1, "PROFILE_END_UDF( %d, %d)",
                      ANNOTATE_FUNNUMBER (arg_node), ANNOTATE_FUNAPNUMBER (arg_node));
         } else {
-            DBUG_ASSERT (0, "wrong tag at N_annotate");
+            DBUG_UNREACHABLE ("wrong tag at N_annotate");
         }
     }
 
@@ -2685,9 +2683,7 @@ PRTvardec (node *arg_node, info *arg_info)
 node *
 PRTblock (node *arg_node, info *arg_info)
 {
-#ifndef DBUG_OFF
     int old_indent = global.indent;
-#endif
 
     DBUG_ENTER ();
 
@@ -3469,8 +3465,7 @@ PRTid (node *arg_node, info *arg_info)
             text = ID_NAME (arg_node);
         } else {
             text = "";
-            DBUG_ASSERT (FALSE,
-                         "Found an Id node with neither NTtag nor ICMText nor Name");
+            DBUG_UNREACHABLE ("Found an Id node with neither NTtag nor ICMText nor Name");
         }
     } else {
         if (ID_AVIS (arg_node) != NULL) {
@@ -3479,7 +3474,7 @@ PRTid (node *arg_node, info *arg_info)
             text = ID_ICMTEXT (arg_node);
         } else {
             text = "";
-            DBUG_ASSERT (FALSE, "Found an Id node with neither Avis nor ICMText");
+            DBUG_UNREACHABLE ("Found an Id node with neither Avis nor ICMText");
         }
     }
 
@@ -5688,7 +5683,7 @@ PRTwlcode (node *arg_node, info *arg_info)
                 break;
 
             default:
-                DBUG_ASSERT (0, "illegal with-loop type found");
+                DBUG_UNREACHABLE ("illegal with-loop type found");
                 break;
             }
         } else {

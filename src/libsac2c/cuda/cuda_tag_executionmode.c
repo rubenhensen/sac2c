@@ -894,7 +894,7 @@ CUTEMap (node *arg_node, info *arg_info)
             INFO_DOFUNARGS (arg_info) = FALSE;
         }
     } else {
-        DBUG_ASSERT (0, "Invalid traverse mode!");
+        DBUG_UNREACHABLE ("Invalid traverse mode!");
     }
 
     DBUG_RETURN (arg_node);

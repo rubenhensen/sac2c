@@ -143,7 +143,7 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
         case TY_hcs:
         case TY_dis:
         default:
-            DBUG_ASSERT (0, "dispach should no have worked!");
+            DBUG_UNREACHABLE ("dispach should no have worked!");
         }
 
         ret = RET_NEXT (ret);

@@ -295,7 +295,7 @@ PickPredFun (ntype *type, node *args, node **preassign, node **vardecs)
             name = "isChar";
             break;
         default:
-            DBUG_ASSERT (0, "unhandled built-in type");
+            DBUG_UNREACHABLE ("unhandled built-in type");
         }
     } else if (TYisUser (TYgetScalar (type))) {
         /*
@@ -426,7 +426,7 @@ PickInputConversion (ntype *type, node *args)
             name = STRcpy ("unwrapChar");
             break;
         default:
-            DBUG_ASSERT (0, "unhandled built-in type");
+            DBUG_UNREACHABLE ("unhandled built-in type");
         }
         ns = NSgetNamespace (global.preludename);
     } else if (TYisUser (TYgetScalar (type))) {
@@ -434,7 +434,7 @@ PickInputConversion (ntype *type, node *args)
         ns = UTgetNamespace (TYgetUserType (TYgetScalar (type)));
 #ifndef DBUG_OFF
     } else {
-        DBUG_ASSERT (0, "unhandled type found!");
+        DBUG_UNREACHABLE ("unhandled type found!");
 #endif
     }
 
@@ -478,7 +478,7 @@ PickOutputConversion (ntype *type, node *args, node **vardecs, node **preassign)
         args = TBmakeExprs (TBmakeId (avis), args);
 #ifndef DBUG_OFF
     } else {
-        DBUG_ASSERT (0, "unhandled type found!");
+        DBUG_UNREACHABLE ("unhandled type found!");
 #endif
     }
 

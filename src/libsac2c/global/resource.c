@@ -186,7 +186,7 @@ RSCprintConfigEntry (char *config)
                 printf ("%d\n", *((int *)resource_table[i].store));
                 break;
             default:
-                DBUG_ASSERT (0 == 1, "Unknown type of config entry");
+                DBUG_UNREACHABLE ("Unknown type of config entry");
                 break;
             }
             break;

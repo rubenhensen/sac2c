@@ -1208,7 +1208,7 @@ DLIRid (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "unable to handle LIR_FLAG in LIRid");
+        DBUG_UNREACHABLE ("unable to handle LIR_FLAG in LIRid");
     }
 
     DBUG_RETURN (arg_node);
@@ -1472,7 +1472,7 @@ DLIRids (node *arg_ids, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "unable to handle case");
+        DBUG_UNREACHABLE ("unable to handle case");
     }
 
     /* traverse to next expression */

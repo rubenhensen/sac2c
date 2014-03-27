@@ -52,7 +52,7 @@ CUh2dSimpleTypeConversion (simpletype sty)
         res = T_double_dev;
         break;
     default:
-        DBUG_ASSERT (0, "Simple type conversion found undefined host simple type!");
+        DBUG_UNREACHABLE ("Simple type conversion found undefined host simple type!");
     }
     DBUG_RETURN (res);
 }
@@ -75,7 +75,7 @@ CUd2hSimpleTypeConversion (simpletype sty)
         res = T_double;
         break;
     default:
-        DBUG_ASSERT (0, "Simple type conversion found undefined device simple type!");
+        DBUG_UNREACHABLE ("Simple type conversion found undefined device simple type!");
     }
     DBUG_RETURN (res);
 }
@@ -101,7 +101,7 @@ CUd2shSimpleTypeConversion (simpletype sty)
         res = T_double_shmem;
         break;
     default:
-        DBUG_ASSERT (0, "Simple type conversion found undefined device simple type!");
+        DBUG_UNREACHABLE ("Simple type conversion found undefined device simple type!");
     }
     DBUG_RETURN (res);
 }
@@ -124,7 +124,7 @@ CUh2shSimpleTypeConversion (simpletype sty)
         res = T_double_shmem;
         break;
     default:
-        DBUG_ASSERT (0, "Simple type conversion found undefined host simple type!");
+        DBUG_UNREACHABLE ("Simple type conversion found undefined host simple type!");
     }
     DBUG_RETURN (res);
 }

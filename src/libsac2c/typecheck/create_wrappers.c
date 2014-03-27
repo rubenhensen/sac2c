@@ -240,7 +240,7 @@ ResetArgsOrRets (node *arg_node)
             arg_node = RET_NEXT (arg_node);
             break;
         default:
-            DBUG_ASSERT (FALSE, "non arg or ret argument to ResetArgsOrRets");
+            DBUG_UNREACHABLE ("non arg or ret argument to ResetArgsOrRets");
         }
     }
 

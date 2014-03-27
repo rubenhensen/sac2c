@@ -65,7 +65,7 @@ NTUgetShapeClassFromTypes (types *type)
         /*
          * the TC has probably not been called yet :-(
          */
-        DBUG_ASSERT (0, "illegal data class found!");
+        DBUG_UNREACHABLE ("illegal data class found!");
         z = C_unknowns;
     } else {
         int dim = TCgetShapeDim (type);
@@ -113,7 +113,7 @@ NTUgetHiddenClassFromTypes (types *type)
         /*
          * the TC has probably not been called yet :-(
          */
-        DBUG_ASSERT (0, "illegal data class found!");
+        DBUG_UNREACHABLE ("illegal data class found!");
         z = C_unknownh;
     } else if (TCisNested (type)) {
         z = C_hns;
@@ -150,7 +150,7 @@ NTUgetUniqueClassFromTypes (types *type)
         /*
          * the TC has probably not been called yet :-(
          */
-        DBUG_ASSERT (0, "illegal data class found!");
+        DBUG_UNREACHABLE ("illegal data class found!");
         z = C_unknownu;
     } else if (TCisUnique (type)) {
         z = C_unq;
@@ -185,7 +185,7 @@ NTUgetMutcStorageClassFromTypes (types *type)
         /*
          * the TC has probably not been called yet :-(
          */
-        DBUG_ASSERT (0, "illegal data class found!");
+        DBUG_UNREACHABLE ("illegal data class found!");
         z = C_unknownc;
     } else {
         switch (simpletype2mutcStorageClass (TYPES_BASETYPE (type))) {
@@ -225,7 +225,7 @@ NTUgetMutcScopeFromTypes (types *type)
         /*
          * the TC has probably not been called yet :-(
          */
-        DBUG_ASSERT (0, "illegal scope found!");
+        DBUG_UNREACHABLE ("illegal scope found!");
         z = C_unknowno;
     } else {
         switch (TYPES_MUTC_SCOPE (type)) {
@@ -262,7 +262,7 @@ NTUgetMutcUsageFromTypes (types *type)
         /*
          * the TC has probably not been called yet :-(
          */
-        DBUG_ASSERT (0, "illegal usage found!");
+        DBUG_UNREACHABLE ("illegal usage found!");
         z = C_unknowna;
     } else {
         switch (TYPES_MUTC_USAGE (type)) {
@@ -409,7 +409,7 @@ NTUaddNtTag (node *id)
         ID_NT_TAG (id) = NTUcreateNtTag (AVIS_NAME (avis), ARG_TYPE (AVIS_DECL (avis)));
         break;
     default:
-        DBUG_ASSERT (FALSE, "illegal decl in avis node");
+        DBUG_UNREACHABLE ("illegal decl in avis node");
     }
 
     DBUG_RETURN (id);
@@ -468,7 +468,7 @@ NTUgetShapeClassFromNType (ntype *ntype)
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal Shape Class");
+        DBUG_UNREACHABLE ("Illegal Shape Class");
         z = C_unknowns;
         break;
     }

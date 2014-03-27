@@ -59,7 +59,7 @@
                                     void *res, int res_pos)                              \
     {                                                                                    \
         DBUG_ENTER ();                                                                   \
-        DBUG_ASSERT (1 == 0, str (COzipCv##arg_ext##fun_ext called !));                  \
+        DBUG_UNREACHABLE (str (COzipCv##arg_ext##fun_ext called !));                     \
         DBUG_RETURN ();                                                                  \
     }
 

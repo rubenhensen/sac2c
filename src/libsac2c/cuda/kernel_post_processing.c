@@ -353,11 +353,11 @@ KPPprf (node *arg_node, info *arg_info)
                                                                "F_dim_A as the second "
                                                                "arguemnt of F_alloc!");
             } else {
-                DBUG_ASSERT (0, "Wrong dim argument for F_alloc!");
+                DBUG_UNREACHABLE ("Wrong dim argument for F_alloc!");
             }
             PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         } else {
-            DBUG_ASSERT (0, "Wrong dim argument for F_alloc!");
+            DBUG_UNREACHABLE ("Wrong dim argument for F_alloc!");
         }
         break;
     case F_free:

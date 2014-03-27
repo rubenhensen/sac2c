@@ -175,7 +175,7 @@ copyOrArray (node *val, int *depth)
             val = EXPRS_EXPR (ARRAY_AELEMS (val));
         }
     } else {
-        DBUG_ASSERT (FALSE, "Unexpected node");
+        DBUG_UNREACHABLE ("Unexpected node");
     }
 
     DBUG_ASSERT (NODE_TYPE (val) == N_id, "Unexpected node expected an N_id");

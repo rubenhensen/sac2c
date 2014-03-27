@@ -128,7 +128,7 @@ CheckAndGetBound (node *bound)
         DBUG_ASSERT (COisConstant (array),
                      "N_gnerator must be contain only constant N_array!");
     } else {
-        DBUG_ASSERT (FALSE, "Non constant N_array node found in N_generator!");
+        DBUG_UNREACHABLE ("Non constant N_array node found in N_generator!");
     }
 
     pat = PMfree (pat);
@@ -494,7 +494,7 @@ CreateWithloopPartitions (node *lb_array, node *ub_array, node *step_array,
             seg1_iter = SEG_NEXT (seg1_iter);
         }
     } else {
-        DBUG_ASSERT (FALSE, "Wrong number of segments!");
+        DBUG_UNREACHABLE ("Wrong number of segments!");
     }
 
     DBUG_RETURN ();

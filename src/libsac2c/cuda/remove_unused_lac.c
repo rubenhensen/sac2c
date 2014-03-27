@@ -116,7 +116,7 @@ RLACfundef (node *arg_node, info *arg_info)
             }
         }
     } else {
-        DBUG_ASSERT (0, "Wrong traverse mode in RLACfundef!");
+        DBUG_UNREACHABLE ("Wrong traverse mode in RLACfundef!");
     }
 
     DBUG_RETURN (arg_node);

@@ -1001,7 +1001,7 @@ COaST2Constant (node *n)
             break;
 
         default:
-            DBUG_ASSERT (FALSE, "missing implementation for given nodetype");
+            DBUG_UNREACHABLE ("missing implementation for given nodetype");
             new_co = NULL; /* just to please the compiler... */
         }
     } else {

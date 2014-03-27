@@ -436,8 +436,8 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
         }
 
         if (ig->step) {
-            DBUG_ASSERT (0, "WL folding with transformed index variables "
-                            "by multiplication and grids not supported right now.");
+            DBUG_UNREACHABLE ("WL folding with transformed index variables "
+                              "by multiplication and grids not supported right now.");
         }
         break;
 
@@ -481,13 +481,13 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
         }
 
         if (ig->step) {
-            DBUG_ASSERT (0, "WL folding with transformed index variables "
-                            "by division and grids not supported right now.");
+            DBUG_UNREACHABLE ("WL folding with transformed index variables "
+                              "by division and grids not supported right now.");
         }
         break;
 
     default:
-        DBUG_ASSERT (0, "Wrong transformation function");
+        DBUG_UNREACHABLE ("Wrong transformation function");
     }
 
     DBUG_RETURN (newig);
@@ -1110,7 +1110,7 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
         break;
 
     default:
-        DBUG_ASSERT (0, "TransformationRangeCheck called with fold-op");
+        DBUG_UNREACHABLE ("TransformationRangeCheck called with fold-op");
     }
 
     /* transform whole_ig */
@@ -1711,7 +1711,7 @@ WLFid (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Not expected");
+        DBUG_UNREACHABLE ("Not expected");
     }
 
     DBUG_RETURN (arg_node);
@@ -1780,7 +1780,7 @@ WLFlet (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Not expected");
+        DBUG_UNREACHABLE ("Not expected");
     }
 
     DBUG_RETURN (arg_node);
@@ -1912,7 +1912,7 @@ WLFwith (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Not expected");
+        DBUG_UNREACHABLE ("Not expected");
     }
 
     DBUG_RETURN (arg_node);
@@ -1968,7 +1968,7 @@ WLFcode (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Unexpected WLF mode");
+        DBUG_UNREACHABLE ("Unexpected WLF mode");
     }
 
     CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);

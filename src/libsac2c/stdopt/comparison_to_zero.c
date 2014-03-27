@@ -373,7 +373,7 @@ GetSubtractionOperator (prf op)
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal argument, must be a comparison operator");
+        DBUG_UNREACHABLE ("Illegal argument, must be a comparison operator");
         result = F_unknown;
     }
 
@@ -634,7 +634,7 @@ CTZprf (node *arg_node, info *arg_info)
             break;
 
         default:
-            DBUG_ASSERT (0, "Type is unknown, must be int, double or float");
+            DBUG_UNREACHABLE ("Type is unknown, must be int, double or float");
         }
 
         // Avis node for zero

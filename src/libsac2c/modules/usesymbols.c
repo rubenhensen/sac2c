@@ -122,7 +122,7 @@ USSntype (ntype *arg_ntype, info *arg_info)
     } else if (TYisScalar (arg_ntype)) {
         scalar = arg_ntype;
     } else {
-        DBUG_ASSERT (0, "don't know what to do here");
+        DBUG_UNREACHABLE ("don't know what to do here");
         scalar = NULL;
     }
 

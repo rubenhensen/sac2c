@@ -897,7 +897,7 @@ BuildReduceAssigns (node *part, info *arg_info)
             assigns = TCappendAssign (y_reduction_assigns, x_reduction_assigns);
         }
     } else {
-        DBUG_ASSERT (0, "Reduction is only supported for 1D and 2D folds!");
+        DBUG_UNREACHABLE ("Reduction is only supported for 1D and 2D folds!");
     }
 
     DBUG_RETURN (assigns);
@@ -1095,7 +1095,7 @@ BuildStoreAssigns (node *part, info *arg_info)
         } else if (INFO_RESDEF (arg_info) == def_array) {
             /* TODO */
         } else {
-            DBUG_ASSERT (0, "Unknow result definition assignment!");
+            DBUG_UNREACHABLE ("Unknow result definition assignment!");
         }
 
         /*
@@ -2046,7 +2046,7 @@ BuildFoldWithloop (node *old_foldwl, info *arg_info)
         WITH_REFERENCED (new_foldwl) = WITH_REFERENCED (old_foldwl);
         WITH_ISFOLDABLE (new_foldwl) = WITH_ISFOLDABLE (old_foldwl);
     } else {
-        DBUG_ASSERT (0, "Unknow result definition assignment!");
+        DBUG_UNREACHABLE ("Unknow result definition assignment!");
     }
 
     /* Cleanup arg_info */

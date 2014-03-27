@@ -294,8 +294,8 @@ F2Lassign (node *arg_node, info *arg_info)
     break;
 #endif
     default:
-        DBUG_ASSERT (FALSE, "Unexpected node type %d in F2Lassign.",
-                     NODE_TYPE (ASSIGN_STMT (arg_node)));
+        DBUG_UNREACHABLE ("Unexpected node type %d in F2Lassign.",
+                          NODE_TYPE (ASSIGN_STMT (arg_node)));
     }
 
     DBUG_RETURN (arg_node);

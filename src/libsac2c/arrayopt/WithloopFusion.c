@@ -252,7 +252,7 @@ UpdateInfo (info *arg_info, info *stacked_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "illegal WOTYPE found!");
+        DBUG_UNREACHABLE ("illegal WOTYPE found!");
         break;
     }
 
@@ -552,7 +552,7 @@ CompGenSon (node *gen_son1, node *gen_son2)
                 gen_prob = GEN_variable;
                 break;
             } else {
-                DBUG_ASSERT (0, "Unknown elements found!");
+                DBUG_UNREACHABLE ("Unknown elements found!");
                 break;
             }
             elems = EXPRS_NEXT (elems);
@@ -1128,7 +1128,7 @@ IntersectParts (node *parts_1, node *parts_2, node **new_parts_2)
         const_tmp = COfreeConstant (const_tmp);
     } else {
         dim = 0;
-        DBUG_ASSERT (0, "lower bound of generator is not constant!");
+        DBUG_UNREACHABLE ("lower bound of generator is not constant!");
     }
 
     nparts_1 = nparts_2 = NULL;

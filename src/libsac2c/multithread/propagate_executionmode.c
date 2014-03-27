@@ -437,7 +437,7 @@ UpdateFundefExecmode (node *fundef, mtexecmode_t execmode)
             FUNDEF_EXECMODE (fundef) = MUTH_EXCLUSIVE;
             break;
         case MUTH_MULTI_SPECIALIZED:
-            DBUG_ASSERT (FALSE, "execmode must not be MUTH_MULTI_SPECIALIZED");
+            DBUG_UNREACHABLE ("execmode must not be MUTH_MULTI_SPECIALIZED");
             break;
         case MUTH_ANY:
             FUNDEF_EXECMODE (fundef) = MUTH_SINGLE;
@@ -456,7 +456,7 @@ UpdateFundefExecmode (node *fundef, mtexecmode_t execmode)
         case MUTH_MULTI:
             break;
         case MUTH_MULTI_SPECIALIZED:
-            DBUG_ASSERT (FALSE, "execmode must not be MUTH_MULTI_SPECIALIZED");
+            DBUG_UNREACHABLE ("execmode must not be MUTH_MULTI_SPECIALIZED");
             break;
         case MUTH_ANY:
             FUNDEF_EXECMODE (fundef) = MUTH_MULTI;
@@ -466,7 +466,7 @@ UpdateFundefExecmode (node *fundef, mtexecmode_t execmode)
     case MUTH_MULTI_SPECIALIZED:
         break;
     default:
-        DBUG_ASSERT (0, "UpdateFundefExecmode expects a valid executionmode");
+        DBUG_UNREACHABLE ("UpdateFundefExecmode expects a valid executionmode");
         break;
     }
     DBUG_RETURN ();
@@ -497,7 +497,7 @@ UpdateCondExecmode (node *condassign, mtexecmode_t execmode)
                 ASSIGN_EXECMODE (condassign) = MUTH_EXCLUSIVE;
                 break;
             case MUTH_MULTI_SPECIALIZED:
-                DBUG_ASSERT (FALSE, "execmode must not be MUTH_MULTI_SPECIALIZED");
+                DBUG_UNREACHABLE ("execmode must not be MUTH_MULTI_SPECIALIZED");
                 break;
             case MUTH_ANY:
                 ASSIGN_EXECMODE (condassign) = MUTH_SINGLE;
@@ -514,7 +514,7 @@ UpdateCondExecmode (node *condassign, mtexecmode_t execmode)
             case MUTH_MULTI:
                 break;
             case MUTH_MULTI_SPECIALIZED:
-                DBUG_ASSERT (FALSE, "execmode must not be MUTH_MULTI_SPECIALIZED");
+                DBUG_UNREACHABLE ("execmode must not be MUTH_MULTI_SPECIALIZED");
                 break;
             case MUTH_ANY:
                 ASSIGN_EXECMODE (condassign) = MUTH_SINGLE;

@@ -243,8 +243,8 @@ TRAVlacIsSuccOf (node *succ, node *parent, lac_info_t *lac_info)
         /* called in N_fundef to decide whether to follow the next */
         result = (LAC_INFO_BLOCKLEVEL (lac_info) == 0);
     } else {
-        DBUG_ASSERT (FALSE, "TRAVlacIsSuccOf called with illegal succ/parent "
-                            "combination");
+        DBUG_UNREACHABLE ("TRAVlacIsSuccOf called with illegal succ/parent "
+                          "combination");
 
         result = FALSE;
     }

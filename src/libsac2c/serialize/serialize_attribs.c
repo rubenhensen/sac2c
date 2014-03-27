@@ -662,7 +662,7 @@ SATserializeExtLink (info *info, node *attr, node *parent)
             SERserializeObjdefLink (attr, INFO_SER_FILE (info));
             break;
         default:
-            DBUG_ASSERT (0, "unknown target for ExtLink found!");
+            DBUG_UNREACHABLE ("unknown target for ExtLink found!");
             fprintf (INFO_SER_FILE (info), "NULL");
             break;
         }

@@ -63,7 +63,7 @@ ICMCompileND_CREATE__IRREGULAR__ARRAY__DATA (char *to_NT, int to_sdim, int val_s
     fprintf (global.outfile, "%s\n", to_NT);
     fprintf (global.outfile, "%s\n", copyfun);
 
-    // DBUG_ASSERT (FALSE, "O YES!");
+    // DBUG_UNREACHABLE ("O YES!");
     fprintf (global.outfile, "FOOBAR!!!!!!!!!!");
 
     DBUG_RETURN ();

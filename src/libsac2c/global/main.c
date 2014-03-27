@@ -1,7 +1,5 @@
-/*
- *  This file contains the start functions for the various sac tools.
- */
-
+/*! \file
+    This file contains the start functions for the various sac tools.  */
 #include "sactools.h"
 #include "types.h"
 #include "phase_drivers.h"
@@ -18,11 +16,8 @@
 #include <stdlib.h>
 #include <locale.h>
 
-/*
- *  Here we handle special options that do not initiate any
- *  compilation process.
- */
-
+/*! Here we handle special options that do not initiate any
+    compilation process.  */
 static void
 HandleSpecialOptions (void)
 {
@@ -30,19 +25,21 @@ HandleSpecialOptions (void)
 
     if (global.printConfig != NULL) {
         RSCprintConfigEntry (global.printConfig);
-        CTIterminateCompilationSilent ();
+        CTIexit (EXIT_SUCCESS);
     } else if (global.libstat) {
         LIBSprintLibStat ();
-        CTIterminateCompilationSilent ();
+        CTIexit (EXIT_SUCCESS);
     }
 
     DBUG_RETURN ();
 }
 
-/*
- *  First, we need to set up the compile infrastructure.
- */
-
+/*! Prepare the compiler: parse options, parse configuration files
+    and initialise global values.
+    \param argc     Number of arguments in the \a argv list
+    \param argv     Argument list
+    \param tool     Identifier of the tool (enum values)
+    \param toolname The name of the tool, e.g. sac2c  */
 static node *
 SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
 {
@@ -53,9 +50,7 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
     /* Set custom exit function to make DBUG_ASSERT
        macro correctly terminate the compilation
        process.  */
-#ifndef DBUG_OFF
     set_debug_exit_function (CTIexit);
-#endif
 
     setlocale (LC_ALL, "en_US");
     CTIinstallInterruptHandlers ();
@@ -87,10 +82,7 @@ int SACrunSac2tex (int argc, char *argv[]);
 }
 #endif
 
-/*
- *  And now, the main function which triggers the whole compilation.
- */
-
+/*! Triggers compilation of sac2c.  */
 int
 SACrunSac2c (int argc, char *argv[])
 {
@@ -107,10 +99,7 @@ SACrunSac2c (int argc, char *argv[])
     DBUG_RETURN (0);
 }
 
-/*
- *  And now, the main function which triggers the whole compilation.
- */
-
+/*! Trigger compilation of sac4c.  */
 int
 SACrunSac4c (int argc, char *argv[])
 {
@@ -127,10 +116,7 @@ SACrunSac4c (int argc, char *argv[])
     DBUG_RETURN (0);
 }
 
-/*
- *  And now, the main function which triggers the whole compilation.
- */
-
+/*! Trigger compilation of sac2tex.  */
 int
 SACrunSac2tex (int argc, char *argv[])
 {

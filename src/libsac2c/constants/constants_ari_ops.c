@@ -110,7 +110,7 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
                 }
 
             } else {
-                DBUG_ASSERT (0 == 1, "COzip called with args of different shape!");
+                DBUG_UNREACHABLE ("COzip called with args of different shape!");
                 res = NULL;
             }
         }

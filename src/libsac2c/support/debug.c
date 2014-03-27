@@ -53,8 +53,6 @@
  *
  */
 
-#ifndef DBUG_OFF
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -65,6 +63,20 @@
 #define DBUG_PREFIX "debug.c"
 #include "debug.h"
 
+static void (*__exit_func) (int) = exit;
+
+void
+set_debug_exit_function (void (*func) (int))
+{
+    __exit_func = func;
+}
+
+void (*get_debug_exit_function ()) (int)
+{
+    return __exit_func;
+}
+
+#ifndef DBUG_OFF
 /*
  *     Manifest constants that should not require any changes.
  */
@@ -134,19 +146,6 @@ EXPORT FILE *_db_fp_; /* Output stream, default stderr */
 EXPORT char *_db_process_ = "dbug"; /* Pointer to process name; argv[0] */
 EXPORT BOOLEAN _db_on_ = FALSE;     /* TRUE if debugging currently on */
 EXPORT int _db_dummy_;
-
-LOCAL void (*__exit_func) (int) = exit;
-
-void
-set_debug_exit_function (void (*func) (int))
-{
-    __exit_func = func;
-}
-
-void (*get_debug_exit_function ()) (int)
-{
-    return __exit_func;
-}
 
 /*
  *     The user may specify a list of functions to trace or

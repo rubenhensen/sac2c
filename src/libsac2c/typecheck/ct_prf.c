@@ -33,7 +33,7 @@ ApplyCF (te_info *info, ntype *args)
                                           TYgetValue (TYgetProductMember (args, 2)));
         break;
     default:
-        DBUG_ASSERT (FALSE, "Constant Folding failed for the given number of arguments!");
+        DBUG_UNREACHABLE ("Constant Folding failed for the given number of arguments!");
     }
     DBUG_ASSERT (res != NULL,
                  "Constant Folding failed despite legal arguments were found!");
@@ -62,7 +62,7 @@ ntype *
 NTCCTprf_dummy (te_info *info, ntype *args)
 {
     DBUG_ENTER ();
-    DBUG_ASSERT (FALSE, "prf not yet implemented");
+    DBUG_UNREACHABLE ("prf not yet implemented");
     DBUG_RETURN (args);
 }
 
@@ -1348,7 +1348,7 @@ NTCCTprf_shape_A (te_info *info, ntype *args)
             res = TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0));
             break;
         default:
-            DBUG_ASSERT (FALSE, "NTCCTprf_shape_A applied to non-array type");
+            DBUG_UNREACHABLE ("NTCCTprf_shape_A applied to non-array type");
         }
     }
 
@@ -1421,7 +1421,7 @@ NTCCTprf_reshape_VxA (te_info *info, ntype *args)
                 res = TYmakeAUD (TYcopyType (scalar));
                 break;
             default:
-                DBUG_ASSERT (FALSE, "NTCPRF_reshape_VxA applied to non-array type");
+                DBUG_UNREACHABLE ("NTCPRF_reshape_VxA applied to non-array type");
             }
         }
     }

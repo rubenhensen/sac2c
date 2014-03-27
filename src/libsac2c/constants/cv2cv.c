@@ -64,7 +64,7 @@ COcv2CvTEMPLATE (unsigned char, UByte) COcv2CvTEMPLATE (unsigned short, UShort)
   void COcv2CvDummy (void *src, int off, int len, void *res, int res_off)
 {
     DBUG_ENTER ();
-    DBUG_ASSERT (1 == 0, "COCv2CvDummy called!");
+    DBUG_UNREACHABLE ("COCv2CvDummy called!");
     DBUG_RETURN ();
 }
 

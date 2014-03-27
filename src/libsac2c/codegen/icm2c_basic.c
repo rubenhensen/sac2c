@@ -413,7 +413,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -436,10 +436,8 @@ WriteScalar (char *scl)
     DBUG_ENTER ();
 
     if (scl[0] == '(') {
-/* 'scl' is a tagged id */
-#ifndef DBUG_OFF
+        /* 'scl' is a tagged id */
         shape_class_t dc = ICUGetShapeClass (scl);
-#endif
 
         DBUG_ASSERT (dc == C_scl || dc == C_aud, "tagged id is no scalar!");
         out ("SAC_ND_WRITE( %s, 0)", scl);
@@ -499,10 +497,8 @@ ReadScalar (void *scl, char *idx_str, int idx)
                 idx);
 
     if (((char *)scl)[0] == '(') {
-/* 'scl' is a tagged id */
-#ifndef DBUG_OFF
+        /* 'scl' is a tagged id */
         shape_class_t sc = ICUGetShapeClass ((char *)scl);
-#endif
 
         DBUG_ASSERT (sc == C_scl || sc == C_aud, "tagged id is no scalar!");
         ReadId (scl, idx_str, idx);
@@ -578,8 +574,8 @@ ReadConstArray_Str (void *v, char *idx_str, int idx)
     DBUG_ENTER ();
 
     if (idx_str != NULL) {
-        DBUG_ASSERT (0, "illegal argument for "
-                        "ReadConstArray_Str() found!");
+        DBUG_UNREACHABLE ("illegal argument for "
+                          "ReadConstArray_Str() found!");
     } else {
         DBUG_ASSERT (idx >= 0, "illegal index for "
                                "ReadConstArray_Str() found!");

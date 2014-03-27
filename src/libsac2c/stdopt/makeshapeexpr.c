@@ -846,7 +846,7 @@ MSEwith (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown Withop encountered");
+        DBUG_UNREACHABLE ("Unknown Withop encountered");
         break;
     }
 

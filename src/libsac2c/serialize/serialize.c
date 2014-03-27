@@ -215,7 +215,7 @@ AppendSerFunType (str_buf *funname, ntype *type)
 
         scalar = TYgetScalar (type);
     } else {
-        DBUG_ASSERT (0, "unknown shape class!");
+        DBUG_UNREACHABLE ("unknown shape class!");
         scalar = NULL;
     }
 
@@ -233,7 +233,7 @@ AppendSerFunType (str_buf *funname, ntype *type)
         funname = SBUFprintf (funname, "%s__%s", NSgetName (TYgetNamespace (scalar)),
                               TYgetName (scalar));
     } else {
-        DBUG_ASSERT (0, "unknown scalar type found");
+        DBUG_UNREACHABLE ("unknown scalar type found");
     }
 
     DBUG_RETURN (funname);
@@ -290,7 +290,7 @@ GenerateSerFunName (stentrytype_t type, node *arg_node)
     switch (type) {
     case SET_funbody:
     case SET_wrapperbody:
-        DBUG_ASSERT (FALSE, "cannot generate names for function bodies!");
+        DBUG_UNREACHABLE ("cannot generate names for function bodies!");
 
         break;
     case SET_funhead:
@@ -311,7 +311,7 @@ GenerateSerFunName (stentrytype_t type, node *arg_node)
                              OBJDEF_NAME (arg_node));
         break;
     default:
-        DBUG_ASSERT (0, "Unexpected symboltype found!");
+        DBUG_UNREACHABLE ("Unexpected symboltype found!");
         break;
     }
 
@@ -391,7 +391,7 @@ GetSerFunName (stentrytype_t type, node *arg_node)
 
         break;
     default:
-        DBUG_ASSERT (0, "Unexpected symboltype found!");
+        DBUG_UNREACHABLE ("Unexpected symboltype found!");
         break;
     }
 
@@ -425,7 +425,7 @@ SERgetSerFunName (node *arg_node)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "unexpected node type.");
+        DBUG_UNREACHABLE ("unexpected node type.");
         result = NULL;
     }
 

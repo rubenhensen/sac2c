@@ -378,7 +378,7 @@ MatchNode (nodetype nt, checkFun_ptr matchAttribsFun, int numAttribs,
                 case N_bool:
                     break;
                 default:
-                    DBUG_ASSERT (FALSE, "pushSons not yet fully implemented!");
+                    DBUG_UNREACHABLE ("pushSons not yet fully implemented!");
                     break;
                 }
             }
