@@ -457,6 +457,7 @@ RSCparseResourceFile (char *buffer)
         }
 
         global.linenum = 1;
+        global.colnum = 1;
         global.filename = buffer; /* set for better error messages only */
         global.start_token = PARSE_RC;
 

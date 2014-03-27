@@ -131,7 +131,8 @@
   <!-- set lineno -->
   <xsl:value-of select="'DBUG_PRINT (&quot;setting lineno to %d&quot;, global.linenum);'"/>
   <xsl:value-of select="'NODE_LINE( xthis) = global.linenum;'" />
-  <xsl:value-of select="'NODE_COL( xthis) = 0;'" />
+  <xsl:value-of select="'DBUG_PRINT (&quot;setting colno to %d&quot;, global.colnum);'"/>
+  <xsl:value-of select="'NODE_COL( xthis) = global.colnum;'" />
   <xsl:value-of select="'NODE_ERROR( xthis) = NULL;'" />
   <!-- set filename -->
   <xsl:value-of select="'DBUG_PRINT (&quot;setting filename to %s&quot;, global.filename);'"/>

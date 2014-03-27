@@ -936,6 +936,11 @@ GLOBAL (int, linenum, 1, xfree_dummy, )
  * Current line number
  */
 
+GLOBAL (int, colnum, 1, xfree_dummy, )
+/*
+ * Current column number
+ */
+
 GLOBAL (char *, filename, NULL, xfree_dummy, )
 /*
  * Current file name
