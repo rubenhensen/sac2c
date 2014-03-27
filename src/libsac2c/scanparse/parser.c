@@ -5830,6 +5830,69 @@ handle_definitions (struct parser *parser)
     return error_mark_node;
 }
 
+int
+parse_for_dependencies (struct parser *parser)
+{
+    struct token *tok;
+    while (tok_eof != token_class (tok = parser_get_token (parser))) {
+        /* use or import dependency.  */
+        if (token_is_keyword (tok, IMPORT) || token_is_keyword (tok, USE)) {
+            struct token *name_tok = parser_get_token (parser);
+            if (tok_id == token_class (name_tok)) {
+                tok = parser_get_token (parser);
+                if (token_is_operator (tok, tv_colon))
+                    /* we found a dependency, which is stored in `tok'  */
+                    printf ("-- use/import dep -- '%s.sac'\n",
+                            token_as_string (name_tok));
+                else
+                    parser_unget (parser);
+            } else
+                parser_unget (parser);
+        }
+        /* implicit module use <modname>::<id>  */
+        else if (token_is_operator (tok, tv_dcolon)) {
+            parser_unget2 (parser);
+            tok = parser_get_token (parser);
+            if (tok_id == token_class (tok)) {
+                printf ("-- implicit use dep -- '%s.sac'\n", token_as_string (tok));
+                parser_get_token (parser), parser_get_token (parser);
+            } else
+                parser_get_token (parser);
+        }
+        /* pragmas can bring a dependency on an object or a library.  */
+        else if (token_is_operator (tok, tv_hash)) {
+            tok = parser_get_token (parser);
+            if (token_is_keyword (tok, PRAGMA)) {
+                bool linkwith_p = false;
+                tok = parser_get_token (parser);
+
+                /* dependency on the external library or objectfile.  */
+                if ((linkwith_p = token_is_keyword (tok, LINKWITH))
+                    || token_is_keyword (tok, LINKOBJ)) {
+                    tok = parser_get_token (parser);
+                    if (tok_string == token_class (tok)) {
+                        if (linkwith_p)
+                            printf ("-- library dep -- '%s'\n", token_as_string (tok));
+                        else
+                            printf ("-- object dep -- '%s'\n", token_as_string (tok));
+                    } else {
+                        error_loc (token_location (tok),
+                                   "object or library used in pragma has to be a "
+                                   "string, `%s' found instead",
+                                   token_as_string (tok));
+                        parser_unget (parser);
+                    }
+                } else
+                    parser_unget (parser);
+            } else
+                /* WTF is '#' not followed by the 'pragma'?  Skip it.  */
+                parser_unget (parser);
+        }
+    }
+
+    return 0;
+}
+
 /* Top level function to parse the file.  */
 int
 parse (struct parser *parser)
@@ -6176,8 +6239,10 @@ SPmyYyparse (void)
 
     if (global.start_token == PARSE_RC)
         parse_rcfile (parser);
-    else
+    else if (!global.makedeps)
         parse (parser);
+    else
+        parse_for_dependencies (parser);
 
 cleanup:
     parser_finalize (parser);
@@ -6209,6 +6274,11 @@ cleanup:
         lexer_finalize (lex, false);
         free (lex);
     }
+
+    /* If we only want to generate a list of dependencies and we have just parsed
+       a program, but not a configuration file -- terminate.  */
+    if (global.makedeps && global.start_token != PARSE_RC)
+        CTIexit (EXIT_SUCCESS);
 
     DBUG_RETURN (ret);
 }
