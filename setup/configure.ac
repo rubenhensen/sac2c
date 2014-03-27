@@ -44,7 +44,8 @@ AC_ARG_ENABLE([cplusplus],
 
 dnl Check if C compiler and preprocessor are available
 dnl we force CFLAGS to be empty, so that it does not default to -g -O2
-CFLAGS=" "
+CFLAGS=
+AC_PROG_CC 
 AC_PROG_CC_C99 
 AC_PROG_CPP
 
@@ -124,6 +125,12 @@ if test "$GCC" = yes ; then
   CHECK_CC_OPTION([-Wno-unused-but-set-variable], [gcc_options])
 fi
 
+gcc_native=
+if test "$GCC" = yes ; then
+  CHECK_CC_OPTION([-march=native], [gcc_native])
+  CHECK_CC_OPTION([-mtune=native], [gcc_native])
+fi
+
 dnl
 dnl test for compiler flags for sac2crc
 dnl
@@ -137,9 +144,9 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
-  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin $flags_lto"])
-  AC_SUBST(MKCCFLAGS, ["$gcc_options -pedantic -g $flags_lto"])
-  AC_SUBST(PDCCFLAGS, ["$gcc_options -pedantic -g -O3 $flags_lto"])
+  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin $gcc_native $flags_lto"])
+  AC_SUBST(MKCCFLAGS, ["$gcc_options $gcc_native -pedantic -g $flags_lto"])
+  AC_SUBST(PDCCFLAGS, ["$gcc_options $gcc_native -pedantic -g -O3 $flags_lto"])
   if [ test "$IS_CYGWIN" = yes ]; then
     AC_SUBST(GENPIC, ["-DPIC"])
   else
@@ -351,5 +358,8 @@ cat <<EOF
 * - CUDA:                  $enable_cuda
 * - OpenMP:                $enable_omp
 * - SL:                    $enable_sl
+* - CC:                    $CC
+* - SaC compiler CFLAGS:   $MKCCFLAGS
+* - SaC programs CFLAGS:   $RCCCFLAGS
 *
 EOF
