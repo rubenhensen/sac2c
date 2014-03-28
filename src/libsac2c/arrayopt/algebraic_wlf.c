@@ -452,7 +452,7 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
 
             default:
                 DBUG_PRINT ("Should not get here.");
-                DBUG_ASSERT (FALSE, "We are confused");
+                DBUG_UNREACHABLE ("We are confused");
                 break;
 
             case INTERSECT_unknown:

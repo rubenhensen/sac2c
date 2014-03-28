@@ -493,7 +493,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
             args = TBmakeExprs (TBmakeId (CDS_GDIM_X (INFO_CDS (arg_info))),
                                 TBmakeExprs (TBmakeNum (1), NULL));
         } else {
-            DBUG_ASSERT (0, "Reduction in unknown dimension!");
+            DBUG_UNREACHABLE ("Reduction in unknown dimension!");
         }
 
         partial_bound = CreatePrfOrConst (TRUE, "partial_bound", T_int, SHmakeShape (0),
@@ -506,7 +506,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
             args = TBmakeExprs (TBmakeId (CIS_BX (INFO_CIS (arg_info))),
                                 TBmakeExprs (TBmakeId (partial_bound), NULL));
         } else {
-            DBUG_ASSERT (0, "Reduction in unknown dimension!");
+            DBUG_UNREACHABLE ("Reduction in unknown dimension!");
         }
 
         /* Is the thread block the last one in the dimension? */
@@ -636,7 +636,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
                                  TBmakeExprs (TBmakeId (avis),
                                               TBmakeExprs (TBmakeId (iterator), NULL)));
             } else {
-                DBUG_ASSERT (0, "Dimension not supported!");
+                DBUG_UNREACHABLE ("Dimension not supported!");
             }
         }
 
@@ -737,7 +737,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
             cond_predicate = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0),
                                                F_and_SxS, args, &predicate, fundef);
         } else {
-            DBUG_ASSERT (0, "Dimension not supported!");
+            DBUG_UNREACHABLE ("Dimension not supported!");
         }
     }
 

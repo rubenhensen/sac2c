@@ -624,7 +624,7 @@ HandleNprf (node *arg_node, info *arg_info)
             case F_neg_S:
 
             default:
-                DBUG_ASSERT (FALSE, "Nprf coding time, senor");
+                DBUG_UNREACHABLE ("Nprf coding time, senor");
                 break;
             }
         }
@@ -999,7 +999,7 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int firstindex)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "Coding time for guard polyhedron");
+        DBUG_UNREACHABLE ("Coding time for guard polyhedron");
         break;
     }
 

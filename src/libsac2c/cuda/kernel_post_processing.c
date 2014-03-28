@@ -254,7 +254,7 @@ KPPwith3 (node *arg_node, info *arg_info)
         } else if (FOLD_NEUTRAL (WITH3_OPERATIONS (arg_node)) != NULL) {
             rhs = DUPdoDupTree (FOLD_NEUTRAL (WITH3_OPERATIONS (arg_node)));
         } else {
-            DBUG_ASSERT (0, "Both neutral and initial are NULL!");
+            DBUG_UNREACHABLE ("Both neutral and initial are NULL!");
         }
 
         preassign

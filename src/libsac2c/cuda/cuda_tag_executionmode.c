@@ -179,7 +179,7 @@ IsIdCudaDefined (node *id, info *arg_info)
             res = TRUE;
         }
     } else {
-        DBUG_ASSERT (0, "N_id's SSAASSIGN is NULL but it's not a function argument!");
+        DBUG_UNREACHABLE ("N_id's SSAASSIGN is NULL but it's not a function argument!");
     }
 
     DBUG_RETURN (res);
@@ -614,10 +614,10 @@ CUTEMassign (node *arg_node, info *arg_info)
         if (INFO_INWITH (arg_info) || INFO_INCOND (arg_info)) {
             ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
         } else {
-            DBUG_ASSERT (0, "Wrong traverse mode in CUTEMassign!");
+            DBUG_UNREACHABLE ("Wrong traverse mode in CUTEMassign!");
         }
     } else {
-        DBUG_ASSERT (0, "Unknown traverse mode in CUTEMassign!");
+        DBUG_UNREACHABLE ("Unknown traverse mode in CUTEMassign!");
     }
 
     INFO_LASTASSIGN (arg_info) = old_assign;
@@ -660,7 +660,7 @@ CUTEMcond (node *arg_node, info *arg_info)
         COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
         INFO_INCOND (arg_info) = old_incond;
     } else {
-        DBUG_ASSERT (0, "Unknown traverse mode in CUTEMcond!");
+        DBUG_UNREACHABLE ("Unknown traverse mode in CUTEMcond!");
     }
 
     DBUG_RETURN (arg_node);
@@ -694,7 +694,7 @@ CUTEMlet (node *arg_node, info *arg_info)
     } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
         LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
     } else {
-        DBUG_ASSERT (0, "Unknown traverse mode in CUTEMlet!");
+        DBUG_UNREACHABLE ("Unknown traverse mode in CUTEMlet!");
     }
 
     DBUG_RETURN (arg_node);
@@ -733,7 +733,7 @@ CUTEMids (node *arg_node, info *arg_info)
             ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
         }
     } else {
-        DBUG_ASSERT (0, "Invalid traverse mode!");
+        DBUG_UNREACHABLE ("Invalid traverse mode!");
     }
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);

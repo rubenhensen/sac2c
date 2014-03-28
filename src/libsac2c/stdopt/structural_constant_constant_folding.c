@@ -690,7 +690,7 @@ ReplaceNarrayElementHelper (node *X, int offset, node *val, info *arg_info)
     if ((offset < 0) || (offset >= TCcountExprs (ARRAY_AELEMS (z)))) {
         DBUG_PRINT ("index error performing indexed assign into %s",
                     AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
-        DBUG_ASSERT (FALSE, "Index error performing indexed assign into N_array");
+        DBUG_UNREACHABLE ("Index error performing indexed assign into N_array");
     }
 
     exprs = TCgetNthExprs (offset, ARRAY_AELEMS (z));

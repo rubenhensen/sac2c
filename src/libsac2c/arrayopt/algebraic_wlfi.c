@@ -973,7 +973,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
     INFO_WITHIDS (arg_info) = NULL;
     switch (NODE_TYPE (iprime)) {
     default:
-        DBUG_ASSERT (FALSE, "unexpected iprime NODE_TYPE");
+        DBUG_UNREACHABLE ("unexpected iprime NODE_TYPE");
         break;
 
     case N_num:
@@ -1373,7 +1373,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
 
         pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
         if (!PMmatchFlat (pat, z)) {
-            DBUG_ASSERT (FALSE, "Expected N_array bounds");
+            DBUG_UNREACHABLE ("Expected N_array bounds");
         }
         DBUG_ASSERT (N_exprs == NODE_TYPE (zelu), "Expected N_exprs zelu");
 
@@ -1613,8 +1613,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                 && (!AWLFIisHasInverseProjection (
                      TCgetNthExprsExpr (curelidxub, PRF_ARGS (arg_node))))) {
                 if (!PMmatchFlat (pat2, intrub)) {
-                    DBUG_ASSERT (FALSE, "lost the N_array for %s",
-                                 AVIS_NAME (ID_AVIS (intrub)));
+                    DBUG_UNREACHABLE ("lost the N_array for %s",
+                                      AVIS_NAME (ID_AVIS (intrub)));
                 }
 
                 if ((PMmatchFlat (pat1, intrlb)) && (PMmatchFlat (pat2, intrub))
@@ -1646,7 +1646,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                     DBUG_ASSERT (N_exprs == NODE_TYPE (zel), "Expected N_exprs zel");
                     DBUG_ASSERT (N_exprs == NODE_TYPE (zeu), "Expected N_exprs zeu");
                     if (swaplb) {
-                        //  DBUG_ASSERT( FALSE, "time2 code");
+                        //  DBUG_UNREACHABLE ("time2 code");
                         tmp = zel;
                         zel = zeu;
                         zeu = tmp;
@@ -1670,8 +1670,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
         zel = NULL;
         zeu = NULL;
     } else {
-        DBUG_ASSERT (FALSE, "Could not find N_array for %s",
-                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
+        DBUG_UNREACHABLE ("Could not find N_array for %s",
+                          AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
     }
 
     DBUG_PRINT ("Done b inverse projection for %s",

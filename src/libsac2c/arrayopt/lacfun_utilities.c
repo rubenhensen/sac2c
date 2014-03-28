@@ -456,7 +456,7 @@ LFUfindLoopInductionVariable (node *arg_node)
         DBUG_PRINT ("predicate relational args are ( %s, %s)", AVIS_NAME (ID_AVIS (arg1)),
                     AVIS_NAME (ID_AVIS (arg2)));
     } else {
-        DBUG_ASSERT (FALSE, "Could not find relational for predicate");
+        DBUG_UNREACHABLE ("Could not find relational for predicate");
     }
 
     pat = PMfree (pat);

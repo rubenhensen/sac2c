@@ -3465,7 +3465,7 @@ NTCCTprf_mask_VxSxS (te_info *info, ntype *args)
     res = TYcopyType (arg);
     res = TYmakeProductType (0, res);
 
-    DBUG_ASSERT (FALSE, "_mask_VxSxS_ wants type of PRF_ARG2/3 but shape of PRF_ARG1");
+    DBUG_UNREACHABLE ("_mask_VxSxS_ wants type of PRF_ARG2/3 but shape of PRF_ARG1");
 
     DBUG_RETURN (res);
 }

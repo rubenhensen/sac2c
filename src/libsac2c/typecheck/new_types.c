@@ -5650,8 +5650,8 @@ TYdeNestTypeFromInner (ntype *nested, ntype *inner)
         res = TYcopyType (nested);
         printf ("WE ARE HERE\n");
     } else {
-        DBUG_ASSERT (0, "TYDeNestTypeFromInner with non AKS/AKD inner type not yet "
-                        "implemented!");
+        DBUG_UNREACHABLE (
+          "TYDeNestTypeFromInner with non AKS/AKD inner type not yet implemented!");
     }
 
     DBUG_RETURN (res);
@@ -7537,7 +7537,7 @@ SerializeAlphaType (FILE *file, ntype *type)
     DBUG_ENTER ();
 
     /*
-    DBUG_ASSERT( 0,
+    DBUG_UNREACHABLE (
         "Cannot handle alpha types");
         */
 

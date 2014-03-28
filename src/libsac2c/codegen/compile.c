@@ -4066,7 +4066,7 @@ COMPprfSyncIn (node *arg_node, info *arg_info)
                                      DUPdupIdsIdNt (INFO_LASTIDS (arg_info)),
                                      DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
     } else {
-        DBUG_ASSERT (0, "syncin is not supported for this backend!");
+        DBUG_UNREACHABLE ("syncin is not supported for this backend!");
     }
 
     DBUG_RETURN (ret_node);
@@ -4087,7 +4087,7 @@ COMPprfSyncOut (node *arg_node, info *arg_info)
           = TCmakeAssignIcm2 ("SAC_CUDA_PRF_SYNCOUT", DUPdupIdNt (PRF_ARG2 (arg_node)),
                               DUPdupIdNt (PRF_ARG1 (arg_node)), ret_node);
     } else {
-        DBUG_ASSERT (0, "syncout is not supported for this backend!");
+        DBUG_UNREACHABLE ("syncout is not supported for this backend!");
     }
 
     DBUG_RETURN (ret_node);

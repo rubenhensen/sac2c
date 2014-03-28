@@ -932,7 +932,7 @@ GetFunNum (prf fun)
     switch (fun) {
     default:
         z = 0;
-        DBUG_ASSERT (FALSE, "fun confusion");
+        DBUG_UNREACHABLE ("fun confusion");
         break;
     case F_lt_SxS:
         z = 1;

@@ -377,7 +377,7 @@ AdjustToNormalizePredicate (node *predicate, enum arg_sign var_or_loopvar_sign)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "Confusion over LOOPFUN predicate");
+        DBUG_UNREACHABLE ("Confusion over LOOPFUN predicate");
         z = -1;
         break;
     }

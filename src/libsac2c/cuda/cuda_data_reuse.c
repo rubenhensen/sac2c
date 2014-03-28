@@ -204,7 +204,7 @@ DeqRangeInfo (range_set_t *set, node *range)
         RS_NONBLOCKED_RANGES_CNT (set)--;
         info = MEMfree (info);
     } else {
-        DBUG_ASSERT (0, "N_range in neither blocked nor nonblocked ranges!");
+        DBUG_UNREACHABLE ("N_range in neither blocked nor nonblocked ranges!");
     }
 
     DBUG_RETURN (set);
@@ -797,7 +797,7 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
         }
         break;
     default:
-        DBUG_ASSERT (0, "Unknown index type found!");
+        DBUG_UNREACHABLE ("Unknown index type found!");
         break;
     }
 
@@ -1332,7 +1332,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
             /* Do nothing */
         }
     } else {
-        DBUG_ASSERT (0, "Reuse array with unsupported dimension!");
+        DBUG_UNREACHABLE ("Reuse array with unsupported dimension!");
     }
 
     vardecs = NULL;
