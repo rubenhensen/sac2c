@@ -4380,140 +4380,6 @@ error:
     return error_mark_node;
 }
 
-// handle user-defined constraint.
-// handle_assign  handle_expr  help
-/*
-
- */
-node *
-handle_udc (struct parser *parser)
-{
-    node *ret = error_mark_node;
-    node *spid = error_mark_node;
-    char *operator;
-    struct identifier *id = NULL;
-    struct token *tok;
-    struct location loc;
-
-    tok = parser_get_token (parser);
-    loc = token_location (tok); // location of the token.
-
-    parser_unget (parser);
-    ret = handle_expr (parser);
-
-    // here, we need more check !!!
-    // according to syntax not only sapa is allowed. [a,b] is also possible.
-    if (NODE_TYPE (ret) != N_spap) // should be spap node, function call
-    {
-        error_loc (loc, "This expresion \" %s \" is not valid", token_as_string (tok));
-    } else {
-        spid = SPAP_ID (ret);
-        if (NODE_TYPE (spid) != N_spid) {
-            error_loc (loc, "This expresion is not valid");
-        }
-
-        // check more details about spap arguments according to syntax tree.
-        /*      operator = SPID_NAME (spid);
-         if (!( strcmp(operator, "==") == 0 || strcmp(operator, "<=") ==0 ||
-         strcmp(operator, "<") ==0 || strcmp(operator, ">=") ==0 ||
-         strcmp(operator, ">") ==0 ))
-         {
-         error_loc (loc, "This expresion is not valid", token_as_string (tok));
-         }
-         */
-    }
-    return ret;
-}
-
-/* udcs_exprs ::= expr_scalar rel_op expr_sclar |
-                  expr_scalar rel_op expr_vector |
-                  expr_vector rel_op expr_scalar |
-                  expr_vector rel_op expr vector
-
- exper_scalar ::= num | id | dim (id) |
-                  expr_scalar arith_op expr_scalar |
-                   expr_vector[expr_scalar]
-
- expr_vector  ::= expr_vector arith_op expr_vector |
-                  shape (id)
-                  take ( expr scalar, expr vector )
-                  drop ( expr scalar, expr vector ) )
-                  tile ( expr scalar, expr scalar, expr vector ) ) |
-                  + + ( expr vector, expr vector ) |
-                  vector |
-                  id
-
-vector ::= [num[,num]*];
-
-rel_op ::= == | != | >= | <= | > | <
-
-arith_op ::= + |− |∗
-
- -------------------------------------
-
-primitive function. N_prf
- is_prf (token_value (tok))
-
- handle_expr (parser)
-
- */
-
-node *
-handle_udcs (struct parser *parser)
-{
-    struct token *tok;
-    node *ret = NULL;
-    node *tmp = NULL;
-    node *udc = NULL;
-    bool parse_error = false;
-    struct location loc;
-
-    // tv_comma;
-
-    tok = parser_get_token (parser);
-    parser_unget (parser);
-
-    if (token_is_operator (tok, tv_rparen))
-        return NULL;
-
-    // deal with the first expression
-    if (error_mark_node == (udc = handle_udc (parser)))
-        parse_error = true;
-
-    ret = TBmakeUdcs (udc, NULL);
-    tmp = ret;
-
-    while (true) {
-        tok = parser_get_token (parser);
-        loc = token_location (tok); // location of the token.
-
-        if (token_is_operator (tok, tv_comma)) {
-            node *udc;
-            if (error_mark_node == (udc = handle_udc (parser))) // check udc, return
-                                                                // udcsss
-                parse_error = true;
-
-            if (!parse_error) {
-                UDCS_NEXT (tmp) = TBmakeUdcs (udc, NULL);
-                tmp = UDCS_NEXT (tmp);
-            }
-        } else {
-            parser_unget (parser); // if meet ")" or other tokens, put it back.
-            break;
-        }
-    }
-
-    tok = parser_get_token (parser);
-    if (token_is_operator (tok, tv_rparen)) {
-        if (!parse_error)
-            return ret;
-    } else {
-        error_loc (loc, ") is expected !", token_as_string (tok));
-        parser_unget (parser);
-        return NULL;
-    }
-}
-
 /* pragmas ::= ( pragma )*  */
 node *
 handle_pragmas (struct parser *parser, enum pragma_type ptype)
@@ -4752,7 +4618,6 @@ error:
       fundef::
           'inline'? 'thread'? type_list
           (id | ( '(' id ')' )) '(' arg_list ')'
-          assert_expr //added by fangyong, user-defined constraints
           expr_block
 */
 node *
@@ -4773,15 +4638,12 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
     bool arg_three_dots = false;
     bool allows_infix = false;
     bool is_main = false;
-    bool assert_p = false;
 
     node *ret_types = error_mark_node;
     node *fname = error_mark_node;
     node *args = error_mark_node;
-    node *udcs = error_mark_node;
     node *body = NULL;
     node *ret = error_mark_node;
-    // node *  udcs = error_mark_node; //added by fangyong
     node *pragmas = NULL;
 
     tok = parser_get_token (parser);
@@ -4959,28 +4821,6 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
     } else
         parser_get_token (parser);
 
-    /* Handle user-defined constraints --added by fangyong*/
-    tok = parser_get_token (parser);
-    if (token_is_keyword (tok, ASSERT)) {
-
-        assert_p = true;
-        tok = parser_get_token (parser);
-        /* Handle user-defined constraints.  */
-        if (token_is_operator (tok, tv_lparen)) // Fangyong: if now we get "("
-        {
-            udcs = handle_udcs (parser);
-        }
-        // if the first character after "assert" is not "(",
-        // report error and track the end of the assert domain.
-        else {
-            /* the follwoing code are not correct*/
-            parse_error = true;
-            parser_get_until_tval (parser, tv_rparen);
-            goto semi_or_exprs;
-        }
-    } else
-        parser_unget (parser);
-
 semi_or_exprs:
     tok = parser_get_token (parser);
     if (token_is_operator (tok, tv_semicolon)) {
@@ -5053,8 +4893,6 @@ pragmas:
     ret = loc_annotated (loc, TBmakeFundef (NULL, NULL, NULL, NULL, NULL, NULL));
     FUNDEF_BODY (ret) = body;
     FUNDEF_ARGS (ret) = args;
-    if (udcs != NULL && udcs != error_mark_node)
-        FUNDEF_ASSERTS (ret) = udcs;
     FUNDEF_RETS (ret) = ret_types;
     FUNDEF_NAME (ret) = SPID_NAME (fname);
     MEMfree (fname);
