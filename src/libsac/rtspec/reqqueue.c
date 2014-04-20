@@ -173,6 +173,11 @@ SAC_enqueueRequest (char *func_name, char *module, char *types, int *shapes,
         SAC_TR_Print ("Runtime specialization: Enqueue specialization request.");
     }
 
+    if (request_queue == NULL) {
+        // using rtspec enabled library in rtspec-disabled application
+        return;
+    }
+
     pthread_mutex_lock (&queue_mutex);
 
     queue_node_t *xnew = SAC_createNode (func_name, module, types, shapes, registry);
