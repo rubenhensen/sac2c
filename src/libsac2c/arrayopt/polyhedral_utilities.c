@@ -531,7 +531,6 @@ HandleNprf (node *avis, info *arg_info)
     node *assgn;
     node *rhs;
     node *ids;
-    node *avis;
     int val;
 
     DBUG_ENTER ();
@@ -1087,9 +1086,9 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *idlist)
     int exit_code;
 
     DBUG_ENTER ();
-    .
+
 #ifndef DBUG_OFF
-      global.polylib_filenumber++;
+    global.polylib_filenumber++;
 #endif // DBUG_OFF
 
     sprintf (polyhedral_arg_filename, "%s/%s%d.arg", global.tmp_dirname, argfile,
