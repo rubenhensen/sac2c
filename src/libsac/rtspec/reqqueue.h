@@ -64,6 +64,10 @@ extern reqqueue_t *request_queue;
 extern pthread_mutex_t empty_queue_mutex;
 extern pthread_cond_t empty_queue_cond;
 
+int wasProcessed (char *function, char *shape_info);
+
+void addProcessed (char *function, char *shape_info);
+
 void SAC_initializeQueue (int trace);
 
 queue_node_t *SAC_createNode (char *, char *, char *, int *, reg_obj_t *);
