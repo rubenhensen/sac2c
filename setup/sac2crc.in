@@ -255,7 +255,10 @@ CC               :=  "@CC@"
 CCFLAGS          :=  "-pedantic @RCCCFLAGS@"
 CCINCDIR         :=  "-I$SAC2CBASE/include/ "
 CCLIBDIR         :=  "-L$SAC2CBASE/lib/ "
-LDFLAGS          :=  "@RCLDFLAGS@ -ldl -lpthread"
+/* libsac needs pthreads after it, but as I do not see where that
+ * happens, I am using --no-as-needed.
+ */
+LDFLAGS          :=  "@RCLDFLAGS@ -ldl @PTHREAD_CFLAGS@ -Wl,--no-as-needed "
 CCLINK           :=  ""    
 CCMTLINK         :=  "@CCMTLINK@"
 CCDLLINK         :=  "@CCDLLINK@"
