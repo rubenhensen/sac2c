@@ -27,7 +27,7 @@
  *****************************************************************************/
 #include "structural_constant_constant_folding.h"
 
-#define DBUG_PREFIX "CF"
+#define DBUG_PREFIX "SCCF"
 #include "debug.h"
 
 #include "tree_basic.h"
@@ -1701,6 +1701,9 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
     }
 
     frameshape = (NULL != frameshape) ? COfreeConstant (frameshape) : NULL;
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
 
     DBUG_RETURN (res);
 }

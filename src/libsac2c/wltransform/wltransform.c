@@ -2575,6 +2575,7 @@ CurrentComponentGetNode (node *aelems)
     } else {
         result = NULL;
     }
+    pattern = PMfree (pattern);
 
     DBUG_RETURN (result);
 }

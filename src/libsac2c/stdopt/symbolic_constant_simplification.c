@@ -72,7 +72,7 @@
  *****************************************************************************/
 #include "symbolic_constant_simplification.h"
 
-#define DBUG_PREFIX "CF"
+#define DBUG_PREFIX "SCS"
 #include "debug.h"
 
 #include "tree_basic.h"

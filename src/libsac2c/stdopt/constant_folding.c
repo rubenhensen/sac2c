@@ -515,22 +515,19 @@ static node *
 InvokeCFprfAndFlattenExtrema (node *arg_node, info *arg_info, travfun_p fn, node *res)
 {
     node *ex;
-    ntype *restype;
 
     DBUG_ENTER ();
 
     if ((NULL == res) && (NULL != fn)) {
         res = fn (arg_node, arg_info);
-        restype = (AVIS_TYPE (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
-        restype = TYeliminateAKV (restype);
         if ((NULL != res) && (NULL != INFO_AVISMIN (arg_info))) {
             ex = FLATGexpression2Avis (INFO_AVISMIN (arg_info), &INFO_VARDECS (arg_info),
-                                       &INFO_PREASSIGN (arg_info), restype);
+                                       &INFO_PREASSIGN (arg_info), NULL);
             INFO_AVISMIN (arg_info) = ex;
         }
         if ((NULL != res) && (NULL != INFO_AVISMAX (arg_info))) {
             ex = FLATGexpression2Avis (INFO_AVISMAX (arg_info), &INFO_VARDECS (arg_info),
-                                       &INFO_PREASSIGN (arg_info), restype);
+                                       &INFO_PREASSIGN (arg_info), NULL);
             INFO_AVISMAX (arg_info) = ex;
         }
     }

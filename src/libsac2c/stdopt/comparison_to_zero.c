@@ -545,6 +545,7 @@ node *
 CTZprf (node *arg_node, info *arg_info)
 {
     ntype *type_zero;
+    ntype *type_zero_mem;
     ntype *type_sub;
 
     node *f_sub;
@@ -570,10 +571,11 @@ CTZprf (node *arg_node, info *arg_info)
                                                      NULL)));
 
         type_zero = NTCnewTypeCheck_Expr (f_sub);
-        type_zero = TYgetProductMember (type_zero, 0);
+        type_zero_mem = TYgetProductMember (type_zero, 0);
+        type_zero = TYfreeTypeConstructor (type_zero);
 
         // Create avis node for subtraction
-        avis_sub = TBmakeAvis (TRAVtmpVar (), TYcopyType (type_zero));
+        avis_sub = TBmakeAvis (TRAVtmpVar (), type_zero_mem);
 
         // Create new zero node where type is based on type of the subtraction
         type_sub = AVIS_TYPE (avis_sub);
@@ -638,9 +640,7 @@ CTZprf (node *arg_node, info *arg_info)
         }
 
         // Avis node for zero
-        avis_zero = TBmakeAvis (TRAVtmpVar (), TYcopyType (type_zero));
-
-        type_zero = TYfreeType (type_zero);
+        avis_zero = TBmakeAvis (TRAVtmpVar (), TYcopyType (type_zero_mem));
 
         // Add the nodes to the instruction list
         INFO_NEWASSIGN (arg_info)

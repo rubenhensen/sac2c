@@ -626,16 +626,13 @@ MDEwith (node *arg_node, info *arg_info)
 
             AVIS_SSAASSIGN (fdavis) = res;
 
-            framedim = TBmakeId (fdavis);
+            framedim = fdavis;
         }
         framedim
           = FLATGexpression2Avis (framedim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
-                                  &preassigns,
-                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-        celldim
-          = FLATGexpression2Avis (celldim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
-                                  &preassigns,
-                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+                                  &preassigns, NULL);
+        celldim = FLATGexpression2Avis (celldim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
+                                        &preassigns, NULL);
         rhsnode = TCmakePrf2 (F_add_SxS, TBmakeId (framedim), TBmakeId (celldim));
     } break;
 

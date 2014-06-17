@@ -41,7 +41,7 @@
  *****************************************************************************/
 #include "saa_constant_folding.h"
 
-#define DBUG_PREFIX "CF"
+#define DBUG_PREFIX "SAACF"
 #include "debug.h"
 
 #include "tree_basic.h"
@@ -510,6 +510,7 @@ SAACFprf_drop_SxV (node *arg_node, info *arg_info)
         DBUG_PRINT ("Case 2: drop(shape(V), V)  replaced by empty vector");
 
     } else if (PMmatchFlatSkipExtrema (pat3, arg_node) && (COisZero (con, TRUE))) {
+        DBUG_ASSERT (NULL == res, "Oopsie");
         /* Case 3 */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
         con = COfreeConstant (con);
