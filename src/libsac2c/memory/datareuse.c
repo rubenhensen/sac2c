@@ -459,6 +459,7 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                     inplace = TRUE;
                 }
             }
+            pat = PMfree (pat);
 
             /*
              * Pattern:
@@ -524,6 +525,7 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                                       PMskipN( 1, 0, 0),
                                       PMvar( 1, PMAisVar( &mem), 0),
                                       PMskipN( 1, 0, 0)));
+                   // If you resurrect this code, be sure to insert a PMfree(with3fill)
 #endif
                     DBUG_PRINT ("wl copy: potential candiate found.");
 
