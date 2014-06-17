@@ -1751,6 +1751,11 @@ ICMCompileND_PRF_VAL_LT_SHAPE_VxA (char *to_NT, char *from_NT, char *from2_NT,
 {
     DBUG_ENTER ();
 
+#define ND_PRF_VAL_LT_SHAPE_VxA
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_VAL_LT_SHAPE_VxA
+
     IF_BEGIN ("(SAC_ND_A_DIM(%s) != 1)"
               "&& (SAC_ND_A_SHAPE(%s,0) != SAC_ND_A_DIM(%s))",
               from_NT, from_NT, from2_NT)
@@ -1778,7 +1783,10 @@ ICMCompileND_PRF_VAL_LT_SHAPE_VxA (char *to_NT, char *from_NT, char *from2_NT,
             IF_BEGIN ("SAC_ND_READ (%s, SAC_i) >= SAC_ND_A_SHAPE (%s, SAC_i)", from_NT,
                       from2_NT)
                 ;
-            FOR_LOOP_END ();
+                out ("SAC_RuntimeError(\"Arrays do not adhere "
+                     "to val less than shape constraint\");\n");
+            IF_END ();
+        FOR_LOOP_END ();
     }
 
     indout ("SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
@@ -1796,6 +1804,11 @@ ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT, char *from
                                           int from2_sdim)
 {
     DBUG_ENTER ();
+
+#define ND_PRF_PROD_MATCHES_PROD_SHAPE
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_PROD_MATCHES_PROD_SHAPE
 
     BLOCK_BEGIN ("int SAC_p1 = 1; int SAC_p2 = 1;")
         ;
