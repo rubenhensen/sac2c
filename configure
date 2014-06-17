@@ -633,7 +633,8 @@ SAC2C_PDCCFLAGS
 SAC2C_MKCCFLAGS
 SAC2C_CC
 CCDLLINK
-CCMTLINK
+CCMT_PTH_CFLAGS
+CCMT_PTH_LINK
 CPPFILE
 DEPSFLAG
 GENPIC
@@ -6361,7 +6362,9 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: none found" >&5
 $as_echo "none found" >&6; }
 fi
-CCMTLINK="$PTHREAD_LIBS"
+CCMT_PTH_LINK="$PTHREAD_LIBS"
+
+CCMT_PTH_CFLAGS="$PTHREAD_CFLAGS"
 
 CCDLLINK="$dlopen_libs $flags_lto"
 
@@ -6437,7 +6440,7 @@ $as_echo "solaris settings" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: linux settings" >&5
 $as_echo "linux settings" >&6; }
     ;;
- *cygwin* | *mingw*)
+  *cygwin* | *mingw*)
     OSFLAGS="-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"
     LD_DYNAMIC="-dy -shared"
     LD_PATH="-L%path% -Wl,-rpath,%path%"

@@ -207,7 +207,8 @@ else
   AC_SUBST(CPP, ["$CPP -P"])
   AC_MSG_RESULT([none found])
 fi
-AC_SUBST(CCMTLINK, ["$PTHREAD_LIBS"])
+AC_SUBST(CCMT_PTH_LINK, ["$PTHREAD_LIBS"])
+AC_SUBST(CCMT_PTH_CFLAGS, ["$PTHREAD_CFLAGS"])
 AC_SUBST(CCDLLINK, ["$dlopen_libs $flags_lto"])
 
 dnl This is a special case for building sac2c with c++ compiler.
@@ -265,7 +266,7 @@ case "$target_os" in
     LD_FLAGS="-Wl,-allow-shlib-undefined $flags_lto"
     AC_MSG_RESULT([linux settings])
     ;;
- *cygwin* | *mingw*)
+  *cygwin* | *mingw*)
     OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"]
     LD_DYNAMIC=["-dy -shared"]
     LD_PATH=["-L%path% -Wl,-rpath,%path%"]

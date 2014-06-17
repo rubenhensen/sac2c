@@ -472,11 +472,12 @@ LINK_MOD         :=  "rm -f %target% && ar cru %target% %objects% && @RANLIB@ %t
 target seq :: default_sbi:
 
 target mt :: default_sbi:
-LIBS             +=  " @CCMTLINK@"
 MT_MODE          :=  1
 USE_PHM_API      :=  @CAN_USE_PHM@
 
 target mt_pth :: mt:
+LIBS             +=  " @CCMT_PTH_CFLAGS@ @CCMT_PTH_LINK@"
+CFLAGS           +=  " @CCMT_PTH_CFLAGS@"
 SBI              :=  "mt-pth"
 MT_LIB           :=  "pthread"
 
@@ -488,7 +489,7 @@ target mt_lpel :: mt:
 SBI              :=  "mt-lpel"
 MT_LIB           :=  "lpel"
 CFLAGS           +=  " @MT_CFLAGS_LPEL@"
-LIBS             :=  " @MT_LDFLAGS_LPEL@ @CCMTLINK@"
+LIBS             :=  " @MT_LDFLAGS_LPEL@ @CCMT_PTH_LINK@"
 RC_METHOD        :=  "local_pasync_norc_desc"
 
 
