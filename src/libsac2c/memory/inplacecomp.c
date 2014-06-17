@@ -299,7 +299,7 @@ HandleBlock (node *block, node *rets, info *arg_info)
                         && idArray (PRF_ARG1 (rhs))))) {
                 /*
                  * Search for suballoc situation
-                 *
+                 * {...
                  *   a  = ...
                  *   m' = suballoc( A, iv);
                  *   m  = fill( copy( a), m');
