@@ -166,6 +166,18 @@ RMTSTFmodule (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 
+static node *
+switchToCompanion (node *fundef, info *arg_info)
+{
+    return FUNDEF_COMPANION (fundef);
+}
+
+static node *
+switchToXTCompanion (node *fundef, info *arg_info)
+{
+    return FUNDEF_XTCOMPANION (fundef);
+}
+
 node *
 RMTSTFfundef (node *arg_node, info *arg_info)
 {
@@ -174,6 +186,10 @@ RMTSTFfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    /*
+     * Note here, that the MT companion does NOT need to be recreated as it
+     * is never exposed externally, and this module is ONLY used in sac4c!
+     */
     if (!FUNDEF_ISSTFUN (arg_node) && !FUNDEF_ISXTFUN (arg_node)
         && !FUNDEF_ISEXTERN (arg_node)) {
 
@@ -182,6 +198,7 @@ RMTSTFfundef (node *arg_node, info *arg_info)
          */
 
         companion = DUPdoDupNode (arg_node);
+        FUNDEF_TCSTAT (companion) = FUNDEF_TCSTAT (arg_node);
 
         FUNDEF_ISSTFUN (companion) = TRUE;
 
@@ -199,6 +216,7 @@ RMTSTFfundef (node *arg_node, info *arg_info)
          */
 
         companion = DUPdoDupNode (arg_node);
+        FUNDEF_TCSTAT (companion) = FUNDEF_TCSTAT (arg_node);
 
         FUNDEF_ISXTFUN (companion) = TRUE;
 
@@ -232,6 +250,35 @@ RMTSTFfundef (node *arg_node, info *arg_info)
             if (FUNDEF_NEXT (arg_node) != NULL) {
                 FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
             }
+        }
+    }
+
+    /*
+     * Finally, we may have to adjust the wrapper types of the companions!
+     * This will enable correct dispatching.
+     */
+    if (FUNDEF_ISWRAPPERFUN (arg_node)
+        && (!FUNDEF_ISSTFUN (arg_node) && !FUNDEF_ISXTFUN (arg_node)
+            && !FUNDEF_ISEXTERN (arg_node))) {
+
+        if (TYisProd (FUNDEF_WRAPPERTYPE (arg_node))) {
+            FUNDEF_IMPL (FUNDEF_COMPANION (arg_node))
+              = FUNDEF_COMPANION (FUNDEF_IMPL (arg_node));
+            FUNDEF_IMPL (FUNDEF_XTCOMPANION (arg_node))
+              = FUNDEF_XTCOMPANION (FUNDEF_IMPL (arg_node));
+        } else {
+            DBUG_ASSERT ((FUNDEF_WRAPPERTYPE (FUNDEF_COMPANION (arg_node)) != NULL),
+                         "companion should not be without wrappertype!");
+            FUNDEF_WRAPPERTYPE (FUNDEF_COMPANION (arg_node))
+              = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (FUNDEF_COMPANION (arg_node)),
+                                        switchToCompanion, arg_info);
+
+            DBUG_ASSERT ((FUNDEF_WRAPPERTYPE (FUNDEF_XTCOMPANION (arg_node)) != NULL),
+                         "XT companion should not be without wrappertype!");
+            FUNDEF_WRAPPERTYPE (FUNDEF_XTCOMPANION (arg_node))
+              = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (
+                                          FUNDEF_XTCOMPANION (arg_node)),
+                                        switchToXTCompanion, arg_info);
         }
     }
 

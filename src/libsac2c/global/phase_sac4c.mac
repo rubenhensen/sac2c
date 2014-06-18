@@ -48,7 +48,7 @@ SUBPHASE (l2f, "Eliminating loops and conditionals", L2FdoLac2Fun, ALWAYS, ssc)
 SUBPHASE (ssa, "Establishing static single assignment form", SSATdoTransformAllowGOs,
           ALWAYS, ssc)
 
-SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls, NEVER,
+SUBPHASE (dfc, "Trying to dispatch functions statically", DFCdoDispatchFunCalls, ALWAYS,
           ssc)
 
 SUBPHASE (eudt, "Eliminating User-Defined Types", RCdoRemoveCasts, ALWAYS, ssc)

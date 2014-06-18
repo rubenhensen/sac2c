@@ -101,6 +101,9 @@ struct INFO {
 
     /*record name space*/
     char *namesapce;
+
+    /* generic use */
+    int count;
 };
 
 /* access macros print */
@@ -126,6 +129,7 @@ struct INFO {
 #define INFO_DOTMODE(n) ((n)->dotmode)
 #define INFO_NAMESPACE(n) ((n)->namesapce)
 #define INFO_PRTOPTS(n) ((n)->prtopts)
+#define INFO_COUNT(n) ((n)->count)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
@@ -262,6 +266,8 @@ MakeInfo (void)
     INFO_DOTMODE (result) = vertices;
 
     INFO_NAMESPACE (result) = NULL;
+
+    INFO_COUNT (result) = 0;
 
     SetDefaultPrintOps (&INFO_PRTOPTS (result));
 
@@ -1830,6 +1836,17 @@ PRTret (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
+static void *
+PrintDispatchFun (node *fundef, void *arg_info)
+{
+    if (INFO_COUNT ((info *)arg_info) > 0) {
+        fprintf (global.outfile, ",\n *                  ");
+    }
+    PrintFunName (fundef, (info *)arg_info);
+    INFO_COUNT ((info *)arg_info) = INFO_COUNT ((info *)arg_info) + 1;
+    return (arg_info);
+}
+
 static void
 PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 {
@@ -1992,6 +2009,16 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
                 fprintf (global.outfile, "%s\n",
                          t2s_fun (FUNDEF_WRAPPERTYPE (arg_node), TRUE,
                                   global.indent + STRlen (FUNDEF_NAME (arg_node)) + 8));
+                fprintf (global.outfile, " *  dispatching to: ");
+                if (TYisProd (FUNDEF_WRAPPERTYPE (arg_node))) {
+                    PrintFunName (FUNDEF_IMPL (arg_node), arg_info);
+                    fprintf (global.outfile, "\n");
+                } else {
+                    INFO_COUNT (arg_info) = 0;
+                    TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (arg_node),
+                                             PrintDispatchFun, arg_info);
+                    fprintf (global.outfile, "\n");
+                }
             } else {
                 fprintf (global.outfile, " ---\n");
             }
