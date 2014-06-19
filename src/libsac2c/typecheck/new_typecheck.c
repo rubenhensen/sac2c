@@ -894,16 +894,12 @@ NTCcond (node *arg_node, info *arg_info)
 {
     ntype *args;
     ntype *res;
-    info *context_info;
     te_info *info;
 
     DBUG_ENTER ();
 
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     args = TYmakeProductType (1, INFO_TYPE (arg_info));
-
-    context_info = MakeInfo ();
-    INFO_LAST_ASSIGN (context_info) = INFO_LAST_ASSIGN (arg_info);
 
     info = TEmakeInfo (global.linenum, global.filename, TE_cond, "predicate");
 

@@ -1857,6 +1857,7 @@ DUPids (node *arg_node, info *arg_info)
     AVIS_SHAPE (avis) = DUPTRAV (AVIS_SHAPE (IDS_AVIS (arg_node)));
     AVIS_MIN (avis) = DUPTRAV (AVIS_MIN (IDS_AVIS (arg_node)));
     AVIS_MAX (avis) = DUPTRAV (AVIS_MAX (IDS_AVIS (arg_node)));
+    AVIS_SCALARS (avis) = DUPTRAV (AVIS_SCALARS (IDS_AVIS (arg_node)));
 
     if ((INFO_ASSIGN (arg_info) != NULL) && (AVIS_SSAASSIGN (avis) != NULL)) {
         AVIS_SSAASSIGN (avis) = INFO_ASSIGN (arg_info);
