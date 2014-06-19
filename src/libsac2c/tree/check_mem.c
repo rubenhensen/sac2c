@@ -32,6 +32,9 @@
 extern mallocinfo_t *malloctable;
 extern mallocphaseinfo_t phasetable[];
 
+static size_t leaks;
+static size_t space;
+
 void
 CHKMdeinitialize ()
 {
@@ -117,10 +120,11 @@ foldmemcheck (void *init, void *key, void *value)
              // wasintree set ONLY by CHKMisNode (above)
         iterator = phasetable[global.compiler_anyphase].leaked;
         while (iterator) {
-            if ((!strcmp (iterator->file, info->file))
-                && iterator->line == info->line) { // Match on file and line #
+            if ((STReq (iterator->file, info->file)) && iterator->line == info->line) {
                 iterator->occurrence++;
                 iterator->size += info->size;
+                leaks += 1;
+                space += info->size;
                 ispresent = TRUE;
                 break;
             }
@@ -143,11 +147,17 @@ void
 CHKMcheckLeakedMemory ()
 {
     mallocinfo_t *iter, *tmp;
+    leaks = 0;
+    space = 0;
     global.memcheck = FALSE;
     HASH_ITER (hh, malloctable, iter, tmp) {
         foldmemcheck (malloctable, iter->key, iter);
     }
     global.memcheck = TRUE;
+
+    if (leaks > 0) {
+        CTItell (1, "Detected space leaks: %d (%d bytes)", leaks, space);
+    }
 }
 #else /*DBUG_OFF*/
 #include "check_mem.h"
