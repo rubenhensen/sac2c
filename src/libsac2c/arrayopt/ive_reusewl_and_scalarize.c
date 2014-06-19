@@ -516,8 +516,8 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
         scalars = Nids2Nid (scalars);
         if (scalars != NULL) {
             offset
-              = TBmakePrf (F_idxs2offset, TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                                                       DUPdoDupTree (scalars)));
+              = TBmakePrf (F_idxs2offset,
+                           TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)), scalars));
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = offset;
         }

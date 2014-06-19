@@ -130,6 +130,8 @@ FreeInfo (info *info)
  * @param shpexpr shape expression to be used for the vect2offset.
  *                If the expression must be copied, that is the
  *                caller's duty.
+ *                shpexpr may be N_id or N_avis or N_array.
+ *
  * @param info    info structure
  *
  * @return the N_avis of the computed offset
@@ -150,12 +152,15 @@ AddVect2Offset (node *iv, node *shpexpr, info *arg_info)
 
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
+#ifdef MAYBEDEAD
+    // let FLATGexpression2Avis figure out typ
     typ = (N_id == NODE_TYPE (shpexpr))
             ? TYcopyType (AVIS_TYPE (ID_AVIS (shpexpr)))
             : TYmakeAKS (TYmakeSimpleType (T_int),
                          SHcreateShape (1, TCcountExprs (ARRAY_AELEMS (shpexpr))));
+#endif // MAYBEDEAD
     shpexpr = FLATGexpression2Avis (shpexpr, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info), typ);
+                                    &INFO_PREASSIGNS (arg_info), NULL);
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
                                       TCmakePrf2 (F_vect2offset, TBmakeId (shpexpr),
                                                   DUPdoDupNode (iv))),
@@ -344,7 +349,7 @@ IVESPLITprf (node *arg_node, info *arg_info)
             CTInote ("Insufficient symbolic shape information available. "
                      "Using explicit information to split index operation.");
 #endif
-            shpprf2 = TBmakeId (AddShapeComputation (array, arg_info));
+            shpprf2 = AddShapeComputation (array, arg_info);
         }
         break;
 
