@@ -249,6 +249,7 @@ ATravRangeResult (node *exprs)
         EXPRS_EXPR (exprs) = FREEdoFreeTree (EXPRS_EXPR (exprs));
         EXPRS_EXPR (exprs) = xnew;
     }
+    pat = PMfree (pat);
 
     DBUG_RETURN (exprs);
 }

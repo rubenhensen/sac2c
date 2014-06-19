@@ -900,13 +900,27 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
  *               negative arg1 values and zero arg2 values,
  *               per the APL ISO N8485 standard.
  *
+ *                            count           modulus
  *               For C99, if (arg1 >=0 ) && ( arg2 > 0):
- *
- *               For APL modulus,
- *               if( arg2 > 0), then we set:
- *
  *                 AVIS_MIN( res) = 0
  *                 AVIS_MAX( normalize( arg2 - 1));
+ *
+ *               For aplmod modulus,
+ *                    count           modulus
+ *               if ( arg1 >= 0) && ( arg2 >= 0), or
+ *                                  ( arg2 >= 1)
+ *                 then AVIS_MIN( res) = 0
+ *
+ *                    count          modulus
+ *               if ( arg1 > 0) && ( arg2 > 0), then
+ *                 AVIS_MAX( normalize( arg2 - 1));
+ *
+ *               This is wrong if the modulus is 1, but I think
+ *               that is harmless.
+ *
+ *               If the count may be zero, then we must not
+ *               set AVIS_MAX, because that will definitely break things,
+ *               such as AWLF unit test rotateAKSAKVEmpty.sac.
  *
  * @params arg_node: Your basic N_let node.
  *         arg_info: As usual.
@@ -931,26 +945,29 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
     node *nsa;
     bool arg1scalar;
     bool arg2scalar;
+    bool isok;
 
     DBUG_ENTER ();
 
+    lhsavis = IDS_AVIS (LET_IDS (arg_node));
     rhs = LET_EXPR (arg_node);
-    if ((SCSisPositive (PRF_ARG2 (rhs))) && (aplmod || SCSisNonneg (PRF_ARG1 (rhs)))) {
-        lhsavis = IDS_AVIS (LET_IDS (arg_node));
-        arg1avis = ID_AVIS (PRF_ARG1 (rhs));
-        arg2avis = ID_AVIS (PRF_ARG2 (rhs));
+    arg1avis = ID_AVIS (PRF_ARG1 (rhs));
+    arg2avis = ID_AVIS (PRF_ARG2 (rhs));
+    arg1scalar = TUisIntScalar (AVIS_TYPE (ID_AVIS (PRF_ARG1 (rhs))));
+    arg2scalar = TUisIntScalar (AVIS_TYPE (ID_AVIS (PRF_ARG2 (rhs))));
+    /* non-scalar argument */
+    nsa = arg2scalar ? PRF_ARG1 (rhs) : PRF_ARG2 (rhs);
 
-        arg1scalar = TUisIntScalar (AVIS_TYPE (ID_AVIS (PRF_ARG1 (rhs))));
-        arg2scalar = TUisIntScalar (AVIS_TYPE (ID_AVIS (PRF_ARG2 (rhs))));
-
-        /* non-scalar argument */
-        nsa = arg2scalar ? PRF_ARG1 (rhs) : PRF_ARG2 (rhs);
-
-        if ((!IVEXPisAvisHasMin (lhsavis))
-            && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))) {
-            /* Create zero minimum */
-            zr = SCSmakeZero (nsa);
-            if (NULL != zr) { // nsa may not be AKS
+    // MINVAL
+    if ((!IVEXPisAvisHasMin (lhsavis))
+        && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))) {
+        isok = (SCSisNonneg (PRF_ARG1 (rhs)))
+               && (((!aplmod) && SCSisPositive (PRF_ARG2 (rhs)))
+                   || ((aplmod) && SCSisNonneg (PRF_ARG2 (rhs))));
+        isok = isok || (aplmod && SCSisPositive (PRF_ARG2 (rhs)));
+        if (isok) {
+            zr = SCSmakeZero (nsa); /* Create zero minval */
+            if (NULL != zr) {       // nsa may not be AKS
                 zr = FLATGexpression2Avis (zr, &INFO_VARDECS (arg_info),
                                            &INFO_PREASSIGNS (arg_info),
                                            TYeliminateAKV (AVIS_TYPE (lhsavis)));
@@ -958,31 +975,35 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
                 INFO_MINVAL (arg_info) = zr;
             }
         }
+    }
 
-        if ((!IVEXPisAvisHasMax (lhsavis))
-            && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))) {
-            /* Create maximum from PRF_ARG2, unless it is scalar and
-             * PRF_ARG1 is vector. We cheat here a bit because
-             * we want the maximum to be PRF_ARG2-1, but we have to
-             *oops normalize it, so we can just copy the value.
-             */
-            if ((nsa == PRF_ARG2 (rhs)) || arg1scalar) {
-                INFO_MAXVAL (arg_info) = ID_AVIS (PRF_ARG2 (rhs));
-            } else {
-                // vector/scalar case: PRF_ARG2( rhs) + ( 0 * PRF_ARG2( rhs));
-                zr = SCSmakeZero (nsa);
-                if (NULL != zr) { // nsa may not be AKS
-                    zr = FLATGexpression2Avis (zr, &INFO_VARDECS (arg_info),
-                                               &INFO_PREASSIGNS (arg_info),
-                                               TYeliminateAKV (AVIS_TYPE (lhsavis)));
-                    zr = TCmakePrf2 (F_add_VxS, TBmakeId (zr),
-                                     TBmakeId (ID_AVIS (PRF_ARG2 (rhs))));
-                    zr = FLATGexpression2Avis (zr, &INFO_VARDECS (arg_info),
-                                               &INFO_PREASSIGNS (arg_info),
-                                               TYeliminateAKV (AVIS_TYPE (lhsavis)));
-                    INFO_MAXVAL (arg_info) = zr;
-                    AVIS_ISMAXHANDLED (zr) = TRUE;
-                }
+    // MAXVAL
+    if ((!IVEXPisAvisHasMax (lhsavis))
+        && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))
+        && (SCSisPositive (PRF_ARG2 (rhs)))
+        && (((!aplmod) && SCSisNonneg (PRF_ARG1 (rhs)))
+            || ((aplmod) && SCSisPositive (PRF_ARG1 (rhs))))) {
+        /* Create maximum from PRF_ARG2, unless it is scalar and
+         * PRF_ARG1 is vector. We cheat here a bit because
+         * we want the maximum to be PRF_ARG2-1, but we have to
+         *oops normalize it, so we can just copy the value.
+         */
+        if ((nsa == PRF_ARG2 (rhs)) || arg1scalar) {
+            INFO_MAXVAL (arg_info) = ID_AVIS (PRF_ARG2 (rhs));
+        } else {
+            // vector/scalar case: PRF_ARG2( rhs) + ( 0 * PRF_ARG2( rhs));
+            zr = SCSmakeZero (nsa);
+            if (NULL != zr) { // nsa may not be AKS
+                zr = FLATGexpression2Avis (zr, &INFO_VARDECS (arg_info),
+                                           &INFO_PREASSIGNS (arg_info),
+                                           TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                zr = TCmakePrf2 (F_add_VxS, TBmakeId (zr),
+                                 TBmakeId (ID_AVIS (PRF_ARG2 (rhs))));
+                zr = FLATGexpression2Avis (zr, &INFO_VARDECS (arg_info),
+                                           &INFO_PREASSIGNS (arg_info),
+                                           TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                INFO_MAXVAL (arg_info) = zr;
+                AVIS_ISMAXHANDLED (zr) = TRUE;
             }
         }
     }
@@ -1190,6 +1211,43 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * Description: Conditionally set AVIS_MIN(z ) = 0
+ *              for z = mul( x, x);
+ *
+ * @params arg_node: N_let node for mul()
+ *
+ * @return N_let node, with possible side effect on AVIS_MIN( z)
+ *
+ ******************************************************************************/
+static node *
+XtimesX (node *arg_node, info *arg_info)
+{
+    node *rhs;
+    node *lhsavis;
+    node *arg;
+    node *minv;
+
+    DBUG_ENTER ();
+
+    rhs = LET_EXPR (arg_node);
+    lhsavis = IDS_AVIS (LET_IDS (arg_node));
+    if ((!IVEXPisAvisHasMin (lhsavis)) && (SCSisMatchPrfargs (rhs, NULL))) {
+        if (F_mul_SxV == PRF_PRF (rhs)) {
+            arg = PRF_ARG2 (rhs);
+        } else { // SxS VxS VxS
+            arg = PRF_ARG1 (rhs);
+        }
+        minv = SCSmakeZero (arg);
+        minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info), NULL);
+        IVEXPsetMinvalIfNotNull (lhsavis, minv);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function: node *GenerateExtremaComputationsMultiply(node *arg_node, info *arg_info)
@@ -1223,7 +1281,6 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
  *           Case 42: If we have no extrema, but
  *           have ( N times non_negative_even_const),
  *           then minval = 0.
- *
  *
  * @note: See note in previous section re WITHID.
  *
@@ -1345,6 +1402,8 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
     }
 
     GenExCalc (rhs, minarg1, minarg2, maxarg1, maxarg2, lhsavis, arg_info);
+
+    arg_node = XtimesX (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }

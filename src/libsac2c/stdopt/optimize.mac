@@ -138,6 +138,7 @@ OPTIMIZE ("ctzg", ctzg, FALSE, FALSE, "comparisons to zero for guards")
 OPTIMIZE ("ctz", ctz, TRUE, TRUE, "comparisons to zero")
 OPTIMIZE ("uctz", uctz, TRUE, TRUE, "eliminating comparisons to zero")
 OPTIMIZE ("ggs", ggs, TRUE, TRUE, "generating guard solvers")
+OPTIMIZE ("pogo", pogo, FALSE, FALSE, "polyhedral guard optimization")
 OPTIMIZE ("wls_aggressive", wls_aggressive, FALSE, FALSE, "aggressive loop scalarization")
 OPTIMIZE ("sse", sse, FALSE, FALSE, "simplify symbiotic expressions")
 OPTIMIZE ("safa", safa, TRUE, TRUE, "sort associative fun arguments")
@@ -202,6 +203,7 @@ OPTCOUNTER (ctzg_expr, TRUE, "comparisons to zero for guards")
 OPTCOUNTER (esd_expr, TRUE, "eliminated sub/div expression(s)")
 OPTCOUNTER (uesd_expr, TRUE, "undo-eliminated sub/div expression(s)")
 OPTCOUNTER (safa_expr, TRUE, "associative function argument(s) sorted")
+OPTCOUNTER (pogo_expr, TRUE, "guards removed by pogo")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr

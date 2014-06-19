@@ -1545,7 +1545,7 @@ ATravCDLmodarray (node *arg_node, info *arg_info)
         /* prod( drop( count(ids), shape( mod))) */
         inner = ModarrayInner (outerdims, ID_AVIS (MODARRAY_ARRAY (arg_node)), arg_info);
     } else {
-        DBUG_ASSERT (FALSE, "non-AKD modarray not implemented!");
+        DBUG_UNREACHABLE ("non-AKD modarray not implemented!");
     }
 
     exprs = ComputeOneLengthVector (sexprs, inner, arg_info);

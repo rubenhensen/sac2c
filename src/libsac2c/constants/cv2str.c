@@ -115,7 +115,7 @@ char *
 COcv2StrDummy (void *src, int off, int len, int max_char)
 {
     DBUG_ENTER ();
-    DBUG_ASSERT (1 == 0, "COcv2StrDummy called!");
+    DBUG_UNREACHABLE ("COcv2StrDummy called!");
     DBUG_RETURN ((char *)NULL);
 }
 

@@ -126,7 +126,7 @@ ExtractTopFrame (node *stack, node **top)
     DBUG_ENTER ();
 
     if ((stack != NULL) && (NODE_TYPE (stack) == N_set)
-        && (NODE_TYPE (SET_MEMBER (stack)) = N_exprs)) {
+        && (NODE_TYPE (SET_MEMBER (stack)) == N_exprs)) {
         *top = SET_MEMBER (stack);
         stack = FREEdoFreeNode (stack);
     } else {
@@ -378,7 +378,7 @@ MatchNode (nodetype nt, checkFun_ptr matchAttribsFun, int numAttribs,
                 case N_bool:
                     break;
                 default:
-                    DBUG_ASSERT (FALSE, "pushSons not yet fully implemented!");
+                    DBUG_UNREACHABLE ("pushSons not yet fully implemented!");
                     break;
                 }
             }

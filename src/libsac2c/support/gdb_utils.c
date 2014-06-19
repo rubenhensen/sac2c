@@ -174,9 +174,9 @@ GDBwhatIsNid (node *arg_node, node *fundef)
  *
  * This function is intended to assist users of ddd/gdb in
  * making the sac2c compiler display the value of the arguments
- * of an N_prf.
+ * of an N_prf or an N_exprs chain
  *
- * This will display all elements of an N_prf EXPRS chain.
+ * This will display all elements of an N_prf/ EXPRS chain.
  *
  * Typical usage:
  *   GDBwhatAre( "foo", arg_info->fundef)
@@ -189,7 +189,12 @@ GDBwhatAreNid (node *arg_node, node *fundef)
     node *expr;
 
     if (NULL != arg_node) {
-        exprs = PRF_ARGS (arg_node);
+        if (N_prf == NODE_TYPE (arg_node)) {
+            exprs = PRF_ARGS (arg_node);
+        } else {
+            exprs = arg_node;
+        }
+
         while (NULL != exprs) {
             expr = EXPRS_EXPR (exprs);
             if ((N_id == NODE_TYPE (expr))) {

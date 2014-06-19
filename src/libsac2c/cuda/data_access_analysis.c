@@ -237,10 +237,10 @@ DecideThreadIdx (node *ids, int dim, node *avis)
         } else if (IDS_AVIS (IDS_NEXT (ids)) == avis) {
             res = IDX_THREADIDX_X;
         } else {
-            DBUG_ASSERT (0, "Found withids with more than 2 ids!");
+            DBUG_UNREACHABLE ("Found withids with more than 2 ids!");
         }
     } else {
-        DBUG_ASSERT (0, "Found withids with more than 2 ids!");
+        DBUG_UNREACHABLE ("Found withids with more than 2 ids!");
     }
 
     DBUG_RETURN (res);
@@ -329,7 +329,7 @@ ActOnId (node *avis, info *arg_info)
                             PART_INFO_NTH (part_info), INFO_IDXDIM (arg_info),
                             INFO_COEFFICIENT (arg_info));
         } else {
-            DBUG_ASSERT (0, "None N_arg or a withids node with NULL ssaassign!");
+            DBUG_UNREACHABLE ("None N_arg or a withids node with NULL ssaassign!");
         }
     } else {
         /* If this id is defined by an assignment outside the current cuda WL */
@@ -569,7 +569,7 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
                 } else if (cuwl_dim == 2) {
                     shmem_size += (coefficient * block_sizes_2d[1]);
                 } else {
-                    DBUG_ASSERT (0, "Unknown array dimension found!");
+                    DBUG_UNREACHABLE ("Unknown array dimension found!");
                 }
                 break;
             case IDX_THREADIDX_Y:
@@ -927,7 +927,7 @@ DAApart (node *arg_node, info *arg_info)
         PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
         PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
     } else {
-        DBUG_ASSERT (0, "Wrong traverse mode found!");
+        DBUG_UNREACHABLE ("Wrong traverse mode found!");
     }
 
     DBUG_RETURN (arg_node);
@@ -978,7 +978,7 @@ DAAassign (node *arg_node, info *arg_info)
         ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     } else {
-        DBUG_ASSERT (0, "Wrong traverse mode!");
+        DBUG_UNREACHABLE ("Wrong traverse mode!");
     }
 
     INFO_LASTASSIGN (arg_info) = old_lastassign;
@@ -1172,7 +1172,7 @@ DAAprf (node *arg_node, info *arg_info)
                 } else if (NODE_TYPE (operand1) == N_id) {
                     ActOnId (ID_AVIS (operand1), arg_info);
                 } else {
-                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
+                    DBUG_UNREACHABLE ("Unknown type of node found in operands!");
                 }
 
                 if (NODE_TYPE (operand2) == N_num) {
@@ -1182,7 +1182,7 @@ DAAprf (node *arg_node, info *arg_info)
                 } else if (NODE_TYPE (operand2) == N_id) {
                     ActOnId (ID_AVIS (operand2), arg_info);
                 } else {
-                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
+                    DBUG_UNREACHABLE ("Unknown type of node found in operands!");
                 }
             }
             break;
@@ -1198,7 +1198,7 @@ DAAprf (node *arg_node, info *arg_info)
                 } else if (NODE_TYPE (operand1) == N_id) {
                     ActOnId (ID_AVIS (operand1), arg_info);
                 } else {
-                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
+                    DBUG_UNREACHABLE ("Unknown type of node found in operands!");
                 }
 
                 if (NODE_TYPE (operand2) == N_num) {
@@ -1214,7 +1214,7 @@ DAAprf (node *arg_node, info *arg_info)
                     ActOnId (ID_AVIS (operand2), arg_info);
                     INFO_COEFFICIENT (arg_info) = old_coefficient;
                 } else {
-                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
+                    DBUG_UNREACHABLE ("Unknown type of node found in operands!");
                 }
             }
             break;
@@ -1239,7 +1239,7 @@ DAAprf (node *arg_node, info *arg_info)
                     ActOnId (ID_AVIS (operand2), arg_info);
                     INFO_COEFFICIENT (arg_info) = old_coefficient;
                 } else {
-                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
+                    DBUG_UNREACHABLE ("Unknown type of node found in operands!");
                 }
             }
             break;
@@ -1260,7 +1260,7 @@ DAAprf (node *arg_node, info *arg_info)
                     ActOnId (ID_AVIS (operand1), arg_info);
                     INFO_COEFFICIENT (arg_info) = old_coefficient;
                 } else {
-                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
+                    DBUG_UNREACHABLE ("Unknown type of node found in operands!");
                 }
             }
             break;

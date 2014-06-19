@@ -854,6 +854,10 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
 
   /*******************************************************************************
    * Functions for implementing conformability constraints:
+   *
+   * NB. Be aware that constraint_statistics.c assumes that all
+   *     constraints are contiguous in this table!
+   *
    */
 
   PRF (guard, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_guard, NULL, COMPprfGuard,

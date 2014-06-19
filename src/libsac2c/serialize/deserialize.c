@@ -247,7 +247,7 @@ InsertIntoState (node *item)
         INFO_OBJDEFS (DSstate) = TCappendObjdef (INFO_OBJDEFS (DSstate), item);
         break;
     default:
-        DBUG_ASSERT (0, "Unhandeled node in InsertIntoState!");
+        DBUG_UNREACHABLE ("Unhandeled node in InsertIntoState!");
         break;
     }
 
@@ -445,7 +445,7 @@ DSremoveAliasing (const char *symbol)
         }
 #endif
     } else {
-        DBUG_ASSERT (0, "no alias to remove found!");
+        DBUG_UNREACHABLE ("no alias to remove found!");
         oldalias = NULL;
     }
 
@@ -652,7 +652,7 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
             }
             break;
         default:
-            DBUG_ASSERT (0, "unhandeled STentrytype");
+            DBUG_UNREACHABLE ("unhandeled STentrytype");
             break;
         }
     }

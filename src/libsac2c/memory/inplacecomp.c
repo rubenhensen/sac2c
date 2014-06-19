@@ -175,7 +175,7 @@ copyOrArray (node *val, int *depth)
             val = EXPRS_EXPR (ARRAY_AELEMS (val));
         }
     } else {
-        DBUG_ASSERT (FALSE, "Unexpected node");
+        DBUG_UNREACHABLE ("Unexpected node");
     }
 
     DBUG_ASSERT (NODE_TYPE (val) == N_id, "Unexpected node expected an N_id");
@@ -299,7 +299,7 @@ HandleBlock (node *block, node *rets, info *arg_info)
                         && idArray (PRF_ARG1 (rhs))))) {
                 /*
                  * Search for suballoc situation
-                 *
+                 * {...
                  *   a  = ...
                  *   m' = suballoc( A, iv);
                  *   m  = fill( copy( a), m');

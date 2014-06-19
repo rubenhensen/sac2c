@@ -1,11 +1,3 @@
-/**
- *
- * @file
- *
- * header file for ctinfo.c
- *
- */
-
 #ifndef _SAC_CTINFO_H_
 #define _SAC_CTINFO_H_
 
@@ -38,7 +30,6 @@ extern void CTInote (const char *format, ...);
 extern void CTInoteLine (int line, const char *format, ...);
 extern void CTItell (int level, const char *format, ...);
 extern void CTIterminateCompilation (node *syntax_tree);
-extern void CTIterminateCompilationSilent (void);
 extern const char *CTIitemName (node *item);
 extern const char *CTIfunParams (node *fundef);
 extern void set_message_line_length (int l);

@@ -1547,7 +1547,7 @@ ISAAcond (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal traversal mode");
+        DBUG_UNREACHABLE ("Illegal traversal mode");
         break;
     }
 
@@ -1578,7 +1578,7 @@ ISAAfuncond (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal traversal mode");
+        DBUG_UNREACHABLE ("Illegal traversal mode");
         break;
     }
 

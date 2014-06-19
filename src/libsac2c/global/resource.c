@@ -123,7 +123,7 @@ RSCprintConfigEntry (char *config)
                 printf ("%d\n", *((int *)resource_table[i].store));
                 break;
             default:
-                DBUG_ASSERT (0 == 1, "Unknown type of config entry");
+                DBUG_UNREACHABLE ("Unknown type of config entry");
                 break;
             }
             break;
@@ -394,6 +394,7 @@ RSCparseResourceFile (char *buffer)
         }
 
         global.linenum = 1;
+        global.colnum = 1;
         global.filename = buffer; /* set for better error messages only */
         global.start_token = PARSE_RC;
 

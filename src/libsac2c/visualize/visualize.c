@@ -791,6 +791,23 @@ VISUALannotate (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 node *
+VISUALudcs (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (arg_node);
+}
+/******************************************************************************
+ *
+ * Function:
+ *   node *VISUALarg( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
 VISUALarg (node *arg_node, info *arg_info)
 {
     char *node_name = giveNodeName (arg_node, arg_info);

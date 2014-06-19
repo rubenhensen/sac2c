@@ -214,7 +214,7 @@ GetRelationalPrimitive (prf op)
 #endif // DEADORNOTYETALIVE
 
     default:
-        DBUG_ASSERT (0, "Illegal argument.");
+        DBUG_UNREACHABLE ("Illegal argument.");
         result = F_unknown;
     }
 

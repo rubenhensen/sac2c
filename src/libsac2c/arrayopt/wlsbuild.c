@@ -204,7 +204,7 @@ WLSBdoBuild (node *arg_node, node *fundef, node **preassigns)
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_with, "First parameter must be a with-loop");
 
-    DBUG_ASSERT (NODE_TYPE (fundef) = N_fundef, "Second parameter must be a fundef");
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "Second parameter must be a fundef");
 
     arg_info = MakeInfo (fundef);
 

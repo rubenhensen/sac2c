@@ -254,7 +254,7 @@ KPPwith3 (node *arg_node, info *arg_info)
         } else if (FOLD_NEUTRAL (WITH3_OPERATIONS (arg_node)) != NULL) {
             rhs = DUPdoDupTree (FOLD_NEUTRAL (WITH3_OPERATIONS (arg_node)));
         } else {
-            DBUG_ASSERT (0, "Both neutral and initial are NULL!");
+            DBUG_UNREACHABLE ("Both neutral and initial are NULL!");
         }
 
         preassign
@@ -353,11 +353,11 @@ KPPprf (node *arg_node, info *arg_info)
                                                                "F_dim_A as the second "
                                                                "arguemnt of F_alloc!");
             } else {
-                DBUG_ASSERT (0, "Wrong dim argument for F_alloc!");
+                DBUG_UNREACHABLE ("Wrong dim argument for F_alloc!");
             }
             PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         } else {
-            DBUG_ASSERT (0, "Wrong dim argument for F_alloc!");
+            DBUG_UNREACHABLE ("Wrong dim argument for F_alloc!");
         }
         break;
     case F_free:

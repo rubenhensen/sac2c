@@ -254,7 +254,7 @@ SISIfundef (node *arg_node, info *arg_info)
 #endif // FIXME
                 }
             } else {
-                DBUG_ASSERT (FALSE, "Unexpected traversal phase!");
+                DBUG_UNREACHABLE ("Unexpected traversal phase!");
             }
             DBUG_PRINT ("End %s %s",
                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),

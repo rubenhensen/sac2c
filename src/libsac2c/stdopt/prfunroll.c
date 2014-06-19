@@ -61,6 +61,7 @@
  *
  *   pstart = TRUE;
  *   shp = _shape_A_( y);
+ *
  *   x0 = _sel_VxA_( [0], x);
  *   y0 = _sel_VxA_( [0], shp);
  *   z0, p0 = _val_lt_val_SxS( x0, y0);
@@ -330,8 +331,9 @@ PRFUnrollOracle (node *arg_node)
 
     case F_val_lt_shape_VxA:
         /* Unroll onlyif we know array dim */
-        res = TYisAKD (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))))
-              || TYisAKS (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))));
+        res = TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))))
+              || TYisAKS (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))))
+              || TYisAKD (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))));
         break;
 
     case F_val_le_val_VxV:
@@ -475,7 +477,7 @@ NormalizePrf (prf p)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "Illegal prf!");
+        DBUG_UNREACHABLE ("Illegal prf!");
         break;
     }
 
@@ -706,7 +708,6 @@ MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
     case F_val_lt_shape_VxA:
         nprf = F_sel_VxA;
         dyadic = TRUE;
-        INFO_LEN (arg_info) = TYgetDim (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))));
         avis = INFO_SHPAVIS (arg_info);
         break;
 
@@ -870,7 +871,7 @@ MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node 
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "Missed a case!");
+        DBUG_UNREACHABLE ("Missed a case!");
         break;
     }
 
@@ -1159,12 +1160,13 @@ UPRFprf (node *arg_node, info *arg_info)
     bool monadic;
     bool valltshp;
     int i;
+    ntype *nt1 = NULL;
+    ntype *nt2 = NULL;
 
     DBUG_ENTER ();
 
     if ((PRFUnrollOracle (arg_node)) && (TYisAKS (IDS_NTYPE (INFO_LHS (arg_info))))
         && (TYgetDim (IDS_NTYPE (INFO_LHS (arg_info))) == 1)) {
-        ntype *nt1, *nt2;
 
         INFO_LEN (arg_info) = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LHS (arg_info))));
         nt1 = NTCnewTypeCheck_Expr (PRF_ARG1 (arg_node));

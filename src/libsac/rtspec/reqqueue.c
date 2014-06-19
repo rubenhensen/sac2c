@@ -26,9 +26,102 @@
 reqqueue_t *request_queue = NULL;
 pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t empty_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t processed_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t empty_queue_cond = PTHREAD_COND_INITIALIZER;
 
 static int do_trace;
+static list_t *processed;
+
+/** <!--*******************************************************************-->
+ *
+ * @fn  wasProcessed( char *function, char *shape_info)
+ *
+ * @brief Iterates over all the nodes in the list of processed requests and
+ * returns TRUE if a node contains the same information as the current request
+ * and FALSE otherwise.
+ *
+ * @param  function  The function for which the request was made.
+ * @param  shape_info  The encoded shapes that were part of the request.
+ *
+ * @return  TRUE if the request was allready handled, FALSE otherwise.
+ *
+ ****************************************************************************/
+int
+wasProcessed (char *function, char *shape_info)
+{
+    char compare[256];
+    list_t *current;
+
+    pthread_mutex_lock (&processed_mutex);
+
+    if (strlen (processed->request) == 0) {
+        pthread_mutex_unlock (&processed_mutex);
+        return 0;
+    }
+
+    sprintf (compare, "%s_%s", function, shape_info);
+
+    current = processed;
+    while (current != NULL) {
+        if (strlen (current->request) != 0) {
+            if (strcmp (current->request, compare) == 0) {
+                pthread_mutex_unlock (&processed_mutex);
+                return 1;
+            }
+        } else {
+            pthread_mutex_unlock (&processed_mutex);
+            return 0;
+        }
+
+        current = current->next;
+    }
+
+    pthread_mutex_unlock (&processed_mutex);
+
+    return 0;
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn  addProcessed( char *function, char *shape_info)
+ *
+ * @brief Adds a new node to the list of processed requests.
+ *
+ * @param  function  The function for which the request was made.
+ * @param  shape_info  The encoded shapes that were part of the request.
+ *
+ ****************************************************************************/
+void
+addProcessed (char *function, char *shape_info)
+{
+    list_t *xnew;
+    char request[256];
+
+    sprintf (request, "%s_%s", function, shape_info);
+
+    xnew = (list_t *)malloc (sizeof (list_t));
+
+    if (xnew == NULL) {
+        fprintf (stderr, "Could not allocate new processed request node!");
+
+        exit (EXIT_FAILURE);
+    }
+
+    strcpy (xnew->request, request);
+
+    pthread_mutex_lock (&processed_mutex);
+
+    /* Add the new processed request at the beginning of the list, this is
+     * cheaper than at the end.
+     */
+    if (strlen (processed->request) != 0) {
+        xnew->next = processed;
+    }
+
+    processed = xnew;
+
+    pthread_mutex_unlock (&processed_mutex);
+}
 
 /** <!--*******************************************************************-->
  *
@@ -69,6 +162,12 @@ SAC_initializeQueue (int trace)
     request_queue->last = NULL;
 
     pthread_mutex_unlock (&queue_mutex);
+
+    pthread_mutex_lock (&processed_mutex);
+
+    processed = (list_t *)malloc (sizeof (list_t));
+
+    pthread_mutex_unlock (&processed_mutex);
 }
 
 /** <!--*******************************************************************-->
@@ -173,6 +272,11 @@ SAC_enqueueRequest (char *func_name, char *module, char *types, int *shapes,
         SAC_TR_Print ("Runtime specialization: Enqueue specialization request.");
     }
 
+    if (request_queue == NULL) {
+        // using rtspec enabled library in rtspec-disabled application
+        return;
+    }
+
     pthread_mutex_lock (&queue_mutex);
 
     queue_node_t *xnew = SAC_createNode (func_name, module, types, shapes, registry);
@@ -236,4 +340,4 @@ SAC_freeReqqueue (queue_node_t *node)
     }
 }
 
-#endif /* ENABLE_RTSPEC */
+#endif /* SAC_DO_RTSPEC  */

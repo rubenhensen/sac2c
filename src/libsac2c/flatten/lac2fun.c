@@ -281,7 +281,7 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
         break;
 
     default:
-        DBUG_ASSERT (0, "illegal node type found!");
+        DBUG_UNREACHABLE ("illegal node type found!");
         assigns = NULL;
         break;
     }

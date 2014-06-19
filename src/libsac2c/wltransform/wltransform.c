@@ -34,7 +34,7 @@
 #include "traverse.h"
 #include "free.h"
 
-#define DBUG_PREFIX "WLtrans"
+#define DBUG_PREFIX "WLTRA"
 #include "debug.h"
 
 #include "DupTree.h"
@@ -98,6 +98,37 @@ FreeInfo (info *info)
 Transformation N_Nwith -> N_Nwith2:
 ===================================
 
+The transformation is divided up into 8 steps. For debugging purposes the code
+here allows to skip steps by means of setting a debug flag!
+This used to be done by means of a third level of break options but such a
+sub-sub-phase notion has not been implemented in the phase driver.
+Since this seems to be the only place where this is needed, we have adopted
+a break-option based solution. (SBS: not nice but easiest to realise)
+So if you want to see the output after step 1, you have to run
+
+sac2c -bwlt:wltr -#d,conv     <file>.sac
+
+The individual break options are:
+
+stop after step 1: "conv"
+stop after step 2: "cubes"
+stop after step 3: "fill1"
+stop after step 4: "segs"
+stop after step 5: "split"
+stop after step 6: "block"
+stop after step 7: "ublock"
+stop after step 8: "merge"
+stop after step 9: "opt"
+stop after step 10: "fit"
+stop after step 11: "norm"
+stop after step 12: "fill2"
+
+When debugging these steps additional output can be triggered by using
+the dbug-flags WLTconv etc. As of 9.1.2014, only WLTsplit is used :-)
+
+Unfortunately, the steps here do not match one-to-one the steps below.
+However, I (SBS) try to guess their relation by putting steps in square
+brackets....
 
 Example:
 --------
@@ -111,7 +142,7 @@ Example:
   [300,101] -> [400,400] step [1,3] width [1,2]: e4
 
 
-1.) Cube Calculation (Calculates the set of cubes)
+1.) Cube Calculation (Calculates the set of cubes) [steps 1 and 2]
 --------------------
 
     -> set of cubes
@@ -139,7 +170,7 @@ Example:
 
 
 2a.) Selection of segments and bv0, bv1, ... (blocking vektors),
-     ---------------------     ubv (unrolling-blocking vector)
+     ---------------------     ubv (unrolling-blocking vector)    [step 4]
 
      Let sv be the global step vector of a segment S --- i.e. sv is the lcm of
      all steps from cubes for which the intersection with S is non-empty. Then
@@ -173,7 +204,7 @@ Example:
 For every segment the following steps must be performed:
 
 
-3.) Cube Splitting (Cuts the projections)
+3.) Cube Splitting (Cuts the projections)  [step 5]
     --------------
 
     First the spitting is performed with all cubes in the 0th dimension: The
@@ -223,7 +254,7 @@ For every segment the following steps must be performed:
                                         1->3: e4
 
 
-4.) Blocking (without fitting) according to the values in bv
+4.) Blocking (without fitting) according to the values in bv  [step 6]
     --------
 
   The blocking is performed that early because the blocking changes the
@@ -457,7 +488,7 @@ For every segment the following steps must be performed:
                                                       1->3: e4
 
 
-5.) Unrolling-Blocking (without fitting) according to the values in ubv
+5.) Unrolling-Blocking (without fitting) according to the values in ubv  [step 7]
     ------------------
 
     On each block an additional blocking for each dimension with (ubv_d > 1)
@@ -561,7 +592,7 @@ For every segment the following steps must be performed:
                                                                    1->3: e4
 
 
-6.) Cube Merging (Makes cubes with identical subtrees compatible and joins them)
+6.) Cube Merging (Makes cubes with identical subtrees compatible and joins them) [step 8]
     ------------
 
     -> The tree forms in each dimension a partition of the relevant
@@ -669,7 +700,7 @@ For every segment the following steps must be performed:
                                                                    1->3: e4
 
 
-7.) Tree Optimization (Joins identical subtrees)
+7.) Tree Optimization (Joins identical subtrees)   [step 9]
     -----------------
 
     Projections with consecutive index ranges and identical operations
@@ -739,7 +770,7 @@ For every segment the following steps must be performed:
                                                                    1->3: e4
 
 
-8.) Projection Fitting (Removes incomplete periods at the tail and adjusts ...
+8.) Projection Fitting (Removes incomplete periods at the tail and adjusts ...  [step 10]
     ------------------                                   ... block sizes)
     (^ after the optimization we have in general no cubes anymore ...)
 
@@ -995,7 +1026,7 @@ For every segment the following steps must be performed:
                                                                    1->3: e4
 
 
-9.) Adjust block sizes to real projection sizes
+9.) Adjust block sizes to real projection sizes  [step 11?]
     -------------------------------------------
 
   In the example bv = (180,158):
@@ -1406,7 +1437,7 @@ WLTRAallStridesAreConstant (node *wlnode, bool trav_cont, bool trav_nextdim)
             break;
 
         default:
-            DBUG_ASSERT (0, "illegal stride/grid node found!");
+            DBUG_UNREACHABLE ("illegal stride/grid node found!");
             break;
         }
     }
@@ -1630,7 +1661,7 @@ CompareWlNode (node *node1, node *node2, bool outline)
 
             default:
                 result = 0;
-                DBUG_ASSERT (0, "wrong node type");
+                DBUG_UNREACHABLE ("wrong node type");
                 break;
             }
 
@@ -2013,7 +2044,7 @@ GetLcmUnroll (node *nodes, int dim, bool include_blocks)
                 break;
 
             default:
-                DBUG_ASSERT (0, "wrong node type");
+                DBUG_UNREACHABLE ("wrong node type");
                 break;
             }
         }
@@ -2129,7 +2160,7 @@ GenerateNodeForGap (node *wlnode, node *bound1, node *bound2, bool is_noop)
             break;
 
         default:
-            DBUG_ASSERT (0, "illegal node type found!");
+            DBUG_UNREACHABLE ("illegal node type found!");
             break;
         }
     }
@@ -2233,7 +2264,8 @@ FillGapSucc (node **new_node, /* a return value!! */
  *
  ******************************************************************************/
 
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
+static int stop = 0;
 
 /*
  * This function is called from within DBUG_ASSERTS only!
@@ -2292,7 +2324,7 @@ CheckWithids (node *part)
     DBUG_RETURN (res);
 }
 
-#endif /* ! DBUG_OFF */
+#endif /* ! NO_DEBUGGING */
 
 /**
  **
@@ -2368,7 +2400,7 @@ GetWlIterShape (node *wl, node *res_ids)
             break;
 
         default:
-            DBUG_ASSERT (FALSE, "non initialised WithopType found.");
+            DBUG_UNREACHABLE ("non initialised WithopType found.");
             break;
         }
 
@@ -2540,6 +2572,8 @@ CurrentComponentGetNode (node *aelems)
         } else {
             result = DUPdoDupNode (EXPRS_EXPR (aelems));
         }
+        pattern = PMfree (pattern);
+
     } else {
         result = NULL;
     }
@@ -2692,7 +2726,7 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
  ******************************************************************************
  ******************************************************************************/
 
-#ifndef DBUG_OFF
+#ifndef NO_DEBUGGING
 /******************************************************************************
  ******************************************************************************
  **
@@ -3189,13 +3223,11 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                  *         of 'ComputeCubes()' !!!
                  */
 
-                DBUG_ASSERT (0,
-                             "must resign:"
-                             " intersection of outline(stride1) and outline(stride2) is"
-                             " non-empty, while intersection of outline(stride1) and "
-                             "stride2,"
-                             " or intersection of stride1 and outline(stride2) is empty "
-                             ":-(");
+                DBUG_UNREACHABLE (
+                  "must resign:"
+                  " intersection of outline(stride1) and outline(stride2) is"
+                  " non-empty, while intersection of outline(stride1) and stride2,"
+                  " or intersection of stride1 and outline(stride2) is empty :-(");
             }
 
             /* intersect 'stride1' with the outline of 'stride2' */
@@ -4319,6 +4351,12 @@ SplitStride (node *stride1, node *stride2, node **s_stride1, node **s_stride2)
     DBUG_ASSERT (((!WLSTRIDE_ISDYNAMIC (stride1)) && (!WLSTRIDE_ISDYNAMIC (stride2))),
                  "constant strides expected.");
 
+    DBUG_EXECUTE_TAG ("WLTsplit", {
+        fprintf (stderr, "\nsplitting");
+        PRTdoPrintNodeFile (stderr, stride1);
+        fprintf (stderr, "and");
+        PRTdoPrintNodeFile (stderr, stride2);
+    });
     /*
      * in which dimension is splitting needed?
      *
@@ -4347,7 +4385,11 @@ SplitStride (node *stride1, node *stride2, node **s_stride1, node **s_stride2)
 
         if (i_bound1 < i_bound2) { /* is intersection non-empty? */
             *s_stride1 = DUPdoDupNode (stride1);
+            WLSTRIDE_ISMODIFIED (*s_stride1)
+              = FALSE; // This init is necessary to avoid bug 1103!
             *s_stride2 = DUPdoDupNode (stride2);
+            WLSTRIDE_ISMODIFIED (*s_stride2)
+              = FALSE; // This init is necessary to avoid bug 1103!
 
             /*
              * propagate the new bounds in dimension 'dim'
@@ -4357,6 +4399,17 @@ SplitStride (node *stride1, node *stride2, node **s_stride1, node **s_stride2)
             *s_stride2 = NewBoundsStride (*s_stride2, dim, i_bound1, i_bound2);
         }
     }
+
+    DBUG_EXECUTE_TAG ("WLTsplit", {
+        fprintf (stderr, "results in");
+        if (*s_stride1 == NULL) {
+            fprintf (stderr, " no splitting!\n");
+        } else {
+            PRTdoPrintFile (stderr, *s_stride1);
+            fprintf (stderr, "and");
+            PRTdoPrintFile (stderr, *s_stride2);
+        }
+    });
 
     DBUG_RETURN ();
 }
@@ -4384,6 +4437,8 @@ SplitWl (node *strides)
          * the outline of each stride is intersected with all the other ones.
          * this is done until no new intersections are generated (fixpoint).
          */
+        DBUG_PRINT_TAG ("WLTsplit", "starting fixpoint iteration...");
+
         do {
             DBUG_ASSERT (((NODE_TYPE (strides) == N_wlstride)
                           && (!WLSTRIDE_ISDYNAMIC (strides))),
@@ -4391,6 +4446,11 @@ SplitWl (node *strides)
 
             fixpoint = TRUE;    /* initialize 'fixpoint' */
             new_strides = NULL; /* here we collect the new stride-set */
+
+            DBUG_EXECUTE_TAG ("WLTsplit", {
+                fprintf (stderr, "\nlooking at strides");
+                PRTdoPrintFile (stderr, strides);
+            });
 
             /* check WLSTRIDE_ISMODIFIED */
             stride1 = strides;
@@ -4580,7 +4640,7 @@ BlockWl (node *stride, int iter_dims, node *bv, bool unroll)
              * unrolling-blocking is allowed only once after all conventional
              *  blocking!!
              */
-            DBUG_ASSERT (0, "data of unrolling-blocking found while blocking");
+            DBUG_UNREACHABLE ("data of unrolling-blocking found while blocking");
             break;
 
         case N_wlstride:
@@ -4690,7 +4750,7 @@ BlockWl (node *stride, int iter_dims, node *bv, bool unroll)
             break;
 
         default:
-            DBUG_ASSERT (0, "wrong node type");
+            DBUG_UNREACHABLE ("wrong node type");
             break;
         }
     }
@@ -5020,7 +5080,7 @@ MergeWl (node *nodes)
             break;
 
         default:
-            DBUG_ASSERT (0, "wrong node type");
+            DBUG_UNREACHABLE ("wrong node type");
             break;
         }
 
@@ -5145,7 +5205,7 @@ CompareWlTrees (node *tree1, node *tree2)
                     break;
 
                 default:
-                    DBUG_ASSERT (0, "wrong node type");
+                    DBUG_UNREACHABLE ("wrong node type");
                     break;
                 }
             } else {
@@ -5247,7 +5307,7 @@ OptWl (node *nodes)
 
         default:
             cont1 = nextdim1 = NULL;
-            DBUG_ASSERT (0, "wrong node type");
+            DBUG_UNREACHABLE ("wrong node type");
             break;
         }
 
@@ -5510,7 +5570,7 @@ FitWl (node *wlnode)
 
         default:
             unroll = 0;
-            DBUG_ASSERT (0, "wrong node type");
+            DBUG_UNREACHABLE ("wrong node type");
             break;
         }
 
@@ -5691,7 +5751,7 @@ DoNormalize (node *nodes, node *width)
                 break;
 
             default:
-                DBUG_ASSERT (0, "wrong node type");
+                DBUG_UNREACHABLE ("wrong node type");
                 break;
             }
 
@@ -5975,7 +6035,7 @@ InsertNoopNodes (node *wlnode)
             break;
 
         default:
-            DBUG_ASSERT (0, "illegal node type found!");
+            DBUG_UNREACHABLE ("illegal node type found!");
             is_noop = FALSE;
             break;
         }
@@ -6079,7 +6139,7 @@ ComputeIndexMinMax (node *wlseg, shape *iter_shp, node *wlnode)
             break;
 
         default:
-            DBUG_ASSERT (0, "illegal node type found!");
+            DBUG_UNREACHABLE ("illegal node type found!");
             dim = (-1);
             min = max = NULL;
             break;
@@ -6249,7 +6309,7 @@ IsHomSV (node *nodes, int dim, int sv, bool include_blocks)
                 break;
 
             default:
-                DBUG_ASSERT (0, "wrong node type");
+                DBUG_UNREACHABLE ("wrong node type");
                 break;
             }
         }
@@ -6404,7 +6464,7 @@ InferFitted (node *wlnode)
             break;
 
         default:
-            DBUG_ASSERT (0, "wrong node type found!");
+            DBUG_UNREACHABLE ("wrong node type found!");
             break;
         }
     }
@@ -6458,6 +6518,14 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             && (STReq (global.break_specifier, "split"))) {
             goto DONE;
         }
+#else
+        DBUG_EXECUTE_TAG ("split", stop = 1;);
+#ifndef NO_DEBUGGING
+        if (stop == 1) {
+            stop = 0;
+            goto DONE;
+        }
+#endif
 #endif
 
         /*
@@ -6480,6 +6548,14 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             && (STReq (global.break_specifier, "block"))) {
             goto DONE;
         }
+#else
+        DBUG_EXECUTE_TAG ("block", stop = 1;);
+#ifndef NO_DEBUGGING
+        if (stop == 1) {
+            stop = 0;
+            goto DONE;
+        }
+#endif
 #endif
 
         /*
@@ -6496,6 +6572,14 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             && (STReq (global.break_specifier, "ublock"))) {
             goto DONE;
         }
+#else
+        DBUG_EXECUTE_TAG ("ublock", stop = 1;);
+#ifndef NO_DEBUGGING
+        if (stop == 1) {
+            stop = 0;
+            goto DONE;
+        }
+#endif
 #endif
 
         /*
@@ -6511,6 +6595,14 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             && (STReq (global.break_specifier, "merge"))) {
             goto DONE;
         }
+#else
+        DBUG_EXECUTE_TAG ("merge", stop = 1;);
+#ifndef NO_DEBUGGING
+        if (stop == 1) {
+            stop = 0;
+            goto DONE;
+        }
+#endif
 #endif
 
         /*
@@ -6526,6 +6618,14 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             && (STReq (global.break_specifier, "opt"))) {
             goto DONE;
         }
+#else
+        DBUG_EXECUTE_TAG ("opt", stop = 1;);
+#ifndef NO_DEBUGGING
+        if (stop == 1) {
+            stop = 0;
+            goto DONE;
+        }
+#endif
 #endif
 
         /*
@@ -6541,6 +6641,14 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             && (STReq (global.break_specifier, "fit"))) {
             goto DONE;
         }
+#else
+        DBUG_EXECUTE_TAG ("fit", stop = 1;);
+#ifndef NO_DEBUGGING
+        if (stop == 1) {
+            stop = 0;
+            goto DONE;
+        }
+#endif
 #endif
 
         /*
@@ -6557,6 +6665,14 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             && (STReq (global.break_specifier, "norm"))) {
             goto DONE;
         }
+#else
+        DBUG_EXECUTE_TAG ("norm", stop = 1;);
+#ifndef NO_DEBUGGING
+        if (stop == 1) {
+            stop = 0;
+            goto DONE;
+        }
+#endif
 #endif
 
         /*
@@ -6571,8 +6687,20 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
             goto DONE;
         }
 
+#else
+        DBUG_EXECUTE_TAG ("fill2", stop = 1;);
+#ifndef NO_DEBUGGING
+        if (stop == 1) {
+            stop = 0;
+            goto DONE;
+        }
+#endif
+#endif
+
+#ifndef NO_DEBUGGING
     DONE:
 #endif
+
         /* compute GRIDX_FITTED */
         WLSEG_CONTENTS (seg) = InferFitted (WLSEG_CONTENTS (seg));
 
@@ -6727,7 +6855,7 @@ CheckWith (node *arg_node, node *res_ids)
             break;
 
         default:
-            DBUG_ASSERT (0, "illegal WITHOP_TYPE found");
+            DBUG_UNREACHABLE ("illegal WITHOP_TYPE found");
         }
 
         cexprs = EXPRS_NEXT (cexprs);
@@ -6772,16 +6900,19 @@ WLTRAwith (node *arg_node, info *arg_info)
     arg_info = FreeInfo (arg_info);
     arg_info = info_tmp;
 
+    DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
     arg_node = CheckWith (arg_node, INFO_WL_LHS (arg_info));
 
     idx_type = TYeliminateAKV (IDS_NTYPE (WITH_VEC (arg_node)));
 
     if (!TYisAKS (idx_type)) {
 
+        DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
         DBUG_EXECUTE (
-          CTInote ("With-loop without full partition found (line %d)", global.linenum));
+          CTInote ("found With-loop s without full partition (line %d)", global.linenum));
         new_node = arg_node;
     } else if (WITH_CUDARIZABLE (arg_node)) {
+        DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
         DBUG_EXECUTE (CTInote ("Cudarizable with-loop found (line %d). Won't touch.",
                                global.linenum));
         new_node = arg_node;
@@ -6794,6 +6925,7 @@ WLTRAwith (node *arg_node, info *arg_info)
         int iter_dims;   /* >= 0 */
         shape *iter_shp; /* may be NULL! */
 
+        DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
         DBUG_EXECUTE (
           CTInote ("with-loop with AKS withid found (line %d)", global.linenum));
 
@@ -6805,9 +6937,9 @@ WLTRAwith (node *arg_node, info *arg_info)
          * check whether WITHID_VEC, WITHID_IDS of all parts have identical
          * names
          */
+        DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
         DBUG_ASSERT (CheckWithids (WITH_PART (arg_node)),
-                     "Not all N_withid nodes of the with-loop have identical"
-                     " names!\n"
+                     "Not all N_withid nodes of the with-loop have identical names!\n"
                      "This is probably due to an error during with-loop-folding.");
 
         iter_shp = GetWlIterShape (arg_node, INFO_WL_LHS (arg_info));
@@ -6820,7 +6952,8 @@ WLTRAwith (node *arg_node, info *arg_info)
              * this shouldn`t happen for multioperator with-loops,
              * because with-loops with empty iteration space are not fused
              */
-            DBUG_ASSERT (FALSE, "with-loop with empty iteration space found!\n");
+            DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
+            DBUG_UNREACHABLE ("with-loop with empty iteration space found!\n");
         } else {
             node *cubes = NULL;
             node *segs = NULL;
@@ -6835,6 +6968,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             /*
              * consistence check: ensures that the strides are pairwise disjoint
              */
+            DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
             DBUG_EXECUTE (CTInote ("step 1.2: check disjointness of strides"));
             DBUG_ASSERT (CheckDisjointness (strides),
                          "Consistence check failed:"
@@ -6843,7 +6977,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 
             new_node = ConvertWith (arg_node, iter_dims);
 
-            DBUG_ASSERT (strides != NULL, "No unempty strides found.");
+            DBUG_ASSERT (strides != NULL, "No non-empty strides found.");
 
             do_naive_comp
               = ExtractNaiveCompPragma (WITH_PRAGMA (arg_node), global.linenum);
@@ -6855,6 +6989,14 @@ WLTRAwith (node *arg_node, info *arg_info)
                 && (STReq (global.break_specifier, "conv"))) {
                 goto DONE;
             }
+#else
+            DBUG_EXECUTE_TAG ("conv", stop = 1;);
+#ifndef NO_DEBUGGING
+            if (stop == 1) {
+                stop = 0;
+                goto DONE;
+            }
+#endif
 #endif
 
             /*
@@ -6869,6 +7011,14 @@ WLTRAwith (node *arg_node, info *arg_info)
                 && (STReq (global.break_specifier, "cubes"))) {
                 goto DONE;
             }
+#else
+            DBUG_EXECUTE_TAG ("cubes", stop = 1;);
+#ifndef NO_DEBUGGING
+            if (stop == 1) {
+                stop = 0;
+                goto DONE;
+            }
+#endif
 #endif
 
             DBUG_EXECUTE (if (do_naive_comp) {
@@ -6886,6 +7036,14 @@ WLTRAwith (node *arg_node, info *arg_info)
                 && (STReq (global.break_specifier, "fill1"))) {
                 goto DONE;
             }
+#else
+            DBUG_EXECUTE_TAG ("fill1", stop = 1;);
+#ifndef NO_DEBUGGING
+            if (stop == 1) {
+                stop = 0;
+                goto DONE;
+            }
+#endif
 #endif
 
             DBUG_EXECUTE (CTInote ("step 4: choose segments"));
@@ -6917,6 +7075,14 @@ WLTRAwith (node *arg_node, info *arg_info)
                 && (STReq (global.break_specifier, "segs"))) {
                 goto DONE;
             }
+#else
+            DBUG_EXECUTE_TAG ("segs", stop = 1;);
+#ifndef NO_DEBUGGING
+            if (stop == 1) {
+                stop = 0;
+                goto DONE;
+            }
+#endif
 #endif
 
             /*
@@ -6924,9 +7090,10 @@ WLTRAwith (node *arg_node, info *arg_info)
              */
             segs = ProcessSegments (segs, iter_dims, iter_shp, do_naive_comp);
 
-#if TO_BE_ADAPTED_TO_PHASE_MECHANISM
+#ifndef NO_DEBUGGING
         DONE:
 #endif
+
             if (segs == NULL) {
                 segs = WLCOMP_All (NULL, NULL, (cubes == NULL) ? strides : cubes,
                                    iter_dims, global.linenum);

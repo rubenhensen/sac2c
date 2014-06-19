@@ -732,7 +732,7 @@ GetNextAny (char **ret, node *exprs)
         (*ret) = CVdouble2String (dval);
         break;
     default:
-        DBUG_ASSERT (0, "illegal icm-arg found!");
+        DBUG_UNREACHABLE ("illegal icm-arg found!");
     }
 
     DBUG_RETURN (exprs);

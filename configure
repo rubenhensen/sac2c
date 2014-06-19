@@ -3975,7 +3975,7 @@ if ${ac_cv__flto_option+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   save_CFLAGS="$CFLAGS";
-                  CFLAGS="-flto"
+                  CFLAGS="-Werror -flto"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6040,7 +6040,7 @@ if ${ac_cv__Wall_option+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   save_CFLAGS="$CFLAGS";
-                  CFLAGS="-Wall"
+                  CFLAGS="-Werror -Wall"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6077,7 +6077,7 @@ if ${ac_cv__Wextra_option+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   save_CFLAGS="$CFLAGS";
-                  CFLAGS="-Wextra"
+                  CFLAGS="-Werror -Wextra"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6114,7 +6114,7 @@ if ${ac_cv__Wstrict_prototypes_option+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   save_CFLAGS="$CFLAGS";
-                  CFLAGS="-Wstrict-prototypes"
+                  CFLAGS="-Werror -Wstrict-prototypes"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6151,7 +6151,7 @@ if ${ac_cv__Wno_unused_parameter_option+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   save_CFLAGS="$CFLAGS";
-                  CFLAGS="-Wno-unused-parameter"
+                  CFLAGS="-Werror -Wno-unused-parameter"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6188,7 +6188,7 @@ if ${ac_cv__Wno_unused_but_set_variable_option+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   save_CFLAGS="$CFLAGS";
-                  CFLAGS="-Wno-unused-but-set-variable"
+                  CFLAGS="-Werror -Wno-unused-but-set-variable"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6214,6 +6214,84 @@ fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv__Wno_unused_but_set_variable_option" >&5
 $as_echo "$ac_cv__Wno_unused_but_set_variable_option" >&6; }
+
+
+fi
+
+gcc_native=
+if test "$GCC" = yes ; then
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -march=native" >&5
+$as_echo_n "checking whether $CC supports -march=native... " >&6; }
+if ${ac_cv__march_native_option+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  save_CFLAGS="$CFLAGS";
+                  CFLAGS="-Werror -march=native"
+                  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv__march_native_option=yes
+else
+  ac_cv__march_native_option=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+                  if test $ac_cv__march_native_option = yes; then :
+  gcc_native="$gcc_native -march=native"
+fi
+                  CFLAGS="$save_CFLAGS"
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv__march_native_option" >&5
+$as_echo "$ac_cv__march_native_option" >&6; }
+
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -mtune=native" >&5
+$as_echo_n "checking whether $CC supports -mtune=native... " >&6; }
+if ${ac_cv__mtune_native_option+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  save_CFLAGS="$CFLAGS";
+                  CFLAGS="-Werror -mtune=native"
+                  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv__mtune_native_option=yes
+else
+  ac_cv__mtune_native_option=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+                  if test $ac_cv__mtune_native_option = yes; then :
+  gcc_native="$gcc_native -mtune=native"
+fi
+                  CFLAGS="$save_CFLAGS"
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv__mtune_native_option" >&5
+$as_echo "$ac_cv__mtune_native_option" >&6; }
 
 
 fi

@@ -283,7 +283,7 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
             }
         }
     } else {
-        DBUG_ASSERT (0, "Neither N_id nor N_ids found in TypeConvert!");
+        DBUG_UNREACHABLE ("Neither N_id nor N_ids found in TypeConvert!");
     }
 
     DBUG_RETURN (dev_type);

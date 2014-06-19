@@ -1208,7 +1208,7 @@ extern bool TCcontainsDefaultPartition (node *parts);
 #define CODE_INC_USED(n) CODE_USED (n) = CODE_USED (n) + 1
 #define CODE_DEC_USED(n)                                                                 \
     if (CODE_USED (n) == 0) {                                                            \
-        DBUG_ASSERT (0, "CODE_USED dropped below 0");                                    \
+        DBUG_UNREACHABLE ("CODE_USED dropped below 0");                                  \
     } else {                                                                             \
         CODE_USED (n) = CODE_USED (n) - 1;                                               \
     }
@@ -1262,7 +1262,7 @@ extern int TCcountWithopsNeq (node *withop, nodetype neq);
             SPFOLD_NEXT (n) = rhs;                                                       \
             break;                                                                       \
         default:                                                                         \
-            DBUG_ASSERT (FALSE, "Illegal node type");                                    \
+            DBUG_UNREACHABLE ("Illegal node type");                                      \
         }
 
 #define WITHOP_MEM(n)                                                                    \
@@ -1288,7 +1288,7 @@ extern int TCcountWithopsNeq (node *withop, nodetype neq);
             MODARRAY_IDX (n) = rhs;                                                      \
             break;                                                                       \
         default:                                                                         \
-            DBUG_ASSERT (FALSE, "Illegal node type");                                    \
+            DBUG_UNREACHABLE ("Illegal node type");                                      \
         }
 
 #define WITHOP_SUB(n)                                                                    \
@@ -1307,7 +1307,7 @@ extern int TCcountWithopsNeq (node *withop, nodetype neq);
             MODARRAY_SUB (n) = rhs;                                                      \
             break;                                                                       \
         default:                                                                         \
-            DBUG_ASSERT (FALSE, "Illegal node type");                                    \
+            DBUG_UNREACHABLE ("Illegal node type");                                      \
         }
 
 #define WITHOP_RC(n)                                                                     \
@@ -1326,7 +1326,7 @@ extern int TCcountWithopsNeq (node *withop, nodetype neq);
             MODARRAY_RC (n) = rhs;                                                       \
             break;                                                                       \
         default:                                                                         \
-            DBUG_ASSERT (FALSE, "Illegal node type");                                    \
+            DBUG_UNREACHABLE ("Illegal node type");                                      \
         }
 
 /*--------------------------------------------------------------------------*/
@@ -1591,7 +1591,7 @@ extern int TCcountWlseg (node *withop);
     else if (NODE_TYPE (n) == N_wlgrid)                                                  \
         WLGRID_NEXT (n) = rhs;                                                           \
     else                                                                                 \
-        DBUG_ASSERT (0, "L_WLNODE_NEXT called on wrong node type");
+        DBUG_UNREACHABLE ("L_WLNODE_NEXT called on wrong node type");
 
 #define L_WLNODE_BOUND1(n, rhs)                                                          \
     if (NODE_TYPE (n) == N_wlblock)                                                      \
@@ -1603,7 +1603,7 @@ extern int TCcountWlseg (node *withop);
     else if (NODE_TYPE (n) == N_wlgrid)                                                  \
         WLGRID_BOUND1 (n) = rhs;                                                         \
     else                                                                                 \
-        DBUG_ASSERT (0, "L_WLNODE_BOUND1_INT called on wrong node type");
+        DBUG_UNREACHABLE ("L_WLNODE_BOUND1_INT called on wrong node type");
 
 #define L_WLNODE_BOUND2(n, rhs)                                                          \
     if (NODE_TYPE (n) == N_wlblock)                                                      \
@@ -1615,7 +1615,7 @@ extern int TCcountWlseg (node *withop);
     else if (NODE_TYPE (n) == N_wlgrid)                                                  \
         WLGRID_BOUND2 (n) = rhs;                                                         \
     else                                                                                 \
-        DBUG_ASSERT (0, "L_WLNODE_BOUND2_INT called on wrong node type");
+        DBUG_UNREACHABLE ("L_WLNODE_BOUND2_INT called on wrong node type");
 
 #define L_WLNODE_STEP(n, rhs)                                                            \
     if (NODE_TYPE (n) == N_wlblock)                                                      \
@@ -1625,7 +1625,7 @@ extern int TCcountWlseg (node *withop);
     else if (NODE_TYPE (n) == N_wlstride)                                                \
         WLSTRIDE_STEP (n) = rhs;                                                         \
     else                                                                                 \
-        DBUG_ASSERT (0, "L_WLNODE_STEP called on wrong node type");
+        DBUG_UNREACHABLE ("L_WLNODE_STEP called on wrong node type");
 
 #define L_WLNODE_NEXTDIM(n, rhs)                                                         \
     if (NODE_TYPE (n) == N_wlblock)                                                      \
@@ -1635,7 +1635,7 @@ extern int TCcountWlseg (node *withop);
     else if (NODE_TYPE (n) == N_wlgrid)                                                  \
         WLGRID_NEXTDIM (n) = rhs;                                                        \
     else                                                                                 \
-        DBUG_ASSERT (0, "L_WLNODE_NEXTDIM called on wrong node type");
+        DBUG_UNREACHABLE ("L_WLNODE_NEXTDIM called on wrong node type");
 
 /*--------------------------------------------------------------------------*/
 

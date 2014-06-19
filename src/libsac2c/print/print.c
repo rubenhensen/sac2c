@@ -101,6 +101,9 @@ struct INFO {
 
     /*record name space*/
     char *namesapce;
+
+    /* generic use */
+    int count;
 };
 
 /* access macros print */
@@ -126,6 +129,7 @@ struct INFO {
 #define INFO_DOTMODE(n) ((n)->dotmode)
 #define INFO_NAMESPACE(n) ((n)->namesapce)
 #define INFO_PRTOPTS(n) ((n)->prtopts)
+#define INFO_COUNT(n) ((n)->count)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
@@ -263,6 +267,8 @@ MakeInfo (void)
 
     INFO_NAMESPACE (result) = NULL;
 
+    INFO_COUNT (result) = 0;
+
     SetDefaultPrintOps (&INFO_PRTOPTS (result));
 
     DBUG_RETURN (result);
@@ -359,7 +365,7 @@ IRAprintRcs (node *arg_node, info *arg_info)
                 } else if (NODE_TYPE (RC_ARRAYSHP (rcs)) == N_array) {
                     PRTarray (RC_ARRAYSHP (rcs), arg_info);
                 } else {
-                    DBUG_ASSERT (0, "Wrong node type found for resuable array shape!");
+                    DBUG_UNREACHABLE ("Wrong node type found for resuable array shape!");
                 }
                 fprintf (global.outfile, "\n");
 
@@ -1817,6 +1823,17 @@ PRTret (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
+static void *
+PrintDispatchFun (node *fundef, void *arg_info)
+{
+    if (INFO_COUNT ((info *)arg_info) > 0) {
+        fprintf (global.outfile, ",\n *                  ");
+    }
+    PrintFunName (fundef, (info *)arg_info);
+    INFO_COUNT ((info *)arg_info) = INFO_COUNT ((info *)arg_info) + 1;
+    return (arg_info);
+}
+
 static void
 PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 {
@@ -1945,6 +1962,11 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 
         fprintf (global.outfile, ")");
 
+        if (FUNDEF_ASSERTS (arg_node) != NULL) {
+            fprintf (global.outfile, "\nAssert");
+            TRAVdo (FUNDEF_ASSERTS (arg_node), arg_info); /* print args of function */
+        }
+
         if (print_c) {
             fprintf (global.outfile, "\n");
             INDENT;
@@ -1974,6 +1996,16 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
                 fprintf (global.outfile, "%s\n",
                          t2s_fun (FUNDEF_WRAPPERTYPE (arg_node), TRUE,
                                   global.indent + STRlen (FUNDEF_NAME (arg_node)) + 8));
+                fprintf (global.outfile, " *  dispatching to: ");
+                if (TYisProd (FUNDEF_WRAPPERTYPE (arg_node))) {
+                    PrintFunName (FUNDEF_IMPL (arg_node), arg_info);
+                    fprintf (global.outfile, "\n");
+                } else {
+                    INFO_COUNT (arg_info) = 0;
+                    TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (arg_node),
+                                             PrintDispatchFun, arg_info);
+                    fprintf (global.outfile, "\n");
+                }
             } else {
                 fprintf (global.outfile, " ---\n");
             }
@@ -2002,9 +2034,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 node *
 PRTfundef (node *arg_node, info *arg_info)
 {
-#ifndef DBUG_OFF
     int old_indent = global.indent;
-#endif
 
     bool is_userdefined_function = FALSE;
 
@@ -2363,7 +2393,7 @@ PRTannotate (node *arg_node, info *arg_info)
             sprintf (strbuffer1, "PROFILE_END_UDF( %d, %d)",
                      ANNOTATE_FUNNUMBER (arg_node), ANNOTATE_FUNAPNUMBER (arg_node));
         } else {
-            DBUG_ASSERT (0, "wrong tag at N_annotate");
+            DBUG_UNREACHABLE ("wrong tag at N_annotate");
         }
     }
 
@@ -2477,6 +2507,10 @@ PRTarg (node *arg_node, info *arg_info)
               = TRAVdo (AVIS_LACSO (ARG_AVIS (arg_node)), arg_info);
         }
 
+        if (AVIS_ISDEAD (ARG_AVIS (arg_node)) != 0) {
+            fprintf (global.outfile, ", ISDEAD");
+        }
+
         fprintf (global.outfile, " } "); /* end of avis info */
     }
     TRAVdo (ARG_AVIS (arg_node), arg_info);
@@ -2487,6 +2521,28 @@ PRTarg (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   node *PRTudcs( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRTudcs (node *arg_node, info *arg_info)
+{
+    TRAVdo (UDCS_UDC (arg_node), arg_info);
+
+    if (NULL != UDCS_NEXT (arg_node)) {
+        fprintf (global.outfile, ", ");
+        TRAVdo (UDCS_NEXT (arg_node), arg_info);
+    }
+    return (arg_node);
 }
 
 /******************************************************************************
@@ -2513,6 +2569,9 @@ PRTvardec (node *arg_node, info *arg_info)
     }
 
     INDENT;
+
+    DBUG_EXECUTE_TAG ("PRINT_LINENO", fprintf (global.outfile, "\n#line %d \"%s\"\n",
+                                               global.linenum, global.filename););
 
     if ((VARDEC_ICM (arg_node) == NULL) || (NODE_TYPE (VARDEC_ICM (arg_node)) != N_icm)) {
         /* print mutc index specifier */
@@ -2564,6 +2623,10 @@ PRTvardec (node *arg_node, info *arg_info)
                   = TRAVdo (AVIS_LACSO (VARDEC_AVIS (arg_node)), arg_info);
             }
 
+            if (AVIS_ISDEAD (VARDEC_AVIS (arg_node)) != 0) {
+                fprintf (global.outfile, ", ISDEAD");
+            }
+
             if (AVIS_SUBALLOC (VARDEC_AVIS (arg_node))) {
                 fprintf (global.outfile, ", SUBALLOC");
             }
@@ -2605,6 +2668,12 @@ PRTvardec (node *arg_node, info *arg_info)
 
         fprintf (global.outfile, "\n");
     } else {
+        if (global.cc_debug
+            && ((global.compiler_subphase == PH_cg_prt)
+                || (global.compiler_subphase == PH_ccg_prt))) {
+            fprintf (global.outfile, "\n#line %d \"%s\"\n", global.linenum,
+                     global.filename);
+        }
         TRAVdo (VARDEC_ICM (arg_node), arg_info);
         fprintf (global.outfile, "\n");
     }
@@ -2629,9 +2698,7 @@ PRTvardec (node *arg_node, info *arg_info)
 node *
 PRTblock (node *arg_node, info *arg_info)
 {
-#ifndef DBUG_OFF
     int old_indent = global.indent;
-#endif
 
     DBUG_ENTER ();
 
@@ -2743,6 +2810,15 @@ PRTassign (node *arg_node, info *arg_info)
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    DBUG_EXECUTE_TAG ("PRINT_LINENO", fprintf (global.outfile, "\n#line %d \"%s\"\n",
+                                               global.linenum, global.filename););
+
+    if (global.cc_debug
+        && ((global.compiler_subphase == PH_cg_prt)
+            || (global.compiler_subphase == PH_ccg_prt))) {
+        fprintf (global.outfile, "\n#line %d \"%s\"\n", global.linenum, global.filename);
     }
 
     instr = ASSIGN_STMT (arg_node);
@@ -3404,8 +3480,7 @@ PRTid (node *arg_node, info *arg_info)
             text = ID_NAME (arg_node);
         } else {
             text = "";
-            DBUG_ASSERT (FALSE,
-                         "Found an Id node with neither NTtag nor ICMText nor Name");
+            DBUG_UNREACHABLE ("Found an Id node with neither NTtag nor ICMText nor Name");
         }
     } else {
         if (ID_AVIS (arg_node) != NULL) {
@@ -3414,7 +3489,7 @@ PRTid (node *arg_node, info *arg_info)
             text = ID_ICMTEXT (arg_node);
         } else {
             text = "";
-            DBUG_ASSERT (FALSE, "Found an Id node with neither Avis nor ICMText");
+            DBUG_UNREACHABLE ("Found an Id node with neither Avis nor ICMText");
         }
     }
 
@@ -5623,7 +5698,7 @@ PRTwlcode (node *arg_node, info *arg_info)
                 break;
 
             default:
-                DBUG_ASSERT (0, "illegal with-loop type found");
+                DBUG_UNREACHABLE ("illegal with-loop type found");
                 break;
             }
         } else {
@@ -5773,6 +5848,11 @@ PRTavis (node *arg_node, info *arg_info)
     if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
         && AVIS_ISCUDALOCAL (arg_node)) {
         fprintf (global.outfile, " /* CUDA local */");
+    }
+
+    if (global.optimize.dopogo && (-1 != AVIS_POLYLIBCOLUMNINDEX (arg_node))) {
+        fprintf (global.outfile, " /* POLYLIBCOLUMNINDEX = %d */ ",
+                 AVIS_POLYLIBCOLUMNINDEX (arg_node));
     }
 
     DBUG_RETURN (arg_node);

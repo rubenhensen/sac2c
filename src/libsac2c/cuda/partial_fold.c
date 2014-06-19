@@ -493,7 +493,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
             args = TBmakeExprs (TBmakeId (CDS_GDIM_X (INFO_CDS (arg_info))),
                                 TBmakeExprs (TBmakeNum (1), NULL));
         } else {
-            DBUG_ASSERT (0, "Reduction in unknown dimension!");
+            DBUG_UNREACHABLE ("Reduction in unknown dimension!");
         }
 
         partial_bound = CreatePrfOrConst (TRUE, "partial_bound", T_int, SHmakeShape (0),
@@ -506,7 +506,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
             args = TBmakeExprs (TBmakeId (CIS_BX (INFO_CIS (arg_info))),
                                 TBmakeExprs (TBmakeId (partial_bound), NULL));
         } else {
-            DBUG_ASSERT (0, "Reduction in unknown dimension!");
+            DBUG_UNREACHABLE ("Reduction in unknown dimension!");
         }
 
         /* Is the thread block the last one in the dimension? */
@@ -636,7 +636,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
                                  TBmakeExprs (TBmakeId (avis),
                                               TBmakeExprs (TBmakeId (iterator), NULL)));
             } else {
-                DBUG_ASSERT (0, "Dimension not supported!");
+                DBUG_UNREACHABLE ("Dimension not supported!");
             }
         }
 
@@ -737,7 +737,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
             cond_predicate = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0),
                                                F_and_SxS, args, &predicate, fundef);
         } else {
-            DBUG_ASSERT (0, "Dimension not supported!");
+            DBUG_UNREACHABLE ("Dimension not supported!");
         }
     }
 
@@ -897,7 +897,7 @@ BuildReduceAssigns (node *part, info *arg_info)
             assigns = TCappendAssign (y_reduction_assigns, x_reduction_assigns);
         }
     } else {
-        DBUG_ASSERT (0, "Reduction is only supported for 1D and 2D folds!");
+        DBUG_UNREACHABLE ("Reduction is only supported for 1D and 2D folds!");
     }
 
     DBUG_RETURN (assigns);
@@ -1095,7 +1095,7 @@ BuildStoreAssigns (node *part, info *arg_info)
         } else if (INFO_RESDEF (arg_info) == def_array) {
             /* TODO */
         } else {
-            DBUG_ASSERT (0, "Unknow result definition assignment!");
+            DBUG_UNREACHABLE ("Unknow result definition assignment!");
         }
 
         /*
@@ -1339,7 +1339,7 @@ PFDgenerator (node *arg_node, info *arg_info)
     INFO_PARTSHP (arg_info)
       = COconstant2AST (COsub (COaST2Constant (bound2), COaST2Constant (bound1), NULL));
 
-    DBUG_ASSERT (NODE_TYPE (INFO_PARTSHP (arg_info)) = N_array,
+    DBUG_ASSERT (NODE_TYPE (INFO_PARTSHP (arg_info)) == N_array,
                  "Partition shape is not an array!");
 
     DBUG_RETURN (arg_node);
@@ -2046,7 +2046,7 @@ BuildFoldWithloop (node *old_foldwl, info *arg_info)
         WITH_REFERENCED (new_foldwl) = WITH_REFERENCED (old_foldwl);
         WITH_ISFOLDABLE (new_foldwl) = WITH_ISFOLDABLE (old_foldwl);
     } else {
-        DBUG_ASSERT (0, "Unknow result definition assignment!");
+        DBUG_UNREACHABLE ("Unknow result definition assignment!");
     }
 
     /* Cleanup arg_info */

@@ -242,7 +242,7 @@ node *CreateArraySel( node *sel_vec, node *sel_array, info *arg_info)
   DBUG_ASSERT (dim_array > 0, "illegal array dimensionality found!");
 
   if (len_index > dim_array) {
-    DBUG_ASSERT (0, "illegal array selection found!");
+    DBUG_UNREACHABLE ("illegal array selection found!");
     sel = NULL;
   }
   else if ((len_index == dim_array)) {

@@ -1182,7 +1182,7 @@ PRAassign (node *arg_node, info *arg_info)
     } else if (INFO_MODE (arg_info) == TR_collect) {
         ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
     } else {
-        DBUG_ASSERT (0, "Wrong traverse mode!");
+        DBUG_UNREACHABLE ("Wrong traverse mode!");
     }
 
     DBUG_RETURN (arg_node);
@@ -1526,10 +1526,10 @@ PRAprf (node *arg_node, info *arg_info)
                                 MatrixClearRow (constraints, level * 2);
                             }
                         } else if (cond_relation == LO_not) {
-                            DBUG_ASSERT (0,
-                                         "Logical operator 'not' is not supported yet!");
+                            DBUG_UNREACHABLE (
+                              "Logical operator 'not' is not supported yet!");
                         } else {
-                            DBUG_ASSERT (0, "Unknow logical operator found!");
+                            DBUG_UNREACHABLE ("Unknow logical operator found!");
                         }
 
                         if (intersected) {

@@ -227,7 +227,7 @@ MergeNewExprs (node **preassigns, node **postassigns, node *with, node **exprs,
                 break;
 
             default:
-                DBUG_ASSERT (FALSE, "unhandeled withop type!");
+                DBUG_UNREACHABLE ("unhandeled withop type!");
             }
         }
     }
@@ -298,7 +298,7 @@ HZGWLwith (node *arg_node, info *arg_info)
                 INFO_NEWRES (arg_info) = FREEdoFreeTree (INFO_NEWRES (arg_info));
                 break;
             default:
-                DBUG_ASSERT (FALSE, "Unhandeled withop type!");
+                DBUG_UNREACHABLE ("Unhandeled withop type!");
             }
         } else {
             MergeNewExprs (&INFO_PREASSIGN (arg_info), &INFO_POSTASSIGN (arg_info),

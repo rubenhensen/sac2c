@@ -1663,7 +1663,7 @@ NTCnodeToType (node *arg_node)
 
     switch (NODE_TYPE (arg_node)) {
     default:
-        DBUG_ASSERT (FALSE, "Illegal node type");
+        DBUG_UNREACHABLE ("Illegal node type");
     case N_bool:
         z = T_bool;
         break;

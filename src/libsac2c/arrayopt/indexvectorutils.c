@@ -120,7 +120,7 @@ IVUToffset2Constant (node *arg_node, node *mat)
     /* z = IVUTidxs2offset( arg_node); */
     if ((NULL == z) && (PMmatchFlat (pat2, arg_node))) {
         shp = COfreeConstant (shp);
-        DBUG_ASSERT (FALSE, "start coding...");
+        DBUG_UNREACHABLE ("start coding...");
     }
 
     pat1 = PMfree (pat1);

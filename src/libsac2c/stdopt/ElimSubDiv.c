@@ -127,7 +127,7 @@ TogglePrf (prf op)
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal argument prf!");
+        DBUG_UNREACHABLE ("Illegal argument prf!");
         /*
          * the following line initialises result, as the product
          * version will continue execution (the DBUG_ASSERT is

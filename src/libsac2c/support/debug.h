@@ -9,6 +9,56 @@
 #define DBUG_PREFIX __FILE__
 #endif
 
+/* Use getter/setter functions for custom exit function used
+   by DBUG_ASSERT and DBUG_UNREACHABLE macros.  */
+extern void set_debug_exit_function (void (*) (int));
+
+/* Get the pointer on the custom exit function.  */
+extern void (*get_debug_exit_function (void)) (int);
+
+/* Wrap the custom exit function.  Used by DBUG_ASSERT macro.  */
+static inline void
+exit_func (int status)
+{
+    void (*func) (int) = get_debug_exit_function ();
+    func (status);
+}
+
+/*! This macro handles the case when a code hits unreachable
+    state.
+    \param f    ``FILE *'' object where fprinf will pipe its
+                output.  */
+#define __sac_unreachable(f, ...)                                                        \
+    do {                                                                                 \
+        fprintf (f, "Internal compiler error\n");                                        \
+        fprintf (f, "Program reached impossible state at %s:%i -- ", __FILE__,           \
+                 __LINE__);                                                              \
+        fprintf (f, __VA_ARGS__);                                                        \
+        fprintf (f, "\n");                                                               \
+        fprintf (f, "Please file a bug at: "                                             \
+                    "http://bugs.sac-home.org\n");                                       \
+        exit_func (EXIT_FAILURE);                                                        \
+        /* Use abort to ensure non-return nature of the macro.  */                       \
+        abort ();                                                                        \
+    } while (0)
+
+/*! This macro handles the case when a code fails to pass
+    an assertion.
+    \param f    ``FILE *'' object where fprinf will pipe its
+                output.
+    \param cond Expression to be asserted.  */
+#define __sac_assert(f, cond, strcond, ...)                                              \
+    ((void)(!(cond) ? (fprintf (f, "Internal compiler error\n"),                         \
+                       fprintf (f,                                                       \
+                                "Assertion \"%s\" failed at "                            \
+                                "%s:%i -- ",                                             \
+                                strcond, __FILE__, __LINE__),                            \
+                       fprintf (f, __VA_ARGS__), fprintf (f, "\n"),                      \
+                       fprintf (f, "Please file a bug at: "                              \
+                                   "http://bugs.sac-home.org\n"),                        \
+                       exit_func (EXIT_FAILURE), 0)                                      \
+                    : 0))
+
 #ifndef DBUG_OFF
 extern int _db_on_;               /* TRUE if debug currently enabled */
 extern int _db_dummy_;            /* dummy for fooling macro preprocessor */
@@ -28,20 +78,6 @@ extern void _db_doprnt_assert_2_ (char *, ...);         /* Print debug output */
 extern void _db_setjmp_ (void);                         /* Save debugger environment */
 extern void _db_longjmp_ (void);                        /* Restore debugger environment */
 
-/* Use getter/setter functions for custom exit function used
-   by DBUG_ASSERT macro.  */
-extern void set_debug_exit_function (void (*) (int));
-
-/* Get the pointer on the custom exit function.  */
-extern void (*get_debug_exit_function (void)) (int);
-
-/* Wrap the custom exit function.  Used by DBUG_ASSERT macro.  */
-static inline void
-exit_func (int status)
-{
-    void (*func) (int) = get_debug_exit_function ();
-    func (status);
-}
 #endif
 
 #ifdef DBUG_OFF
@@ -51,7 +87,8 @@ exit_func (int status)
 #define DBUG_PRINT_TAG(tag, ...) (void)0
 #define DBUG_EXECUTE(expr) (void)0
 #define DBUG_EXECUTE_TAG(tag, expr) (void)0
-#define DBUG_ASSERT(cond, ...) (void)0
+#define DBUG_ASSERT(cond, ...) __sac_assert (stderr, cond, #cond, __VA_ARGS__)
+#define DBUG_UNREACHABLE(...) __sac_unreachable (stderr, __VA_ARGS__)
 #define DBUG_POP()
 #define DBUG_PUSH(var)
 #else
@@ -95,14 +132,9 @@ exit_func (int status)
         }                                                                                \
     } while (0)
 
-#define DBUG_ASSERT(cond, ...)                                                           \
-    ((void)(!(cond) ? (fprintf (_db_fp_,                                                 \
-                                "%s:%i Assertion \"%s"                                   \
-                                "\" failed!\n",                                          \
-                                __FILE__, __LINE__, #cond),                              \
-                       fprintf (_db_fp_, __VA_ARGS__), fprintf (_db_fp_, "\n"),          \
-                       exit_func (EXIT_FAILURE), 0)                                      \
-                    : 0))
+#define DBUG_ASSERT(cond, ...) __sac_assert (_db_fp_, cond, #cond, __VA_ARGS__)
+
+#define DBUG_UNREACHABLE(...) __sac_unreachable (_db_fp_, __VA_ARGS__)
 
 #define DBUG_POP() _db_pop_ ()
 

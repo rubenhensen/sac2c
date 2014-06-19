@@ -377,7 +377,7 @@ AdjustToNormalizePredicate (node *predicate, enum arg_sign var_or_loopvar_sign)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "Confusion over LOOPFUN predicate");
+        DBUG_UNREACHABLE ("Confusion over LOOPFUN predicate");
         z = -1;
         break;
     }
@@ -763,7 +763,7 @@ f_prime (struct m_func mfunc, loopc_t init, double iter)
                + (alpha * beta - gamma * beta - alpha)
                    / ((beta - 1.) * exp (iter * log (beta))) * log (beta);
     } else {
-        DBUG_ASSERT (FALSE, "Unreachable situation");
+        DBUG_UNREACHABLE ("Unreachable situation");
     }
 
     return NAN;
@@ -791,7 +791,7 @@ NewtonF (struct m_func mfunc, loopc_t init, double iter)
                + (alpha * beta - gamma * beta - alpha)
                    / ((beta - 1.) * exp (iter * log (beta)));
     } else
-        DBUG_ASSERT (FALSE, "Unreachable situation");
+        DBUG_UNREACHABLE ("Unreachable situation");
 
     return NAN;
 }
@@ -1079,7 +1079,7 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
                         ivtmp->value = ivtmp->value / ivtmp->mfunc.a;
                         ivtmp->value += ivtmp->mfunc.b;
                     } else
-                        DBUG_ASSERT (FALSE, "Unreachable situation");
+                        DBUG_UNREACHABLE ("Unreachable situation");
                 }
             }
 

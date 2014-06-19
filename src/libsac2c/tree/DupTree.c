@@ -581,6 +581,8 @@ DUPnum (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    NUM_FLAGSTRUCTURE (new_node) = NUM_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -596,6 +598,8 @@ DUPnumbyte (node *arg_node, info *arg_info)
     new_node = TBmakeNumbyte (NUMBYTE_VAL (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    NUMBYTE_FLAGSTRUCTURE (new_node) = NUMBYTE_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -613,6 +617,8 @@ DUPnumshort (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    NUMSHORT_FLAGSTRUCTURE (new_node) = NUMSHORT_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -628,6 +634,8 @@ DUPnumint (node *arg_node, info *arg_info)
     new_node = TBmakeNumint (NUMINT_VAL (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    NUMINT_FLAGSTRUCTURE (new_node) = NUMINT_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -645,6 +653,8 @@ DUPnumlong (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    NUMLONG_FLAGSTRUCTURE (new_node) = NUMLONG_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -660,6 +670,8 @@ DUPnumlonglong (node *arg_node, info *arg_info)
     new_node = TBmakeNumlonglong (NUMLONGLONG_VAL (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    NUMLONGLONG_FLAGSTRUCTURE (new_node) = NUMLONGLONG_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -677,6 +689,8 @@ DUPnumubyte (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    NUMUBYTE_FLAGSTRUCTURE (new_node) = NUMUBYTE_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -692,6 +706,8 @@ DUPnumushort (node *arg_node, info *arg_info)
     new_node = TBmakeNumushort (NUMUSHORT_VAL (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    NUMUSHORT_FLAGSTRUCTURE (new_node) = NUMUSHORT_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -709,6 +725,8 @@ DUPnumuint (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    NUMUINT_FLAGSTRUCTURE (new_node) = NUMUINT_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -724,6 +742,8 @@ DUPnumulong (node *arg_node, info *arg_info)
     new_node = TBmakeNumulong (NUMULONG_VAL (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    NUMULONG_FLAGSTRUCTURE (new_node) = NUMULONG_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -741,6 +761,8 @@ DUPnumulonglong (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    NUMULONGLONG_FLAGSTRUCTURE (new_node) = NUMULONGLONG_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -756,6 +778,8 @@ DUPbool (node *arg_node, info *arg_info)
     new_node = TBmakeBool (BOOL_VAL (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    BOOL_FLAGSTRUCTURE (new_node) = BOOL_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -773,6 +797,8 @@ DUPnested_init (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    NESTED_INIT_FLAGSTRUCTURE (new_node) = NESTED_INIT_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -789,8 +815,12 @@ DUPfloat (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    FLOAT_FLAGSTRUCTURE (new_node) = FLOAT_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
+
+/******************************************************************************/
 
 node *
 DUPfloatvec (node *arg_node, info *arg_info)
@@ -802,6 +832,8 @@ DUPfloatvec (node *arg_node, info *arg_info)
     new_node = TBmakeFloatvec (FLOATVEC_VAL (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    FLOATVEC_FLAGSTRUCTURE (new_node) = FLOATVEC_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -819,6 +851,8 @@ DUPdouble (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    DOUBLE_FLAGSTRUCTURE (new_node) = DOUBLE_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -834,6 +868,8 @@ DUPchar (node *arg_node, info *arg_info)
     new_node = TBmakeChar (CHAR_VAL (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    CHAR_FLAGSTRUCTURE (new_node) = CHAR_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -851,6 +887,8 @@ DUPstr (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    STR_FLAGSTRUCTURE (new_node) = STR_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -867,6 +905,8 @@ DUPtype (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    TYPE_FLAGSTRUCTURE (new_node) = TYPE_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -882,6 +922,8 @@ DUPdot (node *arg_node, info *arg_info)
     new_node = TBmakeDot (DOT_NUM (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    DOT_FLAGSTRUCTURE (new_node) = DOT_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -900,6 +942,8 @@ DUPsetwl (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    SETWL_FLAGSTRUCTURE (new_node) = SETWL_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -917,6 +961,8 @@ DUPconstraint (node *arg_node, info *arg_info)
                                  DUPCONT (CONSTRAINT_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    CONSTRAINT_FLAGSTRUCTURE (new_node) = CONSTRAINT_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -957,6 +1003,8 @@ DUPid (node *arg_node, info *arg_info)
 
     ID_ISSCLPRF (new_node) = ID_ISSCLPRF (arg_node);
 
+    ID_FLAGSTRUCTURE (new_node) = ID_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -974,6 +1022,8 @@ DUPspid (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    SPID_FLAGSTRUCTURE (new_node) = SPID_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -990,6 +1040,8 @@ DUPcast (node *arg_node, info *arg_info)
       = TBmakeCast (TYcopyType (CAST_NTYPE (arg_node)), DUPTRAV (CAST_EXPR (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    CAST_FLAGSTRUCTURE (new_node) = CAST_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1012,6 +1064,8 @@ DUPmodule (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    MODULE_FLAGSTRUCTURE (new_node) = MODULE_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1031,6 +1085,8 @@ DUPstructdef (node *arg_node, info *arg_info)
                                 DUPCONT (STRUCTDEF_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    STRUCTDEF_FLAGSTRUCTURE (new_node) = STRUCTDEF_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1059,6 +1115,8 @@ DUPtypedef (node *arg_node, info *arg_info)
 
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, new_node);
 
+    TYPEDEF_FLAGSTRUCTURE (new_node) = TYPEDEF_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1082,6 +1140,8 @@ DUPobjdef (node *arg_node, info *arg_info)
     CopyCommonNodeData (new_node, arg_node);
 
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, new_node);
+
+    OBJDEF_FLAGSTRUCTURE (new_node) = OBJDEF_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1141,6 +1201,8 @@ DUPfundef (node *arg_node, info *arg_info)
     FUNDEF_FPFRAMENAME (new_node) = STRcpy (FUNDEF_FPFRAMENAME (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    FUNDEF_FLAGSTRUCTURE (new_node) = FUNDEF_FLAGSTRUCTURE (arg_node);
 
     FUNDEF_NEXT (new_node) = DUPCONT (FUNDEF_NEXT (arg_node));
 
@@ -1223,6 +1285,18 @@ DUPfundef (node *arg_node, info *arg_info)
 }
 
 /******************************************************************************/
+// Fangyong add: user-defined constraints, not finish yet.
+node *
+DUPudcs (node *arg_node, info *arg_info)
+{
+    // node *new_node;
+
+    DBUG_ENTER ();
+
+    //  new_node = TBmakeUdcs(DUPTRAV(UDCS_UDC( arg_node)),NULL);
+
+    DBUG_RETURN (arg_node);
+}
 
 node *
 DUParg (node *arg_node, info *arg_info)
@@ -1274,6 +1348,8 @@ DUPret (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    RET_FLAGSTRUCTURE (new_node) = RET_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1292,6 +1368,8 @@ DUPexprs (node *arg_node, info *arg_info)
     CopyCommonNodeData (new_node, arg_node);
 
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, new_node);
+
+    EXPRS_FLAGSTRUCTURE (new_node) = EXPRS_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1347,6 +1425,8 @@ DUPblock (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    BLOCK_FLAGSTRUCTURE (new_node) = BLOCK_FLAGSTRUCTURE (arg_node);
+
     BLOCK_ISMTSEQUENTIALBRANCH (new_node) = BLOCK_ISMTSEQUENTIALBRANCH (arg_node);
     BLOCK_ISMTPARALLELBRANCH (new_node) = BLOCK_ISMTPARALLELBRANCH (arg_node);
 
@@ -1389,7 +1469,7 @@ DUPblock (node *arg_node, info *arg_info)
             } else if (N_num == NODE_TYPE (AVIS_DIM (avis))) {
                 AVIS_DIM (avis) = DUPCONT (AVIS_DIM (avis));
             } else {
-                DBUG_ASSERT (FALSE, "found oddball AVIS_DIM node type");
+                DBUG_UNREACHABLE ("found oddball AVIS_DIM node type");
             }
         }
 
@@ -1408,7 +1488,7 @@ DUPblock (node *arg_node, info *arg_info)
             } else if (N_array == NODE_TYPE (AVIS_SHAPE (avis))) {
                 AVIS_SHAPE (avis) = DUPCONT (AVIS_SHAPE (avis));
             } else {
-                DBUG_ASSERT (FALSE, "found oddball AVIS_SHAPE node type");
+                DBUG_UNREACHABLE ("found oddball AVIS_SHAPE node type");
             }
         }
 
@@ -1428,7 +1508,7 @@ DUPblock (node *arg_node, info *arg_info)
             } else if (N_array == NODE_TYPE (AVIS_SCALARS (avis))) {
                 AVIS_SCALARS (avis) = DUPCONT (AVIS_SCALARS (avis));
             } else {
-                DBUG_ASSERT (FALSE, "found oddball AVIS_SCALARS node type");
+                DBUG_UNREACHABLE ("found oddball AVIS_SCALARS node type");
             }
         }
         /* AVIS_MIN and AVIS_MAX are restricted to N_id nodes, but
@@ -1450,7 +1530,7 @@ DUPblock (node *arg_node, info *arg_info)
             } else if (N_array == NODE_TYPE (AVIS_MIN (avis))) {
                 AVIS_MIN (avis) = DUPCONT (AVIS_MIN (avis));
             } else {
-                DBUG_ASSERT (FALSE, "found oddball AVIS_MIN node type");
+                DBUG_UNREACHABLE ("found oddball AVIS_MIN node type");
             }
         }
 
@@ -1469,7 +1549,7 @@ DUPblock (node *arg_node, info *arg_info)
             } else if (N_array == NODE_TYPE (AVIS_MAX (avis))) {
                 AVIS_MAX (avis) = DUPCONT (AVIS_MAX (avis));
             } else {
-                DBUG_ASSERT (FALSE, "found oddball AVIS_MAX node type");
+                DBUG_UNREACHABLE ("found oddball AVIS_MAX node type");
             }
         }
 
@@ -1493,6 +1573,8 @@ DUPstructelem (node *arg_node, info *arg_info)
                                  DUPCONT (STRUCTELEM_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    STRUCTELEM_FLAGSTRUCTURE (new_node) = STRUCTELEM_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1535,6 +1617,8 @@ DUPreturn (node *arg_node, info *arg_info)
 
     RETURN_CRET (new_node)
       = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), RETURN_CRET (arg_node));
+
+    RETURN_FLAGSTRUCTURE (new_node) = RETURN_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1589,6 +1673,7 @@ DUPassign (node *arg_node, info *arg_info)
         }
 
         CopyCommonNodeData (new_node, arg_node);
+        ASSIGN_FLAGSTRUCTURE (new_node) = ASSIGN_FLAGSTRUCTURE (arg_node);
     } else {
         new_node = NULL;
     }
@@ -1615,6 +1700,8 @@ DUPcond (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    COND_FLAGSTRUCTURE (new_node) = COND_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1638,6 +1725,8 @@ DUPdo (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    DO_FLAGSTRUCTURE (new_node) = DO_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1654,6 +1743,8 @@ DUPwhile (node *arg_node, info *arg_info)
       = TBmakeWhile (DUPTRAV (WHILE_COND (arg_node)), DUPTRAV (WHILE_BODY (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    WHILE_FLAGSTRUCTURE (new_node) = WHILE_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1676,6 +1767,8 @@ DUPlet (node *arg_node, info *arg_info)
     LET_EXPR (new_node) = DUPTRAV (LET_EXPR (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+    LET_FLAGSTRUCTURE (new_node) = LET_FLAGSTRUCTURE (arg_node);
+
     LET_SPAWNSYNCINDEX (new_node) = LET_SPAWNSYNCINDEX (arg_node);
 
     // TODO: are id's in livevars should point to duplicated nodes
@@ -1773,6 +1866,8 @@ DUPids (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    IDS_FLAGSTRUCTURE (new_node) = IDS_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1789,6 +1884,8 @@ DUPspids (node *arg_node, info *arg_info)
       = TBmakeSpids (STRcpy (SPIDS_NAME (arg_node)), DUPCONT (SPIDS_NEXT (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    SPIDS_FLAGSTRUCTURE (new_node) = SPIDS_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1910,6 +2007,8 @@ DUPspap (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    SPAP_FLAGSTRUCTURE (new_node) = SPAP_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1931,6 +2030,8 @@ DUPspmop (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    SPMOP_FLAGSTRUCTURE (new_node) = SPMOP_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1951,6 +2052,8 @@ DUParray (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    ARRAY_FLAGSTRUCTURE (new_node) = ARRAY_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -1968,6 +2071,8 @@ DUPprf (node *arg_node, info *arg_info)
     PRF_FLAGSTRUCTURE (new_node) = PRF_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
+
+    PRF_FLAGSTRUCTURE (new_node) = PRF_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -1987,6 +2092,8 @@ DUPfuncond (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    FUNCOND_FLAGSTRUCTURE (new_node) = FUNCOND_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2001,6 +2108,10 @@ DUPannotate (node *arg_node, info *arg_info)
 
     new_node = TBmakeAnnotate (ANNOTATE_TAG (arg_node), ANNOTATE_FUNNUMBER (arg_node),
                                ANNOTATE_FUNAPNUMBER (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    ANNOTATE_FLAGSTRUCTURE (new_node) = ANNOTATE_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2017,6 +2128,10 @@ DUPex (node *arg_node, info *arg_info)
 
     new_node = TBmakeEx (DUPTRAV (EX_REGION (arg_node)));
 
+    CopyCommonNodeData (new_node, arg_node);
+
+    EX_FLAGSTRUCTURE (new_node) = EX_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2027,7 +2142,7 @@ DUPdataflowgraph (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (FALSE, "DUPdataflowgraph until now not implemented!! :-(");
+    DBUG_UNREACHABLE ("DUPdataflowgraph until now not implemented!! :-(");
     DBUG_RETURN ((node *)NULL);
 }
 
@@ -2038,7 +2153,7 @@ DUPdataflownode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (FALSE, "DUPdataflownode until now not implemented!! :-(");
+    DBUG_UNREACHABLE ("DUPdataflownode until now not implemented!! :-(");
 
     DBUG_RETURN ((node *)NULL);
 }
@@ -2055,6 +2170,8 @@ DUPimport (node *arg_node, info *arg_info)
     new_node
       = TBmakeImport (STRcpy (IMPORT_MOD (arg_node)), DUPCONT (IMPORT_NEXT (arg_node)),
                       DUPTRAV (IMPORT_SYMBOL (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
 
     IMPORT_FLAGSTRUCTURE (new_node) = IMPORT_FLAGSTRUCTURE (arg_node);
 
@@ -2073,6 +2190,8 @@ DUPexport (node *arg_node, info *arg_info)
     new_node = TBmakeExport (DUPCONT (EXPORT_NEXT (arg_node)),
                              DUPTRAV (EXPORT_SYMBOL (arg_node)));
 
+    CopyCommonNodeData (new_node, arg_node);
+
     EXPORT_FLAGSTRUCTURE (new_node) = EXPORT_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
@@ -2090,6 +2209,10 @@ DUPuse (node *arg_node, info *arg_info)
     new_node = TBmakeUse (STRcpy (USE_MOD (arg_node)), DUPCONT (USE_NEXT (arg_node)),
                           DUPTRAV (USE_SYMBOL (arg_node)));
 
+    CopyCommonNodeData (new_node, arg_node);
+
+    USE_FLAGSTRUCTURE (new_node) = USE_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2104,6 +2227,10 @@ DUPprovide (node *arg_node, info *arg_info)
 
     new_node = TBmakeProvide (DUPCONT (PROVIDE_NEXT (arg_node)),
                               DUPTRAV (PROVIDE_SYMBOL (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    PROVIDE_FLAGSTRUCTURE (new_node) = PROVIDE_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2126,6 +2253,10 @@ DUPset (node *arg_node, info *arg_info)
 
     new_node = TBmakeSet (link, DUPCONT (SET_NEXT (arg_node)));
 
+    CopyCommonNodeData (new_node, arg_node);
+
+    SET_FLAGSTRUCTURE (new_node) = SET_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2139,6 +2270,10 @@ DUPnums (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     new_node = TBmakeNums (NUMS_VAL (arg_node), DUPCONT (NUMS_NEXT (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    NUMS_FLAGSTRUCTURE (new_node) = NUMS_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2154,6 +2289,10 @@ DUPsymbol (node *arg_node, info *arg_info)
 
     new_node
       = TBmakeSymbol (STRcpy (SYMBOL_ID (arg_node)), DUPCONT (SYMBOL_NEXT (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    SYMBOL_FLAGSTRUCTURE (new_node) = SYMBOL_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2175,6 +2314,10 @@ DUPglobobj (node *arg_node, info *arg_info)
     }
 
     new_node = TBmakeGlobobj (link);
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    GLOBOBJ_FLAGSTRUCTURE (new_node) = GLOBOBJ_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2208,6 +2351,8 @@ DUPpragma (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    PRAGMA_FLAGSTRUCTURE (new_node) = PRAGMA_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2233,6 +2378,8 @@ DUPicm (node *arg_node, info *arg_info)
     ICM_FLAGSTRUCTURE (new_node) = ICM_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
+
+    ICM_FLAGSTRUCTURE (new_node) = ICM_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2356,6 +2503,8 @@ DUPgenarray (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    GENARRAY_FLAGSTRUCTURE (new_node) = GENARRAY_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2379,6 +2528,8 @@ DUPmodarray (node *arg_node, info *arg_info)
     MODARRAY_NEXT (new_node) = DUPCONT (MODARRAY_NEXT (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    MODARRAY_FLAGSTRUCTURE (new_node) = MODARRAY_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2414,6 +2565,8 @@ DUPfold (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    FOLD_FLAGSTRUCTURE (new_node) = FOLD_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2435,6 +2588,8 @@ DUPspfold (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    SPFOLD_FLAGSTRUCTURE (new_node) = SPFOLD_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2453,6 +2608,8 @@ DUPbreak (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    BREAK_FLAGSTRUCTURE (new_node) = BREAK_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2469,6 +2626,8 @@ DUPpropagate (node *arg_node, info *arg_info)
     PROPAGATE_NEXT (new_node) = DUPCONT (PROPAGATE_NEXT (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    PROPAGATE_FLAGSTRUCTURE (new_node) = PROPAGATE_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2499,6 +2658,8 @@ DUPpart (node *arg_node, info *arg_info)
     }
 
     CopyCommonNodeData (new_node, arg_node);
+
+    PART_FLAGSTRUCTURE (new_node) = PART_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2534,6 +2695,8 @@ DUPcode (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    CODE_FLAGSTRUCTURE (new_node) = CODE_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2554,6 +2717,8 @@ DUPwithid (node *arg_node, info *arg_info)
     WITHID_FLAGSTRUCTURE (new_node) = WITHID_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
+
+    WITHID_FLAGSTRUCTURE (new_node) = WITHID_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2577,6 +2742,8 @@ DUPgenerator (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    GENERATOR_FLAGSTRUCTURE (new_node) = GENERATOR_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2592,6 +2759,8 @@ DUPdefault (node *arg_node, info *arg_info)
     new_node = TBmakeDefault ();
 
     CopyCommonNodeData (new_node, arg_node);
+
+    DEFAULT_FLAGSTRUCTURE (new_node) = DEFAULT_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2625,6 +2794,8 @@ DUPwith2 (node *arg_node, info *arg_info)
     WITH2_FLAGSTRUCTURE (new_node) = WITH2_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
+
+    WITH2_FLAGSTRUCTURE (new_node) = WITH2_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2686,6 +2857,8 @@ DUPwlblock (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    WLBLOCK_FLAGSTRUCTURE (new_node) = WLBLOCK_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2708,6 +2881,8 @@ DUPwlublock (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    WLUBLOCK_FLAGSTRUCTURE (new_node) = WLUBLOCK_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2723,6 +2898,8 @@ DUPwlsimd (node *arg_node, info *arg_info)
     new_node = TBmakeWlsimd (DUPCONT (WLSIMD_BODY (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    WLSIMD_FLAGSTRUCTURE (new_node) = WLSIMD_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2752,6 +2929,8 @@ DUPwlstride (node *arg_node, info *arg_info)
     WLSTRIDE_ISMODIFIED (new_node) = FALSE;
 
     CopyCommonNodeData (new_node, arg_node);
+
+    WLSTRIDE_FLAGSTRUCTURE (new_node) = WLSTRIDE_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2786,6 +2965,8 @@ DUPwlgrid (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    WLGRID_FLAGSTRUCTURE (new_node) = WLGRID_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2812,6 +2993,8 @@ DUPmt (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    MT_FLAGSTRUCTURE (new_node) = MT_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2836,6 +3019,8 @@ DUPst (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    ST_FLAGSTRUCTURE (new_node) = ST_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2859,6 +3044,8 @@ DUPcudast (node *arg_node, info *arg_info)
     new_node = TBmakeSt (DUPTRAV (CUDAST_REGION (arg_node)));
 
     CopyCommonNodeData (new_node, arg_node);
+
+    CUDAST_FLAGSTRUCTURE (new_node) = CUDAST_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -2923,6 +3110,8 @@ DUPavis (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    AVIS_FLAGSTRUCTURE (new_node) = AVIS_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2945,6 +3134,8 @@ DUPssastack (node *arg_node, info *arg_info)
 
     new_node = TBmakeSsastack (SSASTACK_AVIS (arg_node), SSASTACK_NESTLEVEL (arg_node),
                                DUPCONT (SSASTACK_NEXT (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
 
     SSASTACK_FLAGSTRUCTURE (new_node) = SSASTACK_FLAGSTRUCTURE (arg_node);
 
@@ -2973,6 +3164,10 @@ DUPssacnt (node *arg_node, info *arg_info)
 
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, new_node);
 
+    CopyCommonNodeData (new_node, arg_node);
+
+    SSACNT_FLAGSTRUCTURE (new_node) = SSACNT_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -2995,6 +3190,10 @@ DUPerror (node *arg_node, info *arg_info)
 
     new_node = TBmakeError (STRcpy (ERROR_MESSAGE (arg_node)), ERROR_ANYPHASE (arg_node),
                             DUPTRAV (ERROR_NEXT (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    ERROR_FLAGSTRUCTURE (new_node) = ERROR_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -3025,6 +3224,8 @@ DUPfunbundle (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
 
+    FUNBUNDLE_FLAGSTRUCTURE (new_node) = FUNBUNDLE_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -3048,6 +3249,10 @@ DUPlivevars (node *arg_node, info *arg_info)
     new_node
       = TBmakeLivevars (LIVEVARS_AVIS (arg_node), DUPCONT (LIVEVARS_NEXT (arg_node)));
 
+    CopyCommonNodeData (new_node, arg_node);
+
+    LIVEVARS_FLAGSTRUCTURE (new_node) = LIVEVARS_FLAGSTRUCTURE (arg_node);
+
     DBUG_RETURN (new_node);
 }
 
@@ -3070,6 +3275,10 @@ DUPwiths (node *arg_node, info *arg_info)
 
     new_node
       = TBmakeWiths (DUPTRAV (WITHS_WITH (arg_node)), DUPTRAV (WITHS_NEXT (arg_node)));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    WITHS_FLAGSTRUCTURE (new_node) = WITHS_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }
@@ -3136,6 +3345,8 @@ DUPrange (node *arg_node, info *arg_info)
     }
 
     CopyCommonNodeData (new_node, arg_node);
+
+    RANGE_FLAGSTRUCTURE (new_node) = RANGE_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }

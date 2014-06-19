@@ -13,12 +13,12 @@
 static inline int xfprintf (FILE *f, const char *fmt, ...);
 
 #ifndef LEXER_BINARY
-#include "types.h"
-
 #define error(...) CTIerror (__VA_ARGS__)
 #define error_loc(...) CTIerrorLoc (__VA_ARGS__)
 #define warning(...) CTIwarn (__VA_ARGS__)
 #define warning_loc(...) CTIwarnLoc (__VA_ARGS__)
+#define assert(...) DBUG_ASSERT (__VA_ARGS__)
+#define unreachable(...) DBUG_UNREACHABLE (__VA_ARGS__)
 #else
 typedef int bool;
 
@@ -69,6 +69,22 @@ extern int warning_count;
         (void)xfprintf (stderr, __VA_ARGS__);                                            \
         ++warning_count;                                                                 \
     } while (0)
+
+#undef assert
+#define assert(expr, ...)                                                                \
+    ((expr) ? (void)0                                                                    \
+            : (void)(fprintf (stderr,                                                    \
+                              "%s:%i %s: Assertion "                                     \
+                              "(" #expr ") failed.\n",                                   \
+                              __FILE__, __LINE__, __func__),                             \
+                     xfprintf (stderr, __VA_ARGS__), abort ()))
+
+#define unreachable(...)                                                                 \
+    ((void)(fprintf (stderr,                                                             \
+                     "Code in %s:%d reached "                                            \
+                     "impossible state.\n",                                              \
+                     __FILE__, __LINE__),                                                \
+            xfprintf (stderr, __VA_ARGS__), abort ()))
 #endif
 
 #define true 1
@@ -78,18 +94,6 @@ extern int warning_count;
 #include "trie.h"
 
 #define LEXER_BUFFER 8192
-
-#undef assert
-#define assert(expr, ...)                                                                \
-    ((expr) ? (void)0                                                                    \
-            : (void)(fprintf (stderr, "%s:%i %s: Assertion (" #expr ") failed.\n",       \
-                              __FILE__, __LINE__, __func__),                             \
-                     xfprintf (stderr, __VA_ARGS__), abort ()))
-
-#define unreachable(...)                                                                 \
-    ((void)(fprintf (stderr, "Code in %s:%d reached impossible state.\n", __FILE__,      \
-                     __LINE__),                                                          \
-            xfprintf (stderr, __VA_ARGS__), abort ()))
 
 static inline int
 xfprintf (FILE *f, const char *fmt, ...)

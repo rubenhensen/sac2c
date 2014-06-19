@@ -42,7 +42,7 @@ Idx2Outer (ntype *idx)
         res = TYmakeAUD (TYcopyType (scalar));
         break;
     default:
-        DBUG_ASSERT (FALSE, "Idx2Outer applied to non-array type idx");
+        DBUG_UNREACHABLE ("Idx2Outer applied to non-array type idx");
         res = NULL; /* just to please gcc 8-) */
     }
 

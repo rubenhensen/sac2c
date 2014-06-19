@@ -367,7 +367,7 @@ PrintTargetName (node *tree)
         printf ("lib%sMod%s:", NSgetName (MODULE_NAMESPACE (tree)), global.config.modext);
         break;
     default:
-        DBUG_ASSERT (0, "unknown file type found!");
+        DBUG_UNREACHABLE ("unknown file type found!");
         break;
     }
 

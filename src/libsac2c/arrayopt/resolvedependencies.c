@@ -184,7 +184,7 @@ CheckPrfSel (node *arg_node, info *arg_info)
 
             INFO_RDEPEND_RESOLVED (arg_info) = TRUE;
         } else {
-            DBUG_ASSERT (0, "found unresolveable selection!");
+            DBUG_UNREACHABLE ("found unresolveable selection!");
         }
     }
 

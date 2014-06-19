@@ -499,7 +499,7 @@ getPrf (prf prf, node *e1, node *e2)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "Illegal prf!");
+        DBUG_UNREACHABLE ("Illegal prf!");
     }
 
     DBUG_RETURN (prf);

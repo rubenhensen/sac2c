@@ -19,6 +19,7 @@
 #include "globals.h"
 #include "traverse.h"
 #include "ctinfo.h"
+#include "constants.h"
 
 /** <!--********************************************************************-->
  *
@@ -438,17 +439,14 @@ ntype *
 TUtype2alphaAUDMax (ntype *type)
 {
     ntype *xnew, *scalar;
-#ifndef DBUG_OFF
-    tvar *tv;
-#endif
 
     DBUG_ENTER ();
 
     if (TYisAlpha (type)) {
         xnew = TYcopyType (type);
-#ifndef DBUG_OFF
-        tv = TYgetAlpha (type);
-#endif
+
+        tvar *tv = TYgetAlpha (type);
+
         DBUG_ASSERT (SSIgetMax (tv) != NULL,
                      "trying to TUtype2alphaAUDMax alpha without max!");
         DBUG_ASSERT (TYisAUD (SSIgetMax (tv)),
@@ -852,7 +850,7 @@ TUcontainsUser (ntype *type)
             res = res || TUcontainsUser (TYgetProductMember (type, cnt));
         }
     } else {
-        DBUG_ASSERT (0, "type not implemented yet");
+        DBUG_UNREACHABLE ("type not implemented yet");
     }
 
     DBUG_RETURN (res);
@@ -1023,7 +1021,7 @@ TUleShapeInfo (ntype *a, ntype *b)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "illegal argument");
+        DBUG_UNREACHABLE ("illegal argument");
         result = FALSE;
         break;
     }
@@ -1657,6 +1655,32 @@ TUgetBaseSimpleType (ntype *type)
     DBUG_ASSERT (TYisArray (type), "Non array type found!");
     DBUG_ASSERT (TYisSimple (TYgetScalar (type)), "non simple type as base!");
     DBUG_RETURN (TYgetSimpleType (TYgetScalar (type)));
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn int TUtype2Int( ntype *ty)
+ *
+ * @brief: Extract integer scalar constant from an AKV integer scalar ntype
+ *
+ * @param: ty: ntype
+ *
+ * @return the integer value
+ *
+ ******************************************************************************/
+int
+TUtype2Int (ntype *ty)
+{
+    int z;
+    constant *con = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (TYisAKV (ty) && TUisIntScalar (ty), "Expected integer scalar constant");
+    con = TYgetValue (ty); // This is NOT a copy!
+    z = COconst2Int (con);
+
+    DBUG_RETURN (z);
 }
 
 #undef DBUG_PREFIX

@@ -201,7 +201,7 @@ ivMatchCase1 (node *withid, node *cexpr)
 
     if ((NULL == z) && (PMmatchFlatSkipExtremaAndGuards (pat2, cexpr))
         && (PMmatchFlatSkipExtremaAndGuards (pat4, offset))) {
-        DBUG_ASSERT (FALSE, "Case 3: coding time for matching WITHID_IDS to ids");
+        DBUG_UNREACHABLE ("Case 3: coding time for matching WITHID_IDS to ids");
         z = ID_AVIS (srcwl);
     }
 

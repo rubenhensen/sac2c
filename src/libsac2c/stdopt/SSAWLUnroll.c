@@ -422,7 +422,7 @@ ForEachElementWithop (node *bodycode, node *wln, node *partn, node *index, info 
             DBUG_PRINT ("withop: propagate");
             break;
         default:
-            DBUG_ASSERT (0, "unhandled withop");
+            DBUG_UNREACHABLE ("unhandled withop");
         }
 
         DBUG_PRINT ("cexpr: %s", ID_NAME (EXPRS_EXPR (cexpr)));
@@ -445,7 +445,7 @@ ForEachElementWithop (node *bodycode, node *wln, node *partn, node *index, info 
             bodycode = ApplyPropagate (bodycode, index, partn, withop, cexpr);
             break;
         default:
-            DBUG_ASSERT (0, "unhandled withop");
+            DBUG_UNREACHABLE ("unhandled withop");
         }
         withop = WITHOP_NEXT (withop);
         cexpr = EXPRS_NEXT (cexpr);
@@ -1120,7 +1120,7 @@ DoUnrollWithloop (node *wln, info *arg_info)
             res = FinalizePropagate (res, withop, lhs, arg_info);
             break;
         default:
-            DBUG_ASSERT (0, "unhandled with-op");
+            DBUG_UNREACHABLE ("unhandled with-op");
         }
         withop = WITHOP_NEXT (withop);
         lhs = IDS_NEXT (lhs);
@@ -1188,7 +1188,7 @@ CheckUnrollWithloop (node *wln, info *arg_info)
             ok = CheckUnrollPropagate (wln);
             break;
         default:
-            DBUG_ASSERT (0, "unhandled with-op");
+            DBUG_UNREACHABLE ("unhandled with-op");
         }
         op = WITHOP_NEXT (op);
         lhs = IDS_NEXT (lhs);

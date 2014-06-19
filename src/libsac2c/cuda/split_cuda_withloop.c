@@ -383,7 +383,7 @@ SCUWLgenarray (node *arg_node, info *arg_info)
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         // GENARRAY_NEXT( arg_node) = TRAVdo( GENARRAY_NEXT( arg_node), arg_info);
-        DBUG_ASSERT (0, "Cudarizbale N_with with more than one operators!");
+        DBUG_UNREACHABLE ("Cudarizbale N_with with more than one operators!");
     }
 
     avis = TBmakeAvis (TRAVtmpVar (),
@@ -430,7 +430,7 @@ SCUWLmodarray (node *arg_node, info *arg_info)
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
         // MODARRAY_NEXT( arg_node) = TRAVdo( MODARRAY_NEXT( arg_node), arg_info);
-        DBUG_ASSERT (0, "Cudarizbale N_with with more than one operators!");
+        DBUG_UNREACHABLE ("Cudarizbale N_with with more than one operators!");
     }
 
     avis = TBmakeAvis (TRAVtmpVar (),

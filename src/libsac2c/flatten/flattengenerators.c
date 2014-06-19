@@ -139,10 +139,14 @@ FLATGexpression2Avis (node *arg_node, node **vardecs, node **preassigns, ntype *
     switch (NODE_TYPE (arg_node)) {
     case N_id:
         avis = ID_AVIS (arg_node);
+        // Caller may have constructed restype for us, but we do not use it.
+        restype = (NULL != restype) ? TYfreeType (restype) : NULL;
         break;
 
     case N_avis:
         avis = arg_node;
+        // Caller may have constructed restype for us, but we do not use it.
+        restype = (NULL != restype) ? TYfreeType (restype) : NULL;
         break;
 
     default:
@@ -318,7 +322,7 @@ FLATGflattenBound (node *arg_node, info *arg_info)
         case N_id:
             break;
         default:
-            DBUG_ASSERT (FALSE, "FLATGflattenBound expected N_array or N_id");
+            DBUG_UNREACHABLE ("FLATGflattenBound expected N_array or N_id");
         }
     }
 

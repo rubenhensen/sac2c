@@ -81,6 +81,12 @@
 #include "compare_tree.h"
 #include "narray_utilities.h"
 #include "new_typecheck.h"
+#include "inferneedcounters.h"
+#include "wl_cost_check.h"
+#include "set_withloop_depth.h"
+#include "wl_needcount.h"
+#include "deadcoderemoval.h"
+#include "indexvectorutils.h"
 
 /** <!--********************************************************************-->
  *
@@ -91,7 +97,7 @@
 struct INFO {
     node *fundef;
     node *vardecs;
-    node *preassignswith;
+    node *preassigns;
     node *lhs;
     node *consumerpart;
     node *wlprojection1;            /* lower bound of WL proj */
@@ -99,6 +105,7 @@ struct INFO {
     node *withcode;                 /* WITH_CODE from N_with */
     intersect_type_t intersecttype; /* intersect type. see enum */
     lut_t *lut;                     /* LUT for renaming */
+    lut_t *foldlut;                 /* LUT for renames during fold */
     node *producerpart;             /* PWL part matching CWL */
     bool cutnow;                    /* Cut this CWL partn now */
     bool isfoldnow;                 /* Fold this partition now. */
@@ -110,7 +117,7 @@ struct INFO {
  */
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_VARDECS(n) ((n)->vardecs)
-#define INFO_PREASSIGNSWITH(n) ((n)->preassignswith)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_CONSUMERPART(n) ((n)->consumerpart)
 #define INFO_WLPROJECTION1(n) ((n)->wlprojection1)
@@ -118,6 +125,7 @@ struct INFO {
 #define INFO_WITHCODE(n) ((n)->withcode)
 #define INFO_INTERSECTTYPE(n) ((n)->intersecttype)
 #define INFO_LUT(n) ((n)->lut)
+#define INFO_FOLDLUT(n) ((n)->foldlut)
 #define INFO_PRODUCERPART(n) ((n)->producerpart)
 #define INFO_CUTNOW(n) ((n)->cutnow)
 #define INFO_ISFOLDNOW(n) ((n)->isfoldnow)
@@ -134,7 +142,7 @@ MakeInfo (node *fundef)
 
     INFO_FUNDEF (result) = fundef;
     INFO_VARDECS (result) = NULL;
-    INFO_PREASSIGNSWITH (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_CONSUMERPART (result) = NULL;
     INFO_WLPROJECTION1 (result) = NULL;
@@ -142,6 +150,7 @@ MakeInfo (node *fundef)
     INFO_WITHCODE (result) = NULL;
     INFO_INTERSECTTYPE (result) = INTERSECT_unknown;
     INFO_LUT (result) = NULL;
+    INFO_FOLDLUT (result) = NULL;
     INFO_PRODUCERPART (result) = NULL;
     INFO_CUTNOW (result) = FALSE;
     INFO_ISFOLDNOW (result) = FALSE;
@@ -182,14 +191,21 @@ FreeInfo (info *info)
 node *
 CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
 {
+    info *arg_info;
+
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
-                 "CUBSLdoAlgebraicWithLoopFoldingCubeSlicing called for non-fundef");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "called with non-fundef node");
+
+    arg_info = MakeInfo (arg_node);
+    INFO_FOLDLUT (arg_info) = LUTgenerateLut ();
 
     TRAVpush (TR_cubsl);
-    arg_node = TRAVdo (arg_node, NULL);
+    arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
+
+    INFO_FOLDLUT (arg_info) = LUTremoveLut (INFO_FOLDLUT (arg_info));
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -436,6 +452,35 @@ SetWLProjections (node *noteint, int intersectListNo, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn static GetNthPart( int partno, node *npart)
+ *
+ * @brief Get npart[partno] for npart.
+ *
+ * @params partno: non_negative integer partition index
+ *         npart: A WITH_PART node.
+ *
+ * @result: The partno'th N_part of npart.
+ *
+ *****************************************************************************/
+static node *
+GetNthPart (int partno, node *npart)
+{
+    node *z;
+
+    DBUG_ENTER ();
+
+    z = npart;
+    while (partno != 0) {
+        z = PART_NEXT (z);
+        DBUG_ASSERT (z != 0, "partn[partno] index errro");
+        partno--;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn static intersect_type_t FindIntersection(
  *
  * @brief Search the _noteintersect_() list to see if there is an intersection
@@ -538,7 +583,6 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                 && (AWLFIisHasInverseProjection (proj1))
                 && (AWLFIisHasInverseProjection (proj2))) {
                 DBUG_PRINT ("Blind slicing cube at cycle %d", global.cycle_counter);
-#define BROKEN
 #ifdef BROKEN // This definitely breaks a few things:
               // sac2c codingtimeformul.sac -v1  -doawlf -nowlf -noctz
               // gives wrong answers.
@@ -568,7 +612,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                 SetWLProjections (noteint, intersectListNo, arg_info);
             }
 
-            if (int1part && (NULL == cwlpb1)) {
+            if (int1part && (NULL == cwlpb1) && global.optimize.doscwlf) {
                 DBUG_PRINT ("Naked consumer detected");
                 z = INTERSECT_exact;
                 SetWLProjections (noteint, intersectListNo, arg_info);
@@ -733,6 +777,333 @@ CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
 
 /** <!--********************************************************************-->
  *
+ * @fn static node *populateFoldLut( node *arg_node, info *arg_info, shape *shp)
+ *
+ * @brief Generate a clone name for a WITHID.
+ *        Populate one element of a look up table with
+ *        said name and its original, which we will use
+ *        to do renames in the copied PWL code block.
+ *        See caller for description. Basically,
+ *        we have a PWL with generator of this form:
+ *
+ *    PWL = with {
+ *         ( . <= iv=[i,j] <= .) : _sel_VxA_( iv, AAA);
+ *
+ *        We want to perform renames in the PWL code block as follows:
+ *
+ *        iv --> iv'
+ *        i  --> i'
+ *        j  --> j'
+ *
+ * @param: arg_node: one N_avis node of the PWL generator (e.g., iv),
+ *                   to serve as iv for above assigns.
+ *         arg_info: your basic arg_info.
+ *         shp:      the shape descriptor of the new LHS.
+ *
+ * @result: New N_avis node, e.g, iv'.
+ *          Side effect: mapping iv -> iv' entry is now in LUT.
+ *                       New vardec for iv'.
+ *
+ *****************************************************************************/
+static node *
+populateFoldLut (node *arg_node, info *arg_info, shape *shp)
+{
+    node *navis;
+
+    DBUG_ENTER ();
+
+    /* Generate a new LHS name for WITHID_VEC/IDS */
+    navis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
+                        TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (arg_node))), shp));
+
+    INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
+    LUTinsertIntoLutP (INFO_FOLDLUT (arg_info), arg_node, navis);
+
+    DBUG_PRINT ("Inserted WITHID_VEC into lut: oldname: %s, newname %s",
+                AVIS_NAME (arg_node), AVIS_NAME (navis));
+
+    DBUG_RETURN (navis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @ fn static node *makeIdxAssigns( node *arg_node, node *pwlpart)
+ *
+ * @brief This function does setup for renaming PWL index vector elements
+ *        to correspond to their CWL brethren.
+ *
+ *        For a PWL partition, with generator:
+ *
+ *        (. <= iv=[i,j] < .)
+ *
+ *        and a consumer _sel_VxA_( idx, PWL),
+ *
+ *        we generate an N_assign chain of this form:
+ *
+ *        iv = idx;
+ *        k0 = [0];
+ *        i  = _sel_VxA_( k0, idx);
+ *        k1 = [1];
+ *        j  = _sel_VxA_( k1, idx);
+ *
+ *        Also, iv, i, j, k are placed into the LUT.
+ *
+ * @params arg_node: An N_assign node.
+ *
+ * @result: an N_assign chain as above.
+ *
+ *****************************************************************************/
+static node *
+makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
+{
+    node *z = NULL;
+    node *ids;
+    node *narray;
+    node *idxavis;
+    node *navis;
+    node *nass;
+    node *lhsids;
+    node *lhsavis;
+    node *sel;
+    node *args;
+    int k;
+
+    DBUG_ENTER ();
+
+    ids = WITHID_IDS (PART_WITHID (pwlpart));
+    args = LET_EXPR (ASSIGN_STMT (arg_node));
+    idxavis = IVUToffset2Vect (args, &INFO_VARDECS (arg_info),
+                               &INFO_PREASSIGNS (arg_info), pwlpart);
+    DBUG_ASSERT (NULL != idxavis, "Could not rebuild iv for _sel_VxA_(iv, PWL)");
+
+    k = 0;
+
+    while (NULL != ids) {
+        /* Build k0 = [k]; */
+        /* First, the k */
+        narray = TCmakeIntVector (TBmakeExprs (TBmakeNum (k), NULL));
+        navis = TBmakeAvis (TRAVtmpVar (),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
+
+        nass = TBmakeAssign (TBmakeLet (TBmakeIds (navis, NULL), narray), NULL);
+        AVIS_SSAASSIGN (navis) = nass;
+        z = TCappendAssign (nass, z);
+        INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
+
+        lhsavis = populateFoldLut (IDS_AVIS (ids), arg_info, SHcreateShape (0));
+        DBUG_PRINT ("created %s = _sel_VxA_(%d, %s)", AVIS_NAME (lhsavis), k,
+                    AVIS_NAME (idxavis));
+
+        sel = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
+                                       TCmakePrf2 (F_sel_VxA, TBmakeId (navis),
+                                                   TBmakeId (idxavis))),
+                            NULL);
+        z = TCappendAssign (z, sel);
+        AVIS_SSAASSIGN (lhsavis) = sel;
+        ids = IDS_NEXT (ids);
+        k++;
+    }
+
+    /* Now generate iv = idx; */
+    lhsids = WITHID_VEC (PART_WITHID (pwlpart));
+    lhsavis = populateFoldLut (IDS_AVIS (lhsids), arg_info, SHcreateShape (1, k));
+    z = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), TBmakeId (idxavis)), z);
+    AVIS_SSAASSIGN (lhsavis) = z;
+    DBUG_PRINT ("makeIdxAssigns created %s = %s)", AVIS_NAME (lhsavis),
+                AVIS_NAME (idxavis));
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *BypassNoteintersect( node *arg_node)
+ *
+ * @brief Bypass the  F_noteintersect that might precede the
+ *        sel( iv, PWL).
+ *
+ *        "might", because we may have SimpleComposition happening.
+ *
+ * @param N_assign for _idx_sel() or _sel_VxA_()
+ * @result Rebuilt arg_node.
+ *
+ *****************************************************************************/
+static node *
+BypassNoteintersect (node *arg_node)
+{
+    node *z = NULL;
+    pattern *pat;
+    node *expr;
+    node *exprni;
+
+    DBUG_ENTER ();
+
+    expr = LET_EXPR (ASSIGN_STMT (arg_node));
+
+    exprni = AWLFIfindNoteintersect (PRF_ARG1 (expr));
+    if (NULL != exprni) {
+        DBUG_PRINT ("Insertion cycle was %d, folding cycle is %d",
+                    PRF_NOTEINTERSECTINSERTIONCYCLE (exprni), global.cycle_counter);
+    }
+
+    pat = PMprf (1, PMAisPrf (F_noteintersect), 2, PMvar (1, PMAgetNode (&z), 0),
+                 PMskip (0));
+    if (PMmatchFlat (pat, PRF_ARG1 (expr))) {
+        PRF_ARG1 (expr) = FREEdoFreeNode (PRF_ARG1 (expr));
+        PRF_ARG1 (expr) = DUPdoDupNode (z);
+    }
+
+    pat = PMfree (pat);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *FindMarkedSelAssignParent( node *assgn)
+ *
+ * @params assgn: The N_assign chain for the current N_part/N_code block
+ *
+ * @brief: Find the N_assign node that has the marked sel() primitive
+ *         as its RHS, and return its predecessor. We do this
+ *         because we are going to replace the sel() N_assign.
+ *         If N_assign nodes were doubly linked, we wouldn't need this
+ *         function.
+ *
+ * @result: The relevant N_assign node.
+ *          If not found, crash. If more than one found in the block,
+ *          crash.
+ *
+ *****************************************************************************/
+static node *
+FindMarkedSelAssignParent (node *assgn)
+{
+    node *z = NULL;
+    node *prevassgn = NULL;
+
+    DBUG_ENTER ();
+
+    while (NULL != assgn) {
+        if ((N_let == NODE_TYPE (ASSIGN_STMT (assgn)))
+            && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_STMT (assgn))))
+            && ((F_sel_VxA == PRF_PRF (LET_EXPR (ASSIGN_STMT (assgn))))
+                || ((F_idx_sel == PRF_PRF (LET_EXPR (ASSIGN_STMT (assgn))))))
+            && (PRF_ISFOLDNOW (LET_EXPR (ASSIGN_STMT (assgn))))) {
+
+            DBUG_ASSERT (NULL == z, "More than one marked sel() found in N_part");
+            z = prevassgn;
+        }
+        prevassgn = assgn;
+        assgn = ASSIGN_NEXT (assgn);
+    }
+
+    DBUG_ASSERT (NULL != z, "No marked sel() found in N_part");
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *performFold( ... )
+ *
+ * @brief
+ *   In
+ *    pwl = with...  elb = _sel_VxA_(iv=[i,j], AAA) ...
+ *    consumerWL = with...  elc = _sel_VxA_(idx, pwl) ...
+ *
+ *   Replace, in the consumerWL:
+ *     elc = _sel_VxA_( idx, pwl)
+ *   by
+ *     iv = idx;
+ *     i = _sel_VxA_([0], idx);
+ *     j = _sel_VxA_([1], idx);
+ *
+ *     {code block from pwl, with SSA renames}
+ *
+ *     tmp = PWL)
+ *     elc = tmp;
+ *
+ * @params
+ *    cwlpart: cwl N_part
+ *    partno: pwl partition number that will be folded
+ *    PWL: N_part node of pwl.
+ *
+ * @result: new cwlpart with pwl partno folded into it.
+ *
+ *****************************************************************************/
+node *
+performFold (node *cwlpart, int partno, info *arg_info)
+{
+    node *pwlblock;
+    node *newpblock;
+    node *newsel;
+    node *idxassigns;
+    node *cellexpr;
+    node *assgn;
+    node *passgn;
+    node *pwl;
+    node *pwlpart;
+    node *z = NULL;
+    node *cwlass;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Replacing code block in CWL=%s",
+                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+
+    cwlass = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (cwlpart)));
+    passgn = FindMarkedSelAssignParent (cwlass);
+    assgn = ASSIGN_NEXT (passgn);
+    PRF_ISFOLDNOW (LET_EXPR (ASSIGN_STMT (assgn))) = FALSE;
+    pwl = AWLFIfindWlId (PRF_ARG2 (LET_EXPR (ASSIGN_STMT (assgn))));
+    if (NULL != pwl) {
+        pwl = AWLFIfindWL (pwl); /* Now the N_with */
+    }
+
+    pwlpart = GetNthPart (partno, WITH_PART (pwl));
+
+    /* Generate iv=[i,j] assigns, then do renames. */
+    idxassigns = makeIdxAssigns (BypassNoteintersect (assgn), arg_info, pwlpart);
+    cellexpr = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (pwlpart))));
+
+    pwlpart = IVEXCdoIndexVectorExtremaCleanupPartition (pwlpart, arg_info);
+    pwlblock = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (pwlpart)));
+
+    if (NULL != pwlblock) {
+        /* Remove extrema from old block and recompute everything */
+        newpblock = DUPdoDupTreeLutSsa (pwlblock, INFO_FOLDLUT (arg_info),
+                                        INFO_FUNDEF (arg_info));
+    } else {
+        /* If PWL code block is empty, don't duplicate code block.
+         * If the cell is non-scalar, we still need a _sel_() to pick
+         * the proper cell element.
+         */
+        newpblock = NULL;
+    }
+
+    cellexpr = (node *)LUTsearchInLutPp (INFO_FOLDLUT (arg_info), cellexpr);
+    newsel = TBmakeId (cellexpr);
+
+    LUTremoveContentLut (INFO_FOLDLUT (arg_info));
+
+    // Rebuild the new cwlpart's code block:
+    // We started with:  assignA -> sel -> assgnC
+    // and end up with:  assignA -> idxassigns -> newpblock -> assgnC
+    ASSIGN_NEXT (passgn) = NULL; // assignA
+    z = TCappendAssign (cwlass, idxassigns);
+    z = TCappendAssign (z, newpblock);
+
+    FREEdoFreeNode (LET_EXPR (ASSIGN_STMT (assgn))); // Kill the old sel()
+    LET_EXPR (ASSIGN_STMT (assgn)) = newsel;         // Now folded wl result
+    z = TCappendAssign (z, assgn);
+    BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (cwlpart))) = z;
+
+    global.optcounters.awlf_expr += 1;
+
+    DBUG_RETURN (cwlpart);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *CloneCode( arg_node, arg_info)
  *
  * @brief Clone a WL code block, renaming any LHS definitions.
@@ -804,136 +1175,6 @@ BuildSubcube (node *arg_node, info *arg_info, node *lb, node *ub, node *step, no
 
 /** <!--********************************************************************-->
  *
- * @fn static node *FindMarkedSelAssign( node *assgn)
- *
- * @params assgn: The N_assign chain for the current N_part/N_code block
- *
- * @brief: The N_assign node that has the marked sel() primitive
- *          as its RHS
- *
- * @result: The relevant N_assign node.
- *          If not found, crash. If more than one found in the block,
- *          crash.
- *
- *****************************************************************************/
-static node *
-FindMarkedSelAssign (node *assgn)
-{
-    node *z = NULL;
-
-    DBUG_ENTER ();
-
-    while (NULL != assgn) {
-        if ((N_let == NODE_TYPE (ASSIGN_STMT (assgn)))
-            && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_STMT (assgn))))
-            && ((F_sel_VxA == PRF_PRF (LET_EXPR (ASSIGN_STMT (assgn))))
-                || ((F_idx_sel == PRF_PRF (LET_EXPR (ASSIGN_STMT (assgn))))))
-            && (PRF_ISFOLDNOW (LET_EXPR (ASSIGN_STMT (assgn))))) {
-
-            DBUG_ASSERT (NULL == z, "More than one marked sel() found in N_part");
-            z = assgn;
-        }
-        assgn = ASSIGN_NEXT (assgn);
-    }
-
-    DBUG_ASSERT (NULL != z, "No marked sel() found in N_part");
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static node *BuildNewNoteintersect( newpart, partno, noteintersect);
- *
- * @params newpart: A newly minted CWL N_part, resulting from cube slicing
- *         partno: the index into noteintersect of the PWL partition
- *         that newpart matches.
- *         nodeintersect: The N_prf node for the F_noteintersect
- *
- * @result: The amended newpart
- *
- * @brief Locate the sel() primitive that is to be folded, and
- *        create a new F_noteintersect for it, containing only
- *        one entry, for PWL partno.
- *
- *        We start with this:
- *
- *         selassign =  { F_idx_sel( iv, pwl) : selnext}
- *
- *        and produce this:
- *
- *          selassign = { F_noteintersect( iv,...) : newassign}
- *          newassign = { F_idx_sel( selassign, pwl) : selnext}
- *
- *
- *****************************************************************************/
-static node *
-BuildNewNoteintersect (node *newpart, int partno, node *noteintersect, info *arg_info)
-{
-    node *z;
-    node *ni;
-    node *assgn;
-    node *niavis;
-    ntype *restype;
-    node *nilet;
-    node *selprf;
-    node *iv;
-    node *selassgn;
-    node *selavis;
-    node *onepart;
-
-    DBUG_ENTER ();
-
-    ni = DUPdoDupTreeLutSsa (noteintersect, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
-    // Mark the relevant partition as having a one-partition intersect,
-    // so that it will immediately AWLF.
-    onepart = TCgetNthExprsExpr (WLINTERSECTION1PART (partno), PRF_ARGS (ni));
-    onepart = SCSmakeTrue (onepart);
-    onepart = FLATGexpression2Avis (onepart, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNSWITH (arg_info), NULL);
-    PRF_ARGS (ni)
-      = TCputNthExprs (WLINTERSECTION1PART (partno), PRF_ARGS (ni), TBmakeId (onepart));
-
-    // Stick new F_noteintersect before sel().
-    assgn = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (newpart)));
-    assgn = FindMarkedSelAssign (assgn);
-
-    // We have to make the N_assign for the sel() become the
-    // N_assign for the F_noteintersect, then link that to the
-    // new N_assign, which we fill with the sel().
-    restype = TYcopyType (AVIS_TYPE (ID_AVIS (PRF_ARG1 (noteintersect))));
-    niavis = TBmakeAvis (TRAVtmpVar (), restype);
-    INFO_VARDECS (arg_info) = TBmakeVardec (niavis, INFO_VARDECS (arg_info));
-    nilet = TBmakeLet (TBmakeIds (niavis, NULL), ni);
-
-    // Make the sel() use the F_noteintersect result as PRF_ARG1
-    selprf = LET_EXPR (ASSIGN_STMT (assgn));
-    iv = DUPdoDupNode (PRF_ARG1 (selprf));
-    PRF_ARG1 (selprf) = FREEdoFreeNode (PRF_ARG1 (selprf));
-    PRF_ARG1 (selprf) = TBmakeId (niavis);
-
-    // Unmark the sel() N_prf.
-    PRF_ISFOLDNOW (selprf) = FALSE;
-
-    // Make the F_noteintersect use the sel()'s PRF_ARG1 as its PRF_ARG1
-    PRF_ARG1 (ni) = FREEdoFreeNode (PRF_ARG1 (ni));
-    PRF_ARG1 (ni) = iv;
-
-    // Splice new F_noteintersect into the N_assign chain.
-    selassgn = TBmakeAssign (ASSIGN_STMT (assgn), ASSIGN_NEXT (assgn)); // F_sel()
-    ASSIGN_STMT (assgn) = nilet;                                        // F_noteintersect
-    AVIS_SSAASSIGN (niavis) = assgn;
-    ASSIGN_NEXT (assgn) = selassgn;
-    selavis = IDS_AVIS (LET_IDS (ASSIGN_STMT (selassgn)));
-    AVIS_SSAASSIGN (selavis) = selassgn;
-
-    z = newpart;
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn static node *BuildSubcubes(...)
  *
  * @params arg_node: an N_part of the consumerWL.
@@ -950,7 +1191,7 @@ static node *
 BuildSubcubes (node *arg_node, info *arg_info)
 {
     node *newpartns = NULL;
-    node *newpart;
+    node *newcwlpart;
     int partno;
     int partlim;
     node *lb;
@@ -961,7 +1202,6 @@ BuildSubcubes (node *arg_node, info *arg_info)
     node *withid;
     pattern *patlb;
     pattern *patub;
-    node *assgn;
 
     DBUG_ENTER ();
 
@@ -978,75 +1218,28 @@ BuildSubcubes (node *arg_node, info *arg_info)
     width = GENERATOR_WIDTH (PART_GENERATOR (arg_node));
     withid = PART_WITHID (arg_node);
 
-    if (partlim != 1) { // Do not slice simple compositions
+    if (partlim == 1) { // Do not slice simple compositions
+        newpartns = performFold (DUPdoDupNode (arg_node), partno, arg_info);
+    } else {
         DBUG_PRINT ("Slicing partition %s into %d pieces",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), partlim);
-        global.optcounters.cubsl_expr++;
         while (partno < partlim) {
             PMmatchFlat (patlb, TCgetNthExprsExpr (WLPROJECTION1 (partno),
                                                    PRF_ARGS (noteintersect)));
             PMmatchFlat (patub, TCgetNthExprsExpr (WLPROJECTION2 (partno),
                                                    PRF_ARGS (noteintersect)));
-            // Next two lines are poor man's assertion
-            assgn = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node)));
-            assgn = FindMarkedSelAssign (assgn);
-
-            newpart = BuildSubcube (arg_node, arg_info, lb, ub, step, width, withid);
-            newpart = BuildNewNoteintersect (newpart, partno, noteintersect, arg_info);
-            newpartns = TCappendPart (newpartns, newpart);
+            newcwlpart = BuildSubcube (arg_node, arg_info, lb, ub, step, width, withid);
+            newcwlpart = performFold (newcwlpart, partno, arg_info);
+            newpartns = TCappendPart (newpartns, newcwlpart);
             partno++;
         }
-    } else {
-#ifdef DEADCODEIHOPE
-        // Simple composition merely gets marked for folding
-        newpartns = DUPdoDupNode (arg_node);
-        newpartns = BuildNewNoteintersect (newpartns, partno, noteintersect, arg_info);
-#endif // DEADCODEIHOPE
     }
+    global.optcounters.cubsl_expr++;
 
     patlb = PMfree (patlb);
     patub = PMfree (patub);
 
     DBUG_RETURN (newpartns);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn bool
- *
- * @brief: Predicate for presence of at least one exact intersect in arg_node
- *
- * @param: arg_node - an F_noteintersect.
- *
- * @result: TRUE if arg_node has at least one exact intersect present
- *
- *****************************************************************************/
-static UNUSED bool
-IntersectExactPresent (node *arg_node)
-{
-    bool z = FALSE;
-    int intersectListLim;
-    int intersectListNo;
-    node *onepart;
-    node *isnull;
-
-    DBUG_ENTER ();
-
-    intersectListNo = 0;
-    intersectListLim
-      = (NULL != arg_node) ? (TCcountExprs (PRF_ARGS (arg_node)) - WLFIRST) / WLEPP : 0;
-
-    while ((!z) && (intersectListNo < intersectListLim)) {
-        onepart = TCgetNthExprsExpr (WLINTERSECTION1PART (intersectListNo),
-                                     PRF_ARGS (arg_node));
-        isnull
-          = TCgetNthExprsExpr (WLINTERSECTIONNULL (intersectListNo), PRF_ARGS (arg_node));
-        z = SCSisConstantOne (onepart);
-        // DEADCODE && SCSisConstantZero( isnull);
-        intersectListNo++;
-    }
-
-    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
@@ -1071,13 +1264,24 @@ CUBSLfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-
         DBUG_PRINT ("Algebraic-With-Loop-Folding Cube Slicing in %s %s begins",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                     FUNDEF_NAME (arg_node));
 
         oldarginfo = arg_info;
         arg_info = MakeInfo (arg_node);
+        INFO_FOLDLUT (arg_info) = INFO_FOLDLUT (oldarginfo);
+
+        /* cubeslicer (or others) may leave around old WL. That will confuse
+         * WLNC, which is driven by vardecs, NOT by function body traversal.
+         */
+        arg_node = DCRdoDeadCodeRemoval (arg_node);
+        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_awlfi);
+        arg_node = WLNCdoWLNeedCount (arg_node);
+
+        arg_node = WLCCdoWLCostCheck (arg_node);
+        arg_node = SWLDdoSetWithloopDepth (arg_node);
+
         INFO_LUT (arg_info) = LUTgenerateLut ();
 
         if (FUNDEF_BODY (arg_node) != NULL) {
@@ -1133,9 +1337,9 @@ CUBSLassign (node *arg_node, info *arg_info)
 
     if ((N_let == NODE_TYPE (ASSIGN_STMT (arg_node)))
         && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_STMT (arg_node))))
-        && (NULL != INFO_PREASSIGNSWITH (arg_info))) {
-        arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);
-        INFO_PREASSIGNSWITH (arg_info) = NULL;
+        && (NULL != INFO_PREASSIGNS (arg_info))) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
     }
 
     /*

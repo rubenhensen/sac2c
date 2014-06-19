@@ -525,7 +525,7 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
                      wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos,
                      wlids_dim_pos);
         } else {
-            DBUG_ASSERT (0, "Invalid index found!");
+            DBUG_UNREACHABLE ("Invalid index found!");
         }
     } else if (array_dim >= 3) {
         INDENT;
@@ -564,11 +564,11 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
                      wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos,
                      wlids_dim_pos);
         } else {
-            DBUG_ASSERT (0,
-                         "Invalid combination of array dimension and dimension index!");
+            DBUG_UNREACHABLE (
+              "Invalid combination of array dimension and dimension index!");
         }
     } else {
-        DBUG_ASSERT (0, "Invalid array dimension found!");
+        DBUG_UNREACHABLE ("Invalid array dimension found!");
     }
 
     fprintf (global.outfile, "SAC_ND_WRITE( %s, %d) = SAC_ND_READ( %s, 0);\n", iv_NT,
@@ -652,7 +652,7 @@ ICMCompileCUDA_THREADIDX (char *to_NT, int dim, int dim_pos)
         } else if (dim_pos == 1) {
             fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = THREADIDX_X;\n", to_NT);
         } else {
-            DBUG_ASSERT (0, "Illegal dimension position found!");
+            DBUG_UNREACHABLE ("Illegal dimension position found!");
         }
     } else if (dim == 3) {
         INDENT;
@@ -663,10 +663,10 @@ ICMCompileCUDA_THREADIDX (char *to_NT, int dim, int dim_pos)
         } else if (dim_pos == 2) {
             fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = THREADIDX_X;\n", to_NT);
         } else {
-            DBUG_ASSERT (0, "Illegal dimension position found!");
+            DBUG_UNREACHABLE ("Illegal dimension position found!");
         }
     } else {
-        DBUG_ASSERT (0, "Illegal dimension found!");
+        DBUG_UNREACHABLE ("Illegal dimension found!");
     }
 
     DBUG_RETURN ();
@@ -699,7 +699,7 @@ ICMCompileCUDA_BLOCKDIM (char *to_NT, int dim, int dim_pos)
         } else if (dim_pos == 1) {
             fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = BLOCKDIM_X;\n", to_NT);
         } else {
-            DBUG_ASSERT (0, "Illegal dimension position found!");
+            DBUG_UNREACHABLE ("Illegal dimension position found!");
         }
     } else if (dim == 3) {
         INDENT;
@@ -710,10 +710,10 @@ ICMCompileCUDA_BLOCKDIM (char *to_NT, int dim, int dim_pos)
         } else if (dim_pos == 2) {
             fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = BLOCKDIM_X;\n", to_NT);
         } else {
-            DBUG_ASSERT (0, "Illegal dimension position found!");
+            DBUG_UNREACHABLE ("Illegal dimension position found!");
         }
     } else {
-        DBUG_ASSERT (0, "Illegal dimension found!");
+        DBUG_UNREACHABLE ("Illegal dimension found!");
     }
 
     DBUG_RETURN ();
@@ -905,7 +905,7 @@ ICMCompileCUDA_DECL_KERNEL_ARRAY (char *var_NT, char *basetype, int sdim, int *s
         ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
         break;
     default:
-        DBUG_ASSERT (0, "Non-AKS array found in CUDA kernel!");
+        DBUG_UNREACHABLE ("Non-AKS array found in CUDA kernel!");
         break;
     }
 
@@ -948,7 +948,7 @@ ICMCompileCUDA_DECL_SHMEM_ARRAY (char *var_NT, char *basetype, int sdim, int *sh
                  var_NT, size);
         break;
     default:
-        DBUG_ASSERT (0, "Non-AKS shared memory array found in CUDA kernel!");
+        DBUG_UNREACHABLE ("Non-AKS shared memory array found in CUDA kernel!");
         break;
     }
 

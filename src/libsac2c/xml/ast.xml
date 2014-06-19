@@ -102,6 +102,15 @@
            error TravError
          include the include file needed for the traversal
     -->
+
+   <!-- Added by Fangyong -->
+    <traversal id="IUCFB" name="Insert user-defined constraint to function body" default="sons" include="insert_udc_funbody.h">
+        <travuser>
+          <node name="Fundef" />
+          <node name="Udcs" />
+        </travuser>
+      </traversal>
+
     <traversal id="ARMP" name="Add RC Mode PRF" default="sons" include="add_rc_mode_prf.h">
         <travuser>
           <node name="With3" />
@@ -751,6 +760,14 @@
         <travuser>
           <node name="Fundef" />
           <node name="Assign" />
+          <node name="Prf" />
+        </travuser>
+      </traversal> 
+      <traversal id="POGO" name="Polyhedral Guard Optimization" default="sons" include="polyhedral_guard_optimization.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
           <node name="Prf" />
         </travuser>
       </traversal> 
@@ -3979,7 +3996,7 @@
           </type>
         </attribute>
       </attributes>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4037,7 +4054,7 @@ N_structdef :
           </type>
         </attribute>
       </attributes>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4072,7 +4089,7 @@ N_tfspec :
           </targets>
         </son>
       </sons>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4133,7 +4150,7 @@ N_tfdag :
           </targets>
         </son>
       </sons>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4444,7 +4461,7 @@ N_tfrel :
           </targets>
         </son>
       </sons>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4513,7 +4530,7 @@ N_tfexpr :
           </targets>
         </son>
       </sons>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4609,7 +4626,7 @@ N_tfarg :
           </targets>
         </son>
       </sons>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -4992,6 +5009,17 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="Asserts"  default="NULL" >
+          <!--Fangyong: Assert expression. Means user defined constraints. -->
+          <targets>
+            <target mandatory="no">
+              <node name="Udcs" /> <!--Fangyong:Udcs-User-defined constraints. -->
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="Body">
           <targets>
             <target mandatory="no">
@@ -5225,7 +5253,7 @@ N_tfarg :
               <target mandatory="no" >
                 <node name="Fundef" />
                 <phases>
-                  <range from="exp_cspf" to="final" />
+                  <range from="popt_cspf" to="final" />
                 </phases>
               </target>
             </targets>
@@ -5315,7 +5343,7 @@ N_tfarg :
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="pc_fpc" to="cg_frtr" />
+                  <range from="pc_fpc" to="icc_frtr" />
                 </phases>
               </target>
             </targets>
@@ -5892,7 +5920,40 @@ N_tfarg :
     <checks>
       <check name="CHKisNullSsaassign" />
     </checks>
-    </node>
+  </node>
+
+
+<!--
+
+  N_udcs :usr-defined constraints  Fangyong add
+
+-->
+
+  <node name="Udcs">
+      <sons>
+        <son name="Udc">
+           <targets>
+            <target mandatory="no">
+              <set name="Expr" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="Udcs" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+  </node>
+
 <!--
 
   N_block :
@@ -5989,7 +6050,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6003,7 +6064,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6017,7 +6078,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6095,8 +6156,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags>
-      </flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6433,7 +6493,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6467,7 +6527,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6501,7 +6561,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6535,7 +6595,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!-- 
   N_cond :
@@ -6582,7 +6642,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6596,7 +6656,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6610,7 +6670,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6687,7 +6747,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6701,7 +6761,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6715,7 +6775,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -6801,7 +6861,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6848,7 +6908,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -6994,7 +7054,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7038,7 +7098,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7117,7 +7177,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags />
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7219,7 +7279,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7243,7 +7303,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7267,7 +7327,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7291,7 +7351,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7315,7 +7375,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7339,7 +7399,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7363,7 +7423,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7387,7 +7447,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7411,7 +7471,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7435,7 +7495,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7459,7 +7519,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7483,7 +7543,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7507,7 +7567,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7531,7 +7591,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7555,7 +7615,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7579,7 +7639,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7590,7 +7650,7 @@ N_tfarg :
      <description>Nested init value</description>
       <sons/>
       <attributes/>
-      <flags/>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 
 <!--
@@ -7619,7 +7679,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7642,6 +7702,7 @@ N_tfarg :
           </type>
 	</attribute>
       </attributes>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7756,7 +7817,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -7793,7 +7854,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -8087,7 +8148,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -8376,7 +8437,7 @@ N_tfarg :
                 <phases>
                   <phase name="ptc_ssa" />
                   <phase name="wlt_ssa" />
-                  <phase name="cwc_ssa" />
+                  <phase name="popt_ssa" />
                 </phases>
               </target>
             </targets>
@@ -8390,7 +8451,7 @@ N_tfarg :
                 <phases>
                   <phase name="ptc_ssa" />
                   <phase name="wlt_ssa" />
-                  <phase name="cwc_ssa" />
+                  <phase name="popt_ssa" />
                 </phases>
               </target>
             </targets>
@@ -8404,7 +8465,7 @@ N_tfarg :
                 <phases>
                   <phase name="ptc_ssa" />
                   <phase name="wlt_ssa" />
-                  <phase name="cwc_ssa" />
+                  <phase name="popt_ssa" />
                 </phases>
               </target>
             </targets>
@@ -8418,7 +8479,7 @@ N_tfarg :
                 <phases>
                   <phase name="ptc_ssa" />
                   <phase name="wlt_ssa" />
-                  <phase name="cwc_ssa" />
+                  <phase name="popt_ssa" />
                 </phases>
               </target>
             </targets>
@@ -8613,7 +8674,7 @@ N_tfarg :
               <target mandatory="no">
                 <any />
                 <phases>
-                  <phase name="unq" />
+                  <phase name="popt_unq" />
                 </phases>
               </target>
             </targets>
@@ -8692,7 +8753,23 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-
+	<attribute name="PolylibColumnIndex" default="-1" >
+	  <description> 
+	  This is used by PHUTcollectAffineExprs to assign an
+	  origin-1 column number to each distinct name found in
+	  any particular affine expression tree.
+	  </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                 <range name="opt_saacyc_pogo" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>	 
       </attributes>
 
       <flags>
@@ -8910,6 +8987,12 @@ N_tfarg :
 	  more than once.
 	  </description>
         </flag>	 
+	<flag name="IsAffineHandled" default="FALSE" >
+	  <description> 
+	  Used by PHUT to mark N_avis nodes whose values have
+	  been traversed.
+	  </description>
+        </flag>	 
       </flags>
     <checks>
       <check name="CHKavisReflection" />
@@ -8947,7 +9030,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -8969,7 +9052,7 @@ N_tfarg :
       </sons>
       <attributes>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -8991,7 +9074,7 @@ N_tfarg :
       </sons>
       <attributes>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
     
 <!--
@@ -9014,7 +9097,7 @@ N_tfarg :
       </sons>
       <attributes>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
     
 <!--
@@ -9100,7 +9183,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -9114,7 +9197,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -9128,7 +9211,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -9572,7 +9655,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -9582,7 +9665,7 @@ N_tfarg :
     <node name="Default">
       <sons></sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -9788,7 +9871,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -9802,7 +9885,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -9816,7 +9899,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -10027,7 +10110,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10122,7 +10205,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10217,7 +10300,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10357,7 +10440,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10389,7 +10472,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes></attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10663,7 +10746,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10759,7 +10842,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -10776,7 +10859,7 @@ N_tfarg :
       </sons>
       <attributes>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11195,7 +11278,7 @@ N_tfarg :
 	  </type>
 	</attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11427,7 +11510,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11472,7 +11555,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11563,7 +11646,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11598,8 +11681,7 @@ N_tfarg :
           </type>
 	</attribute>
       </attributes>
-      <flags>
-      </flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11623,8 +11705,7 @@ N_tfarg :
           </type>
 	</attribute>
       </attributes>
-      <flags>
-      </flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11665,7 +11746,7 @@ N_tfarg :
           </type>
 	</attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11699,7 +11780,7 @@ N_tfarg :
           </type>
 	</attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -11798,7 +11879,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
   
@@ -11929,7 +12010,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -11943,7 +12024,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -11957,7 +12038,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="ptc_l2f" />
-                  <phase name="cwc_l2f" />
+                  <phase name="popt_l2f" />
 		  <phase name="pc_lw3" />
                 </phases>
               </target>
@@ -12200,7 +12281,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -12266,7 +12347,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -12322,7 +12403,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -12359,7 +12440,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
 <!--
 
@@ -12396,7 +12477,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
         <!--
          
@@ -12432,7 +12513,7 @@ N_tfarg :
           </sons>
           <attributes>
           </attributes>
-          <flags></flags>
+          <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
         </node>
   </syntaxtree>
 </definition>

@@ -705,23 +705,6 @@ FakeUpConstantExtremum (node *elem, info *arg_info, int emax)
     if (NULL != elminco) {
         el = COconstant2AST (elminco);
         elminco = COfreeConstant (elminco);
-
-#ifdef DEADCODE
-        constant *elmaxco = NULL;
-        constant *kcon = NULL;
-
-        if (emax) {
-            kcon = COmakeConstantFromInt (1);
-            elmaxco = COadd (elminco, kcon, NULL);
-            el = COconstant2AST (elmaxco);
-            elmaxco = COfreeConstant (elmaxco);
-            kcon = COfreeConstant (kcon);
-        } else {
-            el = COconstant2AST (elminco);
-        }
-        elminco = COfreeConstant (elminco);
-#endif // DEADCODE
-
         elavis = FLATGexpression2Avis (el, &INFO_VARDECS (arg_info),
                                        &INFO_PREASSIGNS (arg_info), NULL);
         if (emax) { // normalize maxval
@@ -990,7 +973,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
     INFO_WITHIDS (arg_info) = NULL;
     switch (NODE_TYPE (iprime)) {
     default:
-        DBUG_ASSERT (FALSE, "unexpected iprime NODE_TYPE");
+        DBUG_UNREACHABLE ("unexpected iprime NODE_TYPE");
         break;
 
     case N_num:
@@ -1097,7 +1080,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
                             nprf = F_add_SxS;
                             id1 = NULL;
                             id2 = NULL;
-                            DBUG_ASSERT (FALSE, "ivarg confusion");
+                            DBUG_UNREACHABLE ("ivarg confusion");
                         }
 
                         ids = TBmakeIds (resavis, NULL);
@@ -1171,11 +1154,11 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
             case N_array:
                 DBUG_ASSERT (1 == SHgetUnrLen (ARRAY_FRAMESHAPE (idx)),
                              "Expected 1-element N_array");
-                DBUG_ASSERT (FALSE, "We are confused");
+                DBUG_UNREACHABLE ("We are confused");
                 break;
 
             default:
-                DBUG_ASSERT (FALSE, "Cannot chase iv'");
+                DBUG_UNREACHABLE ("Cannot chase iv'");
                 break;
             }
         }
@@ -1390,7 +1373,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
 
         pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
         if (!PMmatchFlat (pat, z)) {
-            DBUG_ASSERT (FALSE, "Expected N_array bounds");
+            DBUG_UNREACHABLE ("Expected N_array bounds");
         }
         DBUG_ASSERT (N_exprs == NODE_TYPE (zelu), "Expected N_exprs zelu");
 
@@ -1630,8 +1613,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                 && (!AWLFIisHasInverseProjection (
                      TCgetNthExprsExpr (curelidxub, PRF_ARGS (arg_node))))) {
                 if (!PMmatchFlat (pat2, intrub)) {
-                    DBUG_ASSERT (FALSE, "lost the N_array for %s",
-                                 AVIS_NAME (ID_AVIS (intrub)));
+                    DBUG_UNREACHABLE ("lost the N_array for %s",
+                                      AVIS_NAME (ID_AVIS (intrub)));
                 }
 
                 if ((PMmatchFlat (pat1, intrlb)) && (PMmatchFlat (pat2, intrub))
@@ -1663,7 +1646,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                     DBUG_ASSERT (N_exprs == NODE_TYPE (zel), "Expected N_exprs zel");
                     DBUG_ASSERT (N_exprs == NODE_TYPE (zeu), "Expected N_exprs zeu");
                     if (swaplb) {
-                        //  DBUG_ASSERT( FALSE, "time2 code");
+                        //  DBUG_UNREACHABLE ("time2 code");
                         tmp = zel;
                         zel = zeu;
                         zeu = tmp;
@@ -1687,8 +1670,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
         zel = NULL;
         zeu = NULL;
     } else {
-        DBUG_ASSERT (FALSE, "Could not find N_array for %s",
-                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
+        DBUG_UNREACHABLE ("Could not find N_array for %s",
+                          AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
     }
 
     DBUG_PRINT ("Done b inverse projection for %s",
@@ -2375,7 +2358,7 @@ AWLFIisSingleOpWL (node *arg_node)
     switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
     default:
         z = FALSE;
-        DBUG_ASSERT (FALSE, "WITHOP confusion");
+        DBUG_UNREACHABLE ("WITHOP confusion");
         break;
     case N_genarray:
         z = (NULL == GENARRAY_NEXT (WITH_WITHOP (arg_node)));
@@ -2516,7 +2499,6 @@ static bool
 isCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info)
 {
     bool z = FALSE;
-    bool z2;
     node *narr;
     pattern *pat;
     node *ivid;
@@ -2525,11 +2507,6 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info)
     node *avis;
 
     DBUG_ENTER ();
-
-    /* This is the old code. I hope we can burn it. FIXME */
-    z2 = (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
-         || ((NULL != ivavis)
-             && ((TYisAKV (AVIS_TYPE (ivavis))) || (IVEXPisAvisHasBothExtrema (ivavis))));
 
     if (NULL != ivavis) {
         /*
@@ -2561,9 +2538,9 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info)
                     avis = ID_AVIS (elem);
                     DBUG_PRINT ("Looking at elem %s", AVIS_NAME (avis));
                     z = z
-                        && ((TYisAKV (AVIS_TYPE (ID_AVIS (elem))))
-                            || (IVEXPisAvisHasBothExtrema (ID_AVIS (elem)))
-                            || (!SWLDisDefinedInThisBlock (ID_AVIS (elem),
+                        && ((TYisAKV (AVIS_TYPE (avis)))
+                            || (IVEXPisAvisHasBothExtrema (avis))
+                            || (!SWLDisDefinedInThisBlock (avis,
                                                            INFO_DEFDEPTH (arg_info))));
                 }
             }
@@ -2572,9 +2549,6 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info)
         ivid = FREEdoFreeNode (ivid);
         pat = PMfree (pat);
     }
-
-    // DEADCODE test
-    DBUG_ASSERT ((z || ((!z) && !z2)), "No, we still need z2");
 
     DBUG_RETURN (z);
 }
@@ -2588,7 +2562,8 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info)
  * @param  cwllevel: INFO_DEFDEPTH of CWL (or naked sel())
  *         pwllevel: AVIS_DEFDEPTH of PWL
  *
- * @result True if the CWL and PWL (even though there is not a PWL...)
+ * @result True if we are allowing naked AWLF and
+ *         the CWL and PWL (even though there is not a PWL...)
  *         are at the same level. I.e., we
  *         have this sort of code layout:
  *
@@ -2603,7 +2578,7 @@ AWLFIisNakedWL (int cwllevel, int pwllevel)
     bool z;
 
     DBUG_ENTER ();
-    z = cwllevel == pwllevel;
+    z = (cwllevel == pwllevel) && global.optimize.doscwlf;
 
     DBUG_RETURN (z);
 }
@@ -2666,10 +2641,6 @@ AWLFIisUsualWL (int cwllevel, int pwllevel)
 bool
 AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel)
 {
-#ifdef FIXME //  this definitely breaks majordiagonal2.sac
-    int lenpwl;
-    int lencwl;
-#endif // FIXME //  this definitely breaks majordiagonal2.sac
     int plev;
     bool z;
     const char *nmc;
@@ -2681,17 +2652,6 @@ AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel)
     /* Naked consumer AWLF: PWL and CWL sel() at same nesting level */
     plev = AVIS_DEFDEPTH (ID_AVIS (pwlid));
     z = AWLFIisNakedWL (cwllevel, plev) || AWLFIisUsualWL (cwllevel, plev);
-
-#ifdef FIXME //  this definitely breaks majordiagonal2.sac
-    /* Restrict producerWL to scalar cells, and require that
-     * producerWL and consumerWL have same shape bounds.
-     */
-    lenpwl = SHgetUnrLen (ARRAY_FRAMESHAPE (
-      GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (INFO_PRODUCERWL (arg_info))))));
-    lencwl = SHgetUnrLen (ARRAY_FRAMESHAPE (
-      GENERATOR_BOUND1 (PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)))));
-    z = z && (lenpwl == lencwl);
-#endif // FIXME //  this definitely breaks majordiagonal2.sac
 
     nmp = (NULL != pwlid) ? AVIS_NAME (ID_AVIS (pwlid)) : "(not a WL";
     nmc = (NULL != cwlids) ? AVIS_NAME (IDS_AVIS (cwlids)) : "(not a WL";
@@ -2867,30 +2827,7 @@ AWLFIpart (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-#ifdef DEADCODE
-/** <!--********************************************************************-->
- *
- * @fn node *AWLFIids( node *arg_node, info *arg_info)
- *
- * @brief set current With-Loop level as ids defDepth attribute
- *
- *****************************************************************************/
-node *
-AWLFIids (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_DEFDEPTH (arg_info);
-    DBUG_PRINT ("%s DEFDEPTH set to %i", AVIS_NAME (IDS_AVIS (arg_node)),
-                AVIS_DEFDEPTH (IDS_AVIS (arg_node)));
-    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-#endif // DEADCODE
-
 /******************************************************************************
- *  (cloned from SSAWLI)
  *
  * function:
  *   node *AWLFIid(node *arg_node, info *arg_info)
@@ -2910,7 +2847,7 @@ AWLFIid (node *arg_node, info *arg_info)
     node *p;
 
     DBUG_ENTER ();
-    /* get the definition assignment via the AVIS_SSAASSIGN backreference */
+
     DBUG_PRINT ("Looking at %s", AVIS_NAME (ID_AVIS (arg_node)));
     p = INFO_CONSUMERWL (arg_info);
     if ((NULL != p) && (NULL == WITH_REFERENCED_CONSUMERWL (p))) {
@@ -2999,7 +2936,9 @@ AWLFIprf (node *arg_node, info *arg_info)
                                       INFO_CONSUMERWLPART (arg_info));
 
             /* We need both extrema or constant index vector */
-            if (isCanAttachIntersectCalc (arg_node, ivavis, arg_info)) {
+            /* Or, we need naked consumer */
+            if ((isCanAttachIntersectCalc (arg_node, ivavis, arg_info))) {
+                // FIXME || isNaked( arg_node, ivavis)) {
                 DBUG_PRINT ("Trying to attach F_noteintersect into cwl=%s", cwlnm);
                 z = attachIntersectCalc (arg_node, arg_info, ivavis);
                 if (z != ID_AVIS (PRF_ARG1 (arg_node))) {

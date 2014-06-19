@@ -301,7 +301,7 @@ AddModuleToPool (const char *name)
     case TOOL_sac4c:
         break;
     default:
-        DBUG_ASSERT (0, "unknown tool!");
+        DBUG_UNREACHABLE ("unknown tool!");
     }
 
     addNamespaceMappings (result);

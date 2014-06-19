@@ -105,9 +105,10 @@ GenIntVector (node *element)
 
 static node *
 MakeAssignForIdShape (node *id, node *fundef, node **preass)
-{
+{ // Return the N_avis we create
     node *res;
     node *newass;
+    int dim;
 
     DBUG_ENTER ();
 
@@ -115,7 +116,7 @@ MakeAssignForIdShape (node *id, node *fundef, node **preass)
                  "Making assign for Id without Dimension!");
 
     if (NODE_TYPE (AVIS_DIM (ID_AVIS (id))) == N_num) {
-        int dim = NUM_VAL (AVIS_DIM (ID_AVIS (id)));
+        dim = NUM_VAL (AVIS_DIM (ID_AVIS (id)));
         res = TBmakeAvis (TRAVtmpVarName (ID_NAME (id)),
                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim)));
     } else {
@@ -846,7 +847,7 @@ MSEwith (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown Withop encountered");
+        DBUG_UNREACHABLE ("Unknown Withop encountered");
         break;
     }
 

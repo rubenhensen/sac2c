@@ -41,9 +41,7 @@
 void
 ICMCompileND_PRF_SHAPE_A__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim)
 {
-#ifndef DBUG_OFF
     hidden_class_t to_hc = ICUGetHiddenClass (to_NT);
-#endif
     shape_class_t from_sc = ICUGetShapeClass (from_NT);
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
@@ -86,7 +84,7 @@ ICMCompileND_PRF_SHAPE_A__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -261,7 +259,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_id (char *to_NT, int to_sdim, char *from_NT,
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -360,7 +358,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT,
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -387,14 +385,12 @@ PrfSel_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
              int idx_size, void (*idx_size_fun) (void *),
              void (*idx_read_fun) (void *, char *, int), char *copyfun)
 {
-#ifndef DBUG_OFF
-    int to_dim = DIM_NO_OFFSET (to_sdim);
-#endif
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (to_dim == 0, "Primitive selection can only yield scalar results!");
+    DBUG_ASSERT (DIM_NO_OFFSET (to_sdim) == 0,
+                 "Primitive selection can only yield scalar results!");
 
     BLOCK_BEGIN ("int SAC_idx;")
         ;
@@ -416,14 +412,12 @@ simd_sel_data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx
                void (*idx_read_fun) (void *, char *, int), char *copyfun, int simd_length,
                char *base_type)
 {
-#ifndef DBUG_OFF
-    int to_dim = DIM_NO_OFFSET (to_sdim);
-#endif
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (to_dim == 1, "Primitive selection can only 1-d vector results!");
+    DBUG_ASSERT (DIM_NO_OFFSET (to_sdim) == 1,
+                 "Primitive selection can only 1-d vector results!");
 
     BLOCK_BEGIN ("int SAC_idx;")
         ;
@@ -1003,11 +997,11 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
         /*
          * F_idx_sel works only for arrays with known dimension!
          */
-        DBUG_ASSERT (0, "F_idx_sel with unknown dimension found!");
+        DBUG_UNREACHABLE ("F_idx_sel with unknown dimension found!");
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 

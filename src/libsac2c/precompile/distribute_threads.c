@@ -445,7 +445,7 @@ DSTrange (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (FALSE, "unknown distribution mode...");
+        DBUG_UNREACHABLE ("unknown distribution mode...");
         break;
     }
 

@@ -537,7 +537,7 @@ extractTopFrame (node *stack, node **top)
     DBUG_ENTER ();
 
     if ((stack != NULL) && (NODE_TYPE (stack) == N_set)
-        && (NODE_TYPE (SET_MEMBER (stack)) = N_exprs)) {
+        && (NODE_TYPE (SET_MEMBER (stack)) == N_exprs)) {
         *top = SET_MEMBER (stack);
         stack = FREEdoFreeNode (stack);
     } else {
@@ -642,7 +642,7 @@ getInner (node *arg_node)
         break;
     default:
         inner = arg_node;
-        DBUG_ASSERT (FALSE, "getInner applied to unexpected NODE_TYPE!");
+        DBUG_UNREACHABLE ("getInner applied to unexpected NODE_TYPE!");
         break;
     }
 

@@ -210,7 +210,7 @@ TogglePrf (prf op)
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal argument prf!");
+        DBUG_UNREACHABLE ("Illegal argument prf!");
     }
 
     DBUG_RETURN (result);
@@ -269,7 +269,7 @@ TogglePrfSwap (prf op)
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal argument prf!");
+        DBUG_UNREACHABLE ("Illegal argument prf!");
     }
 
     DBUG_RETURN (result);
@@ -510,7 +510,7 @@ UESDprf (node *arg_node, info *arg_info)
                 break;
             default:
                 exp = NULL;
-                DBUG_ASSERT (FALSE, "We should never reach here.");
+                DBUG_UNREACHABLE ("We should never reach here.");
             }
             INFO_PREASSIGN (arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), exp), NULL);

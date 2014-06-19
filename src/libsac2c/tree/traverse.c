@@ -45,6 +45,7 @@ TRAVdo (node *arg_node, info *arg_info)
 {
     nodetype arg_node_type;
     int old_linenum = global.linenum;
+    int old_colnum = global.colnum;
     char *old_filename = global.filename;
     static node *arg_last = NULL;
     node *special_funs;
@@ -62,6 +63,7 @@ TRAVdo (node *arg_node, info *arg_info)
      * correctly in case MakeXxx is called.
      */
     global.linenum = NODE_LINE (arg_node);
+    global.colnum = NODE_COL (arg_node);
     global.filename = (char *)NODE_FILE (arg_node);
 
     /*
@@ -94,6 +96,7 @@ TRAVdo (node *arg_node, info *arg_info)
     }
 
     global.linenum = old_linenum;
+    global.colnum = old_colnum;
     global.filename = old_filename;
 
     if ((arg_node != NULL) && (travstack->traversal != TR_anonymous)) {
@@ -243,8 +246,8 @@ TRAVlacIsSuccOf (node *succ, node *parent, lac_info_t *lac_info)
         /* called in N_fundef to decide whether to follow the next */
         result = (LAC_INFO_BLOCKLEVEL (lac_info) == 0);
     } else {
-        DBUG_ASSERT (FALSE, "TRAVlacIsSuccOf called with illegal succ/parent "
-                            "combination");
+        DBUG_UNREACHABLE ("TRAVlacIsSuccOf called with illegal succ/parent "
+                          "combination");
 
         result = FALSE;
     }

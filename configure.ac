@@ -126,6 +126,12 @@ if test "$GCC" = yes ; then
   CHECK_CC_OPTION([-Wno-unused-but-set-variable], [gcc_options])
 fi
 
+gcc_native=
+if test "$GCC" = yes ; then
+  CHECK_CC_OPTION([-march=native], [gcc_native])
+  CHECK_CC_OPTION([-mtune=native], [gcc_native])
+fi
+
 dnl
 dnl test for compiler flags for sac2crc
 dnl

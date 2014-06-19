@@ -691,7 +691,7 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -768,7 +768,7 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -832,7 +832,7 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim)
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -1004,7 +1004,7 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -1226,7 +1226,7 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
             break;
 
         default:
-            DBUG_ASSERT (0, "Illegal assignment found!");
+            DBUG_UNREACHABLE ("Illegal assignment found!");
             break;
         }
         break;
@@ -1254,13 +1254,13 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
             break;
 
         default:
-            DBUG_ASSERT (0, "Illegal assignment found!");
+            DBUG_UNREACHABLE ("Illegal assignment found!");
             break;
         }
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -1317,7 +1317,7 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
         break;
 
     default:
-        DBUG_ASSERT (0, "Unknown shape class found!");
+        DBUG_UNREACHABLE ("Unknown shape class found!");
         break;
     }
 
@@ -1470,9 +1470,8 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_NT, int to_sdim, int dim, int *shp,
 {
     bool entries_are_scalars;
     int i;
-#ifndef DBUG_OFF
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
-#endif
+
     int val0_dim = DIM_NO_OFFSET (val0_sdim);
 
     DBUG_ENTER ();

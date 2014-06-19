@@ -270,7 +270,7 @@ GetInnerTypeName (namespace_t *ns, const char *name)
         result = "";
         break;
     default:
-        DBUG_ASSERT (0, "unhandled simple type");
+        DBUG_UNREACHABLE ("unhandled simple type");
         result = "Unknown";
         break;
     }

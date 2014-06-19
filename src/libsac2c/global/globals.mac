@@ -135,6 +135,12 @@ GLOBAL (char *, system_cleanup, NULL, xfree_char_ptr, )
  * directory for storing temporary files
  */
 
+GLOBAL (int, polylib_filenumber, 0, xfree_dummy, )
+/*
+ * polylib file counter, used to ensure no collisions among
+ * polylib file names created by PHUT and friends.
+ */
+
 /* FIXME: This one also needs special attention; dummy for the time being.  */
 GLOBAL (stringset_t *, exported_modules, NULL, xfree_dummy, )
 /*
@@ -389,6 +395,11 @@ GLOBAL (bool, no_fold_parallel, FALSE, xfree_dummy, )
 GLOBAL (int, max_threads, 128, xfree_dummy, )
 /*
  * Maximum number of threads if exact number is determined dynamically.
+ */
+
+GLOBAL (int, num_rtspec_threads, 1, xfree_dummy, )
+/*
+ * Number of rtspec controller threads to be generated.
  */
 
 GLOBAL (int, min_parallel_size, 250, xfree_dummy, )
@@ -938,6 +949,11 @@ GLOBAL (bool, run_stabilization_cycle, FALSE, xfree_dummy, )
 GLOBAL (int, linenum, 1, xfree_dummy, )
 /*
  * Current line number
+ */
+
+GLOBAL (int, colnum, 1, xfree_dummy, )
+/*
+ * Current column number
  */
 
 GLOBAL (char *, filename, NULL, xfree_dummy, )

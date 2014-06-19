@@ -262,7 +262,7 @@ GGSprf (node *arg_node, info *arg_info)
 
         if ((!PMmatchFlatSkipExtremaAndGuards (patx, arg1))
             || (!PMmatchFlatSkipExtremaAndGuards (paty, arg2))) {
-            DBUG_ASSERT (FALSE, "Expected N_id arguments");
+            DBUG_UNREACHABLE ("Expected N_id arguments");
         }
         pat = PMfree (pat);
         patx = PMfree (patx);

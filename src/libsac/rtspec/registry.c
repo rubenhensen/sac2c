@@ -49,4 +49,4 @@ SAC_registrate (char *module, void *func_ptr)
     return entry;
 }
 
-#endif /* ENABLE_RTSPEC */
+#endif /* SAC_DO_RTPSPEC  */

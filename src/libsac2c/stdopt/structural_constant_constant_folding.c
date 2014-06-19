@@ -27,7 +27,7 @@
  *****************************************************************************/
 #include "structural_constant_constant_folding.h"
 
-#define DBUG_PREFIX "CF"
+#define DBUG_PREFIX "SCCF"
 #include "debug.h"
 
 #include "tree_basic.h"
@@ -690,7 +690,7 @@ ReplaceNarrayElementHelper (node *X, int offset, node *val, info *arg_info)
     if ((offset < 0) || (offset >= TCcountExprs (ARRAY_AELEMS (z)))) {
         DBUG_PRINT ("index error performing indexed assign into %s",
                     AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
-        DBUG_ASSERT (FALSE, "Index error performing indexed assign into N_array");
+        DBUG_UNREACHABLE ("Index error performing indexed assign into N_array");
     }
 
     exprs = TCgetNthExprs (offset, ARRAY_AELEMS (z));
@@ -1701,6 +1701,9 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
     }
 
     frameshape = (NULL != frameshape) ? COfreeConstant (frameshape) : NULL;
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
 
     DBUG_RETURN (res);
 }

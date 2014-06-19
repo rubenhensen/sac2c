@@ -261,8 +261,8 @@ DispatchFunCall (node *fundef, ntype *arg_types, info *arg_info)
                     DBUG_PRINT ("  dispatched statically although only partial"
                                 " has been found (T_dots)!");
                 } else {
-                    DBUG_ASSERT (0, "wrapper with T_dots found which could be dispatched "
-                                    "statically!");
+                    DBUG_UNREACHABLE (
+                      "wrapper with T_dots found which could be dispatched statically!");
                 }
             } else {
                 /*
