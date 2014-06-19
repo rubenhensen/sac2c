@@ -140,7 +140,6 @@ node *
 AddVect2Offset (node *iv, node *shpexpr, info *arg_info)
 {
     node *avis, *assign;
-    ntype *typ;
 
     DBUG_ENTER ();
 
@@ -152,13 +151,6 @@ AddVect2Offset (node *iv, node *shpexpr, info *arg_info)
 
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
-#ifdef MAYBEDEAD
-    // let FLATGexpression2Avis figure out typ
-    typ = (N_id == NODE_TYPE (shpexpr))
-            ? TYcopyType (AVIS_TYPE (ID_AVIS (shpexpr)))
-            : TYmakeAKS (TYmakeSimpleType (T_int),
-                         SHcreateShape (1, TCcountExprs (ARRAY_AELEMS (shpexpr))));
-#endif // MAYBEDEAD
     shpexpr = FLATGexpression2Avis (shpexpr, &INFO_VARDECS (arg_info),
                                     &INFO_PREASSIGNS (arg_info), NULL);
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
