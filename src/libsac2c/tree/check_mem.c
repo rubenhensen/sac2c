@@ -113,10 +113,12 @@ foldmemcheck (void *init, void *key, void *value)
     if (!info->wasintree) {
     } else if (info->isreachable) {
         info->isreachable = FALSE;
-    } else {
+    } else { // was in tree, but not reachable
+             // wasintree set ONLY by CHKMisNode (above)
         iterator = phasetable[global.compiler_anyphase].leaked;
         while (iterator) {
-            if ((!strcmp (iterator->file, info->file)) && iterator->line == info->line) {
+            if ((!strcmp (iterator->file, info->file))
+                && iterator->line == info->line) { // Match on file and line #
                 iterator->occurrence++;
                 iterator->size += info->size;
                 ispresent = TRUE;

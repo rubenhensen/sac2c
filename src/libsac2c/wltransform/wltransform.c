@@ -2572,10 +2572,11 @@ CurrentComponentGetNode (node *aelems)
         } else {
             result = DUPdoDupNode (EXPRS_EXPR (aelems));
         }
+        pattern = PMfree (pattern);
+
     } else {
         result = NULL;
     }
-    pattern = PMfree (pattern);
 
     DBUG_RETURN (result);
 }
