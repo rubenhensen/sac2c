@@ -178,13 +178,13 @@ p = %
 $(LIBBASE)/$(LIBDIR)/%$(MODEXT): \
 	$$(patsubst $$p.c,$$p-$(TARGET)$$(suffix $$*)$(OBJEXT),$$($$(basename $$*)_sources))
 	$(HIDEat)$(MKDIR_P) $(@D)
-	$(HIDEl)$(SAC2C) $(HIDEv) -noprelude -cc ldmod -o $@ $^
+	$(HIDEl)$(SAC2C) $(HIDEv) -linksetsize 0 -noprelude -cc ldmod -o $@ $^
 
 $(PRELUDEBASE)/$(TREEDIR)/libsacpreludeTree$(TREEEXT) \
 	$(PRELUDEBASE)/$(LIBDIR)/libsacpreludeMod$(MODEXT): \
 	src/libsacprelude/sacprelude.sac $(SACDEPS)
 	$(HIDEat)$(MKDIR_P) $(PRELUDEBASE)
-	$(HIDEs)$(SAC2C) $(HIDEv) -noprelude -o $(PRELUDEBASE) $<
+	$(HIDEs)$(SAC2C) $(HIDEv) -linksetsize 0 -noprelude -o $(PRELUDEBASE) $<
 
 ##############################################################################
 #
