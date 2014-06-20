@@ -18,6 +18,18 @@
 #
 #    refactor     refactor source code (requires parameters below)
 #
+#    config       rebuild autoconf-gnerated scripts, e.g. configure,
+#                 src/include/config.h.in, etc.
+#
+#    install      install sac2c under the $PREFIX directory.  Please note
+#                 that $PREFIX can be set when you run ./configure via
+#                 ./configure --prefix=/path/to/some/location
+#                 Also, make sure that your $PREFIX/bin is on the PATH.
+#
+#    uninstall    Remove the files created by the install target.  Please
+#                 note that it does not remove a directory structure, only
+#                 the files.
+#
 #  Parameters:
 #    DEPS="no"    de-activate dependency checking meachanism
 #    HIDE=""      show important commands issued by make (debugging)
@@ -29,7 +41,7 @@
 ###############################################################################
 
 
-#######################################################################################
+###############################################################################
 #
 # general setup:
 #
@@ -45,6 +57,15 @@ MAKEFILE_DIR := $(PROJECT_ROOT)/src/makefiles
 
 -include $(MAKEFILE_DIR)/config.mkf   # config.mkf may not yet exist
 include $(MAKEFILE_DIR)/settings.mkf
+
+# A function that outputs an argument surrounded by the box of stars.
+# Like this:
+#    ********
+#    * arg
+#    ********
+# The first and second line are expansions of $(frame_stars) variable.
+frame_stars := "************************************************************"
+framed_text = @$(ECHO) -e "$(frame_stars)\n* $(1)\n$(frame_stars)"
 
 
 ###############################################################################
@@ -78,10 +99,7 @@ include $(MAKEFILE_DIR)/settings.mkf
 #
 
 default devel prod: checks
-	@$(ECHO) ""
-	@$(ECHO) "************************************************************"
-	@$(ECHO) "* Building $(PROJECT_NAME)"
-	@$(ECHO) "************************************************************"
+	$(call framed_text,Building $(PROJECT_NAME))
 	$(HIDE) $(MAKE) -C src/maketools DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/maketools/" PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsac2c  DEPS="$(DEPS)" HIDE="$(HIDE)" \
@@ -93,12 +111,7 @@ default devel prod: checks
 	$(HIDE) for t in $(BUILD_TARGETS); do \
 	  $(MAKE) -f $(MAKEFILE_DIR)/rtlibs.mkf HIDE="$(HIDE)" TARGET=$$t all || exit 1; \
 	done
-	@$(ECHO) ""
-	@$(ECHO) "************************************************************"
-	@$(ECHO) "* Building $(PROJECT_NAME) completed"
-	@$(ECHO) "************************************************************"
-	@$(ECHO) ""
-
+	$(call framed_text,Building $(PROJECT_NAME) completed)
 
 
 ###############################################################################
@@ -107,10 +120,7 @@ default devel prod: checks
 #
 
 clean cleandevel cleanprod: checks
-	@$(ECHO) ""
-	@$(ECHO) "************************************************************"
-	@$(ECHO) "* Cleaning $(PROJECT_NAME)"
-	@$(ECHO) "************************************************************"
+	$(call framed_text,Cleaning $(PROJECT_NAME))
 	$(HIDE) if [ "$(CLEAN_MAKE_TOOLS)" = "yes" ]; then  \
                   $(MAKE) -C src/maketools DEPS="$(DEPS)" HIDE="$(HIDE)" \
                           PREFIX_LOCAL="src/maketools/" PREFIX_ROOT="" $@ ; \
@@ -125,11 +135,7 @@ clean cleandevel cleanprod: checks
 	    $(MAKE) -f $(MAKEFILE_DIR)/rtlibs.mkf HIDE="$(HIDE)" TARGET=$$t clean || exit 1; \
 	done
 	$(HIDE) $(RM) -rf lib/* bin/*
-	@$(ECHO) ""
-	@$(ECHO) "************************************************************"
-	@$(ECHO) "* Cleaning $(PROJECT_NAME) completed"
-	@$(ECHO) "************************************************************"
-	@$(ECHO) ""
+	$(call framed_text,Cleaning $(PROJECT_NAME) completed)
 
 
 tidy:
@@ -148,10 +154,7 @@ tidyprod:
 #
 
 refactor: checks
-	@$(ECHO) ""
-	@$(ECHO) "************************************************************"
-	@$(ECHO) "* Refactoring $(PROJECT_NAME)"
-	@$(ECHO) "************************************************************"
+	$(call framed_text,Refactoring $(PROJECT_NAME))
 	$(HIDE) $(MAKE) -C src/maketools DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/maketools/" PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsac2c  DEPS="$(DEPS)" HIDE="$(HIDE)" \
@@ -160,11 +163,7 @@ refactor: checks
                         PREFIX_LOCAL="src/runtime/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/" PREFIX_ROOT="" $@
-	@$(ECHO) ""
-	@$(ECHO) "************************************************************"
-	@$(ECHO) "* Refactoring $(PROJECT_NAME) completed"
-	@$(ECHO) "************************************************************"
-	@$(ECHO) ""
+	$(call framed_text,Refactoring $(PROJECT_NAME) completed)
 
 
 ###############################################################################
@@ -198,6 +197,7 @@ rtlibs: checks
 # Rules to create configure the script. Put it here as a first target.
 #
 
+
 config:
 	autoreconf -v -f -i -I setup/config
 
@@ -207,6 +207,7 @@ config:
 #
 
 include $(MAKEFILE_DIR)/check.mkf
+
 
 install: checks
 	$(INSTALL) -d "$(INCPATH_CONF)"
@@ -237,6 +238,7 @@ install: checks
 	for t in $(BUILD_TARGETS); do \
 	  $(MAKE) -f $(MAKEFILE_DIR)/rtlibs.mkf HIDE="$(HIDE)" TARGET=$$t install; \
 	done
+
 
 uninstall:
 	if test -r .uninstall; then \
