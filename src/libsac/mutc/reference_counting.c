@@ -172,4 +172,6 @@ sl_def (SAC_rc_barrier_w, void, sl_glparm (int *, desc))
     sl_sync ();
 }
 sl_enddef
+#else
+static int this_translation_unit = 0xdead;
 #endif

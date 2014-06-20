@@ -49,4 +49,6 @@ SAC_registrate (char *module, void *func_ptr)
     return entry;
 }
 
+#else
+static int this_translation_unit = 0xdead;
 #endif /* SAC_DO_RTPSPEC  */

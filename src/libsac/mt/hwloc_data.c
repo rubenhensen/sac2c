@@ -84,4 +84,6 @@ SAC_HWLOC_dont_bind ()
     topology = 0;
 }
 
+#else
+static int this_translation_unit = 0xdead;
 #endif // ENABLE_HWLOC

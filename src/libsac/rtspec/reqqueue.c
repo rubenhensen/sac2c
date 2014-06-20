@@ -340,4 +340,6 @@ SAC_freeReqqueue (queue_node_t *node)
     }
 }
 
+#else
+static int this_translation_unit = 0xdead;
 #endif /* SAC_DO_RTSPEC  */
