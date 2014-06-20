@@ -240,5 +240,5 @@ install: checks
 
 uninstall:
 	if test -r .uninstall; then \
-	  $(CAT) .uninstall | while read f; do $(RM) "$$f"; done; \
-	done
+	  cat .uninstall | while read f; do $(RM) "$$f"; done; \
+	fi
