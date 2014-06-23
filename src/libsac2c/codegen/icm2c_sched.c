@@ -457,7 +457,7 @@ ICMCompileMT_SCHEDULER_BlockDist_BEGIN (int sched_id, int dim, char **vararg)
 #undef MT_SCHEDULER_BlockDist_BEGIN
 
     INDENT;
-    fprintf (global.outfile, "SAC_DIST_SCHEDULER_Block_DIM0( %s, %s, %s);\n",
+    fprintf (global.outfile, "SAC_MT_SCHEDULER_Block_DIM0( %s, %s, %s);\n",
              lower_bound[0], upper_bound[0], unrolling[0]);
 
     for (i = 1; i < dim; i++) {
@@ -537,7 +537,7 @@ ICMCompileMT_SCHEDULER_BlockVarDist_BEGIN (int sched_id, int dim, char **vararg)
 #undef MT_SCHEDULER_BlockVarDist_BEGIN
 
     INDENT;
-    fprintf (global.outfile, "SAC_DIST_SCHEDULER_BlockVar_DIM0( %s, %s, %s);\n",
+    fprintf (global.outfile, "SAC_MT_SCHEDULER_BlockVar_DIM0( %s, %s, %s);\n",
              lower_bound[0], upper_bound[0], unrolling[0]);
 
     for (i = 1; i < dim; i++) {
