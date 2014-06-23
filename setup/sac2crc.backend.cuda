@@ -1,0 +1,46 @@
+/*****************************************************************************
+ * cuda targets
+ */
+target cuda :: default_sbi:
+SBI              += "-cuda"
+BACKEND          :=  "Cuda"
+
+CUDA_ARCH        :=  "@CUDA_ARCH@"
+
+CEXT             :=  ".cu"
+CC               :=  "@NVCC_PATH@"
+CFLAGS           :=  "@CUDA_ARCH@ --maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
+                     "-Xcompiler -fno-builtin -Xcompiler -std=c99 "
+                     " -I$CUTIL "
+LIBS             :=  " @CCDLLINK@ -lcutil_i386 -lcudart -lcublas"
+EXTLIBPATH       +=  "$CUTIL_LIB:"
+
+target cudahybrid :: cuda:
+BACKEND          :=  "CudaHybrid"
+MT_MODE          :=  2
+
+target cudahybrid64 :: cuda :: add_cuda64:
+BACKEND          :=  "CudaHybrid"
+
+/*******************************************************************************
+ *
+ * Targets that define target modifiers:
+ *
+ */
+
+target add_fixed:
+CFLAGS           :=  "--maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
+                     "-Xcompiler -fno-builtin -Xcompiler -std=c99"
+
+target add_cuda64:
+LIBS             :=  " @CCDLLINK@ -lcutil_x86_64 -lcudart -lcublas"
+
+/*******************************************************************************
+ *
+ * Targets that combine basic targets with target modifiers:
+ *
+ */
+target cuda_fixed :: cuda :: add_fixed:
+
+target cuda64 :: cuda :: add_cuda64:
+

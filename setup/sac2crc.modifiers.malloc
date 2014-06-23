@@ -1,0 +1,51 @@
+/*******************************************************************************
+ *
+ *  TARGETS  for Alternate Memory Allocators:
+ *
+ */
+
+ /*******************************************************************************
+ *
+ * Target hoard: use the Hoard memory allocator instead of regular malloc
+ *
+ * NOTE: This requires the proper installation of the Hoard memory allocator!
+ */
+
+target malloc_hoard:
+
+LIBS        +=  "-lhoard -lpthread -lthread -lrt"
+
+
+/*******************************************************************************
+ *
+ * Target ptmalloc: use the ptmalloc implementation instead of regular malloc
+ *
+ * NOTE: This requires the proper installation of the PTmalloc memory allocator!
+ */
+
+target malloc_pt:
+
+LIBS        +=  " -lptmalloc"
+
+
+/*******************************************************************************
+ *
+ * Target mtmalloc: use the Sun mtmalloc library instead of regular malloc
+ *
+ */
+
+target malloc_mt:
+
+LIBS       +=  " -lmtmalloc"
+
+
+/*******************************************************************************
+ *
+ * Target gnumalloc: use the GNU glibc library instead of Solaris libc
+ *
+ * NOTE: This is mostly intended to test the GNU memory allocator!
+ */
+
+target malloc_gnu:
+
+LIBS      +=  " -lglib"

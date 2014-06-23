@@ -243,10 +243,20 @@ dnl
 dnl append platform specific files to sac2crc
 dnl
 
+AC_SUBST_FILE([RCMUTC])
+AC_SUBST_FILE([RCCUDA])
+AC_SUBST_FILE([RCCC])
+AC_SUBST_FILE([RCMALLOC])
+AC_SUBST_FILE([RCRCM])
 AC_SUBST_FILE([RCSUN])
 AC_SUBST_FILE([RCX86])
 AC_SUBST_FILE([RCALPHA])
 AC_SUBST_FILE([RCMAC])
+RCMUTC=setup/sac2crc.backend.mutc
+RCCUDA=setup/sac2crc.backend.cuda
+RCCC=setup/sac2crc.modifiers.cc
+RCMALLOC=setup/sac2crc.modifiers.malloc
+RCRCM=setup/sac2crc.modifiers.rcm
 RCSUN=setup/sac2crc.SUN
 RCX86=setup/sac2crc.X86
 RCALPHA=setup/sac2crc.ALPHA

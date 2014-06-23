@@ -436,6 +436,11 @@ OPT_g            :=  "XXXXX"
 LDPATH           :=  "XXXXX"
 LINK_MOD         :=  "XXXXX"
 
+/*******************************************************************************
+ *
+ * Targets that define basic targets:
+ *
+ */
 target default_sbi:
 
 TARGET_ENV       :=  "host"
@@ -462,141 +467,13 @@ OPT_g            :=  "@OPT_g@"
 
 LINK_MOD         :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %target%"
 
-target static_link:
 
-SBI              +=  "-static"
-MODEXT           :=  ".a"
-LINK_MOD         :=  "rm -f %target% && ar cru %target% %objects% && @RANLIB@ %target%"
-
-
-target seq :: default_sbi:
-
-target mt :: default_sbi:
+target default_mt:: default_sbi:
+SBI              := "mt"
 MT_MODE          :=  1
 USE_PHM_API      :=  @CAN_USE_PHM@
 
-target mt_pth :: mt:
-LIBS             +=  " @CCMT_PTH_CFLAGS@ @CCMT_PTH_LINK@"
-CFLAGS           +=  " @CCMT_PTH_CFLAGS@"
-SBI              :=  "mt-pth"
-MT_LIB           :=  "pthread"
 
-target mt_pth_rt :: mt_pth:
-SBI              +=  "-rtspec"
-RTSPEC           :=  1
-
-target mt_lpel :: mt:
-SBI              :=  "mt-lpel"
-MT_LIB           :=  "lpel"
-CFLAGS           +=  " @MT_CFLAGS_LPEL@"
-LIBS             :=  " @MT_LDFLAGS_LPEL@ @CCMT_PTH_LINK@"
-RC_METHOD        :=  "local_pasync_norc_desc"
-
-
-/*****************************************************************************
- * reference counting method targets
- */
-target rcm_local:
-RC_METHOD        := "local"
-SBI              += "-rcm-local"
-
-target rcm_norc:
-RC_METHOD        := "norc"
-SBI              += "-rcm-norc"
-
-target rcm_async:
-RC_METHOD        := "async"
-SBI              += "-rcm-async"
-
-target rcm_local_norc_desc:
-RC_METHOD        := "local_norc_desc"
-SBI              += "-rcm-local-norc-desc"
-
-target rcm_local_norc_ptr:
-RC_METHOD        := "local_norc_ptr"
-SBI              += "-rcm-local-norc-ptr"
-
-target rcm_async_norc_copy_desc:
-RC_METHOD        := "async_norc_copy_desc"
-SBI              += "-rcm-async-norc-copy-desc"
-
-target rcm_async_norc_two_descs:
-RC_METHOD        := "async_norc_two_descs"
-SBI              += "-rcm-async-norc-two-descs"
-
-target rcm_async_norc_ptr:
-RC_METHOD        := "async_norc_ptr"
-SBI              += "-rcm-async-norc-ptr"
-
-target rcm_local_pasync_norc_desc:
-RC_METHOD        := "local_pasync_norc_desc"
-SBI              += "-rcm-local-pasync-norc-desc"
-
-target rcm_local_async_norc_ptr:
-RC_METHOD        := "local_async_norc_ptr"
-SBI              += "-rcm-local-async-norc-ptr"
-
-target rcm_local_pasync:
-RC_METHOD        := "local_pasync"
-SBI              += "-rcm-local-pasync"
-
-
-/*****************************************************************************
- * sl targets
- */
-target sl:
-
-BACKEND          :=  "MUTC"
-RC_METHOD        :=  "local_pasync_norc_desc"
-IMPPATH          :=  "@STDLIB_SOURCES@/modules/structures:"
-                     "@STDLIB_SOURCES@/modules/numerical:"
-                     "@STDLIB_SOURCES@/modules/auxiliary:"
-                     "@STDLIB_SOURCES@/modules/mutc:"
-                     "@STDLIB_SOURCES@/world/mutc:"
-                     "@STDLIB_SOURCES@/world/system:"
-                     "@STDLIB_SOURCES@/classes/random:"
-USE_PHM_API      := 0
-MODEXT           :=  ".a"
-EXEEXT           :=  ""
-
-CC               :=  "@SLC@"
-CFLAGS           :=  "-Wall -Wno-unused"
-LD               :=  "@SLC@"
-LIBS             :=  ""
-LDFLAGS          :=  ""
-LDPATH           :=  "-L%path%"
-OPT_g            :=  ""
-
-OPT_O0           :=  "-O1"
-OPT_O1           :=  "-O1"
-OPT_O2           :=  "-O2"
-OPT_O3           :=  "-O2"
-
-target sl_host :: sl:
-TARGET_ENV       :=  "host"
-SBI              :=  "sl-seqc"
-CFLAGS           +=  " -b seqc"
-LDFLAGS          +=  " -b seqc"
-LINK_MOD         :=  "rm -f %target% && @SLAR@ seqc cr %target% %objects% && @SLRANLIB@ seqc %target%"
-
-
-target sl_mta :: sl:
-TARGET_ENV       :=  "mtalpha-mgsim"
-SBI              :=  "mta"
-CFLAGS           +=  " -b mta"
-LDFLAGS          +=  " -b mta"
-LINK_MOD         :=  "rm -f %target% && @SLAR@ mta cr %target% %objects% && @SLRANLIB@ mta %target%"
-
-/*
- * New ppp that does not use tls
- */
-target sl_mtantls :: sl_mta:
-LIBS             += " -lmalloc_notls"
-
-
-/*****************************************************************************
- * OpenMP targets
- */
 target omp :: default_sbi:
 SBI              := "omp"
 BACKEND          := "omp"
@@ -605,174 +482,75 @@ MT_LIB           := "omp"
 CFLAGS           += " @OPENMP_CFLAGS@"
 LDFLAGS          += " @OPENMP_CFLAGS@"
 
-/*****************************************************************************
- * cuda targets
- */
-target cuda :: default_sbi:
-SBI              += "-cuda"
-BACKEND          :=  "Cuda"
-
-CUDA_ARCH        :=  "@CUDA_ARCH@"
-
-CEXT             :=  ".cu"
-CC               :=  "@NVCC_PATH@"
-CFLAGS           :=  "@CUDA_ARCH@ --maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
-                     "-Xcompiler -fno-builtin -Xcompiler -std=c99 "
-                     " -I$CUTIL "
-LIBS             :=  " @CCDLLINK@ -lcutil_i386 -lcudart -lcublas"
-EXTLIBPATH       +=  "$CUTIL_LIB:"
-
-target cuda_fixed :: cuda:
-CFLAGS           :=  "--maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
-                     "-Xcompiler -fno-builtin -Xcompiler -std=c99"
-
-target cuda64 :: cuda:
-LIBS             :=  " @CCDLLINK@ -lcutil_x86_64 -lcudart -lcublas"
-
-target cudahybrid :: cuda:
-BACKEND          :=  "CudaHybrid"
-MT_MODE          :=  2
-
-target cudahybrid64 :: cuda64:
-BACKEND          :=  "CudaHybrid"
-
-/*******************************************************************************
- *  TARGETS  for Alternate Compilers:
- */
 
 /*******************************************************************************
  *
- * Target suncc: use the Sun C compiler instead of gcc
+ * Targets that define target modifiers:
  *
  */
 
-target suncc:
+target add_static_link:
+SBI              +=  "-static"
+MODEXT           :=  ".a"
+LINK_MOD         :=  "rm -f %target% && ar cru %target% %objects% && @RANLIB@ %target%"
 
-CC             :=  "cc"
-CFLAGS         :=  "-KPIC -dalign -xsafe=mem"
-LDFLAGS        :=  "-lpthread -mt"
+target add_pth:
+LIBS             +=  " @CCMT_PTH_CFLAGS@ @CCMT_PTH_LINK@"
+CFLAGS           +=  " @CCMT_PTH_CFLAGS@"
+SBI              +=  "-pth"
+MT_LIB           :=  "pthread"
 
-OPT_O0         :=  ""
-OPT_O1         :=  "-xO2"
-OPT_O2         :=  "-xO4"
-OPT_O3         :=  "-fast"
+target add_lpel:
+SBI              +=  "-lpel"
+MT_LIB           :=  "lpel"
+CFLAGS           +=  " @MT_CFLAGS_LPEL@"
+LIBS             :=  " @MT_LDFLAGS_LPEL@ @CCMT_PTH_LINK@"
+RC_METHOD        :=  "local_pasync_norc_desc"
 
+
+target add_rt:
+SBI              +=  "-rtspec"
+RTSPEC           :=  1
 
 /*******************************************************************************
  *
- * Target intelcc: use the Intel C compiler instead of gcc
+ * Targets that combine basic targets with target modifiers:
  *
  */
+target seq :: default_sbi:
 
-target intelcc:
+target mt_pth :: default_mt :: add_pth:
 
-CC             := "icc"
-CFLAGS         := " @GENPIC@ -shared-intel -xsse4.2"
+target mt_pth_rt :: mt_pth :: add_rt:
 
-target intelcc_sse2 :: intelcc:
+target mt_lpel :: default_mt :: add_lpel:
 
-CFLAGS         += " -msse2"
-
-target intelcc_fast :: intelcc:
-
-CFLAGS         += " -fast"
-
-
-
-/*******************************************************************************
- *
- * Target clang: use the LLVM CLang compiler instead of gcc
- *
- */
-
-target clang:
-CC             := "clang"
-OPT_O2         :=  "-O4"
-OPT_O3         :=  "-O3"
-
-
-/*******************************************************************************
- *
- * Target opencc: use the Open64 C compiler instead of gcc
- *
- */
-
-target opencc:
-CC             := "opencc"
-OPT_O3         := "-O3"
-
-
-/*******************************************************************************
- *
- * Target milepost: use the Milepost Gcc C compiler instead of gcc
- *
- */
-
-target milepost:
-CC             := "milepost-gcc"
-OPT_O3         := "-O3"
 
 
 /*******************************************************************************
  *******************************************************************************
  *******************************************************************************
  ***
- ***  TARGETS  for Alternate Memory Allocators:
+ *** targets that provide:
+ ***   - the mutc backend
+ ***   - the cuda backends
+ ***   - alternative C compilers
+ ***   - alternative allocators
+ ***   - alternative reference counting strategies
  ***
  ***/
 
- /*******************************************************************************
- *
- * Target hoard: use the Hoard memory allocator instead of regular malloc
- *
- * NOTE: This requires the proper installation of the Hoard memory allocator!
- */
-
-target hoard:
-
-LIBS        +=  "-lhoard -lpthread -lthread -lrt"
-
-
-/*******************************************************************************
- *
- * Target ptmalloc: use the ptmalloc implementation instead of regular malloc
- *
- * NOTE: This requires the proper installation of the PTmalloc memory allocator!
- */
-
-target ptmalloc:
-
-LIBS        +=  " -lptmalloc"
-
-
-/*******************************************************************************
- *
- * Target mtmalloc: use the Sun mtmalloc library instead of regular malloc
- *
- */
-
-target mtmalloc:
-
-LIBS       +=  " -lmtmalloc"
-
-
-/*******************************************************************************
- *
- * Target gnumalloc: use the GNU glibc library instead of Solaris libc
- *
- * NOTE: This is mostly intended to test the GNU memory allocator!
- */
-
-target gnumalloc:
-
-LIBS      +=  " -lglib"
-
+@RCMUTC@
+@RCCUDA@
+@RCCC@
+@RCMALLOC@
+@RCRCM@
 
 /*******************************************************************************
  *******************************************************************************
  *******************************************************************************
  ***
- ***  TARGETS  for Individual Architectures / Machines:
+ ***  targets that contain individual machine configs:
  ***
  ***/
 

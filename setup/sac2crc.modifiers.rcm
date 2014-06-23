@@ -1,0 +1,47 @@
+/*****************************************************************************
+ * reference counting method modifier targets
+ */
+target rcm_local:
+RC_METHOD        := "local"
+SBI              += "-rcm-local"
+
+target rcm_norc:
+RC_METHOD        := "norc"
+SBI              += "-rcm-norc"
+
+target rcm_async:
+RC_METHOD        := "async"
+SBI              += "-rcm-async"
+
+target rcm_local_norc_desc:
+RC_METHOD        := "local_norc_desc"
+SBI              += "-rcm-local-norc-desc"
+
+target rcm_local_norc_ptr:
+RC_METHOD        := "local_norc_ptr"
+SBI              += "-rcm-local-norc-ptr"
+
+target rcm_async_norc_copy_desc:
+RC_METHOD        := "async_norc_copy_desc"
+SBI              += "-rcm-async-norc-copy-desc"
+
+target rcm_async_norc_two_descs:
+RC_METHOD        := "async_norc_two_descs"
+SBI              += "-rcm-async-norc-two-descs"
+
+target rcm_async_norc_ptr:
+RC_METHOD        := "async_norc_ptr"
+SBI              += "-rcm-async-norc-ptr"
+
+target rcm_local_pasync_norc_desc:
+RC_METHOD        := "local_pasync_norc_desc"
+SBI              += "-rcm-local-pasync-norc-desc"
+
+target rcm_local_async_norc_ptr:
+RC_METHOD        := "local_async_norc_ptr"
+SBI              += "-rcm-local-async-norc-ptr"
+
+target rcm_local_pasync:
+RC_METHOD        := "local_pasync"
+SBI              += "-rcm-local-pasync"
+

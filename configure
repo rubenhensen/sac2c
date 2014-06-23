@@ -739,7 +739,12 @@ PACKAGE_TARNAME
 PACKAGE_NAME
 PATH_SEPARATOR
 SHELL'
-ac_subst_files='RCSUN
+ac_subst_files='RCMUTC
+RCCUDA
+RCCC
+RCMALLOC
+RCRCM
+RCSUN
 RCX86
 RCALPHA
 RCMAC'
@@ -6490,6 +6495,16 @@ fi
 
 
 
+
+
+
+
+
+RCMUTC=setup/sac2crc.backend.mutc
+RCCUDA=setup/sac2crc.backend.cuda
+RCCC=setup/sac2crc.modifiers.cc
+RCMALLOC=setup/sac2crc.modifiers.malloc
+RCRCM=setup/sac2crc.modifiers.rcm
 RCSUN=setup/sac2crc.SUN
 RCX86=setup/sac2crc.X86
 RCALPHA=setup/sac2crc.ALPHA

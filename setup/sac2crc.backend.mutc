@@ -1,0 +1,61 @@
+/*****************************************************************************
+ * sl targets
+ */
+target sl:
+
+BACKEND          :=  "MUTC"
+RC_METHOD        :=  "local_pasync_norc_desc"
+IMPPATH          :=  "@STDLIB_SOURCES@/modules/structures:"
+                     "@STDLIB_SOURCES@/modules/numerical:"
+                     "@STDLIB_SOURCES@/modules/auxiliary:"
+                     "@STDLIB_SOURCES@/modules/mutc:"
+                     "@STDLIB_SOURCES@/world/mutc:"
+                     "@STDLIB_SOURCES@/world/system:"
+                     "@STDLIB_SOURCES@/classes/random:"
+USE_PHM_API      := 0
+MODEXT           :=  ".a"
+EXEEXT           :=  ""
+
+CC               :=  "@SLC@"
+CFLAGS           :=  "-Wall -Wno-unused"
+LD               :=  "@SLC@"
+LIBS             :=  ""
+LDFLAGS          :=  ""
+LDPATH           :=  "-L%path%"
+OPT_g            :=  ""
+
+OPT_O0           :=  "-O1"
+OPT_O1           :=  "-O1"
+OPT_O2           :=  "-O2"
+OPT_O3           :=  "-O2"
+
+target sl_host :: sl:
+TARGET_ENV       :=  "host"
+SBI              :=  "sl-seqc"
+CFLAGS           +=  " -b seqc"
+LDFLAGS          +=  " -b seqc"
+LINK_MOD         :=  "rm -f %target% && @SLAR@ seqc cr %target% %objects% && @SLRANLIB@ seqc %target%"
+
+
+target sl_mta :: sl:
+TARGET_ENV       :=  "mtalpha-mgsim"
+SBI              :=  "mta"
+CFLAGS           +=  " -b mta"
+LDFLAGS          +=  " -b mta"
+LINK_MOD         :=  "rm -f %target% && @SLAR@ mta cr %target% %objects% && @SLRANLIB@ mta %target%"
+
+/*******************************************************************************
+ *
+ * Targets that define target modifiers:
+ *
+ */
+
+target add_notls:
+LIBS             += " -lmalloc_notls"
+
+/*******************************************************************************
+ *
+ * Targets that combine basic targets with target modifiers:
+ *
+ */
+target sl_mtantls :: sl_mta :: add_notls :
