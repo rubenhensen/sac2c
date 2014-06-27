@@ -241,16 +241,22 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 # Building tools
 #
 
-# FIXME Check this via configure script.
-POLYLIB_SUPPORTED := no
-
-ifneq ("$(POLYLIB_SUPPORTED)", "no")
-POLYINC := /usr/local/include/polylib
-$(PROJECT_ROOT)/bin/polyhedral: cuda/polyhedral.c
-	$(CC) -o $@ -I $(POLYINC) $^ -DLINEAR_VALUE_IS_LONGLONG -lpolylib64
+ifneq ("$(HAVE_LIBPOLYLIB64)", "no")
+$(PROJECT_ROOT)/bin/sacprapolyhedral: cuda/sacprapolyhedral.c
+	@echo POLYLIBINCLUDE is $(POLYLIBINCLUDE) ... LIBS is $(LIBS)
+	$(CC) -o $@ -I $(POLYLIBINCLUDE) $^ -DLINEAR_VALUE_IS_LONGLONG $(LIBS)
 else
-$(PROJECT_ROOT)/bin/polyhedral: cuda/polyhedral.c
-	@echo "Skipping polyhedra compilation is polylib is not supported"
+$(PROJECT_ROOT)/bin/sacprapolyhedral: cuda/sacprapolyhedral.c
+	@echo "Skipping sacprapolyhedral compilation: no polylib supported in this host"
+endif
+
+ifneq ("$(HAVE_LIBPOLYLIB64)", "no")
+$(PROJECT_ROOT)/bin/sacpolylibintersect: cuda/sacpolylibintersect.c
+	@echo build.mkf says POLYLIBINCLUDE is $(POLYLIBINCLUDE) ... LIBS is $(LIBS)
+	$(CC) -o $@ -I $(POLYLIBINCLUDE) $^ -DLINEAR_VALUE_IS_LONGLONG $(LIBS)
+else
+$(PROJECT_ROOT)/bin/sacpolylibintersect: cuda/sacpolylibintersect.c
+	@echo "Skipping sacpolylibintersect compilation: no polylib supported in this host"
 endif
 
 $(PROJECT_ROOT)/bin/comslc: comslc/comslc

@@ -81,6 +81,7 @@ MKDIR_P         = @MKDIR_P@
 INSTALL         = @INSTALL@
 INSTALL_DATA    = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
+POLYLIBINCLUDE  = @POLYLIBINCLUDE@
 
 ################################################################################
 #

@@ -93,8 +93,10 @@ make_%: checks
                fi ; \
           fi
 	@$(ECHO) $($*_long) > .last_style; 
+	@$(ECHO) LIBS= $LIBS ... POLYLIBINCLUDE= $POLYLIBINCLUDE ...
 	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/build.mkf \
                          DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                         LIBS="$(LIBS)" POLYLIBINCLUDE="$(POLYLIBINCLUDE)" \
                          PREFIX_LOCAL="$(PREFIX_LOCAL)" \
                          PREFIX_ROOT="$(PREFIX_ROOT)" \
                          SUBPROJECT="$(SUBPROJECT)" \
