@@ -106,6 +106,7 @@ default devel prod: checks
                         PREFIX_LOCAL="src/libsac2c/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/runtime  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/runtime/"  PREFIX_ROOT="" $@
+	@$(ECHO) default outer level make LIBS is $(LIBS)  POLYLIBINCLUDE is $(POLYLIBINCLUDE)
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
 	$(HIDE) for t in $(BUILD_TARGETS); do \
@@ -184,8 +185,10 @@ runtime: checks
                         PREFIX_LOCAL="src/runtime/"  PREFIX_ROOT="" default
 
 tools: checks
-	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" default
+	echo subproject outer level make LIBS is $(LIBS)  POLYLIBINCLUDE is $(POLYLIBINCLUDE)
+	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)"    \
+			LIBS="$(LIBS)" POLYLIBINCLUDE="$(POLYLIBINCLUDE)" \
+                       PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" default
 
 rtlibs: checks
 	$(HIDE) for t in $(BUILD_TARGETS); do \
