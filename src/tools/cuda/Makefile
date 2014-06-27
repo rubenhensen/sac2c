@@ -1,15 +1,15 @@
-POLYINC = /usr/local/include/polylib
 
-all: polyhedral sacpolylibintersect 
+all: sacprapolyhedral sacpolylibintersect 
 
 clean:
-	rm -f sacpolylibintersect polyhedral
+	rm -f sacpolylibintersect sacprapolyhedral
 
-polyhedral: polyhedral.c
-	gcc -o polyhedral -I $(POLYINC) polyhedral.c -DLINEAR_VALUE_IS_LONGLONG -lpolylib64
+sacprapolyhedral: sacprapolyhedral.c
+	echo $(POLYLIBINCLUDE) is polylibinclude. LIBS is $(LIBS)
+	gcc -o sacprapolyhedral $(POLYLIBINCLUDE) sacprapolyhedral.c -DLINEAR_VALUE_IS_LONGLONG $(LIBS)
 
 deviceQuery:
 	nvcc -o deviceQuery deviceQuery.cpp
 
 sacpolylibintersect: sacpolylibintersect.c
-	gcc -o sacpolylibintersect -I $(POLYINC) sacpolylibintersect.c -DLINEAR_VALUE_IS_LONGLONG -lpolylib64
+	gcc -o sacpolylibintersect $(POLYLIBINCLUDE) sacpolylibintersect.c -DLINEAR_VALUE_IS_LONGLONG $(LIBS)
