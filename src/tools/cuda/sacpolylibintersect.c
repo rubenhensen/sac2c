@@ -1,7 +1,9 @@
-// sac2c polylib solver for polyhedral reuse analysis (-dopra)
-//
-// THIS IS RUBBISH - it is a copy of the dopra code. Trying to
-// get make to work after Mull.
+/*
+ * Read two Polylib polyhedra from stdin,
+ * compute their intersection,
+ * and return 0 if their intersection is NULL; 1 otherwise.
+ *
+ */
 
 #include "arithmetique.h"
 #include "types.h"
@@ -12,34 +14,51 @@
 int
 main ()
 {
-    int AfterMullBroken;
     FILE *file;
-    Matrix *constraints, *write_fas, *read_fas;
-    Polyhedron *constraints_poly, *write_img, *read_img, *intersection;
+    Matrix *Matrix_A;
+    Matrix *Matrix_B;
+    Polyhedron *Poly_A;
+    Polyhedron *Poly_B;
+    Polyhedron *Poly_I;
+    int maxcon = 2000;
+    int z = 1;
 
-    constraints = Matrix_Read ();
-    write_fas = Matrix_Read ();
-    read_fas = Matrix_Read ();
+    Matrix_A = Matrix_Read ();
+    Matrix_B = Matrix_Read ();
 
-    constraints_poly = Constraints2Polyhedron (constraints, 200);
+    Poly_A = Constraints2Polyhedron (Matrix_A, maxcon);
+    Poly_B = Constraints2Polyhedron (Matrix_B, maxcon);
+    // printf("Poly_A is:\n");
+    // Polyhedron_Print( stdout, "%4d", Poly_A);
+    // printf("Poly_B is:\n");
+    // Polyhedron_Print( stdout, "%4d", Poly_B);
 
-    write_img = Polyhedron_Image (constraints_poly, write_fas, 200);
-    read_img = Polyhedron_Image (constraints_poly, read_fas, 200);
+    Poly_I = DomainIntersection (Poly_A, Poly_B, maxcon);
 
-    intersection = DomainIntersection (write_img, read_img, 200);
+    // printf("Poly_I is:\n");
+    // Polyhedron_Print( stdout, "%4d", Poly_I);
 
-    // Polyhedron_Print( stdout, "%4d", intersection);
-
-    if (intersection->NbRays == 0) {
-        printf ("0\n");
+    // printf("#rays=%d\n",  Poly_I->NbRays);
+    if (Poly_I->NbRays == 0) { // Empty array joke.
+        z = 0;                 // If no constraints, the polyhedra match
+                               // printf("no rays\n");
     } else {
-        if (PolyhedronIncludes (write_img, read_img)
-            && PolyhedronIncludes (read_img, write_img)) {
-            printf ("0\n");
+        if (PolyhedronIncludes (Poly_A, Poly_B) && PolyhedronIncludes (Poly_B, Poly_A)) {
+            //   printf("polyhedra match\n");
+            z = 0;
         } else {
-            printf ("1\n");
+            //  printf("polyhedral do not match\n");
+            z = 1;
         }
     }
 
-    return (0);
+    Matrix_Free (Matrix_A);
+    Matrix_Free (Matrix_B);
+    Domain_Free (Poly_A);
+    Domain_Free (Poly_B);
+    Domain_Free (Poly_I);
+
+    printf ("%d\n", z);
+
+    return (z);
 }
