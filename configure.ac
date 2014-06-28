@@ -109,6 +109,14 @@ AC_CHECK_HEADER([dlfcn.h], [], [AC_MSG_ERROR([dlfcn.h is required.])])
 AC_SEARCH_LIBS([dlopen], [dl])
 CHECK_DLL_EXT
 
+dnl check support for polylib
+AC_CHECK_HEADERS([polyhedron.h])
+AC_CHECK_LIB(polylib32,DomainIntersection)
+AC_CHECK_LIB(polylib64,DomainIntersection)
+
+dnl try to look for polyhedral include files
+AC_SUBST(POLYLIBINCLUDE,["$POLYLIBINCLUDE -I/usr/include/polylib -I/usr/local/include/polylib "])
+
 dnl canonicalize dlopen_libs
 case $ac_cv_search_dlopen in
   no | none*) dlopen_libs= ;;
