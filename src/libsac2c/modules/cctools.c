@@ -387,7 +387,8 @@ CCTperformTask (ccm_task_t task)
             char *path_subst;
 
             if (global.filetype == FT_cmod) {
-                path_subst = STRonNull (".", global.lib_dirname);
+                path_subst
+                  = NULL == global.lib_dirname ? STRcpy (".") : global.lib_dirname;
             } else {
                 str_buf *path_buf = SBUFcreate (1);
                 SBUFprintf (path_buf, "%s/%s/%s", global.target_modlibdir,
