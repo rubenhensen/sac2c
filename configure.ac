@@ -359,5 +359,5 @@ cat <<EOF
 * Configuration done.
 *
 * Detected OS string:      $target_os
-*
+* $HAVE_POLYLIB64
 EOF

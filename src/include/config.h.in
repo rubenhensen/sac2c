@@ -20,6 +20,12 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `polylib32' library (-lpolylib32). */
+#undef HAVE_LIBPOLYLIB32
+
+/* Define to 1 if you have the `polylib64' library (-lpolylib64). */
+#undef HAVE_LIBPOLYLIB64
+
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
@@ -31,6 +37,9 @@
 
 /* Define if OpenMP is enabled */
 #undef HAVE_OPENMP
+
+/* Define to 1 if you have the <polyhedron.h> header file. */
+#undef HAVE_POLYHEDRON_H
 
 /* Define if you have POSIX threads libraries and header files. */
 #undef HAVE_PTHREAD

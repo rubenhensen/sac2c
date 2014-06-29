@@ -646,6 +646,7 @@ OPT_O3
 OPT_O2
 OPT_O1
 OPT_O0
+POLYLIBINCLUDE
 SHARED_LIB_EXT
 DOT
 BASH
@@ -6029,6 +6030,112 @@ _ACEOF
 $as_echo "$dll_ext" >&6; }
 
 
+for ac_header in polyhedron.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "polyhedron.h" "ac_cv_header_polyhedron_h" "$ac_includes_default"
+if test "x$ac_cv_header_polyhedron_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_POLYHEDRON_H 1
+_ACEOF
+
+fi
+
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for DomainIntersection in -lpolylib32" >&5
+$as_echo_n "checking for DomainIntersection in -lpolylib32... " >&6; }
+if ${ac_cv_lib_polylib32_DomainIntersection+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpolylib32  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char DomainIntersection ();
+int
+main ()
+{
+return DomainIntersection ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_polylib32_DomainIntersection=yes
+else
+  ac_cv_lib_polylib32_DomainIntersection=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_polylib32_DomainIntersection" >&5
+$as_echo "$ac_cv_lib_polylib32_DomainIntersection" >&6; }
+if test "x$ac_cv_lib_polylib32_DomainIntersection" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPOLYLIB32 1
+_ACEOF
+
+  LIBS="-lpolylib32 $LIBS"
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for DomainIntersection in -lpolylib64" >&5
+$as_echo_n "checking for DomainIntersection in -lpolylib64... " >&6; }
+if ${ac_cv_lib_polylib64_DomainIntersection+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpolylib64  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char DomainIntersection ();
+int
+main ()
+{
+return DomainIntersection ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_polylib64_DomainIntersection=yes
+else
+  ac_cv_lib_polylib64_DomainIntersection=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_polylib64_DomainIntersection" >&5
+$as_echo "$ac_cv_lib_polylib64_DomainIntersection" >&6; }
+if test "x$ac_cv_lib_polylib64_DomainIntersection" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPOLYLIB64 1
+_ACEOF
+
+  LIBS="-lpolylib64 $LIBS"
+
+fi
+
+
+POLYLIBINCLUDE="$POLYLIBINCLUDE -I/usr/include/polylib -I/usr/local/include/polylib "
+
+
 case $ac_cv_search_dlopen in
   no | none*) dlopen_libs= ;;
   * ) dlopen_libs=$ac_cv_search_dlopen ;;
@@ -7937,5 +8044,5 @@ cat <<EOF
 * Configuration done.
 *
 * Detected OS string:      $target_os
-*
+* $HAVE_POLYLIB64
 EOF

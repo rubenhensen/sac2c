@@ -241,6 +241,7 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 # Building tools
 #
 
+HAVE_LIBPOLYLIB64 := no
 ifneq ("$(HAVE_LIBPOLYLIB64)", "no")
 $(PROJECT_ROOT)/bin/sacprapolyhedral: cuda/sacprapolyhedral.c
 	@echo POLYLIBINCLUDE is $(POLYLIBINCLUDE) ... LIBS is $(LIBS)
