@@ -22,7 +22,7 @@ function getargs
  getargs $args
 
 rm -f a.out a.out.c
-sac2c -v0 -O3 $1  &> /dev/null
+sac2c -v0 -target seq -O3 $1  &> /dev/null
 z=$?
 
 if [ $grepstr -ne $z ]; then 

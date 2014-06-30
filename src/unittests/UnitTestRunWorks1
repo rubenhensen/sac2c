@@ -10,8 +10,8 @@ logfile="logWorks"$( sac2c-p -V | grep rev | cut -f 4 -d\ )
 echo $( sac2c-p -V) >> $logfile
 echo $( date)       >> $logfile
 
-echo Starting Worktest: sac2c -v0 -O3 $1 -o $1.exe $optson  >> $logfile
-sac2c -v0 -O3 $1 -o $1.exe $optson   | tee -a $logfile
+echo Starting Worktest: sac2c -v0 -target seq -O3 $1 -o $1.exe $optson  >> $logfile
+sac2c -v0 -target seq -O3 $1 -o $1.exe $optson   | tee -a $logfile
 	./$1.exe                     >>       $logfile
 	z=$?
 	if [ 0 -eq $z ]; then 

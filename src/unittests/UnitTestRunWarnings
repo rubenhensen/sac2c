@@ -7,7 +7,7 @@
 for i in norun*.sac; do
 	rm -f a.out a.out.c
         echo Warntest: $i started;
-	sac2c -v3 -O3 -ecc -check c $i 2>&1 | grep WARNING >/dev/null
+	sac2c -v3 -target seq -O3 -ecc -check c $i 2>&1 | grep WARNING >/dev/null
 	z=$?
         if [ 0 -eq $z ]; then 
 	echo Warntest: $i OK; 

@@ -70,13 +70,13 @@ echo $( sac2c-p -V) >> $logfile
 echo $( date)       >> $logfile
 
  # Test with opts disabled
- echo sac2c $1 -v0 $bopt $optsoff $s1 $s2 $s3 $s4 $s5 $s6  >> $logfile
-      sac2c $1 -v0 $bopt $optsoff $s1 $s2 $s3 $s4 $s5 $s6 > grepn.$1.out
+ echo sac2c $1 -target seq -v0 $bopt $optsoff $s1 $s2 $s3 $s4 $s5 $s6  >> $logfile
+      sac2c $1 -target seq -v0 $bopt $optsoff $s1 $s2 $s3 $s4 $s5 $s6 > grepn.$1.out
  cat grepn.$1.out | $filterop | UnitTestRunCounts $1 "$optsoff" $grepstr $noopt    | tee -a $logfile
  cat grepn.$1.out | $filterop > grepn
  # Test with opts enabled
- echo sac2c $1 -v0 $bopt $optson  $s1 $s2 $s3 $s4 $s5 $s6 >> $logfile
-      sac2c $1 -v0 $bopt $optson  $s1 $s2 $s3 $s4 $s5 $s6 > grepd.$1.out
+ echo sac2c $1 -target seq -v0 $bopt $optson  $s1 $s2 $s3 $s4 $s5 $s6 >> $logfile
+      sac2c $1 -target seq -v0 $bopt $optson  $s1 $s2 $s3 $s4 $s5 $s6 > grepd.$1.out
  cat grepd.$1.out | $filterop | UnitTestRunCounts $1 "$optson" $grepstr $doopt     | tee -a $logfile
  cat grepd.$1.out | $filterop > grepd
  # This test leaves grepn.$1 and grepd.$1 around for possible later
