@@ -59,8 +59,6 @@
 
 #define NT_STR(var_NT) TO_STR (NT_NAME (var_NT))
 
-#ifndef SAC_SIMD_COMPILATION
-
 /*
  * implementation type for hidden objects
  */
@@ -93,8 +91,6 @@ typedef intptr_t *SAC_array_descriptor_parent_t;
  * array
  */
 typedef intptr_t *SAC_array_descriptor_t;
-
-#endif /* SAC_SIMD_COMPILATION */
 
 #define SAC_RC_T_MODE(rc) (rc)
 

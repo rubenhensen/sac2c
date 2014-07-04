@@ -125,7 +125,6 @@ extern node *PRTpropagate (node *arg_node, info *arg_info);
 extern node *PRTwith2 (node *arg_node, info *arg_info);
 extern node *PRTwlseg (node *arg_node, info *arg_info);
 extern node *PRTwlxblock (node *arg_node, info *arg_info);
-extern node *PRTwlsimd (node *arg_node, info *arg_info);
 extern node *PRTwlstride (node *arg_node, info *arg_info);
 extern node *PRTwlgrid (node *arg_node, info *arg_info);
 extern node *PRTwlublock (node *arg_node, info *arg_info);

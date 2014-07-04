@@ -904,8 +904,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("sigspec");
 
-    ARGS_FLAG ("simd", global.simd = TRUE);
-
     ARGS_OPTION_BEGIN ("specmode")
     {
         ARG_CHOICE_BEGIN ();

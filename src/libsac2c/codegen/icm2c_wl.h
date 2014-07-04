@@ -44,8 +44,4 @@ extern void ICMCompileWL_SET_OFFSET (char *off_NT, int dim, int first_block_dim,
                                      char *to_NT, int to_sdim, char *idx_vec_NT, int dims,
                                      char **idxa_scl_NT);
 
-extern void ICMCompileWL_SIMD_BEGIN (int cnt);
-
-extern void ICMCompileWL_SIMD_END (int cnt);
-
 #endif /* _SAC_ICM2C_WL_H_ */

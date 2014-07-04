@@ -293,31 +293,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-static void
-PrintSimdBegin (void)
-{
-    DBUG_ENTER ();
-
-    INDENT;
-    fprintf (global.outfile, "( /* SIMD-Block begin */\n");
-    global.indent++;
-
-    DBUG_RETURN ();
-}
-
-static void
-PrintSimdEnd (void)
-{
-    DBUG_ENTER ();
-
-    fprintf (global.outfile, "\n");
-    global.indent--;
-    INDENT;
-    fprintf (global.outfile, ") /* SIMD-Block end */\n");
-
-    DBUG_RETURN ();
-}
-
 /******************************************************************************
  *
  * Function:
@@ -4877,10 +4852,6 @@ PRTcode (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (CODE_USED (arg_node) >= 0, "illegal CODE_USED value!");
 
-    if (CODE_ISSIMDSUITABLE (arg_node)) {
-        PrintSimdBegin ();
-    }
-
     /* print the code section; the body first */
     TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
@@ -4890,10 +4861,6 @@ PRTcode (node *arg_node, info *arg_info)
     }
 
     fprintf (global.outfile, " ; ");
-
-    if (CODE_ISSIMDSUITABLE (arg_node)) {
-        PrintSimdEnd ();
-    }
 
     if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
         && CODE_IRA_INFO (arg_node) != NULL) {
@@ -5583,30 +5550,6 @@ PRTwlublock (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRTwlsimd( node *arg_node, info *arg_info)
- *
- * description:
- *   prints N_wlsimd node
- *
- ******************************************************************************/
-
-node *
-PRTwlsimd (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    PrintSimdBegin ();
-
-    TRAVcont (arg_node, arg_info);
-
-    PrintSimdEnd ();
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *PRTwlstride( node *arg_node, info *arg_info)
  *
  * description:
@@ -5624,10 +5567,6 @@ PRTwlstride (node *arg_node, info *arg_info)
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
-
-    if (WLSTRIDE_ISSIMDSUITABLE (arg_node)) {
-        PrintSimdBegin ();
     }
 
     INDENT;
@@ -5649,10 +5588,6 @@ PRTwlstride (node *arg_node, info *arg_info)
         global.indent++;
         TRAVopt (WLSTRIDE_CONTENTS (arg_node), arg_info);
         global.indent--;
-    }
-
-    if (WLSTRIDE_ISSIMDSUITABLE (arg_node)) {
-        PrintSimdEnd ();
     }
 
     if (WLSTRIDE_NEXT (arg_node) != NULL) {

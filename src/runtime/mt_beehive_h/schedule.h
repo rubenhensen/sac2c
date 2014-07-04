@@ -15,8 +15,6 @@
 #ifndef _SAC_SCHEDULE_H_
 #define _SAC_SCHEDULE_H_
 
-#ifndef SAC_SIMD_COMPILATION
-
 /*****************************************************************************/
 
 #if SAC_DO_MULTITHREAD
@@ -401,7 +399,5 @@
 #endif /* SAC_DO_MT_PTHREAD || SAC_DO_MT_LPEL || SAC_DO_MT_BEEHIVE */
 
 #endif /* SAC_DO_MULTITHREAD */
-
-#endif /* SAC_SIMD_COMPILATION */
 
 #endif /* _SAC_SCHEDULE_H_ */

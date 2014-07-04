@@ -18,8 +18,6 @@
 #define SAC_C_EXTERN extern
 #endif /* SAC_C_EXTERN */
 
-#ifndef SAC_SIMD_COMPILATION
-
 /*****************************************************************************/
 
 #define SAC_MT_INVALID_GLOBAL_ID 0xdeadbeef
@@ -189,7 +187,5 @@ SAC_C_EXTERN unsigned int SAC_RTSPEC_controller_threads;
 /*****************************************************************************/
 
 #endif /* SAC_DO_MULTITHREAD */
-
-#endif /* SAC_SIMD_COMPILATION */
 
 #endif /* _SAC_MT_H_ */

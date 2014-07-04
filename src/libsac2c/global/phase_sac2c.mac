@@ -1113,8 +1113,6 @@ PHASE (mem, "Introducing memory management instructions", !global.on_demand_lib)
 SUBPHASE (ufiv, "Unshare index vectors in WL-folds", UFIVdoUnshareFoldIV,
           (global.backend == BE_c99), mem)
 
-SUBPHASE (simd, "SIMD inference", SIMDdoInferSIMD, global.simd, mem)
-
 SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.docp, mem)
 
 SUBPHASE (cnstass, "CUDA Flatten generators", CNSTASSdoCUDAconstantAssignment,

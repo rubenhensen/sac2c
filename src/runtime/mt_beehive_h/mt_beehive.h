@@ -14,7 +14,6 @@
 #ifndef _SAC_BEEHIVE_H_
 #define _SAC_BEEHIVE_H_
 
-#ifndef SAC_SIMD_COMPILATION
 /* NOTE: SAC_DO_MT_BEEHIVE is defined only when including from mt_beehive.c */
 #if SAC_DO_MULTITHREAD && (SAC_DO_MT_BEEHIVE || SAC_DO_MT_PTHREAD || SAC_DO_MT_LPEL)
 
@@ -649,5 +648,4 @@ SAC_C_EXTERN struct sac_bee_common_t *SAC_MT_CurrentBee (void);
 
 #endif /* SAC_DO_MULTITHREAD && (SAC_DO_MT_BEEHIVE || SAC_DO_MT_PTHREAD ||               \
           SAC_DO_MT_LPEL) */
-#endif /* ndef SAC_SIMD_COMPILATION */
 #endif /* ndef _SAC_BEEHIVE_H_ */

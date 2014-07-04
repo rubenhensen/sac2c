@@ -15,7 +15,6 @@
 #ifndef _SAC_MT_PTH_H_
 #define _SAC_MT_PTH_H_
 
-#ifndef SAC_SIMD_COMPILATION
 #if SAC_DO_MULTITHREAD && SAC_DO_MT_PTHREAD
 
 /*****************************************************************************/
@@ -310,7 +309,5 @@ SAC_C_EXTERN unsigned int SAC_Get_CurrentBee_GlobalID (void);
 SAC_C_EXTERN unsigned int SAC_MT_Internal_CurrentThreadId (void);
 
 #endif /* SAC_DO_MULTITHREAD && SAC_DO_MULTITHREAD && SAC_DO_MT_PTHREAD */
-
-#endif /* SAC_SIMD_COMPILATION */
 
 #endif /* _SAC_MT_PTH_H_ */

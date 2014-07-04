@@ -932,19 +932,6 @@ ICM_END( WL_SET_OFFSET, (off_NT, dim, first_block_dim, to_NT, to_sdim,
                          idx_vec_NT, dims, idxs_scl_NT))
 #endif
 
-#if defined(WL_SIMD_BEGIN) || defined(ICM_ALL)
-ICM_DEF( WL_SIMD_BEGIN, ICM_TRACE_NONE)
-  ICM_INT( cnt)
-ICM_END( WL_SIMD_BEGIN, ( cnt))
-#endif
-
-#if defined(WL_SIMD_END) || defined(ICM_ALL)
-ICM_DEF( WL_SIMD_END, ICM_TRACE_NONE)
-  ICM_INT( cnt)
-ICM_END( WL_SIMD_END, ( cnt))
-#endif
-
-
 
 /*
  * ICMs for compilation of multi-threaded applications

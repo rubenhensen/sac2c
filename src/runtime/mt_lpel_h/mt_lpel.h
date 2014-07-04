@@ -15,7 +15,6 @@
 #ifndef _SAC_LPEL_H_
 #define _SAC_LPEL_H_
 
-#ifndef SAC_SIMD_COMPILATION
 /* NOTE: SAC_DO_MT_BEEHIVE is defined only when including from mt_beehive.c */
 #if SAC_DO_MULTITHREAD && SAC_DO_MT_LPEL
 
@@ -274,5 +273,4 @@ SAC_C_EXTERN void SAC_MT_LPEL_TR_SetupAndRunStandalone (SAC_main_fun_t main_fn,
 SAC_C_EXTERN unsigned int SAC_Get_CurrentBee_GlobalID (void);
 
 #endif /* SAC_DO_MULTITHREAD && SAC_DO_MT_LPEL */
-#endif /* ndef SAC_SIMD_COMPILATION */
 #endif /* ndef _SAC_LPEL_H_ */

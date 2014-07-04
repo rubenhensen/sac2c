@@ -2890,24 +2890,6 @@ DUPwlublock (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
-DUPwlsimd (node *arg_node, info *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ();
-
-    new_node = TBmakeWlsimd (DUPCONT (WLSIMD_BODY (arg_node)));
-
-    CopyCommonNodeData (new_node, arg_node);
-
-    WLSIMD_FLAGSTRUCTURE (new_node) = WLSIMD_FLAGSTRUCTURE (arg_node);
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
 DUPwlstride (node *arg_node, info *arg_info)
 {
     node *new_node;

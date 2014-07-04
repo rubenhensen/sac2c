@@ -321,15 +321,6 @@ GLOBAL (bool, elf, FALSE, xfree_dummy, )
  */
 
 /*
- * SIMD options
- */
-
-GLOBAL (bool, simd, FALSE, xfree_dummy, )
-/*
- * SIMD code generation disabled per default
- */
-
-/*
  * Multi-thread options
  */
 

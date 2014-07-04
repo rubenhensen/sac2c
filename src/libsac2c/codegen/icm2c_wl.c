@@ -16,11 +16,6 @@
 #include "memory.h"
 #include "ctinfo.h"
 
-static FILE *store_global_outfile;
-static int store_global_indent;
-
-static char *simd_filename;
-
 /******************************************************************************
  *
  * Function:
@@ -814,71 +809,6 @@ ICMCompileWL_SET_OFFSET (char *off_NT, int dim, int first_block_dim, char *to_NT
     }
     out (" * SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT, dims - 1);
     global.indent--;
-
-    DBUG_RETURN ();
-}
-
-void
-ICMCompileWL_SIMD_BEGIN (int cnt)
-{
-    char *tmp_name;
-    FILE *simd_file;
-
-    DBUG_ENTER ();
-
-#define WL_SIMD_BEGIN
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_SIMD_BEGIN
-
-    tmp_name = STRitoa (cnt);
-    simd_filename = STRcatn (4, global.tmp_dirname, "/simd", tmp_name, ".c");
-
-    indout ("#include \"%s\"\n", simd_filename);
-    INDENT;
-
-    simd_file = fopen (simd_filename, "w");
-    if (simd_file == NULL) {
-        CTIabort ("Unable to open file %s", simd_filename);
-    }
-
-    tmp_name = MEMfree (tmp_name);
-
-    store_global_outfile = global.outfile;
-    store_global_indent = global.indent;
-    global.outfile = simd_file;
-    global.indent = 0;
-
-    INDENT;
-#if 0
-  out( "\n#include \"simd.h\"\n");
-#else
-    out ("\n#define SAC_SIMD_COMPILATION\n");
-    out ("#include \"sac.h\"\n");
-#endif
-    DBUG_RETURN ();
-}
-
-void
-ICMCompileWL_SIMD_END (int cnt)
-{
-    DBUG_ENTER ();
-
-    fclose (global.outfile);
-
-    SYScall ("gcc -E -P -I$SAC2CBASE/include %s > %s2",
-             /*     global.config.cpp_file,   */
-             simd_filename, simd_filename);
-    SYScall ("$SAC2CBASE/src/bin/cb -r %s2 >%s", simd_filename, simd_filename);
-
-    simd_filename = MEMfree (simd_filename);
-    global.outfile = store_global_outfile;
-    global.indent = store_global_indent;
-
-#define WL_SIMD_END
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_SIMD_END
 
     DBUG_RETURN ();
 }

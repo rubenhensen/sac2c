@@ -15,8 +15,6 @@
 #ifndef _SAC_MT_OMP_H_
 #define _SAC_MT_OMP_H_
 
-#ifndef SAC_SIMD_COMPILATION
-
 /*****************************************************************************/
 
 #if SAC_DO_MULTITHREAD
@@ -47,7 +45,5 @@ SAC_C_EXTERN void SAC_OMP_SetupInitial (int argc, char *argv[], unsigned int num
 /*****************************************************************************/
 
 #endif /* SAC_DO_MULTITHREAD */
-
-#endif /* SAC_SIMD_COMPILATION */
 
 #endif /* _SAC_MT_OMP_H_ */
