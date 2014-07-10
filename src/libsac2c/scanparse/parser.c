@@ -4278,6 +4278,7 @@ handle_argument (struct parser *parser)
                    "token %s cannot start a function "
                    "argument name",
                    token_as_string (tok));
+        goto error;
     }
 
     /* FIXME this is not relevant anymore, but let's keep it in the code for
