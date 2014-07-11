@@ -908,18 +908,9 @@ lexer_read_number (struct lexer *lex, char **buf, size_t *size, char c)
                 goto return_unknown;
             }
         } else if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
-            /* It could be a hex digit or 'e' prefix of real number.  */
-            if (c == 'e' || c == 'E') {
-                int c1 = lexer_getch (lex);
-                lexer_ungetch (lex, c1);
-                if (c1 == '+' || c1 == '-') {
-                    c = 'E';
-                    buffer_add_char (buf, &index, size, c);
-                    goto read_postfix;
-                }
-            } else if (!ishex)
-                /* It could ne one of the prefixes or end of number.  */
-                break;
+            /* This might be a postfix or an exponent.  */
+            if (!ishex)
+                goto read_postfix;
         } else if (c == '.') {
             if (saw_dot) {
                 error_loc (lex->loc, "more than one dot in the number");
@@ -942,8 +933,10 @@ read_postfix:
         saw_exp = true;
         isreal = true;
 
-        c = lexer_getch (lex);
+        /* Add exponent to the buffer.  */
+        buffer_add_char (buf, &index, size, c);
 
+        c = lexer_getch (lex);
         if (c == '+' || c == '-')
             buffer_add_char (buf, &index, size, c);
         else {
