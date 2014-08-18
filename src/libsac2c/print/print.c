@@ -4926,7 +4926,7 @@ PRTpart (node *arg_node, info *arg_info)
     TRAVdo (PART_CODE (arg_node), arg_info);
 
     if (PART_NEXT (arg_node) != NULL) {
-        fprintf (global.outfile, ",\n");
+        fprintf (global.outfile, "\n");
         /*
          * continue with other parts
          */
