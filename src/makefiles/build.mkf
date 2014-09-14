@@ -241,23 +241,23 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 # Building tools
 #
 
-HAVE_LIBPOLYLIB64 := no
-ifneq ("$(HAVE_LIBPOLYLIB64)", "no")
+HAVE_LIBPOLYLIB64 := yes
+ifeq ("$(HAVE_LIBPOLYLIB64)", "yes")
 $(PROJECT_ROOT)/bin/sacprapolyhedral: cuda/sacprapolyhedral.c
-	@echo POLYLIBINCLUDE is $(POLYLIBINCLUDE) ... LIBS is $(LIBS)
 	$(CC) -o $@ -I $(POLYLIBINCLUDE) $^ -DLINEAR_VALUE_IS_LONGLONG $(LIBS)
 else
 $(PROJECT_ROOT)/bin/sacprapolyhedral: cuda/sacprapolyhedral.c
-	@echo "Skipping sacprapolyhedral compilation: no polylib supported in this host"
+	@echo $(HAVE_LIBPOLYLIB64)
+	@echo " $(HAVE_LIBPOLYLIB64) "
+	@echo "Skipping sacprapolyhedral compilation: no polylib support in this host"
 endif
 
-ifneq ("$(HAVE_LIBPOLYLIB64)", "no")
-$(PROJECT_ROOT)/bin/sacpolylibintersect: cuda/sacpolylibintersect.c
-	@echo build.mkf says POLYLIBINCLUDE is $(POLYLIBINCLUDE) ... LIBS is $(LIBS)
+ifeq ("$(HAVE_LIBPOLYLIB64)", "yes")
+$(PROJECT_ROOT)/bin/sacpolylibisnullintersect: cuda/sacpolylibisnullintersect.c
 	$(CC) -o $@ -I $(POLYLIBINCLUDE) $^ -DLINEAR_VALUE_IS_LONGLONG $(LIBS)
 else
-$(PROJECT_ROOT)/bin/sacpolylibintersect: cuda/sacpolylibintersect.c
-	@echo "Skipping sacpolylibintersect compilation: no polylib supported in this host"
+$(PROJECT_ROOT)/bin/sacpolylibisnullintersect: cuda/sacpolylibisnullintersect.c
+	@echo "Skipping sacpolylibisnullintersect compilation: no polylib support in this host"
 endif
 
 $(PROJECT_ROOT)/bin/comslc: comslc/comslc
