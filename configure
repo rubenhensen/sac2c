@@ -647,6 +647,9 @@ OPT_O2
 OPT_O1
 OPT_O0
 POLYLIBINCLUDE
+POLYLIB
+LIB_HAVEPOLYLIB64
+POLYLIB_LIBS
 SHARED_LIB_EXT
 DOT
 BASH
@@ -762,6 +765,7 @@ enable_cuda
 enable_sl
 enable_omp
 enable_phm
+with_polylib_prefix
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1412,6 +1416,8 @@ Optional Packages:
   --with-lpel-includes=DIR
                           look up lpel.h in DIR
   --with-lpel-libs=DIR    look up liblpel in DIR
+  --with-polylib-prefix=DIR
+                          Prefix of PolyLib installation
 
 Some influential environment variables:
   CC          C compiler command
@@ -6030,25 +6036,29 @@ _ACEOF
 $as_echo "$dll_ext" >&6; }
 
 
-for ac_header in polyhedron.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "polyhedron.h" "ac_cv_header_polyhedron_h" "$ac_includes_default"
-if test "x$ac_cv_header_polyhedron_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_POLYHEDRON_H 1
-_ACEOF
+polylibs="64 32"
 
+# Check whether --with-polylib_prefix was given.
+if test "${with_polylib_prefix+set}" = set; then :
+  withval=$with_polylib_prefix;
 fi
 
-done
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for DomainIntersection in -lpolylib32" >&5
-$as_echo_n "checking for DomainIntersection in -lpolylib32... " >&6; }
-if ${ac_cv_lib_polylib32_DomainIntersection+:} false; then :
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for location of PolyLib" >&5
+$as_echo_n "checking for location of PolyLib... " >&6; }
+	for BITS in $polylibs; do
+            cl_cv_polylib="polylib$BITS"
+            as_ac_Lib=`$as_echo "ac_cv_lib_$cl_cv_polylib''_PolyhedronTSort" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PolyhedronTSort in -l$cl_cv_polylib" >&5
+$as_echo_n "checking for PolyhedronTSort in -l$cl_cv_polylib... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpolylib32  $LIBS"
+LIBS="-l$cl_cv_polylib  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6058,32 +6068,57 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char DomainIntersection ();
+char PolyhedronTSort ();
 int
 main ()
 {
-return DomainIntersection ();
+return PolyhedronTSort ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_polylib32_DomainIntersection=yes
+  eval "$as_ac_Lib=yes"
 else
-  ac_cv_lib_polylib32_DomainIntersection=no
+  eval "$as_ac_Lib=no"
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_polylib32_DomainIntersection" >&5
-$as_echo "$ac_cv_lib_polylib32_DomainIntersection" >&6; }
-if test "x$ac_cv_lib_polylib32_DomainIntersection" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBPOLYLIB32 1
-_ACEOF
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
 
-  LIBS="-lpolylib32 $LIBS"
+                         LIBS="-l$cl_cv_polylib $LIBS"
+                         { $as_echo "$as_me:${as_lineno-$LINENO}: result: LIBS is now $LIBS" >&5
+$as_echo "LIBS is now $LIBS" >&6; }
+                         break
+
+fi
+
+            cl_cv_polylib=missing
+            LIB_HAVEPOLYLIB64="yes"
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: found polylib64" >&5
+$as_echo "found polylib64" >&6; }
+            POLYLIB="yes"
+
+        done
+
+if test "$cl_cv_polylib" = "missing"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: Can't find PolyLib." >&5
+$as_echo "Can't find PolyLib." >&6; }
+else
+      as_ac_Header=`$as_echo "ac_cv_header_polylib/$cl_cv_polylib.h" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "polylib/$cl_cv_polylib.h" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+
+else
+  as_fn_error $? "Can't find PolyLib headers." "$LINENO" 5
+fi
+
 
 fi
 
@@ -6131,7 +6166,6 @@ _ACEOF
   LIBS="-lpolylib64 $LIBS"
 
 fi
-
 
 POLYLIBINCLUDE="$POLYLIBINCLUDE -I/usr/include/polylib -I/usr/local/include/polylib "
 
@@ -8044,5 +8078,5 @@ cat <<EOF
 * Configuration done.
 *
 * Detected OS string:      $target_os
-* $HAVE_POLYLIB64
+* $HAVE_LIBPOLYLIB64
 EOF

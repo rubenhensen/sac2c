@@ -109,12 +109,37 @@ AC_CHECK_HEADER([dlfcn.h], [], [AC_MSG_ERROR([dlfcn.h is required.])])
 AC_SEARCH_LIBS([dlopen], [dl])
 CHECK_DLL_EXT
 
-dnl check support for polylib
-AC_CHECK_HEADERS([polyhedron.h])
-AC_CHECK_LIB(polylib32,DomainIntersection)
-AC_CHECK_LIB(polylib64,DomainIntersection)
+dnl check support for polylib: --with-polylib=polylib-path
+polylibs="64 32"
+AC_ARG_WITH(polylib_prefix,
+            [AS_HELP_STRING([--with-polylib-prefix=DIR],
+            [Prefix of PolyLib installation])])
 
-dnl try to look for polyhedral include files
+AC_SUBST(POLYLIB_LIBS)
+AC_SUBST(LIB_HAVEPOLYLIB64)
+
+AC_MSG_CHECKING(for location of PolyLib)
+	for BITS in $polylibs; do
+            cl_cv_polylib="polylib$BITS"
+            AC_CHECK_LIB($cl_cv_polylib,PolyhedronTSort,[
+                         LIBS="-l$cl_cv_polylib $LIBS"
+                         AC_MSG_RESULT(LIBS is now $LIBS)
+                         break
+            ])
+            cl_cv_polylib=missing
+            AC_SUBST(LIB_HAVEPOLYLIB64, ["yes"])
+            AC_MSG_RESULT(found polylib64)
+            AC_SUBST(POLYLIB,["yes"])
+        done
+
+if test "$cl_cv_polylib" = "missing"; then
+      AC_MSG_RESULT(Can't find PolyLib.)
+else
+      AC_CHECK_HEADER(polylib/$cl_cv_polylib.h,[],
+                      [AC_MSG_ERROR(Can't find PolyLib headers.)])
+fi
+
+AC_CHECK_LIB(polylib64,DomainIntersection)
 AC_SUBST(POLYLIBINCLUDE,["$POLYLIBINCLUDE -I/usr/include/polylib -I/usr/local/include/polylib "])
 
 dnl canonicalize dlopen_libs
@@ -359,5 +384,5 @@ cat <<EOF
 * Configuration done.
 *
 * Detected OS string:      $target_os
-* $HAVE_POLYLIB64
+* $HAVE_LIBPOLYLIB64
 EOF
