@@ -383,6 +383,7 @@ LocalSkipControl (intptr_t param, node *expr)
 
     if (NODE_TYPE (expr) == N_id) {
         avis = ID_AVIS (expr);
+#define IDONOTUNDERSTANDTHIS
 #ifdef IDONOTUNDERSTANDTHIS
         if ((AVIS_NEEDCOUNT (avis) != 1) || !AVIS_ISDLACTIVE (avis)) {
 #else                    // IDONOTUNDERSTANDTHIS
