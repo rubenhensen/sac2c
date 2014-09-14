@@ -81,7 +81,6 @@ MKDIR_P         = @MKDIR_P@
 INSTALL         = @INSTALL@
 INSTALL_DATA    = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
-POLYLIBINCLUDE  = @POLYLIBINCLUDE@
 
 ################################################################################
 #
@@ -96,5 +95,7 @@ SHELL = @BASH@
 # library setup:
 #
 
-LIBS            := @LIBS@
+LIBS              := @LIBS@
+HAVE_LIBPOLYLIB64 := @HAVE_LIBPOLYLIB64@
+POLYLIBINCLUDE    := @POLYLIBINCLUDE@
 
