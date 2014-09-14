@@ -6,8 +6,8 @@ rm -f $1.exe $1.exe.c
 
 source UnitTestRunGrep1.config
 
-logfile="logWorks"$( sac2c-p -V | grep rev | cut -f 4 -d\ )
-echo $( sac2c-p -V) >> $logfile
+logfile="logWorks"$( sac2c -V | grep rev | cut -f 4 -d\ )
+echo $( sac2c -V) >> $logfile
 echo $( date)       >> $logfile
 
 echo Starting Worktest: sac2c -v0 -target seq -O3 $1 -o $1.exe $optson  >> $logfile

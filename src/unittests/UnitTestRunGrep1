@@ -65,8 +65,8 @@ function getargs
 
 bopt=$breakpoint$bopt
               
-logfile="logGreps"$( sac2c-p -V | grep rev | cut -f 4 -d\ )
-echo $( sac2c-p -V) >> $logfile
+logfile="logGreps"$( sac2c -V | grep rev | cut -f 4 -d\ )
+echo $( sac2c -V) >> $logfile
 echo $( date)       >> $logfile
 
  # Test with opts disabled
