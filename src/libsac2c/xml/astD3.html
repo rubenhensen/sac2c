@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>  
+<script src="ast.js"> </script>
+<script src="renderAST.js"> </script>
+
+
+    <style>
+      
+      .node {
+        cursor: pointer;
+      }
+
+      .node rect {
+        fill: #fff;
+        stroke: steelblue;
+        stroke-width: 3px;
+        z-index: 2;
+      } 
+
+       .node text {
+        font: 10px sans-serif;
+        cursor: pointer;
+        z-index: 1;
+      } 
+
+      .link {
+        z-index: 1;
+       }
+
+      .link path {
+        fill: none;
+        stroke: #ccc;
+        stroke-width: 2px;
+        z-index: 1;
+      } 
+
+      .link text {
+         font: 12px sans-serif;
+        z-index: 1;
+       }
+      
+      .info{
+      } 
+      
+    </style>
+</head>
+<body>
+
+
+<iframe src="ast.html" width="800" height="300" name="frame"></iframe>
+
+  <input type= "button" value="Previous Root" onclick="previousRoot()"></input>
+  <input type= "button" value="Initial Root" onclick="initialRoot()"></input>
+
+<hr>
+<script>
+    
+  var xmlObj;
+  var tree;
+     
+  xmlObj = initXMLObj();
+  tree = generateInitialDataTree(xmlObj, "Module");
+  putGraph( tree);
+    
+</script>
+
+
+</body>
+</html>
+
