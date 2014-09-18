@@ -50,7 +50,6 @@ struct INFO {
  * INFO macros
  */
 
-#define INFO_REMOVE(n) ((n)->remove)
 #define INFO_LEVEL(n) ((n)->level)
 
 /**
@@ -66,7 +65,6 @@ MakeInfo (void)
 
     result = (info *)MEMmalloc (sizeof (info));
 
-    INFO_REMOVE (result) = FALSE;
     INFO_LEVEL (result) = 0;
 
     DBUG_RETURN (result);
@@ -142,40 +140,6 @@ RMPRfundef (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
- * @fn node *RMPRassign( node *arg_node, info *arg_info)
- *
- *  @brief RMPR traversal function for N_assign node
- *
- *  @param arg_node
- *  @param arg_info
- *
- *  @return arg_node
- *
- *****************************************************************************/
-
-node *
-RMPRassign (node *arg_node, info *arg_info)
-{
-    bool remove;
-
-    DBUG_ENTER ();
-
-    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-
-    remove = INFO_REMOVE (arg_info);
-    INFO_REMOVE (arg_info) = FALSE;
-
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-
-    if (remove) {
-        arg_node = FREEdoFreeNode (arg_node);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
  * @fn node *RMPRwith2( node *arg_node, info *arg_info)
  *
  *  @brief RMPR traversal function for N_with2 node
@@ -216,12 +180,21 @@ node *
 RMPRprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
+    node *id = NULL;
 
     if (INFO_LEVEL (arg_info) > 1) {
-        if ((PRF_PRF (arg_node) == F_prop_obj_in)
-            || (PRF_PRF (arg_node) == F_prop_obj_out)) {
-            INFO_REMOVE (arg_info) = TRUE;
+        if (PRF_PRF (arg_node) == F_prop_obj_in) {
+            id = PRF_ARG2 (arg_node);
+            PRF_ARG2 (arg_node) = NULL;
+        } else if (PRF_PRF (arg_node) == F_prop_obj_out) {
+            id = PRF_ARG1 (arg_node);
+            PRF_ARG1 (arg_node) = NULL;
         }
+    }
+
+    if (id != NULL) {
+        arg_node = FREEdoFreeNode (arg_node);
+        arg_node = id;
     }
 
     DBUG_RETURN (arg_node);
