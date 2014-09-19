@@ -50,6 +50,7 @@ struct INFO {
  * INFO macros
  */
 
+#define INFO_REMOVEASSIGN(n) ((n)->remove)
 #define INFO_LEVEL(n) ((n)->level)
 
 /**
@@ -65,6 +66,7 @@ MakeInfo (void)
 
     result = (info *)MEMmalloc (sizeof (info));
 
+    INFO_REMOVEASSIGN (result) = FALSE;
     INFO_LEVEL (result) = 0;
 
     DBUG_RETURN (result);
@@ -140,6 +142,40 @@ RMPRfundef (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
+ * @fn node *RMPRassign( node *arg_node, info *arg_info)
+ *
+ *  @brief RMPR traversal function for N_assign node
+ *
+ *  @param arg_node
+ *  @param arg_info
+ *
+ *  @return arg_node
+ *
+ *****************************************************************************/
+
+node *
+RMPRassign (node *arg_node, info *arg_info)
+{
+    bool remove;
+
+    DBUG_ENTER ();
+
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+
+    remove = INFO_REMOVEASSIGN (arg_info);
+    INFO_REMOVEASSIGN (arg_info) = FALSE;
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    if (remove) {
+        arg_node = FREEdoFreeNode (arg_node);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * @fn node *RMPRwith2( node *arg_node, info *arg_info)
  *
  *  @brief RMPR traversal function for N_with2 node
@@ -184,11 +220,29 @@ RMPRprf (node *arg_node, info *arg_info)
 
     if (INFO_LEVEL (arg_info) > 1) {
         if (PRF_PRF (arg_node) == F_prop_obj_in) {
-            id = PRF_ARG2 (arg_node);
-            PRF_ARG2 (arg_node) = NULL;
+            switch (TCcountExprs (PRF_ARGS (arg_node))) {
+            case 1:
+                INFO_REMOVEASSIGN (arg_info) = TRUE;
+                break;
+            case 2:
+                id = PRF_ARG2 (arg_node);
+                PRF_ARG2 (arg_node) = NULL;
+                break;
+            default:
+                DBUG_UNREACHABLE ("prop_obj_in with other than 1 or 2 args encountered");
+            }
         } else if (PRF_PRF (arg_node) == F_prop_obj_out) {
-            id = PRF_ARG1 (arg_node);
-            PRF_ARG1 (arg_node) = NULL;
+            switch (TCcountExprs (PRF_ARGS (arg_node))) {
+            case 0:
+                INFO_REMOVEASSIGN (arg_info) = TRUE;
+                break;
+            case 1:
+                id = PRF_ARG1 (arg_node);
+                PRF_ARG1 (arg_node) = NULL;
+                break;
+            default:
+                DBUG_UNREACHABLE ("prop_obj_out with more than 1 arg encountered");
+            }
         }
     }
 

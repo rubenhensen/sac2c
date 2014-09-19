@@ -3142,6 +3142,7 @@
       <travuser>
         <node name="Module" />
         <node name="Fundef" />
+        <node name="Assign" />
         <node name="With2" />
         <node name="Prf" />
       </travuser>

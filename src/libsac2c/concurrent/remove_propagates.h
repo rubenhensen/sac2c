@@ -15,6 +15,7 @@ extern node *RMPRdoRemovePropagates (node *syntax_tree);
 
 extern node *RMPRmodule (node *arg_node, info *arg_info);
 extern node *RMPRfundef (node *arg_node, info *arg_info);
+extern node *RMPRassign (node *arg_node, info *arg_info);
 extern node *RMPRwith2 (node *arg_node, info *arg_info);
 extern node *RMPRprf (node *arg_node, info *arg_info);
 
