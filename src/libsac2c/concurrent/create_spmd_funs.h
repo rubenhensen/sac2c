@@ -15,7 +15,7 @@ extern node *MTSPMDFdoSpmdLift (node *syntax_tree);
 
 extern node *MTSPMDFmodule (node *arg_node, info *arg_info);
 extern node *MTSPMDFfundef (node *arg_node, info *arg_info);
-extern node *MTSPMDFblock (node *arg_node, info *arg_info);
+extern node *MTSPMDFdo (node *arg_node, info *arg_info);
 extern node *MTSPMDFvardec (node *arg_node, info *arg_info);
 extern node *MTSPMDFwiths (node *arg_node, info *arg_info);
 extern node *MTSPMDFwith2 (node *arg_node, info *arg_info);
