@@ -31,7 +31,7 @@
 
 #include "create_mtst_funs_module.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "MTSTFMOD"
 #include "debug.h"
 
 #include "tree_basic.h"
@@ -164,6 +164,17 @@ HandleApFold (node *callee, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("handling call to %s .....", FUNDEF_NAME (callee));
+
+    if (FUNDEF_ISMTFUN (callee) || FUNDEF_ISSTFUN (callee) || FUNDEF_ISXTFUN (callee)) {
+        /*
+         * we are dealing with a recursive call which has been adjusted
+         * through DupTree. This needs to be reset to ensure proper handling.
+         * See bug 1137 for further details.
+         */
+        callee = FUNDEF_COMPANION (callee);
+    }
+
     switch (INFO_CONTEXT (arg_info)) {
     case SEQ:
         break;
@@ -174,6 +185,7 @@ HandleApFold (node *callee, info *arg_info)
                          FUNDEF_NAME (callee));
 
             callee = FUNDEF_COMPANION (callee);
+            DBUG_PRINT ("setting call to %s to mode ST", FUNDEF_NAME (callee));
         }
         break;
     case MT:
@@ -183,6 +195,7 @@ HandleApFold (node *callee, info *arg_info)
                          FUNDEF_NAME (callee));
 
             callee = FUNDEF_MTCOMPANION (callee);
+            DBUG_PRINT ("setting call to %s to mode MT", FUNDEF_NAME (callee));
         }
         break;
     case XT:
@@ -192,6 +205,7 @@ HandleApFold (node *callee, info *arg_info)
                          FUNDEF_NAME (callee));
 
             callee = FUNDEF_XTCOMPANION (callee);
+            DBUG_PRINT ("setting call to %s to mode XT", FUNDEF_NAME (callee));
         }
         break;
     }
@@ -299,6 +313,7 @@ MTSTFMODfundef (node *arg_node, info *arg_info)
         old_namespace = NSfreeNamespace (old_namespace);
 
         FUNDEF_COMPANION (arg_node) = companion;
+        FUNDEF_COMPANION (companion) = arg_node;
 
         FUNDEF_NEXT (companion) = INFO_STCOMPANIONS (arg_info);
         INFO_STCOMPANIONS (arg_info) = companion;
@@ -316,6 +331,7 @@ MTSTFMODfundef (node *arg_node, info *arg_info)
         old_namespace = NSfreeNamespace (old_namespace);
 
         FUNDEF_MTCOMPANION (arg_node) = companion;
+        FUNDEF_COMPANION (companion) = arg_node;
 
         FUNDEF_NEXT (companion) = INFO_MTCOMPANIONS (arg_info);
         INFO_MTCOMPANIONS (arg_info) = companion;
@@ -333,6 +349,7 @@ MTSTFMODfundef (node *arg_node, info *arg_info)
         old_namespace = NSfreeNamespace (old_namespace);
 
         FUNDEF_XTCOMPANION (arg_node) = companion;
+        FUNDEF_COMPANION (companion) = arg_node;
 
         FUNDEF_NEXT (companion) = INFO_XTCOMPANIONS (arg_info);
         INFO_XTCOMPANIONS (arg_info) = companion;
@@ -373,18 +390,26 @@ MTSTFMODfundef (node *arg_node, info *arg_info)
      * in order to adapt the AP links.
      */
 
+    DBUG_PRINT ("traversing body of function %s", FUNDEF_NAME (arg_node));
+
     if (FUNDEF_BODY (arg_node) != NULL) {
         if (FUNDEF_ISMTFUN (arg_node)) {
             INFO_CONTEXT (arg_info) = MT;
+            DBUG_PRINT ("context MT");
         } else if (FUNDEF_ISSTFUN (arg_node)) {
             INFO_CONTEXT (arg_info) = ST;
+            DBUG_PRINT ("context ST");
         } else if (FUNDEF_ISXTFUN (arg_node)) {
             INFO_CONTEXT (arg_info) = XT;
+            DBUG_PRINT ("context XT");
         } else {
             INFO_CONTEXT (arg_info) = SEQ;
+            DBUG_PRINT ("context SEQ");
         }
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        DBUG_PRINT ("finished traversing body of function %s", FUNDEF_NAME (arg_node));
 
         FUNDEF_VARDECS (arg_node)
           = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDECS (arg_node));
@@ -477,6 +502,7 @@ MTSTFMODwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("traversing with-loop");
     if (INFO_CONTEXT (arg_info) == ST || INFO_CONTEXT (arg_info) == XT) {
         /*
          * We are not yet in a parallel context. Hence, we traverse the SPMD
@@ -489,8 +515,10 @@ MTSTFMODwith2 (node *arg_node, info *arg_info)
         if (WITH2_PARALLELIZE (arg_node)) {
             context_t ctx = INFO_CONTEXT (arg_info);
             INFO_CONTEXT (arg_info) = MT;
+            DBUG_PRINT ("switching to context MT");
             WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
             WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+            DBUG_PRINT ("switching back to previous context");
             INFO_CONTEXT (arg_info) = ctx;
         } else {
             WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
