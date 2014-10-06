@@ -1957,11 +1957,14 @@ IntersectBoundsPolyhedral (node *gen, node *mmx, int boundnum, int shp, info *ar
 
     DBUG_ENTER ();
 
-    for (i = 0; i < shp; i++) {
-        genel = TCgetNthExprsExpr (i, ARRAY_AELEMS (gen));
-        mmxel = TCgetNthExprsExpr (i, ARRAY_AELEMS (mmx));
-        polyint = IntersectBoundsPolyhedralScalar (genel, mmxel, boundnum, shp, arg_info);
-        // FIXME do something with result file
+    if (global.optimize.dopwlf) {
+        for (i = 0; i < shp; i++) {
+            genel = TCgetNthExprsExpr (i, ARRAY_AELEMS (gen));
+            mmxel = TCgetNthExprsExpr (i, ARRAY_AELEMS (mmx));
+            polyint
+              = IntersectBoundsPolyhedralScalar (genel, mmxel, boundnum, shp, arg_info);
+            // FIXME do something with result file
+        }
     }
 
     DBUG_RETURN (z);
