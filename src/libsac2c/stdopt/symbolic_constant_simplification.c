@@ -3308,8 +3308,8 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     node *b = NULL;
     constant *con1 = NULL;
     constant *con2 = NULL;
+    constant *conrel = NULL;
     pattern *pat1;
-    pattern *pat2;
     pattern *pat3;
     pattern *pat4;
     bool flg = FALSE;
@@ -3319,26 +3319,26 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     pat1 = PMprf (1, PMAisPrf (F_val_lt_val_SxS), 2, PMconst (1, PMAgetVal (&con1)),
                   PMconst (1, PMAgetVal (&con2), 0));
 
-    pat2 = PMprf (1, PMAisPrf (F_val_lt_val_SxS), 2, PMvar (1, PMAgetNode (&val), 0),
-                  PMvar (1, PMAisVar (&val), 0));
-
     pat3 = PMprf (1, PMAisPrf (F_val_lt_val_SxS), 2, PMvar (1, PMAgetNode (&val), 0),
                   PMvar (1, PMAgetNode (&val2), 0));
 
     pat4 = PMprf (1, PMAisPrf (F_val_lt_val_SxS), 2, PMvar (1, PMAgetNode (&val3), 0),
                   PMvar (1, PMAisVar (&val2), 0));
 
-    /* Cases 1 and 2 */
-    if ((PMmatchFlat (pat2, arg_node))
-        || (PMmatchFlat (pat1, arg_node) && (COlt (con1, con2, NULL)))) {
-        res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                           TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT_TAG ("SCS", "removed guard Case 1( %s, %s)",
-                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+    /* Case 1 */
+    if (PMmatchFlat (pat1, arg_node)) {
+        conrel = COlt (con1, con2, NULL);
+        if ((NULL != conrel) && COisTrue (conrel, TRUE)) {
+            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (TBmakeBool (TRUE), NULL));
+            DBUG_PRINT_TAG ("SCS", "removed guard Case 1( %s, %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+        }
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
+    conrel = (NULL != conrel) ? COfreeConstant (conrel) : conrel;
 
 #ifdef DEADCODE
     /* Case 2 */
@@ -3427,7 +3427,6 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
     pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
     pat4 = PMfree (pat4);
 
@@ -3501,11 +3500,13 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     constant *con1 = NULL;
     constant *con2 = NULL;
     constant *con3 = NULL;
+    constant *conrel = NULL;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
     bool flg = FALSE;
+    bool flg2;
 
     DBUG_ENTER ();
 
@@ -3522,8 +3523,12 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
                   PMvar (1, PMAisVar (&val2), 0));
 
     /* Cases 1 and 2 */
-    if ((PMmatchFlat (pat2, arg_node))
-        || (PMmatchFlat (pat1, arg_node) && (COle (con1, con2, NULL)))) {
+    flg2 = PMmatchFlat (pat2, arg_node);
+    if (PMmatchFlat (pat1, arg_node)) {
+        conrel = COle (con1, con2, NULL);
+        flg2 = flg2 || ((NULL != conrel) && COisTrue (conrel, TRUE));
+    }
+    if (flg2) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT ("removed guard Case 1( %s, %s)",
@@ -3532,6 +3537,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
+    conrel = (NULL != conrel) ? COfreeConstant (conrel) : conrel;
 
     /* Case 3 */
     if ((NULL == res) && (NULL != AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))))) {
