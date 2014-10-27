@@ -222,7 +222,7 @@ POGOprf (node *arg_node, info *arg_info)
     node *exprs3 = NULL;
     node *idlist1 = NULL;
     node *idlist2 = NULL;
-    int numids;
+    int numvars = 0;
     bool z = FALSE;
     node *res;
     node *resp;
@@ -242,19 +242,18 @@ POGOprf (node *arg_node, info *arg_info)
         PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
         PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
 
-        idlist1 = PHUTcollectAffineNids (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), 0);
-        numids = TCcountExprs (idlist1);
+        idlist1
+          = PHUTcollectAffineNids (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), &numvars);
 
         idlist2
-          = PHUTcollectAffineNids (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), numids);
-        numids = numids + TCcountExprs (idlist2);
+          = PHUTcollectAffineNids (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), &numvars);
 
-        exprs1
-          = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), numids);
-        exprs2
-          = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), numids);
+        exprs1 = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
+                                          &numvars);
+        exprs2 = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info),
+                                          &numvars);
         exprs3
-          = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info), numids);
+          = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info), &numvars);
 
         idlist1 = TCappendExprs (idlist1, idlist2);
         exprs1 = TCappendExprs (exprs1, exprs2);
