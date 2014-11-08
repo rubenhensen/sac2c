@@ -309,7 +309,7 @@ case "$target_os" in
     AC_MSG_RESULT([solaris settings])
     ;;
   *linux*)
-    OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"]
+    OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_DEFAULT_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"]
     LD_DYNAMIC=["-shared -Wl,-allow-shlib-undefined -O3 $flags_lto"]
     LD_PATH=["-L%path% -Wl,-rpath,%path%"]
     LD_FLAGS="-Wl,-allow-shlib-undefined $flags_lto"
