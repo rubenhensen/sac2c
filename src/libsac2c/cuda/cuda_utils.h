@@ -22,6 +22,7 @@
                  ? FALSE                                                                 \
                  : (PRF_PRF (ASSIGN_RHS (assign)) == F_device2host ? TRUE : FALSE))))
 
+extern bool CUisSupportedHostSimpletype (simpletype st);
 extern node *CUnthApArg (node *args, int n);
 extern simpletype CUh2dSimpleTypeConversion (simpletype sty);
 extern simpletype CUd2hSimpleTypeConversion (simpletype sty);

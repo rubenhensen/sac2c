@@ -42,6 +42,7 @@
 #include "DupTree.h"
 #include "type_utils.h"
 #include "shape.h"
+#include "cuda_utils.h"
 
 #include "types.h"
 #include "vector.h"
@@ -321,10 +322,14 @@ node *
 ACUWLwith (node *arg_node, info *arg_info)
 {
     ntype *ty;
+    simpletype base_ty;
+    bool is_ok_basetype;
 
     DBUG_ENTER ();
 
     ty = IDS_NTYPE (INFO_LETIDS (arg_info));
+    base_ty = TYgetSimpleType (TYgetScalar (ty));
+    is_ok_basetype = CUisSupportedHostSimpletype (base_ty);
 
     /* The following assignment cauese a bug when a fold wl is inside
      * a fold wl. Usually, in such a case, the outer fold wl should not
@@ -350,6 +355,14 @@ ACUWLwith (node *arg_node, info *arg_info)
         if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold) {
             /* For fold withloop to be cudarized, it *must* be AKS */
             WITH_CUDARIZABLE (arg_node) = TYisAKS (ty) && INFO_CUDARIZABLE (arg_info);
+            if (WITH_CUDARIZABLE (arg_node) && !is_ok_basetype) {
+                WITH_CUDARIZABLE (arg_node) = FALSE;
+                CTIwarnLine (global.linenum,
+                             "Cannot cudarize with-loop due to missing base type "
+                             "implementation! "
+                             "Missing type: \"%s\" for the result of fold!",
+                             global.type_string[base_ty]);
+            }
 
             if (WITH_CUDARIZABLE (arg_node)) {
                 FOLD_ISPARTIALFOLD (WITH_WITHOP (arg_node)) = TRUE;
@@ -357,6 +370,14 @@ ACUWLwith (node *arg_node, info *arg_info)
         } else {
             WITH_CUDARIZABLE (arg_node)
               = (TYisAKS (ty) || TYisAKD (ty)) && INFO_CUDARIZABLE (arg_info);
+            if (WITH_CUDARIZABLE (arg_node) && !is_ok_basetype) {
+                WITH_CUDARIZABLE (arg_node) = FALSE;
+                CTIwarnLine (global.linenum,
+                             "Cannot cudarize with-loop due to missing base type "
+                             "implementation! "
+                             "Missing type: \"%s\" for the result!",
+                             global.type_string[base_ty]);
+            }
         }
 
         if (WITH_CUDARIZABLE (arg_node)) {
@@ -521,6 +542,13 @@ ACUWLid (node *arg_node, info *arg_info)
          * other than AKS arrays */
         if (!TUisScalar (type) && !TYisAKV (type) && !TYisAKS (type) && !TYisAKD (type)) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
+        } else if (!CUisSupportedHostSimpletype (TYgetSimpleType (TYgetScalar (type)))) {
+            INFO_CUDARIZABLE (arg_info) = FALSE;
+            CTIwarnLine (global.linenum,
+                         "Cannot cudarize with-loop due to missing base type "
+                         "implementation! "
+                         "Missing type: \"%s\" for relatively free variable!",
+                         global.type_string[TYgetSimpleType (TYgetScalar (type))]);
         }
     }
 
