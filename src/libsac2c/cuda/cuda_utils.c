@@ -52,7 +52,9 @@ CUh2dSimpleTypeConversion (simpletype sty)
         res = T_double_dev;
         break;
     default:
-        DBUG_UNREACHABLE ("Simple type conversion found undefined host simple type!");
+        DBUG_UNREACHABLE (
+          "Simple type conversion found no yet implemented host simple type: %s !",
+          global.type_string[sty]);
     }
     DBUG_RETURN (res);
 }
