@@ -549,6 +549,25 @@ target intelcc_fast::intelcc:
 
 CCFLAGS        += " -fast"
 
+/*******************************************************************************
+ *
+ * Target for PGI C-compiler
+ *
+ */
+
+target pgicc:
+
+CC	:= "pgcc -c99"
+CCFLAGS := " –Mipa=fast,inline"
+LDFLAGS := " -ldl -lpthread -Wl,--no-as-needed "
+
+target pgicc_fast::pgicc:
+
+CCFLAGS += " -fast"
+
+target pgicc_sse::pgicc:
+
+CCFLAGS += " -fastsse"
 
 
 /*******************************************************************************
