@@ -346,7 +346,7 @@ getNewModuleName (char *result)
 static void
 encodeShapes (int *shapes, char *result)
 {
-    int num_args, i, j, k;
+    int num_args, i, j, k, l;
 
     char current[15];
 
@@ -363,7 +363,8 @@ encodeShapes (int *shapes, char *result)
     for (; i <= num_args; i++) {
         if (shapes[k] > 0) {
             j = 0;
-            for (; j <= shapes[k]; j++) {
+            l = shapes[k];
+            for (; j <= l; j++) {
                 sprintf (current, "%d-", shapes[k]);
                 strcat (result, current);
                 k++;
