@@ -2,12 +2,13 @@
  * This function is a predicate for NULL intersect of two polyhedra.
  *
  * Read two Polylib polyhedra from stdin,
- * compute their intersection,
- * and return 1 if their intersection is NULL; 0 otherwise.
+ * and do something with them, based on the command-line argument:
+ *
+ *  I:  return 1 if the polyhedral intersection is NULL; else 0.
+ *  M:  return 1 if the polyhedral intersection matches Poly_A; else 0.
+ *  P:  print the intersection of the polyhedra on stdout
  *
  */
-
-#define VERBOSE
 
 #include "arithmetique.h"
 #include "types.h"
@@ -26,9 +27,10 @@ typedef enum {
 } intersect_type_t;
 
 int
-main ()
+main (int argc, char *argv[])
 {
     FILE *file;
+    char opcode;
     Matrix *Matrix_A;
     Matrix *Matrix_B;
     Polyhedron *Poly_A;
@@ -37,12 +39,19 @@ main ()
     int maxcon = 2000;
     int z = 0;
 
+    opcode = 'x';
+
+    if (argc > 1) {
+        opcode = *argv[1];
+    }
+
     Matrix_A = Matrix_Read ();
     Matrix_B = Matrix_Read ();
 
     Poly_A = Constraints2Polyhedron (Matrix_A, maxcon);
     Poly_B = Constraints2Polyhedron (Matrix_B, maxcon);
 
+#define VERBOSE
 #ifdef VERBOSE
     fprintf (stderr, "Poly_A is:\n");
     Polyhedron_Print (stderr, "%4d", Poly_A);
@@ -52,11 +61,11 @@ main ()
 
     Poly_I = DomainIntersection (Poly_A, Poly_B, maxcon);
 
-#ifdef VERBOSE
-    fprintf (stderr, "Poly_I is:\n");
-    Polyhedron_Print (stderr, "%4d", Poly_I);
-    fprintf (stderr, "#rays=%d\n", Poly_I->NbRays);
-#endif // VERBOSE
+    if ('P' == opcode) {
+        fprintf (stderr, "Poly_I is:\n");
+        Polyhedron_Print (stderr, "%4d", Poly_I);
+        fprintf (stderr, "#rays=%d\n", Poly_I->NbRays);
+    }
 
     if (Poly_I->NbRays == 0) { // Empty array joke.
         z = 1;                 // If no constraints, the polyhedra match
@@ -68,13 +77,25 @@ main ()
     } else {
         if (PolyhedronIncludes (Poly_A, Poly_B) && PolyhedronIncludes (Poly_B, Poly_A)) {
 #ifdef VERBOSE
-            fprintf (stderr, "polyhedra match\n");
+            fprintf (stderr, "polyhedra Poly_A and Poly_B match\n");
 #endif // VERBOSE
             z = 1;
         } else {
 #ifdef VERBOSE
-            fprintf (stderr, "polyhedral do not match\n");
+            fprintf (stderr, "polyhedra Poly_A and Poly_B do not match\n");
 #endif // VERBOSE
+            z = 0;
+        }
+    }
+
+    // We assume that Poly_A is the CWL iv. If this matches the intersect,
+    // then the PWLF can proceed immediately
+    if ('M' == opcode) {
+        if (PolyhedronIncludes (Poly_A, Poly_I) && PolyhedronIncludes (Poly_I, Poly_A)) {
+            fprintf (stderr, "polyhedra Poly_A and Poly_I match\n");
+            z = 1;
+        } else {
+            fprintf (stderr, "polyhedra Poly_A and Poly_I do not match\n");
             z = 0;
         }
     }

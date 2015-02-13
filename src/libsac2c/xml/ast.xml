@@ -2308,6 +2308,20 @@
        <node name="Code" />
      </travuser>
    </traversal>
+   <traversal id="PWLFI" name="Polyhedral With-Loop-Folding Inference" default="sons" include="polyhedral_wlfi.h" >
+     <travuser>
+        <node name="Fundef"  />
+        <node name="Block"   />
+        <node name="Assign"  />
+        <node name="Let"  />
+        <node name="Id"  />
+        <node name="Cond" />
+        <node name="With"    />
+        <node name="Modarray"    />
+        <node name="Part"    />
+        <node name="Prf"     />
+     </travuser>
+   </traversal>
    <traversal id="AWLFI" name="Algebraic With-Loop-Folding Inference" default="sons" include="algebraic_wlfi.h" >
      <travuser>
         <node name="Fundef"  />

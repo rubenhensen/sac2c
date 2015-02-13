@@ -744,7 +744,7 @@ FakeUpConstantExtremum (node *elem, info *arg_info, int emax)
  *
  *
  *****************************************************************************/
-node *
+static node *
 GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
 {
     node *elem;
@@ -1175,7 +1175,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
 
 /** <!--********************************************************************-->
  *
- * @fn node *FlattenScalarNode( node *arg_node, info *arg_info)
+ * @fn node *AWLFIflattenScalarNode( node *arg_node, info *arg_info)
  *
  * @brief: Flatten a scalar node, if not already flattened.
  *
@@ -1185,8 +1185,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
  * @result:  N_avis for possibly flattened node
  *
  *****************************************************************************/
-static node *
-FlattenScalarNode (node *arg_node, info *arg_info)
+node *
+AWLFIflattenScalarNode (node *arg_node, info *arg_info)
 {
     node *z;
 
@@ -1265,8 +1265,8 @@ BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnu
             zprime = zarr;
         } else { /* confluence */
             fn = (0 == boundnum) ? "partitionMax" : "partitionMin";
-            newavis = FlattenScalarNode (zelnew, arg_info);
-            curavis = FlattenScalarNode (zelcur, arg_info);
+            newavis = AWLFIflattenScalarNode (zelnew, arg_info);
+            curavis = AWLFIflattenScalarNode (zelcur, arg_info);
             fncall
               = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fn,
                                    TCcreateExprsChainFromAvises (2, curavis, newavis));
@@ -2626,7 +2626,7 @@ AWLFIcheckProducerWLFoldable (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isCanAttachIntersectCalc( node *arg_node, node *ivavis
+ * @fn bool AWLFIisCanAttachIntersectCalc( node *arg_node, node *ivavis
  *                                    info *arg_info)
  *
  * @brief  TRUE if iv/ivavis are in suitable shape that we can
@@ -2638,8 +2638,8 @@ AWLFIcheckProducerWLFoldable (node *arg_node)
  * @result boolean
  *
  *****************************************************************************/
-static bool
-isCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info)
+bool
+AWLFIisCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info)
 {
     bool z = FALSE;
     node *narr;
@@ -3080,7 +3080,7 @@ AWLFIprf (node *arg_node, info *arg_info)
 
             /* We need both extrema or constant index vector */
             /* Or, we need naked consumer */
-            if ((isCanAttachIntersectCalc (arg_node, ivavis, arg_info))) {
+            if ((AWLFIisCanAttachIntersectCalc (arg_node, ivavis, arg_info))) {
                 // FIXME || isNaked( arg_node, ivavis)) {
                 DBUG_PRINT ("Trying to attach F_noteintersect into cwl=%s", cwlnm);
                 z = attachIntersectCalc (arg_node, arg_info, ivavis);

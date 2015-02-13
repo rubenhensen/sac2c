@@ -297,6 +297,16 @@ OPTcheckOptionConsistency (void)
         global.optimize.dowlur = TRUE;
     }
 
+    if (global.optimize.dopwlf && (!global.insertconformitychecks)) {
+        global.insertconformitychecks = TRUE;
+        CTIwarn ("PWLF is enabled: -ecc enabled.");
+    }
+
+    if (global.optimize.dopwlf && (!global.doivext)) {
+        global.doivext = TRUE;
+        CTIwarn ("PWLF is enabled: -extrema enabled.");
+    }
+
     if (global.optimize.doawlf && (!global.insertconformitychecks)) {
         global.insertconformitychecks = TRUE;
         CTIwarn ("AWLF is enabled: -ecc enabled.");
