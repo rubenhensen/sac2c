@@ -22,6 +22,7 @@ extern node *CHKfundefVardecExtrema (node *arg_node);
 extern node *CHKisNullSsaassign (node *arg_node);
 extern node *CHKcondfun (node *arg_node);
 extern node *CHKavisReflection (node *arg_node);
+extern node *CHKavisSsaassignNodeType (node *arg_node);
 extern node *CHKapArgCount (node *arg_node);
 extern node *CHKfundefReturn (node *arg_node);
 

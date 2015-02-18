@@ -400,6 +400,32 @@ CHKavisReflection (node *arg_node)
 
 /** <!--**********************************************************************-->
  *
+ * @fn node *CHKavisSsaassignNodeType( node *arg_node)
+ *
+ * @brief: arg_node is an N_avis. Ensure that
+ *
+ *
+ * @params: arg_node: N_avis.
+ *
+ * @return: arg_node
+ *
+ *****************************************************************************/
+node *
+CHKavisSsaassignNodeType (node *arg_node)
+{
+    DBUG_ENTER ();
+
+    if ((NULL != AVIS_SSAASSIGN (arg_node))
+        && (N_assign != NODE_TYPE (AVIS_SSAASSIGN (arg_node)))) {
+        NODE_ERROR (arg_node)
+          = CHKinsertError (NODE_ERROR (arg_node), "Illegal node type in AVIS_SSAASSIGN");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--**********************************************************************-->
+ *
  * @fn node *CHKapArgCount( node *arg_node)
  *
  * @brief: arg_node is an N_ap.
