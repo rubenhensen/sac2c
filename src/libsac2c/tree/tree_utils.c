@@ -583,6 +583,35 @@ TUremoveUnusedCodes (node *codes)
 
 /** <!--********************************************************************-->
  *
+ * @fn void  TUclearSsaAssign( node *arg_node)
+ *
+ * @brief Clear AVIS_SSAASSIGN nodes associated with arg_node
+ *        N_ids entry/entries.
+ *
+ * @param: arg_node: N_assign node, which we believe points to an N_let
+ *
+ *
+ *****************************************************************************/
+void
+TUclearSsaAssign (node *arg_node)
+{
+    node *ids;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (N_let == NODE_TYPE (ASSIGN_STMT (arg_node)), "Expected N_let");
+    ids = LET_IDS (ASSIGN_STMT (arg_node));
+
+    while (NULL != ids) {
+        AVIS_SSAASSIGN (IDS_AVIS (ids)) = NULL;
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *TUmakeIntVec(...)
  *
  * @brief Create one-element integer vector, i.

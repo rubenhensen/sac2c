@@ -39,6 +39,7 @@
 #include "globals.h"
 #include "phase.h"
 #include "pattern_match.h"
+#include "tree_utils.h"
 
 #define DBUG_PREFIX "SSALUR"
 #include "debug.h"
@@ -2377,6 +2378,7 @@ LURassign (node *arg_node, info *arg_info)
      * assign */
     if (pre_assigns != NULL) {
         tmp = arg_node;
+        TUclearSsaAssign (arg_node);
         arg_node = TCappendAssign (pre_assigns, ASSIGN_NEXT (arg_node));
         tmp = FREEdoFreeNode (tmp);
     }

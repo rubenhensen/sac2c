@@ -162,7 +162,7 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         associative_law                                     \
                         sortassociativefunctionarguments                    \
                         distributive_law elimtypeconv liftoptflags \
-                        wlsimplification prfunroll wlselcount \
+                        prfunroll wlselcount \
                         insert_symb_arrayattr elim_shapevars makedimexpr \
                         makeshapeexpr remove_vardecs \
                         statistics saa_constant_folding constant_folding \
@@ -178,6 +178,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize      \
                         wl_access_analyze tile_size_inference wls wlscheck  \
                         wlsbuild wlswithloopification SSAWithloopFolding    \
                         SSAWLI SSAWLF WithloopFusion detectdependencies     \
+                        wlsimplification                                    \
                         pad pad_collect pad_infer pad_transform pad_info    \
                         tagdependencies resolvedependencies                 \
                         algebraic_wlfi algebraic_wlf cubeslicer             \
