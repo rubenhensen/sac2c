@@ -532,8 +532,10 @@ CYCLEPHASEFUN (ivexp, "Propagating index vector extrema", IVEXPdoIndexVectorExtr
 // we clean up the AST before performing them, by doing
 // CSE, VP, and DCR.
 
+#ifdef FIXHEINZ
 CYCLEPHASEFUN (pvp, "Propagating variables for polyhedral optimizations",
                VPdoVarPropagation, global.optimize.dovp, opt, saacyc)
+#endif // FIXHEINZ
 
 CYCLEPHASEFUN (pcse, "Eliminating common subexpressions for polyhedral optimizations",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
