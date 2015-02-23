@@ -11633,6 +11633,9 @@ N_tfarg :
         </attribute>
       </attributes>
       <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
+    <checks>
+      <check name="FREEattribSsaAssign" />
+    </checks>
     </node>
 <!--
 

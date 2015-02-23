@@ -1046,8 +1046,8 @@ static node *
 IntersectBoundsPolyhedralScalar (node *gen, node *mmx, int boundnum, int shp,
                                  info *arg_info)
 {
+    bool b;
     node *z = NULL;
-    bool p;
     node *idgen;
     node *idmmx;
     node *exprs1, *exprs2;
@@ -1073,8 +1073,8 @@ IntersectBoundsPolyhedralScalar (node *gen, node *mmx, int boundnum, int shp,
     exprs1 = TCappendExprs (exprs1, exprs2);
 
     // Don't bother calling Polylib if it can't do anything for us.
-    z = (NULL != exprs1) && (NULL != exprs3) && (NULL != idgen);
-    z = z && PHUTcheckIntersection (exprs1, exprs3, idgen);
+    b = (NULL != exprs1) && (NULL != exprs3) && (NULL != idgen);
+    b = b && PHUTcheckIntersection (exprs1, exprs3, idgen);
 
     PHUTclearColumnIndices (gen, INFO_FUNDEF (arg_info));
     PHUTclearColumnIndices (mmx, INFO_FUNDEF (arg_info));
@@ -1465,13 +1465,15 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
                            int boundnum, node *ivmin, node *ivmax)
 {
     node *pg;
+#ifdef DEADCODE
     node *resavis;
     node *fncall;
+    prf prfminmax;
+#endif // DEADCODE
     pattern *pat;
     node *gen = NULL;
     node *mmx;
     node *z = NULL;
-    prf prfminmax;
     node *polyint = NULL;
     int shp;
 
