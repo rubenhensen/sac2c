@@ -612,6 +612,33 @@ TUclearSsaAssign (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @fn void  TUsetSsaAssign( node *arg_node)
+ *
+ * @brief Set AVIS_SSAASSIGN nodes associated with arg_node
+ *        N_ids entry/entries.
+ *
+ * @param: arg_node: N_assign node, which we believe points to an N_let
+ *
+ *****************************************************************************/
+void
+TUsetSsaAssign (node *arg_node)
+{
+    node *ids;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (N_let == NODE_TYPE (ASSIGN_STMT (arg_node)), "Expected N_let");
+    ids = LET_IDS (ASSIGN_STMT (arg_node));
+
+    while (NULL != ids) {
+        AVIS_SSAASSIGN (IDS_AVIS (ids)) = arg_node;
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN ();
+}
+/** <!--********************************************************************-->
+ *
  * @fn node *TUmakeIntVec(...)
  *
  * @brief Create one-element integer vector, i.

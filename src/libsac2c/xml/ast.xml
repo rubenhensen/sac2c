@@ -6397,7 +6397,7 @@ N_tfarg :
         </flag>
       </flags>
       <checks>
-        <check name="CHKassignAvisSSAAssign" />
+        <check name="CHKattribsAssign" />
       </checks>
     </node>
 <!--
@@ -8414,7 +8414,7 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="SSAAssign" inconstructor="no" >
+        <attribute name="SSAAssign" default="NULL" inconstructor="no" >
           <description>
             provides a direct link to the N_assign node containing the definition of the identifier represented by this AVIS node. In SSA form, AVIS_SSAASSIGN must only be NULL for identifiers for function arguments and with-loop index variables.
           </description>
@@ -11634,7 +11634,7 @@ N_tfarg :
       </attributes>
       <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     <checks>
-      <check name="FREEattribSsaAssign" />
+      <check name="CHKattribsIds" />
     </checks>
     </node>
 <!--

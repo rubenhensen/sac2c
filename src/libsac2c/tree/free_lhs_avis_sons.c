@@ -80,26 +80,7 @@ FLASids (node *arg_node, info *arg_info)
 
     avis = IDS_AVIS (arg_node);
     DBUG_PRINT ("Looking at avis for %s", AVIS_NAME (avis));
-
-    if (NULL != AVIS_DIM (avis)) {
-        AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
-    }
-
-    if (NULL != AVIS_SHAPE (avis)) {
-        AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
-    }
-
-    if (NULL != AVIS_MIN (avis)) {
-        AVIS_MIN (avis) = FREEdoFreeNode (AVIS_MIN (avis));
-    }
-
-    if (NULL != AVIS_MAX (avis)) {
-        AVIS_MAX (avis) = FREEdoFreeNode (AVIS_MAX (avis));
-    }
-
-    if (NULL != AVIS_SCALARS (avis)) {
-        AVIS_SCALARS (avis) = FREEdoFreeNode (AVIS_SCALARS (avis));
-    }
+    avis = TRAVsons (avis, NULL);
 
     DBUG_RETURN (z);
 }

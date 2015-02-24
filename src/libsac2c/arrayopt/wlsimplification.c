@@ -365,6 +365,7 @@ WLSIMPassign (node *arg_node, info *arg_info)
     }
     if (INFO_PREASSIGN (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_PREASSIGN (arg_info), arg_node);
+        TUsetSsaAssign (arg_node);
         INFO_PREASSIGN (arg_info) = NULL;
     }
 

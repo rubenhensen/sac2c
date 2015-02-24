@@ -15,5 +15,6 @@ extern int TULSsearchAssignChainForAssign (node *chn, node *assgn);
 extern prf TULSgetPrfFamilyName (prf fn);
 extern bool TULSisInPrfFamily (prf fn, prf fnfam);
 extern void TUclearSsaAssign (node *arg_node);
+extern void TUsetSsaAssign (node *arg_node);
 
 #endif /* _SAC_TREE_UTILS_H_ */
