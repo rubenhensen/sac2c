@@ -34,6 +34,13 @@
  *     on nodes where the lhs (e.g., iv4 in the above example) has
  *     its appropriate extrema present.
  *
+ *     2015-02-25: Extended POGO to operate on some relationals:
+ *
+ *        x < y
+ *        x <= y
+ *
+ *      and also on _non_neg_val( x);
+ *
  */
 
 #define DBUG_PREFIX "POGO"
@@ -53,6 +60,7 @@
 #include "polyhedral_guard_optimization.h"
 #include "polyhedral_utilities.h"
 #include "print.h"
+#include "tree_utils.h"
 
 /** <!--********************************************************************-->
  *
@@ -113,24 +121,6 @@ FreeInfo (info *info)
  * @{
  *
  *****************************************************************************/
-#ifdef CRUD
-/** <!--*******************************************************************-->
- *
- * @fn node *CollectAffineExprs( node *arg_node, info *arg_info)
- *
- *
- *****************************************************************************/
-static node *
-CollectAffineExprs (node *arg_node, info *arg_info)
-{
-    node *exprs = NULL;
-
-    DBUG_ENTER ();
-
-    DBUG_RETURN (exprs);
-}
-
-#endif // CRUD
 
 /** <!--*******************************************************************-->
  *
@@ -208,8 +198,8 @@ POGOlet (node *arg_node, info *arg_info)
  *
  * @fn node *POGOprf( node *arg_node, info *arg_info)
  *
- * @brief:
- *
+ * @brief: If we can show that a relational or guard is always
+ *         TRUE, remove it.
  *
  * @result: Possibly altered N_prf node.
  *
@@ -236,6 +226,10 @@ POGOprf (node *arg_node, info *arg_info)
 
     case F_val_lt_val_SxS:
     case F_val_le_val_SxS:
+    case F_lt_SxS:
+    case F_le_SxS:
+    case F_ge_SxS:
+    case F_gt_SxS:
         DBUG_PRINT ("Looking at N_prf for %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
@@ -256,33 +250,52 @@ POGOprf (node *arg_node, info *arg_info)
           = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info), &numvars);
 
         idlist1 = TCappendExprs (idlist1, idlist2);
-        exprs1 = TCappendExprs (exprs1, exprs2);
+
+        // We may have NULL exprs1 or exprs2, as in the unit test
+        //  ~/sac/testsuite/optimizations/pogo/guard_val_lt_val_S.sac
+        //
+        // If so, we cheat by making a DUP for the missing one. This is not exactly
+        // efficient for Polylib (we should have a different
+        // call that only expects two polyhedra), but it is simple to implement here.
+        if ((NULL == exprs2) && (NULL != exprs1)) {
+            exprs2 = DUPdoDupTree (exprs1);
+        }
+        if ((NULL == exprs1) && (NULL != exprs2)) {
+            exprs1 = DUPdoDupTree (exprs2);
+        }
 
         // Don't bother calling Polylib if it can't do anything for us.
-        z = (NULL != exprs1) && (NULL != exprs3) && (NULL != idlist1);
-        z = z && PHUTcheckIntersection (exprs1, exprs3, idlist1);
+        z = (NULL != exprs1) && (NULL != exprs2) && (NULL != exprs3) && (NULL != idlist1);
+        z = z && PHUTcheckIntersection (exprs1, exprs2, exprs3, idlist1);
 
         PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
         PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
 
         idlist1 = (NULL != idlist1) ? FREEdoFreeTree (idlist1) : NULL;
         exprs1 = (NULL != exprs1) ? FREEdoFreeTree (exprs1) : NULL;
+        exprs2 = (NULL != exprs2) ? FREEdoFreeTree (exprs2) : NULL;
         exprs3 = (NULL != exprs3) ? FREEdoFreeTree (exprs3) : NULL;
-        if (z) { // guard can be removed
-            DBUG_PRINT ("Guard for %s removed",
-                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-            res = DUPdoDupNode (PRF_ARG1 (arg_node));
-            resp = TBmakeBool (TRUE);
-            arg_node = FREEdoFreeNode (arg_node);
 
-            guardp = IDS_NEXT (INFO_LHS (arg_info));
-            resp = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
-            AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resp;
-            IDS_NEXT (INFO_LHS (arg_info)) = NULL;
-            INFO_PREASSIGNS (arg_info)
-              = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
+        if (z) { // guard/primitive can be removed
+            DBUG_PRINT ("Guard/relational for result %s removed",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+            resp = TBmakeBool (TRUE);
+
+            if (TUisPrfGuard (arg_node)) { // Need two results
+                res = DUPdoDupNode (PRF_ARG1 (arg_node));
+                arg_node = FREEdoFreeNode (arg_node);
+                guardp = IDS_NEXT (INFO_LHS (arg_info));
+                resp = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
+                AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resp;
+                IDS_NEXT (INFO_LHS (arg_info)) = NULL;
+                INFO_PREASSIGNS (arg_info)
+                  = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
+            } else {
+                res = resp;
+                arg_node = FREEdoFreeNode (arg_node);
+            }
         } else {
-            DBUG_PRINT ("Unable to remove guard for %s",
+            DBUG_PRINT ("Unable to remove guard/primitive for result %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
         }
         break;

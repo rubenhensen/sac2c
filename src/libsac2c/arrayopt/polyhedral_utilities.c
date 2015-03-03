@@ -145,7 +145,7 @@ Node2Avis (node *arg_node)
 static void
 CheckExprsChain (node *exprs, info *arg_info)
 {
-#define PARANOIA
+//       really slow this way...     #define PARANOIA
 #ifdef PARANOIA
     node *tmp;
     node *el;
@@ -283,7 +283,8 @@ AddValueToColumn (node *arg_node, int incr, node *prow, info *arg_info)
     avis = Node2Avis (arg_node);
     CheckExprsChain (prow, arg_info);
 
-    if (N_num != NODE_TYPE (arg_node)) {
+    // FIXME: must assign a name to each constant
+    if (TRUE || N_num != NODE_TYPE (arg_node)) {
         col = AVIS_POLYLIBCOLUMNINDEX (avis);
         if (-1 == col) {
             DBUG_ASSERT (TYisAKV (AVIS_TYPE (avis)),
@@ -446,7 +447,7 @@ Exprs2File (FILE *handle, node *exprs, node *idlist)
 
         for (i = 0; i < rows; i++) {
 
-            // human-readable form
+            // human-readable-ish form
             fprintf (handle, "#  ");
             for (j = 1; j < cols - 1; j++) {
                 indx = j + (cols * i);
@@ -455,9 +456,7 @@ Exprs2File (FILE *handle, node *exprs, node *idlist)
                 id = AVIS_NAME (avis);
                 DBUG_ASSERT (j == AVIS_POLYLIBCOLUMNINDEX (avis),
                              "column index confusion");
-                // if( 0 != val) {
                 fprintf (handle, "(%d*%s) + ", val, id);
-                //}
             }
 
             // The constant
@@ -645,8 +644,16 @@ HandleNprf (node *avis, info *arg_info)
     assgn = AVIS_SSAASSIGN (avis);
     rhs = LET_EXPR (ASSIGN_STMT (assgn));
     ids = LET_IDS (ASSIGN_STMT (assgn));
+    DBUG_PRINT ("Entering HandleNprf for ids=%s", AVIS_NAME (IDS_AVIS (ids)));
 
     if (isCompatibleAffinePrf (PRF_PRF (rhs))) {
+        // Deal with PRF_ARGs
+        res = PHUTcollectAffineExprsLocal (PRF_ARG1 (rhs), arg_info);
+        if (isDyadicPrf (PRF_PRF (rhs))) {
+            right = PHUTcollectAffineExprsLocal (PRF_ARG2 (rhs), arg_info);
+            res = TCappendExprs (res, right);
+        }
+
         if (MODE_generatematrix == INFO_MODE (arg_info)) {
             // Start by grabbing any extrema information attached to the main result.
             // We should compute this properly, rather than relying on IVEXP.
@@ -775,17 +782,11 @@ HandleNprf (node *avis, info *arg_info)
                 break;
             }
         }
-
-        // Deal with PRF_ARGs
-        res = PHUTcollectAffineExprsLocal (PRF_ARG1 (rhs), arg_info);
-        if (isDyadicPrf (PRF_PRF (rhs))) {
-            right = PHUTcollectAffineExprsLocal (PRF_ARG2 (rhs), arg_info);
-            res = TCappendExprs (res, right);
-        }
         z = TCappendExprs (z, res);
     }
 
     CheckExprsChain (z, arg_info);
+    DBUG_PRINT ("Leaving HandleNprf for ids=%s", AVIS_NAME (IDS_AVIS (ids)));
 
     DBUG_RETURN (z);
 }
@@ -799,7 +800,7 @@ HandleNprf (node *avis, info *arg_info)
  *        and this node does not already have a column assigned to it,
  *        and this node is not constant
  *
- * @param arg_node: An N_id
+ * @param arg_node: An N_id or N_avis
  *        arg_info: your basic arg_info
  *        res: An N_exprs chain of N_id nodes which have had a column number
  *             assigned to them.
@@ -819,11 +820,12 @@ assignPolylibColumnIndex (node *arg_node, info *arg_info, node *res)
     switch (INFO_MODE (arg_info)) {
     case MODE_enumeratevars:
 
-        if ((-1 == AVIS_POLYLIBCOLUMNINDEX (avis)) && (!TYisAKV (AVIS_TYPE (avis)))) {
+        if ((-1 == AVIS_POLYLIBCOLUMNINDEX (avis))) {
+            // wrong.          && ( !TYisAKV( AVIS_TYPE( avis)))) {
             INFO_POLYLIBNUMVARS (arg_info)++;
             AVIS_POLYLIBCOLUMNINDEX (avis) = INFO_POLYLIBNUMVARS (arg_info);
-            DBUG_PRINT ("Assigned %d as polylib index for %s",
-                        AVIS_POLYLIBCOLUMNINDEX (avis), AVIS_NAME (avis));
+            DBUG_PRINT ("Assigned %s a polylib index of: %d", AVIS_NAME (avis),
+                        AVIS_POLYLIBCOLUMNINDEX (avis));
             res = TCappendExprs (res, TBmakeExprs (TBmakeId (avis), NULL));
         }
         break;
@@ -831,7 +833,8 @@ assignPolylibColumnIndex (node *arg_node, info *arg_info, node *res)
     case MODE_clearvars:
         AVIS_POLYLIBCOLUMNINDEX (avis) = -1;
         AVIS_ISAFFINEHANDLED (avis) = FALSE;
-        DBUG_PRINT ("cleared polylib index for %s", AVIS_NAME (avis));
+        DBUG_PRINT ("Cleared %s polylib index of %d", AVIS_NAME (avis),
+                    AVIS_POLYLIBCOLUMNINDEX (avis));
         break;
 
     case MODE_generatematrix:
@@ -868,7 +871,9 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info)
 
     avis = Node2Avis (arg_node);
     DBUG_PRINT ("Looking at %s", AVIS_NAME (avis));
+    res = assignPolylibColumnIndex (avis, arg_info, res);
 
+    DBUG_ASSERT (N_num != NODE_TYPE (arg_node), "Unflattened node!");
     if (N_num != NODE_TYPE (arg_node)) {
         switch (INFO_MODE (arg_info)) {
         case MODE_enumeratevars:
@@ -878,7 +883,8 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info)
             AVIS_POLYLIBCOLUMNINDEX (avis) = -1;
             AVIS_ISAFFINEHANDLED (avis) = FALSE;
             res = (NULL != res) ? FREEdoFreeTree (res) : NULL;
-            DBUG_PRINT ("cleared polylib index for %s", AVIS_NAME (avis));
+            DBUG_PRINT ("cleared %s polylib index of %d", AVIS_NAME (avis),
+                        AVIS_POLYLIBCOLUMNINDEX (avis));
             break;
 
         case MODE_generatematrix:
@@ -893,19 +899,23 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info)
             rhs = LET_EXPR (ASSIGN_STMT (assgn));
             switch (NODE_TYPE (rhs)) {
             case N_id: // straight assign: arg_node = rhs
+                res = assignPolylibColumnIndex (arg_node, arg_info, res);
                 res = assignPolylibColumnIndex (rhs, arg_info, res);
                 res = TCappendExprs (res, collectAffineNid (rhs, arg_info));
                 res = TCappendExprs (res, PHUTcollectAffineExprsLocal (rhs, arg_info));
                 break;
 
             case N_prf:
+                res = assignPolylibColumnIndex (arg_node, arg_info, res);
                 res = TCappendExprs (res, HandleNprf (avis, arg_info));
                 break;
 
-            case N_num:
+            case N_num: // Put the negated constant into the Constant column for the lhs.
+                res = assignPolylibColumnIndex (arg_node, arg_info, res);
                 if (MODE_generatematrix == INFO_MODE (arg_info)) {
                     res = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLEQUALITY);
-                    res = AddIntegerToConstantColumn (NUM_VAL (rhs), res, arg_info);
+                    res = AddValueToColumn (arg_node, 1, res, arg_info); // z
+                    res = AddIntegerToConstantColumn (-NUM_VAL (rhs), res, arg_info);
                 }
                 break;
 
@@ -916,9 +926,6 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info)
 
         // Handle extrema
         res = TCappendExprs (res, collectAffineNid (arg_node, arg_info));
-
-        // Handle arg_node
-        res = assignPolylibColumnIndex (arg_node, arg_info, res);
     }
 
     // Discard result if we do not need it.
@@ -975,6 +982,7 @@ PHUTclearColumnIndices (node *arg_node, node *fundef)
         junk = PHUTcollectAffineExprsLocal (arg_node, arg_info);
         DBUG_ASSERT (NULL == junk, "Someone did not clean up indices");
         arg_info = FreeInfo (arg_info);
+        DBUG_PRINT ("Leaving MODE_clearvars");
     }
 
     DBUG_RETURN ();
@@ -1050,6 +1058,7 @@ PHUTcollectAffineNids (node *arg_node, node *fundef, int *numvars)
     DBUG_PRINT ("Found %d affine variables", TCcountExprs (res));
     *numvars = INFO_POLYLIBNUMVARS (arg_info);
     arg_info = FreeInfo (arg_info);
+    DBUG_PRINT ("Leaving MODE_enumeratevars with numids=%d", *numvars);
 
     DBUG_RETURN (res);
 }
@@ -1121,8 +1130,8 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, int *numvars)
     INFO_MODE (arg_info) = MODE_generatematrix;
     DBUG_PRINT ("Entering MODE_generatematrix with numvars=%d", *numvars);
     res = PHUTcollectAffineExprsLocal (arg_node, arg_info);
-
     arg_info = FreeInfo (arg_info);
+    DBUG_PRINT ("Leaving MODE_generatematrix with numvars=%d", *numvars);
 
     DBUG_RETURN (res);
 }
@@ -1131,16 +1140,18 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, int *numvars)
  * @fn node *PHUTgenerateAffineExprsForGuard( node *arg_node, node *fundef)
  *
  * @brief Construct a Polylib matrix for an N_prf guard.
+ *        Now, extended to support some scalar relationals.
  *
  *        We build this as an inverted relational, so that
  *        the intersect of the guard polyhedron and the polyhedron of its
- *        arguments will be empty, if the guard is valid.
+ *        arguments will be empty, IFF the guard is valid.
  *        There might be a more sensible way to do this, but I think
  *        this will work.
  *
  * @param arg_node: an N_prf for a guard primitive
  * @param fundef: The N_fundef for the current function.
  *                Used only for debugging.
+ *
  * @param numvars: the number of distinct variables in the affine function tree.
  *
  * @return A maximal N_exprs chain of expressions for the guard.
@@ -1167,7 +1178,37 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars)
 
     switch (PRF_PRF (arg_node)) {
 
+#ifdef FIXMETESTME
+    case F_non_neg_val_S:
+        // z = non_neg_val_S( x);    -->   x >= 0
+        z = AddValueToColumn (PRF_ARG1 (arg_node), 1, z, arg_info);
+        break;
+#endif // FIXMETESTME
+
+    case F_gt_SxS:
+        // z = _gt_SxS( x, y)        -->   x             >  y
+        // Inverse:                        x             <= y
+        //                                 y             >= x
+        //                                 y - x         >= 0
+        //
+        z = AddValueToColumn (PRF_ARG1 (arg_node), -1, z, arg_info);
+        z = AddValueToColumn (PRF_ARG2 (arg_node), 1, z, arg_info);
+        break;
+
+    case F_ge_SxS:
+        // z = _ge_SxS( x, y)        -->   x             >= y
+        // Inverse:                        x             <  y
+        //                                 y             >  x
+        //                                 y - x         >  0
+        //                                 y - x -1      >= 0
+        //
+        z = AddValueToColumn (PRF_ARG1 (arg_node), -1, z, arg_info);
+        z = AddValueToColumn (PRF_ARG2 (arg_node), 1, z, arg_info);
+        z = AddIntegerToConstantColumn (-1, z, arg_info);
+        break;
+
     case F_val_lt_val_SxS:
+    case F_lt_SxS:
         // z = val_lt_val_SxS( x, y) -->   x             <  y
         // Inverse:                        x             >= y
         //                                 ( x - y)      >= 0
@@ -1176,6 +1217,7 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars)
         break;
 
     case F_val_le_val_SxS:
+    case F_le_SxS:
         // z = val_le_val_SxS( x, y) -->   x             <= y
         // Inverse:                        x             >  y
         //                                 ( x - y)      >  0
@@ -1199,8 +1241,8 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars)
  *
  * @fn node
  *
- * @brief Compute the intersection between two Polylib polyhedra,
- *        represented by exprs1 and exprs2.
+ * @brief Compute the intersection among three Polylib polyhedra,
+ *        represented by exprs1, exprs2, and exprs3.
  *
  *        If the intersect is NULL, return TRUE; else FALSE.
  *
@@ -1209,7 +1251,7 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars)
  *
  *****************************************************************************/
 bool
-PHUTcheckIntersection (node *exprs1, node *exprs2, node *idlist)
+PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *idlist)
 {
 #define MAXLINE 100
     bool res;
@@ -1222,6 +1264,7 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *idlist)
     static const char *resfile = "polyhedral_res";
     char buffer[MAXLINE];
     int exit_code;
+    char opcode = 'I';
 
     DBUG_ENTER ();
 
@@ -1240,12 +1283,13 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *idlist)
 
     Exprs2File (matrix_file, exprs1, idlist);
     Exprs2File (matrix_file, exprs2, idlist);
+    Exprs2File (matrix_file, exprs3, idlist);
 
     FMGRclose (matrix_file);
 
     // We depend on PATH to find the sacpolylibintersect binary
     DBUG_PRINT ("calling sacpolylibisnullintersect");
-    exit_code = SYScallNoErr ("sacpolylibisnullintersect < %s > %s\n",
+    exit_code = SYScallNoErr ("sacpolylibisnullintersect %c < %s > %s\n", opcode,
                               polyhedral_arg_filename, polyhedral_res_filename);
     DBUG_PRINT ("exit_code=%d, WIFEXITED=%d, WIFSIGNALED=%d, WEXITSTATUS=%d", exit_code,
                 WIFEXITED (exit_code), WIFSIGNALED (exit_code), WEXITSTATUS (exit_code));
@@ -1257,51 +1301,5 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *idlist)
 
     DBUG_RETURN (res);
 }
-
-/** <!-- ****************************************************************** -->
- *
- * @fn
- *
- * @brief
- *
- * @param
- *
- * @return void
- *
- ******************************************************************************/
-#ifdef UNDERCONSTRUCTION
-node *PHUTsomething( node *
-{
-    PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
-    PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
-
-    idlist1
-      = PHUTcollectAffineNids (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), &numvars);
-
-    idlist2
-      = PHUTcollectAffineNids (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), &numvars);
-
-    exprs1
-      = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), &numvars);
-    exprs2
-      = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), &numvars);
-    exprs3 = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info), &numvars);
-
-    idlist1 = TCappendExprs (idlist1, idlist2);
-    exprs1 = TCappendExprs (exprs1, exprs2);
-
-    // Don't bother calling Polylib if it can't do anything for us.
-    z = (NULL != exprs1) && (NULL != exprs3) && (NULL != idlist1);
-    z = z && PHUTcheckIntersection (exprs1, exprs3, idlist1);
-
-    PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
-    PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
-
-    idlist1 = (NULL != idlist1) ? FREEdoFreeTree (idlist1) : NULL;
-    exprs1 = (NULL != exprs1) ? FREEdoFreeTree (exprs1) : NULL;
-    exprs3 = (NULL != exprs3) ? FREEdoFreeTree (exprs3) : NULL;
-    DBUG_RETURN (res);
-}
-#endif // UNDERCONSTRUCTION
 
 #undef DBUG_PREFIX

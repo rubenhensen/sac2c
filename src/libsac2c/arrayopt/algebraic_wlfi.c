@@ -1914,16 +1914,16 @@ IntersectBoundsPolyhedralScalar (node *gen, node *mmx, int boundnum, int shp,
     exprs3
       = PHUTgenerateAffineExprsForIntersect (gen, mmx, boundnum, numvars, shp, arg_info);
     idgen = TCappendExprs (idgen, idmmx);
-    exprs1 = TCappendExprs (exprs1, exprs2);
 
     // Don't bother calling Polylib if it can't do anything for us.
-    p = (NULL != exprs1) && (NULL != exprs3) && (NULL != idgen);
-    p = p && PHUTcheckIntersection (exprs1, exprs3, idgen);
+    p = (NULL != exprs1) && (NULL != exprs3) && (NULL != exprs2) && (NULL != idgen);
+    p = p && PHUTcheckIntersection (exprs1, exprs2, exprs3, idgen);
 
     PHUTclearColumnIndices (gen, INFO_FUNDEF (arg_info));
     PHUTclearColumnIndices (mmx, INFO_FUNDEF (arg_info));
 
     // Analyze result file here FIXME
+    // int fixme; // missing code!
 
     DBUG_RETURN (z);
 }
@@ -2830,6 +2830,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
                     FUNDEF_NAME (arg_node));
 
         optctr = global.optcounters.awlfi_expr;
+        DBUG_PRINT ("At AWLFIfundef entry, global.optcounters.awlfi_expr is %d", optctr);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             arg_node = SWLDdoSetWithloopDepth (arg_node);
@@ -2843,12 +2844,14 @@ AWLFIfundef (node *arg_node, info *arg_info)
                 INFO_VARDECS (arg_info) = NULL;
             }
 
+            if (global.optcounters.awlfi_expr != optctr) {
+                DBUG_PRINT ("optcounters was %d; is now %d", optctr,
+                            global.optcounters.awlfi_expr);
+                arg_node = SimplifySymbioticExpression (arg_node, arg_info);
+            }
+
             FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-        }
-
-        if (global.optcounters.awlfi_expr != optctr) {
-            arg_node = SimplifySymbioticExpression (arg_node, arg_info);
         }
 
         DBUG_PRINT ("End %s %s",
@@ -2863,8 +2866,29 @@ AWLFIfundef (node *arg_node, info *arg_info)
  *
  * @fn node AWLFIassign( node *arg_node, info *arg_info)
  *
- * @brief performs a top-down traversal.
+ * @brief performs a bottom-up traversal.
+ *        This is harder than top-down, but we may get more folding done; see below.
+ *
  *        For a foldable WL, arg_node is x = _sel_VxA_(iv, producerWL).
+ *
+ *        Why bottom-up is better than top-down:
+ *         Suppose we have these WLs:
+ *          V1 = iota(N);
+ *          V2 = 3 + V1;
+ *          V3 = V1 * V2;
+ *
+ *         If we go top-down, we are unable to fold V1 into V2, because V1
+ *         is also referenced by V2. Thus, on the first pass, we only fold
+ *         V2 into V3. On the second cycle, we have:
+ *          V1 = iota(N);
+ *          V3 = V1 + ( 3 * V1);
+ *         This will fold, because all references to V1 lie within V3.
+ *
+ *         If we do bottom-up, we immediately fold V2 into V3:
+ *          V1 = iota(N);
+ *          V3 = V1 + ( 3 * V1);
+ *         Then, in the same cycle, we will fold V1 into V3, assuming
+ *         we revisit V3 immediately.
  *
  *****************************************************************************/
 node *
