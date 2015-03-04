@@ -82,24 +82,13 @@ main (int argc, char *argv[])
         Polyhedron_Print (stderr, "%4d", Poly_I2);
         fprintf (stderr, "#rays=%d\n", Poly_I2->NbRays);
 #endif                              // VERBOSE
-        if (Poly_I2->NbRays == 0) { // Empty array joke.
-            z = 1;                  // If no constraints, the polyhedra match
+        if (Poly_I2->NbRays == 0) { // Empty set implies all is good
+            z = 1;
 #ifdef VERBOSE
             fprintf (stderr, "no rays\n");
 #endif // VERBOSE
         } else {
-            if (PolyhedronIncludes (Poly_A, Poly_B)
-                && PolyhedronIncludes (Poly_B, Poly_A)) {
-#ifdef VERBOSE
-                fprintf (stderr, "polyhedra Poly_A and Poly_B match\n");
-#endif // VERBOSE
-                z = 1;
-            } else {
-#ifdef VERBOSE
-                fprintf (stderr, "polyhedra Poly_A and Poly_B do not match\n");
-#endif // VERBOSE
-                z = 0;
-            }
+            z = 0;
         }
         break;
 

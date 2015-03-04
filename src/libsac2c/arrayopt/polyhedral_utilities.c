@@ -174,7 +174,7 @@ CheckExprsChain (node *exprs, info *arg_info)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *GenerateMatrixRow( int polylibcols, int relat);
+ * @fn node *GenerateMatrixRow( int polylibcols, int relfn);
  *
  * @brief Generate a row of a polyhedral matrix.
  *        This is an N_exprs chain of length polylibcols, containing all zeros.
@@ -191,7 +191,7 @@ CheckExprsChain (node *exprs, info *arg_info)
  *                 to account for the polylib function (column 0)
  *                 and the constant column (the ultimate column).
  *
- *       relat: The function specified by this matrix row, either
+ *       relfn: The function specified by this matrix row, either
  *              == 0 or >= 0
  *
  * @return the generated chain, with two extra elements, as noted above
@@ -200,7 +200,7 @@ CheckExprsChain (node *exprs, info *arg_info)
  *
  ******************************************************************************/
 static node *
-GenerateMatrixRow (int numvars, int relat)
+GenerateMatrixRow (int numvars, int relfn)
 {
     node *z = NULL;
     int cnt;
@@ -210,7 +210,7 @@ GenerateMatrixRow (int numvars, int relat)
     cnt = numvars + 1;
     DBUG_PRINT ("Generating matrix row of length %d", cnt + 1);
 
-    z = TBmakeExprs (TBmakeNum (relat), NULL);
+    z = TBmakeExprs (TBmakeNum (relfn), NULL);
     while (cnt > 0) {
         z = TCappendExprs (z, TBmakeExprs (TBmakeNum (0), NULL));
         cnt--;
@@ -380,8 +380,6 @@ collectAvisMax (node *arg_node, info *arg_info)
     node *minmax = NULL;
     node *res = NULL;
     node *avis;
-    int col;
-    int val;
 
     DBUG_ENTER ();
 
@@ -397,9 +395,7 @@ collectAvisMax (node *arg_node, info *arg_info)
             z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLINEQUALITY);
             z = AddValueToColumn (minmax, 1, z, arg_info);    //  max
             z = AddValueToColumn (arg_node, -1, z, arg_info); // -arg_node
-            col = 1 + INFO_POLYLIBNUMVARS (arg_info);
-            val = (-1) + NUM_VAL (TCgetNthExprsExpr (col, z)); // -1
-            z = TCputNthExprs (col, z, TBmakeNum (val));
+            z = AddIntegerToConstantColumn (-1, z, arg_info); // -1
             z = TCappendExprs (z, res);
         } else {
             z = res;
@@ -442,41 +438,46 @@ Exprs2File (FILE *handle, node *exprs, node *idlist)
     rows = TCcountExprs (exprs) / cols;
     DBUG_PRINT ("Writing %d rows and %d columns", rows, cols);
 
-    if (0 != rows) {                             // Ignore empty polyhedra
-        fprintf (handle, "%d %d\n", rows, cols); // polyhedron descriptor
+    fprintf (handle, "%d %d\n", rows, cols); // polyhedron descriptor
 
-        for (i = 0; i < rows; i++) {
+    for (i = 0; i < rows; i++) {
 
-            // human-readable-ish form
-            fprintf (handle, "#  ");
-            for (j = 1; j < cols - 1; j++) {
-                indx = j + (cols * i);
-                val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
-                avis = ID_AVIS (TCgetNthExprsExpr (j - 1, idlist));
-                id = AVIS_NAME (avis);
-                DBUG_ASSERT (j == AVIS_POLYLIBCOLUMNINDEX (avis),
-                             "column index confusion");
-                fprintf (handle, "(%d*%s) + ", val, id);
-            }
-
-            // The constant
-            val = NUM_VAL (TCgetNthExprsExpr (((cols - 1) + (cols * i)), exprs));
+        // human-readable-ish form
+        fprintf (handle, "#  ");
+        for (j = 1; j < cols - 1; j++) {
+            indx = j + (cols * i);
+            val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
+            avis = ID_AVIS (TCgetNthExprsExpr (j - 1, idlist));
+            id = AVIS_NAME (avis);
+            DBUG_ASSERT (j == AVIS_POLYLIBCOLUMNINDEX (avis), "column index confusion");
             if (0 != val) {
-                fprintf (handle, "(%d) ", val);
+                if (j > 1) {
+                    fprintf (handle, " + ");
+                }
+                if (1 != val) {
+                    fprintf (handle, "%d*", val);
+                }
+                fprintf (handle, "%s", id);
             }
-
-            // The relational
-            val = NUM_VAL (TCgetNthExprsExpr ((cols * i), exprs));
-            fprintf (handle, "%s\n", (0 == val) ? "== 0" : ">= 0");
-
-            // machine-readable form
-            for (j = 0; j < cols; j++) {
-                indx = j + (cols * i);
-                val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
-                fprintf (handle, "%d ", val);
-            }
-            fprintf (handle, "\n"); // make reading easier
         }
+
+        // The constant
+        val = NUM_VAL (TCgetNthExprsExpr (((cols - 1) + (cols * i)), exprs));
+        if (0 != val) {
+            fprintf (handle, "%d ", val);
+        }
+
+        // The relational
+        val = NUM_VAL (TCgetNthExprsExpr ((cols * i), exprs));
+        fprintf (handle, "%s\n", (0 == val) ? " == 0" : " >= 0");
+
+        // machine-readable form
+        for (j = 0; j < cols; j++) {
+            indx = j + (cols * i);
+            val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
+            fprintf (handle, "%d ", val);
+        }
+        fprintf (handle, "\n"); // make reading easier
     }
 
     DBUG_RETURN ();
