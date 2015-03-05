@@ -230,7 +230,7 @@ POGOprf (node *arg_node, info *arg_info)
     case F_le_SxS:
     case F_ge_SxS:
     case F_gt_SxS:
-        DBUG_PRINT ("Looking at N_prf for %s",
+        DBUG_PRINT ("Looking at dyadic N_prf for %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
         PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
@@ -238,7 +238,6 @@ POGOprf (node *arg_node, info *arg_info)
 
         idlist1
           = PHUTcollectAffineNids (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), &numvars);
-
         idlist2
           = PHUTcollectAffineNids (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), &numvars);
 
@@ -257,51 +256,57 @@ POGOprf (node *arg_node, info *arg_info)
         // If so, we cheat by making a DUP for the missing one. This is not exactly
         // efficient for Polylib (we should have a different
         // call that only expects two polyhedra), but it is simple to implement here.
-        if ((NULL == exprs2) && (NULL != exprs1)) {
-            exprs2 = DUPdoDupTree (exprs1);
-        }
-        if ((NULL == exprs1) && (NULL != exprs2)) {
-            exprs1 = DUPdoDupTree (exprs2);
-        }
+        exprs2 = (NULL == exprs2) ? PHUTgenerateIdentityExprs (numvars) : exprs2;
+        exprs1 = (NULL == exprs1) ? PHUTgenerateIdentityExprs (numvars) : exprs1;
+        break;
 
-        // Don't bother calling Polylib if it can't do anything for us.
-        z = (NULL != exprs1) && (NULL != exprs2) && (NULL != exprs3) && (NULL != idlist1);
-        z = z && PHUTcheckIntersection (exprs1, exprs2, exprs3, idlist1);
+    case F_non_neg_val_S:
+        DBUG_PRINT ("Looking at monadic N_prf for %s",
+                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
         PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
-        PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
-
-        idlist1 = (NULL != idlist1) ? FREEdoFreeTree (idlist1) : NULL;
-        exprs1 = (NULL != exprs1) ? FREEdoFreeTree (exprs1) : NULL;
-        exprs2 = (NULL != exprs2) ? FREEdoFreeTree (exprs2) : NULL;
-        exprs3 = (NULL != exprs3) ? FREEdoFreeTree (exprs3) : NULL;
-
-        if (z) { // guard/primitive can be removed
-            DBUG_PRINT ("Guard/relational for result %s removed",
-                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-            resp = TBmakeBool (TRUE);
-
-            if (TUisPrfGuard (arg_node)) { // Need two results
-                res = DUPdoDupNode (PRF_ARG1 (arg_node));
-                arg_node = FREEdoFreeNode (arg_node);
-                guardp = IDS_NEXT (INFO_LHS (arg_info));
-                resp = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
-                AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resp;
-                IDS_NEXT (INFO_LHS (arg_info)) = NULL;
-                INFO_PREASSIGNS (arg_info)
-                  = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
-            } else {
-                res = resp;
-                arg_node = FREEdoFreeNode (arg_node);
-            }
-        } else {
-            DBUG_PRINT ("Unable to remove guard/primitive for result %s",
-                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-        }
+        idlist1
+          = PHUTcollectAffineNids (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), &numvars);
+        exprs1 = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
+                                          &numvars);
+        exprs2 = PHUTgenerateIdentityExprs (numvars);
+        exprs3
+          = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info), &numvars);
         break;
 
     default:
         break;
+    }
+
+    // Don't bother calling Polylib if it can't do anything for us.
+    z = (NULL != idlist1) && PHUTcheckIntersection (exprs1, exprs2, exprs3, idlist1);
+
+    idlist1 = (NULL != idlist1) ? FREEdoFreeTree (idlist1) : NULL;
+    exprs1 = (NULL != exprs1) ? FREEdoFreeTree (exprs1) : NULL;
+    exprs2 = (NULL != exprs2) ? FREEdoFreeTree (exprs2) : NULL;
+    exprs3 = (NULL != exprs3) ? FREEdoFreeTree (exprs3) : NULL;
+
+    if (z) { // guard/primitive can be removed
+        DBUG_PRINT ("Guard/relational for result %s removed",
+                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+        resp = TBmakeBool (TRUE);
+
+        if (TUisPrfGuard (arg_node)) { // Need two results
+            res = DUPdoDupNode (PRF_ARG1 (arg_node));
+            arg_node = FREEdoFreeNode (arg_node);
+            guardp = IDS_NEXT (INFO_LHS (arg_info));
+            resp = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
+            AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resp;
+            IDS_NEXT (INFO_LHS (arg_info)) = NULL;
+            INFO_PREASSIGNS (arg_info)
+              = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
+        } else {
+            res = resp;
+            arg_node = FREEdoFreeNode (arg_node);
+        }
+    } else {
+        DBUG_PRINT ("Unable to remove guard/primitive for result %s",
+                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
     }
 
     res = TRAVcont (res, arg_info);

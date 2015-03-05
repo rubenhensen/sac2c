@@ -221,6 +221,29 @@ GenerateMatrixRow (int numvars, int relfn)
 
 /** <!-- ****************************************************************** -->
  *
+ * @fn node *PHUTgenerateIdentityExprs( int numvars)
+ *
+ * @brief Generate one row of a polyhedral matrix, suitable as an identity
+ *        polyhedron in an intersect operation.
+ *
+ * @return An N_exprs chain of length numvars, containing all zeros,
+ *         representing "0 == 0"
+ *
+ ******************************************************************************/
+node *
+PHUTgenerateIdentityExprs (int numvars)
+{
+    node *z;
+
+    DBUG_ENTER ();
+
+    z = GenerateMatrixRow (numvars, PLEQUALITY);
+
+    DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
+ *
  * @fn node *AddIntegerToConstantColumn()
  *
  * @brief Perform prow[ constantcol]+ = val, where constantcol
@@ -1179,12 +1202,10 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars)
 
     switch (PRF_PRF (arg_node)) {
 
-#ifdef FIXMETESTME
     case F_non_neg_val_S:
         // z = non_neg_val_S( x);    -->   x >= 0
         z = AddValueToColumn (PRF_ARG1 (arg_node), 1, z, arg_info);
         break;
-#endif // FIXMETESTME
 
     case F_gt_SxS:
         // z = _gt_SxS( x, y)        -->   x             >  y

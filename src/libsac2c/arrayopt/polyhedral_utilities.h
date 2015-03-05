@@ -19,6 +19,7 @@ extern node *PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int 
 extern node *PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info);
 extern bool PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3,
                                    node *idlist);
+extern node *PHUTgenerateIdentityExprs (int numvars);
 
 // POLYLIB input matrix definitions, as found in Chapter 9 (Example)
 // of the Polyulib User's Manual, page 35.
