@@ -19,6 +19,7 @@
 
 #include "registry.h"
 #include "reqqueue.h"
+#include "controller.h"
 
 #define SAC_DO_TRACE 1
 #include "sac.h"
