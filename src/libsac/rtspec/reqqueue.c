@@ -172,14 +172,12 @@ SAC_initializeQueue (int trace)
 
 /** <!--*******************************************************************-->
  *
- * @fn SAC_createNode (char *func_name, char *module, char *types, int *shapes,
+ * @fn SAC_createNode (char *func_name, char *types, int *shapes,
  *                     reg_obj_t *registry)
  *
  * @brief Allocate a new queue node and initialize the fields of the node.
  *
  * @param func_name  The name of the function being optimized.
- * @param module   The name of the last module that was created by the
- *                 optimization controller.
  * @param types    The types of the arguments of the function being optimized.
  * @param shapes   The shapes of the arguments.
  * @param registry The registry object used for dynamically loading and
@@ -189,8 +187,7 @@ SAC_initializeQueue (int trace)
  *
  ****************************************************************************/
 queue_node_t *
-SAC_createNode (char *func_name, char *module, char *types, int *shapes,
-                reg_obj_t *registry)
+SAC_createNode (char *func_name, char *types, int *shapes, reg_obj_t *registry)
 {
     queue_node_t *xnew = (queue_node_t *)malloc (sizeof (queue_node_t));
 
@@ -201,7 +198,6 @@ SAC_createNode (char *func_name, char *module, char *types, int *shapes,
     }
 
     strcpy (xnew->func_name, func_name);
-    strcpy (xnew->module_name, module);
     strcpy (xnew->type_info, types);
     xnew->shape_info = shapes;
     xnew->reg_obj = registry;
@@ -250,12 +246,10 @@ SAC_dequeueRequest (void)
 
 /** <!--*******************************************************************-->
  *
- * @fn SAC_enqueueRequest (char *func_name, char *module, char *types,
- *                         int *shapes, reg_obj_t *registry)
+ * @fn SAC_enqueueRequest (char *func_name, char *types, int *shapes,
+ *                         reg_obj_t *registry)
  *
  * @param func_name  The name of the function being optimized.
- * @param module   The name of the last module that was created by the
- *                 optimization controller.
  * @param types    The types of the arguments of the function being optimized.
  * @param shapes   The shapes of the arguments.
  * @param registry The registry object used for dynamically loading and
@@ -265,8 +259,7 @@ SAC_dequeueRequest (void)
  *
  ****************************************************************************/
 void
-SAC_enqueueRequest (char *func_name, char *module, char *types, int *shapes,
-                    reg_obj_t *registry)
+SAC_enqueueRequest (char *func_name, char *types, int *shapes, reg_obj_t *registry)
 {
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Enqueue specialization request.");
@@ -279,7 +272,7 @@ SAC_enqueueRequest (char *func_name, char *module, char *types, int *shapes,
 
     pthread_mutex_lock (&queue_mutex);
 
-    queue_node_t *xnew = SAC_createNode (func_name, module, types, shapes, registry);
+    queue_node_t *xnew = SAC_createNode (func_name, types, shapes, registry);
 
     /* Exit on error. */
     if (xnew == NULL) {

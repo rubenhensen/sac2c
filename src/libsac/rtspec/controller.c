@@ -28,8 +28,11 @@
 #include "sac.h"
 
 #define TMP_DIR_NAME_PREFIX "SACrt_"
+#define RTSPEC_MODULE_PREFIX "RTSpec_"
+#define RTSPEC_MODULE_PREFIX_LENGTH 7
 #define MAX_SYS_CALL 512
 #define MAX_STRING_LENGTH 256
+#define MAX_INT_DIGITS 21
 
 #define SAC_RTC_ENV_VAR_NAME "SAC_RTSPEC_CONTROLLER"
 
@@ -301,26 +304,6 @@ getNewFunctionName (char *func, char *result)
 
 /** <!--*******************************************************************-->
  *
- * @fn getNewModuleName( char *mod, char *result)
- *
- * @brief Creates a new random module name used by the compiler for the new
- * module.
- *
- * @param mod  The original module name.
- * @param result  The resulting module name.
- *
- ****************************************************************************/
-static void
-getNewModuleName (char *result)
-{
-    static char *format = "RTSPECmod_%d";
-    static int counter = 0;
-
-    sprintf (result, format, counter++);
-}
-
-/** <!--*******************************************************************-->
- *
  * @fn encodeShapes( int *shapes, char *result)
  *
  * @brief  Creates a string representation of the shape information stored in
@@ -401,10 +384,11 @@ SAC_handleRequest (queue_node_t *request)
                                "-rttypeinfo %s -rtshapeinfo %s "
                                "-L %s -o %s";
 
+    static int counter = 0;
+
     char syscall[MAX_SYS_CALL] = "";
     char filename[MAX_STRING_LENGTH] = "";
     char new_func_name[MAX_STRING_LENGTH] = "";
-    char new_module[MAX_STRING_LENGTH] = "";
     char shape_info[MAX_STRING_LENGTH] = "";
 
     if (request->shape_info == NULL) {
@@ -418,7 +402,6 @@ SAC_handleRequest (queue_node_t *request)
      * arguments.
      */
     getNewFunctionName (request->func_name, new_func_name);
-    getNewModuleName (new_module);
     encodeShapes (request->shape_info, shape_info);
 
     /*
@@ -428,8 +411,16 @@ SAC_handleRequest (queue_node_t *request)
         return;
     }
 
+    char *new_module
+      = (char *)malloc (sizeof (char)
+                        * (strlen (request->reg_obj->module)
+                           + (RTSPEC_MODULE_PREFIX_LENGTH + MAX_INT_DIGITS + 1)));
+
+    sprintf (new_module, "%s%s_%d", RTSPEC_MODULE_PREFIX, request->reg_obj->module,
+             counter++);
+
     /* Build the system call. */
-    sprintf (syscall, call_format, (do_trace == 1) ? 3 : 0, request->module_name,
+    sprintf (syscall, call_format, (do_trace == 1) ? 3 : 0, request->reg_obj->module,
              new_module, request->func_name, new_func_name, request->type_info,
              shape_info, tmpdir_name, tmpdir_name);
 
@@ -495,7 +486,7 @@ SAC_handleRequest (queue_node_t *request)
         /* Load the symbol for the new wrapper. */
         request->reg_obj->func_ptr = dlsym (request->reg_obj->dl_handle, new_func_name);
 
-        strcpy (request->reg_obj->module, new_module);
+        request->reg_obj->module = new_module;
 
         /* Exit on failure. */
         if (request->reg_obj->func_ptr == NULL) {

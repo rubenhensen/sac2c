@@ -20,9 +20,6 @@ typedef struct queue_node {
     /** @brief The name of the function being optimized. */
     char func_name[STR_LENGTH];
 
-    /** @brief The module where the function can be found. */
-    char module_name[STR_LENGTH];
-
     /** @brief The types of the arguments of the function being optimized. */
     char type_info[STR_LENGTH];
 
@@ -54,11 +51,11 @@ typedef struct reqqueue {
 
 void SAC_initializeQueue (int trace);
 
-queue_node_t *SAC_createNode (char *, char *, char *, int *, reg_obj_t *);
+queue_node_t *SAC_createNode (char *, char *, int *, reg_obj_t *);
 
 queue_node_t *SAC_dequeueRequest (void);
 
-void SAC_enqueueRequest (char *, char *, char *, int *, reg_obj_t *);
+void SAC_enqueueRequest (char *, char *, int *, reg_obj_t *);
 
 void SAC_freeReqqueue (queue_node_t *);
 

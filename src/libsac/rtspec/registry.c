@@ -42,7 +42,7 @@ SAC_registrate (char *module, void *func_ptr)
         exit (EXIT_FAILURE);
     }
 
-    strcpy (entry->module, module);
+    entry->module = module;
     entry->func_ptr = func_ptr;
     entry->dl_handle = NULL;
 
