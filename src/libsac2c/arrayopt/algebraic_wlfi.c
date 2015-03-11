@@ -1917,7 +1917,7 @@ IntersectBoundsPolyhedralScalar (node *gen, node *mmx, int boundnum, int shp,
 
     // Don't bother calling Polylib if it can't do anything for us.
     p = (NULL != exprs1) && (NULL != exprs3) && (NULL != exprs2) && (NULL != idgen);
-    p = p && PHUTcheckIntersection (exprs1, exprs2, exprs3, idgen);
+    p = p && PHUTcheckIntersection (exprs1, exprs2, exprs3, NULL, idgen, numvars);
 
     PHUTclearColumnIndices (gen, INFO_FUNDEF (arg_info));
     PHUTclearColumnIndices (mmx, INFO_FUNDEF (arg_info));

@@ -1303,6 +1303,11 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         SCSECI (F_max_SxS, F_min_SxS, TRUE, TRUE);
     }
 
+    // Temporary code to aid in measuring POGO performance on relationals
+    if (!global.optimize.dorelcf) {
+        z = FALSE;
+    }
+
     DBUG_RETURN (z);
 }
 

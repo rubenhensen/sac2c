@@ -26,6 +26,8 @@
 #include "pattern_match.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
+#include "polyhedral_utilities.h"
+#include "print.h"
 
 /** <!--********************************************************************-->
  *
@@ -453,8 +455,11 @@ LFUfindLoopInductionVariable (node *arg_node)
     pat = PMprf (1, PMAgetPrf (&relop), 2, PMvar (1, PMAgetNode (&arg1), 0),
                  PMvar (1, PMAgetNode (&arg2), 0));
     if (PMmatchFlat (pat, cond)) {
-        DBUG_PRINT ("predicate relational args are ( %s, %s)", AVIS_NAME (ID_AVIS (arg1)),
+        DBUG_PRINT ("predicate relational args are ( %s, %s)", AVIS_NAME (zavis),
                     AVIS_NAME (ID_AVIS (arg2)));
+        // FIXME: If lacfun relational is normalized, it's always arg1.
+        // If not, the next line is very broken. Some days...
+        zavis = ID_AVIS (arg1);
     } else {
         DBUG_UNREACHABLE ("Could not find relational for predicate");
     }
@@ -897,5 +902,66 @@ LFUcorrectSSAAssigns (node *arg_node, node *nassgn)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************
+ * @fn node *LFUfindAffineFunctionForLIV( node *arg_node, node *lacfundef)
+ *
+ * @brief: Find the maximum affine function for the variable that
+ *         controls the recursive call in a LOOPFUN.
+ *
+ * @params: arg_node - not sure yet FIXME
+ *          lacfundef - the N_fundef node for the loopfun
+ *
+ * @result: xxxx FIXME or NULL, if lacfundef is not a LOOPFUN.
+ *
+ *****************************************************************************/
+node *
+LFUfindAffineFunctionForLIV (node *arg_node, node *lacfundef)
+{
+    node *liv = NULL;
+    node *z = NULL;
+    node *idlist = NULL;
+    int numvars = 0;
+
+    DBUG_ENTER ();
+
+    liv = LFUfindLoopInductionVariable (lacfundef); // Loop induction variable
+    if (NULL != liv) {
+        DBUG_PRINT ("Loop induction variable is: %s", AVIS_NAME (liv));
+        PHUTclearColumnIndices (liv, lacfundef);
+        idlist = PHUTcollectAffineNids (liv, lacfundef, &numvars);
+        DBUG_PRINT ("LIV has %d variables", numvars);
+        z = PHUTgenerateAffineExprs (liv, lacfundef, &numvars);
+    }
+
+    DBUG_RETURN (z);
+}
+
+#ifdef UNDERCONSTRUCTION
+/******************************************************************************
+ * @fn node *LFUfindLivMin( node *arg_node)
+ *
+ * @brief: Find the maximum value of the loop induction variable(LIV)
+ *         in a loopfun.
+ *
+ * @params: arg_node - an N_ap node
+ *
+ * @result: an N_exprs node describing the minimum value of the
+ *          LIV, or NULL, if it can not be determined.
+ *
+ *****************************************************************************/
+node *
+LFUfindLivMin (node *arg_node)
+{
+    node *liv = NULL;
+    node *z = NULL;
+    node *idlist = NULL;
+    int numvars = 0;
+
+    DBUG_ENTER ();
+
+    DBUG_RETURN (z);
+}
+#endif // UNDERCONSTRUCTION
 
 #undef DBUG_PREFIX

@@ -1098,6 +1098,11 @@ SAACFonRelationalsWithExtrema (node *prfarg1, node *prfarg2, info *arg_info, prf
         break; // goats
     }
 
+    // Temporary code to aid in measuring POGO performance on relationals
+    if (!global.optimize.dorelcf) {
+        res = (NULL != res) ? FREEdoFreeNode (res) : res;
+    }
+
     DBUG_RETURN (res);
 }
 

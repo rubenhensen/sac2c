@@ -61,6 +61,7 @@
 #include "polyhedral_utilities.h"
 #include "print.h"
 #include "tree_utils.h"
+#include "sacpolylibisnullintersect.h"
 
 /** <!--********************************************************************-->
  *
@@ -122,6 +123,92 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 
+/** <!-- ****************************************************************** -->
+ *
+ * @fn prf CompanionFn( prf nprf)
+ *
+ * @brief
+ *
+ * @param An N_prf
+ *
+ * @return An N_prf
+ *
+ ******************************************************************************/
+static prf
+CompanionFn (prf nprf)
+{
+    prf z;
+
+    DBUG_ENTER ();
+
+    switch (nprf) {
+    case F_lt_SxS:
+        z = F_ge_SxS;
+        break;
+    case F_le_SxS:
+        z = F_gt_SxS;
+        break;
+    case F_ge_SxS:
+        z = F_lt_SxS;
+        break;
+    case F_gt_SxS:
+        z = F_le_SxS;
+        break;
+    case F_val_lt_val_SxS:
+        z = F_ge_SxS;
+        break;
+    case F_val_le_val_SxS:
+        z = F_gt_SxS;
+        break;
+    case F_non_neg_val_S:
+        z = F_lt_SxS;
+        break; // NB. Kludge (dyadic vs. monadic!)
+
+    default:
+        DBUG_ASSERT (FALSE, "Oopsie. Expected relational prf!");
+        z = nprf;
+        break;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn bool POGOisPogoPrf( prf nprf)
+ *
+ * @brief Predicate for determining if N_prf is supported by POGO.
+ *
+ * @param An N_prf
+ *
+ * @return TRUE if nprf is supported by POGO; else FALSE;
+ *
+ ******************************************************************************/
+bool
+POGOisPogoPrf (prf nprf)
+{
+    bool z;
+
+    DBUG_ENTER ();
+
+    switch (nprf) {
+    case F_lt_SxS:
+    case F_le_SxS:
+    case F_ge_SxS:
+    case F_gt_SxS:
+    case F_val_lt_val_SxS:
+    case F_val_le_val_SxS:
+    case F_non_neg_val_S:
+        z = TRUE;
+
+    default:
+        z = FALSE;
+        break;
+    }
+
+    DBUG_RETURN (z);
+}
+
 /** <!--*******************************************************************-->
  *
  * @fn node *POGOfundef( node *arg_node, info *arg_info)
@@ -148,6 +235,30 @@ POGOfundef (node *arg_node, info *arg_info)
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     INFO_FUNDEF (arg_info) = NULL;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *POGOpart( node *arg_node, info *arg_info)
+ *
+ * @brief Mark the WITHID_VEC, WITHID_IDS, and WITHID_IDXS of this N_part
+ *        with the N_part address when we enter, and NULL them on the way out.
+ *
+ *        These values are used by PHUT to locate GENERATOR_BOUND values
+ *        for the WL variables. Those bounds are then used to create
+ *        polyhedral inequalities for the WITHID variables.
+ *
+ *****************************************************************************/
+node *
+POGOpart (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    arg_node = PHUTsetClearAvisPart (arg_node, arg_node);
+    PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
+    arg_node = PHUTsetClearAvisPart (arg_node, NULL);
 
     DBUG_RETURN (arg_node);
 }
@@ -210,13 +321,17 @@ POGOprf (node *arg_node, info *arg_info)
     node *exprs1 = NULL;
     node *exprs2 = NULL;
     node *exprs3 = NULL;
+    node *exprs4 = NULL;
     node *idlist1 = NULL;
     node *idlist2 = NULL;
     int numvars = 0;
     bool z = FALSE;
+    bool resv = FALSE;
     node *res;
     node *resp;
     node *guardp;
+    bool dopoly = FALSE;
+    int emp = EMPTYSET_UNKNOWN;
 
     DBUG_ENTER ();
 
@@ -230,6 +345,7 @@ POGOprf (node *arg_node, info *arg_info)
     case F_le_SxS:
     case F_ge_SxS:
     case F_gt_SxS:
+        dopoly = TRUE;
         DBUG_PRINT ("Looking at dyadic N_prf for %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
@@ -245,22 +361,11 @@ POGOprf (node *arg_node, info *arg_info)
                                           &numvars);
         exprs2 = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info),
                                           &numvars);
-        exprs3
-          = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info), &numvars);
-
         idlist1 = TCappendExprs (idlist1, idlist2);
-
-        // We may have NULL exprs1 or exprs2, as in the unit test
-        //  ~/sac/testsuite/optimizations/pogo/guard_val_lt_val_S.sac
-        //
-        // If so, we cheat by making a DUP for the missing one. This is not exactly
-        // efficient for Polylib (we should have a different
-        // call that only expects two polyhedra), but it is simple to implement here.
-        exprs2 = (NULL == exprs2) ? PHUTgenerateIdentityExprs (numvars) : exprs2;
-        exprs1 = (NULL == exprs1) ? PHUTgenerateIdentityExprs (numvars) : exprs1;
         break;
 
     case F_non_neg_val_S:
+        dopoly = TRUE;
         DBUG_PRINT ("Looking at monadic N_prf for %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
@@ -270,43 +375,64 @@ POGOprf (node *arg_node, info *arg_info)
         exprs1 = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
                                           &numvars);
         exprs2 = PHUTgenerateIdentityExprs (numvars);
-        exprs3
-          = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info), &numvars);
         break;
 
     default:
         break;
     }
 
-    // Don't bother calling Polylib if it can't do anything for us.
-    z = (NULL != idlist1) && PHUTcheckIntersection (exprs1, exprs2, exprs3, idlist1);
-
-    idlist1 = (NULL != idlist1) ? FREEdoFreeTree (idlist1) : NULL;
-    exprs1 = (NULL != exprs1) ? FREEdoFreeTree (exprs1) : NULL;
-    exprs2 = (NULL != exprs2) ? FREEdoFreeTree (exprs2) : NULL;
-    exprs3 = (NULL != exprs3) ? FREEdoFreeTree (exprs3) : NULL;
-
-    if (z) { // guard/primitive can be removed
-        DBUG_PRINT ("Guard/relational for result %s removed",
-                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-        resp = TBmakeBool (TRUE);
-
-        if (TUisPrfGuard (arg_node)) { // Need two results
-            res = DUPdoDupNode (PRF_ARG1 (arg_node));
-            arg_node = FREEdoFreeNode (arg_node);
-            guardp = IDS_NEXT (INFO_LHS (arg_info));
-            resp = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
-            AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resp;
-            IDS_NEXT (INFO_LHS (arg_info)) = NULL;
-            INFO_PREASSIGNS (arg_info)
-              = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
-        } else {
-            res = resp;
-            arg_node = FREEdoFreeNode (arg_node);
+    if (dopoly) {
+        // Don't bother calling Polylib if it can't do anything for us.
+        if (NULL != idlist1) {
+            exprs3 = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
+                                                      &numvars, PRF_PRF (arg_node));
+            exprs4 = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
+                                                      &numvars,
+                                                      CompanionFn (PRF_PRF (arg_node)));
+            emp
+              = PHUTcheckIntersection (exprs1, exprs2, exprs3, exprs4, idlist1, numvars);
+            if (emp & EMPTYSET_ABC) {
+                resv = FALSE;
+                z = TRUE;
+            }
+            if (emp & EMPTYSET_ABD) {
+                resv = TRUE;
+                z = TRUE;
+            }
         }
-    } else {
-        DBUG_PRINT ("Unable to remove guard/primitive for result %s",
-                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+
+        idlist1 = (NULL != idlist1) ? FREEdoFreeTree (idlist1) : NULL;
+        exprs1 = (NULL != exprs1) ? FREEdoFreeTree (exprs1) : NULL;
+        exprs2 = (NULL != exprs2) ? FREEdoFreeTree (exprs2) : NULL;
+        exprs3 = (NULL != exprs3) ? FREEdoFreeTree (exprs3) : NULL;
+        exprs4 = (NULL != exprs4) ? FREEdoFreeTree (exprs4) : NULL;
+        PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
+        if (F_non_neg_val_S != PRF_PRF (arg_node)) { // Ignore monadic fns
+            PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
+        }
+
+        if (z) { // guard/primitive can be removed
+            DBUG_PRINT ("Guard/relational for result %s removed",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+            resp = TBmakeBool (resv);
+
+            if (TUisPrfGuard (arg_node)) { // Need two results
+                res = DUPdoDupNode (PRF_ARG1 (arg_node));
+                arg_node = FREEdoFreeNode (arg_node);
+                guardp = IDS_NEXT (INFO_LHS (arg_info));
+                resp = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
+                AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resp;
+                IDS_NEXT (INFO_LHS (arg_info)) = NULL;
+                INFO_PREASSIGNS (arg_info)
+                  = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
+            } else {
+                res = resp;
+                arg_node = FREEdoFreeNode (arg_node);
+            }
+        } else {
+            DBUG_PRINT ("Unable to remove guard/primitive for result %s",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+        }
     }
 
     res = TRAVcont (res, arg_info);

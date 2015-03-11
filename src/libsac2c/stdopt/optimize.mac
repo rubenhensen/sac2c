@@ -150,6 +150,9 @@ OPTIMIZE ("scs", scs, TRUE, TRUE, "Symbolic Constant Simplification")
 OPTIMIZE ("sccf", sccf, TRUE, TRUE, "Structural constant constant folding")
 OPTIMIZE ("saacf", saacf, TRUE, TRUE, "SAA constant folding")
 OPTIMIZE ("scwlf", scwlf, TRUE, TRUE, "Simple composition AWLF")
+OPTIMIZE ("relcf", relcf, TRUE, TRUE, "CF on relationals and guards")
+// relcf is intended only as a debugging and performance measurement aid.
+// It should probably be removed once POGO stablizes.
 
 /* OPTIMIZE entries after this point are intended for
  * developer use only.

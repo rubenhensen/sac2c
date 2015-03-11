@@ -766,6 +766,7 @@
       <traversal id="POGO" name="Polyhedral Guard Optimization" default="sons" include="polyhedral_guard_optimization.h" >
         <travuser>
           <node name="Fundef" />
+          <node name="Part" />
           <node name="Assign" />
           <node name="Let" />
           <node name="Prf" />
@@ -8768,7 +8769,28 @@ N_tfarg :
               <target mandatory="no">
                 <any />
                 <phases>
-                 <range name="opt_saacyc_pogo" />
+                  <range from="opt_saacyc_pogo" to="opt_saacyc_pogo" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>	 
+	<attribute name="Npart" default="NULL" >
+	  <description> 
+	  Pointer to the N_part that defines this variable, if
+	  the variable is a WITHID_IDS or WITHID_VEC. It is 
+	  used by POGO (and other polyhedral codes) to locate the
+	  N_part that defines the variable, along with its generators.
+	  It is NOT defined except within the scope of 
+	  a specific traversal that descends through N_part nodes.
+	  In particular, it is set to NULL when we exit the N_part.
+	  </description>
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="opt_saacyc_pogo" to="opt_saacyc_pogo" />
                 </phases>
               </target>
             </targets>
