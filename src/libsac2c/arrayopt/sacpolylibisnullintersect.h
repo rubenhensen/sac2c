@@ -1,0 +1,5 @@
+
+#define EMPTYSET_INVALID 2
+#define EMPTYSET_UNKNOWN 4
+#define EMPTYSET_ABC 8
+#define EMPTYSET_ABD 16
