@@ -1,10 +1,17 @@
 /*
  * This function is a predicate for NULL intersect of three polyhedra.
  *
- * Read three Polylib polyhedra from stdin, intersect them, and then
- * and do something with the result, based on the command-line argument:
+ * Command-line option I:
+ *   Read four Polylib polyhedra (A,B,C,D) from stdin,
+ *   intersect A,B,C, and return result of EMPTYSET_ABC if the
+ *   intersect is a NULL set.
  *
- *  I:  return 1 if the polyhedral intersection is NULL; else 0.
+ *   Otherwise, intersect A,B,D and return result of EMPTYSET_ABD if the
+ *   intersect is a NULL set.
+ *
+ *   Otherwise, return EMPTYSET_UNKNOWN or EMPTYSET_INVALID.
+ *
+ *  FIXME: these options are broken.
  *  M:  return 1 if the polyhedral intersection matches Poly_A; else 0.
  *  P:  print the intersection of the polyhedra on stdout
  *
