@@ -333,108 +333,6 @@ AddValueToColumn (node *arg_node, int incr, node *prow, info *arg_info)
     DBUG_RETURN (z);
 }
 
-#ifdef DEADCODE
-/** <!-- ****************************************************************** -->
- *
- * @fn node *collectAvisMin( node *arg_node)
- *
- * @brief Possibly generate polylib input matrix row
- *        for AVIS_MIN( arg_node) vs arg_node.
- *
- *        We know that:
- *         arg_node >= AVIS_MIN( arg_node)
- *       so we generate:
- *         arg_node - AVIS_MIN( arg_node) >= 0
- *
- * @param An N_avis
- *
- * @return If in MODE_generatematrix, an N_exprs chain for the above relational.
- *         Otherwise, NULL
- *
- ******************************************************************************/
-static node *
-collectAvisMin (node *arg_node, info *arg_info)
-{
-    node *z = NULL;
-    node *minmax = NULL;
-    node *res = NULL;
-
-    DBUG_ENTER ();
-
-    minmax = AVIS_MIN (arg_node);
-    if (NULL != minmax) {
-        res = PHUTcollectAffineExprsLocal (minmax, arg_info);
-        DBUG_PRINT ("Generating %s >= %s for AVIS_MIN", AVIS_NAME (arg_node),
-                    AVIS_NAME (ID_AVIS (minmax)));
-
-        if ((MODE_generatematrix == INFO_MODE (arg_info))) {
-            z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLINEQUALITY);
-            z = AddValueToColumn (arg_node, 1, z, arg_info); // arg_node
-            z = AddValueToColumn (minmax, -1, z, arg_info);  // -minmax
-            z = TCappendExprs (z, res);
-        } else {
-            z = res;
-        }
-    }
-
-    CheckExprsChain (z, arg_info);
-
-    DBUG_RETURN (z);
-}
-
-/** <!-- ****************************************************************** -->
- *
- * @fn node *collectAvisMax( node *arg_node)
- *
- * @brief Possibly generate polylib input matrix row for
- *        AVIS_MAX( arg_node) vs arg_node:
- *
- *        We know that:
- *         arg_node < AVIS_MAX( arg_node)         --->
- *         AVIS_MAX( arg_node) > arg_node         --->
- *         AVIS_MAX( arg_node) - arg_node) > 0    --->
- *
- *       so we generate:
- *
- *         AVIS_MAX( arg_node) + ( -1 * arg_node) - 1 >= 0
- *
- * @param arg_node: An N_avis or N_id node
- *
- ******************************************************************************/
-static node *
-collectAvisMax (node *arg_node, info *arg_info)
-{
-    node *z = NULL;
-    node *minmax = NULL;
-    node *res = NULL;
-    node *avis;
-
-    DBUG_ENTER ();
-
-    avis = Node2Avis (arg_node);
-    minmax = AVIS_MAX (avis);
-    if (NULL != minmax) {
-        res = PHUTcollectAffineExprsLocal (minmax, arg_info);
-        DBUG_PRINT ("Generating %s < %s for AVIS_MAX", AVIS_NAME (avis),
-                    AVIS_NAME (ID_AVIS (minmax)));
-
-        if ((MODE_generatematrix == INFO_MODE (arg_info))) {
-            z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLINEQUALITY);
-            z = AddValueToColumn (minmax, 1, z, arg_info);    //  max
-            z = AddValueToColumn (arg_node, -1, z, arg_info); // -arg_node
-            z = AddIntegerToConstantColumn (-1, z, arg_info); // -1
-            z = TCappendExprs (z, res);
-        } else {
-            z = res;
-        }
-    }
-
-    CheckExprsChain (z, arg_info);
-
-    DBUG_RETURN (z);
-}
-#endif // DEADCODE
-
 /** <!-- ****************************************************************** -->
  *
  * @fn node *collectWlGeneratorMin( node *arg_node)
@@ -443,15 +341,42 @@ collectAvisMax (node *arg_node, info *arg_info)
  *        If so, generate a polylib input matrix row of:
  *
  *             k = WITHID_IDS iota arg_node
- *             arg_node - GENERATOR_BOUND1[k] >= 0
+ *             arg_node - LB[k] >= 0
  *
  * @param arg_node: an N_avis
  *
  * @return If arg_node is a member of a WITHID_IDS, and we
- *         are in MODE_generatematrix, an N_exprs chain for the above relational.
+ *         are in MODE_generatematrix, an N_exprs chain for the
+ *         above relational.
  *         Otherwise, NULL.
  *
+ *         We eventually want to support non-unit WIDTH, but
+ *         we want to get the simpler stuff working first.
+ *
  ******************************************************************************/
+static bool
+isWidthOne (node *partn)
+{
+    bool z;
+    node *wid;
+
+    DBUG_ENTER ();
+
+    z = (NULL == partn);
+    if (!z) {
+        wid = GENERATOR_WIDTH (PART_GENERATOR (partn));
+        z = (NULL == wid) || (SCSisConstantOne (wid));
+    }
+
+    if (z) {
+        DBUG_PRINT ("WL WIDTH is 1");
+    } else {
+        DBUG_PRINT ("WL WIDTH is not 1");
+    }
+
+    DBUG_RETURN (z);
+}
+
 static node *
 collectWlGeneratorMin (node *arg_node, info *arg_info)
 {
@@ -467,7 +392,7 @@ collectWlGeneratorMin (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     partn = AVIS_NPART (arg_node);
-    if (NULL != partn) {
+    if ((NULL != partn) && isWidthOne (partn)) {
         bnd = GENERATOR_BOUND1 (PART_GENERATOR (partn));
         bnd = WLUTfindArrayForBound (bnd);
         k = LFUindexOfMemberIds (arg_node, WITHID_IDS (PART_WITHID (partn)));
@@ -507,9 +432,17 @@ collectWlGeneratorMin (node *arg_node, info *arg_info)
  * @brief arg_node may represent a WITHID element for a WL.
  *        If so, generate a polylib input matrix row of:
  *
- *             arg_node < GENERATOR_BOUND2    --->
- *             GENERATOR_BOUND2 > arg_node    --->
- *             (GENERATOR_BOUND2 - arg_node) -1  > 0
+ *             arg_node < UB    --->
+ *             UB > arg_node    --->
+ *             (UB - arg_node) -1  >= 0
+ *
+ *        If GENERATOR_STEP is not 1, we also generate a row with:
+ *
+ *             (STEP * ( arg_node - LB)) < UB --->
+ *             UB > ( STEP * arg_node) - ( STEP * LB)
+ *             UB > (STEP * LB) - ( STEP * arg_node)
+ *             UB + (STEP * LB) - ( STEP * arg_node) > 0
+ *             UB + (STEP * LB) - ( STEP * arg_node) -1 >= 0
  *
  * @param An N_avis
  *
@@ -524,38 +457,64 @@ collectWlGeneratorMax (node *arg_node, info *arg_info)
     node *z = NULL;
     node *partn;
     node *res = NULL;
-    node *bnd;
-    node *bndel;
-    int bndelnum;
+    node *lbel;
+    node *ubel;
+    int ubelnum;
+    int stpelnum;
     int k;
-    bool isnumbndel = FALSE;
+    node *lb;
+    node *ub;
+    node *stp;
+    bool ubnum = FALSE;
 
     DBUG_ENTER ();
 
     partn = AVIS_NPART (arg_node);
-    if (NULL != partn) {
-        bnd = GENERATOR_BOUND2 (PART_GENERATOR (partn));
-        bnd = WLUTfindArrayForBound (bnd);
+    if ((NULL != partn) && isWidthOne (partn)) {
+        lb = GENERATOR_BOUND1 (PART_GENERATOR (partn));
+        ub = GENERATOR_BOUND2 (PART_GENERATOR (partn));
+        lb = WLUTfindArrayForBound (lb);
+        ub = WLUTfindArrayForBound (ub);
         k = LFUindexOfMemberIds (arg_node, WITHID_IDS (PART_WITHID (partn)));
         if (-1 != k) {
-            bndel = TCgetNthExprsExpr (k, ARRAY_AELEMS (bnd));
-            isnumbndel = (N_num == NODE_TYPE (bndel));
-            if (isnumbndel) {
-                bndelnum = NUM_VAL (bndel);
+            lbel = TCgetNthExprsExpr (k, ARRAY_AELEMS (lb));
+            ubel = TCgetNthExprsExpr (k, ARRAY_AELEMS (ub));
+            ubnum = (N_num == NODE_TYPE (ubel));
+            if (ubnum) {
+                ubelnum = NUM_VAL (ubel);
             } else {
-                res = PHUTcollectAffineExprsLocal (bndel, arg_info);
+                res = PHUTcollectAffineExprsLocal (ubel, arg_info);
             }
             if ((MODE_generatematrix == INFO_MODE (arg_info))) {
                 DBUG_PRINT ("Generating upper bound for %s", AVIS_NAME (arg_node));
                 z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLINEQUALITY);
-                if (isnumbndel) {
-                    z = AddIntegerToConstantColumn (bndelnum, z, arg_info);
+                if (ubnum) {
+                    z = AddIntegerToConstantColumn (ubelnum, z, arg_info);
                 } else {
-                    z = AddValueToColumn (bndel, 1, z, arg_info); //  bndel
+                    z = AddValueToColumn (ubel, 1, z, arg_info);
                 }
                 z = AddIntegerToConstantColumn (-1, z, arg_info);
                 z = AddValueToColumn (arg_node, -1, z, arg_info); // -arg_node
                 z = TCappendExprs (z, res);
+
+                // Non-unit STEP support:
+                //   UB + (STEP * LB) - ( STEP * arg_node) -1 >= 0
+                stp = GENERATOR_STEP (PART_GENERATOR (partn));
+                if (NULL != stp) {
+                    stp = WLUTfindArrayForBound (stp);
+                    stp = TCgetNthExprsExpr (k, ARRAY_AELEMS (stp));
+                    stpelnum = NUM_VAL (stp);
+                    if (!SCSisConstantOne (stp)) {
+                        DBUG_PRINT ("Generating non-unit stride matrix row for %s",
+                                    AVIS_NAME (ID_AVIS (arg_node)));
+                        z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
+                                               PLINEQUALITY);
+                        z = AddValueToColumn (ubel, 1, z, arg_info);
+                        z = AddValueToColumn (lbel, stpelnum, z, arg_info);
+                        z = AddValueToColumn (arg_node, -stpelnum, z, arg_info);
+                        z = AddIntegerToConstantColumn (-1, z, arg_info);
+                    }
+                }
             } else {
                 z = res;
             }
@@ -653,7 +612,7 @@ Exprs2File (FILE *handle, node *exprs, node *idlist)
  *
  * @fn node *collectAffineNid( node *arg_node, info *arg_info)
  *
- * @brief Collect values for AVIS_MIN and AVIS_MAX for this N_id
+ * @brief Collect extrema values for this N_id
  *
  * @param An N_id or an N_avis
  *
@@ -670,14 +629,11 @@ collectAffineNid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    DBUG_ASSERT (N_id == NODE_TYPE (arg_node), "Expected N_id");
     avis = (N_id == NODE_TYPE (arg_node)) ? ID_AVIS (arg_node) : arg_node;
-
-#ifdef DEADCODE
-    mn = collectAvisMin (avis, arg_info);
-    mx = collectAvisMax (avis, arg_info);
-#endif // DEADCODE
     mn = collectWlGeneratorMin (avis, arg_info);
     mx = collectWlGeneratorMax (avis, arg_info);
+    DBUG_PRINT ("Generator extrema collected for %s", AVIS_NAME (avis));
     z = TCappendExprs (mn, mx);
 
     CheckExprsChain (z, arg_info);
@@ -955,30 +911,6 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info)
         }
 
         if (MODE_generatematrix == INFO_MODE (arg_info)) {
-#ifdef DEADCODE
-            // Start by grabbing any extrema information attached to the main result.
-            // We should compute this properly, rather than relying on IVEXP.
-            // For now, we just use the extrema, if present.
-            if (NULL != AVIS_MIN (IDS_AVIS (ids))) { // z            >= AVIS_MIN
-                                                     // z - AVIS_MIN >= 0
-                z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLINEQUALITY);
-                z = AddValueToColumn (ids, 1, z, arg_info); // z
-                // -AVIS_MIN
-                z = AddValueToColumn (AVIS_MIN (IDS_AVIS (ids)), -1, z, arg_info);
-            }
-
-            if (NULL != AVIS_MAX (IDS_AVIS (ids))) { // z < AVIS_MAX
-                                                     // AVIS_MAX > z
-                                                     // AVIS_MAX - z > 0
-                                                     // AVIS_MAX + ( -z) + (-1) >= 0
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLINEQUALITY);
-                // AVIS_MAX
-                z2 = AddValueToColumn (AVIS_MAX (IDS_AVIS (ids)), 1, z2, arg_info);
-                z2 = AddValueToColumn (ids, -1, z2, arg_info);      // -z
-                z2 = AddIntegerToConstantColumn (-1, z2, arg_info); // - 1
-                z = TCappendExprs (z2, z);
-            }
-#endif // DEADCODE
 
             switch (PRF_PRF (rhs)) {
             case F_add_SxS: // z = x + y;    -->   x + y  + (-z) == 0
@@ -1153,10 +1085,10 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info)
                 z = TCappendExprs (z2, z);
                 break;
 
-            case F_neg_S: //  z = -y;  -->   (-y) + (-z) == 0
+            case F_neg_S: //  z = -y;  -->  z + y == 0
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLEQUALITY);
-                z2 = AddValueToColumn (PRF_ARG1 (rhs), -1, z2, arg_info); // -y
-                z2 = AddValueToColumn (ids, -1, z2, arg_info);            // -z
+                z2 = AddValueToColumn (PRF_ARG1 (rhs), 1, z2, arg_info);
+                z2 = AddValueToColumn (ids, 1, z2, arg_info);
                 z = TCappendExprs (z2, z);
                 break;
 
