@@ -23,7 +23,7 @@ extern node *PHUTcollectAffineNids (node *arg_node, node *fundef, int *numvars);
 extern node *PHUTgenerateAffineExprs (node *arg_node, node *fundef, int *numvars);
 extern node *PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars,
                                               prf relfn);
-extern node *PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info);
+extern node *PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res);
 extern int PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *exprs4,
                                   node *idlist, int numvars);
 extern node *PHUTgenerateIdentityExprs (int numvars);
