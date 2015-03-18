@@ -290,9 +290,11 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
         if ((NULL == AVIS_MIN (lfa)) && (!TYisAKV (typ)) && (NULL != rca)
             && (!LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca)))) {
             af = LFUfindAffineFunctionForLIV (NULL, arg_node);
+#ifdef FIXME
             if (NULL != af) {
                 PRTdoPrint (af);
             }
+#endif // FIXME
         }
 
         if ((NULL == AVIS_MAX (lfa)) && (!TYisAKV (typ)) && (NULL != AVIS_MAX (argavis))

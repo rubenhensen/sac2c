@@ -27,7 +27,6 @@
 #include "DupTree.h"
 #include "LookUpTable.h"
 #include "polyhedral_utilities.h"
-#include "print.h"
 
 /** <!--********************************************************************-->
  *
@@ -450,16 +449,16 @@ LFUfindLoopInductionVariable (node *arg_node)
     cond = ASSIGN_NEXT (LFUfindAssignBeforeCond (arg_node));
     cond = COND_COND (ASSIGN_STMT (cond));
     DBUG_PRINT ("Function %s induction variable predicate is %s", FUNDEF_NAME (arg_node),
-                AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)))));
+                AVIS_NAME (ID_AVIS (cond)));
 
     pat = PMprf (1, PMAgetPrf (&relop), 2, PMvar (1, PMAgetNode (&arg1), 0),
                  PMvar (1, PMAgetNode (&arg2), 0));
     if (PMmatchFlat (pat, cond)) {
-        DBUG_PRINT ("predicate relational args are ( %s, %s)", AVIS_NAME (zavis),
-                    AVIS_NAME (ID_AVIS (arg2)));
         // FIXME: If lacfun relational is normalized, it's always arg1.
         // If not, the next line is very broken. Some days...
         zavis = ID_AVIS (arg1);
+        DBUG_PRINT ("predicate relational args are ( %s, %s)", AVIS_NAME (zavis),
+                    AVIS_NAME (ID_AVIS (arg2)));
     } else {
         DBUG_UNREACHABLE ("Could not find relational for predicate");
     }

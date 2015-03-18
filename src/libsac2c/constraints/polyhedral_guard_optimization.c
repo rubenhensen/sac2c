@@ -73,11 +73,13 @@ struct INFO {
     node *fundef;
     node *lhs;
     node *preassigns;
+    node *with;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_WITH(n) ((n)->with)
 
 static info *
 MakeInfo (void)
@@ -91,6 +93,7 @@ MakeInfo (void)
     INFO_FUNDEF (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
+    INFO_WITH (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -257,8 +260,37 @@ POGOpart (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     arg_node = PHUTsetClearAvisPart (arg_node, arg_node);
-    PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
+
+    CODE_CBLOCK (PART_CODE (arg_node))
+      = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
     arg_node = PHUTsetClearAvisPart (arg_node, NULL);
+
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *POGOwith( node *arg_node, info *arg_info)
+ *
+ * @brief Traverse with-loop partitions. Rebuild WITH_CODE
+ *        We disconnect the current WITH_CODE chain.
+ *
+ *****************************************************************************/
+node *
+POGOwith (node *arg_node, info *arg_info)
+{
+    node *lastwith;
+
+    DBUG_ENTER ();
+
+    lastwith = INFO_WITH (arg_info);
+    INFO_WITH (arg_info) = arg_node;
+
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    WITH_CODE (arg_node) = TUremoveUnusedCodes (WITH_CODE (arg_node));
+    INFO_WITH (arg_info) = lastwith;
 
     DBUG_RETURN (arg_node);
 }

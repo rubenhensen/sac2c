@@ -767,6 +767,7 @@
         <travuser>
           <node name="Fundef" />
           <node name="Part" />
+          <node name="With" />
           <node name="Assign" />
           <node name="Let" />
           <node name="Prf" />

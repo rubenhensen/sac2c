@@ -12,6 +12,7 @@ extern node *POGOdoPolyhedralGuardOptimization (node *arg_node);
 
 extern node *POGOfundef (node *arg_node, info *arg_info);
 extern node *POGOpart (node *arg_node, info *arg_info);
+extern node *POGOwith (node *arg_node, info *arg_info);
 extern node *POGOassign (node *arg_node, info *arg_info);
 extern node *POGOlet (node *arg_node, info *arg_info);
 extern node *POGOprf (node *arg_node, info *arg_info);

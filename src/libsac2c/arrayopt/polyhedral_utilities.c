@@ -445,6 +445,7 @@ collectWlGeneratorMin (node *arg_node, info *arg_info, node *res)
  *             UB > (STEP * LB) - ( STEP * arg_node)
  *             UB + (STEP * LB) - ( STEP * arg_node) > 0
  *             UB + (STEP * LB) - ( STEP * arg_node) -1 >= 0
+ *        NB. LB or UB may be N_num or N_id nodes. Sigh.
  *
  * @param An N_avis
  *
@@ -461,11 +462,13 @@ collectWlGeneratorMax (node *arg_node, info *arg_info, node *res)
     node *lbel;
     node *ubel;
     int ubelnum;
-    int stpelnum;
+    int stpelnum = 1;
     int k;
     node *lb;
     node *ub;
     node *stp;
+    pattern *pat;
+    constant *con = NULL;
     bool ubnum = FALSE;
 
     DBUG_ENTER ();
@@ -502,20 +505,34 @@ collectWlGeneratorMax (node *arg_node, info *arg_info, node *res)
                 //   UB + (STEP * LB) - ( STEP * arg_node) -1 >= 0
                 stp = GENERATOR_STEP (PART_GENERATOR (partn));
                 if (NULL != stp) {
+                    pat = PMconst (1, PMAgetVal (&con), 0);
                     stp = WLUTfindArrayForBound (stp);
                     stp = TCgetNthExprsExpr (k, ARRAY_AELEMS (stp));
-                    stpelnum = NUM_VAL (stp);
-                    if (!SCSisConstantOne (stp)) {
+                    if (PMmatchFlat (pat, stp)) {
+                        stpelnum = COconst2Int (con);
+                        con = COfreeConstant (con);
+                    }
+                    if (1 != stpelnum) {
                         DBUG_PRINT ("Generating non-unit stride matrix row for %s",
-                                    AVIS_NAME (ID_AVIS (arg_node)));
+                                    AVIS_NAME (arg_node));
                         z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
                                                PLINEQUALITY);
-                        z = AddValueToColumn (ubel, 1, z, arg_info);
-                        z = AddValueToColumn (lbel, stpelnum, z, arg_info);
+                        if (N_num == NODE_TYPE (ubel)) {
+                            z = AddIntegerToConstantColumn (NUM_VAL (ubel), z, arg_info);
+                        } else {
+                            z = AddValueToColumn (ubel, 1, z, arg_info);
+                        }
+                        if (N_num == NODE_TYPE (lbel)) {
+                            z = AddIntegerToConstantColumn (NUM_VAL (lbel) * stpelnum, z,
+                                                            arg_info);
+                        } else {
+                            z = AddValueToColumn (lbel, stpelnum, z, arg_info);
+                        }
                         z = AddValueToColumn (arg_node, -stpelnum, z, arg_info);
                         z = AddIntegerToConstantColumn (-1, z, arg_info);
                         res = TCappendExprs (res, z);
                     }
+                    pat = PMfree (pat);
                 }
             }
         }
@@ -557,9 +574,7 @@ Exprs2File (FILE *handle, node *exprs, node *idlist)
     rows = TCcountExprs (exprs) / cols;
     DBUG_PRINT ("Writing %d rows and %d columns", rows, cols);
 
-    fprintf (handle, "%d %d\n", rows, cols); // polyhedron descriptor
-
-    fprintf (handle, "## ");
+    fprintf (handle, "%d %d\n## ", rows, cols); // polyhedron descriptor
     for (i = 0; i < cols - 2; i++) {
         fprintf (handle, " %s ", AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist))));
     }
@@ -626,7 +641,6 @@ collectAffineNid (node *arg_node, info *arg_info, node *res)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (N_id == NODE_TYPE (arg_node), "Expected N_id");
     avis = (N_id == NODE_TYPE (arg_node)) ? ID_AVIS (arg_node) : arg_node;
     res = collectWlGeneratorMin (avis, arg_info, res);
     res = collectWlGeneratorMax (avis, arg_info, res);
@@ -852,6 +866,68 @@ HandleNnum (node *arg_node, node *rhs, info *arg_info, node *res)
 
     CheckExprsChain (res, arg_info);
     DBUG_PRINT ("Leaving HandleNnum for lhs=%s", AVIS_NAME (arg_node));
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *HandleComposition( node *arg_node, node *rhs, info *arg_info, node *res)
+ *
+ * @brief Handler for compositions of primitive functions.
+ *        Currently supported:
+ *          shpel = idx_sel( offset, _shape_A_( var));
+ *          shpel = _sel_VxA_( iv, _shape_A_( var));
+ *          Both of these will generate shpel >= 0.
+ *
+ *
+ * @param  arg_node: The N_avis for an assign.
+ * @param  rhs: The assign's rhs
+ * @param  arg_info: as usual
+ * @param  res: Incoming N_exprs chain
+ *
+ * @return If we are in MODE_generatematrix, an N_exprs chain (or NULL)
+ *         representing a polylib matrix row, appended to res.
+ *         All the N_exprs chain values will be N_num nodes.
+ *         Otherwise, incoming res.
+ *
+ ******************************************************************************/
+static node *
+HandleComposition (node *arg_node, node *rhs, info *arg_info, node *res)
+{
+    node *z = NULL;
+    pattern *pat1;
+    pattern *pat2;
+    pattern *pat3;
+    node *iv = NULL;
+    node *x = NULL;
+    node *m = NULL;
+
+    DBUG_ENTER ();
+
+    if (MODE_generatematrix == INFO_MODE (arg_info)) {
+        /* z = _sel_VxA_( iv, x); */
+        pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
+                      PMvar (1, PMAgetNode (&x), 0));
+        /* z = _idx_sel( offset, x); */
+        pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&iv), 0),
+                      PMvar (1, PMAgetNode (&x), 0));
+        /* x = _shape_A_( m ); */
+        pat3 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&m), 0));
+
+        if ((PMmatchFlat (pat1, rhs) || PMmatchFlat (pat2, rhs))
+            && PMmatchFlat (pat3, x)) {
+            z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLINEQUALITY);
+            z = AddValueToColumn (arg_node, 1, z, arg_info);
+            res = TCappendExprs (res, z);
+        }
+        pat1 = PMfree (pat1);
+        pat2 = PMfree (pat2);
+        pat3 = PMfree (pat3);
+        CheckExprsChain (res, arg_info);
+    }
+
+    DBUG_PRINT ("Leaving HandleComposition for lhs=%s", AVIS_NAME (arg_node));
 
     DBUG_RETURN (res);
 }
@@ -1162,6 +1238,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res)
         case N_prf:
             res = assignPolylibColumnIndex (arg_node, arg_info, res);
             res = HandleNprf (avis, rhs, arg_info, res);
+            res = HandleComposition (avis, rhs, arg_info, res);
             break;
 
         case N_num:
@@ -1585,7 +1662,6 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *exprs4,
  *        iv <  ub
  *        0 == mod( iv - lb, s)
  *        FIXME: deal with width later on
- *        FIXME: deal with non-unit STEP later on
  *
  ******************************************************************************/
 node *

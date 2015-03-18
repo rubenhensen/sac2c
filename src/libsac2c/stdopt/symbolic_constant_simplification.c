@@ -100,6 +100,52 @@
 
 /******************************************************************************
  *
+ * function: Predicate for determining if an argument is
+ *           a selection from a shape vector.
+ *           Or, just a guarded shape vector.
+ *
+ * description: We look for (shape(v)[iv] in various guises.
+ *
+ * result: True if argument is known to be a selection from shape.
+ *         If true, the argument is also known to be non-negative.
+ *         Else false.
+ *
+ *****************************************************************************/
+bool
+SCSisSelOfShape (node *arg_node)
+{
+    pattern *pat1;
+    pattern *pat2;
+    pattern *pat3;
+    node *iv = NULL;
+    node *x = NULL;
+    node *m = NULL;
+    bool z;
+
+    DBUG_ENTER ();
+
+    /* z = _sel_VxA_( iv, x); */
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&x), 0));
+    /* z = _idx_sel( offset, x); */
+    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&x), 0));
+    /* x = _shape_A_( m ); */
+    pat3 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&m), 0));
+
+    z = PMmatchFlatSkipGuards (pat3, arg_node); // Guarded shape vector
+    z = (PMmatchFlatSkipGuards (pat1, arg_node) || PMmatchFlatSkipGuards (pat2, arg_node))
+        && PMmatchFlatSkipGuards (pat3, x);
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
  * function: Predicate for determining if an argument is known to
  *           be non-negative.
  *
@@ -119,11 +165,11 @@ SCSisNonneg (node *arg_node)
     constant *con = NULL;
     bool z;
 
-    pat = PMconst (1, PMAgetVal (&con));
-
     DBUG_ENTER ();
 
+    pat = PMconst (1, PMAgetVal (&con));
     z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
+    z = z || SCSisSelOfShape (arg_node);
 
     if (!z) {
         con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
