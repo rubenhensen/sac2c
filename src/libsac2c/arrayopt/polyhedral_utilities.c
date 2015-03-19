@@ -1572,9 +1572,7 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
  *
  *          exprs1, exprs2, exprs4
  *
- *        The result is a shifted enum, so that we can return multiple single-bit results.
- *        We currently only care about EMPTYSET_true,
- *        indicating that the intersection is an empty set/ intersections are empty sets.
+ *        The result is an element of sacpolylibisnullintersect.h.
  *
  *        The monotonically increasing global.polylib_filenumber
  *        is for debugging, as we will generate MANY files.
@@ -1585,7 +1583,7 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *exprs4,
                        node *idlist, int numvars)
 {
 #define MAXLINE 1000
-    int res = EMPTYSET_INVALID;
+    int res = POLY_INVALID;
     FILE *matrix_file;
     FILE *res_file;
     char polyhedral_arg_filename[PATH_MAX];

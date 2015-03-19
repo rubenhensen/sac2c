@@ -1,15 +1,16 @@
 /*
- * This function is a predicate for NULL intersect of three polyhedra.
+ * This function is a predicate for NULL intersects of three polyhedra.
  *
  * Command-line option I:
  *   Read four Polylib polyhedra (A,B,C,D) from stdin,
- *   intersect A,B,C, and return result of EMPTYSET_ABC if the
+ *   If A and B are matching sets, return POLY_MATCH_AB.
+ *   Else, intersect A,B,C, and return result of POLY_EMPTYSET_ABC if the
  *   intersect is a NULL set.
  *
- *   Otherwise, intersect A,B,D and return result of EMPTYSET_ABD if the
+ *   Else, intersect A,B,D and return result of POLY_EMPTYSET_ABD if the
  *   intersect is a NULL set.
  *
- *   Otherwise, return EMPTYSET_UNKNOWN or EMPTYSET_INVALID.
+ *   Else, return POLY_UNKNOWN or POLY_INVALID.
  *
  *  FIXME: these options are broken.
  *  M:  return 1 if the polyhedral intersection matches Poly_A; else 0.
@@ -25,24 +26,45 @@
 #include "stdio.h"
 #include "sacpolylibisnullintersect.h"
 
+#define MAXCON 2000
+
+int
+isNullIntersect (Polyhedron *Poly_A, Polyhedron *Poly_B, Polyhedron **Poly_Z)
+{
+    // Intersect Poly_A and Poly_B, placing the result in Poly_Z.
+    // return TRUE(1) if the intersect is NULL; else FALSE(0).
+
+    int z;
+
+    *Poly_Z = DomainIntersection (Poly_A, Poly_B, MAXCON);
+    z = (0 == (*Poly_Z)->NbRays) ? 1 : 0;
+#ifdef VERBOSE
+    fprintf (stderr, "Poly_Z is:\n");
+    Polyhedron_Print (stderr, "%4d", *Poly_Z);
+    fprintf (stderr, "#rays ABC=%d\n", (*Poly_Z)->NbRays);
+#endif // VERBOSE
+    return (z);
+}
+
 int
 main (int argc, char *argv[])
 {
     FILE *file;
     char opcode;
-    Matrix *Matrix_A;
-    Matrix *Matrix_B;
-    Matrix *Matrix_C;
-    Matrix *Matrix_D;
-    Polyhedron *Poly_A;
-    Polyhedron *Poly_B;
-    Polyhedron *Poly_C;
-    Polyhedron *Poly_D;
-    Polyhedron *Poly_I;
-    Polyhedron *Poly_I2;
-    int maxcon = 2000;
-    int z = EMPTYSET_UNKNOWN;
+    Matrix *Matrix_A = NULL;
+    Matrix *Matrix_B = NULL;
+    Matrix *Matrix_C = NULL;
+    Matrix *Matrix_D = NULL;
+    Polyhedron *Poly_A = NULL;
+    Polyhedron *Poly_B = NULL;
+    Polyhedron *Poly_C = NULL;
+    Polyhedron *Poly_D = NULL;
+    Polyhedron *Poly_AB = NULL;
+    Polyhedron *Poly_Z = NULL;
+    int z = POLY_UNKNOWN;
+    int res;
     int numrays = 0;
+    int finished = 0;
 
     if (argc > 1) {
         opcode = *argv[1];
@@ -56,10 +78,10 @@ main (int argc, char *argv[])
     Matrix_C = Matrix_Read ();
     Matrix_D = Matrix_Read ();
 
-    Poly_A = Constraints2Polyhedron (Matrix_A, maxcon);
-    Poly_B = Constraints2Polyhedron (Matrix_B, maxcon);
-    Poly_C = Constraints2Polyhedron (Matrix_C, maxcon);
-    Poly_D = Constraints2Polyhedron (Matrix_D, maxcon);
+    Poly_A = Constraints2Polyhedron (Matrix_A, MAXCON);
+    Poly_B = Constraints2Polyhedron (Matrix_B, MAXCON);
+    Poly_C = Constraints2Polyhedron (Matrix_C, MAXCON);
+    Poly_D = Constraints2Polyhedron (Matrix_D, MAXCON);
 
 #ifdef VERBOSE
     fprintf (stderr, "Poly_A is:\n");
@@ -74,71 +96,66 @@ main (int argc, char *argv[])
 
     switch (opcode) {
     case 'P':
-        Poly_I = DomainIntersection (Poly_A, Poly_B, maxcon);
-        Poly_I2 = DomainIntersection (Poly_I, Poly_C, maxcon);
-        fprintf (stderr, "Poly_I2 is:\n");
-        Polyhedron_Print (stderr, "%4d", Poly_I2);
-        fprintf (stderr, "# PolyI2 rays=%d\n", Poly_I2->NbRays);
+        Poly_AB = DomainIntersection (Poly_A, Poly_B, MAXCON);
+        Poly_Z = DomainIntersection (Poly_AB, Poly_C, MAXCON);
+        fprintf (stderr, "Poly_Z(ABC) is:\n");
+        Polyhedron_Print (stderr, "%4d", Poly_Z);
+        fprintf (stderr, "# Poly_Z rays=%d\n", Poly_Z->NbRays);
         break;
 
     case 'I':
-        Poly_I = DomainIntersection (Poly_A, Poly_B, maxcon);
-        if (0 == Poly_I->NbRays) { // Stop here if already empty
-            z = z | EMPTYSET_ABC;
-            z = z & ~EMPTYSET_UNKNOWN;
-            numrays = 0;
-#ifdef VERBOSE
-            fprintf (stderr, "no rays in A,B\n");
-#endif // VERBOSE
-        } else {
-            Poly_I2 = DomainIntersection (Poly_I, Poly_C, maxcon);
-            numrays = Poly_I2->NbRays;
-
-#ifdef VERBOSE
-            fprintf (stderr, "Poly_I2 is:\n");
-            Polyhedron_Print (stderr, "%4d", Poly_I2);
-            fprintf (stderr, "#rays ABC=%d\n", Poly_I2->NbRays);
-#endif // VERBOSE
+        // check for matching polyhedra A and B.
+        if (PolyhedronIncludes (Poly_A, Poly_B) && PolyhedronIncludes (Poly_B, Poly_A)) {
+            z = z | POLY_MATCH_AB;
+            z = z & ~POLY_UNKNOWN;
+            finished = 1;
         }
-        if (0 == numrays) { // Empty set implies all is good
-            z = z | EMPTYSET_ABC;
-            z = z & ~EMPTYSET_UNKNOWN;
-#ifdef VERBOSE
-            fprintf (stderr, "no rays in A,B,C\n");
-#endif // VERBOSE
-        }
-#ifdef VERBOSE
-        fprintf (stderr, "Poly_I2 is:\n");
-        Polyhedron_Print (stderr, "%4d", Poly_I2);
-        fprintf (stderr, "#rays ABC=%d\n", Poly_I2->NbRays);
-#endif // VERBOSE
 
-        // Compute A * B * D
-        Domain_Free (Poly_I2);
-        Poly_I2 = DomainIntersection (Poly_I, Poly_D, maxcon);
-        numrays = Poly_I2->NbRays;
+        if (!finished) { // Intersect A,B
+            if (isNullIntersect (Poly_A, Poly_B, &Poly_AB)) {
+                z = z | POLY_EMPTYSET_AB;
+                z = z & ~POLY_UNKNOWN;
+                finished = 1;
 #ifdef VERBOSE
-        fprintf (stderr, "ABD is:\n");
-        Polyhedron_Print (stderr, "%4d", Poly_I2);
-        fprintf (stderr, "#rays ABD=%d\n", Poly_I2->NbRays);
+                fprintf (stderr, "no rays in A,B\n");
 #endif // VERBOSE
-        if (0 == numrays) {
-            z = z | EMPTYSET_ABD;
-            z = z & ~EMPTYSET_UNKNOWN;
+            }
+        }
+
+        if (!finished) { // Intersect ABC
+            if (isNullIntersect (Poly_AB, Poly_C, &Poly_Z)) {
+                z = z | POLY_EMPTYSET_ABC;
+                z = z & ~POLY_UNKNOWN;
+                numrays = Poly_Z->NbRays;
+                finished = 1;
 #ifdef VERBOSE
-            fprintf (stderr, "no rays in A,B,D\n");
+                fprintf (stderr, "no rays in A,B,C\n");
 #endif // VERBOSE
+            }
+        }
+
+        if (!finished) { // Intersect ABD
+            Domain_Free (Poly_Z);
+            if (isNullIntersect (Poly_AB, Poly_D, &Poly_Z)) {
+                z = z | POLY_EMPTYSET_ABD;
+                z = z & ~POLY_UNKNOWN;
+                numrays = Poly_Z->NbRays;
+                finished = 1;
+#ifdef VERBOSE
+                fprintf (stderr, "no rays in A,B,D\n");
+#endif // VERBOSE
+            }
         }
         break;
 
+#ifdef NEEDSWORKORBURNING
     case 'M':
         // to be continued
-        Poly_I = DomainIntersection (Poly_A, Poly_B, maxcon);
-        Poly_I2 = DomainIntersection (Poly_I, Poly_C, maxcon);
+        Poly_I = DomainIntersection (Poly_A, Poly_B, MAXCON);
+        Poly_I2 = DomainIntersection (Poly_I, Poly_C, MAXCON);
 
         // We assume that Poly_A is the CWL iv. If this matches the intersect,
         // then the PWLF can proceed immediately
-#ifdef NEEDSWORKORBURNING
         if ('M' == opcode) {
             if (PolyhedronIncludes (Poly_A, Poly_I)
                 && PolyhedronIncludes (Poly_I, Poly_A)) {
@@ -164,8 +181,8 @@ main (int argc, char *argv[])
     Domain_Free (Poly_B);
     Domain_Free (Poly_C);
     Domain_Free (Poly_D);
-    Domain_Free (Poly_I);
-    Domain_Free (Poly_I2);
+    Domain_Free (Poly_AB);
+    Domain_Free (Poly_Z);
 
 #ifdef VERBOSE
     fprintf (stderr, "result is %d\n", z);
