@@ -284,26 +284,6 @@ SAC_runController (void *param)
 
 /** <!--*******************************************************************-->
  *
- * @fn getNewFunctionName( char *func, char *result)
- *
- * @brief Creates a new random function name used for the newly created wrapper
- * instance.
- *
- * @param func  The orignal function name.
- * @param result  The resulting function name.
- *
- ****************************************************************************/
-static void
-getNewFunctionName (char *func, char *result)
-{
-    static char *format = "RTSPECf_%s_%d";
-    static int counter = 0;
-
-    sprintf (result, format, func, counter++);
-}
-
-/** <!--*******************************************************************-->
- *
  * @fn encodeShapes( int *shapes, char *result)
  *
  * @brief  Creates a string representation of the shape information stored in
@@ -388,7 +368,6 @@ SAC_handleRequest (queue_node_t *request)
 
     char syscall[MAX_SYS_CALL] = "";
     char filename[MAX_STRING_LENGTH] = "";
-    char new_func_name[MAX_STRING_LENGTH] = "";
     char shape_info[MAX_STRING_LENGTH] = "";
 
     if (request->shape_info == NULL) {
@@ -398,10 +377,8 @@ SAC_handleRequest (queue_node_t *request)
     }
 
     /*
-     * Get a new random module and function name and encode the shapes of the
-     * arguments.
+     * Encode the shapes of the arguments.
      */
-    getNewFunctionName (request->func_name, new_func_name);
     encodeShapes (request->shape_info, shape_info);
 
     /*
@@ -411,6 +388,9 @@ SAC_handleRequest (queue_node_t *request)
         return;
     }
 
+    /*
+     * Get a new module name so we don't have name clashes of the generated library files.
+     */
     char *new_module
       = (char *)malloc (sizeof (char)
                         * (strlen (request->reg_obj->module)
@@ -421,7 +401,7 @@ SAC_handleRequest (queue_node_t *request)
 
     /* Build the system call. */
     sprintf (syscall, call_format, (do_trace == 1) ? 3 : 0, request->reg_obj->module,
-             new_module, request->func_name, new_func_name, request->type_info,
+             new_module, request->func_name, request->func_name, request->type_info,
              shape_info, tmpdir_name, tmpdir_name);
 
     if (do_trace == 1) {
@@ -484,7 +464,8 @@ SAC_handleRequest (queue_node_t *request)
             SAC_TR_Print ("Runtime specialization: Load symbols for new wrapper.");
         }
         /* Load the symbol for the new wrapper. */
-        request->reg_obj->func_ptr = dlsym (request->reg_obj->dl_handle, new_func_name);
+        request->reg_obj->func_ptr
+          = dlsym (request->reg_obj->dl_handle, request->func_name);
 
         request->reg_obj->module = new_module;
 

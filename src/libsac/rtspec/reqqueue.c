@@ -198,7 +198,7 @@ SAC_createNode (char *func_name, char *types, int *shapes, reg_obj_t *registry)
         return NULL;
     }
 
-    strcpy (xnew->func_name, func_name);
+    xnew->func_name = func_name;
     strcpy (xnew->type_info, types);
     xnew->shape_info = shapes;
     xnew->reg_obj = registry;

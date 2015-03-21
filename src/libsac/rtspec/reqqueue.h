@@ -20,7 +20,7 @@
  */
 typedef struct queue_node {
     /** @brief The name of the function being optimized. */
-    char func_name[STR_LENGTH];
+    char *func_name;
 
     /** @brief The types of the arguments of the function being optimized. */
     char type_info[STR_LENGTH];
