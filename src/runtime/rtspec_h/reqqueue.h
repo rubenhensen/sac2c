@@ -11,8 +11,6 @@
 #ifndef _SAC_REQQUEUE_H_
 #define _SAC_REQQUEUE_H_
 
-#define STR_LENGTH 255
-
 /**
  * @brief A node of the request queue.
  */
@@ -21,7 +19,7 @@ typedef struct queue_node {
     char *func_name;
 
     /** @brief The types of the arguments of the function being optimized. */
-    char type_info[STR_LENGTH];
+    char *type_info;
 
     /** @brief The shapes of the arguments. */
     int *shape_info;

@@ -121,32 +121,35 @@ ICMCompileWE_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 #include "icm_trace.c"
 #undef ND_FUN_AP
 
-    /*
-     * Encode the base type information.
-     */
-    str_buf *buffer;
-    buffer = SBUFcreate (256);
-    char *types;
-
-    // char types[256] = "";
-    // char current[10] = "";
-
-    int i = 0;
-    for (; i < vararg_cnt * 3; i += 3) {
-        if (STReq (vararg[i], "in")) {
-            SBUFprintf (buffer, "%s-", vararg[i + 1]);
-            // sprintf( current, "%s-", vararg[i+1]);
-            // sprintf( types, "%s", STRcat( types, current));
-        }
-    }
-
-    types = SBUF2str (buffer);
-
     INDENT;
     if (!STReq (retname, "")) {
         fprintf (global.outfile, "%s = ", retname);
         fprintf (global.outfile, "%s(", name);
     } else {
+
+        /*
+         * Encode the base type information.
+         */
+        size_t type_string_size = 1;
+
+        int i = 0;
+        for (; i < vararg_cnt * 3; i += 3) {
+            if (STReq (vararg[i], "in")) {
+                type_string_size += STRlen (vararg[i + 1]);
+            }
+        }
+
+        char *types = (char *)malloc (type_string_size * sizeof (char));
+
+        sprintf (types, "%s", "");
+
+        i = 0;
+        for (; i < vararg_cnt * 3; i += 3) {
+            if (STReq (vararg[i], "in")) {
+                sprintf (types, "%s%s-", types, vararg[i + 1]);
+            }
+        }
+
         fprintf (global.outfile, "SAC_WE_FUNAP2(");
         fprintf (global.outfile, "%s, %s, ", types, name);
     }
