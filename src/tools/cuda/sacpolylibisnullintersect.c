@@ -24,7 +24,7 @@
 #include "matrix.h"
 #include "polyhedron.h"
 #include "stdio.h"
-#include "sacpolylibisnullintersect.h"
+#include "polyhedral_utilities.h"
 
 #define MAXCON 2000
 

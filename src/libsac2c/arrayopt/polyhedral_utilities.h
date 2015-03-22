@@ -9,11 +9,36 @@
  *
  *****************************************************************************/
 
-// POLYLIB input matrix definitions, as found in Chapter 9 (Example)
+// PolyLib input matrix format is found in Chapter 9 (Example)
 // of the Polyulib User's Manual, page 35.
 
-#define PLEQUALITY 0
-#define PLINEQUALITY 1
+// PolyLib matrix column definitions
+#define PLFUN 0
+#define PLFUNEQUALITY 0
+#define PLFUNINEQUALITY 1
+// PLWID is a fake variable that we use to support GENERATOR_WIDTH as an inner loop on W
+// E.g., 0 <= W < WIDTH
+#define PLWID 1
+// PLAPV is a fake variable that we use to represent STEP*N, as part of
+// an Arithmetic Progession Vector
+#define PLAPV 2
+// PLFAKEN is a fake variable used to represent the unknown N in PLAPV.
+#define PLFAKEN 3
+// PLVARS are the affine variables used in the expression.
+// They start at column PLVARS and go upwards, except the last column, which
+// holds constant values.
+#define PLVARS 4
+
+// PolyLib interface function return codes
+// These are ORed together, so more than one result
+// can appear at one time.
+
+#define POLY_INVALID 2
+#define POLY_UNKNOWN 4
+#define POLY_EMPTYSET_ABC 8
+#define POLY_EMPTYSET_ABD 16
+#define POLY_MATCH_AB 32
+#define POLY_EMPTYSET_AB 64
 
 extern bool *PHUTcreateMatrix (unsigned rows, unsigned cols, bool vals);
 // above bool are a lie

@@ -4,9 +4,14 @@
  *
  * @terminology:
  *
- * @brief Polyhedral With-Loop Folding (PWLF)
- *        PWLF performs WLF on AKS and some AKD arrays, by using
+ * @brief Polyhedral With-Loop Folding (PWLFI)
+ *        PWLFI sets up AWLF on AKS and some AKD arrays, by using
  *        polyhedra to compute array intersections.
+ *
+ *        The code still uses F_noteintersect, but that could
+ *        be removed, given ISMOP. E.g., AWLFperformFold makes assumptions
+ *        about arg_info contents. Also, this code would have to invoke
+ *        it at the N_assign level, etc.
  *
  * @ingroup opt
  *
@@ -234,6 +239,7 @@ PWLFdoPolyhedralWithLoopFolding (node *arg_node)
  *
  *****************************************************************************/
 
+#ifdef UNDERCONSTRUCTION
 /** <!--********************************************************************-->
  *
  * @fn node *BuildInverseProjectionScalar(...)
@@ -990,7 +996,9 @@ BuildInverseProjections (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+#endif // UNDERCONSTRUCTION
 
+#ifdef FIXME
 /** <!--********************************************************************-->
  *
  * @fn node *generateAffineExprsForIntersect( gen, mmx, int boundnum,
@@ -1042,12 +1050,11 @@ generateAffineExprsForIntersect (node *gen, node *mmx, int boundnum, int numvars
  * @result: not sure yet
  *
  ******************************************************************************/
-static node *
+static int
 IntersectBoundsPolyhedralScalar (node *gen, node *mmx, int boundnum, int shp,
                                  info *arg_info)
 {
-    bool b;
-    node *z = NULL;
+    int z = POLY_UNKNOWN;
     node *idgen;
     node *idmmx;
     node *exprs1, *exprs2;
@@ -1073,13 +1080,12 @@ IntersectBoundsPolyhedralScalar (node *gen, node *mmx, int boundnum, int shp,
     exprs1 = TCappendExprs (exprs1, exprs2);
 
     // Don't bother calling Polylib if it can't do anything for us.
-    b = (NULL != exprs1) && (NULL != exprs3) && (NULL != idgen);
-    b = b && PHUTcheckIntersection (exprs1, exprs2, exprs3, NULL, idgen, numvars);
+    if ((NULL != exprs1) && (NULL != exprs3) && (NULL != idgen)) {
+        z = PHUTcheckIntersection (exprs1, exprs2, exprs3, NULL, idgen, numvars);
+    }
 
     PHUTclearColumnIndices (gen, INFO_FUNDEF (arg_info));
     PHUTclearColumnIndices (mmx, INFO_FUNDEF (arg_info));
-
-    // Analyze result file here FIXME
 
     DBUG_RETURN (z);
 }
@@ -1106,7 +1112,8 @@ static node *
 IntersectBoundsPolyhedral (node *gen, node *mmx, int boundnum, int shp, info *arg_info)
 {
     node *z = NULL;
-    node *polyint;
+    int polyint;
+
     node *genel;
     node *mmxel;
     int i;
@@ -1128,151 +1135,77 @@ IntersectBoundsPolyhedral (node *gen, node *mmx, int boundnum, int shp, info *ar
 
 /** <!--********************************************************************-->
  *
- * @fn node *FakeUpConstantExtremum( node *elem, info *arg_info, int emax)
+ * @fn node *CheckPwlPartnsOne( node *arg_node, node *pwlpart, info *arg_info)
  *
- * @brief: If elem is a constant (AKV), generate the appropriate
- *         normalized constant extremum for it. Else NULL.
+ * @brief  Check arg_node against one partition of the PWL for folding suitability.
  *
- * @param: elem: the avis for an index vector or index scalar.
- *               or an N_num.
+ * @params: arg_node - an N_prf in the putative CWL, either a _sel_VxA_() or _idx_sel()
+ * @params: arg_info - your basic arg_info
+ * @result: POLY_UNKNOWN, etc.
  *
- * @result: an N_avis for AVIS_MIN or AVIS_MAX for the constant, or NULL
- *          if elem is not constant.
- *
- *****************************************************************************/
-static node *
-FakeUpConstantExtremum (node *elem, info *arg_info, int emax)
+ ******************************************************************************/
+static int
+CheckPwlPartnsOne (node *arg_node, node *pwlpart, info *arg_info)
 {
-    constant *elminco = NULL;
-    node *elavis = NULL;
-    node *el;
+    int z = POLY_UNKNOWN;
 
     DBUG_ENTER ();
 
-    elminco = COaST2Constant (elem);
-    if (NULL != elminco) {
-        el = COconstant2AST (elminco);
-        elminco = COfreeConstant (elminco);
-        elavis = FLATGexpression2Avis (el, &INFO_VARDECS (arg_info),
-                                       &INFO_PREASSIGNS (arg_info), NULL);
-        if (emax) { // normalize maxval
-            elavis = IVEXPadjustExtremaBound (elavis, 1, &INFO_VARDECS (arg_info),
-                                              &INFO_PREASSIGNS (arg_info), "fakecon");
+    while ((POLY_something == z) && (NULL != pwlpart)) {
+        z = IntersectBoundsPolyhedralScalar (arg_node, mmx, boundnum, shp, arg_info);
+        switch (z) {
+        case POLY_MATCH_AB:
+            xxx = AWLFperformFold (xxx);
+            break;
+        case POLY_EMPTYSET_AB: // Null intersect will never fold.
+            break;
+        case POLY_INVALID:
+        case POLY_UNKNOWN:
+        case POLY_EMPTYSET_ABC:
+        case POLY_EMPTYSET_ABD:
+            DBUG_ASSERT (FALSE, "Polyhedral analysis problem");
+            break;
+        default:
+            DBUG_ASSERT (FALSE, "Polyhedral analysis problem");
+            break;
         }
+        pwlpart = PART_NEXT (pwlpart);
     }
 
-    DBUG_RETURN (elavis);
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *GenerateMinMaxForArray( node *ivavis, info *arg_info, bool emax)
+ * @fn node *CheckPwlPartns( node *arg_node, info *arg_info)
  *
- * @brief: Fake up AVIS_MIN/MAX N_array for naked consumer and for
- *         non-in-block elements of other consumers.
+ * @brief  Check arg_node against all partitions of the PWL for folding suitability.
  *
- *         We do NOT alter the AVIS_MIN/MAX values of ivavis or its
- *         N_array elements, as they may be used later.
+ * @params: arg_node - an N_prf in the putative CWL, either a _sel_VxA_() or _idx_sel()
+ * @params: arg_info - your basic arg_info
+ * @result: not sure yet
  *
- *         Extrema for each element, elem, are built as follows:
- *           - constants: faked, as elem and elem+1
- *           - non-constants, not defined in block: elem and elem+1
- *           - defined-in-block with extrema: extrema are used directly
- *           - defined-in-block, with missing extrema: elem and/or elem+1
- *
- * @param: ivavis: an N_avis for an N_array, iv from _sel_VxA_( iv, PWL)
- *         emax: TRUE for AVIS_MAX, FALSE for AVIS_MIN
- *
- * @result: The generated AVIS_MIN/MAX for the N_array, unless we can't
- *          generate one, in which case we return NULL.
- *
- *          NB. results are NORMALIZED.
- *
- *
- *
- *****************************************************************************/
-// fixme so far, this is identical to the one in AWLFI.
+ ******************************************************************************/
 static node *
-GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
+CheckPwlPartns (node *arg_node, info *arg_info)
 {
-    node *elem;
-    node *aelems;
-    node *narr = NULL;
-    pattern *pat;
-    node *ivid = NULL;
-    node *exprs = NULL;
-    node *exavis = NULL;
-    bool badnews = FALSE;
-    node *newarr = NULL;
+    node *pwlpart;
+    node *z = NULL;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NULL != ivavis, "Must have non-NULL ivavis");
-    ivid = TBmakeId (ivavis);
-    pat = PMarray (1, PMAgetNode (&narr), 1, PMskip (0));
-    if ((PMmatchFlat (pat, ivid))) {
-        aelems = ARRAY_AELEMS (narr);
-        while ((NULL != aelems) && !badnews) {
-            exavis = NULL;
-            elem = EXPRS_EXPR (aelems);
-            aelems = EXPRS_NEXT (aelems);
+    pwlpart = WITH_PART (INFO_PRODUCERWL (arg_info));
+    while ((NULL == z) && (NULL != pwlpart)) {
 
-            /* If constant element, fake up extrema for it */
-            exavis = FakeUpConstantExtremum (elem, arg_info, emax);
-
-            /* Non-constant, defined in this block, & extremum present: normal AWLF */
-            if ((NULL == exavis)
-                && (SWLDisDefinedInThisBlock (ID_AVIS (elem), INFO_DEFDEPTH (arg_info)))
-                && (!emax) && (IVEXPisAvisHasMin (ID_AVIS (elem)))) {
-                exavis = ID_AVIS (AVIS_MIN (ID_AVIS (elem))); // copy min
-            }
-
-            if ((NULL == exavis)
-                && (SWLDisDefinedInThisBlock (ID_AVIS (elem), INFO_DEFDEPTH (arg_info)))
-                && (emax) && (IVEXPisAvisHasMax (ID_AVIS (elem)))) {
-                exavis = ID_AVIS (AVIS_MAX (ID_AVIS (elem))); // copy max
-            }
-
-            /* Non-constant, defined in other block. Fake up value. */
-            if ((NULL == exavis)
-                && (!SWLDisDefinedInThisBlock (ID_AVIS (elem),
-                                               INFO_DEFDEPTH (arg_info)))) {
-                exavis = ID_AVIS (elem); /* Not defined in this block. */
-                if (emax) {
-                    exavis = IVEXPadjustExtremaBound (exavis, 1, /* normalize */
-                                                      &INFO_VARDECS (arg_info),
-                                                      &INFO_PREASSIGNS (arg_info),
-                                                      "nonconminmax");
-                }
-            }
-
-            if (NULL == exavis) {
-                /* Defined in this block, but
-                 * no extrema yet. Try again later.
-                 */
-                badnews = TRUE;
-            }
-            if (!badnews) {
-                exprs = TCappendExprs (exprs, TBmakeExprs (TBmakeId (exavis), NULL));
-            }
-        }
-
-        if (badnews) {
-            exprs = (NULL != exprs) ? FREEdoFreeTree (exprs) : NULL;
-            DBUG_PRINT ("Could not build fake extrema for %s", AVIS_NAME (ivavis));
-        } else {
-            newarr = DUPdoDupTree (narr);
-            ARRAY_AELEMS (newarr) = FREEdoFreeTree (ARRAY_AELEMS (newarr));
-            ARRAY_AELEMS (newarr) = exprs;
-            DBUG_PRINT ("Built fake extrema for %s", AVIS_NAME (ivavis));
-        }
+        z = CheckPwlPartnsOne (arg_node, pwlpart, arg_info);
+        pwlpart = PART_NEXT (pwlpart);
     }
-    pat = PMfree (pat);
-    ivid = FREEdoFreeNode (ivid);
 
-    DBUG_RETURN (newarr);
+    DBUG_RETURN (z);
 }
+#endif // FIXME
 
+#ifdef DEADCODE
 /** <!--********************************************************************-->
  *
  * @fn node *Intersect1PartBuilder( node *idxavismin,
@@ -1365,7 +1298,6 @@ Intersect1PartBuilder (node *idxmin, node *idxmax, node *bound1, node *bound2,
  * @result: N_avis node of generated computation's boolean result.
  *
  *****************************************************************************/
-
 static node *
 IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node *bound2,
                                  info *arg_info)
@@ -1403,6 +1335,9 @@ IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node 
     DBUG_RETURN (resavis);
 }
 
+#endif // FIXME
+
+#ifdef DEADERCODE
 /** <!--********************************************************************-->
  *
  * @fn node *IntersectBoundsBuilderOne( node *arg_node, info *arg_info,
@@ -1459,17 +1394,14 @@ IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node 
  *         or NULL if we were unable to compute the inverse projection.
  *
  *****************************************************************************/
-
 static node *
 IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
                            int boundnum, node *ivmin, node *ivmax)
 {
     node *pg;
-#ifdef DEADCODE
     node *resavis;
     node *fncall;
     prf prfminmax;
-#endif // DEADCODE
     pattern *pat;
     node *gen = NULL;
     node *mmx;
@@ -1518,7 +1450,9 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
 
     DBUG_RETURN (z);
 }
+#endif // DEADERCODE
 
+#ifdef DEADERCODE
 /** <!--********************************************************************-->
  *
  * @fn node *IntersectBoundsBuilder( node *arg_node, info *arg_info,
@@ -1548,7 +1482,6 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
  * @note: For a naked consumer, we use iv as idxmin, and iv+1 as idxmax.
  *
  *****************************************************************************/
-
 static node *
 IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 {
@@ -1582,8 +1515,10 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     pat2 = PMarray (1, PMAgetNode (&gen2), 0);
     pat3 = PMarray (1, PMAgetNode (&ivminmax), 0);
 
+#ifdef DEADCODE
     ivmin = GenerateMinMaxForArray (ivavis, arg_info, FALSE);
     ivmax = GenerateMinMaxForArray (ivavis, arg_info, TRUE);
+#endif // DEADCODE
 
     pwlp = WITH_PART (INFO_PRODUCERWL (arg_info));
 
@@ -1683,7 +1618,9 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 
     DBUG_RETURN (expn);
 }
+#endif // DEADERCODE
 
+#ifdef DEADCODE
 /** <!--********************************************************************-->
  *
  * @fn node *PWLFIattachIntersectCalc( node *arg_node, info *arg_info, node *ivavis)
@@ -1728,7 +1665,6 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
  *         we return ivavis.
  *
  *****************************************************************************/
-
 static node *
 PWLFIattachIntersectCalc (node *arg_node, info *arg_info, node *ivavis)
 {
@@ -1788,6 +1724,7 @@ PWLFIattachIntersectCalc (node *arg_node, info *arg_info, node *ivavis)
 
     DBUG_RETURN (ivpavis);
 }
+#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *
@@ -1996,7 +1933,7 @@ PWLFIid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *P( node *arg_node, info *arg_info)
+ * @fn node *PWLFIprf( node *arg_node, info *arg_info)
  *
  * @brief
  *   Examine a _sel_VxA_(idx, producerWL) primitive to see if
@@ -2019,8 +1956,6 @@ PWLFIid (node *arg_node, info *arg_info)
 node *
 PWLFIprf (node *arg_node, info *arg_info)
 {
-    node *z;
-    node *ivavis = NULL;
     node *pwlid;
     char *cwlnm;
 
@@ -2045,45 +1980,19 @@ PWLFIprf (node *arg_node, info *arg_info)
                                        INFO_DEFDEPTH (arg_info));
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-
-        /* Maybe attach intersect calculations now. */
-        if ((INFO_PRODUCERWLFOLDABLE (arg_info))
-            && (!AWLFIisHasNoteintersect (arg_node))) {
-
-            ivavis = IVUToffset2Vect (arg_node, &INFO_VARDECS (arg_info),
-                                      &INFO_PREASSIGNS (arg_info),
-                                      INFO_CONSUMERWLPART (arg_info));
-
-            /* We need both extrema or constant index vector */
-            /* Or, we need naked consumer */
-            if ((AWLFIisCanAttachIntersectCalc (arg_node, ivavis, arg_info))) {
-                // FIXME || isNaked( arg_node, ivavis)) {
-                DBUG_PRINT ("Trying to attach F_noteintersect into cwl=%s", cwlnm);
-                z = PWLFIattachIntersectCalc (arg_node, arg_info, ivavis);
-                if (z != ID_AVIS (PRF_ARG1 (arg_node))) {
-                    FREEdoFreeNode (PRF_ARG1 (arg_node));
-                    PRF_ARG1 (arg_node) = TBmakeId (z);
-                    DBUG_PRINT ("Inserted F_noteintersect into cwl=%s", cwlnm);
-                }
+#ifdef FIXME
+        bool xx;
+        if (INFO_PRODUCERWLFOLDABLE (arg_info)) {
+            xx = CheckPwlPartns (arg_node, arg_info);
+            if (xx) {
+                arg_node = BuildInverseProjections (arg_node, arg_info);
+                dofold;
             }
         }
-        break;
-
-    case F_noteintersect:
-        /* Maybe detach invalid intersect calculations now. */
-        if (!AWLFIisValidNoteintersect (arg_node, INFO_PRODUCERWLLHS (arg_info))) {
-            arg_node = AWLFIdetachNoteintersect (arg_node);
-            DBUG_PRINT ("Detached invalid F_noteintersect from cwl=%s", cwlnm);
-        }
-
-        /* Maybe project partitionIntersectMin/Max back from PWL to CWL */
-        if (AWLFIisValidNoteintersect (arg_node, INFO_PRODUCERWLLHS (arg_info))) {
-            arg_node = BuildInverseProjections (arg_node, arg_info);
-            DBUG_PRINT ("Building inverse projection for cwl=%s", cwlnm);
-        }
+        DBUG_PRINT ("Building inverse projection for cwl=%s", cwlnm);
+#endif //  FIXME
         break;
     }
-
     DBUG_RETURN (arg_node);
 }
 

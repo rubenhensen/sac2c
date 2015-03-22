@@ -65,7 +65,6 @@
 #include "polyhedral_utilities.h"
 #include "print.h"
 #include "tree_utils.h"
-#include "sacpolylibisnullintersect.h"
 
 /** <!--********************************************************************-->
  *

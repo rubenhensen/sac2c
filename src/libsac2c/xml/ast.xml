@@ -9014,12 +9014,6 @@ N_tfarg :
 	  more than once.
 	  </description>
         </flag>	 
-	<flag name="IsAffineHandled" default="FALSE" >
-	  <description> 
-	  Used by PHUT to mark N_avis nodes whose values have
-	  been traversed.
-	  </description>
-        </flag>	 
       </flags>
     <checks>
       <check name="CHKavisReflection" />
