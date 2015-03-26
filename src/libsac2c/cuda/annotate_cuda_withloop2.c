@@ -551,8 +551,9 @@ ACUWLid (node *arg_node, info *arg_info)
             CTIwarnLine (global.linenum,
                          "Cannot cudarize with-loop due to missing base type "
                          "implementation! "
-                         "Missing type: \"%s\" for relatively free variable!",
-                         global.type_string[TYgetSimpleType (TYgetScalar (type))]);
+                         "Missing type: \"%s\" for relatively free variable \"%s\"!",
+                         global.type_string[TYgetSimpleType (TYgetScalar (type))],
+                         ID_NAME (arg_node));
         }
     }
 
