@@ -145,18 +145,22 @@ InitCudaBlockSizes (void)
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
     } else {
-        CTIwarn ("CUDA architecture cannot be detected, setting to default(1.0)\n");
-        CTIwarn ("Please edit the CUDA_ARCH variable in sac2crc and set it to "
-                 "-arch=sm_xx where xx is the capability version of your CUDA card"
-                 " (ex. -arch=sm_20).\n");
-        global.config.cuda_arch = STRcpy ("-arch=sm_10");
-        global.optimal_threads = 256;
-        global.optimal_blocks = 3;
-        global.cuda_1d_block_large = 256;
-        global.cuda_1d_block_small = 64;
-        global.cuda_blocking_factor = 16;
-        global.cuda_2d_block_x = 16;
-        global.cuda_2d_block_y = 16;
+        if (STReq (global.config.cuda_arch, "no")) {
+            CTIwarn ("CUDA architecture was not detected during install, setting to "
+                     "default(-arch=sm_20)\n");
+            CTIwarn ("Please edit the CUDA_ARCH variable in sac2crc and set it to "
+                     "-arch=sm_xx where xx is the capability version of your CUDA card"
+                     " (ex. -arch=sm_20).\n");
+        } else {
+            CTIwarn ("CUDA architecture specified in sac2crc (%s) does not yet have "
+                     "special support,"
+                     " setting to default(-arch=sm_20)\n",
+                     global.config.cuda_arch);
+            CTIwarn ("Current set of architectures supported is: sm_10, sm_11, sm_12, "
+                     "sm_13, sm_20\n");
+        }
+        global.config.cuda_arch = STRcpy ("-arch=sm_20");
+        InitCudaBlockSizes ();
     }
 
     DBUG_RETURN ();
