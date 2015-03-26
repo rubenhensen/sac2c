@@ -2000,10 +2000,12 @@ handle_primary_expr (struct parser *parser)
                     free_tree (expr);
                     return error_mark_node;
                 }
-            } else
-                /* FIXME emmit an error message.  */
+            } else {
+                error_loc (token_location (tok),
+                           "invalid axis notation --- identifier or list of "
+                           "identifiers expected");
                 res = error_mark_node;
-
+            }
             break;
         }
 
