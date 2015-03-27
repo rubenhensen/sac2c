@@ -31,7 +31,7 @@
 #include "memory.h"
 #include "globals.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "ACUWL"
 #include "debug.h"
 
 #include "ctinfo.h"
@@ -355,6 +355,11 @@ ACUWLwith (node *arg_node, info *arg_info)
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_INWL (arg_info) = FALSE;
 
+        if (!INFO_CUDARIZABLE (arg_info)) {
+            CTInoteLine (NODE_LINE (arg_node),
+                         "Body of With-Loop to complex => no cudarization!");
+        }
+
         /* We only cudarize AKS N_with */
         if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold) {
             /* For fold withloop to be cudarized, it *must* be AKS */
@@ -392,6 +397,7 @@ ACUWLwith (node *arg_node, info *arg_info)
             TRAVpop ();
         }
     } else {
+        CTInoteLine (NODE_LINE (arg_node), "Inner With-loop => no cudarization!");
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
