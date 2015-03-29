@@ -555,8 +555,7 @@ CYCLEPHASEFUN (pwlf, "Polyhedral with loop folding", PWLFdoPolyhedralWithLoopFol
                global.optimize.dopwlf, opt, saacyc)
 
 CYCLEPHASEFUN (awlfi, "Inferring algebraically foldable with-loops",
-               AWLFIdoAlgebraicWithLoopFolding,
-               global.optimize.doawlf || global.optimize.dopwlf, opt, saacyc)
+               AWLFIdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
 
 /* CUBSL needs this for partition-slicing decisions. */
 CYCLEPHASEFUN (cse2, "Eliminating common subexpressions",
@@ -573,8 +572,7 @@ CYCLEPHASEFUN (cubsl, "Slicing algebraically foldable with-loops",
                opt, saacyc)
 
 CYCLEPHASEFUN (awlf, "Applying algebraic with-loop folding",
-               AWLFdoAlgebraicWithLoopFolding,
-               global.optimize.doawlf || global.optimize.dopwlf, opt, saacyc)
+               AWLFdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
 
 CYCLEPHASEFUN (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
                opt, saacyc)
@@ -806,9 +804,7 @@ SUBPHASE (esaa, "Eliminating symbolic array attributes", ESVdoEliminateShapeVari
 
 SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
           SCCdoStripConformityChecks,
-          global.doivext || global.optimize.doawlf || global.insertconformitychecks
-            || global.optimize.dopwlf,
-          opt)
+          global.doivext || global.optimize.doawlf || global.insertconformitychecks, opt)
 
 /*
  *   TC must run after IVE and before LS/LIR,

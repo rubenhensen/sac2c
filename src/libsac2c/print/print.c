@@ -5802,6 +5802,10 @@ PRTavis (node *arg_node, info *arg_info)
                  AVIS_POLYLIBCOLUMNINDEX (arg_node));
     }
 
+    if (global.optimize.dopwlf) {
+        fprintf (global.outfile, " /* AVIS_NPART = %d */ ", AVIS_NPART (arg_node));
+    }
+
     DBUG_RETURN (arg_node);
 }
 

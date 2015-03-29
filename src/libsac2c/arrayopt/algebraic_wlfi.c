@@ -1835,143 +1835,6 @@ AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
 
 /** <!--********************************************************************-->
  *
- * @fn node *PHUTgenerateAffineExprsForIntersect( gen, mmx, int boundnum,
- *            int numvars, info *arg_info)
- *
- * @brief Construct affine exprs chain for computing intersection of
- *        iv and WL generator bounds
- *
- * @param gen - WL generator N_array element
- * @param mmx - index vector element
- * @param boundnum: 1 for bound1,     or 2 for bound2
- * @param arg_info - your basic arg_info
- *
- * @return the node constructed to perform the intersection
- *
- ******************************************************************************/
-static node *
-PHUTgenerateAffineExprsForIntersect (node *gen, node *mmx, int boundnum, int numvars,
-                                     int shp, info *arg_info)
-{
-    node *z;
-    prf prfminmax;
-    node *fncall;
-    node *resavis;
-
-    DBUG_ENTER ();
-
-    prfminmax = (1 == boundnum) ? F_max_VxV : F_min_VxV;
-    fncall = TCmakePrf2 (prfminmax, TBmakeId (gen), TBmakeId (mmx));
-    resavis = FLATGexpression2Avis (fncall, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info),
-                                    TYmakeAKS (TYmakeSimpleType (T_int),
-                                               SHcreateShape (1, shp)));
-    z = TUscalarizeVector (resavis, &INFO_PREASSIGNS (arg_info),
-                           &INFO_VARDECS (arg_info));
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *IntersectBoundsPolyhedralScalar( node *gen,  node *mmx,
- *            int boundnum, int numvars, int shp, info *arg_info)
- *
- * @brief Attempt to determine the intersect of two WL bound/index vectors
- *        using polyhedra.
- *
- * @params: gen - The N_array node for a producerWL partition WL generator
- * @params: mmx - The N_avis node for a consumerWL partition's index vector,
- *                which is assumed to point to an N_array
- * @params boundnum: 1 for bound1,     or 2 for bound2
- * @params: arg_info - your basic arg_info
- * @result: not sure yet
- *
- ******************************************************************************/
-static node *
-IntersectBoundsPolyhedralScalar (node *gen, node *mmx, int boundnum, int shp,
-                                 info *arg_info)
-{
-    node *z = NULL;
-    bool p;
-    node *idgen;
-    node *idmmx;
-    node *exprs1, *exprs2;
-    node *exprs3 = NULL;
-    int numvars = 0;
-
-    DBUG_ENTER ();
-
-    PHUTclearColumnIndices (gen, INFO_FUNDEF (arg_info));
-    PHUTclearColumnIndices (mmx, INFO_FUNDEF (arg_info));
-
-    idgen = PHUTcollectAffineNids (gen, INFO_FUNDEF (arg_info), &numvars);
-
-    idmmx = PHUTcollectAffineNids (mmx, INFO_FUNDEF (arg_info), &numvars);
-
-    exprs1 = PHUTgenerateAffineExprs (gen, INFO_FUNDEF (arg_info), &numvars);
-    exprs2 = PHUTgenerateAffineExprs (mmx, INFO_FUNDEF (arg_info), &numvars);
-    exprs3
-      = PHUTgenerateAffineExprsForIntersect (gen, mmx, boundnum, numvars, shp, arg_info);
-    idgen = TCappendExprs (idgen, idmmx);
-
-    // Don't bother calling Polylib if it can't do anything for us.
-    p = (NULL != exprs1) && (NULL != exprs3) && (NULL != exprs2) && (NULL != idgen);
-    p = p && PHUTcheckIntersection (exprs1, exprs2, exprs3, NULL, idgen, numvars);
-
-    PHUTclearColumnIndices (gen, INFO_FUNDEF (arg_info));
-    PHUTclearColumnIndices (mmx, INFO_FUNDEF (arg_info));
-
-    // Analyze result file here FIXME
-    // int fixme; // missing code!
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *IntersectBoundsPolyhedral( node *gen,  node *mmx,
- *            int boundnum, int numvars, int shp, info *arg_info)
- *
- * @brief Attempt to determine the intersect of two WL bound/index vectors
- *        using polyhedra.
- *        Since gen and mmx are vectors, we iterate over them, doing
- *        polyhedral analysis on each element.
- *
- * @params: gen - The N_array node for a producerWL partition WL generator
- * @params: mmx - The N_avis node for a consumerWL partition's index vector,
- *                which is assumed to point to an N_array
- * @params boundnum: 1 for bound1,     or 2 for bound2
- * @params: arg_info - your basic arg_info
- * @result: not sure yet
- *
- ******************************************************************************/
-static node *
-IntersectBoundsPolyhedral (node *gen, node *mmx, int boundnum, int shp, info *arg_info)
-{
-    node *z = NULL;
-    node *polyint;
-    node *genel;
-    node *mmxel;
-    int i;
-
-    DBUG_ENTER ();
-
-    if (global.optimize.dopwlf) {
-        for (i = 0; i < shp; i++) {
-            genel = TCgetNthExprsExpr (i, ARRAY_AELEMS (gen));
-            mmxel = TCgetNthExprsExpr (i, ARRAY_AELEMS (mmx));
-            polyint
-              = IntersectBoundsPolyhedralScalar (genel, mmxel, boundnum, shp, arg_info);
-            // FIXME do something with result file
-        }
-    }
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *IntersectBoundsBuilderOne( node *arg_node, info *arg_info,
  *                                      node *producerwlPart, int boundnum,
  *                                      node *ivmin, node *ivmax)
@@ -2057,7 +1920,6 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     shp = SHgetUnrLen (ARRAY_FRAMESHAPE (gen));
     mmx = (1 == boundnum) ? ivmin : ivmax;
 
-    polyint = IntersectBoundsPolyhedral (gen, mmx, boundnum, shp, arg_info);
     if (NULL == polyint) { // Use old way if polyhedral analysis does not work
 
         mmx = AWLFItakeDropIv (shp, 0, mmx, &INFO_VARDECS (arg_info),
@@ -3100,7 +2962,7 @@ AWLFIprf (node *arg_node, info *arg_info)
 
             ivavis = IVUToffset2Vect (arg_node, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info),
-                                      INFO_CONSUMERWLPART (arg_info));
+                                      INFO_CONSUMERWLPART (arg_info), NULL);
 
             /* We need both extrema or constant index vector */
             /* Or, we need naked consumer */

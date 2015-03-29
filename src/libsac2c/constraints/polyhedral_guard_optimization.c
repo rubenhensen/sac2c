@@ -63,6 +63,7 @@
 #include "tree_compound.h"
 #include "polyhedral_guard_optimization.h"
 #include "polyhedral_utilities.h"
+#include "polyhedral_defs.h"
 #include "print.h"
 #include "tree_utils.h"
 
@@ -321,7 +322,6 @@ POGOpart (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     arg_node = PHUTsetClearAvisPart (arg_node, arg_node);
-
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
     arg_node = PHUTsetClearAvisPart (arg_node, NULL);
@@ -454,7 +454,7 @@ POGOprf (node *arg_node, info *arg_info)
     node *resp;
     node *guardp;
     bool dopoly;
-    int emp = POLY_UNKNOWN;
+    int emp = POLY_RET_UNKNOWN;
 
     DBUG_ENTER ();
 
@@ -516,20 +516,20 @@ POGOprf (node *arg_node, info *arg_info)
             exprs4 = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
                                                       &numvars,
                                                       CompanionFn (PRF_PRF (arg_node)));
-            emp
-              = PHUTcheckIntersection (exprs1, exprs2, exprs3, exprs4, idlist1, numvars);
+            emp = PHUTcheckIntersection (exprs1, exprs2, exprs3, exprs4, idlist1,
+                                         POLY_OPCODE_INTERSECT);
 
             // Match analysis for A,B, but not for monadic prf.
-            if ((emp & POLY_MATCH_AB) && (F_non_neg_val_S != PRF_PRF (arg_node))) {
+            if ((emp & POLY_RET_MATCH_AB) && (F_non_neg_val_S != PRF_PRF (arg_node))) {
                 z = TRUE;
             }
 
-            if ((!z) && (emp & POLY_EMPTYSET_ABC)) {
+            if ((!z) && (emp & POLY_RET_EMPTYSET_ABC)) {
                 resval = FALSE;
                 z = TRUE;
             }
 
-            if ((!z) && (emp & POLY_EMPTYSET_ABD)) {
+            if ((!z) && (emp & POLY_RET_EMPTYSET_ABD)) {
                 resval = TRUE;
                 z = TRUE;
             }

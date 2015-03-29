@@ -27,6 +27,7 @@
 #include "DupTree.h"
 #include "LookUpTable.h"
 #include "polyhedral_utilities.h"
+#include "polyhedral_defs.h"
 
 /** <!--********************************************************************-->
  *

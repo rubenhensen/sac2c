@@ -564,7 +564,7 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
  *            build a flattened N_array from [ i, j, k], and
  *            return its avis.
  *
- *            If we find that [i,j,k] match the WITHID_IDS,
+ *            If we find that [i,j,k] match the ConsumerWL's WITHID_IDS,
  *            return the WITHID_VEC.
  *
  *         3. We can not find the idxs2offset, but the
@@ -595,9 +595,13 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
  *        idxs2offset by some other, post-SAACYC traversal.
  *
  *
- * @param: arg_node an N_prf node.
- *
- * @param: cwlpart: Optional consumerWL N_part.
+ * @param: arg_node - an N_prf node.
+ * @param: vardecs - pointer to pointer of N_vardecs, in case we have to
+ *                   create new variables.
+ * @param: preassigns - pointer to pointer of N_assigns, in case we have to
+ *                   create new variables.
+ * @param: cwlpart - Optional consumerWL N_part, or NULL
+ * @param: pwlpart - Optional producerWL N_part, or NULL
  *
  * @return: the desired avis node, pointing to a vector N_array.
  *          If we can't find one, we return NULL.
@@ -607,7 +611,8 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
  *
  *****************************************************************************/
 node *
-IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpart)
+IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpart,
+                 node *pwlpart)
 {
     node *z = NULL;
     pattern *pat1;
@@ -973,6 +978,51 @@ IVUTisIvMatchesWithid (node *iv, node *withidvec, node *withidids)
     pat = PMfree (pat);
 
     DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IVUTindex2Array(...)
+ *
+ * @brief arg_node is offset in _idx_sel( offset, X) or
+ *        an index vector iv in _sel_VxA_( iv, X);
+ *
+ *        Skip the _vect2offset_ and guards, and look for an N_array from its
+ *        PRG_ARG2.
+ *
+ *        If we end up with a WITHID_VEC, return the corresponding WITHID_IDS.
+ *
+ * @return: An N_array node that represents the iv/offset, or NULL.
+ *
+ *****************************************************************************/
+node *
+IVUTindex2Array (node *arg_node)
+{
+    node *iv = NULL;
+    node *shp;
+    node *arr = NULL;
+    node *avis;
+    pattern *patv;
+
+    DBUG_ENTER ();
+
+    patv = PMprf (1, PMAisPrf (F_vect2offset), 2, PMany (1, PMAgetNode (&shp), 0),
+                  PMany (1, PMAgetNode (&iv), 0));
+    if (PMmatchFlatSkipGuards (patv, arg_node)) {
+        if (N_array != NODE_TYPE (iv)) {
+            avis = ID_AVIS (iv);
+            DBUG_PRINT ("We found %s", AVIS_NAME (avis));
+            // iv could be an N_prf, a WITHID, an N_ap or a function parameter
+            // If it's a WITHID_VEC, we'll return the corresponding WITHID_IDS.
+            if ((NULL != AVIS_NPART (avis))
+                && (avis == IDS_AVIS (WITHID_VEC (PART_WITHID (AVIS_NPART (avis)))))) {
+                arr = WITHID_IDS (PART_WITHID (AVIS_NPART (avis)));
+            }
+        }
+    }
+    patv = PMfree (patv);
+
+    DBUG_RETURN (arr);
 }
 
 #undef DBUG_PREFIX

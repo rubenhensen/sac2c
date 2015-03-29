@@ -2310,7 +2310,7 @@
        <node name="Code" />
      </travuser>
    </traversal>
-   <traversal id="PWLFI" name="Polyhedral With-Loop-Folding Inference" default="sons" include="polyhedral_wlfi.h" >
+   <traversal id="PWLF" name="Polyhedral With-Loop-Folding" default="sons" include="polyhedral_wlf.h" >
      <travuser>
         <node name="Fundef"  />
         <node name="Block"   />

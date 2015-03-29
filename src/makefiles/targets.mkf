@@ -182,7 +182,6 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize      \
                         pad pad_collect pad_infer pad_transform pad_info    \
                         tagdependencies resolvedependencies                 \
                         algebraic_wlfi algebraic_wlf cubeslicer             \
-                        polyhedral_wlfi                                     \
                         wl_cost_check wl_needcount                          \
                         loop_scalarization withloop_flattening              \
                         loop_and_cond_scalarization_in                      \
@@ -197,6 +196,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize      \
                         narray_utilities                                    \
                         set_withloop_depth                                  \
                         polyhedral_utilities                                \
+                        polyhedral_wlf                                      \
                         eliminate_duplicate_fundef_args
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \

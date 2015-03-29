@@ -97,6 +97,7 @@
 #include "constant_folding.h"
 #include "saa_constant_folding.h"
 #include "ivexpropagation.h"
+#include "polyhedral_utilities.h"
 
 /******************************************************************************
  *
@@ -580,6 +581,10 @@ SCSisConstantOne (node *prfarg)
  *
  * @result: true if:
  *
+ *       Case 0: GENERATOR_GENWIDTH == 1!
+ *         This requires that we be able to find the N_part we are
+ *         in, if it exists.
+ *
  *       Case 1:
  *         ( AVIS_MIN( arg) == ( AVIS_MAX( arg) -  1)) or
  *         ( AVIS_MIN( arg) == ( AVIS_MAX( arg) + -1)).
@@ -604,13 +609,26 @@ isGenwidth1Partition (node *arg, info *arg_info)
     constant *con = NULL;
     constant *cone = NULL;
     constant *consum = NULL;
+    node *partn;
 
     DBUG_ENTER ();
 
     DBUG_PRINT (" Checking %s for 1==GENWIDTH", AVIS_NAME (ID_AVIS (arg)));
 
+#ifdef FIXME
+    this is rubbish
+      - we have no guarantee that we will be called from somewhere with the same arg_info
+          block as CF !
+      // Case 0
+      partn
+      = INFO_PART (arg_info);
+    res
+      = (NULL != partn) && SCSisConstantOne (GENERATOR_GENWIDTH (PART_GENERATOR (partn)));
+#endif // FIXME
+
     // Case 1
-    if ((IVEXPisAvisHasMin (ID_AVIS (arg))) && (IVEXPisAvisHasMax (ID_AVIS (arg)))) {
+    if ((!res) && (IVEXPisAvisHasMin (ID_AVIS (arg)))
+        && (IVEXPisAvisHasMax (ID_AVIS (arg)))) {
         amax = AVIS_MAX (ID_AVIS (arg));
 
         patadd = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAisVar (&amax), 0),

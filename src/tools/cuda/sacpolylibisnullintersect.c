@@ -3,28 +3,34 @@
  *
  * Command-line option I:
  *   Read four Polylib polyhedra (A,B,C,D) from stdin,
- *   If A and B are matching sets, return POLY_MATCH_AB.
- *   Else, intersect A,B,C, and return result of POLY_EMPTYSET_ABC if the
+ *   If A and B are matching sets, return POLY_RET_MATCH_AB.
+ *   Else, intersect A,B,C, and return result of POLY_RET_EMPTYSET_ABC if the
  *   intersect is a NULL set.
  *
- *   Else, intersect A,B,D and return result of POLY_EMPTYSET_ABD if the
+ *   Else, intersect A,B,D and return result of POLY_RET_EMPTYSET_ABD if the
  *   intersect is a NULL set.
  *
- *   Else, return POLY_UNKNOWN or POLY_INVALID.
+ *   Else, return POLY_RET_UNKNOWN or POLY_RET_INVALID.
  *
- *  FIXME: these options are broken.
+ *
+ *  F: Used by PWLF. Poly_A is Consumer-WL; Poly_B is Producer_WL.
+ *     If PolyMatch( Poly_A,( Poly_A intersect Poly_B)), then
+ *     the fold can happen immediately.
+ *     If isNullIntersect( Poly_A, Poly_B), then no folding can occur.
+ *     Otherwise, FIXME we have to decode the intersect and slice the CWL.
+ *  I: Used by POGO. Checks for PolyMatch( Poly_A, Poly_B).
  *  M:  return 1 if the polyhedral intersection matches Poly_A; else 0.
  *  P:  print the intersection of the polyhedra on stdout
  *
  */
 
 #include "arithmetique.h"
-#include "types.h"
+#include "types.h" // This is the PolyLib file!
 #include "vector.h"
 #include "matrix.h"
 #include "polyhedron.h"
 #include "stdio.h"
-#include "polyhedral_utilities.h"
+#include "polyhedral_defs.h"
 
 #define MAXCON 2000
 
@@ -61,7 +67,7 @@ main (int argc, char *argv[])
     Polyhedron *Poly_D = NULL;
     Polyhedron *Poly_AB = NULL;
     Polyhedron *Poly_Z = NULL;
-    int z = POLY_UNKNOWN;
+    int z = POLY_RET_UNKNOWN;
     int res;
     int numrays = 0;
     int finished = 0;
@@ -95,7 +101,7 @@ main (int argc, char *argv[])
 #endif // VERBOSE
 
     switch (opcode) {
-    case 'P':
+    case POLY_OPCODE_PRINT:
         Poly_AB = DomainIntersection (Poly_A, Poly_B, MAXCON);
         Poly_Z = DomainIntersection (Poly_AB, Poly_C, MAXCON);
         fprintf (stderr, "Poly_Z(ABC) is:\n");
@@ -103,18 +109,18 @@ main (int argc, char *argv[])
         fprintf (stderr, "# Poly_Z rays=%d\n", Poly_Z->NbRays);
         break;
 
-    case 'I':
+    case POLY_OPCODE_INTERSECT:
         // check for matching polyhedra A and B.
         if (PolyhedronIncludes (Poly_A, Poly_B) && PolyhedronIncludes (Poly_B, Poly_A)) {
-            z = z | POLY_MATCH_AB;
-            z = z & ~POLY_UNKNOWN;
+            z = z | POLY_RET_MATCH_AB;
+            z = z & ~POLY_RET_UNKNOWN;
             finished = 1;
         }
 
         if (!finished) { // Intersect A,B
             if (isNullIntersect (Poly_A, Poly_B, &Poly_AB)) {
-                z = z | POLY_EMPTYSET_AB;
-                z = z & ~POLY_UNKNOWN;
+                z = z | POLY_RET_EMPTYSET_AB;
+                z = z & ~POLY_RET_UNKNOWN;
                 finished = 1;
 #ifdef VERBOSE
                 fprintf (stderr, "no rays in A,B\n");
@@ -124,8 +130,8 @@ main (int argc, char *argv[])
 
         if (!finished) { // Intersect ABC
             if (isNullIntersect (Poly_AB, Poly_C, &Poly_Z)) {
-                z = z | POLY_EMPTYSET_ABC;
-                z = z & ~POLY_UNKNOWN;
+                z = z | POLY_RET_EMPTYSET_ABC;
+                z = z & ~POLY_RET_UNKNOWN;
                 numrays = Poly_Z->NbRays;
                 finished = 1;
 #ifdef VERBOSE
@@ -137,8 +143,8 @@ main (int argc, char *argv[])
         if (!finished) { // Intersect ABD
             Domain_Free (Poly_Z);
             if (isNullIntersect (Poly_AB, Poly_D, &Poly_Z)) {
-                z = z | POLY_EMPTYSET_ABD;
-                z = z & ~POLY_UNKNOWN;
+                z = z | POLY_RET_EMPTYSET_ABD;
+                z = z & ~POLY_RET_UNKNOWN;
                 numrays = Poly_Z->NbRays;
                 finished = 1;
 #ifdef VERBOSE
@@ -148,26 +154,23 @@ main (int argc, char *argv[])
         }
         break;
 
-#ifdef NEEDSWORKORBURNING
-    case 'M':
-        // to be continued
-        Poly_I = DomainIntersection (Poly_A, Poly_B, MAXCON);
-        Poly_I2 = DomainIntersection (Poly_I, Poly_C, MAXCON);
-
-        // We assume that Poly_A is the CWL iv. If this matches the intersect,
-        // then the PWLF can proceed immediately
-        if ('M' == opcode) {
-            if (PolyhedronIncludes (Poly_A, Poly_I)
-                && PolyhedronIncludes (Poly_I, Poly_A)) {
-                fprintf (stderr, "polyhedra Poly_A and Poly_I match\n");
-                z = INTERSECT_fold;
-            } else {
-                fprintf (stderr, "polyhedra Poly_A and Poly_I do not match\n");
-                z = INTERSECT_xxx;
-            }
-        }
-#endif // NEEDSWORKORBURNING
+    case POLY_OPCODE_PWLF: // Polyhedral WLF
+        // Poly_A is the CWL iv; Poly_B is the PWL bounds,step,width.
+        // Poly_C constrains CWL iv and PWL bounds to match
+        Poly_AB = DomainIntersection (Poly_A, Poly_B, MAXCON);
+        z = (PolyhedronIncludes (Poly_A, Poly_AB)) ? POLY_RET_ACONTAINSB
+                                                   : POLY_RET_UNKNOWN;
+        // FIXME - more coding needed if !z
         break;
+
+    case POLY_OPCODE_MATCH:
+        if (PolyhedronIncludes (Poly_A, Poly_B) && PolyhedronIncludes (Poly_B, Poly_A)) {
+            z = POLY_RET_MATCH_AB;
+        } else {
+            z = POLY_RET_UNKNOWN;
+        }
+        break;
+
     default:
         fprintf (stderr, "caller is confused. We got opcode=%c\n", opcode);
         break;

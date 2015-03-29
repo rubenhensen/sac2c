@@ -873,7 +873,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
     ids = WITHID_IDS (PART_WITHID (pwlpart));
     args = LET_EXPR (ASSIGN_STMT (arg_node));
     idxavis = IVUToffset2Vect (args, &INFO_VARDECS (arg_info),
-                               &INFO_PREASSIGNS (arg_info), pwlpart);
+                               &INFO_PREASSIGNS (arg_info), NULL, pwlpart);
     DBUG_ASSERT (NULL != idxavis, "Could not rebuild iv for _sel_VxA_(iv, PWL)");
 
     k = 0;
@@ -1030,7 +1030,7 @@ FindMarkedSelAssignParent (node *assgn)
  * @result: new cwlpart with pwl partno folded into it.
  *
  *****************************************************************************/
-node *
+static node *
 performFold (node *cwlpart, int partno, info *arg_info)
 {
     node *pwlblock;

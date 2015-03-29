@@ -39,6 +39,7 @@
 #include "filemgr.h"
 #include "sys/param.h"
 #include "polyhedral_utilities.h"
+#include "polyhedral_defs.h"
 #include "symbolic_constant_simplification.h"
 #include "with_loop_utilities.h"
 #include "lacfun_utilities.h"
@@ -362,7 +363,7 @@ AddValueToNamedColumn (node *arg_node, int incr, node *prow, info *arg_info)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *collectWlGeneratorMin( node *arg_node)
+ * @fn node *PHUTcollectWlGeneratorMin( node *arg_node)
  *
  * @brief arg_node may represent a WITHID element for a WL.
  *        If so, generate a polylib input matrix row of:
@@ -371,18 +372,17 @@ AddValueToNamedColumn (node *arg_node, int incr, node *prow, info *arg_info)
  *             arg_node - LB[k] >= 0
  *
  * @param arg_node: an N_avis
+ * @param res: an N_exprs chain for the growing result, initially NULL.
  *
- * @return If arg_node is a member of a WITHID_IDS, and we
- *         are in MODE_generatematrix, an N_exprs chain for the
- *         above relational.
+ * @return If arg_node is a member of a WITHID, and we
+ *         are in MODE_generatematrix, an N_exprs chain for the above relational,
+ *         catenated to the incoming res.
  *         Otherwise, NULL.
  *
- *         We eventually want to support non-unit WIDTH, but
- *         we want to get the simpler stuff working first.
  *
  ******************************************************************************/
-static node *
-collectWlGeneratorMin (node *arg_node, info *arg_info, node *res)
+node *
+PHUTcollectWlGeneratorMin (node *arg_node, info *arg_info, node *res)
 {
     node *z = NULL;
     node *partn;
@@ -428,7 +428,7 @@ collectWlGeneratorMin (node *arg_node, info *arg_info, node *res)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *collectWlGeneratorMax( node *arg_node)
+ * @fn node *PHUTcollectWlGeneratorMax( node *arg_node)
  *
  * @brief arg_node is a WITHID element for a WL, shown here as iv.
  *        We generate polylib input matrix rows of:
@@ -452,9 +452,12 @@ collectWlGeneratorMin (node *arg_node, info *arg_info, node *res)
  *        See also S.B. Scholz: SAC - Efficient Support... p14
  *
  * @param An N_avis
+ * @param res: an N_exprs chain for the growing result, initially NULL.
  *
  * @return If arg_node is a member of a WITHID, and we
- *         are in MODE_generatematrix, an N_exprs chain for the above relational.
+ *         are in MODE_generatematrix, an N_exprs chain for the above relational,
+ *         catenated to the incoming res.
+ *
  *         Otherwise, NULL.
  *
  ******************************************************************************/
@@ -481,8 +484,8 @@ StepOrWidthHelper (node *stpwid, int k)
     return (z);
 }
 
-static node *
-collectWlGeneratorMax (node *arg_node, info *arg_info, node *res)
+node *
+PHUTcollectWlGeneratorMax (node *arg_node, info *arg_info, node *res)
 {
     node *z = NULL;
     node *partn;
@@ -661,7 +664,8 @@ Exprs2File (FILE *handle, node *exprs, node *idlist)
  *
  * @fn node *collectAffineNid( node *arg_node, info *arg_info)
  *
- * @brief Collect extrema values for this N_id
+ * @brief Collect extrema values for this N_id, which may (or may not)
+ *        be a WITHID_IDS element.
  *
  * @param An N_id or an N_avis
  *
@@ -676,8 +680,8 @@ collectAffineNid (node *arg_node, info *arg_info, node *res)
     DBUG_ENTER ();
 
     avis = (N_id == NODE_TYPE (arg_node)) ? ID_AVIS (arg_node) : arg_node;
-    res = collectWlGeneratorMin (avis, arg_info, res);
-    res = collectWlGeneratorMax (avis, arg_info, res);
+    res = PHUTcollectWlGeneratorMin (avis, arg_info, res);
+    res = PHUTcollectWlGeneratorMax (avis, arg_info, res);
     DBUG_PRINT ("Generator extrema collected for %s", AVIS_NAME (avis));
     CheckExprsChain (res, arg_info);
 
@@ -1618,13 +1622,21 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
  *        The monotonically increasing global.polylib_filenumber
  *        is for debugging, as we will generate MANY files.
  *
+ * @param: exprs1, exprs2, exprs3, exprs4 - integer N_exprs chains of
+ *         PolyLib input matrices
+ * @param: idlist - an N_exprs chain of N_id nodes that are referenced
+ *         by the affine function trees in the exprs chains.
+ * @param: opcode - the POLY_OPCODE to select a PolyLib operation set.
+ *
+ * @result: a POLY_RET return code
+ *
  *****************************************************************************/
 int
 PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *exprs4,
-                       node *idlist, int numvars)
+                       node *idlist, char opcode)
 {
 #define MAXLINE 1000
-    int res = POLY_INVALID;
+    int res = POLY_RET_INVALID;
     FILE *matrix_file;
     FILE *res_file;
     char polyhedral_arg_filename[PATH_MAX];
@@ -1632,8 +1644,8 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *exprs4,
     static const char *argfile = "polyhedral_args";
     static const char *resfile = "polyhedral_res";
     char buffer[MAXLINE];
+    int numvars;
     int exit_code;
-    char opcode = 'I';
 
     DBUG_ENTER ();
 
@@ -1656,6 +1668,7 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *exprs4,
     // If so, we cheat by making a DUP for the missing one. This is not exactly
     // efficient for Polylib (we should have a different
     // call that only expects fewer polyhedra), but it is simple to implement here.
+    numvars = TCcountExprs (idlist);
     exprs1 = (NULL == exprs1) ? PHUTgenerateIdentityExprs (numvars) : exprs1;
     exprs2 = (NULL == exprs2) ? PHUTgenerateIdentityExprs (numvars) : exprs2;
     exprs3 = (NULL == exprs3) ? PHUTgenerateIdentityExprs (numvars) : exprs3;
