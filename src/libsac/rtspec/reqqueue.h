@@ -26,6 +26,9 @@ typedef struct queue_node {
     /** @brief The shapes of the arguments. */
     int *shape_info;
 
+    /** @brief Encoded shape info of the arguments. */
+    char *shapes;
+
     /** @brief A registry object, needed for updating the function pointer. */
     reg_obj_t *reg_obj;
 
@@ -50,6 +53,14 @@ typedef struct reqqueue {
 } reqqueue_t;
 
 /**
+ * @brief Structure for holding processed requests.
+ */
+typedef struct list {
+    queue_node_t *node;
+    struct list *next;
+} list_t;
+
+/**
  * @var  request_queue
  *
  * @brief Central administrative object.
@@ -59,9 +70,9 @@ extern reqqueue_t *request_queue;
 extern pthread_mutex_t empty_queue_mutex;
 extern pthread_cond_t empty_queue_cond;
 
-int wasProcessed (char *function, char *shape_info);
+int wasProcessed (queue_node_t *node);
 
-void addProcessed (char *function, char *shape_info);
+void addProcessed (queue_node_t *node);
 
 void SAC_initializeQueue (int trace);
 

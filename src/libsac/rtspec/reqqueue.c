@@ -19,7 +19,6 @@
 
 #include "registry.h"
 #include "reqqueue.h"
-#include "controller.h"
 
 #define SAC_DO_TRACE 1
 #include "sac.h"
@@ -35,46 +34,59 @@ static list_t *processed;
 
 /** <!--*******************************************************************-->
  *
- * @fn  wasProcessed( char *function, char *shape_info)
+ * @fn  wasProcessed( queue_node_t *node)
  *
  * @brief Iterates over all the nodes in the list of processed requests and
  * returns TRUE if a node contains the same information as the current request
  * and FALSE otherwise.
  *
- * @param  function  The function for which the request was made.
- * @param  shape_info  The encoded shapes that were part of the request.
+ * @param  node  The queue node holding information about the function
  *
  * @return  TRUE if the request was allready handled, FALSE otherwise.
  *
  ****************************************************************************/
 int
-wasProcessed (char *function, char *shape_info)
+wasProcessed (queue_node_t *node)
 {
-    char compare[256];
     list_t *current;
 
     pthread_mutex_lock (&processed_mutex);
 
-    if (strlen (processed->request) == 0) {
+    if (processed->node == NULL) {
+        if (do_trace == 1) {
+            SAC_TR_Print ("Runtime specialization: Nothing processed yet.");
+        }
         pthread_mutex_unlock (&processed_mutex);
         return 0;
     }
 
-    sprintf (compare, "%s_%s", function, shape_info);
-
     current = processed;
     while (current != NULL) {
-        if (strlen (current->request) != 0) {
-            if (strcmp (current->request, compare) == 0) {
+        if (do_trace == 1) {
+            SAC_TR_Print ("Runtime specialization: Checking queue.");
+        }
+        if (current->node != NULL) {
+            if ((strcmp (current->node->func_name, node->func_name) == 0)
+                && (strcmp (current->node->shapes, node->shapes) == 0)) {
+                if (do_trace == 1) {
+                    SAC_TR_Print ("Runtime specialization: Already processed.");
+                }
                 pthread_mutex_unlock (&processed_mutex);
                 return 1;
             }
         } else {
+            if (do_trace == 1) {
+                SAC_TR_Print ("Runtime specialization: invalid queue node");
+            }
             pthread_mutex_unlock (&processed_mutex);
             return 0;
         }
 
         current = current->next;
+    }
+
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Found no match.");
     }
 
     pthread_mutex_unlock (&processed_mutex);
@@ -84,23 +96,17 @@ wasProcessed (char *function, char *shape_info)
 
 /** <!--*******************************************************************-->
  *
- * @fn  addProcessed( char *function, char *shape_info)
+ * @fn  addProcessed( queue_node_t *node)
  *
  * @brief Adds a new node to the list of processed requests.
  *
- * @param  function  The function for which the request was made.
- * @param  shape_info  The encoded shapes that were part of the request.
+ * @param  node  The queue node holding information about the function
  *
  ****************************************************************************/
 void
-addProcessed (char *function, char *shape_info)
+addProcessed (queue_node_t *node)
 {
-    list_t *xnew;
-    char request[256];
-
-    sprintf (request, "%s_%s", function, shape_info);
-
-    xnew = (list_t *)malloc (sizeof (list_t));
+    list_t *xnew = (list_t *)malloc (sizeof (list_t));
 
     if (xnew == NULL) {
         fprintf (stderr, "Could not allocate new processed request node!");
@@ -108,16 +114,16 @@ addProcessed (char *function, char *shape_info)
         exit (EXIT_FAILURE);
     }
 
-    strcpy (xnew->request, request);
-
     pthread_mutex_lock (&processed_mutex);
 
     /* Add the new processed request at the beginning of the list, this is
      * cheaper than at the end.
      */
-    if (strlen (processed->request) != 0) {
+    if (processed->node != NULL) {
         xnew->next = processed;
     }
+
+    xnew->node = node;
 
     processed = xnew;
 
@@ -168,6 +174,9 @@ SAC_initializeQueue (int trace)
 
     processed = (list_t *)malloc (sizeof (list_t));
 
+    processed->node = NULL;
+    processed->next = NULL;
+
     pthread_mutex_unlock (&processed_mutex);
 }
 
@@ -201,6 +210,7 @@ SAC_createNode (char *func_name, char *types, int *shapes, reg_obj_t *registry)
     xnew->func_name = func_name;
     xnew->type_info = types;
     xnew->shape_info = shapes;
+    xnew->shapes = NULL;
     xnew->reg_obj = registry;
     xnew->next = NULL;
 

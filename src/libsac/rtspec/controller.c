@@ -368,7 +368,7 @@ SAC_handleRequest (queue_node_t *request)
 
     char syscall[MAX_SYS_CALL] = "";
     char filename[MAX_STRING_LENGTH] = "";
-    char shape_info[MAX_STRING_LENGTH] = "";
+    char *shape_info = malloc (MAX_STRING_LENGTH * sizeof (char));
 
     if (request->shape_info == NULL) {
         // fprintf(stderr, "Could not optimize as shape information is missing for "
@@ -381,10 +381,12 @@ SAC_handleRequest (queue_node_t *request)
      */
     encodeShapes (request->shape_info, shape_info);
 
+    request->shapes = shape_info;
+
     /*
      * Only process requests that haven't been processed yet.
      */
-    if (wasProcessed (request->func_name, shape_info)) {
+    if (wasProcessed (request)) {
         return;
     }
 
@@ -419,7 +421,7 @@ SAC_handleRequest (queue_node_t *request)
 
     // Mark specialization as processed early to avoid concurrently processing
     // it twice by two individual controllers
-    addProcessed (request->func_name, shape_info);
+    addProcessed (request);
 
     /* Execute the system call and act according to the return value. */
     switch (system (syscall)) {

@@ -14,14 +14,6 @@
 
 #include "reqqueue.h"
 
-/**
- * @brief Structure for holding processed requests.
- */
-typedef struct list {
-    char request[256];
-    struct list *next;
-} list_t;
-
 extern void SAC_RTSPEC_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                                      int trace);
 
