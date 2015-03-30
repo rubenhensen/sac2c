@@ -284,7 +284,7 @@ SAC_runController (void *param)
 
 /** <!--*******************************************************************-->
  *
- * @fn encodeShapes( int *shapes, char *result)
+ * @fn encodeShapes( int *shapes)
  *
  * @brief  Creates a string representation of the shape information stored in
  * the integer array 'shapes'.
@@ -304,22 +304,23 @@ SAC_runController (void *param)
  * }
  *
  * @param shapes  The array of shape information.
- * @param result  The resulting string representation.
  ****************************************************************************/
-static void
-encodeShapes (int *shapes, char *result)
+char *
+encodeShapes (int *shapes)
 {
     int num_args, i, j, k, l;
 
-    char current[15];
-
     if (shapes == NULL) {
         fprintf (stderr, "ERROR -- \t Missing shape information!");
-        return;
+        return '\0';
     }
 
     num_args = shapes[0];
-    sprintf (result, "%d-", num_args);
+
+    /*
+     * Encode the base type information.
+     */
+    size_t shape_string_size = MAX_INT_DIGITS + 1;
 
     i = 1;
     k = 1;
@@ -328,16 +329,38 @@ encodeShapes (int *shapes, char *result)
             j = 0;
             l = shapes[k];
             for (; j <= l; j++) {
-                sprintf (current, "%d-", shapes[k]);
-                strcat (result, current);
+                shape_string_size += MAX_INT_DIGITS;
                 k++;
             }
         } else {
-            sprintf (current, "%d-", shapes[k]);
-            strcat (result, current);
+            shape_string_size += MAX_INT_DIGITS;
             k++;
         }
     }
+
+    char *current = (char *)malloc (shape_string_size * sizeof (char));
+
+    current[0] = '\0';
+
+    sprintf (current, "%d-", num_args);
+
+    i = 1;
+    k = 1;
+    for (; i <= num_args; i++) {
+        if (shapes[k] > 0) {
+            j = 0;
+            l = shapes[k];
+            for (; j <= l; j++) {
+                sprintf (current, "%s%d-", current, shapes[k]);
+                k++;
+            }
+        } else {
+            sprintf (current, "%s%d-", current, shapes[k]);
+            k++;
+        }
+    }
+
+    return current;
 }
 
 /** <!--*******************************************************************-->
@@ -368,7 +391,6 @@ SAC_handleRequest (queue_node_t *request)
 
     char syscall[MAX_SYS_CALL] = "";
     char filename[MAX_STRING_LENGTH] = "";
-    char *shape_info = malloc (MAX_STRING_LENGTH * sizeof (char));
 
     if (request->shape_info == NULL) {
         // fprintf(stderr, "Could not optimize as shape information is missing for "
@@ -379,7 +401,7 @@ SAC_handleRequest (queue_node_t *request)
     /*
      * Encode the shapes of the arguments.
      */
-    encodeShapes (request->shape_info, shape_info);
+    char *shape_info = encodeShapes (request->shape_info);
 
     request->shapes = shape_info;
 
