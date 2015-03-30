@@ -16,6 +16,7 @@
 #include "print.h"
 #include "str.h"
 #include "str_buffer.h"
+#include "string.h"
 
 #define DBUG_PREFIX "UNDEFINED"
 #include "debug.h"
@@ -135,18 +136,19 @@ ICMCompileWE_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
         int i = 0;
         for (; i < vararg_cnt * 3; i += 3) {
             if (STReq (vararg[i], "in")) {
-                type_string_size += STRlen (vararg[i + 1]);
+                type_string_size += STRlen (vararg[i + 1]) + 1;
             }
         }
 
         char *types = (char *)malloc (type_string_size * sizeof (char));
 
-        sprintf (types, "%s", "");
+        types[0] = '\0';
 
         i = 0;
         for (; i < vararg_cnt * 3; i += 3) {
             if (STReq (vararg[i], "in")) {
-                sprintf (types, "%s%s-", types, vararg[i + 1]);
+                strcat (types, vararg[i + 1]);
+                strcat (types, "-");
             }
         }
 
