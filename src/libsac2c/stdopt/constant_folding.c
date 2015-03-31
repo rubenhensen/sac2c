@@ -138,6 +138,7 @@
 #include "check.h"
 #include "ivexpropagation.h"
 #include "polyhedral_guard_optimization.h"
+#include "polyhedral_utilities.h"
 
 static info *
 MakeInfo (void)

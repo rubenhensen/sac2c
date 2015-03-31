@@ -272,16 +272,14 @@ PHUTgenerateIdentityExprs (int numvars)
  *
  ******************************************************************************/
 static node *
-AddValueToColumn (int col, int incr, node *prow, info *arg_info)
+AddValueToColumn (int col, int incr, node *prow)
 {
     node *z;
 
     DBUG_ENTER ();
 
-    CheckExprsChain (prow, arg_info);
     incr = incr + NUM_VAL (TCgetNthExprsExpr (col, prow));
     z = TCputNthExprs (col, prow, TBmakeNum (incr));
-    CheckExprsChain (z, arg_info);
 
     DBUG_RETURN (z);
 }
@@ -301,7 +299,7 @@ AddValueToColumn (int col, int incr, node *prow, info *arg_info)
  *
  ******************************************************************************/
 static node *
-AddIntegerToConstantColumn (int incr, node *prow, info *arg_info)
+AddIntegerToConstantColumn (int incr, node *prow)
 {
     node *z = NULL;
     int col;
@@ -309,7 +307,7 @@ AddIntegerToConstantColumn (int incr, node *prow, info *arg_info)
     DBUG_ENTER ();
 
     col = TCcountExprs (prow) - 1;
-    z = AddValueToColumn (col, incr, prow, arg_info);
+    z = AddValueToColumn (col, incr, prow);
 
     DBUG_RETURN (z);
 }
@@ -334,7 +332,7 @@ AddIntegerToConstantColumn (int incr, node *prow, info *arg_info)
  *
  ******************************************************************************/
 static node *
-AddValueToNamedColumn (node *arg_node, int incr, node *prow, info *arg_info)
+AddValueToNamedColumn (node *arg_node, int incr, node *prow)
 {
     node *z = NULL;
     int col;
@@ -343,7 +341,6 @@ AddValueToNamedColumn (node *arg_node, int incr, node *prow, info *arg_info)
     DBUG_ENTER ();
 
     avis = Node2Avis (arg_node);
-    CheckExprsChain (prow, arg_info);
 
     col = AVIS_POLYLIBCOLUMNINDEX (avis);
     if (-1 == col) {
@@ -356,7 +353,7 @@ AddValueToNamedColumn (node *arg_node, int incr, node *prow, info *arg_info)
         // wrong;
         col = TCcountExprs (prow) - 1; // (last) column, for constants
     }
-    z = AddValueToColumn (PLVARS + col, incr, prow, arg_info);
+    z = AddValueToColumn (PLVARS + col, incr, prow);
 
     DBUG_RETURN (z);
 }
@@ -410,11 +407,11 @@ PHUTcollectWlGeneratorMin (node *arg_node, info *arg_info, node *res)
             if ((MODE_generatematrix == INFO_MODE (arg_info))) {
                 DBUG_PRINT ("Generating lower bound for %s", AVIS_NAME (arg_node));
                 z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z = AddValueToNamedColumn (arg_node, 1, z, arg_info); // arg_node
+                z = AddValueToNamedColumn (arg_node, 1, z); // arg_node
                 if (isnumbndel) {
-                    z = AddIntegerToConstantColumn (-bndelnum, z, arg_info);
+                    z = AddIntegerToConstantColumn (-bndelnum, z);
                 } else {
-                    z = AddValueToNamedColumn (bndel, -1, z, arg_info); // -bndel
+                    z = AddValueToNamedColumn (bndel, -1, z); // -bndel
                 }
                 res = TCappendExprs (res, z);
             }
@@ -523,12 +520,12 @@ PHUTcollectWlGeneratorMax (node *arg_node, info *arg_info, node *res)
                 DBUG_PRINT ("Generating upper bound for %s", AVIS_NAME (arg_node));
                 z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
                 if (ubnum) {
-                    z = AddIntegerToConstantColumn (ubelnum, z, arg_info);
+                    z = AddIntegerToConstantColumn (ubelnum, z);
                 } else {
-                    z = AddValueToNamedColumn (ubel, 1, z, arg_info);
+                    z = AddValueToNamedColumn (ubel, 1, z);
                 }
-                z = AddIntegerToConstantColumn (-1, z, arg_info);
-                z = AddValueToNamedColumn (arg_node, -1, z, arg_info); // -arg_node
+                z = AddIntegerToConstantColumn (-1, z);
+                z = AddValueToNamedColumn (arg_node, -1, z); // -arg_node
                 res = TCappendExprs (res, z);
 
                 // Non-unit STEP support:
@@ -543,32 +540,32 @@ PHUTcollectWlGeneratorMax (node *arg_node, info *arg_info, node *res)
                     //  PLWID >= 0
                     z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
                                            PLFUNINEQUALITY);
-                    z = AddValueToColumn (PLWID, 1, z, arg_info);
+                    z = AddValueToColumn (PLWID, 1, z);
                     res = TCappendExprs (res, z);
 
                     // (WIDTH - PLWID) -1 >= 0
                     z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
                                            PLFUNINEQUALITY);
-                    z = AddValueToColumn (PLWID, -1, z, arg_info);
-                    z = AddIntegerToConstantColumn (widnum - 1, z, arg_info);
+                    z = AddValueToColumn (PLWID, -1, z);
+                    z = AddIntegerToConstantColumn (widnum - 1, z);
                     res = TCappendExprs (res, z);
 
                     // APV = LB + STEP*N --->  APV - LB - (STEP*N) = 0
                     z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                    z = AddValueToColumn (PLAPV, 1, z, arg_info); // APV
-                    if (N_num == NODE_TYPE (lbel)) {              // -LB
-                        z = AddIntegerToConstantColumn (-NUM_VAL (lbel), z, arg_info);
+                    z = AddValueToColumn (PLAPV, 1, z); // APV
+                    if (N_num == NODE_TYPE (lbel)) {    // -LB
+                        z = AddIntegerToConstantColumn (-NUM_VAL (lbel), z);
                     } else {
-                        z = AddValueToNamedColumn (ubel, -1, z, arg_info);
+                        z = AddValueToNamedColumn (ubel, -1, z);
                     }
-                    z = AddValueToColumn (PLFAKEN, -stpnum, z, arg_info); // -STEP*N
+                    z = AddValueToColumn (PLFAKEN, -stpnum, z); // -STEP*N
                     res = TCappendExprs (res, z);
 
                     // iv = APV + W --->    iv - APV - W = 0
                     z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                    z = AddValueToNamedColumn (arg_node, 1, z, arg_info); // iv
-                    z = AddValueToColumn (PLAPV, -1, z, arg_info);        // -APV
-                    z = AddValueToColumn (PLWID, -1, z, arg_info);        // -W
+                    z = AddValueToNamedColumn (arg_node, 1, z); // iv
+                    z = AddValueToColumn (PLAPV, -1, z);        // -APV
+                    z = AddValueToColumn (PLWID, -1, z);        // -W
                     res = TCappendExprs (res, z);
                 }
             }
@@ -613,7 +610,8 @@ Exprs2File (FILE *handle, node *exprs, node *idlist)
     DBUG_PRINT ("Writing %d rows and %d columns", rows, cols);
 
     fprintf (handle, "%d %d\n## ", rows, cols); // polyhedron descriptor
-    for (i = 0; i < idcols; i++) {              // all but constant
+    fprintf (handle, "##  PLFN PLWID PLAPV PLFAKEN ");
+    for (i = 0; i < idcols; i++) { // all but constant
         fprintf (handle, " %s ", AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist))));
     }
     fprintf (handle, "\n\n");
@@ -859,8 +857,8 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
     res = PHUTcollectAffineExprsLocal (rhs, arg_info, res);
     if (MODE_generatematrix == INFO_MODE (arg_info)) {
         z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-        z = AddValueToNamedColumn (arg_node, 1, z, arg_info);
-        z = AddValueToNamedColumn (rhs, -1, z, arg_info);
+        z = AddValueToNamedColumn (arg_node, 1, z);
+        z = AddValueToNamedColumn (rhs, -1, z);
         res = TCappendExprs (res, z);
     }
 
@@ -896,8 +894,8 @@ HandleNnum (node *arg_node, node *rhs, info *arg_info, node *res)
 
     if (MODE_generatematrix == INFO_MODE (arg_info)) {
         z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-        z = AddValueToNamedColumn (arg_node, 1, z, arg_info);
-        z = AddIntegerToConstantColumn (-NUM_VAL (rhs), z, arg_info);
+        z = AddValueToNamedColumn (arg_node, 1, z);
+        z = AddIntegerToConstantColumn (-NUM_VAL (rhs), z);
         res = TCappendExprs (res, z);
     }
 
@@ -955,7 +953,7 @@ HandleComposition (node *arg_node, node *rhs, info *arg_info, node *res)
         if ((PMmatchFlat (pat1, rhs) || PMmatchFlat (pat2, rhs))
             && PMmatchFlat (pat3, x)) {
             z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-            z = AddValueToNamedColumn (arg_node, 1, z, arg_info);
+            z = AddValueToNamedColumn (arg_node, 1, z);
             res = TCappendExprs (res, z);
         }
         pat1 = PMfree (pat1);
@@ -1021,28 +1019,28 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
             switch (PRF_PRF (rhs)) {
             case F_add_SxS: // z = x + y;    -->   x + y  + (-z) == 0
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2, arg_info); //  x
-                z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), 1, z2, arg_info); //  +y
-                z2 = AddValueToNamedColumn (ids, -1, z2, arg_info);           // -z
+                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2); //  x
+                z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), 1, z2); //  +y
+                z2 = AddValueToNamedColumn (ids, -1, z2);           // -z
                 res = TCappendExprs (res, z2);
                 break;
 
             case F_non_neg_val_S: // z = nonneg( y) -->  (z == y) && ( z >= 0)
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                z2 = AddValueToNamedColumn (ids, 1, z2, arg_info);             // z
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), -1, z2, arg_info); // -y
+                z2 = AddValueToNamedColumn (ids, 1, z2);             // z
+                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), -1, z2); // -y
                 res = TCappendExprs (res, z2);
 
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z2 = AddValueToNamedColumn (ids, 1, z2, arg_info); //  z >= 0
+                z2 = AddValueToNamedColumn (ids, 1, z2); //  z >= 0
                 res = TCappendExprs (res, z2);
                 break;
 
             case F_sub_SxS: // z = x - y;       -->   x + (-y) +    (-z) == 0
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2, arg_info);  //   x
-                z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), -1, z2, arg_info); //  -y
-                z2 = AddValueToNamedColumn (ids, -1, z2, arg_info);            //  -z
+                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2);  //   x
+                z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), -1, z2); //  -y
+                z2 = AddValueToNamedColumn (ids, -1, z2);            //  -z
                 res = TCappendExprs (res, z2);
                 break;
 
@@ -1050,13 +1048,13 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                             //  -->  ( z >= x)        && ( z >= y)
                             //  -->  (( z - x) >= 0)  && ( z - y) >= 0
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z2 = AddValueToNamedColumn (ids, 1, z2, arg_info);             // z
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), -1, z2, arg_info); //  -x
+                z2 = AddValueToNamedColumn (ids, 1, z2);             // z
+                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), -1, z2); //  -x
                 res = TCappendExprs (res, z2);
 
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z2 = AddValueToNamedColumn (ids, 1, z2, arg_info);             // z
-                z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), -1, z2, arg_info); //  -y
+                z2 = AddValueToNamedColumn (ids, 1, z2);             // z
+                z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), -1, z2); //  -y
                 res = TCappendExprs (res, z2);
                 break;
 
@@ -1065,13 +1063,13 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                             //  -->  ( x >= z)        && ( y >= z)
                             //  -->  (( x - z) >= 0)  && ( y - z) >= 0
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2, arg_info); //  x
-                z2 = AddValueToNamedColumn (ids, -1, z2, arg_info);           // -z
+                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2); //  x
+                z2 = AddValueToNamedColumn (ids, -1, z2);           // -z
                 res = TCappendExprs (res, z2);
 
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), 1, z2, arg_info); //  y
-                z2 = AddValueToNamedColumn (ids, -1, z2, arg_info);           // -z
+                z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), 1, z2); //  y
+                z2 = AddValueToNamedColumn (ids, -1, z2);           // -z
                 res = TCappendExprs (res, z2);
                 break;
 
@@ -1082,9 +1080,8 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                     val = TUtype2Int (AVIS_TYPE (argavis));
                     z2
                       = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                    z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), val, z2,
-                                                arg_info);              //  const*y
-                    z2 = AddValueToNamedColumn (ids, -1, z2, arg_info); // -z
+                    z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), val, z2); //  const*y
+                    z2 = AddValueToNamedColumn (ids, -1, z2);             // -z
                     res = TCappendExprs (res, z2);
                     break;
                 }
@@ -1095,9 +1092,8 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                     val = TUtype2Int (AVIS_TYPE (argavis));
                     z2
                       = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                    z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), val, z2,
-                                                arg_info);              // const*x
-                    z2 = AddValueToNamedColumn (ids, -1, z2, arg_info); // -z
+                    z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), val, z2); // const*x
+                    z2 = AddValueToNamedColumn (ids, -1, z2);             // -z
                     res = TCappendExprs (res, z2);
                     break;
                 }
@@ -1109,17 +1105,16 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                     // z >= 0
                     z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
                                             PLFUNINEQUALITY);
-                    z2 = AddValueToNamedColumn (ids, 1, z2, arg_info);
+                    z2 = AddValueToNamedColumn (ids, 1, z2);
                     res = TCappendExprs (res, z2);
                     // maximum: z < shape  --> shape > z --> (shape - 1) -z >= 0
                     if ((NULL != AVIS_SHAPE (argavis))
                         && (N_id == NODE_TYPE (AVIS_SHAPE (argavis)))) {
                         z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
                                                 PLFUNINEQUALITY);
-                        z2
-                          = AddValueToNamedColumn (AVIS_SHAPE (argavis), 1, z2, arg_info);
-                        z2 = AddValueToNamedColumn (ids, -1, z2, arg_info);
-                        z2 = AddIntegerToConstantColumn (-1, z2, arg_info);
+                        z2 = AddValueToNamedColumn (AVIS_SHAPE (argavis), 1, z2);
+                        z2 = AddValueToNamedColumn (ids, -1, z2);
+                        z2 = AddIntegerToConstantColumn (-1, z2);
                         res = TCappendExprs (res, z2);
                     }
                 }
@@ -1127,7 +1122,7 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
 
             case F_abs_S: // z >= 0
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z2 = AddValueToNamedColumn (ids, 1, z2, arg_info);
+                z2 = AddValueToNamedColumn (ids, 1, z2);
                 res = TCappendExprs (res, z2);
                 break;
 
@@ -1143,7 +1138,7 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                     || (SCSisPositive (PRF_ARG2 (rhs)))) {
                     z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
                                             PLFUNINEQUALITY);
-                    z2 = AddValueToNamedColumn (ids, 1, z2, arg_info); // z >= 0
+                    z2 = AddValueToNamedColumn (ids, 1, z2); // z >= 0
                     res = TCappendExprs (res, z2);
                 }
 
@@ -1155,9 +1150,9 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                     && (SCSisPositive (PRF_ARG1 (rhs)))) {
                     z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
                                             PLFUNINEQUALITY);
-                    z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), 1, z2, arg_info);
-                    z2 = AddValueToNamedColumn (ids, -1, z2, arg_info);
-                    z2 = AddIntegerToConstantColumn (-1, z2, arg_info);
+                    z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), 1, z2);
+                    z2 = AddValueToNamedColumn (ids, -1, z2);
+                    z2 = AddIntegerToConstantColumn (-1, z2);
                     res = TCappendExprs (res, z2);
                 }
                 break;
@@ -1176,7 +1171,7 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                     && (SCSisPositive (PRF_ARG2 (rhs)))) {
                     z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
                                             PLFUNINEQUALITY);
-                    z2 = AddValueToNamedColumn (ids, 1, z2, arg_info);
+                    z2 = AddValueToNamedColumn (ids, 1, z2);
                     res = TCappendExprs (res, z2);
                 }
 
@@ -1187,9 +1182,9 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                 if ((SCSisNonneg (PRF_ARG2 (rhs))) && (SCSisPositive (PRF_ARG1 (rhs)))) {
                     z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
                                             PLFUNINEQUALITY);
-                    z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), 1, z2, arg_info);
-                    z2 = AddValueToNamedColumn (ids, -1, z2, arg_info);
-                    z2 = AddIntegerToConstantColumn (-1, z2, arg_info);
+                    z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), 1, z2);
+                    z2 = AddValueToNamedColumn (ids, -1, z2);
+                    z2 = AddIntegerToConstantColumn (-1, z2);
                     res = TCappendExprs (res, z2);
                 }
                 break;
@@ -1199,14 +1194,14 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                 // Treat a guard within an affine expression as assignment.
                 // z = PRF_ARG1;
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2, arg_info);
+                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2);
                 res = TCappendExprs (res, z2);
                 break;
 
             case F_neg_S: //  z = -y;  -->  z + y == 0
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2, arg_info);
-                z2 = AddValueToNamedColumn (ids, 1, z2, arg_info);
+                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2);
+                z2 = AddValueToNamedColumn (ids, 1, z2);
                 res = TCappendExprs (res, z2);
                 break;
 
@@ -1554,23 +1549,23 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
     switch (relfn) {
     case F_non_neg_val_S:
         // z = non_neg_val_S( x);    -->   x >= 0
-        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z, arg_info);
+        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z);
         break;
 
     case F_gt_SxS:
         // z = _gt_SxS( x, y)        -->   x             >  y
         //                                 x - y         >  0
         //                                (x - y) -1     >= 0
-        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z, arg_info);
-        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), -1, z, arg_info);
-        z = AddIntegerToConstantColumn (-1, z, arg_info);
+        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z);
+        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), -1, z);
+        z = AddIntegerToConstantColumn (-1, z);
         break;
 
     case F_ge_SxS:
         // z = _ge_SxS( x, y)        -->   x             >= y
         //                                 x - y         >= 0
-        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z, arg_info);
-        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), -1, z, arg_info);
+        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z);
+        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), -1, z);
         break;
 
     case F_val_lt_val_SxS:
@@ -1579,12 +1574,12 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
         //                                 y             >  x
         //                                 ( y - x)      >  0
         //                                 ( y - x) -1   >= 0
-        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), -1, z, arg_info);
+        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), -1, z);
         if (F_non_neg_val_S != PRF_PRF (arg_node)) { // Kludge for CompanionFn
             // Want x < 0 --> 0 > x --> 0 - x > 0 --> (-x) -1 >= 0
-            z = AddValueToNamedColumn (PRF_ARG2 (arg_node), 1, z, arg_info);
+            z = AddValueToNamedColumn (PRF_ARG2 (arg_node), 1, z);
         }
-        z = AddIntegerToConstantColumn (-1, z, arg_info);
+        z = AddIntegerToConstantColumn (-1, z);
         break;
 
     case F_val_le_val_SxS:
@@ -1592,8 +1587,8 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
         // z = val_le_val_SxS( x, y) -->   x             <= y
         //                                 y             >= x
         //                                 y - x         >= 0
-        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), -1, z, arg_info);
-        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), 1, z, arg_info);
+        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), -1, z);
+        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), 1, z);
         break;
     default:
         DBUG_UNREACHABLE ("Coding time for guard polyhedron");
@@ -1798,6 +1793,34 @@ PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, int *numvars)
     res = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
 
     arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *PHUTgenerateAffineExprsForPwlfIntersect( node *cwliv, node *pwliv,
+ *                                                    int *numvars)
+ *
+ * @brief Construct a Polylib matrix row for the intersect of a consumerWL
+ *        index vector and producerWL index vector.
+ *
+ * @param cwliv: The N_avis for the consumerWL index vector.
+ * @param pwliv: THe N_avis for the producerWL generator index vector
+ * @param numvars: the number of distinct variables in the affine function tree.
+ *
+ * @return An  N_exprs chain for the intersect, stating that cwliv == pwliv
+ *
+ ******************************************************************************/
+node *
+PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv, int numvars)
+{
+    node *res;
+
+    DBUG_ENTER ();
+
+    res = GenerateMatrixRow (numvars, PLFUNEQUALITY);
+    res = AddValueToNamedColumn (cwliv, 1, res);
+    res = AddValueToNamedColumn (pwliv, 1, res);
 
     DBUG_RETURN (res);
 }

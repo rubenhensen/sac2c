@@ -5903,24 +5903,6 @@ N_tfarg :
             <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
           </phases>
         </flag>	 
-	<flag name="IsNeedsMin" default="FALSE" >
-	  <description> Used to mark LACFUN arguments that have a
-	  non-NULL AVIS_MIN in the calling environment, but not (yet)
-	  in the local environment. This flag is used only in PETL.
-	  </description>
-          <phases>
-            <range from="opt_saacyc_petl" to="opt_saacyc_petl" />
-          </phases>
-        </flag>	 
-	<flag name="IsNeedsMax" default="FALSE" >
-	  <description> Used to mark LACFUN arguments that have a
-	  non-NULL AVIS_MAX in the calling environment, but not (yet)
-	  in the local environment. This flag is used only in PETL.
-	  </description>
-          <phases>
-            <range from="opt_saacyc_petl" to="opt_saacyc_petl" />
-          </phases>
-        </flag>	 
         <flag name="IsCudaDefined" default="FALSE" /> 
       </flags>
     <checks>
@@ -7768,13 +7750,6 @@ N_tfarg :
         </attribute>
       </attributes>
         <flags>
-        <flag name="IsNoteIntersectPresent" default="FALSE" >
-          <description>
-                  Set by AWLFI for _sel_VxA_(iv, PWL) to
-                  indicate that an _noteintersect_ node has been
-                  generated for iv.
-          </description>
-        </flag>
         <flag name="IsInplaceSelect" default="FALSE" >
           <description>
           </description>
@@ -9370,7 +9345,6 @@ N_tfarg :
         <flag name="Cudarizable" default="FALSE" />
         <flag name="hasRC" default="FALSE" />
         <flag name="IsDependent" />
-        <flag name="isAWLFFoldable" default="FALSE" />
         <flag name="containsFunAps" >
           <description>
              indicates whether any partition contains an application

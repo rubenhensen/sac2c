@@ -230,51 +230,6 @@ PWLFdoPolyhedralWithLoopFolding (node *arg_node)
  *
  *****************************************************************************/
 
-#ifdef DEADCODE
-/** <!--********************************************************************-->
- *
- * @fn static node *FindMarkedSelAssignParent( node *assgn)
- *
- * @params assgn: The N_assign chain for the current N_part/N_code block
- *
- * @brief: Find the N_assign node that has the marked sel() primitive
- *         as its RHS, and return its predecessor. We do this
- *         because we are going to replace the sel() N_assign.
- *         If N_assign nodes were doubly linked, we wouldn't need this
- *         function.
- *
- * @result: The relevant N_assign node.
- *          If not found, crash. If more than one found in the block,
- *          crash.
- *
- *****************************************************************************/
-static node *
-FindMarkedSelAssignParent (node *assgn)
-{
-    node *z = NULL;
-    node *prevassgn = NULL;
-
-    DBUG_ENTER ();
-
-    while (NULL != assgn) {
-        if ((N_let == NODE_TYPE (ASSIGN_STMT (assgn)))
-            && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_STMT (assgn))))
-            && ((F_sel_VxA == PRF_PRF (LET_EXPR (ASSIGN_STMT (assgn))))
-                || ((F_idx_sel == PRF_PRF (LET_EXPR (ASSIGN_STMT (assgn))))))
-            && (PRF_ISFOLDNOW (LET_EXPR (ASSIGN_STMT (assgn))))) {
-            DBUG_ASSERT (NULL == z, "More than one marked sel() found in N_part");
-            z = prevassgn;
-            PRF_ISFOLDNOW (LET_EXPR (ASSIGN_STMT (assgn))) = FALSE;
-        }
-        prevassgn = assgn;
-        assgn = ASSIGN_NEXT (assgn);
-    }
-    DBUG_ASSERT (NULL != z, "No marked sel() found in N_part");
-
-    DBUG_RETURN (z);
-}
-#endif // DEADCODE
-
 /** <!--********************************************************************-->
  *
  * @fn static node *populateFoldLut( node *arg_node, info *arg_info, shape *shp)
@@ -366,20 +321,13 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *cwlpart, node *pwlpart)
 
     DBUG_ENTER ();
     ids = WITHID_IDS (PART_WITHID (pwlpart));
-#ifdef DEADCODE
-    node *args;
-    args = LET_EXPR (ASSIGN_STMT (arg_node));
-  idxavis = IVUToffset2Vect( args,
-#endif // DEADCODE
-  idxavis = IVUToffset2Vect( arg_node,
-                             &INFO_VARDECS( arg_info),
-                             &INFO_PREASSIGNS( arg_info),
-                             cwlpart, pwlpart);
-  DBUG_ASSERT( NULL != idxavis, "Could not rebuild iv for _sel_VxA_(iv, PWL)");
+    idxavis = IVUToffset2Vect (arg_node, &INFO_VARDECS (arg_info),
+                               &INFO_PREASSIGNS (arg_info), cwlpart, pwlpart);
+    DBUG_ASSERT (NULL != idxavis, "Could not rebuild iv for _sel_VxA_(iv, PWL)");
 
-  k = 0;
+    k = 0;
 
-  while ( NULL != ids) {
+    while (NULL != ids) {
         /* Build k0 = [k]; */
         /* First, the k */
         narray = TCmakeIntVector (TBmakeExprs (TBmakeNum (k), NULL));
@@ -403,17 +351,16 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *cwlpart, node *pwlpart)
         AVIS_SSAASSIGN (lhsavis) = sel;
         ids = IDS_NEXT (ids);
         k++;
-  }
+    }
 
-  /* Now generate iv = idx; */
-  lhsids = WITHID_VEC( PART_WITHID( pwlpart));
-  lhsavis = populateFoldLut( IDS_AVIS( lhsids), arg_info, SHcreateShape( 1, k));
-  z  = TBmakeAssign( TBmakeLet( TBmakeIds( lhsavis, NULL),
-                                TBmakeId( idxavis)),z);
-  AVIS_SSAASSIGN( lhsavis) = z;
-  DBUG_PRINT ("makeIdxAssigns created %s = %s)",
-                       AVIS_NAME( lhsavis), AVIS_NAME( idxavis));
-  DBUG_RETURN (z);
+    /* Now generate iv = idx; */
+    lhsids = WITHID_VEC (PART_WITHID (pwlpart));
+    lhsavis = populateFoldLut (IDS_AVIS (lhsids), arg_info, SHcreateShape (1, k));
+    z = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), TBmakeId (idxavis)), z);
+    AVIS_SSAASSIGN (lhsavis) = z;
+    DBUG_PRINT ("makeIdxAssigns created %s = %s)", AVIS_NAME (lhsavis),
+                AVIS_NAME (idxavis));
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
@@ -448,7 +395,6 @@ PWLFperformFold (node *arg_node, node *pwlpart, info *arg_info)
     node *cwlpart;
     node *cellexpr;
     node *newblock = NULL;
-    node *cwlass;
     node *idxassigns;
     node *newsel = NULL;
 
@@ -457,13 +403,6 @@ PWLFperformFold (node *arg_node, node *pwlpart, info *arg_info)
     DBUG_PRINT ("Replacing code block in CWL=%s",
                 AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
     cwlpart = INFO_CONSUMERWLPART (arg_info);
-    cwlass = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (cwlpart)));
-#ifdef DEADCODE
-    node *assgn;
-    node *passgn;
-    passgn = FindMarkedSelAssignParent (cwlass);
-    assgn = ASSIGN_NEXT (passgn);
-#endif // DEADCODE
     idxassigns = makeIdxAssigns (arg_node, arg_info, cwlpart, pwlpart);
     INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), idxassigns);
     cellexpr = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (pwlpart))));
@@ -1257,8 +1196,15 @@ BuildInverseProjections (node *arg_node, info *arg_info)
  *
  *        Build a maximal affine function tree for each axis of the PWL partition.
  *        Build a maximal affine function tree for each axis of the CWL iv.
+ *        Intersect those trees, axis by axis, and OR-reduce the resulting
+ *        POLY_xxx summaries. If they indicate that the trees match on all
+ *        axes, or that the PWL is a subset of the CWL, then the fold will
+ *        take place immediately.
  *
- *  next question is: should we intersect them one by one or all at once?
+ *        Otherwise, we have three choices:
+ *           - folding not possible.
+ *           - we do not know if folding is possible
+ *           - we have to slice the CWL, as it is a superset of the PWL.
  *
  * @params: arg_node - an N_prf: _sel_VxA_( iv, arr) or _idx_sel_( iv, arr)
  * @params: pwlpart  - the ProducerWL N_part
@@ -1274,7 +1220,7 @@ isCanStillFold (int el)
 
     DBUG_ENTER ();
 
-    z = (POLY_RET_MATCH_AB == el) || (POLY_RET_ACONTAINSB == el) || (0 == el);
+    z = (POLY_RET_MATCH_AB == el) || (POLY_RET_BCONTAINSA == el) || (0 == el);
 
     DBUG_RETURN (z);
 }
@@ -1293,6 +1239,7 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
     pattern *pat;
     node *arravis;
     node *arrid;
+    node *exprsintr;
     int i;
     int shp;
     int z = 0;
@@ -1339,11 +1286,14 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
                         AVIS_NAME (pwlelavis), TCcountExprs (exprspwl),
                         TCcountExprs (idlistpwl));
 
+            exprsintr
+              = PHUTgenerateAffineExprsForPwlfIntersect (ivel, pwlelavis, numvars);
+
             // Don't bother calling Polylib if it can't do anything for us.
             idlistiv = TCappendExprs (idlistiv, idlistpwl);
             if ((NULL != idlistiv) && (NULL != exprsiv) && (NULL != exprspwl)) {
                 z = z
-                    | PHUTcheckIntersection (exprsiv, exprspwl, NULL, NULL, idlistiv,
+                    | PHUTcheckIntersection (exprsiv, exprspwl, exprsintr, NULL, idlistiv,
                                              POLY_OPCODE_PWLF);
             }
 
@@ -1417,6 +1367,34 @@ PWLFfundef (node *arg_node, info *arg_info)
  * @brief performs a top-down traversal.
  *        For a foldable WL, arg_node is:  x = _sel_VxA_(iv, producerWL).
  *
+ *        A bottom-up traversal is superior to top-down. Here's why:
+ *        Assume we have this code, where WITHn is a WL.
+ *
+ *            B = WITH1();
+ *            C = WITH2(B);
+ *            D = WITH3(B,C);
+ *
+ *         If we fold top-down, we skip WITH1, because it can't fold.
+ *         WITH2 will not fold, because B is referenced by WITH2 and WITH3,
+ *         and folding could double the work required to create B.
+ *         WITH3 will fold C into D, but not B, because it is referenced
+ *         by WITH2. On the next pass, we have:
+ *
+ *            B = WITH1();
+ *            D = WITH3(B);
+ *
+ *         and WITH1 will be folded into D.
+ *
+ *         Whereas, if we operate bottom-up, we have this:
+ *
+ *            B = WITH1();
+ *            C = WITH2(B);
+ *            D = WITH3(B,C);
+ *
+ *           We look at WITH3, and fold C into D. At that point, B is
+ *           only referenced by WITH3, so we fold B into D, in the same
+ *           pass.
+ *
  *****************************************************************************/
 node *
 PWLFassign (node *arg_node, info *arg_info)
@@ -1466,6 +1444,10 @@ node *
 PWLFwith (node *arg_node, info *arg_info)
 {
     info *old_arg_info;
+    node *consumerop;
+    node *producershape;
+    node *genop;
+    node *nextop;
 
     DBUG_ENTER ();
 
@@ -1490,6 +1472,33 @@ PWLFwith (node *arg_node, info *arg_info)
     WITH_REFERENCES_FOLDED (arg_node) = 0;
 
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+
+    /* Try to replace modarray(PWL) by genarray(shape(PWL)).
+     * This has no effect on the PWL itself, but is needed to
+     * eliminate the reference to PWL, so it can be removed by DCR.
+     *
+     * If the PWL has been folded, its NEEDCOUNT will be one, as the
+     * only reference to it will be in the MODARRAY.
+     * Hence, we can blindly replace the modarray by the genarray.
+     */
+    consumerop = WITH_WITHOP (arg_node);
+    if ((N_modarray == NODE_TYPE (consumerop))) {
+        DBUG_PRINT ("producerWL %s has AVIS_NEEDCOUNT=%d and AVIS_WL_NEEDCOUNT=%d",
+                    AVIS_NAME (ID_AVIS (MODARRAY_ARRAY (consumerop))),
+                    AVIS_NEEDCOUNT (ID_AVIS (MODARRAY_ARRAY (consumerop))),
+                    AVIS_WL_NEEDCOUNT (ID_AVIS (MODARRAY_ARRAY (consumerop))));
+    }
+
+    if ((N_modarray == NODE_TYPE (consumerop))
+        && (NULL != AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (consumerop))))
+        && (1 == AVIS_NEEDCOUNT (ID_AVIS (MODARRAY_ARRAY (consumerop))))) {
+        producershape = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (consumerop)));
+        genop = TBmakeGenarray (DUPdoDupTree (producershape), NULL);
+        GENARRAY_NEXT (genop) = MODARRAY_NEXT (consumerop);
+        nextop = FREEdoFreeNode (consumerop);
+        WITH_WITHOP (arg_node) = genop;
+        DBUG_PRINT ("Replacing modarray by genarray");
+    }
 
     INFO_VARDECS (old_arg_info) = INFO_VARDECS (arg_info);
     INFO_FINVERSEINTRODUCED (old_arg_info) = INFO_FINVERSEINTRODUCED (arg_info);
@@ -1588,13 +1597,15 @@ PWLFid (node *arg_node, info *arg_info)
  *   the intersect between the index set of iv,
  *   and each partition of the producerWL.
  *
- *   If the intersect is POLY_RET_MATCH_AB  or POLY_RET_ACONTAINSB,
+ *   If the intersect is POLY_RET_MATCH_AB  or POLY_RET_BCONTAINSA,
  *   we perform the fold.
  *   If the intersect is POLY_RET_EMPTYSET_AB, we go on to the next PWL partition.
  *   Otherwise, we use the result of intersect to slice the CWL, then
  *   perform the fold.
  *
- * @result: FIXME
+ * @result: Original N_prf, or else an assign of the newly folded
+ *          PWL block that will have been appended to INFO_PREASSIGNS,
+ *          for placement above this N_prf when we return to PWLFassign.
  *
  *****************************************************************************/
 node *
@@ -1621,7 +1632,6 @@ PWLFprf (node *arg_node, info *arg_info)
           = AWLFIcheckProducerWLFoldable (pwlid)
             && AWLFIcheckBothFoldable (pwlid, INFO_CONSUMERWLIDS (arg_info),
                                        INFO_DEFDEPTH (arg_info));
-        PRF_ISFOLDNOW (arg_node) = FALSE;
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
@@ -1631,12 +1641,13 @@ PWLFprf (node *arg_node, info *arg_info)
                 foldpwlpart = pwlpart;
                 plresult = IntersectBoundsPolyhedral (arg_node, pwlpart, arg_info);
                 if ((POLY_RET_MATCH_AB == plresult)
-                    || (POLY_RET_ACONTAINSB == plresult)) {
+                    || (POLY_RET_BCONTAINSA == plresult)) {
                     cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
                               ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
                               : "(naked consumer)";
+                    DBUG_PRINT ("We now fold PWL %s into CWL %s",
+                                AVIS_NAME (ID_AVIS (pwlid)), cwlnm);
                     DBUG_PRINT ("Building inverse projection for cwl=%s", cwlnm);
-                    PRF_ISFOLDNOW (arg_node) = TRUE;
                     // FIXME arg_node = BuildInverseProjections( arg_node, arg_info);
                     arg_node = PWLFperformFold (arg_node, foldpwlpart, arg_info);
                     global.optcounters.pwlf_expr += 1;

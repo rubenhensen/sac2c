@@ -24,6 +24,7 @@
  *
  */
 
+#include "stdlib.h"
 #include "arithmetique.h"
 #include "types.h" // This is the PolyLib file!
 #include "vector.h"
@@ -68,15 +69,22 @@ main (int argc, char *argv[])
     Polyhedron *Poly_AB = NULL;
     Polyhedron *Poly_Z = NULL;
     int z = POLY_RET_UNKNOWN;
+    int z0;
+    int z1;
     int res;
     int numrays = 0;
     int finished = 0;
+    int verbose = 0;
 
     if (argc > 1) {
         opcode = *argv[1];
-        // printf("opcode is %c\n", opcode);
     } else {
-        opcode = 'x';
+        fprintf (stderr, "Specify opcode as command-line argument, please");
+        exit (EXIT_FAILURE);
+    }
+
+    if (argc > 2) { // Any second argument is fine. This is crude, I admit.
+        verbose = 1;
     }
 
     Matrix_A = Matrix_Read ();
@@ -89,16 +97,16 @@ main (int argc, char *argv[])
     Poly_C = Constraints2Polyhedron (Matrix_C, MAXCON);
     Poly_D = Constraints2Polyhedron (Matrix_D, MAXCON);
 
-#ifdef VERBOSE
-    fprintf (stderr, "Poly_A is:\n");
-    Polyhedron_Print (stderr, "%4d", Poly_A);
-    fprintf (stderr, "Poly_B is:\n");
-    Polyhedron_Print (stderr, "%4d", Poly_B);
-    fprintf (stderr, "Poly_C is:\n");
-    Polyhedron_Print (stderr, "%4d", Poly_C);
-    fprintf (stderr, "Poly_D is:\n");
-    Polyhedron_Print (stderr, "%4d", Poly_D);
-#endif // VERBOSE
+    if (verbose) {
+        fprintf (stderr, "Poly_A is:\n");
+        Polyhedron_Print (stderr, "%4d", Poly_A);
+        fprintf (stderr, "Poly_B is:\n");
+        Polyhedron_Print (stderr, "%4d", Poly_B);
+        fprintf (stderr, "Poly_C is:\n");
+        Polyhedron_Print (stderr, "%4d", Poly_C);
+        fprintf (stderr, "Poly_D is:\n");
+        Polyhedron_Print (stderr, "%4d", Poly_D);
+    }
 
     switch (opcode) {
     case POLY_OPCODE_PRINT:
@@ -122,9 +130,9 @@ main (int argc, char *argv[])
                 z = z | POLY_RET_EMPTYSET_AB;
                 z = z & ~POLY_RET_UNKNOWN;
                 finished = 1;
-#ifdef VERBOSE
-                fprintf (stderr, "no rays in A,B\n");
-#endif // VERBOSE
+                if (verbose) {
+                    fprintf (stderr, "no rays in A,B\n");
+                }
             }
         }
 
@@ -134,9 +142,9 @@ main (int argc, char *argv[])
                 z = z & ~POLY_RET_UNKNOWN;
                 numrays = Poly_Z->NbRays;
                 finished = 1;
-#ifdef VERBOSE
-                fprintf (stderr, "no rays in A,B,C\n");
-#endif // VERBOSE
+                if (verbose) {
+                    fprintf (stderr, "no rays in A,B,C\n");
+                }
             }
         }
 
@@ -147,19 +155,36 @@ main (int argc, char *argv[])
                 z = z & ~POLY_RET_UNKNOWN;
                 numrays = Poly_Z->NbRays;
                 finished = 1;
-#ifdef VERBOSE
-                fprintf (stderr, "no rays in A,B,D\n");
-#endif // VERBOSE
+                if (verbose) {
+                    fprintf (stderr, "no rays in A,B,D\n");
+                }
             }
         }
         break;
 
     case POLY_OPCODE_PWLF: // Polyhedral WLF
         // Poly_A is the CWL iv; Poly_B is the PWL bounds,step,width.
-        // Poly_C constrains CWL iv and PWL bounds to match
+        // Poly_C is the condition that CWL iv matches PWL iv.
+        // If CWL is a subset of PWL, then we can fold immediately.
+        // If their intersection matches CWL, then this is the case.
         Poly_AB = DomainIntersection (Poly_A, Poly_B, MAXCON);
-        z = (PolyhedronIncludes (Poly_A, Poly_AB)) ? POLY_RET_ACONTAINSB
-                                                   : POLY_RET_UNKNOWN;
+        Poly_Z = DomainIntersection (Poly_AB, Poly_C, MAXCON);
+        if (verbose) {
+            fprintf (stderr, "Poly_AB is:\n");
+            Polyhedron_Print (stderr, "%4d", Poly_AB);
+            fprintf (stderr, "Poly_Z is:\n");
+            Polyhedron_Print (stderr, "%4d", Poly_Z);
+        }
+
+        z0 = (PolyhedronIncludes (Poly_Z, Poly_A)) ? 1 : 0;
+        if (verbose) {
+            fprintf (stderr, "PolyhedronIncludes(Poly_Z, Poly_A is: %d\n", z0);
+        }
+        z1 = (PolyhedronIncludes (Poly_A, Poly_Z)) ? 1 : 0;
+        if (verbose) {
+            fprintf (stderr, "PolyhedronIncludes(Poly_A, Poly_Z is: %d\n", z1);
+        }
+        z = (z0 && z1) ? POLY_RET_BCONTAINSA : POLY_RET_UNKNOWN;
         // FIXME - more coding needed if !z
         break;
 
@@ -187,9 +212,9 @@ main (int argc, char *argv[])
     Domain_Free (Poly_AB);
     Domain_Free (Poly_Z);
 
-#ifdef VERBOSE
-    fprintf (stderr, "result is %d\n", z);
-#endif // VERBOSE
+    if (verbose) {
+        fprintf (stderr, "result is %d\n", z);
+    }
     printf ("%d\n", z);
 
     return (z);

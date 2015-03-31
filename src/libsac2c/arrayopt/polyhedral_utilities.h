@@ -22,6 +22,8 @@ extern int PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node
 extern node *PHUTgenerateIdentityExprs (int numvars);
 extern node *PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, int *numvars);
 extern node *PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, int *numvars);
+extern node *PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv,
+                                                      int numvars);
 extern node *PHUTsetClearAvisPart (node *arg_node, node *val);
 extern node *PHUTcollectWlGeneratorMin (node *arg_node, info *arg_info, node *res);
 extern node *PHUTcollectWlGeneratorMax (node *arg_node, info *arg_info, node *res);

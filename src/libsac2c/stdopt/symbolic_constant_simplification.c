@@ -609,7 +609,9 @@ isGenwidth1Partition (node *arg, info *arg_info)
     constant *con = NULL;
     constant *cone = NULL;
     constant *consum = NULL;
+#ifdef FIXME
     node *partn;
+#endif // FIXME
 
     DBUG_ENTER ();
 

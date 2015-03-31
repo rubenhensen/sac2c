@@ -628,6 +628,7 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
     node *narr = NULL;
     node *arg1 = NULL;
     node *arg2 = NULL;
+    node *fcon = NULL;
 
     DBUG_ENTER ();
 
@@ -705,8 +706,12 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
         ivc = IVUToffset2Constant (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node));
         DBUG_ASSERT (NULL != ivc, "failed to convert offset to constant");
         z = COconstant2AST (ivc);
-        ivc = COfreeConstant (ivc);
         DBUG_ASSERT (N_array == NODE_TYPE (z), "Confusion3");
+        ivc = COfreeConstant (ivc);
+        // Flatten the elements of the resulting N_array
+        fcon = FLATGflattenExprsChain (ARRAY_AELEMS (z), vardecs, preassigns, NULL);
+        FREEdoFreeTree (ARRAY_AELEMS (z));
+        ARRAY_AELEMS (z) = fcon;
     }
 
     pat1 = PMfree (pat1);
