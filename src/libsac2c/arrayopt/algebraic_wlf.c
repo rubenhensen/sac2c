@@ -1022,7 +1022,7 @@ AWLFwith (node *arg_node, info *arg_info)
 
     if ((N_modarray == NODE_TYPE (consumerop))
         && (NULL != AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (consumerop))))
-        && (TRUE == AVIS_ISWLFOLDED (ID_AVIS (MODARRAY_ARRAY (consumerop))))) {
+        && (1 == AVIS_NEEDCOUNT (ID_AVIS (MODARRAY_ARRAY (consumerop))))) {
         producershape = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (consumerop)));
         genop = TBmakeGenarray (DUPdoDupTree (producershape), NULL);
         GENARRAY_NEXT (genop) = MODARRAY_NEXT (consumerop);
