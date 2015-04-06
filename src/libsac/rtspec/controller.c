@@ -31,7 +31,6 @@
 #define RTSPEC_MODULE_PREFIX "RTSpec_"
 #define RTSPEC_MODULE_PREFIX_LENGTH 7
 #define MAX_SYS_CALL 512
-#define MAX_STRING_LENGTH 256
 #define MAX_INT_DIGITS 21
 
 #define SAC_RTC_ENV_VAR_NAME "SAC_RTSPEC_CONTROLLER"
@@ -40,6 +39,7 @@ static int running = 1;
 static int do_trace;
 static char *tmpdir_name = NULL;
 static char *rtspec_syscall = NULL;
+static int tmpdir_strlen = 0;
 
 /* TLS key to retrieve the Thread Self ID Ptr */
 pthread_key_t SAC_RTSPEC_self_id_key;
@@ -64,7 +64,8 @@ pthread_t *controller_threads;
 static char *
 CreateTmpDir (char *dir)
 {
-    tmpdir_name = (char *)malloc (sizeof (char) * (strlen (dir) + 16));
+    tmpdir_strlen = strlen (dir) + 16;
+    tmpdir_name = (char *)malloc (sizeof (char) * tmpdir_strlen);
 
     strcpy (tmpdir_name, dir);
     strcat (tmpdir_name, "/" TMP_DIR_NAME_PREFIX "XXXXXX");
@@ -389,9 +390,6 @@ SAC_handleRequest (queue_node_t *request)
 
     static int counter = 0;
 
-    char syscall[MAX_SYS_CALL] = "";
-    char filename[MAX_STRING_LENGTH] = "";
-
     if (request->shape_info == NULL) {
         // fprintf(stderr, "Could not optimize as shape information is missing for "
         //        "function %s!", request->func_name);
@@ -415,13 +413,14 @@ SAC_handleRequest (queue_node_t *request)
     /*
      * Get a new module name so we don't have name clashes of the generated library files.
      */
-    char *new_module
-      = (char *)malloc (sizeof (char)
-                        * (strlen (request->reg_obj->module)
-                           + (RTSPEC_MODULE_PREFIX_LENGTH + MAX_INT_DIGITS + 1)));
+    int new_module_strlen = strlen (request->reg_obj->module)
+                            + (RTSPEC_MODULE_PREFIX_LENGTH + MAX_INT_DIGITS + 1);
+    char *new_module = (char *)malloc (sizeof (char) * new_module_strlen);
 
     sprintf (new_module, "%s%s_%d", RTSPEC_MODULE_PREFIX, request->reg_obj->module,
              counter++);
+
+    char syscall[MAX_SYS_CALL] = "";
 
     /* Build the system call. */
     sprintf (syscall, call_format, (do_trace == 1) ? 3 : 0, request->reg_obj->module,
@@ -432,6 +431,9 @@ SAC_handleRequest (queue_node_t *request)
         SAC_TR_Print ("Runtime specialization: Calling runtime compiler with:");
         SAC_TR_Print (syscall);
     }
+
+    char *filename
+      = (char *)malloc (sizeof (char) * (tmpdir_strlen + new_module_strlen + 10));
 
     /* The path to the new library. */
     sprintf (filename, "%s/lib%sMod.so", tmpdir_name, new_module);
@@ -500,6 +502,8 @@ SAC_handleRequest (queue_node_t *request)
             exit (EXIT_FAILURE);
         }
     }
+
+    free (filename);
 }
 
 /** <!--*******************************************************************-->
