@@ -30,7 +30,6 @@
 #define TMP_DIR_NAME_PREFIX "SACrt_"
 #define RTSPEC_MODULE_PREFIX "RTSpec_"
 #define RTSPEC_MODULE_PREFIX_LENGTH 7
-#define MAX_SYS_CALL 512
 #define MAX_INT_DIGITS 21
 
 #define SAC_RTC_ENV_VAR_NAME "SAC_RTSPEC_CONTROLLER"
@@ -382,6 +381,7 @@ SAC_handleRequest (queue_node_t *request)
         SAC_TR_Print ("Runtime specialization: Handling new specialization request.");
     }
 
+    static int call_format_strlen = 102;
     static char *call_format = "sac2c -v%i -runtime "
                                "-rt_old_mod %s -rt_new_mod %s "
                                "-rtfunname %s -rtnewname %s "
@@ -413,14 +413,19 @@ SAC_handleRequest (queue_node_t *request)
     /*
      * Get a new module name so we don't have name clashes of the generated library files.
      */
-    int new_module_strlen = strlen (request->reg_obj->module)
-                            + (RTSPEC_MODULE_PREFIX_LENGTH + MAX_INT_DIGITS + 1);
+    int old_module_strlen = strlen (request->reg_obj->module);
+    int new_module_strlen
+      = old_module_strlen + (RTSPEC_MODULE_PREFIX_LENGTH + MAX_INT_DIGITS + 1);
     char *new_module = (char *)malloc (sizeof (char) * new_module_strlen);
 
     sprintf (new_module, "%s%s_%d", RTSPEC_MODULE_PREFIX, request->reg_obj->module,
              counter++);
 
-    char syscall[MAX_SYS_CALL] = "";
+    char *syscall
+      = (char *)malloc (sizeof (char)
+                        * (strlen (request->func_name) * 2 + strlen (request->type_info)
+                           + strlen (shape_info) + call_format_strlen + old_module_strlen
+                           + new_module_strlen + tmpdir_strlen * 2 + 1));
 
     /* Build the system call. */
     sprintf (syscall, call_format, (do_trace == 1) ? 3 : 0, request->reg_obj->module,
@@ -504,6 +509,7 @@ SAC_handleRequest (queue_node_t *request)
     }
 
     free (filename);
+    free (syscall);
 }
 
 /** <!--*******************************************************************-->
