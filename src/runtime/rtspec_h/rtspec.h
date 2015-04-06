@@ -106,7 +106,7 @@
  * Print the function call to enqueue a request for optimization.
  */
 #define SAC_WE_ENQ_REQ(types, name)                                                      \
-    SAC_enqueueRequest (SAC_function, #types, SAC_shapes, SAC_reg_obj);
+    SAC_enqueueRequest (SAC_function, #types, SAC_shapes, size, SAC_reg_obj);
 
 /*
  * Print the 'update' of the function pointer.

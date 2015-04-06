@@ -66,8 +66,11 @@ wasProcessed (queue_node_t *node)
             SAC_TR_Print ("Runtime specialization: Checking queue.");
         }
         if (current->node != NULL) {
-            if ((strcmp (current->node->func_name, node->func_name) == 0)
-                && (strcmp (current->node->shapes, node->shapes) == 0)) {
+            if (current->node->shape_info_size == node->shape_info_size
+                && (memcmp (current->node->shape_info, node->shape_info,
+                            sizeof (int) * node->shape_info_size)
+                    == 0)
+                && (strcmp (current->node->func_name, node->func_name) == 0)) {
                 if (do_trace == 1) {
                     SAC_TR_Print ("Runtime specialization: Already processed.");
                 }
@@ -190,6 +193,7 @@ SAC_initializeQueue (int trace)
  * @param func_name  The name of the function being optimized.
  * @param types    The types of the arguments of the function being optimized.
  * @param shapes   The shapes of the arguments.
+ * @param shapes_size The size of the shape arguments array
  * @param registry The registry object used for dynamically loading and
  *                 storing the optimized function.
  *
@@ -197,7 +201,8 @@ SAC_initializeQueue (int trace)
  *
  ****************************************************************************/
 queue_node_t *
-SAC_createNode (char *func_name, char *types, int *shapes, reg_obj_t *registry)
+SAC_createNode (char *func_name, char *types, int *shapes, int shapes_size,
+                reg_obj_t *registry)
 {
     queue_node_t *xnew = (queue_node_t *)malloc (sizeof (queue_node_t));
 
@@ -210,7 +215,7 @@ SAC_createNode (char *func_name, char *types, int *shapes, reg_obj_t *registry)
     xnew->func_name = func_name;
     xnew->type_info = types;
     xnew->shape_info = shapes;
-    xnew->shapes = NULL;
+    xnew->shape_info_size = shapes_size;
     xnew->reg_obj = registry;
     xnew->next = NULL;
 
@@ -263,6 +268,7 @@ SAC_dequeueRequest (void)
  * @param func_name  The name of the function being optimized.
  * @param types    The types of the arguments of the function being optimized.
  * @param shapes   The shapes of the arguments.
+ * @param shapes_size The size of the shape arguments array
  * @param registry The registry object used for dynamically loading and
  *                 storing the optimized function.
  *
@@ -270,7 +276,8 @@ SAC_dequeueRequest (void)
  *
  ****************************************************************************/
 void
-SAC_enqueueRequest (char *func_name, char *types, int *shapes, reg_obj_t *registry)
+SAC_enqueueRequest (char *func_name, char *types, int *shapes, int shapes_size,
+                    reg_obj_t *registry)
 {
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Enqueue specialization request.");
@@ -283,7 +290,7 @@ SAC_enqueueRequest (char *func_name, char *types, int *shapes, reg_obj_t *regist
 
     pthread_mutex_lock (&queue_mutex);
 
-    queue_node_t *xnew = SAC_createNode (func_name, types, shapes, registry);
+    queue_node_t *xnew = SAC_createNode (func_name, types, shapes, shapes_size, registry);
 
     /* Exit on error. */
     if (xnew == NULL) {

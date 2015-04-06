@@ -321,8 +321,6 @@ SAC_handleRequest (queue_node_t *request)
      */
     char *shape_info = encodeShapes (request->shape_info);
 
-    request->shapes = shape_info;
-
     /*
      * Only process requests that haven't been processed yet.
      */
@@ -430,6 +428,7 @@ SAC_handleRequest (queue_node_t *request)
 
     free (filename);
     free (syscall);
+    free (shape_info);
 }
 
 /** <!--*******************************************************************-->
