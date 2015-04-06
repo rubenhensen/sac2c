@@ -23,6 +23,7 @@
 #include "controller.h"
 #include "reqqueue.h"
 #include "registry.h"
+#include "persistence.h"
 
 #define SAC_DO_TRACE 1
 #include "sac.h"
@@ -280,87 +281,6 @@ SAC_runController (void *param)
 
     pthread_exit (NULL);
     return NULL;
-}
-
-/** <!--*******************************************************************-->
- *
- * @fn encodeShapes( int *shapes)
- *
- * @brief  Creates a string representation of the shape information stored in
- * the integer array 'shapes'.
- *
- * The format of both the shape array and the string representation is as
- * follows:
- *
- * {
- * number_of_arguments
- *  dimension_arg_1
- *    extent_dim_1
- *    ...
- *    extent_dim_n
- *  dimension_arg_2
- *   ...
- *  dimension_arg_n
- * }
- *
- * @param shapes  The array of shape information.
- ****************************************************************************/
-char *
-encodeShapes (int *shapes)
-{
-    int num_args, i, j, k, l;
-
-    if (shapes == NULL) {
-        fprintf (stderr, "ERROR -- \t Missing shape information!");
-        return '\0';
-    }
-
-    num_args = shapes[0];
-
-    /*
-     * Encode the base type information.
-     */
-    size_t shape_string_size = MAX_INT_DIGITS + 1;
-
-    i = 1;
-    k = 1;
-    for (; i <= num_args; i++) {
-        if (shapes[k] > 0) {
-            j = 0;
-            l = shapes[k];
-            for (; j <= l; j++) {
-                shape_string_size += MAX_INT_DIGITS;
-                k++;
-            }
-        } else {
-            shape_string_size += MAX_INT_DIGITS;
-            k++;
-        }
-    }
-
-    char *current = (char *)malloc (shape_string_size * sizeof (char));
-
-    current[0] = '\0';
-
-    sprintf (current, "%d-", num_args);
-
-    i = 1;
-    k = 1;
-    for (; i <= num_args; i++) {
-        if (shapes[k] > 0) {
-            j = 0;
-            l = shapes[k];
-            for (; j <= l; j++) {
-                sprintf (current, "%s%d-", current, shapes[k]);
-                k++;
-            }
-        } else {
-            sprintf (current, "%s%d-", current, shapes[k]);
-            k++;
-        }
-    }
-
-    return current;
 }
 
 /** <!--*******************************************************************-->

@@ -13,6 +13,7 @@
 #define _SAC_CONTROLLER_H_
 
 #include "reqqueue.h"
+#include "persistence.h"
 
 extern void SAC_RTSPEC_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                                      int trace);
