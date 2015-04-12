@@ -2039,9 +2039,10 @@
         <node name="Withid" />
         <node name="Exprs" />
         <node name="Module" />
+        <node name="Genarray" />
       </travuser>
     </traversal>
-    <traversal id="WLIR" name="Loop Invariants Traversal" default="sons" include="withloop_invariant_removal.h" >
+    <traversal id="WLIR" name="With-Loop Invariant Traversal" default="sons" include="withloop_invariant_removal.h" >
       <travuser>
         <node name="Ids" />
         <node name="Assign" />
@@ -2056,7 +2057,7 @@
         <node name="Withid" />
       </travuser>
     </traversal>
-    <traversal id="DLIRMOV" name="Loop Invariants Move Traversal" default="sons" include="loop_invariant_removal.h" >
+    <traversal id="DLIRMOV" name="Loop Invariant Move Traversal" default="sons" include="loop_invariant_removal.h" >
       <travuser>
         <node name="Id" />
         <node name="Withid" />
@@ -8864,12 +8865,6 @@ N_tfarg :
 	  <description>
 	    If true, the given variable is the dedicated index variable for
 	    this thread function. Used by the mutc backend.
-	  </description>
-	</flag>
-	<flag name="IsWLFolded" default="FALSE">
-	  <description>
-             If true, the given variable is the result of a producerWL
-             that has been folded out of existence.
 	  </description>
 	</flag>
         <flag name="IsHostReferenced" default="FALSE">

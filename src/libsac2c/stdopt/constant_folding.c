@@ -987,6 +987,8 @@ CFlet (node *arg_node, info *arg_info)
      *  up now!
      */
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_exprs) {
+        DBUG_PRINT ("RHS replaced by N_exprs chain in lhs %s",
+                    AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
         INFO_POSTASSIGN (arg_info)
           = TCappendAssign (CreateAssignsFromIdsExprs (LET_IDS (arg_node),
                                                        LET_EXPR (arg_node),

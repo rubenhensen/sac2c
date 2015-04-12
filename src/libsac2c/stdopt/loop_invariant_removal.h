@@ -20,6 +20,7 @@ extern node *DLIRfundef (node *arg_node, info *arg_info);
 extern node *DLIRarg (node *arg_node, info *arg_info);
 extern node *DLIRvardec (node *arg_node, info *arg_info);
 extern node *DLIRblock (node *arg_node, info *arg_info);
+extern node *DLIRgenarray (node *arg_node, info *arg_info);
 extern node *DLIRassign (node *arg_node, info *arg_info);
 extern node *DLIRlet (node *arg_node, info *arg_info);
 extern node *DLIRid (node *arg_node, info *arg_info);

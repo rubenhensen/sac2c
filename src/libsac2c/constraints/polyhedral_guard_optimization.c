@@ -20,6 +20,8 @@
  *
  * The code in AL/DL/AS/GGS is unable to solve this one.
  *
+ *
+ #ifdef DEADCODE
  * NB. This traversal runs within SAACYC, because PRFUNR and friends
  *     may create new guards on the fly.
  *
@@ -33,6 +35,7 @@
  *     A better approach would be to make POGO operate only
  *     on nodes where the lhs (e.g., iv4 in the above example) has
  *     its appropriate extrema present.
+#endif // DEADCODE
  *
  *     2015-02-25: Extended POGO to operate on some relationals:
  *
@@ -155,14 +158,18 @@ CompanionFn (prf nprf)
     case F_le_SxS:
         z = F_gt_SxS;
         break;
-    // FIXME LATER case F_eq_SxS:         z = F_neq_SxS; break;
+    case F_eq_SxS:
+        z = F_neq_SxS;
+        break;
     case F_ge_SxS:
         z = F_lt_SxS;
         break;
     case F_gt_SxS:
         z = F_le_SxS;
         break;
-    // FIXME LATER case F_neq_SxS:        z = F_eq_SxS;  break;
+    case F_neq_SxS:
+        z = F_eq_SxS;
+        break;
     case F_val_lt_val_SxS:
         z = F_ge_SxS;
         break;
@@ -184,18 +191,16 @@ CompanionFn (prf nprf)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn bool GetABempty( prf nprf)
+ * @fn bool GetXYmatch( prf nprf)
  *
- * @brief If
- *
+ * @brief A Boolean, giving the relational result if the arguments match
  * @param An N_prf
  *
- * @return A Boolean, giving the relational result if the intersection
- *         of PRF_ARG1 and PRF_ARG2 is an empty set.
+ * @return A Boolean
  *
  ******************************************************************************/
 static bool
-GetABempty (prf nprf)
+GetXYmatch (prf nprf)
 {
     bool z;
 
@@ -208,14 +213,18 @@ GetABempty (prf nprf)
     case F_le_SxS:
         z = TRUE;
         break;
-        // FIXME LATER      case F_eq_SxS:         z = TRUE;  break;
+    case F_eq_SxS:
+        z = TRUE;
+        break;
     case F_ge_SxS:
         z = TRUE;
         break;
     case F_gt_SxS:
         z = FALSE;
         break;
-        // FIXME LATER case F_neq_SxS:        z = FALSE; break;
+    case F_neq_SxS:
+        z = FALSE;
+        break;
     case F_val_lt_val_SxS:
         z = FALSE;
         break;
@@ -256,10 +265,10 @@ POGOisPogoPrf (prf nprf)
     switch (nprf) {
     case F_lt_SxS:
     case F_le_SxS:
-        // FIXME LATER    case F_eq_SxS:
+    case F_eq_SxS:
     case F_ge_SxS:
     case F_gt_SxS:
-        // FIXME LATER  case F_neq_SxS:
+    case F_neq_SxS:
     case F_val_lt_val_SxS:
     case F_val_le_val_SxS:
     case F_non_neg_val_S:
@@ -403,26 +412,26 @@ POGOlet (node *arg_node, info *arg_info)
  * @fn node *POGOprf( node *arg_node, info *arg_info)
  *
  * @brief: If we can show that a relational or guard is always
- *         TRUE, remove it.
+ *         TRUE or always FALSE, replace it by that constant.
  *
  * @result: Possibly altered N_prf node.
  *
  * Algorithm: We build four maximal affine expression trees:
- *              (A, B) for both arguments.
- *              C for the N_prf relational function.
- *              D for the companion relational function.
+ *              (B,C) for PRF_ARG1 and PRF_ARG2.
+ *              RFN for the N_prf relational function.
+ *              CFN for the companion relational function.
  *
  *            We then invoke the polyhedral solver( e.g., PolyLib).
- *            If it can prove that A and B represent identical sets,
- *            it returns POLY_MATCH_AB. If not, it
- *            then performs set intersection on A,B,C,
- *            and A,B,D, generating POLY_EMPTYSET_ABC and/or POLY_EMPTYSET_ABD,
+ *            If it can prove that B and C represent identical sets,
+ *            it returns POLY_MATCH_BC. If not, it
+ *            then performs set intersection on B,C,RFN,
+ *            and B,C,CFN generating POLY_EMPTYSET_BCR and/or POLY_EMPTYSET_BCC,
  *            if those intersections are empty.
  *
  *            Those results determine if we can optimize, as follows:
  *            First, based on matching, we obtain:
  *
- *            Relational  POLY_MATCH_AB
+ *            Relational  POLY_MATCH_BC
  *              x <  y      FALSE
  *              x <= y      TRUE
  *              x == y      TRUE
@@ -434,19 +443,30 @@ POGOlet (node *arg_node, info *arg_info)
  *            Next, if the result is still unknown, we look for empty
  *            set intersections:
  *
- *             If the intersection of A,B,C is empty, the result is FALSE; else unknown.
- *             If the intersection of A,B,D is empty, the result is TRUE; else unknown.
+ *            If the intersection of B,C,RFN is empty, the result is FALSE; else unknown.
+ *            If the intersection of B,C,CFN is empty, the result is TRUE; else unknown.
+ *
+ *            For x = y and x != y, things are a bit harder, because PolyLib
+ *            does not provide a direct way to represent not-equal.
+ *            We use an approach suggested by Vincent Loechner:
+ *            " The different operator can be represented as a union
+ *             (which is what isl does):
+ *                pA := { [i,N] : 0 <= i < N; };
+ *                pB := { [i,N] : i < N;  } + { [i,N] : i > N;  } ;
+ *            "
  *
  *****************************************************************************/
 node *
 POGOprf (node *arg_node, info *arg_info)
 {
-    node *exprs1 = NULL;
-    node *exprs2 = NULL;
-    node *exprs3 = NULL;
-    node *exprs4 = NULL;
+    node *exprsX = NULL;
+    node *exprsY = NULL;
+    node *exprsFn = NULL;
+    node *exprsCfn = NULL;
     node *idlist1 = NULL;
     node *idlist2 = NULL;
+    node *exprsUfn = NULL;
+    node *exprsUcfn = NULL;
     int numvars = 0;
     bool z = FALSE;
     bool resval = FALSE;
@@ -461,16 +481,14 @@ POGOprf (node *arg_node, info *arg_info)
     res = arg_node;
 
     switch (PRF_PRF (arg_node)) {
-
+    case F_eq_SxS:
+    case F_neq_SxS:
     case F_lt_SxS:
     case F_le_SxS:
-    // FIXME LATERcase F_eq_SxS:
     case F_ge_SxS:
     case F_gt_SxS:
-    // FIXME LATERcase F_neq_SxS:
     case F_val_lt_val_SxS:
     case F_val_le_val_SxS:
-        resval = GetABempty (PRF_PRF (arg_node));
         dopoly = TRUE;
         DBUG_PRINT ("Looking at dyadic N_prf for %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
@@ -483,9 +501,9 @@ POGOprf (node *arg_node, info *arg_info)
         idlist2
           = PHUTcollectAffineNids (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), &numvars);
 
-        exprs1 = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
+        exprsX = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
                                           &numvars);
-        exprs2 = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info),
+        exprsY = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info),
                                           &numvars);
         idlist1 = TCappendExprs (idlist1, idlist2);
         break;
@@ -498,9 +516,9 @@ POGOprf (node *arg_node, info *arg_info)
         PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
         idlist1
           = PHUTcollectAffineNids (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), &numvars);
-        exprs1 = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
+        exprsX = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
                                           &numvars);
-        exprs2 = PHUTgenerateIdentityExprs (numvars);
+        exprsY = NULL;
         break;
 
     default:
@@ -511,35 +529,46 @@ POGOprf (node *arg_node, info *arg_info)
     if (dopoly) {
         // Don't bother calling Polylib if it can't do anything for us.
         if (NULL != idlist1) {
-            exprs3 = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
-                                                      &numvars, PRF_PRF (arg_node));
-            exprs4 = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
-                                                      &numvars,
-                                                      CompanionFn (PRF_PRF (arg_node)));
-            emp = PHUTcheckIntersection (exprs1, exprs2, exprs3, exprs4, idlist1,
-                                         POLY_OPCODE_INTERSECT);
+            exprsFn = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
+                                                       &numvars, PRF_PRF (arg_node),
+                                                       &exprsUfn, &exprsUcfn);
+            exprsCfn = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
+                                                        &numvars,
+                                                        CompanionFn (PRF_PRF (arg_node)),
+                                                        &exprsUfn, &exprsUcfn);
+            emp = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn, exprsUfn,
+                                         exprsUcfn, idlist1, POLY_OPCODE_INTERSECT);
+            DBUG_PRINT ("PHUTcheckIntersection result for %s is %d",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), emp);
 
-            // Match analysis for A,B, but not for monadic prf.
-            if ((emp & POLY_RET_MATCH_AB) && (F_non_neg_val_S != PRF_PRF (arg_node))) {
+            // Match analysis for B,C, but not for monadic prf.
+            if ((emp & POLY_RET_MATCH_BC) && (F_non_neg_val_S != PRF_PRF (arg_node))) {
+                DBUG_PRINT ("Matching arguments for %s",
+                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+                resval = GetXYmatch (PRF_PRF (arg_node));
                 z = TRUE;
             }
 
-            if ((!z) && (emp & POLY_RET_EMPTYSET_ABC)) {
+            if ((!z) && (emp & POLY_RET_EMPTYSET_BCR)) {
+                DBUG_PRINT ("Matching Fn sets for %s",
+                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
                 resval = FALSE;
                 z = TRUE;
             }
 
-            if ((!z) && (emp & POLY_RET_EMPTYSET_ABD)) {
+            if ((!z) && (emp & POLY_RET_EMPTYSET_BCC)) {
+                DBUG_PRINT ("Matching CompanionFn sets for %s",
+                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
                 resval = TRUE;
                 z = TRUE;
             }
         }
 
         idlist1 = (NULL != idlist1) ? FREEdoFreeTree (idlist1) : NULL;
-        exprs1 = (NULL != exprs1) ? FREEdoFreeTree (exprs1) : NULL;
-        exprs2 = (NULL != exprs2) ? FREEdoFreeTree (exprs2) : NULL;
-        exprs3 = (NULL != exprs3) ? FREEdoFreeTree (exprs3) : NULL;
-        exprs4 = (NULL != exprs4) ? FREEdoFreeTree (exprs4) : NULL;
+        exprsX = (NULL != exprsX) ? FREEdoFreeTree (exprsX) : NULL;
+        exprsY = (NULL != exprsY) ? FREEdoFreeTree (exprsY) : NULL;
+        exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
+        exprsCfn = (NULL != exprsCfn) ? FREEdoFreeTree (exprsCfn) : NULL;
         PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
         if (F_non_neg_val_S != PRF_PRF (arg_node)) { // Ignore monadic fns
             PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));

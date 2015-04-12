@@ -462,6 +462,8 @@ static int
 StepOrWidthHelper (node *stpwid, int k)
 { // Find  GENERATOR_STEP[k] or GENERATOR_WIDTH[k] as an integer.
     // Result <= 0 means did not find same.
+    // FIXME: Until we get ISL to replace PolyLib, we do not support
+    // non-unit step or stride, as they create non-convex polyhedra.
     int z = -1;
     node *arr;
     pattern *pat;
@@ -478,6 +480,7 @@ StepOrWidthHelper (node *stpwid, int k)
             }
         }
     }
+    z = (z > 1) ? -1 : z; // FIXME kludge for PolyLib vs. ISL
     return (z);
 }
 
@@ -578,7 +581,8 @@ PHUTcollectWlGeneratorMax (node *arg_node, info *arg_info, node *res)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn void Exprs2File( node *exprs, node *idlist)
+ * @fn void Exprs2File( node *exprs, node *idlist, char *tag)
+ *
  *
  * @brief Append one polyhedron to polylib input file, from exprs and idlist
  *
@@ -590,7 +594,7 @@ PHUTcollectWlGeneratorMax (node *arg_node, info *arg_info, node *res)
  *
  ******************************************************************************/
 static void
-Exprs2File (FILE *handle, node *exprs, node *idlist)
+Exprs2File (FILE *handle, node *exprs, node *idlist, char *tag)
 {
     int i;
     int j;
@@ -607,53 +611,57 @@ Exprs2File (FILE *handle, node *exprs, node *idlist)
     idcols = TCcountExprs (idlist);
     cols = idcols + PLVARS + 1; // polylib function column and constants column
     rows = TCcountExprs (exprs) / cols;
-    DBUG_PRINT ("Writing %d rows and %d columns", rows, cols);
+    DBUG_PRINT ("Writing %d rows and %d columns for tag %s", rows, cols, tag);
 
-    fprintf (handle, "%d %d\n## ", rows, cols); // polyhedron descriptor
-    fprintf (handle, "##  PLFN PLWID PLAPV PLFAKEN ");
-    for (i = 0; i < idcols; i++) { // all but constant
-        fprintf (handle, " %s ", AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist))));
-    }
-    fprintf (handle, "\n\n");
+    fprintf (handle, "%d %d\n## %s: ", rows, cols, tag); // polyhedron descriptor
+    if (0 != rows) {
+        fprintf (handle, "##  PLFN PLWID PLAPV PLFAKEN ");
+        for (i = 0; i < idcols; i++) { // all but constant
+            fprintf (handle, " %s ", AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist))));
+        }
+        fprintf (handle, " CONSTANT \n\n");
 
-    for (i = 0; i < rows; i++) {
-        // human-readable-ish form
-        fprintf (handle, "#  ");
-        for (j = 0; j < idcols; j++) {
-            indx = j + (cols * i);
-            val = NUM_VAL (TCgetNthExprsExpr (PLVARS + indx, exprs));
-            avis = ID_AVIS (TCgetNthExprsExpr (j, idlist));
-            id = AVIS_NAME (avis);
-            DBUG_ASSERT ((j) == AVIS_POLYLIBCOLUMNINDEX (avis), "column index confusion");
-            if (0 != val) {
-                if (j > 0) {
-                    fprintf (handle, " + ");
+        for (i = 0; i < rows; i++) {
+            // human-readable-ish form
+            fprintf (handle, "#  ");
+            for (j = 0; j < idcols; j++) {
+                indx = j + (cols * i);
+                val = NUM_VAL (TCgetNthExprsExpr (PLVARS + indx, exprs));
+                avis = ID_AVIS (TCgetNthExprsExpr (j, idlist));
+                id = AVIS_NAME (avis);
+                DBUG_ASSERT ((j) == AVIS_POLYLIBCOLUMNINDEX (avis),
+                             "column index confusion");
+                if (0 != val) {
+                    if (j > 0) {
+                        fprintf (handle, " + ");
+                    }
+                    if (1 != val) {
+                        fprintf (handle, "%d*", val);
+                    }
+                    fprintf (handle, "%s", id);
                 }
-                if (1 != val) {
-                    fprintf (handle, "%d*", val);
-                }
-                fprintf (handle, "%s", id);
             }
-        }
 
-        // The constant
-        val = NUM_VAL (TCgetNthExprsExpr (((cols - 1) + (cols * i)), exprs));
-        if (0 != val) {
-            fprintf (handle, " %d ", val);
-        }
+            // The constant
+            val = NUM_VAL (TCgetNthExprsExpr (((cols - 1) + (cols * i)), exprs));
+            if (0 != val) {
+                fprintf (handle, " %d ", val);
+            }
 
-        // The relational
-        val = NUM_VAL (TCgetNthExprsExpr ((cols * i), exprs));
-        fprintf (handle, "%s\n", (0 == val) ? " == 0" : " >= 0");
+            // The relational
+            val = NUM_VAL (TCgetNthExprsExpr ((cols * i), exprs));
+            fprintf (handle, "%s\n", (0 == val) ? " == 0" : " >= 0");
 
-        // machine-readable form
-        for (j = 0; j < cols; j++) {
-            indx = j + (cols * i);
-            val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
-            fprintf (handle, "%d ", val);
+            // machine-readable form
+            for (j = 0; j < cols; j++) {
+                indx = j + (cols * i);
+                val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
+                fprintf (handle, "%d ", val);
+            }
+            fprintf (handle, "\n"); // make reading easier
         }
-        fprintf (handle, "\n"); // make reading easier
     }
+    fprintf (handle, "\n");
 
     DBUG_RETURN ();
 }
@@ -1514,13 +1522,13 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, int *numvars)
  * @brief Construct a Polylib matrix for an N_prf guard.
  *        Now, extended to support some scalar relationals.
  *
- *        For le, ge, we invert the conditional
- *
  * @param arg_node: an N_prf for a guard primitive
  * @param fundef: The N_fundef for the current function.
  *                Used only for debugging.
  * @param relfn:  Either PRF_PRF( arg_node) or its companion function,
  *                e.g., if PRF_PRF is _gt_SxS_, its companion is _le_SxS.
+ * @param exprsUcfn: An implicit result, set if PRF_PRF( arg_node) is _eq_SxS.
+ * @param exprsUfn: An implicit result, set if PRF_PRF( arg_node) is _eq_SxS.
  *
  * @param numvars: the number of distinct variables in the affine function tree.
  *
@@ -1528,9 +1536,11 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, int *numvars)
  *
  ******************************************************************************/
 node *
-PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf relfn)
+PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf relfn,
+                                 node **exprsUfn, node **exprsUcfn)
 {
     node *z = NULL;
+    node *z2 = NULL;
     info *arg_info;
 
     DBUG_ENTER ();
@@ -1590,6 +1600,31 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
         z = AddValueToNamedColumn (PRF_ARG1 (arg_node), -1, z);
         z = AddValueToNamedColumn (PRF_ARG2 (arg_node), 1, z);
         break;
+
+    case F_eq_SxS:
+        // z = _eq_SxS_( x, y) -->   x     == y
+        //                           x - y == 0
+        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z);
+        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), -1, z);
+        break;
+
+    case F_neq_SxS:
+        // z = _neq_SxS_( x, y) -->
+        // This is harder. We need to get PolyLib to construct a union
+        // of (x<y) and (x>y). We set the explicit result to
+        //    (x<y) --> y > x --> ( y - x) > 0  --> ( y - x) -1 >= 0
+        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), -1, z);
+        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), 1, z);
+        z = AddIntegerToConstantColumn (-1, z);
+
+        // (x>y) --> ( x - y) > 0  --> ( x - y) -1 >= 0
+        z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
+        z2 = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z2);
+        z2 = AddValueToNamedColumn (PRF_ARG2 (arg_node), -1, z2);
+        z2 = AddIntegerToConstantColumn (-1, z2);
+        *exprsUfn = z2;
+        break;
+
     default:
         DBUG_UNREACHABLE ("Coding time for guard polyhedron");
         break;
@@ -1604,7 +1639,7 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
  *
  * @fn node
  *
- * @brief Compute the intersections among three Polylib polyhedra:
+ * @brief Compute the intersections among Polylib polyhedra:
  *
  *          exprs1, exprs2, exprs3
  *
@@ -1612,12 +1647,12 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
  *
  *          exprs1, exprs2, exprs4
  *
- *        The result is an element of sacpolylibisnullintersect.h.
+ *        The result is an element of sacpolylibinterface.h.
  *
  *        The monotonically increasing global.polylib_filenumber
  *        is for debugging, as we will generate MANY files.
  *
- * @param: exprs1, exprs2, exprs3, exprs4 - integer N_exprs chains of
+ * @param: exprscwl, exprs2, exprs3, exprs4 - integer N_exprs chains of
  *         PolyLib input matrices
  * @param: idlist - an N_exprs chain of N_id nodes that are referenced
  *         by the affine function trees in the exprs chains.
@@ -1627,8 +1662,8 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
  *
  *****************************************************************************/
 int
-PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *exprs4,
-                       node *idlist, char opcode)
+PHUTcheckIntersection (node *exprscwl, node *exprspwl, node *exprs3, node *exprs4,
+                       node *exprsuf, node *exprsuc, node *idlist, char opcode)
 {
 #define MAXLINE 1000
     int res = POLY_RET_INVALID;
@@ -1664,20 +1699,22 @@ PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *exprs4,
     // efficient for Polylib (we should have a different
     // call that only expects fewer polyhedra), but it is simple to implement here.
     numvars = TCcountExprs (idlist);
-    exprs1 = (NULL == exprs1) ? PHUTgenerateIdentityExprs (numvars) : exprs1;
-    exprs2 = (NULL == exprs2) ? PHUTgenerateIdentityExprs (numvars) : exprs2;
+    exprscwl = (NULL == exprscwl) ? PHUTgenerateIdentityExprs (numvars) : exprscwl;
+    exprspwl = (NULL == exprspwl) ? PHUTgenerateIdentityExprs (numvars) : exprspwl;
     exprs3 = (NULL == exprs3) ? PHUTgenerateIdentityExprs (numvars) : exprs3;
     exprs4 = (NULL == exprs4) ? PHUTgenerateIdentityExprs (numvars) : exprs4;
-    Exprs2File (matrix_file, exprs1, idlist);
-    Exprs2File (matrix_file, exprs2, idlist);
-    Exprs2File (matrix_file, exprs3, idlist);
-    Exprs2File (matrix_file, exprs4, idlist);
+    Exprs2File (matrix_file, exprscwl, idlist, "cwl");
+    Exprs2File (matrix_file, exprspwl, idlist, "pwl");
+    Exprs2File (matrix_file, exprs3, idlist, "eq");
+    Exprs2File (matrix_file, exprs4, idlist, "cfn");
+    Exprs2File (matrix_file, exprsuf, idlist, "ufn");
+    Exprs2File (matrix_file, exprsuc, idlist, "ucfn");
 
     FMGRclose (matrix_file);
 
-    // We depend on PATH to find the sacpolylibintersect binary
-    DBUG_PRINT ("calling sacpolylibisnullintersect");
-    exit_code = SYScallNoErr ("sacpolylibisnullintersect %c < %s > %s\n", opcode,
+    // We depend on PATH to find the sacpolylibinterface binary
+    DBUG_PRINT ("calling " SACISLINTERFACEBINARY);
+    exit_code = SYScallNoErr (SACISLINTERFACEBINARY " %c < %s > %s\n", opcode,
                               polyhedral_arg_filename, polyhedral_res_filename);
     DBUG_PRINT ("exit_code=%d, WIFEXITED=%d, WIFSIGNALED=%d, WEXITSTATUS=%d", exit_code,
                 WIFEXITED (exit_code), WIFSIGNALED (exit_code), WEXITSTATUS (exit_code));

@@ -1210,7 +1210,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
  * @params: pwlpart  - the ProducerWL N_part
  * @params: arg_info - your basic arg_info
  *
- * @result: A POLY_ element from polyhedraldefs.h
+ * @result: One or more POLY_RET elements from polyhedral_defs.h
  *
  ******************************************************************************/
 static bool
@@ -1220,7 +1220,8 @@ isCanStillFold (int el)
 
     DBUG_ENTER ();
 
-    z = (POLY_RET_MATCH_AB == el) || (POLY_RET_BCONTAINSA == el) || (0 == el);
+    z = (POLY_RET_MATCH_BC == el) || (POLY_RET_CCONTAINSB == el)
+        || (POLY_RET_UNKNOWN == el);
 
     DBUG_RETURN (z);
 }
@@ -1233,7 +1234,7 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
     node *ivel;
     node *pwlelavis;
     node *idlistiv = NULL;
-    node *exprsiv = NULL;
+    node *exprscwl = NULL;
     node *idlistpwl = NULL;
     node *exprspwl = NULL;
     pattern *pat;
@@ -1242,7 +1243,7 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
     node *exprsintr;
     int i;
     int shp;
-    int z = 0;
+    int z = POLY_RET_UNKNOWN;
     int numvars;
 
     DBUG_ENTER ();
@@ -1275,11 +1276,11 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
             idlistpwl
               = PHUTcollectAffineNids (pwlelavis, INFO_FUNDEF (arg_info), &numvars);
 
-            exprsiv = PHUTgenerateAffineExprs (ivel, INFO_FUNDEF (arg_info), &numvars);
+            exprscwl = PHUTgenerateAffineExprs (ivel, INFO_FUNDEF (arg_info), &numvars);
             exprspwl
               = PHUTgenerateAffineExprs (pwlelavis, INFO_FUNDEF (arg_info), &numvars);
             DBUG_PRINT ("iv %s has %d affine fn expressions in %d variables",
-                        AVIS_NAME (ID_AVIS (iv)), TCcountExprs (exprsiv),
+                        AVIS_NAME (ID_AVIS (iv)), TCcountExprs (exprscwl),
                         TCcountExprs (idlistiv));
             // Collect affine exprs for PWL
             DBUG_PRINT ("pwl %s has %d affine fn expressions in %d variables",
@@ -1291,10 +1292,10 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
 
             // Don't bother calling Polylib if it can't do anything for us.
             idlistiv = TCappendExprs (idlistiv, idlistpwl);
-            if ((NULL != idlistiv) && (NULL != exprsiv) && (NULL != exprspwl)) {
+            if ((NULL != idlistiv) && (NULL != exprscwl) && (NULL != exprspwl)) {
                 z = z
-                    | PHUTcheckIntersection (exprsiv, exprspwl, exprsintr, NULL, idlistiv,
-                                             POLY_OPCODE_PWLF);
+                    | PHUTcheckIntersection (exprscwl, exprspwl, exprsintr, NULL, NULL,
+                                             NULL, idlistiv, POLY_OPCODE_PWLF);
             }
 
             // Post-cleanup
@@ -1303,7 +1304,7 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
             pwlelavis = TCgetNthIds (i, WITHID_IDS (PART_WITHID (pwlpart)));
             PHUTclearColumnIndices (pwlelavis, INFO_FUNDEF (arg_info));
             idlistiv = (NULL != idlistiv) ? FREEdoFreeTree (idlistiv) : NULL;
-            exprsiv = (NULL != exprsiv) ? FREEdoFreeTree (exprsiv) : NULL;
+            exprscwl = (NULL != exprscwl) ? FREEdoFreeTree (exprscwl) : NULL;
             exprspwl = (NULL != exprspwl) ? FREEdoFreeTree (exprspwl) : NULL;
             i++;
         }
@@ -1597,9 +1598,9 @@ PWLFid (node *arg_node, info *arg_info)
  *   the intersect between the index set of iv,
  *   and each partition of the producerWL.
  *
- *   If the intersect is POLY_RET_MATCH_AB  or POLY_RET_BCONTAINSA,
+ *   If the intersect is POLY_RET_MATCH_BC  or POLY_RET_CCONTAINSB,
  *   we perform the fold.
- *   If the intersect is POLY_RET_EMPTYSET_AB, we go on to the next PWL partition.
+ *   If the intersect is POLY_RET_EMPTYSET_BC, we go on to the next PWL partition.
  *   Otherwise, we use the result of intersect to slice the CWL, then
  *   perform the fold.
  *
@@ -1640,18 +1641,21 @@ PWLFprf (node *arg_node, info *arg_info)
             while ((POLY_RET_UNKNOWN == plresult) && (NULL != pwlpart)) {
                 foldpwlpart = pwlpart;
                 plresult = IntersectBoundsPolyhedral (arg_node, pwlpart, arg_info);
-                if ((POLY_RET_MATCH_AB == plresult)
-                    || (POLY_RET_BCONTAINSA == plresult)) {
-                    cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
-                              ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
-                              : "(naked consumer)";
-                    DBUG_PRINT ("We now fold PWL %s into CWL %s",
-                                AVIS_NAME (ID_AVIS (pwlid)), cwlnm);
+                cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
+                          ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
+                          : "(naked consumer)";
+                if ((POLY_RET_MATCH_BC & plresult) || (POLY_RET_CCONTAINSB & plresult)) {
+                    DBUG_PRINT ("We now fold PWL %s into CWL %s with plresult %d",
+                                AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);
                     DBUG_PRINT ("Building inverse projection for cwl=%s", cwlnm);
                     // FIXME arg_node = BuildInverseProjections( arg_node, arg_info);
                     arg_node = PWLFperformFold (arg_node, foldpwlpart, arg_info);
                     global.optcounters.pwlf_expr += 1;
+                } else {
+                    DBUG_PRINT ("Unable to fold PWL %s into CWL %s with plresult %d",
+                                AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);
                 }
+
                 pwlpart = PART_NEXT (pwlpart);
             }
         }

@@ -498,7 +498,6 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
         }
 
         if (NULL != pwlp) {
-            AVIS_ISWLFOLDED (producerWLavis) = TRUE;
             DBUG_PRINT ("PWL %s will be folded.", AVIS_NAME (producerWLavis));
         } else {
             DBUG_PRINT ("PWL %s can not be folded, at present.",

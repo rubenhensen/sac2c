@@ -5,14 +5,15 @@
  *
  * Prefix: PHDEFS
  *
- * This is used by POGO, PHUT, and by the PolyLib code in tools/cuda.
+ * This is used by POGO, PHUT, and by the Polyhedral code in tools/cuda/sacislinterface.c
  *
  *****************************************************************************/
 
 // PolyLib input matrix format is found in Chapter 9 (Example)
 // of the Polyulib User's Manual, page 35.
+// ISL supports the same unreadable format, so we just use that.
 
-// PolyLib matrix column definitions
+// PolyLib/ISL matrix column definitions
 #define PLFUN 0
 #define PLFUNEQUALITY 0
 #define PLFUNINEQUALITY 1
@@ -30,6 +31,7 @@
 #define PLVARS 4
 
 // PolyLib interface function op codes
+#define SACISLINTERFACEBINARY "sacislinterface"
 #define POLY_OPCODE_PWLF 'F'
 #define POLY_OPCODE_INTERSECT 'I'
 #define POLY_OPCODE_MATCH 'M'
@@ -41,10 +43,10 @@
 
 #define POLY_RET_INVALID 2
 #define POLY_RET_UNKNOWN 4
-#define POLY_RET_EMPTYSET_ABC 8
-#define POLY_RET_EMPTYSET_ABD 16
-#define POLY_RET_MATCH_AB 32
-#define POLY_RET_EMPTYSET_AB 64
-#define POLY_RET_BCONTAINSA 128
+#define POLY_RET_EMPTYSET_BCR 8
+#define POLY_RET_EMPTYSET_BCC 16
+#define POLY_RET_MATCH_BC 32
+#define POLY_RET_EMPTYSET_BC 64
+#define POLY_RET_CCONTAINSB 128
 
 #endif /* _SAC_PHDEFS_H_ */

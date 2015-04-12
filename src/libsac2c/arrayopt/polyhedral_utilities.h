@@ -15,10 +15,12 @@ extern void PHUTclearColumnIndices (node *arg_node, node *fundef);
 extern node *PHUTcollectAffineNids (node *arg_node, node *fundef, int *numvars);
 extern node *PHUTgenerateAffineExprs (node *arg_node, node *fundef, int *numvars);
 extern node *PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars,
-                                              prf relfn);
+                                              prf relfn, node **exprsUfn,
+                                              node **exprsUcfn);
 extern node *PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res);
 extern int PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *exprs4,
-                                  node *idlist, char opcode);
+                                  node *exprsuf, node *exprsuc, node *idlist,
+                                  char opcode);
 extern node *PHUTgenerateIdentityExprs (int numvars);
 extern node *PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, int *numvars);
 extern node *PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, int *numvars);
