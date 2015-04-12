@@ -1,3 +1,5 @@
+this is rubbish
+
 /*
  * Read two Polylib polyhedra from stdin,
  * compute their intersection,
@@ -11,8 +13,8 @@
 #include "matrix.h"
 #include "polyhedron.h"
 
-int
-main ()
+  int
+  main ()
 {
     FILE *file;
     Matrix *Matrix_A;
