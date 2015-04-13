@@ -126,6 +126,7 @@ Node2Avis (node *arg_node)
         break;
 
     case N_num:
+    case N_bool:
         break;
 
     default:
@@ -462,8 +463,6 @@ static int
 StepOrWidthHelper (node *stpwid, int k)
 { // Find  GENERATOR_STEP[k] or GENERATOR_WIDTH[k] as an integer.
     // Result <= 0 means did not find same.
-    // FIXME: Until we get ISL to replace PolyLib, we do not support
-    // non-unit step or stride, as they create non-convex polyhedra.
     int z = -1;
     node *arr;
     pattern *pat;
@@ -480,7 +479,6 @@ StepOrWidthHelper (node *stpwid, int k)
             }
         }
     }
-    z = (z > 1) ? -1 : z; // FIXME kludge for PolyLib vs. ISL
     return (z);
 }
 
@@ -726,6 +724,7 @@ isCompatibleAffinePrf (prf nprf)
     case F_abs_S:
     case F_neg_S:
     case F_shape_A:
+    case F_not_S:
         z = TRUE;
         break;
 
@@ -772,6 +771,7 @@ isDyadicPrf (prf nprf)
     case F_neg_S:
     case F_non_neg_val_S:
     case F_shape_A:
+    case F_not_S:
         z = FALSE;
         break;
 
@@ -878,32 +878,35 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *HandleNnum( node *arg_node, node *rhs, info *arg_info, node *res)
+ * @fn node *HandleNumber( node *arg_node, node *rhs, info *arg_info, node *res)
  *
- * @brief Handler for N_id = N_num
+ * @brief Handler for N_id = N_num or N_bool
  *
- * @param  arg_node: The N_avis for an assign with N_num as rhs
- * @param  rhs: The N_num
+ * @param  arg_node: The N_avis for an assign with N_num/N_bool as rhs
+ * @param  rhs: The N_num/N_bool
  * @param  arg_info: as usual
  * @param  res: Incoming N_exprs chain
  *
  * @return If we are in MODE_generatematrix, an N_exprs chain
  *         representing a polylib Matrix row, appended to res.
- *         All the N_exprs chain values will be N_num nodes.
+ *         All the N_exprs chain values will be N_num or N_bool nodes.
  *         Otherwise, incoming res.
  *
  ******************************************************************************/
 static node *
-HandleNnum (node *arg_node, node *rhs, info *arg_info, node *res)
+HandleNumber (node *arg_node, node *rhs, info *arg_info, node *res)
 {
     node *z = NULL;
+    int v;
 
     DBUG_ENTER ();
 
     if (MODE_generatematrix == INFO_MODE (arg_info)) {
+        v = (N_num == NODE_TYPE (rhs)) ? NUM_VAL (rhs) : (int)BOOL_VAL (rhs);
+        // ( z - rhs) == 0
         z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
         z = AddValueToNamedColumn (arg_node, 1, z);
-        z = AddIntegerToConstantColumn (-NUM_VAL (rhs), z);
+        z = AddIntegerToConstantColumn (-v, z);
         res = TCappendExprs (res, z);
     }
 
@@ -1128,6 +1131,15 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                 }
                 break;
 
+            case F_not_S: // Treat Booleans as integers(for POGO)
+                // z = !y  --->  z + y == 1  ---> ( z + y) -1 == 0
+                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
+                z2 = AddValueToNamedColumn (ids, 1, z2);
+                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2);
+                z2 = AddIntegerToConstantColumn (-1, z2);
+                res = TCappendExprs (res, z2);
+                break;
+
             case F_abs_S: // z >= 0
                 z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
                 z2 = AddValueToNamedColumn (ids, 1, z2);
@@ -1289,9 +1301,10 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res)
             res = HandleComposition (avis, rhs, arg_info, res);
             break;
 
+        case N_bool:
         case N_num:
             res = assignPolylibColumnIndex (arg_node, arg_info, res);
-            res = HandleNnum (avis, rhs, arg_info, res);
+            res = HandleNumber (avis, rhs, arg_info, res);
             break;
 
         default:
@@ -1604,20 +1617,22 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
     case F_eq_SxS:
         // z = _eq_SxS_( x, y) -->   x     == y
         //                           x - y == 0
+        FREEdoFreeTree (z);
+        z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
         z = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z);
         z = AddValueToNamedColumn (PRF_ARG2 (arg_node), -1, z);
         break;
 
     case F_neq_SxS:
         // z = _neq_SxS_( x, y) -->
-        // This is harder. We need to get PolyLib to construct a union
+        // This is harder. We need to construct a union
         // of (x<y) and (x>y). We set the explicit result to
-        //    (x<y) --> y > x --> ( y - x) > 0  --> ( y - x) -1 >= 0
+        //    (x<y) -->    y > x       --> ( y - x) > 0  --> ( y - x) -1 >= 0
         z = AddValueToNamedColumn (PRF_ARG1 (arg_node), -1, z);
         z = AddValueToNamedColumn (PRF_ARG2 (arg_node), 1, z);
         z = AddIntegerToConstantColumn (-1, z);
 
-        // (x>y) --> ( x - y) > 0  --> ( x - y) -1 >= 0
+        //     (x>y) --> ( x - y) > 0  --> ( x - y) -1 >= 0
         z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
         z2 = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z2);
         z2 = AddValueToNamedColumn (PRF_ARG2 (arg_node), -1, z2);

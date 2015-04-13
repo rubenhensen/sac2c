@@ -135,7 +135,7 @@ FreeInfo (info *info)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn prf CompanionFn( prf nprf)
+ * @fn prf ComplementaryFun( prf nprf)
  *
  * @brief
  *
@@ -145,7 +145,7 @@ FreeInfo (info *info)
  *
  ******************************************************************************/
 static prf
-CompanionFn (prf nprf)
+ComplementaryFun (prf nprf)
 {
     prf z;
 
@@ -532,10 +532,11 @@ POGOprf (node *arg_node, info *arg_info)
             exprsFn = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
                                                        &numvars, PRF_PRF (arg_node),
                                                        &exprsUfn, &exprsUcfn);
-            exprsCfn = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
-                                                        &numvars,
-                                                        CompanionFn (PRF_PRF (arg_node)),
-                                                        &exprsUfn, &exprsUcfn);
+            exprsCfn
+              = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
+                                                 &numvars,
+                                                 ComplementaryFun (PRF_PRF (arg_node)),
+                                                 &exprsUfn, &exprsUcfn);
             emp = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn, exprsUfn,
                                          exprsUcfn, idlist1, POLY_OPCODE_INTERSECT);
             DBUG_PRINT ("PHUTcheckIntersection result for %s is %d",
@@ -557,7 +558,7 @@ POGOprf (node *arg_node, info *arg_info)
             }
 
             if ((!z) && (emp & POLY_RET_EMPTYSET_BCC)) {
-                DBUG_PRINT ("Matching CompanionFn sets for %s",
+                DBUG_PRINT ("Matching ComplementaryFun sets for %s",
                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
                 resval = TRUE;
                 z = TRUE;
