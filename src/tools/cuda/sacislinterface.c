@@ -30,7 +30,9 @@ typedef unsigned int uint32_t;
 void
 printBasicSet (struct isl_basic_set *pset, char *titl, struct isl_ctx *ctx)
 { // Print a BasicSet to stdout
+
     isl_printer *p;
+
     printf ("Printing %s\n", titl);
     p = isl_printer_to_file (ctx, stdout);
     p = isl_printer_print_basic_set (p, pset);
@@ -41,13 +43,14 @@ printBasicSet (struct isl_basic_set *pset, char *titl, struct isl_ctx *ctx)
 }
 
 void
-printUnion (struct isl_union_set *pset, char *titl, struct isl_ctx *ctx, int verbose)
+printUnion (struct _IO_FILE *fd, struct isl_union_set *pset, char *titl,
+            struct isl_ctx *ctx, int verbose)
 {
     isl_printer *p;
 
     if (verbose) {
-        fprintf (stdout, "Union %s is:\n", titl);
-        p = isl_printer_to_file (ctx, stdout);
+        fprintf (fd, "Union %s is:\n", titl);
+        p = isl_printer_to_file (ctx, fd);
         p = isl_printer_print_union_set (p, pset);
         p = isl_printer_end_line (p);
         isl_printer_free (p);
@@ -64,7 +67,7 @@ doIntersect (struct isl_union_set *unionb, struct isl_union_set *unionc, char *t
     intersectbc = isl_union_set_intersect (isl_union_set_copy (unionb),
                                            isl_union_set_copy (unionc));
     if (verbose) {
-        printUnion (intersectbc, titl, ctx, verbose);
+        printUnion (stderr, intersectbc, titl, ctx, verbose);
     }
 
     return (intersectbc);
@@ -85,43 +88,42 @@ ReadUnionFromFile (struct _IO_FILE *fd, struct isl_ctx *ctx)
 int
 PolyhedralWLFIntersectCalc (int verbose)
 {
-    // Poly_CWL is the CWL iv; Poly_PWL is the PWL bounds,step,width.
-    // Poly_EQ is the condition that CWL iv matches PWL iv.
-    // If the CWL is a subset of PWL, then we can fold immediately.
+    // cwl is the consumerWL index vector's affine expn tree;
+    // pwl is the producerWL bounds, step, width affine expn tree.
+    //
+    // If the intersect of cwl and pwl is cwl, then the fold
+    // can proceed immediately. If the intersect is NULL, then
+    // no folding can happen. Otherwise, the cwl must be sliced.
     //
     int z = POLY_RET_UNKNOWN;
+    struct isl_ctx *ctx = isl_ctx_alloc ();
 
-#ifdef FIXME
-    Poly_CWL = ReadPoly ("cwl", verbose);
-    Poly_PWL = ReadPoly ("pwl", verbose);
-    Poly_EQ = ReadPoly ("equality", verbose);
+    struct isl_union_set *pwl = NULL;
+    struct isl_union_set *cwl = NULL;
+    struct isl_union_set *intr = NULL;
 
-    Poly_PWLEQ = DomainIntersection (Poly_PWL, Poly_EQ, MAXCON);
-    Poly_Z = DomainIntersection (Poly_PWLEQ, Poly_CWL, MAXCON);
-    Matrix_Z = Polyhedron2Constraints (Poly_Z);
-    if (verbose) {
-        fprintf (stderr, "Poly_PWLEQ is:\n");
-        Polyhedron_Print (stderr, "%4d", Poly_PWLEQ);
-        fprintf (stderr, "Poly_Z is:\n");
-        Polyhedron_Print (stderr, "%4d", Poly_Z);
+    cwl = ReadUnionFromFile (stdin, ctx);
+    pwl = ReadUnionFromFile (stdin, ctx);
+    printUnion (stderr, pwl, "pwl", ctx, verbose);
+    printUnion (stderr, cwl, "cwl", ctx, verbose);
+
+    intr = doIntersect (cwl, pwl, "intr", ctx, verbose);
+    printUnion (stderr, intr, "intr", ctx, verbose);
+
+    if (isl_union_set_is_subset (intr, cwl)) {
+        z = POLY_RET_CCONTAINSB;
+        if (verbose) {
+            fprintf (stderr, "intersect( cwl, pwl) is subset of cwl\n");
+        }
     }
 
-    z = PolyhedronIncludes (Poly_Z, Poly_CWL);
-    if (verbose) {
-        fprintf (stderr, "PolyhedronIncludes(Poly_CWL, Poly_Z is: %d\n", z);
-    }
-    z = z ? POLY_RET_YCONTAINSX : POLY_RET_UNKNOWN;
-    printf ("%d\n", z); // This is the result that PHUT reads.
+    fprintf (stdout, "%d\n", z); // This is the result that PHUT reads.
+    printUnion (stdout, intr, "intr", ctx, verbose);
 
-    Matrix_Print (stdout, "%4d", Matrix_Z); // This is the intersection polyhedron
-    Matrix_Free (Matrix_Z);
-
-    Domain_Free (Poly_CWL);
-    Domain_Free (Poly_PWL);
-    Domain_Free (Poly_EQ);
-    Domain_Free (Poly_PWLEQ);
-    Domain_Free (Poly_Z);
-#endif // FIXME
+    isl_union_set_free (pwl);
+    isl_union_set_free (cwl);
+    isl_union_set_free (intr);
+    isl_ctx_free (ctx);
 
     return (z);
 }
@@ -134,9 +136,7 @@ PolyhedralRelationalCalc (int verbose)
     //   and where rfn represents the relational itself;
     //   cfn represents the complementary function for the relational.
     //   E.g., for B < C, the complementary relational is B >= C.
-    //
-    //   If B and Y are matching sets, return POLY_RET_MATCH_BC.
-    //   Else, intersect B,C,rfn, and return result of POLY_RET_EMPTYSET_BCR if the
+    //   Intersect B,C,rfn, and return result of POLY_RET_EMPTYSET_BCR if the
     //   intersect is a NULL set.
     //
     //   Else, intersect B,C,cfn and return result of POLY_RET_EMPTYSET_BCC if the
@@ -160,24 +160,25 @@ PolyhedralRelationalCalc (int verbose)
     unionrfn = ReadUnionFromFile (stdin, ctx); // Relational fn
     unioncfn = ReadUnionFromFile (stdin, ctx); // Complementary relational fn
 
-    printUnion (unionb, "unionb", ctx, verbose);
-    printUnion (unionc, "unionc", ctx, verbose);
-    printUnion (unionrfn, "unionrfn", ctx, verbose);
-    printUnion (unioncfn, "unioncfn", ctx, verbose);
+    printUnion (stderr, unionb, "unionb", ctx, verbose);
+    printUnion (stderr, unionc, "unionc", ctx, verbose);
+    printUnion (stderr, unionrfn, "unionrfn", ctx, verbose);
+    printUnion (stderr, unioncfn, "unioncfn", ctx, verbose);
 
-    // I am guessing that looking for equality may be relatively fast, compared
-    // to intersecting set. If not, rip out this code block.
-    if (isl_union_set_is_equal (unionb, unionc)) {
+#ifdef RUBBISH
+    if (isl_union_set_is_subset (unionb, unionc)
+        && isl_union_set_is_subset (unionc, unionb)) {
         z = z | POLY_RET_MATCH_BC;
         z = z & ~POLY_RET_UNKNOWN;
         if (verbose) {
-            fprintf (stderr, "b matches c\n");
+            fprintf (stderr, "non-empty b matches c\n");
         }
     } else {
         if (verbose) {
             fprintf (stderr, "b does not match c\n");
         }
     }
+#endif // RUBBISH
 
     if (POLY_RET_UNKNOWN == z) { // Intersect b,c
         intersectbc = doIntersect (unionb, unionc, "intersectbc", ctx, verbose);
