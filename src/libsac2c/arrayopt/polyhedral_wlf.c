@@ -10,6 +10,10 @@
  *
  * @{
  *
+ * This code likes to run AFTER prfunr, because its operation depends
+ * on the availability of scalars for affine function tree creation.
+ *
+ *
  *****************************************************************************/
 
 /** <!--********************************************************************-->
@@ -108,7 +112,7 @@ struct INFO {
                               * block, rather than to a WL within this
                               * WL.
                               */
-    bool producerWLFoldable; /* producerWL may be legally foldable. */
+    bool producerwlfoldable; /* producerWL may be legally foldable. */
                              /* (If index sets prove to be OK)     */
     bool finverseswap;       /* If TRUE, must swp min/max */
     bool finverseintroduced; /* If TRUE, most simplify F-inverse */
@@ -131,7 +135,7 @@ struct INFO {
 #define INFO_LET(n) ((n)->let)
 #define INFO_WITHIDS(n) ((n)->withids)
 #define INFO_DEFDEPTH(n) ((n)->defdepth)
-#define INFO_PRODUCERWLFOLDABLE(n) ((n)->producerWLFoldable)
+#define INFO_PRODUCERWLFOLDABLE(n) ((n)->producerwlfoldable)
 #define INFO_FINVERSESWAP(n) ((n)->finverseswap)
 #define INFO_FINVERSEINTRODUCED(n) ((n)->finverseintroduced)
 #define INFO_ZWITHIDS(n) ((n)->zwithids)
@@ -1248,70 +1252,73 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
 
     DBUG_ENTER ();
 
-    // Must find N_array node for iv.
+    // Must find N_array node for iv, or give up.
     iv = PRF_ARG1 (arg_node);
     arravis
       = IVUToffset2Vect (arg_node, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
                          INFO_CONSUMERWLPART (arg_info), pwlpart);
-    arrid = TBmakeId (arravis);
-    pat = PMarray (1, PMAgetNode (&ivarr), 0);
-    PHUTsetClearAvisPart (pwlpart, pwlpart);
-    if (PMmatchFlatSkipExtrema (pat, arrid)) {
-        shp = TCcountExprs (ARRAY_AELEMS (ivarr));
-        // Collect affine exprs for iv, across all axes.
-        // Compute the intersect and OR the result flags.
-        i = 0;
-        while ((i < shp) && isCanStillFold (z)) {
-            numvars = 0;
-            // pre-cleanup
-            ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
-            PHUTclearColumnIndices (ivel, INFO_FUNDEF (arg_info));
-            pwlelavis = TCgetNthIds (i, WITHID_IDS (PART_WITHID (pwlpart)));
-            PHUTclearColumnIndices (pwlelavis, INFO_FUNDEF (arg_info));
+    if (NULL != arravis) {
+        arrid = TBmakeId (arravis);
+        pat = PMarray (1, PMAgetNode (&ivarr), 0);
+        PHUTsetClearAvisPart (pwlpart, pwlpart);
+        if (PMmatchFlatSkipExtrema (pat, arrid)) {
+            shp = TCcountExprs (ARRAY_AELEMS (ivarr));
+            // Collect affine exprs for iv, across all axes.
+            // Compute the intersect and OR the result flags.
+            i = 0;
+            while ((i < shp) && isCanStillFold (z)) {
+                numvars = 0;
+                // pre-cleanup
+                ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
+                PHUTclearColumnIndices (ivel, INFO_FUNDEF (arg_info));
+                pwlelavis = TCgetNthIds (i, WITHID_IDS (PART_WITHID (pwlpart)));
+                PHUTclearColumnIndices (pwlelavis, INFO_FUNDEF (arg_info));
 
-            ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
-            idlistiv = PHUTcollectAffineNids (ivel, INFO_FUNDEF (arg_info), &numvars);
+                ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
+                idlistiv = PHUTcollectAffineNids (ivel, INFO_FUNDEF (arg_info), &numvars);
 
-            pwlelavis = TCgetNthIds (i, WITHID_IDS (PART_WITHID (pwlpart)));
-            idlistpwl
-              = PHUTcollectAffineNids (pwlelavis, INFO_FUNDEF (arg_info), &numvars);
+                pwlelavis = TCgetNthIds (i, WITHID_IDS (PART_WITHID (pwlpart)));
+                idlistpwl
+                  = PHUTcollectAffineNids (pwlelavis, INFO_FUNDEF (arg_info), &numvars);
 
-            exprscwl = PHUTgenerateAffineExprs (ivel, INFO_FUNDEF (arg_info), &numvars);
-            exprspwl
-              = PHUTgenerateAffineExprs (pwlelavis, INFO_FUNDEF (arg_info), &numvars);
-            DBUG_PRINT ("iv %s has %d affine fn expressions in %d variables",
-                        AVIS_NAME (ID_AVIS (iv)), TCcountExprs (exprscwl),
-                        TCcountExprs (idlistiv));
-            // Collect affine exprs for PWL
-            DBUG_PRINT ("pwl %s has %d affine fn expressions in %d variables",
-                        AVIS_NAME (pwlelavis), TCcountExprs (exprspwl),
-                        TCcountExprs (idlistpwl));
+                exprscwl
+                  = PHUTgenerateAffineExprs (ivel, INFO_FUNDEF (arg_info), &numvars);
+                exprspwl
+                  = PHUTgenerateAffineExprs (pwlelavis, INFO_FUNDEF (arg_info), &numvars);
+                DBUG_PRINT ("iv %s has %d affine fn expressions in %d variables",
+                            AVIS_NAME (ID_AVIS (iv)), TCcountExprs (exprscwl),
+                            TCcountExprs (idlistiv));
+                // Collect affine exprs for PWL
+                DBUG_PRINT ("pwl %s has %d affine fn expressions in %d variables",
+                            AVIS_NAME (pwlelavis), TCcountExprs (exprspwl),
+                            TCcountExprs (idlistpwl));
 
-            exprsintr
-              = PHUTgenerateAffineExprsForPwlfIntersect (ivel, pwlelavis, numvars);
+                exprsintr
+                  = PHUTgenerateAffineExprsForPwlfIntersect (ivel, pwlelavis, numvars);
 
-            // Don't bother calling Polylib if it can't do anything for us.
-            idlistiv = TCappendExprs (idlistiv, idlistpwl);
-            if ((NULL != idlistiv) && (NULL != exprscwl) && (NULL != exprspwl)) {
-                z = z
-                    | PHUTcheckIntersection (exprscwl, exprspwl, exprsintr, NULL, NULL,
-                                             NULL, idlistiv, POLY_OPCODE_PWLF);
+                // Don't bother calling Polylib if it can't do anything for us.
+                idlistiv = TCappendExprs (idlistiv, idlistpwl);
+                if ((NULL != idlistiv) && (NULL != exprscwl) && (NULL != exprspwl)) {
+                    z = z
+                        | PHUTcheckIntersection (exprspwl, exprscwl, exprsintr, NULL,
+                                                 NULL, NULL, idlistiv, POLY_OPCODE_PWLF);
+                }
+
+                // Post-cleanup
+                ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
+                PHUTclearColumnIndices (ivel, INFO_FUNDEF (arg_info));
+                pwlelavis = TCgetNthIds (i, WITHID_IDS (PART_WITHID (pwlpart)));
+                PHUTclearColumnIndices (pwlelavis, INFO_FUNDEF (arg_info));
+                idlistiv = (NULL != idlistiv) ? FREEdoFreeTree (idlistiv) : NULL;
+                exprscwl = (NULL != exprscwl) ? FREEdoFreeTree (exprscwl) : NULL;
+                exprspwl = (NULL != exprspwl) ? FREEdoFreeTree (exprspwl) : NULL;
+                i++;
             }
-
-            // Post-cleanup
-            ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
-            PHUTclearColumnIndices (ivel, INFO_FUNDEF (arg_info));
-            pwlelavis = TCgetNthIds (i, WITHID_IDS (PART_WITHID (pwlpart)));
-            PHUTclearColumnIndices (pwlelavis, INFO_FUNDEF (arg_info));
-            idlistiv = (NULL != idlistiv) ? FREEdoFreeTree (idlistiv) : NULL;
-            exprscwl = (NULL != exprscwl) ? FREEdoFreeTree (exprscwl) : NULL;
-            exprspwl = (NULL != exprspwl) ? FREEdoFreeTree (exprspwl) : NULL;
-            i++;
         }
+        PHUTsetClearAvisPart (pwlpart, NULL);
+        pat = PMfree (pat);
+        arrid = FREEdoFreeNode (arrid);
     }
-    PHUTsetClearAvisPart (pwlpart, NULL);
-    pat = PMfree (pat);
-    arrid = FREEdoFreeNode (arrid);
 
     DBUG_RETURN (z);
 }
@@ -1470,7 +1477,6 @@ PWLFwith (node *arg_node, info *arg_info)
     DBUG_PRINT ("Resetting WITH_REFERENCED_CONSUMERWL, etc.");
     WITH_REFERENCED_FOLD (arg_node) = 0;
     WITH_REFERENCED_CONSUMERWL (arg_node) = NULL;
-    WITH_REFERENCES_FOLDED (arg_node) = 0;
 
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
@@ -1591,7 +1597,8 @@ PWLFid (node *arg_node, info *arg_info)
  * @brief
  *   Examine a _sel_VxA_(iv, producerWL) primitive to see if
  *   we may be able to fold producerWL here, assuming that
- *   the _sel_ is within a potential consumerWL, OR that idx is constant.
+ *   the _sel_ is within a potential consumerWL, OR that idx is
+ *   constant, or otherwise known.
  *
  *   When we encounter an eligible sel() operation, we use
  *   polyhedral methods to compute
@@ -1655,12 +1662,12 @@ PWLFprf (node *arg_node, info *arg_info)
                     DBUG_PRINT ("Unable to fold PWL %s into CWL %s with plresult %d",
                                 AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);
                 }
-
                 pwlpart = PART_NEXT (pwlpart);
             }
         }
         break;
     }
+
     DBUG_RETURN (arg_node);
 }
 

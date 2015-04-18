@@ -28,12 +28,14 @@ typedef unsigned int uint32_t;
 #include "polyhedral_defs.h"
 
 void
-printBasicSet (struct isl_basic_set *pset, char *titl, struct isl_ctx *ctx)
+printBasicSet (struct isl_basic_set *pset, char *titl)
 { // Print a BasicSet to stdout
 
     isl_printer *p;
+    struct isl_ctx *ctx;
 
     printf ("Printing %s\n", titl);
+    ctx = isl_basic_set_get_ctx (pset);
     p = isl_printer_to_file (ctx, stdout);
     p = isl_printer_print_basic_set (p, pset);
     p = isl_printer_end_line (p);
@@ -43,14 +45,20 @@ printBasicSet (struct isl_basic_set *pset, char *titl, struct isl_ctx *ctx)
 }
 
 void
-printUnion (struct _IO_FILE *fd, struct isl_union_set *pset, char *titl,
-            struct isl_ctx *ctx, int verbose)
+printUnion (struct _IO_FILE *fd, struct isl_union_set *pset, char *titl, int verbose,
+            int fmt)
 {
+    // Print a union_set. Use fmt as format, if non-zero.
     isl_printer *p;
+    struct isl_ctx *ctx;
 
     if (verbose) {
+        ctx = isl_union_set_get_ctx (pset);
         fprintf (fd, "Union %s is:\n", titl);
         p = isl_printer_to_file (ctx, fd);
+        if (0 != fmt) {
+            p = isl_printer_set_output_format (p, fmt);
+        }
         p = isl_printer_print_union_set (p, pset);
         p = isl_printer_end_line (p);
         isl_printer_free (p);
@@ -60,14 +68,14 @@ printUnion (struct _IO_FILE *fd, struct isl_union_set *pset, char *titl,
 
 struct isl_union_set *
 doIntersect (struct isl_union_set *unionb, struct isl_union_set *unionc, char *titl,
-             struct isl_ctx *ctx, int verbose)
+             int verbose)
 { // Intersect two sets and return the resulting set
     struct isl_union_set *intersectbc;
 
     intersectbc = isl_union_set_intersect (isl_union_set_copy (unionb),
                                            isl_union_set_copy (unionc));
     if (verbose) {
-        printUnion (stderr, intersectbc, titl, ctx, verbose);
+        printUnion (stderr, intersectbc, titl, verbose, 0);
     }
 
     return (intersectbc);
@@ -97,32 +105,40 @@ PolyhedralWLFIntersectCalc (int verbose)
     //
     int z = POLY_RET_UNKNOWN;
     struct isl_ctx *ctx = isl_ctx_alloc ();
-
     struct isl_union_set *pwl = NULL;
     struct isl_union_set *cwl = NULL;
+    struct isl_union_set *peq = NULL;
     struct isl_union_set *intr = NULL;
+    struct isl_union_set *cwleq = NULL;
+    struct isl_union_set *pwleq = NULL;
 
-    cwl = ReadUnionFromFile (stdin, ctx);
     pwl = ReadUnionFromFile (stdin, ctx);
-    printUnion (stderr, pwl, "pwl", ctx, verbose);
-    printUnion (stderr, cwl, "cwl", ctx, verbose);
+    cwl = ReadUnionFromFile (stdin, ctx);
+    peq = ReadUnionFromFile (stdin, ctx);
+    printUnion (stderr, pwl, "pwl", verbose, 0);
+    printUnion (stderr, cwl, "cwl", verbose, 0);
+    printUnion (stderr, peq, "peq", verbose, 0);
 
-    intr = doIntersect (cwl, pwl, "intr", ctx, verbose);
-    printUnion (stderr, intr, "intr", ctx, verbose);
-
-    if (isl_union_set_is_subset (intr, cwl)) {
+    // ISL: Is (cwl * eq) = ( cwl * eq * pwl)?
+    cwleq = doIntersect (cwl, peq, "cwleq", verbose);
+    pwleq = doIntersect (pwl, peq, "pwleq", verbose);
+    intr = doIntersect (cwleq, pwleq, "intr", verbose);
+    if (isl_union_set_is_subset (cwleq, intr)) {
         z = POLY_RET_CCONTAINSB;
         if (verbose) {
-            fprintf (stderr, "intersect( cwl, pwl) is subset of cwl\n");
+            fprintf (stderr, "cwleq is subset of intersect( cwleq, pwleq)\n");
         }
     }
 
     fprintf (stdout, "%d\n", z); // This is the result that PHUT reads.
-    printUnion (stdout, intr, "intr", ctx, verbose);
+    printUnion (stdout, intr, "intersect", 1, ISL_FORMAT_ISL);
 
     isl_union_set_free (pwl);
     isl_union_set_free (cwl);
+    isl_union_set_free (peq);
     isl_union_set_free (intr);
+    isl_union_set_free (cwleq);
+    isl_union_set_free (pwleq);
     isl_ctx_free (ctx);
 
     return (z);
@@ -160,10 +176,10 @@ PolyhedralRelationalCalc (int verbose)
     unionrfn = ReadUnionFromFile (stdin, ctx); // Relational fn
     unioncfn = ReadUnionFromFile (stdin, ctx); // Complementary relational fn
 
-    printUnion (stderr, unionb, "unionb", ctx, verbose);
-    printUnion (stderr, unionc, "unionc", ctx, verbose);
-    printUnion (stderr, unionrfn, "unionrfn", ctx, verbose);
-    printUnion (stderr, unioncfn, "unioncfn", ctx, verbose);
+    printUnion (stderr, unionb, "unionb", verbose, 0);
+    printUnion (stderr, unionc, "unionc", verbose, 0);
+    printUnion (stderr, unionrfn, "unionrfn", verbose, 0);
+    printUnion (stderr, unioncfn, "unioncfn", verbose, 0);
 
 #ifdef RUBBISH
     if (isl_union_set_is_subset (unionb, unionc)
@@ -181,7 +197,7 @@ PolyhedralRelationalCalc (int verbose)
 #endif // RUBBISH
 
     if (POLY_RET_UNKNOWN == z) { // Intersect b,c
-        intersectbc = doIntersect (unionb, unionc, "intersectbc", ctx, verbose);
+        intersectbc = doIntersect (unionb, unionc, "intersectbc", verbose);
         if (isl_union_set_is_empty (intersectbc)) {
             z = z | POLY_RET_EMPTYSET_BC;
             z = z & ~POLY_RET_UNKNOWN;
@@ -196,7 +212,7 @@ PolyhedralRelationalCalc (int verbose)
     }
 
     if (POLY_RET_UNKNOWN == z) { // Intersect b,c,rfn
-        intersectbcr = doIntersect (intersectbc, unionrfn, "intersectbcr", ctx, verbose);
+        intersectbcr = doIntersect (intersectbc, unionrfn, "intersectbcr", verbose);
         if (isl_union_set_is_empty (intersectbcr)) {
             z = z | POLY_RET_EMPTYSET_BCR;
             z = z & ~POLY_RET_UNKNOWN;
@@ -211,7 +227,7 @@ PolyhedralRelationalCalc (int verbose)
     }
 
     if (POLY_RET_UNKNOWN == z) { // Intersect b,c,cfn
-        intersectbcc = doIntersect (intersectbc, unioncfn, "intersectbcc", ctx, verbose);
+        intersectbcc = doIntersect (intersectbc, unioncfn, "intersectbcc", verbose);
         if (isl_union_set_is_empty (intersectbcc)) {
             if (verbose) {
                 fprintf (stderr, "no intersect in b,c,cfn\n");

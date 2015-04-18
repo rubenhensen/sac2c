@@ -459,6 +459,9 @@ CYCLEPHASEFUN (ivesplit, "Eliminating index vectors (split selections)",
 CYCLEPHASEFUN (cse, "Eliminating common subexpressions",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
 
+CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
+               global.optimize.doprfunr, opt, saacyc)
+
 CYCLEPHASEFUN (ili, "Inferring loop invariant variables",
                IIPIdoIterationInvariantParameterInference, ALWAYS, opt, saacyc)
 
@@ -588,9 +591,6 @@ CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariant
 
 CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                global.optimize.dowls, opt, saacyc)
-
-CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
-               global.optimize.doprfunr, opt, saacyc)
 
 CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
                opt, saacyc)

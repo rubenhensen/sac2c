@@ -520,27 +520,19 @@ InvokeCFprfAndFlattenExtrema (node *arg_node, info *arg_info, travfun_p fn, node
 
     DBUG_ENTER ();
 
-    // temporary code for testing POGO // TEMP
-    if (global.optimize.dopogo && POGOisPogoPrf (PRF_PRF (arg_node))) {
-        DBUG_PRINT ("Skipping CF for POGO");
-    } else {
-
-        if ((NULL == res) && (NULL != fn)) {
-            res = fn (arg_node, arg_info);
-            if ((NULL != res) && (NULL != INFO_AVISMIN (arg_info))) {
-                ex = FLATGexpression2Avis (INFO_AVISMIN (arg_info),
-                                           &INFO_VARDECS (arg_info),
-                                           &INFO_PREASSIGN (arg_info), NULL);
-                INFO_AVISMIN (arg_info) = ex;
-            }
-            if ((NULL != res) && (NULL != INFO_AVISMAX (arg_info))) {
-                ex = FLATGexpression2Avis (INFO_AVISMAX (arg_info),
-                                           &INFO_VARDECS (arg_info),
-                                           &INFO_PREASSIGN (arg_info), NULL);
-                INFO_AVISMAX (arg_info) = ex;
-            }
+    if ((NULL == res) && (NULL != fn)) {
+        res = fn (arg_node, arg_info);
+        if ((NULL != res) && (NULL != INFO_AVISMIN (arg_info))) {
+            ex = FLATGexpression2Avis (INFO_AVISMIN (arg_info), &INFO_VARDECS (arg_info),
+                                       &INFO_PREASSIGN (arg_info), NULL);
+            INFO_AVISMIN (arg_info) = ex;
         }
-    } // TEMP
+        if ((NULL != res) && (NULL != INFO_AVISMAX (arg_info))) {
+            ex = FLATGexpression2Avis (INFO_AVISMAX (arg_info), &INFO_VARDECS (arg_info),
+                                       &INFO_PREASSIGN (arg_info), NULL);
+            INFO_AVISMAX (arg_info) = ex;
+        }
+    }
 
     DBUG_RETURN (res);
 }

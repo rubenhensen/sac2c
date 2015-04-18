@@ -1667,7 +1667,7 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
  *        The monotonically increasing global.polylib_filenumber
  *        is for debugging, as we will generate MANY files.
  *
- * @param: exprscwl, exprs2, exprs3, exprs4 - integer N_exprs chains of
+ * @param: exprspwl, exprscwl, exprs3, exprs4 - integer N_exprs chains of
  *         PolyLib input matrices
  * @param: idlist - an N_exprs chain of N_id nodes that are referenced
  *         by the affine function trees in the exprs chains.
@@ -1677,7 +1677,7 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
  *
  *****************************************************************************/
 int
-PHUTcheckIntersection (node *exprscwl, node *exprspwl, node *exprs3, node *exprs4,
+PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprs3, node *exprs4,
                        node *exprsuf, node *exprsuc, node *idlist, char opcode)
 {
 #define MAXLINE 1000
@@ -1707,19 +1707,21 @@ PHUTcheckIntersection (node *exprscwl, node *exprspwl, node *exprs3, node *exprs
     DBUG_PRINT ("Polylib res filename: %s", polyhedral_res_filename);
     matrix_file = FMGRwriteOpen (polyhedral_arg_filename, "w");
 
+    numvars = TCcountExprs (idlist);
+#ifdef DEADCODE
     // We may have NULL exprs, as in the unit test
     //  ~/sac/testsuite/optimizations/pogo/guard_val_lt_val_S.sac
     //
     // If so, we cheat by making a DUP for the missing one. This is not exactly
     // efficient for Polylib (we should have a different
     // call that only expects fewer polyhedra), but it is simple to implement here.
-    numvars = TCcountExprs (idlist);
     exprscwl = (NULL == exprscwl) ? PHUTgenerateIdentityExprs (numvars) : exprscwl;
     exprspwl = (NULL == exprspwl) ? PHUTgenerateIdentityExprs (numvars) : exprspwl;
+#endif // DEADCODE
     exprs3 = (NULL == exprs3) ? PHUTgenerateIdentityExprs (numvars) : exprs3;
     exprs4 = (NULL == exprs4) ? PHUTgenerateIdentityExprs (numvars) : exprs4;
-    Exprs2File (matrix_file, exprscwl, idlist, "cwl");
     Exprs2File (matrix_file, exprspwl, idlist, "pwl");
+    Exprs2File (matrix_file, exprscwl, idlist, "cwl");
     Exprs2File (matrix_file, exprs3, idlist, "eq");
     Exprs2File (matrix_file, exprs4, idlist, "cfn");
     Exprs2File (matrix_file, exprsuf, idlist, "ufn");
@@ -1872,7 +1874,7 @@ PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv, int numvars)
 
     res = GenerateMatrixRow (numvars, PLFUNEQUALITY);
     res = AddValueToNamedColumn (cwliv, 1, res);
-    res = AddValueToNamedColumn (pwliv, 1, res);
+    res = AddValueToNamedColumn (pwliv, -1, res);
 
     DBUG_RETURN (res);
 }

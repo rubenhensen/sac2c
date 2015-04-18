@@ -260,6 +260,7 @@ CWLEarg (node *arg_node, info *arg_info)
 
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
+    DBUG_PRINT ("Setting DFM for argument %s", AVIS_NAME (ARG_AVIS (arg_node)));
     DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, ARG_AVIS (arg_node));
 
     DBUG_RETURN (arg_node);

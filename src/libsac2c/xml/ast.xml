@@ -10940,6 +10940,9 @@ N_tfarg :
         <flag name="DoUnroll" />
         <flag name="IsModified">
           <description> Used in wltransform.  </description>
+            <phases>
+              <range from="wlt_wltr" to="wlt_wltr" />
+            </phases>
         </flag>
 	<flag name="IsDynamic" default="FALSE">
 	  <description>Signals that this stride has bounds or a step that are not statically known.</description>
