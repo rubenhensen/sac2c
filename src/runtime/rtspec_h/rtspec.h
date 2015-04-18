@@ -70,11 +70,6 @@
 #define SAC_WE_DECL_FUN(name) static char *SAC_function = name;
 
 /*
- * Declare the function pointer used to call the wrapper.
- */
-#define SAC_WE_DECL_FN_POINTER(rettype, ...) rettype (*SAC_func_ptr) (__VA_ARGS__);
-
-/*
  * Declare the integer array that will hold the shapes of the arguments at
  * runtime.
  */
@@ -107,16 +102,6 @@
  */
 #define SAC_WE_ENQ_REQ(types, name)                                                      \
     SAC_enqueueRequest (SAC_function, #types, SAC_shapes, size, SAC_reg_obj);
-
-/*
- * Print the 'update' of the function pointer.
- *
- * @TODO
- * GCC prints a warning for this code because the types of SAC_func_ptr and
- * SAC_reg_obj->func_ptr are different. Maybe adding a cast here could remove
- * this warning?
- */
-#define SAC_WE_PTR_UPDATE() SAC_func_ptr = SAC_reg_obj->func_ptr;
 
 /*
  * Print the correct indexation of the descriptor to get the dimensions of a
@@ -155,11 +140,11 @@
  * - update the function pointer.
  * - use the function pointer to call the 'normal' wrapper.
  */
-#define SAC_WE_FUNAP2(types, name, ...)                                                  \
+#define SAC_WE_FUNAP2(types, name)                                                       \
     SAC_WE_REGISTRATION (SAC_module, name)                                               \
-    SAC_WE_ENQ_REQ (types, name)                                                         \
-    SAC_WE_PTR_UPDATE ()                                                                 \
-    (*SAC_func_ptr) (__VA_ARGS__);
+    SAC_WE_ENQ_REQ (types, name)
+
+#define SAC_WE_PTR_CAST(rettype, ...) ((rettype (*) (__VA_ARGS__))SAC_reg_obj->func_ptr)
 
 #else /* SAC_DO_RTSPEC */
 

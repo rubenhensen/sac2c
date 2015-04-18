@@ -2234,6 +2234,24 @@ MakeFunApArgs (node *ap)
         }
     }
 
+    if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
+        argtab_t *fundef_argtab;
+
+        fundef_argtab = FUNDEF_ARGTAB (fundef);
+
+        DBUG_ASSERT (fundef_argtab != NULL, "no fundef_argtab found!");
+
+        /* return value */
+        DBUG_ASSERT (fundef_argtab->ptr_in[0] == NULL, "fundef_argtab inconsistent!");
+        if (fundef_argtab->ptr_out[0] == NULL) {
+            icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
+        } else {
+            icm_args = TBmakeExprs (MakeBasetypeArg_NT (TYtype2OldType (
+                                      RET_TYPE (fundef_argtab->ptr_out[0]))),
+                                    icm_args);
+        }
+    }
+
     icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
 
     DBUG_RETURN (icm_args);
