@@ -105,8 +105,8 @@ ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, int vararg_cnt
 #include "icm_trace.c"
 #undef WE_FUN_AP
 
-    INDENT;
     if (!STReq (retname, "")) {
+        INDENT;
         fprintf (global.outfile, "%s = ", retname);
         fprintf (global.outfile, "%s(", name);
     } else {
@@ -135,6 +135,9 @@ ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, int vararg_cnt
             }
         }
 
+        fprintf (global.outfile, "#pragma GCC diagnostic push\n");
+        fprintf (global.outfile, "#pragma GCC diagnostic ignored \"-Wpedantic\"\n");
+        INDENT;
         fprintf (global.outfile, "SAC_WE_FUNAP2(%s, %s)\n", types, name);
         INDENT;
         fprintf (global.outfile, "SAC_WE_PTR_CAST( ");
@@ -157,6 +160,8 @@ ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, int vararg_cnt
                           vararg[i + 2], vararg[i + 1]));
 
     fprintf (global.outfile, ");\n");
+
+    fprintf (global.outfile, "#pragma GCC diagnostic pop\n");
 
     DBUG_RETURN ();
 }
