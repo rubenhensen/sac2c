@@ -311,8 +311,17 @@ SAC_handleRequest (queue_node_t *request)
     static int counter = 0;
 
     if (request->shape_info == NULL) {
+        free (request);
         // fprintf(stderr, "Could not optimize as shape information is missing for "
         //        "function %s!", request->func_name);
+        return;
+    }
+
+    /*
+     * Only process requests that haven't been processed yet.
+     */
+    if (wasProcessed (request)) {
+        free (request);
         return;
     }
 
@@ -320,13 +329,6 @@ SAC_handleRequest (queue_node_t *request)
      * Encode the shapes of the arguments.
      */
     char *shape_info = encodeShapes (request->shape_info);
-
-    /*
-     * Only process requests that haven't been processed yet.
-     */
-    if (wasProcessed (request)) {
-        return;
-    }
 
     /*
      * Get a new module name so we don't have name clashes of the generated library files.
@@ -453,6 +455,10 @@ SAC_finalizeController (void)
         pthread_join (controller_threads[i], NULL);
     }
 
+    free (controller_threads);
+
+    SAC_deinitializeQueue ();
+
     int success;
 
     if (tmpdir_name != NULL) {
@@ -466,6 +472,7 @@ SAC_finalizeController (void)
         success = system (rtspec_syscall);
 
         free (rtspec_syscall);
+        free (tmpdir_name);
     }
 }
 

@@ -53,14 +53,6 @@ typedef struct reqqueue {
 } reqqueue_t;
 
 /**
- * @brief Structure for holding processed requests.
- */
-typedef struct list {
-    queue_node_t *node;
-    struct list *next;
-} list_t;
-
-/**
  * @var  request_queue
  *
  * @brief Central administrative object.
@@ -75,6 +67,8 @@ int wasProcessed (queue_node_t *node);
 void addProcessed (queue_node_t *node);
 
 void SAC_initializeQueue (int trace);
+
+void SAC_deinitializeQueue ();
 
 queue_node_t *SAC_createNode (char *, char *, int *, int, reg_obj_t *);
 

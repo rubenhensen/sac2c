@@ -30,7 +30,7 @@ pthread_mutex_t processed_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t empty_queue_cond = PTHREAD_COND_INITIALIZER;
 
 static int do_trace;
-static list_t *processed;
+reqqueue_t *processed = NULL;
 
 /** <!--*******************************************************************-->
  *
@@ -48,11 +48,11 @@ static list_t *processed;
 int
 wasProcessed (queue_node_t *node)
 {
-    list_t *current;
+    queue_node_t *current;
 
     pthread_mutex_lock (&processed_mutex);
 
-    if (processed->node == NULL) {
+    if (processed->first == NULL) {
         if (do_trace == 1) {
             SAC_TR_Print ("Runtime specialization: Nothing processed yet.");
         }
@@ -60,29 +60,21 @@ wasProcessed (queue_node_t *node)
         return 0;
     }
 
-    current = processed;
+    current = processed->first;
     while (current != NULL) {
         if (do_trace == 1) {
             SAC_TR_Print ("Runtime specialization: Checking queue.");
         }
-        if (current->node != NULL) {
-            if (current->node->shape_info_size == node->shape_info_size
-                && (memcmp (current->node->shape_info, node->shape_info,
-                            sizeof (int) * node->shape_info_size)
-                    == 0)
-                && (strcmp (current->node->func_name, node->func_name) == 0)) {
-                if (do_trace == 1) {
-                    SAC_TR_Print ("Runtime specialization: Already processed.");
-                }
-                pthread_mutex_unlock (&processed_mutex);
-                return 1;
-            }
-        } else {
+        if (current->shape_info_size == node->shape_info_size
+            && (memcmp (current->shape_info, node->shape_info,
+                        sizeof (int) * node->shape_info_size)
+                == 0)
+            && (strcmp (current->func_name, node->func_name) == 0)) {
             if (do_trace == 1) {
-                SAC_TR_Print ("Runtime specialization: invalid queue node");
+                SAC_TR_Print ("Runtime specialization: Already processed.");
             }
             pthread_mutex_unlock (&processed_mutex);
-            return 0;
+            return 1;
         }
 
         current = current->next;
@@ -109,26 +101,20 @@ wasProcessed (queue_node_t *node)
 void
 addProcessed (queue_node_t *node)
 {
-    list_t *xnew = (list_t *)malloc (sizeof (list_t));
-
-    if (xnew == NULL) {
-        fprintf (stderr, "Could not allocate new processed request node!");
-
-        exit (EXIT_FAILURE);
-    }
-
     pthread_mutex_lock (&processed_mutex);
 
     /* Add the new processed request at the beginning of the list, this is
      * cheaper than at the end.
      */
-    if (processed->node != NULL) {
-        xnew->next = processed;
+    node->next = processed->first;
+
+    if (processed->first == NULL) {
+        processed->last = node;
     }
 
-    xnew->node = node;
+    processed->first = node;
 
-    processed = xnew;
+    processed->size++;
 
     pthread_mutex_unlock (&processed_mutex);
 }
@@ -175,10 +161,59 @@ SAC_initializeQueue (int trace)
 
     pthread_mutex_lock (&processed_mutex);
 
-    processed = (list_t *)malloc (sizeof (list_t));
+    /*
+     * Reinitialization, so we clean up first.
+     */
+    if (processed != NULL) {
+        SAC_freeReqqueue (processed->first);
+    }
 
-    processed->node = NULL;
-    processed->next = NULL;
+    processed = (reqqueue_t *)malloc (sizeof (reqqueue_t));
+
+    if (processed == NULL) {
+        fprintf (stderr, "ERROR -- \t "
+                         "[reqqueue.c: SAC_initializeQueue()] malloc().");
+
+        exit (EXIT_FAILURE);
+    }
+
+    processed->size = 0;
+    processed->first = NULL;
+    processed->last = NULL;
+
+    pthread_mutex_unlock (&processed_mutex);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn SAC_deinitializeQueue()
+ *
+ * @brief Deallocate memory for the central request queue.
+ *
+ ****************************************************************************/
+void
+SAC_deinitializeQueue ()
+{
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Deinitialize request queue.");
+    }
+
+    pthread_mutex_lock (&queue_mutex);
+
+    if (request_queue != NULL) {
+        SAC_freeReqqueue (request_queue->first);
+    }
+
+    free (request_queue);
+
+    pthread_mutex_unlock (&queue_mutex);
+    pthread_mutex_lock (&processed_mutex);
+
+    if (request_queue != NULL) {
+        SAC_freeReqqueue (processed->first);
+    }
+
+    free (processed);
 
     pthread_mutex_unlock (&processed_mutex);
 }

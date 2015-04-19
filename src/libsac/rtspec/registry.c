@@ -27,7 +27,7 @@
  * Each function has a local registry object, which is allocated and filled in
  * using this function.
  *
- * @return A registry objec.
+ * @return A registry object.
  *
  ****************************************************************************/
 reg_obj_t *
