@@ -110,6 +110,9 @@
  *  MT_LIB          Multithreading backend library: either pthread or lpel.
  *                  This is effective only when compiling with -mt enabled.
  *
+ *  DISTMEM_COMMLIB Communication library for distributed memory backend
+ *                  This is effective only when compiling for the DistMem backend
+ *
  *  OPT_O0          OPT_O0 specifies the C compiler option to disable optimizations.
  *                  This is triggered by the sac2c option -O0.
  *                  
@@ -272,6 +275,8 @@ RC_METHOD        :=  "local"
 BACKEND          :=  "C99"
 LIB_VARIANT      :=  ""
 MT_LIB           :=  "pthread"
+
+DISTMEM_COMMLIB  :=  ""
 
 OPT_O0           :=  "@OPT_O0@"
 OPT_O1           :=  "@OPT_O1@"
@@ -465,6 +470,26 @@ target openmp:
 
 CCFLAGS          += " @OPENMP_CFLAGS@"
 LDFLAGS          += " @OPENMP_CFLAGS@"
+
+
+/*****************************************************************************
+ * Distributed Memory targets
+ */
+target distmem:
+
+BACKEND          := "DistMem"
+DISTMEM_COMMLIB  := "GASNet"
+
+target distmem_gasmet::distmem:
+
+target distmem_armci::distmem:
+DISTMEM_COMMLIB  := "ARMCI"
+
+target distmem_gpi::distmem:
+DISTMEM_COMMLIB  := "GPI"
+
+target distmem_mpi::distmem:
+DISTMEM_COMMLIB  := "MPI"
 
 /*****************************************************************************
  * cuda targets

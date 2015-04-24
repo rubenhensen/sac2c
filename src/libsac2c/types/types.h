@@ -709,6 +709,8 @@ typedef struct {
     char *backend;
     char *mt_lib;
 
+    char *distmem_commlib;
+
     char *tree_cc;
     char *tree_ld;
     char *tree_ld_path;
@@ -922,6 +924,14 @@ typedef union {
 /*
  * New types for global
  */
+
+/* Communication libraries for the DistMem (distributed memory) backend. */
+typedef enum {
+#define DISTMEM_COMMLIBtype(type) type,
+#include "distmem_commlibs.mac"
+#undef DISTMEM_COMMLIBtype
+    DISTMEM_COMMLIB_UNKNOWN
+} distmem_commlib_t;
 
 /*
  * Read in optimization counters from optimize.mac

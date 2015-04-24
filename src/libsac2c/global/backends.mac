@@ -15,6 +15,7 @@ BACKEND (BE_c99, "C99")
 BACKEND (BE_cuda, "CUDA")
 BACKEND (BE_cudahybrid, "CudaHybrid")
 BACKEND (BE_omp, "omp")
+BACKEND (BE_distmem, "DistMem")
 
 #undef BACKENDtype
 #undef BACKENDstring

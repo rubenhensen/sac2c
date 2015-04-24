@@ -102,6 +102,8 @@ static struct {
   {"BACKEND", str, &global.config.backend},
   {"MT_LIB", str, &global.config.mt_lib},
 
+  {"DISTMEM_COMMLIB", str, &global.config.distmem_commlib},
+
   {"TREE_CC", str, &global.config.tree_cc},
   {"TREE_LD", str, &global.config.tree_ld},
   {"TREE_LD_PATH", str, &global.config.tree_ld_path},
@@ -780,6 +782,8 @@ xfree_configuration (configuration_t conf)
         MEMfree (conf.backend);
     if (conf.mt_lib)
         MEMfree (conf.mt_lib);
+    if (conf.distmem_commlib)
+        MEMfree (conf.distmem_commlib);
     if (conf.tree_cc)
         MEMfree (conf.tree_cc);
     if (conf.tree_ld)

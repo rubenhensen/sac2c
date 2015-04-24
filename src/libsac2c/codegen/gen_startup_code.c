@@ -252,6 +252,26 @@ PrintGlobalSwitches (void)
     case BE_omp:
         fprintf (global.outfile, "#define SAC_BACKEND OMP\n");
         break;
+    case BE_distmem:
+        fprintf (global.outfile, "#define SAC_BACKEND DISTMEM\n");
+        switch (global.distmem_commlib) {
+        case DISTMEM_COMMLIB_GASNET:
+            fprintf (global.outfile, "#define SAC_DISTMEM_COMMLIB_GASNET\n");
+            break;
+        case DISTMEM_COMMLIB_GPI:
+            fprintf (global.outfile, "#define SAC_DISTMEM_COMMLIB_GPI\n");
+            break;
+        case DISTMEM_COMMLIB_MPI:
+            fprintf (global.outfile, "#define SAC_DISTMEM_COMMLIB_MPI\n");
+            break;
+        case DISTMEM_COMMLIB_ARMCI:
+            fprintf (global.outfile, "#define SAC_DISTMEM_COMMLIB_ARMCI\n");
+            break;
+        default:
+            DBUG_UNREACHABLE ("Unknown distributed memory communication library");
+            break;
+        }
+        break;
     default:
         DBUG_UNREACHABLE ("Unknown backend");
         break;
@@ -778,6 +798,27 @@ GSCprintMainC99 (void)
     DBUG_RETURN ();
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   void GSCprintMainDistMem()
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+GSCprintMainDistMem (void)
+{
+
+    DBUG_ENTER ();
+
+    GSCprintMainC99 ();
+
+    DBUG_RETURN ();
+}
+
 static void
 GSCprintMainMuTC (void)
 {
@@ -839,6 +880,9 @@ GSCprintMain (void)
         break;
     case BE_omp:
         GSCprintMainC99 ();
+        break;
+    case BE_distmem:
+        GSCprintMainDistMem ();
         break;
     default:
         DBUG_UNREACHABLE ("unknown backend");

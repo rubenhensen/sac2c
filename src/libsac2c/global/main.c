@@ -63,6 +63,12 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
 
     GLOBsetupBackend ();
 
+    /* For the distributed memory backend
+       determine the communication library setting. */
+    if (global.backend == BE_distmem) {
+        GLOBsetupDistMemCommLib ();
+    }
+
     FMGRsetupPaths ();
     FMGRcreateTmpDir ();
 

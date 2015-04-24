@@ -1153,6 +1153,11 @@ GLOBAL (int, cuda_2d_block_y, 0, xfree_dummy, )
 GLOBAL (int, cuda_blocking_factor, 0, xfree_dummy, )
 
 /*
+ * DistMem backend options
+ */
+GLOBAL (distmem_commlib_t, distmem_commlib, DISTMEM_COMMLIB_GASNET, xfree_dummy, )
+
+/*
  * cygwin compatibility globals
  */
 #if IS_CYGWIN
