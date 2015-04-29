@@ -4,6 +4,30 @@
  *
  *  Overview: These functions are intended to provide useful
  *            manipulation services for polyhedron-based analysis.
+ *            At present, we only support ISL. PolyLib support
+ *            was removed 2015-05-25.
+ *
+ *
+ * ISL input data Terminology, taken from http://barvinok.gforge.inria.fr/tutorial.pdf,
+ *      Sven Verdoolaege's ISCC tutorial.
+ *
+ * A triangular "statement instance set" such as S:
+ *
+ *     for (i = 1; i <= n; ++i)
+ *       for (j = 1; j <= i; ++j)
+ *        **  S  **
+ *
+ * is represented as this input to ISL:
+ *
+ *          [n] -> { S[i,j] : 1 <= i <= n and 1 <= j <= i }
+ *                            ---- Presburger formula
+ *                     --- set variables
+ *                   - optional name of space
+ *           - symbolic constants
+ *
+ *    A Presburger formula is a union of one or more constraints.
+ *
+ *
  *
  *****************************************************************************/
 
@@ -43,6 +67,10 @@
 #include "symbolic_constant_simplification.h"
 #include "with_loop_utilities.h"
 #include "lacfun_utilities.h"
+#include "LookUpTable.h"
+
+// There is a not-an-N_prf value for N_prf somewhere, but I can't find it.
+#define NOPRFOP 0
 
 /** <!--********************************************************************-->
  *
@@ -50,20 +78,16 @@
  * @{
  *
  *****************************************************************************/
-typedef enum { MODE_enumeratevars, MODE_generatematrix, MODE_clearvars } trav_mode_t;
-
 struct INFO {
-    trav_mode_t mode;
-    int polylibnumvars;
     node *fundef;
+    lut_t *varlut;
 };
 
 /**
  * Macro definitions for INFO structure
  */
-#define INFO_MODE(n) ((n)->mode)
-#define INFO_POLYLIBNUMVARS(n) ((n)->polylibnumvars)
 #define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_VARLUT(n) ((n)->varlut)
 
 static info *
 MakeInfo (void)
@@ -73,9 +97,8 @@ MakeInfo (void)
     DBUG_ENTER ();
 
     result = (info *)MEMmalloc (sizeof (info));
-    INFO_MODE (result) = MODE_clearvars;
-    INFO_POLYLIBNUMVARS (result) = 0;
     INFO_FUNDEF (result) = NULL;
+    INFO_VARLUT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -103,6 +126,7 @@ FreeInfo (info *info)
  * @param An N_avis, N_id, or N_ids node
  *
  * @return the associated N_avis node, or NULL if this is an N_num
+ *         or if arg_node is NULL
  *
  ******************************************************************************/
 static node *
@@ -112,122 +136,167 @@ Node2Avis (node *arg_node)
 
     DBUG_ENTER ();
 
-    switch (NODE_TYPE (arg_node)) {
-    case N_id:
-        avis = ID_AVIS (arg_node);
-        break;
+    if (NULL != arg_node) {
+        switch (NODE_TYPE (arg_node)) {
+        case N_id:
+            avis = ID_AVIS (arg_node);
+            break;
 
-    case N_ids:
-        avis = IDS_AVIS (arg_node);
-        break;
+        case N_ids:
+            avis = IDS_AVIS (arg_node);
+            break;
 
-    case N_avis:
-        avis = arg_node;
-        break;
+        case N_avis:
+            avis = arg_node;
+            break;
 
-    case N_num:
-    case N_bool:
-        break;
+        case N_num:
+        case N_bool:
+            break;
 
-    default:
-        DBUG_ASSERT (NULL != avis, "Expected N_id, N_avis, or N_ids node");
+        default:
+            DBUG_ASSERT (NULL != avis, "Expected N_id, N_avis, or N_ids node");
+        }
     }
+
     DBUG_RETURN (avis);
 }
 
 /** <!-- ****************************************************************** -->
  *
- * @fn void CheckExprsChain( node *exprs, info *arg_info)
+ * @fn node *Node2Value( node *arg_node)
  *
- * @brief Ensure that exprs chain consists entirely of N_num nodes,
- *        if we are generating matrix.
+ * @brief Find N_avis node for arg_node, unless it is
+ *        an N_num/N_bool, in which case we XXX
  *
- * @param An N_exprs chain
+ * @param An N_avis, N_id, N_num, N_bool, or N_ids node
  *
- * @return void
+ * @return An N_id if the argument is an N_id, N_avis, or N_ids.
+ *         Otherwise, the associated N_avis node,
  *
  ******************************************************************************/
-static void
-CheckExprsChain (node *exprs, info *arg_info)
+static node *
+Node2Value (node *arg_node)
 {
-// expensive:  #define PARANOIA
-#ifdef PARANOIA
-    node *tmp;
-    node *el;
-    int i = 1;
-#endif // PARANOIA
+    node *z = NULL;
+    constant *con = NULL;
 
     DBUG_ENTER ();
 
-#ifdef PARANOIA
-    tmp = exprs;
-    if (MODE_generatematrix == INFO_MODE (arg_info)) {
-        while (tmp != NULL) {
-            el = EXPRS_EXPR (tmp);
-            //  DBUG_EXECUTE( PRTdoPrintNode( el));
-            DBUG_ASSERT ((N_num == NODE_TYPE (el)) || (N_id == NODE_TYPE (el)),
-                         "Not N_num or N_id!");
-            //  DBUG_PRINT ("\n");
-            tmp = EXPRS_NEXT (tmp);
-            ;
+    if (NULL != arg_node) {
+        z = Node2Avis (arg_node);
+        if (NULL != z) {
+            if (TYisAKV (AVIS_TYPE (z))) {
+                if (TUisIntScalar (AVIS_TYPE (z))) {
+                    z = TBmakeNum (TUtype2Int (AVIS_TYPE (z)));
+                } else {
+                    if (TUisBoolScalar (AVIS_TYPE (z))) {
+                        con = TYgetValue (AVIS_TYPE (z)); // con is NOT a copy!
+                        z = TBmakeNum (COconst2Int (con));
+                    } else {
+                        DBUG_ASSERT (FALSE, "Expected N_num or N_bool");
+                    }
+                }
+            } else {
+                z = TBmakeId (z);
+            }
+        } else {
+            switch (NODE_TYPE (arg_node)) {
+            case N_num:
+            case N_bool:
+                z = DUPdoDupNode (arg_node);
+                break;
+
+            default:
+                DBUG_ASSERT (FALSE,
+                             "Expected N_id, N_avis, N_ids, N_num, or N_bool node");
+            }
         }
     }
 
-#ifdef VERYWRONG
-    if (MODE_enumeratevars == INFO_MODE (arg_info)) {
-        while (tmp != NULL) {
-            el = EXPRS_EXPR (tmp);
-            DBUG_ASSERT (i == AVIS_POLYLIBCOLUMNINDEX (ID_AVIS (el)), "Bad numbering");
-            tmp = EXPRS_NEXT (tmp);
-            ;
-        }
-    }
-#endif // VERYWRONG
-#endif // PARANOIA
-#undef PARANOIA
+    DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn void InsertVarIntoLut( node *arg_node, lut_t *varlut)
+ *
+ * @brief Insert N_id or N_avis into varlut, if not already there.
+ *        We use varlut LUT solely as a way to build the set of unique
+ *        set variable names.
+ *
+ * @param arg_node: An N_id or N_avis
+ *        arg_info: your basic arg_info
+ *
+ * @return none
+ *
+ ******************************************************************************/
+static void
+InsertVarIntoLut (node *arg_node, lut_t *varlut)
+{
+    node *avis;
+    node *founditem;
+
+    DBUG_ENTER ();
+
+    avis = Node2Avis (arg_node);
+    DBUG_ASSERT (NULL != avis, "Expected N_id or N_avis");
+    LUTupdateLutP (varlut, avis, avis, (void **)&founditem);
+    DBUG_PRINT ("Inserted %s into VARLUT", AVIS_NAME (avis));
 
     DBUG_RETURN ();
 }
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *GenerateMatrixRow( int polylibcols, int relfn);
+ * @fn char *Prf2Isl( prf arg_node)
  *
- * @brief Generate a row of a polyhedral matrix.
- *        This is an N_exprs chain of length polylibcols, containing all zeros.
- *        This chain, suitably modified, will comprise one row
- *        of the polylib input matrix.
+ * @brief Convert an N_prf PRF_PRF into
  *
- *        The chain length is the number of distinct variables
- *        in the computation, plus one for the equality/inequality
- *        marker, one for the constant last element of each matrix row,
- *        and two for PLWID and PLAPV.
+ * @param arg_node an N_prf.
  *
- * @param numvars: An integer, specifying the number of
- *                 distinct variables in the matrix, plus overhead columns
- *                 for polyhedral function, etc.
- *
- *       relfn: The function specified by this matrix row, either
- *              == 0 or >= 0
- *
- * @return the generated chain, with extra elements, as noted above.
+ * @return An pointer to a character string representing some affine
+ *         function on scalar arguments.
  *
  ******************************************************************************/
-static node *
-GenerateMatrixRow (int numvars, int relfn)
+static char *
+Prf2Isl (prf arg_node)
 {
-    node *z = NULL;
-    int cnt;
+    char *z = NULL;
 
     DBUG_ENTER ();
 
-    cnt = numvars + PLVARS;
-    DBUG_PRINT ("Generating matrix row of length %d", cnt + 1);
+    switch (arg_node) {
+    default:
+        DBUG_ASSERT (FALSE, "Did not find affine function in table");
+        break;
 
-    z = TBmakeExprs (TBmakeNum (relfn), NULL); // The Polylib "function".
-    while (cnt > 0) {
-        z = TCappendExprs (z, TBmakeExprs (TBmakeNum (0), NULL));
-        cnt--;
+    case F_lt_SxS:
+    case F_val_lt_val_SxS:
+        z = "<";
+        break;
+    case F_le_SxS:
+    case F_val_le_val_SxS:
+        z = "<=";
+        break;
+    case F_eq_SxS:
+        z = "=";
+        break;
+    case F_ge_SxS:
+        z = ">=";
+        break;
+    case F_gt_SxS:
+        z = ">";
+        break;
+    case F_add_SxS:
+        z = "+";
+        break;
+    case F_sub_SxS:
+        z = "-";
+        break;
+    case F_mul_SxS:
+        z = "*";
+        break;
     }
 
     DBUG_RETURN (z);
@@ -235,261 +304,241 @@ GenerateMatrixRow (int numvars, int relfn)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *PHUTgenerateIdentityExprs( int numvars)
+ * @fn void GetIslSetVariablesFromLut(
  *
- * @brief Generate one row of a polyhedral matrix, suitable as an identity
- *        polyhedron in an intersect operation.
+ * @brief Build the set variables used by the contraints.
  *
- * @return An N_exprs chain of length numvars, containing all zeros,
- *         representing "0 == 0"
+ *        The result is an N_exprs chain of the N_avis nodes comprising the
+ *        set variables.
  *
- ******************************************************************************/
-node *
-PHUTgenerateIdentityExprs (int numvars)
-{
-    node *z;
-
-    DBUG_ENTER ();
-
-    z = GenerateMatrixRow (numvars, PLFUNEQUALITY);
-
-    DBUG_RETURN (z);
-}
-
-/** <!-- ****************************************************************** -->
+ *           [i,j,k...]
  *
- * @fn node *AddValueToColumn()
+ * @param varlut: a lut of nodes that comprise the ISL set variables.
  *
- * @brief Perform prow[ col]+ = incr, where col is the column index
- *        in the polyhedral matrix.
- *
- * @param col: An integer
- *        incr: The value to be added for non-constants, or the multiplier for
- *              constants.
- *        prow: An N_exprs chain, the polylib row of interest
- *        arg_info: as usual.
- *
- * @return The updated prow
+ * @return An N_exprs chain of N_avis nodes
  *
  ******************************************************************************/
-static node *
-AddValueToColumn (int col, int incr, node *prow)
-{
-    node *z;
-
-    DBUG_ENTER ();
-
-    incr = incr + NUM_VAL (TCgetNthExprsExpr (col, prow));
-    z = TCputNthExprs (col, prow, TBmakeNum (incr));
-
-    DBUG_RETURN (z);
-}
-
-/** <!-- ****************************************************************** -->
- *
- * @fn node *AddIntegerToConstantColumn()
- *
- * @brief Perform prow[ constantcol]+ = incr, where constantcol
- *        is the last column of the Polylib prow, indicating a constant.
- *
- * @param incr: An integer to be added to the constant column of prow.
- * @param prow: An N_exprs chain representing a row of a Polylib constraint.
- * @param arg_info: as usual.
- *
- * @return The updated matrix
- *
- ******************************************************************************/
-static node *
-AddIntegerToConstantColumn (int incr, node *prow)
+static void *
+GetIslSetVariablesFromLutOne (void *rest, void *avis)
 {
     node *z = NULL;
-    int col;
 
     DBUG_ENTER ();
 
-    col = TCcountExprs (prow) - 1;
-    z = AddValueToColumn (col, incr, prow);
-
-    DBUG_RETURN (z);
-}
-
-/** <!-- ****************************************************************** -->
- *
- * @fn node *AddValueToNamedColumn()
- *
- * @brief Perform prow[ col]+ = incr, where col is a previously assigned
- *        column index in the arg_node's N_avis. If col is -1, then
- *        the arg_node is a constant, and we add the constant's value,
- *        times incr, to the last column of prow;
- *
- * @param arg_node: An N_id node or an N_ids node or an N_avis node
- *                  or an N_num node
- *        incr: The value to be added for non-constants, or the multiplier for
- *              constants.
- *        prow: An N_exprs chain, the polylib row of interest
- *        arg_info: as usual.
- *
- * @return The updated prow
- *
- ******************************************************************************/
-static node *
-AddValueToNamedColumn (node *arg_node, int incr, node *prow)
-{
-    node *z = NULL;
-    int col;
-    node *avis = NULL;
-
-    DBUG_ENTER ();
-
-    avis = Node2Avis (arg_node);
-
-    col = AVIS_POLYLIBCOLUMNINDEX (avis);
-    if (-1 == col) {
-        DBUG_PRINT ("Missing column index in avis for %s!", AVIS_NAME (avis));
-        // FIXME
-        DBUG_ASSERT (TYisAKV (AVIS_TYPE (avis)),
-                     "Failure to assign column index to non-constant");
-        DBUG_ASSERT (FALSE, "how did we get here?");
-        incr = incr * TUtype2Int (AVIS_TYPE (avis));
-        // wrong;
-        col = TCcountExprs (prow) - 1; // (last) column, for constants
+    if (NULL != avis) {
+        DBUG_PRINT ("Found %s in VARLUT", AVIS_NAME (avis));
+        z = TCappendExprs (TBmakeExprs (TBmakeId (avis), NULL), rest);
     }
-    z = AddValueToColumn (PLVARS + col, incr, prow);
+
+    DBUG_RETURN (z);
+}
+
+static node *
+GetIslSetVariablesFromLut (lut_t *varlut)
+{
+    node *z;
+    node *head = NULL;
+
+    DBUG_ENTER ();
+
+    z = (node *)LUTfoldLutP (varlut, head, GetIslSetVariablesFromLutOne);
 
     DBUG_RETURN (z);
 }
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *PHUTcollectWlGeneratorMin( node *arg_node)
+ * @fn node *BuildIslGeneratorConstraint()
+ * @fn node *BuildIslSimpleConstraint()
  *
- * @brief arg_node may represent a WITHID element for a WL.
- *        If so, generate a polylib input matrix row of:
+ * @brief Build one constraint for ISL as a one-element N_exprs chain, containing
+ *        an N_exprs chain of the constraint.
  *
- *             k = WITHID_IDS iota arg_node
- *             arg_node - LB[k] >= 0
  *
- * @param arg_node: an N_avis
- * @param res: an N_exprs chain for the growing result, initially NULL.
+ *        A constraint is something like:  LB <= 3IV < UB
+ *                                                   ^---  nprf2
+ *                                                ^------- set variable
+ *                                               ^-------- stp (step/stride)
+ *                                            ^----------- nprf1
  *
- * @return If arg_node is a member of a WITHID, and we
- *         are in MODE_generatematrix, an N_exprs chain for the above relational,
- *         catenated to the incoming res.
- *         Otherwise, NULL.
+ *         If nprf2 is NULL, generate:     LB <= 3IV.
+ *         If stp is NULL, generate:       LB <= IV.
  *
+ *         BuildIslSimpleConstraint is similar, but it only accepts five arguments,
+ *         to build, e.g.,  ids = arg1 + arg2
+ *
+ * @param ids, arg1, arg2: N_id, N_avis or N_num nodes
+ *        nprf1, nprf2: the function(s) to be used, or NULL
+ *
+ * @return The result is a one-element N_exprs comprising an N_exprs chain
+ *         of the constraint, which will eventually
+ *         be assembled, then turned into text and written to file for passing to ISL.
+ *         The two-deep nesting is so that we can introduce "and" conjunctions
+ *         between the contraints when constructing the ISL input.
+ *
+ *         If arg1 or arg2 is AKV, we replace it by its value.
  *
  ******************************************************************************/
-node *
-PHUTcollectWlGeneratorMin (node *arg_node, info *arg_info, node *res)
+static node *
+BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg2)
 {
-    node *z = NULL;
-    node *partn;
-    node *bnd;
-    node *bndel;
-    int k;
-    int bndelnum = 0;
-    bool isnumbndel = FALSE;
+    node *z;
+    node *idsv;
+    node *arg1v;
+    node *arg2v;
 
     DBUG_ENTER ();
 
-    partn = AVIS_NPART (arg_node);
-    if ((NULL != partn)) {
-        bnd = GENERATOR_BOUND1 (PART_GENERATOR (partn));
-        bnd = WLUTfindArrayForBound (bnd);
-        k = LFUindexOfMemberIds (arg_node, WITHID_IDS (PART_WITHID (partn)));
-        if (-1 != k) {
-            bndel = TCgetNthExprsExpr (k, ARRAY_AELEMS (bnd));
-            isnumbndel = (N_num == NODE_TYPE (bndel));
-            if (isnumbndel) {
-                bndelnum = NUM_VAL (bndel);
-            } else {
-                res = PHUTcollectAffineExprsLocal (bndel, arg_info, res);
-            }
-            if ((MODE_generatematrix == INFO_MODE (arg_info))) {
-                DBUG_PRINT ("Generating lower bound for %s", AVIS_NAME (arg_node));
-                z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z = AddValueToNamedColumn (arg_node, 1, z); // arg_node
-                if (isnumbndel) {
-                    z = AddIntegerToConstantColumn (-bndelnum, z);
-                } else {
-                    z = AddValueToNamedColumn (bndel, -1, z); // -bndel
-                }
-                res = TCappendExprs (res, z);
-            }
+    DBUG_PRINT ("Generating simple constraint");
+    idsv = Node2Avis (ids); // We do not want AKV becoming N_num here.
+    DBUG_ASSERT (NULL != idsv, "Could not find N_avis");
+    idsv = TBmakeId (idsv);
+    arg1v = Node2Value (arg1);
+    arg2v = Node2Value (arg2);
+
+    z = TBmakeExprs (idsv, NULL);
+    z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf1, NULL), NULL));
+    z = TCappendExprs (z, TBmakeExprs (arg1v, NULL));
+
+    if (NOPRFOP != nprf2) {
+        z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf2, NULL), NULL));
+        if (NULL != arg2v) { // kludge for disjunction F_or_SxS
+            z = TCappendExprs (z, TBmakeExprs (arg2v, NULL));
         }
     }
 
-    CheckExprsChain (res, arg_info);
+    z = TBmakeExprs (z, NULL);
 
-    DBUG_RETURN (res);
+    DBUG_RETURN (z);
+}
+
+static node *
+BuildIslGeneratorConstraint (node *lb, prf nprf1, int stpnum, node *iv, prf nprf2,
+                             node *ub)
+{
+    node *z;
+    node *lbv;
+    node *ivv;
+    node *ubv;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Generating constraint");
+    lbv = Node2Value (lb);
+    ivv = Node2Value (iv);
+    ubv = Node2Value (ub);
+
+    z = TBmakeExprs (lbv, NULL);
+    z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf1, NULL), NULL));
+    if (stpnum > 1) {
+        z = TCappendExprs (z, TBmakeExprs (TBmakeNum (stpnum), NULL));
+    }
+
+    z = TCappendExprs (z, TBmakeExprs (ivv, NULL));
+    z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf2, NULL), NULL));
+    z = TCappendExprs (z, TBmakeExprs (ubv, NULL));
+
+    z = TBmakeExprs (z, NULL);
+
+    DBUG_RETURN (z);
 }
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *PHUTcollectWlGeneratorMax( node *arg_node)
+ * @fn node *findBoundEl( node *arg_node, node *bnd, int k, info *arg_info)
+ *
+ * @brief arg_node may represent a WITHID element for a WL.
+ *        If so, generate an ISL constraint of:
+ *
+ *             k = WITHID_IDS iota arg_node
+ *             arg_node >= LB[k]
+ *
+ * @param arg_node: an N_avis for the WITHID_IDS
+ *        bnd: GENERATOR_BOUND1 or GENERATOR_BOUND2
+ *        k: index into WITHID_IDS, which may be -1.
+ *
+ * @return If arg_node is a member of a WITHID, LB[k] or UB[k]
+ *         Otherwise, NULL.
+ *
+ ******************************************************************************/
+static node *
+findBoundEl (node *arg_node, node *bnd, int k, info *arg_info)
+{
+    node *z = NULL;
+
+    DBUG_ENTER ();
+
+    if ((NULL != AVIS_NPART (arg_node)) && (NULL != bnd)) {
+        if (-1 != k) {
+            z = TCgetNthExprsExpr (k, ARRAY_AELEMS (bnd));
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *PHUTcollectWlGenerator( node *arg_node)
  *
  * @brief arg_node is a WITHID element for a WL, shown here as iv.
- *        We generate polylib input matrix rows of:
+ *        The slightly messy part here is non-unit width, which entails
+ *        adding two new set variable, iv' and ivw.
  *
- *              iv < UB    --->
- *              UB > iv    --->
- *              (UB - iv) - 1  >= 0
+ *        Assume we have this WL generator:
+ *          lb <= iv < ub step stp width wid
  *
- *        If GENERATOR_STEP is not 1 (but constant), we also generate a complete
- *        Arithmetic Progression Vector, where N is left unspecified.
+ *        We generate ISL constraints as follows:
+ *         lb <= stp * iv' < ub
+ *         0 <= ivw < wid
+ *         iv = iv' + ivw
  *
- *       GENERATOR_WIDTH also enters the picture here. We consider it
- *       as an inner loop on w:
+ *        One key simplification here is that SAC requires that wid <= stp, and that
+ *        both be constants.
  *
- *              w >= 0
- *              WIDTH > w   --->   (WIDTH - w) > 0  ---> (WIDTH - w) -1 >= 0
- *              APV = LB + STEP*N
- *              iv = APV + w
+ *        NB. lb, ub, stp, and wid are N_num or N_id nodes.
  *
- *        NB. LB, UB, STEP, WIDTH may be N_num or N_id nodes. Sigh.
  *        See also S.B. Scholz: SAC - Efficient Support... p14
  *
  * @param An N_avis
  * @param res: an N_exprs chain for the growing result, initially NULL.
  *
- * @return If arg_node is a member of a WITHID, and we
- *         are in MODE_generatematrix, an N_exprs chain for the above relational,
- *         catenated to the incoming res.
+ * @return If arg_node is a member of a WITHID, an N_exprs chain for
+ *         the above relational, catenated to the incoming res.
  *
  *         Otherwise, NULL.
  *
  ******************************************************************************/
 static int
-StepOrWidthHelper (node *stpwid, int k)
-{ // Find  GENERATOR_STEP[k] or GENERATOR_WIDTH[k] as an integer.
-    // Result <= 0 means did not find same.
+StepOrWidthHelper (node *stpwid)
+{ // Find GENERATOR_STEP or GENERATOR_WIDTH element as an integer.
     int z = -1;
-    node *arr;
     pattern *pat;
     constant *con = NULL;
 
     if (NULL != stpwid) {
         pat = PMconst (1, PMAgetVal (&con), 0);
-        arr = WLUTfindArrayForBound (stpwid);
-        if (NULL != arr) {
-            arr = TCgetNthExprsExpr (k, ARRAY_AELEMS (arr));
-            if (PMmatchFlat (pat, arr)) {
+        if (NULL != stpwid) {
+            if (PMmatchFlat (pat, stpwid)) {
                 z = COconst2Int (con);
                 con = COfreeConstant (con);
+            } else {
+                DBUG_ASSERT (FALSE, "Found non-constant stride/width");
             }
         }
+        pat = PMfree (pat);
     }
     return (z);
 }
 
 node *
-PHUTcollectWlGeneratorMax (node *arg_node, info *arg_info, node *res)
+PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
 {
     node *z = NULL;
     node *partn;
-    node *lbel;
-    node *ubel;
-    int ubelnum;
+    node *lbel = NULL;
+    node *ubel = NULL;
+    node *iv = NULL;
     int stpnum = 1;
     int widnum = 1;
     int k;
@@ -497,169 +546,161 @@ PHUTcollectWlGeneratorMax (node *arg_node, info *arg_info, node *res)
     node *ub;
     node *stp;
     node *wid;
-    bool ubnum = FALSE;
+    node *stpel;
+    node *widel;
+    node *ivprimeavis;
+    node *ivwavis;
 
     DBUG_ENTER ();
 
     partn = AVIS_NPART (arg_node);
     if ((NULL != partn)) {
-        lb = GENERATOR_BOUND1 (PART_GENERATOR (partn));
-        ub = GENERATOR_BOUND2 (PART_GENERATOR (partn));
-        lb = WLUTfindArrayForBound (lb);
-        ub = WLUTfindArrayForBound (ub);
         k = LFUindexOfMemberIds (arg_node, WITHID_IDS (PART_WITHID (partn)));
         if (-1 != k) {
-            lbel = TCgetNthExprsExpr (k, ARRAY_AELEMS (lb));
-            ubel = TCgetNthExprsExpr (k, ARRAY_AELEMS (ub));
-            ubnum = (N_num == NODE_TYPE (ubel));
-            if (ubnum) {
-                ubelnum = NUM_VAL (ubel);
-            } else {
-                res = PHUTcollectAffineExprsLocal (ubel, arg_info, res);
-            }
-            if ((MODE_generatematrix == INFO_MODE (arg_info))) {
-                DBUG_PRINT ("Generating upper bound for %s", AVIS_NAME (arg_node));
-                z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                if (ubnum) {
-                    z = AddIntegerToConstantColumn (ubelnum, z);
-                } else {
-                    z = AddValueToNamedColumn (ubel, 1, z);
-                }
-                z = AddIntegerToConstantColumn (-1, z);
-                z = AddValueToNamedColumn (arg_node, -1, z); // -arg_node
+            iv = TCgetNthIds (k, WITHID_IDS (PART_WITHID (partn)));
+            lb = WLUTfindArrayForBound (GENERATOR_BOUND1 (PART_GENERATOR (partn)));
+            ub = WLUTfindArrayForBound (GENERATOR_BOUND2 (PART_GENERATOR (partn)));
+            stp = WLUTfindArrayForBound (GENERATOR_STEP (PART_GENERATOR (partn)));
+            wid = WLUTfindArrayForBound (GENERATOR_WIDTH (PART_GENERATOR (partn)));
+            lbel = findBoundEl (arg_node, lb, k, arg_info);
+            ubel = findBoundEl (arg_node, ub, k, arg_info);
+            stpel = findBoundEl (arg_node, stp, k, arg_info);
+            widel = findBoundEl (arg_node, wid, k, arg_info);
+            res = PHUTcollectAffineExprsLocal (lbel, arg_info, res);
+            res = PHUTcollectAffineExprsLocal (ubel, arg_info, res);
+
+            // Non-unit STEP, WIDTH support:
+            stpnum = StepOrWidthHelper (stpel);
+            widnum = StepOrWidthHelper (widel);
+
+            if (widnum > 1) {
+                // Generate new set variables for ISL. Apart from ISL analysis, these
+                // names are unused. I.e., we do not generate any code that uses them.
+                ivprimeavis
+                  = TBmakeAvis (TRAVtmpVarName ("pwlfiv"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                InsertVarIntoLut (ivprimeavis, INFO_VARLUT (arg_info));
+                ivwavis
+                  = TBmakeAvis (TRAVtmpVarName ("pwlfivw"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                InsertVarIntoLut (ivwavis, INFO_VARLUT (arg_info));
+
+                // Generate: 0 <= ivw < wid
+                z = BuildIslSimpleConstraint (TBmakeNum (0), F_le_SxS, ivwavis, F_lt_SxS,
+                                              widel);
                 res = TCappendExprs (res, z);
 
-                // Non-unit STEP support:
-                //
-                stp = GENERATOR_STEP (PART_GENERATOR (partn));
-                stpnum = StepOrWidthHelper (stp, k);
-                wid = GENERATOR_WIDTH (PART_GENERATOR (partn));
-                widnum = StepOrWidthHelper (wid, k);
-                if (stpnum > 1) {
-                    DBUG_PRINT ("Generating non-unit stride matrix row for %s",
-                                AVIS_NAME (arg_node));
-                    //  PLWID >= 0
-                    z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
-                                           PLFUNINEQUALITY);
-                    z = AddValueToColumn (PLWID, 1, z);
-                    res = TCappendExprs (res, z);
-
-                    // (WIDTH - PLWID) -1 >= 0
-                    z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
-                                           PLFUNINEQUALITY);
-                    z = AddValueToColumn (PLWID, -1, z);
-                    z = AddIntegerToConstantColumn (widnum - 1, z);
-                    res = TCappendExprs (res, z);
-
-                    // APV = LB + STEP*N --->  APV - LB - (STEP*N) = 0
-                    z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                    z = AddValueToColumn (PLAPV, 1, z); // APV
-                    if (N_num == NODE_TYPE (lbel)) {    // -LB
-                        z = AddIntegerToConstantColumn (-NUM_VAL (lbel), z);
-                    } else {
-                        z = AddValueToNamedColumn (ubel, -1, z);
-                    }
-                    z = AddValueToColumn (PLFAKEN, -stpnum, z); // -STEP*N
-                    res = TCappendExprs (res, z);
-
-                    // iv = APV + W --->    iv - APV - W = 0
-                    z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                    z = AddValueToNamedColumn (arg_node, 1, z); // iv
-                    z = AddValueToColumn (PLAPV, -1, z);        // -APV
-                    z = AddValueToColumn (PLWID, -1, z);        // -W
-                    res = TCappendExprs (res, z);
-                }
+                // Generate iv = iv' + ivw
+                z = BuildIslSimpleConstraint (iv, F_eq_SxS, ivprimeavis, F_add_SxS,
+                                              ivwavis);
+                res = TCappendExprs (res, z);
+            } else {
+                ivprimeavis = iv; // If no width, generate: lb <= stp * iv < ub
             }
+
+            DBUG_PRINT ("Generating generator constraints for %s", AVIS_NAME (arg_node));
+            z = BuildIslGeneratorConstraint (lbel, F_le_SxS, stpnum, ivprimeavis,
+                                             F_lt_SxS, ubel);
+            res = TCappendExprs (res, z);
         }
     }
-
-    CheckExprsChain (res, arg_info);
 
     DBUG_RETURN (res);
 }
 
 /** <!-- ****************************************************************** -->
- * @fn void Exprs2File( node *exprs, node *idlist, char *tag)
+ * @fn void Exprs2File( node *exprs, lut_t *varlut, char *tag)
  *
  *
- * @brief Append one polyhedron to polylib input file, from exprs and idlist
+ * @brief Append one ISL set of polyhedra to input file, from exprs and
+ *        set variable list in varlut.
  *
  * @param handle: output file handle
- * @param exprs: N_exprs chain of N_num nodes to be appended
- * @param idlist N_exprs chain of N_id nodes
+ * @param exprs: N_exprs chain of N_exprs chains. Each element of exprs
+ *               is a single constraint.
  *
  * @return void
  *
  ******************************************************************************/
 static void
-Exprs2File (FILE *handle, node *exprs, node *idlist, char *tag)
+Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
 {
     int i;
     int j;
-    int rows;
-    int cols;
-    int idcols;
-    int indx;
-    int val;
-    char *id;
-    node *avis;
+    int k;
+    int m;
+    int n;
+    char *v;
+    node *idlist;
+    node *expr;
+    node *exprsone;
+    char *txt;
+    bool wasor;
 
     DBUG_ENTER ();
 
-    idcols = TCcountExprs (idlist);
-    cols = idcols + PLVARS + 1; // polylib function column and constants column
-    rows = TCcountExprs (exprs) / cols;
-    DBUG_PRINT ("Writing %d rows and %d columns for tag %s", rows, cols, tag);
+    idlist = GetIslSetVariablesFromLut (varlut);
+    n = TCcountExprs (idlist);
+    fprintf (handle, "{ [");
 
-    fprintf (handle, "%d %d\n## %s: ", rows, cols, tag); // polyhedron descriptor
-    if (0 != rows) {
-        fprintf (handle, "##  PLFN PLWID PLAPV PLFAKEN ");
-        for (i = 0; i < idcols; i++) { // all but constant
-            fprintf (handle, " %s ", AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist))));
-        }
-        fprintf (handle, " CONSTANT \n\n");
-
-        for (i = 0; i < rows; i++) {
-            // human-readable-ish form
-            fprintf (handle, "#  ");
-            for (j = 0; j < idcols; j++) {
-                indx = j + (cols * i);
-                val = NUM_VAL (TCgetNthExprsExpr (PLVARS + indx, exprs));
-                avis = ID_AVIS (TCgetNthExprsExpr (j, idlist));
-                id = AVIS_NAME (avis);
-                DBUG_ASSERT ((j) == AVIS_POLYLIBCOLUMNINDEX (avis),
-                             "column index confusion");
-                if (0 != val) {
-                    if (j > 0) {
-                        fprintf (handle, " + ");
-                    }
-                    if (1 != val) {
-                        fprintf (handle, "%d*", val);
-                    }
-                    fprintf (handle, "%s", id);
-                }
-            }
-
-            // The constant
-            val = NUM_VAL (TCgetNthExprsExpr (((cols - 1) + (cols * i)), exprs));
-            if (0 != val) {
-                fprintf (handle, " %d ", val);
-            }
-
-            // The relational
-            val = NUM_VAL (TCgetNthExprsExpr ((cols * i), exprs));
-            fprintf (handle, "%s\n", (0 == val) ? " == 0" : " >= 0");
-
-            // machine-readable form
-            for (j = 0; j < cols; j++) {
-                indx = j + (cols * i);
-                val = NUM_VAL (TCgetNthExprsExpr (indx, exprs));
-                fprintf (handle, "%d ", val);
-            }
-            fprintf (handle, "\n"); // make reading easier
+    // Append set variables:  [i,j,k...]
+    for (i = 0; i < n; i++) {
+        fprintf (handle, " %s", AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist))));
+        if (i < (n - 1)) {
+            fprintf (handle, ",");
         }
     }
-    fprintf (handle, "\n");
+    fprintf (handle, "] : ");
+
+    // Append constraints
+    n = TCcountExprs (exprs);
+    for (j = 0; j < n; j++) {
+        wasor = FALSE;
+        exprsone = TCgetNthExprsExpr (j, exprs);
+        DBUG_ASSERT (N_exprs == NODE_TYPE (exprsone), "Wrong constraint type");
+        m = TCcountExprs (exprsone);
+        for (k = 0; k < m; k++) { // Emit one constraint
+            expr = TCgetNthExprsExpr (k, exprsone);
+            switch (NODE_TYPE (expr)) {
+            default:
+                DBUG_ASSERT (FALSE, "Unexpected constraint node type");
+                break;
+
+            case N_id:
+                fprintf (handle, "%s", AVIS_NAME (ID_AVIS (expr)));
+                break;
+
+            case N_prf:
+                if (F_or_SxS == PRF_PRF (expr)) {
+                    wasor = TRUE;
+                } else {
+                    fprintf (handle, "%s", Prf2Isl (PRF_PRF (expr)));
+                }
+                break;
+
+            case N_num:
+                fprintf (handle, "%d", NUM_VAL (expr));
+                break;
+
+            case N_bool:
+                v = BOOL_VAL (expr) ? "1" : "0";
+                fprintf (handle, "%s", v);
+                break;
+
+            case N_char: // Support for disjunction because ISL does not support !=
+                DBUG_ASSERT ('|' == CHAR_VAL (expr), "Expected disjunction |");
+                wasor = TRUE;
+                break;
+            }
+            fprintf (handle, " ");
+        }
+        if (j < (n - 1)) { // Handle conjunctions of constraints
+            txt = wasor ? "\n   or " : "\n   and ";
+            wasor = FALSE;
+            fprintf (handle, "%s", txt);
+        }
+    }
+    fprintf (handle, " } \n");
 
     DBUG_RETURN ();
 }
@@ -684,33 +725,37 @@ collectAffineNid (node *arg_node, info *arg_info, node *res)
     DBUG_ENTER ();
 
     avis = (N_id == NODE_TYPE (arg_node)) ? ID_AVIS (arg_node) : arg_node;
-    res = PHUTcollectWlGeneratorMin (avis, arg_info, res);
-    res = PHUTcollectWlGeneratorMax (avis, arg_info, res);
+    res = PHUTcollectWlGenerator (avis, arg_info, res);
     DBUG_PRINT ("Generator extrema collected for %s", AVIS_NAME (avis));
-    CheckExprsChain (res, arg_info);
 
     DBUG_RETURN (res);
 }
 
 /** <!-- ****************************************************************** -->
  *
- * @fn bool isCompatibleAffinePrf( prf nprf)
+ * @fn bool PHUTisCompatibleAffinePrf( prf nprf)
  *
  * @brief Predicate for affine node finding.
  *
- * @param An N_prf
+ * @param A PRF_PRF
  *
  * @return TRUE if nprf member fns
  *
  ******************************************************************************/
-static bool
-isCompatibleAffinePrf (prf nprf)
+bool
+PHUTisCompatibleAffinePrf (prf nprf)
 {
     bool z;
 
     DBUG_ENTER ();
 
     switch (nprf) {
+    case F_lt_SxS:
+    case F_le_SxS:
+    case F_eq_SxS:
+    case F_ge_SxS:
+    case F_gt_SxS:
+    case F_neq_SxS:
     case F_val_lt_val_SxS:
     case F_val_le_val_SxS:
     case F_add_SxS:
@@ -755,7 +800,13 @@ isDyadicPrf (prf nprf)
     DBUG_ENTER ();
 
     switch (nprf) {
-    case F_val_lt_val_SxS: // Dyadic
+    case F_lt_SxS:
+    case F_le_SxS:
+    case F_eq_SxS:
+    case F_ge_SxS:
+    case F_gt_SxS:
+    case F_neq_SxS:
+    case F_val_lt_val_SxS:
     case F_val_le_val_SxS:
     case F_add_SxS:
     case F_sub_SxS:
@@ -785,71 +836,47 @@ isDyadicPrf (prf nprf)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *assignPolylibColumnIndex( node *arg_node, info *arg_info, node *res)
+ * @fn bool PHUTisCompatibleAffineTypes( node *arg_node)
  *
- * @brief Assign the next available polylib column index to arg_node,
- *        if we are in numbering/counting mode,
- *        and this node does not already have a column assigned to it,
- *        and this node is not constant
+ * @brief ISL only supports integer (and Booleans, due to
+ *        coercions made here), so we forbid other types.
  *
- * @param arg_node: An N_id or N_avis
- *        arg_info: your basic arg_info
- *        res: An N_exprs chain of N_id nodes which have had a column number
- *             assigned to them.
+ * @param arg_node: An N_prf
  *
- * @return An amended res N_exprs chain, if a column number was assigned,
- *         or res otherwise.
+ * @return TRUE if arg_node arguments are all Boolean and/or integer
  *
  ******************************************************************************/
-static node *
-assignPolylibColumnIndex (node *arg_node, info *arg_info, node *res)
+bool
+PHUTisCompatibleAffineTypes (node *arg_node)
 {
+    bool z;
     node *avis;
 
     DBUG_ENTER ();
 
-    avis = Node2Avis (arg_node);
-    switch (INFO_MODE (arg_info)) {
-
-    case MODE_enumeratevars:
-        if ((-1 == AVIS_POLYLIBCOLUMNINDEX (avis))) {
-            AVIS_POLYLIBCOLUMNINDEX (avis) = INFO_POLYLIBNUMVARS (arg_info);
-            INFO_POLYLIBNUMVARS (arg_info)++;
-            DBUG_PRINT ("Assigned %s a polylib index of: %d", AVIS_NAME (avis),
-                        AVIS_POLYLIBCOLUMNINDEX (avis));
-            res = TCappendExprs (res, TBmakeExprs (TBmakeId (avis), NULL));
-        }
-        break;
-
-    case MODE_clearvars:
-        DBUG_PRINT ("Cleared %s polylib index; was: %d", AVIS_NAME (avis),
-                    AVIS_POLYLIBCOLUMNINDEX (avis));
-        AVIS_POLYLIBCOLUMNINDEX (avis) = -1;
-        break;
-
-    case MODE_generatematrix:
-        break;
+    avis = Node2Avis (PRF_ARG1 (arg_node));
+    z = TUisBoolScalar (AVIS_TYPE (avis)) || TUisIntScalar (AVIS_TYPE (avis));
+    if (isDyadicPrf (PRF_PRF (arg_node))) {
+        avis = Node2Avis (PRF_ARG2 (arg_node));
+        z = z && (TUisBoolScalar (AVIS_TYPE (avis)) || TUisIntScalar (AVIS_TYPE (avis)));
     }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN (z);
 }
+
 /** <!-- ****************************************************************** -->
  *
  * @fn node *HandleNid( node *arg_node, node *rhs, info *arg_info, node *res)
  *
  * @brief Handler for N_id = N_id
-          We generate: ( arg_node - rhs) == 0
+ *        Generate: arg_node = rhs
  *
  * @param  arg_node: The N_avis for an assign with N_id as rhs
  * @param  rhs: The N_id
  * @param  arg_info: as usual
  * @param  res: the incoming N_exprs chain
  *
- * @return If we are in MODE_generatematrix, an N_exprs chain
- *         representing an integer polylib Matrix row, appended to
- *         the incoming res.
- *
- * NB. In normal operation, calls to this code should be relatively rare, due to
+ * NB. In normal operation, calls to this code should be infrequent, due to
  *     the work done by CSE and VP.
  *
  ******************************************************************************/
@@ -860,17 +887,12 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
 
     DBUG_ENTER ();
 
-    res = assignPolylibColumnIndex (rhs, arg_info, res);
+    InsertVarIntoLut (rhs, INFO_VARLUT (arg_info));
     res = collectAffineNid (rhs, arg_info, res);
     res = PHUTcollectAffineExprsLocal (rhs, arg_info, res);
-    if (MODE_generatematrix == INFO_MODE (arg_info)) {
-        z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-        z = AddValueToNamedColumn (arg_node, 1, z);
-        z = AddValueToNamedColumn (rhs, -1, z);
-        res = TCappendExprs (res, z);
-    }
+    z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
+    res = TCappendExprs (res, z);
 
-    CheckExprsChain (res, arg_info);
     DBUG_PRINT ("Leaving HandleNid for lhs=%s", AVIS_NAME (arg_node));
 
     DBUG_RETURN (res);
@@ -887,8 +909,7 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
  * @param  arg_info: as usual
  * @param  res: Incoming N_exprs chain
  *
- * @return If we are in MODE_generatematrix, an N_exprs chain
- *         representing a polylib Matrix row, appended to res.
+ * @return An N_exprs chain representing an ISL constraint, appended to res.
  *         All the N_exprs chain values will be N_num or N_bool nodes.
  *         Otherwise, incoming res.
  *
@@ -897,21 +918,12 @@ static node *
 HandleNumber (node *arg_node, node *rhs, info *arg_info, node *res)
 {
     node *z = NULL;
-    int v;
 
     DBUG_ENTER ();
 
-    if (MODE_generatematrix == INFO_MODE (arg_info)) {
-        v = (N_num == NODE_TYPE (rhs)) ? NUM_VAL (rhs) : (int)BOOL_VAL (rhs);
-        // ( z - rhs) == 0
-        z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-        z = AddValueToNamedColumn (arg_node, 1, z);
-        z = AddIntegerToConstantColumn (-v, z);
-        res = TCappendExprs (res, z);
-    }
-
-    CheckExprsChain (res, arg_info);
-    DBUG_PRINT ("Leaving HandleNnum for lhs=%s", AVIS_NAME (arg_node));
+    DBUG_PRINT ("HandleNnum for lhs=%s", AVIS_NAME (arg_node));
+    z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
+    res = TCappendExprs (res, z);
 
     DBUG_RETURN (res);
 }
@@ -932,9 +944,8 @@ HandleNumber (node *arg_node, node *rhs, info *arg_info, node *res)
  * @param  arg_info: as usual
  * @param  res: Incoming N_exprs chain
  *
- * @return If we are in MODE_generatematrix, an N_exprs chain (or NULL)
- *         representing a polylib matrix row, appended to res.
- *         All the N_exprs chain values will be N_num nodes.
+ * @return An N_exprs chain (or NULL)
+ *         representing an ISL constraint, appended to res.
  *         Otherwise, incoming res.
  *
  ******************************************************************************/
@@ -951,27 +962,22 @@ HandleComposition (node *arg_node, node *rhs, info *arg_info, node *res)
 
     DBUG_ENTER ();
 
-    if (MODE_generatematrix == INFO_MODE (arg_info)) {
-        /* z = _sel_VxA_( iv, x); */
-        pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
-                      PMvar (1, PMAgetNode (&x), 0));
-        /* z = _idx_sel( offset, x); */
-        pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&iv), 0),
-                      PMvar (1, PMAgetNode (&x), 0));
-        /* x = _shape_A_( m ); */
-        pat3 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&m), 0));
+    /* z = _sel_VxA_( iv, x); */
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&x), 0));
+    /* z = _idx_sel( offset, x); */
+    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&x), 0));
+    /* x = _shape_A_( m ); */
+    pat3 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&m), 0));
 
-        if ((PMmatchFlat (pat1, rhs) || PMmatchFlat (pat2, rhs))
-            && PMmatchFlat (pat3, x)) {
-            z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-            z = AddValueToNamedColumn (arg_node, 1, z);
-            res = TCappendExprs (res, z);
-        }
-        pat1 = PMfree (pat1);
-        pat2 = PMfree (pat2);
-        pat3 = PMfree (pat3);
-        CheckExprsChain (res, arg_info);
+    if ((PMmatchFlat (pat1, rhs) || PMmatchFlat (pat2, rhs)) && PMmatchFlat (pat3, x)) {
+        z = BuildIslSimpleConstraint (arg_node, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
+        res = TCappendExprs (res, z);
     }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
 
     DBUG_PRINT ("Leaving HandleComposition for lhs=%s", AVIS_NAME (arg_node));
 
@@ -982,16 +988,14 @@ HandleComposition (node *arg_node, node *rhs, info *arg_info, node *res)
  *
  * @fn node *HandleNprf( node *arg_node, node *rhs info *arg_info, node *res)
  *
- * @brief If rhs is an affine function, generate a polylib Matrix row for it,
- *        as follows:
+ * @brief If rhs is an affine function, generate ISL contraints for it.
  *
- *         z = x + y;             -->   x +   y  +    (-z) == 0
- *         z = x - y;             -->   x + (-y) +    (-z) == 0
- *         z = x * const          -->   (const * x) + (-z) == 0
- *         z = const * x          -->   (const * x) + (-z) == 0
- *         z =   - y;             -->       (-y)    + (-z) == 0
- *         z = non_neg_val( y)    -->         y            >= 0
- *                                      z + (-y)           == 0
+ *         z = x + y;
+ *         z = x - y;
+ *         z = x * const
+ *         z = const * x;
+ *         z =   - y;
+ *         z = non_neg_val( y);
  *
  *
  * @param  arg_node: The N_avis for an assign with N_prf as rhs
@@ -1000,18 +1004,16 @@ HandleComposition (node *arg_node, node *rhs, info *arg_info, node *res)
  * @param  res: Incoming N_exprs chain
  *
  * @return An N_exprs chain, representing a polylib Matrix row, appended to res.
- *         All the N_exprs chain values will be N_num nodes, if we
- *         are in MODE_generatematrix mode.
+ *         All the N_exprs chain values will be N_num nodes.
  *
  ******************************************************************************/
 static node *
 HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
 {
-    node *z2;
     node *assgn;
     node *ids;
     node *argavis;
-    int val;
+    node *z;
 
     DBUG_ENTER ();
 
@@ -1019,220 +1021,164 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
     ids = LET_IDS (ASSIGN_STMT (assgn));
     DBUG_PRINT ("Entering HandleNprf for ids=%s", AVIS_NAME (IDS_AVIS (ids)));
 
-    if (isCompatibleAffinePrf (PRF_PRF (rhs))) {
+    if ((PHUTisCompatibleAffinePrf (PRF_PRF (rhs)))
+        && (PHUTisCompatibleAffineTypes (rhs))) {
         // Deal with PRF_ARGs
         res = PHUTcollectAffineExprsLocal (PRF_ARG1 (rhs), arg_info, res);
         if (isDyadicPrf (PRF_PRF (rhs))) {
             res = PHUTcollectAffineExprsLocal (PRF_ARG2 (rhs), arg_info, res);
         }
 
-        if (MODE_generatematrix == INFO_MODE (arg_info)) {
-            switch (PRF_PRF (rhs)) {
-            case F_add_SxS: // z = x + y;    -->   x + y  + (-z) == 0
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2); //  x
-                z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), 1, z2); //  +y
-                z2 = AddValueToNamedColumn (ids, -1, z2);           // -z
-                res = TCappendExprs (res, z2);
-                break;
+        switch (PRF_PRF (rhs)) {
+        case F_add_SxS:
+        case F_sub_SxS:
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, PRF_ARG1 (rhs), PRF_PRF (rhs),
+                                          PRF_ARG2 (rhs));
+            res = TCappendExprs (res, z);
+            break;
 
-            case F_non_neg_val_S: // z = nonneg( y) -->  (z == y) && ( z >= 0)
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                z2 = AddValueToNamedColumn (ids, 1, z2);             // z
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), -1, z2); // -y
-                res = TCappendExprs (res, z2);
+        case F_non_neg_val_S:
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, PRF_ARG1 (rhs), NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
+            break;
 
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z2 = AddValueToNamedColumn (ids, 1, z2); //  z >= 0
-                res = TCappendExprs (res, z2);
-                break;
+        case F_max_SxS: // z = max( x, y)  --> ( z >= x) and ( z >= y)
+            z = BuildIslSimpleConstraint (ids, F_ge_SxS, PRF_ARG1 (rhs), NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
+            z = BuildIslSimpleConstraint (ids, F_ge_SxS, PRF_ARG2 (rhs), NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
+            break;
 
-            case F_sub_SxS: // z = x - y;       -->   x + (-y) +    (-z) == 0
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2);  //   x
-                z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), -1, z2); //  -y
-                z2 = AddValueToNamedColumn (ids, -1, z2);            //  -z
-                res = TCappendExprs (res, z2);
-                break;
+        case F_min_SxS: // z = min( x, y) --> ( z <= x) and ( z <= y)
+            z = BuildIslSimpleConstraint (ids, F_le_SxS, PRF_ARG1 (rhs), NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
+            z = BuildIslSimpleConstraint (ids, F_le_SxS, PRF_ARG2 (rhs), NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
+            break;
 
-            case F_max_SxS: // z = max( x, y)
-                            //  -->  ( z >= x)        && ( z >= y)
-                            //  -->  (( z - x) >= 0)  && ( z - y) >= 0
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z2 = AddValueToNamedColumn (ids, 1, z2);             // z
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), -1, z2); //  -x
-                res = TCappendExprs (res, z2);
-
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z2 = AddValueToNamedColumn (ids, 1, z2);             // z
-                z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), -1, z2); //  -y
-                res = TCappendExprs (res, z2);
-                break;
-
-            case F_min_SxS: // z = min( x, y)
-                            //  -->  ( z <= x)        && ( z <= y)
-                            //  -->  ( x >= z)        && ( y >= z)
-                            //  -->  (( x - z) >= 0)  && ( y - z) >= 0
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2); //  x
-                z2 = AddValueToNamedColumn (ids, -1, z2);           // -z
-                res = TCappendExprs (res, z2);
-
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), 1, z2); //  y
-                z2 = AddValueToNamedColumn (ids, -1, z2);           // -z
-                res = TCappendExprs (res, z2);
-                break;
-
-            case F_mul_SxS: // We need one constant argument
-                argavis = ID_AVIS (PRF_ARG1 (rhs));
-                if (TYisAKV (AVIS_TYPE (argavis))) {
-                    // z = ( const * y)  -->  (const * y) + (-z) == 0
-                    val = TUtype2Int (AVIS_TYPE (argavis));
-                    z2
-                      = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                    z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), val, z2); //  const*y
-                    z2 = AddValueToNamedColumn (ids, -1, z2);             // -z
-                    res = TCappendExprs (res, z2);
-                    break;
-                }
-
-                argavis = ID_AVIS (PRF_ARG2 (rhs));
-                if (TYisAKV (AVIS_TYPE (argavis))) {
-                    // z = ( x * const)  -->  ( x * const) + (-z) == 0
-                    val = TUtype2Int (AVIS_TYPE (argavis));
-                    z2
-                      = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                    z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), val, z2); // const*x
-                    z2 = AddValueToNamedColumn (ids, -1, z2);             // -z
-                    res = TCappendExprs (res, z2);
-                    break;
-                }
-                break;
-
-            case F_shape_A:
-                argavis = ID_AVIS (PRF_ARG1 (rhs));
-                if ((TYisAKV (AVIS_TYPE (argavis))) || (TYisAKV (AVIS_TYPE (argavis)))) {
-                    // z >= 0
-                    z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
-                                            PLFUNINEQUALITY);
-                    z2 = AddValueToNamedColumn (ids, 1, z2);
-                    res = TCappendExprs (res, z2);
-                    // maximum: z < shape  --> shape > z --> (shape - 1) -z >= 0
-                    if ((NULL != AVIS_SHAPE (argavis))
-                        && (N_id == NODE_TYPE (AVIS_SHAPE (argavis)))) {
-                        z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
-                                                PLFUNINEQUALITY);
-                        z2 = AddValueToNamedColumn (AVIS_SHAPE (argavis), 1, z2);
-                        z2 = AddValueToNamedColumn (ids, -1, z2);
-                        z2 = AddIntegerToConstantColumn (-1, z2);
-                        res = TCappendExprs (res, z2);
-                    }
-                }
-                break;
-
-            case F_not_S: // Treat Booleans as integers(for POGO)
-                // z = !y  --->  z + y == 1  ---> ( z + y) -1 == 0
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                z2 = AddValueToNamedColumn (ids, 1, z2);
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2);
-                z2 = AddIntegerToConstantColumn (-1, z2);
-                res = TCappendExprs (res, z2);
-                break;
-
-            case F_abs_S: // z >= 0
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-                z2 = AddValueToNamedColumn (ids, 1, z2);
-                res = TCappendExprs (res, z2);
-                break;
-
-            case F_aplmod_SxS:
-                /*
-                 *               Per the APL ISO N8485 standard:
-                 *               For aplmod modulus: z = aplmod( x, y),
-                 *               if ((x >= 0) && (y >= 0)) || (y >= 1)
-                 *               then z >= 0.
-                 */
-                // mimumum
-                if (((SCSisNonneg (PRF_ARG1 (rhs))) && (SCSisNonneg (PRF_ARG2 (rhs))))
-                    || (SCSisPositive (PRF_ARG2 (rhs)))) {
-                    z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
-                                            PLFUNINEQUALITY);
-                    z2 = AddValueToNamedColumn (ids, 1, z2); // z >= 0
-                    res = TCappendExprs (res, z2);
-                }
-
-                // maximum
-                // (x>0) & (y>0) -->   z <=  y-1
-                //                     (y-1) >= z
-                //                     (y-1) -z >= 0
-                if ((SCSisPositive (PRF_ARG2 (rhs)))
-                    && (SCSisPositive (PRF_ARG1 (rhs)))) {
-                    z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
-                                            PLFUNINEQUALITY);
-                    z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), 1, z2);
-                    z2 = AddValueToNamedColumn (ids, -1, z2);
-                    z2 = AddIntegerToConstantColumn (-1, z2);
-                    res = TCappendExprs (res, z2);
-                }
-                break;
-
-            case F_mod_SxS:
-                /*
-                 *               For C99, if (arg1 >=0 ) && ( arg2 > 0), then z <= arg2-1
-                 *
-                 *               Apparently C99 chooses result sign to match
-                 *               that of PRF_ARG1, but we sidestep that issue here.
-                 *               FIXME: Perhaps extend this code to deal with negative
-                 *               PRF_ARG1?
-                 */
-                // minimum
-                if ((SCSisPositive (PRF_ARG1 (rhs)))
-                    && (SCSisPositive (PRF_ARG2 (rhs)))) {
-                    z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
-                                            PLFUNINEQUALITY);
-                    z2 = AddValueToNamedColumn (ids, 1, z2);
-                    res = TCappendExprs (res, z2);
-                }
-
-                // maximum
-                // (x>=0) & (y>0) -->   z <=  y-1
-                //                     (y-1) >= z
-                //                     (y-1) -z >= 0
-                if ((SCSisNonneg (PRF_ARG2 (rhs))) && (SCSisPositive (PRF_ARG1 (rhs)))) {
-                    z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info),
-                                            PLFUNINEQUALITY);
-                    z2 = AddValueToNamedColumn (PRF_ARG2 (rhs), 1, z2);
-                    z2 = AddValueToNamedColumn (ids, -1, z2);
-                    z2 = AddIntegerToConstantColumn (-1, z2);
-                    res = TCappendExprs (res, z2);
-                }
-                break;
-
-            case F_val_lt_val_SxS:
-            case F_val_le_val_SxS:
-                // Treat a guard within an affine expression as assignment.
-                // z = PRF_ARG1;
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2);
-                res = TCappendExprs (res, z2);
-                break;
-
-            case F_neg_S: //  z = -y;  -->  z + y == 0
-                z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-                z2 = AddValueToNamedColumn (PRF_ARG1 (rhs), 1, z2);
-                z2 = AddValueToNamedColumn (ids, 1, z2);
-                res = TCappendExprs (res, z2);
-                break;
-
-            default:
-                DBUG_UNREACHABLE ("Nprf coding time, senor");
+        case F_mul_SxS: // We need one constant argument
+            argavis = ID_AVIS (PRF_ARG1 (rhs));
+            if ((TYisAKV (AVIS_TYPE (argavis)))
+                || (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG2 (rhs)))))) {
+                // z = ( const * y)
+                z = BuildIslSimpleConstraint (PRF_ARG1 (rhs), PRF_PRF (rhs),
+                                              PRF_ARG2 (rhs), NOPRFOP, NULL);
+                res = TCappendExprs (res, z);
                 break;
             }
+
+        case F_shape_A:
+            argavis = ID_AVIS (PRF_ARG1 (rhs));
+            if ((TYisAKS (AVIS_TYPE (argavis))) || (TYisAKV (AVIS_TYPE (argavis)))) {
+                // z >= 0
+                z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
+                                              NULL);
+                res = TCappendExprs (res, z);
+                // maximum: z < shape
+                if ((NULL != AVIS_SHAPE (argavis))
+                    && (N_id == NODE_TYPE (AVIS_SHAPE (argavis)))) {
+                    z = BuildIslSimpleConstraint (ids, F_lt_SxS, AVIS_SHAPE (argavis),
+                                                  NOPRFOP, NULL);
+                    res = TCappendExprs (res, z);
+                }
+            }
+            break;
+
+        case F_not_S: // Treat Booleans as integers(for POGO)
+            // z = !y  --->  ( z = 1 - y) and (y >= 0) and (y <= 1)
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, TBmakeNum (1), F_sub_SxS,
+                                          PRF_ARG1 (rhs));
+            res = TCappendExprs (res, z);
+            z = BuildIslSimpleConstraint (PRF_ARG1 (rhs), F_ge_SxS, TBmakeNum (0),
+                                          NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
+            z = BuildIslSimpleConstraint (PRF_ARG1 (rhs), F_le_SxS, TBmakeNum (1),
+                                          NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
+            break;
+
+        case F_abs_S: // z >= 0
+            z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
+            break;
+
+        case F_aplmod_SxS:
+            /*
+             *               Per the APL ISO N8485 standard:
+             *               For aplmod modulus: z = aplmod( x, y),
+             *               if ((x >= 0) && (y >= 0)) || (y >= 1)
+             *               then z >= 0.
+             */
+            // mimumum
+            if (((SCSisNonneg (PRF_ARG1 (rhs))) && (SCSisNonneg (PRF_ARG2 (rhs))))
+                || (SCSisPositive (PRF_ARG2 (rhs)))) {
+                z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
+                                              NULL);
+                res = TCappendExprs (res, z);
+            }
+
+            // maximum
+            // (x>0) & (y>0) -->   z <=  y-1
+            if ((SCSisPositive (PRF_ARG2 (rhs))) && (SCSisPositive (PRF_ARG1 (rhs)))) {
+                z = BuildIslSimpleConstraint (ids, F_le_SxS, PRF_ARG2 (rhs), F_sub_SxS,
+                                              TBmakeNum (1));
+                res = TCappendExprs (res, z);
+            }
+            break;
+
+        case F_mod_SxS:
+            /*
+             *               For C99, if (arg1 >=0 ) && ( arg2 > 0), then:
+             *                        0 <= z < arg2
+             *
+             *               Apparently C99 chooses result sign to match
+             *               that of PRF_ARG1, but we sidestep that issue here.
+             *               FIXME: Perhaps extend this code to deal with negative
+             *               PRF_ARG1?
+             */
+            // minimum
+            if ((SCSisNonneg (PRF_ARG1 (rhs))) && (SCSisPositive (PRF_ARG2 (rhs)))) {
+                // z >= 0
+                z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
+                                              NULL);
+                res = TCappendExprs (res, z);
+                // z < PRF_ARG2( rhs)
+                z = BuildIslSimpleConstraint (ids, F_lt_SxS, PRF_ARG2 (rhs), NOPRFOP,
+                                              NULL);
+                res = TCappendExprs (res, z);
+            }
+
+        case F_lt_SxS:
+        case F_le_SxS:
+        case F_eq_SxS:
+        case F_ge_SxS:
+        case F_gt_SxS:
+        case F_neq_SxS:
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, PRF_ARG1 (rhs), PRF_PRF (rhs),
+                                          PRF_ARG2 (rhs));
+            res = TCappendExprs (res, z);
+            break;
+
+        case F_val_lt_val_SxS:
+        case F_val_le_val_SxS:
+            // Treat a guard within an affine expression as assignment.
+            // z = PRF_ARG1;
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, PRF_ARG1 (rhs), NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
+            break;
+
+        case F_neg_S: //  z = -y;  -->  z = 0 - y
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, TBmakeNum (0), F_sub_SxS,
+                                          PRF_ARG1 (rhs));
+            res = TCappendExprs (res, z);
+            break;
+
+        default:
+            DBUG_UNREACHABLE ("Nprf coding time, senor");
+            break;
         }
     }
 
-    CheckExprsChain (res, arg_info);
     DBUG_PRINT ("Leaving HandleNprf for ids=%s", AVIS_NAME (IDS_AVIS (ids)));
 
     DBUG_RETURN (res);
@@ -1249,8 +1195,7 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
  *                  our own arg_info for traversal marking.
  * @param res: Partially built N_exprs chain
  *
- * @return A maximal N_exprs chain of expressions, whose elements are
- *         N_id or N_num nodes, appended to incoming res.
+ * @return A maximal N_exprs chain of expressions, appended to the incoming res.
  *
  *         See PHUTcollectExprs for more details.
  *
@@ -1265,193 +1210,43 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res)
     DBUG_ENTER ();
 
     avis = Node2Avis (arg_node);
-    DBUG_PRINT ("Looking at %s", AVIS_NAME (avis));
-    res = assignPolylibColumnIndex (avis, arg_info, res);
+    if (NULL != avis) { // N_num exits here
+        DBUG_PRINT ("Looking at %s", AVIS_NAME (avis));
+        InsertVarIntoLut (avis, INFO_VARLUT (arg_info));
 
-    DBUG_ASSERT (N_num != NODE_TYPE (arg_node), "Unflattened node!");
-    switch (INFO_MODE (arg_info)) {
-    case MODE_enumeratevars:
-        break;
+        // Handle RHS for all modes.
+        assgn = AVIS_SSAASSIGN (avis);
+        if ((NULL != assgn) && (N_let == NODE_TYPE (ASSIGN_STMT (assgn)))) {
 
-    case MODE_clearvars:
-        AVIS_POLYLIBCOLUMNINDEX (avis) = -1;
-        res = (NULL != res) ? FREEdoFreeTree (res) : NULL;
-        DBUG_PRINT ("cleared %s polylib index of %d", AVIS_NAME (avis),
-                    AVIS_POLYLIBCOLUMNINDEX (avis));
-        break;
+            rhs = LET_EXPR (ASSIGN_STMT (assgn));
 
-    case MODE_generatematrix:
-        break;
-    }
+            switch (NODE_TYPE (rhs)) {
+            case N_id: // straight assign:  var2 = var1;
+                res = HandleNid (avis, rhs, arg_info, res);
+                break;
 
-    // Handle RHS for all modes.
-    assgn = AVIS_SSAASSIGN (avis);
-    if ((NULL != assgn) && (N_let == NODE_TYPE (ASSIGN_STMT (assgn)))) {
+            case N_prf:
+                res = HandleNprf (avis, rhs, arg_info, res);
+                res = HandleComposition (avis, rhs, arg_info, res);
+                break;
 
-        rhs = LET_EXPR (ASSIGN_STMT (assgn));
+            case N_bool:
+            case N_num:
+                res = HandleNumber (avis, rhs, arg_info, res);
+                break;
 
-        switch (NODE_TYPE (rhs)) {
-        case N_id: // straight assign:  var2 = var1;
-            res = HandleNid (avis, rhs, arg_info, res);
-            break;
-
-        case N_prf:
-            res = assignPolylibColumnIndex (arg_node, arg_info, res);
-            res = HandleNprf (avis, rhs, arg_info, res);
-            res = HandleComposition (avis, rhs, arg_info, res);
-            break;
-
-        case N_bool:
-        case N_num:
-            res = assignPolylibColumnIndex (arg_node, arg_info, res);
-            res = HandleNumber (avis, rhs, arg_info, res);
-            break;
-
-        default:
-            break;
+            default:
+                break;
+            }
+        } else {
+            if (NULL != assgn) {
+                DBUG_PRINT ("FIXME skipping this node");
+            }
         }
-    } else {
-        if (NULL != assgn) {
-            DBUG_PRINT ("FIXME skipping this node");
-        }
+
+        // Handle extrema
+        res = collectAffineNid (arg_node, arg_info, res);
     }
-
-    // Handle extrema
-    res = collectAffineNid (arg_node, arg_info, res);
-
-    // Discard result if we do not need it.
-    if (MODE_clearvars == INFO_MODE (arg_info) && (NULL != res)) {
-        res = FREEdoFreeTree (res);
-    }
-
-    DBUG_RETURN (res);
-}
-
-/** <!-- ****************************************************************** -->
- * @fn void PHUTclearColumnIndices( node *arg_node, node *fundef)
- *
- * @brief Does a recursive search, starting at arg_node,
- *        for a maximal chain of affine instructions.
- *
- *        As a side effect, AVIS_POLYLIBCOLUMNINDEX is set for each of those
- *        N_id nodes.
- *
- * @param arg_node: an N_id node, an N_avis node, or an N_num node
- *
- * @return A maximal N_exprs chain of N_id nodes, e.g.,
- *
- *    We have:
- *      flat1 = 1;
- *      x = _sub_SxS_( isaa, flat1);
- *      xp, p = _val_lt_val_SxS_( x, isaa);
- *
- *    If we call PHUTfindAffineNids with arg_node xp, we get back res as:
- *
- *     x, isaa, flat1
- *
- *    The column index values assigned are 1+iota( TCcountExprs( res));
- *
- ******************************************************************************/
-void
-PHUTclearColumnIndices (node *arg_node, node *fundef)
-{
-    node *res = NULL;
-    info *arg_info;
-
-    DBUG_ENTER ();
-
-    if (NULL != arg_node) {
-        DBUG_ASSERT (((N_id == NODE_TYPE (arg_node)) || (N_num == NODE_TYPE (arg_node))
-                      || (N_avis == NODE_TYPE (arg_node))),
-                     "Expected N_id or N_avis node");
-
-        if (N_num != NODE_TYPE (arg_node)) {
-            arg_info = MakeInfo ();
-            INFO_FUNDEF (arg_info) = fundef; // debug only. Not really needed.
-
-            DBUG_PRINT ("Entering MODE_clearvars");
-            INFO_MODE (arg_info) = MODE_clearvars;
-            res = PHUTcollectAffineExprsLocal (arg_node, arg_info, res);
-            DBUG_ASSERT (NULL == res, "Someone did not clean up indices");
-            arg_info = FreeInfo (arg_info);
-            DBUG_PRINT ("Leaving MODE_clearvars");
-        }
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!-- ****************************************************************** -->
- * @fn node *PHUTcollectAffineNids( node *arg_node, node *fundef,
- *                                  int firstindex)
- *
- * @brief Does a recursive search, starting at arg_node,
- *        for a maximal chain of affine instructions.
- *        The result is an N_exprs chain of the unique N_id nodes encountered
- *        in that chain, catenated to exprs.
- *
- *        As a side effect, AVIS_POLYLIBCOLUMNINDEX is set for each of those
- *        N_id nodes.
- *
- * @param arg_node: an N_id node
- * @param fundef: The N_fundef of the current function. Used only for
- *                debugging purposes, and could be removed.
- * @param numvars: The next column index to be assigned. This
- *                 number is origin-one, as column 0 assigned to
- *                 Polylib's "function" ( == or >= ).
- * @param res: Partially built N_exprs chain
- *
- * @return A maximal N_exprs chain of N_id nodes, e.g.,
- *
- *    We have:
- *      flat1 = 1;
- *      x = _sub_SxS_( isaa, flat1);
- *      xp, p = _val_lt_val_SxS_( x, isaa);
- *
- *    If we call PHUTfindAffineNids with arg_node xp, we get back res as:
- *
- *     x, isaa, flat1
- *
- *   Also, as a side effect, we set numvars.
- *
- * NB. The code performs three traversals of arg_node and its
- *     ancestors:
- *
- *     MODE_enumeratevars: counts the number of affine variables, and
- *     returns an N_exprs chain of their N_id values.
- *
- *     MODE_generatematrix: This traversal does the actual work,
- *     marking N_avis nodes as it goes, so that we do
- *     not make duplicate entries.
- *
- *     MODE_clearvars:  This restores the N_avis nodes to their
- *     pristine values.
- *
- ******************************************************************************/
-node *
-PHUTcollectAffineNids (node *arg_node, node *fundef, int *numvars)
-{
-    node *res = NULL;
-    info *arg_info;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (((N_id == NODE_TYPE (arg_node)) || (N_num == NODE_TYPE (arg_node))
-                  || (N_avis == NODE_TYPE (arg_node))),
-                 "Expected N_id or N_avis node");
-
-    arg_info = MakeInfo ();
-
-    INFO_FUNDEF (arg_info) = fundef; // debug only. Not really needed.
-
-    INFO_POLYLIBNUMVARS (arg_info) = *numvars;
-    INFO_MODE (arg_info) = MODE_enumeratevars;
-    DBUG_PRINT ("Entering MODE_enumeratevars with numids=%d", *numvars);
-    res = PHUTcollectAffineExprsLocal (arg_node, arg_info, res);
-    DBUG_PRINT ("Found %d affine variables", TCcountExprs (res));
-    *numvars = INFO_POLYLIBNUMVARS (arg_info);
-    arg_info = FreeInfo (arg_info);
-    DBUG_PRINT ("Leaving MODE_enumeratevars with numids=%d", *numvars);
 
     DBUG_RETURN (res);
 }
@@ -1509,7 +1304,7 @@ PHUTcollectAffineNids (node *arg_node, node *fundef, int *numvars)
  *
  ******************************************************************************/
 node *
-PHUTgenerateAffineExprs (node *arg_node, node *fundef, int *numvars)
+PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut)
 {
     node *res = NULL;
     info *arg_info;
@@ -1518,39 +1313,32 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, int *numvars)
 
     arg_info = MakeInfo ();
     INFO_FUNDEF (arg_info) = fundef; // debug only. Not really needed.
-    INFO_POLYLIBNUMVARS (arg_info) = *numvars;
+    INFO_VARLUT (arg_info) = varlut;
 
-    INFO_MODE (arg_info) = MODE_generatematrix;
-    DBUG_PRINT ("Entering MODE_generatematrix with numvars=%d", *numvars);
     res = PHUTcollectAffineExprsLocal (arg_node, arg_info, res);
     arg_info = FreeInfo (arg_info);
-    DBUG_PRINT ("Leaving MODE_generatematrix with numvars=%d", *numvars);
 
     DBUG_RETURN (res);
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *PHUTgenerateAffineExprsForGuard( node *arg_node, node *fundef)
+ * @fn node *PHUTgenerateAffineExprsForGuard(...)
  *
- * @brief Construct a Polylib matrix for an N_prf guard.
- *        Now, extended to support some scalar relationals.
+ * @brief Construct a Polylib matrix for an N_prf guard or relational
  *
- * @param arg_node: an N_prf for a guard primitive
- * @param fundef: The N_fundef for the current function.
- *                Used only for debugging.
+ * @param arg_node: an N_prf for a guard/relational primitive
+ * @param fundef: The N_fundef for the current function, for debugging
  * @param relfn:  Either PRF_PRF( arg_node) or its companion function,
  *                e.g., if PRF_PRF is _gt_SxS_, its companion is _le_SxS.
  * @param exprsUcfn: An implicit result, set if PRF_PRF( arg_node) is _eq_SxS.
  * @param exprsUfn: An implicit result, set if PRF_PRF( arg_node) is _eq_SxS.
  *
- * @param numvars: the number of distinct variables in the affine function tree.
- *
  * @return A maximal N_exprs chain of expressions for the guard.
  *
  ******************************************************************************/
 node *
-PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf relfn,
-                                 node **exprsUfn, node **exprsUcfn)
+PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn, node **exprsUfn,
+                                 node **exprsUcfn)
 {
     node *z = NULL;
     node *z2 = NULL;
@@ -1562,82 +1350,36 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
 
     arg_info = MakeInfo ();
     INFO_FUNDEF (arg_info) = fundef; // debug only. Not really needed.
-    INFO_POLYLIBNUMVARS (arg_info) = *numvars;
-
-    INFO_MODE (arg_info) = MODE_generatematrix;
-    DBUG_PRINT ("Entering MODE_generatematrix with numids=%d", *numvars);
-
-    z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-
     switch (relfn) {
     case F_non_neg_val_S:
-        // z = non_neg_val_S( x);    -->   x >= 0
-        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z);
+        z = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_ge_SxS, TBmakeNum (0),
+                                      NOPRFOP, NULL);
         break;
 
     case F_gt_SxS:
-        // z = _gt_SxS( x, y)        -->   x             >  y
-        //                                 x - y         >  0
-        //                                (x - y) -1     >= 0
-        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z);
-        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), -1, z);
-        z = AddIntegerToConstantColumn (-1, z);
-        break;
-
     case F_ge_SxS:
-        // z = _ge_SxS( x, y)        -->   x             >= y
-        //                                 x - y         >= 0
-        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z);
-        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), -1, z);
-        break;
-
     case F_val_lt_val_SxS:
     case F_lt_SxS:
-        // z = val_lt_val_SxS( x, y) -->   x             <  y
-        //                                 y             >  x
-        //                                 ( y - x)      >  0
-        //                                 ( y - x) -1   >= 0
-        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), -1, z);
-        if (F_non_neg_val_S != PRF_PRF (arg_node)) { // Kludge for CompanionFn
-            // Want x < 0 --> 0 > x --> 0 - x > 0 --> (-x) -1 >= 0
-            z = AddValueToNamedColumn (PRF_ARG2 (arg_node), 1, z);
-        }
-        z = AddIntegerToConstantColumn (-1, z);
-        break;
-
     case F_val_le_val_SxS:
     case F_le_SxS:
-        // z = val_le_val_SxS( x, y) -->   x             <= y
-        //                                 y             >= x
-        //                                 y - x         >= 0
-        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), -1, z);
-        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), 1, z);
-        break;
-
     case F_eq_SxS:
-        // z = _eq_SxS_( x, y) -->   x     == y
-        //                           x - y == 0
-        FREEdoFreeTree (z);
-        z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNEQUALITY);
-        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z);
-        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), -1, z);
+        if (F_non_neg_val_S != PRF_PRF (arg_node)) { // kludge for monadic
+            z = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), relfn, PRF_ARG2 (arg_node),
+                                          NOPRFOP, NULL);
+        } else {
+            z = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_lt_SxS, TBmakeNum (0),
+                                          NOPRFOP, NULL);
+        }
         break;
 
     case F_neq_SxS:
-        // z = _neq_SxS_( x, y) -->
         // This is harder. We need to construct a union
-        // of (x<y) and (x>y). We set the explicit result to
-        //    (x<y) -->    y > x       --> ( y - x) > 0  --> ( y - x) -1 >= 0
-        z = AddValueToNamedColumn (PRF_ARG1 (arg_node), -1, z);
-        z = AddValueToNamedColumn (PRF_ARG2 (arg_node), 1, z);
-        z = AddIntegerToConstantColumn (-1, z);
-
-        //     (x>y) --> ( x - y) > 0  --> ( x - y) -1 >= 0
-        z2 = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
-        z2 = AddValueToNamedColumn (PRF_ARG1 (arg_node), 1, z2);
-        z2 = AddValueToNamedColumn (PRF_ARG2 (arg_node), -1, z2);
-        z2 = AddIntegerToConstantColumn (-1, z2);
-        *exprsUfn = z2;
+        // of (x<y) OR (x>y).
+        z = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_gt_SxS, PRF_ARG2 (arg_node),
+                                      F_or_SxS, NULL);
+        z2 = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_lt_SxS, PRF_ARG2 (arg_node),
+                                       NOPRFOP, NULL);
+        z = TCappendExprs (z, z2);
         break;
 
     default:
@@ -1669,16 +1411,17 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars, prf
  *
  * @param: exprspwl, exprscwl, exprs3, exprs4 - integer N_exprs chains of
  *         PolyLib input matrices
- * @param: idlist - an N_exprs chain of N_id nodes that are referenced
+ * @param: varlut: a lut containing the N_avis names referenced
  *         by the affine function trees in the exprs chains.
- * @param: opcode - the POLY_OPCODE to select a PolyLib operation set.
+ *         This becomes the "set variable" list for ISL.
+ * @param: opcode - the POLY_OPCODE to select a sacislinerface operation.
  *
  * @result: a POLY_RET return code
  *
  *****************************************************************************/
 int
 PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprs3, node *exprs4,
-                       node *exprsuf, node *exprsuc, node *idlist, char opcode)
+                       node *exprsuf, node *exprsuc, lut_t *varlut, char opcode)
 {
 #define MAXLINE 1000
     int res = POLY_RET_INVALID;
@@ -1689,7 +1432,6 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprs3, node *exprs
     static const char *argfile = "polyhedral_args";
     static const char *resfile = "polyhedral_res";
     char buffer[MAXLINE];
-    int numvars;
     int exit_code;
 
     DBUG_ENTER ();
@@ -1706,27 +1448,12 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprs3, node *exprs
     DBUG_PRINT ("Polylib arg filename: %s", polyhedral_arg_filename);
     DBUG_PRINT ("Polylib res filename: %s", polyhedral_res_filename);
     matrix_file = FMGRwriteOpen (polyhedral_arg_filename, "w");
-
-    numvars = TCcountExprs (idlist);
-#ifdef DEADCODE
-    // We may have NULL exprs, as in the unit test
-    //  ~/sac/testsuite/optimizations/pogo/guard_val_lt_val_S.sac
-    //
-    // If so, we cheat by making a DUP for the missing one. This is not exactly
-    // efficient for Polylib (we should have a different
-    // call that only expects fewer polyhedra), but it is simple to implement here.
-    exprscwl = (NULL == exprscwl) ? PHUTgenerateIdentityExprs (numvars) : exprscwl;
-    exprspwl = (NULL == exprspwl) ? PHUTgenerateIdentityExprs (numvars) : exprspwl;
-#endif // DEADCODE
-    exprs3 = (NULL == exprs3) ? PHUTgenerateIdentityExprs (numvars) : exprs3;
-    exprs4 = (NULL == exprs4) ? PHUTgenerateIdentityExprs (numvars) : exprs4;
-    Exprs2File (matrix_file, exprspwl, idlist, "pwl");
-    Exprs2File (matrix_file, exprscwl, idlist, "cwl");
-    Exprs2File (matrix_file, exprs3, idlist, "eq");
-    Exprs2File (matrix_file, exprs4, idlist, "cfn");
-    Exprs2File (matrix_file, exprsuf, idlist, "ufn");
-    Exprs2File (matrix_file, exprsuc, idlist, "ucfn");
-
+    Exprs2File (matrix_file, exprspwl, varlut, "pwl");
+    Exprs2File (matrix_file, exprscwl, varlut, "cwl");
+    Exprs2File (matrix_file, exprs3, varlut, "eq");
+    Exprs2File (matrix_file, exprs4, varlut, "cfn");
+    Exprs2File (matrix_file, exprsuf, varlut, "ufn");
+    Exprs2File (matrix_file, exprsuc, varlut, "ucfn");
     FMGRclose (matrix_file);
 
     // We depend on PATH to find the sacpolylibinterface binary
@@ -1744,18 +1471,18 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprs3, node *exprs
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *PHUTgenerateAffineExprsForPwl( node *arg_node, node *fundef, int *numvars)
+ * @fn node *PHUTgenerateAffineExprsForPwl( node *arg_node, node *fundef, lut_t *varlut)
  *
- * @brief Construct a Polylib matrix for a Producer with-loop partition.
+ * @brief Construct ISL input N_exprs chain for producerWL
  *
  * @param arg_node: an N_part
  * @param fundef: The N_fundef for the current function.
  *                Used only for debugging.
- * @param numvars: the number of distinct variables in the affine function tree.
+ * @param varlut: The lut used to collect set variable names
  *
  * @return A maximal N_exprs chain of expressions for the Producer-WL partition.
  *
- * We establish the following, for this normalized generator:
+ * We establish the following, for this generator:
  *
  *        ( lb <= iv < ub step s width w)
  *
@@ -1766,7 +1493,7 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprs3, node *exprs
  *
  ******************************************************************************/
 node *
-PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, int *numvars)
+PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, lut_t *varlut)
 {
     node *z = NULL;
     info *arg_info;
@@ -1777,12 +1504,11 @@ PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, int *numvars)
 
     arg_info = MakeInfo ();
     INFO_FUNDEF (arg_info) = fundef; // debug only. Not really needed.
-    INFO_POLYLIBNUMVARS (arg_info) = *numvars;
 
-    INFO_MODE (arg_info) = MODE_generatematrix;
-    DBUG_PRINT ("Entering MODE_generatematrix with numids=%d", *numvars);
-
+    DBUG_ASSERT (FALSE, "CODING TIME");
+#ifdef FIXME
     z = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
+#endif // FIXME
 
     arg_info = FreeInfo (arg_info);
 
@@ -1790,27 +1516,25 @@ PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, int *numvars)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *PHUTgenerateAffineExprsForCwl( node *arg_node, node *fundef, int *numvars)
+ * @fn node *PHUTgenerateAffineExprsForCwl( node *arg_node, node *fundef, lut_t *varlut)
  *
- * @brief Construct a Polylib matrix for a Consumer with-loop _sel_() expression.
+ * @brief Construct an ISL constraint for a Consumer with-loop _sel_() expression.
  *
  * @param arg_node: an N_prf for an _sel_VxA_( iv, PWL)
  * @param fundef: The N_fundef for the current function.
  *                Used only for debugging.
- * @param numvars: the number of distinct variables in the affine function tree.
+ * @param varlut: the lut used to collect the list of set variables
  *
  * @return A maximal N_exprs chain of expressions for the Consumer-WL sel expn.
  *
  ******************************************************************************/
 node *
-PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, int *numvars)
+PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, lut_t *varlut)
 {
     node *res = NULL;
     info *arg_info;
     node *exprs1 = NULL;
     node *exprs2 = NULL;
-    node *idlist1 = NULL;
-    node *idlist2 = NULL;
 
     DBUG_ENTER ();
 
@@ -1819,32 +1543,10 @@ PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, int *numvars)
 
     arg_info = MakeInfo ();
     INFO_FUNDEF (arg_info) = fundef; // debug only. Not really needed.
-    INFO_POLYLIBNUMVARS (arg_info) = *numvars;
-
-    PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
-    PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
-
-    // results are side effects here.
-    idlist1
-      = PHUTcollectAffineNids (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), numvars);
-    idlist2
-      = PHUTcollectAffineNids (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), numvars);
-
-    exprs1
-      = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), numvars);
-    exprs2
-      = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), numvars);
-
-    exprs1 = (NULL == exprs1) ? PHUTgenerateIdentityExprs (*numvars) : exprs1;
-    exprs2 = (NULL == exprs2) ? PHUTgenerateIdentityExprs (*numvars) : exprs2;
-
-    PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
-    PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
-
-    INFO_MODE (arg_info) = MODE_generatematrix;
-    DBUG_PRINT ("Entering MODE_generatematrix with numvars=%d", *numvars);
-
-    res = GenerateMatrixRow (INFO_POLYLIBNUMVARS (arg_info), PLFUNINEQUALITY);
+    exprs1 = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), fundef, varlut);
+    exprs2 = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), fundef, varlut);
+    res = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_eq_SxS, PRF_ARG2 (arg_node),
+                                    NOPRFOP, NULL);
 
     arg_info = FreeInfo (arg_info);
 
@@ -1853,28 +1555,28 @@ PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, int *numvars)
 
 /** <!-- ****************************************************************** -->
  * @fn node *PHUTgenerateAffineExprsForPwlfIntersect( node *cwliv, node *pwliv,
- *                                                    int *numvars)
+ *           lut_t *varlut)
  *
- * @brief Construct a Polylib matrix row for the intersect of a consumerWL
- *        index vector and producerWL index vector.
+ * @brief Construct an ISL constraint for the intersect of a consumerWL
  *
  * @param cwliv: The N_avis for the consumerWL index vector.
  * @param pwliv: THe N_avis for the producerWL generator index vector
- * @param numvars: the number of distinct variables in the affine function tree.
+ * @param varlut: The lut we use to collect set variable names.
  *
- * @return An  N_exprs chain for the intersect, stating that cwliv == pwliv
+ * @return An N_exprs chain for the intersect, stating that:
+ *         cwliv == pwliv
  *
  ******************************************************************************/
 node *
-PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv, int numvars)
+PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv, lut_t *varlut)
 {
     node *res;
 
     DBUG_ENTER ();
 
-    res = GenerateMatrixRow (numvars, PLFUNEQUALITY);
-    res = AddValueToNamedColumn (cwliv, 1, res);
-    res = AddValueToNamedColumn (pwliv, -1, res);
+    InsertVarIntoLut (cwliv, varlut);
+    InsertVarIntoLut (pwliv, varlut);
+    res = BuildIslSimpleConstraint (cwliv, F_eq_SxS, pwliv, NOPRFOP, NULL);
 
     DBUG_RETURN (res);
 }

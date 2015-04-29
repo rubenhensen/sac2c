@@ -81,18 +81,6 @@ doIntersect (struct isl_union_set *unionb, struct isl_union_set *unionc, char *t
     return (intersectbc);
 }
 
-isl_union_set *
-ReadUnionFromFile (struct _IO_FILE *fd, struct isl_ctx *ctx)
-{ // Read one PolyLib-format union from file.
-    struct isl_basic_set *bset;
-    struct isl_union_set *bunion;
-
-    bset = isl_basic_set_read_from_file (ctx, fd);
-    bunion = isl_union_set_from_basic_set (bset);
-
-    return (bunion);
-}
-
 int
 PolyhedralWLFIntersectCalc (int verbose)
 {
@@ -112,9 +100,9 @@ PolyhedralWLFIntersectCalc (int verbose)
     struct isl_union_set *cwleq = NULL;
     struct isl_union_set *pwleq = NULL;
 
-    pwl = ReadUnionFromFile (stdin, ctx);
-    cwl = ReadUnionFromFile (stdin, ctx);
-    peq = ReadUnionFromFile (stdin, ctx);
+    pwl = isl_union_set_read_from_file (ctx, stdin);
+    cwl = isl_union_set_read_from_file (ctx, stdin);
+    peq = isl_union_set_read_from_file (ctx, stdin);
     printUnion (stderr, pwl, "pwl", verbose, 0);
     printUnion (stderr, cwl, "cwl", verbose, 0);
     printUnion (stderr, peq, "peq", verbose, 0);
@@ -171,30 +159,15 @@ PolyhedralRelationalCalc (int verbose)
     struct isl_union_set *intersectbcc = NULL;
     struct isl_ctx *ctx = isl_ctx_alloc ();
 
-    unionb = ReadUnionFromFile (stdin, ctx);   // PRF_ARG1 affine exprs tree
-    unionc = ReadUnionFromFile (stdin, ctx);   // PRF_ARG2 affine exprs tree
-    unionrfn = ReadUnionFromFile (stdin, ctx); // Relational fn
-    unioncfn = ReadUnionFromFile (stdin, ctx); // Complementary relational fn
+    unionb = isl_union_set_read_from_file (ctx, stdin);   // PRF_ARG1 affine exprs tree
+    unionc = isl_union_set_read_from_file (ctx, stdin);   // PRF_ARG2 affine exprs tree
+    unionrfn = isl_union_set_read_from_file (ctx, stdin); // Relational fn
+    unioncfn = isl_union_set_read_from_file (ctx, stdin); // Complementary relational fn
 
     printUnion (stderr, unionb, "unionb", verbose, 0);
     printUnion (stderr, unionc, "unionc", verbose, 0);
     printUnion (stderr, unionrfn, "unionrfn", verbose, 0);
     printUnion (stderr, unioncfn, "unioncfn", verbose, 0);
-
-#ifdef RUBBISH
-    if (isl_union_set_is_subset (unionb, unionc)
-        && isl_union_set_is_subset (unionc, unionb)) {
-        z = z | POLY_RET_MATCH_BC;
-        z = z & ~POLY_RET_UNKNOWN;
-        if (verbose) {
-            fprintf (stderr, "non-empty b matches c\n");
-        }
-    } else {
-        if (verbose) {
-            fprintf (stderr, "b does not match c\n");
-        }
-    }
-#endif // RUBBISH
 
     if (POLY_RET_UNKNOWN == z) { // Intersect b,c
         intersectbc = doIntersect (unionb, unionc, "intersectbc", verbose);

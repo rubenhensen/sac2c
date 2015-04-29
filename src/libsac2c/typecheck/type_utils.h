@@ -24,6 +24,7 @@ extern node *TUrettypes2alphaMax (node *rets);
 extern node *TUrettypes2alphaAUDMax (node *rets);
 extern bool TUdimKnown (ntype *ty);
 extern bool TUshapeKnown (ntype *ty);
+extern bool TUisBoolScalar (ntype *ty);
 extern bool TUisIntScalar (ntype *ty);
 extern bool TUisIntVect (ntype *ty);
 extern bool TUisEmptyVect (ntype *ty);

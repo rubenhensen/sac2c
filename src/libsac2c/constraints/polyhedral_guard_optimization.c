@@ -69,6 +69,7 @@
 #include "polyhedral_defs.h"
 #include "print.h"
 #include "tree_utils.h"
+#include "LookUpTable.h"
 
 /** <!--********************************************************************-->
  *
@@ -81,12 +82,14 @@ struct INFO {
     node *lhs;
     node *preassigns;
     node *with;
+    lut_t *varlut;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_WITH(n) ((n)->with)
+#define INFO_VARLUT(n) ((n)->varlut)
 
 static info *
 MakeInfo (void)
@@ -101,6 +104,7 @@ MakeInfo (void)
     INFO_LHS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_WITH (result) = NULL;
+    INFO_VARLUT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -374,7 +378,6 @@ POGOwith (node *arg_node, info *arg_info)
 node *
 POGOassign (node *arg_node, info *arg_info)
 {
-
     DBUG_ENTER ();
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
@@ -463,11 +466,8 @@ POGOprf (node *arg_node, info *arg_info)
     node *exprsY = NULL;
     node *exprsFn = NULL;
     node *exprsCfn = NULL;
-    node *idlist1 = NULL;
-    node *idlist2 = NULL;
     node *exprsUfn = NULL;
     node *exprsUcfn = NULL;
-    int numvars = 0;
     bool z = FALSE;
     bool resval = FALSE;
     node *res;
@@ -479,66 +479,55 @@ POGOprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = arg_node;
+    if ((PHUTisCompatibleAffinePrf (PRF_PRF (arg_node)))
+        && (PHUTisCompatibleAffineTypes (arg_node))) {
 
-    switch (PRF_PRF (arg_node)) {
-    case F_eq_SxS:
-    case F_neq_SxS:
-    case F_lt_SxS:
-    case F_le_SxS:
-    case F_ge_SxS:
-    case F_gt_SxS:
-    case F_val_lt_val_SxS:
-    case F_val_le_val_SxS:
-        dopoly = TRUE;
-        DBUG_PRINT ("Looking at dyadic N_prf for %s",
-                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+        switch (PRF_PRF (arg_node)) {
+        case F_eq_SxS:
+        case F_neq_SxS:
+        case F_lt_SxS:
+        case F_le_SxS:
+        case F_ge_SxS:
+        case F_gt_SxS:
+        case F_val_lt_val_SxS:
+        case F_val_le_val_SxS:
+            dopoly = TRUE;
+            DBUG_PRINT ("Looking at dyadic N_prf for %s",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
-        PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
-        PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
+            exprsX = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
+                                              INFO_VARLUT (arg_info));
+            exprsY = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info),
+                                              INFO_VARLUT (arg_info));
+            break;
 
-        idlist1
-          = PHUTcollectAffineNids (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), &numvars);
-        idlist2
-          = PHUTcollectAffineNids (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), &numvars);
+        case F_non_neg_val_S:
+            dopoly = TRUE;
+            DBUG_PRINT ("Looking at monadic N_prf for %s",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
-        exprsX = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
-                                          &numvars);
-        exprsY = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info),
-                                          &numvars);
-        idlist1 = TCappendExprs (idlist1, idlist2);
-        break;
+            exprsX = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
+                                              INFO_VARLUT (arg_info));
+            exprsY = NULL;
+            break;
 
-    case F_non_neg_val_S:
-        dopoly = TRUE;
-        DBUG_PRINT ("Looking at monadic N_prf for %s",
-                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+        default:
+            dopoly = FALSE;
+            break;
+        }
 
-        PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
-        idlist1
-          = PHUTcollectAffineNids (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), &numvars);
-        exprsX = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
-                                          &numvars);
-        exprsY = NULL;
-        break;
-
-    default:
-        dopoly = FALSE;
-        break;
-    }
-
-    if (dopoly) {
-        // Don't bother calling Polylib if it can't do anything for us.
-        if (NULL != idlist1) {
+        if (dopoly) {
+            // Don't bother calling ISL if it can't do anything for us.
             exprsFn = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
-                                                       &numvars, PRF_PRF (arg_node),
-                                                       &exprsUfn, &exprsUcfn);
+                                                       PRF_PRF (arg_node), &exprsUfn,
+                                                       &exprsUcfn);
             exprsCfn
               = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
-                                                 &numvars,
                                                  ComplementaryFun (PRF_PRF (arg_node)),
                                                  &exprsUfn, &exprsUcfn);
             emp = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn, exprsUfn,
-                                         exprsUcfn, idlist1, POLY_OPCODE_INTERSECT);
+                                         exprsUcfn, INFO_VARLUT (arg_info),
+                                         POLY_OPCODE_INTERSECT);
             DBUG_PRINT ("PHUTcheckIntersection result for %s is %d",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), emp);
 
@@ -563,43 +552,39 @@ POGOprf (node *arg_node, info *arg_info)
                 resval = TRUE;
                 z = TRUE;
             }
+
+            if (z) { // guard/primitive can be removed
+                DBUG_PRINT ("Guard/relational for result %s removed",
+                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+                resp = TBmakeBool (resval);
+
+                if (TUisPrfGuard (arg_node)) { // Need two results
+                    res = DUPdoDupNode (PRF_ARG1 (arg_node));
+                    arg_node = FREEdoFreeNode (arg_node);
+                    guardp = IDS_NEXT (INFO_LHS (arg_info));
+                    resp = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
+                    AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resp;
+                    IDS_NEXT (INFO_LHS (arg_info)) = NULL;
+                    INFO_PREASSIGNS (arg_info)
+                      = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
+                } else {
+                    res = resp;
+                    arg_node = FREEdoFreeNode (arg_node);
+                }
+            } else {
+                DBUG_PRINT ("Unable to remove guard/primitive for result %s",
+                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+            }
         }
 
-        idlist1 = (NULL != idlist1) ? FREEdoFreeTree (idlist1) : NULL;
         exprsX = (NULL != exprsX) ? FREEdoFreeTree (exprsX) : NULL;
         exprsY = (NULL != exprsY) ? FREEdoFreeTree (exprsY) : NULL;
         exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
         exprsCfn = (NULL != exprsCfn) ? FREEdoFreeTree (exprsCfn) : NULL;
-        PHUTclearColumnIndices (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info));
-        if (F_non_neg_val_S != PRF_PRF (arg_node)) { // Ignore monadic fns
-            PHUTclearColumnIndices (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info));
-        }
 
-        if (z) { // guard/primitive can be removed
-            DBUG_PRINT ("Guard/relational for result %s removed",
-                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-            resp = TBmakeBool (resval);
-
-            if (TUisPrfGuard (arg_node)) { // Need two results
-                res = DUPdoDupNode (PRF_ARG1 (arg_node));
-                arg_node = FREEdoFreeNode (arg_node);
-                guardp = IDS_NEXT (INFO_LHS (arg_info));
-                resp = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
-                AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resp;
-                IDS_NEXT (INFO_LHS (arg_info)) = NULL;
-                INFO_PREASSIGNS (arg_info)
-                  = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
-            } else {
-                res = resp;
-                arg_node = FREEdoFreeNode (arg_node);
-            }
-        } else {
-            DBUG_PRINT ("Unable to remove guard/primitive for result %s",
-                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-        }
+        res = TRAVcont (res, arg_info);
+        LUTremoveContentLut (INFO_VARLUT (arg_info));
     }
-
-    res = TRAVcont (res, arg_info);
 
     DBUG_RETURN (res);
 }
@@ -622,9 +607,11 @@ POGOdoPolyhedralGuardOptimization (node *arg_node)
 
     arg_info = MakeInfo ();
 
+    INFO_VARLUT (arg_info) = LUTgenerateLut ();
     TRAVpush (TR_pogo);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
+    INFO_VARLUT (arg_info) = LUTremoveLut (INFO_VARLUT (arg_info));
 
     arg_info = FreeInfo (arg_info);
 

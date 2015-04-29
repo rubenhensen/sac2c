@@ -12,6 +12,7 @@
  *
  * This code likes to run AFTER prfunr, because its operation depends
  * on the availability of scalars for affine function tree creation.
+ * Otherwise, we lose an entire SAACYC cycle.
  *
  *
  *****************************************************************************/
@@ -118,6 +119,7 @@ struct INFO {
     bool finverseintroduced; /* If TRUE, most simplify F-inverse */
     node *zwithids;          /* zwithids for GENERATOR_BOUNDs */
     lut_t *foldlut;          /* LUT for renames during fold */
+    lut_t *varlut;           /* LUT for ISL set variables */
 };
 
 /**
@@ -140,6 +142,7 @@ struct INFO {
 #define INFO_FINVERSEINTRODUCED(n) ((n)->finverseintroduced)
 #define INFO_ZWITHIDS(n) ((n)->zwithids)
 #define INFO_FOLDLUT(n) ((n)->foldlut)
+#define INFO_VARLUT(n) ((n)->varlut)
 
 static info *
 MakeInfo (node *fundef)
@@ -167,6 +170,7 @@ MakeInfo (node *fundef)
     INFO_FINVERSEINTRODUCED (result) = FALSE;
     INFO_ZWITHIDS (result) = NULL;
     INFO_FOLDLUT (result) = NULL;
+    INFO_VARLUT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -212,12 +216,14 @@ PWLFdoPolyhedralWithLoopFolding (node *arg_node)
 
     arg_info = MakeInfo (arg_node);
     INFO_FOLDLUT (arg_info) = LUTgenerateLut ();
+    INFO_VARLUT (arg_info) = LUTgenerateLut ();
 
     TRAVpush (TR_pwlf);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
     INFO_FOLDLUT (arg_info) = LUTremoveLut (INFO_FOLDLUT (arg_info));
+    INFO_VARLUT (arg_info) = LUTremoveLut (INFO_VARLUT (arg_info));
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1237,9 +1243,7 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
     node *iv;
     node *ivel;
     node *pwlelavis;
-    node *idlistiv = NULL;
     node *exprscwl = NULL;
-    node *idlistpwl = NULL;
     node *exprspwl = NULL;
     pattern *pat;
     node *arravis;
@@ -1248,7 +1252,6 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
     int i;
     int shp;
     int z = POLY_RET_UNKNOWN;
-    int numvars;
 
     DBUG_ENTER ();
 
@@ -1267,49 +1270,31 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
             // Compute the intersect and OR the result flags.
             i = 0;
             while ((i < shp) && isCanStillFold (z)) {
-                numvars = 0;
                 // pre-cleanup
                 ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
-                PHUTclearColumnIndices (ivel, INFO_FUNDEF (arg_info));
                 pwlelavis = TCgetNthIds (i, WITHID_IDS (PART_WITHID (pwlpart)));
-                PHUTclearColumnIndices (pwlelavis, INFO_FUNDEF (arg_info));
-
                 ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
-                idlistiv = PHUTcollectAffineNids (ivel, INFO_FUNDEF (arg_info), &numvars);
 
-                pwlelavis = TCgetNthIds (i, WITHID_IDS (PART_WITHID (pwlpart)));
-                idlistpwl
-                  = PHUTcollectAffineNids (pwlelavis, INFO_FUNDEF (arg_info), &numvars);
-
-                exprscwl
-                  = PHUTgenerateAffineExprs (ivel, INFO_FUNDEF (arg_info), &numvars);
-                exprspwl
-                  = PHUTgenerateAffineExprs (pwlelavis, INFO_FUNDEF (arg_info), &numvars);
-                DBUG_PRINT ("iv %s has %d affine fn expressions in %d variables",
-                            AVIS_NAME (ID_AVIS (iv)), TCcountExprs (exprscwl),
-                            TCcountExprs (idlistiv));
+                exprscwl = PHUTgenerateAffineExprs (ivel, INFO_FUNDEF (arg_info),
+                                                    INFO_VARLUT (arg_info));
+                exprspwl = PHUTgenerateAffineExprs (pwlelavis, INFO_FUNDEF (arg_info),
+                                                    INFO_VARLUT (arg_info));
                 // Collect affine exprs for PWL
-                DBUG_PRINT ("pwl %s has %d affine fn expressions in %d variables",
-                            AVIS_NAME (pwlelavis), TCcountExprs (exprspwl),
-                            TCcountExprs (idlistpwl));
-
                 exprsintr
-                  = PHUTgenerateAffineExprsForPwlfIntersect (ivel, pwlelavis, numvars);
+                  = PHUTgenerateAffineExprsForPwlfIntersect (ivel, pwlelavis,
+                                                             INFO_VARLUT (arg_info));
 
                 // Don't bother calling Polylib if it can't do anything for us.
-                idlistiv = TCappendExprs (idlistiv, idlistpwl);
-                if ((NULL != idlistiv) && (NULL != exprscwl) && (NULL != exprspwl)) {
+                if ((NULL != exprscwl) && (NULL != exprspwl)) {
                     z = z
                         | PHUTcheckIntersection (exprspwl, exprscwl, exprsintr, NULL,
-                                                 NULL, NULL, idlistiv, POLY_OPCODE_PWLF);
+                                                 NULL, NULL, INFO_VARLUT (arg_info),
+                                                 POLY_OPCODE_PWLF);
                 }
 
                 // Post-cleanup
                 ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
-                PHUTclearColumnIndices (ivel, INFO_FUNDEF (arg_info));
                 pwlelavis = TCgetNthIds (i, WITHID_IDS (PART_WITHID (pwlpart)));
-                PHUTclearColumnIndices (pwlelavis, INFO_FUNDEF (arg_info));
-                idlistiv = (NULL != idlistiv) ? FREEdoFreeTree (idlistiv) : NULL;
                 exprscwl = (NULL != exprscwl) ? FREEdoFreeTree (exprscwl) : NULL;
                 exprspwl = (NULL != exprspwl) ? FREEdoFreeTree (exprspwl) : NULL;
                 i++;
@@ -1462,6 +1447,7 @@ PWLFwith (node *arg_node, info *arg_info)
     old_arg_info = arg_info;
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
     INFO_FOLDLUT (arg_info) = INFO_FOLDLUT (old_arg_info);
+    INFO_VARLUT (arg_info) = INFO_VARLUT (old_arg_info);
     INFO_LET (arg_info) = INFO_LET (old_arg_info);
     INFO_DEFDEPTH (arg_info) = INFO_DEFDEPTH (old_arg_info) + 1;
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_arg_info);
@@ -1664,6 +1650,7 @@ PWLFprf (node *arg_node, info *arg_info)
                 }
                 pwlpart = PART_NEXT (pwlpart);
             }
+            LUTremoveContentLut (INFO_FOLDLUT (arg_info));
         }
         break;
     }

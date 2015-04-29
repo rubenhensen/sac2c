@@ -11,23 +11,20 @@
 extern bool *PHUTcreateMatrix (unsigned rows, unsigned cols, bool vals);
 // above bool are a lie
 
-extern void PHUTclearColumnIndices (node *arg_node, node *fundef);
-extern node *PHUTcollectAffineNids (node *arg_node, node *fundef, int *numvars);
-extern node *PHUTgenerateAffineExprs (node *arg_node, node *fundef, int *numvars);
-extern node *PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, int *numvars,
-                                              prf relfn, node **exprsUfn,
-                                              node **exprsUcfn);
+extern node *PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut);
+extern node *PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn,
+                                              node **exprsUfn, node **exprsUcfn);
 extern node *PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res);
 extern int PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *exprs4,
-                                  node *exprsuf, node *exprsuc, node *idlist,
+                                  node *exprsuf, node *exprsuc, lut_t *varlut,
                                   char opcode);
-extern node *PHUTgenerateIdentityExprs (int numvars);
-extern node *PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, int *numvars);
-extern node *PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, int *numvars);
+extern node *PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, lut_t *varlut);
+extern node *PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, lut_t *varlut);
 extern node *PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv,
-                                                      int numvars);
+                                                      lut_t *varlut);
 extern node *PHUTsetClearAvisPart (node *arg_node, node *val);
-extern node *PHUTcollectWlGeneratorMin (node *arg_node, info *arg_info, node *res);
-extern node *PHUTcollectWlGeneratorMax (node *arg_node, info *arg_info, node *res);
+extern node *PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res);
+extern bool PHUTisCompatibleAffineTypes (node *arg_node);
+extern bool PHUTisCompatibleAffinePrf (prf nprf);
 
 #endif /* _SAC_PHUT_H_ */

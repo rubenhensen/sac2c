@@ -918,22 +918,25 @@ LFUcorrectSSAAssigns (node *arg_node, node *nassgn)
 node *
 LFUfindAffineFunctionForLIV (node *arg_node, node *lacfundef)
 {
-    node *liv = NULL;
     node *z = NULL;
+#ifdef FIXME // needs ISL conversion
+    node *liv = NULL;
     node *idlist = NULL;
     int numvars = 0;
+#endif // FIXME // needs ISL conversion
 
     DBUG_ENTER ();
 
+#ifdef FIXME                                        // needs ISL conversion
     liv = LFUfindLoopInductionVariable (lacfundef); // Loop induction variable
     if (NULL != liv) {
         DBUG_PRINT ("Loop induction variable is: %s", AVIS_NAME (liv));
-        PHUTclearColumnIndices (liv, lacfundef);
         idlist = PHUTcollectAffineNids (liv, lacfundef, &numvars);
         DBUG_PRINT ("LIV has %d variables", numvars);
         z = PHUTgenerateAffineExprs (liv, lacfundef, &numvars);
     }
 
+#endif // FIXME // needs ISL conversion
     DBUG_RETURN (z);
 }
 
