@@ -27,6 +27,8 @@
  *
  *    A Presburger formula is a union of one or more constraints.
  *
+ * NB. This code assumes, in at least one place, that AVIS_NPART is
+ *     being maintained for all WITHID elements by the calling traversal.
  *
  *
  *****************************************************************************/
@@ -267,6 +269,7 @@ Prf2Isl (prf arg_node)
     DBUG_ENTER ();
 
     switch (arg_node) {
+
     default:
         DBUG_ASSERT (FALSE, "Did not find affine function in table");
         break;
@@ -275,10 +278,12 @@ Prf2Isl (prf arg_node)
     case F_val_lt_val_SxS:
         z = "<";
         break;
+
     case F_le_SxS:
     case F_val_le_val_SxS:
         z = "<=";
         break;
+
     case F_eq_SxS:
         z = "=";
         break;
@@ -366,6 +371,7 @@ GetIslSetVariablesFromLut (lut_t *varlut)
  *
  *         BuildIslSimpleConstraint is similar, but it only accepts five arguments,
  *         to build, e.g.,  ids = arg1 + arg2
+ *                   e.g.,  0  <= arg1 < arg2
  *
  * @param ids, arg1, arg2: N_id, N_avis or N_num nodes
  *        nprf1, nprf2: the function(s) to be used, or NULL
@@ -390,9 +396,12 @@ BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
     DBUG_ENTER ();
 
     DBUG_PRINT ("Generating simple constraint");
-    idsv = Node2Avis (ids); // We do not want AKV becoming N_num here.
-    DBUG_ASSERT (NULL != idsv, "Could not find N_avis");
-    idsv = TBmakeId (idsv);
+    idsv = Node2Avis (ids);
+    idsv = (NULL == idsv) ? ids : idsv; // N_num support
+    if ((NULL != idsv) && (N_avis == NODE_TYPE (idsv))) {
+        idsv = TBmakeId (idsv);
+    }
+    DBUG_ASSERT (NULL != idsv, "Expected non-NULL ids");
     arg1v = Node2Value (arg1);
     arg2v = Node2Value (arg2);
 
@@ -413,7 +422,7 @@ BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
 }
 
 static node *
-BuildIslGeneratorConstraint (node *lb, prf nprf1, int stpnum, node *iv, prf nprf2,
+BuildIslGeneratorConstraint (node *lb, prf nprf1, node *stp, node *iv, prf nprf2,
                              node *ub)
 {
     node *z;
@@ -430,10 +439,9 @@ BuildIslGeneratorConstraint (node *lb, prf nprf1, int stpnum, node *iv, prf nprf
 
     z = TBmakeExprs (lbv, NULL);
     z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf1, NULL), NULL));
-    if (stpnum > 1) {
-        z = TCappendExprs (z, TBmakeExprs (TBmakeNum (stpnum), NULL));
+    if (NULL != stp) { // Micro-optimization
+        z = TCappendExprs (z, TBmakeExprs (stp, NULL));
     }
-
     z = TCappendExprs (z, TBmakeExprs (ivv, NULL));
     z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf2, NULL), NULL));
     z = TCappendExprs (z, TBmakeExprs (ubv, NULL));
@@ -482,16 +490,22 @@ findBoundEl (node *arg_node, node *bnd, int k, info *arg_info)
  * @fn node *PHUTcollectWlGenerator( node *arg_node)
  *
  * @brief arg_node is a WITHID element for a WL, shown here as iv.
- *        The slightly messy part here is non-unit width, which entails
- *        adding two new set variable, iv' and ivw.
+ *        The slightly messy part here is non-unit step and/or width, which entail
+ *        adding two new set variables, iv', iv'', and ivw.
  *
  *        Assume we have this WL generator:
+ *
  *          lb <= iv < ub step stp width wid
  *
  *        We generate ISL constraints as follows:
- *         lb <= stp * iv' < ub
- *         0 <= ivw < wid
- *         iv = iv' + ivw
+ *
+ *          lb <= stp * iv' < ub
+ *          0 <= ivw < wid
+ *          iv'' = stp * iv'
+ *          iv = iv'' + ivw
+ *
+ *        We also have to ensure that these constraints are generated
+ *        whenever there is ANY reference to a WITHID_IDS.
  *
  *        One key simplification here is that SAC requires that wid <= stp, and that
  *        both be constants.
@@ -509,10 +523,12 @@ findBoundEl (node *arg_node, node *bnd, int k, info *arg_info)
  *         Otherwise, NULL.
  *
  ******************************************************************************/
-static int
+static node *
 StepOrWidthHelper (node *stpwid)
-{ // Find GENERATOR_STEP or GENERATOR_WIDTH element as an integer.
-    int z = -1;
+{ // Find GENERATOR_STEP or GENERATOR_WIDTH element as an N_num.
+    // If stpwid is NULL, generate a value of 1 for it.
+
+    node *z;
     pattern *pat;
     constant *con = NULL;
 
@@ -520,14 +536,17 @@ StepOrWidthHelper (node *stpwid)
         pat = PMconst (1, PMAgetVal (&con), 0);
         if (NULL != stpwid) {
             if (PMmatchFlat (pat, stpwid)) {
-                z = COconst2Int (con);
+                z = TBmakeNum (COconst2Int (con));
                 con = COfreeConstant (con);
             } else {
                 DBUG_ASSERT (FALSE, "Found non-constant stride/width");
             }
         }
         pat = PMfree (pat);
+    } else {
+        z = TBmakeNum (1);
     }
+
     return (z);
 }
 
@@ -539,8 +558,6 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
     node *lbel = NULL;
     node *ubel = NULL;
     node *iv = NULL;
-    int stpnum = 1;
-    int widnum = 1;
     int k;
     node *lb;
     node *ub;
@@ -548,8 +565,10 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
     node *wid;
     node *stpel;
     node *widel;
-    node *ivprimeavis;
+    node *ivpavis;
+    node *ivppavis;
     node *ivwavis;
+    prf mulop;
 
     DBUG_ENTER ();
 
@@ -564,43 +583,51 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
             wid = WLUTfindArrayForBound (GENERATOR_WIDTH (PART_GENERATOR (partn)));
             lbel = findBoundEl (arg_node, lb, k, arg_info);
             ubel = findBoundEl (arg_node, ub, k, arg_info);
+
             stpel = findBoundEl (arg_node, stp, k, arg_info);
+            stpel = StepOrWidthHelper (stpel);
             widel = findBoundEl (arg_node, wid, k, arg_info);
+            widel = StepOrWidthHelper (widel);
+
             res = PHUTcollectAffineExprsLocal (lbel, arg_info, res);
             res = PHUTcollectAffineExprsLocal (ubel, arg_info, res);
 
-            // Non-unit STEP, WIDTH support:
-            stpnum = StepOrWidthHelper (stpel);
-            widnum = StepOrWidthHelper (widel);
+            // Generate new set variables for ISL. Apart from ISL analysis, these
+            // names are unused. I.e., we do not generate any code that uses them.
+            ivpavis
+              = TBmakeAvis (TRAVtmpVarName ("pwlfiv"),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+            InsertVarIntoLut (ivpavis, INFO_VARLUT (arg_info));
+            ivppavis
+              = TBmakeAvis (TRAVtmpVarName ("pwlfivp"),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+            InsertVarIntoLut (ivppavis, INFO_VARLUT (arg_info));
+            ivwavis
+              = TBmakeAvis (TRAVtmpVarName ("pwlfivw"),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+            InsertVarIntoLut (ivwavis, INFO_VARLUT (arg_info));
 
-            if (widnum > 1) {
-                // Generate new set variables for ISL. Apart from ISL analysis, these
-                // names are unused. I.e., we do not generate any code that uses them.
-                ivprimeavis
-                  = TBmakeAvis (TRAVtmpVarName ("pwlfiv"),
-                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-                InsertVarIntoLut (ivprimeavis, INFO_VARLUT (arg_info));
-                ivwavis
-                  = TBmakeAvis (TRAVtmpVarName ("pwlfivw"),
-                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-                InsertVarIntoLut (ivwavis, INFO_VARLUT (arg_info));
+            // Generate: 0 <= ivw < wid
+            z = BuildIslSimpleConstraint (TBmakeNum (0), F_le_SxS, ivwavis, F_lt_SxS,
+                                          widel);
+            res = TCappendExprs (res, z);
 
-                // Generate: 0 <= ivw < wid
-                z = BuildIslSimpleConstraint (TBmakeNum (0), F_le_SxS, ivwavis, F_lt_SxS,
-                                              widel);
-                res = TCappendExprs (res, z);
-
-                // Generate iv = iv' + ivw
-                z = BuildIslSimpleConstraint (iv, F_eq_SxS, ivprimeavis, F_add_SxS,
-                                              ivwavis);
-                res = TCappendExprs (res, z);
+            // Generate iv'' = iv' * stp
+            //          iv   = iv'' + ivw
+            if (SCSisConstantOne (stpel)) { // Micro-optimization
+                mulop = NOPRFOP;
+                stpel = FREEdoFreeNode (stpel);
             } else {
-                ivprimeavis = iv; // If no width, generate: lb <= stp * iv < ub
+                mulop = F_mul_SxS;
             }
+            z = BuildIslSimpleConstraint (ivppavis, F_eq_SxS, ivpavis, mulop, stpel);
+            res = TCappendExprs (res, z);
+            z = BuildIslSimpleConstraint (iv, F_eq_SxS, ivppavis, F_add_SxS, ivwavis);
+            res = TCappendExprs (res, z);
 
             DBUG_PRINT ("Generating generator constraints for %s", AVIS_NAME (arg_node));
-            z = BuildIslGeneratorConstraint (lbel, F_le_SxS, stpnum, ivprimeavis,
-                                             F_lt_SxS, ubel);
+            z = BuildIslGeneratorConstraint (lbel, F_le_SxS, stpel, ivpavis, F_lt_SxS,
+                                             ubel);
             res = TCappendExprs (res, z);
         }
     }
@@ -709,7 +736,7 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
  *
  * @fn node *collectAffineNid( node *arg_node, info *arg_info)
  *
- * @brief Collect extrema values for this N_id, which may (or may not)
+ * @brief Collect affine info for this N_id, which may (or may not)
  *        be a WITHID_IDS element.
  *
  * @param An N_id or an N_avis
@@ -726,7 +753,7 @@ collectAffineNid (node *arg_node, info *arg_info, node *res)
 
     avis = (N_id == NODE_TYPE (arg_node)) ? ID_AVIS (arg_node) : arg_node;
     res = PHUTcollectWlGenerator (avis, arg_info, res);
-    DBUG_PRINT ("Generator extrema collected for %s", AVIS_NAME (avis));
+    DBUG_PRINT ("Generator affine info collected for %s", AVIS_NAME (avis));
 
     DBUG_RETURN (res);
 }
@@ -906,6 +933,8 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
  *
  * @param  arg_node: The N_avis for an assign with N_num/N_bool as rhs
  * @param  rhs: The N_num/N_bool
+ *         If rhs is NULL, then arg_node may be AKV, in which we
+ *         treat its value as rhs.
  * @param  arg_info: as usual
  * @param  res: Incoming N_exprs chain
  *
@@ -917,11 +946,14 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
 static node *
 HandleNumber (node *arg_node, node *rhs, info *arg_info, node *res)
 {
-    node *z = NULL;
+    node *z;
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("HandleNnum for lhs=%s", AVIS_NAME (arg_node));
+    DBUG_PRINT ("HandleNumber for lhs=%s", AVIS_NAME (arg_node));
+    if ((NULL == rhs) && TYisAKV (AVIS_TYPE (arg_node))) {
+        rhs = TBmakeNum (TUtype2Int (AVIS_TYPE (arg_node)));
+    }
     z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
     res = TCappendExprs (res, z);
 
@@ -1064,8 +1096,8 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                 z = BuildIslSimpleConstraint (PRF_ARG1 (rhs), PRF_PRF (rhs),
                                               PRF_ARG2 (rhs), NOPRFOP, NULL);
                 res = TCappendExprs (res, z);
-                break;
             }
+            break;
 
         case F_shape_A:
             argavis = ID_AVIS (PRF_ARG1 (rhs));
@@ -1147,6 +1179,7 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
                                               NULL);
                 res = TCappendExprs (res, z);
             }
+            break;
 
         case F_lt_SxS:
         case F_le_SxS:
@@ -1206,6 +1239,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res)
     node *assgn = NULL;
     node *rhs = NULL;
     node *avis = NULL;
+    node *npart = NULL;
 
     DBUG_ENTER ();
 
@@ -1239,11 +1273,26 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res)
                 break;
             }
         } else {
-            if (NULL != assgn) {
-                DBUG_PRINT ("FIXME skipping this node");
+            DBUG_ASSERT (NULL == assgn, "Confusion about AVIS_SSAASSIGN");
+            // This may be a WITHID or a function parameter.
+            // If it is constant, then we treat it as a number.
+            if (TYisAKV (AVIS_TYPE (avis))) {
+                res = HandleNumber (avis, rhs, arg_info, res);
+            } else {
+                // This presumes that AVIS_NPART is being maintained by our caller.
+                npart = AVIS_NPART (avis);
+                if (NULL != npart) {
+                    if (-1
+                        != LFUindexOfMemberIds (avis, WITHID_IDS (PART_WITHID (npart)))) {
+                        // arg_node is a withid element.
+                        res = PHUTcollectWlGenerator (avis, arg_info, res);
+                    } else {
+                        // non-constant function parameter
+                        DBUG_ASSERT (FALSE, "Coding time for lacfun args");
+                    }
+                }
             }
         }
-
         // Handle extrema
         res = collectAffineNid (arg_node, arg_info, res);
     }
