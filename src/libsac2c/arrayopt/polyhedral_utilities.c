@@ -534,13 +534,12 @@ StepOrWidthHelper (node *stpwid)
 
     if (NULL != stpwid) {
         pat = PMconst (1, PMAgetVal (&con), 0);
-        if (NULL != stpwid) {
-            if (PMmatchFlat (pat, stpwid)) {
-                z = TBmakeNum (COconst2Int (con));
-                con = COfreeConstant (con);
-            } else {
-                DBUG_ASSERT (FALSE, "Found non-constant stride/width");
-            }
+        if (PMmatchFlat (pat, stpwid)) {
+            z = TBmakeNum (COconst2Int (con));
+            con = COfreeConstant (con);
+        } else {
+            z = NULL; // Make gcc happy
+            DBUG_ASSERT (FALSE, "Found non-constant stride/width");
         }
         pat = PMfree (pat);
     } else {
