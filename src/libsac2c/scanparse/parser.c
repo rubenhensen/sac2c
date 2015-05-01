@@ -1003,7 +1003,8 @@ token_starts_expr (struct parser *parser, struct token *tok)
             return false;
         }
     case tok_keyword:
-        return is_prf (token_value (tok)) || token_is_reserved (tok);
+        return is_prf (token_value (tok)) || token_is_reserved (tok)
+               || token_is_keyword (tok, NWITH);
     default:
         return token_is_reserved (tok);
     }
