@@ -86,8 +86,9 @@ static bool IsLURModifier (node *, struct idx_vector *);
 static node *GetCallArg (node *, node *, node *);
 static bool GetConstantArg (node *, node *, node *, loopc_t *);
 static bool GetPredicateData (node *, prf *, loopc_t *);
-static node *UnrollLoopBody (node *, loopc_t);
-static node *CreateCopyAssigns (node *, node *);
+static node *UnrollLoopBody (node *, loopc_t, info *);
+static node *CreateCopyAssigns (node *, node *, node *);
+static node *CreateCopyAssignsHelper (node **, node *, node *, node *);
 
 static node *GetLoopVariable (node *, node *, node *);
 static bool GetModifier (node *, struct prf_expr_queue *, struct idx_vector_queue *, bool,
@@ -2105,7 +2106,7 @@ GetLoopVariable (node *var, node *fundef, node *params)
  *
  ******************************************************************************/
 static node *
-UnrollLoopBody (node *fundef, loopc_t unrolling)
+UnrollLoopBody (node *fundef, loopc_t unrolling, info *arg_info)
 {
     node *loop_body;
     node *then_instr; /* N_assign */
@@ -2159,10 +2160,10 @@ UnrollLoopBody (node *fundef, loopc_t unrolling)
                      "cond of loop fun w/o recursiv call in then body");
 
         /* append copy assignments to loop-body */
-        loop_body
-          = TCappendAssign (loop_body,
-                            CreateCopyAssigns (FUNDEF_ARGS (fundef),
-                                               AP_ARGS (ASSIGN_RHS (then_instr))));
+        loop_body = TCappendAssign (loop_body,
+                                    CreateCopyAssigns (FUNDEF_ARGS (fundef),
+                                                       AP_ARGS (ASSIGN_RHS (then_instr)),
+                                                       fundef));
 
         new_body = NULL;
 
@@ -2221,35 +2222,82 @@ UnrollLoopBody (node *fundef, loopc_t unrolling)
 
 /** <!--********************************************************************-->
  *
- * @fn static node *CreateCopyAssigns(node *arg_chain, node *rec_chain)
+ * @fn static node *CreateCopyAssigns( node *arg_chain,
+ *                                     node *rec_chain,
+ *                                     node *fundef)
  *
  * @brief
  *   this functions builds up an assignment chain of copy assignments for
  *   all identifiers used in the recursive call to have loop back to the
  *   args in the functions signature.
  *
+ *   We need to perform a rename encase an argument is passed back to the
+ *   loop as a different argument
+ *
+ *   loop( int a, int b){
+ *     loop( b, a);
+ *   }
+ *
+ *   !=
+ *
+ *   loop( int a, int b){
+ *     a = b;
+ *     b = a;
+ *     loop( a, b);
+ *   }
+ *
+ *
  ******************************************************************************/
 static node *
-CreateCopyAssigns (node *arg_chain, node *rec_chain)
+CreateCopyAssigns (node *arg_chain, node *rec_chain, node *fundef)
+{
+    node *copy_assigns;
+    node *copy_assigns2 = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (arg_chain != NULL && rec_chain != NULL,
+                 "arg_chain and rec_chain must not be NULL");
+
+    copy_assigns = CreateCopyAssignsHelper (&copy_assigns2, arg_chain, rec_chain, fundef);
+    copy_assigns = TCappendAssign (copy_assigns2, copy_assigns);
+
+    DBUG_RETURN (copy_assigns);
+}
+
+static node *
+CreateCopyAssignsHelper (node **copy_assigns2, node *arg_chain, node *rec_chain,
+                         node *fundef)
 {
     node *copy_assigns;
     node *right_id;
+    node *right_id2;
+    node *avis;
 
     DBUG_ENTER ();
 
     if (arg_chain != NULL) {
         /* process further identifiers in chain */
-        copy_assigns = CreateCopyAssigns (ARG_NEXT (arg_chain), EXPRS_NEXT (rec_chain));
+        copy_assigns = CreateCopyAssignsHelper (copy_assigns2, ARG_NEXT (arg_chain),
+                                                EXPRS_NEXT (rec_chain), fundef);
 
         /* make right identifer as used in recursive call */
         DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (rec_chain)) == N_id,
                      "non id node as paramter in recursive call");
-        right_id = TBmakeId (ID_AVIS (EXPRS_EXPR (rec_chain)));
 
+        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (ARG_AVIS (arg_chain))));
+
+        FUNDEF_VARDECS (fundef) = TBmakeVardec (avis, FUNDEF_VARDECS (fundef));
+
+        right_id = TBmakeId (ID_AVIS (EXPRS_EXPR (rec_chain)));
+        right_id2 = TBmakeId (avis);
         /* make copy assignment */
+        *copy_assigns2
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), right_id), *copy_assigns2);
         copy_assigns
-          = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (arg_chain), NULL), right_id),
+          = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (arg_chain), NULL), right_id2),
                           copy_assigns);
+        AVIS_SSAASSIGN (avis) = *copy_assigns2;
         AVIS_SSAASSIGN (ARG_AVIS (arg_chain)) = copy_assigns;
 
     } else {
@@ -2316,7 +2364,7 @@ LURfundef (node *arg_node, info *arg_info)
 
             /* start do-loop unrolling - this leads to non ssa form
              * code */
-            arg_node = UnrollLoopBody (arg_node, unrolling);
+            arg_node = UnrollLoopBody (arg_node, unrolling, arg_info);
 
         } else {
             DBUG_PRINT ("no unrolling of %s: should be %d (but set to maxlur %d)",
