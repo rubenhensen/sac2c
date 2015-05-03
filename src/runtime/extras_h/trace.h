@@ -188,6 +188,16 @@ typedef enum {
 
 #endif /* SAC_DO_TRACE_MT */
 
+#if SAC_DO_TRACE_DISTMEM
+
+#define SAC_TR_DISTMEM_PRINT(msg) SAC_TR_PRINT (msg);
+
+#else /* SAC_DO_TRACE_MEM */
+
+#define SAC_TR_DISTMEM_PRINT(msg)
+
+#endif
+
 #if SAC_DO_TRACE_MEM
 
 #define SAC_TR_MEM_PRINT(msg) SAC_TR_PRINT (msg);

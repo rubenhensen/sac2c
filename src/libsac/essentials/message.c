@@ -80,6 +80,8 @@ SAC_RuntimeError (char *format, ...)
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
+    SAC_DISTMEM_EXIT ();
+
     exit (1);
 }
 
@@ -121,6 +123,8 @@ SAC_RuntimeError_Mult (int cnt, ...)
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
+    SAC_DISTMEM_EXIT ();
+
     exit (1);
 }
 
@@ -148,6 +152,8 @@ SAC_RuntimeErrorLine (int line, char *format, ...)
     fprintf (stderr, "\n\n");
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
+
+    SAC_DISTMEM_EXIT ();
 
     exit (1);
 }

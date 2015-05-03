@@ -145,7 +145,8 @@ PrintGlobalSwitches (void)
              (global.trace.mt) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_TRACE_RTSPEC    %d\n",
              (global.trace.rtspec) ? 1 : 0);
-    fprintf (global.outfile, "\n");
+    fprintf (global.outfile, "#define SAC_DO_TRACE_DISTMEM    %d\n",
+             (global.trace.distmem) ? 1 : 0);
 
     fprintf (global.outfile, "#define SAC_DO_CACHESIM        %d\n",
              (global.docachesim) ? 1 : 0);
@@ -174,6 +175,33 @@ PrintGlobalSwitches (void)
 
     fprintf (global.outfile, "#define SAC_DO_MT_OMP          %d\n",
              (global.backend == BE_omp) ? 1 : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM         %d\n",
+             (global.backend == BE_distmem) ? 1 : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_GASNET  %d\n",
+             (global.backend == BE_distmem
+              && global.distmem_commlib == DISTMEM_COMMLIB_GASNET)
+               ? 1
+               : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_GPI  %d\n",
+             (global.backend == BE_distmem
+              && global.distmem_commlib == DISTMEM_COMMLIB_GPI)
+               ? 1
+               : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_MPI  %d\n",
+             (global.backend == BE_distmem
+              && global.distmem_commlib == DISTMEM_COMMLIB_MPI)
+               ? 1
+               : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_ARMCI  %d\n",
+             (global.backend == BE_distmem
+              && global.distmem_commlib == DISTMEM_COMMLIB_ARMCI)
+               ? 1
+               : 0);
 
     fprintf (global.outfile, "#define SAC_DO_THREADS_STATIC  %d\n",
              (global.num_threads == 0) ? 0 : 1);
@@ -253,7 +281,7 @@ PrintGlobalSwitches (void)
         fprintf (global.outfile, "#define SAC_BACKEND OMP\n");
         break;
     case BE_distmem:
-        fprintf (global.outfile, "#define SAC_BACKEND DISTMEM\n");
+        fprintf (global.outfile, "#define SAC_BACKEND_DISTMEM\n");
         switch (global.distmem_commlib) {
         case DISTMEM_COMMLIB_GASNET:
             fprintf (global.outfile, "#define SAC_DISTMEM_COMMLIB_GASNET\n");
@@ -657,6 +685,17 @@ GSCprintMainBegin (void)
 {
     DBUG_ENTER ();
 
+    fprintf (global.outfile, "SAC_TR_DISTMEM_PRINT((\"Tracing activated for distributed "
+                             "memory.\\n\"));\n");
+
+    INDENT;
+    fprintf (global.outfile, "SAC_DISTMEM_INIT();\n");
+    INDENT;
+
+    INDENT;
+    fprintf (global.outfile, "SAC_DISTMEM_BARRIER();\n");
+    INDENT;
+
     INDENT;
     fprintf (global.outfile, "SAC_MT_SETUP_INITIAL();\n");
     INDENT;
@@ -717,6 +756,10 @@ GSCprintMainEnd (void)
     if (global.backend != BE_cuda) {
         fprintf (global.outfile, "SAC_RTSPEC_FINALIZE();\n\n");
     }
+
+    INDENT;
+    fprintf (global.outfile, "SAC_DISTMEM_EXIT();\n");
+    INDENT;
 
     DBUG_RETURN ();
 }

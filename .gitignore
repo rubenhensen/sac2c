@@ -1,8 +1,10 @@
 *.o
 *.d
+*~
 bin/*
 lib/*
 src/bin/*
+/.project
 
 # SaC generated files.
 .revision.txt
@@ -69,4 +71,3 @@ src/runtime/mutc_h/mutc_gen.h
 src/runtime/mutc_h/mutc_rc_gen.h
 src/runtime/nested_h/nested_gen.h
 src/tools/.last_style
-

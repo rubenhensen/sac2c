@@ -760,6 +760,8 @@ PrintRuntimeTraceOptions (void)
       "                      t: Trace multi-threading specific operations.\n"
       "                      c: Trace runtime enviroment init/exit when\n"
       "                         using SAC libraries in C programs.\n"
+      "										"
+      "	 d: Trace distributed memory run time.\n"
       "\n"
       "    -utrace\n"
       "                    Introduce user tracing calls.");

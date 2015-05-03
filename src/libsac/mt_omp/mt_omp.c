@@ -17,8 +17,8 @@
 
 /******************************************************************************
  *
- * If all defines are falls this source file is "emptry".
- * Emptry source files are not allowed by the C99 standard
+ * If all defines are falls this source file is "empty".
+ * Empty source files are not allowed by the C99 standard
  * For this reason a dummy variable is declared.
  *
  ******************************************************************************/
