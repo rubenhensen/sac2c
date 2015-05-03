@@ -531,10 +531,14 @@ CYCLEPHASEFUN (ivexi, "Inserting index vector extrema", IVEXIdoInsertIndexVector
 CYCLEPHASEFUN (ivexp, "Propagating index vector extrema", IVEXPdoIndexVectorExtremaProp,
                global.doivext, opt, saacyc)
 
+CYCLEPHASEFUN (petl, "Propagate extrema thru lacfuns", PETLdoPropagateExtremaThruLacfuns,
+               global.optimize.dopetl, opt, saacyc)
+
 // Polyhedral optimizations can be very expensive, so
 // we clean up the AST before performing them, by doing
 // CSE, VP, and DCR.
 
+#define BUG1147
 #ifdef BUG1147
 // to be resolved...
 CYCLEPHASEFUN (pvp, "Propagating variables for polyhedral optimizations",
@@ -547,12 +551,8 @@ CYCLEPHASEFUN (pcse, "Eliminating common subexpressions for polyhedral optimizat
 CYCLEPHASEFUN (pdcr, "Removing dead code for polyhedral optimizations",
                DCRdoDeadCodeRemoval, global.optimize.dodcr, opt, saacyc)
 
-// We need extrema on guard results. This may be a lousy way to get this effect.
 CYCLEPHASEFUN (pogo, "Polyhedral guard optimization", POGOdoPolyhedralGuardOptimization,
                global.optimize.dopogo, opt, saacyc)
-
-CYCLEPHASEFUN (petl, "Propagate extrema thru lacfuns", PETLdoPropagateExtremaThruLacfuns,
-               global.optimize.dopetl, opt, saacyc)
 
 CYCLEPHASEFUN (pwlf, "Polyhedral with loop folding", PWLFdoPolyhedralWithLoopFolding,
                global.optimize.dopwlf, opt, saacyc)

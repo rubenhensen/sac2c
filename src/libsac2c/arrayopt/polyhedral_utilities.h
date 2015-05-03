@@ -23,6 +23,7 @@ extern node *PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, lut_t 
 extern node *PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv,
                                                       lut_t *varlut);
 extern node *PHUTsetClearAvisPart (node *arg_node, node *val);
+extern void PHUTsetClearCallAp (node *arg_node, node *callerfundef, node *nassign);
 extern node *PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res);
 extern bool PHUTisCompatibleAffineTypes (node *arg_node);
 extern bool PHUTisCompatibleAffinePrf (prf nprf);

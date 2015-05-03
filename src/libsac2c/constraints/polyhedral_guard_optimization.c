@@ -83,6 +83,8 @@ struct INFO {
     node *preassigns;
     node *with;
     lut_t *varlut;
+    node *nassign;
+    node *lacfun;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -90,6 +92,8 @@ struct INFO {
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_WITH(n) ((n)->with)
 #define INFO_VARLUT(n) ((n)->varlut)
+#define INFO_NASSIGN(n) ((n)->nassign)
+#define INFO_LACFUN(n) ((n)->lacfun)
 
 static info *
 MakeInfo (void)
@@ -105,6 +109,8 @@ MakeInfo (void)
     INFO_PREASSIGNS (result) = NULL;
     INFO_WITH (result) = NULL;
     INFO_VARLUT (result) = NULL;
+    INFO_NASSIGN (result) = NULL;
+    INFO_LACFUN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -297,22 +303,22 @@ POGOisPogoPrf (prf nprf)
 node *
 POGOfundef (node *arg_node, info *arg_info)
 {
+    node *fundefold;
+
     DBUG_ENTER ();
 
     DBUG_PRINT ("Starting to traverse %s %s",
                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                 FUNDEF_NAME (arg_node));
+    fundefold = INFO_FUNDEF (arg_info);
     INFO_FUNDEF (arg_info) = arg_node;
 
     if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     }
 
+    INFO_FUNDEF (arg_info) = fundefold;
     DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
-
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_FUNDEF (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -380,13 +386,52 @@ POGOassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    INFO_NASSIGN (arg_info) = arg_node;
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+    INFO_NASSIGN (arg_info) = NULL;
 
     if (INFO_PREASSIGNS (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
         INFO_PREASSIGNS (arg_info) = NULL;
     }
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *POGOap( node *arg_node, info *arg_info)
+ *
+ * @brief: If this is a non-recursive call of a LACFUN,
+ *         set FUNDEF_CALLAP to point to this N_ap's N_assign node,
+ *         then traverse the LACFUN.
+ *
+ *****************************************************************************/
+node *
+POGOap (node *arg_node, info *arg_info)
+{
+    node *lacfundef;
+    node *newfundef;
+
+    DBUG_ENTER ();
+
+    lacfundef = AP_FUNDEF (arg_node);
+
+    if ((NULL == INFO_LACFUN (arg_info)) &&      /* Vanilla traversal */
+        (FUNDEF_ISLACFUN (lacfundef)) &&         /* Ignore non-lacfun call */
+        (lacfundef != INFO_FUNDEF (arg_info))) { /* Ignore recursive call */
+        DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
+                    FUNDEF_NAME (lacfundef), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+        PHUTsetClearCallAp (lacfundef, INFO_FUNDEF (arg_info), INFO_NASSIGN (arg_info));
+        /* Traverse into the LACFUN */
+        INFO_LACFUN (arg_info) = lacfundef; /* The called lacfun */
+        newfundef = TRAVdo (lacfundef, arg_info);
+        DBUG_ASSERT (newfundef = lacfundef,
+                     "Did not expect N_fundef of LACFUN to change");
+        INFO_LACFUN (arg_info) = NULL; /* Back to normal traversal */
+        PHUTsetClearCallAp (lacfundef, NULL, NULL);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -582,7 +627,6 @@ POGOprf (node *arg_node, info *arg_info)
         exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
         exprsCfn = (NULL != exprsCfn) ? FREEdoFreeTree (exprsCfn) : NULL;
 
-        res = TRAVcont (res, arg_info);
         LUTremoveContentLut (INFO_VARLUT (arg_info));
     }
 

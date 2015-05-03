@@ -171,7 +171,8 @@ LFUisLoopFunInvariant (node *arg_node, node *arg, node *rca)
  *         fundef: the N_fundef entry for the called LACFUN.
  *         ext_assign: The N_assign of the external call to the LACFUN.
  *
- * @brief 1. Ensure that id is N_arg of fundef.
+ * @brief 1. Ensure that N_id/N_Avis id is N_arg of fundef.
+ *
  *        2. Search the parameter list of the fundef arg chain for
  *           id, and return the ext_assign element that corresponds to
  *           that.
@@ -187,21 +188,23 @@ LFUgetCallArg (node *id, node *fundef, node *ext_assign)
     node *arg_chain;
     node *param_chain;
     node *param;
+    node *avis;
     int pos;
     int i;
 
     DBUG_ENTER ();
 
+    avis = (N_avis == NODE_TYPE (id)) ? id : ID_AVIS (id);
     /* Check if id is an arg of this fundef */
-    if (NODE_TYPE (AVIS_DECL (ID_AVIS (id))) != N_arg) {
-        DBUG_PRINT ("identifier %s is not fundef argument", AVIS_NAME (ID_AVIS (id)));
+    if (NODE_TYPE (AVIS_DECL (avis)) != N_arg) {
+        DBUG_PRINT ("identifier %s is not fundef argument", AVIS_NAME (avis));
         DBUG_RETURN (NULL);
     }
 
     /* Get argument position in fundef arg chain */
     arg_chain = FUNDEF_ARGS (fundef);
     pos = 1;
-    while ((arg_chain != NULL) && (arg_chain != AVIS_DECL (ID_AVIS (id)))) {
+    while ((arg_chain != NULL) && (arg_chain != AVIS_DECL (avis))) {
         arg_chain = ARG_NEXT (arg_chain);
         pos++;
     }

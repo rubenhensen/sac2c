@@ -5797,11 +5797,6 @@ PRTavis (node *arg_node, info *arg_info)
         fprintf (global.outfile, " /* CUDA local */");
     }
 
-    if (global.optimize.dopogo && (-1 != AVIS_POLYLIBCOLUMNINDEX (arg_node))) {
-        fprintf (global.outfile, " /* POLYLIBCOLUMNINDEX = %d */ ",
-                 AVIS_POLYLIBCOLUMNINDEX (arg_node));
-    }
-
 #ifdef SOONDEAD
     if (global.optimize.dopwlf) {
         fprintf (global.outfile, " /* AVIS_NPART = %d */ ", (int)AVIS_NPART (arg_node));

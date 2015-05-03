@@ -769,6 +769,7 @@
           <node name="Part" />
           <node name="With" />
           <node name="Assign" />
+          <node name="Ap" />
           <node name="Let" />
           <node name="Prf" />
         </travuser>
@@ -5541,23 +5542,6 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="Callap" default="NULL" inconstructor="no">
-          <description>
-	  If this function is a LACFUN, this attribute points to
-	  the N_ap node that invokes it from outside the
-	  LACFUN. Valid only during EDFA.
-          </description>
-          <type name="ExtLink">
-            <targets>
-              <target mandatory="no">
-                <node name="Ap" />
-                <phases>
-                  <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="SlowClone" default="NULL" inconstructor="no">
           <description>
             This attribute points to the slow clone implementation if this
@@ -5638,6 +5622,50 @@ N_tfarg :
                 <range from="cg_cpl" to="cg_cpl" />
               </phases>
             </target>
+          </type>
+        </attribute>
+        <attribute name="Callerfundef" default="NULL" inconstructor="no">
+          <description>
+	  For a LACFUN, this attribute points to the N_fundef code of its 
+	  external caller. Other functions have NULL here.
+	  Valid only during EDFA, POGO, and PWLF. Referenced in PHUT,
+	  so any PHUT callers must maintain this. It would be nice to
+	  have this maintained throughout compilation, but that may not
+	  be trivial.
+          </description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Assign" />
+                <phases>
+                  <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
+                  <range from="opt_saacyc_pogo" to="opt_saacyc_pogo" />
+                  <range from="opt_saacyc_pwlf" to="opt_saacyc_pwlf" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Callap" default="NULL" inconstructor="no">
+          <description>
+	  If this function is a LACFUN, this attribute points to
+	  the N_assign node for the N_ap that invokes the LACFUN from outside the
+	  LACFUN; else NULL. Valid only during EDFA, POGO, and PWLF. Referenced in PHUT,
+	  so any PHUT callers must maintain this. It would be nice to
+	  have this maintained throughout compilation, but that may not
+	  be trivial.
+          </description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Ap" />
+                <phases>
+                  <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
+                  <range from="opt_saacyc_pogo" to="opt_saacyc_pogo" />
+                  <range from="opt_saacyc_pwlf" to="opt_saacyc_pwlf" />
+                </phases>
+              </target>
+            </targets>
           </type>
         </attribute>
       </attributes>
@@ -8735,23 +8763,6 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-	<attribute name="PolylibColumnIndex" default="-1" >
-	  <description> 
-	  This is used by PHUTcollectAffineExprs to assign an
-	  origin-1 column number to each distinct name found in
-	  any particular affine expression tree.
-	  </description>
-          <type name="Integer">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <range from="opt_saacyc_pogo" to="opt_saacyc_pogo" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>	 
 	<attribute name="Npart" default="NULL" >
 	  <description> 
 	  Pointer to the N_part that defines this variable, if
