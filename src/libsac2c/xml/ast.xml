@@ -8996,6 +8996,15 @@ N_tfarg :
 	  more than once.
 	  </description>
         </flag>	 
+	<flag name="IsHasAft" default="FALSE" >
+	  <description> 
+	  This flag is used by PHUT to keep track of N_id nodes that
+	  have already had an Affine Function Tree (AFT) built for them, so
+	  that we do not put redundant constraints into ISL input files.
+	  The extremely high cost of polyhedral model analysis 
+	  make this quite important.
+	  </description>
+        </flag>	 
       </flags>
     <checks>
       <check name="CHKavisReflection" />
