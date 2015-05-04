@@ -538,7 +538,6 @@ CYCLEPHASEFUN (petl, "Propagate extrema thru lacfuns", PETLdoPropagateExtremaThr
 // we clean up the AST before performing them, by doing
 // CSE, VP, and DCR.
 
-#define BUG1147
 #ifdef BUG1147
 // to be resolved...
 CYCLEPHASEFUN (pvp, "Propagating variables for polyhedral optimizations",
