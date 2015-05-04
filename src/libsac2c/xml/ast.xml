@@ -2324,6 +2324,7 @@
         <node name="Modarray"    />
         <node name="Part"    />
         <node name="Prf"     />
+        <node name="Ap"     />
      </travuser>
    </traversal>
    <traversal id="AWLFI" name="Algebraic With-Loop-Folding Inference" default="sons" include="algebraic_wlfi.h" >

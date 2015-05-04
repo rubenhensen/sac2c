@@ -137,6 +137,59 @@ FreeInfo (info *info)
 
 /** <!-- ****************************************************************** -->
  *
+ * @fn void PHUTclearAvisHasAft( node *arg_node)
+ *
+ * @brief Since polyhedral analysis is VERY expensive, we want to minimize
+ *        the size of any Affine Function Trees (AFTs) that we create
+ *        and pass to ISL.
+ *
+ *        For example, if we have code such as:
+ *
+ *            b = c + d;
+ *            e = b + 1;
+ *            f = b + 2
+ *            if( e == f) {
+ *             ...
+ *            }
+ *
+ *            POGO will build AFTs for e and f, plus one for the relational.
+ *            The first two will contain: "b = c + d", thereby increasing
+ *            the problem size, unless we take steps to prevent that.
+ *
+ *            We use AVIS_ISHASAFT to mark the AFT N_avis nodes to
+ *            prevent that duplication.
+ *
+ *            This function clears AVIS_ISHASAFT when we are done constructing
+ *            each AFT.
+ *
+ * @param An N_exprs chain of N_exprs chains for ISL
+ *
+ * @return none
+ *
+ *****************************************************************************/
+static void
+PHUTclearAvisHasAft (node *arg_node)
+{
+    node *innerexprs;
+
+    DBUG_ENTER ();
+
+    while (NULL != arg_node) {
+        innerexprs = EXPRS_EXPR (arg_node);
+        while (NULL != innerexprs) {
+            if (N_id == NODE_TYPE (EXPRS_EXPR (innerexprs))) {
+                AVIS_ISHASAFT (ID_AVIS (EXPRS_EXPR (innerexprs))) = FALSE;
+            }
+            innerexprs = EXPRS_NEXT (innerexprs);
+        }
+        arg_node = EXPRS_NEXT (arg_node);
+    }
+
+    DBUG_RETURN ();
+}
+
+/** <!-- ****************************************************************** -->
+ *
  * @fn void PHUTprintIslAffineFunctionTree( node *arg_node)
  *
  * @brief  Utility for printing an ISL affine function tree in slightly
@@ -265,32 +318,42 @@ Node2Value (node *arg_node)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn void InsertVarIntoLut( node *arg_node, lut_t *varlut)
+ * @fn bool InsertVarIntoLut( node *arg_node, lut_t *varlut)
  *
  * @brief Insert N_id or N_avis into varlut, if not already there.
  *        We use varlut LUT solely as a way to build the set of unique
  *        set variable names.
  *
- * @param arg_node: An N_id or N_avis
+ * @param arg_node: An N_id or N_avis. Or, just to make life more fun,
+ *                  it may be an N_num or N_bool, which we ignore.
  *        arg_info: your basic arg_info
  *
- * @return none
+ * @return TRUE if we the variables was inserted; FALSE if it was already there
+ *         or not a variable.
  *
  ******************************************************************************/
-static void
+static bool
 InsertVarIntoLut (node *arg_node, lut_t *varlut)
 {
     node *avis;
     node *founditem;
+    bool z = FALSE;
 
     DBUG_ENTER ();
 
     avis = Node2Avis (arg_node);
-    DBUG_ASSERT (NULL != avis, "Expected N_id or N_avis");
-    LUTupdateLutP (varlut, avis, avis, (void **)&founditem);
-    DBUG_PRINT ("Inserted %s into VARLUT", AVIS_NAME (avis));
+    if (NULL != avis) {
+        if (AVIS_ISHASAFT (avis)) {
+            DBUG_PRINT ("%s already in VARLUT", AVIS_NAME (avis));
+        } else {
+            z = TRUE;
+            AVIS_ISHASAFT (avis) = TRUE;
+            LUTupdateLutP (varlut, avis, avis, (void **)&founditem);
+            DBUG_PRINT ("Inserted %s into VARLUT", AVIS_NAME (avis));
+        }
+    }
 
-    DBUG_RETURN ();
+    DBUG_RETURN (z);
 }
 
 /** <!-- ****************************************************************** -->
@@ -775,6 +838,7 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
     DBUG_RETURN ();
 }
 
+#ifdef DEADCODE
 /** <!-- ****************************************************************** -->
  *
  * @fn node *collectAffineNid( node *arg_node, info *arg_info)
@@ -800,6 +864,7 @@ collectAffineNid (node *arg_node, info *arg_info, node *res)
 
     DBUG_RETURN (res);
 }
+#endif // DEADCODE
 
 /** <!-- ****************************************************************** -->
  *
@@ -959,11 +1024,14 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
 
     DBUG_ENTER ();
 
-    InsertVarIntoLut (rhs, INFO_VARLUT (arg_info));
-    res = collectAffineNid (rhs, arg_info, res);
-    res = PHUTcollectAffineExprsLocal (rhs, arg_info, res);
-    z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
-    res = TCappendExprs (res, z);
+    if (InsertVarIntoLut (rhs, INFO_VARLUT (arg_info))) {
+#ifdef DEADCODE // handled by PHUTcollectAffineExprsLocal
+        res = collectAffineNid (rhs, arg_info, res);
+#endif // DEADCODE
+        res = PHUTcollectAffineExprsLocal (rhs, arg_info, res);
+        z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
+        res = TCappendExprs (res, z);
+    }
 
     DBUG_PRINT ("Leaving HandleNid for lhs=%s", AVIS_NAME (arg_node));
 
@@ -1401,57 +1469,61 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res)
     avis = Node2Avis (arg_node);
     if (NULL != avis) { // N_num exits here
         DBUG_PRINT ("Looking at %s", AVIS_NAME (avis));
-        InsertVarIntoLut (avis, INFO_VARLUT (arg_info));
+        if (InsertVarIntoLut (avis, INFO_VARLUT (arg_info))) {
 
-        // Handle RHS for all modes.
-        assgn = AVIS_SSAASSIGN (avis);
-        if ((NULL != assgn) && (N_let == NODE_TYPE (ASSIGN_STMT (assgn)))) {
+            // Handle RHS for all modes.
+            assgn = AVIS_SSAASSIGN (avis);
+            if ((NULL != assgn) && (N_let == NODE_TYPE (ASSIGN_STMT (assgn)))) {
 
-            rhs = LET_EXPR (ASSIGN_STMT (assgn));
+                rhs = LET_EXPR (ASSIGN_STMT (assgn));
 
-            switch (NODE_TYPE (rhs)) {
-            case N_id: // straight assign:  var2 = var1;
-                res = HandleNid (avis, rhs, arg_info, res);
-                break;
+                switch (NODE_TYPE (rhs)) {
+                case N_id: // straight assign:  var2 = var1;
+                    res = HandleNid (avis, rhs, arg_info, res);
+                    break;
 
-            case N_prf:
-                res = HandleNprf (avis, rhs, arg_info, res);
-                res = HandleComposition (avis, rhs, arg_info, res);
-                break;
+                case N_prf:
+                    res = HandleNprf (avis, rhs, arg_info, res);
+                    res = HandleComposition (avis, rhs, arg_info, res);
+                    break;
 
-            case N_bool:
-            case N_num:
-                res = HandleNumber (avis, rhs, arg_info, res);
-                break;
+                case N_bool:
+                case N_num:
+                    res = HandleNumber (avis, rhs, arg_info, res);
+                    break;
 
-            default:
-                break;
-            }
-        } else {
-            DBUG_ASSERT (NULL == assgn, "Confusion about AVIS_SSAASSIGN");
-            // This may be a WITHID or a function parameter.
-            // If it is constant, then we treat it as a number.
-            if (TYisAKV (AVIS_TYPE (avis))) {
-                res = HandleNumber (avis, rhs, arg_info, res);
+                default:
+                    break;
+                }
             } else {
-                // This presumes that AVIS_NPART is being maintained by our caller.
-                npart = AVIS_NPART (avis);
-                if (NULL != npart) {
-                    if (-1
-                        != LFUindexOfMemberIds (avis, WITHID_IDS (PART_WITHID (npart)))) {
-                        // arg_node is a withid element.
-                        res = PHUTcollectWlGenerator (avis, arg_info, res);
-                    } else {
-                        // non-constant function parameter
-                        DBUG_ASSERT (FALSE, "Coding time for lacfun args");
-                    }
+                DBUG_ASSERT (NULL == assgn, "Confusion about AVIS_SSAASSIGN");
+                // This may be a WITHID or a function parameter.
+                // If it is constant, then we treat it as a number.
+                if (TYisAKV (AVIS_TYPE (avis))) {
+                    res = HandleNumber (avis, rhs, arg_info, res);
                 } else {
-                    res = PHUThandleLacfunArg (avis, arg_info, res);
+                    // This presumes that AVIS_NPART is being maintained by our caller.
+                    npart = AVIS_NPART (avis);
+                    if (NULL != npart) {
+                        if (-1
+                            != LFUindexOfMemberIds (avis,
+                                                    WITHID_IDS (PART_WITHID (npart)))) {
+                            // arg_node is a withid element.
+                            res = PHUTcollectWlGenerator (avis, arg_info, res);
+                        } else {
+                            // non-constant function parameter
+                            DBUG_ASSERT (FALSE, "Coding time for lacfun args");
+                        }
+                    } else {
+                        res = PHUThandleLacfunArg (avis, arg_info, res);
+                    }
                 }
             }
         }
+#ifdef DEADCODE // handled by HandleNid already
         // Handle extrema
         res = collectAffineNid (arg_node, arg_info, res);
+#endif // DEADCODE // handled by HandleNid already
     }
 
     DBUG_RETURN (res);
@@ -1522,6 +1594,7 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut)
     INFO_VARLUT (arg_info) = varlut;
 
     res = PHUTcollectAffineExprsLocal (arg_node, arg_info, res);
+    PHUTclearAvisHasAft (res);
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (res);
@@ -1544,7 +1617,7 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut)
  ******************************************************************************/
 node *
 PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn, node **exprsUfn,
-                                 node **exprsUcfn)
+                                 node **exprsUcfn, lut_t *varlut)
 {
     node *z = NULL;
     node *z2 = NULL;
@@ -1554,6 +1627,7 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn, node *
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_prf, "Expected N_prf node");
 
+    InsertVarIntoLut (PRF_ARG1 (arg_node), varlut);
     arg_info = MakeInfo ();
     INFO_FUNDEF (arg_info) = fundef;
     switch (relfn) {
@@ -1569,7 +1643,8 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn, node *
     case F_val_le_val_SxS:
     case F_le_SxS:
     case F_eq_SxS:
-        if (F_non_neg_val_S != PRF_PRF (arg_node)) { // kludge for monadic
+        if (F_non_neg_val_S != PRF_PRF (arg_node)) { // kludge for monadic CFN
+            InsertVarIntoLut (PRF_ARG2 (arg_node), varlut);
             z = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), relfn, PRF_ARG2 (arg_node),
                                           NOPRFOP, NULL);
         } else {
@@ -1581,6 +1656,7 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn, node *
     case F_neq_SxS:
         // This is harder. We need to construct a union
         // of (x<y) OR (x>y).
+        InsertVarIntoLut (PRF_ARG2 (arg_node), varlut);
         z = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_gt_SxS, PRF_ARG2 (arg_node),
                                       F_or_SxS, NULL);
         z2 = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_lt_SxS, PRF_ARG2 (arg_node),
@@ -1593,6 +1669,7 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn, node *
         break;
     }
 
+    PHUTclearAvisHasAft (z);
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (z);
@@ -1688,15 +1765,6 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprs3, node *exprs
  *
  * @return A maximal N_exprs chain of expressions for the Producer-WL partition.
  *
- * We establish the following, for this generator:
- *
- *        ( lb <= iv < ub step s width w)
- *
- *        iv >= lb
- *        iv <  ub
- *        0 == mod( iv - lb, s)
- *        FIXME: deal with width later on
- *
  ******************************************************************************/
 node *
 PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, lut_t *varlut)
@@ -1713,6 +1781,8 @@ PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, lut_t *varlut)
 
     DBUG_ASSERT (FALSE, "CODING TIME");
 
+    InsertVarIntoLut (arg_node, INFO_VARLUT (arg_info));
+    PHUTclearAvisHasAft (z);
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (z);
@@ -1746,11 +1816,13 @@ PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, lut_t *varlut)
 
     arg_info = MakeInfo ();
     INFO_FUNDEF (arg_info) = fundef;
+    InsertVarIntoLut (arg_node, INFO_VARLUT (arg_info));
     exprs1 = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), fundef, varlut);
     exprs2 = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), fundef, varlut);
     res = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_eq_SxS, PRF_ARG2 (arg_node),
                                     NOPRFOP, NULL);
 
+    PHUTclearAvisHasAft (res);
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (res);
@@ -1780,6 +1852,7 @@ PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv, lut_t *varlut
     InsertVarIntoLut (cwliv, varlut);
     InsertVarIntoLut (pwliv, varlut);
     res = BuildIslSimpleConstraint (cwliv, F_eq_SxS, pwliv, NOPRFOP, NULL);
+    PHUTclearAvisHasAft (res);
 
     DBUG_RETURN (res);
 }

@@ -563,13 +563,15 @@ POGOprf (node *arg_node, info *arg_info)
 
         if (dopoly) {
             // Don't bother calling ISL if it can't do anything for us.
-            exprsFn = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
-                                                       PRF_PRF (arg_node), &exprsUfn,
-                                                       &exprsUcfn);
+            exprsFn
+              = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
+                                                 PRF_PRF (arg_node), &exprsUfn,
+                                                 &exprsUcfn, INFO_VARLUT (arg_info));
             exprsCfn
               = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
                                                  ComplementaryFun (PRF_PRF (arg_node)),
-                                                 &exprsUfn, &exprsUcfn);
+                                                 &exprsUfn, &exprsUcfn,
+                                                 INFO_VARLUT (arg_info));
             emp = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn, exprsUfn,
                                          exprsUcfn, INFO_VARLUT (arg_info),
                                          POLY_OPCODE_INTERSECT);

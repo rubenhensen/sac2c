@@ -120,6 +120,8 @@ struct INFO {
     node *zwithids;          /* zwithids for GENERATOR_BOUNDs */
     lut_t *foldlut;          /* LUT for renames during fold */
     lut_t *varlut;           /* LUT for ISL set variables */
+    node *lacfun;            /* Marker that this is a LACFUN call */
+    node *nassign;           /* The N_assign node of a LACFUN N_ap call */
 };
 
 /**
@@ -143,6 +145,8 @@ struct INFO {
 #define INFO_ZWITHIDS(n) ((n)->zwithids)
 #define INFO_FOLDLUT(n) ((n)->foldlut)
 #define INFO_VARLUT(n) ((n)->varlut)
+#define INFO_LACFUN(n) ((n)->lacfun)
+#define INFO_NASSIGN(n) ((n)->nassign)
 
 static info *
 MakeInfo (node *fundef)
@@ -171,6 +175,8 @@ MakeInfo (node *fundef)
     INFO_ZWITHIDS (result) = NULL;
     INFO_FOLDLUT (result) = NULL;
     INFO_VARLUT (result) = NULL;
+    INFO_LACFUN (result) = NULL;
+    INFO_NASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1321,7 +1327,6 @@ PWLFfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-
         DBUG_PRINT ("Begin %s %s",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                     FUNDEF_NAME (arg_node));
@@ -1340,11 +1345,7 @@ PWLFfundef (node *arg_node, info *arg_info)
                                     BLOCK_VARDECS (FUNDEF_BODY (arg_node)));
                 INFO_VARDECS (arg_info) = NULL;
             }
-
-            FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         }
-
         DBUG_PRINT ("End %s %s",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                     FUNDEF_NAME (arg_node));
@@ -1707,6 +1708,42 @@ PWLFmodarray (node *arg_node, info *arg_info)
                     WITH_REFERENCED_FOLD (wl));
     }
 
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *PWLFap( node *arg_node, info *arg_info)
+ *
+ * @brief: If this is a non-recursive call of a LACFUN,
+ *         set FUNDEF_CALLAP to point to this N_ap's N_assign node,
+ *         then traverse the LACFUN.
+ *
+ *****************************************************************************/
+node *
+PWLFap (node *arg_node, info *arg_info)
+{
+    node *lacfundef;
+    node *newfundef;
+
+    DBUG_ENTER ();
+
+    lacfundef = AP_FUNDEF (arg_node);
+
+    if ((NULL == INFO_LACFUN (arg_info)) &&      /* Vanilla traversal */
+        (FUNDEF_ISLACFUN (lacfundef)) &&         /* Ignore non-lacfun call */
+        (lacfundef != INFO_FUNDEF (arg_info))) { /* Ignore recursive call */
+        DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
+                    FUNDEF_NAME (lacfundef), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+        PHUTsetClearCallAp (lacfundef, INFO_FUNDEF (arg_info), INFO_NASSIGN (arg_info));
+        /* Traverse into the LACFUN */
+        INFO_LACFUN (arg_info) = lacfundef; /* The called lacfun */
+        newfundef = TRAVdo (lacfundef, arg_info);
+        DBUG_ASSERT (newfundef = lacfundef,
+                     "Did not expect N_fundef of LACFUN to change");
+        INFO_LACFUN (arg_info) = NULL; /* Back to normal traversal */
+        PHUTsetClearCallAp (lacfundef, NULL, NULL);
+    }
     DBUG_RETURN (arg_node);
 }
 

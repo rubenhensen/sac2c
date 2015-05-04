@@ -15,6 +15,7 @@ extern node *PWLFdoPolyhedralWithLoopFolding (node *arg_node);
 extern node *PWLFfundef (node *arg_node, info *arg_info);
 extern node *PWLFblock (node *arg_node, info *arg_info);
 extern node *PWLFassign (node *arg_node, info *arg_info);
+extern node *PWLFap (node *arg_node, info *arg_info);
 extern node *PWLFlet (node *arg_node, info *arg_info);
 extern node *PWLFcond (node *arg_node, info *arg_info);
 extern node *PWLFfuncond (node *arg_node, info *arg_info);

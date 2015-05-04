@@ -112,13 +112,22 @@ PolyhedralWLFIntersectCalc (int verbose)
     pwleq = doIntersect (pwl, peq, "pwleq", verbose);
     intr = doIntersect (cwleq, pwleq, "intr", verbose);
     if (isl_union_set_is_subset (cwleq, intr)) {
-        z = POLY_RET_CCONTAINSB;
+        z = z | POLY_RET_CCONTAINSB;
+        z = z & ~POLY_RET_UNKNOWN;
         if (verbose) {
             fprintf (stderr, "cwleq is subset of intersect( cwleq, pwleq)\n");
         }
+    } else {
+        if (isl_union_set_is_empty (intr)) {
+            z = z | POLY_RET_EMPTYSET_BCR;
+            z = z & ~POLY_RET_UNKNOWN;
+            if (verbose) {
+                fprintf (stderr, "cwleq and pwleq do not intersect\n");
+            }
+        }
     }
 
-    fprintf (stdout, "%d\n", z); // This is the result that PHUT reads.
+    fprintf (stdout, "%d\n", z); // Write the result that PHUT will read.
     printUnion (stdout, intr, "intersect", 1, ISL_FORMAT_ISL);
 
     isl_union_set_free (pwl);

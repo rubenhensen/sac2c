@@ -13,7 +13,8 @@ extern bool *PHUTcreateMatrix (unsigned rows, unsigned cols, bool vals);
 
 extern node *PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut);
 extern node *PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn,
-                                              node **exprsUfn, node **exprsUcfn);
+                                              node **exprsUfn, node **exprsUcfn,
+                                              lut_t *varlut);
 extern node *PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res);
 extern int PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *exprs4,
                                   node *exprsuf, node *exprsuc, lut_t *varlut,
