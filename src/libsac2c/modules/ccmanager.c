@@ -195,7 +195,7 @@ AddDistMemLib (str_buf *buffer)
         SBUFprint (buffer, "-lsacdistmem");
         switch (global.distmem_commlib) {
         case DISTMEM_COMMLIB_GASNET:
-            SBUFprint (buffer, ".gasnet ");
+            SBUFprintf (buffer, ".gasnet%s ", global.config.commlib_conduit);
             break;
         }
     }

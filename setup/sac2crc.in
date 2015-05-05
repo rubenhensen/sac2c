@@ -113,6 +113,10 @@
  *  DISTMEM_COMMLIB Communication library for distributed memory backend
  *                  This is effective only when compiling for the DistMem backend
  *
+ *  COMMLIB_CONDUIT Conduit of communication library to be used
+ *                  This is effective only when compiling for the DistMem backend
+ *                  and if the communication library offers multiple conduits.
+ *
  *  OPT_O0          OPT_O0 specifies the C compiler option to disable optimizations.
  *                  This is triggered by the sac2c option -O0.
  *                  
@@ -277,6 +281,7 @@ LIB_VARIANT      :=  ""
 MT_LIB           :=  "pthread"
 
 DISTMEM_COMMLIB  :=  ""
+COMMLIB_CONDUIT  :=  ""
 
 OPT_O0           :=  "@OPT_O0@"
 OPT_O1           :=  "@OPT_O1@"
@@ -478,16 +483,18 @@ LDFLAGS          += " @OPENMP_CFLAGS@"
 target distmem:
 
 BACKEND          := "DistMem"
-DISTMEM_COMMLIB  := "GASNet"
-CC               := "mpicc -std=gnu99"
+/*CC               := "mpicc -std=gnu99"
 EXTLIBPATH       += "/usr/local/gasnet/lib:/usr/lib/gcc/x86_64-linux-gnu/4.8:"
 CCLINK           += " -lgasnet-mpi-seq"
                     " -lammpi"
                     " -lrt"
                     " -lgcc"
-                    " -lm"
+                    " -lm"*/
 
-target distmem_gasmet::distmem:
+target distmem_gasnet::distmem:
+DISTMEM_COMMLIB  := "GASNet"
+
+@GASNET_CONDUIT_TARGETS@
 
 target distmem_armci::distmem:
 DISTMEM_COMMLIB  := "ARMCI"

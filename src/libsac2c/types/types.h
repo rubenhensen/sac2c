@@ -710,6 +710,7 @@ typedef struct {
     char *mt_lib;
 
     char *distmem_commlib;
+    char *commlib_conduit;
 
     char *tree_cc;
     char *tree_ld;

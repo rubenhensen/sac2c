@@ -20,9 +20,6 @@ static UNUSED int SAC_DISTMEM_COMMLIB_GASNET_dummy;
 
 #ifdef COMPILE_DISTMEM_GASNET
 
-// TODO: This is temporary until we actually check the availability.
-#define ENABLE_DISTMEM_GASNET 1
-
 #if ENABLE_DISTMEM_GASNET
 
 #include <gasnet.h>
@@ -76,6 +73,7 @@ SAC_DISTMEM_COMMLIB_Init (int argc, char *argv[])
     size_t heapsz = 0;
 
     GASNET_SAFE (gasnet_attach (NULL, 0, segsz * SAC_DISTMEM_size, heapsz));
+    SAC_TR_DISTMEM_PRINT ((GASNET_CONFIG_STRING));
 }
 
 #if COMPILE_TRACE

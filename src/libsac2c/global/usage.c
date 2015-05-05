@@ -131,6 +131,38 @@ PrintFeatureSet (void)
     printf ("    OpenMP based parallelization:       disabled\n");
 #endif
 
+#if ENABLE_DISTMEM
+    printf ("    Distributed memory parallelization:  enabled\n");
+
+#if ENABLE_DISTMEM_GASNET
+    printf ("        GASNet communication library:    enabled (conduits: %s)\n",
+            DISTMEM_GASNET_CONDUITS);
+#else
+    printf ("        GASNet communication library:   disabled\n");
+#endif
+
+#if ENABLE_DISTMEM_GPI
+    printf ("        GPI communication library:       enabled\n");
+#else
+    printf ("        GPI communication library:      disabled\n");
+#endif
+
+#if ENABLE_DISTMEM_MPI
+    printf ("        MPI communication library:       enabled\n");
+#else
+    printf ("        MPI communication library:      disabled\n");
+#endif
+
+#if ENABLE_DISTMEM_ARMCI
+    printf ("        ARMCI communication library:     enabled\n");
+#else
+    printf ("        ARMCI communication library:    disabled\n");
+#endif
+
+#else
+    printf ("    Distributed memory parallelization:  disabled\n");
+#endif
+
 #if ENABLE_PHM
     printf ("    Private heap management:             enabled\n");
 #else
@@ -558,6 +590,29 @@ PrintMutcOptions (void)
       "    -mutc_rc_indirect                Perform reference counting operations using\n"
       "                                     wrapper functions\n\n"
       "    -mutc_seq_data_parallel          sequentialised data parallel code\n\n");
+
+    DBUG_RETURN ();
+}
+
+static void
+PrintDistMemOptions (void)
+{
+    DBUG_ENTER ();
+
+    printf ("\n\nDISTRIBUTED MEMORY OPTIONS:\n\n"
+
+            "    -numprocs <n>   Specify at compile time the exact number of processes "
+            "to be\n"
+            "                    used for parallel execution.\n"
+            "\n"
+            "    -maxprocs <n>   Specify at compile time only an upper bound on the "
+            "number\n"
+            "                    of processes to be used  for parallel execution when "
+            "exact\n"
+            "                    number is determined at runtime.\n"
+            "                      (default: %d)\n"
+            "\n",
+            global.max_procs);
 
     DBUG_RETURN ();
 }
@@ -1170,6 +1225,7 @@ USGprintUsage ()
         PrintTypeInferenceOptions ();
         PrintOptimisationOptions ();
         PrintMultithreadOptions ();
+        PrintDistMemOptions ();
         PrintMutcOptions ();
         PrintBackendOptions ();
 #ifndef DBUG_OFF
@@ -1271,7 +1327,7 @@ USGprintCopyright ()
       "\n"
       "COPYRIGHT NOTICE, LICENSE AND DISCLAIMER\n"
       "\n"
-      "(c) Copyright 1994 - 2011 by\n"
+      "(c) Copyright 1994 - 2015 by\n"
       "\n"
       "  SAC Development Team\n"
       "\n"

@@ -485,9 +485,7 @@ libsacphm_compat    := malloc
 #
 ###############################################################################
 
-#TODO: add other commlibs
-libsacdistmem_targets   := libsacdistmem$(CROSS_VARIANT).gasnet.a \
-                           libsacdistmem$(CROSS_VARIANT).gasnet$(SHARED_LIB_EXT) \
+libsacdistmem_targets   := $(foreach gasnet_conduit,$(DISTMEM_GASNET_CONDUITS),libsacdistmem$(CROSS_VARIANT).gasnet$(gasnet_conduit).a libsacdistmem$(CROSS_VARIANT).gasnet$(gasnet_conduit)$(SHARED_LIB_EXT)) \
                            libsacdistmem$(CROSS_VARIANT).mpi.a \
                            libsacdistmem$(CROSS_VARIANT).mpi$(SHARED_LIB_EXT)
 

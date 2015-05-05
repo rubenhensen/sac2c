@@ -103,6 +103,7 @@ static struct {
   {"MT_LIB", str, &global.config.mt_lib},
 
   {"DISTMEM_COMMLIB", str, &global.config.distmem_commlib},
+  {"COMMLIB_CONDUIT", str, &global.config.commlib_conduit},
 
   {"TREE_CC", str, &global.config.tree_cc},
   {"TREE_LD", str, &global.config.tree_ld},
@@ -784,6 +785,8 @@ xfree_configuration (configuration_t conf)
         MEMfree (conf.mt_lib);
     if (conf.distmem_commlib)
         MEMfree (conf.distmem_commlib);
+    if (conf.commlib_conduit)
+        MEMfree (conf.commlib_conduit);
     if (conf.tree_cc)
         MEMfree (conf.tree_cc);
     if (conf.tree_ld)

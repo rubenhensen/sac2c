@@ -20,9 +20,6 @@ static UNUSED int SAC_DISTMEM_COMMLIB_MPI_dummy;
 
 #ifdef COMPILE_DISTMEM_MPI
 
-// TODO: This is temporary until we actually check the availability.
-#define ENABLE_DISTMEM_MPI 1
-
 #if ENABLE_DISTMEM_MPI
 
 #include <mpi.h>
