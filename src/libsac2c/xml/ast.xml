@@ -5669,6 +5669,19 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="RtspecId" inconstructor="no">
+          <description>Used by rtspec to uniquely identify a function</description>
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsMain">
