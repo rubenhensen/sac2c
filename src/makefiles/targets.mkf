@@ -274,7 +274,7 @@ libsac2c_constraints := insert_domain_constraints insert_conformity_checks \
                         generate_guard_solvers                             \
                         strip_conformity_checks constraint_statistics
 
-libsac2c_rtspec      := runtime_specialization runtime_compiler runtime_filtering
+libsac2c_rtspec      := runtime_specialization runtime_compiler runtime_filtering runtime_function_id
 
 libsac2c_funcpara    := add_sync move_sync_statement tag_fp_fundefs tag_fp_aps \
                         live_variable_analysis make_slow_clones count_spawn_sync

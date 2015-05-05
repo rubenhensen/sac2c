@@ -126,6 +126,12 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
+      <traversal id="UID" name="Set unique ids for generic functions" default="sons" include="runtime_function_id.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
       <traversal id="CLF" name="Create loop functions" default="sons" include="create_loop_fun.h">
         <travuser>
           <node name="Assign" />
