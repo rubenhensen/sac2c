@@ -577,23 +577,23 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
               TCgetNthExprsExpr (WLINTERSECTIONNULL (intersectListNo),
                                  PRF_ARGS (noteint)));
 
+#ifdef BROKEN // This definitely breaks a few things:
             /* Slicing and exact intersect criteria */
             // After four kicks at the AWLFI can, give up and slice.
             if (((global.cycle_counter - noteintinsertcycle) > 3)
                 && (AWLFIisHasInverseProjection (proj1))
                 && (AWLFIisHasInverseProjection (proj2))) {
                 DBUG_PRINT ("Blind slicing cube at cycle %d", global.cycle_counter);
-#ifdef BROKEN // This definitely breaks a few things:
-              // sac2c codingtimeformul.sac -v1  -doawlf -nowlf -noctz
-              // gives wrong answers.
-              // Also, takeAKSunknownAKDVector.sac goes to cube-slicing
-              // heaven, never quite getting the intersect right
-              // for AWLF.
+                // sac2c codingtimeformul.sac -v1  -doawlf -nowlf -noctz
+                // gives wrong answers.
+                // Also, takeAKSunknownAKDVector.sac goes to cube-slicing
+                // heaven, never quite getting the intersect right
+                // for AWLF.
 
                 z = INTERSECT_sliceneeded;
                 SetWLProjections (noteint, intersectListNo, arg_info);
-#endif /* BROKEN */
             }
+#endif /* BROKEN */
 
             if (intnull) {
                 DBUG_PRINT ("Null intersect");
@@ -873,7 +873,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
     ids = WITHID_IDS (PART_WITHID (pwlpart));
     args = LET_EXPR (ASSIGN_STMT (arg_node));
     idxavis = IVUToffset2Vect (args, &INFO_VARDECS (arg_info),
-                               &INFO_PREASSIGNS (arg_info), pwlpart);
+                               &INFO_PREASSIGNS (arg_info), NULL, pwlpart);
     DBUG_ASSERT (NULL != idxavis, "Could not rebuild iv for _sel_VxA_(iv, PWL)");
 
     k = 0;
@@ -1030,7 +1030,7 @@ FindMarkedSelAssignParent (node *assgn)
  * @result: new cwlpart with pwl partno folded into it.
  *
  *****************************************************************************/
-node *
+static node *
 performFold (node *cwlpart, int partno, info *arg_info)
 {
     node *pwlblock;

@@ -97,6 +97,53 @@
 #include "constant_folding.h"
 #include "saa_constant_folding.h"
 #include "ivexpropagation.h"
+#include "polyhedral_utilities.h"
+
+/******************************************************************************
+ *
+ * function: Predicate for determining if an argument is
+ *           a selection from a shape vector.
+ *           Or, just a guarded shape vector.
+ *
+ * description: We look for (shape(v)[iv] in various guises.
+ *
+ * result: True if argument is known to be a selection from shape.
+ *         If true, the argument is also known to be non-negative.
+ *         Else false.
+ *
+ *****************************************************************************/
+bool
+SCSisSelOfShape (node *arg_node)
+{
+    pattern *pat1;
+    pattern *pat2;
+    pattern *pat3;
+    node *iv = NULL;
+    node *x = NULL;
+    node *m = NULL;
+    bool z;
+
+    DBUG_ENTER ();
+
+    /* z = _sel_VxA_( iv, x); */
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&x), 0));
+    /* z = _idx_sel( offset, x); */
+    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&x), 0));
+    /* x = _shape_A_( m ); */
+    pat3 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&m), 0));
+
+    z = PMmatchFlatSkipGuards (pat3, arg_node); // Guarded shape vector
+    z = (PMmatchFlatSkipGuards (pat1, arg_node) || PMmatchFlatSkipGuards (pat2, arg_node))
+        && PMmatchFlatSkipGuards (pat3, x);
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+
+    DBUG_RETURN (z);
+}
 
 /******************************************************************************
  *
@@ -119,11 +166,11 @@ SCSisNonneg (node *arg_node)
     constant *con = NULL;
     bool z;
 
-    pat = PMconst (1, PMAgetVal (&con));
-
     DBUG_ENTER ();
 
+    pat = PMconst (1, PMAgetVal (&con));
     z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
+    z = z || SCSisSelOfShape (arg_node);
 
     if (!z) {
         con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
@@ -534,6 +581,10 @@ SCSisConstantOne (node *prfarg)
  *
  * @result: true if:
  *
+ *       Case 0: GENERATOR_GENWIDTH == 1!
+ *         This requires that we be able to find the N_part we are
+ *         in, if it exists.
+ *
  *       Case 1:
  *         ( AVIS_MIN( arg) == ( AVIS_MAX( arg) -  1)) or
  *         ( AVIS_MIN( arg) == ( AVIS_MAX( arg) + -1)).
@@ -558,13 +609,28 @@ isGenwidth1Partition (node *arg, info *arg_info)
     constant *con = NULL;
     constant *cone = NULL;
     constant *consum = NULL;
+#ifdef FIXME
+    node *partn;
+#endif // FIXME
 
     DBUG_ENTER ();
 
     DBUG_PRINT (" Checking %s for 1==GENWIDTH", AVIS_NAME (ID_AVIS (arg)));
 
+#ifdef FIXME
+    this is rubbish
+      - we have no guarantee that we will be called from somewhere with the same arg_info
+          block as CF !
+      // Case 0
+      partn
+      = INFO_PART (arg_info);
+    res
+      = (NULL != partn) && SCSisConstantOne (GENERATOR_GENWIDTH (PART_GENERATOR (partn)));
+#endif // FIXME
+
     // Case 1
-    if ((IVEXPisAvisHasMin (ID_AVIS (arg))) && (IVEXPisAvisHasMax (ID_AVIS (arg)))) {
+    if ((!res) && (IVEXPisAvisHasMin (ID_AVIS (arg)))
+        && (IVEXPisAvisHasMax (ID_AVIS (arg)))) {
         amax = AVIS_MAX (ID_AVIS (arg));
 
         patadd = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAisVar (&amax), 0),
@@ -1301,6 +1367,11 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         SCSECI (F_min_SxS, F_max_SxS, TRUE, TRUE);
         // min( max( x, y), x) --> x
         SCSECI (F_max_SxS, F_min_SxS, TRUE, TRUE);
+    }
+
+    // Temporary code to aid in measuring POGO performance on relationals
+    if (!global.optimize.dorelcf) {
+        z = FALSE;
     }
 
     DBUG_RETURN (z);
@@ -3308,8 +3379,8 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     node *b = NULL;
     constant *con1 = NULL;
     constant *con2 = NULL;
+    constant *conrel = NULL;
     pattern *pat1;
-    pattern *pat2;
     pattern *pat3;
     pattern *pat4;
     bool flg = FALSE;
@@ -3319,26 +3390,26 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     pat1 = PMprf (1, PMAisPrf (F_val_lt_val_SxS), 2, PMconst (1, PMAgetVal (&con1)),
                   PMconst (1, PMAgetVal (&con2), 0));
 
-    pat2 = PMprf (1, PMAisPrf (F_val_lt_val_SxS), 2, PMvar (1, PMAgetNode (&val), 0),
-                  PMvar (1, PMAisVar (&val), 0));
-
     pat3 = PMprf (1, PMAisPrf (F_val_lt_val_SxS), 2, PMvar (1, PMAgetNode (&val), 0),
                   PMvar (1, PMAgetNode (&val2), 0));
 
     pat4 = PMprf (1, PMAisPrf (F_val_lt_val_SxS), 2, PMvar (1, PMAgetNode (&val3), 0),
                   PMvar (1, PMAisVar (&val2), 0));
 
-    /* Cases 1 and 2 */
-    if ((PMmatchFlat (pat2, arg_node))
-        || (PMmatchFlat (pat1, arg_node) && (COlt (con1, con2, NULL)))) {
-        res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                           TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT_TAG ("SCS", "removed guard Case 1( %s, %s)",
-                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+    /* Case 1 */
+    if (PMmatchFlat (pat1, arg_node)) {
+        conrel = COlt (con1, con2, NULL);
+        if ((NULL != conrel) && COisTrue (conrel, TRUE)) {
+            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (TBmakeBool (TRUE), NULL));
+            DBUG_PRINT_TAG ("SCS", "removed guard Case 1( %s, %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+        }
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
+    conrel = (NULL != conrel) ? COfreeConstant (conrel) : conrel;
 
 #ifdef DEADCODE
     /* Case 2 */
@@ -3427,7 +3498,6 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
     pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
     pat4 = PMfree (pat4);
 
@@ -3501,11 +3571,13 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     constant *con1 = NULL;
     constant *con2 = NULL;
     constant *con3 = NULL;
+    constant *conrel = NULL;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
     bool flg = FALSE;
+    bool flg2;
 
     DBUG_ENTER ();
 
@@ -3522,8 +3594,12 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
                   PMvar (1, PMAisVar (&val2), 0));
 
     /* Cases 1 and 2 */
-    if ((PMmatchFlat (pat2, arg_node))
-        || (PMmatchFlat (pat1, arg_node) && (COle (con1, con2, NULL)))) {
+    flg2 = PMmatchFlat (pat2, arg_node);
+    if (PMmatchFlat (pat1, arg_node)) {
+        conrel = COle (con1, con2, NULL);
+        flg2 = flg2 || ((NULL != conrel) && COisTrue (conrel, TRUE));
+    }
+    if (flg2) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT ("removed guard Case 1( %s, %s)",
@@ -3532,6 +3608,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
+    conrel = (NULL != conrel) ? COfreeConstant (conrel) : conrel;
 
     /* Case 3 */
     if ((NULL == res) && (NULL != AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))))) {

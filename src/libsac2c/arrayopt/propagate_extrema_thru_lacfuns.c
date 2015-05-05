@@ -79,6 +79,7 @@
 #include "compare_tree.h"
 #include "lacfun_utilities.h"
 #include "pattern_match.h"
+#include "print.h"
 
 /*
  * INFO structure
@@ -251,6 +252,7 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
     node *reccall;
     node *newrecursiveapargs = NULL;
     node *lfa;
+    node *af = NULL;
 
     DBUG_ENTER ();
     DBUG_PRINT ("Attempting to enhance LACFUN %s header", FUNDEF_NAME (arg_node));
@@ -278,10 +280,21 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
             minmax = AVIS_MIN (argavis);
             newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
                                                  &INFO_NEWOUTERAPARGS (arg_info));
-            AVIS_MIN (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
+            AVIS_MIN (lfa) = TBmakeId (newavis);
             DBUG_PRINT ("Adding AVIS_MIN(%s) for formal parameter %s",
-                        AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
+                        AVIS_NAME (newavis), AVIS_NAME (lfa));
             global.optcounters.petl_expr++;
+        }
+
+        // Support for LOOPFUN induction variable
+        if ((NULL == AVIS_MIN (lfa)) && (!TYisAKV (typ)) && (NULL != rca)
+            && (!LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca)))) {
+            af = LFUfindAffineFunctionForLIV (NULL, arg_node);
+#ifdef FIXME
+            if (NULL != af) {
+                PRTdoPrint (af);
+            }
+#endif // FIXME
         }
 
         if ((NULL == AVIS_MAX (lfa)) && (!TYisAKV (typ)) && (NULL != AVIS_MAX (argavis))
@@ -293,9 +306,9 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
             minmax = AVIS_MAX (argavis);
             newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
                                                  &INFO_NEWOUTERAPARGS (arg_info));
-            AVIS_MAX (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
+            AVIS_MAX (lfa) = TBmakeId (newavis);
             DBUG_PRINT ("Adding AVIS_MAX(%s) for formal parameter %s",
-                        AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
+                        AVIS_NAME (newavis), AVIS_NAME (lfa));
             global.optcounters.petl_expr++;
         }
 

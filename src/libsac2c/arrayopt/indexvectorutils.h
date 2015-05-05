@@ -11,7 +11,7 @@
 
 extern constant *IVUToffset2Constant (node *arg_node, node *mat);
 extern node *IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns,
-                              node *cwlpart);
+                              node *cwlpart, node *pwlpart);
 extern node *IVUTarrayFromProxy (node *iv);
 extern node *IVUTarrayFromProxySel (node *iv);
 extern node *IVUTarrayFromProxyIdxsel (node *iv);
@@ -23,5 +23,6 @@ extern node *IVUTfindOffset2Iv (node *arg_node);
 extern node *IVUToffset2IV (node *arg_node);
 extern bool IVUToffsetMatchesOffset (node *iv1, node *iv2);
 extern bool IVUTisIvMatchesWithid (node *iv, node *withidvec, node *withidids);
+extern node *IVUTindex2Array (node *iv);
 
 #endif /* _SAC_IVUT_TRAV_H_ */

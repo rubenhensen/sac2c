@@ -498,7 +498,6 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
         }
 
         if (NULL != pwlp) {
-            AVIS_ISWLFOLDED (producerWLavis) = TRUE;
             DBUG_PRINT ("PWL %s will be folded.", AVIS_NAME (producerWLavis));
         } else {
             DBUG_PRINT ("PWL %s can not be folded, at present.",
@@ -602,7 +601,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
     ids = WITHID_IDS (PART_WITHID (pwlpart));
     args = LET_EXPR (ASSIGN_STMT (arg_node));
     idxavis = IVUToffset2Vect (args, &INFO_VARDECS (arg_info),
-                               &INFO_PREASSIGNS (arg_info), pwlpart);
+                               &INFO_PREASSIGNS (arg_info), pwlpart, NULL);
     DBUG_ASSERT (NULL != idxavis, "Could not rebuild iv for _sel_VxA_(iv, PWL)");
 
     k = 0;
@@ -1022,7 +1021,7 @@ AWLFwith (node *arg_node, info *arg_info)
 
     if ((N_modarray == NODE_TYPE (consumerop))
         && (NULL != AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (consumerop))))
-        && (TRUE == AVIS_ISWLFOLDED (ID_AVIS (MODARRAY_ARRAY (consumerop))))) {
+        && (1 == AVIS_NEEDCOUNT (ID_AVIS (MODARRAY_ARRAY (consumerop))))) {
         producershape = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (consumerop)));
         genop = TBmakeGenarray (DUPdoDupTree (producershape), NULL);
         GENARRAY_NEXT (genop) = MODARRAY_NEXT (consumerop);

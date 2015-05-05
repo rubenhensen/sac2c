@@ -274,7 +274,7 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     iv = IVUToffset2Vect (arg_node, &INFO_VARDECS (arg_info), &INFO_PREASSIGN (arg_info),
-                          NULL);
+                          NULL, NULL);
     if (NULL != iv) {
         ivid = TBmakeId (iv);
         result = StructOpSelHelper (ivid, PRF_ARG2 (arg_node), arg_info);

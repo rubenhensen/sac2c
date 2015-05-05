@@ -31,6 +31,7 @@
 #include "user_types.h"
 #include "shape.h"
 #include "math_utils.h"
+#include "tree_utils.h"
 #include "type_utils.h"
 #include "DupTree.h"
 #include "SSAWithloopFolding.h"
@@ -1307,6 +1308,7 @@ WLURassign (node *arg_node, info *arg_info)
     /* integrate pre_assignments in assignment chain and remove this assign */
     if (pre_assigns != NULL) {
         tmp = arg_node;
+        TUclearSsaAssign (arg_node);
         arg_node = TCappendAssign (pre_assigns, ASSIGN_NEXT (arg_node));
         tmp = FREEdoFreeNode (tmp);
     }

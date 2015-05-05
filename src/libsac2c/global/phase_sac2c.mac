@@ -459,6 +459,9 @@ CYCLEPHASEFUN (ivesplit, "Eliminating index vectors (split selections)",
 CYCLEPHASEFUN (cse, "Eliminating common subexpressions",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
 
+CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
+               global.optimize.doprfunr, opt, saacyc)
+
 CYCLEPHASEFUN (ili, "Inferring loop invariant variables",
                IIPIdoIterationInvariantParameterInference, ALWAYS, opt, saacyc)
 
@@ -528,12 +531,30 @@ CYCLEPHASEFUN (ivexi, "Inserting index vector extrema", IVEXIdoInsertIndexVector
 CYCLEPHASEFUN (ivexp, "Propagating index vector extrema", IVEXPdoIndexVectorExtremaProp,
                global.doivext, opt, saacyc)
 
-// We need extrema on guard results. This may be a lousy way to get this effect.
+CYCLEPHASEFUN (petl, "Propagate extrema thru lacfuns", PETLdoPropagateExtremaThruLacfuns,
+               global.optimize.dopetl, opt, saacyc)
+
+// Polyhedral optimizations can be very expensive, so
+// we clean up the AST before performing them, by doing
+// CSE, VP, and DCR.
+
+#ifdef BUG1147
+// to be resolved...
+CYCLEPHASEFUN (pvp, "Propagating variables for polyhedral optimizations",
+               VPdoVarPropagation, global.optimize.dovp, opt, saacyc)
+#endif // BUG1147
+
+CYCLEPHASEFUN (pcse, "Eliminating common subexpressions for polyhedral optimizations",
+               CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
+
+CYCLEPHASEFUN (pdcr, "Removing dead code for polyhedral optimizations",
+               DCRdoDeadCodeRemoval, global.optimize.dodcr, opt, saacyc)
+
 CYCLEPHASEFUN (pogo, "Polyhedral guard optimization", POGOdoPolyhedralGuardOptimization,
                global.optimize.dopogo, opt, saacyc)
 
-CYCLEPHASEFUN (petl, "Propagate extrema thru lacfuns", PETLdoPropagateExtremaThruLacfuns,
-               global.optimize.dopetl, opt, saacyc)
+CYCLEPHASEFUN (pwlf, "Polyhedral with loop folding", PWLFdoPolyhedralWithLoopFolding,
+               global.optimize.dopwlf, opt, saacyc)
 
 CYCLEPHASEFUN (awlfi, "Inferring algebraically foldable with-loops",
                AWLFIdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
@@ -548,7 +569,9 @@ CYCLEPHASEFUN (wlircubsl, "Applying with-loop invariant removal for CUBSL",
 
 CYCLEPHASEFUN (cubsl, "Slicing algebraically foldable with-loops",
                CUBSLdoAlgebraicWithLoopFoldingCubeSlicing,
-               global.optimize.doawlf &&global.optimize.docubsl, opt, saacyc)
+               global.optimize.docubsl
+                 && (global.optimize.doawlf || global.optimize.dopwlf),
+               opt, saacyc)
 
 CYCLEPHASEFUN (awlf, "Applying algebraic with-loop folding",
                AWLFdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
@@ -567,9 +590,6 @@ CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariant
 
 CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                global.optimize.dowls, opt, saacyc)
-
-CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
-               global.optimize.doprfunr, opt, saacyc)
 
 CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
                opt, saacyc)

@@ -542,9 +542,9 @@ PrintIncludes (void)
     fprintf (global.outfile, "\n"
                              "#include <stdio.h>\n\n");
     fprintf (global.outfile, "\n"
-                             "#include <cutil.h>\n\n");
+                             "#include <cuda.h>\n\n");
     fprintf (global.outfile, "\n"
-                             "#include <cutil_inline_runtime.h>\n\n");
+                             "#include <cuda_runtime.h>\n\n");
     fprintf (global.outfile, "#endif\n");
 
     DBUG_RETURN ();

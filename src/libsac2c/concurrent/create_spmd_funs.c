@@ -302,11 +302,14 @@ MTSPMDFfundef (node *arg_node, info *arg_info)
  *        a) ensure traversal of BODY happens before that of COND. Reason for
  *        this is that COND typically refers to variables defined in BODY which
  *        are, hence, not relatively free.
- *        b) skip the DO_SKIP part. Reason for that is that
- *        the skip part contains RC-free operations of variables that
- *        may be local to the entire loop. In the context of MTSPMDF, this results
- *        in a potentially erroneous detection of a relatively free variable.
- *        See bug 1130 for details.
+ *        b) After traversing the body, we also need to traverse the DO_SKIP
+ *        part! Skipping the DO_SKIP part is *not* an option. One may believe
+ *        that the skip part contains only RC-free operations and therefore
+ *        does not need to be inspected. However, fun2lac sometimes inserts
+ *        renamings here which rely on the existance of relatively free variables
+ *        and that are *not* referenced anywhere in the body.
+ *
+ *        See bug 1136 for details.
  *
  *****************************************************************************/
 
@@ -321,7 +324,8 @@ MTSPMDFdo (node *arg_node, info *arg_info)
     DBUG_PRINT (" do-loop: traversing cond");
     DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
 
-    DBUG_PRINT (" do-loop: skipping skip");
+    DBUG_PRINT (" do-loop: traversing skip");
+    DO_SKIP (arg_node) = TRAVopt (DO_SKIP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

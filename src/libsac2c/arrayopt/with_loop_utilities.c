@@ -119,13 +119,16 @@ WLUTfindArrayForBound (node *bnd)
 
     DBUG_ENTER ();
 
-    if (N_array == NODE_TYPE (bnd)) {
-        z = bnd;
-    }
+    if (NULL != bnd) {
+        if (N_array == NODE_TYPE (bnd)) {
+            z = bnd;
+        }
 
-    if ((NULL == z) && (N_id == NODE_TYPE (bnd))) {
-        pat = PMarray (1, PMAgetNode (&z), 1, PMskip (0));
-        PMmatchFlat (pat, bnd);
+        if ((NULL == z) && (N_id == NODE_TYPE (bnd))) {
+            pat = PMarray (1, PMAgetNode (&z), 1, PMskip (0));
+            PMmatchFlat (pat, bnd);
+            pat = PMfree (pat);
+        }
     }
 
     DBUG_RETURN (z);

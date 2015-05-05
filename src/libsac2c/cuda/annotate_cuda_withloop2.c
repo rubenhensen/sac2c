@@ -31,7 +31,7 @@
 #include "memory.h"
 #include "globals.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "ACUWL"
 #include "debug.h"
 
 #include "ctinfo.h"
@@ -42,6 +42,7 @@
 #include "DupTree.h"
 #include "type_utils.h"
 #include "shape.h"
+#include "cuda_utils.h"
 
 #include "types.h"
 #include "vector.h"
@@ -144,18 +145,22 @@ InitCudaBlockSizes (void)
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
     } else {
-        CTIwarn ("CUDA architecture cannot be detected, setting to default(1.0)\n");
-        CTIwarn ("Please edit the CUDA_ARCH variable in sac2crc and set it to "
-                 "-arch=sm_xx where xx is the capability version of your CUDA card"
-                 " (ex. -arch=sm_20).\n");
-        global.config.cuda_arch = STRcpy ("-arch=sm_10");
-        global.optimal_threads = 256;
-        global.optimal_blocks = 3;
-        global.cuda_1d_block_large = 256;
-        global.cuda_1d_block_small = 64;
-        global.cuda_blocking_factor = 16;
-        global.cuda_2d_block_x = 16;
-        global.cuda_2d_block_y = 16;
+        if (STReq (global.config.cuda_arch, "no")) {
+            CTIwarn ("CUDA architecture was not detected during install, setting to "
+                     "default(-arch=sm_20)\n");
+            CTIwarn ("Please edit the CUDA_ARCH variable in sac2crc and set it to "
+                     "-arch=sm_xx where xx is the capability version of your CUDA card"
+                     " (ex. -arch=sm_20).\n");
+        } else {
+            CTIwarn ("CUDA architecture specified in sac2crc (%s) does not yet have "
+                     "special support,"
+                     " setting to default(-arch=sm_20)\n",
+                     global.config.cuda_arch);
+            CTIwarn ("Current set of architectures supported is: sm_10, sm_11, sm_12, "
+                     "sm_13, sm_20\n");
+        }
+        global.config.cuda_arch = STRcpy ("-arch=sm_20");
+        InitCudaBlockSizes ();
     }
 
     DBUG_RETURN ();
@@ -321,10 +326,14 @@ node *
 ACUWLwith (node *arg_node, info *arg_info)
 {
     ntype *ty;
+    simpletype base_ty;
+    bool is_ok_basetype;
 
     DBUG_ENTER ();
 
     ty = IDS_NTYPE (INFO_LETIDS (arg_info));
+    base_ty = TYgetSimpleType (TYgetScalar (ty));
+    is_ok_basetype = CUisSupportedHostSimpletype (base_ty);
 
     /* The following assignment cauese a bug when a fold wl is inside
      * a fold wl. Usually, in such a case, the outer fold wl should not
@@ -346,10 +355,23 @@ ACUWLwith (node *arg_node, info *arg_info)
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_INWL (arg_info) = FALSE;
 
+        if (!INFO_CUDARIZABLE (arg_info)) {
+            CTInoteLine (NODE_LINE (arg_node),
+                         "Body of With-Loop to complex => no cudarization!");
+        }
+
         /* We only cudarize AKS N_with */
         if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold) {
             /* For fold withloop to be cudarized, it *must* be AKS */
             WITH_CUDARIZABLE (arg_node) = TYisAKS (ty) && INFO_CUDARIZABLE (arg_info);
+            if (WITH_CUDARIZABLE (arg_node) && !is_ok_basetype) {
+                WITH_CUDARIZABLE (arg_node) = FALSE;
+                CTIwarnLine (global.linenum,
+                             "Cannot cudarize with-loop due to missing base type "
+                             "implementation! "
+                             "Missing type: \"%s\" for the result of fold!",
+                             global.type_string[base_ty]);
+            }
 
             if (WITH_CUDARIZABLE (arg_node)) {
                 FOLD_ISPARTIALFOLD (WITH_WITHOP (arg_node)) = TRUE;
@@ -357,6 +379,14 @@ ACUWLwith (node *arg_node, info *arg_info)
         } else {
             WITH_CUDARIZABLE (arg_node)
               = (TYisAKS (ty) || TYisAKD (ty)) && INFO_CUDARIZABLE (arg_info);
+            if (WITH_CUDARIZABLE (arg_node) && !is_ok_basetype) {
+                WITH_CUDARIZABLE (arg_node) = FALSE;
+                CTIwarnLine (global.linenum,
+                             "Cannot cudarize with-loop due to missing base type "
+                             "implementation! "
+                             "Missing type: \"%s\" for the result!",
+                             global.type_string[base_ty]);
+            }
         }
 
         if (WITH_CUDARIZABLE (arg_node)) {
@@ -367,6 +397,7 @@ ACUWLwith (node *arg_node, info *arg_info)
             TRAVpop ();
         }
     } else {
+        CTInoteLine (NODE_LINE (arg_node), "Inner With-loop => no cudarization!");
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
@@ -521,6 +552,14 @@ ACUWLid (node *arg_node, info *arg_info)
          * other than AKS arrays */
         if (!TUisScalar (type) && !TYisAKV (type) && !TYisAKS (type) && !TYisAKD (type)) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
+        } else if (!CUisSupportedHostSimpletype (TYgetSimpleType (TYgetScalar (type)))) {
+            INFO_CUDARIZABLE (arg_info) = FALSE;
+            CTIwarnLine (global.linenum,
+                         "Cannot cudarize with-loop due to missing base type "
+                         "implementation! "
+                         "Missing type: \"%s\" for relatively free variable \"%s\"!",
+                         global.type_string[TYgetSimpleType (TYgetScalar (type))],
+                         ID_NAME (arg_node));
         }
     }
 

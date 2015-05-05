@@ -888,7 +888,7 @@ lexer_read_number (struct lexer *lex, char **buf, size_t *size, char c)
         c = lexer_getch (lex);
 
         if (!isdigit (c)) {
-            error_loc (lex->loc, "digit expexted, '%c' found instead", c);
+            error_loc (lex->loc, "digit expected, '%c' found instead", c);
             lexer_ungetch (lex, c);
             buffer_add_char (buf, &index, size, 0);
             return tok_unknown;
@@ -937,11 +937,18 @@ read_postfix:
         buffer_add_char (buf, &index, size, c);
 
         c = lexer_getch (lex);
-        if (c == '+' || c == '-')
+        if (c == '+' || c == '-') {
             buffer_add_char (buf, &index, size, c);
-        else {
-            error_loc (lex->loc, "+ or - expected after exponent");
-            goto return_unknown;
+        } else {
+            // Optional sign (+ or - ) for exponent
+            if (isdigit (c)) {
+                DBUG_PRINT ("Faking up + sign for exponent");
+                lexer_ungetch (lex, c);
+                buffer_add_char (buf, &index, size, '+');
+            } else {
+                error_loc (lex->loc, "+ or - expected after exponent");
+                goto return_unknown;
+            }
         }
 
         c = lexer_getch (lex);

@@ -914,6 +914,25 @@ DLIRblock (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node* LIRgenarray(node *arg_node, info *arg_info)
+ *
+ * description:
+ *  Traverse the sons
+ *
+ *****************************************************************************/
+node *
+DLIRgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    arg_node = TRAVsons (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node* LIRassign(node *arg_node, info *arg_info)
  *
  * description:

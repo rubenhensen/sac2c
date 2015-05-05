@@ -297,11 +297,12 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
             while (result && (NULL != aexprs) && (NULL != ids)) {
                 idsid = TBmakeId (IDS_AVIS (ids));
                 el = EXPRS_EXPR (aexprs);
-                result = PMmatchFlat (pat4, idsid);
+                // N_num is a valid index, but PMmatchFlat will croak on it.
+                result = (N_num == NODE_TYPE (el)) || PMmatchFlat (pat4, idsid);
+                idsid = FREEdoFreeNode (idsid);
                 aexprs = EXPRS_NEXT (aexprs);
                 ids = IDS_NEXT (ids);
             }
-            idsid = FREEdoFreeNode (idsid);
 
             *ivs = SET_NEXT (*ivs);
             *ivids = SET_NEXT (*ivids);

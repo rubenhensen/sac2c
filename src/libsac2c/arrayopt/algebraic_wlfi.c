@@ -134,6 +134,7 @@
 #include "with_loop_utilities.h"
 #include "set_withloop_depth.h"
 #include "symbolic_constant_simplification.h"
+#include "polyhedral_utilities.h"
 
 /** <!--********************************************************************-->
  *
@@ -743,7 +744,7 @@ FakeUpConstantExtremum (node *elem, info *arg_info, int emax)
  *
  *
  *****************************************************************************/
-node *
+static node *
 GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
 {
     node *elem;
@@ -1174,7 +1175,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
 
 /** <!--********************************************************************-->
  *
- * @fn node *FlattenScalarNode( node *arg_node, info *arg_info)
+ * @fn node *AWLFIflattenScalarNode( node *arg_node, info *arg_info)
  *
  * @brief: Flatten a scalar node, if not already flattened.
  *
@@ -1184,8 +1185,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
  * @result:  N_avis for possibly flattened node
  *
  *****************************************************************************/
-static node *
-FlattenScalarNode (node *arg_node, info *arg_info)
+node *
+AWLFIflattenScalarNode (node *arg_node, info *arg_info)
 {
     node *z;
 
@@ -1264,8 +1265,8 @@ BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnu
             zprime = zarr;
         } else { /* confluence */
             fn = (0 == boundnum) ? "partitionMax" : "partitionMin";
-            newavis = FlattenScalarNode (zelnew, arg_info);
-            curavis = FlattenScalarNode (zelcur, arg_info);
+            newavis = AWLFIflattenScalarNode (zelnew, arg_info);
+            curavis = AWLFIflattenScalarNode (zelcur, arg_info);
             fncall
               = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fn,
                                    TCcreateExprsChainFromAvises (2, curavis, newavis));
@@ -1899,8 +1900,9 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     pattern *pat;
     node *gen = NULL;
     node *mmx;
-    node *z;
+    node *z = NULL;
     prf prfminmax;
+    node *polyint = NULL;
     int shp;
 
     DBUG_ENTER ();
@@ -1914,25 +1916,28 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     pat = PMarray (1, PMAgetNode (&gen), 0);
     PMmatchFlatSkipExtrema (pat, pg);
     DBUG_ASSERT (N_array == NODE_TYPE (gen), "Expected N_array gen");
-
+    pat = PMfree (pat);
     shp = SHgetUnrLen (ARRAY_FRAMESHAPE (gen));
     mmx = (1 == boundnum) ? ivmin : ivmax;
-    mmx = AWLFItakeDropIv (shp, 0, mmx, &INFO_VARDECS (arg_info),
-                           &INFO_PREASSIGNS (arg_info));
 
-    gen = WLSflattenBound (DUPdoDupTree (gen), &INFO_VARDECS (arg_info),
-                           &INFO_PREASSIGNS (arg_info));
+    if (NULL == polyint) { // Use old way if polyhedral analysis does not work
 
-    prfminmax = (1 == boundnum) ? F_max_VxV : F_min_VxV;
-    fncall = TCmakePrf2 (prfminmax, TBmakeId (gen), TBmakeId (mmx));
-    resavis = FLATGexpression2Avis (fncall, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info),
-                                    TYmakeAKS (TYmakeSimpleType (T_int),
-                                               SHcreateShape (1, shp)));
-    z = TUscalarizeVector (resavis, &INFO_PREASSIGNS (arg_info),
-                           &INFO_VARDECS (arg_info));
+        mmx = AWLFItakeDropIv (shp, 0, mmx, &INFO_VARDECS (arg_info),
+                               &INFO_PREASSIGNS (arg_info));
 
-    pat = PMfree (pat);
+        gen = WLSflattenBound (DUPdoDupTree (gen), &INFO_VARDECS (arg_info),
+                               &INFO_PREASSIGNS (arg_info));
+        prfminmax = (1 == boundnum) ? F_max_VxV : F_min_VxV;
+        fncall = TCmakePrf2 (prfminmax, TBmakeId (gen), TBmakeId (mmx));
+        resavis = FLATGexpression2Avis (fncall, &INFO_VARDECS (arg_info),
+                                        &INFO_PREASSIGNS (arg_info),
+                                        TYmakeAKS (TYmakeSimpleType (T_int),
+                                                   SHcreateShape (1, shp)));
+        z = TUscalarizeVector (resavis, &INFO_PREASSIGNS (arg_info),
+                               &INFO_VARDECS (arg_info));
+    } else {
+        z = polyint;
+    }
 
     DBUG_RETURN (z);
 }
@@ -2483,7 +2488,7 @@ AWLFIcheckProducerWLFoldable (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isCanAttachIntersectCalc( node *arg_node, node *ivavis
+ * @fn bool AWLFIisCanAttachIntersectCalc( node *arg_node, node *ivavis
  *                                    info *arg_info)
  *
  * @brief  TRUE if iv/ivavis are in suitable shape that we can
@@ -2495,8 +2500,8 @@ AWLFIcheckProducerWLFoldable (node *arg_node)
  * @result boolean
  *
  *****************************************************************************/
-static bool
-isCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info)
+bool
+AWLFIisCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info)
 {
     bool z = FALSE;
     node *narr;
@@ -2687,6 +2692,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
                     FUNDEF_NAME (arg_node));
 
         optctr = global.optcounters.awlfi_expr;
+        DBUG_PRINT ("At AWLFIfundef entry, global.optcounters.awlfi_expr is %d", optctr);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             arg_node = SWLDdoSetWithloopDepth (arg_node);
@@ -2700,12 +2706,14 @@ AWLFIfundef (node *arg_node, info *arg_info)
                 INFO_VARDECS (arg_info) = NULL;
             }
 
+            if (global.optcounters.awlfi_expr != optctr) {
+                DBUG_PRINT ("optcounters was %d; is now %d", optctr,
+                            global.optcounters.awlfi_expr);
+                arg_node = SimplifySymbioticExpression (arg_node, arg_info);
+            }
+
             FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-        }
-
-        if (global.optcounters.awlfi_expr != optctr) {
-            arg_node = SimplifySymbioticExpression (arg_node, arg_info);
         }
 
         DBUG_PRINT ("End %s %s",
@@ -2720,8 +2728,29 @@ AWLFIfundef (node *arg_node, info *arg_info)
  *
  * @fn node AWLFIassign( node *arg_node, info *arg_info)
  *
- * @brief performs a top-down traversal.
+ * @brief performs a bottom-up traversal.
+ *        This is harder than top-down, but we may get more folding done; see below.
+ *
  *        For a foldable WL, arg_node is x = _sel_VxA_(iv, producerWL).
+ *
+ *        Why bottom-up is better than top-down:
+ *         Suppose we have these WLs:
+ *          V1 = iota(N);
+ *          V2 = 3 + V1;
+ *          V3 = V1 * V2;
+ *
+ *         If we go top-down, we are unable to fold V1 into V2, because V1
+ *         is also referenced by V2. Thus, on the first pass, we only fold
+ *         V2 into V3. On the second cycle, we have:
+ *          V1 = iota(N);
+ *          V3 = V1 + ( 3 * V1);
+ *         This will fold, because all references to V1 lie within V3.
+ *
+ *         If we do bottom-up, we immediately fold V2 into V3:
+ *          V1 = iota(N);
+ *          V3 = V1 + ( 3 * V1);
+ *         Then, in the same cycle, we will fold V1 into V3, assuming
+ *         we revisit V3 immediately.
  *
  *****************************************************************************/
 node *
@@ -2933,11 +2962,11 @@ AWLFIprf (node *arg_node, info *arg_info)
 
             ivavis = IVUToffset2Vect (arg_node, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info),
-                                      INFO_CONSUMERWLPART (arg_info));
+                                      INFO_CONSUMERWLPART (arg_info), NULL);
 
             /* We need both extrema or constant index vector */
             /* Or, we need naked consumer */
-            if ((isCanAttachIntersectCalc (arg_node, ivavis, arg_info))) {
+            if ((AWLFIisCanAttachIntersectCalc (arg_node, ivavis, arg_info))) {
                 // FIXME || isNaked( arg_node, ivavis)) {
                 DBUG_PRINT ("Trying to attach F_noteintersect into cwl=%s", cwlnm);
                 z = attachIntersectCalc (arg_node, arg_info, ivavis);

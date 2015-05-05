@@ -34,6 +34,13 @@ CUnthApArg (node *args, int n)
     DBUG_RETURN (tmp);
 }
 
+bool
+CUisSupportedHostSimpletype (simpletype st)
+{
+    DBUG_ENTER ();
+    DBUG_RETURN ((st == T_int) || (st == T_float) || (st == T_double));
+}
+
 simpletype
 CUh2dSimpleTypeConversion (simpletype sty)
 {
@@ -52,7 +59,9 @@ CUh2dSimpleTypeConversion (simpletype sty)
         res = T_double_dev;
         break;
     default:
-        DBUG_UNREACHABLE ("Simple type conversion found undefined host simple type!");
+        DBUG_UNREACHABLE ("Host to Device type conversion encountered not yet supported "
+                          "host element type: %s!",
+                          global.type_string[sty]);
     }
     DBUG_RETURN (res);
 }

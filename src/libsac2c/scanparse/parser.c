@@ -1003,7 +1003,8 @@ token_starts_expr (struct parser *parser, struct token *tok)
             return false;
         }
     case tok_keyword:
-        return is_prf (token_value (tok)) || token_is_reserved (tok);
+        return is_prf (token_value (tok)) || token_is_reserved (tok)
+               || token_is_keyword (tok, NWITH);
     default:
         return token_is_reserved (tok);
     }
@@ -2000,10 +2001,12 @@ handle_primary_expr (struct parser *parser)
                     free_tree (expr);
                     return error_mark_node;
                 }
-            } else
-                /* FIXME emmit an error message.  */
+            } else {
+                error_loc (token_location (tok),
+                           "invalid axis notation --- identifier or list of "
+                           "identifiers expected");
                 res = error_mark_node;
-
+            }
             break;
         }
 
@@ -5817,8 +5820,16 @@ parse (struct parser *parser)
                     parser_get_until_tval (parser, tv_semicolon);
             } else
                 parser_unget (parser);
-        } else
-            parser_get_until_tval (parser, tv_semicolon);
+        } else {
+            /* We need to set some name as module name, at this point
+               it doesn't really matter which one, as we have encountered
+               an error and we just want to parse the definitions, so use
+               the value of the token.  */
+            tok = parser_get_token (parser);
+            name = strdup (token_as_string (tok));
+            if (!token_is_operator (tok, tv_semicolon))
+                parser_get_until_tval (parser, tv_semicolon);
+        }
 
         /* FIXME otherwise what... */
         if (CTIgetErrorCount () == 0)
@@ -5836,7 +5847,8 @@ parse (struct parser *parser)
             MODULE_FILETYPE (defs) = FT_modimp;
             MODULE_DEPRECATED (defs) = deprecated;
             global.syntax_tree = defs;
-        }
+        } else
+            free (name);
     } else if (token_is_keyword (tok, CLASS)) {
         node *defs = error_mark_node;
         ntype *classtype = error_type_node;
@@ -5861,8 +5873,14 @@ parse (struct parser *parser)
             } else
                 parser_unget (parser);
         } else {
-            parser_unget (parser);
-            parser_get_until_tval (parser, tv_semicolon);
+            /* We need to set some name as module name, at this point
+               it doesn't really matter which one, as we have encountered
+               an error and we just want to parse the definitions, so use
+               the value of the token.  */
+            tok = parser_get_token (parser);
+            name = strdup (token_as_string (tok));
+            if (!token_is_operator (tok, tv_semicolon))
+                parser_get_until_tval (parser, tv_semicolon);
         }
 
         /* Add class name into the hash-table of known types.  */
@@ -5923,7 +5941,8 @@ parse (struct parser *parser)
             MODULE_DEPRECATED (defs) = deprecated;
             defs = SetClassType (defs, classtype, pragmas);
             global.syntax_tree = defs;
-        }
+        } else
+            free (name);
     } else if (token_class (tok) == tok_unknown) {
         error_loc (token_location (tok), "unknown token found `%s'!",
                    token_as_string (tok));

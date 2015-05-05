@@ -175,49 +175,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/* msd 18/06/2012 : could not find where UPRFdoUnrollPRFsPrf is used,
- *                  commenting out for now */
-
-/** <!--********************************************************************-->
- *
- * @fn node *UPRFdoUnrollPRFsPrf( node *arg_node, node *vardecs, node *preassigns, node
- **lhs))
- *
- * @brief starting point of prf unrolling for a single N_prf
- *
- * @param arg_node: An N_prf node
- *        vardecs: A pointer to a pointer to an N_vardec chain
- *        preassigns: A pointer to a pointer to an N_assign chain
- *        lhs: A pointer to the LHS for the N_prf.
- *
- * @return updated arg_node, items added to vardecs and preassigns
- *
- *****************************************************************************/
-// node *UPRFdoUnrollPRFsPrf( node *arg_node, node **vardecs,
-//                           node **preassigns, node *lhs)
-//{
-//  info *arg_info;
-//
-//  DBUG_ENTER ();
-//
-//  DBUG_ASSERT (N_prf == NODE_TYPE( arg_node), "Expected N_prf");
-//
-//  arg_info = MakeInfo();
-//  INFO_LHS( arg_info) = lhs;
-//
-//  TRAVpush( TR_uprf);
-//  arg_node = TRAVdo( arg_node, arg_info);
-//  TRAVpop();
-//
-//  *vardecs = TCappendVardec( INFO_VARDEC( arg_info), *vardecs);
-//  *preassigns = TCappendAssign( *preassigns, INFO_PREASSIGN( arg_info));
-//
-//  arg_info = FreeInfo( arg_info);
-//
-//  DBUG_RETURN (arg_node);
-//
-//}
-
 /** <!--********************************************************************-->
  *
  * @fn node *UPRFdoUnrollPRFs( node *fundef)
@@ -253,7 +210,7 @@ UPRFdoUnrollPRFs (node *fundef)
  *
  *****************************************************************************/
 static bool
-PRFUnrollOracle (node *arg_node)
+UPRFunrollOracle (node *arg_node)
 {
     bool res;
 
@@ -330,7 +287,7 @@ PRFUnrollOracle (node *arg_node)
         break;
 
     case F_val_lt_shape_VxA:
-        /* Unroll onlyif we know array dim */
+        /* Unroll only if we know array dim */
         res = TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))))
               || TYisAKS (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))))
               || TYisAKD (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))));
@@ -594,6 +551,7 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
 
     case F_non_neg_val_V:
     case F_neg_V:
+    case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:
     case F_abs_V:
     case F_not_V:
@@ -626,10 +584,6 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
     case F_or_VxS:
     case F_or_VxV:
 
-        nprf = F_sel_VxA;
-        break;
-
-    case F_val_lt_shape_VxA:
         nprf = F_sel_VxA;
         break;
     }
@@ -709,6 +663,11 @@ MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
         nprf = F_sel_VxA;
         dyadic = TRUE;
         avis = INFO_SHPAVIS (arg_info);
+        break;
+
+    case F_val_le_val_VxV:
+        nprf = F_sel_VxA;
+        dyadic = TRUE;
         break;
 
     default:
@@ -1165,7 +1124,7 @@ UPRFprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if ((PRFUnrollOracle (arg_node)) && (TYisAKS (IDS_NTYPE (INFO_LHS (arg_info))))
+    if ((UPRFunrollOracle (arg_node)) && (TYisAKS (IDS_NTYPE (INFO_LHS (arg_info))))
         && (TYgetDim (IDS_NTYPE (INFO_LHS (arg_info))) == 1)) {
 
         INFO_LEN (arg_info) = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LHS (arg_info))));

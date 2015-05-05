@@ -10,6 +10,7 @@
  * prefix: SCS
  *
  *****************************************************************************/
+extern bool SCSisSelOfShape (node *arg_node);
 extern bool SCSisNegative (node *arg_node);
 extern bool SCSisNonneg (node *arg_node);
 extern bool SCSisPositive (node *arg_node);
