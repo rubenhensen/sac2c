@@ -252,7 +252,6 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
     node *reccall;
     node *newrecursiveapargs = NULL;
     node *lfa;
-    node *af = NULL;
 
     DBUG_ENTER ();
     DBUG_PRINT ("Attempting to enhance LACFUN %s header", FUNDEF_NAME (arg_node));
@@ -286,16 +285,20 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
             global.optcounters.petl_expr++;
         }
 
+#ifdef FIXME
+
+        node *af = NULL;
+        // FIXME This is rubbish. It need to be burned and/or rewritten to use PHUT.
+        // More likely, we can just burn it, once we get rid of extrema.
         // Support for LOOPFUN induction variable
         if ((NULL == AVIS_MIN (lfa)) && (!TYisAKV (typ)) && (NULL != rca)
             && (!LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca)))) {
             af = LFUfindAffineFunctionForLIV (NULL, arg_node);
-#ifdef FIXME
             if (NULL != af) {
                 PRTdoPrint (af);
             }
-#endif // FIXME
         }
+#endif // FIXME
 
         if ((NULL == AVIS_MAX (lfa)) && (!TYisAKV (typ)) && (NULL != AVIS_MAX (argavis))
             && (FUNDEF_ISCONDFUN (arg_node)
@@ -536,7 +539,6 @@ PETLfundef (node *arg_node, info *arg_info)
     if (NULL == INFO_LACFUN (arg_info)) { /* Vanilla traversal */
         DBUG_PRINT ("Normal traversal of: %s", FUNDEF_NAME (arg_node));
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     } else {
         DBUG_ASSERT (arg_node == INFO_LACFUN (arg_info), "Wrong LACFUN");
         DBUG_PRINT ("Looking at lacfun: %s", FUNDEF_NAME (arg_node));

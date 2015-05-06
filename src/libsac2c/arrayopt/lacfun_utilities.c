@@ -99,18 +99,19 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
 
 /** <!--***********************************************************************-->
  *
- * @fn bool LFUisLoopFunInvariant( node *arg_node, node *argid,
+ * @fn bool LFUisLoopFunInvariant( node *arg_node, node *inneriv,
  *                                 node *rca)
  *
  * @brief true if arg_node is not a LOOPFUN.
- *        true if arg_node IS a LOOPFUN, and argid (the current
- *        outer N_ap element) is the same as rca (recursivecallavis),
+ *        true if arg_node IS a LOOPFUN, and inneriv (the current
+ *        LOOPFUN N_arg element) is the same as rca (recursivecallavis),
  *        the current inner N_ap recursive call element.
  *
- * @param arg_node: N_fundef in question
- *        arg:   The current N_id or N_avis element of the
- *               lacfun's N_arg.
- *        rca:   The current N_id of the recursive call of arg_node.
+ * @param arg_node: LACFUN N_fundef in question
+ *        inneriv:   The current N_id or N_avis element of the
+ *                   lacfun's N_arg.
+ *        rca:       The current N_id of the recursive call of arg_node.
+ *                   In the example below, this is iv'.
  *
  * @result: True if the above brief holds.
  *
@@ -131,7 +132,7 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
  *
  ******************************************************************************/
 bool
-LFUisLoopFunInvariant (node *arg_node, node *arg, node *rca)
+LFUisLoopFunInvariant (node *arg_node, node *inneriv, node *rca)
 {
     bool z = TRUE;
     node *proxy;
@@ -139,7 +140,7 @@ LFUisLoopFunInvariant (node *arg_node, node *arg, node *rca)
 
     DBUG_ENTER ();
 
-    avis = (N_avis == NODE_TYPE (arg)) ? arg : ID_AVIS (arg);
+    avis = (N_avis == NODE_TYPE (inneriv)) ? inneriv : ID_AVIS (inneriv);
     if (FUNDEF_ISLOOPFUN (arg_node)) {
         z = avis == ID_AVIS (rca);
         if (!z) {
@@ -156,7 +157,7 @@ LFUisLoopFunInvariant (node *arg_node, node *arg, node *rca)
             }
         }
     }
-    DBUG_PRINT ("arg=%s and rca=%s are %s loop-invariant", AVIS_NAME (avis),
+    DBUG_PRINT ("inneriv=%s and rca=%s are %s loop-invariant", AVIS_NAME (avis),
                 ((NULL != rca) ? AVIS_NAME (ID_AVIS (rca)) : "notrecursive!"),
                 ((z ? "" : "not")));
 
@@ -229,7 +230,14 @@ LFUgetCallArg (node *id, node *fundef, node *ext_assign)
  * @fn node *LFUgetLoopVariable (node * var, node * fundef, node * params)
  *
  * @brief Return the variable in the LACFUN recursive call which has the same
- *        position as VAR in FUNDEF params.
+ *        position as VAR in fundef's params.
+ *
+ *        I.e.,  params[ FUNDEF_ARGS iota var]
+ *
+ * @param: var:    an N_id node in the LACFUNs N_arg list,
+ *                 or its N_avis node.
+ * @param: fundef: the LACFUN N_fundef node
+ * @param: params: Recursive call AP_ARGS list.
  *
  *****************************************************************************/
 node *
@@ -240,7 +248,8 @@ LFUgetLoopVariable (node *var, node *fundef, node *params)
 
     DBUG_ENTER ();
 
-    while (params && fargs && (ID_AVIS (var) != ARG_AVIS (fargs))) {
+    var = (N_id == NODE_TYPE (var)) ? ID_AVIS (var) : var;
+    while (params && fargs && (var != ARG_AVIS (fargs))) {
         params = EXPRS_NEXT (params);
         fargs = ARG_NEXT (fargs);
     }
@@ -909,7 +918,7 @@ LFUcorrectSSAAssigns (node *arg_node, node *nassgn)
 /******************************************************************************
  * @fn node *LFUfindAffineFunctionForLIV( node *arg_node, node *lacfundef)
  *
- * @brief: Find the maximum affine function for the variable that
+ * @brief: Find the maximal affine function tree for the variable that
  *         controls the recursive call in a LOOPFUN.
  *
  * @params: arg_node - not sure yet FIXME
@@ -923,7 +932,12 @@ LFUfindAffineFunctionForLIV (node *arg_node, node *lacfundef)
 {
     node *z = NULL;
 #ifdef FIXME // needs ISL conversion
-    node *liv = NULL;
+
+    this function, and its call from PETL,
+      are rubbish.
+
+      node *liv
+      = NULL;
     node *idlist = NULL;
     int numvars = 0;
 #endif // FIXME // needs ISL conversion

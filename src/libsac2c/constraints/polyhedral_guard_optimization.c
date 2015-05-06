@@ -297,7 +297,8 @@ POGOisPogoPrf (prf nprf)
  *
  * @fn node *POGOfundef( node *arg_node, info *arg_info)
  *
- * @brief Traverse this function only.
+ * @brief Traverse this function only. Do not traverse any LACFUN, unless
+ *        we come via POGOap.
  *
  *****************************************************************************/
 node *
@@ -307,14 +308,17 @@ POGOfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Starting to traverse %s %s",
-                (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                FUNDEF_NAME (arg_node));
     fundefold = INFO_FUNDEF (arg_info);
     INFO_FUNDEF (arg_info) = arg_node;
 
     if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+        if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_node == INFO_LACFUN (arg_info))) {
+            /* Vanilla traversal or LACFUN via POGOap */
+            DBUG_PRINT ("Starting to traverse %s %s",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                        FUNDEF_NAME (arg_node));
+            FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+        }
     }
 
     INFO_FUNDEF (arg_info) = fundefold;
@@ -417,9 +421,7 @@ POGOap (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     lacfundef = AP_FUNDEF (arg_node);
-
-    if ((NULL == INFO_LACFUN (arg_info)) &&      /* Vanilla traversal */
-        (FUNDEF_ISLACFUN (lacfundef)) &&         /* Ignore non-lacfun call */
+    if ((FUNDEF_ISLACFUN (lacfundef)) &&         /* Ignore call to non-lacfun */
         (lacfundef != INFO_FUNDEF (arg_info))) { /* Ignore recursive call */
         DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
                     FUNDEF_NAME (lacfundef), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
@@ -536,7 +538,6 @@ POGOprf (node *arg_node, info *arg_info)
         case F_gt_SxS:
         case F_val_lt_val_SxS:
         case F_val_le_val_SxS:
-            dopoly = TRUE;
             DBUG_PRINT ("Looking at dyadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
@@ -544,16 +545,17 @@ POGOprf (node *arg_node, info *arg_info)
                                               INFO_VARLUT (arg_info));
             exprsY = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info));
+            dopoly = TRUE;
             break;
 
         case F_non_neg_val_S:
-            dopoly = TRUE;
             DBUG_PRINT ("Looking at monadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
             exprsX = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info));
             exprsY = NULL;
+            dopoly = (NULL != exprsX);
             break;
 
         default:

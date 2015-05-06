@@ -137,59 +137,6 @@ FreeInfo (info *info)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn void PHUTclearAvisHasAft( node *arg_node)
- *
- * @brief Since polyhedral analysis is VERY expensive, we want to minimize
- *        the size of any Affine Function Trees (AFTs) that we create
- *        and pass to ISL.
- *
- *        For example, if we have code such as:
- *
- *            b = c + d;
- *            e = b + 1;
- *            f = b + 2
- *            if( e == f) {
- *             ...
- *            }
- *
- *            POGO will build AFTs for e and f, plus one for the relational.
- *            The first two will contain: "b = c + d", thereby increasing
- *            the problem size, unless we take steps to prevent that.
- *
- *            We use AVIS_ISHASAFT to mark the AFT N_avis nodes to
- *            prevent that duplication.
- *
- *            This function clears AVIS_ISHASAFT when we are done constructing
- *            each AFT.
- *
- * @param An N_exprs chain of N_exprs chains for ISL
- *
- * @return none
- *
- *****************************************************************************/
-static void
-PHUTclearAvisHasAft (node *arg_node)
-{
-    node *innerexprs;
-
-    DBUG_ENTER ();
-
-    while (NULL != arg_node) {
-        innerexprs = EXPRS_EXPR (arg_node);
-        while (NULL != innerexprs) {
-            if (N_id == NODE_TYPE (EXPRS_EXPR (innerexprs))) {
-                AVIS_ISHASAFT (ID_AVIS (EXPRS_EXPR (innerexprs))) = FALSE;
-            }
-            innerexprs = EXPRS_NEXT (innerexprs);
-        }
-        arg_node = EXPRS_NEXT (arg_node);
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!-- ****************************************************************** -->
- *
  * @fn void PHUTprintIslAffineFunctionTree( node *arg_node)
  *
  * @brief  Utility for printing an ISL affine function tree in slightly
@@ -336,20 +283,20 @@ static bool
 InsertVarIntoLut (node *arg_node, lut_t *varlut)
 {
     node *avis;
-    node *founditem;
+    node *founditem = NULL;
     bool z = FALSE;
 
     DBUG_ENTER ();
 
     avis = Node2Avis (arg_node);
     if (NULL != avis) {
-        if (AVIS_ISHASAFT (avis)) {
-            DBUG_PRINT ("%s already in VARLUT", AVIS_NAME (avis));
-        } else {
-            z = TRUE;
-            AVIS_ISHASAFT (avis) = TRUE;
-            LUTupdateLutP (varlut, avis, avis, (void **)&founditem);
+        DBUG_ASSERT (NULL != varlut, "NULL VARLUT");
+        LUTupdateLutP (varlut, avis, avis, (void **)&founditem);
+        z = NULL == founditem;
+        if (z) {
             DBUG_PRINT ("Inserted %s into VARLUT", AVIS_NAME (avis));
+        } else {
+            DBUG_PRINT ("%s already in VARLUT", AVIS_NAME (avis));
         }
     }
 
@@ -838,34 +785,6 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
     DBUG_RETURN ();
 }
 
-#ifdef DEADCODE
-/** <!-- ****************************************************************** -->
- *
- * @fn node *collectAffineNid( node *arg_node, info *arg_info)
- *
- * @brief Collect affine info for this N_id, which may (or may not)
- *        be a WITHID_IDS element.
- *
- * @param An N_id or an N_avis
- *
- * @return An N_exprs chain, or  NULL
- *
- ******************************************************************************/
-static node *
-collectAffineNid (node *arg_node, info *arg_info, node *res)
-{
-    node *avis;
-
-    DBUG_ENTER ();
-
-    avis = (N_id == NODE_TYPE (arg_node)) ? ID_AVIS (arg_node) : arg_node;
-    res = PHUTcollectWlGenerator (avis, arg_info, res);
-    DBUG_PRINT ("Generator affine info collected for %s", AVIS_NAME (avis));
-
-    DBUG_RETURN (res);
-}
-#endif // DEADCODE
-
 /** <!-- ****************************************************************** -->
  *
  * @fn bool PHUTisCompatibleAffinePrf( prf nprf)
@@ -1025,9 +944,6 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
     DBUG_ENTER ();
 
     if (InsertVarIntoLut (rhs, INFO_VARLUT (arg_info))) {
-#ifdef DEADCODE // handled by PHUTcollectAffineExprsLocal
-        res = collectAffineNid (rhs, arg_info, res);
-#endif // DEADCODE
         res = PHUTcollectAffineExprsLocal (rhs, arg_info, res);
         z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
         res = TCappendExprs (res, z);
@@ -1075,7 +991,115 @@ PHUTsetClearCallAp (node *arg_node, node *callerfundef, node *nassign)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node node *PHUThandleLacfunArg( node *avis, info *arg_info, node *res)
+ * @fn node node *PHUThandleLoopfunArg( node *avis, info *arg_info, node *res)
+ *
+ * @brief avis is the N_avis of a LOOPFUN N_arg, and we are in a LOOPFUN.
+ *
+ * @param  avis: the N_avis for an N_id with no AVIS_SSAASSIGN, but we
+ *         know that avis is not a WITHID element, so we assume
+ *         we are in a LACFUN (or defined fun), looking at one of the
+ *         function's arguments.
+ *
+ *
+ * @param  arg_info: as usual
+ * @param  res: Incoming N_exprs chain for ISL
+ * @param  callerassign: The N_assign node of the external N_ap call to this
+ *                       LACFUN
+ * @param: callerfundef: The N_fundef node of the LACFUN's calling function
+ * @param  externalnid:  The N_id node representing avis' value from the
+ *                       external caller.
+ *
+ * @return An N_exprs chain representing an ISL constraint, appended to res.
+ *         Otherwise, incoming res.
+ *
+ ******************************************************************************/
+static node *
+PHUThandleLoopfunArg (node *avis, info *arg_info, node *res, node *callerassign,
+                      node *callerfundef, node *externalnid)
+{
+    node *zinit = NULL;
+    node *rca = NULL;
+    node *reccallargs = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Looking at LOOPFUN %s", FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+
+    // Leap into caller's world to collect the caller's AFT for the initial value
+    zinit = PHUTgenerateAffineExprs (externalnid, callerfundef, INFO_VARLUT (arg_info));
+
+    // If the variable is loop-independent, we are done.
+    // See unit test ~/sac/testsuite/optimizations/pogorelationals/SCSprf_lt_SxS.LIR.sac
+    reccallargs = LFUfindRecursiveCallAssign (INFO_FUNDEF (arg_info));
+    reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallargs)));
+    rca = LFUgetLoopVariable (avis, INFO_FUNDEF (arg_info), reccallargs);
+    DBUG_PRINT ("LACFUN arg %s has recursive call value of %s", AVIS_NAME (avis),
+                AVIS_NAME (ID_AVIS (rca)));
+    if (!LFUisLoopFunInvariant (INFO_FUNDEF (arg_info), avis, rca)) {
+        // We are not done yet. Handle the recursive call.
+        DBUG_PRINT ("LACFUN arg %s is not loop-independent", AVIS_NAME (avis));
+        // FIXME int CODINGTIME;
+        zinit = (NULL != zinit) ? FREEdoFreeTree (zinit)
+                                : zinit; // FIXME -temp until we get analysis complete
+    } else {
+        DBUG_PRINT ("LACFUN arg %s is loop-independent", AVIS_NAME (avis));
+    }
+
+    res = TCappendExprs (res, zinit);
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node node *PHUThandleCondfunArg( node *avis, info *arg_info, node *res)
+ *
+ * @brief avis is the N_avis of an N_arg, and we are in a CONDFUN.
+ *
+ * @param  avis: the N_avis for an N_id with no AVIS_SSAASSIGN, but we
+ *         know that avis is not a WITHID element, so we assume
+ *         we are in a LACFUN (or defined fun), looking at one of the
+ *         function's arguments.
+ *
+ *         Our unit test is ~/sac/testsuite/optimizations/pogo/condfun.sac
+ *
+ * @param  arg_info: as usual
+ * @param  res: Incoming N_exprs chain for ISL
+ * @param  callerassign: The N_assign node of the external N_ap call to this
+ *                       LACFUN
+ * @param: callerfundef: The N_fundef node of the LACFUN's calling function
+ * @param  externalnid:  The N_id node representing avis' value from the
+ *                       external caller.
+ *
+ * @return An N_exprs chain representing an ISL constraint, appended to res.
+ *         Otherwise, incoming res.
+ *
+ ******************************************************************************/
+static node *
+PHUThandleCondfunArg (node *avis, info *arg_info, node *res, node *callerassign,
+                      node *callerfundef, node *externalnid)
+{
+    node *z = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Looking at CONDFUN %s", FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+
+    // Leap into caller's world to collect the AFT
+    z = PHUTgenerateAffineExprs (externalnid, callerfundef, INFO_VARLUT (arg_info));
+    res = TCappendExprs (res, z);
+
+    // we now have the AFT from the caller's environment. We now
+    // emit one more constraint, to make internal_name == external_name.
+    z = BuildIslSimpleConstraint (avis, F_eq_SxS, ID_AVIS (externalnid), NOPRFOP, NULL);
+    res = TCappendExprs (res, z);
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node node *PHUThandleLacfunArg()
  *
  * @brief avis may be the N_avis of an N_arg, if we are in a LACFUN.
  *
@@ -1101,35 +1125,31 @@ PHUThandleLacfunArg (node *avis, info *arg_info, node *res)
     node *callerassign;
     node *externalnid;
     node *callerfundef;
-    node *z = NULL;
 
     DBUG_ENTER ();
 
+    // N_assign of External call (N_ap) to LACFUN
+    callerassign = FUNDEF_CALLAP (INFO_FUNDEF (arg_info));
+    callerfundef = FUNDEF_CALLERFUNDEF (INFO_FUNDEF (arg_info));
+    DBUG_ASSERT (N_assign == NODE_TYPE (callerassign),
+                 "Expected FUNDEF_CALLAP to be N_assign");
+    DBUG_ASSERT (AP_FUNDEF (LET_EXPR (ASSIGN_STMT (callerassign)))
+                   == INFO_FUNDEF (arg_info),
+                 "Expected FUNDEF_CALLAP to point to its N_ap node");
+
+    // Find caller's value for avis.
+    externalnid = LFUgetCallArg (avis, INFO_FUNDEF (arg_info), callerassign);
+    DBUG_PRINT ("Building affine function for LACFUN variable %s from caller's %s",
+                AVIS_NAME (avis), AVIS_NAME (ID_AVIS (externalnid)));
+
     if (FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))) {
-        DBUG_PRINT ("Looking at CONDFUN %s", FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+        res = PHUThandleCondfunArg (avis, arg_info, res, callerassign, callerfundef,
+                                    externalnid);
+    }
 
-        // N_assign of External call (N_ap) to LACFUN
-        callerassign = FUNDEF_CALLAP (INFO_FUNDEF (arg_info));
-        callerfundef = FUNDEF_CALLERFUNDEF (INFO_FUNDEF (arg_info));
-        DBUG_ASSERT (N_assign == NODE_TYPE (callerassign),
-                     "Expected FUNDEF_CALLAP to be N_assign");
-        DBUG_ASSERT (AP_FUNDEF (LET_EXPR (ASSIGN_STMT (callerassign)))
-                       == INFO_FUNDEF (arg_info),
-                     "Expected FUNDEF_CALLAP to point to its N_ap node");
-
-        // Find caller's value for avis.
-        externalnid = LFUgetCallArg (avis, INFO_FUNDEF (arg_info), callerassign);
-        DBUG_PRINT ("Building affine function for LACFUN variable %s from caller's %s",
-                    AVIS_NAME (avis), AVIS_NAME (ID_AVIS (externalnid)));
-        // Leap into caller's world to collect the AFT
-        z = PHUTgenerateAffineExprs (externalnid, callerfundef, INFO_VARLUT (arg_info));
-        res = TCappendExprs (res, z);
-
-        // we now have the AFT from the caller's environment. We now
-        // emit one more constraint, to make internal_name == external_name.
-        z = BuildIslSimpleConstraint (avis, F_eq_SxS, ID_AVIS (externalnid), NOPRFOP,
-                                      NULL);
-        res = TCappendExprs (res, z);
+    if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
+        res = PHUThandleLoopfunArg (avis, arg_info, res, callerassign, callerfundef,
+                                    externalnid);
     }
 
     DBUG_RETURN (res);
@@ -1520,10 +1540,6 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res)
                 }
             }
         }
-#ifdef DEADCODE // handled by HandleNid already
-        // Handle extrema
-        res = collectAffineNid (arg_node, arg_info, res);
-#endif // DEADCODE // handled by HandleNid already
     }
 
     DBUG_RETURN (res);
@@ -1594,7 +1610,6 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut)
     INFO_VARLUT (arg_info) = varlut;
 
     res = PHUTcollectAffineExprsLocal (arg_node, arg_info, res);
-    PHUTclearAvisHasAft (res);
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (res);
@@ -1669,7 +1684,6 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn, node *
         break;
     }
 
-    PHUTclearAvisHasAft (z);
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (z);
@@ -1782,7 +1796,6 @@ PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, lut_t *varlut)
     DBUG_ASSERT (FALSE, "CODING TIME");
 
     InsertVarIntoLut (arg_node, INFO_VARLUT (arg_info));
-    PHUTclearAvisHasAft (z);
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (z);
@@ -1822,7 +1835,6 @@ PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, lut_t *varlut)
     res = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_eq_SxS, PRF_ARG2 (arg_node),
                                     NOPRFOP, NULL);
 
-    PHUTclearAvisHasAft (res);
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (res);
@@ -1852,7 +1864,6 @@ PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv, lut_t *varlut
     InsertVarIntoLut (cwliv, varlut);
     InsertVarIntoLut (pwliv, varlut);
     res = BuildIslSimpleConstraint (cwliv, F_eq_SxS, pwliv, NOPRFOP, NULL);
-    PHUTclearAvisHasAft (res);
 
     DBUG_RETURN (res);
 }

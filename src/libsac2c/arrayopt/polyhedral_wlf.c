@@ -1319,6 +1319,7 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
  * @fn node *PWLFfundef(node *arg_node, info *arg_info)
  *
  * @brief applies PWLF to a given fundef.
+ *        LACFUNs are traversed from PWLFap.
  *
  *****************************************************************************/
 node *
@@ -1330,7 +1331,8 @@ PWLFfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("Begin %s %s",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                     FUNDEF_NAME (arg_node));
-        if (NULL != FUNDEF_BODY (arg_node)) {
+        if ((NULL == INFO_LACFUN (arg_info)) && (NULL != FUNDEF_BODY (arg_node))) {
+            /* Vanilla traversal */
             arg_node = SWLDdoSetWithloopDepth (arg_node);
             arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_pwlf);
             arg_node = WLNCdoWLNeedCount (arg_node);
@@ -1729,7 +1731,6 @@ PWLFap (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     lacfundef = AP_FUNDEF (arg_node);
-
     if ((NULL == INFO_LACFUN (arg_info)) &&      /* Vanilla traversal */
         (FUNDEF_ISLACFUN (lacfundef)) &&         /* Ignore non-lacfun call */
         (lacfundef != INFO_FUNDEF (arg_info))) { /* Ignore recursive call */
