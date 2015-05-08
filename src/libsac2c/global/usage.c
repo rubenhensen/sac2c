@@ -132,7 +132,7 @@ PrintFeatureSet (void)
 #endif
 
 #if ENABLE_DISTMEM
-    printf ("    Distributed memory parallelization:  enabled\n");
+    printf ("    Distributed memory parallelization:  enabled (experimental)\n");
 
 #if ENABLE_DISTMEM_GASNET
     printf ("        GASNet communication library:    enabled (conduits: %s)\n",
@@ -599,8 +599,11 @@ PrintDistMemOptions (void)
 {
     DBUG_ENTER ();
 
-    printf ("\n\nDISTRIBUTED MEMORY OPTIONS:\n\n"
+    printf ("\n\nDISTRIBUTED MEMORY OPTIONS (experimental):\n\n"
 
+            "    -dsm_maxmem_mb <n>   Maximum amount of memory to use for the DSM system "
+            "in MB.\n"
+            "\n"
             "    -numprocs <n>   Specify at compile time the exact number of processes "
             "to be\n"
             "                    used for parallel execution.\n"
@@ -815,8 +818,7 @@ PrintRuntimeTraceOptions (void)
       "                      t: Trace multi-threading specific operations.\n"
       "                      c: Trace runtime enviroment init/exit when\n"
       "                         using SAC libraries in C programs.\n"
-      "										"
-      "	 d: Trace distributed memory run time.\n"
+      "                      d: Trace distributed memory run time (experimental).\n"
       "\n"
       "    -utrace\n"
       "                    Introduce user tracing calls.");

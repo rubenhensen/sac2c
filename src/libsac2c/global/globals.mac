@@ -371,7 +371,7 @@ GLOBAL (int, max_threads, 32, xfree_dummy, )
 GLOBAL (int, num_procs, 1, xfree_dummy, )
 /*
  * Number of processes to be generated (for distributed memory backend).
- *  0  : dynamic number of processes, specified as first command line argument
+ *  0  : dynamic number of processes, specified as command line argument
  *       on application program startup.
  *  1  : single process
  *  >1 : exact number of processes to be started
@@ -382,7 +382,7 @@ GLOBAL (int, max_procs, 32, xfree_dummy, )
  * Maximum number of processes if exact number is determined dynamically.
  */
 
-GLOBAL (unsigned int, distmem_max_memory_pages, 0, xfree_dummy, )
+GLOBAL (unsigned int, distmem_max_memory_mb, 512, xfree_dummy, )
 /*
  * Maximum number of pages to use for dsm.
  */

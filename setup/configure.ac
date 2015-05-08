@@ -382,7 +382,7 @@ else
 fi
 
 if test x"$enable_distmem" = xyes; then
-  distmem_details_print="
+  distmem_details_print=" (experimental)
 *   - GASNet:              $enable_distmem_gasnet$gasnet_conduit_names_print
 *   - GPI:                 $enable_distmem_gpi
 *   - MPI:                 $enable_distmem_mpi

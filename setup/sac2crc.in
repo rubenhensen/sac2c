@@ -481,15 +481,7 @@ LDFLAGS          += " @OPENMP_CFLAGS@"
  * Distributed Memory targets
  */
 target distmem:
-
 BACKEND          := "DistMem"
-/*CC               := "mpicc -std=gnu99"
-EXTLIBPATH       += "/usr/local/gasnet/lib:/usr/lib/gcc/x86_64-linux-gnu/4.8:"
-CCLINK           += " -lgasnet-mpi-seq"
-                    " -lammpi"
-                    " -lrt"
-                    " -lgcc"
-                    " -lm"*/
 
 target distmem_gasnet::distmem:
 DISTMEM_COMMLIB  := "GASNet"

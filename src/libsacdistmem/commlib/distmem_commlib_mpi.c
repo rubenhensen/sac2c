@@ -8,6 +8,9 @@
  *
  *****************************************************************************/
 
+// TODO: This is a placeholder and does not work yet. This implementation is behind of the
+// GASNet implementation.
+
 #include "config.h"
 
 /* By default, we do not use tracing. */

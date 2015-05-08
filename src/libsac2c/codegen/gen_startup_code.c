@@ -145,7 +145,7 @@ PrintGlobalSwitches (void)
              (global.trace.mt) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_TRACE_RTSPEC    %d\n",
              (global.trace.rtspec) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_TRACE_DISTMEM    %d\n",
+    fprintf (global.outfile, "#define SAC_DO_TRACE_DISTMEM   %d\n",
              (global.trace.distmem) ? 1 : 0);
 
     fprintf (global.outfile, "#define SAC_DO_CACHESIM        %d\n",
@@ -185,19 +185,19 @@ PrintGlobalSwitches (void)
                ? 1
                : 0);
 
-    fprintf (global.outfile, "#define SAC_DO_DISTMEM_GPI  %d\n",
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_GPI     %d\n",
              (global.backend == BE_distmem
               && global.distmem_commlib == DISTMEM_COMMLIB_GPI)
                ? 1
                : 0);
 
-    fprintf (global.outfile, "#define SAC_DO_DISTMEM_MPI  %d\n",
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_MPI     %d\n",
              (global.backend == BE_distmem
               && global.distmem_commlib == DISTMEM_COMMLIB_MPI)
                ? 1
                : 0);
 
-    fprintf (global.outfile, "#define SAC_DO_DISTMEM_ARMCI  %d\n",
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_ARMCI   %d\n",
              (global.backend == BE_distmem
               && global.distmem_commlib == DISTMEM_COMMLIB_ARMCI)
                ? 1
@@ -554,6 +554,15 @@ PrintGlobalSettings (node *syntax_tree)
         PrintProfileData ();
     }
 
+    /* Distributed memory backend specific settings */
+    if (global.backend == BE_distmem) {
+        fprintf (global.outfile, "#ifndef SAC_SET_DISTMEM_MAX_MEMORY_MB\n");
+        fprintf (global.outfile,
+                 "#define SAC_SET_DISTMEM_MAX_MEMORY_MB              %d\n",
+                 global.distmem_max_memory_mb);
+        fprintf (global.outfile, "#endif\n\n");
+    }
+
     DBUG_RETURN ();
 }
 
@@ -685,25 +694,20 @@ GSCprintMainBegin (void)
 {
     DBUG_ENTER ();
 
-    fprintf (global.outfile, "SAC_TR_DISTMEM_PRINT((\"Tracing activated for distributed "
-                             "memory.\\n\"));\n");
-
     INDENT;
-    fprintf (global.outfile, "SAC_DISTMEM_INIT();\n");
-    INDENT;
-
+    fprintf (global.outfile, "SAC_DISTMEM_SETUP();\n");
     INDENT;
     fprintf (global.outfile, "SAC_DISTMEM_BARRIER();\n");
-    INDENT;
 
     INDENT;
     fprintf (global.outfile, "SAC_MT_SETUP_INITIAL();\n");
-    INDENT;
 
     if (global.backend != BE_cuda) {
+        INDENT;
         fprintf (global.outfile, "SAC_RTSPEC_SETUP_INITIAL();\n");
     }
 
+    INDENT;
     fprintf (global.outfile, "SAC_PF_SETUP();\n");
     INDENT;
     fprintf (global.outfile, "SAC_HM_SETUP();\n");
@@ -717,9 +721,9 @@ GSCprintMainBegin (void)
 
     INDENT;
     fprintf (global.outfile, "SAC_CS_SETUP();\n");
-    INDENT;
 
     if (global.backend != BE_cuda) {
+        INDENT;
         fprintf (global.outfile, "SAC_RTSPEC_SETUP();\n");
     }
 
@@ -752,14 +756,14 @@ GSCprintMainEnd (void)
     fprintf (global.outfile, "SAC_MT_FINALIZE();\n");
     INDENT;
     fprintf (global.outfile, "SAC_HM_PRINT();\n\n");
-    INDENT;
+
     if (global.backend != BE_cuda) {
+        INDENT;
         fprintf (global.outfile, "SAC_RTSPEC_FINALIZE();\n\n");
     }
 
     INDENT;
     fprintf (global.outfile, "SAC_DISTMEM_EXIT();\n");
-    INDENT;
 
     DBUG_RETURN ();
 }
@@ -796,6 +800,14 @@ GSCprintMainC99 (void)
     INDENT;
     fprintf (global.outfile, "{\n");
     global.indent++;
+
+    /*
+     * The distributed memory communication library needs to be initialized
+     * before inspecting the arguments and before any output is produced.
+     */
+    INDENT;
+    fprintf (global.outfile, "SAC_DISTMEM_INIT();\n");
+
     if (print_thread_id) {
         INDENT;
         fprintf (global.outfile, "SAC_MT_DECL_MYTHREAD()\n");
