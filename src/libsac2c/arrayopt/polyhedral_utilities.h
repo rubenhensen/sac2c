@@ -8,9 +8,6 @@
  * Prefix: PHUT
  *
  *****************************************************************************/
-extern bool *PHUTcreateMatrix (unsigned rows, unsigned cols, bool vals);
-// above bool are a lie
-
 extern node *PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut);
 extern node *PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn,
                                               node **exprsUfn, node **exprsUcfn,

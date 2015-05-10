@@ -407,25 +407,14 @@ GetIslSetVariablesFromLut (lut_t *varlut)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *BuildIslGeneratorConstraint()
  * @fn node *BuildIslSimpleConstraint()
+ * @fn node *BuildIslNotSoSimpleConstraint()
  *
  * @brief Build one constraint for ISL as a one-element N_exprs chain, containing
  *        an N_exprs chain of the constraint.
  *
- *
- *        A constraint is something like:  LB <= 3IV < UB
- *                                                   ^---  nprf2
- *                                                ^------- set variable
- *                                               ^-------- stp (step/stride)
- *                                            ^----------- nprf1
- *
- *         If nprf2 is NULL, generate:     LB <= 3IV.
- *         If stp is NULL, generate:       LB <= IV.
- *
- *         BuildIslSimpleConstraint is similar, but it only accepts five arguments,
- *         to build, e.g.,  ids = arg1 + arg2
- *                   e.g.,  0  <= arg1 < arg2
+ *        For ids nprf1  arg1 nprf2 arg2, we get, e.g.,
+ *              0 <=     arg1 <     arg2
  *
  * @param ids, arg1, arg2: N_id, N_avis or N_num nodes
  *        nprf1, nprf2: the function(s) to be used, or NULL
@@ -434,7 +423,7 @@ GetIslSetVariablesFromLut (lut_t *varlut)
  *         of the constraint, which will eventually
  *         be assembled, then turned into text and written to file for passing to ISL.
  *         The two-deep nesting is so that we can introduce "and" conjunctions
- *         between the contraints when constructing the ISL input.
+ *         among the contraints when constructing the ISL input.
  *
  *         If arg1 or arg2 is AKV, we replace it by its value.
  *
@@ -476,6 +465,79 @@ BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
 }
 
 static node *
+BuildIslNotSoSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg2,
+                               prf nprf3, node *arg3)
+{ // Like BuildIslSimpleConstraint, but with one more prf and arg.
+    node *z;
+    node *idsv;
+    node *arg1v;
+    node *arg2v;
+    node *arg3v;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Generating not-so-simple constraint");
+    idsv = Node2Avis (ids);
+    idsv = (NULL == idsv) ? ids : idsv; // N_num support
+    if ((NULL != idsv) && (N_avis == NODE_TYPE (idsv))) {
+        idsv = TBmakeId (idsv);
+    }
+    DBUG_ASSERT (NULL != idsv, "Expected non-NULL ids");
+    arg1v = Node2Value (arg1);
+    arg2v = Node2Value (arg2);
+    arg3v = Node2Value (arg3);
+
+    z = TBmakeExprs (idsv, NULL);
+    z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf1, NULL), NULL));
+    z = TCappendExprs (z, TBmakeExprs (arg1v, NULL));
+
+    if (NOPRFOP != nprf2) {
+        z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf2, NULL), NULL));
+        if (NULL != arg2v) { // kludge for disjunction F_or_SxS
+            z = TCappendExprs (z, TBmakeExprs (arg2v, NULL));
+        }
+    }
+
+    if (NOPRFOP != nprf3) {
+        z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf3, NULL), NULL));
+        z = TCappendExprs (z, TBmakeExprs (arg3v, NULL));
+    }
+
+    z = TBmakeExprs (z, NULL);
+
+    DBUG_RETURN (z);
+}
+
+#ifdef DEADCODE
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *BuildIslGeneratorConstraint()
+ *
+ * @brief Build one constraint for ISL as a one-element N_exprs chain, containing
+ *        an N_exprs chain of the constraint for a WL generator.
+ *
+ *        A constraint is:  LB <= 3 IV < UB
+ *                                     ^---  nprf2
+ *                                  ^------- set variable
+ *                                ^-------- stp (step/stride)
+ *                             ^----------- nprf1
+ *
+ *         If nprf2 is NULL, generate:     LB <= 3 IV.
+ *         If stp is NULL, generate:       LB <= IV.
+ *
+ * @param ids, arg1, arg2: N_id, N_avis or N_num nodes
+ *        nprf1, nprf2: the function(s) to be used, or NULL
+ *
+ * @return The result is one-element N_exprs comprising an N_exprs chain
+ *         of the constraint, which will eventually
+ *         be assembled, then turned into text and written to file for passing to ISL.
+ *         The two-deep nesting is so that we can introduce "and" conjunctions
+ *         between the contraints when constructing the ISL input.
+ *
+ *         If arg1 or arg2 is AKV, we replace it by its value.
+ *
+ ******************************************************************************/
+static node *
 BuildIslGeneratorConstraint (node *lb, prf nprf1, node *stp, node *iv, prf nprf2,
                              node *ub)
 {
@@ -504,6 +566,7 @@ BuildIslGeneratorConstraint (node *lb, prf nprf1, node *stp, node *iv, prf nprf2
 
     DBUG_RETURN (z);
 }
+#endif // DEADCODE
 
 /** <!-- ****************************************************************** -->
  *
@@ -553,10 +616,11 @@ findBoundEl (node *arg_node, node *bnd, int k, info *arg_info)
  *
  *        We generate ISL constraints as follows:
  *
- *          lb <= stp * iv' < ub
+ *          iv' = lb + stp * N   for some N
  *          0 <= ivw < wid
- *          iv'' = stp * iv'
- *          iv = iv'' + ivw
+ *          iv'' = iv' + ivw
+ *          iv = iv''
+ *          lb <= iv < ub
  *
  *        We also have to ensure that these constraints are generated
  *        whenever there is ANY reference to a WITHID_IDS.
@@ -610,7 +674,7 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
     node *partn;
     node *lbel = NULL;
     node *ubel = NULL;
-    node *iv = NULL;
+    node *ivavis;
     int k;
     node *lb;
     node *ub;
@@ -621,7 +685,7 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
     node *ivpavis;
     node *ivppavis;
     node *ivwavis;
-    prf mulop;
+    node *navis;
 
     DBUG_ENTER ();
 
@@ -629,7 +693,8 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
     if ((NULL != partn)) {
         k = LFUindexOfMemberIds (arg_node, WITHID_IDS (PART_WITHID (partn)));
         if (-1 != k) {
-            iv = TCgetNthIds (k, WITHID_IDS (PART_WITHID (partn)));
+            DBUG_PRINT ("Generating generator constraints for %s", AVIS_NAME (arg_node));
+            ivavis = TCgetNthIds (k, WITHID_IDS (PART_WITHID (partn)));
             lb = WLUTfindArrayForBound (GENERATOR_BOUND1 (PART_GENERATOR (partn)));
             ub = WLUTfindArrayForBound (GENERATOR_BOUND2 (PART_GENERATOR (partn)));
             stp = WLUTfindArrayForBound (GENERATOR_STEP (PART_GENERATOR (partn)));
@@ -648,39 +713,46 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
             // Generate new set variables for ISL. Apart from ISL analysis, these
             // names are unused. I.e., we do not generate any code that uses them.
             ivpavis
-              = TBmakeAvis (TRAVtmpVarName ("pwlfiv"),
+              = TBmakeAvis (TRAVtmpVarName ("iv"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             InsertVarIntoLut (ivpavis, INFO_VARLUT (arg_info));
+
             ivppavis
-              = TBmakeAvis (TRAVtmpVarName ("pwlfivp"),
+              = TBmakeAvis (TRAVtmpVarName ("ivp"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             InsertVarIntoLut (ivppavis, INFO_VARLUT (arg_info));
+
             ivwavis
-              = TBmakeAvis (TRAVtmpVarName ("pwlfivw"),
+              = TBmakeAvis (TRAVtmpVarName ("ivw"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             InsertVarIntoLut (ivwavis, INFO_VARLUT (arg_info));
+
+            navis = TBmakeAvis (TRAVtmpVarName ("n"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+            InsertVarIntoLut (navis, INFO_VARLUT (arg_info));
 
             // Generate: 0 <= ivw < wid
             z = BuildIslSimpleConstraint (TBmakeNum (0), F_le_SxS, ivwavis, F_lt_SxS,
                                           widel);
             res = TCappendExprs (res, z);
 
-            // Generate iv'' = iv' * stp
-            //          iv   = iv'' + ivw
-            if (SCSisConstantOne (stpel)) { // Micro-optimization
-                mulop = NOPRFOP;
-                stpel = FREEdoFreeNode (stpel);
-            } else {
-                mulop = F_mul_SxS;
-            }
-            z = BuildIslSimpleConstraint (ivppavis, F_eq_SxS, ivpavis, mulop, stpel);
-            res = TCappendExprs (res, z);
-            z = BuildIslSimpleConstraint (iv, F_eq_SxS, ivppavis, F_add_SxS, ivwavis);
+            // Generate iv' = lb + stp * N
+            z = BuildIslNotSoSimpleConstraint (ivpavis, F_eq_SxS, DUPdoDupNode (lbel),
+                                               F_add_SxS, stpel, F_mul_SxS, navis);
             res = TCappendExprs (res, z);
 
-            DBUG_PRINT ("Generating generator constraints for %s", AVIS_NAME (arg_node));
-            z = BuildIslGeneratorConstraint (lbel, F_le_SxS, stpel, ivpavis, F_lt_SxS,
-                                             ubel);
+            // Generate iv'' = iv' + ivw
+            z = BuildIslSimpleConstraint (ivppavis, F_eq_SxS, ivpavis, F_add_SxS,
+                                          ivwavis);
+            res = TCappendExprs (res, z);
+
+            // Generate iv  = iv''
+            z = BuildIslSimpleConstraint (ivavis, F_eq_SxS, ivppavis, NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
+
+            // Generate lb <= iv < ub
+            z = BuildIslSimpleConstraint (DUPdoDupNode (lbel), F_le_SxS, ivavis, F_lt_SxS,
+                                          DUPdoDupNode (ubel));
             res = TCappendExprs (res, z);
         }
     }
@@ -730,7 +802,7 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
             fprintf (handle, ",");
         }
     }
-    fprintf (handle, "] : ");
+    fprintf (handle, "] : \n");
 
     // Append constraints
     n = TCcountExprs (exprs);
@@ -826,6 +898,7 @@ PHUTisCompatibleAffinePrf (prf nprf)
     case F_neg_S:
     case F_shape_A:
     case F_not_S:
+    case F_saabind:
         z = TRUE;
         break;
 
@@ -880,6 +953,41 @@ isDyadicPrf (prf nprf)
     case F_shape_A:
     case F_not_S:
         z = FALSE;
+        break;
+
+    default:
+        z = FALSE;
+        break;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn bool isLoopfunCond( prf nprf)
+ *
+ * @brief Predicate to check for acceptable relational in LOOPFUN N_cond.
+ *
+ * @param An N_prf
+ *
+ * @return TRUE if nprf is legitimate for LOOPFUN
+ *
+ ******************************************************************************/
+static bool
+isLoopfunCond (prf nprf)
+{
+    bool z;
+
+    DBUG_ENTER ();
+
+    switch (nprf) {
+    case F_lt_SxS:
+    case F_le_SxS:
+    case F_ge_SxS:
+    case F_gt_SxS:
+    case F_neq_SxS:
+        z = TRUE;
         break;
 
     default:
@@ -956,41 +1064,6 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node node *PHUTsetClearCallAp( node *arg_node, node *callerfundef, node *nassign)
- *
- * @brief Set or clear FUNDEF_CALLAP in a LACFUN
- *        "nassign" should be set to the external function's N_assign node
- *        for the LACFUN's N_ap call, when the caller is being traversed,
- *        and NULLed afterward. The LACFUN can then be called to do its thing,
- *        and when that completes, it is nulled by the caller.
- *        FUNDEF_CALLAP and FUNDEF_CALLERFUNDEF are used within a LACFUN
- *        to find the argument list and fundef entry of its calling function.
- *
- *        This could have been done inline, but this way everbody uses
- *        the same code.
- *
- * @param arg_node: The N_fundef of a LACFUN.
- * @param callerfundef: The N_fundef of the caller function of the LACFUN
- * @param nassign: The N_assign node of the caller's N_ap of this LACFUN
- *
- * @return none
- *
- *
- ******************************************************************************/
-void
-PHUTsetClearCallAp (node *arg_node, node *callerfundef, node *nassign)
-{
-
-    DBUG_ENTER ();
-
-    FUNDEF_CALLAP (arg_node) = nassign;
-    FUNDEF_CALLERFUNDEF (arg_node) = callerfundef;
-
-    DBUG_RETURN ();
-}
-
-/** <!-- ****************************************************************** -->
- *
  * @fn node node *PHUThandleLoopfunArg( node *avis, info *arg_info, node *res)
  *
  * @brief avis is the N_avis of a LOOPFUN N_arg, and we are in a LOOPFUN.
@@ -999,36 +1072,64 @@ PHUTsetClearCallAp (node *arg_node, node *callerfundef, node *nassign)
  *         know that avis is not a WITHID element, so we assume
  *         we are in a LACFUN (or defined fun), looking at one of the
  *         function's arguments.
- *
- *
  * @param  arg_info: as usual
  * @param  res: Incoming N_exprs chain for ISL
  * @param  callerassign: The N_assign node of the external N_ap call to this
  *                       LACFUN
  * @param: callerfundef: The N_fundef node of the LACFUN's calling function
- * @param  externalnid:  The N_id node representing avis' value from the
+ * @param  initialvalue: The N_id node representing avis' initial value, from the
  *                       external caller.
  *
- * @return An N_exprs chain representing an ISL constraint, appended to res.
+ * @return An N_exprs chain representing the ISL induction-variable constraint,
+ *         appended to res.
  *         Otherwise, incoming res.
+ *
+ * NB. If the increment is positive, we generate:
+ *
+ *         rca' >= initialvalue
+ *         rca' = initialvalue + N * increment
+ *         rca' [condprf] lim
+ *         rca' = rca
+ *
+ *     If the increment is negative, we generate:
+ *
+ *         rca' <= initialvalue
+ *         rca' = initialvalue + N * increment
+ *         rca' [condprf] lim
+ *         rca' = rca
+ *
+ *      where N is unknown, but unimportant, condprf
+ *      is the relational function for the LACFUN's N_cond,
+ *      initialvalue is the initial value of the loop-induction variable,
+ *       from the LACFUN caller.
+ *      lim is the non-induction-variable argument to the condfun.
  *
  ******************************************************************************/
 static node *
 PHUThandleLoopfunArg (node *avis, info *arg_info, node *res, node *callerassign,
-                      node *callerfundef, node *externalnid)
+                      node *callerfundef, node *initialvalue)
 {
-    node *zinit = NULL;
     node *rca = NULL;
     node *reccallargs = NULL;
+    node *condprf;
+    node *relarg1 = NULL;
+    node *relarg2 = NULL;
+    node *z = NULL;
+    node *incrementvalue;
+    prf relfn;
+    node *rcapp;
+    node *navis;
+    node *lim;
+    node *zinit;
+    node *ext_limit;
+    int incrementsign = 0;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Looking at LOOPFUN %s", FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+    DBUG_ASSERT (N_avis == NODE_TYPE (initialvalue), "Expected avis for initialvalue");
 
-    // Leap into caller's world to collect the caller's AFT for the initial value
-    zinit = PHUTgenerateAffineExprs (externalnid, callerfundef, INFO_VARLUT (arg_info));
-
-    // If the variable is loop-independent, we are done.
+    // If the variable is loop-independent, we are done, except for peeking outside.
     // See unit test ~/sac/testsuite/optimizations/pogorelationals/SCSprf_lt_SxS.LIR.sac
     reccallargs = LFUfindRecursiveCallAssign (INFO_FUNDEF (arg_info));
     reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallargs)));
@@ -1037,22 +1138,103 @@ PHUThandleLoopfunArg (node *avis, info *arg_info, node *res, node *callerassign,
                 AVIS_NAME (ID_AVIS (rca)));
     if (!LFUisLoopFunInvariant (INFO_FUNDEF (arg_info), avis, rca)) {
         // We are not done yet. Handle the recursive call.
-        DBUG_PRINT ("LACFUN arg %s is not loop-independent", AVIS_NAME (avis));
-        // FIXME int CODINGTIME;
-        zinit = (NULL != zinit) ? FREEdoFreeTree (zinit)
-                                : zinit; // FIXME -temp until we get analysis complete
+        DBUG_PRINT ("LACFUN arg %s is loop-dependent", AVIS_NAME (avis));
+        condprf
+          = LET_EXPR (ASSIGN_STMT (LFUfindAssignBeforeCond (INFO_FUNDEF (arg_info))));
+        DBUG_ASSERT (N_prf == NODE_TYPE (condprf), "Expected relational in LOOPFUN");
+        if ((NULL != condprf) && isLoopfunCond (PRF_PRF (condprf))) {
+            lim = (ID_AVIS (rca) == ID_AVIS (PRF_ARG1 (condprf))) ? PRF_ARG2 (condprf)
+                                                                  : PRF_ARG1 (condprf);
+            relarg1 = PHUTgenerateAffineExprs (PRF_ARG1 (condprf), INFO_FUNDEF (arg_info),
+                                               INFO_VARLUT (arg_info));
+            // FIXME relarg1 or relarg2 needs trimming to remove assign to rca
+            res = TCappendExprs (res, relarg1);
+
+            relarg2 = PHUTgenerateAffineExprs (PRF_ARG2 (condprf), INFO_FUNDEF (arg_info),
+                                               INFO_VARLUT (arg_info));
+            res = TCappendExprs (res, relarg2);
+
+            // At this point, we need to know if the induction variable increment is
+            // positive or negative.
+            incrementvalue = LFUgetLoopIncrement (relarg1, rca);
+            if (NULL == incrementvalue) {
+                incrementvalue = LFUgetLoopIncrement (relarg2, rca);
+            }
+
+            if (NULL != incrementvalue) {
+                incrementsign = SCSisPositive (incrementvalue)
+                                  ? 1
+                                  : SCSisNegative (incrementvalue) ? -1 : 0;
+            }
+
+            if (0 != incrementsign) {
+                res = TCappendExprs (res, relarg2);
+                // Leap into caller's world to collect the caller's AFT for the initial
+                // value
+                //
+                zinit = PHUTgenerateAffineExprs (initialvalue, callerfundef,
+                                                 INFO_VARLUT (arg_info));
+                res = TCappendExprs (res, zinit);
+
+                // Leap into caller's world to collect the caller's AFT for the limit
+                // Limit may be local or incoming
+                ext_limit = LFUgetCallArg (lim, INFO_FUNDEF (arg_info), callerassign);
+                ext_limit = (NULL != ext_limit) ? ext_limit : lim;
+                ext_limit = ID_AVIS (ext_limit);
+                zinit = PHUTgenerateAffineExprs (ext_limit, callerfundef,
+                                                 INFO_VARLUT (arg_info));
+                res = TCappendExprs (res, zinit);
+                // Build lim = ext_limit
+                z = BuildIslSimpleConstraint (ID_AVIS (lim), F_eq_SxS, ext_limit, NOPRFOP,
+                                              NULL);
+                res = TCappendExprs (res, z);
+
+                // Build: rca' <= initialvalue   or   rca' >= initialvalue
+                relfn = (incrementsign < 0) ? F_le_SxS : F_ge_SxS;
+                rcapp
+                  = TBmakeAvis (TRAVtmpVarName ("rcapp"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                InsertVarIntoLut (rcapp, INFO_VARLUT (arg_info));
+                z = BuildIslSimpleConstraint (rcapp, relfn, initialvalue, NOPRFOP, NULL);
+                res = TCappendExprs (res, z);
+
+                // Build increment:  rca' = initialvalue + N * increment
+                navis
+                  = TBmakeAvis (TRAVtmpVarName ("N"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                InsertVarIntoLut (navis, INFO_VARLUT (arg_info));
+                z = BuildIslNotSoSimpleConstraint (rcapp, F_eq_SxS, initialvalue,
+                                                   F_add_SxS, navis, F_mul_SxS,
+                                                   DUPdoDupNode (incrementvalue));
+                res = TCappendExprs (res, z);
+
+                // Build rca'' [condprf] lim
+                z = BuildIslSimpleConstraint (rcapp, PRF_PRF (condprf),
+                                              DUPdoDupNode (lim), NOPRFOP, NULL);
+                res = TCappendExprs (res, z);
+
+                // Build rca'' = incoming-loop-carried value
+                z = BuildIslSimpleConstraint (rcapp, F_eq_SxS, avis, NOPRFOP, NULL);
+                res = TCappendExprs (res, z);
+
+            } else {
+                relarg1 = (NULL != relarg1) ? FREEdoFreeTree (relarg1) : NULL;
+                relarg2 = (NULL != relarg2) ? FREEdoFreeTree (relarg2) : NULL;
+            }
+        }
     } else {
         DBUG_PRINT ("LACFUN arg %s is loop-independent", AVIS_NAME (avis));
+        // Leap into caller's world to collect the AFT
+        z = PHUTgenerateAffineExprs (initialvalue, callerfundef, INFO_VARLUT (arg_info));
+        res = TCappendExprs (res, z);
     }
-
-    res = TCappendExprs (res, zinit);
 
     DBUG_RETURN (res);
 }
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node node *PHUThandleCondfunArg( node *avis, info *arg_info, node *res)
+ * @fn node node *PHUThandleCondfunArg()
  *
  * @brief avis is the N_avis of an N_arg, and we are in a CONDFUN.
  *
@@ -1068,7 +1250,7 @@ PHUThandleLoopfunArg (node *avis, info *arg_info, node *res, node *callerassign,
  * @param  callerassign: The N_assign node of the external N_ap call to this
  *                       LACFUN
  * @param: callerfundef: The N_fundef node of the LACFUN's calling function
- * @param  externalnid:  The N_id node representing avis' value from the
+ * @param  initialvalue:  The N_id node representing avis' value from the
  *                       external caller.
  *
  * @return An N_exprs chain representing an ISL constraint, appended to res.
@@ -1077,7 +1259,7 @@ PHUThandleLoopfunArg (node *avis, info *arg_info, node *res, node *callerassign,
  ******************************************************************************/
 static node *
 PHUThandleCondfunArg (node *avis, info *arg_info, node *res, node *callerassign,
-                      node *callerfundef, node *externalnid)
+                      node *callerfundef, node *initialvalue)
 {
     node *z = NULL;
 
@@ -1086,12 +1268,12 @@ PHUThandleCondfunArg (node *avis, info *arg_info, node *res, node *callerassign,
     DBUG_PRINT ("Looking at CONDFUN %s", FUNDEF_NAME (INFO_FUNDEF (arg_info)));
 
     // Leap into caller's world to collect the AFT
-    z = PHUTgenerateAffineExprs (externalnid, callerfundef, INFO_VARLUT (arg_info));
+    z = PHUTgenerateAffineExprs (initialvalue, callerfundef, INFO_VARLUT (arg_info));
     res = TCappendExprs (res, z);
 
     // we now have the AFT from the caller's environment. We now
     // emit one more constraint, to make internal_name == external_name.
-    z = BuildIslSimpleConstraint (avis, F_eq_SxS, ID_AVIS (externalnid), NOPRFOP, NULL);
+    z = BuildIslSimpleConstraint (avis, F_eq_SxS, initialvalue, NOPRFOP, NULL);
     res = TCappendExprs (res, z);
 
     DBUG_RETURN (res);
@@ -1122,34 +1304,36 @@ PHUThandleCondfunArg (node *avis, info *arg_info, node *res, node *callerassign,
 static node *
 PHUThandleLacfunArg (node *avis, info *arg_info, node *res)
 {
-    node *callerassign;
-    node *externalnid;
+    node *ext_assign;
+    node *initialvalue;
     node *callerfundef;
 
     DBUG_ENTER ();
 
     // N_assign of External call (N_ap) to LACFUN
-    callerassign = FUNDEF_CALLAP (INFO_FUNDEF (arg_info));
-    callerfundef = FUNDEF_CALLERFUNDEF (INFO_FUNDEF (arg_info));
-    DBUG_ASSERT (N_assign == NODE_TYPE (callerassign),
-                 "Expected FUNDEF_CALLAP to be N_assign");
-    DBUG_ASSERT (AP_FUNDEF (LET_EXPR (ASSIGN_STMT (callerassign)))
-                   == INFO_FUNDEF (arg_info),
-                 "Expected FUNDEF_CALLAP to point to its N_ap node");
+    ext_assign = FUNDEF_CALLAP (INFO_FUNDEF (arg_info));
+    if (NULL != ext_assign) { // Current function may not be a LACFUN
+        callerfundef = FUNDEF_CALLERFUNDEF (INFO_FUNDEF (arg_info));
+        DBUG_ASSERT (N_assign == NODE_TYPE (ext_assign),
+                     "Expected FUNDEF_CALLAP to be N_assign");
+        DBUG_ASSERT (AP_FUNDEF (LET_EXPR (ASSIGN_STMT (ext_assign)))
+                       == INFO_FUNDEF (arg_info),
+                     "Expected FUNDEF_CALLAP to point to its N_ap node");
 
-    // Find caller's value for avis.
-    externalnid = LFUgetCallArg (avis, INFO_FUNDEF (arg_info), callerassign);
-    DBUG_PRINT ("Building affine function for LACFUN variable %s from caller's %s",
-                AVIS_NAME (avis), AVIS_NAME (ID_AVIS (externalnid)));
+        // Find caller's value for avis.
+        initialvalue = ID_AVIS (LFUgetCallArg (avis, INFO_FUNDEF (arg_info), ext_assign));
+        DBUG_PRINT ("Building affine function for LACFUN variable %s from caller's %s",
+                    AVIS_NAME (avis), AVIS_NAME (initialvalue));
 
-    if (FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))) {
-        res = PHUThandleCondfunArg (avis, arg_info, res, callerassign, callerfundef,
-                                    externalnid);
-    }
+        if (FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))) {
+            res = PHUThandleCondfunArg (avis, arg_info, res, ext_assign, callerfundef,
+                                        initialvalue);
+        }
 
-    if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
-        res = PHUThandleLoopfunArg (avis, arg_info, res, callerassign, callerfundef,
-                                    externalnid);
+        if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
+            res = PHUThandleLoopfunArg (avis, arg_info, res, ext_assign, callerfundef,
+                                        initialvalue);
+        }
     }
 
     DBUG_RETURN (res);
@@ -1285,10 +1469,15 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
 
     if ((PHUTisCompatibleAffinePrf (PRF_PRF (rhs)))
         && (PHUTisCompatibleAffineTypes (rhs))) {
+
         // Deal with PRF_ARGs
-        res = PHUTcollectAffineExprsLocal (PRF_ARG1 (rhs), arg_info, res);
-        if (isDyadicPrf (PRF_PRF (rhs))) {
-            res = PHUTcollectAffineExprsLocal (PRF_ARG2 (rhs), arg_info, res);
+        if (F_saabind == PRF_PRF (rhs)) {
+            res = PHUTcollectAffineExprsLocal (PRF_ARG3 (rhs), arg_info, res);
+        } else {
+            res = PHUTcollectAffineExprsLocal (PRF_ARG1 (rhs), arg_info, res);
+            if (isDyadicPrf (PRF_PRF (rhs))) {
+                res = PHUTcollectAffineExprsLocal (PRF_ARG2 (rhs), arg_info, res);
+            }
         }
 
         switch (PRF_PRF (rhs)) {
@@ -1438,15 +1627,15 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
 
         case F_idx_sel:
         case F_sel_VxA:
-#ifdef FIXME
-            // THIS IS PROBABLY NOT REQUIRED ONCE PWLF WORKS.
-            z = PHUTSelectFromnoblockthingy (arg_node, arg_info);
+            break;
+
+        case F_saabind: // z = PRF_ARG3( rhs);
+            // We need to capture the relationship among initial and final values
+            // of LACFUN parameters. E.g., in simpleNonconstantUp.sac, we have a
+            // loop from START to START+5, where the value of START is the result
+            // of a function call [id(0)].
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, PRF_ARG3 (rhs), NOPRFOP, NULL);
             res = TCappendExprs (res, z);
-            if (NULL == z) {
-                z = PHUTSelectFromKnown (arg_node, arg_info);
-            }
-            res = TCappendExprs (res, z);
-#endif // FIXME
             break;
 
         default:
@@ -1904,6 +2093,41 @@ PHUTsetClearAvisPart (node *arg_node, node *val)
     }
 
     DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node node *PHUTsetClearCallAp( node *arg_node, node *callerfundef, node *nassign)
+ *
+ * @brief Set or clear FUNDEF_CALLAP in a LACFUN
+ *        "nassign" should be set to the external function's N_assign node
+ *        for the LACFUN's N_ap call, when the caller is being traversed,
+ *        and NULLed afterward. The LACFUN can then be called to do its thing,
+ *        and when that completes, it is nulled by the caller.
+ *        FUNDEF_CALLAP and FUNDEF_CALLERFUNDEF are used within a LACFUN
+ *        to find the argument list and fundef entry of its calling function.
+ *
+ *        This could have been done inline, but this way everbody uses
+ *        the same code.
+ *
+ * @param arg_node: The N_fundef of a LACFUN.
+ * @param callerfundef: The N_fundef of the caller function of the LACFUN
+ * @param nassign: The N_assign node of the caller's N_ap of this LACFUN
+ *
+ * @return none
+ *
+ *
+ ******************************************************************************/
+void
+PHUTsetClearCallAp (node *arg_node, node *callerfundef, node *nassign)
+{
+
+    DBUG_ENTER ();
+
+    FUNDEF_CALLAP (arg_node) = nassign;
+    FUNDEF_CALLERFUNDEF (arg_node) = callerfundef;
+
+    DBUG_RETURN ();
 }
 
 #undef DBUG_PREFIX

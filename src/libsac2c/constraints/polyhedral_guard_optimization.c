@@ -70,6 +70,7 @@
 #include "print.h"
 #include "tree_utils.h"
 #include "LookUpTable.h"
+#include "lacfun_utilities.h"
 
 /** <!--********************************************************************-->
  *
@@ -142,62 +143,6 @@ FreeInfo (info *info)
  * @{
  *
  *****************************************************************************/
-
-/** <!-- ****************************************************************** -->
- *
- * @fn prf ComplementaryFun( prf nprf)
- *
- * @brief
- *
- * @param An N_prf
- *
- * @return An N_prf
- *
- ******************************************************************************/
-static prf
-ComplementaryFun (prf nprf)
-{
-    prf z;
-
-    DBUG_ENTER ();
-
-    switch (nprf) {
-    case F_lt_SxS:
-        z = F_ge_SxS;
-        break;
-    case F_le_SxS:
-        z = F_gt_SxS;
-        break;
-    case F_eq_SxS:
-        z = F_neq_SxS;
-        break;
-    case F_ge_SxS:
-        z = F_lt_SxS;
-        break;
-    case F_gt_SxS:
-        z = F_le_SxS;
-        break;
-    case F_neq_SxS:
-        z = F_eq_SxS;
-        break;
-    case F_val_lt_val_SxS:
-        z = F_ge_SxS;
-        break;
-    case F_val_le_val_SxS:
-        z = F_gt_SxS;
-        break;
-    case F_non_neg_val_S:
-        z = F_lt_SxS;
-        break; // NB. Kludge (dyadic vs. monadic!)
-
-    default:
-        DBUG_ASSERT (FALSE, "Oopsie. Expected relational prf!");
-        z = nprf;
-        break;
-    }
-
-    DBUG_RETURN (z);
-}
 
 /** <!-- ****************************************************************** -->
  *
@@ -569,11 +514,10 @@ POGOprf (node *arg_node, info *arg_info)
               = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
                                                  PRF_PRF (arg_node), &exprsUfn,
                                                  &exprsUcfn, INFO_VARLUT (arg_info));
-            exprsCfn
-              = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
-                                                 ComplementaryFun (PRF_PRF (arg_node)),
-                                                 &exprsUfn, &exprsUcfn,
-                                                 INFO_VARLUT (arg_info));
+            exprsCfn = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
+                                                        LFUdualFun (PRF_PRF (arg_node)),
+                                                        &exprsUfn, &exprsUcfn,
+                                                        INFO_VARLUT (arg_info));
             emp = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn, exprsUfn,
                                          exprsUcfn, INFO_VARLUT (arg_info),
                                          POLY_OPCODE_INTERSECT);
@@ -596,7 +540,7 @@ POGOprf (node *arg_node, info *arg_info)
             }
 
             if ((!z) && (emp & POLY_RET_EMPTYSET_BCC)) {
-                DBUG_PRINT ("Matching ComplementaryFun sets for %s",
+                DBUG_PRINT ("Matching DualFun sets for %s",
                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
                 resval = TRUE;
                 z = TRUE;

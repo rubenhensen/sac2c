@@ -28,6 +28,7 @@
 #include "LookUpTable.h"
 #include "polyhedral_utilities.h"
 #include "polyhedral_defs.h"
+#include "symbolic_constant_simplification.h"
 
 /** <!--********************************************************************-->
  *
@@ -168,11 +169,11 @@ LFUisLoopFunInvariant (node *arg_node, node *inneriv, node *rca)
  *
  * @fn node *LFUgetCallArg (node *id, node *fundef, node *ext_assign)
  *
- * @params id: An N_id node.
- *         fundef: the N_fundef entry for the called LACFUN.
+ * @params id: An N_id node in fundef, a LACFUN.
+ *         fundef: the N_fundef entry for the LACFUN.
  *         ext_assign: The N_assign of the external call to the LACFUN.
  *
- * @brief 1. Ensure that N_id/N_Avis id is N_arg of fundef.
+ * @brief 1. Ensure that N_id/N_Avis id is an N_arg of fundef.
  *
  *        2. Search the parameter list of the fundef arg chain for
  *           id, and return the ext_assign element that corresponds to
@@ -245,11 +246,12 @@ LFUgetLoopVariable (node *var, node *fundef, node *params)
 {
     node *ret = NULL;
     node *fargs = FUNDEF_ARGS (fundef);
+    node *avis;
 
     DBUG_ENTER ();
 
-    var = (N_id == NODE_TYPE (var)) ? ID_AVIS (var) : var;
-    while (params && fargs && (var != ARG_AVIS (fargs))) {
+    avis = (N_id == NODE_TYPE (var)) ? ID_AVIS (var) : var;
+    while (params && fargs && (avis != ARG_AVIS (fargs))) {
         params = EXPRS_NEXT (params);
         fargs = ARG_NEXT (fargs);
     }
@@ -257,6 +259,9 @@ LFUgetLoopVariable (node *var, node *fundef, node *params)
     if (params) {
         ret = EXPRS_EXPR (params);
     }
+
+    DBUG_PRINT ("LACFUN %s arg %s has recursive call value of %s", FUNDEF_NAME (fundef),
+                AVIS_NAME (avis), AVIS_NAME (ID_AVIS (ret)));
 
     DBUG_RETURN (ret);
 }
@@ -983,5 +988,115 @@ LFUfindLivMin (node *arg_node)
     DBUG_RETURN (z);
 }
 #endif // UNDERCONSTRUCTION
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *LFUgetLoopIncrement( node *arg_node, node *rca)
+ *
+ * @brief Search arg_node for a + or - on the induction variable, rca.
+ *        If found, return the other argument. If not, return NULL.
+ *
+ *        The N_exprs chain should be one of:
+ *
+ *            rca = X + Y;
+ *            rca = X - Y;
+ *        where one of the arguments is constant.
+ *
+ * @param  arg_node: An ISL N_exprs chain of N_exprs.
+ * @param  rca: The induction variable N_id.
+ *
+ * @result: An N_id or N_num or NULL.
+ *
+ ******************************************************************************/
+node *
+LFUgetLoopIncrement (node *arg_node, node *rca)
+{
+    node *z = NULL;
+    node *exprs;
+
+    DBUG_ENTER ();
+
+    while ((NULL == z) && (NULL != arg_node)) {
+        exprs = EXPRS_EXPR (arg_node);
+        if ((ID_AVIS (rca) == ID_AVIS (EXPRS_EXPR (exprs)))
+            && (N_prf == NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (exprs))))
+            && (F_eq_SxS == PRF_PRF (EXPRS_EXPR (EXPRS_NEXT (exprs))))) { // rca = ...
+            exprs = EXPRS_NEXT (EXPRS_NEXT (exprs));                      // drop rca =
+            if ((N_prf == NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (exprs))))
+                && ((F_add_SxS == PRF_PRF (EXPRS_EXPR (EXPRS_NEXT (exprs))))
+                    || (F_sub_SxS == PRF_PRF (EXPRS_EXPR (EXPRS_NEXT (exprs)))))) {
+                if ((SCSisPositive (EXPRS_EXPR (exprs)))
+                    || (SCSisNegative (EXPRS_EXPR (exprs)))) {
+                    z = EXPRS_EXPR (exprs);
+                } else {
+                    if ((SCSisPositive (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs)))))
+                        || (SCSisNegative (
+                             EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs)))))) {
+                        z = EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs)));
+                    }
+                }
+            }
+        }
+        arg_node = EXPRS_NEXT (arg_node);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn prf LFUdualFun( prf nprf)
+ *
+ * @brief Find the dual function for a relational function
+ *
+ * @param An N_prf
+ *
+ * @return An N_prf
+ *
+ ******************************************************************************/
+prf
+LFUdualFun (prf nprf)
+{
+    prf z;
+
+    DBUG_ENTER ();
+
+    switch (nprf) {
+    case F_lt_SxS:
+        z = F_ge_SxS;
+        break;
+    case F_le_SxS:
+        z = F_gt_SxS;
+        break;
+    case F_eq_SxS:
+        z = F_neq_SxS;
+        break;
+    case F_ge_SxS:
+        z = F_lt_SxS;
+        break;
+    case F_gt_SxS:
+        z = F_le_SxS;
+        break;
+    case F_neq_SxS:
+        z = F_eq_SxS;
+        break;
+    case F_val_lt_val_SxS:
+        z = F_ge_SxS;
+        break;
+    case F_val_le_val_SxS:
+        z = F_gt_SxS;
+        break;
+    case F_non_neg_val_S:
+        z = F_lt_SxS;
+        break; // NB. Kludge (dyadic vs. monadic!)
+
+    default:
+        DBUG_ASSERT (FALSE, "Oopsie. Expected relational prf!");
+        z = nprf;
+        break;
+    }
+
+    DBUG_RETURN (z);
+}
 
 #undef DBUG_PREFIX

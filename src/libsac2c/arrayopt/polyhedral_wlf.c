@@ -1745,6 +1745,7 @@ PWLFap (node *arg_node, info *arg_info)
         INFO_LACFUN (arg_info) = NULL; /* Back to normal traversal */
         PHUTsetClearCallAp (lacfundef, NULL, NULL);
     }
+
     DBUG_RETURN (arg_node);
 }
 

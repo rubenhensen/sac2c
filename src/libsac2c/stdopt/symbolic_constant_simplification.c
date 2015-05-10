@@ -153,6 +153,8 @@ SCSisSelOfShape (node *arg_node)
  * description: We check for a constant arg_node, and if that
  *              fails, look for a suitable constant AVIS_MIN.
  *
+ * @brief: arg_node: An N_id or N_num node
+ *
  * result: True if argument is known to be non-negative.
  *         Else false.
  *
@@ -168,17 +170,21 @@ SCSisNonneg (node *arg_node)
 
     DBUG_ENTER ();
 
-    pat = PMconst (1, PMAgetVal (&con));
-    z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
-    z = z || SCSisSelOfShape (arg_node);
+    z = (N_num == NODE_TYPE (arg_node)) && (NUM_VAL (arg_node) >= 0);
 
-    if (!z) {
-        con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
-        z = (NULL != con) && COisNonNeg (con, TRUE);
+    if ((!z) && N_id == NODE_TYPE (arg_node)) {
+        pat = PMconst (1, PMAgetVal (&con));
+        z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
+        z = z || SCSisSelOfShape (arg_node);
+
+        if (!z) {
+            con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
+            z = (NULL != con) && COisNonNeg (con, TRUE);
+        }
+
+        con = (NULL != con) ? COfreeConstant (con) : con;
+        pat = PMfree (pat);
     }
-
-    con = (NULL != con) ? COfreeConstant (con) : con;
-    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
@@ -204,20 +210,22 @@ SCSisNegative (node *arg_node)
     constant *con = NULL;
     bool z;
 
-    pat = PMconst (1, PMAgetVal (&con));
-
     DBUG_ENTER ();
 
-    z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNeg (con, TRUE);
+    z = (N_num == NODE_TYPE (arg_node)) && (NUM_VAL (arg_node) < 0);
 
-    if (!z) {
-        // If maximum value is <= 0, then arg_node is negative.
-        con = SAACFchaseMinMax (arg_node, SAACFCHASEMAX);
-        z = (NULL != con) && (COisNeg (con, TRUE) || COisZero (con, TRUE));
+    if ((!z) && N_id == NODE_TYPE (arg_node)) {
+        pat = PMconst (1, PMAgetVal (&con));
+        z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNeg (con, TRUE);
+        if (!z) {
+            // If maximum value is <= 0, then arg_node is negative.
+            con = SAACFchaseMinMax (arg_node, SAACFCHASEMAX);
+            z = (NULL != con) && (COisNeg (con, TRUE) || COisZero (con, TRUE));
+        }
+
+        con = (NULL != con) ? COfreeConstant (con) : con;
+        pat = PMfree (pat);
     }
-
-    con = (NULL != con) ? COfreeConstant (con) : con;
-    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
@@ -243,21 +251,22 @@ SCSisNonPositive (node *arg_node)
     constant *con = NULL;
     bool z;
 
-    pat = PMconst (1, PMAgetVal (&con));
-
     DBUG_ENTER ();
 
-    z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNeg (con, TRUE);
+    z = (N_num == NODE_TYPE (arg_node)) && (NUM_VAL (arg_node) <= 0);
+    if ((!z) && N_id == NODE_TYPE (arg_node)) {
+        pat = PMconst (1, PMAgetVal (&con));
+        z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNeg (con, TRUE);
+        if (!z) {
+            // If maximum value is <= 1, then arg_node is negative.
+            con = SAACFchaseMinMax (arg_node, SAACFCHASEMAX);
+            z = (NULL != con)
+                && (COisNeg (con, TRUE) || COisZero (con, TRUE) || COisOne (con, TRUE));
+        }
 
-    if (!z) {
-        // If maximum value is <= 1, then arg_node is negative.
-        con = SAACFchaseMinMax (arg_node, SAACFCHASEMAX);
-        z = (NULL != con)
-            && (COisNeg (con, TRUE) || COisZero (con, TRUE) || COisOne (con, TRUE));
+        con = (NULL != con) ? COfreeConstant (con) : con;
+        pat = PMfree (pat);
     }
-
-    con = (NULL != con) ? COfreeConstant (con) : con;
-    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
@@ -283,19 +292,20 @@ SCSisPositive (node *arg_node)
     constant *con = NULL;
     bool z;
 
-    pat = PMconst (1, PMAgetVal (&con));
-
     DBUG_ENTER ();
 
-    z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
+    z = (N_num == NODE_TYPE (arg_node)) && (NUM_VAL (arg_node) > 0);
+    if ((!z) && N_id == NODE_TYPE (arg_node)) {
+        pat = PMconst (1, PMAgetVal (&con));
+        z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
+        if (!z) {
+            con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
+            z = (NULL != con) && COisNonNeg (con, TRUE) && (!COisZero (con, TRUE));
+        }
 
-    if (!z) {
-        con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
-        z = (NULL != con) && COisNonNeg (con, TRUE) && (!COisZero (con, TRUE));
+        con = (NULL != con) ? COfreeConstant (con) : con;
+        pat = PMfree (pat);
     }
-
-    con = (NULL != con) ? COfreeConstant (con) : con;
-    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }

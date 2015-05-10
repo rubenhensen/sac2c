@@ -21,5 +21,7 @@ extern node *LFUscalarizeArray (node *avis, node **preassigns, node **vardecs,
                                 shape *shp);
 extern node *LFUcorrectSSAAssigns (node *arg_node, node *nassgn);
 extern node *LFUfindAffineFunctionForLIV (node *arg_node, node *lacfundef);
+extern node *LFUgetLoopIncrement (node *arg_node, node *rca);
+extern prf LFUdualFun (prf nprf);
 
 #endif /* _SAC_LACFUN_UTILITIES_H_ */
