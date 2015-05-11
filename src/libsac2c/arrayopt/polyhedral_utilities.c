@@ -165,6 +165,69 @@ PHUTprintIslAffineFunctionTree (node *arg_node)
 
 /** <!-- ****************************************************************** -->
  *
+ * @fn node *RemoveRcaAssign( node *relarg, node *rca)
+ *
+ * @brief Remove the assign to rca from the relarg chain.
+ *        Search relarg for a + or - on the induction variable, rca.
+ *
+ *        We are looking for an N_exprs chain like:
+ *
+ *            rca = X + Y;
+ *            rca = X - Y;
+ *
+ *        where one of the arguments is constant.
+ *
+ * @param relarg: An N_exprs chain for ISL
+ * @param rca: An N_id
+ *
+ * @return The updated relarg node
+ *
+ ******************************************************************************/
+static node *
+RemoveRcaAssign (node *relarg, node *rca)
+{
+    DBUG_ENTER ();
+
+#ifdef FIXME
+    node *z = NULL;
+    node *exprsouter;
+    node *exprs;
+    node *exprs2;
+
+    exprsouter = relarg;
+    while ((NULL == z) && (NULL != exprsouter)) {
+        exprs = EXPRS_EXPR (exprsouter);
+        if ((ID_AVIS (rca) == ID_AVIS (EXPRS_EXPR (exprs)))
+            && (N_prf == NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (exprs))))
+            && (F_eq_SxS == PRF_PRF (EXPRS_EXPR (EXPRS_NEXT (exprs))))) { // rca = ...
+            exprs2 = EXPRS_NEXT (EXPRS_NEXT (exprs));                     // drop rca =
+            if ((N_prf == NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (exprs2))))
+                && ((F_add_SxS == PRF_PRF (EXPRS_EXPR (EXPRS_NEXT (exprs2))))
+                    || (F_sub_SxS == PRF_PRF (EXPRS_EXPR (EXPRS_NEXT (exprs2)))))) {
+                if ((SCSisPositive (EXPRS_EXPR (exprs2)))
+                    || (SCSisNegative (EXPRS_EXPR (exprs2)))) {
+                    DBUG_PRINT ("Trimmed relarg arg1");
+                    EXPRS_EXPR (exprsouter) = FREEdoFreeTree (EXPRS_EXPR (exprsouter));
+                } else {
+                    if ((SCSisPositive (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs2)))))
+                        || (SCSisNegative (
+                             EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs2)))))) {
+                        DBUG_PRINT ("Trimmed relarg arg2");
+                        EXPRS_EXPR (exprsouter)
+                          = FREEdoFreeTree (EXPRS_EXPR (exprsouter));
+                    }
+                }
+            }
+        }
+        exprsouter = EXPRS_NEXT (exprsouter);
+    }
+#endif // FIXME
+
+    DBUG_RETURN (relarg);
+}
+
+/** <!-- ****************************************************************** -->
+ *
  * @fn node *Node2Avis( node *arg_node)
  *
  * @brief Find N_avis node for arg_node
@@ -244,13 +307,17 @@ Node2Value (node *arg_node)
                     }
                 }
             } else {
+                DBUG_ASSERT (N_avis == NODE_TYPE (z), "Expected N_avis from Node2Avis");
                 z = TBmakeId (z);
             }
         } else {
             switch (NODE_TYPE (arg_node)) {
             case N_num:
-            case N_bool:
                 z = DUPdoDupNode (arg_node);
+                break;
+
+            case N_bool:
+                z = TBmakeNum (BOOL_VAL (arg_node));
                 break;
 
             default:
@@ -425,7 +492,7 @@ GetIslSetVariablesFromLut (lut_t *varlut)
  *         The two-deep nesting is so that we can introduce "and" conjunctions
  *         among the contraints when constructing the ISL input.
  *
- *         If arg1 or arg2 is AKV, we replace it by its value.
+ *         If ids, arg1, or arg2 is AKV, we replace it by its value.
  *
  ******************************************************************************/
 static node *
@@ -507,66 +574,6 @@ BuildIslNotSoSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node
 
     DBUG_RETURN (z);
 }
-
-#ifdef DEADCODE
-/** <!-- ****************************************************************** -->
- *
- * @fn node *BuildIslGeneratorConstraint()
- *
- * @brief Build one constraint for ISL as a one-element N_exprs chain, containing
- *        an N_exprs chain of the constraint for a WL generator.
- *
- *        A constraint is:  LB <= 3 IV < UB
- *                                     ^---  nprf2
- *                                  ^------- set variable
- *                                ^-------- stp (step/stride)
- *                             ^----------- nprf1
- *
- *         If nprf2 is NULL, generate:     LB <= 3 IV.
- *         If stp is NULL, generate:       LB <= IV.
- *
- * @param ids, arg1, arg2: N_id, N_avis or N_num nodes
- *        nprf1, nprf2: the function(s) to be used, or NULL
- *
- * @return The result is one-element N_exprs comprising an N_exprs chain
- *         of the constraint, which will eventually
- *         be assembled, then turned into text and written to file for passing to ISL.
- *         The two-deep nesting is so that we can introduce "and" conjunctions
- *         between the contraints when constructing the ISL input.
- *
- *         If arg1 or arg2 is AKV, we replace it by its value.
- *
- ******************************************************************************/
-static node *
-BuildIslGeneratorConstraint (node *lb, prf nprf1, node *stp, node *iv, prf nprf2,
-                             node *ub)
-{
-    node *z;
-    node *lbv;
-    node *ivv;
-    node *ubv;
-
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("Generating constraint");
-    lbv = Node2Value (lb);
-    ivv = Node2Value (iv);
-    ubv = Node2Value (ub);
-
-    z = TBmakeExprs (lbv, NULL);
-    z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf1, NULL), NULL));
-    if (NULL != stp) { // Micro-optimization
-        z = TCappendExprs (z, TBmakeExprs (stp, NULL));
-    }
-    z = TCappendExprs (z, TBmakeExprs (ivv, NULL));
-    z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf2, NULL), NULL));
-    z = TCappendExprs (z, TBmakeExprs (ubv, NULL));
-
-    z = TBmakeExprs (z, NULL);
-
-    DBUG_RETURN (z);
-}
-#endif // DEADCODE
 
 /** <!-- ****************************************************************** -->
  *
@@ -1088,20 +1095,22 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
  *
  *         rca' >= initialvalue
  *         rca' = initialvalue + N * increment
- *         rca' [condprf] lim
+ *         rca' [dualprf] lim
  *         rca' = rca
  *
  *     If the increment is negative, we generate:
  *
  *         rca' <= initialvalue
  *         rca' = initialvalue + N * increment
- *         rca' [condprf] lim
+ *         rca' [dualprf] lim
  *         rca' = rca
  *
- *      where N is unknown, but unimportant, condprf
- *      is the relational function for the LACFUN's N_cond,
+ *      where N is unknown, but unimportant.
+ *      dualprf is the dual to the relational function for the LACFUN's N_cond;
+ *        e.g., if the condfun is _lt_SxS_, the dualprf is _ge_SxS.
  *      initialvalue is the initial value of the loop-induction variable,
- *       from the LACFUN caller.
+ *      from the LACFUN caller.
+ *
  *      lim is the non-induction-variable argument to the condfun.
  *
  ******************************************************************************/
@@ -1115,7 +1124,7 @@ PHUThandleLoopfunArg (node *avis, info *arg_info, node *res, node *callerassign,
     node *relarg1 = NULL;
     node *relarg2 = NULL;
     node *z = NULL;
-    node *incrementvalue;
+    node *incrementnid;
     prf relfn;
     node *rcapp;
     node *navis;
@@ -1123,6 +1132,7 @@ PHUThandleLoopfunArg (node *avis, info *arg_info, node *res, node *callerassign,
     node *zinit;
     node *ext_limit;
     int incrementsign = 0;
+    bool swap;
 
     DBUG_ENTER ();
 
@@ -1139,39 +1149,45 @@ PHUThandleLoopfunArg (node *avis, info *arg_info, node *res, node *callerassign,
     if (!LFUisLoopFunInvariant (INFO_FUNDEF (arg_info), avis, rca)) {
         // We are not done yet. Handle the recursive call.
         DBUG_PRINT ("LACFUN arg %s is loop-dependent", AVIS_NAME (avis));
-        condprf
-          = LET_EXPR (ASSIGN_STMT (LFUfindAssignBeforeCond (INFO_FUNDEF (arg_info))));
-        DBUG_ASSERT (N_prf == NODE_TYPE (condprf), "Expected relational in LOOPFUN");
+
+        condprf = COND_COND (ASSIGN_STMT (LFUfindAssignForCond (INFO_FUNDEF (arg_info))));
+        condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
         if ((NULL != condprf) && isLoopfunCond (PRF_PRF (condprf))) {
+            DBUG_ASSERT (N_prf == NODE_TYPE (condprf), "Expected relational in LOOPFUN");
             lim = (ID_AVIS (rca) == ID_AVIS (PRF_ARG1 (condprf))) ? PRF_ARG2 (condprf)
                                                                   : PRF_ARG1 (condprf);
             relarg1 = PHUTgenerateAffineExprs (PRF_ARG1 (condprf), INFO_FUNDEF (arg_info),
                                                INFO_VARLUT (arg_info));
-            // FIXME relarg1 or relarg2 needs trimming to remove assign to rca
-            res = TCappendExprs (res, relarg1);
 
             relarg2 = PHUTgenerateAffineExprs (PRF_ARG2 (condprf), INFO_FUNDEF (arg_info),
                                                INFO_VARLUT (arg_info));
-            res = TCappendExprs (res, relarg2);
 
-            // At this point, we need to know if the induction variable increment is
-            // positive or negative.
-            incrementvalue = LFUgetLoopIncrement (relarg1, rca);
-            if (NULL == incrementvalue) {
-                incrementvalue = LFUgetLoopIncrement (relarg2, rca);
+            // At this point, we need to know if the variable increment is
+            // positive or negative. This loop-carried variable may, or may not, be
+            // the induction variable.
+            // If we get the increment from PRF_ARG1, we must swap the
+            // order of the arguments to rca'' [dualprf] lim, below.
+            swap = FALSE;
+            incrementnid = LFUgetLoopIncrementFromIslChain (rca, relarg2);
+            if (NULL == incrementnid) {
+                incrementnid = LFUgetLoopIncrementFromIslChain (rca, relarg1);
+                swap = TRUE;
             }
 
-            if (NULL != incrementvalue) {
-                incrementsign = SCSisPositive (incrementvalue)
+            relarg1 = RemoveRcaAssign (relarg1, rca);
+            res = TCappendExprs (res, relarg1);
+            relarg2 = RemoveRcaAssign (relarg2, rca);
+            res = TCappendExprs (res, relarg2);
+
+            if (NULL != incrementnid) {
+                incrementsign = SCSisPositive (incrementnid)
                                   ? 1
-                                  : SCSisNegative (incrementvalue) ? -1 : 0;
+                                  : SCSisNegative (incrementnid) ? -1 : 0;
             }
 
             if (0 != incrementsign) {
-                res = TCappendExprs (res, relarg2);
                 // Leap into caller's world to collect the caller's AFT for the initial
                 // value
-                //
                 zinit = PHUTgenerateAffineExprs (initialvalue, callerfundef,
                                                  INFO_VARLUT (arg_info));
                 res = TCappendExprs (res, zinit);
@@ -1205,21 +1221,22 @@ PHUThandleLoopfunArg (node *avis, info *arg_info, node *res, node *callerassign,
                 InsertVarIntoLut (navis, INFO_VARLUT (arg_info));
                 z = BuildIslNotSoSimpleConstraint (rcapp, F_eq_SxS, initialvalue,
                                                    F_add_SxS, navis, F_mul_SxS,
-                                                   DUPdoDupNode (incrementvalue));
+                                                   DUPdoDupNode (incrementnid));
                 res = TCappendExprs (res, z);
 
-                // Build rca'' [condprf] lim
-                z = BuildIslSimpleConstraint (rcapp, PRF_PRF (condprf),
-                                              DUPdoDupNode (lim), NOPRFOP, NULL);
+                // Build rca'' [dualprf] lim
+                if (swap) {
+                    z = BuildIslSimpleConstraint (rcapp, PRF_PRF (condprf),
+                                                  DUPdoDupNode (lim), NOPRFOP, NULL);
+                } else {
+                    z = BuildIslSimpleConstraint (DUPdoDupNode (lim), PRF_PRF (condprf),
+                                                  rcapp, NOPRFOP, NULL);
+                }
                 res = TCappendExprs (res, z);
 
                 // Build rca'' = incoming-loop-carried value
                 z = BuildIslSimpleConstraint (rcapp, F_eq_SxS, avis, NOPRFOP, NULL);
                 res = TCappendExprs (res, z);
-
-            } else {
-                relarg1 = (NULL != relarg1) ? FREEdoFreeTree (relarg1) : NULL;
-                relarg2 = (NULL != relarg2) ? FREEdoFreeTree (relarg2) : NULL;
             }
         }
     } else {
@@ -1456,19 +1473,29 @@ HandleComposition (node *arg_node, node *rhs, info *arg_info, node *res)
 static node *
 HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
 {
-    node *assgn;
+    node *assgn = NULL;
     node *ids;
     node *argavis;
-    node *z;
+    node *z = NULL;
+    node *nid;
+    pattern *pat;
 
     DBUG_ENTER ();
 
-    assgn = AVIS_SSAASSIGN (arg_node);
-    ids = LET_IDS (ASSIGN_STMT (assgn));
-    DBUG_PRINT ("Entering HandleNprf for ids=%s", AVIS_NAME (IDS_AVIS (ids)));
+    pat = PMvar (1, PMAgetNode (&assgn), 0);
 
-    if ((PHUTisCompatibleAffinePrf (PRF_PRF (rhs)))
+    nid
+      = (N_avis == NODE_TYPE (arg_node)) ? TBmakeId (arg_node) : DUPdoDupNode (arg_node);
+    if (PMmatchFlatSkipGuards (pat, nid)) {
+        assgn = AVIS_SSAASSIGN (ID_AVIS (assgn));
+        ids = LET_IDS (ASSIGN_STMT (assgn));
+    }
+    nid = FREEdoFreeNode (nid);
+    pat = PMfree (pat);
+
+    if ((NULL != assgn) && (PHUTisCompatibleAffinePrf (PRF_PRF (rhs)))
         && (PHUTisCompatibleAffineTypes (rhs))) {
+        DBUG_PRINT ("Entering HandleNprf for ids=%s", AVIS_NAME (IDS_AVIS (ids)));
 
         // Deal with PRF_ARGs
         if (F_saabind == PRF_PRF (rhs)) {

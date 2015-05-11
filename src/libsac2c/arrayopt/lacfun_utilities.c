@@ -268,12 +268,44 @@ LFUgetLoopVariable (node *var, node *fundef, node *params)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *LFUfindAssignForCond( node *arg_node)
+ *
+ * @brief Find the N_assign for the N_cond in a LOOPFUN.
+ *        We assume that there is only one N_cond in the LOOPFUN.
+ *
+ * @params arg_node: A LOOPFUN N_fundef node
+ *
+ * @result: The N_assign of the N_cond in a LOOPFUN
+ *          Crash if not found.
+ *
+ ******************************************************************************/
+node *
+LFUfindAssignForCond (node *arg_node)
+{
+    node *assignchain;
+
+    DBUG_ENTER ();
+    /* separate loop body assignment chain */
+    assignchain = BLOCK_ASSIGNS (FUNDEF_BODY (arg_node));
+
+    while ((assignchain != NULL) && (NODE_TYPE (ASSIGN_STMT (assignchain)) != N_cond)) {
+        assignchain = ASSIGN_NEXT (assignchain);
+    }
+
+    DBUG_ASSERT (assignchain != NULL, "Missing conditional in loop");
+
+    DBUG_RETURN (assignchain);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *LFUfindAssignBeforeCond( node *arg_node)
  *
  * @brief Find the N_assign that is just before the N_cond
  *        N_assign in a LOOPFUN.
  *
  *        Blind assumption that first N_assign is not the N_cond.
+ *        We assume that there is only one N_cond in the LOOPFUN.
  *
  * @params arg_node: A LOOPFUN N_fundef node
  *
@@ -298,21 +330,13 @@ LFUfindAssignBeforeCond (node *arg_node)
         assignchain = ASSIGN_NEXT (assignchain);
     }
 
-    /*
-     * z points to the last assignment of the loop body
-     * and assignchain to the conditional of the loop
-     */
+    // z points to the last assignment of the loop body
+    // and assignchain to the conditional of the loop
     DBUG_ASSERT (z != NULL, "Loop body missing");
     DBUG_ASSERT (assignchain != NULL, "Missing conditional in loop");
 
     DBUG_RETURN (z);
 }
-
-/* Structure for the Anonymous traversal.  */
-struct local_info {
-    node *res;
-    nodetype nt;
-};
 
 /** <!--********************************************************************-->
  *
@@ -321,6 +345,12 @@ struct local_info {
  *  of assignments.
  *
  ******************************************************************************/
+// Structure for the Anonymous traversal.
+struct local_info {
+    node *res;
+    nodetype nt;
+};
+
 static node *
 ATravFilter (node *arg_node, info *arg_info)
 {
@@ -464,7 +494,7 @@ LFUfindLoopInductionVariable (node *arg_node)
 
     DBUG_ENTER ();
 
-    cond = ASSIGN_NEXT (LFUfindAssignBeforeCond (arg_node));
+    cond = LFUfindAssignForCond (arg_node);
     cond = COND_COND (ASSIGN_STMT (cond));
     DBUG_PRINT ("Function %s induction variable predicate is %s", FUNDEF_NAME (arg_node),
                 AVIS_NAME (ID_AVIS (cond)));
@@ -991,10 +1021,10 @@ LFUfindLivMin (node *arg_node)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *LFUgetLoopIncrement( node *arg_node, node *rca)
+ * @fn node *LFUgetLoopIncrementFromIslChain( node *arg_node, node *rca)
  *
  * @brief Search arg_node for a + or - on the induction variable, rca.
- *        If found, return the other argument. If not, return NULL.
+ *        If found, return the other argument to the +/-. If not, return NULL.
  *
  *        The N_exprs chain should be one of:
  *
@@ -1002,22 +1032,22 @@ LFUfindLivMin (node *arg_node)
  *            rca = X - Y;
  *        where one of the arguments is constant.
  *
- * @param  arg_node: An ISL N_exprs chain of N_exprs.
- * @param  rca: The induction variable N_id.
+ * @param  rca: An induction variable N_id.
+ * @param  relarg: An ISL N_exprs chain of N_exprs.
  *
  * @result: An N_id or N_num or NULL.
  *
  ******************************************************************************/
 node *
-LFUgetLoopIncrement (node *arg_node, node *rca)
+LFUgetLoopIncrementFromIslChain (node *rca, node *relarg)
 {
     node *z = NULL;
     node *exprs;
 
     DBUG_ENTER ();
 
-    while ((NULL == z) && (NULL != arg_node)) {
-        exprs = EXPRS_EXPR (arg_node);
+    while ((NULL == z) && (NULL != relarg)) {
+        exprs = EXPRS_EXPR (relarg);
         if ((ID_AVIS (rca) == ID_AVIS (EXPRS_EXPR (exprs)))
             && (N_prf == NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (exprs))))
             && (F_eq_SxS == PRF_PRF (EXPRS_EXPR (EXPRS_NEXT (exprs))))) { // rca = ...
@@ -1037,11 +1067,38 @@ LFUgetLoopIncrement (node *arg_node, node *rca)
                 }
             }
         }
-        arg_node = EXPRS_NEXT (arg_node);
+        relarg = EXPRS_NEXT (relarg);
     }
 
     DBUG_RETURN (z);
 }
+
+#ifdef DEADCODE
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *LFUgetLoopIncrementFromCondprf( node *arg_node, node *rca)
+ *
+ * @brief arg_node is an N_prf relational. Return the argument that is
+ *        not rca.
+ *
+ * @param  arg_node: An N_prf
+ * @param  rca: The induction variable N_id.
+ *
+ * @result: An N_id.
+ *
+ ******************************************************************************/
+node *
+LFUgetLoopIncrementFromCondprf (node *arg_node, node *rca)
+{
+    node *z;
+
+    DBUG_ENTER ();
+
+    z = (ID_AVIS (rca) == ID_AVIS (PRF_ARG1 (arg_node))) ? PRF_ARG2 (arg_node)
+                                                         : PRF_ARG1 (arg_node);
+    DBUG_RETURN (z);
+}
+#endif // DEADCODE
 
 /** <!-- ****************************************************************** -->
  *
@@ -1098,5 +1155,88 @@ LFUdualFun (prf nprf)
 
     DBUG_RETURN (z);
 }
+
+#ifdef DEADCODE
+/** <!-- ****************************************************************** -->
+ *
+ * @fn prf LFUalmostDualFun( prf nprf)
+ *
+ * @brief Find the almost-dual function for a relational function
+ *        This is used when in PHUT, when the recursive LOOPFUN conditional
+ *        has its arguments reversed. E.g., if we have:
+ *
+ *           p = _lt_SxS_( lcv, 9)
+ *
+ *        PHUT generates a constraint of: lcv < 9
+ *        However, if we have the same conditional with reversed arguments, we have:
+ *
+ *           p = _gt_SxS_( 9, lcv)
+ *
+ *        PHUT generates a constraint of:  9 > lcv
+ *
+ *        Similarly (and this is where it differs from LFUdualFun),
+ *        if we have:
+ *
+ *           p = _le_SxS_( lcv, 9)
+ *
+ *        PHUT generates a constraint of: lcv <= 9
+ *        However, if we have:
+ *
+ *           p = _ge_SxS_( 9, lcv)
+ *
+ *        PHUT generates a constraint of:  9 >= lcv
+ *
+ *
+ *
+ * @param An N_prf
+ *
+ * @return An N_prf
+ *
+ ******************************************************************************/
+prf
+LFUalmostDualFun (prf nprf)
+{
+    prf z;
+
+    DBUG_ENTER ();
+
+    switch (nprf) {
+    case F_lt_SxS:
+        z = F_ge_SxS;
+        break;
+    case F_le_SxS:
+        z = F_gt_SxS;
+        break;
+    case F_eq_SxS:
+        z = F_neq_SxS;
+        break;
+    case F_ge_SxS:
+        z = F_lt_SxS;
+        break;
+    case F_gt_SxS:
+        z = F_le_SxS;
+        break;
+    case F_neq_SxS:
+        z = F_eq_SxS;
+        break;
+    case F_val_lt_val_SxS:
+        z = F_ge_SxS;
+        break;
+    case F_val_le_val_SxS:
+        z = F_gt_SxS;
+        break;
+    case F_non_neg_val_S:
+        z = F_lt_SxS;
+        break; // NB. Kludge (dyadic vs. monadic!)
+
+    default:
+        DBUG_ASSERT (FALSE, "Oopsie. Expected relational prf!");
+        z = nprf;
+        break;
+    }
+
+    DBUG_RETURN (z);
+}
+#endif // DEADCODE
 
 #undef DBUG_PREFIX
