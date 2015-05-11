@@ -221,12 +221,26 @@ ICMCompileMT_SCHEDULER_BEGIN (int sched_id, int dim, char **vararg)
     for (i = 0; i < dim; i++) {
         INDENT;
 
-        fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i,
-                 lower_bound[i]);
-        INDENT;
+        if (global.backend == BE_distmem && i == 0) {
 
-        fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i,
-                 upper_bound[i]);
+            fprintf (global.outfile,
+                     "SAC_WL_MT_SCHEDULE_START( %d) = SAC_DISTEM_DET_DIM0_START( %s - "
+                     "%s);\n",
+                     i, upper_bound[i], lower_bound[i]);
+            INDENT;
+
+            fprintf (global.outfile,
+                     "SAC_WL_MT_SCHEDULE_STOP( %d) = SAC_DISTEM_DET_DIM0_STOP( %s - "
+                     "%s);\n",
+                     i, upper_bound[i], lower_bound[i]);
+        } else {
+            fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i,
+                     lower_bound[i]);
+            INDENT;
+
+            fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i,
+                     upper_bound[i]);
+        }
     }
 
     DBUG_RETURN ();

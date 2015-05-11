@@ -24,49 +24,92 @@
  * No tracing declarations
  *******************************************/
 
-/*
- * Initializes the communication library.
+/** <!--********************************************************************-->
  *
- * Has to be called before any other operation. The
- * communication library cannot be used after this
- * operation but other operations (e.g. parameter handling)
- * are permitted then.
- */
+ * @fn void SAC_DISTMEM_COMMLIB_Init( int argc, char *argv[])
+ *
+ *   @brief    Initializes the communication library.
+ *
+ *             Has to be called before any other operation. The
+ *             communication library cannot be used after this
+ *             operation but other operations (e.g. parameter handling)
+ *             are permitted then.
+ *
+ *   @param argc      argc as passed to main()
+ *   @param argv      argv as passed to main()
+ *
+ ******************************************************************************/
+
 void SAC_DISTMEM_COMMLIB_Init (int argc, char *argv[]);
 
-/*
- * Sets up the communication library so that it can be used.
+/** <!--********************************************************************-->
  *
- * Before this operation is called the following global
- * variables have to be initialized:
- *   - SAC_DISTMEM_pagesz
+ * @fn void SAC_DISTMEM_COMMLIB_Setup( size_t maxmem)
  *
- * This operation initializes the following global variables:
- *   - SAC_DISTMEM_rank
- *   - SAC_DISTMEM_size
- *   - SAC_DISTMEM_segsz
- *   - SAC_DISTMEM_shared_seg_ptr
- *   - SAC_DISTMEM_cache_ptr
- */
+ *   @brief    Sets up the communication library so that it is ready for use.
+ *
+ *             Tries to reserve maxmem_mb MB of memory for the dsm system.
+ *             If less than the requested memory is available, a warning
+ *             is printed.
+ *
+ *             Before this operation is called the following global
+ *             variables have to be initialized:
+ *              - SAC_DISTMEM_pagesz
+ *
+ *            This function initializes the following global variables:
+ *             - SAC_DISTMEM_rank
+ *             - SAC_DISTMEM_size
+ *             - SAC_DISTMEM_segsz
+ *             - SAC_DISTMEM_shared_seg_ptr
+ *             - SAC_DISTMEM_cache_ptr
+ *
+ *   @param maxmem_mb      amount of memory to reserve in MB
+ *
+ ******************************************************************************/
+
 void SAC_DISTMEM_COMMLIB_Setup (size_t maxmem);
 
-/*
- * Performs a barrier operation.
- */
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_DISTMEM_COMMLIB_Barrier( void)
+ *
+ *   @brief    Performs a barrier operation.
+ *
+ ******************************************************************************/
+
 void SAC_DISTMEM_COMMLIB_Barrier (void);
 
-/*
- * Loads the memory page with index remote_page_index within the shared segment of
- * node owner_rank into the local address local_page_ptr.
- */
-void SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, int owner_rank,
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_DISTMEM_COMMLIB_LoadPage( void *local_page_ptr, int owner_rank, size_t
+ *remote_page_index)
+ *
+ *   @brief    Loads a memory page from a remote node.
+ *
+ *             Loads the memory page with index remote_page_index within the shared
+ *segment of node owner_rank into the local address local_page_ptr.
+ *
+ *   @param local_page_ptr      destination
+ *   @param owner_rank          rank of the process where the page is loaded from
+ *   @param remote_page_index   index of the page within the shared segment
+ *                              of the remote node
+ *
+ ******************************************************************************/
+
+void SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, size_t owner_rank,
                                    size_t remote_page_index);
 
-/*
- * Shuts down the communication library.
- * Call exit() afterwards but do not rely on
- * it being executed.
- */
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_DISTMEM_COMMLIB_Exit( void)
+ *
+ *   @brief    Shuts down the communication library.
+ *
+ *             It is recommended to still call exit() afterwards but do not
+ *             rely on it being called.
+ *
+ ******************************************************************************/
+
 void SAC_DISTMEM_COMMLIB_Exit (void);
 
 /******************************************
@@ -79,7 +122,7 @@ void SAC_DISTMEM_COMMLIB_TR_Setup (size_t maxmem);
 
 void SAC_DISTMEM_COMMLIB_TR_Barrier (void);
 
-void SAC_DISTMEM_COMMLIB_TR_LoadPage (void *local_page_ptr, int owner_rank,
+void SAC_DISTMEM_COMMLIB_TR_LoadPage (void *local_page_ptr, size_t owner_rank,
                                       size_t remote_page_index);
 
 void SAC_DISTMEM_COMMLIB_TR_Exit (void);

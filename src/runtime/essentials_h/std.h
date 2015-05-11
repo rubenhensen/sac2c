@@ -38,7 +38,7 @@
  *           AKD: array of known dimension but unknown shape
  *           AUD: array of unknown dimension
  *
- *   hidden: NUQ: data object is non-hidden
+ *   hidden: NHD: data object is non-hidden
  *           HID: data object is hidden
  *
  *   unique: NUQ: data object is non-unique

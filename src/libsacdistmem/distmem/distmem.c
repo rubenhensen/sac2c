@@ -12,6 +12,7 @@
 #include <signal.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 #include "config.h"
 
@@ -90,10 +91,10 @@ static UNUSED int SAC_DISTMEM_COMMLIB_dummy;
  */
 
 /* Rank of this node */
-int SAC_DISTMEM_rank;
+size_t SAC_DISTMEM_rank;
 
 /* Number of nodes */
-int SAC_DISTMEM_size;
+size_t SAC_DISTMEM_size;
 
 /* System page size */
 size_t SAC_DISTMEM_pagesz;
@@ -121,11 +122,12 @@ size_t SAC_DISTMEM_seg_free_offs = 0;
 #if COMPILE_TRACE
 /* Variables used for tracing */
 
-// static unsigned long SAC_DISTMEM_TR_num_inval_pages = 0;
+static unsigned long SAC_DISTMEM_TR_num_inval_pages = 0;
 
 static unsigned long SAC_DISTMEM_TR_num_segfaults = 0;
 
-// static unsigned long SAC_DISTMEM_TR_num_ptr_calcs = 0;
+/* Used in the header file so this cannot be static. */
+unsigned long SAC_DISTMEM_TR_num_ptr_calcs = 0;
 
 #endif /* COMPILE_TRACE*/
 
@@ -134,7 +136,7 @@ static unsigned long SAC_DISTMEM_TR_num_segfaults = 0;
 
 /* Handles seg faults. Copies remote data into local cache. */
 static void
-SAC_DISTMEM_segv_handler (int sig, siginfo_t *si, void *unused)
+SegvHandler (int sig, siginfo_t *si, void *unused)
 {
     /* The segfault occured outside of the cache memory area
      * (i.e. was not caused by the dsm system). */
@@ -143,7 +145,7 @@ SAC_DISTMEM_segv_handler (int sig, siginfo_t *si, void *unused)
     }
 
     /* Calculate the rank of the owner of the requested memory address. */
-    int owner_rank
+    size_t owner_rank
       = (uintptr_t)si->si_addr - (uintptr_t)SAC_DISTMEM_cache_ptr / SAC_DISTMEM_segsz;
     /* The local cache segments form a coherent memory area but there is no
      * cache segment for this node. Therefore, add 1 in case the result is
@@ -198,6 +200,33 @@ SAC_DISTMEM_segv_handler (int sig, siginfo_t *si, void *unused)
     */
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn static size_t DetMaxDim0SharePerNode( size_t dim0_size)
+ *
+ *   @brief   Determines the maximum share of the array's first dimension per node.
+ *
+ *   @param dim0_size     size of the array's first dimension
+ *   @return              maximum share of the array's first dimension per node
+ *
+ ******************************************************************************/
+
+static size_t
+DetMaxDim0SharePerNode (size_t dim0_size)
+{
+    if (dim0_size < SAC_DISTMEM_size * (SAC_DISTMEM_size - 1)
+        && dim0_size % SAC_DISTMEM_size != 0) {
+        /* The distribution method does not work because then some nodes would not receive
+         * any elements. */
+        SAC_RuntimeError ("The first dimension of the array is too small (%zd) for the "
+                          "distribution method (requires at least nodes * (nodes - 1) = "
+                          "%zd).",
+                          dim0_size, SAC_DISTMEM_size * (SAC_DISTMEM_size - 1));
+    }
+
+    return (dim0_size + SAC_DISTMEM_size - 1) / SAC_DISTMEM_size;
+}
+
 #if COMPILE_TRACE
 void
 SAC_DISTMEM_TR_Init (int argc, char *argv[])
@@ -217,7 +246,7 @@ void
 SAC_DISTMEM_Setup (size_t maxmem_mb)
 #endif /* COMPILE_TRACE */
 {
-    int i;
+    size_t i;
 
     /* Query system page size */
     int pagesz = sysconf (_SC_PAGE_SIZE);
@@ -230,11 +259,11 @@ SAC_DISTMEM_Setup (size_t maxmem_mb)
      * system page size. */
     size_t maxmem = maxmem_mb * 1024 * 1024 / SAC_DISTMEM_pagesz * SAC_DISTMEM_pagesz;
 
-    SAC_TR_DISTMEM_PRINT (("Setting up communication library.\n"));
+    SAC_TR_DISTMEM_PRINT (("Setting up communication library."));
 
     SAC_DISTMEM_COMMLIB_SETUP (maxmem);
 
-    SAC_TR_DISTMEM_PRINT (("Rank: %d, size: %d\n", SAC_DISTMEM_rank, SAC_DISTMEM_size));
+    SAC_TR_DISTMEM_PRINT (("Rank: %d, size: %d", SAC_DISTMEM_rank, SAC_DISTMEM_size));
 
     /* Initalize the offset to the free memory in the shared segment. */
     SAC_DISTMEM_seg_free_offs = 0;
@@ -243,12 +272,12 @@ SAC_DISTMEM_Setup (size_t maxmem_mb)
     struct sigaction sa;
     sa.sa_flags = SA_SIGINFO;
     sigemptyset (&sa.sa_mask);
-    sa.sa_sigaction = SAC_DISTMEM_segv_handler;
+    sa.sa_sigaction = SegvHandler;
     if (sigaction (SIGSEGV, &sa, NULL) == -1) {
         SAC_RuntimeError ("Registering segfault handler for dsm system failed.");
     }
 
-    SAC_DISTMEM_INVAL_CACHE ();
+    SAC_DISTMEM_INVAL_ENTIRE_CACHE ();
 
 #if COMPILE_TRACE
     SAC_TR_DISTMEM_PRINT (("Allocated memory: %zd MB per segment, %zd MB in total",
@@ -271,15 +300,43 @@ SAC_DISTMEM_Setup (size_t maxmem_mb)
 
 #if COMPILE_TRACE
 void
-SAC_DISTMEM_TR_InvalCache (void)
+SAC_DISTMEM_TR_InvalEntireCache (void)
 #else  /* COMPILE_TRACE */
 void
-SAC_DISTMEM_InvalCache (void)
+SAC_DISTMEM_InvalEntireCache (void)
 #endif /* COMPILE_TRACE */
 {
     /* Invalidate the entire cache. */
     SAC_DISTMEM_PROT_NONE (SAC_DISTMEM_cache_ptr,
                            (SAC_DISTMEM_size - 1) * SAC_DISTMEM_segsz);
+}
+
+#if COMPILE_TRACE
+void
+SAC_DISTMEM_TR_InvalCache (uintptr_t arr_offset, size_t b)
+#else  /* COMPILE_TRACE */
+void
+SAC_DISTMEM_InvalCache (uintptr_t arr_offset, size_t b)
+#endif /* COMPILE_TRACE */
+{
+    size_t i;
+
+    for (i = 0; i < SAC_DISTMEM_size; i++) {
+        if (i == SAC_DISTMEM_rank) {
+            continue;
+        }
+
+        uintptr_t start = (uintptr_t)SAC_DISTMEM_local_seg_ptrs[i] + arr_offset;
+        uintptr_t end = (uintptr_t)start + b;
+        void *page_start = (void *)(start - start % SAC_DISTMEM_pagesz);
+        size_t num_pages = end / SAC_DISTMEM_pagesz - start / SAC_DISTMEM_pagesz + 1;
+
+        SAC_DISTMEM_PROT_NONE (page_start, SAC_DISTMEM_pagesz * num_pages);
+
+#if COMPILE_TRACE
+        SAC_DISTMEM_TR_num_inval_pages += num_pages;
+#endif
+    }
 }
 
 #if COMPILE_TRACE
@@ -290,11 +347,11 @@ void
 SAC_DISTMEM_Barrier (void)
 #endif /* COMPILE_TRACE */
 {
-    SAC_TR_DISTMEM_PRINT (("%d before barrier.\n", SAC_DISTMEM_rank));
+    SAC_TR_DISTMEM_PRINT (("%d before barrier.", SAC_DISTMEM_rank));
 
     SAC_DISTMEM_COMMLIB_BARRIER ();
 
-    SAC_TR_DISTMEM_PRINT (("%d after barrier.\n", SAC_DISTMEM_rank));
+    SAC_TR_DISTMEM_PRINT (("%d after barrier.", SAC_DISTMEM_rank));
 }
 
 #if COMPILE_TRACE
@@ -305,74 +362,119 @@ void
 SAC_DISTMEM_Exit (void)
 #endif /* COMPILE_TRACE */
 {
-    SAC_TR_DISTMEM_PRINT (("%d exiting communication library.\n", SAC_DISTMEM_rank));
+    SAC_TR_DISTMEM_PRINT (("%d exiting communication library.", SAC_DISTMEM_rank));
+
+    SAC_TR_DISTMEM_PRINT (("\t Invalidated pages: %lu", SAC_DISTMEM_TR_num_inval_pages));
+    SAC_TR_DISTMEM_PRINT (("\t Seg faults: %lu", SAC_DISTMEM_TR_num_segfaults));
+    SAC_TR_DISTMEM_PRINT (("\t Pointer calulations: %lu", SAC_DISTMEM_TR_num_ptr_calcs));
 
     SAC_DISTMEM_COMMLIB_EXIT ();
 }
 
-#if 0
+#if COMPILE_TRACE
+bool
+SAC_DISTMEM_TR_DetDoDistrArr (size_t total_elems, size_t dim0_size)
+#else  /* COMPILE_TRACE */
+bool
+SAC_DISTMEM_DetDoDistrArr (size_t total_elems, size_t dim0_size)
+#endif /* COMPILE_TRACE */
+{
+    bool do_dist = TRUE;
 
-/* Returns the node where the element resides */
-/* Static so that compiler knows it is not used in other source file and can be inlined. */
-/* This also works if the struct is not passed by reference. */
-static inline int *elem_pointer(dsm_arr_t dsm_arr, size_t elem_index, int *recalc_index) {
-#ifdef FLAG_STATS
-		if (record_stats == 1) {
-			num_ptr_calcs++;
-		}
-#endif
+    if (dim0_size < SAC_DISTMEM_size * (SAC_DISTMEM_size - 1)
+        && dim0_size % SAC_DISTMEM_size != 0) {
+        /* The distribution method does not work because then some nodes would not receive
+         * any elements. */
+        do_dist = FALSE;
+    } else {
+        /* The last node owns the least elements. */
+        size_t min_elems
+          = total_elems
+            - (SAC_DISTMEM_size - 1)
+                * SAC_DISTMEM_DET_MAX_ELEMS_PER_NODE (total_elems, dim0_size);
 
-#ifdef FLAG_NO_DIV
-		int *pointer = (int *)((uintptr_t)local_seg_ptrs[elem_index / dsm_arr.elems_first_nodes] + dsm_arr.offset) + elem_index % dsm_arr.elems_first_nodes;
-		// At which index do we have to recalculate the pointer?
-		*recalc_index = elem_index + (dsm_arr.elems_first_nodes - elem_index % dsm_arr.elems_first_nodes);
-#else
-		/* quot = node, rem = offset within node's array portion */
-		ldiv_t q = ldiv(elem_index, dsm_arr.elems_first_nodes);
-		int *pointer = (int *)((uintptr_t)local_seg_ptrs[q.quot] + dsm_arr.offset) + q.rem;
-		// At which index do we have to recalculate the pointer?
-		*recalc_index = elem_index + (dsm_arr.elems_first_nodes - q.rem);
-#endif
-	
-	PRINT_DEBUG("At %d: pointer to elem %zd: %p\n", rank, elem_index, pointer);
+        if (min_elems < SAC_DISTMEM_MIN_ELEMS_PER_NODE) {
+            do_dist = FALSE;
+        }
+    }
 
-	return pointer;
+    SAC_TR_DISTMEM_PRINT (("Distribute array of size %zd? %d", total_elems, do_dist));
+
+    return do_dist;
 }
-#endif
 
-#if 0
-/* Invalidates the cache for one array. */
-void invalidate_array_cache(dsm_arr_t dsm_arr) {
-#if !defined(USE_SEQ) && !defined(USE_SEQIX)
-		int i;
+#if COMPILE_TRACE
+size_t
+SAC_DISTMEM_TR_DetMaxElemsPerNode (size_t total_elems, size_t dim0_size)
+#else  /* COMPILE_TRACE */
+size_t
+SAC_DISTMEM_DetMaxElemsPerNode (size_t total_elems, size_t dim0_size)
+#endif /* COMPILE_TRACE */
+{
+    size_t max_dim0 = DetMaxDim0SharePerNode (dim0_size);
+    size_t max_elems = max_dim0 * total_elems / dim0_size;
 
-		for (i = 0; i < size; i++) {
-			if (i == rank) {
-				continue;
-			}
+    SAC_TR_DISTMEM_PRINT (("Maximum number of elements/dim0 share per node is %zd/%zd "
+                           "for array of size/dim0 %zd/%zd.",
+                           max_elems, max_dim0, total_elems, dim0_size));
 
-			uintptr_t start = (uintptr_t)local_seg_ptrs[i] + dsm_arr.offset;
-			uintptr_t end = (uintptr_t)start + dsm_arr.element_size * dsm_arr.elems_first_nodes;
-			void *page_start = (void*) (start - start % pagesize);
-			size_t num_pages = end / pagesize - start / pagesize + 1;
-
-			PRINT_DEBUG("At %d: Invalidating array cache from node %d, %zd pages from %p\n", rank, i, num_pages, page_start);
-		
-			/* Protect local cache */
-			if (mprotect(page_start, pagesize * num_pages, PROT_NONE) == -1) {
-				fprintf(stderr, "error mprotect: %d, codes: %d %d %d %d\n", errno, EACCES, EFAULT, EINVAL, ENOMEM);
-				handle_error("mprotect");
-			}
-
-#ifdef FLAG_STATS
-				if (record_stats == 1) {
-					num_inval_pages += num_pages;
-				}
-#endif
-		}
-#endif
+    return max_elems;
 }
-#endif
+
+#if COMPILE_TRACE
+size_t
+SAC_DISTMEM_TR_DetDim0Start (size_t dim0_size)
+#else  /* COMPILE_TRACE */
+size_t
+SAC_DISTMEM_DetDim0Start (size_t dim0_size)
+#endif /* COMPILE_TRACE */
+{
+    size_t max_dim0 = DetMaxDim0SharePerNode (dim0_size);
+    size_t start = max_dim0 * SAC_DISTMEM_rank;
+
+    SAC_TR_DISTMEM_PRINT (("Node %zd starts at dim0 = %zd (size of dim0: %zd)",
+                           SAC_DISTMEM_rank, start, dim0_size));
+
+    return start;
+}
+
+#if COMPILE_TRACE
+size_t
+SAC_DISTMEM_TR_DetDim0Stop (size_t dim0_size)
+#else  /* COMPILE_TRACE */
+size_t
+SAC_DISTMEM_DetDim0Stop (size_t dim0_size)
+#endif /* COMPILE_TRACE */
+{
+    size_t max_dim0 = DetMaxDim0SharePerNode (dim0_size);
+    size_t start = max_dim0 * SAC_DISTMEM_rank;
+    size_t stop = SAC_MIN (start + max_dim0, dim0_size);
+
+    SAC_TR_DISTMEM_PRINT (("Node %zd stops at dim0 = %zd (size of dim0: %zd)",
+                           SAC_DISTMEM_rank, stop, dim0_size));
+
+    return stop;
+}
+
+#if COMPILE_TRACE
+void *
+SAC_DISTMEM_TR_Malloc (size_t b, uintptr_t *offset)
+#else  /* COMPILE_TRACE */
+void *
+SAC_DISTMEM_Malloc (size_t b, uintptr_t *offset)
+#endif /* COMPILE_TRACE */
+{
+    *offset = SAC_DISTMEM_seg_free_offs;
+    SAC_DISTMEM_seg_free_offs += b;
+
+    if (SAC_DISTMEM_seg_free_offs > SAC_DISTMEM_segsz) {
+        SAC_RuntimeError ("Out of memory: DSM segment size exceeded.");
+    }
+
+    SAC_TR_DISTMEM_PRINT (
+      ("Allocated %zd B at offset %" PRIuPTR " in shared segment.", b, *offset));
+    return (void *)(((uintptr_t)SAC_DISTMEM_shared_seg_ptr) + *offset);
+}
 
 #endif /* ENABLE_DISTMEM */
 

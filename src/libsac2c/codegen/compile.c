@@ -877,6 +877,8 @@ MakeDecRcIcm (char *name, types *type, int num, node *assigns)
                    || TCgetBasetype (type) == T_double_dev) {
 
             icm = "CUDA_DEC_RC_FREE";
+        } else if (global.backend == BE_distmem) {
+            icm = "DISTMEM_DEC_RC_FREE";
         } else {
             icm = "ND_DEC_RC_FREE";
         }
@@ -963,14 +965,27 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
                   = TCmakeAssignIcm3 ("ND_ALLOC", TCmakeIdCopyStringNt (name, type),
                                       TBmakeNum (rc), get_dim, set_shape_icm, assigns);
 #else
-                assigns = TCmakeAssignIcm4 (
-                  "ND_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type), TBmakeNum (rc),
-                  get_dim, MakeBasetypeArg (type),
-                  TBmakeAssign (set_shape_icm,
-                                TCmakeAssignIcm4 ("ND_ALLOC_END",
-                                                  TCmakeIdCopyStringNt (name, type),
-                                                  TBmakeNum (rc), DUPdoDupTree (get_dim),
-                                                  MakeBasetypeArg (type), assigns)));
+                if (global.backend == BE_distmem) {
+                    assigns = TCmakeAssignIcm4 (
+                      "DISTMEM_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type),
+                      TBmakeNum (rc), get_dim, MakeBasetypeArg (type),
+                      TBmakeAssign (set_shape_icm,
+                                    TCmakeAssignIcm4 ("ND_ALLOC_END",
+                                                      TCmakeIdCopyStringNt (name, type),
+                                                      TBmakeNum (rc),
+                                                      DUPdoDupTree (get_dim),
+                                                      MakeBasetypeArg (type), assigns)));
+                } else {
+                    assigns = TCmakeAssignIcm4 (
+                      "ND_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type), TBmakeNum (rc),
+                      get_dim, MakeBasetypeArg (type),
+                      TBmakeAssign (set_shape_icm,
+                                    TCmakeAssignIcm4 ("ND_ALLOC_END",
+                                                      TCmakeIdCopyStringNt (name, type),
+                                                      TBmakeNum (rc),
+                                                      DUPdoDupTree (get_dim),
+                                                      MakeBasetypeArg (type), assigns)));
+                }
 #endif
             }
         } else {
@@ -3166,10 +3181,17 @@ COMPvardec (node *arg_node, info *arg_info)
                             MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
                                           TRUE, TRUE, TRUE, NULL));
         } else {
-            VARDEC_ICM (arg_node)
-              = TCmakeIcm1 ("ND_DECL",
-                            MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
-                                          TRUE, TRUE, TRUE, NULL));
+            if (global.backend == BE_distmem) {
+                VARDEC_ICM (arg_node)
+                  = TCmakeIcm1 ("DISTMEM_DECL", MakeTypeArgs (VARDEC_NAME (arg_node),
+                                                              VARDEC_TYPE (arg_node),
+                                                              TRUE, TRUE, TRUE, NULL));
+            } else {
+                VARDEC_ICM (arg_node)
+                  = TCmakeIcm1 ("ND_DECL", MakeTypeArgs (VARDEC_NAME (arg_node),
+                                                         VARDEC_TYPE (arg_node), TRUE,
+                                                         TRUE, TRUE, NULL));
+            }
         }
     }
 
@@ -10428,7 +10450,7 @@ COMPwlstride (node *arg_node, info *arg_info)
          * no unrolling
          */
 
-        if (mt_active) {
+        if (mt_active || global.backend == BE_distmem) {
             if (level == 0) {
                 icm_name_begin = "WL_MT_STRIDE_LOOP0_BEGIN";
             } else {

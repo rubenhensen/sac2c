@@ -327,8 +327,9 @@ typedef struct TYPES {
     mutcScope scope; /* the scope of the value of this var */
     mutcUsage usage; /* where is this var used */
 
-    bool unique; /* this variable is unique */
-    bool akv;    /* this variable is akv */
+    bool unique;      /* this variable is unique */
+    bool akv;         /* this variable is akv */
+    bool distributed; /* this variable is distributed */
 
 } types;
 
@@ -464,6 +465,7 @@ typedef struct ARGTAB_T {
 #define NT_MUTC_SCOPE_INDEX 5
 #define NT_MUTC_USAGE_INDEX 6
 #define NT_BITARRAY_INDEX 7
+#define NT_DISTRIBUTED_INDEX 8
 
 /*
  * Enumerated types for data class and uniqueness class
@@ -524,6 +526,14 @@ typedef enum {
 #undef NTIFtype
 #undef ATTRIB
 } bitarray_class_t;
+
+typedef enum {
+#define ATTRIB NT_DISTRIBUTED_INDEX
+#define NTIFtype(it_type) it_type
+#include "nt_info.mac"
+#undef NTIFtype
+#undef ATTRIB
+} distributed_class_t;
 
 /*
  * moved from shape.h

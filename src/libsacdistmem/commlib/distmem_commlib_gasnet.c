@@ -91,7 +91,7 @@ void
 SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
 #endif /* COMPILE_TRACE */
 {
-    int i;
+    size_t i;
 
     /* Print GASNet configuration. */
     SAC_TR_DISTMEM_PRINT ((GASNET_CONFIG_STRING));
@@ -174,11 +174,11 @@ SAC_DISTMEM_COMMLIB_Barrier (void)
 
 #if COMPILE_TRACE
 void
-SAC_DISTMEM_COMMLIB_TR_LoadPage (void *local_page_ptr, int owner_rank,
+SAC_DISTMEM_COMMLIB_TR_LoadPage (void *local_page_ptr, size_t owner_rank,
                                  size_t remote_page_index)
 #else  /* COMPILE_TRACE */
 void
-SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, int owner_rank,
+SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, size_t owner_rank,
                               size_t remote_page_index)
 #endif /* COMPILE_TRACE */
 {

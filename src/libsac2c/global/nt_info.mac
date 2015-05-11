@@ -60,6 +60,11 @@ NTIF (C_threadparam, "TPA"), NTIF (C_threadparamio, "TPO"), NTIF (C_funparam, "F
 NTIF (C_dense, "YES"), NTIF (C_sparse, "NOT"),
   NTIF (C_unknownb, "???") /* should be the last entry! */
 
+#elif (ATTRIB == NT_DISTRIBUTED_INDEX)
+
+NTIF (C_distr, "DIS"), NTIF (C_notdistr, "NDI"),
+  NTIF (C_unknownd, "???") /* should be the last entry! */
+
 #endif
 
 #undef NTIF
