@@ -7,7 +7,6 @@
  *            At present, we only support ISL. PolyLib support
  *            was removed 2015-05-25.
  *
- *
  * ISL input data Terminology, taken from http://barvinok.gforge.inria.fr/tutorial.pdf,
  *      Sven Verdoolaege's ISCC tutorial.
  *
@@ -33,14 +32,21 @@
  * NB. General assumptions made in these functions about the calling
  *     envionment:
  *
- *      1. The caller will maintain AVIS_NPART. It would be nice
+ *      1. The caller must maintain AVIS_NPART for WITHID_xxx nodes.
+ *         It would be nice
  *         if this were maintained throughout compilation, but things
  *         can change underfoot enough we are unsure where we should
  *         invalidate it. Hence, we assume the calling traversal
  *         will pass through N_part codes on its way down, and set AVIS_NPART.
  *         Similarly, on its way up, it will unset AVIS_NPART.
  *
+ *         The main problem with maintaining AVIS_NPART is that WITHID nodes
+ *         are NOT SSA, so multiple N_part nodes share the same WITHID N_avis nodes.
+ *
  *      2. Similarly, the caller must maintain FUNDEF_CALLAP and FUNDEF_CALLERFUNDEF
+ *
+ *      3. All callers must SKIP chained assigns. Failure to do this will result
+ *         in complaints from ISL about "unknown identifier".
  *
  * NB.     Interprocedural affine function construction
  *         (Look at ~/sac/testsuite/optimizations/pogo/condfun.sac to see
@@ -86,6 +92,7 @@
 #include "with_loop_utilities.h"
 #include "lacfun_utilities.h"
 #include "LookUpTable.h"
+#include "polyhedral_guard_optimization.h"
 
 // There is a not-an-N_prf value for N_prf somewhere, but I can't find it.
 #define NOPRFOP 0
@@ -134,6 +141,46 @@ FreeInfo (info *info)
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *PHUTskipChainedAssigns( node *arg_node)
+ *
+ * @brief Skip intermediate N_id node assigns for arg_node N_id.
+ *        E.g., if we have:
+ *            x = foo();
+ *            y = x;
+ *            z = y;
+ *        then PHUTskipChainedAssigns( z) will give us x.
+ *
+ * @param  arg_node: The N_id we want to chase
+ * @return The last N_id in the chain
+ *
+ ******************************************************************************/
+node *
+PHUTskipChainedAssigns (node *arg_node)
+{
+    node *z;
+    node *avis;
+    node *rhs = NULL;
+    node *assgn;
+
+    DBUG_ENTER ();
+
+    z = arg_node;
+    if (N_id == NODE_TYPE (arg_node)) {
+        avis = ID_AVIS (arg_node);
+        assgn = AVIS_SSAASSIGN (avis);
+        if ((NULL != assgn) && (N_let == NODE_TYPE (ASSIGN_STMT (assgn)))) {
+            rhs = LET_EXPR (ASSIGN_STMT (assgn));
+            if (N_id == NODE_TYPE (rhs)) {
+                z = PHUTskipChainedAssigns (rhs);
+            }
+        }
+    }
+
+    DBUG_RETURN (z);
+}
 
 /** <!-- ****************************************************************** -->
  *
@@ -679,8 +726,8 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
 {
     node *z = NULL;
     node *partn;
-    node *lbel = NULL;
-    node *ubel = NULL;
+    node *lbel;
+    node *ubel;
     node *ivavis;
     int k;
     node *lb;
@@ -707,12 +754,16 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
             stp = WLUTfindArrayForBound (GENERATOR_STEP (PART_GENERATOR (partn)));
             wid = WLUTfindArrayForBound (GENERATOR_WIDTH (PART_GENERATOR (partn)));
             lbel = findBoundEl (arg_node, lb, k, arg_info);
+            lbel = PHUTskipChainedAssigns (lbel);
             ubel = findBoundEl (arg_node, ub, k, arg_info);
+            ubel = PHUTskipChainedAssigns (ubel);
 
             stpel = findBoundEl (arg_node, stp, k, arg_info);
             stpel = StepOrWidthHelper (stpel);
+            stpel = PHUTskipChainedAssigns (stpel);
             widel = findBoundEl (arg_node, wid, k, arg_info);
             widel = StepOrWidthHelper (widel);
+            widel = PHUTskipChainedAssigns (widel);
 
             res = PHUTcollectAffineExprsLocal (lbel, arg_info, res);
             res = PHUTcollectAffineExprsLocal (ubel, arg_info, res);
@@ -1063,7 +1114,6 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
         z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
         res = TCappendExprs (res, z);
     }
-
     DBUG_PRINT ("Leaving HandleNid for lhs=%s", AVIS_NAME (arg_node));
 
     DBUG_RETURN (res);
@@ -1243,6 +1293,10 @@ PHUThandleLoopfunArg (node *avis, info *arg_info, node *res, node *callerassign,
         DBUG_PRINT ("LACFUN arg %s is loop-independent", AVIS_NAME (avis));
         // Leap into caller's world to collect the AFT
         z = PHUTgenerateAffineExprs (initialvalue, callerfundef, INFO_VARLUT (arg_info));
+        res = TCappendExprs (res, z);
+        // we now have the AFT from the caller's environment. We now
+        // emit one more constraint, to make internal_name == external_name.
+        z = BuildIslSimpleConstraint (avis, F_eq_SxS, initialvalue, NOPRFOP, NULL);
         res = TCappendExprs (res, z);
     }
 
@@ -1473,80 +1527,79 @@ HandleComposition (node *arg_node, node *rhs, info *arg_info, node *res)
 static node *
 HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
 {
-    node *assgn = NULL;
-    node *ids;
+    node *assgn;
+    node *ids = NULL;
     node *argavis;
     node *z = NULL;
-    node *nid;
-    pattern *pat;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    node *arg3 = NULL;
+    node *arg1aft = NULL;
+    node *arg2aft = NULL;
+    node *arg3aft = NULL;
 
     DBUG_ENTER ();
 
-    pat = PMvar (1, PMAgetNode (&assgn), 0);
-
-    nid
-      = (N_avis == NODE_TYPE (arg_node)) ? TBmakeId (arg_node) : DUPdoDupNode (arg_node);
-    if (PMmatchFlatSkipGuards (pat, nid)) {
-        assgn = AVIS_SSAASSIGN (ID_AVIS (assgn));
-        ids = LET_IDS (ASSIGN_STMT (assgn));
-    }
-    nid = FREEdoFreeNode (nid);
-    pat = PMfree (pat);
-
+    assgn = AVIS_SSAASSIGN (arg_node);
     if ((NULL != assgn) && (PHUTisCompatibleAffinePrf (PRF_PRF (rhs)))
         && (PHUTisCompatibleAffineTypes (rhs))) {
         DBUG_PRINT ("Entering HandleNprf for ids=%s", AVIS_NAME (IDS_AVIS (ids)));
 
+        ids = LET_IDS (ASSIGN_STMT (assgn));
         // Deal with PRF_ARGs
         if (F_saabind == PRF_PRF (rhs)) {
-            res = PHUTcollectAffineExprsLocal (PRF_ARG3 (rhs), arg_info, res);
+            arg3 = PHUTskipChainedAssigns (PRF_ARG3 (rhs));
+            arg3aft = PHUTcollectAffineExprsLocal (arg3, arg_info, NULL);
+            res = TCappendExprs (res, arg3aft);
         } else {
-            res = PHUTcollectAffineExprsLocal (PRF_ARG1 (rhs), arg_info, res);
+            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
+            arg1aft = PHUTcollectAffineExprsLocal (arg1, arg_info, NULL);
+            res = TCappendExprs (res, arg1aft);
             if (isDyadicPrf (PRF_PRF (rhs))) {
-                res = PHUTcollectAffineExprsLocal (PRF_ARG2 (rhs), arg_info, res);
+                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
+                arg2aft = PHUTcollectAffineExprsLocal (arg2, arg_info, NULL);
+                res = TCappendExprs (res, arg2aft);
             }
         }
 
         switch (PRF_PRF (rhs)) {
         case F_add_SxS:
         case F_sub_SxS:
-            z = BuildIslSimpleConstraint (ids, F_eq_SxS, PRF_ARG1 (rhs), PRF_PRF (rhs),
-                                          PRF_ARG2 (rhs));
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, PRF_PRF (rhs), arg2);
             res = TCappendExprs (res, z);
             break;
 
         case F_non_neg_val_S:
-            z = BuildIslSimpleConstraint (ids, F_eq_SxS, PRF_ARG1 (rhs), NOPRFOP, NULL);
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, NOPRFOP, NULL);
             res = TCappendExprs (res, z);
             break;
 
         case F_max_SxS: // z = max( x, y)  --> ( z >= x) and ( z >= y)
-            z = BuildIslSimpleConstraint (ids, F_ge_SxS, PRF_ARG1 (rhs), NOPRFOP, NULL);
+            z = BuildIslSimpleConstraint (ids, F_ge_SxS, arg1, NOPRFOP, NULL);
             res = TCappendExprs (res, z);
-            z = BuildIslSimpleConstraint (ids, F_ge_SxS, PRF_ARG2 (rhs), NOPRFOP, NULL);
+            z = BuildIslSimpleConstraint (ids, F_ge_SxS, arg2, NOPRFOP, NULL);
             res = TCappendExprs (res, z);
             break;
 
         case F_min_SxS: // z = min( x, y) --> ( z <= x) and ( z <= y)
-            z = BuildIslSimpleConstraint (ids, F_le_SxS, PRF_ARG1 (rhs), NOPRFOP, NULL);
+            z = BuildIslSimpleConstraint (ids, F_le_SxS, arg1, NOPRFOP, NULL);
             res = TCappendExprs (res, z);
-            z = BuildIslSimpleConstraint (ids, F_le_SxS, PRF_ARG2 (rhs), NOPRFOP, NULL);
+            z = BuildIslSimpleConstraint (ids, F_le_SxS, arg2, NOPRFOP, NULL);
             res = TCappendExprs (res, z);
             break;
 
         case F_mul_SxS: // We need one constant argument
-            argavis = ID_AVIS (PRF_ARG1 (rhs));
+            argavis = ID_AVIS (arg1);
             if ((TYisAKV (AVIS_TYPE (argavis)))
-                || (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG2 (rhs)))))) {
+                || (TYisAKV (AVIS_TYPE (ID_AVIS (arg2))))) {
                 // z = ( const * y)
-                z = BuildIslSimpleConstraint (ids, F_eq_SxS, PRF_ARG1 (rhs),
-                                              PRF_PRF (rhs), PRF_ARG2 (rhs));
+                z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, PRF_PRF (rhs), arg2);
                 res = TCappendExprs (res, z);
             }
             break;
 
         case F_shape_A:
-            argavis = ID_AVIS (PRF_ARG1 (rhs));
+            argavis = ID_AVIS (arg1);
             if ((TYisAKS (AVIS_TYPE (argavis))) || (TYisAKV (AVIS_TYPE (argavis)))) {
                 // z >= 0
                 z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
@@ -1564,8 +1617,7 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
 
         case F_not_S: // Treat Booleans as integers(for POGO)
             // z = !y  --->  ( z = 1 - y) and (y >= 0) and (y <= 1)
-            z = BuildIslSimpleConstraint (ids, F_eq_SxS, TBmakeNum (1), F_sub_SxS,
-                                          PRF_ARG1 (rhs));
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, TBmakeNum (1), F_sub_SxS, arg1);
             res = TCappendExprs (res, z);
             z = BuildIslSimpleConstraint (PRF_ARG1 (rhs), F_ge_SxS, TBmakeNum (0),
                                           NOPRFOP, NULL);
@@ -1586,20 +1638,30 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
              *               For aplmod modulus: z = aplmod( x, y),
              *               if ((x >= 0) && (y >= 0)) || (y >= 1)
              *               then z >= 0.
+             *               [Not sure about the above, and I can't find N8485.]
+             *
+             *               Bear in mind that aplmod reverses the APL argument order,
+             *               so that the modulus is arg2.
+             *
+             *               SHARP APL says that the result (ignoring tolerant comparison)
+             *               is always between 0 and the modulus.
+             *               Ergo, ( z >= 0) and ( z < abs( arg2)).
+             *               This is the definition we will use.
              */
-            // mimumum
-            if (((SCSisNonneg (PRF_ARG1 (rhs))) && (SCSisNonneg (PRF_ARG2 (rhs))))
-                || (SCSisPositive (PRF_ARG2 (rhs)))) {
-                z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
-                                              NULL);
-                res = TCappendExprs (res, z);
-            }
+            // mimumum:  z >= 0
+            z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
 
-            // maximum
-            // (x>0) & (y>0) -->   z <=  y-1
-            if ((SCSisPositive (PRF_ARG2 (rhs))) && (SCSisPositive (PRF_ARG1 (rhs)))) {
-                z = BuildIslSimpleConstraint (ids, F_le_SxS, PRF_ARG2 (rhs), F_sub_SxS,
-                                              TBmakeNum (1));
+            // maximum:  z < abs( arg2)
+            // So, if arg2 > 0 --->   z < arg2
+            //     If arg2 < 0 --->   z < -arg2
+            if (POGOisPositive (arg2, arg2aft, INFO_FUNDEF (arg_info),
+                                INFO_VARLUT (arg_info))) {
+                z = BuildIslSimpleConstraint (ids, F_lt_SxS, arg2, NOPRFOP, NULL);
+                res = TCappendExprs (res, z);
+            } else {
+                z = BuildIslSimpleConstraint (ids, F_lt_SxS, TBmakeNum (0), F_sub_SxS,
+                                              arg2);
                 res = TCappendExprs (res, z);
             }
             break;
@@ -1615,14 +1677,16 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
              *               PRF_ARG1?
              */
             // minimum
-            if ((SCSisNonneg (PRF_ARG1 (rhs))) && (SCSisPositive (PRF_ARG2 (rhs)))) {
+            if ((POGOisNonNegative (arg1, arg1aft, INFO_FUNDEF (arg_info),
+                                    INFO_VARLUT (arg_info)))
+                && (POGOisPositive (arg2, arg2aft, INFO_FUNDEF (arg_info),
+                                    INFO_VARLUT (arg_info)))) {
                 // z >= 0
                 z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
                                               NULL);
                 res = TCappendExprs (res, z);
                 // z < PRF_ARG2( rhs)
-                z = BuildIslSimpleConstraint (ids, F_lt_SxS, PRF_ARG2 (rhs), NOPRFOP,
-                                              NULL);
+                z = BuildIslSimpleConstraint (ids, F_lt_SxS, arg2, NOPRFOP, NULL);
                 res = TCappendExprs (res, z);
             }
             break;
@@ -1633,8 +1697,7 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
         case F_ge_SxS:
         case F_gt_SxS:
         case F_neq_SxS:
-            z = BuildIslSimpleConstraint (ids, F_eq_SxS, PRF_ARG1 (rhs), PRF_PRF (rhs),
-                                          PRF_ARG2 (rhs));
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, PRF_PRF (rhs), arg2);
             res = TCappendExprs (res, z);
             break;
 
@@ -1642,13 +1705,12 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
         case F_val_le_val_SxS:
             // Treat a guard within an affine expression as assignment.
             // z = PRF_ARG1;
-            z = BuildIslSimpleConstraint (ids, F_eq_SxS, PRF_ARG1 (rhs), NOPRFOP, NULL);
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, NOPRFOP, NULL);
             res = TCappendExprs (res, z);
             break;
 
         case F_neg_S: //  z = -y;  -->  z = 0 - y
-            z = BuildIslSimpleConstraint (ids, F_eq_SxS, TBmakeNum (0), F_sub_SxS,
-                                          PRF_ARG1 (rhs));
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, TBmakeNum (0), F_sub_SxS, arg1);
             res = TCappendExprs (res, z);
             break;
 
@@ -1661,7 +1723,7 @@ HandleNprf (node *arg_node, node *rhs, info *arg_info, node *res)
             // of LACFUN parameters. E.g., in simpleNonconstantUp.sac, we have a
             // loop from START to START+5, where the value of START is the result
             // of a function call [id(0)].
-            z = BuildIslSimpleConstraint (ids, F_eq_SxS, PRF_ARG3 (rhs), NOPRFOP, NULL);
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg3, NOPRFOP, NULL);
             res = TCappendExprs (res, z);
             break;
 
@@ -1699,22 +1761,22 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res)
     node *rhs = NULL;
     node *avis = NULL;
     node *npart = NULL;
+    node *nid;
 
     DBUG_ENTER ();
 
-    avis = Node2Avis (arg_node);
+    nid = PHUTskipChainedAssigns (arg_node);
+    avis = Node2Avis (nid);
     if (NULL != avis) { // N_num exits here
         DBUG_PRINT ("Looking at %s", AVIS_NAME (avis));
         if (InsertVarIntoLut (avis, INFO_VARLUT (arg_info))) {
-
             // Handle RHS for all modes.
             assgn = AVIS_SSAASSIGN (avis);
             if ((NULL != assgn) && (N_let == NODE_TYPE (ASSIGN_STMT (assgn)))) {
-
                 rhs = LET_EXPR (ASSIGN_STMT (assgn));
 
                 switch (NODE_TYPE (rhs)) {
-                case N_id: // straight assign:  var2 = var1;
+                case N_id: // straight assign: var2 = var1.
                     res = HandleNid (avis, rhs, arg_info, res);
                     break;
 
@@ -1836,19 +1898,19 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut)
  *
  * @brief Construct an ISL matrix for an N_prf guard or relational
  *
- * @param arg_node: an N_prf for a guard/relational primitive
+ * @param fn: PRF_PRF for a guard/relational primitive
+ * @param arg1: PRF_ARG1 for a guard/relational primitive
+ * @param arg2: PRF_ARG2 for a guard/relational primitive
  * @param fundef: The N_fundef for the current function, for debugging
  * @param relfn:  Either PRF_PRF( arg_node) or its companion function,
  *                e.g., if PRF_PRF is _gt_SxS_, its companion is _le_SxS.
- * @param exprsUcfn: An implicit result, set if PRF_PRF( arg_node) is _eq_SxS.
- * @param exprsUfn: An implicit result, set if PRF_PRF( arg_node) is _eq_SxS.
  *
  * @return A maximal N_exprs chain of expressions for the guard.
  *
  ******************************************************************************/
 node *
-PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn, node **exprsUfn,
-                                 node **exprsUcfn, lut_t *varlut)
+PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, prf relfn,
+                                 lut_t *varlut)
 {
     node *z = NULL;
     node *z2 = NULL;
@@ -1856,15 +1918,13 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn, node *
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_prf, "Expected N_prf node");
-
-    InsertVarIntoLut (PRF_ARG1 (arg_node), varlut);
+    arg1 = PHUTskipChainedAssigns (arg1);
+    InsertVarIntoLut (arg1, varlut);
     arg_info = MakeInfo ();
     INFO_FUNDEF (arg_info) = fundef;
     switch (relfn) {
     case F_non_neg_val_S:
-        z = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_ge_SxS, TBmakeNum (0),
-                                      NOPRFOP, NULL);
+        z = BuildIslSimpleConstraint (arg1, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
         break;
 
     case F_gt_SxS:
@@ -1874,24 +1934,22 @@ PHUTgenerateAffineExprsForGuard (node *arg_node, node *fundef, prf relfn, node *
     case F_val_le_val_SxS:
     case F_le_SxS:
     case F_eq_SxS:
-        if (F_non_neg_val_S != PRF_PRF (arg_node)) { // kludge for monadic CFN
-            InsertVarIntoLut (PRF_ARG2 (arg_node), varlut);
-            z = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), relfn, PRF_ARG2 (arg_node),
-                                          NOPRFOP, NULL);
+        if (F_non_neg_val_S != fn) { // kludge for monadic CFN
+            arg2 = PHUTskipChainedAssigns (arg2);
+            InsertVarIntoLut (arg2, varlut);
+            z = BuildIslSimpleConstraint (arg1, relfn, arg2, NOPRFOP, NULL);
         } else {
-            z = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_lt_SxS, TBmakeNum (0),
-                                          NOPRFOP, NULL);
+            z = BuildIslSimpleConstraint (arg1, F_lt_SxS, TBmakeNum (0), NOPRFOP, NULL);
         }
         break;
 
     case F_neq_SxS:
         // This is harder. We need to construct a union
         // of (x<y) OR (x>y).
-        InsertVarIntoLut (PRF_ARG2 (arg_node), varlut);
-        z = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_gt_SxS, PRF_ARG2 (arg_node),
-                                      F_or_SxS, NULL);
-        z2 = BuildIslSimpleConstraint (PRF_ARG1 (arg_node), F_lt_SxS, PRF_ARG2 (arg_node),
-                                       NOPRFOP, NULL);
+        arg2 = PHUTskipChainedAssigns (arg2);
+        InsertVarIntoLut (arg2, varlut);
+        z = BuildIslSimpleConstraint (arg1, F_gt_SxS, arg2, F_or_SxS, NULL);
+        z2 = BuildIslSimpleConstraint (arg1, F_lt_SxS, arg2, NOPRFOP, NULL);
         z = TCappendExprs (z, z2);
         break;
 

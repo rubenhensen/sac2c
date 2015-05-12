@@ -71,6 +71,7 @@
 #include "tree_utils.h"
 #include "LookUpTable.h"
 #include "lacfun_utilities.h"
+#include "symbolic_constant_simplification.h"
 
 /** <!--********************************************************************-->
  *
@@ -465,6 +466,8 @@ POGOprf (node *arg_node, info *arg_info)
     node *res;
     node *resp;
     node *guardp;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
     bool dopoly;
     int emp = POLY_RET_UNKNOWN;
 
@@ -486,9 +489,11 @@ POGOprf (node *arg_node, info *arg_info)
             DBUG_PRINT ("Looking at dyadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
-            exprsX = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
+            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (arg_node));
+            arg2 = PHUTskipChainedAssigns (PRF_ARG2 (arg_node));
+            exprsX = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info));
-            exprsY = PHUTgenerateAffineExprs (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info),
+            exprsY = PHUTgenerateAffineExprs (arg2, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info));
             dopoly = TRUE;
             break;
@@ -496,8 +501,8 @@ POGOprf (node *arg_node, info *arg_info)
         case F_non_neg_val_S:
             DBUG_PRINT ("Looking at monadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-
-            exprsX = PHUTgenerateAffineExprs (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info),
+            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (arg_node));
+            exprsX = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info));
             exprsY = NULL;
             dopoly = (NULL != exprsX);
@@ -510,13 +515,13 @@ POGOprf (node *arg_node, info *arg_info)
 
         if (dopoly) {
             // Don't bother calling ISL if it can't do anything for us.
-            exprsFn
-              = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
-                                                 PRF_PRF (arg_node), &exprsUfn,
-                                                 &exprsUcfn, INFO_VARLUT (arg_info));
-            exprsCfn = PHUTgenerateAffineExprsForGuard (arg_node, INFO_FUNDEF (arg_info),
+            exprsFn = PHUTgenerateAffineExprsForGuard (PRF_PRF (arg_node), arg1, arg2,
+                                                       INFO_FUNDEF (arg_info),
+                                                       PRF_PRF (arg_node),
+                                                       INFO_VARLUT (arg_info));
+            exprsCfn = PHUTgenerateAffineExprsForGuard (PRF_PRF (arg_node), arg1, arg2,
+                                                        INFO_FUNDEF (arg_info),
                                                         LFUdualFun (PRF_PRF (arg_node)),
-                                                        &exprsUfn, &exprsUcfn,
                                                         INFO_VARLUT (arg_info));
             emp = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn, exprsUfn,
                                          exprsUcfn, INFO_VARLUT (arg_info),
@@ -608,6 +613,214 @@ POGOdoPolyhedralGuardOptimization (node *arg_node)
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ * bool POGOisPositive( node *arg_node)
+ *
+ * function: Predicate for determining if an argument is known to
+ *           be positive.
+ *
+ * @brief: arg_node: An N_exprs ISL chain
+ *
+ * result: True if argument is known to be positive.
+ *         Else false.
+ *
+ *         NB. False does NOT imply that the argument is non-positive.
+ *
+ * NB. This function is used in PHUT for mod() and aplmod(), where
+ *     SCSisPositive is too weak to do the job.
+ *
+ *     It must only be called from code that invokes PHUT. I.e.,
+ *     the caller maintains AVIS_NPART and FUNDEF_CALLAP.
+ *
+ *     In particular, all elements of arg_node are already in the LUT.
+ *     This is why we can't just call PHUTgenerateAffineExprs - it would
+ *     do nothing.
+ *
+ *****************************************************************************/
+bool
+POGOisPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
+{
+    bool z;
+    node *exprsFn;
+    node *zro;
+    node *arg1;
+    int emp = POLY_RET_UNKNOWN;
+
+    DBUG_ENTER ();
+
+    z = SCSisPositive (arg_node);
+    if (!z) {
+        arg1 = PHUTskipChainedAssigns (arg_node);
+        zro = TBmakeNum (0);
+        // We look for NULL intersect on the dual function: arg1 <= 0
+        exprsFn = PHUTgenerateAffineExprsForGuard (F_le_SxS, arg1, zro, fundef, F_le_SxS,
+                                                   varlut);
+        emp = PHUTcheckIntersection (aft, NULL, exprsFn, NULL, NULL, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT);
+        z = 0 != (emp & POLY_RET_EMPTYSET_BCR);
+        exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
+        FREEdoFreeNode (zro);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ * bool POGOisNegative( node *arg_node)
+ *
+ * function: Predicate for determining if an argument is known to
+ *           be negative.
+ *
+ * @brief: arg_node: An N_exprs ISL chain
+ *
+ * result: True if argument is known to be negative.
+ *         Else false.
+ *
+ *         NB. False does NOT imply that the argument is non-negative.
+ *
+ * NB. This function is used in PHUT for mod() and aplmod(), where
+ *     SCSisNegative is too weak to do the job.
+ *
+ *     It must only be called from code that invokes PHUT. I.e.,
+ *     the caller maintains AVIS_NPART and FUNDEF_CALLAP.
+ *
+ *     In particular, all elements of arg_node are already in the LUT.
+ *     This is why we can't just call PHUTgenerateAffineExprs - it would
+ *     do nothing.
+ *
+ *****************************************************************************/
+bool
+POGOisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
+{
+    bool z;
+    node *exprsFn;
+    node *zro;
+    node *arg1;
+    int emp = POLY_RET_UNKNOWN;
+
+    DBUG_ENTER ();
+
+    z = SCSisPositive (arg_node);
+    if (!z) {
+        arg1 = PHUTskipChainedAssigns (arg_node);
+        zro = TBmakeNum (0);
+        // We look for NULL intersect on the dual function: arg1 >= 0
+        exprsFn = PHUTgenerateAffineExprsForGuard (F_ge_SxS, arg1, zro, fundef, F_ge_SxS,
+                                                   varlut);
+        emp = PHUTcheckIntersection (aft, NULL, exprsFn, NULL, NULL, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT);
+        z = 0 != (emp & POLY_RET_EMPTYSET_BCR);
+        exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
+        FREEdoFreeNode (zro);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ * bool POGOisNonPositive( node *arg_node)
+ *
+ * function: Predicate for determining if an argument is known to
+ *           be non-positive.
+ *
+ * @brief: arg_node: An N_exprs ISL chain
+ *
+ * result: True if argument is known to be non-positive.
+ *         Else false.
+ *
+ *         NB. False does NOT imply that the argument is positive.
+ *
+ * NB. This function is used in PHUT for mod() and aplmod(), where
+ *     SCSisNonPositive is too weak to do the job.
+ *
+ *     It must only be called from code that invokes PHUT. I.e.,
+ *     the caller maintains AVIS_NPART and FUNDEF_CALLAP.
+ *
+ *     In particular, all elements of arg_node are already in the LUT.
+ *     This is why we can't just call PHUTgenerateAffineExprs - it would
+ *     do nothing.
+ *
+ *****************************************************************************/
+bool
+POGOisNonPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
+{
+    bool z;
+    node *exprsFn;
+    node *zro;
+    node *arg1;
+    int emp = POLY_RET_UNKNOWN;
+
+    DBUG_ENTER ();
+
+    z = SCSisNonnegative (arg_node);
+    if (!z) {
+        arg1 = PHUTskipChainedAssigns (arg_node);
+        zro = TBmakeNum (0);
+        // We look for NULL intersect on the dual function  arg1 > 0
+        exprsFn = PHUTgenerateAffineExprsForGuard (F_gt_SxS, arg1, zro, fundef, F_gt_SxS,
+                                                   varlut);
+        emp = PHUTcheckIntersection (aft, NULL, exprsFn, NULL, NULL, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT);
+        z = 0 != (emp & POLY_RET_EMPTYSET_BCR);
+        exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
+        FREEdoFreeNode (zro);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ * bool POGOisNonNegative( node *arg_node)
+ *
+ * function: Predicate for determining if an argument is known to
+ *           be non-negative.
+ *
+ * @brief: arg_node: An N_exprs ISL chain
+ *
+ * result: True if argument is known to be non-negative.
+ *         Else false.
+ *
+ *         NB. False does NOT imply that the argument is negative.
+ *
+ * NB. This function is used in PHUT for mod() and aplmod(), where
+ *     SCSisNonNegative is too weak to do the job.
+ *
+ *     It must only be called from code that invokes PHUT. I.e.,
+ *     the caller maintains AVIS_NPART and FUNDEF_CALLAP.
+ *
+ *     In particular, all elements of arg_node are already in the LUT.
+ *     This is why we can't just call PHUTgenerateAffineExprs - it would
+ *     do nothing.
+ *
+ *****************************************************************************/
+bool
+POGOisNonNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
+{
+    bool z;
+    node *exprsFn;
+    node *zro;
+    node *arg1;
+    int emp = POLY_RET_UNKNOWN;
+
+    DBUG_ENTER ();
+
+    z = SCSisNonnegative (arg_node);
+    if (!z) {
+        arg1 = PHUTskipChainedAssigns (arg_node);
+        zro = TBmakeNum (0);
+        // We look for NULL intersect on the dual function  arg1 < 0
+        exprsFn = PHUTgenerateAffineExprsForGuard (F_lt_SxS, arg1, zro, fundef, F_lt_SxS,
+                                                   varlut);
+        emp = PHUTcheckIntersection (aft, NULL, exprsFn, NULL, NULL, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT);
+        z = 0 != (emp & POLY_RET_EMPTYSET_BCR);
+        exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
+        FREEdoFreeNode (zro);
+    }
+
+    DBUG_RETURN (z);
 }
 
 #undef DBUG_PREFIX
