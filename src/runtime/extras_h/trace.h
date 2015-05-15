@@ -190,11 +190,11 @@ typedef enum {
 
 #if SAC_DO_TRACE_DISTMEM
 
-#define SAC_TR_DISTMEM_PRINT(msg) SAC_TR_PRINT (msg);
+#define SAC_TR_DISTMEM_PRINT(...) SAC_TR_PRINT (("DSM -> " __VA_ARGS__))
 
 #else /* SAC_DO_TRACE_MEM */
 
-#define SAC_TR_DISTMEM_PRINT(msg)
+#define SAC_TR_DISTMEM_PRINT(...)
 
 #endif
 

@@ -288,6 +288,12 @@ dnl
 AC_SUBST_FILE([GASNET_CONDUIT_BUILD_OBJECT_FILES])
 GASNET_CONDUIT_BUILD_OBJECT_FILES=./build.GASNetconduits
 
+dnl
+dnl Append rules for building libsacdistmem GASNet cross variant object files to build.mkf
+dnl
+AC_SUBST_FILE([GASNET_CONDUIT_BUILD_OBJECT_FILES_CROSS_VARIANT])
+GASNET_CONDUIT_BUILD_OBJECT_FILES_CROSS_VARIANT=./build.GASNetconduitsCrossVariant
+
 # generate specific flags for known os
 AC_MSG_CHECKING([sac2crc system flags])
 

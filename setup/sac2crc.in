@@ -482,6 +482,7 @@ LDFLAGS          += " @OPENMP_CFLAGS@"
  */
 target distmem:
 BACKEND          := "DistMem"
+LIB_VARIANT      := "dm"
 
 target distmem_gasnet::distmem:
 DISTMEM_COMMLIB  := "GASNet"

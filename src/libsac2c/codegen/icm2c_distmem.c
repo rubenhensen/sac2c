@@ -99,6 +99,13 @@ ICMCompileDISTMEM_DECL__MIRROR (char *var_NT, int sdim, int *shp)
         indout ("const bool SAC_DISTMEM_MIRROR_IS_DIST( %s) = "
                 "SAC_DISTMEM_DET_DO_DISTR_ARR( %d, %d);\n",
                 var_NT, size, shp[0]);
+        /*
+         * Initialize these variables to 0 to avoid warnings.
+         * If the array is distributed, they will be set to the correct values
+         * when the array is allocated. *
+         */
+        indout ("size_t SAC_DISTMEM_MIRROR_FIRST_ELEMS( %s) = 0;", var_NT);
+        indout ("uintptr_t SAC_DISTMEM_MIRROR_OFFS( %s) = 0;", var_NT);
 
         break;
 

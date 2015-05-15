@@ -61,7 +61,11 @@ SAC_RuntimeError (char *format, ...)
      * heapmgr/setup.c or in libsac/nophm.c.
      */
 
-    fprintf (stderr, "\n\n*** SAC runtime error\n");
+    if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {
+        fprintf (stderr, "\n\n*** SAC runtime error\n");
+    } else {
+        fprintf (stderr, "\n\n*** SAC runtime error at node %zd\n", SAC_DISTMEM_rank);
+    }
 
     va_start (arg_p, format);
 

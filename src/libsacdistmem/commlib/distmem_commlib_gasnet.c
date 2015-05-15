@@ -94,7 +94,7 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
     size_t i;
 
     /* Print GASNet configuration. */
-    SAC_TR_DISTMEM_PRINT ((GASNET_CONFIG_STRING));
+    SAC_TR_DISTMEM_PRINT (GASNET_CONFIG_STRING);
 
     SAC_DISTMEM_rank = gasnet_mynode ();
     SAC_DISTMEM_size = gasnet_nodes ();

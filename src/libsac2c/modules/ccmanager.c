@@ -191,13 +191,16 @@ AddDistMemLib (str_buf *buffer)
 {
     DBUG_ENTER ();
 
+    SBUFprint (buffer, "-lsacdistmem");
+
     if (global.backend == BE_distmem) {
-        SBUFprint (buffer, "-lsacdistmem");
         switch (global.distmem_commlib) {
         case DISTMEM_COMMLIB_GASNET:
             SBUFprintf (buffer, ".gasnet%s ", global.config.commlib_conduit);
             break;
         }
+    } else {
+        SBUFprintf (buffer, ".nodistmem ");
     }
 
     DBUG_RETURN ();

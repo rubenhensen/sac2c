@@ -6029,6 +6029,12 @@ Type2OldType (ntype *xnew)
         res = Type2OldType (AKS_BASE (xnew));
         TYPES_DIM (res) = SHgetDim (AKS_SHP (xnew));
         TYPES_SHPSEG (res) = SHshape2OldShpseg (AKS_SHP (xnew));
+        // TODO: Think of suitable condition.
+        if (global.backend == BE_distmem) {
+            TYPES_DISTRIBUTED (res) = TRUE;
+        } else {
+            TYPES_DISTRIBUTED (res) = FALSE;
+        }
         break;
     case TC_akd:
         res = Type2OldType (AKD_BASE (xnew));

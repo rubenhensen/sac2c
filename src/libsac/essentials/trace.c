@@ -97,7 +97,17 @@ SAC_TR_Print (char *format, ...)
 {
     va_list arg_p;
 
-    fprintf (stderr, "TR-> ");
+#if 0
+  if (SAC_DISTMEM_rank != 0) {
+    return;
+  }
+#endif
+
+    if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {
+        fprintf (stderr, "TR-> ");
+    } else {
+        fprintf (stderr, "TR:n%zd-> ", SAC_DISTMEM_rank);
+    }
 
     va_start (arg_p, format);
     vfprintf (stderr, format, arg_p);

@@ -73,6 +73,7 @@
 #define Item5(a, b) Item4 b
 #define Item6(a, b) Item5 b
 #define Item7(a, b) Item6 b
+#define Item8(a, b) Item7 b
 
 /*
  * The odd-looking CAT? macros is required to provide a degree of indirection

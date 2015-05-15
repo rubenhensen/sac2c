@@ -71,7 +71,7 @@
         SAC_DISTMEM_MALLOC_FIXED_SIZE_WITH_DESC (SAC_ND_A_FIELD (var_NT),                \
                                                  SAC_ND_A_DESC (var_NT),                 \
                                                  SAC_DISTMEM_MIRROR_OFFS (var_NT),       \
-                                                 SAC_ND_A_MIRROR_SIZE (var_NT)           \
+                                                 SAC_DISTMEM_MIRROR_FIRST_ELEMS (var_NT) \
                                                    * sizeof (*SAC_ND_A_FIELD (var_NT)),  \
                                                  SAC_ND_A_MIRROR_DIM (var_NT), basetype, \
                                                  SAC_ND_DESC_BASETYPE (var_NT))          \
@@ -89,11 +89,11 @@
 
 #define SAC_DISTMEM_ALLOC_BEGIN__DAO(var_NT, rc, dim, basetype)                          \
     {                                                                                    \
-        if (SAC_DISTMEM_MIRROR_IS_DIST (var_NT) == TRUE) {                               \
-            SAC_TR_DISTMEM_PRINT (                                                       \
-              ("Allocating dsm memory for array: %s", NT_STR (var_NT)));                 \
-            uintptr_t SAC_DISTMEM_MIRROR_OFFS (var_NT);                                  \
-            const size_t SAC_DISTMEM_MIRROR_FIRST_ELEMS (var_NT)                         \
+        if (SAC_DISTMEM_MIRROR_IS_DIST (var_NT)) {                                       \
+            SAC_TR_DISTMEM_PRINT ("Allocating dsm memory for array: %s",                 \
+                                  NT_STR (var_NT));                                      \
+                                                                                         \
+            SAC_DISTMEM_MIRROR_FIRST_ELEMS (var_NT)                                      \
               = SAC_DISTMEM_DET_MAX_ELEMS_PER_NODE (SAC_ND_A_MIRROR_SIZE (var_NT),       \
                                                     SAC_ND_A_MIRROR_SHAPE (var_NT, 0));  \
                                                                                          \

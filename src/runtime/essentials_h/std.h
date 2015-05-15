@@ -46,6 +46,9 @@
  *
  *   storage:INT:
  *           FLO:
+ *
+ *   distribution: DIS uses DSM memory
+ *                 NDI does not use DSM memory
  */
 
 #define NT_NAME(var_NT) Item0 var_NT
@@ -56,6 +59,7 @@
 #define NT_SCO(var_NT) Item5 var_NT
 #define NT_USG(var_NT) Item6 var_NT
 #define NT_BIT(var_NT) Item7 var_NT
+#define NT_DIS(var_NT) Item8 var_NT
 
 #define NT_STR(var_NT) TO_STR (NT_NAME (var_NT))
 
@@ -405,6 +409,25 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_A_SHAPE__AUD(var_NT, dim) SAC_ND_A_DESC_SHAPE (var_NT, dim)
 
+/*
+ * TODO: move SAC_DISTMEM_MIRROR_OFFS implementations (referenced by distmem_icm_gen.h)
+ */
+
+#define SAC_ND_A_MIRROR_OFFS(var_NT) CAT12 (NT_NAME (var_NT), __dm_offs)
+
+/*
+ * TODO: move SAC_DISTMEM_MIRROR_FIRST_ELEMS implementations (referenced by
+ * distmem_icm_gen.h)
+ */
+
+#define SAC_ND_A_MIRROR_FIRST_ELEMS(var_NT) CAT12 (NT_NAME (var_NT), __dm_firstElems)
+
+/*
+ * TODO: move SAC_DISTMEM_MIRROR_IS_DIST implementations (referenced by distmem_icm_gen.h)
+ */
+
+#define SAC_ND_A_MIRROR_IS_DIST(var_NT) CAT12 (NT_NAME (var_NT), __dm_isDist)
+
 /****************
  ****************
  ***
@@ -461,6 +484,14 @@ typedef intptr_t *SAC_array_descriptor_t;
        SAC_CS_READ_ARRAY (from_NT, from_pos)                                             \
          SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos])
 
+/* TODO: int is hardcoded now and not always mirror? , ) */
+#define SAC_ND_READ__DISTMEM(from_NT, from_pos)                                          \
+    (SAC_TR_AA_PRINT ("DSM read", from_NT, from_pos) SAC_BC_READ (from_NT, from_pos)     \
+         SAC_CS_READ_ARRAY (from_NT, from_pos) SAC_ND_A_MIRROR_IS_DIST (from_NT)         \
+       ? *SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_MIRROR_OFFS (from_NT), int,                 \
+                                    SAC_ND_A_MIRROR_FIRST_ELEMS (from_NT), from_pos)     \
+       : SAC_ND_READ__DEFAULT (from_NT, from_pos))
+
 /*
  * SAC_ND_WRITE implementations (referenced by sac_std_gen.h)
  */
@@ -480,6 +511,16 @@ typedef intptr_t *SAC_array_descriptor_t;
     SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
     SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))[to_pos]
 
+/* TODO: int is hardcoded now and not always mirror? , )
+TODO: check that we never write into the cache
+TODO: optimize away some pointer calculations */
+#define SAC_ND_WRITE_DISTMEM(to_NT, to_pos)                                              \
+    SAC_TR_AA_PRINT ("DSM write", to_NT, to_pos)                                         \
+    SAC_BC_WRITE (to_NT, to_pos)                                                         \
+    SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
+    *SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_MIRROR_OFFS (to_NT), int,                        \
+                               SAC_ND_A_MIRROR_FIRST_ELEMS (to_NT), to_pos)
+
 /*
  * SAC_ND_WRITE_COPY implementations (referenced by sac_std_gen.h)
  */
@@ -487,6 +528,15 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_ND_WRITE_COPY__NHD(to_NT, to_pos, expr, copyfun)                             \
     {                                                                                    \
         SAC_ND_WRITE (to_NT, to_pos) = expr;                                             \
+    }
+
+#define SAC_ND_WRITE_COPY__NHD_DISTMEM(to_NT, to_pos, expr, copyfun)                     \
+    {                                                                                    \
+        if (SAC_ND_A_MIRROR_IS_DIST (to_NT)) {                                           \
+            SAC_ND_WRITE_DISTMEM (to_NT, to_pos) = expr;                                 \
+        } else {                                                                         \
+            SAC_ND_WRITE (to_NT, to_pos) = expr;                                         \
+        }                                                                                \
     }
 
 #define SAC_ND_WRITE_COPY__HID(to_NT, to_pos, expr, copyfun)                             \

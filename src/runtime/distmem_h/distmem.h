@@ -17,6 +17,13 @@
 
 /*****************************************************************************/
 
+/* Rank of this node
+ * We always declare this variable for tracing purposes. */
+SAC_C_EXTERN_VAR size_t SAC_DISTMEM_rank;
+
+/* For tracing purposes. */
+#define SAC_DISTMEM_RANK_UNDEFINED SIZE_MAX
+
 #if SAC_DO_DISTMEM
 
 /* Minimum elements per node so that array is distributed. */
@@ -25,9 +32,6 @@
 /******************************************
  * Global variables
  *******************************************/
-
-/* Rank of this node */
-SAC_C_EXTERN_VAR size_t SAC_DISTMEM_rank;
 
 /* Number of nodes */
 SAC_C_EXTERN_VAR size_t SAC_DISTMEM_size;
@@ -260,14 +264,24 @@ void *SAC_DISTMEM_TR_Malloc (size_t b, uintptr_t *offset);
  *
  ******************************************************************************/
 #define _SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)  \
-    (elem_type *)((uintptr_t)SAC_DISTMEM_local_seg_ptrs[elem_index / elems_first_nodes]  \
-                  + arr_offset)                                                          \
-      + elem_index % elems_first_nodes;
+    ((elem_type *)((uintptr_t)SAC_DISTMEM_local_seg_ptrs[elem_index / elems_first_nodes] \
+                   + arr_offset)                                                         \
+     + elem_index % elems_first_nodes)
 
 #define _SAC_DISTMEM_TR_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes,           \
                                      elem_index)                                         \
-    SAC_DISTMEM_TR_num_ptr_calcs++;                                                      \
-    _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index);
+    (SAC_DISTMEM_TR_num_ptr_calcs++,                                                     \
+     SAC_TR_DISTMEM_PRINT (                                                              \
+       "Retrieving pointer for element owned by node %zd (segment starting at: %p), "    \
+       "offset within segment: %zd, element address: %p",                                \
+       elem_index / elems_first_nodes,                                                   \
+       (elem_type *)((uintptr_t)                                                         \
+                       SAC_DISTMEM_local_seg_ptrs[elem_index / elems_first_nodes]        \
+                     + arr_offset),                                                      \
+       elem_index % elems_first_nodes,                                                   \
+       _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes,              \
+                                  elem_index)),                                          \
+     _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index))
 
 /** <!--********************************************************************-->
  *
@@ -317,7 +331,7 @@ void *SAC_DISTMEM_TR_Malloc (size_t b, uintptr_t *offset);
 #define SAC_DISTMEM_MALLOC(b, offset) SAC_DISTMEM_TR_Malloc (b, offset);
 
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
-    _SAC_DISTMEM_TR_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index);
+    _SAC_DISTMEM_TR_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
 #define SAC_DISTMEM_RECALC_INDEX(elems_first_nodes, elem_index)                          \
     _SAC_DISTMEM_TR_RECALC_INDEX (elems_first_nodes, elem_index);
@@ -349,7 +363,7 @@ void *SAC_DISTMEM_TR_Malloc (size_t b, uintptr_t *offset);
 #define SAC_DISTMEM_MALLOC(b, offset) SAC_DISTMEM_Malloc (b, offset);
 
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
-    _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index);
+    _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
 #define SAC_DISTMEM_RECALC_INDEX(elems_first_nodes, elem_index)                          \
     _SAC_DISTMEM_RECALC_INDEX (elems_first_nodes, elem_index);
@@ -374,6 +388,9 @@ void *SAC_DISTMEM_TR_Malloc (size_t b, uintptr_t *offset);
 #define SAC_DISTMEM_BARRIER()
 
 #define SAC_DISTMEM_EXIT()
+
+/* TODO: Prelude needs this */
+#define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index) 0
 
 /*
  * We do not define the following macros because they

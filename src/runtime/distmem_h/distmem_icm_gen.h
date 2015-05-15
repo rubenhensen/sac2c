@@ -265,11 +265,6 @@ SAC_ND_ALLOC__DATA__NOOP(__VA_ARGS__)
 
 #define SAC_DISTMEM_DEC_RC_FREE_SCLHNSNUQ(...) SAC_ND_DEC_RC_FREE__NOOP (__VA_ARGS__)
 
-#define SAC_DISTMEM_DEC_RC_FREE_SCLHIDNUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-
-#define SAC_DISTMEM_DEC_RC_FREE_SCL___NUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
 #define SAC_DISTMEM_DEC_RC_FREE_AKSNHDNUQ(...)                                           \
     SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
 #define SAC_DISTMEM_DEC_RC_FREE_AKSHIDNUQ(...)                                           \
@@ -278,30 +273,23 @@ SAC_ND_ALLOC__DATA__NOOP(__VA_ARGS__)
     SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
 #define SAC_DISTMEM_DEC_RC_FREE_AKS___NUQ(...)                                           \
     SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-#define SAC_DISTMEM_DEC_RC_FREE_AKDNHDNUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-#define SAC_DISTMEM_DEC_RC_FREE_AKDHIDNUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-#define SAC_DISTMEM_DEC_RC_FREE_AKDHNSNUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-#define SAC_DISTMEM_DEC_RC_FREE_AKD___NUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-#define SAC_DISTMEM_DEC_RC_FREE_AUDNHDNUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-#define SAC_DISTMEM_DEC_RC_FREE_AUDHIDNUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-#define SAC_DISTMEM_DEC_RC_FREE_AUDHNSNUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-#define SAC_DISTMEM_DEC_RC_FREE_AUD___NUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-#define SAC_DISTMEM_DEC_RC_FREE____NHDNUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-#define SAC_DISTMEM_DEC_RC_FREE____HIDNUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-#define SAC_DISTMEM_DEC_RC_FREE____HNSNUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
-#define SAC_DISTMEM_DEC_RC_FREE_______NUQ(...)                                           \
-    SAC_DISTMEM_DEC_RC_FREE__DEFAULT (__VA_ARGS__)
+
+#define SAC_DISTMEM_DEC_RC_FREE_SCLHIDNUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+
+#define SAC_DISTMEM_DEC_RC_FREE_SCL___NUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+
+#define SAC_DISTMEM_DEC_RC_FREE_AKDNHDNUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+#define SAC_DISTMEM_DEC_RC_FREE_AKDHIDNUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+#define SAC_DISTMEM_DEC_RC_FREE_AKDHNSNUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+#define SAC_DISTMEM_DEC_RC_FREE_AKD___NUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+#define SAC_DISTMEM_DEC_RC_FREE_AUDNHDNUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+#define SAC_DISTMEM_DEC_RC_FREE_AUDHIDNUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+#define SAC_DISTMEM_DEC_RC_FREE_AUDHNSNUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+#define SAC_DISTMEM_DEC_RC_FREE_AUD___NUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+#define SAC_DISTMEM_DEC_RC_FREE____NHDNUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+#define SAC_DISTMEM_DEC_RC_FREE____HIDNUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+#define SAC_DISTMEM_DEC_RC_FREE____HNSNUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
+#define SAC_DISTMEM_DEC_RC_FREE_______NUQ(...) SAC_ND_DEC_RC_FREE (__VA_ARGS__)
 
 #define CAT_M4_distmem_icm_gen_11(x, y) xCAT_M4_distmem_icm_gen_11 (x, y)
 #define xCAT_M4_distmem_icm_gen_11(x, y) x##y

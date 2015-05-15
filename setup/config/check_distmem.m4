@@ -96,6 +96,24 @@ EOF
 	@\$(CLOCK_SKEW_ELIMINATION)
 EOF
 
+         dnl Append the rules for the libsacdistmem GASNet cross variant object files to build.mkf
+         dnl At the places where we print \$$** or \$$*@ we want $* $@ to end up in the makefile.
+         dnl However, $* is replaced by an empty string and $@ by \, escaping does not help.
+         cat <<EOF >>./build.GASNetconduitsCrossVariant
+%.\$(\$(STYLE)_short)\$(CROSS_VARIANT).gasnet${gasnet_conduit_name}.o: %.c
+	@if [[ "compile \$(dir \$$**)" != "\`cat .make_track\`" ]] ; \\
+         then \$(ECHO) "compile \$(dir \$$**)" > .make_track; \\
+              \$(ECHO) ""; \\
+              \$(ECHO) "Compiling files in directory \$(PREFIX_LOCAL)\$(dir \$@)"; \\
+         fi
+	@\$(ECHO) "  Compiling GasNET ${gasnet_conduit_name} \$(\$(STYLE)_long) code: \$(notdir \$<)"
+	\$(HIDE) \$(GASNET_${gasnet_conduit_name_uc}_CC) \\
+                  \$(GASNET_${gasnet_conduit_name_uc}_CPPFLAGS) \$(GASNET_${gasnet_conduit_name_uc}_CFLAGS) \$(CC_FLAGS_\$(\$(STYLE)_cap)) \$(SETTINGS_\$(\$(STYLE)_cap)) \\
+                  \$(CC_FLAGS_YY) \$(SETTINGS_DISTMEM) \$(SETTINGS_DISTMEM_GASNET) \\
+                  \$(INCDIRS) -o \$$*@ -c \$<
+	@\$(CLOCK_SKEW_ELIMINATION)
+EOF
+
       done
 
       if test x"$gasnet_conduit_names" = x ; then
