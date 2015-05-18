@@ -18,6 +18,8 @@ extern node *UIDmodule (node *arg_node, info *arg_info);
 
 extern node *UIDfundef (node *arg_node, info *arg_info);
 
+extern node *UIDarg (node *arg_node, info *arg_info);
+
 extern node *UIDdoSetFunctionIDs (node *arg_node);
 
 #endif /* _SAC_RUNTIME_FUNCTION_ID_H_ */

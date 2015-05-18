@@ -112,11 +112,13 @@ CHECK_HR_CLOCK
 dnl check support for dynamic libraries
 AC_CHECK_HEADER([dlfcn.h], [], [AC_MSG_ERROR([dlfcn.h is required.])])
 AC_SEARCH_LIBS([dlopen], [dl])
+AC_CHECK_HEADER([uuid/uuid.h], [], [AC_MSG_ERROR([uuid.h is required.])])
+AC_SEARCH_LIBS([uuid_generate], [uuid])
 CHECK_DLL_EXT
 
 dnl set rtspec flag
 enable_rtspec=no
-if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes; then
+if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes -a x"$ac_cv_search_uuid_generate" != xno; then
   enable_rtspec=yes
 fi
 case $ac_cv_search_dlopen in

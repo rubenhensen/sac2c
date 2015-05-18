@@ -16,12 +16,17 @@
 
 #include "traverse.h"
 #include "new_types.h"
+#include "tree_compound.h"
+
+#include <uuid/uuid.h>
 
 struct INFO {
     node *module;
+    bool isgeneric;
 };
 
 #define INFO_MODULE(n) ((n)->module)
+#define INFO_ISGENERIC(n) ((n)->isgeneric)
 
 static info *
 MakeInfo (info *arg_info)
@@ -49,6 +54,36 @@ FreeInfo (info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn UIDarg (node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ * @param  arg_node  The current node of the syntax tree.
+ * @param  arg_info  Info object, unused.
+ *
+ * @return  The updated arg node.
+ *
+ *****************************************************************************/
+node *
+UIDarg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    ntype *argtype = ARG_NTYPE (arg_node);
+
+    if (!TYisAKS (argtype)) {
+        INFO_ISGENERIC (arg_info) = TRUE;
+    }
+
+    if (ARG_NEXT (arg_node) != NULL) {
+        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn UIDfundef (node *arg_node, info *arg_info)
  *
  * @brief
@@ -64,6 +99,31 @@ UIDfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    uuid_t uuid;
+
+    if (FUNDEF_ISLOCAL (arg_node) && !FUNDEF_ISWRAPPERFUN (arg_node)
+        && !FUNDEF_ISCONDFUN (arg_node) && !FUNDEF_ISLOOPFUN (arg_node)) {
+        INFO_ISGENERIC (arg_info) = FALSE;
+
+        if (FUNDEF_ARGS (arg_node) != NULL) {
+            FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+        }
+
+        if (INFO_ISGENERIC (arg_info)) {
+            FUNDEF_RTSPECID (arg_node) = (char *)malloc (sizeof (char) * 36);
+
+            uuid_generate (uuid);
+            uuid_unparse_lower (uuid, FUNDEF_RTSPECID (arg_node));
+        }
+    }
+
+    if (FUNDEF_NEXT (arg_node) != NULL) {
+        /*
+         * Traverse all the functions in the fundef chain.
+         */
+        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -71,7 +131,7 @@ UIDfundef (node *arg_node, info *arg_info)
  *
  * @fn UIDmodule (node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Go over modules and traverse only the ones that actually have functions
  *
  * @param arg_node  the syntax tree.
  *

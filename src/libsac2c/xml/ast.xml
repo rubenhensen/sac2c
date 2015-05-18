@@ -130,6 +130,7 @@
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
+          <node name="Arg" />
         </travuser>
       </traversal>
       <traversal id="CLF" name="Create loop functions" default="sons" include="create_loop_fun.h">
