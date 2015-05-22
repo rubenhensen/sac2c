@@ -29,7 +29,16 @@
 
 #if SAC_DO_TRACE
 
+/*
+ * FIXME: Bug 978
+ * This should never be included here.
+ * As a quick fix, only include for TRACE_MT
+ * so that the other tracing options work.
+ */
+#if SAC_DO_TRACE_MT
 #include <stdio.h>
+#endif
+
 #include <string.h>
 
 SAC_C_EXTERN int SAC_TR_hidden_memcnt;
@@ -143,6 +152,11 @@ typedef enum {
             break;                                                                       \
         }                                                                                \
     }
+/*
+ * FIXME: Bug 978
+ * This should not directly use functions from stdio (snprintf) as we cannot
+ * include them into sac.h.
+ */
 #define SAC_TR_MT_PRINT_FOLD_RESULT__AKS(basetype, accu_NT, msg)                         \
     {                                                                                    \
         int SAC_i;                                                                       \

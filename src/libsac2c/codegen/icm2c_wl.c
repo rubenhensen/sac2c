@@ -398,6 +398,13 @@ ICMCompileWL_SCHEDULE__END (int dims)
 #include "icm_trace.c"
 #undef WL_SCHEDULE__END
 
+    if (global.backend == BE_distmem) {
+        /* TODO: Do we always need to do this? Is this with-loop even distributed? */
+        indout ("SAC_DISTMEM_BARRIER();");
+        /* TODO: We do not need to invalidate the entire cache. */
+        indout ("SAC_DISTMEM_INVAL_ENTIRE_CACHE();");
+    }
+
     global.indent--;
     indout ("}\n");
 

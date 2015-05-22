@@ -1442,6 +1442,39 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
+    case F_isDist_A:
+        /*
+         * _isDist_A_ always yields a scalar
+         *
+         * _isDist_A_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_bool);
+        break;
+
+    case F_firstElems_A:
+        /*
+         * _firstElems_A_ always yields a scalar
+         *
+         * _firstElems_A_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_ulong);
+        break;
+
+    case F_offs_A:
+        /*
+         * _offs_A_ always yields a scalar
+         *
+         * _offs_A_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_ulong);
+        break;
+
     case F_shape_A:
         /*
          * shape( A );

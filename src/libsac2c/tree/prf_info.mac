@@ -132,6 +132,8 @@
  *
  *   name           name of function, used to create enum type
  *   arg_encoding   shape class of arguments
+ *                  PA_A = array, PA_V = vector, PA_S = scalar,
+ *                  PA_x = no more arguments
  *   arity          arity as natural number (0 indicates variable arity)
  *                  For those of you who find "arity" an irritating term,
  *                  this is the number of arguments to the function, or
@@ -564,6 +566,21 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
   PRF (dim_A, (PA_A, PA_x, PA_x), 1, XXX, NTCCTprf_dim_A, COdim, COMPprfDim, NULL, NULL,
        SAACFprf_dim, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVDim, ICCnone, TEone,
        NULL, NULL),
+
+  PRF (isDist_A, (PA_A, PA_x, PA_x), 1, XXX, NTCCTprf_isDist_A, COisDist, COMPprfIsDist,
+       NULL, NULL, NULL, /*TODO: verify*/
+       SAAdim_is_0, SAAshp_is_empty, NULL, 0, NULL, /*TODO: verify*/ ICCnone, TEone, NULL,
+       NULL),
+
+  PRF (firstElems_A, (PA_A, PA_x, PA_x), 1, XXX, NTCCTprf_firstElems_A, COfirstElems,
+       COMPprfFirstElems, NULL, NULL, NULL, /*TODO: verify*/
+       SAAdim_is_0, SAAshp_is_empty, NULL, 0, NULL, /*TODO: verify*/ ICCnone, TEone, NULL,
+       NULL),
+
+  PRF (offs_A, (PA_A, PA_x, PA_x), 1, XXX, NTCCTprf_offs_A, COoffs, COMPprfOffs, NULL,
+       NULL, NULL, /*TODO: verify*/
+       SAAdim_is_0, SAAshp_is_empty, NULL, 0, NULL, /*TODO: verify*/ ICCnone, TEone, NULL,
+       NULL),
 
   PRF (shape_A, (PA_A, PA_x, PA_x), 1, XXX, NTCCTprf_shape_A, COshape, COMPprfShape,
        SCSprf_shape, NULL, SAACFprf_shape, SAAdim_is_1, SAAshp_for_shape, NULL, 0,

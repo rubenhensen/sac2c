@@ -155,7 +155,7 @@ SegvHandler (int sig, siginfo_t *si, void *unused)
     /* The segfault occured outside of the cache memory area
      * (i.e. was not caused by the dsm system). */
     if ((uintptr_t)si->si_addr < (uintptr_t)SAC_DISTMEM_cache_ptr) {
-        SAC_RuntimeError ("Segfault at %p", si->si_addr);
+        SAC_RuntimeError ("DSM segfault at %p", si->si_addr);
     }
 
     /* Calculate the rank of the owner of the requested memory address. */
@@ -172,7 +172,7 @@ SegvHandler (int sig, siginfo_t *si, void *unused)
     /* The segfault occured outside of the cache memory area
      * (i.e. was not caused by the dsm system). */
     if (owner_rank >= SAC_DISTMEM_size) {
-        SAC_RuntimeError ("Segfault at %p", si->si_addr);
+        SAC_RuntimeError ("DSM segfault at %p", si->si_addr);
     }
 
     /* Record the segfault only here because we need to be sure
@@ -194,7 +194,8 @@ SegvHandler (int sig, siginfo_t *si, void *unused)
     /* Make the page writable so that it can be loaded from its owner. */
     SAC_DISTMEM_PROT_PAGE_WRITE (local_page_ptr);
 
-    SAC_TR_DISTMEM_PRINT ("Fetching page %zd from %zd", remote_page_index, owner_rank);
+    SAC_TR_DISTMEM_PRINT ("Fetching page %zd from %zd to %p", remote_page_index,
+                          owner_rank, local_page_ptr);
 
     /* Load the page from its owner node. */
     SAC_DISTMEM_COMMLIB_LOAD_PAGE (local_page_ptr, owner_rank, remote_page_index);
@@ -493,6 +494,14 @@ SAC_DISTMEM_Malloc (size_t b, uintptr_t *offset)
                           *offset);
     return (void *)(((uintptr_t)SAC_DISTMEM_shared_seg_ptr) + *offset);
 }
+
+#if COMPILE_TRACE
+void
+SAC_DISTMEM_TR_IncNumPtrCalcs (void)
+{
+    SAC_DISTMEM_TR_num_ptr_calcs++;
+}
+#endif /* COMPILE_TRACE */
 
 #endif /* ENABLE_DISTMEM */
 

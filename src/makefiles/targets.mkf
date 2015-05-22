@@ -258,7 +258,7 @@ libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \
                         icm2c_utils icm2c_std icm2c_prf icm2c_mt icm2c_sched \
                         icm2c_wl icm2c_error tag_preparation icm2c_cuda \
-                        icm2c_rtspec icm2c_fp icm2c_ia icm2c_nested icm2c_distmem
+                        icm2c_rtspec icm2c_fp icm2c_ia icm2c_nested
 
 libsac2c_print       := print convert
 
@@ -336,7 +336,7 @@ runtime_cudahybrid_h   := cudahybrid alloc_cache dist_var_nomemsave basic
 
 runtime_rtspec_h       := rtspec registry reqqueue controller
 
-runtime_distmem_h      := distmem distmem_icm distmem_icm_gen
+runtime_distmem_h      := distmem
 
 runtime_nested_h       := nested nested_gen
 

@@ -877,8 +877,6 @@ MakeDecRcIcm (char *name, types *type, int num, node *assigns)
                    || TCgetBasetype (type) == T_double_dev) {
 
             icm = "CUDA_DEC_RC_FREE";
-        } else if (global.backend == BE_distmem) {
-            icm = "DISTMEM_DEC_RC_FREE";
         } else {
             icm = "ND_DEC_RC_FREE";
         }
@@ -965,27 +963,14 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
                   = TCmakeAssignIcm3 ("ND_ALLOC", TCmakeIdCopyStringNt (name, type),
                                       TBmakeNum (rc), get_dim, set_shape_icm, assigns);
 #else
-                if (global.backend == BE_distmem) {
-                    assigns = TCmakeAssignIcm4 (
-                      "DISTMEM_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type),
-                      TBmakeNum (rc), get_dim, MakeBasetypeArg (type),
-                      TBmakeAssign (set_shape_icm,
-                                    TCmakeAssignIcm4 ("ND_ALLOC_END",
-                                                      TCmakeIdCopyStringNt (name, type),
-                                                      TBmakeNum (rc),
-                                                      DUPdoDupTree (get_dim),
-                                                      MakeBasetypeArg (type), assigns)));
-                } else {
-                    assigns = TCmakeAssignIcm4 (
-                      "ND_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type), TBmakeNum (rc),
-                      get_dim, MakeBasetypeArg (type),
-                      TBmakeAssign (set_shape_icm,
-                                    TCmakeAssignIcm4 ("ND_ALLOC_END",
-                                                      TCmakeIdCopyStringNt (name, type),
-                                                      TBmakeNum (rc),
-                                                      DUPdoDupTree (get_dim),
-                                                      MakeBasetypeArg (type), assigns)));
-                }
+                assigns = TCmakeAssignIcm4 (
+                  "ND_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type), TBmakeNum (rc),
+                  get_dim, MakeBasetypeArg (type),
+                  TBmakeAssign (set_shape_icm,
+                                TCmakeAssignIcm4 ("ND_ALLOC_END",
+                                                  TCmakeIdCopyStringNt (name, type),
+                                                  TBmakeNum (rc), DUPdoDupTree (get_dim),
+                                                  MakeBasetypeArg (type), assigns)));
 #endif
             }
         } else {
@@ -3181,17 +3166,17 @@ COMPvardec (node *arg_node, info *arg_info)
                             MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
                                           TRUE, TRUE, TRUE, NULL));
         } else {
-            if (global.backend == BE_distmem) {
-                VARDEC_ICM (arg_node)
-                  = TCmakeIcm1 ("DISTMEM_DECL", MakeTypeArgs (VARDEC_NAME (arg_node),
-                                                              VARDEC_TYPE (arg_node),
-                                                              TRUE, TRUE, TRUE, NULL));
-            } else {
-                VARDEC_ICM (arg_node)
-                  = TCmakeIcm1 ("ND_DECL", MakeTypeArgs (VARDEC_NAME (arg_node),
-                                                         VARDEC_TYPE (arg_node), TRUE,
-                                                         TRUE, TRUE, NULL));
-            }
+            DBUG_PRINT ("%s: VARDEC_TYPE == int: %d, TYPES_DISTRIBUTED: %d, "
+                        "AVIS_ISGENARRAYMEMVAL:%d,  AVIS_ISMODARRAYMEMVAL:%d \n",
+                        VARDEC_NAME (arg_node),
+                        TYPES_DISTRIBUTED (VARDEC_TYPE (arg_node)),
+                        TYPES_BASETYPE (VARDEC_TYPE (arg_node)) == T_int,
+                        AVIS_ISGENARRAYMEMVAL (VARDEC_AVIS (arg_node)),
+                        AVIS_ISMODARRAYMEMVAL (VARDEC_AVIS (arg_node)));
+            VARDEC_ICM (arg_node)
+              = TCmakeIcm1 ("ND_DECL",
+                            MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
+                                          TRUE, TRUE, TRUE, NULL));
         }
     }
 
@@ -5633,6 +5618,117 @@ COMPprfDim (node *arg_node, info *arg_info)
     DBUG_ASSERT (NODE_TYPE (arg) == N_id, "arg of F_dim_A is no N_id!");
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_DIM_A__DATA",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE,
+                                               MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                             FALSE, TRUE, FALSE, NULL)),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfIsDist( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_isDist_A.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfIsDist (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *arg;
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg = PRF_ARG1 (arg_node);
+
+    DBUG_ASSERT (NODE_TYPE (arg) == N_id, "arg of F_isDist_A is no N_id!");
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_IS_DIST_A__DATA",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE,
+                                               MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                             FALSE, TRUE, FALSE, NULL)),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfFirstElems( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_firstElems_A.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfFirstElems (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *arg;
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg = PRF_ARG1 (arg_node);
+
+    DBUG_ASSERT (NODE_TYPE (arg) == N_id, "arg of F_firstElems_A is no N_id!");
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_FIRST_ELEMS_A__DATA",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE,
+                                               MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                             FALSE, TRUE, FALSE, NULL)),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfOffs( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_offs_A.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfOffs (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *arg;
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg = PRF_ARG1 (arg_node);
+
+    DBUG_ASSERT (NODE_TYPE (arg) == N_id, "arg of F_offs_A is no N_id!");
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_OFFS_A__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
                                                FALSE, TRUE, FALSE,
                                                MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),

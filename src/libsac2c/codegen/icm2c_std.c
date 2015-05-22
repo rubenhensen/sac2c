@@ -648,6 +648,7 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
     int size, i;
     shape_class_t sc = ICUGetShapeClass (var_NT);
     int dim = DIM_NO_OFFSET (sdim);
+    distributed_class_t dc = ICUGetDistributedClass (var_NT);
 
     DBUG_ENTER ();
 
@@ -673,6 +674,27 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
 
         indout ("const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", var_NT, size);
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
+
+        if (global.backend == BE_distmem && dc == C_distr) {
+            /* Array is potentially distributed. */
+
+            /*
+             * Postpone the decisison whether the array is actually distributed to
+             * runtime since this depends on the number of nodes as well.
+             */
+            indout ("const bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
+                    "SAC_DISTMEM_DET_DO_DISTR_ARR( %d, %d);\n",
+                    var_NT, size, shp[0]);
+
+            /*
+             * Initialize these variables to 0 to avoid warnings.
+             * If the array is actually distributed, they will be set to the correct
+             * values when the data is allocated.
+             */
+            indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
+            indout ("uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = 0;\n", var_NT);
+        }
+
         break;
 
     case C_akd:
@@ -683,11 +705,39 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
 
         indout ("int SAC_ND_A_MIRROR_SIZE( %s);\n", var_NT);
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
+
+        if (global.backend == BE_distmem && dc == C_distr) {
+            /* Array is potentially distributed. */
+
+            /*
+             * Initialize these variables to avoid warnings.
+             * If the array is actually distributed, they will be set to the correct
+             * values when the data is allocated.
+             */
+            indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n", var_NT);
+            indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
+            indout ("uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = 0;\n", var_NT);
+        }
+
         break;
 
     case C_aud:
         indout ("int SAC_ND_A_MIRROR_SIZE( %s) = 0;\n", var_NT);
         indout ("int SAC_ND_A_MIRROR_DIM( %s) = 0;\n", var_NT);
+
+        if (global.backend == BE_distmem && dc == C_distr) {
+            /* Array is potentially distributed. */
+
+            /*
+             * Initialize these variables to avoid warnings.
+             * If the array is actually distributed, they will be set to the correct
+             * values when the data is allocated.
+             */
+            indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n", var_NT);
+            indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
+            indout ("uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = 0;\n", var_NT);
+        }
+
         break;
 
     default:
@@ -716,6 +766,7 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
     int size, i;
     shape_class_t sc = ICUGetShapeClass (var_NT);
     int dim = DIM_NO_OFFSET (sdim);
+    distributed_class_t dc = ICUGetDistributedClass (var_NT);
 
     DBUG_ENTER ();
 
@@ -742,17 +793,17 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
         indout ("const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", var_NT, size);
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
 
-        if (global.backend == BE_distmem) {
-            indout ("const bool SAC_DISTMEM_MIRROR_IS_DIST( %s) = "
-                    "SAC_DISTMEM_DET_DO_DISTR_ARR( %d, %d);\n",
-                    var_NT, size, shp[0]);
-            /*
-             * Initialize these variables to 0 to avoid warnings.
-             * If the array is distributed, they will be set to the correct values
-             * when the array is allocated. *
-             */
-            indout ("size_t SAC_DISTMEM_MIRROR_FIRST_ELEMS( %s) = 0;", var_NT);
-            indout ("uintptr_t SAC_DISTMEM_MIRROR_OFFS( %s) = 0;", var_NT);
+        if (global.backend == BE_distmem && dc == C_distr) {
+            /* Array is potentially distributed. */
+            indout (
+              "const bool SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
+              var_NT, var_NT);
+            indout ("const size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
+                    "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
+                    var_NT, var_NT);
+            indout (
+              "const uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
+              var_NT, var_NT);
         }
 
         break;
@@ -770,6 +821,20 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
                 " = SAC_ND_A_DESC_SIZE( %s);\n",
                 var_NT, var_NT);
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
+
+        if (global.backend == BE_distmem && dc == C_distr) {
+            /* Array is potentially distributed. */
+            indout (
+              "const bool SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
+              var_NT, var_NT);
+            indout ("const size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
+                    "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
+                    var_NT, var_NT);
+            indout (
+              "const uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
+              var_NT, var_NT);
+        }
+
         break;
 
     case C_aud:
@@ -779,6 +844,20 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
         indout ("int SAC_ND_A_MIRROR_DIM( %s)"
                 " = SAC_ND_A_DESC_DIM( %s);\n",
                 var_NT, var_NT);
+
+        if (global.backend == BE_distmem && dc == C_distr) {
+            /* Array is potentially distributed. */
+            indout (
+              "const bool SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
+              var_NT, var_NT);
+            indout ("const size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
+                    "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
+                    var_NT, var_NT);
+            indout (
+              "const uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
+              var_NT, var_NT);
+        }
+
         break;
 
     default:
@@ -801,6 +880,7 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
  *
  ******************************************************************************/
 
+// TODO: Changes for distributed memory backend
 void
 ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim)
 {
@@ -1093,7 +1173,7 @@ ICMCompileND_ASSIGN__DESC (char *to_NT, char *from_NT)
 
     from_has_desc = from_sc != C_scl || (from_hc == C_hid && from_uc != C_unq);
 
-    /* FIXME This is hard to read, an it may be simplified.  */
+    /* FIXME This is hard to read, and it may be simplified.  */
     if (!to_has_desc && !from_has_desc) {
         /* 'to_NT' has no desc, 'from_NT' has no desc */
         indout ("SAC_NOOP()\n");
@@ -1206,6 +1286,7 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
     shape_class_t from_sc = ICUGetShapeClass (from_NT);
     int from_dim = DIM_NO_OFFSET (from_sdim);
+    distributed_class_t to_dc = ICUGetDistributedClass (to_NT);
 
     DBUG_ENTER ();
 
@@ -1232,6 +1313,15 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
             }
 
             indout ("SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_NT, from_NT);
+
+            if (global.backend == BE_distmem && to_dc == C_distr) {
+                /* Target is potentially distributed. */
+                indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_IS_DIST( %s);\n", to_NT,
+                        from_NT);
+                indout ("SAC_ND_A_DESC_FIRST_ELEMS( %s) = SAC_ND_A_FIRST_ELEMS( %s);\n",
+                        to_NT, from_NT);
+            }
+
             break;
 
         case C_akd:
@@ -1257,7 +1347,17 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
             }
 
             indout ("SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_NT, from_NT);
-            /* ... fallthrough ...  */
+            indout ("SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_NT, from_NT);
+
+            if (global.backend == BE_distmem && to_dc == C_distr) {
+                /* Target is potentially distributed. */
+                indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_IS_DIST( %s);\n", to_NT,
+                        from_NT);
+                indout ("SAC_ND_A_DESC_FIRST_ELEMS( %s) = SAC_ND_A_FIRST_ELEMS( %s);\n",
+                        to_NT, from_NT);
+            }
+
+            break;
 
         case C_akd:
             indout ("SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_NT, from_NT);
@@ -1299,6 +1399,7 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
 {
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
+    distributed_class_t to_dc = ICUGetDistributedClass (to_NT);
 
     DBUG_ENTER ();
 
@@ -1323,11 +1424,29 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
         }
 
         indout ("SAC_ND_A_MIRROR_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_NT, from_NT);
+
+        if (global.backend == BE_distmem && to_dc == C_distr) {
+            /* Target is potentially distributed. */
+            indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_IS_DIST( %s);\n", to_NT,
+                    from_NT);
+            indout ("SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = SAC_ND_A_FIRST_ELEMS( %s);\n",
+                    to_NT, from_NT);
+        }
+
         break;
 
     case C_aud:
         indout ("SAC_ND_A_MIRROR_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_NT, from_NT);
         indout ("SAC_ND_A_MIRROR_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_NT, from_NT);
+
+        if (global.backend == BE_distmem && to_dc == C_distr) {
+            /* Target is potentially distributed. */
+            indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_IS_DIST( %s);\n", to_NT,
+                    from_NT);
+            indout ("SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = SAC_ND_A_FIRST_ELEMS( %s);\n",
+                    to_NT, from_NT);
+        }
+
         break;
 
     default:

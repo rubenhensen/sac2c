@@ -182,6 +182,9 @@ SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, size_t owner_rank,
                               size_t remote_page_index)
 #endif /* COMPILE_TRACE */
 {
+    SAC_TR_DISTMEM_PRINT ("GASNet get from remote address: %p",
+                          (void *)((uintptr_t)seg_info[owner_rank].addr
+                                   + remote_page_index * SAC_DISTMEM_pagesz));
     gasnet_get (local_page_ptr, owner_rank,
                 (void *)((uintptr_t)seg_info[owner_rank].addr
                          + remote_page_index * SAC_DISTMEM_pagesz),

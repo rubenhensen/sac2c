@@ -17,6 +17,8 @@
 
 /*****************************************************************************/
 
+#include <inttypes.h>
+
 /* Rank of this node
  * We always declare this variable for tracing purposes. */
 SAC_C_EXTERN_VAR size_t SAC_DISTMEM_rank;
@@ -245,6 +247,8 @@ size_t SAC_DISTMEM_TR_DetDim0Stop (size_t dim0_size);
 
 void *SAC_DISTMEM_TR_Malloc (size_t b, uintptr_t *offset);
 
+void SAC_DISTMEM_TR_IncNumPtrCalcs (void);
+
 /******************************************
  * Macros for accessing distributed
  * array elements
@@ -270,18 +274,29 @@ void *SAC_DISTMEM_TR_Malloc (size_t b, uintptr_t *offset);
 
 #define _SAC_DISTMEM_TR_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes,           \
                                      elem_index)                                         \
-    (SAC_DISTMEM_TR_num_ptr_calcs++,                                                     \
-     SAC_TR_DISTMEM_PRINT (                                                              \
-       "Retrieving pointer for element owned by node %zd (segment starting at: %p), "    \
-       "offset within segment: %zd, element address: %p",                                \
-       elem_index / elems_first_nodes,                                                   \
-       (elem_type *)((uintptr_t)                                                         \
-                       SAC_DISTMEM_local_seg_ptrs[elem_index / elems_first_nodes]        \
-                     + arr_offset),                                                      \
-       elem_index % elems_first_nodes,                                                   \
-       _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes,              \
-                                  elem_index)),                                          \
-     _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index))
+    ((elems_first_nodes == 0)                                                            \
+       ? (SAC_RuntimeError ("Invalid arguments for retrieving DSM pointer: element "     \
+                            "%zd, array offset: %p, elems_first_nodes: %zd",             \
+                            elem_index, arr_offset, elems_first_nodes),                  \
+          (elem_type *)NULL)                                                             \
+       : (SAC_DISTMEM_TR_IncNumPtrCalcs (),                                              \
+          SAC_TR_DISTMEM_PRINT (                                                         \
+            "Retrieving pointer for element %zd owned by node %zd, segment starting "    \
+            "at: %p, offset within segment: %" PRIuPTR                                   \
+            ", array starting at: %p, elems first nodes: %zd, offset within array: "     \
+            "%zd, element address: %p",                                                  \
+            elem_index, elem_index / elems_first_nodes,                                  \
+            (elem_type *)((                                                              \
+              uintptr_t)SAC_DISTMEM_local_seg_ptrs[elem_index / elems_first_nodes]),     \
+            arr_offset,                                                                  \
+            (elem_type *)((uintptr_t)                                                    \
+                            SAC_DISTMEM_local_seg_ptrs[elem_index / elems_first_nodes]   \
+                          + arr_offset),                                                 \
+            elems_first_nodes, elem_index % elems_first_nodes,                           \
+            _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes,         \
+                                       elem_index)),                                     \
+          _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes,           \
+                                     elem_index)))
 
 /** <!--********************************************************************-->
  *
