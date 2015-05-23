@@ -537,7 +537,7 @@ typedef enum {
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
 #undef NTIFtype
-#undef ATTRIB NT_DISTRIBUTED_INDEX
+#undef ATTRIB
 } distributed_class_t;
 
 /*

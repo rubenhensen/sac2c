@@ -18,18 +18,12 @@ AC_DEFUN([CHECK_DISTMEM], dnl
    dnl Create GASNet conduit targets file.
    cat >./sac2crc.GASNetconduits
 
-   dnl Create GASNet conduit build file.
+   dnl Create GASNet conduit build files.
    cat >./build.GASNetconduits
+   cat >./build.GASNetconduitsCrossVariant
 
    dnl Create GASNet conduit settings file.
    cat >./config.GASNetconduits
-   cat <<EOF >>./config.GASNetconduits
-################################################################################
-#
-# GASNet conduit settings:
-#
-
-EOF
 
 
 ################################################################################
@@ -43,6 +37,14 @@ EOF
    if test -r $gasnet_home; then
       AC_MSG_RESULT([yes])
       AC_MSG_CHECKING(installed gasnet conduits)
+
+      cat <<EOF >>./config.GASNetconduits
+################################################################################
+#
+# GASNet conduit settings:
+#
+
+EOF
 
       for gasnet_conduit_path in $gasnet_home/include/*-conduit/; do
          gasnet_conduit_filename="$(basename "${gasnet_conduit_path}")"
@@ -124,6 +126,7 @@ EOF
       fi
    else
       AC_MSG_RESULT([no])
+      enable_distmem_gasnet=no
    fi
 
    if test x"$enable_distmem_gasnet" = xno -a x"$enable_distmem_gpi" = xno -a x"$enable_distmem_mpi" = xno -a x"$enable_distmem_armci" = xno ; then

@@ -5012,15 +5012,9 @@ fi
       cat >./sac2crc.GASNetconduits
 
       cat >./build.GASNetconduits
+   cat >./build.GASNetconduitsCrossVariant
 
       cat >./config.GASNetconduits
-   cat <<EOF >>./config.GASNetconduits
-################################################################################
-#
-# GASNet conduit settings:
-#
-
-EOF
 
 
 ################################################################################
@@ -5037,6 +5031,14 @@ $as_echo_n "checking if $gasnet_home exists... " >&6; }
 $as_echo "yes" >&6; }
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking installed gasnet conduits" >&5
 $as_echo_n "checking installed gasnet conduits... " >&6; }
+
+      cat <<EOF >>./config.GASNetconduits
+################################################################################
+#
+# GASNet conduit settings:
+#
+
+EOF
 
       for gasnet_conduit_path in $gasnet_home/include/*-conduit/; do
          gasnet_conduit_filename="$(basename "${gasnet_conduit_path}")"
@@ -5115,6 +5117,7 @@ $as_echo "$gasnet_conduit_names" >&6; }
    else
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+      enable_distmem_gasnet=no
    fi
 
    if test x"$enable_distmem_gasnet" = xno -a x"$enable_distmem_gpi" = xno -a x"$enable_distmem_mpi" = xno -a x"$enable_distmem_armci" = xno ; then

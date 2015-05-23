@@ -6024,53 +6024,24 @@ Type2OldType (ntype *xnew)
         TYPES_DIM (res) = TYgetDim (xnew);
         TYPES_SHPSEG (res) = SHshape2OldShpseg (TYgetShape (xnew));
         TYPES_AKV (res) = TRUE;
-        /* TODO: Think of suitable condition. */
-        if (global.backend == BE_distmem && TYPES_BASETYPE (res) == T_int) {
-            TYPES_DISTRIBUTED (res) = TRUE;
-        } else {
-            TYPES_DISTRIBUTED (res) = FALSE;
-        }
         break;
     case TC_aks:
         res = Type2OldType (AKS_BASE (xnew));
         TYPES_DIM (res) = SHgetDim (AKS_SHP (xnew));
         TYPES_SHPSEG (res) = SHshape2OldShpseg (AKS_SHP (xnew));
-        /* TODO: Think of suitable condition. */
-        if (global.backend == BE_distmem && TYPES_BASETYPE (res) == T_int) {
-            TYPES_DISTRIBUTED (res) = TRUE;
-        } else {
-            TYPES_DISTRIBUTED (res) = FALSE;
-        }
+
         break;
     case TC_akd:
         res = Type2OldType (AKD_BASE (xnew));
         TYPES_DIM (res) = KNOWN_DIM_OFFSET - AKD_DOTS (xnew);
-        /* TODO: Think of suitable condition. */
-        if (global.backend == BE_distmem && TYPES_BASETYPE (res) == T_int) {
-            TYPES_DISTRIBUTED (res) = TRUE;
-        } else {
-            TYPES_DISTRIBUTED (res) = FALSE;
-        }
         break;
     case TC_audgz:
         res = Type2OldType (AUDGZ_BASE (xnew));
         TYPES_DIM (res) = UNKNOWN_SHAPE;
-        /* TODO: Think of suitable condition. */
-        if (global.backend == BE_distmem && TYPES_BASETYPE (res) == T_int) {
-            TYPES_DISTRIBUTED (res) = TRUE;
-        } else {
-            TYPES_DISTRIBUTED (res) = FALSE;
-        }
         break;
     case TC_aud:
         res = Type2OldType (AUD_BASE (xnew));
         TYPES_DIM (res) = ARRAY_OR_SCALAR;
-        /* TODO: Think of suitable condition. */
-        if (global.backend == BE_distmem && TYPES_BASETYPE (res) == T_int) {
-            TYPES_DISTRIBUTED (res) = TRUE;
-        } else {
-            TYPES_DISTRIBUTED (res) = FALSE;
-        }
         break;
     case TC_simple:
         if ((SIMPLE_TYPE (xnew) == T_hidden)
@@ -6097,6 +6068,12 @@ Type2OldType (ntype *xnew)
         DBUG_UNREACHABLE ("Type2OldType not yet entirely implemented!");
         res = NULL;
         break;
+    }
+
+    // TODO: Think of suitable condition.
+    if (global.backend == BE_distmem && TYPES_BASETYPE (res) == T_int
+        && TYPES_DIM (res) != SCALAR && !TCisHidden (res) && !TCisNested (res)) {
+        TYPES_DISTRIBUTED (res) = TRUE;
     }
 
     if (res != NULL && xnew != NULL) {

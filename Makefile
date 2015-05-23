@@ -93,10 +93,8 @@ default devel prod: checks
                   $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                           PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@ ; \
                 fi
-	$(HIDE) if [ "$(ENABLE_DISTMEM)" = "yes" ]; then   \
-                  $(MAKE) -C src/libsacdistmem  DEPS="$(DEPS)" HIDE="$(HIDE)" \
-                        PREFIX_LOCAL="src/libsacdistmem/"  PREFIX_ROOT="" $@ ; \
-                fi
+	$(HIDE) $(MAKE) -C src/libsacdistmem  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacdistmem/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsacprelude  DEPS="$(DEPS)" HIDE="$(HIDE)" \
