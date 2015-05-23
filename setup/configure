@@ -657,6 +657,12 @@ UNIQ
 SORT
 CB
 RANLIB
+ENABLE_DISTMEM_ARMCI
+ENABLE_DISTMEM_MPI
+ENABLE_DISTMEM_GPI
+DISTMEM_GASNET_CONDUITS
+ENABLE_DISTMEM_GASNET
+ENABLE_DISTMEM
 ENABLE_PHM
 ENABLE_OMP
 OPENMP_CFLAGS
@@ -740,7 +746,11 @@ SHELL'
 ac_subst_files='RCSUN
 RCX86
 RCALPHA
-RCMAC'
+RCMAC
+GASNET_CONDUIT_TARGETS
+GASNET_CONDUIT_SETTINGS
+GASNET_CONDUIT_BUILD_OBJECT_FILES
+GASNET_CONDUIT_BUILD_OBJECT_FILES_CROSS_VARIANT'
 ac_user_opts='
 enable_option_checking
 enable_cplusplus
@@ -753,6 +763,7 @@ enable_cuda
 enable_sl
 enable_omp
 enable_phm
+enable_distmem
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1395,6 +1406,7 @@ Optional Features:
   --disable-sl            Disable checking for SL
   --disable-omp           Disable checking for OpenMP
   --disable-phm           Disable checking for the private heap manager
+  --disable-distmem       Disable checking for Distributed Memory support
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2244,7 +2256,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-ac_config_files="$ac_config_files ../src/makefiles/config.mkf sac2crc"
+ac_config_files="$ac_config_files ../src/makefiles/config.mkf sac2crc ../src/makefiles/build.mkf"
 
 ac_config_headers="$ac_config_headers ../src/include/config.h"
 
@@ -4028,6 +4040,18 @@ _ACEOF
 
 
 
+getmakevar() {
+    makefile="$1"
+    var="$2"
+
+    make getmakevar -f -  <<EOI
+include $makefile
+
+getmakevar:
+	@echo \$($var)
+EOI
+}
+
 
   # Check whether --enable-mt was given.
 if test "${enable_mt+set}" = set; then :
@@ -4968,6 +4992,185 @@ _ACEOF
 cat >>confdefs.h <<_ACEOF
 #define ENABLE_PHM $have_phm
 _ACEOF
+
+
+
+   # Check whether --enable-distmem was given.
+if test "${enable_distmem+set}" = set; then :
+  enableval=$enable_distmem; enable_distmem_gasnet=$enableval
+                 enable_distmem_gpi=no
+                 enable_distmem_mpi=no
+                 enable_distmem_armci=no
+else
+  enable_distmem_gasnet=yes
+                 enable_distmem_gpi=no
+                 enable_distmem_mpi=no
+                 enable_distmem_armci=no
+fi
+
+
+      cat >./sac2crc.GASNetconduits
+
+      cat >./build.GASNetconduits
+
+      cat >./config.GASNetconduits
+   cat <<EOF >>./config.GASNetconduits
+################################################################################
+#
+# GASNet conduit settings:
+#
+
+EOF
+
+
+################################################################################
+#
+# feature setup:
+#
+
+   gasnet_home=/usr/local/gasnet
+   gasnet_conduit_names=""
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $gasnet_home exists" >&5
+$as_echo_n "checking if $gasnet_home exists... " >&6; }
+   if test -r $gasnet_home; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking installed gasnet conduits" >&5
+$as_echo_n "checking installed gasnet conduits... " >&6; }
+
+      for gasnet_conduit_path in $gasnet_home/include/*-conduit/; do
+         gasnet_conduit_filename="$(basename "${gasnet_conduit_path}")"
+         gasnet_conduit_name="${gasnet_conduit_filename//-conduit/}"
+         gasnet_conduit_name_uc=`echo $gasnet_conduit_name | tr 'a-z' 'A-Z'`
+         if test x"$gasnet_conduit_names" != x ; then
+            gasnet_conduit_names="$gasnet_conduit_names "
+         fi
+         gasnet_conduit_names="$gasnet_conduit_names$gasnet_conduit_name"
+         gasnet_conduit_makefile="$gasnet_conduit_path$gasnet_conduit_name-seq.mak"
+
+         gasnet_conduit_cc="$(getmakevar $gasnet_conduit_makefile GASNET_CC)"
+         gasnet_conduit_cppflags="$(getmakevar $gasnet_conduit_makefile GASNET_CPPFLAGS)"
+         gasnet_conduit_cflags="$(getmakevar $gasnet_conduit_makefile GASNET_CFLAGS)"
+         gasnet_conduit_ld="$(getmakevar $gasnet_conduit_makefile GASNET_LD)"
+         gasnet_conduit_ldflags="$(getmakevar $gasnet_conduit_makefile GASNET_LDFLAGS)"
+         gasnet_conduit_libs="$(getmakevar $gasnet_conduit_makefile GASNET_LIBS)"
+
+         cat <<EOF >>./sac2crc.GASNetconduits
+target distmem_gasnet_$gasnet_conduit_name::distmem_gasnet:
+COMMLIB_CONDUIT  := "$gasnet_conduit_name"
+CC               := "$gasnet_conduit_ld -std=gnu99"
+CCLINK           += "$gasnet_conduit_libs"
+LDFLAGS          += "$gasnet_conduit_ldflags"
+
+EOF
+
+         cat <<EOF >>./config.GASNetconduits
+GASNET_${gasnet_conduit_name_uc}_CC        := $gasnet_conduit_cc -std=gnu99
+GASNET_${gasnet_conduit_name_uc}_CPPFLAGS  := $gasnet_conduit_cppflags
+GASNET_${gasnet_conduit_name_uc}_CFLAGS    := $gasnet_conduit_cflags
+GASNET_${gasnet_conduit_name}_cap       := $gasnet_conduit_name_uc
+
+EOF
+
+                                    cat <<EOF >>./build.GASNetconduits
+%.\$(\$(STYLE)_short).gasnet${gasnet_conduit_name}.o: %.c
+	@if [ "compile \$(dir \$*)" != "\`cat .make_track\`" ] ; \\
+         then \$(ECHO) "compile \$(dir \$*)" > .make_track; \\
+              \$(ECHO) ""; \\
+              \$(ECHO) "Compiling files in directory \$(PREFIX_LOCAL)\$(dir \)"; \\
+         fi
+	@\$(ECHO) "  Compiling GasNET ${gasnet_conduit_name} \$(\$(STYLE)_long) code: \$(notdir \$<)"
+	\$(HIDE) \$(GASNET_${gasnet_conduit_name_uc}_CC) \\
+                  \$(GASNET_${gasnet_conduit_name_uc}_CPPFLAGS) \$(GASNET_${gasnet_conduit_name_uc}_CFLAGS) \$(CC_FLAGS_\$(\$(STYLE)_cap)) \$(SETTINGS_\$(\$(STYLE)_cap)) \\
+                  \$(CC_FLAGS_YY) \$(SETTINGS_DISTMEM) \$(SETTINGS_DISTMEM_GASNET) \\
+                  \$(INCDIRS) -o \$@ -c \$<
+	@\$(CLOCK_SKEW_ELIMINATION)
+EOF
+
+                                    cat <<EOF >>./build.GASNetconduitsCrossVariant
+%.\$(\$(STYLE)_short)\$(CROSS_VARIANT).gasnet${gasnet_conduit_name}.o: %.c
+	@if [ "compile \$(dir \$*)" != "\`cat .make_track\`" ] ; \\
+         then \$(ECHO) "compile \$(dir \$*)" > .make_track; \\
+              \$(ECHO) ""; \\
+              \$(ECHO) "Compiling files in directory \$(PREFIX_LOCAL)\$(dir \)"; \\
+         fi
+	@\$(ECHO) "  Compiling GasNET ${gasnet_conduit_name} \$(\$(STYLE)_long) code: \$(notdir \$<)"
+	\$(HIDE) \$(GASNET_${gasnet_conduit_name_uc}_CC) \\
+                  \$(GASNET_${gasnet_conduit_name_uc}_CPPFLAGS) \$(GASNET_${gasnet_conduit_name_uc}_CFLAGS) \$(CC_FLAGS_\$(\$(STYLE)_cap)) \$(SETTINGS_\$(\$(STYLE)_cap)) \\
+                  \$(CC_FLAGS_YY) \$(SETTINGS_DISTMEM) \$(SETTINGS_DISTMEM_GASNET) \\
+                  \$(INCDIRS) -o \$@ -c \$<
+	@\$(CLOCK_SKEW_ELIMINATION)
+EOF
+
+      done
+
+      if test x"$gasnet_conduit_names" = x ; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
+$as_echo "none" >&6; }
+         enable_distmem_gasnet=no
+      else
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $gasnet_conduit_names" >&5
+$as_echo "$gasnet_conduit_names" >&6; }
+      fi
+   else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+   fi
+
+   if test x"$enable_distmem_gasnet" = xno -a x"$enable_distmem_gpi" = xno -a x"$enable_distmem_mpi" = xno -a x"$enable_distmem_armci" = xno ; then
+      enable_distmem=no
+   else
+      enable_distmem=yes
+   fi
+
+   have_distmem=`if test x"$enable_distmem" != xno; then echo 1; else echo 0; fi`
+   have_distmem_gasnet=`if test x"$enable_distmem_gasnet" != xno; then echo 1; else echo 0; fi`
+   have_distmem_gpi=`if test x"$enable_distmem_gpi" != xno; then echo 1; else echo 0; fi`
+   have_distmem_mpi=`if test x"$enable_distmem_mpi" != xno; then echo 1; else echo 0; fi`
+   have_distmem_armci=`if test x"$enable_distmem_armci" != xno; then echo 1; else echo 0; fi`
+
+
+cat >>confdefs.h <<_ACEOF
+#define ENABLE_DISTMEM $have_distmem
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define ENABLE_DISTMEM_GASNET $have_distmem_gasnet
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define DISTMEM_GASNET_CONDUITS "$gasnet_conduit_names"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define ENABLE_DISTMEM_GPI $have_distmem_gpi
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define ENABLE_DISTMEM_MPI $have_distmem_mpi
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define ENABLE_DISTMEM_ARMCI $have_distmem_armci
+_ACEOF
+
+
+   ENABLE_DISTMEM=$enable_distmem
+
+   ENABLE_DISTMEM_GASNET=$enable_distmem_gasnet
+
+   DISTMEM_GASNET_CONDUITS=$gasnet_conduit_names
+
+   ENABLE_DISTMEM_GPI=$enable_distmem_gpi
+
+   ENABLE_DISTMEM_MPI=$enable_distmem_mpi
+
+   ENABLE_DISTMEM_ARMCI=$enable_distmem_armci
 
 
 
@@ -6259,6 +6462,17 @@ RCALPHA=./sac2crc.ALPHA
 RCMAC=./sac2crc.MAC
 
 
+GASNET_CONDUIT_TARGETS=./sac2crc.GASNetconduits
+
+
+GASNET_CONDUIT_SETTINGS=./config.GASNetconduits
+
+
+GASNET_CONDUIT_BUILD_OBJECT_FILES=./build.GASNetconduits
+
+
+GASNET_CONDUIT_BUILD_OBJECT_FILES_CROSS_VARIANT=./build.GASNetconduitsCrossVariant
+
 # generate specific flags for known os
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking sac2crc system flags" >&5
 $as_echo_n "checking sac2crc system flags... " >&6; }
@@ -6358,6 +6572,25 @@ $as_echo "#define SAC_PRELUDE_NAME \"sacprelude\"" >>confdefs.h
 $as_echo "#define UNUSED __attribute__((unused))" >>confdefs.h
 
 
+
+
+
+
+if test x"$enable_distmem_gasnet" = xyes; then
+  gasnet_conduit_names_print=" (conduits: $gasnet_conduit_names)"
+else
+  gasnet_conduit_names_print=""
+fi
+
+if test x"$enable_distmem" = xyes; then
+  distmem_details_print=" (experimental)
+*   - GASNet:              $enable_distmem_gasnet$gasnet_conduit_names_print
+*   - GPI:                 $enable_distmem_gpi
+*   - MPI:                 $enable_distmem_mpi
+*   - ARMCI:               $enable_distmem_armci"
+else
+  distmem_details_print=""
+fi
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -7050,6 +7283,7 @@ do
   case $ac_config_target in
     "../src/makefiles/config.mkf") CONFIG_FILES="$CONFIG_FILES ../src/makefiles/config.mkf" ;;
     "sac2crc") CONFIG_FILES="$CONFIG_FILES sac2crc" ;;
+    "../src/makefiles/build.mkf") CONFIG_FILES="$CONFIG_FILES ../src/makefiles/build.mkf" ;;
     "../src/include/config.h") CONFIG_HEADERS="$CONFIG_HEADERS ../src/include/config.h" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
@@ -7673,7 +7907,6 @@ fi
 
 
 cat <<EOF
-*
 * Configuration done.
 *
 * Detected OS string:      $target_os
@@ -7687,6 +7920,7 @@ cat <<EOF
 * - CUDA:                  $enable_cuda
 * - OpenMP:                $enable_omp
 * - SL:                    $enable_sl
+* - Distributed memory:    $enable_distmem$distmem_details_print
 * - CC:                    $CC
 * - SaC compiler CFLAGS:   $MKCCFLAGS
 * - SaC programs CFLAGS:   $RCCCFLAGS

@@ -19,5 +19,6 @@
 extern shape_class_t ICUGetShapeClass (char *var_NT);
 extern hidden_class_t ICUGetHiddenClass (char *var_NT);
 extern unique_class_t ICUGetUniqueClass (char *var_NT);
+extern distributed_class_t ICUGetDistributedClass (char *var_NT);
 
 #endif /* _SAC_ICM2C_UTILS_H_ */

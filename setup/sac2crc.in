@@ -110,6 +110,13 @@
  *  MT_LIB          Multithreading backend library: either pthread or lpel.
  *                  This is effective only when compiling with -mt enabled.
  *
+ *  DISTMEM_COMMLIB Communication library for distributed memory backend
+ *                  This is effective only when compiling for the DistMem backend
+ *
+ *  COMMLIB_CONDUIT Conduit of communication library to be used
+ *                  This is effective only when compiling for the DistMem backend
+ *                  and if the communication library offers multiple conduits.
+ *
  *  OPT_O0          OPT_O0 specifies the C compiler option to disable optimizations.
  *                  This is triggered by the sac2c option -O0.
  *                  
@@ -273,6 +280,9 @@ BACKEND          :=  "C99"
 LIB_VARIANT      :=  ""
 MT_LIB           :=  "pthread"
 
+DISTMEM_COMMLIB  :=  ""
+COMMLIB_CONDUIT  :=  ""
+
 OPT_O0           :=  "@OPT_O0@"
 OPT_O1           :=  "@OPT_O1@"
 OPT_O2           :=  "@OPT_O2@"
@@ -313,7 +323,7 @@ IMPPATH          :=  "$SACBASE/stdlib/modules/structures:"
                      "$SACBASE/stdlib/auxiliary/random:"
                      "$SACBASE/stdlib/classes/random:"
                      "$SACBASE/stdlib/utrace:"
-EXTLIBPATH       :=  "/usr/local/dislin:/opt/local/lib"
+EXTLIBPATH       :=  "/usr/local/dislin:/opt/local/lib:"
  
 TMPDIR           :=  "/tmp"
 
@@ -465,6 +475,28 @@ target openmp:
 
 CCFLAGS          += " @OPENMP_CFLAGS@"
 LDFLAGS          += " @OPENMP_CFLAGS@"
+
+
+/*****************************************************************************
+ * Distributed Memory targets
+ */
+target distmem:
+BACKEND          := "DistMem"
+LIB_VARIANT      := "dm"
+
+target distmem_gasnet::distmem:
+DISTMEM_COMMLIB  := "GASNet"
+
+@GASNET_CONDUIT_TARGETS@
+
+target distmem_armci::distmem:
+DISTMEM_COMMLIB  := "ARMCI"
+
+target distmem_gpi::distmem:
+DISTMEM_COMMLIB  := "GPI"
+
+target distmem_mpi::distmem:
+DISTMEM_COMMLIB  := "MPI"
 
 /*****************************************************************************
  * cuda targets

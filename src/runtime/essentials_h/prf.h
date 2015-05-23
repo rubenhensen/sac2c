@@ -155,6 +155,12 @@
  *
  * ND_PRF_DIM_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
+ * ND_PRF_IS_DIST_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
+ *
+ * ND_PRF_FIRST_ELEMS_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
+ *
+ * ND_PRF_OFFS_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
+ *
  * ND_PRF_SHAPE_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
  * ND_PRF_SIZE_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
@@ -213,6 +219,21 @@
     SAC_TR_PRF_PRINT (("ND_PRF_DIM_A__...( %s, %d, %s, %d)\n", NT_STR (to_NT), to_sdim,  \
                        NT_STR (from_NT), from_sdim))                                     \
     SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_DIM (from_NT))
+
+#define SAC_ND_PRF_IS_DIST_A__DATA(to_NT, to_sdim, from_NT, from_sdim)                   \
+    SAC_TR_PRF_PRINT (("ND_PRF_IS_DIST_A__...( %s, %d, %s, %d)\n", NT_STR (to_NT),       \
+                       to_sdim, NT_STR (from_NT), from_sdim))                            \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_IS_DIST (from_NT))
+
+#define SAC_ND_PRF_FIRST_ELEMS_A__DATA(to_NT, to_sdim, from_NT, from_sdim)               \
+    SAC_TR_PRF_PRINT (("ND_PRF_FIRST_ELEMS_A__...( %s, %d, %s, %d)\n", NT_STR (to_NT),   \
+                       to_sdim, NT_STR (from_NT), from_sdim))                            \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_FIRST_ELEMS (from_NT))
+
+#define SAC_ND_PRF_OFFS_A__DATA(to_NT, to_sdim, from_NT, from_sdim)                      \
+    SAC_TR_PRF_PRINT (("ND_PRF_OFFS_A__...( %s, %d, %s, %d)\n", NT_STR (to_NT), to_sdim, \
+                       NT_STR (from_NT), from_sdim))                                     \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_OFFS (from_NT))
 
 /* ND_PRF_SHAPE_A__DATA( ...) is a C-ICM */
 

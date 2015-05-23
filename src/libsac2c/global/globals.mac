@@ -368,6 +368,25 @@ GLOBAL (int, max_threads, 32, xfree_dummy, )
  * Maximum number of threads if exact number is determined dynamically.
  */
 
+GLOBAL (int, num_procs, 1, xfree_dummy, )
+/*
+ * Number of processes to be generated (for distributed memory backend).
+ *  0  : dynamic number of processes, specified as command line argument
+ *       on application program startup.
+ *  1  : single process
+ *  >1 : exact number of processes to be started
+ */
+
+GLOBAL (int, max_procs, 32, xfree_dummy, )
+/*
+ * Maximum number of processes if exact number is determined dynamically.
+ */
+
+GLOBAL (unsigned int, distmem_max_memory_mb, 512, xfree_dummy, )
+/*
+ * Maximum number of pages to use for dsm.
+ */
+
 GLOBAL (int, num_rtspec_threads, 1, xfree_dummy, )
 /*
  * Number of rtspec controller threads to be generated.
@@ -1011,6 +1030,7 @@ GLOBAL (char **, nt_mutc_storage_class_string, nt_mutc_storage_class_string_init
 GLOBAL (char **, nt_mutc_scope_string, nt_mutc_scope_string_init, xfree_dummy, )
 GLOBAL (char **, nt_mutc_usage_string, nt_mutc_usage_string_init, xfree_dummy, )
 GLOBAL (char **, nt_bitarray_string, nt_bitarray_string_init, xfree_dummy, )
+GLOBAL (char **, nt_distributed_string, nt_distributed_string_init, xfree_dummy, )
 /*
  * These character arrays are the macro-name-parts used to select
  * array class and array uniqueness properties.
@@ -1151,6 +1171,11 @@ GLOBAL (int, cuda_1d_block_small, 0, xfree_dummy, )
 GLOBAL (int, cuda_2d_block_x, 0, xfree_dummy, )
 GLOBAL (int, cuda_2d_block_y, 0, xfree_dummy, )
 GLOBAL (int, cuda_blocking_factor, 0, xfree_dummy, )
+
+/*
+ * DistMem backend options
+ */
+GLOBAL (distmem_commlib_t, distmem_commlib, DISTMEM_COMMLIB_GASNET, xfree_dummy, )
 
 /*
  * cygwin compatibility globals

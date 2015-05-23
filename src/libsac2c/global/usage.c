@@ -131,6 +131,38 @@ PrintFeatureSet (void)
     printf ("    OpenMP based parallelization:       disabled\n");
 #endif
 
+#if ENABLE_DISTMEM
+    printf ("    Distributed memory parallelization:  enabled (experimental)\n");
+
+#if ENABLE_DISTMEM_GASNET
+    printf ("        GASNet communication library:    enabled (conduits: %s)\n",
+            DISTMEM_GASNET_CONDUITS);
+#else
+    printf ("        GASNet communication library:   disabled\n");
+#endif
+
+#if ENABLE_DISTMEM_GPI
+    printf ("        GPI communication library:       enabled\n");
+#else
+    printf ("        GPI communication library:      disabled\n");
+#endif
+
+#if ENABLE_DISTMEM_MPI
+    printf ("        MPI communication library:       enabled\n");
+#else
+    printf ("        MPI communication library:      disabled\n");
+#endif
+
+#if ENABLE_DISTMEM_ARMCI
+    printf ("        ARMCI communication library:     enabled\n");
+#else
+    printf ("        ARMCI communication library:    disabled\n");
+#endif
+
+#else
+    printf ("    Distributed memory parallelization:  disabled\n");
+#endif
+
 #if ENABLE_PHM
     printf ("    Private heap management:             enabled\n");
 #else
@@ -563,6 +595,32 @@ PrintMutcOptions (void)
 }
 
 static void
+PrintDistMemOptions (void)
+{
+    DBUG_ENTER ();
+
+    printf ("\n\nDISTRIBUTED MEMORY OPTIONS (experimental):\n\n"
+
+            "    -dsm_maxmem_mb <n>   Maximum amount of memory to use for the DSM system "
+            "in MB.\n"
+            "\n"
+            "    -numprocs <n>   Specify at compile time the exact number of processes "
+            "to be\n"
+            "                    used for parallel execution.\n"
+            "\n"
+            "    -maxprocs <n>   Specify at compile time only an upper bound on the "
+            "number\n"
+            "                    of processes to be used  for parallel execution when "
+            "exact\n"
+            "                    number is determined at runtime.\n"
+            "                      (default: %d)\n"
+            "\n",
+            global.max_procs);
+
+    DBUG_RETURN ();
+}
+
+static void
 PrintMultithreadOptions (void)
 {
     DBUG_ENTER ();
@@ -760,6 +818,7 @@ PrintRuntimeTraceOptions (void)
       "                      t: Trace multi-threading specific operations.\n"
       "                      c: Trace runtime enviroment init/exit when\n"
       "                         using SAC libraries in C programs.\n"
+      "                      d: Trace distributed memory run time (experimental).\n"
       "\n"
       "    -utrace\n"
       "                    Introduce user tracing calls.");
@@ -1168,6 +1227,7 @@ USGprintUsage ()
         PrintTypeInferenceOptions ();
         PrintOptimisationOptions ();
         PrintMultithreadOptions ();
+        PrintDistMemOptions ();
         PrintMutcOptions ();
         PrintBackendOptions ();
 #ifndef DBUG_OFF
@@ -1269,7 +1329,7 @@ USGprintCopyright ()
       "\n"
       "COPYRIGHT NOTICE, LICENSE AND DISCLAIMER\n"
       "\n"
-      "(c) Copyright 1994 - 2011 by\n"
+      "(c) Copyright 1994 - 2015 by\n"
       "\n"
       "  SAC Development Team\n"
       "\n"

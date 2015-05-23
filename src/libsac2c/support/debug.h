@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #ifndef DBUG_PREFIX
-#warning DBUG_PREFIX is undefined. Using the cuurent file name.
+#warning DBUG_PREFIX is undefined. Using the current file name.
 #define DBUG_PREFIX __FILE__
 #endif
 

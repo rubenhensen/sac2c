@@ -107,6 +107,7 @@ extern types *TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name
 #define TYPES_MUTC_USAGE(t) (t->usage)
 #define TYPES_UNIQUE(t) (t->unique)
 #define TYPES_AKV(t) (t->akv)
+#define TYPES_DISTRIBUTED(t) (t->distributed)
 /*--------------------------------------------------------------------------*/
 
 /***

@@ -933,6 +933,76 @@ COdim (constant *a, constant *tmp1, constant *tmp2)
 /******************************************************************************
  *
  * function:
+ *    constant *COisDist( constant *a)
+ *
+ * description:
+ *    Returns whether a is distributed.
+ *
+ ******************************************************************************/
+
+constant *
+COisDist (constant *a, constant *tmp1, constant *tmp2)
+{
+    constant *res;
+
+    DBUG_ENTER ();
+
+    /* A constant is never distributed. */
+    res = COmakeConstantFromInt (0);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COfirstElems( constant *a)
+ *
+ * description:
+ *    Returns the maximum number of elements of a distributed array that are
+ *    owned by each node.
+ *
+ ******************************************************************************/
+
+constant *
+COfirstElems (constant *a, constant *tmp1, constant *tmp2)
+{
+    constant *res;
+
+    DBUG_ENTER ();
+
+    /* A constant is never distributed so this is not applicable. */
+    res = COmakeConstantFromInt (0);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    constant *COoffs( constant *a)
+ *
+ * description:
+ *    Returns the offset of a distributed array in the dsm shared memory segment.
+ *
+ ******************************************************************************/
+/* TODO */
+constant *
+COoffs (constant *a, constant *tmp1, constant *tmp2)
+{
+    constant *res;
+
+    DBUG_ENTER ();
+
+    /* A constant is never distributed so this is not applicable. */
+    res = COmakeConstantFromInt (0);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    constant *COshape( constant *a)
  *
  * description:

@@ -145,7 +145,8 @@ PrintGlobalSwitches (void)
              (global.trace.mt) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_TRACE_RTSPEC    %d\n",
              (global.trace.rtspec) ? 1 : 0);
-    fprintf (global.outfile, "\n");
+    fprintf (global.outfile, "#define SAC_DO_TRACE_DISTMEM   %d\n",
+             (global.trace.distmem) ? 1 : 0);
 
     fprintf (global.outfile, "#define SAC_DO_CACHESIM        %d\n",
              (global.docachesim) ? 1 : 0);
@@ -174,6 +175,33 @@ PrintGlobalSwitches (void)
 
     fprintf (global.outfile, "#define SAC_DO_MT_OMP          %d\n",
              (global.backend == BE_omp) ? 1 : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM         %d\n",
+             (global.backend == BE_distmem) ? 1 : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_GASNET  %d\n",
+             (global.backend == BE_distmem
+              && global.distmem_commlib == DISTMEM_COMMLIB_GASNET)
+               ? 1
+               : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_GPI     %d\n",
+             (global.backend == BE_distmem
+              && global.distmem_commlib == DISTMEM_COMMLIB_GPI)
+               ? 1
+               : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_MPI     %d\n",
+             (global.backend == BE_distmem
+              && global.distmem_commlib == DISTMEM_COMMLIB_MPI)
+               ? 1
+               : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_ARMCI   %d\n",
+             (global.backend == BE_distmem
+              && global.distmem_commlib == DISTMEM_COMMLIB_ARMCI)
+               ? 1
+               : 0);
 
     fprintf (global.outfile, "#define SAC_DO_THREADS_STATIC  %d\n",
              (global.num_threads == 0) ? 0 : 1);
@@ -251,6 +279,26 @@ PrintGlobalSwitches (void)
         break;
     case BE_omp:
         fprintf (global.outfile, "#define SAC_BACKEND OMP\n");
+        break;
+    case BE_distmem:
+        fprintf (global.outfile, "#define SAC_BACKEND_DISTMEM\n");
+        switch (global.distmem_commlib) {
+        case DISTMEM_COMMLIB_GASNET:
+            fprintf (global.outfile, "#define SAC_DISTMEM_COMMLIB_GASNET\n");
+            break;
+        case DISTMEM_COMMLIB_GPI:
+            fprintf (global.outfile, "#define SAC_DISTMEM_COMMLIB_GPI\n");
+            break;
+        case DISTMEM_COMMLIB_MPI:
+            fprintf (global.outfile, "#define SAC_DISTMEM_COMMLIB_MPI\n");
+            break;
+        case DISTMEM_COMMLIB_ARMCI:
+            fprintf (global.outfile, "#define SAC_DISTMEM_COMMLIB_ARMCI\n");
+            break;
+        default:
+            DBUG_UNREACHABLE ("Unknown distributed memory communication library");
+            break;
+        }
         break;
     default:
         DBUG_UNREACHABLE ("Unknown backend");
@@ -506,6 +554,15 @@ PrintGlobalSettings (node *syntax_tree)
         PrintProfileData ();
     }
 
+    /* Distributed memory backend specific settings */
+    if (global.backend == BE_distmem) {
+        fprintf (global.outfile, "#ifndef SAC_SET_DISTMEM_MAX_MEMORY_MB\n");
+        fprintf (global.outfile,
+                 "#define SAC_SET_DISTMEM_MAX_MEMORY_MB              %d\n",
+                 global.distmem_max_memory_mb);
+        fprintf (global.outfile, "#endif\n\n");
+    }
+
     DBUG_RETURN ();
 }
 
@@ -638,13 +695,19 @@ GSCprintMainBegin (void)
     DBUG_ENTER ();
 
     INDENT;
-    fprintf (global.outfile, "SAC_MT_SETUP_INITIAL();\n");
+    fprintf (global.outfile, "SAC_DISTMEM_SETUP();\n");
     INDENT;
+    fprintf (global.outfile, "SAC_DISTMEM_BARRIER();\n");
+
+    INDENT;
+    fprintf (global.outfile, "SAC_MT_SETUP_INITIAL();\n");
 
     if (global.backend != BE_cuda) {
+        INDENT;
         fprintf (global.outfile, "SAC_RTSPEC_SETUP_INITIAL();\n");
     }
 
+    INDENT;
     fprintf (global.outfile, "SAC_PF_SETUP();\n");
     INDENT;
     fprintf (global.outfile, "SAC_HM_SETUP();\n");
@@ -658,9 +721,9 @@ GSCprintMainBegin (void)
 
     INDENT;
     fprintf (global.outfile, "SAC_CS_SETUP();\n");
-    INDENT;
 
     if (global.backend != BE_cuda) {
+        INDENT;
         fprintf (global.outfile, "SAC_RTSPEC_SETUP();\n");
     }
 
@@ -693,10 +756,14 @@ GSCprintMainEnd (void)
     fprintf (global.outfile, "SAC_MT_FINALIZE();\n");
     INDENT;
     fprintf (global.outfile, "SAC_HM_PRINT();\n\n");
-    INDENT;
+
     if (global.backend != BE_cuda) {
+        INDENT;
         fprintf (global.outfile, "SAC_RTSPEC_FINALIZE();\n\n");
     }
+
+    INDENT;
+    fprintf (global.outfile, "SAC_DISTMEM_EXIT();\n");
 
     DBUG_RETURN ();
 }
@@ -733,6 +800,14 @@ GSCprintMainC99 (void)
     INDENT;
     fprintf (global.outfile, "{\n");
     global.indent++;
+
+    /*
+     * The distributed memory communication library needs to be initialized
+     * before inspecting the arguments and before any output is produced.
+     */
+    INDENT;
+    fprintf (global.outfile, "SAC_DISTMEM_INIT();\n");
+
     if (print_thread_id) {
         INDENT;
         fprintf (global.outfile, "SAC_MT_DECL_MYTHREAD()\n");
@@ -774,6 +849,27 @@ GSCprintMainC99 (void)
     global.indent--;
     INDENT;
     fprintf (global.outfile, "}\n");
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void GSCprintMainDistMem()
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+static void
+GSCprintMainDistMem (void)
+{
+
+    DBUG_ENTER ();
+
+    GSCprintMainC99 ();
 
     DBUG_RETURN ();
 }
@@ -839,6 +935,9 @@ GSCprintMain (void)
         break;
     case BE_omp:
         GSCprintMainC99 ();
+        break;
+    case BE_distmem:
+        GSCprintMainDistMem ();
         break;
     default:
         DBUG_UNREACHABLE ("unknown backend");

@@ -1,0 +1,21 @@
+#ifndef DISTMEM_COMMLIBtype
+#define DISTMEM_COMMLIBtype(type)
+#endif
+
+#ifndef DISTMEM_COMMLIBstring
+#define DISTMEM_COMMLIBstring(string)
+#endif
+
+#ifndef DISTMEM_COMMLIB
+#define DISTMEM_COMMLIB(type, string)                                                    \
+    DISTMEM_COMMLIBtype (type) DISTMEM_COMMLIBstring (string)
+#endif
+
+DISTMEM_COMMLIB (DISTMEM_COMMLIB_GASNET, "GASNet")
+DISTMEM_COMMLIB (DISTMEM_COMMLIB_GPI, "GPI")
+DISTMEM_COMMLIB (DISTMEM_COMMLIB_MPI, "MPI")
+DISTMEM_COMMLIB (DISTMEM_COMMLIB_ARMCI, "ARMCI")
+
+#undef DISTMEM_COMMLIBtype
+#undef DISTMEM_COMMLIBstring
+#undef DISTMEM_COMMLIB

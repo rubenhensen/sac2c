@@ -220,7 +220,12 @@ typedef enum {
 #include "prf_info.mac"
 } prf;
 
-typedef enum { PA_x = 0, PA_S = 1, PA_V = 2, PA_A = 3 } arg_encoding_t;
+typedef enum {
+    PA_x = 0, /* No argument */
+    PA_S = 1, /* Scalar argument */
+    PA_V = 2, /* Vector argument */
+    PA_A = 3  /* Array argument */
+} arg_encoding_t;
 
 typedef node *(*cf_fun_t) (node *arg_node);
 
@@ -327,8 +332,9 @@ typedef struct TYPES {
     mutcScope scope; /* the scope of the value of this var */
     mutcUsage usage; /* where is this var used */
 
-    bool unique; /* this variable is unique */
-    bool akv;    /* this variable is akv */
+    bool unique;      /* this variable is unique */
+    bool akv;         /* this variable is akv */
+    bool distributed; /* this variable is distributed */
 
 } types;
 
@@ -464,6 +470,7 @@ typedef struct ARGTAB_T {
 #define NT_MUTC_SCOPE_INDEX 5
 #define NT_MUTC_USAGE_INDEX 6
 #define NT_BITARRAY_INDEX 7
+#define NT_DISTRIBUTED_INDEX 8
 
 /*
  * Enumerated types for data class and uniqueness class
@@ -524,6 +531,14 @@ typedef enum {
 #undef NTIFtype
 #undef ATTRIB
 } bitarray_class_t;
+
+typedef enum {
+#define ATTRIB NT_DISTRIBUTED_INDEX
+#define NTIFtype(it_type) it_type
+#include "nt_info.mac"
+#undef NTIFtype
+#undef ATTRIB NT_DISTRIBUTED_INDEX
+} distributed_class_t;
 
 /*
  * moved from shape.h
@@ -708,6 +723,9 @@ typedef struct {
     char *rc_method;
     char *backend;
     char *mt_lib;
+
+    char *distmem_commlib;
+    char *commlib_conduit;
 
     char *tree_cc;
     char *tree_ld;
@@ -922,6 +940,14 @@ typedef union {
 /*
  * New types for global
  */
+
+/* Communication libraries for the DistMem (distributed memory) backend. */
+typedef enum {
+#define DISTMEM_COMMLIBtype(type) type,
+#include "distmem_commlibs.mac"
+#undef DISTMEM_COMMLIBtype
+    DISTMEM_COMMLIB_UNKNOWN
+} distmem_commlib_t;
 
 /*
  * Read in optimization counters from optimize.mac

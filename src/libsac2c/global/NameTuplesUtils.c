@@ -319,6 +319,41 @@ NTUgetBitarrayFromTypes (types *type)
 /******************************************************************************
  *
  * function:
+ *   bitarray_class_t NTUgetDistributedFromTypes( types *type)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+bitarray_class_t
+NTUgetDistributedFromTypes (types *type)
+{
+    distributed_class_t d;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (type != NULL, "No type found!");
+
+    if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
+        /*
+         * the TC has probably not been called yet :-(
+         */
+        DBUG_UNREACHABLE ("illegal distributed attribute found!");
+        d = C_unknownd;
+    } else {
+        if (TYPES_DISTRIBUTED (type)) {
+            d = C_distr;
+        } else {
+            d = C_notdistr;
+        }
+    }
+
+    DBUG_RETURN (d);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   char *NTUcreateNtTag( const char *name, types *type)
  *
  * description:
@@ -336,6 +371,7 @@ NTUcreateNtTag (const char *name, types *type)
     mutc_scope_class_t scope;
     mutc_usage_class_t usage;
     bitarray_class_t bitarray;
+    distributed_class_t distr;
     char *res;
 
     DBUG_ENTER ();
@@ -352,12 +388,14 @@ NTUcreateNtTag (const char *name, types *type)
 
     bitarray = NTUgetBitarrayFromTypes (type);
 
+    distr = NTUgetDistributedFromTypes (type);
+
     /*
      * Allocate enough space for the textual representation of the type tuple.
      * The total length is the length of all textual representations combined
      * plus some space for administration:
      *
-     * - 8 is the number of elements (including the name)
+     * - 9 is the number of elements (including the name)
      * - 4 is the number of chars each element takes aside of its name: "( ,)"
      * - 1 is the terminating \0 byte.
      */
@@ -367,14 +405,15 @@ NTUcreateNtTag (const char *name, types *type)
        + STRlen (global.nt_mutc_storage_class_string[storage])
        + STRlen (global.nt_mutc_scope_string[scope])
        + STRlen (global.nt_mutc_usage_string[usage])
-       + STRlen (global.nt_bitarray_string[bitarray]) + (8 * 4 + 1))
+       + STRlen (global.nt_bitarray_string[bitarray])
+       + STRlen (global.nt_distributed_string[distr]) + (9 * 4 + 1))
       * sizeof (char));
 
-    sprintf (res, "(%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, ))))))))", name,
+    sprintf (res, "(%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, )))))))))", name,
              global.nt_shape_string[sc], global.nt_hidden_string[hc],
              global.nt_unique_string[uc], global.nt_mutc_storage_class_string[storage],
              global.nt_mutc_scope_string[scope], global.nt_mutc_usage_string[usage],
-             global.nt_bitarray_string[bitarray]);
+             global.nt_bitarray_string[bitarray], global.nt_distributed_string[distr]);
 
     DBUG_RETURN (res);
 }

@@ -5622,6 +5622,117 @@ COMPprfDim (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *COMPprfIsDist( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_isDist_A.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfIsDist (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *arg;
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg = PRF_ARG1 (arg_node);
+
+    DBUG_ASSERT (NODE_TYPE (arg) == N_id, "arg of F_isDist_A is no N_id!");
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_IS_DIST_A__DATA",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE,
+                                               MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                             FALSE, TRUE, FALSE, NULL)),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfFirstElems( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_firstElems_A.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfFirstElems (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *arg;
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg = PRF_ARG1 (arg_node);
+
+    DBUG_ASSERT (NODE_TYPE (arg) == N_id, "arg of F_firstElems_A is no N_id!");
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_FIRST_ELEMS_A__DATA",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE,
+                                               MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                             FALSE, TRUE, FALSE, NULL)),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfOffs( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_offs_A.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfOffs (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *arg;
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg = PRF_ARG1 (arg_node);
+
+    DBUG_ASSERT (NODE_TYPE (arg) == N_id, "arg of F_offs_A is no N_id!");
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_OFFS_A__DATA",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, TRUE, FALSE,
+                                               MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                             FALSE, TRUE, FALSE, NULL)),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPprfShape( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_shape_A.
@@ -10428,7 +10539,7 @@ COMPwlstride (node *arg_node, info *arg_info)
          * no unrolling
          */
 
-        if (mt_active) {
+        if (mt_active || global.backend == BE_distmem) {
             if (level == 0) {
                 icm_name_begin = "WL_MT_STRIDE_LOOP0_BEGIN";
             } else {

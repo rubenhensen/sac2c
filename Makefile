@@ -76,7 +76,6 @@ include $(MAKEFILE_DIR)/settings.mkf
 # Furthermore, the current solution allows us to rebuild locally without 
 # enforcing dependency checks.
 #
-
 default devel prod: checks
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
@@ -93,6 +92,10 @@ default devel prod: checks
 	$(HIDE) if [ "$(ENABLE_PHM)" = "yes" ]; then   \
                   $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                           PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@ ; \
+                fi
+	$(HIDE) if [ "$(ENABLE_DISTMEM)" = "yes" ]; then   \
+                  $(MAKE) -C src/libsacdistmem  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacdistmem/"  PREFIX_ROOT="" $@ ; \
                 fi
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
@@ -130,6 +133,8 @@ clean cleandevel cleanprod: checks
                         PREFIX_LOCAL="src/libsac/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsacdistmem  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacdistmem/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
 	$(HIDE) $(RM) -rf lib/* bin/*
@@ -172,6 +177,8 @@ refactor: checks
                         PREFIX_LOCAL="src/libsac/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsacdistmem  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacdistmem/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/" PREFIX_ROOT="" $@
 	@$(ECHO) ""
@@ -209,6 +216,10 @@ libsac: checks
 libsacphm: checks
 	$(HIDE) $(MAKE) -C src/libsacphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" default
+
+libsacdistmem: checks
+	$(HIDE) $(MAKE) -C src/libsacdistmem  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacdistmem/"  PREFIX_ROOT="" default
 
 tools: checks
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \

@@ -28,6 +28,7 @@ TRACE (wl, 'w', FALSE)
 TRACE (aa, 's', FALSE)
 TRACE (mt, 't', FALSE)
 TRACE (cenv, 'c', FALSE)
+TRACE (distmem, 'd', FALSE)
 
 #undef TRACEflag
 #undef TRACEchar

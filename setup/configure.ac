@@ -15,7 +15,7 @@ dnl we use C as our compiler language
 AC_LANG(C)
 
 dnl and which files to create
-AC_CONFIG_FILES(../src/makefiles/config.mkf sac2crc)
+AC_CONFIG_FILES(../src/makefiles/config.mkf sac2crc ../src/makefiles/build.mkf)
 AC_CONFIG_HEADER(../src/include/config.h)
 
 dnl check for host type
@@ -61,6 +61,19 @@ CHECK_LTO
 dnl Check if C compiler supports SIMD syntax
 CHECK_SIMD_SYNTAX
 
+dnl Prints the value of a makefile variable.
+getmakevar() {
+    makefile="$1"
+    var="$2"
+
+    make getmakevar -f -  <<EOI
+include $makefile
+
+getmakevar:
+	@echo \$($var)
+EOI
+}
+
 dnl Check for SAC back-ends (CHECK_LPEL must appear after CHECK_MT)
 CHECK_MT
 CHECK_LPEL
@@ -69,6 +82,7 @@ CHECK_SL
 CHECK_OMP
 dnl enable private heap manager?
 CHECK_PHM
+CHECK_DISTMEM
 
 dnl check for ranlib
 AC_PROG_RANLIB
@@ -256,6 +270,29 @@ RCX86=./sac2crc.X86
 RCALPHA=./sac2crc.ALPHA
 RCMAC=./sac2crc.MAC
 
+dnl
+dnl Append GASNet conduit targets file to sac2crc.
+dnl
+AC_SUBST_FILE([GASNET_CONDUIT_TARGETS])
+GASNET_CONDUIT_TARGETS=./sac2crc.GASNetconduits
+
+dnl
+dnl Append GASNet conduit settings file to config.mkf.
+dnl
+AC_SUBST_FILE([GASNET_CONDUIT_SETTINGS])
+GASNET_CONDUIT_SETTINGS=./config.GASNetconduits
+
+dnl
+dnl Append rules for building libsacdistmem GASNet object files to build.mkf
+dnl
+AC_SUBST_FILE([GASNET_CONDUIT_BUILD_OBJECT_FILES])
+GASNET_CONDUIT_BUILD_OBJECT_FILES=./build.GASNetconduits
+
+dnl
+dnl Append rules for building libsacdistmem GASNet cross variant object files to build.mkf
+dnl
+AC_SUBST_FILE([GASNET_CONDUIT_BUILD_OBJECT_FILES_CROSS_VARIANT])
+GASNET_CONDUIT_BUILD_OBJECT_FILES_CROSS_VARIANT=./build.GASNetconduitsCrossVariant
 
 # generate specific flags for known os
 AC_MSG_CHECKING([sac2crc system flags])
@@ -341,10 +378,28 @@ AC_DEFINE([SAC_PRELUDE_NAME], ["sacprelude"], [Name of the sac prelude module.])
 AC_DEFINE( UNUSED, __attribute__((unused)), define macro for unused variables)
 
 
+
+
+
+if test x"$enable_distmem_gasnet" = xyes; then
+  gasnet_conduit_names_print=" (conduits: $gasnet_conduit_names)"
+else
+  gasnet_conduit_names_print=""
+fi
+
+if test x"$enable_distmem" = xyes; then
+  distmem_details_print=" (experimental)
+*   - GASNet:              $enable_distmem_gasnet$gasnet_conduit_names_print
+*   - GPI:                 $enable_distmem_gpi
+*   - MPI:                 $enable_distmem_mpi
+*   - ARMCI:               $enable_distmem_armci"
+else
+  distmem_details_print=""
+fi
+
 AC_OUTPUT
 
 cat <<EOF
-*
 * Configuration done.
 *
 * Detected OS string:      $target_os
@@ -358,6 +413,7 @@ cat <<EOF
 * - CUDA:                  $enable_cuda
 * - OpenMP:                $enable_omp
 * - SL:                    $enable_sl
+* - Distributed memory:    $enable_distmem$distmem_details_print
 * - CC:                    $CC
 * - SaC compiler CFLAGS:   $MKCCFLAGS
 * - SaC programs CFLAGS:   $RCCCFLAGS

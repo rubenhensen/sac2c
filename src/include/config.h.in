@@ -3,6 +3,9 @@
 /* CPU architecture string */
 #undef ARCH
 
+/* Available GASNet conduits. */
+#undef DISTMEM_GASNET_CONDUITS
+
 /* Define to the command to use to invoke graphviz/dot, followed by a space.
    */
 #undef DOT_CMD
@@ -12,6 +15,21 @@
 
 /* Set to 1 if CUDA is enabled, otherwise 0. */
 #undef ENABLE_CUDA
+
+/* Define to 1 if distributed memory support is enabled, otherwise 0. */
+#undef ENABLE_DISTMEM
+
+/* Define to 1 if ARMCI conduit is supported, otherwise 0. */
+#undef ENABLE_DISTMEM_ARMCI
+
+/* Define to 1 if GASNet conduit is supported, otherwise 0. */
+#undef ENABLE_DISTMEM_GASNET
+
+/* Define to 1 if GPI conduit is supported, otherwise 0. */
+#undef ENABLE_DISTMEM_GPI
+
+/* Define to 1 if MPI conduit is supported, otherwise 0. */
+#undef ENABLE_DISTMEM_MPI
 
 /* Define to 1 if pthreads are available and MT is enabled, otherwise 0. */
 #undef ENABLE_MT

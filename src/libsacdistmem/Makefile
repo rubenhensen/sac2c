@@ -1,0 +1,170 @@
+###############################################################################
+#
+# Calling conventions:
+#
+#  Start rules: 
+#    default    compile default code (subproject dependent)
+#    devel      compile developer code 
+#    prod       compile product code
+#
+#    clean      cleanup derived files
+#    cleandevel cleanup compiled files (developer code only)
+#    cleanprod  cleanup compiled files (product code only)
+#
+#    refactor   refactor source code (requires parameters below)
+#
+#  Parameters:
+#    DEPS="no"  de-activate dependency checking meachanism
+#    HIDE=""    show important commands issued by make (debugging)
+#
+#  Refactor parameters:
+#    PATTERN="" pattern to look for in all source files
+#    OUTPUT=""  text to replace matched pattern
+#
+###############################################################################
+
+
+#######################################################################################
+#
+# general setup:
+#
+
+PROJECT_ROOT     := ../..
+
+HIDE             := 
+DEPS             := yes
+
+PREFIX_LOCAL     := 
+PREFIX_ROOT      := $(PROJECT_ROOT)/
+
+MAKEFILE_DIR     := $(PROJECT_ROOT)/src/makefiles
+
+include $(MAKEFILE_DIR)/config.mkf
+include $(MAKEFILE_DIR)/settings.mkf
+include $(MAKEFILE_DIR)/targets.mkf
+
+SUBPROJECT       := $(notdir $(CURDIR))
+
+TARGETDIR_NAME   := $($(SUBPROJECT)_targetdir)
+TARGETDIR        := $(PROJECT_ROOT)/$(TARGETDIR_NAME)
+
+TARGETS          := $(addprefix $(TARGETDIR)/,\
+                      $($(SUBPROJECT)_targets))
+
+
+###############################################################################
+#
+# Dummy rules
+#
+
+.PHONY: default devel prod make_%
+.PHONY: clean clean_% refactor
+
+
+###############################################################################
+#
+# Start rules
+#
+
+default: make_$($(SUBPROJECT)_defaultstyle)
+
+devel: make_devel
+
+prod: make_prod
+
+
+###############################################################################
+#
+# Main rule
+#
+
+make_%: checks
+	@$(ECHO) ""
+	@$(ECHO) "************************************************************"
+	@$(ECHO) "* Building $(PROJECT_NAME) $(SUBPROJECT) ($($*_long) version)"
+	@$(ECHO) "* revision "`cat $(PROJECT_ROOT)/.revision.txt`
+	@$(ECHO) "* on $(OS) for $(ARCH)"
+	@$(ECHO) "************************************************************"
+	@$(TOUCH) .make_track
+	@ if [ -f .last_style ] ; \
+          then if [ "$($*_long)" != "`cat .last_style`" -a "" != "`cat .last_style`" ] ; \
+               then $(RM) $(TARGETS) ; \
+                    $(ECHO) "" ; \
+                    $(ECHO) "Removing `cat .last_style` targets for $($*_long) targets" ; \
+               fi ; \
+          fi
+	@$(ECHO) $($*_long) > .last_style; 
+	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/build.mkf \
+                         DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                         PREFIX_LOCAL="$(PREFIX_LOCAL)" \
+                         PREFIX_ROOT="$(PREFIX_ROOT)" \
+                         SUBPROJECT="$(SUBPROJECT)" \
+                         STYLE="$*" 
+	@$(RM) .make_track
+	@$(ECHO) ""
+
+
+###############################################################################
+#
+# Rules for cleaning directories
+#
+
+clean: clean_all
+
+clean_%: $(PROJECT_ROOT)/.revision.txt
+	@$(ECHO) ""
+	@$(ECHO) "************************************************************"
+	@$(ECHO) "* Cleaning $(PROJECT_NAME) $(SUBPROJECT)"
+	@$(ECHO) "* revision "`cat $(PROJECT_ROOT)/.revision.txt`
+	@$(ECHO) "* on $(OS) for $(ARCH)"
+	@$(ECHO) "************************************************************"
+	@$(ECHO) ""
+	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/clean.mkf \
+                        HIDE="$(HIDE)" \
+                        PROJECT_ROOT="$(PROJECT_ROOT)" \
+                        PREFIX_LOCAL="$(PREFIX_LOCAL)" \
+                        PREFIX_ROOT="$(PREFIX_ROOT)" \
+                        STYLE="$*" \
+                        SUBPROJECT="$(SUBPROJECT)" \
+                        clean_subdirs
+	@$(ECHO) ""
+
+
+###############################################################################
+#
+# Rules for refactoring source files
+#
+
+refactor: $(PROJECT_ROOT)/.revision.txt
+	$(HIDE) if [ "$(PATTERN)" == "" ] ; \
+                then $(ECHO) "No pattern for refactoring specified!" ; \
+                     exit 1 ; \
+                fi
+	@$(ECHO) ""
+	@$(ECHO) "************************************************************"
+	@$(ECHO) "* Refactoring $(PROJECT_NAME) $(SUBPROJECT)"
+	@$(ECHO) "* revision "`cat $(PROJECT_ROOT)/.revision.txt`
+	@$(ECHO) "* on $(OS) for $(ARCH)"
+	@$(ECHO) "************************************************************"
+	@$(ECHO) "* \"$(PATTERN)\""
+	@$(ECHO) "*   -> \"$(OUTPUT)\""
+	@$(ECHO) "************************************************************"
+	@$(TOUCH) .make_track
+	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/refactor.mkf \
+                        SUBPROJECT="$(SUBPROJECT)" \
+                        HIDE="$(HIDE)" \
+                        COND="$(COND)" \
+                        PATTERN="$(PATTERN)" \
+                        OUTPUT="$(OUTPUT)"
+	$(HIDE) $(RM) .make_track
+
+
+###############################################################################
+#
+# Includes for consistency checking mechanism
+#
+
+include $(MAKEFILE_DIR)/check.mkf
+
+
+

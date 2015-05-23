@@ -522,6 +522,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("do");
 
+    ARGS_OPTION ("dsm_maxmem_mb", ARG_RANGE (global.distmem_max_memory_mb, 128, 2000));
+
 #ifndef DBUG_OFF
 
     ARGS_OPTION_BEGIN ("d")
@@ -756,6 +758,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         }
     }
     ARGS_OPTION_END ("numthreads");
+
+    ARGS_OPTION ("numprocs", ARG_RANGE (global.num_procs, 1, global.max_procs));
 
     ARGS_OPTION_BEGIN ("no")
     {

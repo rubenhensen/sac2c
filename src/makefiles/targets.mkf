@@ -302,7 +302,7 @@ runtime_extraclean_devel  :=
 runtime_extraclean_prod   := 
 
 runtime_sourcedirs        := essentials_h extras_h mt_h mt_omp_h mt_beehive_h mt_pth_h \
-                             mt_lpel_h phm_h mutc_h cuda_h rtspec_h \
+                             mt_lpel_h phm_h mutc_h cuda_h rtspec_h distmem_h \
                              cudahybrid_h nested_h
 
 ###############################################################################
@@ -335,6 +335,8 @@ runtime_cuda_h         := cuda cuda_gen
 runtime_cudahybrid_h   := cudahybrid alloc_cache dist_var_nomemsave basic
 
 runtime_rtspec_h       := rtspec registry reqqueue controller
+
+runtime_distmem_h      := distmem
 
 runtime_nested_h       := nested nested_gen
 
@@ -474,6 +476,40 @@ libsacphm_diag      := diagnostics
 libsacphm_opt       := placement
 
 libsacphm_compat    := malloc 
+
+
+
+###############################################################################
+#
+# Subproject libsacdistmem
+#
+###############################################################################
+
+libsacdistmem_targets   := $(foreach gasnet_conduit,$(DISTMEM_GASNET_CONDUITS),libsacdistmem$(CROSS_VARIANT).gasnet$(gasnet_conduit).a libsacdistmem$(CROSS_VARIANT).gasnet$(gasnet_conduit)$(SHARED_LIB_EXT)) \
+                           libsacdistmem$(CROSS_VARIANT).mpi.a \
+                           libsacdistmem$(CROSS_VARIANT).mpi$(SHARED_LIB_EXT) \
+                           libsacdistmem$(CROSS_VARIANT).nodistmem.a \
+                           libsacdistmem$(CROSS_VARIANT).nodistmem$(SHARED_LIB_EXT)
+
+libsacdistmem_targetdir := lib
+
+libsacdistmem_subtarget_suffix  := $(CROSS_VARIANT).o
+libsacdistmem_defaultstyle      := prod
+
+libsacdistmem_extraclean_all    := 
+libsacdistmem_extraclean_devel  := 
+libsacdistmem_extraclean_prod   := 
+
+libsacdistmem_sourcedirs := distmem commlib
+
+###############################################################################
+# Files to be compiled in each source directory
+###############################################################################
+
+libsacdistmem_distmem    := distmem distmem_trace
+
+libsacdistmem_commlib    := distmem_commlib_gasnet distmem_commlib_gasnet_trace \
+                            distmem_commlib_mpi distmem_commlib_mpi_trace
 
 
 

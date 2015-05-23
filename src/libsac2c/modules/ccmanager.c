@@ -164,7 +164,7 @@ AddSacLib (str_buf *buffer)
     SBUFprint (buffer, global.config.lib_variant);
 
     switch (global.mtmode) {
-    case MT_none:
+    case MT_none: /* no PThreads */
         if (global.backend == BE_omp) {
             SBUFprint (buffer, ".mt.omp ");
         } else {
@@ -181,6 +181,26 @@ AddSacLib (str_buf *buffer)
             SBUFprint (buffer, ".mt.pth ");
         }
         break;
+    }
+
+    DBUG_RETURN ();
+}
+
+static void
+AddDistMemLib (str_buf *buffer)
+{
+    DBUG_ENTER ();
+
+    SBUFprint (buffer, "-lsacdistmem");
+
+    if (global.backend == BE_distmem) {
+        switch (global.distmem_commlib) {
+        case DISTMEM_COMMLIB_GASNET:
+            SBUFprintf (buffer, ".gasnet%s ", global.config.commlib_conduit);
+            break;
+        }
+    } else {
+        SBUFprintf (buffer, ".nodistmem ");
     }
 
     DBUG_RETURN ();
@@ -249,6 +269,7 @@ GetLibs (void)
     buffer = SBUFcreate (256);
 
     AddPhmLib (buffer);
+    AddDistMemLib (buffer);
     AddSacLib (buffer);
     AddCCLibs (buffer);
     AddEfenceLib (buffer);

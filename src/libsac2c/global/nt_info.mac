@@ -25,13 +25,17 @@ YOU HAVE TO DEFINE ATTRIB !!!Do this before you include this file.
 
 #if (ATTRIB == NT_SHAPE_INDEX)
 
-  NTIF (C_scl, "SCL"),
-  NTIF (C_aks, "AKS"), NTIF (C_akd, "AKD"), NTIF (C_aud, "AUD"),
+  NTIF (C_scl, "SCL"),     /* scalar */
+  NTIF (C_aks, "AKS"),     /* known shape */
+  NTIF (C_akd, "AKD"),     /* known dimension */
+  NTIF (C_aud, "AUD"),     /* unknown dimension */
   NTIF (C_unknowns, "???") /* should be the last entry! */
 
 #elif (ATTRIB == NT_HIDDEN_INDEX)
 
-NTIF (C_nhd, "NHD"), NTIF (C_hid, "HID"), NTIF (C_hns, "HNS"),
+NTIF (C_nhd, "NHD"),       /* not hidden */
+  NTIF (C_hid, "HID"),     /* hidden */
+  NTIF (C_hns, "HNS"),     /* nested */
   NTIF (C_unknownh, "???") /* should be the last entry! */
 
 #elif (ATTRIB == NT_UNIQUE_INDEX)
@@ -59,6 +63,12 @@ NTIF (C_threadparam, "TPA"), NTIF (C_threadparamio, "TPO"), NTIF (C_funparam, "F
 
 NTIF (C_dense, "YES"), NTIF (C_sparse, "NOT"),
   NTIF (C_unknownb, "???") /* should be the last entry! */
+
+#elif (ATTRIB == NT_DISTRIBUTED_INDEX)
+
+NTIF (C_distr, "DIS"),      /* potentially distributed */
+  NTIF (C_notdistr, "NDI"), /* not distributed */
+  NTIF (C_unknownd, "???")  /* should be the last entry! */
 
 #endif
 

@@ -161,6 +161,14 @@ static char *nt_bitarray_string_init[] = {
 #undef NTIFstr
 };
 
+static char *nt_distributed_string_init[] = {
+#define ATTRIB NT_DISTRIBUTED_INDEX
+#define NTIFstr(it_str) it_str
+#include "nt_info.mac"
+#undef ATTRIB
+#undef NTIFstr
+};
+
 static const char *backend_string[] = {
 #define BACKENDstring(string) string,
 #include "backends.mac"
@@ -432,7 +440,9 @@ static const char *rename_type_init[] = {
           NULL, /* cext		  */                                                            \
           NULL, /* rc_method		  */                                                       \
           NULL, /* backend		  */                                                         \
-          NULL, /* mt_lib               */                                               \
+          NULL, /* mt_lib           */                                                   \
+          NULL, /* distmem_commlib  */                                                   \
+          NULL, /* commlib_conduit  */                                                   \
           NULL, /* tree_cc		  */                                                         \
           NULL, /* tree_ld		  */                                                         \
           NULL, /* tree_ld_path	  */                                                     \
@@ -770,6 +780,28 @@ GLOBsetupBackend (void)
 #include "backends.mac"
     else {
         CTIabort ("Unknown compiler backend in sac2crc file: %s", global.config.backend);
+    }
+
+    DBUG_RETURN ();
+}
+
+void
+GLOBsetupDistMemCommLib (void)
+{
+    DBUG_ENTER ();
+
+    if (STReq (global.config.distmem_commlib, "")) {
+        global.distmem_commlib = DISTMEM_COMMLIB_GASNET;
+    }
+#define DISTMEM_COMMLIB(type, string)                                                    \
+    else if (STReqci (global.config.distmem_commlib, string))                            \
+    {                                                                                    \
+        global.distmem_commlib = type;                                                   \
+    }
+#include "distmem_commlibs.mac"
+    else {
+        CTIabort ("Unknown distributed memory communication library in sac2crc file: %s",
+                  global.config.distmem_commlib);
     }
 
     DBUG_RETURN ();
