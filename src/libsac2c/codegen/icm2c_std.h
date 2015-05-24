@@ -5,6 +5,9 @@ extern void ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
                                    char **vararg);
 extern void ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
                                         char **vararg);
+
+extern void ICMCompileND_DISTMEM_REF_FUN_DEF_BEGIN (char *name, char *rettype_NT,
+                                                    int vararg_cnt, char **vararg);
 extern void ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt,
                                       char **vararg);
 extern void ICMCompileMUTC_THREADFUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
@@ -17,6 +20,9 @@ extern void ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT,
                                                int vararg_cnt, char **vararg);
 extern void ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt,
                                  char **vararg);
+
+extern void ICMCompileND_DISTMEM_REF_FUN_AP (char *name, char *retname, int vararg_cnt,
+                                             char **vararg);
 extern void ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt,
                                          char **vararg);
 extern void ICMCompileMUTC_SPAWNFUN_AP (char *syncid, char *place, char *name,

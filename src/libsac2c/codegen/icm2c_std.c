@@ -136,6 +136,68 @@ ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileND_DISTMEM_REF_FUN_DEF_BEGIN( char *name, char *rettype_NT,
+ *                                                int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_DISTMEM_REF_FUN_DEF_BEGIN( name, rettype_NT, vararg_cnt, [ TAG, basetype, arg_NT
+ *]* )
+ *
+ *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
+ *
+ ******************************************************************************/
+// TODO: distmem
+void
+ICMCompileND_DISTMEM_REF_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
+                                        char **vararg)
+{
+    DBUG_ENTER ();
+
+#define ND_DISTMEM_REF_FUN_DEF_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_DISTMEM_REF_FUN_DEF_BEGIN
+
+    indout ("SAC_ND_DEF_FUN_BEGIN2( %s, ", name);
+
+    if (rettype_NT[0] != '\0') {
+        out ("SAC_ND_TYPE_NT( %s), ", rettype_NT);
+    } else {
+        out ("void, ");
+    }
+
+    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                   out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
+                        vararg[i + 1]));
+    out (")\n");
+
+    indout ("{\n");
+    global.indent++;
+
+    /* The ND_FUN_DEF ICM is used for SEQ and ST functions.
+     * The SEQ functions are assumed always running in the single-threaded context (hence
+     * the HM annotation), and they do not contain any SPMD invocations. The ST functions
+     * are also assumed always running in the single-threaded context, but they may
+     * contain an SPMD invocation. They are used only in stand-alone programs, i.e. not
+     * from external calls. The SAC_MT_DEFINE_ST_SELF() defines the SAC_MT_self local
+     * variable. In SEQ it will be ultimately NULL, while in ST it shall point to the
+     * global singleton queen-bee.
+     */
+    indout ("SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
+    indout ("SAC_MT_DEFINE_ST_SELF()\n");
+
+    indout ("if (SAC_DISTMEM_rank != SAC_DISTMEM_RANK_MASTER) {\n");
+    indout ("return;\n");
+    indout ("}\n");
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileND_FUN_DEF_END( char *name, char *rettype_NT,
  *                                  int vararg_cnt, char **vararg)
  *
@@ -312,6 +374,70 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
     } else {
         out (")\n");
     }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DISTMEM_REF_FUN_AP( char *name, char *retname,
+ *                             int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_FUN_DEC( name, retname, vararg_cnt, [ TAG, basetype, arg_NT ]* )
+ *
+ *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
+ *
+ ******************************************************************************/
+// TODO: distmem
+void
+ICMCompileND_DISTMEM_REF_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ();
+
+#define ND_DISTMEM_REF_FUN_AP
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_DISTMEM_REF_FUN_AP
+
+    indout ("if (SAC_DISTMEM_rank != SAC_DISTMEM_RANK_MASTER) {\n");
+
+    INDENT;
+
+    if (STReq (retname, "")) {
+        indout ("SAC_TR_DISTMEM_PRINT( \"Non-master node is skipping function "
+                "application: %s\");\n",
+                name);
+    } else {
+        indout ("SAC_TR_DISTMEM_PRINT( \"Non-master node should be skipping function "
+                "application: %s\");\n",
+                name);
+    }
+
+    if (!STReq (retname, "")) {
+        out ("}\n");
+        indout ("%s = %s(", retname, name);
+    } else {
+        out ("} else {\n");
+        INDENT;
+        indout ("SAC_ND_FUNAP2( %s, ", name);
+    }
+
+    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                   out (" SAC_ND_ARG_%s( %s, %s)", vararg[i], vararg[i + 2],
+                        vararg[i + 1]));
+
+    if (!STReq (retname, "")) {
+        out (");\n");
+    } else {
+        out (")\n");
+        indout ("}");
+    }
+
+    out ("\n");
 
     DBUG_RETURN ();
 }

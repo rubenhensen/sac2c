@@ -387,7 +387,7 @@ SAC_DISTMEM_Exit (void)
 
     SAC_TR_DISTMEM_PRINT ("\t Invalidated pages: %lu", SAC_DISTMEM_TR_num_inval_pages);
     SAC_TR_DISTMEM_PRINT ("\t Seg faults: %lu", SAC_DISTMEM_TR_num_segfaults);
-    SAC_TR_DISTMEM_PRINT ("\t Pointer calulations: %lu", SAC_DISTMEM_TR_num_ptr_calcs);
+    SAC_TR_DISTMEM_PRINT ("\t Pointer calculations: %lu", SAC_DISTMEM_TR_num_ptr_calcs);
 
     SAC_DISTMEM_COMMLIB_EXIT ();
 }
@@ -444,14 +444,17 @@ SAC_DISTMEM_DetMaxElemsPerNode (size_t total_elems, size_t dim0_size)
 
 #if COMPILE_TRACE
 size_t
-SAC_DISTMEM_TR_DetDim0Start (size_t dim0_size)
+SAC_DISTMEM_TR_DetDim0Start (size_t dim0_size, size_t start_range, size_t stop_range)
 #else  /* COMPILE_TRACE */
 size_t
-SAC_DISTMEM_DetDim0Start (size_t dim0_size)
+SAC_DISTMEM_DetDim0Start (size_t dim0_size, size_t start_range, size_t stop_range)
 #endif /* COMPILE_TRACE */
 {
     size_t max_dim0 = DetMaxDim0SharePerNode (dim0_size);
-    size_t start = max_dim0 * SAC_DISTMEM_rank;
+    size_t start_owned = max_dim0 * SAC_DISTMEM_rank;
+    size_t stop_owned = SAC_MIN (start_owned + max_dim0, dim0_size);
+
+    size_t start = SAC_MAX (start_owned, start_range);
 
     SAC_TR_DISTMEM_PRINT ("Starts at dim0 = %zd (size of dim0: %zd)", start, dim0_size);
 
@@ -460,15 +463,17 @@ SAC_DISTMEM_DetDim0Start (size_t dim0_size)
 
 #if COMPILE_TRACE
 size_t
-SAC_DISTMEM_TR_DetDim0Stop (size_t dim0_size)
+SAC_DISTMEM_TR_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range)
 #else  /* COMPILE_TRACE */
 size_t
-SAC_DISTMEM_DetDim0Stop (size_t dim0_size)
+SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range)
 #endif /* COMPILE_TRACE */
 {
     size_t max_dim0 = DetMaxDim0SharePerNode (dim0_size);
-    size_t start = max_dim0 * SAC_DISTMEM_rank;
-    size_t stop = SAC_MIN (start + max_dim0, dim0_size);
+    size_t start_owned = max_dim0 * SAC_DISTMEM_rank;
+    size_t stop_owned = SAC_MIN (start_owned + max_dim0, dim0_size);
+
+    size_t stop = SAC_MIN (stop_owned, stop_range);
 
     SAC_TR_DISTMEM_PRINT ("Stops at dim0 = %zd (size of dim0: %zd)", stop, dim0_size);
 

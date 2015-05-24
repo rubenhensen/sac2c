@@ -258,6 +258,53 @@ ICMCompileWL_SCHEDULE__BEGIN (int dims)
 
     indout ("{\n");
     global.indent++;
+    // TODO: Hack into here
+
+    for (i = 0; i < dims; i++) {
+        indout ("int SAC_WL_MT_SCHEDULE_START( %d);\n", i);
+        indout ("int SAC_WL_MT_SCHEDULE_STOP( %d);\n", i);
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_DIST_SCHEDULE__BEGIN( int dims, bool is_distributable, char *to_NT)
+ *
+ * description:
+ *   Implements the compilation of the following ICM:
+ *
+ *   WL_DIST_SCHEDULE__BEGIN( dims, is_distributable, to_NT)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT)
+{
+    int i;
+
+    DBUG_ENTER ();
+
+#define WL_DIST_SCHEDULE__BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_DIST_SCHEDULE__BEGIN
+
+    indout ("{\n");
+    global.indent++;
+
+    if (is_distributable) {
+        indout ("const bool SAC_WL_IS_DISTRIBUTED = SAC_ND_A_IS_DIST( %s);\n", to_NT);
+        indout ("const int SAC_WL_DIST_DIM0_SIZE = SAC_ND_A_SHAPE( %s, 0);\n", to_NT);
+        indout ("SAC_TR_DISTMEM_PRINT( \"Executing %%s with-loop.\", "
+                "SAC_WL_IS_DISTRIBUTED ? \"distributed\" : \"non-distributed\");\n");
+    } else {
+        indout ("const bool SAC_WL_IS_DISTRIBUTED = FALSE;\n");
+        indout ("const int SAC_WL_DIST_DIM0_SIZE = 0;\n");
+        indout ("SAC_TR_DISTMEM_PRINT( \"Executing non-distributable with-loop.\");\n");
+    }
 
     for (i = 0; i < dims; i++) {
         indout ("int SAC_WL_MT_SCHEDULE_START( %d);\n", i);

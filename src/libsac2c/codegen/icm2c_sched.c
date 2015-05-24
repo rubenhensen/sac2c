@@ -222,24 +222,43 @@ ICMCompileMT_SCHEDULER_BEGIN (int sched_id, int dim, char **vararg)
         INDENT;
 
         if (global.backend == BE_distmem && i == 0) {
+            fprintf (global.outfile, "if (SAC_WL_IS_DISTRIBUTED) {");
 
-            fprintf (global.outfile,
-                     "SAC_WL_MT_SCHEDULE_START( %d) = SAC_DISTEM_DET_DIM0_START( %s - "
-                     "%s);\n",
-                     i, upper_bound[i], lower_bound[i]);
+            global.indent++;
             INDENT;
 
             fprintf (global.outfile,
-                     "SAC_WL_MT_SCHEDULE_STOP( %d) = SAC_DISTEM_DET_DIM0_STOP( %s - "
-                     "%s);\n",
-                     i, upper_bound[i], lower_bound[i]);
-        } else {
-            fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i,
-                     lower_bound[i]);
+                     "SAC_WL_MT_SCHEDULE_START( %d) = SAC_DISTEM_DET_DIM0_START( "
+                     "SAC_WL_DIST_DIM0_SIZE, %s, %s);\n",
+                     i, lower_bound[i], upper_bound[i]);
             INDENT;
 
-            fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i,
-                     upper_bound[i]);
+            fprintf (global.outfile,
+                     "SAC_WL_MT_SCHEDULE_STOP( %d) = SAC_DISTEM_DET_DIM0_STOP( "
+                     "SAC_WL_DIST_DIM0_SIZE, %s, %s);\n",
+                     i, lower_bound[i], upper_bound[i]);
+
+            global.indent--;
+            INDENT;
+
+            fprintf (global.outfile, "} else {");
+
+            global.indent++;
+            INDENT;
+        }
+
+        fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i,
+                 lower_bound[i]);
+        INDENT;
+
+        fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i,
+                 upper_bound[i]);
+
+        if (global.backend == BE_distmem && i == 0) {
+            global.indent--;
+            INDENT;
+
+            fprintf (global.outfile, "}");
         }
     }
 

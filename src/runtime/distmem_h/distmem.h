@@ -28,6 +28,9 @@ SAC_C_EXTERN_VAR size_t SAC_DISTMEM_rank;
 
 #if SAC_DO_DISTMEM
 
+/* Master node. Only this nodes executes functions with side-effects. */
+#define SAC_DISTMEM_RANK_MASTER 0
+
 /* Minimum elements per node so that array is distributed. */
 #define SAC_DISTMEM_MIN_ELEMS_PER_NODE 10
 
@@ -176,36 +179,37 @@ size_t SAC_DISTMEM_DetMaxElemsPerNode (size_t total_elems, size_t dim0_size);
 
 /** <!--********************************************************************-->
  *
- * @fn size_t SAC_DISTMEM_DetDim0Start( size_t dim0_size)
+ * @fn size_t SAC_DISTMEM_DetDim0Start( size_t dim0_size, size_t start_range, size_t
+ *stop_range)
  *
- *   @brief   Determines first index of first dimension which is owned by this node.
+ *   @brief   Determines the first index within the range [start_range_range, stop) that
+ *is owned by this node.
  *
- *            This node owns all indices of the first dimension of the array for which
- *            index >= start.
- *
- *   @param dim0_size  size of the first dimension of the array
- *   @return           first index owned by this node
+ *   @param dim0_size     size of the first dimension of the array
+ *   @param start_range   beginning of index range
+ *   @param stop_range    end of index range
+ *   @return              first index owned by this node or 0 if none
  *
  ******************************************************************************/
 
-size_t SAC_DISTMEM_DetDim0Start (size_t dim0_size);
+size_t SAC_DISTMEM_DetDim0Start (size_t dim0_size, size_t start_range, size_t stop_range);
 
 /** <!--********************************************************************-->
  *
- * @fn size_t SAC_DISTMEM_DetDim0Stop( size_t dim0_size, size_t *start, size_t *stop)
+ * @fn size_t SAC_DISTMEM_DetDim0Stop( size_t dim0_size, size_t start_range, size_t
+ *stop_range)
  *
- *   @brief   Determines the last index + 1 of the first dimension which is owned by this
- *node.
+ *   @brief   Determines the last index within the range [start_range, stop_range) that is
+ *owned by this node.
  *
- *            This node owns all indices of the first dimension of the array for which
- *            index < stop.
- *
- *   @param dim0_size   size of the first dimension of the array
- *   @return            last index owned by this node + 1
+ *   @param dim0_size     size of the first dimension of the array
+ *   @param start_range   beginning of index range
+ *   @param stop_range    end of index range
+ *   @return              last index owned by this node + 1 or 0 if none
  *
  ******************************************************************************/
 
-size_t SAC_DISTMEM_DetDim0Stop (size_t dim0_size);
+size_t SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range);
 
 /** <!--********************************************************************-->
  *
@@ -241,9 +245,9 @@ bool SAC_DISTMEM_TR_DetDoDistrArr (size_t total_elems, size_t dim0_size);
 
 size_t SAC_DISTMEM_TR_DetMaxElemsPerNode (size_t total_elems, size_t dim0_size);
 
-size_t SAC_DISTMEM_TR_DetDim0Start (size_t dim0_size);
+size_t SAC_DISTMEM_TR_DetDim0Start (size_t dim0_size, size_t start, size_t stop);
 
-size_t SAC_DISTMEM_TR_DetDim0Stop (size_t dim0_size);
+size_t SAC_DISTMEM_TR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 void *SAC_DISTMEM_TR_Malloc (size_t b, uintptr_t *offset);
 
@@ -339,9 +343,11 @@ void SAC_DISTMEM_TR_IncNumPtrCalcs (void);
 #define SAC_DISTMEM_DET_MAX_ELEMS_PER_NODE(total_elems, dim0_size)                       \
     SAC_DISTMEM_TR_DetMaxElemsPerNode (total_elems, dim0_size);
 
-#define SAC_DISTEM_DET_DIM0_START(dim0_size) SAC_DISTMEM_TR_DetDim0Start (dim0_size);
+#define SAC_DISTEM_DET_DIM0_START(dim0_size, start_range, stop_range)                    \
+    SAC_DISTMEM_TR_DetDim0Start (dim0_size, start_range, stop_range);
 
-#define SAC_DISTEM_DET_DIM0_STOP(dim0_size) SAC_DISTMEM_TR_DetDim0Stop (dim0_size);
+#define SAC_DISTEM_DET_DIM0_STOP(dim0_size, start, stop)                                 \
+    SAC_DISTMEM_TR_DetDim0Stop (dim0_size, start, stop);
 
 #define SAC_DISTMEM_MALLOC(b, offset) SAC_DISTMEM_TR_Malloc (b, offset);
 
@@ -371,9 +377,11 @@ void SAC_DISTMEM_TR_IncNumPtrCalcs (void);
 #define SAC_DISTMEM_DET_MAX_ELEMS_PER_NODE(total_elems, dim0_size)                       \
     SAC_DISTMEM_DetMaxElemsPerNode (total_elems, dim0_size);
 
-#define SAC_DISTEM_DET_DIM0_START(dim0_size) SAC_DISTMEM_DetDim0Start (dim0_size);
+#define SAC_DISTEM_DET_DIM0_START(dim0_size, start_range, stop_range)                    \
+    SAC_DISTMEM_DetDim0Start (dim0_size, start_range, stop_range);
 
-#define SAC_DISTEM_DET_DIM0_STOP(dim0_size) SAC_DISTMEM_DetDim0Stop (dim0_size);
+#define SAC_DISTEM_DET_DIM0_STOP(dim0_size, start_range, stop_range)                     \
+    SAC_DISTMEM_DetDim0Stop (dim0_size, start_range, stop_range);
 
 #define SAC_DISTMEM_MALLOC(b, offset) SAC_DISTMEM_Malloc (b, offset);
 
@@ -414,7 +422,8 @@ void SAC_DISTMEM_TR_IncNumPtrCalcs (void);
  *
  *  SAC_DISTMEM_TR_DET_DO_DISTR_ARR
  *  SAC_DISTMEM_DET_MAX_ELEMS_PER_NODE
- *  SAC_DISTEM_DET_DIM0_START_STOP
+ *  SAC_DISTEM_DET_DIM0_START
+ *  SAC_DISTEM_DET_DIM0_STOP
  *  SAC_DISTMEM_MALLOC
  *  SAC_DISTMEM_ELEM_POINTER
  *  SAC_DISTMEM_RECALC_INDEX

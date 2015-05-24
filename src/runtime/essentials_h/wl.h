@@ -38,6 +38,10 @@
 
 #define SAC_WL_MT_SCHEDULE_STOP(dim) CAT0 (SAC_schedule_stop, dim)
 
+#define SAC_WL_IS_DISTRIBUTED SAC_wl_is_distributed
+
+#define SAC_WL_DIST_DIM0_SIZE SAC_wl_dist_dim0_size
+
 /*****************************************************************************/
 
 /***
