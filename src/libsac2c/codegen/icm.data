@@ -837,7 +837,8 @@ ICM_DEF( WL_DIST_SCHEDULE__BEGIN, ICM_TRACE_NONE)
   ICM_INT( dims)
   ICM_BOOL( is_distributable)
   ICM_NT( to_NT)
-ICM_END( WL_DIST_SCHEDULE__BEGIN, ( dims, is_distributable, to_NT))
+  ICM_ID( to_basetype)
+ICM_END( WL_DIST_SCHEDULE__BEGIN, ( dims, is_distributable, to_NT, to_basetype))
 #endif
 
 #if defined(WL3_SCHEDULE__BEGIN) || defined(ICM_ALL)

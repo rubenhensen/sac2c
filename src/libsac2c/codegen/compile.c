@@ -9947,7 +9947,7 @@ COMPwith2 (node *arg_node, info *arg_info)
         begin_icm = TCmakeAssignIcm3 ("WL_DIST_SCHEDULE__BEGIN", icm_args,
                                       TBmakeBool (is_distributable),
                                       MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids),
-                                                    FALSE, FALSE, FALSE, NULL),
+                                                    TRUE, FALSE, FALSE, NULL),
                                       NULL);
 
     } else {

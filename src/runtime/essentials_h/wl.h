@@ -42,6 +42,10 @@
 
 #define SAC_WL_DIST_DIM0_SIZE SAC_wl_dist_dim0_size
 
+#define SAC_WL_DIST_OFFS SAC_wl_dist_offs
+
+#define SAC_WL_DIST_BYTES SAC_wl_dist_bytes
+
 /*****************************************************************************/
 
 /***

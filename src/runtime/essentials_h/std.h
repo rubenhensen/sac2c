@@ -597,11 +597,13 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 /* TODO: int is hardcoded now */
 #define SAC_ND_READ__DIS(from_NT, from_pos)                                              \
-    (SAC_TR_AA_PRINT ("DSM read", from_NT, from_pos) SAC_BC_READ (from_NT, from_pos)     \
-         SAC_CS_READ_ARRAY (from_NT, from_pos) SAC_ND_A_IS_DIST (from_NT)                \
+    (SAC_TR_AA_FPRINT ("%s read", from_NT, from_pos,                                     \
+                       SAC_ND_A_IS_DIST (to_NT) ? "DSM" : "Non-DSM")                     \
+         SAC_BC_READ (from_NT, from_pos) SAC_CS_READ_ARRAY (from_NT, from_pos)           \
+           SAC_ND_A_IS_DIST (from_NT)                                                    \
        ? *SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (from_NT), int,                        \
                                     SAC_ND_A_FIRST_ELEMS (from_NT), from_pos)            \
-       : SAC_ND_READ__DEFAULT (from_NT, from_pos))
+       : SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos])
 
 /*
  * SAC_ND_WRITE implementations (referenced by sac_std_gen.h)
@@ -625,12 +627,15 @@ typedef intptr_t *SAC_array_descriptor_t;
 /* TODO: int is hardcoded now
 TODO: check that we never write into the cache
 TODO: optimize away some pointer calculations */
-#define SAC_ND_WRITE_DISTMEM(to_NT, to_pos)                                              \
-    SAC_TR_AA_PRINT ("DSM write", to_NT, to_pos)                                         \
+#define SAC_ND_WRITE__DIS(to_NT, to_pos)                                                 \
+    SAC_TR_AA_FPRINT ("%s write", to_NT, to_pos,                                         \
+                      SAC_ND_A_IS_DIST (to_NT) ? "DSM" : "Non-DSM")                      \
     SAC_BC_WRITE (to_NT, to_pos)                                                         \
     SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
-    *SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT), int, SAC_ND_A_FIRST_ELEMS (to_NT), \
-                               to_pos)
+    *(SAC_ND_A_IS_DIST (to_NT)                                                           \
+        ? SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT), int,                          \
+                                    SAC_ND_A_FIRST_ELEMS (to_NT), to_pos)                \
+        : &SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))[to_pos])
 
 /*
  * SAC_ND_WRITE_COPY implementations (referenced by sac_std_gen.h)
@@ -639,15 +644,6 @@ TODO: optimize away some pointer calculations */
 #define SAC_ND_WRITE_COPY__NHD(to_NT, to_pos, expr, copyfun)                             \
     {                                                                                    \
         SAC_ND_WRITE (to_NT, to_pos) = expr;                                             \
-    }
-
-#define SAC_ND_WRITE_COPY__NHD_DIS(to_NT, to_pos, expr, copyfun)                         \
-    {                                                                                    \
-        if (SAC_ND_A_IS_DIST (to_NT)) {                                                  \
-            SAC_ND_WRITE_DISTMEM (to_NT, to_pos) = expr;                                 \
-        } else {                                                                         \
-            SAC_ND_WRITE (to_NT, to_pos) = expr;                                         \
-        }                                                                                \
     }
 
 #define SAC_ND_WRITE_COPY__HID(to_NT, to_pos, expr, copyfun)                             \
@@ -1537,8 +1533,10 @@ FIXME Do not initialize for the time beinb, as value 0                          
     {                                                                                    \
         SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))                                    \
           = SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT));                           \
-        SAC_ND_A_MIRROR_OFFS (to_NT) = SAC_ND_A_OFFS (from_NT);                          \
-        SAC_ND_A_DESC_OFFS (to_NT) = SAC_ND_A_OFFS (from_NT);                            \
+        SAC_ND_A_DESC_OFFS (to_NT) = SAC_ND_A_MIRROR_OFFS (to_NT)                        \
+          = SAC_ND_A_OFFS (from_NT);                                                     \
+        SAC_ND_A_DESC_FIRST_ELEMS (to_NT) = SAC_ND_A_MIRROR_FIRST_ELEMS (to_NT)          \
+          = SAC_ND_A_FIRST_ELEMS (from_NT);                                              \
     }
 
 #define SAC_ND_ASSIGN__DATA__AUD_SCL_NHD(to_NT, from_NT, copyfun)                        \
@@ -1563,8 +1561,10 @@ FIXME Do not initialize for the time beinb, as value 0                          
     {                                                                                    \
         SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))                                    \
           = SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT));                           \
-        SAC_ND_A_MIRROR_OFFS (to_NT) = SAC_ND_A_OFFS (from_NT);                          \
-        SAC_ND_A_DESC_OFFS (to_NT) = SAC_ND_A_OFFS (from_NT);                            \
+        SAC_ND_A_DESC_OFFS (to_NT) = SAC_ND_A_MIRROR_OFFS (to_NT)                        \
+          = SAC_ND_A_OFFS (from_NT);                                                     \
+        SAC_ND_A_DESC_FIRST_ELEMS (to_NT) = SAC_ND_A_MIRROR_FIRST_ELEMS (to_NT)          \
+          = SAC_ND_A_FIRST_ELEMS (from_NT);                                              \
     }
 
 /* ND_MAKE_UNIQUE( ...)  is a C-ICM */

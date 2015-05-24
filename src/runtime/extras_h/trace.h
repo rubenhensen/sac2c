@@ -114,9 +114,14 @@ SAC_C_EXTERN void SAC_TR_DecHiddenMemcnt (int size);
 #define SAC_TR_AA_PRINT(str, array, pos)                                                 \
     SAC_TR_PRINT (("%s access to array %s at position %d", str, #array, pos)),
 
+#define SAC_TR_AA_FPRINT(str, array, pos, ...)                                           \
+    SAC_TR_PRINT ((str " access to array %s at position %d", __VA_ARGS__, #array, pos)),
+
 #else /* SAC_DO_TRACE_AA */
 
-#define SAC_TR_AA_PRINT(class, array, idx)
+#define SAC_TR_AA_PRINT(str, array, idx)
+
+#define SAC_TR_AA_FPRINT(str, array, pos, ...)
 
 #endif /* SAC_DO_TRACE_AA */
 

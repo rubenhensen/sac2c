@@ -281,7 +281,8 @@ ICMCompileWL_SCHEDULE__BEGIN (int dims)
  ******************************************************************************/
 
 void
-ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT)
+ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
+                                   char *to_basetype)
 {
     int i;
 
@@ -300,10 +301,17 @@ ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT)
         indout ("const int SAC_WL_DIST_DIM0_SIZE = SAC_ND_A_SHAPE( %s, 0);\n", to_NT);
         indout ("SAC_TR_DISTMEM_PRINT( \"Executing %%s with-loop.\", "
                 "SAC_WL_IS_DISTRIBUTED ? \"distributed\" : \"non-distributed\");\n");
+        indout ("const uintptr_t SAC_WL_DIST_OFFS = SAC_ND_A_OFFS( %s);\n", to_NT);
+        indout (
+          "const size_t SAC_WL_DIST_BYTES = SAC_ND_A_FIRST_ELEMS( %s) * sizeof( %s);\n",
+          to_NT, to_basetype);
+
     } else {
         indout ("const bool SAC_WL_IS_DISTRIBUTED = FALSE;\n");
         indout ("const int SAC_WL_DIST_DIM0_SIZE = 0;\n");
         indout ("SAC_TR_DISTMEM_PRINT( \"Executing non-distributable with-loop.\");\n");
+        indout ("const uintptr_t SAC_WL_DIST_OFFS = 0;\n");
+        indout ("const size_t SAC_WL_DIST_BYTES = 0;\n");
     }
 
     for (i = 0; i < dims; i++) {
@@ -446,10 +454,17 @@ ICMCompileWL_SCHEDULE__END (int dims)
 #undef WL_SCHEDULE__END
 
     if (global.backend == BE_distmem) {
-        /* TODO: Do we always need to do this? Is this with-loop even distributed? */
-        indout ("SAC_DISTMEM_BARRIER();");
-        /* TODO: We do not need to invalidate the entire cache. */
-        indout ("SAC_DISTMEM_INVAL_ENTIRE_CACHE();");
+        indout ("if (SAC_WL_IS_DISTRIBUTED) {\n");
+
+        INDENT;
+
+        indout ("SAC_DISTMEM_INVAL_CACHE( SAC_WL_DIST_OFFS, SAC_WL_DIST_BYTES);\n");
+
+        INDENT;
+
+        indout ("SAC_DISTMEM_BARRIER();\n");
+
+        indout ("}\n");
     }
 
     global.indent--;

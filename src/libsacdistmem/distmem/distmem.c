@@ -355,8 +355,8 @@ SAC_DISTMEM_InvalCache (uintptr_t arr_offset, size_t b)
         void *page_start = (void *)(start - start % SAC_DISTMEM_pagesz);
         size_t num_pages = end / SAC_DISTMEM_pagesz - start / SAC_DISTMEM_pagesz + 1;
 
-        SAC_TR_DISTMEM_PRINT ("Invalidating %zd cache pages of node %i from %p.",
-                              num_pages, i, page_start);
+        SAC_TR_DISTMEM_PRINT ("Invalidating %zd B = %zd cache pages of node %i from %p.",
+                              b, num_pages, i, page_start);
         SAC_DISTMEM_PROT_NONE (page_start, SAC_DISTMEM_pagesz * num_pages);
 
 #if COMPILE_TRACE
