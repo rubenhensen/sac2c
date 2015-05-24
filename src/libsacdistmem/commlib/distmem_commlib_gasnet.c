@@ -136,7 +136,12 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
           min_global_segsz / 1024 / 1024, maxmem / 1024 / 1024);
     }
 
-    SAC_DISTMEM_segsz = min_global_segsz / SAC_DISTMEM_size;
+    /*
+     * Divide by and multiply with the page size because the segment size has to be a
+     * multiple of the page size.
+     */
+    SAC_DISTMEM_segsz
+      = min_global_segsz / SAC_DISTMEM_size / SAC_DISTMEM_pagesz * SAC_DISTMEM_pagesz;
     SAC_DISTMEM_shared_seg_ptr = seg_info[SAC_DISTMEM_rank].addr;
 
     /*

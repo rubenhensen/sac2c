@@ -222,7 +222,7 @@ ICMCompileMT_SCHEDULER_BEGIN (int sched_id, int dim, char **vararg)
         INDENT;
 
         if (global.backend == BE_distmem && i == 0) {
-            fprintf (global.outfile, "if (SAC_WL_IS_DISTRIBUTED) {");
+            fprintf (global.outfile, "if (SAC_WL_IS_DISTRIBUTED) {\n");
 
             global.indent++;
             INDENT;
@@ -241,7 +241,7 @@ ICMCompileMT_SCHEDULER_BEGIN (int sched_id, int dim, char **vararg)
             global.indent--;
             INDENT;
 
-            fprintf (global.outfile, "} else {");
+            fprintf (global.outfile, "} else {\n");
 
             global.indent++;
             INDENT;
@@ -258,7 +258,7 @@ ICMCompileMT_SCHEDULER_BEGIN (int sched_id, int dim, char **vararg)
             global.indent--;
             INDENT;
 
-            fprintf (global.outfile, "}");
+            fprintf (global.outfile, "}\n");
         }
     }
 

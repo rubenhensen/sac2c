@@ -192,6 +192,7 @@ AddDistMemLib (str_buf *buffer)
     DBUG_ENTER ();
 
     SBUFprint (buffer, "-lsacdistmem");
+    SBUFprint (buffer, global.config.lib_variant);
 
     if (global.backend == BE_distmem) {
         switch (global.distmem_commlib) {

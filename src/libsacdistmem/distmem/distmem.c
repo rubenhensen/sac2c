@@ -297,9 +297,11 @@ SAC_DISTMEM_Setup (size_t maxmem_mb)
     SAC_DISTMEM_INVAL_ENTIRE_CACHE ();
 
 #if COMPILE_TRACE
-    SAC_TR_DISTMEM_PRINT ("Allocated memory: %zd MB per segment, %zd MB in total",
-                          SAC_DISTMEM_segsz / 1024 / 1024,
-                          SAC_DISTMEM_segsz * SAC_DISTMEM_size / 1024 / 1024);
+    SAC_TR_DISTMEM_PRINT (
+      "Allocated memory: %zd MB per segment, %zd MB in total, seg size: %" PRIuPTR
+      " B, page size: %zd B",
+      SAC_DISTMEM_segsz / 1024 / 1024, SAC_DISTMEM_segsz * SAC_DISTMEM_size / 1024 / 1024,
+      SAC_DISTMEM_segsz, SAC_DISTMEM_pagesz);
 #endif
 
     /* Init pointers to local memory segment per node. */
@@ -327,9 +329,10 @@ void
 SAC_DISTMEM_InvalEntireCache (void)
 #endif /* COMPILE_TRACE */
 {
-    /* Invalidate the entire cache. */
-    SAC_DISTMEM_PROT_NONE (SAC_DISTMEM_cache_ptr,
-                           (SAC_DISTMEM_size - 1) * SAC_DISTMEM_segsz);
+    uintptr_t size = (SAC_DISTMEM_size - 1) * SAC_DISTMEM_segsz;
+    SAC_TR_DISTMEM_PRINT ("Invalidating entire cache (%" PRIuPTR " B from %p).", size,
+                          SAC_DISTMEM_cache_ptr);
+    SAC_DISTMEM_PROT_NONE (SAC_DISTMEM_cache_ptr, size);
 }
 
 #if COMPILE_TRACE
@@ -352,6 +355,8 @@ SAC_DISTMEM_InvalCache (uintptr_t arr_offset, size_t b)
         void *page_start = (void *)(start - start % SAC_DISTMEM_pagesz);
         size_t num_pages = end / SAC_DISTMEM_pagesz - start / SAC_DISTMEM_pagesz + 1;
 
+        SAC_TR_DISTMEM_PRINT ("Invalidating %zd cache pages of node %i from %p.",
+                              num_pages, i, page_start);
         SAC_DISTMEM_PROT_NONE (page_start, SAC_DISTMEM_pagesz * num_pages);
 
 #if COMPILE_TRACE
@@ -419,7 +424,8 @@ SAC_DISTMEM_DetDoDistrArr (size_t total_elems, size_t dim0_size)
         }
     }
 
-    SAC_TR_DISTMEM_PRINT ("Distribute array of size %zd? %d", total_elems, do_dist);
+    SAC_TR_DISTMEM_PRINT ("Distribute array of size %zd (size of dim0: %zd)? %d",
+                          total_elems, dim0_size, do_dist);
 
     return do_dist;
 }
