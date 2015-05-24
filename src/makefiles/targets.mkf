@@ -486,10 +486,13 @@ libsacphm_compat    := malloc
 ###############################################################################
 
 libsacdistmem_targets   := $(foreach gasnet_conduit,$(DISTMEM_GASNET_CONDUITS),libsacdistmem$(CROSS_VARIANT).gasnet$(gasnet_conduit).a libsacdistmem$(CROSS_VARIANT).gasnet$(gasnet_conduit)$(SHARED_LIB_EXT)) \
-                           libsacdistmem$(CROSS_VARIANT).mpi.a \
-                           libsacdistmem$(CROSS_VARIANT).mpi$(SHARED_LIB_EXT) \
                            libsacdistmem$(CROSS_VARIANT).nodistmem.a \
                            libsacdistmem$(CROSS_VARIANT).nodistmem$(SHARED_LIB_EXT)
+
+ifeq  (yes, $(ENABLE_DISTMEM_MPI))
+libsacdistmem_targets   += libsacdistmem$(CROSS_VARIANT).mpi.a \
+                           libsacdistmem$(CROSS_VARIANT).mpi$(SHARED_LIB_EXT)
+endif
 
 libsacdistmem_targetdir := lib
 
