@@ -56,7 +56,7 @@ SETTINGS_DISTMEM_MPI    := -DCOMPILE_DISTMEM_MPI
 
 LIBDIRS                := -L../../lib
 LIB_MAKETOOLS          := 
-LIB_TOOLS              := -lsac.seq
+LIB_TOOLS              := -lsacdistmem.nodistmem -lsac.seq
 
 XML_DIR                := $(PROJECT_ROOT)/src/libsac2c/xml
 XML_COMMONS            := $(wildcard $(XML_DIR)/common_*.xsl)
