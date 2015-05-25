@@ -182,7 +182,7 @@ SegvHandler (int sig, siginfo_t *si, void *unused)
 
     /* Calculate the offset within the owner's segment. */
     uintptr_t remote_offset
-      = (uintptr_t)si->si_addr % (uintptr_t)SAC_DISTMEM_cache_ptr / SAC_DISTMEM_segsz;
+      = ((uintptr_t)si->si_addr - (uintptr_t)SAC_DISTMEM_cache_ptr) % SAC_DISTMEM_segsz;
     /* Calculate the index of the page within the owner's segment. */
     size_t remote_page_index = remote_offset / SAC_DISTMEM_pagesz;
 
@@ -194,7 +194,7 @@ SegvHandler (int sig, siginfo_t *si, void *unused)
     /* Make the page writable so that it can be loaded from its owner. */
     SAC_DISTMEM_PROT_PAGE_WRITE (local_page_ptr);
 
-    SAC_TR_DISTMEM_PRINT ("Fetching page %zd from %zd to %p", remote_page_index,
+    SAC_TR_DISTMEM_PRINT ("Fetching page %zd from node %zd to %p", remote_page_index,
                           owner_rank, local_page_ptr);
 
     /* Load the page from its owner node. */
