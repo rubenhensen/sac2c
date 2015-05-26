@@ -2,7 +2,7 @@
  * info:
  *   Names are presumed to be 3 characters long.
  *   This affects NT_OVERHEAD in types.h
- *   Note that C_unknownc and C_unknownu must be the last entries in the lists.
+ *   Note that the C_unknownX items must be the last entries in the lists.
  *
  * USAGE:
  *   Before you include this file you have to define macros for ATTRIB
@@ -69,6 +69,25 @@ NTIF (C_dense, "YES"), NTIF (C_sparse, "NOT"),
 NTIF (C_distr, "DIS"),      /* potentially distributed */
   NTIF (C_notdistr, "NDI"), /* not distributed */
   NTIF (C_unknownd, "???")  /* should be the last entry! */
+
+#elif (ATTRIB == NT_CBASETYPE_INDEX)
+
+NTIF (C_btint, "INT"),      /* int */
+  NTIF (C_btfloat, "FLO"),  /* float */
+  NTIF (C_btdouble, "DOU"), /* double */
+  NTIF (C_btuchar, "UCH"),  /* unsigned char */
+  NTIF (C_btbool, "BOO"),   /* bool */
+  NTIF (C_btbyte, "BYT"),   /* byte */
+  NTIF (C_btshort, "SHO"),  /* short */
+  NTIF (C_btlong, "LON"),   /* long */
+  NTIF (C_btllong, "LLO"),  /* long long */
+  NTIF (C_btubyte, "UBY"),  /* unsigned byte */
+  NTIF (C_btushort, "USH"), /* unsigned short */
+  NTIF (C_btuint, "UIN"),   /* unsigned int */
+  NTIF (C_btulong, "ULO"),  /* unsigned long */
+  NTIF (C_btullong, "ULL"), /* unsigned long long */
+  NTIF (C_btother, "OTH"),  /* other */
+  NTIF (C_unknownt, "???")  /* should be the last entry! */
 
 #endif
 

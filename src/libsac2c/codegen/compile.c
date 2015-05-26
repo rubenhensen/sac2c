@@ -3021,34 +3021,23 @@ COMPfundef (node *arg_node, info *arg_info)
               = TBmakeIcm ("WE_FUN_DEF_BEGIN", DUPdoDupTree (icm_args));
             FUNDEF_ICMDEFEND (arg_node)
               = TBmakeIcm ("WE_FUN_DEF_END", DUPdoDupTree (icm_args));
-        }
-#if 0
-    else if (global.backend == BE_distmem) {
-       node *funargs = FUNDEF_ARGS( arg_node);
-        bool has_ref_arg = FALSE;
-        while (funargs != NULL) {
-          if (ARG_ISREFERENCE( funargs)) {
-            has_ref_arg = TRUE;
-            break;
-          }
-
-          funargs = ARG_NEXT( funargs);
-        }
-
-      if (has_ref_arg ||  FUNDEF_AFFECTEDOBJECTS( arg_node) != NULL) {
-        icm_args = MakeFunctionArgs( arg_node);
-        FUNDEF_ICMDECL( arg_node) = TBmakeIcm( "ND_FUN_DECL", icm_args);
-        FUNDEF_ICMDEFBEGIN( arg_node) = TBmakeIcm( "ND_DISTMEM_REF_FUN_DEF_BEGIN", DUPdoDupTree( icm_args));
-        FUNDEF_ICMDEFEND( arg_node) = TBmakeIcm( "ND_FUN_DEF_END", DUPdoDupTree( icm_args));
-      } else {
-        icm_args = MakeFunctionArgs( arg_node);
-        FUNDEF_ICMDECL( arg_node) = TBmakeIcm( "ND_FUN_DECL", icm_args);
-        FUNDEF_ICMDEFBEGIN( arg_node) = TBmakeIcm( "ND_FUN_DEF_BEGIN", DUPdoDupTree( icm_args));
-        FUNDEF_ICMDEFEND( arg_node) = TBmakeIcm( "ND_FUN_DEF_END", DUPdoDupTree( icm_args));
-      }
-    }
-#endif
-        else {
+        } else if (global.backend == BE_distmem) {
+            if (FUNDEF_DISTMEMHASSIDEEFFECTS (arg_node)) {
+                icm_args = MakeFunctionArgs (arg_node);
+                FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("ND_DISTMEM_FUN_DECL", icm_args);
+                FUNDEF_ICMDEFBEGIN (arg_node)
+                  = TBmakeIcm ("ND_FUN_DEF_BEGIN", DUPdoDupTree (icm_args));
+                FUNDEF_ICMDEFEND (arg_node)
+                  = TBmakeIcm ("ND_FUN_DEF_END", DUPdoDupTree (icm_args));
+            } else {
+                icm_args = MakeFunctionArgs (arg_node);
+                FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("ND_FUN_DECL", icm_args);
+                FUNDEF_ICMDEFBEGIN (arg_node)
+                  = TBmakeIcm ("ND_FUN_DEF_BEGIN", DUPdoDupTree (icm_args));
+                FUNDEF_ICMDEFEND (arg_node)
+                  = TBmakeIcm ("ND_FUN_DEF_END", DUPdoDupTree (icm_args));
+            }
+        } else {
             /* ST and SEQ functions */
             icm_args = MakeFunctionArgs (arg_node);
             FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("ND_FUN_DECL", icm_args);
@@ -3190,6 +3179,12 @@ COMPvardec (node *arg_node, info *arg_info)
                    && TYPEDEF_ISNESTED (TYPES_TDEF (VARDEC_TYPE (arg_node)))) {
             VARDEC_ICM (arg_node)
               = TCmakeIcm1 ("ND_DECL_NESTED",
+                            MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
+                                          TRUE, TRUE, TRUE, NULL));
+        } else if (global.backend == BE_distmem
+                   && AVIS_DISTMEMISDISTRIBUTABLE (VARDEC_AVIS (arg_node))) {
+            VARDEC_ICM (arg_node)
+              = TCmakeIcm1 ("ND_DIST_DECL",
                             MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
                                           TRUE, TRUE, TRUE, NULL));
         } else {
@@ -3869,23 +3864,37 @@ COMPap (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("CUDA_ST_GLOBALFUN_AP", icm_args);
     } else if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
         icm = TBmakeIcm ("WE_FUN_AP", icm_args);
-    } else if (global.backend == BE_distmem) {
-        node *funargs = FUNDEF_ARGS (fundef);
-        bool has_ref_arg = FALSE;
-        while (funargs != NULL) {
-            if (ARG_ISREFERENCE (funargs)) {
-                has_ref_arg = TRUE;
-                break;
-            }
+    } else if (global.backend == BE_distmem && FUNDEF_DISTMEMHASSIDEEFFECTS (fundef)) {
+        /* This function has side effects. We have to treat it in a special way. */
 
-            funargs = ARG_NEXT (funargs);
-        }
-
-        if (has_ref_arg || FUNDEF_AFFECTEDOBJECTS (fundef) != NULL) {
-            icm = TBmakeIcm ("ND_DISTMEM_REF_FUN_AP", icm_args);
+        /* Append return type and return NT to ICM arguments. */
+        if (AP_ARGTAB (arg_node)->ptr_out[0] == NULL) {
+            icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
+            icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
         } else {
-            icm = TBmakeIcm ("ND_FUN_AP", icm_args);
+            icm_args
+              = TBmakeExprs (DUPdupIdsIdNt (AP_ARGTAB (arg_node)->ptr_out[0]), icm_args);
+            icm_args = TBmakeExprs (TCmakeIdCopyString (GetBaseTypeFromExpr (
+                                      AP_ARGTAB (arg_node)->ptr_out[0])),
+                                    icm_args);
         }
+
+        /* Append NT of out arguments to ICM arguments. */
+        for (int i = AP_ARGTAB (arg_node)->size - 1; i >= 1; i--) {
+            /* in/inout arguments */
+            /* TODO: Do we need inout arguments too? */
+            if (AP_ARGTAB (arg_node)->ptr_out[i] == NULL) {
+                icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
+            } else {
+                /* out arguments */
+                icm_args = TBmakeExprs (DUPdupIdsIdNt (AP_ARGTAB (arg_node)->ptr_out[i]),
+                                        icm_args);
+            }
+        }
+
+        icm_args = TBmakeExprs (TBmakeNum (AP_ARGTAB (arg_node)->size - 1), icm_args);
+
+        icm = TBmakeIcm ("ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS", icm_args);
     } else {
         icm = TBmakeIcm ("ND_FUN_AP", icm_args);
     }

@@ -522,7 +522,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("do");
 
-    ARGS_OPTION ("dsm_maxmem_mb", ARG_RANGE (global.distmem_max_memory_mb, 128, 2000));
+    ARGS_OPTION ("dsm_maxmem_mb", ARG_RANGE (global.distmem_max_memory_mb, 128, 10000));
 
 #ifndef DBUG_OFF
 

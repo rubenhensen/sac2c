@@ -297,15 +297,39 @@ ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
     global.indent++;
 
     if (is_distributable) {
-        indout ("const bool SAC_WL_IS_DISTRIBUTED = SAC_ND_A_IS_DIST( %s);\n", to_NT);
+        indout ("if (SAC_ND_A_IS_DIST( %s) && SAC_DISTMEM_exec_mode != "
+                "SAC_DISTMEM_exec_mode_sync) {\n",
+                to_NT);
+        global.indent++;
+        indout ("SAC_RuntimeError( \"Tried to execute distributed with-loop in "
+                "non-synchronous execution mode.\");\n");
+        global.indent--;
+        indout ("}\n");
+
+        indout ("const bool SAC_WL_IS_DISTRIBUTED = SAC_ND_A_IS_DIST( %s) && "
+                "SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_sync;\n",
+                to_NT);
         indout ("const int SAC_WL_DIST_DIM0_SIZE = SAC_ND_A_SHAPE( %s, 0);\n", to_NT);
-        indout ("SAC_TR_DISTMEM_PRINT( \"Executing %%s with-loop.\", "
-                "SAC_WL_IS_DISTRIBUTED ? \"distributed\" : \"non-distributed\");\n");
         indout ("const uintptr_t SAC_WL_DIST_OFFS = SAC_ND_A_OFFS( %s);\n", to_NT);
         indout (
           "const size_t SAC_WL_DIST_BYTES = SAC_ND_A_FIRST_ELEMS( %s) * sizeof( %s);\n",
           to_NT, to_basetype);
+        indout ("if (SAC_WL_IS_DISTRIBUTED) {\n");
 
+        global.indent++;
+        indout ("SAC_TR_DISTMEM_PRINT( \"Executing distributed with-loop.\");\n");
+        indout ("SAC_DISTMEM_BARRIER();\n");
+        indout ("SAC_DISTMEM_SWITCH_TO_DISTR_EXEC();\n");
+        indout ("SAC_DISTMEM_ALLOW_DIST_WRITES();\n");
+        global.indent--;
+
+        indout ("} else {\n");
+
+        global.indent++;
+        indout ("SAC_TR_DISTMEM_PRINT( \"Executing non-distributed with-loop.\");\n");
+        global.indent--;
+
+        indout ("}\n");
     } else {
         indout ("const bool SAC_WL_IS_DISTRIBUTED = FALSE;\n");
         indout ("const int SAC_WL_DIST_DIM0_SIZE = 0;\n");
@@ -456,13 +480,14 @@ ICMCompileWL_SCHEDULE__END (int dims)
     if (global.backend == BE_distmem) {
         indout ("if (SAC_WL_IS_DISTRIBUTED) {\n");
 
-        INDENT;
+        global.indent++;
 
+        indout ("SAC_DISTMEM_SWITCH_TO_SYNC_EXEC();\n");
         indout ("SAC_DISTMEM_INVAL_CACHE( SAC_WL_DIST_OFFS, SAC_WL_DIST_BYTES);\n");
-
-        INDENT;
-
+        indout ("SAC_DISTMEM_FORBID_DIST_WRITES();\n");
         indout ("SAC_DISTMEM_BARRIER();\n");
+
+        global.indent--;
 
         indout ("}\n");
     }

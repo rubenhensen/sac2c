@@ -211,9 +211,27 @@ typedef enum {
 
 #define SAC_TR_DISTMEM_PRINT(...) SAC_TR_PRINT (("DSM -> " __VA_ARGS__))
 
+#if SAC_DO_TRACE_AA
+
+/*
+ * This allows to print tracing information only if distributed memory AND
+ * array access tracing is activated.
+ * Why? Tracing per element operations (such as pointer calculations) clutters
+ * the trace output and this way it can be switched off easily.
+ */
+#define SAC_TR_DISTMEM_AA_PRINT(...) SAC_TR_PRINT (("DSM -> " __VA_ARGS__)),
+
+#else /* SAC_DO_TRACE_AA */
+
+#define SAC_TR_DISTMEM_AA_PRINT(...)
+
+#endif /* SAC_DO_TRACE_AA */
+
 #else /* SAC_DO_TRACE_MEM */
 
 #define SAC_TR_DISTMEM_PRINT(...)
+
+#define SAC_TR_DISTMEM_AA_PRINT(...)
 
 #endif
 

@@ -630,6 +630,7 @@ PrfModarrayScalarVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdi
                            char *copyfun)
 {
     int to_dim = DIM_NO_OFFSET (to_sdim);
+    distributed_class_t to_dc = ICUGetDistributedClass (to_NT);
 
     DBUG_ENTER ();
 
@@ -644,9 +645,45 @@ PrfModarrayScalarVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdi
                          to_dim);
         }
 
+        if (global.backend == BE_distmem && to_dc == C_distr) {
+            /* Target is potentially distributed. */
+
+            indout ("if (SAC_ND_A_IS_DIST( %s)) {\n", to_NT);
+            /* Target is actually distributed. */
+            global.indent++;
+
+            /*
+             * This write is performed by every node.
+             * If a node is not the owner, it writes directly
+             * into its local cache.
+             * Temporarily allow writing
+             * distributed arrays (local and local cache).
+             */
+            indout ("SAC_DISTMEM_ALLOW_CACHE_WRITES();\n");
+
+            global.indent--;
+            indout ("}\n");
+        }
+
         indout ("SAC_ND_WRITE_COPY( %s, SAC_idx, ", to_NT);
         ReadScalar (val_scalar, NULL, 0);
         out (" , %s)\n", copyfun);
+
+        if (global.backend == BE_distmem && to_dc == C_distr) {
+            /* Target is potentially distributed. */
+
+            indout ("if (SAC_ND_A_IS_DIST( %s)) {\n", to_NT);
+            /* Target is actually distributed. */
+            global.indent++;
+
+            /*
+             * Forbid writing distributed arrays again.
+             */
+            indout ("SAC_DISTMEM_FORBID_CACHE_WRITES();\n");
+
+            global.indent--;
+            indout ("}\n");
+        }
     BLOCK_END ();
 
     DBUG_RETURN ();
@@ -676,6 +713,8 @@ PrfModarrayArrayVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim
                           char *copyfun)
 {
     int to_dim = DIM_NO_OFFSET (to_sdim);
+    distributed_class_t to_dc = ICUGetDistributedClass (to_NT);
+    distributed_class_t val_array_dc = ICUGetDistributedClass (val_array);
 
     DBUG_ENTER ();
 
@@ -690,6 +729,48 @@ PrfModarrayArrayVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim
                          to_dim);
         }
 
+        if (global.backend == BE_distmem && to_dc == C_distr) {
+            /* TODO: Do we need to to something with from_NT???) */
+            /* Target is potentially distributed. */
+
+            indout ("if (SAC_ND_A_IS_DIST( %s)) {\n", to_NT);
+            /* Target is actually distributed. */
+            global.indent++;
+
+            if (val_array_dc == C_distr) {
+                /* Value array is potentially distributed. */
+
+                indout ("if (SAC_ND_A_IS_DIST( %s)) {\n", val_array);
+                /* Value array is actually distributed. */
+                global.indent++;
+
+                /*
+                 * Make sure that the value array is fully loaded into the cache
+                 * before the writing starts.
+                 */
+                indout ("SAC_DISTMEM_ASSURE_IN_CACHE ( SAC_ND_A_OFFS( %s), "
+                        "SAC_NT_CBASETYPE( %s), SAC_ND_A_FIRST_ELEMS( %s), 0, "
+                        "SAC_ND_A_SIZE( %s));\n",
+                        val_array, val_array, val_array, val_array);
+                indout ("SAC_DISTMEM_BARRIER();\n");
+
+                global.indent--;
+                indout ("}\n");
+            }
+
+            /*
+             * This write is performed by every node.
+             * If a node is not the owner, it writes directly
+             * into its local cache.
+             * Temporarily allow writing
+             * distributed arrays (local and local cache).
+             */
+            indout ("SAC_DISTMEM_ALLOW_CACHE_WRITES();\n");
+
+            global.indent--;
+            indout ("}\n");
+        }
+
         FOR_LOOP_BEGIN ("int SAC_i = SAC_idx, SAC_j = 0; "
                         "SAC_j < SAC_ND_A_SIZE( %s); "
                         "SAC_i++, SAC_j++",
@@ -698,6 +779,23 @@ PrfModarrayArrayVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim
             indout ("SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_j, %s)\n", to_NT,
                     val_array, copyfun);
         FOR_LOOP_END ();
+
+        if (global.backend == BE_distmem && to_dc == C_distr) {
+            /* Target is potentially distributed. */
+
+            indout ("if (SAC_ND_A_IS_DIST( %s)) {\n", to_NT);
+            /* Target is actually distributed. */
+            global.indent++;
+
+            /*
+             * Forbid writing distributed arrays again.
+             */
+            indout ("SAC_DISTMEM_FORBID_CACHE_WRITES();\n");
+
+            global.indent--;
+            indout ("}\n");
+        }
+
     BLOCK_END ();
 
     DBUG_RETURN ();
@@ -768,6 +866,9 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id (char *to_NT, int to_sdim, char *from_N
  *   ND_PRF_MODARRAY_AxVxS__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
  *                              idx_size, [ idxs_ANY ]* , val_scalar, copyfun)
  *
+ *   V - a vector of indices
+ *   S - scalar data
+ *
  ******************************************************************************/
 
 void
@@ -812,16 +913,19 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr (char *to_NT, int to_sdim, char *from_
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id( char *to_NT, int to_sdim,
+ *   void ICMCompileND_PRF_MODARRAY_AxVxA__DATA_id( char *to_NT, int to_sdim,
  *                                                  char *from_NT, int from_sdim,
  *                                                  char *idx_NT, int idx_size,
- *                                                  char *val_scalar, char *copyfun)
+ *                                                  char *val_array, char *copyfun)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_PRF_MODARRAY_AxVxS__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
- *                             idx_NT, idx_size, val_ANY, copyfun)
+ *   ND_PRF_MODARRAY_AxVxA__DATA_id( to_NT, to_sdim, from_NT, from_sdim,
+ *                             idx_NT, idx_size, val_array, copyfun)
+ *
+ *   V - a vector of indices
+ *   A - array data
  *
  ******************************************************************************/
 
@@ -873,6 +977,9 @@ ICMCompileND_PRF_MODARRAY_AxVxA__DATA_id (char *to_NT, int to_sdim, char *from_N
  *
  *   ND_PRF_MODARRAY_AxVxA__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
  *                              idx_size, [ idxs_ANY ]* , val_ANY, copyfun)
+ *
+ *   V - a vector of indices
+ *   A - array data
  *
  ******************************************************************************/
 
@@ -1160,6 +1267,9 @@ ICMCompileND_PRF_IDX_SHAPE_SEL__DATA (char *to_NT, int to_sdim, char *from_NT,
  *   ND_PRF_IDX_MODARRAY_AxSxS__DATA( to_NT, to_sdim, from_NT, from_sdim, idx, val,
  *                                    copyfun)
  *
+ *   S - a scalar index
+ *   S - scalar data
+ *
  ******************************************************************************/
 
 void
@@ -1210,6 +1320,9 @@ ICMCompileND_PRF_IDX_MODARRAY_AxSxS__DATA (char *to_NT, int to_sdim, char *from_
  *
  *   ND_PRF_IDX_MODARRAY_AxSxA__DATA( to_NT, to_sdim, from_NT, from_sdim, idx, val,
  *                                    copyfun)
+ *
+ *   S - a scalar index
+ *   A - array data
  *
  ******************************************************************************/
 

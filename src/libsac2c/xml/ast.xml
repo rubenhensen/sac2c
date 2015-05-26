@@ -395,6 +395,14 @@
           <node name="Prf" />
         </travuser>
       </traversal>
+      <traversal id="DMIDA" name="Identify distributable arrays for the distributed memory backend" default="sons" include="identify_distributable_arrays.h">
+        <travuser>
+	        <node name="Let" />
+	        <node name="Ids" />
+	        <node name="Arg" />
+	        <node name="Fundef" />
+	      </travuser>
+      </traversal>
       <traversal id="ACUPTN" name="Annotate CUDA partitions" default="sons" include="annotate_cuda_partition.h" >
         <travuser>
           <node name="With" />
@@ -944,6 +952,14 @@
           <node name="Cond" />
           <node name="Arg" />
         </travuser>
+      </traversal>
+      <traversal id="DMISEF" name="Identify side effect functions for the distributed memory backend" default="sons" include="identify_side_effect_functions.h">
+        <travuser>
+	        <node name="Fundef" />
+	        <node name="Arg" />
+	        <node name="Ap" />
+	        <node name="Exprs" />
+	      </travuser>
       </traversal>
       <traversal id="USSAT" name="UndoSSATransform Traversal" default="sons" include="UndoSSATransform.h" >
         <travuser>
@@ -5806,6 +5822,12 @@ N_tfarg :
         <flag name="IsSlowClone" default="FALSE">
           <description>This function is a slow clone</description>
         </flag>
+        <flag name="DistMemHasSideEffects" default="FALSE">
+          <description>This function has side effects and may only be executed by the master node when the distributed memory backend is used.</description>
+          <phases>
+            <range from="dm_dmisef" to="final" />
+          </phases>
+        </flag>
       </flags>
     <checks>
       <check name="CHKfundefVardecExtrema" />
@@ -5916,6 +5938,12 @@ N_tfarg :
         <flag name="IsRefcounted" default="TRUE" />
         <flag name="HasLinksignInfo" />
 	<flag name="IsUnique" />
+  <flag name="DistMemIsUniqueLeaf" default="FALSE" >
+	  <description> Indicates that this argument is unique and that it is not passed to another function. </description>
+    <phases>
+      <range from="dm_dmisef" to="dm_dmisef" />
+    </phases>
+  </flag>
 	<flag name="IsInUse" default="FALSE" >
 	  <description> Used to mark unused function arguments in DeadCodeRemoval. Marked arguments are removed in signature simplification.
 	  </description>
@@ -9005,12 +9033,19 @@ N_tfarg :
 	  make this quite important.
 	  </description>
         </flag>	 
-      </flags>
-    <checks>
-      <check name="CHKavisReflection" />
-      <check name="CHKavisSsaassignNodeType" />
-    </checks>
-    </node>
+  <flag name="DistMemIsDistributable" default="FALSE" >
+	  <description> 
+	  This flag indicates whether the array is distributable. 
+    That is the case if the result of a genarray/modarray with-loop
+    is assigned to it.
+	  </description>
+  </flag>	 
+  </flags>
+  <checks>
+    <check name="CHKavisReflection" />
+    <check name="CHKavisSsaassignNodeType" />
+  </checks>
+  </node>
 <!--
 
   N_mt :

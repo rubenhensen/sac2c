@@ -1031,6 +1031,7 @@ GLOBAL (char **, nt_mutc_scope_string, nt_mutc_scope_string_init, xfree_dummy, )
 GLOBAL (char **, nt_mutc_usage_string, nt_mutc_usage_string_init, xfree_dummy, )
 GLOBAL (char **, nt_bitarray_string, nt_bitarray_string_init, xfree_dummy, )
 GLOBAL (char **, nt_distributed_string, nt_distributed_string_init, xfree_dummy, )
+GLOBAL (char **, nt_cbasetype_string, nt_cbasetype_string_init, xfree_dummy, )
 /*
  * These character arrays are the macro-name-parts used to select
  * array class and array uniqueness properties.
@@ -1113,6 +1114,11 @@ GLOBAL (const char **, mdb_type, mdb_type_init, xfree_dummy, )
 
 GLOBAL (const char **, type_string, type_string_init, xfree_dummy, )
 GLOBAL (const char **, rename_type, rename_type_init, xfree_dummy, )
+
+/*
+ * Type to C basetype conversion table
+ */
+GLOBAL (const cbasetype_class_t *, type_cbasetype, type_cbasetype_init, xfree_dummy, )
 
 /*
  * Resource / configuration management

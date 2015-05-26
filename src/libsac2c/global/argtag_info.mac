@@ -30,6 +30,14 @@
 #define SELECTtext(it_text)
 #endif
 
+#ifndef SELECTtextoutinout
+#define SELECTtextoutinout(it_text, it_out, it_inout)
+#endif
+
+#ifndef SEPargtag
+#define SEPargtag ,
+#endif
+
 #define SELECT(it_element, it_shp, /* contains shape information? (bool) */              \
                it_rc,              /* contains reference counter? (bool) */              \
                it_desc,            /* contains descriptor?        (bool) */              \
@@ -38,42 +46,45 @@
                it_inout,           /* is a 'inout' parameter?     (bool) */              \
                it_text)                                                                  \
     SELECTelement (it_element) SELECTshp (it_shp) SELECTrc (it_rc) SELECTdesc (it_desc)  \
-      SELECTin (it_in) SELECTout (it_out) SELECTinout (it_inout) SELECTtext (it_text)
+      SELECTin (it_in) SELECTout (it_out) SELECTinout (it_inout) SELECTtext (it_text)    \
+        SELECTtextoutinout (it_text, it_out, it_inout)
 
-SELECT (ATG_notag, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, ""),
+SELECT (ATG_notag, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, "")
+SEPargtag
 
-  SELECT (ATG_in, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, "in"),
+  SELECT (ATG_in, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, "in") SEPargtag
 
   SELECT (ATG_in_norc, TRUE, FALSE, TRUE, TRUE, FALSE, FALSE,
-          "in_norc"), /* not fully implemented yet */
+          "in_norc") SEPargtag /* not fully implemented yet */
 
   SELECT (ATG_in_noshp, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE,
-          "in_noshp"), /* not fully implemented yet */
+          "in_noshp") SEPargtag /* not fully implemented yet */
 
-  SELECT (ATG_in_nodesc, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, "in_nodesc"),
+  SELECT (ATG_in_nodesc, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, "in_nodesc") SEPargtag
 
-  SELECT (ATG_inout, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, "inout"),
+  SELECT (ATG_inout, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, "inout") SEPargtag
 
-  SELECT (ATG_inout_nobx, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, "inout"),
+  SELECT (ATG_inout_nobx, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, "inout_nobx") SEPargtag
 
   SELECT (ATG_inout_norc, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE,
-          "inout_norc"), /* not fully implemented yet */
+          "inout_norc") SEPargtag /* not fully implemented yet */
 
   SELECT (ATG_inout_noshp, FALSE, TRUE, TRUE, FALSE, FALSE, TRUE,
-          "inout_noshp"), /* not fully implemented yet */
+          "inout_noshp") SEPargtag /* not fully implemented yet */
 
-  SELECT (ATG_inout_nodesc, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, "inout_nodesc"),
+  SELECT (ATG_inout_nodesc, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE,
+          "inout_nodesc") SEPargtag
 
   SELECT (ATG_inout_nodesc_bx, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE,
-          "inout_nodesc_bx"),
+          "inout_nodesc_bx") SEPargtag
 
-  SELECT (ATG_out, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, "out"),
+  SELECT (ATG_out, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, "out") SEPargtag
 
   SELECT (ATG_out_norc, TRUE, FALSE, TRUE, FALSE, TRUE, FALSE,
-          "out_norc"), /* not fully implemented yet */
+          "out_norc") SEPargtag /* not fully implemented yet */
 
   SELECT (ATG_out_noshp, FALSE, TRUE, TRUE, FALSE, TRUE, FALSE,
-          "out_noshp"), /* not fully implemented yet */
+          "out_noshp") SEPargtag /* not fully implemented yet */
 
   SELECT (ATG_out_nodesc, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, "out_nodesc")
 
@@ -87,3 +98,6 @@ SELECT (ATG_notag, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, ""),
 #undef SELECTin
 #undef SELECTout
 #undef SELECTinout
+#undef SELECTtextoutinout
+
+#undef SEPargtag

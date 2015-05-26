@@ -86,4 +86,64 @@
 
 #endif /* SAC_DO_CHECK_BOUNDARY */
 
+/******************************************************************************
+ *
+ * ICMs for distributed memory runtime checks
+ * ========================
+ *
+ * SAC_DISTMEM_CHECK_WRITE_ALLOWED ( ptr, var_NT, pos)
+ * SAC_DISTMEM_CHECK_READ_ALLOWED ( ptr, var_NT, pos)
+ *
+ ******************************************************************************/
+
+#if SAC_DO_CHECK_DISTMEM
+
+#define _SAC_DISTMEM_CHECK_IS_LEGAL_FOR_LOCAL_WRITE(ptr)                                 \
+    ((SAC_DISTMEM_are_dist_writes_allowed && SAC_DISTMEM_IS_VALID_WRITE_PTR (ptr))       \
+       ? TRUE                                                                            \
+       : FALSE)
+
+#define _SAC_DISTMEM_CHECK_IS_LEGAL_FOR_CACHE_WRITE(ptr)                                 \
+    ((SAC_DISTMEM_are_cache_writes_allowed && SAC_DISTMEM_IS_VALID_CACHE_PTR (ptr))      \
+       ? TRUE                                                                            \
+       : FALSE)
+
+#define SAC_DISTMEM_CHECK_WRITE_ALLOWED(ptr, var_NT, pos)                                \
+    ((_SAC_DISTMEM_CHECK_IS_LEGAL_FOR_LOCAL_WRITE (ptr)                                  \
+      || _SAC_DISTMEM_CHECK_IS_LEGAL_FOR_CACHE_WRITE (ptr))                              \
+       ? 0                                                                               \
+       : (SAC_RuntimeError ("Illegal write access to distributed array %s"               \
+                            ", index position %d at %p\n"                                \
+                            "(legal pointer? %d, writes allowed? %d, "                   \
+                            "legal cache pointer? %d cache writes allowed? %d)",         \
+                            NT_STR (var_NT), pos, ptr,                                   \
+                            SAC_DISTMEM_IS_VALID_WRITE_PTR (ptr),                        \
+                            SAC_DISTMEM_are_dist_writes_allowed,                         \
+                            SAC_DISTMEM_IS_VALID_CACHE_PTR (ptr),                        \
+                            SAC_DISTMEM_are_cache_writes_allowed),                       \
+          0)),
+
+#define SAC_DISTMEM_CHECK_READ_ALLOWED(ptr, var_NT, pos)                                 \
+    (SAC_DISTMEM_IS_VALID_READ_PTR (ptr)                                                 \
+       ? 0                                                                               \
+       : (SAC_RuntimeError ("Illegal read access to distributed array %s"                \
+                            ", index position %d at %p",                                 \
+                            NT_STR (var_NT), pos, ptr),                                  \
+          0)),
+
+#define SAC_DISTMEM_CHECK_POINTER_VALID_FOR_READ(ptr)                                    \
+    (SAC_DISTMEM_IS_VALID_READ_PTR (ptr)                                                 \
+       ? 0                                                                               \
+       : (SAC_RuntimeError ("Illegal read access to distributed array at %p", ptr), 0));
+
+#else /* SAC_DO_CHECK_DISTMEM */
+
+#define SAC_DISTMEM_CHECK_WRITE_ALLOWED(ptr, var_NT, pos)
+
+#define SAC_DISTMEM_CHECK_READ_ALLOWED(ptr, var_NT, pos)
+
+#define SAC_DISTMEM_CHECK_POINTER_VALID_FOR_READ(ptr)
+
+#endif /* SAC_DO_CHECK_DISTMEM */
+
 #endif /* _SAC_RUNTIMECHECK_H_ */

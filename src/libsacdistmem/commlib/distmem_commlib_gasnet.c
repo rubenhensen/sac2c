@@ -28,11 +28,19 @@ static UNUSED int SAC_DISTMEM_COMMLIB_GASNET_dummy;
 
 #if ENABLE_DISTMEM_GASNET
 
-/* Do not show some warnings for the GASNet header. */
+/* Do not show some warnings for the GASNet header for GCC (>= 4.6). */
+#ifdef __GNUC__
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+#endif
 #include <gasnet.h>
+#ifdef __GNUC__
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic pop
+#endif
+#endif
 
 #if COMPILE_TRACE
 #define SAC_DO_TRACE 1

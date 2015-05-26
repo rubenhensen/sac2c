@@ -6071,8 +6071,13 @@ Type2OldType (ntype *xnew)
     }
 
     // TODO: Think of suitable condition.
-    if (global.backend == BE_distmem && TYPES_BASETYPE (res) == T_int
-        && TYPES_DIM (res) != SCALAR && !TCisHidden (res) && !TCisNested (res)) {
+    if (
+      global.backend == BE_distmem
+      && global.type_cbasetype[TYPES_BASETYPE (res)] != C_btother
+      /* For now we cannot support string functions, so we do not support unsigned char
+         arrays. */
+      && global.type_cbasetype[TYPES_BASETYPE (res)] != C_btuchar
+      && TYPES_DIM (res) != SCALAR && !TCisHidden (res) && !TCisNested (res)) {
         TYPES_DISTRIBUTED (res) = TRUE;
     }
 

@@ -329,6 +329,9 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
 
         if (global.backend == BE_distmem && to_dc == C_distr) {
             /* Array is potentially distributed. */
+            indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_DISTMEM_DET_DO_DISTR_ARR( "
+                    "SAC_ND_A_SIZE( %s), SAC_ND_A_SHAPE( %s, 0));\n",
+                    to_NT, to_NT, to_NT);
             indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s);\n", to_NT,
                     to_NT);
         }
@@ -416,6 +419,9 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
 
         if (global.backend == BE_distmem && to_dc == C_distr) {
             /* Array is potentially distributed. */
+            indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_DISTMEM_DET_DO_DISTR_ARR( "
+                    "SAC_ND_A_SIZE( %s), SAC_ND_A_SHAPE( %s, 0));\n",
+                    to_NT, to_NT, to_NT);
             indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s);\n", to_NT,
                     to_NT);
         }

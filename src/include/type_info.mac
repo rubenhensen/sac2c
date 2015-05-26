@@ -60,128 +60,140 @@
 #define TYP_IFunused(it_unused)
 #endif
 
+#ifndef TYP_IFntcbasetype
+#define TYP_IFntcbasetype(it_ntcbasetype)
+#endif
+
 #ifndef TYP_IF
 #define TYP_IF(it_name, it_db_str, it_pr_str, it_funr_str, it_cv2scal, it_cv2cv,         \
-               it_cv2str, it_size, it_zipcv, it_basecv, it_mutc_sc, it_unused)           \
+               it_cv2str, it_size, it_zipcv, it_basecv, it_mutc_sc, it_unused,           \
+               it_ntcbasetype)                                                           \
                                                                                          \
     TYP_IFname (it_name) TYP_IFdb_str (it_db_str) TYP_IFpr_str (it_pr_str)               \
       TYP_IFfunr_str (it_funr_str) TYP_IFcv2scal (it_cv2scal) TYP_IFcv2cv (it_cv2cv)     \
         TYP_IFcv2str (it_cv2str) TYP_IFsize (it_size) TYP_IFzipcv (it_zipcv)             \
           TYP_IFbasecv (it_basecv) TYP_IFmutcsc (it_mutc_sc) TYP_IFunused (it_unused)    \
-            TYP_SEPARATOR
+            TYP_IFntcbasetype (it_ntcbasetype) TYP_SEPARATOR
 #endif
 
 /*
  *      simpletype          mdb_type            type_string        rename_type
  *      cv2scalar           cv2cv               cv2str             simpletype_size
  *      zipcv               basecv              mutcStorageClass   unused
+ *      ntcbasetype
  */
 
 TYP_IF (T_unknown, "unknown", "_unknown_", "", COcv2ScalarDummy, COcv2CvDummy,
-        COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, NULL)
+        COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, NULL, C_btother)
 
 TYP_IF (T_byte, "byte", "byte", "b", COcv2Numbyte, COcv2CvByte, COcv2StrByte,
-        sizeof (char), COzipCvByte, CObaseCvByte, MUTC_SC_INT, unused)
+        sizeof (char), COzipCvByte, CObaseCvByte, MUTC_SC_INT, unused, C_btbyte)
 
 TYP_IF (T_short, "short", "short", "s", COcv2Numshort, COcv2CvShort, COcv2StrShort,
-        sizeof (short int), COzipCvShort, CObaseCvShort, MUTC_SC_INT, unused)
+        sizeof (short int), COzipCvShort, CObaseCvShort, MUTC_SC_INT, unused, C_btshort)
 
 TYP_IF (T_int, "int", "int", "i", COcv2Num, COcv2CvInt, COcv2StrInt, sizeof (int),
-        COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused)
+        COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused, C_btint)
 
 TYP_IF (T_long, "long", "long", "l", COcv2Numlong, COcv2CvLong, COcv2StrLong,
-        sizeof (long int), COzipCvLong, CObaseCvLong, MUTC_SC_INT, unused)
+        sizeof (long int), COzipCvLong, CObaseCvLong, MUTC_SC_INT, unused, C_btlong)
 
 TYP_IF (T_longlong, "longlong", "longlong", "ll", COcv2Numlonglong, COcv2CvLongLong,
         COcv2StrLongLong, sizeof (long long int), COzipCvLongLong, CObaseCvLongLong,
-        MUTC_SC_INT, unused)
+        MUTC_SC_INT, unused, C_btllong)
 
 TYP_IF (T_ubyte, "ubyte", "ubyte", "ub", COcv2Numubyte, COcv2CvUByte, COcv2StrUByte,
-        sizeof (char), COzipCvUByte, CObaseCvUByte, MUTC_SC_INT, unused)
+        sizeof (char), COzipCvUByte, CObaseCvUByte, MUTC_SC_INT, unused, C_btubyte)
 
 TYP_IF (T_ushort, "ushort", "ushort", "us", COcv2Numushort, COcv2CvUShort, COcv2StrUShort,
-        sizeof (short int), COzipCvUShort, CObaseCvUShort, MUTC_SC_INT, unused)
+        sizeof (short int), COzipCvUShort, CObaseCvUShort, MUTC_SC_INT, unused,
+        C_btushort)
 
 TYP_IF (T_uint, "uint", "uint", "ui", COcv2Numuint, COcv2CvUInt, COcv2StrUInt,
-        sizeof (int), COzipCvUInt, CObaseCvUInt, MUTC_SC_INT, unused)
+        sizeof (int), COzipCvUInt, CObaseCvUInt, MUTC_SC_INT, unused, C_btuint)
 
 TYP_IF (T_ulong, "ulong", "ulong", "ul", COcv2Numulong, COcv2CvULong, COcv2StrULong,
-        sizeof (long int), COzipCvULong, CObaseCvULong, MUTC_SC_INT, unused)
+        sizeof (long int), COzipCvULong, CObaseCvULong, MUTC_SC_INT, unused, C_btulong)
 
 TYP_IF (T_ulonglong, "ulonglong", "ulonglong", "ull", COcv2Numulonglong, COcv2CvULongLong,
         COcv2StrULongLong, sizeof (long long int), COzipCvULongLong, CObaseCvULongLong,
-        MUTC_SC_INT, unused)
+        MUTC_SC_INT, unused, C_btullong)
 
 TYP_IF (T_float, "float", "float", "f", COcv2Float, COcv2CvFloat, COcv2StrFloat,
-        sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused)
+        sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused, C_btfloat)
 
 TYP_IF (T_floatvec, "floatvec", "floatvec", "fv", COcv2Floatvec, COcv2CvFloatvec,
         COcv2StrFloatvec, sizeof (floatvec), COzipCvDummy, CObaseCvFloatvec,
-        MUTC_SC_FLOAT, unused)
+        MUTC_SC_FLOAT, unused, C_btother)
 
 TYP_IF (T_double, "double", "double", "d", COcv2Double, COcv2CvDouble, COcv2StrDouble,
-        sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT, unused)
+        sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT, unused, C_btdouble)
 
 TYP_IF (T_longdbl, "long double", "long double", "ld", COcv2ScalarDummy,
         COcv2CvLongDouble, COcv2StrLongDouble, sizeof (long double), COzipCvLongDouble,
-        CObaseCvLongDouble, MUTC_SC_FLOAT, unused)
+        CObaseCvLongDouble, MUTC_SC_FLOAT, unused, C_btother)
 
 TYP_IF (T_bool, "bool", "bool", "bl", COcv2Bool, COcv2CvBool, COcv2StrBool, sizeof (bool),
-        COzipCvBool, CObaseCvBool, MUTC_SC_INT, unused)
+        COzipCvBool, CObaseCvBool, MUTC_SC_INT, unused, C_btbool)
 
 TYP_IF (T_str, "string", "string", "st", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy,
-        sizeof (char *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
+        sizeof (char *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused, C_btother)
 
 TYP_IF (T_char, "char", "unsigned char", "c", COcv2Char, COcv2CvChar, COcv2StrChar,
-        sizeof (unsigned char), COzipCvChar, CObaseCvChar, MUTC_SC_INT, unused)
+        sizeof (unsigned char), COzipCvChar, CObaseCvChar, MUTC_SC_INT, unused, C_btuchar)
 
 TYP_IF (T_hidden, "hidden", "SAC_hidden", "h", COcv2ScalarDummy, COcv2CvHidden,
-        COcv2StrDummy, sizeof (void *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
+        COcv2StrDummy, sizeof (void *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused,
+        C_btother)
 
 TYP_IF (T_classtype, "classtype", "SAC_classtype", "u", COcv2ScalarDummy, COcv2CvHidden,
-        COcv2StrDummy, sizeof (void *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
+        COcv2StrDummy, sizeof (void *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused,
+        C_btother)
 
 TYP_IF (T_void, "void", "void", "v", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy, 0,
-        COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
+        COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused, C_btother)
 
 TYP_IF (T_dots, "...", "...", "d", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy, 0,
-        COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
+        COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused, C_btother)
 
 TYP_IF (T_user, "user", "SAC_user", "", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy, 0,
-        COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
+        COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused, C_btother)
 
 TYP_IF (T_float_dev, "float_dev", "float_dev", "fd", COcv2Float, COcv2CvFloat,
-        COcv2StrFloat, sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused)
+        COcv2StrFloat, sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused,
+        C_btother)
 
 TYP_IF (T_int_dev, "int_dev", "int_dev", "id", COcv2Num, COcv2CvInt, COcv2StrInt,
-        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused)
+        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused, C_btother)
 
 TYP_IF (T_double_dev, "double_dev", "double_dev", "dd", COcv2Double, COcv2CvDouble,
         COcv2StrDouble, sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT,
-        unused)
+        unused, C_btother)
 
 TYP_IF (T_float_shmem, "float_shmem", "float_shmem", "fsh", COcv2Float, COcv2CvFloat,
-        COcv2StrFloat, sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused)
+        COcv2StrFloat, sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused,
+        C_btother)
 
 TYP_IF (T_int_shmem, "int_shmem", "int_shmem", "ish", COcv2Num, COcv2CvInt, COcv2StrInt,
-        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused)
+        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused, C_btother)
 
 TYP_IF (T_double_shmem, "double_shmem", "double_shmem", "dsh", COcv2Double, COcv2CvDouble,
         COcv2StrDouble, sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT,
-        unused)
+        unused, C_btother)
 
 TYP_IF (T_float_dist, "float_dist", "float_dist", "fdi", COcv2Float, COcv2CvFloat,
-        COcv2StrFloat, sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused)
+        COcv2StrFloat, sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused,
+        C_btother)
 
 TYP_IF (T_int_dist, "int_dist", "int_dist", "idi", COcv2Num, COcv2CvInt, COcv2StrInt,
-        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused)
+        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused, C_btother)
 
 TYP_IF (T_double_dist, "double_dist", "double_dist", "ddi", COcv2Double, COcv2CvDouble,
         COcv2StrDouble, sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT,
-        unused)
+        unused, C_btother)
 
 TYP_IF (T_sync, "sync", "SAC_sync", "syn", COcv2ScalarDummy, COcv2CvHidden, COcv2StrDummy,
-        sizeof (void *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
+        sizeof (void *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused, C_btother)
 
 /*
  * This is an internal type that is used to store information about the state of
@@ -189,10 +201,11 @@ TYP_IF (T_sync, "sync", "SAC_sync", "syn", COcv2ScalarDummy, COcv2CvHidden, COcv
  * This type is only used in the mutc backend at this time.
  */
 TYP_IF (T_rc, "reference_count", "SAC_referencecount_t", "rc", COcv2ScalarDummy,
-        COcv2CvDummy, COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, NULL)
+        COcv2CvDummy, COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, NULL,
+        C_btother)
 
 TYP_IF (T_nothing, "nothing", "nothing", "n", COcv2ScalarDummy, COcv2CvDummy,
-        COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
+        COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused, C_btother)
 
 #undef TYP_IFname
 #undef TYP_IFdb_str
@@ -201,9 +214,11 @@ TYP_IF (T_nothing, "nothing", "nothing", "n", COcv2ScalarDummy, COcv2CvDummy,
 #undef TYP_IFcv2scal
 #undef TYP_IFcv2cv
 #undef TYP_IFcv2str
-#undef TYP_IFunused
 #undef TYP_IFsize
 #undef TYP_IFzipcv
 #undef TYP_IFbasecv
+#undef TYP_IFmutcsc
+#undef TYP_IFunused
 #undef TYP_SEPARATOR
+#undef TYP_IFntcbasetype
 #undef TYP_IF

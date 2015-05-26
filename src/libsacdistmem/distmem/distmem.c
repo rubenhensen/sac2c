@@ -17,23 +17,25 @@
 #include "config.h"
 
 /* By default, we do not use tracing. */
-#ifndef COMPILE_TRACE
-#define COMPILE_TRACE 0
+#if !defined(COMPILE_TRACE) && !defined(COMPILE_PROFILE)
+#define COMPILE_PLAIN 1
 #endif /* !defined(COMPILE_TRACE) */
 
 #if COMPILE_TRACE
 #define SAC_DO_TRACE 1
 #define SAC_DO_TRACE_DISTMEM 1
-#else /* COMPILE_TRACE */
-#define SAC_DO_TRACE 0
-#define SAC_DO_TRACE_DISTMEM 0
-#endif /* COMPILE_TRACE */
+#elif COMPILE_PROFILE
+#define SAC_DO_PROFILE 1
+#define SAC_DO_PROFILE_DISTMEM 1
+#endif
 #define SAC_DO_DISTMEM 1
 
 #include "sac.h"
 
 #undef SAC_DO_TRACE
 #undef SAC_DO_TRACE_DISTMEM
+#undef SAC_DO_PROFILE
+#undef SAC_DO_PROFILE_DISTMEM
 #undef SAC_DO_DISTMEM
 
 #include "distmem_commlib.h"
@@ -43,10 +45,10 @@
  */
 static UNUSED int SAC_DISTMEM_COMMLIB_dummy;
 
-#if !COMPILE_TRACE
+#if COMPILE_PLAIN
 /*
- * If we compile for distmem_trace.o, we don't need the global variables since
- * these always remain in distmem.o (without tracing).
+ * If we compile for distmem_trace.o or distmem_profile.o, we don't need the global
+ * variables since these always remain in distmem.o (without tracing and profiling).
  */
 
 /*
@@ -55,7 +57,7 @@ static UNUSED int SAC_DISTMEM_COMMLIB_dummy;
  * is disabled. Therefore, it is also included into libsacdistmem.nodistmem
  */
 size_t SAC_DISTMEM_rank = SAC_DISTMEM_RANK_UNDEFINED;
-#endif
+#endif /* COMPILE_PLAIN */
 
 #ifdef COMPILE_DISTMEM
 
@@ -86,23 +88,27 @@ size_t SAC_DISTMEM_rank = SAC_DISTMEM_RANK_UNDEFINED;
         SAC_RuntimeError ("Failed to unprotect memory.");                                \
     }
 
-#if COMPILE_TRACE
+#if COMPILE_TRACE || COMPILE_PROFILE
 
 #define SAC_DISTMEM_TR_RECORD_SEGFAULT() SAC_DISTMEM_TR_num_segfaults++;
 
-#else /* COMPILE_TRACE */
+#else /* COMPILE_TRACE || COMPILE_PROFILE */
 
 /* Dummy definitions */
 
 #define SAC_DISTMEM_TR_RECORD_SEGFAULT()
 
-#endif /* COMPILE_TRACE*/
+#endif /* COMPILE_TRACE || COMPILE_PROFILE */
 
-#if !COMPILE_TRACE
+#if COMPILE_PLAIN
 /*
- * If we compile for distmem_trace.o, we don't need the global variables since
- * these always remain in distmem.o (without tracing).
+ * If we compile for distmem_trace.o or distmem_profile.o, we don't need the global
+ * variables since these always remain in distmem.o (without tracing and profiling).
  */
+
+/******************************************
+ * Global variables
+ *******************************************/
 
 /* Rank of this node */
 size_t SAC_DISTMEM_rank;
@@ -115,7 +121,7 @@ size_t SAC_DISTMEM_pagesz;
 
 /* Segment size (applies to local shared segment and local
  * caches for segments owned by other nodes) */
-size_t SAC_DISTMEM_segsz;
+uintptr_t SAC_DISTMEM_segsz;
 
 /* Pointer to start of local shared segment */
 void *SAC_DISTMEM_shared_seg_ptr;
@@ -129,24 +135,40 @@ void *SAC_DISTMEM_cache_ptr;
 void **SAC_DISTMEM_local_seg_ptrs;
 
 /* Offset to free memory within shared segment */
-size_t SAC_DISTMEM_seg_free_offs = 0;
+uintptr_t SAC_DISTMEM_seg_free_offs = 0;
 
-#endif /* !COMPILE_TRACE */
+/* Flag that indicates whether writes to distributed arrays are
+ * currently allowed. */
+bool SAC_DISTMEM_are_dist_writes_allowed = FALSE;
 
-#if COMPILE_TRACE
-/* Variables used for tracing */
+/* Flag that indicates whether writes into the local dsm cache are
+ * currently allowed. */
+bool SAC_DISTMEM_are_cache_writes_allowed = FALSE;
 
-static unsigned long SAC_DISTMEM_TR_num_inval_pages = 0;
+/* Current execution mode. */
+SAC_DISTMEM_exec_mode_t SAC_DISTMEM_exec_mode = SAC_DISTMEM_exec_mode_sync;
 
-static unsigned long SAC_DISTMEM_TR_num_segfaults = 0;
+/******************************************
+ * Global variables used for
+ * tracing/profiling
+ *******************************************/
 
-/* Used in the header file so this cannot be static. */
+/* Number of distributed arrays */
+unsigned long SAC_DISTMEM_TR_num_arrays = 0;
+
+/* Number of invalidated pages */
+unsigned long SAC_DISTMEM_TR_num_inval_pages = 0;
+
+/* Number of segfaults = page fetches */
+unsigned long SAC_DISTMEM_TR_num_segfaults = 0;
+
+/* Number of pointer calculations */
 unsigned long SAC_DISTMEM_TR_num_ptr_calcs = 0;
 
-#endif /* COMPILE_TRACE*/
+/* Number of barriers */
+unsigned long SAC_DISTMEM_TR_num_barriers = 0;
 
-// TODO: Add methods for write protection. This may be useful in detecting errors
-// because after loading data nodes should not write into cache segments.
+#endif /* COMPILE_PLAIN */
 
 /* Handles seg faults. Copies remote data into local cache. */
 static void
@@ -247,10 +269,13 @@ DetMaxDim0SharePerNode (size_t dim0_size)
 #if COMPILE_TRACE
 void
 SAC_DISTMEM_TR_Init (int argc, char *argv[])
-#else  /* COMPILE_TRACE */
+#elif COMPILE_PROFILE
+void
+SAC_DISTMEM_PR_Init (int argc, char *argv[])
+#else /* COMPILE_PLAIN */
 void
 SAC_DISTMEM_Init (int argc, char *argv[])
-#endif /* COMPILE_TRACE */
+#endif
 {
     SAC_DISTMEM_COMMLIB_INIT (argc, argv);
 }
@@ -258,10 +283,13 @@ SAC_DISTMEM_Init (int argc, char *argv[])
 #if COMPILE_TRACE
 void
 SAC_DISTMEM_TR_Setup (size_t maxmem_mb)
-#else  /* COMPILE_TRACE */
+#elif COMPILE_PROFILE
+void
+SAC_DISTMEM_PR_Setup (size_t maxmem_mb)
+#else /* COMPILE_PLAIN */
 void
 SAC_DISTMEM_Setup (size_t maxmem_mb)
-#endif /* COMPILE_TRACE */
+#endif
 {
     size_t i;
 
@@ -309,25 +337,30 @@ SAC_DISTMEM_Setup (size_t maxmem_mb)
     for (i = 0; i < SAC_DISTMEM_rank; i++) {
         SAC_DISTMEM_local_seg_ptrs[i]
           = (void *)((uintptr_t)SAC_DISTMEM_cache_ptr + SAC_DISTMEM_segsz * i);
-        SAC_TR_DISTMEM_PRINT ("\tSegment of %zd: %p\n", i, SAC_DISTMEM_local_seg_ptrs[i]);
+        SAC_TR_DISTMEM_PRINT ("   Segment of %zd: %p", i, SAC_DISTMEM_local_seg_ptrs[i]);
     }
     SAC_DISTMEM_local_seg_ptrs[SAC_DISTMEM_rank] = SAC_DISTMEM_shared_seg_ptr;
-    SAC_TR_DISTMEM_PRINT ("\tSegment of %zd: %p\n", SAC_DISTMEM_rank,
+    SAC_TR_DISTMEM_PRINT ("   Segment of %zd: %p", SAC_DISTMEM_rank,
                           SAC_DISTMEM_local_seg_ptrs[SAC_DISTMEM_rank]);
     for (i = SAC_DISTMEM_rank + 1; i < SAC_DISTMEM_size; i++) {
         SAC_DISTMEM_local_seg_ptrs[i]
           = (void *)((uintptr_t)SAC_DISTMEM_cache_ptr + SAC_DISTMEM_segsz * (i - 1));
-        SAC_TR_DISTMEM_PRINT ("\tSegment of %zd: %p\n", i, SAC_DISTMEM_local_seg_ptrs[i]);
+        SAC_TR_DISTMEM_PRINT ("   Segment of %zd: %p", i, SAC_DISTMEM_local_seg_ptrs[i]);
     }
+
+    SAC_DISTMEM_BARRIER ();
 }
 
 #if COMPILE_TRACE
 void
 SAC_DISTMEM_TR_InvalEntireCache (void)
-#else  /* COMPILE_TRACE */
+#elif COMPILE_PROFILE
+void
+SAC_DISTMEM_PR_InvalEntireCache (void)
+#else /* COMPILE_PLAIN */
 void
 SAC_DISTMEM_InvalEntireCache (void)
-#endif /* COMPILE_TRACE */
+#endif
 {
     uintptr_t size = (SAC_DISTMEM_size - 1) * SAC_DISTMEM_segsz;
     SAC_TR_DISTMEM_PRINT ("Invalidating entire cache (%" PRIuPTR " B from %p).", size,
@@ -338,10 +371,13 @@ SAC_DISTMEM_InvalEntireCache (void)
 #if COMPILE_TRACE
 void
 SAC_DISTMEM_TR_InvalCache (uintptr_t arr_offset, size_t b)
-#else  /* COMPILE_TRACE */
+#elif COMPILE_PROFILE
+void
+SAC_DISTMEM_PR_InvalCache (uintptr_t arr_offset, size_t b)
+#else /* COMPILE_PLAIN */
 void
 SAC_DISTMEM_InvalCache (uintptr_t arr_offset, size_t b)
-#endif /* COMPILE_TRACE */
+#endif
 {
     size_t i;
 
@@ -359,7 +395,7 @@ SAC_DISTMEM_InvalCache (uintptr_t arr_offset, size_t b)
                               b, num_pages, i, page_start);
         SAC_DISTMEM_PROT_NONE (page_start, SAC_DISTMEM_pagesz * num_pages);
 
-#if COMPILE_TRACE
+#if COMPILE_TRACE || COMPILE_PROFILE
         SAC_DISTMEM_TR_num_inval_pages += num_pages;
 #endif
     }
@@ -368,47 +404,73 @@ SAC_DISTMEM_InvalCache (uintptr_t arr_offset, size_t b)
 #if COMPILE_TRACE
 void
 SAC_DISTMEM_TR_Barrier (void)
-#else  /* COMPILE_TRACE */
+#elif COMPILE_PROFILE
+void
+SAC_DISTMEM_PR_Barrier (void)
+#else /* COMPILE_PLAIN */
 void
 SAC_DISTMEM_Barrier (void)
-#endif /* COMPILE_TRACE */
+#endif
 {
-    SAC_TR_DISTMEM_PRINT ("Before barrier.");
+    if (SAC_DISTMEM_exec_mode != SAC_DISTMEM_exec_mode_side_effects) {
+#if COMPILE_TRACE || COMPILE_PROFILE
+        SAC_DISTMEM_TR_num_barriers++;
+#endif
 
-    SAC_DISTMEM_COMMLIB_BARRIER ();
+        SAC_TR_DISTMEM_PRINT ("Waiting at barrier.");
 
-    SAC_TR_DISTMEM_PRINT ("After barrier.");
+        SAC_DISTMEM_COMMLIB_BARRIER ();
+    } else {
+        SAC_TR_DISTMEM_PRINT ("Ignoring barrier in side effects execution mode.");
+    }
 }
 
 #if COMPILE_TRACE
 void
 SAC_DISTMEM_TR_Exit (void)
-#else  /* COMPILE_TRACE */
+#elif COMPILE_PROFILE
+void
+SAC_DISTMEM_PR_Exit (void)
+#else /* COMPILE_PLAIN */
 void
 SAC_DISTMEM_Exit (void)
-#endif /* COMPILE_TRACE */
+#endif
 {
     SAC_TR_DISTMEM_PRINT ("Exiting communication library.");
 
-    SAC_TR_DISTMEM_PRINT ("\t Invalidated pages: %lu", SAC_DISTMEM_TR_num_inval_pages);
-    SAC_TR_DISTMEM_PRINT ("\t Seg faults: %lu", SAC_DISTMEM_TR_num_segfaults);
-    SAC_TR_DISTMEM_PRINT ("\t Pointer calculations: %lu", SAC_DISTMEM_TR_num_ptr_calcs);
+    SAC_TR_DISTMEM_PRINT ("   Distributed arrays: %lu", SAC_DISTMEM_TR_num_arrays);
+    SAC_TR_DISTMEM_PRINT ("   Invalidated pages: %lu", SAC_DISTMEM_TR_num_inval_pages);
+    SAC_TR_DISTMEM_PRINT ("   Seg faults: %lu", SAC_DISTMEM_TR_num_segfaults);
+    SAC_TR_DISTMEM_PRINT ("   Pointer calculations: %lu", SAC_DISTMEM_TR_num_ptr_calcs);
+    SAC_TR_DISTMEM_PRINT ("   Barriers: %lu", SAC_DISTMEM_TR_num_barriers);
 
+    SAC_DISTMEM_BARRIER ();
     SAC_DISTMEM_COMMLIB_EXIT ();
 }
 
 #if COMPILE_TRACE
 bool
 SAC_DISTMEM_TR_DetDoDistrArr (size_t total_elems, size_t dim0_size)
-#else  /* COMPILE_TRACE */
+#elif COMPILE_PROFILE
+bool
+SAC_DISTMEM_PR_DetDoDistrArr (size_t total_elems, size_t dim0_size)
+#else /* COMPILE_PLAIN */
 bool
 SAC_DISTMEM_DetDoDistrArr (size_t total_elems, size_t dim0_size)
-#endif /* COMPILE_TRACE */
+#endif
 {
     bool do_dist = TRUE;
 
-    if (dim0_size < SAC_DISTMEM_size * (SAC_DISTMEM_size - 1)
-        && dim0_size % SAC_DISTMEM_size != 0) {
+    if (SAC_DISTMEM_exec_mode != SAC_DISTMEM_exec_mode_sync) {
+        SAC_TR_DISTMEM_PRINT ("Array is not distributed because program is not in "
+                              "synchronous execution mode.");
+        return FALSE;
+    }
+
+    /* It can happen that dim0 is 0! */
+    if (dim0_size == 0
+        || (dim0_size < SAC_DISTMEM_size * (SAC_DISTMEM_size - 1)
+            && dim0_size % SAC_DISTMEM_size != 0)) {
         /* The distribution method does not work because then some nodes would not receive
          * any elements. */
         do_dist = FALSE;
@@ -433,10 +495,13 @@ SAC_DISTMEM_DetDoDistrArr (size_t total_elems, size_t dim0_size)
 #if COMPILE_TRACE
 size_t
 SAC_DISTMEM_TR_DetMaxElemsPerNode (size_t total_elems, size_t dim0_size)
-#else  /* COMPILE_TRACE */
+#elif COMPILE_PROFILE
+size_t
+SAC_DISTMEM_PR_DetMaxElemsPerNode (size_t total_elems, size_t dim0_size)
+#else /* COMPILE_PLAIN */
 size_t
 SAC_DISTMEM_DetMaxElemsPerNode (size_t total_elems, size_t dim0_size)
-#endif /* COMPILE_TRACE */
+#endif
 {
     size_t max_dim0 = DetMaxDim0SharePerNode (dim0_size);
     size_t max_elems = max_dim0 * total_elems / dim0_size;
@@ -451,14 +516,16 @@ SAC_DISTMEM_DetMaxElemsPerNode (size_t total_elems, size_t dim0_size)
 #if COMPILE_TRACE
 size_t
 SAC_DISTMEM_TR_DetDim0Start (size_t dim0_size, size_t start_range, size_t stop_range)
-#else  /* COMPILE_TRACE */
+#elif COMPILE_PROFILE
+size_t
+SAC_DISTMEM_PR_DetDim0Start (size_t dim0_size, size_t start_range, size_t stop_range)
+#else /* COMPILE_PLAIN */
 size_t
 SAC_DISTMEM_DetDim0Start (size_t dim0_size, size_t start_range, size_t stop_range)
-#endif /* COMPILE_TRACE */
+#endif
 {
     size_t max_dim0 = DetMaxDim0SharePerNode (dim0_size);
     size_t start_owned = max_dim0 * SAC_DISTMEM_rank;
-    size_t stop_owned = SAC_MIN (start_owned + max_dim0, dim0_size);
 
     size_t start = SAC_MAX (start_owned, start_range);
 
@@ -470,10 +537,13 @@ SAC_DISTMEM_DetDim0Start (size_t dim0_size, size_t start_range, size_t stop_rang
 #if COMPILE_TRACE
 size_t
 SAC_DISTMEM_TR_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range)
-#else  /* COMPILE_TRACE */
+#elif COMPILE_PROFILE
+size_t
+SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range)
+#else /* COMPILE_PLAIN */
 size_t
 SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range)
-#endif /* COMPILE_TRACE */
+#endif
 {
     size_t max_dim0 = DetMaxDim0SharePerNode (dim0_size);
     size_t start_owned = max_dim0 * SAC_DISTMEM_rank;
@@ -488,30 +558,63 @@ SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range
 
 #if COMPILE_TRACE
 void *
-SAC_DISTMEM_TR_Malloc (size_t b, uintptr_t *offset)
-#else  /* COMPILE_TRACE */
+SAC_DISTMEM_TR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offset)
+#elif COMPILE_PROFILE
 void *
-SAC_DISTMEM_Malloc (size_t b, uintptr_t *offset)
-#endif /* COMPILE_TRACE */
+SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offset)
+#else /* COMPILE_PLAIN */
+void *
+SAC_DISTMEM_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offset)
+#endif
 {
+#if COMPILE_TRACE || COMPILE_PROFILE
+    SAC_DISTMEM_TR_num_arrays++;
+#endif
+
+    if (SAC_DISTMEM_seg_free_offs % elem_size > 0) {
+        /*
+         * Next free address is not well-aligned.
+         * Insert padding.
+         */
+        SAC_TR_DISTMEM_PRINT (
+          "Next free offset %zd is not well-aligned. Inserting %zd of padding to %zd.",
+          SAC_DISTMEM_seg_free_offs, (elem_size - SAC_DISTMEM_seg_free_offs % elem_size),
+          SAC_DISTMEM_seg_free_offs
+            + (elem_size - SAC_DISTMEM_seg_free_offs % elem_size));
+
+        SAC_DISTMEM_seg_free_offs += (elem_size - SAC_DISTMEM_seg_free_offs % elem_size);
+    }
+
     *offset = SAC_DISTMEM_seg_free_offs;
-    SAC_DISTMEM_seg_free_offs += b;
+
+    SAC_DISTMEM_seg_free_offs += num_elems * elem_size;
 
     if (SAC_DISTMEM_seg_free_offs > SAC_DISTMEM_segsz) {
         SAC_RuntimeError ("Out of memory: DSM segment size exceeded.");
     }
 
-    SAC_TR_DISTMEM_PRINT ("Allocated %zd B at offset %" PRIuPTR " in shared segment.", b,
-                          *offset);
+    SAC_TR_DISTMEM_PRINT ("Allocated %zd B at offset %" PRIuPTR " in shared segment from "
+                                                                "%p (first element) to "
+                                                                "%p (last element).",
+                          num_elems * elem_size, *offset,
+                          (void *)(((uintptr_t)SAC_DISTMEM_shared_seg_ptr) + *offset),
+                          (void *)(((uintptr_t)SAC_DISTMEM_shared_seg_ptr) + *offset
+                                   + elem_size * (num_elems - 1)));
     return (void *)(((uintptr_t)SAC_DISTMEM_shared_seg_ptr) + *offset);
 }
 
 #if COMPILE_TRACE
+/*
+ * This must be a C function because otherwise
+ * we get a operation on SAC_DISTMEM_TR_num_ptr_calcs may be
+ * undefined [-Wsequence-point] warning.
+ */
 void
 SAC_DISTMEM_TR_IncNumPtrCalcs (void)
 {
     SAC_DISTMEM_TR_num_ptr_calcs++;
 }
+
 #endif /* COMPILE_TRACE */
 
 #endif /* ENABLE_DISTMEM */

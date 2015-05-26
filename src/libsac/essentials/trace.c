@@ -98,6 +98,10 @@ SAC_TR_Print (char *format, ...)
     va_list arg_p;
 
     if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {
+        /*
+         * The rank should only be undefined if the distributed memory
+         * backend is not used.
+         */
         fprintf (stderr, "TR-> ");
     } else {
         fprintf (stderr, "TR:n%zd-> ", SAC_DISTMEM_rank);

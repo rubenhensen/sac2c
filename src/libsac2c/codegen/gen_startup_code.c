@@ -103,6 +103,8 @@ PrintGlobalSwitches (void)
              (global.runtimecheck.checkerrno) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_CHECK_HEAP      %d\n",
              (global.runtimecheck.heap) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CHECK_DISTMEM   %d\n",
+             (global.runtimecheck.distmem) ? 1 : 0);
     fprintf (global.outfile, "\n");
 
     fprintf (global.outfile, "#define SAC_DO_PHM             %d\n",
@@ -125,6 +127,8 @@ PrintGlobalSwitches (void)
              (global.profile.inl) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_PROFILE_LIB     %d\n",
              (global.profile.lib) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_PROFILE_DISTMEM %d\n",
+             (global.profile.distmem) ? 1 : 0);
     fprintf (global.outfile, "\n");
 
     fprintf (global.outfile, "#define SAC_DO_TRACE           %d\n",
@@ -696,8 +700,6 @@ GSCprintMainBegin (void)
 
     INDENT;
     fprintf (global.outfile, "SAC_DISTMEM_SETUP();\n");
-    INDENT;
-    fprintf (global.outfile, "SAC_DISTMEM_BARRIER();\n");
 
     INDENT;
     fprintf (global.outfile, "SAC_MT_SETUP_INITIAL();\n");

@@ -16,6 +16,15 @@ ICM_DEF( ND_FUN_DECL, ICM_TRACE_NONE)
 ICM_END( ND_FUN_DECL, (name, rettype_NT, vararg_cnt, vararg))
 #endif
 
+#if defined(ND_DISTMEM_FUN_DECL) || defined(ICM_ALL)
+ICM_DEF( ND_DISTMEM_FUN_DECL, ICM_TRACE_NONE)
+  ICM_ID( name)
+  ICM_NT( rettype_NT)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( ND_DISTMEM_FUN_DECL, (name, rettype_NT, vararg_cnt, vararg))
+#endif
+
 #if defined(ND_FUN_DEF_BEGIN) || defined(ICM_ALL)
 ICM_DEF( ND_FUN_DEF_BEGIN, ICM_TRACE_NONE)
   ICM_ID( name)
@@ -23,15 +32,6 @@ ICM_DEF( ND_FUN_DEF_BEGIN, ICM_TRACE_NONE)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
 ICM_END( ND_FUN_DEF_BEGIN, (name, rettype_NT, vararg_cnt, vararg))
-#endif
-
-#if defined(ND_DISTMEM_REF_FUN_DEF_BEGIN) || defined(ICM_ALL)
-ICM_DEF( ND_DISTMEM_REF_FUN_DEF_BEGIN, ICM_TRACE_NONE)
-  ICM_ID( name)
-  ICM_NT( rettype_NT)
-  ICM_INT( vararg_cnt)
-  ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( ND_DISTMEM_REF_FUN_DEF_BEGIN, (name, rettype_NT, vararg_cnt, vararg))
 #endif
 
 #if defined(ND_FUN_DEF_END) || defined(ICM_ALL)
@@ -135,13 +135,17 @@ ICM_DEF( ND_FUN_AP, ICM_TRACE(fun))
 ICM_END( ND_FUN_AP, (name, retname, vararg_cnt, vararg))
 #endif
 
-#if defined(ND_DISTMEM_REF_FUN_AP) || defined(ICM_ALL)
-ICM_DEF( ND_DISTMEM_REF_FUN_AP, ICM_TRACE(fun))
+#if defined(ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS) || defined(ICM_ALL)
+ICM_DEF( ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS, ICM_TRACE(fun))
+  ICM_INT( vararg_NT_cnt) 
+  ICM_VARANY( (vararg_NT_cnt), vararg_NT)
+  ICM_ID( rettype)
+  ICM_NT( ret_NT)
   ICM_ID( name)
   ICM_ID( retname)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( ND_DISTMEM_REF_FUN_AP, (name, retname, vararg_cnt, vararg))
+ICM_END( ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS, (vararg_NT_cnt, vararg_NT, rettype, ret_NT, name, retname, vararg_cnt, vararg))
 #endif
 
 #if defined(MUTC_THREADFUN_AP) || defined(ICM_ALL)
@@ -213,6 +217,15 @@ ICM_DEF( ND_DECL, ICM_TRACE_NONE)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
 ICM_END( ND_DECL, (var_NT, basetype, sdim, shp))
+#endif
+
+#if defined(ND_DIST_DECL) || defined(ICM_ALL)
+ICM_DEF( ND_DIST_DECL, ICM_TRACE_NONE)
+  ICM_NT( var_NT)
+  ICM_ID( basetype)
+  ICM_INT( sdim)
+  ICM_VARINT( sdim, shp)
+ICM_END( ND_DIST_DECL, (var_NT, basetype, sdim, shp))
 #endif
 
 #if defined(ND_DECL_EXTERN) || defined(ICM_ALL)
