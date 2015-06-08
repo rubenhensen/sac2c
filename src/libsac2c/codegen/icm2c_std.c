@@ -80,42 +80,28 @@ ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vara
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_DISTMEM_FUN_DECL( char *name, char *rettype_NT,
- *                                       int vararg_cnt, char **vararg)
+ *   void ICMCompileND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS ( char *name, char *rettype_NT,
+ *                                                          int vararg_cnt, char **vararg)
  *
  * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_DISTMEM_FUN_DECL( name, rettype_NT, vararg_cnt, [ TAG, basetype, arg_NT ]* )
- *
- *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
+ *   Currently, this ICM only serves debugging purposes in the C code by showing which
+ *   functions have side effects when the distributed memory backend is used.
+ *   All calls are redirected to ICMCompileND_FUN_DECL.
  *
  ******************************************************************************/
-/* TODO: Having a separate ICM does not really fulfill a purpose other than documenting
- * that this function has side effects. */
+
 void
-ICMCompileND_DISTMEM_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
-                               char **vararg)
+ICMCompileND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS (char *name, char *rettype_NT,
+                                                 int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
-#define ND_DISTMEM_FUN_DECL
+#define ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_DISTMEM_FUN_DECL
+#undef ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS
 
-    indout ("SAC_ND_DECL_FUN2( %s, ", name);
-
-    if (rettype_NT[0] != '\0') {
-        out ("SAC_ND_TYPE_NT( %s), ", rettype_NT);
-    } else {
-        out ("void, ");
-    }
-
-    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                   out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
-                        vararg[i + 1]));
-    out (")");
+    ICMCompileND_FUN_DECL (name, rettype_NT, vararg_cnt, vararg);
 
     DBUG_RETURN ();
 }
@@ -362,6 +348,160 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ( char *name, char
+ **retname, char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg)
+ *
+ * description:
+ *
+ *   Creates code for hidden arguments, hidden return values and unique arguments of a
+ *function application with side effects for the distributed memory backend.
+ *
+ *   For hidden out arguments and hidden return values, we create code that raises a
+ *runtime error. The distributed memory backend does not support hidden out arguments and
+ *hidden return values in function applications with side effects since this would require
+ *C functions for the (de-)serialisation when the out arguments and return values are
+ *broadcasted from the master to the worker nodes after the function application.We do not
+ *raise an error at compilation time because we want to be able to compile the standard
+ *library without errors.
+ *
+ *   This function also handles inout arguments which are always unique. We can safely
+ *initialise them to NULL at all worker nodes as they are only used by the master.
+ *
+ ******************************************************************************/
+
+static void
+ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ (char *name, char *retname,
+                                                       char *ret_NT, int vararg_cnt,
+                                                       char **vararg_NT, char **vararg)
+{
+    DBUG_ENTER ();
+
+    /* Raise runtime error if there is a hidden return value. */
+    if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) != C_hid) {
+        indout ("SAC_RuntimeError( \"The distributed memory backend does not support "
+                "hidden return "
+                "values in function applications with side-effects (calling function: "
+                "%s).\");\n",
+                name);
+    }
+
+    /* Raise runtime error if there is a hidden out argument. */
+    for (int i = 0; i < vararg_cnt * 3; i += 3) {
+#define SEPargtag
+#define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
+    if (STReq (it_text, vararg[i]) && it_out                                             \
+        && ICUGetHiddenClass (vararg_NT[i / 3]) == C_hid) {                              \
+        indout ("SAC_RuntimeError( \"The distributed memory backend does not support "   \
+                "hidden out "                                                            \
+                "arguments in function applications with side-effects (argument %%s of " \
+                "function %s).\","                                                       \
+                "NT_STR( %s));\n",                                                       \
+                name, vararg[i + 2]);                                                    \
+    }
+#include "argtag_info.mac"
+    }
+
+    /* Initialise inout arguments to NULL. */
+    for (int i = 0; i < vararg_cnt * 3; i += 3) {
+#define SEPargtag
+#define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
+    if (STReq (it_text, vararg[i]) && it_inout) {                                        \
+        indout ("SAC_ND_A_FIELD( %s) = NULL;", vararg[i + 2]);                           \
+    }
+#include "argtag_info.mac"
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST( char *retname, char
+ **rettype, char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg, char
+ **broadcast_operation)
+ *
+ * description:
+ *   Creates code for the broadcast operations for non-hidden out arguments and non-hidden
+ *return values of function applications with side effects when the distributed memory
+ *backend is used.
+ *
+ ******************************************************************************/
+
+static void
+ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (char *retname, char *rettype,
+                                                         char *ret_NT, int vararg_cnt,
+                                                         char **vararg_NT, char **vararg,
+                                                         char *broadcast_operation)
+{
+    DBUG_ENTER ();
+
+    if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) != C_hid) {
+        /* Create code for broadcast operation for non-hidden return value. */
+        indout ("%s( %s, %s);\n", broadcast_operation, rettype, ret_NT);
+    }
+
+    /* Create code for broadcast operations for non-hidden out arguments. */
+    for (int i = 0; i < vararg_cnt * 3; i += 3) {
+#define SEPargtag
+#define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
+    if (STReq (it_text, vararg[i]) && it_out                                             \
+        && ICUGetHiddenClass (vararg_NT[i / 3]) != C_hid) {                              \
+        indout ("%s( %s, %s);\n", broadcast_operation, vararg[i + 1], vararg[i + 2]);    \
+    }
+#include "argtag_info.mac"
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER( char *retname,
+ *char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg)
+ *
+ * description:
+ *   Creates code for a barrier operation to be used between broadcast operations for
+ *function applications with side effects when the distributed memory backend is used. The
+ *barrier is only created if there was at least one broadcast operation.
+ *
+ ******************************************************************************/
+
+static void
+ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER (
+  char *retname, char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg)
+{
+    DBUG_ENTER ();
+
+    bool do_barrier = FALSE;
+
+    if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) != C_hid) {
+        /* There was a broadcast operation for a non-hidden return value. */
+        do_barrier = TRUE;
+    }
+
+    /* Check whether there was a broadcast operation for a non-hidden out argument. */
+    for (int i = 0; i < vararg_cnt * 3; i += 3) {
+#define SEPargtag
+#define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
+    if (STReq (it_text, vararg[i]) && it_out                                             \
+        && ICUGetHiddenClass (vararg_NT[i / 3]) != C_hid) {                              \
+        do_barrier = TRUE;                                                               \
+    }
+#include "argtag_info.mac"
+    }
+
+    if (do_barrier) {
+        indout ("SAC_DISTMEM_BARRIER();\n");
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS( int vararg_NT_cnt, char
  ***vararg_NT, char *rettype, char *ret_NT, char *name, char *retname, int vararg_cnt,
  *char **vararg)
@@ -390,96 +530,109 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt, char **vararg_
 #include "icm_trace.c"
 #undef ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS
 
-    indout ("SAC_DISTMEM_BARRIER();\n");
+    /*
+     * We have to check whether we are already in side effects execution mode at runtime
+     * because the following may happen:
+     * fun0 declared as ND_FUN_DECL
+     * fun0 calls fun1 ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS
+     * fun1 declared as ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS
+     * fun1 calls fun2 ND_FUN_AP
+     * fun2 declared as ND_FUN_DECL
+     * fun2 calls fun3 ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS --> Error: already in side
+     * effects execution mode fun3 declared as ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS
+     *
+     * In a function declared with ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS we know
+     * for sure at compile time that it will already be in side effects execution mode
+     * when it is called but for a function declared with ND_FUN_DECL that depends on
+     * where it is called from. It may be possible to recognize this in some cases at
+     * compile time but not across module borders.
+     */
+    IF_BEGIN ("SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_side_effects")
+        ;
+        /* We are already in side effects execution mode. Only the master will execute
+         * this so no special treatment is necessary. */
+        indout ("SAC_TR_DISTMEM_PRINT( \"Already in side effects execution mode when "
+                "calling function: %s. "
+                "Redirecting to sequential function application.\");\n\n",
+                name);
+        ICMCompileND_FUN_AP (name, retname, vararg_cnt, vararg);
+    IF_END ();
+    ELSE_BEGIN ()
+        ; /* SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_side_effects */
+        /* It is important that we are in a block at this point because the variables
+         * declared by the broadcast operations are only needed within the block. */
+        indout ("SAC_DISTMEM_BARRIER();\n");
 
-    indout ("if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER) {\n");
-    global.indent++;
-    indout ("SAC_DISTMEM_SWITCH_TO_SIDE_EFFECTS_EXEC();\n");
-    indout ("SAC_TR_DISTMEM_PRINT( \"Master node is executing function application with "
-            "side effects: %s\");\n",
-            name);
+        IF_BEGIN ("SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER")
+            ;
 
-    if (!STReq (retname, "")) {
-        indout ("%s = %s(", retname, name);
-    } else {
-        indout ("SAC_ND_FUNAP2( %s, ", name);
-    }
+            indout ("SAC_DISTMEM_CHECK_IS_SWITCH_TO_SIDE_EFFECTS_EXEC_ALLOWED();\n");
 
-    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                   out (" SAC_ND_ARG_%s( %s, %s)", vararg[i], vararg[i + 2],
-                        vararg[i + 1]));
+            indout ("SAC_DISTMEM_SWITCH_TO_SIDE_EFFECTS_EXEC();\n");
+            indout ("SAC_TR_DISTMEM_PRINT( \"Master node is executing function "
+                    "application with side effects: %s\");\n",
+                    name);
 
-    if (!STReq (retname, "")) {
-        out (");\n");
-    } else {
-        out (")\n");
-    }
+            if (!STReq (retname, "")) {
+                indout ("%s = %s(", retname, name);
+            } else {
+                indout ("SAC_ND_FUNAP2( %s, ", name);
+            }
 
-    indout ("SAC_DISTMEM_SWITCH_TO_SYNC_EXEC();\n");
+            SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                           out (" SAC_ND_ARG_%s( %s, %s)", vararg[i], vararg[i + 2],
+                                vararg[i + 1]));
 
-    global.indent--;
-    indout ("} else {\n");
-    global.indent++;
-    indout ("SAC_TR_DISTMEM_PRINT( \"Non-master node is skipping function application "
-            "with side effects: %s\");\n",
-            name);
-    global.indent--;
-    indout ("}\n");
+            if (!STReq (retname, "")) {
+                out (");\n");
+            } else {
+                out (")\n");
+            }
 
-    if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) != C_hid) {
-        /* Initialize broadcast of non-hidden return value. */
-        /* TODO: What about hidden ones? */
-        indout ("SAC_TR_DISTMEM_PRINT( \"Initializing broadcast of return value %s of "
-                "type %s\");\n",
-                retname, rettype);
-        indout ("SAC_MASTER_BROADCAST_INIT( %s, *%s, SAC_ND_A_SIZE( %s));\n", rettype,
-                retname, ret_NT);
-    }
+            indout ("SAC_DISTMEM_SWITCH_TO_SYNC_EXEC();\n");
 
-    /* Initialize broadcast of non-hidden out/inout arguments. */
-    /* TODO: What about inout parameters (it_inout)? */
-    /* We have to check for the hidden class at runtime because it is not easily available
-     * here. */
-    for (int i = 0; i < vararg_cnt * 3; i += 3) { /*  */
-#define SEPargtag
-#define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
-    if (STReq (it_text, vararg[i]) && (it_out)                                           \
-        && ICUGetHiddenClass (vararg_NT[i / 3]) != C_hid) {                              \
-        indout ("SAC_TR_DISTMEM_PRINT( \"Initializing broadcast of %s argument %%s of "  \
-                "type %s\", NT_STR( %s));\n",                                            \
-                vararg[i], vararg[i + 1], vararg[i + 2]);                                \
-        indout ("SAC_MASTER_BROADCAST_INIT( %s, %s);\n", vararg[i + 1], vararg[i + 2]);  \
-    }
-#include "argtag_info.mac"
-    }
+        IF_END (); /* SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER */
+        ELSE_BEGIN ()
+            ;
+            indout ("SAC_TR_DISTMEM_PRINT( \"Non-master node is skipping function "
+                    "application with side effects: %s\");\n",
+                    name);
 
-    indout ("SAC_DISTMEM_BARRIER();\n");
+        ELSE_END (); /* SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER */
 
-    if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) != C_hid) {
-        /* Finalize broadcast of non-hidden return value. */
-        indout ("SAC_TR_DISTMEM_PRINT( \"Finalizing broadcast of return value %s of type "
-                "%s\");\n",
-                retname, rettype);
-        indout ("SAC_MASTER_BROADCAST_FINALIZE( %s, *%s, SAC_ND_A_SIZE( %s));\n", rettype,
-                retname, ret_NT);
-    }
+        /* Handle hidden arguments, hidden return values and unique (inout) arguments. */
+        ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ (name, retname, ret_NT,
+                                                               vararg_cnt, vararg_NT,
+                                                               vararg);
 
-    /* Finalize broadcast of non-hidden out/inout arguments. */
-    /* We have to check for the hidden class at runtime because it is not easily available
-     * here. */
-    for (int i = 0; i < vararg_cnt * 3; i += 3) {
-#define SEPargtag
-#define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
-    if (STReq (it_text, vararg[i]) && (it_out)                                           \
-        && ICUGetHiddenClass (vararg_NT[i / 3]) != C_hid) {                              \
-        indout ("SAC_TR_DISTMEM_PRINT( \"Finalizing broadcast of %s argument %%s of "    \
-                "type %s\", NT_STR( %s));\n",                                            \
-                vararg[i], vararg[i + 1], vararg[i + 2]);                                \
-        indout ("SAC_MASTER_BROADCAST_FINALIZE( %s, %s);\n", vararg[i + 1],              \
-                vararg[i + 2]);                                                          \
-    }
-#include "argtag_info.mac"
-    }
+        /* Required broadcast operations */
+        ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (retname, rettype, ret_NT,
+                                                                 vararg_cnt, vararg_NT,
+                                                                 vararg,
+                                                                 "SAC_DISTMEM_BROADCAST_"
+                                                                 "INIT");
+        ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER (retname, ret_NT,
+                                                                         vararg_cnt,
+                                                                         vararg_NT,
+                                                                         vararg);
+
+        ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (retname, rettype, ret_NT,
+                                                                 vararg_cnt, vararg_NT,
+                                                                 vararg,
+                                                                 "SAC_DISTMEM_BROADCAST_"
+                                                                 "FINALIZE");
+        ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER (retname, ret_NT,
+                                                                         vararg_cnt,
+                                                                         vararg_NT,
+                                                                         vararg);
+
+        ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (retname, rettype, ret_NT,
+                                                                 vararg_cnt, vararg_NT,
+                                                                 vararg,
+                                                                 "SAC_DISTMEM_BROADCAST_"
+                                                                 "FREE_MEMORY");
+
+    ELSE_END (); /* SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_side_effects */
 
     DBUG_RETURN ();
 }
@@ -906,13 +1059,12 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
         if (global.backend == BE_distmem && dc == C_distr) {
             /* Array is potentially distributed. */
 
-            indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s);\n", var_NT);
-
             /*
              * Initialize these variables to avoid warnings.
              * If the array is actually distributed, they will be set to the correct
              * values when the data is allocated.
              */
+            indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n", var_NT);
             indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
             indout ("uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = 0;\n", var_NT);
         }
@@ -925,13 +1077,13 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
 
         if (global.backend == BE_distmem && dc == C_distr) {
             /* Array is potentially distributed. */
-            indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s);\n", var_NT);
 
             /*
              * Initialize these variables to avoid warnings.
              * If the array is actually distributed, they will be set to the correct
              * values when the data is allocated.
              */
+            indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n", var_NT);
             indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
             indout ("uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = 0;\n", var_NT);
         }

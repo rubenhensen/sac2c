@@ -1377,12 +1377,13 @@ SUBPHASE (mc, "Move constants to variable declaration", MCdoMoveConst, ALWAYS, p
 SUBPHASE (pfg, "CUDA Prepare for loop generation", PFGdoPrepareForloopGeneration,
           (global.backend == BE_cuda || global.backend == BE_cudahybrid), pc)
 
-CYCLE (dmcyc, "Distributed memory cycle", global.backend == BE_distmem, pc, RESET)
+SUBPHASE (
+  dmisefa,
+  "Identifying function applications with side effects for distributed memory backend",
+  DMISEFAdoIdentifySideEffectFunctionApplications, global.backend == BE_distmem, pc)
 
-CYCLEPHASE (dmida, "Identify distributable arrays for the distributed memory backend",
-            DMIDAdoIdentifyDistributableArrays, (global.backend == BE_distmem), pc, dmcyc)
-
-ENDCYCLE (dmcyc)
+SUBPHASE (dmida, "Identifying distributable arrays for distributed memory backend",
+          DMIDAdoIdentifyDistributableArrays, (global.backend == BE_distmem), pc)
 
 ENDPHASE (pc)
 

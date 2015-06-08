@@ -599,11 +599,15 @@ PrintDistMemOptions (void)
 {
     DBUG_ENTER ();
 
-    printf ("\n\nDISTRIBUTED MEMORY OPTIONS (experimental):\n\n"
+    printf ("\n\nDISTRIBUTED MEMORY BACKEND OPTIONS (experimental):\n\n"
 
-            "    -dsm_maxmem_mb <n>   Maximum amount of memory to use for the DSM system "
-            "in MB.\n"
+            "    -dsm_maxmem_mb <n>     Maximum amount of memory to use for the DSM "
+            "system in MB.\n"
             "                           (default: %d MB)\n"
+            "\n"
+            "    -distmem_min_elems <n> Minimum number of array elements per node such "
+            "that an array\n"
+            "                           gets distributed (default: %d elements)\n"
             "\n"
             "    -numprocs <n>   Specify at compile time the exact number of processes "
             "to be\n"
@@ -616,7 +620,8 @@ PrintDistMemOptions (void)
             "                    number is determined at runtime.\n"
             "                      (default: %d)\n"
             "\n",
-            global.distmem_max_memory_mb, global.max_procs);
+            global.distmem_max_memory_mb, global.distmem_min_elems_per_node,
+            global.max_procs);
 
     DBUG_RETURN ();
 }
@@ -784,7 +789,7 @@ PrintRuntimeCheckOptions (void)
 
       "    -ecc            Insert explicit conformity checks at compile time.\n"
       "\n"
-      "    -check [actbmehd]+\n"
+      "    -check [actbmehdi]+\n"
       "                    Incorporate runtime checks into executable program.\n"
       "                    The following flags are supported:\n"
       "                      a: Incorporate all available runtime checks.\n"
@@ -798,7 +803,9 @@ PrintRuntimeCheckOptions (void)
       "                      d: Perform checks for the distributed memory backend.\n"
       "                         (Check that there are no illegal accesses to "
       "distributed\n"
-      "                         arrays.)\n");
+      "                         arrays.)\n"
+      "                      i: Use diagnostic heap manager for distributed memory "
+      "backend.\n");
 
     DBUG_RETURN ();
 }

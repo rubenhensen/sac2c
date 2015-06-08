@@ -91,12 +91,28 @@
  * ICMs for distributed memory runtime checks
  * ========================
  *
+ * SAC_DISTMEM_CHECK_IS_DSM_ALLOC_ALLOWED()
+ * SAC_DISTMEM_CHECK_IS_SWITCH_TO_SIDE_EFFECTS_EXEC_ALLOWED()
  * SAC_DISTMEM_CHECK_WRITE_ALLOWED ( ptr, var_NT, pos)
  * SAC_DISTMEM_CHECK_READ_ALLOWED ( ptr, var_NT, pos)
  *
  ******************************************************************************/
 
 #if SAC_DO_CHECK_DISTMEM
+
+#define SAC_DISTMEM_CHECK_IS_DSM_ALLOC_ALLOWED()                                         \
+    if (SAC_DISTMEM_exec_mode != SAC_DISTMEM_exec_mode_sync) {                           \
+        SAC_RuntimeError ("Allocations in the DSM segment are "                          \
+                          "only allowed in synchronous execution mode.");                \
+    }
+
+#define SAC_DISTMEM_CHECK_IS_SWITCH_TO_SIDE_EFFECTS_EXEC_ALLOWED()                       \
+    if (SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_side_effects) {                   \
+        SAC_RuntimeError ("Already in side effects execution mode.");                    \
+    } else if (SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_dist) {                    \
+        SAC_RuntimeError (                                                               \
+          "Cannot switch from distributed to side effects execution mode.");             \
+    }
 
 #define _SAC_DISTMEM_CHECK_IS_LEGAL_FOR_LOCAL_WRITE(ptr)                                 \
     ((SAC_DISTMEM_are_dist_writes_allowed && SAC_DISTMEM_IS_VALID_WRITE_PTR (ptr))       \
@@ -137,6 +153,10 @@
        : (SAC_RuntimeError ("Illegal read access to distributed array at %p", ptr), 0));
 
 #else /* SAC_DO_CHECK_DISTMEM */
+
+#define SAC_DISTMEM_CHECK_IS_DSM_ALLOC_ALLOWED()
+
+#define SAC_DISTMEM_CHECK_IS_SWITCH_TO_SIDE_EFFECTS_EXEC_ALLOWED()
 
 #define SAC_DISTMEM_CHECK_WRITE_ALLOWED(ptr, var_NT, pos)
 

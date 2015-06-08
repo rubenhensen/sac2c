@@ -1,9 +1,9 @@
 /*
  * Identifies distributable arrays for the distributed memory backend.
- * Arrays are distributable if they are the result of a
- * genarray/modarray with-loop.
- * TODO: Possibly this is not sufficient and arguments to functions/
- * results of function calls also have to be distributable.
+ * Arrays are distributable unless they are written to in the body of a with-loop
+ * even though they are not the result variables of the with-loop.
+ * TODO: Variables that are written to in side effect functions are also not
+ * distributable.
  */
 
 #include "identify_distributable_arrays.h"
@@ -19,13 +19,17 @@
  * INFO structure
  */
 struct INFO {
-    bool is_result_of_with;
+    bool traversing_with_loop;
+    bool traversing_lhs;
+    node *results_of_with_loop;
 };
 
 /*
  * INFO macros
  */
-#define INFO_IS_RESULT_OF_WITH(n) ((n)->is_result_of_with)
+#define INFO_TRAVERSING_WITH_LOOP(n) ((n)->traversing_with_loop)
+#define INFO_TRAVERSING_LHS(n) ((n)->traversing_lhs)
+#define INFO_RESULTS_OF_WITH_LOOP(n) ((n)->results_of_with_loop)
 
 /*
  * INFO functions
@@ -39,7 +43,8 @@ MakeInfo (void)
 
     result = (info *)MEMmalloc (sizeof (info));
 
-    INFO_IS_RESULT_OF_WITH (result) = FALSE;
+    INFO_TRAVERSING_WITH_LOOP (result) = FALSE;
+    INFO_TRAVERSING_LHS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -62,20 +67,34 @@ DMIDAlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_TYPE (LET_EXPR (arg_node)) == N_with2
-        && (NODE_TYPE (WITH2_WITHOP (LET_EXPR (arg_node))) == N_genarray
-            || NODE_TYPE (WITH2_WITHOP (LET_EXPR (arg_node))) == N_modarray)) {
+    if (INFO_TRAVERSING_WITH_LOOP (arg_info)) {
+        /* We are traversing the body of a genarray or modarray with-loop.
+         * All variables on the left-hand side are non-distributable
+         * unless they are the target variables of the with-loop. */
 
-        /* A variable is distributable if the result of a genarray/modarray with-loop is
-         * assigned to it. */
-        INFO_IS_RESULT_OF_WITH (arg_info) = TRUE;
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-        INFO_IS_RESULT_OF_WITH (arg_info) = FALSE;
+        /* Traverse the left-hand side. */
+        INFO_TRAVERSING_LHS (arg_info) = TRUE;
+        LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
+        INFO_TRAVERSING_LHS (arg_info) = FALSE;
+
+        /* Traverse the right-hand side. */
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    } else if (NODE_TYPE (LET_EXPR (arg_node)) == N_with2
+               && (NODE_TYPE (WITH2_WITHOP (LET_EXPR (arg_node))) == N_genarray
+                   || NODE_TYPE (WITH2_WITHOP (LET_EXPR (arg_node))) == N_modarray)) {
+        /* We are not in the body of a with-loop and have encountered
+         * a genarray or modarray with-loop. */
+
+        INFO_TRAVERSING_WITH_LOOP (arg_info) = TRUE;
+        INFO_RESULTS_OF_WITH_LOOP (arg_info) = LET_IDS (arg_node);
+
+        /* Traverse the right-hand side. */
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+        INFO_TRAVERSING_WITH_LOOP (arg_info) = FALSE;
+        INFO_RESULTS_OF_WITH_LOOP (arg_info) = NULL;
     }
-
-    /* There is no need to traverse the expression.
-     * There may be an inner with-loop but the distributed memory
-     * backend only supports one level of parallelism. */
 
     DBUG_RETURN (arg_node);
 }
@@ -83,55 +102,34 @@ DMIDAlet (node *arg_node, info *arg_info)
 node *
 DMIDAids (node *arg_node, info *arg_info)
 {
-    node *avis;
+    node *ids;
+    bool is_result_of_with_loop;
 
     DBUG_ENTER ();
 
-    /* Use TRAVopt because there may not be another argument. */
-    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
+    if (INFO_TRAVERSING_LHS (arg_info)) {
+        /* This is the left-hand side of an expression in the body of a
+         * genarray or modarray with-loop.
+         * All variables on the left-hand side are non-distributable
+         * unless they are the result variables of the with-loop. */
 
-    avis = IDS_AVIS (arg_node);
-    AVIS_DISTMEMISDISTRIBUTABLE (avis) = TRUE;
+        ids = INFO_RESULTS_OF_WITH_LOOP (arg_info);
+        is_result_of_with_loop = FALSE;
 
-    DBUG_RETURN (arg_node);
-}
+        do {
+            if (arg_node == ids) {
+                is_result_of_with_loop = TRUE;
+                break;
+            }
+        } while ((ids = IDS_NEXT (ids)) != NULL);
 
-node *
-DMIDAfundef (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
+        if (!is_result_of_with_loop) {
+            AVIS_DISTMEMISDISTRIBUTABLE (IDS_AVIS (arg_node)) = FALSE;
+        }
 
-    if (FUNDEF_ISEXPORTED (arg_node)) {
-        /* If the function is exported, its argumens are distributable. */
-        /* Traverse the arguments if there are any. */
-        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+        /* Use TRAVopt because there may not be another argument. */
+        IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
     }
-
-    /* Traverse the remaining function definitions if there are any. */
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-DMIDAarg (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    /* We only get here if the function is exported. In that case,
-     * the argument is distributable. */
-    AVIS_DISTMEMISDISTRIBUTABLE (ARG_AVIS (arg_node)) = TRUE;
-
-    /* Examine the remaining arguments if there are any. */
-    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-DMIDAap (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
 
     DBUG_RETURN (arg_node);
 }

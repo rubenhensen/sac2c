@@ -140,7 +140,7 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
 
     if (maxmem != min_global_segsz) {
         SAC_RuntimeWarning (
-          "Registered less than requested memory: (%zd) MB rather than (%zd) MB",
+          "Registered less than requested memory: %zd MB rather than %zd MB",
           min_global_segsz / 1024 / 1024, maxmem / 1024 / 1024);
     }
 
@@ -206,13 +206,13 @@ SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, size_t owner_rank,
 
 #if COMPILE_TRACE
 void
-SAC_DISTMEM_COMMLIB_TR_Exit (void)
+SAC_DISTMEM_COMMLIB_TR_Exit (int exit_code)
 #else  /* COMPILE_TRACE */
 void
-SAC_DISTMEM_COMMLIB_Exit (void)
+SAC_DISTMEM_COMMLIB_Exit (int exit_code)
 #endif /* COMPILE_TRACE */
 {
-    gasnet_exit (0);
+    gasnet_exit (exit_code);
 }
 
 #endif /* ENABLE_DISTMEM_GASNET */

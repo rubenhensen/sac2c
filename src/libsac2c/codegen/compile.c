@@ -3024,7 +3024,8 @@ COMPfundef (node *arg_node, info *arg_info)
         } else if (global.backend == BE_distmem) {
             if (FUNDEF_DISTMEMHASSIDEEFFECTS (arg_node)) {
                 icm_args = MakeFunctionArgs (arg_node);
-                FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("ND_DISTMEM_FUN_DECL", icm_args);
+                FUNDEF_ICMDECL (arg_node)
+                  = TBmakeIcm ("ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS", icm_args);
                 FUNDEF_ICMDEFBEGIN (arg_node)
                   = TBmakeIcm ("ND_FUN_DEF_BEGIN", DUPdoDupTree (icm_args));
                 FUNDEF_ICMDEFEND (arg_node)
@@ -3864,8 +3865,9 @@ COMPap (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("CUDA_ST_GLOBALFUN_AP", icm_args);
     } else if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
         icm = TBmakeIcm ("WE_FUN_AP", icm_args);
-    } else if (global.backend == BE_distmem && FUNDEF_DISTMEMHASSIDEEFFECTS (fundef)) {
-        /* This function has side effects. We have to treat it in a special way. */
+    } else if (global.backend == BE_distmem && AP_DISTMEMHASSIDEEFFECTS (arg_node)) {
+        /* This function application has side effects. We have to treat it in a special
+         * way. */
 
         /* Append return type and return NT to ICM arguments. */
         if (AP_ARGTAB (arg_node)->ptr_out[0] == NULL) {
@@ -3881,12 +3883,11 @@ COMPap (node *arg_node, info *arg_info)
 
         /* Append NT of out arguments to ICM arguments. */
         for (int i = AP_ARGTAB (arg_node)->size - 1; i >= 1; i--) {
-            /* in/inout arguments */
-            /* TODO: Do we need inout arguments too? */
             if (AP_ARGTAB (arg_node)->ptr_out[i] == NULL) {
+                /* in/inout argument, append a placeholder only. */
                 icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
             } else {
-                /* out arguments */
+                /* out argument, append NT */
                 icm_args = TBmakeExprs (DUPdupIdsIdNt (AP_ARGTAB (arg_node)->ptr_out[i]),
                                         icm_args);
             }
@@ -5268,6 +5269,10 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
                               DUPdupIdNt (PRF_ARG1 (arg_node)),
                               TBmakeNum (TCgetShapeDim (ID_TYPE (PRF_ARG1 (arg_node)))),
                               DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+    } else if (global.backend == BE_distmem) {
+        ret_node = TCmakeAssignIcm3 ("WL_DISTMEM_SUBALLOC", DUPdupIdsIdNt (let_ids),
+                                     DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                     DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
     } else {
         ret_node = TCmakeAssignIcm3 ("WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
                                      DUPdupIdNt (PRF_ARG1 (arg_node)),

@@ -384,7 +384,14 @@ GLOBAL (int, max_procs, 32, xfree_dummy, )
 
 GLOBAL (unsigned int, distmem_max_memory_mb, 512, xfree_dummy, )
 /*
- * Maximum number of pages to use for dsm.
+ * Amount of memory in MB for the DSM subsystem (for both local segment and cache)
+ * when the distributed memory backend is used.
+ */
+
+GLOBAL (unsigned int, distmem_min_elems_per_node, 10, xfree_dummy, )
+/*
+ * Minimum number of array elements per node such that the array is distributed
+ * when the distributed memory backend is used.
  */
 
 GLOBAL (int, num_rtspec_threads, 1, xfree_dummy, )

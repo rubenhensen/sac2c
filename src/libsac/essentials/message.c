@@ -84,7 +84,9 @@ SAC_RuntimeError (char *format, ...)
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
-    SAC_DISTMEM_EXIT ();
+    /* If the program does not use the distributed memory backend,
+     * an empty dummy function in libsacdistmem.nodistmem will be called. */
+    SAC_DISTMEM_EXIT (1);
 
     exit (1);
 }
@@ -127,7 +129,7 @@ SAC_RuntimeError_Mult (int cnt, ...)
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
-    SAC_DISTMEM_EXIT ();
+    SAC_DISTMEM_EXIT (1);
 
     exit (1);
 }
@@ -157,7 +159,7 @@ SAC_RuntimeErrorLine (int line, char *format, ...)
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
-    SAC_DISTMEM_EXIT ();
+    SAC_DISTMEM_EXIT (1);
 
     exit (1);
 }
@@ -169,7 +171,12 @@ SAC_RuntimeWarning (char *format, ...)
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
-    fprintf (stderr, "\n\n*** SAC runtime warning\n");
+    if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {
+        fprintf (stderr, "\n\n*** SAC runtime warning\n");
+    } else {
+        fprintf (stderr, "\n\n*** SAC runtime warning at node %zd\n", SAC_DISTMEM_rank);
+    }
+
     fprintf (stderr, "*** ");
 
     va_start (arg_p, format);
@@ -229,6 +236,10 @@ SAC_Print (char *format, ...)
     va_list arg_p;
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
+
+    if (SAC_DISTMEM_rank != SAC_DISTMEM_RANK_UNDEFINED) {
+        fprintf (stderr, "n%zd-> ", SAC_DISTMEM_rank);
+    }
 
     va_start (arg_p, format);
     vfprintf (stderr, format, arg_p);

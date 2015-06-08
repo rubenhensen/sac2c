@@ -211,6 +211,8 @@ typedef enum {
 
 #define SAC_TR_DISTMEM_PRINT(...) SAC_TR_PRINT (("DSM -> " __VA_ARGS__))
 
+#define SAC_TR_DISTMEM_PRINT_EXPR(...) SAC_TR_PRINT (("DSM -> " __VA_ARGS__)),
+
 #if SAC_DO_TRACE_AA
 
 /*
@@ -230,6 +232,8 @@ typedef enum {
 #else /* SAC_DO_TRACE_MEM */
 
 #define SAC_TR_DISTMEM_PRINT(...)
+
+#define SAC_TR_DISTMEM_PRINT_EXPR(...)
 
 #define SAC_TR_DISTMEM_AA_PRINT(...)
 

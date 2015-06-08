@@ -395,12 +395,16 @@
           <node name="Prf" />
         </travuser>
       </traversal>
+      <traversal id="DMISEFA" name="Identify function applications with side-effects for the distributed memory backend" default="sons" include="identify_side_effect_function_aps.h">
+        <travuser>
+	        <node name="Ap" />
+	        <node name="Fundef" />
+	      </travuser>
+      </traversal>
       <traversal id="DMIDA" name="Identify distributable arrays for the distributed memory backend" default="sons" include="identify_distributable_arrays.h">
         <travuser>
 	        <node name="Let" />
 	        <node name="Ids" />
-	        <node name="Arg" />
-	        <node name="Fundef" />
 	      </travuser>
       </traversal>
       <traversal id="ACUPTN" name="Annotate CUDA partitions" default="sons" include="annotate_cuda_partition.h" >
@@ -7032,6 +7036,12 @@ N_tfarg :
             This node calls a function which contains spawns
           </description>
         </flag>
+        <flag name="DistMemHasSideEffects" default="FALSE">
+          <description>This function application has side effects and may only be executed by the master node when the distributed memory backend is used.</description>
+          <phases>
+            <range from="dm_dmisefa" to="final" />
+          </phases>
+        </flag>
       </flags>
     <checks>
       <check name="CHKapArgCount" />
@@ -9033,11 +9043,11 @@ N_tfarg :
 	  make this quite important.
 	  </description>
         </flag>	 
-  <flag name="DistMemIsDistributable" default="FALSE" >
+  <flag name="DistMemIsDistributable" default="TRUE" >
 	  <description> 
 	  This flag indicates whether the array is distributable. 
-    That is the case if the result of a genarray/modarray with-loop
-    is assigned to it.
+    That is not the case if the array is written to in the body of a parallel genarray/modarray with-loop
+    (including nested with-loops) but it is not the result of the (outermost) with-loop.
 	  </description>
   </flag>	 
   </flags>

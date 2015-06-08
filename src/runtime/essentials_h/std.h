@@ -652,23 +652,20 @@ typedef intptr_t *SAC_array_descriptor_t;
        SAC_CS_READ_ARRAY (from_NT, from_pos)                                             \
          SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos])
 
-#define SAC_ND_READ__DIS(from_NT, from_pos)                                                \
-    (SAC_TR_AA_FPRINT ("%s read", from_NT, from_pos,                                       \
-                       SAC_ND_A_IS_DIST (from_NT) ? "DSM" : "Non-DSM")                     \
-         SAC_BC_READ (from_NT, from_pos) SAC_CS_READ_ARRAY (from_NT, from_pos)             \
-           SAC_ND_A_IS_DIST (from_NT)                                                      \
-       ? (SAC_DISTMEM_CHECK_READ_ALLOWED (SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (        \
-                                                                      from_NT),            \
-                                                                    SAC_NT_CBASETYPE (     \
-                                                                      from_NT),            \
-                                                                    SAC_ND_A_FIRST_ELEMS ( \
-                                                                      from_NT),            \
-                                                                    from_pos),             \
-                                          from_NT, from_pos)                               \
-          * SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (from_NT),                             \
-                                      SAC_NT_CBASETYPE (from_NT),                          \
-                                      SAC_ND_A_FIRST_ELEMS (from_NT), from_pos))           \
-       : SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos])
+#define SAC_ND_READ__DIS(from_NT, from_pos)                                              \
+    (SAC_TR_AA_FPRINT ("%s read", from_NT, from_pos,                                     \
+                       SAC_ND_A_IS_DIST (from_NT) ? "DSM" : "Non-DSM")                   \
+       SAC_BC_READ (from_NT, from_pos) SAC_CS_READ_ARRAY (from_NT, from_pos) (           \
+         SAC_ND_A_IS_DIST (from_NT)                                                      \
+           ? (SAC_DISTMEM_CHECK_READ_ALLOWED (                                           \
+                SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (from_NT),                       \
+                                          SAC_NT_CBASETYPE (from_NT),                    \
+                                          SAC_ND_A_FIRST_ELEMS (from_NT), from_pos),     \
+                from_NT, from_pos)                                                       \
+              * SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (from_NT),                       \
+                                          SAC_NT_CBASETYPE (from_NT),                    \
+                                          SAC_ND_A_FIRST_ELEMS (from_NT), from_pos))     \
+           : SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos]))
 
 /*
  * SAC_ND_WRITE implementations (referenced by sac_std_gen.h)
@@ -696,12 +693,12 @@ typedef intptr_t *SAC_array_descriptor_t;
     SAC_BC_WRITE (to_NT, to_pos)                                                         \
     SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
     *(SAC_ND_A_IS_DIST (to_NT)                                                           \
-        ? SAC_DISTMEM_CHECK_WRITE_ALLOWED (                                              \
+        ? (SAC_DISTMEM_CHECK_WRITE_ALLOWED (                                             \
             SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT), SAC_NT_CBASETYPE (to_NT),   \
                                       SAC_ND_A_FIRST_ELEMS (to_NT), to_pos),             \
             to_NT, to_pos)                                                               \
-            SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT), SAC_NT_CBASETYPE (to_NT),   \
-                                      SAC_ND_A_FIRST_ELEMS (to_NT), to_pos)              \
+             SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT), SAC_NT_CBASETYPE (to_NT),  \
+                                       SAC_ND_A_FIRST_ELEMS (to_NT), to_pos))            \
         : &SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))[to_pos])
 
 /*
@@ -1330,34 +1327,44 @@ FIXME Do not initialize for the time beinb, as value 0                          
 
 #define SAC_ND_ALLOC__DATA_BASETYPE__AKS_DIS(var_NT, basetype)                           \
     {                                                                                    \
-        if (SAC_ND_A_IS_DIST (var_NT))                                                   \
-            SAC_ND_ALLOC__DATA_BASETYPE__DIS (var_NT, basetype)                          \
-        else                                                                             \
+        if (SAC_ND_A_IS_DIST (var_NT)) {                                                 \
+            SAC_ND_A_DESC_FIRST_ELEMS (var_NT) = SAC_ND_A_MIRROR_FIRST_ELEMS (var_NT)    \
+              = SAC_DISTMEM_DET_MAX_ELEMS_PER_NODE (SAC_ND_A_SIZE (var_NT),              \
+                                                    SAC_ND_A_SHAPE (var_NT, 0));         \
+            SAC_DISTMEM_HM_MALLOC_FIXED_SIZE (SAC_ND_A_FIELD (var_NT),                   \
+                                              SAC_ND_A_MIRROR_FIRST_ELEMS (var_NT)       \
+                                                * sizeof (basetype),                     \
+                                              basetype);                                 \
+            SAC_TR_MEM_PRINT (("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT),       \
+                               SAC_ND_A_FIELD (var_NT)))                                 \
+            SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT)                  \
+              = SAC_DISTMEM_DET_OFFS (SAC_ND_A_FIELD (var_NT));                          \
+            SAC_CS_REGISTER_ARRAY (var_NT)                                               \
+        } else {                                                                         \
             SAC_ND_ALLOC__DATA_BASETYPE__AKS (var_NT, basetype)                          \
+        }                                                                                \
     }
 
 #define SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD_DIS(var_NT, basetype)                       \
     {                                                                                    \
-        if (SAC_ND_A_IS_DIST (var_NT))                                                   \
-            SAC_ND_ALLOC__DATA_BASETYPE__DIS (var_NT, basetype)                          \
-        else                                                                             \
+        if (SAC_ND_A_IS_DIST (var_NT)) {                                                 \
+            SAC_ND_A_DESC_FIRST_ELEMS (var_NT) = SAC_ND_A_MIRROR_FIRST_ELEMS (var_NT)    \
+              = SAC_DISTMEM_DET_MAX_ELEMS_PER_NODE (SAC_ND_A_SIZE (var_NT),              \
+                                                    SAC_ND_A_SHAPE (var_NT, 0));         \
+            SAC_DISTMEM_HM_MALLOC (SAC_ND_A_FIELD (var_NT),                              \
+                                   SAC_ND_A_MIRROR_FIRST_ELEMS (var_NT)                  \
+                                     * sizeof (basetype),                                \
+                                   basetype);                                            \
+            SAC_TR_MEM_PRINT (("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT),       \
+                               SAC_ND_A_FIELD (var_NT)))                                 \
+            SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT)                  \
+              = SAC_DISTMEM_DET_OFFS (SAC_ND_A_FIELD (var_NT));                          \
+            SAC_CS_REGISTER_ARRAY (var_NT)                                               \
+        } else {                                                                         \
             SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD (var_NT, basetype)                      \
-    }
-
-#define SAC_ND_ALLOC__DATA_BASETYPE__DIS(var_NT, basetype)                               \
-    {                                                                                    \
-        SAC_ND_A_DESC_FIRST_ELEMS (var_NT) = SAC_ND_A_MIRROR_FIRST_ELEMS (var_NT)        \
-          = SAC_DISTMEM_DET_MAX_ELEMS_PER_NODE (SAC_ND_A_SIZE (var_NT),                  \
-                                                SAC_ND_A_SHAPE (var_NT, 0));             \
-        SAC_ND_A_FIELD (var_NT)                                                          \
-          = (basetype *)SAC_DISTMEM_MALLOC (SAC_ND_A_MIRROR_FIRST_ELEMS (var_NT),        \
-                                            sizeof (basetype),                           \
-                                            &SAC_ND_A_MIRROR_OFFS (var_NT));             \
-        SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT);                     \
-        SAC_TR_MEM_PRINT (                                                               \
-          ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
-        SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                          \
-        SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
+        }                                                                                \
     }
 
 /*
@@ -1392,20 +1399,21 @@ FIXME Do not initialize for the time beinb, as value 0                          
             SAC_ND_A_MIRROR_FIRST_ELEMS (var_NT)                                         \
               = SAC_DISTMEM_DET_MAX_ELEMS_PER_NODE (SAC_ND_A_SIZE (var_NT),              \
                                                     SAC_ND_A_SHAPE (var_NT, 0));         \
-            SAC_ND_A_FIELD (var_NT)                                                      \
-              = (basetype *)SAC_DISTMEM_MALLOC (SAC_ND_A_MIRROR_FIRST_ELEMS (var_NT),    \
-                                                sizeof (basetype),                       \
-                                                &SAC_ND_A_MIRROR_OFFS (var_NT));         \
+            SAC_DISTMEM_HM_MALLOC_FIXED_SIZE (SAC_ND_A_FIELD (var_NT),                   \
+                                              SAC_ND_A_MIRROR_FIRST_ELEMS (var_NT)       \
+                                                * sizeof (basetype),                     \
+                                              basetype);                                 \
             SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (var_NT),                            \
                                       BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)),  \
                                       SAC_ND_DESC_BASETYPE (var_NT))                     \
-            SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT);                 \
             SAC_ND_A_DESC_FIRST_ELEMS (var_NT) = SAC_ND_A_MIRROR_FIRST_ELEMS (var_NT);   \
             SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT),   \
                                #dim, SAC_ND_A_DESC (var_NT)))                            \
             SAC_TR_MEM_PRINT (("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT),       \
                                SAC_ND_A_FIELD (var_NT)))                                 \
             SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT)                  \
+              = SAC_DISTMEM_DET_OFFS (SAC_ND_A_FIELD (var_NT));                          \
             SAC_CS_REGISTER_ARRAY (var_NT)                                               \
         } else {                                                                         \
             SAC_ND_ALLOC__DESC_AND_DATA__AKS (var_NT, dim, basetype)                     \
@@ -1475,13 +1483,16 @@ FIXME Do not initialize for the time beinb, as value 0                          
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
     }
 
-/* TODO: actually free data */
 #define SAC_ND_FREE__DATA__AKS_NHD_DIS(var_NT, freefun)                                  \
     {                                                                                    \
         if (SAC_ND_A_IS_DIST (var_NT)) {                                                 \
             SAC_DISTMEM_BARRIER ();                                                      \
             SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", NT_STR (var_NT),    \
                                #freefun, SAC_ND_A_FIELD (var_NT)))                       \
+            SAC_DISTMEM_HM_FREE_FIXED_SIZE (SAC_ND_GETVAR (var_NT,                       \
+                                                           SAC_ND_A_FIELD (var_NT)),     \
+                                            SAC_ND_A_FIRST_ELEMS (var_NT)                \
+                                              * sizeof (*SAC_ND_A_FIELD (var_NT)))       \
             SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
             SAC_CS_UNREGISTER_ARRAY (var_NT)                                             \
         } else {                                                                         \
@@ -1507,13 +1518,13 @@ FIXME Do not initialize for the time beinb, as value 0                          
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
     }
 
-/* TODO: actually free data */
 #define SAC_ND_FREE__DATA__AKD_NHD_DIS(var_NT, freefun)                                  \
     {                                                                                    \
         if (SAC_ND_A_IS_DIST (var_NT)) {                                                 \
             SAC_DISTMEM_BARRIER ();                                                      \
             SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", NT_STR (var_NT),    \
                                #freefun, SAC_ND_A_FIELD (var_NT)))                       \
+            SAC_DISTMEM_HM_FREE (SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT)))        \
             SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
             SAC_CS_UNREGISTER_ARRAY (var_NT)                                             \
         } else {                                                                         \

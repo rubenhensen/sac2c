@@ -17,6 +17,10 @@
  * passed on directly.
  */
 
+/* TODO: identify side effect function calls afterwards
+ * we can ignore side effect function calls if they are initialized from side effect
+ * functions */
+
 #include "identify_side_effect_functions.h"
 
 #include "traverse.h"

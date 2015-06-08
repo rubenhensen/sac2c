@@ -233,6 +233,8 @@ RTC (malloc, 'm', FALSE)
 RTC (checkerrno, 'e', FALSE)
 RTC (heap, 'h', FALSE)
 RTC (distmem, 'd', FALSE) /* Distributed memory backend */
+RTC (distmemphm, 'i',
+     FALSE) /* Use diagnostic heap manager for distributed memory backend. */
 
 #undef RTCflag
 #undef RTCchar

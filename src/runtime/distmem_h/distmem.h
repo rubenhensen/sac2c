@@ -25,6 +25,23 @@
  * We always declare this variable for tracing purposes. */
 SAC_C_EXTERN_VAR size_t SAC_DISTMEM_rank;
 
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_DISTMEM_Exit( int exit_code)
+ *
+ *   @brief    Shuts down the dsm system.
+ *
+ *             It is recommended to still call exit() afterwards but do not
+ *             rely on it being called.
+ *             This is also declared when the distributed memory backend is not
+ *             used so that it can be used from SAC_RuntimeError.
+ *
+ *  @param exit_code    exit code
+ *
+ ******************************************************************************/
+
+void SAC_DISTMEM_Exit (int exit_code);
+
 /* For tracing purposes. */
 #define SAC_DISTMEM_RANK_UNDEFINED SIZE_MAX
 
@@ -32,9 +49,6 @@ SAC_C_EXTERN_VAR size_t SAC_DISTMEM_rank;
 
 /* Master node. Only this nodes executes functions with side-effects. */
 #define SAC_DISTMEM_RANK_MASTER 0
-
-/* Minimum elements per node so that array is distributed. */
-#define SAC_DISTMEM_MIN_ELEMS_PER_NODE 10
 
 /* Type for the execution mode */
 typedef enum SAC_DISTMEM_exec_mode_enum {
@@ -69,9 +83,6 @@ SAC_C_EXTERN_VAR void *SAC_DISTMEM_cache_ptr;
  * (at other indices) */
 SAC_C_EXTERN_VAR void **SAC_DISTMEM_local_seg_ptrs;
 
-/* Offset to free memory within shared segment */
-SAC_C_EXTERN_VAR uintptr_t SAC_DISTMEM_seg_free_offs;
-
 /* Flag that indicates whether writes to distributed arrays are
  * currently allowed. */
 SAC_C_EXTERN_VAR bool SAC_DISTMEM_are_dist_writes_allowed;
@@ -82,6 +93,9 @@ SAC_C_EXTERN_VAR bool SAC_DISTMEM_are_cache_writes_allowed;
 
 /* Current execution mode. */
 SAC_C_EXTERN_VAR SAC_DISTMEM_exec_mode_t SAC_DISTMEM_exec_mode;
+
+/* Minimum number of array elements per node such that an array gets distributed */
+SAC_C_EXTERN_VAR size_t SAC_DISTMEM_min_elems_per_node;
 
 /******************************************
  * Global variables used for
@@ -127,19 +141,22 @@ void SAC_DISTMEM_Init (int argc, char *argv[]);
 
 /** <!--********************************************************************-->
  *
- * @fn void SAC_DISTMEM_Setup( size_t maxmem_mb)
+ * @fn void SAC_DISTMEM_Setup( size_t maxmem_mb, size_t min_elems_per_node)
  *
  *   @brief    Sets up the dsm systemn so that it is ready for use.
  *
  *             Tries to reserve maxmem_mb MB of memory for the dsm system.
  *             If less than the requested memory is available, a warning
  *             is printed.
+ *             Initializes the private heap manager.
  *
- *   @param maxmem_mb      amount of memory to use for the dsm system in MB
+ *   @param maxmem_mb             amount of memory to use for the dsm system in MB
+ *   @param min_elems_per_node    minimum number of elements per node such that
+ *                                an array gets distributed
  *
  ******************************************************************************/
 
-void SAC_DISTMEM_Setup (size_t maxmem_mb);
+void SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node);
 
 /** <!--********************************************************************-->
  *
@@ -170,19 +187,6 @@ void SAC_DISTMEM_InvalCache (uintptr_t arr_offset, size_t b);
  ******************************************************************************/
 
 void SAC_DISTMEM_Barrier (void);
-
-/** <!--********************************************************************-->
- *
- * @fn void SAC_DISTMEM_Exit( void)
- *
- *   @brief    Shuts down the dsm system.
- *
- *             It is recommended to still call exit() afterwards but do not
- *             rely on it being called.
- *
- ******************************************************************************/
-
-void SAC_DISTMEM_Exit (void);
 
 /** <!--********************************************************************-->
  *
@@ -250,30 +254,13 @@ size_t SAC_DISTMEM_DetDim0Start (size_t dim0_size, size_t start_range, size_t st
 
 size_t SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range);
 
-/** <!--********************************************************************-->
- *
- * @fn void *SAC_DISTMEM_Malloc( size_t num_elems, size_t elem_size, uintptr_t *offset)
- *
- *   @brief   Allocates num_elems * elems_size B of memory in the shared segment.
- *
- *            Also takes care of memory alignment.
- *
- *   @param num_elems number of elements (per node)
- *   @param elem_size element size in B
- *   @param offset    is set to the offset within the shared segment
- *   @return          pointer to allocated memory
- *
- ******************************************************************************/
-
-void *SAC_DISTMEM_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offset);
-
 /******************************************
  * Tracing declarations
  *******************************************/
 
 void SAC_DISTMEM_TR_Init (int argc, char *argv[]);
 
-void SAC_DISTMEM_TR_Setup (size_t maxmem_mb);
+void SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node);
 
 void SAC_DISTMEM_TR_InvalEntireCache (void);
 
@@ -285,7 +272,7 @@ void SAC_DISTMEM_TR_AllowDistWrites (void);
 
 void SAC_DISTMEM_TR_ForbidDistWrites (void);
 
-void SAC_DISTMEM_TR_Exit (void);
+void SAC_DISTMEM_TR_Exit (int exit_code);
 
 bool SAC_DISTMEM_TR_DetDoDistrArr (size_t total_elems, size_t dim0_size);
 
@@ -295,8 +282,6 @@ size_t SAC_DISTMEM_TR_DetDim0Start (size_t dim0_size, size_t start, size_t stop)
 
 size_t SAC_DISTMEM_TR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
-void *SAC_DISTMEM_TR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offset);
-
 void SAC_DISTMEM_TR_IncNumPtrCalcs (void);
 
 /******************************************
@@ -305,7 +290,7 @@ void SAC_DISTMEM_TR_IncNumPtrCalcs (void);
 
 void SAC_DISTMEM_PR_Init (int argc, char *argv[]);
 
-void SAC_DISTMEM_PR_Setup (size_t maxmem_mb);
+void SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node);
 
 void SAC_DISTMEM_PR_InvalEntireCache (void);
 
@@ -317,7 +302,7 @@ void SAC_DISTMEM_PR_AllowDistWrites (void);
 
 void SAC_DISTMEM_PR_ForbidDistWrites (void);
 
-void SAC_DISTMEM_PR_Exit (void);
+void SAC_DISTMEM_PR_Exit (int exit_code);
 
 bool SAC_DISTMEM_PR_DetDoDistrArr (size_t total_elems, size_t dim0_size);
 
@@ -327,12 +312,27 @@ size_t SAC_DISTMEM_PR_DetDim0Start (size_t dim0_size, size_t start, size_t stop)
 
 size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
-void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offset);
-
 /******************************************
  * Functions that are implemented as
  * macros.
  *******************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_DET_OFFS( addr)
+ *
+ *   @brief   Calculates the offset of an address within the shared segment of this node.
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_DET_OFFS(addr)                                                       \
+    (SAC_TR_DISTMEM_PRINT_EXPR ("Offset of address %p in shared segment is %" PRIuPTR    \
+                                ".",                                                     \
+                                addr,                                                    \
+                                (uintptr_t)addr                                          \
+                                  - (uintptr_t)SAC_DISTMEM_shared_seg_ptr) (uintptr_t)   \
+       addr                                                                              \
+     - (uintptr_t)SAC_DISTMEM_shared_seg_ptr)
 
 /** <!--********************************************************************-->
  *
@@ -516,7 +516,7 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 
 /** <!--********************************************************************-->
  *
- * @fn SAC_MASTER_BROADCAST_INIT( value_type, value_NT)
+ * @fn SAC_DISTMEM_BROADCAST_INIT( value_type, value_NT)
  *
  *   @brief   Initializes a broadcasts of value_NT from the master node to all other
  *nodes.
@@ -527,10 +527,16 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
  *
  ******************************************************************************/
 
-#define SAC_MASTER_BROADCAST_INIT(value_type, value_NT)                                  \
-    uintptr_t CAT12 (NT_NAME (value_NT), __broadcast_offset);                            \
-    SAC_DISTMEM_MALLOC (SAC_ND_A_SIZE (value_NT), sizeof (value_type),                   \
-                        &CAT12 (NT_NAME (value_NT), __broadcast_offset));                \
+#define SAC_DISTMEM_BROADCAST_INIT(value_type, value_NT)                                 \
+    value_type *CAT12 (NT_NAME (value_NT), __broadcast_var);                             \
+    SAC_DISTMEM_HM_MALLOC (CAT12 (NT_NAME (value_NT), __broadcast_var),                  \
+                           SAC_ND_A_SIZE (value_NT) * sizeof (value_type), value_type);  \
+    uintptr_t CAT12 (NT_NAME (value_NT), __broadcast_offset)                             \
+      = SAC_DISTMEM_DET_OFFS (CAT12 (NT_NAME (value_NT), __broadcast_var));              \
+    SAC_TR_DISTMEM_PRINT ("Initializing broadcast of %d elements of variable %s of "     \
+                          "type %s starting at %p.",                                     \
+                          SAC_ND_A_SIZE (value_NT), NT_STR (value_NT), #value_type,      \
+                          CAT12 (NT_NAME (value_NT), __broadcast_var));                  \
     if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER) {                                   \
         for (int i = 0; i < SAC_ND_A_SIZE (value_NT); i++) {                             \
             *SAC_DISTMEM_ELEM_POINTER (CAT12 (NT_NAME (value_NT), __broadcast_offset),   \
@@ -544,7 +550,7 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 
 /** <!--********************************************************************-->
  *
- * @fn SAC_MASTER_BROADCAST_FINALIZE( value_type, value_NT)
+ * @fn SAC_DISTMEM_BROADCAST_FINALIZE( value_type, value_NT)
  *
  *   @brief   Finalizes a broadcast of value_NT from the master node to all other nodes.
  *
@@ -561,7 +567,9 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
  *
  ******************************************************************************/
 
-#define SAC_MASTER_BROADCAST_FINALIZE(value_type, value_NT)                              \
+#define SAC_DISTMEM_BROADCAST_FINALIZE(value_type, value_NT)                             \
+    SAC_TR_DISTMEM_PRINT ("Finalizing broadcast of variable %s of type %s.",             \
+                          NT_STR (value_NT), #value_type);                               \
     if (SAC_DISTMEM_rank != SAC_DISTMEM_RANK_MASTER) {                                   \
         for (int i = 0; i < SAC_ND_A_SIZE (value_NT); i++) {                             \
             SAC_ND_WRITE (value_NT, i)                                                   \
@@ -569,8 +577,31 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
                                                   __broadcast_offset),                   \
                                            value_type, SAC_ND_A_SIZE (value_NT), i);     \
         }                                                                                \
-    }                                                                                    \
-    /* TODO: Free memory! This would require a barrier too. */
+    }
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_BROADCAST_FREE_MEMORY( value_type, value_NT)
+ *
+ *   @brief   Frees the memory used during a broadcast operation.
+ *
+ *            A barrier is required between SAC_MASTER_BROADCAST_FINALIZE and this
+ *function. The barrier is not included in this function for performance reasons. If
+ *multiple values are broadcasted, a single barrier between the calls to
+ *SAC_MASTER_BROADCAST_FINALIZE and SAC_MASTER_BROADCAST_FREE_MEMORY suffices. Accesses to
+ *the local cache are not allowed between SAC_MASTER_BROADCAST_INIT and after this
+ *function!
+ *
+ *   @param value_type    type of the values
+ *   @param value_NT      at the master: variable to be broadcasted
+ *                        at a worker: variable where the result should be stored in
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_BROADCAST_FREE_MEMORY(value_type, value_NT)                          \
+    SAC_TR_DISTMEM_PRINT ("Freeing memory after broadcast of variable %s of type %s.",   \
+                          NT_STR (value_NT), #value_type);                               \
+    SAC_DISTMEM_HM_FREE (CAT12 (NT_NAME (value_NT), __broadcast_var))
 
 /******************************************
  * Runtime check macros
@@ -670,8 +701,7 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
  *
  *             Performs the following checks:
  *              - ptr must not lie before the begin of the local shared segment.
- *              - ptr must not lie after the end of the currently allocated area
- *                within the local shared segment.
+ *              - ptr must not lie after the end of the local shared segment.
  *
  *   @return        TRUE if ptr is valid, FALSE otherwise
  *
@@ -679,8 +709,7 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 
 #define SAC_DISTMEM_IS_VALID_WRITE_PTR(ptr)                                              \
     (((uintptr_t)ptr < (uintptr_t)SAC_DISTMEM_shared_seg_ptr                             \
-      || (uintptr_t)ptr                                                                  \
-           > (uintptr_t)SAC_DISTMEM_shared_seg_ptr + SAC_DISTMEM_seg_free_offs)          \
+      || (uintptr_t)ptr > (uintptr_t)SAC_DISTMEM_shared_seg_ptr + SAC_DISTMEM_segsz)     \
        ? FALSE                                                                           \
        : TRUE)
 
@@ -693,8 +722,6 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
  *             Performs the following checks:
  *              - ptr must not lie before the begin of the overall cache memory segment.
  *              - ptr must not lie after the end of the overall cache memory segment.
- *              - ptr must not lie after the end of the currently allocated area within
- *                a node's segment.
  *
  *   @return        TRUE if ptr is valid, FALSE otherwise
  *
@@ -703,10 +730,7 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 #define SAC_DISTMEM_IS_VALID_CACHE_PTR(ptr)                                              \
     (((uintptr_t)ptr < (uintptr_t)SAC_DISTMEM_cache_ptr                                  \
       || (uintptr_t)ptr > (uintptr_t)SAC_DISTMEM_cache_ptr                               \
-                            + SAC_DISTMEM_segsz * (SAC_DISTMEM_size - 1)                 \
-      || ((uintptr_t)ptr - (uintptr_t)SAC_DISTMEM_cache_ptr))                            \
-           % SAC_DISTMEM_segsz                                                           \
-         > SAC_DISTMEM_seg_free_offs                                                     \
+                            + SAC_DISTMEM_segsz * (SAC_DISTMEM_size - 1))                \
        ? FALSE                                                                           \
        : TRUE)
 
@@ -750,7 +774,9 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 
 #define SAC_DISTMEM_INIT() SAC_DISTMEM_TR_Init (__argc, __argv);
 
-#define SAC_DISTMEM_SETUP() SAC_DISTMEM_TR_Setup (SAC_SET_DISTMEM_MAX_MEMORY_MB);
+#define SAC_DISTMEM_SETUP()                                                              \
+    SAC_DISTMEM_TR_Setup (SAC_SET_DISTMEM_MAX_MEMORY_MB,                                 \
+                          SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE);
 
 #define SAC_DISTMEM_INVAL_ENTIRE_CACHE() SAC_DISTMEM_TR_InvalEntireCache ();
 
@@ -758,7 +784,7 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 
 #define SAC_DISTMEM_BARRIER() SAC_DISTMEM_TR_Barrier ();
 
-#define SAC_DISTMEM_EXIT() SAC_DISTMEM_TR_Exit ();
+#define SAC_DISTMEM_EXIT(exit_code) SAC_DISTMEM_TR_Exit (exit_code);
 
 #define SAC_DISTMEM_DET_DO_DISTR_ARR(total_elems, dim0_size)                             \
     SAC_DISTMEM_TR_DetDoDistrArr (total_elems, dim0_size);
@@ -772,9 +798,6 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 #define SAC_DISTEM_DET_DIM0_STOP(dim0_size, start, stop)                                 \
     SAC_DISTMEM_TR_DetDim0Stop (dim0_size, start, stop);
 
-#define SAC_DISTMEM_MALLOC(num_elems, elem_size, offset)                                 \
-    SAC_DISTMEM_TR_Malloc (num_elems, elem_size, offset);
-
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
     _SAC_DISTMEM_TR_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
@@ -782,7 +805,9 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 
 #define SAC_DISTMEM_INIT() SAC_DISTMEM_PR_Init (__argc, __argv);
 
-#define SAC_DISTMEM_SETUP() SAC_DISTMEM_PR_Setup (SAC_SET_DISTMEM_MAX_MEMORY_MB);
+#define SAC_DISTMEM_SETUP()                                                              \
+    SAC_DISTMEM_PR_Setup (SAC_SET_DISTMEM_MAX_MEMORY_MB,                                 \
+                          SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE);
 
 #define SAC_DISTMEM_INVAL_ENTIRE_CACHE() SAC_DISTMEM_PR_InvalEntireCache ();
 
@@ -790,7 +815,7 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 
 #define SAC_DISTMEM_BARRIER() SAC_DISTMEM_PR_Barrier ();
 
-#define SAC_DISTMEM_EXIT() SAC_DISTMEM_PR_Exit ();
+#define SAC_DISTMEM_EXIT(exit_code) SAC_DISTMEM_PR_Exit (exit_code);
 
 #define SAC_DISTMEM_DET_DO_DISTR_ARR(total_elems, dim0_size)                             \
     SAC_DISTMEM_PR_DetDoDistrArr (total_elems, dim0_size);
@@ -804,9 +829,6 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 #define SAC_DISTEM_DET_DIM0_STOP(dim0_size, start, stop)                                 \
     SAC_DISTMEM_PR_DetDim0Stop (dim0_size, start, stop);
 
-#define SAC_DISTMEM_MALLOC(num_elems, elem_size, offset)                                 \
-    SAC_DISTMEM_PR_Malloc (num_elems, elem_size, offset);
-
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
     _SAC_DISTMEM_PR_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
@@ -814,7 +836,8 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 
 #define SAC_DISTMEM_INIT() SAC_DISTMEM_Init (__argc, __argv);
 
-#define SAC_DISTMEM_SETUP() SAC_DISTMEM_Setup (SAC_SET_DISTMEM_MAX_MEMORY_MB);
+#define SAC_DISTMEM_SETUP()                                                              \
+    SAC_DISTMEM_Setup (SAC_SET_DISTMEM_MAX_MEMORY_MB, SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE);
 
 #define SAC_DISTMEM_INVAL_ENTIRE_CACHE() SAC_DISTMEM_InvalEntireCache ();
 
@@ -822,7 +845,7 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 
 #define SAC_DISTMEM_BARRIER() SAC_DISTMEM_Barrier ();
 
-#define SAC_DISTMEM_EXIT() SAC_DISTMEM_Exit ();
+#define SAC_DISTMEM_EXIT(exit_code) SAC_DISTMEM_Exit (exit_code);
 
 #define SAC_DISTMEM_DET_DO_DISTR_ARR(total_elems, dim0_size)                             \
     SAC_DISTMEM_DetDoDistrArr (total_elems, dim0_size);
@@ -836,9 +859,6 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
 #define SAC_DISTEM_DET_DIM0_STOP(dim0_size, start_range, stop_range)                     \
     SAC_DISTMEM_DetDim0Stop (dim0_size, start_range, stop_range);
 
-#define SAC_DISTMEM_MALLOC(num_elems, elem_size, offset)                                 \
-    SAC_DISTMEM_Malloc (num_elems, elem_size, offset);
-
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
     _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
@@ -851,29 +871,7 @@ void *SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offs
  * distributed memory backend is not used.
  *******************************************/
 
-#define SAC_DISTMEM_INIT()
-
-#define SAC_DISTMEM_SETUP()
-
-#define SAC_DISTMEM_EXIT()
-
-#if 0
-
-// TODO: verify sequential works and remove
-
-/* TODO: We probably don't need this when the distmem backend is not used. */
-#define SAC_DISTMEM_INVAL_ENTIRE_CACHE()
-
-/* TODO: We probably don't need this when the distmem backend is not used. */
-#define SAC_DISTMEM_INVAL_CACHE(arr_offset, b)
-
-/* TODO: We probably don't need this when the distmem backend is not used. */
-#define SAC_DISTMEM_BARRIER()
-
-/* TODO: Prelude needs this. Really? */
-#define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index) 0
-
-#endif
+#define SAC_DISTMEM_EXIT(exit_code) SAC_DISTMEM_Exit (exit_code);
 
 /*
  * We do not define the other macros because they

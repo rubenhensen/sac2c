@@ -95,6 +95,8 @@ default devel prod: checks
                 fi
 	$(HIDE) $(MAKE) -C src/libsacdistmem  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsacdistmem/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsacdistmemphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacdistmemphm/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsacprelude  DEPS="$(DEPS)" HIDE="$(HIDE)" \
@@ -133,6 +135,8 @@ clean cleandevel cleanprod: checks
                         PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsacdistmem  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsacdistmem/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsacdistmemphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacdistmemphm/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
 	$(HIDE) $(RM) -rf lib/* bin/*
@@ -177,6 +181,8 @@ refactor: checks
                         PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/libsacdistmem  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsacdistmem/"  PREFIX_ROOT="" $@
+	$(HIDE) $(MAKE) -C src/libsacdistmemphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacdistmemphm/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/" PREFIX_ROOT="" $@
 	@$(ECHO) ""
@@ -218,6 +224,10 @@ libsacphm: checks
 libsacdistmem: checks
 	$(HIDE) $(MAKE) -C src/libsacdistmem  DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/libsacdistmem/"  PREFIX_ROOT="" default
+
+libsacdistmemphm: checks
+	$(HIDE) $(MAKE) -C src/libsacdistmemphm  DEPS="$(DEPS)" HIDE="$(HIDE)" \
+                        PREFIX_LOCAL="src/libsacdistmemphm/"  PREFIX_ROOT="" default
 
 tools: checks
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \

@@ -134,9 +134,6 @@ void *SAC_DISTMEM_cache_ptr;
  * (at other indices) */
 void **SAC_DISTMEM_local_seg_ptrs;
 
-/* Offset to free memory within shared segment */
-uintptr_t SAC_DISTMEM_seg_free_offs = 0;
-
 /* Flag that indicates whether writes to distributed arrays are
  * currently allowed. */
 bool SAC_DISTMEM_are_dist_writes_allowed = FALSE;
@@ -147,6 +144,9 @@ bool SAC_DISTMEM_are_cache_writes_allowed = FALSE;
 
 /* Current execution mode. */
 SAC_DISTMEM_exec_mode_t SAC_DISTMEM_exec_mode = SAC_DISTMEM_exec_mode_sync;
+
+/* Minimum number of array elements per node such that an array gets distributed */
+size_t SAC_DISTMEM_min_elems_per_node;
 
 /******************************************
  * Global variables used for
@@ -282,16 +282,18 @@ SAC_DISTMEM_Init (int argc, char *argv[])
 
 #if COMPILE_TRACE
 void
-SAC_DISTMEM_TR_Setup (size_t maxmem_mb)
+SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node)
 #elif COMPILE_PROFILE
 void
-SAC_DISTMEM_PR_Setup (size_t maxmem_mb)
+SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node)
 #else /* COMPILE_PLAIN */
 void
-SAC_DISTMEM_Setup (size_t maxmem_mb)
+SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node)
 #endif
 {
     size_t i;
+
+    SAC_DISTMEM_min_elems_per_node = min_elems_per_node;
 
     /* Query system page size */
     int pagesz = sysconf (_SC_PAGE_SIZE);
@@ -304,14 +306,12 @@ SAC_DISTMEM_Setup (size_t maxmem_mb)
      * system page size. */
     size_t maxmem = maxmem_mb * 1024 * 1024 / SAC_DISTMEM_pagesz * SAC_DISTMEM_pagesz;
 
-    SAC_TR_DISTMEM_PRINT ("Setting up communication library.");
+    SAC_TR_DISTMEM_PRINT ("Setting up communication library (min. elements/node: %zd).",
+                          SAC_DISTMEM_min_elems_per_node);
 
     SAC_DISTMEM_COMMLIB_SETUP (maxmem);
 
     SAC_TR_DISTMEM_PRINT ("Size: %d", SAC_DISTMEM_size);
-
-    /* Initalize the offset to the free memory in the shared segment. */
-    SAC_DISTMEM_seg_free_offs = 0;
 
     /* Register seg fault signal handler. */
     struct sigaction sa;
@@ -347,6 +347,10 @@ SAC_DISTMEM_Setup (size_t maxmem_mb)
           = (void *)((uintptr_t)SAC_DISTMEM_cache_ptr + SAC_DISTMEM_segsz * (i - 1));
         SAC_TR_DISTMEM_PRINT ("   Segment of %zd: %p", i, SAC_DISTMEM_local_seg_ptrs[i]);
     }
+
+    /* Setup of private heap manager. */
+    SAC_TR_DISTMEM_PRINT ("Initializing setup of heap manager.");
+    SAC_DISTMEM_HM_Setup ();
 
     SAC_DISTMEM_BARRIER ();
 }
@@ -427,16 +431,19 @@ SAC_DISTMEM_Barrier (void)
 
 #if COMPILE_TRACE
 void
-SAC_DISTMEM_TR_Exit (void)
+SAC_DISTMEM_TR_Exit (int exit_code)
 #elif COMPILE_PROFILE
 void
-SAC_DISTMEM_PR_Exit (void)
+SAC_DISTMEM_PR_Exit (int exit_code)
 #else /* COMPILE_PLAIN */
 void
-SAC_DISTMEM_Exit (void)
+SAC_DISTMEM_Exit (int exit_code)
 #endif
 {
-    SAC_TR_DISTMEM_PRINT ("Exiting communication library.");
+    /* Print heap manager diagnostics; */
+    SAC_DISTMEM_HM_ShowDiagnostics ();
+
+    SAC_TR_DISTMEM_PRINT ("Exiting communication library with exit code %d.", exit_code);
 
     SAC_TR_DISTMEM_PRINT ("   Distributed arrays: %lu", SAC_DISTMEM_TR_num_arrays);
     SAC_TR_DISTMEM_PRINT ("   Invalidated pages: %lu", SAC_DISTMEM_TR_num_inval_pages);
@@ -445,7 +452,7 @@ SAC_DISTMEM_Exit (void)
     SAC_TR_DISTMEM_PRINT ("   Barriers: %lu", SAC_DISTMEM_TR_num_barriers);
 
     SAC_DISTMEM_BARRIER ();
-    SAC_DISTMEM_COMMLIB_EXIT ();
+    SAC_DISTMEM_COMMLIB_EXIT (exit_code);
 }
 
 #if COMPILE_TRACE
@@ -481,7 +488,7 @@ SAC_DISTMEM_DetDoDistrArr (size_t total_elems, size_t dim0_size)
             - (SAC_DISTMEM_size - 1)
                 * SAC_DISTMEM_DET_MAX_ELEMS_PER_NODE (total_elems, dim0_size);
 
-        if (min_elems < SAC_DISTMEM_MIN_ELEMS_PER_NODE) {
+        if (min_elems < SAC_DISTMEM_min_elems_per_node) {
             do_dist = FALSE;
         }
     }
@@ -557,53 +564,6 @@ SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range
 }
 
 #if COMPILE_TRACE
-void *
-SAC_DISTMEM_TR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offset)
-#elif COMPILE_PROFILE
-void *
-SAC_DISTMEM_PR_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offset)
-#else /* COMPILE_PLAIN */
-void *
-SAC_DISTMEM_Malloc (size_t num_elems, size_t elem_size, uintptr_t *offset)
-#endif
-{
-#if COMPILE_TRACE || COMPILE_PROFILE
-    SAC_DISTMEM_TR_num_arrays++;
-#endif
-
-    if (SAC_DISTMEM_seg_free_offs % elem_size > 0) {
-        /*
-         * Next free address is not well-aligned.
-         * Insert padding.
-         */
-        SAC_TR_DISTMEM_PRINT (
-          "Next free offset %zd is not well-aligned. Inserting %zd of padding to %zd.",
-          SAC_DISTMEM_seg_free_offs, (elem_size - SAC_DISTMEM_seg_free_offs % elem_size),
-          SAC_DISTMEM_seg_free_offs
-            + (elem_size - SAC_DISTMEM_seg_free_offs % elem_size));
-
-        SAC_DISTMEM_seg_free_offs += (elem_size - SAC_DISTMEM_seg_free_offs % elem_size);
-    }
-
-    *offset = SAC_DISTMEM_seg_free_offs;
-
-    SAC_DISTMEM_seg_free_offs += num_elems * elem_size;
-
-    if (SAC_DISTMEM_seg_free_offs > SAC_DISTMEM_segsz) {
-        SAC_RuntimeError ("Out of memory: DSM segment size exceeded.");
-    }
-
-    SAC_TR_DISTMEM_PRINT ("Allocated %zd B at offset %" PRIuPTR " in shared segment from "
-                                                                "%p (first element) to "
-                                                                "%p (last element).",
-                          num_elems * elem_size, *offset,
-                          (void *)(((uintptr_t)SAC_DISTMEM_shared_seg_ptr) + *offset),
-                          (void *)(((uintptr_t)SAC_DISTMEM_shared_seg_ptr) + *offset
-                                   + elem_size * (num_elems - 1)));
-    return (void *)(((uintptr_t)SAC_DISTMEM_shared_seg_ptr) + *offset);
-}
-
-#if COMPILE_TRACE
 /*
  * This must be a C function because otherwise
  * we get a operation on SAC_DISTMEM_TR_num_ptr_calcs may be
@@ -618,5 +578,13 @@ SAC_DISTMEM_TR_IncNumPtrCalcs (void)
 #endif /* COMPILE_TRACE */
 
 #endif /* ENABLE_DISTMEM */
+
+#elif COMPILE_PLAIN /* defined(COMPILE_DISTMEM) */
+
+/* Dummy function for SAC_RuntimeError when the distributed memory backend is not used. */
+void
+SAC_DISTMEM_Exit (int exit_code)
+{
+}
 
 #endif /* defined(COMPILE_DISTMEM) */

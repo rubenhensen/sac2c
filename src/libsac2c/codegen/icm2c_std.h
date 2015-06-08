@@ -4,8 +4,9 @@
 extern void ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
                                    char **vararg);
 
-extern void ICMCompileND_DISTMEM_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
-                                           char **vararg);
+extern void ICMCompileND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS (char *name, char *rettype_NT,
+                                                             int vararg_cnt,
+                                                             char **vararg);
 
 extern void ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
                                         char **vararg);

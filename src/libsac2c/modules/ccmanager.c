@@ -186,6 +186,7 @@ AddSacLib (str_buf *buffer)
     DBUG_RETURN ();
 }
 
+/* Adds libsacdistmem and libsacdistmemphm. */
 static void
 AddDistMemLib (str_buf *buffer)
 {
@@ -200,6 +201,18 @@ AddDistMemLib (str_buf *buffer)
             SBUFprintf (buffer, ".gasnet%s ", global.config.commlib_conduit);
             break;
         }
+
+        SBUFprint (buffer, " -lsacdistmemphm");
+        SBUFprint (buffer, global.config.lib_variant);
+
+        if (global.runtimecheck.distmemphm) {
+            /* Use diagnostic heap manager for distributed memory backend. */
+            SBUFprint (buffer, ".seq.diag ");
+        } else {
+            /* Use normal heap manager for distributed memory backend. */
+            SBUFprint (buffer, ".seq ");
+        }
+
     } else {
         SBUFprintf (buffer, ".nodistmem ");
     }

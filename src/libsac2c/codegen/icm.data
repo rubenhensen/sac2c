@@ -16,13 +16,13 @@ ICM_DEF( ND_FUN_DECL, ICM_TRACE_NONE)
 ICM_END( ND_FUN_DECL, (name, rettype_NT, vararg_cnt, vararg))
 #endif
 
-#if defined(ND_DISTMEM_FUN_DECL) || defined(ICM_ALL)
-ICM_DEF( ND_DISTMEM_FUN_DECL, ICM_TRACE_NONE)
+#if defined(ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS) || defined(ICM_ALL)
+ICM_DEF( ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS, ICM_TRACE_NONE)
   ICM_ID( name)
   ICM_NT( rettype_NT)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( ND_DISTMEM_FUN_DECL, (name, rettype_NT, vararg_cnt, vararg))
+ICM_END( ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS, (name, rettype_NT, vararg_cnt, vararg))
 #endif
 
 #if defined(ND_FUN_DEF_BEGIN) || defined(ICM_ALL)
@@ -900,6 +900,14 @@ ICM_DEF( WL_SUBALLOC, ICM_TRACE_NONE)
   ICM_NT( to_NT)
   ICM_NT( off_NT)
 ICM_END( WL_SUBALLOC, (sub_NT, to_NT, off_NT))
+#endif
+
+#if defined(WL_DISTMEM_SUBALLOC) || defined(ICM_ALL)
+ICM_DEF( WL_DISTMEM_SUBALLOC, ICM_TRACE_NONE)
+  ICM_NT( sub_NT)
+  ICM_NT( to_NT)
+  ICM_NT( off_NT)
+ICM_END( WL_DISTMEM_SUBALLOC, (sub_NT, to_NT, off_NT))
 #endif
 
 #if defined(WL_ASSIGN) || defined(ICM_ALL)

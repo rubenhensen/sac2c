@@ -6070,23 +6070,38 @@ Type2OldType (ntype *xnew)
         break;
     }
 
-    // TODO: Think of suitable condition.
-    if (
-      global.backend == BE_distmem
-      && global.type_cbasetype[TYPES_BASETYPE (res)] != C_btother
-      /* For now we cannot support string functions, so we do not support unsigned char
-         arrays. */
-      && global.type_cbasetype[TYPES_BASETYPE (res)] != C_btuchar
-      && TYPES_DIM (res) != SCALAR && !TCisHidden (res) && !TCisNested (res)) {
-        TYPES_DISTRIBUTED (res) = TRUE;
-    }
-
     if (res != NULL && xnew != NULL) {
         TYPES_MUTC_SCOPE (res) = NTYPE_MUTC_SCOPE (xnew);
         TYPES_MUTC_USAGE (res) = NTYPE_MUTC_USAGE (xnew);
         if (TYisUnique (xnew)) {
             TYPES_UNIQUE (res) = TRUE;
         }
+    }
+
+    /* Decide whether the type is distributable. */
+    /* TODO: This is not the best location but we only need this during code generation
+     * so at this moment we do not need this in the new type system. */
+    if (global.backend == BE_distmem
+        /* It seems like the basetype is not yet supported by the distributed memory
+         * backend. Don't distribute. */
+        && global.type_cbasetype[TYPES_BASETYPE (res)] != C_btother
+        /* To avoid problems with string functions, we do not distribute unsigned char
+           arrays. */
+        && global.type_cbasetype[TYPES_BASETYPE (res)] != C_btuchar
+        /* It doesn't make sense to distribute scalars. */
+        && TYPES_DIM (res) != SCALAR
+        /* We do not distribute hidden types. It is not practical since we would have to
+         * think about (de-)serialization. But since hidden types come from the
+         * non-distributed C world it doesn't make make sense to distribute them anyways.
+         */
+        && !TCisHidden (res)
+        /* It doesn't make sense to distribute unique types. These are only used by the
+         * master node.
+         * TODO: TYPES_UNIQUE seems to be always FALSE. */
+        && !TYPES_UNIQUE (res)
+        /* For now we do not distribute nested types. TODO: What are these actually? */
+        && !TCisNested (res)) {
+        TYPES_DISTRIBUTED (res) = TRUE;
     }
 
     DBUG_RETURN (res);

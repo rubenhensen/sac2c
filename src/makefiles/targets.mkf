@@ -144,7 +144,7 @@ libsac2c_objects     := object_init resolve_reference_args object_analysis \
 
 libsac2c_nested      := generate_nested_type_conversions
 
-libsac2c_distmem     := identify_side_effect_functions identify_distributable_arrays
+libsac2c_distmem     := identify_side_effect_functions identify_side_effect_function_aps identify_distributable_arrays
 
 libsac2c_generics    := remove_generic_definitions \
                         check_and_simplify_generic_definitions \
@@ -306,7 +306,7 @@ runtime_extraclean_prod   :=
 
 runtime_sourcedirs        := essentials_h extras_h mt_h mt_omp_h mt_beehive_h mt_pth_h \
                              mt_lpel_h phm_h mutc_h cuda_h rtspec_h distmem_h \
-                             cudahybrid_h nested_h
+                             cudahybrid_h nested_h distmemphm_h
 
 ###############################################################################
 
@@ -318,6 +318,8 @@ runtime_essentials_h   := rc_methods types audwl commandline icm prf std std_gen
 runtime_extras_h       := cachesim profile runtimecheck trace
 
 runtime_phm_h          := phm
+
+runtime_distmemphm_h   := distmemphm
 
 runtime_mt_h           := mt
 
@@ -480,6 +482,34 @@ libsacphm_opt       := placement
 
 libsacphm_compat    := malloc 
 
+
+###############################################################################
+#
+# Subproject libsacdistmemphm
+#
+###############################################################################
+
+libsacdistmemphm_targets    := libsacdistmemphm$(CROSS_VARIANT).seq.a \
+                               libsacdistmemphm$(CROSS_VARIANT).seq$(SHARED_LIB_EXT) \
+                               libsacdistmemphm$(CROSS_VARIANT).seq.diag.a \
+                               libsacdistmemphm$(CROSS_VARIANT).seq.diag$(SHARED_LIB_EXT)
+     
+libsacdistmemphm_targetdir         := lib
+
+libsacdistmemphm_subtarget_suffix  := $(CROSS_VARIANT).o
+libsacdistmemphm_defaultstyle      := prod
+
+libsacdistmemphm_extraclean_all    := 
+libsacdistmemphm_extraclean_devel  := 
+libsacdistmemphm_extraclean_prod   := 
+
+libsacdistmemphm_sourcedirs        := heap diag
+
+###############################################################################
+
+libsacdistmemphm_heap      := internal setup wrapper small_chunks large_chunks
+
+libsacdistmemphm_diag      := diagnostics
 
 
 ###############################################################################
