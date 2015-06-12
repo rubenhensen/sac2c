@@ -156,7 +156,7 @@ CHKcorrectTypeInsertError (node *arg_node, char *string)
  *        arg_node may be NULL if the N_let has no result, e.g., "_dec_rc_()".
  *
  *******************************************************************************/
-static bool
+bool
 CHKisAttribIds (node *arg_node, node *assgn)
 {
     node *ids;
