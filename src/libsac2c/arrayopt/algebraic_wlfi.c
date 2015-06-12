@@ -814,8 +814,10 @@ GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
             DBUG_PRINT ("Could not build fake extrema for %s", AVIS_NAME (ivavis));
         } else {
             newarr = DUPdoDupTree (narr);
-            ARRAY_AELEMS (newarr) = FREEdoFreeTree (ARRAY_AELEMS (newarr));
-            ARRAY_AELEMS (newarr) = exprs;
+            if (NULL != ARRAY_AELEMS (newarr)) { // [:int] avoidance
+                ARRAY_AELEMS (newarr) = FREEdoFreeTree (ARRAY_AELEMS (newarr));
+                ARRAY_AELEMS (newarr) = exprs;
+            }
             DBUG_PRINT ("Built fake extrema for %s", AVIS_NAME (ivavis));
         }
     }
