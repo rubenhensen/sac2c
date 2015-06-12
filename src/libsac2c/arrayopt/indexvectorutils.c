@@ -500,13 +500,13 @@ IVUTisShapesMatch (node *pavis, node *cavis, node *cavisshape)
  *         those optimizations that need to have an index vector,
  *         rather than an offset, for indexing analysis.
  *
- * @return: the avis node for the new N_array.
+ * @return: the avis node for the new N_array, or NULL, if arg_node is NULL.
  *
  *****************************************************************************/
 static node *
 CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
 {
-    node *avis;
+    node *avis = NULL;
     node *ids;
     node *assgn;
     node *nlet;
@@ -515,23 +515,25 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
 
     DBUG_ENTER ();
 
-    len = TCcountExprs (arg_node);
-    avis = TBmakeAvis (TRAVtmpVar (),
-                       TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, len)));
-    *vardecs = TBmakeVardec (avis, *vardecs);
+    if (NULL != arg_node) {
+        len = TCcountExprs (arg_node);
+        avis = TBmakeAvis (TRAVtmpVar (),
+                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, len)));
+        *vardecs = TBmakeVardec (avis, *vardecs);
 
-    ids = TBmakeIds (avis, NULL);
-    assgn
-      = TBmakeAssign (TBmakeLet (ids, TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int),
-                                                              SHcreateShape (0)),
-                                                   SHcreateShape (1, len),
-                                                   DUPdoDupTree (arg_node))),
-                      NULL);
-    *preassigns = TCappendAssign (*preassigns, assgn);
-    AVIS_SSAASSIGN (avis) = assgn;
-    nlet = ASSIGN_STMT (assgn);
-    z = IVEXPgenerateNarrayExtrema (nlet, vardecs, preassigns);
-    LET_EXPR (nlet) = z;
+        ids = TBmakeIds (avis, NULL);
+        assgn = TBmakeAssign (TBmakeLet (ids,
+                                         TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int),
+                                                                 SHcreateShape (0)),
+                                                      SHcreateShape (1, len),
+                                                      DUPdoDupTree (arg_node))),
+                              NULL);
+        *preassigns = TCappendAssign (*preassigns, assgn);
+        AVIS_SSAASSIGN (avis) = assgn;
+        nlet = ASSIGN_STMT (assgn);
+        z = IVEXPgenerateNarrayExtrema (nlet, vardecs, preassigns);
+        LET_EXPR (nlet) = z;
+    }
 
     DBUG_RETURN (avis);
 }
