@@ -202,7 +202,7 @@
 #include "LookUpTable.h"
 #include "phase.h"
 #include "globals.h"
-#include "check.h"
+#include "check_lib.h"
 #include "wls.h"
 #include "ivexpropagation.h"
 #include "flattengenerators.h"
@@ -903,7 +903,7 @@ IVEXIpart (node *arg_node, info *arg_info)
     /* Don't try this on empty code blocks, kids. */
     /* Or default partitions, either! */
     if ((NULL != BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node))))
-        && (!CODE_HASEXTREMA (PART_CODE (arg_node)))
+        && (!WLUTisEmptyGenerator (arg_node)) && (!CODE_HASEXTREMA (PART_CODE (arg_node)))
         && (N_default != NODE_TYPE (PART_GENERATOR (arg_node)))) {
 
         populateLUTVars (arg_node, arg_info);
@@ -931,14 +931,14 @@ IVEXIpart (node *arg_node, info *arg_info)
          * arg_node. Weird....  2010-08-25
          */
         if (FALSE && (1 == CODE_USED (PART_CODE (arg_node)))) { /* FIXME */
-            newcode = DUPdoDupTreeLut (PART_CODE (arg_node), INFO_LUTVARS (arg_info));
+            newcode = DUPdoDupNodeLut (PART_CODE (arg_node), INFO_LUTVARS (arg_info));
             /* At this point, AVIS_SSAASSIGN nodes are
              * now wrong in the old code block. So, we will
              * delete the old code block later on in this
              * traversal.
              */
         } else {
-            newcode = DUPdoDupTreeLutSsa (PART_CODE (arg_node), INFO_LUTVARS (arg_info),
+            newcode = DUPdoDupNodeLutSsa (PART_CODE (arg_node), INFO_LUTVARS (arg_info),
                                           INFO_FUNDEF (arg_info));
         }
         (CODE_USED (PART_CODE (arg_node)))--;
@@ -1099,6 +1099,7 @@ IVEXIap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+#ifdef FIXME // HOPEFULLY DEAD. trying to find ipbb.sac AVIS_SSAASSIGN corruption
     DBUG_PRINT ("Traversing ap");
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
@@ -1106,6 +1107,7 @@ IVEXIap (node *arg_node, info *arg_info)
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
         INFO_FROMAP (arg_info) = FALSE;
     }
+#endif // FIXME  //HOPEFULLY DEAD. trying to find ipbb.sac AVIS_SSAASSIGN corruption
 
     DBUG_RETURN (arg_node);
 }

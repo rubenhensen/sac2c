@@ -551,6 +551,9 @@ CYCLEPHASEFUN (pcse, "Eliminating common subexpressions for polyhedral optimizat
 CYCLEPHASEFUN (pdcr, "Removing dead code for polyhedral optimizations",
                DCRdoDeadCodeRemoval, global.optimize.dodcr, opt, saacyc)
 
+CYCLEPHASEFUN (polys, "Polyhedral analysis setup", POLYSdoPolyhedralSetup,
+               global.optimize.dopogo || global.optimize.dopwlf, opt, saacyc)
+
 CYCLEPHASEFUN (pogo, "Polyhedral guard optimization", POGOdoPolyhedralGuardOptimization,
                global.optimize.dopogo, opt, saacyc)
 

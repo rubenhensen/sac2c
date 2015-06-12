@@ -195,6 +195,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize      \
                         wlpropagation                                       \
                         narray_utilities                                    \
                         set_withloop_depth                                  \
+                        polyhedral_setup                                    \
                         polyhedral_utilities                                \
                         polyhedral_wlf                                      \
                         eliminate_duplicate_fundef_args

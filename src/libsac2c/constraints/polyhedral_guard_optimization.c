@@ -290,10 +290,8 @@ POGOpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    arg_node = PHUTsetClearAvisPart (arg_node, arg_node);
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
-    arg_node = PHUTsetClearAvisPart (arg_node, NULL);
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -371,14 +369,12 @@ POGOap (node *arg_node, info *arg_info)
         (lacfundef != INFO_FUNDEF (arg_info))) { /* Ignore recursive call */
         DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
                     FUNDEF_NAME (lacfundef), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
-        PHUTsetClearCallAp (lacfundef, INFO_FUNDEF (arg_info), INFO_NASSIGN (arg_info));
         /* Traverse into the LACFUN */
         INFO_LACFUN (arg_info) = lacfundef; /* The called lacfun */
         newfundef = TRAVdo (lacfundef, arg_info);
         DBUG_ASSERT (newfundef = lacfundef,
                      "Did not expect N_fundef of LACFUN to change");
         INFO_LACFUN (arg_info) = NULL; /* Back to normal traversal */
-        PHUTsetClearCallAp (lacfundef, NULL, NULL);
     }
 
     DBUG_RETURN (arg_node);

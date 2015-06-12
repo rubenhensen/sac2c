@@ -6,25 +6,22 @@
 // #include <stdint.h> does not work today, so we do it this way.
 typedef unsigned int uint32_t;
 
-//#include "isl_map_private.h"
-#include <isl/ctx.h>
-#include <isl/vec.h>
+#include <ctx.h>
+#include <vec.h>
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <isl/obj.h>
-#include <isl/stream.h>
-#include <isl/set.h>
-#include <isl/map.h>
-#include <isl/vertices.h>
-#include <isl/flow.h>
-#include <isl/band.h>
-#include <isl/schedule.h>
-#include <isl/ast_build.h>
-#include <barvinok/isl.h>
-#include <barvinok/options.h>
+#include <obj.h>
+#include <stream.h>
+#include <set.h>
+#include <map.h>
+#include <vertices.h>
+#include <flow.h>
+#include <band.h>
+#include <schedule.h>
+#include <ast_build.h>
 #include "polyhedral_defs.h"
 
 void
@@ -66,6 +63,121 @@ printUnion (struct _IO_FILE *fd, struct isl_union_set *pset, char *titl, int ver
     return;
 }
 
+#ifdef CRUD
+// Stolen from iscc.c
+static struct isl_obj
+convert (isl_ctx *ctx, struct isl_obj obj, isl_obj_type type)
+{
+    if (obj.type == type)
+        return obj;
+    if (obj.type == isl_obj_map && type == isl_obj_union_map) {
+        obj.type = isl_obj_union_map;
+        obj.v = isl_union_map_from_map (obj.v);
+        return obj;
+    }
+    if (obj.type == isl_obj_set && type == isl_obj_union_set) {
+        obj.type = isl_obj_union_set;
+        obj.v = isl_union_set_from_set (obj.v);
+        return obj;
+    }
+    if (obj.type == isl_obj_pw_qpolynomial && type == isl_obj_union_pw_qpolynomial) {
+        obj.type = isl_obj_union_pw_qpolynomial;
+        obj.v = isl_union_pw_qpolynomial_from_pw_qpolynomial (obj.v);
+        return obj;
+    }
+    if (obj.type == isl_obj_pw_qpolynomial_fold
+        && type == isl_obj_union_pw_qpolynomial_fold) {
+        obj.type = isl_obj_union_pw_qpolynomial_fold;
+        obj.v = isl_union_pw_qpolynomial_fold_from_pw_qpolynomial_fold (obj.v);
+        return obj;
+    }
+    if (obj.type == isl_obj_union_set && isl_union_set_is_empty (obj.v)) {
+        if (type == isl_obj_union_map) {
+            obj.type = isl_obj_union_map;
+            return obj;
+        }
+        if (type == isl_obj_union_pw_qpolynomial) {
+            isl_space *dim = isl_union_set_get_space (obj.v);
+            isl_union_set_free (obj.v);
+            obj.v = isl_union_pw_qpolynomial_zero (dim);
+            obj.type = isl_obj_union_pw_qpolynomial;
+            return obj;
+        }
+        if (type == isl_obj_union_pw_qpolynomial_fold) {
+            isl_space *dim = isl_union_set_get_space (obj.v);
+            isl_union_set_free (obj.v);
+            obj.v = isl_union_pw_qpolynomial_fold_zero (dim, isl_fold_list);
+            obj.type = isl_obj_union_pw_qpolynomial_fold;
+            return obj;
+        }
+    }
+    if (obj.type == isl_obj_list) {
+        struct isl_list *list = obj.v;
+        if (list->n == 2 && list->obj[1].type == isl_obj_bool)
+            return convert (ctx, obj_at (obj, 0), type);
+    }
+    if (type == isl_obj_str) {
+        isl_str *str;
+        isl_printer *p;
+        char *s;
+
+        p = isl_printer_to_str (ctx);
+        if (!p)
+            goto error;
+        p = obj.type->print (p, obj.v);
+        s = isl_printer_get_str (p);
+        isl_printer_free (p);
+
+        str = isl_str_from_string (ctx, s);
+        if (!str)
+            goto error;
+        free_obj (obj);
+        obj.v = str;
+        obj.type = isl_obj_str;
+        return obj;
+    }
+error:
+    free_obj (obj);
+    obj.type = isl_obj_none;
+    obj.v = NULL;
+    return obj;
+}
+#endif // CRUD
+
+// Stolen from iscc.c
+//
+/* Generate an AST for the given schedule and options and print
+ * the AST on the printer.
+ */
+static __isl_give isl_printer *
+print_code (__isl_take isl_printer *p, __isl_take isl_union_map *schedule,
+            __isl_take isl_union_map *options)
+{
+    isl_set *context;
+    isl_ast_build *build;
+    isl_ast_node *tree;
+    int format;
+
+    context = isl_set_universe (isl_union_map_get_space (schedule));
+
+    build = isl_ast_build_from_context (context);
+    build = isl_ast_build_set_options (build, options);
+    tree = isl_ast_build_ast_from_schedule (build, schedule);
+    isl_ast_build_free (build);
+
+    if (!tree)
+        return p;
+
+    format = isl_printer_get_output_format (p);
+    p = isl_printer_set_output_format (p, ISL_FORMAT_C);
+    p = isl_printer_print_ast_node (p, tree);
+    p = isl_printer_set_output_format (p, format);
+
+    isl_ast_node_free (tree);
+
+    return p;
+}
+
 struct isl_union_set *
 doIntersect (struct isl_union_set *unionb, struct isl_union_set *unionc, char *titl,
              int verbose)
@@ -80,6 +192,29 @@ doIntersect (struct isl_union_set *unionb, struct isl_union_set *unionc, char *t
 
     return (intersectbc);
 }
+
+#ifdef CRUD
+isl_printer *
+Codegen (struct _IO_FILE *fd, struct isl_union_set *pset)
+{ // Perform code generation for a PWLF intersect
+
+    isl_printer *p;
+    isl_union_map *schedule;
+    isl_union_map *options;
+    struct isl_ctx *ctx;
+    struct isl_obj obj;
+
+    ctx = isl_union_set_get_ctx (pset);
+    p = isl_printer_to_file (ctx, fd);
+
+    obj = convert (ctx, obj, isl_obj_union_set);
+    schedule = isl_union_set_identity (obj.v);
+    options = isl_union_map_empty (isl_union_map_get_space (schedule));
+    p = print_code (p, schedule, options);
+
+    return (p);
+}
+#endif // CRUD
 
 int
 PolyhedralWLFIntersectCalc (int verbose)
@@ -127,8 +262,13 @@ PolyhedralWLFIntersectCalc (int verbose)
         }
     }
 
-    fprintf (stdout, "%d\n", z); // Write the result that PHUT will read.
+    // Perform the ISL codegen operation, using the intersect data.
+    // Codegen( stdout, intr);
+
+    fprintf (stdout, "%d\n", z);    // Write the result that PHUT will read.
+    fprintf (stdout, "codegen \n"); // Write the result that PHUT will read.
     printUnion (stdout, intr, "intersect", 1, ISL_FORMAT_ISL);
+    fprintf (stdout, "\n using { [b] -> separate[x] };");
 
     isl_union_set_free (pwl);
     isl_union_set_free (cwl);

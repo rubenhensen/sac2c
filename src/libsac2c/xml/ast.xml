@@ -781,6 +781,17 @@
           <node name="Prf" />
         </travuser>
       </traversal> 
+      <traversal id="POLYS" name="Polyhedral Analysis Setup" default="sons" include="polyhedral_setup.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Part" />
+          <node name="With" />
+          <node name="Assign" />
+          <node name="Ap" />
+          <node name="Let" />
+          <node name="Prf" />
+        </travuser>
+      </traversal> 
       <traversal id="GLF" name="Group Local functions" default="sons" include="group_local_funs.h" >
         <travuser>
           <node name="Module" />
@@ -8799,7 +8810,7 @@ N_tfarg :
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="opt_saacyc_pogo" to="opt_saacyc_pogo" />
+                  <range from="opt_saacyc_polys" to="final" />
                 </phases>
               </target>
             </targets>

@@ -165,6 +165,7 @@ LFUisLoopFunInvariant (node *arg_node, node *inneriv, node *rca)
     DBUG_RETURN (z);
 }
 
+#ifdef DEADCODE
 /** <!--********************************************************************-->
  *
  * @fn node *LFUgetCallArg (node *id, node *fundef, node *ext_assign)
@@ -225,26 +226,30 @@ LFUgetCallArg (node *id, node *fundef, node *ext_assign)
 
     DBUG_RETURN (param);
 }
+#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *
- * @fn node *LFUgetLoopVariable (node * var, node * fundef, node * params)
+ * @fn node *LFUgetLoopVariable (node *var, node *fundef, node *params)
  *
- * @brief Return the variable in the LACFUN recursive call which has the same
- *        position as VAR in fundef's params.
+ * @brief Given an N_id, var, that must appear in FUNDEF_ARGS( fundef),
+ *        return the N_id that has the same position in params.
+ *        Almost: We chase back across any direct assigns for the params element,
+ *        a la VP, so as to reduce the number of variables involved.
  *
  *        I.e.,  params[ FUNDEF_ARGS iota var]
  *
  * @param: var:    an N_id node in the LACFUNs N_arg list,
  *                 or its N_avis node.
  * @param: fundef: the LACFUN N_fundef node
- * @param: params: Recursive call AP_ARGS list.
+ * @param: params: Either a recursive call AP_ARGS list, or
+ *                 an outer call AP_ARGS list.
  *
  *****************************************************************************/
 node *
 LFUgetLoopVariable (node *var, node *fundef, node *params)
 {
-    node *ret = NULL;
+    node *z = NULL;
     node *fargs = FUNDEF_ARGS (fundef);
     node *avis;
 
@@ -257,13 +262,13 @@ LFUgetLoopVariable (node *var, node *fundef, node *params)
     }
 
     if (params) {
-        ret = EXPRS_EXPR (params);
+        z = EXPRS_EXPR (params);
+        DBUG_PRINT ("LACFUN %s arg %s has recursive call value of %s",
+                    FUNDEF_NAME (fundef), AVIS_NAME (avis), AVIS_NAME (ID_AVIS (z)));
+        z = PHUTskipChainedAssigns (z);
     }
 
-    DBUG_PRINT ("LACFUN %s arg %s has recursive call value of %s", FUNDEF_NAME (fundef),
-                AVIS_NAME (avis), AVIS_NAME (ID_AVIS (ret)));
-
-    DBUG_RETURN (ret);
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->

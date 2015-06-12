@@ -139,6 +139,7 @@
 #include "ivexpropagation.h"
 #include "polyhedral_guard_optimization.h"
 #include "polyhedral_utilities.h"
+#include "polyhedral_setup.h"
 
 static info *
 MakeInfo (void)
@@ -1292,12 +1293,12 @@ CFpart (node *arg_node, info *arg_info)
      * Traverse this partition's code if it has not yet been traversed.
      * Mark the code as completely traversed afterwards by inverting CODE_USED
      */
-    arg_node = PHUTsetClearAvisPart (arg_node, arg_node);
+    arg_node = POLYSsetClearAvisPart (arg_node, arg_node);
     if (CODE_USED (PART_CODE (arg_node)) > 0) {
         PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
         CODE_USED (PART_CODE (arg_node)) *= -1;
     }
-    arg_node = PHUTsetClearAvisPart (arg_node, NULL);
+    arg_node = POLYSsetClearAvisPart (arg_node, NULL);
 
     /*
      * Revert types of index variables to AKS

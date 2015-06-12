@@ -428,7 +428,7 @@ PWLFperformFold (node *arg_node, node *pwlpart, info *arg_info)
         // If PWL code block is empty, don't duplicate code block.
         // If the cell is non-scalar, we still need a _sel_() to pick
         // the proper cell element.
-        newblock = DUPdoDupTreeLutSsa (pwlblock, INFO_FOLDLUT (arg_info),
+        newblock = DUPdoDupNodeLutSsa (pwlblock, INFO_FOLDLUT (arg_info),
                                        INFO_FUNDEF (arg_info));
         INFO_PREASSIGNS (arg_info)
           = TCappendAssign (INFO_PREASSIGNS (arg_info), newblock);
@@ -1269,7 +1269,6 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
     if (NULL != arravis) {
         arrid = TBmakeId (arravis);
         pat = PMarray (1, PMAgetNode (&ivarr), 0);
-        PHUTsetClearAvisPart (pwlpart, pwlpart);
         if (PMmatchFlatSkipExtrema (pat, arrid)) {
             shp = TCcountExprs (ARRAY_AELEMS (ivarr));
             // Collect affine exprs for iv, across all axes.
@@ -1306,7 +1305,6 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
                 i++;
             }
         }
-        PHUTsetClearAvisPart (pwlpart, NULL);
         pat = PMfree (pat);
         arrid = FREEdoFreeNode (arrid);
     }
@@ -1519,11 +1517,9 @@ PWLFpart (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_CONSUMERWLPART (arg_info) = arg_node;
-    arg_node = PHUTsetClearAvisPart (arg_node, arg_node);
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVdo (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
     INFO_CONSUMERWLPART (arg_info) = NULL;
-    arg_node = PHUTsetClearAvisPart (arg_node, NULL);
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -1567,13 +1563,10 @@ PWLFid (node *arg_node, info *arg_info)
      * arg_node describes a WL, so
      * WITH_REFERENCED_FOLD( p) may have to be incremented
      */
-    if ((NULL != p) && (NULL != INFO_CONSUMERWL (arg_info))
-        && (WITH_REFERENCED_CONSUMERWL (p) == INFO_CONSUMERWL (arg_info))) {
+    if ((NULL != p) && (WITH_REFERENCED_CONSUMERWL (p) == INFO_CONSUMERWL (arg_info))) {
         (WITH_REFERENCED_FOLD (p))++;
         DBUG_PRINT ("Incrementing WITH_REFERENCED_FOLD(%s) = %d",
                     AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (p));
-    } else {
-        DBUG_PRINT ("%s is not defined by a WL", AVIS_NAME (ID_AVIS (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -1736,14 +1729,12 @@ PWLFap (node *arg_node, info *arg_info)
         (lacfundef != INFO_FUNDEF (arg_info))) { /* Ignore recursive call */
         DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
                     FUNDEF_NAME (lacfundef), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
-        PHUTsetClearCallAp (lacfundef, INFO_FUNDEF (arg_info), INFO_NASSIGN (arg_info));
         /* Traverse into the LACFUN */
         INFO_LACFUN (arg_info) = lacfundef; /* The called lacfun */
         newfundef = TRAVdo (lacfundef, arg_info);
         DBUG_ASSERT (newfundef = lacfundef,
                      "Did not expect N_fundef of LACFUN to change");
         INFO_LACFUN (arg_info) = NULL; /* Back to normal traversal */
-        PHUTsetClearCallAp (lacfundef, NULL, NULL);
     }
 
     DBUG_RETURN (arg_node);

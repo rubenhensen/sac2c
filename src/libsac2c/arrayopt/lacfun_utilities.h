@@ -6,7 +6,6 @@
 extern node *LFUprefixFunctionArgument (node *arg_node, node *calleravis,
                                         node **callerapargs);
 extern bool LFUisLoopFunInvariant (node *arg_node, node *argid, node *rca);
-extern node *LFUgetCallArg (node *id, node *fundef, node *ext_assign);
 extern node *LFUgetLoopVariable (node *var, node *fundef, node *params);
 extern node *LFUfindAssignForCond (node *arg_node);
 extern node *LFUfindAssignBeforeCond (node *arg_node);

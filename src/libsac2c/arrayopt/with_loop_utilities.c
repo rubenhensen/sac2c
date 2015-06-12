@@ -412,4 +412,34 @@ WLUTisCopyPartition (node *partn)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool WLUTisEmptyGenerator( node *partn)
+ *
+ * @brief: Predicate for determining if N_part partn has an empty generator,
+ *         i.e., [:int]
+ *
+ * @param: part: An N_part
+ *
+ * @result: true if partn has an empty generator; else false.
+ *          Do NOT depend a FALSE result meaning that the generator is not
+ *          empty. We may just not be able to find an N_array!
+ *
+ *****************************************************************************/
+bool
+WLUTisEmptyGenerator (node *partn)
+{
+    node *bnd;
+    bool res = FALSE;
+
+    DBUG_ENTER ();
+
+    bnd = WLUTfindArrayForBound (GENERATOR_BOUND1 (PART_GENERATOR (partn)));
+    if (NULL != bnd) {
+        res = 0 != TCcountExprs (ARRAY_AELEMS (bnd));
+    }
+
+    DBUG_RETURN (res);
+}
+
 #undef DBUG_PREFIX
