@@ -1070,7 +1070,7 @@ performFold (node *cwlpart, int partno, info *arg_info)
 
     if (NULL != pwlblock) {
         /* Remove extrema from old block and recompute everything */
-        newpblock = DUPdoDupTreeLutSsa (pwlblock, INFO_FOLDLUT (arg_info),
+        newpblock = DUPdoDupNodeLutSsa (pwlblock, INFO_FOLDLUT (arg_info),
                                         INFO_FUNDEF (arg_info));
     } else {
         /* If PWL code block is empty, don't duplicate code block.
@@ -1124,7 +1124,7 @@ CloneCode (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (1 == CODE_USED (arg_node), "CODE_USED confusion3");
     LUTremoveContentLut (INFO_LUT (arg_info));
-    z = DUPdoDupTreeLutSsa (arg_node, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
+    z = DUPdoDupNodeLutSsa (arg_node, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
     CODE_INC_USED (z); /* DUP gives us Used=0 */
 
     z = IVEXCdoIndexVectorExtremaCleanupPartition (z, NULL);
