@@ -298,7 +298,7 @@ $(PROJECT_ROOT)/lib/libsacphm$(CROSS_VARIANT)%$(SHARED_LIB_EXT): $(SUBTARGETS:.o
 	@$(CLOCK_SKEW_ELIMINATION)  
 
 
-$(PROJECT_ROOT)/lib/libsacdistmem$(CROSS_VARIANT)%.a: $(SUBTARGETS:.o=%.o) $(PROJECT_ROOT)/include/sac.h
+$(PROJECT_ROOT)/lib/libsacdistmem$(CROSS_VARIANT)%.a: $(SUBTARGETS:.o=%.o)
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacdistmem$(CROSS_VARIANT)$*.a " \
                  "($($(STYLE)_long) version) $(CROSS_FOR)"
@@ -307,7 +307,7 @@ $(PROJECT_ROOT)/lib/libsacdistmem$(CROSS_VARIANT)%.a: $(SUBTARGETS:.o=%.o) $(PRO
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
-$(PROJECT_ROOT)/lib/libsacdistmem$(CROSS_VARIANT)%$(SHARED_LIB_EXT): $(SUBTARGETS:.o=%.o) $(PROJECT_ROOT)/include/sac.h
+$(PROJECT_ROOT)/lib/libsacdistmem$(CROSS_VARIANT)%$(SHARED_LIB_EXT): $(SUBTARGETS:.o=%.o)
 	@$(ECHO) ""
 	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacdistmem$(CROSS_VARIANT)$*$(SHARED_LIB_EXT) " \
                  "($($(STYLE)_long) version) $(CROSS_FOR)"

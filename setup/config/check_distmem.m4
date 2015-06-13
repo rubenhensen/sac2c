@@ -25,20 +25,20 @@ AC_DEFUN([CHECK_DISTMEM], dnl
    dnl Create GASNet conduit settings file.
    cat >./config.GASNetconduits
 
-
+   if test x"$enable_distmem_gasnet" != xno; then
 ################################################################################
 #
 # feature setup:
 #
 
-   gasnet_home=/usr/local/gasnet
-   gasnet_conduit_names=""
-   AC_MSG_CHECKING(if $gasnet_home exists)
-   if test -r $gasnet_home; then
-      AC_MSG_RESULT([yes])
-      AC_MSG_CHECKING(installed gasnet conduits)
+     gasnet_home=/usr/local/gasnet
+     gasnet_conduit_names=""
+     AC_MSG_CHECKING(if $gasnet_home exists)
+     if test -r $gasnet_home; then
+        AC_MSG_RESULT([yes])
+        AC_MSG_CHECKING(installed gasnet conduits)
 
-      cat <<EOF >>./config.GASNetconduits
+        cat <<EOF >>./config.GASNetconduits
 ################################################################################
 #
 # GASNet conduit settings:
@@ -46,24 +46,24 @@ AC_DEFUN([CHECK_DISTMEM], dnl
 
 EOF
 
-      for gasnet_conduit_path in $gasnet_home/include/*-conduit/; do
-         gasnet_conduit_filename="$(basename "${gasnet_conduit_path}")"
-         gasnet_conduit_name="${gasnet_conduit_filename//-conduit/}"
-         gasnet_conduit_name_uc=`echo $gasnet_conduit_name | tr '[a-z]' '[A-Z]'`
-         if test x"$gasnet_conduit_names" != x ; then
-            gasnet_conduit_names="$gasnet_conduit_names "
-         fi
-         gasnet_conduit_names="$gasnet_conduit_names$gasnet_conduit_name"
-         gasnet_conduit_makefile="$gasnet_conduit_path$gasnet_conduit_name-seq.mak"
+        for gasnet_conduit_path in $gasnet_home/include/*-conduit/; do
+           gasnet_conduit_filename="$(basename "${gasnet_conduit_path}")"
+           gasnet_conduit_name="${gasnet_conduit_filename//-conduit/}"
+           gasnet_conduit_name_uc=`echo $gasnet_conduit_name | tr '[a-z]' '[A-Z]'`
+           if test x"$gasnet_conduit_names" != x ; then
+              gasnet_conduit_names="$gasnet_conduit_names "
+           fi
+           gasnet_conduit_names="$gasnet_conduit_names$gasnet_conduit_name"
+           gasnet_conduit_makefile="$gasnet_conduit_path$gasnet_conduit_name-seq.mak"
 
-         gasnet_conduit_cc="$(getmakevar $gasnet_conduit_makefile GASNET_CC)"
-         gasnet_conduit_cppflags="$(getmakevar $gasnet_conduit_makefile GASNET_CPPFLAGS)"
-         gasnet_conduit_cflags="$(getmakevar $gasnet_conduit_makefile GASNET_CFLAGS)"
-         gasnet_conduit_ld="$(getmakevar $gasnet_conduit_makefile GASNET_LD)"
-         gasnet_conduit_ldflags="$(getmakevar $gasnet_conduit_makefile GASNET_LDFLAGS)"
-         gasnet_conduit_libs="$(getmakevar $gasnet_conduit_makefile GASNET_LIBS)"
+           gasnet_conduit_cc="$(getmakevar $gasnet_conduit_makefile GASNET_CC)"
+           gasnet_conduit_cppflags="$(getmakevar $gasnet_conduit_makefile GASNET_CPPFLAGS)"
+           gasnet_conduit_cflags="$(getmakevar $gasnet_conduit_makefile GASNET_CFLAGS)"
+           gasnet_conduit_ld="$(getmakevar $gasnet_conduit_makefile GASNET_LD)"
+           gasnet_conduit_ldflags="$(getmakevar $gasnet_conduit_makefile GASNET_LDFLAGS)"
+           gasnet_conduit_libs="$(getmakevar $gasnet_conduit_makefile GASNET_LIBS)"
 
-         cat <<EOF >>./sac2crc.GASNetconduits
+           cat <<EOF >>./sac2crc.GASNetconduits
 target distmem_gasnet_$gasnet_conduit_name::distmem_gasnet:
 COMMLIB_CONDUIT  := "$gasnet_conduit_name"
 CC               := "$gasnet_conduit_ld -std=gnu99"
@@ -72,7 +72,7 @@ LDFLAGS          += "$gasnet_conduit_ldflags"
 
 EOF
 
-         cat <<EOF >>./config.GASNetconduits
+          cat <<EOF >>./config.GASNetconduits
 GASNET_${gasnet_conduit_name_uc}_CC        := $gasnet_conduit_cc -std=gnu99
 GASNET_${gasnet_conduit_name_uc}_CPPFLAGS  := $gasnet_conduit_cppflags
 GASNET_${gasnet_conduit_name_uc}_CFLAGS    := $gasnet_conduit_cflags
@@ -80,10 +80,10 @@ GASNET_${gasnet_conduit_name}_cap       := $gasnet_conduit_name_uc
 
 EOF
 
-         dnl Append the rules for the libsacdistmem GASNet object files to build.mkf
-         dnl At the places where we print \$$** or \$$*@ we want $* $@ to end up in the makefile.
-         dnl However, $* is replaced by an empty string and $@ by \, escaping does not help.
-         cat <<EOF >>./build.GASNetconduits
+          dnl Append the rules for the libsacdistmem GASNet object files to build.mkf
+          dnl At the places where we print \$$** or \$$*@ we want $* $@ to end up in the makefile.
+          dnl However, $* is replaced by an empty string and $@ by \, escaping does not help.
+          cat <<EOF >>./build.GASNetconduits
 %.\$(\$(STYLE)_short).gasnet${gasnet_conduit_name}.o: %.c
 	@if [[ "compile \$(dir \$$**)" != "\`cat .make_track\`" ]] ; \\
          then \$(ECHO) "compile \$(dir \$$**)" > .make_track; \\
@@ -98,10 +98,10 @@ EOF
 	@\$(CLOCK_SKEW_ELIMINATION)
 EOF
 
-         dnl Append the rules for the libsacdistmem GASNet cross variant object files to build.mkf
-         dnl At the places where we print \$$** or \$$*@ we want $* $@ to end up in the makefile.
-         dnl However, $* is replaced by an empty string and $@ by \, escaping does not help.
-         cat <<EOF >>./build.GASNetconduitsCrossVariant
+          dnl Append the rules for the libsacdistmem GASNet cross variant object files to build.mkf
+          dnl At the places where we print \$$** or \$$*@ we want $* $@ to end up in the makefile.
+          dnl However, $* is replaced by an empty string and $@ by \, escaping does not help.
+          cat <<EOF >>./build.GASNetconduitsCrossVariant
 %.\$(\$(STYLE)_short)\$(CROSS_VARIANT).gasnet${gasnet_conduit_name}.o: %.c
 	@if [[ "compile \$(dir \$$**)" != "\`cat .make_track\`" ]] ; \\
          then \$(ECHO) "compile \$(dir \$$**)" > .make_track; \\
@@ -116,17 +116,18 @@ EOF
 	@\$(CLOCK_SKEW_ELIMINATION)
 EOF
 
-      done
+        done
 
-      if test x"$gasnet_conduit_names" = x ; then
-         AC_MSG_RESULT([none])
-         enable_distmem_gasnet=no
-      else
-         AC_MSG_RESULT([$gasnet_conduit_names])
-      fi
-   else
-      AC_MSG_RESULT([no])
-      enable_distmem_gasnet=no
+        if test x"$gasnet_conduit_names" = x ; then
+          AC_MSG_RESULT([none])
+          enable_distmem_gasnet=no
+        else
+          AC_MSG_RESULT([$gasnet_conduit_names])
+        fi
+    else
+        AC_MSG_RESULT([no])
+        enable_distmem_gasnet=no
+    fi
    fi
 
    if test x"$enable_distmem_gasnet" = xno -a x"$enable_distmem_gpi" = xno -a x"$enable_distmem_mpi" = xno -a x"$enable_distmem_armci" = xno ; then
