@@ -5076,6 +5076,12 @@ CC               := "$gasnet_conduit_ld -std=gnu99"
 CCLINK           += "$gasnet_conduit_libs"
 LDFLAGS          += "$gasnet_conduit_ldflags"
 
+target distmemcheck_gasnet_$gasnet_conduit_name::distmemcheck_gasnet:
+COMMLIB_CONDUIT  := "$gasnet_conduit_name"
+CC               := "$gasnet_conduit_ld -std=gnu99"
+CCLINK           += "$gasnet_conduit_libs"
+LDFLAGS          += "$gasnet_conduit_ldflags"
+
 EOF
 
           cat <<EOF >>./config.GASNetconduits

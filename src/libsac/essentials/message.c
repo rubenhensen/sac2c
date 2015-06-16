@@ -237,10 +237,6 @@ SAC_Print (char *format, ...)
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
-    if (SAC_DISTMEM_rank != SAC_DISTMEM_RANK_UNDEFINED) {
-        fprintf (stderr, "n%zd-> ", SAC_DISTMEM_rank);
-    }
-
     va_start (arg_p, format);
     vfprintf (stderr, format, arg_p);
     va_end (arg_p);

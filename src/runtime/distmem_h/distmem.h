@@ -118,6 +118,17 @@ SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_ptr_calcs;
 SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_barriers;
 
 /******************************************
+ * Global variables used for
+ * runtime checks
+ *******************************************/
+
+/* Upper limit (non-inclusive) for valid cache pointers. */
+SAC_C_EXTERN_VAR uintptr_t SAC_DISTMEM_CH_max_valid_cache_ptr;
+
+/* Upper limit (non-inclusive) for valid pointers into the local shared segment. */
+SAC_C_EXTERN_VAR uintptr_t SAC_DISTMEM_CH_max_valid_write_ptr;
+
+/******************************************
  * No tracing declarations
  *******************************************/
 
@@ -709,7 +720,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define SAC_DISTMEM_IS_VALID_WRITE_PTR(ptr)                                              \
     (((uintptr_t)ptr < (uintptr_t)SAC_DISTMEM_shared_seg_ptr                             \
-      || (uintptr_t)ptr > (uintptr_t)SAC_DISTMEM_shared_seg_ptr + SAC_DISTMEM_segsz)     \
+      || (uintptr_t)ptr > SAC_DISTMEM_CH_max_valid_write_ptr)                            \
        ? FALSE                                                                           \
        : TRUE)
 
@@ -729,8 +740,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define SAC_DISTMEM_IS_VALID_CACHE_PTR(ptr)                                              \
     (((uintptr_t)ptr < (uintptr_t)SAC_DISTMEM_cache_ptr                                  \
-      || (uintptr_t)ptr > (uintptr_t)SAC_DISTMEM_cache_ptr                               \
-                            + SAC_DISTMEM_segsz * (SAC_DISTMEM_size - 1))                \
+      || (uintptr_t)ptr > SAC_DISTMEM_CH_max_valid_cache_ptr)                            \
        ? FALSE                                                                           \
        : TRUE)
 
@@ -751,6 +761,24 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define SAC_DISTMEM_IS_VALID_READ_PTR(ptr)                                               \
     ((SAC_DISTMEM_IS_VALID_WRITE_PTR (ptr) || SAC_DISTMEM_IS_VALID_CACHE_PTR (ptr))      \
+       ? TRUE                                                                            \
+       : FALSE)
+
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_DISTMEM_IS_NON_DIST_PTR( ptr)
+ *
+ *   @brief    Determines whether ptr is a non-DSM pointer.
+ *
+ *             This macro is used when the runtime checks are activated to check
+ *             that no distributed arrays are used as if they were non-distributed.
+ *
+ *   @return        TRUE if ptr is a non-DSM pointer, FALSE otherwise
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_IS_NON_DIST_PTR(ptr)                                                 \
+    ((!SAC_DISTMEM_IS_VALID_WRITE_PTR (ptr) && !SAC_DISTMEM_IS_VALID_CACHE_PTR (ptr))    \
        ? TRUE                                                                            \
        : FALSE)
 

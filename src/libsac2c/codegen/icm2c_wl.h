@@ -27,6 +27,8 @@ extern void ICMCompileWL3_SCHEDULE__END (char *idx_nt);
 
 extern void ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT);
 
+extern void ICMCompileWL_DISTMEM_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT);
+
 extern void ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
                                  char *idx_vec_NT, int dims, char *off_NT, char *copyfun);
 

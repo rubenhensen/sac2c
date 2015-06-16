@@ -484,7 +484,14 @@ target distmem:
 BACKEND          := "DistMem"
 LIB_VARIANT      := "dm"
 
+target distmemcheck:
+BACKEND          := "DistMem"
+LIB_VARIANT      := "dmcheck"
+
 target distmem_gasnet::distmem:
+DISTMEM_COMMLIB  := "GASNet"
+
+target distmemcheck_gasnet::distmemcheck:
 DISTMEM_COMMLIB  := "GASNet"
 
 @GASNET_CONDUIT_TARGETS@

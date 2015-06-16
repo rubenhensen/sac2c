@@ -649,8 +649,9 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_READ__DEFAULT(from_NT, from_pos)                                          \
     (SAC_TR_AA_PRINT ("read", from_NT, from_pos) SAC_BC_READ (from_NT, from_pos)         \
-       SAC_CS_READ_ARRAY (from_NT, from_pos)                                             \
-         SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos])
+       SAC_DISTMEM_CHECK_IS_NON_DIST_ARR (from_NT + from_pos)                            \
+         SAC_CS_READ_ARRAY (from_NT, from_pos)                                           \
+           SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos])
 
 #define SAC_ND_READ__DIS(from_NT, from_pos)                                              \
     (SAC_TR_AA_FPRINT ("%s read", from_NT, from_pos,                                     \
@@ -683,6 +684,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_ND_WRITE__DEFAULT(to_NT, to_pos)                                             \
     SAC_TR_AA_PRINT ("write", to_NT, to_pos)                                             \
     SAC_BC_WRITE (to_NT, to_pos)                                                         \
+    SAC_DISTMEM_CHECK_IS_NON_DIST_ARR (to_NT + to_pos)                                   \
     SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
     SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))[to_pos]
 

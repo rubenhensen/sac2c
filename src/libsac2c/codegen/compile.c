@@ -3182,8 +3182,8 @@ COMPvardec (node *arg_node, info *arg_info)
               = TCmakeIcm1 ("ND_DECL_NESTED",
                             MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
                                           TRUE, TRUE, TRUE, NULL));
-        } else if (global.backend == BE_distmem
-                   && AVIS_DISTMEMISDISTRIBUTABLE (VARDEC_AVIS (arg_node))) {
+        } else if (global.backend == BE_distmem 
+               /*&& AVIS_DISTMEMISDISTRIBUTABLE( VARDEC_AVIS( arg_node)) TODO: May cause a bug*/) {
             VARDEC_ICM (arg_node)
               = TCmakeIcm1 ("ND_DIST_DECL",
                             MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),

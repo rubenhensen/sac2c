@@ -168,6 +168,17 @@ unsigned long SAC_DISTMEM_TR_num_ptr_calcs = 0;
 /* Number of barriers */
 unsigned long SAC_DISTMEM_TR_num_barriers = 0;
 
+/******************************************
+ * Global variables used for
+ * runtime checks
+ *******************************************/
+
+/* Upper limit (non-inclusive) for valid cache pointers. */
+uintptr_t SAC_DISTMEM_CH_max_valid_cache_ptr;
+
+/* Upper limit (non-inclusive) for valid pointers into the local shared segment. */
+uintptr_t SAC_DISTMEM_CH_max_valid_write_ptr;
+
 #endif /* COMPILE_PLAIN */
 
 /* Handles seg faults. Copies remote data into local cache. */
@@ -351,6 +362,12 @@ SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node)
     /* Setup of private heap manager. */
     SAC_TR_DISTMEM_PRINT ("Initializing setup of heap manager.");
     SAC_DISTMEM_HM_Setup ();
+
+    /* Initialise variables for runtime checks. */
+    SAC_DISTMEM_CH_max_valid_cache_ptr
+      = (uintptr_t)SAC_DISTMEM_cache_ptr + SAC_DISTMEM_segsz * (SAC_DISTMEM_size - 1);
+    SAC_DISTMEM_CH_max_valid_write_ptr
+      = (uintptr_t)SAC_DISTMEM_shared_seg_ptr + SAC_DISTMEM_segsz;
 
     SAC_DISTMEM_BARRIER ();
 }

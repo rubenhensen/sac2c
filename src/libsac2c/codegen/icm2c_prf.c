@@ -676,9 +676,7 @@ PrfModarrayScalarVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdi
             /* Target is actually distributed. */
             global.indent++;
 
-            /*
-             * Forbid writing distributed arrays again.
-             */
+            /* Forbid writing distributed arrays again. */
             indout ("SAC_DISTMEM_FORBID_CACHE_WRITES();\n");
 
             global.indent--;
@@ -730,7 +728,7 @@ PrfModarrayArrayVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim
         }
 
         if (global.backend == BE_distmem && to_dc == C_distr) {
-            /* TODO: Do we need to to something with from_NT???) */
+            /* TODO: Do we need to to something with from_NT??? */
             /* Target is potentially distributed. */
 
             indout ("if (SAC_ND_A_IS_DIST( %s)) {\n", to_NT);
@@ -1816,8 +1814,8 @@ ICMCompileND_PRF_SAME_SHAPE (char *to_NT, char *from_NT, int from_sdim, char *fr
 
         BLOCK_NOVAR_BEGIN ()
             ;
-            out ("SAC_RuntimeError(\"Arrays do not adhere "
-                 "to same shape constraint\");\n");
+            indout ("SAC_RuntimeError(\"Arrays do not adhere "
+                    "to same shape constraint\");\n");
         BLOCK_END ();
 
     } else {
@@ -1827,8 +1825,8 @@ ICMCompileND_PRF_SAME_SHAPE (char *to_NT, char *from_NT, int from_sdim, char *fr
          */
         IF_BEGIN ("SAC_ND_A_DIM(%s) != SAC_ND_A_DIM(%s)", from_NT, from2_NT)
             ;
-            out ("SAC_RuntimeError(\"Arrays do not adhere "
-                 "to same shape constraint\");\n");
+            indout ("SAC_RuntimeError(\"Arrays do not adhere "
+                    "to same shape constraint\");\n");
         IF_END ();
 
         FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_DIM(%s); SAC_i++", from_NT)
@@ -1858,12 +1856,12 @@ ICMCompileND_PRF_VAL_LT_SHAPE_VxA (char *to_NT, char *from_NT, char *from2_NT,
 {
     DBUG_ENTER ();
 
-    IF_BEGIN ("(SAC_ND_A_DIM(%s) != 1)"
+    IF_BEGIN ("(SAC_ND_A_DIM(%s) != 1) "
               "&& (SAC_ND_A_SHAPE(%s,0) != SAC_ND_A_DIM(%s))",
               from_NT, from_NT, from2_NT)
         ;
-        out ("SAC_RuntimeError(\"Arrays do not adhere "
-             "to val less than shape constraint\");\n");
+        indout ("SAC_RuntimeError(\"Arrays do not adhere "
+                "to val less than shape constraint\");\n");
     IF_END ();
 
     if (KNOWN_DIMENSION (from2_sdim)) {
@@ -1885,7 +1883,10 @@ ICMCompileND_PRF_VAL_LT_SHAPE_VxA (char *to_NT, char *from_NT, char *from2_NT,
             IF_BEGIN ("SAC_ND_READ (%s, SAC_i) >= SAC_ND_A_SHAPE (%s, SAC_i)", from_NT,
                       from2_NT)
                 ;
-            FOR_LOOP_END ();
+                indout ("SAC_RuntimeError(\"Arrays do not adhere "
+                        "to val less than shape constraint\");\n");
+            IF_END ();
+        FOR_LOOP_END ();
     }
 
     indout ("SAC_ND_A_FIELD( %s) = 1;\n", to_NT);

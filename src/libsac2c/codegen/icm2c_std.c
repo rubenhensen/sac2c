@@ -435,6 +435,8 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (char *retname, char *re
                                                          char *broadcast_operation)
 {
     DBUG_ENTER ();
+    // TODO: Maybe initialise these variables.
+    // This may cause the warnings.
 
     if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) != C_hid) {
         /* Create code for broadcast operation for non-hidden return value. */
@@ -1031,9 +1033,11 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
             /*
              * Postpone the decisison whether the array is actually distributed to
              * runtime since this depends on the number of nodes as well.
+             * SAC_ND_A_MIRROR_IS_DIST cannot be declared constant because the array
+             * may be treated as non-distributed later on.
              */
-            indout ("const bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
-                    "SAC_DISTMEM_DET_DO_DISTR_ARR( %d, %d);\n",
+            indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_DISTMEM_DET_DO_DISTR_ARR( "
+                    "%d, %d);\n",
                     var_NT, size, shp[0]);
 
             /*
@@ -1144,10 +1148,11 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
 
         if (global.backend == BE_distmem && dc == C_distr) {
-            /* Array is potentially distributed. */
-            indout (
-              "const bool SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
-              var_NT, var_NT);
+            /* Array is potentially distributed.
+             * SAC_ND_A_MIRROR_IS_DIST cannot be declared constant because the
+             * array may be treated as non-distributed later on. */
+            indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
+                    var_NT, var_NT);
             indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
                     "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
                     var_NT, var_NT);
@@ -1225,7 +1230,7 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
  *
  ******************************************************************************/
 
-// TODO: Changes for distributed memory backend
+/* TODO: Does this require changes for distributed memory backend? */
 void
 ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim)
 {
@@ -1308,18 +1313,27 @@ ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
     if (to_sc == C_scl) {
         indout ("SAC_NOOP()\n");
     } else {
-        indout ("SAC_IS_LASTREF__BLOCK_BEGIN( %s)\n", from_NT);
+        if (global.backend == BE_distmem
+            && ICUGetDistributedClass (to_NT) != ICUGetDistributedClass (from_NT)) {
+            indout ("SAC_TR_DISTMEM_PRINT( \"Cannot reuse memory, distributability does "
+                    "not match (from %%s: %d, to %%s: %d).\","
+                    "%s, %s);\n",
+                    ICUGetDistributedClass (from_NT) == C_distr,
+                    ICUGetDistributedClass (to_NT) == C_distr, from_NT, to_NT);
+        } else {
+            indout ("SAC_IS_LASTREF__BLOCK_BEGIN( %s)\n", from_NT);
 
-        global.indent++;
-        ICMCompileND_ASSIGN (to_NT, to_sdim, from_NT, from_sdim, copyfun);
-        indout ("SAC_TR_MEM_PRINT("
-                " (\"reuse memory of %s at %%p for %s\","
-                " SAC_ND_GETVAR( %s, SAC_ND_A_FIELD( %s))))\n",
-                from_NT, to_NT, from_NT, from_NT);
-        global.indent--;
+            global.indent++;
+            ICMCompileND_ASSIGN (to_NT, to_sdim, from_NT, from_sdim, copyfun);
+            indout ("SAC_TR_MEM_PRINT("
+                    " (\"reuse memory of %s at %%p for %s\","
+                    " SAC_ND_GETVAR( %s, SAC_ND_A_FIELD( %s))))\n",
+                    from_NT, to_NT, from_NT, from_NT);
+            global.indent--;
 
-        indout ("SAC_IS_LASTREF__BLOCK_END( %s)\n", from_NT);
-        indout ("else\n");
+            indout ("SAC_IS_LASTREF__BLOCK_END( %s)\n", from_NT);
+            indout ("else\n");
+        }
     }
 
     DBUG_RETURN ();

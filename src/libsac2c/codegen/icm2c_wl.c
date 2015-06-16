@@ -554,6 +554,9 @@ ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
  *
  *   WL_DISTMEM_SUBALLOC( sub_NT, to_NT, off_NT)
  *
+ *   Creates code for a suballoc where the outer and/or the inner array
+ *   is distributable.
+ *
  ******************************************************************************/
 
 void
@@ -566,33 +569,52 @@ ICMCompileWL_DISTMEM_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
 #include "icm_trace.c"
 #undef WL_DISTMEM_SUBALLOC
 
-    IF_BEGIN ("SAC_WL_IS_DISTRIBUTED")
-        ;
-        /* The outer with-loop and its result array are distributed. Do some magic. */
+    /* Check whether the inner array is distributable at compile time. */
+    if (ICUGetDistributedClass (sub_NT) == C_distr) {
+        /* Check whether the inner array is actually distributed at runtime. */
+        IF_BEGIN ("SAC_ND_A_IS_DIST( %s)", sub_NT)
+            ;
+            /*
+             * The sub-allocated variable may be sub-allocated in the DSM segment but
+             * will be treated like a non-distributed variable.
+             * We can do this because it is never freed and all accessed indices will fall
+             * in the local shared segment. This means that we do not have to take any
+             * further precautions. A possible inner with-loop will not be distributed
+             * because the result variable is not distributed.
+             */
+            indout (
+              "SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n",
+              sub_NT, sub_NT);
+        IF_END ();
+    }
 
-        /*
-         * The sub-allocated variable is sub-allocated in the DSM segment but treated
-         * like a non-distributed variable.
-         * We can do this because it is never freed and all accessed indices are in
-         * the local shared segment.
-         * This means that we do not have to take any further precautions.
-         * The inner with-loop will not be distributed because the result variable
-         * is not distributed.
-         */
-        indout ("SAC_ND_A_DESC_IS_DIST(%s) = SAC_ND_A_MIRROR_IS_DIST(%s) = FALSE;");
-
-        /* Get the pointer to the start of the sub-allocated array. */
-        indout ("SAC_ND_GETVAR(%s, SAC_ND_A_FIELD( %s)) = "
-                "SAC_DISTMEM_ELEM_POINTER(SAC_ND_A_OFFS( %s), SAC_NT_CBASETYPE( %s),"
-                "                         SAC_ND_A_FIRST_ELEMS( %s), %s);\n",
-                sub_NT, sub_NT, to_NT, to_NT, to_NT, off_NT);
-    IF_END ();
-    ELSE_BEGIN ()
-        ;
-        /* The outer with-loop and its result array are not distributed. Do nothing
+    /* Check whether the outer array is distributable at compile time. */
+    if (ICUGetDistributedClass (to_NT) == C_distr) {
+        /* Check whether the outer array is actually distributed at runtime.
+         * We can't check whether a possible outer with-loop is distributed because
+         * it may have been unrolled. */
+        IF_BEGIN ("SAC_ND_A_IS_DIST( %s)", to_NT)
+            ;
+            /* The outer array (and possibly with-loop) are distributed.
+             * Get the pointer to the start of the sub-allocated array. */
+            indout ("SAC_ND_GETVAR(%s, SAC_ND_A_FIELD( %s)) = "
+                    "SAC_DISTMEM_ELEM_POINTER(SAC_ND_A_OFFS( %s), SAC_NT_CBASETYPE( %s),"
+                    "                         SAC_ND_A_FIRST_ELEMS( %s), SAC_ND_READ( "
+                    "%s, 0));\n",
+                    sub_NT, sub_NT, to_NT, to_NT, to_NT, off_NT);
+            indout ("SAC_DISTMEM_CHECK_MARK_AS_TREAT_AS_NONDIST( %s);", sub_NT);
+        IF_END ();
+        ELSE_BEGIN ()
+            ;
+            /* The outer array (and possibly with-loop) are not distributed. Do nothing
+             * special. */
+            ICMCompileWL_SUBALLOC (sub_NT, to_NT, off_NT);
+        ELSE_END ();
+    } else {
+        /* The outer array (and possibly with-loop) are not distributed. Do nothing
          * special. */
         ICMCompileWL_SUBALLOC (sub_NT, to_NT, off_NT);
-    ELSE_END ();
+    }
 
     DBUG_RETURN ();
 }
