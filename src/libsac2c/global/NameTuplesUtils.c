@@ -319,13 +319,13 @@ NTUgetBitarrayFromTypes (types *type)
 /******************************************************************************
  *
  * function:
- *   bitarray_class_t NTUgetDistributedFromTypes( types *type)
+ *   distributed_class_t NTUgetDistributedFromTypes( types *type)
  *
  * description:
  *
  ******************************************************************************/
 
-bitarray_class_t
+distributed_class_t
 NTUgetDistributedFromTypes (types *type)
 {
     distributed_class_t d;
