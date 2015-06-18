@@ -67,6 +67,7 @@ NTIF (C_dense, "YES"), NTIF (C_sparse, "NOT"),
 #elif (ATTRIB == NT_DISTRIBUTED_INDEX)
 
 NTIF (C_distr, "DIS"),      /* potentially distributed */
+  NTIF (C_distmem, "DSM"),  /* not distributed, but allocated in DSM memory */
   NTIF (C_notdistr, "NDI"), /* not distributed */
   NTIF (C_unknownd, "???")  /* should be the last entry! */
 

@@ -963,6 +963,7 @@
 	        <node name="Arg" />
 	        <node name="Ap" />
 	        <node name="Exprs" />
+	        <node name="Ret" />
 	      </travuser>
       </traversal>
       <traversal id="USSAT" name="UndoSSATransform Traversal" default="sons" include="UndoSSATransform.h" >
@@ -8983,6 +8984,15 @@ N_tfarg :
             this function
           </description>
         </flag>
+        <flag name="DistMemSuballoc" default="FALSE">
+          <description>
+            This variable is allocated using a suballoc. It may need to be allocated in the
+            DSM memory.
+          </description>
+          <phases>
+            <range from="emal" to="final" />
+          </phases>
+        </flag>
         <flag name="NeedBlocked" default="FALSE" >
           <description>
                   If true, the given variable is a loop index and the loop needs to be blocked
@@ -11653,6 +11663,15 @@ N_tfarg :
         <flag name="IsCReturn" />
         <flag name="WasRemoved" default="FALSE" />
         <flag name="IsUnique" default="FALSE" />
+        <flag name="DistMemBroadcastArg" default="FALSE">
+          <description>
+            This return value needs to be broadcast
+            and is therefore allocated in DSM memory.
+          </description>
+          <phases>
+            <range from="emal" to="final" />
+          </phases>
+        </flag>
       </flags>
     </node>
 <!--

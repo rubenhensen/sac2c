@@ -47,6 +47,8 @@ extern void ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp)
 
 extern void ICMCompileND_DIST_DECL (char *var_NT, char *basetype, int sdim, int *shp);
 
+extern void ICMCompileND_DSM_DECL (char *var_NT, char *basetype, int sdim, int *shp);
+
 extern void ICMCompileND_DECL_EXTERN (char *var_NT, char *basetype, int sdim);
 
 extern void ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp);

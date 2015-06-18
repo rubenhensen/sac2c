@@ -103,6 +103,10 @@ InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
 node *
 AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
 {
+    /* FIXME: Something seems to go wrong here when a function that takes an AKD
+     * array and returns an AKD array is specialized for AKS arrays. Only the parameter
+     * becomes AKS but the return type should also become AKS. Or at least a type
+     * conversion should be inserted.  */
     node *ret;
     int i;
     ntype *spec_type, *inherited_type, *new_type;

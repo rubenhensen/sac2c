@@ -228,6 +228,15 @@ ICM_DEF( ND_DIST_DECL, ICM_TRACE_NONE)
 ICM_END( ND_DIST_DECL, (var_NT, basetype, sdim, shp))
 #endif
 
+#if defined(ND_DSM_DECL) || defined(ICM_ALL)
+ICM_DEF( ND_DSM_DECL, ICM_TRACE_NONE)
+  ICM_NT( var_NT)
+  ICM_ID( basetype)
+  ICM_INT( sdim)
+  ICM_VARINT( sdim, shp)
+ICM_END( ND_DSM_DECL, (var_NT, basetype, sdim, shp))
+#endif
+
 #if defined(ND_DECL_EXTERN) || defined(ICM_ALL)
 ICM_DEF( ND_DECL_EXTERN, ICM_TRACE_NONE)
   ICM_NT( var_NT)

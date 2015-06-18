@@ -568,6 +568,9 @@ PrintGlobalSettings (node *syntax_tree)
         fprintf (global.outfile,
                  "#define SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE         %d\n",
                  global.distmem_min_elems_per_node);
+        fprintf (global.outfile,
+                 "#define SAC_SET_DISTMEM_TRACE_NODE                 %d\n",
+                 global.distmem_trace_node);
     }
 
     DBUG_RETURN ();

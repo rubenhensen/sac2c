@@ -358,7 +358,7 @@ MakeBasetypeArg_NT (types *type)
  *         dimensionality and shape components of the given object.
  *
  ******************************************************************************/
-// TODO: Here you can add the type! Aaaahhhh
+
 static node *
 MakeTypeArgs (char *name, types *type, bool add_type, bool add_dim, bool add_shape,
               node *exprs)
@@ -3182,6 +3182,12 @@ COMPvardec (node *arg_node, info *arg_info)
               = TCmakeIcm1 ("ND_DECL_NESTED",
                             MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
                                           TRUE, TRUE, TRUE, NULL));
+        } else if (global.backend == BE_distmem
+                   && AVIS_DISTMEMSUBALLOC (VARDEC_AVIS (arg_node))) {
+            VARDEC_ICM (arg_node)
+              = TCmakeIcm1 ("ND_DSM_DECL",
+                            MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
+                                          TRUE, TRUE, TRUE, NULL));
         } else if (global.backend == BE_distmem 
                /*&& AVIS_DISTMEMISDISTRIBUTABLE( VARDEC_AVIS( arg_node)) TODO: May cause a bug*/) {
             VARDEC_ICM (arg_node)
@@ -3386,7 +3392,8 @@ MakeFunRetArgs (node *arg_node, info *arg_info)
             new_args
               = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
                              TBmakeExprs (MakeArgNode (i,
-                                                       ID_TYPE (EXPRS_EXPR (ret_exprs)),
+                                                       TYtype2OldType (
+                                                         RET_TYPE (argtab->ptr_out[i])),
                                                        FUNDEF_ISTHREADFUN (fundef)),
                                           TBmakeExprs (DUPdupIdNt (
                                                          EXPRS_EXPR (ret_exprs)),
@@ -3884,10 +3891,18 @@ COMPap (node *arg_node, info *arg_info)
         /* Append NT of out arguments to ICM arguments. */
         for (int i = AP_ARGTAB (arg_node)->size - 1; i >= 1; i--) {
             if (AP_ARGTAB (arg_node)->ptr_out[i] == NULL) {
-                /* in/inout argument, append a placeholder only. */
-                icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
+                /* in/inout argument, append NT. */
+                if (NODE_TYPE (EXPRS_EXPR (AP_ARGTAB (arg_node)->ptr_in[i])) == N_id) {
+                    icm_args = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (
+                                              AP_ARGTAB (arg_node)->ptr_in[i])),
+                                            icm_args);
+                } else { /* N_globobj */
+                    icm_args = TBmakeExprs (DUPdoDupNode (EXPRS_EXPR (
+                                              AP_ARGTAB (arg_node)->ptr_in[i])),
+                                            icm_args);
+                }
             } else {
-                /* out argument, append NT */
+                /* out argument, append NT. */
                 icm_args = TBmakeExprs (DUPdupIdsIdNt (AP_ARGTAB (arg_node)->ptr_out[i]),
                                         icm_args);
             }
@@ -5707,9 +5722,9 @@ COMPprfIsDist (node *arg_node, info *arg_info)
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_IS_DIST_A__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                               FALSE, TRUE, FALSE,
+                                               FALSE, FALSE, FALSE,
                                                MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
-                                                             FALSE, TRUE, FALSE, NULL)),
+                                                             FALSE, FALSE, FALSE, NULL)),
                                  NULL);
 
     DBUG_RETURN (ret_node);
@@ -5744,9 +5759,9 @@ COMPprfFirstElems (node *arg_node, info *arg_info)
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_FIRST_ELEMS_A__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                               FALSE, TRUE, FALSE,
+                                               FALSE, FALSE, FALSE,
                                                MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
-                                                             FALSE, TRUE, FALSE, NULL)),
+                                                             FALSE, FALSE, FALSE, NULL)),
                                  NULL);
 
     DBUG_RETURN (ret_node);
@@ -5781,9 +5796,9 @@ COMPprfOffs (node *arg_node, info *arg_info)
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_OFFS_A__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                               FALSE, TRUE, FALSE,
+                                               FALSE, FALSE, FALSE,
                                                MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
-                                                             FALSE, TRUE, FALSE, NULL)),
+                                                             FALSE, FALSE, FALSE, NULL)),
                                  NULL);
 
     DBUG_RETURN (ret_node);

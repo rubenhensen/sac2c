@@ -134,3 +134,47 @@ SAC_DISTMEM_HM_FreeAnyChunk (void *addr)
         }
     }
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   void *SAC_DISTMEM_HM_MallocDesc( SAC_DISTMEM_HM_header_t *addr,
+ *                                    SAC_DISTMEM_HM_size_byte_t size,
+ *                                    SAC_DISTMEM_HM_size_byte_t desc_size)
+ *
+ * description:
+ *
+ *   This function definition is needed for descriptor co-allocation.
+ *
+ ******************************************************************************/
+
+void *
+SAC_DISTMEM_HM_MallocDesc (SAC_DISTMEM_HM_header_t *addr, SAC_DISTMEM_HM_size_byte_t size,
+                           SAC_DISTMEM_HM_size_byte_t desc_size)
+{
+    void *desc;
+
+    desc = addr + (SAC_DISTMEM_HM_BYTES_2_UNITS (size) + 1);
+    SAC_DISTMEM_HM_ADDR_ARENA (desc) = NULL;
+
+    return (desc);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_DISTMEM_HM_FreeDesc( SAC_DISTMEM_HM_header_t *addr)
+ *
+ * description:
+ *
+ *   This function definition is needed for descriptor co-allocation.
+ *
+ ******************************************************************************/
+
+void
+SAC_DISTMEM_HM_FreeDesc (SAC_DISTMEM_HM_header_t *addr)
+{
+    if (SAC_DISTMEM_HM_ADDR_ARENA (addr) != NULL) {
+        SAC_DISTMEM_HM_FreeSmallChunk (addr, SAC_DISTMEM_HM_ADDR_ARENA (addr));
+    }
+}

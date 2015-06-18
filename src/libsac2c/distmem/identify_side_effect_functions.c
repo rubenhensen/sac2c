@@ -17,15 +17,14 @@
  * passed on directly.
  */
 
-/* TODO: identify side effect function calls afterwards
- * we can ignore side effect function calls if they are initialized from side effect
- * functions */
+/* TODO:   TYsetDistributed( AVIS_TYPE( memavis)) = distmem_dis_dsm; */
 
 #include "identify_side_effect_functions.h"
 
 #include "traverse.h"
 #include "memory.h"
 #include "tree_basic.h"
+#include "new_types.h"
 
 #define DBUG_PREFIX "DMISEF"
 #include "debug.h"
@@ -153,17 +152,41 @@ DMISEFfundef (node *arg_node, info *arg_info)
         INFO_HAS_UNIQUE_LEAF_ARG (arg_info) = FALSE;
         INFO_IS_FIRST_TRAVERSAL (arg_info) = FALSE;
 
-        /* Traverse the arguments for the second time if there are any.
+        /* Traverse the arguments for the second time.
          * This is to find if there are any unique leaf arguments. */
-        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
 
         if (INFO_HAS_UNIQUE_LEAF_ARG (arg_info)) {
             FUNDEF_DISTMEMHASSIDEEFFECTS (arg_node) = TRUE;
         }
+
+        /* Traverse the returns if there is any.
+         * This is to mark them as broadcasted. */
+        FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
     }
 
     /* Continue to the next function if there is any. */
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/* Return value of function
+   We only traverse this nodes for functions with side effects. */
+node *
+DMISEFret (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (RET_ISARTIFICIAL (arg_node)) {
+        /* If the return value is not a reference parameter
+           it needs to be broadcast. */
+        RET_DISTMEMBROADCASTARG (arg_node) = TRUE;
+        // RET_TYPE( arg_node) = TYsetDistributed( RET_TYPE( arg_node), distmem_dis_dsm);
+    }
+
+    /* Traverse the next return value if there is any. */
+    RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -252,6 +252,12 @@ SAC_C_EXTERN void SAC_DISTMEM_HM_FreeLargeChunk (SAC_DISTMEM_HM_header_t *addr,
 SAC_C_EXTERN void *SAC_DISTMEM_HM_MallocAnyChunk (SAC_DISTMEM_HM_size_byte_t size);
 SAC_C_EXTERN void SAC_DISTMEM_HM_FreeAnyChunk (void *addr);
 
+SAC_C_EXTERN void *SAC_DISTMEM_HM_MallocDesc (SAC_DISTMEM_HM_header_t *addr,
+                                              SAC_DISTMEM_HM_size_byte_t size,
+                                              SAC_DISTMEM_HM_size_byte_t desc_size);
+
+SAC_C_EXTERN void SAC_DISTMEM_HM_FreeDesc (SAC_DISTMEM_HM_header_t *addr);
+
 SAC_C_EXTERN void SAC_DISTMEM_HM_ShowDiagnostics (void);
 
 /*
@@ -384,16 +390,57 @@ SAC_C_EXTERN void SAC_DISTMEM_HM_ShowDiagnostics (void);
 
 #endif /* SAC_DO_APS */
 
+#if SAC_DO_DAO
+
+#define SAC_DISTMEM_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim, basetype,   \
+                                                   descbasetype)                         \
+    {                                                                                    \
+        SAC_DISTMEM_HM_MALLOC_FIXED_SIZE (var,                                           \
+                                          ((size) + BYTE_SIZE_OF_DESC (dim)              \
+                                           + 2 * SAC_DISTMEM_HM_UNIT_SIZE),              \
+                                          basetype)                                      \
+                                                                                         \
+        var_desc                                                                         \
+          = (descbasetype *)SAC_DISTMEM_HM_MallocDesc ((SAC_DISTMEM_HM_header_t *)var,   \
+                                                       size, BYTE_SIZE_OF_DESC (dim));   \
+    }
+
+#else /* SAC_DO_DAO */
+
+#define SAC_DISTMEM_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim, basetype,   \
+                                                   descbasetype)                         \
+    {                                                                                    \
+        SAC_DISTMEM_HM_MALLOC_FIXED_SIZE (var, (size), basetype)                         \
+        SAC_DISTMEM_HM_MALLOC_FIXED_SIZE (var_desc, BYTE_SIZE_OF_DESC (dim),             \
+                                          descbasetype)                                  \
+    }
+
+#endif /* SAC_DO_DAO */
+
 /*
  * Definition of memory de-allocation macros.
  */
 
-#define SAC_DISTMEM_HM_FREE(addr) SAC_DISTMEM_HM_FreeAnyChunk (addr);
+#define SAC_DISTMEM_HM_FREE(addr)                                                        \
+    SAC_TR_DISTMEM_PRINT ("SAC_DISTMEM_HM_FREE( %p)", addr);                             \
+    SAC_DISTMEM_HM_FreeAnyChunk (addr);
 
 #if SAC_DO_APS
 
+/*
+ * Note, that due to DAO the size of the allocated chunk might be larger than
+ * actually required by the size of the data object to be stored.
+ */
+
+#define SAC_DISTMEM_HM_FREE_DESC(addr)                                                   \
+    {                                                                                    \
+        SAC_TR_DISTMEM_PRINT ("SAC_DISTMEM_HM_FREE_DESC( %p)", addr);                    \
+        SAC_DISTMEM_HM_FreeDesc ((SAC_DISTMEM_HM_header_t *)addr);                       \
+    }
+
 #define SAC_DISTMEM_HM_FREE_FIXED_SIZE(addr, size)                                       \
     {                                                                                    \
+        SAC_TR_DISTMEM_PRINT ("SAC_DISTMEM_HM_FREE_FIXED_SIZE( %p, %d)", addr, size);    \
         if (((size) + 2 * SAC_DISTMEM_HM_UNIT_SIZE)                                      \
             <= SAC_DISTMEM_HM_ARENA_4_MAXCS_BYTES) {                                     \
             SAC_DISTMEM_HM_FreeSmallChunk ((SAC_DISTMEM_HM_header_t *)addr,              \
@@ -437,7 +484,17 @@ SAC_C_EXTERN void SAC_DISTMEM_HM_ShowDiagnostics (void);
 
 #else /* SAC_DO_APS */
 
-#define SAC_DISTMEM_HM_FREE_FIXED_SIZE(addr, size) SAC_DISTMEM_HM_FREE (addr)
+#define SAC_DISTMEM_HM_FREE_DESC(addr)                                                   \
+    {                                                                                    \
+        SAC_TR_DISTMEM_PRINT ("SAC_DISTMEM_HM_FREE_DESC( %p)", addr);                    \
+        if (SAC_DISTMEM_HM_ADDR_ARENA (addr) != NULL) {                                  \
+            SAC_DISTMEM_HM_FREE (addr)                                                   \
+        }                                                                                \
+    }
+
+#define SAC_DISTMEM_HM_FREE_FIXED_SIZE(addr, size)                                       \
+    SAC_TR_DISTMEM_PRINT ("SAC_DISTMEM_HM_FREE_FIXED_SIZE( %p, %d)", addr, size);        \
+    SAC_DISTMEM_HM_FREE (addr)
 
 #endif /* SAC_DO_APS */
 

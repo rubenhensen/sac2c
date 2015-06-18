@@ -1603,16 +1603,18 @@ ICMCompileND_PRF_DROP_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int fr
         IF_BEGIN ("SAC_cond")
             ;
             indout ("SAC_cnt = SAC_ND_A_SIZE( %s) + SAC_off;\n", from_NT);
+            ASSURE_TYPE (ASSURE_COND ("SAC_off <= 0"),
+                         ASSURE_TEXT ("1st argument of %s is out of range!",
+                                      global.prf_name[F_drop_SxV]));
             indout ("SAC_off = 0;\n");
         IF_END ();
         ELSE_BEGIN ()
             ;
             indout ("SAC_cnt = SAC_ND_A_SIZE( %s) - SAC_off;\n", from_NT);
+            ASSURE_TYPE (ASSURE_COND ("-SAC_off <= 0"),
+                         ASSURE_TEXT ("1st argument of %s is out of range!",
+                                      global.prf_name[F_drop_SxV]));
         ELSE_END ();
-
-        ASSURE_TYPE (ASSURE_COND ("SAC_cnt <= SAC_ND_A_SIZE( %s)", from_NT),
-                     ASSURE_TEXT ("1st argument of %s is out of range!",
-                                  global.prf_name[F_drop_SxV]));
 
         FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_cnt; SAC_i++")
             ;

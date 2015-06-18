@@ -132,6 +132,12 @@ typedef enum simpletype_t simpletype;
  */
 typedef int usertype;
 
+typedef enum distmem_dis_t {
+    distmem_dis_dis,
+    distmem_dis_ndi,
+    distmem_dis_dsm
+} distmem_dis;
+
 #define PHASE(name, text, cond) PH_##name,
 
 #define SUBPHASE(name, text, fun, cond, phase) PH_##phase##_##name,
@@ -332,9 +338,9 @@ typedef struct TYPES {
     mutcScope scope; /* the scope of the value of this var */
     mutcUsage usage; /* where is this var used */
 
-    bool unique;      /* this variable is unique */
-    bool akv;         /* this variable is akv */
-    bool distributed; /* this variable is distributed */
+    bool unique;             /* this variable is unique */
+    bool akv;                /* this variable is akv */
+    distmem_dis distributed; /* distributed class of this variable */
 
 } types;
 

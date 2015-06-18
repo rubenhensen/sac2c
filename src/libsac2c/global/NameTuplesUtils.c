@@ -342,8 +342,10 @@ NTUgetDistributedFromTypes (types *type)
         DBUG_UNREACHABLE ("illegal distributed attribute found!");
         d = C_unknownd;
     } else {
-        if (TYPES_DISTRIBUTED (type)) {
+        if (TYPES_DISTRIBUTED (type) == distmem_dis_dis) {
             d = C_distr;
+        } else if (TYPES_DISTRIBUTED (type) == distmem_dis_dsm) {
+            d = C_distmem;
         } else {
             d = C_notdistr;
         }

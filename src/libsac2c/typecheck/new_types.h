@@ -156,6 +156,7 @@ extern ntype *TYsetHiddenUserType (ntype *simple, usertype udt);
 extern ntype *TYsetMutcUsage (ntype *type, mutcUsage usage);
 extern ntype *TYsetMutcScope (ntype *type, mutcScope scope);
 extern ntype *TYsetUnique (ntype *type, bool val);
+extern ntype *TYsetDistributed (ntype *type, distmem_dis val);
 
 extern simpletype TYgetSimpleType (ntype *simple);
 extern usertype TYgetHiddenUserType (ntype *simple);
@@ -280,6 +281,7 @@ extern bool TYisProdOfAKVafter (ntype *, int);
 extern bool TYisProdContainingAKV (ntype *);
 
 extern bool TYgetUnique (ntype *type);
+extern distmem_dis TYgetDistributed (ntype *type);
 
 extern int TYcountNonFixedAlpha (ntype *);
 extern int TYcountNoMinAlpha (ntype *);

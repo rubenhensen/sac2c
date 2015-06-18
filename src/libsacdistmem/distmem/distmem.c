@@ -46,6 +46,7 @@
 static UNUSED int SAC_DISTMEM_COMMLIB_dummy;
 
 #if COMPILE_PLAIN
+
 /*
  * If we compile for distmem_trace.o or distmem_profile.o, we don't need the global
  * variables since these always remain in distmem.o (without tracing and profiling).
@@ -57,6 +58,15 @@ static UNUSED int SAC_DISTMEM_COMMLIB_dummy;
  * is disabled. Therefore, it is also included into libsacdistmem.nodistmem
  */
 size_t SAC_DISTMEM_rank = SAC_DISTMEM_RANK_UNDEFINED;
+
+/*
+ * If not equal to SAC_DISTMEM_TRACE_RANK_ANY, only produce
+ * trace output for this rank.
+ * For tracing purposes we also need this when the distributed memory backend
+ * is disabled. Therefore, it is also included into libsacdistmem.nodistmem
+ */
+int SAC_DISTMEM_trace_rank = SAC_DISTMEM_TRACE_RANK_ANY;
+
 #endif /* COMPILE_PLAIN */
 
 #ifdef COMPILE_DISTMEM
@@ -133,6 +143,10 @@ void *SAC_DISTMEM_cache_ptr;
  * and to the local caches of segments owned by other nodes
  * (at other indices) */
 void **SAC_DISTMEM_local_seg_ptrs;
+
+/* Flag that indicates whether allocations in the DSM segment are
+ * currently allowed. */
+bool SAC_DISTMEM_are_dsm_allocs_allowed = TRUE;
 
 /* Flag that indicates whether writes to distributed arrays are
  * currently allowed. */
@@ -293,18 +307,19 @@ SAC_DISTMEM_Init (int argc, char *argv[])
 
 #if COMPILE_TRACE
 void
-SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node)
+SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank)
 #elif COMPILE_PROFILE
 void
-SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node)
+SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank)
 #else /* COMPILE_PLAIN */
 void
-SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node)
+SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank)
 #endif
 {
     size_t i;
 
     SAC_DISTMEM_min_elems_per_node = min_elems_per_node;
+    SAC_DISTMEM_trace_rank = trace_rank;
 
     /* Query system page size */
     int pagesz = sysconf (_SC_PAGE_SIZE);
@@ -407,19 +422,33 @@ SAC_DISTMEM_InvalCache (uintptr_t arr_offset, size_t b)
             continue;
         }
 
-        uintptr_t start = (uintptr_t)SAC_DISTMEM_local_seg_ptrs[i] + arr_offset;
-        uintptr_t end = (uintptr_t)start + b;
-        void *page_start = (void *)(start - start % SAC_DISTMEM_pagesz);
-        size_t num_pages = end / SAC_DISTMEM_pagesz - start / SAC_DISTMEM_pagesz + 1;
+        SAC_DISTMEM_InvalCacheOfNode (arr_offset, i, b);
+    }
+}
 
-        SAC_TR_DISTMEM_PRINT ("Invalidating %zd B = %zd cache pages of node %i from %p.",
-                              b, num_pages, i, page_start);
-        SAC_DISTMEM_PROT_NONE (page_start, SAC_DISTMEM_pagesz * num_pages);
+#if COMPILE_TRACE
+void
+SAC_DISTMEM_TR_InvalCacheOfNode (uintptr_t arr_offset, size_t node, size_t b)
+#elif COMPILE_PROFILE
+void
+SAC_DISTMEM_PR_InvalCacheOfNode (uintptr_t arr_offset, size_t node, size_t b)
+#else /* COMPILE_PLAIN */
+void
+SAC_DISTMEM_InvalCacheOfNode (uintptr_t arr_offset, size_t node, size_t b)
+#endif
+{
+    uintptr_t start = (uintptr_t)SAC_DISTMEM_local_seg_ptrs[node] + arr_offset;
+    uintptr_t end = (uintptr_t)start + b;
+    void *page_start = (void *)(start - start % SAC_DISTMEM_pagesz);
+    size_t num_pages = end / SAC_DISTMEM_pagesz - start / SAC_DISTMEM_pagesz + 1;
+
+    SAC_TR_DISTMEM_PRINT ("Invalidating %zd B = %zd cache pages of node %zd from %p.", b,
+                          num_pages, node, page_start);
+    SAC_DISTMEM_PROT_NONE (page_start, SAC_DISTMEM_pagesz * num_pages);
 
 #if COMPILE_TRACE || COMPILE_PROFILE
-        SAC_DISTMEM_TR_num_inval_pages += num_pages;
+    SAC_DISTMEM_TR_num_inval_pages += num_pages;
 #endif
-    }
 }
 
 #if COMPILE_TRACE

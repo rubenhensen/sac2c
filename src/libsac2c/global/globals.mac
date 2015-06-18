@@ -388,6 +388,11 @@ GLOBAL (unsigned int, distmem_max_memory_mb, 512, xfree_dummy, )
  * when the distributed memory backend is used.
  */
 
+GLOBAL (int, distmem_trace_node, -1, xfree_dummy, )
+/*
+ * If not equal to -1, trace output is only produced for the node with the provided rank.
+ */
+
 GLOBAL (unsigned int, distmem_min_elems_per_node, 10, xfree_dummy, )
 /*
  * Minimum number of array elements per node such that the array is distributed

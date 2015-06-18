@@ -6,6 +6,7 @@
 extern node *DMISEFfundef (node *arg_node, info *arg_info);
 extern node *DMISEFarg (node *arg_node, info *arg_info);
 extern node *DMISEFap (node *arg_node, info *arg_info);
+extern node *DMISEFret (node *arg_node, info *arg_info);
 extern node *DMISEFexprs (node *arg_node, info *arg_info);
 
 extern node *DMISEFdoIdentifySideEffectFunctions (node *syntax_tree);

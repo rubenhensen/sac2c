@@ -296,17 +296,20 @@ ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
     global.indent++;
 
     if (is_distributable) {
-        IF_BEGIN (
-          "SAC_ND_A_IS_DIST( %s) && SAC_DISTMEM_exec_mode != SAC_DISTMEM_exec_mode_sync",
-          to_NT)
+        /* The with-loop is distributed if the array is distributed (i.e. not only
+         * allocated in DSM memory but actually distributed). */
+        IF_BEGIN ("SAC_ND_A_IS_DIST( %s) && !SAC_ND_A_IS_DSM( %s) && "
+                  "SAC_DISTMEM_exec_mode != SAC_DISTMEM_exec_mode_sync",
+                  to_NT, to_NT)
             ;
             indout ("SAC_RuntimeError( \"Tried to execute distributed with-loop in "
                     "non-synchronous execution mode.\");\n");
         IF_END ();
 
         indout ("const bool SAC_WL_IS_DISTRIBUTED = SAC_ND_A_IS_DIST( %s) && "
-                "SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_sync;\n",
-                to_NT);
+                "!SAC_ND_A_IS_DSM( %s) && SAC_DISTMEM_exec_mode == "
+                "SAC_DISTMEM_exec_mode_sync;\n",
+                to_NT, to_NT);
         indout ("const int SAC_WL_DIST_DIM0_SIZE = SAC_ND_A_SHAPE( %s, 0);\n", to_NT);
         indout ("const uintptr_t SAC_WL_DIST_OFFS = SAC_ND_A_OFFS( %s);\n", to_NT);
         indout (
@@ -317,7 +320,7 @@ ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
             ;
             indout ("SAC_TR_DISTMEM_PRINT( \"Executing distributed with-loop.\");\n");
             indout ("SAC_DISTMEM_BARRIER();\n");
-            indout ("SAC_DISTMEM_SWITCH_TO_DISTR_EXEC();\n");
+            indout ("SAC_DISTMEM_SWITCH_TO_DIST_EXEC();\n");
             indout ("SAC_DISTMEM_ALLOW_DIST_WRITES();\n");
         IF_END ();
         ELSE_BEGIN ()
@@ -595,14 +598,16 @@ ICMCompileWL_DISTMEM_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
          * it may have been unrolled. */
         IF_BEGIN ("SAC_ND_A_IS_DIST( %s)", to_NT)
             ;
-            /* The outer array (and possibly with-loop) are distributed.
-             * Get the pointer to the start of the sub-allocated array. */
+            /* The outer array (and possibly with-loop) are distributed. */
+            /* The inner array is sub-allocated in DSM memory. */
+            indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s) = TRUE;\n",
+                    sub_NT, sub_NT);
+            /* Get the pointer to the start of the sub-allocated array. */
             indout ("SAC_ND_GETVAR(%s, SAC_ND_A_FIELD( %s)) = "
                     "SAC_DISTMEM_ELEM_POINTER(SAC_ND_A_OFFS( %s), SAC_NT_CBASETYPE( %s),"
                     "                         SAC_ND_A_FIRST_ELEMS( %s), SAC_ND_READ( "
                     "%s, 0));\n",
                     sub_NT, sub_NT, to_NT, to_NT, to_NT, off_NT);
-            indout ("SAC_DISTMEM_CHECK_MARK_AS_TREAT_AS_NONDIST( %s);", sub_NT);
         IF_END ();
         ELSE_BEGIN ()
             ;

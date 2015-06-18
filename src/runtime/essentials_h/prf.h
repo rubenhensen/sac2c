@@ -155,11 +155,11 @@
  *
  * ND_PRF_DIM_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
- * ND_PRF_IS_DIST_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
+ * ND_PRF_IS_DIST_A__DATA( to_NT, from_NT)
  *
- * ND_PRF_FIRST_ELEMS_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
+ * ND_PRF_FIRST_ELEMS_A__DATA( to_NT, from_NT)
  *
- * ND_PRF_OFFS_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
+ * ND_PRF_OFFS_A__DATA( to_NT, from_NT)
  *
  * ND_PRF_SHAPE_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
@@ -220,22 +220,52 @@
                        NT_STR (from_NT), from_sdim))                                     \
     SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_DIM (from_NT))
 
-#define SAC_ND_PRF_IS_DIST_A__DATA(to_NT, to_sdim, from_NT, from_sdim)                   \
-    SAC_TR_PRF_PRINT (("ND_PRF_IS_DIST_A__...( %s, %d, %s, %d)\n", NT_STR (to_NT),       \
-                       to_sdim, NT_STR (from_NT), from_sdim))                            \
+#if SAC_DO_DISTMEM
+
+#define SAC_ND_PRF_IS_DIST_A__DATA(to_NT, from_NT)                                       \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_IS_DIST_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))            \
     SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_IS_DIST (from_NT))
 
-#define SAC_ND_PRF_FIRST_ELEMS_A__DATA(to_NT, to_sdim, from_NT, from_sdim)               \
-    SAC_TR_PRF_PRINT (("ND_PRF_FIRST_ELEMS_A__...( %s, %d, %s, %d)\n", NT_STR (to_NT),   \
-                       to_sdim, NT_STR (from_NT), from_sdim))                            \
-    SAC_DISTMEM_CHECK_IS_PRF_CALL_ALLOWED (from_NT, "_firstElems_A_")                    \
+/* We allow this primitive function to be called on all arrays, also if they
+ * are not distributed or even distributable. Then it simply returns 0. This is
+ * to avoid loads of checks in print functions. */
+#define SAC_ND_PRF_FIRST_ELEMS_A__DATA(to_NT, from_NT)                                   \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_FIRST_ELEMS_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))        \
     SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_FIRST_ELEMS (from_NT))
 
-#define SAC_ND_PRF_OFFS_A__DATA(to_NT, to_sdim, from_NT, from_sdim)                      \
-    SAC_TR_PRF_PRINT (("ND_PRF_OFFS_A__...( %s, %d, %s, %d)\n", NT_STR (to_NT), to_sdim, \
-                       NT_STR (from_NT), from_sdim))                                     \
-    SAC_DISTMEM_CHECK_IS_PRF_CALL_ALLOWED (from_NT, "_offs_A_")                          \
+/* We allow this primitive function to be called on all arrays, also if they
+ * are not distributed or even distributable. Then it simply returns 0. This is
+ * to avoid loads of checks in print functions. */
+#define SAC_ND_PRF_OFFS_A__DATA(to_NT, from_NT)                                          \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_OFFS_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))               \
     SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_OFFS (from_NT))
+
+#else /* SAC_DO_DISTMEM */
+
+/* We don't allow these primitive functions to be called
+ * when the distributed memory backend is not used. */
+
+#define SAC_ND_PRF_IS_DIST_A__DATA(to_NT, from_NT)                                       \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_IS_DIST_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))            \
+    SAC_RuntimeError ("This primitive function may only be called "                      \
+                      "if the distributed memory backend is used.");
+
+#define SAC_ND_PRF_FIRST_ELEMS_A__DATA(to_NT, from_NT)                                   \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_FIRST_ELEMS_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))        \
+    SAC_RuntimeError ("This primitive function may only be called "                      \
+                      "if the distributed memory backend is used.");
+
+#define SAC_ND_PRF_OFFS_A__DATA(to_NT, from_NT)                                          \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_OFFS_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))               \
+    SAC_RuntimeError ("This primitive function may only be called "                      \
+                      "if the distributed memory backend is used.");
+#endif /* SAC_DO_DISTMEM */
 
 /* ND_PRF_SHAPE_A__DATA( ...) is a C-ICM */
 
