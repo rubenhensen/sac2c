@@ -5188,6 +5188,19 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="SourceName" default="NULL" inconstructor="no">
+          <description>original name of a function</description>
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="pc_rid" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="WrapperType" default="NULL" inconstructor="no">
           <type name="NewType">
             <targets>
