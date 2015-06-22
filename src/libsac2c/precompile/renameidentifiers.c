@@ -195,6 +195,8 @@ RenameFun (node *fun)
 
     DBUG_ENTER ();
 
+    FUNDEF_SOURCENAME (fun) = STRcpy (FUNDEF_NAME (fun));
+
     if (FUNDEF_LINKNAME (fun) != NULL) {
         /*
          * A name has been preset, so we rename the function
