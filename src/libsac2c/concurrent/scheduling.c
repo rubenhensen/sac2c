@@ -855,7 +855,7 @@ CompileSchedulingArgs (int seg_id, sched_t *sched, node *args)
             args = TBmakeExprs (new_arg, args);
         }
     }
-    /*TODO: here?*/
+
     args = TBmakeExprs (TBmakeNum (seg_id), args);
 
     DBUG_RETURN (args);
@@ -992,7 +992,7 @@ CompileVarSegSchedulingArgs (node *wl_ids, node *wlseg, sched_t *sched)
  *   depending on the parameter 'suffix'.
  *
  ******************************************************************************/
-// TODO: Here happens sthg
+
 static node *
 CompileScheduling (int seg_id, node *wl_ids, sched_t *sched, node *arg_node, char *suffix)
 {

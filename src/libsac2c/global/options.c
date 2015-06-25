@@ -219,12 +219,11 @@ OPTcheckOptionConsistency (void)
                       "supported when using the distributed memory backend.");
         }
     } else {
-        /* The distributed memory backend is not used. Check for invalid options. */
-        if (global.runtimecheck.distmem) {
-            CTIwarn ("The distributed memory backend is not used. "
-                     "Disabling distributed memory runtime checks.");
-            global.runtimecheck.distmem = FALSE;
-        }
+        /* The distributed memory backend is not used. Disable options that don't apply.
+         */
+        global.runtimecheck.distmem = FALSE;
+        global.trace.distmem = FALSE;
+        global.profile.distmem = FALSE;
     }
 
     /* turn on default multithreading if using cuda hybrid backend */

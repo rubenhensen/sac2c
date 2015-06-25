@@ -910,21 +910,6 @@ ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
                        out ("SAC_ND_RET_%s( %s, %s)", vararg[i], vararg[i + 1],
                             vararg[i + 2]));
         out ("\n");
-
-/* FIXME: Good idea, but doesn't work. */
-#if 0
-    /* For non-hidden out arguments ensure 
-     * that all required descriptor fields are filled. */
-    for (int i = 0; i < vararg_cnt * 3; i += 3) {
-#define SEPargtag
-#define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
-    if (STReq (it_text, vararg[i]) && it_out                                             \
-        && ICUGetHiddenClass (vararg[i + 1]) != C_hid) {                                 \
-        ICMCompileND_UPDATE__DESC (vararg[i + 1], 0, vararg[i + 2], 0);                  \
-    }
-#include "argtag_info.mac"
-    }
-#endif
     }
 
     if (!STReq (retname, "")) {

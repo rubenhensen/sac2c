@@ -3728,7 +3728,7 @@ TYgetBottom (ntype *type)
  *    bool   TYeqTypes( ntype *t1, ntype *t2)
  *
  * description:
- * TODO: Something goes wrong here
+ *
  *
  ******************************************************************************/
 
