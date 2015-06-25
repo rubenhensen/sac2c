@@ -276,7 +276,7 @@ $(STYLE)/libsacpreludeTree$(CROSS_VARIANT)$(SHARED_LIB_EXT): \
 
 ################################################################################
 #
-# Building libsac, libsacdistmem and libsacphm in various variants
+# Building libsacphm, libsacdistmemphm, libsacdistmem and libsac in various variants
 #
 
 
@@ -297,6 +297,22 @@ $(PROJECT_ROOT)/lib/libsacphm$(CROSS_VARIANT)%$(SHARED_LIB_EXT): $(SUBTARGETS:.o
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
+$(PROJECT_ROOT)/lib/libsacdistmemphm$(CROSS_VARIANT)%.a: $(SUBTARGETS:.o=%.o)
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacdistmemphm$(CROSS_VARIANT)$*.a " \
+                 "($($(STYLE)_long) version) $(CROSS_FOR)"
+	$(HIDE) $(CROSS_AR) $@ $^
+	$(HIDE) $(CROSS_RANLIB) $@
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
+
+$(PROJECT_ROOT)/lib/libsacdistmemphm$(CROSS_VARIANT)%$(SHARED_LIB_EXT): $(SUBTARGETS:.o=%.o)
+	@$(ECHO) ""
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsacdistmemphm$(CROSS_VARIANT)$*$(SHARED_LIB_EXT) " \
+                 "($($(STYLE)_long) version) $(CROSS_FOR)"
+	$(HIDE) $(subst %libname%,$(notdir $@),$(CROSS_LD_DYNAMIC)) -o $@ $^
+	@$(TOUCH) .done
+	@$(CLOCK_SKEW_ELIMINATION)  
 
 $(PROJECT_ROOT)/lib/libsacdistmem$(CROSS_VARIANT)%.a: $(SUBTARGETS:.o=%.o)
 	@$(ECHO) ""
@@ -798,6 +814,7 @@ endif
 #
 # Pattern rules for dependency tracking mechanism:
 #
+# TODO: The dependency check now only works for GASNet ibv and mpi (those are hardcoded). The check should be generated for all available conduits.
 
 .%.d: %.c $(GENERATED_FILES) 
 	@if [ "dependency $(dir $*)" != "`cat .make_track`" ] ; \
@@ -807,7 +824,7 @@ endif
         fi
 	@$(ECHO) "  Checking dependencies of source file: $(notdir $<)"
 	$(HIDE) if $(CC_DEVEL) $(CC_FLAGS_DEPS) $(SETTINGS_DEVEL) $(INCDIRS) $<  > $@d ; \
-	 then $(SED) 's/\($(notdir $*)\)\.o[ :]*/$(subst /,\/,$*)\.o $(subst /,\/,$*)\.p.o $(subst /,\/,$*)\.d.o $(subst /,\/,$*)\.p.mt.o $(subst /,\/,$*)\.d.mt.o $(subst /,\/,$*)\.p.diag.o $(subst /,\/,$*)\.d.diag.o  $(subst /,\/,$*)\.p.mt.diag.o $(subst /,\/,$*)\.d.mt.diag.o $(subst /,\/,$@)\: ..\/makefiles\/config.mkf /'  <$@d >$@.tmp; \
+	 then $(SED) 's/\($(notdir $*)\)\.o[ :]*/$(subst /,\/,$*)\.o $(subst /,\/,$*)\.p.o $(subst /,\/,$*)\.d.o $(subst /,\/,$*)\.p.nodistmem.o $(subst /,\/,$*)\.d.nodistmem.o $(subst /,\/,$*)\.p.gasnetibv.o $(subst /,\/,$*)\.d.gasnetibv.o $(subst /,\/,$*)\.p.gasnetmpi.o $(subst /,\/,$*)\.d.gasnetmpi.o $(subst /,\/,$*)\.p.mt.o $(subst /,\/,$*)\.d.mt.o $(subst /,\/,$*)\.p.seq.o $(subst /,\/,$*)\.d.seq.o $(subst /,\/,$*)\.p.diag.o $(subst /,\/,$*)\.d.diag.o $(subst /,\/,$*)\.p.seq.diag.o $(subst /,\/,$*)\.d.seq.diag.o $(subst /,\/,$*)\.p.mt.diag.o $(subst /,\/,$*)\.d.mt.diag.o $(subst /,\/,$@)\: ..\/makefiles\/config.mkf /'  <$@d >$@.tmp; \
               $(MV) $@.tmp $@; \
 	      $(RM) $@d ; \
 	 else $(RM) $@d ; \

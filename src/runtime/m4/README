@@ -146,8 +146,10 @@ Adding a new tag
 To add a new tag a a new entry to the _star m4 macro.  _star is
 described in `Extending values of a tag'.
 
-Update tupple.h
+Update tuple.h
 
 Add a new macro called NT_tagname, where tagname is the name of the
 tag.
+
+Update sacarg.c
 

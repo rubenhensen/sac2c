@@ -45,7 +45,7 @@
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_FUN_DEC( name, rettype_NT, vararg_cnt, [ TAG, basetype, arg_NT ]* )
+ *   ND_FUN_DECL( name, rettype_NT, vararg_cnt, [ TAG, basetype, arg_NT ]* )
  *
  *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
  *
@@ -73,6 +73,35 @@ ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vara
                    out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
                         vararg[i + 1]));
     out (")");
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS ( char *name, char *rettype_NT,
+ *                                                          int vararg_cnt, char **vararg)
+ *
+ * description:
+ *   Currently, this ICM only serves debugging purposes in the C code by showing which
+ *   functions have side effects when the distributed memory backend is used.
+ *   All calls are redirected to ICMCompileND_FUN_DECL.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS (char *name, char *rettype_NT,
+                                                 int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ();
+
+#define ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS
+
+    ICMCompileND_FUN_DECL (name, rettype_NT, vararg_cnt, vararg);
 
     DBUG_RETURN ();
 }
@@ -297,6 +326,19 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 #include "icm_trace.c"
 #undef ND_FUN_AP
 
+    if (global.backend == BE_distmem) {
+        BLOCK_NOVAR_BEGIN ()
+            ;
+            indout ("bool SAC_FUN_AP_was_side_effects_outer = FALSE;\n");
+            IF_BEGIN ("SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_side_effects_outer")
+                ;
+                /* We are in side effects outer execution mode.
+                 * Switch to side effects execution mode. */
+                indout ("SAC_DISTMEM_SWITCH_TO_SIDE_EFFECTS_EXEC();\n");
+                indout ("SAC_FUN_AP_was_side_effects_outer = TRUE;\n");
+            IF_END ();
+    }
+
     if (!STReq (retname, "")) {
         indout ("%s = %s(", retname, name);
     } else {
@@ -312,6 +354,414 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
     } else {
         out (")\n");
     }
+
+    if (global.backend == BE_distmem) {
+        IF_BEGIN ("SAC_FUN_AP_was_side_effects_outer")
+            ;
+            /* We were in side effects outer execution mode before the function
+             * application. Switch back. */
+            indout ("SAC_DISTMEM_SWITCH_TO_SIDE_EFFECTS_OUTER_EXEC();\n");
+        IF_END ();
+BLOCK_END
+();
+}
+
+DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK( char *name, char
+ **retname, char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg)
+ *
+ * description:
+ *
+ *   Creates code for hidden arguments, hidden return values and unique arguments of a
+ *function application with side effects for the distributed memory backend.
+ *
+ *   For hidden out arguments and hidden return values, we create code that raises a
+ *runtime error. The distributed memory backend does not support hidden out arguments and
+ *hidden return values in function applications with side effects since this would require
+ *C functions for the (de-)serialisation when the out arguments and return values are
+ *broadcasted from the master to the worker nodes after the function application.We do not
+ *raise an error at compilation time because we want to be able to compile the standard
+ *library without errors.
+ *
+ *   This function also handles inout arguments which are always unique. We can safely
+ *initialise them to NULL at all worker nodes as they are only used by the master.
+ *
+ ******************************************************************************/
+
+static void
+ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (char *name, char *retname,
+                                                             char *ret_NT, int vararg_cnt,
+                                                             char **vararg_NT,
+                                                             char **vararg)
+{
+    DBUG_ENTER ();
+
+    /* FIXME: We have to detect whether the return value is unique
+     * so that we can raise a runtime error if there is a hidden non-unique return value.
+     * For now we assume that the return value is unique (and therefore only used by the
+     * master node) and initialize it to NULL at the worker nodes. */
+    if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) == C_hid) {
+        indout ("SAC_RuntimeWarning( \"The distributed memory backend does not support "
+                "hidden non-unique return "
+                "values in function applications with side-effects (while calling "
+                "function: %s). "
+                "We assume that the return value is unique and initialize it to NULL. If "
+                "the program works, don't worry about this. "
+                "However, if you encounter a segfault, the reason may be that the return "
+                "value is not unique after all.\");\n",
+                name);
+    }
+
+    /* Raise runtime warning if there is a hidden out argument. */
+    for (int i = 0; i < vararg_cnt * 3; i += 3) {
+#define SEPargtag
+#define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
+    if (STReq (it_text, vararg[i]) && it_out                                             \
+        && ICUGetHiddenClass (vararg_NT[i / 3]) == C_hid) {                              \
+        indout ("SAC_RuntimeWarning( \"The distributed memory backend does not support " \
+                "hidden non-unique "                                                     \
+                "out arguments in function applications with side-effects (argument "    \
+                "%%s of function %s). "                                                  \
+                "We assume that the out argument is unique and initialize it to NULL. "  \
+                "If the program "                                                        \
+                "works, don't worry about this. However, if you encounter a segfault, "  \
+                "the reason may "                                                        \
+                "be that the out argument is not unique after all.\","                   \
+                "NT_STR( %s));\n",                                                       \
+                name, vararg[i + 2]);                                                    \
+    }
+#include "argtag_info.mac"
+    }
+
+    DBUG_RETURN ();
+}
+
+static void
+ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_INIT (char *name, char *retname,
+                                                            char *ret_NT, int vararg_cnt,
+                                                            char **vararg_NT,
+                                                            char **vararg)
+{
+    DBUG_ENTER ();
+
+    /* FIXME: We have to detect whether the return value is unique
+     * so that we can raise a runtime error if there is a hidden non-unique return value.
+     * For now we assume that the return value is unique (and therefore only used by the
+     * master node) and initialize it to NULL at the worker nodes. */
+    if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) == C_hid) {
+        indout ("%s = NULL;\n", retname);
+    }
+
+    /* FIXME: We have to detect whether the out argument is unique
+     * so that we can raise a runtime error if there is a hidden non-unique out argument.
+     * For now we assume that the out argument value is unique (and therefore only used by
+     * the master node) and initialize it to NULL at the worker nodes. Inout arguments
+     * should always be unique. We initialize them to NULL if they are hidden. */
+    for (int i = 0; i < vararg_cnt * 3; i += 3) {
+#define SEPargtag
+#define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
+    if (STReq (it_text, vararg[i]) && (it_out || it_inout)                               \
+        && ICUGetHiddenClass (vararg_NT[i / 3]) == C_hid) {                              \
+        indout ("SAC_ND_A_FIELD( %s) = NULL;\n", vararg[i + 2]);                         \
+    }
+#include "argtag_info.mac"
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST( char *retname, char
+ **rettype, char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg, char
+ **broadcast_operation)
+ *
+ * description:
+ *   Creates code for the broadcast operations for non-hidden out arguments and non-hidden
+ *return values of function applications with side effects when the distributed memory
+ *backend is used.
+ *
+ ******************************************************************************/
+
+static void
+ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (char *retname, char *rettype,
+                                                         char *ret_NT, int vararg_cnt,
+                                                         char **vararg_NT, char **vararg,
+                                                         char *broadcast_operation)
+{
+    DBUG_ENTER ();
+
+    if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) != C_hid) {
+        /* Create code for broadcast operation for non-hidden return value. */
+        shape_class_t sc = ICUGetShapeClass (ret_NT);
+        char *prefix = "";
+        if (sc == C_akd || sc == C_aud) {
+            prefix = "WITH_DESC_";
+        } else if (sc == C_scl) {
+            prefix = "SCL_";
+        }
+        indout ("SAC_DISTMEM_BROADCAST_%s%s( %s, %s);\n", prefix, broadcast_operation,
+                rettype, ret_NT);
+    }
+
+    /* Create code for broadcast operations for non-hidden out and in-out arguments.
+     * Inout arguments should always be unique but for the time being we broadcast them
+     anyways so that free operations and passing them as arguments to other functions
+     don't fail. */
+    for (int i = 0; i < vararg_cnt * 3; i += 3) {
+#define SEPargtag
+#define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
+    if (STReq (it_text, vararg[i]) && (it_out || it_inout)                               \
+        && ICUGetHiddenClass (vararg_NT[i / 3]) != C_hid) {                              \
+        shape_class_t sc = ICUGetShapeClass (vararg_NT[i / 3]);                          \
+        char *prefix = "";                                                               \
+        if (sc == C_akd || sc == C_aud) {                                                \
+            prefix = "WITH_DESC_";                                                       \
+        } else if (sc == C_scl) {                                                        \
+            prefix = "SCL_";                                                             \
+        }                                                                                \
+        indout ("SAC_DISTMEM_BROADCAST_%s%s( %s, %s);\n", prefix, broadcast_operation,   \
+                vararg[i + 1], vararg[i + 2]);                                           \
+    }
+#include "argtag_info.mac"
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER( char *retname,
+ *char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg)
+ *
+ * description:
+ *   Creates code for a barrier operation to be used between broadcast operations for
+ *function applications with side effects when the distributed memory backend is used. The
+ *barrier is only created if there was at least one broadcast operation.
+ *
+ ******************************************************************************/
+
+static void
+ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER (
+  char *retname, char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg)
+{
+    DBUG_ENTER ();
+
+    bool do_barrier = FALSE;
+
+    if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) != C_hid) {
+        /* There was a broadcast operation for a non-hidden return value. */
+        do_barrier = TRUE;
+    }
+
+    if (!do_barrier) {
+        /* Check whether there was a broadcast operation for a non-hidden out or inout
+         * argument. */
+        for (int i = 0; i < vararg_cnt * 3; i += 3) {
+#define SEPargtag
+#define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
+    if (STReq (it_text, vararg[i]) && (it_out || it_inout)                               \
+        && ICUGetHiddenClass (vararg_NT[i / 3]) != C_hid) {                              \
+        do_barrier = TRUE;                                                               \
+        break;                                                                           \
+    }
+#include "argtag_info.mac"
+        }
+    }
+
+    if (do_barrier) {
+        indout ("SAC_DISTMEM_BARRIER();\n");
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS( int vararg_NT_cnt, char
+ ***vararg_NT, char *rettype, char *ret_NT, char *name, char *retname, int vararg_cnt,
+ *char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS( vararg_NT_cnt, vararg_NT*, rettype, ret_NT,
+ *                                        name, retname, vararg_cnt, [ TAG, basetype,
+ *arg_NT ]* )
+ *
+ *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt, char **vararg_NT,
+                                               char *rettype, char *ret_NT, char *name,
+                                               char *retname, int vararg_cnt,
+                                               char **vararg)
+{
+    DBUG_ENTER ();
+
+#define ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS
+
+    /*
+     * We have to check whether we are already in side effects execution mode at runtime
+     * because the following may happen:
+     * fun0 declared as ND_FUN_DECL
+     * fun0 calls fun1 ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS
+     * fun1 declared as ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS
+     * fun1 calls fun2 ND_FUN_AP
+     * fun2 declared as ND_FUN_DECL
+     * fun2 calls fun3 ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS --> Error: already in side
+     * effects execution mode fun3 declared as ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS
+     *
+     * In a function declared with ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS we know
+     * for sure at compile time that it will already be in side effects execution mode
+     * when it is called but for a function declared with ND_FUN_DECL that depends on
+     * where it is called from. It may be possible to recognize this in some cases at
+     * compile time but not across module borders.
+     *
+     * FIXME: Possible memory leaks if arguments are freed in a function with side effects
+     * because only the master does that.
+     */
+    IF_BEGIN ("SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_side_effects"
+              "|| SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_side_effects_outer")
+        ;
+        /* We are already in side effects (outer) execution mode. Only the master will
+         * execute this so no special treatment is necessary. */
+        indout ("SAC_TR_DISTMEM_PRINT( \"Already in side effects (outer) execution mode "
+                "when calling function: %s. "
+                "Redirecting to sequential function application.\");\n\n",
+                name);
+        ICMCompileND_FUN_AP (name, retname, vararg_cnt, vararg);
+    IF_END ();
+    ELSE_BEGIN ()
+        ;
+        /* It is important that we are in a block at this point because the variables
+         * declared by the broadcast operations are only needed within the block. */
+        indout ("SAC_DISTMEM_BARRIER();\n");
+
+        IF_BEGIN ("SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER")
+            ;
+            indout ("SAC_DISTMEM_SWITCH_TO_SIDE_EFFECTS_OUTER_EXEC();\n");
+            indout ("SAC_TR_DISTMEM_PRINT( \"Master node is executing function "
+                    "application with side effects: %s\");\n",
+                    name);
+            indout ("SAC_DISTMEM_FORBID_DSM_ALLOCS();\n");
+
+            if (!STReq (retname, "")) {
+                indout ("%s = %s(", retname, name);
+            } else {
+                indout ("SAC_ND_FUNAP2( %s, ", name);
+            }
+
+            SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                           out (" SAC_ND_ARG_%s( %s, %s)", vararg[i], vararg[i + 2],
+                                vararg[i + 1]));
+
+            if (!STReq (retname, "")) {
+                out (");\n");
+            } else {
+                out (")\n");
+            }
+
+            /* Handle hidden arguments, hidden return values and unique (inout) arguments.
+             */
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (name, retname,
+                                                                         ret_NT,
+                                                                         vararg_cnt,
+                                                                         vararg_NT,
+                                                                         vararg);
+
+            /* Allow allocations in the DSM segment for the broadcast operations. */
+            indout ("SAC_DISTMEM_ALLOW_DSM_ALLOCS();\n");
+
+            /* Required broadcast operations */
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (retname, rettype,
+                                                                     ret_NT, vararg_cnt,
+                                                                     vararg_NT, vararg,
+                                                                     "INIT_MASTER");
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER (retname,
+                                                                             ret_NT,
+                                                                             vararg_cnt,
+                                                                             vararg_NT,
+                                                                             vararg);
+
+            /* There is no finalize operation for the master. */
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER (retname,
+                                                                             ret_NT,
+                                                                             vararg_cnt,
+                                                                             vararg_NT,
+                                                                             vararg);
+
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (retname, rettype,
+                                                                     ret_NT, vararg_cnt,
+                                                                     vararg_NT, vararg,
+                                                                     "FREE_MEM_COMMON");
+
+            indout ("SAC_DISTMEM_SWITCH_TO_SYNC_EXEC();\n");
+        IF_END ();
+        ELSE_BEGIN ()
+            ;
+            indout ("SAC_TR_DISTMEM_PRINT( \"Non-master node is skipping function "
+                    "application with side effects: %s\");\n",
+                    name);
+
+            /* Handle hidden arguments, hidden return values and unique (inout) arguments.
+             */
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (name, retname,
+                                                                         ret_NT,
+                                                                         vararg_cnt,
+                                                                         vararg_NT,
+                                                                         vararg);
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_INIT (name, retname,
+                                                                        ret_NT,
+                                                                        vararg_cnt,
+                                                                        vararg_NT,
+                                                                        vararg);
+
+            /* Required broadcast operations */
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (retname, rettype,
+                                                                     ret_NT, vararg_cnt,
+                                                                     vararg_NT, vararg,
+                                                                     "INIT_WORKER");
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER (retname,
+                                                                             ret_NT,
+                                                                             vararg_cnt,
+                                                                             vararg_NT,
+                                                                             vararg);
+
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (retname, rettype,
+                                                                     ret_NT, vararg_cnt,
+                                                                     vararg_NT, vararg,
+                                                                     "STEP1_WORKER");
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (retname, rettype,
+                                                                     ret_NT, vararg_cnt,
+                                                                     vararg_NT, vararg,
+                                                                     "STEP2_WORKER");
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER (retname,
+                                                                             ret_NT,
+                                                                             vararg_cnt,
+                                                                             vararg_NT,
+                                                                             vararg);
+
+            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (retname, rettype,
+                                                                     ret_NT, vararg_cnt,
+                                                                     vararg_NT, vararg,
+                                                                     "FREE_MEM_COMMON");
+        ELSE_END ();
+
+    ELSE_END ();
 
     DBUG_RETURN ();
 }
@@ -460,6 +910,21 @@ ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
                        out ("SAC_ND_RET_%s( %s, %s)", vararg[i], vararg[i + 1],
                             vararg[i + 2]));
         out ("\n");
+
+/* FIXME: Good idea, but doesn't work. */
+#if 0
+    /* For non-hidden out arguments ensure 
+     * that all required descriptor fields are filled. */
+    for (int i = 0; i < vararg_cnt * 3; i += 3) {
+#define SEPargtag
+#define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
+    if (STReq (it_text, vararg[i]) && it_out                                             \
+        && ICUGetHiddenClass (vararg[i + 1]) != C_hid) {                                 \
+        ICMCompileND_UPDATE__DESC (vararg[i + 1], 0, vararg[i + 2], 0);                  \
+    }
+#include "argtag_info.mac"
+    }
+#endif
     }
 
     if (!STReq (retname, "")) {
@@ -604,6 +1069,64 @@ ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp)
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileND_DIST_DECL( char *var_NT, char *basetype, int sdim, int *shp)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_DIST_DECL( var_NT, basetype, sdim, [ shp ]* )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_DIST_DECL (char *var_NT, char *basetype, int sdim, int *shp)
+{
+    DBUG_ENTER ();
+
+#define ND_DIST_DECL
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_DIST_DECL
+
+    indout ("SAC_ND_DECL__DATA( %s, %s, )\n", var_NT, basetype);
+    indout ("SAC_ND_DECL__DESC( %s, )\n", var_NT);
+    ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_DSM_DECL( char *var_NT, char *basetype, int sdim, int *shp)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_DIST_DECL( var_NT, basetype, sdim, [ shp ]* )
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_DSM_DECL (char *var_NT, char *basetype, int sdim, int *shp)
+{
+    DBUG_ENTER ();
+
+#define ND_DSM_DECL
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_DSM_DECL
+
+    indout ("SAC_ND_DECL__DATA( %s, %s, )\n", var_NT, basetype);
+    indout ("SAC_ND_DECL__DESC( %s, )\n", var_NT);
+    ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileND_DECL_EXTERN( char *var_NT, char *basetype, int sdim)
  *
  * description:
@@ -675,24 +1198,37 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
         indout ("const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", var_NT, size);
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
 
-        if (global.backend == BE_distmem && dc == C_distr) {
-            /* Array is potentially distributed. */
+        if (global.backend == BE_distmem) {
+            if (dc == C_distr) {
+                /* Array is potentially distributed. */
 
-            /*
-             * Postpone the decisison whether the array is actually distributed to
-             * runtime since this depends on the number of nodes as well.
-             */
-            indout ("const bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
-                    "SAC_DISTMEM_DET_DO_DISTR_ARR( %d, %d);\n",
-                    var_NT, size, shp[0]);
+                /*
+                 * Postpone the decisison whether the array is actually distributed to
+                 * runtime since this depends on the number of nodes as well.
+                 * SAC_ND_A_MIRROR_IS_DIST cannot be declared constant because the array
+                 * may be treated as non-distributed later on.
+                 */
+                indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
+                        "SAC_DISTMEM_DET_DO_DISTR_ARR( %d, %d);\n",
+                        var_NT, size, shp[0]);
 
-            /*
-             * Initialize these variables to 0 to avoid warnings.
-             * If the array is actually distributed, they will be set to the correct
-             * values when the data is allocated.
-             */
-            indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
-            indout ("uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = 0;\n", var_NT);
+                /*
+                 * Initialize these variables to 0 to avoid warnings.
+                 * If the array is actually distributed, they will be set to the correct
+                 * values when the data is allocated.
+                 */
+                indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
+            } else if (dc == C_distmem) {
+                /* Array is potentially allocated in DSM memory. */
+                indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
+                        "SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
+                        var_NT);
+            }
+
+            if (dc == C_distr || dc == C_distmem) {
+                /* Array is potentially distributed or allocated in DSM memory. */
+                indout ("uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = 0;\n", var_NT);
+            }
         }
 
         break;
@@ -706,17 +1242,28 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
         indout ("int SAC_ND_A_MIRROR_SIZE( %s);\n", var_NT);
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
 
-        if (global.backend == BE_distmem && dc == C_distr) {
-            /* Array is potentially distributed. */
+        if (global.backend == BE_distmem) {
+            if (dc == C_distr) {
+                /* Array is potentially distributed. */
 
-            /*
-             * Initialize these variables to avoid warnings.
-             * If the array is actually distributed, they will be set to the correct
-             * values when the data is allocated.
-             */
-            indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n", var_NT);
-            indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
-            indout ("uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = 0;\n", var_NT);
+                /*
+                 * Initialize these variables to avoid warnings.
+                 * If the array is actually distributed, they will be set to the correct
+                 * values when the data is allocated.
+                 */
+                indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n", var_NT);
+                indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
+            } else if (dc == C_distmem) {
+                /* Array is potentially allocated in DSM memory. */
+                indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
+                        "SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
+                        var_NT);
+            }
+
+            if (dc == C_distr || dc == C_distmem) {
+                /* Array is potentially distributed or allocated in DSM memory. */
+                indout ("uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = 0;\n", var_NT);
+            }
         }
 
         break;
@@ -725,17 +1272,28 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
         indout ("int SAC_ND_A_MIRROR_SIZE( %s) = 0;\n", var_NT);
         indout ("int SAC_ND_A_MIRROR_DIM( %s) = 0;\n", var_NT);
 
-        if (global.backend == BE_distmem && dc == C_distr) {
-            /* Array is potentially distributed. */
+        if (global.backend == BE_distmem) {
+            if (dc == C_distr) {
+                /* Array is potentially distributed. */
 
-            /*
-             * Initialize these variables to avoid warnings.
-             * If the array is actually distributed, they will be set to the correct
-             * values when the data is allocated.
-             */
-            indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n", var_NT);
-            indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
-            indout ("uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = 0;\n", var_NT);
+                /*
+                 * Initialize these variables to avoid warnings.
+                 * If the array is actually distributed, they will be set to the correct
+                 * values when the data is allocated.
+                 */
+                indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n", var_NT);
+                indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
+            } else if (dc == C_distmem) {
+                /* Array is potentially allocated in DSM memory. */
+                indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
+                        "SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
+                        var_NT);
+            }
+
+            if (dc == C_distr || dc == C_distmem) {
+                /* Array is potentially distributed or allocated in DSM memory. */
+                indout ("uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = 0;\n", var_NT);
+            }
         }
 
         break;
@@ -793,17 +1351,30 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
         indout ("const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", var_NT, size);
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
 
-        if (global.backend == BE_distmem && dc == C_distr) {
-            /* Array is potentially distributed. */
-            indout (
-              "const bool SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
-              var_NT, var_NT);
-            indout ("const size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
-                    "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
-                    var_NT, var_NT);
-            indout (
-              "const uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
-              var_NT, var_NT);
+        if (global.backend == BE_distmem) {
+            if (dc == C_distr) {
+                /* Array is potentially distributed.
+                 * SAC_ND_A_MIRROR_IS_DIST cannot be declared constant because the
+                 * array may be treated as non-distributed later on. */
+                indout (
+                  "bool SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
+                  var_NT, var_NT);
+                indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
+                        "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
+                        var_NT, var_NT);
+            } else if (dc == C_distmem) {
+                /* Array is potentially allocated in DSM memory. */
+                indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
+                        "SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
+                        var_NT);
+            }
+
+            if (dc == C_distr || dc == C_distmem) {
+                /* Array is potentially distributed or allocated in DSM memory. */
+                indout (
+                  "uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
+                  var_NT, var_NT);
+            }
         }
 
         break;
@@ -822,17 +1393,28 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
                 var_NT, var_NT);
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
 
-        if (global.backend == BE_distmem && dc == C_distr) {
-            /* Array is potentially distributed. */
-            indout (
-              "const bool SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
-              var_NT, var_NT);
-            indout ("const size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
-                    "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
-                    var_NT, var_NT);
-            indout (
-              "const uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
-              var_NT, var_NT);
+        if (global.backend == BE_distmem) {
+            if (dc == C_distr) {
+                /* Array is potentially distributed. */
+                indout (
+                  "bool SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
+                  var_NT, var_NT);
+                indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
+                        "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
+                        var_NT, var_NT);
+            } else if (dc == C_distmem) {
+                /* Array is potentially allocated in DSM memory. */
+                indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
+                        "SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
+                        var_NT);
+            }
+
+            if (dc == C_distr || dc == C_distmem) {
+                /* Array is potentially distributed or allocated in DSM memory. */
+                indout (
+                  "uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
+                  var_NT, var_NT);
+            }
         }
 
         break;
@@ -845,17 +1427,28 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
                 " = SAC_ND_A_DESC_DIM( %s);\n",
                 var_NT, var_NT);
 
-        if (global.backend == BE_distmem && dc == C_distr) {
-            /* Array is potentially distributed. */
-            indout (
-              "const bool SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
-              var_NT, var_NT);
-            indout ("const size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
-                    "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
-                    var_NT, var_NT);
-            indout (
-              "const uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
-              var_NT, var_NT);
+        if (global.backend == BE_distmem) {
+            if (dc == C_distr) {
+                /* Array is potentially distributed. */
+                indout (
+                  "bool SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
+                  var_NT, var_NT);
+                indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
+                        "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
+                        var_NT, var_NT);
+            } else if (dc == C_distmem) {
+                /* Array is potentially allocated in DSM memory. */
+                indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
+                        "SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
+                        var_NT);
+            }
+
+            if (dc == C_distr || dc == C_distmem) {
+                /* Array is potentially distributed or allocated in DSM memory. */
+                indout (
+                  "uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
+                  var_NT, var_NT);
+            }
         }
 
         break;
@@ -880,7 +1473,7 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
  *
  ******************************************************************************/
 
-// TODO: Changes for distributed memory backend
+/* TODO: Does this require changes for distributed memory backend? */
 void
 ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim)
 {
@@ -963,18 +1556,29 @@ ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
     if (to_sc == C_scl) {
         indout ("SAC_NOOP()\n");
     } else {
-        indout ("SAC_IS_LASTREF__BLOCK_BEGIN( %s)\n", from_NT);
+        if (global.backend == BE_distmem
+            && ICUGetDistributedClass (to_NT) != ICUGetDistributedClass (from_NT)) {
 
-        global.indent++;
-        ICMCompileND_ASSIGN (to_NT, to_sdim, from_NT, from_sdim, copyfun);
-        indout ("SAC_TR_MEM_PRINT("
-                " (\"reuse memory of %s at %%p for %s\","
-                " SAC_ND_GETVAR( %s, SAC_ND_A_FIELD( %s))))\n",
-                from_NT, to_NT, from_NT, from_NT);
-        global.indent--;
+            indout ("SAC_TR_DISTMEM_PRINT( \"Cannot reuse memory, distributability does "
+                    "not match (from %%s: %s, to %%s: %s).\","
+                    "%s, %s);\n",
+                    global.nt_distributed_string[ICUGetDistributedClass (from_NT)],
+                    global.nt_distributed_string[ICUGetDistributedClass (to_NT)], from_NT,
+                    to_NT);
+        } else {
+            indout ("SAC_IS_LASTREF__BLOCK_BEGIN( %s)\n", from_NT);
 
-        indout ("SAC_IS_LASTREF__BLOCK_END( %s)\n", from_NT);
-        indout ("else\n");
+            global.indent++;
+            ICMCompileND_ASSIGN (to_NT, to_sdim, from_NT, from_sdim, copyfun);
+            indout ("SAC_TR_MEM_PRINT("
+                    " (\"reuse memory of %s at %%p for %s\","
+                    " SAC_ND_GETVAR( %s, SAC_ND_A_FIELD( %s))))\n",
+                    from_NT, to_NT, from_NT, from_NT);
+            global.indent--;
+
+            indout ("SAC_IS_LASTREF__BLOCK_END( %s)\n", from_NT);
+            indout ("else\n");
+        }
     }
 
     DBUG_RETURN ();
@@ -1051,12 +1655,16 @@ ICMCompileND_SET__SHAPE_arr (char *to_NT, int dim, char **shp_ANY)
  *
  *   ND_REFRESH__MIRROR( var_NT, sdim)
  *
+ *
+ *   This is used for the results of a function call.
+ *
  ******************************************************************************/
 
 void
 ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
 {
     shape_class_t sc = ICUGetShapeClass (var_NT);
+    distributed_class_t dc = ICUGetDistributedClass (var_NT);
     int dim = DIM_NO_OFFSET (sdim);
 
     DBUG_ENTER ();
@@ -1072,7 +1680,27 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
         break;
 
     case C_aks:
-        indout ("SAC_NOOP()\n");
+        if (global.backend == BE_distmem) {
+            if (dc == C_distr) {
+                /* Array is potentially distributed. */
+                indout (
+                  "SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
+                  var_NT, var_NT);
+            } else if (dc == C_distmem) {
+                /* Array is potentially allocated in DSM memory. */
+                indout (
+                  "SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
+                  var_NT);
+            }
+
+            if (dc == C_distr || dc == C_distmem) {
+                /* Array is potentially distributed or allocated in DSM memory. */
+                indout ("SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n", var_NT,
+                        var_NT);
+            }
+        } else {
+            indout ("SAC_NOOP()\n");
+        }
         break;
 
     case C_akd:
@@ -1086,6 +1714,28 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
         indout ("SAC_ND_A_MIRROR_SIZE( %s)"
                 " = SAC_ND_A_DESC_SIZE( %s);\n",
                 var_NT, var_NT);
+
+        if (global.backend == BE_distmem) {
+            if (dc == C_distr) {
+                /* Array is potentially distributed. */
+                indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
+                        var_NT, var_NT);
+                indout (
+                  "SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
+                  var_NT, var_NT);
+            } else if (dc == C_distmem) {
+                /* Array is potentially allocated in DSM memory. */
+                indout (
+                  "SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
+                  var_NT);
+            }
+
+            if (dc == C_distr || dc == C_distmem) {
+                /* Array is potentially distributed or allocated in DSM memory. */
+                indout ("SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n", var_NT,
+                        var_NT);
+            }
+        }
         break;
 
     case C_aud:
@@ -1095,6 +1745,28 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
         indout ("SAC_ND_A_MIRROR_DIM( %s)"
                 " = SAC_ND_A_DESC_DIM( %s);\n",
                 var_NT, var_NT);
+
+        if (global.backend == BE_distmem) {
+            if (dc == C_distr) {
+                /* Array is potentially distributed. */
+                indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s);\n",
+                        var_NT, var_NT);
+                indout (
+                  "SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
+                  var_NT, var_NT);
+            } else if (dc == C_distmem) {
+                /* Array is potentially allocated in DSM memory. */
+                indout (
+                  "SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
+                  var_NT);
+            }
+
+            if (dc == C_distr || dc == C_distmem) {
+                /* Array is potentially distributed or allocated in DSM memory. */
+                indout ("SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n", var_NT,
+                        var_NT);
+            }
+        }
         break;
 
     default:
@@ -1277,6 +1949,8 @@ ICMCompileND_ASSIGN__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sd
  *
  *   ND_UPDATE__DESC( to_NT, to_sdim, from_NT, from_sdim)
  *
+ *   This is used for assignments.
+ *
  ******************************************************************************/
 
 void
@@ -1286,7 +1960,6 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
     shape_class_t from_sc = ICUGetShapeClass (from_NT);
     int from_dim = DIM_NO_OFFSET (from_sdim);
-    distributed_class_t to_dc = ICUGetDistributedClass (to_NT);
 
     DBUG_ENTER ();
 
@@ -1313,15 +1986,6 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
             }
 
             indout ("SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_NT, from_NT);
-
-            if (global.backend == BE_distmem && to_dc == C_distr) {
-                /* Target is potentially distributed. */
-                indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_IS_DIST( %s);\n", to_NT,
-                        from_NT);
-                indout ("SAC_ND_A_DESC_FIRST_ELEMS( %s) = SAC_ND_A_FIRST_ELEMS( %s);\n",
-                        to_NT, from_NT);
-            }
-
             break;
 
         case C_akd:
@@ -1348,15 +2012,6 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
 
             indout ("SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_SIZE( %s);\n", to_NT, from_NT);
             indout ("SAC_ND_A_DESC_DIM( %s) = SAC_ND_A_DIM( %s);\n", to_NT, from_NT);
-
-            if (global.backend == BE_distmem && to_dc == C_distr) {
-                /* Target is potentially distributed. */
-                indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_IS_DIST( %s);\n", to_NT,
-                        from_NT);
-                indout ("SAC_ND_A_DESC_FIRST_ELEMS( %s) = SAC_ND_A_FIRST_ELEMS( %s);\n",
-                        to_NT, from_NT);
-            }
-
             break;
 
         case C_akd:
@@ -1391,6 +2046,9 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
  *   implements the compilation of the following ICM:
  *
  *   ND_UPDATE__MIRROR( to_NT, to_sdim, from_NT, from_sdim)
+ *
+ *
+ *   This is used for assignments.
  *
  ******************************************************************************/
 
@@ -1429,8 +2087,6 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
             /* Target is potentially distributed. */
             indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_IS_DIST( %s);\n", to_NT,
                     from_NT);
-            indout ("SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = SAC_ND_A_FIRST_ELEMS( %s);\n",
-                    to_NT, from_NT);
         }
 
         break;
@@ -1443,8 +2099,6 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
             /* Target is potentially distributed. */
             indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_IS_DIST( %s);\n", to_NT,
                     from_NT);
-            indout ("SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = SAC_ND_A_FIRST_ELEMS( %s);\n",
-                    to_NT, from_NT);
         }
 
         break;

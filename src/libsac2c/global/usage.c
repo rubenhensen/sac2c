@@ -599,10 +599,19 @@ PrintDistMemOptions (void)
 {
     DBUG_ENTER ();
 
-    printf ("\n\nDISTRIBUTED MEMORY OPTIONS (experimental):\n\n"
+    printf ("\n\nDISTRIBUTED MEMORY BACKEND OPTIONS (experimental):\n\n"
 
-            "    -dsm_maxmem_mb <n>   Maximum amount of memory to use for the DSM system "
-            "in MB.\n"
+            "    -dsm_maxmem_mb <n>     Maximum amount of memory to use for the DSM "
+            "system in MB.\n"
+            "                           (default: %d MB)\n"
+            "\n"
+            "    -distmem_min_elems <n> Minimum number of array elements per node such "
+            "that an array\n"
+            "                           gets distributed (default: %d elements)\n"
+            "\n"
+            "    -distmem_trace_node <n> Only produce trace output at the node with this "
+            "rank (-1 = all nodes).\n"
+            "                            (default: %d elements)\n"
             "\n"
             "    -numprocs <n>   Specify at compile time the exact number of processes "
             "to be\n"
@@ -615,7 +624,8 @@ PrintDistMemOptions (void)
             "                    number is determined at runtime.\n"
             "                      (default: %d)\n"
             "\n",
-            global.max_procs);
+            global.distmem_max_memory_mb, global.distmem_min_elems_per_node,
+            global.distmem_trace_node, global.max_procs);
 
     DBUG_RETURN ();
 }
@@ -778,21 +788,28 @@ PrintRuntimeCheckOptions (void)
 {
     DBUG_ENTER ();
 
-    printf ("\n\nRUNTIME CHECK OPTIONS:\n\n"
+    printf (
+      "\n\nRUNTIME CHECK OPTIONS:\n\n"
 
-            "    -ecc            Insert explicit conformity checks at compile time.\n"
-            "\n"
-            "    -check [atbmeh]+\n"
-            "                    Incorporate runtime checks into executable program.\n"
-            "                    The following flags are supported:\n"
-            "                      a: Incorporate all available runtime checks.\n"
-            "                      c: Perform conformity checks.\n"
-            "                      t: Check assignments for type violations.\n"
-            "                      b: Check array accesses for boundary violations.\n"
-            "                      m: Check success of memory allocations.\n"
-            "                      e: Check errno variable upon applications of\n"
-            "                         external functions.\n"
-            "                      h: Use diagnostic heap manager.\n");
+      "    -ecc            Insert explicit conformity checks at compile time.\n"
+      "\n"
+      "    -check [actbmehdi]+\n"
+      "                    Incorporate runtime checks into executable program.\n"
+      "                    The following flags are supported:\n"
+      "                      a: Incorporate all available runtime checks.\n"
+      "                      c: Perform conformity checks.\n"
+      "                      t: Check assignments for type violations.\n"
+      "                      b: Check array accesses for boundary violations.\n"
+      "                      m: Check success of memory allocations.\n"
+      "                      e: Check errno variable upon applications of\n"
+      "                         external functions.\n"
+      "                      h: Use diagnostic heap manager.\n"
+      "                      d: Perform checks for the distributed memory backend.\n"
+      "                         (Check that there are no illegal accesses to "
+      "distributed\n"
+      "                         arrays.)\n"
+      "                      i: Use diagnostic heap manager for distributed memory "
+      "backend.\n");
 
     DBUG_RETURN ();
 }
@@ -805,10 +822,10 @@ PrintRuntimeTraceOptions (void)
     printf (
       "\n\nRUNTIME TRACE OPTIONS:\n\n"
 
-      "    -trace [amrfpwstc]+\n"
+      "    -trace [amrfpwstcd]+\n"
       "                    Incorporate trace output generation into executable program.\n"
       "                    The following flags are supported:\n"
-      "                      a: Trace all (same as mrfpowt).\n"
+      "                      a: Trace all (same as mrfpwstcd).\n"
       "                      m: Trace memory operations.\n"
       "                      r: Trace reference counting operations.\n"
       "                      f: Trace user-defined function calls.\n"
@@ -818,7 +835,8 @@ PrintRuntimeTraceOptions (void)
       "                      t: Trace multi-threading specific operations.\n"
       "                      c: Trace runtime enviroment init/exit when\n"
       "                         using SAC libraries in C programs.\n"
-      "                      d: Trace distributed memory run time (experimental).\n"
+      "                      d: Trace distributed memory run time.\n"
+      "                         (per element tracing only in combination with s)\n"
       "\n"
       "    -utrace\n"
       "                    Introduce user tracing calls.");
@@ -902,13 +920,14 @@ PrintRuntimeProfilingOptions (void)
     printf (
       "\n\nRUNTIME PROFILING OPTIONS:\n\n"
 
-      "    -profile [afilw]+\n"
+      "    -profile [afilwd]+\n"
       "                    Incorporate profiling analysis into executable program.\n"
-      "                      a: Analyse all (same as filw).\n"
+      "                      a: Analyse all (same as filwd).\n"
       "                      f: Analyse time spent in non-inline functions.\n"
       "                      i: Analyse time spent in inline functions.\n"
       "                      l: Analyse time spent in library functions.\n"
-      "                      w: Analyse time spent in with-loops.\n");
+      "                      w: Analyse time spent in with-loops.\n"
+      "                      d: Analyse performance of distributed memory backend.\n");
 
     DBUG_RETURN ();
 }
@@ -1063,7 +1082,7 @@ PrintCCompilerOptions (void)
 
             "    -g              Include debug information into object code.\n"
             "\n"
-            "    -O <n>          Specify  the C compiler level of optimization.\n"
+            "    -O <n>          Specify the C compiler level of optimization.\n"
             "                      0: no C compiler optimizations.\n"
             "                      1: minor C compiler optimizations.\n"
             "                      2: medium C compiler optimizations.\n"
@@ -1306,7 +1325,7 @@ USGprintVersionVerbose ()
             (build_user[0] == '\0') ? "???" : build_user,
             (build_host[0] == '\0') ? "???" : build_host);
 
-    printf ("(c) Copyright 1994-2011 by\n\n"
+    printf ("(c) Copyright 1994-2015 by\n\n"
 
             "  SAC Development Team\n\n"
 

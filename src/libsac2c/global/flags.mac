@@ -28,7 +28,7 @@ TRACE (wl, 'w', FALSE)
 TRACE (aa, 's', FALSE)
 TRACE (mt, 't', FALSE)
 TRACE (cenv, 'c', FALSE)
-TRACE (distmem, 'd', FALSE)
+TRACE (distmem, 'd', FALSE) /* Distributed memory backend */
 
 #undef TRACEflag
 #undef TRACEchar
@@ -162,6 +162,7 @@ PROFILE (fun, 'f', FALSE)
 PROFILE (inl, 'i', FALSE)
 PROFILE (lib, 'l', FALSE)
 PROFILE (with, 'w', FALSE)
+PROFILE (distmem, 'd', FALSE)
 
 #undef PROFILEflag
 #undef PROFILEchar
@@ -231,6 +232,9 @@ RTC (type, 't', FALSE)
 RTC (malloc, 'm', FALSE)
 RTC (checkerrno, 'e', FALSE)
 RTC (heap, 'h', FALSE)
+RTC (distmem, 'd', FALSE) /* Distributed memory backend */
+RTC (distmemphm, 'i',
+     FALSE) /* Use diagnostic heap manager for distributed memory backend. */
 
 #undef RTCflag
 #undef RTCchar

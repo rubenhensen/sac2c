@@ -11,6 +11,8 @@ extern void ICMCompileND_WL_GENARRAY__SHAPE_arr_id (char *to_NT, int to_sdim,
                                                     char *val_NT, int val_sdim);
 
 extern void ICMCompileWL_SCHEDULE__BEGIN (int dims);
+extern void ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable,
+                                               char *to_NT, char *to_basetype);
 void ICMCompileWL3_SCHEDULE__BEGIN (int lb, char *idx_nt, int ub, int chunksz,
                                     bool need_unroll);
 
@@ -24,6 +26,8 @@ extern void ICMCompileWL_SCHEDULE__END (int dims);
 extern void ICMCompileWL3_SCHEDULE__END (char *idx_nt);
 
 extern void ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT);
+
+extern void ICMCompileWL_DISTMEM_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT);
 
 extern void ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
                                  char *idx_vec_NT, int dims, char *off_NT, char *copyfun);

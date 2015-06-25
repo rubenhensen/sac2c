@@ -1218,6 +1218,15 @@ ENDPHASE (mem)
 
 /******************************************************************************/
 
+PHASE (dm, "Preparing for distributed memory execution", (global.backend == BE_distmem))
+
+SUBPHASE (dmisef, "Identifying functions with side effects",
+          DMISEFdoIdentifySideEffectFunctions, ALWAYS, dm)
+
+ENDPHASE (dm)
+
+/******************************************************************************/
+
 PHASE (ussa, "Converting from static single assignment form", !global.on_demand_lib)
 
 SUBPHASE (ussa, "Converting from SSA form", USSATdoUndoSsaTransform, ALWAYS, ussa)
@@ -1372,6 +1381,14 @@ SUBPHASE (mc, "Move constants to variable declaration", MCdoMoveConst, ALWAYS, p
 
 SUBPHASE (pfg, "CUDA Prepare for loop generation", PFGdoPrepareForloopGeneration,
           (global.backend == BE_cuda || global.backend == BE_cudahybrid), pc)
+
+SUBPHASE (
+  dmisefa,
+  "Identifying function applications with side effects for distributed memory backend",
+  DMISEFAdoIdentifySideEffectFunctionApplications, global.backend == BE_distmem, pc)
+
+SUBPHASE (dmida, "Identifying distributable arrays for distributed memory backend",
+          DMIDAdoIdentifyDistributableArrays, (global.backend == BE_distmem), pc)
 
 ENDPHASE (pc)
 

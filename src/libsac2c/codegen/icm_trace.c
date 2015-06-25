@@ -38,6 +38,8 @@
     fprintf (global.outfile, "SAC_Print( \"%d \");\n", name);                            \
     sep = 1;
 
+#define ICM_BOOL(name) ICM_INT (name)
+
 #define ICM_VARANY(dim, name)                                                            \
     {                                                                                    \
         int i;                                                                           \
@@ -86,6 +88,7 @@
 #undef ICM_ID
 #undef ICM_STR
 #undef ICM_INT
+#undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT
 #undef ICM_VARID

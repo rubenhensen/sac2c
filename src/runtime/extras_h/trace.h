@@ -114,9 +114,14 @@ SAC_C_EXTERN void SAC_TR_DecHiddenMemcnt (int size);
 #define SAC_TR_AA_PRINT(str, array, pos)                                                 \
     SAC_TR_PRINT (("%s access to array %s at position %d", str, #array, pos)),
 
+#define SAC_TR_AA_FPRINT(str, array, pos, ...)                                           \
+    SAC_TR_PRINT ((str " access to array %s at position %d", __VA_ARGS__, #array, pos)),
+
 #else /* SAC_DO_TRACE_AA */
 
-#define SAC_TR_AA_PRINT(class, array, idx)
+#define SAC_TR_AA_PRINT(str, array, idx)
+
+#define SAC_TR_AA_FPRINT(str, array, pos, ...)
 
 #endif /* SAC_DO_TRACE_AA */
 
@@ -206,9 +211,31 @@ typedef enum {
 
 #define SAC_TR_DISTMEM_PRINT(...) SAC_TR_PRINT (("DSM -> " __VA_ARGS__))
 
+#define SAC_TR_DISTMEM_PRINT_EXPR(...) SAC_TR_PRINT (("DSM -> " __VA_ARGS__)),
+
+#if SAC_DO_TRACE_AA
+
+/*
+ * This allows to print tracing information only if distributed memory AND
+ * array access tracing is activated.
+ * Why? Tracing per element operations (such as pointer calculations) clutters
+ * the trace output and this way it can be switched off easily.
+ */
+#define SAC_TR_DISTMEM_AA_PRINT(...) SAC_TR_PRINT (("DSM -> " __VA_ARGS__)),
+
+#else /* SAC_DO_TRACE_AA */
+
+#define SAC_TR_DISTMEM_AA_PRINT(...)
+
+#endif /* SAC_DO_TRACE_AA */
+
 #else /* SAC_DO_TRACE_MEM */
 
 #define SAC_TR_DISTMEM_PRINT(...)
+
+#define SAC_TR_DISTMEM_PRINT_EXPR(...)
+
+#define SAC_TR_DISTMEM_AA_PRINT(...)
 
 #endif
 

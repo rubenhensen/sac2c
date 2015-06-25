@@ -3,8 +3,14 @@
 
 extern void ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
                                    char **vararg);
+
+extern void ICMCompileND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS (char *name, char *rettype_NT,
+                                                             int vararg_cnt,
+                                                             char **vararg);
+
 extern void ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
                                         char **vararg);
+
 extern void ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt,
                                       char **vararg);
 extern void ICMCompileMUTC_THREADFUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
@@ -17,6 +23,12 @@ extern void ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT,
                                                int vararg_cnt, char **vararg);
 extern void ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt,
                                  char **vararg);
+
+extern void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt,
+                                                           char **vararg_NT,
+                                                           char *rettype, char *ret_NT,
+                                                           char *name, char *retname,
+                                                           int vararg_cnt, char **vararg);
 extern void ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt,
                                          char **vararg);
 extern void ICMCompileMUTC_SPAWNFUN_AP (char *syncid, char *place, char *name,
@@ -32,6 +44,10 @@ extern void ICMCompileND_OBJDEF (char *var_NT, char *basetype, int sdim, int *sh
 extern void ICMCompileND_OBJDEF_EXTERN (char *var_NT, char *basetype, int sdim);
 
 extern void ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp);
+
+extern void ICMCompileND_DIST_DECL (char *var_NT, char *basetype, int sdim, int *shp);
+
+extern void ICMCompileND_DSM_DECL (char *var_NT, char *basetype, int sdim, int *shp);
 
 extern void ICMCompileND_DECL_EXTERN (char *var_NT, char *basetype, int sdim);
 

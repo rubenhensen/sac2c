@@ -270,6 +270,82 @@ ICMCompileWL_SCHEDULE__BEGIN (int dims)
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileWL_DIST_SCHEDULE__BEGIN( int dims, bool is_distributable, char *to_NT)
+ *
+ * description:
+ *   Implements the compilation of the following ICM:
+ *
+ *   WL_DIST_SCHEDULE__BEGIN( dims, is_distributable, to_NT)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
+                                   char *to_basetype)
+{
+    int i;
+
+    DBUG_ENTER ();
+
+#define WL_DIST_SCHEDULE__BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_DIST_SCHEDULE__BEGIN
+
+    indout ("{\n");
+    global.indent++;
+
+    if (is_distributable) {
+        /* The with-loop is distributed if the array is distributed (i.e. not only
+         * allocated in DSM memory but actually distributed). */
+        IF_BEGIN ("SAC_ND_A_IS_DIST( %s) && !SAC_ND_A_IS_DSM( %s) && "
+                  "SAC_DISTMEM_exec_mode != SAC_DISTMEM_exec_mode_sync",
+                  to_NT, to_NT)
+            ;
+            indout ("SAC_RuntimeError( \"Tried to execute distributed with-loop in "
+                    "non-synchronous execution mode.\");\n");
+        IF_END ();
+
+        indout ("const bool SAC_WL_IS_DISTRIBUTED = SAC_ND_A_IS_DIST( %s) && "
+                "!SAC_ND_A_IS_DSM( %s) && SAC_DISTMEM_exec_mode == "
+                "SAC_DISTMEM_exec_mode_sync;\n",
+                to_NT, to_NT);
+        indout ("const int SAC_WL_DIST_DIM0_SIZE = SAC_ND_A_SHAPE( %s, 0);\n", to_NT);
+        indout ("const uintptr_t SAC_WL_DIST_OFFS = SAC_ND_A_OFFS( %s);\n", to_NT);
+        indout (
+          "const size_t SAC_WL_DIST_BYTES = SAC_ND_A_FIRST_ELEMS( %s) * sizeof( %s);\n",
+          to_NT, to_basetype);
+
+        IF_BEGIN ("SAC_WL_IS_DISTRIBUTED")
+            ;
+            indout ("SAC_TR_DISTMEM_PRINT( \"Executing distributed with-loop.\");\n");
+            indout ("SAC_DISTMEM_BARRIER();\n");
+            indout ("SAC_DISTMEM_SWITCH_TO_DIST_EXEC();\n");
+            indout ("SAC_DISTMEM_ALLOW_DIST_WRITES();\n");
+        IF_END ();
+        ELSE_BEGIN ()
+            ;
+            indout ("SAC_TR_DISTMEM_PRINT( \"Executing non-distributed with-loop.\");\n");
+        ELSE_END ();
+    } else {
+        indout ("const bool SAC_WL_IS_DISTRIBUTED = FALSE;\n");
+        indout ("const int SAC_WL_DIST_DIM0_SIZE = 0;\n");
+        indout ("SAC_TR_DISTMEM_PRINT( \"Executing non-distributable with-loop.\");\n");
+        indout ("const uintptr_t SAC_WL_DIST_OFFS = 0;\n");
+        indout ("const size_t SAC_WL_DIST_BYTES = 0;\n");
+    }
+
+    for (i = 0; i < dims; i++) {
+        indout ("int SAC_WL_MT_SCHEDULE_START( %d);\n", i);
+        indout ("int SAC_WL_MT_SCHEDULE_STOP( %d);\n", i);
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileWL3_SCHEDULE__BEGIN( int lb, char *idx_nt, int ub, int chunksz, bool
  *need_unroll)
  *
@@ -399,10 +475,13 @@ ICMCompileWL_SCHEDULE__END (int dims)
 #undef WL_SCHEDULE__END
 
     if (global.backend == BE_distmem) {
-        /* TODO: Do we always need to do this? Is this with-loop even distributed? */
-        indout ("SAC_DISTMEM_BARRIER();");
-        /* TODO: We do not need to invalidate the entire cache. */
-        indout ("SAC_DISTMEM_INVAL_ENTIRE_CACHE();");
+        IF_BEGIN ("SAC_WL_IS_DISTRIBUTED")
+            ;
+            indout ("SAC_DISTMEM_SWITCH_TO_SYNC_EXEC();\n");
+            indout ("SAC_DISTMEM_INVAL_CACHE( SAC_WL_DIST_OFFS, SAC_WL_DIST_BYTES);\n");
+            indout ("SAC_DISTMEM_FORBID_DIST_WRITES();\n");
+            indout ("SAC_DISTMEM_BARRIER();\n");
+        IF_END ();
     }
 
     global.indent--;
@@ -464,6 +543,83 @@ ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
     indout ("SAC_ND_GETVAR(%s, SAC_ND_A_FIELD( %s)) "
             "= SAC_ND_GETVAR( %s, SAC_ND_A_FIELD( %s))+SAC_ND_READ( %s, 0);\n",
             sub_NT, sub_NT, to_NT, to_NT, off_NT);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_DISTMEM_SUBALLOC( char *sub_NT, char *to_NT, char *off_NT)
+ *
+ * description:
+ *   Implements the compilation of the following ICM:
+ *
+ *   WL_DISTMEM_SUBALLOC( sub_NT, to_NT, off_NT)
+ *
+ *   Creates code for a suballoc where the outer and/or the inner array
+ *   is distributable.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_DISTMEM_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
+{
+    DBUG_ENTER ();
+
+#define WL_DISTMEM_SUBALLOC
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_DISTMEM_SUBALLOC
+
+    /* Check whether the inner array is distributable at compile time. */
+    if (ICUGetDistributedClass (sub_NT) == C_distr) {
+        /* Check whether the inner array is actually distributed at runtime. */
+        IF_BEGIN ("SAC_ND_A_IS_DIST( %s)", sub_NT)
+            ;
+            /*
+             * The sub-allocated variable may be sub-allocated in the DSM segment but
+             * will be treated like a non-distributed variable.
+             * We can do this because it is never freed and all accessed indices will fall
+             * in the local shared segment. This means that we do not have to take any
+             * further precautions. A possible inner with-loop will not be distributed
+             * because the result variable is not distributed.
+             */
+            indout (
+              "SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n",
+              sub_NT, sub_NT);
+        IF_END ();
+    }
+
+    /* Check whether the outer array is distributable at compile time. */
+    if (ICUGetDistributedClass (to_NT) == C_distr) {
+        /* Check whether the outer array is actually distributed at runtime.
+         * We can't check whether a possible outer with-loop is distributed because
+         * it may have been unrolled. */
+        IF_BEGIN ("SAC_ND_A_IS_DIST( %s)", to_NT)
+            ;
+            /* The outer array (and possibly with-loop) are distributed. */
+            /* The inner array is sub-allocated in DSM memory. */
+            indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s) = TRUE;\n",
+                    sub_NT, sub_NT);
+            /* Get the pointer to the start of the sub-allocated array. */
+            indout ("SAC_ND_GETVAR(%s, SAC_ND_A_FIELD( %s)) = "
+                    "SAC_DISTMEM_ELEM_POINTER(SAC_ND_A_OFFS( %s), SAC_NT_CBASETYPE( %s),"
+                    "                         SAC_ND_A_FIRST_ELEMS( %s), SAC_ND_READ( "
+                    "%s, 0));\n",
+                    sub_NT, sub_NT, to_NT, to_NT, to_NT, off_NT);
+        IF_END ();
+        ELSE_BEGIN ()
+            ;
+            /* The outer array (and possibly with-loop) are not distributed. Do nothing
+             * special. */
+            ICMCompileWL_SUBALLOC (sub_NT, to_NT, off_NT);
+        ELSE_END ();
+    } else {
+        /* The outer array (and possibly with-loop) are not distributed. Do nothing
+         * special. */
+        ICMCompileWL_SUBALLOC (sub_NT, to_NT, off_NT);
+    }
 
     DBUG_RETURN ();
 }

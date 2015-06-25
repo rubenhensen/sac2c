@@ -14,6 +14,24 @@ include(`icm.m4')
 start_icm_definition(std_gen)
 
 
+pat(`SAC_NT_CBASETYPE', `0', `0', `NT_CBT')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__INT', `INT')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__FLO', `FLO')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__DOU', `DOU')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__UCH', `UCH')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__BOO', `BOO')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__BYT', `BYT')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__SHO', `SHO')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__LON', `LON')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__LLO', `LLO')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__UBY', `UBY')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__USH', `USH')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__UIN', `UIN')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__ULO', `ULO')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__ULL', `ULL')
+rule(`SAC_NT_CBASETYPE', `SAC_NT_CBASETYPE__UNDEF', `*CBT')
+
+
 pat(`SAC_ND_A_DESC', `0', `0', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__UNDEF', `SCL', `NHD', `*UNQ')
 rule(`SAC_ND_A_DESC', `SAC_ND_A_DESC__DEFAULT', `SCL', `HID', `NUQ')
@@ -59,12 +77,15 @@ rule(`SAC_ND_A_DESC_SHAPE', `SAC_ND_A_DESC_SHAPE__UNDEF', `*SHP')
 
 pat(`SAC_ND_A_DESC_IS_DIST', `0', `0', `NT_DIS')
 rule(`SAC_ND_A_DESC_IS_DIST', `SAC_ND_A_DESC_IS_DIST__DEFAULT', `DIS')
+rule(`SAC_ND_A_DESC_IS_DIST', `SAC_ND_A_DESC_IS_DIST__DEFAULT', `DSM')
 rule(`SAC_ND_A_DESC_IS_DIST', `SAC_ND_A_DESC_IS_DIST__UNDEF', `*DIS')
 
 
-pat(`SAC_ND_A_DESC_OFFS', `0', `0', `NT_DIS')
-rule(`SAC_ND_A_DESC_OFFS', `SAC_ND_A_DESC_OFFS__DEFAULT', `DIS')
-rule(`SAC_ND_A_DESC_OFFS', `SAC_ND_A_DESC_OFFS__UNDEF', `*DIS')
+pat(`SAC_ND_A_DESC_OFFS', `0', `0', `NT_SHP')
+rule(`SAC_ND_A_DESC_OFFS', `SAC_ND_A_DESC_OFFS__DEFAULT', `AUD')
+rule(`SAC_ND_A_DESC_OFFS', `SAC_ND_A_DESC_OFFS__DEFAULT', `AKS')
+rule(`SAC_ND_A_DESC_OFFS', `SAC_ND_A_DESC_OFFS__DEFAULT', `AKD')
+rule(`SAC_ND_A_DESC_OFFS', `SAC_ND_A_DESC_OFFS__UNDEF', `*SHP')
 
 
 pat(`SAC_ND_A_DESC_FIRST_ELEMS', `0', `0', `NT_DIS')
@@ -90,11 +111,13 @@ rule(`SAC_ND_A_MIRROR_SHAPE', `SAC_ND_A_MIRROR_SHAPE__UNDEF', `*SHP')
 
 pat(`SAC_ND_A_MIRROR_IS_DIST', `0', `0', `NT_DIS')
 rule(`SAC_ND_A_MIRROR_IS_DIST', `SAC_ND_A_MIRROR_IS_DIST__DEFAULT', `DIS')
+rule(`SAC_ND_A_MIRROR_IS_DIST', `SAC_ND_A_MIRROR_IS_DIST__DEFAULT', `DSM')
 rule(`SAC_ND_A_MIRROR_IS_DIST', `SAC_ND_A_MIRROR_IS_DIST__UNDEF', `*DIS')
 
 
 pat(`SAC_ND_A_MIRROR_OFFS', `0', `0', `NT_DIS')
 rule(`SAC_ND_A_MIRROR_OFFS', `SAC_ND_A_MIRROR_OFFS__DEFAULT', `DIS')
+rule(`SAC_ND_A_MIRROR_OFFS', `SAC_ND_A_MIRROR_OFFS__DEFAULT', `DSM')
 rule(`SAC_ND_A_MIRROR_OFFS', `SAC_ND_A_MIRROR_OFFS__UNDEF', `*DIS')
 
 
@@ -109,6 +132,7 @@ rule(`SAC_ND_A_FIELD', `SAC_ND_A_FIELD__DEFAULT')
 pat(`SAC_ND_A_FIELD_UNBOX', `0', `0', `NT_SHP')
 rule(`SAC_ND_A_FIELD_UNBOX', `SAC_ND_A_FIELD', `SCL')
 rule(`SAC_ND_A_FIELD_UNBOX', `SAC_ND_A_FIELD__BOXED', `*SHP')
+
 
 pat(`SAC_ND_A_RC', `0', `0', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`SAC_ND_A_RC', `SAC_ND_A_RC__UNDEF', `*SHP', `*HID', `UNQ')
@@ -133,17 +157,26 @@ rule(`SAC_ND_A_SHAPE', `SAC_ND_A_SHAPE__AUD', `AUD')
 
 
 pat(`SAC_ND_A_IS_DIST', `0', `0', `NT_DIS')
-rule(`SAC_ND_A_IS_DIST', `SAC_ND_A_IS_DIST__DIS', `DIS')
+rule(`SAC_ND_A_IS_DIST', `SAC_ND_A_IS_DIST__DIS_DSM', `DIS')
+rule(`SAC_ND_A_IS_DIST', `SAC_ND_A_IS_DIST__DIS_DSM', `DSM')
 rule(`SAC_ND_A_IS_DIST', `SAC_ND_A_IS_DIST__DEFAULT', `*DIS')
+
+
+pat(`SAC_ND_A_IS_DSM', `0', `0', `NT_DIS')
+rule(`SAC_ND_A_IS_DSM', `SAC_ND_A_IS_DSM__DSM', `DSM')
+rule(`SAC_ND_A_IS_DSM', `SAC_ND_A_IS_DSM__DEFAULT', `*DIS')
 
 
 pat(`SAC_ND_A_FIRST_ELEMS', `0', `0', `NT_DIS')
 rule(`SAC_ND_A_FIRST_ELEMS', `SAC_ND_A_FIRST_ELEMS__DIS', `DIS')
+dnl For DSM we refer to the size on purpose!
+rule(`SAC_ND_A_FIRST_ELEMS', `SAC_ND_A_SIZE__DEFAULT', `DSM')
 rule(`SAC_ND_A_FIRST_ELEMS', `SAC_ND_A_FIRST_ELEMS__DEFAULT', `*DIS')
 
 
 pat(`SAC_ND_A_OFFS', `0', `0',  `NT_DIS')
-rule(`SAC_ND_A_OFFS', `SAC_ND_A_OFFS__DIS', `DIS')
+rule(`SAC_ND_A_OFFS', `SAC_ND_A_OFFS__DIS_DSM', `DIS')
+rule(`SAC_ND_A_OFFS', `SAC_ND_A_OFFS__DIS_DSM', `DSM')
 rule(`SAC_ND_A_OFFS', `SAC_ND_A_OFFS__DEFAULT', `*DIS')
 
 
@@ -151,25 +184,26 @@ pat(`SAC_ND_READ', `0', `1', `NT_SHP', `NT_BIT', `NT_DIS')
 rule(`SAC_ND_READ', `SAC_ND_READ__SCL', `SCL', `*BIT', `*DIS')
 rule(`SAC_ND_READ', `SAC_ND_READ__BITARRAY', `*SHP', `YES', `*DIS')
 rule(`SAC_ND_READ', `SAC_ND_READ__DIS', `*SHP', `*BIT', `DIS')
+rule(`SAC_ND_READ', `SAC_ND_READ__DSM', `*SHP', `*BIT', `DSM')
 rule(`SAC_ND_READ', `SAC_ND_READ__DEFAULT', `*SHP', `*BIT', `*DIS')
 
 
-pat(`SAC_ND_WRITE', `0', `1', `NT_SHP', `NT_BIT')
-rule(`SAC_ND_WRITE', `SAC_ND_WRITE__SCL', `SCL', `*BIT')
-rule(`SAC_ND_WRITE', `SAC_ND_WRITE__BITARRAY', `*SHP', `YES')
-rule(`SAC_ND_WRITE', `SAC_ND_WRITE__DEFAULT', `*SHP', `*BIT')
+pat(`SAC_ND_WRITE', `0', `1', `NT_SHP', `NT_BIT', `NT_DIS')
+rule(`SAC_ND_WRITE', `SAC_ND_WRITE__SCL', `SCL', `*BIT', `*DIS')
+rule(`SAC_ND_WRITE', `SAC_ND_WRITE__BITARRAY', `*SHP', `YES', `*DIS')
+rule(`SAC_ND_WRITE', `SAC_ND_WRITE__DIS', `*SHP', `*BIT', `DIS')
+rule(`SAC_ND_WRITE', `SAC_ND_WRITE__DSM', `*SHP', `*BIT', `DSM')
+rule(`SAC_ND_WRITE', `SAC_ND_WRITE__DEFAULT', `*SHP', `*BIT', `*DIS')
 
 
 pat(`SAC_ND_WRITE_READ_COPY', `0', `4', `NT_HID')
 rule(`SAC_ND_WRITE_READ_COPY', `SAC_ND_WRITE_READ_COPY__NESTED', `HNS')
 rule(`SAC_ND_WRITE_READ_COPY', `SAC_ND_WRITE_READ_COPY__DEFAULT', `*HID')
 
-pat(`SAC_ND_WRITE_COPY', `0', `3', `NT_HID', `NT_SHP', `NT_DIS')
-rule(`SAC_ND_WRITE_COPY', `SAC_ND_WRITE_COPY__HID', `HID', `*SHP', `*DIS')
-rule(`SAC_ND_WRITE_COPY', `SAC_ND_WRITE_COPY__NHD_DIS', `NHD', `AKS', `DIS')
-rule(`SAC_ND_WRITE_COPY', `SAC_ND_WRITE_COPY__NHD_DIS', `NHD', `AUD', `DIS')
-rule(`SAC_ND_WRITE_COPY', `SAC_ND_WRITE_COPY__NHD', `NHD', `*SHP', `*DIS')
-rule(`SAC_ND_WRITE_COPY', `SAC_ND_WRITE_COPY__HNS', `HNS, `*SHP'', `*DIS')
+pat(`SAC_ND_WRITE_COPY', `0', `3', `NT_HID')
+rule(`SAC_ND_WRITE_COPY', `SAC_ND_WRITE_COPY__HID', `HID')
+rule(`SAC_ND_WRITE_COPY', `SAC_ND_WRITE_COPY__NHD', `NHD')
+rule(`SAC_ND_WRITE_COPY', `SAC_ND_WRITE_COPY__HNS', `HNS')
 
 pat(`SAC_ND_PRINT_SHAPE', `0', `0', `NT_SHP')
 rule(`SAC_ND_PRINT_SHAPE', `SAC_ND_PRINT_SHAPE__SCL', `SCL')
@@ -301,6 +335,17 @@ rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__NOOP', `AKS', `*HID', `UNQ')
 rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__AUD', `AUD', `*HID', `*UNQ')
 rule(`SAC_ND_ALLOC__DESC', `SAC_ND_ALLOC__DESC__FIXED', `*SHP', `*HID', `*UNQ')
 
+pat(`SAC_ND_ALLOC__DESC__FIXED_C99', `0', `1', `NT_DIS')
+rule(`SAC_ND_ALLOC__DESC__FIXED_C99', `SAC_ND_ALLOC__DESC__FIXED_C99__DSM', `DSM')
+rule(`SAC_ND_ALLOC__DESC__FIXED_C99', `SAC_ND_ALLOC__DESC__FIXED_C99__DEFAULT', `*DIS')
+
+pat(`SAC_ND_ALLOC__DESC__AUD_C99', `0', `1', `NT_DIS')
+rule(`SAC_ND_ALLOC__DESC__AUD_C99', `SAC_ND_ALLOC__DESC__AUD_C99__DSM', `DSM')
+rule(`SAC_ND_ALLOC__DESC__AUD_C99', `SAC_ND_ALLOC__DESC__AUD_C99__DEFAULT', `*DIS')
+
+pat(`SAC_DESC_ALLOC', `0', `1', `NT_DIS')
+rule(`SAC_DESC_ALLOC', `SAC_DESC_ALLOC__DSM', `DSM')
+rule(`SAC_DESC_ALLOC', `SAC_DESC_ALLOC__DEFAULT', `*DIS')
 
 pat(`SAC_ND_ALLOC__DATA', `0', `0', `NT_SHP')
 rule(`SAC_ND_ALLOC__DATA', `SAC_ND_ALLOC__DATA__NOOP', `SCL')
@@ -313,6 +358,7 @@ rule(`SAC_ND_ALLOC__DATA_BASETYPE', `SAC_ND_ALLOC__DATA_BASETYPE__NOOP', `SCL', 
 rule(`SAC_ND_ALLOC__DATA_BASETYPE', `SAC_ND_ALLOC__DATA_BASETYPE__AKS_DIS', `AKS', `DIS')
 rule(`SAC_ND_ALLOC__DATA_BASETYPE', `SAC_ND_ALLOC__DATA_BASETYPE__AKS', `AKS', `*DIS')
 rule(`SAC_ND_ALLOC__DATA_BASETYPE', `SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD_DIS', `*SHP', `DIS')
+rule(`SAC_ND_ALLOC__DATA_BASETYPE', `SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD_DSM', `*SHP', `DSM')
 rule(`SAC_ND_ALLOC__DATA_BASETYPE', `SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD', `*SHP', `*DIS')
 
 
@@ -325,32 +371,37 @@ rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC__FIXED_BASETYPE', `SCL',
 rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC__NOOP_BASETYPE', `SCL', `HNS', `NUQ', `*DIS')
 rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC_AND_DATA_NESTED__AKS', `AKS', `HNS', `NUQ', `*DIS')
 rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC_AND_DATA__AKS_DIS', `AKS', `*HID', `*UNQ', `DIS')
+rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC_AND_DATA__AKS_DSM', `AKS', `*HID', `*UNQ', `DSM')
 rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC_AND_DATA__AKS', `AKS', `*HID', `*UNQ', `*DIS')
 rule(`SAC_ND_ALLOC__DESC_AND_DATA', `SAC_ND_ALLOC__DESC_AND_DATA__UNDEF', `*SHP', `*HID', `*UNQ', `*DIS')
 
 
-pat(`SAC_ND_FREE__DESC', `0', `0', `NT_SHP', `NT_HID', `NT_UNQ')
-rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `NHD', `*UNQ')
-rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `HID', `UNQ')
-rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `HNS', `NUQ')
-rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `*HID', `UNQ')
-rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `AKS', `*HID', `UNQ')
-rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__DEFAULT', `*SHP', `*HID', `*UNQ')
+pat(`SAC_ND_FREE__DESC', `0', `0', `NT_SHP', `NT_HID', `NT_UNQ', `NT_DIS')
+rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `NHD', `*UNQ', `*DIS')
+rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `HID', `UNQ', `*DIS')
+rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `HNS', `NUQ', `*DIS')
+rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `SCL', `*HID', `UNQ', `*DIS')
+rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__NOOP', `AKS', `*HID', `UNQ', `*DIS')
+rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__DSM', `*SHP', `*HID', `*UNQ', `DSM')
+rule(`SAC_ND_FREE__DESC', `SAC_ND_FREE__DESC__DEFAULT', `*SHP', `*HID', `*UNQ', `*DIS')
 
 
 pat(`SAC_ND_FREE__DATA', `0', `1', `NT_SHP', `NT_HID', `NT_DIS')
 rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__SCL_NHD', `SCL', `NHD', `*DIS')
 rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__SCL_HID', `SCL', `HID', `*DIS')
 rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__SCL_HNS', `SCL', `HNS', `*DIS')
-rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_NHD_DIS', `AKS', `NHD', `DIS')
-rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_NHD', `AKS', `NHD', `*DIS')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_NHD_DIS_DSM', `AKS', `NHD', `DIS')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_NHD_DIS_DSM', `AKS', `NHD', `DSM')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_NHD', `AKS', `NHD', `NDI')
 rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_HID', `AKS', `HID', `*DIS')
 rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_HNS', `AKS', `HNS', `*DIS')
-rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_NHD_DIS', `AKD', `NHD', `DIS')
-rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_NHD', `AKD', `NHD', `*DIS')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_AUD_NHD_DIS_DSM', `AKD', `NHD', `DIS')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_AUD_NHD_DIS_DSM', `AKD', `NHD', `DSM')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_NHD', `AKD', `NHD', `NDI')
 rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_HID', `AKD', `HID', `*DIS')
-rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_NHD_DIS', `AUD', `NHD', `DIS')
-rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_NHD', `AUD', `NHD', `*DIS')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_AUD_NHD_DIS_DSM', `AUD', `NHD', `DIS')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_AUD_NHD_DIS_DSM', `AUD', `NHD', `DSM')
+rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKD_NHD', `AUD', `NHD', `NDI')
 rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_HID', `AUD', `HID', `*DIS')
 rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_NHD', `*SHP', `NHD', `*DIS')
 rule(`SAC_ND_FREE__DATA', `SAC_ND_FREE__DATA__AKS_HID', `*SHP', `HID', `*DIS')
@@ -389,8 +440,12 @@ dnl
 dnl There are five cases for the LHS nametuple:
 dnl     SCL, NHD
 dnl     SCL, HID
-dnl     AKS and AKD
-dnl     AUD, NHD
+dnl     AKS and AKD DIS (only if distributed memory backend is used)
+dnl     AKS and AKD DSM (only if distributed memory backend is used)
+dnl     AKS and AKD NDI
+dnl     AUD, NHD DIS (only if distributed memory backend is used)
+dnl     AUD, NHD DSM (only if distributed memory backend is used)
+dnl     AUD, NHD NDI 
 dnl     AUD, HID
 dnl
 dnl These are actually reduced to less target macro's, but we still need
@@ -398,12 +453,15 @@ dnl them.
 pat(`SAC_ND_ASSIGN__DATA', `0', `2', `NT_SHP', `NT_HID', `NT_DIS')
 rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__SCL_NHD', `SCL', `NHD', `*DIS')
 rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `SCL', `HID', `*DIS')
-rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS_DIS', `AKS', `NHD', `DIS')
-rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS', `AKS', `*HID', `*DIS')
-rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS_DIS', `AKD', `NHD', `DIS')
-rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS', `AKD', `*HID', `*DIS')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS_AKD_DIS', `AKS', `NHD', `DIS')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS_AKD_DSM', `AKS', `NHD', `DSM')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS', `AKS', `*HID', `NDI')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS_AKD_DIS', `AKD', `NHD', `DIS')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS_AKD_DSM', `AKD', `NHD', `DSM')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AKS', `AKD', `*HID', `NDI')
 rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DIS', `AUD', `NHD', `DIS')
-rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `AUD', `NHD', `*DIS')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DSM', `AUD', `NHD', `DSM')
+rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `AUD', `NHD', `NDI')
 rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AUD_HID', `AUD', `HID', `*DIS')
 rule(`SAC_ND_ASSIGN__DATA', `GEN_SAC_ND_ASSIGN__DATA__AUD_HNS', `AUD', `HNS', `*DIS')
 
@@ -411,8 +469,8 @@ dnl GEN_SAC_ND_ASSIGN__DATA__SCL_NHD
 dnl
 dnl Left-hand NT is a SCL NHD. There are three cases for the RHS:
 dnl     SCL -> do a direct assignment of the scl value
-dnl     AKS/AKD, AUD HID -> undef (can't assign)
-dnl     AUD, NHD -> copy aud value to scl
+dnl     AUD NHD -> copy aud value to scl
+dnl     AKS, AKD, AUD HID -> undef (can't assign)
 pat(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD', `1', `1', `NT_SHP', `NT_HID')
 rule(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD', `SAC_ND_ASSIGN__DATA__AKS_AKS', `SCL', `*HID')
 rule(`GEN_SAC_ND_ASSIGN__DATA__SCL_NHD', `SAC_ND_ASSIGN__DATA__SCL_AUD', `AUD', `NHD')
@@ -422,9 +480,9 @@ dnl GEN_SAC_ND_ASSIGN__DATA__SCL_HID
 dnl
 dnl Left-hand NT is a SCL HID. There are four cases for the RHS:
 dnl     SCL -> do a direct assignment of the scl value
-dnl     AKS/AKD, AUD NHD -> undef (can't assign)
 dnl     AUD HID NUQ  -> copy aud value to scl
 dnl     AUD HID UNQ  -> copy aud value to scl, free unique aud
+dnl     AKS, AKD, AUD NHD -> undef (can't assign)
 pat(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `1', `1', `NT_SHP', `NT_HID', `NT_UNQ')
 rule(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `SAC_ND_ASSIGN__DATA__AKS_AKS', `SCL', `*HID', `*UNQ')
 rule(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `SAC_ND_ASSIGN__DATA__SCL_AUD', `AUD', `HID', `NUQ')
@@ -433,54 +491,77 @@ rule(`GEN_SAC_ND_ASSIGN__DATA__SCL_HID', `SAC_ND_ASSIGN__DATA__UNDEF', `*SHP', `
 
 dnl GEN_SAC_ND_ASSIGN__DATA__AKS
 dnl
-dnl Left-hand NT is a AKS or AKD. There are two cases for the RHS:
+dnl Left-hand NT is a AKS NDI or AKD NDI. There are four cases for the RHS:
 dnl     SCL -> undef (can't assign)
-dnl     AKS, AKD or AUD -> do a direct assignment
-dnl TODO: implement DIS case
+dnl     AKS DIS, AKD DIS or AUD DIS -> action depends on whether rhs is actually distributed
+dnl     AKS DSM, AKD DSM or AUD DSM -> action depends on whether rhs is actually allocated in DSM memory
+dnl     AKS NDI, AKD NDI or AUD NDI -> do a direct assignment
 pat(`GEN_SAC_ND_ASSIGN__DATA__AKS', `1', `1', `NT_SHP', `NT_DIS')
 rule(`GEN_SAC_ND_ASSIGN__DATA__AKS', `SAC_ND_ASSIGN__DATA__UNDEF', `SCL', `*DIS')
-rule(`GEN_SAC_ND_ASSIGN__DATA__AKS', `SAC_ND_ASSIGN__DATA__UNDEF', `*SHP', `DIS')
-rule(`GEN_SAC_ND_ASSIGN__DATA__AKS', `SAC_ND_ASSIGN__DATA__AKS_AKS', `*SHP', `*DIS')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AKS', `SAC_ND_ASSIGN__DATA__TO_NDI', `*SHP', `DIS')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AKS', `SAC_ND_ASSIGN__DATA__TO_NDI', `*SHP', `DSM')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AKS', `SAC_ND_ASSIGN__DATA__AKS_AKS', `*SHP', `NDI')
 
-dnl GEN_SAC_ND_ASSIGN__DATA__AKS_DIS
+dnl GEN_SAC_ND_ASSIGN__DATA__AKS_AKD_DIS
 dnl
-dnl Left-hand NT is a AKS or AKD and DIS. There are two cases for the RHS:
+dnl Left-hand NT is a AKS DIS or AKD DIS. There are two cases for the RHS:
 dnl     SCL -> undef (can't assign)
-dnl     AKS, AKD or AUD -> do a direct assignment
-dnl TODO: Implement NDI case
-pat(`GEN_SAC_ND_ASSIGN__DATA__AKS_DIS', `1', `1', `NT_SHP', `NT_DIS')
-rule(`GEN_SAC_ND_ASSIGN__DATA__AKS_DIS', `SAC_ND_ASSIGN__DATA__UNDEF', `SCL', `*DIS')
-rule(`GEN_SAC_ND_ASSIGN__DATA__AKS_DIS', `SAC_ND_ASSIGN__DATA__AKS_DIS_AKS_DIS', `*SHP', `DIS')
-rule(`GEN_SAC_ND_ASSIGN__DATA__AKS_DIS', `SAC_ND_ASSIGN__DATA__UNDEF', `*SHP', `*DIS')
+dnl     AKS, AKD or AUD -> action depends on whether lhs is actually distributed 
+dnl                        and rhs are is actually distributed/allocated in DSM memory
+pat(`GEN_SAC_ND_ASSIGN__DATA__AKS_AKD_DIS', `1', `1', `NT_SHP', `NT_DIS')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AKS_AKD_DIS', `SAC_ND_ASSIGN__DATA__UNDEF', `SCL', `*DIS')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AKS_AKD_DIS', `SAC_ND_ASSIGN__DATA__TO_DIS', `*SHP', `*DIS')
+
+dnl GEN_SAC_ND_ASSIGN__DATA__AKS_AKD_DSM
+dnl
+dnl Left-hand NT is a AKS DSM or AKD DSM. There are two cases for the RHS:
+dnl     SCL -> undef (can't assign)
+dnl     AKS, AKD or AUD -> action depends on whether lhs is actually allocated in DSM memory 
+dnl                        and rhs are is actually distributed/allocated in DSM memory
+pat(`GEN_SAC_ND_ASSIGN__DATA__AKS_AKD_DSM', `1', `1', `NT_SHP', `NT_DIS')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AKS_AKD_DSM', `SAC_ND_ASSIGN__DATA__UNDEF', `SCL', `*DIS')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AKS_AKD_DSM', `SAC_ND_ASSIGN__DATA__TO_DSM', `*SHP', `*DIS')
 
 dnl GEN_SAC_ND_ASSIGN__DATA__AUD_NHD
 dnl
-dnl Left-hand NT is a AUD NHD. There are three cases for the RHS:
+dnl Left-hand NT is a AUD NHD NDI. There are five cases for the RHS:
 dnl     SCL NHD -> allocate aud, copy scl
 dnl     SCL HID -> undef (can't assign)
-dnl     AKS, AKD, AUD -> allocate aud, do assignment
-dnl TODO: implement DIS case
+dnl     AKS DIS, AKD DIS, AUD DIS -> action depends on whether rhs is actually distributed
+dnl     AKS DSM, AKD DSM, AUD DSM -> action depends on whether rhs is actually allocated in DSM memory
+dnl     AKS NDI, AKD NDI, AUD NDI -> do a direct assignment
 pat(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `1', `1', `NT_SHP', `NT_HID', `NT_DIS')
 rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `SAC_ND_ASSIGN__DATA__AUD_SCL_NHD', `SCL', `NHD', `*DIS')
 rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `SAC_ND_ASSIGN__DATA__UNDEF', `SCL', `HID', `*DIS')
-rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `SAC_ND_ASSIGN__DATA__UNDEF', `*SHP', `*HID', `DIS')
-rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `SAC_ND_ASSIGN__DATA__AUD_AKS', `*SHP', `*HID', `*DIS')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `SAC_ND_ASSIGN__DATA__TO_NDI', `*SHP', `*HID', `DIS')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `SAC_ND_ASSIGN__DATA__TO_NDI', `*SHP', `*HID', `DSM')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD', `SAC_ND_ASSIGN__DATA__AUD_AKS', `*SHP', `*HID', `NDI')
 
 dnl GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DIS
 dnl
 dnl Left-hand NT is a AUD NHD DIS. There are three cases for the RHS:
 dnl     SCL NHD -> allocate aud, copy scl
-dnl     SCL HID -> undef (can't assign)
-dnl     AKS, AKD, AUD -> allocate aud, do assignment
-dnl TODO: implement NDI case
+dnl     SCL -> undef (can't assign)
+dnl     AKS, AKD or AUD -> action depends on whether lhs is actually distributed 
+dnl                        and rhs are is actually distributed/allocated in DSM memory
 pat(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DIS', `1', `1', `NT_SHP', `NT_HID', `NT_DIS')
 rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DIS', `SAC_ND_ASSIGN__DATA__AUD_SCL_NHD', `SCL', `NHD', `*DIS')
 rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DIS', `SAC_ND_ASSIGN__DATA__UNDEF', `SCL', `HID', `*DIS')
-rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DIS', `SAC_ND_ASSIGN__DATA__AUD_DIS_AKS_DIS', `*SHP', `*HID', `DIS')
-rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DIS', `SAC_ND_ASSIGN__DATA__UNDEF', `*SHP', `*HID', `*DIS')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DIS', `SAC_ND_ASSIGN__DATA__TO_DIS', `*SHP', `*HID', `*DIS')
 
+dnl GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DSM
+dnl
+dnl Left-hand NT is a AUD NHD DSM. There are three cases for the RHS:
+dnl     SCL NHD -> allocate aud, copy scl
+dnl     SCL -> undef (can't assign)
+dnl     AKS, AKD or AUD -> action depends on whether lhs is actually allocated in DSM memory 
+dnl                        and rhs are is actually distributed/allocated in DSM memory
+pat(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DSM', `1', `1', `NT_SHP', `NT_HID', `NT_DIS')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DSM', `SAC_ND_ASSIGN__DATA__AUD_SCL_NHD', `SCL', `NHD', `*DIS')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DSM', `SAC_ND_ASSIGN__DATA__UNDEF', `SCL', `HID', `*DIS')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_NHD_DSM', `SAC_ND_ASSIGN__DATA__TO_DSM', `*SHP', `*HID', `*DIS')
 
-dnl Left-hand NT is a AUD NHD. There are four cases for the RHS:
+dnl Left-hand NT is a AUD HID. There are four cases for the RHS:
 dnl     SCL HID NUQ -> allocate aud, copy scl
 dnl     SCL HID UNQ -> allocate aud, copy scl, do uniqueness foo
 dnl     SCL NHD -> undef (can't assign)
@@ -583,6 +664,16 @@ rule(`SAC_IS_LASTREF__BLOCK_BEGIN', `SAC_IS_LASTREF__BLOCK_BEGIN__DEFAULT', `*SH
 pat(`SAC_IS_REUSED__BLOCK_BEGIN', `0', `1', `NT_SHP')
 rule(`SAC_IS_REUSED__BLOCK_BEGIN', `SAC_IS_REUSED__BLOCK_BEGIN__SCL', `SCL')
 rule(`SAC_IS_REUSED__BLOCK_BEGIN', `SAC_IS_REUSED__BLOCK_BEGIN__DEFAULT', `*SHP')
+
+pat(`SAC_UPDATE_A_MIRROR_DIM', `0', `1', `NT_SHP')
+rule(`SAC_UPDATE_A_MIRROR_DIM', `SAC_UPDATE_A_MIRROR_DIM__AUD', `AUD')
+rule(`SAC_UPDATE_A_MIRROR_DIM', `SAC_UPDATE_A_MIRROR_DIM__AKD', `AKD')
+rule(`SAC_UPDATE_A_MIRROR_DIM', `SAC_UPDATE_A_MIRROR_DIM__UNDEF', `*SHP')
+
+pat(`SAC_A_DIM_BEFORE_UPDATE_MIRROR', `0', `0', `NT_SHP')
+rule(`SAC_A_DIM_BEFORE_UPDATE_MIRROR', `SAC_A_DIM_BEFORE_UPDATE_MIRROR__AUD', `AUD')
+rule(`SAC_A_DIM_BEFORE_UPDATE_MIRROR', `SAC_A_DIM_BEFORE_UPDATE_MIRROR__AKD', `AKD')
+rule(`SAC_A_DIM_BEFORE_UPDATE_MIRROR', `SAC_A_DIM_BEFORE_UPDATE_MIRROR__UNDEF', `*SHP')
 
 end_icm_definition
 

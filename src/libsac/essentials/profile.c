@@ -96,7 +96,7 @@ SAC_PF_PrintSubHeader (char *title, int lineno)
  *
  * description:
  *
- *   Function for priniting timing information in a formatted manner.
+ *   Function for printing timing information in a formatted manner.
  *
  *
  *
@@ -109,6 +109,24 @@ SAC_PF_PrintTime (char *title, char *space, __PF_TIMER *time)
              "%-20s: %s "__PF_TIMER_FORMAT
              " sec\n",
              title, space, __PF_TIMER ((*time)));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_PF_PrintCount( char * title, char * space, unsigned long count)
+ *
+ * description:
+ *
+ *   Function for printing a counter in a formatted manner.
+ *
+ *
+ ******************************************************************************/
+
+void
+SAC_PF_PrintCount (char *title, char *space, unsigned long count)
+{
+    fprintf (stderr, "%-30s: %s %lu\n", title, space, count);
 }
 
 /******************************************************************************
@@ -136,4 +154,4 @@ SAC_PF_PrintTimePercentage (char *title, char *space, __PF_TIMER *time1,
              __PF_TIMER_PERCENTAGE ((*time1), (*time2)));
 }
 
-#endif /* SAC_BACKEND_MUTC */
+#endif /* !defined(SAC_BACKEND_MUTC) */

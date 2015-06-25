@@ -79,16 +79,23 @@ OPTIMIZE ("tgtl", tgtl, FALSE, FALSE,
           "Transform gt and ge operator to lt and le operator")
 OPTIMIZE ("srf", srf, TRUE, TRUE, "static reuse / static free")
 OPTIMIZE ("pr", pr, FALSE, FALSE, "partial reuse")
+#if (ENABLE_PHM || ENABLE_DISTMEM)
+OPTIMIZE ("aps", aps, TRUE, TRUE,
+          "arena preselection (requires -dophm or distributed memory backend)")
+OPTIMIZE ("msca", msca, TRUE, TRUE,
+          "memory size cache adjustment (requires -dophm or distributed memory backend)")
+#else
+OPTIMIZE ("aps", aps, FALSE, FALSE,
+          "arena preselection (requires -dophm or distributed memory backend)")
+OPTIMIZE ("msca", msca, FALSE, FALSE,
+          "memory size cache adjustment (requires -dophm or distributed memory backend)")
+#endif
 #if ENABLE_PHM
 OPTIMIZE ("phm", phm, TRUE, TRUE, "private heap management")
-OPTIMIZE ("aps", aps, TRUE, TRUE, "arena preselection (requires -dophm)")
 OPTIMIZE ("dpa", dpa, TRUE, TRUE, "descriptor preallocation (requires -dophm)")
-OPTIMIZE ("msca", msca, TRUE, TRUE, "memory size cache adjustment (requires -dophm)")
 #else
 OPTIMIZE ("phm", phm, FALSE, FALSE, "private heap management")
-OPTIMIZE ("aps", aps, FALSE, FALSE, "arena preselection (requires -dophm)")
 OPTIMIZE ("dpa", dpa, FALSE, FALSE, "descriptor preallocation (requires -dophm)")
-OPTIMIZE ("msca", msca, FALSE, FALSE, "memory size cache adjustment (requires -dophm)")
 #endif
 OPTIMIZE ("ap", ap, FALSE, FALSE, "array padding")
 OPTIMIZE ("apl", apl, FALSE, FALSE, "array placement")

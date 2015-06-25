@@ -108,9 +108,11 @@ void SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, size_t owner_rank,
  *             It is recommended to still call exit() afterwards but do not
  *             rely on it being called.
  *
+ *   @param exit_code     exit code
+ *
  ******************************************************************************/
 
-void SAC_DISTMEM_COMMLIB_Exit (void);
+void SAC_DISTMEM_COMMLIB_Exit (int exit_code);
 
 /******************************************
  * Tracing declarations
@@ -125,7 +127,7 @@ void SAC_DISTMEM_COMMLIB_TR_Barrier (void);
 void SAC_DISTMEM_COMMLIB_TR_LoadPage (void *local_page_ptr, size_t owner_rank,
                                       size_t remote_page_index);
 
-void SAC_DISTMEM_COMMLIB_TR_Exit (void);
+void SAC_DISTMEM_COMMLIB_TR_Exit (int exit_code);
 
 /******************************************
  * Macros to abstract from different
@@ -144,7 +146,7 @@ void SAC_DISTMEM_COMMLIB_TR_Exit (void);
 #define SAC_DISTMEM_COMMLIB_LOAD_PAGE(local_page_ptr, owner_rank, remote_page_index)     \
     SAC_DISTMEM_COMMLIB_TR_LoadPage (local_page_ptr, owner_rank, remote_page_index);
 
-#define SAC_DISTMEM_COMMLIB_EXIT() SAC_DISTMEM_COMMLIB_TR_Exit ();
+#define SAC_DISTMEM_COMMLIB_EXIT(exit_code) SAC_DISTMEM_COMMLIB_TR_Exit (exit_code);
 
 #else /* COMPILE_TRACE */
 
@@ -157,7 +159,7 @@ void SAC_DISTMEM_COMMLIB_TR_Exit (void);
 #define SAC_DISTMEM_COMMLIB_LOAD_PAGE(local_page_ptr, owner_rank, remote_page_index)     \
     SAC_DISTMEM_COMMLIB_LoadPage (local_page_ptr, owner_rank, remote_page_index);
 
-#define SAC_DISTMEM_COMMLIB_EXIT() SAC_DISTMEM_COMMLIB_Exit ();
+#define SAC_DISTMEM_COMMLIB_EXIT(exit_code) SAC_DISTMEM_COMMLIB_Exit (exit_code);
 
 #endif /* COMPILE_TRACE */
 

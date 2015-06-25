@@ -3039,6 +3039,23 @@ COMPfundef (node *arg_node, info *arg_info)
               = TBmakeIcm ("WE_FUN_DEF_BEGIN", DUPdoDupTree (icm_args));
             FUNDEF_ICMDEFEND (arg_node)
               = TBmakeIcm ("WE_FUN_DEF_END", DUPdoDupTree (icm_args));
+        } else if (global.backend == BE_distmem) {
+            if (FUNDEF_DISTMEMHASSIDEEFFECTS (arg_node)) {
+                icm_args = MakeFunctionArgs (arg_node);
+                FUNDEF_ICMDECL (arg_node)
+                  = TBmakeIcm ("ND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS", icm_args);
+                FUNDEF_ICMDEFBEGIN (arg_node)
+                  = TBmakeIcm ("ND_FUN_DEF_BEGIN", DUPdoDupTree (icm_args));
+                FUNDEF_ICMDEFEND (arg_node)
+                  = TBmakeIcm ("ND_FUN_DEF_END", DUPdoDupTree (icm_args));
+            } else {
+                icm_args = MakeFunctionArgs (arg_node);
+                FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("ND_FUN_DECL", icm_args);
+                FUNDEF_ICMDEFBEGIN (arg_node)
+                  = TBmakeIcm ("ND_FUN_DEF_BEGIN", DUPdoDupTree (icm_args));
+                FUNDEF_ICMDEFEND (arg_node)
+                  = TBmakeIcm ("ND_FUN_DEF_END", DUPdoDupTree (icm_args));
+            }
         } else {
             /* ST and SEQ functions */
             icm_args = MakeFunctionArgs (arg_node);
@@ -3181,6 +3198,18 @@ COMPvardec (node *arg_node, info *arg_info)
                    && TYPEDEF_ISNESTED (TYPES_TDEF (VARDEC_TYPE (arg_node)))) {
             VARDEC_ICM (arg_node)
               = TCmakeIcm1 ("ND_DECL_NESTED",
+                            MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
+                                          TRUE, TRUE, TRUE, NULL));
+        } else if (global.backend == BE_distmem
+                   && AVIS_DISTMEMSUBALLOC (VARDEC_AVIS (arg_node))) {
+            VARDEC_ICM (arg_node)
+              = TCmakeIcm1 ("ND_DSM_DECL",
+                            MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
+                                          TRUE, TRUE, TRUE, NULL));
+        } else if (global.backend == BE_distmem 
+               /*&& AVIS_DISTMEMISDISTRIBUTABLE( VARDEC_AVIS( arg_node)) TODO: May cause a bug*/) {
+            VARDEC_ICM (arg_node)
+              = TCmakeIcm1 ("ND_DIST_DECL",
                             MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
                                           TRUE, TRUE, TRUE, NULL));
         } else {
@@ -3381,7 +3410,8 @@ MakeFunRetArgs (node *arg_node, info *arg_info)
             new_args
               = TBmakeExprs (TCmakeIdCopyString (global.argtag_string[argtab->tag[i]]),
                              TBmakeExprs (MakeArgNode (i,
-                                                       ID_TYPE (EXPRS_EXPR (ret_exprs)),
+                                                       TYtype2OldType (
+                                                         RET_TYPE (argtab->ptr_out[i])),
                                                        FUNDEF_ISTHREADFUN (fundef)),
                                           TBmakeExprs (DUPdupIdNt (
                                                          EXPRS_EXPR (ret_exprs)),
@@ -3860,6 +3890,45 @@ COMPap (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("CUDA_ST_GLOBALFUN_AP", icm_args);
     } else if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
         icm = TBmakeIcm ("WE_FUN_AP", icm_args);
+    } else if (global.backend == BE_distmem && AP_DISTMEMHASSIDEEFFECTS (arg_node)) {
+        /* This function application has side effects. We have to treat it in a special
+         * way. */
+
+        /* Append return type and return NT to ICM arguments. */
+        if (AP_ARGTAB (arg_node)->ptr_out[0] == NULL) {
+            icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
+            icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
+        } else {
+            icm_args
+              = TBmakeExprs (DUPdupIdsIdNt (AP_ARGTAB (arg_node)->ptr_out[0]), icm_args);
+            icm_args = TBmakeExprs (TCmakeIdCopyString (GetBaseTypeFromExpr (
+                                      AP_ARGTAB (arg_node)->ptr_out[0])),
+                                    icm_args);
+        }
+
+        /* Append NT of out arguments to ICM arguments. */
+        for (int i = AP_ARGTAB (arg_node)->size - 1; i >= 1; i--) {
+            if (AP_ARGTAB (arg_node)->ptr_out[i] == NULL) {
+                /* in/inout argument, append NT. */
+                if (NODE_TYPE (EXPRS_EXPR (AP_ARGTAB (arg_node)->ptr_in[i])) == N_id) {
+                    icm_args = TBmakeExprs (DUPdupIdNt (EXPRS_EXPR (
+                                              AP_ARGTAB (arg_node)->ptr_in[i])),
+                                            icm_args);
+                } else { /* N_globobj */
+                    icm_args = TBmakeExprs (DUPdoDupNode (EXPRS_EXPR (
+                                              AP_ARGTAB (arg_node)->ptr_in[i])),
+                                            icm_args);
+                }
+            } else {
+                /* out argument, append NT. */
+                icm_args = TBmakeExprs (DUPdupIdsIdNt (AP_ARGTAB (arg_node)->ptr_out[i]),
+                                        icm_args);
+            }
+        }
+
+        icm_args = TBmakeExprs (TBmakeNum (AP_ARGTAB (arg_node)->size - 1), icm_args);
+
+        icm = TBmakeIcm ("ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS", icm_args);
     } else {
         icm = TBmakeIcm ("ND_FUN_AP", icm_args);
     }
@@ -5233,6 +5302,10 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
                               DUPdupIdNt (PRF_ARG1 (arg_node)),
                               TBmakeNum (TCgetShapeDim (ID_TYPE (PRF_ARG1 (arg_node)))),
                               DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+    } else if (global.backend == BE_distmem) {
+        ret_node = TCmakeAssignIcm3 ("WL_DISTMEM_SUBALLOC", DUPdupIdsIdNt (let_ids),
+                                     DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                     DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
     } else {
         ret_node = TCmakeAssignIcm3 ("WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
                                      DUPdupIdNt (PRF_ARG1 (arg_node)),
@@ -5667,9 +5740,9 @@ COMPprfIsDist (node *arg_node, info *arg_info)
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_IS_DIST_A__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                               FALSE, TRUE, FALSE,
+                                               FALSE, FALSE, FALSE,
                                                MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
-                                                             FALSE, TRUE, FALSE, NULL)),
+                                                             FALSE, FALSE, FALSE, NULL)),
                                  NULL);
 
     DBUG_RETURN (ret_node);
@@ -5704,9 +5777,9 @@ COMPprfFirstElems (node *arg_node, info *arg_info)
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_FIRST_ELEMS_A__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                               FALSE, TRUE, FALSE,
+                                               FALSE, FALSE, FALSE,
                                                MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
-                                                             FALSE, TRUE, FALSE, NULL)),
+                                                             FALSE, FALSE, FALSE, NULL)),
                                  NULL);
 
     DBUG_RETURN (ret_node);
@@ -5741,9 +5814,9 @@ COMPprfOffs (node *arg_node, info *arg_info)
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_OFFS_A__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                               FALSE, TRUE, FALSE,
+                                               FALSE, FALSE, FALSE,
                                                MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
-                                                             FALSE, TRUE, FALSE, NULL)),
+                                                             FALSE, FALSE, FALSE, NULL)),
                                  NULL);
 
     DBUG_RETURN (ret_node);
@@ -9684,6 +9757,7 @@ COMPwith2 (node *arg_node, info *arg_info)
     node *withop;
     node *let_neutral;
     char *break_label_str;
+    int num_with_ops = 0;
 
     DBUG_ENTER ();
 
@@ -9714,6 +9788,8 @@ COMPwith2 (node *arg_node, info *arg_info)
     withop = WITH2_WITHOP (wlnode);
 
     while (withop != NULL) {
+        num_with_ops++;
+
         if (WITHOP_IDX (withop) != NULL) {
             shpfac_decl_icms
               = TCmakeAssignIcm3 ("WL_DECLARE_SHAPE_FACTOR",
@@ -9903,10 +9979,31 @@ COMPwith2 (node *arg_node, info *arg_info)
     break_label_str = TRAVtmpVarName (LABEL_POSTFIX);
     INFO_BREAKLABEL (arg_info) = break_label_str;
 
+    node *begin_icm;
+    if (global.backend == BE_distmem) {
+        withop = WITH2_WITHOP (wlnode);
+
+        /*
+         * The with-loop is distributable iff it is a single-operator
+         * genarray or modarray with-loop.
+         */
+        bool is_distributable
+          = (num_with_ops == 1)
+            && ((NODE_TYPE (withop) == N_genarray) || (NODE_TYPE (withop) == N_modarray));
+
+        begin_icm = TCmakeAssignIcm3 ("WL_DIST_SCHEDULE__BEGIN", icm_args,
+                                      TBmakeBool (is_distributable),
+                                      MakeTypeArgs (IDS_NAME (wlids), IDS_TYPE (wlids),
+                                                    TRUE, FALSE, FALSE, NULL),
+                                      NULL);
+
+    } else {
+        begin_icm = TCmakeAssignIcm1 ("WL_SCHEDULE__BEGIN", icm_args, NULL);
+    }
+
     ret_node = TCmakeAssigns9 (
       alloc_icms, fold_icms,
-      TCmakeAssignIcm1 ("PF_BEGIN_WITH", TCmakeIdCopyString (profile_name),
-                        TCmakeAssignIcm1 ("WL_SCHEDULE__BEGIN", icm_args, NULL)),
+      TCmakeAssignIcm1 ("PF_BEGIN_WITH", TCmakeIdCopyString (profile_name), begin_icm),
       shpfac_decl_icms, shpfac_def_icms, TRAVdo (WITH2_SEGS (arg_node), arg_info),
       TCmakeAssignIcm1 ("WL_SCHEDULE__END", DUPdoDupTree (icm_args),
                         TCmakeAssignIcm1 ("PF_END_WITH",

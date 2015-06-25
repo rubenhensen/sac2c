@@ -211,6 +211,22 @@ OPTcheckOptionConsistency (void)
                  "Insertion of explicit conformity checks has been enabled.");
     }
 
+    /* Checks related to the distributed memory backend */
+    if (global.backend == BE_distmem) {
+        /* The distributed memory backend is used. Check for incompatible options. */
+        if (global.mtmode != MT_none) {
+            CTIerror ("Multi-threaded program execution is not "
+                      "supported when using the distributed memory backend.");
+        }
+    } else {
+        /* The distributed memory backend is not used. Check for invalid options. */
+        if (global.runtimecheck.distmem) {
+            CTIwarn ("The distributed memory backend is not used. "
+                     "Disabling distributed memory runtime checks.");
+            global.runtimecheck.distmem = FALSE;
+        }
+    }
+
     /* turn on default multithreading if using cuda hybrid backend */
     if (global.backend == BE_cudahybrid && global.mtmode == MT_none) {
         global.mtmode = MT_startstop;
@@ -522,7 +538,12 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("do");
 
-    ARGS_OPTION ("dsm_maxmem_mb", ARG_RANGE (global.distmem_max_memory_mb, 128, 2000));
+    ARGS_OPTION ("dsm_maxmem_mb", ARG_RANGE (global.distmem_max_memory_mb, 128, 10000));
+
+    ARGS_OPTION ("distmem_min_elems",
+                 ARG_RANGE (global.distmem_min_elems_per_node, 10, 1000));
+
+    ARGS_OPTION ("distmem_trace_node", ARG_RANGE (global.distmem_trace_node, -1, 1000));
 
 #ifndef DBUG_OFF
 

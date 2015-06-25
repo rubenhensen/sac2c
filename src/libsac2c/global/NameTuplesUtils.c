@@ -30,7 +30,8 @@ simpletype2mutcStorageClass (simpletype st)
     DBUG_ENTER ();
 
 #define TYP_IF(it_name, it_db_str, it_pr_str, it_funr_str, it_cv2scal, it_cv2cv,         \
-               it_cv2str, it_size, it_zipcv, it_basecv, it_mutc_sc, unused2)             \
+               it_cv2str, it_size, it_zipcv, it_basecv, it_mutc_sc, unused2,             \
+               it_ntcbasetype)                                                           \
     case it_name:                                                                        \
         ret = it_mutc_sc;                                                                \
         break;
@@ -341,14 +342,60 @@ NTUgetDistributedFromTypes (types *type)
         DBUG_UNREACHABLE ("illegal distributed attribute found!");
         d = C_unknownd;
     } else {
-        if (TYPES_DISTRIBUTED (type)) {
+        if (TYPES_DISTRIBUTED (type) == distmem_dis_dis) {
             d = C_distr;
+        } else if (TYPES_DISTRIBUTED (type) == distmem_dis_dsm) {
+            d = C_distmem;
         } else {
             d = C_notdistr;
         }
     }
 
     DBUG_RETURN (d);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   cbasetype_class_t NTUgetCBasetypeFromTypes( types *type)
+ *
+ * description:
+ *
+ * Note:    This has to be kept in sync with GetBasetypeStr
+ *          (compile.c) !!!
+ *
+ ******************************************************************************/
+
+cbasetype_class_t
+NTUgetCBasetypeFromTypes (types *type)
+{
+    cbasetype_class_t b;
+    simpletype basetype;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (type != NULL, "No type found!");
+
+    if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
+        /*
+         * the TC has probably not been called yet :-(
+         */
+        DBUG_UNREACHABLE ("illegal C basetype attribute found!");
+        b = C_unknownt;
+    } else {
+        basetype = TCgetBasetype (type);
+        b = global.type_cbasetype[basetype];
+
+        /*
+         * If the enforce_float flag is set,
+         * we change all doubles to floats.
+         */
+        if (b == C_btdouble && global.enforce_float) {
+            b = C_btfloat;
+        }
+    }
+
+    DBUG_RETURN (b);
 }
 
 /******************************************************************************
@@ -372,6 +419,7 @@ NTUcreateNtTag (const char *name, types *type)
     mutc_usage_class_t usage;
     bitarray_class_t bitarray;
     distributed_class_t distr;
+    cbasetype_class_t cbasetype;
     char *res;
 
     DBUG_ENTER ();
@@ -390,12 +438,14 @@ NTUcreateNtTag (const char *name, types *type)
 
     distr = NTUgetDistributedFromTypes (type);
 
+    cbasetype = NTUgetCBasetypeFromTypes (type);
+
     /*
      * Allocate enough space for the textual representation of the type tuple.
      * The total length is the length of all textual representations combined
      * plus some space for administration:
      *
-     * - 9 is the number of elements (including the name)
+     * - 10 is the number of elements (including the name)
      * - 4 is the number of chars each element takes aside of its name: "( ,)"
      * - 1 is the terminating \0 byte.
      */
@@ -406,14 +456,16 @@ NTUcreateNtTag (const char *name, types *type)
        + STRlen (global.nt_mutc_scope_string[scope])
        + STRlen (global.nt_mutc_usage_string[usage])
        + STRlen (global.nt_bitarray_string[bitarray])
-       + STRlen (global.nt_distributed_string[distr]) + (9 * 4 + 1))
+       + STRlen (global.nt_distributed_string[distr])
+       + STRlen (global.nt_cbasetype_string[cbasetype]) + (10 * 4 + 1))
       * sizeof (char));
 
-    sprintf (res, "(%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, )))))))))", name,
+    sprintf (res, "(%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, ))))))))))", name,
              global.nt_shape_string[sc], global.nt_hidden_string[hc],
              global.nt_unique_string[uc], global.nt_mutc_storage_class_string[storage],
              global.nt_mutc_scope_string[scope], global.nt_mutc_usage_string[usage],
-             global.nt_bitarray_string[bitarray], global.nt_distributed_string[distr]);
+             global.nt_bitarray_string[bitarray], global.nt_distributed_string[distr],
+             global.nt_cbasetype_string[cbasetype]);
 
     DBUG_RETURN (res);
 }

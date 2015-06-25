@@ -28,11 +28,19 @@ static UNUSED int SAC_DISTMEM_COMMLIB_GASNET_dummy;
 
 #if ENABLE_DISTMEM_GASNET
 
-/* Do not show some warnings for the GASNet header. */
+/* Do not show some warnings for the GASNet header for GCC (>= 4.6). */
+#ifdef __GNUC__
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+#endif
 #include <gasnet.h>
+#ifdef __GNUC__
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #pragma GCC diagnostic pop
+#endif
+#endif
 
 #if COMPILE_TRACE
 #define SAC_DO_TRACE 1
@@ -132,11 +140,16 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
 
     if (maxmem != min_global_segsz) {
         SAC_RuntimeWarning (
-          "Registered less than requested memory: (%zd) MB rather than (%zd) MB",
+          "Registered less than requested memory: %zd MB rather than %zd MB",
           min_global_segsz / 1024 / 1024, maxmem / 1024 / 1024);
     }
 
-    SAC_DISTMEM_segsz = min_global_segsz / SAC_DISTMEM_size;
+    /*
+     * Divide by and multiply with the page size because the segment size has to be a
+     * multiple of the page size.
+     */
+    SAC_DISTMEM_segsz
+      = min_global_segsz / SAC_DISTMEM_size / SAC_DISTMEM_pagesz * SAC_DISTMEM_pagesz;
     SAC_DISTMEM_shared_seg_ptr = seg_info[SAC_DISTMEM_rank].addr;
 
     /*
@@ -193,13 +206,13 @@ SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, size_t owner_rank,
 
 #if COMPILE_TRACE
 void
-SAC_DISTMEM_COMMLIB_TR_Exit (void)
+SAC_DISTMEM_COMMLIB_TR_Exit (int exit_code)
 #else  /* COMPILE_TRACE */
 void
-SAC_DISTMEM_COMMLIB_Exit (void)
+SAC_DISTMEM_COMMLIB_Exit (int exit_code)
 #endif /* COMPILE_TRACE */
 {
-    gasnet_exit (0);
+    gasnet_exit (exit_code);
 }
 
 #endif /* ENABLE_DISTMEM_GASNET */

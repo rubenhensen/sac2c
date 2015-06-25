@@ -402,6 +402,18 @@
           <node name="Prf" />
         </travuser>
       </traversal>
+      <traversal id="DMISEFA" name="Identify function applications with side-effects for the distributed memory backend" default="sons" include="identify_side_effect_function_aps.h">
+        <travuser>
+	        <node name="Ap" />
+	        <node name="Fundef" />
+	      </travuser>
+      </traversal>
+      <traversal id="DMIDA" name="Identify distributable arrays for the distributed memory backend" default="sons" include="identify_distributable_arrays.h">
+        <travuser>
+	        <node name="Let" />
+	        <node name="Ids" />
+	      </travuser>
+      </traversal>
       <traversal id="ACUPTN" name="Annotate CUDA partitions" default="sons" include="annotate_cuda_partition.h" >
         <travuser>
           <node name="With" />
@@ -962,6 +974,15 @@
           <node name="Cond" />
           <node name="Arg" />
         </travuser>
+      </traversal>
+      <traversal id="DMISEF" name="Identify side effect functions for the distributed memory backend" default="sons" include="identify_side_effect_functions.h">
+        <travuser>
+	        <node name="Fundef" />
+	        <node name="Arg" />
+	        <node name="Ap" />
+	        <node name="Exprs" />
+	        <node name="Ret" />
+	      </travuser>
       </traversal>
       <traversal id="USSAT" name="UndoSSATransform Traversal" default="sons" include="UndoSSATransform.h" >
         <travuser>
@@ -5837,6 +5858,12 @@ N_tfarg :
         <flag name="IsSlowClone" default="FALSE">
           <description>This function is a slow clone</description>
         </flag>
+        <flag name="DistMemHasSideEffects" default="FALSE">
+          <description>This function has side effects and may only be executed by the master node when the distributed memory backend is used.</description>
+          <phases>
+            <range from="dm_dmisef" to="final" />
+          </phases>
+        </flag>
       </flags>
     <checks>
       <check name="CHKfundefVardecExtrema" />
@@ -5947,6 +5974,12 @@ N_tfarg :
         <flag name="IsRefcounted" default="TRUE" />
         <flag name="HasLinksignInfo" />
 	<flag name="IsUnique" />
+  <flag name="DistMemIsUniqueLeaf" default="FALSE" >
+	  <description> Indicates that this argument is unique and that it is not passed to another function. </description>
+    <phases>
+      <range from="dm_dmisef" to="dm_dmisef" />
+    </phases>
+  </flag>
 	<flag name="IsInUse" default="FALSE" >
 	  <description> Used to mark unused function arguments in DeadCodeRemoval. Marked arguments are removed in signature simplification.
 	  </description>
@@ -7034,6 +7067,12 @@ N_tfarg :
           <description>
             This node calls a function which contains spawns
           </description>
+        </flag>
+        <flag name="DistMemHasSideEffects" default="FALSE">
+          <description>This function application has side effects and may only be executed by the master node when the distributed memory backend is used.</description>
+          <phases>
+            <range from="dm_dmisefa" to="final" />
+          </phases>
         </flag>
       </flags>
     <checks>
@@ -8976,6 +9015,15 @@ N_tfarg :
             this function
           </description>
         </flag>
+        <flag name="DistMemSuballoc" default="FALSE">
+          <description>
+            This variable is allocated using a suballoc. It may need to be allocated in the
+            DSM memory.
+          </description>
+          <phases>
+            <range from="emal" to="final" />
+          </phases>
+        </flag>
         <flag name="NeedBlocked" default="FALSE" >
           <description>
                   If true, the given variable is a loop index and the loop needs to be blocked
@@ -9036,12 +9084,19 @@ N_tfarg :
 	  make this quite important.
 	  </description>
         </flag>	 
-      </flags>
-    <checks>
-      <check name="CHKavisReflection" />
-      <check name="CHKavisSsaassignNodeType" />
-    </checks>
-    </node>
+  <flag name="DistMemIsDistributable" default="TRUE" >
+	  <description> 
+	  This flag indicates whether the array is distributable. 
+    That is not the case if the array is written to in the body of a parallel genarray/modarray with-loop
+    (including nested with-loops) but it is not the result of the (outermost) with-loop.
+	  </description>
+  </flag>	 
+  </flags>
+  <checks>
+    <check name="CHKavisReflection" />
+    <check name="CHKavisSsaassignNodeType" />
+  </checks>
+  </node>
 <!--
 
   N_mt :
@@ -11639,6 +11694,15 @@ N_tfarg :
         <flag name="IsCReturn" />
         <flag name="WasRemoved" default="FALSE" />
         <flag name="IsUnique" default="FALSE" />
+        <flag name="DistMemBroadcastArg" default="FALSE">
+          <description>
+            This return value needs to be broadcast
+            and is therefore allocated in DSM memory.
+          </description>
+          <phases>
+            <range from="emal" to="final" />
+          </phases>
+        </flag>
       </flags>
     </node>
 <!--

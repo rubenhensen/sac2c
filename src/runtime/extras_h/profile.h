@@ -6,10 +6,11 @@
  *   This file is part of the SAC standard header file sac.h
  *
  *   Profiling operations may be selectively activated by the global switches
- *    PROFILE_WITH  for profiling with-loops
- *    PROFILE_FUN   for profiling function applications
- *    PROFILE_INL   for profiling even inlined functions
- *    PROFILE_LIB   for profiling even library functions
+ *    PROFILE_WITH      for profiling with-loops
+ *    PROFILE_FUN       for profiling function applications
+ *    PROFILE_INL       for profiling even inlined functions
+ *    PROFILE_LIB       for profiling even library functions
+ *    PROFILE_DISTMEM   for profiling the distributed memory backend
  *
  *   The global switch PROFILE indicates any profiling activations.
  *
@@ -83,6 +84,7 @@ SAC_C_EXTERN int getrusage (int who, struct rusage *rusage);
 SAC_C_EXTERN void SAC_PF_PrintHeader (char *title);
 SAC_C_EXTERN void SAC_PF_PrintSubHeader (char *title, int lineno);
 SAC_C_EXTERN void SAC_PF_PrintTime (char *title, char *space, SAC_PF_TIMER *time);
+SAC_C_EXTERN void SAC_PF_PrintCount (char *title, char *space, unsigned long count);
 SAC_C_EXTERN void SAC_PF_PrintTimePercentage (char *title, char *space,
                                               SAC_PF_TIMER *time1, SAC_PF_TIMER *time2);
 
@@ -157,6 +159,7 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
         SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
         SAC_PF_PRINT_OVERALL (grand_total);                                              \
         SAC_PF_PRINT_FUNS (grand_total);                                                 \
+        SAC_PF_PRINT_DISTMEM ();                                                         \
     }
 
 #define SAC_PF_PRINT_OVERALL(total)                                                      \
@@ -310,6 +313,7 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
     }
 
 #define SAC_PF_TIMER_SPACE "              "
+#define SAC_PF_COUNT_SPACE "              "
 
 #else /* SAC_DO_PROFILE */
 
@@ -358,6 +362,33 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
 #define SAC_PF_DISPLAY_WITH 0
 
 #endif /* SAC_DO_PROFILE_WITH */
+
+/*
+ *  Macros for profiling the distributed memory backend
+ */
+
+#if (SAC_DO_PROFILE_DISTMEM && SAC_DO_PROFILE)
+
+#define SAC_PF_PRINT_DISTMEM()                                                           \
+    {                                                                                    \
+        SAC_PF_PrintHeader ("Distributed Memory Backend Profile");                       \
+        SAC_PF_PrintCount ("Distributed arrays:", SAC_PF_COUNT_SPACE,                    \
+                           SAC_DISTMEM_TR_num_arrays);                                   \
+        SAC_PF_PrintCount ("Invalidated pages:", SAC_PF_COUNT_SPACE,                     \
+                           SAC_DISTMEM_TR_num_inval_pages);                              \
+        SAC_PF_PrintCount ("Seg faults/page fetches: ", SAC_PF_COUNT_SPACE,              \
+                           SAC_DISTMEM_TR_num_segfaults);                                \
+        SAC_PF_PrintCount ("Pointer calculations: ", SAC_PF_COUNT_SPACE,                 \
+                           SAC_DISTMEM_TR_num_ptr_calcs);                                \
+        SAC_PF_PrintCount ("Barriers: ", SAC_PF_COUNT_SPACE,                             \
+                           SAC_DISTMEM_TR_num_barriers);                                 \
+    }
+
+#else /* SAC_DO_PROFILE_DISTMEM && SAC_DO_PROFILE */
+
+#define SAC_PF_PRINT_DISTMEM()
+
+#endif /* SAC_DO_PROFILE_DISTMEM && SAC_DO_PROFILE */
 
 #ifdef DEBUG_PROFILING
 

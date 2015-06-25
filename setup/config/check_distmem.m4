@@ -26,15 +26,24 @@ AC_DEFUN([CHECK_DISTMEM], dnl
    cat >./config.GASNetconduits
 
    if test x"$enable_distmem_gasnet" != xno; then
+
 ################################################################################
 #
 # feature setup:
 #
 
-     gasnet_home=/usr/local/gasnet
-     gasnet_conduit_names=""
-     AC_MSG_CHECKING(if $gasnet_home exists)
-     if test -r $gasnet_home; then
+    AC_MSG_CHECKING(if GASNET_HOME is set)
+    if test x"$GASNET_HOME" != x ; then
+      gasnet_home="$GASNET_HOME"
+      AC_MSG_RESULT([using GASNET_HOME: $gasnet_home])
+    else
+      gasnet_home=/usr/local/gasnet
+      AC_MSG_RESULT([using default location: $gasnet_home])
+    fi
+
+    gasnet_conduit_names=""
+    AC_MSG_CHECKING(if $gasnet_home exists)
+    if test -r $gasnet_home; then
         AC_MSG_RESULT([yes])
         AC_MSG_CHECKING(installed gasnet conduits)
 
@@ -47,24 +56,30 @@ AC_DEFUN([CHECK_DISTMEM], dnl
 EOF
 
         for gasnet_conduit_path in $gasnet_home/include/*-conduit/; do
-           gasnet_conduit_filename="$(basename "${gasnet_conduit_path}")"
-           gasnet_conduit_name="${gasnet_conduit_filename//-conduit/}"
-           gasnet_conduit_name_uc=`echo $gasnet_conduit_name | tr '[a-z]' '[A-Z]'`
-           if test x"$gasnet_conduit_names" != x ; then
+          gasnet_conduit_filename="$(basename "${gasnet_conduit_path}")"
+          gasnet_conduit_name="${gasnet_conduit_filename//-conduit/}"
+          gasnet_conduit_name_uc=`echo $gasnet_conduit_name | tr '[a-z]' '[A-Z]'`
+          if test x"$gasnet_conduit_names" != x ; then
               gasnet_conduit_names="$gasnet_conduit_names "
-           fi
-           gasnet_conduit_names="$gasnet_conduit_names$gasnet_conduit_name"
-           gasnet_conduit_makefile="$gasnet_conduit_path$gasnet_conduit_name-seq.mak"
+          fi
+          gasnet_conduit_names="$gasnet_conduit_names$gasnet_conduit_name"
+          gasnet_conduit_makefile="$gasnet_conduit_path$gasnet_conduit_name-seq.mak"
 
-           gasnet_conduit_cc="$(getmakevar $gasnet_conduit_makefile GASNET_CC)"
-           gasnet_conduit_cppflags="$(getmakevar $gasnet_conduit_makefile GASNET_CPPFLAGS)"
-           gasnet_conduit_cflags="$(getmakevar $gasnet_conduit_makefile GASNET_CFLAGS)"
-           gasnet_conduit_ld="$(getmakevar $gasnet_conduit_makefile GASNET_LD)"
-           gasnet_conduit_ldflags="$(getmakevar $gasnet_conduit_makefile GASNET_LDFLAGS)"
-           gasnet_conduit_libs="$(getmakevar $gasnet_conduit_makefile GASNET_LIBS)"
+          gasnet_conduit_cc="$(getmakevar $gasnet_conduit_makefile GASNET_CC)"
+          gasnet_conduit_cppflags="$(getmakevar $gasnet_conduit_makefile GASNET_CPPFLAGS)"
+          gasnet_conduit_cflags="$(getmakevar $gasnet_conduit_makefile GASNET_CFLAGS)"
+          gasnet_conduit_ld="$(getmakevar $gasnet_conduit_makefile GASNET_LD)"
+          gasnet_conduit_ldflags="$(getmakevar $gasnet_conduit_makefile GASNET_LDFLAGS)"
+          gasnet_conduit_libs="$(getmakevar $gasnet_conduit_makefile GASNET_LIBS)"
 
-           cat <<EOF >>./sac2crc.GASNetconduits
+          cat <<EOF >>./sac2crc.GASNetconduits
 target distmem_gasnet_$gasnet_conduit_name::distmem_gasnet:
+COMMLIB_CONDUIT  := "$gasnet_conduit_name"
+CC               := "$gasnet_conduit_ld -std=gnu99"
+CCLINK           += "$gasnet_conduit_libs"
+LDFLAGS          += "$gasnet_conduit_ldflags"
+
+target distmemcheck_gasnet_$gasnet_conduit_name::distmemcheck_gasnet:
 COMMLIB_CONDUIT  := "$gasnet_conduit_name"
 CC               := "$gasnet_conduit_ld -std=gnu99"
 CCLINK           += "$gasnet_conduit_libs"
@@ -86,10 +101,10 @@ EOF
           cat <<EOF >>./build.GASNetconduits
 %.\$(\$(STYLE)_short).gasnet${gasnet_conduit_name}.o: %.c
 	@if [[ "compile \$(dir \$$**)" != "\`cat .make_track\`" ]] ; \\
-         then \$(ECHO) "compile \$(dir \$$**)" > .make_track; \\
+          then \$(ECHO) "compile \$(dir \$$**)" > .make_track; \\
               \$(ECHO) ""; \\
               \$(ECHO) "Compiling files in directory \$(PREFIX_LOCAL)\$(dir \$@)"; \\
-         fi
+          fi
 	@\$(ECHO) "  Compiling GasNET ${gasnet_conduit_name} \$(\$(STYLE)_long) code: \$(notdir \$<)"
 	\$(HIDE) \$(GASNET_${gasnet_conduit_name_uc}_CC) \\
                   \$(GASNET_${gasnet_conduit_name_uc}_CPPFLAGS) \$(GASNET_${gasnet_conduit_name_uc}_CFLAGS) \$(CC_FLAGS_\$(\$(STYLE)_cap)) \$(SETTINGS_\$(\$(STYLE)_cap)) \\
@@ -104,10 +119,10 @@ EOF
           cat <<EOF >>./build.GASNetconduitsCrossVariant
 %.\$(\$(STYLE)_short)\$(CROSS_VARIANT).gasnet${gasnet_conduit_name}.o: %.c
 	@if [[ "compile \$(dir \$$**)" != "\`cat .make_track\`" ]] ; \\
-         then \$(ECHO) "compile \$(dir \$$**)" > .make_track; \\
+          then \$(ECHO) "compile \$(dir \$$**)" > .make_track; \\
               \$(ECHO) ""; \\
               \$(ECHO) "Compiling files in directory \$(PREFIX_LOCAL)\$(dir \$@)"; \\
-         fi
+          fi
 	@\$(ECHO) "  Compiling GasNET ${gasnet_conduit_name} \$(\$(STYLE)_long) code: \$(notdir \$<)"
 	\$(HIDE) \$(GASNET_${gasnet_conduit_name_uc}_CC) \\
                   \$(GASNET_${gasnet_conduit_name_uc}_CPPFLAGS) \$(GASNET_${gasnet_conduit_name_uc}_CFLAGS) \$(CC_FLAGS_\$(\$(STYLE)_cap)) \$(SETTINGS_\$(\$(STYLE)_cap)) \\
@@ -116,24 +131,25 @@ EOF
 	@\$(CLOCK_SKEW_ELIMINATION)
 EOF
 
-        done
+          done
 
-        if test x"$gasnet_conduit_names" = x ; then
-          AC_MSG_RESULT([none])
+          if test x"$gasnet_conduit_names" = x ; then
+            AC_MSG_RESULT([none])
+            enable_distmem_gasnet=no
+          else
+            AC_MSG_RESULT([$gasnet_conduit_names])
+          fi
+      else
+          AC_MSG_RESULT([no])
           enable_distmem_gasnet=no
-        else
-          AC_MSG_RESULT([$gasnet_conduit_names])
-        fi
-    else
-        AC_MSG_RESULT([no])
-        enable_distmem_gasnet=no
-    fi
-   fi
+      fi
 
-   if test x"$enable_distmem_gasnet" = xno -a x"$enable_distmem_gpi" = xno -a x"$enable_distmem_mpi" = xno -a x"$enable_distmem_armci" = xno ; then
-      enable_distmem=no
-   else
-      enable_distmem=yes
+      if test x"$enable_distmem_gasnet" = xno -a x"$enable_distmem_gpi" = xno -a x"$enable_distmem_mpi" = xno -a x"$enable_distmem_armci" = xno ; then
+          enable_distmem=no
+      else
+          enable_distmem=yes
+      fi
+
    fi
 
    have_distmem=`if test x"$enable_distmem" != xno; then echo 1; else echo 0; fi`

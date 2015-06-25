@@ -29,6 +29,8 @@
 
 #define ICM_INT(name) exprs = GetNextInt (&name, exprs);
 
+#define ICM_BOOL(name) exprs = GetNextBool (&name, exprs);
+
 #define ICM_VARANY(cnt, name)                                                            \
     if (cnt > 0) {                                                                       \
         exprs = GetNextVarAny (&name, NULL, cnt, exprs);                                 \
@@ -838,6 +840,7 @@ GetNextVarInt (int **ret, int cnt, node *exprs)
 #undef ICM_ID
 #undef ICM_STR
 #undef ICM_INT
+#undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT
 #undef ICM_VARID

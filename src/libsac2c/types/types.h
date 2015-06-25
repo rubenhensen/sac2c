@@ -132,6 +132,12 @@ typedef enum simpletype_t simpletype;
  */
 typedef int usertype;
 
+typedef enum distmem_dis_t {
+    distmem_dis_dis,
+    distmem_dis_ndi,
+    distmem_dis_dsm
+} distmem_dis;
+
 #define PHASE(name, text, cond) PH_##name,
 
 #define SUBPHASE(name, text, fun, cond, phase) PH_##phase##_##name,
@@ -332,9 +338,9 @@ typedef struct TYPES {
     mutcScope scope; /* the scope of the value of this var */
     mutcUsage usage; /* where is this var used */
 
-    bool unique;      /* this variable is unique */
-    bool akv;         /* this variable is akv */
-    bool distributed; /* this variable is distributed */
+    bool unique;             /* this variable is unique */
+    bool akv;                /* this variable is akv */
+    distmem_dis distributed; /* distributed class of this variable */
 
 } types;
 
@@ -459,8 +465,7 @@ typedef struct ARGTAB_T {
 
 /*
  * The following defines indicate the position of tags within name tuples.
- * They should be kept in synch with the NT_NAME, NT_SHP, NT_HID and NT_UNQ
- * macros in sac_std.h
+ * They should be kept in synch with the macros in std.h.
  */
 #define NT_NAME_INDEX 0
 #define NT_SHAPE_INDEX 1
@@ -471,74 +476,65 @@ typedef struct ARGTAB_T {
 #define NT_MUTC_USAGE_INDEX 6
 #define NT_BITARRAY_INDEX 7
 #define NT_DISTRIBUTED_INDEX 8
+#define NT_CBASETYPE_INDEX 9
 
 /*
- * Enumerated types for data class and uniqueness class
+ * Enumerated types for classes
  */
 
 typedef enum {
 #define ATTRIB NT_SHAPE_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } shape_class_t;
 
 typedef enum {
 #define ATTRIB NT_HIDDEN_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } hidden_class_t;
 
 typedef enum {
 #define ATTRIB NT_UNIQUE_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } unique_class_t;
 
 typedef enum {
 #define ATTRIB NT_MUTC_STORAGE_CLASS_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } mutc_storage_class_class_t;
 
 typedef enum {
 #define ATTRIB NT_MUTC_SCOPE_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } mutc_scope_class_t;
 
 typedef enum {
 #define ATTRIB NT_MUTC_USAGE_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } mutc_usage_class_t;
 
 typedef enum {
 #define ATTRIB NT_BITARRAY_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } bitarray_class_t;
 
 typedef enum {
 #define ATTRIB NT_DISTRIBUTED_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } distributed_class_t;
+
+typedef enum {
+#define ATTRIB NT_CBASETYPE_INDEX
+#define NTIFtype(it_type) it_type
+#include "nt_info.mac"
+} cbasetype_class_t;
 
 /*
  * moved from shape.h

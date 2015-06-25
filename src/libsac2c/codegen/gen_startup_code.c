@@ -91,18 +91,22 @@ PrintGlobalSwitches (void)
     fprintf (global.outfile, "#define SAC_DO_RTSPEC          %d\n",
              (global.rtspec) ? 1 : 0);
 
-    fprintf (global.outfile, "#define SAC_DO_CHECK           %d\n",
+    fprintf (global.outfile, "#define SAC_DO_CHECK            %d\n",
              (global.doruntimecheck) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_TYPE      %d\n",
+    fprintf (global.outfile, "#define SAC_DO_CHECK_TYPE       %d\n",
              (global.runtimecheck.type) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_BOUNDARY  %d\n",
+    fprintf (global.outfile, "#define SAC_DO_CHECK_BOUNDARY   %d\n",
              (global.runtimecheck.boundary) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_MALLOC    %d\n",
+    fprintf (global.outfile, "#define SAC_DO_CHECK_MALLOC     %d\n",
              (global.runtimecheck.malloc) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_ERRNO     %d\n",
+    fprintf (global.outfile, "#define SAC_DO_CHECK_ERRNO      %d\n",
              (global.runtimecheck.checkerrno) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_HEAP      %d\n",
+    fprintf (global.outfile, "#define SAC_DO_CHECK_HEAP       %d\n",
              (global.runtimecheck.heap) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CHECK_DISTMEM    %d\n",
+             (global.runtimecheck.distmem) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CHECK_DISTMEMPHM %d\n",
+             (global.runtimecheck.distmemphm) ? 1 : 0);
     fprintf (global.outfile, "\n");
 
     fprintf (global.outfile, "#define SAC_DO_PHM             %d\n",
@@ -125,6 +129,8 @@ PrintGlobalSwitches (void)
              (global.profile.inl) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_PROFILE_LIB     %d\n",
              (global.profile.lib) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_PROFILE_DISTMEM %d\n",
+             (global.profile.distmem) ? 1 : 0);
     fprintf (global.outfile, "\n");
 
     fprintf (global.outfile, "#define SAC_DO_TRACE           %d\n",
@@ -556,11 +562,15 @@ PrintGlobalSettings (node *syntax_tree)
 
     /* Distributed memory backend specific settings */
     if (global.backend == BE_distmem) {
-        fprintf (global.outfile, "#ifndef SAC_SET_DISTMEM_MAX_MEMORY_MB\n");
         fprintf (global.outfile,
                  "#define SAC_SET_DISTMEM_MAX_MEMORY_MB              %d\n",
                  global.distmem_max_memory_mb);
-        fprintf (global.outfile, "#endif\n\n");
+        fprintf (global.outfile,
+                 "#define SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE         %d\n",
+                 global.distmem_min_elems_per_node);
+        fprintf (global.outfile,
+                 "#define SAC_SET_DISTMEM_TRACE_NODE                 %d\n",
+                 global.distmem_trace_node);
     }
 
     DBUG_RETURN ();
@@ -694,10 +704,10 @@ GSCprintMainBegin (void)
 {
     DBUG_ENTER ();
 
-    INDENT;
-    fprintf (global.outfile, "SAC_DISTMEM_SETUP();\n");
-    INDENT;
-    fprintf (global.outfile, "SAC_DISTMEM_BARRIER();\n");
+    if (global.backend == BE_distmem) {
+        INDENT;
+        fprintf (global.outfile, "SAC_DISTMEM_SETUP();\n");
+    }
 
     INDENT;
     fprintf (global.outfile, "SAC_MT_SETUP_INITIAL();\n");
@@ -762,9 +772,6 @@ GSCprintMainEnd (void)
         fprintf (global.outfile, "SAC_RTSPEC_FINALIZE();\n\n");
     }
 
-    INDENT;
-    fprintf (global.outfile, "SAC_DISTMEM_EXIT();\n");
-
     DBUG_RETURN ();
 }
 
@@ -801,12 +808,14 @@ GSCprintMainC99 (void)
     fprintf (global.outfile, "{\n");
     global.indent++;
 
-    /*
-     * The distributed memory communication library needs to be initialized
-     * before inspecting the arguments and before any output is produced.
-     */
-    INDENT;
-    fprintf (global.outfile, "SAC_DISTMEM_INIT();\n");
+    if (global.backend == BE_distmem) {
+        /*
+         * The distributed memory communication library needs to be initialized
+         * before inspecting the arguments and before any output is produced.
+         */
+        INDENT;
+        fprintf (global.outfile, "SAC_DISTMEM_INIT();\n");
+    }
 
     if (print_thread_id) {
         INDENT;
@@ -843,6 +852,12 @@ GSCprintMainC99 (void)
     fprintf (global.outfile, ");\n\n");
 
     GSCprintMainEnd ();
+
+    if (global.backend == BE_distmem) {
+        INDENT;
+        fprintf (global.outfile, "SAC_DISTMEM_EXIT( SAC_ND_READ( %s, 0));\n", res_NT);
+    }
+
     INDENT;
     fprintf (global.outfile, "return( SAC_ND_READ( %s, 0));\n", res_NT);
     res_NT = MEMfree (res_NT);

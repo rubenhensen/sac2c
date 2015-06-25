@@ -35,6 +35,10 @@
     scanf ("%i", &name);                                                                 \
     DBUG_PRINT ("BEtest", ("int-arg: %i\n", name));
 
+#define ICM_BOOL(name)                                                                   \
+    scanf ("%i", &name);                                                                 \
+    DBUG_PRINT ("BEtest", ("bool-arg: %i\n", name));
+
 #define ICM_VARANY(dim, name)                                                            \
     {                                                                                    \
         int i;                                                                           \
@@ -91,6 +95,7 @@
 #undef ICM_ID
 #undef ICM_STR
 #undef ICM_INT
+#undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT
 #undef ICM_VARID
