@@ -179,6 +179,9 @@ unsigned long SAC_DISTMEM_TR_num_segfaults = 0;
 /* Number of pointer calculations */
 unsigned long SAC_DISTMEM_TR_num_ptr_calcs = 0;
 
+/* Number of avoided pointer calculations */
+unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs;
+
 /* Number of barriers */
 unsigned long SAC_DISTMEM_TR_num_barriers = 0;
 
@@ -491,10 +494,13 @@ SAC_DISTMEM_Exit (int exit_code)
 
     SAC_TR_DISTMEM_PRINT ("Exiting communication library with exit code %d.", exit_code);
 
-    SAC_TR_DISTMEM_PRINT ("   Distributed arrays: %lu", SAC_DISTMEM_TR_num_arrays);
+    // TODO: can probably be removed
+    // SAC_TR_DISTMEM_PRINT( "   Distributed arrays: %lu",  SAC_DISTMEM_TR_num_arrays);
     SAC_TR_DISTMEM_PRINT ("   Invalidated pages: %lu", SAC_DISTMEM_TR_num_inval_pages);
     SAC_TR_DISTMEM_PRINT ("   Seg faults: %lu", SAC_DISTMEM_TR_num_segfaults);
     SAC_TR_DISTMEM_PRINT ("   Pointer calculations: %lu", SAC_DISTMEM_TR_num_ptr_calcs);
+    SAC_TR_DISTMEM_PRINT ("   Avoided pointer calculations: %lu",
+                          SAC_DISTMEM_TR_num_avoided_ptr_calcs);
     SAC_TR_DISTMEM_PRINT ("   Barriers: %lu", SAC_DISTMEM_TR_num_barriers);
 
     SAC_DISTMEM_BARRIER ();

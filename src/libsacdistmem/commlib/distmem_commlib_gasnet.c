@@ -28,6 +28,16 @@ static UNUSED int SAC_DISTMEM_COMMLIB_GASNET_dummy;
 
 #if ENABLE_DISTMEM_GASNET
 
+/* Specifies whether the cache should be allocated in the GASNet segment.
+ * If this is set to FALSE, the cache will be allocated using mmap. */
+#define ALLOCATE_CACHE_IN_GASNET_SEGMENT FALSE
+
+#if !ALLOCATE_CACHE_IN_GASNET_SEGMENT
+
+#include <sys/mman.h>
+
+#endif /* !ALLOCATE_CACHE_IN_GASNET_SEGMENT */
+
 /* Do not show some warnings for the GASNet header for GCC (>= 4.6). */
 #ifdef __GNUC__
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
@@ -144,19 +154,25 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
           min_global_segsz / 1024 / 1024, maxmem / 1024 / 1024);
     }
 
+#if ALLOCATE_CACHE_IN_GASNET_SEGMENT
+    SAC_DISTMEM_segsz = min_global_segsz / SAC_DISTMEM_size;
+#else  /* ALLOCATE_CACHE_IN_GASNET_SEGMENT */
+    SAC_DISTMEM_segsz = min_global_segsz;
+#endif /* ALLOCATE_CACHE_IN_GASNET_SEGMENT */
+
     /*
      * Divide by and multiply with the page size because the segment size has to be a
      * multiple of the page size.
      */
-    SAC_DISTMEM_segsz
-      = min_global_segsz / SAC_DISTMEM_size / SAC_DISTMEM_pagesz * SAC_DISTMEM_pagesz;
+    SAC_DISTMEM_segsz = SAC_DISTMEM_segsz / SAC_DISTMEM_pagesz * SAC_DISTMEM_pagesz;
     SAC_DISTMEM_shared_seg_ptr = seg_info[SAC_DISTMEM_rank].addr;
 
+#if ALLOCATE_CACHE_IN_GASNET_SEGMENT
     /*
            * With GASNet the cache needs to lie within the segment.
            * When previously pinned pages are protected, this leads to an error:
            * FATAL ERROR: ibv_reg_mr failed in firehose_move_callback errno=14 (Bad
-       address)
+     address)
 
            * From readme:
            * In a GASNET_SEGMENT_FAST configuration, the GASNet
@@ -168,9 +184,18 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
            * preregistered bounce buffers, or dynamically register memory.  By
            * default firehose is used to manage registration of out-of-segment
            * memory.
+     *
+     * See also: https://upc-bugs.lbl.gov/bugzilla/show_bug.cgi?id=495
            */
     SAC_DISTMEM_cache_ptr
       = (void *)((uintptr_t)SAC_DISTMEM_shared_seg_ptr + SAC_DISTMEM_segsz);
+#else  /* ALLOCATE_CACHE_IN_GASNET_SEGMENT */
+    if ((SAC_DISTMEM_cache_ptr = mmap (NULL, (SAC_DISTMEM_size - 1) * SAC_DISTMEM_segsz,
+                                       PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0))
+        == (void *)-1) {
+        SAC_RuntimeError ("Error during mmap of cache: %d", errno);
+    }
+#endif /* ALLOCATE_CACHE_IN_GASNET_SEGMENT */
 }
 
 #if COMPILE_TRACE

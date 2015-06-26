@@ -148,6 +148,9 @@ SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_segfaults;
 /* Number of pointer calculations */
 SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_ptr_calcs;
 
+/* Number of avoided pointer calculations */
+SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs;
+
 /* Number of barriers */
 SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_barriers;
 
@@ -381,6 +384,29 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 /** <!--********************************************************************-->
  *
+ * @fn SAC_DISTMEM_RECHECK_AKS_IS_DIST( var_NT)
+ *
+ *   @brief   Rechecks at allocation time of an AKS array if it should still be
+ *            distributed and updates the mirror accordingly.
+ *
+ *            This check is necessary because the execution mode may have changed
+ *            since the declaration of the array.
+ *
+ *   @param  var_NT       the array in question
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_RECHECK_AKS_IS_DIST(var_NT)                                          \
+    SAC_TR_DISTMEM_PRINT ("Rechecking if array %s is distributed, was: %d, is: %d.",     \
+                          NT_STR (var_NT), SAC_ND_A_IS_DIST (var_NT),                    \
+                          SAC_ND_A_IS_DIST (var_NT)                                      \
+                            && SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_sync);     \
+    SAC_ND_A_MIRROR_IS_DIST (var_NT)                                                     \
+      = SAC_ND_A_IS_DIST (var_NT)                                                        \
+        && SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_sync;
+
+/** <!--********************************************************************-->
+ *
  * @fn SAC_DISTMEM_DET_OFFS( addr)
  *
  *   @brief   Calculates the offset of an address within the shared segment of this node.
@@ -395,6 +421,41 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
                                   - (uintptr_t)SAC_DISTMEM_shared_seg_ptr) (uintptr_t)   \
        addr                                                                              \
      - (uintptr_t)SAC_DISTMEM_shared_seg_ptr)
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_MOVE_PTR_FOR_WRITES( ptr)
+ *
+ *   @brief   Moves the pointer of a distributed array so that it can be treated like a
+ *            pointer to a non-DSM array for write accesses.
+ *
+ *   @param  ptr          pointer to the start of the local portion of the array
+ *   @param  first_elems  number of elements all nodes but the last node own
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_MOVE_PTR_FOR_WRITES(addr, first_elems)                               \
+    SAC_TR_DISTMEM_PRINT ("Moving pointer from %p to %p (first elems: %zd).", addr,      \
+                          addr - first_elems * SAC_DISTMEM_rank, first_elems);           \
+    addr -= first_elems * SAC_DISTMEM_rank;
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_GET_PTR_FOR_FREE( ptr)
+ *
+ *   @brief   Undoes SAC_DISTMEM_MOVE_PTR_FOR_WRITES for free.
+ *
+ *   @param  ptr          pointer
+ *
+ *   @return              pointer to the start of the local portion of the array
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_GET_PTR_FOR_FREE(addr, first_elems)                                  \
+    (SAC_TR_DISTMEM_PRINT_EXPR (                                                         \
+       "Getting pointer for free from %p: %p (first elems: %zd).", addr,                 \
+       addr + first_elems * SAC_DISTMEM_rank, first_elems) addr                          \
+     + first_elems * SAC_DISTMEM_rank)
 
 /** <!--********************************************************************-->
  *
@@ -1482,6 +1543,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
     _SAC_DISTMEM_TR_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_EXPR() SAC_DISTMEM_TR_num_avoided_ptr_calcs++,
+
 #elif SAC_DO_PROFILE_DISTMEM
 
 #define SAC_DISTMEM_INIT() SAC_DISTMEM_PR_Init (__argc, __argv);
@@ -1517,6 +1580,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
     _SAC_DISTMEM_PR_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_EXPR() SAC_DISTMEM_TR_num_avoided_ptr_calcs++,
+
 #else
 
 #define SAC_DISTMEM_INIT() SAC_DISTMEM_Init (__argc, __argv);
@@ -1550,6 +1615,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
     _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
+
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_EXPR()
 
 #endif
 

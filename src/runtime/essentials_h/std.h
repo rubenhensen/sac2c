@@ -716,20 +716,41 @@ typedef intptr_t *SAC_array_descriptor_t;
     SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
     SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))[to_pos]
 
-/* TODO: optimize away some pointer calculations */
+/*
+ * This ICM should be used whenever cache writes are not allowed
+ * for performance reasons. That is always the case except for
+ * the modarray primitive functions.
+ */
 #define SAC_ND_WRITE__DIS(to_NT, to_pos)                                                 \
     SAC_TR_AA_FPRINT ("%s write", to_NT, to_pos,                                         \
                       SAC_ND_A_IS_DIST (to_NT) ? "DSM" : "Non-DSM")                      \
     SAC_BC_WRITE (to_NT, to_pos)                                                         \
     SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
-    *(SAC_ND_A_IS_DIST (to_NT)                                                           \
-        ? (SAC_DISTMEM_CHECK_WRITE_ALLOWED (                                             \
-            SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT), SAC_NT_CBASETYPE (to_NT),   \
-                                      SAC_ND_A_FIRST_ELEMS (to_NT), to_pos),             \
-            to_NT, to_pos)                                                               \
-             SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT), SAC_NT_CBASETYPE (to_NT),  \
-                                       SAC_ND_A_FIRST_ELEMS (to_NT), to_pos))            \
-        : &SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))[to_pos])
+    SAC_DISTMEM_AVOIDED_PTR_CALC_EXPR ()                                                 \
+    SAC_DISTMEM_CHECK_WRITE_ALLOWED (SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT),    \
+                                                               SAC_NT_CBASETYPE (to_NT), \
+                                                               SAC_ND_A_FIRST_ELEMS (    \
+                                                                 to_NT),                 \
+                                                               to_pos),                  \
+                                     to_NT, to_pos)                                      \
+    SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))[to_pos]
+
+/*
+ * This ICM is for distributed arrays and should be used only when cache
+ * writes are allowed which is the case in the modarray primitive functions.
+ */
+#define SAC_ND_WRITE__DCA(to_NT, to_pos)                                                 \
+    SAC_TR_AA_PRINT ("DCA write", to_NT, to_pos)                                         \
+    SAC_BC_WRITE (to_NT, to_pos)                                                         \
+    SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
+    SAC_DISTMEM_CHECK_WRITE_ALLOWED (SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT),    \
+                                                               SAC_NT_CBASETYPE (to_NT), \
+                                                               SAC_ND_A_FIRST_ELEMS (    \
+                                                                 to_NT),                 \
+                                                               to_pos),                  \
+                                     to_NT, to_pos)                                      \
+    *SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT), SAC_NT_CBASETYPE (to_NT),          \
+                               SAC_ND_A_FIRST_ELEMS (to_NT), to_pos)
 
 /*
  * SAC_ND_WRITE_COPY implementations (referenced by sac_std_gen.h)
@@ -876,7 +897,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_DECL__DATA_(var_NT, basetype, decoration)                                 \
     decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT); /*                \
-FIXME Do not initialize for the time beinb, as value 0                                   \
+FIXME Do not initialize for the time being, as value 0                                   \
       does not work for SIMD types.                                                      \
 = ( SAC_ND_TYPE( var_NT, basetype)) 0;*/
 
@@ -1323,8 +1344,10 @@ FIXME Do not initialize for the time beinb, as value 0                          
         DESC_DIM (ndesc) = dim;                                                          \
     }
 
+/* FIXME: This doesn't work but probably it is never needed either. */
 #define SAC_DESC_ALLOC__DSM(ndesc, dim)                                                  \
     {                                                                                    \
+        SAC_ICM_UNDEF ();                                                                \
         if (SAC_ND_A_IS_DIST (var_NT)) {                                                 \
             SAC_ASSURE_TYPE ((dim >= 0), ("Illegal dimension for array %s found!",       \
                                           NT_STR (var_NT)));                             \
@@ -1422,11 +1445,14 @@ FIXME Do not initialize for the time beinb, as value 0                          
 
 #define SAC_ND_ALLOC__DATA_BASETYPE__AKS_DIS(var_NT, basetype)                           \
     {                                                                                    \
+        SAC_DISTMEM_RECHECK_AKS_IS_DIST (var_NT)                                         \
         if (SAC_ND_A_IS_DIST (var_NT)) {                                                 \
             SAC_ND_A_DESC_FIRST_ELEMS (var_NT) = SAC_ND_A_MIRROR_FIRST_ELEMS (var_NT)    \
               = SAC_DISTMEM_DET_MAX_ELEMS_PER_NODE (SAC_ND_A_SIZE (var_NT),              \
                                                     SAC_ND_A_SHAPE (var_NT, 0));         \
             SAC_ND_ALLOC__DATA_BASETYPE__AKS_DIS_DSM (var_NT, basetype)                  \
+            SAC_DISTMEM_MOVE_PTR_FOR_WRITES (SAC_ND_A_FIELD (var_NT),                    \
+                                             SAC_ND_A_FIRST_ELEMS (var_NT))              \
         } else {                                                                         \
             SAC_ND_ALLOC__DATA_BASETYPE__AKS (var_NT, basetype)                          \
         }                                                                                \
@@ -1460,6 +1486,8 @@ FIXME Do not initialize for the time beinb, as value 0                          
               = SAC_DISTMEM_DET_MAX_ELEMS_PER_NODE (SAC_ND_A_SIZE (var_NT),              \
                                                     SAC_ND_A_SHAPE (var_NT, 0));         \
             SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD_DIS_DSM (var_NT, basetype)              \
+            SAC_DISTMEM_MOVE_PTR_FOR_WRITES (SAC_ND_A_FIELD (var_NT),                    \
+                                             SAC_ND_A_FIRST_ELEMS (var_NT))              \
         } else {                                                                         \
             SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD (var_NT, basetype)                      \
         }                                                                                \
@@ -1537,6 +1565,7 @@ FIXME Do not initialize for the time beinb, as value 0                          
 
 #define SAC_ND_ALLOC__DESC_AND_DATA__AKS_DIS(var_NT, dim, basetype)                      \
     {                                                                                    \
+        SAC_DISTMEM_RECHECK_AKS_IS_DIST (var_NT)                                         \
         if (SAC_ND_A_IS_DIST (var_NT)) {                                                 \
             SAC_ASSURE_TYPE ((dim == SAC_ND_A_MIRROR_DIM (var_NT)),                      \
                              ("Inconsistant dimension for array %s found!",              \
@@ -1559,6 +1588,8 @@ FIXME Do not initialize for the time beinb, as value 0                          
             SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
             SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT)                  \
               = SAC_DISTMEM_DET_OFFS (SAC_ND_A_FIELD (var_NT));                          \
+            SAC_DISTMEM_MOVE_PTR_FOR_WRITES (SAC_ND_A_FIELD (var_NT),                    \
+                                             SAC_ND_A_FIRST_ELEMS (var_NT))              \
             SAC_CS_REGISTER_ARRAY (var_NT)                                               \
         } else {                                                                         \
             SAC_ND_ALLOC__DESC_AND_DATA__AKS (var_NT, dim, basetype)                     \
@@ -1639,7 +1670,26 @@ FIXME Do not initialize for the time beinb, as value 0                          
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
     }
 
-#define SAC_ND_FREE__DATA__AKS_NHD_DIS_DSM(var_NT, freefun)                              \
+/* TODO: Is the descriptor freed? */
+#define SAC_ND_FREE__DATA__AKS_NHD_DIS(var_NT, freefun)                                  \
+    {                                                                                    \
+        if (SAC_ND_A_IS_DIST (var_NT)) {                                                 \
+            SAC_DISTMEM_BARRIER ();                                                      \
+            SAC_TR_MEM_PRINT (("ND_FREE__DATA_DSM( %s, %s) at addr: %p",                 \
+                               NT_STR (var_NT), #freefun, SAC_ND_A_FIELD (var_NT)))      \
+            SAC_DISTMEM_HM_FREE_FIXED_SIZE (                                             \
+              SAC_DISTMEM_GET_PTR_FOR_FREE (SAC_ND_GETVAR (var_NT,                       \
+                                                           SAC_ND_A_FIELD (var_NT)),     \
+                                            SAC_ND_A_FIRST_ELEMS (var_NT)),              \
+              SAC_ND_A_FIRST_ELEMS (var_NT) * sizeof (*SAC_ND_A_FIELD (var_NT)))         \
+            SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_CS_UNREGISTER_ARRAY (var_NT)                                             \
+        } else {                                                                         \
+            SAC_ND_FREE__DATA__AKS_NHD (var_NT, freefun)                                 \
+        }                                                                                \
+    }
+
+#define SAC_ND_FREE__DATA__AKS_NHD_DSM(var_NT, freefun)                                  \
     {                                                                                    \
         if (SAC_ND_A_IS_DIST (var_NT)) {                                                 \
             SAC_DISTMEM_BARRIER ();                                                      \
@@ -1674,7 +1724,24 @@ FIXME Do not initialize for the time beinb, as value 0                          
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
     }
 
-#define SAC_ND_FREE__DATA__AKD_AUD_NHD_DIS_DSM(var_NT, freefun)                          \
+#define SAC_ND_FREE__DATA__AKD_AUD_NHD_DIS(var_NT, freefun)                              \
+    {                                                                                    \
+        if (SAC_ND_A_IS_DIST (var_NT)) {                                                 \
+            SAC_DISTMEM_BARRIER ();                                                      \
+            SAC_TR_MEM_PRINT (("ND_FREE__DATA_DSM( %s, %s) at addr: %p",                 \
+                               NT_STR (var_NT), #freefun, SAC_ND_A_FIELD (var_NT)))      \
+            SAC_DISTMEM_HM_FREE (                                                        \
+              SAC_DISTMEM_GET_PTR_FOR_FREE (SAC_ND_GETVAR (var_NT,                       \
+                                                           SAC_ND_A_FIELD (var_NT)),     \
+                                            SAC_ND_A_FIRST_ELEMS (var_NT)))              \
+            SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_CS_UNREGISTER_ARRAY (var_NT)                                             \
+        } else {                                                                         \
+            SAC_ND_FREE__DATA__AKD_NHD (var_NT, freefun)                                 \
+        }                                                                                \
+    }
+
+#define SAC_ND_FREE__DATA__AKD_AUD_NHD_DSM(var_NT, freefun)                              \
     {                                                                                    \
         if (SAC_ND_A_IS_DIST (var_NT)) {                                                 \
             SAC_DISTMEM_BARRIER ();                                                      \

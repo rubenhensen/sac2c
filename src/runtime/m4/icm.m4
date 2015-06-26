@@ -13,7 +13,7 @@ define(_star, `ifelse(`$1', `*SHP', `SCL, AKS, AKD, AUD, ___',
                       `$1', `*SCO', `SHR, GLO, ___',
                       `$1', `*USG', `TPM, TPA, TAG, TPO, FTA, FPM, FPA, FPO, FAG, NON, ___',
                       `$1', `*BIT', `YES, NOT, ___',
-                      `$1', `*DIS', `DIS, DSM, NDI, ___',
+                      `$1', `*DIS', `DIS, DSM, NDI, DCA, ___',
                       `$1', `*CBT', `INT, FLO, DOU, UCH, BOO, BYT, SHO, LON, LLO, UBY, USH, UIN, ULO, ULL, OTH, ___',
                       `errprint(`Unknown wild card "$1"
 ')')')
@@ -32,6 +32,7 @@ dnl FAG Funtion arg
 dnl NON None of the above
 
 dnl DIS Potentially distributed (allocated in DSM memory)
+dnl DCA Potentially distributed (allocated in DSM memory), cache writes are allowed
 dnl DSM Not distributed, but allocated in DSM memory
 dnl NDI Not distributed
 

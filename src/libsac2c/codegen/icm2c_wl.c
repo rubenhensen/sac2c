@@ -303,7 +303,9 @@ ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
                   to_NT, to_NT)
             ;
             indout ("SAC_RuntimeError( \"Tried to execute distributed with-loop in "
-                    "non-synchronous execution mode.\");\n");
+                    "non-synchronous execution mode (%s is distributed).\", NT_STR( "
+                    "%%s));\n",
+                    to_NT);
         IF_END ();
 
         indout ("const bool SAC_WL_IS_DISTRIBUTED = SAC_ND_A_IS_DIST( %s) && "
@@ -319,6 +321,7 @@ ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
         IF_BEGIN ("SAC_WL_IS_DISTRIBUTED")
             ;
             indout ("SAC_TR_DISTMEM_PRINT( \"Executing distributed with-loop.\");\n");
+            /* TODO: We should REALLY get rid of this barrier! */
             indout ("SAC_DISTMEM_BARRIER();\n");
             indout ("SAC_DISTMEM_SWITCH_TO_DIST_EXEC();\n");
             indout ("SAC_DISTMEM_ALLOW_DIST_WRITES();\n");
@@ -477,11 +480,18 @@ ICMCompileWL_SCHEDULE__END (int dims)
     if (global.backend == BE_distmem) {
         IF_BEGIN ("SAC_WL_IS_DISTRIBUTED")
             ;
+            indout (
+              "SAC_TR_DISTMEM_PRINT( \"Done executing distributed with-loop.\");\n");
             indout ("SAC_DISTMEM_SWITCH_TO_SYNC_EXEC();\n");
             indout ("SAC_DISTMEM_INVAL_CACHE( SAC_WL_DIST_OFFS, SAC_WL_DIST_BYTES);\n");
             indout ("SAC_DISTMEM_FORBID_DIST_WRITES();\n");
             indout ("SAC_DISTMEM_BARRIER();\n");
         IF_END ();
+        ELSE_BEGIN ()
+            ;
+            indout (
+              "SAC_TR_DISTMEM_PRINT( \"Done executing non-distributed with-loop.\");\n");
+        ELSE_END ();
     }
 
     global.indent--;
@@ -588,6 +598,9 @@ ICMCompileWL_DISTMEM_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
             indout (
               "SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n",
               sub_NT, sub_NT);
+            indout ("SAC_TR_DISTMEM_PRINT( \"%%s is not distributed because it is "
+                    "sub-allocated.\", NT_STR( %s));\n",
+                    sub_NT);
         IF_END ();
     }
 
@@ -600,8 +613,7 @@ ICMCompileWL_DISTMEM_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
             ;
             /* The outer array (and possibly with-loop) are distributed. */
             /* The inner array is sub-allocated in DSM memory. */
-            indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_DESC_IS_DIST( %s) = TRUE;\n",
-                    sub_NT, sub_NT);
+
             /* Get the pointer to the start of the sub-allocated array. */
             indout ("SAC_ND_GETVAR(%s, SAC_ND_A_FIELD( %s)) = "
                     "SAC_DISTMEM_ELEM_POINTER(SAC_ND_A_OFFS( %s), SAC_NT_CBASETYPE( %s),"

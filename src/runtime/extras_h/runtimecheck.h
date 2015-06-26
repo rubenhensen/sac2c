@@ -160,7 +160,7 @@
        : FALSE)
 
 #define SAC_DISTMEM_CHECK_WRITE_ALLOWED(ptr, var_NT, pos)                                \
-    ((_SAC_DISTMEM_CHECK_IS_LEGAL_FOR_LOCAL_WRITE (ptr)                                  \
+    ((!SAC_ND_A_IS_DIST (var_NT) || _SAC_DISTMEM_CHECK_IS_LEGAL_FOR_LOCAL_WRITE (ptr)    \
       || _SAC_DISTMEM_CHECK_IS_LEGAL_FOR_CACHE_WRITE (ptr))                              \
        ? 0                                                                               \
        : (SAC_RuntimeError ("Illegal write access to distributed array %s"               \

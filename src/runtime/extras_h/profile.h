@@ -372,14 +372,16 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
 #define SAC_PF_PRINT_DISTMEM()                                                           \
     {                                                                                    \
         SAC_PF_PrintHeader ("Distributed Memory Backend Profile");                       \
-        SAC_PF_PrintCount ("Distributed arrays:", SAC_PF_COUNT_SPACE,                    \
-                           SAC_DISTMEM_TR_num_arrays);                                   \
+        /*TODO SAC_PF_PrintCount("Distributed arrays:", SAC_PF_COUNT_SPACE,              \
+         * SAC_DISTMEM_TR_num_arrays);*/                                                 \
         SAC_PF_PrintCount ("Invalidated pages:", SAC_PF_COUNT_SPACE,                     \
                            SAC_DISTMEM_TR_num_inval_pages);                              \
         SAC_PF_PrintCount ("Seg faults/page fetches: ", SAC_PF_COUNT_SPACE,              \
                            SAC_DISTMEM_TR_num_segfaults);                                \
         SAC_PF_PrintCount ("Pointer calculations: ", SAC_PF_COUNT_SPACE,                 \
                            SAC_DISTMEM_TR_num_ptr_calcs);                                \
+        SAC_PF_PrintCount ("Avoided pointer calculations: ", SAC_PF_COUNT_SPACE,         \
+                           SAC_DISTMEM_TR_num_avoided_ptr_calcs);                        \
         SAC_PF_PrintCount ("Barriers: ", SAC_PF_COUNT_SPACE,                             \
                            SAC_DISTMEM_TR_num_barriers);                                 \
     }
