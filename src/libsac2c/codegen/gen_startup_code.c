@@ -569,8 +569,8 @@ PrintGlobalSettings (node *syntax_tree)
                  "#define SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE         %d\n",
                  global.distmem_min_elems_per_node);
         fprintf (global.outfile,
-                 "#define SAC_SET_DISTMEM_TRACE_NODE                 %d\n",
-                 global.distmem_trace_node);
+                 "#define SAC_SET_DISTMEM_TRACE_PROFILE_NODE         %d\n",
+                 global.distmem_tr_pf_node);
     }
 
     DBUG_RETURN ();
@@ -758,6 +758,10 @@ GSCprintMainEnd (void)
     /*
      * global.outfile is already indented by 2
      */
+    INDENT;
+    /* We put the barrier here because the dsm memory is not
+     * used anymore and otherwise the profiling may be incorrect. */
+    fprintf (global.outfile, "SAC_DISTMEM_BARRIER();\n");
     INDENT;
     fprintf (global.outfile, "SAC_PF_PRINT();\n");
     INDENT;

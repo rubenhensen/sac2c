@@ -679,9 +679,9 @@ typedef intptr_t *SAC_array_descriptor_t;
        SAC_BC_READ (from_NT, from_pos) SAC_CS_READ_ARRAY (from_NT, from_pos) (           \
          SAC_ND_A_IS_DIST (from_NT)                                                      \
            ? (SAC_DISTMEM_CHECK_READ_ALLOWED (                                           \
-                SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (from_NT),                       \
-                                          SAC_NT_CBASETYPE (from_NT),                    \
-                                          SAC_ND_A_FIRST_ELEMS (from_NT), from_pos),     \
+                _SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (from_NT),                      \
+                                           SAC_NT_CBASETYPE (from_NT),                   \
+                                           SAC_ND_A_FIRST_ELEMS (from_NT), from_pos),    \
                 from_NT, from_pos)                                                       \
               * SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (from_NT),                       \
                                           SAC_NT_CBASETYPE (from_NT),                    \
@@ -727,11 +727,12 @@ typedef intptr_t *SAC_array_descriptor_t;
     SAC_BC_WRITE (to_NT, to_pos)                                                         \
     SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
     SAC_DISTMEM_AVOIDED_PTR_CALC_EXPR ()                                                 \
-    SAC_DISTMEM_CHECK_WRITE_ALLOWED (SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT),    \
-                                                               SAC_NT_CBASETYPE (to_NT), \
-                                                               SAC_ND_A_FIRST_ELEMS (    \
-                                                                 to_NT),                 \
-                                                               to_pos),                  \
+    SAC_DISTMEM_CHECK_WRITE_ALLOWED (_SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT),   \
+                                                                SAC_NT_CBASETYPE (       \
+                                                                  to_NT),                \
+                                                                SAC_ND_A_FIRST_ELEMS (   \
+                                                                  to_NT),                \
+                                                                to_pos),                 \
                                      to_NT, to_pos)                                      \
     SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))[to_pos]
 
@@ -743,11 +744,12 @@ typedef intptr_t *SAC_array_descriptor_t;
     SAC_TR_AA_PRINT ("DCA write", to_NT, to_pos)                                         \
     SAC_BC_WRITE (to_NT, to_pos)                                                         \
     SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
-    SAC_DISTMEM_CHECK_WRITE_ALLOWED (SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT),    \
-                                                               SAC_NT_CBASETYPE (to_NT), \
-                                                               SAC_ND_A_FIRST_ELEMS (    \
-                                                                 to_NT),                 \
-                                                               to_pos),                  \
+    SAC_DISTMEM_CHECK_WRITE_ALLOWED (_SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT),   \
+                                                                SAC_NT_CBASETYPE (       \
+                                                                  to_NT),                \
+                                                                SAC_ND_A_FIRST_ELEMS (   \
+                                                                  to_NT),                \
+                                                                to_pos),                 \
                                      to_NT, to_pos)                                      \
     *SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT), SAC_NT_CBASETYPE (to_NT),          \
                                SAC_ND_A_FIRST_ELEMS (to_NT), to_pos)

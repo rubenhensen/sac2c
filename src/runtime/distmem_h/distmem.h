@@ -25,10 +25,10 @@
  * We always declare this variable for tracing purposes. */
 SAC_C_EXTERN_VAR size_t SAC_DISTMEM_rank;
 
-/* If not equal to SAC_DISTMEM_TRACE_RANK_ANY, only produce
+/* If not equal to SAC_DISTMEM_TRACE_PROFILE_RANK_ANY, only produce
  * trace output for this rank.
  * We always declare this variable for tracing purposes. */
-SAC_C_EXTERN_VAR int SAC_DISTMEM_trace_rank;
+SAC_C_EXTERN_VAR int SAC_DISTMEM_trace_profile_rank;
 
 /** <!--********************************************************************-->
  *
@@ -47,9 +47,14 @@ SAC_C_EXTERN_VAR int SAC_DISTMEM_trace_rank;
 
 void SAC_DISTMEM_Exit (int exit_code);
 
-/* For tracing purposes. */
+/* For tracing purposes we define the following macros also when
+ * the distributed memory backend is not used. */
+
 #define SAC_DISTMEM_RANK_UNDEFINED SIZE_MAX
-#define SAC_DISTMEM_TRACE_RANK_ANY -1
+#define SAC_DISTMEM_TRACE_PROFILE_RANK_ANY -1
+
+/* Master node. Only this nodes executes functions with side-effects. */
+#define SAC_DISTMEM_RANK_MASTER 0
 
 #if SAC_DO_DISTMEM
 
@@ -73,9 +78,6 @@ extern void *memset (void *s, int c, size_t n);
 #ifndef memcpy
 extern void *memcpy (void *dest, const void *src, size_t n);
 #endif
-
-/* Master node. Only this nodes executes functions with side-effects. */
-#define SAC_DISTMEM_RANK_MASTER 0
 
 /* Type for the execution mode */
 typedef enum SAC_DISTMEM_exec_mode_enum {
@@ -135,10 +137,6 @@ SAC_C_EXTERN_VAR size_t SAC_DISTMEM_min_elems_per_node;
  * tracing/profiling
  *******************************************/
 
-/* Number of distributed arrays */
-/* TODO: Do we still need this with the diagnostic heap manager? */
-SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_arrays;
-
 /* Number of invalidated pages */
 SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_inval_pages;
 
@@ -190,7 +188,7 @@ void SAC_DISTMEM_Init (int argc, char *argv[]);
 /** <!--********************************************************************-->
  *
  * @fn void SAC_DISTMEM_Setup( size_t maxmem_mb, size_t min_elems_per_node, int
- *trace_rank)
+ *trace_profile_rank)
  *
  *   @brief    Sets up the dsm systemn so that it is ready for use.
  *
@@ -202,12 +200,13 @@ void SAC_DISTMEM_Init (int argc, char *argv[]);
  *   @param maxmem_mb             amount of memory to use for the dsm system in MB
  *   @param min_elems_per_node    minimum number of elements per node such that
  *                                an array gets distributed
- *   @param trace_rank            If not equal to SAC_DISTMEM_TRACE_RANK_ANY, only
+ *   @param trace_profile_rank    If not equal to SAC_DISTMEM_TRACE_PROFILE_RANK_ANY, only
  *                                produce trace output for the provided rank.
  *
  ******************************************************************************/
 
-void SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank);
+void SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node,
+                        int trace_profile_rank);
 
 /** <!--********************************************************************-->
  *
@@ -321,7 +320,8 @@ size_t SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t sto
 
 void SAC_DISTMEM_TR_Init (int argc, char *argv[]);
 
-void SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank);
+void SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node,
+                           int trace_profile_rank);
 
 void SAC_DISTMEM_TR_InvalEntireCache (void);
 
@@ -353,7 +353,8 @@ void SAC_DISTMEM_TR_IncNumPtrCalcs (void);
 
 void SAC_DISTMEM_PR_Init (int argc, char *argv[]);
 
-void SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank);
+void SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node,
+                           int trace_profile_rank);
 
 void SAC_DISTMEM_PR_InvalEntireCache (void);
 
@@ -473,6 +474,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_SWITCH_TO_DIST_EXEC()                                                \
     SAC_TR_DISTMEM_PRINT ("Switching to distributed execution mode.");                   \
     SAC_DISTMEM_CHECK_IS_SWITCH_TO_DIST_EXEC_ALLOWED ()                                  \
+    SAC_PF_BEGIN_EXEC_DIST ()                                                            \
     SAC_DISTMEM_exec_mode = SAC_DISTMEM_exec_mode_dist;                                  \
     SAC_DISTMEM_FORBID_DSM_ALLOCS ();
 
@@ -494,6 +496,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
     }                                                                                    \
     SAC_TR_DISTMEM_PRINT ("Switching to synchronous execution mode.");                   \
     SAC_DISTMEM_CHECK_IS_SWITCH_TO_SYNC_EXEC_ALLOWED ()                                  \
+    SAC_PF_END_EXEC_MODE ()                                                              \
     SAC_DISTMEM_exec_mode = SAC_DISTMEM_exec_mode_sync;
 
 /** <!--********************************************************************-->
@@ -528,6 +531,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_SWITCH_TO_SIDE_EFFECTS_OUTER_EXEC()                                  \
     SAC_TR_DISTMEM_PRINT ("Switching to side effects outer execution mode.");            \
     SAC_DISTMEM_CHECK_IS_SWITCH_TO_SIDE_EFFECTS_OUTER_EXEC_ALLOWED ()                    \
+    SAC_PF_BEGIN_EXEC_SIDE_EFFECTS ()                                                    \
     SAC_DISTMEM_exec_mode = SAC_DISTMEM_exec_mode_side_effects_outer;
 
 /** <!--********************************************************************-->
@@ -1515,7 +1519,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_SETUP()                                                              \
     SAC_DISTMEM_TR_Setup (SAC_SET_DISTMEM_MAX_MEMORY_MB,                                 \
                           SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE,                            \
-                          SAC_SET_DISTMEM_TRACE_NODE);
+                          SAC_SET_DISTMEM_TRACE_PROFILE_NODE);
 
 #define SAC_DISTMEM_INVAL_ENTIRE_CACHE() SAC_DISTMEM_TR_InvalEntireCache ();
 
@@ -1524,7 +1528,10 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_INVAL_CACHE_OF_NODE(arr_offset, node, b)                             \
     SAC_DISTMEM_TR_InvalCacheOfNode (arr_offset, node, b);
 
-#define SAC_DISTMEM_BARRIER() SAC_DISTMEM_TR_Barrier ();
+#define SAC_DISTMEM_BARRIER()                                                            \
+    SAC_PF_BEGIN_BARRIER ()                                                              \
+    SAC_DISTMEM_TR_Barrier ();                                                           \
+    SAC_PF_END_BARRIER ()
 
 #define SAC_DISTMEM_EXIT(exit_code) SAC_DISTMEM_TR_Exit (exit_code);
 
@@ -1552,7 +1559,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_SETUP()                                                              \
     SAC_DISTMEM_PR_Setup (SAC_SET_DISTMEM_MAX_MEMORY_MB,                                 \
                           SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE,                            \
-                          SAC_SET_DISTMEM_TRACE_NODE);
+                          SAC_SET_DISTMEM_TRACE_PROFILE_NODE);
 
 #define SAC_DISTMEM_INVAL_ENTIRE_CACHE() SAC_DISTMEM_PR_InvalEntireCache ();
 
@@ -1561,7 +1568,10 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_INVAL_CACHE_OF_NODE(arr_offset, node, b)                             \
     SAC_DISTMEM_PR_InvalCacheOfNode (arr_offset, node, b);
 
-#define SAC_DISTMEM_BARRIER() SAC_DISTMEM_PR_Barrier ();
+#define SAC_DISTMEM_BARRIER()                                                            \
+    SAC_PF_BEGIN_BARRIER ()                                                              \
+    SAC_DISTMEM_PR_Barrier ();                                                           \
+    SAC_PF_END_BARRIER ()
 
 #define SAC_DISTMEM_EXIT(exit_code) SAC_DISTMEM_PR_Exit (exit_code);
 
@@ -1588,7 +1598,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define SAC_DISTMEM_SETUP()                                                              \
     SAC_DISTMEM_Setup (SAC_SET_DISTMEM_MAX_MEMORY_MB,                                    \
-                       SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE, SAC_SET_DISTMEM_TRACE_NODE);
+                       SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE,                               \
+                       SAC_SET_DISTMEM_TRACE_PROFILE_NODE);
 
 #define SAC_DISTMEM_INVAL_ENTIRE_CACHE() SAC_DISTMEM_InvalEntireCache ();
 
@@ -1628,6 +1639,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *******************************************/
 
 #define SAC_DISTMEM_EXIT(exit_code) SAC_DISTMEM_Exit (exit_code);
+
+#define SAC_DISTMEM_BARRIER()
 
 /*
  * We do not define the other macros because they

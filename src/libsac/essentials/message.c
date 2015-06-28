@@ -188,6 +188,31 @@ SAC_RuntimeWarning (char *format, ...)
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 }
 
+/* Prints a runtime warning only at the master node.
+ * Useful for warnings that are not node- but program-specific. */
+void
+SAC_RuntimeWarningMaster (char *format, ...)
+{
+    va_list arg_p;
+
+    if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED
+        || SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER) {
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
+
+        fprintf (stderr, "\n\n*** SAC runtime warning\n");
+
+        fprintf (stderr, "*** ");
+
+        va_start (arg_p, format);
+        vfprintf (stderr, format, arg_p);
+        va_end (arg_p);
+
+        fprintf (stderr, "\n\n");
+
+        SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
+    }
+}
+
 #define MAX_SHAPE_SIZE 255
 
 const char *

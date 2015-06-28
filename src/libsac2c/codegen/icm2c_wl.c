@@ -321,8 +321,11 @@ ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
         IF_BEGIN ("SAC_WL_IS_DISTRIBUTED")
             ;
             indout ("SAC_TR_DISTMEM_PRINT( \"Executing distributed with-loop.\");\n");
-            /* TODO: We should REALLY get rid of this barrier! */
+            /* TODO: Maybe we can get rid of this barrier in some cases? It is required
+             * because of a possible anti-dependency only. */
             indout ("SAC_DISTMEM_BARRIER();\n");
+            /* Perform the switch after the barrier so that the profiling of the execution
+             * modes is correct. */
             indout ("SAC_DISTMEM_SWITCH_TO_DIST_EXEC();\n");
             indout ("SAC_DISTMEM_ALLOW_DIST_WRITES();\n");
         IF_END ();
@@ -482,10 +485,12 @@ ICMCompileWL_SCHEDULE__END (int dims)
             ;
             indout (
               "SAC_TR_DISTMEM_PRINT( \"Done executing distributed with-loop.\");\n");
-            indout ("SAC_DISTMEM_SWITCH_TO_SYNC_EXEC();\n");
             indout ("SAC_DISTMEM_INVAL_CACHE( SAC_WL_DIST_OFFS, SAC_WL_DIST_BYTES);\n");
-            indout ("SAC_DISTMEM_FORBID_DIST_WRITES();\n");
             indout ("SAC_DISTMEM_BARRIER();\n");
+            /* Perform the switch after the barrier so that the profiling of the execution
+             * modes is correct. */
+            indout ("SAC_DISTMEM_SWITCH_TO_SYNC_EXEC();\n");
+            indout ("SAC_DISTMEM_FORBID_DIST_WRITES();\n");
         IF_END ();
         ELSE_BEGIN ()
             ;
@@ -772,6 +777,13 @@ ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
     if (val_dim == 0 || to_dim == dims) {
         indout ("SAC_ND_WRITE_READ_COPY( %s, SAC_ND_READ( %s, 0), %s, 0, %s);\n", to_NT,
                 off_NT, val_NT, copyfun);
+    } else if (global.backend == BE_distmem) { // TODO: optimize
+        FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_SIZE( %s); SAC_i++", val_NT)
+            ;
+            indout ("SAC_ND_WRITE_READ_COPY( %s, SAC_ND_READ( %s, 0) + SAC_i, "
+                    "%s, SAC_i, %s);\n",
+                    to_NT, off_NT, val_NT, copyfun);
+        FOR_LOOP_END ();
     } else {
         FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_SIZE( %s); SAC_i++", val_NT)
             ;

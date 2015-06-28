@@ -30,7 +30,9 @@ static UNUSED int SAC_DISTMEM_COMMLIB_GASNET_dummy;
 
 /* Specifies whether the cache should be allocated in the GASNet segment.
  * If this is set to FALSE, the cache will be allocated using mmap. */
-#define ALLOCATE_CACHE_IN_GASNET_SEGMENT FALSE
+//#define ALLOCATE_CACHE_IN_GASNET_SEGMENT FALSE
+
+#define ALLOCATE_CACHE_IN_GASNET_SEGMENT TRUE
 
 #if !ALLOCATE_CACHE_IN_GASNET_SEGMENT
 
@@ -126,6 +128,7 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
 
     /* Global minimum of optimistic maximum shared segment size */
     size_t max_global_segsz = gasnet_getMaxGlobalSegmentSize ();
+    SAC_TR_DISTMEM_PRINT ("Max. global seg size: %zd", max_global_segsz);
 
     /*
      * Determine minimum of:
@@ -169,24 +172,25 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
 
 #if ALLOCATE_CACHE_IN_GASNET_SEGMENT
     /*
-           * With GASNet the cache needs to lie within the segment.
-           * When previously pinned pages are protected, this leads to an error:
-           * FATAL ERROR: ibv_reg_mr failed in firehose_move_callback errno=14 (Bad
-     address)
-
-           * From readme:
-           * In a GASNET_SEGMENT_FAST configuration, the GASNet
-           * segment is registered (pinned) with the HCA at initialization time,
-           * because pinning is required for RDMA.  However, GASNet allows for
-           * local addresses (source of a PUT or destination of a GET) to lie
-           * outside of the GASNet segment.  So, to perform RDMA GETs and PUTs,
-           * ibv-conduit must either copy out-of-segment transfers though
-           * preregistered bounce buffers, or dynamically register memory.  By
-           * default firehose is used to manage registration of out-of-segment
-           * memory.
+     * With GASNet the cache needs to lie within the segment.
+     * When previously pinned pages are protected, this leads to an error:
+     * FATAL ERROR: ibv_reg_mr failed in firehose_move_callback errno=14 (Bad address)
+     *
+     * This happens for instance with convolution_measure.sac
+     *
+     * From readme:
+     * In a GASNET_SEGMENT_FAST configuration, the GASNet
+     * segment is registered (pinned) with the HCA at initialization time,
+     * because pinning is required for RDMA.  However, GASNet allows for
+     * local addresses (source of a PUT or destination of a GET) to lie
+     * outside of the GASNet segment.  So, to perform RDMA GETs and PUTs,
+     * ibv-conduit must either copy out-of-segment transfers though
+     * preregistered bounce buffers, or dynamically register memory.  By
+     * default firehose is used to manage registration of out-of-segment
+     * memory.
      *
      * See also: https://upc-bugs.lbl.gov/bugzilla/show_bug.cgi?id=495
-           */
+     */
     SAC_DISTMEM_cache_ptr
       = (void *)((uintptr_t)SAC_DISTMEM_shared_seg_ptr + SAC_DISTMEM_segsz);
 #else  /* ALLOCATE_CACHE_IN_GASNET_SEGMENT */
@@ -195,6 +199,11 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
         == (void *)-1) {
         SAC_RuntimeError ("Error during mmap of cache: %d", errno);
     }
+
+    SAC_RuntimeWarningMaster (
+      "The cache has been registered outside of the GASNet segment which can cause bugs. "
+      "If you experience the following error this is probably the reason: FATAL ERROR: "
+      "ibv_reg_mr failed in firehose_move_callback errno=14 (Bad address)");
 #endif /* ALLOCATE_CACHE_IN_GASNET_SEGMENT */
 }
 

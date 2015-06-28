@@ -406,8 +406,8 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (char *name, char *r
      * For now we assume that the return value is unique (and therefore only used by the
      * master node) and initialize it to NULL at the worker nodes. */
     if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) == C_hid) {
-        indout ("SAC_RuntimeWarning( \"The distributed memory backend does not support "
-                "hidden non-unique return "
+        indout ("SAC_RuntimeWarningMaster( \"The distributed memory backend does not "
+                "support hidden non-unique return "
                 "values in function applications with side-effects (while calling "
                 "function: %s). "
                 "We assume that the return value is unique and initialize it to NULL. If "
@@ -423,8 +423,8 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (char *name, char *r
 #define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
     if (STReq (it_text, vararg[i]) && it_out                                             \
         && ICUGetHiddenClass (vararg_NT[i / 3]) == C_hid) {                              \
-        indout ("SAC_RuntimeWarning( \"The distributed memory backend does not support " \
-                "hidden non-unique "                                                     \
+        indout ("SAC_RuntimeWarningMaster( \"The distributed memory backend does not "   \
+                "support hidden non-unique "                                             \
                 "out arguments in function applications with side-effects (argument "    \
                 "%%s of function %s). "                                                  \
                 "We assume that the out argument is unique and initialize it to NULL. "  \
@@ -649,6 +649,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt, char **vararg_
         ;
         /* It is important that we are in a block at this point because the variables
          * declared by the broadcast operations are only needed within the block. */
+
         indout ("SAC_DISTMEM_BARRIER();\n");
 
         IF_BEGIN ("SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER")

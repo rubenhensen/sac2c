@@ -27,6 +27,7 @@
 #elif COMPILE_PROFILE
 #define SAC_DO_PROFILE 1
 #define SAC_DO_PROFILE_DISTMEM 1
+#define SAC_DO_COMPILE_MODULE 1
 #endif
 #define SAC_DO_DISTMEM 1
 
@@ -36,6 +37,7 @@
 #undef SAC_DO_TRACE_DISTMEM
 #undef SAC_DO_PROFILE
 #undef SAC_DO_PROFILE_DISTMEM
+#undef SAC_DO_COMPILE_MODULE
 #undef SAC_DO_DISTMEM
 
 #include "distmem_commlib.h"
@@ -60,12 +62,12 @@ static UNUSED int SAC_DISTMEM_COMMLIB_dummy;
 size_t SAC_DISTMEM_rank = SAC_DISTMEM_RANK_UNDEFINED;
 
 /*
- * If not equal to SAC_DISTMEM_TRACE_RANK_ANY, only produce
+ * If not equal to SAC_DISTMEM_TRACE_PROFILE_RANK_ANY, only produce
  * trace output for this rank.
  * For tracing purposes we also need this when the distributed memory backend
  * is disabled. Therefore, it is also included into libsacdistmem.nodistmem
  */
-int SAC_DISTMEM_trace_rank = SAC_DISTMEM_TRACE_RANK_ANY;
+int SAC_DISTMEM_trace_profile_rank = SAC_DISTMEM_TRACE_PROFILE_RANK_ANY;
 
 #endif /* COMPILE_PLAIN */
 
@@ -166,9 +168,6 @@ size_t SAC_DISTMEM_min_elems_per_node;
  * Global variables used for
  * tracing/profiling
  *******************************************/
-
-/* Number of distributed arrays */
-unsigned long SAC_DISTMEM_TR_num_arrays = 0;
 
 /* Number of invalidated pages */
 unsigned long SAC_DISTMEM_TR_num_inval_pages = 0;
@@ -310,19 +309,19 @@ SAC_DISTMEM_Init (int argc, char *argv[])
 
 #if COMPILE_TRACE
 void
-SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank)
+SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profile_rank)
 #elif COMPILE_PROFILE
 void
-SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank)
+SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profile_rank)
 #else /* COMPILE_PLAIN */
 void
-SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank)
+SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profile_rank)
 #endif
 {
     size_t i;
 
     SAC_DISTMEM_min_elems_per_node = min_elems_per_node;
-    SAC_DISTMEM_trace_rank = trace_rank;
+    SAC_DISTMEM_trace_profile_rank = trace_profile_rank;
 
     /* Query system page size */
     int pagesz = sysconf (_SC_PAGE_SIZE);
@@ -387,7 +386,9 @@ SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank)
     SAC_DISTMEM_CH_max_valid_write_ptr
       = (uintptr_t)SAC_DISTMEM_shared_seg_ptr + SAC_DISTMEM_segsz;
 
-    SAC_DISTMEM_BARRIER ();
+    /* We cannot profile this barrier because otherwise libsacdistmem doesn't compile.
+     * Since we always need this barrier it wouldn't be useful anyways. */
+    SAC_DISTMEM_Barrier ();
 }
 
 #if COMPILE_TRACE
@@ -494,8 +495,6 @@ SAC_DISTMEM_Exit (int exit_code)
 
     SAC_TR_DISTMEM_PRINT ("Exiting communication library with exit code %d.", exit_code);
 
-    // TODO: can probably be removed
-    // SAC_TR_DISTMEM_PRINT( "   Distributed arrays: %lu",  SAC_DISTMEM_TR_num_arrays);
     SAC_TR_DISTMEM_PRINT ("   Invalidated pages: %lu", SAC_DISTMEM_TR_num_inval_pages);
     SAC_TR_DISTMEM_PRINT ("   Seg faults: %lu", SAC_DISTMEM_TR_num_segfaults);
     SAC_TR_DISTMEM_PRINT ("   Pointer calculations: %lu", SAC_DISTMEM_TR_num_ptr_calcs);
@@ -503,7 +502,9 @@ SAC_DISTMEM_Exit (int exit_code)
                           SAC_DISTMEM_TR_num_avoided_ptr_calcs);
     SAC_TR_DISTMEM_PRINT ("   Barriers: %lu", SAC_DISTMEM_TR_num_barriers);
 
-    SAC_DISTMEM_BARRIER ();
+    /* We cannot profile this barrier because otherwise libsacdistmem doesn't compile.
+     * Since we always need this barrier it wouldn't be useful anyways. */
+    SAC_DISTMEM_Barrier ();
     SAC_DISTMEM_COMMLIB_EXIT (exit_code);
 }
 

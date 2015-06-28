@@ -542,7 +542,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION ("distmem_min_elems",
                  ARG_RANGE (global.distmem_min_elems_per_node, 10, 1000));
 
-    ARGS_OPTION ("distmem_trace_node", ARG_RANGE (global.distmem_trace_node, -1, 1000));
+    ARGS_OPTION ("distmem_tr_pf_node", ARG_RANGE (global.distmem_tr_pf_node, -1, 1000));
 
 #ifndef DBUG_OFF
 

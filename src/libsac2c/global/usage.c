@@ -609,8 +609,8 @@ PrintDistMemOptions (void)
             "that an array\n"
             "                           gets distributed (default: %d elements)\n"
             "\n"
-            "    -distmem_trace_node <n> Only produce trace output at the node with this "
-            "rank (-1 = all nodes).\n"
+            "    -distmem_tr_pf_node <n> Only produce trace and profile output at the "
+            "node with this rank (-1 = all nodes).\n"
             "                            (default: %d elements)\n"
             "\n"
             "    -numprocs <n>   Specify at compile time the exact number of processes "
@@ -625,7 +625,7 @@ PrintDistMemOptions (void)
             "                      (default: %d)\n"
             "\n",
             global.distmem_max_memory_mb, global.distmem_min_elems_per_node,
-            global.distmem_trace_node, global.max_procs);
+            global.distmem_tr_pf_node, global.max_procs);
 
     DBUG_RETURN ();
 }
