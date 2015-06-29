@@ -523,7 +523,7 @@ SAC_DISTMEM_DetDoDistrArr (size_t total_elems, size_t dim0_size)
 
     if (SAC_DISTMEM_exec_mode != SAC_DISTMEM_exec_mode_sync) {
         SAC_TR_DISTMEM_PRINT ("Array is not distributed because program is not in "
-                              "synchronous execution mode.");
+                              "replicated execution mode.");
         return FALSE;
     }
 

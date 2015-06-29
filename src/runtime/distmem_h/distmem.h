@@ -81,7 +81,8 @@ extern void *memcpy (void *dest, const void *src, size_t n);
 
 /* Type for the execution mode */
 typedef enum SAC_DISTMEM_exec_mode_enum {
-    SAC_DISTMEM_exec_mode_sync, /* All nodes are executing the same code. */
+    SAC_DISTMEM_exec_mode_sync, /* All nodes are executing the same code. TODO: Rename to
+                                   replicated */
     SAC_DISTMEM_exec_mode_dist, /* Each node is executing its share of work. */
     SAC_DISTMEM_exec_mode_side_effects_outer, /* The master node is executing the
                                                  most-outer function with side-effects. */
@@ -482,9 +483,9 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  * @fn SAC_DISTMEM_SWITCH_TO_SYNC_EXEC()
  *
- *   @brief   Switches to synchronous execution mode.
+ *   @brief   Switches to replicated execution mode.
  *
- *            In synchronous execution mode, all nodes are executing the same program in
+ *            In replicated execution mode, all nodes are executing the same program in
  *parallel. If the previous execution mode was distributed, allows allocations in the DSM
  *segment again.
  *
@@ -494,7 +495,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
     if (SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_dist) {                           \
         SAC_DISTMEM_ALLOW_DSM_ALLOCS ();                                                 \
     }                                                                                    \
-    SAC_TR_DISTMEM_PRINT ("Switching to synchronous execution mode.");                   \
+    SAC_TR_DISTMEM_PRINT ("Switching to replicated execution mode.");                    \
     SAC_DISTMEM_CHECK_IS_SWITCH_TO_SYNC_EXEC_ALLOWED ()                                  \
     SAC_PF_END_EXEC_MODE ()                                                              \
     SAC_DISTMEM_exec_mode = SAC_DISTMEM_exec_mode_sync;
