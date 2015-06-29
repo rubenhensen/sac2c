@@ -32,6 +32,7 @@
 #include "constants.h"
 #include "string.h"
 #include "new_typecheck.h"
+#include "globals.h"
 
 #define DBUG_PREFIX "EMAL"
 #include "debug.h"
