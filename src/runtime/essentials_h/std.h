@@ -529,6 +529,23 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_A_MIRROR_FIRST_ELEMS__UNDEF(var_NT) SAC_ICM_UNDEF ()
 
+/*
+ * SAC_ND_A_MIRROR_LOCAL_FROM implementations (referenced by sac_std_gen.h)
+ */
+
+#define SAC_ND_A_MIRROR_LOCAL_FROM__DEFAULT(var_NT)                                      \
+    CAT12 (NT_NAME (var_NT), __dm_localFrom)
+
+#define SAC_ND_A_MIRROR_LOCAL_FROM__UNDEF(var_NT) SAC_ICM_UNDEF ()
+
+/*
+ * SAC_ND_A_MIRROR_LOCAL_TO implementations (referenced by sac_std_gen.h)
+ */
+
+#define SAC_ND_A_MIRROR_LOCAL_TO__DEFAULT(var_NT) CAT12 (NT_NAME (var_NT), __dm_localTo)
+
+#define SAC_ND_A_MIRROR_LOCAL_TO__UNDEF(var_NT) SAC_ICM_UNDEF ()
+
 #endif /* SAC_DO_DISTMEM */
 
 /*
@@ -677,7 +694,8 @@ typedef intptr_t *SAC_array_descriptor_t;
     (SAC_TR_AA_FPRINT ("%s read", from_NT, from_pos,                                     \
                        SAC_ND_A_IS_DIST (from_NT) ? "DSM" : "Non-DSM")                   \
        SAC_BC_READ (from_NT, from_pos) SAC_CS_READ_ARRAY (from_NT, from_pos) (           \
-         SAC_ND_A_IS_DIST (from_NT)                                                      \
+         (SAC_ND_A_MIRROR_LOCAL_FROM (from_NT) > from_pos                                \
+          || SAC_ND_A_MIRROR_LOCAL_TO (from_NT) < from_pos)                              \
            ? (SAC_DISTMEM_CHECK_READ_ALLOWED (                                           \
                 _SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (from_NT),                      \
                                            SAC_NT_CBASETYPE (from_NT),                   \
@@ -686,7 +704,12 @@ typedef intptr_t *SAC_array_descriptor_t;
               * SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (from_NT),                       \
                                           SAC_NT_CBASETYPE (from_NT),                    \
                                           SAC_ND_A_FIRST_ELEMS (from_NT), from_pos))     \
-           : SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos]))
+           : (SAC_DISTMEM_CHECK_READ_ALLOWED (&(SAC_ND_GETVAR (from_NT,                  \
+                                                               SAC_ND_A_FIELD (          \
+                                                                 from_NT))[from_pos]),   \
+                                              from_NT, from_pos)                         \
+                SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_READ_EXPR (from_NT)                   \
+                  SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos])))
 
 /*
  * SAC_ND_WRITE implementations (referenced by sac_std_gen.h)
@@ -726,7 +749,7 @@ typedef intptr_t *SAC_array_descriptor_t;
                       SAC_ND_A_IS_DIST (to_NT) ? "DSM" : "Non-DSM")                      \
     SAC_BC_WRITE (to_NT, to_pos)                                                         \
     SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
-    SAC_DISTMEM_AVOIDED_PTR_CALC_EXPR ()                                                 \
+    SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_WRITE_EXPR ()                                     \
     SAC_DISTMEM_CHECK_WRITE_ALLOWED (_SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (to_NT),   \
                                                                 SAC_NT_CBASETYPE (       \
                                                                   to_NT),                \
@@ -1458,6 +1481,8 @@ FIXME Do not initialize for the time being, as value 0                          
         } else {                                                                         \
             SAC_ND_ALLOC__DATA_BASETYPE__AKS (var_NT, basetype)                          \
         }                                                                                \
+        SAC_ND_A_MIRROR_LOCAL_FROM (var_NT) = SAC_DISTMEM_DET_LOCAL_FROM (var_NT);       \
+        SAC_ND_A_MIRROR_LOCAL_TO (var_NT) = SAC_DISTMEM_DET_LOCAL_TO (var_NT);           \
     }
 
 #define SAC_ND_ALLOC__DATA_BASETYPE__AKS_DSM(var_NT, basetype)                           \
@@ -1493,6 +1518,8 @@ FIXME Do not initialize for the time being, as value 0                          
         } else {                                                                         \
             SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD (var_NT, basetype)                      \
         }                                                                                \
+        SAC_ND_A_MIRROR_LOCAL_FROM (var_NT) = SAC_DISTMEM_DET_LOCAL_FROM (var_NT);       \
+        SAC_ND_A_MIRROR_LOCAL_TO (var_NT) = SAC_DISTMEM_DET_LOCAL_TO (var_NT);           \
     }
 
 #define SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD_DSM(var_NT, basetype)                       \
@@ -1597,6 +1624,8 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_ND_ALLOC__DESC_AND_DATA__AKS (var_NT, dim, basetype)                     \
         }                                                                                \
         SAC_ND_A_DESC_IS_DIST (var_NT) = SAC_ND_A_MIRROR_IS_DIST (var_NT);               \
+        SAC_ND_A_MIRROR_LOCAL_FROM (var_NT) = SAC_DISTMEM_DET_LOCAL_FROM (var_NT);       \
+        SAC_ND_A_MIRROR_LOCAL_TO (var_NT) = SAC_DISTMEM_DET_LOCAL_TO (var_NT);           \
     }
 
 #define SAC_ND_ALLOC__DESC_AND_DATA__UNDEF(var_NT, dim, basetype) SAC_ICM_UNDEF ();
@@ -1881,6 +1910,8 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))                                \
               = SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT));                       \
         }                                                                                \
+        SAC_ND_A_MIRROR_LOCAL_FROM (to_NT) = SAC_DISTMEM_DET_LOCAL_FROM (to_NT);         \
+        SAC_ND_A_MIRROR_LOCAL_TO (to_NT) = SAC_DISTMEM_DET_LOCAL_TO (to_NT);             \
     }
 
 /*

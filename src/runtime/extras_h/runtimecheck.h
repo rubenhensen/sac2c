@@ -175,7 +175,7 @@
           0)),
 
 #define SAC_DISTMEM_CHECK_READ_ALLOWED(ptr, var_NT, pos)                                 \
-    (SAC_DISTMEM_IS_VALID_READ_PTR (ptr)                                                 \
+    ((!SAC_ND_A_IS_DIST (var_NT) || SAC_DISTMEM_IS_VALID_READ_PTR (ptr))                 \
        ? 0                                                                               \
        : (SAC_RuntimeError ("Illegal read access to distributed array %s"                \
                             ", index position %d at %p",                                 \

@@ -147,8 +147,14 @@ SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_segfaults;
 /* Number of pointer calculations */
 SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_ptr_calcs;
 
-/* Number of avoided pointer calculations */
-SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs;
+/* Number of avoided pointer calculations for local writes */
+SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes;
+
+/* Number of avoided pointer calculations for local reads */
+SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads;
+
+/* Number of avoided pointer calculations for remote reads */
+SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads;
 
 /* Number of barriers */
 SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_barriers;
@@ -383,6 +389,50 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  * Functions that are implemented as
  * macros.
  *******************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_DET_LOCAL_FROM( var_NT)
+ *
+ *   @brief   Determines the first array element that is local to this node.
+ *
+ *   @param  var_NT       array
+ *
+ *   @return              index of the first array element that is local to this node
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_DET_LOCAL_FROM(var_NT)                                               \
+    (SAC_ND_A_IS_DIST (var_NT)                                                           \
+       ? (SAC_TR_DISTMEM_PRINT_EXPR ("The first local element of array %s is %d.",       \
+                                     NT_STR (var_NT),                                    \
+                                     SAC_ND_A_FIRST_ELEMS (var_NT) * SAC_DISTMEM_rank)   \
+            SAC_ND_A_FIRST_ELEMS (var_NT)                                                \
+          * SAC_DISTMEM_rank)                                                            \
+       : 0)
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_DET_LOCAL_TO( var_NT)
+ *
+ *   @brief   Determines the last array element that is local to this node.
+ *
+ *   @param  var_NT       array
+ *
+ *   @return              index of the last array element that is local to this node
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_DET_LOCAL_TO(var_NT)                                                 \
+    (SAC_ND_A_IS_DIST (var_NT)                                                           \
+       ? (SAC_TR_DISTMEM_PRINT_EXPR ("The last local element of array %s is %d.",        \
+                                     NT_STR (var_NT),                                    \
+                                     SAC_ND_A_FIRST_ELEMS (var_NT)                       \
+                                         * (SAC_DISTMEM_rank + 1)                        \
+                                       - 1) SAC_ND_A_FIRST_ELEMS (var_NT)                \
+            * (SAC_DISTMEM_rank + 1)                                                     \
+          - 1)                                                                           \
+       : (SAC_ND_A_SIZE (var_NT) - 1))
 
 /** <!--********************************************************************-->
  *
@@ -1551,7 +1601,19 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
     _SAC_DISTMEM_TR_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
-#define SAC_DISTMEM_AVOIDED_PTR_CALC_EXPR() SAC_DISTMEM_TR_num_avoided_ptr_calcs++,
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_WRITE_EXPR()                                  \
+    SAC_TR_DISTMEM_AA_PRINT ("Avoided pointer calculation for local write.")             \
+    SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes++,
+
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_READ_EXPR(var_NT)                             \
+    (SAC_ND_A_IS_DIST (var_NT)                                                           \
+       ? SAC_TR_DISTMEM_AA_PRINT ("Avoided pointer calculation for local read.")         \
+           SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads++                            \
+       : 0),
+
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_REMOTE_READ_EXPR()                                  \
+    SAC_TR_DISTMEM_AA_PRINT ("Avoided pointer calculation for remote read.")             \
+    SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads++,
 
 #elif SAC_DO_PROFILE_DISTMEM
 
@@ -1591,7 +1653,14 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
     _SAC_DISTMEM_PR_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
-#define SAC_DISTMEM_AVOIDED_PTR_CALC_EXPR() SAC_DISTMEM_TR_num_avoided_ptr_calcs++,
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_WRITE_EXPR()                                  \
+    SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes++,
+
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_READ_EXPR(var_NT)                             \
+    (SAC_ND_A_IS_DIST (var_NT) ? SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads++ : 0),
+
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_REMOTE_READ_EXPR()                                  \
+    SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads++,
 
 #else
 
@@ -1628,7 +1697,11 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
     _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
-#define SAC_DISTMEM_AVOIDED_PTR_CALC_EXPR()
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_WRITE_EXPR()
+
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_READ_EXPR(var_NT)
+
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_REMOTE_READ_EXPR()
 
 #endif
 

@@ -1199,11 +1199,14 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
                         var_NT, size, shp[0]);
 
                 /*
-                 * Initialize these variables to 0 to avoid warnings.
+                 * Initialize these variables to avoid warnings.
                  * If the array is actually distributed, they will be set to the correct
-                 * values when the data is allocated.
+                 * values when the data is allocated. 0 and -1 were chosen because they
+                 * represent illegal values.
                  */
                 indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
+                indout ("int SAC_ND_A_MIRROR_LOCAL_FROM( %s) = -1;\n", var_NT);
+                indout ("int SAC_ND_A_MIRROR_LOCAL_TO( %s) = -1;\n", var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
@@ -1235,10 +1238,13 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
                 /*
                  * Initialize these variables to avoid warnings.
                  * If the array is actually distributed, they will be set to the correct
-                 * values when the data is allocated.
+                 * values when the data is allocated. 0 and -1 were chosen because they
+                 * represent illegal values.
                  */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n", var_NT);
                 indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
+                indout ("int SAC_ND_A_MIRROR_LOCAL_FROM( %s) = -1;\n", var_NT);
+                indout ("int SAC_ND_A_MIRROR_LOCAL_TO( %s) = -1;\n", var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
@@ -1265,10 +1271,13 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
                 /*
                  * Initialize these variables to avoid warnings.
                  * If the array is actually distributed, they will be set to the correct
-                 * values when the data is allocated.
+                 * values when the data is allocated. 0 and -1 were chosen because they
+                 * represent illegal values.
                  */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n", var_NT);
                 indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
+                indout ("int SAC_ND_A_MIRROR_LOCAL_FROM( %s) = -1;\n", var_NT);
+                indout ("int SAC_ND_A_MIRROR_LOCAL_TO( %s) = -1;\n", var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
@@ -1348,6 +1357,12 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
                 indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
                         "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
                         var_NT, var_NT);
+                indout ("int SAC_ND_A_MIRROR_LOCAL_FROM( %s) = "
+                        "SAC_DISTMEM_DET_LOCAL_FROM( %s);\n",
+                        var_NT, var_NT);
+                indout (
+                  "int SAC_ND_A_MIRROR_LOCAL_TO( %s) = SAC_DISTMEM_DET_LOCAL_TO( %s);\n",
+                  var_NT, var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
@@ -1388,6 +1403,12 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
                 indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
                         "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
                         var_NT, var_NT);
+                indout ("int SAC_ND_A_MIRROR_LOCAL_FROM( %s) = "
+                        "SAC_DISTMEM_DET_LOCAL_FROM( %s);\n",
+                        var_NT, var_NT);
+                indout (
+                  "int SAC_ND_A_MIRROR_LOCAL_TO( %s) = SAC_DISTMEM_DET_LOCAL_TO( %s);\n",
+                  var_NT, var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
@@ -1422,6 +1443,12 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
                 indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
                         "SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
                         var_NT, var_NT);
+                indout ("int SAC_ND_A_MIRROR_LOCAL_FROM( %s) = "
+                        "SAC_DISTMEM_DET_LOCAL_FROM( %s);\n",
+                        var_NT, var_NT);
+                indout (
+                  "int SAC_ND_A_MIRROR_LOCAL_TO( %s) = SAC_DISTMEM_DET_LOCAL_TO( %s);\n",
+                  var_NT, var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
@@ -1672,6 +1699,12 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
                 indout (
                   "SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
                   var_NT, var_NT);
+                indout (
+                  "SAC_ND_A_MIRROR_LOCAL_FROM( %s) = SAC_DISTMEM_DET_LOCAL_FROM( %s);\n",
+                  var_NT, var_NT);
+                indout (
+                  "SAC_ND_A_MIRROR_LOCAL_TO( %s) = SAC_DISTMEM_DET_LOCAL_TO( %s);\n",
+                  var_NT, var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout (
@@ -1709,6 +1742,12 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
                 indout (
                   "SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
                   var_NT, var_NT);
+                indout (
+                  "SAC_ND_A_MIRROR_LOCAL_FROM( %s) = SAC_DISTMEM_DET_LOCAL_FROM( %s);\n",
+                  var_NT, var_NT);
+                indout (
+                  "SAC_ND_A_MIRROR_LOCAL_TO( %s) = SAC_DISTMEM_DET_LOCAL_TO( %s);\n",
+                  var_NT, var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout (
@@ -1739,6 +1778,12 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
                         var_NT, var_NT);
                 indout (
                   "SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = SAC_ND_A_DESC_FIRST_ELEMS( %s);\n",
+                  var_NT, var_NT);
+                indout (
+                  "SAC_ND_A_MIRROR_LOCAL_FROM( %s) = SAC_DISTMEM_DET_LOCAL_FROM( %s);\n",
+                  var_NT, var_NT);
+                indout (
+                  "SAC_ND_A_MIRROR_LOCAL_TO( %s) = SAC_DISTMEM_DET_LOCAL_TO( %s);\n",
                   var_NT, var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */

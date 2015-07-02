@@ -178,8 +178,14 @@ unsigned long SAC_DISTMEM_TR_num_segfaults = 0;
 /* Number of pointer calculations */
 unsigned long SAC_DISTMEM_TR_num_ptr_calcs = 0;
 
-/* Number of avoided pointer calculations */
-unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs;
+/* Number of avoided pointer calculations for local writes */
+unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes = 0;
+
+/* Number of avoided pointer calculations for local reads */
+unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads = 0;
+
+/* Number of avoided pointer calculations for remote reads */
+unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads = 0;
 
 /* Number of barriers */
 unsigned long SAC_DISTMEM_TR_num_barriers = 0;
@@ -498,8 +504,12 @@ SAC_DISTMEM_Exit (int exit_code)
     SAC_TR_DISTMEM_PRINT ("   Invalidated pages: %lu", SAC_DISTMEM_TR_num_inval_pages);
     SAC_TR_DISTMEM_PRINT ("   Seg faults: %lu", SAC_DISTMEM_TR_num_segfaults);
     SAC_TR_DISTMEM_PRINT ("   Pointer calculations: %lu", SAC_DISTMEM_TR_num_ptr_calcs);
-    SAC_TR_DISTMEM_PRINT ("   Avoided pointer calculations: %lu",
-                          SAC_DISTMEM_TR_num_avoided_ptr_calcs);
+    SAC_TR_DISTMEM_PRINT ("   Avoided pointer calculations (local writes): %lu",
+                          SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes);
+    SAC_TR_DISTMEM_PRINT ("   Avoided pointer calculations (local reads): %lu",
+                          SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads);
+    SAC_TR_DISTMEM_PRINT ("   Avoided pointer calculations (remote reads): %lu",
+                          SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads);
     SAC_TR_DISTMEM_PRINT ("   Barriers: %lu", SAC_DISTMEM_TR_num_barriers);
 
     /* We cannot profile this barrier because otherwise libsacdistmem doesn't compile.
