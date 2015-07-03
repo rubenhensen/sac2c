@@ -1207,6 +1207,10 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
                 indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
                 indout ("int SAC_ND_A_MIRROR_LOCAL_FROM( %s) = -1;\n", var_NT);
                 indout ("int SAC_ND_A_MIRROR_LOCAL_TO( %s) = -1;\n", var_NT);
+                indout ("SAC_NT_CBASETYPE( %s) *SAC_ND_A_MIRROR_PTR_CACHE( %s) = NULL;\n",
+                        var_NT, var_NT);
+                indout ("int SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = -1;\n", var_NT);
+                indout ("int SAC_ND_A_MIRROR_PTR_CACHE_TO( %s) = -1;\n", var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
@@ -1245,6 +1249,10 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
                 indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
                 indout ("int SAC_ND_A_MIRROR_LOCAL_FROM( %s) = -1;\n", var_NT);
                 indout ("int SAC_ND_A_MIRROR_LOCAL_TO( %s) = -1;\n", var_NT);
+                indout ("SAC_NT_CBASETYPE( %s) *SAC_ND_A_MIRROR_PTR_CACHE( %s) = NULL;\n",
+                        var_NT, var_NT);
+                indout ("int SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = -1;\n", var_NT);
+                indout ("int SAC_ND_A_MIRROR_PTR_CACHE_TO( %s) = -1;\n", var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
@@ -1278,6 +1286,10 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
                 indout ("size_t SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = 0;\n", var_NT);
                 indout ("int SAC_ND_A_MIRROR_LOCAL_FROM( %s) = -1;\n", var_NT);
                 indout ("int SAC_ND_A_MIRROR_LOCAL_TO( %s) = -1;\n", var_NT);
+                indout ("SAC_NT_CBASETYPE( %s) *SAC_ND_A_MIRROR_PTR_CACHE( %s) = NULL;\n",
+                        var_NT, var_NT);
+                indout ("int SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = -1;\n", var_NT);
+                indout ("int SAC_ND_A_MIRROR_PTR_CACHE_TO( %s) = -1;\n", var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
@@ -1363,6 +1375,10 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
                 indout (
                   "int SAC_ND_A_MIRROR_LOCAL_TO( %s) = SAC_DISTMEM_DET_LOCAL_TO( %s);\n",
                   var_NT, var_NT);
+                indout ("SAC_NT_CBASETYPE( %s) *SAC_ND_A_MIRROR_PTR_CACHE( %s) = NULL;\n",
+                        var_NT, var_NT);
+                indout ("int SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = -1;\n", var_NT);
+                indout ("int SAC_ND_A_MIRROR_PTR_CACHE_TO( %s) = -1;\n", var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
@@ -1409,6 +1425,10 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
                 indout (
                   "int SAC_ND_A_MIRROR_LOCAL_TO( %s) = SAC_DISTMEM_DET_LOCAL_TO( %s);\n",
                   var_NT, var_NT);
+                indout ("SAC_NT_CBASETYPE( %s) *SAC_ND_A_MIRROR_PTR_CACHE( %s) = NULL;\n",
+                        var_NT, var_NT);
+                indout ("int SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = -1;\n", var_NT);
+                indout ("int SAC_ND_A_MIRROR_PTR_CACHE_TO( %s) = -1;\n", var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
@@ -1449,6 +1469,10 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
                 indout (
                   "int SAC_ND_A_MIRROR_LOCAL_TO( %s) = SAC_DISTMEM_DET_LOCAL_TO( %s);\n",
                   var_NT, var_NT);
+                indout ("SAC_NT_CBASETYPE( %s) *SAC_ND_A_MIRROR_PTR_CACHE( %s) = NULL;\n",
+                        var_NT, var_NT);
+                indout ("int SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = -1;\n", var_NT);
+                indout ("int SAC_ND_A_MIRROR_PTR_CACHE_TO( %s) = -1;\n", var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
@@ -1705,6 +1729,8 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
                 indout (
                   "SAC_ND_A_MIRROR_LOCAL_TO( %s) = SAC_DISTMEM_DET_LOCAL_TO( %s);\n",
                   var_NT, var_NT);
+                indout ("SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = -1;\n", var_NT);
+                indout ("SAC_ND_A_MIRROR_PTR_CACHE_TO( %s) = -1;\n", var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout (
@@ -1748,6 +1774,8 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
                 indout (
                   "SAC_ND_A_MIRROR_LOCAL_TO( %s) = SAC_DISTMEM_DET_LOCAL_TO( %s);\n",
                   var_NT, var_NT);
+                indout ("SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = -1;\n", var_NT);
+                indout ("SAC_ND_A_MIRROR_PTR_CACHE_TO( %s) = -1;\n", var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout (
@@ -1785,6 +1813,8 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
                 indout (
                   "SAC_ND_A_MIRROR_LOCAL_TO( %s) = SAC_DISTMEM_DET_LOCAL_TO( %s);\n",
                   var_NT, var_NT);
+                indout ("SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = -1;\n", var_NT);
+                indout ("SAC_ND_A_MIRROR_PTR_CACHE_TO( %s) = -1;\n", var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout (

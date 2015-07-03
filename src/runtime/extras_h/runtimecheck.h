@@ -91,6 +91,7 @@
  * ICMs for distributed memory runtime checks
  * ========================
  *
+ * #define SAC_DISTMEM_CHECK_PTR_FROM_CACHE( var_NT, pos, ptr)
  * SAC_DISTMEM_CHECK_IS_DSM_ALLOC_ALLOWED()
  * SAC_DISTMEM_CHECK_IS_SWITCH_TO_SIDE_EFFECTS_OUTER_EXEC_ALLOWED()
  * SAC_DISTMEM_CHECK_IS_SWITCH_TO_SIDE_EFFECTS_EXEC_ALLOWED()
@@ -104,6 +105,20 @@
  ******************************************************************************/
 
 #if SAC_DO_CHECK_DISTMEM
+
+#define SAC_DISTMEM_CHECK_PTR_FROM_CACHE(var_NT, pos, ptr)                               \
+    ((ptr                                                                                \
+      == SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT), SAC_NT_CBASETYPE (var_NT),    \
+                                   SAC_ND_A_FIRST_ELEMS (var_NT), pos))                  \
+       ? 0                                                                               \
+       : (SAC_RuntimeError ("Pointer to element %d of array %s from cache (%p) "         \
+                            "does not match calculated pointer (%p).",                   \
+                            pos, NT_STR (var_NT), ptr,                                   \
+                            SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT),            \
+                                                      SAC_NT_CBASETYPE (var_NT),         \
+                                                      SAC_ND_A_FIRST_ELEMS (var_NT),     \
+                                                      pos)),                             \
+          0)),
 
 #define SAC_DISTMEM_CHECK_IS_DSM_ALLOC_ALLOWED()                                         \
     if (!SAC_DISTMEM_are_dsm_allocs_allowed) {                                           \
@@ -221,6 +236,8 @@
             : 0)),
 
 #else /* SAC_DO_CHECK_DISTMEM */
+
+#define SAC_DISTMEM_CHECK_PTR_FROM_CACHE(var_NT, pos, ptr)
 
 #define SAC_DISTMEM_CHECK_IS_DSM_ALLOC_ALLOWED()
 

@@ -187,6 +187,9 @@ unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads = 0;
 /* Number of avoided pointer calculations for remote reads */
 unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads = 0;
 
+/* Number of pointer cache updates */
+unsigned long SAC_DISTMEM_TR_num_ptr_cache_updates = 0;
+
 /* Number of barriers */
 unsigned long SAC_DISTMEM_TR_num_barriers = 0;
 
@@ -510,6 +513,8 @@ SAC_DISTMEM_Exit (int exit_code)
                           SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads);
     SAC_TR_DISTMEM_PRINT ("   Avoided pointer calculations (remote reads): %lu",
                           SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads);
+    SAC_TR_DISTMEM_PRINT ("   Pointer cache updates (remote reads): %lu",
+                          SAC_DISTMEM_TR_num_ptr_cache_updates);
     SAC_TR_DISTMEM_PRINT ("   Barriers: %lu", SAC_DISTMEM_TR_num_barriers);
 
     /* We cannot profile this barrier because otherwise libsacdistmem doesn't compile.

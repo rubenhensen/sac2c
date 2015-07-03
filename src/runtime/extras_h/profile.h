@@ -500,6 +500,8 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
                            SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads);            \
         SAC_PF_PrintCount ("Avoided ptr calcs (remote reads)", SAC_PF_COUNT_SPACE,       \
                            SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads);           \
+        SAC_PF_PrintCount ("Ptr cache updates(remote reads) ", SAC_PF_COUNT_SPACE,       \
+                           SAC_DISTMEM_TR_num_ptr_cache_updates);                        \
         SAC_PF_PrintCount ("Barriers                        ", SAC_PF_COUNT_SPACE,       \
                            SAC_DISTMEM_TR_num_barriers);                                 \
                                                                                          \

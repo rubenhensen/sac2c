@@ -156,6 +156,9 @@ SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads;
 /* Number of avoided pointer calculations for remote reads */
 SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads;
 
+/* Number of pointer cache updates */
+SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_ptr_cache_updates;
+
 /* Number of barriers */
 SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_barriers;
 
@@ -392,6 +395,72 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 /** <!--********************************************************************-->
  *
+ * @fn SAC_DISTMEM_DET_OWNER( var_NT, elem_index)
+ *
+ *   @brief   Determines the owner node of an array element.
+ *
+ *   @param  var_NT       array
+ *   @param  elem_index   element index
+ *
+ *   @return              rank of the owner
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_DET_OWNER(var_NT, elem_index)                                        \
+    (elem_index / SAC_ND_A_FIRST_ELEMS (var_NT))
+
+/** <!--********************************************************************-->
+ *
+ * @fn  SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR( var_NT, elem_index)
+ *
+ *   @brief   Updates the pointer cache for an array.
+ *
+ *   @param  var_NT       array
+ *   @param  elem_index   index of the element that lead to a cache miss
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR(var_NT, elem_index)                            \
+    SAC_TR_DISTMEM_PRINT_EXPR ("Updating pointer cache of array %s for index %d.",       \
+                               NT_STR (var_NT), elem_index)                              \
+    SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT)                                              \
+      = SAC_DISTMEM_DET_FROM (var_NT, SAC_DISTMEM_DET_OWNER (var_NT, elem_index)),       \
+      SAC_ND_A_MIRROR_PTR_CACHE_TO (var_NT)                                              \
+      = SAC_DISTMEM_DET_TO (var_NT, SAC_DISTMEM_DET_OWNER (var_NT, elem_index)),         \
+      SAC_ND_A_MIRROR_PTR_CACHE (var_NT)                                                 \
+      = SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT), SAC_NT_CBASETYPE (var_NT),     \
+                                  SAC_ND_A_FIRST_ELEMS (var_NT),                         \
+                                  SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT))               \
+        - SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT),                                       \
+      SAC_TR_DISTMEM_PRINT_EXPR (                                                        \
+        "Updated pointer cache of array %s for index %d to %p (indices %d - %d)",        \
+        NT_STR (var_NT), elem_index, SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                 \
+        SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT), SAC_ND_A_MIRROR_PTR_CACHE_TO (var_NT))  \
+        SAC_DISTMEM_UPDATED_PTR_CACHE_EXPR () 0
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_DET_LOCAL_FROM( var_NT)
+ *
+ *   @brief   Determines the first array element that is local to a node.
+ *
+ *   @param  var_NT       array
+ *   @param  rank         rank of the node
+ *
+ *   @return              index of the first array element that is local to the node
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_DET_FROM(var_NT, rank)                                               \
+    (SAC_ND_A_IS_DIST (var_NT)                                                           \
+       ? (SAC_TR_DISTMEM_PRINT_EXPR (                                                    \
+            "The first element of array %s local to node %d is %d.", NT_STR (var_NT),    \
+            rank, SAC_ND_A_FIRST_ELEMS (var_NT) * rank) SAC_ND_A_FIRST_ELEMS (var_NT)    \
+          * rank)                                                                        \
+       : 0)
+
+/** <!--********************************************************************-->
+ *
  * @fn SAC_DISTMEM_DET_LOCAL_FROM( var_NT)
  *
  *   @brief   Determines the first array element that is local to this node.
@@ -402,14 +471,30 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  ******************************************************************************/
 
-#define SAC_DISTMEM_DET_LOCAL_FROM(var_NT)                                               \
+#define SAC_DISTMEM_DET_LOCAL_FROM(var_NT) SAC_DISTMEM_DET_FROM (var_NT, SAC_DISTMEM_rank)
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_DET_TO( var_NT, rank)
+ *
+ *   @brief   Determines the last array element that is local to a node.
+ *
+ *   @param  var_NT       array
+ *   @param  rank         rank of the node
+ *
+ *   @return              index of the last array element that is local to the node
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_DET_TO(var_NT, rank)                                                 \
     (SAC_ND_A_IS_DIST (var_NT)                                                           \
-       ? (SAC_TR_DISTMEM_PRINT_EXPR ("The first local element of array %s is %d.",       \
-                                     NT_STR (var_NT),                                    \
-                                     SAC_ND_A_FIRST_ELEMS (var_NT) * SAC_DISTMEM_rank)   \
-            SAC_ND_A_FIRST_ELEMS (var_NT)                                                \
-          * SAC_DISTMEM_rank)                                                            \
-       : 0)
+       ? (SAC_TR_DISTMEM_PRINT_EXPR (                                                    \
+            "The last element of array %s local to node %d is %d.", NT_STR (var_NT),     \
+            rank, SAC_ND_A_FIRST_ELEMS (var_NT) * (rank + 1) - 1)                        \
+              SAC_ND_A_FIRST_ELEMS (var_NT)                                              \
+            * (rank + 1)                                                                 \
+          - 1)                                                                           \
+       : (SAC_ND_A_SIZE (var_NT) - 1))
 
 /** <!--********************************************************************-->
  *
@@ -423,16 +508,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  ******************************************************************************/
 
-#define SAC_DISTMEM_DET_LOCAL_TO(var_NT)                                                 \
-    (SAC_ND_A_IS_DIST (var_NT)                                                           \
-       ? (SAC_TR_DISTMEM_PRINT_EXPR ("The last local element of array %s is %d.",        \
-                                     NT_STR (var_NT),                                    \
-                                     SAC_ND_A_FIRST_ELEMS (var_NT)                       \
-                                         * (SAC_DISTMEM_rank + 1)                        \
-                                       - 1) SAC_ND_A_FIRST_ELEMS (var_NT)                \
-            * (SAC_DISTMEM_rank + 1)                                                     \
-          - 1)                                                                           \
-       : (SAC_ND_A_SIZE (var_NT) - 1))
+#define SAC_DISTMEM_DET_LOCAL_TO(var_NT) SAC_DISTMEM_DET_TO (var_NT, SAC_DISTMEM_rank)
 
 /** <!--********************************************************************-->
  *
@@ -1615,6 +1691,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
     SAC_TR_DISTMEM_AA_PRINT ("Avoided pointer calculation for remote read.")             \
     SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads++,
 
+#define SAC_DISTMEM_UPDATED_PTR_CACHE_EXPR() SAC_DISTMEM_TR_num_ptr_cache_updates++,
+
 #elif SAC_DO_PROFILE_DISTMEM
 
 #define SAC_DISTMEM_INIT() SAC_DISTMEM_PR_Init (__argc, __argv);
@@ -1662,6 +1740,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_REMOTE_READ_EXPR()                                  \
     SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads++,
 
+#define SAC_DISTMEM_UPDATED_PTR_CACHE_EXPR() SAC_DISTMEM_TR_num_ptr_cache_updates++,
+
 #else
 
 #define SAC_DISTMEM_INIT() SAC_DISTMEM_Init (__argc, __argv);
@@ -1702,6 +1782,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_READ_EXPR(var_NT)
 
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_REMOTE_READ_EXPR()
+
+#define SAC_DISTMEM_UPDATED_PTR_CACHE_EXPR()
 
 #endif
 

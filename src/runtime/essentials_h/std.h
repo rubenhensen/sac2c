@@ -546,6 +546,32 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_A_MIRROR_LOCAL_TO__UNDEF(var_NT) SAC_ICM_UNDEF ()
 
+/*
+ * SAC_ND_A_MIRROR_PTR_CACHE implementations (referenced by sac_std_gen.h)
+ */
+
+#define SAC_ND_A_MIRROR_PTR_CACHE__DEFAULT(var_NT) CAT12 (NT_NAME (var_NT), __dm_ptrCache)
+
+#define SAC_ND_A_MIRROR_PTR_CACHE__UNDEF(var_NT) SAC_ICM_UNDEF ()
+
+/*
+ * SAC_ND_A_MIRROR_PTR_CACHE_FROM implementations (referenced by sac_std_gen.h)
+ */
+
+#define SAC_ND_A_MIRROR_PTR_CACHE_FROM__DEFAULT(var_NT)                                  \
+    CAT12 (NT_NAME (var_NT), __dm_ptrCacheFrom)
+
+#define SAC_ND_A_MIRROR_PTR_CACHE_FROM__UNDEF(var_NT) SAC_ICM_UNDEF ()
+
+/*
+ * SAC_ND_A_MIRROR_PTR_CACHE_TO implementations (referenced by sac_std_gen.h)
+ */
+
+#define SAC_ND_A_MIRROR_PTR_CACHE_TO__DEFAULT(var_NT)                                    \
+    CAT12 (NT_NAME (var_NT), __dm_ptrCacheTo)
+
+#define SAC_ND_A_MIRROR_PTR_CACHE_TO__UNDEF(var_NT) SAC_ICM_UNDEF ()
+
 #endif /* SAC_DO_DISTMEM */
 
 /*
@@ -696,14 +722,17 @@ typedef intptr_t *SAC_array_descriptor_t;
        SAC_BC_READ (from_NT, from_pos) SAC_CS_READ_ARRAY (from_NT, from_pos) (           \
          (SAC_ND_A_MIRROR_LOCAL_FROM (from_NT) > from_pos                                \
           || SAC_ND_A_MIRROR_LOCAL_TO (from_NT) < from_pos)                              \
-           ? (SAC_DISTMEM_CHECK_READ_ALLOWED (                                           \
-                _SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (from_NT),                      \
-                                           SAC_NT_CBASETYPE (from_NT),                   \
-                                           SAC_ND_A_FIRST_ELEMS (from_NT), from_pos),    \
-                from_NT, from_pos)                                                       \
-              * SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (from_NT),                       \
-                                          SAC_NT_CBASETYPE (from_NT),                    \
-                                          SAC_ND_A_FIRST_ELEMS (from_NT), from_pos))     \
+           ? ((SAC_ND_A_MIRROR_PTR_CACHE_FROM (from_NT) > from_pos                       \
+               || SAC_ND_A_MIRROR_PTR_CACHE_TO (from_NT) < from_pos)                     \
+                ? (SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR (from_NT, from_pos))                \
+                : (SAC_DISTMEM_AVOIDED_PTR_CALC_REMOTE_READ_EXPR () 0),                  \
+              SAC_DISTMEM_CHECK_PTR_FROM_CACHE (from_NT, from_pos,                       \
+                                                &(SAC_ND_A_MIRROR_PTR_CACHE (            \
+                                                  from_NT)[from_pos]))                   \
+                SAC_DISTMEM_CHECK_READ_ALLOWED (&(SAC_ND_A_MIRROR_PTR_CACHE (            \
+                                                  from_NT)[from_pos]),                   \
+                                                from_NT, from_pos)                       \
+                  SAC_ND_A_MIRROR_PTR_CACHE (from_NT)[from_pos])                         \
            : (SAC_DISTMEM_CHECK_READ_ALLOWED (&(SAC_ND_GETVAR (from_NT,                  \
                                                                SAC_ND_A_FIELD (          \
                                                                  from_NT))[from_pos]),   \
@@ -1912,6 +1941,8 @@ FIXME Do not initialize for the time being, as value 0                          
         }                                                                                \
         SAC_ND_A_MIRROR_LOCAL_FROM (to_NT) = SAC_DISTMEM_DET_LOCAL_FROM (to_NT);         \
         SAC_ND_A_MIRROR_LOCAL_TO (to_NT) = SAC_DISTMEM_DET_LOCAL_TO (to_NT);             \
+        SAC_ND_A_MIRROR_PTR_CACHE_FROM (to_NT) = -1;                                     \
+        SAC_ND_A_MIRROR_PTR_CACHE_TO (to_NT) = -1;                                       \
     }
 
 /*
