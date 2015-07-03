@@ -198,7 +198,7 @@ void SAC_DISTMEM_Init (int argc, char *argv[]);
 /** <!--********************************************************************-->
  *
  * @fn void SAC_DISTMEM_Setup( size_t maxmem_mb, size_t min_elems_per_node, int
- *trace_profile_rank)
+ *trace_profile_rank, bool alloc_cache_outside_dsm)
  *
  *   @brief    Sets up the dsm systemn so that it is ready for use.
  *
@@ -207,16 +207,17 @@ void SAC_DISTMEM_Init (int argc, char *argv[]);
  *             is printed.
  *             Initializes the private heap manager.
  *
- *   @param maxmem_mb             amount of memory to use for the dsm system in MB
- *   @param min_elems_per_node    minimum number of elements per node such that
- *                                an array gets distributed
- *   @param trace_profile_rank    If not equal to SAC_DISTMEM_TRACE_PROFILE_RANK_ANY, only
- *                                produce trace output for the provided rank.
+ *   @param maxmem_mb                 amount of memory to use for the dsm system in MB
+ *   @param min_elems_per_node        minimum number of elements per node such that
+ *                                    an array gets distributed
+ *   @param trace_profile_rank        If not equal to SAC_DISTMEM_TRACE_PROFILE_RANK_ANY,
+ *only produce trace output for the provided rank.
+ *   @param alloc_cache_outside_dsm   Allocate the caches outside of the DSM segment.
  *
  ******************************************************************************/
 
 void SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node,
-                        int trace_profile_rank);
+                        int trace_profile_rank, bool alloc_cache_outside_dsm);
 
 /** <!--********************************************************************-->
  *
@@ -331,7 +332,7 @@ size_t SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t sto
 void SAC_DISTMEM_TR_Init (int argc, char *argv[]);
 
 void SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node,
-                           int trace_profile_rank);
+                           int trace_profile_rank, bool alloc_cache_outside_dsm);
 
 void SAC_DISTMEM_TR_InvalEntireCache (void);
 
@@ -364,7 +365,7 @@ void SAC_DISTMEM_TR_IncNumPtrCalcs (void);
 void SAC_DISTMEM_PR_Init (int argc, char *argv[]);
 
 void SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node,
-                           int trace_profile_rank);
+                           int trace_profile_rank, bool alloc_cache_outside_dsm);
 
 void SAC_DISTMEM_PR_InvalEntireCache (void);
 
@@ -1646,7 +1647,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_SETUP()                                                              \
     SAC_DISTMEM_TR_Setup (SAC_SET_DISTMEM_MAX_MEMORY_MB,                                 \
                           SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE,                            \
-                          SAC_SET_DISTMEM_TRACE_PROFILE_NODE);
+                          SAC_SET_DISTMEM_TRACE_PROFILE_NODE,                            \
+                          SAC_DO_DISTMEM_ALLOC_CACHE_OUTSIDE_DSM);
 
 #define SAC_DISTMEM_INVAL_ENTIRE_CACHE() SAC_DISTMEM_TR_InvalEntireCache ();
 
@@ -1700,7 +1702,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_SETUP()                                                              \
     SAC_DISTMEM_PR_Setup (SAC_SET_DISTMEM_MAX_MEMORY_MB,                                 \
                           SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE,                            \
-                          SAC_SET_DISTMEM_TRACE_PROFILE_NODE);
+                          SAC_SET_DISTMEM_TRACE_PROFILE_NODE,                            \
+                          SAC_DO_DISTMEM_ALLOC_CACHE_OUTSIDE_DSM);
 
 #define SAC_DISTMEM_INVAL_ENTIRE_CACHE() SAC_DISTMEM_PR_InvalEntireCache ();
 
@@ -1749,7 +1752,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_SETUP()                                                              \
     SAC_DISTMEM_Setup (SAC_SET_DISTMEM_MAX_MEMORY_MB,                                    \
                        SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE,                               \
-                       SAC_SET_DISTMEM_TRACE_PROFILE_NODE);
+                       SAC_SET_DISTMEM_TRACE_PROFILE_NODE,                               \
+                       SAC_DO_DISTMEM_ALLOC_CACHE_OUTSIDE_DSM);
 
 #define SAC_DISTMEM_INVAL_ENTIRE_CACHE() SAC_DISTMEM_InvalEntireCache ();
 

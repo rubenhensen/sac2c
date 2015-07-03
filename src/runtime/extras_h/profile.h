@@ -500,22 +500,21 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
                            SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads);            \
         SAC_PF_PrintCount ("Avoided ptr calcs (remote reads)", SAC_PF_COUNT_SPACE,       \
                            SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads);           \
-        SAC_PF_PrintCount ("Ptr cache updates(remote reads) ", SAC_PF_COUNT_SPACE,       \
+        SAC_PF_PrintCount ("Ptr cache updates (remote reads) ", SAC_PF_COUNT_SPACE,      \
                            SAC_DISTMEM_TR_num_ptr_cache_updates);                        \
         SAC_PF_PrintCount ("Barriers                        ", SAC_PF_COUNT_SPACE,       \
                            SAC_DISTMEM_TR_num_barriers);                                 \
                                                                                          \
-        SAC_PF_PrintTimePercentage ("Synchronous execution ", SAC_PF_TIMER_SPACE,        \
+        SAC_PF_PrintTimePercentage ("Synchronous execution  ", SAC_PF_TIMER_SPACE,       \
                                     &distmem_exec_sync,                                  \
                                     &(SAC_PF_timer[0][0][PF_ow_fun]));                   \
-        SAC_PF_PrintTimePercentage ("Distributed execution ", SAC_PF_TIMER_SPACE,        \
+        SAC_PF_PrintTimePercentage ("Distributed execution  ", SAC_PF_TIMER_SPACE,       \
                                     &(SAC_PF_timer[0][0][PF_distmem_exec_dist]),         \
                                     &(SAC_PF_timer[0][0][PF_ow_fun]));                   \
-        SAC_PF_PrintTimePercentage ("Side effects execution", SAC_PF_TIMER_SPACE,        \
+        SAC_PF_PrintTimePercentage ("Side effects execution ", SAC_PF_TIMER_SPACE,       \
                                     &(SAC_PF_timer[0][0][PF_distmem_exec_side_effects]), \
                                     &(SAC_PF_timer[0][0][PF_ow_fun]));                   \
-        SAC_PF_PrintTimePercentage ("Waiting at barriers           ",                    \
-                                    SAC_PF_TIMER_SPACE,                                  \
+        SAC_PF_PrintTimePercentage ("Waiting at barriers    ", SAC_PF_TIMER_SPACE,       \
                                     &(SAC_PF_timer[0][0][PF_distmem_barrier]),           \
                                     &(SAC_PF_timer[0][0][PF_ow_fun]));                   \
     }

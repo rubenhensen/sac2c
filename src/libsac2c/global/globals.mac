@@ -388,6 +388,12 @@ GLOBAL (unsigned int, distmem_max_memory_mb, 512, xfree_dummy, )
  * when the distributed memory backend is used.
  */
 
+GLOBAL (bool, distmem_cache_outside_dsm, FALSE, xfree_dummy, )
+/*
+ * Assign cache segments outside of DSM segment when the distributed memory backend
+ * is used.
+ */
+
 GLOBAL (int, distmem_tr_pf_node, -1, xfree_dummy, )
 /*
  * If not equal to -1, trace and profile output is only produced for the node with the

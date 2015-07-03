@@ -318,13 +318,16 @@ SAC_DISTMEM_Init (int argc, char *argv[])
 
 #if COMPILE_TRACE
 void
-SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profile_rank)
+SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profile_rank,
+                      bool alloc_cache_outside_dsm)
 #elif COMPILE_PROFILE
 void
-SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profile_rank)
+SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profile_rank,
+                      bool alloc_cache_outside_dsm)
 #else /* COMPILE_PLAIN */
 void
-SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profile_rank)
+SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profile_rank,
+                   bool alloc_cache_outside_dsm)
 #endif
 {
     size_t i;
@@ -346,7 +349,7 @@ SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profil
     SAC_TR_DISTMEM_PRINT ("Setting up communication library (min. elements/node: %zd).",
                           SAC_DISTMEM_min_elems_per_node);
 
-    SAC_DISTMEM_COMMLIB_SETUP (maxmem);
+    SAC_DISTMEM_COMMLIB_SETUP (maxmem, alloc_cache_outside_dsm);
 
     SAC_TR_DISTMEM_PRINT ("Size: %d", SAC_DISTMEM_size);
 

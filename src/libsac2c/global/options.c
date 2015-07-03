@@ -537,12 +537,15 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("do");
 
-    ARGS_OPTION ("dsm_maxmem_mb", ARG_RANGE (global.distmem_max_memory_mb, 128, 10000));
+    ARGS_OPTION ("dsm_maxmem_mb", ARG_RANGE (global.distmem_max_memory_mb, 128,
+                                             1000 * 1024)); /* Max. 100 GB */
 
     ARGS_OPTION ("distmem_min_elems",
                  ARG_RANGE (global.distmem_min_elems_per_node, 10, 1000));
 
     ARGS_OPTION ("distmem_tr_pf_node", ARG_RANGE (global.distmem_tr_pf_node, -1, 1000));
+
+    ARGS_FLAG ("dsm_cache_outside_seg", global.distmem_cache_outside_dsm = TRUE);
 
 #ifndef DBUG_OFF
 

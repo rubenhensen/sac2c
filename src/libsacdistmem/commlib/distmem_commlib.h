@@ -63,11 +63,12 @@ void SAC_DISTMEM_COMMLIB_Init (int argc, char *argv[]);
  *             - SAC_DISTMEM_shared_seg_ptr
  *             - SAC_DISTMEM_cache_ptr
  *
- *   @param maxmem_mb      amount of memory to reserve in MB
+ *   @param maxmem_mb                 amount of memory to reserve in MB
+ *   @param alloc_cache_outside_dsm   allocate caches outside of DSM segment
  *
  ******************************************************************************/
 
-void SAC_DISTMEM_COMMLIB_Setup (size_t maxmem);
+void SAC_DISTMEM_COMMLIB_Setup (size_t maxmem, bool alloc_cache_outside_dsm);
 
 /** <!--********************************************************************-->
  *
@@ -120,7 +121,7 @@ void SAC_DISTMEM_COMMLIB_Exit (int exit_code);
 
 void SAC_DISTMEM_COMMLIB_TR_Init (int argc, char *argv[]);
 
-void SAC_DISTMEM_COMMLIB_TR_Setup (size_t maxmem);
+void SAC_DISTMEM_COMMLIB_TR_Setup (size_t maxmem, bool alloc_cache_outside_dsm);
 
 void SAC_DISTMEM_COMMLIB_TR_Barrier (void);
 
@@ -139,7 +140,8 @@ void SAC_DISTMEM_COMMLIB_TR_Exit (int exit_code);
 
 #define SAC_DISTMEM_COMMLIB_INIT(argc, argv) SAC_DISTMEM_COMMLIB_TR_Init (argc, argv);
 
-#define SAC_DISTMEM_COMMLIB_SETUP(maxmem) SAC_DISTMEM_COMMLIB_TR_Setup (maxmem);
+#define SAC_DISTMEM_COMMLIB_SETUP(maxmem, alloc_cache_outside_dsm)                       \
+    SAC_DISTMEM_COMMLIB_TR_Setup (maxmem, alloc_cache_outside_dsm);
 
 #define SAC_DISTMEM_COMMLIB_BARRIER() SAC_DISTMEM_COMMLIB_TR_Barrier ();
 
@@ -152,7 +154,8 @@ void SAC_DISTMEM_COMMLIB_TR_Exit (int exit_code);
 
 #define SAC_DISTMEM_COMMLIB_INIT(argc, argv) SAC_DISTMEM_COMMLIB_Init (argc, argv);
 
-#define SAC_DISTMEM_COMMLIB_SETUP(maxmem) SAC_DISTMEM_COMMLIB_Setup (maxmem);
+#define SAC_DISTMEM_COMMLIB_SETUP(maxmem, alloc_cache_outside_dsm)                       \
+    SAC_DISTMEM_COMMLIB_Setup (maxmem, alloc_cache_outside_dsm);
 
 #define SAC_DISTMEM_COMMLIB_BARRIER() SAC_DISTMEM_COMMLIB_Barrier ();
 
