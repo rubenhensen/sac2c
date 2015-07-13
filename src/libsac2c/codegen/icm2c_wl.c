@@ -320,7 +320,9 @@ ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
 
         IF_BEGIN ("SAC_WL_IS_DISTRIBUTED")
             ;
-            indout ("SAC_TR_DISTMEM_PRINT( \"Executing distributed with-loop.\");\n");
+            indout ("SAC_TR_DISTMEM_PRINT( \"Executing distributed with-loop (arr: "
+                    "%%s).\", NT_STR( %s));\n",
+                    to_NT);
             /* TODO: Maybe we can get rid of this barrier in some cases? It is required
              * because of a possible anti-dependency only. */
             indout ("SAC_DISTMEM_BARRIER();\n");
@@ -331,12 +333,18 @@ ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
         IF_END ();
         ELSE_BEGIN ()
             ;
-            indout ("SAC_TR_DISTMEM_PRINT( \"Executing non-distributed with-loop.\");\n");
+            indout ("SAC_TR_DISTMEM_PRINT( \"Executing non-distributed with-loop (arr: "
+                    "%%s, arr distributed: %%d, in replicated exec mode? %%d).\", "
+                    "NT_STR( %s), SAC_ND_A_IS_DIST( %s), SAC_DISTMEM_exec_mode == "
+                    "SAC_DISTMEM_exec_mode_sync);\n",
+                    to_NT, to_NT);
         ELSE_END ();
     } else {
         indout ("const bool SAC_WL_IS_DISTRIBUTED = FALSE;\n");
         indout ("const int SAC_WL_DIST_DIM0_SIZE = 0;\n");
-        indout ("SAC_TR_DISTMEM_PRINT( \"Executing non-distributable with-loop.\");\n");
+        indout ("SAC_TR_DISTMEM_PRINT( \"Executing non-distributable with-loop (arr: "
+                "%%s).\", NT_STR( %s));\n",
+                to_NT);
         indout ("const uintptr_t SAC_WL_DIST_OFFS = 0;\n");
         indout ("const size_t SAC_WL_DIST_BYTES = 0;\n");
     }

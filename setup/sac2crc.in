@@ -505,6 +505,13 @@ DISTMEM_COMMLIB  := "GPI"
 target distmem_mpi::distmem:
 DISTMEM_COMMLIB  := "MPI"
 
+
+/*****************************************************************************
+ * MT target for mt version of the library that can coexist
+ */
+target mtcoexist:
+LIB_VARIANT      := "mtcoexist"
+
 /*****************************************************************************
  * cuda targets
  */

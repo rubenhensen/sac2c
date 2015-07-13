@@ -8939,9 +8939,12 @@ COMPcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    /* FIXME: This assertion fails sometimes when compiling for -mt and the condition is a
+     * N_prf node.  */
     DBUG_ASSERT (((NODE_TYPE (COND_COND (arg_node)) == N_id)
                   || (NODE_TYPE (COND_COND (arg_node)) == N_bool)),
-                 "if-clause condition is neither a N_id nor a N_bool node!");
+                 "if-clause condition is neither a N_id nor a N_bool but node type %d!",
+                 NODE_TYPE (COND_COND (arg_node)));
 
     INFO_COND (arg_info) = TRUE;
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
@@ -9982,6 +9985,13 @@ COMPwith2 (node *arg_node, info *arg_info)
     node *begin_icm;
     if (global.backend == BE_distmem) {
         withop = WITH2_WITHOP (wlnode);
+
+        if (num_with_ops > 1) {
+            CTIwarn ("The distributed memory backend does not yet support distributed "
+                     "multi-operator with-loops "
+                     "(first target: %s, first operator: %s, number of operators: %s).",
+                     IDS_NAME (wlids), profile_name, num_with_ops);
+        }
 
         /*
          * The with-loop is distributable iff it is a single-operator
