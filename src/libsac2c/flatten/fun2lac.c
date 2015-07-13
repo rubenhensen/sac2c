@@ -282,17 +282,24 @@ F2Lassign (node *arg_node, info *arg_info)
             }
         }
         break;
-#if 0
-  /* There (probably) should not be annotations in loop-funs at all as they may break
-   * assumptions about loop-fun structure, e.g. see the elaborate if-conditions
-   * in the N_let case above that checks that a function call is the last assignment
-   * in N_cond's true-branch. */
-  case N_annotate:
-    if (ASSIGN_NEXT( arg_node) != NULL) {
-      ASSIGN_NEXT( arg_node) = TRAVdo( ASSIGN_NEXT( arg_node), arg_info);
-    }
-    break;
-#endif
+
+    /* There (probably) should not be annotations in loop-funs at all as they may break
+     * assumptions about loop-fun structure, e.g. see the elaborate if-conditions
+     * in the N_let case above that checks that a function call is the last assignment
+     * in N_cond's true-branch. */
+    case N_annotate:
+        if (!global.doprofile) {
+            DBUG_UNREACHABLE ("Unexpected node type %d in F2Lassign.",
+                              NODE_TYPE (ASSIGN_STMT (arg_node)));
+        }
+
+        /* When profiling is enabled, there can be annotations in loop-funs.
+         * We don't want to break compilation in that case. */
+
+        if (ASSIGN_NEXT (arg_node) != NULL) {
+            ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+        }
+        break;
     default:
         DBUG_UNREACHABLE ("Unexpected node type %d in F2Lassign.",
                           NODE_TYPE (ASSIGN_STMT (arg_node)));
