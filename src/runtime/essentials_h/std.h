@@ -539,12 +539,13 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_ND_A_MIRROR_LOCAL_FROM__UNDEF(var_NT) SAC_ICM_UNDEF ()
 
 /*
- * SAC_ND_A_MIRROR_LOCAL_TO implementations (referenced by sac_std_gen.h)
+ * SAC_ND_A_MIRROR_LOCAL_COUNT implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_A_MIRROR_LOCAL_TO__DEFAULT(var_NT) CAT12 (NT_NAME (var_NT), __dm_localTo)
+#define SAC_ND_A_MIRROR_LOCAL_COUNT__DEFAULT(var_NT)                                     \
+    CAT12 (NT_NAME (var_NT), __dm_localCount)
 
-#define SAC_ND_A_MIRROR_LOCAL_TO__UNDEF(var_NT) SAC_ICM_UNDEF ()
+#define SAC_ND_A_MIRROR_LOCAL_COUNT__UNDEF(var_NT) SAC_ICM_UNDEF ()
 
 /*
  * SAC_ND_A_MIRROR_PTR_CACHE implementations (referenced by sac_std_gen.h)
@@ -564,13 +565,13 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_ND_A_MIRROR_PTR_CACHE_FROM__UNDEF(var_NT) SAC_ICM_UNDEF ()
 
 /*
- * SAC_ND_A_MIRROR_PTR_CACHE_TO implementations (referenced by sac_std_gen.h)
+ * SAC_ND_A_MIRROR_PTR_CACHE_COUNT implementations (referenced by sac_std_gen.h)
  */
 
-#define SAC_ND_A_MIRROR_PTR_CACHE_TO__DEFAULT(var_NT)                                    \
-    CAT12 (NT_NAME (var_NT), __dm_ptrCacheTo)
+#define SAC_ND_A_MIRROR_PTR_CACHE_COUNT__DEFAULT(var_NT)                                 \
+    CAT12 (NT_NAME (var_NT), __dm_ptrCacheCount)
 
-#define SAC_ND_A_MIRROR_PTR_CACHE_TO__UNDEF(var_NT) SAC_ICM_UNDEF ()
+#define SAC_ND_A_MIRROR_PTR_CACHE_COUNT__UNDEF(var_NT) SAC_ICM_UNDEF ()
 
 #endif /* SAC_DO_DISTMEM */
 
@@ -716,14 +717,26 @@ typedef intptr_t *SAC_array_descriptor_t;
          SAC_CS_READ_ARRAY (from_NT, from_pos)                                           \
            SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos])
 
+/******************************************************************************
+ * How does the range check optimization in SAC_ND_READ__DIS work?
+ *
+ * use a < for an inclusive lower bound and exclusive upper bound
+ * use <= for an inclusive lower bound and inclusive upper bound
+ * alternatively, if the upper bound is inclusive and you can pre-calculate
+ *   upper-lower, simply add + 1 to upper-lower and use the < operator.
+ *     if ((unsigned)(number-lower) <= (upper-lower))
+ *         in_range(number);
+ *
+ ******************************************************************************/
+
 #define SAC_ND_READ__DIS(from_NT, from_pos)                                              \
     (SAC_TR_AA_FPRINT ("%s read", from_NT, from_pos,                                     \
                        SAC_ND_A_IS_DIST (from_NT) ? "DSM" : "Non-DSM")                   \
        SAC_BC_READ (from_NT, from_pos) SAC_CS_READ_ARRAY (from_NT, from_pos) (           \
-         (SAC_ND_A_MIRROR_LOCAL_FROM (from_NT) > from_pos                                \
-          || SAC_ND_A_MIRROR_LOCAL_TO (from_NT) < from_pos)                              \
-           ? ((SAC_ND_A_MIRROR_PTR_CACHE_FROM (from_NT) > from_pos                       \
-               || SAC_ND_A_MIRROR_PTR_CACHE_TO (from_NT) < from_pos)                     \
+         ((unsigned)(from_pos - SAC_ND_A_MIRROR_LOCAL_FROM (from_NT))                    \
+          >= SAC_ND_A_MIRROR_LOCAL_COUNT (from_NT))                                      \
+           ? (((unsigned)(from_pos - SAC_ND_A_MIRROR_PTR_CACHE_FROM (from_NT))           \
+               >= SAC_ND_A_MIRROR_PTR_CACHE_COUNT (from_NT))                             \
                 ? (SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR (from_NT, from_pos))                \
                 : (SAC_DISTMEM_AVOIDED_PTR_CALC_REMOTE_READ_EXPR () 0),                  \
               SAC_DISTMEM_CHECK_PTR_FROM_CACHE (from_NT, from_pos,                       \
@@ -1511,7 +1524,7 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_ND_ALLOC__DATA_BASETYPE__AKS (var_NT, basetype)                          \
         }                                                                                \
         SAC_ND_A_MIRROR_LOCAL_FROM (var_NT) = SAC_DISTMEM_DET_LOCAL_FROM (var_NT);       \
-        SAC_ND_A_MIRROR_LOCAL_TO (var_NT) = SAC_DISTMEM_DET_LOCAL_TO (var_NT);           \
+        SAC_ND_A_MIRROR_LOCAL_COUNT (var_NT) = SAC_DISTMEM_DET_LOCAL_COUNT (var_NT);     \
     }
 
 #define SAC_ND_ALLOC__DATA_BASETYPE__AKS_DSM(var_NT, basetype)                           \
@@ -1548,7 +1561,7 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD (var_NT, basetype)                      \
         }                                                                                \
         SAC_ND_A_MIRROR_LOCAL_FROM (var_NT) = SAC_DISTMEM_DET_LOCAL_FROM (var_NT);       \
-        SAC_ND_A_MIRROR_LOCAL_TO (var_NT) = SAC_DISTMEM_DET_LOCAL_TO (var_NT);           \
+        SAC_ND_A_MIRROR_LOCAL_COUNT (var_NT) = SAC_DISTMEM_DET_LOCAL_COUNT (var_NT);     \
     }
 
 #define SAC_ND_ALLOC__DATA_BASETYPE__AKD_AUD_DSM(var_NT, basetype)                       \
@@ -1654,7 +1667,7 @@ FIXME Do not initialize for the time being, as value 0                          
         }                                                                                \
         SAC_ND_A_DESC_IS_DIST (var_NT) = SAC_ND_A_MIRROR_IS_DIST (var_NT);               \
         SAC_ND_A_MIRROR_LOCAL_FROM (var_NT) = SAC_DISTMEM_DET_LOCAL_FROM (var_NT);       \
-        SAC_ND_A_MIRROR_LOCAL_TO (var_NT) = SAC_DISTMEM_DET_LOCAL_TO (var_NT);           \
+        SAC_ND_A_MIRROR_LOCAL_COUNT (var_NT) = SAC_DISTMEM_DET_LOCAL_COUNT (var_NT);     \
     }
 
 #define SAC_ND_ALLOC__DESC_AND_DATA__UNDEF(var_NT, dim, basetype) SAC_ICM_UNDEF ();
@@ -1940,9 +1953,9 @@ FIXME Do not initialize for the time being, as value 0                          
               = SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT));                       \
         }                                                                                \
         SAC_ND_A_MIRROR_LOCAL_FROM (to_NT) = SAC_DISTMEM_DET_LOCAL_FROM (to_NT);         \
-        SAC_ND_A_MIRROR_LOCAL_TO (to_NT) = SAC_DISTMEM_DET_LOCAL_TO (to_NT);             \
-        SAC_ND_A_MIRROR_PTR_CACHE_FROM (to_NT) = -1;                                     \
-        SAC_ND_A_MIRROR_PTR_CACHE_TO (to_NT) = -1;                                       \
+        SAC_ND_A_MIRROR_LOCAL_COUNT (to_NT) = SAC_DISTMEM_DET_LOCAL_COUNT (to_NT);       \
+        SAC_ND_A_MIRROR_PTR_CACHE_FROM (to_NT) = 0;                                      \
+        SAC_ND_A_MIRROR_PTR_CACHE_COUNT (to_NT) = 0;                                     \
     }
 
 /*

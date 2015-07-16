@@ -9989,7 +9989,7 @@ COMPwith2 (node *arg_node, info *arg_info)
         if (num_with_ops > 1) {
             CTIwarn ("The distributed memory backend does not yet support distributed "
                      "multi-operator with-loops "
-                     "(first target: %s, first operator: %s, number of operators: %s).",
+                     "(first target: %s, first operator: %s, number of operators: %d).",
                      IDS_NAME (wlids), profile_name, num_with_ops);
         }
 

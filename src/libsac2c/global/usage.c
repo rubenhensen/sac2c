@@ -619,21 +619,9 @@ PrintDistMemOptions (void)
             "disabled.\n"
             "                           (By default, the caches are allocated within the "
             "DSM segment.)\n"
-            "\n"
-
-            "    -numprocs <n>   Specify at compile time the exact number of processes "
-            "to be\n"
-            "                    used for parallel execution.\n"
-            "\n"
-            "    -maxprocs <n>   Specify at compile time only an upper bound on the "
-            "number\n"
-            "                    of processes to be used  for parallel execution when "
-            "exact\n"
-            "                    number is determined at runtime.\n"
-            "                      (default: %d)\n"
             "\n",
             global.distmem_max_memory_mb, global.distmem_min_elems_per_node,
-            global.distmem_tr_pf_node, global.max_procs);
+            global.distmem_tr_pf_node);
 
     DBUG_RETURN ();
 }

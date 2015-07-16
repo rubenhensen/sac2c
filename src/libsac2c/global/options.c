@@ -782,8 +782,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("numthreads");
 
-    ARGS_OPTION ("numprocs", ARG_RANGE (global.num_procs, 1, global.max_procs));
-
     ARGS_OPTION_BEGIN ("no")
     {
         ARG_CHOICE_BEGIN ();

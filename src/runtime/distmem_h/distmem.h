@@ -417,7 +417,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *   @brief   Updates the pointer cache for an array.
  *
  *   @param  var_NT       array
- *   @param  elem_index   index of the element that lead to a cache miss
+ *   @param  elem_index   index of the element that lead to a pointer cache miss
  *
  ******************************************************************************/
 
@@ -426,17 +426,19 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
                                NT_STR (var_NT), elem_index)                              \
     SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT)                                              \
       = SAC_DISTMEM_DET_FROM (var_NT, SAC_DISTMEM_DET_OWNER (var_NT, elem_index)),       \
-      SAC_ND_A_MIRROR_PTR_CACHE_TO (var_NT)                                              \
-      = SAC_DISTMEM_DET_TO (var_NT, SAC_DISTMEM_DET_OWNER (var_NT, elem_index)),         \
+      SAC_ND_A_MIRROR_PTR_CACHE_COUNT (var_NT)                                           \
+      = SAC_ND_A_FIRST_ELEMS (var_NT),                                                   \
       SAC_ND_A_MIRROR_PTR_CACHE (var_NT)                                                 \
       = SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT), SAC_NT_CBASETYPE (var_NT),     \
                                   SAC_ND_A_FIRST_ELEMS (var_NT),                         \
                                   SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT))               \
         - SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT),                                       \
-      SAC_TR_DISTMEM_PRINT_EXPR (                                                        \
-        "Updated pointer cache of array %s for index %d to %p (indices %d - %d)",        \
-        NT_STR (var_NT), elem_index, SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                 \
-        SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT), SAC_ND_A_MIRROR_PTR_CACHE_TO (var_NT))  \
+      SAC_TR_DISTMEM_PRINT_EXPR ("Updated pointer cache of array %s for index %d to %p " \
+                                 "(%d elements from index %d)",                          \
+                                 NT_STR (var_NT), elem_index,                            \
+                                 SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                     \
+                                 SAC_ND_A_MIRROR_PTR_CACHE_COUNT (var_NT),               \
+                                 SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT))                \
         SAC_DISTMEM_UPDATED_PTR_CACHE_EXPR () 0
 
 /** <!--********************************************************************-->
@@ -476,40 +478,18 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 /** <!--********************************************************************-->
  *
- * @fn SAC_DISTMEM_DET_TO( var_NT, rank)
+ * @fn SAC_DISTMEM_DET_LOCAL_COUNT( var_NT)
  *
- *   @brief   Determines the last array element that is local to a node.
- *
- *   @param  var_NT       array
- *   @param  rank         rank of the node
- *
- *   @return              index of the last array element that is local to the node
- *
- ******************************************************************************/
-
-#define SAC_DISTMEM_DET_TO(var_NT, rank)                                                 \
-    (SAC_ND_A_IS_DIST (var_NT)                                                           \
-       ? (SAC_TR_DISTMEM_PRINT_EXPR (                                                    \
-            "The last element of array %s local to node %d is %d.", NT_STR (var_NT),     \
-            rank, SAC_ND_A_FIRST_ELEMS (var_NT) * (rank + 1) - 1)                        \
-              SAC_ND_A_FIRST_ELEMS (var_NT)                                              \
-            * (rank + 1)                                                                 \
-          - 1)                                                                           \
-       : (SAC_ND_A_SIZE (var_NT) - 1))
-
-/** <!--********************************************************************-->
- *
- * @fn SAC_DISTMEM_DET_LOCAL_TO( var_NT)
- *
- *   @brief   Determines the last array element that is local to this node.
+ *   @brief   Determines the number of array elements that are local to this node.
  *
  *   @param  var_NT       array
  *
- *   @return              index of the last array element that is local to this node
+ *   @return              number of array elements that are local to this node
  *
  ******************************************************************************/
 
-#define SAC_DISTMEM_DET_LOCAL_TO(var_NT) SAC_DISTMEM_DET_TO (var_NT, SAC_DISTMEM_rank)
+#define SAC_DISTMEM_DET_LOCAL_COUNT(var_NT)                                              \
+    (SAC_ND_A_IS_DIST (var_NT) ? SAC_ND_A_FIRST_ELEMS (var_NT) : SAC_ND_A_SIZE (var_NT))
 
 /** <!--********************************************************************-->
  *
