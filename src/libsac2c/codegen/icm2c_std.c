@@ -650,11 +650,11 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt, char **vararg_
         /* It is important that we are in a block at this point because the variables
          * declared by the broadcast operations are only needed within the block. */
 
+        indout ("SAC_DISTMEM_SWITCH_TO_SIDE_EFFECTS_OUTER_EXEC();\n");
         indout ("SAC_DISTMEM_BARRIER();\n");
 
         IF_BEGIN ("SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER")
             ;
-            indout ("SAC_DISTMEM_SWITCH_TO_SIDE_EFFECTS_OUTER_EXEC();\n");
             indout ("SAC_TR_DISTMEM_PRINT( \"Master node is executing function "
                     "application with side effects: %s\");\n",
                     name);
@@ -709,8 +709,6 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt, char **vararg_
                                                                      ret_NT, vararg_cnt,
                                                                      vararg_NT, vararg,
                                                                      "FREE_MEM_COMMON");
-
-            indout ("SAC_DISTMEM_SWITCH_TO_SYNC_EXEC();\n");
         IF_END ();
         ELSE_BEGIN ()
             ;
@@ -761,6 +759,8 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt, char **vararg_
                                                                      vararg_NT, vararg,
                                                                      "FREE_MEM_COMMON");
         ELSE_END ();
+
+        indout ("SAC_DISTMEM_SWITCH_TO_SYNC_EXEC();\n");
 
     ELSE_END ();
 

@@ -28,7 +28,10 @@ static UNUSED int SAC_DISTMEM_COMMLIB_GASNET_dummy;
 
 #if ENABLE_DISTMEM_GASNET
 
+/* For mmap */
 #include <sys/mman.h>
+/* For errno */
+#include <errno.h>
 
 /* Do not show some warnings for the GASNet header for GCC (>= 4.6). */
 #ifdef __GNUC__
@@ -91,6 +94,9 @@ SAC_DISTMEM_COMMLIB_Init (int argc, char *argv[])
 #endif /* COMPILE_TRACE */
 {
     GASNET_SAFE (gasnet_init (&argc, &argv));
+
+    SAC_DISTMEM_rank = gasnet_mynode ();
+    SAC_DISTMEM_size = gasnet_nodes ();
 }
 
 #if COMPILE_TRACE
@@ -105,10 +111,6 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem, bool alloc_cache_outside_dsm)
 
     /* Print GASNet configuration. */
     SAC_TR_DISTMEM_PRINT (GASNET_CONFIG_STRING);
-
-    SAC_DISTMEM_rank = gasnet_mynode ();
-    SAC_DISTMEM_size = gasnet_nodes ();
-    // TODO: Check the size again the specified size?
 
     if (SAC_DISTMEM_pagesz != GASNET_PAGESIZE) {
         SAC_RuntimeError (
@@ -228,6 +230,17 @@ SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, size_t owner_rank,
                 (void *)((uintptr_t)seg_info[owner_rank].addr
                          + remote_page_index * SAC_DISTMEM_pagesz),
                 SAC_DISTMEM_pagesz);
+}
+
+#if COMPILE_TRACE
+void
+SAC_DISTMEM_COMMLIB_TR_Abort (int exit_code)
+#else  /* COMPILE_TRACE */
+void
+SAC_DISTMEM_COMMLIB_Abort (int exit_code)
+#endif /* COMPILE_TRACE */
+{
+    gasnet_exit (exit_code);
 }
 
 #if COMPILE_TRACE

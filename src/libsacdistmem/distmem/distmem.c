@@ -256,22 +256,20 @@ SegvHandler (int sig, siginfo_t *si, void *unused)
                           owner_rank, local_page_ptr);
 
     /* Load the page from its owner node. */
+    SAC_PF_BeginComm ();
     SAC_DISTMEM_COMMLIB_LOAD_PAGE (local_page_ptr, owner_rank, remote_page_index);
+    SAC_PF_EndComm ();
 
     /*
-    // TODO: implement this
-          MPI_SAFE(MPI_Win_lock(MPI_LOCK_SHARED, node, 0, win));
-          MPI_SAFE(MPI_Get(page, pagesize, MPI_BYTE, node, remote_page * pagesize,
-    pagesize, MPI_BYTE, win)); MPI_SAFE(MPI_Win_unlock(node, win));
 
           ARMCI_SAFE(ARMCI_Get((void*)((uintptr_t)getseg(node) + remote_page * pagesize),
-    page, pagesize, node));
+       page, pagesize, node));
 
           const gaspi_queue_id_t queue_id = 0;
           uintptr_t local_offset = (uintptr_t)page - (uintptr_t)cache;
           GPI_SAFE(gaspi_read(get_segid(rank, SEGID_LOCAL_CACHE), local_offset, node,
-    get_segid(node, SEGID_SHARED_SEG), remote_page * pagesize, pagesize, queue_id,
-    GASPI_BLOCK)); GPI_SAFE(gaspi_wait(queue_id, GASPI_BLOCK));
+       get_segid(node, SEGID_SHARED_SEG), remote_page * pagesize, pagesize, queue_id,
+       GASPI_BLOCK)); GPI_SAFE(gaspi_wait(queue_id, GASPI_BLOCK));
     */
 }
 
@@ -491,22 +489,9 @@ SAC_DISTMEM_Barrier (void)
     }
 }
 
-#if COMPILE_TRACE
-void
-SAC_DISTMEM_TR_Exit (int exit_code)
-#elif COMPILE_PROFILE
-void
-SAC_DISTMEM_PR_Exit (int exit_code)
-#else /* COMPILE_PLAIN */
-void
-SAC_DISTMEM_Exit (int exit_code)
-#endif
+static void
+PrintTraceSummary ()
 {
-    /* Print heap manager diagnostics; */
-    SAC_DISTMEM_HM_ShowDiagnostics ();
-
-    SAC_TR_DISTMEM_PRINT ("Exiting communication library with exit code %d.", exit_code);
-
     SAC_TR_DISTMEM_PRINT ("   Invalidated pages: %lu", SAC_DISTMEM_TR_num_inval_pages);
     SAC_TR_DISTMEM_PRINT ("   Seg faults: %lu", SAC_DISTMEM_TR_num_segfaults);
     SAC_TR_DISTMEM_PRINT ("   Pointer calculations: %lu", SAC_DISTMEM_TR_num_ptr_calcs);
@@ -519,11 +504,51 @@ SAC_DISTMEM_Exit (int exit_code)
     SAC_TR_DISTMEM_PRINT ("   Pointer cache updates (remote reads): %lu",
                           SAC_DISTMEM_TR_num_ptr_cache_updates);
     SAC_TR_DISTMEM_PRINT ("   Barriers: %lu", SAC_DISTMEM_TR_num_barriers);
+}
+
+#if COMPILE_TRACE
+void
+SAC_DISTMEM_TR_Exit (int exit_code)
+#elif COMPILE_PROFILE
+void
+SAC_DISTMEM_PR_Exit (int exit_code)
+#else /* COMPILE_PLAIN */
+void
+SAC_DISTMEM_Exit (int exit_code)
+#endif
+{
+    SAC_TR_DISTMEM_PRINT ("Exiting communication library with exit code %d.", exit_code);
+
+    /* Print heap manager diagnostics; */
+    SAC_DISTMEM_HM_ShowDiagnostics ();
+
+    PrintTraceSummary ();
 
     /* We cannot profile this barrier because otherwise libsacdistmem doesn't compile.
      * Since we always need this barrier it wouldn't be useful anyways. */
     SAC_DISTMEM_Barrier ();
     SAC_DISTMEM_COMMLIB_EXIT (exit_code);
+}
+
+#if COMPILE_TRACE
+void
+SAC_DISTMEM_TR_Abort (int exit_code)
+#elif COMPILE_PROFILE
+void
+SAC_DISTMEM_PR_Abort (int exit_code)
+#else /* COMPILE_PLAIN */
+void
+SAC_DISTMEM_Abort (int exit_code)
+#endif
+{
+    SAC_TR_DISTMEM_PRINT ("Aborting communication library with exit code %d.", exit_code);
+
+    /* Print heap manager diagnostics; */
+    SAC_DISTMEM_HM_ShowDiagnostics ();
+
+    PrintTraceSummary ();
+
+    SAC_DISTMEM_COMMLIB_ABORT (exit_code);
 }
 
 #if COMPILE_TRACE
@@ -634,28 +659,33 @@ SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range
     return stop;
 }
 
-#if COMPILE_TRACE
+#if COMPILE_PLAIN
+
 /*
- * This must be a C function because otherwise
- * we get a operation on SAC_DISTMEM_TR_num_ptr_calcs may be
- * undefined [-Wsequence-point] warning.
+ * We don't need different versions of this functions since it is just a
+ * helper function for profiling and tracing purposes.
+ * But make sure to compile it only once.
  */
 void
-SAC_DISTMEM_TR_IncNumPtrCalcs (void)
+SAC_DISTMEM_IncCounter (unsigned long *counter_ptr)
 {
-    SAC_DISTMEM_TR_num_ptr_calcs++;
+    (*counter_ptr)++;
 }
 
-#endif /* COMPILE_TRACE */
+#endif
 
 #endif /* ENABLE_DISTMEM */
 
-#elif COMPILE_PLAIN /* defined(COMPILE_DISTMEM) */
+#elif COMPILE_PLAIN
 
 /* Dummy function for SAC_RuntimeError when the distributed memory backend is not used. */
 void
-SAC_DISTMEM_Exit (int exit_code)
+SAC_DISTMEM_Abort (int exit_code)
 {
 }
 
-#endif /* defined(COMPILE_DISTMEM) */
+#endif
+
+#undef COMPILE_PLAIN
+#undef COMPILE_TRACE
+#undef COMPILE_PROFILE

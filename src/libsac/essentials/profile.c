@@ -154,7 +154,7 @@ SAC_PF_PrintTime (char *title, char *space, __PF_TIMER *time)
 void
 SAC_PF_PrintCount (char *title, char *space, unsigned long count)
 {
-    fprintf (stderr, "%-30s: %s %lu\n", title, space, count);
+    fprintf (stderr, "%-40s: %s %lu\n", title, space, count);
 }
 
 /******************************************************************************

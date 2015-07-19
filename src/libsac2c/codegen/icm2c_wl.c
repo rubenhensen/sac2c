@@ -323,12 +323,12 @@ ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
             indout ("SAC_TR_DISTMEM_PRINT( \"Executing distributed with-loop (arr: "
                     "%%s).\", NT_STR( %s));\n",
                     to_NT);
+            /* Perform the switch before the barrier so that the profiling of the
+             * execution modes is correct. */
+            indout ("SAC_DISTMEM_SWITCH_TO_DIST_EXEC();\n");
             /* TODO: Maybe we can get rid of this barrier in some cases? It is required
              * because of a possible anti-dependency only. */
             indout ("SAC_DISTMEM_BARRIER();\n");
-            /* Perform the switch after the barrier so that the profiling of the execution
-             * modes is correct. */
-            indout ("SAC_DISTMEM_SWITCH_TO_DIST_EXEC();\n");
             indout ("SAC_DISTMEM_ALLOW_DIST_WRITES();\n");
         IF_END ();
         ELSE_BEGIN ()

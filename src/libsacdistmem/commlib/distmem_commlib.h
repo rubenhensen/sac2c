@@ -102,9 +102,24 @@ void SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, size_t owner_rank,
 
 /** <!--********************************************************************-->
  *
+ * @fn void SAC_DISTMEM_COMMLIB_Abort( void)
+ *
+ *   @brief    Shuts down the communication library when an error has occured.
+ *
+ *             It is recommended to still call exit() afterwards but do not
+ *             rely on it being called.
+ *
+ *   @param exit_code     exit code
+ *
+ ******************************************************************************/
+
+void SAC_DISTMEM_COMMLIB_Abort (int exit_code);
+
+/** <!--********************************************************************-->
+ *
  * @fn void SAC_DISTMEM_COMMLIB_Exit( void)
  *
- *   @brief    Shuts down the communication library.
+ *   @brief    Shuts down the communication library when no error has occured.
  *
  *             It is recommended to still call exit() afterwards but do not
  *             rely on it being called.
@@ -114,6 +129,8 @@ void SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, size_t owner_rank,
  ******************************************************************************/
 
 void SAC_DISTMEM_COMMLIB_Exit (int exit_code);
+
+/* TODO: Add Broadcast */
 
 /******************************************
  * Tracing declarations
@@ -127,6 +144,8 @@ void SAC_DISTMEM_COMMLIB_TR_Barrier (void);
 
 void SAC_DISTMEM_COMMLIB_TR_LoadPage (void *local_page_ptr, size_t owner_rank,
                                       size_t remote_page_index);
+
+void SAC_DISTMEM_COMMLIB_TR_Abort (int exit_code); /* TODO: Use */
 
 void SAC_DISTMEM_COMMLIB_TR_Exit (int exit_code);
 
@@ -150,6 +169,8 @@ void SAC_DISTMEM_COMMLIB_TR_Exit (int exit_code);
 
 #define SAC_DISTMEM_COMMLIB_EXIT(exit_code) SAC_DISTMEM_COMMLIB_TR_Exit (exit_code);
 
+#define SAC_DISTMEM_COMMLIB_ABORT(exit_code) SAC_DISTMEM_COMMLIB_TR_Abort (exit_code);
+
 #else /* COMPILE_TRACE */
 
 #define SAC_DISTMEM_COMMLIB_INIT(argc, argv) SAC_DISTMEM_COMMLIB_Init (argc, argv);
@@ -163,6 +184,8 @@ void SAC_DISTMEM_COMMLIB_TR_Exit (int exit_code);
     SAC_DISTMEM_COMMLIB_LoadPage (local_page_ptr, owner_rank, remote_page_index);
 
 #define SAC_DISTMEM_COMMLIB_EXIT(exit_code) SAC_DISTMEM_COMMLIB_Exit (exit_code);
+
+#define SAC_DISTMEM_COMMLIB_ABORT(exit_code) SAC_DISTMEM_COMMLIB_Abort (exit_code);
 
 #endif /* COMPILE_TRACE */
 

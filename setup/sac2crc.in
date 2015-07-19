@@ -488,10 +488,17 @@ target distmemcheck:
 BACKEND          := "DistMem"
 LIB_VARIANT      := "dmcheck"
 
+target distmemprofile:
+BACKEND          := "DistMem"
+LIB_VARIANT      := "dmprofile"
+
 target distmem_gasnet::distmem:
 DISTMEM_COMMLIB  := "GASNet"
 
 target distmemcheck_gasnet::distmemcheck:
+DISTMEM_COMMLIB  := "GASNet"
+
+target distmemprofile_gasnet::distmemprofile:
 DISTMEM_COMMLIB  := "GASNet"
 
 @GASNET_CONDUIT_TARGETS@
@@ -499,11 +506,22 @@ DISTMEM_COMMLIB  := "GASNet"
 target distmem_armci::distmem:
 DISTMEM_COMMLIB  := "ARMCI"
 
+target distmemcheck_armci::distmemcheck:
+DISTMEM_COMMLIB  := "ARMCI"
+
 target distmem_gpi::distmem:
+DISTMEM_COMMLIB  := "GPI"
+
+target distmemcheck_gpi::distmemcheck:
 DISTMEM_COMMLIB  := "GPI"
 
 target distmem_mpi::distmem:
 DISTMEM_COMMLIB  := "MPI"
+CC               := "@MPICC@ -std=gnu99"
+
+target distmemcheck_mpi::distmemcheck:
+DISTMEM_COMMLIB  := "MPI"
+CC               := "@MPICC@ -std=gnu99"
 
 
 /*****************************************************************************

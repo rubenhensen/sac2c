@@ -32,9 +32,9 @@ SAC_C_EXTERN_VAR int SAC_DISTMEM_trace_profile_rank;
 
 /** <!--********************************************************************-->
  *
- * @fn void SAC_DISTMEM_Exit( int exit_code)
+ * @fn void SAC_DISTMEM_Abort( int exit_code)
  *
- *   @brief    Shuts down the dsm system.
+ *   @brief    Aborts execution in an error situation.
  *
  *             It is recommended to still call exit() afterwards but do not
  *             rely on it being called.
@@ -45,7 +45,7 @@ SAC_C_EXTERN_VAR int SAC_DISTMEM_trace_profile_rank;
  *
  ******************************************************************************/
 
-void SAC_DISTMEM_Exit (int exit_code);
+void SAC_DISTMEM_Abort (int exit_code);
 
 /* For tracing purposes we define the following macros also when
  * the distributed memory backend is not used. */
@@ -261,6 +261,21 @@ void SAC_DISTMEM_Barrier (void);
 
 /** <!--********************************************************************-->
  *
+ * @fn void SAC_DISTMEM_Exit( int exit_code)
+ *
+ *   @brief    Shuts down the dsm system.
+ *
+ *             It is recommended to still call exit() afterwards but do not
+ *             rely on it being called.
+ *
+ *  @param exit_code    exit code
+ *
+ ******************************************************************************/
+
+void SAC_DISTMEM_Exit (int exit_code);
+
+/** <!--********************************************************************-->
+ *
  * @fn size_t SAC_DISTMEM_DetDoDistributeArray( size_t total_elems, size_t dim0_size)
  *
  *   @brief   Determines whether an array of the given size should be distributed.
@@ -325,6 +340,21 @@ size_t SAC_DISTMEM_DetDim0Start (size_t dim0_size, size_t start_range, size_t st
 
 size_t SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range);
 
+/** <!--********************************************************************-->
+ *
+ * @fn size_t SAC_DISTMEM_IncCounter( unsigned long *counter_ptr)
+ *
+ *   @brief   Increments a counter. Used for tracing and profiling purposes.
+ *
+ *            This must be a C function because otherwise
+ *            we get "operation may be undefined [-Wsequence-point]" warnings.
+ *
+ *   @param counter_ptr     pointer to the counter
+ *
+ ******************************************************************************/
+
+void SAC_DISTMEM_IncCounter (unsigned long *counter_ptr);
+
 /******************************************
  * Tracing declarations
  *******************************************/
@@ -346,6 +376,8 @@ void SAC_DISTMEM_TR_AllowDistWrites (void);
 
 void SAC_DISTMEM_TR_ForbidDistWrites (void);
 
+void SAC_DISTMEM_TR_Abort (int exit_code);
+
 void SAC_DISTMEM_TR_Exit (int exit_code);
 
 bool SAC_DISTMEM_TR_DetDoDistrArr (size_t total_elems, size_t dim0_size);
@@ -355,8 +387,6 @@ size_t SAC_DISTMEM_TR_DetMaxElemsPerNode (size_t total_elems, size_t dim0_size);
 size_t SAC_DISTMEM_TR_DetDim0Start (size_t dim0_size, size_t start, size_t stop);
 
 size_t SAC_DISTMEM_TR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
-
-void SAC_DISTMEM_TR_IncNumPtrCalcs (void);
 
 /******************************************
  * Profiling declarations
@@ -378,6 +408,8 @@ void SAC_DISTMEM_PR_Barrier (void);
 void SAC_DISTMEM_PR_AllowDistWrites (void);
 
 void SAC_DISTMEM_PR_ForbidDistWrites (void);
+
+void SAC_DISTMEM_PR_Abort (int exit_code);
 
 void SAC_DISTMEM_PR_Exit (int exit_code);
 
@@ -697,7 +729,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define _SAC_DISTMEM_PR_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes,           \
                                      elem_index)                                         \
-    (SAC_DISTMEM_TR_IncNumPtrCalcs (),                                                   \
+    (SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_ptr_calcs),                             \
      _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index))
 
 /*
@@ -715,7 +747,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
             "%p, elems_first_nodes: %zd",                                                \
             elem_index, arr_offset, elems_first_nodes),                                  \
           (elem_type *)NULL)                                                             \
-       : (SAC_DISTMEM_TR_IncNumPtrCalcs (),                                              \
+       : (SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_ptr_calcs),                        \
           SAC_TR_DISTMEM_AA_PRINT (                                                      \
             "Retrieving pointer for element %zd owned by node %zd, segment "             \
             "starting at: %p, offset within segment: %" PRIuPTR ", array starting "      \
@@ -1644,6 +1676,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define SAC_DISTMEM_EXIT(exit_code) SAC_DISTMEM_TR_Exit (exit_code);
 
+#define SAC_DISTMEM_ABORT(exit_code) SAC_DISTMEM_TR_Abort (exit_code);
+
 #define SAC_DISTMEM_DET_DO_DISTR_ARR(total_elems, dim0_size)                             \
     SAC_DISTMEM_TR_DetDoDistrArr (total_elems, dim0_size);
 
@@ -1661,19 +1695,21 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_WRITE_EXPR()                                  \
     SAC_TR_DISTMEM_AA_PRINT ("Avoided pointer calculation for local write.")             \
-    SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes++,
+    SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes),
 
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_READ_EXPR(var_NT)                             \
     (SAC_ND_A_IS_DIST (var_NT)                                                           \
-       ? SAC_TR_DISTMEM_AA_PRINT ("Avoided pointer calculation for local read.")         \
-           SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads++                            \
+       ? (SAC_TR_DISTMEM_AA_PRINT ("Avoided pointer calculation for local read.")        \
+            SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads),  \
+          0)                                                                             \
        : 0),
 
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_REMOTE_READ_EXPR()                                  \
     SAC_TR_DISTMEM_AA_PRINT ("Avoided pointer calculation for remote read.")             \
-    SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads++,
+    SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads),
 
-#define SAC_DISTMEM_UPDATED_PTR_CACHE_EXPR() SAC_DISTMEM_TR_num_ptr_cache_updates++,
+#define SAC_DISTMEM_UPDATED_PTR_CACHE_EXPR()                                             \
+    SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_ptr_cache_updates),
 
 #elif SAC_DO_PROFILE_DISTMEM
 
@@ -1699,6 +1735,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define SAC_DISTMEM_EXIT(exit_code) SAC_DISTMEM_PR_Exit (exit_code);
 
+#define SAC_DISTMEM_ABORT(exit_code) SAC_DISTMEM_PR_Abort (exit_code);
+
 #define SAC_DISTMEM_DET_DO_DISTR_ARR(total_elems, dim0_size)                             \
     SAC_DISTMEM_PR_DetDoDistrArr (total_elems, dim0_size);
 
@@ -1715,15 +1753,18 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
     _SAC_DISTMEM_PR_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_WRITE_EXPR()                                  \
-    SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes++,
+    SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes),
 
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_READ_EXPR(var_NT)                             \
-    (SAC_ND_A_IS_DIST (var_NT) ? SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads++ : 0),
+    (SAC_ND_A_IS_DIST (var_NT)                                                           \
+       ? (SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads), 0) \
+       : 0),
 
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_REMOTE_READ_EXPR()                                  \
-    SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads++,
+    SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads),
 
-#define SAC_DISTMEM_UPDATED_PTR_CACHE_EXPR() SAC_DISTMEM_TR_num_ptr_cache_updates++,
+#define SAC_DISTMEM_UPDATED_PTR_CACHE_EXPR()                                             \
+    SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_ptr_cache_updates),
 
 #else
 
@@ -1745,6 +1786,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_BARRIER() SAC_DISTMEM_Barrier ();
 
 #define SAC_DISTMEM_EXIT(exit_code) SAC_DISTMEM_Exit (exit_code);
+
+#define SAC_DISTMEM_ABORT(exit_code) SAC_DISTMEM_Abort (exit_code);
 
 #define SAC_DISTMEM_DET_DO_DISTR_ARR(total_elems, dim0_size)                             \
     SAC_DISTMEM_DetDoDistrArr (total_elems, dim0_size);
@@ -1778,7 +1821,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  * distributed memory backend is not used.
  *******************************************/
 
-#define SAC_DISTMEM_EXIT(exit_code) SAC_DISTMEM_Exit (exit_code);
+#define SAC_DISTMEM_ABORT(exit_code) SAC_DISTMEM_Abort (exit_code);
 
 #define SAC_DISTMEM_BARRIER()
 

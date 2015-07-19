@@ -86,7 +86,7 @@ SAC_RuntimeError (char *format, ...)
 
     /* If the program does not use the distributed memory backend,
      * an empty dummy function in libsacdistmem.nodistmem will be called. */
-    SAC_DISTMEM_EXIT (1);
+    SAC_DISTMEM_ABORT (1);
 
     exit (1);
 }
@@ -129,7 +129,7 @@ SAC_RuntimeError_Mult (int cnt, ...)
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
-    SAC_DISTMEM_EXIT (1);
+    SAC_DISTMEM_ABORT (1);
 
     exit (1);
 }
@@ -159,7 +159,7 @@ SAC_RuntimeErrorLine (int line, char *format, ...)
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
-    SAC_DISTMEM_EXIT (1);
+    SAC_DISTMEM_ABORT (1);
 
     exit (1);
 }

@@ -218,6 +218,14 @@ OPTcheckOptionConsistency (void)
             CTIerror ("Multi-threaded program execution is not "
                       "supported when using the distributed memory backend.");
         }
+
+        if (global.distmem_cache_outside_dsm
+            && global.distmem_commlib == DISTMEM_COMMLIB_MPI) {
+            CTIwarn ("When MPI is used as a communication library, the cache is always "
+                     "allocated "
+                     "outside of the DSM segment. dsm_cache_outside_seg does not have "
+                     "any effect.");
+        }
     } else {
         /* The distributed memory backend is not used. Disable options that don't apply.
          */

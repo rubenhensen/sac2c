@@ -200,6 +200,9 @@ AddDistMemLib (str_buf *buffer)
         case DISTMEM_COMMLIB_GASNET:
             SBUFprintf (buffer, ".gasnet%s ", global.config.commlib_conduit);
             break;
+        case DISTMEM_COMMLIB_MPI:
+            SBUFprintf (buffer, ".mpi ");
+            break;
         default:
             /* TODO: Temporary to avoid warning, will be fixed when implemented. */
             SBUFprintf (buffer, ".notimplemented ");
