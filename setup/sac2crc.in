@@ -523,6 +523,18 @@ target distmemcheck_mpi::distmemcheck:
 DISTMEM_COMMLIB  := "MPI"
 CC               := "@MPICC@ -std=gnu99"
 
+target distmem_armci::distmem:
+DISTMEM_COMMLIB  := "ARMCI"
+CC               := "@MPICC@ -std=gnu99"
+CCLINK           += "-L@ARMCI_DIR@/lib -larmci -libverbs -lm"
+CCINCDIR         += "-I@ARMCI_DIR@/include"
+
+target distmemcheck_armci::distmemcheck:
+DISTMEM_COMMLIB  := "ARMCI"
+CC               := "@MPICC@ -std=gnu99"
+CCLINK           += "-L@ARMCI_DIR@/lib -larmci -libverbs -lm"
+CCINCDIR         += "-I@ARMCI_DIR@/include"
+
 
 /*****************************************************************************
  * MT target for mt version of the library that can coexist

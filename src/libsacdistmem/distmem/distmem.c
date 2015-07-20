@@ -27,9 +27,9 @@
 #elif COMPILE_PROFILE
 #define SAC_DO_PROFILE 1
 #define SAC_DO_PROFILE_DISTMEM 1
-#define SAC_DO_COMPILE_MODULE 1
 #endif
 #define SAC_DO_DISTMEM 1
+#define SAC_DO_COMPILE_MODULE 1
 
 #include "sac.h"
 

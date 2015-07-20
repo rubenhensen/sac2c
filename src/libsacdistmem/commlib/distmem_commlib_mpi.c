@@ -191,7 +191,7 @@ SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, size_t owner_rank,
                               size_t remote_page_index)
 #endif /* COMPILE_TRACE */
 {
-    SAC_TR_DISTMEM_PRINT ("MPI get from node %d, offset: %zd.",
+    SAC_TR_DISTMEM_PRINT ("MPI get from node %d, offset: %zd.", owner_rank,
                           remote_page_index * SAC_DISTMEM_pagesz);
     MPI_SAFE (MPI_Win_lock (MPI_LOCK_SHARED, owner_rank, 0, win));
     MPI_SAFE (MPI_Get (local_page_ptr, SAC_DISTMEM_pagesz, MPI_BYTE, owner_rank,

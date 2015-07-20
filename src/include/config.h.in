@@ -3,6 +3,9 @@
 /* CPU architecture string */
 #undef ARCH
 
+/* ARMCI installation */
+#undef ARMCI_DIR
+
 /* Available GASNet conduits. */
 #undef DISTMEM_GASNET_CONDUITS
 

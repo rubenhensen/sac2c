@@ -203,6 +203,9 @@ AddDistMemLib (str_buf *buffer)
         case DISTMEM_COMMLIB_MPI:
             SBUFprintf (buffer, ".mpi ");
             break;
+        case DISTMEM_COMMLIB_ARMCI:
+            SBUFprintf (buffer, ".armci ");
+            break;
         default:
             /* TODO: Temporary to avoid warning, will be fixed when implemented. */
             SBUFprintf (buffer, ".notimplemented ");

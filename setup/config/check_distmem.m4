@@ -9,11 +9,11 @@ AC_DEFUN([CHECK_DISTMEM], dnl
                  [enable_distmem_gasnet=$enableval]
                  [enable_distmem_gpi=no]
                  [enable_distmem_mpi=$enableval]
-                 [enable_distmem_armci=no],
+                 [enable_distmem_armci=$enableval],
                  [enable_distmem_gasnet=yes]
                  [enable_distmem_gpi=no]
                  [enable_distmem_mpi=yes]
-                 [enable_distmem_armci=no])
+                 [enable_distmem_armci=yes])
 
    if test x"$enable_distmem_gasnet" != xno; then
       AC_ARG_ENABLE([distmem_gasnet],
@@ -63,6 +63,27 @@ int main(int argc, char *argv[]) {
 ],[AC_MSG_RESULT(yes)], [enable_distmem_mpi=no
 	        AC_MSG_RESULT(no)])
         CC="$ax_mpi_save_CC"
+      fi
+   fi
+
+   if test x"$enable_distmem_armci" != xno; then
+      AC_MSG_CHECKING(if ARMCI_HOME is set)
+      if test x"$ARMCI_HOME" != x ; then
+        AC_MSG_RESULT([using ARMCI_HOME: $ARMCI_HOME])
+
+        AC_MSG_CHECKING(if $ARMCI_HOME exists)
+        if test -r $ARMCI_HOME; then
+           AC_MSG_RESULT([yes])
+           AC_DEFINE_UNQUOTED([ARMCI_DIR], ["$ARMCI_HOME"],
+                              [ARMCI installation])
+           AC_SUBST([ARMCI_DIR], [$ARMCI_HOME])
+        else
+           AC_MSG_RESULT([no])
+           enable_distmem_armci=no
+        fi
+      else
+        AC_MSG_RESULT([no])
+        enable_distmem_armci=no
       fi
    fi
 

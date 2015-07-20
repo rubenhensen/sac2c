@@ -49,6 +49,8 @@ SETTINGS_DISTMEM_GASNET := -DCOMPILE_DISTMEM_GASNET
 
 SETTINGS_DISTMEM_MPI    := -DCOMPILE_DISTMEM_MPI
 
+SETTINGS_DISTMEM_ARMCI  := -DCOMPILE_DISTMEM_ARMCI
+
 ################################################################################
 #
 # internal directories and other settings:

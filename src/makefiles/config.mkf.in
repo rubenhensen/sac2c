@@ -11,6 +11,7 @@ ARCH            := @ARCH@
 #
 # compiler and linker setup:
 #
+# FIXME: GASNet settings end up here!
 
 CC_DEVEL        := @SAC2C_CC@
 CC_PROD         := @SAC2C_CC@
@@ -94,3 +95,5 @@ ENABLE_DISTMEM_ARMCI    := @ENABLE_DISTMEM_ARMCI@
 
 @GASNET_CONDUIT_SETTINGS@
 
+MPICC := @MPICC@ -std=gnu99
+ARMCI_CPPFLAGS := -I@ARMCI_DIR@/include

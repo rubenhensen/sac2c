@@ -226,6 +226,14 @@ OPTcheckOptionConsistency (void)
                      "outside of the DSM segment. dsm_cache_outside_seg does not have "
                      "any effect.");
         }
+
+        if (global.distmem_cache_outside_dsm
+            && global.distmem_commlib == DISTMEM_COMMLIB_ARMCI) {
+            CTIwarn ("When ARMCI is used as a communication library, the cache is always "
+                     "allocated "
+                     "outside of the DSM segment. dsm_cache_outside_seg does not have "
+                     "any effect.");
+        }
     } else {
         /* The distributed memory backend is not used. Disable options that don't apply.
          */
