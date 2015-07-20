@@ -6,6 +6,9 @@
  *
  * description: This is the MPI specific implementation of distmem_commlib.h.
  *
+ * We make use of MPI-3 one-sided communication facilities.
+ * See https://cvw.cac.cornell.edu/MPIoneSided/ for a tutorial.
+ *
  *****************************************************************************/
 
 #include "config.h"
@@ -64,8 +67,8 @@ static UNUSED int SAC_DISTMEM_COMMLIB_MPI_dummy;
             SAC_RuntimeError ("Error during MPI call from: %s\n"                         \
                               " at: %s:%i\n"                                             \
                               " error class: %d (%s) \n",                                \
-                              " error: %d (%s) \n", #fncall, __FILE__, __LINE__,         \
-                              err_cls, err_cls_str, retval, err_str);                    \
+                              " error: %d (%s)", #fncall, __FILE__, __LINE__, err_cls,   \
+                              err_cls_str, retval, err_str);                             \
         }                                                                                \
     }
 

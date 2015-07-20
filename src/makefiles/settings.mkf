@@ -41,7 +41,7 @@ SETTINGS_DIAG          := -DDIAG
 SETTINGS_XT            := -DMT -DPHM_XT
 
 # The below environment variables are used to exclude files from the compilation
-# of the sacdistmem libaries.
+# of the libsacdistmem libaries.
 
 SETTINGS_DISTMEM        := -DCOMPILE_DISTMEM
 
@@ -50,6 +50,8 @@ SETTINGS_DISTMEM_GASNET := -DCOMPILE_DISTMEM_GASNET
 SETTINGS_DISTMEM_MPI    := -DCOMPILE_DISTMEM_MPI
 
 SETTINGS_DISTMEM_ARMCI  := -DCOMPILE_DISTMEM_ARMCI
+
+SETTINGS_DISTMEM_GPI    := -DCOMPILE_DISTMEM_GPI
 
 ################################################################################
 #

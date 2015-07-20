@@ -206,9 +206,12 @@ AddDistMemLib (str_buf *buffer)
         case DISTMEM_COMMLIB_ARMCI:
             SBUFprintf (buffer, ".armci ");
             break;
+        case DISTMEM_COMMLIB_GPI:
+            SBUFprintf (buffer, ".gpi ");
+            break;
         default:
-            /* TODO: Temporary to avoid warning, will be fixed when implemented. */
-            SBUFprintf (buffer, ".notimplemented ");
+            /* This should never happen as we check the options. */
+            CTIerror ("Unknown distributed memory backend communication library");
             break;
         }
 
@@ -592,12 +595,14 @@ CCMinvokeCC (node *syntax_tree)
     } else {
         cccall = GetCCCall ();
         compileflags = GetCompilationFlags ();
-        linkflags = GetLinkingFlags ();
-        libs = GetLibs ();
 
         if (global.filetype == FT_prog) {
+            libs = GetLibs ();
+            linkflags = GetLinkingFlags ();
             InvokeCCProg (cccall, compileflags, global.config.ccincdir, linkflags, libs,
                           deps);
+            libs = MEMfree (libs);
+            linkflags = MEMfree (linkflags);
         } else if (global.filetype == FT_cmod) {
             InvokeCCWrapper (cccall, compileflags);
         } else {
@@ -606,8 +611,6 @@ CCMinvokeCC (node *syntax_tree)
 
         cccall = MEMfree (cccall);
         compileflags = MEMfree (compileflags);
-        linkflags = MEMfree (linkflags);
-        libs = MEMfree (libs);
     }
 
     if (global.gen_cccall) {

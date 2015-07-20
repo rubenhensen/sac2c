@@ -52,6 +52,9 @@
 /* Define to 1 if runtime specialization is enabled, otherwise 0. */
 #undef ENABLE_RTSPEC
 
+/* GPI installation */
+#undef GPI_DIR
+
 /* Set to 1 if compiler supports GNU vector syntax, otherwise 0. */
 #undef HAVE_GCC_SIMD_OPERATIONS
 

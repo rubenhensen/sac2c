@@ -214,25 +214,87 @@ OPTcheckOptionConsistency (void)
     /* Checks related to the distributed memory backend */
     if (global.backend == BE_distmem) {
         /* The distributed memory backend is used. Check for incompatible options. */
+
+#if !ENABLE_DISTMEM
+        CTIerror ("The distributed memory backend (-target) is not supported by this "
+                  "installation.");
+#endif
+
         if (global.mtmode != MT_none) {
             CTIerror ("Multi-threaded program execution is not "
                       "supported when using the distributed memory backend.");
         }
 
-        if (global.distmem_cache_outside_dsm
-            && global.distmem_commlib == DISTMEM_COMMLIB_MPI) {
-            CTIwarn ("When MPI is used as a communication library, the cache is always "
-                     "allocated "
-                     "outside of the DSM segment. dsm_cache_outside_seg does not have "
-                     "any effect.");
-        }
+        /* Communication library specific checks */
+        switch (global.distmem_commlib) {
+        case DISTMEM_COMMLIB_MPI:
+#if !ENABLE_DISTMEM_MPI
+            CTIerror ("The MPI communication library (-target) for the distributed "
+                      "memory backend is not supported by this installation.");
+#endif
 
-        if (global.distmem_cache_outside_dsm
-            && global.distmem_commlib == DISTMEM_COMMLIB_ARMCI) {
-            CTIwarn ("When ARMCI is used as a communication library, the cache is always "
-                     "allocated "
-                     "outside of the DSM segment. dsm_cache_outside_seg does not have "
-                     "any effect.");
+            if (global.distmem_cache_outside_dsm) {
+                CTIwarn ("When MPI is used as a communication library, the cache is "
+                         "always allocated "
+                         "outside of the DSM segment. dsm_cache_outside_seg does not "
+                         "have any effect.");
+            } else {
+                global.distmem_cache_outside_dsm = TRUE;
+            }
+            break;
+        case DISTMEM_COMMLIB_ARMCI:
+#if !ENABLE_DISTMEM_ARMCI
+            CTIerror ("The ARMCI communication library (-target) for the distributed "
+                      "memory backend is not supported by this installation.");
+#endif
+
+            if (global.distmem_cache_outside_dsm) {
+                CTIwarn ("When ARMCI is used as a communication library, the cache is "
+                         "always allocated "
+                         "outside of the DSM segment. dsm_cache_outside_seg does not "
+                         "have any effect.");
+            } else {
+                global.distmem_cache_outside_dsm = TRUE;
+            }
+            break;
+        case DISTMEM_COMMLIB_GPI:
+#if !ENABLE_DISTMEM_GPI
+            CTIerror ("The GPI communication library (-target) for the distributed "
+                      "memory backend is not supported by this installation.");
+#endif
+
+            if (global.distmem_cache_outside_dsm) {
+                CTIwarn ("When GPI is used as a communication library, the cache is "
+                         "always allocated "
+                         "within the DSM segment. dsm_cache_outside_seg does not have "
+                         "any effect.");
+                global.distmem_cache_outside_dsm = FALSE;
+            }
+            break;
+        case DISTMEM_COMMLIB_GASNET:
+#if !ENABLE_DISTMEM_GASNET
+            CTIerror ("The GASNet communication library (-target) for the distributed "
+                      "memory backend is not supported by this installation.");
+#endif
+
+            if (global.distmem_cache_outside_dsm) {
+                CTIwarn ("The cache will be registered outside of the GASNet segment "
+                         "which can cause bugs. If you experience the following error "
+                         "this is probably the reason: FATAL ERROR: ibv_reg_mr failed in "
+                         "firehose_move_callback errno=14 (Bad address). To fix this "
+                         "problem, you can deactivate firehose by setting "
+                         "GASNET_USE_FIREHOSE=NO but this may affect performance.");
+            }
+            break;
+        default:
+            /* The communication library is obligatory when the distributed memory backend
+             * is used and a SAC program is compiled. Modules are compiled for the
+             * distributed memory backend but not for a specific communication library.
+             * The same holds for the prelude (which for some reason has FT_prog). */
+            if (global.filetype == FT_prog && global.loadprelude) {
+                CTIerror ("Unknown distributed memory backend communication library");
+            }
+            break;
         }
     } else {
         /* The distributed memory backend is not used. Disable options that don't apply.

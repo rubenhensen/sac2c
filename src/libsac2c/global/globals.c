@@ -747,7 +747,7 @@ GLOBsetupDistMemCommLib (void)
     DBUG_ENTER ();
 
     if (STReq (global.config.distmem_commlib, "")) {
-        global.distmem_commlib = DISTMEM_COMMLIB_GASNET;
+        global.distmem_commlib = DISTMEM_COMMLIB_UNKNOWN;
     }
 #define DISTMEM_COMMLIB(type, string)                                                    \
     else if (STReqci (global.config.distmem_commlib, string))                            \
@@ -756,8 +756,9 @@ GLOBsetupDistMemCommLib (void)
     }
 #include "distmem_commlibs.mac"
     else {
-        CTIabort ("Unknown distributed memory communication library in sac2crc file: %s",
-                  global.config.distmem_commlib);
+        CTIabort (
+          "Unknown distributed memory backend communication library in sac2crc file: %s",
+          global.config.distmem_commlib);
     }
 
     DBUG_RETURN ();

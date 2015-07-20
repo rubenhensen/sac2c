@@ -663,6 +663,7 @@ ENABLE_DISTMEM_GPI
 DISTMEM_GASNET_CONDUITS
 ENABLE_DISTMEM_GASNET
 ENABLE_DISTMEM
+GPI_DIR
 ARMCI_DIR
 MPILIBS
 MPICC
@@ -769,6 +770,8 @@ enable_phm
 enable_distmem
 enable_distmem_gasnet
 enable_distmem_mpi
+enable_distmem_armci
+enable_distmem_gpi
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1417,6 +1420,9 @@ Optional Features:
                           Disable checking for Distributed Memory GASNet
                           support
   --disable-distmem_mpi   Disable checking for Distributed Memory MPI support
+  --disable-distmem_armci Disable checking for Distributed Memory ARMCI
+                          support
+  --disable-distmem_gpi   Disable checking for Distributed Memory GPI support
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5086,12 +5092,12 @@ _ACEOF
    # Check whether --enable-distmem was given.
 if test "${enable_distmem+set}" = set; then :
   enableval=$enable_distmem; enable_distmem_gasnet=$enableval
-                 enable_distmem_gpi=no
+                 enable_distmem_gpi=$enableval
                  enable_distmem_mpi=$enableval
                  enable_distmem_armci=$enableval
 else
   enable_distmem_gasnet=yes
-                 enable_distmem_gpi=no
+                 enable_distmem_gpi=yes
                  enable_distmem_mpi=yes
                  enable_distmem_armci=yes
 fi
@@ -5113,6 +5119,26 @@ if test "${enable_distmem_mpi+set}" = set; then :
   enableval=$enable_distmem_mpi; enable_distmem_mpi=$enableval
 else
   enable_distmem_mpi=yes
+fi
+
+   fi
+
+   if test x"$enable_distmem_armci" != xno; then
+      # Check whether --enable-distmem_armci was given.
+if test "${enable_distmem_armci+set}" = set; then :
+  enableval=$enable_distmem_armci; enable_distmem_armci=$enableval
+else
+  enable_distmem_armci=yes
+fi
+
+   fi
+
+   if test x"$enable_distmem_gpi" != xno; then
+      # Check whether --enable-distmem_gpi was given.
+if test "${enable_distmem_gpi+set}" = set; then :
+  enableval=$enable_distmem_gpi; enable_distmem_gpi=$enableval
+else
+  enable_distmem_gpi=yes
 fi
 
    fi
@@ -5311,8 +5337,8 @@ fi
 
 
       if test x"$enable_distmem_mpi" != xno; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI 3" >&5
-$as_echo_n "checking for MPI 3... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI 3 support" >&5
+$as_echo_n "checking for MPI 3 support... " >&6; }
         ax_mpi_save_CC="$CC"
 	      CC="$MPICC"
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -5379,6 +5405,37 @@ $as_echo "no" >&6; }
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
         enable_distmem_armci=no
+      fi
+   fi
+
+   if test x"$enable_distmem_gpi" != xno; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if GPI_HOME is set" >&5
+$as_echo_n "checking if GPI_HOME is set... " >&6; }
+      if test x"$GPI_HOME" != x ; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: using GPI_HOME: $GPI_HOME" >&5
+$as_echo "using GPI_HOME: $GPI_HOME" >&6; }
+      else
+        GPI_HOME=/opt/GPI2
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: using default location: $GPI_HOME" >&5
+$as_echo "using default location: $GPI_HOME" >&6; }
+      fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $GPI_HOME exists" >&5
+$as_echo_n "checking if $GPI_HOME exists... " >&6; }
+      if test -r $GPI_HOME; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+cat >>confdefs.h <<_ACEOF
+#define GPI_DIR "$GPI_HOME"
+_ACEOF
+
+         GPI_DIR=$GPI_HOME
+
+      else
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+         enable_distmem_gpi=no
       fi
    fi
 

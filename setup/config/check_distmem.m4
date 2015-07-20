@@ -7,11 +7,11 @@ AC_DEFUN([CHECK_DISTMEM], dnl
                  [AS_HELP_STRING([--disable-distmem],
                                  [Disable checking for Distributed Memory support])],
                  [enable_distmem_gasnet=$enableval]
-                 [enable_distmem_gpi=no]
+                 [enable_distmem_gpi=$enableval]
                  [enable_distmem_mpi=$enableval]
                  [enable_distmem_armci=$enableval],
                  [enable_distmem_gasnet=yes]
-                 [enable_distmem_gpi=no]
+                 [enable_distmem_gpi=yes]
                  [enable_distmem_mpi=yes]
                  [enable_distmem_armci=yes])
 
@@ -31,6 +31,22 @@ AC_DEFUN([CHECK_DISTMEM], dnl
                     [enable_distmem_mpi=yes])
    fi
 
+   if test x"$enable_distmem_armci" != xno; then
+      AC_ARG_ENABLE([distmem_armci],
+                    [AS_HELP_STRING([--disable-distmem_armci],
+                                    [Disable checking for Distributed Memory ARMCI support])],
+                    [enable_distmem_armci=$enableval],
+                    [enable_distmem_armci=yes])
+   fi
+
+   if test x"$enable_distmem_gpi" != xno; then
+      AC_ARG_ENABLE([distmem_gpi],
+                    [AS_HELP_STRING([--disable-distmem_gpi],
+                                    [Disable checking for Distributed Memory GPI support])],
+                    [enable_distmem_gpi=$enableval],
+                    [enable_distmem_gpi=yes])
+   fi
+
    dnl Create GASNet conduit targets file.
    cat >./sac2crc.GASNetconduits
 
@@ -45,7 +61,7 @@ AC_DEFUN([CHECK_DISTMEM], dnl
       AX_MPI([enable_distmem_mpi=yes], [enable_distmem_mpi=no])
 
       if test x"$enable_distmem_mpi" != xno; then
-        AC_MSG_CHECKING([for MPI 3])
+        AC_MSG_CHECKING([for MPI 3 support])
         ax_mpi_save_CC="$CC"
 	      CC="$MPICC"
         AC_TRY_COMPILE([#include <mpi.h>],[
@@ -84,6 +100,27 @@ int main(int argc, char *argv[]) {
       else
         AC_MSG_RESULT([no])
         enable_distmem_armci=no
+      fi
+   fi
+
+   if test x"$enable_distmem_gpi" != xno; then
+      AC_MSG_CHECKING(if GPI_HOME is set)
+      if test x"$GPI_HOME" != x ; then
+        AC_MSG_RESULT([using GPI_HOME: $GPI_HOME])
+      else
+        GPI_HOME=/opt/GPI2
+        AC_MSG_RESULT([using default location: $GPI_HOME])
+      fi
+
+      AC_MSG_CHECKING(if $GPI_HOME exists)
+      if test -r $GPI_HOME; then
+         AC_MSG_RESULT([yes])
+         AC_DEFINE_UNQUOTED([GPI_DIR], ["$GPI_HOME"],
+                            [GPI installation])
+         AC_SUBST([GPI_DIR], [$GPI_HOME])
+      else
+         AC_MSG_RESULT([no])
+         enable_distmem_gpi=no
       fi
    fi
 

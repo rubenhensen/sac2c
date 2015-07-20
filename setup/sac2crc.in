@@ -511,9 +511,13 @@ DISTMEM_COMMLIB  := "ARMCI"
 
 target distmem_gpi::distmem:
 DISTMEM_COMMLIB  := "GPI"
+CCLINK           += "-L@GPI_DIR@/lib64 -lGPI2 -libverbs -lpthread -lm"
+CCINCDIR         += "-I@GPI_DIR@/include"
 
 target distmemcheck_gpi::distmemcheck:
 DISTMEM_COMMLIB  := "GPI"
+CCLINK           += "-L@GPI_DIR@/lib64 -lGPI2 -libverbs -lpthread -lm"
+CCINCDIR         += "-I@GPI_DIR@/include"
 
 target distmem_mpi::distmem:
 DISTMEM_COMMLIB  := "MPI"

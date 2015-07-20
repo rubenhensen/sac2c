@@ -6,6 +6,9 @@
  *
  * description: This is the GASNet specific implementation of distmem_commlib.h.
  *
+ * GASNet is a language-independent, low-level networking layer.
+ * See http://gasnet.lbl.gov/
+ *
  *****************************************************************************/
 
 #include "config.h"
@@ -74,9 +77,9 @@ static UNUSED int SAC_DISTMEM_COMMLIB_GASNET_dummy;
     {                                                                                    \
         int retval;                                                                      \
         if ((retval = fncall) != GASNET_OK) {                                            \
-            SAC_RuntimeError ("Error calling: %s\n"                                      \
+            SAC_RuntimeError ("Error during GASNet call from: %s\n"                      \
                               " at: %s:%i\n"                                             \
-                              " error: %s (%s)\n",                                       \
+                              " error: %s (%s)",                                         \
                               #fncall, __FILE__, __LINE__, gasnet_ErrorName (retval),    \
                               gasnet_ErrorDesc (retval));                                \
         }                                                                                \
@@ -169,12 +172,6 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem, bool alloc_cache_outside_dsm)
             == (void *)-1) {
             SAC_RuntimeError ("Error during mmap of cache: %d", errno);
         }
-
-        SAC_RuntimeWarningMaster ("The cache has been registered outside of the GASNet "
-                                  "segment which can cause bugs. If you experience the "
-                                  "following error this is probably the reason: FATAL "
-                                  "ERROR: ibv_reg_mr failed in firehose_move_callback "
-                                  "errno=14 (Bad address)");
     } else {
         /*
          * With GASNet the cache needs to lie within the segment.

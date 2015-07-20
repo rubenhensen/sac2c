@@ -6,6 +6,12 @@
  *
  * description: This is the ARMCI specific implementation of distmem_commlib.h.
  *
+ * ARMCI is a one-sided communication library that is part of the Global Arrays project.
+ *
+ * See http://hpc.pnl.gov/armci/
+ * ARMCI can be downloaded as part of the Global Arrays Toolkit:
+ *http://hpc.pnl.gov/globalarrays/download.shtml
+ *
  *****************************************************************************/
 
 #include "config.h"
@@ -59,7 +65,7 @@ static UNUSED int SAC_DISTMEM_COMMLIB_ARMCI_dummy;
         if ((retval = fncall) != 0) {                                                    \
             SAC_RuntimeError ("Error during ARMCI call from: %s\n"                       \
                               " at: %s:%i\n"                                             \
-                              " error: %d \n",                                           \
+                              " error: %d",                                              \
                               #fncall, __FILE__, __LINE__, retval);                      \
         }                                                                                \
     }
