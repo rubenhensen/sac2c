@@ -957,14 +957,6 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                                                   TBmakePrf (F_suballoc, args)),
                                        assign);
 
-                if (global.backend == BE_distmem) {
-                    /* Mark the variable as suballocated for the
-                     * distributed memory backend. */
-                    AVIS_DISTMEMSUBALLOC (memavis) = TRUE;
-                    AVIS_TYPE (memavis)
-                      = TYsetDistributed (AVIS_TYPE (memavis), distmem_dis_dsm);
-                }
-
                 AVIS_SSAASSIGN (memavis) = assign;
             }
         }

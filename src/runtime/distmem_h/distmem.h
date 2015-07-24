@@ -355,6 +355,45 @@ size_t SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t sto
 
 void SAC_DISTMEM_IncCounter (unsigned long *counter_ptr);
 
+/** <!--********************************************************************-->
+ *
+ * @fn  void SAC_DISTMEM_UpdatePtrCacheBound( int *ptr_cache_from, int *ptr_cache_count,
+                                              int ptr_cache_from_val, int
+ ptr_cache_count_val)
+ *
+ *   @brief   Updates the pointer cache boundaries.
+ *
+ *            We need this function and cannot include the update in the
+ *            SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR macro because that code leads
+ *            to undefined behaviour (compiler warning: operation may be undefined).
+ *
+ *   @param  ptr_cache_from         pointer to SAC_ND_A_MIRROR_PTR_CACHE_FROM
+ *   @param  ptr_cache_count        pointer to SAC_ND_A_MIRROR_PTR_CACHE_COUNT
+ *   @param  ptr_cache_from_val     new value of SAC_ND_A_MIRROR_PTR_CACHE_FROM
+ *   @param  ptr_cache_count_val    new value of SAC_ND_A_MIRROR_PTR_CACHE_COUNT
+ *
+ ******************************************************************************/
+
+void SAC_DISTMEM_UpdatePtrCacheBound (int *ptr_cache_from, int *ptr_cache_count,
+                                      int ptr_cache_from_val, int ptr_cache_count_val);
+
+/** <!--********************************************************************-->
+ *
+ * @fn  SAC_DISTMEM_UpdatePtrCachePtr( void **ptr_cache, void *ptr_cache_val)
+ *
+ *   @brief   Updates the pointer cache.
+ *
+ *            We need this function and cannot include the update in the
+ *            SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR macro because that code leads
+ *            to undefined behaviour (compiler warning: operation may be undefined).
+ *
+ *   @param  ptr_cache         pointer to SAC_ND_A_MIRROR_PTR_CACHE
+ *   @param  ptr_cache_val     new value of SAC_ND_A_MIRROR_PTR_CACHE
+ *
+ ******************************************************************************/
+
+void SAC_DISTMEM_UpdatePtrCachePtr (void **ptr_cache, void *ptr_cache_val);
+
 /******************************************
  * Tracing declarations
  *******************************************/
@@ -439,8 +478,25 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  ******************************************************************************/
 
-#define SAC_DISTMEM_DET_OWNER(var_NT, elem_index)                                        \
+#define _SAC_DISTMEM_DET_OWNER(var_NT, elem_index)                                       \
     (elem_index / SAC_ND_A_FIRST_ELEMS (var_NT))
+
+#if SAC_DO_CHECK_DISTMEM
+
+#define SAC_DISTMEM_DET_OWNER(var_NT, elem_index)                                        \
+    ((SAC_ND_A_FIRST_ELEMS (var_NT) == 0)                                                \
+       ? (SAC_RuntimeError (                                                             \
+            "elems_first_nodes is 0 when determining owner of element %d of array %s",   \
+            elem_index, NT_STR (var_NT)),                                                \
+          0)                                                                             \
+       : _SAC_DISTMEM_DET_OWNER (var_NT, elem_index))
+
+#else /* SAC_DO_CHECK_DISTMEM */
+
+#define SAC_DISTMEM_DET_OWNER(var_NT, elem_index)                                        \
+    _SAC_DISTMEM_DET_OWNER (var_NT, elem_index)
+
+#endif /* SAC_DO_CHECK_DISTMEM */
 
 /** <!--********************************************************************-->
  *
@@ -456,26 +512,33 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR(var_NT, elem_index)                            \
     SAC_TR_DISTMEM_PRINT_EXPR ("Updating pointer cache of array %s for index %d.",       \
                                NT_STR (var_NT), elem_index)                              \
-    SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT)                                              \
-      = SAC_DISTMEM_DET_FROM (var_NT, SAC_DISTMEM_DET_OWNER (var_NT, elem_index)),       \
-      SAC_ND_A_MIRROR_PTR_CACHE_COUNT (var_NT)                                           \
-      = SAC_ND_A_FIRST_ELEMS (var_NT),                                                   \
-      SAC_ND_A_MIRROR_PTR_CACHE (var_NT)                                                 \
-      = SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT), SAC_NT_CBASETYPE (var_NT),     \
+    SAC_DISTMEM_UpdatePtrCacheBound (                                                    \
+      &SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT),                                          \
+      &SAC_ND_A_MIRROR_PTR_CACHE_COUNT (var_NT),                                         \
+      SAC_DISTMEM_DET_FROM (var_NT, SAC_DISTMEM_DET_OWNER (var_NT, elem_index)),         \
+      SAC_ND_A_FIRST_ELEMS (var_NT)),                                                    \
+      SAC_DISTMEM_UpdatePtrCachePtr (                                                    \
+        (void **)&SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                                    \
+        (SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT), SAC_NT_CBASETYPE (var_NT),    \
+                                   SAC_ND_A_FIRST_ELEMS (var_NT),                        \
+                                   SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT))              \
+         - SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT))),                                    \
+      SAC_TR_DISTMEM_PRINT_EXPR (                                                        \
+        "Updated pointer cache of array %s for index %d to %p "                          \
+        "(%d elements from index %d), calculated ptr: %p, "                              \
+        "offset: %" PRIuPTR ", first elems: %zd",                                        \
+        NT_STR (var_NT), elem_index, SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                 \
+        SAC_ND_A_MIRROR_PTR_CACHE_COUNT (var_NT),                                        \
+        SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT),                                         \
+        SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT), SAC_NT_CBASETYPE (var_NT),     \
                                   SAC_ND_A_FIRST_ELEMS (var_NT),                         \
-                                  SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT))               \
-        - SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT),                                       \
-      SAC_TR_DISTMEM_PRINT_EXPR ("Updated pointer cache of array %s for index %d to %p " \
-                                 "(%d elements from index %d)",                          \
-                                 NT_STR (var_NT), elem_index,                            \
-                                 SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                     \
-                                 SAC_ND_A_MIRROR_PTR_CACHE_COUNT (var_NT),               \
-                                 SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT))                \
+                                  SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT)),              \
+        SAC_ND_A_OFFS (var_NT), SAC_ND_A_FIRST_ELEMS (var_NT))                           \
         SAC_DISTMEM_UPDATED_PTR_CACHE_EXPR () 0
 
 /** <!--********************************************************************-->
  *
- * @fn SAC_DISTMEM_DET_LOCAL_FROM( var_NT)
+ * @fn SAC_DISTMEM_DET_FROM( var_NT)
  *
  *   @brief   Determines the first array element that is local to a node.
  *
@@ -487,12 +550,17 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  ******************************************************************************/
 
 #define SAC_DISTMEM_DET_FROM(var_NT, rank)                                               \
-    (SAC_ND_A_IS_DIST (var_NT)                                                           \
-       ? (SAC_TR_DISTMEM_PRINT_EXPR (                                                    \
-            "The first element of array %s local to node %d is %d.", NT_STR (var_NT),    \
-            rank, SAC_ND_A_FIRST_ELEMS (var_NT) * rank) SAC_ND_A_FIRST_ELEMS (var_NT)    \
-          * rank)                                                                        \
-       : 0)
+    (                                                                                           \
+  SAC_ND_A_IS_DIST( var_NT)                                                                 \
+    ? (                                                                                     \
+        /*SAC_TR_DISTMEM_PRINT_EXPR( "The first element of array %s local to node %d is %d.",*/ \
+        /*                           NT_STR( var_NT),                                        */ \
+        /*                           rank,                                                  */  \
+        /*                           SAC_ND_A_FIRST_ELEMS( var_NT) * rank)*/                    \
+        SAC_ND_A_FIRST_ELEMS( var_NT) * rank                                                \
+      )                                                                                     \
+    : 0                                                                                     \
+)
 
 /** <!--********************************************************************-->
  *
@@ -507,6 +575,27 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  ******************************************************************************/
 
 #define SAC_DISTMEM_DET_LOCAL_FROM(var_NT) SAC_DISTMEM_DET_FROM (var_NT, SAC_DISTMEM_rank)
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_DET_LOCAL_TO( var_NT)
+ *
+ *   @brief   Determines the last array element that is local to this node.
+ *
+ *   @param  var_NT       array
+ *
+ *   @return              index of the last array element that is local to this node
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_DET_LOCAL_TO(var_NT)                                                 \
+    (SAC_ND_A_IS_DIST (var_NT)                                                           \
+       ? (SAC_TR_DISTMEM_PRINT_EXPR (                                                    \
+           "The last element of array %s local to node %d is %d.", NT_STR (var_NT),      \
+           SAC_DISTMEM_rank, SAC_ND_A_FIRST_ELEMS (var_NT) * (SAC_DISTMEM_rank + 1) - 1) \
+            SAC_MIN (SAC_ND_A_FIRST_ELEMS (var_NT) * (SAC_DISTMEM_rank + 1) - 1,         \
+                     SAC_ND_A_SIZE (var_NT) - 1))                                        \
+       : (SAC_ND_A_SIZE (var_NT) - 1))
 
 /** <!--********************************************************************-->
  *
@@ -538,13 +627,15 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  ******************************************************************************/
 
 #define SAC_DISTMEM_RECHECK_AKS_IS_DIST(var_NT)                                          \
-    SAC_TR_DISTMEM_PRINT ("Rechecking if array %s is distributed, was: %d, is: %d.",     \
-                          NT_STR (var_NT), SAC_ND_A_IS_DIST (var_NT),                    \
-                          SAC_ND_A_IS_DIST (var_NT)                                      \
-                            && SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_sync);     \
-    SAC_ND_A_MIRROR_IS_DIST (var_NT)                                                     \
-      = SAC_ND_A_IS_DIST (var_NT)                                                        \
-        && SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_sync;
+    if (SAC_ND_A_IS_DIST (var_NT)) {                                                     \
+        SAC_TR_DISTMEM_PRINT ("Rechecking if array %s should still be distributed? %d",  \
+                              NT_STR (var_NT),                                           \
+                              SAC_ND_A_IS_DIST (var_NT)                                  \
+                                && SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_sync); \
+        SAC_ND_A_MIRROR_IS_DIST (var_NT)                                                 \
+          = SAC_ND_A_IS_DIST (var_NT)                                                    \
+            && SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_sync;                      \
+    }
 
 /** <!--********************************************************************-->
  *
@@ -856,6 +947,10 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define _BC_DESC_OFFS(value_NT) CAT12 (NT_NAME (value_NT), __bc_desc_offs)
 
+#define _BC_RC_VAR(value_NT) CAT12 (NT_NAME (value_NT), __bc_rc_var)
+
+#define _BC_RC_OFFS(value_NT) CAT12 (NT_NAME (value_NT), __bc_rc_offs)
+
 /** <!--********************************************************************-->
  *
  * @fn _SAC_DISTMEM_BROADCAST_WITH_DESC_INIT_COMMON( value_type, value_NT)
@@ -898,7 +993,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            A barrier is required after this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier after
- *all calls to this macro suffices.
+ *all calls to init macros suffices.
  *
  *   @param value_type    C-type of the value
  *   @param value_NT      source variable
@@ -947,7 +1042,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            A barrier is required after this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier after
- *all calls to this macro suffices.
+ *all calls to init macros suffices.
  *
  *   @param value_type    C-type of the value
  *   @param value_NT      target variable
@@ -993,7 +1088,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            A barrier is required after this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier after
- *all calls to this macro suffices.
+ *all calls to init macros suffices.
  *
  *   @param value_type    C-type of the value
  *   @param value_NT      source variable
@@ -1025,7 +1120,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            A barrier is required after this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier after
- *all calls to this macro suffices.
+ *all calls to init macros suffices.
  *
  *   @param value_type    C-type of the value
  *   @param value_NT      target variable
@@ -1068,7 +1163,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            A barrier is required after this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier after
- *all calls to this macro suffices.
+ *all calls to init macros suffices.
  *
  *   @param value_type    C-type of the value
  *   @param value_NT      source variable
@@ -1097,7 +1192,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            A barrier is required after this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier after
- *all calls to this macro suffices.
+ *all calls to init macros suffices.
  *
  *   @param value_type    C-type of the value
  *   @param value_NT      target variable
@@ -1106,6 +1201,74 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define SAC_DISTMEM_BROADCAST_SCL_INIT_WORKER(value_type, value_NT)                      \
     _SAC_DISTMEM_BROADCAST_INIT_COMMON (value_type, value_NT)
+
+/** <!--********************************************************************-->
+ *
+ * @fn _SAC_DISTMEM_BROADCAST_RC_INIT_COMMON( value_NT)
+ *
+ *   @brief   Common part of the initialization of a reference counter broadcast
+ *            (master -> workers) for both master and worker nodes.
+ *
+ *   @param value_NT      source variable
+ *
+ ******************************************************************************/
+
+#define _SAC_DISTMEM_BROADCAST_RC_INIT_COMMON(value_NT)                                  \
+    intptr_t *_BC_RC_VAR (value_NT) = NULL;                                              \
+    uintptr_t _BC_RC_OFFS (value_NT) = 0;                                                \
+    if (SAC_ND_A_IS_DIST (value_NT)) {                                                   \
+        SAC_TR_DISTMEM_PRINT ("Initializing RC broadcast of variable %s.",               \
+                              NT_STR (value_NT));                                        \
+    }
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_BROADCAST_RC_INIT_MASTER( value_NT)
+ *
+ *   @brief   Initializes a reference counter broadcast (master -> workers) at the master
+ *node.
+ *
+ *            A barrier is required after this macro. The barrier is not included in this
+ *macro for performance reasons. If multiple values are broadcast, a single barrier after
+ *all calls to init macros suffices.
+ *
+ *   @param value_NT      source variable
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_BROADCAST_RC_INIT_MASTER(value_NT)                                   \
+    _SAC_DISTMEM_BROADCAST_RC_INIT_COMMON (value_NT)                                     \
+    if (SAC_ND_A_IS_DIST (value_NT)) {                                                   \
+        SAC_DISTMEM_HM_MALLOC_FIXED_SIZE (_BC_RC_VAR (value_NT), sizeof (intptr_t),      \
+                                          intptr_t);                                     \
+        _BC_RC_OFFS (value_NT) = SAC_DISTMEM_DET_OFFS (_BC_RC_VAR (value_NT));           \
+        SAC_TR_DISTMEM_PRINT ("BC RC starting at: %p (offset: %" PRIuPTR ")",            \
+                              _BC_RC_VAR (value_NT), _BC_RC_OFFS (value_NT));            \
+        SAC_TR_DISTMEM_PRINT ("BC copying %d B of RC "                                   \
+                              "(value: %" PRIdPTR ") from %p to %p.",                    \
+                              sizeof (intptr_t), SAC_ND_A_RC (value_NT),                 \
+                              &SAC_ND_A_RC (value_NT), _BC_RC_VAR (value_NT));           \
+        *_BC_RC_VAR (value_NT) = SAC_ND_A_RC (value_NT);                                 \
+    }
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_BROADCAST_RC_INIT_WORKER( value_type, value_NT)
+ *
+ *   @brief   Initializes a reference counter broadcast (master -> workers) at a worker
+ *node node.
+ *
+ *            A barrier is required after this macro. The barrier is not included in this
+ *macro for performance reasons. If multiple values are broadcast, a single barrier after
+ *all calls to init macros suffices.
+ *
+ *   @param value_type    C-type of the value
+ *   @param value_NT      target variable
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_BROADCAST_RC_INIT_WORKER(value_NT)                                   \
+    _SAC_DISTMEM_BROADCAST_RC_INIT_COMMON (value_NT)
 
 /** <!--********************************************************************-->
  *
@@ -1353,6 +1516,74 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 /** <!--********************************************************************-->
  *
+ * @fn SAC_DISTMEM_BROADCAST_RC_STEP1_WORKER( value_NT)
+ *
+ *   @brief   First step to finalize a reference counter broadcast
+ *            (master -> workers) at a worker node.
+ *
+ *            The finalize operation has been split into two operations to reduce
+ *communication if multiple values are broadcast. Otherwise, the same memory pages may be
+ *invalidated and fetched multiple times.
+ *
+ *            Important: Interfering accesses to the DSM segment and local cache
+ *            are not allowed during the whole broadcast operation!
+ *
+ *   @param value_NT      target variable
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_BROADCAST_RC_STEP1_WORKER(value_NT)                                  \
+    if (SAC_ND_A_IS_DIST (value_NT)) {                                                   \
+        SAC_TR_DISTMEM_PRINT ("Finalizing RC broadcast "                                 \
+                              "of variable %s, step 1",                                  \
+                              NT_STR (value_NT));                                        \
+        SAC_DISTMEM_HM_MALLOC_FIXED_SIZE (_BC_RC_VAR (value_NT), sizeof (intptr_t),      \
+                                          intptr_t);                                     \
+        _BC_RC_OFFS (value_NT) = SAC_DISTMEM_DET_OFFS (_BC_RC_VAR (value_NT));           \
+        SAC_TR_DISTMEM_PRINT ("BC RC starting at: %p (offset: %" PRIuPTR ")",            \
+                              _BC_RC_VAR (value_NT), _BC_RC_OFFS (value_NT));            \
+        SAC_DISTMEM_INVAL_CACHE_OF_NODE (_BC_RC_OFFS (value_NT),                         \
+                                         SAC_DISTMEM_RANK_MASTER, sizeof (intptr_t));    \
+    }
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_BROADCAST_RC_STEP2_WORKER( value_NT)
+ *
+ *   @brief   Second step to finalize a reference counter broadcast
+ *            (master -> workers) at a worker node.
+ *
+ *            The finalize operation has been split into two operations to reduce
+ *communication if multiple values are broadcast. Otherwise, the same memory pages may be
+ *invalidated and fetched multiple times.
+ *
+ *            Important: Interfering accesses to the DSM segment and local cache
+ *            are not allowed during the whole broadcast operation!
+ *
+ *   @param value_NT      target variable
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_BROADCAST_RC_STEP2_WORKER(value_NT)                                  \
+    if (SAC_ND_A_IS_DIST (value_NT)) {                                                   \
+        SAC_TR_DISTMEM_PRINT ("Finalizing RC broadcast "                                 \
+                              "of variable %s, step 2",                                  \
+                              NT_STR (value_NT));                                        \
+        SAC_TR_DISTMEM_PRINT ("BC copying %d B of RC (value: %" PRIdPTR                  \
+                              ") from %p to %p.",                                        \
+                              sizeof (intptr_t),                                         \
+                              *SAC_DISTMEM_DSM_ELEM_POINTER (_BC_RC_OFFS (value_NT),     \
+                                                             intptr_t,                   \
+                                                             SAC_DISTMEM_RANK_MASTER,    \
+                                                             0),                         \
+                              _BC_RC_VAR (value_NT), &SAC_ND_A_RC (value_NT));           \
+        SAC_ND_SET__RC (value_NT,                                                        \
+                        *SAC_DISTMEM_DSM_ELEM_POINTER (_BC_RC_OFFS (value_NT), intptr_t, \
+                                                       SAC_DISTMEM_RANK_MASTER, 0));     \
+    }
+
+/** <!--********************************************************************-->
+ *
  * @fn SAC_DISTMEM_BROADCAST_WITH_DESC_FREE_MEM_COMMON( value_type, value_NT)
  *
  *   @brief   Frees the memory that was allocated during the broadcast operation at both
@@ -1363,7 +1594,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            A barrier is required before this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier before
- *all calls to this macro suffices.
+ *all calls to free macros suffices.
  *
  *   @param value_type    C-type of the value
  *   @param value_NT      at the master: source variable
@@ -1393,7 +1624,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            A barrier is required before this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier before
- *all calls to this macro suffices.
+ *all calls to free macros suffices.
  *
  *   @param value_type    C-type of the value
  *   @param value_NT      at the master: source variable
@@ -1420,7 +1651,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            A barrier is required before this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier before
- *all calls to this macro suffices.
+ *all calls to free macros suffices.
  *
  *   @param value_type    C-type of the value
  *   @param value_NT      at the master: source variable
@@ -1435,6 +1666,36 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
     SAC_DISTMEM_HM_FREE (_BC_VAR (value_NT))                                             \
     SAC_TR_DISTMEM_PRINT ("Done with broadcast of variable %s of type %s.",              \
                           NT_STR (value_NT), #value_type);
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAC_DISTMEM_BROADCAST_RC_FREE_MEM_COMMON( value_NT)
+ *
+ *   @brief   Frees the memory that was allocated during a reference counter broadcast
+ *            at both worker and master. Decrements the reference counter and frees
+ *            the variable if it reaches zero.
+ *
+ *            A barrier is required before this macro. The barrier is not included in this
+ *macro for performance reasons. If multiple values are broadcast, a single barrier before
+ *all calls to free macros suffices.
+ *
+ *   @param value_NT      at the master: source variable
+ *                        at a worker: target variable
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_BROADCAST_RC_FREE_MEM_COMMON(value_NT)                               \
+    if (SAC_ND_A_IS_DIST (value_NT)) {                                                   \
+        SAC_TR_DISTMEM_PRINT ("Freeing memory after RC broadcast of variable %s.",       \
+                              NT_STR (value_NT));                                        \
+        SAC_DISTMEM_HM_FREE (_BC_RC_VAR (value_NT))                                      \
+        SAC_TR_DISTMEM_PRINT ("Decrementing RC of variable %s (old value: %" PRIdPTR     \
+                              ").",                                                      \
+                              NT_STR (value_NT), SAC_ND_A_RC (value_NT));                \
+        SAC_ND_DEC_RC_FREE (value_NT, 1, );                                              \
+        SAC_TR_DISTMEM_PRINT ("Done with RC broadcast of variable %s.",                  \
+                              NT_STR (value_NT));                                        \
+    }
 
 /******************************************
  * Runtime check macros
@@ -1545,7 +1806,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_FORBID_CACHE_WRITES()                                                \
     {                                                                                    \
         SAC_TR_DISTMEM_PRINT ("Forbidding write accesses to distributed "                \
-                              "arrays (also directly into the local cache");             \
+                              "arrays (also directly into the local cache).");           \
         SAC_DISTMEM_are_dist_writes_allowed = FALSE;                                     \
         SAC_DISTMEM_are_cache_writes_allowed = FALSE;                                    \
     }

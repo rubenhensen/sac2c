@@ -211,7 +211,8 @@ AddDistMemLib (str_buf *buffer)
             break;
         default:
             /* This should never happen as we check the options. */
-            CTIerror ("Unknown distributed memory backend communication library");
+            CTIerror ("Linking libsacdistmem: Unknown distributed memory backend "
+                      "communication library");
             break;
         }
 

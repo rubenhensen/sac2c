@@ -64,7 +64,8 @@ SAC_RuntimeError (char *format, ...)
     if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {
         fprintf (stderr, "\n\n*** SAC runtime error\n");
     } else {
-        fprintf (stderr, "\n\n*** SAC runtime error at node %zd\n", SAC_DISTMEM_rank);
+        /* The distributed memory backend is used since the rank is defined. */
+        fprintf (stderr, "\n\n*** SAC runtime error at Node %zd\n", SAC_DISTMEM_rank);
     }
 
     va_start (arg_p, format);
@@ -174,7 +175,7 @@ SAC_RuntimeWarning (char *format, ...)
     if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {
         fprintf (stderr, "\n\n*** SAC runtime warning\n");
     } else {
-        fprintf (stderr, "\n\n*** SAC runtime warning at node %zd\n", SAC_DISTMEM_rank);
+        fprintf (stderr, "\n\n*** SAC runtime warning at Node %zd\n", SAC_DISTMEM_rank);
     }
 
     fprintf (stderr, "*** ");

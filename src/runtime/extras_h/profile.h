@@ -628,6 +628,7 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
         SAC_PF_BEGIN_DISTMEM (SAC_PF_distmem_dist_barrier_record)                        \
         break;                                                                           \
     case SAC_DISTMEM_exec_mode_side_effects_outer:                                       \
+    case SAC_DISTMEM_exec_mode_side_effects:                                             \
         SAC_PF_BEGIN_DISTMEM (SAC_PF_distmem_side_effects_barrier_record)                \
         break;                                                                           \
     default: /*  SAC_DISTMEM_exec_mode_sync */                                           \
@@ -641,6 +642,7 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
         SAC_PF_END_DISTMEM (SAC_PF_distmem_dist_barrier_record)                          \
         break;                                                                           \
     case SAC_DISTMEM_exec_mode_side_effects_outer:                                       \
+    case SAC_DISTMEM_exec_mode_side_effects:                                             \
         SAC_PF_END_DISTMEM (SAC_PF_distmem_side_effects_barrier_record)                  \
         break;                                                                           \
     default: /*  SAC_DISTMEM_exec_mode_sync */                                           \

@@ -1388,7 +1388,10 @@ SUBPHASE (
   DMISEFAdoIdentifySideEffectFunctionApplications, global.backend == BE_distmem, pc)
 
 SUBPHASE (dmida, "Identifying distributable arrays for distributed memory backend",
-          DMIDAdoIdentifyDistributableArrays, (global.backend == BE_distmem), pc)
+          DMIDAdoIdentifyDistributableArrays, global.backend == BE_distmem, pc)
+
+SUBPHASE (dmisaa, "Identify sub-allocated arrays for the distributed memory backend",
+          DMISAAdoIdentifySubAllocatedArrays, global.backend == BE_distmem, pc)
 
 ENDPHASE (pc)
 

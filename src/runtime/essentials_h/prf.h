@@ -466,13 +466,18 @@
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
-#define SAC_ND_PRF_VAL_LT_VAL_SxS(to_NT, from_NT, from2_NT)                              \
-    {                                                                                    \
-        if (SAC_ND_READ (from_NT, 0) >= SAC_ND_READ (from2_NT, 0)) {                     \
-            SAC_RuntimeError ("Scalar constraint " NT_STR (from_NT) " < " NT_STR (       \
-              from2_NT) " violated in " __FILE__ ":" TO_STR (__LINE__) ".");             \
-        }                                                                                \
-        SAC_ND_A_FIELD (to_NT) = 1;                                                      \
+#define SAC_ND_PRF_VAL_LT_VAL_SxS(to_NT, from_NT, from2_NT)                                               \
+    {                                                                                                     \
+        if (SAC_ND_READ (from_NT, 0) >= SAC_ND_READ (from2_NT, 0)) {                                      \
+            SAC_RuntimeError (                                                                            \
+              "Scalar constraint " NT_STR (from_NT) " (" SAC_NT_PRINT_CBASETYPE (from_NT) ") < " NT_STR ( \
+                from2_NT) " (" SAC_NT_PRINT_CBASETYPE (from2_NT) ") violated "                            \
+                                                                 "in " __FILE__                           \
+                                                                 ":" TO_STR (                             \
+                                                                   __LINE__) ".",                         \
+              SAC_ND_READ (from_NT, 0), SAC_ND_READ (from2_NT, 0));                                       \
+        }                                                                                                 \
+        SAC_ND_A_FIELD (to_NT) = 1;                                                                       \
     }
 
 #define SAC_ND_PRF_VAL_LE_VAL_VxV(to_NT, from_NT, from2_NT)                              \
@@ -487,13 +492,18 @@
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
-#define SAC_ND_PRF_VAL_LE_VAL_SxS(to_NT, from_NT, from2_NT)                              \
-    {                                                                                    \
-        if (SAC_ND_READ (from_NT, 0) > SAC_ND_READ (from2_NT, 0)) {                      \
-            SAC_RuntimeError ("Scalar constraint " NT_STR (from_NT) " < " NT_STR (       \
-              from2_NT) " violated in " __FILE__ ":" TO_STR (__LINE__) ".");             \
-        }                                                                                \
-        SAC_ND_A_FIELD (to_NT) = 1;                                                      \
+#define SAC_ND_PRF_VAL_LE_VAL_SxS(to_NT, from_NT, from2_NT)                                                \
+    {                                                                                                      \
+        if (SAC_ND_READ (from_NT, 0) > SAC_ND_READ (from2_NT, 0)) {                                        \
+            SAC_RuntimeError (                                                                             \
+              "Scalar constraint " NT_STR (from_NT) " (" SAC_NT_PRINT_CBASETYPE (from_NT) ") <= " NT_STR ( \
+                from2_NT) " (" SAC_NT_PRINT_CBASETYPE (from2_NT) ") violated "                             \
+                                                                 "in " __FILE__                            \
+                                                                 ":" TO_STR (                              \
+                                                                   __LINE__) ".",                          \
+              SAC_ND_READ (from_NT, 0), SAC_ND_READ (from2_NT, 0));                                        \
+        }                                                                                                  \
+        SAC_ND_A_FIELD (to_NT) = 1;                                                                        \
     }
 
 #define SAC_ND_PRF_MASK_SxSxS__DATA(to_NT, from1_NT, from2_NT, from3_NT)                 \

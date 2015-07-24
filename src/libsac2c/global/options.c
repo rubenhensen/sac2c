@@ -290,10 +290,8 @@ OPTcheckOptionConsistency (void)
             /* The communication library is obligatory when the distributed memory backend
              * is used and a SAC program is compiled. Modules are compiled for the
              * distributed memory backend but not for a specific communication library.
-             * The same holds for the prelude (which for some reason has FT_prog). */
-            if (global.filetype == FT_prog && global.loadprelude) {
-                CTIerror ("Unknown distributed memory backend communication library");
-            }
+             * The same holds for the prelude. However, we cannot enforce this check here
+             * because we do not know yet if we are compiling a module. */
             break;
         }
     } else {

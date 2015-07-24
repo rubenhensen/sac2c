@@ -308,10 +308,10 @@ PrintGlobalSwitches (void)
             /* The communication library is obligatory when the distributed memory backend
              * is used and a SAC program is compiled. Modules are compiled for the
              * distributed memory backend but not for a specific communication library.
-             * The same holds for the prelude (which for some reason has FT_prog). */
-            if (global.filetype == FT_prog && global.loadprelude) {
-                DBUG_UNREACHABLE (
-                  "Unknown distributed memory backend communication library");
+             * The same holds for the prelude. */
+            if (global.filetype == FT_prog) {
+                DBUG_UNREACHABLE ("Generating startup code: Unknown distributed memory "
+                                  "backend communication library");
             }
             break;
         }

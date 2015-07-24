@@ -94,9 +94,8 @@
  * Initialization:
  *
  *   When the distributed memory heap manager is initialized upon program startup, it is
- *passed a reference to the DSM memory segment along with its size.
- *   TODO: actually do this
- *   The following memory layout is established.
+ *passed a reference to the DSM memory segment along with its size. The following memory
+ *layout is established.
  *
  *     |                  |
  *     +------------------+
@@ -191,8 +190,10 @@
  *
  *  Descriptor Allocation Optimization (DAO)
  *
- *   This optimization of the traditional SAC heap manager is not used by the distributed
- *   memory heap manager. Descriptors are never allocated in the DSM segment.
+ *   This optimization of the traditional SAC heap manager is also used by the distributed
+ *   memory heap manager. Descriptors of distributed arrays are not allocated in the DSM
+ *segment, but when broadcasting AKD or AKS variables, their descriptors are also
+ *allocated in the DSM segment.
  *
  *
  *  Memory Size Cache Adjustment (MSCA)

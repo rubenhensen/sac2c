@@ -414,6 +414,13 @@
 	        <node name="Ids" />
 	      </travuser>
       </traversal>
+      <traversal id="DMISAA" name="Identify sub-allocated arrays for the distributed memory backend" default="sons" include="identify_suballocated_arrays.h">
+        <travuser>
+          <node name="Prf" />
+          <node name="Let" />
+          <node name="Ids" />
+        </travuser>
+      </traversal>
       <traversal id="ACUPTN" name="Annotate CUDA partitions" default="sons" include="annotate_cuda_partition.h" >
         <travuser>
           <node name="With" />
@@ -9021,7 +9028,7 @@ N_tfarg :
             DSM memory.
           </description>
           <phases>
-            <range from="emal" to="final" />
+            <range from="dmisaa" to="final" />
           </phases>
         </flag>
         <flag name="NeedBlocked" default="FALSE" >

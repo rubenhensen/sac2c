@@ -2,9 +2,10 @@
  *
  * file:   distmem.c
  *
- * prefix: SAC_DISTMEM_ (no tracing) / SAC_DISTMEM_TR_ (tracing)
+ * prefix: SAC_DISTMEM_ (no tracing) / SAC_DISTMEM_TR_ (tracing) / SAC_DISTMEM_PR_
+ *(profiling)
  *
- * description:
+ * description: communication library-independent part of libsacdistmem
  *
  *****************************************************************************/
 
@@ -259,18 +260,6 @@ SegvHandler (int sig, siginfo_t *si, void *unused)
     SAC_PF_BeginComm ();
     SAC_DISTMEM_COMMLIB_LOAD_PAGE (local_page_ptr, owner_rank, remote_page_index);
     SAC_PF_EndComm ();
-
-    /*
-
-          ARMCI_SAFE(ARMCI_Get((void*)((uintptr_t)getseg(node) + remote_page * pagesize),
-       page, pagesize, node));
-
-          const gaspi_queue_id_t queue_id = 0;
-          uintptr_t local_offset = (uintptr_t)page - (uintptr_t)cache;
-          GPI_SAFE(gaspi_read(get_segid(rank, SEGID_LOCAL_CACHE), local_offset, node,
-       get_segid(node, SEGID_SHARED_SEG), remote_page * pagesize, pagesize, queue_id,
-       GASPI_BLOCK)); GPI_SAFE(gaspi_wait(queue_id, GASPI_BLOCK));
-    */
 }
 
 /** <!--********************************************************************-->
@@ -436,7 +425,7 @@ SAC_DISTMEM_InvalCache (uintptr_t arr_offset, size_t b)
             continue;
         }
 
-        SAC_DISTMEM_InvalCacheOfNode (arr_offset, i, b);
+        SAC_DISTMEM_INVAL_CACHE_OF_NODE (arr_offset, i, b);
     }
 }
 
@@ -543,6 +532,26 @@ SAC_DISTMEM_Abort (int exit_code)
 {
     SAC_TR_DISTMEM_PRINT ("Aborting communication library with exit code %d.", exit_code);
 
+    /* Print some useful debug information. */
+    SAC_Print (
+      "Allocated memory: %zd MB per segment, %zd MB in total, seg size: %" PRIuPTR
+      " B, page size: %zd B\n",
+      SAC_DISTMEM_segsz / 1024 / 1024, SAC_DISTMEM_segsz * SAC_DISTMEM_size / 1024 / 1024,
+      SAC_DISTMEM_segsz, SAC_DISTMEM_pagesz);
+    for (size_t i = 0; i < SAC_DISTMEM_rank; i++) {
+        SAC_DISTMEM_local_seg_ptrs[i]
+          = (void *)((uintptr_t)SAC_DISTMEM_cache_ptr + SAC_DISTMEM_segsz * i);
+        SAC_Print ("Segment of %zd: %p\n", i, SAC_DISTMEM_local_seg_ptrs[i]);
+    }
+    SAC_DISTMEM_local_seg_ptrs[SAC_DISTMEM_rank] = SAC_DISTMEM_shared_seg_ptr;
+    SAC_Print ("Segment of %zd: %p\n", SAC_DISTMEM_rank,
+               SAC_DISTMEM_local_seg_ptrs[SAC_DISTMEM_rank]);
+    for (size_t i = SAC_DISTMEM_rank + 1; i < SAC_DISTMEM_size; i++) {
+        SAC_DISTMEM_local_seg_ptrs[i]
+          = (void *)((uintptr_t)SAC_DISTMEM_cache_ptr + SAC_DISTMEM_segsz * (i - 1));
+        SAC_Print ("Segment of %zd: %p\n", i, SAC_DISTMEM_local_seg_ptrs[i]);
+    }
+
     /* Print heap manager diagnostics; */
     SAC_DISTMEM_HM_ShowDiagnostics ();
 
@@ -565,8 +574,8 @@ SAC_DISTMEM_DetDoDistrArr (size_t total_elems, size_t dim0_size)
     bool do_dist = TRUE;
 
     if (SAC_DISTMEM_exec_mode != SAC_DISTMEM_exec_mode_sync) {
-        SAC_TR_DISTMEM_PRINT ("Array is not distributed because program is not in "
-                              "replicated execution mode.");
+        // SAC_TR_DISTMEM_PRINT( "Array is not distributed because program is not in
+        // replicated execution mode.");
         return FALSE;
     }
 
@@ -589,8 +598,8 @@ SAC_DISTMEM_DetDoDistrArr (size_t total_elems, size_t dim0_size)
         }
     }
 
-    SAC_TR_DISTMEM_PRINT ("Distribute array of size %zd (size of dim0: %zd)? %d",
-                          total_elems, dim0_size, do_dist);
+    // SAC_TR_DISTMEM_PRINT( "Distribute array of size %zd (size of dim0: %zd)? %d",
+    // total_elems, dim0_size, do_dist);
 
     return do_dist;
 }
@@ -609,9 +618,8 @@ SAC_DISTMEM_DetMaxElemsPerNode (size_t total_elems, size_t dim0_size)
     size_t max_dim0 = DetMaxDim0SharePerNode (dim0_size);
     size_t max_elems = max_dim0 * total_elems / dim0_size;
 
-    SAC_TR_DISTMEM_PRINT ("Maximum number of elements/dim0 share per node is %zd/%zd for "
-                          "array of size/dim0 %zd/%zd.",
-                          max_elems, max_dim0, total_elems, dim0_size);
+    // SAC_TR_DISTMEM_PRINT( "Maximum number of elements/dim0 share per node is %zd/%zd
+    // for array of size/dim0 %zd/%zd.", max_elems, max_dim0, total_elems, dim0_size);
 
     return max_elems;
 }
@@ -660,6 +668,25 @@ SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range
 }
 
 #if COMPILE_PLAIN
+
+/*
+ * We don't need different versions of the pointer cache update functions,
+ * because all the tracing happens in the macro's that call them.
+ */
+
+void
+SAC_DISTMEM_UpdatePtrCacheBound (int *ptr_cache_from, int *ptr_cache_count,
+                                 int ptr_cache_from_val, int ptr_cache_count_val)
+{
+    *ptr_cache_from = ptr_cache_from_val;
+    *ptr_cache_count = ptr_cache_count_val;
+}
+
+void
+SAC_DISTMEM_UpdatePtrCachePtr (void **ptr_cache, void *ptr_cache_val)
+{
+    *ptr_cache = ptr_cache_val;
+}
 
 /*
  * We don't need different versions of this functions since it is just a

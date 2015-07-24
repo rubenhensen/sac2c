@@ -303,8 +303,8 @@ ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
                   to_NT, to_NT)
             ;
             indout ("SAC_RuntimeError( \"Tried to execute distributed with-loop in "
-                    "non-synchronous execution mode (%s is distributed).\", NT_STR( "
-                    "%%s));\n",
+                    "non-synchronous execution mode (%%s is distributed).\", NT_STR( "
+                    "%s));\n",
                     to_NT);
         IF_END ();
 
@@ -595,37 +595,29 @@ ICMCompileWL_DISTMEM_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
 #include "icm_trace.c"
 #undef WL_DISTMEM_SUBALLOC
 
-    /* Check whether the inner array is distributable at compile time. */
-    if (ICUGetDistributedClass (sub_NT) == C_distr) {
-        /* Check whether the inner array is actually distributed at runtime. */
-        IF_BEGIN ("SAC_ND_A_IS_DIST( %s)", sub_NT)
-            ;
-            /*
-             * The sub-allocated variable may be sub-allocated in the DSM segment but
-             * will be treated like a non-distributed variable.
-             * We can do this because it is never freed and all accessed indices will fall
-             * in the local shared segment. This means that we do not have to take any
-             * further precautions. A possible inner with-loop will not be distributed
-             * because the result variable is not distributed.
-             */
-            indout (
-              "SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s) = FALSE;\n",
-              sub_NT, sub_NT);
-            indout ("SAC_TR_DISTMEM_PRINT( \"%%s is not distributed because it is "
-                    "sub-allocated.\", NT_STR( %s));\n",
-                    sub_NT);
-        IF_END ();
-    }
-
     /* Check whether the outer array is distributable at compile time. */
     if (ICUGetDistributedClass (to_NT) == C_distr) {
+        /* The inner array has to be DSM (not distributed but possibly allocated in DSM
+         * memory). */
+        if (ICUGetDistributedClass (sub_NT) != C_distmem) {
+            indout ("SAC_RuntimeError( \"Suballoc with DIS outer array ( %%s) but "
+                    "non-DSM inner array ( %%s).\", NT_STR( %s), NT_STR( %s));\n",
+                    to_NT, sub_NT);
+        }
+
         /* Check whether the outer array is actually distributed at runtime.
          * We can't check whether a possible outer with-loop is distributed because
          * it may have been unrolled. */
         IF_BEGIN ("SAC_ND_A_IS_DIST( %s)", to_NT)
             ;
             /* The outer array (and possibly with-loop) are distributed. */
-            /* The inner array is sub-allocated in DSM memory. */
+            /* The inner array is sub-allocated in DSM memory (but not distributed). */
+            indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s) = TRUE;\n",
+                    sub_NT, sub_NT);
+            indout ("SAC_TR_DISTMEM_PRINT( \"%%s is allocated in DSM memory because it "
+                    "is sub-allocated from the distributed variable %%s.\", NT_STR( %s), "
+                    "NT_STR( %s));\n",
+                    sub_NT, to_NT);
 
             /* Get the pointer to the start of the sub-allocated array. */
             indout ("SAC_ND_GETVAR(%s, SAC_ND_A_FIELD( %s)) = "

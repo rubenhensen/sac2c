@@ -34,6 +34,10 @@
 #define SELECTtextoutinout(it_text, it_out, it_inout)
 #endif
 
+#ifndef SELECTtextin
+#define SELECTtextin(it_text, it_in)
+#endif
+
 #ifndef SEPargtag
 #define SEPargtag ,
 #endif
@@ -47,7 +51,7 @@
                it_text)                                                                  \
     SELECTelement (it_element) SELECTshp (it_shp) SELECTrc (it_rc) SELECTdesc (it_desc)  \
       SELECTin (it_in) SELECTout (it_out) SELECTinout (it_inout) SELECTtext (it_text)    \
-        SELECTtextoutinout (it_text, it_out, it_inout)
+        SELECTtextoutinout (it_text, it_out, it_inout) SELECTtextin (it_text, it_in)
 
 SELECT (ATG_notag, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, "")
 SEPargtag
@@ -99,5 +103,6 @@ SEPargtag
 #undef SELECTout
 #undef SELECTinout
 #undef SELECTtextoutinout
+#undef SELECTtextin
 
 #undef SEPargtag

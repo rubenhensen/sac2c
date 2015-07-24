@@ -112,12 +112,18 @@
                                    SAC_ND_A_FIRST_ELEMS (var_NT), pos))                  \
        ? 0                                                                               \
        : (SAC_RuntimeError ("Pointer to element %d of array %s from cache (%p) "         \
-                            "does not match calculated pointer (%p).",                   \
+                            "does not match calculated pointer (%p). "                   \
+                            "Offset: %" PRIuPTR ", first elems: %zd. "                   \
+                            "Cache at %p: %d elements from %d.",                         \
                             pos, NT_STR (var_NT), ptr,                                   \
                             SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT),            \
                                                       SAC_NT_CBASETYPE (var_NT),         \
                                                       SAC_ND_A_FIRST_ELEMS (var_NT),     \
-                                                      pos)),                             \
+                                                      pos),                              \
+                            SAC_ND_A_OFFS (var_NT), SAC_ND_A_FIRST_ELEMS (var_NT),       \
+                            SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                          \
+                            SAC_ND_A_MIRROR_PTR_CACHE_COUNT (var_NT),                    \
+                            SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT)),                    \
           0)),
 
 #define SAC_DISTMEM_CHECK_IS_DSM_ALLOC_ALLOWED()                                         \

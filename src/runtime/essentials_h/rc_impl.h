@@ -1,7 +1,7 @@
-#ifdef SAC_BACKEND_C99
+#if defined(SAC_BACKEND_C99) || defined(SAC_BACKEND_DISTMEM)
 /**
  * This header implements reference counting schemes in ICMs
- * in the C99 backend. The mutc backend has its own definitions
+ * in the C99 and distmem backend. The mutc backend has its own definitions
  * in mutc_rc.h
  * For the list of the reference counting methods
  * see the file doc/ref-counting-methods.txt
@@ -183,4 +183,4 @@
  * rcm_local_pasync_norc_desc.h */
 /* I like to keep things separate ;-) */
 
-#endif /* defined SAC_BACKEND_C99 */
+#endif /* defined(SAC_BACKEND_C99) || defined(SAC_BACKEND_DISTMEM) */
