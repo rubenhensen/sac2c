@@ -105,7 +105,7 @@ WLUTisIdsMemberPartition (node *arg_node, node *partn)
  * @fn node *WLUTfindArrayForBound( node *bnd)
  *
  * @brief Assuming that bnd is GENERATOR_BOUND1/2 for a WL generator,
- *        try to find an N_array that gives its elements.
+ *        try to find the N_array that gives its elements.
  *
  * @param:  N_id or N_array
  * @result: N_array, or NULL if we can't find an N_array.
@@ -130,6 +130,8 @@ WLUTfindArrayForBound (node *bnd)
             pat = PMfree (pat);
         }
     }
+
+    DBUG_ASSERT ((NULL == z) || N_array == NODE_TYPE (z), "result node type wrong");
 
     DBUG_RETURN (z);
 }

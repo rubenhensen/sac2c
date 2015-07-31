@@ -7,8 +7,14 @@
  *
  * @file Polyhedral Analysis Setup
  *
- * This traversal initializes FUNDEF_CALLAP and AVIS_NPART,
- * which are need by polyhedral-based optimizations.
+ * This traversal initializes several fields:
+ *
+ *    FUNDEF_CALLAP
+ *    AVIS_NPART
+ *    FUNDEF_LOOPCOUNT
+ *
+ * These are needed by polyhedral-based optimizations.
+ *
  */
 
 #define DBUG_PREFIX "POLYS"

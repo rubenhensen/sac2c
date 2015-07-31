@@ -7024,6 +7024,26 @@ N_tfarg :
               </phases>
             </target>
           </targets>
+	  <description>
+	  Argument list for function invocation
+          </description>
+        </son>
+        <son name="LoopCount" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+	  <description>
+	  If AP_FUNDEF is a LOOPFUN, we may be able to deduce the
+	  iteration count for the loop. If so, AP_LOOPCOUNT is an N_exprs
+	  that is the count; else NULL.
+	  The count may be a constant ( e.g., 42), or it may be symbolic
+	  ( e.g., UB-LB).
+          </description>
         </son>
       </sons>
       <attributes>

@@ -6,6 +6,7 @@
 // #include <stdint.h> does not work today, so we do it this way.
 typedef unsigned int uint32_t;
 
+#include <union_set.h>
 #include <ctx.h>
 #include <vec.h>
 #include <assert.h>
@@ -378,6 +379,77 @@ PolyhedralRelationalCalc (int verbose)
 }
 
 int
+LoopCount (__isl_keep isl_union_set *For)
+{
+    // Try to find integer constant iteration count of FOR-loop.
+    // If no luck, return -1.
+    //
+    int z = -1;
+    isl_val *V;
+    struct isl_union_map *sched;
+
+    sched = isl_schedule_constraints_on_domain (For);
+
+    isl_set *LoopDomain = isl_set_from_union_set (isl_union_map_range (sched));
+    int Dim = isl_set_dim (LoopDomain, isl_dim_set);
+
+    // Calculate a map similar to the identity map, but with the last input
+    // and output dimension not related.
+    //  [i0, i1, i2, i3] -> [i0, i1, i2, o0]
+    isl_space *Space = isl_set_get_space (LoopDomain);
+    Space = isl_space_drop_dims (Space, isl_dim_out, Dim - 1, 1);
+    Space = isl_space_map_from_set (Space);
+    isl_map *Identity = isl_map_identity (Space);
+    Identity = isl_map_add_dims (Identity, isl_dim_in, 1);
+    Identity = isl_map_add_dims (Identity, isl_dim_out, 1);
+
+    LoopDomain = isl_set_reset_tuple_id (LoopDomain);
+
+    isl_map *Map = isl_map_from_domain_and_range (isl_set_copy (LoopDomain),
+                                                  isl_set_copy (LoopDomain));
+    isl_set_free (LoopDomain);
+    Map = isl_map_intersect (Map, Identity);
+
+    isl_map *LexMax = isl_map_lexmax (isl_map_copy (Map));
+    isl_map *LexMin = isl_map_lexmin (Map);
+    isl_map *Sub = isl_map_sum (LexMax, isl_map_neg (LexMin));
+
+    isl_set *Elements = isl_map_range (Sub);
+
+    if (isl_set_is_singleton (Elements)) {
+        // I think this works because there is only one element.
+        isl_point *P = isl_set_sample_point (Elements);
+        V = isl_point_get_coordinate_val (P, isl_dim_set, Dim - 1);
+        z = isl_val_get_num_si (V);
+        isl_val_free (V);
+        isl_point_free (P);
+        z = (-1 != z) ? z + 1 : z; // iteration count = 1 + LexMax-MexMin
+    } else {
+        isl_set_free (Elements);
+    }
+
+    sched = isl_schedule_constraints_free (sched);
+
+    return (z);
+}
+
+int
+PolyhedralLoopCount (int verbose)
+{ // Attempt to determine a constant loop count for a FOR-loop.
+    int z;
+    struct isl_union_set *islfor;
+    struct isl_ctx *ctx = isl_ctx_alloc ();
+
+    islfor = isl_union_set_read_from_file (ctx, stdin);
+
+    z = LoopCount (islfor);
+
+    isl_union_set_free (islfor);
+
+    return (z);
+}
+
+int
 main (int argc, char *argv[])
 {
     FILE *file;
@@ -407,6 +479,9 @@ main (int argc, char *argv[])
     case POLY_OPCODE_PWLF: // Polyhedral WLF (PWLF)
         z = PolyhedralWLFIntersectCalc (verbose);
         break;
+
+    case POLY_OPCODE_LOOPCOUNT: // Polyhedral Setup (and loop count analysis)
+        z = PolyhedralLoopCount (verbose);
 
     default:
         fprintf (stderr, "caller is confused. We got opcode=%c\n", opcode);

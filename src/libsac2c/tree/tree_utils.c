@@ -627,6 +627,7 @@ TUsetSsaAssign (node *arg_node)
 
     DBUG_ENTER ();
 
+    DBUG_ASSERT (N_assign == NODE_TYPE (arg_node), "Expected N_assign");
     DBUG_ASSERT (N_let == NODE_TYPE (ASSIGN_STMT (arg_node)), "Expected N_let");
     ids = LET_IDS (ASSIGN_STMT (arg_node));
 
@@ -637,6 +638,7 @@ TUsetSsaAssign (node *arg_node)
 
     DBUG_RETURN ();
 }
+
 /** <!--********************************************************************-->
  *
  * @fn node *TUmakeIntVec(...)

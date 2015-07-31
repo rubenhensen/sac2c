@@ -1347,6 +1347,7 @@ PRAprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_sel_VxA:
+    case F_idx_sel:
         if (INFO_MODE (arg_info) == TR_normal) {
             IntMatrix constraints, write_fas = NULL, read_fas = NULL;
             node *iv = PRF_ARG1 (arg_node);
