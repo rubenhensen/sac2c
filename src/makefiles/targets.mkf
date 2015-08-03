@@ -145,7 +145,8 @@ libsac2c_objects     := object_init resolve_reference_args object_analysis \
 libsac2c_nested      := generate_nested_type_conversions
 
 libsac2c_distmem     := identify_side_effect_functions identify_side_effect_function_aps \
-                        identify_distributable_arrays identify_suballocated_arrays
+                        identify_distributable_arrays identify_suballocated_arrays \
+                        mark_local_selects
 
 libsac2c_generics    := remove_generic_definitions \
                         check_and_simplify_generic_definitions \

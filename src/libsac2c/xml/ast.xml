@@ -1694,6 +1694,14 @@
 	  <node name="Fundef" />
 	</travuser>
       </traversal>
+   <traversal id="DMMLS" name="Mark local selects for distmem backend" default="sons" include="mark_local_selects.h">
+    <travuser>
+	    <node name="With" />
+	    <node name="Part" />
+	    <node name="Prf" />
+	    <node name="Spap" />
+	  </travuser>
+   </traversal>
       <traversal id="PPI" name="Prepare Inline" default="sons" include="prepareinline.h">
         <travuser>
 	  <node name="Fundef" />
@@ -7882,7 +7890,17 @@ N_tfarg :
             <range from="opt_saacyc_cubsl" to="opt_saacyc_cubsl" />
           </phases>
 	</flag>
-      </flags>
+    <flag name="DistmemIsLocalRead" default="FALSE">
+          <description> 
+            Set to TRUE by DMMLS/IVESPLIT if the distributed memory backend is used,
+            Prf is F_sel_VxA/F_idx_sel and the read is known to be local,
+            even if the array is distributed.
+	    </description>
+          <phases>
+            <range from="ptc_dmmls" to="final" />
+          </phases>
+	    </flag>
+    </flags>
     </node>
 <!--
 

@@ -58,15 +58,22 @@
  *   BIT: Bitarray?
  *        TODO describe
  *
- *   DIS distribution: Used by the distmem backend. Can the variable be distributed?
- *                     DIS: potentially distributed
- *                     DIM: not distributed, but may be allocated in DSM memory
- *                     NDI: not distributed (default if distributed memory backend not
- * used)
+ *   DIS distribution: Used by the distmem backend. Can the variable be
+ * distributed/allocated in DSM memory? DIS: Distributable, i.e. potentially distributed
+ * (and allocated in DSM memory) DSM: Not distributed, but may be allocated in DSM memory
+ *                          Used for sub-allocated arrays (with a distributable outer
+ * array) DCA: Distributable, i.e., potentially distributed; writing into the local cache
+ * is allowed Used for write accesses to individual array elements in modarray primitive
+ * functions DLO: Distributable, i.e. potentially distributed; but access is known to be
+ * local Used for read accesses to individual array elements in modarray-with-loops NDI:
+ * Not distributed, not allocated in DSM memory Only legal value if distributed memory
+ * backend not used
  *
- *   CBT c-basetype:  Used by the distmem backend. Basetype as declared in generated
- * C-code. INT: int FLO: float DOU: double OTH: other (currently we don't care about
- * these)
+ *   CBT c-basetype:  Basetype as declared in generated C-code
+ *                    Mainly used for the distributed memory backend, but always available
+ * and in some cases used to improve debug output INT: int FLO: float DOU: double
+ *                    ... (see SAC_NT_CBASETYPE macro for all values)
+ *                    OTH: other
  */
 
 #define NT_NAME(var_NT) Item0 var_NT
@@ -756,6 +763,21 @@ typedef intptr_t *SAC_array_descriptor_t;
        SAC_BC_READ (from_NT, from_pos) SAC_DISTMEM_CHECK_IS_DSM_ARR (from_NT)            \
          SAC_CS_READ_ARRAY (from_NT, from_pos)                                           \
            SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos])
+
+/*
+ * Read from a possibly distributed variable, but the read index is local
+ * for sure.
+ */
+#define SAC_ND_READ__DLO(from_NT, from_pos)                                              \
+    (SAC_TR_AA_FPRINT ("%s read", from_NT, from_pos,                                     \
+                       SAC_ND_A_IS_DIST (from_NT) ? "DLO" : "Non-DLO")                   \
+       SAC_BC_READ (from_NT, from_pos) SAC_CS_READ_ARRAY (from_NT, from_pos)             \
+         SAC_DISTMEM_CHECK_LOCAL_READ_ALLOWED (&(SAC_ND_GETVAR (from_NT,                 \
+                                                                SAC_ND_A_FIELD (         \
+                                                                  from_NT))[from_pos]),  \
+                                               from_NT, from_pos)                        \
+           SAC_DISTMEM_AVOIDED_PTR_CALC_KNOWN_LOCAL_READ_EXPR (from_NT)                  \
+             SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos])
 
 /******************************************************************************
  * How does the range check optimization in SAC_ND_READ__DIS work?

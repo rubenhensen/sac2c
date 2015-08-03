@@ -117,6 +117,11 @@ OPTIMIZE ("rwo", rwo, TRUE, TRUE, "memory reuse with offset")
 OPTIMIZE ("rip", rip, TRUE, TRUE, "memory reuse with in place selection")
 OPTIMIZE ("tup", tup, TRUE, TRUE, "type upgrade")
 OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
+#if ENABLE_DISTMEM
+OPTIMIZE ("dmmls", dmmls, TRUE, TRUE, "DISTMEM mark local selects")
+#else
+OPTIMIZE ("dmmls", dmmls, FALSE, FALSE, "DISTMEM mark local selects")
+#endif
 OPTIMIZE ("sde", sde, TRUE, TRUE, "subtraction / division elimination")
 OPTIMIZE ("wlprop", wlprop, TRUE, TRUE, "with-loop propagation")
 OPTIMIZE ("saa", saa, TRUE, TRUE, "use symbolic array attributes")

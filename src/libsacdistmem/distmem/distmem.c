@@ -14,6 +14,15 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <inttypes.h>
+#include <errno.h>
+
+/*
+ * We need this extern declaration here rather than including
+ * the corresponding header file because the further declarations in
+ * string.h conflict with SAC-generated headers in the SAC string module.
+ */
+
+extern char *strerror (int errnum);
 
 #include "config.h"
 
@@ -95,10 +104,21 @@ int SAC_DISTMEM_trace_profile_rank = SAC_DISTMEM_TRACE_PROFILE_RANK_ANY;
 /*
  * Unprotects a single memory page starting at page_ptr
  * (allows reads and writes).
+ *
+ * If mprotect fails with Error: 12 Cannot allocate memory
+ * the reason may be that we depleted the max map count.
+ * We have a limit on the number of maps you can have, mprotect()
+ * calls split maps like crazy.
+ *
+ * See setting: /proc/sys/vm/max_map_count
+ * and /proc/$pid/maps
+ *
+ * Change setting: sudo sysctl -w vm.max_map_count=1000000
  */
 #define SAC_DISTMEM_PROT_PAGE_WRITE(page_ptr)                                            \
     if (mprotect (page_ptr, SAC_DISTMEM_pagesz, PROT_WRITE) == -1) {                     \
-        SAC_RuntimeError ("Failed to unprotect memory.");                                \
+        SAC_RuntimeError ("Failed to unprotect memory page from %p. Error: %d %s",       \
+                          page_ptr, errno, strerror (errno));                            \
     }
 
 #if COMPILE_TRACE || COMPILE_PROFILE
@@ -184,6 +204,9 @@ unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes = 0;
 
 /* Number of avoided pointer calculations for local reads */
 unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads = 0;
+
+/* Number of avoided pointer calculations for known to be local reads */
+unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_known_local_reads = 0;
 
 /* Number of avoided pointer calculations for remote reads */
 unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads = 0;
@@ -488,6 +511,9 @@ PrintTraceSummary ()
                           SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes);
     SAC_TR_DISTMEM_PRINT ("   Avoided pointer calculations (local reads): %lu",
                           SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads);
+    SAC_TR_DISTMEM_PRINT (
+      "   Avoided pointer calculations (known to be local reads): %lu",
+      SAC_DISTMEM_TR_num_avoided_ptr_calcs_known_local_reads);
     SAC_TR_DISTMEM_PRINT ("   Avoided pointer calculations (remote reads): %lu",
                           SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads);
     SAC_TR_DISTMEM_PRINT ("   Pointer cache updates (remote reads): %lu",

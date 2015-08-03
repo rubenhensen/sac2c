@@ -153,6 +153,9 @@ SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes
 /* Number of avoided pointer calculations for local reads */
 SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads;
 
+/* Number of avoided pointer calculations for known to be local reads */
+SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_known_local_reads;
+
 /* Number of avoided pointer calculations for remote reads */
 SAC_C_EXTERN_VAR unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads;
 
@@ -1837,6 +1840,46 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 /** <!--********************************************************************-->
  *
+ * @fn void SAC_DISTMEM_IS_VALID_LOCAL_READ_PTR( ptr)
+ *
+ *   @brief    Determines whether ptr is a valid pointer for a local read access to a
+ *distributed array.
+ *
+ *             The pointer is valid for a local read access if it lies within the local
+ *             shared segment (not within the local cache).
+ *
+ *             Performs the following checks:
+ *              - ptr must not lie before the begin of the local shared segment.
+ *              - ptr must not lie after the end of the local shared segment.
+ *
+ *   @return        TRUE if ptr is valid, FALSE otherwise
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_IS_VALID_LOCAL_READ_PTR(ptr) SAC_DISTMEM_IS_VALID_WRITE_PTR (ptr)
+
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_DISTMEM_IS_VALID_LOCAL_READ_IDX( first_elems, elem_idx)
+ *
+ *   @brief    Determines whether elem_idx is a valid index for a local read access to a
+ *distributed array.
+ *
+ *             The index is valid for a local read access if it lies within the range of
+ *             indices that is local to this node.
+ *
+ *   @return        TRUE if index is valid, FALSE otherwise
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_IS_VALID_LOCAL_READ_IDX(var_NT, elem_idx)                            \
+    ((elem_idx < SAC_DISTMEM_DET_LOCAL_FROM (var_NT)                                     \
+      || elem_idx > SAC_DISTMEM_DET_LOCAL_TO (var_NT))                                   \
+       ? FALSE                                                                           \
+       : TRUE)
+
+/** <!--********************************************************************-->
+ *
  * @fn void SAC_DISTMEM_IS_VALID_CACHE_PTR( ptr)
  *
  *   @brief    Determines whether ptr is a valid pointer within the local dsm cache.
@@ -1965,6 +2008,15 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
           0)                                                                             \
        : 0),
 
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_KNOWN_LOCAL_READ_EXPR(var_NT)                       \
+    (SAC_ND_A_IS_DIST (var_NT)                                                           \
+       ? (SAC_TR_DISTMEM_AA_PRINT (                                                      \
+            "Avoided pointer calculation for known to be local read.")                   \
+            SAC_DISTMEM_IncCounter (                                                     \
+              &SAC_DISTMEM_TR_num_avoided_ptr_calcs_known_local_reads),                  \
+          0)                                                                             \
+       : 0),
+
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_REMOTE_READ_EXPR()                                  \
     SAC_TR_DISTMEM_AA_PRINT ("Avoided pointer calculation for remote read.")             \
     SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads),
@@ -2021,6 +2073,13 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
        ? (SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads), 0) \
        : 0),
 
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_KNOWN_LOCAL_READ_EXPR(var_NT)                       \
+    (SAC_ND_A_IS_DIST (var_NT)                                                           \
+       ? (SAC_DISTMEM_IncCounter (                                                       \
+            &SAC_DISTMEM_TR_num_avoided_ptr_calcs_known_local_reads),                    \
+          0)                                                                             \
+       : 0),
+
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_REMOTE_READ_EXPR()                                  \
     SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads),
 
@@ -2068,6 +2127,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_WRITE_EXPR()
 
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_READ_EXPR(var_NT)
+
+#define SAC_DISTMEM_AVOIDED_PTR_CALC_KNOWN_LOCAL_READ_EXPR(var_NT)
 
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_REMOTE_READ_EXPR()
 

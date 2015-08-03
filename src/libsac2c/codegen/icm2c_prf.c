@@ -509,6 +509,55 @@ ICMCompileND_PRF_SIMD_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT
 /******************************************************************************
  *
  * Function:
+ *   void ICMCompileND_PRF_SEL_VxA__DATA_id_Local( char *to_NT, int to_sdim,
+ *                                                 char *from_NT, int from_sdim,
+ *                                                 char *idx_NT, int idx_size,
+ *                                                 char *copyfun)
+ *
+ * Description:
+ *   implements the compilation of the following ICM if the distributed memory
+ *   backend is used and the read access is known to be local:
+ *
+ *   ND_PRF_SEL_VxA__DATA_id( to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size,
+ *                            copyfun)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_SEL_VxA__DATA_id_Local (char *to_NT, int to_sdim, char *from_NT,
+                                         int from_sdim, char *idx_NT, int idx_size,
+                                         char *copyfun)
+{
+    DBUG_ENTER ();
+
+#define ND_PRF_SEL_VxA__DATA_id_Local
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+    char *new_from_NT;
+
+    /* If source array is distributable set it to: distributable, but known to be local.
+     */
+    if (ICUGetDistributedClass (from_NT) == C_distr) {
+        new_from_NT = STRcatn (3, "SAC_SET_NT_DIS( DLO, ", from_NT, ")");
+    } else {
+        new_from_NT = from_NT;
+    }
+
+    ICMCompileND_PRF_SEL_VxA__DATA_id (to_NT, to_sdim, new_from_NT, from_sdim, idx_NT,
+                                       idx_size, copyfun);
+
+/* Undefine here to not print two ICMs. */
+#undef ND_PRF_SEL_VxA__DATA_id_Local
+
+    new_from_NT = MEMfree (new_from_NT);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   void ICMCompileND_PRF_SEL_VxA__DATA_id( char *to_NT, int to_sdim,
  *                                           char *from_NT, int from_sdim,
  *                                           char *idx_NT, int idx_size,
@@ -528,10 +577,13 @@ ICMCompileND_PRF_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *from_NT, int 
 {
     DBUG_ENTER ();
 
+#ifndef ND_PRF_SEL_VxA__DATA_id_Local
+/* Do not print this ICM if called from ICMCompileND_PRF_SEL_VxA__DATA_id_Local. */
 #define ND_PRF_SEL_VxA__DATA_id
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_PRF_SEL_VxA__DATA_id
+#endif
 
     indout ("SAC_TR_PRF_PRINT( (\"ND_PRF_SEL_VxA__DATA( %s, %d, %s, %d, ...)\"))\n",
             to_NT, to_sdim, from_NT, from_sdim);
@@ -547,6 +599,55 @@ ICMCompileND_PRF_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *from_NT, int 
 
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size, SizeId, ReadId,
                  copyfun);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void ICMCompileND_PRF_SEL_VxA__DATA_arr_Local( char *to_NT, int to_sdim,
+ *                                                  char *from_NT, int from_sdim,
+ *                                                  int idx_size, char **idxs_ANY,
+ *                                                  char *copyfun)
+ *
+ * Description:
+ *   implements the compilation of the following ICM if the distributed memory
+ *   backend is used and the read access is known to be local.
+ *
+ *   ND_PRF_SEL_VxA__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *                             idx_size, [ idxs_ANY ]* , copyfun)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_SEL_VxA__DATA_arr_Local (char *to_NT, int to_sdim, char *from_NT,
+                                          int from_sdim, int idx_size, char **idxs_ANY,
+                                          char *copyfun)
+{
+    DBUG_ENTER ();
+
+#define ND_PRF_SEL_VxA__DATA_arr_Local
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+    char *new_from_NT;
+
+    /* If source array is distributable set it to: distributable, but known to be local.
+     */
+    if (ICUGetDistributedClass (from_NT) == C_distr) {
+        new_from_NT = STRcatn (3, "SAC_SET_NT_DIS( DLO, ", from_NT, ")");
+    } else {
+        new_from_NT = from_NT;
+    }
+
+    ICMCompileND_PRF_SEL_VxA__DATA_arr_Local (to_NT, to_sdim, new_from_NT, from_sdim,
+                                              idx_size, idxs_ANY, copyfun);
+
+/* Undefine here to not print two ICMs. */
+#undef ND_PRF_SEL_VxA__DATA_arr_Local
+
+    new_from_NT = MEMfree (new_from_NT);
 
     DBUG_RETURN ();
 }
@@ -574,10 +675,13 @@ ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
 {
     DBUG_ENTER ();
 
+#ifndef ND_PRF_SEL_VxA__DATA_arr_Local
+/* Do not print this ICM if called from ICMCompileND_PRF_SEL_VxA__DATA_arr_Local. */
 #define ND_PRF_SEL_VxA__DATA_arr
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_PRF_SEL_VxA__DATA_arr
+#endif
 
     /*
      * CAUTION:
@@ -1160,6 +1264,53 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
 /******************************************************************************
  *
  * Function:
+ *   void ICMCompileND_PRF_IDX_SEL__DATA_Local( char *to_NT, int to_sdim,
+ *                                              char *from_NT, int from_sdim,
+ *                                              char *idx_ANY,
+ *                                              char *copyfun)
+ *
+ * Description:
+ *   implements the compilation of the following ICM if the distributed memory
+ *   backend is used and the read is known to be local:
+ *
+ *   ND_PRF_IDX_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, idx_ANY)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_IDX_SEL__DATA_Local (char *to_NT, int to_sdim, char *from_NT,
+                                      int from_sdim, char *idx_ANY, char *copyfun)
+{
+    DBUG_ENTER ();
+
+#define ND_PRF_IDX_SEL__DATA_Local
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+    char *new_from_NT;
+
+    /* If source array is distributable set it to: distributable, but known to be local.
+     */
+    if (ICUGetDistributedClass (from_NT) == C_distr) {
+        new_from_NT = STRcatn (3, "SAC_SET_NT_DIS( DLO, ", from_NT, ")");
+    } else {
+        new_from_NT = from_NT;
+    }
+
+    ICMCompileND_PRF_IDX_SEL__DATA (to_NT, to_sdim, new_from_NT, from_sdim, idx_ANY,
+                                    copyfun);
+
+/* Undefine here to not print two ICMs. */
+#undef ND_PRF_IDX_SEL__DATA_Local
+
+    new_from_NT = MEMfree (new_from_NT);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   void ICMCompileND_PRF_IDX_SEL__DATA( char *to_NT, int to_sdim,
  *                                        char *from_NT, int from_sdim,
  *                                        char *idx_ANY,
@@ -1180,10 +1331,13 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
 
     DBUG_ENTER ();
 
+#ifndef ND_PRF_IDX_SEL__DATA_Local
+/* Do not print this ICM if called from ICMCompileND_PRF_IDX_SEL__DATA_Local. */
 #define ND_PRF_IDX_SEL__DATA
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_PRF_IDX_SEL__DATA
+#endif
 
     /*
      * CAUTION:

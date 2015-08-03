@@ -6078,8 +6078,15 @@ COMPprfIdxSel (node *arg_node, info *arg_info)
     dim = TCgetDim (IDS_TYPE (let_ids));
     DBUG_ASSERT (dim >= 0, "unknown dimension found!");
 
+    /* The ICM depends on whether we use the distributed memory backend
+     * and the read access is known to be local. */
+    char *icm_name = "ND_PRF_IDX_SEL__DATA";
+    if (global.backend == BE_distmem && PRF_DISTMEMISLOCALREAD (arg_node)) {
+        icm_name = "ND_PRF_IDX_SEL__DATA_Local";
+    }
+
     ret_node
-      = TCmakeAssignIcm2 ("ND_PRF_IDX_SEL__DATA",
+      = TCmakeAssignIcm2 (icm_name,
                           MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
                                         TRUE, FALSE, DUPdoDupTree (icm_args)),
                           TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
@@ -6328,9 +6335,15 @@ COMPprfSel (node *arg_node, info *arg_info)
                           MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
                                         FALSE, TBmakeExprs (DUPdupIdNt (arg1), NULL)));
 
+        /* The ICM depends on whether we use the distributed memory backend
+         * and the read access is known to be local. */
+        char *icm_name = "ND_PRF_SEL_VxA__DATA_id";
+        if (global.backend == BE_distmem && PRF_DISTMEMISLOCALREAD (arg_node)) {
+            icm_name = "ND_PRF_SEL_VxA__DATA_id_Local";
+        }
+
         ret_node
-          = TCmakeAssignIcm3 ("ND_PRF_SEL_VxA__DATA_id", DUPdoDupTree (icm_args),
-                              MakeSizeArg (arg1, TRUE),
+          = TCmakeAssignIcm3 (icm_name, DUPdoDupTree (icm_args), MakeSizeArg (arg1, TRUE),
                               TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                               NULL);
     } else {
@@ -6348,8 +6361,15 @@ COMPprfSel (node *arg_node, info *arg_info)
         icm_args = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
                                  FALSE, type_args);
 
+        /* The ICM depends on whether we use the distributed memory backend
+         * and the read access is known to be local. */
+        char *icm_name = "ND_PRF_SEL_VxA__DATA_arr";
+        if (global.backend == BE_distmem && PRF_DISTMEMISLOCALREAD (arg_node)) {
+            icm_name = "ND_PRF_SEL_VxA__DATA_arr_Local";
+        }
+
         ret_node
-          = TCmakeAssignIcm2 ("ND_PRF_SEL_VxA__DATA_arr", DUPdoDupTree (icm_args),
+          = TCmakeAssignIcm2 (icm_name, DUPdoDupTree (icm_args),
                               TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                               NULL);
     }

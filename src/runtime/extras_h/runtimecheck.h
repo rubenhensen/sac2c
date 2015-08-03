@@ -203,6 +203,16 @@
                             NT_STR (var_NT), pos, ptr),                                  \
           0)),
 
+#define SAC_DISTMEM_CHECK_LOCAL_READ_ALLOWED(ptr, var_NT, pos)                           \
+    ((!SAC_ND_A_IS_DIST (var_NT)                                                         \
+      || (SAC_DISTMEM_IS_VALID_LOCAL_READ_IDX (var_NT, pos)                              \
+          && SAC_DISTMEM_IS_VALID_LOCAL_READ_PTR (ptr)))                                 \
+       ? 0                                                                               \
+       : (SAC_RuntimeError ("Illegal local read access to distributed array %s"          \
+                            ", index position %d at %p",                                 \
+                            NT_STR (var_NT), pos, ptr),                                  \
+          0)),
+
 #define SAC_DISTMEM_CHECK_POINTER_VALID_FOR_READ(ptr)                                    \
     if (!SAC_DISTMEM_IS_VALID_READ_PTR (ptr)) {                                          \
         SAC_RuntimeError ("Illegal read access to distributed array at %p", ptr);        \
@@ -258,6 +268,8 @@
 #define SAC_DISTMEM_CHECK_WRITE_ALLOWED(ptr, var_NT, pos)
 
 #define SAC_DISTMEM_CHECK_READ_ALLOWED(ptr, var_NT, pos)
+
+#define SAC_DISTMEM_CHECK_LOCAL_READ_ALLOWED(ptr, var_NT, pos)
 
 #define SAC_DISTMEM_CHECK_POINTER_VALID_FOR_READ(ptr)
 

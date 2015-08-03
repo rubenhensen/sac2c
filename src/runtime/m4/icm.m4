@@ -13,7 +13,7 @@ define(_star, `ifelse(`$1', `*SHP', `SCL, AKS, AKD, AUD, ___',
                       `$1', `*SCO', `SHR, GLO, ___',
                       `$1', `*USG', `TPM, TPA, TAG, TPO, FTA, FPM, FPA, FPO, FAG, NON, ___',
                       `$1', `*BIT', `YES, NOT, ___',
-                      `$1', `*DIS', `DIS, DSM, NDI, DCA, ___',
+                      `$1', `*DIS', `DIS, DSM, NDI, DCA, DLO, ___',
                       `$1', `*CBT', `INT, FLO, DOU, UCH, BOO, BYT, SHO, LON, LLO, UBY, USH, UIN, ULO, ULL, OTH, ___',
                       `errprint(`Unknown wild card "$1"
 ')')')
@@ -31,12 +31,18 @@ dnl FPO Funtion out param
 dnl FAG Funtion arg
 dnl NON None of the above
 
-dnl DIS Potentially distributed (allocated in DSM memory)
-dnl DCA Potentially distributed (allocated in DSM memory), cache writes are allowed
-dnl DSM Not distributed, but allocated in DSM memory
-dnl NDI Not distributed
+dnl DIS Distributable, i.e. potentially distributed (and allocated in DSM memory)
+dnl DSM Not distributed, but potentially allocated in DSM memory
+dnl     Used for sub-allocated arrays (with a distributable outer array)
+dnl DCA Distributable, i.e. potentially distributed (and allocated in DSM memory); writing into the local cache is allowed
+dnl     Used for write accesses to individual array elements in modarray primitive functions
+dnl DLO Distributable, i.e. potentially distributed; but access is known to be local
+dnl     Used for read accesses to individual array elements in modarray-with-loops
+dnl NDI Not distributed, not allocated in DSM memory
+dnl     Only legal value if distributed memory backend is not used
 
 dnl CBT Declared type in generated C-code
+dnl     Mainly used for the distributed memory backend, but always available and in some cases used to improve debug output
 
 dnl Start ifndef block
 dnl Remember namespace for use with cat macros.

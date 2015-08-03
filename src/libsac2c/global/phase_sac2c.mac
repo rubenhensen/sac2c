@@ -100,6 +100,14 @@ PHASE (ptc, "Converting to static single assignment form", ALWAYS)
 
 SUBPHASE (ivd, "Inserting variable declarations", INSVDdoInsertVardec, ALWAYS, ptc)
 
+/*
+ * This needs the variable declarations but the
+ * array indices should not have been converted in any way.
+ * So it goes here.
+ */
+SUBPHASE (dmmls, "Mark local selects for distmem backend", DMMLSdoMarkLocalSelects,
+          global.backend == BE_distmem && global.optimize.dodmmls, ptc)
+
 SUBPHASE (itc, "Converting type decls into type conversions", INSTCdoInsertTypeConv,
           ALWAYS, ptc)
 

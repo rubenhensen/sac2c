@@ -1309,6 +1309,7 @@ NTCCTprf_dim_A (te_info *info, ntype *args)
  *    ntype *NTCCTprf_isDist_A( te_info *info, ntype *args)
  *
  * description: This primitive function returns whether an array is distributed.
+ *              (This primitive function is for the distributed memory backend.)
  *
  ******************************************************************************/
 
@@ -1329,7 +1330,6 @@ NTCCTprf_isDist_A (te_info *info, ntype *args)
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
-        /* TODO: We could decide this if we know the shape. */
         res = TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0));
     }
 
@@ -1345,6 +1345,7 @@ NTCCTprf_isDist_A (te_info *info, ntype *args)
  *              of a distributed array that are owned by each node.
  *              The first n - 1 nodes own exactly this number of elements
  *              and the last node owns the remaining elements.
+ *              (This primitive function is for the distributed memory backend.)
  *
  ******************************************************************************/
 
@@ -1365,7 +1366,6 @@ NTCCTprf_firstElems_A (te_info *info, ntype *args)
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
-        /* TODO: We actually do know this if we know the shape. */
         res = TYmakeAKS (TYmakeSimpleType (T_ulong), SHmakeShape (0));
     }
 
@@ -1379,6 +1379,7 @@ NTCCTprf_firstElems_A (te_info *info, ntype *args)
  *
  * description: This primitive function returns the offset of a distributed array
  *              in the dsm shared memory segment.
+ *              (This primitive function is for the distributed memory backend.)
  *
  ******************************************************************************/
 
@@ -1399,7 +1400,6 @@ NTCCTprf_offs_A (te_info *info, ntype *args)
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
-        /* We only know this at runtime, after memory allocation. */
         res = TYmakeAKS (TYmakeSimpleType (T_ulong), SHmakeShape (0));
     }
 
@@ -1652,7 +1652,7 @@ NTCCTprf_sel_VxIA (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_idx_selS( te_info *info, ntype *args)
  *
- * description:
+ * description: Type inference for idx_sel primitive function
  *
  ******************************************************************************/
 
