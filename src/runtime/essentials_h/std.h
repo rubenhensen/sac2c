@@ -699,6 +699,24 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_A_FIRST_ELEMS__DEFAULT(var_NT) 0
 
+/*
+ * SAC_ND_A_LOCAL_FROM implementations (referenced by sac_std_gen.h)
+ * The default variant returns 0 for use by the _firstElems_A_ primitive function.
+ */
+
+#define SAC_ND_A_LOCAL_FROM__DIS(var_NT) SAC_ND_A_MIRROR_LOCAL_FROM (var_NT)
+
+#define SAC_ND_A_LOCAL_FROM__DEFAULT(var_NT) 0
+
+/*
+ * SAC_ND_A_LOCAL_COUNT implementations (referenced by sac_std_gen.h)
+ * The default variant returns 0 for use by the _firstElems_A_ primitive function.
+ */
+
+#define SAC_ND_A_LOCAL_COUNT__DIS(var_NT) SAC_ND_A_MIRROR_LOCAL_COUNT (var_NT)
+
+#define SAC_ND_A_LOCAL_COUNT__DEFAULT(var_NT) SAC_ND_A_SIZE (var_NT)
+
 #endif /* SAC_DO_DISTMEM */
 
 /****************
@@ -795,8 +813,8 @@ typedef intptr_t *SAC_array_descriptor_t;
     (SAC_TR_AA_FPRINT ("%s read", from_NT, from_pos,                                     \
                        SAC_ND_A_IS_DIST (from_NT) ? "DIS" : "Non-DIS")                   \
        SAC_BC_READ (from_NT, from_pos) SAC_CS_READ_ARRAY (from_NT, from_pos) (           \
-         ((unsigned)(from_pos - SAC_ND_A_MIRROR_LOCAL_FROM (from_NT))                    \
-          >= SAC_ND_A_MIRROR_LOCAL_COUNT (from_NT))                                      \
+         ((unsigned)(from_pos - SAC_ND_A_LOCAL_FROM (from_NT))                           \
+          >= SAC_ND_A_LOCAL_COUNT (from_NT))                                             \
            ? (((unsigned)(from_pos - SAC_ND_A_MIRROR_PTR_CACHE_FROM (from_NT))           \
                >= SAC_ND_A_MIRROR_PTR_CACHE_COUNT (from_NT))                             \
                 ? (SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR (from_NT, from_pos))                \

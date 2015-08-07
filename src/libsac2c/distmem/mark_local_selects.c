@@ -69,14 +69,22 @@
 #include "mark_local_selects.h"
 
 #include "str.h"
+#include "math_utils.h"
 #include "traverse.h"
 #include "memory.h"
 #include "tree_basic.h"
 #include "new_types.h"
+#include "DupTree.h"
+#include "shape.h"
+#include "tree_compound.h"
 #include "namespaces.h"
 
 #define DBUG_PREFIX "DMMLS"
 #include "debug.h"
+
+/* If global.dmmls_min_selects has this value, we never
+ * apply the second part of the optimisation. */
+#define DMMLS_NEVER_APPLY_SECOND_PART 0
 
 /*
  * INFO structure
@@ -99,6 +107,13 @@ struct INFO {
     node *modarray_part_cblock;
     /* Keep track of the number of local selects that we found. */
     int local_selects;
+    /* Number of selects from the source array of the modarray with-loop
+     * per iteration in a part. */
+    int selects_from_modarray_source;
+    /* Keep track of vardecs we have to append to the vardecs of the function. */
+    node *vardec;
+    /* Number of selects transformed by the 2nd part. */
+    int boundary_selects;
 };
 
 /*
@@ -111,6 +126,9 @@ struct INFO {
 #define INFO_MODARRAY_WITHID_VEC(n) ((n)->modarray_withid_vec)
 #define INFO_MODARRAY_PART_CBLOCK(n) ((n)->modarray_part_cblock)
 #define INFO_LOCAL_SELECTS(n) ((n)->local_selects)
+#define INFO_SELECTS_FROM_MODARRAY_SOURCE(n) ((n)->selects_from_modarray_source)
+#define INFO_VARDEC(n) ((n)->vardec)
+#define INFO_BOUNDARY_SELECTS(n) ((n)->boundary_selects)
 
 /*
  * INFO functions
@@ -131,6 +149,9 @@ MakeInfo (void)
     INFO_MODARRAY_WITHID_VEC (result) = NULL;
     INFO_MODARRAY_PART_CBLOCK (result) = NULL;
     INFO_LOCAL_SELECTS (result) = 0;
+    INFO_SELECTS_FROM_MODARRAY_SOURCE (result) = 0;
+    INFO_VARDEC (result) = NULL;
+    INFO_BOUNDARY_SELECTS (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -146,12 +167,15 @@ FreeInfo (info *info)
 }
 
 /*
- * Examines a variable that contains a selection index.
- * Returns whether the first dimension of the index is equal to
- * the first dimension of the with-loop index.
+ * Helper functions
  */
-static bool
-CheckIfVarIsFirstDimOfWLIdx (node *var, info *arg_info)
+
+/*
+ * Returns the right-hand side of the last let to the variable var in the with-loop-part
+ * INFO_MODARRAY_PART_CBLOCK( arg_info) or NULL if none is found.
+ */
+static node *
+GetLastAssignment (node *var, info *arg_info)
 {
     /* Search the assignments of the with-loop-part for the latest value of the variable.
      */
@@ -167,7 +191,7 @@ CheckIfVarIsFirstDimOfWLIdx (node *var, info *arg_info)
             /* The statement is a let. */
 
             if (IDS_AVIS (LET_IDS (stmt)) == ID_AVIS (var)) {
-                DBUG_PRINT ("Found let to the selection index variable.");
+                DBUG_PRINT ("Found last let to variable %s.", AVIS_NAME (ID_AVIS (var)));
 
                 latest_let_expr = LET_EXPR (stmt);
             }
@@ -176,6 +200,20 @@ CheckIfVarIsFirstDimOfWLIdx (node *var, info *arg_info)
         /* Continue to next assignment. */
         cblock_expr = ASSIGN_NEXT (cblock_expr);
     }
+
+    return latest_let_expr;
+}
+
+/*
+ * Examines a variable that contains a selection index.
+ * Returns whether the first dimension of the index is equal to
+ * the first dimension of the with-loop index.
+ */
+static bool
+CheckIfVarIsFirstDimOfWLIdx (node *var, info *arg_info)
+{
+    /* Saves the last assignment to the variable. */
+    node *latest_let_expr = GetLastAssignment (var, arg_info);
 
     if (latest_let_expr != NULL && NODE_TYPE (latest_let_expr) == N_array) {
         /* The variable is assigned a constant array. */
@@ -222,20 +260,17 @@ CheckIfSelectToSourceArray (node *first_arg, node *second_arg, info *arg_info)
 
 /*
  * Checks whether a select (either a call to the _sel_VxA_ primitive function or a call to
- * the sel() function) is local by examining the first argument (the selection index) and
- * the second argument (the array that is accessed) if the selection index is a scalar.
+ * the sel() function) is local by examining the first argument (the selection index) if
+ * the selection index is a scalar.
  */
 static bool
-CheckIfSelectIsLocalAndIndexScalar (node *first_arg, node *second_arg, info *arg_info)
+CheckIfSelectIsLocalAndIndexScalar (node *first_arg, info *arg_info)
 {
-    if (CheckIfSelectToSourceArray (first_arg, second_arg, arg_info)) {
-        if (INFO_MODARRAY_WITHID_IDS (arg_info) != NULL
-            && ID_AVIS (first_arg) == IDS_AVIS (INFO_MODARRAY_WITHID_IDS (arg_info))) {
-            DBUG_PRINT ("!!! The first argument is equal to the first dimension of the "
-                        "with-loop index. We have found a local read access !!!");
-            INFO_LOCAL_SELECTS (arg_info)++;
-            return TRUE;
-        }
+    if (INFO_MODARRAY_WITHID_IDS (arg_info) != NULL
+        && ID_AVIS (first_arg) == IDS_AVIS (INFO_MODARRAY_WITHID_IDS (arg_info))) {
+        DBUG_PRINT ("!!! The first argument is equal to the first dimension of the "
+                    "with-loop index. We have found a local read access !!!");
+        return TRUE;
     }
 
     return FALSE;
@@ -243,25 +278,53 @@ CheckIfSelectIsLocalAndIndexScalar (node *first_arg, node *second_arg, info *arg
 
 /*
  * Checks whether a select (either a call to the _sel_VxA_ primitive function or a call to
- * the sel() function) is local by examining the first argument (the selection index) and
- * the second argument (the array that is accessed) if the selection index is a vector.
+ * the sel() function) is local by examining the first argument (the selection index) if
+ * the selection index is a vector.
  */
 static bool
-CheckIfSelectIsLocalAndIndexVector (node *first_arg, node *second_arg, info *arg_info)
+CheckIfSelectIsLocalAndIndexVector (node *first_arg, info *arg_info)
 {
-    if (CheckIfSelectToSourceArray (first_arg, second_arg, arg_info)) {
-        if (INFO_MODARRAY_WITHID_VEC (arg_info) != NULL
-            && ID_AVIS (first_arg) == IDS_AVIS (INFO_MODARRAY_WITHID_VEC (arg_info))) {
-            DBUG_PRINT ("!!! The first argument is equal to the with-loop index. We have "
-                        "found a local read access !!!");
-            INFO_LOCAL_SELECTS (arg_info)++;
-            return TRUE;
-        } else {
-            return CheckIfVarIsFirstDimOfWLIdx (first_arg, arg_info);
+    if (INFO_MODARRAY_WITHID_VEC (arg_info) != NULL
+        && ID_AVIS (first_arg) == IDS_AVIS (INFO_MODARRAY_WITHID_VEC (arg_info))) {
+        DBUG_PRINT ("!!! The first argument is equal to the with-loop index. We have "
+                    "found a local read access !!!");
+        INFO_LOCAL_SELECTS (arg_info)++;
+        return TRUE;
+    } else {
+        return CheckIfVarIsFirstDimOfWLIdx (first_arg, arg_info);
+    }
+}
+
+/*
+ * Returns the SPAP node if the STMT is a sel()
+ * in the correct namespace.
+ * Returns NULL otherwise.
+ */
+static node *
+GetSpapIfStmtIsSel (node *assign)
+{
+    if (NODE_TYPE (ASSIGN_STMT (assign)) == N_let
+        && NODE_TYPE (LET_EXPR (ASSIGN_STMT (assign))) == N_spap) {
+        node *spap = LET_EXPR (ASSIGN_STMT (assign));
+        node *spid = SPAP_ID (spap);
+        namespace_t *ns = SPID_NS (spid);
+        DBUG_PRINT ("Found spap: name = %s, ns = %s, module = %s", SPID_NAME (spid),
+                    NSgetName (ns), NSgetModule (ns));
+        if (STReq (SPID_NAME (spid), "sel")) {
+            /* Check the namespace. sel() may be redefined elsewhere. */
+            if (STReq (NSgetName (ns), "Array") || STReq (NSgetName (ns), "ArrayBasics")
+                || STReq (NSgetName (ns), "ArrayArith")
+                || STReq (NSgetName (ns), "MathArray")
+                || STReq (NSgetName (ns), NSgetName (NSgetNamespace (global.preludename)))
+                || STReq (NSgetName (ns), NSgetName (NSgetRootNamespace ()))) {
+
+                DBUG_PRINT ("Found sel() in correct namespace.");
+                return spap;
+            }
         }
     }
 
-    return FALSE;
+    return NULL;
 }
 
 /*
@@ -303,13 +366,22 @@ DMMLSwith (node *arg_node, info *arg_info)
         INFO_TRAVERSING_MODARRAY_WITH_PARTS (new_info) = TRUE;
         INFO_MODARRAY_TARGET (new_info)
           = ID_AVIS (MODARRAY_ARRAY (WITH_WITHOP (arg_node)));
+        INFO_VARDEC (new_info) = NULL;
         DBUG_PRINT ("BEGIN traversing modarray with-loop to apply optimization.");
 
         /* Traverse parts. */
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), new_info);
 
+        /* If new vardecs were made, append them to the current set */
+        if (INFO_VARDEC (new_info) != NULL) {
+            INFO_VARDEC (arg_info)
+              = TCappendVardec (INFO_VARDEC (new_info), INFO_VARDEC (arg_info));
+            INFO_VARDEC (new_info) = NULL;
+        }
+
         DBUG_PRINT ("END traversing modarray with-loop to apply optimization.");
         INFO_LOCAL_SELECTS (arg_info) += INFO_LOCAL_SELECTS (new_info);
+        INFO_BOUNDARY_SELECTS (arg_info) += INFO_BOUNDARY_SELECTS (new_info);
         new_info = FreeInfo (new_info);
     } else {
         /*
@@ -322,6 +394,25 @@ DMMLSwith (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
+}
+
+/*
+ * Checks whether the spap is the arithmetic function name
+ * from the correct namespace.
+ */
+static bool
+isArithFromCorrectNamespace (node *spid, namespace_t *ns, char *name)
+{
+    if (STReq (SPID_NAME (spid), name)) {
+        /* Check the namespace. name() may be redefined elsewhere. */
+        if (STReq (NSgetName (ns), "Array") || STReq (NSgetName (ns), "ArrayArith")) {
+
+            DBUG_PRINT ("Found %s() in correct namespace.", name);
+            return TRUE;
+        }
+    }
+
+    return FALSE;
 }
 
 /* with-loop part */ /*
@@ -364,6 +455,8 @@ DMMLSpart (node *arg_node, info *arg_info)
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
 
     if (INFO_TRAVERSING_MODARRAY_WITH (arg_info)) {
+        INFO_SELECTS_FROM_MODARRAY_SOURCE (arg_info) = 0;
+
         /* Manually search for SPAPs. For some reason the son-traversal never reaches it.
          */
         node *assign = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node)));
@@ -371,72 +464,474 @@ DMMLSpart (node *arg_node, info *arg_info)
         /* For all assignments within the curly braces that (may) follow a WL generator
          * specification ... */
         while (assign != NULL) {
-            /* If it is a LET statement and the right-hand side is a SPAPMakeInfo. */
-            if (NODE_TYPE (ASSIGN_STMT (assign)) == N_let
-                && NODE_TYPE (LET_EXPR (ASSIGN_STMT (assign))) == N_spap) {
-                node *spap = LET_EXPR (ASSIGN_STMT (assign));
+            node *spap = GetSpapIfStmtIsSel (assign);
+
+            if (spap != NULL) {
+                /* The assignment is a LET and the right-hand side is a sel(). */
                 node *spid = SPAP_ID (spap);
-                namespace_t *ns = SPID_NS (spid);
-                DBUG_PRINT ("Found spap: name = %s, ns = %s, module = %s",
-                            SPID_NAME (spid), NSgetName (ns), NSgetModule (ns));
-                if (STReq (SPID_NAME (spid), "sel")) {
-                    /* Check the namespace. sel() may be redefined elsewhere. */
-                    if (STReq (NSgetName (ns), "Array")
-                        || STReq (NSgetName (ns), "ArrayBasics")
-                        || STReq (NSgetName (ns), "ArrayArith")
-                        || STReq (NSgetName (ns), "MathArray")
-                        || STReq (NSgetName (ns),
-                                  NSgetName (NSgetNamespace (global.preludename)))
-                        || STReq (NSgetName (ns), NSgetName (NSgetRootNamespace ()))) {
 
-                        DBUG_PRINT ("Found sel() in correct namespace.");
+                /* The first argument of sel is the index. */
+                node *first_arg = EXPRS_EXPR (SPAP_ARGS (spap));
 
-                        /* The first argument of sel is the index. */
-                        node *first_arg = EXPRS_EXPR (SPAP_ARGS (spap));
+                /* The second argument of sel is the array from which we select. */
+                node *second_arg = EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (spap)));
 
-                        /* The second argument of sel is the array from which we select.
-                         */
-                        node *second_arg = EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (spap)));
+                if (CheckIfSelectToSourceArray (first_arg, second_arg, arg_info)) {
+                    /* We found a select with the modarray source array as target. */
+                    INFO_SELECTS_FROM_MODARRAY_SOURCE (arg_info)++;
 
-                        if (CheckIfSelectIsLocalAndIndexScalar (first_arg, second_arg,
-                                                                arg_info)) {
-                            DBUG_PRINT (
-                              "Found local sel(). Replacing by _selSxADistmemLocal.");
-                            SPID_NAME (spid) = STRcpy ("_selSxADistmemLocal");
-                            SPID_NS (spid)
-                              = NSdupNamespace (NSgetNamespace (global.preludename));
-                        } else if (CheckIfSelectIsLocalAndIndexVector (first_arg,
-                                                                       second_arg,
-                                                                       arg_info)) {
-                            DBUG_PRINT (
-                              "Found local sel(). Replacing by _selVxADistmemLocal.");
-                            SPID_NAME (spid) = STRcpy ("_selVxADistmemLocal");
-                            SPID_NS (spid)
-                              = NSdupNamespace (NSgetNamespace (global.preludename));
-                        }
+                    if (CheckIfSelectIsLocalAndIndexScalar (first_arg, arg_info)) {
+                        INFO_LOCAL_SELECTS (arg_info)++;
+                        DBUG_PRINT (
+                          "Found local sel(). Replacing by _selSxADistmemLocal.");
+                        SPID_NAME (spid) = STRcpy ("_selSxADistmemLocal");
+                        SPID_NS (spid)
+                          = NSdupNamespace (NSgetNamespace (global.preludename));
+                    } else if (CheckIfSelectIsLocalAndIndexVector (first_arg, arg_info)) {
+                        DBUG_PRINT (
+                          "Found local sel(). Replacing by _selVxADistmemLocal.");
+                        SPID_NAME (spid) = STRcpy ("_selVxADistmemLocal");
+                        SPID_NS (spid)
+                          = NSdupNamespace (NSgetNamespace (global.preludename));
                     }
                 }
             }
             assign = ASSIGN_NEXT (assign);
         }
+
+        /*
+         *  Second part of the optimisation: Insert a single runtime check that checks
+         *  if all accesses are local.
+         */
+        DBUG_PRINT ("### Second part of optimisation ###");
+
+        if (global.dmmls_min_selects != DMMLS_NEVER_APPLY_SECOND_PART
+            && (INFO_SELECTS_FROM_MODARRAY_SOURCE (arg_info)
+                - INFO_LOCAL_SELECTS (arg_info))
+                 >= global.dmmls_min_selects) {
+            /*
+             * There is at least dmmls_min_selects selects that may be applicable to the
+             * second part of the optimisation. Continue.
+             */
+            DBUG_PRINT ("!!! There is %d reads from the source array that have not been "
+                        "marked as local yet. Continuing with second part of "
+                        "optimisation.",
+                        INFO_SELECTS_FROM_MODARRAY_SOURCE (arg_info)
+                          - INFO_LOCAL_SELECTS (arg_info));
+
+            node *thenBlock = CODE_CBLOCK (PART_CODE (arg_node));
+            node *elseBlock = DUPdoDupTree (thenBlock);
+
+            /* Manually search for SPAPs. For some reason the son-traversal never reaches
+             * it. */
+            assign = BLOCK_ASSIGNS (thenBlock);
+            int max_neg_offset = 0;
+            int max_pos_offset = 0;
+
+            /* For all assignments within the curly braces that (may) follow a WL
+             * generator specification ... */
+            while (assign != NULL) {
+                node *spap = GetSpapIfStmtIsSel (assign);
+
+                if (spap != NULL) {
+                    /* The assignment is a LET and the right-hand side is a sel(). */
+                    node *spid = SPAP_ID (spap);
+
+                    /* The first argument of sel is the index. */
+                    node *first_arg = EXPRS_EXPR (SPAP_ARGS (spap));
+
+                    /* The second argument of sel is the array from which we select. */
+                    node *second_arg = EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (spap)));
+
+                    if (CheckIfSelectToSourceArray (first_arg, second_arg, arg_info)) {
+                        /* We found a select with the modarray source array as target. */
+
+                        node *index_def = GetLastAssignment (first_arg, arg_info);
+
+                        if (index_def != NULL && NODE_TYPE (index_def) == N_array) {
+                            /* The variable is assigned a constant array. */
+
+                            node *first_index = EXPRS_EXPR (ARRAY_AELEMS (index_def));
+                            if (NODE_TYPE (first_index) == N_id) {
+                                DBUG_PRINT ("Index is a constant array. The first index "
+                                            "element is the variable %s.",
+                                            AVIS_NAME (ID_AVIS (first_index)));
+
+                                node *calc_spap
+                                  = GetLastAssignment (first_index, arg_info);
+
+                                if (NODE_TYPE (calc_spap) == N_spap) {
+                                    /* The first element of the index is calculated by a
+                                     * spap. */
+                                    node *calc_spid = SPAP_ID (calc_spap);
+                                    namespace_t *calc_ns = SPID_NS (calc_spid);
+
+                                    /* The first argument of the calculation. */
+                                    node *calc_first_arg
+                                      = EXPRS_EXPR (SPAP_ARGS (calc_spap));
+
+                                    /* The second argument of the calculation. */
+                                    node *calc_second_arg
+                                      = EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (calc_spap)));
+
+                                    DBUG_PRINT (
+                                      "%s is calculated by spap: name = %s, ns = %s, "
+                                      "module = %s, first arg = %s, second arg = %s",
+                                      AVIS_NAME (ID_AVIS (first_index)),
+                                      SPID_NAME (calc_spid), NSgetName (calc_ns),
+                                      NSgetModule (calc_ns), NODE_TEXT (calc_first_arg),
+                                      NODE_TEXT (calc_second_arg));
+
+                                    bool makeLocal = FALSE;
+                                    if (isArithFromCorrectNamespace (calc_spid, calc_ns,
+                                                                     "+")) {
+                                        if (CheckIfSelectIsLocalAndIndexScalar (
+                                              calc_first_arg, arg_info)) {
+                                            node *num
+                                              = GetLastAssignment (calc_second_arg,
+                                                                   arg_info);
+                                            if (NODE_TYPE (num) != N_num) {
+                                                continue;
+                                            }
+                                            DBUG_PRINT ("!!! The first argument of the + "
+                                                        "is the with-loop index. The "
+                                                        "other is %d. Making sel() "
+                                                        "local.",
+                                                        NUM_VAL (num));
+                                            max_pos_offset
+                                              = MATHmax (max_pos_offset, NUM_VAL (num));
+                                            makeLocal = TRUE;
+                                        } else if (CheckIfSelectIsLocalAndIndexScalar (
+                                                     calc_second_arg, arg_info)) {
+                                            node *num = GetLastAssignment (calc_first_arg,
+                                                                           arg_info);
+                                            if (NODE_TYPE (num) != N_num) {
+                                                continue;
+                                            }
+                                            DBUG_PRINT ("!!! The second argument of the "
+                                                        "+ is the with-loop index. The "
+                                                        "other is %d. Making sel() "
+                                                        "local.",
+                                                        NUM_VAL (num));
+                                            max_pos_offset
+                                              = MATHmax (max_pos_offset, NUM_VAL (num));
+                                            makeLocal = TRUE;
+                                        }
+                                    } else if (isArithFromCorrectNamespace (calc_spid,
+                                                                            calc_ns,
+                                                                            "-")) {
+                                        node *num
+                                          = GetLastAssignment (calc_second_arg, arg_info);
+                                        if (NODE_TYPE (num) != N_num) {
+                                            continue;
+                                        }
+                                        DBUG_PRINT ("!!! The first argument of the - is "
+                                                    "the with-loop index. The other is "
+                                                    "%d. Making sel() local.",
+                                                    NUM_VAL (num));
+                                        max_neg_offset
+                                          = MATHmax (max_neg_offset, NUM_VAL (num));
+                                        makeLocal = TRUE;
+                                    }
+
+                                    if (makeLocal) {
+                                        SPID_NAME (spid) = STRcpy ("_selVxADistmemLocal");
+                                        SPID_NS (spid) = NSdupNamespace (
+                                          NSgetNamespace (global.preludename));
+                                        INFO_BOUNDARY_SELECTS (arg_info)++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                assign = ASSIGN_NEXT (assign);
+            }
+
+            if (global.dmmls_min_selects != DMMLS_NEVER_APPLY_SECOND_PART
+                && INFO_BOUNDARY_SELECTS (arg_info) >= global.dmmls_min_selects) {
+                /*
+                 * We have found at least dmmls_min_selects selects that are applicable to
+                 * the second part of the optimisation. Since we insert two checks, the
+                 * optimisation does not pay off if there is less than three.
+                 */
+                DBUG_PRINT ("!!! Found %d reads that are applicable to the second part "
+                            "of the optimisation. Continuing.",
+                            INFO_BOUNDARY_SELECTS (arg_info));
+
+                DBUG_PRINT ("!!! Max. offsets: + %d, - %d", max_pos_offset,
+                            max_neg_offset);
+
+                /*
+                 *    Generate the following condition:
+                 *    if (((unsigned)(first_sel_idx - local_from) >= local_count)
+                 *         && ((unsigned)(last_sel_idx - local_from) >= local_count)) {
+                 *      // All accessed indices of the source array are local.
+                 *      // Code block with all local reads.
+                 *    } else {
+                 *      // Not all of the accessed indices are local.
+                 *      // Code block with normal reads.
+                 *    }
+                 */
+
+                /* Determine which indices are local. */
+
+                node *localCountAvis
+                  = TBmakeAvis (TRAVtmpVarName ("local_count"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (localCountAvis, INFO_VARDEC (arg_info));
+                node *localCountLet
+                  = TBmakeLet (TBmakeIds (localCountAvis, NULL),
+                               TBmakePrf (F_localCount_A,
+                                          TBmakeExprs (TBmakeId (
+                                                         INFO_MODARRAY_TARGET (arg_info)),
+                                                       NULL)));
+
+                node *localFromAvis
+                  = TBmakeAvis (TRAVtmpVarName ("local_from"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (localFromAvis, INFO_VARDEC (arg_info));
+                node *localFromLet
+                  = TBmakeLet (TBmakeIds (localFromAvis, NULL),
+                               TBmakePrf (F_localFrom_A,
+                                          TBmakeExprs (TBmakeId (
+                                                         INFO_MODARRAY_TARGET (arg_info)),
+                                                       NULL)));
+
+                /* Check that the first index is local. */
+
+                node *maxNegOffsAvis
+                  = TBmakeAvis (TRAVtmpVarName ("max_neg_offs"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (maxNegOffsAvis, INFO_VARDEC (arg_info));
+                node *maxNegOffsLet = TBmakeLet (TBmakeIds (maxNegOffsAvis, NULL),
+                                                 TBmakeNumint (max_neg_offset));
+
+                node *firstSelIdxAvis
+                  = TBmakeAvis (TRAVtmpVarName ("first_sel_idx"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (firstSelIdxAvis, INFO_VARDEC (arg_info));
+                node *firstSelIdxLet
+                  = TBmakeLet (TBmakeIds (firstSelIdxAvis, NULL),
+                               TBmakePrf (F_sub_SxS,
+                                          TBmakeExprs (TBmakeId (IDS_AVIS (
+                                                         INFO_MODARRAY_WITHID_IDS (
+                                                           arg_info))),
+                                                       TBmakeExprs (TBmakeId (
+                                                                      maxNegOffsAvis),
+                                                                    NULL))));
+
+                node *diffFirstAvis
+                  = TBmakeAvis (TRAVtmpVarName ("diff_first"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (diffFirstAvis, INFO_VARDEC (arg_info));
+                node *diffFirstLet
+                  = TBmakeLet (TBmakeIds (diffFirstAvis, NULL),
+                               TBmakePrf (F_sub_SxS,
+                                          TBmakeExprs (TBmakeId (firstSelIdxAvis),
+                                                       TBmakeExprs (TBmakeId (
+                                                                      localFromAvis),
+                                                                    NULL))));
+
+                node *diffFirstUnsignedAvis
+                  = TBmakeAvis (TRAVtmpVarName ("diff_first_unsigned"),
+                                TYmakeAKS (TYmakeSimpleType (T_uint), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (diffFirstUnsignedAvis, INFO_VARDEC (arg_info));
+                node *diffFirstUnsignedLet
+                  = TBmakeLet (TBmakeIds (diffFirstUnsignedAvis, NULL),
+                               TBmakePrf (F_toui_S,
+                                          TBmakeExprs (TBmakeId (diffFirstAvis), NULL)));
+
+                node *diffFirstSignedAvis
+                  = TBmakeAvis (TRAVtmpVarName ("diff_first_signed"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (diffFirstSignedAvis, INFO_VARDEC (arg_info));
+                node *diffFirstSignedLet
+                  = TBmakeLet (TBmakeIds (diffFirstSignedAvis, NULL),
+                               TBmakePrf (F_toi_S,
+                                          TBmakeExprs (TBmakeId (diffFirstUnsignedAvis),
+                                                       NULL)));
+
+                node *condFirstAvis
+                  = TBmakeAvis (TRAVtmpVarName ("cond_first"),
+                                TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (condFirstAvis, INFO_VARDEC (arg_info));
+                node *condFirstLet
+                  = TBmakeLet (TBmakeIds (condFirstAvis, NULL),
+                               TBmakePrf (F_ge_SxS,
+                                          TBmakeExprs (TBmakeId (diffFirstSignedAvis),
+                                                       TBmakeExprs (TBmakeId (
+                                                                      localCountAvis),
+                                                                    NULL))));
+                /* Check that the last index is local. */
+
+                node *maxPosOffsAvis
+                  = TBmakeAvis (TRAVtmpVarName ("max_pos_offs"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (maxPosOffsAvis, INFO_VARDEC (arg_info));
+                node *maxPosOffsLet = TBmakeLet (TBmakeIds (maxPosOffsAvis, NULL),
+                                                 TBmakeNumint (max_pos_offset));
+
+                node *lastSelIdxAvis
+                  = TBmakeAvis (TRAVtmpVarName ("last_sel_idx"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (lastSelIdxAvis, INFO_VARDEC (arg_info));
+                node *lastSelIdxLet
+                  = TBmakeLet (TBmakeIds (lastSelIdxAvis, NULL),
+                               TBmakePrf (F_add_SxS,
+                                          TBmakeExprs (TBmakeId (IDS_AVIS (
+                                                         INFO_MODARRAY_WITHID_IDS (
+                                                           arg_info))),
+                                                       TBmakeExprs (TBmakeId (
+                                                                      maxPosOffsAvis),
+                                                                    NULL))));
+
+                node *diffLastAvis
+                  = TBmakeAvis (TRAVtmpVarName ("diff_last"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (diffLastAvis, INFO_VARDEC (arg_info));
+                node *diffLastLet
+                  = TBmakeLet (TBmakeIds (diffLastAvis, NULL),
+                               TBmakePrf (F_sub_SxS,
+                                          TBmakeExprs (TBmakeId (lastSelIdxAvis),
+                                                       TBmakeExprs (TBmakeId (
+                                                                      localFromAvis),
+                                                                    NULL))));
+
+                node *diffLastUnsignedAvis
+                  = TBmakeAvis (TRAVtmpVarName ("diff_last_unsigned"),
+                                TYmakeAKS (TYmakeSimpleType (T_uint), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (diffLastUnsignedAvis, INFO_VARDEC (arg_info));
+                node *diffLastUnsignedLet
+                  = TBmakeLet (TBmakeIds (diffLastUnsignedAvis, NULL),
+                               TBmakePrf (F_toui_S,
+                                          TBmakeExprs (TBmakeId (diffLastAvis), NULL)));
+
+                node *diffLastSignedAvis
+                  = TBmakeAvis (TRAVtmpVarName ("diff_last_signed"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (diffLastSignedAvis, INFO_VARDEC (arg_info));
+                node *diffLastSignedLet
+                  = TBmakeLet (TBmakeIds (diffLastSignedAvis, NULL),
+                               TBmakePrf (F_toi_S,
+                                          TBmakeExprs (TBmakeId (diffLastUnsignedAvis),
+                                                       NULL)));
+
+                node *condLastAvis
+                  = TBmakeAvis (TRAVtmpVarName ("cond_last"),
+                                TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (condLastAvis, INFO_VARDEC (arg_info));
+                node *condLastLet
+                  = TBmakeLet (TBmakeIds (condLastAvis, NULL),
+                               TBmakePrf (F_ge_SxS,
+                                          TBmakeExprs (TBmakeId (diffLastSignedAvis),
+                                                       TBmakeExprs (TBmakeId (
+                                                                      localCountAvis),
+                                                                    NULL))));
+
+                /* Check that the first and the last index are local. */
+
+                node *conditionAvis
+                  = TBmakeAvis (TRAVtmpVarName ("arr_all_sel_local"),
+                                TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (conditionAvis, INFO_VARDEC (arg_info));
+                node *conditionLet
+                  = TBmakeLet (TBmakeIds (conditionAvis, NULL),
+                               TBmakePrf (F_and_SxS,
+                                          TBmakeExprs (TBmakeId (condFirstAvis),
+                                                       TBmakeExprs (TBmakeId (
+                                                                      condLastAvis),
+                                                                    NULL))));
+
+                node *cond = TBmakeCond (TBmakeId (conditionAvis), thenBlock, elseBlock);
+
+                /* Determine which indices are local. */
+                node *optAssigns
+                  = TBmakeAssign (
+                    localCountLet,
+                    TBmakeAssign (
+                      localFromLet,
+                      /* Check that the first index is local. */
+                      TBmakeAssign (
+                        maxNegOffsLet,
+                        TBmakeAssign (
+                          firstSelIdxLet,
+                          TBmakeAssign (
+                            diffFirstLet,
+                            TBmakeAssign (
+                              diffFirstUnsignedLet,
+                              TBmakeAssign (
+                                diffFirstSignedLet,
+                                TBmakeAssign (
+                                  condFirstLet,
+                                  /* Check that the last index is local. */
+                                  TBmakeAssign (
+                                    maxPosOffsLet,
+                                    TBmakeAssign (
+                                      lastSelIdxLet,
+                                      TBmakeAssign (
+                                        diffLastLet,
+                                        TBmakeAssign (
+                                          diffLastUnsignedLet,
+                                          TBmakeAssign (
+                                            diffLastSignedLet,
+                                            TBmakeAssign (
+                                              condLastLet,
+                                              /* Check that the first and the last index
+                                                 are local. */
+                                              TBmakeAssign (
+                                                conditionLet,
+                                                TBmakeAssign (cond, NULL))))))))))))))));
+                node *optBlock = TBmakeBlock (optAssigns, NULL);
+                CODE_CBLOCK (PART_CODE (arg_node)) = optBlock;
+            } else {
+                /* We do not apply the optimisation. No need to generate two code blocks.
+                 */
+                elseBlock = MEMfree (elseBlock);
+            }
+        }
+
+        DBUG_PRINT ("### Done with second part of optimisation ###");
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/* Function application, TODO: remove */
+/* Function definition */
 node *
-DMMLSspap (node *arg_node, info *arg_info)
+DMMLSfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("!!!!!!!!!!!Found fun ap outside: name = %s ns = %s",
-                SPID_NAME (SPAP_ID (arg_node)), SPID_NS (SPAP_ID (arg_node)));
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        INFO_VARDEC (arg_info) = NULL;
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-    if (INFO_TRAVERSING_MODARRAY_WITH (arg_info)) {
-        DBUG_PRINT ("!!!!!!!!!!!!Found fun ap inside: name = %s ns = %s",
-                    SPID_NAME (SPAP_ID (arg_node)), SPID_NS (SPAP_ID (arg_node)));
+        /* If new vardecs were made, append them to the current set */
+        if (INFO_VARDEC (arg_info) != NULL) {
+            FUNDEF_VARDECS (arg_node)
+              = TCappendVardec (INFO_VARDEC (arg_info), FUNDEF_VARDECS (arg_node));
+            INFO_VARDEC (arg_info) = NULL;
+        }
     }
+
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -457,8 +952,10 @@ DMMLSprf (node *arg_node, info *arg_info)
         /* The second argument of F_sel_VxA is the array from which we select. */
         node *second_arg = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
 
-        PRF_DISTMEMISLOCALREAD (arg_node)
-          = CheckIfSelectIsLocalAndIndexVector (first_arg, second_arg, arg_info);
+        if (CheckIfSelectToSourceArray (first_arg, second_arg, arg_info)) {
+            PRF_DISTMEMISLOCALREAD (arg_node)
+              = CheckIfSelectIsLocalAndIndexVector (first_arg, arg_info);
+        }
     }
 
     /* In any case, traverse the arguments of the primitive function application. */
@@ -482,6 +979,8 @@ DMMLSdoMarkLocalSelects (node *syntax_tree)
     info = MakeInfo ();
     syntax_tree = TRAVdo (syntax_tree, info);
     DBUG_PRINT ("Found %d local selects.", INFO_LOCAL_SELECTS (info));
+    DBUG_PRINT ("Found %d possibly local selects (2nd part of opt).",
+                INFO_BOUNDARY_SELECTS (info));
     info = FreeInfo (info);
 
     TRAVpop ();

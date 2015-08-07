@@ -613,6 +613,13 @@ PrintDistMemOptions (void)
             "node with this rank (-1 = all nodes).\n"
             "                            (default: %d elements)\n"
             "\n"
+            "    -dmmls_min_selects <n> Minimum number of selects that have not been "
+            "marked as local in the first part of the\n"
+            "                           DMMLS optimisation so that the second part of "
+            "the optimisation is applied.\n"
+            "                           0 = never apply second part of optimisation.\n"
+            "                           (default: %d elements)\n"
+            "\n"
             "    -dsm_cache_outside_seg Allocate the caches outside of the DSM memory "
             "segment.\n"
             "                           With GASNet, this requires Firehose to be "
@@ -621,7 +628,7 @@ PrintDistMemOptions (void)
             "DSM segment.)\n"
             "\n",
             global.distmem_max_memory_mb, global.distmem_min_elems_per_node,
-            global.distmem_tr_pf_node);
+            global.distmem_tr_pf_node, global.dmmls_min_selects);
 
     DBUG_RETURN ();
 }

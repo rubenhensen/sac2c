@@ -621,6 +621,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("distmem_tr_pf_node", ARG_RANGE (global.distmem_tr_pf_node, -1, 1000));
 
+    ARGS_OPTION ("dmmls_min_selects", ARG_RANGE (global.dmmls_min_selects, 0, 100));
+
     ARGS_FLAG ("dsm_cache_outside_seg", global.distmem_cache_outside_dsm = TRUE);
 
 #ifndef DBUG_OFF

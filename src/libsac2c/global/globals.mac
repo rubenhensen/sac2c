@@ -392,6 +392,12 @@ GLOBAL (unsigned int, distmem_min_elems_per_node, 10, xfree_dummy, )
  * when the distributed memory backend is used.
  */
 
+GLOBAL (int, dmmls_min_selects, 3, xfree_dummy, )
+/*
+ * Minimum number of selects that have not been marked as local in the first part of the
+ * DMMLS optimisation so that the second part of the optimisation is applied.
+ */
+
 GLOBAL (int, num_rtspec_threads, 1, xfree_dummy, )
 /*
  * Number of rtspec controller threads to be generated.

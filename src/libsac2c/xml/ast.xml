@@ -1699,7 +1699,7 @@
 	    <node name="With" />
 	    <node name="Part" />
 	    <node name="Prf" />
-	    <node name="Spap" />
+	    <node name="Fundef" />
 	  </travuser>
    </traversal>
       <traversal id="PPI" name="Prepare Inline" default="sons" include="prepareinline.h">

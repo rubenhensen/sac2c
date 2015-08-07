@@ -1375,6 +1375,76 @@ NTCCTprf_firstElems_A (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCCTprf_localFrom_A( te_info *info, ntype *args)
+ *
+ * description: This primitive function returns the first element index
+ *              that is local to the current node.
+ *              If the array is not distributed, that is equal to 0.
+ *              (This primitive function is for the distributed memory backend.)
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_localFrom_A (te_info *info, ntype *args)
+{
+    ntype *array;
+    ntype *res;
+    char *err_msg;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "localFrom called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_localCount_A( te_info *info, ntype *args)
+ *
+ * description: This primitive function returns the number of elements that are
+ *              local to the current node. If the array is not distributed, that
+ *              is equal to the size of the array.
+ *              (This primitive function is for the distributed memory backend.)
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_localCount_A (te_info *info, ntype *args)
+{
+    ntype *array;
+    ntype *res;
+    char *err_msg;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "localCount called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCCTprf_offs_A( te_info *info, ntype *args)
  *
  * description: This primitive function returns the offset of a distributed array

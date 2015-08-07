@@ -1465,6 +1465,28 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCcreateZeroVector (0, T_ulong);
         break;
 
+    case F_localFrom_A:
+        /*
+         * _localFrom_A_ always yields a scalar
+         *
+         * _localFrom_A_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_ulong);
+        break;
+
+    case F_localCount_A:
+        /*
+         * _localCount_A_ always yields a scalar
+         *
+         * _localCount_A_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_ulong);
+        break;
+
     case F_offs_A:
         /*
          * _offs_A_ always yields a scalar

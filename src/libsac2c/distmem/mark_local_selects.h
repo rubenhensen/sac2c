@@ -6,7 +6,7 @@
 extern node *DMMLSwith (node *arg_node, info *arg_info);
 extern node *DMMLSpart (node *arg_node, info *arg_info);
 extern node *DMMLSprf (node *arg_node, info *arg_info);
-extern node *DMMLSspap (node *arg_node, info *arg_info);
+extern node *DMMLSfundef (node *arg_node, info *arg_info);
 
 extern node *DMMLSdoMarkLocalSelects (node *syntax_tree);
 
