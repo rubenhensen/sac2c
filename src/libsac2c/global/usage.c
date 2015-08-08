@@ -609,16 +609,23 @@ PrintDistMemOptions (void)
             "that an array\n"
             "                           gets distributed (default: %d elements)\n"
             "\n"
-            "    -distmem_tr_pf_node <n> Only produce trace and profile output at the "
+            "    -distmem_tr_pf_node <r> Only produce trace and profile output at the "
             "node with this rank (-1 = all nodes).\n"
             "                            (default: %d elements)\n"
             "\n"
-            "    -dmmls_min_selects <n> Minimum number of selects that have not been "
-            "marked as local in the first part of the\n"
-            "                           DMMLS optimisation so that the second part of "
-            "the optimisation is applied.\n"
-            "                           0 = never apply second part of optimisation.\n"
-            "                           (default: %d elements)\n"
+            "    -dmgs_min_selects <n> Minimum number of selects that have not been "
+            "marked as local in the DMMLS\n"
+            "                          optimisation so that the DMGS optimisation is "
+            "applied.\n"
+            "                          The value has to be at least 3 because otherwise "
+            "it cannot pay off.\n"
+            "                          (default: %d elements)\n"
+            "\n"
+            "    -dmgs_max_selects <n> Maximum number of selects that have not been "
+            "marked as local in the DMMLS\n"
+            "                          optimisation so that the DMGS optimisation is "
+            "applied.\n"
+            "                          (default: %d elements, 0 = unbounded)\n"
             "\n"
             "    -dsm_cache_outside_seg Allocate the caches outside of the DSM memory "
             "segment.\n"
@@ -626,9 +633,15 @@ PrintDistMemOptions (void)
             "disabled.\n"
             "                           (By default, the caches are allocated within the "
             "DSM segment.)\n"
+            "\n"
+            "    -distmem_ptrs_desc   Keep pointers to the start of a distributed array "
+            "at\n"
+            "                         every node in the array descriptor.\n"
+            "\n"
+            "    -distmem_no_ptr_cache  Disables the pointer cache.\n"
             "\n",
             global.distmem_max_memory_mb, global.distmem_min_elems_per_node,
-            global.distmem_tr_pf_node, global.dmmls_min_selects);
+            global.distmem_tr_pf_node, global.dmgs_min_selects, global.dmgs_max_selects);
 
     DBUG_RETURN ();
 }

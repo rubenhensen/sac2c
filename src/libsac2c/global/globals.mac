@@ -386,16 +386,33 @@ GLOBAL (int, distmem_tr_pf_node, -1, xfree_dummy, )
  * provided rank.
  */
 
+GLOBAL (bool, distmem_ptrs_desc, FALSE, xfree_dummy, )
+/*
+ * Flag for the distributed memory backend: Keep pointers to the start of a distributed
+ * array at every node in the array descriptor.
+ */
+
+GLOBAL (bool, distmem_ptr_cache, TRUE, xfree_dummy, )
+/*
+ * Flag for the distributed memory backend: Enable the pointer cache.
+ */
+
 GLOBAL (unsigned int, distmem_min_elems_per_node, 10, xfree_dummy, )
 /*
  * Minimum number of array elements per node such that the array is distributed
  * when the distributed memory backend is used.
  */
 
-GLOBAL (int, dmmls_min_selects, 3, xfree_dummy, )
+GLOBAL (int, dmgs_min_selects, 3, xfree_dummy, )
 /*
- * Minimum number of selects that have not been marked as local in the first part of the
- * DMMLS optimisation so that the second part of the optimisation is applied.
+ * Minimum number of selects that have not been marked as local in the
+ * DMMLS optimisation so that the DMGS optimisation is applied.
+ */
+
+GLOBAL (int, dmgs_max_selects, 0, xfree_dummy, )
+/*
+ * Maximum number of selects that have not been marked as local in the
+ * DMMLS optimisation so that the DMGS optimisation is applied.
  */
 
 GLOBAL (int, num_rtspec_threads, 1, xfree_dummy, )

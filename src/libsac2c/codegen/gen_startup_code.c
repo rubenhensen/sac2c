@@ -212,6 +212,12 @@ PrintGlobalSwitches (void)
     fprintf (global.outfile, "#define SAC_DO_DISTMEM_ALLOC_CACHE_OUTSIDE_DSM %d\n",
              global.distmem_cache_outside_dsm);
 
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_PTR_DESC %d\n",
+             (global.backend == BE_distmem && global.distmem_ptrs_desc) ? 1 : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_PTR_CACHE %d\n",
+             (global.backend == BE_distmem && global.distmem_ptr_cache) ? 1 : 0);
+
     fprintf (global.outfile, "#define SAC_DO_THREADS_STATIC  %d\n",
              (global.num_threads == 0) ? 0 : 1);
 

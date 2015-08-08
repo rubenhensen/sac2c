@@ -117,8 +117,19 @@ int SAC_DISTMEM_trace_profile_rank = SAC_DISTMEM_TRACE_PROFILE_RANK_ANY;
  */
 #define SAC_DISTMEM_PROT_PAGE_WRITE(page_ptr)                                            \
     if (mprotect (page_ptr, SAC_DISTMEM_pagesz, PROT_WRITE) == -1) {                     \
-        SAC_RuntimeError ("Failed to unprotect memory page from %p. Error: %d %s",       \
-                          page_ptr, errno, strerror (errno));                            \
+        if (errno == ENOMEM) {                                                           \
+            SAC_RuntimeError ("Failed to unprotect memory page from %p. Error: %d %s. "  \
+                              "If mprotect fails with 'Error: 12 Cannot allocate "       \
+                              "memory', "                                                \
+                              "the reason may be that we depleted the max map count. "   \
+                              "We have a limit on the number of maps we can have and "   \
+                              "mprotect() calls split maps like crazy. Try to "          \
+                              "increase /proc/sys/vm/max_map_count",                     \
+                              page_ptr, errno, strerror (errno));                        \
+        } else {                                                                         \
+            SAC_RuntimeError ("Failed to unprotect memory page from %p. Error: %d %s",   \
+                              page_ptr, errno, strerror (errno));                        \
+        }                                                                                \
     }
 
 #if COMPILE_TRACE || COMPILE_PROFILE

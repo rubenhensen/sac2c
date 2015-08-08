@@ -482,7 +482,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  ******************************************************************************/
 
 #define _SAC_DISTMEM_DET_OWNER(var_NT, elem_index)                                       \
-    (elem_index / SAC_ND_A_FIRST_ELEMS (var_NT))
+    ((elem_index) / SAC_ND_A_FIRST_ELEMS (var_NT))
 
 #if SAC_DO_CHECK_DISTMEM
 
@@ -501,6 +501,70 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #endif /* SAC_DO_CHECK_DISTMEM */
 
+#if SAC_DO_DISTMEM_PTR_DESC
+
+/** <!--********************************************************************-->
+ *
+ * @fn  SAC_DISTMEM_INIT_PTR_DESC( var_NT)
+ *
+ *   @brief   Initialize the pointers in the array descriptor.
+ *
+ *            If enabled, we keep a pointer to the start of the local portions of the
+ *distributed array at every node in the descriptor. This macro initializes those
+ *pointers.
+ *
+ *   @param  var_NT       distributed array
+ *
+ ******************************************************************************/
+
+#define SAC_DISTMEM_INIT_PTR_DESC(var_NT)                                                \
+    for (int i = 0; i < SAC_DISTMEM_size; i++) {                                         \
+        SAC_ND_A_DESC_PTR (var_NT, i) = (uintptr_t) (                                    \
+          ((SAC_NT_CBASETYPE (var_NT) *)(((uintptr_t)SAC_DISTMEM_local_seg_ptrs[i])      \
+                                         + (unsigned)SAC_ND_A_OFFS (var_NT)))            \
+          - (unsigned)SAC_DISTMEM_DET_FROM (var_NT, i));                                 \
+        SAC_TR_DISTMEM_PRINT ("Writing start of array %s at node %d = %p to %p",         \
+                              NT_STR (var_NT), i, SAC_ND_A_DESC_PTR (var_NT, i),         \
+                              &(SAC_ND_A_DESC_PTR (var_NT, i)));                         \
+    }
+
+/** <!--********************************************************************-->
+ *
+ * @fn  SAC_DISTMEM_ELEM_DESC_POINTER( var_NT, elem_index)
+ *
+ *   @brief   Returns a pointer to element with index elem_index of distributed array
+ *var_NT.
+ *
+ *            Uses the pointers to the start of the local portions of the distributed
+ *array at every node from the descriptor.
+ *
+ *   @param  var_NT       distributed array
+ *   @param  elem_index   element index
+ *
+ *   @return              pointer to array element
+ *
+ ******************************************************************************/
+
+#define _SAC_DISTMEM_ELEM_DESC_POINTER(var_NT, elem_index)                               \
+    (((SAC_NT_CBASETYPE (var_NT) *)                                                      \
+        SAC_ND_A_DESC_PTR (var_NT, ((unsigned)elem_index                                 \
+                                    / (unsigned)SAC_ND_A_FIRST_ELEMS (var_NT))))         \
+     + elem_index)
+
+#define _SAC_DISTMEM_TR_ELEM_DESC_POINTER(var_NT, elem_index)                            \
+    (SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_ptr_calcs),                             \
+     _SAC_DISTMEM_ELEM_DESC_POINTER (var_NT, elem_index))
+
+#define _SAC_DISTMEM_PR_ELEM_DESC_POINTER(var_NT, elem_index)                            \
+    (SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_ptr_calcs),                             \
+     _SAC_DISTMEM_ELEM_DESC_POINTER (var_NT, elem_index))
+
+#else /* SAC_DO_DISTMEM_PTR_DESC */
+
+#define SAC_DISTMEM_INIT_PTR_DESC(var_NT)
+
+#endif /* SAC_DO_DISTMEM_PTR_DESC */
+
 /** <!--********************************************************************-->
  *
  * @fn  SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR( var_NT, elem_index)
@@ -513,31 +577,56 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  ******************************************************************************/
 
 #define SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR(var_NT, elem_index)                            \
-    SAC_TR_DISTMEM_PRINT_EXPR ("Updating pointer cache of array %s for index %d.",       \
-                               NT_STR (var_NT), elem_index)                              \
+    SAC_TR_DISTMEM_PRINT_EXPR ("Updating pointer cache of array %s for index %d. "       \
+                               "Array offset: %" PRIuPTR ", first elems: %zd.",          \
+                               NT_STR (var_NT), elem_index, SAC_ND_A_OFFS (var_NT),      \
+                               SAC_ND_A_FIRST_ELEMS (var_NT))                            \
     SAC_DISTMEM_UpdatePtrCacheBound (                                                    \
       &SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT),                                          \
       &SAC_ND_A_MIRROR_PTR_CACHE_COUNT (var_NT),                                         \
       SAC_DISTMEM_DET_FROM (var_NT, SAC_DISTMEM_DET_OWNER (var_NT, elem_index)),         \
       SAC_ND_A_FIRST_ELEMS (var_NT)),                                                    \
-      SAC_DISTMEM_UpdatePtrCachePtr (                                                    \
-        (void **)&SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                                    \
-        (SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT), SAC_NT_CBASETYPE (var_NT),    \
-                                   SAC_ND_A_FIRST_ELEMS (var_NT),                        \
-                                   SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT))              \
-         - SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT))),                                    \
+      _SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR_PTR (var_NT, elem_index)                        \
+        SAC_DISTMEM_UPDATED_PTR_CACHE_EXPR () 0
+
+#if SAC_DO_DISTMEM_PTR_DESC
+
+#define _SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR_PTR(var_NT, elem_index)                       \
+    SAC_DISTMEM_UpdatePtrCachePtr (                                                      \
+      (void **)&SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                                      \
+      ((void *)SAC_ND_A_DESC_PTR (var_NT, SAC_DISTMEM_DET_OWNER (var_NT, elem_index)))), \
+      SAC_TR_DISTMEM_PRINT_EXPR ("Updated pointer cache of array %s for index %d to %p " \
+                                 "(%d elements from index %d are owned by %d), "         \
+                                 "calculated ptr: %p",                                   \
+                                 NT_STR (var_NT), elem_index,                            \
+                                 SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                     \
+                                 SAC_ND_A_MIRROR_PTR_CACHE_COUNT (var_NT),               \
+                                 SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT),                \
+                                 SAC_DISTMEM_DET_OWNER (var_NT, elem_index),             \
+                                 SAC_ND_A_DESC_PTR (var_NT,                              \
+                                                    SAC_DISTMEM_DET_OWNER (var_NT,       \
+                                                                           elem_index)))
+
+#else /* SAC_DO_DISTMEM_PTR_DESC */
+
+#define _SAC_DISTMEM_UPDATE_PTR_CACHE_EXPR_PTR(var_NT, elem_index)                       \
+    SAC_DISTMEM_UpdatePtrCachePtr (                                                      \
+      (void **)&SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                                      \
+      (SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT), SAC_NT_CBASETYPE (var_NT),      \
+                                 SAC_ND_A_FIRST_ELEMS (var_NT),                          \
+                                 SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT))                \
+       - (unsigned)SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT))),                            \
       SAC_TR_DISTMEM_PRINT_EXPR (                                                        \
         "Updated pointer cache of array %s for index %d to %p "                          \
-        "(%d elements from index %d), calculated ptr: %p, "                              \
-        "offset: %" PRIuPTR ", first elems: %zd",                                        \
+        "(%d elements from index %d), calculated ptr: %p ",                              \
         NT_STR (var_NT), elem_index, SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                 \
         SAC_ND_A_MIRROR_PTR_CACHE_COUNT (var_NT),                                        \
         SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT),                                         \
         SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT), SAC_NT_CBASETYPE (var_NT),     \
                                   SAC_ND_A_FIRST_ELEMS (var_NT),                         \
-                                  SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT)),              \
-        SAC_ND_A_OFFS (var_NT), SAC_ND_A_FIRST_ELEMS (var_NT))                           \
-        SAC_DISTMEM_UPDATED_PTR_CACHE_EXPR () 0
+                                  SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT)))
+
+#endif /* SAC_DO_DISTMEM_PTR_DESC */
 
 /** <!--********************************************************************-->
  *
@@ -553,17 +642,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  ******************************************************************************/
 
 #define SAC_DISTMEM_DET_FROM(var_NT, rank)                                               \
-    (                                                                                           \
-  SAC_ND_A_IS_DIST( var_NT)                                                                 \
-    ? (                                                                                     \
-        /*SAC_TR_DISTMEM_PRINT_EXPR( "The first element of array %s local to node %d is %d.",*/ \
-        /*                           NT_STR( var_NT),                                        */ \
-        /*                           rank,                                                  */  \
-        /*                           SAC_ND_A_FIRST_ELEMS( var_NT) * rank)*/                    \
-        SAC_ND_A_FIRST_ELEMS( var_NT) * rank                                                \
-      )                                                                                     \
-    : 0                                                                                     \
-)
+    (SAC_ND_A_IS_DIST (var_NT) ? (SAC_ND_A_FIRST_ELEMS (var_NT) * rank) : 0)
 
 /** <!--********************************************************************-->
  *
@@ -617,9 +696,9 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 /** <!--********************************************************************-->
  *
- * @fn SAC_DISTMEM_RECHECK_AKS_IS_DIST( var_NT)
+ * @fn SAC_DISTMEM_RECHECK_IS_DIST( var_NT)
  *
- *   @brief   Rechecks at allocation time of an AKS array if it should still be
+ *   @brief   Rechecks at allocation time of an array if it should still be
  *            distributed and updates the mirror accordingly.
  *
  *            This check is necessary because the execution mode may have changed
@@ -629,7 +708,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  ******************************************************************************/
 
-#define SAC_DISTMEM_RECHECK_AKS_IS_DIST(var_NT)                                          \
+#define SAC_DISTMEM_RECHECK_IS_DIST(var_NT)                                              \
     if (SAC_ND_A_IS_DIST (var_NT)) {                                                     \
         SAC_TR_DISTMEM_PRINT ("Rechecking if array %s should still be distributed? %d",  \
                               NT_STR (var_NT),                                           \
@@ -671,14 +750,14 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define SAC_DISTMEM_MOVE_PTR_FOR_WRITES(addr, first_elems)                               \
     SAC_TR_DISTMEM_PRINT ("Moving pointer from %p to %p (first elems: %zd).", addr,      \
-                          addr - first_elems * SAC_DISTMEM_rank, first_elems);           \
-    addr -= first_elems * SAC_DISTMEM_rank;
+                          addr - (unsigned)first_elems * SAC_DISTMEM_rank, first_elems); \
+    addr -= (unsigned)first_elems * SAC_DISTMEM_rank;
 
 /** <!--********************************************************************-->
  *
  * @fn SAC_DISTMEM_GET_PTR_FOR_FREE( ptr)
  *
- *   @brief   Undoes SAC_DISTMEM_MOVE_PTR_FOR_WRITES for free.
+ *   @brief   Undoes SAC_DISTMEM_MOVE_PTR_FOR_WRITES to prepare for freeing memory.
  *
  *   @param  ptr          pointer
  *
@@ -690,7 +769,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
     (SAC_TR_DISTMEM_PRINT_EXPR (                                                         \
        "Getting pointer for free from %p: %p (first elems: %zd).", addr,                 \
        addr + first_elems * SAC_DISTMEM_rank, first_elems) addr                          \
-     + first_elems * SAC_DISTMEM_rank)
+     + (unsigned)first_elems * SAC_DISTMEM_rank)
 
 /** <!--********************************************************************-->
  *
@@ -992,7 +1071,9 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *   @brief   Initializes a broadcast operation (master -> workers) at the master node.
  *
  *            This macro is for AKD and AKU arrays; the dimension, the size and the
- *descriptor are broadcast as well.
+ *descriptor are broadcast as well. Broadcasts of distributed arrays are not supported but
+ *this is also not necessary since distributed arrays cannot be allocated in side effects
+ *execution mode.
  *
  *            A barrier is required after this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier after
@@ -1024,7 +1105,7 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
     SAC_TR_DISTMEM_PRINT ("BC descriptor starting at: %p (offset: %" PRIuPTR ")",        \
                           _BC_DESC_VAR (value_NT), _BC_DESC_OFFS (value_NT));            \
     SAC_TR_DISTMEM_PRINT ("BC copying %d B of descriptor from %p.",                      \
-                          BYTE_SIZE_OF_DESC (SAC_ND_A_DIM (value_NT)),                   \
+                          BYTE_SIZE_OF_DESC (SAC_A_DIM_BEFORE_UPDATE_MIRROR (value_NT)), \
                           _BC_DESC_VAR (value_NT));                                      \
     memcpy (_BC_DESC_VAR (value_NT), SAC_ND_A_DESC (value_NT),                           \
             BYTE_SIZE_OF_DESC (SAC_A_DIM_BEFORE_UPDATE_MIRROR (value_NT)));              \
@@ -1041,7 +1122,9 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *   @brief   Initializes a broadcast operation (master -> workers) at the worker node.
  *
  *            This macro is for AKD and AKU arrays; the dimension, the size and the
- *descriptor are broadcast as well.
+ *descriptor are broadcast as well. Broadcasts of distributed arrays are not supported but
+ *this is also not necessary since distributed arrays cannot be allocated in side effects
+ *execution mode.
  *
  *            A barrier is required after this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier after
@@ -1088,6 +1171,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            This macro is for AKS arrays; the dimension, the size and the descriptor
  *            are not broadcast.
+ *            Broadcasts of distributed arrays are not supported but this is also not
+ *necessary since distributed arrays cannot be allocated in side effects execution mode.
  *
  *            A barrier is required after this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier after
@@ -1120,6 +1205,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            This macro is for AKS arrays; the dimension, the size and the descriptor
  *            are not broadcast.
+ *            Broadcasts of distributed arrays are not supported but this is also not
+ *necessary since distributed arrays cannot be allocated in side effects execution mode.
  *
  *            A barrier is required after this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier after
@@ -1281,7 +1368,9 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *node.
  *
  *            This macro is for AKD and AKU arrays; the dimension, the size and the
- *descriptor are broadcast as well.
+ *descriptor are broadcast as well. Broadcasts of distributed arrays are not supported but
+ *this is also not necessary since distributed arrays cannot be allocated in side effects
+ *execution mode.
  *
  *            The finalize operation has been split into two operations to reduce
  *communication if multiple values are broadcast. Otherwise, the same memory pages may be
@@ -1340,7 +1429,9 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *worker node.
  *
  *            This macro is for AKD and AKU arrays; the dimension, the size and the
- *descriptor are broadcast as well.
+ *descriptor are broadcast as well. Broadcasts of distributed arrays are not supported but
+ *this is also not necessary since distributed arrays cannot be allocated in side effects
+ *execution mode.
  *
  *            The finalize operation has been split into two operations to reduce
  *communication if multiple values are broadcast. Otherwise, the same memory pages may be
@@ -1388,6 +1479,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            This macro is for AKS arrays; the dimension, the size and the descriptor
  *            are not broadcast.
+ *            Broadcasts of distributed arrays are not supported but this is also not
+ *necessary since distributed arrays cannot be allocated in side effects execution mode.
  *
  *            The finalize operation has been split into two operations to reduce
  *communication if multiple values are broadcast. Otherwise, the same memory pages may be
@@ -1423,6 +1516,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            This macro is for AKS arrays; the dimension, the size and the descriptor
  *            are not broadcast.
+ *            Broadcasts of distributed arrays are not supported but this is also not
+ *necessary since distributed arrays cannot be allocated in side effects execution mode.
  *
  *            The finalize operation has been split into two operations to reduce
  *communication if multiple values are broadcast. Otherwise, the same memory pages may be
@@ -1593,7 +1688,9 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *master and workers.
  *
  *            This macro is for AKD and AKU arrays; the dimension, the size and the
- *descriptor were broadcast as well.
+ *descriptor were broadcast as well. Broadcasts of distributed arrays are not supported
+ *but this is also not necessary since distributed arrays cannot be allocated in side
+ *effects execution mode.
  *
  *            A barrier is required before this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier before
@@ -1624,6 +1721,8 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
  *
  *            This macro is for AKS arrays; the dimension, the size and the descriptor
  *            were not broadcast.
+ *            Broadcasts of distributed arrays are not supported but this is also not
+ *necessary since distributed arrays cannot be allocated in side effects execution mode.
  *
  *            A barrier is required before this macro. The barrier is not included in this
  *macro for performance reasons. If multiple values are broadcast, a single barrier before
@@ -1997,6 +2096,9 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
     _SAC_DISTMEM_TR_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
+#define SAC_DISTMEM_ELEM_DESC_POINTER(var_NT, elem_index)                                \
+    _SAC_DISTMEM_TR_ELEM_DESC_POINTER (var_NT, elem_index)
+
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_WRITE_EXPR()                                  \
     SAC_TR_DISTMEM_AA_PRINT ("Avoided pointer calculation for local write.")             \
     SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes),
@@ -2065,6 +2167,9 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
     _SAC_DISTMEM_PR_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
 
+#define SAC_DISTMEM_ELEM_DESC_POINTER(var_NT, elem_index)                                \
+    _SAC_DISTMEM_PR_ELEM_DESC_POINTER (var_NT, elem_index)
+
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_WRITE_EXPR()                                  \
     SAC_DISTMEM_IncCounter (&SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes),
 
@@ -2123,6 +2228,9 @@ size_t SAC_DISTMEM_PR_DetDim0Stop (size_t dim0_size, size_t start, size_t stop);
 
 #define SAC_DISTMEM_ELEM_POINTER(arr_offset, elem_type, elems_first_nodes, elem_index)   \
     _SAC_DISTMEM_ELEM_POINTER (arr_offset, elem_type, elems_first_nodes, elem_index)
+
+#define SAC_DISTMEM_ELEM_DESC_POINTER(var_NT, elem_index)                                \
+    _SAC_DISTMEM_ELEM_DESC_POINTER (var_NT, elem_index)
 
 #define SAC_DISTMEM_AVOIDED_PTR_CALC_LOCAL_WRITE_EXPR()
 

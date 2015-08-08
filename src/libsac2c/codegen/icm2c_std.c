@@ -377,19 +377,11 @@ DBUG_RETURN ();
  *
  * description:
  *
- *   Creates code for hidden arguments, hidden return values and unique arguments of a
- *function application with side effects for the distributed memory backend.
- *
- *   For hidden out arguments and hidden return values, we create code that raises a
- *runtime error. The distributed memory backend does not support hidden out arguments and
- *hidden return values in function applications with side effects since this would require
- *C functions for the (de-)serialisation when the out arguments and return values are
- *broadcasted from the master to the worker nodes after the function application.We do not
- *raise an error at compilation time because we want to be able to compile the standard
- *library without errors.
- *
- *   This function also handles inout arguments which are always unique. We can safely
- *initialise them to NULL at all worker nodes as they are only used by the master.
+ *   For hidden out arguments and hidden return values, we raises a compile time warning.
+ *   The distributed memory backend does not support hidden out arguments and hidden
+ *return values in function applications with side effects since this would require C
+ *functions for the (de-)serialisation when the out arguments and return values are
+ *broadcasted from the master to the worker nodes after the function application.
  *
  ******************************************************************************/
 
@@ -402,44 +394,57 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (char *name, char *r
     DBUG_ENTER ();
 
     /* FIXME: We have to detect whether the return value is unique
-     * so that we can raise a runtime error if there is a hidden non-unique return value.
-     * For now we assume that the return value is unique (and therefore only used by the
-     * master node) and initialize it to NULL at the worker nodes. */
+     * so that we can raise a compile time error if there is a hidden non-unique return
+     * value. For now we assume that the return value is unique (and therefore only used
+     * by the master node), initialize it to NULL at the worker nodes and raise a compile
+     * time warning. */
     if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) == C_hid) {
-        indout ("SAC_RuntimeWarningMaster( \"The distributed memory backend does not "
-                "support hidden non-unique return "
-                "values in function applications with side-effects (while calling "
-                "function: %s). "
-                "We assume that the return value is unique and initialize it to NULL. If "
-                "the program works, don't worry about this. "
-                "However, if you encounter a segfault, the reason may be that the return "
-                "value is not unique after all.\");\n",
-                name);
+        CTIwarn (
+          "The distributed memory backend does not support hidden non-unique return "
+          "values in function applications with side-effects (application of function: "
+          "%s). "
+          "We assume that the return value is unique and initialize it to NULL. If the "
+          "program works, don't worry about this. "
+          "However, if you encounter a segfault, the reason may be that the return value "
+          "is not unique after all.",
+          name);
     }
 
-    /* Raise runtime warning if there is a hidden out argument. */
+    /* Raise compile time warning if there is a hidden out argument. */
     for (int i = 0; i < vararg_cnt * 3; i += 3) {
 #define SEPargtag
 #define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
     if (STReq (it_text, vararg[i]) && it_out                                             \
         && ICUGetHiddenClass (vararg_NT[i / 3]) == C_hid) {                              \
-        indout ("SAC_RuntimeWarningMaster( \"The distributed memory backend does not "   \
-                "support hidden non-unique "                                             \
-                "out arguments in function applications with side-effects (argument "    \
-                "%%s of function %s). "                                                  \
-                "We assume that the out argument is unique and initialize it to NULL. "  \
-                "If the program "                                                        \
-                "works, don't worry about this. However, if you encounter a segfault, "  \
-                "the reason may "                                                        \
-                "be that the out argument is not unique after all.\","                   \
-                "NT_STR( %s));\n",                                                       \
-                name, vararg[i + 2]);                                                    \
+        CTIwarn ("The distributed memory backend does not support hidden non-unique "    \
+                 "out arguments in function applications with side-effects (argument "   \
+                 "%s of function %s). "                                                  \
+                 "We assume that the out argument is unique and initialize it to NULL. " \
+                 "If the program "                                                       \
+                 "works, don't worry about this. However, if you encounter a segfault, " \
+                 "the reason may "                                                       \
+                 "be that the out argument is not unique after all.",                    \
+                 vararg[i + 2], name);                                                   \
     }
 #include "argtag_info.mac"
     }
 
     DBUG_RETURN ();
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   void  ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_INIT( char *name, char
+ **retname, char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg)
+ *
+ * description:
+ *
+ *   Initializes hidden out arguments and hidden return values to NULL (assuming they are
+ *unique). This function also handles inout arguments which are always unique. We can
+ *safely initialise them to NULL at all worker nodes as they are only used by the master.
+ *
+ ******************************************************************************/
 
 static void
 ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_INIT (char *name, char *retname,
@@ -724,6 +729,11 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt, char **vararg_
         indout ("SAC_DISTMEM_SWITCH_TO_SIDE_EFFECTS_OUTER_EXEC();\n");
         indout ("SAC_DISTMEM_BARRIER();\n");
 
+        /* Handle non-unique hidden arguments and non-unique hidden return values. */
+        ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (name, retname,
+                                                                     ret_NT, vararg_cnt,
+                                                                     vararg_NT, vararg);
+
         IF_BEGIN ("SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER")
             ;
             indout ("SAC_TR_DISTMEM_PRINT( \"Master node is executing function "
@@ -757,14 +767,6 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt, char **vararg_
             } else {
                 out (")\n");
             }
-
-            /* Handle hidden arguments, hidden return values and unique (inout) arguments.
-             */
-            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (name, retname,
-                                                                         ret_NT,
-                                                                         vararg_cnt,
-                                                                         vararg_NT,
-                                                                         vararg);
 
             /* Allow allocations in the DSM segment for the broadcast operations. */
             indout ("SAC_DISTMEM_ALLOW_DSM_ALLOCS();\n");
@@ -800,11 +802,6 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt, char **vararg_
 
             /* Handle hidden arguments, hidden return values and unique (inout) arguments.
              */
-            ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (name, retname,
-                                                                         ret_NT,
-                                                                         vararg_cnt,
-                                                                         vararg_NT,
-                                                                         vararg);
             ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_INIT (name, retname,
                                                                         ret_NT,
                                                                         vararg_cnt,
@@ -1143,41 +1140,12 @@ ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_DIST_DECL( char *var_NT, char *basetype, int sdim, int *shp)
- *
- * description:
- *   implements the compilation of the following ICM:
- *
- *   ND_DIST_DECL( var_NT, basetype, sdim, [ shp ]* )
- *
- ******************************************************************************/
-
-void
-ICMCompileND_DIST_DECL (char *var_NT, char *basetype, int sdim, int *shp)
-{
-    DBUG_ENTER ();
-
-#define ND_DIST_DECL
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef ND_DIST_DECL
-
-    indout ("SAC_ND_DECL__DATA( %s, %s, )\n", var_NT, basetype);
-    indout ("SAC_ND_DECL__DESC( %s, )\n", var_NT);
-    ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
-
-    DBUG_RETURN ();
-}
-
-/******************************************************************************
- *
- * function:
  *   void ICMCompileND_DSM_DECL( char *var_NT, char *basetype, int sdim, int *shp)
  *
  * description:
  *   implements the compilation of the following ICM:
  *
- *   ND_DIST_DECL( var_NT, basetype, sdim, [ shp ]* )
+ *   ND_DSM_DECL( var_NT, basetype, sdim, [ shp ]* )
  *
  ******************************************************************************/
 
@@ -1464,15 +1432,14 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
                         var_NT, var_NT);
                 indout ("int SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = 0;\n", var_NT);
                 indout ("int SAC_ND_A_MIRROR_PTR_CACHE_COUNT( %s) = 0;\n", var_NT);
+                indout (
+                  "uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
+                  var_NT, var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
                         "SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
                         var_NT);
-            }
-
-            if (dc == C_distr || dc == C_distmem) {
-                /* Array is potentially distributed or allocated in DSM memory. */
                 indout (
                   "uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
                   var_NT, var_NT);
@@ -1514,15 +1481,14 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
                         var_NT, var_NT);
                 indout ("int SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = 0;\n", var_NT);
                 indout ("int SAC_ND_A_MIRROR_PTR_CACHE_COUNT( %s) = 0;\n", var_NT);
+                indout (
+                  "uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
+                  var_NT, var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
                 indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
                         "SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
                         var_NT);
-            }
-
-            if (dc == C_distr || dc == C_distmem) {
-                /* Array is potentially distributed or allocated in DSM memory. */
                 indout (
                   "uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
                   var_NT, var_NT);
@@ -1558,18 +1524,17 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
                         var_NT, var_NT);
                 indout ("int SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = 0;\n", var_NT);
                 indout ("int SAC_ND_A_MIRROR_PTR_CACHE_COUNT( %s) = 0;\n", var_NT);
-            } else if (dc == C_distmem) {
-                /* Array is potentially allocated in DSM memory. */
-                indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
-                        "SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
-                        var_NT);
-            }
-
-            if (dc == C_distr || dc == C_distmem) {
-                /* Array is potentially distributed or allocated in DSM memory. */
                 indout (
                   "uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
                   var_NT, var_NT);
+            } else if (dc == C_distmem) {
+                /* Array is potentially allocated in DSM memory. */
+                indout (
+                  "uintptr_t SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n",
+                  var_NT, var_NT);
+                indout ("bool SAC_ND_A_MIRROR_IS_DIST( %s) = "
+                        "SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
+                        var_NT);
             }
         }
 
@@ -1821,17 +1786,15 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
                         var_NT, var_NT);
                 indout ("SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = 0;\n", var_NT);
                 indout ("SAC_ND_A_MIRROR_PTR_CACHE_COUNT( %s) = 0;\n", var_NT);
+                indout ("SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n", var_NT,
+                        var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
+                indout ("SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n", var_NT,
+                        var_NT);
                 indout (
                   "SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
                   var_NT);
-            }
-
-            if (dc == C_distr || dc == C_distmem) {
-                /* Array is potentially distributed or allocated in DSM memory. */
-                indout ("SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n", var_NT,
-                        var_NT);
             }
         } else {
             indout ("SAC_NOOP()\n");
@@ -1866,17 +1829,15 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
                         var_NT, var_NT);
                 indout ("SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = 0;\n", var_NT);
                 indout ("SAC_ND_A_MIRROR_PTR_CACHE_COUNT( %s) = 0;\n", var_NT);
+                indout ("SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n", var_NT,
+                        var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
+                indout ("SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n", var_NT,
+                        var_NT);
                 indout (
                   "SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
                   var_NT);
-            }
-
-            if (dc == C_distr || dc == C_distmem) {
-                /* Array is potentially distributed or allocated in DSM memory. */
-                indout ("SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n", var_NT,
-                        var_NT);
             }
         }
         break;
@@ -1905,17 +1866,15 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
                         var_NT, var_NT);
                 indout ("SAC_ND_A_MIRROR_PTR_CACHE_FROM( %s) = 0;\n", var_NT);
                 indout ("SAC_ND_A_MIRROR_PTR_CACHE_COUNT( %s) = 0;\n", var_NT);
+                indout ("SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n", var_NT,
+                        var_NT);
             } else if (dc == C_distmem) {
                 /* Array is potentially allocated in DSM memory. */
+                indout ("SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n", var_NT,
+                        var_NT);
                 indout (
                   "SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_DISTMEM_DET_ALLOC_DSM_IN_DSM();\n",
                   var_NT);
-            }
-
-            if (dc == C_distr || dc == C_distmem) {
-                /* Array is potentially distributed or allocated in DSM memory. */
-                indout ("SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_DESC_OFFS( %s);\n", var_NT,
-                        var_NT);
             }
         }
         break;
@@ -1955,6 +1914,61 @@ ICMCompileND_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
 
     ICMCompileND_ASSIGN__SHAPE (to_NT, to_sdim, from_NT, from_sdim);
     indout ("SAC_ND_ASSIGN__DATA( %s, %s, %s)\n", to_NT, from_NT, copyfun);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_COPY__DESC_DIS_FIELDS( char *to_NT, char *from_NT)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_ND_COPY__DESC_DIS_FIELDS( to_NT, from_NT)
+ *
+ *   This ICM is used by reshape.
+ *   When the new shape has more dimensions than the old one, a new descriptor is
+ *assigned. When the distributed memory backend is used, the descriptor also contains
+ *information to locate the data. We have to make sure that that does not get lost!
+ *   from_NT is the array with the new descriptor, to_NT is the array with the old
+ *descriptor
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_COPY__DESC_DIS_FIELDS (char *to_NT, char *from_NT)
+{
+    distributed_class_t to_dc = ICUGetDistributedClass (to_NT);
+    distributed_class_t from_dc = ICUGetDistributedClass (from_NT);
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (to_dc == from_dc, "Illegal assignment found!");
+
+#define ND_COPY__DESC_DIS_FIELDS
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_COPY__DESC_DIS_FIELDS
+
+    if (to_dc == C_distr) {
+        indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s) = "
+                "SAC_ND_A_IS_DIST( %s);\n",
+                from_NT, from_NT, to_NT);
+        indout ("SAC_ND_A_DESC_FIRST_ELEMS( %s) = SAC_ND_A_MIRROR_FIRST_ELEMS( %s) = "
+                "SAC_ND_A_FIRST_ELEMS( %s);\n",
+                from_NT, from_NT, to_NT);
+        indout (
+          "SAC_ND_A_DESC_OFFS( %s) = SAC_ND_A_MIRROR_OFFS( %s) = SAC_ND_A_OFFS( %s);\n",
+          from_NT, from_NT, to_NT);
+
+        FOR_LOOP_BEGIN ("int SAC_r = 0; SAC_r < SAC_DISTMEM_size; SAC_r++")
+            ;
+            indout ("SAC_ND_A_DESC_PTR( %s, SAC_r) = SAC_ND_A_DESC_PTR( %s, SAC_r);\n",
+                    from_NT, to_NT);
+        FOR_LOOP_END ();
+    }
 
     DBUG_RETURN ();
 }
@@ -2222,6 +2236,7 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
     case C_scl:
     case C_aks:
         indout ("SAC_NOOP()\n");
+
         break;
 
     case C_akd:
@@ -2236,8 +2251,9 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
 
         if (global.backend == BE_distmem && to_dc == C_distr) {
             /* Target is potentially distributed. */
-            indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_IS_DIST( %s);\n", to_NT,
-                    from_NT);
+            indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s) = "
+                    "SAC_ND_A_IS_DIST( %s);\n",
+                    to_NT, to_NT, from_NT);
         }
 
         break;
@@ -2248,8 +2264,9 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
 
         if (global.backend == BE_distmem && to_dc == C_distr) {
             /* Target is potentially distributed. */
-            indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_ND_A_IS_DIST( %s);\n", to_NT,
-                    from_NT);
+            indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s) = "
+                    "SAC_ND_A_IS_DIST( %s);\n",
+                    to_NT, to_NT, from_NT);
         }
 
         break;

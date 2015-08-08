@@ -1,17 +1,20 @@
 /*
- * Marks array read accesses that are known to be local for the distributed memory.
+ * Performs the DMMLS and DMGS optimizations:
+ * DMMLS: Marks array read accesses that are known to be local for the distributed memory.
+ * DMGS: Checks in every iteration of a modarray-with-loop if all accesses to the source
+ * array are local. If that is the case, we do not need separate checks per access.
  *
  *
- * Why this optimization?
+ * Why these optimizations?
  *
  * By generating different code we can avoid the runtime-check whether a read
  * is local or remote. Since read accesses occur frequently,
  * the frequent checks have a bad influence on the overall performance.
- * Note: We do not need this optimization for write accesses because they are known to be
- * always local ("owner computes" principle).
+ * Note: We do not need these optimizations for write accesses because they are known to
+ * be always local ("owner computes" principle).
  *
  *
- * How do we recognize local reads?
+ * How do we recognize local reads for DMMLS?
  *
  * Due to the "owner computes" principle, we know that elements of distributed
  * arrays that are written in with-loops are always local to the compute node.
@@ -23,6 +26,32 @@
  * This is why it is sufficient that only the first dimension of the index of a read
  * access matches the first dimension of the current write-index to know that the read is
  * local too.
+ *
+ *
+ * What is the idea behind DMGS?
+ *
+ * In many cases DMMLS cannot decide that a read is local. However, for many applications
+ * all reads to the source array are to indices that are close to each other. Think of
+ * image convolution as an example. The DMGS optimization checks for every part of a
+ * modarray-with-loopf if, after DMMLS was applied, there is a certain number (depends on
+ * the -dmgs_min_selects and -dmgs_max_selects options) of reads left that could not be
+ * identified as local reads.
+ *
+ * If that is the case, it determines the smallest and biggest offset of all reads. We
+ * then insert a single check at the beginning of the with-loop-part that checks whether
+ * all reads are local and copy the remainder of the with-loop-part. In one of the copies
+ * we replace all selects to the source array by local selects. If, at runtime, the check
+ * shows that all reads are local, we can execute the branch with local selects and do not
+ * have to execute the check whether an array element is local for every select.
+ *
+ *    if (first_sel_offs >= local_from
+ *         && last_sel_offs < local_to_excl) {
+ *      // All accessed indices of the source array are local.
+ *      // Code block with all local reads.
+ *    } else {
+ *      // Not all of the accessed indices are local.
+ *      // Code block with normal reads.
+ *    }
  *
  *
  * How do we mark local reads?
@@ -51,6 +80,9 @@
  *
  * To ease implementation we only apply this optimization to with-loops with a
  * single (modarray) operator.
+ * Also, the optimizations assume a simple source code layout. If, there is, for instance,
+ * nested with-loops it won't work. There is no reason for that other than that there was
+ * not enough time to come up with a more general implementation.
  *
  *
  * How to show debug output for this optimization?
@@ -61,9 +93,12 @@
  * -bptc:dmmls
  *
  *
- * By default, this optimization is activated when the distributed memory backend is used.
- * If it does produce bugs, you can switch it off by specifying: -no dmmls
+ * By default, both DMMLS and DMGS optimizations are activated when the distributed memory
+ * backend is used. If it does produce bugs, you can switch DMMLS off by specifying: -no
+ * dmmls The DMGS optimization can be switched off by specifying: -no dmgs
  *
+ * There is two more options that determine whether DMGS is applied:
+ * -dmgs_min_selects and -dmgs_max_selects
  */
 
 #include "mark_local_selects.h"
@@ -82,9 +117,8 @@
 #define DBUG_PREFIX "DMMLS"
 #include "debug.h"
 
-/* If global.dmmls_min_selects has this value, we never
- * apply the second part of the optimisation. */
-#define DMMLS_NEVER_APPLY_SECOND_PART 0
+/* If global.dmgs_max_selects has this value, it is unbounded. */
+#define DMGS_MAX_SELECTS_UNBOUNDED 0
 
 /*
  * INFO structure
@@ -222,8 +256,9 @@ CheckIfVarIsFirstDimOfWLIdx (node *var, info *arg_info)
         if (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (latest_let_expr))) == N_id) {
             DBUG_PRINT ("The first element of the array is a variable.");
 
-            if (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (latest_let_expr)))
-                == IDS_AVIS (INFO_MODARRAY_WITHID_IDS (arg_info))) {
+            if (INFO_MODARRAY_WITHID_IDS (arg_info) != NULL
+                && ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (latest_let_expr)))
+                     == IDS_AVIS (INFO_MODARRAY_WITHID_IDS (arg_info))) {
                 DBUG_PRINT ("!!! The variable is the first dimension of the with-loop "
                             "index. We have found a local read access !!!");
                 INFO_LOCAL_SELECTS (arg_info)++;
@@ -415,11 +450,7 @@ isArithFromCorrectNamespace (node *spid, namespace_t *ns, char *name)
     return FALSE;
 }
 
-/* with-loop part */ /*
-                      * This is a test for the DMMLS optimization.
-                      * We detect local selects (Array::sel()) and replace them
-                      * by sacprelude::_selVxADistmemLocal.
-                      */
+/* with-loop part */
 node *
 DMMLSpart (node *arg_node, info *arg_info)
 {
@@ -500,22 +531,28 @@ DMMLSpart (node *arg_node, info *arg_info)
         }
 
         /*
-         *  Second part of the optimisation: Insert a single runtime check that checks
+         *  DMGS optimization: Insert a single runtime check that checks
          *  if all accesses are local.
          */
-        DBUG_PRINT ("### Second part of optimisation ###");
+        DBUG_PRINT ("### DMGS optimization ###");
 
-        if (global.dmmls_min_selects != DMMLS_NEVER_APPLY_SECOND_PART
+        if (global.optimize.dodmgs
             && (INFO_SELECTS_FROM_MODARRAY_SOURCE (arg_info)
                 - INFO_LOCAL_SELECTS (arg_info))
-                 >= global.dmmls_min_selects) {
+                 >= global.dmgs_min_selects
+            && ((INFO_SELECTS_FROM_MODARRAY_SOURCE (arg_info)
+                 - INFO_LOCAL_SELECTS (arg_info))
+                  <= global.dmgs_max_selects
+                || global.dmgs_max_selects == DMGS_MAX_SELECTS_UNBOUNDED)) {
             /*
-             * There is at least dmmls_min_selects selects that may be applicable to the
-             * second part of the optimisation. Continue.
+             * The DMGS optimization is enabled
+             * AND there is at least dmgs_min_selects selects that may be applicable to
+             * DMGS optimization AND there is at most dmgs_max_selects selects that may be
+             * applicable to the DMGS optimization OR there is no maximum. Continue with
+             * the DMGS optimization.
              */
             DBUG_PRINT ("!!! There is %d reads from the source array that have not been "
-                        "marked as local yet. Continuing with second part of "
-                        "optimisation.",
+                        "marked as local yet. Continuing with DMGS optimization.",
                         INFO_SELECTS_FROM_MODARRAY_SOURCE (arg_info)
                           - INFO_LOCAL_SELECTS (arg_info));
 
@@ -648,15 +685,17 @@ DMMLSpart (node *arg_node, info *arg_info)
                 assign = ASSIGN_NEXT (assign);
             }
 
-            if (global.dmmls_min_selects != DMMLS_NEVER_APPLY_SECOND_PART
-                && INFO_BOUNDARY_SELECTS (arg_info) >= global.dmmls_min_selects) {
+            if (INFO_BOUNDARY_SELECTS (arg_info) >= global.dmgs_min_selects
+                && (INFO_BOUNDARY_SELECTS (arg_info) <= global.dmgs_max_selects
+                    || global.dmgs_max_selects == DMGS_MAX_SELECTS_UNBOUNDED)) {
                 /*
-                 * We have found at least dmmls_min_selects selects that are applicable to
-                 * the second part of the optimisation. Since we insert two checks, the
-                 * optimisation does not pay off if there is less than three.
+                 * We have found at least dmgs_min_selects selects that are applicable to
+                 * the DMGS optimization AND we have found at most dmgs_max_selects
+                 * selects that are applicable to the DMGS optimization OR there is no
+                 * maximum. Continue with the DMGS optimization.
                  */
-                DBUG_PRINT ("!!! Found %d reads that are applicable to the second part "
-                            "of the optimisation. Continuing.",
+                DBUG_PRINT ("!!! Found %d reads that are applicable to the DMGS "
+                            "optimization. Continuing.",
                             INFO_BOUNDARY_SELECTS (arg_info));
 
                 DBUG_PRINT ("!!! Max. offsets: + %d, - %d", max_pos_offset,
@@ -664,8 +703,8 @@ DMMLSpart (node *arg_node, info *arg_info)
 
                 /*
                  *    Generate the following condition:
-                 *    if (((unsigned)(first_sel_idx - local_from) >= local_count)
-                 *         && ((unsigned)(last_sel_idx - local_from) >= local_count)) {
+                 *    if (first_sel_offs >= local_from
+                 *         && last_sel_offs < local_to_excl) {
                  *      // All accessed indices of the source array are local.
                  *      // Code block with all local reads.
                  *    } else {
@@ -676,6 +715,20 @@ DMMLSpart (node *arg_node, info *arg_info)
 
                 /* Determine which indices are local. */
 
+                /* src_arr_shape = _shape_A( src_arr); */
+                node *srcArrShapeAvis
+                  = TBmakeAvis (TRAVtmpVarName ("src_arr_shape"),
+                                TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (srcArrShapeAvis, INFO_VARDEC (arg_info));
+                node *srcArrShapeLet
+                  = TBmakeLet (TBmakeIds (srcArrShapeAvis, NULL),
+                               TBmakePrf (F_shape_A,
+                                          TBmakeExprs (TBmakeId (
+                                                         INFO_MODARRAY_TARGET (arg_info)),
+                                                       NULL)));
+
+                /* local_count = _localCount_A( src_arr); */
                 node *localCountAvis
                   = TBmakeAvis (TRAVtmpVarName ("local_count"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
@@ -688,6 +741,7 @@ DMMLSpart (node *arg_node, info *arg_info)
                                                          INFO_MODARRAY_TARGET (arg_info)),
                                                        NULL)));
 
+                /* local_from = _localFrom_A( src_arr); */
                 node *localFromAvis
                   = TBmakeAvis (TRAVtmpVarName ("local_from"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
@@ -700,8 +754,23 @@ DMMLSpart (node *arg_node, info *arg_info)
                                                          INFO_MODARRAY_TARGET (arg_info)),
                                                        NULL)));
 
+                /* local_to_excl = local_from + local_count; */
+                node *localToExclAvis
+                  = TBmakeAvis (TRAVtmpVarName ("local_to_excl"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (localToExclAvis, INFO_VARDEC (arg_info));
+                node *localToExclLet
+                  = TBmakeLet (TBmakeIds (localToExclAvis, NULL),
+                               TBmakePrf (F_add_SxS,
+                                          TBmakeExprs (TBmakeId (localFromAvis),
+                                                       TBmakeExprs (TBmakeId (
+                                                                      localCountAvis),
+                                                                    NULL))));
+
                 /* Check that the first index is local. */
 
+                /* max_neg_offs = max_neg_offset; */
                 node *maxNegOffsAvis
                   = TBmakeAvis (TRAVtmpVarName ("max_neg_offs"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
@@ -710,6 +779,7 @@ DMMLSpart (node *arg_node, info *arg_info)
                 node *maxNegOffsLet = TBmakeLet (TBmakeIds (maxNegOffsAvis, NULL),
                                                  TBmakeNumint (max_neg_offset));
 
+                /* first_sel_idx = i - max_neg_offs; */
                 node *firstSelIdxAvis
                   = TBmakeAvis (TRAVtmpVarName ("first_sel_idx"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
@@ -725,40 +795,32 @@ DMMLSpart (node *arg_node, info *arg_info)
                                                                       maxNegOffsAvis),
                                                                     NULL))));
 
-                node *diffFirstAvis
-                  = TBmakeAvis (TRAVtmpVarName ("diff_first"),
+                /* first_sel_vec = [ first_sel_idx ]; */
+                node *firstSelVecAvis = TBmakeAvis (TRAVtmpVarName ("first_sel_vec"),
+                                                    TYmakeAKS (TYmakeSimpleType (T_int),
+                                                               SHcreateShape (1, 1)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (firstSelVecAvis, INFO_VARDEC (arg_info));
+                node *firstSelVecLet
+                  = TBmakeLet (TBmakeIds (firstSelVecAvis, NULL),
+                               TCmakeIntVector (
+                                 TBmakeExprs (TBmakeId (firstSelIdxAvis), NULL)));
+
+                /* first_sel_offs = _vect2offset( src_arr_shape, first_sel_vec); */
+                node *firstSelOffsAvis
+                  = TBmakeAvis (TRAVtmpVarName ("first_sel_offs"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
                 INFO_VARDEC (arg_info)
-                  = TBmakeVardec (diffFirstAvis, INFO_VARDEC (arg_info));
-                node *diffFirstLet
-                  = TBmakeLet (TBmakeIds (diffFirstAvis, NULL),
-                               TBmakePrf (F_sub_SxS,
-                                          TBmakeExprs (TBmakeId (firstSelIdxAvis),
+                  = TBmakeVardec (firstSelOffsAvis, INFO_VARDEC (arg_info));
+                node *firstSelOffsLet
+                  = TBmakeLet (TBmakeIds (firstSelOffsAvis, NULL),
+                               TBmakePrf (F_vect2offset,
+                                          TBmakeExprs (TBmakeId (srcArrShapeAvis),
                                                        TBmakeExprs (TBmakeId (
-                                                                      localFromAvis),
+                                                                      firstSelVecAvis),
                                                                     NULL))));
 
-                node *diffFirstUnsignedAvis
-                  = TBmakeAvis (TRAVtmpVarName ("diff_first_unsigned"),
-                                TYmakeAKS (TYmakeSimpleType (T_uint), SHcreateShape (0)));
-                INFO_VARDEC (arg_info)
-                  = TBmakeVardec (diffFirstUnsignedAvis, INFO_VARDEC (arg_info));
-                node *diffFirstUnsignedLet
-                  = TBmakeLet (TBmakeIds (diffFirstUnsignedAvis, NULL),
-                               TBmakePrf (F_toui_S,
-                                          TBmakeExprs (TBmakeId (diffFirstAvis), NULL)));
-
-                node *diffFirstSignedAvis
-                  = TBmakeAvis (TRAVtmpVarName ("diff_first_signed"),
-                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-                INFO_VARDEC (arg_info)
-                  = TBmakeVardec (diffFirstSignedAvis, INFO_VARDEC (arg_info));
-                node *diffFirstSignedLet
-                  = TBmakeLet (TBmakeIds (diffFirstSignedAvis, NULL),
-                               TBmakePrf (F_toi_S,
-                                          TBmakeExprs (TBmakeId (diffFirstUnsignedAvis),
-                                                       NULL)));
-
+                /* cond_first = first_sel_offs >= local_from; */
                 node *condFirstAvis
                   = TBmakeAvis (TRAVtmpVarName ("cond_first"),
                                 TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
@@ -767,12 +829,13 @@ DMMLSpart (node *arg_node, info *arg_info)
                 node *condFirstLet
                   = TBmakeLet (TBmakeIds (condFirstAvis, NULL),
                                TBmakePrf (F_ge_SxS,
-                                          TBmakeExprs (TBmakeId (diffFirstSignedAvis),
+                                          TBmakeExprs (TBmakeId (firstSelOffsAvis),
                                                        TBmakeExprs (TBmakeId (
-                                                                      localCountAvis),
+                                                                      localFromAvis),
                                                                     NULL))));
                 /* Check that the last index is local. */
 
+                /* max_pos_offs = max_pos_offset; */
                 node *maxPosOffsAvis
                   = TBmakeAvis (TRAVtmpVarName ("max_pos_offs"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
@@ -781,6 +844,7 @@ DMMLSpart (node *arg_node, info *arg_info)
                 node *maxPosOffsLet = TBmakeLet (TBmakeIds (maxPosOffsAvis, NULL),
                                                  TBmakeNumint (max_pos_offset));
 
+                /* last_sel_idx = i + max_pos_offs; */
                 node *lastSelIdxAvis
                   = TBmakeAvis (TRAVtmpVarName ("last_sel_idx"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
@@ -796,40 +860,32 @@ DMMLSpart (node *arg_node, info *arg_info)
                                                                       maxPosOffsAvis),
                                                                     NULL))));
 
-                node *diffLastAvis
-                  = TBmakeAvis (TRAVtmpVarName ("diff_last"),
+                /* last_sel_vec = [ last_sel_idx ]; */
+                node *lastSelVecAvis = TBmakeAvis (TRAVtmpVarName ("last_sel_vec"),
+                                                   TYmakeAKS (TYmakeSimpleType (T_int),
+                                                              SHcreateShape (1, 1)));
+                INFO_VARDEC (arg_info)
+                  = TBmakeVardec (lastSelVecAvis, INFO_VARDEC (arg_info));
+                node *lastSelVecLet
+                  = TBmakeLet (TBmakeIds (lastSelVecAvis, NULL),
+                               TCmakeIntVector (
+                                 TBmakeExprs (TBmakeId (lastSelIdxAvis), NULL)));
+
+                /* last_sel_offs = _vect2offset_( src_arr_shape, last_sel_vec); */
+                node *lastSelOffsAvis
+                  = TBmakeAvis (TRAVtmpVarName ("last_sel_offs"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
                 INFO_VARDEC (arg_info)
-                  = TBmakeVardec (diffLastAvis, INFO_VARDEC (arg_info));
-                node *diffLastLet
-                  = TBmakeLet (TBmakeIds (diffLastAvis, NULL),
-                               TBmakePrf (F_sub_SxS,
-                                          TBmakeExprs (TBmakeId (lastSelIdxAvis),
+                  = TBmakeVardec (lastSelOffsAvis, INFO_VARDEC (arg_info));
+                node *lastSelOffsLet
+                  = TBmakeLet (TBmakeIds (lastSelOffsAvis, NULL),
+                               TBmakePrf (F_vect2offset,
+                                          TBmakeExprs (TBmakeId (srcArrShapeAvis),
                                                        TBmakeExprs (TBmakeId (
-                                                                      localFromAvis),
+                                                                      lastSelVecAvis),
                                                                     NULL))));
 
-                node *diffLastUnsignedAvis
-                  = TBmakeAvis (TRAVtmpVarName ("diff_last_unsigned"),
-                                TYmakeAKS (TYmakeSimpleType (T_uint), SHcreateShape (0)));
-                INFO_VARDEC (arg_info)
-                  = TBmakeVardec (diffLastUnsignedAvis, INFO_VARDEC (arg_info));
-                node *diffLastUnsignedLet
-                  = TBmakeLet (TBmakeIds (diffLastUnsignedAvis, NULL),
-                               TBmakePrf (F_toui_S,
-                                          TBmakeExprs (TBmakeId (diffLastAvis), NULL)));
-
-                node *diffLastSignedAvis
-                  = TBmakeAvis (TRAVtmpVarName ("diff_last_signed"),
-                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-                INFO_VARDEC (arg_info)
-                  = TBmakeVardec (diffLastSignedAvis, INFO_VARDEC (arg_info));
-                node *diffLastSignedLet
-                  = TBmakeLet (TBmakeIds (diffLastSignedAvis, NULL),
-                               TBmakePrf (F_toi_S,
-                                          TBmakeExprs (TBmakeId (diffLastUnsignedAvis),
-                                                       NULL)));
-
+                /* cond_last = last_sel_offs < local_to_excl; */
                 node *condLastAvis
                   = TBmakeAvis (TRAVtmpVarName ("cond_last"),
                                 TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
@@ -837,14 +893,14 @@ DMMLSpart (node *arg_node, info *arg_info)
                   = TBmakeVardec (condLastAvis, INFO_VARDEC (arg_info));
                 node *condLastLet
                   = TBmakeLet (TBmakeIds (condLastAvis, NULL),
-                               TBmakePrf (F_ge_SxS,
-                                          TBmakeExprs (TBmakeId (diffLastSignedAvis),
+                               TBmakePrf (F_lt_SxS,
+                                          TBmakeExprs (TBmakeId (lastSelOffsAvis),
                                                        TBmakeExprs (TBmakeId (
-                                                                      localCountAvis),
+                                                                      localToExclAvis),
                                                                     NULL))));
 
                 /* Check that the first and the last index are local. */
-
+                /* arr_all_sel_local = cond_first && cond_last; */
                 node *conditionAvis
                   = TBmakeAvis (TRAVtmpVarName ("arr_all_sel_local"),
                                 TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
@@ -863,33 +919,33 @@ DMMLSpart (node *arg_node, info *arg_info)
                 /* Determine which indices are local. */
                 node *optAssigns
                   = TBmakeAssign (
-                    localCountLet,
+                    srcArrShapeLet,
                     TBmakeAssign (
-                      localFromLet,
-                      /* Check that the first index is local. */
+                      localCountLet,
                       TBmakeAssign (
-                        maxNegOffsLet,
+                        localFromLet,
                         TBmakeAssign (
-                          firstSelIdxLet,
+                          localToExclLet,
+                          /* Check that the first index is local. */
                           TBmakeAssign (
-                            diffFirstLet,
+                            maxNegOffsLet,
                             TBmakeAssign (
-                              diffFirstUnsignedLet,
+                              firstSelIdxLet,
                               TBmakeAssign (
-                                diffFirstSignedLet,
+                                firstSelVecLet,
                                 TBmakeAssign (
-                                  condFirstLet,
-                                  /* Check that the last index is local. */
+                                  firstSelOffsLet,
                                   TBmakeAssign (
-                                    maxPosOffsLet,
+                                    condFirstLet,
+                                    /* Check that the last index is local. */
                                     TBmakeAssign (
-                                      lastSelIdxLet,
+                                      maxPosOffsLet,
                                       TBmakeAssign (
-                                        diffLastLet,
+                                        lastSelIdxLet,
                                         TBmakeAssign (
-                                          diffLastUnsignedLet,
+                                          lastSelVecLet,
                                           TBmakeAssign (
-                                            diffLastSignedLet,
+                                            lastSelOffsLet,
                                             TBmakeAssign (
                                               condLastLet,
                                               /* Check that the first and the last index
@@ -900,13 +956,13 @@ DMMLSpart (node *arg_node, info *arg_info)
                 node *optBlock = TBmakeBlock (optAssigns, NULL);
                 CODE_CBLOCK (PART_CODE (arg_node)) = optBlock;
             } else {
-                /* We do not apply the optimisation. No need to generate two code blocks.
+                /* We do not apply the optimization. No need to generate two code blocks.
                  */
                 elseBlock = MEMfree (elseBlock);
             }
         }
 
-        DBUG_PRINT ("### Done with second part of optimisation ###");
+        DBUG_PRINT ("### Done with DMGS optimization ###");
     }
 
     DBUG_RETURN (arg_node);
@@ -978,9 +1034,9 @@ DMMLSdoMarkLocalSelects (node *syntax_tree)
 
     info = MakeInfo ();
     syntax_tree = TRAVdo (syntax_tree, info);
-    DBUG_PRINT ("Found %d local selects.", INFO_LOCAL_SELECTS (info));
-    DBUG_PRINT ("Found %d possibly local selects (2nd part of opt).",
-                INFO_BOUNDARY_SELECTS (info));
+    CTInote ("Found %d local selects (DMMLS optimization).", INFO_LOCAL_SELECTS (info));
+    CTInote ("Found %d possibly local selects (DMGS optimization).",
+             INFO_BOUNDARY_SELECTS (info));
     info = FreeInfo (info);
 
     TRAVpop ();

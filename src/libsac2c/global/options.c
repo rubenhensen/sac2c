@@ -225,6 +225,15 @@ OPTcheckOptionConsistency (void)
                       "supported when using the distributed memory backend.");
         }
 
+        if (global.optimize.dodmgs && !global.optimize.dodmmls) {
+            CTIerror ("The optimization DMGS requires the optimization DMMLS.");
+        }
+
+        if (global.optimize.dodmmls && global.dmgs_max_selects != 0
+            && global.dmgs_min_selects > global.dmgs_max_selects) {
+            CTIerror ("dmgs_max_selects must be 0 (unbounded) or >= dmgs_min_selects");
+        }
+
         /* Communication library specific checks */
         switch (global.distmem_commlib) {
         case DISTMEM_COMMLIB_MPI:
@@ -621,9 +630,15 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("distmem_tr_pf_node", ARG_RANGE (global.distmem_tr_pf_node, -1, 1000));
 
-    ARGS_OPTION ("dmmls_min_selects", ARG_RANGE (global.dmmls_min_selects, 0, 100));
+    ARGS_OPTION ("dmgs_min_selects", ARG_RANGE (global.dmgs_min_selects, 3, 100));
+
+    ARGS_OPTION ("dmgs_max_selects", ARG_RANGE (global.dmgs_max_selects, 0, 100));
 
     ARGS_FLAG ("dsm_cache_outside_seg", global.distmem_cache_outside_dsm = TRUE);
+
+    ARGS_FLAG ("distmem_ptrs_desc", global.distmem_ptrs_desc = TRUE);
+
+    ARGS_FLAG ("distmem_no_ptr_cache", global.distmem_ptr_cache = FALSE);
 
 #ifndef DBUG_OFF
 

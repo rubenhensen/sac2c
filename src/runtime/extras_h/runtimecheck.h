@@ -126,6 +126,28 @@
                             SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT)),                    \
           0)),
 
+#define SAC_DISTMEM_CHECK_PTR_FROM_DESC(var_NT, pos, ptr)                                \
+    ((ptr                                                                                \
+      == SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT), SAC_NT_CBASETYPE (var_NT),    \
+                                   SAC_ND_A_FIRST_ELEMS (var_NT), pos))                  \
+       ? 0                                                                               \
+       : (SAC_RuntimeError ("Pointer to element %d of array %s from descriptor (%p) "    \
+                            "does not match calculated pointer (%p). "                   \
+                            "Offset: %" PRIuPTR ", first elems: %zd. "                   \
+                            "Element local to: %d, start of array there: %p.",           \
+                            pos, NT_STR (var_NT), ptr,                                   \
+                            SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT),            \
+                                                      SAC_NT_CBASETYPE (var_NT),         \
+                                                      SAC_ND_A_FIRST_ELEMS (var_NT),     \
+                                                      pos),                              \
+                            SAC_ND_A_OFFS (var_NT), SAC_ND_A_FIRST_ELEMS (var_NT),       \
+                            ((unsigned)pos / (unsigned)SAC_ND_A_FIRST_ELEMS (var_NT)),   \
+                            SAC_ND_A_DESC_PTR (var_NT,                                   \
+                                               ((unsigned)pos                            \
+                                                / (unsigned)SAC_ND_A_FIRST_ELEMS (       \
+                                                    var_NT)))),                          \
+          0)),
+
 #define SAC_DISTMEM_CHECK_IS_DSM_ALLOC_ALLOWED()                                         \
     if (!SAC_DISTMEM_are_dsm_allocs_allowed) {                                           \
         SAC_RuntimeError ("Allocations in the DSM segment are "                          \
@@ -254,6 +276,8 @@
 #else /* SAC_DO_CHECK_DISTMEM */
 
 #define SAC_DISTMEM_CHECK_PTR_FROM_CACHE(var_NT, pos, ptr)
+
+#define SAC_DISTMEM_CHECK_PTR_FROM_DESC(var_NT, pos, ptr)
 
 #define SAC_DISTMEM_CHECK_IS_DSM_ALLOC_ALLOWED()
 

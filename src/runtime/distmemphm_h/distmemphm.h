@@ -339,6 +339,8 @@ SAC_C_EXTERN void SAC_DISTMEM_HM_ShowDiagnostics (void);
                 }                                                                        \
             }                                                                            \
         }                                                                                \
+        SAC_TR_DISTMEM_PRINT ("Done with SAC_DISTMEM_HM_MALLOC_FIXED_SIZE( %s, %d, %s)", \
+                              #var, size, #basetype);                                    \
     }
 
 #else /* SAC_DO_MSCA */
@@ -379,6 +381,8 @@ SAC_C_EXTERN void SAC_DISTMEM_HM_ShowDiagnostics (void);
                 }                                                                        \
             }                                                                            \
         }                                                                                \
+        SAC_TR_DISTMEM_PRINT ("Done with SAC_DISTMEM_HM_MALLOC_FIXED_SIZE( %s, %d, %s)", \
+                              #var, size, #basetype);                                    \
     }
 
 #endif /* SAC_DO_MSCA */
@@ -391,6 +395,13 @@ SAC_C_EXTERN void SAC_DISTMEM_HM_ShowDiagnostics (void);
 #endif /* SAC_DO_APS */
 
 #if SAC_DO_DAO
+
+/*
+ * We only support the allocation of descriptors in DSM memory for descriptors of
+ * variables that are broadcast after a function application of side effects. Variables
+ * that are allocated in side effects execution mode cannot be distributed. Therefore, we
+ * do not support descriptors of distributed arrays!
+ */
 
 #define SAC_DISTMEM_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim, basetype,   \
                                                    descbasetype)                         \

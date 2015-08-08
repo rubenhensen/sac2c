@@ -220,15 +220,6 @@ ICM_DEF( ND_DECL, ICM_TRACE_NONE)
 ICM_END( ND_DECL, (var_NT, basetype, sdim, shp))
 #endif
 
-#if defined(ND_DIST_DECL) || defined(ICM_ALL)
-ICM_DEF( ND_DIST_DECL, ICM_TRACE_NONE)
-  ICM_NT( var_NT)
-  ICM_ID( basetype)
-  ICM_INT( sdim)
-  ICM_VARINT( sdim, shp)
-ICM_END( ND_DIST_DECL, (var_NT, basetype, sdim, shp))
-#endif
-
 #if defined(ND_DSM_DECL) || defined(ICM_ALL)
 ICM_DEF( ND_DSM_DECL, ICM_TRACE_NONE)
   ICM_NT( var_NT)
@@ -325,6 +316,13 @@ ICM_DEF( ND_ASSIGN, ICM_TRACE_NONE)
   ICM_INT( from_sdim)
   ICM_ID( copyfun)
 ICM_END( ND_ASSIGN, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
+#endif
+
+#if defined(ND_COPY__DESC_DIS_FIELDS) || defined(ICM_ALL)
+ICM_DEF( ND_COPY__DESC_DIS_FIELDS, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_NT( from_NT)
+ICM_END( ND_COPY__DESC_DIS_FIELDS, (to_NT, from_NT))
 #endif
 
 #if defined(ND_ASSIGN__DESC) || defined(ICM_ALL)

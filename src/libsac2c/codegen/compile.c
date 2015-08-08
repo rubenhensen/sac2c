@@ -3206,12 +3206,6 @@ COMPvardec (node *arg_node, info *arg_info)
               = TCmakeIcm1 ("ND_DSM_DECL",
                             MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
                                           TRUE, TRUE, TRUE, NULL));
-        } else if (global.backend == BE_distmem 
-               /*&& AVIS_DISTMEMISDISTRIBUTABLE( VARDEC_AVIS( arg_node)) TODO: May cause a bug*/) {
-            VARDEC_ICM (arg_node)
-              = TCmakeIcm1 ("ND_DIST_DECL",
-                            MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
-                                          TRUE, TRUE, TRUE, NULL));
         } else {
             VARDEC_ICM (arg_node)
               = TCmakeIcm1 ("ND_DECL",
@@ -6046,6 +6040,18 @@ COMPprfReshape (node *arg_node, info *arg_info)
          */
         ret_node = TCmakeAssignIcm2 ("ND_ASSIGN__DESC", DUPdupIdsIdNt (let_ids),
                                      DUPdupIdNt (PRF_ARG4 (arg_node)), ret_node);
+    } else if (global.backend == BE_distmem) {
+        ret_node = MakeAllocDescIcm (
+          IDS_NAME (let_ids), IDS_TYPE (let_ids), rc, MakeGetDimIcm (PRF_ARG2 (arg_node)),
+          TCmakeAssignIcm2 ("ND_COPY__DESC_DIS_FIELDS", DUPdupIdNt (PRF_ARG4 (arg_node)),
+                            DUPdupIdsIdNt (let_ids),
+                            TCmakeAssignIcm1 ("ND_FREE__DESC",
+                                              DUPdupIdNt (PRF_ARG4 (arg_node)),
+                                              TCmakeAssignIcm2 ("ND_ASSIGN__DESC",
+                                                                DUPdupIdNt (
+                                                                  PRF_ARG4 (arg_node)),
+                                                                DUPdupIdsIdNt (let_ids),
+                                                                ret_node))));
     } else {
         ret_node
           = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), rc,

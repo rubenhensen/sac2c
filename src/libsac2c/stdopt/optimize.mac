@@ -119,8 +119,10 @@ OPTIMIZE ("tup", tup, TRUE, TRUE, "type upgrade")
 OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
 #if ENABLE_DISTMEM
 OPTIMIZE ("dmmls", dmmls, TRUE, TRUE, "DISTMEM mark local selects")
+OPTIMIZE ("dmgs", dmgs, TRUE, TRUE, "DISTMEM group selects")
 #else
 OPTIMIZE ("dmmls", dmmls, FALSE, FALSE, "DISTMEM mark local selects")
+OPTIMIZE ("dmgs", dmgs, FALSE, FALSE, "DISTMEM group selects")
 #endif
 OPTIMIZE ("sde", sde, TRUE, TRUE, "subtraction / division elimination")
 OPTIMIZE ("wlprop", wlprop, TRUE, TRUE, "with-loop propagation")
