@@ -33,6 +33,7 @@
 #include "phase_options.h"
 #include "phase_info.h"
 #include "resource.h"
+#include "rtspec_modes.h"
 #include "runtime_compiler.h"
 
 /******************************************************************************
@@ -891,7 +892,23 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_FLAG ("rtspec", {
         global.rtspec = TRUE;
         global.maxspec = 0;
+
+        global.rtspec_mode = RTSPEC_MODE_UUID;
     });
+
+    ARGS_OPTION_BEGIN ("rtspec_mode")
+    {
+        ARG_CHOICE_BEGIN ();
+
+        ARG_CHOICE ("simple", global.rtspec_mode = RTSPEC_MODE_SIMPLE);
+
+        ARG_CHOICE ("hash", global.rtspec_mode = RTSPEC_MODE_HASH);
+
+        ARG_CHOICE ("uuid", global.rtspec_mode = RTSPEC_MODE_UUID);
+
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("rtspec_mode");
 
     ARGS_FLAG ("runtime", global.runtime = TRUE);
 

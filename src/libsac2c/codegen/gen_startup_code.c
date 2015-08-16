@@ -38,6 +38,7 @@
 #include "memory.h"
 #include "renameidentifiers.h"
 #include "namespaces.h"
+#include "rtspec_modes.h"
 
 /******************************************************************************
  *
@@ -714,7 +715,7 @@ GSCprintMainBegin (void)
 
     if (global.backend != BE_cuda) {
         INDENT;
-        fprintf (global.outfile, "SAC_RTSPEC_SETUP_INITIAL();\n");
+        fprintf (global.outfile, "SAC_RTSPEC_SETUP_INITIAL(%i);\n", global.rtspec_mode);
     }
 
     INDENT;

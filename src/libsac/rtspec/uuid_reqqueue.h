@@ -1,6 +1,6 @@
 /** <!--********************************************************************-->
  *
- * @file reqqueue.h
+ * @file uuid_reqqueue.h
  *
  * @brief Header file for the request queue data structure.
  *
@@ -8,13 +8,15 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_REQQUEUE_H_
-#define _SAC_REQQUEUE_H_
+#ifndef _SAC_UUID_REQQUEUE_H_
+#define _SAC_UUID_REQQUEUE_H_
+
+#include "registry.h"
 
 /**
  * @brief A node of the request queue.
  */
-typedef struct queue_node {
+typedef struct uuid_queue_node {
     /** @brief The name of the function being optimized. */
     char *func_name;
 
@@ -31,35 +33,49 @@ typedef struct queue_node {
     reg_obj_t *reg_obj;
 
     /** @brief The next request in the queue. */
-    struct queue_node *next;
+    struct uuid_queue_node *next;
 
-} queue_node_t;
+} uuid_queue_node_t;
 
 /**
  * @brief Structure to administer a single queue.
  */
-typedef struct reqqueue {
+typedef struct uuid_reqqueue {
     /** @brief The amount of objects in the queue. */
     int size;
 
     /** @brief The first element in the queue. */
-    queue_node_t *first;
+    uuid_queue_node_t *first;
 
     /** @brief The last element in the queue. */
-    queue_node_t *last;
+    uuid_queue_node_t *last;
 
-} reqqueue_t;
+} uuid_reqqueue_t;
 
-void SAC_initializeQueue (int trace);
+/**
+ * @var  request_queue
+ *
+ * @brief Central administrative object.
+ */
+extern uuid_reqqueue_t *uuid_request_queue;
 
-void SAC_deinitializeQueue (void);
+extern pthread_mutex_t uuid_empty_queue_mutex;
+extern pthread_cond_t uuid_empty_queue_cond;
 
-queue_node_t *SAC_createNode (char *, char *, int *, int, reg_obj_t *);
+int SAC_UUID_wasProcessed (uuid_queue_node_t *node);
 
-queue_node_t *SAC_dequeueRequest (void);
+void SAC_UUID_addProcessed (uuid_queue_node_t *node);
 
-void SAC_enqueueRequest (char *, char *, int *, int, reg_obj_t *);
+void SAC_UUID_initializeQueue (int trace);
 
-void SAC_freeReqqueue (queue_node_t *);
+void SAC_UUID_deinitializeQueue (void);
 
-#endif /* _SAC_REQQUEUE_H_ */
+uuid_queue_node_t *SAC_UUID_createNode (char *, char *, int *, int, reg_obj_t *);
+
+uuid_queue_node_t *SAC_UUID_dequeueRequest (void);
+
+void SAC_UUID_enqueueRequest (char *, char *, int *, int, reg_obj_t *);
+
+void SAC_UUID_freeReqqueue (uuid_queue_node_t *);
+
+#endif /* _SAC_UUID_REQQUEUE_H_ */

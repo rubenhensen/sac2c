@@ -229,6 +229,11 @@ GLOBAL (bool, rtspec, FALSE, xfree_dummy, )
  */
 
 /*
+ * Runtime specialization mode.
+ */
+GLOBAL (int, rtspec_mode, 0, xfree_dummy, )
+
+/*
  * Type info provided as a commandline argument for runtime optimization.
  */
 

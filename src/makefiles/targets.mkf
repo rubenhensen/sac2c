@@ -340,7 +340,7 @@ runtime_cuda_h         := cuda cuda_gen
 
 runtime_cudahybrid_h   := cudahybrid alloc_cache dist_var_nomemsave basic
 
-runtime_rtspec_h       := rtspec registry reqqueue controller persistence
+runtime_rtspec_h       := rtspec registry simple_reqqueue uuid_reqqueue abstract_controller simple_controller uuid_controller persistence
 
 runtime_distmem_h      := distmem
 
@@ -438,7 +438,7 @@ libsac_phm          := nophm
 
 libsac_cachesim     := basic access_simple access_detailed
 
-libsac_rtspec       := registry reqqueue controller persistence
+libsac_rtspec       := registry simple_reqqueue uuid_reqqueue abstract_controller simple_controller uuid_controller persistence
 
 
 ###############################################################################
