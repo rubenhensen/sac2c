@@ -7,7 +7,7 @@ AC_DEFUN([CHECK_CC_OPTION],[
   AC_CACHE_CHECK([whether $CC supports $1], ac_cc_option,
                  [save_CFLAGS="$CFLAGS";
                   CFLAGS="-Werror $1"
-                  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
+                  AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main(void) { return 0; }])],
                                     [AS_VAR_SET(ac_cc_option, yes)],
                                     [AS_VAR_SET(ac_cc_option, no)])
                   AS_IF([test AS_VAR_GET(ac_cc_option) = yes],

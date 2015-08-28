@@ -3964,14 +3964,7 @@ else
                   CFLAGS="-Werror -flto"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+int main(void) { return 0; }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
   ac_cv__flto_option=yes
@@ -6086,14 +6079,7 @@ else
                   CFLAGS="-Werror -Wall"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+int main(void) { return 0; }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
   ac_cv__Wall_option=yes
@@ -6123,14 +6109,7 @@ else
                   CFLAGS="-Werror -Wextra"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+int main(void) { return 0; }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
   ac_cv__Wextra_option=yes
@@ -6160,14 +6139,7 @@ else
                   CFLAGS="-Werror -Wstrict-prototypes"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+int main(void) { return 0; }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
   ac_cv__Wstrict_prototypes_option=yes
@@ -6197,14 +6169,7 @@ else
                   CFLAGS="-Werror -Wno-unused-parameter"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+int main(void) { return 0; }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
   ac_cv__Wno_unused_parameter_option=yes
@@ -6234,14 +6199,7 @@ else
                   CFLAGS="-Werror -Wno-unused-but-set-variable"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+int main(void) { return 0; }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
   ac_cv__Wno_unused_but_set_variable_option=yes
@@ -6275,14 +6233,7 @@ else
                   CFLAGS="-Werror -march=native"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+int main(void) { return 0; }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
   ac_cv__march_native_option=yes
@@ -6312,14 +6263,7 @@ else
                   CFLAGS="-Werror -mtune=native"
                   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
+int main(void) { return 0; }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
   ac_cv__mtune_native_option=yes

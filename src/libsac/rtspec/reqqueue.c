@@ -192,7 +192,7 @@ SAC_initializeQueue (int trace)
  *
  ****************************************************************************/
 void
-SAC_deinitializeQueue ()
+SAC_deinitializeQueue (void)
 {
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Deinitialize request queue.");

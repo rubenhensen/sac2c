@@ -52,7 +52,7 @@ typedef struct reqqueue {
 
 void SAC_initializeQueue (int trace);
 
-void SAC_deinitializeQueue ();
+void SAC_deinitializeQueue (void);
 
 queue_node_t *SAC_createNode (char *, char *, int *, int, reg_obj_t *);
 
