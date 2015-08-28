@@ -379,16 +379,20 @@ PolyhedralRelationalCalc (int verbose)
 }
 
 int
-LoopCount (__isl_keep isl_union_set *For)
+LoopCount (__isl_keep isl_union_set *domain)
 {
     // Try to find integer constant iteration count of FOR-loop.
     // If no luck, return -1.
     //
+    // We fake up a schedule, merely so that we can get at the AST.
+
     int z = -1;
+
+#ifdef FIXME
     isl_val *V;
     struct isl_union_map *sched;
 
-    sched = isl_schedule_constraints_on_domain (For);
+    sched = isl_schedule_from_domain (domain);
 
     isl_set *LoopDomain = isl_set_from_union_set (isl_union_map_range (sched));
     int Dim = isl_set_dim (LoopDomain, isl_dim_set);
@@ -429,22 +433,24 @@ LoopCount (__isl_keep isl_union_set *For)
     }
 
     sched = isl_schedule_constraints_free (sched);
+#endif // FIXME
 
     return (z);
 }
 
 int
 PolyhedralLoopCount (int verbose)
-{ // Attempt to determine a constant loop count for a FOR-loop.
+{ // Attempt to determine a constant loop count for a FOR-loop,
+    // from a union set.
     int z;
-    struct isl_union_set *islfor;
+    struct isl_union_set *islus;
     struct isl_ctx *ctx = isl_ctx_alloc ();
 
-    islfor = isl_union_set_read_from_file (ctx, stdin);
+    islus = isl_union_set_read_from_file (ctx, stdin);
 
-    z = LoopCount (islfor);
+    z = LoopCount (islus);
 
-    isl_union_set_free (islfor);
+    isl_union_set_free (islus);
 
     return (z);
 }
