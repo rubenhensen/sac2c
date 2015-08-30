@@ -438,7 +438,7 @@ WLUTisEmptyGenerator (node *partn)
 
     bnd = WLUTfindArrayForBound (GENERATOR_BOUND1 (PART_GENERATOR (partn)));
     if (NULL != bnd) {
-        res = 0 != TCcountExprs (ARRAY_AELEMS (bnd));
+        res = 0 == TCcountExprs (ARRAY_AELEMS (bnd));
     }
 
     DBUG_RETURN (res);
