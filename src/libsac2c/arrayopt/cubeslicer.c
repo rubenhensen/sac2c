@@ -1070,7 +1070,7 @@ performFold (node *cwlpart, int partno, info *arg_info)
 
     if (NULL != pwlblock) {
         /* Remove extrema from old block and recompute everything */
-        newpblock = DUPdoDupNodeLutSsa (pwlblock, INFO_FOLDLUT (arg_info),
+        newpblock = DUPdoDupTreeLutSsa (pwlblock, INFO_FOLDLUT (arg_info),
                                         INFO_FUNDEF (arg_info));
     } else {
         /* If PWL code block is empty, don't duplicate code block.

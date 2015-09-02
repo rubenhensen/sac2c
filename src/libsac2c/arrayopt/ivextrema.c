@@ -1099,15 +1099,16 @@ IVEXIap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-#ifdef FIXME // HOPEFULLY DEAD. trying to find ipbb.sac AVIS_SSAASSIGN corruption
     DBUG_PRINT ("Traversing ap");
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
+        DBUG_PRINT ("Non-recursive call of %s from %s",
+                    FUNDEF_NAME (AP_FUNDEF (arg_node)),
+                    FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         INFO_FROMAP (arg_info) = TRUE;
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
         INFO_FROMAP (arg_info) = FALSE;
     }
-#endif // FIXME  //HOPEFULLY DEAD. trying to find ipbb.sac AVIS_SSAASSIGN corruption
 
     DBUG_RETURN (arg_node);
 }
