@@ -893,7 +893,11 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         global.rtspec = TRUE;
         global.maxspec = 0;
 
+#if ENABLE_UUID
         global.rtspec_mode = RTSPEC_MODE_UUID;
+#else
+    global.rtspec_mode = RTSPEC_MODE_HASH;
+#endif /* ENABLE_UUID */
     });
 
     ARGS_OPTION_BEGIN ("rtspec_mode")
@@ -904,7 +908,9 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
         ARG_CHOICE ("hash", global.rtspec_mode = RTSPEC_MODE_HASH);
 
+#if ENABLE_UUID
         ARG_CHOICE ("uuid", global.rtspec_mode = RTSPEC_MODE_UUID);
+#endif /* ENABLE_UUID */
 
         ARG_CHOICE_END ();
     }

@@ -14,11 +14,19 @@
 #define DBUG_PREFIX "UID"
 #include "debug.h"
 
+#include "rtspec_modes.h"
+#include "globals.h"
 #include "traverse.h"
 #include "new_types.h"
 #include "tree_compound.h"
 
+#if ENABLE_UUID
 #include <uuid/uuid.h>
+#endif /* ENABLE_UUID */
+
+#include <time.h>
+#include <unistd.h>
+#include <crypt.h>
 
 struct INFO {
     node *module;
@@ -99,7 +107,14 @@ UIDfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+#if ENABLE_UUID
     uuid_t uuid;
+#endif /* ENABLE_UUID */
+    time_t seconds;
+    char hostname[1024];
+    hostname[1023] = '\0';
+    char *str_uuid;
+    char *str_seconds;
 
     if (FUNDEF_ISLOCAL (arg_node) && !FUNDEF_ISWRAPPERFUN (arg_node)
         && !FUNDEF_ISCONDFUN (arg_node) && !FUNDEF_ISLOOPFUN (arg_node)) {
@@ -112,8 +127,31 @@ UIDfundef (node *arg_node, info *arg_info)
         if (INFO_ISGENERIC (arg_info)) {
             FUNDEF_RTSPECID (arg_node) = (char *)malloc (sizeof (char) * 36);
 
-            uuid_generate (uuid);
-            uuid_unparse_lower (uuid, FUNDEF_RTSPECID (arg_node));
+#if ENABLE_UUID
+            if (global.rtspec_mode == RTSPEC_MODE_UUID) {
+                uuid_generate (uuid);
+                uuid_unparse_lower (uuid, FUNDEF_RTSPECID (arg_node));
+            } else {
+#else
+            if (global.rtspec_mode == RTSPEC_MODE_HASH) {
+#endif /* ENABLE_UUID */
+                FUNDEF_RTSPECID (arg_node) = (char *)malloc (sizeof (char) * 36);
+
+                gethostname (hostname, 1023);
+                seconds = time (NULL);
+
+                str_seconds = (char *)malloc (sizeof (char) * 11);
+                sprintf (str_seconds, "%ld", (long)seconds);
+
+                str_uuid = (char *)malloc (sizeof (char)
+                                           * (STRlen (FUNDEF_NAME (arg_node)) + 1035));
+                str_uuid = STRcat (FUNDEF_NAME (arg_node), hostname);
+                str_uuid = STRcat (str_uuid, str_seconds);
+
+                FUNDEF_RTSPECID (arg_node) = STRcpy (crypt (str_uuid, "$1$RTspec$"));
+
+                free (str_uuid);
+            }
         }
     }
 
@@ -167,17 +205,20 @@ UIDdoSetFunctionIDs (node *arg_node)
 {
     DBUG_ENTER ();
 
-    info *info = NULL;
+    if (global.rtspec_mode == RTSPEC_MODE_HASH
+        || global.rtspec_mode == RTSPEC_MODE_UUID) {
+        info *info = NULL;
 
-    info = MakeInfo (info);
+        info = MakeInfo (info);
 
-    TRAVpush (TR_uid);
+        TRAVpush (TR_uid);
 
-    arg_node = TRAVdo (arg_node, info);
+        arg_node = TRAVdo (arg_node, info);
 
-    TRAVpop ();
+        TRAVpop ();
 
-    info = FreeInfo (info);
+        info = FreeInfo (info);
+    }
 
     DBUG_RETURN (arg_node);
 }

@@ -344,7 +344,7 @@ void
 SAC_Simple_stopController (void)
 {
     if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Stopping controllers!");
+        SAC_TR_Print ("Runtime specialization: Stopping simple controllers!");
     }
 
     running = 0;
@@ -362,7 +362,7 @@ void
 SAC_Simple_finalizeController (void)
 {
     if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Finalize controller!");
+        SAC_TR_Print ("Runtime specialization: Finalize simple controller!");
     }
 
     SAC_Simple_deinitializeQueue ();

@@ -112,14 +112,26 @@ CHECK_HR_CLOCK
 dnl check support for dynamic libraries
 AC_CHECK_HEADER([dlfcn.h], [], [AC_MSG_ERROR([dlfcn.h is required.])])
 AC_SEARCH_LIBS([dlopen], [dl])
-AC_CHECK_HEADER([uuid/uuid.h], [], [AC_MSG_ERROR([uuid.h is required.])])
-AC_SEARCH_LIBS([uuid_generate], [uuid])
 CHECK_DLL_EXT
+
+enable_uuid=no
+AC_SEARCH_LIBS([uuid_generate], [uuid], [enable_uuid=yes], [enable_uuid=no])
+AC_CHECK_HEADER([uuid/uuid.h], [enable_uuid=yes], [enable_uuid=no])
+have_uuid=`if test $enable_uuid = yes; then echo 1; else echo 0; fi`
+AC_DEFINE_UNQUOTED([ENABLE_UUID], [$have_uuid],
+                   [Define to 1 if libuuid is available, otherwise 0.])
+AC_SUBST([ENABLE_UUID], [$enable_uuid])
+
+enable_crypt=no
+AC_SEARCH_LIBS([crypt], [crypt], [enable_crypt=yes], [enable_crypt=no])
+AC_CHECK_HEADER([crypt.h], [enable_crypt=yes], [enable_crypt=no])
 
 dnl set rtspec flag
 enable_rtspec=no
-if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes -a x"$ac_cv_search_uuid_generate" != xno; then
-  enable_rtspec=yes
+if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes ; then
+  if test x"$enable_uuid" != xno -o x"$enable_crypt" != xno ; then
+    enable_rtspec=yes
+  fi
 fi
 case $ac_cv_search_dlopen in
   no | none*) dlopen_libs= ;;

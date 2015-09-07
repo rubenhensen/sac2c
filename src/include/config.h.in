@@ -49,6 +49,9 @@
 /* Define to 1 if runtime specialization is enabled, otherwise 0. */
 #undef ENABLE_RTSPEC
 
+/* Define to 1 if libuuid is available, otherwise 0. */
+#undef ENABLE_UUID
+
 /* Set to 1 if compiler supports GNU vector syntax, otherwise 0. */
 #undef HAVE_GCC_SIMD_OPERATIONS
 

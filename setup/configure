@@ -648,6 +648,7 @@ OPT_O2
 OPT_O1
 OPT_O0
 ENABLE_RTSPEC
+ENABLE_UUID
 SHARED_LIB_EXT
 DOT
 BASH
@@ -5964,14 +5965,27 @@ if test "$ac_res" != no; then :
 
 fi
 
-ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
-if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
-
-else
-  as_fn_error $? "uuid.h is required." "$LINENO" 5
-fi
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for file name extension for dynamic libraries" >&5
+$as_echo_n "checking for file name extension for dynamic libraries... " >&6; }
+  case "$target_os" in
+     *cygwin* | *windows* | *mingw*) dll_ext=.dll ;;
+     *darwin* ) dll_ext=.dylib ;;
+     * ) dll_ext=.so ;;
+  esac
+  SHARED_LIB_EXT=$dll_ext
+
+
+cat >>confdefs.h <<_ACEOF
+#define SHARED_LIB_EXT "$dll_ext"
+_ACEOF
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $dll_ext" >&5
+$as_echo "$dll_ext" >&6; }
+
+
+enable_uuid=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing uuid_generate" >&5
 $as_echo_n "checking for library containing uuid_generate... " >&6; }
 if ${ac_cv_search_uuid_generate+:} false; then :
@@ -6025,32 +6039,101 @@ $as_echo "$ac_cv_search_uuid_generate" >&6; }
 ac_res=$ac_cv_search_uuid_generate
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  enable_uuid=yes
+else
+  enable_uuid=no
+fi
 
+ac_fn_c_check_header_mongrel "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
+if test "x$ac_cv_header_uuid_uuid_h" = xyes; then :
+  enable_uuid=yes
+else
+  enable_uuid=no
+fi
+
+
+have_uuid=`if test $enable_uuid = yes; then echo 1; else echo 0; fi`
+
+cat >>confdefs.h <<_ACEOF
+#define ENABLE_UUID $have_uuid
+_ACEOF
+
+ENABLE_UUID=$enable_uuid
+
+
+enable_crypt=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing crypt" >&5
+$as_echo_n "checking for library containing crypt... " >&6; }
+if ${ac_cv_search_crypt+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char crypt ();
+int
+main ()
+{
+return crypt ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' crypt; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_crypt=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_crypt+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_crypt+:} false; then :
+
+else
+  ac_cv_search_crypt=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_crypt" >&5
+$as_echo "$ac_cv_search_crypt" >&6; }
+ac_res=$ac_cv_search_crypt
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  enable_crypt=yes
+else
+  enable_crypt=no
+fi
+
+ac_fn_c_check_header_mongrel "$LINENO" "crypt.h" "ac_cv_header_crypt_h" "$ac_includes_default"
+if test "x$ac_cv_header_crypt_h" = xyes; then :
+  enable_crypt=yes
+else
+  enable_crypt=no
 fi
 
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for file name extension for dynamic libraries" >&5
-$as_echo_n "checking for file name extension for dynamic libraries... " >&6; }
-  case "$target_os" in
-     *cygwin* | *windows* | *mingw*) dll_ext=.dll ;;
-     *darwin* ) dll_ext=.dylib ;;
-     * ) dll_ext=.so ;;
-  esac
-  SHARED_LIB_EXT=$dll_ext
-
-
-cat >>confdefs.h <<_ACEOF
-#define SHARED_LIB_EXT "$dll_ext"
-_ACEOF
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $dll_ext" >&5
-$as_echo "$dll_ext" >&6; }
-
-
 enable_rtspec=no
-if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes -a x"$ac_cv_search_uuid_generate" != xno; then
-  enable_rtspec=yes
+if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes ; then
+  if test x"$enable_uuid" != xno -o x"$enable_crypt" != xno ; then
+    enable_rtspec=yes
+  fi
 fi
 case $ac_cv_search_dlopen in
   no | none*) dlopen_libs= ;;

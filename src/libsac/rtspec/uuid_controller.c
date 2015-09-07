@@ -344,7 +344,7 @@ void
 SAC_UUID_stopController (void)
 {
     if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Stopping controllers!");
+        SAC_TR_Print ("Runtime specialization: Stopping uuid controllers!");
     }
 
     running = 0;
@@ -362,7 +362,7 @@ void
 SAC_UUID_finalizeController (void)
 {
     if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Finalize controller!");
+        SAC_TR_Print ("Runtime specialization: Finalize uuid controller!");
     }
 
     SAC_UUID_deinitializeQueue ();
