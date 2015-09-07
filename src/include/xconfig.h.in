@@ -1,0 +1,46 @@
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
+
+/* FIXME This is a hack of course.  */
+#define ARCH "@CMAKE_SYSTEM@"
+#define OS "@CMAKE_SYSTEM_NAME@"
+
+#cmakedefine01 DOT_FLAG
+
+#cmakedefine01 ENABLE_CUDA
+#cmakedefine01 ENABLE_PHM
+#cmakedefine01 ENABLE_MT
+#cmakedefine01 ENABLE_MUTC
+#cmakedefine01 ENABLE_OMP
+#cmakedefine01 ENABLE_RTSPEC
+
+
+/*
+    These guys are not used.
+
+    #cmakedefine01 HAVE_DLFCN_H
+    #cmakedefine01 HAVE_INTTYPES_H
+    #cmakedefine01 HAVE_MEMORY_H
+    #cmakedefine01 HAVE_PTHREAD_H
+    #cmakedefine01 HAVE_OMP_H
+    #cmakedefine01 HAVE_STDINT_H
+*/
+
+#cmakedefine01 HAVE_MALLOC_H
+#cmakedefine01 HAVE_STRTOK
+#cmakedefine01 HAVE_STRRCHR
+#cmakedefine01 HAVE_MKDTEMP
+
+/* STDERR_IS_CONSTANT is going to be checked with ifdef.  */
+#cmakedefine STDERR_IS_CONSTANT
+
+
+#define MAX_PATH_LEN  @MAX_PATH_LEN@
+#define MAX_FILE_NAME  @MAX_FILE_NAME@
+#define PF_MAXFUN  @PF_MAXFUN@
+#define PF_MAXFUNAP  @PF_MAXFUNAP@
+#define PF_MAXFUNNAMELEN  @PF_MAXFUNNAMELEN@
+#define SAC_PRELUDE_NAME  "@SAC_PRELUDE_NAME@"
+#define SBRK_T  @SBRK_T@
+
+#endif /* __CONFIG_H__  */
