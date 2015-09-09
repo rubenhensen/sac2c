@@ -58,8 +58,7 @@ ADD_DEFINITIONS(
   -DCHECK_NODE_ACCESS 
   -DINLINE_MACRO_CHECKS 
   -DSAC_BACKEND_C99 -DSAC_RC_METHOD=SAC_RCM_local
-  # FIXME put this into config and check for the right one:
-  -DSHARED_LIB_EXT=".so"
+  -DSHARED_LIB_EXT="${CMAKE_SHARED_LIBRARY_SUFFIX}"
 )
 
 
