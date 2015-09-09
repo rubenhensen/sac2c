@@ -7,6 +7,8 @@ PROJECT (sac C)
 
 include ("cmake/options.cmake")
 include ("cmake/config.cmake")
+include ("cmake/settings.cmake")
+include ("cmake/macros.cmake")
 
 # Include common directories for the project.
 INCLUDE_DIRECTORIES(
