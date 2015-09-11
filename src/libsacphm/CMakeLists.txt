@@ -45,7 +45,6 @@ ADD_DEFINITIONS(
 
 # FIXME This probably can be changed later.
 SET (LIB_PATH "${PROJECT_SOURCE_DIR}/lib")
-MESSAGE ("the lib path is ${LIB_PATH}")
 
 SET (SHARED_TARGET_NAME    "${MT_VARIANT_NAME}.Shared")
 SET (STATIC_TARGET_NAME    "${MT_VARIANT_NAME}.Static")
