@@ -1,20 +1,13 @@
-# Create the list of directories.
-FILE (GLOB tmplst RELATIVE  "${CMAKE_CURRENT_SOURCE_DIR}" *)
-SET (DIR_LIST)
-FOREACH (dir ${tmplst})
-  SET (mask "CMakeLists.txt|Makefile|xml")
-  IF (NOT ${dir} MATCHES ${mask})
-    LIST (APPEND DIR_LIST ${dir}) 
-  ENDIF (NOT ${dir} MATCHES ${mask})
-ENDFOREACH (dir)
+
+# Get a list of subdirectories containing *.h files into the variable HEADER_LIST
+HEADER_DIRECTORIES (HEADER_LIST)
 
 # Add each directory to include_dirs.
-FOREACH (d ${DIR_LIST})
-  # MESSAGE ("found dir: ${d}")
-  INCLUDE_DIRECTORIES ("${CMAKE_CURRENT_SOURCE_DIR}/${d}")
-  INCLUDE_DIRECTORIES ("${CMAKE_CURRENT_BINARY_DIR}/${d}")
-  FILE (MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${d}")
+FOREACH (d ${HEADER_LIST})
+  INCLUDE_DIRECTORIES ("${d}")
 ENDFOREACH (d)
+
+INCLUDE_DIRECTORIES ("{${CMAKE_CURRENT_BINARY_DIR}}")
 
 
 SET (COMMON_XSL
@@ -27,7 +20,7 @@ SET (COMMON_XSL
   ${CMAKE_CURRENT_SOURCE_DIR}/xml/common_key_tables.xsl
   ${CMAKE_CURRENT_SOURCE_DIR}/xml/common_name_to_nodeenum.xsl
   ${CMAKE_CURRENT_SOURCE_DIR}/xml/common_make_body.xsl
-  ${CMAKE_CURRENT_SOURCE_DIR}/xml/common_c_code.xsl 
+  ${CMAKE_CURRENT_SOURCE_DIR}/xml/common_c_code.xsl
 )
 
 SET (XSL_FILES
@@ -62,41 +55,47 @@ SET (XSL_FILES
   global/node_info.mac
 )
 
+# For every *.{c,h,mac}.xsl file add a custom command to generate this file
+# and store the name of generated files in the XSL_DONE_FILES
 SET(XSL_DONE_FILES)
 FOREACH(name ${XSL_FILES})
   SET(src "${CMAKE_CURRENT_SOURCE_DIR}/${name}.xsl")
-  SET(dst "${CMAKE_CURRENT_BINARY_DIR}/${name}")
+  GET_FILENAME_COMPONENT (dst ${name} NAME)
+  SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}")
   ADD_CUSTOM_COMMAND(
     OUTPUT "${dst}"
     DEPENDS "${src}"
     COMMAND
     ${XSLT_EXEC} ${src}
-		 ${CMAKE_CURRENT_SOURCE_DIR}/xml/ast.xml 
-		 | ${CB} > ${dst}
+                 ${CMAKE_CURRENT_SOURCE_DIR}/xml/ast.xml
+                 | ${CB} > ${dst}
     )
 
   LIST (APPEND XSL_DONE_FILES "${dst}")
 ENDFOREACH(name)
 
+
+# Add custom command to produce fancy_icm_vars.c
 ADD_CUSTOM_COMMAND(
-  OUTPUT 
-    "${CMAKE_CURRENT_BINARY_DIR}/codegen/fancy_icm_vars.c"
-  DEPENDS 
-    "${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm_vars.c"  
+  OUTPUT
+  "${CMAKE_CURRENT_BINARY_DIR}/fancy_icm_vars.c"
+  DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm_vars.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm.data"
   COMMAND
-    cpp -P ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm_vars.c  -DICM_ALL 
-    | sort 
-    | uniq > "${CMAKE_CURRENT_BINARY_DIR}/codegen/fancy_icm_vars.c"
+    # FIXME sort and uniq are unix-specific, we can do use CMake tools for sort
+    # and uniq.
+    ${CMAKE_C_COMPILER} -E -P ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm_vars.c  -DICM_ALL
+    | sort
+    | uniq > "${CMAKE_CURRENT_BINARY_DIR}/fancy_icm_vars.c"
 )
 
 
-
-
+# Create a dependency for the file where fancy_icm_vars are used.
 SET_SOURCE_FILES_PROPERTIES(
     "${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c.c"
     PROPERTIES
-    OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/codegen/fancy_icm_vars.c")
+    OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/fancy_icm_vars.c")
 
 
 
@@ -567,13 +566,12 @@ ${PROJECT_BINARY_DIR}/src/build.c
 
 
 
-
-
 ADD_LIBRARY (sac2cShared SHARED ${SAC2C_SRC})
-SET_TARGET_PROPERTIES(sac2cShared 
-  PROPERTIES 
+SET_TARGET_PROPERTIES (sac2cShared
+  PROPERTIES
     OUTPUT_NAME sac2c
     LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib"
+    # FIXME this should come from the config variabl
     LINK_FLAGS "-Wl,-allow-shlib-undefined"
 
 )

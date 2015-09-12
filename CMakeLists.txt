@@ -51,7 +51,9 @@ INCLUDE_DIRECTORIES (
 
 ADD_DEFINITIONS(
   -DPIC -D_POSIX_SOURCE -D_DEFAULT_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint -D_POSIX_C_SOURCE=200809L
-  #${RCCCFLAGS}
+  # FIXME this is to enable quick build, fix it depending on the build type
+  # and take the variables from config.
+  -Wall -Wextra -Wno-unused-parameter -std=c99 -Os
   -DSANITYCHECKS
   -DWLAA_DEACTIVATED
   -DAE_DEACTIVATED
