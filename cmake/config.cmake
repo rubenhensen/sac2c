@@ -1,9 +1,9 @@
 INCLUDE (CheckIncludeFiles)
 INCLUDE (CheckCSourceCompiles)
-INCLUDE (CheckFunctionExists) 
-INCLUDE (CheckLibraryExists) 
+INCLUDE (CheckFunctionExists)
+INCLUDE (CheckLibraryExists)
 INCLUDE (CheckCSourceRuns)
-
+INCLUDE (CheckCCompilerFlag)
 
 
 # Checks if the C compiler defines a macro called DEF.
@@ -35,8 +35,34 @@ ENDMACRO ()
 
 # System-dependent variables.
 SET (OS       "${CMAKE_SYSTEM}")
-SET (ARCH     "${CMAKE_SYSTEM_NAME}")
+SET (ARCH     "${CMAKE_SYSTEM_PROCESSOR}")
 
+
+# Check for Link Time Optimisation
+SET (HAVE_LTO   OFF)
+IF (LTO)
+    CHECK_C_COMPILER_FLAG ("-flto" c_compiler_has_lto)
+    if (c_compiler_has_lto)
+        SET (HAVE_LTO   ON)
+    endif ()
+ENDIF ()
+
+
+# Check if C compiler supports explicit SIMD syntax.
+CHECK_C_SOURCE_COMPILES ("
+    int main (void) {
+      float __attribute__((vector_size (4*sizeof(float)))) a, b, c;
+      float x;
+      a = b + c;
+      a = b - c;
+      a = b / c;
+      a = b * c;
+      x = a[0];
+      return 0;
+    }
+    "
+    HAVE_GCC_SIMD_OPERATIONS
+)
 
 
 # Check headers.
@@ -44,8 +70,10 @@ CHECK_INCLUDE_FILES (dlfcn.h HAVE_DLFCN_H)
 CHECK_INCLUDE_FILES (inttypes.h HAVE_INTTYPES_H)
 CHECK_INCLUDE_FILES (malloc.h HAVE_MALLOC_H)
 CHECK_INCLUDE_FILES (memory.h HAVE_MEMORY_H)
-CHECK_INCLUDE_FILES (pthread.h HAVE_PTHREAD_H)
-CHECK_INCLUDE_FILES (omp.h HAVE_OMP_H)
+
+# TODO this should be checked by FindThreads and FindOpenmp
+#CHECK_INCLUDE_FILES (pthread.h HAVE_PTHREAD_H)
+#CHECK_INCLUDE_FILES (omp.h HAVE_OMP_H)
 
 
 
@@ -57,34 +85,55 @@ CHECK_FUNCTION_EXISTS (mkdtemp HAVE_MKDTEMP)
 
 
 # Check functions in libs
-# FIXME What happens if there is not `m', or `dl'?
-# Do we stop the compilation, or we try to recover somehow?
-SET (LIBS)
-FIND_LIBRARY (M_PATH "m")
-CHECK_LIBRARY_EXISTS ("m" "sqrt" ${M_PATH} m_sqrt_found)
-IF (${m_sqrt_found})
-  SET (LIBS "${LIBS} -lm")
-ENDIF ()
+ASSERT_LIB (M    "m"     "sqrt")
+ASSERT_LIB (DL   "dl"    "dlopen")
+ASSERT_LIB (UUID "uuid"  "uuid_generate")
 
-FIND_LIBRARY (DL_PATH "dl")
-CHECK_LIBRARY_EXISTS ("dl" "dlopen" ${DL_PATH} dl_dlopen_found)
-IF (${dl_dlopen_found})
-  SET (LIBS "${LIBS} -ldl")
+SET (LPEL_PATH)
+IF (LPEL)
+    ASSERT_LIB (LPEL  "lpel"  "LpelInit")
+    FIND_PATH (LPEL_INCLUDE_DIR lpel.h)
+    IF (LPEL_INCLUDE_DIR)
+        # FIXME we enable this globally but maybe we want to put it only
+        # in the saclib-related part.
+        INCLUDE_DIRECTORIES (${LPEL_INCLUDE_DIR})
+        SET (ENABLE_MT_LPEL     ON)
+        SET (MT_CFLAGS_LPEL     "-I${LPEL_INCLUDE_DIR}")
+        SET (MT_LDFLAGS_LPEL    "-L${LPEL_PATH} -llpel")
+    ELSE ()
+        MESSAGE (FATAL_ERROR "Cannot find lpel.h header")
+    ENDIF ()
 ENDIF ()
-
-FIND_LIBRARY (UUID_PATH "uuid")
-CHECK_LIBRARY_EXISTS ("uuid" "uuid_generate" ${UUID_PATH} uuid_generate_found)
-IF (${uuid_generate_found})
-  SET (LIBS "${LIBS} -luuid")
-ENDIF ()
-
 
 
 
 # Options which depend on availability of header-files and functions
 ENABLE_IF (HAVE_DLFCN_H ENABLE_DL)
-ENABLE_IF (HAVE_PTHREAD_H  ENABLE_MT)
-ENABLE_IF (HAVE_OMP_H  ENABLE_OMP)
+
+# If Option MT is set
+IF (MT)
+    # Prefer -pthread over -lpthread and stuff.
+    SET (THREADS_PREFER_PTHREAD_FLAG ON)
+    FIND_PACKAGE (Threads)
+    IF (THREADS_FOUND AND NOT WIN32)
+        MESSAGE (STATUS "Enabling MT")
+        SET (ENABLE_MT  ON)
+        # FIXME propagate ${CMAKE_THREAD_LIBS_INIT} into sac2crc
+        #MESSAGE (STATUS "Threading library is '${CMAKE_THREAD_LIBS_INIT}'")
+    ENDIF ()
+ENDIF ()
+
+# If oprion OMP is set.
+IF (OMP)
+    FIND_PACKAGE (OpenMP)
+    IF (OPENMP_FOUND)
+        SET (ENABLE_OMP      ON)
+        SET (OPENMP_CFLAGS   ${OpenMP_C_FLAGS})
+    ENDIF ()
+ENDIF ()
+
+
+# FIXME This should be check for MT and UUID.
 SET (ENABLE_RTSPEC OFF)
 IF (ENABLE_DL AND ENABLE_MT)
   SET (ENABLE_RTSPEC ON)
@@ -96,6 +145,8 @@ SET (SBRK_T)
 CHECK_FUNCTION_EXISTS ("sbrk" HAVE_SBRK)
 IF (HAVE_SBRK)
   SET (ENABLE_PHM  ON)
+  # FIXME Select the right type from "intptr_t ptrdiff_t ssize_t int"
+  # currently this is just a hack.
   SET (SBRK_T      "intptr_t")
 ENDIF ()
 
@@ -105,14 +156,14 @@ ENDIF ()
 CHECK_C_SOURCE_RUNS ("
 #include <stdio.h>
 #include <string.h>
-int main ()
+int main (void)
 {
   char buf[128];
   sprintf (buf, \"%p\", (void*)0);
   if (!strncmp (buf, \"0x\", 2))
-    return 1;
-  else
     return 0;
+  else
+    return 1;
 }
 " NEED_PTR_PREFIX)
 
@@ -169,7 +220,7 @@ FIND_PROGRAM (DOT_FLAG
   HINTS   ENV PATH
   DOC	  "Dot graph visualizer")
 
-# Cuda 
+# Cuda
 # FIXME  Make sure that it is enough of a check.
 FIND_PACKAGE (CUDA)
 SET (ENABLE_CUDA OFF)
@@ -182,7 +233,7 @@ ENDIF ()
 
 # Indenting the code
 SET (CB "${PROJECT_BINARY_DIR}/cb")
-FIND_PROGRAM (INDENT_EXEC  
+FIND_PROGRAM (INDENT_EXEC
   NAME	  indent  gindent
   HINTS	  ENV PATH
   DOC	  "Indent the C code")
@@ -219,45 +270,6 @@ SET (SAC_PRELUDE_NAME   "sacprelude")
 
 
 
-# Configuration variables for build.c.in
-# NOTE:  Macros which return user, host and date are
-#        properly implemented for unix systems only.
-#        It would not fall with an error for other 
-#        systems, but the data returned would be fake.
-
-# Get current date and time.
-MACRO (GET_DATE RES)
-  IF (UNIX)
-    EXECUTE_PROCESS(COMMAND "date" OUTPUT_VARIABLE ${RES})
-  ELSE ()
-    MESSAGE(SEND_ERROR "Date not implemented on the given platform")
-    SET(${RES} "<date-unknown>")
-  ENDIF ()
-  STRING (REGEX REPLACE "\n" "" ${RES} ${${RES}})
-ENDMACRO ()
-
-# Get the name of the machine.
-MACRO (GET_HOSTNAME RES)
-  IF (UNIX)
-    EXECUTE_PROCESS(COMMAND "hostname" OUTPUT_VARIABLE ${RES})
-  ELSE ()
-    MESSAGE(SEND_ERROR "`hostname' not implemented on the given platform")
-    SET(${RES} "<host-unknown>")
-  ENDIF ()
-  STRING (REGEX REPLACE "\n" "" ${RES} ${${RES}})
-ENDMACRO ()
-
-# Get current user.
-MACRO (GET_USERNAME RES)
-  IF (UNIX)
-    EXECUTE_PROCESS(COMMAND "whoami" OUTPUT_VARIABLE ${RES})
-  ELSE ()
-    MESSAGE(SEND_ERROR "`hostname' not implemented on the given platform")
-    SET(${RES} "<user-unknown>")
-  ENDIF ()
-  STRING (REGEX REPLACE "\n" "" ${RES} ${${RES}})
-ENDMACRO ()
-
 # Get svn version.
 #INCLUDE (FindSubversion)
 #Subversion_WC_INFO (${PROJECT_SOURCE_DIR} SVN)
@@ -267,17 +279,27 @@ SET (SVN_WC_REVISION "test-version")
 
 # FIXME build-style should come from options.
 SET (BUILD_STYLE  "developer")
-GET_DATE (DATE)
-GET_HOSTNAME (HOST_NAME)
+
+# Get current date and time.
+CURRENT_TIME (DATE)
+
+# Get the name of the machine we are compiling sac2c on.
+SITE_NAME (HOST_NAME)
+
+# Get current user.
+# FIXME why the hell this is useful?
 GET_USERNAME (USER_NAME)
+
+
 SET (REVISION ${SVN_WC_REVISION})
 SET (REVISION_NUMBER ${SVN_WC_REVISION})
 
 # Get an md5 hash of the `ast.xml'.
 SET (XMLDIR  "${PROJECT_SOURCE_DIR}/src/libsac2c/xml")
-SET (MD5CALC )
+# FIXME This can be acheived by the internal cmake md5 mechanisms.
+SET (MD5CALC)
 EXECUTE_PROCESS (
-  COMMAND   ${XSLT_EXEC}  "${XMLDIR}/ast2fingerprint.xsl" "${XMLDIR}/ast.xml" 
+  COMMAND   ${XSLT_EXEC}  "${XMLDIR}/ast2fingerprint.xsl" "${XMLDIR}/ast.xml"
   COMMAND   "${PROJECT_BINARY_DIR}/md5"
   OUTPUT_VARIABLE AST_MD5
 )
@@ -393,7 +415,7 @@ ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   SET (LD_DYNAMIC   "-dy -shared -Wl,-allow-shlib-undefined")
   SET (LD_PATH      "-L%path% -Wl,-rpath,%path%")
   SET (LD_FLAGS     "-Wl,-allow-shlib-undefined")
-ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES ".*osf.*") 
+ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES ".*osf.*")
   SET (OSFLAGS      "-D_OSF_SOURCE")
   SET (LD_DYNAMIC   "")
   SET (LD_PATH      "-L%path%")

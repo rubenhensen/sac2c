@@ -5,10 +5,10 @@ PROJECT (sac C)
 
 # SET (CMAKE_VERBOSE_MAKEFILE ON)
 
+include ("cmake/macros.cmake")
 include ("cmake/options.cmake")
 include ("cmake/config.cmake")
 include ("cmake/settings.cmake")
-include ("cmake/macros.cmake")
 
 # Include common directories for the project.
 INCLUDE_DIRECTORIES(
@@ -70,7 +70,9 @@ ADD_SUBDIRECTORY (src)
 
 # Make sac2c binary
 ADD_EXECUTABLE (sac2c src/tools/sac2c/sac2c.c)
-TARGET_LINK_LIBRARIES (sac2c ${M_PATH} ${DL_PATH} ${UUID_PATH})
+ADD_DEPENDENCIES (sac2c sac_h)
+TARGET_LINK_LIBRARIES (sac2c ${M_LIB} ${DL_LIB} ${UUID_LIB})
+
 
 
 
