@@ -22,6 +22,7 @@
 #define DBUG_PREFIX "UNDEFINED"
 #include "debug.h"
 
+// this is used for RTSPEC_MODE_SIMPLE
 #define ScanArglist(cnt, inc, sep_str, sep_code, code)                                   \
     {                                                                                    \
         int i;                                                                           \
@@ -33,6 +34,18 @@
             code;                                                                        \
         }                                                                                \
     }
+
+// this is used for all other modes
+#define SCAN_ARG_LIST(cnt, inc, sep_str, sep_code, code)                                 \
+    do {                                                                                 \
+        for (int i = 0; i < cnt * inc; i += inc) {                                       \
+            if (i > 0) {                                                                 \
+                out ("%s", sep_str);                                                     \
+                sep_code;                                                                \
+            }                                                                            \
+            code;                                                                        \
+        }                                                                                \
+    } while (0)
 
 /******************************************************************************
  *
@@ -91,6 +104,120 @@ ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
 
 /** <!--*******************************************************************-->
  *
+ * @fn ICMCompileRTSPEC_FUN_AP( char *modname, char *name, char *srcname, char
+ **rettype_NT, char *retname, int vararg_cnt, char **vararg)
+ *
+ * @brief Implements the ICM for the function application with runtime
+ *        specialization wrapper code.
+ *
+ ****************************************************************************/
+void
+ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *rettype_NT,
+                         char *retname, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ();
+
+#define RTSPEC_FUN_AP
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef RTSPEC_FUN_AP
+
+    if (!STReq (retname, "")) {
+        indout ("%s = %s(", retname, name);
+    } else {
+
+        indout ("SAC_RTSPEC_BLOCK_START()\n");
+
+        indout ("SAC_WE_DECL_REG_FLAG()\n");
+
+        indout ("SAC_WE_DECL_REG_OBJ()\n");
+
+        indout ("SAC_WE_DECL_MOD( \"%s\")\n", modname);
+
+        indout ("SAC_WE_DECL_FUN( \"%s\")\n", srcname);
+
+        indout ("SAC_WE_DECL_SHAPE_ARRAY()\n");
+
+        indout ("SAC_WE_DECL_I_J()\n");
+
+        /*
+         * Encode the base type information.
+         */
+        size_t type_string_size = 1;
+
+        int i = 0;
+        int arg_cnt = 0;
+
+        i = 0;
+        for (; i < vararg_cnt * 3; i += 3) {
+            if (STReq (vararg[i], "in")) {
+                type_string_size += STRlen (vararg[i + 1]) + 1;
+                arg_cnt++;
+            }
+        }
+
+        indout ("SAC_WE_CALC_SIZE( %d", arg_cnt);
+
+        char *types = (char *)malloc (type_string_size * sizeof (char));
+
+        types[0] = '\0';
+
+        i = 0;
+        for (; i < vararg_cnt * 3; i += 3) {
+            if (STReq (vararg[i], "in")) {
+                strcat (types, vararg[i + 1]);
+                strcat (types, "-");
+                out (" + SAC_WE_GET_DIM( %s)", vararg[i + 2]);
+            }
+        }
+
+        out (")\n");
+
+        indout ("SAC_WE_ALLOC_SHAPE_ARRAY()\n");
+
+        indout ("SAC_WE_SET_NUM_ARGS( %d)\n", arg_cnt);
+
+        i = 0;
+        for (; i < vararg_cnt * 3; i += 3) {
+            if (STReq (vararg[i], "in")) {
+                indout ("SAC_WE_GET_SHAPE( %s)\n", vararg[i + 2]);
+            }
+        }
+
+        out ("#pragma GCC diagnostic push\n");
+        out ("#pragma GCC diagnostic ignored \"-Wpedantic\"\n");
+        indout ("SAC_RTSPEC_ENQ_REQ_CHK(%s, %s)\n", types, name);
+        indout ("SAC_WE_PTR_CAST( ");
+
+        if (rettype_NT[0] != '\0') {
+            out ("SAC_ND_TYPE_NT( %s), ", rettype_NT);
+        } else {
+            out ("void, ");
+        }
+
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                       out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
+                            vararg[i + 1]));
+
+        out (")(");
+    }
+
+    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                   out (" SAC_ND_ARG_%s( %s, %s)", vararg[i], vararg[i + 2],
+                        vararg[i + 1]));
+
+    out (");\n");
+
+    if (STReq (retname, "")) {
+        out ("#pragma GCC diagnostic pop\n");
+        indout ("SAC_RTSPEC_BLOCK_END()\n");
+    }
+
+    DBUG_RETURN ();
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn ICMCompileWE_FUN_AP( char *name, char *retname, int vararg_cnt,
  *                          char **vararg)
  *
@@ -143,11 +270,7 @@ ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, int vararg_cnt
         fprintf (global.outfile, "#pragma GCC diagnostic push\n");
         fprintf (global.outfile, "#pragma GCC diagnostic ignored \"-Wpedantic\"\n");
         INDENT;
-        if (global.rtspec_mode == RTSPEC_MODE_SIMPLE) {
-            fprintf (global.outfile, "SAC_WE_FUNAP2(%s, %s)\n", types, name);
-        } else {
-            fprintf (global.outfile, "SAC_RTSPEC_ENQ_REQ_CHK(%s, %s)\n", types, name);
-        }
+        fprintf (global.outfile, "SAC_WE_FUNAP2(%s, %s)\n", types, name);
         INDENT;
         fprintf (global.outfile, "SAC_WE_PTR_CAST( ");
 

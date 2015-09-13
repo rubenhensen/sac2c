@@ -33,6 +33,10 @@
         SAC_finalizeController ();                                                       \
     }
 
+#define SAC_RTSPEC_BLOCK_START() {
+
+#define SAC_RTSPEC_BLOCK_END() }
+
 #define SAC_RTSPEC_CURRENT_THREAD_ID() SAC_RTSPEC_CurrentThreadId ();
 
 /*
@@ -161,5 +165,7 @@
 #define SAC_RTSPEC_FINALIZE()
 
 #define SAC_RTSPEC_CURRENT_THREAD_ID() 0;
+
+#define SAC_RTSPEC_ENQ_REQ_CHK(types, name)
 
 #endif /* SAC_DO_RTSPEC */

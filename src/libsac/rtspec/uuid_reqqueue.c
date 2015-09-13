@@ -323,6 +323,11 @@ SAC_UUID_enqueueRequest (char *func_name, char *types, int *shapes, int shapes_s
         return;
     }
 
+    if (strcmp (registry->module, "_MAIN") == 0) {
+        // we do not support specializing functions within main yet
+        return;
+    }
+
     pthread_mutex_lock (&uuid_queue_mutex);
 
     uuid_queue_node_t *xnew

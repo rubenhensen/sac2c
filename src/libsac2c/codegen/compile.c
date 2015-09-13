@@ -44,6 +44,7 @@
 #include "types.h"
 #include "cuda_utils.h"
 #include "regression.h"
+#include "namespaces.h"
 
 #define FOLDFIX_LABEL_GENERATION_ACTIVE 1
 
@@ -2266,7 +2267,8 @@ MakeFunApArgs (node *ap)
         }
     }
 
-    if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
+    if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)
+        || (FUNDEF_RTSPECID (fundef) != NULL && global.rtspec)) {
         argtab_t *fundef_argtab;
 
         fundef_argtab = FUNDEF_ARGTAB (fundef);
@@ -2282,6 +2284,11 @@ MakeFunApArgs (node *ap)
                                       RET_TYPE (fundef_argtab->ptr_out[0]))),
                                     icm_args);
         }
+    }
+
+    if (FUNDEF_RTSPECID (fundef) != NULL && global.rtspec) {
+        icm_args
+          = TBmakeExprs (TCmakeIdCopyString (FUNDEF_SOURCENAME (fundef)), icm_args);
     }
 
     icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (fundef)), icm_args);
@@ -4499,6 +4506,11 @@ COMPap (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("CUDA_ST_GLOBALFUN_AP", icm_args);
     } else if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
         icm = TBmakeIcm ("WE_FUN_AP", icm_args);
+    } else if (FUNDEF_RTSPECID (fundef) != NULL && global.rtspec) {
+        icm_args = TBmakeExprs (TCmakeIdCopyString (
+                                  NSgetModule (MODULE_NAMESPACE (INFO_MODUL (arg_info)))),
+                                icm_args);
+        icm = TBmakeIcm ("RTSPEC_FUN_AP", icm_args);
     } else if (global.backend == BE_distmem && AP_DISTMEMHASSIDEEFFECTS (arg_node)) {
         /* This function application has side effects. We have to treat it in a special
          * way. */
