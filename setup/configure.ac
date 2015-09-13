@@ -125,6 +125,10 @@ AC_SUBST([ENABLE_UUID], [$enable_uuid])
 enable_crypt=no
 AC_SEARCH_LIBS([crypt], [crypt], [enable_crypt=yes], [enable_crypt=no])
 AC_CHECK_HEADER([crypt.h], [enable_crypt=yes], [enable_crypt=no])
+have_crypt=`if test $enable_crypt = yes; then echo 1; else echo 0; fi`
+AC_DEFINE_UNQUOTED([ENABLE_HASH], [$have_crypt],
+                   [Define to 1 if libcrypt is available, otherwise 0.])
+AC_SUBST([ENABLE_HASH], [$enable_crypt])
 
 dnl set rtspec flag
 enable_rtspec=no

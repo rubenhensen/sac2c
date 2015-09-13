@@ -231,7 +231,13 @@ GLOBAL (bool, rtspec, FALSE, xfree_dummy, )
 /*
  * Runtime specialization mode.
  */
+#if ENABLE_UUID
+GLOBAL (int, rtspec_mode, 2, xfree_dummy, )
+#elif ENABLE_HASH
+GLOBAL (int, rtspec_mode, 1, xfree_dummy, )
+#else
 GLOBAL (int, rtspec_mode, 0, xfree_dummy, )
+#endif /* ENABLE_UUID */
 
 /*
  * Type info provided as a commandline argument for runtime optimization.

@@ -24,9 +24,11 @@
 #include <uuid/uuid.h>
 #endif /* ENABLE_UUID */
 
+#if ENABLE_HASH
 #include <time.h>
 #include <unistd.h>
 #include <crypt.h>
+#endif /* ENABLE_HASH */
 
 struct INFO {
     node *module;
@@ -110,11 +112,13 @@ UIDfundef (node *arg_node, info *arg_info)
 #if ENABLE_UUID
     uuid_t uuid;
 #endif /* ENABLE_UUID */
+#if ENABLE_HASH
     time_t seconds;
     char hostname[1024];
     hostname[1023] = '\0';
-    char *str_uuid;
+    char *str_id;
     char *str_seconds;
+#endif /* ENABLE_HASH */
 
     if (FUNDEF_ISLOCAL (arg_node) && !FUNDEF_ISWRAPPERFUN (arg_node)
         && !FUNDEF_ISCONDFUN (arg_node) && !FUNDEF_ISLOOPFUN (arg_node)) {
@@ -125,33 +129,31 @@ UIDfundef (node *arg_node, info *arg_info)
         }
 
         if (INFO_ISGENERIC (arg_info)) {
-            FUNDEF_RTSPECID (arg_node) = (char *)malloc (sizeof (char) * 36);
+            FUNDEF_RTSPECID (arg_node) = (char *)MEMmalloc (sizeof (char) * 37);
 
 #if ENABLE_UUID
             if (global.rtspec_mode == RTSPEC_MODE_UUID) {
                 uuid_generate (uuid);
                 uuid_unparse_lower (uuid, FUNDEF_RTSPECID (arg_node));
-            } else {
-#else
-            if (global.rtspec_mode == RTSPEC_MODE_HASH) {
+            }
 #endif /* ENABLE_UUID */
-                FUNDEF_RTSPECID (arg_node) = (char *)malloc (sizeof (char) * 36);
 
+#if ENABLE_HASH
+            if (global.rtspec_mode == RTSPEC_MODE_HASH) {
                 gethostname (hostname, 1023);
                 seconds = time (NULL);
 
-                str_seconds = (char *)malloc (sizeof (char) * 11);
-                sprintf (str_seconds, "%ld", (long)seconds);
+                str_seconds = (char *)MEMmalloc (sizeof (char) * 11);
+                snprintf (str_seconds, 11, "%ld", (long)seconds);
 
-                str_uuid = (char *)malloc (sizeof (char)
-                                           * (STRlen (FUNDEF_NAME (arg_node)) + 1035));
-                str_uuid = STRcat (FUNDEF_NAME (arg_node), hostname);
-                str_uuid = STRcat (str_uuid, str_seconds);
+                str_id = STRcatn (3, FUNDEF_NAME (arg_node), hostname, str_seconds);
 
-                FUNDEF_RTSPECID (arg_node) = STRcpy (crypt (str_uuid, "$1$RTspec$"));
+                FUNDEF_RTSPECID (arg_node) = STRcpy (crypt (str_id, "$1$RTspec$"));
 
-                free (str_uuid);
+                MEMfree (str_id);
+                MEMfree (str_seconds);
             }
+#endif /* ENABLE_HASH */
         }
     }
 
@@ -205,20 +207,17 @@ UIDdoSetFunctionIDs (node *arg_node)
 {
     DBUG_ENTER ();
 
-    if (global.rtspec_mode == RTSPEC_MODE_HASH
-        || global.rtspec_mode == RTSPEC_MODE_UUID) {
-        info *info = NULL;
+    info *info = NULL;
 
-        info = MakeInfo (info);
+    info = MakeInfo (info);
 
-        TRAVpush (TR_uid);
+    TRAVpush (TR_uid);
 
-        arg_node = TRAVdo (arg_node, info);
+    arg_node = TRAVdo (arg_node, info);
 
-        TRAVpop ();
+    TRAVpop ();
 
-        info = FreeInfo (info);
-    }
+    info = FreeInfo (info);
 
     DBUG_RETURN (arg_node);
 }

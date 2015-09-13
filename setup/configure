@@ -648,6 +648,7 @@ OPT_O2
 OPT_O1
 OPT_O0
 ENABLE_RTSPEC
+ENABLE_HASH
 ENABLE_UUID
 SHARED_LIB_EXT
 DOT
@@ -6127,6 +6128,14 @@ else
   enable_crypt=no
 fi
 
+
+have_crypt=`if test $enable_crypt = yes; then echo 1; else echo 0; fi`
+
+cat >>confdefs.h <<_ACEOF
+#define ENABLE_HASH $have_crypt
+_ACEOF
+
+ENABLE_HASH=$enable_crypt
 
 
 enable_rtspec=no

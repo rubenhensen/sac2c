@@ -1,5 +1,5 @@
 /** <!--********************************************************************-->
- * @file  abstract_controller.c
+ * @file  supervisor.c
  *
  * @brief  This file contains the shared functionality between all different
  *         implementations of a dynamic specialization controller.
@@ -7,6 +7,10 @@
  * @author tvd, hmw
  *
  *****************************************************************************/
+
+#include "config.h"
+
+#if ENABLE_RTSPEC
 
 #include <stdlib.h>
 #include <pthread.h>
@@ -204,3 +208,5 @@ SAC_finalizeController (void)
         SAC_UUID_finalizeController ();
     }
 }
+
+#endif /* ENABLE_RTSPEC */

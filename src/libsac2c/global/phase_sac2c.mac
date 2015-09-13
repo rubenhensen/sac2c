@@ -152,7 +152,10 @@ SUBPHASE (exp, "Exporting symbols", EXPdoExport, ALWAYS, exp)
 SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optimize.dodfr,
           exp)
 
-SUBPHASE (uid, "Set unique ids for generic functions", UIDdoSetFunctionIDs, ALWAYS, exp)
+SUBPHASE (uid, "Set unique ids for generic functions", UIDdoSetFunctionIDs,
+          global.rtspec_mode == RTSPEC_MODE_HASH
+            || global.rtspec_mode == RTSPEC_MODE_UUID,
+          exp)
 
 SUBPHASE (ser, "Serializing syntax tree", SERdoSerialize,
           ((global.filetype == FT_modimp) || (global.filetype == FT_classimp)), exp)

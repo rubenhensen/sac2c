@@ -31,6 +31,9 @@
 /* Define to 1 if MPI conduit is supported, otherwise 0. */
 #undef ENABLE_DISTMEM_MPI
 
+/* Define to 1 if libcrypt is available, otherwise 0. */
+#undef ENABLE_HASH
+
 /* Define to 1 if pthreads are available and MT is enabled, otherwise 0. */
 #undef ENABLE_MT
 
