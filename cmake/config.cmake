@@ -36,7 +36,8 @@ ENDMACRO ()
 # System-dependent variables.
 SET (OS       "${CMAKE_SYSTEM}")
 SET (ARCH     "${CMAKE_SYSTEM_PROCESSOR}")
-
+# FIXME use CYGWIN value directly
+SET (IS_CYGWIN  ${CYGWIN})
 
 # Check for Link Time Optimisation
 SET (HAVE_LTO   OFF)
@@ -127,7 +128,10 @@ ENDIF ()
 IF (OMP)
     FIND_PACKAGE (OpenMP)
     IF (OPENMP_FOUND)
+        # FIXME We can use only one of the variables.  I.e. of course
+        # we have openmp if it is enabled.
         SET (ENABLE_OMP      ON)
+        SET (HAVE_OPENMP     ON)
         SET (OPENMP_CFLAGS   ${OpenMP_C_FLAGS})
     ENDIF ()
 ENDIF ()
@@ -178,6 +182,9 @@ FILE *_db_fp_ = stderr;
 " STDERR_IS_CONSTANT)
 
 
+# FIXME This doesn't check if CLOCK_PROCESS_CPUTIME_ID is supported
+CHECK_LIBRARY_EXISTS ("rt" "clock_gettime" "" HAVE_GETTIME)
+
 
 # Check compiler identities variables.
 # FIXME  CMake has builtin flag CMAKE_C_COMPILER_ID
@@ -213,12 +220,17 @@ FIND_PROGRAM (MUTC_EXEC
   HINTS   ENV PATH
   DOC	  "Chek for Mutc slc.")
 
-# Check for options meeting requirements.
-# Dot program
-FIND_PROGRAM (DOT_FLAG
-  NAME    dot
-  HINTS   ENV PATH
-  DOC	  "Dot graph visualizer")
+# Check for the dot program in case we are compiling with dot support.
+IF (DOT)
+    FIND_PROGRAM (DOT_CMD
+        NAME    dot
+        HINTS   ENV PATH
+        DOC	"Dot graph visualizer")
+    # FIXME the name DOT_FLAG is moronic.
+    SET (DOT_FLAG   ON)
+ELSE ()
+    SET (DOT_FLAG   OFF)
+ENDIF ()
 
 # Cuda
 # FIXME  Make sure that it is enough of a check.

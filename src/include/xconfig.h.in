@@ -1,46 +1,70 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-/* FIXME This is a hack of course.  */
-#define ARCH "@CMAKE_SYSTEM@"
-#define OS "@CMAKE_SYSTEM_NAME@"
+/* Here is a script to verify if all the symbols defined in the original
+   config.h.in that are being used in the code are available here.
 
+   for s in $(cat /tmp/confsymb.txt); do
+        if find ./src \( -iname '*.[ch]' -o -iname '*.mac' -o -iname '*.m4' \) \
+                -exec grep $s {} \+ >/dev/null; then
+            echo "YES - $s";
+        else
+            echo " NO - $s";
+        fi
+    done | sort  */
+
+#define ARCH                    "@ARCH@"
+
+// FIXME define this later
+#undef DISTMEM_GASNET_CONDUITS
+
+// Dot-related configuration
+#define DOT_CMD                 "@DOT_CMD@"
 #cmakedefine01 DOT_FLAG
 
 #cmakedefine01 ENABLE_CUDA
-#cmakedefine01 ENABLE_PHM
+
+// FIXME distmem-related stuff
+#undef ENABLE_DISTMEM
+#undef ENABLE_DISTMEM_ARMCI
+#undef ENABLE_DISTMEM_GASNET
+#undef ENABLE_DISTMEM_GPI
+#undef ENABLE_DISTMEM_MPI
+
+
 #cmakedefine01 ENABLE_MT
+#cmakedefine01 ENABLE_MT_LPEL
 #cmakedefine01 ENABLE_MUTC
 #cmakedefine01 ENABLE_OMP
+#cmakedefine01 ENABLE_PHM
 #cmakedefine01 ENABLE_RTSPEC
-
-
-/*
-    These guys are not used.
-
-    #cmakedefine01 HAVE_DLFCN_H
-    #cmakedefine01 HAVE_INTTYPES_H
-    #cmakedefine01 HAVE_MEMORY_H
-    #cmakedefine01 HAVE_PTHREAD_H
-    #cmakedefine01 HAVE_OMP_H
-    #cmakedefine01 HAVE_STDINT_H
-*/
-
+#cmakedefine01 HAVE_GCC_SIMD_OPERATIONS
+#cmakedefine01 HAVE_GETTIME
 #cmakedefine01 HAVE_MALLOC_H
-#cmakedefine01 HAVE_STRTOK
-#cmakedefine01 HAVE_STRRCHR
 #cmakedefine01 HAVE_MKDTEMP
+#cmakedefine01 HAVE_OPENMP
+#cmakedefine01 HAVE_STRRCHR
+#cmakedefine01 HAVE_STRTOK
 
-/* STDERR_IS_CONSTANT is going to be checked with ifdef.  */
+// FIXME the source could be updated to use CYGWIN instead of IS_CYGWIN
+#cmakedefine01 IS_CYGWIN
+
+
+#cmakedefine01 NEED_PTR_PREFIX
+
+
+#define OS                      "@OS@"
+
+#define PF_MAXFUN               @PF_MAXFUN@
+#define PF_MAXFUNAP             @PF_MAXFUNAP@
+#define PF_MAXFUNNAMELEN        @PF_MAXFUNNAMELEN@
+#define SAC_PRELUDE_NAME        "@SAC_PRELUDE_NAME@"
+#define SBRK_T                  @SBRK_T@
+
+// XXX we do not define SHARED_LIB_EXT here, as it is used only when building tools
+
 #cmakedefine STDERR_IS_CONSTANT
 
-
-#define MAX_PATH_LEN  @MAX_PATH_LEN@
-#define MAX_FILE_NAME  @MAX_FILE_NAME@
-#define PF_MAXFUN  @PF_MAXFUN@
-#define PF_MAXFUNAP  @PF_MAXFUNAP@
-#define PF_MAXFUNNAMELEN  @PF_MAXFUNNAMELEN@
-#define SAC_PRELUDE_NAME  "@SAC_PRELUDE_NAME@"
-#define SBRK_T  @SBRK_T@
+#define UNUSED __attribute__((unused))
 
 #endif /* __CONFIG_H__  */
