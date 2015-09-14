@@ -33,7 +33,7 @@ extern mallocinfo_t *malloctable;
 extern mallocphaseinfo_t phasetable[];
 
 void
-CHKMdeinitialize ()
+CHKMdeinitialize (void)
 {
     DBUG_ENTER ();
 

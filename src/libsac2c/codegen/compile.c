@@ -277,6 +277,8 @@ GetBasetypeStr (types *type)
     if (basetype == T_user) {
         str = TYPES_NAME (type);
         DBUG_ASSERT (str != NULL, "Name of user-defined type not found");
+    } else if (basetype == T_bool_dev) {
+        str = "bool";
     } else if (basetype == T_float_dev || basetype == T_float_shmem) {
         str = "float";
     } else if (basetype == T_int_dev || basetype == T_int_shmem) {

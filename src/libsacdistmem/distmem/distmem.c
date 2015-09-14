@@ -513,7 +513,7 @@ SAC_DISTMEM_Barrier (void)
 }
 
 static void
-PrintTraceSummary ()
+PrintTraceSummary (void)
 {
     SAC_TR_DISTMEM_PRINT ("   Invalidated pages: %lu", SAC_DISTMEM_TR_num_inval_pages);
     SAC_TR_DISTMEM_PRINT ("   Seg faults: %lu", SAC_DISTMEM_TR_num_segfaults);

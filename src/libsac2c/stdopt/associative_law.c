@@ -393,6 +393,35 @@ identifyInverses (prf inverse_prf, node **head)
     DBUG_RETURN (res);
 }
 
+// Crude workaround to get AL to ignore eq/neq
+static bool
+isEqNeqPrf (prf fun)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    switch (fun) {
+
+    case F_eq_SxS:
+    case F_eq_SxV:
+    case F_eq_VxS:
+    case F_eq_VxV:
+
+    case F_neq_SxS:
+    case F_neq_SxV:
+    case F_neq_VxS:
+    case F_neq_VxV:
+        res = TRUE;
+        break;
+
+    default:
+        res = FALSE;
+    }
+
+    DBUG_RETURN (res);
+}
+
 bool
 ALisAssociativeAndCommutativePrf (prf fun)
 {
@@ -1203,7 +1232,7 @@ ALprf (node *arg_node, info *arg_info)
 
     prf = PRF_PRF (arg_node);
 
-    if ((INFO_MODE (arg_info) == MODE_transform)
+    if ((INFO_MODE (arg_info) == MODE_transform) && (!isEqNeqPrf (prf))
         && ALisAssociativeAndCommutativePrf (prf)) {
 
         ltype = IDS_NTYPE (INFO_LHS (arg_info));

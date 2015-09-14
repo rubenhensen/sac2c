@@ -80,7 +80,8 @@ IsInplaceSelect (node *id)
     cass = AVIS_SSAASSIGN (ID_AVIS (id));
 
     if ((cass != NULL) && (NODE_TYPE (ASSIGN_RHS (cass)) == N_prf)
-        && (PRF_PRF (ASSIGN_RHS (cass)) == F_sel_VxA)) {
+        && ((PRF_PRF (ASSIGN_RHS (cass)) == F_sel_VxA)
+            || (PRF_PRF (ASSIGN_RHS (cass)) == F_idx_sel))) {
         res = PRF_ISINPLACESELECT (ASSIGN_RHS (cass));
     }
 

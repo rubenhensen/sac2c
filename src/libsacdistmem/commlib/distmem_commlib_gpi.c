@@ -93,7 +93,7 @@ get_seg (gaspi_rank_t at, int segid_type)
 }
 
 static char *
-get_local_shared_seg ()
+get_local_shared_seg (void)
 {
     return get_seg (SAC_DISTMEM_rank, SEGID_SHARED_SEG);
 }

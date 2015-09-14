@@ -106,6 +106,7 @@
 struct INFO {
     node *fundef;
     lut_t *varlut;
+    node *loopcount;
 };
 
 /**
@@ -113,6 +114,7 @@ struct INFO {
  */
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_VARLUT(n) ((n)->varlut)
+#define INFO_LOOPCOUNT(n) ((n)->loopcount)
 
 static info *
 MakeInfo (void)
@@ -124,6 +126,7 @@ MakeInfo (void)
     result = (info *)MEMmalloc (sizeof (info));
     INFO_FUNDEF (result) = NULL;
     INFO_VARLUT (result) = NULL;
+    INFO_LOOPCOUNT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -213,6 +216,7 @@ PHUTprintIslAffineFunctionTree (node *arg_node)
     DBUG_RETURN ();
 }
 
+#ifdef FIXME
 /** <!-- ****************************************************************** -->
  *
  * @fn node *RemoveRcaAssign( node *relarg, node *rca)
@@ -238,7 +242,6 @@ RemoveRcaAssign (node *relarg, node *rca)
 {
     DBUG_ENTER ();
 
-#ifdef FIXME
     node *z = NULL;
     node *exprsouter;
     node *exprs;
@@ -271,10 +274,10 @@ RemoveRcaAssign (node *relarg, node *rca)
         }
         exprsouter = EXPRS_NEXT (exprsouter);
     }
-#endif // FIXME
 
     DBUG_RETURN (relarg);
 }
+#endif // FIXME
 
 /** <!-- ****************************************************************** -->
  *
@@ -682,8 +685,8 @@ findBoundEl (node *arg_node, node *bnd, int k, info *arg_info)
  *        We also have to ensure that these constraints are generated
  *        whenever there is ANY reference to a WITHID_IDS.
  *
- *        One key simplification here is that SAC requires that wid <= stp, and that
- *        both be constants.
+ *        A key simplification here is that SAC requires that wid <= stp,
+ *        and that wid and stp be constants.
  *
  *        NB. lb, ub, stp, and wid are N_num or N_id nodes.
  *
@@ -1024,6 +1027,7 @@ isDyadicPrf (prf nprf)
     DBUG_RETURN (z);
 }
 
+#ifdef CODEME
 /** <!-- ****************************************************************** -->
  *
  * @fn bool isLoopfunCond( prf nprf)
@@ -1058,6 +1062,7 @@ isLoopfunCond (prf nprf)
 
     DBUG_RETURN (z);
 }
+#endif // CODEME
 
 /** <!-- ****************************************************************** -->
  *
@@ -1124,7 +1129,7 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *HandleInductionVariable()
+ * @fn node *getLoopCount()
  *
  * @brief Handler for N_id = nid
  *
@@ -1134,11 +1139,15 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
  * @param  res: the incoming N_exprs chain
  * @param  callerassign:
  *
+ * @result Updated res, ISL N_exprs chain
+ * @result Side effect is optionally to set INFO_LOOPCOUNT
+ *
  ******************************************************************************/
 static node *
-HandleInductionVariable (node *nid, node *rca, info *arg_info, node *res,
-                         node *callerassign, node *callerfundef, node *initialvalue)
+getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassign,
+              node *callerfundef, node *initialvalue)
 {
+#ifdef DEADCODE
     node *z = NULL;
     node *lim;
     node *ext_limit;
@@ -1151,13 +1160,15 @@ HandleInductionVariable (node *nid, node *rca, info *arg_info, node *res,
     int incrementsign = 0;
     bool swap;
     prf relfn;
+#endif // DEADCODE
 
     DBUG_ENTER ();
 
-    // If nid is the LoopfunCond, we have to do more work.
+#ifdef DEADCODE
     condprf = COND_COND (ASSIGN_STMT (LFUfindAssignForCond (INFO_FUNDEF (arg_info))));
     condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
-    if ((NULL != condprf) && isLoopfunCond (PRF_PRF (condprf))) {
+    if ((NULL != condprf) && (NULL == INFO_LOOPCOUNT (arg_info))
+        && (isLoopfunCond (PRF_PRF (condprf)))) {
         DBUG_ASSERT (N_prf == NODE_TYPE (condprf), "Expected relational in LOOPFUN");
         lim = (ID_AVIS (rca) == ID_AVIS (PRF_ARG1 (condprf))) ? PRF_ARG2 (condprf)
                                                               : PRF_ARG1 (condprf);
@@ -1239,6 +1250,8 @@ HandleInductionVariable (node *nid, node *rca, info *arg_info, node *res,
         }
     }
 
+#endif // DEADCODE
+
     DBUG_RETURN (res);
 }
 
@@ -1303,8 +1316,10 @@ PHUThandleLoopfunArg (node *nid, info *arg_info, node *res, node *callerassign,
     DBUG_ASSERT (N_id == NODE_TYPE (initialvalue), "Expected N_id for initialvalue");
     nidavis = ID_AVIS (nid);
 
-    // If the variable is loop-independent, we are done, except for peeking outside.
-    // See unit test ~/sac/testsuite/optimizations/pogorelationals/SCSprf_lt_SxS.LIR.sac
+    // If the variable is loop-independent, we are done, except for
+    // peeking outside.
+    // See unit test:
+    // ~/sac/testsuite/optimizations/pogorelationals/SCSprf_lt_SxS.LIR.sac
     reccallass = LFUfindRecursiveCallAssign (INFO_FUNDEF (arg_info));
     reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallass)));
     rca = LFUgetLoopVariable (nidavis, INFO_FUNDEF (arg_info), reccallargs);
@@ -1321,10 +1336,10 @@ PHUThandleLoopfunArg (node *nid, info *arg_info, node *res, node *callerassign,
     } else { // Handle recursive call for loop-dependent var
         DBUG_PRINT ("LACFUN arg %s is loop-dependent", AVIS_NAME (nidavis));
         // Attempt to determine loop count
-        res = HandleInductionVariable (nid, rca, arg_info, res, callerassign,
-                                       callerfundef, initialvalue);
+        res = getLoopCount (nid, rca, arg_info, res, callerassign, callerfundef,
+                            initialvalue);
 
-        // Leap into caller's world to collect the outer AFT for the initial value
+        // Leap into caller's world to get the outer AFT for the initial value
         z = PHUTgenerateAffineExprs (initialvalue, callerfundef, INFO_VARLUT (arg_info));
         res = TCappendExprs (res, z);
 

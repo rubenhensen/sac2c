@@ -4897,8 +4897,9 @@ PRTpart (node *arg_node, info *arg_info)
     tmp_npart = INFO_NPART (arg_info);
     INFO_NPART (arg_info) = arg_node;
 
-    fprintf (global.outfile, "/* Partn */\n"); // For automated partition counting
-                                               // by unit testing code.
+    // For automated partition counting by unit testing code
+    INDENT
+    fprintf (global.outfile, "/* Partn */\n");
 
     if (PART_CUDARIZABLE (arg_node)) {
         INDENT
