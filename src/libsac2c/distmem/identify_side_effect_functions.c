@@ -17,8 +17,6 @@
  * passed on directly.
  */
 
-/* TODO:   TYsetDistributed( AVIS_TYPE( memavis)) = distmem_dis_dsm; */
-
 #include "identify_side_effect_functions.h"
 
 #include "traverse.h"
@@ -167,26 +165,6 @@ DMISEFfundef (node *arg_node, info *arg_info)
 
     /* Continue to the next function if there is any. */
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/* Return value of function
-   We only traverse this nodes for functions with side effects. */
-node *
-DMISEFret (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (RET_ISARTIFICIAL (arg_node)) {
-        /* If the return value is not a reference parameter
-           it needs to be broadcast. */
-        RET_DISTMEMBROADCASTARG (arg_node) = TRUE;
-        // RET_TYPE( arg_node) = TYsetDistributed( RET_TYPE( arg_node), distmem_dis_dsm);
-    }
-
-    /* Traverse the next return value if there is any. */
-    RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

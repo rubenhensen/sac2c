@@ -1,0 +1,1 @@
+(export CROSS=distmemcheck; make "$@")

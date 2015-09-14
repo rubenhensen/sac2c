@@ -64,7 +64,8 @@ SAC_RuntimeError (char *format, ...)
     if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {
         fprintf (stderr, "\n\n*** SAC runtime error\n");
     } else {
-        fprintf (stderr, "\n\n*** SAC runtime error at node %zd\n", SAC_DISTMEM_rank);
+        /* The distributed memory backend is used since the rank is defined. */
+        fprintf (stderr, "\n\n*** SAC runtime error at Node %zd\n", SAC_DISTMEM_rank);
     }
 
     va_start (arg_p, format);
@@ -86,7 +87,7 @@ SAC_RuntimeError (char *format, ...)
 
     /* If the program does not use the distributed memory backend,
      * an empty dummy function in libsacdistmem.nodistmem will be called. */
-    SAC_DISTMEM_EXIT (1);
+    SAC_DISTMEM_ABORT (1);
 
     exit (1);
 }
@@ -129,7 +130,7 @@ SAC_RuntimeError_Mult (int cnt, ...)
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
-    SAC_DISTMEM_EXIT (1);
+    SAC_DISTMEM_ABORT (1);
 
     exit (1);
 }
@@ -159,7 +160,7 @@ SAC_RuntimeErrorLine (int line, char *format, ...)
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
-    SAC_DISTMEM_EXIT (1);
+    SAC_DISTMEM_ABORT (1);
 
     exit (1);
 }
@@ -174,7 +175,7 @@ SAC_RuntimeWarning (char *format, ...)
     if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {
         fprintf (stderr, "\n\n*** SAC runtime warning\n");
     } else {
-        fprintf (stderr, "\n\n*** SAC runtime warning at node %zd\n", SAC_DISTMEM_rank);
+        fprintf (stderr, "\n\n*** SAC runtime warning at Node %zd\n", SAC_DISTMEM_rank);
     }
 
     fprintf (stderr, "*** ");
@@ -186,6 +187,31 @@ SAC_RuntimeWarning (char *format, ...)
     fprintf (stderr, "\n\n");
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
+}
+
+/* Prints a runtime warning only at the master node.
+ * Useful for warnings that are not node- but program-specific. */
+void
+SAC_RuntimeWarningMaster (char *format, ...)
+{
+    va_list arg_p;
+
+    if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED
+        || SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER) {
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
+
+        fprintf (stderr, "\n\n*** SAC runtime warning\n");
+
+        fprintf (stderr, "*** ");
+
+        va_start (arg_p, format);
+        vfprintf (stderr, format, arg_p);
+        va_end (arg_p);
+
+        fprintf (stderr, "\n\n");
+
+        SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
+    }
 }
 
 #define MAX_SHAPE_SIZE 255

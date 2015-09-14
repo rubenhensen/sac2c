@@ -144,7 +144,8 @@ libsac2c_objects     := object_init resolve_reference_args object_analysis \
 
 libsac2c_nested      := generate_nested_type_conversions
 
-libsac2c_distmem     := identify_side_effect_functions identify_side_effect_function_aps identify_distributable_arrays
+libsac2c_distmem     := identify_side_effect_functions identify_side_effect_function_aps \
+                        identify_suballocated_arrays mark_local_selects
 
 libsac2c_generics    := remove_generic_definitions \
                         check_and_simplify_generic_definitions \
@@ -528,6 +529,16 @@ libsacdistmem_targets   += libsacdistmem$(CROSS_VARIANT).mpi.a \
                            libsacdistmem$(CROSS_VARIANT).mpi$(SHARED_LIB_EXT)
 endif
 
+ifeq  (yes, $(ENABLE_DISTMEM_ARMCI))
+libsacdistmem_targets   += libsacdistmem$(CROSS_VARIANT).armci.a \
+                           libsacdistmem$(CROSS_VARIANT).armci$(SHARED_LIB_EXT)
+endif
+
+ifeq  (yes, $(ENABLE_DISTMEM_GPI))
+libsacdistmem_targets   += libsacdistmem$(CROSS_VARIANT).gpi.a \
+                           libsacdistmem$(CROSS_VARIANT).gpi$(SHARED_LIB_EXT)
+endif
+
 libsacdistmem_targetdir := lib
 
 libsacdistmem_subtarget_suffix  := $(CROSS_VARIANT).o
@@ -546,7 +557,9 @@ libsacdistmem_sourcedirs := distmem commlib
 libsacdistmem_distmem    := distmem distmem_trace distmem_profile
 
 libsacdistmem_commlib    := distmem_commlib_gasnet distmem_commlib_gasnet_trace \
-                            distmem_commlib_mpi distmem_commlib_mpi_trace
+                            distmem_commlib_mpi distmem_commlib_mpi_trace \
+                            distmem_commlib_armci distmem_commlib_armci_trace \
+                            distmem_commlib_gpi distmem_commlib_gpi_trace
 
 
 

@@ -2,9 +2,10 @@
  *
  * file:   distmem.c
  *
- * prefix: SAC_DISTMEM_ (no tracing) / SAC_DISTMEM_TR_ (tracing)
+ * prefix: SAC_DISTMEM_ (no tracing) / SAC_DISTMEM_TR_ (tracing) / SAC_DISTMEM_PR_
+ *(profiling)
  *
- * description:
+ * description: communication library-independent part of libsacdistmem
  *
  *****************************************************************************/
 
@@ -13,6 +14,15 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <inttypes.h>
+#include <errno.h>
+
+/*
+ * We need this extern declaration here rather than including
+ * the corresponding header file because the further declarations in
+ * string.h conflict with SAC-generated headers in the SAC string module.
+ */
+
+extern char *strerror (int errnum);
 
 #include "config.h"
 
@@ -29,6 +39,7 @@
 #define SAC_DO_PROFILE_DISTMEM 1
 #endif
 #define SAC_DO_DISTMEM 1
+#define SAC_DO_COMPILE_MODULE 1
 
 #include "sac.h"
 
@@ -36,6 +47,7 @@
 #undef SAC_DO_TRACE_DISTMEM
 #undef SAC_DO_PROFILE
 #undef SAC_DO_PROFILE_DISTMEM
+#undef SAC_DO_COMPILE_MODULE
 #undef SAC_DO_DISTMEM
 
 #include "distmem_commlib.h"
@@ -60,12 +72,12 @@ static UNUSED int SAC_DISTMEM_COMMLIB_dummy;
 size_t SAC_DISTMEM_rank = SAC_DISTMEM_RANK_UNDEFINED;
 
 /*
- * If not equal to SAC_DISTMEM_TRACE_RANK_ANY, only produce
+ * If not equal to SAC_DISTMEM_TRACE_PROFILE_RANK_ANY, only produce
  * trace output for this rank.
  * For tracing purposes we also need this when the distributed memory backend
  * is disabled. Therefore, it is also included into libsacdistmem.nodistmem
  */
-int SAC_DISTMEM_trace_rank = SAC_DISTMEM_TRACE_RANK_ANY;
+int SAC_DISTMEM_trace_profile_rank = SAC_DISTMEM_TRACE_PROFILE_RANK_ANY;
 
 #endif /* COMPILE_PLAIN */
 
@@ -92,10 +104,32 @@ int SAC_DISTMEM_trace_rank = SAC_DISTMEM_TRACE_RANK_ANY;
 /*
  * Unprotects a single memory page starting at page_ptr
  * (allows reads and writes).
+ *
+ * If mprotect fails with Error: 12 Cannot allocate memory
+ * the reason may be that we depleted the max map count.
+ * We have a limit on the number of maps you can have, mprotect()
+ * calls split maps like crazy.
+ *
+ * See setting: /proc/sys/vm/max_map_count
+ * and /proc/$pid/maps
+ *
+ * Change setting: sudo sysctl -w vm.max_map_count=1000000
  */
 #define SAC_DISTMEM_PROT_PAGE_WRITE(page_ptr)                                            \
     if (mprotect (page_ptr, SAC_DISTMEM_pagesz, PROT_WRITE) == -1) {                     \
-        SAC_RuntimeError ("Failed to unprotect memory.");                                \
+        if (errno == ENOMEM) {                                                           \
+            SAC_RuntimeError ("Failed to unprotect memory page from %p. Error: %d %s. "  \
+                              "If mprotect fails with 'Error: 12 Cannot allocate "       \
+                              "memory', "                                                \
+                              "the reason may be that we depleted the max map count. "   \
+                              "We have a limit on the number of maps we can have and "   \
+                              "mprotect() calls split maps like crazy. Try to "          \
+                              "increase /proc/sys/vm/max_map_count",                     \
+                              page_ptr, errno, strerror (errno));                        \
+        } else {                                                                         \
+            SAC_RuntimeError ("Failed to unprotect memory page from %p. Error: %d %s",   \
+                              page_ptr, errno, strerror (errno));                        \
+        }                                                                                \
     }
 
 #if COMPILE_TRACE || COMPILE_PROFILE
@@ -167,9 +201,6 @@ size_t SAC_DISTMEM_min_elems_per_node;
  * tracing/profiling
  *******************************************/
 
-/* Number of distributed arrays */
-unsigned long SAC_DISTMEM_TR_num_arrays = 0;
-
 /* Number of invalidated pages */
 unsigned long SAC_DISTMEM_TR_num_inval_pages = 0;
 
@@ -178,6 +209,21 @@ unsigned long SAC_DISTMEM_TR_num_segfaults = 0;
 
 /* Number of pointer calculations */
 unsigned long SAC_DISTMEM_TR_num_ptr_calcs = 0;
+
+/* Number of avoided pointer calculations for local writes */
+unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes = 0;
+
+/* Number of avoided pointer calculations for local reads */
+unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads = 0;
+
+/* Number of avoided pointer calculations for known to be local reads */
+unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_known_local_reads = 0;
+
+/* Number of avoided pointer calculations for remote reads */
+unsigned long SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads = 0;
+
+/* Number of pointer cache updates */
+unsigned long SAC_DISTMEM_TR_num_ptr_cache_updates = 0;
 
 /* Number of barriers */
 unsigned long SAC_DISTMEM_TR_num_barriers = 0;
@@ -245,23 +291,9 @@ SegvHandler (int sig, siginfo_t *si, void *unused)
                           owner_rank, local_page_ptr);
 
     /* Load the page from its owner node. */
+    SAC_PF_BeginComm ();
     SAC_DISTMEM_COMMLIB_LOAD_PAGE (local_page_ptr, owner_rank, remote_page_index);
-
-    /*
-    // TODO: implement this
-          MPI_SAFE(MPI_Win_lock(MPI_LOCK_SHARED, node, 0, win));
-          MPI_SAFE(MPI_Get(page, pagesize, MPI_BYTE, node, remote_page * pagesize,
-    pagesize, MPI_BYTE, win)); MPI_SAFE(MPI_Win_unlock(node, win));
-
-          ARMCI_SAFE(ARMCI_Get((void*)((uintptr_t)getseg(node) + remote_page * pagesize),
-    page, pagesize, node));
-
-          const gaspi_queue_id_t queue_id = 0;
-          uintptr_t local_offset = (uintptr_t)page - (uintptr_t)cache;
-          GPI_SAFE(gaspi_read(get_segid(rank, SEGID_LOCAL_CACHE), local_offset, node,
-    get_segid(node, SEGID_SHARED_SEG), remote_page * pagesize, pagesize, queue_id,
-    GASPI_BLOCK)); GPI_SAFE(gaspi_wait(queue_id, GASPI_BLOCK));
-    */
+    SAC_PF_EndComm ();
 }
 
 /** <!--********************************************************************-->
@@ -307,19 +339,22 @@ SAC_DISTMEM_Init (int argc, char *argv[])
 
 #if COMPILE_TRACE
 void
-SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank)
+SAC_DISTMEM_TR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profile_rank,
+                      bool alloc_cache_outside_dsm)
 #elif COMPILE_PROFILE
 void
-SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank)
+SAC_DISTMEM_PR_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profile_rank,
+                      bool alloc_cache_outside_dsm)
 #else /* COMPILE_PLAIN */
 void
-SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank)
+SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_profile_rank,
+                   bool alloc_cache_outside_dsm)
 #endif
 {
     size_t i;
 
     SAC_DISTMEM_min_elems_per_node = min_elems_per_node;
-    SAC_DISTMEM_trace_rank = trace_rank;
+    SAC_DISTMEM_trace_profile_rank = trace_profile_rank;
 
     /* Query system page size */
     int pagesz = sysconf (_SC_PAGE_SIZE);
@@ -335,7 +370,7 @@ SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank)
     SAC_TR_DISTMEM_PRINT ("Setting up communication library (min. elements/node: %zd).",
                           SAC_DISTMEM_min_elems_per_node);
 
-    SAC_DISTMEM_COMMLIB_SETUP (maxmem);
+    SAC_DISTMEM_COMMLIB_SETUP (maxmem, alloc_cache_outside_dsm);
 
     SAC_TR_DISTMEM_PRINT ("Size: %d", SAC_DISTMEM_size);
 
@@ -384,7 +419,9 @@ SAC_DISTMEM_Setup (size_t maxmem_mb, size_t min_elems_per_node, int trace_rank)
     SAC_DISTMEM_CH_max_valid_write_ptr
       = (uintptr_t)SAC_DISTMEM_shared_seg_ptr + SAC_DISTMEM_segsz;
 
-    SAC_DISTMEM_BARRIER ();
+    /* We cannot profile this barrier because otherwise libsacdistmem doesn't compile.
+     * Since we always need this barrier it wouldn't be useful anyways. */
+    SAC_DISTMEM_Barrier ();
 }
 
 #if COMPILE_TRACE
@@ -422,7 +459,7 @@ SAC_DISTMEM_InvalCache (uintptr_t arr_offset, size_t b)
             continue;
         }
 
-        SAC_DISTMEM_InvalCacheOfNode (arr_offset, i, b);
+        SAC_DISTMEM_INVAL_CACHE_OF_NODE (arr_offset, i, b);
     }
 }
 
@@ -475,6 +512,26 @@ SAC_DISTMEM_Barrier (void)
     }
 }
 
+static void
+PrintTraceSummary (void)
+{
+    SAC_TR_DISTMEM_PRINT ("   Invalidated pages: %lu", SAC_DISTMEM_TR_num_inval_pages);
+    SAC_TR_DISTMEM_PRINT ("   Seg faults: %lu", SAC_DISTMEM_TR_num_segfaults);
+    SAC_TR_DISTMEM_PRINT ("   Pointer calculations: %lu", SAC_DISTMEM_TR_num_ptr_calcs);
+    SAC_TR_DISTMEM_PRINT ("   Avoided pointer calculations (local writes): %lu",
+                          SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes);
+    SAC_TR_DISTMEM_PRINT ("   Avoided pointer calculations (local reads): %lu",
+                          SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads);
+    SAC_TR_DISTMEM_PRINT (
+      "   Avoided pointer calculations (known to be local reads): %lu",
+      SAC_DISTMEM_TR_num_avoided_ptr_calcs_known_local_reads);
+    SAC_TR_DISTMEM_PRINT ("   Avoided pointer calculations (remote reads): %lu",
+                          SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads);
+    SAC_TR_DISTMEM_PRINT ("   Pointer cache updates (remote reads): %lu",
+                          SAC_DISTMEM_TR_num_ptr_cache_updates);
+    SAC_TR_DISTMEM_PRINT ("   Barriers: %lu", SAC_DISTMEM_TR_num_barriers);
+}
+
 #if COMPILE_TRACE
 void
 SAC_DISTMEM_TR_Exit (int exit_code)
@@ -486,19 +543,58 @@ void
 SAC_DISTMEM_Exit (int exit_code)
 #endif
 {
+    SAC_TR_DISTMEM_PRINT ("Exiting communication library with exit code %d.", exit_code);
+
     /* Print heap manager diagnostics; */
     SAC_DISTMEM_HM_ShowDiagnostics ();
 
-    SAC_TR_DISTMEM_PRINT ("Exiting communication library with exit code %d.", exit_code);
+    PrintTraceSummary ();
 
-    SAC_TR_DISTMEM_PRINT ("   Distributed arrays: %lu", SAC_DISTMEM_TR_num_arrays);
-    SAC_TR_DISTMEM_PRINT ("   Invalidated pages: %lu", SAC_DISTMEM_TR_num_inval_pages);
-    SAC_TR_DISTMEM_PRINT ("   Seg faults: %lu", SAC_DISTMEM_TR_num_segfaults);
-    SAC_TR_DISTMEM_PRINT ("   Pointer calculations: %lu", SAC_DISTMEM_TR_num_ptr_calcs);
-    SAC_TR_DISTMEM_PRINT ("   Barriers: %lu", SAC_DISTMEM_TR_num_barriers);
-
-    SAC_DISTMEM_BARRIER ();
+    /* We cannot profile this barrier because otherwise libsacdistmem doesn't compile.
+     * Since we always need this barrier it wouldn't be useful anyways. */
+    SAC_DISTMEM_Barrier ();
     SAC_DISTMEM_COMMLIB_EXIT (exit_code);
+}
+
+#if COMPILE_TRACE
+void
+SAC_DISTMEM_TR_Abort (int exit_code)
+#elif COMPILE_PROFILE
+void
+SAC_DISTMEM_PR_Abort (int exit_code)
+#else /* COMPILE_PLAIN */
+void
+SAC_DISTMEM_Abort (int exit_code)
+#endif
+{
+    SAC_TR_DISTMEM_PRINT ("Aborting communication library with exit code %d.", exit_code);
+
+    /* Print some useful debug information. */
+    SAC_Print (
+      "Allocated memory: %zd MB per segment, %zd MB in total, seg size: %" PRIuPTR
+      " B, page size: %zd B\n",
+      SAC_DISTMEM_segsz / 1024 / 1024, SAC_DISTMEM_segsz * SAC_DISTMEM_size / 1024 / 1024,
+      SAC_DISTMEM_segsz, SAC_DISTMEM_pagesz);
+    for (size_t i = 0; i < SAC_DISTMEM_rank; i++) {
+        SAC_DISTMEM_local_seg_ptrs[i]
+          = (void *)((uintptr_t)SAC_DISTMEM_cache_ptr + SAC_DISTMEM_segsz * i);
+        SAC_Print ("Segment of %zd: %p\n", i, SAC_DISTMEM_local_seg_ptrs[i]);
+    }
+    SAC_DISTMEM_local_seg_ptrs[SAC_DISTMEM_rank] = SAC_DISTMEM_shared_seg_ptr;
+    SAC_Print ("Segment of %zd: %p\n", SAC_DISTMEM_rank,
+               SAC_DISTMEM_local_seg_ptrs[SAC_DISTMEM_rank]);
+    for (size_t i = SAC_DISTMEM_rank + 1; i < SAC_DISTMEM_size; i++) {
+        SAC_DISTMEM_local_seg_ptrs[i]
+          = (void *)((uintptr_t)SAC_DISTMEM_cache_ptr + SAC_DISTMEM_segsz * (i - 1));
+        SAC_Print ("Segment of %zd: %p\n", i, SAC_DISTMEM_local_seg_ptrs[i]);
+    }
+
+    /* Print heap manager diagnostics; */
+    SAC_DISTMEM_HM_ShowDiagnostics ();
+
+    PrintTraceSummary ();
+
+    SAC_DISTMEM_COMMLIB_ABORT (exit_code);
 }
 
 #if COMPILE_TRACE
@@ -515,8 +611,8 @@ SAC_DISTMEM_DetDoDistrArr (size_t total_elems, size_t dim0_size)
     bool do_dist = TRUE;
 
     if (SAC_DISTMEM_exec_mode != SAC_DISTMEM_exec_mode_sync) {
-        SAC_TR_DISTMEM_PRINT ("Array is not distributed because program is not in "
-                              "synchronous execution mode.");
+        // SAC_TR_DISTMEM_PRINT( "Array is not distributed because program is not in
+        // replicated execution mode.");
         return FALSE;
     }
 
@@ -539,8 +635,8 @@ SAC_DISTMEM_DetDoDistrArr (size_t total_elems, size_t dim0_size)
         }
     }
 
-    SAC_TR_DISTMEM_PRINT ("Distribute array of size %zd (size of dim0: %zd)? %d",
-                          total_elems, dim0_size, do_dist);
+    // SAC_TR_DISTMEM_PRINT( "Distribute array of size %zd (size of dim0: %zd)? %d",
+    // total_elems, dim0_size, do_dist);
 
     return do_dist;
 }
@@ -559,9 +655,8 @@ SAC_DISTMEM_DetMaxElemsPerNode (size_t total_elems, size_t dim0_size)
     size_t max_dim0 = DetMaxDim0SharePerNode (dim0_size);
     size_t max_elems = max_dim0 * total_elems / dim0_size;
 
-    SAC_TR_DISTMEM_PRINT ("Maximum number of elements/dim0 share per node is %zd/%zd for "
-                          "array of size/dim0 %zd/%zd.",
-                          max_elems, max_dim0, total_elems, dim0_size);
+    // SAC_TR_DISTMEM_PRINT( "Maximum number of elements/dim0 share per node is %zd/%zd
+    // for array of size/dim0 %zd/%zd.", max_elems, max_dim0, total_elems, dim0_size);
 
     return max_elems;
 }
@@ -609,28 +704,52 @@ SAC_DISTMEM_DetDim0Stop (size_t dim0_size, size_t start_range, size_t stop_range
     return stop;
 }
 
-#if COMPILE_TRACE
+#if COMPILE_PLAIN
+
 /*
- * This must be a C function because otherwise
- * we get a operation on SAC_DISTMEM_TR_num_ptr_calcs may be
- * undefined [-Wsequence-point] warning.
+ * We don't need different versions of the pointer cache update functions,
+ * because all the tracing happens in the macro's that call them.
  */
+
 void
-SAC_DISTMEM_TR_IncNumPtrCalcs (void)
+SAC_DISTMEM_UpdatePtrCacheBound (int *ptr_cache_from, int *ptr_cache_count,
+                                 int ptr_cache_from_val, int ptr_cache_count_val)
 {
-    SAC_DISTMEM_TR_num_ptr_calcs++;
+    *ptr_cache_from = ptr_cache_from_val;
+    *ptr_cache_count = ptr_cache_count_val;
 }
 
-#endif /* COMPILE_TRACE */
+void
+SAC_DISTMEM_UpdatePtrCachePtr (void **ptr_cache, void *ptr_cache_val)
+{
+    *ptr_cache = ptr_cache_val;
+}
+
+/*
+ * We don't need different versions of this functions since it is just a
+ * helper function for profiling and tracing purposes.
+ * But make sure to compile it only once.
+ */
+void
+SAC_DISTMEM_IncCounter (unsigned long *counter_ptr)
+{
+    (*counter_ptr)++;
+}
+
+#endif
 
 #endif /* ENABLE_DISTMEM */
 
-#elif COMPILE_PLAIN /* defined(COMPILE_DISTMEM) */
+#elif COMPILE_PLAIN
 
 /* Dummy function for SAC_RuntimeError when the distributed memory backend is not used. */
 void
-SAC_DISTMEM_Exit (int exit_code)
+SAC_DISTMEM_Abort (int exit_code)
 {
 }
 
-#endif /* defined(COMPILE_DISTMEM) */
+#endif
+
+#undef COMPILE_PLAIN
+#undef COMPILE_TRACE
+#undef COMPILE_PROFILE

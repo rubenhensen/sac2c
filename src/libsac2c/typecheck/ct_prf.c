@@ -1309,6 +1309,7 @@ NTCCTprf_dim_A (te_info *info, ntype *args)
  *    ntype *NTCCTprf_isDist_A( te_info *info, ntype *args)
  *
  * description: This primitive function returns whether an array is distributed.
+ *              (This primitive function is for the distributed memory backend.)
  *
  ******************************************************************************/
 
@@ -1329,7 +1330,6 @@ NTCCTprf_isDist_A (te_info *info, ntype *args)
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
-        /* TODO: We could decide this if we know the shape. */
         res = TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0));
     }
 
@@ -1345,6 +1345,7 @@ NTCCTprf_isDist_A (te_info *info, ntype *args)
  *              of a distributed array that are owned by each node.
  *              The first n - 1 nodes own exactly this number of elements
  *              and the last node owns the remaining elements.
+ *              (This primitive function is for the distributed memory backend.)
  *
  ******************************************************************************/
 
@@ -1365,8 +1366,77 @@ NTCCTprf_firstElems_A (te_info *info, ntype *args)
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
-        /* TODO: We actually do know this if we know the shape. */
         res = TYmakeAKS (TYmakeSimpleType (T_ulong), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_localFrom_A( te_info *info, ntype *args)
+ *
+ * description: This primitive function returns the first element index
+ *              that is local to the current node.
+ *              If the array is not distributed, that is equal to 0.
+ *              (This primitive function is for the distributed memory backend.)
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_localFrom_A (te_info *info, ntype *args)
+{
+    ntype *array;
+    ntype *res;
+    char *err_msg;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "localFrom called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_localCount_A( te_info *info, ntype *args)
+ *
+ * description: This primitive function returns the number of elements that are
+ *              local to the current node. If the array is not distributed, that
+ *              is equal to the size of the array.
+ *              (This primitive function is for the distributed memory backend.)
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_localCount_A (te_info *info, ntype *args)
+{
+    ntype *array;
+    ntype *res;
+    char *err_msg;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "localCount called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
     }
 
     DBUG_RETURN (TYmakeProductType (1, res));
@@ -1379,6 +1449,7 @@ NTCCTprf_firstElems_A (te_info *info, ntype *args)
  *
  * description: This primitive function returns the offset of a distributed array
  *              in the dsm shared memory segment.
+ *              (This primitive function is for the distributed memory backend.)
  *
  ******************************************************************************/
 
@@ -1399,7 +1470,6 @@ NTCCTprf_offs_A (te_info *info, ntype *args)
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
-        /* We only know this at runtime, after memory allocation. */
         res = TYmakeAKS (TYmakeSimpleType (T_ulong), SHmakeShape (0));
     }
 
@@ -1652,7 +1722,7 @@ NTCCTprf_sel_VxIA (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_idx_selS( te_info *info, ntype *args)
  *
- * description:
+ * description: Type inference for idx_sel primitive function
  *
  ******************************************************************************/
 

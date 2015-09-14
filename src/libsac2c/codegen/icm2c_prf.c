@@ -509,6 +509,55 @@ ICMCompileND_PRF_SIMD_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT
 /******************************************************************************
  *
  * Function:
+ *   void ICMCompileND_PRF_SEL_VxA__DATA_id_Local( char *to_NT, int to_sdim,
+ *                                                 char *from_NT, int from_sdim,
+ *                                                 char *idx_NT, int idx_size,
+ *                                                 char *copyfun)
+ *
+ * Description:
+ *   implements the compilation of the following ICM if the distributed memory
+ *   backend is used and the read access is known to be local:
+ *
+ *   ND_PRF_SEL_VxA__DATA_id( to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size,
+ *                            copyfun)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_SEL_VxA__DATA_id_Local (char *to_NT, int to_sdim, char *from_NT,
+                                         int from_sdim, char *idx_NT, int idx_size,
+                                         char *copyfun)
+{
+    DBUG_ENTER ();
+
+#define ND_PRF_SEL_VxA__DATA_id_Local
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+    char *new_from_NT;
+
+    /* If source array is distributable set it to: distributable, but known to be local.
+     */
+    if (ICUGetDistributedClass (from_NT) == C_distr) {
+        new_from_NT = STRcatn (3, "SAC_SET_NT_DIS( DLO, ", from_NT, ")");
+    } else {
+        new_from_NT = from_NT;
+    }
+
+    ICMCompileND_PRF_SEL_VxA__DATA_id (to_NT, to_sdim, new_from_NT, from_sdim, idx_NT,
+                                       idx_size, copyfun);
+
+/* Undefine here to not print two ICMs. */
+#undef ND_PRF_SEL_VxA__DATA_id_Local
+
+    new_from_NT = MEMfree (new_from_NT);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   void ICMCompileND_PRF_SEL_VxA__DATA_id( char *to_NT, int to_sdim,
  *                                           char *from_NT, int from_sdim,
  *                                           char *idx_NT, int idx_size,
@@ -528,10 +577,13 @@ ICMCompileND_PRF_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *from_NT, int 
 {
     DBUG_ENTER ();
 
+#ifndef ND_PRF_SEL_VxA__DATA_id_Local
+/* Do not print this ICM if called from ICMCompileND_PRF_SEL_VxA__DATA_id_Local. */
 #define ND_PRF_SEL_VxA__DATA_id
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_PRF_SEL_VxA__DATA_id
+#endif
 
     indout ("SAC_TR_PRF_PRINT( (\"ND_PRF_SEL_VxA__DATA( %s, %d, %s, %d, ...)\"))\n",
             to_NT, to_sdim, from_NT, from_sdim);
@@ -547,6 +599,55 @@ ICMCompileND_PRF_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *from_NT, int 
 
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size, SizeId, ReadId,
                  copyfun);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   void ICMCompileND_PRF_SEL_VxA__DATA_arr_Local( char *to_NT, int to_sdim,
+ *                                                  char *from_NT, int from_sdim,
+ *                                                  int idx_size, char **idxs_ANY,
+ *                                                  char *copyfun)
+ *
+ * Description:
+ *   implements the compilation of the following ICM if the distributed memory
+ *   backend is used and the read access is known to be local.
+ *
+ *   ND_PRF_SEL_VxA__DATA_arr( to_NT, to_sdim, from_NT, from_sdim,
+ *                             idx_size, [ idxs_ANY ]* , copyfun)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_SEL_VxA__DATA_arr_Local (char *to_NT, int to_sdim, char *from_NT,
+                                          int from_sdim, int idx_size, char **idxs_ANY,
+                                          char *copyfun)
+{
+    DBUG_ENTER ();
+
+#define ND_PRF_SEL_VxA__DATA_arr_Local
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+    char *new_from_NT;
+
+    /* If source array is distributable set it to: distributable, but known to be local.
+     */
+    if (ICUGetDistributedClass (from_NT) == C_distr) {
+        new_from_NT = STRcatn (3, "SAC_SET_NT_DIS( DLO, ", from_NT, ")");
+    } else {
+        new_from_NT = from_NT;
+    }
+
+    ICMCompileND_PRF_SEL_VxA__DATA_arr_Local (to_NT, to_sdim, new_from_NT, from_sdim,
+                                              idx_size, idxs_ANY, copyfun);
+
+/* Undefine here to not print two ICMs. */
+#undef ND_PRF_SEL_VxA__DATA_arr_Local
+
+    new_from_NT = MEMfree (new_from_NT);
 
     DBUG_RETURN ();
 }
@@ -574,10 +675,13 @@ ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
 {
     DBUG_ENTER ();
 
+#ifndef ND_PRF_SEL_VxA__DATA_arr_Local
+/* Do not print this ICM if called from ICMCompileND_PRF_SEL_VxA__DATA_arr_Local. */
 #define ND_PRF_SEL_VxA__DATA_arr
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_PRF_SEL_VxA__DATA_arr
+#endif
 
     /*
      * CAUTION:
@@ -609,13 +713,60 @@ ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
 /******************************************************************************
  *
  * Function:
+ *   static void
+ *   PrfModarrayScalarVal_Data_Dist( char *to_NT, char *val_scalar, char *copyfun)
+ *
+ * Description:
+ *   Assigns a scalar value to an array that is potentially distributed.
+ *
+ ******************************************************************************/
+
+static void
+PrfModarrayScalarVal_Data_Dist (char *to_NT, char *val_scalar, char *copyfun)
+{
+    /* Target is potentially distributed. */
+
+    IF_BEGIN ("SAC_ND_A_IS_DIST( %s)", to_NT)
+        ;
+        /* Target is actually distributed. */
+
+        /*
+         * This write is performed by every node.
+         * If a node is not the owner, it writes directly
+         * into its local cache.
+         * Temporarily allow writing
+         * distributed arrays (local and local cache).
+         */
+        indout ("SAC_DISTMEM_ALLOW_CACHE_WRITES();\n");
+
+        indout ("SAC_ND_WRITE_COPY( SAC_SET_NT_DIS( DCA, %s), SAC_idx, ", to_NT);
+        ReadScalar (val_scalar, NULL, 0);
+        out (" , %s)\n", copyfun);
+
+        /* Forbid writing distributed arrays again. */
+        indout ("SAC_DISTMEM_FORBID_CACHE_WRITES();\n");
+
+    IF_END ();
+    ELSE_BEGIN ()
+        ;
+        /* Target is not distributed. */
+
+        indout ("SAC_ND_WRITE_COPY( %s, SAC_idx, ", to_NT);
+        ReadScalar (val_scalar, NULL, 0);
+        out (" , %s)\n", copyfun);
+    ELSE_END ();
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   void PrfModarrayScalarVal_Data( char *to_NT, int to_sdim,
- *                                char *from_NT, int from_sdim,
- *                                bool idx_unrolled, void *idx, int idx_size,
- *                                void (*idx_size_fun)( void *),
- *                                void (*idx_read_fun)( void *, char *, int),
- *                                char *val_scalar,
- *                                char *copyfun)
+ *                                   char *from_NT, int from_sdim,
+ *                                   bool idx_unrolled, void *idx, int idx_size,
+ *                                   void (*idx_size_fun)( void *),
+ *                                   void (*idx_read_fun)( void *, char *, int),
+ *                                   char *val_scalar,
+ *                                   char *copyfun)
  *
  * Description:
  *   implements all the ND_PRF_..._MODARRAY__DATA_... ICMs.
@@ -647,44 +798,94 @@ PrfModarrayScalarVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdi
 
         if (global.backend == BE_distmem && to_dc == C_distr) {
             /* Target is potentially distributed. */
-
-            indout ("if (SAC_ND_A_IS_DIST( %s)) {\n", to_NT);
-            /* Target is actually distributed. */
-            global.indent++;
-
-            /*
-             * This write is performed by every node.
-             * If a node is not the owner, it writes directly
-             * into its local cache.
-             * Temporarily allow writing
-             * distributed arrays (local and local cache).
-             */
-            indout ("SAC_DISTMEM_ALLOW_CACHE_WRITES();\n");
-
-            global.indent--;
-            indout ("}\n");
-        }
-
-        indout ("SAC_ND_WRITE_COPY( %s, SAC_idx, ", to_NT);
-        ReadScalar (val_scalar, NULL, 0);
-        out (" , %s)\n", copyfun);
-
-        if (global.backend == BE_distmem && to_dc == C_distr) {
-            /* Target is potentially distributed. */
-
-            indout ("if (SAC_ND_A_IS_DIST( %s)) {\n", to_NT);
-            /* Target is actually distributed. */
-            global.indent++;
-
-            /* Forbid writing distributed arrays again. */
-            indout ("SAC_DISTMEM_FORBID_CACHE_WRITES();\n");
-
-            global.indent--;
-            indout ("}\n");
+            PrfModarrayScalarVal_Data_Dist (to_NT, val_scalar, copyfun);
+        } else {
+            indout ("SAC_ND_WRITE_COPY( %s, SAC_idx, ", to_NT);
+            ReadScalar (val_scalar, NULL, 0);
+            out (" , %s)\n", copyfun);
         }
     BLOCK_END ();
 
     DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * Function:
+ *   static void
+ *   PrfModarrayArrayVal_Data_Dist( char *to_NT, char *val_array, char *copyfun)
+ *
+ * Description:
+ *    Assigns values to an array that is potentially distributed.
+ *
+ ******************************************************************************/
+
+static void
+PrfModarrayArrayVal_Data_Dist (char *to_NT, char *val_array, char *copyfun)
+{
+    distributed_class_t val_array_dc = ICUGetDistributedClass (val_array);
+
+    IF_BEGIN ("SAC_ND_A_IS_DIST( %s)", to_NT)
+        ;
+        /* Target is actually distributed. */
+
+        if (val_array_dc == C_distr) {
+            /* Value array is potentially distributed. */
+
+            IF_BEGIN ("SAC_ND_A_IS_DIST( %s)", val_array)
+                ;
+                /* Value array is actually distributed. */
+
+                /*
+                 * Make sure that the value array is fully loaded into the cache
+                 * before the writing starts.
+                 */
+                indout ("SAC_DISTMEM_ASSURE_IN_CACHE ( SAC_ND_A_OFFS( %s), "
+                        "SAC_NT_CBASETYPE( %s), SAC_ND_A_FIRST_ELEMS( %s), 0, "
+                        "SAC_ND_A_SIZE( %s));\n",
+                        val_array, val_array, val_array, val_array);
+                indout ("SAC_DISTMEM_BARRIER();\n");
+            IF_END ();
+        }
+
+        /*
+         * This write is performed by every node.
+         * If a node is not the owner, it writes directly
+         * into its local cache.
+         * Temporarily allow writing
+         * distributed arrays (local and local cache).
+         */
+        indout ("SAC_DISTMEM_ALLOW_CACHE_WRITES();\n");
+
+        FOR_LOOP_BEGIN ("int SAC_i = SAC_idx, SAC_j = 0; "
+                        "SAC_j < SAC_ND_A_SIZE( %s); "
+                        "SAC_i++, SAC_j++",
+                        val_array)
+            ;
+            indout (
+              "SAC_ND_WRITE_READ_COPY( SAC_SET_NT_DIS( DCA, %s), SAC_i, %s, SAC_j, %s)\n",
+              to_NT, val_array, copyfun);
+        FOR_LOOP_END ();
+
+        /*
+         * Forbid writing distributed arrays again.
+         */
+        indout ("SAC_DISTMEM_FORBID_CACHE_WRITES();\n");
+    IF_END ();
+    ELSE_BEGIN ()
+        ;
+        /* Value array is not distributed. */
+        /* Do nothing special. */
+
+        FOR_LOOP_BEGIN ("int SAC_i = SAC_idx, SAC_j = 0; "
+                        "SAC_j < SAC_ND_A_SIZE( %s); "
+                        "SAC_i++, SAC_j++",
+                        val_array)
+            ;
+            indout ("SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_j, %s)\n", to_NT,
+                    val_array, copyfun);
+        FOR_LOOP_END ();
+    ELSE_END ();
 }
 
 /******************************************************************************
@@ -712,7 +913,6 @@ PrfModarrayArrayVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim
 {
     int to_dim = DIM_NO_OFFSET (to_sdim);
     distributed_class_t to_dc = ICUGetDistributedClass (to_NT);
-    distributed_class_t val_array_dc = ICUGetDistributedClass (val_array);
 
     DBUG_ENTER ();
 
@@ -730,68 +930,16 @@ PrfModarrayArrayVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim
         if (global.backend == BE_distmem && to_dc == C_distr) {
             /* TODO: Do we need to to something with from_NT??? */
             /* Target is potentially distributed. */
-
-            indout ("if (SAC_ND_A_IS_DIST( %s)) {\n", to_NT);
-            /* Target is actually distributed. */
-            global.indent++;
-
-            if (val_array_dc == C_distr) {
-                /* Value array is potentially distributed. */
-
-                indout ("if (SAC_ND_A_IS_DIST( %s)) {\n", val_array);
-                /* Value array is actually distributed. */
-                global.indent++;
-
-                /*
-                 * Make sure that the value array is fully loaded into the cache
-                 * before the writing starts.
-                 */
-                indout ("SAC_DISTMEM_ASSURE_IN_CACHE ( SAC_ND_A_OFFS( %s), "
-                        "SAC_NT_CBASETYPE( %s), SAC_ND_A_FIRST_ELEMS( %s), 0, "
-                        "SAC_ND_A_SIZE( %s));\n",
-                        val_array, val_array, val_array, val_array);
-                indout ("SAC_DISTMEM_BARRIER();\n");
-
-                global.indent--;
-                indout ("}\n");
-            }
-
-            /*
-             * This write is performed by every node.
-             * If a node is not the owner, it writes directly
-             * into its local cache.
-             * Temporarily allow writing
-             * distributed arrays (local and local cache).
-             */
-            indout ("SAC_DISTMEM_ALLOW_CACHE_WRITES();\n");
-
-            global.indent--;
-            indout ("}\n");
-        }
-
-        FOR_LOOP_BEGIN ("int SAC_i = SAC_idx, SAC_j = 0; "
-                        "SAC_j < SAC_ND_A_SIZE( %s); "
-                        "SAC_i++, SAC_j++",
-                        val_array)
-            ;
-            indout ("SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_j, %s)\n", to_NT,
-                    val_array, copyfun);
-        FOR_LOOP_END ();
-
-        if (global.backend == BE_distmem && to_dc == C_distr) {
-            /* Target is potentially distributed. */
-
-            indout ("if (SAC_ND_A_IS_DIST( %s)) {\n", to_NT);
-            /* Target is actually distributed. */
-            global.indent++;
-
-            /*
-             * Forbid writing distributed arrays again.
-             */
-            indout ("SAC_DISTMEM_FORBID_CACHE_WRITES();\n");
-
-            global.indent--;
-            indout ("}\n");
+            PrfModarrayArrayVal_Data_Dist (to_NT, val_array, copyfun);
+        } else {
+            FOR_LOOP_BEGIN ("int SAC_i = SAC_idx, SAC_j = 0; "
+                            "SAC_j < SAC_ND_A_SIZE( %s); "
+                            "SAC_i++, SAC_j++",
+                            val_array)
+                ;
+                indout ("SAC_ND_WRITE_READ_COPY( %s, SAC_i, %s, SAC_j, %s)\n", to_NT,
+                        val_array, copyfun);
+            FOR_LOOP_END ();
         }
 
     BLOCK_END ();
@@ -1116,6 +1264,53 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
 /******************************************************************************
  *
  * Function:
+ *   void ICMCompileND_PRF_IDX_SEL__DATA_Local( char *to_NT, int to_sdim,
+ *                                              char *from_NT, int from_sdim,
+ *                                              char *idx_ANY,
+ *                                              char *copyfun)
+ *
+ * Description:
+ *   implements the compilation of the following ICM if the distributed memory
+ *   backend is used and the read is known to be local:
+ *
+ *   ND_PRF_IDX_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, idx_ANY)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_IDX_SEL__DATA_Local (char *to_NT, int to_sdim, char *from_NT,
+                                      int from_sdim, char *idx_ANY, char *copyfun)
+{
+    DBUG_ENTER ();
+
+#define ND_PRF_IDX_SEL__DATA_Local
+#include "icm_comment.c"
+#include "icm_trace.c"
+
+    char *new_from_NT;
+
+    /* If source array is distributable set it to: distributable, but known to be local.
+     */
+    if (ICUGetDistributedClass (from_NT) == C_distr) {
+        new_from_NT = STRcatn (3, "SAC_SET_NT_DIS( DLO, ", from_NT, ")");
+    } else {
+        new_from_NT = from_NT;
+    }
+
+    ICMCompileND_PRF_IDX_SEL__DATA (to_NT, to_sdim, new_from_NT, from_sdim, idx_ANY,
+                                    copyfun);
+
+/* Undefine here to not print two ICMs. */
+#undef ND_PRF_IDX_SEL__DATA_Local
+
+    new_from_NT = MEMfree (new_from_NT);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   void ICMCompileND_PRF_IDX_SEL__DATA( char *to_NT, int to_sdim,
  *                                        char *from_NT, int from_sdim,
  *                                        char *idx_ANY,
@@ -1136,10 +1331,13 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
 
     DBUG_ENTER ();
 
+#ifndef ND_PRF_IDX_SEL__DATA_Local
+/* Do not print this ICM if called from ICMCompileND_PRF_IDX_SEL__DATA_Local. */
 #define ND_PRF_IDX_SEL__DATA
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_PRF_IDX_SEL__DATA
+#endif
 
     /*
      * CAUTION:

@@ -6,6 +6,9 @@
  *
  * description: This is the GASNet specific implementation of distmem_commlib.h.
  *
+ * GASNet is a language-independent, low-level networking layer.
+ * See http://gasnet.lbl.gov/
+ *
  *****************************************************************************/
 
 #include "config.h"
@@ -27,6 +30,11 @@ static UNUSED int SAC_DISTMEM_COMMLIB_GASNET_dummy;
 #ifdef COMPILE_DISTMEM_GASNET
 
 #if ENABLE_DISTMEM_GASNET
+
+/* For mmap */
+#include <sys/mman.h>
+/* For errno */
+#include <errno.h>
 
 /* Do not show some warnings for the GASNet header for GCC (>= 4.6). */
 #ifdef __GNUC__
@@ -69,9 +77,9 @@ static UNUSED int SAC_DISTMEM_COMMLIB_GASNET_dummy;
     {                                                                                    \
         int retval;                                                                      \
         if ((retval = fncall) != GASNET_OK) {                                            \
-            SAC_RuntimeError ("Error calling: %s\n"                                      \
+            SAC_RuntimeError ("Error during GASNet call from: %s\n"                      \
                               " at: %s:%i\n"                                             \
-                              " error: %s (%s)\n",                                       \
+                              " error: %s (%s)",                                         \
                               #fncall, __FILE__, __LINE__, gasnet_ErrorName (retval),    \
                               gasnet_ErrorDesc (retval));                                \
         }                                                                                \
@@ -89,24 +97,23 @@ SAC_DISTMEM_COMMLIB_Init (int argc, char *argv[])
 #endif /* COMPILE_TRACE */
 {
     GASNET_SAFE (gasnet_init (&argc, &argv));
+
+    SAC_DISTMEM_rank = gasnet_mynode ();
+    SAC_DISTMEM_size = gasnet_nodes ();
 }
 
 #if COMPILE_TRACE
 void
-SAC_DISTMEM_COMMLIB_TR_Setup (size_t maxmem)
+SAC_DISTMEM_COMMLIB_TR_Setup (size_t maxmem, bool alloc_cache_outside_dsm)
 #else  /* COMPILE_TRACE */
 void
-SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
+SAC_DISTMEM_COMMLIB_Setup (size_t maxmem, bool alloc_cache_outside_dsm)
 #endif /* COMPILE_TRACE */
 {
     size_t i;
 
     /* Print GASNet configuration. */
     SAC_TR_DISTMEM_PRINT (GASNET_CONFIG_STRING);
-
-    SAC_DISTMEM_rank = gasnet_mynode ();
-    SAC_DISTMEM_size = gasnet_nodes ();
-    // TODO: Check the size again the specified size?
 
     if (SAC_DISTMEM_pagesz != GASNET_PAGESIZE) {
         SAC_RuntimeError (
@@ -116,6 +123,7 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
 
     /* Global minimum of optimistic maximum shared segment size */
     size_t max_global_segsz = gasnet_getMaxGlobalSegmentSize ();
+    SAC_TR_DISTMEM_PRINT ("Max. global seg size: %zd", max_global_segsz);
 
     /*
      * Determine minimum of:
@@ -144,33 +152,50 @@ SAC_DISTMEM_COMMLIB_Setup (size_t maxmem)
           min_global_segsz / 1024 / 1024, maxmem / 1024 / 1024);
     }
 
+    if (alloc_cache_outside_dsm) {
+        SAC_DISTMEM_segsz = min_global_segsz;
+    } else {
+        SAC_DISTMEM_segsz = min_global_segsz / SAC_DISTMEM_size;
+    }
+
     /*
      * Divide by and multiply with the page size because the segment size has to be a
      * multiple of the page size.
      */
-    SAC_DISTMEM_segsz
-      = min_global_segsz / SAC_DISTMEM_size / SAC_DISTMEM_pagesz * SAC_DISTMEM_pagesz;
+    SAC_DISTMEM_segsz = SAC_DISTMEM_segsz / SAC_DISTMEM_pagesz * SAC_DISTMEM_pagesz;
     SAC_DISTMEM_shared_seg_ptr = seg_info[SAC_DISTMEM_rank].addr;
 
-    /*
-           * With GASNet the cache needs to lie within the segment.
-           * When previously pinned pages are protected, this leads to an error:
-           * FATAL ERROR: ibv_reg_mr failed in firehose_move_callback errno=14 (Bad
-       address)
-
-           * From readme:
-           * In a GASNET_SEGMENT_FAST configuration, the GASNet
-           * segment is registered (pinned) with the HCA at initialization time,
-           * because pinning is required for RDMA.  However, GASNet allows for
-           * local addresses (source of a PUT or destination of a GET) to lie
-           * outside of the GASNet segment.  So, to perform RDMA GETs and PUTs,
-           * ibv-conduit must either copy out-of-segment transfers though
-           * preregistered bounce buffers, or dynamically register memory.  By
-           * default firehose is used to manage registration of out-of-segment
-           * memory.
-           */
-    SAC_DISTMEM_cache_ptr
-      = (void *)((uintptr_t)SAC_DISTMEM_shared_seg_ptr + SAC_DISTMEM_segsz);
+    if (alloc_cache_outside_dsm) {
+        if ((SAC_DISTMEM_cache_ptr
+             = mmap (NULL, (SAC_DISTMEM_size - 1) * SAC_DISTMEM_segsz, PROT_NONE,
+                     MAP_PRIVATE | MAP_ANONYMOUS, -1, 0))
+            == (void *)-1) {
+            SAC_RuntimeError ("Error during mmap of cache: %d", errno);
+        }
+    } else {
+        /*
+         * With GASNet the cache needs to lie within the segment.
+         * When previously pinned pages are protected, this leads to an error:
+         * FATAL ERROR: ibv_reg_mr failed in firehose_move_callback errno=14 (Bad address)
+         *
+         * This happens for instance with convolution_measure.sac
+         *
+         * From readme:
+         * In a GASNET_SEGMENT_FAST configuration, the GASNet
+         * segment is registered (pinned) with the HCA at initialization time,
+         * because pinning is required for RDMA.  However, GASNet allows for
+         * local addresses (source of a PUT or destination of a GET) to lie
+         * outside of the GASNet segment.  So, to perform RDMA GETs and PUTs,
+         * ibv-conduit must either copy out-of-segment transfers though
+         * preregistered bounce buffers, or dynamically register memory.  By
+         * default firehose is used to manage registration of out-of-segment
+         * memory.
+         *
+         * See also: https://upc-bugs.lbl.gov/bugzilla/show_bug.cgi?id=495
+         */
+        SAC_DISTMEM_cache_ptr
+          = (void *)((uintptr_t)SAC_DISTMEM_shared_seg_ptr + SAC_DISTMEM_segsz);
+    }
 }
 
 #if COMPILE_TRACE
@@ -202,6 +227,17 @@ SAC_DISTMEM_COMMLIB_LoadPage (void *local_page_ptr, size_t owner_rank,
                 (void *)((uintptr_t)seg_info[owner_rank].addr
                          + remote_page_index * SAC_DISTMEM_pagesz),
                 SAC_DISTMEM_pagesz);
+}
+
+#if COMPILE_TRACE
+void
+SAC_DISTMEM_COMMLIB_TR_Abort (int exit_code)
+#else  /* COMPILE_TRACE */
+void
+SAC_DISTMEM_COMMLIB_Abort (int exit_code)
+#endif /* COMPILE_TRACE */
+{
+    gasnet_exit (exit_code);
 }
 
 #if COMPILE_TRACE

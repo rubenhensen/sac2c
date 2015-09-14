@@ -7,13 +7,45 @@ AC_DEFUN([CHECK_DISTMEM], dnl
                  [AS_HELP_STRING([--disable-distmem],
                                  [Disable checking for Distributed Memory support])],
                  [enable_distmem_gasnet=$enableval]
-                 [enable_distmem_gpi=no]
-                 [enable_distmem_mpi=no]
-                 [enable_distmem_armci=no],
+                 [enable_distmem_gpi=$enableval]
+                 [enable_distmem_mpi=$enableval]
+                 [enable_distmem_armci=$enableval],
                  [enable_distmem_gasnet=yes]
-                 [enable_distmem_gpi=no]
-                 [enable_distmem_mpi=no]
-                 [enable_distmem_armci=no])
+                 [enable_distmem_gpi=yes]
+                 [enable_distmem_mpi=yes]
+                 [enable_distmem_armci=yes])
+
+   if test x"$enable_distmem_gasnet" != xno; then
+      AC_ARG_ENABLE([distmem_gasnet],
+                    [AS_HELP_STRING([--disable-distmem_gasnet],
+                                    [Disable checking for Distributed Memory GASNet support])],
+                    [enable_distmem_gasnet=$enableval],
+                    [enable_distmem_gasnet=yes])
+   fi
+
+   if test x"$enable_distmem_mpi" != xno; then
+      AC_ARG_ENABLE([distmem_mpi],
+                    [AS_HELP_STRING([--disable-distmem_mpi],
+                                    [Disable checking for Distributed Memory MPI support])],
+                    [enable_distmem_mpi=$enableval],
+                    [enable_distmem_mpi=yes])
+   fi
+
+   if test x"$enable_distmem_armci" != xno; then
+      AC_ARG_ENABLE([distmem_armci],
+                    [AS_HELP_STRING([--disable-distmem_armci],
+                                    [Disable checking for Distributed Memory ARMCI support])],
+                    [enable_distmem_armci=$enableval],
+                    [enable_distmem_armci=yes])
+   fi
+
+   if test x"$enable_distmem_gpi" != xno; then
+      AC_ARG_ENABLE([distmem_gpi],
+                    [AS_HELP_STRING([--disable-distmem_gpi],
+                                    [Disable checking for Distributed Memory GPI support])],
+                    [enable_distmem_gpi=$enableval],
+                    [enable_distmem_gpi=yes])
+   fi
 
    dnl Create GASNet conduit targets file.
    cat >./sac2crc.GASNetconduits
@@ -24,6 +56,73 @@ AC_DEFUN([CHECK_DISTMEM], dnl
 
    dnl Create GASNet conduit settings file.
    cat >./config.GASNetconduits
+
+   if test x"$enable_distmem_mpi" != xno; then
+      AX_MPI([enable_distmem_mpi=yes], [enable_distmem_mpi=no])
+
+      if test x"$enable_distmem_mpi" != xno; then
+        AC_MSG_CHECKING([for MPI 3 support])
+        ax_mpi_save_CC="$CC"
+	      CC="$MPICC"
+        AC_TRY_COMPILE([#include <mpi.h>],[
+/* This program uses MPI 3 one-sided communication to test whether the MPI installation does support these operations. */
+int main(int argc, char *argv[]) {
+  static MPI_Win win = NULL;
+  size_t SAC_DISTMEM_pagesz = 0;
+
+  void *local_page_ptr = NULL;
+  size_t owner_rank = 0;
+  size_t remote_page_index;
+
+  MPI_Get( local_page_ptr, SAC_DISTMEM_pagesz, MPI_BYTE, owner_rank, remote_page_index * SAC_DISTMEM_pagesz, SAC_DISTMEM_pagesz, MPI_BYTE, win);
+}
+],[AC_MSG_RESULT(yes)], [enable_distmem_mpi=no
+	        AC_MSG_RESULT(no)])
+        CC="$ax_mpi_save_CC"
+      fi
+   fi
+
+   if test x"$enable_distmem_armci" != xno; then
+      AC_MSG_CHECKING(if ARMCI_HOME is set)
+      if test x"$ARMCI_HOME" != x ; then
+        AC_MSG_RESULT([using ARMCI_HOME: $ARMCI_HOME])
+
+        AC_MSG_CHECKING(if $ARMCI_HOME exists)
+        if test -r $ARMCI_HOME; then
+           AC_MSG_RESULT([yes])
+           AC_DEFINE_UNQUOTED([ARMCI_DIR], ["$ARMCI_HOME"],
+                              [ARMCI installation])
+           AC_SUBST([ARMCI_DIR], [$ARMCI_HOME])
+        else
+           AC_MSG_RESULT([no])
+           enable_distmem_armci=no
+        fi
+      else
+        AC_MSG_RESULT([no])
+        enable_distmem_armci=no
+      fi
+   fi
+
+   if test x"$enable_distmem_gpi" != xno; then
+      AC_MSG_CHECKING(if GPI_HOME is set)
+      if test x"$GPI_HOME" != x ; then
+        AC_MSG_RESULT([using GPI_HOME: $GPI_HOME])
+      else
+        GPI_HOME=/opt/GPI2
+        AC_MSG_RESULT([using default location: $GPI_HOME])
+      fi
+
+      AC_MSG_CHECKING(if $GPI_HOME exists)
+      if test -r $GPI_HOME; then
+         AC_MSG_RESULT([yes])
+         AC_DEFINE_UNQUOTED([GPI_DIR], ["$GPI_HOME"],
+                            [GPI installation])
+         AC_SUBST([GPI_DIR], [$GPI_HOME])
+      else
+         AC_MSG_RESULT([no])
+         enable_distmem_gpi=no
+      fi
+   fi
 
    if test x"$enable_distmem_gasnet" != xno; then
 
@@ -80,6 +179,12 @@ CCLINK           += "$gasnet_conduit_libs"
 LDFLAGS          += "$gasnet_conduit_ldflags"
 
 target distmemcheck_gasnet_$gasnet_conduit_name::distmemcheck_gasnet:
+COMMLIB_CONDUIT  := "$gasnet_conduit_name"
+CC               := "$gasnet_conduit_ld -std=gnu99"
+CCLINK           += "$gasnet_conduit_libs"
+LDFLAGS          += "$gasnet_conduit_ldflags"
+
+target distmemprofile_gasnet_$gasnet_conduit_name::distmemprofile_gasnet:
 COMMLIB_CONDUIT  := "$gasnet_conduit_name"
 CC               := "$gasnet_conduit_ld -std=gnu99"
 CCLINK           += "$gasnet_conduit_libs"

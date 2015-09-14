@@ -215,9 +215,94 @@ OPTcheckOptionConsistency (void)
     /* Checks related to the distributed memory backend */
     if (global.backend == BE_distmem) {
         /* The distributed memory backend is used. Check for incompatible options. */
+
+#if !ENABLE_DISTMEM
+        CTIerror ("The distributed memory backend (-target) is not supported by this "
+                  "installation.");
+#endif
+
         if (global.mtmode != MT_none) {
             CTIerror ("Multi-threaded program execution is not "
                       "supported when using the distributed memory backend.");
+        }
+
+        if (global.optimize.dodmgs && !global.optimize.dodmmls) {
+            CTIerror ("The optimization DMGS requires the optimization DMMLS.");
+        }
+
+        if (global.optimize.dodmmls && global.dmgs_max_selects != 0
+            && global.dmgs_min_selects > global.dmgs_max_selects) {
+            CTIerror ("dmgs_max_selects must be 0 (unbounded) or >= dmgs_min_selects");
+        }
+
+        /* Communication library specific checks */
+        switch (global.distmem_commlib) {
+        case DISTMEM_COMMLIB_MPI:
+#if !ENABLE_DISTMEM_MPI
+            CTIerror ("The MPI communication library (-target) for the distributed "
+                      "memory backend is not supported by this installation.");
+#endif
+
+            if (global.distmem_cache_outside_dsm) {
+                CTIwarn ("When MPI is used as a communication library, the cache is "
+                         "always allocated "
+                         "outside of the DSM segment. dsm_cache_outside_seg does not "
+                         "have any effect.");
+            } else {
+                global.distmem_cache_outside_dsm = TRUE;
+            }
+            break;
+        case DISTMEM_COMMLIB_ARMCI:
+#if !ENABLE_DISTMEM_ARMCI
+            CTIerror ("The ARMCI communication library (-target) for the distributed "
+                      "memory backend is not supported by this installation.");
+#endif
+
+            if (global.distmem_cache_outside_dsm) {
+                CTIwarn ("When ARMCI is used as a communication library, the cache is "
+                         "always allocated "
+                         "outside of the DSM segment. dsm_cache_outside_seg does not "
+                         "have any effect.");
+            } else {
+                global.distmem_cache_outside_dsm = TRUE;
+            }
+            break;
+        case DISTMEM_COMMLIB_GPI:
+#if !ENABLE_DISTMEM_GPI
+            CTIerror ("The GPI communication library (-target) for the distributed "
+                      "memory backend is not supported by this installation.");
+#endif
+
+            if (global.distmem_cache_outside_dsm) {
+                CTIwarn ("When GPI is used as a communication library, the cache is "
+                         "always allocated "
+                         "within the DSM segment. dsm_cache_outside_seg does not have "
+                         "any effect.");
+                global.distmem_cache_outside_dsm = FALSE;
+            }
+            break;
+        case DISTMEM_COMMLIB_GASNET:
+#if !ENABLE_DISTMEM_GASNET
+            CTIerror ("The GASNet communication library (-target) for the distributed "
+                      "memory backend is not supported by this installation.");
+#endif
+
+            if (global.distmem_cache_outside_dsm) {
+                CTIwarn ("The cache will be registered outside of the GASNet segment "
+                         "which can cause bugs. If you experience the following error "
+                         "this is probably the reason: FATAL ERROR: ibv_reg_mr failed in "
+                         "firehose_move_callback errno=14 (Bad address). To fix this "
+                         "problem, you can deactivate firehose by setting "
+                         "GASNET_USE_FIREHOSE=NO but this may affect performance.");
+            }
+            break;
+        default:
+            /* The communication library is obligatory when the distributed memory backend
+             * is used and a SAC program is compiled. Modules are compiled for the
+             * distributed memory backend but not for a specific communication library.
+             * The same holds for the prelude. However, we cannot enforce this check here
+             * because we do not know yet if we are compiling a module. */
+            break;
         }
     } else {
         /* The distributed memory backend is not used. Disable options that don't apply.
@@ -538,12 +623,23 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("do");
 
-    ARGS_OPTION ("dsm_maxmem_mb", ARG_RANGE (global.distmem_max_memory_mb, 128, 10000));
+    ARGS_OPTION ("dsm_maxmem_mb", ARG_RANGE (global.distmem_max_memory_mb, 0,
+                                             1000 * 1024)); /* Max. 1000 GB */
 
     ARGS_OPTION ("distmem_min_elems",
                  ARG_RANGE (global.distmem_min_elems_per_node, 10, 1000));
 
-    ARGS_OPTION ("distmem_trace_node", ARG_RANGE (global.distmem_trace_node, -1, 1000));
+    ARGS_OPTION ("distmem_tr_pf_node", ARG_RANGE (global.distmem_tr_pf_node, -1, 1000));
+
+    ARGS_OPTION ("dmgs_min_selects", ARG_RANGE (global.dmgs_min_selects, 3, 100));
+
+    ARGS_OPTION ("dmgs_max_selects", ARG_RANGE (global.dmgs_max_selects, 0, 100));
+
+    ARGS_FLAG ("dsm_cache_outside_seg", global.distmem_cache_outside_dsm = TRUE);
+
+    ARGS_FLAG ("distmem_ptrs_desc", global.distmem_ptrs_desc = TRUE);
+
+    ARGS_FLAG ("distmem_no_ptr_cache", global.distmem_ptr_cache = FALSE);
 
 #ifndef DBUG_OFF
 
@@ -779,8 +875,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         }
     }
     ARGS_OPTION_END ("numthreads");
-
-    ARGS_OPTION ("numprocs", ARG_RANGE (global.num_procs, 1, global.max_procs));
 
     ARGS_OPTION_BEGIN ("no")
     {

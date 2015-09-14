@@ -120,6 +120,7 @@ extern constant *COdrop (constant *idx, constant *a, constant *);
 extern constant *COdim (constant *a, constant *b, constant *);
 extern constant *COisDist (constant *a, constant *b, constant *);
 extern constant *COfirstElems (constant *a, constant *b, constant *);
+extern constant *COlocalFrom (constant *a, constant *tmp1, constant *tmp2);
 extern constant *COoffs (constant *a, constant *b, constant *);
 extern constant *COshape (constant *a, constant *b, constant *);
 extern constant *COmodarray_AxVxS (constant *a, constant *idx, constant *elem);

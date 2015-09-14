@@ -357,6 +357,12 @@ IVESPLITprf (node *arg_node, info *arg_info)
             new_node = TCmakePrf2 (F_idx_sel, TBmakeId (avis), PRF_ARG2 (arg_node));
             PRF_ARG2 (arg_node) = NULL;
 
+            /*
+             * If the distributed memory backend is used and we have identified
+             * the read as local, we have to keep that information.
+             */
+            PRF_DISTMEMISLOCALREAD (new_node) = PRF_DISTMEMISLOCALREAD (arg_node);
+
             arg_node = FREEdoFreeTree (arg_node);
             arg_node = new_node;
             break;
