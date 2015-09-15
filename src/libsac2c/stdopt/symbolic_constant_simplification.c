@@ -97,14 +97,64 @@
 #include "constant_folding.h"
 #include "saa_constant_folding.h"
 #include "ivexpropagation.h"
+#include "polyhedral_utilities.h"
 
 /******************************************************************************
+ *
+ * function: Predicate for determining if an argument is
+ *           a selection from a shape vector.
+ *           Or, just a guarded shape vector.
+ *
+ * description: We look for (shape(v)[iv] in various guises.
+ *
+ * result: True if argument is known to be a selection from shape.
+ *         If true, the argument is also known to be non-negative.
+ *         Else false.
+ *
+ *****************************************************************************/
+bool
+SCSisSelOfShape (node *arg_node)
+{
+    pattern *pat1;
+    pattern *pat2;
+    pattern *pat3;
+    node *iv = NULL;
+    node *x = NULL;
+    node *m = NULL;
+    bool z;
+
+    DBUG_ENTER ();
+
+    /* z = _sel_VxA_( iv, x); */
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&x), 0));
+    /* z = _idx_sel( offset, x); */
+    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&x), 0));
+    /* x = _shape_A_( m ); */
+    pat3 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&m), 0));
+
+    z = PMmatchFlatSkipGuards (pat3, arg_node); // Guarded shape vector
+    z = (PMmatchFlatSkipGuards (pat1, arg_node) || PMmatchFlatSkipGuards (pat2, arg_node))
+        && PMmatchFlatSkipGuards (pat3, x);
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ * bool SCSisNonnegative( node *arg_node)
  *
  * function: Predicate for determining if an argument is known to
  *           be non-negative.
  *
  * description: We check for a constant arg_node, and if that
  *              fails, look for a suitable constant AVIS_MIN.
+ *
+ * @brief: arg_node: An N_id or N_num node
  *
  * result: True if argument is known to be non-negative.
  *         Else false.
@@ -113,30 +163,35 @@
  *
  *****************************************************************************/
 bool
-SCSisNonneg (node *arg_node)
+SCSisNonnegative (node *arg_node)
 {
     pattern *pat;
     constant *con = NULL;
     bool z;
 
-    pat = PMconst (1, PMAgetVal (&con));
-
     DBUG_ENTER ();
 
-    z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
+    z = (N_num == NODE_TYPE (arg_node)) && (NUM_VAL (arg_node) >= 0);
 
-    if (!z) {
-        con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
-        z = (NULL != con) && COisNonNeg (con, TRUE);
+    if ((!z) && N_id == NODE_TYPE (arg_node)) {
+        pat = PMconst (1, PMAgetVal (&con));
+        z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
+        z = z || SCSisSelOfShape (arg_node);
+
+        if (!z) {
+            con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
+            z = (NULL != con) && COisNonNeg (con, TRUE);
+        }
+
+        con = (NULL != con) ? COfreeConstant (con) : con;
+        pat = PMfree (pat);
     }
-
-    con = (NULL != con) ? COfreeConstant (con) : con;
-    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
 
 /******************************************************************************
+ * bool SCSisNegative( node *arg_node)
  *
  * function: Predicate for determining if an argument is known to
  *           be negative.
@@ -157,25 +212,28 @@ SCSisNegative (node *arg_node)
     constant *con = NULL;
     bool z;
 
-    pat = PMconst (1, PMAgetVal (&con));
-
     DBUG_ENTER ();
 
-    z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNeg (con, TRUE);
+    z = (N_num == NODE_TYPE (arg_node)) && (NUM_VAL (arg_node) < 0);
 
-    if (!z) {
-        // If maximum value is <= 0, then arg_node is negative.
-        con = SAACFchaseMinMax (arg_node, SAACFCHASEMAX);
-        z = (NULL != con) && (COisNeg (con, TRUE) || COisZero (con, TRUE));
+    if ((!z) && N_id == NODE_TYPE (arg_node)) {
+        pat = PMconst (1, PMAgetVal (&con));
+        z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNeg (con, TRUE);
+        if (!z) {
+            // If maximum value is <= 0, then arg_node is negative.
+            con = SAACFchaseMinMax (arg_node, SAACFCHASEMAX);
+            z = (NULL != con) && (COisNeg (con, TRUE) || COisZero (con, TRUE));
+        }
+
+        con = (NULL != con) ? COfreeConstant (con) : con;
+        pat = PMfree (pat);
     }
-
-    con = (NULL != con) ? COfreeConstant (con) : con;
-    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
 
 /******************************************************************************
+ * bool SCSisNonPositive( node *arg_node)
  *
  * function: Predicate for determining if an argument is known to
  *           be non-positive.
@@ -196,26 +254,28 @@ SCSisNonPositive (node *arg_node)
     constant *con = NULL;
     bool z;
 
-    pat = PMconst (1, PMAgetVal (&con));
-
     DBUG_ENTER ();
 
-    z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNeg (con, TRUE);
+    z = (N_num == NODE_TYPE (arg_node)) && (NUM_VAL (arg_node) <= 0);
+    if ((!z) && N_id == NODE_TYPE (arg_node)) {
+        pat = PMconst (1, PMAgetVal (&con));
+        z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNeg (con, TRUE);
+        if (!z) {
+            // If maximum value is <= 1, then arg_node is negative.
+            con = SAACFchaseMinMax (arg_node, SAACFCHASEMAX);
+            z = (NULL != con)
+                && (COisNeg (con, TRUE) || COisZero (con, TRUE) || COisOne (con, TRUE));
+        }
 
-    if (!z) {
-        // If maximum value is <= 1, then arg_node is negative.
-        con = SAACFchaseMinMax (arg_node, SAACFCHASEMAX);
-        z = (NULL != con)
-            && (COisNeg (con, TRUE) || COisZero (con, TRUE) || COisOne (con, TRUE));
+        con = (NULL != con) ? COfreeConstant (con) : con;
+        pat = PMfree (pat);
     }
-
-    con = (NULL != con) ? COfreeConstant (con) : con;
-    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
 
 /******************************************************************************
+ * bool SCSisPositive( node *arg_node)
  *
  * function: Predicate for determining if an argument is known to
  *           be positive.
@@ -236,19 +296,20 @@ SCSisPositive (node *arg_node)
     constant *con = NULL;
     bool z;
 
-    pat = PMconst (1, PMAgetVal (&con));
-
     DBUG_ENTER ();
 
-    z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
+    z = (N_num == NODE_TYPE (arg_node)) && (NUM_VAL (arg_node) > 0);
+    if ((!z) && N_id == NODE_TYPE (arg_node)) {
+        pat = PMconst (1, PMAgetVal (&con));
+        z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
+        if (!z) {
+            con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
+            z = (NULL != con) && COisNonNeg (con, TRUE) && (!COisZero (con, TRUE));
+        }
 
-    if (!z) {
-        con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
-        z = (NULL != con) && COisNonNeg (con, TRUE) && (!COisZero (con, TRUE));
+        con = (NULL != con) ? COfreeConstant (con) : con;
+        pat = PMfree (pat);
     }
-
-    con = (NULL != con) ? COfreeConstant (con) : con;
-    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
@@ -534,6 +595,10 @@ SCSisConstantOne (node *prfarg)
  *
  * @result: true if:
  *
+ *       Case 0: GENERATOR_GENWIDTH == 1!
+ *         This requires that we be able to find the N_part we are
+ *         in, if it exists.
+ *
  *       Case 1:
  *         ( AVIS_MIN( arg) == ( AVIS_MAX( arg) -  1)) or
  *         ( AVIS_MIN( arg) == ( AVIS_MAX( arg) + -1)).
@@ -558,13 +623,28 @@ isGenwidth1Partition (node *arg, info *arg_info)
     constant *con = NULL;
     constant *cone = NULL;
     constant *consum = NULL;
+#ifdef FIXME
+    node *partn;
+#endif // FIXME
 
     DBUG_ENTER ();
 
     DBUG_PRINT (" Checking %s for 1==GENWIDTH", AVIS_NAME (ID_AVIS (arg)));
 
+#ifdef FIXME
+    this is rubbish
+      - we have no guarantee that we will be called from somewhere with the same arg_info
+          block as CF !
+      // Case 0
+      partn
+      = INFO_PART (arg_info);
+    res
+      = (NULL != partn) && SCSisConstantOne (GENERATOR_GENWIDTH (PART_GENERATOR (partn)));
+#endif // FIXME
+
     // Case 1
-    if ((IVEXPisAvisHasMin (ID_AVIS (arg))) && (IVEXPisAvisHasMax (ID_AVIS (arg)))) {
+    if ((!res) && (IVEXPisAvisHasMin (ID_AVIS (arg)))
+        && (IVEXPisAvisHasMax (ID_AVIS (arg)))) {
         amax = AVIS_MAX (ID_AVIS (arg));
 
         patadd = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAisVar (&amax), 0),
@@ -957,14 +1037,14 @@ SawingTheBoardInTwo (node *arg_node, info *arg_info)
     iv = PRF_ARG1 (arg_node);
     shpa = PRF_ARG2 (arg_node);
 
-    if ((SCSisNonneg (shpa)) && (PMmatchFlatSkipGuards (patsub, iv))
-        && (SCSisNonneg (count))) {
+    if ((SCSisNonnegative (shpa)) && (PMmatchFlatSkipGuards (patsub, iv))
+        && (SCSisNonnegative (count))) {
         res = TBmakeExprs (DUPdoDupNode (iv), TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT ("removed guard Case 7a( %s)", AVIS_NAME (ID_AVIS (iv)));
     }
 
     // Case 7b
-    if ((NULL == res) && (SCSisNonneg (shpa))
+    if ((NULL == res) && (SCSisNonnegative (shpa))
         && ((PMmatchFlatSkipGuards (patadd1, iv))
             || (PMmatchFlatSkipGuards (patadd2, iv)))
         && (SCSisNegative (count))) {
@@ -1021,12 +1101,12 @@ isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info, bool signum)
     patadd2 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAgetNode (&v2), 0),
                      PMvar (1, PMAisVar (&arg1), 0));
 
-    z = (SCSisNonneg (arg1)) && (SCSisNonneg (arg2));
+    z = (SCSisNonnegative (arg1)) && (SCSisNonnegative (arg2));
     z = z
         && (PMmatchFlat (patadd1, arg2) || // prf( arg1, arg1 + arg2);
             PMmatchFlat (patadd2, arg2));  // prf( arg1, arg2 + arg1);
     if (signum) {
-        z = z && SCSisNonneg (v2);
+        z = z && SCSisNonnegative (v2);
     } else {
         z = z && SCSisNegative (v2);
     }
@@ -1223,10 +1303,10 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisNegative (Y));
 
         // (x + nonnegY) <  x
-        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNonneg (Y));
+        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNonnegative (Y));
         // (x + nonnegY) <= x         dunno
         // (x + nonnegY) >= x
-        SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNonneg (Y));
+        SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNonnegative (Y));
         // (x + nonnegY) > x          dunno
 
         // (x + posY) <= x
@@ -1240,9 +1320,9 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
 
         // (x - nonnegY) <   x         dunno
         // (x - nonnegY) <=  x
-        SCSECI (F_sub_SxS, F_le_SxS, TRUE, SCSisNonneg (Y));
+        SCSECI (F_sub_SxS, F_le_SxS, TRUE, SCSisNonnegative (Y));
         // (x - nonnegY) > x
-        SCSECI (F_sub_SxS, F_gt_SxS, FALSE, SCSisNonneg (Y));
+        SCSECI (F_sub_SxS, F_gt_SxS, FALSE, SCSisNonnegative (Y));
         // (x - nonnegY) >= x         dunno
 
         // In these functions, myres == FALSE means PRF_ARG2 is the result;
@@ -1277,9 +1357,9 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         SCSECI (F_add_SxS, F_gt_SxS, TRUE, SCSisNegative (Y));
 
         // x <= (x + nonnegY)
-        SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisNonneg (Y));
+        SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisNonnegative (Y));
         // x >  (x + nonnegY)
-        SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisNonneg (Y));
+        SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisNonnegative (Y));
 
         // x <= (x + posY)
         SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisPositive (Y));
@@ -1291,16 +1371,21 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisPositive (Y));
 
         // x <  (x - nonnegY)
-        SCSECI (F_sub_SxS, F_lt_SxS, FALSE, SCSisNonneg (Y));
+        SCSECI (F_sub_SxS, F_lt_SxS, FALSE, SCSisNonnegative (Y));
         // x <= (x - nonnegY)         dunno
         // x >= (x - nonnegY)
-        SCSECI (F_sub_SxS, F_ge_SxS, TRUE, SCSisNonneg (Y));
+        SCSECI (F_sub_SxS, F_ge_SxS, TRUE, SCSisNonnegative (Y));
         // x >  (x - nonnegY)         dunno
 
         // max( min( x, y), x) --> x
         SCSECI (F_min_SxS, F_max_SxS, TRUE, TRUE);
         // min( max( x, y), x) --> x
         SCSECI (F_max_SxS, F_min_SxS, TRUE, TRUE);
+    }
+
+    // Temporary code to aid in measuring POGO performance on relationals
+    if (!global.optimize.dorelcf) {
+        z = FALSE;
     }
 
     DBUG_RETURN (z);
@@ -3178,7 +3263,7 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* Case 1*/
-    if (SCSisNonneg (PRF_ARG1 (arg_node))) {
+    if (SCSisNonnegative (PRF_ARG1 (arg_node))) {
 
         DBUG_PRINT ("Removed non_neg guard on %s",
                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));

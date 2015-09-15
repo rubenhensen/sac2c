@@ -3,12 +3,45 @@
 /* CPU architecture string */
 #undef ARCH
 
+/* ARMCI installation */
+#undef ARMCI_DIR
+
+/* Available GASNet conduits. */
+#undef DISTMEM_GASNET_CONDUITS
+
 /* Define to the command to use to invoke graphviz/dot, followed by a space.
    */
 #undef DOT_CMD
 
 /* Define to 1 to enable graphviz visualization, otherwise 0. */
 #undef DOT_FLAG
+
+/* Define to 1 if distributed memory support is enabled, otherwise 0. */
+#undef ENABLE_DISTMEM
+
+/* Define to 1 if ARMCI conduit is supported, otherwise 0. */
+#undef ENABLE_DISTMEM_ARMCI
+
+/* Define to 1 if GASNet conduit is supported, otherwise 0. */
+#undef ENABLE_DISTMEM_GASNET
+
+/* Define to 1 if GPI conduit is supported, otherwise 0. */
+#undef ENABLE_DISTMEM_GPI
+
+/* Define to 1 if MPI conduit is supported, otherwise 0. */
+#undef ENABLE_DISTMEM_MPI
+
+/* Define to 1 if libcrypt is available, otherwise 0. */
+#undef ENABLE_HASH
+
+/* Define to 1 if runtime specialization is enabled, otherwise 0. */
+#undef ENABLE_RTSPEC
+
+/* Define to 1 if libuuid is available, otherwise 0. */
+#undef ENABLE_UUID
+
+/* GPI installation */
+#undef GPI_DIR
 
 /* Set to 1 if compiler supports GNU vector syntax, otherwise 0. */
 #undef HAVE_GCC_SIMD_OPERATIONS
@@ -19,9 +52,6 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
-
-/* Define to 1 if you have the `polylib32' library (-lpolylib32). */
-#undef HAVE_LIBPOLYLIB32
 
 /* Define to 1 if you have the `polylib64' library (-lpolylib64). */
 #undef HAVE_LIBPOLYLIB64
@@ -37,9 +67,6 @@
 
 /* Define if OpenMP is enabled */
 #undef HAVE_OPENMP
-
-/* Define to 1 if you have the <polyhedron.h> header file. */
-#undef HAVE_POLYHEDRON_H
 
 /* Define if you have POSIX threads libraries and header files. */
 #undef HAVE_PTHREAD

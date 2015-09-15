@@ -1,8 +1,12 @@
 *.o
 *.d
+*~
+*.sacbugreport
 bin/*
 lib/*
 src/bin/*
+/.project
+.make_track
 
 # SaC generated files.
 .revision.txt
@@ -53,10 +57,10 @@ src/libsac2c/types/types_nodetype.h
 src/libsac2c/types/types_trav.h
 src/libsacphm/.last_style
 src/libsacprelude/.last_style
-src/libsacprelude/devel/libsacpreludeMod.*
-src/libsacprelude/devel/libsacpreludeTree.*
-src/libsacprelude/prod/libsacpreludeMod.*
-src/libsacprelude/prod/libsacpreludeTree.*
+src/libsacprelude/devel/libsacpreludeMod*.*
+src/libsacprelude/devel/libsacpreludeTree*.*
+src/libsacprelude/prod/libsacpreludeMod*.*
+src/libsacprelude/prod/libsacpreludeTree*.*
 src/makefiles/config.mkf
 src/maketools/.last_style
 src/runtime/.last_style
@@ -69,4 +73,5 @@ src/runtime/mutc_h/mutc_gen.h
 src/runtime/mutc_h/mutc_rc_gen.h
 src/runtime/nested_h/nested_gen.h
 src/tools/.last_style
-
+/make_distmem.sh
+/configure_das.sh

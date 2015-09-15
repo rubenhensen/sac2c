@@ -16,8 +16,11 @@
 #ifndef SAC_BACKEND_MUTC
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+
+#include "sac.h"
 
 /*
  *  Internal type definitions
@@ -34,8 +37,10 @@ typedef struct timeval __PF_TIMER;
 #define __PF_TIMER(timer) timer.tv_sec + timer.tv_usec / 1000000.0
 
 #define __PF_TIMER_PERCENTAGE(timer1, timer2)                                            \
-    (timer1.tv_sec + timer1.tv_usec / 1000000.0) * 100                                   \
-      / (timer2.tv_sec + timer2.tv_usec / 1000000.0)
+    ((timer2.tv_sec + timer2.tv_usec / 1000000.0) == 0                                   \
+       ? 0                                                                               \
+       : (timer1.tv_sec + timer1.tv_usec / 1000000.0) * 100                              \
+           / (timer2.tv_sec + timer2.tv_usec / 1000000.0))
 
 /*
  * Global variables
@@ -73,6 +78,29 @@ SAC_PF_PrintHeader (char *title)
 /******************************************************************************
  *
  * function:
+ *   void SAC_PF_PrintHeaderNode( char * title, size_t rank)
+ *
+ * description:
+ *
+ *   This function prints some header lines for presenting profiling
+ *   information for a specific node when the distributed memory backend is used.
+ *
+ *
+ ******************************************************************************/
+
+void
+SAC_PF_PrintHeaderNode (char *title, size_t rank)
+{
+    fprintf (stderr, "\n****************************************"
+                     "****************************************\n");
+    fprintf (stderr, "*** %-60s for node %2zd ***\n", title, rank);
+    fprintf (stderr, "****************************************"
+                     "****************************************\n");
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void SAC_PF_PrintSubHeader( char * title, int lineno)
  *
  * description:
@@ -96,7 +124,7 @@ SAC_PF_PrintSubHeader (char *title, int lineno)
  *
  * description:
  *
- *   Function for priniting timing information in a formatted manner.
+ *   Function for printing timing information in a formatted manner.
  *
  *
  *
@@ -109,6 +137,24 @@ SAC_PF_PrintTime (char *title, char *space, __PF_TIMER *time)
              "%-20s: %s "__PF_TIMER_FORMAT
              " sec\n",
              title, space, __PF_TIMER ((*time)));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void SAC_PF_PrintCount( char * title, char * space, unsigned long count)
+ *
+ * description:
+ *
+ *   Function for printing a counter in a formatted manner.
+ *
+ *
+ ******************************************************************************/
+
+void
+SAC_PF_PrintCount (char *title, char *space, unsigned long count)
+{
+    fprintf (stderr, "%-40s: %s %lu\n", title, space, count);
 }
 
 /******************************************************************************
@@ -130,10 +176,10 @@ SAC_PF_PrintTimePercentage (char *title, char *space, __PF_TIMER *time1,
                             __PF_TIMER *time2)
 {
     fprintf (stderr,
-             "%-20s:%s  "__PF_TIMER_FORMAT
+             "%-30s:%s  "__PF_TIMER_FORMAT
              " sec  %8.2f %%\n",
              title, space, __PF_TIMER ((*time1)),
              __PF_TIMER_PERCENTAGE ((*time1), (*time2)));
 }
 
-#endif /* SAC_BACKEND_MUTC */
+#endif /* !defined(SAC_BACKEND_MUTC) */

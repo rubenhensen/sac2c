@@ -265,7 +265,7 @@ IsConstantArg (node *id, node *fundef, node *ext_assign, loopc_t *init_counter)
 
     DBUG_ENTER ();
 
-    param = LFUgetCallArg (id, fundef, ext_assign);
+    param = LFUgetLoopVariable (id, fundef, ext_assign);
 
     /* get constant value (conversion w/constant resolves propagated data */
     co = COaST2Constant (param);
@@ -323,7 +323,8 @@ InitialValueExtrema (struct idx_vector *ivptr, info *arg_info)
     DBUG_ENTER ();
 
     liv = ID_AVIS (ivptr->var);
-    val = LFUgetCallArg (ivptr->var, INFO_FUNDEF (arg_info), INFO_EXT_ASSIGN (arg_info));
+    val = LFUgetLoopVariable (ivptr->var, INFO_FUNDEF (arg_info),
+                              INFO_EXT_ASSIGN (arg_info));
     newavis = LFUprefixFunctionArgument (INFO_FUNDEF (arg_info), ID_AVIS (val),
                                          &INFO_NEWOUTERAPARGS (arg_info));
 

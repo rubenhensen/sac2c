@@ -97,13 +97,30 @@ SAC_TR_Print (char *format, ...)
 {
     va_list arg_p;
 
-    fprintf (stderr, "TR-> ");
+    /* Check if tracing is active for this node. */
+    if (SAC_DISTMEM_rank
+          == SAC_DISTMEM_RANK_UNDEFINED /* Distributed memory backend not used */
+        || SAC_DISTMEM_trace_profile_rank
+             == SAC_DISTMEM_TRACE_PROFILE_RANK_ANY /* Print tracing for any node */
+        || SAC_DISTMEM_trace_profile_rank
+             == (int)SAC_DISTMEM_rank) { /* Print tracing for this node */
 
-    va_start (arg_p, format);
-    vfprintf (stderr, format, arg_p);
-    va_end (arg_p);
+        if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {
+            /*
+             * The rank should only be undefined if the distributed memory
+             * backend is not used.
+             */
+            fprintf (stderr, "TR-> ");
+        } else {
+            fprintf (stderr, "TR:n%zd-> ", SAC_DISTMEM_rank);
+        }
 
-    fprintf (stderr, "\n");
+        va_start (arg_p, format);
+        vfprintf (stderr, format, arg_p);
+        va_end (arg_p);
+
+        fprintf (stderr, "\n");
+    }
 }
 
 #endif /* MT */

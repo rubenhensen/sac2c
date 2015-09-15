@@ -24,8 +24,11 @@
 
 #include "cost_model.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "MTCM"
 #include "debug.h"
+#ifndef DBUG_OFF
+#include "print.h"
+#endif
 
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -47,6 +50,7 @@ struct INFO {
     node *letids;
     bool maypar;
     bool isworth;
+    bool mod_or_gen_seen;
     node *condition;
     node *sequential;
     node *vardecs;
@@ -60,6 +64,7 @@ struct INFO {
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_LETIDS(n) (n->letids)
 #define INFO_ISWORTH(n) (n->isworth)
+#define INFO_MOD_GEN_SEEN(n) (n->mod_or_gen_seen)
 #define INFO_MAYPAR(n) (n->maypar)
 #define INFO_CONDITION(n) (n->condition)
 #define INFO_SEQUENTIAL(n) (n->sequential)
@@ -193,6 +198,7 @@ MTCMfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_PRINT ("------- function \"%s\" -------\n", FUNDEF_NAME (arg_node));
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
@@ -279,25 +285,35 @@ MTCMwith2 (node *arg_node, info *arg_info)
 
     INFO_MAYPAR (arg_info) = TRUE;
     INFO_ISWORTH (arg_info) = FALSE;
+    INFO_MOD_GEN_SEEN (arg_info) = FALSE;
     INFO_CONDITION (arg_info) = NULL;
+
+    DBUG_PRINT ("considering with2 in line %d ...", NODE_LINE (arg_node));
 
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
     if (INFO_MAYPAR (arg_info)) {
         if (INFO_ISWORTH (arg_info)) {
             WITH2_PARALLELIZE (arg_node) = TRUE;
+            DBUG_PRINT ("will parallelize!\n");
         } else {
+            DBUG_PRINT ("*may* parallelize ...");
             if (INFO_CONDITION (arg_info) != NULL) {
+                DBUG_PRINT ("condition is:");
+                DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, INFO_CONDITION (arg_info)););
                 INFO_SEQUENTIAL (arg_info)
                   = TBmakeLet (DUPdoDupTree (INFO_LETIDS (arg_info)),
                                DUPdoDupTree (arg_node));
 
                 WITH2_PARALLELIZE (arg_node) = TRUE;
+            } else {
+                DBUG_PRINT ("       BUT have no condition!\n");
             }
         }
     } else {
         /* Traverse code to find nested withloops which we may want
          * to parallellize */
+        DBUG_PRINT ("will *not* parallelize!\n");
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
 
@@ -372,15 +388,13 @@ MTCMfold (node *arg_node, info *arg_info)
         if (FOLD_NEXT (arg_node) != NULL) {
             INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
             FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
-        } else {
-            if (INFO_MAYPAR (arg_info) && !INFO_ISWORTH (arg_info)) {
-                /*
-                 * This with-loop only consists of fold operations. As long as we do
-                 * not have a proper condition on fold-with-loops, we parallelize
-                 * always.
-                 */
-                INFO_ISWORTH (arg_info) = TRUE;
-            }
+        }
+        if (!INFO_MOD_GEN_SEEN (arg_info)) {
+            /*
+             * This with-loop only consists of fold operations or propgates. As long as we
+             * do not have a proper condition on fold-with-loops, we parallelize always.
+             */
+            INFO_ISWORTH (arg_info) = TRUE;
         }
     }
 
@@ -401,6 +415,7 @@ MTCMgenarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    INFO_MOD_GEN_SEEN (arg_info) = TRUE;
     if (INFO_LETIDS (arg_info) != NULL) {
         size_static = TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)));
 
@@ -481,6 +496,7 @@ MTCMmodarray (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    INFO_MOD_GEN_SEEN (arg_info) = TRUE;
     if (TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
         size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
         if (size >= global.min_parallel_size) {

@@ -132,6 +132,12 @@ typedef enum simpletype_t simpletype;
  */
 typedef int usertype;
 
+typedef enum distmem_dis_t {
+    distmem_dis_dis,
+    distmem_dis_ndi,
+    distmem_dis_dsm
+} distmem_dis;
+
 #define PHASE(name, text, cond) PH_##name,
 
 #define SUBPHASE(name, text, fun, cond, phase) PH_##phase##_##name,
@@ -220,7 +226,12 @@ typedef enum {
 #include "prf_info.mac"
 } prf;
 
-typedef enum { PA_x = 0, PA_S = 1, PA_V = 2, PA_A = 3 } arg_encoding_t;
+typedef enum {
+    PA_x = 0, /* No argument */
+    PA_S = 1, /* Scalar argument */
+    PA_V = 2, /* Vector argument */
+    PA_A = 3  /* Array argument */
+} arg_encoding_t;
 
 typedef node *(*cf_fun_t) (node *arg_node);
 
@@ -327,8 +338,9 @@ typedef struct TYPES {
     mutcScope scope; /* the scope of the value of this var */
     mutcUsage usage; /* where is this var used */
 
-    bool unique; /* this variable is unique */
-    bool akv;    /* this variable is akv */
+    bool unique;             /* this variable is unique */
+    bool akv;                /* this variable is akv */
+    distmem_dis distributed; /* distributed class of this variable */
 
 } types;
 
@@ -453,8 +465,7 @@ typedef struct ARGTAB_T {
 
 /*
  * The following defines indicate the position of tags within name tuples.
- * They should be kept in synch with the NT_NAME, NT_SHP, NT_HID and NT_UNQ
- * macros in sac_std.h
+ * They should be kept in synch with the macros in std.h.
  */
 #define NT_NAME_INDEX 0
 #define NT_SHAPE_INDEX 1
@@ -464,66 +475,66 @@ typedef struct ARGTAB_T {
 #define NT_MUTC_SCOPE_INDEX 5
 #define NT_MUTC_USAGE_INDEX 6
 #define NT_BITARRAY_INDEX 7
+#define NT_DISTRIBUTED_INDEX 8
+#define NT_CBASETYPE_INDEX 9
 
 /*
- * Enumerated types for data class and uniqueness class
+ * Enumerated types for classes
  */
 
 typedef enum {
 #define ATTRIB NT_SHAPE_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } shape_class_t;
 
 typedef enum {
 #define ATTRIB NT_HIDDEN_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } hidden_class_t;
 
 typedef enum {
 #define ATTRIB NT_UNIQUE_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } unique_class_t;
 
 typedef enum {
 #define ATTRIB NT_MUTC_STORAGE_CLASS_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } mutc_storage_class_class_t;
 
 typedef enum {
 #define ATTRIB NT_MUTC_SCOPE_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } mutc_scope_class_t;
 
 typedef enum {
 #define ATTRIB NT_MUTC_USAGE_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } mutc_usage_class_t;
 
 typedef enum {
 #define ATTRIB NT_BITARRAY_INDEX
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
-#undef NTIFtype
-#undef ATTRIB
 } bitarray_class_t;
+
+typedef enum {
+#define ATTRIB NT_DISTRIBUTED_INDEX
+#define NTIFtype(it_type) it_type
+#include "nt_info.mac"
+} distributed_class_t;
+
+typedef enum {
+#define ATTRIB NT_CBASETYPE_INDEX
+#define NTIFtype(it_type) it_type
+#include "nt_info.mac"
+} cbasetype_class_t;
 
 /*
  * moved from shape.h
@@ -718,6 +729,8 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (SBI, sbi, char *, str)                                                 \
     DEF_RESOURCE (VARIANT, variant, char *, str)                                         \
     DEF_RESOURCE (BACKEND, backend, char *, str)                                         \
+    DEF_RESOURCE (DISTMEM_COMMLIB, distmem_commlib, char *, str)                         \
+    DEF_RESOURCE (COMMLIB_CONDUIT, commlib_conduit, char *, str)                         \
     DEF_RESOURCE (RC_METHOD, rc_method, char *, str)                                     \
     DEF_RESOURCE (CUDA_ARCH, cuda_arch, char *, str)                                     \
     DEF_RESOURCE (USE_PHM_API, use_phm_api, int, num)                                    \
@@ -935,6 +948,14 @@ typedef union {
 /*
  * New types for global
  */
+
+/* Communication libraries for the DistMem (distributed memory) backend. */
+typedef enum {
+#define DISTMEM_COMMLIBtype(type) type,
+#include "distmem_commlibs.mac"
+#undef DISTMEM_COMMLIBtype
+    DISTMEM_COMMLIB_UNKNOWN
+} distmem_commlib_t;
 
 /*
  * Read in optimization counters from optimize.mac

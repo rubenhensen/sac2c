@@ -78,6 +78,7 @@
 #include "constants.h"
 #include "shape.h"
 #include "type_utils.h"
+#include "new_types.h"
 #include "indexvectorutils.h"
 #include "with_loop_utilities.h"
 
@@ -260,6 +261,7 @@ CWLEarg (node *arg_node, info *arg_info)
 
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
+    DBUG_PRINT ("Setting DFM for argument %s", AVIS_NAME (ARG_AVIS (arg_node)));
     DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, ARG_AVIS (arg_node));
 
     DBUG_RETURN (arg_node);
@@ -397,6 +399,15 @@ CWLEwith (node *arg_node, info *arg_info)
              */
             arg_node = FREEdoFreeTree (arg_node);
             arg_node = TBmakeId (INFO_PAVIS (arg_info));
+
+            /*
+             * To avoid loss of type information, we attach the old LHS type to the RHS
+             * in the form of a type-conv! See bug 1147 for details.
+             */
+            arg_node = TCmakePrf2 (F_type_conv,
+                                   TBmakeType (TYcopyType (
+                                     AVIS_TYPE (IDS_AVIS (INFO_LHS (arg_info))))),
+                                   arg_node);
         } else {
             DBUG_PRINT ("Shape mismatch: Unable to replace LHS(%s) WL by RHS(%s)",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),

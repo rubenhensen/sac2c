@@ -203,6 +203,7 @@ static node *last_assignment_icm = NULL;
 #define ICM_ID(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
+#define ICM_BOOL(name)
 #define ICM_VARANY(dim, name)
 #define ICM_VARNT(dim, name)
 #define ICM_VARID(dim, name)
@@ -216,6 +217,7 @@ static node *last_assignment_icm = NULL;
 #undef ICM_ID
 #undef ICM_STR
 #undef ICM_INT
+#undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT
 #undef ICM_VARID
@@ -291,31 +293,6 @@ FreeInfo (info *info)
     info = MEMfree (info);
 
     DBUG_RETURN (info);
-}
-
-static void
-PrintSimdBegin (void)
-{
-    DBUG_ENTER ();
-
-    INDENT;
-    fprintf (global.outfile, "( /* SIMD-Block begin */\n");
-    global.indent++;
-
-    DBUG_RETURN ();
-}
-
-static void
-PrintSimdEnd (void)
-{
-    DBUG_ENTER ();
-
-    fprintf (global.outfile, "\n");
-    global.indent--;
-    INDENT;
-    fprintf (global.outfile, ") /* SIMD-Block end */\n");
-
-    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -4213,6 +4190,7 @@ PRTicm (node *arg_node, info *arg_info)
 #define ICM_ID(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
+#define ICM_BOOL(name)
 #define ICM_VARANY(dim, name)
 #define ICM_VARNT(dim, name)
 #define ICM_VARID(dim, name)
@@ -4226,7 +4204,7 @@ PRTicm (node *arg_node, info *arg_info)
 #undef ICM_NT
 #undef ICM_ID
 #undef ICM_STR
-#undef ICM_INT
+#undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT
 #undef ICM_VARID
@@ -4865,10 +4843,6 @@ PRTcode (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (CODE_USED (arg_node) >= 0, "illegal CODE_USED value!");
 
-    if (CODE_ISSIMDSUITABLE (arg_node)) {
-        PrintSimdBegin ();
-    }
-
     /* print the code section; the body first */
     TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
@@ -4878,10 +4852,6 @@ PRTcode (node *arg_node, info *arg_info)
     }
 
     fprintf (global.outfile, " ; ");
-
-    if (CODE_ISSIMDSUITABLE (arg_node)) {
-        PrintSimdEnd ();
-    }
 
     if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
         && CODE_IRA_INFO (arg_node) != NULL) {
@@ -4915,8 +4885,9 @@ PRTpart (node *arg_node, info *arg_info)
     tmp_npart = INFO_NPART (arg_info);
     INFO_NPART (arg_info) = arg_node;
 
-    fprintf (global.outfile, "/* Partn */\n"); // For automated partition counting
-                                               // by unit testing code.
+    // For automated partition counting by unit testing code
+    INDENT
+    fprintf (global.outfile, "/* Partn */\n");
 
     if (PART_CUDARIZABLE (arg_node)) {
         INDENT
@@ -4947,7 +4918,7 @@ PRTpart (node *arg_node, info *arg_info)
     TRAVdo (PART_CODE (arg_node), arg_info);
 
     if (PART_NEXT (arg_node) != NULL) {
-        fprintf (global.outfile, ",\n");
+        fprintf (global.outfile, "\n");
         /*
          * continue with other parts
          */
@@ -5571,30 +5542,6 @@ PRTwlublock (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *PRTwlsimd( node *arg_node, info *arg_info)
- *
- * description:
- *   prints N_wlsimd node
- *
- ******************************************************************************/
-
-node *
-PRTwlsimd (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    PrintSimdBegin ();
-
-    TRAVcont (arg_node, arg_info);
-
-    PrintSimdEnd ();
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *PRTwlstride( node *arg_node, info *arg_info)
  *
  * description:
@@ -5612,10 +5559,6 @@ PRTwlstride (node *arg_node, info *arg_info)
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
-
-    if (WLSTRIDE_ISSIMDSUITABLE (arg_node)) {
-        PrintSimdBegin ();
     }
 
     INDENT;
@@ -5637,10 +5580,6 @@ PRTwlstride (node *arg_node, info *arg_info)
         global.indent++;
         TRAVopt (WLSTRIDE_CONTENTS (arg_node), arg_info);
         global.indent--;
-    }
-
-    if (WLSTRIDE_ISSIMDSUITABLE (arg_node)) {
-        PrintSimdEnd ();
     }
 
     if (WLSTRIDE_NEXT (arg_node) != NULL) {
@@ -5850,10 +5789,11 @@ PRTavis (node *arg_node, info *arg_info)
         fprintf (global.outfile, " /* CUDA local */");
     }
 
-    if (global.optimize.dopogo && (-1 != AVIS_POLYLIBCOLUMNINDEX (arg_node))) {
-        fprintf (global.outfile, " /* POLYLIBCOLUMNINDEX = %d */ ",
-                 AVIS_POLYLIBCOLUMNINDEX (arg_node));
+#ifdef SOONDEAD
+    if (global.optimize.dopwlf) {
+        fprintf (global.outfile, " /* AVIS_NPART = %d */ ", (int)AVIS_NPART (arg_node));
     }
+#endif // SOONDEAD
 
     DBUG_RETURN (arg_node);
 }

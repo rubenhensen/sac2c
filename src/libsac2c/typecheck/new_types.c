@@ -173,6 +173,7 @@ struct NTYPE {
     mutcScope mutcscope;
     mutcUsage mutcusage;
     bool unique;
+    distmem_dis distributed;
     struct NTYPE **sons;
 };
 
@@ -190,6 +191,7 @@ struct NTYPE {
 #define NTYPE_MUTC_SCOPE(n) (n->mutcscope)
 #define NTYPE_MUTC_USAGE(n) (n->mutcusage)
 #define NTYPE_UNIQUE(n) (n->unique)
+#define NTYPE_DISTRIBUTED(n) (n->distributed)
 /*
  * Macros for accessing the attributes...
  */
@@ -307,6 +309,7 @@ MakeNtype (typeconstr con, int arity)
     NTYPE_MUTC_SCOPE (res) = MUTC_GLOBAL;
     NTYPE_MUTC_USAGE (res) = MUTC_US_DEFAULT;
     NTYPE_UNIQUE (res) = FALSE;
+    NTYPE_DISTRIBUTED (res) = distmem_dis_ndi;
 
     DBUG_RETURN (res);
 }
@@ -509,6 +512,7 @@ TYgetMutcUsage (ntype *type)
 
     DBUG_RETURN (NTYPE_MUTC_USAGE (type));
 }
+
 /******************************************************************************
  *
  * function:
@@ -523,6 +527,22 @@ TYisUnique (ntype *type)
     DBUG_ENTER ();
 
     DBUG_RETURN (NTYPE_UNIQUE (type));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    distmem_dis TYDistributed( ntype *type)
+ *
+ * description:
+ *
+ ******************************************************************************/
+distmem_dis
+TYgetDistributed (ntype *type)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (NTYPE_DISTRIBUTED (type));
 }
 
 /******************************************************************************
@@ -639,6 +659,16 @@ TYsetUnique (ntype *type, bool val)
     DBUG_ENTER ();
 
     NTYPE_UNIQUE (type) = val;
+
+    DBUG_RETURN (type);
+}
+
+ntype *
+TYsetDistributed (ntype *type, distmem_dis val)
+{
+    DBUG_ENTER ();
+
+    NTYPE_DISTRIBUTED (type) = val;
 
     DBUG_RETURN (type);
 }
@@ -4630,6 +4660,7 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
 
     if (res != NULL) {
         res = TYsetUnique (res, TYisUnique (type));
+        res = TYsetDistributed (res, TYgetDistributed (type));
     }
 
     DBUG_RETURN (res);
@@ -6029,6 +6060,7 @@ Type2OldType (ntype *xnew)
         res = Type2OldType (AKS_BASE (xnew));
         TYPES_DIM (res) = SHgetDim (AKS_SHP (xnew));
         TYPES_SHPSEG (res) = SHshape2OldShpseg (AKS_SHP (xnew));
+
         break;
     case TC_akd:
         res = Type2OldType (AKD_BASE (xnew));
@@ -6074,6 +6106,38 @@ Type2OldType (ntype *xnew)
         TYPES_MUTC_USAGE (res) = NTYPE_MUTC_USAGE (xnew);
         if (TYisUnique (xnew)) {
             TYPES_UNIQUE (res) = TRUE;
+        }
+    }
+
+    /* Decide whether the type is distributable. */
+    /* TODO: This is not the best location but we only need this during code generation
+     * so at this moment we do not need this in the new type system. */
+    if (global.backend == BE_distmem) {
+        if (TYgetDistributed (xnew) == distmem_dis_dsm) {
+            TYPES_DISTRIBUTED (res) = distmem_dis_dsm;
+        }
+
+        /* It seems like the basetype is not yet supported by the distributed memory
+         * backend. Don't distribute. */
+        else if (
+          global.type_cbasetype[TYPES_BASETYPE (res)] != C_btother
+          /* To avoid problems with string functions, we do not distribute unsigned char
+             arrays. */
+          && global.type_cbasetype[TYPES_BASETYPE (res)] != C_btuchar
+          /* It doesn't make sense to distribute scalars. */
+          && TYPES_DIM (res) != SCALAR
+          /* We do not distribute hidden types. It is not practical since we would have to
+           * think about (de-)serialization. But since hidden types come from the
+           * non-distributed C world it doesn't make make sense to distribute them
+           * anyways. */
+          && !TCisHidden (res)
+          /* It doesn't make sense to distribute unique types. These are only used by the
+           * master node.
+           * TODO: TYPES_UNIQUE seems to be always FALSE. */
+          && !TYPES_UNIQUE (res)
+          /* For now we do not distribute nested types. TODO: What are these actually? */
+          && !TCisNested (res)) {
+            TYPES_DISTRIBUTED (res) = distmem_dis_dis;
         }
     }
 

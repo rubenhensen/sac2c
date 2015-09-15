@@ -161,8 +161,8 @@ FLATGexpression2Avis (node *arg_node, node **vardecs, node **preassigns, ntype *
         avis = TBmakeAvis (TRAVtmpVar (), restype);
         *vardecs = TBmakeVardec (avis, *vardecs);
         nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), arg_node), NULL);
-        *preassigns = TCappendAssign (*preassigns, nas);
         AVIS_SSAASSIGN (avis) = nas;
+        *preassigns = TCappendAssign (*preassigns, nas);
         DBUG_PRINT ("Generated assign for %s", AVIS_NAME (avis));
         break;
     }

@@ -16,6 +16,8 @@
 #include "print.h"
 #include "str.h"
 #include "str_buffer.h"
+#include "string.h"
+#include "rtspec_modes.h"
 
 #define DBUG_PREFIX "UNDEFINED"
 #include "debug.h"
@@ -51,10 +53,10 @@ ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
 {
     DBUG_ENTER ();
 
-#define ND_FUN_DEF_BEGIN
+#define WE_FUN_DEF_BEGIN
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_FUN_DEF_BEGIN
+#undef WE_FUN_DEF_BEGIN
 
     INDENT;
 
@@ -80,24 +82,6 @@ ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
     INDENT;
     fprintf (global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
 
-    /*
-     * Add a macro do declare the function pointer needed by the wrapper entry
-     * function.
-     */
-    INDENT;
-    fprintf (global.outfile, "SAC_WE_DECL_FN_POINTER(");
-
-    if (rettype_NT[0] != '\0') {
-        fprintf (global.outfile, "SAC_ND_TYPE_NT( %s), ", rettype_NT);
-    } else {
-        fprintf (global.outfile, "void, ");
-    }
-
-    ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
-                          vararg[i + 2], vararg[i + 1]));
-    fprintf (global.outfile, ");\n");
-
     DBUG_RETURN ();
 }
 
@@ -112,56 +96,77 @@ ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
  *
  ****************************************************************************/
 void
-ICMCompileWE_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
+ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, int vararg_cnt,
+                     char **vararg)
 {
     DBUG_ENTER ();
 
-#define ND_FUN_AP
+#define WE_FUN_AP
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_FUN_AP
+#undef WE_FUN_AP
 
-    /*
-     * Encode the base type information.
-     */
-    str_buf *buffer;
-    buffer = SBUFcreate (256);
-    char *types;
-
-    // char types[256] = "";
-    // char current[10] = "";
-
-    int i = 0;
-    for (; i < vararg_cnt * 3; i += 3) {
-        if (STReq (vararg[i], "in")) {
-            SBUFprintf (buffer, "%s-", vararg[i + 1]);
-            // sprintf( current, "%s-", vararg[i+1]);
-            // sprintf( types, "%s", STRcat( types, current));
-        }
-    }
-
-    types = SBUF2str (buffer);
-
-    INDENT;
     if (!STReq (retname, "")) {
+        INDENT;
         fprintf (global.outfile, "%s = ", retname);
         fprintf (global.outfile, "%s(", name);
     } else {
-        fprintf (global.outfile, "SAC_WE_FUNAP2(");
-        fprintf (global.outfile, "%s, %s, ", types, name);
+
+        /*
+         * Encode the base type information.
+         */
+        size_t type_string_size = 1;
+
+        int i = 0;
+        for (; i < vararg_cnt * 3; i += 3) {
+            if (STReq (vararg[i], "in")) {
+                type_string_size += STRlen (vararg[i + 1]) + 1;
+            }
+        }
+
+        char *types = (char *)malloc (type_string_size * sizeof (char));
+
+        types[0] = '\0';
+
+        i = 0;
+        for (; i < vararg_cnt * 3; i += 3) {
+            if (STReq (vararg[i], "in")) {
+                strcat (types, vararg[i + 1]);
+                strcat (types, "-");
+            }
+        }
+
+        fprintf (global.outfile, "#pragma GCC diagnostic push\n");
+        fprintf (global.outfile, "#pragma GCC diagnostic ignored \"-Wpedantic\"\n");
+        INDENT;
+        if (global.rtspec_mode == RTSPEC_MODE_SIMPLE) {
+            fprintf (global.outfile, "SAC_WE_FUNAP2(%s, %s)\n", types, name);
+        } else {
+            fprintf (global.outfile, "SAC_RTSPEC_ENQ_REQ_CHK(%s, %s)\n", types, name);
+        }
+        INDENT;
+        fprintf (global.outfile, "SAC_WE_PTR_CAST( ");
+
+        if (rettype_NT[0] != '\0') {
+            fprintf (global.outfile, "SAC_ND_TYPE_NT( %s), ", rettype_NT);
+        } else {
+            fprintf (global.outfile, "void, ");
+        }
+
+        ScanArglist (vararg_cnt, 3, ",", ,
+                     fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                              vararg[i + 2], vararg[i + 1]));
+
+        fprintf (global.outfile, ")(");
     }
 
     ScanArglist (vararg_cnt, 3, ",", ,
                  fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
                           vararg[i + 2], vararg[i + 1]));
 
-    if (!STReq (retname, "")) {
-        fprintf (global.outfile, ");");
-    } else {
-        fprintf (global.outfile, ")");
-    }
+    fprintf (global.outfile, ");\n");
 
-    fprintf (global.outfile, "\n");
+    fprintf (global.outfile, "#pragma GCC diagnostic pop\n");
 
     DBUG_RETURN ();
 }
@@ -278,10 +283,10 @@ ICMCompileWE_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **v
 {
     DBUG_ENTER ();
 
-#define ND_FUN_DEF_END
+#define WE_FUN_DEF_END
 #include "icm_comment.c"
 #include "icm_trace.c"
-#undef ND_FUN_DEF_END
+#undef WE_FUN_DEF_END
 
     global.indent--;
     INDENT;

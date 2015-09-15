@@ -16,8 +16,6 @@ start_icm_definition(mt_gen)
 #ifndef _SAC_MT_GEN_H_
 #define _SAC_MT_GEN_H_
 
-#ifndef SAC_SIMD_COMPILATION
-
 #if SAC_DO_MULTITHREAD
 
 /*
@@ -172,8 +170,6 @@ rule(`SAC_MT_SYNC_FOLD_out', `SAC_MT_SYNC_FOLD_out__DESC', `AKD', `*HID')
 rule(`SAC_MT_SYNC_FOLD_out', `SAC_MT_SYNC_FOLD_out__DESC', `AUD', `*HID')
 
 #endif  /* SAC_DO_MULTITHREAD */
-
-#endif  /* SAC_SIMD_COMPILATION */
 
 #endif  /* _SAC_MT_GEN_H_ */
 

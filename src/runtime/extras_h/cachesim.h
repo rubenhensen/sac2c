@@ -29,8 +29,6 @@
 #if SAC_MUTC_MACROS
 #else
 
-#ifndef SAC_SIMD_COMPILATION
-
 #define SAC_CS_NONE 0
 #define SAC_CS_FILE 1
 #define SAC_CS_SIMPLE 2
@@ -203,7 +201,6 @@ SAC_C_EXTERN void (*SAC_CS_Start) (char * /*tag*/);
 
 SAC_C_EXTERN void (*SAC_CS_Stop) (void);
 
-#endif /* ! SAC_SIMD_COMPILATION */
 #endif
 
 /*****************************************************************************

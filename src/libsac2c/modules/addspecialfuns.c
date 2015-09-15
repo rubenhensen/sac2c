@@ -72,6 +72,8 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         DSinitDeserialize (syntaxtree);
 
         DSaddSymbolByName ("sel", SET_wrapperhead, global.preludename);
+        DSaddSymbolByName ("_selVxADistmemLocal", SET_wrapperhead, global.preludename);
+        DSaddSymbolByName ("_selSxADistmemLocal", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("zero", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("eq", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("adjustLacFunParams", SET_wrapperhead, global.preludename);

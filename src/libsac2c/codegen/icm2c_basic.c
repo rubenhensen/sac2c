@@ -201,6 +201,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
     int i;
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
+    distributed_class_t to_dc = ICUGetDistributedClass (to_NT);
 
     DBUG_ENTER ();
     DBUG_ASSERT (shp1_read_fun != NULL, "1st shape-read-fun not found!");
@@ -325,6 +326,16 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
                           shp2_prod_fun (shp2);
                       });
         BLOCK_END ();
+
+        if (global.backend == BE_distmem && to_dc == C_distr) {
+            /* Array is potentially distributed. */
+            indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_DISTMEM_DET_DO_DISTR_ARR( "
+                    "SAC_ND_A_SIZE( %s), SAC_ND_A_SHAPE( %s, 0));\n",
+                    to_NT, to_NT, to_NT);
+            indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s);\n", to_NT,
+                    to_NT);
+        }
+
         break;
 
     case C_akd:
@@ -405,6 +416,16 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
                           });
             }
         BLOCK_END ();
+
+        if (global.backend == BE_distmem && to_dc == C_distr) {
+            /* Array is potentially distributed. */
+            indout ("SAC_ND_A_MIRROR_IS_DIST( %s) = SAC_DISTMEM_DET_DO_DISTR_ARR( "
+                    "SAC_ND_A_SIZE( %s), SAC_ND_A_SHAPE( %s, 0));\n",
+                    to_NT, to_NT, to_NT);
+            indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s);\n", to_NT,
+                    to_NT);
+        }
+
         break;
 
     case C_aks:

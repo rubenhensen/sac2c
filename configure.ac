@@ -63,6 +63,19 @@ CHECK_LTO
 dnl Check if C compiler supports SIMD syntax
 CHECK_SIMD_SYNTAX
 
+dnl Prints the value of a makefile variable.
+getmakevar() {
+    makefile="$1"
+    var="$2"
+
+    make getmakevar -f -  <<EOI
+include $makefile
+
+getmakevar:
+	@echo \$($var)
+EOI
+}
+
 dnl Check for SAC back-ends (CHECK_LPEL must appear after CHECK_MT)
 CHECK_MT
 CHECK_LPEL
@@ -71,6 +84,7 @@ CHECK_SL
 CHECK_OMP
 dnl enable private heap manager?
 CHECK_PHM
+CHECK_DISTMEM
 
 dnl check for ranlib
 AC_PROG_RANLIB
@@ -109,34 +123,28 @@ AC_CHECK_HEADER([dlfcn.h], [], [AC_MSG_ERROR([dlfcn.h is required.])])
 AC_SEARCH_LIBS([dlopen], [dl])
 CHECK_DLL_EXT
 
-dnl check support for polylib: --with-polylib=polylib-path
-polylibs="64 32"
-AC_ARG_WITH(polylib_prefix,
-            [AS_HELP_STRING([--with-polylib-prefix=DIR],
-            [Prefix of PolyLib installation])])
+enable_uuid=no
+AC_SEARCH_LIBS([uuid_generate], [uuid], [enable_uuid=yes], [enable_uuid=no])
+AC_CHECK_HEADER([uuid/uuid.h], [enable_uuid=yes], [enable_uuid=no])
+have_uuid=`if test $enable_uuid = yes; then echo 1; else echo 0; fi`
+AC_DEFINE_UNQUOTED([ENABLE_UUID], [$have_uuid],
+                   [Define to 1 if libuuid is available, otherwise 0.])
+AC_SUBST([ENABLE_UUID], [$enable_uuid])
 
-AC_SUBST(POLYLIB_LIBS)
-AC_SUBST(LIB_HAVEPOLYLIB64)
+enable_crypt=no
+AC_SEARCH_LIBS([crypt], [crypt], [enable_crypt=yes], [enable_crypt=no])
+AC_CHECK_HEADER([crypt.h], [enable_crypt=yes], [enable_crypt=no])
+have_crypt=`if test $enable_crypt = yes; then echo 1; else echo 0; fi`
+AC_DEFINE_UNQUOTED([ENABLE_HASH], [$have_crypt],
+                   [Define to 1 if libcrypt is available, otherwise 0.])
+AC_SUBST([ENABLE_HASH], [$enable_crypt])
 
-AC_MSG_CHECKING(for location of PolyLib)
-	for BITS in $polylibs; do
-            cl_cv_polylib="polylib$BITS"
-            AC_CHECK_LIB($cl_cv_polylib,PolyhedronTSort,[
-                         LIBS="-l$cl_cv_polylib $LIBS"
-                         AC_MSG_RESULT(LIBS is now $LIBS)
-                         break
-            ])
-            cl_cv_polylib=missing
-            AC_SUBST(LIB_HAVEPOLYLIB64, ["yes"])
-            AC_MSG_RESULT(found polylib64)
-            AC_SUBST(POLYLIB,["yes"])
-        done
-
-if test "$cl_cv_polylib" = "missing"; then
-      AC_MSG_RESULT(Can't find PolyLib.)
-else
-      AC_CHECK_HEADER(polylib/$cl_cv_polylib.h,[],
-                      [AC_MSG_ERROR(Can't find PolyLib headers.)])
+dnl set rtspec flag
+enable_rtspec=no
+if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes ; then
+  if test x"$enable_uuid" != xno -o x"$enable_crypt" != xno ; then
+    enable_rtspec=yes
+  fi
 fi
 
 AC_CHECK_LIB(polylib64,DomainIntersection)
@@ -147,6 +155,10 @@ case $ac_cv_search_dlopen in
   no | none*) dlopen_libs= ;;
   * ) dlopen_libs=$ac_cv_search_dlopen ;;
 esac
+have_rtspec=`if test $enable_rtspec = yes; then echo 1; else echo 0; fi`
+AC_DEFINE_UNQUOTED([ENABLE_RTSPEC], [$have_rtspec],
+                   [Define to 1 if runtime specialization is enabled, otherwise 0.])
+AC_SUBST([ENABLE_RTSPEC], [$enable_rtspec])
 
 dnl Check which GCC warning options are available and
 dnl add them later to MKCCFLAGS and PDCCFLAGS
@@ -178,8 +190,8 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin $flags_lto"])
-  AC_SUBST(MKCCFLAGS, ["$gcc_options -pedantic -g $flags_lto"])
-  AC_SUBST(PDCCFLAGS, ["$gcc_options -pedantic -g -O3 $flags_lto"])
+  AC_SUBST(MKCCFLAGS, ["$gcc_options $gcc_native -pedantic -g $flags_lto"])
+  AC_SUBST(PDCCFLAGS, ["$gcc_options $gcc_native -pedantic -g -O3 $flags_lto"])
   if [ test "$IS_CYGWIN" = yes ]; then
     AC_SUBST(GENPIC, ["-DPIC"])
   else
@@ -295,6 +307,29 @@ RCX86=setup/sac2crc.X86
 RCALPHA=setup/sac2crc.ALPHA
 RCMAC=setup/sac2crc.MAC
 
+dnl
+dnl Append GASNet conduit targets file to sac2crc.
+dnl
+AC_SUBST_FILE([GASNET_CONDUIT_TARGETS])
+GASNET_CONDUIT_TARGETS=./sac2crc.GASNetconduits
+
+dnl
+dnl Append GASNet conduit settings file to config.mkf.
+dnl
+AC_SUBST_FILE([GASNET_CONDUIT_SETTINGS])
+GASNET_CONDUIT_SETTINGS=./config.GASNetconduits
+
+dnl
+dnl Append rules for building libsacdistmem GASNet object files to build.mkf
+dnl
+AC_SUBST_FILE([GASNET_CONDUIT_BUILD_OBJECT_FILES])
+GASNET_CONDUIT_BUILD_OBJECT_FILES=./build.GASNetconduits
+
+dnl
+dnl Append rules for building libsacdistmem GASNet cross variant object files to build.mkf
+dnl
+AC_SUBST_FILE([GASNET_CONDUIT_BUILD_OBJECT_FILES_CROSS_VARIANT])
+GASNET_CONDUIT_BUILD_OBJECT_FILES_CROSS_VARIANT=./build.GASNetconduitsCrossVariant
 
 # generate specific flags for known os
 AC_MSG_CHECKING([sac2crc system flags])
@@ -309,7 +344,7 @@ case "$target_os" in
     AC_MSG_RESULT([solaris settings])
     ;;
   *linux*)
-    OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"]
+    OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_DEFAULT_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"]
     LD_DYNAMIC=["-shared -Wl,-allow-shlib-undefined -O3 $flags_lto"]
     LD_PATH=["-L%path% -Wl,-rpath,%path%"]
     LD_FLAGS="-Wl,-allow-shlib-undefined $flags_lto"
@@ -377,12 +412,44 @@ AC_DEFINE([SAC_PRELUDE_NAME], ["sacprelude"], [Name of the sac prelude module.])
 AC_DEFINE( UNUSED, __attribute__((unused)), define macro for unused variables)
 
 
+
+
+
+if test x"$enable_distmem_gasnet" = xyes; then
+  gasnet_conduit_names_print=" (conduits: $gasnet_conduit_names)"
+else
+  gasnet_conduit_names_print=""
+fi
+
+if test x"$enable_distmem" = xyes; then
+  distmem_details_print=" (experimental)
+*   - GASNet:              $enable_distmem_gasnet$gasnet_conduit_names_print
+*   - GPI:                 $enable_distmem_gpi
+*   - MPI:                 $enable_distmem_mpi
+*   - ARMCI:               $enable_distmem_armci"
+else
+  distmem_details_print=""
+fi
+
 AC_OUTPUT
 
 cat <<EOF
-*
 * Configuration done.
 *
 * Detected OS string:      $target_os
-* $HAVE_LIBPOLYLIB64
+* Detected CPU string:     $target_cpu
+*
+* Run-time specialization: $enable_rtspec
+* Private heap manager:    $enable_phm
+* Back-ends:
+* - MT/pthread:            $enable_mt
+* - MT/LPEL:               $enable_mt_lpel
+* - CUDA:                  $enable_cuda
+* - OpenMP:                $enable_omp
+* - SL:                    $enable_sl
+* - Distributed memory:    $enable_distmem$distmem_details_print
+* - CC:                    $CC
+* - SaC compiler CFLAGS:   $MKCCFLAGS
+* - SaC programs CFLAGS:   $RCCCFLAGS
+*
 EOF

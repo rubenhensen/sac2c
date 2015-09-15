@@ -137,6 +137,9 @@
 #include "flattengenerators.h"
 #include "check.h"
 #include "ivexpropagation.h"
+#include "polyhedral_guard_optimization.h"
+#include "polyhedral_utilities.h"
+#include "polyhedral_setup.h"
 
 static info *
 MakeInfo (void)
@@ -977,6 +980,8 @@ CFlet (node *arg_node, info *arg_info)
      *  up now!
      */
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_exprs) {
+        DBUG_PRINT ("RHS replaced by N_exprs chain in lhs %s",
+                    AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
         INFO_POSTASSIGN (arg_info)
           = TCappendAssign (CreateAssignsFromIdsExprs (LET_IDS (arg_node),
                                                        LET_EXPR (arg_node),
@@ -1285,13 +1290,15 @@ CFpart (node *arg_node, info *arg_info)
     }
 
     /*
-     * Traverse this parts code if it has not yet been traversed.
+     * Traverse this partition's code if it has not yet been traversed.
      * Mark the code as completely traversed afterwards by inverting CODE_USED
      */
+    arg_node = POLYSsetClearAvisPart (arg_node, arg_node);
     if (CODE_USED (PART_CODE (arg_node)) > 0) {
         PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
         CODE_USED (PART_CODE (arg_node)) *= -1;
     }
+    arg_node = POLYSsetClearAvisPart (arg_node, NULL);
 
     /*
      * Revert types of index variables to AKS

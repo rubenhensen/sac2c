@@ -13,8 +13,9 @@
 
 #if SAC_DO_RTSPEC
 
-#define SAC_RTSPEC_SETUP_INITIAL()                                                       \
-    SAC_RTSPEC_SetupInitial (__argc, __argv, SAC_SET_RTSPEC_THREADS, SAC_DO_TRACE_RTSPEC);
+#define SAC_RTSPEC_SETUP_INITIAL(mode)                                                   \
+    SAC_RTSPEC_SetupInitial (__argc, __argv, SAC_SET_RTSPEC_THREADS,                     \
+                             SAC_DO_TRACE_RTSPEC, mode);
 
 /*
  * Print the code necessary to setup the optimization controller.
@@ -70,11 +71,6 @@
 #define SAC_WE_DECL_FUN(name) static char *SAC_function = name;
 
 /*
- * Declare the function pointer used to call the wrapper.
- */
-#define SAC_WE_DECL_FN_POINTER(rettype, ...) rettype (*SAC_func_ptr) (__VA_ARGS__);
-
-/*
  * Declare the integer array that will hold the shapes of the arguments at
  * runtime.
  */
@@ -106,18 +102,7 @@
  * Print the function call to enqueue a request for optimization.
  */
 #define SAC_WE_ENQ_REQ(types, name)                                                      \
-    SAC_enqueueRequest (SAC_function, SAC_reg_obj->module, #types, SAC_shapes,           \
-                        SAC_reg_obj);
-
-/*
- * Print the 'update' of the function pointer.
- *
- * @TODO
- * GCC prints a warning for this code because the types of SAC_func_ptr and
- * SAC_reg_obj->func_ptr are different. Maybe adding a cast here could remove
- * this warning?
- */
-#define SAC_WE_PTR_UPDATE() SAC_func_ptr = SAC_reg_obj->func_ptr;
+    SAC_Simple_enqueueRequest (SAC_function, #types, SAC_shapes, size, SAC_reg_obj);
 
 /*
  * Print the correct indexation of the descriptor to get the dimensions of a
@@ -156,16 +141,23 @@
  * - update the function pointer.
  * - use the function pointer to call the 'normal' wrapper.
  */
-#define SAC_WE_FUNAP2(types, name, ...)                                                  \
+#define SAC_WE_FUNAP2(types, name)                                                       \
     SAC_WE_REGISTRATION (SAC_module, name)                                               \
-    SAC_WE_ENQ_REQ (types, name)                                                         \
-    SAC_WE_PTR_UPDATE ()                                                                 \
-    (*SAC_func_ptr) (__VA_ARGS__);
+    SAC_WE_ENQ_REQ (types, name)
+
+#define SAC_WE_PTR_CAST(rettype, ...) ((rettype (*) (__VA_ARGS__))SAC_reg_obj->func_ptr)
+
+#define SAC_RTSPEC_ENQ_REQ(types, name)                                                  \
+    SAC_UUID_enqueueRequest (SAC_function, #types, SAC_shapes, size, SAC_reg_obj);
+
+#define SAC_RTSPEC_ENQ_REQ_CHK(types, name)                                              \
+    SAC_WE_REGISTRATION (SAC_module, name)                                               \
+    SAC_RTSPEC_ENQ_REQ (types, name)
 
 #else /* SAC_DO_RTSPEC */
 
 #define SAC_RTSPEC_SETUP()
-#define SAC_RTSPEC_SETUP_INITIAL()
+#define SAC_RTSPEC_SETUP_INITIAL(mode)
 #define SAC_RTSPEC_FINALIZE()
 
 #define SAC_RTSPEC_CURRENT_THREAD_ID() 0;

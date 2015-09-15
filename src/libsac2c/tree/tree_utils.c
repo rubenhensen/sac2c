@@ -583,6 +583,64 @@ TUremoveUnusedCodes (node *codes)
 
 /** <!--********************************************************************-->
  *
+ * @fn void  TUclearSsaAssign( node *arg_node)
+ *
+ * @brief Clear AVIS_SSAASSIGN nodes associated with arg_node
+ *        N_ids entry/entries.
+ *
+ * @param: arg_node: N_assign node, which we believe points to an N_let
+ *
+ *
+ *****************************************************************************/
+void
+TUclearSsaAssign (node *arg_node)
+{
+    node *ids;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (N_let == NODE_TYPE (ASSIGN_STMT (arg_node)), "Expected N_let");
+    ids = LET_IDS (ASSIGN_STMT (arg_node));
+
+    while (NULL != ids) {
+        AVIS_SSAASSIGN (IDS_AVIS (ids)) = NULL;
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void  TUsetSsaAssign( node *arg_node)
+ *
+ * @brief Set AVIS_SSAASSIGN nodes associated with arg_node
+ *        N_ids entry/entries.
+ *
+ * @param: arg_node: N_assign node, which we believe points to an N_let
+ *
+ *****************************************************************************/
+void
+TUsetSsaAssign (node *arg_node)
+{
+    node *ids;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (N_assign == NODE_TYPE (arg_node), "Expected N_assign");
+    DBUG_ASSERT (N_let == NODE_TYPE (ASSIGN_STMT (arg_node)), "Expected N_let");
+    ids = LET_IDS (ASSIGN_STMT (arg_node));
+
+    while (NULL != ids) {
+        AVIS_SSAASSIGN (IDS_AVIS (ids)) = arg_node;
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *TUmakeIntVec(...)
  *
  * @brief Create one-element integer vector, i.
@@ -865,6 +923,47 @@ TULSgetPrfFamilyName (prf fun)
 
         FNFAM (mod)
         FNFAM (aplmod)
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn bool TUisPrfGuard(node *arg_node)
+ *
+ * @brief If arg_node is an N_prf and is a guard with PRF_ARG1 as
+ *        its primary result, return TRUE; else FALSE.
+ * @param
+ * @return
+ *
+ *****************************************************************************/
+bool
+TUisPrfGuard (node *arg_node)
+{
+    bool z;
+
+    DBUG_ENTER ();
+    z = (N_prf == NODE_TYPE (arg_node));
+    if (z) {
+        switch (PRF_PRF (arg_node)) {
+        default:
+            z = FALSE;
+            break;
+        case F_guard:
+        case F_noteminval:
+        case F_notemaxval:
+        case F_noteintersect:
+        case F_non_neg_val_V:
+        case F_non_neg_val_S:
+        case F_val_lt_shape_VxA:
+        case F_val_lt_val_SxS:
+        case F_val_le_val_SxS:
+        case F_val_le_val_VxV:
+        case F_shape_matches_dim_VxA:
+            z = TRUE;
+            break;
+        }
     }
 
     DBUG_RETURN (z);

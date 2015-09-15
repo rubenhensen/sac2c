@@ -16,11 +16,6 @@
 #include "memory.h"
 #include "ctinfo.h"
 
-static FILE *store_global_outfile;
-static int store_global_indent;
-
-static char *simd_filename;
-
 /******************************************************************************
  *
  * Function:
@@ -275,6 +270,96 @@ ICMCompileWL_SCHEDULE__BEGIN (int dims)
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileWL_DIST_SCHEDULE__BEGIN( int dims, bool is_distributable, char *to_NT)
+ *
+ * description:
+ *   Implements the compilation of the following ICM:
+ *
+ *   WL_DIST_SCHEDULE__BEGIN( dims, is_distributable, to_NT)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_DIST_SCHEDULE__BEGIN (int dims, bool is_distributable, char *to_NT,
+                                   char *to_basetype)
+{
+    int i;
+
+    DBUG_ENTER ();
+
+#define WL_DIST_SCHEDULE__BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_DIST_SCHEDULE__BEGIN
+
+    indout ("{\n");
+    global.indent++;
+
+    if (is_distributable) {
+        /* The with-loop is distributed if the array is distributed (i.e. not only
+         * allocated in DSM memory but actually distributed). */
+        IF_BEGIN ("SAC_ND_A_IS_DIST( %s) && !SAC_ND_A_IS_DSM( %s) && "
+                  "SAC_DISTMEM_exec_mode != SAC_DISTMEM_exec_mode_sync",
+                  to_NT, to_NT)
+            ;
+            indout ("SAC_RuntimeError( \"Tried to execute distributed with-loop in "
+                    "non-synchronous execution mode (%%s is distributed).\", NT_STR( "
+                    "%s));\n",
+                    to_NT);
+        IF_END ();
+
+        indout ("const bool SAC_WL_IS_DISTRIBUTED = SAC_ND_A_IS_DIST( %s) && "
+                "!SAC_ND_A_IS_DSM( %s) && SAC_DISTMEM_exec_mode == "
+                "SAC_DISTMEM_exec_mode_sync;\n",
+                to_NT, to_NT);
+        indout ("const int SAC_WL_DIST_DIM0_SIZE = SAC_ND_A_SHAPE( %s, 0);\n", to_NT);
+        indout ("const uintptr_t SAC_WL_DIST_OFFS = SAC_ND_A_OFFS( %s);\n", to_NT);
+        indout (
+          "const size_t SAC_WL_DIST_BYTES = SAC_ND_A_FIRST_ELEMS( %s) * sizeof( %s);\n",
+          to_NT, to_basetype);
+
+        IF_BEGIN ("SAC_WL_IS_DISTRIBUTED")
+            ;
+            indout ("SAC_TR_DISTMEM_PRINT( \"Executing distributed with-loop (arr: "
+                    "%%s).\", NT_STR( %s));\n",
+                    to_NT);
+            /* Perform the switch before the barrier so that the profiling of the
+             * execution modes is correct. */
+            indout ("SAC_DISTMEM_SWITCH_TO_DIST_EXEC();\n");
+            /* TODO: Maybe we can get rid of this barrier in some cases? It is required
+             * because of a possible anti-dependency only. */
+            indout ("SAC_DISTMEM_BARRIER();\n");
+            indout ("SAC_DISTMEM_ALLOW_DIST_WRITES();\n");
+        IF_END ();
+        ELSE_BEGIN ()
+            ;
+            indout ("SAC_TR_DISTMEM_PRINT( \"Executing non-distributed with-loop (arr: "
+                    "%%s, arr distributed: %%d, in replicated exec mode? %%d).\", "
+                    "NT_STR( %s), SAC_ND_A_IS_DIST( %s), SAC_DISTMEM_exec_mode == "
+                    "SAC_DISTMEM_exec_mode_sync);\n",
+                    to_NT, to_NT);
+        ELSE_END ();
+    } else {
+        indout ("const bool SAC_WL_IS_DISTRIBUTED = FALSE;\n");
+        indout ("const int SAC_WL_DIST_DIM0_SIZE = 0;\n");
+        indout ("SAC_TR_DISTMEM_PRINT( \"Executing non-distributable with-loop (arr: "
+                "%%s).\", NT_STR( %s));\n",
+                to_NT);
+        indout ("const uintptr_t SAC_WL_DIST_OFFS = 0;\n");
+        indout ("const size_t SAC_WL_DIST_BYTES = 0;\n");
+    }
+
+    for (i = 0; i < dims; i++) {
+        indout ("int SAC_WL_MT_SCHEDULE_START( %d);\n", i);
+        indout ("int SAC_WL_MT_SCHEDULE_STOP( %d);\n", i);
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileWL3_SCHEDULE__BEGIN( int lb, char *idx_nt, int ub, int chunksz, bool
  *need_unroll)
  *
@@ -403,6 +488,25 @@ ICMCompileWL_SCHEDULE__END (int dims)
 #include "icm_trace.c"
 #undef WL_SCHEDULE__END
 
+    if (global.backend == BE_distmem) {
+        IF_BEGIN ("SAC_WL_IS_DISTRIBUTED")
+            ;
+            indout (
+              "SAC_TR_DISTMEM_PRINT( \"Done executing distributed with-loop.\");\n");
+            indout ("SAC_DISTMEM_INVAL_CACHE( SAC_WL_DIST_OFFS, SAC_WL_DIST_BYTES);\n");
+            indout ("SAC_DISTMEM_BARRIER();\n");
+            /* Perform the switch after the barrier so that the profiling of the execution
+             * modes is correct. */
+            indout ("SAC_DISTMEM_SWITCH_TO_SYNC_EXEC();\n");
+            indout ("SAC_DISTMEM_FORBID_DIST_WRITES();\n");
+        IF_END ();
+        ELSE_BEGIN ()
+            ;
+            indout (
+              "SAC_TR_DISTMEM_PRINT( \"Done executing non-distributed with-loop.\");\n");
+        ELSE_END ();
+    }
+
     global.indent--;
     indout ("}\n");
 
@@ -462,6 +566,77 @@ ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
     indout ("SAC_ND_GETVAR(%s, SAC_ND_A_FIELD( %s)) "
             "= SAC_ND_GETVAR( %s, SAC_ND_A_FIELD( %s))+SAC_ND_READ( %s, 0);\n",
             sub_NT, sub_NT, to_NT, to_NT, off_NT);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileWL_DISTMEM_SUBALLOC( char *sub_NT, char *to_NT, char *off_NT)
+ *
+ * description:
+ *   Implements the compilation of the following ICM:
+ *
+ *   WL_DISTMEM_SUBALLOC( sub_NT, to_NT, off_NT)
+ *
+ *   Creates code for a suballoc where the outer and/or the inner array
+ *   is distributable.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileWL_DISTMEM_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
+{
+    DBUG_ENTER ();
+
+#define WL_DISTMEM_SUBALLOC
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef WL_DISTMEM_SUBALLOC
+
+    /* Check whether the outer array is distributable at compile time. */
+    if (ICUGetDistributedClass (to_NT) == C_distr) {
+        /* The inner array has to be DSM (not distributed but possibly allocated in DSM
+         * memory). */
+        if (ICUGetDistributedClass (sub_NT) != C_distmem) {
+            indout ("SAC_RuntimeError( \"Suballoc with DIS outer array ( %%s) but "
+                    "non-DSM inner array ( %%s).\", NT_STR( %s), NT_STR( %s));\n",
+                    to_NT, sub_NT);
+        }
+
+        /* Check whether the outer array is actually distributed at runtime.
+         * We can't check whether a possible outer with-loop is distributed because
+         * it may have been unrolled. */
+        IF_BEGIN ("SAC_ND_A_IS_DIST( %s)", to_NT)
+            ;
+            /* The outer array (and possibly with-loop) are distributed. */
+            /* The inner array is sub-allocated in DSM memory (but not distributed). */
+            indout ("SAC_ND_A_DESC_IS_DIST( %s) = SAC_ND_A_MIRROR_IS_DIST( %s) = TRUE;\n",
+                    sub_NT, sub_NT);
+            indout ("SAC_TR_DISTMEM_PRINT( \"%%s is allocated in DSM memory because it "
+                    "is sub-allocated from the distributed variable %%s.\", NT_STR( %s), "
+                    "NT_STR( %s));\n",
+                    sub_NT, to_NT);
+
+            /* Get the pointer to the start of the sub-allocated array. */
+            indout ("SAC_ND_GETVAR(%s, SAC_ND_A_FIELD( %s)) = "
+                    "SAC_DISTMEM_ELEM_POINTER(SAC_ND_A_OFFS( %s), SAC_NT_CBASETYPE( %s),"
+                    "                         SAC_ND_A_FIRST_ELEMS( %s), SAC_ND_READ( "
+                    "%s, 0));\n",
+                    sub_NT, sub_NT, to_NT, to_NT, to_NT, off_NT);
+        IF_END ();
+        ELSE_BEGIN ()
+            ;
+            /* The outer array (and possibly with-loop) are not distributed. Do nothing
+             * special. */
+            ICMCompileWL_SUBALLOC (sub_NT, to_NT, off_NT);
+        ELSE_END ();
+    } else {
+        /* The outer array (and possibly with-loop) are not distributed. Do nothing
+         * special. */
+        ICMCompileWL_SUBALLOC (sub_NT, to_NT, off_NT);
+    }
 
     DBUG_RETURN ();
 }
@@ -602,6 +777,13 @@ ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
     if (val_dim == 0 || to_dim == dims) {
         indout ("SAC_ND_WRITE_READ_COPY( %s, SAC_ND_READ( %s, 0), %s, 0, %s);\n", to_NT,
                 off_NT, val_NT, copyfun);
+    } else if (global.backend == BE_distmem) { // TODO: optimize
+        FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_SIZE( %s); SAC_i++", val_NT)
+            ;
+            indout ("SAC_ND_WRITE_READ_COPY( %s, SAC_ND_READ( %s, 0) + SAC_i, "
+                    "%s, SAC_i, %s);\n",
+                    to_NT, off_NT, val_NT, copyfun);
+        FOR_LOOP_END ();
     } else {
         FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_SIZE( %s); SAC_i++", val_NT)
             ;
@@ -814,71 +996,6 @@ ICMCompileWL_SET_OFFSET (char *off_NT, int dim, int first_block_dim, char *to_NT
     }
     out (" * SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT, dims - 1);
     global.indent--;
-
-    DBUG_RETURN ();
-}
-
-void
-ICMCompileWL_SIMD_BEGIN (int cnt)
-{
-    char *tmp_name;
-    FILE *simd_file;
-
-    DBUG_ENTER ();
-
-#define WL_SIMD_BEGIN
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_SIMD_BEGIN
-
-    tmp_name = STRitoa (cnt);
-    simd_filename = STRcatn (4, global.tmp_dirname, "/simd", tmp_name, ".c");
-
-    indout ("#include \"%s\"\n", simd_filename);
-    INDENT;
-
-    simd_file = fopen (simd_filename, "w");
-    if (simd_file == NULL) {
-        CTIabort ("Unable to open file %s", simd_filename);
-    }
-
-    tmp_name = MEMfree (tmp_name);
-
-    store_global_outfile = global.outfile;
-    store_global_indent = global.indent;
-    global.outfile = simd_file;
-    global.indent = 0;
-
-    INDENT;
-#if 0
-  out( "\n#include \"simd.h\"\n");
-#else
-    out ("\n#define SAC_SIMD_COMPILATION\n");
-    out ("#include \"sac.h\"\n");
-#endif
-    DBUG_RETURN ();
-}
-
-void
-ICMCompileWL_SIMD_END (int cnt)
-{
-    DBUG_ENTER ();
-
-    fclose (global.outfile);
-
-    SYScall ("gcc -E -P -I$SAC2CBASE/include %s > %s2",
-             /*     global.config.cpp_file,   */
-             simd_filename, simd_filename);
-    SYScall ("$SAC2CBASE/src/bin/cb -r %s2 >%s", simd_filename, simd_filename);
-
-    simd_filename = MEMfree (simd_filename);
-    global.outfile = store_global_outfile;
-    global.indent = store_global_indent;
-
-#define WL_SIMD_END
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef WL_SIMD_END
 
     DBUG_RETURN ();
 }

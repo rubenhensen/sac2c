@@ -1857,6 +1857,7 @@ DUPids (node *arg_node, info *arg_info)
     AVIS_SHAPE (avis) = DUPTRAV (AVIS_SHAPE (IDS_AVIS (arg_node)));
     AVIS_MIN (avis) = DUPTRAV (AVIS_MIN (IDS_AVIS (arg_node)));
     AVIS_MAX (avis) = DUPTRAV (AVIS_MAX (IDS_AVIS (arg_node)));
+    AVIS_SCALARS (avis) = DUPTRAV (AVIS_SCALARS (IDS_AVIS (arg_node)));
 
     if ((INFO_ASSIGN (arg_info) != NULL) && (AVIS_SSAASSIGN (avis) != NULL)) {
         AVIS_SSAASSIGN (avis) = INFO_ASSIGN (arg_info);
@@ -2882,24 +2883,6 @@ DUPwlublock (node *arg_node, info *arg_info)
     CopyCommonNodeData (new_node, arg_node);
 
     WLUBLOCK_FLAGSTRUCTURE (new_node) = WLUBLOCK_FLAGSTRUCTURE (arg_node);
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
-DUPwlsimd (node *arg_node, info *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ();
-
-    new_node = TBmakeWlsimd (DUPCONT (WLSIMD_BODY (arg_node)));
-
-    CopyCommonNodeData (new_node, arg_node);
-
-    WLSIMD_FLAGSTRUCTURE (new_node) = WLSIMD_FLAGSTRUCTURE (arg_node);
 
     DBUG_RETURN (new_node);
 }

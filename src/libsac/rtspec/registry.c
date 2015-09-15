@@ -27,7 +27,7 @@
  * Each function has a local registry object, which is allocated and filled in
  * using this function.
  *
- * @return A registry objec.
+ * @return A registry object.
  *
  ****************************************************************************/
 reg_obj_t *
@@ -42,7 +42,7 @@ SAC_registrate (char *module, void *func_ptr)
         exit (EXIT_FAILURE);
     }
 
-    strcpy (entry->module, module);
+    entry->module = module;
     entry->func_ptr = func_ptr;
     entry->dl_handle = NULL;
 

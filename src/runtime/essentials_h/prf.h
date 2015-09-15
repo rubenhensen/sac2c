@@ -155,6 +155,16 @@
  *
  * ND_PRF_DIM_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
+ * ND_PRF_IS_DIST_A__DATA( to_NT, from_NT)
+ *
+ * ND_PRF_FIRST_ELEMS_A__DATA( to_NT, from_NT)
+ *
+ * ND_PRF_LOCAL_FROM_A__DATA( to_NT, from_NT)
+ *
+ * ND_PRF_LOCAL_COUNT_A__DATA( to_NT, from_NT)
+ *
+ * ND_PRF_OFFS_A__DATA( to_NT, from_NT)
+ *
  * ND_PRF_SHAPE_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
  *
  * ND_PRF_SIZE_A__DATA( to_NT, to_sdim, from_NT, from_sdim)
@@ -213,6 +223,80 @@
     SAC_TR_PRF_PRINT (("ND_PRF_DIM_A__...( %s, %d, %s, %d)\n", NT_STR (to_NT), to_sdim,  \
                        NT_STR (from_NT), from_sdim))                                     \
     SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_DIM (from_NT))
+
+#if SAC_DO_DISTMEM
+
+#define SAC_ND_PRF_IS_DIST_A__DATA(to_NT, from_NT)                                       \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_IS_DIST_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))            \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_IS_DIST (from_NT))
+
+/* We allow this primitive function to be called on all arrays, also if they
+ * are not distributed or even distributable. Then it simply returns 0. This is
+ * to avoid loads of checks in print functions. */
+#define SAC_ND_PRF_FIRST_ELEMS_A__DATA(to_NT, from_NT)                                   \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_FIRST_ELEMS_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))        \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_FIRST_ELEMS (from_NT))
+
+/* We allow this primitive function to be called on all arrays, also if they
+ * are not distributed or even distributable. Then it simply returns 0. */
+#define SAC_ND_PRF_LOCAL_FROM_A__DATA(to_NT, from_NT)                                    \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_LOCAL_FROM_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))         \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_LOCAL_FROM (from_NT))
+
+/* We allow this primitive function to be called on all arrays, also if they
+ * are not distributed or even distributable. Then it simply returns the size
+ * of the array. */
+#define SAC_ND_PRF_LOCAL_COUNT_A__DATA(to_NT, from_NT)                                   \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_LOCAL_COUNT_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))        \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_LOCAL_COUNT (from_NT))
+
+/* We allow this primitive function to be called on all arrays, also if they
+ * are not distributed or even distributable. Then it simply returns 0. This is
+ * to avoid loads of checks in print functions. */
+#define SAC_ND_PRF_OFFS_A__DATA(to_NT, from_NT)                                          \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_OFFS_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))               \
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_ND_A_OFFS (from_NT))
+
+#else /* SAC_DO_DISTMEM */
+
+/* We don't allow these primitive functions to be called
+ * when the distributed memory backend is not used. */
+
+#define SAC_ND_PRF_IS_DIST_A__DATA(to_NT, from_NT)                                       \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_IS_DIST_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))            \
+    SAC_RuntimeError ("This primitive function may only be called "                      \
+                      "if the distributed memory backend is used.");
+
+#define SAC_ND_PRF_FIRST_ELEMS_A__DATA(to_NT, from_NT)                                   \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_FIRST_ELEMS_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))        \
+    SAC_RuntimeError ("This primitive function may only be called "                      \
+                      "if the distributed memory backend is used.");
+
+#define SAC_ND_PRF_LOCAL_FROM_A__DATA(to_NT, from_NT)                                    \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_LOCAL_FROM_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))         \
+    SAC_RuntimeError ("This primitive function may only be called "                      \
+                      "if the distributed memory backend is used.");
+
+#define SAC_ND_PRF_LOCAL_COUNT_A__DATA(to_NT, from_NT)                                   \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_LOCAL_COUNT_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))        \
+    SAC_RuntimeError ("This primitive function may only be called "                      \
+                      "if the distributed memory backend is used.");
+
+#define SAC_ND_PRF_OFFS_A__DATA(to_NT, from_NT)                                          \
+    SAC_TR_PRF_PRINT (                                                                   \
+      ("ND_PRF_OFFS_A__...( %s, %s)\n", NT_STR (to_NT), NT_STR (from_NT)))               \
+    SAC_RuntimeError ("This primitive function may only be called "                      \
+                      "if the distributed memory backend is used.");
+#endif /* SAC_DO_DISTMEM */
 
 /* ND_PRF_SHAPE_A__DATA( ...) is a C-ICM */
 
@@ -413,13 +497,18 @@
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
-#define SAC_ND_PRF_VAL_LT_VAL_SxS(to_NT, from_NT, from2_NT)                              \
-    {                                                                                    \
-        if (SAC_ND_READ (from_NT, 0) >= SAC_ND_READ (from2_NT, 0)) {                     \
-            SAC_RuntimeError ("Scalar constraint " NT_STR (from_NT) " < " NT_STR (       \
-              from2_NT) " violated in " __FILE__ ":" TO_STR (__LINE__) ".");             \
-        }                                                                                \
-        SAC_ND_A_FIELD (to_NT) = 1;                                                      \
+#define SAC_ND_PRF_VAL_LT_VAL_SxS(to_NT, from_NT, from2_NT)                                               \
+    {                                                                                                     \
+        if (SAC_ND_READ (from_NT, 0) >= SAC_ND_READ (from2_NT, 0)) {                                      \
+            SAC_RuntimeError (                                                                            \
+              "Scalar constraint " NT_STR (from_NT) " (" SAC_NT_PRINT_CBASETYPE (from_NT) ") < " NT_STR ( \
+                from2_NT) " (" SAC_NT_PRINT_CBASETYPE (from2_NT) ") violated "                            \
+                                                                 "in " __FILE__                           \
+                                                                 ":" TO_STR (                             \
+                                                                   __LINE__) ".",                         \
+              SAC_ND_READ (from_NT, 0), SAC_ND_READ (from2_NT, 0));                                       \
+        }                                                                                                 \
+        SAC_ND_A_FIELD (to_NT) = 1;                                                                       \
     }
 
 #define SAC_ND_PRF_VAL_LE_VAL_VxV(to_NT, from_NT, from2_NT)                              \
@@ -434,13 +523,18 @@
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
-#define SAC_ND_PRF_VAL_LE_VAL_SxS(to_NT, from_NT, from2_NT)                              \
-    {                                                                                    \
-        if (SAC_ND_READ (from_NT, 0) > SAC_ND_READ (from2_NT, 0)) {                      \
-            SAC_RuntimeError ("Scalar constraint " NT_STR (from_NT) " < " NT_STR (       \
-              from2_NT) " violated in " __FILE__ ":" TO_STR (__LINE__) ".");             \
-        }                                                                                \
-        SAC_ND_A_FIELD (to_NT) = 1;                                                      \
+#define SAC_ND_PRF_VAL_LE_VAL_SxS(to_NT, from_NT, from2_NT)                                                \
+    {                                                                                                      \
+        if (SAC_ND_READ (from_NT, 0) > SAC_ND_READ (from2_NT, 0)) {                                        \
+            SAC_RuntimeError (                                                                             \
+              "Scalar constraint " NT_STR (from_NT) " (" SAC_NT_PRINT_CBASETYPE (from_NT) ") <= " NT_STR ( \
+                from2_NT) " (" SAC_NT_PRINT_CBASETYPE (from2_NT) ") violated "                             \
+                                                                 "in " __FILE__                            \
+                                                                 ":" TO_STR (                              \
+                                                                   __LINE__) ".",                          \
+              SAC_ND_READ (from_NT, 0), SAC_ND_READ (from2_NT, 0));                                        \
+        }                                                                                                  \
+        SAC_ND_A_FIELD (to_NT) = 1;                                                                        \
     }
 
 #define SAC_ND_PRF_MASK_SxSxS__DATA(to_NT, from1_NT, from2_NT, from3_NT)                 \

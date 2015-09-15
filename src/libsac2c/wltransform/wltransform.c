@@ -3949,6 +3949,8 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
      */
     if (pragma != NULL) {
         aps = PRAGMA_WLCOMP_APS (pragma);
+        DBUG_PRINT_TAG ("PRAGMA", "analysing WLCOMP pragma");
+        DBUG_EXECUTE_TAG ("PRAGMA", PRTdoPrint (aps););
         // last parameter of wlcomp pragma is a spid (Default)
         while (NODE_TYPE (EXPRS_EXPR (aps)) != N_spid) {
             param_name = SPAP_NAME (EXPRS_EXPR (aps));
@@ -3968,14 +3970,14 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
 #undef WLP
             {
                 fun_names =
-#define WLP(fun, str, ieee) str
+#define WLP(fun, str, ieee) str " "
 #include "wlpragma_funs.mac"
 #undef WLP
                   ;
 
                 CTIwarnLine (global.linenum,
                              "Illegal function name %s in wlcomp-pragma found."
-                             " Currently supported functions are:%s",
+                             " Currently supported functions are: %s",
                              SPAP_NAME (EXPRS_EXPR (aps)), fun_names);
             }
 

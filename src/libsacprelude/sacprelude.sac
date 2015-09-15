@@ -10,6 +10,16 @@ provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          partitionMin, partitionMax, isPartitionIntersect1Part,
          partitionIntersectMax, partitionIntersectMin,
          SACarg, prod, partitionSlicer, gridFiller, ++
+#if 0
+/*
+ * We need the following two functions only for the distributed memory backend but unfortunately 
+ * we cannot easily tell that we are compiling the prelude for the distributed memory
+ * backend at the precompilation stage. So we always include these functions.
+ * The name starts with an underscore to signalize that they are not intended to be used directly
+ * by the programmer.
+ */
+#endif
+         ,_selVxADistmemLocal, _selSxADistmemLocal
 #define MUTC 1
 #ifndef SAC_BACKEND_MUTC
          , unwrapInt, unwrapBool, unwrapFloat, unwrapDouble, unwrapChar, 
@@ -59,6 +69,31 @@ a[*] sel( int[.] idx, a[*] array)                                        \
 BUILT_IN( SEL_VxA)
 
 
+#define SEL_VxA_distmem_local( a)                                             \
+inline                                                                        \
+a[*] _selVxADistmemLocal( int[.] idx, a[*] array)                             \
+{                                                                             \
+  new_shape = _drop_SxV_( _sel_VxA_( [0], _shape_A_(idx)), _shape_A_(array)); \
+  res = with {                                                                \
+          ( . <= iv <= . )                                                    \
+          {                                                                   \
+            new_idx = _cat_VxV_( idx, iv);                                    \
+          } : _sel_VxA_distmem_local_(new_idx, array);                        \
+        } : genarray( new_shape, zero( array ) );                             \
+  return( res);                                                               \
+}
+
+BUILT_IN( SEL_VxA_distmem_local)
+
+
+#define SEL_SxA_distmem_local( a)                   \
+inline                                              \
+a[*] _selSxADistmemLocal( int idx, a[*] array)      \
+{                                                   \
+  return( _selVxADistmemLocal( [idx], array));      \
+}
+
+BUILT_IN( SEL_SxA_distmem_local)
 
 
 #define ZERO( a, za)  \

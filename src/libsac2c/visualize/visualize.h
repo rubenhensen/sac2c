@@ -96,7 +96,6 @@ extern node *VISUALpropagate (node *arg_node, info *arg_info);
 extern node *VISUALwith2 (node *arg_node, info *arg_info);
 extern node *VISUALwlseg (node *arg_node, info *arg_info);
 extern node *VISUALwlxblock (node *arg_node, info *arg_info);
-extern node *VISUALwlsimd (node *arg_node, info *arg_info);
 extern node *VISUALwlstride (node *arg_node, info *arg_info);
 extern node *VISUALwlgrid (node *arg_node, info *arg_info);
 extern node *VISUALwlublock (node *arg_node, info *arg_info);

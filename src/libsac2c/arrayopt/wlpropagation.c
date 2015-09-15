@@ -658,7 +658,7 @@ CopyWL (node *arg_node, info *arg_info)
      */
     next = ASSIGN_NEXT (old_withloop);
     ASSIGN_NEXT (old_withloop) = NULL;
-    new_withloop = DUPdoDupTreeLutSsa (old_withloop, lut, lacfundef);
+    new_withloop = DUPdoDupNodeLutSsa (old_withloop, lut, lacfundef);
     ASSIGN_NEXT (old_withloop) = next;
     lut = LUTremoveLut (lut);
 
@@ -674,11 +674,11 @@ CopyWL (node *arg_node, info *arg_info)
      */
 
     wlavis = IDS_AVIS (LET_IDS (ASSIGN_STMT (new_withloop)));
-    AVIS_DIM (wlavis) = DUPdoDupTreeLut (AVIS_DIM (wlavis), lut);
-    AVIS_SHAPE (wlavis) = DUPdoDupTreeLut (AVIS_SHAPE (wlavis), lut);
-    AVIS_MIN (wlavis) = DUPdoDupTreeLut (AVIS_MIN (wlavis), lut);
-    AVIS_MAX (wlavis) = DUPdoDupTreeLut (AVIS_MAX (wlavis), lut);
-    AVIS_SCALARS (wlavis) = DUPdoDupTreeLut (AVIS_SCALARS (wlavis), lut);
+    AVIS_DIM (wlavis) = DUPdoDupNodeLut (AVIS_DIM (wlavis), lut);
+    AVIS_SHAPE (wlavis) = DUPdoDupNodeLut (AVIS_SHAPE (wlavis), lut);
+    AVIS_MIN (wlavis) = DUPdoDupNodeLut (AVIS_MIN (wlavis), lut);
+    AVIS_MAX (wlavis) = DUPdoDupNodeLut (AVIS_MAX (wlavis), lut);
+    AVIS_SCALARS (wlavis) = DUPdoDupNodeLut (AVIS_SCALARS (wlavis), lut);
 
     /*
      * Copy the withloop definition into the body

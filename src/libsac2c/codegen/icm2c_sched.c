@@ -221,12 +221,45 @@ ICMCompileMT_SCHEDULER_BEGIN (int sched_id, int dim, char **vararg)
     for (i = 0; i < dim; i++) {
         INDENT;
 
+        if (global.backend == BE_distmem && i == 0) {
+            fprintf (global.outfile, "if (SAC_WL_IS_DISTRIBUTED) {\n");
+
+            global.indent++;
+            INDENT;
+
+            fprintf (global.outfile,
+                     "SAC_WL_MT_SCHEDULE_START( %d) = SAC_DISTEM_DET_DIM0_START( "
+                     "SAC_WL_DIST_DIM0_SIZE, %s, %s);\n",
+                     i, lower_bound[i], upper_bound[i]);
+            INDENT;
+
+            fprintf (global.outfile,
+                     "SAC_WL_MT_SCHEDULE_STOP( %d) = SAC_DISTEM_DET_DIM0_STOP( "
+                     "SAC_WL_DIST_DIM0_SIZE, %s, %s);\n",
+                     i, lower_bound[i], upper_bound[i]);
+
+            global.indent--;
+            INDENT;
+
+            fprintf (global.outfile, "} else {\n");
+
+            global.indent++;
+            INDENT;
+        }
+
         fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i,
                  lower_bound[i]);
         INDENT;
 
         fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i,
                  upper_bound[i]);
+
+        if (global.backend == BE_distmem && i == 0) {
+            global.indent--;
+            INDENT;
+
+            fprintf (global.outfile, "}\n");
+        }
     }
 
     DBUG_RETURN ();
@@ -457,7 +490,7 @@ ICMCompileMT_SCHEDULER_BlockDist_BEGIN (int sched_id, int dim, char **vararg)
 #undef MT_SCHEDULER_BlockDist_BEGIN
 
     INDENT;
-    fprintf (global.outfile, "SAC_DIST_SCHEDULER_Block_DIM0( %s, %s, %s);\n",
+    fprintf (global.outfile, "SAC_MT_SCHEDULER_Block_DIM0( %s, %s, %s);\n",
              lower_bound[0], upper_bound[0], unrolling[0]);
 
     for (i = 1; i < dim; i++) {
@@ -537,7 +570,7 @@ ICMCompileMT_SCHEDULER_BlockVarDist_BEGIN (int sched_id, int dim, char **vararg)
 #undef MT_SCHEDULER_BlockVarDist_BEGIN
 
     INDENT;
-    fprintf (global.outfile, "SAC_DIST_SCHEDULER_BlockVar_DIM0( %s, %s, %s);\n",
+    fprintf (global.outfile, "SAC_MT_SCHEDULER_BlockVar_DIM0( %s, %s, %s);\n",
              lower_bound[0], upper_bound[0], unrolling[0]);
 
     for (i = 1; i < dim; i++) {

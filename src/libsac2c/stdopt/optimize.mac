@@ -107,6 +107,13 @@ OPTIMIZE ("rwo", rwo, TRUE, TRUE, "memory reuse with offset")
 OPTIMIZE ("rip", rip, TRUE, TRUE, "memory reuse with in place selection")
 OPTIMIZE ("tup", tup, TRUE, TRUE, "type upgrade")
 OPTIMIZE ("sisi", sisi, FALSE, FALSE, "signature simplification")
+#if ENABLE_DISTMEM
+OPTIMIZE ("dmmls", dmmls, TRUE, TRUE, "DISTMEM mark local selects")
+OPTIMIZE ("dmgs", dmgs, TRUE, TRUE, "DISTMEM group selects")
+#else
+OPTIMIZE ("dmmls", dmmls, FALSE, FALSE, "DISTMEM mark local selects")
+OPTIMIZE ("dmgs", dmgs, FALSE, FALSE, "DISTMEM group selects")
+#endif
 OPTIMIZE ("sde", sde, TRUE, TRUE, "subtraction / division elimination")
 OPTIMIZE ("wlprop", wlprop, TRUE, TRUE, "with-loop propagation")
 OPTIMIZE ("saa", saa, TRUE, TRUE, "use symbolic array attributes")
@@ -139,7 +146,7 @@ OPTIMIZE ("ctz", ctz, TRUE, TRUE, "comparisons to zero")
 OPTIMIZE ("uctz", uctz, TRUE, TRUE, "eliminating comparisons to zero")
 OPTIMIZE ("ggs", ggs, TRUE, TRUE, "generating guard solvers")
 OPTIMIZE ("pogo", pogo, FALSE, FALSE, "polyhedral guard optimization")
-OPTIMIZE ("pwlf", pwlf, FALSE, FALSE, "polyhedral with-loop folding")
+OPTIMIZE ("pwlf", pwlf, FALSE, FALSE, "polyhedral WLF")
 OPTIMIZE ("wls_aggressive", wls_aggressive, FALSE, FALSE, "aggressive loop scalarization")
 OPTIMIZE ("sse", sse, FALSE, FALSE, "simplify symbiotic expressions")
 OPTIMIZE ("safa", safa, TRUE, TRUE, "sort associative fun arguments")
@@ -147,6 +154,9 @@ OPTIMIZE ("scs", scs, TRUE, TRUE, "Symbolic Constant Simplification")
 OPTIMIZE ("sccf", sccf, TRUE, TRUE, "Structural constant constant folding")
 OPTIMIZE ("saacf", saacf, TRUE, TRUE, "SAA constant folding")
 OPTIMIZE ("scwlf", scwlf, TRUE, TRUE, "Simple composition AWLF")
+OPTIMIZE ("relcf", relcf, TRUE, TRUE, "CF on relationals and guards")
+// relcf is intended only as a debugging and performance measurement aid.
+// It should probably be removed once POGO stablizes.
 
 /* OPTIMIZE entries after this point are intended for
  * developer use only.
@@ -204,8 +214,8 @@ OPTCOUNTER (ctzg_expr, TRUE, "comparisons to zero for guards")
 OPTCOUNTER (esd_expr, TRUE, "eliminated sub/div expression(s)")
 OPTCOUNTER (uesd_expr, TRUE, "undo-eliminated sub/div expression(s)")
 OPTCOUNTER (safa_expr, TRUE, "associative function argument(s) sorted")
-OPTCOUNTER (pogo_expr, TRUE, "guards removed by pogo")
-OPTCOUNTER (pwlf_expr, TRUE, "with-loops folded using polyhedra")
+OPTCOUNTER (pogo_expr, FALSE, "guards removed by pogo")
+OPTCOUNTER (pwlf_expr, FALSE, "with-loops folded using polyhedra")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr

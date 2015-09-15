@@ -83,12 +83,15 @@ static const int basetype_to_size[] = {
      || (btype == T_ulonglong) || (btype == T_double) || (btype == T_char)               \
      || (btype == T_bool))
 
-#define result_nt (result, (AUD, (NHD, (NUQ, (INT, (GLO, (FAG, (NOT, ))))))))
-#define param_nt (param, (AUD, (NHD, (NUQ, (INT, (GLO, (FAG, (NOT, ))))))))
-#define param_hid_nt (param, (SCL, (HID, (NUQ, (INT, (GLO, (FAG, (NOT, ))))))))
-#define out_nt (out, (AUD, (NHD, (NUQ, (INT, (GLO, (FAG, (NOT, ))))))))
-#define data_nt (data, (AUD, (NHD, (NUQ, (INT, (GLO, (FAG, (NOT, ))))))))
-#define data_hid_nt (data, (SCL, (HID, (NUQ, (INT, (GLO, (FAG, (NOT, ))))))))
+#define result_nt                                                                        \
+    (result, (AUD, (NHD, (NUQ, (INT, (GLO, (FAG, (NOT, (NDI, (OTH, ))))))))))
+#define param_nt (param, (AUD, (NHD, (NUQ, (INT, (GLO, (FAG, (NOT, (NDI, (OTH, ))))))))))
+#define param_hid_nt                                                                     \
+    (param, (SCL, (HID, (NUQ, (INT, (GLO, (FAG, (NOT, (NDI, (OTH, ))))))))))
+#define out_nt (out, (AUD, (NHD, (NUQ, (INT, (GLO, (FAG, (NOT, (NDI, (OTH, ))))))))))
+#define data_nt (data, (AUD, (NHD, (NUQ, (INT, (GLO, (FAG, (NOT, (NDI, (OTH, ))))))))))
+#define data_hid_nt                                                                      \
+    (data, (SCL, (HID, (NUQ, (INT, (GLO, (FAG, (NOT, (NDI, (OTH, ))))))))))
 
 /**
  * Functions for creating SACargs
@@ -141,7 +144,7 @@ SACARGmakeDescriptorVect (int dim, int *shape)
     return (SAC_ND_A_DESC (result_nt));
 }
 
-/* Unfortunatly param is the wrong way round, else we could just use one macro */
+/* Unfortunately param is the wrong way round, else we could just use one macro */
 SACarg *
 SACARGmakeSacArg (basetype btype, SAC_ND_PARAM_in_justdesc (param_nt, void),
                   SAC_ND_PARAM_in_nodesc (param_nt, void))

@@ -102,63 +102,60 @@ static const char *argtag_string_init[] = {
 static const int basetype_size_init[] = {
 #define TYP_IFsize(sz) sz
 #include "type_info.mac"
-#undef TYP_IFsize
 };
 
 static char *nt_shape_string_init[] = {
 #define ATTRIB NT_SHAPE_INDEX
 #define NTIFstr(it_str) it_str
 #include "nt_info.mac"
-#undef ATTRIB
-#undef NTIFstr
 };
 
 static char *nt_hidden_string_init[] = {
 #define ATTRIB NT_HIDDEN_INDEX
 #define NTIFstr(it_str) it_str
 #include "nt_info.mac"
-#undef ATTRIB
-#undef NTIFstr
 };
 
 static char *nt_unique_string_init[] = {
 #define ATTRIB NT_UNIQUE_INDEX
 #define NTIFstr(it_str) it_str
 #include "nt_info.mac"
-#undef ATTRIB
-#undef NTIFstr
 };
 
 static char *nt_mutc_storage_class_string_init[] = {
 #define ATTRIB NT_MUTC_STORAGE_CLASS_INDEX
 #define NTIFstr(it_str) it_str
 #include "nt_info.mac"
-#undef ATTRIB
-#undef NTIFstr
 };
 
 static char *nt_mutc_scope_string_init[] = {
 #define ATTRIB NT_MUTC_SCOPE_INDEX
 #define NTIFstr(it_str) it_str
 #include "nt_info.mac"
-#undef ATTRIB
-#undef NTIFstr
 };
 
 static char *nt_mutc_usage_string_init[] = {
 #define ATTRIB NT_MUTC_USAGE_INDEX
 #define NTIFstr(it_str) it_str
 #include "nt_info.mac"
-#undef ATTRIB
-#undef NTIFstr
 };
 
 static char *nt_bitarray_string_init[] = {
 #define ATTRIB NT_BITARRAY_INDEX
 #define NTIFstr(it_str) it_str
 #include "nt_info.mac"
-#undef ATTRIB
-#undef NTIFstr
+};
+
+static char *nt_distributed_string_init[] = {
+#define ATTRIB NT_DISTRIBUTED_INDEX
+#define NTIFstr(it_str) it_str
+#include "nt_info.mac"
+};
+
+static char *nt_cbasetype_string_init[] = {
+#define ATTRIB NT_CBASETYPE_INDEX
+#define NTIFstr(it_str) it_str
+#include "nt_info.mac"
 };
 
 static const char *backend_string[] = {
@@ -170,157 +167,131 @@ static const char *backend_string[] = {
 static const zipcvfunptr zipcv_plus_init[] = {
 #define TYP_IFzipcv(fun) fun##Plus
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_minus_init[] = {
 #define TYP_IFzipcv(fun) fun##Minus
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_mul_init[] = {
 #define TYP_IFzipcv(fun) fun##Mul
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_div_init[] = {
 #define TYP_IFzipcv(fun) fun##Div
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_mod_init[] = {
 #define TYP_IFzipcv(fun) fun##Mod
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_min_init[] = {
 #define TYP_IFzipcv(fun) fun##Min
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_max_init[] = {
 #define TYP_IFzipcv(fun) fun##Max
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_and_init[] = {
 #define TYP_IFzipcv(fun) fun##And
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_or_init[] = {
 #define TYP_IFzipcv(fun) fun##Or
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_eq_init[] = {
 #define TYP_IFzipcv(fun) fun##Eq
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_neq_init[] = {
 #define TYP_IFzipcv(fun) fun##Neq
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_le_init[] = {
 #define TYP_IFzipcv(fun) fun##Le
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_lt_init[] = {
 #define TYP_IFzipcv(fun) fun##Lt
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_gt_init[] = {
 #define TYP_IFzipcv(fun) fun##Gt
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_ge_init[] = {
 #define TYP_IFzipcv(fun) fun##Ge
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_not_init[] = {
 #define TYP_IFzipcv(fun) fun##Not
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_tob_init[] = {
 #define TYP_IFzipcv(fun) fun##Tob
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_tos_init[] = {
 #define TYP_IFzipcv(fun) fun##Tos
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_tobool[] = {
 #define TYP_IFzipcv(fun) fun##Tobool
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_toc_init[] = {
 #define TYP_IFzipcv(fun) fun##Toc
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_toi_init[] = {
 #define TYP_IFzipcv(fun) fun##Toi
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_tol_init[] = {
 #define TYP_IFzipcv(fun) fun##Tol
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_toll_init[] = {
 #define TYP_IFzipcv(fun) fun##Toll
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_toub_init[] = {
 #define TYP_IFzipcv(fun) fun##Toub
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_tous_init[] = {
 #define TYP_IFzipcv(fun) fun##Tous
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_toui_init[] = {
 #define TYP_IFzipcv(fun) fun##Toui
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_toul_init[] = {
@@ -332,67 +303,56 @@ static const zipcvfunptr zipcv_toul_init[] = {
 static const zipcvfunptr zipcv_toull_init[] = {
 #define TYP_IFzipcv(fun) fun##Toull
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_tof_init[] = {
 #define TYP_IFzipcv(fun) fun##Tof
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_tod_init[] = {
 #define TYP_IFzipcv(fun) fun##Tod
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_abs_init[] = {
 #define TYP_IFzipcv(fun) fun##Abs
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const zipcvfunptr zipcv_neg_init[] = {
 #define TYP_IFzipcv(fun) fun##Neg
 #include "type_info.mac"
-#undef TYP_IFzipcv
 };
 
 static const basecvfunptr basecv_negativeone_init[] = {
 #define TYP_IFbasecv(fun) fun##NegativeOne
 #include "type_info.mac"
-#undef TYP_IFbasecv
 };
 
 static const basecvfunptr basecv_zero_init[] = {
 #define TYP_IFbasecv(fun) fun##Zero
 #include "type_info.mac"
-#undef TYP_IFbasecv
 };
 
 static const basecvfunptr basecv_one_init[] = {
 #define TYP_IFbasecv(fun) fun##One
 #include "type_info.mac"
-#undef TYP_IFbasecv
 };
 
 static const cv2cvfunptr cv2cv_init[] = {
 #define TYP_IFcv2cv(fun) fun
 #include "type_info.mac"
-#undef TYP_IFcv2cv
 };
 
 static const cv2scalarfunptr cv2scalar_init[] = {
 #define TYP_IFcv2scal(fun) fun
 #include "type_info.mac"
-#undef TYP_IFcv2scal
 };
 
 static const cv2strfunptr cv2str_init[] = {
 #define TYP_IFcv2str(fun) fun
 #include "type_info.mac"
-#undef TYP_IFcv2str
 };
 
 static const char *mdb_nodetype_init[] = {
@@ -404,7 +364,6 @@ static const char *mdb_nodetype_init[] = {
 static const char *mdb_type_init[] = {
 #define TYP_IFdb_str(str) str
 #include "type_info.mac"
-#undef TYP_IFdb_str
 };
 
 static const char *type_string_init[] = {
@@ -414,6 +373,11 @@ static const char *type_string_init[] = {
 
 static const char *rename_type_init[] = {
 #define TYP_IFfunr_str(str) str
+#include "type_info.mac"
+};
+
+static const cbasetype_class_t type_cbasetype_init[] = {
+#define TYP_IFntcbasetype(it_ntcbasetype) it_ntcbasetype
 #include "type_info.mac"
 };
 
@@ -714,6 +678,29 @@ GLOBsetupBackend (void)
 #include "backends.mac"
     else {
         CTIabort ("Unknown compiler backend in sac2crc file: %s", global.config.backend);
+    }
+
+    DBUG_RETURN ();
+}
+
+void
+GLOBsetupDistMemCommLib (void)
+{
+    DBUG_ENTER ();
+
+    if (STReq (global.config.distmem_commlib, "")) {
+        global.distmem_commlib = DISTMEM_COMMLIB_UNKNOWN;
+    }
+#define DISTMEM_COMMLIB(type, string)                                                    \
+    else if (STReqci (global.config.distmem_commlib, string))                            \
+    {                                                                                    \
+        global.distmem_commlib = type;                                                   \
+    }
+#include "distmem_commlibs.mac"
+    else {
+        CTIabort (
+          "Unknown distributed memory backend communication library in sac2crc file: %s",
+          global.config.distmem_commlib);
     }
 
     DBUG_RETURN ();

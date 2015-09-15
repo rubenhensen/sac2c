@@ -1,4 +1,4 @@
-#ifdef SAC_BACKEND_C99
+#if defined(SAC_BACKEND_C99) || defined(SAC_BACKEND_DISTMEM)
 
 #ifndef SAC_HAS_RC_NORC
 /* Stub SAC_ND_RC_TO_NORC / SAC_ND_RC_FROM_NORC
@@ -15,4 +15,4 @@
 
 #endif /* not defined SAC_HAS_RC_NORC */
 
-#endif /* defined SAC_BACKEND_C99 */
+#endif /* defined(SAC_BACKEND_C99) || defined(SAC_BACKEND_DISTMEM) */

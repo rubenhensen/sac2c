@@ -5,6 +5,7 @@
 
 #include "phase.h"
 #include "globals.h"
+#include "rtspec_modes.h"
 
 /*
  * Generated function-based cycle driver functions

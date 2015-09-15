@@ -18,15 +18,11 @@
 #define SAC_C_EXTERN extern
 #endif /* SAC_C_EXTERN */
 
-#ifndef SAC_SIMD_COMPILATION
-
 #if SAC_MUTC_MACROS
 #define SAC_String2Array(array, string) SAC_STRING2ARRAY (array, string)
 #else
 SAC_C_EXTERN void SAC_String2Array (unsigned char *array, const char *string);
 #endif
-
-#endif /* SAC_SIMD_COMPILATION */
 
 /*****************************************************************************
  *

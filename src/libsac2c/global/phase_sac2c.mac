@@ -100,6 +100,14 @@ PHASE (ptc, "Converting to static single assignment form", ALWAYS)
 
 SUBPHASE (ivd, "Inserting variable declarations", INSVDdoInsertVardec, ALWAYS, ptc)
 
+/*
+ * This needs the variable declarations but the
+ * array indices should not have been converted in any way.
+ * So it goes here.
+ */
+SUBPHASE (dmmls, "Mark local selects for distmem backend", DMMLSdoMarkLocalSelects,
+          global.backend == BE_distmem && global.optimize.dodmmls, ptc)
+
 SUBPHASE (itc, "Converting type decls into type conversions", INSTCdoInsertTypeConv,
           ALWAYS, ptc)
 
@@ -150,6 +158,11 @@ PHASE (exp, "Processing exports", ALWAYS)
 SUBPHASE (exp, "Exporting symbols", EXPdoExport, ALWAYS, exp)
 
 SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optimize.dodfr,
+          exp)
+
+SUBPHASE (uid, "Set unique ids for generic functions", UIDdoSetFunctionIDs,
+          global.rtspec_mode == RTSPEC_MODE_HASH
+            || global.rtspec_mode == RTSPEC_MODE_UUID,
           exp)
 
 SUBPHASE (ser, "Serializing syntax tree", SERdoSerialize,
@@ -459,6 +472,9 @@ CYCLEPHASEFUN (ivesplit, "Eliminating index vectors (split selections)",
 CYCLEPHASEFUN (cse, "Eliminating common subexpressions",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
 
+CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
+               global.optimize.doprfunr, opt, saacyc)
+
 CYCLEPHASEFUN (ili, "Inferring loop invariant variables",
                IIPIdoIterationInvariantParameterInference, ALWAYS, opt, saacyc)
 
@@ -528,12 +544,32 @@ CYCLEPHASEFUN (ivexi, "Inserting index vector extrema", IVEXIdoInsertIndexVector
 CYCLEPHASEFUN (ivexp, "Propagating index vector extrema", IVEXPdoIndexVectorExtremaProp,
                global.doivext, opt, saacyc)
 
-// We need extrema on guard results. This may be a lousy way to get this effect.
+CYCLEPHASEFUN (petl, "Propagate extrema thru lacfuns", PETLdoPropagateExtremaThruLacfuns,
+               global.optimize.dopetl, opt, saacyc)
+
+// Polyhedral optimizations can be very expensive, so
+// we clean up the AST before performing them, by doing
+// CSE, VP, and DCR.
+
+#ifdef BUG1147 // still
+CYCLEPHASEFUN (pvp, "Propagating variables for polyhedral optimizations",
+               VPdoVarPropagation, global.optimize.dovp, opt, saacyc)
+#endif // BUG1147 // still
+
+CYCLEPHASEFUN (pcse, "Eliminating common subexpressions for polyhedral optimizations",
+               CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
+
+CYCLEPHASEFUN (pdcr, "Removing dead code for polyhedral optimizations",
+               DCRdoDeadCodeRemoval, global.optimize.dodcr, opt, saacyc)
+
+CYCLEPHASEFUN (polys, "Polyhedral analysis setup", POLYSdoPolyhedralSetup,
+               global.optimize.dopogo || global.optimize.dopwlf, opt, saacyc)
+
 CYCLEPHASEFUN (pogo, "Polyhedral guard optimization", POGOdoPolyhedralGuardOptimization,
                global.optimize.dopogo, opt, saacyc)
 
-CYCLEPHASEFUN (petl, "Propagate extrema thru lacfuns", PETLdoPropagateExtremaThruLacfuns,
-               global.optimize.dopetl, opt, saacyc)
+CYCLEPHASEFUN (pwlf, "Polyhedral with loop folding", PWLFdoPolyhedralWithLoopFolding,
+               global.optimize.dopwlf, opt, saacyc)
 
 CYCLEPHASEFUN (awlfi, "Inferring algebraically foldable with-loops",
                AWLFIdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
@@ -548,7 +584,9 @@ CYCLEPHASEFUN (wlircubsl, "Applying with-loop invariant removal for CUBSL",
 
 CYCLEPHASEFUN (cubsl, "Slicing algebraically foldable with-loops",
                CUBSLdoAlgebraicWithLoopFoldingCubeSlicing,
-               global.optimize.doawlf &&global.optimize.docubsl, opt, saacyc)
+               global.optimize.docubsl
+                 && (global.optimize.doawlf || global.optimize.dopwlf),
+               opt, saacyc)
 
 CYCLEPHASEFUN (awlf, "Applying algebraic with-loop folding",
                AWLFdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
@@ -567,9 +605,6 @@ CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariant
 
 CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                global.optimize.dowls, opt, saacyc)
-
-CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
-               global.optimize.doprfunr, opt, saacyc)
 
 CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
                opt, saacyc)
@@ -1113,8 +1148,6 @@ PHASE (mem, "Introducing memory management instructions", !global.on_demand_lib)
 SUBPHASE (ufiv, "Unshare index vectors in WL-folds", UFIVdoUnshareFoldIV,
           (global.backend == BE_c99), mem)
 
-SUBPHASE (simd, "SIMD inference", SIMDdoInferSIMD, global.simd, mem)
-
 SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.docp, mem)
 
 SUBPHASE (cnstass, "CUDA Flatten generators", CNSTASSdoCUDAconstantAssignment,
@@ -1193,6 +1226,15 @@ SUBPHASE( mvsmi,
 SUBPHASE (re, "Removing reuse instructions", EMREdoReuseElimination, ALWAYS, mem)
 
 ENDPHASE (mem)
+
+/******************************************************************************/
+
+PHASE (dm, "Preparing for distributed memory execution", (global.backend == BE_distmem))
+
+SUBPHASE (dmisef, "Identifying functions with side effects",
+          DMISEFdoIdentifySideEffectFunctions, ALWAYS, dm)
+
+ENDPHASE (dm)
 
 /******************************************************************************/
 
@@ -1350,6 +1392,14 @@ SUBPHASE (mc, "Move constants to variable declaration", MCdoMoveConst, ALWAYS, p
 
 SUBPHASE (pfg, "CUDA Prepare for loop generation", PFGdoPrepareForloopGeneration,
           (global.backend == BE_cuda || global.backend == BE_cudahybrid), pc)
+
+SUBPHASE (
+  dmisefa,
+  "Identifying function applications with side effects for distributed memory backend",
+  DMISEFAdoIdentifySideEffectFunctionApplications, global.backend == BE_distmem, pc)
+
+SUBPHASE (dmisaa, "Identify sub-allocated arrays for the distributed memory backend",
+          DMISAAdoIdentifySubAllocatedArrays, global.backend == BE_distmem, pc)
 
 ENDPHASE (pc)
 

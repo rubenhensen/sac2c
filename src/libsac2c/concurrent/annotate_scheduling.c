@@ -20,7 +20,7 @@
 
 #include "annotate_scheduling.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "MTAS"
 #include "debug.h"
 
 #include "types.h"
@@ -248,6 +248,8 @@ MTASfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("WL-scheduling in function %s", FUNDEF_NAME (arg_node));
+
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
@@ -299,11 +301,14 @@ MTASwith2 (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("processing segments of WL....");
     was_in_par_wl = INFO_INPARWL (arg_info);
 
     INFO_INPARWL (arg_info) = WITH2_PARALLELIZE (arg_node);
     WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
     INFO_INPARWL (arg_info) = was_in_par_wl;
+
+    DBUG_PRINT (".... done");
 
     WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
 
@@ -338,6 +343,7 @@ MTASwlseg (node *arg_node, info *arg_info)
          * constant segments.
          */
         if (WLSEG_SCHEDULING (arg_node) == NULL) {
+            DBUG_PRINT ("...parllel segment: inferring scheduling");
             if (WLSEG_ISDYNAMIC (arg_node)) {
                 WLSEG_SCHEDULING (arg_node)
                   = InferSchedulingVarSegment (arg_node, arg_info);
@@ -349,6 +355,7 @@ MTASwlseg (node *arg_node, info *arg_info)
             //        WLSEG_TASKSEL(arg_node) = InferTaskselSegment(arg_node, arg_info);
             //      }
         } else {
+            DBUG_PRINT ("...parllel segment: using annotated scheduling");
             if (WLSEG_ISDYNAMIC (arg_node)) {
                 SCHcheckSuitabilityVarSeg (WLSEG_SCHEDULING (arg_node));
             } else {
@@ -360,6 +367,7 @@ MTASwlseg (node *arg_node, info *arg_info)
          * Here, we are not within a (to be) parallelised with-loop.
          * Scheduling annotations from the wlcomp pragma are removed.
          */
+        DBUG_PRINT ("...non parllel segment: no scheduling");
         if (WLSEG_SCHEDULING (arg_node) != NULL) {
             WLSEG_SCHEDULING (arg_node)
               = SCHremoveScheduling (WLSEG_SCHEDULING (arg_node));

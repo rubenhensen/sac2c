@@ -417,6 +417,18 @@ PHOinterpretBreakOption (char *option)
 
     DBUG_PRINT ("Interpreting break option: %s", option);
 
+    /*
+     * We reset potential information from previous occurrences of the break
+     * option on the command line, which is scanned left to right.
+     */
+    global.break_after_phase = PH_undefined;
+    global.break_after_subphase = PH_undefined;
+    global.break_after_cyclephase = PH_undefined;
+    global.break_cycle_specifier = 1;
+
+    /*
+     * We start to interpret the current option.
+     */
     break_phase = STRtok (option, ":");
 
     num = strtol (break_phase, &rest, 10);

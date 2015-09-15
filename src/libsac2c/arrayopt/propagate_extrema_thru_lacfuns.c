@@ -79,6 +79,7 @@
 #include "compare_tree.h"
 #include "lacfun_utilities.h"
 #include "pattern_match.h"
+#include "print.h"
 
 /*
  * INFO structure
@@ -278,11 +279,26 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
             minmax = AVIS_MIN (argavis);
             newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
                                                  &INFO_NEWOUTERAPARGS (arg_info));
-            AVIS_MIN (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
+            AVIS_MIN (lfa) = TBmakeId (newavis);
             DBUG_PRINT ("Adding AVIS_MIN(%s) for formal parameter %s",
-                        AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
+                        AVIS_NAME (newavis), AVIS_NAME (lfa));
             global.optcounters.petl_expr++;
         }
+
+#ifdef FIXME
+
+        node *af = NULL;
+        // FIXME This is rubbish. It need to be burned and/or rewritten to use PHUT.
+        // More likely, we can just burn it, once we get rid of extrema.
+        // Support for LOOPFUN induction variable
+        if ((NULL == AVIS_MIN (lfa)) && (!TYisAKV (typ)) && (NULL != rca)
+            && (!LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca)))) {
+            af = LFUfindAffineFunctionForLIV (NULL, arg_node);
+            if (NULL != af) {
+                PRTdoPrint (af);
+            }
+        }
+#endif // FIXME
 
         if ((NULL == AVIS_MAX (lfa)) && (!TYisAKV (typ)) && (NULL != AVIS_MAX (argavis))
             && (FUNDEF_ISCONDFUN (arg_node)
@@ -293,9 +309,9 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
             minmax = AVIS_MAX (argavis);
             newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
                                                  &INFO_NEWOUTERAPARGS (arg_info));
-            AVIS_MAX (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
+            AVIS_MAX (lfa) = TBmakeId (newavis);
             DBUG_PRINT ("Adding AVIS_MAX(%s) for formal parameter %s",
-                        AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
+                        AVIS_NAME (newavis), AVIS_NAME (lfa));
             global.optcounters.petl_expr++;
         }
 
@@ -523,7 +539,6 @@ PETLfundef (node *arg_node, info *arg_info)
     if (NULL == INFO_LACFUN (arg_info)) { /* Vanilla traversal */
         DBUG_PRINT ("Normal traversal of: %s", FUNDEF_NAME (arg_node));
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     } else {
         DBUG_ASSERT (arg_node == INFO_LACFUN (arg_info), "Wrong LACFUN");
         DBUG_PRINT ("Looking at lacfun: %s", FUNDEF_NAME (arg_node));

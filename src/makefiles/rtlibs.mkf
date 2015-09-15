@@ -30,6 +30,7 @@ OBJEXT := $(shell $(SAC2C_T) -COBJEXT)
 MODEXT := $(shell $(SAC2C_T) -CMODEXT)
 TREEEXT := $(shell $(SAC2C_T) -CTREE_DLLEXT)
 USE_PHM_API := $(shell $(SAC2C_T) -CUSE_PHM_API)
+RTSPEC := $(shell $(SAC2C_T) -CRTSPEC) 
 
 ifeq ($(SBI),XXXXX)
 $(error ** Error: no SBI specified for target '$(TARGET)')
@@ -52,6 +53,8 @@ BINDIR = bin
 #
 SACLIBS = \
   $(LIBDIR)/libsac$(MODEXT) \
+  $(LIBDIR)/libsacdistmem$(MODEXT) \
+  $(LIBDIR)/libsacrtspec$(MODEXT) \
   $(LIBDIR)/libsacphm.diag$(MODEXT) \
   $(LIBDIR)/libsacphm$(MODEXT) \
   $(LIBDIR)/libsacphmc.diag$(MODEXT) \
@@ -76,7 +79,7 @@ all: $(TARGETS)
 
 CDEPS = $(wildcard include/*.h src/include/*.h src/libsac/*/*.h src/libsacphm/*/*.h)
 SACDEPS = include/sac.h include/sac_serialize.h
-EXTRAINC = -Iinclude -Isrc/include -Isrc/libsacphm/heap
+EXTRAINC = -Iinclude -Isrc/include -Isrc/libsacphm/heap -Isrc/libsacdistmem/commlib
 
 libsac_sources = \
   src/libsac/cachesim/access_detailed.c \
@@ -90,18 +93,28 @@ libsac_sources = \
   src/libsac/interface/sacarg.c \
   src/libsac/interface/sacargconvert.c \
   src/libsac/interface/sacmt.c \
-  src/libsac/mt/hwloc_data.c \
   src/libsac/mt/mt.c \
   src/libsac/mt_beehive/mt_beehive.c \
   src/libsac/mt_lpel/mt_lpel_std.c \
   src/libsac/mt_lpel/mt_lpel_trace.c \
   src/libsac/mt_omp/mt_omp.c \
   src/libsac/mt_pth/mt_pth_std.c \
-  src/libsac/mt_pth/mt_pth_trace.c \
-  src/libsac/mutc/reference_counting.c \
-  src/libsac/rtspec/controller.c \
-  src/libsac/rtspec/registry.c \
-  src/libsac/rtspec/reqqueue.c
+  src/libsac/mt_pth/mt_pth_trace.c
+
+
+libsacdistmem_sources = \
+  src/libsacdistmem/distmem/distmem.c \
+  src/libsacdistmem/distmem/distmem_trace.c \
+  src/libsacdistmem/distmem/distmem_profile.c \
+  src/libsacdistmem/commlib/distmem_commlib_gasnet.c \
+  src/libsacdistmem/commlib/distmem_commlib_gasnet_trace.c \
+  src/libsacdistmem/commlib/distmem_commlib_mpi.c \
+  src/libsacdistmem/commlib/distmem_commlib_mpi_trace.c \
+  src/libsacdistmem/commlib/distmem_commlib_armci.c \
+  src/libsacdistmem/commlib/distmem_commlib_armci_trace.c \
+  src/libsacdistmem/commlib/distmem_commlib_gpi.c \
+  src/libsacdistmem/commlib/distmem_commlib_gpi_trace.c
+
 
 ifeq ($(USE_PHM_API), 1)
 
@@ -115,8 +128,8 @@ libsacphm_sources = \
   src/libsacphm/heap/setup.c \
   src/libsacphm/heap/small_chunks.c \
   src/libsacphm/heap/thread_ids.c \
-  src/libsacphm/heap/wrapper.c \
-  src/libsacphm/opt/placement.c
+  src/libsacphm/heap/wrapper.c
+
 
 else
 
@@ -126,6 +139,30 @@ libsacphm_sources = \
   src/libsacphm/empty/empty.c
 
 endif
+
+
+ifeq ($(RTSPEC), 1)
+
+$(info ** INFO: target '$(TARGET)' does support RTSPEC.)
+
+libsacrtspec_sources = \
+  src/libsac/rtspec/persistence.c \
+  src/libsac/rtspec/registry.c \
+  src/libsac/rtspec/simple_controller.c \
+  src/libsac/rtspec/simple_reqqueue.c \
+  src/libsac/rtspec/supervisor.c \
+  src/libsac/rtspec/uuid_controller.c \
+  src/libsac/rtspec/uuid_reqqueue.c
+
+else
+
+$(info ** INFO: target '$(TARGET)' does not support RTSPEC.)
+
+libsacrtspec_sources = \
+  src/libsacphm/empty/empty.c
+
+endif
+	
 
 libsacphmc_sources = \
   src/libsacphmc/wrappers/nophm.c

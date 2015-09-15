@@ -139,30 +139,98 @@ CHKcorrectTypeInsertError (node *arg_node, char *string)
 
 /** <!--**********************************************************************-->
  *
- * @fn node *CHKassignAvisSSAAssign( node *arg_node)
+ * @fn node *CHKisAttribIds( node *arg_node)
+ *
+ * @desc: If in SSA mode, check that each N_ids' AVIS_SSAASSIGN is either NULL,
+ *        or that it points to N_assign node assgn.
+ *        If assgn is NULL, we are being called from some place where we do not
+ *        know the N_assign node, so do the best we can.
+ *
+ *        If not in SSA mode, we allow anything, for better or worse...
+ *
+ *        Result is TRUE if all ok, else FALSE and NODE_ERROR.
+ *        Also true if the node is an N_spids, because that means
+ *        we are very early in the compilation process, and N_avis nodes
+ *        do not exist yet.
+ *
+ *        arg_node may be NULL if the N_let has no result, e.g., "_dec_rc_()".
  *
  *******************************************************************************/
-node *
-CHKassignAvisSSAAssign (node *arg_node)
+bool
+CHKisAttribIds (node *arg_node, node *assgn)
 {
     node *ids;
+    node *avis;
+    node *aassgn;
+    bool b = TRUE;
 
     DBUG_ENTER ();
 
-    if (global.valid_ssaform) {
-        if (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let) {
-            ids = LET_IDS (ASSIGN_STMT (arg_node));
-            while (ids != NULL) {
-                if (AVIS_SSAASSIGN (IDS_AVIS (ids)) != arg_node) {
-                    NODE_ERROR (IDS_AVIS (ids))
-                      = CHKinsertError (NODE_ERROR (IDS_AVIS (ids)),
-                                        "AVIS_SSAASSIGN does not point to correct "
-                                        "N_assign node.");
-                    DBUG_PRINT ("for %s", AVIS_NAME (IDS_AVIS (ids)));
+    ids = arg_node;
+    if ((NULL != arg_node) && (N_ids == NODE_TYPE (arg_node))) { // Ignore N_spids
+        while (ids != NULL) {
+            avis = IDS_AVIS (ids);
+            aassgn = AVIS_SSAASSIGN (avis);
+            if (NULL != aassgn) { // Sadly, NULL treated as ok here.
+                b = b && (N_assign == NODE_TYPE (aassgn));
+                b = b && ((NULL == assgn) || (assgn == aassgn));
+                if (!b) {
+                    NODE_ERROR (arg_node)
+                      = CHKinsertError (NODE_ERROR (avis), "AVIS_SSAASSIGN is does not "
+                                                           "point to correct N_assign "
+                                                           "node for N_ids");
+                    DBUG_PRINT ("for %s", AVIS_NAME (avis));
                 }
-                ids = IDS_NEXT (ids);
             }
+            ids = IDS_NEXT (ids);
         }
+    }
+
+    DBUG_RETURN (b);
+}
+
+/** <!--**********************************************************************-->
+ *
+ * @fn node *CHKattribsAssign( node *arg_node)
+ *
+ * @desc: Check all N_ids in this N_assign, to ensure that
+ *        their AVIS_SSAASSIGN either points to this assign, or is NULL.
+ *        If not in SSA mode, must be NULL.
+ *
+ *******************************************************************************/
+node *
+CHKattribsAssign (node *arg_node)
+{
+    node *nlet;
+
+    DBUG_ENTER ();
+
+    nlet = ASSIGN_STMT (arg_node);
+    if ((N_let == NODE_TYPE (nlet)) && (!CHKisAttribIds (LET_IDS (nlet), arg_node))) {
+        NODE_ERROR (arg_node)
+          = CHKinsertError (NODE_ERROR (arg_node),
+                            "AVIS_SSAASSIGN does not point to correct N_assign node");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--**********************************************************************-->
+ *
+ * @fn node *CHKattribsIds( node *arg_node)
+ *
+ * @desc: Check all N_ids elements
+ *
+ *******************************************************************************/
+node *
+CHKattribsIds (node *arg_node)
+{
+    DBUG_ENTER ();
+
+    if (!CHKisAttribIds (arg_node, NULL)) {
+        DBUG_PRINT ("Offending N_ids is %s", AVIS_NAME (IDS_AVIS (arg_node)));
+        NODE_ERROR (arg_node)
+          = CHKinsertError (NODE_ERROR (arg_node), "AVIS_SSAASSIGN is invalid for N_ids");
     }
 
     DBUG_RETURN (arg_node);
@@ -393,6 +461,36 @@ CHKavisReflection (node *arg_node)
         NODE_ERROR (arg_node)
           = CHKinsertError (NODE_ERROR (arg_node),
                             "AVIS_DECL and VARDEC_AVIS do not reflect");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--**********************************************************************-->
+ *
+ * @fn node *CHKavisSsaassignNodeType( node *arg_node)
+ *
+ * @brief: arg_node is an N_avis. If running in SSA mode,
+ *         check that AVIS_SSAASSIGN is either NULL or a pointer to an N_assign node.
+ *
+ * @params: arg_node: N_avis.
+ *
+ * @return: arg_node
+ *
+ *****************************************************************************/
+node *
+CHKavisSsaassignNodeType (node *arg_node)
+{
+    node *ssaassign; // mostly for debug aid
+
+    DBUG_ENTER ();
+
+    ssaassign = AVIS_SSAASSIGN (arg_node);
+    if ((NULL != ssaassign) && global.valid_ssaform
+        && (N_assign != NODE_TYPE (ssaassign))) {
+        NODE_ERROR (arg_node)
+          = CHKinsertError (NODE_ERROR (arg_node), "Illegal node type in AVIS_SSAASSIGN");
+        DBUG_PRINT ("Offending variable is %s", AVIS_NAME (arg_node));
     }
 
     DBUG_RETURN (arg_node);

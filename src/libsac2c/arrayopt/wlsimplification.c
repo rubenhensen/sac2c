@@ -359,11 +359,13 @@ WLSIMPassign (node *arg_node, info *arg_info)
     if (INFO_REPLACE (arg_info)) {
         DBUG_PRINT ("Freeing N_assign for %s",
                     AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)))));
+        TUclearSsaAssign (arg_node);
         arg_node = FREEdoFreeNode (arg_node);
         INFO_REPLACE (arg_info) = FALSE;
     }
     if (INFO_PREASSIGN (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_PREASSIGN (arg_info), arg_node);
+        TUsetSsaAssign (arg_node);
         INFO_PREASSIGN (arg_info) = NULL;
     }
 

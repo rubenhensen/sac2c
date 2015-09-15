@@ -9,7 +9,6 @@ extern void ICMCompileND_PRF_RESHAPE_VxA__SHAPE_id (char *to_NT, int to_sdim,
 
 extern void ICMCompileND_PRF_RESHAPE_VxA__SHAPE_arr (char *to_NT, int to_sdim,
                                                      int shp_size, char **shpa_ANY);
-
 extern void ICMCompileND_PRF_SEL_VxA__SHAPE_id (char *to_NT, int to_sdim, char *from_NT,
                                                 int from_sdim, char *idx_NT);
 
@@ -17,9 +16,19 @@ extern void ICMCompileND_PRF_SEL_VxA__SHAPE_arr (char *to_NT, int to_sdim, char 
                                                  int from_sdim, int idx_size,
                                                  char **idxs_ANY);
 
+extern void ICMCompileND_PRF_SEL_VxA__DATA_id_Local (char *to_NT, int to_sdim,
+                                                     char *from_NT, int from_sdim,
+                                                     char *idx_NT, int idx_size,
+                                                     char *copyfun);
+
 extern void ICMCompileND_PRF_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *from_NT,
                                                int from_sdim, char *idx_NT, int idx_size,
                                                char *copyfun);
+
+extern void ICMCompileND_PRF_SEL_VxA__DATA_arr_Local (char *to_NT, int to_sdim,
+                                                      char *from_NT, int from_sdim,
+                                                      int idx_size, char **idxs_ANY,
+                                                      char *copyfun);
 
 extern void ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
                                                 int from_sdim, int idx_size,
@@ -58,6 +67,10 @@ extern void ICMCompileND_PRF_MODARRAY_AxVxA__DATA_arr (char *to_NT, int to_sdim,
 
 extern void ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT,
                                              int from_sdim, char *idx_ANY);
+
+extern void ICMCompileND_PRF_IDX_SEL__DATA_Local (char *to_NT, int to_sdim, char *from_NT,
+                                                  int from_sdim, char *idx_ANY,
+                                                  char *copyfun);
 
 extern void ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT,
                                             int from_sdim, char *idx_ANY, char *copyfun);

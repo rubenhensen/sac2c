@@ -34,6 +34,13 @@ CUnthApArg (node *args, int n)
     DBUG_RETURN (tmp);
 }
 
+bool
+CUisSupportedHostSimpletype (simpletype st)
+{
+    DBUG_ENTER ();
+    DBUG_RETURN ((st == T_bool) || (st == T_int) || (st == T_float) || (st == T_double));
+}
+
 simpletype
 CUh2dSimpleTypeConversion (simpletype sty)
 {
@@ -42,6 +49,9 @@ CUh2dSimpleTypeConversion (simpletype sty)
     DBUG_ENTER ();
 
     switch (sty) {
+    case T_bool:
+        res = T_bool_dev;
+        break;
     case T_int:
         res = T_int_dev;
         break;
@@ -52,7 +62,9 @@ CUh2dSimpleTypeConversion (simpletype sty)
         res = T_double_dev;
         break;
     default:
-        DBUG_UNREACHABLE ("Simple type conversion found undefined host simple type!");
+        DBUG_UNREACHABLE ("Host to Device type conversion encountered not yet supported "
+                          "host element type: %s!",
+                          global.type_string[sty]);
     }
     DBUG_RETURN (res);
 }
@@ -65,6 +77,9 @@ CUd2hSimpleTypeConversion (simpletype sty)
     DBUG_ENTER ();
 
     switch (sty) {
+    case T_bool_dev:
+        res = T_bool;
+        break;
     case T_int_dev:
         res = T_int;
         break;
@@ -138,6 +153,7 @@ CUisDeviceTypeNew (ntype *ty)
 
     res = TYgetSimpleType (TYgetScalar (ty)) == T_float_dev
           || TYgetSimpleType (TYgetScalar (ty)) == T_int_dev
+          || TYgetSimpleType (TYgetScalar (ty)) == T_bool_dev
           || TYgetSimpleType (TYgetScalar (ty)) == T_double_dev;
 
     DBUG_RETURN (res);
@@ -178,7 +194,7 @@ CUisDeviceTypeOld (types *ty)
     DBUG_ENTER ();
 
     res = TCgetBasetype (ty) == T_float_dev || TCgetBasetype (ty) == T_int_dev
-          || TCgetBasetype (ty) == T_double_dev;
+          || TCgetBasetype (ty) == T_bool_dev || TCgetBasetype (ty) == T_double_dev;
 
     DBUG_RETURN (res);
 }
@@ -190,10 +206,7 @@ CUisDeviceArrayTypeNew (ntype *ty)
 
     DBUG_ENTER ();
 
-    res = (TYgetSimpleType (TYgetScalar (ty)) == T_float_dev
-           || TYgetSimpleType (TYgetScalar (ty)) == T_int_dev
-           || TYgetSimpleType (TYgetScalar (ty)) == T_double_dev)
-          && TYisArray (ty);
+    res = CUisDeviceTypeNew (ty) && TYisArray (ty);
 
     DBUG_RETURN (res);
 }

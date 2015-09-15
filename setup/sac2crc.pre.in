@@ -436,6 +436,12 @@ OPT_g            :=  "XXXXX"
 LDPATH           :=  "XXXXX"
 LINK_MOD         :=  "XXXXX"
 
+/* FIXME I am not sure that this has to be specified here.  */
+DISTMEM_COMMLIB  :=  ""
+COMMLIB_CONDUIT  :=  ""
+
+
+
 /*******************************************************************************
  *
  * Targets that define basic targets:

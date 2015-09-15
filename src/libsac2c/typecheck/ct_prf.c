@@ -1306,6 +1306,179 @@ NTCCTprf_dim_A (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCCTprf_isDist_A( te_info *info, ntype *args)
+ *
+ * description: This primitive function returns whether an array is distributed.
+ *              (This primitive function is for the distributed memory backend.)
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_isDist_A (te_info *info, ntype *args)
+{
+    ntype *array;
+    ntype *res;
+    char *err_msg;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "isDist called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_firstElems_A( te_info *info, ntype *args)
+ *
+ * description: This primitive function returns the maximum number of elements
+ *              of a distributed array that are owned by each node.
+ *              The first n - 1 nodes own exactly this number of elements
+ *              and the last node owns the remaining elements.
+ *              (This primitive function is for the distributed memory backend.)
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_firstElems_A (te_info *info, ntype *args)
+{
+    ntype *array;
+    ntype *res;
+    char *err_msg;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "firstElems called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TYmakeAKS (TYmakeSimpleType (T_ulong), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_localFrom_A( te_info *info, ntype *args)
+ *
+ * description: This primitive function returns the first element index
+ *              that is local to the current node.
+ *              If the array is not distributed, that is equal to 0.
+ *              (This primitive function is for the distributed memory backend.)
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_localFrom_A (te_info *info, ntype *args)
+{
+    ntype *array;
+    ntype *res;
+    char *err_msg;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "localFrom called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_localCount_A( te_info *info, ntype *args)
+ *
+ * description: This primitive function returns the number of elements that are
+ *              local to the current node. If the array is not distributed, that
+ *              is equal to the size of the array.
+ *              (This primitive function is for the distributed memory backend.)
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_localCount_A (te_info *info, ntype *args)
+{
+    ntype *array;
+    ntype *res;
+    char *err_msg;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "localCount called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_offs_A( te_info *info, ntype *args)
+ *
+ * description: This primitive function returns the offset of a distributed array
+ *              in the dsm shared memory segment.
+ *              (This primitive function is for the distributed memory backend.)
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_offs_A (te_info *info, ntype *args)
+{
+    ntype *array;
+    ntype *res;
+    char *err_msg;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 1,
+                 "offs called with incorrect number of arguments");
+
+    array = TYgetProductMember (args, 0);
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TYmakeAKS (TYmakeSimpleType (T_ulong), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCCTprf_shape_A( te_info *info, ntype *args)
  *
  * description:
@@ -1549,7 +1722,7 @@ NTCCTprf_sel_VxIA (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_idx_selS( te_info *info, ntype *args)
  *
- * description:
+ * description: Type inference for idx_sel primitive function
  *
  ******************************************************************************/
 

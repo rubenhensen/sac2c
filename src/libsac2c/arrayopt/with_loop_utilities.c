@@ -105,7 +105,7 @@ WLUTisIdsMemberPartition (node *arg_node, node *partn)
  * @fn node *WLUTfindArrayForBound( node *bnd)
  *
  * @brief Assuming that bnd is GENERATOR_BOUND1/2 for a WL generator,
- *        try to find an N_array that gives its elements.
+ *        try to find the N_array that gives its elements.
  *
  * @param:  N_id or N_array
  * @result: N_array, or NULL if we can't find an N_array.
@@ -119,14 +119,19 @@ WLUTfindArrayForBound (node *bnd)
 
     DBUG_ENTER ();
 
-    if (N_array == NODE_TYPE (bnd)) {
-        z = bnd;
+    if (NULL != bnd) {
+        if (N_array == NODE_TYPE (bnd)) {
+            z = bnd;
+        }
+
+        if ((NULL == z) && (N_id == NODE_TYPE (bnd))) {
+            pat = PMarray (1, PMAgetNode (&z), 1, PMskip (0));
+            PMmatchFlat (pat, bnd);
+            pat = PMfree (pat);
+        }
     }
 
-    if ((NULL == z) && (N_id == NODE_TYPE (bnd))) {
-        pat = PMarray (1, PMAgetNode (&z), 1, PMskip (0));
-        PMmatchFlat (pat, bnd);
-    }
+    DBUG_ASSERT ((NULL == z) || N_array == NODE_TYPE (z), "result node type wrong");
 
     DBUG_RETURN (z);
 }
@@ -405,6 +410,36 @@ WLUTisCopyPartition (node *partn)
     DBUG_ENTER ();
 
     res = NULL != WLUTfindCopyPartition (partn);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool WLUTisEmptyGenerator( node *partn)
+ *
+ * @brief: Predicate for determining if N_part partn has an empty generator,
+ *         i.e., [:int]
+ *
+ * @param: part: An N_part
+ *
+ * @result: true if partn has an empty generator; else false.
+ *          Do NOT depend a FALSE result meaning that the generator is not
+ *          empty. We may just not be able to find an N_array!
+ *
+ *****************************************************************************/
+bool
+WLUTisEmptyGenerator (node *partn)
+{
+    node *bnd;
+    bool res = FALSE;
+
+    DBUG_ENTER ();
+
+    bnd = WLUTfindArrayForBound (GENERATOR_BOUND1 (PART_GENERATOR (partn)));
+    if (NULL != bnd) {
+        res = 0 == TCcountExprs (ARRAY_AELEMS (bnd));
+    }
 
     DBUG_RETURN (res);
 }

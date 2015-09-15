@@ -102,7 +102,7 @@
  *   Memory is always allocated in so-called units (currently sizeof(double)).
  *   This assures proper alignment as required by malloc().
  *
- *   Each separately indentifiable chunk of memory (allocated or de-allocated)
+ *   Each separately identifiable chunk of memory (allocated or de-allocated)
  *   is associated with some administrative information:
  *
  *   Small chunks:
@@ -229,11 +229,12 @@
  *   As a more or less ad-hoc solution to this problem, MSCA artificially increases
  *   memory size requests before allocation actually takes place. This simple
  *   measure manipulates the relative positions of arrays in memory and may cause
- *   significant performance improvements, in particular on machnies with low
+ *   significant performance improvements, in particular on machines with low
  *   associative cache memories.
  *
  *   Nevertheless, a more sophisticated solution to the problem of cross
  *   interference conflicts would be desirable. Such a solution would be
+>>>>>>> master
  *   Array Placements (APL). Unfortunately, APL for the time being is only
  *   rudimentarily implemented in the SAC compiler.
  *

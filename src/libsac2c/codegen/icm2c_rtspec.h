@@ -18,8 +18,8 @@ extern void ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg
 extern void ICMCompileWE_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt,
                                       char **vararg);
 
-extern void ICMCompileWE_FUN_AP (char *name, char *rettype_NT, int vararg_cnt,
-                                 char **vararg);
+extern void ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname,
+                                 int vararg_cnt, char **vararg);
 
 extern void ICMCompileWE_MODFUN_INFO (char *name, char *module);
 

@@ -10,10 +10,11 @@
  * prefix: SCS
  *
  *****************************************************************************/
-extern bool SCSisNegative (node *arg_node);
-extern bool SCSisNonneg (node *arg_node);
+extern bool SCSisSelOfShape (node *arg_node);
 extern bool SCSisPositive (node *arg_node);
+extern bool SCSisNegative (node *arg_node);
 extern bool SCSisNonPositive (node *arg_node);
+extern bool SCSisNonnegative (node *arg_node);
 extern void SCSinitSymbolicConstantSimplification (void);
 extern void SCSfinalizeSymbolicConstantSimplification (void);
 extern node *SCSmakeTrue (node *prfarg);

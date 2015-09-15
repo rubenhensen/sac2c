@@ -291,6 +291,38 @@ FREEattribCodeLink (node *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
+ * @fn FREEattribSsaAssign
+ *
+ * @brief Does not free anything, but does zero AVIS_SSAASSIGN
+ *        for all entries in the argument N_ids.
+ *
+ *        This happens only in SSA mode. Otherwise, this function is a no-op.
+ *
+ * @param arg_node N_ids node
+ *
+ * @return N_ids node, unchanged, with above side effects
+ *
+ ***************************************************************************/
+node *
+FREEattribSsaAssign (node *arg_node)
+{
+    node *ids;
+
+    DBUG_ENTER ();
+
+    if (global.valid_ssaform) {
+        ids = arg_node;
+        while (NULL != ids) {
+            AVIS_SSAASSIGN (IDS_AVIS (ids)) = NULL;
+            ids = IDS_NEXT (ids);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn FREEattribLUT
  *
  * @brief Frees LUT attribute

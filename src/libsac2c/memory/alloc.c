@@ -32,6 +32,7 @@
 #include "constants.h"
 #include "string.h"
 #include "new_typecheck.h"
+#include "globals.h"
 
 #define DBUG_PREFIX "EMAL"
 #include "debug.h"
@@ -1440,6 +1441,61 @@ EMALprf (node *arg_node, info *arg_info)
          */
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_int);
+        break;
+
+    case F_isDist_A:
+        /*
+         * _isDist_A_ always yields a scalar
+         *
+         * _isDist_A_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_bool);
+        break;
+
+    case F_firstElems_A:
+        /*
+         * _firstElems_A_ always yields a scalar
+         *
+         * _firstElems_A_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_ulong);
+        break;
+
+    case F_localFrom_A:
+        /*
+         * _localFrom_A_ always yields a scalar
+         *
+         * _localFrom_A_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_ulong);
+        break;
+
+    case F_localCount_A:
+        /*
+         * _localCount_A_ always yields a scalar
+         *
+         * _localCount_A_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_ulong);
+        break;
+
+    case F_offs_A:
+        /*
+         * _offs_A_ always yields a scalar
+         *
+         * _offs_A_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_ulong);
         break;
 
     case F_shape_A:

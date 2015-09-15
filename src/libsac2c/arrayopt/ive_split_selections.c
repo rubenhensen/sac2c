@@ -130,6 +130,8 @@ FreeInfo (info *info)
  * @param shpexpr shape expression to be used for the vect2offset.
  *                If the expression must be copied, that is the
  *                caller's duty.
+ *                shpexpr may be N_id or N_avis or N_array.
+ *
  * @param info    info structure
  *
  * @return the N_avis of the computed offset
@@ -138,7 +140,6 @@ node *
 AddVect2Offset (node *iv, node *shpexpr, info *arg_info)
 {
     node *avis, *assign;
-    ntype *typ;
 
     DBUG_ENTER ();
 
@@ -150,12 +151,8 @@ AddVect2Offset (node *iv, node *shpexpr, info *arg_info)
 
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
-    typ = (N_id == NODE_TYPE (shpexpr))
-            ? TYcopyType (AVIS_TYPE (ID_AVIS (shpexpr)))
-            : TYmakeAKS (TYmakeSimpleType (T_int),
-                         SHcreateShape (1, TCcountExprs (ARRAY_AELEMS (shpexpr))));
     shpexpr = FLATGexpression2Avis (shpexpr, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info), typ);
+                                    &INFO_PREASSIGNS (arg_info), NULL);
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
                                       TCmakePrf2 (F_vect2offset, TBmakeId (shpexpr),
                                                   DUPdoDupNode (iv))),
@@ -344,7 +341,7 @@ IVESPLITprf (node *arg_node, info *arg_info)
             CTInote ("Insufficient symbolic shape information available. "
                      "Using explicit information to split index operation.");
 #endif
-            shpprf2 = TBmakeId (AddShapeComputation (array, arg_info));
+            shpprf2 = AddShapeComputation (array, arg_info);
         }
         break;
 
@@ -359,6 +356,12 @@ IVESPLITprf (node *arg_node, info *arg_info)
             avis = AddVect2Offset (PRF_ARG1 (arg_node), shpprf2, arg_info);
             new_node = TCmakePrf2 (F_idx_sel, TBmakeId (avis), PRF_ARG2 (arg_node));
             PRF_ARG2 (arg_node) = NULL;
+
+            /*
+             * If the distributed memory backend is used and we have identified
+             * the read as local, we have to keep that information.
+             */
+            PRF_DISTMEMISLOCALREAD (new_node) = PRF_DISTMEMISLOCALREAD (arg_node);
 
             arg_node = FREEdoFreeTree (arg_node);
             arg_node = new_node;

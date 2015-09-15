@@ -18,8 +18,6 @@
 #define SAC_DO_PHM 0
 #endif
 
-#ifndef SAC_SIMD_COMPILATION
-
 /*
  * Basic type definitions.
  */
@@ -889,7 +887,5 @@ SAC_C_EXTERN void SAC_HM_ShowDiagnostics (void);
 #endif
 
 #endif /* SAC_DO_PHM */
-
-#endif /* SAC_SIMD_COMPILATION */
 
 #endif /* _SAC_HEAPMGR_H */

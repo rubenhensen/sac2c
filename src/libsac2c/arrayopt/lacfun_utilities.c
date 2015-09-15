@@ -26,6 +26,9 @@
 #include "pattern_match.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
+#include "polyhedral_utilities.h"
+#include "polyhedral_defs.h"
+#include "symbolic_constant_simplification.h"
 
 /** <!--********************************************************************-->
  *
@@ -97,18 +100,19 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
 
 /** <!--***********************************************************************-->
  *
- * @fn bool LFUisLoopFunInvariant( node *arg_node, node *argid,
+ * @fn bool LFUisLoopFunInvariant( node *arg_node, node *inneriv,
  *                                 node *rca)
  *
  * @brief true if arg_node is not a LOOPFUN.
- *        true if arg_node IS a LOOPFUN, and argid (the current
- *        outer N_ap element) is the same as rca (recursivecallavis),
+ *        true if arg_node IS a LOOPFUN, and inneriv (the current
+ *        LOOPFUN N_arg element) is the same as rca (recursivecallavis),
  *        the current inner N_ap recursive call element.
  *
- * @param arg_node: N_fundef in question
- *        arg:   The current N_id or N_avis element of the
- *               lacfun's N_arg.
- *        rca:   The current N_id of the recursive call of arg_node.
+ * @param arg_node: LACFUN N_fundef in question
+ *        inneriv:   The current N_id or N_avis element of the
+ *                   lacfun's N_arg.
+ *        rca:       The current N_id of the recursive call of arg_node.
+ *                   In the example below, this is iv'.
  *
  * @result: True if the above brief holds.
  *
@@ -129,7 +133,7 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
  *
  ******************************************************************************/
 bool
-LFUisLoopFunInvariant (node *arg_node, node *arg, node *rca)
+LFUisLoopFunInvariant (node *arg_node, node *inneriv, node *rca)
 {
     bool z = TRUE;
     node *proxy;
@@ -137,7 +141,7 @@ LFUisLoopFunInvariant (node *arg_node, node *arg, node *rca)
 
     DBUG_ENTER ();
 
-    avis = (N_avis == NODE_TYPE (arg)) ? arg : ID_AVIS (arg);
+    avis = (N_avis == NODE_TYPE (inneriv)) ? inneriv : ID_AVIS (inneriv);
     if (FUNDEF_ISLOOPFUN (arg_node)) {
         z = avis == ID_AVIS (rca);
         if (!z) {
@@ -154,22 +158,24 @@ LFUisLoopFunInvariant (node *arg_node, node *arg, node *rca)
             }
         }
     }
-    DBUG_PRINT ("arg=%s and rca=%s are %s loop-invariant", AVIS_NAME (avis),
+    DBUG_PRINT ("inneriv=%s and rca=%s are %s loop-invariant", AVIS_NAME (avis),
                 ((NULL != rca) ? AVIS_NAME (ID_AVIS (rca)) : "notrecursive!"),
                 ((z ? "" : "not")));
 
     DBUG_RETURN (z);
 }
 
+#ifdef DEADCODE
 /** <!--********************************************************************-->
  *
  * @fn node *LFUgetCallArg (node *id, node *fundef, node *ext_assign)
  *
- * @params id: An N_id node.
- *         fundef: the N_fundef entry for the called LACFUN.
+ * @params id: An N_id node in fundef, a LACFUN.
+ *         fundef: the N_fundef entry for the LACFUN.
  *         ext_assign: The N_assign of the external call to the LACFUN.
  *
- * @brief 1. Ensure that id is N_arg of fundef.
+ * @brief 1. Ensure that N_id/N_Avis id is an N_arg of fundef.
+ *
  *        2. Search the parameter list of the fundef arg chain for
  *           id, and return the ext_assign element that corresponds to
  *           that.
@@ -185,21 +191,23 @@ LFUgetCallArg (node *id, node *fundef, node *ext_assign)
     node *arg_chain;
     node *param_chain;
     node *param;
+    node *avis;
     int pos;
     int i;
 
     DBUG_ENTER ();
 
+    avis = (N_avis == NODE_TYPE (id)) ? id : ID_AVIS (id);
     /* Check if id is an arg of this fundef */
-    if (NODE_TYPE (AVIS_DECL (ID_AVIS (id))) != N_arg) {
-        DBUG_PRINT ("identifier %s is not fundef argument", AVIS_NAME (ID_AVIS (id)));
+    if (NODE_TYPE (AVIS_DECL (avis)) != N_arg) {
+        DBUG_PRINT ("identifier %s is not fundef argument", AVIS_NAME (avis));
         DBUG_RETURN (NULL);
     }
 
     /* Get argument position in fundef arg chain */
     arg_chain = FUNDEF_ARGS (fundef);
     pos = 1;
-    while ((arg_chain != NULL) && (arg_chain != AVIS_DECL (ID_AVIS (id)))) {
+    while ((arg_chain != NULL) && (arg_chain != AVIS_DECL (avis))) {
         arg_chain = ARG_NEXT (arg_chain);
         pos++;
     }
@@ -218,33 +226,80 @@ LFUgetCallArg (node *id, node *fundef, node *ext_assign)
 
     DBUG_RETURN (param);
 }
+#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *
- * @fn node *LFUgetLoopVariable (node * var, node * fundef, node * params)
+ * @fn node *LFUgetLoopVariable (node *var, node *fundef, node *params)
  *
- * @brief Return the variable in the LACFUN recursive call which has the same
- *        position as VAR in FUNDEF params.
+ * @brief Given an N_id, var, that must appear in FUNDEF_ARGS( fundef),
+ *        return the N_id that has the same position in params.
+ *        Almost: We chase back across any direct assigns for the params element,
+ *        a la VP, so as to reduce the number of variables involved.
+ *
+ *        I.e.,  params[ FUNDEF_ARGS iota var]
+ *
+ * @param: var:    an N_id node in the LACFUNs N_arg list,
+ *                 or its N_avis node.
+ * @param: fundef: the LACFUN N_fundef node
+ * @param: params: Either a recursive call AP_ARGS list, or
+ *                 an outer call AP_ARGS list.
  *
  *****************************************************************************/
 node *
 LFUgetLoopVariable (node *var, node *fundef, node *params)
 {
-    node *ret = NULL;
+    node *z = NULL;
     node *fargs = FUNDEF_ARGS (fundef);
+    node *avis;
 
     DBUG_ENTER ();
 
-    while (params && fargs && (ID_AVIS (var) != ARG_AVIS (fargs))) {
+    avis = (N_id == NODE_TYPE (var)) ? ID_AVIS (var) : var;
+    while (params && fargs && (avis != ARG_AVIS (fargs))) {
         params = EXPRS_NEXT (params);
         fargs = ARG_NEXT (fargs);
     }
 
     if (params) {
-        ret = EXPRS_EXPR (params);
+        z = EXPRS_EXPR (params);
+        DBUG_PRINT ("LACFUN %s arg %s has recursive call value of %s",
+                    FUNDEF_NAME (fundef), AVIS_NAME (avis), AVIS_NAME (ID_AVIS (z)));
+        z = PHUTskipChainedAssigns (z);
     }
 
-    DBUG_RETURN (ret);
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *LFUfindAssignForCond( node *arg_node)
+ *
+ * @brief Find the N_assign for the N_cond in a LOOPFUN.
+ *        We assume that there is only one N_cond in the LOOPFUN.
+ *
+ * @params arg_node: A LOOPFUN N_fundef node
+ *
+ * @result: The N_assign of the N_cond in a LOOPFUN
+ *          Crash if not found.
+ *
+ ******************************************************************************/
+node *
+LFUfindAssignForCond (node *arg_node)
+{
+    node *assignchain;
+
+    DBUG_ENTER ();
+    /* separate loop body assignment chain */
+    assignchain = BLOCK_ASSIGNS (FUNDEF_BODY (arg_node));
+
+    while ((assignchain != NULL) && (NODE_TYPE (ASSIGN_STMT (assignchain)) != N_cond)) {
+        assignchain = ASSIGN_NEXT (assignchain);
+    }
+
+    DBUG_ASSERT (assignchain != NULL, "Missing conditional in loop");
+
+    DBUG_RETURN (assignchain);
 }
 
 /** <!--********************************************************************-->
@@ -255,6 +310,7 @@ LFUgetLoopVariable (node *var, node *fundef, node *params)
  *        N_assign in a LOOPFUN.
  *
  *        Blind assumption that first N_assign is not the N_cond.
+ *        We assume that there is only one N_cond in the LOOPFUN.
  *
  * @params arg_node: A LOOPFUN N_fundef node
  *
@@ -279,21 +335,13 @@ LFUfindAssignBeforeCond (node *arg_node)
         assignchain = ASSIGN_NEXT (assignchain);
     }
 
-    /*
-     * z points to the last assignment of the loop body
-     * and assignchain to the conditional of the loop
-     */
+    // z points to the last assignment of the loop body
+    // and assignchain to the conditional of the loop
     DBUG_ASSERT (z != NULL, "Loop body missing");
     DBUG_ASSERT (assignchain != NULL, "Missing conditional in loop");
 
     DBUG_RETURN (z);
 }
-
-/* Structure for the Anonymous traversal.  */
-struct local_info {
-    node *res;
-    nodetype nt;
-};
 
 /** <!--********************************************************************-->
  *
@@ -302,6 +350,12 @@ struct local_info {
  *  of assignments.
  *
  ******************************************************************************/
+// Structure for the Anonymous traversal.
+struct local_info {
+    node *res;
+    nodetype nt;
+};
+
 static node *
 ATravFilter (node *arg_node, info *arg_info)
 {
@@ -445,15 +499,18 @@ LFUfindLoopInductionVariable (node *arg_node)
 
     DBUG_ENTER ();
 
-    cond = ASSIGN_NEXT (LFUfindAssignBeforeCond (arg_node));
+    cond = LFUfindAssignForCond (arg_node);
     cond = COND_COND (ASSIGN_STMT (cond));
     DBUG_PRINT ("Function %s induction variable predicate is %s", FUNDEF_NAME (arg_node),
-                AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)))));
+                AVIS_NAME (ID_AVIS (cond)));
 
     pat = PMprf (1, PMAgetPrf (&relop), 2, PMvar (1, PMAgetNode (&arg1), 0),
                  PMvar (1, PMAgetNode (&arg2), 0));
     if (PMmatchFlat (pat, cond)) {
-        DBUG_PRINT ("predicate relational args are ( %s, %s)", AVIS_NAME (ID_AVIS (arg1)),
+        // FIXME: If lacfun relational is normalized, it's always arg1.
+        // If not, the next line is very broken. Some days...
+        zavis = ID_AVIS (arg1);
+        DBUG_PRINT ("predicate relational args are ( %s, %s)", AVIS_NAME (zavis),
                     AVIS_NAME (ID_AVIS (arg2)));
     } else {
         DBUG_UNREACHABLE ("Could not find relational for predicate");
@@ -897,5 +954,294 @@ LFUcorrectSSAAssigns (node *arg_node, node *nassgn)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************
+ * @fn node *LFUfindAffineFunctionForLIV( node *arg_node, node *lacfundef)
+ *
+ * @brief: Find the maximal affine function tree for the variable that
+ *         controls the recursive call in a LOOPFUN.
+ *
+ * @params: arg_node - not sure yet FIXME
+ *          lacfundef - the N_fundef node for the loopfun
+ *
+ * @result: xxxx FIXME or NULL, if lacfundef is not a LOOPFUN.
+ *
+ *****************************************************************************/
+node *
+LFUfindAffineFunctionForLIV (node *arg_node, node *lacfundef)
+{
+    node *z = NULL;
+#ifdef FIXME // needs ISL conversion
+
+    this function, and its call from PETL,
+      are rubbish.
+
+      node *liv
+      = NULL;
+    node *idlist = NULL;
+    int numvars = 0;
+#endif // FIXME // needs ISL conversion
+
+    DBUG_ENTER ();
+
+#ifdef FIXME                                        // needs ISL conversion
+    liv = LFUfindLoopInductionVariable (lacfundef); // Loop induction variable
+    if (NULL != liv) {
+        DBUG_PRINT ("Loop induction variable is: %s", AVIS_NAME (liv));
+        idlist = PHUTcollectAffineNids (liv, lacfundef, &numvars);
+        DBUG_PRINT ("LIV has %d variables", numvars);
+        z = PHUTgenerateAffineExprs (liv, lacfundef, &numvars);
+    }
+
+#endif // FIXME // needs ISL conversion
+    DBUG_RETURN (z);
+}
+
+#ifdef UNDERCONSTRUCTION
+/******************************************************************************
+ * @fn node *LFUfindLivMin( node *arg_node)
+ *
+ * @brief: Find the maximum value of the loop induction variable(LIV)
+ *         in a loopfun.
+ *
+ * @params: arg_node - an N_ap node
+ *
+ * @result: an N_exprs node describing the minimum value of the
+ *          LIV, or NULL, if it can not be determined.
+ *
+ *****************************************************************************/
+node *
+LFUfindLivMin (node *arg_node)
+{
+    node *liv = NULL;
+    node *z = NULL;
+    node *idlist = NULL;
+    int numvars = 0;
+
+    DBUG_ENTER ();
+
+    DBUG_RETURN (z);
+}
+#endif // UNDERCONSTRUCTION
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *LFUgetLoopIncrementFromIslChain( node *arg_node, node *rca)
+ *
+ * @brief Search arg_node for a + or - on the induction variable, rca.
+ *        If found, return the other argument to the +/-. If not, return NULL.
+ *
+ *        The N_exprs chain should be one of:
+ *
+ *            rca = X + Y;
+ *            rca = X - Y;
+ *        where one of the arguments is constant.
+ *
+ * @param  rca: An induction variable N_id.
+ * @param  relarg: An ISL N_exprs chain of N_exprs.
+ *
+ * @result: An N_id or N_num or NULL.
+ *
+ ******************************************************************************/
+node *
+LFUgetLoopIncrementFromIslChain (node *rca, node *relarg)
+{
+    node *z = NULL;
+    node *exprs;
+
+    DBUG_ENTER ();
+
+    while ((NULL == z) && (NULL != relarg)) {
+        exprs = EXPRS_EXPR (relarg);
+        if ((ID_AVIS (rca) == ID_AVIS (EXPRS_EXPR (exprs)))
+            && (N_prf == NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (exprs))))
+            && (F_eq_SxS == PRF_PRF (EXPRS_EXPR (EXPRS_NEXT (exprs))))) { // rca = ...
+            exprs = EXPRS_NEXT (EXPRS_NEXT (exprs));                      // drop rca =
+            if ((N_prf == NODE_TYPE (EXPRS_EXPR (EXPRS_NEXT (exprs))))
+                && ((F_add_SxS == PRF_PRF (EXPRS_EXPR (EXPRS_NEXT (exprs))))
+                    || (F_sub_SxS == PRF_PRF (EXPRS_EXPR (EXPRS_NEXT (exprs)))))) {
+                if ((SCSisPositive (EXPRS_EXPR (exprs)))
+                    || (SCSisNegative (EXPRS_EXPR (exprs)))) {
+                    z = EXPRS_EXPR (exprs);
+                } else {
+                    if ((SCSisPositive (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs)))))
+                        || (SCSisNegative (
+                             EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs)))))) {
+                        z = EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs)));
+                    }
+                }
+            }
+        }
+        relarg = EXPRS_NEXT (relarg);
+    }
+
+    DBUG_RETURN (z);
+}
+
+#ifdef DEADCODE
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *LFUgetLoopIncrementFromCondprf( node *arg_node, node *rca)
+ *
+ * @brief arg_node is an N_prf relational. Return the argument that is
+ *        not rca.
+ *
+ * @param  arg_node: An N_prf
+ * @param  rca: The induction variable N_id.
+ *
+ * @result: An N_id.
+ *
+ ******************************************************************************/
+node *
+LFUgetLoopIncrementFromCondprf (node *arg_node, node *rca)
+{
+    node *z;
+
+    DBUG_ENTER ();
+
+    z = (ID_AVIS (rca) == ID_AVIS (PRF_ARG1 (arg_node))) ? PRF_ARG2 (arg_node)
+                                                         : PRF_ARG1 (arg_node);
+    DBUG_RETURN (z);
+}
+#endif // DEADCODE
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn prf LFUdualFun( prf nprf)
+ *
+ * @brief Find the dual function for a relational function
+ *
+ * @param An N_prf
+ *
+ * @return An N_prf
+ *
+ ******************************************************************************/
+prf
+LFUdualFun (prf nprf)
+{
+    prf z;
+
+    DBUG_ENTER ();
+
+    switch (nprf) {
+    case F_lt_SxS:
+        z = F_ge_SxS;
+        break;
+    case F_le_SxS:
+        z = F_gt_SxS;
+        break;
+    case F_eq_SxS:
+        z = F_neq_SxS;
+        break;
+    case F_ge_SxS:
+        z = F_lt_SxS;
+        break;
+    case F_gt_SxS:
+        z = F_le_SxS;
+        break;
+    case F_neq_SxS:
+        z = F_eq_SxS;
+        break;
+    case F_val_lt_val_SxS:
+        z = F_ge_SxS;
+        break;
+    case F_val_le_val_SxS:
+        z = F_gt_SxS;
+        break;
+    case F_non_neg_val_S:
+        z = F_lt_SxS;
+        break; // NB. Kludge (dyadic vs. monadic!)
+
+    default:
+        DBUG_ASSERT (FALSE, "Oopsie. Expected relational prf!");
+        z = nprf;
+        break;
+    }
+
+    DBUG_RETURN (z);
+}
+
+#ifdef DEADCODE
+/** <!-- ****************************************************************** -->
+ *
+ * @fn prf LFUalmostDualFun( prf nprf)
+ *
+ * @brief Find the almost-dual function for a relational function
+ *        This is used when in PHUT, when the recursive LOOPFUN conditional
+ *        has its arguments reversed. E.g., if we have:
+ *
+ *           p = _lt_SxS_( lcv, 9)
+ *
+ *        PHUT generates a constraint of: lcv < 9
+ *        However, if we have the same conditional with reversed arguments, we have:
+ *
+ *           p = _gt_SxS_( 9, lcv)
+ *
+ *        PHUT generates a constraint of:  9 > lcv
+ *
+ *        Similarly (and this is where it differs from LFUdualFun),
+ *        if we have:
+ *
+ *           p = _le_SxS_( lcv, 9)
+ *
+ *        PHUT generates a constraint of: lcv <= 9
+ *        However, if we have:
+ *
+ *           p = _ge_SxS_( 9, lcv)
+ *
+ *        PHUT generates a constraint of:  9 >= lcv
+ *
+ *
+ *
+ * @param An N_prf
+ *
+ * @return An N_prf
+ *
+ ******************************************************************************/
+prf
+LFUalmostDualFun (prf nprf)
+{
+    prf z;
+
+    DBUG_ENTER ();
+
+    switch (nprf) {
+    case F_lt_SxS:
+        z = F_ge_SxS;
+        break;
+    case F_le_SxS:
+        z = F_gt_SxS;
+        break;
+    case F_eq_SxS:
+        z = F_neq_SxS;
+        break;
+    case F_ge_SxS:
+        z = F_lt_SxS;
+        break;
+    case F_gt_SxS:
+        z = F_le_SxS;
+        break;
+    case F_neq_SxS:
+        z = F_eq_SxS;
+        break;
+    case F_val_lt_val_SxS:
+        z = F_ge_SxS;
+        break;
+    case F_val_le_val_SxS:
+        z = F_gt_SxS;
+        break;
+    case F_non_neg_val_S:
+        z = F_lt_SxS;
+        break; // NB. Kludge (dyadic vs. monadic!)
+
+    default:
+        DBUG_ASSERT (FALSE, "Oopsie. Expected relational prf!");
+        z = nprf;
+        break;
+    }
+
+    DBUG_RETURN (z);
+}
+#endif // DEADCODE
 
 #undef DBUG_PREFIX

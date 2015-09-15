@@ -11,13 +11,11 @@
 #ifndef _SAC_REGISTRY_H_
 #define _SAC_REGISTRY_H_
 
-#define MAX_MOD_NAME 128
-
 /**
  * @brief  Struct representing a specialized function.
  */
 typedef struct {
-    char module[MAX_MOD_NAME];
+    char *module;
     void *func_ptr;
     void *dl_handle;
 } reg_obj_t;

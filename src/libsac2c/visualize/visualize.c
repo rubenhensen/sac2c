@@ -3046,23 +3046,6 @@ VISUALwlublock (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *VISUALwlsimd( node *arg_node, info *arg_info)
- *
- * description:
- *   visualise N_wlsimd node
- *
- ******************************************************************************/
-
-node *
-VISUALwlsimd (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    DBUG_RETURN (arg_node);
-}
-/******************************************************************************
- *
- * function:
  *   node *VISUALwlstride( node *arg_node, info *arg_info)
  *
  * description:

@@ -126,6 +126,13 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
+      <traversal id="UID" name="Set unique ids for generic functions" default="sons" include="runtime_function_id.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Arg" />
+        </travuser>
+      </traversal>
       <traversal id="CLF" name="Create loop functions" default="sons" include="create_loop_fun.h">
         <travuser>
           <node name="Assign" />
@@ -393,6 +400,19 @@
           <node name="Do" />
           <node name="Id" />
           <node name="Prf" />
+        </travuser>
+      </traversal>
+      <traversal id="DMISEFA" name="Identify function applications with side-effects for the distributed memory backend" default="sons" include="identify_side_effect_function_aps.h">
+        <travuser>
+	        <node name="Ap" />
+	        <node name="Fundef" />
+	      </travuser>
+      </traversal>
+      <traversal id="DMISAA" name="Identify sub-allocated arrays for the distributed memory backend" default="sons" include="identify_suballocated_arrays.h">
+        <travuser>
+          <node name="Prf" />
+          <node name="Let" />
+          <node name="Ids" />
         </travuser>
       </traversal>
       <traversal id="ACUPTN" name="Annotate CUDA partitions" default="sons" include="annotate_cuda_partition.h" >
@@ -766,7 +786,21 @@
       <traversal id="POGO" name="Polyhedral Guard Optimization" default="sons" include="polyhedral_guard_optimization.h" >
         <travuser>
           <node name="Fundef" />
+          <node name="Part" />
+          <node name="With" />
           <node name="Assign" />
+          <node name="Ap" />
+          <node name="Let" />
+          <node name="Prf" />
+        </travuser>
+      </traversal> 
+      <traversal id="POLYS" name="Polyhedral Analysis Setup" default="sons" include="polyhedral_setup.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Part" />
+          <node name="With" />
+          <node name="Assign" />
+          <node name="Ap" />
           <node name="Let" />
           <node name="Prf" />
         </travuser>
@@ -941,6 +975,14 @@
           <node name="Cond" />
           <node name="Arg" />
         </travuser>
+      </traversal>
+      <traversal id="DMISEF" name="Identify side effect functions for the distributed memory backend" default="sons" include="identify_side_effect_functions.h">
+        <travuser>
+	        <node name="Fundef" />
+	        <node name="Arg" />
+	        <node name="Ap" />
+	        <node name="Exprs" />
+	      </travuser>
       </traversal>
       <traversal id="USSAT" name="UndoSSATransform Traversal" default="sons" include="UndoSSATransform.h" >
         <travuser>
@@ -1645,6 +1687,14 @@
 	  <node name="Fundef" />
 	</travuser>
       </traversal>
+   <traversal id="DMMLS" name="Mark local selects for distmem backend" default="sons" include="mark_local_selects.h">
+    <travuser>
+	    <node name="With" />
+	    <node name="Part" />
+	    <node name="Prf" />
+	    <node name="Fundef" />
+	  </travuser>
+   </traversal>
       <traversal id="PPI" name="Prepare Inline" default="sons" include="prepareinline.h">
         <travuser>
 	  <node name="Fundef" />
@@ -2037,9 +2087,10 @@
         <node name="Withid" />
         <node name="Exprs" />
         <node name="Module" />
+        <node name="Genarray" />
       </travuser>
     </traversal>
-    <traversal id="WLIR" name="Loop Invariants Traversal" default="sons" include="withloop_invariant_removal.h" >
+    <traversal id="WLIR" name="With-Loop Invariant Traversal" default="sons" include="withloop_invariant_removal.h" >
       <travuser>
         <node name="Ids" />
         <node name="Assign" />
@@ -2054,7 +2105,7 @@
         <node name="Withid" />
       </travuser>
     </traversal>
-    <traversal id="DLIRMOV" name="Loop Invariants Move Traversal" default="sons" include="loop_invariant_removal.h" >
+    <traversal id="DLIRMOV" name="Loop Invariant Move Traversal" default="sons" include="loop_invariant_removal.h" >
       <travuser>
         <node name="Id" />
         <node name="Withid" />
@@ -2308,6 +2359,21 @@
        <node name="Code" />
      </travuser>
    </traversal>
+   <traversal id="PWLF" name="Polyhedral With-Loop-Folding" default="sons" include="polyhedral_wlf.h" >
+     <travuser>
+        <node name="Fundef"  />
+        <node name="Block"   />
+        <node name="Assign"  />
+        <node name="Let"  />
+        <node name="Id"  />
+        <node name="Cond" />
+        <node name="With"    />
+        <node name="Modarray"    />
+        <node name="Part"    />
+        <node name="Prf"     />
+        <node name="Ap"     />
+     </travuser>
+   </traversal>
    <traversal id="AWLFI" name="Algebraic With-Loop-Folding Inference" default="sons" include="algebraic_wlfi.h" >
      <travuser>
         <node name="Fundef"  />
@@ -2541,17 +2607,6 @@
         <node name="Range" />
         <node name="With3" />
       </travuser>
-    </traversal>
-    <traversal id="SIMD" name="SIMD inference" default="sons" include="simd_infer.h">
-      <travuser> 
-        <node name="Ap" />
-        <node name="Prf" />
-        <node name="Array" />
-        <node name="With2" />
-        <node name="Code" />
-        <node name="WLstride" />
-        <node name="WLgrid" />
-      </travuser> 
     </traversal>
     <traversal id="EMAA" name="Alias analysis" default="none" include="aliasanalysis.h" >
       <travuser>
@@ -3140,6 +3195,7 @@
       <travuser>
         <node name="Module" />
         <node name="Fundef" />
+        <node name="Do" />
         <node name="Withs" />
         <node name="With2" />
         <node name="With" />
@@ -5140,6 +5196,19 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="SourceName" default="NULL" inconstructor="no">
+          <description>original name of a function</description>
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="pc_rid" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="WrapperType" default="NULL" inconstructor="no">
           <type name="NewType">
             <targets>
@@ -5534,23 +5603,6 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="Callap" default="NULL" inconstructor="no">
-          <description>
-	  If this function is a LACFUN, this attribute points to
-	  the N_ap node that invokes it from outside the
-	  LACFUN. Valid only during EDFA.
-          </description>
-          <type name="ExtLink">
-            <targets>
-              <target mandatory="no">
-                <node name="Ap" />
-                <phases>
-                  <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="SlowClone" default="NULL" inconstructor="no">
           <description>
             This attribute points to the slow clone implementation if this
@@ -5631,6 +5683,63 @@ N_tfarg :
                 <range from="cg_cpl" to="cg_cpl" />
               </phases>
             </target>
+          </type>
+        </attribute>
+        <attribute name="Callerfundef" default="NULL" inconstructor="no">
+          <description>
+	  For a LACFUN, this attribute points to the N_fundef code of its 
+	  external caller. Other functions have NULL here.
+	  Valid only during EDFA, POGO, and PWLF. Referenced in PHUT,
+	  so any PHUT callers must maintain this. It would be nice to
+	  have this maintained throughout compilation, but that may not
+	  be trivial.
+          </description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Assign" />
+                <phases>
+                  <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
+                  <range from="opt_saacyc_pogo" to="opt_saacyc_pogo" />
+                  <range from="opt_saacyc_pwlf" to="opt_saacyc_pwlf" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Callap" default="NULL" inconstructor="no">
+          <description>
+	  If this function is a LACFUN, this attribute points to
+	  the N_assign node for the N_ap that invokes the LACFUN from outside the
+	  LACFUN; else NULL. Valid only during EDFA, POGO, and PWLF. Referenced in PHUT,
+	  so any PHUT callers must maintain this. It would be nice to
+	  have this maintained throughout compilation, but that may not
+	  be trivial.
+          </description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Ap" />
+                <phases>
+                  <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
+                  <range from="opt_saacyc_pogo" to="opt_saacyc_pogo" />
+                  <range from="opt_saacyc_pwlf" to="opt_saacyc_pwlf" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="RtspecId" inconstructor="no">
+          <description>Used by rtspec to uniquely identify a function</description>
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
           </type>
         </attribute>
       </attributes>
@@ -5770,6 +5879,12 @@ N_tfarg :
         <flag name="IsSlowClone" default="FALSE">
           <description>This function is a slow clone</description>
         </flag>
+        <flag name="DistMemHasSideEffects" default="FALSE">
+          <description>This function has side effects and may only be executed by the master node when the distributed memory backend is used.</description>
+          <phases>
+            <range from="dm_dmisef" to="final" />
+          </phases>
+        </flag>
       </flags>
     <checks>
       <check name="CHKfundefVardecExtrema" />
@@ -5880,6 +5995,12 @@ N_tfarg :
         <flag name="IsRefcounted" default="TRUE" />
         <flag name="HasLinksignInfo" />
 	<flag name="IsUnique" />
+  <flag name="DistMemIsUniqueLeaf" default="FALSE" >
+	  <description> Indicates that this argument is unique and that it is not passed to another function. </description>
+    <phases>
+      <range from="dm_dmisef" to="dm_dmisef" />
+    </phases>
+  </flag>
 	<flag name="IsInUse" default="FALSE" >
 	  <description> Used to mark unused function arguments in DeadCodeRemoval. Marked arguments are removed in signature simplification.
 	  </description>
@@ -5895,24 +6016,6 @@ N_tfarg :
 	  </description>
           <phases>
             <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
-          </phases>
-        </flag>	 
-	<flag name="IsNeedsMin" default="FALSE" >
-	  <description> Used to mark LACFUN arguments that have a
-	  non-NULL AVIS_MIN in the calling environment, but not (yet)
-	  in the local environment. This flag is used only in PETL.
-	  </description>
-          <phases>
-            <range from="opt_saacyc_petl" to="opt_saacyc_petl" />
-          </phases>
-        </flag>	 
-	<flag name="IsNeedsMax" default="FALSE" >
-	  <description> Used to mark LACFUN arguments that have a
-	  non-NULL AVIS_MAX in the calling environment, but not (yet)
-	  in the local environment. This flag is used only in PETL.
-	  </description>
-          <phases>
-            <range from="opt_saacyc_petl" to="opt_saacyc_petl" />
           </phases>
         </flag>	 
         <flag name="IsCudaDefined" default="FALSE" /> 
@@ -6393,7 +6496,7 @@ N_tfarg :
         </flag>
       </flags>
       <checks>
-        <check name="CHKassignAvisSSAAssign" />
+        <check name="CHKattribsAssign" />
       </checks>
     </node>
 <!--
@@ -6929,6 +7032,26 @@ N_tfarg :
               </phases>
             </target>
           </targets>
+	  <description>
+	  Argument list for function invocation
+          </description>
+        </son>
+        <son name="LoopCount" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+	  <description>
+	  If AP_FUNDEF is a LOOPFUN, we may be able to deduce the
+	  iteration count for the loop. If so, AP_LOOPCOUNT is an N_exprs
+	  that is the count; else NULL.
+	  The count may be a constant ( e.g., 42), or it may be symbolic
+	  ( e.g., UB-LB).
+          </description>
         </son>
       </sons>
       <attributes>
@@ -6985,6 +7108,12 @@ N_tfarg :
           <description>
             This node calls a function which contains spawns
           </description>
+        </flag>
+        <flag name="DistMemHasSideEffects" default="FALSE">
+          <description>This function application has side effects and may only be executed by the master node when the distributed memory backend is used.</description>
+          <phases>
+            <range from="dm_dmisefa" to="final" />
+          </phases>
         </flag>
       </flags>
     <checks>
@@ -7762,13 +7891,6 @@ N_tfarg :
         </attribute>
       </attributes>
         <flags>
-        <flag name="IsNoteIntersectPresent" default="FALSE" >
-          <description>
-                  Set by AWLFI for _sel_VxA_(iv, PWL) to
-                  indicate that an _noteintersect_ node has been
-                  generated for iv.
-          </description>
-        </flag>
         <flag name="IsInplaceSelect" default="FALSE" >
           <description>
           </description>
@@ -7794,7 +7916,17 @@ N_tfarg :
             <range from="opt_saacyc_cubsl" to="opt_saacyc_cubsl" />
           </phases>
 	</flag>
-      </flags>
+    <flag name="DistmemIsLocalRead" default="FALSE">
+          <description> 
+            Set to TRUE by DMMLS/IVESPLIT if the distributed memory backend is used,
+            Prf is F_sel_VxA/F_idx_sel and the read is known to be local,
+            even if the array is distributed.
+	    </description>
+          <phases>
+            <range from="ptc_dmmls" to="final" />
+          </phases>
+	    </flag>
+    </flags>
     </node>
 <!--
 
@@ -8410,7 +8542,7 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="SSAAssign" inconstructor="no" >
+        <attribute name="SSAAssign" default="NULL" inconstructor="no" >
           <description>
             provides a direct link to the N_assign node containing the definition of the identifier represented by this AVIS node. In SSA form, AVIS_SSAASSIGN must only be NULL for identifiers for function arguments and with-loop index variables.
           </description>
@@ -8753,18 +8885,22 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-	<attribute name="PolylibColumnIndex" default="-1" >
+	<attribute name="Npart" default="NULL" >
 	  <description> 
-	  This is used by PHUTcollectAffineExprs to assign an
-	  origin-1 column number to each distinct name found in
-	  any particular affine expression tree.
+	  Pointer to the N_part that defines this variable, if
+	  the variable is a WITHID_IDS or WITHID_VEC. It is 
+	  used by POGO (and other polyhedral codes) to locate the
+	  N_part that defines the variable, along with its generators.
+	  It is NOT defined except within the scope of 
+	  a specific traversal that descends through N_part nodes.
+	  In particular, it is set to NULL when we exit the N_part.
 	  </description>
-          <type name="Integer">
+          <type name="Link">
             <targets>
               <target mandatory="no">
                 <any />
                 <phases>
-                 <range name="opt_saacyc_pogo" />
+                  <range from="opt_saacyc_polys" to="final" />
                 </phases>
               </target>
             </targets>
@@ -8864,12 +9000,6 @@ N_tfarg :
 	    this thread function. Used by the mutc backend.
 	  </description>
 	</flag>
-	<flag name="IsWLFolded" default="FALSE">
-	  <description>
-             If true, the given variable is the result of a producerWL
-             that has been folded out of existence.
-	  </description>
-	</flag>
         <flag name="IsHostReferenced" default="FALSE">
 	</flag>
         <flag name="IsMinHandled" default="FALSE">
@@ -8936,6 +9066,15 @@ N_tfarg :
             this function
           </description>
         </flag>
+        <flag name="DistMemSuballoc" default="FALSE">
+          <description>
+            This variable is allocated using a suballoc. It may need to be allocated in the
+            DSM memory.
+          </description>
+          <phases>
+            <range from="dmisaa" to="final" />
+          </phases>
+        </flag>
         <flag name="NeedBlocked" default="FALSE" >
           <description>
                   If true, the given variable is a loop index and the loop needs to be blocked
@@ -8987,17 +9126,21 @@ N_tfarg :
 	  more than once.
 	  </description>
         </flag>	 
-	<flag name="IsAffineHandled" default="FALSE" >
+	<flag name="IsHasAft" default="FALSE" >
 	  <description> 
-	  Used by PHUT to mark N_avis nodes whose values have
-	  been traversed.
+	  This flag is used by PHUT to keep track of N_id nodes that
+	  have already had an Affine Function Tree (AFT) built for them, so
+	  that we do not put redundant constraints into ISL input files.
+	  The extremely high cost of polyhedral model analysis 
+	  make this quite important.
 	  </description>
         </flag>	 
-      </flags>
-    <checks>
-      <check name="CHKavisReflection" />
-    </checks>
-    </node>
+  </flags>
+  <checks>
+    <check name="CHKavisReflection" />
+    <check name="CHKavisSsaassignNodeType" />
+  </checks>
+  </node>
 <!--
 
   N_mt :
@@ -9348,7 +9491,6 @@ N_tfarg :
         <flag name="Cudarizable" default="FALSE" />
         <flag name="hasRC" default="FALSE" />
         <flag name="IsDependent" />
-        <flag name="isAWLFFoldable" default="FALSE" />
         <flag name="containsFunAps" >
           <description>
              indicates whether any partition contains an application
@@ -9781,7 +9923,6 @@ N_tfarg :
       <flags>
         <flag name="Visited" />
         <flag name="HasResolveableDependencies" />
-        <flag name="IsSimdSuitable" />
         <flag name="HasExtrema" default="FALSE">
           <description> 
             Set to true if the WITHIDs for this code block have
@@ -10846,23 +10987,6 @@ N_tfarg :
     </node>
 <!--
 
-  N_wlsimd :
-
--->
-    <node name="WLsimd">
-      <sons>
-        <son name="Body" mandatory="yes">
-          <target>
-            <node name="WLstride" />
-          </target>
-        </son>
-      </sons>
-      <attributes>
-      </attributes>
-      <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
-    </node>
-<!--
-
   N_wlstride :
 
 -->
@@ -10967,8 +11091,10 @@ N_tfarg :
         <flag name="DoUnroll" />
         <flag name="IsModified">
           <description> Used in wltransform.  </description>
+            <phases>
+              <range from="wlt_wltr" to="wlt_wltr" />
+            </phases>
         </flag>
-        <flag name="IsSimdSuitable" />
 	<flag name="IsDynamic" default="FALSE">
 	  <description>Signals that this stride has bounds or a step that are not statically known.</description>
 	</flag>
@@ -11647,6 +11773,9 @@ N_tfarg :
         </attribute>
       </attributes>
       <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
+    <checks>
+      <check name="CHKattribsIds" />
+    </checks>
     </node>
 <!--
 

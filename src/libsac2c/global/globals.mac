@@ -248,6 +248,22 @@ GLOBAL (bool, enable_structs, FALSE, xfree_dummy, )
  * functionality.
  */
 
+GLOBAL (bool, rtspec, FALSE, xfree_dummy, )
+/*
+ * Runtime specialization is disabled by default.
+ */
+
+/*
+ * Runtime specialization mode.
+ */
+#if ENABLE_UUID
+GLOBAL (int, rtspec_mode, 2, xfree_dummy, )
+#elif ENABLE_HASH
+GLOBAL (int, rtspec_mode, 1, xfree_dummy, )
+#else
+GLOBAL (int, rtspec_mode, 0, xfree_dummy, )
+#endif /* ENABLE_UUID */
+
 /*
  * Type info provided as a commandline argument for runtime optimization.
  */
@@ -341,15 +357,6 @@ GLOBAL (bool, elf, FALSE, xfree_dummy, )
  */
 
 /*
- * SIMD options
- */
-
-GLOBAL (bool, simd, FALSE, xfree_dummy, )
-/*
- * SIMD code generation disabled per default
- */
-
-/*
  * Multi-thread options
  */
 
@@ -395,6 +402,53 @@ GLOBAL (bool, no_fold_parallel, FALSE, xfree_dummy, )
 GLOBAL (int, max_threads, 128, xfree_dummy, )
 /*
  * Maximum number of threads if exact number is determined dynamically.
+ */
+
+GLOBAL (unsigned int, distmem_max_memory_mb, 512, xfree_dummy, )
+/*
+ * Amount of memory in MB for the DSM subsystem (for both local segment and cache)
+ * when the distributed memory backend is used.
+ */
+
+GLOBAL (bool, distmem_cache_outside_dsm, FALSE, xfree_dummy, )
+/*
+ * Assign cache segments outside of DSM segment when the distributed memory backend
+ * is used.
+ */
+
+GLOBAL (int, distmem_tr_pf_node, -1, xfree_dummy, )
+/*
+ * If not equal to -1, trace and profile output is only produced for the node with the
+ * provided rank.
+ */
+
+GLOBAL (bool, distmem_ptrs_desc, FALSE, xfree_dummy, )
+/*
+ * Flag for the distributed memory backend: Keep pointers to the start of a distributed
+ * array at every node in the array descriptor.
+ */
+
+GLOBAL (bool, distmem_ptr_cache, TRUE, xfree_dummy, )
+/*
+ * Flag for the distributed memory backend: Enable the pointer cache.
+ */
+
+GLOBAL (unsigned int, distmem_min_elems_per_node, 10, xfree_dummy, )
+/*
+ * Minimum number of array elements per node such that the array is distributed
+ * when the distributed memory backend is used.
+ */
+
+GLOBAL (int, dmgs_min_selects, 3, xfree_dummy, )
+/*
+ * Minimum number of selects that have not been marked as local in the
+ * DMMLS optimisation so that the DMGS optimisation is applied.
+ */
+
+GLOBAL (int, dmgs_max_selects, 0, xfree_dummy, )
+/*
+ * Maximum number of selects that have not been marked as local in the
+ * DMMLS optimisation so that the DMGS optimisation is applied.
  */
 
 GLOBAL (int, num_rtspec_threads, 1, xfree_dummy, )
@@ -1035,6 +1089,8 @@ GLOBAL (char **, nt_mutc_storage_class_string, nt_mutc_storage_class_string_init
 GLOBAL (char **, nt_mutc_scope_string, nt_mutc_scope_string_init, xfree_dummy, )
 GLOBAL (char **, nt_mutc_usage_string, nt_mutc_usage_string_init, xfree_dummy, )
 GLOBAL (char **, nt_bitarray_string, nt_bitarray_string_init, xfree_dummy, )
+GLOBAL (char **, nt_distributed_string, nt_distributed_string_init, xfree_dummy, )
+GLOBAL (char **, nt_cbasetype_string, nt_cbasetype_string_init, xfree_dummy, )
 /*
  * These character arrays are the macro-name-parts used to select
  * array class and array uniqueness properties.
@@ -1119,6 +1175,11 @@ GLOBAL (const char **, type_string, type_string_init, xfree_dummy, )
 GLOBAL (const char **, rename_type, rename_type_init, xfree_dummy, )
 
 /*
+ * Type to C basetype conversion table
+ */
+GLOBAL (const cbasetype_class_t *, type_cbasetype, type_cbasetype_init, xfree_dummy, )
+
+/*
  * Resource / configuration management
  */
 
@@ -1182,6 +1243,11 @@ GLOBAL (int, cuda_1d_block_small, 0, xfree_dummy, )
 GLOBAL (int, cuda_2d_block_x, 0, xfree_dummy, )
 GLOBAL (int, cuda_2d_block_y, 0, xfree_dummy, )
 GLOBAL (int, cuda_blocking_factor, 0, xfree_dummy, )
+
+/*
+ * DistMem backend options
+ */
+GLOBAL (distmem_commlib_t, distmem_commlib, DISTMEM_COMMLIB_UNKNOWN, xfree_dummy, )
 
 /*
  * cygwin compatibility globals

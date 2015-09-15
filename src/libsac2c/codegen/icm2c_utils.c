@@ -151,4 +151,38 @@ ICUGetUniqueClass (char *var_NT)
     DBUG_RETURN (z);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   distributed_class_t ICUGetDistributedClass( char *var_NT)
+ *
+ * description:
+ *   Returns the distributed tag of an array or other object
+ *
+ ******************************************************************************/
+
+distributed_class_t
+ICUGetDistributedClass (char *var_NT)
+{
+    int nc, i;
+    distributed_class_t z;
+
+    DBUG_ENTER ();
+
+    nc = FindParen (var_NT, NT_DISTRIBUTED_INDEX + 1) + 1;
+    i = 0;
+    z = C_unknownd;
+    while ((i != C_unknownd) && (z == C_unknownd)) {
+        if (STReqn (var_NT + nc, global.nt_distributed_string[i], 3)) {
+            z = (distributed_class_t)i;
+        }
+        i++;
+    }
+
+    DBUG_ASSERT (z != C_unknownd,
+                 "ICUGetDistributedClass() did not find valid distributed tag");
+
+    DBUG_RETURN (z);
+}
+
 #undef DBUG_PREFIX

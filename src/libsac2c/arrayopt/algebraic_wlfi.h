@@ -34,6 +34,10 @@ extern bool AWLFIcheckProducerWLFoldable (node *arg_node);
 extern bool AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel);
 extern bool AWLFIisNakedWL (int cwllevel, int pwllevel);
 extern bool AWLFIisUsualWL (int cwllevel, int pwllevel);
+extern node *AWLFIflattenScalarNode (node *arg_node, info *arg_info);
+extern node *AWLFIattachIntersectCalc (node *arg_node, info *arg_info, node *ivavis);
+extern bool AWLFIisCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info);
+extern node *AWLFIgenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax);
 
 extern node *AWLFIfundef (node *arg_node, info *arg_info);
 extern node *AWLFIblock (node *arg_node, info *arg_info);
@@ -79,5 +83,8 @@ extern node *AWLFIprf (node *arg_node, info *arg_info);
 #define WLPROJECTION2(partno) (WLFIRST + 7 + (WLEPP * partno))
 #define WLLB 0 /* Lower bound */
 #define WLUB 1 /* Upper bound */
+
+#define NOINVERSEPROJECTION (-666)
+// NOINVERSEPROJECTION is just a highly visible number that is not a legal index
 
 #endif /* _SAC_ALGEBRAIC_WLFI_H_ */
