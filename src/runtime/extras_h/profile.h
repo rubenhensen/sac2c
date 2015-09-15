@@ -14,6 +14,22 @@
  *
  *   The global switch PROFILE indicates any profiling activations.
  *
+ * We only have one timer. So whenever we measure a code fragment,
+ * we have to make sure it is attributed to the right call *and* all its parents!
+ * We do so by maintaining a chain of records which reflect the call graph. Whenever we
+ * finish an inner function call, we add the time delta measured to all parents in the
+ * call graph! However, we *must* not blindly do that (!) because we may have recursion
+ * which ends up calling cyclicly the same code! That is why we simply tag the parents
+ * when following the call graph with a unique new number which is devised upon each
+ * function application we perform. If we find a parent with a tag identical to the
+ * current one, we know that we have added the current time and we do not add the time
+ *again.
+ *
+ * The distributed memory backend profiling is independent of the ordinary profiling.
+ * The reason is that we are interested in the overall time spent in execution modes or
+ * waiting at barriers rather than the time spent waiting at a barrier in a specific
+ *function.
+ *
  *****************************************************************************/
 
 #ifndef _SAC_PROFILE_H
@@ -29,6 +45,16 @@
 #endif
 
 #if !SAC_MUTC_MACROS
+
+/* For profiling communications */
+
+#if SAC_DO_COMPILE_MODULE
+
+SAC_C_EXTERN void SAC_PF_BeginComm (void);
+
+SAC_C_EXTERN void SAC_PF_EndComm (void);
+
+#endif
 
 /*
  *  General profiling macros and declarations
@@ -50,6 +76,11 @@
  * for struct rusage
  */
 
+#include <stdlib.h>
+/*
+ * for size_t
+ */
+
 typedef struct timeval SAC_PF_TIMER;
 
 typedef enum {
@@ -61,7 +92,77 @@ typedef enum {
     PF_iw_genarray = 5,
     PF_iw_modarray = 6,
     PF_iw_fold = 7
+
+#if SAC_DO_PROFILE_DISTMEM
+    /* Distributed memory backend profiling options */
+    ,
+    PF_distmem_exec_rep = 8,
+    PF_distmem_exec_dist = 9,
+    PF_distmem_exec_side_effects = 10,
+    PF_distmem_rep_barrier = 11,
+    PF_distmem_dist_barrier = 12,
+    PF_distmem_side_effects_barrier = 13,
+    PF_distmem_comm = 14
+#endif /* SAC_DO_PROFILE_DISTMEM  */
+
 } SAC_PF_timer_type;
+
+#if SAC_DO_PROFILE_DISTMEM
+
+#define SAC_PF_NUM_TIMER_TYPES 15
+
+#if SAC_DO_COMPILE_MODULE
+
+#define SAC_PF_DISTMEM_DEFINE()                                                          \
+    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_initial_record;                      \
+    SAC_C_EXTERN SAC_PF_TIMER_RECORD *SAC_PF_distmem_act_record;                         \
+    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_rep_record;                          \
+    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_dist_record;                         \
+    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_side_effects_record;                 \
+    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_rep_barrier_record;                  \
+    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_dist_barrier_record;                 \
+    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_side_effects_barrier_record;         \
+    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_comm_record;
+
+#else /* SAC_DO_COMPILE_MODULE */
+
+#define SAC_PF_DISTMEM_DEFINE()                                                          \
+    SAC_PF_TIMER_RECORD SAC_PF_distmem_initial_record;                                   \
+    SAC_PF_TIMER_RECORD *SAC_PF_distmem_act_record = &SAC_PF_distmem_initial_record;     \
+    SAC_PF_TIMER_RECORD SAC_PF_distmem_rep_record;                                       \
+    SAC_PF_TIMER_RECORD SAC_PF_distmem_dist_record;                                      \
+    SAC_PF_TIMER_RECORD SAC_PF_distmem_side_effects_record;                              \
+    SAC_PF_TIMER_RECORD SAC_PF_distmem_rep_barrier_record;                               \
+    SAC_PF_TIMER_RECORD SAC_PF_distmem_dist_barrier_record;                              \
+    SAC_PF_TIMER_RECORD SAC_PF_distmem_side_effects_barrier_record;                      \
+    SAC_PF_TIMER_RECORD SAC_PF_distmem_comm_record;
+
+#endif /* SAC_DO_COMPILE_MODULE */
+
+#define SAC_PF_DISTMEM_SETUP()                                                           \
+    SAC_PF_distmem_rep_record.timer_type = PF_distmem_exec_rep;                          \
+    SAC_PF_distmem_dist_record.timer_type = PF_distmem_exec_dist;                        \
+    SAC_PF_distmem_side_effects_record.timer_type = PF_distmem_exec_side_effects;        \
+    SAC_PF_distmem_rep_barrier_record.timer_type = PF_distmem_rep_barrier;               \
+    SAC_PF_distmem_dist_barrier_record.timer_type = PF_distmem_dist_barrier;             \
+    SAC_PF_distmem_side_effects_barrier_record.timer_type                                \
+      = PF_distmem_side_effects_barrier;                                                 \
+    SAC_PF_distmem_comm_record.timer_type = PF_distmem_comm;                             \
+    SAC_PF_distmem_act_record->funno = 0;                                                \
+    SAC_PF_distmem_act_record->funapno = 0;                                              \
+    SAC_PF_distmem_act_record->timer_type = PF_distmem_exec_rep;                         \
+    SAC_PF_distmem_act_record->parent = NULL;                                            \
+    SAC_PF_distmem_act_record->cycle_tag = NULL;
+
+#else /* SAC_DO_PROFILE_DISTMEM */
+
+#define SAC_PF_NUM_TIMER_TYPES 8
+
+#define SAC_PF_DISTMEM_DEFINE()
+
+#define SAC_PF_DISTMEM_SETUP()
+
+#endif /* SAC_DO_PROFILE_DISTMEM  */
 
 typedef struct timer_record {
     int funno;
@@ -82,6 +183,7 @@ SAC_C_EXTERN int getrusage (int who, struct rusage *rusage);
  */
 
 SAC_C_EXTERN void SAC_PF_PrintHeader (char *title);
+SAC_C_EXTERN void SAC_PF_PrintHeaderNode (char *title, size_t rank);
 SAC_C_EXTERN void SAC_PF_PrintSubHeader (char *title, int lineno);
 SAC_C_EXTERN void SAC_PF_PrintTime (char *title, char *space, SAC_PF_TIMER *time);
 SAC_C_EXTERN void SAC_PF_PrintCount (char *title, char *space, unsigned long count);
@@ -104,29 +206,43 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
 
 #if SAC_DO_COMPILE_MODULE
 #define SAC_PF_DEFINE()                                                                  \
-    SAC_C_EXTERN SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP][8];         \
-    SAC_C_EXTERN int SAC_PF_cycle_tag[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                 \
+    SAC_C_EXTERN SAC_PF_TIMER ***SAC_PF_timer;                                           \
+    SAC_C_EXTERN int **SAC_PF_cycle_tag;                                                 \
                                                                                          \
     SAC_C_EXTERN int SAC_PF_act_cycle_tag;                                               \
     SAC_C_EXTERN SAC_PF_TIMER_RECORD *SAC_PF_act_record;                                 \
                                                                                          \
-    SAC_C_EXTERN char *SAC_PF_fun_name[SAC_SET_MAXFUN];                                  \
-    SAC_C_EXTERN int SAC_PF_maxfunap[SAC_SET_MAXFUN];                                    \
-    SAC_C_EXTERN int SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                 \
-    SAC_C_EXTERN int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];
+    SAC_PF_DISTMEM_DEFINE ()                                                             \
+                                                                                         \
+    SAC_C_EXTERN char **SAC_PF_fun_name;                                                 \
+    SAC_C_EXTERN int *SAC_PF_maxfunap;                                                   \
+    SAC_C_EXTERN int **SAC_PF_funapline;                                                 \
+    SAC_C_EXTERN int **SAC_PF_parentfunno;
 #else
 #define SAC_PF_DEFINE()                                                                  \
-    SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP][8];                      \
+    SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP][SAC_PF_NUM_TIMER_TYPES]; \
     int SAC_PF_cycle_tag[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                              \
                                                                                          \
     int SAC_PF_act_cycle_tag;                                                            \
     SAC_PF_TIMER_RECORD SAC_PF_initial_record;                                           \
     SAC_PF_TIMER_RECORD *SAC_PF_act_record = &SAC_PF_initial_record;                     \
                                                                                          \
+    SAC_PF_DISTMEM_DEFINE ()                                                             \
+                                                                                         \
     char *SAC_PF_fun_name[SAC_SET_MAXFUN] = SAC_SET_FUN_NAMES;                           \
     int SAC_PF_maxfunap[SAC_SET_MAXFUN] = SAC_SET_FUN_APPS;                              \
     int SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_AP_LINES;       \
-    int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_PARENTS;
+    int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_PARENTS;      \
+                                                                                         \
+    void SAC_PF_BeginComm (void)                                                         \
+    {                                                                                    \
+        SAC_PF_BEGIN_COMM ();                                                            \
+    }                                                                                    \
+                                                                                         \
+    void SAC_PF_EndComm (void)                                                           \
+    {                                                                                    \
+        SAC_PF_END_COMM ();                                                              \
+    }
 #endif
 
 #define SAC_PF_SETUP()                                                                   \
@@ -136,7 +252,7 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
         SAC_PF_INIT_CLOCK ();                                                            \
         for (i = 0; i < SAC_SET_MAXFUN; i++) {                                           \
             for (j = 0; j < SAC_PF_maxfunap[i]; j++) {                                   \
-                for (k = 0; k < 8; k++) {                                                \
+                for (k = 0; k < SAC_PF_NUM_TIMER_TYPES; k++) {                           \
                     SAC_PF_INIT_TIMER (SAC_PF_timer[i][j][k]);                           \
                 }                                                                        \
                 SAC_PF_cycle_tag[i][j] = 0;                                              \
@@ -148,18 +264,29 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
         SAC_PF_act_record->parent = NULL;                                                \
         SAC_PF_act_record->cycle_tag = &SAC_PF_cycle_tag[0][0];                          \
         SAC_PF_act_cycle_tag = 0;                                                        \
+                                                                                         \
+        SAC_PF_DISTMEM_SETUP ()                                                          \
+                                                                                         \
         SAC_PF_START_CLOCK ();                                                           \
     }
 
 #define SAC_PF_PRINT()                                                                   \
     {                                                                                    \
-        SAC_PF_TIMER grand_total;                                                        \
+        if (SAC_DISTMEM_rank                                                             \
+              == SAC_DISTMEM_RANK_UNDEFINED /* Distributed memory backend not used */    \
+            || SAC_DISTMEM_trace_profile_rank                                            \
+                 == SAC_DISTMEM_TRACE_PROFILE_RANK_ANY /* Print profiling for any node   \
+                                                        */                               \
+            || SAC_DISTMEM_trace_profile_rank                                            \
+                 == (int)SAC_DISTMEM_rank) { /* Print profiling for this node */         \
+            SAC_PF_TIMER grand_total;                                                    \
                                                                                          \
-        SAC_PF_STOP_CLOCK ();                                                            \
-        SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
-        SAC_PF_PRINT_OVERALL (grand_total);                                              \
-        SAC_PF_PRINT_FUNS (grand_total);                                                 \
-        SAC_PF_PRINT_DISTMEM ();                                                         \
+            SAC_PF_STOP_CLOCK ();                                                        \
+            SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                               \
+            SAC_PF_PRINT_OVERALL (grand_total);                                          \
+            SAC_PF_PRINT_DISTMEM (grand_total);                                          \
+            SAC_PF_PRINT_FUNS (grand_total);                                             \
+        }                                                                                \
     }
 
 #define SAC_PF_PRINT_OVERALL(total)                                                      \
@@ -175,7 +302,12 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
         }                                                                                \
         SAC_PF_ADD_TIMERS (total, with_total, SAC_PF_timer[0][0][PF_ow_fun]);            \
                                                                                          \
-        SAC_PF_PrintHeader ("Overall Profile");                                          \
+        if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {                            \
+            SAC_PF_PrintHeader ("Overall Profile");                                      \
+        } else {                                                                         \
+            SAC_PF_PrintHeaderNode ("Overall Profile", SAC_DISTMEM_rank);                \
+        }                                                                                \
+                                                                                         \
         SAC_PF_PrintTime ("time used", SAC_PF_TIMER_SPACE, &total);                      \
                                                                                          \
         if (SAC_PF_DISPLAY_WITH) {                                                       \
@@ -265,6 +397,30 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
 #define SAC_PF_RECORD_TIMER(record)                                                      \
     (SAC_PF_timer[record->funno][record->funapno][record->timer_type])
 
+#if SAC_DO_PROFILE_DISTMEM
+
+/* When profiling the distributed memory backend, we also
+ * measure the system CPU time to get meaningful measurements for
+ * the overhead caused by barriers. */
+
+#define SAC_PF_ADD_STIME_TO_TIMER(record)                                                \
+    if ((SAC_PF_RECORD_TIMER (record).tv_usec                                            \
+         += SAC_PF_stop_timer.ru_stime.tv_usec - SAC_PF_start_timer.ru_stime.tv_usec)    \
+        < 0) {                                                                           \
+        SAC_PF_RECORD_TIMER (record).tv_usec += 1000000;                                 \
+        SAC_PF_RECORD_TIMER (record).tv_sec                                              \
+          += SAC_PF_stop_timer.ru_stime.tv_sec - SAC_PF_start_timer.ru_stime.tv_sec - 1; \
+    } else {                                                                             \
+        SAC_PF_RECORD_TIMER (record).tv_sec                                              \
+          += SAC_PF_stop_timer.ru_stime.tv_sec - SAC_PF_start_timer.ru_stime.tv_sec;     \
+    }
+
+#else /* SAC_DO_PROFILE_DISTMEM */
+
+#define SAC_PF_ADD_STIME_TO_TIMER(record)
+
+#endif /* SAC_DO_PROFILE_DISTMEM */
+
 #define SAC_PF_ADD_TO_TIMER(record)                                                      \
     {                                                                                    \
         if ((SAC_PF_RECORD_TIMER (record).tv_usec                                        \
@@ -279,6 +435,8 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
             SAC_PF_RECORD_TIMER (record).tv_sec                                          \
               += SAC_PF_stop_timer.ru_utime.tv_sec - SAC_PF_start_timer.ru_utime.tv_sec; \
         }                                                                                \
+                                                                                         \
+        SAC_PF_ADD_STIME_TO_TIMER (record)                                               \
     }
 
 #define SAC_PF_ADD_TO_TIMER_CHAIN(record)                                                \
@@ -293,6 +451,7 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
             }                                                                            \
             tmp = tmp->parent;                                                           \
         } while (tmp != NULL);                                                           \
+        SAC_PF_ADD_TO_DISTMEM_TIMER_CHAIN ()                                             \
     }
 
 #define SAC_PF_ADD_TIMERS(timer, timer1, timer2)                                         \
@@ -306,6 +465,25 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
         }                                                                                \
     }
 
+#define SAC_PF_SUBTRACT_TIMERS(timer, timer1, timer2)                                    \
+    {                                                                                    \
+        if (timer1.tv_usec < timer2.tv_usec) {                                           \
+            int nsec = (timer2.tv_usec - timer1.tv_usec) / 1000000 + 1;                  \
+            timer2.tv_usec -= 1000000 * nsec;                                            \
+            timer2.tv_sec += nsec;                                                       \
+        }                                                                                \
+                                                                                         \
+        if (timer1.tv_usec - timer2.tv_usec > 1000000) {                                 \
+            int nsec = (timer1.tv_usec - timer2.tv_usec) / 1000000;                      \
+            timer2.tv_usec += 1000000 * nsec;                                            \
+            timer2.tv_sec -= nsec;                                                       \
+        }                                                                                \
+                                                                                         \
+        /* tv_usec is certainly positive. */                                             \
+        timer.tv_sec = timer1.tv_sec - timer2.tv_sec;                                    \
+        timer.tv_usec = timer1.tv_usec - timer2.tv_usec;                                 \
+    }
+
 #define SAC_PF_COPY_TIMER(totimer, fromtimer)                                            \
     {                                                                                    \
         totimer.tv_sec = fromtimer.tv_sec;                                               \
@@ -317,7 +495,30 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
 
 #else /* SAC_DO_PROFILE */
 
+#if SAC_DO_COMPILE_MODULE
+
 #define SAC_PF_DEFINE()
+
+#else /* SAC_DO_COMPILE_MODULE */
+/*
+ * It is ugly to define the SAC_PF_BeginComm and SAC_PF_EndComm functions
+ * here but there is no other easy solution.
+ * The communication profiling is called from within libsacdistmem but when
+ * the libsacdistmem is built we don't know whether profiling will be active.
+ * Also, we don't want to build profiling and non-profiling versions of
+ * libsacdistmem since there are already plenty of versions.
+ */
+#define SAC_PF_DEFINE()                                                                  \
+    /* Dummy definitions for when profiling is disabled */                               \
+    void SAC_PF_BeginComm (void)                                                         \
+    {                                                                                    \
+    }                                                                                    \
+    void SAC_PF_EndComm (void)                                                           \
+    {                                                                                    \
+    }
+
+#endif /* SAC_DO_COMPILE_MODULE */
+
 #define SAC_PF_SETUP()
 #define SAC_PF_PRINT()
 
@@ -369,24 +570,160 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
 
 #if (SAC_DO_PROFILE_DISTMEM && SAC_DO_PROFILE)
 
-#define SAC_PF_PRINT_DISTMEM()                                                           \
+#define SAC_PF_PRINT_DISTMEM(total)                                                      \
     {                                                                                    \
+        int i;                                                                           \
+        SAC_PF_TIMER barrier_total;                                                      \
+        SAC_PF_INIT_TIMER (barrier_total);                                               \
+        for (i = PF_distmem_rep_barrier; i <= PF_distmem_side_effects_barrier; i++) {    \
+            SAC_PF_ADD_TIMERS (barrier_total, barrier_total, SAC_PF_timer[0][0][i]);     \
+        }                                                                                \
         SAC_PF_PrintHeader ("Distributed Memory Backend Profile");                       \
-        SAC_PF_PrintCount ("Distributed arrays:", SAC_PF_COUNT_SPACE,                    \
-                           SAC_DISTMEM_TR_num_arrays);                                   \
-        SAC_PF_PrintCount ("Invalidated pages:", SAC_PF_COUNT_SPACE,                     \
+        SAC_PF_PrintCount ("Invalidated pages                    ", SAC_PF_COUNT_SPACE,  \
                            SAC_DISTMEM_TR_num_inval_pages);                              \
-        SAC_PF_PrintCount ("Seg faults/page fetches: ", SAC_PF_COUNT_SPACE,              \
+        SAC_PF_PrintCount ("Seg faults/page fetches              ", SAC_PF_COUNT_SPACE,  \
                            SAC_DISTMEM_TR_num_segfaults);                                \
-        SAC_PF_PrintCount ("Pointer calculations: ", SAC_PF_COUNT_SPACE,                 \
+        SAC_PF_PrintCount ("Pointer calculations                 ", SAC_PF_COUNT_SPACE,  \
                            SAC_DISTMEM_TR_num_ptr_calcs);                                \
-        SAC_PF_PrintCount ("Barriers: ", SAC_PF_COUNT_SPACE,                             \
+        SAC_PF_PrintCount ("Avoided ptr calcs (local writes)     ", SAC_PF_COUNT_SPACE,  \
+                           SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_writes);           \
+        SAC_PF_PrintCount ("Avoided ptr calcs (local reads)      ", SAC_PF_COUNT_SPACE,  \
+                           SAC_DISTMEM_TR_num_avoided_ptr_calcs_local_reads);            \
+        SAC_PF_PrintCount ("Avoided ptr calcs (known local reads)", SAC_PF_COUNT_SPACE,  \
+                           SAC_DISTMEM_TR_num_avoided_ptr_calcs_known_local_reads);      \
+        SAC_PF_PrintCount ("Avoided ptr calcs (remote reads)     ", SAC_PF_COUNT_SPACE,  \
+                           SAC_DISTMEM_TR_num_avoided_ptr_calcs_remote_reads);           \
+        SAC_PF_PrintCount ("Ptr cache updates (remote reads)     ", SAC_PF_COUNT_SPACE,  \
+                           SAC_DISTMEM_TR_num_ptr_cache_updates);                        \
+        SAC_PF_PrintCount ("Barriers                             ", SAC_PF_COUNT_SPACE,  \
                            SAC_DISTMEM_TR_num_barriers);                                 \
+                                                                                         \
+        SAC_PF_PrintTimePercentage ("Waiting at barriers    ", SAC_PF_TIMER_SPACE,       \
+                                    &barrier_total, &total);                             \
+        SAC_PF_PrintTimePercentage ("Communications         ", SAC_PF_TIMER_SPACE,       \
+                                    &(SAC_PF_timer[0][0][PF_distmem_comm]), &total);     \
+        SAC_PF_PrintTimePercentage ("Replicated execution   ", SAC_PF_TIMER_SPACE,       \
+                                    &(SAC_PF_timer[0][0][PF_distmem_exec_rep]), &total); \
+        SAC_PF_PrintTimePercentage ("   Waiting at barriers ", SAC_PF_TIMER_SPACE,       \
+                                    &(SAC_PF_timer[0][0][PF_distmem_rep_barrier]),       \
+                                    &(SAC_PF_timer[0][0][PF_distmem_exec_rep]));         \
+        SAC_PF_PrintTimePercentage ("Distributed execution  ", SAC_PF_TIMER_SPACE,       \
+                                    &(SAC_PF_timer[0][0][PF_distmem_exec_dist]),         \
+                                    &total);                                             \
+        SAC_PF_PrintTimePercentage ("   Waiting at barriers ", SAC_PF_TIMER_SPACE,       \
+                                    &(SAC_PF_timer[0][0][PF_distmem_dist_barrier]),      \
+                                    &(SAC_PF_timer[0][0][PF_distmem_exec_dist]));        \
+        SAC_PF_PrintTimePercentage ("Side effects execution ", SAC_PF_TIMER_SPACE,       \
+                                    &(SAC_PF_timer[0][0][PF_distmem_exec_side_effects]), \
+                                    &total);                                             \
+        SAC_PF_PrintTimePercentage ("   Waiting at barriers ", SAC_PF_TIMER_SPACE,       \
+                                    &(SAC_PF_timer[0][0]                                 \
+                                                  [PF_distmem_side_effects_barrier]),    \
+                                    &(SAC_PF_timer[0][0]                                 \
+                                                  [PF_distmem_exec_side_effects]));      \
     }
+
+/* For profiling barriers */
+#define SAC_PF_BEGIN_BARRIER()                                                           \
+    switch (SAC_DISTMEM_exec_mode) {                                                     \
+    case SAC_DISTMEM_exec_mode_dist:                                                     \
+        SAC_PF_BEGIN_DISTMEM (SAC_PF_distmem_dist_barrier_record)                        \
+        break;                                                                           \
+    case SAC_DISTMEM_exec_mode_side_effects_outer:                                       \
+    case SAC_DISTMEM_exec_mode_side_effects:                                             \
+        SAC_PF_BEGIN_DISTMEM (SAC_PF_distmem_side_effects_barrier_record)                \
+        break;                                                                           \
+    default: /*  SAC_DISTMEM_exec_mode_sync */                                           \
+        SAC_PF_BEGIN_DISTMEM (SAC_PF_distmem_rep_barrier_record)                         \
+        break;                                                                           \
+    }
+
+#define SAC_PF_END_BARRIER()                                                             \
+    switch (SAC_DISTMEM_exec_mode) {                                                     \
+    case SAC_DISTMEM_exec_mode_dist:                                                     \
+        SAC_PF_END_DISTMEM (SAC_PF_distmem_dist_barrier_record)                          \
+        break;                                                                           \
+    case SAC_DISTMEM_exec_mode_side_effects_outer:                                       \
+    case SAC_DISTMEM_exec_mode_side_effects:                                             \
+        SAC_PF_END_DISTMEM (SAC_PF_distmem_side_effects_barrier_record)                  \
+        break;                                                                           \
+    default: /*  SAC_DISTMEM_exec_mode_sync */                                           \
+        SAC_PF_END_DISTMEM (SAC_PF_distmem_rep_barrier_record)                           \
+        break;                                                                           \
+    }
+
+/* For profiling communications */
+#define SAC_PF_BEGIN_COMM() SAC_PF_BEGIN_DISTMEM (SAC_PF_distmem_comm_record)
+
+#define SAC_PF_END_COMM() SAC_PF_END_DISTMEM (SAC_PF_distmem_comm_record)
+
+/* For profiling execution modes */
+#define SAC_PF_BEGIN_EXEC_SIDE_EFFECTS()                                                 \
+    if (SAC_DISTMEM_exec_mode == SAC_DISTMEM_exec_mode_sync) {                           \
+        SAC_PF_BEGIN_DISTMEM (SAC_PF_distmem_side_effects_record)                        \
+    }
+
+#define SAC_PF_BEGIN_EXEC_DIST() SAC_PF_BEGIN_DISTMEM (SAC_PF_distmem_dist_record)
+
+/* Ends profiling of the current execution mode. */
+#define SAC_PF_END_EXEC_MODE()                                                           \
+    switch (SAC_DISTMEM_exec_mode) {                                                     \
+    case SAC_DISTMEM_exec_mode_dist:                                                     \
+        SAC_PF_END_DISTMEM (SAC_PF_distmem_dist_record)                                  \
+        break;                                                                           \
+    case SAC_DISTMEM_exec_mode_side_effects_outer:                                       \
+        SAC_PF_END_DISTMEM (SAC_PF_distmem_side_effects_record)                          \
+        break;                                                                           \
+    default:                                                                             \
+        /* Unreachable */                                                                \
+        break;                                                                           \
+    }
+
+#define SAC_PF_ADD_TO_DISTMEM_TIMER_CHAIN()                                              \
+    SAC_PF_ADD_TO_TIMER (SAC_PF_distmem_act_record);                                     \
+    if (SAC_PF_distmem_act_record->timer_type == PF_distmem_rep_barrier                  \
+        || SAC_PF_distmem_act_record->timer_type == PF_distmem_dist_barrier              \
+        || SAC_PF_distmem_act_record->timer_type == PF_distmem_side_effects_barrier      \
+        || SAC_PF_distmem_act_record->timer_type == PF_distmem_comm) {                   \
+        SAC_PF_ADD_TO_TIMER (SAC_PF_distmem_act_record->parent);                         \
+    }
+
+/* Generic functionality for distributed memory profiling */
+#define SAC_PF_BEGIN_DISTMEM(timer_record)                                               \
+    SAC_PF_STOP_CLOCK ();                                                                \
+    SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                       \
+    timer_record.parent = SAC_PF_distmem_act_record;                                     \
+    timer_record.funno = SAC_PF_distmem_act_record->funno;                               \
+    timer_record.funapno = SAC_PF_distmem_act_record->funapno;                           \
+    timer_record.cycle_tag = SAC_PF_distmem_act_record->cycle_tag;                       \
+    SAC_PF_distmem_act_record = &timer_record;                                           \
+    SAC_PF_START_CLOCK ();
+
+#define SAC_PF_END_DISTMEM(timer_record)                                                 \
+    SAC_PF_STOP_CLOCK ();                                                                \
+    SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                       \
+    SAC_PF_distmem_act_record = SAC_PF_distmem_act_record->parent;                       \
+    SAC_PF_START_CLOCK ();
 
 #else /* SAC_DO_PROFILE_DISTMEM && SAC_DO_PROFILE */
 
-#define SAC_PF_PRINT_DISTMEM()
+#define SAC_PF_PRINT_DISTMEM(total)
+
+#define SAC_PF_BEGIN_BARRIER()
+
+#define SAC_PF_END_BARRIER()
+
+#define SAC_PF_BEGIN_COMM()
+
+#define SAC_PF_END_COMM()
+
+#define SAC_PF_BEGIN_EXEC_SIDE_EFFECTS()
+
+#define SAC_PF_BEGIN_EXEC_DIST()
+
+#define SAC_PF_END_EXEC_MODE()
+
+#define SAC_PF_ADD_TO_DISTMEM_TIMER_CHAIN()
 
 #endif /* SAC_DO_PROFILE_DISTMEM && SAC_DO_PROFILE */
 

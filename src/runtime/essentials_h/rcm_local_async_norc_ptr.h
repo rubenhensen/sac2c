@@ -1,4 +1,4 @@
-#ifdef SAC_BACKEND_C99
+#if defined(SAC_BACKEND_C99) || defined(SAC_BACKEND_DISTMEM)
 
 /**
  * SAC_RCM_local_async_norc_ptr method.
@@ -183,4 +183,4 @@
 
 #endif /* SAC_RC_METHOD == SAC_RCM_local_async_norc_ptr */
 
-#endif /* defined SAC_BACKEND_C99 */
+#endif /* defined(SAC_BACKEND_C99) || defined(SAC_BACKEND_DISTMEM) */

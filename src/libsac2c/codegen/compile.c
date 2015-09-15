@@ -3208,12 +3208,6 @@ COMPvardec (node *arg_node, info *arg_info)
               = TCmakeIcm1 ("ND_DSM_DECL",
                             MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
                                           TRUE, TRUE, TRUE, NULL));
-        } else if (global.backend == BE_distmem 
-               /*&& AVIS_DISTMEMISDISTRIBUTABLE( VARDEC_AVIS( arg_node)) TODO: May cause a bug*/) {
-            VARDEC_ICM (arg_node)
-              = TCmakeIcm1 ("ND_DIST_DECL",
-                            MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
-                                          TRUE, TRUE, TRUE, NULL));
         } else {
             VARDEC_ICM (arg_node)
               = TCmakeIcm1 ("ND_DECL",
@@ -5789,6 +5783,80 @@ COMPprfFirstElems (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *COMPprfLocalFrom( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_localFrom_A.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfLocalFrom (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *arg;
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg = PRF_ARG1 (arg_node);
+
+    DBUG_ASSERT (NODE_TYPE (arg) == N_id, "arg of F_localFrom_A is no N_id!");
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_LOCAL_FROM_A__DATA",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, FALSE, FALSE,
+                                               MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                             FALSE, FALSE, FALSE, NULL)),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfLocalCount( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_localCount_A.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfLocalCount (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    node *arg;
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg = PRF_ARG1 (arg_node);
+
+    DBUG_ASSERT (NODE_TYPE (arg) == N_id, "arg of F_localCount_A is no N_id!");
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_LOCAL_COUNT_A__DATA",
+                                 MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
+                                               FALSE, FALSE, FALSE,
+                                               MakeTypeArgs (ID_NAME (arg), ID_TYPE (arg),
+                                                             FALSE, FALSE, FALSE, NULL)),
+                                 NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPprfOffs( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_offs_A.
@@ -5974,6 +6042,18 @@ COMPprfReshape (node *arg_node, info *arg_info)
          */
         ret_node = TCmakeAssignIcm2 ("ND_ASSIGN__DESC", DUPdupIdsIdNt (let_ids),
                                      DUPdupIdNt (PRF_ARG4 (arg_node)), ret_node);
+    } else if (global.backend == BE_distmem) {
+        ret_node = MakeAllocDescIcm (
+          IDS_NAME (let_ids), IDS_TYPE (let_ids), rc, MakeGetDimIcm (PRF_ARG2 (arg_node)),
+          TCmakeAssignIcm2 ("ND_COPY__DESC_DIS_FIELDS", DUPdupIdNt (PRF_ARG4 (arg_node)),
+                            DUPdupIdsIdNt (let_ids),
+                            TCmakeAssignIcm1 ("ND_FREE__DESC",
+                                              DUPdupIdNt (PRF_ARG4 (arg_node)),
+                                              TCmakeAssignIcm2 ("ND_ASSIGN__DESC",
+                                                                DUPdupIdNt (
+                                                                  PRF_ARG4 (arg_node)),
+                                                                DUPdupIdsIdNt (let_ids),
+                                                                ret_node))));
     } else {
         ret_node
           = MakeAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), rc,
@@ -6080,8 +6160,15 @@ COMPprfIdxSel (node *arg_node, info *arg_info)
     dim = TCgetDim (IDS_TYPE (let_ids));
     DBUG_ASSERT (dim >= 0, "unknown dimension found!");
 
+    /* The ICM depends on whether we use the distributed memory backend
+     * and the read access is known to be local. */
+    char *icm_name = "ND_PRF_IDX_SEL__DATA";
+    if (global.backend == BE_distmem && PRF_DISTMEMISLOCALREAD (arg_node)) {
+        icm_name = "ND_PRF_IDX_SEL__DATA_Local";
+    }
+
     ret_node
-      = TCmakeAssignIcm2 ("ND_PRF_IDX_SEL__DATA",
+      = TCmakeAssignIcm2 (icm_name,
                           MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
                                         TRUE, FALSE, DUPdoDupTree (icm_args)),
                           TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
@@ -6330,9 +6417,15 @@ COMPprfSel (node *arg_node, info *arg_info)
                           MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
                                         FALSE, TBmakeExprs (DUPdupIdNt (arg1), NULL)));
 
+        /* The ICM depends on whether we use the distributed memory backend
+         * and the read access is known to be local. */
+        char *icm_name = "ND_PRF_SEL_VxA__DATA_id";
+        if (global.backend == BE_distmem && PRF_DISTMEMISLOCALREAD (arg_node)) {
+            icm_name = "ND_PRF_SEL_VxA__DATA_id_Local";
+        }
+
         ret_node
-          = TCmakeAssignIcm3 ("ND_PRF_SEL_VxA__DATA_id", DUPdoDupTree (icm_args),
-                              MakeSizeArg (arg1, TRUE),
+          = TCmakeAssignIcm3 (icm_name, DUPdoDupTree (icm_args), MakeSizeArg (arg1, TRUE),
                               TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                               NULL);
     } else {
@@ -6350,8 +6443,15 @@ COMPprfSel (node *arg_node, info *arg_info)
         icm_args = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
                                  FALSE, type_args);
 
+        /* The ICM depends on whether we use the distributed memory backend
+         * and the read access is known to be local. */
+        char *icm_name = "ND_PRF_SEL_VxA__DATA_arr";
+        if (global.backend == BE_distmem && PRF_DISTMEMISLOCALREAD (arg_node)) {
+            icm_name = "ND_PRF_SEL_VxA__DATA_arr_Local";
+        }
+
         ret_node
-          = TCmakeAssignIcm2 ("ND_PRF_SEL_VxA__DATA_arr", DUPdoDupTree (icm_args),
+          = TCmakeAssignIcm2 (icm_name, DUPdoDupTree (icm_args),
                               TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                               NULL);
     }
@@ -8941,9 +9041,12 @@ COMPcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    /* FIXME: This assertion fails sometimes when compiling for -mt and the condition is a
+     * N_prf node.  */
     DBUG_ASSERT (((NODE_TYPE (COND_COND (arg_node)) == N_id)
                   || (NODE_TYPE (COND_COND (arg_node)) == N_bool)),
-                 "if-clause condition is neither a N_id nor a N_bool node!");
+                 "if-clause condition is neither a N_id nor a N_bool but node type %d!",
+                 NODE_TYPE (COND_COND (arg_node)));
 
     INFO_COND (arg_info) = TRUE;
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
@@ -9984,6 +10087,13 @@ COMPwith2 (node *arg_node, info *arg_info)
     node *begin_icm;
     if (global.backend == BE_distmem) {
         withop = WITH2_WITHOP (wlnode);
+
+        if (num_with_ops > 1) {
+            CTIwarn ("The distributed memory backend does not yet support distributed "
+                     "multi-operator with-loops "
+                     "(first target: %s, first operator: %s, number of operators: %d).",
+                     IDS_NAME (wlids), profile_name, num_with_ops);
+        }
 
         /*
          * The with-loop is distributable iff it is a single-operator

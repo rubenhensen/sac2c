@@ -937,6 +937,7 @@ COdim (constant *a, constant *tmp1, constant *tmp2)
  *
  * description:
  *    Returns whether a is distributed.
+ *    (This primitive function is for the distributed memory backend.)
  *
  ******************************************************************************/
 
@@ -961,6 +962,7 @@ COisDist (constant *a, constant *tmp1, constant *tmp2)
  * description:
  *    Returns the maximum number of elements of a distributed array that are
  *    owned by each node.
+ *    (This primitive function is for the distributed memory backend.)
  *
  ******************************************************************************/
 
@@ -980,13 +982,40 @@ COfirstElems (constant *a, constant *tmp1, constant *tmp2)
 /******************************************************************************
  *
  * function:
+ *    constant *COlocalFrom( constant *a)
+ *
+ * description:
+ *    Returns the first element index that is
+ *    local to the current node.
+ *    If the array is not distributed, that is equal to 0.
+ *    (This primitive function is for the distributed memory backend.)
+ *
+ ******************************************************************************/
+
+constant *
+COlocalFrom (constant *a, constant *tmp1, constant *tmp2)
+{
+    constant *res;
+
+    DBUG_ENTER ();
+
+    /* A constant is never distributed, so return 0. */
+    res = COmakeConstantFromInt (0);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    constant *COoffs( constant *a)
  *
  * description:
  *    Returns the offset of a distributed array in the dsm shared memory segment.
+ *    (This primitive function is for the distributed memory backend.)
  *
  ******************************************************************************/
-/* TODO */
+
 constant *
 COoffs (constant *a, constant *tmp1, constant *tmp2)
 {

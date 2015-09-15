@@ -1554,7 +1554,23 @@ handle_function_call (struct parser *parser)
             return error_mark_node;
 
         /* FIXME: check the number of arguments.  */
-        return loc_annotated (loc, TBmakePrf (to_prf (tkind), args));
+
+        node *prf;
+        if (to_prf (tkind) == F_sel_VxA_distmem_local) {
+            /*
+             * Special case: Until code generation, we treat the primitive
+             * function F_sel_VxA_distmem_local just like F_sel_VxA.
+             *
+             * It is used to mark that a read is local for the distributed
+             * memory backend.
+             */
+            prf = TBmakePrf (F_sel_VxA, args);
+            PRF_DISTMEMISLOCALREAD (prf) = TRUE;
+        } else {
+            prf = TBmakePrf (to_prf (tkind), args);
+        }
+
+        return loc_annotated (loc, prf);
     } else
         parser_unget (parser);
 

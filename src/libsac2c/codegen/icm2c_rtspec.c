@@ -17,6 +17,7 @@
 #include "str.h"
 #include "str_buffer.h"
 #include "string.h"
+#include "rtspec_modes.h"
 
 #define DBUG_PREFIX "UNDEFINED"
 #include "debug.h"
@@ -138,7 +139,11 @@ ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, int vararg_cnt
         fprintf (global.outfile, "#pragma GCC diagnostic push\n");
         fprintf (global.outfile, "#pragma GCC diagnostic ignored \"-Wpedantic\"\n");
         INDENT;
-        fprintf (global.outfile, "SAC_WE_FUNAP2(%s, %s)\n", types, name);
+        if (global.rtspec_mode == RTSPEC_MODE_SIMPLE) {
+            fprintf (global.outfile, "SAC_WE_FUNAP2(%s, %s)\n", types, name);
+        } else {
+            fprintf (global.outfile, "SAC_RTSPEC_ENQ_REQ_CHK(%s, %s)\n", types, name);
+        }
         INDENT;
         fprintf (global.outfile, "SAC_WE_PTR_CAST( ");
 

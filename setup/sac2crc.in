@@ -488,10 +488,17 @@ target distmemcheck:
 BACKEND          := "DistMem"
 LIB_VARIANT      := "dmcheck"
 
+target distmemprofile:
+BACKEND          := "DistMem"
+LIB_VARIANT      := "dmprofile"
+
 target distmem_gasnet::distmem:
 DISTMEM_COMMLIB  := "GASNet"
 
 target distmemcheck_gasnet::distmemcheck:
+DISTMEM_COMMLIB  := "GASNet"
+
+target distmemprofile_gasnet::distmemprofile:
 DISTMEM_COMMLIB  := "GASNet"
 
 @GASNET_CONDUIT_TARGETS@
@@ -499,11 +506,45 @@ DISTMEM_COMMLIB  := "GASNet"
 target distmem_armci::distmem:
 DISTMEM_COMMLIB  := "ARMCI"
 
+target distmemcheck_armci::distmemcheck:
+DISTMEM_COMMLIB  := "ARMCI"
+
 target distmem_gpi::distmem:
 DISTMEM_COMMLIB  := "GPI"
+CCLINK           += "-L@GPI_DIR@/lib64 -lGPI2 -libverbs -lpthread -lm"
+CCINCDIR         += "-I@GPI_DIR@/include"
+
+target distmemcheck_gpi::distmemcheck:
+DISTMEM_COMMLIB  := "GPI"
+CCLINK           += "-L@GPI_DIR@/lib64 -lGPI2 -libverbs -lpthread -lm"
+CCINCDIR         += "-I@GPI_DIR@/include"
 
 target distmem_mpi::distmem:
 DISTMEM_COMMLIB  := "MPI"
+CC               := "@MPICC@ -std=gnu99"
+
+target distmemcheck_mpi::distmemcheck:
+DISTMEM_COMMLIB  := "MPI"
+CC               := "@MPICC@ -std=gnu99"
+
+target distmem_armci::distmem:
+DISTMEM_COMMLIB  := "ARMCI"
+CC               := "@MPICC@ -std=gnu99"
+CCLINK           += "-L@ARMCI_DIR@/lib -larmci -libverbs -lm"
+CCINCDIR         += "-I@ARMCI_DIR@/include"
+
+target distmemcheck_armci::distmemcheck:
+DISTMEM_COMMLIB  := "ARMCI"
+CC               := "@MPICC@ -std=gnu99"
+CCLINK           += "-L@ARMCI_DIR@/lib -larmci -libverbs -lm"
+CCINCDIR         += "-I@ARMCI_DIR@/include"
+
+
+/*****************************************************************************
+ * MT target for mt version of the library that can coexist
+ */
+target mtcoexist:
+LIB_VARIANT      := "mtcoexist"
 
 /*****************************************************************************
  * cuda targets

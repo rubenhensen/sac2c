@@ -1,6 +1,6 @@
 /** <!--********************************************************************-->
  *
- * @file reqqueue.c
+ * @file simple_reqqueue.c
  *
  * @brief Implementation of the request queue data structure.
  *
@@ -18,23 +18,23 @@
 #include <pthread.h>
 
 #include "registry.h"
-#include "reqqueue.h"
+#include "simple_reqqueue.h"
 
 #define SAC_DO_TRACE 1
 #include "sac.h"
 
-reqqueue_t *request_queue = NULL;
-pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t empty_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t processed_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t empty_queue_cond = PTHREAD_COND_INITIALIZER;
+simple_reqqueue_t *simple_request_queue = NULL;
+pthread_mutex_t simple_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t simple_empty_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t simple_processed_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t simple_empty_queue_cond = PTHREAD_COND_INITIALIZER;
 
 static int do_trace;
-reqqueue_t *processed = NULL;
+simple_reqqueue_t *simple_processed = NULL;
 
 /** <!--*******************************************************************-->
  *
- * @fn  wasProcessed( queue_node_t *node)
+ * @fn  SAC_Simple_wasProcessed( simple_queue_node_t *node)
  *
  * @brief Iterates over all the nodes in the list of processed requests and
  * returns TRUE if a node contains the same information as the current request
@@ -46,21 +46,21 @@ reqqueue_t *processed = NULL;
  *
  ****************************************************************************/
 int
-wasProcessed (queue_node_t *node)
+SAC_Simple_wasProcessed (simple_queue_node_t *node)
 {
-    queue_node_t *current;
+    simple_queue_node_t *current;
 
-    pthread_mutex_lock (&processed_mutex);
+    pthread_mutex_lock (&simple_processed_mutex);
 
-    if (processed->first == NULL) {
+    if (simple_processed->first == NULL) {
         if (do_trace == 1) {
             SAC_TR_Print ("Runtime specialization: Nothing processed yet.");
         }
-        pthread_mutex_unlock (&processed_mutex);
+        pthread_mutex_unlock (&simple_processed_mutex);
         return 0;
     }
 
-    current = processed->first;
+    current = simple_processed->first;
     while (current != NULL) {
         if (do_trace == 1) {
             SAC_TR_Print ("Runtime specialization: Checking queue.");
@@ -73,7 +73,7 @@ wasProcessed (queue_node_t *node)
             if (do_trace == 1) {
                 SAC_TR_Print ("Runtime specialization: Already processed.");
             }
-            pthread_mutex_unlock (&processed_mutex);
+            pthread_mutex_unlock (&simple_processed_mutex);
             return 1;
         }
 
@@ -84,14 +84,14 @@ wasProcessed (queue_node_t *node)
         SAC_TR_Print ("Runtime specialization: Found no match.");
     }
 
-    pthread_mutex_unlock (&processed_mutex);
+    pthread_mutex_unlock (&simple_processed_mutex);
 
     return 0;
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn  addProcessed( queue_node_t *node)
+ * @fn  SAC_Simple_addProcessed( simple_queue_node_t *node)
  *
  * @brief Adds a new node to the list of processed requests.
  *
@@ -99,35 +99,35 @@ wasProcessed (queue_node_t *node)
  *
  ****************************************************************************/
 void
-addProcessed (queue_node_t *node)
+SAC_Simple_addProcessed (simple_queue_node_t *node)
 {
-    pthread_mutex_lock (&processed_mutex);
+    pthread_mutex_lock (&simple_processed_mutex);
 
     /* Add the new processed request at the beginning of the list, this is
      * cheaper than at the end.
      */
-    node->next = processed->first;
+    node->next = simple_processed->first;
 
-    if (processed->first == NULL) {
-        processed->last = node;
+    if (simple_processed->first == NULL) {
+        simple_processed->last = node;
     }
 
-    processed->first = node;
+    simple_processed->first = node;
 
-    processed->size++;
+    simple_processed->size++;
 
-    pthread_mutex_unlock (&processed_mutex);
+    pthread_mutex_unlock (&simple_processed_mutex);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn SAC_initializeQueue(int trace)
+ * @fn SAC_Simple_initializeQueue(int trace)
  *
  * @brief Allocate memory for the central request queue.
  *
  ****************************************************************************/
 void
-SAC_initializeQueue (int trace)
+SAC_Simple_initializeQueue (int trace)
 {
     do_trace = trace;
 
@@ -135,92 +135,92 @@ SAC_initializeQueue (int trace)
         SAC_TR_Print ("Runtime specialization: Initialize request queue.");
     }
 
-    pthread_mutex_lock (&queue_mutex);
+    pthread_mutex_lock (&simple_queue_mutex);
 
     /*
      * Reinitialization, so we clean up first.
      */
-    if (request_queue != NULL) {
-        SAC_freeReqqueue (request_queue->first);
+    if (simple_request_queue != NULL) {
+        SAC_Simple_freeReqqueue (simple_request_queue->first);
     }
 
-    request_queue = (reqqueue_t *)malloc (sizeof (reqqueue_t));
+    simple_request_queue = (simple_reqqueue_t *)malloc (sizeof (simple_reqqueue_t));
 
-    if (request_queue == NULL) {
+    if (simple_request_queue == NULL) {
         fprintf (stderr, "ERROR -- \t "
                          "[reqqueue.c: SAC_initializeQueue()] malloc().");
 
         exit (EXIT_FAILURE);
     }
 
-    request_queue->size = 0;
-    request_queue->first = NULL;
-    request_queue->last = NULL;
+    simple_request_queue->size = 0;
+    simple_request_queue->first = NULL;
+    simple_request_queue->last = NULL;
 
-    pthread_mutex_unlock (&queue_mutex);
+    pthread_mutex_unlock (&simple_queue_mutex);
 
-    pthread_mutex_lock (&processed_mutex);
+    pthread_mutex_lock (&simple_processed_mutex);
 
     /*
      * Reinitialization, so we clean up first.
      */
-    if (processed != NULL) {
-        SAC_freeReqqueue (processed->first);
+    if (simple_processed != NULL) {
+        SAC_Simple_freeReqqueue (simple_processed->first);
     }
 
-    processed = (reqqueue_t *)malloc (sizeof (reqqueue_t));
+    simple_processed = (simple_reqqueue_t *)malloc (sizeof (simple_reqqueue_t));
 
-    if (processed == NULL) {
+    if (simple_processed == NULL) {
         fprintf (stderr, "ERROR -- \t "
                          "[reqqueue.c: SAC_initializeQueue()] malloc().");
 
         exit (EXIT_FAILURE);
     }
 
-    processed->size = 0;
-    processed->first = NULL;
-    processed->last = NULL;
+    simple_processed->size = 0;
+    simple_processed->first = NULL;
+    simple_processed->last = NULL;
 
-    pthread_mutex_unlock (&processed_mutex);
+    pthread_mutex_unlock (&simple_processed_mutex);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn SAC_deinitializeQueue()
+ * @fn SAC_Simple_deinitializeQueue(void)
  *
  * @brief Deallocate memory for the central request queue.
  *
  ****************************************************************************/
 void
-SAC_deinitializeQueue (void)
+SAC_Simple_deinitializeQueue (void)
 {
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Deinitialize request queue.");
     }
 
-    pthread_mutex_lock (&queue_mutex);
+    pthread_mutex_lock (&simple_queue_mutex);
 
-    if (request_queue != NULL) {
-        SAC_freeReqqueue (request_queue->first);
+    if (simple_request_queue != NULL) {
+        SAC_Simple_freeReqqueue (simple_request_queue->first);
     }
 
-    free (request_queue);
+    free (simple_request_queue);
 
-    pthread_mutex_unlock (&queue_mutex);
-    pthread_mutex_lock (&processed_mutex);
+    pthread_mutex_unlock (&simple_queue_mutex);
+    pthread_mutex_lock (&simple_processed_mutex);
 
-    if (request_queue != NULL) {
-        SAC_freeReqqueue (processed->first);
+    if (simple_request_queue != NULL) {
+        SAC_Simple_freeReqqueue (simple_processed->first);
     }
 
-    free (processed);
+    free (simple_processed);
 
-    pthread_mutex_unlock (&processed_mutex);
+    pthread_mutex_unlock (&simple_processed_mutex);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn SAC_createNode (char *func_name, char *types, int *shapes,
+ * @fn SAC_Simple_createNode (char *func_name, char *types, int *shapes,
  *                     reg_obj_t *registry)
  *
  * @brief Allocate a new queue node and initialize the fields of the node.
@@ -235,11 +235,12 @@ SAC_deinitializeQueue (void)
  * @return A new queue node or NULL on failure.
  *
  ****************************************************************************/
-queue_node_t *
-SAC_createNode (char *func_name, char *types, int *shapes, int shapes_size,
-                reg_obj_t *registry)
+simple_queue_node_t *
+SAC_Simple_createNode (char *func_name, char *types, int *shapes, int shapes_size,
+                       reg_obj_t *registry)
 {
-    queue_node_t *xnew = (queue_node_t *)malloc (sizeof (queue_node_t));
+    simple_queue_node_t *xnew
+      = (simple_queue_node_t *)malloc (sizeof (simple_queue_node_t));
 
     if (xnew == NULL) {
         fprintf (stderr, "ERROR -- \t [reqqueue.c: SAC_createNode()] malloc().");
@@ -259,7 +260,7 @@ SAC_createNode (char *func_name, char *types, int *shapes, int shapes_size,
 
 /** <!--*******************************************************************-->
  *
- * @fn SAC_dequeueRequest(void)
+ * @fn SAC_Simple_dequeueRequest(void)
  *
  * @brief Retrieve the first element in the queue and move the pointer to the
  *        first element to the second element.
@@ -267,37 +268,37 @@ SAC_createNode (char *func_name, char *types, int *shapes, int shapes_size,
  * @return The first node in the queue or NULL if the queue is empty.
  *
  ****************************************************************************/
-queue_node_t *
-SAC_dequeueRequest (void)
+simple_queue_node_t *
+SAC_Simple_dequeueRequest (void)
 {
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Dequeue specialization request.");
     }
 
-    pthread_mutex_lock (&queue_mutex);
+    pthread_mutex_lock (&simple_queue_mutex);
 
-    if (request_queue->first == NULL) {
+    if (simple_request_queue->first == NULL) {
         return NULL;
     }
 
-    queue_node_t *result = request_queue->first;
+    simple_queue_node_t *result = simple_request_queue->first;
 
     /* Move the pointer to the first object to the next object. */
-    request_queue->first = request_queue->first->next;
+    simple_request_queue->first = simple_request_queue->first->next;
 
     /* The result is no longer part of the queue. */
     result->next = NULL;
 
-    request_queue->size--;
+    simple_request_queue->size--;
 
-    pthread_mutex_unlock (&queue_mutex);
+    pthread_mutex_unlock (&simple_queue_mutex);
 
     return result;
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn SAC_enqueueRequest (char *func_name, char *types, int *shapes,
+ * @fn SAC_Simple_enqueueRequest (char *func_name, char *types, int *shapes,
  *                         reg_obj_t *registry)
  *
  * @param func_name  The name of the function being optimized.
@@ -311,59 +312,60 @@ SAC_dequeueRequest (void)
  *
  ****************************************************************************/
 void
-SAC_enqueueRequest (char *func_name, char *types, int *shapes, int shapes_size,
-                    reg_obj_t *registry)
+SAC_Simple_enqueueRequest (char *func_name, char *types, int *shapes, int shapes_size,
+                           reg_obj_t *registry)
 {
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Enqueue specialization request.");
     }
 
-    if (request_queue == NULL) {
+    if (simple_request_queue == NULL) {
         // using rtspec enabled library in rtspec-disabled application
         return;
     }
 
-    pthread_mutex_lock (&queue_mutex);
+    pthread_mutex_lock (&simple_queue_mutex);
 
-    queue_node_t *xnew = SAC_createNode (func_name, types, shapes, shapes_size, registry);
+    simple_queue_node_t *xnew
+      = SAC_Simple_createNode (func_name, types, shapes, shapes_size, registry);
 
     /* Exit on error. */
     if (xnew == NULL) {
         fprintf (stderr, "ERROR -- \t [reqqueue.c: enqueue_request()] "
                          "Couldn't create node, exiting.");
 
-        pthread_mutex_unlock (&queue_mutex);
+        pthread_mutex_unlock (&simple_queue_mutex);
         exit (EXIT_FAILURE);
     }
 
-    if (request_queue->first == NULL) {
+    if (simple_request_queue->first == NULL) {
         /* Insert the first element. */
-        request_queue->first = xnew;
+        simple_request_queue->first = xnew;
 
         /* The only element in the queue is both first and last. */
-        request_queue->last = request_queue->first;
+        simple_request_queue->last = simple_request_queue->first;
 
     } else {
         /* Insert the new node after the last node in the queue. */
-        request_queue->last->next = xnew;
+        simple_request_queue->last->next = xnew;
 
         /* Move the pointer to the last object to the newly inserted node. */
-        request_queue->last = request_queue->last->next;
+        simple_request_queue->last = simple_request_queue->last->next;
     }
 
-    request_queue->size++;
+    simple_request_queue->size++;
 
     /* Signal the controller if it was waiting for requests. */
-    if (request_queue->size > 0) {
-        pthread_cond_signal (&empty_queue_cond);
+    if (simple_request_queue->size > 0) {
+        pthread_cond_signal (&simple_empty_queue_cond);
     }
 
-    pthread_mutex_unlock (&queue_mutex);
+    pthread_mutex_unlock (&simple_queue_mutex);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn SAC_freeReqqueue( queue_node_t *node)
+ * @fn SAC_Simple_freeReqqueue( simple_queue_node_t *node)
  *
  * @param node  the first node in the queue.
  *
@@ -371,9 +373,9 @@ SAC_enqueueRequest (char *func_name, char *types, int *shapes, int shapes_size,
  *
  ****************************************************************************/
 void
-SAC_freeReqqueue (queue_node_t *node)
+SAC_Simple_freeReqqueue (simple_queue_node_t *node)
 {
-    queue_node_t *current;
+    simple_queue_node_t *current;
 
     /* Walk through the queue and free each node. */
     if (node != NULL) {
@@ -382,7 +384,7 @@ SAC_freeReqqueue (queue_node_t *node)
         free (node);
         node = NULL;
 
-        SAC_freeReqqueue (current);
+        SAC_Simple_freeReqqueue (current);
     }
 }
 

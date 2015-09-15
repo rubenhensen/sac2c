@@ -100,6 +100,14 @@ PHASE (ptc, "Converting to static single assignment form", ALWAYS)
 
 SUBPHASE (ivd, "Inserting variable declarations", INSVDdoInsertVardec, ALWAYS, ptc)
 
+/*
+ * This needs the variable declarations but the
+ * array indices should not have been converted in any way.
+ * So it goes here.
+ */
+SUBPHASE (dmmls, "Mark local selects for distmem backend", DMMLSdoMarkLocalSelects,
+          global.backend == BE_distmem && global.optimize.dodmmls, ptc)
+
 SUBPHASE (itc, "Converting type decls into type conversions", INSTCdoInsertTypeConv,
           ALWAYS, ptc)
 
@@ -152,7 +160,10 @@ SUBPHASE (exp, "Exporting symbols", EXPdoExport, ALWAYS, exp)
 SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optimize.dodfr,
           exp)
 
-SUBPHASE (uid, "Set unique ids for generic functions", UIDdoSetFunctionIDs, ALWAYS, exp)
+SUBPHASE (uid, "Set unique ids for generic functions", UIDdoSetFunctionIDs,
+          global.rtspec_mode == RTSPEC_MODE_HASH
+            || global.rtspec_mode == RTSPEC_MODE_UUID,
+          exp)
 
 SUBPHASE (ser, "Serializing syntax tree", SERdoSerialize,
           ((global.filetype == FT_modimp) || (global.filetype == FT_classimp)), exp)
@@ -1387,8 +1398,8 @@ SUBPHASE (
   "Identifying function applications with side effects for distributed memory backend",
   DMISEFAdoIdentifySideEffectFunctionApplications, global.backend == BE_distmem, pc)
 
-SUBPHASE (dmida, "Identifying distributable arrays for distributed memory backend",
-          DMIDAdoIdentifyDistributableArrays, (global.backend == BE_distmem), pc)
+SUBPHASE (dmisaa, "Identify sub-allocated arrays for the distributed memory backend",
+          DMISAAdoIdentifySubAllocatedArrays, global.backend == BE_distmem, pc)
 
 ENDPHASE (pc)
 

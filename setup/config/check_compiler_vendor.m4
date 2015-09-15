@@ -10,4 +10,13 @@ AC_DEFUN([CHECK_COMPILER_VENDOR],dnl
     CHECK_CPP_FLAG([__DECC], [DECC])
     CHECK_CPP_FLAG([__APPLE_CC__], [MACC])
   fi
+
+  # For some reason, ICC is recognized as GCC.
+  CHECK_CPP_FLAG([__INTEL_COMPILER], [ICC])
+  if test "$ICC" != yes ; then
+      CHECK_CPP_FLAG([__ICC], [ICC])
+  fi
+  if test "$ICC" = yes ; then
+    [GCC=no]
+  fi
 ])

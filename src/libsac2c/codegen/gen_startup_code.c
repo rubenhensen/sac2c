@@ -38,6 +38,7 @@
 #include "memory.h"
 #include "renameidentifiers.h"
 #include "namespaces.h"
+#include "rtspec_modes.h"
 
 /******************************************************************************
  *
@@ -209,6 +210,15 @@ PrintGlobalSwitches (void)
                ? 1
                : 0);
 
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_ALLOC_CACHE_OUTSIDE_DSM %d\n",
+             global.distmem_cache_outside_dsm);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_PTR_DESC %d\n",
+             (global.backend == BE_distmem && global.distmem_ptrs_desc) ? 1 : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_DISTMEM_PTR_CACHE %d\n",
+             (global.backend == BE_distmem && global.distmem_ptr_cache) ? 1 : 0);
+
     fprintf (global.outfile, "#define SAC_DO_THREADS_STATIC  %d\n",
              (global.num_threads == 0) ? 0 : 1);
 
@@ -302,7 +312,14 @@ PrintGlobalSwitches (void)
             fprintf (global.outfile, "#define SAC_DISTMEM_COMMLIB_ARMCI\n");
             break;
         default:
-            DBUG_UNREACHABLE ("Unknown distributed memory communication library");
+            /* The communication library is obligatory when the distributed memory backend
+             * is used and a SAC program is compiled. Modules are compiled for the
+             * distributed memory backend but not for a specific communication library.
+             * The same holds for the prelude. */
+            if (global.filetype == FT_prog) {
+                DBUG_UNREACHABLE ("Generating startup code: Unknown distributed memory "
+                                  "backend communication library");
+            }
             break;
         }
         break;
@@ -569,8 +586,8 @@ PrintGlobalSettings (node *syntax_tree)
                  "#define SAC_SET_DISTMEM_MIN_ELEMS_PER_NODE         %d\n",
                  global.distmem_min_elems_per_node);
         fprintf (global.outfile,
-                 "#define SAC_SET_DISTMEM_TRACE_NODE                 %d\n",
-                 global.distmem_trace_node);
+                 "#define SAC_SET_DISTMEM_TRACE_PROFILE_NODE         %d\n",
+                 global.distmem_tr_pf_node);
     }
 
     DBUG_RETURN ();
@@ -714,7 +731,7 @@ GSCprintMainBegin (void)
 
     if (global.backend != BE_cuda) {
         INDENT;
-        fprintf (global.outfile, "SAC_RTSPEC_SETUP_INITIAL();\n");
+        fprintf (global.outfile, "SAC_RTSPEC_SETUP_INITIAL(%i);\n", global.rtspec_mode);
     }
 
     INDENT;
@@ -758,6 +775,10 @@ GSCprintMainEnd (void)
     /*
      * global.outfile is already indented by 2
      */
+    INDENT;
+    /* We put the barrier here because the dsm memory is not
+     * used anymore and otherwise the profiling may be incorrect. */
+    fprintf (global.outfile, "SAC_DISTMEM_BARRIER();\n");
     INDENT;
     fprintf (global.outfile, "SAC_PF_PRINT();\n");
     INDENT;

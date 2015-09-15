@@ -957,14 +957,6 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                                                   TBmakePrf (F_suballoc, args)),
                                        assign);
 
-                if (global.backend == BE_distmem) {
-                    /* Mark the variable as suballocated for the
-                     * distributed memory backend. */
-                    AVIS_DISTMEMSUBALLOC (memavis) = TRUE;
-                    AVIS_TYPE (memavis)
-                      = TYsetDistributed (AVIS_TYPE (memavis), distmem_dis_dsm);
-                }
-
                 AVIS_SSAASSIGN (memavis) = assign;
             }
         }
@@ -1467,6 +1459,28 @@ EMALprf (node *arg_node, info *arg_info)
          * _firstElems_A_ always yields a scalar
          *
          * _firstElems_A_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_ulong);
+        break;
+
+    case F_localFrom_A:
+        /*
+         * _localFrom_A_ always yields a scalar
+         *
+         * _localFrom_A_( A);
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_ulong);
+        break;
+
+    case F_localCount_A:
+        /*
+         * _localCount_A_ always yields a scalar
+         *
+         * _localCount_A_( A);
          * alloc( 0, []);
          */
         als->dim = TBmakeNum (0);

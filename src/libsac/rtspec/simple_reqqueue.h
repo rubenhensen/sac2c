@@ -1,6 +1,6 @@
 /** <!--********************************************************************-->
  *
- * @file reqqueue.h
+ * @file simple_reqqueue.h
  *
  * @brief Header file for the request queue data structure.
  *
@@ -8,15 +8,15 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_REQQUEUE_H_
-#define _SAC_REQQUEUE_H_
+#ifndef _SAC_SIMPLE_REQQUEUE_H_
+#define _SAC_SIMPLE_REQQUEUE_H_
 
 #include "registry.h"
 
 /**
  * @brief A node of the request queue.
  */
-typedef struct queue_node {
+typedef struct simple_queue_node {
     /** @brief The name of the function being optimized. */
     char *func_name;
 
@@ -33,49 +33,49 @@ typedef struct queue_node {
     reg_obj_t *reg_obj;
 
     /** @brief The next request in the queue. */
-    struct queue_node *next;
+    struct simple_queue_node *next;
 
-} queue_node_t;
+} simple_queue_node_t;
 
 /**
  * @brief Structure to administer a single queue.
  */
-typedef struct reqqueue {
+typedef struct simple_reqqueue {
     /** @brief The amount of objects in the queue. */
     int size;
 
     /** @brief The first element in the queue. */
-    queue_node_t *first;
+    simple_queue_node_t *first;
 
     /** @brief The last element in the queue. */
-    queue_node_t *last;
+    simple_queue_node_t *last;
 
-} reqqueue_t;
+} simple_reqqueue_t;
 
 /**
  * @var  request_queue
  *
  * @brief Central administrative object.
  */
-extern reqqueue_t *request_queue;
+extern simple_reqqueue_t *simple_request_queue;
 
-extern pthread_mutex_t empty_queue_mutex;
-extern pthread_cond_t empty_queue_cond;
+extern pthread_mutex_t simple_empty_queue_mutex;
+extern pthread_cond_t simple_empty_queue_cond;
 
-int wasProcessed (queue_node_t *node);
+int SAC_Simple_wasProcessed (simple_queue_node_t *node);
 
-void addProcessed (queue_node_t *node);
+void SAC_Simple_addProcessed (simple_queue_node_t *node);
 
-void SAC_initializeQueue (int trace);
+void SAC_Simple_initializeQueue (int trace);
 
-void SAC_deinitializeQueue (void);
+void SAC_Simple_deinitializeQueue (void);
 
-queue_node_t *SAC_createNode (char *, char *, int *, int, reg_obj_t *);
+simple_queue_node_t *SAC_Simple_createNode (char *, char *, int *, int, reg_obj_t *);
 
-queue_node_t *SAC_dequeueRequest (void);
+simple_queue_node_t *SAC_Simple_dequeueRequest (void);
 
-void SAC_enqueueRequest (char *, char *, int *, int, reg_obj_t *);
+void SAC_Simple_enqueueRequest (char *, char *, int *, int, reg_obj_t *);
 
-void SAC_freeReqqueue (queue_node_t *);
+void SAC_Simple_freeReqqueue (simple_queue_node_t *);
 
-#endif /* _SAC_REQQUEUE_H_ */
+#endif /* _SAC_SIMPLE_REQQUEUE_H_ */

@@ -408,11 +408,12 @@
 	        <node name="Fundef" />
 	      </travuser>
       </traversal>
-      <traversal id="DMIDA" name="Identify distributable arrays for the distributed memory backend" default="sons" include="identify_distributable_arrays.h">
+      <traversal id="DMISAA" name="Identify sub-allocated arrays for the distributed memory backend" default="sons" include="identify_suballocated_arrays.h">
         <travuser>
-	        <node name="Let" />
-	        <node name="Ids" />
-	      </travuser>
+          <node name="Prf" />
+          <node name="Let" />
+          <node name="Ids" />
+        </travuser>
       </traversal>
       <traversal id="ACUPTN" name="Annotate CUDA partitions" default="sons" include="annotate_cuda_partition.h" >
         <travuser>
@@ -981,7 +982,6 @@
 	        <node name="Arg" />
 	        <node name="Ap" />
 	        <node name="Exprs" />
-	        <node name="Ret" />
 	      </travuser>
       </traversal>
       <traversal id="USSAT" name="UndoSSATransform Traversal" default="sons" include="UndoSSATransform.h" >
@@ -1687,6 +1687,14 @@
 	  <node name="Fundef" />
 	</travuser>
       </traversal>
+   <traversal id="DMMLS" name="Mark local selects for distmem backend" default="sons" include="mark_local_selects.h">
+    <travuser>
+	    <node name="With" />
+	    <node name="Part" />
+	    <node name="Prf" />
+	    <node name="Fundef" />
+	  </travuser>
+   </traversal>
       <traversal id="PPI" name="Prepare Inline" default="sons" include="prepareinline.h">
         <travuser>
 	  <node name="Fundef" />
@@ -7908,7 +7916,17 @@ N_tfarg :
             <range from="opt_saacyc_cubsl" to="opt_saacyc_cubsl" />
           </phases>
 	</flag>
-      </flags>
+    <flag name="DistmemIsLocalRead" default="FALSE">
+          <description> 
+            Set to TRUE by DMMLS/IVESPLIT if the distributed memory backend is used,
+            Prf is F_sel_VxA/F_idx_sel and the read is known to be local,
+            even if the array is distributed.
+	    </description>
+          <phases>
+            <range from="ptc_dmmls" to="final" />
+          </phases>
+	    </flag>
+    </flags>
     </node>
 <!--
 
@@ -9054,7 +9072,7 @@ N_tfarg :
             DSM memory.
           </description>
           <phases>
-            <range from="emal" to="final" />
+            <range from="dmisaa" to="final" />
           </phases>
         </flag>
         <flag name="NeedBlocked" default="FALSE" >
@@ -9117,13 +9135,6 @@ N_tfarg :
 	  make this quite important.
 	  </description>
         </flag>	 
-  <flag name="DistMemIsDistributable" default="TRUE" >
-	  <description> 
-	  This flag indicates whether the array is distributable. 
-    That is not the case if the array is written to in the body of a parallel genarray/modarray with-loop
-    (including nested with-loops) but it is not the result of the (outermost) with-loop.
-	  </description>
-  </flag>	 
   </flags>
   <checks>
     <check name="CHKavisReflection" />
@@ -11727,15 +11738,6 @@ N_tfarg :
         <flag name="IsCReturn" />
         <flag name="WasRemoved" default="FALSE" />
         <flag name="IsUnique" default="FALSE" />
-        <flag name="DistMemBroadcastArg" default="FALSE">
-          <description>
-            This return value needs to be broadcast
-            and is therefore allocated in DSM memory.
-          </description>
-          <phases>
-            <range from="emal" to="final" />
-          </phases>
-        </flag>
       </flags>
     </node>
 <!--

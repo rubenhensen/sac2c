@@ -91,6 +91,7 @@
  * ICMs for distributed memory runtime checks
  * ========================
  *
+ * #define SAC_DISTMEM_CHECK_PTR_FROM_CACHE( var_NT, pos, ptr)
  * SAC_DISTMEM_CHECK_IS_DSM_ALLOC_ALLOWED()
  * SAC_DISTMEM_CHECK_IS_SWITCH_TO_SIDE_EFFECTS_OUTER_EXEC_ALLOWED()
  * SAC_DISTMEM_CHECK_IS_SWITCH_TO_SIDE_EFFECTS_EXEC_ALLOWED()
@@ -104,6 +105,48 @@
  ******************************************************************************/
 
 #if SAC_DO_CHECK_DISTMEM
+
+#define SAC_DISTMEM_CHECK_PTR_FROM_CACHE(var_NT, pos, ptr)                               \
+    ((ptr                                                                                \
+      == SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT), SAC_NT_CBASETYPE (var_NT),    \
+                                   SAC_ND_A_FIRST_ELEMS (var_NT), pos))                  \
+       ? 0                                                                               \
+       : (SAC_RuntimeError ("Pointer to element %d of array %s from cache (%p) "         \
+                            "does not match calculated pointer (%p). "                   \
+                            "Offset: %" PRIuPTR ", first elems: %zd. "                   \
+                            "Cache at %p: %d elements from %d.",                         \
+                            pos, NT_STR (var_NT), ptr,                                   \
+                            SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT),            \
+                                                      SAC_NT_CBASETYPE (var_NT),         \
+                                                      SAC_ND_A_FIRST_ELEMS (var_NT),     \
+                                                      pos),                              \
+                            SAC_ND_A_OFFS (var_NT), SAC_ND_A_FIRST_ELEMS (var_NT),       \
+                            SAC_ND_A_MIRROR_PTR_CACHE (var_NT),                          \
+                            SAC_ND_A_MIRROR_PTR_CACHE_COUNT (var_NT),                    \
+                            SAC_ND_A_MIRROR_PTR_CACHE_FROM (var_NT)),                    \
+          0)),
+
+#define SAC_DISTMEM_CHECK_PTR_FROM_DESC(var_NT, pos, ptr)                                \
+    ((ptr                                                                                \
+      == SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT), SAC_NT_CBASETYPE (var_NT),    \
+                                   SAC_ND_A_FIRST_ELEMS (var_NT), pos))                  \
+       ? 0                                                                               \
+       : (SAC_RuntimeError ("Pointer to element %d of array %s from descriptor (%p) "    \
+                            "does not match calculated pointer (%p). "                   \
+                            "Offset: %" PRIuPTR ", first elems: %zd. "                   \
+                            "Element local to: %d, start of array there: %p.",           \
+                            pos, NT_STR (var_NT), ptr,                                   \
+                            SAC_DISTMEM_ELEM_POINTER (SAC_ND_A_OFFS (var_NT),            \
+                                                      SAC_NT_CBASETYPE (var_NT),         \
+                                                      SAC_ND_A_FIRST_ELEMS (var_NT),     \
+                                                      pos),                              \
+                            SAC_ND_A_OFFS (var_NT), SAC_ND_A_FIRST_ELEMS (var_NT),       \
+                            ((unsigned)pos / (unsigned)SAC_ND_A_FIRST_ELEMS (var_NT)),   \
+                            SAC_ND_A_DESC_PTR (var_NT,                                   \
+                                               ((unsigned)pos                            \
+                                                / (unsigned)SAC_ND_A_FIRST_ELEMS (       \
+                                                    var_NT)))),                          \
+          0)),
 
 #define SAC_DISTMEM_CHECK_IS_DSM_ALLOC_ALLOWED()                                         \
     if (!SAC_DISTMEM_are_dsm_allocs_allowed) {                                           \
@@ -160,7 +203,7 @@
        : FALSE)
 
 #define SAC_DISTMEM_CHECK_WRITE_ALLOWED(ptr, var_NT, pos)                                \
-    ((_SAC_DISTMEM_CHECK_IS_LEGAL_FOR_LOCAL_WRITE (ptr)                                  \
+    ((!SAC_ND_A_IS_DIST (var_NT) || _SAC_DISTMEM_CHECK_IS_LEGAL_FOR_LOCAL_WRITE (ptr)    \
       || _SAC_DISTMEM_CHECK_IS_LEGAL_FOR_CACHE_WRITE (ptr))                              \
        ? 0                                                                               \
        : (SAC_RuntimeError ("Illegal write access to distributed array %s"               \
@@ -175,9 +218,19 @@
           0)),
 
 #define SAC_DISTMEM_CHECK_READ_ALLOWED(ptr, var_NT, pos)                                 \
-    (SAC_DISTMEM_IS_VALID_READ_PTR (ptr)                                                 \
+    ((!SAC_ND_A_IS_DIST (var_NT) || SAC_DISTMEM_IS_VALID_READ_PTR (ptr))                 \
        ? 0                                                                               \
        : (SAC_RuntimeError ("Illegal read access to distributed array %s"                \
+                            ", index position %d at %p",                                 \
+                            NT_STR (var_NT), pos, ptr),                                  \
+          0)),
+
+#define SAC_DISTMEM_CHECK_LOCAL_READ_ALLOWED(ptr, var_NT, pos)                           \
+    ((!SAC_ND_A_IS_DIST (var_NT)                                                         \
+      || (SAC_DISTMEM_IS_VALID_LOCAL_READ_IDX (var_NT, pos)                              \
+          && SAC_DISTMEM_IS_VALID_LOCAL_READ_PTR (ptr)))                                 \
+       ? 0                                                                               \
+       : (SAC_RuntimeError ("Illegal local read access to distributed array %s"          \
                             ", index position %d at %p",                                 \
                             NT_STR (var_NT), pos, ptr),                                  \
           0)),
@@ -222,6 +275,10 @@
 
 #else /* SAC_DO_CHECK_DISTMEM */
 
+#define SAC_DISTMEM_CHECK_PTR_FROM_CACHE(var_NT, pos, ptr)
+
+#define SAC_DISTMEM_CHECK_PTR_FROM_DESC(var_NT, pos, ptr)
+
 #define SAC_DISTMEM_CHECK_IS_DSM_ALLOC_ALLOWED()
 
 #define SAC_DISTMEM_CHECK_IS_SWITCH_TO_SIDE_EFFECTS_OUTER_EXEC_ALLOWED()
@@ -235,6 +292,8 @@
 #define SAC_DISTMEM_CHECK_WRITE_ALLOWED(ptr, var_NT, pos)
 
 #define SAC_DISTMEM_CHECK_READ_ALLOWED(ptr, var_NT, pos)
+
+#define SAC_DISTMEM_CHECK_LOCAL_READ_ALLOWED(ptr, var_NT, pos)
 
 #define SAC_DISTMEM_CHECK_POINTER_VALID_FOR_READ(ptr)
 

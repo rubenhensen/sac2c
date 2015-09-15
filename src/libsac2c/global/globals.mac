@@ -229,6 +229,17 @@ GLOBAL (bool, rtspec, FALSE, xfree_dummy, )
  */
 
 /*
+ * Runtime specialization mode.
+ */
+#if ENABLE_UUID
+GLOBAL (int, rtspec_mode, 2, xfree_dummy, )
+#elif ENABLE_HASH
+GLOBAL (int, rtspec_mode, 1, xfree_dummy, )
+#else
+GLOBAL (int, rtspec_mode, 0, xfree_dummy, )
+#endif /* ENABLE_UUID */
+
+/*
  * Type info provided as a commandline argument for runtime optimization.
  */
 
@@ -368,35 +379,51 @@ GLOBAL (int, max_threads, 32, xfree_dummy, )
  * Maximum number of threads if exact number is determined dynamically.
  */
 
-GLOBAL (int, num_procs, 1, xfree_dummy, )
-/*
- * Number of processes to be generated (for distributed memory backend).
- *  0  : dynamic number of processes, specified as command line argument
- *       on application program startup.
- *  1  : single process
- *  >1 : exact number of processes to be started
- */
-
-GLOBAL (int, max_procs, 32, xfree_dummy, )
-/*
- * Maximum number of processes if exact number is determined dynamically.
- */
-
 GLOBAL (unsigned int, distmem_max_memory_mb, 512, xfree_dummy, )
 /*
  * Amount of memory in MB for the DSM subsystem (for both local segment and cache)
  * when the distributed memory backend is used.
  */
 
-GLOBAL (int, distmem_trace_node, -1, xfree_dummy, )
+GLOBAL (bool, distmem_cache_outside_dsm, FALSE, xfree_dummy, )
 /*
- * If not equal to -1, trace output is only produced for the node with the provided rank.
+ * Assign cache segments outside of DSM segment when the distributed memory backend
+ * is used.
+ */
+
+GLOBAL (int, distmem_tr_pf_node, -1, xfree_dummy, )
+/*
+ * If not equal to -1, trace and profile output is only produced for the node with the
+ * provided rank.
+ */
+
+GLOBAL (bool, distmem_ptrs_desc, FALSE, xfree_dummy, )
+/*
+ * Flag for the distributed memory backend: Keep pointers to the start of a distributed
+ * array at every node in the array descriptor.
+ */
+
+GLOBAL (bool, distmem_ptr_cache, TRUE, xfree_dummy, )
+/*
+ * Flag for the distributed memory backend: Enable the pointer cache.
  */
 
 GLOBAL (unsigned int, distmem_min_elems_per_node, 10, xfree_dummy, )
 /*
  * Minimum number of array elements per node such that the array is distributed
  * when the distributed memory backend is used.
+ */
+
+GLOBAL (int, dmgs_min_selects, 3, xfree_dummy, )
+/*
+ * Minimum number of selects that have not been marked as local in the
+ * DMMLS optimisation so that the DMGS optimisation is applied.
+ */
+
+GLOBAL (int, dmgs_max_selects, 0, xfree_dummy, )
+/*
+ * Maximum number of selects that have not been marked as local in the
+ * DMMLS optimisation so that the DMGS optimisation is applied.
  */
 
 GLOBAL (int, num_rtspec_threads, 1, xfree_dummy, )
@@ -1193,7 +1220,7 @@ GLOBAL (int, cuda_blocking_factor, 0, xfree_dummy, )
 /*
  * DistMem backend options
  */
-GLOBAL (distmem_commlib_t, distmem_commlib, DISTMEM_COMMLIB_GASNET, xfree_dummy, )
+GLOBAL (distmem_commlib_t, distmem_commlib, DISTMEM_COMMLIB_UNKNOWN, xfree_dummy, )
 
 /*
  * cygwin compatibility globals

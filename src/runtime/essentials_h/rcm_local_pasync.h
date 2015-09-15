@@ -1,4 +1,4 @@
-#ifdef SAC_BACKEND_C99
+#if defined(SAC_BACKEND_C99) || defined(SAC_BACKEND_DISTMEM)
 
 /**
  * SAC_RCM_local_pasync method
@@ -185,4 +185,4 @@
 
 #endif /* of SAC_RC_METHOD == SAC_RCM_local_pasync */
 
-#endif /* defined SAC_BACKEND_C99 */
+#endif /* defined(SAC_BACKEND_C99) || defined(SAC_BACKEND_DISTMEM) */

@@ -3,6 +3,9 @@
 /* CPU architecture string */
 #undef ARCH
 
+/* ARMCI installation */
+#undef ARMCI_DIR
+
 /* Available GASNet conduits. */
 #undef DISTMEM_GASNET_CONDUITS
 
@@ -31,6 +34,9 @@
 /* Define to 1 if MPI conduit is supported, otherwise 0. */
 #undef ENABLE_DISTMEM_MPI
 
+/* Define to 1 if libcrypt is available, otherwise 0. */
+#undef ENABLE_HASH
+
 /* Define to 1 if pthreads are available and MT is enabled, otherwise 0. */
 #undef ENABLE_MT
 
@@ -48,6 +54,12 @@
 
 /* Define to 1 if runtime specialization is enabled, otherwise 0. */
 #undef ENABLE_RTSPEC
+
+/* Define to 1 if libuuid is available, otherwise 0. */
+#undef ENABLE_UUID
+
+/* GPI installation */
+#undef GPI_DIR
 
 /* Set to 1 if compiler supports GNU vector syntax, otherwise 0. */
 #undef HAVE_GCC_SIMD_OPERATIONS

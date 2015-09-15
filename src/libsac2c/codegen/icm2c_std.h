@@ -45,8 +45,6 @@ extern void ICMCompileND_OBJDEF_EXTERN (char *var_NT, char *basetype, int sdim);
 
 extern void ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp);
 
-extern void ICMCompileND_DIST_DECL (char *var_NT, char *basetype, int sdim, int *shp);
-
 extern void ICMCompileND_DSM_DECL (char *var_NT, char *basetype, int sdim, int *shp);
 
 extern void ICMCompileND_DECL_EXTERN (char *var_NT, char *basetype, int sdim);
@@ -71,6 +69,8 @@ extern void ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim);
 
 extern void ICMCompileND_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                                  char *copyfun);
+
+extern void ICMCompileND_COPY__DESC_DIS_FIELDS (char *to_NT, char *from_NT);
 
 extern void ICMCompileND_ASSIGN__DESC (char *to_NT, char *from_NT);
 

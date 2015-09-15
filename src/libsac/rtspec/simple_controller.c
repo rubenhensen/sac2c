@@ -1,5 +1,5 @@
 /** <!--********************************************************************-->
- * @file  controller.c
+ * @file  simple_controller.c
  *
  * @brief  This file contains the implementation of the central dynamic
  * optimization controller.
@@ -20,8 +20,8 @@
 #include <dlfcn.h>
 #include <string.h>
 
-#include "controller.h"
-#include "reqqueue.h"
+#include "simple_controller.h"
+#include "simple_reqqueue.h"
 #include "registry.h"
 #include "persistence.h"
 
@@ -98,85 +98,9 @@ CreateTmpDir (char *dir)
 
 #endif /* HAVE_MKDTEMP */
 
-/******************************************************************************
- *
- * function:
- *   void SAC_RTSPEC_SetupInitial( int argc, char *argv[],
- *                                    unsigned int num_threads)
- *
- * description:
- *  Parse the command line and determine the number of rtspec controller threads.
- *  Looks for the -rtc cmdline option, sets SAC_RTSPEC_controller_threads.
- *
- ******************************************************************************/
-void
-SAC_RTSPEC_SetupInitial (int argc, char *argv[], unsigned int num_threads, int trace)
-{
-    do_trace = trace;
-
-    int i;
-    bool rtc_option_exists = FALSE;
-    char *rtc_parallel = NULL;
-
-    if (argv) {
-        for (i = 1; i < argc - 1; i++) {
-            if ((argv[i][0] == '-') && (argv[i][1] == 'r') && (argv[i][2] == 't')
-                && (argv[i][3] == 'c') && (argv[i][4] == '\0')) {
-                SAC_RTSPEC_controller_threads = atoi (argv[i + 1]);
-                rtc_option_exists = TRUE;
-                break;
-            }
-        }
-    }
-    if (!rtc_option_exists) {
-        rtc_parallel = getenv (SAC_RTC_ENV_VAR_NAME);
-        SAC_RTSPEC_controller_threads = (rtc_parallel != NULL) ? atoi (rtc_parallel) : 0;
-    }
-
-    if (SAC_RTSPEC_controller_threads == 0) {
-        SAC_RTSPEC_controller_threads = num_threads;
-    }
-
-    if (SAC_RTSPEC_controller_threads <= 0) {
-        SAC_RuntimeError (
-          "Number of rtspec controller threads is unspecified or exceeds legal"
-          " range (>0).\n"
-          "    Use the '%s' environment variable or the option"
-          " -rtc <num>' (which override the environment variable).",
-          SAC_RTC_ENV_VAR_NAME);
-    }
-
-    if (do_trace == 1) {
-        SAC_TR_PRINT (
-          ("Number of threads determined as %u.", SAC_RTSPEC_controller_threads));
-    }
-}
-
-/******************************************************************************
- *
- * function:
- *   unsigned int SAC_RTSPEC_CurrentThreadId(void)
- *
- * description:
- *
- *  Return the Thread ID of the current rtspec controller thread.
- *
- ******************************************************************************/
-unsigned int
-SAC_RTSPEC_CurrentThreadId (void)
-{
-    void *thread_id = pthread_getspecific (SAC_RTSPEC_self_id_key);
-
-    if (thread_id == NULL) {
-        return 0;
-    } else {
-        return *(unsigned int *)thread_id;
-    }
-}
-
 /** <!--*******************************************************************-->
  *
- * @fn SAC_setupController(void)
+ * @fn SAC_Simple_setupController( char *dir, int trace )
  *
  * @brief Initializes the request queue and starts the optimization controller
  *        in a separate thread.
@@ -184,29 +108,17 @@ SAC_RTSPEC_CurrentThreadId (void)
  ****************************************************************************/
 
 void
-SAC_setupController (char *dir)
+SAC_Simple_setupController (char *dir, int trace)
 {
+    do_trace = trace;
 
     if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Setup controller.");
+        SAC_TR_Print ("Runtime specialization: Setup simple controller.");
     }
 
-    int result;
     char *tmpdir_name;
-    pthread_t controller_thread;
-    result = 0;
-    unsigned int rtspec_thread_ids[SAC_HM_RTSPEC_THREADS ()];
 
-    for (unsigned int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
-        rtspec_thread_ids[i] = SAC_MT_GLOBAL_THREADS () + i;
-    }
-
-    if (0 != pthread_key_create (&SAC_RTSPEC_self_id_key, NULL)) {
-        SAC_RuntimeError (
-          "Unable to create thread specific data key (SAC_RTSPEC_self_id_key).");
-    }
-
-    SAC_initializeQueue (do_trace);
+    SAC_Simple_initializeQueue (do_trace);
 
     tmpdir_name = CreateTmpDir (dir);
 
@@ -216,24 +128,11 @@ SAC_setupController (char *dir)
         SAC_TR_Print ("Runtime specialization: Setup specialization repository in: ");
         SAC_TR_Print (tmpdir_name);
     }
-
-    controller_threads = malloc (sizeof (pthread_t) * SAC_HM_RTSPEC_THREADS ());
-
-    for (unsigned int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
-        result = pthread_create (&controller_thread, NULL, SAC_runController,
-                                 &rtspec_thread_ids[i]);
-
-        if (result != 0) {
-            SAC_RuntimeError ("Runtime specialization controller could not be launched");
-        }
-
-        controller_threads[i] = controller_thread;
-    }
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn  SAC_runController (void)
+ * @fn  SAC_Simple_runController (void)
  *
  * @brief  Controls all the aspects of dynamically optimizing functions.
  *
@@ -246,7 +145,7 @@ SAC_setupController (char *dir)
  *
  ****************************************************************************/
 void *
-SAC_runController (void *param)
+SAC_Simple_runController (void *param)
 {
     pthread_setspecific (SAC_RTSPEC_self_id_key, param);
 
@@ -254,24 +153,24 @@ SAC_runController (void *param)
         SAC_TR_Print ("Runtime specialization: Starting controller.");
     }
 
-    queue_node_t *current;
+    simple_queue_node_t *current;
 
     while (running) {
-        pthread_mutex_lock (&empty_queue_mutex);
+        pthread_mutex_lock (&simple_empty_queue_mutex);
 
         /* If the queue is empty and we're still running the controller, wait
          * for requests.
          */
-        while (request_queue->size == 0 && running) {
-            pthread_cond_wait (&empty_queue_cond, &empty_queue_mutex);
+        while (simple_request_queue->size == 0 && running) {
+            pthread_cond_wait (&simple_empty_queue_cond, &simple_empty_queue_mutex);
         }
 
-        pthread_mutex_unlock (&empty_queue_mutex);
+        pthread_mutex_unlock (&simple_empty_queue_mutex);
 
         if (running) {
-            current = SAC_dequeueRequest ();
+            current = SAC_Simple_dequeueRequest ();
 
-            SAC_handleRequest (current);
+            SAC_Simple_handleRequest (current);
         }
     }
 
@@ -285,7 +184,7 @@ SAC_runController (void *param)
 
 /** <!--*******************************************************************-->
  *
- * @fn  handle_request (queue_node *request)
+ * @fn  SAC_Simple_handle_request (queue_node *request)
  *
  * @brief  Handles a single request.
  *
@@ -295,7 +194,7 @@ SAC_runController (void *param)
  * @param  request  The request being handled.
  ****************************************************************************/
 void
-SAC_handleRequest (queue_node_t *request)
+SAC_Simple_handleRequest (simple_queue_node_t *request)
 {
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Handling new specialization request.");
@@ -320,7 +219,7 @@ SAC_handleRequest (queue_node_t *request)
     /*
      * Only process requests that haven't been processed yet.
      */
-    if (wasProcessed (request)) {
+    if (SAC_Simple_wasProcessed (request)) {
         free (request);
         return;
     }
@@ -370,20 +269,20 @@ SAC_handleRequest (queue_node_t *request)
 
     // Mark specialization as processed early to avoid concurrently processing
     // it twice by two individual controllers
-    addProcessed (request);
+    SAC_Simple_addProcessed (request);
 
     /* Execute the system call and act according to the return value. */
     switch (system (syscall)) {
     default:
         fprintf (stderr, "ERROR -- \t [RTSpec Controller: "
-                         "handle_request()] Compilation failed!\n");
+                         "SAC_Simple_handle_request()] Compilation failed!\n");
 
         exit (EXIT_FAILURE);
         break;
 
     case -1:
         fprintf (stderr, "ERROR -- \t [RTSpec Controller: "
-                         "handle_request()] System call failed!\n");
+                         "SAC_Simple_handle_request()] System call failed!\n");
 
         exit (EXIT_FAILURE);
 
@@ -435,29 +334,38 @@ SAC_handleRequest (queue_node_t *request)
 
 /** <!--*******************************************************************-->
  *
- * @fn  exit_controller (void)
+ * @fn  SAC_Simple_stopController (void)
+ *
+ * @brief  Stop the optimization controller.
+ *
+ ****************************************************************************/
+
+void
+SAC_Simple_stopController (void)
+{
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Stopping simple controllers!");
+    }
+
+    running = 0;
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn  SAC_Simple_finalizeController (void)
  *
  * @brief  Kills the optimization controller.
  *
  ****************************************************************************/
 
 void
-SAC_finalizeController (void)
+SAC_Simple_finalizeController (void)
 {
     if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Finalize controller!");
+        SAC_TR_Print ("Runtime specialization: Finalize simple controller!");
     }
 
-    running = 0;
-
-    for (unsigned int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
-        pthread_cond_broadcast (&empty_queue_cond);
-        pthread_join (controller_threads[i], NULL);
-    }
-
-    free (controller_threads);
-
-    SAC_deinitializeQueue ();
+    SAC_Simple_deinitializeQueue ();
 
     int success;
 

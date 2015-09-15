@@ -100,9 +100,10 @@ SAC_TR_Print (char *format, ...)
     /* Check if tracing is active for this node. */
     if (SAC_DISTMEM_rank
           == SAC_DISTMEM_RANK_UNDEFINED /* Distributed memory backend not used */
-        || SAC_DISTMEM_trace_rank == SAC_DISTMEM_TRACE_RANK_ANY /* Tracing for any node */
-        || SAC_DISTMEM_trace_rank
-             == (int)SAC_DISTMEM_rank) { /* Tracing activated for this node */
+        || SAC_DISTMEM_trace_profile_rank
+             == SAC_DISTMEM_TRACE_PROFILE_RANK_ANY /* Print tracing for any node */
+        || SAC_DISTMEM_trace_profile_rank
+             == (int)SAC_DISTMEM_rank) { /* Print tracing for this node */
 
         if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {
             /*

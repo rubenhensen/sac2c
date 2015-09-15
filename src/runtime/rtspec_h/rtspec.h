@@ -13,8 +13,9 @@
 
 #if SAC_DO_RTSPEC
 
-#define SAC_RTSPEC_SETUP_INITIAL()                                                       \
-    SAC_RTSPEC_SetupInitial (__argc, __argv, SAC_SET_RTSPEC_THREADS, SAC_DO_TRACE_RTSPEC);
+#define SAC_RTSPEC_SETUP_INITIAL(mode)                                                   \
+    SAC_RTSPEC_SetupInitial (__argc, __argv, SAC_SET_RTSPEC_THREADS,                     \
+                             SAC_DO_TRACE_RTSPEC, mode);
 
 /*
  * Print the code necessary to setup the optimization controller.
@@ -101,7 +102,7 @@
  * Print the function call to enqueue a request for optimization.
  */
 #define SAC_WE_ENQ_REQ(types, name)                                                      \
-    SAC_enqueueRequest (SAC_function, #types, SAC_shapes, size, SAC_reg_obj);
+    SAC_Simple_enqueueRequest (SAC_function, #types, SAC_shapes, size, SAC_reg_obj);
 
 /*
  * Print the correct indexation of the descriptor to get the dimensions of a
@@ -146,10 +147,17 @@
 
 #define SAC_WE_PTR_CAST(rettype, ...) ((rettype (*) (__VA_ARGS__))SAC_reg_obj->func_ptr)
 
+#define SAC_RTSPEC_ENQ_REQ(types, name)                                                  \
+    SAC_UUID_enqueueRequest (SAC_function, #types, SAC_shapes, size, SAC_reg_obj);
+
+#define SAC_RTSPEC_ENQ_REQ_CHK(types, name)                                              \
+    SAC_WE_REGISTRATION (SAC_module, name)                                               \
+    SAC_RTSPEC_ENQ_REQ (types, name)
+
 #else /* SAC_DO_RTSPEC */
 
 #define SAC_RTSPEC_SETUP()
-#define SAC_RTSPEC_SETUP_INITIAL()
+#define SAC_RTSPEC_SETUP_INITIAL(mode)
 #define SAC_RTSPEC_FINALIZE()
 
 #define SAC_RTSPEC_CURRENT_THREAD_ID() 0;
