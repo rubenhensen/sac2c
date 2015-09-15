@@ -5,6 +5,9 @@
 
 // #include <stdint.h> does not work today, so we do it this way.
 typedef unsigned int uint32_t;
+typedef int int32_t;
+typedef unsigned char uint8_t;
+typedef unsigned long long uint64_t;
 
 #include <union_set.h>
 #include <ctx.h>
@@ -43,8 +46,7 @@ printBasicSet (struct isl_basic_set *pset, char *titl)
 }
 
 void
-printUnion (struct _IO_FILE *fd, struct isl_union_set *pset, char *titl, int verbose,
-            int fmt)
+printUnion (FILE *fd, struct isl_union_set *pset, char *titl, int verbose, int fmt)
 {
     // Print a union_set. Use fmt as format, if non-zero.
     isl_printer *p;
@@ -196,7 +198,7 @@ doIntersect (struct isl_union_set *unionb, struct isl_union_set *unionc, char *t
 
 #ifdef CRUD
 isl_printer *
-Codegen (struct _IO_FILE *fd, struct isl_union_set *pset)
+Codegen (FILE *fd, struct isl_union_set *pset)
 { // Perform code generation for a PWLF intersect
 
     isl_printer *p;
@@ -491,6 +493,13 @@ main (int argc, char *argv[])
 
     default:
         fprintf (stderr, "caller is confused. We got opcode=%c\n", opcode);
+        // break elision is intentional
+
+    case POLY_OPCODE_HELP:
+    case POLY_OPCODE_HELPLC:
+        fprintf (stderr, "legal opcodes are %c, %c, %c, %c, %c\n", POLY_OPCODE_INTERSECT,
+                 POLY_OPCODE_PWLF, POLY_OPCODE_LOOPCOUNT, POLY_OPCODE_HELP,
+                 POLY_OPCODE_HELPLC);
         break;
     }
 

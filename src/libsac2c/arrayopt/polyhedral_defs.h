@@ -37,6 +37,8 @@
 #define POLY_OPCODE_MATCH 'M'
 #define POLY_OPCODE_PRINT 'P'
 #define POLY_OPCODE_LOOPCOUNT 'C'
+#define POLY_OPCODE_HELP 'H'
+#define POLY_OPCODE_HELPLC 'h'
 
 // PolyLib interface function return codes
 // These are ORed together, so more than one result
