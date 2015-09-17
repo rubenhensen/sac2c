@@ -113,6 +113,7 @@
 #include "shape.h"
 #include "tree_compound.h"
 #include "namespaces.h"
+#include "globals.h"
 
 #define DBUG_PREFIX "DMMLS"
 #include "debug.h"
