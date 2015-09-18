@@ -444,7 +444,18 @@ ParseResourceFiles (void)
         ok = RSCparseResourceFile (SAC2CRC_CONF);
 
         if (!ok) {
-            CTIabort ("Error while parsing '%s'.", SAC2CRC_CONF);
+
+            CTIwarn ("sac2crc not found; neither via SAC2CRC nor in '%s'; "
+                     "attempting use of local build '%s' now and "
+                     "including '%s.local'.\n"
+                     "Running 'make install' would avoid this warning.",
+                     SAC2CRC_CONF, SAC2CRC_BUILD_CONF, SAC2CRC_BUILD_CONF);
+            ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF);
+            ok = ok && RSCparseResourceFile (SAC2CRC_BUILD_CONF ".local");
+
+            if (!ok) {
+                CTIabort ("Error while parsing '%s'.", SAC2CRC_CONF);
+            }
         }
     }
 

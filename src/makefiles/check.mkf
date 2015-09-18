@@ -75,39 +75,10 @@ $(PROJECT_ROOT)/setup/sac2crc: $(PROJECT_ROOT)/setup/sac2crc.pre $(PROJECT_ROOT)
 	@ if ! test -r "$@"; then mv $@.tmp $@; else \
              if ! cmp $@.tmp $@ >/dev/null 2>&1; then mv $@.tmp $@; else rm $@.tmp; fi; fi
 
-#$(PROJECT_ROOT)/.revision.txt:
-#	@ if which svn > /dev/null ;  \
-#          then svn info | grep Revision: | sed -e 's/Revision: //g' > $@ ; \
-#          else if [ ! -f $@ ] ; \
-#                 then echo "???" > $@ ; \
-#               fi ; \
-#          fi
-
-# Use indirect phony and non mod time changing rule ( when version unchanged)
-# to prevent needless rebuilds of the compiler.
-#$(PROJECT_ROOT)/.revision.txt:
-#	@ if [ ! -f $@ ];                        \
-#	  then                                   \
-#	    echo "?????" >$@;                    \
-#	  fi
-#	@ if which svnversion > /dev/null; then  \
-#            svnversion $(PROJECT_ROOT)           \
-#            | sed -e 's/[ \t\n]/_/g'             \
-#            | sed -e 's/M/:MODIFIED/g'           \
-#            | sed -e 's/S/:SWITCHED/g' > $@.new; \
-#            if which diff >/dev/null; then       \
-#              if diff $@ $@.new >/dev/null; then \
-#                rm $@.new;                       \
-#              else                               \
-#                mv $@.new $@;                    \
-#              fi                                 \
-#            else                                 \
-#              rm $@.new;                         \
-#            fi                                   \
-#          fi
-
 # This code merely counts the number of GIT commits, and
 # used that to fake a revision number.
+# Please NOTE, that .revision.txt is a PHONY target ie this is being redone
+# on every single make!
 # #
 $(PROJECT_ROOT)/.revision.txt:
 	@ if [ ! -f $@ ];                        \
@@ -119,7 +90,7 @@ $(PROJECT_ROOT)/.revision.txt:
               | wc -l | sed -e 's/[ ]*//g' > $@.new;                    \
             if git status $(PROJECT_ROOT)                               \
                | fgrep 'modified' >/dev/null; then                      \
-              echo ":MODIFIED" >> $@.new;                               \
+              echo "-MODIFIED" >> $@.new;                               \
               tr -d '\n' < $@.new > $@.new2;                            \
               mv $@.new2 $@.new;                                        \
             fi;                                                         \
@@ -137,6 +108,7 @@ $(PROJECT_ROOT)/.revision.txt:
 .PHONY: $(PROJECT_ROOT)/src/include/sacdirs.h
 $(PROJECT_ROOT)/src/include/sacdirs.h:
 	@ echo '#define SAC2CRC_CONF "$(SAC2CRC_CONF)"' >$@.tmp
+	@ echo '#define SAC2CRC_BUILD_CONF "$(SAC2CRC_BUILD_CONF)"' >>$@.tmp
 	@ echo '#define DLL_DIR "$(DLL_DIR)"' >>$@.tmp
 	@ echo '#define DLL_BUILD_DIR "$(DLL_BUILD_DIR)"' >>$@.tmp
 	@ if ! test -r "$@"; then mv $@.tmp $@; else \

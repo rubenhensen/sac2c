@@ -58,7 +58,7 @@ GLOBAL (int, start_token, 0, xfree_dummy, )
  *  Version control
  */
 
-GLOBAL (const char *, version_id, "v1.00-beta (Haggis And Apple)", xfree_dummy, )
+GLOBAL (const char *, version_id, "v1.20-beta (Black Forest)", xfree_dummy, )
 /*
  * version string
  */

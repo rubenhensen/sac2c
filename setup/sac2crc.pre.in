@@ -447,7 +447,7 @@ COMMLIB_CONDUIT  :=  ""
  * Targets that define basic targets:
  *
  */
-target default_sbi:
+target add_default_sbi:
 
 TARGET_ENV       :=  "host"
 
@@ -473,6 +473,8 @@ OPT_g            :=  "@OPT_g@"
 
 LINK_MOD         :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %target%"
 
+
+target default_sbi:: add_default_sbi:
 
 target default_mt:: default_sbi:
 SBI              := "mt"

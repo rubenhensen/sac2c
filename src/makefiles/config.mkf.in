@@ -24,6 +24,7 @@ DLL_BUILD_DIR   = $(shell cd $(PROJECT_ROOT); pwd)/lib
 TREEPATH_CONF   = $(DLL_DIR)
 SAC2CRC_DIR     = $(datadir)/sac2c/$(shell cat $(PROJECT_ROOT)/.revision.txt)
 SAC2CRC_CONF    = $(SAC2CRC_DIR)/sac2crc
+SAC2CRC_BUILD_CONF = $(shell cd $(PROJECT_ROOT); pwd)/setup/sac2crc
 
 ################################################################################
 #

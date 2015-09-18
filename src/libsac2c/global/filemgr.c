@@ -75,6 +75,7 @@ FMGRfindFilePath (pathkind_t p, const char *name)
 
         while (path != NULL) {
             char *fpath = STRcatn (3, path, "/", name);
+            DBUG_PRINT ("trying '%s'", fpath);
             file = fopen (fpath, "r");
             if (file != NULL)
                 break;
