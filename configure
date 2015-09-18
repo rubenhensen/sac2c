@@ -647,6 +647,7 @@ OPT_O2
 OPT_O1
 OPT_O0
 ENABLE_RTSPEC
+HAVE_LIBISL
 POLYLIBINCLUDE
 ENABLE_HASH
 ENABLE_UUID
@@ -784,6 +785,7 @@ enable_distmem_gasnet
 enable_distmem_mpi
 enable_distmem_armci
 enable_distmem_gpi
+enable_isl
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1435,6 +1437,7 @@ Optional Features:
   --disable-distmem_armci Disable checking for Distributed Memory ARMCI
                           support
   --disable-distmem_gpi   Disable checking for Distributed Memory GPI support
+  --disable-isl           Disable checking for ISL
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -6888,6 +6891,99 @@ fi
 POLYLIBINCLUDE="$POLYLIBINCLUDE -I/usr/include/polylib -I/usr/local/include/polylib "
 
 
+
+  # Check whether --enable-isl was given.
+if test "${enable_isl+set}" = set; then :
+  enableval=$enable_isl; enable_isl=$enableval
+else
+  enable_isl=yes
+fi
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for isl_ctx_alloc in -lisl" >&5
+$as_echo_n "checking for isl_ctx_alloc in -lisl... " >&6; }
+if ${ac_cv_lib_isl_isl_ctx_alloc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lisl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char isl_ctx_alloc ();
+int
+main ()
+{
+return isl_ctx_alloc ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_isl_isl_ctx_alloc=yes
+else
+  ac_cv_lib_isl_isl_ctx_alloc=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_isl_isl_ctx_alloc" >&5
+$as_echo "$ac_cv_lib_isl_isl_ctx_alloc" >&6; }
+if test "x$ac_cv_lib_isl_isl_ctx_alloc" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBISL 1
+_ACEOF
+
+  LIBS="-lisl $LIBS"
+
+fi
+
+  if test "$ac_cv_lib_isl" = "no"
+  then
+    enable_isl=no
+    { $as_echo "$as_me:${as_lineno-$LINENO}: ISL link lib not found" >&5
+$as_echo "$as_me: ISL link lib not found" >&6;}
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: ISL LIBS is \"$LIBS\"" >&5
+$as_echo "$as_me: ISL LIBS is \"$LIBS\"" >&6;}
+
+    for ac_header in isl/ctx.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "isl/ctx.h" "ac_cv_header_isl_ctx_h" "$ac_includes_default"
+if test "x$ac_cv_header_isl_ctx_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_ISL_CTX_H 1
+_ACEOF
+
+fi
+
+done
+
+  if test "$ac_cv_header_isl_ctx_h" = "yes"
+  then
+    if test "$enable_isl" = "yes"
+    then
+      { $as_echo "$as_me:${as_lineno-$LINENO}:  ISL is enabled" >&5
+$as_echo "$as_me:  ISL is enabled" >&6;}
+      enable_isl=yes
+    fi
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}:  ISL is disabled" >&5
+$as_echo "$as_me:  ISL is disabled" >&6;}
+    enable_isl=no
+  fi
+  HAVE_LIBISL=$enable_isl
+
+
+
+
 case $ac_cv_search_dlopen in
   no | none*) dlopen_libs= ;;
   * ) dlopen_libs=$ac_cv_search_dlopen ;;
@@ -8799,5 +8895,8 @@ cat <<EOF
 * - CC:                    $CC
 * - SaC compiler CFLAGS:   $MKCCFLAGS
 * - SaC programs CFLAGS:   $RCCCFLAGS
+*
+* Optional packages:
+* - Integer Set Library (ISL): $enable_isl
 *
 EOF

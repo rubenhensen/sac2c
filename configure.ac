@@ -1,5 +1,8 @@
 ### Configuration
 
+### DO NOT use autoconf for this script. Instead, do:
+### "make config"
+
 dnl Old versions of Autoconf appear to fail
 AC_PREREQ([2.63])
 
@@ -149,6 +152,8 @@ fi
 
 AC_CHECK_LIB(polylib64,DomainIntersection)
 AC_SUBST(POLYLIBINCLUDE,["$POLYLIBINCLUDE -I/usr/include/polylib -I/usr/local/include/polylib "])
+
+CHECK_ISL
 
 dnl canonicalize dlopen_libs
 case $ac_cv_search_dlopen in
@@ -451,5 +456,8 @@ cat <<EOF
 * - CC:                    $CC
 * - SaC compiler CFLAGS:   $MKCCFLAGS
 * - SaC programs CFLAGS:   $RCCCFLAGS
+*
+* Optional packages:
+* - Integer Set Library (ISL): $enable_isl
 *
 EOF

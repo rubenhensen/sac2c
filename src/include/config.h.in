@@ -53,6 +53,12 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the <isl/ctx.h> header file. */
+#undef HAVE_ISL_CTX_H
+
+/* Define to 1 if you have the `isl' library (-lisl). */
+#undef HAVE_LIBISL
+
 /* Define to 1 if you have the `polylib64' library (-lpolylib64). */
 #undef HAVE_LIBPOLYLIB64
 

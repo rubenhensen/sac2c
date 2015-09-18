@@ -266,6 +266,16 @@ $(PROJECT_ROOT)/bin/sacpolylibisnullintersect: cuda/sacpolylibisnullintersect.c
 	@echo "Skipping sacpolylibisnullintersect compilation: no polylib support in this host"
 endif
 
+ifeq ("$(HAVE_LIBISL)", "yes")
+###ifeq ("yes", "yes")
+$(PROJECT_ROOT)/bin/sacislinterface: cuda/sacislinterface.c
+	@echo "Compiling sacislinterface"
+	$(CC) -o $@ $^ -DLINEAR_VALUE_IS_LONGLONG $(LIBS) $(INCDIRS)/include
+else
+        $(PROJECT_ROOT)/bin/sacislinterface: cuda/sacislinterface.c
+	@echo "Skipping sacislinterface compilation: unable to determine if ISL is present"
+endif
+
 $(PROJECT_ROOT)/bin/comslc: comslc/comslc
 	$(HIDE) $(CP) $(PROJECT_ROOT)/src/tools/comslc/comslc $(PROJECT_ROOT)/bin/
 

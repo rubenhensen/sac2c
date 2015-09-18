@@ -9,23 +9,23 @@ typedef int int32_t;
 typedef unsigned char uint8_t;
 typedef unsigned long long uint64_t;
 
-#include <union_set.h>
-#include <ctx.h>
-#include <vec.h>
+#include <isl/union_set.h>
+#include <isl/ctx.h>
+#include <isl/vec.h>
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <obj.h>
-#include <stream.h>
-#include <set.h>
-#include <map.h>
-#include <vertices.h>
-#include <flow.h>
-#include <band.h>
-#include <schedule.h>
-#include <ast_build.h>
+#include <isl/obj.h>
+#include <isl/stream.h>
+#include <isl/set.h>
+#include <isl/map.h>
+#include <isl/vertices.h>
+#include <isl/flow.h>
+#include <isl/band.h>
+#include <isl/schedule.h>
+#include <isl/ast_build.h>
 #include "polyhedral_defs.h"
 
 void
