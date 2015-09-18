@@ -2,6 +2,8 @@ target add_local:
 TREEPATH       += "@abs_top_srcdir@/lib/prelude:"
 SACINCLUDES    += " -I@abs_top_srcdir@/include"
 LIBPATH        += "@abs_top_srcdir@/lib:"
+TREE_OUTPUTDIR += ":@abs_top_srcdir@/lib/prelude"
+LIB_OUTPUTDIR  += ":@abs_top_srcdir@/lib/prelude"
 
 target default_sbi :: add_default_sbi :: add_local:
 
