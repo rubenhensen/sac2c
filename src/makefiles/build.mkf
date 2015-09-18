@@ -86,10 +86,12 @@ GENERATED_INCLUDE_FILES := $(patsubst %.xsl,%,\
 
 GENERATED_SOURCE_FILES := $(patsubst %.xsl,%,\
                             $(foreach dir,$(MAKE_DIRS),\
-                              $(wildcard $(dir)/*.c.xsl)))
+                              $(wildcard $(dir)/*.c.xsl)))\
+                          $(patsubst %icm_vars.c,%fancy_icm_vars.c,\
+                            $(foreach dir,$(MAKE_DIRS),\
+                              $(wildcard $(dir)/icm_vars.c)))
 
-GENERATED_FILES  := $(GENERATED_INCLUDE_FILES) $(GENERATED_SOURCE_FILES) \
-		    codegen/fancy_icm_vars.c
+GENERATED_FILES  := $(GENERATED_INCLUDE_FILES) $(GENERATED_SOURCE_FILES) 
 
 DEPENDENCY_FILES := $(addsuffix .d,\
                       $(foreach file,$(SUBTARGETS_RAW),\
@@ -128,9 +130,14 @@ all: $(TARGETS)
 #
 
 tutu:
+	@$(ECHO) TARGETS:
 	@$(ECHO) $(TARGETS)
+	@$(ECHO) SUBTARGETS:
 	@$(ECHO) $(SUBTARGETS)
+	@$(ECHO) DEPENDENCY_FILES:
 	@$(ECHO) $(DEPENDENCY_FILES)
+	@$(ECHO) GENERATED_FILES:
+	@$(ECHO) $(GENERATED_FILES)
 
 
 ###############################################################################

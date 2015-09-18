@@ -50,10 +50,24 @@ launch_function_from_library (const char *library, const char *mainfun, int argc
         strcat (tmp, library);
         libsac2c = dlopen (tmp, DLOPEN_FLAGS);
         if (!libsac2c) {
-            fprintf (stderr, "ERROR: library '%s' not found, also not as '%s'.\n",
-                     library, tmp);
-            report_error ();
-            exit (10);
+            char *tmp2 = malloc (strlen (DLL_BUILD_DIR) + strlen (library) + 2);
+            strcpy (tmp2, DLL_BUILD_DIR);
+            strcat (tmp2, "/");
+            strcat (tmp2, library);
+            fprintf (stderr,
+                     "WARNING: library '%s' not found;\n"
+                     "         neither via LD_LIBRARY_PATH nor as '%s';\n"
+                     "         attempting use of local build '%s' now.\n",
+                     library, tmp, tmp2);
+            libsac2c = dlopen (tmp2, DLOPEN_FLAGS);
+            if (!libsac2c) {
+                fprintf (stderr, "ERROR: library '%s' not found.\n", library);
+                report_error ();
+                exit (10);
+            }
+            fprintf (stderr,
+                     "         Running 'make install' would avoid this warning.\n");
+            free (tmp2);
         }
         free (tmp);
     }

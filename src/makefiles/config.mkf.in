@@ -20,6 +20,7 @@ RTPATH_CONF     = $(libdir)/sac2c/$(shell cat $(PROJECT_ROOT)/.revision.txt)/rt
 MODPATH_CONF    = $(libdir)/sac2c/$(shell cat $(PROJECT_ROOT)/.revision.txt)/modlibs
 INCPATH_CONF    = $(includedir)/sac2c/$(shell cat $(PROJECT_ROOT)/.revision.txt)
 DLL_DIR         = $(libexecdir)/sac2c/$(shell cat $(PROJECT_ROOT)/.revision.txt)
+DLL_BUILD_DIR   = $(shell cd $(PROJECT_ROOT); pwd)/lib
 TREEPATH_CONF   = $(DLL_DIR)
 SAC2CRC_DIR     = $(datadir)/sac2c/$(shell cat $(PROJECT_ROOT)/.revision.txt)
 SAC2CRC_CONF    = $(SAC2CRC_DIR)/sac2crc
