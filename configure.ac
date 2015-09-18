@@ -14,6 +14,12 @@ dnl set source directory and scripting directory
 AC_CONFIG_SRCDIR([setup])
 AC_CONFIG_AUX_DIR([setup/config])
 
+dnl ensure the directories are absolute since they will
+dnl be used from Makefiles in sub-directories.
+srcdir=$(cd "$srcdir" && pwd)
+ac_aux_dir=$(cd "$ac_aux_dir" && pwd)
+ac_install_sh="$ac_aux_dir/install-sh -c"
+
 dnl where to find the SAC standard library sources
 CHECK_STDLIB([modules/structures/ArrayBasics.xsac])
 
