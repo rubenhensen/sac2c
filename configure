@@ -624,7 +624,6 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-SRCDIR
 LD_FLAGS
 LD_PATH
 LD_DYNAMIC
@@ -667,6 +666,16 @@ FGREP
 SED
 LN_S
 RANLIB
+ENABLE_DISTMEM_ARMCI
+ENABLE_DISTMEM_MPI
+ENABLE_DISTMEM_GPI
+DISTMEM_GASNET_CONDUITS
+ENABLE_DISTMEM_GASNET
+ENABLE_DISTMEM
+GPI_DIR
+ARMCI_DIR
+MPILIBS
+MPICC
 CAN_USE_PHM
 OPENMP_CFLAGS
 SLRANLIB
@@ -770,6 +779,11 @@ enable_cuda
 enable_sl
 enable_omp
 enable_phm
+enable_distmem
+enable_distmem_gasnet
+enable_distmem_mpi
+enable_distmem_armci
+enable_distmem_gpi
 '
       ac_precious_vars='build_alias
 host_alias
@@ -783,6 +797,7 @@ CPP
 LPEL_CFLAGS
 LPEL_LIBS
 NVCC
+MPICC
 CB
 SORT
 UNIQ
@@ -1412,6 +1427,14 @@ Optional Features:
   --disable-sl            Disable checking for SL
   --disable-omp           Disable checking for OpenMP
   --disable-phm           Disable checking for the private heap manager
+  --disable-distmem       Disable checking for Distributed Memory support
+  --disable-distmem_gasnet
+                          Disable checking for Distributed Memory GASNet
+                          support
+  --disable-distmem_mpi   Disable checking for Distributed Memory MPI support
+  --disable-distmem_armci Disable checking for Distributed Memory ARMCI
+                          support
+  --disable-distmem_gpi   Disable checking for Distributed Memory GPI support
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1433,6 +1456,7 @@ Some influential environment variables:
   LPEL_CFLAGS compiler flags to locate lpel.h
   LPEL_LIBS   linker flags to link with lpel
   NVCC        NVidia CUDA compiler (defaults to nvcc)
+  MPICC       MPI C compiler command
   CB          Code beautifier (defaults to indent)
   SORT        Location of 'sort' (should be autodetected)
   UNIQ        Location of 'uniq' (should be autodetected)
@@ -5047,7 +5071,543 @@ _ACEOF
    CAN_USE_PHM=$have_phm
 
 
-CHECK_DISTMEM
+
+   # Check whether --enable-distmem was given.
+if test "${enable_distmem+set}" = set; then :
+  enableval=$enable_distmem; enable_distmem_gasnet=$enableval
+                 enable_distmem_gpi=$enableval
+                 enable_distmem_mpi=$enableval
+                 enable_distmem_armci=$enableval
+else
+  enable_distmem_gasnet=yes
+                 enable_distmem_gpi=yes
+                 enable_distmem_mpi=yes
+                 enable_distmem_armci=yes
+fi
+
+
+   if test x"$enable_distmem_gasnet" != xno; then
+      # Check whether --enable-distmem_gasnet was given.
+if test "${enable_distmem_gasnet+set}" = set; then :
+  enableval=$enable_distmem_gasnet; enable_distmem_gasnet=$enableval
+else
+  enable_distmem_gasnet=yes
+fi
+
+   fi
+
+   if test x"$enable_distmem_mpi" != xno; then
+      # Check whether --enable-distmem_mpi was given.
+if test "${enable_distmem_mpi+set}" = set; then :
+  enableval=$enable_distmem_mpi; enable_distmem_mpi=$enableval
+else
+  enable_distmem_mpi=yes
+fi
+
+   fi
+
+   if test x"$enable_distmem_armci" != xno; then
+      # Check whether --enable-distmem_armci was given.
+if test "${enable_distmem_armci+set}" = set; then :
+  enableval=$enable_distmem_armci; enable_distmem_armci=$enableval
+else
+  enable_distmem_armci=yes
+fi
+
+   fi
+
+   if test x"$enable_distmem_gpi" != xno; then
+      # Check whether --enable-distmem_gpi was given.
+if test "${enable_distmem_gpi+set}" = set; then :
+  enableval=$enable_distmem_gpi; enable_distmem_gpi=$enableval
+else
+  enable_distmem_gpi=yes
+fi
+
+   fi
+
+      cat >./sac2crc.GASNetconduits
+
+      cat >./build.GASNetconduits
+   cat >./build.GASNetconduitsCrossVariant
+
+      cat >./config.GASNetconduits
+
+   if test x"$enable_distmem_mpi" != xno; then
+
+
+
+
+
+	for ac_prog in mpicc hcc mpxlc_r mpxlc mpcc cmpicc
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_MPICC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$MPICC"; then
+  ac_cv_prog_MPICC="$MPICC" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_MPICC="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+MPICC=$ac_cv_prog_MPICC
+if test -n "$MPICC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MPICC" >&5
+$as_echo "$MPICC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$MPICC" && break
+done
+test -n "$MPICC" || MPICC="$CC"
+
+	ax_mpi_save_CC="$CC"
+	CC="$MPICC"
+
+
+
+if test x = x"$MPILIBS"; then
+	ac_fn_c_check_func "$LINENO" "MPI_Init" "ac_cv_func_MPI_Init"
+if test "x$ac_cv_func_MPI_Init" = xyes; then :
+  MPILIBS=" "
+fi
+
+fi
+
+if test x = x"$MPILIBS"; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpi" >&5
+$as_echo_n "checking for MPI_Init in -lmpi... " >&6; }
+if ${ac_cv_lib_mpi_MPI_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmpi  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char MPI_Init ();
+int
+main ()
+{
+return MPI_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_mpi_MPI_Init=yes
+else
+  ac_cv_lib_mpi_MPI_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpi_MPI_Init" >&5
+$as_echo "$ac_cv_lib_mpi_MPI_Init" >&6; }
+if test "x$ac_cv_lib_mpi_MPI_Init" = xyes; then :
+  MPILIBS="-lmpi"
+fi
+
+fi
+if test x = x"$MPILIBS"; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpich" >&5
+$as_echo_n "checking for MPI_Init in -lmpich... " >&6; }
+if ${ac_cv_lib_mpich_MPI_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmpich  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char MPI_Init ();
+int
+main ()
+{
+return MPI_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_mpich_MPI_Init=yes
+else
+  ac_cv_lib_mpich_MPI_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpich_MPI_Init" >&5
+$as_echo "$ac_cv_lib_mpich_MPI_Init" >&6; }
+if test "x$ac_cv_lib_mpich_MPI_Init" = xyes; then :
+  MPILIBS="-lmpich"
+fi
+
+fi
+
+if test x != x"$MPILIBS"; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for mpi.h" >&5
+$as_echo_n "checking for mpi.h... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <mpi.h>
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  MPILIBS=""
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+CC="$ax_mpi_save_CC"
+
+
+
+# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+if test x = x"$MPILIBS"; then
+        enable_distmem_mpi=no
+        :
+else
+        enable_distmem_mpi=yes
+        :
+fi
+
+
+      if test x"$enable_distmem_mpi" != xno; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI 3 support" >&5
+$as_echo_n "checking for MPI 3 support... " >&6; }
+        ax_mpi_save_CC="$CC"
+	      CC="$MPICC"
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <mpi.h>
+int
+main ()
+{
+
+/* This program uses MPI 3 one-sided communication to test whether the MPI installation does support these operations. */
+int main(int argc, char *argv[]) {
+  static MPI_Win win = NULL;
+  size_t SAC_DISTMEM_pagesz = 0;
+
+  void *local_page_ptr = NULL;
+  size_t owner_rank = 0;
+  size_t remote_page_index;
+
+  MPI_Get( local_page_ptr, SAC_DISTMEM_pagesz, MPI_BYTE, owner_rank, remote_page_index * SAC_DISTMEM_pagesz, SAC_DISTMEM_pagesz, MPI_BYTE, win);
+}
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  enable_distmem_mpi=no
+	        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+        CC="$ax_mpi_save_CC"
+      fi
+   fi
+
+   if test x"$enable_distmem_armci" != xno; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ARMCI_HOME is set" >&5
+$as_echo_n "checking if ARMCI_HOME is set... " >&6; }
+      if test x"$ARMCI_HOME" != x ; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: using ARMCI_HOME: $ARMCI_HOME" >&5
+$as_echo "using ARMCI_HOME: $ARMCI_HOME" >&6; }
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $ARMCI_HOME exists" >&5
+$as_echo_n "checking if $ARMCI_HOME exists... " >&6; }
+        if test -r $ARMCI_HOME; then
+           { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+cat >>confdefs.h <<_ACEOF
+#define ARMCI_DIR "$ARMCI_HOME"
+_ACEOF
+
+           ARMCI_DIR=$ARMCI_HOME
+
+        else
+           { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+           enable_distmem_armci=no
+        fi
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+        enable_distmem_armci=no
+      fi
+   fi
+
+   if test x"$enable_distmem_gpi" != xno; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if GPI_HOME is set" >&5
+$as_echo_n "checking if GPI_HOME is set... " >&6; }
+      if test x"$GPI_HOME" != x ; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: using GPI_HOME: $GPI_HOME" >&5
+$as_echo "using GPI_HOME: $GPI_HOME" >&6; }
+      else
+        GPI_HOME=/opt/GPI2
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: using default location: $GPI_HOME" >&5
+$as_echo "using default location: $GPI_HOME" >&6; }
+      fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $GPI_HOME exists" >&5
+$as_echo_n "checking if $GPI_HOME exists... " >&6; }
+      if test -r $GPI_HOME; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+cat >>confdefs.h <<_ACEOF
+#define GPI_DIR "$GPI_HOME"
+_ACEOF
+
+         GPI_DIR=$GPI_HOME
+
+      else
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+         enable_distmem_gpi=no
+      fi
+   fi
+
+   if test x"$enable_distmem_gasnet" != xno; then
+
+################################################################################
+#
+# feature setup:
+#
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if GASNET_HOME is set" >&5
+$as_echo_n "checking if GASNET_HOME is set... " >&6; }
+    if test x"$GASNET_HOME" != x ; then
+      gasnet_home="$GASNET_HOME"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: using GASNET_HOME: $gasnet_home" >&5
+$as_echo "using GASNET_HOME: $gasnet_home" >&6; }
+    else
+      gasnet_home=/usr/local/gasnet
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: using default location: $gasnet_home" >&5
+$as_echo "using default location: $gasnet_home" >&6; }
+    fi
+
+    gasnet_conduit_names=""
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $gasnet_home exists" >&5
+$as_echo_n "checking if $gasnet_home exists... " >&6; }
+    if test -r $gasnet_home; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking installed gasnet conduits" >&5
+$as_echo_n "checking installed gasnet conduits... " >&6; }
+
+        cat <<EOF >>./config.GASNetconduits
+################################################################################
+#
+# GASNet conduit settings:
+#
+
+EOF
+
+        for gasnet_conduit_path in $gasnet_home/include/*-conduit/; do
+          gasnet_conduit_filename="$(basename "${gasnet_conduit_path}")"
+          gasnet_conduit_name="${gasnet_conduit_filename//-conduit/}"
+          gasnet_conduit_name_uc=`echo $gasnet_conduit_name | tr 'a-z' 'A-Z'`
+          if test x"$gasnet_conduit_names" != x ; then
+              gasnet_conduit_names="$gasnet_conduit_names "
+          fi
+          gasnet_conduit_names="$gasnet_conduit_names$gasnet_conduit_name"
+          gasnet_conduit_makefile="$gasnet_conduit_path$gasnet_conduit_name-seq.mak"
+
+          gasnet_conduit_cc="$(getmakevar $gasnet_conduit_makefile GASNET_CC)"
+          gasnet_conduit_cppflags="$(getmakevar $gasnet_conduit_makefile GASNET_CPPFLAGS)"
+          gasnet_conduit_cflags="$(getmakevar $gasnet_conduit_makefile GASNET_CFLAGS)"
+          gasnet_conduit_ld="$(getmakevar $gasnet_conduit_makefile GASNET_LD)"
+          gasnet_conduit_ldflags="$(getmakevar $gasnet_conduit_makefile GASNET_LDFLAGS)"
+          gasnet_conduit_libs="$(getmakevar $gasnet_conduit_makefile GASNET_LIBS)"
+
+          cat <<EOF >>./sac2crc.GASNetconduits
+target distmem_gasnet_$gasnet_conduit_name::distmem_gasnet:
+COMMLIB_CONDUIT  := "$gasnet_conduit_name"
+CC               := "$gasnet_conduit_ld -std=gnu99"
+CCLINK           += "$gasnet_conduit_libs"
+LDFLAGS          += "$gasnet_conduit_ldflags"
+
+target distmemcheck_gasnet_$gasnet_conduit_name::distmemcheck_gasnet:
+COMMLIB_CONDUIT  := "$gasnet_conduit_name"
+CC               := "$gasnet_conduit_ld -std=gnu99"
+CCLINK           += "$gasnet_conduit_libs"
+LDFLAGS          += "$gasnet_conduit_ldflags"
+
+target distmemprofile_gasnet_$gasnet_conduit_name::distmemprofile_gasnet:
+COMMLIB_CONDUIT  := "$gasnet_conduit_name"
+CC               := "$gasnet_conduit_ld -std=gnu99"
+CCLINK           += "$gasnet_conduit_libs"
+LDFLAGS          += "$gasnet_conduit_ldflags"
+
+EOF
+
+          cat <<EOF >>./config.GASNetconduits
+GASNET_${gasnet_conduit_name_uc}_CC        := $gasnet_conduit_cc -std=gnu99
+GASNET_${gasnet_conduit_name_uc}_CPPFLAGS  := $gasnet_conduit_cppflags
+GASNET_${gasnet_conduit_name_uc}_CFLAGS    := $gasnet_conduit_cflags
+GASNET_${gasnet_conduit_name}_cap       := $gasnet_conduit_name_uc
+
+EOF
+
+                                        cat <<EOF >>./build.GASNetconduits
+%.\$(\$(STYLE)_short).gasnet${gasnet_conduit_name}.o: %.c
+	@if [ "compile \$(dir \$*)" != "\`cat .make_track\`" ] ; \\
+          then \$(ECHO) "compile \$(dir \$*)" > .make_track; \\
+              \$(ECHO) ""; \\
+              \$(ECHO) "Compiling files in directory \$(PREFIX_LOCAL)\$(dir \)"; \\
+          fi
+	@\$(ECHO) "  Compiling GasNET ${gasnet_conduit_name} \$(\$(STYLE)_long) code: \$(notdir \$<)"
+	\$(HIDE) \$(GASNET_${gasnet_conduit_name_uc}_CC) \\
+                  \$(GASNET_${gasnet_conduit_name_uc}_CPPFLAGS) \$(GASNET_${gasnet_conduit_name_uc}_CFLAGS) \$(CC_FLAGS_\$(\$(STYLE)_cap)) \$(SETTINGS_\$(\$(STYLE)_cap)) \\
+                  \$(CC_FLAGS_YY) \$(SETTINGS_DISTMEM) \$(SETTINGS_DISTMEM_GASNET) \\
+                  \$(INCDIRS) -o \$@ -c \$<
+	@\$(CLOCK_SKEW_ELIMINATION)
+EOF
+
+                                        cat <<EOF >>./build.GASNetconduitsCrossVariant
+%.\$(\$(STYLE)_short)\$(CROSS_VARIANT).gasnet${gasnet_conduit_name}.o: %.c
+	@if [ "compile \$(dir \$*)" != "\`cat .make_track\`" ] ; \\
+          then \$(ECHO) "compile \$(dir \$*)" > .make_track; \\
+              \$(ECHO) ""; \\
+              \$(ECHO) "Compiling files in directory \$(PREFIX_LOCAL)\$(dir \)"; \\
+          fi
+	@\$(ECHO) "  Compiling GasNET ${gasnet_conduit_name} \$(\$(STYLE)_long) code: \$(notdir \$<)"
+	\$(HIDE) \$(GASNET_${gasnet_conduit_name_uc}_CC) \\
+                  \$(GASNET_${gasnet_conduit_name_uc}_CPPFLAGS) \$(GASNET_${gasnet_conduit_name_uc}_CFLAGS) \$(CC_FLAGS_\$(\$(STYLE)_cap)) \$(SETTINGS_\$(\$(STYLE)_cap)) \\
+                  \$(CC_FLAGS_YY) \$(SETTINGS_DISTMEM) \$(SETTINGS_DISTMEM_GASNET) \\
+                  \$(INCDIRS) -o \$@ -c \$<
+	@\$(CLOCK_SKEW_ELIMINATION)
+EOF
+
+          done
+
+          if test x"$gasnet_conduit_names" = x ; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
+$as_echo "none" >&6; }
+            enable_distmem_gasnet=no
+          else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $gasnet_conduit_names" >&5
+$as_echo "$gasnet_conduit_names" >&6; }
+          fi
+      else
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+          enable_distmem_gasnet=no
+      fi
+
+      if test x"$enable_distmem_gasnet" = xno -a x"$enable_distmem_gpi" = xno -a x"$enable_distmem_mpi" = xno -a x"$enable_distmem_armci" = xno ; then
+          enable_distmem=no
+      else
+          enable_distmem=yes
+      fi
+
+   fi
+
+   have_distmem=`if test x"$enable_distmem" != xno; then echo 1; else echo 0; fi`
+   have_distmem_gasnet=`if test x"$enable_distmem_gasnet" != xno; then echo 1; else echo 0; fi`
+   have_distmem_gpi=`if test x"$enable_distmem_gpi" != xno; then echo 1; else echo 0; fi`
+   have_distmem_mpi=`if test x"$enable_distmem_mpi" != xno; then echo 1; else echo 0; fi`
+   have_distmem_armci=`if test x"$enable_distmem_armci" != xno; then echo 1; else echo 0; fi`
+
+
+cat >>confdefs.h <<_ACEOF
+#define ENABLE_DISTMEM $have_distmem
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define ENABLE_DISTMEM_GASNET $have_distmem_gasnet
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define DISTMEM_GASNET_CONDUITS "$gasnet_conduit_names"
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define ENABLE_DISTMEM_GPI $have_distmem_gpi
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define ENABLE_DISTMEM_MPI $have_distmem_mpi
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define ENABLE_DISTMEM_ARMCI $have_distmem_armci
+_ACEOF
+
+
+   ENABLE_DISTMEM=$enable_distmem
+
+   ENABLE_DISTMEM_GASNET=$enable_distmem_gasnet
+
+   DISTMEM_GASNET_CONDUITS=$gasnet_conduit_names
+
+   ENABLE_DISTMEM_GPI=$enable_distmem_gpi
+
+   ENABLE_DISTMEM_MPI=$enable_distmem_mpi
+
+   ENABLE_DISTMEM_ARMCI=$enable_distmem_armci
+
+
 
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
@@ -6853,8 +7413,6 @@ OS=$target_os
 
 
 
-
-SRCDIR=$ac_abs_srcdir
 
 
 
