@@ -72,6 +72,9 @@ CHECK_LTO
 dnl Check if C compiler supports SIMD syntax
 CHECK_SIMD_SYNTAX
 
+dnl Check if the C compiler support large bracket depths
+CHECK_CC_BRACKETS
+
 dnl Prints the value of a makefile variable.
 getmakevar() {
     makefile="$1"
