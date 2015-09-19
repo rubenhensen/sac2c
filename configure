@@ -4809,17 +4809,25 @@ test -n "$NVCC" || NVCC="no"
          enable_cuda=no
       else
          # try to compile a test CUDA program
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether nvcc works and set the CUDA Computer version" >&5
-$as_echo_n "checking whether nvcc works and set the CUDA Computer version... " >&6; }
-         cp -f "$srcdir"/../src/tools/cuda/deviceQuery.cpp conftest.cc
-         if ! $NVCC conftest.cc -o conftest$EXEEXT; then
-            enable_cuda=no
-         fi
-         # extract the architecture flags from the test program
-         CUDA_ARCH=`./conftest$EXEEXT 2>/dev/null`
-         NVCC_PATH=$NVCC
-         { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_cuda and setting $CUDA_ARCH" >&5
-$as_echo "$enable_cuda and setting $CUDA_ARCH" >&6; }
+         if cp -f "$srcdir"/src/tools/cuda/deviceQuery.cpp conftest.cc 2>/dev/null; then
+             { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether nvcc works" >&5
+$as_echo_n "checking whether nvcc works... " >&6; }
+             if ! $NVCC conftest.cc -o conftest$EXEEXT; then
+                enable_cuda=no
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_cuda" >&5
+$as_echo "$enable_cuda" >&6; }
+             else
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_cuda" >&5
+$as_echo "$enable_cuda" >&6; }
+                # extract the architecture flags from the test program
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking what CUDA compute level is supported" >&5
+$as_echo_n "checking what CUDA compute level is supported... " >&6; }
+                CUDA_ARCH=`./conftest$EXEEXT 2>/dev/null`
+                NVCC_PATH=$NVCC
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CUDA_ARCH" >&5
+$as_echo "$CUDA_ARCH" >&6; }
+            fi
+        fi
       fi
   fi
 
