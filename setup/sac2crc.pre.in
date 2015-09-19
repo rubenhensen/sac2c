@@ -473,8 +473,13 @@ OPT_g            :=  "@OPT_g@"
 
 LINK_MOD         :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %target%"
 
+/*
+ * The next 2 targets are dummies that allow later extension of the default_sbi
+ */
+target add_local:
+target add_stdlib_local:
 
-target default_sbi:: add_default_sbi:
+target default_sbi:: add_default_sbi :: add_local :: add_stdlib_local:
 
 target default_mt:: default_sbi:
 SBI              := "mt"

@@ -91,6 +91,7 @@ $(PROJECT_ROOT)/.revision.txt:
             if git status $(PROJECT_ROOT)                               \
                | fgrep 'modified' >/dev/null; then                      \
               echo "-MODIFIED" >> $@.new;                               \
+	      date | sed -e 's/[ ]*//g' >> $@.new;                                           \
               tr -d '\n' < $@.new > $@.new2;                            \
               mv $@.new2 $@.new;                                        \
             fi;                                                         \
