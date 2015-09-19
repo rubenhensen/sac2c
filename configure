@@ -7282,7 +7282,7 @@ if  test "$GCC" = yes ; then
 
   OPT_g=-g
 
-  RCCCFLAGS="-Wall -Wno-unused -fno-builtin $flags_lto"
+  RCCCFLAGS="$gcc_options $gcc_native -pedantic -Wall -Wno-unused -fno-builtin $flags_lto"
 
   MKCCFLAGS="$gcc_options $gcc_native -pedantic -g $flags_lto"
 

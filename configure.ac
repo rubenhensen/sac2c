@@ -208,7 +208,7 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(OPT_O2, [-O2])
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
-  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin $flags_lto"])
+  AC_SUBST(RCCCFLAGS, ["$gcc_options $gcc_native -pedantic -Wall -Wno-unused -fno-builtin $flags_lto"])
   AC_SUBST(MKCCFLAGS, ["$gcc_options $gcc_native -pedantic -g $flags_lto"])
   AC_SUBST(PDCCFLAGS, ["$gcc_options $gcc_native -pedantic -g -O3 $flags_lto"])
   if [ test "$IS_CYGWIN" = yes ]; then
