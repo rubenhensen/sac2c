@@ -248,34 +248,6 @@ $(PROJECT_ROOT)/include/sac.h: $(SUBTARGETS_HEADER)
 # Building tools
 #
 
-ifeq ("$(HAVE_LIBPOLYLIB64)", "yes")
-$(PROJECT_ROOT)/bin/sacprapolyhedral: cuda/sacprapolyhedral.c
-	$(CC) -o $@ -I $(POLYLIBINCLUDE) $^ -DLINEAR_VALUE_IS_LONGLONG $(LIBS)
-else
-$(PROJECT_ROOT)/bin/sacprapolyhedral: cuda/sacprapolyhedral.c
-	@echo $(HAVE_LIBPOLYLIB64)
-	@echo " $(HAVE_LIBPOLYLIB64) "
-	@echo "Skipping sacprapolyhedral compilation: no polylib support in this host"
-endif
-
-ifeq ("$(HAVE_LIBPOLYLIB64)", "yes")
-$(PROJECT_ROOT)/bin/sacpolylibisnullintersect: cuda/sacpolylibisnullintersect.c
-	$(CC) -o $@ -I $(POLYLIBINCLUDE) $^ -DLINEAR_VALUE_IS_LONGLONG $(LIBS)
-else
-$(PROJECT_ROOT)/bin/sacpolylibisnullintersect: cuda/sacpolylibisnullintersect.c
-	@echo "Skipping sacpolylibisnullintersect compilation: no polylib support in this host"
-endif
-
-ifeq ("$(HAVE_LIBISL)", "yes")
-###ifeq ("yes", "yes")
-$(PROJECT_ROOT)/bin/sacislinterface: cuda/sacislinterface.c
-	@echo "Compiling sacislinterface"
-	$(CC) -o $@ $^ -DLINEAR_VALUE_IS_LONGLONG $(LIBS) $(INCDIRS)/include
-else
-        $(PROJECT_ROOT)/bin/sacislinterface: cuda/sacislinterface.c
-	@echo "Skipping sacislinterface compilation: unable to determine if ISL is present"
-endif
-
 $(PROJECT_ROOT)/bin/comslc: comslc/comslc
 	$(HIDE) $(CP) $(PROJECT_ROOT)/src/tools/comslc/comslc $(PROJECT_ROOT)/bin/
 

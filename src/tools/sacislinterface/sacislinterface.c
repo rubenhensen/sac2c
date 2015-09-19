@@ -3,20 +3,15 @@
  *
  */
 
-// #include <stdint.h> does not work today, so we do it this way.
-typedef unsigned int uint32_t;
-typedef int int32_t;
-typedef unsigned char uint8_t;
-typedef unsigned long long uint64_t;
-
-#include <isl/union_set.h>
-#include <isl/ctx.h>
-#include <isl/vec.h>
+#include <stdint.h>
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <isl/union_set.h>
+#include <isl/ctx.h>
+#include <isl/vec.h>
 #include <isl/obj.h>
 #include <isl/stream.h>
 #include <isl/set.h>
