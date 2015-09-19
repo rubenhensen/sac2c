@@ -2284,8 +2284,13 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 srcdir=$(cd "$srcdir" && pwd)
 ac_aux_dir=$(cd "$ac_aux_dir" && pwd)
-ac_install_sh="$ac_aux_dir/install-sh -c"
-
+if test -r "$ac_aux_dir/install-sh"; then
+ ac_install_sh="$ac_aux_dir/install-sh -c"
+elif test -r "$ac_aux_dir/install.sh"; then
+ ac_install_sh="$ac_aux_dir/install.sh -c"
+elif test -r "$ac_aux_dir/shtool"; then
+ ac_install_sh="$ac_aux_dir/shtool install -c"
+fi
 
 
 # Check whether --with-stdlib-sources was given.

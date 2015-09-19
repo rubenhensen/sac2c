@@ -18,8 +18,13 @@ dnl ensure the directories are absolute since they will
 dnl be used from Makefiles in sub-directories.
 srcdir=$(cd "$srcdir" && pwd)
 ac_aux_dir=$(cd "$ac_aux_dir" && pwd)
-ac_install_sh="$ac_aux_dir/install-sh -c"
-
+if test -r "$ac_aux_dir/install-sh"; then
+ ac_install_sh="$ac_aux_dir/install-sh -c"
+elif test -r "$ac_aux_dir/install.sh"; then
+ ac_install_sh="$ac_aux_dir/install.sh -c"
+elif test -r "$ac_aux_dir/shtool"; then
+ ac_install_sh="$ac_aux_dir/shtool install -c"
+fi
 dnl where to find the SAC standard library sources
 CHECK_STDLIB([modules/structures/ArrayBasics.xsac])
 
