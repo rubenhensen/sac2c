@@ -6905,7 +6905,7 @@ _ACEOF
 
 fi
 
-POLYLIBINCLUDE="$POLYLIBINCLUDE -I/usr/include/polylib -I/usr/local/include/polylib "
+POLYLIBINCLUDE="/usr/include/polylib -I/usr/local/include/polylib"
 
 
 

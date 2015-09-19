@@ -162,7 +162,7 @@ if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes ; then
 fi
 
 AC_CHECK_LIB(polylib64,DomainIntersection)
-AC_SUBST(POLYLIBINCLUDE,["$POLYLIBINCLUDE -I/usr/include/polylib -I/usr/local/include/polylib "])
+AC_SUBST(POLYLIBINCLUDE,["/usr/include/polylib -I/usr/local/include/polylib"])
 
 CHECK_ISL
 
