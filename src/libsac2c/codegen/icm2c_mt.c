@@ -327,11 +327,11 @@ ICMCompileMT_MTFUN_DECL (char *funname, char *rettype_NT, int vararg_cnt, char *
 
     if (vararg_cnt > 0) {
         fprintf (global.outfile, ", ");
-    }
 
-    ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
-                          vararg[i + 2], vararg[i + 1]));
+        ScanArglist (vararg_cnt, 3, ",", ,
+                     fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                              vararg[i + 2], vararg[i + 1]));
+    }
     fprintf (global.outfile, ")");
 
     DBUG_RETURN ();
@@ -376,11 +376,11 @@ ICMCompileMT_MTFUN_DEF_BEGIN (char *funname, char *rettype_NT, int vararg_cnt,
 
     if (vararg_cnt > 0) {
         fprintf (global.outfile, ", ");
-    }
 
-    ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
-                          vararg[i + 2], vararg[i + 1]));
+        ScanArglist (vararg_cnt, 3, ",", ,
+                     fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                              vararg[i + 2], vararg[i + 1]));
+    }
     fprintf (global.outfile, ")\n");
 
     INDENT;

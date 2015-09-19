@@ -224,7 +224,7 @@ STlookupSymbol (const char *symbol, const sttable_t *table)
 }
 
 sttable_t *
-STinit ()
+STinit (void)
 {
     sttable_t *result;
 

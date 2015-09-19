@@ -35,7 +35,7 @@ GenerateSerSymbolTableHead (node *module, FILE *file)
                    "extern \"C\"\n"
                    "#endif\n");
 
-    fprintf (file, "void *__%s__SYMTAB()\n", NSgetName (MODULE_NAMESPACE (module)));
+    fprintf (file, "void *__%s__SYMTAB( void)\n", NSgetName (MODULE_NAMESPACE (module)));
 
     fprintf (file, "{\nvoid *result;\n");
     fprintf (file, "result = STinit();\n");

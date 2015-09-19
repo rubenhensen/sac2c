@@ -626,7 +626,7 @@ GenerateNamespaceMappingConstructor (FILE *file)
 
     pos = pool;
 
-    fprintf (file, "EXTERNC void __%s__MapConstructor() {\n", global.modulename);
+    fprintf (file, "EXTERNC void __%s__MapConstructor( void) {\n", global.modulename);
 
     for (cnt = 0; cnt < nextid; cnt++) {
         fprintf (file, "MAPNS(%d) = NSaddMapping( \"%s\",", cnt,

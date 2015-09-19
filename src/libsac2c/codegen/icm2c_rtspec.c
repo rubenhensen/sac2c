@@ -70,9 +70,13 @@ ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
         fprintf (global.outfile, "void, ");
     }
 
-    ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
-                          vararg[i + 2], vararg[i + 1]));
+    if (vararg_cnt > 0) {
+        ScanArglist (vararg_cnt, 3, ",", ,
+                     fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                              vararg[i + 2], vararg[i + 1]));
+    } else {
+        fprintf (global.outfile, "void");
+    }
     fprintf (global.outfile, ")\n");
 
     INDENT;

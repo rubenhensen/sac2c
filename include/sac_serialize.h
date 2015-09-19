@@ -19,7 +19,7 @@ extern void *MEMcopy (int size, void *mem);
 extern void *SERbuildSerStack (void *node);
 extern void *DSlookupFunction (const char *s, const char *t);
 extern void *DSlookupObject (const char *s, const char *t);
-extern void *STinit ();
+extern void *STinit (void);
 extern void STadd (const char *s1, int l, const char *s2, int i, void *table, unsigned);
 extern void *STRSadd (char *s1, int i, void *p);
 extern void *DSfetchArgAvis (int i);

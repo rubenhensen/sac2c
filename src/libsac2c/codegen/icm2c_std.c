@@ -69,9 +69,13 @@ ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vara
         out ("void, ");
     }
 
-    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                   out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
-                        vararg[i + 1]));
+    if (vararg_cnt > 0) {
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                       out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
+                            vararg[i + 1]));
+    } else {
+        out ("void");
+    }
     out (")");
 
     DBUG_RETURN ();
@@ -139,9 +143,13 @@ ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
         out ("void, ");
     }
 
-    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                   out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
-                        vararg[i + 1]));
+    if (vararg_cnt > 0) {
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                       out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
+                            vararg[i + 1]));
+    } else {
+        out ("void");
+    }
     out (")\n");
 
     indout ("{\n");
@@ -219,9 +227,13 @@ ICMCompileMUTC_THREADFUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
     DBUG_ASSERT (rettype_NT[0] == '\0', "Thread funs must have a return type of void");
 
     indout ("SAC_MUTC_DECL_THREADFUN2( %s, , ", name);
-    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                   out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
-                        vararg[i + 1]));
+    if (vararg_cnt > 0) {
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                       out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
+                            vararg[i + 1]));
+    } else {
+        out ("void");
+    }
     out (")");
 
     DBUG_RETURN ();
@@ -241,9 +253,13 @@ ICMCompileMUTC_THREADFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt
     DBUG_ASSERT (rettype_NT[0] == '\0', "Thread funs must have a return type of void");
 
     indout ("SAC_MUTC_DEF_THREADFUN_BEGIN2 ( %s, , ", name);
-    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                   out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
-                        vararg[i + 1]));
+    if (vararg_cnt > 0) {
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                       out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
+                            vararg[i + 1]));
+    } else {
+        out ("void");
+    }
     out (")");
 
     DBUG_RETURN ();
@@ -271,9 +287,13 @@ ICMCompileMUTC_SPAWNFUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char
     DBUG_ASSERT (rettype_NT[0] == '\0', "Spawn funs must have a return type of void");
 
     indout ("SAC_MUTC_SPAWNFUN_DECL2( %s, , ", name);
-    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                   out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
-                        vararg[i + 1]));
+    if (vararg_cnt > 0) {
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                       out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
+                            vararg[i + 1]));
+    } else {
+        out ("void");
+    }
     out (")");
 
     DBUG_RETURN ();
@@ -293,9 +313,13 @@ ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
     DBUG_ASSERT (rettype_NT[0] == '\0', "Spawn funs must have a return type of void");
 
     indout ("SAC_MUTC_DEF_SPAWNFUN_BEGIN2( %s, , ", name);
-    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                   out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
-                        vararg[i + 1]));
+    if (vararg_cnt > 0) {
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                       out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
+                            vararg[i + 1]));
+    } else {
+        out ("void");
+    }
     out (")");
 
     DBUG_RETURN ();

@@ -154,33 +154,33 @@ GenerateSerFileModuleInfo (node *module, FILE *file)
     STRtoupper (uppercase, 0, STRlen (uppercase));
 
     fprintf (file,
-             "const char *__%s_MIXEDCASENAME() {\n"
+             "const char *__%s_MIXEDCASENAME( void) {\n"
              "  return( \"%s\"); \n}\n\n",
              uppercase, NSgetName (MODULE_NAMESPACE (module)));
 
     fprintf (file,
-             "const char *__%s_ASTVERSION() {\n"
+             "const char *__%s_ASTVERSION( void) {\n"
              "  return( \"%s\"); \n}\n\n",
              NSgetName (MODULE_NAMESPACE (module)), build_ast);
 
     fprintf (file,
-             "int __%s_SERIALIZER() {\n"
+             "int __%s_SERIALIZER( void) {\n"
              "  return( %d); \n}\n\n",
              NSgetName (MODULE_NAMESPACE (module)), SAC_SERIALIZE_VERSION);
 
     fprintf (file,
-             "int __%s_USEDFLAGS() {\n"
+             "int __%s_USEDFLAGS( void) {\n"
              "  return( %d); \n}\n\n",
              NSgetName (MODULE_NAMESPACE (module)), GLOBALS_MODFLAGS);
 
     if (MODULE_DEPRECATED (module) == NULL) {
         fprintf (file,
-                 "char * __%s_DEPRECATED() {\n"
+                 "char * __%s_DEPRECATED( void) {\n"
                  "  return( (char *) 0); \n}\n\n",
                  NSgetName (MODULE_NAMESPACE (module)));
     } else {
         fprintf (file,
-                 "char * __%s_DEPRECATED() {\n"
+                 "char * __%s_DEPRECATED( void) {\n"
                  "  return( \"%s\"); \n}\n\n",
                  NSgetName (MODULE_NAMESPACE (module)), MODULE_DEPRECATED (module));
     }
@@ -441,7 +441,7 @@ GenerateSerFunHead (node *elem, stentrytype_t type, info *info)
 
     funname = GetSerFunName (type, elem);
 
-    fprintf (INFO_SER_FILE (info), "void *%s()", funname);
+    fprintf (INFO_SER_FILE (info), "void *%s( void)", funname);
     fprintf (INFO_SER_FILE (info), "{\n");
     fprintf (INFO_SER_FILE (info), "void *result;\n");
     fprintf (INFO_SER_FILE (info), "void *stack;\n");
