@@ -209,7 +209,7 @@ CCTperformTask (ccm_task_t task)
     char *linkflags_subst
       = STRcatn (11, ldflags_subst, " ", modlibdirs_subst, " ", modlibs_subst, " ",
                  extlibdirs_subst, " ", saclibs_subst, " ", libs_subst);
-
+    // Normally this should only be called by sac4c
     if (task == CCT_linkflags) {
         MEMfree (cflags_subst);
         MEMfree (extlibdirs_subst);
@@ -387,23 +387,26 @@ CCTperformTask (ccm_task_t task)
         } else {
             char *path_subst;
 
+            str_buf *path_buf = SBUFcreate (1);
+
             if (global.filetype == FT_cmod) {
-                path_subst
-                  = NULL == global.lib_dirname ? STRcpy (".") : global.lib_dirname;
+                SBUFprintf (path_buf, "%s/%s/%s",
+                            NULL == global.lib_dirname ? global.outfilename
+                                                       : global.lib_dirname,
+                            global.config.target_env, global.config.sbi);
             } else {
-                str_buf *path_buf = SBUFcreate (1);
                 SBUFprintf (path_buf, "%s/%s/%s", global.target_modlibdir,
                             global.config.target_env, global.config.sbi);
-
-                if (STRlen (global.config.variant) > 0)
-                    SBUFprintf (path_buf, "/%s", global.config.variant);
-
-                path_subst = SBUF2strAndFree (&path_buf);
-
-                // The destination directory may not exist at this point,
-                // so invoke mkdir just in case.
-                SYScall ("%s %s", global.config.mkdir, path_subst);
             }
+
+            if (STRlen (global.config.variant) > 0)
+                SBUFprintf (path_buf, "/%s", global.config.variant);
+
+            path_subst = SBUF2strAndFree (&path_buf);
+
+            // The destination directory may not exist at this point,
+            // so invoke mkdir just in case.
+            SYScall ("%s %s", global.config.mkdir, path_subst);
 
             char *target_subst
               = STRcatn (4, path_subst, "/", libname_subst, global.config.modext);
