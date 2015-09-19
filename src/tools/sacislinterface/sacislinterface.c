@@ -182,7 +182,6 @@ error:
     obj.v = NULL;
     return obj;
 }
-#endif // CRUD
 
 // Stolen from iscc.c
 //
@@ -218,22 +217,6 @@ print_code (__isl_take isl_printer *p, __isl_take isl_union_map *schedule,
     return p;
 }
 
-struct isl_union_set *
-doIntersect (struct isl_union_set *unionb, struct isl_union_set *unionc, char *titl,
-             int verbose)
-{ // Intersect two sets and return the resulting set
-    struct isl_union_set *intersectbc;
-
-    intersectbc = isl_union_set_intersect (isl_union_set_copy (unionb),
-                                           isl_union_set_copy (unionc));
-    if (verbose) {
-        printUnion (stderr, intersectbc, titl, verbose, 0);
-    }
-
-    return (intersectbc);
-}
-
-#ifdef CRUD
 isl_printer *
 Codegen (FILE *fd, struct isl_union_set *pset)
 { // Perform code generation for a PWLF intersect
@@ -255,6 +238,21 @@ Codegen (FILE *fd, struct isl_union_set *pset)
     return (p);
 }
 #endif // CRUD
+
+struct isl_union_set *
+doIntersect (struct isl_union_set *unionb, struct isl_union_set *unionc, char *titl,
+             int verbose)
+{ // Intersect two sets and return the resulting set
+    struct isl_union_set *intersectbc;
+
+    intersectbc = isl_union_set_intersect (isl_union_set_copy (unionb),
+                                           isl_union_set_copy (unionc));
+    if (verbose) {
+        printUnion (stderr, intersectbc, titl, verbose, 0);
+    }
+
+    return (intersectbc);
+}
 
 int
 PolyhedralWLFIntersectCalc (int verbose)
@@ -312,10 +310,10 @@ PolyhedralWLFIntersectCalc (int verbose)
     ;
     printSchedule (stdout, sched, "schedule", 1, ISL_FORMAT_ISL);
 
-#ifdef UNDERCONSTRUCTION
     // Perform the ISL codegen operation, using the intersect data.
+#ifdef FIXME
     ast = isl_ast_build_ast_from_schedule (build, intr);
-#endif // UNDERCONSTRUCTION
+#endif // FIXME
 
     fprintf (stdout, "%d\n", z); // Write the result that PHUT will read.
     fprintf (stdout, "ast \n");
@@ -512,10 +510,8 @@ PolyhedralLoopCount (int verbose)
 int
 main (int argc, char *argv[])
 {
-    FILE *file;
     char opcode;
     int z = POLY_RET_UNKNOWN;
-    int res;
     int verbose = 0;
 
     if (argc > 1) {
