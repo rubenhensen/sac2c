@@ -20,7 +20,9 @@ PLDFdoPrintLDFlags (node *syntax_tree)
     DBUG_ENTER ();
 
     flags = CCTperformTask (CCT_linkflags);
-    printf ("%s", flags);
+    // We append the cwrapper library to the linker list to ensure
+    // that we detect and make use of it...
+    printf ("%s -l%s", flags, global.outfilename);
     flags = MEMfree (flags);
 
     CTIterminateCompilation (syntax_tree);
