@@ -463,7 +463,7 @@ InternalCompilerErrorBreak (int sig)
         error_file = fopen (error_file_name, "a");
 
         fprintf (error_file, " *\n");
-        fprintf (error_file, " * using sac2c %s rev %s\n", global.version_id, build_rev);
+        fprintf (error_file, " * using sac2c %s\n", global.version_id);
         fprintf (error_file, " * built %s.\n", build_date);
         fprintf (error_file, " * by user %s on host %s.\n", build_user, build_host);
         fprintf (error_file, " *\n");

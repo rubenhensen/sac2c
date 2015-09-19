@@ -1222,10 +1222,9 @@ USGprintVersion ()
 {
     DBUG_ENTER ();
 
-    printf ("%s %s\n %s rev %s\n (%s by %s)\n", global.toolname,
+    printf ("%s %s\n %s\n (%s by %s)\n", global.toolname,
             (global.version_id[0] == '\0') ? "???" : global.version_id,
             (build_style[0] == '\0') ? "" : build_style,
-            (build_rev[0] == '\0') ? "???" : build_rev,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user);
 
@@ -1247,8 +1246,7 @@ USGprintVersionVerbose ()
             "\n"
 
             "\n",
-            (build_rev[0] == '\0') ? "???" : build_rev,
-            (build_style[0] == '\0') ? "" : build_style,
+            global.version_id, (build_style[0] == '\0') ? "" : build_style,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user,
             (build_host[0] == '\0') ? "???" : build_host);

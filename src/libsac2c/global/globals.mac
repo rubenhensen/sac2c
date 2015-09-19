@@ -14,6 +14,7 @@
  */
 
 #include "config.h"
+#include "sacdirs.h"
 
 /* The source file of sac program can come from various files due to
    recognition of #line directives.  Usually massively used by preprocessor.
@@ -58,7 +59,7 @@ GLOBAL (int, start_token, 0, xfree_dummy, )
  *  Version control
  */
 
-GLOBAL (const char *, version_id, "v1.20-beta (Black Forest)", xfree_dummy, )
+GLOBAL (const char *, version_id, SAC2C_VERSION, xfree_dummy, )
 /*
  * version string
  */

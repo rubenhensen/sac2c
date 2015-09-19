@@ -82,7 +82,7 @@ make_%: checks
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Building $(PROJECT_NAME) $(SUBPROJECT) ($($*_long) version)"
-	@$(ECHO) "* revision "`cat $(PROJECT_ROOT)/.revision.txt`
+	@$(ECHO) "* revision $(SAC2C_VERSION)"
 	@$(ECHO) "************************************************************"
 	@$(TOUCH) .make_track
 	@ if [ -f .last_style ] ; \
@@ -112,11 +112,11 @@ make_%: checks
 
 clean: clean_all
 
-clean_%: $(PROJECT_ROOT)/.revision.txt
+clean_%: 
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Cleaning $(PROJECT_NAME) $(SUBPROJECT)"
-	@$(ECHO) "* revision "`cat $(PROJECT_ROOT)/.revision.txt`
+	@$(ECHO) "* revision $(SAC2C_VERSION)"
 	@$(ECHO) "************************************************************"
 	@$(ECHO) ""
 	$(HIDE) $(MAKE) -f $(MAKEFILE_DIR)/clean.mkf \
@@ -135,7 +135,7 @@ clean_%: $(PROJECT_ROOT)/.revision.txt
 # Rules for refactoring source files
 #
 
-refactor: $(PROJECT_ROOT)/.revision.txt
+refactor:
 	$(HIDE) if [ "$(PATTERN)" == "" ] ; \
                 then $(ECHO) "No pattern for refactoring specified!" ; \
                      exit 1 ; \
@@ -143,7 +143,7 @@ refactor: $(PROJECT_ROOT)/.revision.txt
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Refactoring $(PROJECT_NAME) $(SUBPROJECT)"
-	@$(ECHO) "* revision "`cat $(PROJECT_ROOT)/.revision.txt`
+	@$(ECHO) "* revision $(SAC2C_VERSION)"
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* \"$(PATTERN)\""
 	@$(ECHO) "*   -> \"$(OUTPUT)\""

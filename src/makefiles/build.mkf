@@ -269,11 +269,6 @@ $(PROJECT_ROOT)/bin/%: $(SUBTARGETS)
 #
 # Creating the revision data file
 #
-# We make snetc depend on the revision data file and in turn the revision data
-# file depend on all target object files. By this dependency chain we achieve
-# that only if one of the object files needs to be remade, we also remake the
-# revision data file and, thereupon, relink snetc.
-#
 
 global/build_$(STYLE).c: $(SUBTARGETS) $(PROJECT_ROOT)/.revision.txt
 	$(HIDE) $(FINGERPRINTER_CALL) > .fingerprint
@@ -289,8 +284,6 @@ global/build_$(STYLE).c: $(SUBTARGETS) $(PROJECT_ROOT)/.revision.txt
 	@$(ECHO) "char build_date[]  = \"`date`\";"                                            >> $@
 	@$(ECHO) "char build_user[]  = \"$(USER)\";"                                           >> $@
 	@$(ECHO) "char build_host[]  = \"`hostname`\";"                                        >> $@
-	@$(ECHO) "char build_rev[]   = \"`cat $(PROJECT_ROOT)/.revision.txt`\";"               >> $@
-	@$(ECHO) "char build_srev[]  = \"`$(SED) -e 's/:.*//g' $(PROJECT_ROOT)/.revision.txt`\";" >> $@
 	@$(ECHO) "char build_ast[]   = \"`cat .fingerprint`\";"                                >> $@
 	@$(CLOCK_SKEW_ELIMINATION)
 

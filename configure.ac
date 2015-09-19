@@ -8,7 +8,7 @@ AC_PREREQ([2.63])
 
 dnl tell configure who we are
 dnl parameters: package name, version, where to send bugreports
-AC_INIT(sac2c, git, info@sac-home.org)
+AC_INIT([sac2c], [git], [info@sac-home.org])
 
 dnl set source directory and scripting directory
 AC_CONFIG_SRCDIR([setup])

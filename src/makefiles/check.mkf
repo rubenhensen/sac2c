@@ -41,7 +41,7 @@ checks-install:
 	@ for t in $(CONFIGURED) $(PROJECT_ROOT)/.revision.txt; do \
           test -r "$$t" || { echo "Error: must run 'make' first." >&2; exit 1; }; \
         done
-	@ if grep MODIFIED $(PROJECT_ROOT)/.revision.txt >/dev/null 2>&1; then \
+	@ if grep dirty $(PROJECT_ROOT)/.revision.txt >/dev/null 2>&1; then \
 	   echo "Error: can't install a locally modified, non-committed version." >&2; \
 	   exit 1; \
 	fi
@@ -90,30 +90,14 @@ $(PROJECT_ROOT)/setup/sac2crc: $(PROJECT_ROOT)/setup/sac2crc.pre $(PROJECT_ROOT)
 # Please NOTE, that .revision.txt is a PHONY target ie this is being redone
 # on every single make!
 # #
+.PHONY: $(PROJECT_ROOT)/.revision.txt
 $(PROJECT_ROOT)/.revision.txt:
-	@ if [ ! -f $@ ];                        \
-	  then                                   \
-	    echo "?????" >$@;                    \
-	  fi
-	@ if which git > /dev/null; then                                \
-            git rev-list --abbrev-commit HEAD $(PROJECT_ROOT)           \
-              | wc -l | sed -e 's/[ ]*//g' > $@.new;                    \
-            if git status $(PROJECT_ROOT)                               \
-               | fgrep 'modified' >/dev/null; then                      \
-              echo "-MODIFIED" >> $@.new;                               \
-              tr -d '\n' < $@.new > $@.new2;                            \
-              mv $@.new2 $@.new;                                        \
-            fi;                                                         \
-            if which diff >/dev/null; then                              \
-              if diff $@ $@.new >/dev/null; then                        \
-                rm $@.new;                                              \
-              else                                                      \
-                mv $@.new $@;                                           \
-              fi;                                                       \
-            else                                                        \
-              rm $@.new;                                                \
-            fi;                                                         \
-          fi
+	@ echo $(SAC2C_VERSION) >$@-t
+	@ if test -r $@ && cmp $@-t $@ >/dev/null; then \
+	   rm $@-t; \
+	else \
+	   mv -f $@-t $@; \
+	fi
 
 .PHONY: $(PROJECT_ROOT)/src/include/sacdirs.h
 $(PROJECT_ROOT)/src/include/sacdirs.h:
@@ -121,5 +105,6 @@ $(PROJECT_ROOT)/src/include/sacdirs.h:
 	@ echo '#define SAC2CRC_BUILD_CONF "$(SAC2CRC_BUILD_CONF)"' >>$@.tmp
 	@ echo '#define DLL_DIR "$(DLL_DIR)"' >>$@.tmp
 	@ echo '#define DLL_BUILD_DIR "$(DLL_BUILD_DIR)"' >>$@.tmp
+	@ echo '#define SAC2C_VERSION "$(SAC2C_VERSION)"' >>$@.tmp
 	@ if ! test -r "$@"; then mv $@.tmp $@; else \
              if ! cmp $@.tmp $@ >/dev/null 2>&1; then mv $@.tmp $@; else rm $@.tmp; fi; fi
