@@ -53,7 +53,7 @@ endif
 TARGETS          := $(addprefix $(TARGETDIR)/,\
                       $($(SUBPROJECT)_targets))
 
-SUBTARGETS_RAW   := $(foreach srcdir,$(MAKE_DIRS),\
+SUBTARGETS_RAW   := $(foreach srcdir,$(filter-out %_h,$(MAKE_DIRS)),\
                       $(addprefix $(srcdir)/,\
                         $($(SUBPROJECT)_$(srcdir))))
 
@@ -428,6 +428,6 @@ codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
 
 ifeq ($(DEPS),yes)
   ifneq ($(DEPENDENCY_FILES),)
-    -include $(DEPENDENCY_FILES)
+    include $(DEPENDENCY_FILES)
   endif
 endif
