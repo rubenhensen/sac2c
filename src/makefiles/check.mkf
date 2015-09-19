@@ -91,7 +91,6 @@ $(PROJECT_ROOT)/.revision.txt:
             if git status $(PROJECT_ROOT)                               \
                | fgrep 'modified' >/dev/null; then                      \
               echo "-MODIFIED" >> $@.new;                               \
-	      date | sed -e 's/[ ]*//g' >> $@.new;                                           \
               tr -d '\n' < $@.new > $@.new2;                            \
               mv $@.new2 $@.new;                                        \
             fi;                                                         \
@@ -100,10 +99,10 @@ $(PROJECT_ROOT)/.revision.txt:
                 rm $@.new;                                              \
               else                                                      \
                 mv $@.new $@;                                           \
-              fi                                                        \
+              fi;                                                       \
             else                                                        \
               rm $@.new;                                                \
-            fi                                                          \
+            fi;                                                         \
           fi
 
 .PHONY: $(PROJECT_ROOT)/src/include/sacdirs.h
