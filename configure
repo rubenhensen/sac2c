@@ -4174,42 +4174,6 @@ _ACEOF
 
 
 
-
-
-  brackets_ok=no
-  save_CFLAGS=$CFLAGS
-  for cf in "" "-fbracket-depth=2048"; do
-     CFLAGS="$save_CFLAGS $cf"
-     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC $cf supports 300 bracket nesting levels" >&5
-$as_echo_n "checking whether $CC $cf supports 300 bracket nesting levels... " >&6; }
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-int a =
-((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((0))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
-
-(void)a;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }; brackets_ok=yes; break
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  done
-  if test $brackets_ok = no; then
-     as_fn_error $? "$CC does not support large bracketing depths" "$LINENO" 5
-  fi
-  gcc_options="$gcc_options $cf"
-
-
 getmakevar() {
     makefile="$1"
     var="$2"
@@ -7267,6 +7231,42 @@ $as_echo "$ac_cv__mtune_native_option" >&6; }
 
 
 fi
+
+
+
+  brackets_ok=no
+  save_CFLAGS=$CFLAGS
+  for cf in "" "-fbracket-depth=2048"; do
+     CFLAGS="$save_CFLAGS $cf"
+     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC $cf supports 300 bracket nesting levels" >&5
+$as_echo_n "checking whether $CC $cf supports 300 bracket nesting levels... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+int a =
+((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((0))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))));
+
+(void)a;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }; brackets_ok=yes; break
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  done
+  if test $brackets_ok = no; then
+     as_fn_error $? "$CC does not support large bracketing depths" "$LINENO" 5
+  fi
+  gcc_options="$gcc_options $cf"
+
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking sac2crc compiler flags" >&5

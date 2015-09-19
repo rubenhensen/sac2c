@@ -77,9 +77,6 @@ CHECK_LTO
 dnl Check if C compiler supports SIMD syntax
 CHECK_SIMD_SYNTAX
 
-dnl Check if the C compiler support large bracket depths
-CHECK_CC_BRACKETS
-
 dnl Prints the value of a makefile variable.
 getmakevar() {
     makefile="$1"
@@ -195,6 +192,10 @@ if test "$GCC" = yes ; then
   CHECK_CC_OPTION([-march=native], [gcc_native])
   CHECK_CC_OPTION([-mtune=native], [gcc_native])
 fi
+
+dnl Check if the C compiler support large bracket depths
+dnl this also updates gcc_options as needed.
+CHECK_CC_BRACKETS
 
 dnl
 dnl test for compiler flags for sac2crc
