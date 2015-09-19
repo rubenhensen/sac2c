@@ -37,6 +37,16 @@ AUTOCONFED   := $(PROJECT_ROOT)/configure
 
 checks: $(CONFIGURED) $(PROJECT_ROOT)/.revision.txt
 
+checks-install:
+	@ for t in $(CONFIGURED) $(PROJECT_ROOT)/.revision.txt; do \
+          test -r "$$t" || { echo "Error: must run 'make' first." >&2; exit 1; }; \
+        done
+	@ if grep MODIFIED $(PROJECT_ROOT)/.revision.txt >/dev/null 2>&1; then \
+	   echo "Error: can't install a locally modified, non-committed version." >&2; \
+	   exit 1; \
+	fi
+	
+
 
 #######################################################################################
 #

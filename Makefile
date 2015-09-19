@@ -210,7 +210,7 @@ config:
 include $(MAKEFILE_DIR)/check.mkf
 
 
-install: checks
+install: checks-install
 	$(INSTALL) -d "$(INCPATH_CONF)"
 	$(INSTALL) -d "$(SAC2CRC_DIR)"
 	$(INSTALL) -d "$(bindir)"
