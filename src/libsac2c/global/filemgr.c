@@ -60,14 +60,15 @@ FMGRensureInitialized (void)
 char *
 FMGRfindFilePath (pathkind_t p, const char *name)
 {
-    FILE *file = NULL;
     char *path = NULL;
 
     DBUG_ENTER ();
     FMGRensureInitialized ();
 
     if (name[0] == '/') { /* absolute path specified! */
-        file = fopen (name, "r");
+        if (!FMGRcheckExistFile (name))
+            CTIabort ("Error: cannot find/open '%s'.", name);
+
         path = STRcpy ("");
     } else {
         char *buffer = SBUF2str (path_bufs[p]);
@@ -76,8 +77,7 @@ FMGRfindFilePath (pathkind_t p, const char *name)
         while (path != NULL) {
             char *fpath = STRcatn (3, path, "/", name);
             DBUG_PRINT ("trying '%s'", fpath);
-            file = fopen (fpath, "r");
-            if (file != NULL)
+            if (FMGRcheckExistFile (fpath))
                 break;
             path = strtok (NULL, ":");
         }
@@ -85,10 +85,6 @@ FMGRfindFilePath (pathkind_t p, const char *name)
             path = STRcpy (path);
         }
         buffer = MEMfree (buffer);
-    }
-
-    if (file != NULL) {
-        fclose (file);
     }
 
     DBUG_RETURN (path);
@@ -154,6 +150,35 @@ FMGRcheckExistDir (const char *dir)
     } else {
         res = TRUE;
         closedir (d);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn bool FMGRcheckExistFile(const char *file)
+ *
+ * @brief The function checks whether the given file path exists.
+ *
+ * @param file file path
+ *
+ * @return TRUE if the file exists and is readable.
+ ******************************************************************************/
+bool
+FMGRcheckExistFile (const char *file)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (file != NULL, "Function FMGRcheckExistFile() called with file NULL");
+
+    FILE *f = fopen (file, "r");
+    if (f == NULL) {
+        res = FALSE;
+    } else {
+        res = TRUE;
+        fclose (f);
     }
 
     DBUG_RETURN (res);

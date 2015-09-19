@@ -59,6 +59,7 @@
 #include "str.h"
 #include "memory.h"
 #include "sacdirs.h"
+#include "filemgr.h"
 
 //#include "sac.tab.h"
 
@@ -441,18 +442,24 @@ ParseResourceFiles (void)
 #ifndef SAC2CRC_CONF
 #error SAC2CRC_CONF not set, please check flags in config.mkf
 #endif
-        ok = RSCparseResourceFile (SAC2CRC_CONF);
+        if (!FMGRcheckExistFile (SAC2CRC_CONF)) {
 
-        if (!ok) {
-
-            CTIwarn ("sac2crc not found; neither via SAC2CRC nor in '%s'; "
+            CTIwarn ("sac2crc not found; neither via SAC2CRC nor in '%s';\n"
                      "attempting use of local build '%s' now and "
                      "including '%s.local'.\n"
                      "Running 'make install' would avoid this warning.",
                      SAC2CRC_CONF, SAC2CRC_BUILD_CONF, SAC2CRC_BUILD_CONF);
             ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF);
-            ok = ok && RSCparseResourceFile (SAC2CRC_BUILD_CONF ".local");
+            if (!ok) {
+                CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF);
+            }
+            ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF ".local");
+            if (!ok) {
+                CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF ".local");
+            }
 
+        } else {
+            ok = RSCparseResourceFile (SAC2CRC_CONF);
             if (!ok) {
                 CTIabort ("Error while parsing '%s'.", SAC2CRC_CONF);
             }
@@ -467,12 +474,12 @@ ParseResourceFiles (void)
 
     if (envvar != NULL) {
         filename = STRcat (envvar, "/.sac2crc");
-        ok = RSCparseResourceFile (filename);
+        if (FMGRcheckExistFile (filename)) {
+            ok = RSCparseResourceFile (filename);
 
-        // We do not warn/err about an error here, because
-        // it's perfectly OK that ~/.sac2crc does not exist.
-        if (!ok) {
-            CTInote ("'%s' not found or not readable, skipping.", filename);
+            if (!ok) {
+                CTIabort ("Error while parsing '%s'.", filename);
+            }
         }
         MEMfree (filename);
     }
