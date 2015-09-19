@@ -16,5 +16,6 @@ int a =
   if test $brackets_ok = no; then
      AC_MSG_ERROR([$CC does not support large bracketing depths])
   fi
+  gcc_options="$gcc_options $cf"
 ])
   

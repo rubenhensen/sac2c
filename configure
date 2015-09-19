@@ -4207,6 +4207,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
   if test $brackets_ok = no; then
      as_fn_error $? "$CC does not support large bracketing depths" "$LINENO" 5
   fi
+  gcc_options="$gcc_options $cf"
 
 
 getmakevar() {
