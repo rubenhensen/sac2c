@@ -41,6 +41,48 @@ printBasicSet (struct isl_basic_set *pset, char *titl)
 }
 
 void
+printSchedule (FILE *fd, isl_schedule *sched, char *titl, int verbose, int fmt)
+{
+    // Print a schedule. Use fmt as format, if non-zero.
+    isl_printer *p;
+    struct isl_ctx *ctx;
+
+    if (verbose) {
+        ctx = isl_schedule_get_ctx (sched);
+        fprintf (fd, "Union %s is:\n", titl);
+        p = isl_printer_to_file (ctx, fd);
+        if (0 != fmt) {
+            p = isl_printer_set_output_format (p, fmt);
+        }
+        p = isl_printer_print_schedule (p, sched);
+        p = isl_printer_end_line (p);
+        isl_printer_free (p);
+    }
+    return;
+}
+
+void
+printAst (FILE *fd, isl_ast_node *ast, char *titl, int verbose, int fmt)
+{
+    // Print an ast. Use fmt as format, if non-zero.
+    isl_printer *p;
+    struct isl_ctx *ctx;
+
+    if (verbose) {
+        ctx = isl_ast_node_get_ctx (ast);
+        fprintf (fd, "Union %s is:\n", titl);
+        p = isl_printer_to_file (ctx, fd);
+        if (0 != fmt) {
+            p = isl_printer_set_output_format (p, fmt);
+        }
+        p = isl_printer_print_ast_node (p, ast);
+        p = isl_printer_end_line (p);
+        isl_printer_free (p);
+    }
+    return;
+}
+
+void
 printUnion (FILE *fd, struct isl_union_set *pset, char *titl, int verbose, int fmt)
 {
     // Print a union_set. Use fmt as format, if non-zero.
@@ -232,6 +274,10 @@ PolyhedralWLFIntersectCalc (int verbose)
     struct isl_union_set *intr = NULL;
     struct isl_union_set *cwleq = NULL;
     struct isl_union_set *pwleq = NULL;
+    isl_ast_build *build = NULL;
+    isl_schedule *sched = NULL;
+    isl_schedule_constraints *schedcon = NULL;
+    isl_ast_node *ast = NULL;
 
     pwl = isl_union_set_read_from_file (ctx, stdin);
     cwl = isl_union_set_read_from_file (ctx, stdin);
@@ -260,21 +306,30 @@ PolyhedralWLFIntersectCalc (int verbose)
         }
     }
 
-    // Perform the ISL codegen operation, using the intersect data.
-    // Codegen( stdout, intr);
+    // Attach a default schedule to the domain
+    schedcon = isl_schedule_constraints_on_domain (intr);
+    sched = isl_schedule_constraints_compute_schedule (schedcon);
+    ;
+    printSchedule (stdout, sched, "schedule", 1, ISL_FORMAT_ISL);
 
-    fprintf (stdout, "%d\n", z);    // Write the result that PHUT will read.
-    fprintf (stdout, "codegen \n"); // Write the result that PHUT will read.
-    printUnion (stdout, intr, "intersect", 1, ISL_FORMAT_ISL);
+    // Perform the ISL codegen operation, using the intersect data.
+    ast = isl_ast_build_ast_from_schedule (build, intr);
+
+    fprintf (stdout, "%d\n", z); // Write the result that PHUT will read.
+    fprintf (stdout, "ast \n");
+
+    printAst (stdout, ast, "ast", 1, ISL_FORMAT_ISL);
     fprintf (stdout, "\n using { [b] -> separate[x] };");
 
     isl_union_set_free (pwl);
     isl_union_set_free (cwl);
     isl_union_set_free (peq);
-    isl_union_set_free (intr);
     isl_union_set_free (cwleq);
     isl_union_set_free (pwleq);
+    isl_schedule_free (sched);
+    isl_ast_node_free (ast);
     isl_ctx_free (ctx);
+    isl_ast_build_free (build);
 
     return (z);
 }
