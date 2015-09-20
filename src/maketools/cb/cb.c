@@ -39,10 +39,10 @@ int save_tabs[20][10];
 
 char cc;
 bool s_flg = TRUE;
-char peek = (-1);
+int peek = (-1);
 int tabs = 0;
-char last_char;
-char c;
+int last_char;
+int c;
 
 /* prints usage info to stdout */
 static void
