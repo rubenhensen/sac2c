@@ -142,7 +142,7 @@
                                                                                          \
         DBUG_ASSERT (0 <= (((arg_t *)arg1)[pos1]) "toc() given negative argument")       \
         DBUG_ASSERT (256 > (((arg_t *)arg1)[pos1]) "toc() given argument > 255")         \
-        ((res_t *)res)[res_pos] = (char)((arg_t *)arg1[pos1]);                           \
+        ((res_t *)res)[res_pos] = (res_t) ((arg_t *)arg1[pos1]);                         \
         DBUG_RETURN ();                                                                  \
     }
 
@@ -154,7 +154,7 @@
           COzipCvTEMPLATE (fun, fname, unsigned long, ULong, unsigned long)              \
             COzipCvTEMPLATE (fun, fname, unsigned long long, ULongLong,                  \
                              unsigned long long)                                         \
-              COzipCvTEMPLATE (fun, fname, char, Byte, char)                             \
+              COzipCvTEMPLATE (fun, fname, signed char, Byte, signed char)               \
                 COzipCvTEMPLATE (fun, fname, short, Short, short)                        \
                   COzipCvTEMPLATE (fun, fname, int, Int, int)                            \
                     COzipCvTEMPLATE (fun, fname, long, Long, long)                       \
@@ -173,7 +173,7 @@
           COzipCvMINMAXTEMPLATE (fun, fname, unsigned long, ULong, unsigned long)        \
             COzipCvMINMAXTEMPLATE (fun, fname, unsigned long long, ULongLong,            \
                                    unsigned long long)                                   \
-              COzipCvMINMAXTEMPLATE (fun, fname, char, Byte, char)                       \
+              COzipCvMINMAXTEMPLATE (fun, fname, signed char, Byte, signed char)         \
                 COzipCvMINMAXTEMPLATE (fun, fname, short, Short, short)                  \
                   COzipCvMINMAXTEMPLATE (fun, fname, int, Int, int)                      \
                     COzipCvMINMAXTEMPLATE (fun, fname, long, Long, long)                 \
@@ -194,7 +194,7 @@
           COzipCvAPLMODTEMPLATE (fun, fname, unsigned long, ULong, unsigned long)        \
             COzipCvAPLMODTEMPLATE (fun, fname, unsigned long long, ULongLong,            \
                                    unsigned long long)                                   \
-              COzipCvAPLMODTEMPLATE (fun, fname, char, Byte, char)                       \
+              COzipCvAPLMODTEMPLATE (fun, fname, signed char, Byte, signed char)         \
                 COzipCvAPLMODTEMPLATE (fun, fname, short, Short, short)                  \
                   COzipCvAPLMODTEMPLATE (fun, fname, int, Int, int)                      \
                     COzipCvAPLMODTEMPLATE (fun, fname, long, Long, long)                 \
@@ -223,7 +223,7 @@
         COzipCvTEMPLATE (fun, fname, unsigned int, UInt, bool)                           \
           COzipCvTEMPLATE (fun, fname, unsigned long, ULong, bool)                       \
             COzipCvTEMPLATE (fun, fname, unsigned long long, ULongLong, bool)            \
-              COzipCvTEMPLATE (fun, fname, char, Byte, bool)                             \
+              COzipCvTEMPLATE (fun, fname, signed char, Byte, bool)                      \
                 COzipCvTEMPLATE (fun, fname, short, Short, bool)                         \
                   COzipCvTEMPLATE (fun, fname, int, Int, bool)                           \
                     COzipCvTEMPLATE (fun, fname, long, Long, bool)                       \
@@ -241,7 +241,7 @@
         COzipCvTEMPLATE (fun, fname, unsigned int, UInt, bool)                           \
           COzipCvTEMPLATE (fun, fname, unsigned long, ULong, bool)                       \
             COzipCvTEMPLATE (fun, fname, unsigned long long, ULongLong, bool)            \
-              COzipCvTEMPLATE (fun, fname, char, Byte, bool)                             \
+              COzipCvTEMPLATE (fun, fname, signed char, Byte, bool)                      \
                 COzipCvTEMPLATE (fun, fname, short, Short, bool)                         \
                   COzipCvTEMPLATE (fun, fname, int, Int, bool)                           \
                     COzipCvTEMPLATE (fun, fname, long, Long, bool)                       \
@@ -270,7 +270,7 @@
         COzipCvUNARYTEMPLATE (fun, fname, unsigned int, UInt, target_t)                  \
           COzipCvUNARYTEMPLATE (fun, fname, unsigned long, ULong, target_t)              \
             COzipCvUNARYTEMPLATE (fun, fname, unsigned long long, ULongLong, target_t)   \
-              COzipCvUNARYTEMPLATE (fun, fname, char, Byte, target_t)                    \
+              COzipCvUNARYTEMPLATE (fun, fname, signed char, Byte, target_t)             \
                 COzipCvUNARYTEMPLATE (fun, fname, short, Short, target_t)                \
                   COzipCvUNARYTEMPLATE (fun, fname, int, Int, target_t)                  \
                     COzipCvUNARYTEMPLATE (fun, fname, long, Long, target_t)              \
@@ -289,7 +289,7 @@
         COzipCvUNARYTEMPLATE (fun, fname, unsigned int, UInt, target_t)                  \
           COzipCvUNARYTEMPLATE (fun, fname, unsigned long, ULong, target_t)              \
             COzipCvUNARYTEMPLATE (fun, fname, unsigned long long, ULongLong, target_t)   \
-              COzipCvUNARYTEMPLATE (fun, fname, char, Byte, target_t)                    \
+              COzipCvUNARYTEMPLATE (fun, fname, signed char, Byte, target_t)             \
                 COzipCvUNARYTEMPLATE (fun, fname, short, Short, target_t)                \
                   COzipCvUNARYTEMPLATE (fun, fname, int, Int, target_t)                  \
                     COzipCvUNARYTEMPLATE (fun, fname, long, Long, target_t)              \
@@ -310,7 +310,7 @@
           COzipCvUNARYTEMPLATE (fun, fname, unsigned long, ULong, unsigned long)         \
             COzipCvUNARYTEMPLATE (fun, fname, unsigned long long, ULongLong,             \
                                   unsigned long long)                                    \
-              COzipCvUNARYTEMPLATE (fun, fname, char, Byte, char)                        \
+              COzipCvUNARYTEMPLATE (fun, fname, signed char, Byte, signed char)          \
                 COzipCvUNARYTEMPLATE (fun, fname, short, Short, short)                   \
                   COzipCvUNARYTEMPLATE (fun, fname, int, Int, int)                       \
                     COzipCvUNARYTEMPLATE (fun, fname, long, Long, long)                  \
@@ -330,7 +330,7 @@
           COzipCvUNARYTEMPLATE (, fname, unsigned long, ULong, unsigned long)            \
             COzipCvUNARYTEMPLATE (, fname, unsigned long long, ULongLong,                \
                                   unsigned long long)                                    \
-              COzipCvABSTEMPLATE (fun, fname, char, Byte, char)                          \
+              COzipCvABSTEMPLATE (fun, fname, signed char, Byte, signed char)            \
                 COzipCvABSTEMPLATE (fun, fname, short, Short, short)                     \
                   COzipCvABSTEMPLATE (fun, fname, int, Int, int)                         \
                     COzipCvABSTEMPLATE (fun, fname, long, Long, long)                    \
@@ -349,7 +349,7 @@
         COzipCvUNARYTEMPLATE (, fname, unsigned int, UInt, unsigned char)                \
           COzipCvUNARYTEMPLATE (, fname, unsigned long, ULong, unsigned char)            \
             COzipCvUNARYTEMPLATE (, fname, unsigned long long, ULongLong, unsigned char) \
-              COzipCvUNARYTEMPLATE (, fname, char, Byte, unsigned char)                  \
+              COzipCvUNARYTEMPLATE (, fname, signed char, Byte, unsigned char)           \
                 COzipCvUNARYTEMPLATE (, fname, short, Short, unsigned char)              \
                   COzipCvUNARYTEMPLATE (, fname, int, Int, unsigned char)                \
                     COzipCvUNARYTEMPLATE (, fname, long, Long, unsigned char)            \
@@ -366,7 +366,7 @@
         COzipCvTOBOOLTEMPLATE (, fname, unsigned int, UInt, bool)                        \
           COzipCvTOBOOLTEMPLATE (, fname, unsigned long, ULong, bool)                    \
             COzipCvTOBOOLTEMPLATE (, fname, unsigned long long, ULongLong, bool)         \
-              COzipCvTOBOOLTEMPLATE (, fname, char, Byte, bool)                          \
+              COzipCvTOBOOLTEMPLATE (, fname, signed char, Byte, bool)                   \
                 COzipCvTOBOOLTEMPLATE (, fname, short, Short, bool)                      \
                   COzipCvTOBOOLTEMPLATE (, fname, int, Int, bool)                        \
                     COzipCvTOBOOLTEMPLATE (, fname, long, Long, bool)                    \
@@ -413,7 +413,7 @@ MAP_NUMxNUM_NUM (+, Plus)
 
                               MAP_BOOL_BOOL (!, Not)
 
-                                MAP_ANY_TYPE ((char), Tob, char)
+                                MAP_ANY_TYPE ((signed char), Tob, signed char)
 
                                   MAP_ANY_TYPE ((short), Tos, short)
 
@@ -444,7 +444,8 @@ MAP_NUMxNUM_NUM (+, Plus)
 
                                                         MAP_ABS_NUM_NUM (NOP, Abs)
 
-                                                          MAP_TOC_NUM_NUM ((char), Toc)
+                                                          MAP_TOC_NUM_NUM ((signed char),
+                                                                           Toc)
 
                                                             MAP_TOBOOL_NUM_NUM ((boolean),
                                                                                 Tobool)
