@@ -261,7 +261,7 @@ lexer_change_file_name (struct lexer *lex, const char *fname)
 }
 
 static inline bool
-is_operator_symbol (const char c)
+is_operator_symbol (const int c)
 {
     return !(isspace (c) || isalnum (c) || c == '(' || c == ')' || c == '[' || c == ']'
              || c == '{' || c == '}' || c == ';' || c == ',' || c == '\'' || c == '"'

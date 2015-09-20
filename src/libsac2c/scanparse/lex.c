@@ -202,7 +202,7 @@ lexer_getch (struct lexer *lex)
         }
 
         if (ch == '\\') {
-            char c = fgetc (lex->file);
+            int c = fgetc (lex->file);
             if (c == '\n') {
                 add_char_to_buffer (lex, ' ');
                 lex->loc.line++;
@@ -239,7 +239,7 @@ lexer_getch (struct lexer *lex)
 /* Put character back on the stream of the lexer.
    Consequent lexer_getch should return exactly this character.  */
 static inline void
-lexer_ungetch (struct lexer *lex, char ch)
+lexer_ungetch (struct lexer *lex, int ch)
 {
     ssize_t s;
     (void)ch; /* Surpress unused variable warning */
@@ -257,7 +257,7 @@ lexer_ungetch (struct lexer *lex, char ch)
    If the *BUFFER is NULL then it is being allocated, if the *INDEX
    points at the end of the *BUFFER the *BUFFER will be reallocated. */
 static inline void
-buffer_add_char (char **buffer, char **index, size_t *size, char c)
+buffer_add_char (char **buffer, char **index, size_t *size, int c)
 {
     const size_t initial_size = 16;
 
@@ -285,13 +285,13 @@ static inline enum token_class
 lexer_read_comments (struct lexer *lex, char **buf, size_t *size)
 {
     char *index = *buf;
-    char prev = '\0';
+    int prev = '\0';
 
     buffer_add_char (buf, &index, size, '/');
     buffer_add_char (buf, &index, size, '*');
 
     while (true) {
-        char c = lexer_getch (lex);
+        int c = lexer_getch (lex);
         if (c == EOF) {
             error_loc (lex->loc, "unexpected end of file in the middle of comment");
             buffer_add_char (buf, &index, size, 0);
@@ -319,7 +319,7 @@ lexer_read_line_comment (struct lexer *lex, char **buf, size_t *size)
     buffer_add_char (buf, &index, size, '/');
 
     while (true) {
-        char c = lexer_getch (lex);
+        int c = lexer_getch (lex);
         if (c == EOF) {
             error_loc (lex->loc, "unexpected end of file in the "
                                  "middle of line comment");
@@ -342,7 +342,7 @@ is_normal_id (const char *id)
     size_t i;
 
     for (i = 0; i < strlen (id); i++) {
-        char c = id[i];
+        int c = id[i];
         if (!isalpha (c) && !isdigit (c) && c != '_')
             return false;
     }
@@ -373,7 +373,7 @@ lexer_read_user_op (struct lexer *lex, struct token *tok, char **buf, size_t *si
     char *index = *buf;
     int i = 0;
     ssize_t search;
-    char c;
+    int c;
 
     assert (lex->is_read_user_op, "One has to set-up lexer in the "
                                   "user-operation reading mode");
@@ -394,7 +394,7 @@ lexer_read_user_op (struct lexer *lex, struct token *tok, char **buf, size_t *si
         lexer_ungetch (lex, c);
 
     for (i = 0;; i++) {
-        char c = lexer_getch (lex);
+        int c = lexer_getch (lex);
 
         if (isspace (c) || c == ')' || c == '(' || c == ',' || c == '{' || c == '}'
             || c == ';' || c == EOF) {
@@ -454,9 +454,10 @@ lexer_trie_read (struct lexer *lex, struct trie *trie, char **buf, size_t writte
     /* We have a word inside the buf which we may possily append,
        so stand at the beginning.  */
     char *index = buf == NULL ? NULL : *buf + written;
-    char c = lexer_getch (lex);
+    int c = lexer_getch (lex);
     ssize_t last;
-    struct trie *next = trie_check_prefix (trie, &c, 1, &last);
+    const char cb = (char)c;
+    struct trie *next = trie_check_prefix (trie, &cb, 1, &last);
 
     if (!next && last == TRIE_NOT_LAST) {
         lexer_ungetch (lex, c);
@@ -562,7 +563,7 @@ quote_string (const char *s, char *res, int pos)
             buffer[count++] = '\\', buffer[count++] = '\'';
             break;
         default: {
-            char x1, x2;
+            int x1, x2;
 
             if (isprint (*ptr)) {
                 buffer[count++] = *ptr;
@@ -598,7 +599,7 @@ quote_string (const char *s, char *res, int pos)
 static int
 lexer_read_escape_char (struct lexer *lex, bool *error)
 {
-    char c = lexer_getch (lex);
+    int c = lexer_getch (lex);
     *error = false;
 
     switch (c) {
@@ -688,7 +689,7 @@ lexer_read_escape_char (struct lexer *lex, bool *error)
 static inline void
 lexer_skip_comments (struct lexer *lex)
 {
-    char c;
+    int c;
     bool ret = false;
 
     do {
@@ -699,13 +700,13 @@ lexer_skip_comments (struct lexer *lex)
             lexer_ungetch (lex, c);
             ret = true;
         } else if (c == '/') {
-            char c1 = lexer_getch (lex);
-            char prev = '\0';
+            int c1 = lexer_getch (lex);
+            int prev = '\0';
 
             ret = true;
             if (c1 == '*')
                 while (true) {
-                    char c2 = lexer_getch (lex);
+                    int c2 = lexer_getch (lex);
                     if (c2 == EOF) {
                         error_loc (lex->loc, "unexpected end of file in the "
                                              "middle of comment");
@@ -719,7 +720,7 @@ lexer_skip_comments (struct lexer *lex)
                 }
             else if (c1 == '/')
                 while (true) {
-                    char c2 = lexer_getch (lex);
+                    int c2 = lexer_getch (lex);
                     if (c2 == EOF) {
                         error_loc (lex->loc, "unexpected end of file in the "
                                              "middle of line comment");
@@ -744,11 +745,11 @@ lexer_skip_comments (struct lexer *lex)
 /* Internal function to read until the end of string/char ignoring
    escape sequences.  */
 static inline enum token_class
-lexer_read_string (struct lexer *lex, char **buf, size_t *size, char c)
+lexer_read_string (struct lexer *lex, char **buf, size_t *size, int c)
 {
     char *index = *buf;
     enum token_class tok_class;
-    const char stop = c;
+    const int stop = c;
 
     assert (stop == '"' || stop == '\'',
             "inapproriate starting symbol for string or char");
@@ -827,7 +828,7 @@ return_unknown:
 /* Internal function to read until the end of identifier, checking
    if it is a keyword.  */
 static inline void
-lexer_read_id (struct lexer *lex, struct token *tok, char **buf, size_t *size, char c)
+lexer_read_id (struct lexer *lex, struct token *tok, char **buf, size_t *size, int c)
 {
     char *index = *buf;
     ssize_t search;
@@ -848,7 +849,7 @@ lexer_read_id (struct lexer *lex, struct token *tok, char **buf, size_t *size, c
 
 /* Internal function to read until the end of number.  */
 static inline enum token_class
-lexer_read_number (struct lexer *lex, char **buf, size_t *size, char c)
+lexer_read_number (struct lexer *lex, char **buf, size_t *size, int c)
 {
     char *index = *buf;
     bool isoctal = false;
@@ -1013,7 +1014,7 @@ return_unknown:
 /* Handle the line directive in form:
    # <num> "<fname>" <flags><EOL>  */
 void
-read_line_directive (struct lexer *lex, char digit)
+read_line_directive (struct lexer *lex, int digit)
 {
     char fname[PATH_MAX];
     int line = digit - '0';
@@ -1065,7 +1066,7 @@ skip:
 struct token *
 lexer_get_token (struct lexer *lex)
 {
-    char c;
+    int c;
     struct location loc = lex->loc;
     struct token *tok = (struct token *)malloc (sizeof (struct token));
     size_t buf_size = 16;
@@ -1091,7 +1092,7 @@ lexer_get_token (struct lexer *lex)
     }
 
     while (c == '#') {
-        char c1;
+        int c1;
         while (isspace (c1 = lexer_getch (lex)))
             ;
 
@@ -1127,7 +1128,7 @@ lexer_get_token (struct lexer *lex)
     }
 
     if (c == '/') {
-        char c1 = lexer_getch (lex);
+        int c1 = lexer_getch (lex);
 
         tval_tok_init (tok, tok_operator, tv_div);
         if (c1 == '*')
