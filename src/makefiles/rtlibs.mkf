@@ -158,6 +158,9 @@ else
 
 $(info ** INFO: target '$(TARGET)' does not support RTSPEC.)
 
+libsac_sources += \
+  src/libsac/rtspec/empty.c
+
 libsacrtspec_sources = \
   src/libsacphm/empty/empty.c
 

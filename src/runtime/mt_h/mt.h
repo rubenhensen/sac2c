@@ -105,6 +105,8 @@ extern void *memcpy (void *dest, const void *src, size_t n);
 
 #define SAC_MT_GLOBAL_THREADS() SAC_SET_THREADS
 
+#define SAC_HM_RTSPEC_THREADS() SAC_RTSPEC_controller_threads
+
 #else /* SAC_DO_THREADS_STATIC */
 
 /***
@@ -114,6 +116,8 @@ extern void *memcpy (void *dest, const void *src, size_t n);
 
 // #define SAC_MT_THREADS()
 #define SAC_MT_GLOBAL_THREADS() SAC_MT_global_threads
+
+#define SAC_HM_RTSPEC_THREADS() SAC_RTSPEC_controller_threads
 
 #endif /* SAC_DO_THREADS_STATIC */
 
@@ -151,6 +155,8 @@ SAC_C_EXTERN unsigned int SAC_RTSPEC_controller_threads;
 
 /* total number of threads in the environment */
 #define SAC_MT_GLOBAL_THREADS() 1
+
+#define SAC_HM_RTSPEC_THREADS() SAC_RTSPEC_controller_threads
 
 #define SAC_MT_SETUP()
 #define SAC_MT_SETUP_INITIAL()
