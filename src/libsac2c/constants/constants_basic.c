@@ -156,6 +156,44 @@ COINTcopyCVToMem (simpletype type, int length, void *cv)
     DBUG_RETURN (res);
 }
 
+/** <!-- ****************************************************************** -->
+ *
+ * function:
+ *    void *COINTcopyCVVaListToMem(simpletype type, int length, va_list cv)
+ *
+ * description:
+ *    internal function to copy a cv variable list into a new mem area.
+ *
+ ******************************************************************************/
+
+static void *
+COINTcopyCVVaListToMem (simpletype type, int length, va_list cv)
+{
+    DBUG_ENTER ();
+
+    void *res;
+    int i;
+
+    res = MEMmalloc (global.basetype_size[type] * length);
+    switch (type) {
+#define CASE(SacType, CType)                                                             \
+    case SacType: {                                                                      \
+        CType *dst = (CType *)res;                                                       \
+        for (i = 0; i < length; ++i)                                                     \
+            dst[i] = va_arg (cv, CType);                                                 \
+    } break
+
+        CASE (T_int, int);
+        CASE (T_long, long);
+
+    default:
+        CTIabort ("unknown type in CV list");
+        break;
+    }
+
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * function:
@@ -465,7 +503,7 @@ COmakeConstantFromDynamicArguments (simpletype type, int dim, ...)
 
         /* if #elems > 0 copy these elements into memory*/
         if (res_elems_num > 0) {
-            res_elems = COINTcopyCVToMem (type, res_elems_num, Argp);
+            res_elems = COINTcopyCVVaListToMem (type, res_elems_num, Argp);
         }
         va_end (Argp);
     }
