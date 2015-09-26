@@ -184,7 +184,7 @@ add_char_to_buffer (struct lexer *lex, int c)
 
 /* Gets one character from the file, is end of file is
    reached, it will return EOF in all the consequent calls.  */
-static inline char
+static inline int
 lexer_getch (struct lexer *lex)
 {
     int ch;
@@ -213,7 +213,7 @@ lexer_getch (struct lexer *lex)
             ungetc (c, lex->file);
         }
 
-        return (char)ch;
+        return ch;
     } else {
         ssize_t s;
 
@@ -800,7 +800,7 @@ lexer_read_string (struct lexer *lex, char **buf, size_t *size, int c)
                     if (error)
                         goto return_unknown;
                     else
-                        c = (char)res;
+                        c = res;
                 }
 
                 buffer_add_char (buf, &index, size, c);
