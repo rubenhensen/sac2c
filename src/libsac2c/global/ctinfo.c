@@ -662,14 +662,14 @@ produce_header (struct location loc, const char *hdr)
     str_buf *buffer;
 
     buffer = SBUFcreate (128);
-    SBUFprintf (buffer, "%s ", loc.fname);
+    SBUFprintf (buffer, "%s:", loc.fname);
     if (loc.line == 0)
-        SBUFprint (buffer, "??");
+        SBUFprint (buffer, "??:");
     else
-        SBUFprintf (buffer, "%zd", loc.line);
+        SBUFprintf (buffer, "%zd:", loc.line);
 
     if (loc.col > 0)
-        SBUFprintf (buffer, ":%zd ", loc.col);
+        SBUFprintf (buffer, "%zd: ", loc.col);
     else
         SBUFprint (buffer, " ");
 
