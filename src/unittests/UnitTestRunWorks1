@@ -6,7 +6,7 @@ rm -f $1.exe $1.exe.c
 
 source UnitTestRunGrep1.config
 
-logfile="logWorks"$( sac2c -V | grep rev | cut -f 4 -d\ )
+logfile="logWorks"$( sac2c -V | grep sac2c | cut -f 2 -d\ )
 echo $( sac2c -V) >> $logfile
 echo $( date)       >> $logfile
 
