@@ -49,7 +49,7 @@
              SAC_MAX (SAC_SET_CACHE_2_LINE, SAC_MAX (SAC_SET_CACHE_3_LINE, 1)))
 
 #include <pthread.h>
-#include <alloca.h>
+#include <stdlib.h>
 
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 199506L

@@ -15,8 +15,6 @@
 #include <stdlib.h>
 #define shutup_cstring_h
 #include <string.h>
-#define shutup_calloca_h
-#include <alloca.h>
 #include <svp/sep.h>
 #include <svp/slr.h>
 #include <svp/testoutput.h>

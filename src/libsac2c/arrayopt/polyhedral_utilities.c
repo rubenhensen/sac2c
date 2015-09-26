@@ -67,6 +67,7 @@
 
 #define DBUG_PREFIX "PHUT"
 #include <stdlib.h>
+#include <sys/wait.h>
 #include "debug.h"
 #include "memory.h"
 #include "traverse.h"

@@ -7538,7 +7538,7 @@ $as_echo "darwin settings" >&6; }
     ;;
   *bsd*)
     OSFLAGS="-fPIC -DPIC"
-    LD_DYNAMIC="-shared -symbolic -Wl,-allow-shlib-undefined $flags_lto"
+    LD_DYNAMIC="-shared -Wl,-allow-shlib-undefined $flags_lto"
     LD_PATH="-L%path% -Wl,-rpath,%path%"
     LD_FLAGS="$flags_lto"
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: BSD settings" >&5

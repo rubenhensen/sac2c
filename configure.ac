@@ -395,7 +395,7 @@ case "$target_os" in
     ;;
   *bsd*)
     OSFLAGS=["-fPIC -DPIC"]
-    LD_DYNAMIC=["-shared -symbolic -Wl,-allow-shlib-undefined $flags_lto"]
+    LD_DYNAMIC=["-shared -Wl,-allow-shlib-undefined $flags_lto"]
     LD_PATH=["-L%path% -Wl,-rpath,%path%"]
     LD_FLAGS=["$flags_lto"]
     AC_MSG_RESULT([BSD settings])

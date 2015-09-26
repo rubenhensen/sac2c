@@ -19,6 +19,7 @@
 
 #else
 
+#include <time.h>
 #include <sys/times.h>
 
 typedef struct timeinfo_t {
