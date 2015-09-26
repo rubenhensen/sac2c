@@ -190,8 +190,8 @@ CCTperformTask (ccm_task_t task)
         saclibs_subst
           = STRcatn (6, "-lsacphm", global.optimize.dophm ? "" : "c",
                      global.runtimecheck.heap ? ".diag" : "",
-                     " -lsacdistmem -lsac -lsacphm", global.optimize.dophm ? "" : "c",
-                     global.runtimecheck.heap ? ".diag" : "");
+                     " -lsac -lsacdistmem -lsacphm", global.optimize.dophm ? "" : "c",
+                     global.runtimecheck.heap ? ".diag " : " ");
     } else {
         saclibs_subst = STRcpy ("");
     }
