@@ -874,38 +874,20 @@ lexer_read_number (struct lexer *lex, char **buf, size_t *size, int c)
             isoctal = true;
             if (!(c >= '0' && c <= '7'))
                 error_loc (lex->loc, "%c found in the octal number", c);
-        } else if (c == '.')
-            /* fall down into the next if.  */
-            ;
-        else {
+        } else if (c == '.') {
+            isreal = true;
+            saw_dot = true;
+        } else {
             /* Note that we specially do not unget here.  */
             goto read_postfix;
         }
         buffer_add_char (buf, &index, size, c);
     }
 
-    if (c == '.') {
-        isreal = true;
-        saw_dot = true;
-
-        c = lexer_getch (lex);
-
-        if (!isdigit (c)) {
-            error_loc (lex->loc, "digit expected, '%c' found instead", c);
-            lexer_ungetch (lex, c);
-            buffer_add_char (buf, &index, size, 0);
-            return tok_unknown;
-        } else
-            lexer_ungetch (lex, c);
-    }
-
     /* middle of the number  */
     while (true) {
         c = lexer_getch (lex);
-        if (c == EOF) {
-            error_loc (lex->loc, "unexpected end of file");
-            goto return_unknown;
-        } else if (isdigit (c)) {
+        if (isdigit (c)) {
             if (isoctal && c >= '8') {
                 error_loc (lex->loc, "'%c' found in octal number", c);
                 goto return_unknown;
@@ -998,12 +980,16 @@ read_postfix:
         lexer_ungetch (lex, c);
     }
 
-    if (*(index - 1) == '.')
-        error_loc (lex->loc, "prefix cannot follow after the dot");
-
     if ((saw_dot || saw_exp || isreal) && tclass != tok_number_float
         && tclass != tok_number_double)
-        error_loc (lex->loc, "real number is followed by integer prefix");
+        error_loc (lex->loc, "real number is followed by integer postfix");
+
+    c = lexer_getch (lex);
+    if (isalpha (c) || c == '_') {
+        error_loc (lex->loc, "unexpected number suffix");
+        goto return_unknown;
+    }
+    lexer_ungetch (lex, c);
 
     buffer_add_char (buf, &index, size, 0);
     return tclass;
@@ -1152,6 +1138,15 @@ lexer_get_token (struct lexer *lex)
     if (isalpha (c) || c == '_') {
         lexer_read_id (lex, tok, &buf, &buf_size, c);
         goto return_token;
+    }
+
+    if (c == '.') {
+        int c2 = lexer_getch (lex);
+        lexer_ungetch (lex, c2);
+        if (isdigit (c2)) {
+            tok->tok_class = lexer_read_number (lex, &buf, &buf_size, c);
+            goto return_token;
+        }
     }
 
     if (isdigit (c)) {
