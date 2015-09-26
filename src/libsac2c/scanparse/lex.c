@@ -9,6 +9,8 @@
 #include "types.h"
 #define DBUG_PREFIX "LEXER"
 #include "debug.h"
+#else
+#define DBUG_PRINT(Hai, ...) (void)0
 #endif
 
 #include "lex.h"
