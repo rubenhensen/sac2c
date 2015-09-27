@@ -236,8 +236,8 @@ SAC_UUID_deinitializeQueue (void)
  *
  ****************************************************************************/
 uuid_queue_node_t *
-SAC_UUID_createNode (char *func_name, char *types, int *shapes, int shapes_size,
-                     reg_obj_t *registry)
+SAC_UUID_createNode (char *func_name, char *uuid, char *types, int *shapes,
+                     int shapes_size, char *shape, char *mod_name, char *key)
 {
     uuid_queue_node_t *xnew = (uuid_queue_node_t *)malloc (sizeof (uuid_queue_node_t));
 
@@ -248,10 +248,13 @@ SAC_UUID_createNode (char *func_name, char *types, int *shapes, int shapes_size,
     }
 
     xnew->func_name = func_name;
+    xnew->uuid = uuid;
     xnew->type_info = types;
     xnew->shape_info = shapes;
     xnew->shape_info_size = shapes_size;
-    xnew->reg_obj = registry;
+    xnew->shape = shape;
+    xnew->mod_name = mod_name;
+    xnew->key = key;
     xnew->next = NULL;
 
     return xnew;
@@ -311,8 +314,8 @@ SAC_UUID_dequeueRequest (void)
  *
  ****************************************************************************/
 void
-SAC_UUID_enqueueRequest (char *func_name, char *types, int *shapes, int shapes_size,
-                         reg_obj_t *registry)
+SAC_UUID_enqueueRequest (char *func_name, char *uuid, char *types, int *shapes,
+                         int shapes_size, char *shape, char *mod_name, char *key)
 {
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Enqueue specialization request.");
@@ -323,15 +326,10 @@ SAC_UUID_enqueueRequest (char *func_name, char *types, int *shapes, int shapes_s
         return;
     }
 
-    if (strcmp (registry->module, "_MAIN") == 0) {
-        // we do not support specializing functions within main yet
-        return;
-    }
-
     pthread_mutex_lock (&uuid_queue_mutex);
 
-    uuid_queue_node_t *xnew
-      = SAC_UUID_createNode (func_name, types, shapes, shapes_size, registry);
+    uuid_queue_node_t *xnew = SAC_UUID_createNode (func_name, uuid, types, shapes,
+                                                   shapes_size, shape, mod_name, key);
 
     /* Exit on error. */
     if (xnew == NULL) {

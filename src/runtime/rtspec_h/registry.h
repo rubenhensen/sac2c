@@ -22,4 +22,9 @@ typedef struct {
 
 reg_obj_t *SAC_registrate (char *, void *);
 
+void SAC_register_specialization (char *key, void *dl_handle, void *func_ptr);
+
+void *SAC_lookup_function (char *func_name, char *uuid, char *types, int *shapes,
+                           int shape_size, char *mod_name, void *func_ptr);
+
 #endif /* _SAC_REGISTRY_H_ */

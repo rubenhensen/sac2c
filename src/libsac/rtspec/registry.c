@@ -18,9 +18,16 @@
 
 #include "registry.h"
 
+#define SAC_DO_TRACE 1
+#include "sac.h"
+
+#include "uthash.h"
+
+reg_item_t *registry = NULL;
+
 /** <!--*******************************************************************-->
  *
- * @fn SAC_registrate(void *func_ptr)
+ * @fn SAC_registrate(char *module, void *func_ptr)
  *
  * @brief Register a single function.
  *
@@ -47,6 +54,75 @@ SAC_registrate (char *module, void *func_ptr)
     entry->dl_handle = NULL;
 
     return entry;
+}
+
+void
+SAC_register_specialization (char *key, void *dl_handle, void *func_ptr)
+{
+    reg_item_t *item = (reg_item_t *)calloc (1, sizeof (reg_item_t));
+
+    item->key = key;
+    item->dl_handle = dl_handle;
+    item->func_ptr = func_ptr;
+
+    HASH_ADD_KEYPTR (hh, registry, key, strlen (key), item);
+
+    SAC_TR_Print ("Registered UUID: %s", key);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn SAC_lookup_function( char *func_name, char *uuid, char *types, int *shapes, int
+ *shape_size, char *shape, void *func_ptr)
+ *
+ * @brief Look up the best matching function pointer.
+ *
+ * @return A function pointer.
+ *
+ ****************************************************************************/
+void *
+SAC_lookup_function (char *func_name, char *uuid, char *types, int *shapes,
+                     int shape_size, char *mod_name, void *func_ptr)
+{
+    SAC_TR_Print ("Look up function: %s::%s", mod_name, func_name);
+
+    if (strcmp (mod_name, "_MAIN") == 0) {
+        // we do not support specializing functions within main yet
+        return func_ptr;
+    }
+
+    char *shape = encodeShapes (shapes);
+
+    SAC_TR_Print ("Look up UUID: %s", uuid);
+    SAC_TR_Print ("Look up types: %s", types);
+    SAC_TR_Print ("Look up shape: %s", shape);
+    reg_item_t *item = NULL;
+    char *key
+      = (char *)calloc (1, sizeof (char)
+                             * (strlen (uuid) + strlen (types) + strlen (shape) + 1));
+
+    key[0] = '\0';
+
+    strcat (key, uuid);
+    strcat (key, types);
+    strcat (key, shape);
+
+    SAC_TR_Print ("Look up key: %s", key);
+
+    HASH_FIND_STR (registry, key, item);
+
+    if (item) {
+        SAC_TR_Print ("Found specialization");
+
+        return item->func_ptr;
+    } else {
+        SAC_TR_Print ("No specialization found");
+
+        SAC_UUID_enqueueRequest (func_name, uuid, types, shapes, shape_size, shape,
+                                 mod_name, key);
+
+        return func_ptr;
+    }
 }
 
 #else

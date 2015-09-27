@@ -132,11 +132,12 @@ ICM_DEF( RTSPEC_FUN_AP, ICM_TRACE(fun))
   ICM_ID( modname)
   ICM_ID( name)
   ICM_ID( srcname)
+  ICM_ID( uuid)
   ICM_NT( rettype_NT)
   ICM_ID( retname)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
-ICM_END( RTSPEC_FUN_AP, (modname, name, srcname, rettype_NT, retname, vararg_cnt, vararg))
+ICM_END( RTSPEC_FUN_AP, (modname, name, srcname, uuid, rettype_NT, retname, vararg_cnt, vararg))
 #endif
 
 #if defined(ND_FUN_AP) || defined(ICM_ALL)

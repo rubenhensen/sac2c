@@ -2287,6 +2287,7 @@ MakeFunApArgs (node *ap)
     }
 
     if (FUNDEF_RTSPECID (fundef) != NULL && global.rtspec) {
+        icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_RTSPECID (fundef)), icm_args);
         icm_args
           = TBmakeExprs (TCmakeIdCopyString (FUNDEF_SOURCENAME (fundef)), icm_args);
     }

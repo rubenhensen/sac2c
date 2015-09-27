@@ -42,7 +42,7 @@
 char *
 encodeShapes (int *shapes)
 {
-    int num_args, i, j, k, l;
+    int num_args, i, j, k, l, length;
 
     if (shapes == NULL) {
         fprintf (stderr, "ERROR -- \t Missing shape information!");
@@ -76,7 +76,9 @@ encodeShapes (int *shapes)
 
     current[0] = '\0';
 
-    sprintf (current, "%d-", num_args);
+    length = 0;
+
+    length += sprintf (current, "%d-", num_args);
 
     i = 1;
     k = 1;
@@ -85,11 +87,11 @@ encodeShapes (int *shapes)
             j = 0;
             l = shapes[k];
             for (; j <= l; j++) {
-                sprintf (current, "%s%d-", current, shapes[k]);
+                length += sprintf (current + length, "%d-", shapes[k]);
                 k++;
             }
         } else {
-            sprintf (current, "%s%d-", current, shapes[k]);
+            length += sprintf (current + length, "%d-", shapes[k]);
             k++;
         }
     }

@@ -21,7 +21,7 @@ extern void ICMCompileWE_FUN_DEF_END (char *name, char *rettype_NT, int vararg_c
 extern void ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname,
                                  int vararg_cnt, char **vararg);
 
-extern void ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname,
+extern void ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
                                      char *rettype_NT, char *retname, int vararg_cnt,
                                      char **vararg);
 

@@ -19,6 +19,7 @@
 #include "traverse.h"
 #include "new_types.h"
 #include "tree_compound.h"
+#include "str.h"
 
 #if ENABLE_UUID
 #include <uuid/uuid.h>

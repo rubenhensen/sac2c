@@ -210,6 +210,7 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
 {
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Handling new specialization request.");
+        SAC_TR_Print ("Runtime specialization: UUID: %s", request->uuid);
     }
 
     static char call_format[CALL_FORMAT_STRLEN] = "sac2c -v%i -runtime "
@@ -232,38 +233,35 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
      * Only process requests that haven't been processed yet.
      */
     if (SAC_UUID_wasProcessed (request)) {
+        free (request->key);
+        free (request->shape);
+        free (request->shape_info);
         free (request);
         return;
     }
 
     /*
-     * Encode the shapes of the arguments.
-     */
-    char *shape_info = encodeShapes (request->shape_info);
-
-    /*
      * Get a new module name so we don't have name clashes of the generated library files.
      */
-    int old_module_strlen = strlen (request->reg_obj->module);
+    int old_module_strlen = strlen (request->mod_name);
     int new_module_strlen
       = old_module_strlen + (RTSPEC_MODULE_PREFIX_LENGTH + MAX_INT_DIGITS + 1);
     char *new_module = (char *)malloc (sizeof (char) * new_module_strlen);
 
-    sprintf (new_module, "%s%s_%d", RTSPEC_MODULE_PREFIX, request->reg_obj->module,
-             counter++);
+    sprintf (new_module, "%s%s_%d", RTSPEC_MODULE_PREFIX, request->mod_name, counter++);
 
     char *syscall
       = (char *)malloc (sizeof (char)
                         * (strlen (request->func_name) * 2 + strlen (request->type_info)
-                           + strlen (shape_info) + target_env_strlen * 2 + sbi_strlen
+                           + strlen (request->shape) + target_env_strlen * 2 + sbi_strlen
                            + cli_arguments_strlen + CALL_FORMAT_STRLEN + old_module_strlen
                            + new_module_strlen + tmpdir_strlen * 2 + 1));
 
     /* Build the system call. */
-    sprintf (syscall, call_format, (do_trace == 1) ? 3 : 0, request->reg_obj->module,
-             new_module, request->func_name, request->func_name, request->type_info,
-             shape_info, SAC_TARGET_ENV_STRING, SAC_SBI_STRING, SAC_TARGET_ENV_STRING,
-             tmpdir_name, cli_arguments);
+    sprintf (syscall, call_format, (do_trace == 1) ? 3 : 0, request->mod_name, new_module,
+             request->func_name, request->func_name, request->type_info, request->shape,
+             SAC_TARGET_ENV_STRING, SAC_SBI_STRING, SAC_TARGET_ENV_STRING, tmpdir_name,
+             cli_arguments);
 
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Calling runtime compiler with:");
@@ -308,15 +306,19 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
         if (do_trace == 1) {
             SAC_TR_Print ("Runtime specialization: Linking with generated library.");
         }
+
+        void *dl_handle;
+        void *func_ptr;
+
         /* Dynamically link with the new libary. */
-        request->reg_obj->dl_handle = dlopen (filename, RTLD_NOW | RTLD_GLOBAL);
+        dl_handle = dlopen (filename, RTLD_NOW | RTLD_GLOBAL);
 
         if (do_trace == 1) {
             SAC_TR_Print ("Runtime specialization: Check handle not being NULL.");
         }
 
         /* Exit on failure. */
-        if (request->reg_obj->dl_handle == NULL) {
+        if (dl_handle == NULL) {
             fprintf (stderr, "ERROR -- \t %s\n", dlerror ());
 
             exit (EXIT_FAILURE);
@@ -331,23 +333,22 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
         if (do_trace == 1) {
             SAC_TR_Print ("Runtime specialization: Load symbols for new wrapper.");
         }
-        /* Load the symbol for the new wrapper. */
-        request->reg_obj->func_ptr
-          = dlsym (request->reg_obj->dl_handle, request->func_name);
 
-        request->reg_obj->module = new_module;
+        /* Load the symbol for the new wrapper. */
+        func_ptr = dlsym (dl_handle, request->func_name);
 
         /* Exit on failure. */
-        if (request->reg_obj->func_ptr == NULL) {
+        if (func_ptr == NULL) {
             fprintf (stderr, "ERROR -- \t Could not load symbol!\n");
 
             exit (EXIT_FAILURE);
         }
+
+        SAC_register_specialization (request->key, dl_handle, func_ptr);
     }
 
     free (filename);
     free (syscall);
-    free (shape_info);
 }
 
 /** <!--*******************************************************************-->

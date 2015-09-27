@@ -20,6 +20,9 @@ typedef struct uuid_queue_node {
     /** @brief The name of the function being optimized. */
     char *func_name;
 
+    /** @brief Unique ID of the function being optimized */
+    char *uuid;
+
     /** @brief The types of the arguments of the function being optimized. */
     char *type_info;
 
@@ -29,8 +32,14 @@ typedef struct uuid_queue_node {
     /** @brief The size of the shape info array */
     int shape_info_size;
 
-    /** @brief A registry object, needed for updating the function pointer. */
-    reg_obj_t *reg_obj;
+    /** @brief The shape information as a string */
+    char *shape;
+
+    /** @brief The name of the module the function is in. */
+    char *mod_name;
+
+    /** @brief Registration key for the specialized function. */
+    char *key;
 
     /** @brief The next request in the queue. */
     struct uuid_queue_node *next;
@@ -70,11 +79,14 @@ void SAC_UUID_initializeQueue (int trace);
 
 void SAC_UUID_deinitializeQueue (void);
 
-uuid_queue_node_t *SAC_UUID_createNode (char *, char *, int *, int, reg_obj_t *);
+uuid_queue_node_t *SAC_UUID_createNode (char *func_name, char *uuid, char *types,
+                                        int *shapes, int shapes_size, char *shape,
+                                        char *mod_name, char *key);
 
 uuid_queue_node_t *SAC_UUID_dequeueRequest (void);
 
-void SAC_UUID_enqueueRequest (char *, char *, int *, int, reg_obj_t *);
+void SAC_UUID_enqueueRequest (char *func_name, char *uuid, char *types, int *shapes,
+                              int shapes_size, char *shape, char *mod_name, char *key);
 
 void SAC_UUID_freeReqqueue (uuid_queue_node_t *);
 

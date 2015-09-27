@@ -75,6 +75,12 @@
 #define SAC_WE_DECL_FUN(name) static char *SAC_function = name;
 
 /*
+ * Store the name of the original module, needed for the registry and the
+ * request.
+ */
+#define SAC_RTSPEC_DECL_UUID(uuid) static char *SAC_unique_id = uuid;
+
+/*
  * Declare the integer array that will hold the shapes of the arguments at
  * runtime.
  */
@@ -151,12 +157,10 @@
 
 #define SAC_WE_PTR_CAST(rettype, ...) ((rettype (*) (__VA_ARGS__))SAC_reg_obj->func_ptr)
 
-#define SAC_RTSPEC_ENQ_REQ(types, name)                                                  \
-    SAC_UUID_enqueueRequest (SAC_function, #types, SAC_shapes, size, SAC_reg_obj);
-
-#define SAC_RTSPEC_ENQ_REQ_CHK(types, name)                                              \
-    SAC_WE_REGISTRATION (SAC_module, name)                                               \
-    SAC_RTSPEC_ENQ_REQ (types, name)
+#define SAC_RTSPEC_PTR_CAST(name, types, rettype, ...)                                   \
+    ((rettype (*) (__VA_ARGS__))SAC_lookup_function (SAC_function, SAC_unique_id,        \
+                                                     #types, SAC_shapes, size,           \
+                                                     SAC_module, (void *)&name))
 
 #else /* SAC_DO_RTSPEC */
 

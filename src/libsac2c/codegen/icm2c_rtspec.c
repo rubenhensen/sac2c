@@ -104,16 +104,17 @@ ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
 
 /** <!--*******************************************************************-->
  *
- * @fn ICMCompileRTSPEC_FUN_AP( char *modname, char *name, char *srcname, char
- **rettype_NT, char *retname, int vararg_cnt, char **vararg)
+ * @fn ICMCompileRTSPEC_FUN_AP( char *modname, char *name, char *srcname, char *uuid
+ *                              char *rettype_NT, char *retname, int vararg_cnt,
+ *                              char **vararg)
  *
  * @brief Implements the ICM for the function application with runtime
  *        specialization wrapper code.
  *
  ****************************************************************************/
 void
-ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *rettype_NT,
-                         char *retname, int vararg_cnt, char **vararg)
+ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
+                         char *rettype_NT, char *retname, int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -135,6 +136,8 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *rettype
         indout ("SAC_WE_DECL_MOD( \"%s\")\n", modname);
 
         indout ("SAC_WE_DECL_FUN( \"%s\")\n", srcname);
+
+        indout ("SAC_RTSPEC_DECL_UUID( \"%s\")\n", uuid);
 
         indout ("SAC_WE_DECL_SHAPE_ARRAY()\n");
 
@@ -186,8 +189,7 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *rettype
 
         out ("#pragma GCC diagnostic push\n");
         out ("#pragma GCC diagnostic ignored \"-Wpedantic\"\n");
-        indout ("SAC_RTSPEC_ENQ_REQ_CHK(%s, %s)\n", types, name);
-        indout ("SAC_WE_PTR_CAST( ");
+        indout ("SAC_RTSPEC_PTR_CAST( %s, %s, ", name, types);
 
         if (rettype_NT[0] != '\0') {
             out ("SAC_ND_TYPE_NT( %s), ", rettype_NT);
