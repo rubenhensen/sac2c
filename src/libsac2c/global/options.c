@@ -1353,16 +1353,16 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("target")
     {
-        if (global.target_name != NULL)
-            CTIabort ("-target specified more than once.");
+        if (global.target_name == NULL)
+            CTIabort ("-target is missing an argument.");
         global.target_name = ARG;
     }
     ARGS_OPTION_END ("target");
 
     ARGS_OPTION_BEGIN ("t")
     {
-        if (global.target_name != NULL)
-            CTIabort ("-target specified more than once.");
+        if (global.target_name == NULL)
+            CTIabort ("-target is missing an argument.");
         global.target_name = ARG;
     }
     ARGS_OPTION_END ("t");
