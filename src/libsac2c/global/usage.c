@@ -87,7 +87,11 @@ PrintDescriptionSac4c (void)
       "    -ldflags, which prints appropriate linker flags that need to be used for\n"
       "    linking the wrapper library. To compiler code that uses the wrapper,\n"
       "    add the flags printed by using the -ccflags option to the c compiler\n"
-      "    call.\n\n");
+      "    call.\n\n"
+
+      "    With the -fortran option, sac4c will generate a Fortran module file\n"
+      "    in addition to the wrapper library to call SAC functions from a Fortran\n"
+      "    context.\n\n");
 
     DBUG_RETURN ();
 }
@@ -188,7 +192,9 @@ PrintOptionsSac4c (void)
             "                      2: basic compile time information\n"
             "                      3: full compile time information\n"
             "                      4: even more compile time information\n"
-            "                    (default: %d)\n",
+            "                    (default: %d)\n"
+            "\n"
+            "    -fortran        generate Fortran module\n",
             global.verbose_level);
 
     DBUG_RETURN ();

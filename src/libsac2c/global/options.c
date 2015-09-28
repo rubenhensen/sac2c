@@ -1267,6 +1267,12 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_OPTION_END ("E");
 
     /*
+     * Options starting with fffffffffffffffffffffffffffffffffffffffffff
+     */
+
+    ARGS_FLAG ("fortran", global.genfortran = TRUE);
+
+    /*
      * Options starting with ggggggggggggggggggggggggggggggggggggggggggg
      */
 

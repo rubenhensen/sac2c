@@ -148,6 +148,12 @@ GLOBAL (stringset_t *, exported_modules, NULL, xfree_dummy, )
  * list of modules that will be exported by sac4c
  */
 
+GLOBAL (bool, genfortran, FALSE, xfree_dummy, )
+/*
+ * enables the generation of a Fortran interface in addition to
+ * the C-lib/header through sac4c
+ */
+
 GLOBAL (bool, printldflags, FALSE, xfree_dummy, )
 /*
  * enables printing of ldflags in sac4c

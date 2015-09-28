@@ -31,6 +31,7 @@ extern void CTInoteLine (int line, const char *format, ...);
 extern void CTItell (int level, const char *format, ...);
 extern void CTIterminateCompilation (node *syntax_tree);
 extern const char *CTIitemName (node *item);
+extern const char *CTIitemNameDivider (node *item, const char *divider);
 extern const char *CTIfunParams (node *fundef);
 extern void set_message_line_length (int l);
 

@@ -1317,7 +1317,7 @@ CTIterminateCompilation (node *syntax_tree)
  */
 
 const char *
-formatItemName (namespace_t *ns, char *name)
+formatItemName (namespace_t *ns, char *name, const char *divider)
 {
     static char buffer[MAX_ITEM_NAME_LENGTH + 1];
     int written;
@@ -1325,7 +1325,8 @@ formatItemName (namespace_t *ns, char *name)
     DBUG_ENTER ();
 
     if (ns != NULL) {
-        written = snprintf (buffer, MAX_ITEM_NAME_LENGTH, "%s::%s", NSgetName (ns), name);
+        written = snprintf (buffer, MAX_ITEM_NAME_LENGTH, "%s%s%s", NSgetName (ns),
+                            divider, name);
     } else {
         written = snprintf (buffer, MAX_ITEM_NAME_LENGTH, "%s", name);
     }
@@ -1338,22 +1339,28 @@ formatItemName (namespace_t *ns, char *name)
 const char *
 CTIitemName (node *item)
 {
+    return CTIitemNameDivider (item, "::");
+}
+
+const char *
+CTIitemNameDivider (node *item, const char *divider)
+{
     const char *ret;
 
     DBUG_ENTER ();
 
-    if (item == NULL) {
+    if (item == NULL || divider == NULL || divider[0] == '\0') {
         ret = "???";
     } else {
         switch (NODE_TYPE (item)) {
         case N_fundef:
-            ret = formatItemName (FUNDEF_NS (item), FUNDEF_NAME (item));
+            ret = formatItemName (FUNDEF_NS (item), FUNDEF_NAME (item), divider);
             break;
         case N_typedef:
-            ret = formatItemName (TYPEDEF_NS (item), TYPEDEF_NAME (item));
+            ret = formatItemName (TYPEDEF_NS (item), TYPEDEF_NAME (item), divider);
             break;
         case N_objdef:
-            ret = formatItemName (OBJDEF_NS (item), OBJDEF_NAME (item));
+            ret = formatItemName (OBJDEF_NS (item), OBJDEF_NAME (item), divider);
             break;
         default:
             DBUG_UNREACHABLE ("Wrong item in call of function 'CTIitemName`");

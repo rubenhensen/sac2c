@@ -3645,6 +3645,17 @@
         <node name="Module" />
       </travuser>
     </traversal>
+    <traversal id="CFWH" name="Create Fortran interface file" default="sons"
+               include="create_f_wrapper_header.h">
+      <travuser>
+        <node name="FunBundle" />
+        <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Ret" />
+        <node name="Typedef" />
+        <node name="Module" />
+      </travuser>
+    </traversal>
     <traversal id="GCF" name="Generate Copy And Free" default="sons"
                include="generate_copy_and_free.h">
       <travuser>
