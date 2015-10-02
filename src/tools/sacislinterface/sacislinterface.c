@@ -272,6 +272,7 @@ PolyhedralWLFIntersectCalc (int verbose)
     struct isl_union_set *intr = NULL;
     struct isl_union_set *cwleq = NULL;
     struct isl_union_set *pwleq = NULL;
+    struct isl_set *domain = NULL;
     isl_ast_build *build = NULL;
     isl_schedule *sched = NULL;
     isl_schedule_constraints *schedcon = NULL;
@@ -310,10 +311,11 @@ PolyhedralWLFIntersectCalc (int verbose)
     ;
     printSchedule (stdout, sched, "schedule", 1, ISL_FORMAT_ISL);
 
+    // Create a generic "build"
+    build = isl_ast_build_alloc (ctx);
+
     // Perform the ISL codegen operation, using the intersect data.
-#ifdef FIXME
-    ast = isl_ast_build_ast_from_schedule (build, intr);
-#endif // FIXME
+    ast = isl_ast_build_node_from_schedule (build, sched);
 
     fprintf (stdout, "%d\n", z); // Write the result that PHUT will read.
     fprintf (stdout, "ast \n");
@@ -330,6 +332,7 @@ PolyhedralWLFIntersectCalc (int verbose)
     isl_ast_node_free (ast);
     isl_ctx_free (ctx);
     isl_ast_build_free (build);
+    isl_set_free (domain);
 
     return (z);
 }
