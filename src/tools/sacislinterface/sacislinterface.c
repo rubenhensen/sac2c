@@ -331,9 +331,9 @@ PolyhedralWLFIntersectCalc (int verbose)
     isl_union_set_free (pwleq);
     isl_schedule_free (sched);
     isl_ast_node_free (ast);
-    isl_ctx_free (ctx);
     isl_ast_build_free (build);
     isl_set_free (domain);
+    isl_ctx_free (ctx);
 
     return (z);
 }
