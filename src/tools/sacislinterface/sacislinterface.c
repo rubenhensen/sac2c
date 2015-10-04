@@ -317,10 +317,11 @@ PolyhedralWLFIntersectCalc (int verbose)
     // Perform the ISL codegen operation, using the intersect data.
     ast = isl_ast_build_node_from_schedule (build, sched);
 
+    printAst (stdout, ast, "Intersect calculated is:", verbose, ISL_FORMAT_C);
+
     fprintf (stdout, "%d\n", z); // Write the result that PHUT will read.
     fprintf (stdout, "ast \n");
 
-    printAst (stdout, ast, "ast", 1, ISL_FORMAT_ISL);
     fprintf (stdout, "\n using { [b] -> separate[x] };");
 
     isl_union_set_free (pwl);
