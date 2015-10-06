@@ -30,7 +30,7 @@ OBJEXT := $(shell $(SAC2C_T) -COBJEXT)
 MODEXT := $(shell $(SAC2C_T) -CMODEXT)
 TREEEXT := $(shell $(SAC2C_T) -CTREE_DLLEXT)
 USE_PHM_API := $(shell $(SAC2C_T) -CUSE_PHM_API)
-RTSPEC := $(shell $(SAC2C_T) -CRTSPEC) 
+RTSPEC := $(shell $(SAC2C_T) -CRTSPEC)
 
 ifeq ($(SBI),XXXXX)
 $(error ** Error: no SBI specified for target '$(TARGET)')
