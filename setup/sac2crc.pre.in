@@ -483,7 +483,7 @@ target default_sbi:: add_default_sbi :: add_local :: add_stdlib_local:
 
 target default_mt:: default_sbi:
 SBI              := "mt"
-MT_MODE          :=  1
+MT_MODE          :=  2
 USE_PHM_API      :=  @CAN_USE_PHM@
 
 
