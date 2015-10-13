@@ -618,8 +618,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("cshost", strncpy (global.cachesim_host, ARG, NAME_MAX - 1));
 
-    ARGS_OPTION ("ccflag",
-                 CTIwarn ("Option -ccflag is deprecated, consider using -Xc instead.");
+    ARGS_OPTION ("ccflag", CTIwarn ("Option -ccflag has been replaced by -Xc");
                  SBUFprintf (cflags_buf, " %s", ARG));
     ARGS_FIXED ("Xc", SBUFprintf (cflags_buf, " %s", ARG));
     ARGS_FIXED ("Xl", SBUFprintf (ldflags_buf, " %s", ARG));
