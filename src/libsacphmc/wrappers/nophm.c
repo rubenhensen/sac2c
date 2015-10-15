@@ -26,6 +26,10 @@
 #undef SAC_DO_MULTITHREAD
 
 SAC_HM_arena_t SAC_HM_arenas[1][SAC_HM_NUM_ARENAS + 2];
+const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size;
+const SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size;
+const SAC_HM_size_byte_t SAC_HM_initial_top_arena_size;
+const unsigned int SAC_HM_max_worker_threads;
 
 void *
 SAC_HM_MallocSmallChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
