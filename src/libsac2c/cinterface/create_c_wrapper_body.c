@@ -109,7 +109,7 @@ PrintFileHeader (info *arg_info)
      * descriptor alloc and free functions
      */
     fprintf (INFO_FILE (arg_info),
-             "static SAC_array_descriptor_t makeScalarDesc()\n{\n"
+             "static SAC_array_descriptor_t makeScalarDesc( void)\n{\n"
              "  SAC_array_descriptor_t result \n"
              "    = (SAC_array_descriptor_t) SAC_MALLOC( BYTE_SIZE_OF_DESC( 0)); \n"
              "  SAC_DESC_INIT_RC( result, 1);\n"
