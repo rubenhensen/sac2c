@@ -4,9 +4,9 @@
 /* SAC config */
 #include "config.h"
 
-#if ENABLE_MT
+#if SAC_MT_MODE > 0
 /* the code is only loaded into libsac.mt.pth and libsac.mt.lpel */
-#if defined(PTH) || defined(LPEL)
+#if defined(SAC_MT_LIB_pthread) || defined(SAC_MT_LIB_lpel)
 
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_MT_BEEHIVE 1
