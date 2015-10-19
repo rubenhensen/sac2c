@@ -3634,18 +3634,7 @@
         <node name="Module" />
       </travuser>
     </traversal>
-    <traversal id="CCWH" name="Create C wrapper header" default="sons"
-               include="create_c_wrapper_header.h">
-      <travuser>
-        <node name="FunBundle" />
-        <node name="Fundef" />
-        <node name="Arg" />
-        <node name="Ret" />
-        <node name="Typedef" />
-        <node name="Module" />
-      </travuser>
-    </traversal>
-    <traversal id="CFWH" name="Create Fortran interface file" default="sons"
+    <traversal id="CFWH" name="Create Foreign-function interface file" default="sons"
                include="create_f_wrapper_header.h">
       <travuser>
         <node name="FunBundle" />

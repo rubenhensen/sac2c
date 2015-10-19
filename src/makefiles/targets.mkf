@@ -270,8 +270,7 @@ libsac2c_print       := print convert
 libsac2c_visualize   := visualize
 
 libsac2c_cinterface  := load_module_contents construct_bundles \
-			create_c_wrapper_header create_f_wrapper_header \
-            bundle_to_fundef print_ldflags \
+		    create_f_wrapper_header bundle_to_fundef print_ldflags \
             create_c_wrapper_body print_ccflags \
             generate_copy_and_free
 

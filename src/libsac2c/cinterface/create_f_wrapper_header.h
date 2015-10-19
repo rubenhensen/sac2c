@@ -3,7 +3,10 @@
 
 #include "types.h"
 
-extern node *CFWHdoCreateFWrapper (node *syntax_tree);
+typedef struct HOLDER holder;
+
+extern node *CFWHdoCreateFWrapperHeader (node *syntax_tree);
+extern node *CFWHdoCreateCWrapperHeader (node *syntax_tree);
 
 extern node *CFWHfunbundle (node *arg_node, info *arg_info);
 extern node *CFWHfundef (node *arg_node, info *arg_info);

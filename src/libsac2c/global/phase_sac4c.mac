@@ -23,10 +23,10 @@ ENDPHASE (ami)
 
 PHASE (gwc, "Generating wrapper code", ALWAYS)
 
-SUBPHASE (cwh, "Creating header files", CCWHdoCreateCWrapperHeader, !global.printldflags,
-          gwc)
+SUBPHASE (cwh, "Creating C header files", CFWHdoCreateCWrapperHeader,
+          !global.printldflags, gwc)
 
-SUBPHASE (fwh, "Creating Fortran interface file", CFWHdoCreateFWrapperHeader,
+SUBPHASE (fwh, "Creating Fortran interface files", CFWHdoCreateFWrapperHeader,
           !global.printldflags && global.genfortran, gwc)
 
 SUBPHASE (cwb, "Creating interface stub files", CCWBdoCreateCWrapperBody, ALWAYS, gwc)
