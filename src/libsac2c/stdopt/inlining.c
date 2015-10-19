@@ -58,6 +58,7 @@ struct INFO {
     node *vardecs;
     node *lacfuns;
     bool spine;
+    int wldepth;
 };
 
 /*
@@ -69,6 +70,7 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_LACFUNS(n) ((n)->lacfuns)
 #define INFO_SPINE(n) ((n)->spine)
+#define INFO_WITHDEPTH(n) ((n)->wldepth)
 
 /*
   INFO functions
@@ -88,6 +90,7 @@ MakeInfo (void)
     INFO_VARDECS (result) = NULL;
     INFO_LACFUNS (result) = NULL;
     INFO_SPINE (result) = FALSE;
+    INFO_WITHDEPTH (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -122,6 +125,25 @@ INLmodule (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+INLwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("We found a WITHLOOP!");
+
+    INFO_WITHDEPTH (arg_info) = INFO_WITHDEPTH (arg_info) + 1;
+
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+    DBUG_PRINT ("For with-loop -> %s we have nesting of %d", CTIitemName (arg_node),
+                INFO_WITHDEPTH (arg_info));
+
+    INFO_WITHDEPTH (arg_info) = 0;
 
     DBUG_RETURN (arg_node);
 }
@@ -182,6 +204,11 @@ INLfundef (node *arg_node, info *arg_info)
         arg_info = old_info;
 
         FUNDEF_ISINLINECOMPLETED (arg_node) = TRUE;
+    }
+
+    if ((FUNDEF_BODY (arg_node) != NULL) && FUNDEF_ISLOOPFUN (arg_node)) {
+
+        DBUG_PRINT ("We found a LOOP! -> %s", CTIitemName (arg_node));
     }
 
     if (INFO_SPINE (arg_info)) {

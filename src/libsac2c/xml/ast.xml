@@ -2058,7 +2058,8 @@
 	  <node name="Assign" />
 	  <node name="Fundef" />
 	  <node name="Let" />
-	  <node name="Ap" />
+      <node name="Ap" />
+      <node name="With" />
 	</travuser>
       </traversal>
       <traversal id="LINL" name="LAC Inline Traversal" default="sons" include="lacinlining.h" >
