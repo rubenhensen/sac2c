@@ -2058,8 +2058,8 @@
 	  <node name="Assign" />
 	  <node name="Fundef" />
 	  <node name="Let" />
-      <node name="Ap" />
-      <node name="With" />
+          <node name="Ap" />
+          <node name="Code" />
 	</travuser>
       </traversal>
       <traversal id="LINL" name="LAC Inline Traversal" default="sons" include="lacinlining.h" >
@@ -9931,6 +9931,12 @@ N_tfarg :
             attaching extrema more than once per block.
 	  </description>
 	</flag>
+        <flag name="Nested" default="FALSE">
+          <description>
+            Set to TRUE if this block is within a WL that is
+            nested within another WL.
+          </description>
+        </flag>
       </flags>
     </node>
 <!--

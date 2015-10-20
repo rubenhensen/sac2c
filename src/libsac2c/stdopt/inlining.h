@@ -10,6 +10,6 @@ extern node *INLfundef (node *arg_node, info *arg_info);
 extern node *INLassign (node *arg_node, info *arg_info);
 extern node *INLlet (node *arg_node, info *arg_info);
 extern node *INLap (node *arg_node, info *arg_info);
-extern node *INLwith (node *arg_node, info *arg_info);
+extern node *INLcode (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INLINING_H_ */
