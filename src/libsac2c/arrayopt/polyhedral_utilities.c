@@ -386,7 +386,7 @@ Node2Value (node *arg_node)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn bool InsertVarIntoLut( node *arg_node, lut_t *varlut)
+ * @fn bool InsertVarIntoLut( node *arg_node, lut_t *varlut, node *fundef)
  *
  * @brief Insert N_id or N_avis into varlut, if not already there.
  *        We use varlut LUT solely as a way to build the set of unique
@@ -394,14 +394,20 @@ Node2Value (node *arg_node)
  *
  * @param arg_node: An N_id or N_avis. Or, just to make life more fun,
  *                  it may be an N_num or N_bool, which we ignore.
- *        arg_info: your basic arg_info
+ *        varlut: The address of the LUT we use for collecting names
+ *        fundef: The fundef containing arg_node.
+ *                We store fundef and arg_node in the LUT, and
+ *                then catenate those when building the
+ *                ISL input variables. We have to do this in order
+ *                to disambiguate duplicate names across LACFUN
+ *                calls.
  *
  * @return TRUE if we the variables was inserted; FALSE if it was already there
  *         or not a variable.
  *
  ******************************************************************************/
 static bool
-InsertVarIntoLut (node *arg_node, lut_t *varlut)
+InsertVarIntoLut (node *arg_node, lut_t *varlut, node *fundef)
 {
     node *avis;
     node *founditem = NULL;
@@ -412,7 +418,7 @@ InsertVarIntoLut (node *arg_node, lut_t *varlut)
     avis = Node2Avis (arg_node);
     if (NULL != avis) {
         DBUG_ASSERT (NULL != varlut, "NULL VARLUT");
-        LUTupdateLutP (varlut, avis, avis, (void **)&founditem);
+        LUTupdateLutP (varlut, avis, fundef, (void **)&founditem);
         z = NULL == founditem;
         if (z) {
             DBUG_PRINT ("Inserted %s into VARLUT", AVIS_NAME (avis));
@@ -780,21 +786,21 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
             ivpavis
               = TBmakeAvis (TRAVtmpVarName ("iv"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            InsertVarIntoLut (ivpavis, INFO_VARLUT (arg_info));
+            InsertVarIntoLut (ivpavis, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info));
 
             ivppavis
               = TBmakeAvis (TRAVtmpVarName ("ivp"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            InsertVarIntoLut (ivppavis, INFO_VARLUT (arg_info));
+            InsertVarIntoLut (ivppavis, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info));
 
             ivwavis
               = TBmakeAvis (TRAVtmpVarName ("ivw"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            InsertVarIntoLut (ivwavis, INFO_VARLUT (arg_info));
+            InsertVarIntoLut (ivwavis, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info));
 
             navis = TBmakeAvis (TRAVtmpVarName ("n"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            InsertVarIntoLut (navis, INFO_VARLUT (arg_info));
+            InsertVarIntoLut (navis, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info));
 
             // Generate: 0 <= ivw < wid
             z = BuildIslSimpleConstraint (TBmakeNum (0), F_le_SxS, ivwavis, F_lt_SxS,
@@ -1118,7 +1124,7 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
 
     DBUG_ENTER ();
 
-    if (InsertVarIntoLut (rhs, INFO_VARLUT (arg_info))) {
+    if (InsertVarIntoLut (rhs, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info))) {
         res = PHUTcollectAffineExprsLocal (rhs, arg_info, res);
         z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
         res = TCappendExprs (res, z);
@@ -1219,7 +1225,7 @@ getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassig
             relfn = (incrementsign < 0) ? F_le_SxS : F_ge_SxS;
             rcapp = TBmakeAvis (TRAVtmpVarName ("rcapp"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            InsertVarIntoLut (rcapp, INFO_VARLUT (arg_info));
+            InsertVarIntoLut (rcapp, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info));
             z = BuildIslSimpleConstraint (rcapp, relfn, DUPdoDupNode (initialvalue),
                                           NOPRFOP, NULL);
             res = TCappendExprs (res, z);
@@ -1227,7 +1233,7 @@ getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassig
             // Build increment:  rca' = initialvalue + N * increment
             navis = TBmakeAvis (TRAVtmpVarName ("N"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            InsertVarIntoLut (navis, INFO_VARLUT (arg_info));
+            InsertVarIntoLut (navis, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info));
             z = BuildIslNotSoSimpleConstraint (rcapp, F_eq_SxS,
                                                DUPdoDupNode (initialvalue), F_add_SxS,
                                                navis, F_mul_SxS,
@@ -1830,7 +1836,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res)
     avis = Node2Avis (nid);
     if (NULL != avis) { // N_num exits here
         DBUG_PRINT ("Looking at %s", AVIS_NAME (avis));
-        if (InsertVarIntoLut (avis, INFO_VARLUT (arg_info))) {
+        if (InsertVarIntoLut (avis, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info))) {
             // Handle RHS for all modes.
             assgn = AVIS_SSAASSIGN (avis);
             if ((NULL != assgn) && (N_let == NODE_TYPE (ASSIGN_STMT (assgn)))) {
@@ -1980,7 +1986,7 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
     DBUG_ENTER ();
 
     arg1 = PHUTskipChainedAssigns (arg1);
-    InsertVarIntoLut (arg1, varlut);
+    InsertVarIntoLut (arg1, varlut, fundef);
     arg_info = MakeInfo ();
     INFO_FUNDEF (arg_info) = fundef;
     switch (relfn) {
@@ -1997,7 +2003,7 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
     case F_eq_SxS:
         if (F_non_neg_val_S != fn) { // kludge for monadic CFN
             arg2 = PHUTskipChainedAssigns (arg2);
-            InsertVarIntoLut (arg2, varlut);
+            InsertVarIntoLut (arg2, varlut, fundef);
             z = BuildIslSimpleConstraint (arg1, relfn, arg2, NOPRFOP, NULL);
         } else {
             z = BuildIslSimpleConstraint (arg1, F_lt_SxS, TBmakeNum (0), NOPRFOP, NULL);
@@ -2008,7 +2014,7 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
         // This is harder. We need to construct a union
         // of (x<y) OR (x>y).
         arg2 = PHUTskipChainedAssigns (arg2);
-        InsertVarIntoLut (arg2, varlut);
+        InsertVarIntoLut (arg2, varlut, fundef);
         z = BuildIslSimpleConstraint (arg1, F_gt_SxS, arg2, F_or_SxS, NULL);
         z2 = BuildIslSimpleConstraint (arg1, F_lt_SxS, arg2, NOPRFOP, NULL);
         z = TCappendExprs (z, z2);
@@ -2111,20 +2117,22 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprs3, node *exprs
  * @param cwliv: The N_avis for the consumerWL index vector.
  * @param pwliv: THe N_avis for the producerWL generator index vector
  * @param varlut: The lut we use to collect set variable names.
+ * @param fundef: the N_fundef for the function containing cwliv and pwliv
  *
  * @return An N_exprs chain for the intersect, stating that:
  *         cwliv == pwliv
  *
  ******************************************************************************/
 node *
-PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv, lut_t *varlut)
+PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv, lut_t *varlut,
+                                         node *fundef)
 {
     node *res;
 
     DBUG_ENTER ();
 
-    InsertVarIntoLut (cwliv, varlut);
-    InsertVarIntoLut (pwliv, varlut);
+    InsertVarIntoLut (cwliv, varlut, fundef);
+    InsertVarIntoLut (pwliv, varlut, fundef);
     res = BuildIslSimpleConstraint (cwliv, F_eq_SxS, pwliv, NOPRFOP, NULL);
 
     DBUG_RETURN (res);
