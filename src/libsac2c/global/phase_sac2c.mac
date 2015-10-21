@@ -301,6 +301,9 @@ FUNBEGIN (cyc, opt, cyc)
 CYCLEPHASEFUN (cse, "Applying common subexpression elimination",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, cyc)
 
+CYCLEPHASEFUN (ainl, "Determine candidate functions for inlining", AINLdoAutoInlining,
+               global.optimize.doainl, opt, cyc)
+
 CYCLEPHASEFUN (ili, "Inferring loop invariant variables",
                IIPIdoIterationInvariantParameterInference, ALWAYS, opt, cyc)
 

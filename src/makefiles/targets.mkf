@@ -160,10 +160,10 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
 			variable_propagation \
 			reorder_equalityprf_arguments \
 			transform_gtge_to_ltle \
-			signature_simplification inlining inferneedcounters \
-			arithmetic_simplification                           \
-			SSALUR                                              \
-			associative_law                                     \
+			signature_simplification auto_inlining inlining     \
+            inferneedcounters arithmetic_simplification         \
+            SSALUR                                              \
+            associative_law                                     \
 			sortassociativefunctionarguments                    \
 			distributive_law elimtypeconv liftoptflags \
 			prfunroll wlselcount \

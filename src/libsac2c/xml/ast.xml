@@ -879,7 +879,17 @@
         <travuser>
           <node name="Ids" />
         </travuser>
-      </traversal> 
+      </traversal>
+      <traversal id="AINL" name="Determine and mark candidates for inlining" default="sons" include="auto_inlining.h" >
+        <travuser>
+            <node name="Code" />
+            <node name="Part" />
+            <node name="With" />
+            <node name="Prf" />
+            <node name="Ap" />
+            <node name="Fundef" />
+        </travuser>
+      </traversal>    
       <traversal id="PINL" name="Prepare inlining" default="sons" include="prepare_inlining.h" >
         <travuser>
           <node name="Fundef" />
@@ -2058,8 +2068,7 @@
 	  <node name="Assign" />
 	  <node name="Fundef" />
 	  <node name="Let" />
-          <node name="Ap" />
-          <node name="Code" />
+      <node name="Ap" />
 	</travuser>
       </traversal>
       <traversal id="LINL" name="LAC Inline Traversal" default="sons" include="lacinlining.h" >
@@ -5821,7 +5830,10 @@ N_tfarg :
         <flag name="IsGeneric" >
 	  <description>True if the function definition contains generic arguments.</description>
 	</flag>
-        <flag name="IsInline" />
+    <flag name="IsInline" />
+    <flag name="WasInlined" default="FALSE">
+	  <description>True if the function has been automatically inlined, via AINL</description>
+    </flag>
         <flag name="IsInlineCompleted" />
         <flag name="IsLacInline" />
         <flag name="AllowsInfix" />
@@ -9929,13 +9941,7 @@ N_tfarg :
             Set to true if the WITHIDs for this code block have
             extrema attached to them. This keeps IVEXI from
             attaching extrema more than once per block.
-	  </description>
-	</flag>
-        <flag name="Nested" default="FALSE">
-          <description>
-            Set to TRUE if this block is within a WL that is
-            nested within another WL.
-          </description>
+	      </description>
         </flag>
       </flags>
     </node>

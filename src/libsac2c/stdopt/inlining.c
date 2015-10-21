@@ -58,7 +58,6 @@ struct INFO {
     node *vardecs;
     node *lacfuns;
     bool spine;
-    int wlnesting;
 };
 
 /*
@@ -70,7 +69,6 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_LACFUNS(n) ((n)->lacfuns)
 #define INFO_SPINE(n) ((n)->spine)
-#define INFO_WLNESTING(n) ((n)->wlnesting)
 
 /*
   INFO functions
@@ -90,7 +88,6 @@ MakeInfo (void)
     INFO_VARDECS (result) = NULL;
     INFO_LACFUNS (result) = NULL;
     INFO_SPINE (result) = FALSE;
-    INFO_WLNESTING (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -129,40 +126,6 @@ INLmodule (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-node *
-INLcode (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("We found a WITHLOOP N_code node");
-
-    if (!CODE_NESTED (arg_node) && INFO_WLNESTING (arg_info) == 0) {
-        /* Within a top level N_code that may or may not be the start of a nesting */
-
-        INFO_WLNESTING (arg_info) = INFO_WLNESTING (arg_info) + 1;
-        DBUG_PRINT ("Found top WITHLOOP N_code node");
-    }
-
-    if (!CODE_NESTED (arg_node) && INFO_WLNESTING (arg_info) > 0) {
-        CODE_NESTED (arg_node) = TRUE;
-        INFO_WLNESTING (arg_info) = INFO_WLNESTING (arg_info) + 1;
-    }
-
-    CODE_CEXPRS (arg_node) = TRAVcont (CODE_CEXPRS (arg_node), arg_info);
-
-    if (!CODE_NESTED (arg_node)) {
-        /* Within a top level N_code that may or may not be the start of a nesting */
-
-        INFO_WLNESTING (arg_info) = 0;
-        DBUG_PRINT ("Back at top WITHLOOP N_code node");
-    }
-
-    DBUG_PRINT ("We have nesting at N_code (%d) with %d", CODE_ID (arg_node),
-                INFO_WLNESTING (arg_info));
-
-    DBUG_RETURN (arg_node);
-}
-
 /** <!--***********************************************************************-->
  *
  * @fn node *INLfundef( node *arg_node, info *arg_info)
@@ -197,7 +160,6 @@ INLfundef (node *arg_node, info *arg_info)
         arg_info = MakeInfo ();
 
         INFO_FUNDEF (arg_info) = arg_node;
-        INFO_WLNESTING (arg_info) = 0;
         FUNDEF_INLINECOUNTER (arg_node) += 1;
 
         DBUG_PRINT ("Traversing body of %s", CTIitemName (arg_node));
@@ -205,8 +167,6 @@ INLfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         DBUG_PRINT ("Leaving body of %s", CTIitemName (arg_node));
-        DBUG_PRINT ("Total WLnesting for %s is %d", CTIitemName (arg_node),
-                    INFO_WLNESTING (arg_info));
 
         if (GLFisLocalFun (arg_node)) {
             INFO_LACFUNS (old_info)
@@ -222,11 +182,6 @@ INLfundef (node *arg_node, info *arg_info)
         arg_info = old_info;
 
         FUNDEF_ISINLINECOMPLETED (arg_node) = TRUE;
-    }
-
-    if ((FUNDEF_BODY (arg_node) != NULL) && FUNDEF_ISLOOPFUN (arg_node)) {
-
-        DBUG_PRINT ("We found a LOOP! -> %s", CTIitemName (arg_node));
     }
 
     if (INFO_SPINE (arg_info)) {

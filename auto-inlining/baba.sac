@@ -1,0 +1,121 @@
+module baba;
+
+export all;
+
+#ifdef INL
+#define INLINE inline
+#else
+#define INLINE
+#endif
+
+INLINE
+int +(int a, int b) { return _add_SxS_(a, b); }
+INLINE
+int ++(int a) { return _add_SxS_(a, 1); }
+INLINE
+bool <=(int a, int b) { return _le_SxS_(a, b); }
+INLINE
+bool >(int a, int b) { return _gt_SxS_(a, b); }
+INLINE
+bool <(int a, int b) { return _lt_SxS_(a, b); }
+INLINE
+bool ==(int a, int b) { return _eq_SxS_(a, b); }
+INLINE
+int +(int a, int[.] b) { 
+    c = with { (_mul_SxV_( 0, _shape_A_( b)) <= iv < _shape_A_( b)): _sel_VxA_(iv, b); } : fold(+, 0);
+    return _add_SxS_(a, c); 
+}
+INLINE
+int +(int[*] a, int b) { 
+    c = with { (_mul_SxV_( 0, _shape_A_( a)) <= iv < _shape_A_( a)): _sel_VxA_(iv, a); } : fold(+, 0);
+    return _add_SxS_(b, c); 
+}
+INLINE
+int sum( int[*] a) {
+  res = with {
+          ( _mul_SxV_( 0, _shape_A_( a)) <= iv < _shape_A_( a)) : _sel_VxA_( iv, a);                                   
+  } : fold(+, 0); 
+  return( res);
+}
+
+
+INLINE
+int ourloop(int a)
+{
+  for(i = 1; i <= 10; i++)
+    for(j = 1; j <= 10; j++)
+      for(k = 1; k <= 10; k++)
+        a++;
+
+  if(a > 10) {
+    for(i = 1; i <= 10; i++)
+      for(j = 1; j <= 10; j++)
+        for(k = 1; k <= 10; k++)
+          for(l = 1; l <= k; l++)
+            a++;
+  }
+  
+  if(a > 10) {
+    for(i = 1; i <= 10; i++) {
+      if( i == 5) {
+        for(j = 1; j <= 10; j++)
+          for(k = 1; k <= 10; k++)
+            for(l = 1; l <= k; l++)
+              a++;
+      }
+    }
+  }
+
+  return a;
+}
+
+INLINE
+int ourwithloop(int a)
+{
+  //b = with {
+  //  ([1] <= [i] <= [10]) {
+  //    c = with {
+  //      ([1] <= [j] <= [10]) {
+  //        d = with {
+  //          ([0] <= [k] <= [10]) : k;
+  //        } : fold(+, 0);
+  //      } : d + j;
+  //    } : fold(+, 0);
+  //  } : c + i;
+  //} : fold(+, 0);
+
+  e = with {
+    ([0] <= [i] <= [9]) {
+      f = with { } : genarray( with {} : genarray([1], 0), 0);
+    } : f;
+  } : fold(+, 0);
+
+  //g = with {
+  //  ([0] <= [i] <= [9]) {
+  //    t = with { ([0] <= [x] <= [9]) : i + x; } : fold(+, 0);
+  //  } : t;
+  //  ([10] <= [j] <= [19]) {
+  //    t = with { ([0] <= [x] <= [9]) : j + x; } : fold(+, 0);  
+  //    e = with {
+  //      ([0] <= [i] <= [9]) {
+  //        f = with { } : genarray( with {
+  //                                  ([0] <= [k] <= [99]) : k;
+  //                                 } : genarray([100], 1), 1);
+  //        g = sum( f);
+  //      } : g;
+  //    } : fold(+, 0);
+  //  } : t + e;
+  //} : fold(+, 0);
+
+  return a + e;
+}
+
+INLINE
+int ourconditional( int a)
+{
+  if ( a > 10)
+      a++;
+  else
+      a = a + 10;
+  return a;
+}
