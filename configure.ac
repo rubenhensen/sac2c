@@ -26,7 +26,7 @@ elif test -r "$ac_aux_dir/shtool"; then
  ac_install_sh="$ac_aux_dir/shtool install -c"
 fi
 dnl where to find the SAC standard library sources
-CHECK_STDLIB([modules/structures/ArrayBasics.xsac])
+CHECK_STDLIB([src/modules/structures/ArrayBasics.xsac])
 
 dnl we use C as our compiler language
 AC_LANG(C)

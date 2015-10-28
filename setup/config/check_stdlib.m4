@@ -4,10 +4,10 @@ dnl The argument indicates a file whose presence confirms the path is correct.
 AC_DEFUN([CHECK_STDLIB],dnl
 [
   AC_ARG_WITH([stdlib-sources],
-              [AS_HELP_STRING([--with-stdlib-sources],
-                              [Where to find the SAC standard library sources.])],
-              [with_stdlib_sources=$withval],
-              [with_stdlib_sources=])
+              [AS_HELP_STRING([--with-stdlib-sources=DIR],
+                              [lookup SAC standard library sources in DIR])],
+              [], [with_stdlib_sources=])
+
   if test x"$with_stdlib_sources" = x; then
      AC_MSG_WARN([--with-stdlib-sources is not set; do not forget to edit sac2crc with the final location.])
   else

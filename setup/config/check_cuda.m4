@@ -24,16 +24,20 @@ AC_DEFUN([CHECK_CUDA],dnl
          # try to compile a test CUDA program
          if cp -f "$srcdir"/src/tools/cuda/deviceQuery.cpp conftest.cc 2>/dev/null; then
              AC_MSG_CHECKING([whether nvcc works])
-             if ! $NVCC conftest.cc -o conftest$EXEEXT; then
-                enable_cuda=no
+             if $NVCC conftest.cc -o conftest$EXEEXT; then
                 AC_MSG_RESULT([$enable_cuda])
-             else
-                AC_MSG_RESULT([$enable_cuda])
+                NVCC_PATH=$NVCC
                 # extract the architecture flags from the test program
                 AC_MSG_CHECKING([what CUDA compute level is supported])
-                CUDA_ARCH=`./conftest$EXEEXT 2>/dev/null`
-                NVCC_PATH=$NVCC
+                if ./conftest$EXEEXT 2>/dev/null; then
+                  CUDA_ARCH=`./conftest$EXEEXT`
+                else
+                  CUDA_ARCH="\"please set this manually\""
+                fi
                 AC_MSG_RESULT([$CUDA_ARCH])
+            else
+                enable_cuda=no
+                AC_MSG_RESULT([$enable_cuda])
             fi
         fi
       fi
