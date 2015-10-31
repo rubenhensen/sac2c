@@ -429,6 +429,9 @@ PrintGlobalSettings (node *syntax_tree)
              (int)global.mtmode);
     fprintf (global.outfile, "#endif\n\n");
 
+    fprintf (global.outfile, "#define SAC_SET_BARRIER_TYPE               %d\n",
+             global.mt_barrier_type);
+
     fprintf (global.outfile, "#ifndef SAC_SET_THREADS_MAX\n");
     fprintf (global.outfile, "#define SAC_SET_THREADS_MAX          %d\n",
              global.max_threads);

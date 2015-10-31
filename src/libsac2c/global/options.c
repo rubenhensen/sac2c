@@ -844,6 +844,18 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
      */
 
+    ARGS_OPTION_BEGIN ("mt_barrier_type")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("spin", global.mt_barrier_type = 0);
+        ARG_CHOICE ("mutex", global.mt_barrier_type = 1);
+        ARG_CHOICE ("cond", global.mt_barrier_type = 2);
+        ARG_CHOICE ("pthread", global.mt_barrier_type = 3);
+        ARG_CHOICE ("futex", global.mt_barrier_type = 4);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("mt_barrier_type");
+
     ARGS_OPTION ("maxnewgens", ARG_NUM (global.max_newgens));
 
     ARGS_OPTION ("maxoptcyc", ARG_NUM (global.max_optcycles));

@@ -327,7 +327,7 @@ runtime_mt_h           := mt
 
 runtime_mt_beehive_h   := schedule mt_beehive mt_gen
 
-runtime_mt_pth_h       := mt_pth fp fp_gen
+runtime_mt_pth_h       := mt_barriers mt_pth fp fp_gen
 
 runtime_mt_lpel_h      := mt_lpel
 

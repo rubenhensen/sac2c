@@ -34,6 +34,7 @@
  *
  ******************************************************************************/
 static UNUSED int dummy_mt_pth;
+int barrier_type;
 
 /*
  * In case we do not have mt available, we have to make sure this file
@@ -202,15 +203,38 @@ tls_destroy_self_bee_key (void *data)
 static void
 ThreadServeLoop (struct sac_bee_pth_t *SAC_MT_self)
 {
+    volatile unsigned *sharedfl;
+    unsigned *locfl;
+
     for (;;) {
+        sharedfl = &CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive)->start_barr_sharedfl;
+        locfl = &SAC_MT_self->start_barr_locfl;
+
         SAC_TR_PRINT (("Worker thread H:%p, L:%d ready.", SAC_MT_self->c.hive,
                        SAC_MT_self->c.local_id));
+        SAC_TR_PRINT (("Worker thread L:%d takes barrier type: %i.",
+                       SAC_MT_self->c.local_id, barrier_type));
 
         /* wait on start lock: the queen will release it when all is ready
          * for an SPMD execution */
-        SAC_MT_PTH_wait_on_barrier (&SAC_MT_self->start_barr_locfl,
-                                    &CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive)
-                                       ->start_barr_sharedfl);
+        switch (barrier_type) {
+        case 1:
+            take_mutex_barrier ();
+            break;
+        case 2:
+            wait_on_cond_barrier (sharedfl, locfl);
+            break;
+        case 3:
+            take_pthread_barrier ();
+            break;
+#ifdef __linux__
+        case 4:
+            wait_on_futex_barrier (sharedfl, locfl);
+            break;
+#endif
+        default:
+            SAC_MT_PTH_wait_on_barrier (locfl, sharedfl);
+        }
 
         /* check there is a hive */
         assert (SAC_MT_self->c.hive);
@@ -567,8 +591,27 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
     /* setup spmd function which kills each bee */
     hive->spmd_fun = spmd_kill_pth_bee;
 
+    volatile unsigned *sharedfl = &hive->start_barr_sharedfl;
+
     /* start slave bees */
-    SAC_MT_PTH_signal_barrier (NULL, &hive->start_barr_sharedfl);
+    switch (barrier_type) {
+    case 1:
+        take_mutex_barrier ();
+        break;
+    case 2:
+        lift_cond_barrier (sharedfl);
+        break;
+    case 3:
+        take_pthread_barrier ();
+        break;
+#ifdef __linux__
+    case 4:
+        lift_futex_barrier (sharedfl);
+        break;
+#endif
+    default:
+        SAC_MT_PTH_signal_barrier (NULL, sharedfl);
+    }
 
     /* wait on bees until done */
     for (unsigned i = 1; i < hive->c.num_bees; ++i) {

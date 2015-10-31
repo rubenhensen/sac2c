@@ -27,6 +27,8 @@ SAC_C_EXTERN pthread_key_t SAC_MT_self_bee_key;
 struct sac_bee_pth_t;
 struct sac_hive_pth_t;
 
+SAC_C_EXTERN int barrier_type;
+
 /**
  * Low-latency mutex/semaphore types, i.e. spinlocks.
  * The implementation is simplistic and assumes only a single locker and single unlocker,
@@ -223,15 +225,17 @@ CAST_HIVE_COMMON_TO_PTH (struct sac_hive_common_t *cp)
 static inline void
 SAC_MT_PTH_do_spmd_execute (struct sac_bee_pth_t *const SAC_MT_self)
 {
+    volatile unsigned *sharedfl
+      = &CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive)->start_barr_sharedfl;
+
     /* we're not single thread any more */
     unsigned old_globally_single = SAC_MT_globally_single;
     if (SAC_MT_globally_single) {
         SAC_MT_globally_single = 0;
     }
     /* start all the slave bees by signaling the start-barrier */
-    SAC_MT_PTH_signal_barrier (&SAC_MT_self->start_barr_locfl,
-                               &CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive)
-                                  ->start_barr_sharedfl);
+    SAC_MT_PTH_SIGNAL_BARRIER (sharedfl);
+
     /* run ourself */
     CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive)->spmd_fun (SAC_MT_self);
     /* clean up */
@@ -256,25 +260,31 @@ SAC_MT_PTH_do_spmd_execute (struct sac_bee_pth_t *const SAC_MT_self)
 #if SAC_DO_TRACE_MT
 
 #define SAC_MT_SETUP_INITIAL()                                                           \
-    SAC_MT_TR_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);
+    SAC_MT_TR_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);       \
+    SAC_MT_PTH_INIT_BARRIER (SAC_MT_GLOBAL_THREADS ());                                  \
+    barrier_type = SAC_SET_BARRIER_TYPE;
 
 #define SAC_MT_SETUP() SAC_MT_PTH_TR_SetupStandalone (SAC_SET_NUM_SCHEDULERS);
 
 #define SAC_MT_FINALIZE()                                                                \
     SAC_MT_TR_ReleaseHive (SAC_MT_TR_DetachHive ());                                     \
-    SAC_MT_TR_ReleaseQueen ();
+    SAC_MT_TR_ReleaseQueen ();                                                           \
+    SAC_MT_PTH_DESTROY_BARRIER ();
 
 #else /* SAC_DO_TRACE_MT */
 
 #define SAC_MT_SETUP_INITIAL()                                                           \
-    SAC_MT_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);
+    SAC_MT_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);          \
+    SAC_MT_PTH_INIT_BARRIER (SAC_MT_GLOBAL_THREADS ());                                  \
+    barrier_type = SAC_SET_BARRIER_TYPE;
 
 #define SAC_MT_SETUP() SAC_MT_PTH_SetupStandalone (SAC_SET_NUM_SCHEDULERS);
 
 #define SAC_MT_FINALIZE()                                                                \
     SAC_MT_ReleaseHive (SAC_MT_DetachHive ());                                           \
     SAC_MT_ReleaseQueen ();                                                              \
-    SAC_MT_singleton_queen = NULL;
+    SAC_MT_singleton_queen = NULL;                                                       \
+    SAC_MT_PTH_DESTROY_BARRIER ();
 
 #endif
 

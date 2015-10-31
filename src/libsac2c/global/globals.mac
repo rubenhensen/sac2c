@@ -378,6 +378,16 @@ GLOBAL (mtmode_t, mtmode, MT_none, xfree_dummy, )
  * Multi-thread mode set according to -mt and -mtmode compiler flags
  */
 
+GLOBAL (int, mt_barrier_type, 0, xfree_dummy, )
+/*
+ * Select barrier type for synchronization of threads
+ * 0:"spin"   : (default) uses a spinlock technique to implement the barrier
+ * 1:"mutex"  : a barrier implementation solely based on mutex locks and counters
+ * 2:"cond"   : uses pthread_cond_wait to implement the barrier
+ * 3:"pthread": uses the built-in POSIX thread barrier implementation
+ * 4:"futex"  : a barrier that uses the low level futex lock technique
+ */
+
 GLOBAL (char *, ompschedule, "static", xfree_dummy, )
 /*
  * OMP schedule technique
