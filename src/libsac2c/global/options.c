@@ -446,6 +446,29 @@ OPTcheckOptionConsistency (void)
         global.num_threads = 1;
     }
 
+    if ((global.mt_smart_mode > 0) && (global.min_parallel_size != 0)) {
+        CTIwarn ("Cannot use both -minmtsize and -mt_smart_mode simultaniously, "
+                 "setting -minmtsize to 0.");
+        global.min_parallel_size = 0;
+    }
+
+    if ((global.mt_smart_mode > 0) && (global.mt_smart_filename == NULL)) {
+        CTIerror ("-mt_smart_filename must be set when using -mt_smart_mode. ");
+    }
+
+    if ((global.mt_smart_mode > 0) && (global.mt_smart_arch == NULL)) {
+        CTIerror ("-mt_smart_arch must be set when using -mt_smart_mode. ");
+    }
+
+    if ((global.mt_smart_filename != NULL)
+        && (strstr (global.mt_smart_filename, ".") != NULL)) {
+        CTIerror ("Illegal use of dot (\".\") character in -mt_smart_filename.");
+    }
+
+    if ((global.mt_smart_arch != NULL) && (strstr (global.mt_smart_arch, ".") != NULL)) {
+        CTIerror ("Illegal use of dot (\".\") character in -mt_smart_arch.");
+    }
+
     /* validity check of RC_METHOD entry */
 
     if (STReq (global.config.rc_method, "local")) {
@@ -855,6 +878,24 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("mt_barrier_type");
+
+    ARGS_OPTION_BEGIN ("mt_smart_mode")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("off", global.mt_smart_mode = 0);
+        ARG_CHOICE ("train", global.mt_smart_mode = 1);
+        ARG_CHOICE ("on", global.mt_smart_mode = 2);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("mt_smart_mode");
+
+    ARGS_OPTION ("mt_smart_filename", global.mt_smart_filename = STRcpy (ARG));
+
+    ARGS_OPTION ("mt_smart_arch", global.mt_smart_arch = STRcpy (ARG));
+
+    ARGS_OPTION ("mt_smart_period", ARG_NUM (global.mt_smart_period));
+
+    ARGS_OPTION ("mt_smart_gradient", ARG_RANGE (global.mt_smart_gradient, 0, 90));
 
     ARGS_OPTION ("maxnewgens", ARG_NUM (global.max_newgens));
 

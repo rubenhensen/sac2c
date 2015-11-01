@@ -55,6 +55,7 @@ struct INFO {
     node *sequential;
     node *vardecs;
     node *topmostblock;
+    node *with2;
 };
 
 /**
@@ -70,6 +71,7 @@ struct INFO {
 #define INFO_SEQUENTIAL(n) (n->sequential)
 #define INFO_VARDECS(n) (n->vardecs)
 #define INFO_TOPMOSTBLOCK(n) (n->topmostblock)
+#define INFO_WITH2(n) (n->with2)
 
 /**
  * INFO functions
@@ -92,6 +94,7 @@ MakeInfo (void)
     INFO_SEQUENTIAL (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_TOPMOSTBLOCK (result) = NULL;
+    INFO_WITH2 (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -287,6 +290,7 @@ MTCMwith2 (node *arg_node, info *arg_info)
     INFO_ISWORTH (arg_info) = FALSE;
     INFO_MOD_GEN_SEEN (arg_info) = FALSE;
     INFO_CONDITION (arg_info) = NULL;
+    INFO_WITH2 (arg_info) = arg_node;
 
     DBUG_PRINT ("considering with2 in line %d ...", NODE_LINE (arg_node));
 
@@ -373,6 +377,8 @@ MTCMfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    node *alt = arg_node;
+
     if (global.no_fold_parallel) {
         /*
          * We decided not to parallelize fold-with-loops.
@@ -394,7 +400,51 @@ MTCMfold (node *arg_node, info *arg_info)
              * This with-loop only consists of fold operations or propgates. As long as we
              * do not have a proper condition on fold-with-loops, we parallelize always.
              */
-            INFO_ISWORTH (arg_info) = TRUE;
+            if (global.mt_smart_mode > 0) {
+
+                INFO_CONDITION (arg_info)
+                  = TCmakePrf2 (F_run_mt_fold, TBmakeBool (TRUE),
+                                TBmakeNum (global.min_parallel_size));
+            } else {
+                INFO_ISWORTH (arg_info) = TRUE;
+            }
+
+            while (alt != NULL && NODE_TYPE (alt) != N_genarray
+                   && NODE_TYPE (alt) != N_modarray) {
+                if (NODE_TYPE (alt) != N_genarray && NODE_TYPE (alt) != N_modarray) {
+                    switch (NODE_TYPE (alt)) {
+                    case N_fold:
+                        alt = FOLD_NEXT (alt);
+                        break;
+                    case N_spfold:
+                        alt = SPFOLD_NEXT (alt);
+                        break;
+                    case N_break:
+                        alt = BREAK_NEXT (alt);
+                        break;
+                    case N_propagate:
+                        alt = PROPAGATE_NEXT (alt);
+                        break;
+                    default:
+                        alt = NULL;
+                    }
+                }
+            }
+
+            if (alt != NULL && arg_info != NULL) {
+                if (TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
+                    WITH2_SIZE (INFO_WITH2 (arg_info))
+                      = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
+                } else {
+                    if (NODE_TYPE (alt) == N_genarray) {
+                        WITH2_MEMID (INFO_WITH2 (arg_info))
+                          = DUPdoDupNode (GENARRAY_MEM (alt));
+                    } else {
+                        WITH2_MEMID (INFO_WITH2 (arg_info))
+                          = DUPdoDupNode (MODARRAY_MEM (alt));
+                    }
+                }
+            }
         }
     }
 
@@ -421,6 +471,7 @@ MTCMgenarray (node *arg_node, info *arg_info)
 
         if (size_static) {
             size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
+            WITH2_SIZE (INFO_WITH2 (arg_info)) = size;
             if (size >= global.min_parallel_size) {
                 /*
                  * We statically know the size of the result array and its beyond the
@@ -474,6 +525,7 @@ MTCMgenarray (node *arg_node, info *arg_info)
              * criterion.
              */
 
+            WITH2_MEMID (INFO_WITH2 (arg_info)) = DUPdoDupNode (GENARRAY_MEM (arg_node));
             INFO_CONDITION (arg_info)
               = TCmakePrf2 (F_run_mt_genarray, DUPdoDupNode (GENARRAY_MEM (arg_node)),
                             TBmakeNum (global.min_parallel_size));
@@ -499,6 +551,7 @@ MTCMmodarray (node *arg_node, info *arg_info)
     INFO_MOD_GEN_SEEN (arg_info) = TRUE;
     if (TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
         size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
+        WITH2_SIZE (INFO_WITH2 (arg_info)) = size;
         if (size >= global.min_parallel_size) {
             /*
              * We statically know the size of the result array and its beyond the
@@ -537,6 +590,7 @@ MTCMmodarray (node *arg_node, info *arg_info)
          * existing condition.
          */
         if (INFO_CONDITION (arg_info) == NULL) {
+            WITH2_MEMID (INFO_WITH2 (arg_info)) = DUPdoDupNode (MODARRAY_MEM (arg_node));
             INFO_CONDITION (arg_info)
               = TCmakePrf2 (F_run_mt_modarray, DUPdoDupNode (MODARRAY_MEM (arg_node)),
                             TBmakeNum (global.min_parallel_size));

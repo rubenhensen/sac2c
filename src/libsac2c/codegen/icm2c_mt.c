@@ -45,6 +45,183 @@
         }                                                                                \
     }
 
+void
+ICMCompileMT_SMART_BEGIN (int spmd_id)
+{
+    DBUG_ENTER ();
+
+    fprintf (global.outfile, "SAC_MT_SMART_BEGIN( %i )\n", spmd_id);
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SMART_END (void)
+{
+    DBUG_ENTER ();
+
+    fprintf (global.outfile, "SAC_MT_SMART_END()\n");
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SMART_DATA_BEGIN (int data_size)
+{
+    DBUG_ENTER ();
+
+    fprintf (global.outfile, "SAC_MT_SMART_DATA_BEGIN(%i)", data_size);
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SMART_DATA_ADD (int input_size, int nr_threads)
+{
+    DBUG_ENTER ();
+
+    fprintf (global.outfile, "SAC_MT_SMART_DATA_ADD(%i, %i)", input_size, nr_threads);
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SMART_DATA_END (void)
+{
+    DBUG_ENTER ();
+
+    fprintf (global.outfile, "SAC_MT_SMART_DATA_END()");
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SMART_PROBLEM_SIZE (int problem_size)
+{
+    DBUG_ENTER ();
+
+    fprintf (global.outfile, "problem_size = %i;", problem_size);
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SMART_VAR_PROBLEM_SIZE (char *mem_id)
+{
+    DBUG_ENTER ();
+
+    fprintf (global.outfile, "problem_size = SAC_ND_A_DESC_SIZE(%s);", mem_id);
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_BEGIN (void)
+{
+    DBUG_ENTER ();
+
+    fprintf (global.outfile, "problem_size = ");
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_IxI (int inf, int sup, int operation)
+{
+    DBUG_ENTER ();
+
+    switch (operation) {
+    case 0:
+        fprintf (global.outfile, "(%i-%i)", sup, inf);
+        break;
+    case 1:
+        fprintf (global.outfile, " * (%i-%i)", sup, inf);
+        break;
+    case 2:
+        fprintf (global.outfile, " + (%i-%i)", sup, inf);
+        break;
+    }
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_IxC (int inf, char *sup, int operation)
+{
+    DBUG_ENTER ();
+
+    switch (operation) {
+    case 0:
+        fprintf (global.outfile, "(SAC_ND_A_DESC_SIZE(%s)-%i)", sup, inf);
+        break;
+    case 1:
+        fprintf (global.outfile, " * (SAC_ND_A_DESC_SIZE(%s)-%i)", sup, inf);
+        break;
+    case 2:
+        fprintf (global.outfile, " + (SAC_ND_A_DESC_SIZE(%s)-%i)", sup, inf);
+        break;
+    }
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_CxI (char *inf, int sup, int operation)
+{
+    DBUG_ENTER ();
+
+    switch (operation) {
+    case 0:
+        fprintf (global.outfile, "(%i-SAC_ND_A_DESC_SIZE(%s))", sup, inf);
+        break;
+    case 1:
+        fprintf (global.outfile, " * (%i-SAC_ND_A_DESC_SIZE(%s))", sup, inf);
+        break;
+    case 2:
+        fprintf (global.outfile, " + (%i-SAC_ND_A_DESC_SIZE(%s))", sup, inf);
+        break;
+    }
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_CxC (char *inf, char *sup, int operation)
+{
+    DBUG_ENTER ();
+
+    switch (operation) {
+    case 0:
+        fprintf (global.outfile, "(SAC_ND_A_DESC_SIZE(%s)-SAC_ND_A_DESC_SIZE(%s))", sup,
+                 inf);
+        break;
+    case 1:
+        fprintf (global.outfile, " * (SAC_ND_A_DESC_SIZE(%s)-SAC_ND_A_DESC_SIZE(%s))",
+                 sup, inf);
+        break;
+    case 2:
+        fprintf (global.outfile, " + (SAC_ND_A_DESC_SIZE(%s)-SAC_ND_A_DESC_SIZE(%s))",
+                 sup, inf);
+        break;
+    }
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_END (int operation)
+{
+    DBUG_ENTER ();
+
+    if (operation == 0) {
+        fprintf (global.outfile, ";");
+    } else {
+        fprintf (global.outfile, "0;");
+    }
+
+    DBUG_RETURN ();
+}
+
 /******************************************************************************
  *
  * function:

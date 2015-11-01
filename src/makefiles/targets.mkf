@@ -307,7 +307,7 @@ runtime_extraclean_devel  :=
 runtime_extraclean_prod   :=
 
 runtime_sourcedirs        := essentials_h extras_h mt_h mt_omp_h mt_beehive_h mt_pth_h \
-			     mt_lpel_h phm_h mutc_h cuda_h rtspec_h distmem_h \
+			     mt_smart_h mt_lpel_h phm_h mutc_h cuda_h rtspec_h distmem_h \
 			     cudahybrid_h nested_h distmemphm_h
 
 ###############################################################################
@@ -328,6 +328,8 @@ runtime_mt_h           := mt
 runtime_mt_beehive_h   := schedule mt_beehive mt_gen
 
 runtime_mt_pth_h       := mt_barriers mt_pth fp fp_gen
+
+runtime_mt_smart_h     := mt_smart
 
 runtime_mt_lpel_h      := mt_lpel
 

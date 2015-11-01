@@ -19,6 +19,22 @@
 
 #include "types.h"
 
+extern void ICMCompileMT_SMART_BEGIN (int spmd_id);
+extern void ICMCompileMT_SMART_END (void);
+extern void ICMCompileMT_SMART_DATA_BEGIN (int data_size);
+extern void ICMCompileMT_SMART_DATA_ADD (int input_size, int nr_threads);
+extern void ICMCompileMT_SMART_DATA_END (void);
+
+extern void ICMCompileMT_SMART_PROBLEM_SIZE (int problem_size);
+extern void ICMCompileMT_SMART_VAR_PROBLEM_SIZE (char *mem_id);
+extern void ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_BEGIN (void);
+extern void ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_IxI (int inf, int sup, int operation);
+extern void ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_IxC (int inf, char *sup, int operation);
+extern void ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_CxI (char *inf, int sup, int operation);
+extern void ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_CxC (char *inf, char *sup,
+                                                      int operation);
+extern void ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_END (int operation);
+
 extern void ICMCompileMT_SPMDFUN_DECL (char *funname, int vararg_cnt, char **vararg);
 extern void ICMCompileMT_SPMDFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg);
 extern void ICMCompileMT_SPMDFUN_DEF_END (char *funname, int vararg_cnt, char **vararg);

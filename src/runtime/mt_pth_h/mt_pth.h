@@ -262,21 +262,24 @@ SAC_MT_PTH_do_spmd_execute (struct sac_bee_pth_t *const SAC_MT_self)
 #define SAC_MT_SETUP_INITIAL()                                                           \
     SAC_MT_TR_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);       \
     SAC_MT_PTH_INIT_BARRIER (SAC_MT_GLOBAL_THREADS ());                                  \
-    barrier_type = SAC_SET_BARRIER_TYPE;
+    barrier_type = SAC_SET_BARRIER_TYPE;                                                 \
+    SAC_MT_SMART_INIT (SAC_MT_global_threads);
 
 #define SAC_MT_SETUP() SAC_MT_PTH_TR_SetupStandalone (SAC_SET_NUM_SCHEDULERS);
 
 #define SAC_MT_FINALIZE()                                                                \
     SAC_MT_TR_ReleaseHive (SAC_MT_TR_DetachHive ());                                     \
     SAC_MT_TR_ReleaseQueen ();                                                           \
-    SAC_MT_PTH_DESTROY_BARRIER ();
+    SAC_MT_PTH_DESTROY_BARRIER ();                                                       \
+    SAC_MT_SMART_FINALIZE ();
 
 #else /* SAC_DO_TRACE_MT */
 
 #define SAC_MT_SETUP_INITIAL()                                                           \
     SAC_MT_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);          \
     SAC_MT_PTH_INIT_BARRIER (SAC_MT_GLOBAL_THREADS ());                                  \
-    barrier_type = SAC_SET_BARRIER_TYPE;
+    barrier_type = SAC_SET_BARRIER_TYPE;                                                 \
+    SAC_MT_SMART_INIT (SAC_MT_global_threads);
 
 #define SAC_MT_SETUP() SAC_MT_PTH_SetupStandalone (SAC_SET_NUM_SCHEDULERS);
 
@@ -284,7 +287,8 @@ SAC_MT_PTH_do_spmd_execute (struct sac_bee_pth_t *const SAC_MT_self)
     SAC_MT_ReleaseHive (SAC_MT_DetachHive ());                                           \
     SAC_MT_ReleaseQueen ();                                                              \
     SAC_MT_singleton_queen = NULL;                                                       \
-    SAC_MT_PTH_DESTROY_BARRIER ();
+    SAC_MT_PTH_DESTROY_BARRIER ();                                                       \
+    SAC_MT_SMART_FINALIZE ();
 
 #endif
 

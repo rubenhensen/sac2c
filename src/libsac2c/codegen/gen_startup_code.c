@@ -432,6 +432,18 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (global.outfile, "#define SAC_SET_BARRIER_TYPE               %d\n",
              global.mt_barrier_type);
 
+    fprintf (global.outfile, "#define SAC_SET_SMART_DECISIONS            %d\n",
+             global.mt_smart_mode);
+
+    fprintf (global.outfile, "#define SAC_SET_SMART_FILENAME           \"%s\"\n",
+             global.mt_smart_filename);
+
+    fprintf (global.outfile, "#define SAC_SET_SMART_ARCH               \"%s\"\n",
+             global.mt_smart_arch);
+
+    fprintf (global.outfile, "#define SAC_SET_SMART_PERIOD               %d\n",
+             global.mt_smart_period);
+
     fprintf (global.outfile, "#ifndef SAC_SET_THREADS_MAX\n");
     fprintf (global.outfile, "#define SAC_SET_THREADS_MAX          %d\n",
              global.max_threads);

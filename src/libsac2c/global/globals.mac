@@ -388,6 +388,43 @@ GLOBAL (int, mt_barrier_type, 0, xfree_dummy, )
  * 4:"futex"  : a barrier that uses the low level futex lock technique
  */
 
+GLOBAL (int, mt_smart_mode, 0, xfree_dummy, )
+/*
+ * Select smart decision mode
+ * 0:"off"    : (default) do not use the smart decision technique
+ * 1:"train"  : toggles the smart decision tool into training mode
+ * 2:"on"     : use smart decisions to optimize the number of threads being used
+ *              to compute spmd functions
+ */
+
+GLOBAL (char *, mt_smart_filename, "default", xfree_dummy, )
+/*
+ * Filename for smart decision database file
+ */
+
+GLOBAL (char *, mt_smart_arch, NULL, xfree_dummy, )
+/*
+ * The name of the computer architecture you are using.
+ */
+
+GLOBAL (int, mt_smart_period, 500, xfree_dummy, )
+/*
+ * To be able to make smart decisions, a performance profile is being created by
+ * performing a number of time measurements. This value is an indication for the
+ * time (ms) a single measurement should take. The real time can be a bit shorter
+ * or a bit longer.
+ */
+
+GLOBAL (int, mt_smart_gradient, 10, xfree_dummy, )
+/*
+ * To be able to make smart decisions, a performance profile is being created.
+ * This profile is used to create a performance graph for each parallelizable
+ * with loop. The smart decision tool tries to find the point on the performance
+ * graph where the gradient matches the 'mt_smart_gradient' value (degrees). This
+ * point on the performance graph will be used to determine the optimal number
+ * of threads to be used to parallelize the with loop.
+ */
+
 GLOBAL (char *, ompschedule, "static", xfree_dummy, )
 /*
  * OMP schedule technique

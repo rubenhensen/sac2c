@@ -9,6 +9,11 @@
 #include "compile.h"
 
 #include <stdlib.h>
+#include <math.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -99,6 +104,11 @@ struct INFO {
     node *withops;
     node *vardec_init;
     char *with3_dist;
+    node *with2_cond;
+    FILE **fp_list;
+    int *line_count;
+    int nr_threads;
+    int nr_files;
 };
 
 /*
@@ -130,6 +140,11 @@ struct INFO {
 #define INFO_WITHOPS(n) ((n)->withops)
 #define INFO_VARDEC_INIT(n) ((n)->vardec_init)
 #define INFO_WITH3_DIST(n) ((n)->with3_dist)
+#define INFO_WITH2_COND(n) ((n)->with2_cond)
+#define INFO_FP_LIST(n) ((n)->fp_list)
+#define INFO_LINE_COUNT(n) ((n)->line_count)
+#define INFO_NR_THREADS(n) ((n)->nr_threads)
+#define INFO_NR_FILES(n) ((n)->nr_files)
 /*
  * INFO functions
  */
@@ -166,6 +181,11 @@ MakeInfo (void)
     INFO_WITHOPS (result) = NULL;
     INFO_VARDEC_INIT (result) = NULL;
     INFO_WITH3_DIST (result) = NULL;
+    INFO_WITH2_COND (result) = NULL;
+    INFO_FP_LIST (result) = NULL;
+    INFO_LINE_COUNT (result) = NULL;
+    INFO_NR_THREADS (result) = 0;
+    INFO_NR_FILES (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -207,6 +227,21 @@ FreeInfo (info *info)
  *****************************************************************************/
 
 typedef enum { GF_copy, GF_free } generic_fun_t;
+
+/*******************************************************************************
+ *
+ * Struct used by the smart decision tool
+ *
+ ******************************************************************************/
+
+struct smart_decision_t {
+    int64_t *nr_measurements;
+    int64_t *cum_time;
+    float *fun_time;
+    float max_time;
+    float min_time;
+    int problem_size;
+};
 
 /******************************************************************************
  *
@@ -2593,6 +2628,131 @@ AnnotateDescParams (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn  static void COMPdoPrepareSmart(info *info)
+ *
+ * @brief  this function reads all database files that where created by the
+ *         smart decision tool during the training phases. The file pointers
+ *         to these files are stored in the arg_info node alongside with some
+ *         important information such as the number of database files that
+ *         where found, and the largest number of threads that where used during
+ *         the training phase.
+ *         More information can be found in mt_smart.c.
+ *
+ * @param info: arg_info node.
+ *
+ ******************************************************************************/
+static void
+COMPdoPrepareSmart (info *info)
+{
+    DBUG_ENTER ();
+
+    FILE *fp;
+    DIR *dp = opendir ("."); // pointer to current directory
+
+    // reserve some memory to temporarly store the filenames of the database files that
+    // are present in the current directory. The amount of memory that is reserved for
+    // these filenames is an estimation and can be changed later.
+    char *filename = MEMmalloc (
+      (strlen (global.mt_smart_filename) + strlen (global.mt_smart_arch) + 15)
+      * sizeof (char));
+    char *file_id
+      = MEMmalloc ((strlen (global.mt_smart_filename) + strlen (global.mt_smart_arch) + 2)
+                   * sizeof (char));
+
+    struct dirent *inode;
+    int n, i = 0, nr_files = 0, max_nr_threads = 0;
+    unsigned filename_len
+      = strlen (global.mt_smart_filename) + strlen (global.mt_smart_arch) + 14;
+
+    if (dp == NULL) {
+        CTIabort ("Unable to open current directory.");
+    }
+
+    // only target database files contain the following id.
+    sprintf (file_id, "%s.%s", global.mt_smart_filename, global.mt_smart_arch);
+
+    // scan current directory for database files. Only database files that contain the
+    // above id are targeted. The id consists of the filename of the database and the name
+    // of the architecture that one which to compile for. During this scan phase the
+    // number of candidate database files as well as the largest number of threads that
+    // where used during the training phase are computed.
+    while ((inode = readdir (dp)) != NULL) {
+        if (strstr (inode->d_name, file_id)) {
+            if (strlen (inode->d_name) > filename_len) {
+                MEMrealloc (filename, (strlen (inode->d_name) + 1) * sizeof (char));
+                filename_len = strlen (inode->d_name);
+            }
+            strcpy (filename, inode->d_name);
+            strtok (filename, ".");        // stat
+            strtok (NULL, ".");            // <filename>
+            strtok (NULL, ".");            // <architecture>
+            n = atoi (strtok (NULL, ".")); // <threads>
+            max_nr_threads = n > max_nr_threads ? n : max_nr_threads;
+            nr_files++;
+        }
+    }
+
+    if (nr_files == 0) {
+        CTIabort (
+          "No stat files found. Smart decisions can't be made without training data.");
+    }
+
+    // store largest number of threads
+    INFO_NR_THREADS (info) = max_nr_threads;
+    // reserve some memory to store the file pointers to the candidate
+    // database files, also reserve some memory the store the size of
+    // each database file.
+    INFO_FP_LIST (info) = MEMmalloc (nr_files * sizeof (FILE *));
+    INFO_LINE_COUNT (info) = MEMmalloc (nr_files * sizeof (int));
+    // store the total number of database files
+    INFO_NR_FILES (info) = nr_files;
+
+    rewinddir (dp);
+
+    // scan current directory a second time to store the file pointers
+    // to the candidate database files as well as there file sizes.
+    while ((inode = readdir (dp)) != NULL) {
+        if (strstr (inode->d_name, file_id)) {
+            strcpy (filename, inode->d_name);
+            strtok (filename, ".");        // stat
+            strtok (NULL, ".");            // <filename>
+            strtok (NULL, ".");            // <architecture>
+            n = atoi (strtok (NULL, ".")); // <threads>
+            INFO_LINE_COUNT (info)[i] = n + 3;
+
+            fp = fopen (inode->d_name, "r");
+            if (fp == NULL) {
+                CTIabort ("Unable to load stat files.");
+            }
+            INFO_FP_LIST (info)[i] = fp;
+            i++;
+        }
+    }
+
+    // free some memory that is no longer needed
+    closedir (dp);
+    MEMfree (filename);
+    MEMfree (file_id);
+
+    DBUG_RETURN ();
+}
+
+static void
+COMPdoFinalizeSmart (info *info)
+{
+    DBUG_ENTER ();
+
+    for (int i = 0; i < INFO_NR_FILES (info); i++) {
+        fclose (INFO_FP_LIST (info)[i]);
+    }
+    MEMfree (INFO_FP_LIST (info));
+    MEMfree (INFO_LINE_COUNT (info));
+
+    DBUG_RETURN ();
+}
+
 /******************************************************************************
  *
  * COMPILE traversal functions
@@ -2615,6 +2775,10 @@ COMPdoCompile (node *arg_node)
 
     info = MakeInfo ();
 
+    if (global.mt_smart_mode == 2) {
+        COMPdoPrepareSmart (info);
+    }
+
     INFO_FOLDLUT (info) = LUTgenerateLut ();
 
     TRAVpush (TR_comp);
@@ -2627,6 +2791,10 @@ COMPdoCompile (node *arg_node)
     TRAVpop ();
 
     INFO_FOLDLUT (info) = LUTremoveLut (INFO_FOLDLUT (info));
+
+    if (global.mt_smart_mode == 2) {
+        COMPdoFinalizeSmart (info);
+    }
 
     info = FreeInfo (info);
 
@@ -3811,6 +3979,254 @@ AddDescArgs (node *ops, node *args)
 
 /** <!--********************************************************************-->
  *
+ * @fn  int rank(int64_t y, struct smart_decision_t ** X, int n)
+ *
+ * @brief  Sequential algorithm that computes the rank of y in X, where n = |X|.
+ *
+ * @param y: integer y that is used to compute the rank for.
+ * @param X: integer pointer to an sorted integer array.
+ * @param n: integer which is the length of X.
+ *
+ ******************************************************************************/
+int
+rank (int64_t y, struct smart_decision_t **X, int n)
+{
+    DBUG_ENTER ();
+
+    int idx = n / 2;
+    if (n == 0) {
+        DBUG_RETURN (0);
+    }
+    while (n > 1) {
+        if (X[idx]->problem_size <= y) {
+            n -= n / 2;
+            idx += n / 2;
+        } else {
+            n /= 2;
+            idx -= n - n / 2;
+        }
+    }
+
+    DBUG_RETURN (X[idx]->problem_size < y ? idx + 1 : idx);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  struct smart_decision_t * create_smart_decision_data( info * info )
+ *
+ * @brief  this function creates a data structure that is used to analyze
+ *         the performance profile stored in the database file that was
+ *         created by the smart decision tool. For more information see
+ *         mt_smart.c.
+ *
+ * @param info: arg_info node.
+ *
+ ******************************************************************************/
+struct smart_decision_t *
+create_smart_decision_data (info *info)
+{
+    DBUG_ENTER ();
+
+    struct smart_decision_t *data = MEMmalloc (1 * sizeof (struct smart_decision_t));
+
+    data->max_time = 0.0;
+    data->min_time = 0.0;
+    data->problem_size = 0;
+    data->nr_measurements = MEMmalloc (INFO_NR_THREADS (info) * sizeof (int64_t));
+    data->cum_time = MEMmalloc (INFO_NR_THREADS (info) * sizeof (int64_t));
+    data->fun_time = MEMmalloc (INFO_NR_THREADS (info) * sizeof (float));
+
+    for (int i = 0; i < INFO_NR_THREADS (info); i++) {
+        data->nr_measurements[i] = 0;
+        data->cum_time[i] = 0;
+        data->fun_time[i] = 0.0;
+    }
+
+    DBUG_RETURN (data);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  void destroy_smart_decision_data(struct smart_decision_t * data)
+ *
+ * @brief  this function frees the memory that was used by the data structure
+ *         that was created by the create_smart_decision_data function.
+ *
+ * @param data: pointer to the data structure.
+ *
+ ******************************************************************************/
+void
+destroy_smart_decision_data (struct smart_decision_t *data)
+{
+    DBUG_ENTER ();
+
+    MEMfree (data->nr_measurements);
+    MEMfree (data->cum_time);
+    MEMfree (data->fun_time);
+    MEMfree (data);
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  static int * COMPdoDecideSmart( info *info, int spmd_id)
+ *
+ * @brief  This function computes a recommendation table for each with loop
+ *         based on the performance profile stored in the database files that
+ *         where created by the smart decision tool during the training phase.
+ *         The recommendation file is needed on runtime during the decision
+ *         phase. The COMPap function compiles the recommendation table in the
+ *         SAC code for use on runtime by using a series of ICM's. For more
+ *         information see the COMPap function and mt_smart.c.
+ *
+ * @param info: arg_info node.
+ * @param spmd_id: unique identifier for the current with loop.
+ *
+ ******************************************************************************/
+static int *
+COMPdoDecideSmart (info *info, int spmd_id)
+{
+    DBUG_ENTER ();
+
+    bool moved = false;
+    int nr_measurements = 0;
+    int measurements_array_size = 128;
+    int idx;
+    FILE *fp;
+    int64_t *line;
+    struct smart_decision_t **measurements;
+    int *recommendations;
+
+    float slope, angle;
+    float pX, pY, diff;
+    const float t_angle = global.mt_smart_gradient * (M_PI / 180.0);
+
+    // Handle trivial cases
+    if (global.mt_smart_gradient < 0 || global.mt_smart_gradient > 90) {
+        CTIabort ("The gradient must be a value between 0 and 90 degrees.");
+    } else if (global.mt_smart_gradient == 90) {
+        DBUG_PRINT ("SAC will use 1 thread to compute SPMD function %i.\n", spmd_id);
+        recommendations = MEMmalloc (3 * sizeof (int));
+        recommendations[0] = 1; // one recommendation
+        recommendations[1] = 0; // for any problem size of 1 or larger
+        recommendations[2] = 1; // use 1 thread
+        DBUG_RETURN (recommendations);
+    }
+
+    measurements
+      = MEMmalloc (measurements_array_size * sizeof (struct smart_decision_t *));
+
+    // Combine and sort the smart decision profiles from the candidate database files that
+    // where found by the COMPdoPrepareSmart function. The combined profiles from the
+    // candidate database files are stored in the smart_decision_t structs. These structs
+    // are designed to make it easy to analyse the profiles. Complexity: O(n^2) + O(log
+    // n!) = O(n^2) Start by looping over all candidate database files.
+    for (int i = 0; i < INFO_NR_FILES (info); i++) {
+        line = MEMmalloc (INFO_LINE_COUNT (info)[i] * sizeof (int64_t));
+        fp = INFO_FP_LIST (info)[i];
+        rewind (fp);
+        // Read all lines in the database
+        while (fread (line, sizeof (int64_t), INFO_LINE_COUNT (info)[i], fp)
+               == (unsigned)INFO_LINE_COUNT (info)[i]) {
+            // We are only interested in those lines that contain information about the
+            // current with loop, because we want to construct the recommendation table
+            // for the current with loop.
+            if (line[0] == spmd_id) {
+                // make sure that there is enough memory available to store the next
+                // profile
+                if (nr_measurements >= measurements_array_size) {
+                    measurements_array_size *= 2;
+                    MEMrealloc (measurements, measurements_array_size
+                                                * sizeof (struct smart_decision_t *));
+                }
+                // find the memory location for the current profile
+                idx = rank (line[1], measurements, nr_measurements);
+                // check if profiles can be combined, if not create some space for a new
+                // profile.
+                if (idx < nr_measurements && measurements[idx]->problem_size != line[1]) {
+                    memmove (&measurements[idx + 1], &measurements[idx],
+                             (nr_measurements - idx)
+                               * sizeof (struct smart_decision_t *));
+                    moved = true;
+                }
+                // create a new profile
+                if (idx == nr_measurements || moved == true) {
+                    measurements[idx] = create_smart_decision_data (info);
+                    measurements[idx]->problem_size = line[1];
+                    measurements[idx]->max_time = 0.0;
+                    measurements[idx]->min_time = INFINITY;
+                    nr_measurements++;
+                    moved = false;
+                }
+                // combine profiles
+                for (int j = 0; j < INFO_LINE_COUNT (info)[i] - 3; j++) {
+                    measurements[idx]->nr_measurements[j] += line[2];
+                    measurements[idx]->cum_time[j] += line[j + 3];
+                    measurements[idx]->fun_time[j]
+                      = measurements[idx]->cum_time[j]
+                        / (float)measurements[idx]->nr_measurements[j];
+                    if (measurements[idx]->fun_time[j] > measurements[idx]->max_time) {
+                        measurements[idx]->max_time = measurements[idx]->fun_time[j];
+                    }
+                    if (measurements[idx]->fun_time[j] < measurements[idx]->min_time) {
+                        measurements[idx]->min_time = measurements[idx]->fun_time[j];
+                    }
+                }
+            }
+        }
+        MEMfree (line);
+    }
+
+    // Handle case when there are no measurements
+    if (nr_measurements == 0) {
+        DBUG_PRINT ("SAC will use all threads to compute SPMD function %i.\n", spmd_id);
+        recommendations = MEMmalloc (3 * sizeof (int));
+        recommendations[0] = 1; // one recommendation
+        recommendations[1] = 0; // for any problem size of 0 or larger
+        recommendations[2] = 0; // use all threads
+    }
+    // Compute recommendation table when there are 1 or more measurements
+    else {
+        DBUG_PRINT ("SAC will use a recommendation table to decide how many threads "
+                    "should be used to compute SPMD function %i.\n",
+                    spmd_id);
+        recommendations = MEMmalloc ((2 * nr_measurements + 1) * sizeof (int));
+        recommendations[0]
+          = nr_measurements; // N recommendations (N is defined by 'nr_measurements')
+
+        // Convert sorted decision data in a recommendation table
+        for (int i = 0; i < nr_measurements; i++) {
+            recommendations[2 * i + 1]
+              = measurements[i]->problem_size; // for problem size x (x is defined by
+                                               // 'measurements[i]->problem_size')
+            recommendations[2 * (i + 1)] = 0;
+            for (int j = 1; j < INFO_NR_THREADS (info); j++) {
+                diff = measurements[i]->max_time - measurements[i]->min_time;
+                pX = (measurements[i]->max_time - measurements[i]->fun_time[j]) / diff;
+                pY
+                  = (measurements[i]->max_time - measurements[i]->fun_time[j - 1]) / diff;
+                slope = pX - pY;
+                angle = atan (slope);
+                if (angle <= t_angle || angle <= 0) {
+                    recommendations[2 * (i + 1)] = j; // use j threads
+                    break;
+                }
+            }
+        }
+    }
+
+    // Clean-up phase
+    for (int i = 0; i < nr_measurements; i++) {
+        destroy_smart_decision_data (measurements[i]);
+    }
+    MEMfree (measurements);
+
+    DBUG_RETURN (recommendations);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPap( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_ap node.
@@ -3829,9 +4245,15 @@ AddDescArgs (node *ops, node *args)
 node *
 COMPap (node *arg_node, info *arg_info)
 {
-    node *let_ids, *icm, *icm_args;
-    node *fundef;
-    node *assigns, *assigns1 = NULL, *assigns2 = NULL;
+    node *let_ids, *icm, *icm_conf, *icm_args, *icm_pre, *icm_post;
+    node *fundef, *with2, *cond, *seg, *array_inf, *array_sup;
+    node *assigns, *assigns1 = NULL, *assigns2 = NULL, *assigns4 = NULL;
+
+    node **icm_data, **icm_conf_expr = NULL;
+    int *recommendations;
+    int data_size, dims, seg_dim, op_offset, op, nr_segs, idx;
+
+    static int spmdfun_count = 0;
 
     DBUG_ENTER ();
 
@@ -3860,7 +4282,158 @@ COMPap (node *arg_node, info *arg_info)
     icm_args = MakeFunApArgs (arg_node);
 
     if (FUNDEF_ISSPMDFUN (fundef)) {
-        icm = TBmakeIcm ("MT_SPMDFUN_AP", icm_args);
+        if (global.mt_smart_mode > 0) {
+
+            spmdfun_count++;
+
+            assigns4 = BLOCK_ASSIGNS (FUNDEF_BODY (fundef));
+
+            while (assigns4 != NULL
+                   && (NODE_TYPE (ASSIGN_STMT (assigns4)) != N_let
+                       || NODE_TYPE (LET_EXPR (ASSIGN_STMT (assigns4))) != N_with2)) {
+                assigns4 = ASSIGN_NEXT (assigns4);
+            }
+
+            DBUG_ASSERT (assigns4 != NULL,
+                         "A SPMD function without a with loop in the body was detected!");
+
+            with2 = LET_EXPR (ASSIGN_STMT (assigns4));
+
+            cond = INFO_WITH2_COND (arg_info);
+
+            if (WITH2_SIZE (with2) < 0 && cond != NULL && COND_ELSE (cond) != NULL) {
+                assigns4 = BLOCK_ASSIGNS (COND_ELSE (cond));
+
+                while (assigns4 != NULL
+                       && (NODE_TYPE (ASSIGN_STMT (assigns4)) != N_let
+                           || NODE_TYPE (LET_EXPR (ASSIGN_STMT (assigns4))) != N_with2)) {
+                    assigns4 = ASSIGN_NEXT (assigns4);
+                }
+
+                if (assigns4 != NULL) {
+                    with2 = LET_EXPR (ASSIGN_STMT (assigns4));
+                }
+
+                INFO_WITH2_COND (arg_info) = NULL;
+            }
+
+            if (WITH2_SIZE (with2) > -1) {
+                icm_conf
+                  = TCmakeIcm1 ("MT_SMART_PROBLEM_SIZE", TBmakeNum (WITH2_SIZE (with2)));
+            } else if (WITH2_MEMID (with2) != NULL) {
+                icm_conf = TCmakeIcm1 ("MT_SMART_VAR_PROBLEM_SIZE",
+                                       DUPdupNodeNt (WITH2_MEMID (with2)));
+            } else if (WITH2_SEGS (with2) != NULL) {
+                seg = WITH2_SEGS (with2);
+                nr_segs = 0;
+                op_offset = -2;
+
+                while (seg != NULL) {
+                    seg = WLSEG_NEXT (seg);
+                    nr_segs++;
+                }
+
+                idx = 0;
+                seg = WITH2_SEGS (with2);
+                dims = WITH2_DIMS (with2);
+                icm_conf_expr = MEMmalloc ((nr_segs * dims + 2) * sizeof (node *));
+                icm_conf_expr[idx++]
+                  = TBmakeIcm ("MT_SMART_EXPR_PROBLEM_SIZE_BEGIN", NULL);
+
+                while (seg != NULL) {
+                    seg_dim = WLSEG_DIMS (seg);
+                    if (seg_dim > dims) {
+                        MEMrealloc (icm_conf_expr,
+                                    (nr_segs * seg_dim + 2) * sizeof (node *));
+                        dims = seg_dim;
+                    }
+                    if (seg_dim > 0) {
+                        array_inf = ARRAY_AELEMS (WLSEG_IDXINF (seg));
+                        array_sup = ARRAY_AELEMS (WLSEG_IDXSUP (seg));
+
+                        for (int i = 0; i < seg_dim; i++) {
+                            op = op_offset + (i == 0 ? 2 : 1);
+                            DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (array_inf)) == N_num
+                                           || NODE_TYPE (EXPRS_EXPR (array_inf)) == N_id,
+                                         "The array IdxInf of N_wlseg does contain an "
+                                         "attribute that is not a N_num neither a N_id!");
+                            DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (array_sup)) == N_num
+                                           || NODE_TYPE (EXPRS_EXPR (array_sup)) == N_id,
+                                         "The array IdxSup of N_wlseg does contain an "
+                                         "attribute that is not a N_num neither a N_id!");
+                            if (NODE_TYPE (EXPRS_EXPR (array_inf)) == N_num
+                                && NODE_TYPE (EXPRS_EXPR (array_sup)) == N_num) {
+                                icm_conf_expr[idx++]
+                                  = TCmakeIcm3 ("MT_SMART_EXPR_PROBLEM_SIZE_IxI",
+                                                TBmakeNum (
+                                                  NUM_VAL (EXPRS_EXPR (array_inf))),
+                                                TBmakeNum (
+                                                  NUM_VAL (EXPRS_EXPR (array_sup))),
+                                                TBmakeNum (op));
+                            } else if (NODE_TYPE (EXPRS_EXPR (array_inf)) == N_num
+                                       && NODE_TYPE (EXPRS_EXPR (array_sup)) == N_id) {
+                                icm_conf_expr[idx++]
+                                  = TCmakeIcm3 ("MT_SMART_EXPR_PROBLEM_SIZE_IxC",
+                                                TBmakeNum (
+                                                  NUM_VAL (EXPRS_EXPR (array_inf))),
+                                                DUPdupNodeNt (EXPRS_EXPR (array_sup)),
+                                                TBmakeNum (op));
+                            } else if (NODE_TYPE (EXPRS_EXPR (array_inf)) == N_id
+                                       && NODE_TYPE (EXPRS_EXPR (array_sup)) == N_num) {
+                                icm_conf_expr[idx++]
+                                  = TCmakeIcm3 ("MT_SMART_EXPR_PROBLEM_SIZE_CxI",
+                                                DUPdupNodeNt (EXPRS_EXPR (array_inf)),
+                                                TBmakeNum (
+                                                  NUM_VAL (EXPRS_EXPR (array_sup))),
+                                                TBmakeNum (op));
+                            } else {
+                                icm_conf_expr[idx++]
+                                  = TCmakeIcm3 ("MT_SMART_EXPR_PROBLEM_SIZE_CxC",
+                                                DUPdupNodeNt (EXPRS_EXPR (array_inf)),
+                                                DUPdupNodeNt (EXPRS_EXPR (array_sup)),
+                                                TBmakeNum (op));
+                            }
+                            array_inf = EXPRS_NEXT (array_inf);
+                            array_sup = EXPRS_NEXT (array_sup);
+                            op_offset = 0;
+                        }
+                    }
+                    seg = WLSEG_NEXT (seg);
+                }
+
+                icm_conf_expr[idx++]
+                  = TCmakeIcm1 ("MT_SMART_EXPR_PROBLEM_SIZE_END", TBmakeNum (op_offset));
+            } else {
+                icm_conf = TCmakeIcm1 ("MT_SMART_PROBLEM_SIZE", TBmakeNum (0));
+            }
+
+            // compute and compile recommendation table in SAC code if one has to compile
+            // for the decision phase.
+            if (global.mt_smart_mode == 2) {
+                // compute recommendation table
+                recommendations = COMPdoDecideSmart (arg_info, spmdfun_count);
+                // create set of ICM's to compile the recommendation tabel in the SAC
+                // code.
+                data_size = recommendations[0];
+                icm_data = MEMmalloc ((data_size + 2) * sizeof (node *));
+                icm_data[0] = TCmakeIcm1 ("MT_SMART_DATA_BEGIN", TBmakeNum (data_size));
+                for (int i = 0; i < data_size; i++) {
+                    icm_data[i + 1]
+                      = TCmakeIcm2 ("MT_SMART_DATA_ADD",
+                                    TBmakeNum (recommendations[2 * i + 1]),
+                                    TBmakeNum (recommendations[2 * (i + 1)]));
+                }
+                icm_data[data_size + 1] = TBmakeIcm ("MT_SMART_DATA_END", NULL);
+            }
+            // create ICM's to compile the calls for the execution of the runtime
+            // components of the smart decision tool in the SAC code.
+            icm_pre = TCmakeIcm1 ("MT_SMART_BEGIN", TBmakeNum (spmdfun_count));
+            icm = TBmakeIcm ("MT_SPMDFUN_AP", icm_args);
+            icm_post = TBmakeIcm ("MT_SMART_END", NULL);
+
+        } else {
+            icm = TBmakeIcm ("MT_SPMDFUN_AP", icm_args);
+        }
     } else if (FUNDEF_ISMTFUN (fundef) || FUNDEF_ISXTFUN (fundef)) {
         /* The interface of the MT and XT funs is the same, hence use the same ICM. */
         icm = TBmakeIcm ("MT_MTFUN_AP", icm_args);
@@ -3951,7 +4524,29 @@ COMPap (node *arg_node, info *arg_info)
          * We return an N_assign chain here rather than an N_ap node.
          * The surrounding COMPlet takes care of this.
          */
-        arg_node = TBmakeAssign (icm, assigns);
+        if (FUNDEF_ISSPMDFUN (fundef) && global.mt_smart_mode > 0) {
+            arg_node
+              = TBmakeAssign (icm_pre,
+                              TBmakeAssign (icm, TCappendAssign (assigns,
+                                                                 TBmakeAssign (icm_post,
+                                                                               NULL))));
+            if (global.mt_smart_mode == 2) {
+                for (int i = data_size + 1; i >= 0; i--) {
+                    arg_node = TBmakeAssign (icm_data[i], arg_node);
+                }
+                MEMfree (icm_data);
+            }
+            if (icm_conf_expr != NULL) {
+                for (int i = nr_segs + 1; i >= 0; i--) {
+                    arg_node = TBmakeAssign (icm_conf_expr[i], arg_node);
+                }
+                MEMfree (icm_conf_expr);
+            } else {
+                arg_node = TBmakeAssign (icm_conf, arg_node);
+            }
+        } else {
+            arg_node = TBmakeAssign (icm, assigns);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -9048,6 +9643,7 @@ COMPcond (node *arg_node, info *arg_info)
                  "if-clause condition is neither a N_id nor a N_bool but node type %d!",
                  NODE_TYPE (COND_COND (arg_node)));
 
+    INFO_WITH2_COND (arg_info) = arg_node;
     INFO_COND (arg_info) = TRUE;
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     INFO_COND (arg_info) = FALSE;

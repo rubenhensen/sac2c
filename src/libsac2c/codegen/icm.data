@@ -1075,6 +1075,90 @@ ICM_DEF( MT_MTFUN_RET, ICM_TRACE(fun))
 ICM_END( MT_MTFUN_RET, (retname_NT, vararg_cnt, vararg))
 #endif
 
+#if defined(MT_SMART_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_BEGIN, ICM_TRACE_NONE )
+  ICM_INT( spmd_id )
+ICM_END( MT_SMART_BEGIN, (spmd_id))
+#endif
+
+#if defined(MT_SMART_END) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_END, ICM_TRACE_NONE )
+ICM_END( MT_SMART_END, ())
+#endif
+
+#if defined(MT_SMART_DATA_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_DATA_BEGIN, ICM_TRACE_NONE )
+  ICM_INT( data_size )
+ICM_END( MT_SMART_DATA_BEGIN, (data_size))
+#endif
+
+#if defined(MT_SMART_DATA_ADD) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_DATA_ADD, ICM_TRACE_NONE )
+  ICM_INT( input_size )
+  ICM_INT( nr_threads )
+ICM_END( MT_SMART_DATA_ADD, (input_size, nr_threads))
+#endif
+
+#if defined(MT_SMART_DATA_END) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_DATA_END, ICM_TRACE_NONE )
+ICM_END( MT_SMART_DATA_END, ())
+#endif
+
+#if defined(MT_SMART_PROBLEM_SIZE) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_PROBLEM_SIZE, ICM_TRACE_NONE )
+  ICM_INT( problem_size )
+ICM_END( MT_SMART_PROBLEM_SIZE, (problem_size))
+#endif
+
+#if defined(MT_SMART_VAR_PROBLEM_SIZE) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_VAR_PROBLEM_SIZE, ICM_TRACE_NONE )
+  ICM_NT( mem_id )
+ICM_END( MT_SMART_VAR_PROBLEM_SIZE, (mem_id))
+#endif
+
+#if defined(MT_SMART_EXPR_PROBLEM_SIZE_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_EXPR_PROBLEM_SIZE_BEGIN, ICM_TRACE_NONE )
+ICM_END( MT_SMART_EXPR_PROBLEM_SIZE_BEGIN, ())
+#endif
+
+#if defined(MT_SMART_EXPR_PROBLEM_SIZE_IxI) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_EXPR_PROBLEM_SIZE_IxI, ICM_TRACE_NONE )
+  ICM_INT( inf_i)
+  ICM_INT( sup_i)
+  ICM_INT( operation)
+ICM_END( MT_SMART_EXPR_PROBLEM_SIZE_IxI, (inf_i, sup_i, operation))
+#endif
+
+#if defined(MT_SMART_EXPR_PROBLEM_SIZE_IxC) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_EXPR_PROBLEM_SIZE_IxC, ICM_TRACE_NONE )
+  ICM_INT( inf_i)
+  ICM_NT( sup_c)
+  ICM_INT( operation)
+ICM_END( MT_SMART_EXPR_PROBLEM_SIZE_IxC, (inf_i, sup_c, operation))
+#endif
+
+#if defined(MT_SMART_EXPR_PROBLEM_SIZE_CxI) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_EXPR_PROBLEM_SIZE_CxI, ICM_TRACE_NONE )
+  ICM_NT( inf_c)
+  ICM_INT( sup_i)
+  ICM_INT( operation)
+ICM_END( MT_SMART_EXPR_PROBLEM_SIZE_CxI, (inf_c, sup_i, operation))
+#endif
+
+#if defined(MT_SMART_EXPR_PROBLEM_SIZE_CxC) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_EXPR_PROBLEM_SIZE_CxC, ICM_TRACE_NONE )
+  ICM_NT( inf_c)
+  ICM_NT( sup_c)
+  ICM_INT( operation)
+ICM_END( MT_SMART_EXPR_PROBLEM_SIZE_CxC, (inf_c, sup_c, operation))
+#endif
+
+#if defined(MT_SMART_EXPR_PROBLEM_SIZE_END) || defined(ICM_ALL)
+ICM_DEF( MT_SMART_EXPR_PROBLEM_SIZE_END, ICM_TRACE_NONE )
+  ICM_INT( operation)
+ICM_END( MT_SMART_EXPR_PROBLEM_SIZE_END, ( operation))
+#endif
+
 #if defined(MT_SPMDFUN_DECL) || defined(ICM_ALL)
 ICM_DEF( MT_SPMDFUN_DECL, ICM_TRACE_NONE)
   ICM_ID( funname)

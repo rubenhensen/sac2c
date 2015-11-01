@@ -9993,6 +9993,38 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="Size" default="-1" inconstructor="no">
+          <description>
+            The size of the array that is constructed by the with loop, or -1 if
+            the size is not known at compile time.
+          </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="mt_mtcm" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="MemId" default="NULL" inconstructor="no">
+          <description>
+            Pointer to Id containing the name of the array that is constructed by
+            the with loop.
+          </description>
+          <type name="Node">
+            <targets>
+              <target mandatory="no">
+                <node name="Id" />
+                <phases>
+                  <range from="mt_mtcm" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="Pragma" default="NULL" inconstructor="no">
           <type name="Node">
             <targets>
