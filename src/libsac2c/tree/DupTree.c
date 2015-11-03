@@ -2771,7 +2771,7 @@ DUPdefault (node *arg_node, info *arg_info)
 node *
 DUPwith2 (node *arg_node, info *arg_info)
 {
-    node *new_node, *id, *segs, *code, *withop;
+    node *new_node, *id, *segs, *code, *withop, *memid;
 
     DBUG_ENTER ();
 
@@ -2783,8 +2783,13 @@ DUPwith2 (node *arg_node, info *arg_info)
     code = DUPTRAV (WITH2_CODE (arg_node));
     segs = DUPTRAV (WITH2_SEGS (arg_node));
     withop = DUPTRAV (WITH2_WITHOP (arg_node));
+    memid = DUPTRAV (WITH2_MEMID (arg_node));
 
     new_node = TBmakeWith2 (WITH2_DIMS (arg_node), id, segs, code, withop);
+
+    WITH2_MEMID (new_node) = memid;
+
+    WITH2_SIZE (new_node) = WITH2_SIZE (arg_node);
 
     WITH2_IN_MASK (new_node) = DupDfmask (WITH2_IN_MASK (arg_node), arg_info);
     WITH2_OUT_MASK (new_node) = DupDfmask (WITH2_OUT_MASK (arg_node), arg_info);
