@@ -15,6 +15,7 @@
 #include "ctinfo.h"
 #include "free.h"
 #include "globals.h"
+#include "options.h"
 #include "handle_mops.h"
 #include "new_types.h"
 #include "user_types.h"
@@ -5846,6 +5847,9 @@ parse (struct parser *parser)
 
         parser->in_module = true;
         parser->current_module = name;
+
+        OPTcheckOptionConsistencyForTarget (true);
+
         defs = handle_definitions (parser);
         parser->in_module = false;
         parser->current_module = NULL;
@@ -5939,6 +5943,9 @@ parse (struct parser *parser)
            module to the name of the class.  */
         parser->in_module = true;
         parser->current_module = name;
+
+        OPTcheckOptionConsistencyForTarget (true);
+
         defs = handle_definitions (parser);
         parser->in_module = false;
         parser->current_module = NULL;
@@ -5958,6 +5965,9 @@ parse (struct parser *parser)
         node *defs;
 
         parser_unget (parser);
+
+        OPTcheckOptionConsistencyForTarget (false);
+
         defs = handle_definitions (parser);
         if (CTIgetErrorCount () == 0 && defs != error_mark_node) {
             MODULE_NAMESPACE (defs) = NSgetRootNamespace ();

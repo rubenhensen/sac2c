@@ -497,9 +497,39 @@ OPTcheckOptionConsistency (void)
     FMGRprependPath (PK_tree_path, global.config.tree_outputdir);
     FMGRprependPath (PK_lib_path, global.config.lib_outputdir);
 
-    if (global.outfilename != NULL) {
-        FMGRprependPath (PK_tree_path, global.outfilename);
-        FMGRprependPath (PK_lib_path, global.outfilename);
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *OPTcheckOptionConsistencyForTarget(  bool in_module)
+ *
+ * description:
+ *   This function is called after the compiler knows whether
+ *   it is compiling a module or a plain program, but before
+ *   it starts searching for dependent modules.
+ *
+ ******************************************************************************/
+
+void
+OPTcheckOptionConsistencyForTarget (bool in_module)
+{
+    DBUG_ENTER ();
+
+    if (in_module) {
+
+        /* when compiling a module, the directory specified with
+           -o must be searched to find dependent modules.
+           However this must not be done when compiling plain
+           programs, because then -o specifies a binary file, not
+           a directory.
+        */
+
+        if (global.outfilename != NULL) {
+            FMGRprependPath (PK_tree_path, global.outfilename);
+            FMGRprependPath (PK_lib_path, global.outfilename);
+        }
     }
 
     if (global.target_modlibdir != NULL) {
