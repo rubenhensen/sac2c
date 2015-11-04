@@ -99,7 +99,8 @@ libsac_sources = \
   src/libsac/mt_lpel/mt_lpel_trace.c \
   src/libsac/mt_omp/mt_omp.c \
   src/libsac/mt_pth/mt_pth_std.c \
-  src/libsac/mt_pth/mt_pth_trace.c
+  src/libsac/mt_pth/mt_pth_trace.c \
+  src/libsac/mt_smart/mt_smart.c
 
 
 libsacdistmem_sources = \
@@ -218,7 +219,7 @@ p = %
 $(LIBBASE)/$(LIBDIR)/%$(MODEXT): \
 	$$(patsubst $$p.c,$$p-$(TARGET)$$(suffix $$*)$(OBJEXT),$$($$(basename $$*)_sources))
 	$(HIDEat)$(MKDIR_P) $(@D)
-	$(HIDEl)$(SAC2C) $(HIDEv) -linksetsize 0 -noprelude -cc ldmod -o $@ $^
+	$(HIDEl)$(SAC2C) $(HIDEv) -linksetsize 0 -noprelude -cc ldmod -Xl -lm -o $@ $^
 
 $(PRELUDEBASE)/$(TREEDIR)/libsacpreludeTree$(TREEEXT) \
 	$(PRELUDEBASE)/$(LIBDIR)/libsacpreludeMod$(MODEXT): \

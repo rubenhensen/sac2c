@@ -4520,10 +4520,6 @@ COMPap (node *arg_node, info *arg_info)
         }
         arg_node = TBmakeAssign (icm, assigns);
     } else {
-        /*
-         * We return an N_assign chain here rather than an N_ap node.
-         * The surrounding COMPlet takes care of this.
-         */
         if (FUNDEF_ISSPMDFUN (fundef) && global.mt_smart_mode > 0) {
             arg_node
               = TBmakeAssign (icm_pre,
@@ -4537,14 +4533,19 @@ COMPap (node *arg_node, info *arg_info)
                 MEMfree (icm_data);
             }
             if (icm_conf_expr != NULL) {
-                for (int i = nr_segs + 1; i >= 0; i--) {
+                for (int i = idx; i >= 0; i--) {
                     arg_node = TBmakeAssign (icm_conf_expr[i], arg_node);
                 }
                 MEMfree (icm_conf_expr);
             } else {
                 arg_node = TBmakeAssign (icm_conf, arg_node);
             }
-        } else {
+        }
+        /*
+         * We return an N_assign chain here rather than an N_ap node.
+         * The surrounding COMPlet takes care of this.
+         */
+        else {
             arg_node = TBmakeAssign (icm, assigns);
         }
     }
