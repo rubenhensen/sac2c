@@ -70,7 +70,7 @@ printAst (FILE *fd, isl_ast_node *ast, char *titl, int verbose, int fmt)
 
     if (verbose) {
         ctx = isl_ast_node_get_ctx (ast);
-        fprintf (fd, "Union %s is:\n", titl);
+        fprintf (fd, "AST %s is:\n", titl);
         p = isl_printer_to_file (ctx, fd);
         if (0 != fmt) {
             p = isl_printer_set_output_format (p, fmt);
@@ -317,7 +317,7 @@ PolyhedralWLFIntersectCalc (int verbose)
     // Perform the ISL codegen operation, using the intersect data.
     ast = isl_ast_build_node_from_schedule (build, sched);
 
-    printAst (stdout, ast, "Intersect calculated is:", verbose, ISL_FORMAT_C);
+    printAst (stdout, ast, "ISL AST calculated is:", verbose, ISL_FORMAT_C);
 
     fprintf (stdout, "%d\n", z); // Write the result that PHUT will read.
     fprintf (stdout, "ast \n");
