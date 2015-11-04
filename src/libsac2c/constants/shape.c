@@ -42,6 +42,7 @@
 #include "memory.h"
 #include "free.h"
 #include "check_mem.h"
+#include "str_buffer.h"
 
 /*
  * Now, we include the own interface! The reason for this is twofold:
@@ -570,32 +571,37 @@ SHtakeFromShape (int n, shape *a)
 char *
 SHshape2String (int dots, shape *shp)
 {
-    static char buf[256];
-    char *tmp = &buf[0];
+    static str_buf *buf;
+    char *res;
     int i, j, n;
 
     DBUG_ENTER ();
     DBUG_ASSERT (shp != NULL, "SHshape2String called with NULL shape!");
 
-    tmp += sprintf (tmp, "[");
+    if (buf == NULL) {
+        buf = SBUFcreate (64);
+    }
+    buf = SBUFprintf (buf, "[");
     for (i = 0; i < dots; i++) {
         if (i == 0) {
-            tmp += sprintf (tmp, ".");
+            buf = SBUFprintf (buf, ".");
         } else {
-            tmp += sprintf (tmp, ",.");
+            buf = SBUFprintf (buf, ",.");
         }
     }
     n = SHAPE_DIM (shp);
     for (j = 0; j < n; i++, j++) {
         if (i == 0) {
-            tmp += sprintf (tmp, "%d", SHAPE_EXT (shp, i));
+            buf = SBUFprintf (buf, "%d", SHAPE_EXT (shp, i));
         } else {
-            tmp += sprintf (tmp, ",%d", SHAPE_EXT (shp, i));
+            buf = SBUFprintf (buf, ",%d", SHAPE_EXT (shp, i));
         }
     }
-    tmp += sprintf (tmp, "]");
+    buf = SBUFprintf (buf, "]");
+    res = SBUF2str (buf);
+    SBUFflush (buf);
 
-    DBUG_RETURN (STRcpy (buf));
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
