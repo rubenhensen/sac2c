@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
 
 #include "config.h"
 
@@ -1123,6 +1125,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("specmode");
+
+    ARGS_FLAG ("stop", kill (getpid (), SIGSTOP));
 
     /*
      * Options starting with ttttttttttttttttttttttttttttttttttttttttttt
