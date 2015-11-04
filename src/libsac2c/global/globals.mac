@@ -116,7 +116,7 @@ GLOBAL (namespace_t *, modulenamespace, NULL, xfree_dummy, )
  * namespace of module/class which is compiled
  */
 
-GLOBAL (char *, targetdir, NULL, xfree_dummy, )
+GLOBAL (char *, targetdir, NULL, xfree_char_ptr, )
 /*
  * name of C source code file
  */
@@ -124,6 +124,12 @@ GLOBAL (char *, targetdir, NULL, xfree_dummy, )
 GLOBAL (file_type, filetype, FT_prog, xfree_dummy, )
 /*
  * kind of file: FT_prog, FT_modimp or FT_classimp
+ */
+
+GLOBAL (char *, cwd, NULL, xfree_char_ptr, )
+/*
+ * current working directory of the compiler,
+ * used to canonicalize relative paths.
  */
 
 GLOBAL (char *, tmp_dirname, NULL, xfree_char_ptr, )

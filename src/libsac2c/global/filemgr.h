@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include "types.h"
 
+extern char *FMGRabsName (const char *name);
 extern char *FMGRfindFile (pathkind_t p, const char *name);
 extern char *FMGRfindFilePath (pathkind_t p, const char *name);
 extern void *FMGRmapPath (pathkind_t p, void *(*mapfun) (const char *, void *),

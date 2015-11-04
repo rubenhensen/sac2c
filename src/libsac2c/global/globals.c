@@ -46,6 +46,8 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/param.h>
+#include <string.h>
+#include <sys/errno.h>
 
 /*
  * global variable to hold the global variables
@@ -654,6 +656,10 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname)
 
     /* setup the line length for cti interface.  */
     set_message_line_length ((int)get_terminal_size ());
+
+    global.cwd = getcwd (0, 0);
+    if (!global.cwd)
+        CTIabort ("getcwd: %s", strerror (errno));
 
     DBUG_RETURN ();
 }

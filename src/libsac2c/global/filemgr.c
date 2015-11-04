@@ -306,9 +306,6 @@ AppendConfigPaths (pathkind_t pathkind, const char *path)
  * to have a higher priority.
  * At last, the paths specified by environment variables are appended.
  * These have a lower priority.
- * At very last, the required paths for using the SAC standard library
- * relative to the shell variable SAC_HOME are added. These have the
- * lowest priority.
  *
  *
  ******************************************************************************/
@@ -363,7 +360,36 @@ FMGRdirname (const char *path)
         result[last - path] = '\0';
     }
 
+    char *newresult = FMGRabsName (result);
+    result = MEMfree (result);
+    result = newresult;
+
     DBUG_RETURN (result);
+}
+
+/*
+ * Retrieve the absolute path of a path.
+ * The result is always a new string.
+ */
+char *
+FMGRabsName (const char *path)
+{
+    if (path[0] != '/') {
+        /* first reduce as follows:
+           "./xxxx" -> reduce("xxxx")
+           "./"     -> ""
+           "."      -> ""
+        */
+        while (path[0] == '.' && (!path[1] || path[1] == '/'))
+            path += path[1] ? 2 : 1;
+
+        /* end situation:
+           ""    -> cwd
+           "xxx" -> cwd/xxx
+        */
+        return path[0] ? STRcatn (3, global.cwd, "/", path) : STRcpy (global.cwd);
+    } else
+        return STRcpy (path);
 }
 
 /*
@@ -638,9 +664,10 @@ FMGRsetFileNames (node *module)
         }
 
         if (global.outfilename == NULL) {
-            global.targetdir = global.install ? global.config.tree_outputdir : ".";
+            global.targetdir
+              = FMGRabsName (global.install ? global.config.tree_outputdir : ".");
         } else {
-            global.targetdir = global.outfilename;
+            global.targetdir = FMGRabsName (global.outfilename);
             if (!FMGRcheckExistDir (global.targetdir)) {
                 CTIabort ("Target directory `%s' does not exist.", global.targetdir);
             }

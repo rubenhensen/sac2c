@@ -31,9 +31,15 @@ AddLibPath (const char *path, void *buf)
     DBUG_ENTER ();
 
     str_buf *sbuf = (str_buf *)buf;
-    char *str = STRsubstToken (global.config.ldpath, "%path%", path);
+
+    /* make path absolute as the linker can get confused otherwise. */
+    char *abspath = FMGRabsName (path);
+
+    char *str = STRsubstToken (global.config.ldpath, "%path%", abspath);
     sbuf = SBUFprintf (sbuf, " %s", str);
+
     str = MEMfree (str);
+    abspath = MEMfree (abspath);
 
     DBUG_RETURN (buf);
 }
@@ -46,11 +52,16 @@ AddModLibPath (const char *path, void *buf)
     str_buf *sbuf = (str_buf *)buf;
     char *fpath
       = STRcatn (5, path, "/", global.config.target_env, "/", global.config.sbi);
-    char *str = STRsubstToken (global.config.ldpath, "%path%", fpath);
-    fpath = MEMfree (fpath);
 
+    /* make path absolute as the linker can get confused otherwise. */
+    char *absfpath = FMGRabsName (fpath);
+
+    char *str = STRsubstToken (global.config.ldpath, "%path%", absfpath);
     sbuf = SBUFprintf (sbuf, " %s", str);
+
     str = MEMfree (str);
+    absfpath = MEMfree (absfpath);
+    fpath = MEMfree (fpath);
 
     DBUG_RETURN (buf);
 }
@@ -391,8 +402,8 @@ CCTperformTask (ccm_task_t task)
 
             if (global.filetype == FT_cmod) {
                 SBUFprintf (path_buf, "%s/%s/%s",
-                            NULL == global.lib_dirname ? global.outfilename
-                                                       : global.lib_dirname,
+                            (NULL == global.lib_dirname) ? global.outfilename
+                                                         : global.lib_dirname,
                             global.config.target_env, global.config.sbi);
             } else {
                 SBUFprintf (path_buf, "%s/%s/%s", global.target_modlibdir,
