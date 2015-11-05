@@ -46,8 +46,7 @@
 /* Set to 1 if compiler supports GNU vector syntax, otherwise 0. */
 #undef HAVE_GCC_SIMD_OPERATIONS
 
-/* Define if clock_gettime and CLOCK_PROCESS_CPUTIME_ID from POSIX RT are
-   available. */
+/* Define if clock_gettime and CLOCK_MONOTONIC from POSIX RT are available. */
 #undef HAVE_GETTIME
 
 /* Define to 1 if you have the <inttypes.h> header file. */

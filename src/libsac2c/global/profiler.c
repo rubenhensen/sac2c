@@ -89,7 +89,7 @@ TIMEbegin (compiler_phase_t phase)
         CreateReport (phasetime);
     }
     phasetime->timestraversed++;
-    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &phasetime->timer);
+    clock_gettime (CLOCK_MONOTONIC, &phasetime->timer);
 }
 
 void
@@ -106,21 +106,17 @@ TIMEend (compiler_phase_t phase)
 
     preusage.tv_sec = phasetime->timer.tv_sec;
     preusage.tv_nsec = phasetime->timer.tv_nsec;
-    clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &phasetime->timer);
-    if ((phasetime->timer.tv_nsec - preusage.tv_nsec) < 0) {
-        phasetime->timer.tv_sec -= (preusage.tv_sec + 1);
-        phasetime->timer.tv_nsec += 1000000000 - preusage.tv_nsec;
-    } else {
-        phasetime->timer.tv_sec -= preusage.tv_sec;
-        phasetime->timer.tv_nsec -= preusage.tv_nsec;
-    }
+    clock_gettime (CLOCK_MONOTONIC, &phasetime->timer);
 
-    phasetime->duration.tv_sec += phasetime->timer.tv_sec;
-    phasetime->duration.tv_nsec += phasetime->timer.tv_nsec;
-    if (phasetime->duration.tv_nsec >= 1000000000) {
-        phasetime->duration.tv_nsec -= 1000000000;
-        phasetime->duration.tv_sec++;
-    }
+#define NANO (ssize_t)1e9
+
+    ssize_t delta = ((ssize_t)phasetime->timer.tv_sec * NANO + phasetime->timer.tv_nsec)
+                    - ((ssize_t)preusage.tv_sec * NANO + preusage.tv_nsec);
+
+    phasetime->duration.tv_sec = delta / NANO;
+    phasetime->duration.tv_nsec = delta % NANO;
+
+#undef NANO
 
     if (global.timefreq == 4 && PHIphaseType (phase) != PHT_cycle) {
         CreateReport (phasetime);
@@ -156,8 +152,8 @@ CreateReport (timeinfo_t *phasetime)
     } else {
         fprintf (reportfile, "\n");
         fprintf (reportfile, "  Name: %s\n", PHIphaseText (phasetime->phase));
-        fprintf (reportfile, "  Time: %d.%.3d seconds\n", (int)phasetime->duration.tv_sec,
-                 ((int)phasetime->duration.tv_nsec) / 1000000);
+        fprintf (reportfile, "  Time: %d.%.9li seconds\n",
+                 (int)phasetime->duration.tv_sec, phasetime->duration.tv_nsec);
         fprintf (reportfile, "  Phasetype: %s\n",
                  phasename[PHIphaseType (phasetime->phase)]);
         fprintf (reportfile, "  Ident: %s\n", PHIphaseIdent (phasetime->phase));
