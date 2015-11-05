@@ -4533,7 +4533,7 @@ COMPap (node *arg_node, info *arg_info)
                 MEMfree (icm_data);
             }
             if (icm_conf_expr != NULL) {
-                for (int i = idx; i >= 0; i--) {
+                for (int i = idx - 1; i >= 0; i--) {
                     arg_node = TBmakeAssign (icm_conf_expr[i], arg_node);
                 }
                 MEMfree (icm_conf_expr);
