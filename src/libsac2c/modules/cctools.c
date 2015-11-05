@@ -92,15 +92,61 @@ AddObjDependency (const char *lib, strstype_t kind, void *buf)
 {
     DBUG_ENTER ();
 
+    char *rpath = NULL;
+    char *src_dirname = NULL;
     str_buf *sbuf = (str_buf *)buf;
 
     switch (kind) {
     case STRS_objfile:
-        SBUFprintf (sbuf, " %s", lib);
+
+        if (FMGRcheckExistFile (lib)) {
+            CTInote ("External object %s picked from current directory.", lib);
+            SBUFprintf (sbuf, " %s", lib);
+            break;
+        }
+
+        if (lib[0] != '/') {
+            rpath = STRcatn (3, global.targetdir, "/", lib);
+
+            if (FMGRcheckExistFile (rpath)) {
+                CTInote ("External object %s picked from build target directory (%s)",
+                         lib, rpath);
+                SBUFprintf (sbuf, " %s", rpath);
+                break;
+            }
+
+            if (global.target_modlibdir != NULL) {
+                rpath = MEMfree (rpath);
+                rpath = STRcatn (3, global.target_modlibdir, "/", lib);
+                if (FMGRcheckExistFile (rpath)) {
+                    CTInote (
+                      "External object %s picked from module target directory (%s)", lib,
+                      rpath);
+                    SBUFprintf (sbuf, " %s", rpath);
+                    break;
+                }
+            }
+
+            src_dirname = FMGRdirname (global.sacfilename);
+            rpath = MEMfree (rpath);
+            rpath = STRcatn (3, src_dirname, "/", lib);
+            if (FMGRcheckExistFile (rpath)) {
+                CTInote ("External object %s picked from source directory (%s)", lib,
+                         rpath);
+                SBUFprintf (sbuf, " %s", rpath);
+                break;
+            }
+        }
+
+        CTIerror ("Unable to find external object: %s", lib);
+
         break;
     default:
         break;
     }
+
+    rpath = MEMfree (rpath);
+    src_dirname = MEMfree (src_dirname);
 
     DBUG_RETURN (buf);
 }
