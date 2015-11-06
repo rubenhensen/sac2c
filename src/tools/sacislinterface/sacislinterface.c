@@ -308,7 +308,6 @@ PolyhedralWLFIntersectCalc (int verbose)
     // Attach a default schedule to the domain
     schedcon = isl_schedule_constraints_on_domain (intr);
     sched = isl_schedule_constraints_compute_schedule (schedcon);
-    ;
     printSchedule (stdout, sched, "schedule", 1, ISL_FORMAT_ISL);
 
     // Create a generic "build"
