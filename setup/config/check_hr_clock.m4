@@ -3,6 +3,7 @@ AC_DEFUN([CHECK_HR_CLOCK], dnl
 [
   AC_SEARCH_LIBS([clock_gettime], [rt])
   if test x"$ac_cv_search_clock_gettime" != xno; then
+     AC_SUBST([LIB_RT], ["-Xl -lrt"])
      AC_CACHE_CHECK([whether CLOCK_MONOTONIC is supported], [my_cv_clock_pcpuid],
                     [AC_LINK_IFELSE([AC_LANG_PROGRAM([
 @%:@include <time.h>
