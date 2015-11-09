@@ -1237,6 +1237,28 @@ SATserializeMTExecMode (info *info, mtexecmode_t attr, node *parent)
 
 /** <!--******************************************************************-->
  *
+ * @fn SATserializeCudaExecMode
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeCudaExecMode (info *info, cudaexecmode_t attr, node *parent)
+{
+    DBUG_ENTER ();
+
+    fprintf (INFO_SER_FILE (info), "%d", attr);
+
+    DBUG_RETURN ();
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn SATserializeTypeCheckingStatus
  *
  * @brief generates code to serialize the given attribute

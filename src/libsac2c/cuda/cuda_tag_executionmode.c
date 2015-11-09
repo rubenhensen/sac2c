@@ -25,15 +25,6 @@
 #include "type_utils.h"
 #include "new_types.h"
 
-// The macros here being cudaexecmode_t are assigned to
-// ASSIGN_EXECMODE (assign) which has a type mtexecmode_t
-// So in order to make type-conversions happy, and as
-// this is used intirely in cuda setting we would perform
-// a conversion macro-conversion from one type to another
-#define CUDA_HOST_SINGLE (mtexecmode_t) CUDA_HOST_SINGLE
-#define CUDA_DEVICE_SINGLE (mtexecmode_t) CUDA_DEVICE_SINGLE
-#define CUDA_DEVICE_MULTI (mtexecmode_t) CUDA_DEVICE_MULTI
-
 static bool CHANGED = FALSE;
 static int ITERATION = 1;
 
@@ -147,9 +138,9 @@ IsIdCudaDefined (node *id, info *arg_info)
     if (ssa != NULL) {
         if (/* ( TUisScalar( type) || TYisAKS( type)) && */ /* Scalar or AKS */
             !AVIS_ISHOSTREFERENCED (ID_AVIS (id)) && /* NOT referenced in host N_assign */
-            (ASSIGN_EXECMODE (ssa) == CUDA_DEVICE_SINGLE
+            (ASSIGN_CUDAEXECMODE (ssa) == CUDA_DEVICE_SINGLE
              || /* Define by DEVICE_SINGLE or DEVICE_MULTI N_assign */
-             ASSIGN_EXECMODE (ssa) == CUDA_DEVICE_MULTI)) {
+             ASSIGN_CUDAEXECMODE (ssa) == CUDA_DEVICE_MULTI)) {
             res = TRUE;
         }
     }
@@ -577,26 +568,26 @@ CUTEMassign (node *arg_node, info *arg_info)
 
     if (INFO_TRAVMODE (arg_info) == cutem_tag) {
         /* Each N_assign is intially tagged to be CUDA_HOST_SINGLE */
-        ASSIGN_EXECMODE (arg_node) = CUDA_HOST_SINGLE;
+        ASSIGN_CUDAEXECMODE (arg_node) = CUDA_HOST_SINGLE;
         ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
         /* If after tagging, the execution mode of this N_assign
          * remains to be CUDA_HOST_SINGLE (i.e. this N_assign must
          * be executed on the host), we update its RHS variables */
-        if (ASSIGN_EXECMODE (arg_node) == CUDA_HOST_SINGLE) {
+        if (ASSIGN_CUDAEXECMODE (arg_node) == CUDA_HOST_SINGLE) {
             INFO_TRAVMODE (arg_info) = cutem_update;
             ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
         }
         INFO_TRAVMODE (arg_info) = cutem_tag;
     } else if (INFO_TRAVMODE (arg_info) == cutem_untag) {
-        old_mode = (cudaexecmode_t)ASSIGN_EXECMODE (arg_node);
+        old_mode = ASSIGN_CUDAEXECMODE (arg_node);
         ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
         /* If after traversing the RHS, we found that the execution
          * mode of this N_assign has been changed from CUDA_DEVICE_SINGLE
          * to CUDA_HOST_SINGLE, we update its RHS variables. */
         if (old_mode == CUDA_DEVICE_SINGLE
-            && ASSIGN_EXECMODE (arg_node) == CUDA_HOST_SINGLE) {
+            && ASSIGN_CUDAEXECMODE (arg_node) == CUDA_HOST_SINGLE) {
             INFO_TRAVMODE (arg_info) = cutem_update;
             ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
@@ -723,14 +714,14 @@ CUTEMids (node *arg_node, info *arg_info)
          * wls too)*/
         if (/* !TUisScalar( IDS_NTYPE( arg_node)) && !TYisAKS( IDS_NTYPE( arg_node)) */
             IDS_NEXT (arg_node) != NULL) {
-            ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
+            ASSIGN_CUDAEXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
         }
     } else if (INFO_TRAVMODE (arg_info) == cutem_untag) {
         /* If the result produced by this N_assign is referenced in
          * CUDA_HOST_SINGLE N_assign, the current N_assign is tagged
          * as CUDA_HOST_SINGLE too */
         if (AVIS_ISHOSTREFERENCED (IDS_AVIS (arg_node))) {
-            ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
+            ASSIGN_CUDAEXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
         }
     } else {
         DBUG_UNREACHABLE ("Invalid traverse mode!");
@@ -766,10 +757,10 @@ CUTEMid (node *arg_node, info *arg_info)
          * N_assign, the N_assign referenced this N_id is also
          * tagged as CUDA_DEVICE_SINGLE */
         if (IsIdCudaDefined (arg_node, arg_info)) {
-            ASSIGN_EXECMODE (lastassign) = CUDA_DEVICE_SINGLE;
+            ASSIGN_CUDAEXECMODE (lastassign) = CUDA_DEVICE_SINGLE;
         }
     } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
-        DBUG_ASSERT (ASSIGN_EXECMODE (lastassign) == CUDA_HOST_SINGLE,
+        DBUG_ASSERT (ASSIGN_CUDAEXECMODE (lastassign) == CUDA_HOST_SINGLE,
                      "Updating N_id in non-CUDA_HOST_SINGLE N_assign!");
 
         /* In update mode, the N_id should be set host referenced. */
@@ -850,7 +841,7 @@ CUTEMap (node *arg_node, info *arg_info)
                 /* If the conditional lac fun is cudarizbale, we tag the
                  * application of it as CUDA_DEVICE_SINGLE */
                 if (FUNDEF_ISCUDALACFUN (fundef)) {
-                    ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_DEVICE_SINGLE;
+                    ASSIGN_CUDAEXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_DEVICE_SINGLE;
                 }
 
                 /************ Anonymous Traversal ************/
@@ -866,13 +857,13 @@ CUTEMap (node *arg_node, info *arg_info)
         /* If the ap is do-fun, it's tagged as host single and
          * traverse into the loop body */
         else if (FUNDEF_ISLOOPFUN (fundef) && fundef != INFO_FUNDEF (arg_info)) {
-            ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
+            ASSIGN_CUDAEXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
             fundef = TraverseLacFun (fundef, arg_node, arg_info);
         }
         /* If the ap is normal fun app */
         else {
             /* All other N_aps are immediately tagged as CUDA_HOST_SINGLE */
-            ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
+            ASSIGN_CUDAEXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
         }
     } else if (INFO_TRAVMODE (arg_info) == cutem_untag) {
         if (FUNDEF_ISLACFUN (fundef) && fundef != INFO_FUNDEF (arg_info)) {
@@ -921,7 +912,7 @@ CUTEMwith (node *arg_node, info *arg_info)
     if (INFO_TRAVMODE (arg_info) == cutem_tag) {
         /* Cudarizbale N_with is tagged as CUDA_DEVICE_MULTI */
         if (WITH_CUDARIZABLE (arg_node)) {
-            ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_DEVICE_MULTI;
+            ASSIGN_CUDAEXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_DEVICE_MULTI;
         }
     } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
         if (!WITH_CUDARIZABLE (arg_node)) {

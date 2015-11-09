@@ -77,6 +77,8 @@
     copy="function" />
     <type name="MTExecMode" ctype="mtexecmode_t" init="MUTH_ANY"
     copy="literal" />
+    <type name="CudaExecMode" ctype="cudaexecmode_t" init="MUTH_ANY"
+    copy="literal" />
     <type name="StringSet" ctype="stringset_t*" init="NULL"
     copy="function" persist="no" />
     <type name="IndexInfo" ctype="index_info*" init="NULL"
@@ -6381,6 +6383,19 @@ N_tfarg :
       <attributes>
 	<attribute name="ExecMode" inconstructor="no">
 	  <type name="MTExecMode">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <!-- NOT TESTED -->
+                  <range from="mt3_crwiw" to="mt3_repfun" /> 
+                </phases>
+              </target>
+            </targets>
+          </type>
+	</attribute>
+	<attribute name="CudaExecMode" inconstructor="no">
+	  <type name="CudaExecMode">
             <targets>
               <target mandatory="no">
                 <any />

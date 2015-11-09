@@ -89,14 +89,15 @@ CUCCassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* First N_assign with CUDA_DEVICE_SINGLE execution mode */
-    if (ASSIGN_EXECMODE (arg_node) == CUDA_DEVICE_SINGLE) {
+    if (ASSIGN_CUDAEXECMODE (arg_node) == CUDA_DEVICE_SINGLE) {
         cell = TBmakeAssign (TBmakeCudast (TBmakeBlock (arg_node, NULL)), NULL);
-        ASSIGN_EXECMODE (cell) = (mtexecmode_t)CUDA_DEVICE_SINGLE;
+        ASSIGN_CUDAEXECMODE (cell) = CUDA_DEVICE_SINGLE;
 
         /* Keep searching for consecutive CUDA_DEVICE_SINGLE N_assigns */
         last_cellassign = arg_node;
         while (ASSIGN_NEXT (last_cellassign) != NULL
-               && ASSIGN_EXECMODE (ASSIGN_NEXT (last_cellassign)) == CUDA_DEVICE_SINGLE) {
+               && ASSIGN_CUDAEXECMODE (ASSIGN_NEXT (last_cellassign))
+                    == CUDA_DEVICE_SINGLE) {
             last_cellassign = ASSIGN_NEXT (last_cellassign);
         }
         ASSIGN_NEXT (cell) = ASSIGN_NEXT (last_cellassign);
