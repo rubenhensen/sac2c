@@ -18,6 +18,9 @@
  *       (not always as it is currently implemented). Also, the thresholds
  *       we use could be further improved, but this would need a lot more
  *       testing.
+ *
+ * FIXME: We avoid functions that have arguments passed by reference, meaning
+ *        almost no inlining occurs in classses. See big #1172 for updates.
  */
 
 #include "globals.h"
@@ -59,6 +62,8 @@
  */
 struct INFO {
     node *fundef; // stores the pointer to a N_fundef of a loop function
+    bool isref;   // FIXME: this is to avoid inlining functions that have
+                  // arguments as references. See bug #1172
     /* Metrics */
     int wl_nesting;  // stores current with-loop nesting level
     int wl_nest_max; // stores function-level max with-loop nesting level
@@ -74,6 +79,7 @@ struct INFO {
  * INFO macros
  */
 #define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_ISREF(n) ((n)->isref)
 #define INFO_WLNESTMAX(n) ((n)->wl_nest_max)
 #define INFO_WLNESTING(n) ((n)->wl_nesting)
 #define INFO_LPNESTMAX(n) ((n)->lp_nest_max)
@@ -94,6 +100,7 @@ MakeInfo (void)
     result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
+    INFO_ISREF (result) = FALSE;
     INFO_WLNESTMAX (result) = 0;
     INFO_WLNESTING (result) = 0;
     INFO_LPNESTMAX (result) = 0;
@@ -205,6 +212,7 @@ AINLwith (node *arg_node, info *arg_info)
 
     DBUG_PRINT_TAG ("AINL-ALL", "Processing call of N_with node");
 
+    // There might not be a partition...
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
@@ -274,6 +282,37 @@ AINLcode (node *arg_node, info *arg_info)
 
 /** <!--***********************************************************************-->
  *
+ * @fn node *AINLarg node *arg_node, info *arg_info)
+ *
+ * @brief Here we traverse through the `list' of args associated with the fundef
+ *        looking for any args that are passed by reference - we do this because
+ *        inling such functions can cause issues in later phases of the compiler.
+ *        As it stands, inlining creates a situation where a reference passed
+ *        variable is being directly assigned to, which is not supported by the
+ *        compiler. See bug #1172.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return arg_node
+ *****************************************************************************/
+node *
+AINLarg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (ARG_WASREFERENCE (arg_node)) {
+        INFO_ISREF (arg_info) = TRUE;
+        DBUG_PRINT ("Found referenced argument!");
+    } else {
+        ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--***********************************************************************-->
+ *
  * @fn node *AINLfundef( node *arg_node, info *arg_info)
  *
  * @brief We traverse through the body of each N_fundef, but treat LAC functions
@@ -320,25 +359,34 @@ AINLfundef (node *arg_node, info *arg_info)
                && (!FUNDEF_ISWRAPPERFUN (arg_node)) && (!FUNDEF_ISLACFUN (arg_node))
                && (!FUNDEF_ISEXTERN (arg_node)) && (!FUNDEF_ISINLINE (arg_node))
                && (!FUNDEF_WASINLINED (arg_node))) {
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+        // Traverse into function arguments
+        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
-        DBUG_PRINT ("## inlining metrics of %s ("
-                    "WL: %d, "
-                    "LPs: %d, "
-                    "PRF: %d, "
-                    "AP: %d"
-                    ")",
-                    CTIitemName (arg_node), INFO_WLNESTMAX (arg_info),
-                    INFO_LPNESTMAX (arg_info), INFO_PRFCOUNT (arg_info),
-                    INFO_APCOUNT (arg_info));
+        if (!(INFO_ISREF (arg_info))) {
+            // Traverse into function body ->
+            FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-        if (INFO_WLNESTMAX (arg_info) < WLNESTING && INFO_LPNESTMAX (arg_info) < LPNESTING
-            && INFO_PRFCOUNT (arg_info) < PRFCOUNT && INFO_APCOUNT (arg_info) < APCOUNT
-            && (!FUNDEF_NOINLINE (arg_node))) {
-            FUNDEF_ISINLINE (arg_node) = TRUE;
-            FUNDEF_WASINLINED (arg_node) = TRUE;
-            DBUG_PRINT ("%%%% marked %s as inline", CTIitemName (arg_node));
+            DBUG_PRINT ("## inlining metrics of %s ("
+                        "WL: %d, "
+                        "LPs: %d, "
+                        "PRF: %d, "
+                        "AP: %d"
+                        ")",
+                        CTIitemName (arg_node), INFO_WLNESTMAX (arg_info),
+                        INFO_LPNESTMAX (arg_info), INFO_PRFCOUNT (arg_info),
+                        INFO_APCOUNT (arg_info));
+
+            if (INFO_WLNESTMAX (arg_info) < WLNESTING
+                && INFO_LPNESTMAX (arg_info) < LPNESTING
+                && INFO_PRFCOUNT (arg_info) < PRFCOUNT
+                && INFO_APCOUNT (arg_info) < APCOUNT && (!FUNDEF_NOINLINE (arg_node))) {
+                FUNDEF_ISINLINE (arg_node) = TRUE;
+                FUNDEF_WASINLINED (arg_node) = TRUE;
+                DBUG_PRINT ("%%%% marked %s as inline", CTIitemName (arg_node));
+            }
         }
+    } else {
+        DBUG_PRINT ("!! skipping %s", CTIitemName (arg_node));
     }
 
     DBUG_PRINT ("<- Left body of %s", CTIitemName (arg_node));
