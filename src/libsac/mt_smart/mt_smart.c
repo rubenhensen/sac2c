@@ -78,6 +78,7 @@ static SAC_MT_smart_share_t share;
 unsigned current_nr_threads;
 unsigned smart_sample_size;
 unsigned problem_size;
+struct timespec begin, end;
 
 /******************************************************************************
  *
@@ -186,16 +187,10 @@ SAC_MT_smart_init (int type, char *file_id, char *arch_id, unsigned nr_threads)
 int
 SAC_MT_smart_train (int spmd_id, int64_t measurement_period)
 {
-    static struct timespec begin, end;
-
     int64_t tot_time;
     int64_t bsec, bnsec, esec, ensec;
     int count;
     int idx;
-
-    // store end time of time measurement (this value is ignored the first
-    // time when this function is called)
-    clock_gettime (CLOCK_REALTIME, &end);
 
     // find or create the line in the database file that is used to store
     // the measurements for the current with loop
@@ -240,7 +235,6 @@ SAC_MT_smart_train (int spmd_id, int64_t measurement_period)
             share.first_measurement = false;
             smart_sample_size = (measurement_period * 1000000) / tot_time;
             if (smart_sample_size > 1) {
-                clock_gettime (CLOCK_REALTIME, &begin);
                 return 1;
             }
             smart_sample_size = 1;
@@ -253,7 +247,6 @@ SAC_MT_smart_train (int spmd_id, int64_t measurement_period)
     if (current_nr_threads < share.tot_nr_threads) {
         // increase the number of threads and start the next measurement
         current_nr_threads++;
-        clock_gettime (CLOCK_REALTIME, &begin);
         return 1;
     } else {
         // write the current set of measurements to the line in the database

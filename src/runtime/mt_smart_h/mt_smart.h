@@ -46,6 +46,7 @@
 SAC_C_EXTERN unsigned current_nr_threads;
 SAC_C_EXTERN unsigned smart_sample_size;
 SAC_C_EXTERN unsigned problem_size;
+SAC_C_EXTERN struct timespec begin, end;
 
 #ifdef SAC_SET_SMART_DECISIONS
 SAC_C_EXTERN void SAC_MT_smart_init (int type, char *file_id, char *arch_id,
@@ -60,9 +61,11 @@ SAC_C_EXTERN void SAC_MT_smart_finalize (void);
                        SAC_SET_SMART_ARCH, nr_threads)
 #define SAC_MT_SMART_BEGIN(spmd_id)                                                      \
     while (SAC_MT_smart_train (spmd_id, SAC_SET_SMART_PERIOD)) {                         \
+        clock_gettime (CLOCK_REALTIME, &begin);                                          \
         for (unsigned i = 0; i < smart_sample_size; i++) {
 #define SAC_MT_SMART_END()                                                               \
     }                                                                                    \
+    clock_gettime (CLOCK_REALTIME, &end);                                                \
     }
 #define SAC_MT_SMART_FINALIZE() SAC_MT_smart_finalize ()
 #elif SAC_SET_SMART_DECISIONS == 2
