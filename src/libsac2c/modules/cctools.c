@@ -240,14 +240,15 @@ CCTperformTask (ccm_task_t task)
     // %saclibs%
     char *saclibs_subst;
     if (global.loadprelude == TRUE) {
-        saclibs_subst = STRcatn (3,
+        saclibs_subst = STRcatn (4,
                                  " -lsac "
 #if ENABLE_DISTMEM
                                  " -lsacdistmem "
 #endif
                                  " -lsacphm",
                                  global.optimize.dophm ? "" : "c",
-                                 global.runtimecheck.heap ? ".diag " : " ");
+                                 global.runtimecheck.heap ? ".diag " : " ",
+                                 global.config.rtspec ? "-lsacrtspec " : "");
     } else {
         saclibs_subst = STRcpy ("");
     }
