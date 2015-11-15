@@ -182,7 +182,8 @@ RTSPECfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_ISLOCAL (arg_node) && FUNDEF_ISWRAPPERFUN (arg_node)
         && NSequals (FUNDEF_NS (arg_node), global.modulenamespace)
-        && FUNDEF_ISEXPORTED (arg_node) && (FUNDEF_ARGS (arg_node) != NULL)) {
+        && FUNDEF_ISEXPORTED (arg_node) && (FUNDEF_ARGS (arg_node) != NULL)
+        && !FUNDEF_HASDOTARGS (arg_node) && !FUNDEF_HASDOTRETS (arg_node)) {
         DBUG_PRINT ("Creating a wrapper entry function for: %s", FUNDEF_NAME (arg_node));
 
         result = CreateWrapperEntry (arg_node, arg_info);
