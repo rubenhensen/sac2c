@@ -376,11 +376,6 @@ OPTcheckOptionConsistency (void)
         }
     }
 
-    if (global.config.rtspec != 0 && global.maxspec > 0) {
-        CTIwarn ("RTSPEC set by target, forcing -maxspec 0.");
-        global.maxspec = 0;
-    }
-
     if (global.mtmode != MT_none) {
         if (global.docachesim) {
             CTIerror ("Cache simulation is not available for multi-threaded "
@@ -1103,10 +1098,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /* Specialization has to be turned of otherwise the compiler will pick the
      * most generic function instead of the wrapper entry function.
      */
-    ARGS_FLAG ("rtspec", {
-        global.rtspec = TRUE;
-        global.maxspec = 0;
-    });
+    ARGS_FLAG ("rtspec", { global.rtspec = TRUE; });
 
     ARGS_OPTION_BEGIN ("rtspec_mode")
     {
