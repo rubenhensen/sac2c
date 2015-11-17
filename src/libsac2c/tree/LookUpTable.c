@@ -726,7 +726,7 @@ MapLUT (lut_t *lut, void *(*fun) (void *, void *), hash_key_t start, hash_key_t 
             DBUG_ASSERT (lut[k].size >= 0, "illegal LUT size found!");
             tmp = lut[k].first;
             for (i = 0; i < lut[k].size; i++) {
-                tmp[1] = fun (tmp[0], tmp[1]);
+                tmp[1] = fun (tmp[1], tmp[0]);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */

@@ -506,7 +506,7 @@ Prf2Isl (prf arg_node)
  *
  ******************************************************************************/
 static void *
-GetIslSetVariablesFromLutOne (void *rest, void *avis, void *fundef)
+GetIslSetVariablesFromLutOne (void *rest, void *fundef, void *avis)
 {
     node *z = NULL;
 
