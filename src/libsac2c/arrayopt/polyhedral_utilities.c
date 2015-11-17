@@ -842,7 +842,7 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
  *        set variable list in varlut.
  *
  * @param handle: output file handle
- * @param exprs: N_exprs chain of N_exprs chains. Each element of exprs
+ * @param exprs: N_exprs chain of N_exprs chains. Each pair of elements of exprs
  *               is a single constraint.
  *
  * @return void
@@ -860,6 +860,8 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
     node *idlist;
     node *expr;
     node *exprsone;
+    char *fundefname;
+    char *avisname;
     char *txt;
     bool wasor;
 
@@ -870,8 +872,12 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
     fprintf (handle, "{ [");
 
     // Append set variables:  [i,j,k...]
+    // These come in pairs: [fundefname,i], [fundefname,j]...
     for (i = 0; i < n; i++) {
-        fprintf (handle, " %s", AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist))));
+        fundefname = STR_STRING (TCgetNthExprsExpr (i, idlist));
+        i = i + 1;
+        avisname = AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist)));
+        fprintf (handle, " %s:%s", fundefname, avisname);
         if (i < (n - 1)) {
             fprintf (handle, ",");
         }
