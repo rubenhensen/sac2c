@@ -495,17 +495,18 @@ Prf2Isl (prf arg_node)
  * @brief Build the set variables used by the contraints.
  *
  *        The result is an N_exprs chain of the N_avis nodes comprising the
- *        set variables.
+ *        set variables, prefixed by the fundef name. E.g.,
+ *        if i,j,k are called by foo, foo, and goo, we end up with:
  *
- *           [i,j,k...]
+ *          [ [foo,i], [goo,j], goo,k]]
  *
  * @param varlut: a lut of nodes that comprise the ISL set variables.
  *
- * @return An N_exprs chain of N_avis nodes
+ * @return An N_exprs chain of the above nodes
  *
  ******************************************************************************/
 static void *
-GetIslSetVariablesFromLutOne (void *rest, void *avis)
+GetIslSetVariablesFromLutOne (void *rest, void *avis, void *fundef)
 {
     node *z = NULL;
 
@@ -513,7 +514,9 @@ GetIslSetVariablesFromLutOne (void *rest, void *avis)
 
     if (NULL != avis) {
         DBUG_PRINT ("Found %s in VARLUT", AVIS_NAME (avis));
-        z = TCappendExprs (TBmakeExprs (TBmakeId (avis), NULL), rest);
+        z = TBmakeExprs (TBmakeStr (FUNDEF_NAME (fundef)),
+                         TBmakeExprs (TBmakeId (avis), NULL));
+        z = TCappendExprs (z, rest);
     }
 
     DBUG_RETURN (z);

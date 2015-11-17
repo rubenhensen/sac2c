@@ -385,7 +385,7 @@ SpecFundef (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static node *
-ConsFundefs (node *fundefs, node *fundef)
+ConsFundefs (node *fundefs, node *fundef, node *Key)
 {
     DBUG_ENTER ();
 
@@ -432,7 +432,7 @@ CRTWRPmodule (node *arg_node, info *arg_info)
      */
     MODULE_FUNS (arg_node)
       = (node *)LUTfoldLutS (INFO_WRAPPERFUNS (arg_info), MODULE_FUNS (arg_node),
-                             (void *(*)(void *, void *))ConsFundefs);
+                             (void *(*)(void *, void *, void *))ConsFundefs);
 
     DBUG_RETURN (arg_node);
 }

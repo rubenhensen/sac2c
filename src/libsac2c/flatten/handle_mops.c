@@ -308,7 +308,7 @@ HMdoHandleMops (node *arg_node)
     arg_node = TRAVdo (arg_node, NULL);
     TRAVpop ();
 
-    prec_lut = LUTmapLutS (prec_lut, (void *(*)(void *))FreePrec);
+    prec_lut = LUTmapLutS (prec_lut, (void *(*)(void *, void *))FreePrec);
     prec_lut = LUTremoveLut (prec_lut);
 
     DBUG_RETURN (arg_node);
