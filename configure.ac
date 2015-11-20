@@ -437,7 +437,7 @@ AC_DEFINE( UNUSED, __attribute__((unused)), define macro for unused variables)
 
 
 if test x"$enable_distmem_gasnet" = xyes; then
-  gasnet_conduit_names_print=" (conduits: $gasnet_conduit_names)"
+  gasnet_conduit_names_print=" (conduits: $gasnet_conduits)"
 else
   gasnet_conduit_names_print=""
 fi

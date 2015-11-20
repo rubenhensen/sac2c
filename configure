@@ -784,9 +784,9 @@ enable_omp
 enable_phm
 enable_distmem
 enable_distmem_gasnet
+enable_distmem_gpi
 enable_distmem_mpi
 enable_distmem_armci
-enable_distmem_gpi
 enable_isl
 '
       ac_precious_vars='build_alias
@@ -1431,14 +1431,15 @@ Optional Features:
   --disable-sl            Disable checking for SL
   --disable-omp           Disable checking for OpenMP
   --disable-phm           Disable checking for the private heap manager
-  --disable-distmem       Disable checking for Distributed Memory support
-  --disable-distmem_gasnet
-                          Disable checking for Distributed Memory GASNet
-                          support
-  --disable-distmem_mpi   Disable checking for Distributed Memory MPI support
-  --disable-distmem_armci Disable checking for Distributed Memory ARMCI
-                          support
-  --disable-distmem_gpi   Disable checking for Distributed Memory GPI support
+  --enable-distmem=x,y,z  Enable distmem targets x,y,z, or use
+                          --disable-distmem to disable entirely. Available
+                          targets: gasnet,gpi,mpi,armci. The default target is
+                          "auto" which enables whichever target can be found.
+  --disable-distmem-gasnet
+                          Disable the GASnet target.
+  --disable-distmem-gpi   Disable the GPI target.
+  --disable-distmem-mpi   Disable the MPI target.
+  --disable-distmem-armci Disable the ARMci target.
   --disable-isl           Disable checking for ISL
 
 Optional Packages:
@@ -5100,68 +5101,60 @@ _ACEOF
 
 
 
+
    # Check whether --enable-distmem was given.
 if test "${enable_distmem+set}" = set; then :
-  enableval=$enable_distmem; enable_distmem_gasnet=$enableval
-                 enable_distmem_gpi=$enableval
-                 enable_distmem_mpi=$enableval
-                 enable_distmem_armci=$enableval
+  enableval=$enable_distmem;
 else
-  enable_distmem_gasnet=yes
-                 enable_distmem_gpi=yes
-                 enable_distmem_mpi=yes
-                 enable_distmem_armci=yes
+  enable_distmem=auto
 fi
 
+   enable_distmem_gasnet=no
+   enable_distmem_gpi=no
+   enable_distmem_mpi=no
+   enable_distmem_armci=no
+   case $enable_distmem in
+      auto|yes)
+	    enable_distmem_gasnet=auto
+	    enable_distmem_gpi=auto
+	    enable_distmem_mpi=auto
+	    enable_distmem_armci=auto
+	    ;;
+   esac
 
-   if test x"$enable_distmem_gasnet" != xno; then
-      # Check whether --enable-distmem_gasnet was given.
+   case $enable_distmem in *gasnet*) enable_distmem_gasnet=yes;; esac
+   case $enable_distmem in *gpi*) enable_distmem_gpi=yes;; esac
+   case $enable_distmem in *mpi*) enable_distmem_mpi=yes;; esac
+   case $enable_distmem in *armci*) enable_distmem_armci=yes;; esac
+   # Check whether --enable-distmem-gasnet was given.
 if test "${enable_distmem_gasnet+set}" = set; then :
-  enableval=$enable_distmem_gasnet; enable_distmem_gasnet=$enableval
-else
-  enable_distmem_gasnet=yes
+  enableval=$enable_distmem_gasnet;
 fi
 
-   fi
-
-   if test x"$enable_distmem_mpi" != xno; then
-      # Check whether --enable-distmem_mpi was given.
-if test "${enable_distmem_mpi+set}" = set; then :
-  enableval=$enable_distmem_mpi; enable_distmem_mpi=$enableval
-else
-  enable_distmem_mpi=yes
-fi
-
-   fi
-
-   if test x"$enable_distmem_armci" != xno; then
-      # Check whether --enable-distmem_armci was given.
-if test "${enable_distmem_armci+set}" = set; then :
-  enableval=$enable_distmem_armci; enable_distmem_armci=$enableval
-else
-  enable_distmem_armci=yes
-fi
-
-   fi
-
-   if test x"$enable_distmem_gpi" != xno; then
-      # Check whether --enable-distmem_gpi was given.
+   # Check whether --enable-distmem-gpi was given.
 if test "${enable_distmem_gpi+set}" = set; then :
-  enableval=$enable_distmem_gpi; enable_distmem_gpi=$enableval
-else
-  enable_distmem_gpi=yes
+  enableval=$enable_distmem_gpi;
 fi
 
-   fi
+   # Check whether --enable-distmem-mpi was given.
+if test "${enable_distmem_mpi+set}" = set; then :
+  enableval=$enable_distmem_mpi;
+fi
 
-      cat >./sac2crc.GASNetconduits
+   # Check whether --enable-distmem-armci was given.
+if test "${enable_distmem_armci+set}" = set; then :
+  enableval=$enable_distmem_armci;
+fi
 
-      cat >./build.GASNetconduits
-   cat >./build.GASNetconduitsCrossVariant
 
-      cat >./config.GASNetconduits
+
+
+   if test x"$enable_distmem" != xno; then
 
    if test x"$enable_distmem_mpi" != xno; then
+      expected=$enable_distmem_mpi
+
+
 
 
 
@@ -5351,7 +5344,7 @@ fi
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI 3 support" >&5
 $as_echo_n "checking for MPI 3 support... " >&6; }
         ax_mpi_save_CC="$CC"
-	      CC="$MPICC"
+        CC="$MPICC"
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <mpi.h>
@@ -5359,17 +5352,21 @@ int
 main ()
 {
 
-/* This program uses MPI 3 one-sided communication to test whether the MPI installation does support these operations. */
-int main(int argc, char *argv[]) {
-  static MPI_Win win = NULL;
-  size_t SAC_DISTMEM_pagesz = 0;
+         /* This program uses MPI 3 one-sided communication to test
+            whether the MPI installation does support these operations. */
+         int main(int argc, char *argv[]) {
+           static MPI_Win win = NULL;
+           size_t SAC_DISTMEM_pagesz = 0;
 
-  void *local_page_ptr = NULL;
-  size_t owner_rank = 0;
-  size_t remote_page_index;
+           void *local_page_ptr = NULL;
+           size_t owner_rank = 0;
+           size_t remote_page_index;
 
-  MPI_Get( local_page_ptr, SAC_DISTMEM_pagesz, MPI_BYTE, owner_rank, remote_page_index * SAC_DISTMEM_pagesz, SAC_DISTMEM_pagesz, MPI_BYTE, win);
-}
+           MPI_Get( local_page_ptr, SAC_DISTMEM_pagesz,
+                    MPI_BYTE, owner_rank,
+         	   remote_page_index * SAC_DISTMEM_pagesz,
+         	   SAC_DISTMEM_pagesz, MPI_BYTE, win);
+         }
 
   ;
   return 0;
@@ -5379,25 +5376,35 @@ if ac_fn_c_try_compile "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else
-  enable_distmem_mpi=no
-	        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  enable_distmem_mpi=no;
+                       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
         CC="$ax_mpi_save_CC"
       fi
+
+
+      if test x"$expected" = xyes -a x"$enable_distmem_mpi" = xno; then
+      	 as_fn_error $? "unable to find a working MPI back-end" "$LINENO" 5
+      fi
    fi
 
+
    if test x"$enable_distmem_armci" != xno; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if ARMCI_HOME is set" >&5
-$as_echo_n "checking if ARMCI_HOME is set... " >&6; }
+      expected=$enable_distmem_armci
+
+
+      enable_distmem_armci=no
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ARMCI_HOME is set" >&5
+$as_echo_n "checking whether ARMCI_HOME is set... " >&6; }
       if test x"$ARMCI_HOME" != x ; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: using ARMCI_HOME: $ARMCI_HOME" >&5
 $as_echo "using ARMCI_HOME: $ARMCI_HOME" >&6; }
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $ARMCI_HOME exists" >&5
-$as_echo_n "checking if $ARMCI_HOME exists... " >&6; }
-        if test -r $ARMCI_HOME; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $ARMCI_HOME exists" >&5
+$as_echo_n "checking whether $ARMCI_HOME exists... " >&6; }
+        if test -r "$ARMCI_HOME"; then
            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
@@ -5407,33 +5414,36 @@ _ACEOF
 
            ARMCI_DIR=$ARMCI_HOME
 
+	   enable_distmem_armci=yes
         else
            { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-           enable_distmem_armci=no
         fi
       else
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-        enable_distmem_armci=no
+      fi
+
+
+      if test x"$expected" = xyes -a x"$enable_distmem_armci" = xno; then
+      	 as_fn_error $? "AMRCI_HOME not set or ARMci directory not found" "$LINENO" 5
       fi
    fi
 
+
    if test x"$enable_distmem_gpi" != xno; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if GPI_HOME is set" >&5
-$as_echo_n "checking if GPI_HOME is set... " >&6; }
+      expected=$enable_distmem_gpi
+
+
+      enable_distmem_gpi=no
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether GPI_HOME is set" >&5
+$as_echo_n "checking whether GPI_HOME is set... " >&6; }
       if test x"$GPI_HOME" != x ; then
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: using GPI_HOME: $GPI_HOME" >&5
 $as_echo "using GPI_HOME: $GPI_HOME" >&6; }
-      else
-        GPI_HOME=/opt/GPI2
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: using default location: $GPI_HOME" >&5
-$as_echo "using default location: $GPI_HOME" >&6; }
-      fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $GPI_HOME exists" >&5
-$as_echo_n "checking if $GPI_HOME exists... " >&6; }
-      if test -r $GPI_HOME; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $GPI_HOME exists" >&5
+$as_echo_n "checking whether $GPI_HOME exists... " >&6; }
+        if test -r "$GPI_HOME"; then
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
@@ -5443,67 +5453,89 @@ _ACEOF
 
          GPI_DIR=$GPI_HOME
 
-      else
+	 enable_distmem_gpi=yes
+        else
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-         enable_distmem_gpi=no
+        fi
+      else
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      fi
+
+
+      if test x"$expected" = xyes -a x"$enable_distmem_gpi" = xno; then
+      	 as_fn_error $? "GPI_HOME not set or GPI directory not found" "$LINENO" 5
       fi
    fi
 
+
    if test x"$enable_distmem_gasnet" != xno; then
+      expected=$enable_distmem_gasnet
 
-################################################################################
-#
-# feature setup:
-#
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if GASNET_HOME is set" >&5
-$as_echo_n "checking if GASNET_HOME is set... " >&6; }
+    enable_distmem_gastnet=no
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether GASNET_HOME is set" >&5
+$as_echo_n "checking whether GASNET_HOME is set... " >&6; }
     if test x"$GASNET_HOME" != x ; then
       gasnet_home="$GASNET_HOME"
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: using GASNET_HOME: $gasnet_home" >&5
 $as_echo "using GASNET_HOME: $gasnet_home" >&6; }
-    else
-      gasnet_home=/usr/local/gasnet
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: using default location: $gasnet_home" >&5
-$as_echo "using default location: $gasnet_home" >&6; }
-    fi
 
-    gasnet_conduit_names=""
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $gasnet_home exists" >&5
-$as_echo_n "checking if $gasnet_home exists... " >&6; }
-    if test -r $gasnet_home; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $gasnet_home exists" >&5
+$as_echo_n "checking whether $gasnet_home exists... " >&6; }
+      if test -r "$gasnet_home"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking installed gasnet conduits" >&5
-$as_echo_n "checking installed gasnet conduits... " >&6; }
 
-        cat <<EOF >>./config.GASNetconduits
-################################################################################
-#
-# GASNet conduit settings:
-#
+         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for installed gasnet conduits" >&5
+$as_echo_n "checking for installed gasnet conduits... " >&6; }
+ 	 gasnet_conduits=$(echo $( (cd "$gasnet_home/include" && ls -d *-conduit 2>/dev/null | cut -d- -f1 ) ) )
+         if test x"$gasnet_conduits" = x ; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
+$as_echo "none" >&6; }
+         else
+             { $as_echo "$as_me:${as_lineno-$LINENO}: result: $gasnet_conduits" >&5
+$as_echo "$gasnet_conduits" >&6; }
+	     enable_distmem_gasnet=yes
+         fi
+      else
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      fi
+      else
+       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      fi
 
-EOF
 
-        for gasnet_conduit_path in $gasnet_home/include/*-conduit/; do
-          gasnet_conduit_filename="$(basename "${gasnet_conduit_path}")"
-          gasnet_conduit_name="${gasnet_conduit_filename//-conduit/}"
-          gasnet_conduit_name_uc=`echo $gasnet_conduit_name | tr 'a-z' 'A-Z'`
-          if test x"$gasnet_conduit_names" != x ; then
-              gasnet_conduit_names="$gasnet_conduit_names "
-          fi
-          gasnet_conduit_names="$gasnet_conduit_names$gasnet_conduit_name"
-          gasnet_conduit_makefile="$gasnet_conduit_path$gasnet_conduit_name-seq.mak"
+      if test x"$expected" = xyes -a x"$enable_distmem_gasnet" = xno; then
+      	 as_fn_error $? "GASNET_HOME not set or directory not found or no GASnet conduits defined." "$LINENO" 5
+      fi
+   fi
 
-          gasnet_conduit_cc="$(getmakevar $gasnet_conduit_makefile GASNET_CC)"
-          gasnet_conduit_cppflags="$(getmakevar $gasnet_conduit_makefile GASNET_CPPFLAGS)"
-          gasnet_conduit_cflags="$(getmakevar $gasnet_conduit_makefile GASNET_CFLAGS)"
-          gasnet_conduit_ld="$(getmakevar $gasnet_conduit_makefile GASNET_LD)"
-          gasnet_conduit_ldflags="$(getmakevar $gasnet_conduit_makefile GASNET_LDFLAGS)"
-          gasnet_conduit_libs="$(getmakevar $gasnet_conduit_makefile GASNET_LIBS)"
+     if test x"$enable_distmem_gasnet" != xno; then
 
-          cat <<EOF >>./sac2crc.GASNetconduits
+      true >./sac2crc.GASNetconduits
+
+      true >./build.GASNetconduits
+   true >./build.GASNetconduitsCrossVariant
+
+      true >./config.GASNetconduits
+
+   for gasnet_conduit_name in $gasnet_conduits; do
+       gasnet_conduit_path=$gasnet_home/include/$gasnet_conduit_name-conduit/
+       gasnet_conduit_name_uc=$(echo $gasnet_conduit_name | tr 'a-z' 'A-Z')
+       gasnet_conduit_makefile=$gasnet_conduit_path$gasnet_conduit_name-seq.mak
+
+       gasnet_conduit_cc=$(getmakevar $gasnet_conduit_makefile GASNET_CC)
+       gasnet_conduit_cppflags=$(getmakevar $gasnet_conduit_makefile GASNET_CPPFLAGS)
+       gasnet_conduit_cflags=$(getmakevar $gasnet_conduit_makefile GASNET_CFLAGS)
+       gasnet_conduit_ld=$(getmakevar $gasnet_conduit_makefile GASNET_LD)
+       gasnet_conduit_ldflags=$(getmakevar $gasnet_conduit_makefile GASNET_LDFLAGS)
+       gasnet_conduit_libs=$(getmakevar $gasnet_conduit_makefile GASNET_LIBS)
+
+       cat <<EOF >>./sac2crc.GASNetconduits
 target distmem_gasnet_$gasnet_conduit_name::distmem_gasnet:
 COMMLIB_CONDUIT  := "$gasnet_conduit_name"
 CC               := "$gasnet_conduit_ld -std=gnu99"
@@ -5524,12 +5556,11 @@ LDFLAGS          += "$gasnet_conduit_ldflags"
 
 EOF
 
-          cat <<EOF >>./config.GASNetconduits
+      cat <<EOF >>./config.GASNetconduits
 GASNET_${gasnet_conduit_name_uc}_CC        := $gasnet_conduit_cc -std=gnu99
 GASNET_${gasnet_conduit_name_uc}_CPPFLAGS  := $gasnet_conduit_cppflags
 GASNET_${gasnet_conduit_name_uc}_CFLAGS    := $gasnet_conduit_cflags
 GASNET_${gasnet_conduit_name}_cap       := $gasnet_conduit_name_uc
-
 EOF
 
                                         cat <<EOF >>./build.GASNetconduits
@@ -5562,64 +5593,54 @@ EOF
 	@\$(CLOCK_SKEW_ELIMINATION)
 EOF
 
-          done
+    done
 
-          if test x"$gasnet_conduit_names" = x ; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: none" >&5
-$as_echo "none" >&6; }
-            enable_distmem_gasnet=no
-          else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $gasnet_conduit_names" >&5
-$as_echo "$gasnet_conduit_names" >&6; }
-          fi
-      else
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-          enable_distmem_gasnet=no
-      fi
 
-      if test x"$enable_distmem_gasnet" = xno -a x"$enable_distmem_gpi" = xno -a x"$enable_distmem_mpi" = xno -a x"$enable_distmem_armci" = xno ; then
-          enable_distmem=no
+     fi
+
+     if test x"$enable_distmem_gasnet" = xno \
+        -a x"$enable_distmem_gpi" = xno \
+	-a x"$enable_distmem_mpi" = xno \
+	-a x"$enable_distmem_armci" = xno \
+	; then
+          if test x"$enable_distmem" != xauto; then
+	     as_fn_error $? "unable to find a suitable distmem back-end." "$LINENO" 5
+	  fi
+	  enable_distmem=no
       else
           enable_distmem=yes
       fi
-
    fi
 
-   have_distmem=`if test x"$enable_distmem" != xno; then echo 1; else echo 0; fi`
-   have_distmem_gasnet=`if test x"$enable_distmem_gasnet" != xno; then echo 1; else echo 0; fi`
-   have_distmem_gpi=`if test x"$enable_distmem_gpi" != xno; then echo 1; else echo 0; fi`
-   have_distmem_mpi=`if test x"$enable_distmem_mpi" != xno; then echo 1; else echo 0; fi`
-   have_distmem_armci=`if test x"$enable_distmem_armci" != xno; then echo 1; else echo 0; fi`
 
 
 cat >>confdefs.h <<_ACEOF
-#define ENABLE_DISTMEM $have_distmem
+#define ENABLE_DISTMEM `test x"$enable_distmem" = xno && echo 0 || echo 1`
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define ENABLE_DISTMEM_GASNET $have_distmem_gasnet
+#define ENABLE_DISTMEM_GASNET `test x"$enable_distmem_gasnet" = xno && echo 0 || echo 1`
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define DISTMEM_GASNET_CONDUITS "$gasnet_conduit_names"
+#define DISTMEM_GASNET_CONDUITS "$gasnet_conduits"
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define ENABLE_DISTMEM_GPI $have_distmem_gpi
+#define ENABLE_DISTMEM_GPI `test x"$enable_distmem_gpi" = xno && echo 0 || echo 1`
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define ENABLE_DISTMEM_MPI $have_distmem_mpi
+#define ENABLE_DISTMEM_MPI `test x"$enable_distmem_mpi" = xno && echo 0 || echo 1`
 _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define ENABLE_DISTMEM_ARMCI $have_distmem_armci
+#define ENABLE_DISTMEM_ARMCI `test x"$enable_distmem_armci" = xno && echo 0 || echo 1`
 _ACEOF
 
 
@@ -5627,7 +5648,7 @@ _ACEOF
 
    ENABLE_DISTMEM_GASNET=$enable_distmem_gasnet
 
-   DISTMEM_GASNET_CONDUITS=$gasnet_conduit_names
+   DISTMEM_GASNET_CONDUITS=$gasnet_conduits
 
    ENABLE_DISTMEM_GPI=$enable_distmem_gpi
 
@@ -7638,7 +7659,7 @@ $as_echo "#define UNUSED __attribute__((unused))" >>confdefs.h
 
 
 if test x"$enable_distmem_gasnet" = xyes; then
-  gasnet_conduit_names_print=" (conduits: $gasnet_conduit_names)"
+  gasnet_conduit_names_print=" (conduits: $gasnet_conduits)"
 else
   gasnet_conduit_names_print=""
 fi
