@@ -841,6 +841,8 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
  * @brief Append one ISL set of polyhedra to input file, from exprs and
  *        set variable list in varlut.
  *
+ *        If exprs is NULL, do nothing.
+ *
  * @param handle: output file handle
  * @param exprs: N_exprs chain of N_exprs chains. Each pair of elements of exprs
  *               is a single constraint.
@@ -870,69 +872,71 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
     idlist = GetIslSetVariablesFromLut (varlut);
     n = TCcountExprs (idlist);
     fprintf (handle, "{ [");
+    if (0 != n) {
 
-    // Append set variables:  [i,j,k...]
-    // These come in pairs: [fundefname,i], [fundefname,j]...
-    for (i = 0; i < n; i++) {
-        fundefname = STR_STRING (TCgetNthExprsExpr (i, idlist));
-        i = i + 1;
-        avisname = AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist)));
-        fprintf (handle, " %s:%s", fundefname, avisname);
-        if (i < (n - 1)) {
-            fprintf (handle, ",");
-        }
-    }
-    fprintf (handle, "] : \n");
-
-    // Append constraints
-    n = TCcountExprs (exprs);
-    for (j = 0; j < n; j++) {
-        wasor = FALSE;
-        exprsone = TCgetNthExprsExpr (j, exprs);
-        DBUG_ASSERT (N_exprs == NODE_TYPE (exprsone), "Wrong constraint type");
-        m = TCcountExprs (exprsone);
-        for (k = 0; k < m; k++) { // Emit one constraint
-            expr = TCgetNthExprsExpr (k, exprsone);
-            switch (NODE_TYPE (expr)) {
-            default:
-                DBUG_ASSERT (FALSE, "Unexpected constraint node type");
-                break;
-
-            case N_id:
-                fprintf (handle, "%s", AVIS_NAME (ID_AVIS (expr)));
-                break;
-
-            case N_prf:
-                if (F_or_SxS == PRF_PRF (expr)) {
-                    wasor = TRUE;
-                } else {
-                    fprintf (handle, "%s", Prf2Isl (PRF_PRF (expr)));
-                }
-                break;
-
-            case N_num:
-                fprintf (handle, "%d", NUM_VAL (expr));
-                break;
-
-            case N_bool:
-                v = BOOL_VAL (expr) ? "1" : "0";
-                fprintf (handle, "%s", v);
-                break;
-
-            case N_char: // Support for disjunction because ISL does not support !=
-                DBUG_ASSERT ('|' == CHAR_VAL (expr), "Expected disjunction |");
-                wasor = TRUE;
-                break;
+        // Append set variables:  [i,j,k...]
+        // These come in pairs: [fundefname,i], [fundefname,j]...
+        for (i = 0; i < n; i++) {
+            fundefname = STR_STRING (TCgetNthExprsExpr (i, idlist));
+            i = i + 1;
+            avisname = AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist)));
+            fprintf (handle, " %s:%s", fundefname, avisname);
+            if (i < (n - 1)) {
+                fprintf (handle, ",");
             }
-            fprintf (handle, " ");
         }
-        if (j < (n - 1)) { // Handle conjunctions of constraints
-            txt = wasor ? "\n   or " : "\n   and ";
+        fprintf (handle, "] : \n");
+
+        // Append constraints
+        n = TCcountExprs (exprs);
+        for (j = 0; j < n; j++) {
             wasor = FALSE;
-            fprintf (handle, "%s", txt);
+            exprsone = TCgetNthExprsExpr (j, exprs);
+            DBUG_ASSERT (N_exprs == NODE_TYPE (exprsone), "Wrong constraint type");
+            m = TCcountExprs (exprsone);
+            for (k = 0; k < m; k++) { // Emit one constraint
+                expr = TCgetNthExprsExpr (k, exprsone);
+                switch (NODE_TYPE (expr)) {
+                default:
+                    DBUG_ASSERT (FALSE, "Unexpected constraint node type");
+                    break;
+
+                case N_id:
+                    fprintf (handle, "%s", AVIS_NAME (ID_AVIS (expr)));
+                    break;
+
+                case N_prf:
+                    if (F_or_SxS == PRF_PRF (expr)) {
+                        wasor = TRUE;
+                    } else {
+                        fprintf (handle, "%s", Prf2Isl (PRF_PRF (expr)));
+                    }
+                    break;
+
+                case N_num:
+                    fprintf (handle, "%d", NUM_VAL (expr));
+                    break;
+
+                case N_bool:
+                    v = BOOL_VAL (expr) ? "1" : "0";
+                    fprintf (handle, "%s", v);
+                    break;
+
+                case N_char: // Support for disjunction because ISL does not support !=
+                    DBUG_ASSERT ('|' == CHAR_VAL (expr), "Expected disjunction |");
+                    wasor = TRUE;
+                    break;
+                }
+                fprintf (handle, " ");
+            }
+            if (j < (n - 1)) { // Handle conjunctions of constraints
+                txt = wasor ? "\n   or " : "\n   and ";
+                wasor = FALSE;
+                fprintf (handle, "%s", txt);
+            }
         }
+        fprintf (handle, " } \n");
     }
-    fprintf (handle, " } \n");
 
     DBUG_RETURN ();
 }
