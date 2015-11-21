@@ -61,12 +61,12 @@ SAC_RuntimeError (char *format, ...)
      * heapmgr/setup.c or in libsac/nophm.c.
      */
 
-    if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {
-        fprintf (stderr, "\n\n*** SAC runtime error\n");
-    } else {
-        /* The distributed memory backend is used since the rank is defined. */
+#if ENABLE_DISTMEM
+    if (SAC_DISTMEM_rank != SAC_DISTMEM_RANK_UNDEFINED) {
         fprintf (stderr, "\n\n*** SAC runtime error at Node %zd\n", SAC_DISTMEM_rank);
-    }
+    } else
+#endif
+        fprintf (stderr, "\n\n*** SAC runtime error\n");
 
     va_start (arg_p, format);
 
@@ -85,9 +85,11 @@ SAC_RuntimeError (char *format, ...)
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
+#if ENABLE_DISTMEM
     /* If the program does not use the distributed memory backend,
      * an empty dummy function in libsacdistmem.nodistmem will be called. */
     SAC_DISTMEM_ABORT (1);
+#endif
 
     exit (1);
 }
@@ -130,7 +132,9 @@ SAC_RuntimeError_Mult (int cnt, ...)
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
+#if ENABLE_DISTMEM
     SAC_DISTMEM_ABORT (1);
+#endif
 
     exit (1);
 }
@@ -160,7 +164,9 @@ SAC_RuntimeErrorLine (int line, char *format, ...)
 
     SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 
+#if ENABLE_DISTMEM
     SAC_DISTMEM_ABORT (1);
+#endif
 
     exit (1);
 }
@@ -172,11 +178,12 @@ SAC_RuntimeWarning (char *format, ...)
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
-    if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {
-        fprintf (stderr, "\n\n*** SAC runtime warning\n");
-    } else {
+#if ENABLE_DISTMEM
+    if (SAC_DISTMEM_rank != SAC_DISTMEM_RANK_UNDEFINED) {
         fprintf (stderr, "\n\n*** SAC runtime warning at Node %zd\n", SAC_DISTMEM_rank);
-    }
+    } else
+#endif
+        fprintf (stderr, "\n\n*** SAC runtime warning\n");
 
     fprintf (stderr, "*** ");
 
@@ -196,22 +203,25 @@ SAC_RuntimeWarningMaster (char *format, ...)
 {
     va_list arg_p;
 
+#if ENABLE_DISTMEM
     if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED
-        || SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER) {
-        SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
+        || SAC_DISTMEM_rank == SAC_DISTMEM_RANK_MASTER)
+#endif
+        do {
+            SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
-        fprintf (stderr, "\n\n*** SAC runtime warning\n");
+            fprintf (stderr, "\n\n*** SAC runtime warning\n");
 
-        fprintf (stderr, "*** ");
+            fprintf (stderr, "*** ");
 
-        va_start (arg_p, format);
-        vfprintf (stderr, format, arg_p);
-        va_end (arg_p);
+            va_start (arg_p, format);
+            vfprintf (stderr, format, arg_p);
+            va_end (arg_p);
 
-        fprintf (stderr, "\n\n");
+            fprintf (stderr, "\n\n");
 
-        SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
-    }
+            SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
+        } while (0);
 }
 
 #define MAX_SHAPE_SIZE 255

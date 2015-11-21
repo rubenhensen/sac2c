@@ -244,11 +244,15 @@ CCTperformTask (ccm_task_t task)
         // provided by libphm(c), which in turn depends on libsac.
         // Express -llsacphm  before *and* after -lsac
         // to keep single-pass linkers happy.
-        saclibs_subst
-          = STRcatn (6, "-lsacphm", global.optimize.dophm ? "" : "c",
-                     global.runtimecheck.heap ? ".diag" : "",
-                     " -lsac -lsacdistmem -lsacphm", global.optimize.dophm ? "" : "c",
-                     global.runtimecheck.heap ? ".diag " : " ");
+        saclibs_subst = STRcatn (6, "-lsacphm", global.optimize.dophm ? "" : "c",
+                                 global.runtimecheck.heap ? ".diag" : "",
+                                 " -lsac "
+#if ENABLE_DISTMEM
+                                 " -lsacdistmem "
+#endif
+                                 " -lsacphm",
+                                 global.optimize.dophm ? "" : "c",
+                                 global.runtimecheck.heap ? ".diag " : " ");
     } else {
         saclibs_subst = STRcpy ("");
     }
