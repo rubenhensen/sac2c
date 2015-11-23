@@ -379,7 +379,8 @@ AINLfundef (node *arg_node, info *arg_info)
             if (INFO_WLNESTMAX (arg_info) < WLNESTING
                 && INFO_LPNESTMAX (arg_info) < LPNESTING
                 && INFO_PRFCOUNT (arg_info) < PRFCOUNT
-                && INFO_APCOUNT (arg_info) < APCOUNT && (!FUNDEF_NOINLINE (arg_node))) {
+                && INFO_APCOUNT (arg_info) < APCOUNT && (!FUNDEF_ISMAIN (arg_node))
+                && (!FUNDEF_NOINLINE (arg_node))) {
                 FUNDEF_ISINLINE (arg_node) = TRUE;
                 FUNDEF_WASINLINED (arg_node) = TRUE;
                 DBUG_PRINT ("%%%% marked %s as inline", CTIitemName (arg_node));

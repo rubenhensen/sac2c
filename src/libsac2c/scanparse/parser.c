@@ -4644,6 +4644,7 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
     bool extern_p = false;
     bool specialize_p = false;
     bool inline_p = false;
+    bool noinline_p = false;
     bool thread_p = false;
     bool attribute_error = false;
     bool parse_error = false;
@@ -4667,7 +4668,9 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
     error_loc (token_location (tok), "attribute %s contradicts with %s",                 \
                token_as_string (tok),                                                    \
                inline_p ? token_kind_as_string (INLINE)                                  \
-                        : thread_p ? token_kind_as_string (THREAD) : "something")
+                        : thread_p ? token_kind_as_string (THREAD)                       \
+                                   : noinline_p ? token_kind_as_string (NOINLINE)        \
+                                                : "something")
 #define FUNDEC_ERROR(tok)                                                                \
     error_loc (token_location (tok), "attribute %s contradicts with %s",                 \
                token_as_string (tok),                                                    \
@@ -4690,11 +4693,23 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
             } else
                 fundec_p = true, specialize_p = true;
         } else if (token_is_keyword (tok, INLINE)) {
-            if (fundec_p) {
+            if (fundef_p) {
+                attribute_error = true;
+                FUNDEF_ERROR (tok);
+            } else if (fundec_p) {
                 attribute_error = true;
                 FUNDEC_ERROR (tok);
             } else
                 fundef_p = true, inline_p = true;
+        } else if (token_is_keyword (tok, NOINLINE)) {
+            if (fundef_p) {
+                attribute_error = true;
+                FUNDEF_ERROR (tok);
+            } else if (fundec_p) {
+                attribute_error = true;
+                FUNDEC_ERROR (tok);
+            } else
+                fundef_p = true, noinline_p = true;
         } else if (token_is_keyword (tok, THREAD)) {
             if (global.backend != BE_mutc) {
                 warning_loc (token_location (tok),
@@ -4702,6 +4717,9 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
                              "supported with selected backend and will "
                              "be ignored",
                              token_kind_as_string (THREAD));
+            } else if (fundef_p) {
+                attribute_error = true;
+                FUNDEF_ERROR (tok);
             } else if (fundec_p) {
                 FUNDEC_ERROR (tok);
                 attribute_error = true;
@@ -4714,6 +4732,8 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
 
         tok = parser_get_token (parser);
     }
+
+    DBUG_ASSERT (!inline_p && !noinline_p, "Cannot both INLINE and NOINLINE!!!");
 
     /* Handle return types.  */
     if (attribute_error || (!fundef_p && !fundec_p) || fundec_p)
@@ -4775,6 +4795,9 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
                                              "defined inside the module");
         if (inline_p)
             warning_loc (token_location (tok), "making main function inline "
+                                               "doesn't have any effect");
+        if (noinline_p)
+            warning_loc (token_location (tok), "making main function noinline "
                                                "doesn't have any effect");
 
         fname = loc_annotated (token_location (tok),
@@ -4910,6 +4933,7 @@ pragmas:
     FUNDEF_NAME (ret) = SPID_NAME (fname);
     MEMfree (fname);
     FUNDEF_PRAGMA (ret) = pragmas;
+
     if (is_main)
         FUNDEF_ISMAIN (ret) = true;
 
@@ -4918,6 +4942,7 @@ pragmas:
         FUNDEF_ALLOWSINFIX (ret) = allows_infix;
         FUNDEF_ISTHREADFUN (ret) = thread_p;
         FUNDEF_ISINLINE (ret) = inline_p;
+        FUNDEF_NOINLINE (ret) = noinline_p;
     } else if (fundec_p) {
         FUNDEF_ISEXTERN (ret) = true;
         FUNDEF_HASDOTRETS (ret) = ret_three_dots;
