@@ -468,13 +468,11 @@ LoopCount (__isl_keep isl_union_set *domain, int verbose)
     struct isl_set *LoopDomain = NULL;
 
     printUnion (stderr, domain, "domain for LoopCount is ", verbose, 0);
-#ifdef CRUD
     sched = isl_schedule_from_domain (domain);
 
     LoopDomain = isl_set_from_union_set (isl_union_map_range (sched));
     Dim = isl_set_dim (LoopDomain, isl_dim_set);
     printf ("Dim is %d\n", Dim);
-#endif       // CRUD
     Dim = 1; // Vector only
 
     // Calculate a map similar to the identity map, but with the last input
@@ -501,8 +499,10 @@ LoopCount (__isl_keep isl_union_set *domain, int verbose)
     isl_set *Elements = isl_map_range (Sub);
 
     if (isl_set_is_singleton (Elements)) {
+        printf ("set is singleton\n");
         // I think this works because there is only one element.
         isl_point *P = isl_set_sample_point (Elements);
+        Dim = 1;
         V = isl_point_get_coordinate_val (P, isl_dim_set, Dim - 1);
         z = isl_val_get_num_si (V);
         printf ("z is %d\n", z);
