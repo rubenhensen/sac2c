@@ -41,6 +41,8 @@ strtok (char *str, const char *delim)
 }
 #endif
 
+void (*SAC_HM_ShowDiagnostics_callback) (void) = 0;
+
 /*
  * Function definitions
  */
@@ -54,12 +56,8 @@ SAC_RuntimeError (char *format, ...)
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
-    SAC_HM_ShowDiagnostics ();
-    /*
-     * If the program is not linked with the diagnostic version of the private
-     * heap manager, a dummy function will be called here defined either in
-     * heapmgr/setup.c or in libsac/nophm.c.
-     */
+    if (SAC_HM_ShowDiagnostics_callback)
+        SAC_HM_ShowDiagnostics_callback ();
 
 #if ENABLE_DISTMEM
     if (SAC_DISTMEM_rank != SAC_DISTMEM_RANK_UNDEFINED) {
@@ -104,12 +102,8 @@ SAC_RuntimeError_Mult (int cnt, ...)
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
-    SAC_HM_ShowDiagnostics ();
-    /*
-     * If the program is not linked with the diagnostic version of the private
-     * heap manager, a dummy function will be called here defined either in
-     * heapmgr/setup.c or in libsac/nophm.c.
-     */
+    if (SAC_HM_ShowDiagnostics_callback)
+        SAC_HM_ShowDiagnostics_callback ();
 
     fprintf (stderr, "\n\n*** SAC runtime error\n");
 
@@ -146,12 +140,8 @@ SAC_RuntimeErrorLine (int line, char *format, ...)
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
-    SAC_HM_ShowDiagnostics ();
-    /*
-     * If the program is not linked with the diagnostic version of the private
-     * heap manager, a dummy function will be called here defined either in
-     * heapmgr/setup.c or in libsac/nophm.c.
-     */
+    if (SAC_HM_ShowDiagnostics_callback)
+        SAC_HM_ShowDiagnostics_callback ();
 
     fprintf (stderr, "\n\n*** SAC runtime error\n");
     fprintf (stderr, "*** line %d\n*** ", line);

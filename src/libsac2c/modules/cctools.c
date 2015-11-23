@@ -240,12 +240,7 @@ CCTperformTask (ccm_task_t task)
     // %saclibs%
     char *saclibs_subst;
     if (global.loadprelude == TRUE) {
-        // libsac invokes SAC_HM_ShowDiagnostics, which is
-        // provided by libphm(c), which in turn depends on libsac.
-        // Express -llsacphm  before *and* after -lsac
-        // to keep single-pass linkers happy.
-        saclibs_subst = STRcatn (6, "-lsacphm", global.optimize.dophm ? "" : "c",
-                                 global.runtimecheck.heap ? ".diag" : "",
+        saclibs_subst = STRcatn (3,
                                  " -lsac "
 #if ENABLE_DISTMEM
                                  " -lsacdistmem "
