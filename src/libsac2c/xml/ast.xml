@@ -4788,7 +4788,7 @@ N_tfarg :
               <target mandatory="no">
                 <node name="Pragma" />
                 <phases>
-                  <range from="scp" to="pre_rpr" />
+                  <range from="scp" to="pre_rsp" />
                 </phases>
               </target>
             </targets>
@@ -4800,7 +4800,7 @@ N_tfarg :
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="pre_rpr" to="final" />
+                  <range from="pre_rsp" to="final" />
                 </phases>
               </target>
             </targets>
@@ -4812,7 +4812,7 @@ N_tfarg :
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="pre_rpr" to="final" />
+                  <range from="pre_rsp" to="final" />
                 </phases>
               </target>
             </targets>
@@ -4824,7 +4824,7 @@ N_tfarg :
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="pre_rpr" to="final" />
+                  <range from="pre_rsp" to="final" />
                 </phases>
               </target>
             </targets>
@@ -4957,7 +4957,7 @@ N_tfarg :
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="pre_rpr" to="final" />
+                  <range from="pre_rsp" to="final" />
                 </phases>
               </target>
             </targets>
@@ -4969,7 +4969,7 @@ N_tfarg :
               <target mandatory="yes">
                 <node name="Pragma" />
                 <phases>
-                  <range from="scp" to="pre_rpr" />
+                  <range from="scp" to="pre_rsp" />
                 </phases>
               </target>
             </targets>
@@ -5191,7 +5191,7 @@ N_tfarg :
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="pre_rpr" to="final" />
+                  <range from="pre_rsp" to="final" />
                 </phases>
               </target>
             </targets>
@@ -5203,7 +5203,7 @@ N_tfarg :
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="pre_rpr" to="final" />
+                  <range from="pre_rsp" to="final" />
                 </phases>
               </target>
             </targets>
@@ -5985,7 +5985,7 @@ N_tfarg :
               <target mandatory="no" >
                 <any />
                 <phases>
-                  <range from="pre_rpr" to="final" />
+                  <range from="pre_rsp" to="final" />
                 </phases>
               </target>
             </targets>
@@ -11781,7 +11781,7 @@ N_tfarg :
               <target mandatory="no" >
                 <any />
                 <phases>
-                  <range from="pre_rpr" to="final" />
+                  <range from="pre_rsp" to="final" />
                 </phases>
               </target>
             </targets>
