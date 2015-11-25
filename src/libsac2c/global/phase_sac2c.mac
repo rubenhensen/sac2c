@@ -31,7 +31,7 @@ SUBPHASE (mowl, "Handling multi-operator with-loops", HWLOdoHandleWithLoops, ALW
 SUBPHASE (acn, "Resolving axis control and dot notation", HDdoEliminateSelDots, ALWAYS,
           pre)
 
-SUBPHASE (rpr, "Resolving pragma annotations", RSPdoResolvePragmas, ALWAYS, pre)
+SUBPHASE (rsp, "Resolving pragma annotations", RSPdoResolvePragmas, ALWAYS, pre)
 
 SUBPHASE (obi, "Generating object initializers", OIdoObjectInit, ALWAYS, pre)
 
