@@ -4629,7 +4629,7 @@ error:
 
    Function definition:
       fundef::
-          'inline'? 'thread'? type_list
+          'noinline'? 'inline'? 'thread'? type_list
           (id | ( '(' id ')' )) '(' arg_list ')'
           expr_block
 */
@@ -4693,19 +4693,13 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
             } else
                 fundec_p = true, specialize_p = true;
         } else if (token_is_keyword (tok, INLINE)) {
-            if (fundef_p) {
-                attribute_error = true;
-                FUNDEF_ERROR (tok);
-            } else if (fundec_p) {
+            if (fundec_p) {
                 attribute_error = true;
                 FUNDEC_ERROR (tok);
             } else
                 fundef_p = true, inline_p = true;
         } else if (token_is_keyword (tok, NOINLINE)) {
-            if (fundef_p) {
-                attribute_error = true;
-                FUNDEF_ERROR (tok);
-            } else if (fundec_p) {
+            if (fundec_p) {
                 attribute_error = true;
                 FUNDEC_ERROR (tok);
             } else
@@ -4717,9 +4711,6 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
                              "supported with selected backend and will "
                              "be ignored",
                              token_kind_as_string (THREAD));
-            } else if (fundef_p) {
-                attribute_error = true;
-                FUNDEF_ERROR (tok);
             } else if (fundec_p) {
                 FUNDEC_ERROR (tok);
                 attribute_error = true;
@@ -4733,7 +4724,8 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
         tok = parser_get_token (parser);
     }
 
-    DBUG_ASSERT (!inline_p && !noinline_p, "Cannot both INLINE and NOINLINE!!!");
+    if (inline_p && noinline_p)
+        error_loc (loc, "function cannot both `inline' and `noinline' attributes");
 
     /* Handle return types.  */
     if (attribute_error || (!fundef_p && !fundec_p) || fundec_p)
