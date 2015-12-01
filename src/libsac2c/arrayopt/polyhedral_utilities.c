@@ -883,6 +883,7 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
 #define ISLIDDELIMITER $
             // FIXME ISL fix from Sven needed fprintf( handle, " %sISLIDDELIMITER%s",
             // fundefname, avisname);
+            fprintf (handle, "%s", avisname);
             if (i < (n - 1)) {
                 fprintf (handle, ",");
             }
