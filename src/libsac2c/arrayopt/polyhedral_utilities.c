@@ -514,7 +514,7 @@ GetIslSetVariablesFromLutOne (void *rest, void *fundef, void *avis)
 
     if (NULL != avis) {
         DBUG_PRINT ("Found %s in VARLUT", AVIS_NAME (avis));
-        z = TBmakeExprs (TBmakeStr (FUNDEF_NAME (fundef)),
+        z = TBmakeExprs (TBmakeStr (FUNDEF_NAME ((node *)fundef)),
                          TBmakeExprs (TBmakeId (avis), NULL));
         z = TCappendExprs (z, rest);
     }
@@ -880,7 +880,9 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
             fundefname = STR_STRING (TCgetNthExprsExpr (i, idlist));
             i = i + 1;
             avisname = AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist)));
-            fprintf (handle, " %s:%s", fundefname, avisname);
+#define ISLIDDELIMITER $
+            // FIXME ISL fix from Sven needed fprintf( handle, " %sISLIDDELIMITER%s",
+            // fundefname, avisname);
             if (i < (n - 1)) {
                 fprintf (handle, ",");
             }
