@@ -267,6 +267,15 @@ ACTRANfuncond (node *arg_node, info *arg_info)
             } else {
                 /* Do nothing */
             }
+        } else {
+            DBUG_ASSERT (INFO_TRAVMODE (arg_info) == trav_collect,
+                         "illegal traversal mode in ACTRAN");
+            /* Here, we traverse all N_id's of the funcond to make sure we capture
+             * all possible occurences of variables.
+             * This is in response to bug 626 but may adversely affect the ability
+             * to memopt loops.... (sbs, 2015)
+             */
+            arg_node = TRAVcont (arg_node, arg_info);
         }
     }
     DBUG_RETURN (arg_node);
