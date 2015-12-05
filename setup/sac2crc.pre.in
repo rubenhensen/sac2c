@@ -523,6 +523,8 @@ RC_METHOD        :=  "local_pasync_norc_desc"
 
 target add_rt:
 SBI              +=  "-rtspec"
+CFLAGS           +=  " -pthread "
+LIBS             +=  " -ldl -pthread "
 RTSPEC           :=  1
 
 /*******************************************************************************
@@ -538,7 +540,7 @@ target mt_pth_rt :: mt_pth :: add_rt:
 
 target mt_lpel :: default_mt :: add_lpel:
 
-
+target seq_rt :: seq :: add_rt:
 
 /*******************************************************************************
  *******************************************************************************
