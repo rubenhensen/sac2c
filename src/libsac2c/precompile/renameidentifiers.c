@@ -218,8 +218,7 @@ RenameFun (node *fun)
          */
 
         if (global.runtime && STReq (FUNDEF_NAME (fun), global.rt_fun_name)
-            && FUNDEF_ISWRAPPERFUN (fun)) {
-
+            && FUNDEF_ISINDIRECTWRAPPERFUN (fun)) {
             new_name = STRcpy (global.rt_new_name);
         } else {
             new_name = RenameFunName (fun);
