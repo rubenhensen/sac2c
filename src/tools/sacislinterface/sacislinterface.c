@@ -383,14 +383,16 @@ PolyhedralRelationalCalc (int verbose)
     struct isl_union_set *intersectbcc = NULL;
     struct isl_ctx *ctx = isl_ctx_alloc ();
 
-    unionb = isl_union_set_read_from_file (ctx, stdin);   // PRF_ARG1 affine exprs tree
-    unionc = isl_union_set_read_from_file (ctx, stdin);   // PRF_ARG2 affine exprs tree
-    unionrfn = isl_union_set_read_from_file (ctx, stdin); // Relational fn
-    unioncfn = isl_union_set_read_from_file (ctx, stdin); // Complementary relational fn
-
+    unionb = isl_union_set_read_from_file (ctx, stdin); // PRF_ARG1 affine exprs tree
     printUnion (stderr, unionb, "unionb", verbose, 0);
+
+    unionc = isl_union_set_read_from_file (ctx, stdin); // PRF_ARG2 affine exprs tree
     printUnion (stderr, unionc, "unionc", verbose, 0);
+
+    unionrfn = isl_union_set_read_from_file (ctx, stdin); // Relational fn
     printUnion (stderr, unionrfn, "unionrfn", verbose, 0);
+
+    unioncfn = isl_union_set_read_from_file (ctx, stdin); // Complementary relational fn
     printUnion (stderr, unioncfn, "unioncfn", verbose, 0);
 
     if (POLY_RET_UNKNOWN == z) { // Intersect b,c
