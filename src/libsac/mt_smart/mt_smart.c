@@ -216,6 +216,7 @@ SAC_MT_smart_train (int spmd_id, int64_t measurement_period)
         }
         share.new_line = true;
         share.line_read = true;
+        share.new_file = false;
     }
 
     idx = current_nr_threads + 2;
