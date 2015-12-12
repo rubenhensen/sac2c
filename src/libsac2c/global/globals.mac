@@ -415,7 +415,7 @@ GLOBAL (int, mt_smart_period, 500, xfree_dummy, )
  * or a bit longer.
  */
 
-GLOBAL (int, mt_smart_gradient, 10, xfree_dummy, )
+GLOBAL (int, mt_smart_gradient, 1, xfree_dummy, )
 /*
  * To be able to make smart decisions, a performance profile is being created.
  * This profile is used to create a performance graph for each parallelizable
