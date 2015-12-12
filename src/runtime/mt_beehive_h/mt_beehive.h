@@ -76,7 +76,8 @@ struct sac_hive_common_t {
 
 /* #define SAC_MT_GLOBAL_THREADS()       in mt.h */
 /* Get current hive's local number of thread. Used for task scheduling. */
-#define SAC_MT_LOCAL_THREADS() (SAC_MT_self->c.hive->num_bees)
+#define SAC_MT_LOCAL_THREADS()                                                           \
+    (current_nr_threads ? current_nr_threads : SAC_MT_self->c.hive->num_bees)
 
 /* Ptr to the current hive. Used in schedule.h to get the variables. */
 #define SAC_MT_HIVE() (SAC_MT_self->c.hive)

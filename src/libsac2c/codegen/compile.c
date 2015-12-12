@@ -43,6 +43,7 @@
 #include "math_utils.h"
 #include "types.h"
 #include "cuda_utils.h"
+#include "regression.h"
 
 #define FOLDFIX_LABEL_GENERATION_ACTIVE 1
 
@@ -4097,6 +4098,9 @@ COMPdoDecideSmart (info *info, int spmd_id)
     int64_t *line;
     struct smart_decision_t **measurements;
     int *recommendations;
+    float *y;
+    float *reg;
+    float **X;
 
     float slope, angle;
     float pX, pY, diff;
@@ -4201,17 +4205,59 @@ COMPdoDecideSmart (info *info, int spmd_id)
               = measurements[i]->problem_size; // for problem size x (x is defined by
                                                // 'measurements[i]->problem_size')
             recommendations[2 * (i + 1)] = 0;
-            for (int j = 1; j < INFO_NR_THREADS (info); j++) {
-                diff = measurements[i]->max_time - measurements[i]->min_time;
-                pX = (measurements[i]->max_time - measurements[i]->fun_time[j]) / diff;
-                pY
-                  = (measurements[i]->max_time - measurements[i]->fun_time[j - 1]) / diff;
-                slope = pX - pY;
-                angle = atan (slope);
-                if (angle <= t_angle || angle <= 0) {
-                    recommendations[2 * (i + 1)] = j; // use j threads
-                    break;
+
+            if (INFO_NR_THREADS (info) <= 4) {
+                for (int j = 1; j < INFO_NR_THREADS (info); j++) {
+                    diff = measurements[i]->max_time - measurements[i]->min_time;
+                    pX
+                      = (measurements[i]->max_time - measurements[i]->fun_time[j]) / diff;
+                    pY = (measurements[i]->max_time - measurements[i]->fun_time[j - 1])
+                         / diff;
+                    slope = pX - pY;
+                    angle = atan (slope);
+                    if (angle <= t_angle || angle <= 0) {
+                        recommendations[2 * (i + 1)] = j; // use j threads
+                        break;
+                    }
                 }
+            }
+            // 4th order polynomial regression
+            // this makes the recommendation process less sensitive for outliers
+            else {
+                reg = MEMmalloc (4 * sizeof (float));
+                y = MEMmalloc (INFO_NR_THREADS (info) * sizeof (float));
+                X = Matrix (INFO_NR_THREADS (info), 4);
+
+                // collect data for regression
+                for (int j = 0; j < INFO_NR_THREADS (info); j++) {
+                    diff = measurements[i]->max_time - measurements[i]->min_time;
+                    X[j][0] = 1.0;
+                    X[j][1] = (float)(j + 1);
+                    X[j][2] = X[j][1] * (j + 1);
+                    X[j][3] = X[j][2] * (j + 1);
+                    y[j]
+                      = (measurements[i]->max_time - measurements[i]->fun_time[j]) / diff;
+                }
+
+                // apply regression
+                PolyRegression (X, INFO_NR_THREADS (info), 4, y, reg);
+
+                // do recommendation
+                for (int j = 1; j < INFO_NR_THREADS (info); j++) {
+                    pX = reg[0] + j * reg[1] + j * j * reg[2] + j * j * j * reg[3];
+                    pY = reg[0] + (j - 1) * reg[1] + (j - 1) * (j - 1) * reg[2]
+                         + (j - 1) * (j - 1) * (j - 1) * reg[3];
+                    slope = pX - pY;
+                    angle = atan (slope);
+                    if (angle <= t_angle || angle <= 0) {
+                        recommendations[2 * (i + 1)] = j; // use j threads
+                        break;
+                    }
+                }
+
+                MEMfree (reg);
+                MEMfree (y);
+                DelMatrix (X, INFO_NR_THREADS (info), 4);
             }
         }
     }
