@@ -944,7 +944,7 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
                     break;
 
                 case N_id:
-                    avis = ID_AVIS (TCgetNthExprsExpr (k, idlist));
+                    avis = ID_AVIS (TCgetNthExprsExpr (k, exprsone));
                     printIslName (handle, avis);
                     break;
 
