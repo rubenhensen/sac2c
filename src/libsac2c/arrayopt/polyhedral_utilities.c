@@ -907,6 +907,7 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
     node *expr;
     node *exprsone;
     node *avis;
+    node *fundef;
     char *txt;
     bool wasor;
 
@@ -914,11 +915,25 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
 
     idlist = GetIslSetVariablesFromLut (varlut);
     n = TCcountExprs (idlist);
-    fprintf (handle, "{ [");
     if (0 != n) {
 
-        // Append set variables:  [i,j,k...]
+        // Append names of set variables:  [i,j,k...]
         // These come in pairs: [fundefname,i], [fundefname,j]...
+        fprintf (handle, "#  ");
+        for (i = 0; i < n; i++) {
+            fundef = TCgetNthExprsExpr (i, idlist);
+            i = i + 1;
+            avis = ID_AVIS (TCgetNthExprsExpr (i, idlist));
+            fprintf (handle, "%s:%s", AVIS_NAME (avis), FUNDEF_NAME (fundef));
+            if (i < (n - 1)) {
+                fprintf (handle, ",");
+            }
+        }
+        fprintf (handle, "\n");
+
+        // Append ISL versions of set variables:  [i,j,k...]
+        // These come in pairs: [fundefname,i], [fundefname,j]...
+        fprintf (handle, "{ [");
         for (i = 0; i < n; i++) {
             i = i + 1;
             avis = ID_AVIS (TCgetNthExprsExpr (i, idlist));
