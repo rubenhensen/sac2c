@@ -142,6 +142,8 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+static int islvarnum;
+
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
@@ -419,7 +421,7 @@ InsertVarIntoLut (node *arg_node, lut_t *varlut, node *fundef)
     if (NULL != avis) {
         DBUG_ASSERT (NULL != varlut, "NULL VARLUT");
         LUTupdateLutP (varlut, avis, fundef, (void **)&founditem);
-        z = NULL == founditem;
+        z = (NULL == founditem);
         if (z) {
             DBUG_PRINT ("Inserted %s into VARLUT", AVIS_NAME (avis));
         } else {
@@ -533,6 +535,38 @@ GetIslSetVariablesFromLut (lut_t *varlut)
     z = (node *)LUTfoldLutP (varlut, head, GetIslSetVariablesFromLutOne);
 
     DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn void printIslName( FILE *handle, node *avis)
+ *
+ * @brief print (to file) an ISL-acceptable, unique version of avisname.
+ *        For fundefname of "foo", and avisname of nid", we generate:
+ *          _3_foo_nid, where 3 is the length of "foo".
+ *
+ * @param handle: a file handle for the output
+ *        avis: the SAC N_avis for the variable
+ *
+ * @return void
+ *         Side effect is to print the generated ISL name.
+ *
+ ******************************************************************************/
+static void
+printIslName (FILE *handle, node *avis)
+{
+
+    DBUG_ENTER ();
+
+    if (0 == AVIS_ISLINDEX (avis)) {
+        islvarnum++;
+        AVIS_ISLINDEX (avis) = islvarnum;
+    }
+
+    fprintf (handle, "V%d", AVIS_ISLINDEX (avis));
+    DBUG_PRINT ("Generated V%d for %s", AVIS_ISLINDEX (avis), AVIS_NAME (avis));
+
+    DBUG_RETURN ();
 }
 
 /** <!-- ****************************************************************** -->
@@ -837,11 +871,21 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
 /** <!-- ****************************************************************** -->
  * @fn void Exprs2File( node *exprs, lut_t *varlut, char *tag)
  *
- *
  * @brief Append one ISL set of polyhedra to input file, from exprs and
  *        set variable list in varlut.
  *
  *        If exprs is NULL, do nothing.
+ *
+ *        We avoid duplicate variable names (arising from LACFUNs in
+ *        code such as ipbb.sac) by prefixing the function name to the
+ *        variable name. The rules for forming ISL identifiers are
+ *        undocumented, which makes things messy: we can not pick
+ *        some character, such as $, to build funname$varname, which
+ *        would simplify undoing things after ISL does its thing.
+ *        Alexandre Isoard suggested, in the ISL development group email:
+ *        "_13_FUNCTIONNAME_13_VARIABLENAME",
+ *        where the first 13 is the length of FUNCTIONNAME..."
+ *
  *
  * @param handle: output file handle
  * @param exprs: N_exprs chain of N_exprs chains. Each pair of elements of exprs
@@ -862,8 +906,7 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
     node *idlist;
     node *expr;
     node *exprsone;
-    char *fundefname;
-    char *avisname;
+    node *avis;
     char *txt;
     bool wasor;
 
@@ -877,13 +920,9 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
         // Append set variables:  [i,j,k...]
         // These come in pairs: [fundefname,i], [fundefname,j]...
         for (i = 0; i < n; i++) {
-            fundefname = STR_STRING (TCgetNthExprsExpr (i, idlist));
             i = i + 1;
-            avisname = AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist)));
-#define ISLIDDELIMITER $
-            // FIXME ISL fix from Sven needed fprintf( handle, " %sISLIDDELIMITER%s",
-            // fundefname, avisname);
-            fprintf (handle, "%s", avisname);
+            avis = ID_AVIS (TCgetNthExprsExpr (i, idlist));
+            printIslName (handle, avis);
             if (i < (n - 1)) {
                 fprintf (handle, ",");
             }
@@ -905,7 +944,8 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
                     break;
 
                 case N_id:
-                    fprintf (handle, "%s", AVIS_NAME (ID_AVIS (expr)));
+                    avis = ID_AVIS (TCgetNthExprsExpr (k, idlist));
+                    printIslName (handle, avis);
                     break;
 
                 case N_prf:
@@ -2050,7 +2090,7 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
  *
  * @fn node
  *
- * @brief Compute the intersections amongn ISL polyhedra:
+ * @brief Compute the intersections among ISL polyhedra:
  *
  *          exprs1, exprs2, exprs3
  *
@@ -2101,6 +2141,7 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprs3, node *exprs
 
     DBUG_PRINT ("ISL arg filename: %s", polyhedral_arg_filename);
     DBUG_PRINT ("ISL res filename: %s", polyhedral_res_filename);
+    islvarnum = 0;
     matrix_file = FMGRwriteOpen (polyhedral_arg_filename, "w");
     Exprs2File (matrix_file, exprspwl, varlut, "pwl");
     Exprs2File (matrix_file, exprscwl, varlut, "cwl");

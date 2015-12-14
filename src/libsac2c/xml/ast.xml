@@ -8935,6 +8935,21 @@ N_tfarg :
             </targets>
           </type>
         </attribute>	 
+        <attribute name="IslIndex" inconstructor="no" default="0">
+          <description>
+	    Index into ISL namelist.
+          </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="opt_saacyc_polys" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
 
       <flags>
@@ -9153,15 +9168,6 @@ N_tfarg :
 	  argument or result has been scalarized. Its only
 	  function is to prevent us from doing the scalarization
 	  more than once.
-	  </description>
-        </flag>	 
-	<flag name="IsHasAft" default="FALSE" >
-	  <description> 
-	  This flag is used by PHUT to keep track of N_id nodes that
-	  have already had an Affine Function Tree (AFT) built for them, so
-	  that we do not put redundant constraints into ISL input files.
-	  The extremely high cost of polyhedral model analysis 
-	  make this quite important.
 	  </description>
         </flag>	 
   </flags>
