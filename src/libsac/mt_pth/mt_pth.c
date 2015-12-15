@@ -224,9 +224,11 @@ ThreadServeLoop (struct sac_bee_pth_t *SAC_MT_self)
         case 2:
             wait_on_cond_barrier (sharedfl, locfl);
             break;
+#ifndef __APPLE__
         case 3:
             take_pthread_barrier ();
             break;
+#endif
 #ifdef __linux__
         case 4:
             wait_on_futex_barrier (sharedfl, locfl);
@@ -601,9 +603,11 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
     case 2:
         lift_cond_barrier (sharedfl);
         break;
+#ifndef __APPLE__
     case 3:
         take_pthread_barrier ();
         break;
+#endif
 #ifdef __linux__
     case 4:
         lift_futex_barrier (sharedfl);

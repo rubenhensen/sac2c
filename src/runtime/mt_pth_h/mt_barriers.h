@@ -29,10 +29,6 @@
 #ifndef _MT_BARRIERS
 #define _MT_BARRIERS
 
-#ifndef _POSIX_BARRIERS
-#define _POSIX_BARRIERS 1
-#endif
-
 #include <pthread.h>
 //#include <unistd.h>
 
@@ -55,6 +51,12 @@ long syscall (long number, ...);
 // one of the other options
 #ifdef SAC_SET_BARRIER_TYPE
 
+#ifndef __APPLE__
+#define ACCEPT_PTHREAD 1
+#else
+#define ACCEPT_PTHREAD 0
+#endif
+
 // the futex barrier is only made available on linux systems
 #ifdef __linux__
 #define ACCEPT_FUTEX 1
@@ -76,7 +78,7 @@ long syscall (long number, ...);
 #define SAC_MT_PTH_INIT_BARRIER(nrthreads) init_cond_barrier ()
 #define SAC_MT_PTH_SIGNAL_BARRIER(glflag) lift_cond_barrier (glflag)
 #define SAC_MT_PTH_DESTROY_BARRIER() destroy_cond_barrier ()
-#elif SAC_SET_BARRIER_TYPE == 3
+#elif SAC_SET_BARRIER_TYPE == 3 && ACCEPT_PTHREAD == 1
 #define SAC_MT_PTH_INIT_BARRIER(nrthreads) init_pthread_barrier (nrthreads)
 #define SAC_MT_PTH_SIGNAL_BARRIER(glflag) take_pthread_barrier ()
 #define SAC_MT_PTH_DESTROY_BARRIER() destroy_pthread_barrier ()
@@ -91,6 +93,7 @@ long syscall (long number, ...);
 #endif
 
 #undef ACCEPT_FUTEX
+#undef ACCEPT_PTHREAD
 
 #endif
 
@@ -113,7 +116,9 @@ SAC_MT_PTH_EXTERN pthread_mutex_t mutex_barrier;
 SAC_MT_PTH_EXTERN pthread_cond_t cond_barrier;
 SAC_MT_PTH_EXTERN pthread_mutex_t cond_mutex;
 
+#ifndef __APPLE__
 SAC_MT_PTH_EXTERN pthread_barrier_t pthread_barrier;
+#endif
 
 #undef SAC_MT_PTH_EXTERN
 
@@ -134,7 +139,6 @@ static inline void
 init_mutex_barrier (int nr_threads)
 {
     mutex_nr_threads = nr_threads;
-    SAC_TR_MT_PRINT (("Mutex barrier init with %i threads.", mutex_nr_threads));
     pthread_mutex_init (&mutex_sacred, NULL);
     pthread_mutex_init (&mutex_lock_sacred, NULL);
     pthread_mutex_init (&mutex_barrier, NULL);
@@ -156,8 +160,6 @@ static inline void
 take_mutex_barrier (void)
 {
     int lock = 0;
-
-    SAC_TR_MT_PRINT (("Take Mutex barrier with %i threads.", mutex_nr_threads));
 
     pthread_mutex_lock (&mutex_lock_sacred);
     pthread_mutex_unlock (&mutex_lock_sacred);
@@ -198,8 +200,6 @@ take_mutex_barrier (void)
 static inline void
 destroy_mutex_barrier (void)
 {
-    SAC_TR_MT_PRINT (("Destroy mutex barrier."));
-
     pthread_mutex_destroy (&mutex_sacred);
     pthread_mutex_destroy (&mutex_lock_sacred);
     pthread_mutex_destroy (&mutex_barrier);
@@ -218,7 +218,6 @@ destroy_mutex_barrier (void)
 static inline void
 init_cond_barrier (void)
 {
-    SAC_TR_MT_PRINT (("Cond barrier init."));
     pthread_cond_init (&cond_barrier, NULL);
     pthread_mutex_init (&cond_mutex, NULL);
 }
@@ -241,7 +240,6 @@ init_cond_barrier (void)
 static inline void
 wait_on_cond_barrier (volatile unsigned int *glflag, unsigned int *lcflag)
 {
-    SAC_TR_MT_PRINT (("Wait on cond barrier."));
     pthread_mutex_lock (&cond_mutex);
     if (*glflag == *lcflag) {
         pthread_cond_wait (&cond_barrier, &cond_mutex);
@@ -266,7 +264,6 @@ wait_on_cond_barrier (volatile unsigned int *glflag, unsigned int *lcflag)
 static inline void
 lift_cond_barrier (volatile unsigned int *glflag)
 {
-    SAC_TR_MT_PRINT (("Lift cond barrier."));
     pthread_mutex_lock (&cond_mutex);
     (*glflag)++;
     pthread_cond_broadcast (&cond_barrier);
@@ -285,11 +282,11 @@ lift_cond_barrier (volatile unsigned int *glflag)
 static inline void
 destroy_cond_barrier (void)
 {
-    SAC_TR_MT_PRINT (("Destroy mutex barrier."));
     pthread_cond_destroy (&cond_barrier);
     pthread_mutex_destroy (&cond_mutex);
 }
 
+#ifndef __APPLE__
 /******************************************************************************
  *
  * function:
@@ -306,7 +303,6 @@ destroy_cond_barrier (void)
 static inline void
 init_pthread_barrier (int nr_threads)
 {
-    SAC_TR_PRINT (("Init pthread barrier %i.", nr_threads));
     pthread_barrier_init (&pthread_barrier, NULL, nr_threads);
 }
 
@@ -326,7 +322,6 @@ init_pthread_barrier (int nr_threads)
 static inline void
 take_pthread_barrier (void)
 {
-    SAC_TR_PRINT (("Take pthread barrier."));
     pthread_barrier_wait (&pthread_barrier);
 }
 
@@ -343,9 +338,9 @@ take_pthread_barrier (void)
 static inline void
 destroy_pthread_barrier (void)
 {
-    SAC_TR_PRINT (("Destroy pthread barrier."));
     pthread_barrier_destroy (&pthread_barrier);
 }
+#endif
 
 #ifdef __linux__
 /******************************************************************************
@@ -366,7 +361,6 @@ destroy_pthread_barrier (void)
 static inline void
 wait_on_futex_barrier (volatile unsigned int *glflag, unsigned int *lcflag)
 {
-    SAC_TR_MT_PRINT (("Wait on futex barrier."));
     syscall (SYS_futex, glflag, FUTEX_WAIT, *lcflag, NULL, NULL, 0);
     (*lcflag)++;
 }
@@ -387,7 +381,6 @@ wait_on_futex_barrier (volatile unsigned int *glflag, unsigned int *lcflag)
 static inline void
 lift_futex_barrier (volatile unsigned int *glflag)
 {
-    SAC_TR_MT_PRINT (("Lift futex barrier."));
     (*glflag)++;
     syscall (SYS_futex, glflag, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
 }
