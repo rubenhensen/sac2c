@@ -1221,7 +1221,7 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
  *
  * @brief Handler for N_id = nid
  *
- * @param  nid: potential
+ * @param  nid: potential loopfun argument.
  * @param  rca:
  * @param  arg_info: as usual
  * @param  res: the incoming N_exprs chain
@@ -1235,7 +1235,6 @@ static node *
 getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassign,
               node *callerfundef, node *initialvalue)
 {
-#ifdef DEADCODE
     node *z = NULL;
     node *lim;
     node *ext_limit;
@@ -1248,11 +1247,9 @@ getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassig
     int incrementsign = 0;
     bool swap;
     prf relfn;
-#endif // DEADCODE
 
     DBUG_ENTER ();
 
-#ifdef DEADCODE
     condprf = COND_COND (ASSIGN_STMT (LFUfindAssignForCond (INFO_FUNDEF (arg_info))));
     condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
     if ((NULL != condprf) && (NULL == INFO_LOOPCOUNT (arg_info))
@@ -1337,8 +1334,6 @@ getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassig
             res = TCappendExprs (res, z);
         }
     }
-
-#endif // DEADCODE
 
     DBUG_RETURN (res);
 }
