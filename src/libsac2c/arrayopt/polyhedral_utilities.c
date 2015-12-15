@@ -219,7 +219,6 @@ PHUTprintIslAffineFunctionTree (node *arg_node)
     DBUG_RETURN ();
 }
 
-#ifdef FIXME
 /** <!-- ****************************************************************** -->
  *
  * @fn node *RemoveRcaAssign( node *relarg, node *rca)
@@ -280,7 +279,6 @@ RemoveRcaAssign (node *relarg, node *rca)
 
     DBUG_RETURN (relarg);
 }
-#endif // FIXME
 
 /** <!-- ****************************************************************** -->
  *
@@ -1115,7 +1113,6 @@ isDyadicPrf (prf nprf)
     DBUG_RETURN (z);
 }
 
-#ifdef CODEME
 /** <!-- ****************************************************************** -->
  *
  * @fn bool isLoopfunCond( prf nprf)
@@ -1150,7 +1147,6 @@ isLoopfunCond (prf nprf)
 
     DBUG_RETURN (z);
 }
-#endif // CODEME
 
 /** <!-- ****************************************************************** -->
  *
