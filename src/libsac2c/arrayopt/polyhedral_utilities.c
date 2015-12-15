@@ -249,6 +249,8 @@ RemoveRcaAssign (node *relarg, node *rca)
     node *exprs;
     node *exprs2;
 
+    node *junk = NULL;
+
     exprsouter = relarg;
     while ((NULL == z) && (NULL != exprsouter)) {
         exprs = EXPRS_EXPR (exprsouter);
@@ -262,12 +264,14 @@ RemoveRcaAssign (node *relarg, node *rca)
                 if ((SCSisPositive (EXPRS_EXPR (exprs2)))
                     || (SCSisNegative (EXPRS_EXPR (exprs2)))) {
                     DBUG_PRINT ("Trimmed relarg arg1");
+                    junk = EXPRS_EXPR (exprsouter);
                     EXPRS_EXPR (exprsouter) = FREEdoFreeTree (EXPRS_EXPR (exprsouter));
                 } else {
                     if ((SCSisPositive (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs2)))))
                         || (SCSisNegative (
                              EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs2)))))) {
                         DBUG_PRINT ("Trimmed relarg arg2");
+                        junk = EXPRS_EXPR (exprsouter);
                         EXPRS_EXPR (exprsouter)
                           = FREEdoFreeTree (EXPRS_EXPR (exprsouter));
                     }
