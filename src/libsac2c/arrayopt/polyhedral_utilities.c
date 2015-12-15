@@ -549,7 +549,17 @@ GetIslSetVariablesFromLut (lut_t *varlut)
  *        avis: the SAC N_avis for the variable
  *
  * @return void
- *         Side effect is to print the generated ISL name.
+ *         Side effect: print the generated ISL name.
+ *         Side effect: Set AVIS_ISLINDEX, if not already set.
+ *
+ *         NB. AVIS_ISLINDEX is used only to provide a unique ISL name for
+ *             each variable in an Affine Function Tree(AFT). Since each call
+ *             to ISL (via sacislinterface) is independent of the others,
+ *             we could use the AVIS's address for this purpose. The idea
+ *             here is to come up with something that is slightly more
+ *             human-readable (for debugging only). It could also
+ *             serve to identify those nodes that already possess an AFT, but
+ *             we do not do that yet.
  *
  ******************************************************************************/
 static void
@@ -907,7 +917,7 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
     node *expr;
     node *exprsone;
     node *avis;
-    node *fundef;
+    char *funname;
     char *txt;
     bool wasor;
 
@@ -921,10 +931,10 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
         // These come in pairs: [fundefname,i], [fundefname,j]...
         fprintf (handle, "#  ");
         for (i = 0; i < n; i++) {
-            fundef = TCgetNthExprsExpr (i, idlist);
+            funname = STR_STRING (TCgetNthExprsExpr (i, idlist));
             i = i + 1;
             avis = ID_AVIS (TCgetNthExprsExpr (i, idlist));
-            fprintf (handle, "%s:%s", AVIS_NAME (avis), FUNDEF_NAME (fundef));
+            fprintf (handle, "%s:%s", funname, AVIS_NAME (avis));
             if (i < (n - 1)) {
                 fprintf (handle, ",");
             }
@@ -2156,7 +2166,7 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprs3, node *exprs
 
     DBUG_PRINT ("ISL arg filename: %s", polyhedral_arg_filename);
     DBUG_PRINT ("ISL res filename: %s", polyhedral_res_filename);
-    islvarnum = 0;
+    // bad idea, Bob: We get repeated names, somehow.  islvarnum = 0;
     matrix_file = FMGRwriteOpen (polyhedral_arg_filename, "w");
     Exprs2File (matrix_file, exprspwl, varlut, "pwl");
     Exprs2File (matrix_file, exprscwl, varlut, "cwl");
