@@ -121,8 +121,9 @@ UIDfundef (node *arg_node, info *arg_info)
     char *str_seconds;
 #endif /* ENABLE_HASH */
 
-    if (FUNDEF_ISLOCAL (arg_node) && !FUNDEF_ISWRAPPERFUN (arg_node)
-        && !FUNDEF_ISCONDFUN (arg_node) && !FUNDEF_ISLOOPFUN (arg_node)) {
+    if (!FUNDEF_HASDOTARGS (arg_node) && !FUNDEF_HASDOTRETS (arg_node)
+        && !FUNDEF_ISWRAPPERFUN (arg_node) && !FUNDEF_ISCONDFUN (arg_node)
+        && !FUNDEF_ISLOOPFUN (arg_node) && FUNDEF_ARGS (arg_node) != NULL) {
         INFO_ISGENERIC (arg_info) = FALSE;
 
         if (FUNDEF_ARGS (arg_node) != NULL) {
