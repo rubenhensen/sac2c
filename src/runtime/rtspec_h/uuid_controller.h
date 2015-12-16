@@ -10,7 +10,7 @@
 #ifndef _SAC_UUID_CONTROLLER_H_
 #define _SAC_UUID_CONTROLLER_H_
 
-extern void SAC_UUID_setupController (char *dir, int trace);
+extern void SAC_UUID_setupController (char *dir, int trace, char *command_line);
 
 extern void *SAC_UUID_runController (void);
 

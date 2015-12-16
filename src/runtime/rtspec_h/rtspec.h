@@ -13,9 +13,9 @@
 
 #if SAC_DO_RTSPEC
 
-#define SAC_RTSPEC_SETUP_INITIAL(mode)                                                   \
+#define SAC_RTSPEC_SETUP_INITIAL(mode, command_line)                                     \
     SAC_RTSPEC_SetupInitial (__argc, __argv, SAC_SET_RTSPEC_THREADS,                     \
-                             SAC_DO_TRACE_RTSPEC, mode);
+                             SAC_DO_TRACE_RTSPEC, mode, command_line);
 
 /*
  * Print the code necessary to setup the optimization controller.
@@ -157,7 +157,7 @@
 #else /* SAC_DO_RTSPEC */
 
 #define SAC_RTSPEC_SETUP()
-#define SAC_RTSPEC_SETUP_INITIAL(mode)
+#define SAC_RTSPEC_SETUP_INITIAL(mode, command_line)
 #define SAC_RTSPEC_FINALIZE()
 
 #define SAC_RTSPEC_CURRENT_THREAD_ID() 0;

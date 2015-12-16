@@ -36,6 +36,8 @@ static int do_trace;
 
 static int rtspec_mode;
 
+static char *cli_arguments;
+
 /******************************************************************************
  *
  * function:
@@ -49,10 +51,11 @@ static int rtspec_mode;
  ******************************************************************************/
 void
 SAC_RTSPEC_SetupInitial (int argc, char *argv[], unsigned int num_threads, int trace,
-                         int mode)
+                         int mode, char *command_line)
 {
     do_trace = trace;
     rtspec_mode = mode;
+    cli_arguments = command_line;
 
     int i;
     bool rtc_option_exists = FALSE;
@@ -87,8 +90,8 @@ SAC_RTSPEC_SetupInitial (int argc, char *argv[], unsigned int num_threads, int t
     }
 
     if (do_trace == 1) {
-        SAC_TR_PRINT (
-          ("Number of threads determined as %u.", SAC_RTSPEC_controller_threads));
+        SAC_TR_Print ("Number of threads determined as %u.",
+                      SAC_RTSPEC_controller_threads);
     }
 }
 
@@ -132,9 +135,9 @@ SAC_setupController (char *dir)
     }
 
     if (rtspec_mode == RTSPEC_MODE_SIMPLE) {
-        SAC_Simple_setupController (dir, do_trace);
+        SAC_Simple_setupController (dir, do_trace, cli_arguments);
     } else {
-        SAC_UUID_setupController (dir, do_trace);
+        SAC_UUID_setupController (dir, do_trace, cli_arguments);
     }
 
     int result;

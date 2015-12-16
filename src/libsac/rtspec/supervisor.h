@@ -13,7 +13,7 @@
 #define _SAC_SUPERVISOR_H_
 
 extern void SAC_RTSPEC_SetupInitial (int argc, char *argv[], unsigned int num_threads,
-                                     int trace, int mode);
+                                     int trace, int mode, char *command_line);
 
 extern unsigned int SAC_RTSPEC_CurrentThreadId (void);
 

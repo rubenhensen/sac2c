@@ -8,7 +8,7 @@
 
 #include "config.h"
 
-#if ENABLE_RTSPEC
+#if SAC_DO_RTSPEC
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +32,7 @@
 #define RTSPEC_MODULE_PREFIX "RTSpec_"
 #define RTSPEC_MODULE_PREFIX_LENGTH 7
 #define MAX_INT_DIGITS 21
+#define CALL_FORMAT_STRLEN 144
 
 #define SAC_RTC_ENV_VAR_NAME "SAC_RTSPEC_CONTROLLER"
 
@@ -40,6 +41,11 @@ static int do_trace;
 static char *tmpdir_name = NULL;
 static char *rtspec_syscall = NULL;
 static int tmpdir_strlen = 0;
+static char *cli_arguments;
+static int sbi_strlen = 0;
+static int target_env_strlen = 0;
+static int modext_strlen = 0;
+static int cli_arguments_strlen = 0;
 
 /* TLS key to retrieve the Thread Self ID Ptr */
 pthread_key_t SAC_RTSPEC_self_id_key;
@@ -100,7 +106,7 @@ CreateTmpDir (char *dir)
 
 /** <!--*******************************************************************-->
  *
- * @fn SAC_Simple_setupController( char *dir, int trace )
+ * @fn SAC_Simple_setupController( char *dir, int trace, char *command_line )
  *
  * @brief Initializes the request queue and starts the optimization controller
  *        in a separate thread.
@@ -108,9 +114,15 @@ CreateTmpDir (char *dir)
  ****************************************************************************/
 
 void
-SAC_Simple_setupController (char *dir, int trace)
+SAC_Simple_setupController (char *dir, int trace, char *command_line)
 {
     do_trace = trace;
+    cli_arguments = command_line;
+
+    cli_arguments_strlen = strlen (cli_arguments);
+    sbi_strlen = strlen (SAC_SBI_STRING);
+    target_env_strlen = strlen (SAC_TARGET_ENV_STRING);
+    modext_strlen = strlen (SAC_MODEXT_STRING);
 
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Setup simple controller.");
@@ -200,12 +212,12 @@ SAC_Simple_handleRequest (simple_queue_node_t *request)
         SAC_TR_Print ("Runtime specialization: Handling new specialization request.");
     }
 
-    static int call_format_strlen = 102;
-    static char *call_format = "sac2c -v%i -runtime "
-                               "-rt_old_mod %s -rt_new_mod %s "
-                               "-rtfunname %s -rtnewname %s "
-                               "-rttypeinfo %s -rtshapeinfo %s "
-                               "-L %s -o %s";
+    static char call_format[CALL_FORMAT_STRLEN] = "sac2c -v%i -runtime "
+                                                  "-rt_old_mod %s -rt_new_mod %s "
+                                                  "-rtfunname %s -rtnewname %s "
+                                                  "-rttypeinfo %s -rtshapeinfo %s "
+                                                  "-L ./%s/%s/ "
+                                                  "-T ./tree/%s/ -o %s %s";
 
     static int counter = 0;
 
@@ -243,13 +255,15 @@ SAC_Simple_handleRequest (simple_queue_node_t *request)
     char *syscall
       = (char *)malloc (sizeof (char)
                         * (strlen (request->func_name) * 2 + strlen (request->type_info)
-                           + strlen (shape_info) + call_format_strlen + old_module_strlen
+                           + strlen (shape_info) + target_env_strlen * 2 + sbi_strlen
+                           + cli_arguments_strlen + CALL_FORMAT_STRLEN + old_module_strlen
                            + new_module_strlen + tmpdir_strlen * 2 + 1));
 
     /* Build the system call. */
     sprintf (syscall, call_format, (do_trace == 1) ? 3 : 0, request->reg_obj->module,
              new_module, request->func_name, request->func_name, request->type_info,
-             shape_info, tmpdir_name, tmpdir_name);
+             shape_info, SAC_TARGET_ENV_STRING, SAC_SBI_STRING, SAC_TARGET_ENV_STRING,
+             tmpdir_name, cli_arguments);
 
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Calling runtime compiler with:");
@@ -257,10 +271,14 @@ SAC_Simple_handleRequest (simple_queue_node_t *request)
     }
 
     char *filename
-      = (char *)malloc (sizeof (char) * (tmpdir_strlen + new_module_strlen + 10));
+      = (char *)malloc (sizeof (char)
+                        * (tmpdir_strlen + new_module_strlen + target_env_strlen
+                           + sbi_strlen + modext_strlen + 4));
 
     /* The path to the new library. */
-    sprintf (filename, "%s/lib%sMod.so", tmpdir_name, new_module);
+    sprintf (filename,
+             "%s/" SAC_TARGET_ENV_STRING "/" SAC_SBI_STRING "/lib%sMod" SAC_MODEXT_STRING,
+             tmpdir_name, new_module);
 
     if (do_trace == 1) {
         SAC_TR_Print ("Runtime specialization: Generating specialized library at:");
@@ -384,4 +402,6 @@ SAC_Simple_finalizeController (void)
     }
 }
 
-#endif /* ENABLE_RTSPEC */
+#else
+static int this_translation_unit = 0xdead;
+#endif /* SAC_DO_RTSPEC  */

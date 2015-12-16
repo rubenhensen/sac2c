@@ -215,6 +215,11 @@ GLOBAL (char *, tree_ldflags, NULL, xfree_char_ptr, )
  * Additional linker flags for tree code
  */
 
+GLOBAL (char *, command_line, NULL, xfree_char_ptr, )
+/*
+ * All command line arguments
+ */
+
 GLOBAL (int, num_fun_files, 0, xfree_dummy, )
 /*
  * Number of funNNN.c files generated.

@@ -15,7 +15,7 @@
 #include "uuid_reqqueue.h"
 #include "persistence.h"
 
-extern void SAC_UUID_setupController (char *dir, int trace);
+extern void SAC_UUID_setupController (char *dir, int trace, char *command_line);
 
 extern void *SAC_UUID_runController (void *);
 

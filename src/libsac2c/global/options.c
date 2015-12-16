@@ -589,6 +589,11 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     str_buf *ldflags_buf = SBUFcreate (1);
     str_buf *tree_cflags_buf = SBUFcreate (1);
     str_buf *tree_ldflags_buf = SBUFcreate (1);
+    str_buf *command_line_buf = SBUFcreate (1);
+
+    for (int i = 1; i < argc; i++) {
+        SBUFprintf (command_line_buf, " %s", argv[i]);
+    }
 
     ARGS_BEGIN (argc, argv);
 
@@ -1009,9 +1014,12 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      */
     ARGS_OPTION_BEGIN ("o")
     {
-        if (global.outfilename != NULL)
+        if (global.outfilename != NULL && global.runtime != TRUE) {
             CTIabort ("-o cannot be specified multiple times.");
-        global.outfilename = STRcpy (ARG);
+        }
+        if (global.outfilename == NULL) {
+            global.outfilename = STRcpy (ARG);
+        }
     }
     ARGS_OPTION_END ("o");
 
@@ -1277,6 +1285,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     global.ldflags = SBUF2strAndFree (&ldflags_buf);
     global.tree_cflags = SBUF2strAndFree (&tree_cflags_buf);
     global.tree_ldflags = SBUF2strAndFree (&tree_ldflags_buf);
+    global.command_line = SBUF2strAndFree (&command_line_buf);
 
     DBUG_RETURN ();
 }
