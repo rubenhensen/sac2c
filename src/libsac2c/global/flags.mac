@@ -227,6 +227,7 @@ CS (immediate, 'i', TRUE)
 #endif
 
 RTC (conformity, 'c', FALSE)
+RTC (gpu, 'g', FALSE) /* On cuda backend, check for kernel and transfer errors. */
 RTC (boundary, 'b', FALSE)
 RTC (type, 't', FALSE)
 RTC (malloc, 'm', FALSE)

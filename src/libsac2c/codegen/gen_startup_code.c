@@ -93,6 +93,8 @@ PrintGlobalSwitches (void)
              (global.doruntimecheck) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_CHECK_TYPE      %d\n",
              (global.runtimecheck.type) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_CHECK_GPU       %d\n",
+             (global.runtimecheck.gpu) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_CHECK_BOUNDARY   %d\n",
              (global.runtimecheck.boundary) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_CHECK_MALLOC     %d\n",
