@@ -19,9 +19,7 @@ PLDFdoPrintLDFlags (node *syntax_tree)
 
     DBUG_ENTER ();
 
-    flags = CCTperformTask (CCT_linkflags);
-    // We append the cwrapper library to the linker list to ensure
-    // that we detect and make use of it...
+    flags = CCTperformTaskCwrapper (CCT_linkflags);
     printf ("%s -l%s", flags, global.outfilename);
     flags = MEMfree (flags);
 

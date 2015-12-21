@@ -13,5 +13,6 @@
 
 extern char *CCTperformTask (ccm_task_t task);
 extern node *CCTrunTools (node *syntax_tree);
+extern char *CCTperformTaskCwrapper (ccm_task_t task);
 
 #endif /* _SAC_CCTOOLS_H_ */

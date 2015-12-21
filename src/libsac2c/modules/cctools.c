@@ -14,6 +14,8 @@
 #include "resource.h"
 #include "stringset.h"
 
+#include <limits.h>
+
 static void *
 AddIncPath (const char *path, void *buf)
 {
@@ -531,6 +533,30 @@ CCTrunTools (node *syntax_tree)
     }
 
     DBUG_RETURN (syntax_tree);
+}
+
+/**
+ * CCTperformTaskCwrapper()
+ *
+ * Wraps around CCTperformTask() with the addition of extending LIBPATH with
+ * the location of the cwrapper library.
+ *
+ */
+char *
+CCTperformTaskCwrapper (ccm_task_t task)
+{
+    char *ret;
+    char cwrapper[PATH_MAX];
+
+    DBUG_ENTER ();
+
+    sprintf (cwrapper, "./%s", global.outfilename);
+
+    FMGRappendPath (PK_lib_path, cwrapper);
+
+    ret = CCTperformTask (task);
+
+    DBUG_RETURN (ret);
 }
 
 #undef DBUG_PREFIX
