@@ -31,8 +31,22 @@ CHECK_STDLIB([src/modules/structures/ArrayBasics.xsac])
 dnl we use C as our compiler language
 AC_LANG(C)
 
-dnl and which files to create
-AC_CONFIG_FILES([src/makefiles/config.mkf setup/sac2crc.pre setup/sac2crc.local src/tools/saccc])
+dnl and which files to create -
+dnl * variable `_config files' contains the list of files relevent to the
+dnl   sac2c build system.
+dnl * variable `_rc_files' contains the list of files that are used to
+dnl   generate the sac2crc.pre file - variables created by this script are
+dnl   substituted into these files, and are later combined into sac2crc.pre.
+dnl   NOTE: the order of the files in the list is the order that autotools
+dnl         uses to generate the files, thus sac2crc.pre needs to appear
+dnl         toward the end of the list.
+_config_files="src/makefiles/config.mkf src/tools/saccc"
+_rc_files="setup/sac2crc.backend.mutc setup/sac2crc.backend.cuda       \
+    setup/sac2crc.modifiers.cc setup/sac2crc.modifiers.malloc          \
+    setup/sac2crc.modifiers.rcm setup/sac2crc.SUN setup/sac2crc.X86    \
+    setup/sac2crc.ALPHA setup/sac2crc.MAC setup/sac2crc.pre            \
+    setup/sac2crc.local"
+AC_CONFIG_FILES([$_config_files $_rc_files])
 AC_CONFIG_HEADER([src/include/config.h])
 
 dnl check for host type

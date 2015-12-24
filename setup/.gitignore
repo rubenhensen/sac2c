@@ -3,3 +3,15 @@
 /sac2crc.GASNetconduits
 /build.GASNetconduits
 /build.GASNetconduitsCrossVariant
+/sac2crc.ALPHA
+/sac2crc.MAC
+/sac2crc.SUN
+/sac2crc.X86
+/sac2crc.backend.cuda
+/sac2crc.backend.mutc
+/sac2crc.local
+/sac2crc.modifiers.cc
+/sac2crc.modifiers.malloc
+/sac2crc.modifiers.rcm
+/sac2crc.pre
+/sac2crc

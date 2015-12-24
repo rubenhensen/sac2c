@@ -2325,7 +2325,13 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-ac_config_files="$ac_config_files src/makefiles/config.mkf setup/sac2crc.pre setup/sac2crc.local src/tools/saccc"
+_config_files="src/makefiles/config.mkf src/tools/saccc"
+_rc_files="setup/sac2crc.backend.mutc setup/sac2crc.backend.cuda       \
+    setup/sac2crc.modifiers.cc setup/sac2crc.modifiers.malloc          \
+    setup/sac2crc.modifiers.rcm setup/sac2crc.SUN setup/sac2crc.X86    \
+    setup/sac2crc.ALPHA setup/sac2crc.MAC setup/sac2crc.pre            \
+    setup/sac2crc.local"
+ac_config_files="$ac_config_files $_config_files $_rc_files"
 
 ac_config_headers="$ac_config_headers src/include/config.h"
 
@@ -8365,10 +8371,8 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "src/makefiles/config.mkf") CONFIG_FILES="$CONFIG_FILES src/makefiles/config.mkf" ;;
-    "setup/sac2crc.pre") CONFIG_FILES="$CONFIG_FILES setup/sac2crc.pre" ;;
-    "setup/sac2crc.local") CONFIG_FILES="$CONFIG_FILES setup/sac2crc.local" ;;
-    "src/tools/saccc") CONFIG_FILES="$CONFIG_FILES src/tools/saccc" ;;
+    "$_config_files") CONFIG_FILES="$CONFIG_FILES $_config_files" ;;
+    "$_rc_files") CONFIG_FILES="$CONFIG_FILES $_rc_files" ;;
     "src/include/config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/include/config.h" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

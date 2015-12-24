@@ -406,7 +406,7 @@ CEXT             :=  ".c"
 OBJEXT           :=  ".o"
 
 VARIANT          :=  ""
-CUDA_ARCH        :=  ""
+CUDA_ARCH        :=  "@CUDA_ARCH@"
 MT_LIB           :=  ""
 MT_MODE          :=  0
 
