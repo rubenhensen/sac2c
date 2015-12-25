@@ -345,8 +345,6 @@ PrintFileHeader (info *arg_info)
 static void
 PrintFileFooter (info *arg_info)
 {
-    char *footer;
-
     DBUG_ENTER ();
 
     fprintf (INFO_FILE (arg_info),
