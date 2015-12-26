@@ -381,7 +381,7 @@ IMPPATH          :=  ".:"
                      "@STDLIB_SOURCES@/auxiliary/random:"
                      "@STDLIB_SOURCES@/classes/random:"
                      "@STDLIB_SOURCES@/utrace:"
-EXTLIBPATH       :=  "/usr/local/dislin:/opt/local/lib"
+EXTLIBPATH       :=  "/usr/local/dislin:/opt/local/lib:"
 INCPATH          :=  ".:"
 
 CACHE1_SIZE      :=  0
@@ -460,7 +460,7 @@ MODEXT           :=  "@SHARED_LIB_EXT@"
 EXEEXT           :=  "@EXEEXT@"
 
 CC               :=  "@CC@"
-CFLAGS           :=  "-pedantic @GENPIC@ @RCCCFLAGS@"
+CFLAGS           :=  "-pedantic -g @GENPIC@ @RCCCFLAGS@"
 
 LD               :=  "@CC@"
 LDPATH           :=  "@LD_PATH@"
@@ -513,6 +513,10 @@ CFLAGS           +=  " @CCMT_PTH_CFLAGS@"
 SBI              +=  "-pth"
 MT_LIB           :=  "pthread"
 
+target add_xt:
+SBI              += "-xt"
+CFLAGS           += " -DPHM_XT"
+
 target add_lpel:
 SBI              +=  "-lpel"
 MT_LIB           :=  "lpel"
@@ -537,6 +541,8 @@ target seq :: default_sbi:
 target mt_pth :: default_mt :: add_pth:
 
 target mt_pth_rt :: mt_pth :: add_rt:
+
+target mt_pth_xt :: mt_pth :: add_xt:
 
 target mt_lpel :: default_mt :: add_lpel:
 
