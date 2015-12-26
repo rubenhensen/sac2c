@@ -1,46 +1,37 @@
 /*****************************************************************************
  * cuda targets
+ *
+ * NOTE: NVCC provides the `-Xcudafe "--diag_suppress=<key>"' flag in order
+ *       to selectively disable certain warnings. At the moment, warnings for
+ *       set but unused variables and declared but not referenced variables
+ *       are deactivated (see CFLAGS). A list of valid keys to use can be
+ *       found in doc/cuda_warning_codes.txt.
+ *
+ * NOTE: CUDA targets assume CUDA version 6.0 >= is used...
  */
-target cuda :: default_sbi:
-SBI              += "-cuda"
+target cuda_base :: default_sbi:
 BACKEND          :=  "Cuda"
 
 CUDA_ARCH        :=  "@CUDA_ARCH@"
 
 CEXT             :=  ".cu"
 CC               :=  "@NVCC_PATH@"
-CFLAGS           :=  "@CUDA_ARCH@ --maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
-                     "-Xcompiler -fno-builtin -Xcompiler -std=c99 "
-                     " -I$CUTIL "
-LIBS             :=  " @CCDLLINK@ -lcutil_i386 -lcudart -lcublas"
-EXTLIBPATH       +=  "$CUTIL_LIB:"
+CFLAGS           :=  "@CUDA_ARCH@ --maxrregcount 20 -Xcompiler -Wall "
+                     "-Xcompiler -Wno-unused -Xcompiler -fno-builtin "
+                     "-Xcudafe '--diag_suppress=set_but_not_used --diag_suppress=declared_but_not_referenced' "
+                     " -I@CUDA_ROOT@/include "
+LIBS             :=  " @CCDLLINK@ -lcudart -lcublas"
+
+target cuda :: cuda_base:
+EXTLIBPATH       +=  "@CUDA_ROOT@/lib64:"
+
+target cuda32 :: cuda_base:
+EXTLIBPATH       +=  "@CUDA_ROOT@/lib:"
 
 target cudahybrid :: cuda:
 BACKEND          :=  "CudaHybrid"
 MT_MODE          :=  2
 
-target cudahybrid64 :: cuda :: add_cuda64:
+target cudahybrid32 :: cuda32:
 BACKEND          :=  "CudaHybrid"
-
-/*******************************************************************************
- *
- * Targets that define target modifiers:
- *
- */
-
-target add_fixed:
-CFLAGS           :=  "--maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
-                     "-Xcompiler -fno-builtin -Xcompiler -std=c99"
-
-target add_cuda64:
-LIBS             :=  " @CCDLLINK@ -lcutil_x86_64 -lcudart -lcublas"
-
-/*******************************************************************************
- *
- * Targets that combine basic targets with target modifiers:
- *
- */
-target cuda_fixed :: cuda :: add_fixed:
-
-target cuda64 :: cuda :: add_cuda64:
-
+MT_MODE          :=  2

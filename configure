@@ -684,6 +684,7 @@ OPENMP_CFLAGS
 SLRANLIB
 SLAR
 SLC
+CUDA_ROOT
 NVCC_PATH
 CUDA_ARCH
 NVCC
@@ -4737,6 +4738,7 @@ fi
 
   CUDA_ARCH=no
   NVCC_PATH=no
+  CUDA_ROOT=no
   if test x"$enable_cuda" != xno; then
       # search for the NVidia compiler (nvcc)
 
@@ -4797,11 +4799,15 @@ $as_echo_n "checking whether nvcc works... " >&6; }
                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_cuda" >&5
 $as_echo "$enable_cuda" >&6; }
                 NVCC_PATH=$NVCC
+                # get cuda base directory from NVCC location
+                CUDA_ROOT=$(dirname $(dirname $NVCC))
+                { $as_echo "$as_me:${as_lineno-$LINENO}: using '$CUDA_ROOT' as CUDA_ROOT" >&5
+$as_echo "$as_me: using '$CUDA_ROOT' as CUDA_ROOT" >&6;}
                 # extract the architecture flags from the test program
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking what CUDA compute level is supported" >&5
 $as_echo_n "checking what CUDA compute level is supported... " >&6; }
-                if ./conftest$EXEEXT 2>/dev/null; then
-                  CUDA_ARCH=`./conftest$EXEEXT`
+                if ./conftest$EXEEXT 2>&1 >/dev/null; then
+                  CUDA_ARCH=$(./conftest$EXEEXT)
                 else
                   CUDA_ARCH="\"please set this manually\""
                 fi
@@ -4815,6 +4821,7 @@ $as_echo "$enable_cuda" >&6; }
         fi
       fi
   fi
+
 
 
 

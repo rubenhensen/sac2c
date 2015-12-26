@@ -14,6 +14,7 @@ AC_DEFUN([CHECK_CUDA],dnl
 
   CUDA_ARCH=no
   NVCC_PATH=no
+  CUDA_ROOT=no
   if test x"$enable_cuda" != xno; then
       # search for the NVidia compiler (nvcc)
       AC_ARG_VAR([NVCC], [NVidia CUDA compiler (defaults to nvcc)])
@@ -27,10 +28,15 @@ AC_DEFUN([CHECK_CUDA],dnl
              if $NVCC conftest.cc -o conftest$EXEEXT; then
                 AC_MSG_RESULT([$enable_cuda])
                 NVCC_PATH=$NVCC
+                # get cuda base directory from NVCC location
+                # this is generally safe as CUDA has the same directory
+                # structure across systems
+                CUDA_ROOT=$(dirname $(dirname $NVCC))
+                AC_MSG_NOTICE([using '$CUDA_ROOT' as [CUDA_ROOT]])
                 # extract the architecture flags from the test program
                 AC_MSG_CHECKING([what CUDA compute level is supported])
-                if ./conftest$EXEEXT 2>/dev/null; then
-                  CUDA_ARCH=`./conftest$EXEEXT`
+                if ./conftest$EXEEXT 2>&1 >/dev/null; then
+                  CUDA_ARCH=$(./conftest$EXEEXT)
                 else
                   CUDA_ARCH="\"please set this manually\""
                 fi
@@ -44,4 +50,5 @@ AC_DEFUN([CHECK_CUDA],dnl
   fi
   AC_SUBST([CUDA_ARCH])
   AC_SUBST([NVCC_PATH])
+  AC_SUBST([CUDA_ROOT])
 ])
