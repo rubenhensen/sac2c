@@ -18,6 +18,8 @@
 #include "str_buffer.h"
 #include "string.h"
 #include "rtspec_modes.h"
+#include "new_types.h"
+#include "types.h"
 
 #define DBUG_PREFIX "UNDEFINED"
 #include "debug.h"
@@ -152,7 +154,7 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
         int arg_cnt = 0;
 
         i = 0;
-        for (; i < vararg_cnt * 3; i += 3) {
+        for (; i < vararg_cnt * 5; i += 5) {
             if (STReq (vararg[i], "in")) {
                 type_string_size += STRlen (vararg[i + 1]) + 1;
                 arg_cnt++;
@@ -166,11 +168,11 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
         types[0] = '\0';
 
         i = 0;
-        for (; i < vararg_cnt * 3; i += 3) {
+        for (; i < vararg_cnt * 5; i += 5) {
             if (STReq (vararg[i], "in")) {
                 strcat (types, vararg[i + 1]);
                 strcat (types, "-");
-                out (" + SAC_WE_GET_DIM( %s)", vararg[i + 2]);
+                out (" + SAC_WE_GET_DIM( %s)", vararg[i + 4]);
             }
         }
 
@@ -180,10 +182,24 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
 
         indout ("SAC_WE_SET_NUM_ARGS( %d)\n", arg_cnt);
 
+        shape_class_t shape_class;
+        int dim;
+        int j = 0;
+
         i = 0;
-        for (; i < vararg_cnt * 3; i += 3) {
+        for (; i < vararg_cnt * 5; i += 5) {
             if (STReq (vararg[i], "in")) {
-                indout ("SAC_WE_GET_SHAPE( %s)\n", vararg[i + 2]);
+                shape_class = (shape_class_t)strtol (vararg[i + 3], NULL, 10);
+                if (shape_class == C_akd || shape_class == C_aks) {
+                    dim = (int)strtol (vararg[i + 2], NULL, 10);
+                    indout ("SAC_RTSPEC_GET_DIM_FOR_SHAPE( %s)\n", vararg[i + 4]);
+                    for (j = 0; j < dim; j++) {
+                        indout ("SAC_RTSPEC_GET_SHAPE_KNOWN_DIM( %s, %i)\n",
+                                vararg[i + 4], j);
+                    }
+                } else {
+                    indout ("SAC_RTSPEC_GET_SHAPE_UNKNOWN_DIM( %s)\n", vararg[i + 4]);
+                }
             }
         }
 
@@ -197,15 +213,15 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
             out ("void, ");
         }
 
-        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                       out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 2],
+        SCAN_ARG_LIST (vararg_cnt, 5, ",", ,
+                       out (" SAC_ND_PARAM_%s( %s, %s)", vararg[i], vararg[i + 4],
                             vararg[i + 1]));
 
         out (")(");
     }
 
-    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                   out (" SAC_ND_ARG_%s( %s, %s)", vararg[i], vararg[i + 2],
+    SCAN_ARG_LIST (vararg_cnt, 5, ",", ,
+                   out (" SAC_ND_ARG_%s( %s, %s)", vararg[i], vararg[i + 4],
                         vararg[i + 1]));
 
     out (");\n");

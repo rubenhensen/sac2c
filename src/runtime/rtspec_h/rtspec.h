@@ -144,6 +144,22 @@
     }
 
 /*
+ * Print the code that encodes the shape of an argument at runtime.
+ */
+#define SAC_RTSPEC_GET_DIM_FOR_SHAPE(arg)                                                \
+    SAC_shapes[i] = SAC_WE_GET_DIM (arg);                                                \
+    i++;
+
+#define SAC_RTSPEC_GET_SHAPE_KNOWN_DIM(arg, j) SAC_shapes[i++] = SAC_ND_A_SHAPE (arg, j);
+
+#define SAC_RTSPEC_GET_SHAPE_UNKNOWN_DIM(arg)                                            \
+    SAC_shapes[i] = SAC_WE_GET_DIM (arg);                                                \
+    i++;                                                                                 \
+    for (j = 0; j < SAC_WE_GET_DIM (arg); j++) {                                         \
+        SAC_shapes[i++] = SAC_ND_A_SHAPE (arg, j);                                       \
+    }
+
+/*
  * Print all the code needed to:
  *
  * - allocate the registry object.

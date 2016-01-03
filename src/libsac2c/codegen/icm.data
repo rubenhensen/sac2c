@@ -136,7 +136,7 @@ ICM_DEF( RTSPEC_FUN_AP, ICM_TRACE(fun))
   ICM_NT( rettype_NT)
   ICM_ID( retname)
   ICM_INT( vararg_cnt)
-  ICM_VARANY( (3*vararg_cnt), vararg)
+  ICM_VARANY( (5*vararg_cnt), vararg)
 ICM_END( RTSPEC_FUN_AP, (modname, name, srcname, uuid, rettype_NT, retname, vararg_cnt, vararg))
 #endif
 

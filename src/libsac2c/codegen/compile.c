@@ -2155,6 +2155,8 @@ MakeFunApArgs (node *ap)
     for (i = argtab->size - 1; i >= 1; i--) {
         node *exprs = NULL;
         bool shared = FALSE; /* MUTC shared parameter? */
+        shape_class_t shape;
+        int dim = 0;
 
         if (argtab->ptr_out[i] != NULL) {
             if (!FUNDEF_ISTHREADFUN (fundef)) {
@@ -2162,6 +2164,13 @@ MakeFunApArgs (node *ap)
             } else {
                 exprs
                   = TBmakeExprs (MakeFunApArgIdsNtThread (argtab->ptr_out[i]), icm_args);
+            }
+
+            if (FUNDEF_RTSPECID (fundef) != NULL && global.rtspec) {
+                shape = NTUgetShapeClassFromTypes (IDS_TYPE (argtab->ptr_out[i]));
+                dim = TCgetDim (IDS_TYPE (argtab->ptr_out[i]));
+                exprs = TBmakeExprs (TBmakeNum (shape), exprs);
+                exprs = TBmakeExprs (TBmakeNum (dim), exprs);
             }
 
             if (!FUNDEF_ISCUDAGLOBALFUN (fundef) && !FUNDEF_ISCUDASTGLOBALFUN (fundef)) {
@@ -2175,6 +2184,7 @@ MakeFunApArgs (node *ap)
                                                     IDS_TYPE (argtab->ptr_out[i]))),
                                                   exprs));
             }
+
         } else {
             DBUG_ASSERT (argtab->ptr_in[i] != NULL, "argtab is uncompressed!");
             DBUG_ASSERT (NODE_TYPE (argtab->ptr_in[i]) == N_exprs,
@@ -2201,6 +2211,14 @@ MakeFunApArgs (node *ap)
                     }
                 }
 
+                if (FUNDEF_RTSPECID (fundef) != NULL && global.rtspec) {
+                    shape = NTUgetShapeClassFromTypes (
+                      ID_TYPE (EXPRS_EXPR (argtab->ptr_in[i])));
+                    dim = TCgetDim (ID_TYPE (EXPRS_EXPR (argtab->ptr_in[i])));
+                    exprs = TBmakeExprs (TBmakeNum (shape), exprs);
+                    exprs = TBmakeExprs (TBmakeNum (dim), exprs);
+                }
+
                 if (!FUNDEF_ISCUDAGLOBALFUN (fundef)
                     && !FUNDEF_ISCUDASTGLOBALFUN (fundef)) {
                     exprs = TBmakeExprs (TCmakeIdCopyString (
@@ -2213,6 +2231,7 @@ MakeFunApArgs (node *ap)
                                                         EXPRS_EXPR (argtab->ptr_in[i])))),
                                                       exprs));
                 }
+
             } else if (NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_globobj) {
                 if (!FUNDEF_ISTHREADFUN (fundef)) {
                     if (TYgetMutcUsage (
@@ -2237,9 +2256,19 @@ MakeFunApArgs (node *ap)
                                                    EXPRS_EXPR (argtab->ptr_in[i]))),
                                      icm_args);
                 }
+
+                if (FUNDEF_RTSPECID (fundef) != NULL && global.rtspec) {
+                    shape = NTUgetShapeClassFromTypes (
+                      ID_TYPE (EXPRS_EXPR (argtab->ptr_in[i])));
+                    dim = TCgetDim (ID_TYPE (EXPRS_EXPR (argtab->ptr_in[i])));
+                    exprs = TBmakeExprs (TBmakeNum (shape), exprs);
+                    exprs = TBmakeExprs (TBmakeNum (dim), exprs);
+                }
+
                 exprs = TBmakeExprs (TCmakeIdCopyString (
                                        GetBaseTypeFromExpr (argtab->ptr_in[i])),
                                      exprs);
+
 #ifndef DBUG_OFF
             } else {
                 DBUG_UNREACHABLE (
@@ -2247,6 +2276,7 @@ MakeFunApArgs (node *ap)
 #endif
             }
         }
+
         if (shared) {
             icm_args = TBmakeExprs (TCmakeIdCopyString ("shared"), exprs);
         } else {
