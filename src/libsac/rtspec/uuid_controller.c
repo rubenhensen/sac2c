@@ -311,7 +311,7 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
         void *func_ptr;
 
         /* Dynamically link with the new libary. */
-        dl_handle = dlopen (filename, RTLD_NOW | RTLD_GLOBAL);
+        dl_handle = dlopen (filename, RTLD_NOW | RTLD_LOCAL);
 
         if (do_trace == 1) {
             SAC_TR_Print ("Runtime specialization: Check handle not being NULL.");

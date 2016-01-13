@@ -24,6 +24,7 @@
 #include "convert.h"
 #include "namespaces.h"
 #include "globals.h"
+
 /*
  * INFO structure
  */
@@ -219,6 +220,11 @@ RenameFun (node *fun)
 
         if (global.runtime && STReq (FUNDEF_NAME (fun), global.rt_fun_name)
             && FUNDEF_ISINDIRECTWRAPPERFUN (fun)) {
+            // rtspec mode simple
+            new_name = STRcpy (global.rt_new_name);
+        } else if (global.runtime && STReq (FUNDEF_NAME (fun), global.rt_fun_name)
+                   && FUNDEF_ISSPECIALISATION (fun)) {
+            // rtspec mode uuid/hash
             new_name = STRcpy (global.rt_new_name);
         } else {
             new_name = RenameFunName (fun);
