@@ -227,6 +227,8 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
         }
     }
     fprintf (global.outfile, ");\n");
+
+    fprintf (global.outfile, "SAC_DO_CHECK_GPU_TEST();\n");
     /*
       fprintf( global.outfile, "cudaThreadSynchronize();\n");
       fprintf( global.outfile, "cutStopTimer(timer);\n");

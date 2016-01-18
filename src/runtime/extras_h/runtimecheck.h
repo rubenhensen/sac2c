@@ -303,4 +303,28 @@
 
 #endif /* SAC_DO_CHECK_DISTMEM */
 
+/******************************************************************************
+ *
+ * ICMs for GPU runtime checks
+ * ========================
+ *
+ ******************************************************************************/
+#if SAC_DO_CHECK_GPU
+
+#define SAC_DO_CHECK_GPU_TEST()                                                          \
+    do {                                                                                 \
+                                                                                         \
+        cudaDeviceSynchronize ();                                                        \
+        cudaError_t error = cudaGetLastError ();                                         \
+        if (error != cudaSuccess) {                                                      \
+            SAC_RuntimeError ("GPU Error: %s\n", cudaGetErrorString (error));            \
+        }                                                                                \
+    } while (0)
+
+#else
+
+#define SAC_DO_CHECK_GPU_TEST()
+
+#endif /* SAC_DO_CHECK_GPU */
+
 #endif /* _SAC_RUNTIMECHECK_H_ */
