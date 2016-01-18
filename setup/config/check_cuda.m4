@@ -38,7 +38,7 @@ AC_DEFUN([CHECK_CUDA],dnl
                 if ./conftest$EXEEXT 2>&1 >/dev/null; then
                   CUDA_ARCH=$(./conftest$EXEEXT)
                 else
-                  CUDA_ARCH="\"please set this manually\""
+                  CUDA_ARCH="\\\"please set this manually\\\""
                 fi
                 AC_MSG_RESULT([$CUDA_ARCH])
             else
