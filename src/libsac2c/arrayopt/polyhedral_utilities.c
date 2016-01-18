@@ -245,11 +245,11 @@ RemoveRcaAssign (node *relarg, node *rca)
     DBUG_ENTER ();
 
     node *z = NULL;
+#ifdef FIXME // not sure why we are removing RCA... this will help us to find out.
     node *exprsouter;
     node *exprs;
     node *exprs2;
-
-    node *junk = NULL;
+    node *expr = NULL;
 
     exprsouter = relarg;
     while ((NULL == z) && (NULL != exprsouter)) {
@@ -264,22 +264,24 @@ RemoveRcaAssign (node *relarg, node *rca)
                 if ((SCSisPositive (EXPRS_EXPR (exprs2)))
                     || (SCSisNegative (EXPRS_EXPR (exprs2)))) {
                     DBUG_PRINT ("Trimmed relarg arg1");
-                    junk = EXPRS_EXPR (exprsouter);
-                    EXPRS_EXPR (exprsouter) = FREEdoFreeTree (EXPRS_EXPR (exprsouter));
+                    expr = EXPRS_EXPR (exprsouter);
+                    EXPRS_NEXT (expr) = FREEdoFreeTree (EXPRS_NEXT (expr));
+                    EXPRS_NEXT (expr) = DUPdoDupNode (EXPRS_EXPR (expr));
                 } else {
                     if ((SCSisPositive (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs2)))))
                         || (SCSisNegative (
                              EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs2)))))) {
                         DBUG_PRINT ("Trimmed relarg arg2");
-                        junk = EXPRS_EXPR (exprsouter);
-                        EXPRS_EXPR (exprsouter)
-                          = FREEdoFreeTree (EXPRS_EXPR (exprsouter));
+                        expr = EXPRS_EXPR (exprsouter);
+                        EXPRS_NEXT (expr) = FREEdoFreeTree (EXPRS_NEXT (expr));
+                        EXPRS_NEXT (expr) = DUPdoDupNode (EXPRS_EXPR (expr));
                     }
                 }
             }
         }
         exprsouter = EXPRS_NEXT (exprsouter);
     }
+#endif // FIXME // not sure why we are removing RCA... this will help us to find out.
 
     DBUG_RETURN (relarg);
 }
@@ -929,29 +931,20 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
     n = TCcountExprs (idlist);
     if (0 != n) {
 
-        // Append names of set variables:  [i,j,k...]
-        // These come in pairs: [fundefname,i], [fundefname,j]...
-        fprintf (handle, "#  ");
-        for (i = 0; i < n; i++) {
-            funname = STR_STRING (TCgetNthExprsExpr (i, idlist));
-            i = i + 1;
-            avis = ID_AVIS (TCgetNthExprsExpr (i, idlist));
-            fprintf (handle, "%s:%s", funname, AVIS_NAME (avis));
-            if (i < (n - 1)) {
-                fprintf (handle, ",");
-            }
-        }
-        fprintf (handle, "\n");
-
         // Append ISL versions of set variables:  [i,j,k...]
         // These come in pairs: [fundefname,i], [fundefname,j]...
         fprintf (handle, "{ [");
         for (i = 0; i < n; i++) {
+            funname = STR_STRING (TCgetNthExprsExpr (i, idlist));
             i = i + 1;
             avis = ID_AVIS (TCgetNthExprsExpr (i, idlist));
             printIslName (handle, avis);
+            // Print SAC set variable info
+            avis = ID_AVIS (TCgetNthExprsExpr (i, idlist));
+            fprintf (handle, " # %s:%s\n", funname, AVIS_NAME (avis));
+
             if (i < (n - 1)) {
-                fprintf (handle, ",");
+                fprintf (handle, ",  ");
             }
         }
         fprintf (handle, "] : \n");
@@ -1244,6 +1237,7 @@ getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassig
     node *rcapp;
     node *navis;
     node *incrementnid;
+    node *callerargs;
     int incrementsign = 0;
     bool swap;
     prf relfn;
@@ -1288,7 +1282,8 @@ getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassig
         if (0 != incrementsign) {
             // Leap into caller's world to collect the caller's AFT for the limit
             // Limit may be local or incoming
-            ext_limit = LFUgetLoopVariable (lim, INFO_FUNDEF (arg_info), callerassign);
+            callerargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (callerassign)));
+            ext_limit = LFUgetLoopVariable (lim, INFO_FUNDEF (arg_info), callerargs);
             ext_limit = (NULL != ext_limit) ? ext_limit : lim;
             ext_limit = ID_AVIS (ext_limit);
             z = PHUTgenerateAffineExprs (ext_limit, callerfundef, INFO_VARLUT (arg_info));
