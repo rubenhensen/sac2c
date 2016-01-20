@@ -319,9 +319,11 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
 
         /* Exit on failure. */
         if (dl_handle == NULL) {
-            fprintf (stderr, "ERROR -- \t %s\n", dlerror ());
+            SAC_TR_Print ("Runtime specialization: Could not load generated "
+                          "specialization function: %s",
+                          dlerror ());
 
-            exit (EXIT_FAILURE);
+            break;
         }
 
         if (do_trace == 1) {
@@ -337,14 +339,12 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
         /* Load the symbol for the new wrapper. */
         func_ptr = dlsym (dl_handle, request->func_name);
 
-        /* Exit on failure. */
-        if (func_ptr == NULL) {
-            fprintf (stderr, "ERROR -- \t Could not load symbol!\n");
-
-            exit (EXIT_FAILURE);
+        if (func_ptr != NULL) {
+            SAC_register_specialization (request->key, dl_handle, func_ptr);
+        } else {
+            SAC_TR_Print ("Runtime specialization: Could not load symbols for generated "
+                          "specialization function.");
         }
-
-        SAC_register_specialization (request->key, dl_handle, func_ptr);
     }
 
     free (filename);
