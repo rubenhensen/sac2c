@@ -23,7 +23,12 @@
 
 #include "uthash.h"
 
+static int do_trace;
+
 reg_item_t *registry = NULL;
+
+/* Lock for accessing the registry */
+pthread_rwlock_t SAC_RTSPEC_registry_lock;
 
 /** <!--*******************************************************************-->
  *
@@ -56,6 +61,34 @@ SAC_registrate (char *module, void *func_ptr)
     return entry;
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn SAC_registry_init(int trace)
+ *
+ * @brief Setup the registry.
+ *
+ ****************************************************************************/
+void
+SAC_registry_init (int trace)
+{
+    do_trace = trace;
+
+    // set up registry access lock
+    if (pthread_rwlock_init (&SAC_RTSPEC_registry_lock, NULL) != 0) {
+        fprintf (stderr, "ERROR -- \t [registry.c: SAC_registry_init()] Can't "
+                         " initialize registry lock!");
+
+        exit (EXIT_FAILURE);
+    }
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn SAC_register_specialization( char *key, void *dl_handle, void *func_ptr)
+ *
+ * @brief Register a specialized function.
+ *
+ ****************************************************************************/
 void
 SAC_register_specialization (char *key, void *dl_handle, void *func_ptr)
 {
@@ -65,7 +98,16 @@ SAC_register_specialization (char *key, void *dl_handle, void *func_ptr)
     item->dl_handle = dl_handle;
     item->func_ptr = func_ptr;
 
+    if (pthread_rwlock_wrlock (&SAC_RTSPEC_registry_lock) != 0) {
+        fprintf (stderr, "ERROR -- \t [registry.c: SAC_register_specialization()] Can't "
+                         " get write lock!");
+
+        exit (EXIT_FAILURE);
+    }
+
     HASH_ADD_KEYPTR (hh, registry, key, strlen (key), item);
+
+    pthread_rwlock_unlock (&SAC_RTSPEC_registry_lock);
 
     SAC_TR_Print ("Registered UUID: %s", key);
 }
@@ -109,7 +151,16 @@ SAC_lookup_function (char *func_name, char *uuid, char *types, int *shapes,
 
     SAC_TR_Print ("Look up key: %s", key);
 
+    if (pthread_rwlock_rdlock (&SAC_RTSPEC_registry_lock) != 0) {
+        fprintf (stderr, "ERROR -- \t [registry.c: SAC_register_specialization()] Can't "
+                         " get write lock!");
+
+        exit (EXIT_FAILURE);
+    }
+
     HASH_FIND_STR (registry, key, item);
+
+    pthread_rwlock_unlock (&SAC_RTSPEC_registry_lock);
 
     if (item) {
         SAC_TR_Print ("Found specialization");

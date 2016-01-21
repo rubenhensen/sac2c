@@ -15,7 +15,8 @@
 
 #define SAC_RTSPEC_SETUP_INITIAL(mode, command_line)                                     \
     SAC_RTSPEC_SetupInitial (__argc, __argv, SAC_SET_RTSPEC_THREADS,                     \
-                             SAC_DO_TRACE_RTSPEC, mode, command_line);
+                             SAC_DO_TRACE_RTSPEC, mode, command_line);                   \
+    SAC_registry_init (SAC_DO_TRACE_RTSPEC);
 
 /*
  * Print the code necessary to setup the optimization controller.

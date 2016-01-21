@@ -32,6 +32,8 @@ typedef struct {
 
 reg_obj_t *SAC_registrate (char *, void *);
 
+void SAC_registry_init (int trace);
+
 void SAC_register_specialization (char *key, void *dl_handle, void *func_ptr);
 
 void *SAC_lookup_function (char *func_name, char *uuid, char *types, int *shapes,
