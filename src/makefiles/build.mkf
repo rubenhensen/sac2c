@@ -304,7 +304,7 @@ codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
          fi
 	@$(ECHO) "  Compiling $($(STYLE)_long) code:  $(notdir $<)"
 	$(HIDE) $(CC_$($(STYLE)_cap)) \
-                  $(CC_FLAGS_$($(STYLE)_cap)) $(SETTINGS_$($(STYLE)_cap)) \
+                  $(CC_FLAGS_$($(STYLE)_cap)) -D$($($(SUBPROJECT)_malloc)_cap)_MALLOC $(SETTINGS_$($(STYLE)_cap)) \
                   $(CC_FLAGS_YY) \
                   $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION)

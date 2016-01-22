@@ -114,7 +114,9 @@ typedef struct UT_hash_handle {
 } UT_hash_handle;
 
 #ifndef LEXER_BINARY
+#ifdef INTERNAL_MALLOC
 #include "compat.h"
+#endif
 #endif
 
 /* These macros use decltype or the earlier __typeof GNU extension.

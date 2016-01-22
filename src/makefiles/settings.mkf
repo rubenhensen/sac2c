@@ -91,7 +91,8 @@ p_long                 := prod
 devel_cap              := DEVEL
 prod_cap               := PROD
 default_cap            := DEFAULT
-
+external_cap           := EXTERNAL
+internal_cap           := INTERNAL
 
 ################################################################################
 #
