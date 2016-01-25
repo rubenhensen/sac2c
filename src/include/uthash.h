@@ -28,6 +28,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stddef.h> /* ptrdiff_t */
 #include <stdlib.h> /* exit() */
 
+/* a number of the hash function use uint32_t which isn't defined on Pre VS2010 */
+#if defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1600
+#include <stdint.h>
+#elif defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#include <stdint.h>
+#else
+typedef unsigned int uint32_t;
+typedef unsigned char uint8_t;
+#endif
+#elif defined(__GNUC__) && !defined(__VXWORKS__)
+#include <stdint.h>
+#else
+typedef unsigned int uint32_t;
+typedef unsigned char uint8_t;
+#endif
+
 typedef struct UT_hash_bucket {
     struct UT_hash_handle *hh_head;
     unsigned count;
@@ -129,23 +146,6 @@ typedef struct UT_hash_handle {
     do {                                                                                 \
         (dst) = DECLTYPE (dst) (src);                                                    \
     } while (0)
-#endif
-
-/* a number of the hash function use uint32_t which isn't defined on Pre VS2010 */
-#if defined(_WIN32)
-#if defined(_MSC_VER) && _MSC_VER >= 1600
-#include <stdint.h>
-#elif defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
-#include <stdint.h>
-#else
-typedef unsigned int uint32_t;
-typedef unsigned char uint8_t;
-#endif
-#elif defined(__GNUC__) && !defined(__VXWORKS__)
-#include <stdint.h>
-#else
-typedef unsigned int uint32_t;
-typedef unsigned char uint8_t;
 #endif
 
 #define UTHASH_VERSION 1.9.9
