@@ -40,6 +40,22 @@ printBasicSet (struct isl_basic_set *pset, char *titl)
     return;
 }
 
+// This from Roman Gareev, isl-development google group
+// 2014-03-08.
+
+static __isl_give isl_ast_build *
+set_options (__isl_take isl_ast_build *control, __isl_keep isl_union_map *schedule)
+{
+    isl_ctx *ctx = isl_union_map_get_ctx (schedule);
+    isl_space *range_space = isl_space_set_alloc (ctx, 0, 1);
+    range_space = isl_space_set_tuple_name (range_space, isl_dim_set, "separate");
+    isl_union_set *range = isl_union_set_from_set (isl_set_universe (range_space));
+    isl_union_set *domain = isl_union_map_range (isl_union_map_copy (schedule));
+    domain = isl_union_set_universe (domain);
+    isl_union_map *options = isl_union_map_from_domain_and_range (domain, range);
+    return isl_ast_build_set_options (control, options);
+}
+
 void
 printSchedule (FILE *fd, isl_schedule *sched, char *titl, int verbose, int fmt)
 {
@@ -70,7 +86,7 @@ printAst (FILE *fd, isl_ast_node *ast, char *titl, int verbose, int fmt)
 
     if (verbose) {
         ctx = isl_ast_node_get_ctx (ast);
-        fprintf (fd, "Union %s is:\n", titl);
+        fprintf (fd, "AST %s is:\n", titl);
         p = isl_printer_to_file (ctx, fd);
         if (0 != fmt) {
             p = isl_printer_set_output_format (p, fmt);
@@ -305,24 +321,26 @@ PolyhedralWLFIntersectCalc (int verbose)
         }
     }
 
-    // Attach a default schedule to the domain
-    schedcon = isl_schedule_constraints_on_domain (intr);
-    sched = isl_schedule_constraints_compute_schedule (schedcon);
-    ;
-    printSchedule (stdout, sched, "schedule", 1, ISL_FORMAT_ISL);
+    if (POLY_RET_UNKNOWN == z) {
+        z = z | POLY_RET_SLICENEEDED;
+        z = z & ~POLY_RET_UNKNOWN;
+        // Attach a default schedule to the domain
+        schedcon = isl_schedule_constraints_on_domain (intr);
+        sched = isl_schedule_constraints_compute_schedule (schedcon);
+        printSchedule (stdout, sched, "schedule", 1, ISL_FORMAT_ISL);
 
-    // Create a generic "build"
-    build = isl_ast_build_alloc (ctx);
+        // Create a generic "build"
+        build = isl_ast_build_alloc (ctx);
 
-    // Perform the ISL codegen operation, using the intersect data.
-    ast = isl_ast_build_node_from_schedule (build, sched);
+        // Perform the ISL codegen operation, using the intersect data.
+        ast = isl_ast_build_node_from_schedule (build, sched);
 
-    printAst (stdout, ast, "Intersect calculated is:", verbose, ISL_FORMAT_C);
+        fprintf (stdout, "\n using { [b] -> separate[x] };");
+        printAst (stdout, ast, "ISL AST calculated is:", verbose, ISL_FORMAT_C);
+    }
 
     fprintf (stdout, "%d\n", z); // Write the result that PHUT will read.
     fprintf (stdout, "ast \n");
-
-    fprintf (stdout, "\n using { [b] -> separate[x] };");
 
     isl_union_set_free (pwl);
     isl_union_set_free (cwl);
@@ -365,14 +383,16 @@ PolyhedralRelationalCalc (int verbose)
     struct isl_union_set *intersectbcc = NULL;
     struct isl_ctx *ctx = isl_ctx_alloc ();
 
-    unionb = isl_union_set_read_from_file (ctx, stdin);   // PRF_ARG1 affine exprs tree
-    unionc = isl_union_set_read_from_file (ctx, stdin);   // PRF_ARG2 affine exprs tree
-    unionrfn = isl_union_set_read_from_file (ctx, stdin); // Relational fn
-    unioncfn = isl_union_set_read_from_file (ctx, stdin); // Complementary relational fn
-
+    unionb = isl_union_set_read_from_file (ctx, stdin); // PRF_ARG1 affine exprs tree
     printUnion (stderr, unionb, "unionb", verbose, 0);
+
+    unionc = isl_union_set_read_from_file (ctx, stdin); // PRF_ARG2 affine exprs tree
     printUnion (stderr, unionc, "unionc", verbose, 0);
+
+    unionrfn = isl_union_set_read_from_file (ctx, stdin); // Relational fn
     printUnion (stderr, unionrfn, "unionrfn", verbose, 0);
+
+    unioncfn = isl_union_set_read_from_file (ctx, stdin); // Complementary relational fn
     printUnion (stderr, unioncfn, "unioncfn", verbose, 0);
 
     if (POLY_RET_UNKNOWN == z) { // Intersect b,c
@@ -435,7 +455,7 @@ PolyhedralRelationalCalc (int verbose)
 }
 
 int
-LoopCount (__isl_keep isl_union_set *domain)
+LoopCount (__isl_keep isl_union_set *domain, int verbose)
 {
     // Try to find integer constant iteration count of FOR-loop.
     // If no luck, return -1.
@@ -444,14 +464,18 @@ LoopCount (__isl_keep isl_union_set *domain)
 
     int z = -1;
 
-#ifdef FIXME
     isl_val *V;
+    int Dim = -1;
     struct isl_union_map *sched;
+    struct isl_set *LoopDomain = NULL;
 
+    printUnion (stderr, domain, "domain for LoopCount is ", verbose, 0);
     sched = isl_schedule_from_domain (domain);
 
-    isl_set *LoopDomain = isl_set_from_union_set (isl_union_map_range (sched));
-    int Dim = isl_set_dim (LoopDomain, isl_dim_set);
+    LoopDomain = isl_set_from_union_set (isl_union_map_range (sched));
+    Dim = isl_set_dim (LoopDomain, isl_dim_set);
+    printf ("Dim is %d\n", Dim);
+    Dim = 1; // Vector only
 
     // Calculate a map similar to the identity map, but with the last input
     // and output dimension not related.
@@ -477,10 +501,13 @@ LoopCount (__isl_keep isl_union_set *domain)
     isl_set *Elements = isl_map_range (Sub);
 
     if (isl_set_is_singleton (Elements)) {
+        printf ("set is singleton\n");
         // I think this works because there is only one element.
         isl_point *P = isl_set_sample_point (Elements);
+        Dim = 1;
         V = isl_point_get_coordinate_val (P, isl_dim_set, Dim - 1);
         z = isl_val_get_num_si (V);
+        printf ("z is %d\n", z);
         isl_val_free (V);
         isl_point_free (P);
         z = (-1 != z) ? z + 1 : z; // iteration count = 1 + LexMax-MexMin
@@ -488,8 +515,9 @@ LoopCount (__isl_keep isl_union_set *domain)
         isl_set_free (Elements);
     }
 
+#ifdef CRUD
     sched = isl_schedule_constraints_free (sched);
-#endif // FIXME
+#endif // CRUD
 
     return (z);
 }
@@ -504,7 +532,7 @@ PolyhedralLoopCount (int verbose)
 
     islus = isl_union_set_read_from_file (ctx, stdin);
 
-    z = LoopCount (islus);
+    z = LoopCount (islus, verbose);
 
     isl_union_set_free (islus);
 
@@ -542,6 +570,7 @@ main (int argc, char *argv[])
 
     case POLY_OPCODE_LOOPCOUNT: // Polyhedral Setup (and loop count analysis)
         z = PolyhedralLoopCount (verbose);
+        break;
 
     default:
         fprintf (stderr, "caller is confused. We got opcode=%c\n", opcode);

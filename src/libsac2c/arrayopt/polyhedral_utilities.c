@@ -142,6 +142,8 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+static int islvarnum;
+
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
@@ -217,7 +219,6 @@ PHUTprintIslAffineFunctionTree (node *arg_node)
     DBUG_RETURN ();
 }
 
-#ifdef FIXME
 /** <!-- ****************************************************************** -->
  *
  * @fn node *RemoveRcaAssign( node *relarg, node *rca)
@@ -244,9 +245,11 @@ RemoveRcaAssign (node *relarg, node *rca)
     DBUG_ENTER ();
 
     node *z = NULL;
+#ifdef FIXME // not sure why we are removing RCA... this will help us to find out.
     node *exprsouter;
     node *exprs;
     node *exprs2;
+    node *expr = NULL;
 
     exprsouter = relarg;
     while ((NULL == z) && (NULL != exprsouter)) {
@@ -261,24 +264,27 @@ RemoveRcaAssign (node *relarg, node *rca)
                 if ((SCSisPositive (EXPRS_EXPR (exprs2)))
                     || (SCSisNegative (EXPRS_EXPR (exprs2)))) {
                     DBUG_PRINT ("Trimmed relarg arg1");
-                    EXPRS_EXPR (exprsouter) = FREEdoFreeTree (EXPRS_EXPR (exprsouter));
+                    expr = EXPRS_EXPR (exprsouter);
+                    EXPRS_NEXT (expr) = FREEdoFreeTree (EXPRS_NEXT (expr));
+                    EXPRS_NEXT (expr) = DUPdoDupNode (EXPRS_EXPR (expr));
                 } else {
                     if ((SCSisPositive (EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs2)))))
                         || (SCSisNegative (
                              EXPRS_EXPR (EXPRS_NEXT (EXPRS_NEXT (exprs2)))))) {
                         DBUG_PRINT ("Trimmed relarg arg2");
-                        EXPRS_EXPR (exprsouter)
-                          = FREEdoFreeTree (EXPRS_EXPR (exprsouter));
+                        expr = EXPRS_EXPR (exprsouter);
+                        EXPRS_NEXT (expr) = FREEdoFreeTree (EXPRS_NEXT (expr));
+                        EXPRS_NEXT (expr) = DUPdoDupNode (EXPRS_EXPR (expr));
                     }
                 }
             }
         }
         exprsouter = EXPRS_NEXT (exprsouter);
     }
+#endif // FIXME // not sure why we are removing RCA... this will help us to find out.
 
     DBUG_RETURN (relarg);
 }
-#endif // FIXME
 
 /** <!-- ****************************************************************** -->
  *
@@ -386,7 +392,7 @@ Node2Value (node *arg_node)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn bool InsertVarIntoLut( node *arg_node, lut_t *varlut)
+ * @fn bool InsertVarIntoLut( node *arg_node, lut_t *varlut, node *fundef)
  *
  * @brief Insert N_id or N_avis into varlut, if not already there.
  *        We use varlut LUT solely as a way to build the set of unique
@@ -394,14 +400,20 @@ Node2Value (node *arg_node)
  *
  * @param arg_node: An N_id or N_avis. Or, just to make life more fun,
  *                  it may be an N_num or N_bool, which we ignore.
- *        arg_info: your basic arg_info
+ *        varlut: The address of the LUT we use for collecting names
+ *        fundef: The fundef containing arg_node.
+ *                We store fundef and arg_node in the LUT, and
+ *                then catenate those when building the
+ *                ISL input variables. We have to do this in order
+ *                to disambiguate duplicate names across LACFUN
+ *                calls.
  *
  * @return TRUE if we the variables was inserted; FALSE if it was already there
  *         or not a variable.
  *
  ******************************************************************************/
 static bool
-InsertVarIntoLut (node *arg_node, lut_t *varlut)
+InsertVarIntoLut (node *arg_node, lut_t *varlut, node *fundef)
 {
     node *avis;
     node *founditem = NULL;
@@ -412,8 +424,8 @@ InsertVarIntoLut (node *arg_node, lut_t *varlut)
     avis = Node2Avis (arg_node);
     if (NULL != avis) {
         DBUG_ASSERT (NULL != varlut, "NULL VARLUT");
-        LUTupdateLutP (varlut, avis, avis, (void **)&founditem);
-        z = NULL == founditem;
+        LUTupdateLutP (varlut, avis, fundef, (void **)&founditem);
+        z = (NULL == founditem);
         if (z) {
             DBUG_PRINT ("Inserted %s into VARLUT", AVIS_NAME (avis));
         } else {
@@ -489,17 +501,18 @@ Prf2Isl (prf arg_node)
  * @brief Build the set variables used by the contraints.
  *
  *        The result is an N_exprs chain of the N_avis nodes comprising the
- *        set variables.
+ *        set variables, prefixed by the fundef name. E.g.,
+ *        if i,j,k are called by foo, foo, and goo, we end up with:
  *
- *           [i,j,k...]
+ *          [ [foo,i], [goo,j], goo,k]]
  *
  * @param varlut: a lut of nodes that comprise the ISL set variables.
  *
- * @return An N_exprs chain of N_avis nodes
+ * @return An N_exprs chain of the above nodes
  *
  ******************************************************************************/
 static void *
-GetIslSetVariablesFromLutOne (void *rest, void *avis)
+GetIslSetVariablesFromLutOne (void *rest, void *fundef, void *avis)
 {
     node *z = NULL;
 
@@ -507,7 +520,9 @@ GetIslSetVariablesFromLutOne (void *rest, void *avis)
 
     if (NULL != avis) {
         DBUG_PRINT ("Found %s in VARLUT", AVIS_NAME (avis));
-        z = TCappendExprs (TBmakeExprs (TBmakeId (avis), NULL), rest);
+        z = TBmakeExprs (TBmakeStr (FUNDEF_NAME ((node *)fundef)),
+                         TBmakeExprs (TBmakeId (avis), NULL));
+        z = TCappendExprs (z, rest);
     }
 
     DBUG_RETURN (z);
@@ -524,6 +539,48 @@ GetIslSetVariablesFromLut (lut_t *varlut)
     z = (node *)LUTfoldLutP (varlut, head, GetIslSetVariablesFromLutOne);
 
     DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn void printIslName( FILE *handle, node *avis)
+ *
+ * @brief print (to file) an ISL-acceptable, unique version of avisname.
+ *        For fundefname of "foo", and avisname of nid", we generate:
+ *          _3_foo_nid, where 3 is the length of "foo".
+ *
+ * @param handle: a file handle for the output
+ *        avis: the SAC N_avis for the variable
+ *
+ * @return void
+ *         Side effect: print the generated ISL name.
+ *         Side effect: Set AVIS_ISLINDEX, if not already set.
+ *
+ *         NB. AVIS_ISLINDEX is used only to provide a unique ISL name for
+ *             each variable in an Affine Function Tree(AFT). Since each call
+ *             to ISL (via sacislinterface) is independent of the others,
+ *             we could use the AVIS's address for this purpose. The idea
+ *             here is to come up with something that is slightly more
+ *             human-readable (for debugging only). It could also
+ *             serve to identify those nodes that already possess an AFT, but
+ *             we do not do that yet.
+ *
+ ******************************************************************************/
+static void
+printIslName (FILE *handle, node *avis)
+{
+
+    DBUG_ENTER ();
+
+    if (0 == AVIS_ISLINDEX (avis)) {
+        islvarnum++;
+        AVIS_ISLINDEX (avis) = islvarnum;
+    }
+
+    fprintf (handle, "V%d", AVIS_ISLINDEX (avis));
+    DBUG_PRINT ("Generated V%d for %s", AVIS_ISLINDEX (avis), AVIS_NAME (avis));
+
+    DBUG_RETURN ();
 }
 
 /** <!-- ****************************************************************** -->
@@ -780,21 +837,21 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
             ivpavis
               = TBmakeAvis (TRAVtmpVarName ("iv"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            InsertVarIntoLut (ivpavis, INFO_VARLUT (arg_info));
+            InsertVarIntoLut (ivpavis, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info));
 
             ivppavis
               = TBmakeAvis (TRAVtmpVarName ("ivp"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            InsertVarIntoLut (ivppavis, INFO_VARLUT (arg_info));
+            InsertVarIntoLut (ivppavis, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info));
 
             ivwavis
               = TBmakeAvis (TRAVtmpVarName ("ivw"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            InsertVarIntoLut (ivwavis, INFO_VARLUT (arg_info));
+            InsertVarIntoLut (ivwavis, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info));
 
             navis = TBmakeAvis (TRAVtmpVarName ("n"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            InsertVarIntoLut (navis, INFO_VARLUT (arg_info));
+            InsertVarIntoLut (navis, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info));
 
             // Generate: 0 <= ivw < wid
             z = BuildIslSimpleConstraint (TBmakeNum (0), F_le_SxS, ivwavis, F_lt_SxS,
@@ -828,12 +885,24 @@ PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res)
 /** <!-- ****************************************************************** -->
  * @fn void Exprs2File( node *exprs, lut_t *varlut, char *tag)
  *
- *
  * @brief Append one ISL set of polyhedra to input file, from exprs and
  *        set variable list in varlut.
  *
+ *        If exprs is NULL, do nothing.
+ *
+ *        We avoid duplicate variable names (arising from LACFUNs in
+ *        code such as ipbb.sac) by prefixing the function name to the
+ *        variable name. The rules for forming ISL identifiers are
+ *        undocumented, which makes things messy: we can not pick
+ *        some character, such as $, to build funname$varname, which
+ *        would simplify undoing things after ISL does its thing.
+ *        Alexandre Isoard suggested, in the ISL development group email:
+ *        "_13_FUNCTIONNAME_13_VARIABLENAME",
+ *        where the first 13 is the length of FUNCTIONNAME..."
+ *
+ *
  * @param handle: output file handle
- * @param exprs: N_exprs chain of N_exprs chains. Each element of exprs
+ * @param exprs: N_exprs chain of N_exprs chains. Each pair of elements of exprs
  *               is a single constraint.
  *
  * @return void
@@ -851,6 +920,8 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
     node *idlist;
     node *expr;
     node *exprsone;
+    node *avis;
+    char *funname;
     char *txt;
     bool wasor;
 
@@ -858,66 +929,77 @@ Exprs2File (FILE *handle, node *exprs, lut_t *varlut, char *tag)
 
     idlist = GetIslSetVariablesFromLut (varlut);
     n = TCcountExprs (idlist);
-    fprintf (handle, "{ [");
+    if (0 != n) {
 
-    // Append set variables:  [i,j,k...]
-    for (i = 0; i < n; i++) {
-        fprintf (handle, " %s", AVIS_NAME (ID_AVIS (TCgetNthExprsExpr (i, idlist))));
-        if (i < (n - 1)) {
-            fprintf (handle, ",");
-        }
-    }
-    fprintf (handle, "] : \n");
+        // Append ISL versions of set variables:  [i,j,k...]
+        // These come in pairs: [fundefname,i], [fundefname,j]...
+        fprintf (handle, "{ [");
+        for (i = 0; i < n; i++) {
+            funname = STR_STRING (TCgetNthExprsExpr (i, idlist));
+            i = i + 1;
+            avis = ID_AVIS (TCgetNthExprsExpr (i, idlist));
+            printIslName (handle, avis);
+            // Print SAC set variable info
+            avis = ID_AVIS (TCgetNthExprsExpr (i, idlist));
+            fprintf (handle, " # %s:%s\n", funname, AVIS_NAME (avis));
 
-    // Append constraints
-    n = TCcountExprs (exprs);
-    for (j = 0; j < n; j++) {
-        wasor = FALSE;
-        exprsone = TCgetNthExprsExpr (j, exprs);
-        DBUG_ASSERT (N_exprs == NODE_TYPE (exprsone), "Wrong constraint type");
-        m = TCcountExprs (exprsone);
-        for (k = 0; k < m; k++) { // Emit one constraint
-            expr = TCgetNthExprsExpr (k, exprsone);
-            switch (NODE_TYPE (expr)) {
-            default:
-                DBUG_ASSERT (FALSE, "Unexpected constraint node type");
-                break;
-
-            case N_id:
-                fprintf (handle, "%s", AVIS_NAME (ID_AVIS (expr)));
-                break;
-
-            case N_prf:
-                if (F_or_SxS == PRF_PRF (expr)) {
-                    wasor = TRUE;
-                } else {
-                    fprintf (handle, "%s", Prf2Isl (PRF_PRF (expr)));
-                }
-                break;
-
-            case N_num:
-                fprintf (handle, "%d", NUM_VAL (expr));
-                break;
-
-            case N_bool:
-                v = BOOL_VAL (expr) ? "1" : "0";
-                fprintf (handle, "%s", v);
-                break;
-
-            case N_char: // Support for disjunction because ISL does not support !=
-                DBUG_ASSERT ('|' == CHAR_VAL (expr), "Expected disjunction |");
-                wasor = TRUE;
-                break;
+            if (i < (n - 1)) {
+                fprintf (handle, ",  ");
             }
-            fprintf (handle, " ");
         }
-        if (j < (n - 1)) { // Handle conjunctions of constraints
-            txt = wasor ? "\n   or " : "\n   and ";
+        fprintf (handle, "] : \n");
+
+        // Append constraints
+        n = TCcountExprs (exprs);
+        for (j = 0; j < n; j++) {
             wasor = FALSE;
-            fprintf (handle, "%s", txt);
+            exprsone = TCgetNthExprsExpr (j, exprs);
+            DBUG_ASSERT (N_exprs == NODE_TYPE (exprsone), "Wrong constraint type");
+            m = TCcountExprs (exprsone);
+            for (k = 0; k < m; k++) { // Emit one constraint
+                expr = TCgetNthExprsExpr (k, exprsone);
+                switch (NODE_TYPE (expr)) {
+                default:
+                    DBUG_ASSERT (FALSE, "Unexpected constraint node type");
+                    break;
+
+                case N_id:
+                    avis = ID_AVIS (TCgetNthExprsExpr (k, exprsone));
+                    printIslName (handle, avis);
+                    break;
+
+                case N_prf:
+                    if (F_or_SxS == PRF_PRF (expr)) {
+                        wasor = TRUE;
+                    } else {
+                        fprintf (handle, "%s", Prf2Isl (PRF_PRF (expr)));
+                    }
+                    break;
+
+                case N_num:
+                    fprintf (handle, "%d", NUM_VAL (expr));
+                    break;
+
+                case N_bool:
+                    v = BOOL_VAL (expr) ? "1" : "0";
+                    fprintf (handle, "%s", v);
+                    break;
+
+                case N_char: // Support for disjunction because ISL does not support !=
+                    DBUG_ASSERT ('|' == CHAR_VAL (expr), "Expected disjunction |");
+                    wasor = TRUE;
+                    break;
+                }
+                fprintf (handle, " ");
+            }
+            if (j < (n - 1)) { // Handle conjunctions of constraints
+                txt = wasor ? "\n   or " : "\n   and ";
+                wasor = FALSE;
+                fprintf (handle, "%s", txt);
+            }
         }
+        fprintf (handle, " } \n");
     }
-    fprintf (handle, " } \n");
 
     DBUG_RETURN ();
 }
@@ -1028,7 +1110,6 @@ isDyadicPrf (prf nprf)
     DBUG_RETURN (z);
 }
 
-#ifdef CODEME
 /** <!-- ****************************************************************** -->
  *
  * @fn bool isLoopfunCond( prf nprf)
@@ -1063,7 +1144,6 @@ isLoopfunCond (prf nprf)
 
     DBUG_RETURN (z);
 }
-#endif // CODEME
 
 /** <!-- ****************************************************************** -->
  *
@@ -1118,7 +1198,7 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
 
     DBUG_ENTER ();
 
-    if (InsertVarIntoLut (rhs, INFO_VARLUT (arg_info))) {
+    if (InsertVarIntoLut (rhs, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info))) {
         res = PHUTcollectAffineExprsLocal (rhs, arg_info, res);
         z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
         res = TCappendExprs (res, z);
@@ -1134,7 +1214,7 @@ HandleNid (node *arg_node, node *rhs, info *arg_info, node *res)
  *
  * @brief Handler for N_id = nid
  *
- * @param  nid: potential
+ * @param  nid: potential loopfun argument.
  * @param  rca:
  * @param  arg_info: as usual
  * @param  res: the incoming N_exprs chain
@@ -1148,7 +1228,6 @@ static node *
 getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassign,
               node *callerfundef, node *initialvalue)
 {
-#ifdef DEADCODE
     node *z = NULL;
     node *lim;
     node *ext_limit;
@@ -1158,14 +1237,13 @@ getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassig
     node *rcapp;
     node *navis;
     node *incrementnid;
+    node *callerargs;
     int incrementsign = 0;
     bool swap;
     prf relfn;
-#endif // DEADCODE
 
     DBUG_ENTER ();
 
-#ifdef DEADCODE
     condprf = COND_COND (ASSIGN_STMT (LFUfindAssignForCond (INFO_FUNDEF (arg_info))));
     condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
     if ((NULL != condprf) && (NULL == INFO_LOOPCOUNT (arg_info))
@@ -1204,7 +1282,8 @@ getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassig
         if (0 != incrementsign) {
             // Leap into caller's world to collect the caller's AFT for the limit
             // Limit may be local or incoming
-            ext_limit = LFUgetLoopVariable (lim, INFO_FUNDEF (arg_info), callerassign);
+            callerargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (callerassign)));
+            ext_limit = LFUgetLoopVariable (lim, INFO_FUNDEF (arg_info), callerargs);
             ext_limit = (NULL != ext_limit) ? ext_limit : lim;
             ext_limit = ID_AVIS (ext_limit);
             z = PHUTgenerateAffineExprs (ext_limit, callerfundef, INFO_VARLUT (arg_info));
@@ -1219,7 +1298,7 @@ getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassig
             relfn = (incrementsign < 0) ? F_le_SxS : F_ge_SxS;
             rcapp = TBmakeAvis (TRAVtmpVarName ("rcapp"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            InsertVarIntoLut (rcapp, INFO_VARLUT (arg_info));
+            InsertVarIntoLut (rcapp, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info));
             z = BuildIslSimpleConstraint (rcapp, relfn, DUPdoDupNode (initialvalue),
                                           NOPRFOP, NULL);
             res = TCappendExprs (res, z);
@@ -1227,7 +1306,7 @@ getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassig
             // Build increment:  rca' = initialvalue + N * increment
             navis = TBmakeAvis (TRAVtmpVarName ("N"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            InsertVarIntoLut (navis, INFO_VARLUT (arg_info));
+            InsertVarIntoLut (navis, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info));
             z = BuildIslNotSoSimpleConstraint (rcapp, F_eq_SxS,
                                                DUPdoDupNode (initialvalue), F_add_SxS,
                                                navis, F_mul_SxS,
@@ -1250,8 +1329,6 @@ getLoopCount (node *nid, node *rca, info *arg_info, node *res, node *callerassig
             res = TCappendExprs (res, z);
         }
     }
-
-#endif // DEADCODE
 
     DBUG_RETURN (res);
 }
@@ -1830,7 +1907,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res)
     avis = Node2Avis (nid);
     if (NULL != avis) { // N_num exits here
         DBUG_PRINT ("Looking at %s", AVIS_NAME (avis));
-        if (InsertVarIntoLut (avis, INFO_VARLUT (arg_info))) {
+        if (InsertVarIntoLut (avis, INFO_VARLUT (arg_info), INFO_FUNDEF (arg_info))) {
             // Handle RHS for all modes.
             assgn = AVIS_SSAASSIGN (avis);
             if ((NULL != assgn) && (N_let == NODE_TYPE (ASSIGN_STMT (assgn)))) {
@@ -1980,7 +2057,7 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
     DBUG_ENTER ();
 
     arg1 = PHUTskipChainedAssigns (arg1);
-    InsertVarIntoLut (arg1, varlut);
+    InsertVarIntoLut (arg1, varlut, fundef);
     arg_info = MakeInfo ();
     INFO_FUNDEF (arg_info) = fundef;
     switch (relfn) {
@@ -1997,7 +2074,7 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
     case F_eq_SxS:
         if (F_non_neg_val_S != fn) { // kludge for monadic CFN
             arg2 = PHUTskipChainedAssigns (arg2);
-            InsertVarIntoLut (arg2, varlut);
+            InsertVarIntoLut (arg2, varlut, fundef);
             z = BuildIslSimpleConstraint (arg1, relfn, arg2, NOPRFOP, NULL);
         } else {
             z = BuildIslSimpleConstraint (arg1, F_lt_SxS, TBmakeNum (0), NOPRFOP, NULL);
@@ -2008,7 +2085,7 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
         // This is harder. We need to construct a union
         // of (x<y) OR (x>y).
         arg2 = PHUTskipChainedAssigns (arg2);
-        InsertVarIntoLut (arg2, varlut);
+        InsertVarIntoLut (arg2, varlut, fundef);
         z = BuildIslSimpleConstraint (arg1, F_gt_SxS, arg2, F_or_SxS, NULL);
         z2 = BuildIslSimpleConstraint (arg1, F_lt_SxS, arg2, NOPRFOP, NULL);
         z = TCappendExprs (z, z2);
@@ -2028,7 +2105,7 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
  *
  * @fn node
  *
- * @brief Compute the intersections amongn ISL polyhedra:
+ * @brief Compute the intersections among ISL polyhedra:
  *
  *          exprs1, exprs2, exprs3
  *
@@ -2079,6 +2156,7 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprs3, node *exprs
 
     DBUG_PRINT ("ISL arg filename: %s", polyhedral_arg_filename);
     DBUG_PRINT ("ISL res filename: %s", polyhedral_res_filename);
+    // bad idea, Bob: We get repeated names, somehow.  islvarnum = 0;
     matrix_file = FMGRwriteOpen (polyhedral_arg_filename, "w");
     Exprs2File (matrix_file, exprspwl, varlut, "pwl");
     Exprs2File (matrix_file, exprscwl, varlut, "cwl");
@@ -2111,20 +2189,22 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprs3, node *exprs
  * @param cwliv: The N_avis for the consumerWL index vector.
  * @param pwliv: THe N_avis for the producerWL generator index vector
  * @param varlut: The lut we use to collect set variable names.
+ * @param fundef: the N_fundef for the function containing cwliv and pwliv
  *
  * @return An N_exprs chain for the intersect, stating that:
  *         cwliv == pwliv
  *
  ******************************************************************************/
 node *
-PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv, lut_t *varlut)
+PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv, lut_t *varlut,
+                                         node *fundef)
 {
     node *res;
 
     DBUG_ENTER ();
 
-    InsertVarIntoLut (cwliv, varlut);
-    InsertVarIntoLut (pwliv, varlut);
+    InsertVarIntoLut (cwliv, varlut, fundef);
+    InsertVarIntoLut (pwliv, varlut, fundef);
     res = BuildIslSimpleConstraint (cwliv, F_eq_SxS, pwliv, NOPRFOP, NULL);
 
     DBUG_RETURN (res);

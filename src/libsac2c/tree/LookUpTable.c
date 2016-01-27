@@ -42,15 +42,20 @@
  *  SearchInLUT_SS()  searches for a string (string compare) and expects
  *                    to find a string.
  *
- *  You can map a function 'fun' to all associated data present in the LUT
- *  by means of  MapLUT( lut, fun). Let  ass_t  be the type of the associated
- *  data in the LUT, then 'fun' should have the signature  ass_t -> ass_t  .
- *  Moreover, the associated data can be folded by using the function
+ *  In the following we refer to "old" and "new" as Key and Value.
+ *  You can map a function 'fun' to all Values present in the LUT
+ *  by means of  MapLUT( lut, fun). If ass_t is the type of the Value
+ *  in the LUT, and ass_k is type of Key, then 'fun' should have
+ *  the signature:
+ *
+ *    ass_t fun( ass_t Value, ass_k Key)
+ *
+ *  Moreover, the Value can be folded by using the function
  *  FoldLUT( lut, init, fun)  , where 'init' is the initial value for the
- *  fold operation. Let again  ass_t  be the type of the associated data in
- *  the LUT and let  init_t  be the type of 'init'. Then 'fun' should have
- *  the signature  ( init_t , ass_t ) -> init_t  and the return value of
- *  FoldLUT()  has the type  init_t  .
+ *  fold operation. If init_t is the type of 'init, then the
+ *  fun should have the signature:
+ *
+ *     init_t fun( init_t redu, ass_t Value, ass_k, Key)
  *
  *  *** CAUTION ***
  *  - InsertIntoLUT_S()  copies the compare-string ('old') before inserting
@@ -695,16 +700,18 @@ UpdateLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key,
 /******************************************************************************
  *
  * Function:
- *   lut_t *MapLUT( lut_t *lut, void *(*fun)( void *),
+ *   lut_t *MapLUT( lut_t *lut, void *(*fun)( void *, void *),
  *                  hash_key_t start, hash_key_t stop)
  *
  * Description:
+ *  Invoke fun, passing each Value in LUT as first argument, and
+ *  Key as second argument.
  *
  *
  ******************************************************************************/
 
 static lut_t *
-MapLUT (lut_t *lut, void *(*fun) (void *), hash_key_t start, hash_key_t stop)
+MapLUT (lut_t *lut, void *(*fun) (void *, void *), hash_key_t start, hash_key_t stop)
 {
     void **tmp;
     hash_key_t k;
@@ -719,7 +726,7 @@ MapLUT (lut_t *lut, void *(*fun) (void *), hash_key_t start, hash_key_t stop)
             DBUG_ASSERT (lut[k].size >= 0, "illegal LUT size found!");
             tmp = lut[k].first;
             for (i = 0; i < lut[k].size; i++) {
-                tmp[1] = fun (tmp[1]);
+                tmp[1] = fun (tmp[1], tmp[0]);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
@@ -739,16 +746,18 @@ MapLUT (lut_t *lut, void *(*fun) (void *), hash_key_t start, hash_key_t stop)
 /******************************************************************************
  *
  * Function:
- *   void *FoldLUT( lut_t *lut, void *init, void *(*fun)( void *, void *),
+ *   void *FoldLUT( lut_t *lut, void *init, void *(*fun)( void *, void *, void *),
  *                  hash_key_t start, hash_key_t stop)
  *
  * Description:
+ *  Invoke fun, passing each Value in LUT as first argument, and
+ *  Key as second argument.
  *
  *
  ******************************************************************************/
 
 static void *
-FoldLUT (lut_t *lut, void *init, void *(*fun) (void *, void *), hash_key_t start,
+FoldLUT (lut_t *lut, void *init, void *(*fun) (void *, void *, void *), hash_key_t start,
          hash_key_t stop)
 {
     void **tmp;
@@ -764,7 +773,7 @@ FoldLUT (lut_t *lut, void *init, void *(*fun) (void *, void *), hash_key_t start
             DBUG_ASSERT (lut[k].size >= 0, "illegal LUT size found!");
             tmp = lut[k].first;
             for (i = 0; i < lut[k].size; i++) {
-                init = fun (init, tmp[1]);
+                init = fun (init, tmp[1], tmp[0]);
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
@@ -1413,15 +1422,15 @@ LUTupdateLutS (lut_t *lut, char *old_item, void *new_item, void **found_item)
 /******************************************************************************
  *
  * Function:
- *   lut_t *LUTmapLutS( lut_t *lut, void *(*fun)( void *))
+ *   lut_t *LUTmapLutS( lut_t *lut, void *(*fun)( void *, void *))
  *
  * Description:
- *   Applies 'fun' to all data found in the LUT which is associated to strings.
+ *   Applies 'fun' to all string Values in the LUT.
  *
  ******************************************************************************/
 
 lut_t *
-LUTmapLutS (lut_t *lut, void *(*fun) (void *))
+LUTmapLutS (lut_t *lut, void *(*fun) (void *, void *))
 {
     DBUG_ENTER ();
 
@@ -1433,15 +1442,15 @@ LUTmapLutS (lut_t *lut, void *(*fun) (void *))
 /******************************************************************************
  *
  * Function:
- *   lut_t *LUTmapLutP( lut_t *lut, void *(*fun)( void *))
+ *   lut_t *LUTmapLutP( lut_t *lut, void *(*fun)( void *, void *))
  *
  * Description:
- *   Applies 'fun' to all data found in the LUT which is associated to pointers.
+ *   Applies 'fun' to all pointer Values in the LUT.
  *
  ******************************************************************************/
 
 lut_t *
-LUTmapLutP (lut_t *lut, void *(*fun) (void *))
+LUTmapLutP (lut_t *lut, void *(*fun) (void *, void *))
 {
     DBUG_ENTER ();
 
@@ -1453,15 +1462,16 @@ LUTmapLutP (lut_t *lut, void *(*fun) (void *))
 /******************************************************************************
  *
  * Function:
- *   void *LUTfoldLutS( lut_t *lut, void *init, void *(*fun)( void *, void *))
+ *   void *LUTfoldLutS( lut_t *lut, void *init, void *(*fun)( void *, void *,
+ *                      void *))
  *
  * Description:
- *   Applies 'fun' to all data found in the LUT which is associated to strings.
+ *   Applies 'fun' to all string Values in the LUT.
  *
  ******************************************************************************/
 
 void *
-LUTfoldLutS (lut_t *lut, void *init, void *(*fun) (void *, void *))
+LUTfoldLutS (lut_t *lut, void *init, void *(*fun) (void *, void *, void *))
 {
     DBUG_ENTER ();
 
@@ -1473,15 +1483,16 @@ LUTfoldLutS (lut_t *lut, void *init, void *(*fun) (void *, void *))
 /******************************************************************************
  *
  * Function:
- *   void *LUTfoldLutP( lut_t *lut, void *init, void *(*fun)( void *, void *))
+ *   void *LUTfoldLutP( lut_t *lut, void *init, void *(*fun)( void *, void *
+ *                      void *))
  *
  * Description:
- *   Applies 'fun' to all data found in the LUT which is associated to pointers.
+ *   Applies 'fun' to all pointer values in the LUT.
  *
  ******************************************************************************/
 
 void *
-LUTfoldLutP (lut_t *lut, void *init, void *(*fun) (void *, void *))
+LUTfoldLutP (lut_t *lut, void *init, void *(*fun) (void *, void *, void *))
 {
     DBUG_ENTER ();
 

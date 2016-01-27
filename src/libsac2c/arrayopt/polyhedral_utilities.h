@@ -18,7 +18,7 @@ extern int PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node
 extern node *PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, lut_t *varlut);
 extern node *PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, lut_t *varlut);
 extern node *PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv,
-                                                      lut_t *varlut);
+                                                      lut_t *varlut, node *fundef);
 extern node *PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res);
 extern bool PHUTisCompatibleAffineTypes (node *arg_node);
 extern bool PHUTisCompatibleAffinePrf (prf nprf);

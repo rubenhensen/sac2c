@@ -464,7 +464,7 @@ POGOprf (node *arg_node, info *arg_info)
     node *guardp;
     node *arg1 = NULL;
     node *arg2 = NULL;
-    bool dopoly;
+    bool dopoly = FALSE;
     int emp = POLY_RET_UNKNOWN;
 
     DBUG_ENTER ();
@@ -491,7 +491,7 @@ POGOprf (node *arg_node, info *arg_info)
                                               INFO_VARLUT (arg_info));
             exprsY = PHUTgenerateAffineExprs (arg2, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info));
-            dopoly = TRUE;
+            dopoly = (NULL != exprsX) || (NULL != exprsY);
             break;
 
         case F_non_neg_val_S:

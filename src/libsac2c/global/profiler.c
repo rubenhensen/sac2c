@@ -16,8 +16,8 @@
 #include <time.h>
 
 static void CreateReport (timeinfo_t *);
-static void *WrapCreateReport (void *, void *);
-static void *OrderedReport (void *, void *);
+static void *WrapCreateReport (void *, void *, void *);
+static void *OrderedReport (void *, void *, void *);
 
 static lut_t *timetable = 0;
 static FILE *reportfile = 0;
@@ -165,7 +165,7 @@ CreateReport (timeinfo_t *phasetime)
 }
 
 static void *
-WrapCreateReport (void *head, void *node)
+WrapCreateReport (void *head, void *node, void *Key)
 {
     if (node != NULL) {
         CreateReport ((timeinfo_t *)node);
@@ -174,7 +174,7 @@ WrapCreateReport (void *head, void *node)
 }
 
 static void *
-OrderedReport (void *head, void *phasetime)
+OrderedReport (void *head, void *phasetime, void *Key)
 {
     timeinfo_t *iterator = (timeinfo_t *)head;
     timeinfo_t *prev = 0;
