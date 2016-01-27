@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "registry.h"
+#include "trace.h"
 
 #define SAC_DO_TRACE 1
 #include "sac.h"
@@ -109,7 +110,7 @@ SAC_register_specialization (char *key, void *dl_handle, void *func_ptr)
 
     pthread_rwlock_unlock (&SAC_RTSPEC_registry_lock);
 
-    SAC_TR_Print ("Registered UUID: %s", key);
+    SAC_RTSPEC_TR_Print ("Registered UUID: %s", key);
 }
 
 /** <!--*******************************************************************-->
@@ -126,7 +127,7 @@ void *
 SAC_lookup_function (char *func_name, char *uuid, char *types, int *shapes,
                      int shape_size, char *mod_name, void *func_ptr)
 {
-    SAC_TR_Print ("Look up function: %s::%s", mod_name, func_name);
+    SAC_RTSPEC_TR_Print ("Look up function: %s::%s", mod_name, func_name);
 
     if (strcmp (mod_name, "_MAIN") == 0) {
         // we do not support specializing functions within main yet
@@ -135,9 +136,10 @@ SAC_lookup_function (char *func_name, char *uuid, char *types, int *shapes,
 
     char *shape = encodeShapes (shapes);
 
-    SAC_TR_Print ("Look up UUID: %s", uuid);
-    SAC_TR_Print ("Look up types: %s", types);
-    SAC_TR_Print ("Look up shape: %s", shape);
+    SAC_RTSPEC_TR_Print ("Look up UUID: %s", uuid);
+    SAC_RTSPEC_TR_Print ("Look up types: %s", types);
+    SAC_RTSPEC_TR_Print ("Look up shape: %s", shape);
+
     reg_item_t *item = NULL;
     char *key
       = (char *)calloc (1, sizeof (char)
@@ -149,7 +151,7 @@ SAC_lookup_function (char *func_name, char *uuid, char *types, int *shapes,
     strcat (key, types);
     strcat (key, shape);
 
-    SAC_TR_Print ("Look up key: %s", key);
+    SAC_RTSPEC_TR_Print ("Look up key: %s", key);
 
     if (pthread_rwlock_rdlock (&SAC_RTSPEC_registry_lock) != 0) {
         fprintf (stderr, "ERROR -- \t [registry.c: SAC_register_specialization()] Can't "
@@ -163,11 +165,11 @@ SAC_lookup_function (char *func_name, char *uuid, char *types, int *shapes,
     pthread_rwlock_unlock (&SAC_RTSPEC_registry_lock);
 
     if (item) {
-        SAC_TR_Print ("Found specialization");
+        SAC_RTSPEC_TR_Print ("Found specialization");
 
         return item->func_ptr;
     } else {
-        SAC_TR_Print ("No specialization found");
+        SAC_RTSPEC_TR_Print ("No specialization found");
 
         SAC_UUID_enqueueRequest (func_name, uuid, types, shapes, shape_size, shape,
                                  mod_name, key);

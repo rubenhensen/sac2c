@@ -18,6 +18,7 @@
 #include "rtspec_modes.h"
 #include "simple_controller.h"
 #include "uuid_controller.h"
+#include "trace.h"
 
 #define SAC_DO_TRACE 1
 #include "sac.h"
@@ -89,10 +90,8 @@ SAC_RTSPEC_SetupInitial (int argc, char *argv[], unsigned int num_threads, int t
           SAC_RTC_ENV_VAR_NAME);
     }
 
-    if (do_trace == 1) {
-        SAC_TR_Print ("Number of threads determined as %u.",
-                      SAC_RTSPEC_controller_threads);
-    }
+    SAC_RTSPEC_TR_Print ("Number of threads determined as %u.",
+                         SAC_RTSPEC_controller_threads);
 }
 
 /******************************************************************************
@@ -129,10 +128,7 @@ SAC_RTSPEC_CurrentThreadId (void)
 void
 SAC_setupController (char *dir)
 {
-
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Setup controller.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Setup controller.");
 
     if (rtspec_mode == RTSPEC_MODE_SIMPLE) {
         SAC_Simple_setupController (dir, do_trace, cli_arguments);
@@ -184,9 +180,7 @@ SAC_setupController (char *dir)
 void
 SAC_finalizeController (void)
 {
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Finalize controller!");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Finalize controller!");
 
     if (rtspec_mode == RTSPEC_MODE_SIMPLE) {
         SAC_Simple_stopController ();

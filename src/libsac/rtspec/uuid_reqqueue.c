@@ -19,6 +19,7 @@
 
 #include "registry.h"
 #include "uuid_reqqueue.h"
+#include "trace.h"
 
 #define SAC_DO_TRACE 1
 #include "sac.h"
@@ -53,26 +54,20 @@ SAC_UUID_wasProcessed (uuid_queue_node_t *node)
     pthread_mutex_lock (&uuid_processed_mutex);
 
     if (uuid_processed->first == NULL) {
-        if (do_trace == 1) {
-            SAC_TR_Print ("Runtime specialization: Nothing processed yet.");
-        }
+        SAC_RTSPEC_TR_Print ("Runtime specialization: Nothing processed yet.");
         pthread_mutex_unlock (&uuid_processed_mutex);
         return 0;
     }
 
     current = uuid_processed->first;
     while (current != NULL) {
-        if (do_trace == 1) {
-            SAC_TR_Print ("Runtime specialization: Checking queue.");
-        }
+        SAC_RTSPEC_TR_Print ("Runtime specialization: Checking queue.");
         if (current->shape_info_size == node->shape_info_size
             && (memcmp (current->shape_info, node->shape_info,
                         sizeof (int) * node->shape_info_size)
                 == 0)
             && (strcmp (current->func_name, node->func_name) == 0)) {
-            if (do_trace == 1) {
-                SAC_TR_Print ("Runtime specialization: Already processed.");
-            }
+            SAC_RTSPEC_TR_Print ("Runtime specialization: Already processed.");
             pthread_mutex_unlock (&uuid_processed_mutex);
             return 1;
         }
@@ -80,9 +75,7 @@ SAC_UUID_wasProcessed (uuid_queue_node_t *node)
         current = current->next;
     }
 
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Found no match.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Found no match.");
 
     pthread_mutex_unlock (&uuid_processed_mutex);
 
@@ -131,9 +124,7 @@ SAC_UUID_initializeQueue (int trace)
 {
     do_trace = trace;
 
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Initialize request queue.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Initialize request queue.");
 
     pthread_mutex_lock (&uuid_queue_mutex);
 
@@ -194,9 +185,7 @@ SAC_UUID_initializeQueue (int trace)
 void
 SAC_UUID_deinitializeQueue (void)
 {
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Deinitialize request queue.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Deinitialize request queue.");
 
     pthread_mutex_lock (&uuid_queue_mutex);
 
@@ -273,9 +262,7 @@ SAC_UUID_createNode (char *func_name, char *uuid, char *types, int *shapes,
 uuid_queue_node_t *
 SAC_UUID_dequeueRequest (void)
 {
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Dequeue specialization request.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Dequeue specialization request.");
 
     pthread_mutex_lock (&uuid_queue_mutex);
 
@@ -317,9 +304,7 @@ void
 SAC_UUID_enqueueRequest (char *func_name, char *uuid, char *types, int *shapes,
                          int shapes_size, char *shape, char *mod_name, char *key)
 {
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Enqueue specialization request.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Enqueue specialization request.");
 
     if (uuid_request_queue == NULL) {
         // using rtspec enabled library in rtspec-disabled application

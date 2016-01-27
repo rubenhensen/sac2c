@@ -24,6 +24,7 @@
 #include "uuid_reqqueue.h"
 #include "registry.h"
 #include "persistence.h"
+#include "trace.h"
 
 #define SAC_DO_TRACE 1
 #include "sac.h"
@@ -124,9 +125,7 @@ SAC_UUID_setupController (char *dir, int trace, char *command_line)
     target_env_strlen = strlen (SAC_TARGET_ENV_STRING);
     modext_strlen = strlen (SAC_MODEXT_STRING);
 
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Setup uuid controller.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Setup uuid controller.");
 
     char *tmpdir_name;
 
@@ -136,9 +135,9 @@ SAC_UUID_setupController (char *dir, int trace, char *command_line)
 
     if (tmpdir_name == NULL) {
         SAC_RuntimeError ("Unable to create tmp directory for specialization controller");
-    } else if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Setup specialization repository in: ");
-        SAC_TR_Print (tmpdir_name);
+    } else {
+        SAC_RTSPEC_TR_Print (
+          "Runtime specialization: Setup specialization repository in:\n%s", tmpdir_name);
     }
 }
 
@@ -161,9 +160,7 @@ SAC_UUID_runController (void *param)
 {
     pthread_setspecific (SAC_RTSPEC_self_id_key, param);
 
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Starting controller.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Starting controller.");
 
     uuid_queue_node_t *current;
 
@@ -186,9 +183,7 @@ SAC_UUID_runController (void *param)
         }
     }
 
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Exiting controller.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Exiting controller.");
 
     pthread_exit (NULL);
     return NULL;
@@ -208,10 +203,8 @@ SAC_UUID_runController (void *param)
 void
 SAC_UUID_handleRequest (uuid_queue_node_t *request)
 {
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Handling new specialization request.");
-        SAC_TR_Print ("Runtime specialization: UUID: %s", request->uuid);
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Handling new specialization request.");
+    SAC_RTSPEC_TR_Print ("Runtime specialization: UUID: %s", request->uuid);
 
     static char call_format[CALL_FORMAT_STRLEN] = "sac2c -v%i -runtime "
                                                   "-rt_old_mod %s -rt_new_mod %s "
@@ -263,10 +256,8 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
              SAC_TARGET_ENV_STRING, SAC_SBI_STRING, SAC_TARGET_ENV_STRING, tmpdir_name,
              cli_arguments);
 
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Calling runtime compiler with:");
-        SAC_TR_Print (syscall);
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Calling runtime compiler with:\n%s",
+                         syscall);
 
     char *filename
       = (char *)malloc (sizeof (char)
@@ -278,10 +269,8 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
              "%s/" SAC_TARGET_ENV_STRING "/" SAC_SBI_STRING "/lib%sMod" SAC_MODEXT_STRING,
              tmpdir_name, new_module);
 
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Generating specialized library at:");
-        SAC_TR_Print (filename);
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Generating specialized library at:\n%s",
+                         filename);
 
     // Mark specialization as processed early to avoid concurrently processing
     // it twice by two individual controllers
@@ -303,9 +292,7 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
         exit (EXIT_FAILURE);
 
     case 0:
-        if (do_trace == 1) {
-            SAC_TR_Print ("Runtime specialization: Linking with generated library.");
-        }
+        SAC_RTSPEC_TR_Print ("Runtime specialization: Linking with generated library.");
 
         void *dl_handle;
         void *func_ptr;
@@ -313,28 +300,22 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
         /* Dynamically link with the new libary. */
         dl_handle = dlopen (filename, RTLD_NOW | RTLD_LOCAL);
 
-        if (do_trace == 1) {
-            SAC_TR_Print ("Runtime specialization: Check handle not being NULL.");
-        }
+        SAC_RTSPEC_TR_Print ("Runtime specialization: Check handle not being NULL.");
 
         /* Exit on failure. */
         if (dl_handle == NULL) {
-            SAC_TR_Print ("Runtime specialization: Could not load generated "
-                          "specialization function: %s",
-                          dlerror ());
+            SAC_RTSPEC_TR_Print ("Runtime specialization: Could not load generated "
+                                 "specialization function: %s",
+                                 dlerror ());
 
             break;
         }
 
-        if (do_trace == 1) {
-            SAC_TR_Print ("Runtime specialization: Check linking error.");
-        }
+        SAC_RTSPEC_TR_Print ("Runtime specialization: Check linking error.");
 
         dlerror ();
 
-        if (do_trace == 1) {
-            SAC_TR_Print ("Runtime specialization: Load symbols for new wrapper.");
-        }
+        SAC_RTSPEC_TR_Print ("Runtime specialization: Load symbols for new wrapper.");
 
         /* Load the symbol for the new wrapper. */
         func_ptr = dlsym (dl_handle, request->func_name);
@@ -342,8 +323,8 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
         if (func_ptr != NULL) {
             SAC_register_specialization (request->key, dl_handle, func_ptr);
         } else {
-            SAC_TR_Print ("Runtime specialization: Could not load symbols for generated "
-                          "specialization function.");
+            SAC_RTSPEC_TR_Print ("Runtime specialization: Could not load symbols for "
+                                 "generated specialization function.");
         }
     }
 
@@ -362,9 +343,7 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
 void
 SAC_UUID_stopController (void)
 {
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Stopping uuid controllers!");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Stopping uuid controllers!");
 
     running = 0;
 }
@@ -380,9 +359,7 @@ SAC_UUID_stopController (void)
 void
 SAC_UUID_finalizeController (void)
 {
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Finalize uuid controller!");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Finalize uuid controller!");
 
     SAC_UUID_deinitializeQueue ();
 

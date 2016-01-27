@@ -19,6 +19,7 @@
 
 #include "registry.h"
 #include "simple_reqqueue.h"
+#include "trace.h"
 
 #define SAC_DO_TRACE 1
 #include "sac.h"
@@ -53,26 +54,20 @@ SAC_Simple_wasProcessed (simple_queue_node_t *node)
     pthread_mutex_lock (&simple_processed_mutex);
 
     if (simple_processed->first == NULL) {
-        if (do_trace == 1) {
-            SAC_TR_Print ("Runtime specialization: Nothing processed yet.");
-        }
+        SAC_RTSPEC_TR_Print ("Runtime specialization: Nothing processed yet.");
         pthread_mutex_unlock (&simple_processed_mutex);
         return 0;
     }
 
     current = simple_processed->first;
     while (current != NULL) {
-        if (do_trace == 1) {
-            SAC_TR_Print ("Runtime specialization: Checking queue.");
-        }
+        SAC_RTSPEC_TR_Print ("Runtime specialization: Checking queue.");
         if (current->shape_info_size == node->shape_info_size
             && (memcmp (current->shape_info, node->shape_info,
                         sizeof (int) * node->shape_info_size)
                 == 0)
             && (strcmp (current->func_name, node->func_name) == 0)) {
-            if (do_trace == 1) {
-                SAC_TR_Print ("Runtime specialization: Already processed.");
-            }
+            SAC_RTSPEC_TR_Print ("Runtime specialization: Already processed.");
             pthread_mutex_unlock (&simple_processed_mutex);
             return 1;
         }
@@ -80,9 +75,7 @@ SAC_Simple_wasProcessed (simple_queue_node_t *node)
         current = current->next;
     }
 
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Found no match.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Found no match.");
 
     pthread_mutex_unlock (&simple_processed_mutex);
 
@@ -131,9 +124,7 @@ SAC_Simple_initializeQueue (int trace)
 {
     do_trace = trace;
 
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Initialize request queue.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Initialize request queue.");
 
     pthread_mutex_lock (&simple_queue_mutex);
 
@@ -194,9 +185,7 @@ SAC_Simple_initializeQueue (int trace)
 void
 SAC_Simple_deinitializeQueue (void)
 {
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Deinitialize request queue.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Deinitialize request queue.");
 
     pthread_mutex_lock (&simple_queue_mutex);
 
@@ -271,9 +260,7 @@ SAC_Simple_createNode (char *func_name, char *types, int *shapes, int shapes_siz
 simple_queue_node_t *
 SAC_Simple_dequeueRequest (void)
 {
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Dequeue specialization request.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Dequeue specialization request.");
 
     pthread_mutex_lock (&simple_queue_mutex);
 
@@ -315,9 +302,7 @@ void
 SAC_Simple_enqueueRequest (char *func_name, char *types, int *shapes, int shapes_size,
                            reg_obj_t *registry)
 {
-    if (do_trace == 1) {
-        SAC_TR_Print ("Runtime specialization: Enqueue specialization request.");
-    }
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Enqueue specialization request.");
 
     if (simple_request_queue == NULL) {
         // using rtspec enabled library in rtspec-disabled application
