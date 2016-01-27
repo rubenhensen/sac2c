@@ -14,4 +14,6 @@
 
 extern char *encodeShapes (int *shapes);
 
+void SAC_persistence_init (int trace);
+
 #endif /* _SAC_PERSISTENCE_H_ */

@@ -10,11 +10,15 @@
 
 #if ENABLE_RTSPEC
 
+#include "trace.h"
+
 #define SAC_DO_TRACE 1
 #include "sac.h"
 #include "stdio.h"
 
 #define MAX_INT_DIGITS 21
+
+static int do_trace;
 
 /** <!--*******************************************************************-->
  *
@@ -97,6 +101,19 @@ encodeShapes (int *shapes)
     }
 
     return current;
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn SAC_persistence_init(int trace)
+ *
+ * @brief Setup the persistence directory.
+ *
+ ****************************************************************************/
+void
+SAC_persistence_init (int trace)
+{
+    do_trace = trace;
 }
 
 #endif /* ENABLE_RTSPEC */
