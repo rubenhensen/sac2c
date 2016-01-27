@@ -10,7 +10,7 @@
 
 #include "config.h"
 
-#if ENABLE_RTSPEC
+#if SAC_DO_RTSPEC
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -373,4 +373,4 @@ SAC_Simple_freeReqqueue (simple_queue_node_t *node)
     }
 }
 
-#endif /* ENABLE_RTSPEC */
+#endif /* SAC_DO_RTSPEC */

@@ -10,7 +10,7 @@
 
 #include "config.h"
 
-#if ENABLE_RTSPEC
+#if SAC_DO_RTSPEC
 
 #include <stdlib.h>
 #include <pthread.h>
@@ -206,4 +206,4 @@ SAC_finalizeController (void)
     }
 }
 
-#endif /* ENABLE_RTSPEC */
+#endif /* SAC_DO_RTSPEC */

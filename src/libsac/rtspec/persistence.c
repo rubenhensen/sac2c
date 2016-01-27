@@ -8,7 +8,7 @@
 
 #include "config.h"
 
-#if ENABLE_RTSPEC
+#if SAC_DO_RTSPEC
 
 #include "trace.h"
 
@@ -116,4 +116,4 @@ SAC_persistence_init (int trace)
     do_trace = trace;
 }
 
-#endif /* ENABLE_RTSPEC */
+#endif /* SAC_DO_RTSPEC */
