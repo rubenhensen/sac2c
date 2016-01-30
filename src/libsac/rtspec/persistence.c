@@ -15,7 +15,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <dlfcn.h>
 
+#include "registry.h"
 #include "trace.h"
 
 #define SAC_DO_TRACE 1
@@ -348,6 +350,57 @@ SAC_persistence_add (char *filename, char *func_name, char *uuid, char *type_inf
         free (cmd);
 
         return destination;
+    }
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn SAC_persistence_load( char *filename, char *symbol_name, char *key)
+ *
+ * @brief Load specialization
+ *
+ * @return A function pointer.
+ *
+ ****************************************************************************/
+void *
+SAC_persistence_load (char *filename, char *symbol_name, char *key)
+{
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Linking with library %s.", filename);
+
+    void *dl_handle;
+    void *func_ptr;
+
+    /* Dynamically link with the new libary. */
+    dl_handle = dlopen (filename, RTLD_NOW | RTLD_LOCAL);
+
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Check handle not being NULL.");
+
+    /* Stop on failure. */
+    if (dl_handle == NULL) {
+        SAC_RTSPEC_TR_Print (
+          "Runtime specialization: Could not load specialized function: %s", dlerror ());
+
+        return NULL;
+    }
+
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Check linking error.");
+
+    dlerror ();
+
+    SAC_RTSPEC_TR_Print (
+      "Runtime specialization: Load symbol(s) for new specialization.");
+
+    func_ptr = dlsym (dl_handle, symbol_name);
+
+    if (func_ptr != NULL) {
+        SAC_register_specialization (key, dl_handle, func_ptr);
+
+        return func_ptr;
+    } else {
+        SAC_RTSPEC_TR_Print (
+          "Runtime specialization: Could not load symbols for specialized function.");
+
+        return NULL;
     }
 }
 

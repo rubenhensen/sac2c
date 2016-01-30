@@ -297,44 +297,12 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
         lib = SAC_persistence_add (filename, request->func_name, request->uuid,
                                    request->type_info, request->shape, request->mod_name);
 
-        SAC_RTSPEC_TR_Print ("Runtime specialization: Linking with generated library.");
-
-        void *dl_handle;
-        void *func_ptr;
-
-        /* Dynamically link with the new libary. */
-        dl_handle = dlopen (filename, RTLD_NOW | RTLD_LOCAL);
-
-        SAC_RTSPEC_TR_Print ("Runtime specialization: Check handle not being NULL.");
-
-        /* Exit on failure. */
-        if (dl_handle == NULL) {
-            SAC_RTSPEC_TR_Print ("Runtime specialization: Could not load generated "
-                                 "specialization function: %s",
-                                 dlerror ());
-
-            break;
-        }
-
-        SAC_RTSPEC_TR_Print ("Runtime specialization: Check linking error.");
-
-        dlerror ();
-
-        SAC_RTSPEC_TR_Print ("Runtime specialization: Load symbols for new wrapper.");
-
-        /* Load the symbol for the new wrapper. */
-        func_ptr = dlsym (dl_handle, request->func_name);
-
-        if (func_ptr != NULL) {
-            SAC_register_specialization (request->key, dl_handle, func_ptr);
-        } else {
-            SAC_RTSPEC_TR_Print ("Runtime specialization: Could not load symbols for "
-                                 "generated specialization function.");
-        }
+        SAC_persistence_load (lib, request->func_name, request->key);
     }
 
     free (filename);
     free (syscall);
+    free (lib);
 }
 
 /** <!--*******************************************************************-->
