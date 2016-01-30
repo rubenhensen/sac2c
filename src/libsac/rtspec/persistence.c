@@ -31,6 +31,8 @@ static int do_trace;
 static bool persistence_enabled;
 
 char *cachedir;
+int strlen_cachedir;
+int strlen_extension;
 
 /** <!--*******************************************************************-->
  *
@@ -153,21 +155,42 @@ SAC_persistence_init (int argc, char *argv[], int trace)
         homedir = getpwuid (getuid ())->pw_dir;
     }
 
-    cachedir = (char *)malloc (sizeof (char) * (strlen (homedir) + 16));
+    int strlen_homedir = strlen (homedir);
+    int strlen_target = strlen (SAC_TARGET_ENV_STRING);
+    int strlen_sbi = strlen (SAC_SBI_STRING);
 
-    sprintf (cachedir, "%s/.sac2c/rtspec/", homedir);
+    cachedir = (char *)malloc (sizeof (char)
+                               * (strlen_homedir + strlen_target + strlen_sbi + 18));
+
+    sprintf (cachedir, "%s/.sac2c/rtspec/" SAC_TARGET_ENV_STRING "/" SAC_SBI_STRING,
+             homedir);
+
+    strlen_cachedir = strlen (cachedir);
+    strlen_extension = strlen (SAC_MODEXT_STRING);
 
     if (access (cachedir, F_OK) == 0) {
         return;
     }
 
     char *basedir;
+    char *rtspecdir;
+    char *targetdir;
 
-    basedir = (char *)malloc (sizeof (char) * (strlen (homedir) + 9));
+    basedir = (char *)malloc (sizeof (char) * (strlen_homedir + 9));
+    rtspecdir = (char *)malloc (sizeof (char) * (strlen_homedir + 16));
+    targetdir = (char *)malloc (sizeof (char) * (strlen_homedir + strlen_target + 16));
 
     sprintf (basedir, "%s/.sac2c/", homedir);
+    sprintf (rtspecdir, "%s/.sac2c/rtspec/", homedir);
+    sprintf (targetdir, "%s/.sac2c/rtspec/" SAC_TARGET_ENV_STRING, homedir);
 
     mkdir (basedir, 0755);
+    mkdir (rtspecdir, 0755);
+    mkdir (targetdir, 0755);
+
+    free (basedir);
+    free (rtspecdir);
+    free (targetdir);
 
     if (mkdir (cachedir, 0755) < 0) {
         int err = errno;
@@ -185,8 +208,147 @@ SAC_persistence_init (int argc, char *argv[], int trace)
         SAC_RTSPEC_TR_Print (
           "Runtime specialization: Persistence directory created at %s", cachedir)
     }
+}
 
-    free (basedir);
+/** <!--*******************************************************************-->
+ *
+ * @fn SAC_persistence_add( char *filename, char *func_name, char *uuid,
+ *                          char *type_info, char *shape, char *mod_name)
+ *
+ * @brief Add a specialization to the persistence layer
+ *
+ * @return The filename of the library to load.
+ *
+ ****************************************************************************/
+char *
+SAC_persistence_add (char *filename, char *func_name, char *uuid, char *type_info,
+                     char *shape, char *mod_name)
+{
+    if (!persistence_enabled) {
+        return filename;
+    }
+
+    char *destdir;
+    char *destination;
+
+    int strlen_func_name = strlen (func_name);
+    int strlen_uuid = strlen (uuid);
+    int strlen_type_info = strlen (type_info);
+    int strlen_shape = strlen (shape);
+    int strlen_mod_name = strlen (mod_name);
+
+    int strlen_destdir = strlen_cachedir + strlen_mod_name + strlen_func_name
+                         + strlen_uuid + strlen_type_info + 5;
+
+    destdir = (char *)malloc (sizeof (char) * strlen_destdir);
+
+    sprintf (destdir, "%s/%s/%s/%s/%s", cachedir, mod_name, func_name, uuid, type_info);
+
+    if (access (destdir, F_OK) != 0) {
+        char *moddir;
+        char *fundir;
+        char *uuiddir;
+
+        moddir = (char *)malloc (sizeof (char) * (strlen_cachedir + strlen_mod_name + 2));
+        fundir = (char *)malloc (
+          sizeof (char) * (strlen_cachedir + strlen_mod_name + strlen_func_name + 3));
+        uuiddir = (char *)malloc (
+          sizeof (char)
+          * (strlen_cachedir + strlen_mod_name + strlen_func_name + strlen_uuid + 4));
+
+        sprintf (moddir, "%s/%s", cachedir, mod_name);
+        sprintf (fundir, "%s/%s/%s", cachedir, mod_name, func_name);
+        sprintf (uuiddir, "%s/%s/%s/%s", cachedir, mod_name, func_name, uuid);
+
+        if (mkdir (moddir, 0755) < 0) {
+            int err = errno;
+
+            if (err != EEXIST) {
+                SAC_RTSPEC_TR_Print ("Runtime specialization: Could not store "
+                                     "specialization in persistence. Error creating %s!",
+                                     moddir);
+                free (moddir);
+
+                return filename;
+            }
+        }
+
+        free (moddir);
+
+        if (mkdir (fundir, 0755) < 0) {
+            int err = errno;
+
+            if (err != EEXIST) {
+                SAC_RTSPEC_TR_Print ("Runtime specialization: Could not store "
+                                     "specialization in persistence. Error creating %s!",
+                                     fundir);
+                free (fundir);
+
+                return filename;
+            }
+        }
+
+        free (fundir);
+
+        if (mkdir (uuiddir, 0755) < 0) {
+            int err = errno;
+
+            if (err != EEXIST) {
+                SAC_RTSPEC_TR_Print ("Runtime specialization: Could not store "
+                                     "specialization in persistence. Error creating %s!",
+                                     uuiddir);
+                free (uuiddir);
+
+                return filename;
+            }
+        }
+
+        free (uuiddir);
+
+        if (mkdir (destdir, 0755) < 0) {
+            int err = errno;
+
+            if (err != EEXIST) {
+                SAC_RTSPEC_TR_Print ("Runtime specialization: Could not store "
+                                     "specialization in persistence. Error creating %s!",
+                                     destdir);
+                free (destdir);
+
+                return filename;
+            }
+        }
+    }
+
+    destination = (char *)malloc (sizeof (char)
+                                  * (strlen_destdir + strlen_shape + strlen_extension
+                                     + 2)); // 1 "/" + null byte at the end
+
+    sprintf (destination, "%s/%s%s", destdir, shape, SAC_MODEXT_STRING);
+
+    // 16 chars in cmd template, 2 from re-counted strlen of destination + null byte at
+    // the end
+    char *cmd = (char *)malloc (
+      sizeof (char)
+      * (strlen (filename) + strlen_destdir + strlen_shape + strlen_extension + 19));
+
+    sprintf (cmd, "/bin/cp -p \'%s\' \'%s\'", filename, destination);
+
+    switch (system (cmd)) {
+    default:
+        SAC_RTSPEC_TR_Print (
+          "Runtime specialization: Couldn't store specialization in persistence!");
+        free (destdir);
+        free (cmd);
+
+        return filename;
+    case 0:
+        SAC_RTSPEC_TR_Print ("Runtime specialization: Specialization stored as %s.",
+                             destination);
+        free (destdir);
+        free (cmd);
+
+        return destination;
+    }
 }
 
 #endif /* SAC_DO_RTSPEC */

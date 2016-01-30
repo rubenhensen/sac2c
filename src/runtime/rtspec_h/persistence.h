@@ -16,4 +16,7 @@ extern char *encodeShapes (int *shapes);
 
 void SAC_persistence_init (int argc, char *argv[], int trace);
 
+char *SAC_persistence_add (char *filename, char *func_name, char *uuid, char *type_info,
+                           char *shape, char *mod_name);
+
 #endif /* _SAC_PERSISTENCE_H_ */

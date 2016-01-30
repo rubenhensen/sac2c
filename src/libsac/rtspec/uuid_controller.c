@@ -276,6 +276,8 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
     // it twice by two individual controllers
     SAC_UUID_addProcessed (request);
 
+    char *lib;
+
     /* Execute the system call and act according to the return value. */
     switch (system (syscall)) {
     default:
@@ -292,6 +294,9 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
         exit (EXIT_FAILURE);
 
     case 0:
+        lib = SAC_persistence_add (filename, request->func_name, request->uuid,
+                                   request->type_info, request->shape, request->mod_name);
+
         SAC_RTSPEC_TR_Print ("Runtime specialization: Linking with generated library.");
 
         void *dl_handle;
