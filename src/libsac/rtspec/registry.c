@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "registry.h"
+#include "persistence.h"
 #include "trace.h"
 
 #define SAC_DO_TRACE 1
@@ -170,6 +171,14 @@ SAC_lookup_function (char *func_name, char *uuid, char *types, int *shapes,
         return item->func_ptr;
     } else {
         SAC_RTSPEC_TR_Print ("No specialization found");
+        SAC_RTSPEC_TR_Print ("Lookup in persistence");
+
+        void *specialization
+          = SAC_persistence_get (key, func_name, uuid, types, shape, mod_name);
+
+        if (specialization != NULL) {
+            return specialization;
+        }
 
         SAC_UUID_enqueueRequest (func_name, uuid, types, shapes, shape_size, shape,
                                  mod_name, key);

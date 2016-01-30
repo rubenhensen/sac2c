@@ -404,4 +404,45 @@ SAC_persistence_load (char *filename, char *symbol_name, char *key)
     }
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn SAC_persistence_get( char *key, char *func_name, char *uuid,
+ *                          char *type_info, char *shape, char *mod_name)
+ *
+ * @brief Get a specialization from the persistence layer
+ *
+ * @return A function pointer
+ *
+ ****************************************************************************/
+void *
+SAC_persistence_get (char *key, char *func_name, char *uuid, char *type_info, char *shape,
+                     char *mod_name)
+{
+    if (!persistence_enabled) {
+        return NULL;
+    }
+
+    int strlen_func_name = strlen (func_name);
+    int strlen_uuid = strlen (uuid);
+    int strlen_type_info = strlen (type_info);
+    int strlen_shape = strlen (shape);
+    int strlen_mod_name = strlen (mod_name);
+
+    char *filename
+      = (char *)malloc (sizeof (char)
+                        * (strlen_cachedir + strlen_mod_name + strlen_func_name
+                           + strlen_uuid + strlen_type_info + strlen_shape
+                           + strlen_extension + 6 // 5 "/" + null string at the end
+                           ));
+
+    sprintf (filename, "%s/%s/%s/%s/%s/%s%s", cachedir, mod_name, func_name, uuid,
+             type_info, shape, SAC_MODEXT_STRING);
+
+    if (access (filename, F_OK) != 0) {
+        return NULL;
+    }
+
+    return SAC_persistence_load (filename, func_name, key);
+}
+
 #endif /* SAC_DO_RTSPEC */
