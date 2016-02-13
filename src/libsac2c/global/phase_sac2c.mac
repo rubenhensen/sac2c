@@ -62,6 +62,9 @@ SUBPHASE (uss, "Retrieving used symbols", USSdoUseSymbols, ALWAYS, mod)
 
 SUBPHASE (asf, "Loading prelude functions", ASFdoAddSpecialFunctions, ALWAYS, mod)
 
+SUBPHASE (rtfilter, "Filter unneeded functions (runtime specialization)", RTdoFilter,
+          global.runtime, mod)
+
 ENDPHASE (mod)
 
 /******************************************************************************/
@@ -88,9 +91,6 @@ SUBPHASE (gntc, "Generating nested type conversion functions",
 
 SUBPHASE (ggtc, "Generating generic type conversion functions",
           GGTCdoGenerateGenericTypeConversions, ALWAYS, sim)
-
-SUBPHASE (rtfilter, "Filter unneeded functions (runtime specialization)", RTdoFilter,
-          global.runtime, sim)
 
 ENDPHASE (sim)
 
