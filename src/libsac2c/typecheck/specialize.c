@@ -101,6 +101,60 @@ InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
 }
 
 node *
+InsertHideInfo (node *fundef, int pos_of_ret, ntype *spec_type)
+{
+    node *last_assign, *ret, *id, *avis, *new_avis;
+
+    DBUG_ENTER ();
+
+    last_assign = TCgetLastAssign (FUNDEF_ASSIGNS (fundef));
+
+    DBUG_ASSERT ((last_assign != NULL)
+                   && (NODE_TYPE (ASSIGN_STMT (last_assign)) == N_return),
+                 "trying to insert shape/dimension hiding for return type "
+                 "into body without return!");
+
+    ret = ASSIGN_STMT (last_assign);
+    id = TCgetNthExprsExpr (pos_of_ret, RETURN_EXPRS (ret));
+    avis = ID_AVIS (id);
+
+    DBUG_ASSERT (NODE_TYPE (id) == N_id, "non N_id node found in N_return");
+
+    new_avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)), TYcopyType (spec_type));
+    ID_AVIS (id) = new_avis;
+
+    /**
+     * we are recycling the N_assign node here as it may either be hooked
+     * up to an N_block or an N_assign node and we do not want to use
+     * a traversal here!
+     */
+
+    if (TYisAKD (spec_type)) {
+        ASSIGN_STMT (last_assign)
+          = TBmakeLet (TBmakeIds (new_avis, NULL),
+                       TCmakePrf2 (F_hideShape_SxA, TBmakeNum (0), TBmakeId (avis)));
+    } else {
+        ASSIGN_STMT (last_assign)
+          = TBmakeLet (TBmakeIds (new_avis, NULL),
+                       TCmakePrf2 (F_hideDim_SxA, TBmakeNum (0), TBmakeId (avis)));
+    }
+
+    ASSIGN_NEXT (last_assign) = TBmakeAssign (ret, NULL);
+
+    if (PHisSAAMode ()) {
+        AVIS_SSAASSIGN (new_avis) = last_assign;
+    }
+
+    FUNDEF_VARDECS (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDECS (fundef));
+
+    if (TYisAUDGZ (spec_type)) {
+        InsertTypeConv (fundef, pos_of_ret, spec_type);
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+node *
 AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
 {
     /* FIXME: Something seems to go wrong here when a function that takes an AKD
@@ -121,9 +175,12 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
 
         switch (TYcmpTypes (spec_type, inherited_type)) {
         case TY_eq:
-            /**
-             * nothing to be done here!
-             */
+            if (global.runtime && STReq (FUNDEF_NAME (fundef), global.rt_fun_name)) {
+                if (TYisAUD (inherited_type) || TYisAUDGZ (inherited_type)
+                    || TYisAKD (inherited_type)) {
+                    fundef = InsertHideInfo (fundef, i, inherited_type);
+                }
+            }
             break;
         case TY_lt:
             /**
@@ -135,6 +192,13 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
              * Now, we inherit the return type:
              */
         case TY_gt:
+            if (global.runtime && STReq (FUNDEF_NAME (fundef), global.rt_fun_name)) {
+                if (TYisAUD (inherited_type) || TYisAUDGZ (inherited_type)
+                    || TYisAKD (inherited_type)) {
+                    fundef = InsertHideInfo (fundef, i, inherited_type);
+                }
+            }
+
             /**
              * we can potentially sharpen the return type here, as we know
              * that any specialisation can not specialize to a LESS
@@ -143,6 +207,7 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
             new_type = TYcopyType (inherited_type);
             spec_type = TYfreeType (spec_type);
             rets = TYsetProductMember (rets, i, new_type);
+
             break;
         case TY_hcs:
         case TY_dis:
