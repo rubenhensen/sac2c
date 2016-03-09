@@ -838,8 +838,7 @@ MakeSetRcIcm (char *name, types *type, int rc, node *assigns)
                                         TBmakeNum (rc), assigns);
         } else {
             basetype = TCgetBasetype (type);
-            if (basetype == T_float_dev || basetype == T_int_dev
-                || basetype == T_double_dev) {
+            if (CUisDeviceTypeOld (type)) {
                 assigns
                   = TCmakeAssignIcm2 ("CUDA_FREE", TCmakeIdCopyStringNt (name, type),
                                       TCmakeIdCopyString (GenericFun (GF_free, type)),
@@ -910,10 +909,7 @@ MakeDecRcIcm (char *name, types *type, int num, node *assigns)
         if (TCgetBasetype (type) == T_float_dist || TCgetBasetype (type) == T_int_dist
             || TCgetBasetype (type) == T_double_dist) {
             icm = "DIST_DEC_RC_FREE";
-        } else if (TCgetBasetype (type) == T_float_dev
-                   || TCgetBasetype (type) == T_int_dev
-                   || TCgetBasetype (type) == T_double_dev) {
-
+        } else if (CUisDeviceTypeOld (type)) {
             icm = "CUDA_DEC_RC_FREE";
         } else {
             icm = "ND_DEC_RC_FREE";
@@ -956,8 +952,7 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
 
             baseType = TCgetBasetype (type);
             /* This is an array that should be allocated on the device */
-            if (baseType == T_float_dev || baseType == T_int_dev
-                || baseType == T_double_dev) {
+            if (CUisDeviceTypeOld (type)) {
 #if USE_COMPACT_ALLOC
                 assigns
                   = TCmakeAssignIcm3 ("ND_ALLOC", TCmakeIdCopyStringNt (name, type),
@@ -1120,8 +1115,7 @@ MakeReAllocIcm (char *name, types *type, char *sname, types *stype, int rc, node
 
     if (RC_IS_ACTIVE (rc)) {
         /* This is an array that should be allocated on the device */
-        if (TCgetBasetype (type) == T_float_dev || TCgetBasetype (type) == T_int_dev
-            || TCgetBasetype (type) == T_double_dev) {
+        if (CUisDeviceTypeOld (type)) {
 #if USE_COMPACT_ALLOC
             assigns = TCmakeAssignIcm3 ("ND_ALLOC", TCmakeIdCopyStringNt (name, type),
                                         TBmakeNum (rc), get_dim, set_shape_icm, assigns);
@@ -6259,9 +6253,8 @@ COMPprfCopy (node *arg_node, info *arg_info)
         src_basetype = TCgetBasetype (ID_TYPE (PRF_ARG1 (arg_node)));
         dst_basetype = TCgetBasetype (IDS_TYPE (let_ids));
 
-        if (((src_basetype == T_float_dev && dst_basetype == T_float_dev)
-             || (src_basetype == T_int_dev && dst_basetype == T_int_dev)
-             || (src_basetype == T_double_dev && dst_basetype == T_double_dev))
+        if (CUisDeviceTypeOld (ID_TYPE (PRF_ARG1 (arg_node)))
+            && (src_basetype == dst_basetype)
             && !FUNDEF_ISCUDAGLOBALFUN (INFO_FUNDEF (arg_info))) {
             ret_node
               = TCmakeAssignIcm4 ("CUDA_COPY__ARRAY", DUPdupIdsIdNt (let_ids),
@@ -6937,12 +6930,7 @@ COMPprfIdxModarray_AxSxA (node *arg_node, info *arg_info)
                  "3rd arg of F_idx_modarray_AxSxA is a N_array!");
 
     if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
-        && (TCgetBasetype (ID_TYPE (arg1)) == T_float_dev
-            || TCgetBasetype (ID_TYPE (arg1)) == T_int_dev
-            || TCgetBasetype (ID_TYPE (arg1)) == T_double_dev)
-        && (TCgetBasetype (ID_TYPE (arg3)) == T_float_dev
-            || TCgetBasetype (ID_TYPE (arg3)) == T_int_dev
-            || TCgetBasetype (ID_TYPE (arg3)) == T_double_dev)
+        && CUisDeviceTypeOld (ID_TYPE (arg1)) && CUisDeviceTypeOld (ID_TYPE (arg3))
         && !FUNDEF_ISCUDAGLOBALFUN (INFO_FUNDEF (arg_info))) {
         ret_node
           = TCmakeAssignIcm4 ("CUDA_PRF_IDX_MODARRAY_AxSxA__DATA",
