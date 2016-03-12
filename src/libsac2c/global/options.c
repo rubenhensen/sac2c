@@ -1106,8 +1106,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /* Specialization has to be turned of otherwise the compiler will pick the
      * most generic function instead of the wrapper entry function.
      */
-    ARGS_FLAG ("rtspec", { global.rtspec = TRUE; });
-
     ARGS_OPTION_BEGIN ("rtspec_mode")
     {
         ARG_CHOICE_BEGIN ();

@@ -2167,7 +2167,7 @@ MakeFunApArgs (node *ap)
             }
 
             if (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef)
-                && global.rtspec) {
+                && global.config.rtspec) {
                 shape = NTUgetShapeClassFromTypes (IDS_TYPE (argtab->ptr_out[i]));
                 dim = TCgetDim (IDS_TYPE (argtab->ptr_out[i]));
                 exprs = TBmakeExprs (TBmakeNum (shape), exprs);
@@ -2213,7 +2213,7 @@ MakeFunApArgs (node *ap)
                 }
 
                 if (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef)
-                    && global.rtspec) {
+                    && global.config.rtspec) {
                     shape = NTUgetShapeClassFromTypes (
                       ID_TYPE (EXPRS_EXPR (argtab->ptr_in[i])));
                     dim = TCgetDim (ID_TYPE (EXPRS_EXPR (argtab->ptr_in[i])));
@@ -2260,7 +2260,7 @@ MakeFunApArgs (node *ap)
                 }
 
                 if (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef)
-                    && global.rtspec) {
+                    && global.config.rtspec) {
                     shape = NTUgetShapeClassFromTypes (
                       ID_TYPE (EXPRS_EXPR (argtab->ptr_in[i])));
                     dim = TCgetDim (ID_TYPE (EXPRS_EXPR (argtab->ptr_in[i])));
@@ -2302,7 +2302,7 @@ MakeFunApArgs (node *ap)
 
     if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)
         || (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef)
-            && global.rtspec)) {
+            && global.config.rtspec)) {
         argtab_t *fundef_argtab;
 
         fundef_argtab = FUNDEF_ARGTAB (fundef);
@@ -2320,7 +2320,8 @@ MakeFunApArgs (node *ap)
         }
     }
 
-    if (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef) && global.rtspec) {
+    if (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef)
+        && global.config.rtspec) {
         icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_RTSPECID (fundef)), icm_args);
         icm_args
           = TBmakeExprs (TCmakeIdCopyString (FUNDEF_SOURCENAME (fundef)), icm_args);
@@ -4542,7 +4543,7 @@ COMPap (node *arg_node, info *arg_info)
     } else if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
         icm = TBmakeIcm ("WE_FUN_AP", icm_args);
     } else if (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef)
-               && global.rtspec) {
+               && global.config.rtspec) {
         icm_args = TBmakeExprs (TCmakeIdCopyString (
                                   NSgetModule (MODULE_NAMESPACE (INFO_MODUL (arg_info)))),
                                 icm_args);
