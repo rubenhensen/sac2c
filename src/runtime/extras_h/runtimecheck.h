@@ -311,19 +311,32 @@
  ******************************************************************************/
 #if SAC_DO_CHECK_GPU
 
-#define SAC_DO_CHECK_GPU_TEST()                                                          \
+#define SAC_CUDA_GET_LAST_ERROR(ERROR_MSG)                                               \
     do {                                                                                 \
-                                                                                         \
-        cudaDeviceSynchronize ();                                                        \
         cudaError_t error = cudaGetLastError ();                                         \
         if (error != cudaSuccess) {                                                      \
-            SAC_RuntimeError ("GPU Error: %s\n", cudaGetErrorString (error));            \
+            SAC_RuntimeError ("%s ERROR: %s (%d): %s\n", ERROR_MSG, __FILE__, __LINE__,  \
+                              cudaGetErrorString (error));                               \
         }                                                                                \
     } while (0)
 
+#define SAC_CUDA_GET_LAST_KERNEL_ERROR()                                                 \
+    cudaDeviceSynchronize ();                                                            \
+    SAC_CUDA_GET_LAST_ERROR ("GPU KERNEL")
+
+#define SAC_GET_CUDA_MEM_TRANSFER_ERROR() SAC_CUDA_GET_LAST_ERROR ("GPU MEMORY TRANSFER")
+
+#define SAC_GET_CUDA_MALLOC_ERROR() SAC_CUDA_GET_LAST_ERROR ("GPU MALLOC")
+
+#define SAC_GET_CUDA_FREE_ERROR() SAC_CUDA_GET_LAST_ERROR ("GPU CUDA FREE")
+
 #else
 
-#define SAC_DO_CHECK_GPU_TEST()
+#define SAC_CUDA_GET_LAST_ERROR(ERROR_MSG)
+#define SAC_CUDA_GET_LAST_KERNEL_ERROR()
+#define SAC_GET_CUDA_MEM_TRANSFER_ERROR()
+#define SAC_GET_CUDA_MALLOC_ERROR()
+#define SAC_GET_CUDA_FREE_ERROR()
 
 #endif /* SAC_DO_CHECK_GPU */
 

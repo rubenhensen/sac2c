@@ -228,7 +228,7 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     }
     fprintf (global.outfile, ");\n");
 
-    fprintf (global.outfile, "SAC_DO_CHECK_GPU_TEST();\n");
+    fprintf (global.outfile, "SAC_CUDA_GET_LAST_KERNEL_ERROR();\n");
     /*
       fprintf( global.outfile, "cudaThreadSynchronize();\n");
       fprintf( global.outfile, "cutStopTimer(timer);\n");
@@ -781,8 +781,6 @@ ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype, char *d
     INDENT;
     fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER(%s, %s, %s, %s)", to_NT, from_NT,
              basetype, direction);
-
-    DBUG_RETURN ();
 }
 
 /******************************************************************************
