@@ -781,6 +781,8 @@ ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype, char *d
     INDENT;
     fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER(%s, %s, %s, %s)", to_NT, from_NT,
              basetype, direction);
+
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
