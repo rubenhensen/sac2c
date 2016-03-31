@@ -98,7 +98,7 @@ encodeShapes (int *shapes)
 
     length = 0;
 
-    length += sprintf (current, "%d-", num_args);
+    length += sprintf (current, "%d", num_args);
 
     i = 1;
     k = 1;
@@ -107,11 +107,11 @@ encodeShapes (int *shapes)
             j = 0;
             l = shapes[k];
             for (; j <= l; j++) {
-                length += sprintf (current + length, "%d-", shapes[k]);
+                length += sprintf (current + length, "-%d", shapes[k]);
                 k++;
             }
         } else {
-            length += sprintf (current + length, "%d-", shapes[k]);
+            length += sprintf (current + length, "-%d", shapes[k]);
             k++;
         }
     }
