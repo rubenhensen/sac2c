@@ -170,8 +170,10 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
         i = 0;
         for (; i < vararg_cnt * 5; i += 5) {
             if (STReq (vararg[i], "in")) {
+                if (types[0] != 0) {
+                    strcat (types, "-");
+                }
                 strcat (types, vararg[i + 1]);
-                strcat (types, "-");
                 out (" + SAC_WE_GET_DIM( %s)", vararg[i + 4]);
             }
         }
