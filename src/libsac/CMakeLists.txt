@@ -40,11 +40,7 @@ IF (NOT ENABLE_MUTC)
     mt_omp/mt_omp.c
     mt_pth/mt_pth_std.c
     mt_pth/mt_pth_trace.c
-    phm/nophm.c
-    rtspec/controller.c
-    rtspec/persistence.c
-    rtspec/registry.c
-    rtspec/reqqueue.c
+    mt_smart/mt_smart.c
   )
 ELSE ()
   SET (LIBSAC_SRC
@@ -57,7 +53,6 @@ ELSE ()
     interface/sacargconvert.c
     interface/sacmt.c
     mutc/reference_counting.c
-    phm/nophm.c
   )
 ENDIF (NOT ENABLE_MUTC)
 

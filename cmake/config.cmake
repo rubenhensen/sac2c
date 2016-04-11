@@ -319,10 +319,21 @@ EXECUTE_PROCESS (
 
 
 # sac2crc and makefile-related variables
-FILE (READ "${PROJECT_SOURCE_DIR}/setup/sac2crc.SUN" RCSUN)
-FILE (READ "${PROJECT_SOURCE_DIR}/setup/sac2crc.X86" RCX86)
-FILE (READ "${PROJECT_SOURCE_DIR}/setup/sac2crc.ALPHA" RCALPHA)
-FILE (READ "${PROJECT_SOURCE_DIR}/setup/sac2crc.MAC" RCMAC)
+MACRO (SUBST_SAC2CRC_FILE f var)
+    CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/setup/${f}.in" "${PROJECT_BINARY_DIR}/${f}")
+    FILE (READ "${PROJECT_BINARY_DIR}/${f}" ${var})
+ENDMACRO ()
+
+SUBST_SAC2CRC_FILE ("sac2crc.backend.mutc" RCMUTC)
+SUBST_SAC2CRC_FILE ("sac2crc.backend.cuda" RCCUDA)
+SUBST_SAC2CRC_FILE ("sac2crc.modifiers.cc" RCCC)
+SUBST_SAC2CRC_FILE ("sac2crc.modifiers.malloc" RCMALLOC)
+SUBST_SAC2CRC_FILE ("sac2crc.modifiers.rcm" RCRCM)
+SUBST_SAC2CRC_FILE ("sac2crc.SUN" RCSUN)
+SUBST_SAC2CRC_FILE ("sac2crc.X86" RCX86)
+SUBST_SAC2CRC_FILE ("sac2crc.ALPHA" RCALPHA)
+SUBST_SAC2CRC_FILE ("sac2crc.MAC" RCMAC)
+
 SET (CC  ${CMAKE_C_COMPILER})
 
 SET (OPT_O0)
@@ -471,10 +482,10 @@ CONFIGURE_FILE (
   "${PROJECT_BINARY_DIR}/src/build.c"
 )
 
-CONFIGURE_FILE (
-  "${PROJECT_SOURCE_DIR}/setup/sac2crc.in"
-  "${PROJECT_SOURCE_DIR}/sac2crc"
-)
+#CONFIGURE_FILE (
+#  "${PROJECT_SOURCE_DIR}/setup/sac2crc.in"
+#  "${PROJECT_SOURCE_DIR}/sac2crc"
+#)
 
 CONFIGURE_FILE (
   "${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf.in"

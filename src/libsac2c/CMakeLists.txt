@@ -149,7 +149,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlswithloopification.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cinterface/bundle_to_fundef.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cinterface/construct_bundles.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cinterface/create_c_wrapper_body.c
-${CMAKE_CURRENT_SOURCE_DIR}/cinterface/create_c_wrapper_header.c
+${CMAKE_CURRENT_SOURCE_DIR}/cinterface/create_f_wrapper_header.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cinterface/generate_copy_and_free.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cinterface/load_module_contents.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cinterface/print_ccflags.c
@@ -171,6 +171,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_sched.c
 ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_std.c
 ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_utils.c
 ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_wl.c
+${CMAKE_CURRENT_SOURCE_DIR}/codegen/regression.c
 ${CMAKE_CURRENT_SOURCE_DIR}/codegen/tag_preparation.c
 ${CMAKE_CURRENT_SOURCE_DIR}/concurrent/annotate_scheduling.c
 ${CMAKE_CURRENT_SOURCE_DIR}/concurrent/cost_model.c
@@ -241,9 +242,10 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/infer_memory_accesses.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/insert_memtrans_dist.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/introduce_availability_loop.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/prepare_dist_scheduler.c
-${CMAKE_CURRENT_SOURCE_DIR}/distmem/identify_distributable_arrays.c
 ${CMAKE_CURRENT_SOURCE_DIR}/distmem/identify_side_effect_function_aps.c
 ${CMAKE_CURRENT_SOURCE_DIR}/distmem/identify_side_effect_functions.c
+${CMAKE_CURRENT_SOURCE_DIR}/distmem/identify_suballocated_arrays.c
+${CMAKE_CURRENT_SOURCE_DIR}/distmem/mark_local_selects.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flatten/ExplicitAccumulate.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flatten/SSATransform.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flatten/UndoSSATransform.c
@@ -336,12 +338,11 @@ ${CMAKE_CURRENT_SOURCE_DIR}/memory/staticreuse.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/wrci.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/addspecialfuns.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/annotatenamespace.c
-${CMAKE_CURRENT_SOURCE_DIR}/modules/ccmanager.c
+${CMAKE_CURRENT_SOURCE_DIR}/modules/cctools.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/dependencies.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/export.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/gatherdependencies.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/importsymbols.c
-${CMAKE_CURRENT_SOURCE_DIR}/modules/libbuilder.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/libmanager.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/libstat.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/modulemanager.c
@@ -436,6 +437,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/UndoCondZeroCmp.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/UndoElimSubDiv.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/arithmetic_simplification.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/associative_law.c
+${CMAKE_CURRENT_SOURCE_DIR}/stdopt/auto_inlining.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/comparison_to_zero.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/comparison_to_zero_guards.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/constant_folding.c
