@@ -477,6 +477,12 @@ CONFIGURE_FILE (
   "${PROJECT_BINARY_DIR}/include/config.h"
 )
 
+# Create files depending on the options.
+CONFIGURE_FILE (
+  "${PROJECT_SOURCE_DIR}/src/include/xsacdirs.h.in"
+  "${PROJECT_BINARY_DIR}/include/sacdirs.h"
+)
+
 CONFIGURE_FILE (
   "${PROJECT_SOURCE_DIR}/src/libsac2c/global/build.c.in"
   "${PROJECT_BINARY_DIR}/src/build.c"

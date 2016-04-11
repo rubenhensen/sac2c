@@ -41,81 +41,82 @@ ENDFOREACH (name)
 
 FILE (GLOB_RECURSE HEADERS "*.h")
 
-# This is a stupid hack, as the order of the definitions in the following list
-# makes a difference on how sac.h is being composed.
+# XXX This is a stupid hack, as the order of the definitions in the following list
+# *makes a difference*.  If the order is different, the sac2c will not
+# compile.
 SET (HEADERS_ALL
-#  ${HEADERS}
 ${M4_LIST_DONE}
-${CMAKE_CURRENT_SOURCE_DIR}/cuda_h/cuda.h
-#${CMAKE_CURRENT_SOURCE_DIR}/cuda_h/cuda_gen.h
-${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid_h/alloc_cache.h
-${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid_h/basic.h
-${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid_h/cudahybrid.h
-${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid_h/dist_var_nomemsave.h
-${CMAKE_CURRENT_SOURCE_DIR}/distmem_h/distmem.h
-${CMAKE_CURRENT_SOURCE_DIR}/distmemphm_h/distmemphm.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/audwl.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/bool.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/commandline.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/errors.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/icm.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/idx.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/message.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/misc.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/prf.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/rc_impl.h
-#${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/rc_impl_gen.h
 ${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/rc_methods.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/rc_stubs.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/types.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/audwl.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/commandline.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/icm.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/prf.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/std.h
+#${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/std_gen.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/rc_impl.h
 ${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/rcm_local_async_norc_ptr.h
 ${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/rcm_local_pasync.h
 ${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/rcm_local_pasync_norc_desc.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/std.h
-#${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/std_gen.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/tuple.h
-${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/types.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/rc_stubs.h
+#${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/rc_impl_gen.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/message.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/bool.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/errors.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/idx.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/misc.h
 ${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/wl.h
+${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/tuple.h
 ${CMAKE_CURRENT_SOURCE_DIR}/extras_h/cachesim.h
 ${CMAKE_CURRENT_SOURCE_DIR}/extras_h/profile.h
 ${CMAKE_CURRENT_SOURCE_DIR}/extras_h/runtimecheck.h
 ${CMAKE_CURRENT_SOURCE_DIR}/extras_h/trace.h
+${CMAKE_CURRENT_SOURCE_DIR}/mt_h/mt.h
+${CMAKE_CURRENT_SOURCE_DIR}/mt_omp_h/mt_omp.h
+${CMAKE_CURRENT_SOURCE_DIR}/mt_beehive_h/schedule.h
 ${CMAKE_CURRENT_SOURCE_DIR}/mt_beehive_h/mt_beehive.h
 #${CMAKE_CURRENT_SOURCE_DIR}/mt_beehive_h/mt_gen.h
-${CMAKE_CURRENT_SOURCE_DIR}/mt_beehive_h/schedule.h
-${CMAKE_CURRENT_SOURCE_DIR}/mt_h/mt.h
-${CMAKE_CURRENT_SOURCE_DIR}/mt_lpel_h/mt_lpel.h
-${CMAKE_CURRENT_SOURCE_DIR}/mt_omp_h/mt_omp.h
-${CMAKE_CURRENT_SOURCE_DIR}/mt_pth_h/fp.h
-#${CMAKE_CURRENT_SOURCE_DIR}/mt_pth_h/fp_gen.h
 ${CMAKE_CURRENT_SOURCE_DIR}/mt_pth_h/mt_barriers.h
 ${CMAKE_CURRENT_SOURCE_DIR}/mt_pth_h/mt_pth.h
+${CMAKE_CURRENT_SOURCE_DIR}/mt_pth_h/fp.h
+#${CMAKE_CURRENT_SOURCE_DIR}/mt_pth_h/fp_gen.h
 ${CMAKE_CURRENT_SOURCE_DIR}/mt_smart_h/mt_smart.h
+${CMAKE_CURRENT_SOURCE_DIR}/mt_lpel_h/mt_lpel.h
+${CMAKE_CURRENT_SOURCE_DIR}/phm_h/phm.h
 ${CMAKE_CURRENT_SOURCE_DIR}/mutc_h/mutc.h
+${CMAKE_CURRENT_SOURCE_DIR}/mutc_h/mutc_world.h
 #${CMAKE_CURRENT_SOURCE_DIR}/mutc_h/mutc_gen.h
+${CMAKE_CURRENT_SOURCE_DIR}/mutc_h/mutc_tostring.h
+${CMAKE_CURRENT_SOURCE_DIR}/mutc_h/mutc_startup.h
 ${CMAKE_CURRENT_SOURCE_DIR}/mutc_h/mutc_rc.h
 #${CMAKE_CURRENT_SOURCE_DIR}/mutc_h/mutc_rc_gen.h
-${CMAKE_CURRENT_SOURCE_DIR}/mutc_h/mutc_startup.h
-${CMAKE_CURRENT_SOURCE_DIR}/mutc_h/mutc_tostring.h
-${CMAKE_CURRENT_SOURCE_DIR}/mutc_h/mutc_world.h
+${CMAKE_CURRENT_SOURCE_DIR}/cuda_h/cuda.h
+#${CMAKE_CURRENT_SOURCE_DIR}/cuda_h/cuda_gen.h
+${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/rtspec.h
+${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/registry.h
+${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/simple_reqqueue.h
+${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/uuid_reqqueue.h
+${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/supervisor.h
+${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/simple_controller.h
+${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/uuid_controller.h
+${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/persistence.h
+${CMAKE_CURRENT_SOURCE_DIR}/distmem_h/distmem.h
+${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid_h/cudahybrid.h
+${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid_h/alloc_cache.h
+${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid_h/dist_var_nomemsave.h
+${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid_h/basic.h
 ${CMAKE_CURRENT_SOURCE_DIR}/nested_h/nested.h
 #${CMAKE_CURRENT_SOURCE_DIR}/nested_h/nested_gen.h
-${CMAKE_CURRENT_SOURCE_DIR}/phm_h/phm.h
-${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/persistence.h
-${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/registry.h
-${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/rtspec.h
-${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/simple_controller.h
-${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/simple_reqqueue.h
-${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/supervisor.h
-${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/uuid_controller.h
-${CMAKE_CURRENT_SOURCE_DIR}/rtspec_h/uuid_reqqueue.h
+${CMAKE_CURRENT_SOURCE_DIR}/distmemphm_h/distmemphm.h
 )
 
 
 SET (SAC_H  "${PROJECT_SOURCE_DIR}/include/sac.h")
+SET (HZIP "${PROJECT_BINARY_DIR}/hzip")
 ADD_CUSTOM_COMMAND (
   OUTPUT    ${SAC_H}
-  COMMAND   "${PROJECT_BINARY_DIR}/hzip" ${HEADERS_ALL} > ${SAC_H}
-  DEPENDS   ${HEADERS_ALL}
+  COMMAND   ${HZIP} ${HEADERS_ALL} > ${SAC_H}
+  DEPENDS   ${HEADERS_ALL} ${HZIP}
 )
 
 ADD_CUSTOM_TARGET (sac_h ALL DEPENDS ${SAC_H})
