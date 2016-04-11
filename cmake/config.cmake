@@ -351,7 +351,14 @@ SET (DEPSFLAG)
 SET (CPPFILE)
 SET (CCMTLINK)
 SET (CCDLLINK)
+SET (GCC_FLAGS "")
 IF (CMAKE_COMPILER_IS_GNUCC AND NOT MACC)
+  CHECK_GCC_FLAG ("-Wall" GCC_FLAGS)
+  CHECK_GCC_FLAG ("-Wextra" GCC_FLAGS)
+  CHECK_GCC_FLAG ("-Wstrict-prototypes" GCC_FLAGS)
+  CHECK_GCC_FLAG ("-Wno-unused-parameter" GCC_FLAGS)
+  CHECK_GCC_FLAG ("-march=native" GCC_FLAGS)
+  CHECK_GCC_FLAG ("-mtune=native" GCC_FLAGS)
   EXECUTE_PROCESS (
     COMMAND ${CC} -pthread
     ERROR_VARIABLE GCC_ERR
@@ -366,9 +373,9 @@ IF (CMAKE_COMPILER_IS_GNUCC AND NOT MACC)
   SET (OPT_O3       "-O3")
   SET (OPT_g        "-g")
   SET (RCLDFLAGS    "")
-  SET (RCCCFLAGS    "-Wall -Wno-unused -fno-builtin -std=c99")
-  SET (MKCCFLAGS    "-Wall -g -std=c99")
-  SET (PDCCFLAGS    "-Wall -g -O3 -std=c99")
+  SET (RCCCFLAGS    "${GCC_FLAGS} -std=gnu99 -pedantic -Wno-unused -fno-builtin")
+  SET (MKCCFLAGS    "${GCC_FLAGS} -std=gnu99 -pedantic -g")
+  SET (PDCCFLAGS    "${GCC_FLAGS} -std=gnu99 -pedantic -g -O3 -std=c99")
   SET (GENPIC	    "-fPIC -DPIC")
   SET (DEPSFLAG     "-M")
   SET (CPPFILE	    "gcc -E -C -x c")
@@ -435,10 +442,10 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Solaris")
   SET (LD_PATH      "-L%path% -R%path%")
   SET (LD_FLAGS     "-Wl,-z,nodefs,-z,lazyload")
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  SET (OSFLAGS      "-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint")
-  SET (LD_DYNAMIC   "-dy -shared -Wl,-allow-shlib-undefined")
+  SET (OSFLAGS      "-fPIC -DPIC -D_POSIX_SOURCE -D_DEFAULT_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE")
+  SET (LD_DYNAMIC   "-shared -Wl,-allow-shlib-undefined -O3 ${flags_lto}")
   SET (LD_PATH      "-L%path% -Wl,-rpath,%path%")
-  SET (LD_FLAGS     "-Wl,-allow-shlib-undefined")
+  SET (LD_FLAGS     "-Wl,-allow-shlib-undefined ${flgas_lto}")
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES ".*osf.*")
   SET (OSFLAGS      "-D_OSF_SOURCE")
   SET (LD_DYNAMIC   "")
@@ -447,30 +454,60 @@ ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES ".*osf.*")
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   SET (ENABLE_PHM   OFF)
   SET (RANLIB       "$RANLIB -c")
-  IF (${CMAKE_SYSTEM_VERSION} MATCHES "10.")
-    SET (OSFLAGS    "-no-cpp-precomp -D_DARWIN_C_SOURCE")
-    SET (LD_DYNAMIC "-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' ")
-    SET (LD_PATH    "-L%path% -Wl,-rpath,%path%")
-    SET (LD_FLAGS   "")
-  ELSEIF (${CMAKE_SYSTEM_VERSION} MATCHES "9.")
-    SET (OSFLAGS    "-no-cpp-precomp -Wno-long-double -D_DARWIN_C_SOURCE")
-    SET (LD_DYNAMIC "-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' ")
-    SET (LD_PATH    "-L%path% -Wl,-rpath,%path%")
-    SET (LD_FLAGS   "")
-  ELSEIF (${CMAKE_SYSTEM_VERSION} MATCHES "[6-8].")
-    SET (OSFLAGS    "-no-cpp-precomp -Wno-long-double -D_DARWIN_C_SOURCE")
-    SET (LD_DYNAMIC "-undefined suppress -flat_namespace -bundle")
-    SET (LD_PATH    "-L%path%")
-    SET (LD_FLAGS   "")
-  ENDIF ()
-ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES ".*bsd")
-  SET (OSFLAGS      "-fpic")
-  SET (LD_DYNAMIC   "ld -dy -shared -symbolic")
-  SET (LD_PATH      "-L -Wl,-rpath,%path%")
+  SET (OSFLAGS      "-D_DARWIN_C_SOURCE")
+  SET (LD_DYNAMIC   "-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%.dylib' ")
+  SET (LD_PATH      "-L%path% -Wl,-rpath,%path%")
   SET (LD_FLAGS     "")
+ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES ".*bsd")
+  SET (OSFLAGS      "-fPIC -DPIC")
+  SET (LD_DYNAMIC   "-shared -Wl,-allow-shlib-undefined $flags_lto")
+  SET (LD_PATH      "-L%path% -Wl,-rpath,%path%")
+  SET (LD_FLAGS     "${flags_lto}")
+ELSE ()
+  SET (OSFLAGS      "-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE")
+  SET (LD_DYNAMIC   "-dy -shared -Wl,-allow-shlib-undefined")
+  SET (LD_PATH      "-L%path% -Wl,-rpath,%path%")
+  SET (LD_FLAGS     "-Wl,-allow-shlib-undefined")
 ENDIF ()
 
 
+# Prpeare C flags for the debug version of the compiler
+SET (CMAKE_C_FLAGS_DEBUG 
+  ${CMAKE_C_FLAGS_DEBUG}
+  -DSANITYCHECKS
+  -DWLAA_DEACTIVATED
+  -DAE_DEACTIVATED
+  -DTSI_DEACTIVATED
+  -DPADT_DEACTIVATED
+  -DCHECK_NODE_ACCESS
+  -DINLINE_MACRO_CHECKS
+  ${MKCCFLAGS}
+  
+)
+
+# Prepare C flags for the product version of the compiler
+SET (CMAKE_C_FLAGS_RELEASE 
+  ${CMAKE_C_FLAGS_RELEASE}
+  -DDBUG_OFF
+  -DPRODUCTION
+  -DWLAA_DEACTIVATED
+  -DAE_DEACTIVATED
+  -DTSI_DEACTIVATED
+  -DPADT_DEACTIVATED
+  ${PDCCFLAGS}
+)
+
+IF (NOT CMAKE_BUILD_TYPE)
+    ADD_DEFINITIONS (
+        ${CMAKE_C_FLAGS_DEBUG}
+    )
+ENDIF ()
+
+ADD_DEFINITIONS (
+    ${OSFLAGS}
+    -DSHARED_LIB_EXT="${CMAKE_SHARED_LIBRARY_SUFFIX}"
+    -D_POSIX_C_SOURCE=200809L
+)
 
 # Create files depending on the options.
 CONFIGURE_FILE (

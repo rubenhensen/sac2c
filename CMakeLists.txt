@@ -49,30 +49,12 @@ INCLUDE_DIRECTORIES (
   "src"
 )
 
-ADD_DEFINITIONS(
-  -DPIC -D_POSIX_SOURCE -D_DEFAULT_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint -D_POSIX_C_SOURCE=200809L
-  # FIXME this is to enable quick build, fix it depending on the build type
-  # and take the variables from config.
-  -Wall -Wextra -Wno-unused-parameter -std=c99 -Os
-  -DSANITYCHECKS
-  -DWLAA_DEACTIVATED
-  -DAE_DEACTIVATED
-  -DTSI_DEACTIVATED
-  -DPADT_DEACTIVATED
-  -DCHECK_NODE_ACCESS
-  -DINLINE_MACRO_CHECKS
-  -DSAC_BACKEND_C99 -DSAC_RC_METHOD=SAC_RCM_local
-  -DSHARED_LIB_EXT="${CMAKE_SHARED_LIBRARY_SUFFIX}"
-)
-
-
 ADD_SUBDIRECTORY (src)
 
 # Make sac2c binary
 ADD_EXECUTABLE (sac2c src/tools/sac2c/sac2c.c)
 ADD_DEPENDENCIES (sac2c sac_h)
 TARGET_LINK_LIBRARIES (sac2c ${M_LIB} ${DL_LIB} ${UUID_LIB})
-
 
 
 
