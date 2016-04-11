@@ -269,8 +269,11 @@ SET (XSLT   "${XSLT_EXEC}")
 SET (M4     "${M4_EXEC}")
 SET (DOT    "${DOT_FLAG}")
 
-
-
+# Get GIT version.
+FIND_PACKAGE (Git)
+IF (NOT GIT_FOUND)
+    MESSAGE (FATAL_ERROR "Could not find GIT on the system!") 
+ENDIF ()
 
 # Misc variables
 # FIXME  Try to get the file-path lengths from the correct include-files.
@@ -280,18 +283,6 @@ SET (PF_MAXFUN          100)
 SET (PF_MAXFUNAP        100)
 SET (PF_MAXFUNNAMELEN   100)
 SET (SAC_PRELUDE_NAME   "sacprelude")
-
-
-
-# Get svn version.
-#INCLUDE (FindSubversion)
-#Subversion_WC_INFO (${PROJECT_SOURCE_DIR} SVN)
-
-# FIXME get this from git!
-SET (SVN_WC_REVISION "test-version")
-
-# FIXME build-style should come from options.
-SET (BUILD_STYLE  "developer")
 
 # Get current date and time.
 CURRENT_TIME (DATE)
@@ -325,6 +316,13 @@ MACRO (SUBST_SAC2CRC_FILE f var)
     FILE (READ "${PROJECT_BINARY_DIR}/${f}" ${var})
 ENDMACRO ()
 
+FILE (READ "${PROJECT_SOURCE_DIR}/.revision.txt" SAC2C_VERSION_N)
+STRING (STRIP "${SAC2C_VERSION_N}" SAC2C_VERSION)
+SET (RTPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/rt")
+SET (MODPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/modlibs")
+SET (INCPATH_CONF "${CMAKE_INSTALL_PREFIX}/include/sac2c/${SAC2C_VERSION}")
+SET (TREEPATH_CONF "${CMAKE_INSTALL_PREFIX}/libexec/sac2c/${SAC2C_VERSION}")
+
 SUBST_SAC2CRC_FILE ("sac2crc.backend.mutc" RCMUTC)
 SUBST_SAC2CRC_FILE ("sac2crc.backend.cuda" RCCUDA)
 SUBST_SAC2CRC_FILE ("sac2crc.modifiers.cc" RCCC)
@@ -334,6 +332,8 @@ SUBST_SAC2CRC_FILE ("sac2crc.SUN" RCSUN)
 SUBST_SAC2CRC_FILE ("sac2crc.X86" RCX86)
 SUBST_SAC2CRC_FILE ("sac2crc.ALPHA" RCALPHA)
 SUBST_SAC2CRC_FILE ("sac2crc.MAC" RCMAC)
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/setup/sac2crc.pre.in" "${PROJECT_BINARY_DIR}/sac2crc.pre" @ONLY)
+CONFIGURE_FILE ("${PROJECT_BINARY_DIR}/sac2crc.pre" "${PROJECT_SOURCE_DIR}/setup/sac2crc")
 
 SET (CC  ${CMAKE_C_COMPILER})
 
