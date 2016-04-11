@@ -313,6 +313,7 @@ MACRO (SUBST_SAC2CRC_FILE f var)
     FILE (READ "${PROJECT_BINARY_DIR}/${f}" ${var})
 ENDMACRO ()
 
+# FIXME(artem) Where the `.revision.txt' file is coming from?
 FILE (READ "${PROJECT_SOURCE_DIR}/.revision.txt" SAC2C_VERSION_N)
 STRING (STRIP "${SAC2C_VERSION_N}" SAC2C_VERSION)
 SET (RTPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/rt")
@@ -500,11 +501,20 @@ IF (NOT CMAKE_BUILD_TYPE)
     )
 ENDIF ()
 
+# These CC flags are always present
 ADD_DEFINITIONS (
     ${OSFLAGS}
     -DSHARED_LIB_EXT="${CMAKE_SHARED_LIBRARY_SUFFIX}"
     -D_POSIX_C_SOURCE=200809L
 )
+
+# These flags will be used by the linker when creating a shared library
+# FIXME(artem) Revisit this later.  Mayve we don't need -shared and other
+#              flags when defining LD_DYNAMIC as CMake should be smart enough
+#              to figure out basic call for building shared library on all
+#              the systems.
+SET (CMAKE_SHARED_LINKER_FLAGS ${LD_DYNAMIC})
+
 
 # Create files depending on the options.
 CONFIGURE_FILE (
@@ -522,11 +532,6 @@ CONFIGURE_FILE (
   "${PROJECT_SOURCE_DIR}/src/libsac2c/global/build.c.in"
   "${PROJECT_BINARY_DIR}/src/build.c"
 )
-
-#CONFIGURE_FILE (
-#  "${PROJECT_SOURCE_DIR}/setup/sac2crc.in"
-#  "${PROJECT_SOURCE_DIR}/sac2crc"
-#)
 
 CONFIGURE_FILE (
   "${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf.in"
