@@ -45,7 +45,6 @@ FILE (GLOB_RECURSE HEADERS "*.h")
 # *makes a difference*.  If the order is different, the sac2c will not
 # compile.
 SET (HEADERS_ALL
-${M4_LIST_DONE}
 ${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/rc_methods.h
 ${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/types.h
 ${CMAKE_CURRENT_SOURCE_DIR}/essentials_h/audwl.h
@@ -108,6 +107,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid_h/basic.h
 ${CMAKE_CURRENT_SOURCE_DIR}/nested_h/nested.h
 #${CMAKE_CURRENT_SOURCE_DIR}/nested_h/nested_gen.h
 ${CMAKE_CURRENT_SOURCE_DIR}/distmemphm_h/distmemphm.h
+${M4_LIST_DONE}
 )
 
 
