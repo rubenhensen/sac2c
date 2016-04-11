@@ -567,7 +567,6 @@ ${PROJECT_BINARY_DIR}/src/build.c
 )
 
 
-
 ADD_LIBRARY (sac2cShared SHARED ${SAC2C_SRC})
 SET_TARGET_PROPERTIES (sac2cShared
   PROPERTIES
@@ -577,3 +576,4 @@ SET_TARGET_PROPERTIES (sac2cShared
     LINK_FLAGS "-Wl,-allow-shlib-undefined"
 
 )
+TARGET_LINK_LIBRARIES (sac2cShared ${M_LIB} ${DL_LIB} ${UUID_LIB} "-lcrypt")

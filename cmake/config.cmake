@@ -145,10 +145,12 @@ ENDIF ()
 
 # Check if sbrk exists which yields ENABLE_PHM
 SET (ENABLE_PHM  OFF)
+SET (CAN_USE_PHM "0")
 SET (SBRK_T)
 CHECK_FUNCTION_EXISTS ("sbrk" HAVE_SBRK)
 IF (HAVE_SBRK)
   SET (ENABLE_PHM  ON)
+  SET (CAN_USE_PHM "1")
   # FIXME Select the right type from "intptr_t ptrdiff_t ssize_t int"
   # currently this is just a hack.
   SET (SBRK_T      "intptr_t")
@@ -239,8 +241,7 @@ SET (ENABLE_CUDA OFF)
 SET (CUDA_ARCH)
 IF (CUDA_FOUND)
   SET (ENABLE_CUDA ON)
-  MATH (EXPR version_number "${CUDA_VERSION_MAJOR} * 10 + ${CUDA_VERSION_MINOR}")
-  SET (CUDA_ARCH  "-arch=${version_number}")
+  SET (CUDA_ARCH  "-arch=sm20")
 ENDIF ()
 
 # Indenting the code
@@ -293,10 +294,6 @@ SITE_NAME (HOST_NAME)
 # Get current user.
 # FIXME why the hell this is useful?
 GET_USERNAME (USER_NAME)
-
-
-SET (REVISION ${SVN_WC_REVISION})
-SET (REVISION_NUMBER ${SVN_WC_REVISION})
 
 # Get an md5 hash of the `ast.xml'.
 SET (XMLDIR  "${PROJECT_SOURCE_DIR}/src/libsac2c/xml")

@@ -56,8 +56,6 @@ ADD_EXECUTABLE (sac2c src/tools/sac2c/sac2c.c)
 ADD_DEPENDENCIES (sac2c sac_h)
 TARGET_LINK_LIBRARIES (sac2c ${M_LIB} ${DL_LIB} ${UUID_LIB})
 
-
-
 #
 # Create sac-prelude.
 SET (PRELUDE_OUT   "lib${SAC_PRELUDE_NAME}Tree.so"
@@ -69,8 +67,8 @@ SET (PRELUDE_IN
 ADD_CUSTOM_COMMAND (
   # WORKING_DIRECTORY   "${PROJECT_SOURCE_DIR}/lib"
   OUTPUT    ${PRELUDE_OUT}
-  COMMAND   "sac2c" -v0 -O3 -noprelude ${PRELUDE_IN}
-  DEPENDS   sac2c sac2cShared ${PRELUDE_IN}
+  COMMAND   "sac2c" -v0 -linksetsize 0 -noprelude ${PRELUDE_IN}
+  DEPENDS   sac2c sac2cShared sac2crc ${PRELUDE_IN}
 )
 ADD_CUSTOM_TARGET (sacprelude ALL DEPENDS ${PRELUDE_OUT})
 
@@ -80,8 +78,4 @@ ADD_CUSTOM_COMMAND (
     COMMENT "Updating sac2c revision number"
 )
 
-ADD_CUSTOM_TARGET (
-    sac2crc 
-    ALL 
-    DEPENDS "${PROJECT_SOURCE_DIR}/setup/sac2crc"
-)
+ADD_CUSTOM_TARGET (sac2crc ALL DEPENDS "${PROJECT_SOURCE_DIR}/setup/sac2crc")
