@@ -115,17 +115,13 @@ FINGERPRINT_FILE := $(PROJECT_ROOT)/src/include/.fingerprint
 # Start rule
 #
 
-
-all:
-	echo $(SUBTARGETS)
-
-#all: $(TARGETS)
-#	@ if [ -f .done ] ; \
-#          then $(RM) .done ; \
-#          else $(ECHO) "" ; \
-#               $(ECHO) "$(PROJECT_NAME) $(SUBPROJECT)" \
-#                       "($($(STYLE)_long) version) is up to date !"; \
-#          fi
+all: $(TARGETS)
+	@ if [ -f .done ] ; \
+          then $(RM) .done ; \
+          else $(ECHO) "" ; \
+               $(ECHO) "$(PROJECT_NAME) $(SUBPROJECT)" \
+                       "($($(STYLE)_long) version) is up to date !"; \
+          fi
 
 
 ###############################################################################

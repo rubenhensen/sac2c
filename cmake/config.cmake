@@ -255,6 +255,7 @@ IF (INDENT_EXEC)
     SET (CB ${INDENT_EXEC})
   ENDIF ()
 ENDIF ()
+MESSAGE (STATUS "Using `${CB}' for code-beautification")
 
 
 

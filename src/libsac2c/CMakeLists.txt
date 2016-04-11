@@ -64,7 +64,7 @@ FOREACH(name ${XSL_FILES})
   SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}")
   ADD_CUSTOM_COMMAND(
     OUTPUT "${dst}"
-    DEPENDS "${src}"
+    DEPENDS "${CB}" "${src}"
     COMMAND
     ${XSLT_EXEC} ${src}
                  ${CMAKE_CURRENT_SOURCE_DIR}/xml/ast.xml
