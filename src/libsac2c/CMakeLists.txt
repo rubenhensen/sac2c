@@ -69,8 +69,8 @@ FOREACH(name ${XSL_FILES})
     ${XSLT_EXEC} ${src}
                  ${CMAKE_CURRENT_SOURCE_DIR}/xml/ast.xml
                  | ${CB} > ${dst}
-    )
-
+    COMMENT "Generating ${dst}"
+  )
   LIST (APPEND XSL_DONE_FILES "${dst}")
 ENDFOREACH(name)
 
@@ -88,6 +88,7 @@ ADD_CUSTOM_COMMAND(
     ${CMAKE_C_COMPILER} -E -P ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm_vars.c  -DICM_ALL
     | sort
     | uniq > "${CMAKE_CURRENT_BINARY_DIR}/fancy_icm_vars.c"
+  COMMENT "Generating ${CMAKE_CURRENT_BINARY_DIR}/fancy_icm_vars.c"
 )
 
 
@@ -574,7 +575,6 @@ SET_TARGET_PROPERTIES (sac2cShared
     LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib"
     # FIXME this should come from the config variabl
     LINK_FLAGS "-Wl,-allow-shlib-undefined"
-
 )
 
 IF (ENABLE_RTSPEC)
