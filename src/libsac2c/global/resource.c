@@ -449,13 +449,19 @@ ParseResourceFiles (void)
                      "including '%s.local'.\n"
                      "Running 'make install' would avoid this warning.",
                      SAC2CRC_CONF, SAC2CRC_BUILD_CONF, SAC2CRC_BUILD_CONF);
-            ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF);
-            if (!ok) {
-                CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF);
-            }
-            ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF ".local");
-            if (!ok) {
-                CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF ".local");
+            if (FMGRcheckExistFile (SAC2CRC_BUILD_CONF)) {
+                ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF);
+                if (!ok) {
+                    CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF);
+                }
+            } else if (FMGRcheckExistFile (SAC2CRC_BUILD_CONF ".local")) {
+                ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF ".local");
+                if (!ok) {
+                    CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF ".local");
+                }
+            } else {
+                CTIabort ("Neither of '%s' or '%s' exists on the system.",
+                          SAC2CRC_BUILD_CONF, SAC2CRC_BUILD_CONF ".local");
             }
 
         } else {
