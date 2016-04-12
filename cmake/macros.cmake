@@ -44,6 +44,7 @@ MACRO (ASSERT_LIB VAR lib_name lib_func)
     ENDIF ()
 ENDMACRO ()
 
+# Check if compiler `flag' is supported, and if so append it to the `var' string.
 MACRO (CHECK_GCC_FLAG flag var)
     SET (OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
     SET (CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Werror ${flag}")
@@ -58,3 +59,36 @@ MACRO (CHECK_GCC_FLAG flag var)
     ENDIF ()
     SET (CMAKE_REQUIRED_FLAGS "${OLD_CMAKE_REQUIRED_FLAGS}")
 ENDMACRO ()
+
+# Generate version using `git describe'
+# FIXME(artem) what happens if we are compiling from withing the source 
+# distribution and .git directory is not available?  We need to have a
+# mechanism to deal with this situation.  For example checking for SAC2C_VERSION
+# file in case .git directory is not present.
+FUNCTION (GET_VERSION ver)
+    FIND_PACKAGE (Git)
+
+    IF (Git_FOUND)
+        EXECUTE_PROCESS (COMMAND
+            "${GIT_EXECUTABLE}"
+            describe
+            --tags 
+            --abbrev=4
+            --dirty
+            WORKING_DIRECTORY
+                "${CMAKE_CURRENT_SOURCE_DIR}"
+            RESULT_VARIABLE
+                res
+            OUTPUT_VARIABLE
+                out
+            ERROR_QUIET
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        IF (NOT res EQUAL 0)
+            MESSAGE (FATAL_ERROR "Failing to get git version")
+        ENDIF ()
+        STRING (REGEX REPLACE "^v" "" out "${out}")
+        SET (${ver} "${out}" PARENT_SCOPE)
+    ELSE ()
+        MESSAGE (FATAL_ERROR "Git executable not found")
+    ENDIF ()
+ENDFUNCTION ()

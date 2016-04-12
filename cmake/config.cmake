@@ -41,6 +41,9 @@ SET (ARCH     "${CMAKE_SYSTEM_PROCESSOR}")
 # FIXME use CYGWIN value directly
 SET (IS_CYGWIN  ${CYGWIN})
 
+# Get sac2c version
+GET_VERSION (SAC2C_VERSION)
+
 # Check for Link Time Optimisation
 SET (HAVE_LTO   OFF)
 SET (FLAGS_LTO  "")
@@ -534,9 +537,6 @@ MACRO (SUBST_SAC2CRC_FILE f var)
     FILE (READ "${PROJECT_BINARY_DIR}/${f}" ${var})
 ENDMACRO ()
 
-# FIXME(artem) Where the `.revision.txt' file is coming from?
-FILE (READ "${PROJECT_SOURCE_DIR}/.revision.txt" SAC2C_VERSION_N)
-STRING (STRIP "${SAC2C_VERSION_N}" SAC2C_VERSION)
 SET (RTPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/rt")
 SET (MODPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/modlibs")
 SET (INCPATH_CONF "${CMAKE_INSTALL_PREFIX}/include/sac2c/${SAC2C_VERSION}")
