@@ -72,10 +72,4 @@ ADD_CUSTOM_COMMAND (
 )
 ADD_CUSTOM_TARGET (sacprelude ALL DEPENDS ${PRELUDE_OUT})
 
-ADD_CUSTOM_COMMAND (
-    OUTPUT "${PROJECT_SOURCE_DIR}/.revision.txt"
-    COMMAND "${PROJECT_SOURCE_DIR}/setup/config/git-version-gen" "setup/config/tarball-version"
-    COMMENT "Updating sac2c revision number"
-)
-
 ADD_CUSTOM_TARGET (sac2crc ALL DEPENDS "${PROJECT_SOURCE_DIR}/setup/sac2crc")
