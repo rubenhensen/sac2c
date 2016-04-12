@@ -324,22 +324,25 @@ GET_USERNAME (USER_NAME)
 
 # Get an md5 hash of the `ast.xml'.
 EXECUTE_PROCESS (
-    COMMAND 
-        ${XSLT_EXEC} 
+    COMMAND
+        ${XSLT_EXEC}
         "${PROJECT_SOURCE_DIR}/src/libsac2c/xml/ast2fingerprint.xsl"
         "${PROJECT_SOURCE_DIR}/src/libsac2c/xml/ast.xml"
     OUTPUT_FILE "${CMAKE_BINARY_DIR}/__ast-xml-fingerprint")
-FILE (MD5 "${CMAKE_BINARY_DIR}/__ast-xml-fingerprint" NEW_AST_MD5) 
+FILE (MD5 "${CMAKE_BINARY_DIR}/__ast-xml-fingerprint" NEW_AST_MD5)
 # Create a configure dependency that will trigger cmake reconfiguration
 # every time when ast.xml is touched.
-# XXX This might be too heavy-weight, as we might not need to rebuild 
-# everything, but I am not sure how to figure out which targets exactly 
+# XXX This might be too heavy-weight, as we might not need to rebuild
+# everything, but I am not sure how to figure out which targets exactly
 # to rebuild.
 CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/src/libsac2c/xml/ast.xml
                 ${PROJECT_BINARY_DIR}/src/libsac2c/xml/ast.xml)
 
 
 SET (CC  ${CMAKE_C_COMPILER})
+# FIXME(artem) A better way to get preprocessor command is by replacing
+#              <...> strings int he CMAKE_C_CREATE_PREPROCESSED_SOURCE
+#              variable.
 SET (CPP_CMD "${CMAKE_C_COMPILER} -E ")
 
 SET (OPT_O0      "")
