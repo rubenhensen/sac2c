@@ -1,12 +1,10 @@
 #ifndef __SACDIRS_H__
 #define __SACDIRS_H__
 
-// FIXME Update those to the proper locations
-
-#define SAC2CRC_CONF "$(SAC2CRC_CONF)"
-#define SAC2CRC_BUILD_CONF "$(SAC2CRC_BUILD_CONF)"
-#define DLL_DIR "$(DLL_DIR)"
-#define DLL_BUILD_DIR "$(DLL_BUILD_DIR)"
-#define SAC2C_VERSION "$(SAC2C_VERSION)"
+#define SAC2CRC_CONF "${SAC2CRC_CONF}"
+#define SAC2CRC_BUILD_CONF "${SAC2CRC_BUILD_CONF}"
+#define DLL_DIR "${DLL_DIR}"
+#define DLL_BUILD_DIR "${DLL_BUILD_DIR}"
+#define SAC2C_VERSION "${SAC2C_VERSION}"
 
 #endif // __SACDIRS_H__

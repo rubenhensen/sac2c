@@ -64,10 +64,17 @@ SET (PRELUDE_OUT   "lib${SAC_PRELUDE_NAME}Tree.so"
 SET (PRELUDE_IN
      "${PROJECT_SOURCE_DIR}/src/lib${SAC_PRELUDE_NAME}/${SAC_PRELUDE_NAME}.sac")
 
+
+
+# Directories to be included via -Xc and -Xtc so that sac2c could find
+# sac.h and similar headers.
+SET (SAC2C_EXTRA_INC "-I${PROJECT_SOURCE_DIR}/include -I${PROJECT_BINARY_DIR}/include")
 ADD_CUSTOM_COMMAND (
-  # WORKING_DIRECTORY   "${PROJECT_SOURCE_DIR}/lib"
   OUTPUT    ${PRELUDE_OUT}
-  COMMAND   "sac2c" -v0 -linksetsize 0 -noprelude ${PRELUDE_IN}
+  COMMAND   "sac2c" -v0 -linksetsize 0 -noprelude 
+            -Xc "${SAC2C_EXTRA_INC}"
+            -Xtc "${SAC2C_EXTRA_INC}"
+            ${PRELUDE_IN}
   DEPENDS   sac2c sac2cShared sac2crc ${PRELUDE_IN}
 )
 ADD_CUSTOM_TARGET (sacprelude ALL DEPENDS ${PRELUDE_OUT})

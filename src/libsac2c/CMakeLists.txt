@@ -570,22 +570,19 @@ ${PROJECT_BINARY_DIR}/src/build.c
 
 ADD_LIBRARY (sac2cShared SHARED ${SAC2C_SRC})
 SET_TARGET_PROPERTIES (sac2cShared
-  PROPERTIES
+  PROPERTIES 
     OUTPUT_NAME sac2c
-    LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib"
-    # FIXME this should come from the config variabl
-    LINK_FLAGS "-Wl,-allow-shlib-undefined"
 )
 
 IF (ENABLE_RTSPEC)
-    TARGET_LINK_LIBRARIES (sac2cShared 
+    TARGET_LINK_LIBRARIES (sac2cShared
         ${M_LIB}
         ${DL_LIB}
         ${UUID_LIB}
         ${CRYPT_LIB}
     )
 ELSE ()
-    TARGET_LINK_LIBRARIES (sac2cShared 
+    TARGET_LINK_LIBRARIES (sac2cShared
         ${M_LIB}
         ${DL_LIB}
     )

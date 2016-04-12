@@ -530,29 +530,6 @@ ADD_DEFINITIONS (
 #              the systems.
 SET (CMAKE_SHARED_LINKER_FLAGS ${LD_DYNAMIC})
 
-
-# Create files depending on the options.
-CONFIGURE_FILE (
-  "${PROJECT_SOURCE_DIR}/src/include/xconfig.h.in"
-  "${PROJECT_BINARY_DIR}/include/config.h"
-)
-
-# Create files depending on the options.
-CONFIGURE_FILE (
-  "${PROJECT_SOURCE_DIR}/src/include/xsacdirs.h.in"
-  "${PROJECT_BINARY_DIR}/include/sacdirs.h"
-)
-
-CONFIGURE_FILE (
-  "${PROJECT_SOURCE_DIR}/src/libsac2c/global/build.c.in"
-  "${PROJECT_BINARY_DIR}/src/build.c"
-)
-
-CONFIGURE_FILE (
-  "${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf.in"
-  "${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf"
-)
-
 # sac2crc and makefile-related variables
 MACRO (SUBST_SAC2CRC_FILE f var)
     CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/setup/${f}.in" "${PROJECT_BINARY_DIR}/${f}")
@@ -563,6 +540,17 @@ SET (RTPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/rt")
 SET (MODPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/modlibs")
 SET (INCPATH_CONF "${CMAKE_INSTALL_PREFIX}/include/sac2c/${SAC2C_VERSION}")
 SET (TREEPATH_CONF "${CMAKE_INSTALL_PREFIX}/libexec/sac2c/${SAC2C_VERSION}")
+SET (DLL_DIR "${TREEPATH_CONF}")
+SET (DLL_BUILD_DIR "${PROJECT_BINARY_DIR}/lib")
+SET (SAC2CRC_DIR  "${CMAKE_INSTALL_PREFIX}/share/sac2c/${SAC2C_VERSION}")
+SET (SAC2CRC_CONF  "${CMAKE_INSTALL_PREFIX}/share/sac2c/${SAC2C_VERSION}/sac2crc")
+SET (SAC2CRC_BUILD_CONF "${PROJECT_BINARY_DIR}/sac2crc")
+
+# Make sure that all the libraries are found here.
+SET (LIBRARY_OUTPUT_PATH "${DLL_BUILD_DIR}")
+# Make sure that this directory exists.
+FILE (MAKE_DIRECTORY "${DLL_BUILD_DIR}")
+
 
 SUBST_SAC2CRC_FILE ("sac2crc.backend.mutc" RCMUTC)
 SUBST_SAC2CRC_FILE ("sac2crc.backend.cuda" RCCUDA)
@@ -574,6 +562,13 @@ SUBST_SAC2CRC_FILE ("sac2crc.X86" RCX86)
 SUBST_SAC2CRC_FILE ("sac2crc.ALPHA" RCALPHA)
 SUBST_SAC2CRC_FILE ("sac2crc.MAC" RCMAC)
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/setup/sac2crc.pre.in" "${PROJECT_BINARY_DIR}/sac2crc.pre" @ONLY)
-CONFIGURE_FILE ("${PROJECT_BINARY_DIR}/sac2crc.pre" "${PROJECT_SOURCE_DIR}/setup/sac2crc")
+CONFIGURE_FILE ("${PROJECT_BINARY_DIR}/sac2crc.pre" "${SAC2CRC_BUILD_CONF}")
 
+# Create files depending on the options.
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xconfig.h.in" "${PROJECT_BINARY_DIR}/include/config.h")
+# Create files depending on the options.
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xsacdirs.h.in" "${PROJECT_BINARY_DIR}/include/sacdirs.h")
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/libsac2c/global/build.c.in" "${PROJECT_BINARY_DIR}/src/build.c")
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf.in"
+                "${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf")
 
