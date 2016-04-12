@@ -15,7 +15,7 @@ MACRO (CHECK_COMPILER DEF FLAG)
   #else
     int main ()
       {
-	return 0;
+        return 0;
       }
   #endif"
   ${FLAG}
@@ -212,9 +212,9 @@ CHECK_COMPILER (__APPLE__  MACC)
 # Check tools which required for compilation.
 # Find xslt processor.
 FIND_PROGRAM (XSLT_EXEC
-  NAME	  xsltproc
+  NAME    xsltproc
   HINTS   ENV PATH
-  DOC	  "Chek for xslt processor")
+  DOC     "Chek for xslt processor")
 IF (NOT XSLT_EXEC)
   MESSAGE (FATAL_ERROR "Cannot find a suitable xslt processor")
 ENDIF ()
@@ -223,7 +223,7 @@ ENDIF ()
 FIND_PROGRAM (M4_EXEC
   NAME    m4 gm4
   HINTS   ENV PATH
-  DOC	  "Chek for m4 processor")
+  DOC     "Check for m4 processor")
 IF (NOT M4_EXEC)
   MESSAGE (FATAL_ERROR "Cannot find a suitable m4 processor")
 ENDIF ()
@@ -232,14 +232,14 @@ ENDIF ()
 FIND_PROGRAM (MUTC_EXEC
   NAME    slc
   HINTS   ENV PATH
-  DOC	  "Chek for Mutc slc.")
+  DOC     "Check for Mutc slc.")
 
 # Check for the dot program in case we are compiling with dot support.
 IF (DOT)
     FIND_PROGRAM (DOT_CMD
         NAME    dot
         HINTS   ENV PATH
-        DOC	"Dot graph visualizer")
+        DOC     "Dot graph visualizer")
     # FIXME the name DOT_FLAG is moronic.
     SET (DOT_FLAG   ON)
 ELSE ()
@@ -259,9 +259,9 @@ ENDIF ()
 # Indenting the code
 SET (CB "${PROJECT_BINARY_DIR}/cb")
 FIND_PROGRAM (INDENT_EXEC
-  NAME	  indent  gindent
-  HINTS	  ENV PATH
-  DOC	  "Indent the C code")
+  NAME        indent  gindent
+  HINTS       ENV PATH
+  DOC         "Indent the C code")
 IF (INDENT_EXEC)
   EXECUTE_PROCESS (COMMAND ${INDENT_EXEC} --version OUTPUT_VARIABLE indent_v)
   IF (${indent_v} MATCHES "GNU indent")
@@ -285,12 +285,12 @@ SET (DOT    "${DOT_FLAG}")
 # Get GIT version.
 FIND_PACKAGE (Git)
 IF (NOT GIT_FOUND)
-    MESSAGE (FATAL_ERROR "Could not find GIT on the system!") 
+    MESSAGE (FATAL_ERROR "Could not find GIT on the system!")
 ENDIF ()
 
 # Misc variables
 # FIXME  Try to get the file-path lengths from the correct include-files.
-SET (MAX_PATH_LEN	10000)   # This is bullshit by the way, limits.h have PATH_MAX
+SET (MAX_PATH_LEN       10000)   # This is bullshit by the way, limits.h have PATH_MAX
 SET (MAX_FILE_NAME      256)
 SET (PF_MAXFUN          100)
 SET (PF_MAXFUNAP        100)
@@ -317,58 +317,34 @@ EXECUTE_PROCESS (
   OUTPUT_VARIABLE AST_MD5
 )
 
-
-
-# sac2crc and makefile-related variables
-MACRO (SUBST_SAC2CRC_FILE f var)
-    CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/setup/${f}.in" "${PROJECT_BINARY_DIR}/${f}")
-    FILE (READ "${PROJECT_BINARY_DIR}/${f}" ${var})
-ENDMACRO ()
-
-# FIXME(artem) Where the `.revision.txt' file is coming from?
-FILE (READ "${PROJECT_SOURCE_DIR}/.revision.txt" SAC2C_VERSION_N)
-STRING (STRIP "${SAC2C_VERSION_N}" SAC2C_VERSION)
-SET (RTPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/rt")
-SET (MODPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/modlibs")
-SET (INCPATH_CONF "${CMAKE_INSTALL_PREFIX}/include/sac2c/${SAC2C_VERSION}")
-SET (TREEPATH_CONF "${CMAKE_INSTALL_PREFIX}/libexec/sac2c/${SAC2C_VERSION}")
-
-SUBST_SAC2CRC_FILE ("sac2crc.backend.mutc" RCMUTC)
-SUBST_SAC2CRC_FILE ("sac2crc.backend.cuda" RCCUDA)
-SUBST_SAC2CRC_FILE ("sac2crc.modifiers.cc" RCCC)
-SUBST_SAC2CRC_FILE ("sac2crc.modifiers.malloc" RCMALLOC)
-SUBST_SAC2CRC_FILE ("sac2crc.modifiers.rcm" RCRCM)
-SUBST_SAC2CRC_FILE ("sac2crc.SUN" RCSUN)
-SUBST_SAC2CRC_FILE ("sac2crc.X86" RCX86)
-SUBST_SAC2CRC_FILE ("sac2crc.ALPHA" RCALPHA)
-SUBST_SAC2CRC_FILE ("sac2crc.MAC" RCMAC)
-CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/setup/sac2crc.pre.in" "${PROJECT_BINARY_DIR}/sac2crc.pre" @ONLY)
-CONFIGURE_FILE ("${PROJECT_BINARY_DIR}/sac2crc.pre" "${PROJECT_SOURCE_DIR}/setup/sac2crc")
-
 SET (CC  ${CMAKE_C_COMPILER})
+SET (CPP_CMD "${CMAKE_C_COMPILER} -E ")
 
-SET (OPT_O0)
-SET (OPT_O1)
-SET (OPT_O2)
-SET (OPT_O3)
-SET (OPT_g)
-SET (RCLDFLAGS)
-SET (RCCCFLAGS)
-SET (MKCCFLAGS)
-SET (PDCCFLAGS)
-SET (GENPIC)
-SET (DEPSFLAG)
-SET (CPPFILE)
-SET (CCMTLINK)
-SET (CCDLLINK)
-SET (GCC_FLAGS "")
+SET (OPT_O0      "")
+SET (OPT_O1      "")
+SET (OPT_O2      "")
+SET (OPT_O3      "")
+SET (OPT_g       "")
+SET (RCCCFLAGS   "")
+SET (MKCCFLAGS   "")
+SET (PDCCFLAGS   "")
+SET (GENPIC      "")
+SET (DEPSFLAG    "-M")
+SET (CPPFILE     "${CPP_CMD} -C")
+SET (CPP         "${CPP_CMD} -P")
+# FIXME(artem) These are named differently now in the configure.ac
+SET (CCMTLINK    "")
+SET (CCDLLINK    "")
+
 IF (CMAKE_COMPILER_IS_GNUCC AND NOT MACC)
+  SET (GCC_FLAGS   "")
   CHECK_GCC_FLAG ("-Wall" GCC_FLAGS)
   CHECK_GCC_FLAG ("-Wextra" GCC_FLAGS)
   CHECK_GCC_FLAG ("-Wstrict-prototypes" GCC_FLAGS)
   CHECK_GCC_FLAG ("-Wno-unused-parameter" GCC_FLAGS)
   CHECK_GCC_FLAG ("-march=native" GCC_FLAGS)
   CHECK_GCC_FLAG ("-mtune=native" GCC_FLAGS)
+  # FIXME(artem) Can we get these flags from the Pthread checking macro?
   EXECUTE_PROCESS (
     COMMAND ${CC} -pthread
     ERROR_VARIABLE GCC_ERR
@@ -382,17 +358,17 @@ IF (CMAKE_COMPILER_IS_GNUCC AND NOT MACC)
   SET (OPT_O2       "-O2")
   SET (OPT_O3       "-O3")
   SET (OPT_g        "-g")
-  SET (RCLDFLAGS    "")
   SET (RCCCFLAGS    "${GCC_FLAGS} -std=gnu99 -pedantic -Wno-unused -fno-builtin")
   SET (MKCCFLAGS    "${GCC_FLAGS} -std=gnu99 -pedantic -g ${FLAGS_LTO}")
   SET (PDCCFLAGS    "${GCC_FLAGS} -std=gnu99 -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
-  SET (GENPIC	    "-fPIC -DPIC")
+  SET (GENPIC       "-fPIC -DPIC")
   SET (DEPSFLAG     "-M")
-  SET (CPPFILE	    "gcc -E -C -x c")
+  SET (CPPFILE      "${CPP_CMD} -C -x c")
+  SET (CPP          "${CPP_CMD} -P -x c")
   SET (CCMTLINK     "${GCC_PTHREADS}")
   SET (CCDLLINK     "-ldl")
 ELSEIF (SUNC)
-  SET (OPT_O0	      "")
+  SET (OPT_O0        "")
   SET (OPT_O1        "-xO2")
   SET (OPT_O2        "-xO4")
   SET (OPT_O3        "-xO5")
@@ -403,7 +379,8 @@ ELSEIF (SUNC)
   SET (PDCCFLAGS     "-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4 -xc99=all -KPIC")
   SET (GENPIC        "-KPIC")
   SET (DEPSFLAG      "-xM")
-  SET (CPPFILE       "cpp -E -C -x c")
+  SET (CPPFILE       "${CPP_CMD} -C -x c")
+  SET (CPP           "${CPP_CMD} -P -x c")
   SET (CCMTLINK      "-lpthread")
   SET (CCDLLINK      "-ldl")
 ELSEIF (DECC)
@@ -418,7 +395,8 @@ ELSEIF (DECC)
   SET (PDCCFLAGS     "-g3")
   SET (GENPIC        "")
   SET (DEPSFLAG      "-M")
-  SET (CPPFILE       "cc -E -C -x c")
+  SET (CPPFILE       "${CPP_CMD} -C -x c")
+  SET (CPP           "${CPP_CMD} -P -x c")
   SET (CCMTLINK      "-pthread")
   SET (CCDLLINK      "-ldl")
 ELSEIF (MACC)
@@ -433,11 +411,11 @@ ELSEIF (MACC)
   SET (PDCCFLAGS     "-std=c99")
   SET (GENPIC        "")
   SET (DEPSFLAG      "-M")
-  SET (CPPFILE       "gcc -E -C -x c")
+  SET (CPPFILE       "${CPP_CMD} -C -x c")
+  SET (CPP           "${CPP_CMD} -P -x c")
   SET (CCMTLINK      "")
   SET (CCDLLINK      "-ldl")
 ENDIF ()
-
 
 
 # Operating system dependent flags
@@ -482,7 +460,7 @@ ENDIF ()
 
 
 # Prpeare C flags for the debug version of the compiler
-SET (CMAKE_C_FLAGS_DEBUG 
+SET (CMAKE_C_FLAGS_DEBUG
   ${CMAKE_C_FLAGS_DEBUG}
   -DSANITYCHECKS
   -DWLAA_DEACTIVATED
@@ -492,11 +470,11 @@ SET (CMAKE_C_FLAGS_DEBUG
   -DCHECK_NODE_ACCESS
   -DINLINE_MACRO_CHECKS
   ${MKCCFLAGS}
-  
+
 )
 
 # Prepare C flags for the product version of the compiler
-SET (CMAKE_C_FLAGS_RELEASE 
+SET (CMAKE_C_FLAGS_RELEASE
   ${CMAKE_C_FLAGS_RELEASE}
   -DDBUG_OFF
   -DPRODUCTION
@@ -549,3 +527,31 @@ CONFIGURE_FILE (
   "${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf.in"
   "${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf"
 )
+
+# sac2crc and makefile-related variables
+MACRO (SUBST_SAC2CRC_FILE f var)
+    CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/setup/${f}.in" "${PROJECT_BINARY_DIR}/${f}")
+    FILE (READ "${PROJECT_BINARY_DIR}/${f}" ${var})
+ENDMACRO ()
+
+# FIXME(artem) Where the `.revision.txt' file is coming from?
+FILE (READ "${PROJECT_SOURCE_DIR}/.revision.txt" SAC2C_VERSION_N)
+STRING (STRIP "${SAC2C_VERSION_N}" SAC2C_VERSION)
+SET (RTPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/rt")
+SET (MODPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/modlibs")
+SET (INCPATH_CONF "${CMAKE_INSTALL_PREFIX}/include/sac2c/${SAC2C_VERSION}")
+SET (TREEPATH_CONF "${CMAKE_INSTALL_PREFIX}/libexec/sac2c/${SAC2C_VERSION}")
+
+SUBST_SAC2CRC_FILE ("sac2crc.backend.mutc" RCMUTC)
+SUBST_SAC2CRC_FILE ("sac2crc.backend.cuda" RCCUDA)
+SUBST_SAC2CRC_FILE ("sac2crc.modifiers.cc" RCCC)
+SUBST_SAC2CRC_FILE ("sac2crc.modifiers.malloc" RCMALLOC)
+SUBST_SAC2CRC_FILE ("sac2crc.modifiers.rcm" RCRCM)
+SUBST_SAC2CRC_FILE ("sac2crc.SUN" RCSUN)
+SUBST_SAC2CRC_FILE ("sac2crc.X86" RCX86)
+SUBST_SAC2CRC_FILE ("sac2crc.ALPHA" RCALPHA)
+SUBST_SAC2CRC_FILE ("sac2crc.MAC" RCMAC)
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/setup/sac2crc.pre.in" "${PROJECT_BINARY_DIR}/sac2crc.pre" @ONLY)
+CONFIGURE_FILE ("${PROJECT_BINARY_DIR}/sac2crc.pre" "${PROJECT_SOURCE_DIR}/setup/sac2crc")
+
+
