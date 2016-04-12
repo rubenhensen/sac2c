@@ -38,8 +38,13 @@ ENDMACRO ()
 # System-dependent variables.
 SET (OS       "${CMAKE_SYSTEM}")
 SET (ARCH     "${CMAKE_SYSTEM_PROCESSOR}")
+
 # FIXME(artem) use CYGWIN value directly. [after the move to cmake]
 SET (IS_CYGWIN  ${CYGWIN})
+
+# These will be substituted in the sac2crc file.
+SET (SHARED_LIB_EXT "${CMAKE_SHARED_LIBRARY_SUFFIX}")
+SET (EXEEXT "${CMAKE_EXECUTABLE_SUFFIX}")
 
 # Get sac2c version
 GET_VERSION (SAC2C_VERSION)
@@ -516,10 +521,12 @@ IF (NOT CMAKE_BUILD_TYPE)
     )
 ENDIF ()
 
+
+
 # These CC flags are always present
 ADD_DEFINITIONS (
     ${OSFLAGS}
-    -DSHARED_LIB_EXT="${CMAKE_SHARED_LIBRARY_SUFFIX}"
+    -DSHARED_LIB_EXT="${SHARED_LIB_EXT}"
     -D_POSIX_C_SOURCE=200809L
 )
 
