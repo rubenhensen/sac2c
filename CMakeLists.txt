@@ -38,10 +38,10 @@ BUILD_TOOL (csd)
 BUILD_TOOL (cse)
 BUILD_TOOL (echo)
 BUILD_TOOL (icmt)
-ADD_EXECUTABLE(md5
-  src/maketools/md5calc/md5.c
-  src/maketools/md5calc/md5calc.c
-)
+##ADD_EXECUTABLE(md5
+##  src/maketools/md5calc/md5.c
+##  src/maketools/md5calc/md5calc.c
+##)
 BUILD_TOOL (hzip)
 
 INCLUDE_DIRECTORIES (

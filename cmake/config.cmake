@@ -38,7 +38,7 @@ ENDMACRO ()
 # System-dependent variables.
 SET (OS       "${CMAKE_SYSTEM}")
 SET (ARCH     "${CMAKE_SYSTEM_PROCESSOR}")
-# FIXME use CYGWIN value directly
+# FIXME(artem) use CYGWIN value directly. [after the move to cmake]
 SET (IS_CYGWIN  ${CYGWIN})
 
 # Get sac2c version
@@ -310,15 +310,34 @@ SITE_NAME (HOST_NAME)
 # FIXME why the hell this is useful?
 GET_USERNAME (USER_NAME)
 
+# XXX(artem) This is an old way of generating MD5.  Several lines down we
+#            Introduced the CMake-based MD5 sum generation, with an extra
+#            dependency on the ast.xml.  This allows us to get rid of local
+#            MD5 dependency.
+## SET (MD5CALC)
+## EXECUTE_PROCESS (
+##   COMMAND   ${XSLT_EXEC}  "${XMLDIR}/ast2fingerprint.xsl" "${XMLDIR}/ast.xml"
+##   COMMAND   "${PROJECT_BINARY_DIR}/md5"
+##   OUTPUT_VARIABLE AST_MD5
+## )
+
+
 # Get an md5 hash of the `ast.xml'.
-SET (XMLDIR  "${PROJECT_SOURCE_DIR}/src/libsac2c/xml")
-# FIXME This can be acheived by the internal cmake md5 mechanisms.
-SET (MD5CALC)
 EXECUTE_PROCESS (
-  COMMAND   ${XSLT_EXEC}  "${XMLDIR}/ast2fingerprint.xsl" "${XMLDIR}/ast.xml"
-  COMMAND   "${PROJECT_BINARY_DIR}/md5"
-  OUTPUT_VARIABLE AST_MD5
-)
+    COMMAND 
+        ${XSLT_EXEC} 
+        "${PROJECT_SOURCE_DIR}/src/libsac2c/xml/ast2fingerprint.xsl"
+        "${PROJECT_SOURCE_DIR}/src/libsac2c/xml/ast.xml"
+    OUTPUT_FILE "${CMAKE_BINARY_DIR}/__ast-xml-fingerprint")
+FILE (MD5 "${CMAKE_BINARY_DIR}/__ast-xml-fingerprint" NEW_AST_MD5) 
+# Create a configure dependency that will trigger cmake reconfiguration
+# every time when ast.xml is touched.
+# XXX This might be too heavy-weight, as we might not need to rebuild 
+# everything, but I am not sure how to figure out which targets exactly 
+# to rebuild.
+CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/src/libsac2c/xml/ast.xml
+                ${PROJECT_BINARY_DIR}/src/libsac2c/xml/ast.xml)
+
 
 SET (CC  ${CMAKE_C_COMPILER})
 SET (CPP_CMD "${CMAKE_C_COMPILER} -E ")
