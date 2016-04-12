@@ -25,9 +25,11 @@ ENDMACRO ()
 
 
 # Enables FLAG in case the COND is enabled.
-MACRO (ENABLE_IF  COND  FLAG)
+MACRO (ENABLE_VAR_IF  FLAG)
   SET (${FLAG} OFF)
-  IF (${COND})
+  # Here we use a trick that makes it possible to pass
+  # a condition to the macro via last arguments.
+  IF (${ARGN})
     SET (${FLAG} ON)
   ENDIF ()
 ENDMACRO ()
@@ -69,7 +71,6 @@ CHECK_C_SOURCE_COMPILES ("
 
 
 # Check headers.
-CHECK_INCLUDE_FILES (dlfcn.h HAVE_DLFCN_H)
 CHECK_INCLUDE_FILES (inttypes.h HAVE_INTTYPES_H)
 CHECK_INCLUDE_FILES (malloc.h HAVE_MALLOC_H)
 CHECK_INCLUDE_FILES (memory.h HAVE_MEMORY_H)
@@ -88,9 +89,23 @@ CHECK_FUNCTION_EXISTS (mkdtemp HAVE_MKDTEMP)
 
 
 # Check functions in libs
-ASSERT_LIB (M    "m"     "sqrt")
-ASSERT_LIB (DL   "dl"    "dlopen")
-ASSERT_LIB (UUID "uuid"  "uuid_generate")
+ASSERT_LIB (M     "m"     "sqrt")
+
+ASSERT_LIB (DL    "dl"    "dlopen")
+CHECK_INCLUDE_FILES ("dlfcn.h" HAVE_DLFCN_H)
+ENABLE_VAR_IF (ENABLE_DL  HAVE_DLFCN_H AND DL_LIB)
+
+
+ASSERT_LIB (UUID  "uuid"  "uuid_generate")
+CHECK_INCLUDE_FILES ("uuid/uuid.h"  HAVE_UUID_H)
+ENABLE_VAR_IF (ENABLE_UUID  HAVE_UUID_H AND UUID_LIB)
+
+FIND_LIBRARY (CRYPT_LIB   "crypt")
+CHECK_INCLUDE_FILES ("crypt.h" HAVE_CRYPT_H)
+ENABLE_VAR_IF (ENABLE_CRYPT  HAVE_CRYPT_H AND CRYPT_LIB)
+# This is needed for the config.h file
+# FIXME(artem) we can use the ENABLE_CRYPT directly
+SET (ENABLE_HASH  ${ENABLE_CRYPT})
 
 SET (LPEL_PATH)
 IF (LPEL)
@@ -108,10 +123,6 @@ IF (LPEL)
     ENDIF ()
 ENDIF ()
 
-
-
-# Options which depend on availability of header-files and functions
-ENABLE_IF (HAVE_DLFCN_H ENABLE_DL)
 
 # If Option MT is set
 IF (MT)
@@ -139,9 +150,8 @@ IF (OMP)
 ENDIF ()
 
 
-# FIXME This should be check for MT and UUID.
 SET (ENABLE_RTSPEC OFF)
-IF (ENABLE_DL AND ENABLE_MT)
+IF (ENABLE_DL AND ENABLE_MT AND ENABLE_UUID AND ENABLE_CRYPT)
   SET (ENABLE_RTSPEC ON)
 ENDIF ()
 

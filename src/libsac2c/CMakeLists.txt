@@ -576,4 +576,17 @@ SET_TARGET_PROPERTIES (sac2cShared
     LINK_FLAGS "-Wl,-allow-shlib-undefined"
 
 )
-TARGET_LINK_LIBRARIES (sac2cShared ${M_LIB} ${DL_LIB} ${UUID_LIB} "-lcrypt")
+
+IF (ENABLE_RTSPEC)
+    TARGET_LINK_LIBRARIES (sac2cShared 
+        ${M_LIB}
+        ${DL_LIB}
+        ${UUID_LIB}
+        ${CRYPT_LIB}
+    )
+ELSE ()
+    TARGET_LINK_LIBRARIES (sac2cShared 
+        ${M_LIB}
+        ${DL_LIB}
+    )
+ENDIF ()

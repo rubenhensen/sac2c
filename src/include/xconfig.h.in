@@ -37,7 +37,9 @@
 #cmakedefine01 ENABLE_MUTC
 #cmakedefine01 ENABLE_OMP
 #cmakedefine01 ENABLE_PHM
+#cmakedefine01 ENABLE_HASH
 #cmakedefine01 ENABLE_RTSPEC
+#cmakedefine01 ENABLE_UUID
 #cmakedefine01 HAVE_GCC_SIMD_OPERATIONS
 #cmakedefine01 HAVE_GETTIME
 #cmakedefine01 HAVE_MALLOC_H
