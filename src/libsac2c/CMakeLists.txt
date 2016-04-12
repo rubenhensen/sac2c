@@ -587,3 +587,4 @@ ELSE ()
         ${DL_LIB}
     )
 ENDIF ()
+INSTALL (TARGETS sac2cShared LIBRARY DESTINATION "${DLL_DIR}")

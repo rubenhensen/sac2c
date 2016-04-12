@@ -78,5 +78,20 @@ ADD_CUSTOM_COMMAND (
   DEPENDS   sac2c sac2cShared sac2crc ${PRELUDE_IN}
 )
 ADD_CUSTOM_TARGET (sacprelude ALL DEPENDS ${PRELUDE_OUT})
-
 ADD_CUSTOM_TARGET (sac2crc ALL DEPENDS "${PROJECT_SOURCE_DIR}/setup/sac2crc")
+
+
+# Installing the sac2c project files.
+INSTALL (TARGETS sac2c RUNTIME DESTINATION "${DLL_DIR}")
+IF (CMAKE_HOST_UNIX)
+    INSTALL (CODE "
+                EXECUTE_PROCESS (COMMAND ln -sf sac2c \"${DLL_DIR}/sac2c\"
+                WORKING_DIRECTORY \"${CMAKE_INSTALL_PREFIX}/bin\")
+             ")
+ELSE ()
+    INSTALL (TARGETS sac2c RUNTIME DESTINATION bin)
+ENDIF ()
+# FIXME(artem) Can we do better than just copying files?
+#              We have the target sacprelude...
+INSTALL (FILES "${PRELUDE_OUT}" LIBRARY DESTINATION "${DLL_DIR}")
+INSTALL (FILES "${SAC2CRC_BUILD_CONF}" RESOURCE DESTINATION "${SAC2CRC_DIR}")
