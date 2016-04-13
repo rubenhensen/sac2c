@@ -593,7 +593,11 @@ SUBST_SAC2CRC_FILE ("sac2crc.SUN" RCSUN)
 SUBST_SAC2CRC_FILE ("sac2crc.X86" RCX86)
 SUBST_SAC2CRC_FILE ("sac2crc.ALPHA" RCALPHA)
 SUBST_SAC2CRC_FILE ("sac2crc.MAC" RCMAC)
+
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/setup/sac2crc.pre.in" "${PROJECT_BINARY_DIR}/sac2crc.pre" @ONLY)
+
+SET (abs_top_srcdir "${PROJECT_BINARY_DIR}")
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/setup/sac2crc.local.in" "${SAC2CRC_BUILD_CONF}.local")
 CONFIGURE_FILE ("${PROJECT_BINARY_DIR}/sac2crc.pre" "${SAC2CRC_BUILD_CONF}")
 
 # Create files depending on the options.

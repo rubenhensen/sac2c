@@ -445,25 +445,21 @@ ParseResourceFiles (void)
         if (!FMGRcheckExistFile (SAC2CRC_CONF)) {
 
             CTIwarn ("sac2crc not found; neither via SAC2CRC nor in '%s';\n"
-                     "attempting use of local build '%s' now and "
-                     "including '%s.local'.\n"
+                     "attempting to load local sac2crc files: '%s' and "
+                     "'%s.local'.\n"
                      "Running 'make install' would avoid this warning.",
                      SAC2CRC_CONF, SAC2CRC_BUILD_CONF, SAC2CRC_BUILD_CONF);
-            if (FMGRcheckExistFile (SAC2CRC_BUILD_CONF)) {
-                ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF);
-                if (!ok) {
-                    CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF);
-                }
-            } else if (FMGRcheckExistFile (SAC2CRC_BUILD_CONF ".local")) {
-                ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF ".local");
-                if (!ok) {
-                    CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF ".local");
-                }
-            } else {
-                CTIabort ("Neither of '%s' or '%s' exists on the system.",
-                          SAC2CRC_BUILD_CONF, SAC2CRC_BUILD_CONF ".local");
+            /* We have to load the original sac2crc with all the targets.  */
+            ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF);
+            if (!ok) {
+                CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF);
             }
-
+            /* And the sac2crc.local where pathes to libs and includes
+               are specified relatively to the build directory.  */
+            ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF ".local");
+            if (!ok) {
+                CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF ".local");
+            }
         } else {
             ok = RSCparseResourceFile (SAC2CRC_CONF);
             if (!ok) {
