@@ -52,8 +52,10 @@ TARGET_LINK_LIBRARIES (sac2c ${DL_LIB})
 ADD_DEPENDENCIES (sac2c sac_h)
 
 # Installing the sac2c project files.
+# XXX(artem) in case we are doing packaging, symbolic links should be
+#            avoided.
 INSTALL (TARGETS sac2c RUNTIME DESTINATION "${DLL_DIR}")
-IF (CMAKE_HOST_UNIX)
+IF (CMAKE_HOST_UNIX AND SYMLINKS)
     INSTALL (CODE "
         FILE (MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
         EXECUTE_PROCESS (
@@ -65,3 +67,28 @@ ELSE ()
 ENDIF ()
 
 INSTALL (FILES "${SAC2CRC_BUILD_CONF}" DESTINATION "${SAC2CRC_DIR}")
+
+# Cpack information
+# INCLUDE(InstallRequiredSystemLibraries)
+
+SET (CPACK_GENERATOR "DEB")
+
+# XXX(artem) This allows one to use absolute pathes during installation,
+#            but it doesn't seem to work on windows and friends.
+SET (CPACK_SET_DESTDIR ON)
+
+# FIXME(artem) Get this from the ${SAC2C_VERSION} variable
+SET (CPACK_PACKAGE_VERSION_MAJOR 1)
+SET (CPACK_PACKAGE_VERSION_MINOR 2)
+SET (CPACK_PACKAGE_VERSION_PATCH 0)
+
+# SET (CPACK_PACKAGE_DESCRIPTION_FILE ...)
+SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY
+     "The sac2c compiler for a data-parallel array-based functional language sac")
+# FIXME(artem) We need to decide on where do we put the stuff on the target system...)
+#SET (CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+SET (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
+
+SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Jack the Ripper")
+
+INCLUDE(CPack)
