@@ -71,16 +71,19 @@ INSTALL (FILES "${SAC2CRC_BUILD_CONF}" DESTINATION "${SAC2CRC_DIR}")
 # Cpack information
 # INCLUDE(InstallRequiredSystemLibraries)
 
+# By setting this on we can see where installation targets are specified via
+# absolute pathes.  For portability pruroses this should be avoided.
+# SET (CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION ON)
+
 SET (CPACK_GENERATOR "DEB")
 
 # XXX(artem) This allows one to use absolute pathes during installation,
 #            but it doesn't seem to work on windows and friends.
 SET (CPACK_SET_DESTDIR ON)
 
-# FIXME(artem) Get this from the ${SAC2C_VERSION} variable
-SET (CPACK_PACKAGE_VERSION_MAJOR 1)
-SET (CPACK_PACKAGE_VERSION_MINOR 2)
-SET (CPACK_PACKAGE_VERSION_PATCH 0)
+SET (CPACK_PACKAGE_VERSION_MAJOR "${SAC2C_VERSION_MAJOR}")
+SET (CPACK_PACKAGE_VERSION_MINOR "${SAC2C_VERSION_MINOR}")
+SET (CPACK_PACKAGE_VERSION_PATCH "${SAC2C_VERSION_PATCH}")
 
 # SET (CPACK_PACKAGE_DESCRIPTION_FILE ...)
 SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY
