@@ -8,3 +8,9 @@ SET (SETTINGS_OMP           -DOMP)
 SET (SETTINGS_DIAG          -DDIAG)
 SET (SETTINGS_XT            -DMT -DPHM_XT)
 
+SET (LIB_M                  -Xl -lm)
+SET (LIB_RT                 -Xl -lrt)
+
+# BUILD TARGETS
+SET (TARGETS seq mt_pth mt_pth_xt)
+

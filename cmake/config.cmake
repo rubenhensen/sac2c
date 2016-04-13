@@ -67,6 +67,13 @@ IF (LTO)
     endif ()
 ENDIF ()
 
+# Check what extension to use for library files
+SET (SHARED_LIB_EXT ".so") # assume UNIX
+IF (WIN32 OR CYGWIN)
+    SET (SHARED_LIB_EXT ".dll")
+ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    SET (SHARED_LIB_EXT ".dylib")
+ENDIF ()
 
 # Check if C compiler supports explicit SIMD syntax.
 CHECK_C_SOURCE_COMPILES ("
@@ -534,6 +541,7 @@ ENDIF ()
 ADD_DEFINITIONS (
     ${OSFLAGS}
     -DSHARED_LIB_EXT="${SHARED_LIB_EXT}"
+    -Wfatal-errors
     -D_POSIX_C_SOURCE=200809L
 )
 
@@ -559,6 +567,16 @@ SET (DLL_BUILD_DIR "${PROJECT_BINARY_DIR}/lib")
 SET (SAC2CRC_DIR  "${CMAKE_INSTALL_PREFIX}/share/sac2c/${SAC2C_VERSION}")
 SET (SAC2CRC_CONF  "${CMAKE_INSTALL_PREFIX}/share/sac2c/${SAC2C_VERSION}/sac2crc")
 SET (SAC2CRC_BUILD_CONF "${PROJECT_BINARY_DIR}/sac2crc")
+
+# variables for SAC2C invocations
+# FIXME We have duplication in libsac-project...
+SET (LD_LIB_PATH "${DLL_BUILD_DIR}:$ENV{LD_LIBRARY_PATH}")
+SET (DYLD_LIB_PATH "${DLL_BUILD_DIR}:$ENV{LD_LIBRARY_PATH}")
+SET (SAC2C_EXTRA_INC
+    -I${PROJECT_SOURCE_DIR}/include
+    -I${PROJECT_SOURCE_DIR}/src/include
+    -I${PROJECT_SOURCE_DIR}/src/libsacphm/heap
+    -I${PROJECT_SOURCE_DIR}/src/libsacdistmem/commlib)
 
 # Make sure that all the libraries are found here.
 SET (LIBRARY_OUTPUT_PATH "${DLL_BUILD_DIR}")
