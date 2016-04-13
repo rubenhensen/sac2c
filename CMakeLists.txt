@@ -15,47 +15,45 @@ INCLUDE_DIRECTORIES(
   "${PROJECT_BINARY_DIR}/include"
 )
 
-# Macro to buikd a tool.
-MACRO (BUILD_TOOL ARG)
-  ADD_EXECUTABLE(${ARG} src/maketools/${ARG}/${ARG}.c)
-  # Copy the tool to the lcoation
-  # FIXME  Why the hell we do not store them in $SAC2CBASE/bin
-  #           instead of $SAC2CBASE/src/bin?
-  ADD_CUSTOM_COMMAND(
-          TARGET ${ARG}
-          POST_BUILD
-          COMMAND ${CMAKE_COMMAND} -E copy ${ARG}
-                  ${PROJECT_SOURCE_DIR}/src/bin
-)
-ENDMACRO (BUILD_TOOL)
-
 # Build executables for the tools.
-BUILD_TOOL (cb)
-BUILD_TOOL (csd)
-BUILD_TOOL (cse)
-BUILD_TOOL (echo)
-BUILD_TOOL (icmt)
-BUILD_TOOL (hzip)
+ADD_EXECUTABLE (cb    src/maketools/cb/cb.c)
+ADD_EXECUTABLE (hzip  src/maketools/hzip/hzip.c)
+
+# FIXME(artem) We don't really need those tools.
+ADD_EXECUTABLE (csd   src/maketools/csd/csd.c)
+ADD_EXECUTABLE (cse   src/maketools/cse/cse.c)
+ADD_EXECUTABLE (echo  src/maketools/echo/echo.c)
+ADD_EXECUTABLE (icmt  src/maketools/icmt/icmt.c)
 
 INCLUDE_DIRECTORIES (
   "${PROJECT_BINARY_DIR}"
   "src"
 )
 
-ADD_SUBDIRECTORY (src)
+# Build sac.h
+ADD_SUBDIRECTORY (src/runtime)
+# Build libsac2c
+ADD_SUBDIRECTORY (src/libsac2c)
 
-# Make sac2c binary
+# Make sac2c-related binaryies
 ADD_EXECUTABLE (sac2c src/tools/sac2c/sac2c.c)
 TARGET_LINK_LIBRARIES (sac2c ${DL_LIB})
 
+ADD_EXECUTABLE (sac4c src/tools/sac4c/sac4c.c)
+TARGET_LINK_LIBRARIES (sac4c ${DL_LIB})
+
+ADD_EXECUTABLE (sac2tex src/tools/sac2tex/sac2tex.c)
+TARGET_LINK_LIBRARIES (sac2tex ${DL_LIB})
+
 # FIXME(artem) Is this really a dependency of sac2c?
-ADD_DEPENDENCIES (sac2c sac_h)
+#ADD_DEPENDENCIES (sac2c sac_h)
 
 # Installing the sac2c project files.
 # XXX(artem) in case we are doing packaging, symbolic links should be
 #            avoided.
 INSTALL (TARGETS sac2c RUNTIME DESTINATION "${DLL_DIR}")
 IF (CMAKE_HOST_UNIX AND SYMLINKS)
+    # FIXME(artem) Create symlinks for other tools we install
     INSTALL (CODE "
         FILE (MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
         EXECUTE_PROCESS (
@@ -64,6 +62,8 @@ IF (CMAKE_HOST_UNIX AND SYMLINKS)
     ")
 ELSE ()
     INSTALL (TARGETS sac2c RUNTIME DESTINATION bin)
+    INSTALL (TARGETS sac4c RUNTIME DESTINATION bin)
+    INSTALL (TARGETS sac2tex RUNTIME DESTINATION bin)
 ENDIF ()
 
 INSTALL (FILES "${SAC2CRC_BUILD_CONF}" DESTINATION "${SAC2CRC_DIR}")
