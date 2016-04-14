@@ -568,21 +568,10 @@ SET (SAC2CRC_DIR  "${CMAKE_INSTALL_PREFIX}/share/sac2c/${SAC2C_VERSION}")
 SET (SAC2CRC_CONF  "${CMAKE_INSTALL_PREFIX}/share/sac2c/${SAC2C_VERSION}/sac2crc")
 SET (SAC2CRC_BUILD_CONF "${PROJECT_BINARY_DIR}/sac2crc")
 
-# variables for SAC2C invocations
-# FIXME We have duplication in libsac-project...
-SET (LD_LIB_PATH "${DLL_BUILD_DIR}:$ENV{LD_LIBRARY_PATH}")
-SET (DYLD_LIB_PATH "${DLL_BUILD_DIR}:$ENV{LD_LIBRARY_PATH}")
-SET (SAC2C_EXTRA_INC
-    -I${PROJECT_SOURCE_DIR}/include
-    -I${PROJECT_SOURCE_DIR}/src/include
-    -I${PROJECT_SOURCE_DIR}/src/libsacphm/heap
-    -I${PROJECT_SOURCE_DIR}/src/libsacdistmem/commlib)
-
 # Make sure that all the libraries are found here.
 SET (LIBRARY_OUTPUT_PATH "${DLL_BUILD_DIR}")
 # Make sure that this directory exists.
 FILE (MAKE_DIRECTORY "${DLL_BUILD_DIR}")
-
 
 SUBST_SAC2CRC_FILE ("sac2crc.backend.mutc" RCMUTC)
 SUBST_SAC2CRC_FILE ("sac2crc.backend.cuda" RCCUDA)

@@ -1,85 +1,81 @@
-# A Pattern to build a variant of the libsac.
-# When including this CMakeLists.txt as subdirectory
-# one shoude define variables:
-#
-#       * CC_FLAGS_MT            comes from cmake/settings.cmake.
-#
-#       * CC_FLAGS_MT_VARIANT    extra definitions for the variant of the
-#                                libsacphm library.
-#
-#       * MT_VARIANT_NAME        the name of the resulting variable without
-#                                the postfix.
-#
-# For example, the following inclusion is valid:
-#
-#       SET (CC_FLAGS_MT_VARIANT        -DMT -DPTH)
-#       SET (MT_VARIANT_NAME            libsac.mt)
-#       ADD_SUBDIRECTORY (libsacphm     libsac.mt)
-#
+# Create local variant of the SAC2C flags 
+SET (SAC2C_T ${SAC2C_EXEC} -target ${TARGET})
+SET (SAC2C ${SAC2C_T} -Xc "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"")
+SET (SAC2C_NT ${SAC2C} -Xc "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"") # defaults to SEQ
 
-
-# FIXME this is WRONG, this condition should not check for ENABLE_MUTC
-# but rather for CROSS==MUTC.
-IF (NOT ENABLE_MUTC)
-  SET (LIBSAC_SRC
-    cachesim/access_detailed.c
-    cachesim/access_simple.c
-    cachesim/basic.c
-    essentials/commandline.c
-    essentials/message.c
-    essentials/misc.c
-    essentials/profile.c
-    essentials/trace.c
-    interface/sacarg.c
-    interface/sacargconvert.c
-    interface/sacmt.c
-    mt/mt.c
-    mt_beehive/mt_beehive.c
-    mt_lpel/mt_lpel_std.c
-    mt_lpel/mt_lpel_trace.c
-    mt_omp/mt_omp.c
-    mt_pth/mt_pth_std.c
-    mt_pth/mt_pth_trace.c
-    mt_smart/mt_smart.c
-  )
+EXECUTE_PROCESS (COMMAND ${SAC2C_T} -CTARGET_ENV OUTPUT_VARIABLE TARGET_ENV OUTPUT_STRIP_TRAILING_WHITESPACE)
+IF (NOT TARGET_ENV)
+    MESSAGE (FATAL_ERROR "${SAC2C_T} seems not to work, cannot determine SBI data, exiting...")
 ELSE ()
-  SET (LIBSAC_SRC
-    essentials/commandline.c
-    essentials/message.c
-    essentials/misc.c
-    essentials/profile.c
-    essentials/trace.c
-    interface/sacarg.c
-    interface/sacargconvert.c
-    interface/sacmt.c
-    mutc/reference_counting.c
+    EXECUTE_PROCESS (COMMAND ${SAC2C_T} -CSBI OUTPUT_VARIABLE SBI OUTPUT_STRIP_TRAILING_WHITESPACE)
+    EXECUTE_PROCESS (COMMAND ${SAC2C_T} -COBJEXT OUTPUT_VARIABLE OBJEXT OUTPUT_STRIP_TRAILING_WHITESPACE)
+    EXECUTE_PROCESS (COMMAND ${SAC2C_T} -CTREE_DLLEXT OUTPUT_VARIABLE TREEEXT OUTPUT_STRIP_TRAILING_WHITESPACE)
+    EXECUTE_PROCESS (COMMAND ${SAC2C_T} -CUSE_PHM_API OUTPUT_VARIABLE USE_PHM_API OUTPUT_STRIP_TRAILING_WHITESPACE)
+    EXECUTE_PROCESS (COMMAND ${SAC2C_T} -CRTSPEC OUTPUT_VARIABLE RTSPEC OUTPUT_STRIP_TRAILING_WHITESPACE)
+ENDIF ()
+
+IF ("${SBI}" STREQUAL "XXXXX")
+    MESSAGE (FATAL_ERROR "No SBI specification for target `${TARGET}', exiting...")
+ENDIF ()
+IF ("${TARGET_ENV}" STREQUAL "XXXXX")
+    MESSAGE (FATAL_ERROR "No TARGET_ENV specificed for target `${TARGET}', exiting...")
+ENDIF ()
+
+MESSAGE (STATUS "Target `${TARGET}' build properties: ${TARGET_ENV} ${SBI} ${SHARED_LIB_EXT} ${OBJEXT} ${TREEEXT} ${USE_PHM_API} ${RTSPEC}")
+
+# create directory
+FILE (MAKE_DIRECTORY "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}")
+SET (LIBSAC_LIB "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsac${SHARED_LIB_EXT}")
+
+SET (LIBSAC_SRC
+  cachesim/access_detailed.c
+  cachesim/access_simple.c
+  cachesim/basic.c
+  essentials/commandline.c
+  essentials/message.c
+  essentials/misc.c
+  essentials/profile.c
+  essentials/trace.c
+  interface/sacarg.c
+  interface/sacargconvert.c
+  interface/sacmt.c
+  mt/mt.c
+  mt_beehive/mt_beehive.c
+  mt_lpel/mt_lpel_std.c
+  mt_lpel/mt_lpel_trace.c
+  mt_omp/mt_omp.c
+  mt_pth/mt_pth_std.c
+  mt_pth/mt_pth_trace.c
+  mt_smart/mt_smart.c
+)
+
+IF(${RTSPEC} EQUAL 1)
+    MESSAGE ("Target `${TARGET}' does support RTSPEC")
+ELSE ()
+    MESSAGE ("Target `${TARGET}' does *not* support RTSPEC")
+    LIST (APPEND LIBSAC_SRC rtspec/empty.c)
+ENDIF ()
+
+SET(LIBSAC_OBJS)
+FOREACH(name ${LIBSAC_SRC})
+  SET (src "${CMAKE_CURRENT_SOURCE_DIR}/${name}")
+  GET_FILENAME_COMPONENT (dst ${name} NAME_WE)
+  SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}.libsac${OBJEXT}")
+  ADD_CUSTOM_COMMAND (
+    OUTPUT "${dst}"
+    DEPENDS "${src}"
+# FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
+    COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -noprelude -cc ccmod -o "${dst}" "${src}"
+    COMMENT "Generating ${dst}"
   )
-ENDIF (NOT ENABLE_MUTC)
+  LIST (APPEND LIBSAC_OBJS "${dst}")
+ENDFOREACH(name)
+ADD_CUSTOM_TARGET (libsac-${TARGET}-objs DEPENDS ${LIBSAC_OBJS})
 
-ADD_DEFINITIONS(
-    ${CC_FLAGS_MT}
-    ${CC_FLAGS_MT_VARIANT}
-)
-
-# FIXME This probably can be changed later.
-SET (LIB_PATH "${PROJECT_SOURCE_DIR}/lib")
-
-SET (SHARED_TARGET_NAME    "${MT_VARIANT_NAME}.Shared")
-SET (STATIC_TARGET_NAME    "${MT_VARIANT_NAME}.Static")
-
-ADD_LIBRARY (${SHARED_TARGET_NAME} SHARED ${LIBSAC_SRC})
-ADD_LIBRARY (${STATIC_TARGET_NAME} STATIC ${LIBSAC_SRC})
-ADD_DEPENDENCIES (${SHARED_TARGET_NAME} sac_h)
-ADD_DEPENDENCIES (${STATIC_TARGET_NAME} sac_h)
-
-SET_TARGET_PROPERTIES (${SHARED_TARGET_NAME}
-    PROPERTIES
-        OUTPUT_NAME ${MT_VARIANT_NAME}
-        LIBRARY_OUTPUT_DIRECTORY ${LIB_PATH}
-)
-SET_TARGET_PROPERTIES (${STATIC_TARGET_NAME}
-    PROPERTIES
-        OUTPUT_NAME ${MT_VARIANT_NAME}
-        ARCHIVE_OUTPUT_DIRECTORY ${LIB_PATH}
-)
-
+ADD_CUSTOM_COMMAND (
+    OUTPUT "${LIBSAC_LIB}"
+# FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
+    COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT} -o "${LIBSAC_LIB}" ${LIBSAC_OBJS} 
+    DEPENDS libsac-${TARGET}-objs
+    COMMENT "Linking for target `${TARGET}' libsac")
+ADD_CUSTOM_TARGET (libsac-${TARGET} ALL DEPENDS "${LIBSAC_LIB}")

@@ -25,31 +25,16 @@ MESSAGE (STATUS "Target `${TARGET}' build properties: ${TARGET_ENV} ${SBI} ${SHA
 
 # create directory
 FILE (MAKE_DIRECTORY "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}")
-SET (LIBSAC_LIB "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsacphm${SHARED_LIB_EXT}")
-SET (LIBSAC_LIBD "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsacphm.diag${SHARED_LIB_EXT}")
+SET (LIBSAC_LIB "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsacphmc${SHARED_LIB_EXT}")
+SET (LIBSAC_LIBD "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsacphmc.diag${SHARED_LIB_EXT}")
 
-IF(${USE_PHM_API} EQUAL 1)
-    MESSAGE ("Target `${TARGET}' does support PHM")
-    SET (LIBSAC_SRC
-        compat/malloc.c
-        diag/diagnostics.c
-        heap/internal.c
-        heap/large_chunks.c
-        heap/setup.c
-        heap/small_chunks.c
-        heap/thread_ids.c
-        heap/wrapper.c
-    )
-ELSE ()
-    MESSAGE ("Target `${TARGET}' does *not* support PHM")
-    SET (LIBSAC_SRC empty/empty.c)
-ENDIF ()
+SET (LIBSAC_SRC wrappers/nophm.c)
 
 SET(LIBSAC_OBJS)
 FOREACH(name ${LIBSAC_SRC})
   SET (src "${CMAKE_CURRENT_SOURCE_DIR}/${name}")
   GET_FILENAME_COMPONENT (dst ${name} NAME_WE)
-  SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}${OBJEXT}")
+  SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}.phmc${OBJEXT}")
   ADD_CUSTOM_COMMAND (
     OUTPUT "${dst}"
     DEPENDS "${src}"
@@ -59,13 +44,13 @@ FOREACH(name ${LIBSAC_SRC})
   )
   LIST (APPEND LIBSAC_OBJS "${dst}")
 ENDFOREACH(name)
-ADD_CUSTOM_TARGET (libsacphm-${TARGET}-objs DEPENDS ${LIBSAC_OBJS})
+ADD_CUSTOM_TARGET (libsacphmc-${TARGET}-objs DEPENDS ${LIBSAC_OBJS})
 
 SET(LIBSAC_OBJSD)
 FOREACH(name ${LIBSAC_SRC})
   SET (src "${CMAKE_CURRENT_SOURCE_DIR}/${name}")
   GET_FILENAME_COMPONENT (dst ${name} NAME_WE)
-  SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}.diag${OBJEXT}")
+  SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}.phmc.diag${OBJEXT}")
   ADD_CUSTOM_COMMAND (
     OUTPUT "${dst}"
     DEPENDS "${src}"
@@ -75,21 +60,21 @@ COMMENT "Generating ${dst} (diag)"
   )
   LIST (APPEND LIBSAC_OBJSD "${dst}")
 ENDFOREACH(name)
-ADD_CUSTOM_TARGET (libsacphm-${TARGET}-objsd DEPENDS ${LIBSAC_OBJSD})
+ADD_CUSTOM_TARGET (libsacphmc-${TARGET}-objsd DEPENDS ${LIBSAC_OBJSD})
 
 ADD_CUSTOM_COMMAND (
     OUTPUT "${LIBSAC_LIB}"
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
     COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT} -o "${LIBSAC_LIB}" ${LIBSAC_OBJS} 
-    DEPENDS libsacphm-${TARGET}-objs
-    COMMENT "Linking for target `${TARGET}' libsacphm")
+    DEPENDS libsacphmc-${TARGET}-objs
+    COMMENT "Linking for target `${TARGET}' libsacphmc")
 
 ADD_CUSTOM_COMMAND (
     OUTPUT "${LIBSAC_LIBD}"
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
 COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT} -o "${LIBSAC_LIBD}" ${LIBSAC_OBJSD} 
-    DEPENDS libsacphm-${TARGET}-objsd
-    COMMENT "Linking for target `${TARGET}' libsacphm (diag)")
+    DEPENDS libsacphmc-${TARGET}-objsd
+    COMMENT "Linking for target `${TARGET}' libsacphmc (diag)")
 
 # Create and link both the normal and DIAG version of libsacphm
-ADD_CUSTOM_TARGET (libsacphm-${TARGET} ALL DEPENDS "${LIBSAC_LIB}" "${LIBSAC_LIBD}")
+ADD_CUSTOM_TARGET (libsacphmc-${TARGET} ALL DEPENDS "${LIBSAC_LIB}" "${LIBSAC_LIBD}")
