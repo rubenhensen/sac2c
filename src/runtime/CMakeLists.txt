@@ -113,7 +113,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/distmemphm_h/distmemphm.h
 )
 
 
-SET (SAC_H  "${PROJECT_SOURCE_DIR}/include/sac.h")
+SET (SAC_H  "${PROJECT_BINARY_DIR}/include/sac.h")
 SET (HZIP "${PROJECT_BINARY_DIR}/hzip")
 ADD_CUSTOM_COMMAND (
   OUTPUT    ${SAC_H}
