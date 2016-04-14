@@ -20,6 +20,14 @@ COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRAR
 ADD_CUSTOM_TARGET (csima-prog-objs DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/csima/csima.o")
 
 ADD_CUSTOM_COMMAND (
+    OUTPUT "${BINDIR}/csima"
+# FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
+COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C_NT} -target seq -L "${PROJECT_BINARY_DIR}/lib" -v0 -cc ldprog ${LIB_M} ${LIB_RT} -o "${BINDIR}/csima" "${CMAKE_CURRENT_BINARY_DIR}/csima/csima.o" 
+    DEPENDS csima-prog-objs
+    COMMENT "Linking for `csimt' program")
+ADD_CUSTOM_TARGET (csima-prog ALL DEPENDS "${BINDIR}/csima")
+
+ADD_CUSTOM_COMMAND (
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/csimt/csimt.o"
     DEPENDS libsacprelude-seq "${CMAKE_CURRENT_SOURCE_DIR}/csimt/csimt.c"
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?

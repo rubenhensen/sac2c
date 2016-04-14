@@ -28,7 +28,7 @@ SET (ENV{SAC2CRC} ${SAC2CRC_BUILD_CONF})
 # added an include to sac2crc.local so that sac2c can find header files
 IF (EXISTS ${PROJECT_BINARY_DIR}/sac2crc.local)
     FILE (READ "${SAC2CLOCAL}" SAC2CLOCAL)
-    STRING (REGEX REPLACE "SACINCLUDES[ ]*\\+=[ ]*\"([^\"]+)\"" "SACINCLUDES    += \"\\1 -I${SAC2C_BUILD_DIR}/include\"" NSAC2CLOCAL "${SAC2CLOCAL}")
+    STRING (REGEX REPLACE "SACINCLUDES[ ]*\\+=[ ]*\"([^\"]+)\"" "SACINCLUDES    += \"\\1 -I${SAC2C_SOURCE_DIR}/src/include -I${SAC2C_BUILD_DIR}/include\"" NSAC2CLOCAL "${SAC2CLOCAL}")
     FILE (WRITE "${BSAC2CLOCAL}" "${NSAC2CLOCAL}")
 ELSE ()
     MESSAGE(FATAL_ERROR "Unable to copy over sac2crc.local, does not exist, exiting...")

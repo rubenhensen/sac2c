@@ -232,6 +232,16 @@ CHECK_COMPILER (__APPLE__  MACC)
 
 
 # Check tools which required for compilation.
+# Find BASH interpreter.
+FIND_PROGRAM (BASH_EXEC
+  NAME    bash
+  HINTS   ENV PATH
+  DOC     "Check for bash interpreter")
+IF (NOT BASH_EXEC)
+  MESSAGE (FATAL_ERROR "Cannot find a bash interpreter")
+ENDIF ()
+SET (BASH "${BASH_EXEC}")
+
 # Find xslt processor.
 FIND_PROGRAM (XSLT_EXEC
   NAME    xsltproc
@@ -596,4 +606,6 @@ CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xsacdirs.h.in" "${PROJECT_BIN
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/libsac2c/global/build.c.in" "${PROJECT_BINARY_DIR}/src/build.c")
 #CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf.in"
 #                "${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf")
+
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/saccc.in" "${PROJECT_BINARY_DIR}/saccc" @ONLY)
 

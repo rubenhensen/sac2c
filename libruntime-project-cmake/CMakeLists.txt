@@ -1,19 +1,29 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
 
 # Name of the project
-PROJECT (libsac C)
+PROJECT (sac2c_runtime C)
 
 IF (NOT SAC2C_BUILD_DIR)
     MESSAGE (FATAL_ERROR "The SAC2C_BUILD_DIR is not set!")
 ENDIF ()
+IF (NOT SAC2C_SOURCE_DIR)
+    MESSAGE (FATAL_ERROR "The SAC2C_SOURCE_DIR is not set!")
+ENDIF ()
+
 IF (NOT EXISTS "${SAC2C_BUILD_DIR}/sac2crc.local")
     MESSAGE (FATAL_ERROR
         "The content of SAC2C_BUILD_DIR does not contain sac2crc.local.\
         Please ensure that you have compiled the sac2c project and that\
         sac2crc.local has been generated.")
 ENDIF ()
+IF (NOT EXISTS "${SAC2C_SOURCE_DIR}/src/libsac/essentials/commandline.c")
+    MESSAGE (FATAL_ERROR
+        "The content of SAC2C_SOURCE_DIR does not contain the src/libsac/\
+        directory structure. Please specify this location.")
+ENDIF ()
 
 GET_FILENAME_COMPONENT (SAC2C_BUILD_DIR "${SAC2C_BUILD_DIR}" ABSOLUTE)
+GET_FILENAME_COMPONENT (SAC2C_SOURCE_DIR "${SAC2C_SOURCE_DIR}" ABSOLUTE)
 
 # we include the global config files
 include ("cmake/macros.cmake")
