@@ -29,7 +29,7 @@ SET (M4_FILES
 SET (M4_LIST_DONE)
 FOREACH(name ${M4_FILES})
   SET(src "${CMAKE_CURRENT_SOURCE_DIR}/${name}.m4")
-  SET(dst "${CMAKE_CURRENT_SOURCE_DIR}/${name}")
+  SET(dst "${CMAKE_CURRENT_BINARY_DIR}/${name}")
   ADD_CUSTOM_COMMAND(
     OUTPUT "${dst}"
     DEPENDS "${src}"  "${CMAKE_CURRENT_SOURCE_DIR}/m4/icm.m4"
