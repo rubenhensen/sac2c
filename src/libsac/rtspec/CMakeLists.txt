@@ -1,4 +1,4 @@
-# Create local variant of the SAC2C flags 
+# Create local variant of the SAC2C flags
 SET (SAC2C_T ${SAC2C_EXEC} -target ${TARGET})
 SET (SAC2C ${SAC2C_T} -Xc "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"")
 SET (SAC2C_NT ${SAC2C} -Xc "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"") # defaults to SEQ
@@ -62,7 +62,7 @@ ADD_CUSTOM_TARGET (libsacrtspec-${TARGET}-objs DEPENDS ${LIBSAC_OBJS})
 ADD_CUSTOM_COMMAND (
     OUTPUT "${LIBSAC_LIB}"
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
-    COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT} -o "${LIBSAC_LIB}" ${LIBSAC_OBJS} 
+    COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT} -o "${LIBSAC_LIB}" ${LIBSAC_OBJS}
     DEPENDS libsacrtspec-${TARGET}-objs
     COMMENT "Linking for target `${TARGET}' libsacrtspec")
 ADD_CUSTOM_TARGET (libsacrtspec-${TARGET} ALL DEPENDS "${LIBSAC_LIB}")

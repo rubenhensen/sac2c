@@ -1,4 +1,4 @@
-# Create local variant of the SAC2C flags 
+# Create local variant of the SAC2C flags
 SET (SAC2C_T ${SAC2C_EXEC} -target ${TARGET})
 SET (SAC2C ${SAC2C_T} -Xc "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"")
 SET (SAC2C_NT ${SAC2C} -Xc "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"") # defaults to SEQ
@@ -37,7 +37,7 @@ SET (LIBSAC_SRC
 ADD_CUSTOM_COMMAND (
     OUTPUT "${LIBSAC_MOD}" "${LIBSAC_TREE}"
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
-COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -linksetsize 0 -noprelude -o ${PRELUDE_DIR} ${LIBSAC_SRC} 
+COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -linksetsize 0 -noprelude -o ${PRELUDE_DIR} ${LIBSAC_SRC}
     DEPENDS ${LIBSAC_SRC}
     COMMENT "Generating libsacprelude for target `${TARGET}'")
 ADD_CUSTOM_TARGET (libsacprelude-${TARGET} ALL DEPENDS "${LIBSAC_MOD}" "${LIBSAC_TREE}")

@@ -12,5 +12,5 @@ SET (LIB_M                  -Xl -lm)
 SET (LIB_RT                 -Xl -lrt)
 
 # BUILD TARGETS
-SET (TARGETS seq mt_pth mt_pth_xt)
+SET (TARGETS                seq mt_pth mt_pth_xt)
 
