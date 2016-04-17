@@ -6,6 +6,7 @@ PROJECT (sac2c C)
 include ("cmake/macros.cmake")
 include ("cmake/options.cmake")
 include ("cmake/config.cmake")
+include ("cmake/sac2c/sac2crc.cmake")
 include ("cmake/settings.cmake")
 
 # Include common directories for the project.
@@ -24,11 +25,20 @@ ADD_EXECUTABLE (csd   src/maketools/csd/csd.c)
 ADD_EXECUTABLE (cse   src/maketools/cse/cse.c)
 ADD_EXECUTABLE (echo  src/maketools/echo/echo.c)
 ADD_EXECUTABLE (icmt  src/maketools/icmt/icmt.c)
+# extra tool file...
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/saccc.in" "${PROJECT_BINARY_DIR}/saccc" @ONLY)
 
 INCLUDE_DIRECTORIES (
   "${PROJECT_BINARY_DIR}"
   "src"
 )
+
+# generate files necessary to compile sac2c
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xconfig.h.in" "${PROJECT_BINARY_DIR}/include/config.h")
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xsacdirs.h.in" "${PROJECT_BINARY_DIR}/include/sacdirs.h")
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/libsac2c/global/build.c.in" "${PROJECT_BINARY_DIR}/src/build.c")
+#CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf.in"
+#                "${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf")
 
 # Build sac.h
 ADD_SUBDIRECTORY (src/runtime)

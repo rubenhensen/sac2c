@@ -16,6 +16,7 @@ IF (NOT EXISTS "${SAC2C_BUILD_DIR}/sac2crc.local")
         Please ensure that you have compiled the sac2c project and that\
         sac2crc.local has been generated.")
 ENDIF ()
+#XXX: maybe we should check for something else, like cmake/ dir?
 IF (NOT EXISTS "${SAC2C_SOURCE_DIR}/src/libsac/essentials/commandline.c")
     MESSAGE (FATAL_ERROR
         "The content of SAC2C_SOURCE_DIR does not contain the src/libsac/\
@@ -26,13 +27,13 @@ GET_FILENAME_COMPONENT (SAC2C_BUILD_DIR "${SAC2C_BUILD_DIR}" ABSOLUTE)
 GET_FILENAME_COMPONENT (SAC2C_SOURCE_DIR "${SAC2C_SOURCE_DIR}" ABSOLUTE)
 
 # we include the global config files
-include ("cmake/macros.cmake")
-include ("cmake/options.cmake")
-include ("cmake/config.cmake")
-include ("cmake/settings.cmake")
+include ("${SAC2C_SOURCE_DIR}/cmake/macros.cmake")
+include ("${SAC2C_SOURCE_DIR}/cmake/options.cmake")
+include ("${SAC2C_SOURCE_DIR}/cmake/config.cmake")
+include ("${SAC2C_SOURCE_DIR}/cmake/settings.cmake")
 
 # and include our for checks on sac2c
-include ("sac2c.cmake")
+include ("${SAC2C_SOURCE_DIR}/cmake/runtime/config.cmake")
 
 # Include common directories for the project.
 INCLUDE_DIRECTORIES(
@@ -43,7 +44,7 @@ INCLUDE_DIRECTORIES(
   "${PROJECT_BINARY_DIR}/include"
 )
 
-# Include the libsac or libsacphm subdirectory and pre-set the variables
+# Include the runtime subdirectory and pre-set the variables
 # of the variant that we want to compile.
 MACRO (ADD_LIBSAC_TARGET SRC_DIR VARIANT_TARGET)
     SET (TARGET                     ${VARIANT_TARGET})
