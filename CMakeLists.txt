@@ -1,8 +1,13 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.0)
 
 # Name of the project
 PROJECT (sac2c C)
 
+# Extra cmake packages
+INCLUDE (ExternalProject)
+INCLUDE (FeatureSummary)
+
+# Include config related cmake files
 include ("cmake/macros.cmake")
 include ("cmake/options.cmake")
 include ("cmake/config.cmake")
@@ -15,6 +20,15 @@ INCLUDE_DIRECTORIES(
   "src/include"
   "${PROJECT_BINARY_DIR}/include"
 )
+
+ADD_FEATURE_INFO(PHM PHM "use Private Heap Manager in sac2c")
+ADD_FEATURE_INFO(LPEL LPEL "use LPEL in sac2c")
+ADD_FEATURE_INFO(OMP OMP "use OpenMP backend for sac2c multithreading")
+ADD_FEATURE_INFO(MT MT "use POSIX-thread backend for sac2c multithreading")
+ADD_FEATURE_INFO(LTO LTO "adds Link Time Optimisations to the C compiler")
+ADD_FEATURE_INFO(Dot DOT "used to generate a visual of the AST")
+ADD_FEATURE_INFO(C++ CPLUSPLUS "to compile sac2c with")
+FEATURE_SUMMARY(WHAT ALL)
 
 # Build executables for the tools.
 ADD_EXECUTABLE (cb    src/maketools/cb/cb.c)
@@ -58,6 +72,18 @@ TARGET_LINK_LIBRARIES (sac2tex ${DL_LIB})
 # FIXME(artem) Is this really a dependency of sac2c?
 #ADD_DEPENDENCIES (sac2c sac_h)
 
+## This is where we call the build of the sac2c shared-libraries
+## XXX: this *depends* on sac2c having been build first!
+ExternalProject_Add(runtime_libraries
+    DEPENDS sac2cShared sac2c
+    DOWNLOAD_COMMAND "" # this is to prevent any download target from being called
+    INSTALL_COMMAND "" # this is to prevent any install target from being called
+    PREFIX runtime_build
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/libruntime-project-cmake
+    INSTALL_DIR ${PROJECT_BINARY_DIR}
+    CMAKE_ARGS -DSAC2C_BUILD_DIR=${PROJECT_BINARY_DIR} -DSAC2C_SOURCE_DIR=${PROJECT_SOURCE_DIR}
+)
+
 # Installing the sac2c project files.
 # XXX(artem) in case we are doing packaging, symbolic links should be
 #            avoided.
@@ -76,7 +102,32 @@ ELSE ()
     INSTALL (TARGETS sac2tex RUNTIME DESTINATION bin)
 ENDIF ()
 
+# install sac2crc stuff...
 INSTALL (FILES "${SAC2CRC_BUILD_CONF}" DESTINATION "${SAC2CRC_DIR}")
+
+## We need to install the runtime libraries and sacprelude into a directory
+## hiearchy that is different from the `local' hiearchy. Under out local `lib/' we
+## have the 'prelude' directory and then one or more other directories - these are
+## the 'TARGET_ENV' or target environment specific libries, e.g. 'x64' is for AMD64
+## system and 'x86' is for i386 systems. How these directories are named can not be
+## known before hand, as this is defined through that target within the sac2crc
+## file. Because of this, we use pattern matching to select the correct directories
+## to be installed in the new heirchy. The pattern match is a generic start (*)
+## glob, which means we get all directories within `lib' - including `prelude'. To
+## avoid installing prelude, we have use the EXCLUDE directive with the pattern
+## "prelude". We do the same for the local directory `lib/prelude', but exlude
+## 'tree' instead.
+INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/
+    DESTINATION ${RTPATH_CONF}
+    FILES_MATCHING PATTERN "*"
+    PATTERN "prelude" EXCLUDE)
+INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/ 
+    DESTINATION ${MODPATH_CONF} 
+    FILES_MATCHING PATTERN "*" 
+    PATTERN "tree" EXCLUDE)
+
+INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/tree DESTINATION ${TREEPATH_CONF})
+INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/bin/ DESTINATION bin FILES_MATCHING PATTERN "*")
 
 # Cpack information
 # INCLUDE(InstallRequiredSystemLibraries)
