@@ -80,7 +80,12 @@ ExternalProject_Add(runtime_libraries
     PREFIX runtime_build
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/libruntime-project-cmake
     INSTALL_DIR ${PROJECT_BINARY_DIR}
-    CMAKE_ARGS -DSAC2C_BUILD_DIR=${PROJECT_BINARY_DIR} -DSAC2C_SOURCE_DIR=${PROJECT_SOURCE_DIR}
+    CMAKE_ARGS
+        -DSAC2C_BUILD_DIR=${PROJECT_BINARY_DIR}
+        -DSAC2C_SOURCE_DIR=${PROJECT_SOURCE_DIR}
+        -DSAC2CRC_BUILD_CONF=${SAC2CRC_BUILD_CONF}
+        # FIXME(artem) Shouldn't we use MODEXT from sac2crc instead?
+        -DSHARED_LIB_EXT=${SHARED_LIB_EXT}
 )
 
 # Installing the sac2c project files.

@@ -29,7 +29,7 @@ GET_FILENAME_COMPONENT (SAC2C_SOURCE_DIR "${SAC2C_SOURCE_DIR}" ABSOLUTE)
 # we include the global config files
 include ("${SAC2C_SOURCE_DIR}/cmake/macros.cmake")
 include ("${SAC2C_SOURCE_DIR}/cmake/options.cmake")
-include ("${SAC2C_SOURCE_DIR}/cmake/config.cmake")
+#include ("${SAC2C_SOURCE_DIR}/cmake/config.cmake")
 include ("${SAC2C_SOURCE_DIR}/cmake/settings.cmake")
 
 # and include our for checks on sac2c

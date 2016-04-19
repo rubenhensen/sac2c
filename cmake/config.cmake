@@ -568,3 +568,4 @@ SET (SAC2CRC_BUILD_CONF "${PROJECT_BINARY_DIR}/sac2crc")
 SET (LIBRARY_OUTPUT_PATH "${DLL_BUILD_DIR}")
 # Make sure that this directory exists.
 FILE (MAKE_DIRECTORY "${DLL_BUILD_DIR}")
+
