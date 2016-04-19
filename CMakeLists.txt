@@ -51,26 +51,25 @@ INCLUDE_DIRECTORIES (
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xconfig.h.in" "${PROJECT_BINARY_DIR}/include/config.h")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xsacdirs.h.in" "${PROJECT_BINARY_DIR}/include/sacdirs.h")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/libsac2c/global/build.c.in" "${PROJECT_BINARY_DIR}/src/build.c")
-#CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf.in"
-#                "${PROJECT_SOURCE_DIR}/src/makefiles/config.mkf")
 
 # Build sac.h
 ADD_SUBDIRECTORY (src/runtime)
+
 # Build libsac2c
 ADD_SUBDIRECTORY (src/libsac2c)
 
 # Make sac2c-related binaryies
 ADD_EXECUTABLE (sac2c src/tools/sac2c/sac2c.c)
+ADD_DEPENDENCIES (sac2c sac_h)
 TARGET_LINK_LIBRARIES (sac2c ${DL_LIB})
 
 ADD_EXECUTABLE (sac4c src/tools/sac4c/sac4c.c)
+ADD_DEPENDENCIES (sac4c sac_h)
 TARGET_LINK_LIBRARIES (sac4c ${DL_LIB})
 
 ADD_EXECUTABLE (sac2tex src/tools/sac2tex/sac2tex.c)
+ADD_DEPENDENCIES (sac2tex sac_h)
 TARGET_LINK_LIBRARIES (sac2tex ${DL_LIB})
-
-# FIXME(artem) Is this really a dependency of sac2c?
-#ADD_DEPENDENCIES (sac2c sac_h)
 
 ## This is where we call the build of the sac2c shared-libraries
 ## XXX: this *depends* on sac2c having been build first!
@@ -121,9 +120,9 @@ INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-bui
     DESTINATION ${RTPATH_CONF}
     FILES_MATCHING PATTERN "*"
     PATTERN "prelude" EXCLUDE)
-INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/ 
-    DESTINATION ${MODPATH_CONF} 
-    FILES_MATCHING PATTERN "*" 
+INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/
+    DESTINATION ${MODPATH_CONF}
+    FILES_MATCHING PATTERN "*"
     PATTERN "tree" EXCLUDE)
 
 INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/tree DESTINATION ${TREEPATH_CONF})
