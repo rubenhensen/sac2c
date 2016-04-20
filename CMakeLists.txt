@@ -19,6 +19,8 @@ INCLUDE_DIRECTORIES(
   "include"
   "src/include"
   "${PROJECT_BINARY_DIR}/include"
+  "${PROJECT_BINARY_DIR}"
+  "src"
 )
 
 ADD_FEATURE_INFO(PHM PHM "use Private Heap Manager in sac2c")
@@ -41,11 +43,6 @@ ADD_EXECUTABLE (echo  src/maketools/echo/echo.c)
 ADD_EXECUTABLE (icmt  src/maketools/icmt/icmt.c)
 # extra tool file...
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/saccc.in" "${PROJECT_BINARY_DIR}/saccc" @ONLY)
-
-INCLUDE_DIRECTORIES (
-  "${PROJECT_BINARY_DIR}"
-  "src"
-)
 
 # generate files necessary to compile sac2c
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xconfig.h.in" "${PROJECT_BINARY_DIR}/include/config.h")
@@ -109,6 +106,12 @@ ENDIF ()
 # install sac2crc stuff...
 INSTALL (FILES "${SAC2CRC_BUILD_CONF}" DESTINATION "${SAC2CRC_DIR}")
 
+# install sac2c-related binaries stuff...
+INSTALL (FILES "${PROJECT_BINARY_DIR}/saccc" DESTINATION bin)
+
+# install include files
+INSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/" DESTINATION "${INCPATH_CONF}")
+
 ## We need to install the runtime libraries and sacprelude into a directory
 ## hiearchy that is different from the `local' hiearchy. Under out local `lib/' we
 ## have the 'prelude' directory and then one or more other directories - these are
@@ -130,8 +133,11 @@ INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-bui
     FILES_MATCHING PATTERN "*"
     PATTERN "tree" EXCLUDE)
 
-INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/tree DESTINATION ${TREEPATH_CONF})
+# install runtime-related binaries
 INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/bin/ DESTINATION bin FILES_MATCHING PATTERN "*")
+
+# install sacprelude
+INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/tree DESTINATION ${TREEPATH_CONF})
 
 # Cpack information
 # INCLUDE(InstallRequiredSystemLibraries)
@@ -152,7 +158,7 @@ SET (CPACK_PACKAGE_VERSION_PATCH "${SAC2C_VERSION_PATCH}")
 
 # SET (CPACK_PACKAGE_DESCRIPTION_FILE ...)
 SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY
-     "The sac2c compiler for a data-parallel array-based functional language sac")
+    "The sac2c compiler for a data-parallel array-based functional language SAC")
 # FIXME(artem) We need to decide on where do we put the stuff on the target system...)
 #SET (CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 SET (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
