@@ -10,7 +10,7 @@ INCLUDE (FeatureSummary)
 # Include config related cmake files
 include ("cmake/macros.cmake")
 include ("cmake/options.cmake")
-include ("cmake/config.cmake")
+include ("cmake/sac2c/config.cmake")
 include ("cmake/sac2c/sac2crc.cmake")
 include ("cmake/settings.cmake")
 
