@@ -146,7 +146,7 @@ INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-bui
 # absolute pathes.  For portability pruroses this should be avoided.
 # SET (CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION ON)
 
-SET (CPACK_GENERATOR "DEB")
+SET (CPACK_GENERATOR "TGZ")
 
 # XXX(artem) This allows one to use absolute pathes during installation,
 #            but it doesn't seem to work on windows and friends.
