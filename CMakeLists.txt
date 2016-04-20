@@ -75,8 +75,8 @@ ExternalProject_Add(runtime_libraries
     DOWNLOAD_COMMAND "" # this is to prevent any download target from being called
     INSTALL_COMMAND "" # this is to prevent any install target from being called
     PREFIX runtime_build
-    SOURCE_DIR ${PROJECT_SOURCE_DIR}/libruntime-project-cmake
-    INSTALL_DIR ${PROJECT_BINARY_DIR}
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/cmake/runtime
+    INSTALL_DIR ${PROJECT_BINARY_DIR} #XXX: this is not used...
     CMAKE_ARGS
         -DSAC2C_BUILD_DIR=${PROJECT_BINARY_DIR}
         -DSAC2C_SOURCE_DIR=${PROJECT_SOURCE_DIR}

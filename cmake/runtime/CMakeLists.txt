@@ -48,10 +48,10 @@ INCLUDE_DIRECTORIES(
 # of the variant that we want to compile.
 MACRO (ADD_LIBSAC_TARGET SRC_DIR VARIANT_TARGET)
     SET (TARGET                     ${VARIANT_TARGET})
-    ADD_SUBDIRECTORY (${SRC_DIR}    ${SRC_DIR}-${TARGET})
+    # FIXME: this isn't very `clean'... 
+    ADD_SUBDIRECTORY (${SAC2C_SOURCE_DIR}/${SRC_DIR}    ${SRC_DIR}-${TARGET})
 ENDMACRO ()
 
-# TODO: probably some more...
 FOREACH (TARGET IN ITEMS ${TARGETS})
     ADD_LIBSAC_TARGET (src/libsac ${TARGET})
     ADD_LIBSAC_TARGET (src/libsacphm ${TARGET})
@@ -62,4 +62,4 @@ FOREACH (TARGET IN ITEMS ${TARGETS})
 ENDFOREACH ()
 
 # for tools
-ADD_SUBDIRECTORY (src/tools)
+ADD_LIBSAC_TARGET (src/tools seq)

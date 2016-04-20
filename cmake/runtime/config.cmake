@@ -15,20 +15,10 @@ SET (DYLD_LIB_PATH "${SAC2C_BUILD_DIR}/lib:${PROJECT_BUILD_DIR}/lib:$ENV{LD_LIBR
 # FIXME: Are the headers in the correct places?
 SET (SAC2C_EXTRA_INC
     -I${SAC2C_BUILD_DIR}/include
-    -I${PROJECT_SOURCE_DIR}/include
-    -I${PROJECT_SOURCE_DIR}/src/include
-    -I${PROJECT_SOURCE_DIR}/src/libsacphm/heap
-    -I${PROJECT_SOURCE_DIR}/src/libsacdistmem/commlib)
-
-# Set environment vars for sac2c during configuration phase
-# FIXME(artem) these can go directly to the call of sac2c without polluting the environment...
-SET (ENV{LD_LIBRARY_PATH} ${LD_LIB_PATH})
-SET (ENV{DYLD_LIBRARY_PATH} ${DYLD_LIB_PATH})
-SET (ENV{SAC2CRC} "${SAC2C_BUILD_DIR}/sac2crc")
-
-# TODO: this should be seperated
-# Override existing assignments
-#SET (SAC2CRC_BUILD_CONF "${SAC2C_BUILD_DIR}/sac2crc")
+    -I${SAC2C_SOURCE_DIR}/include
+    -I${SAC2C_SOURCE_DIR}/src/include
+    -I${SAC2C_SOURCE_DIR}/src/libsacphm/heap
+    -I${SAC2C_SOURCE_DIR}/src/libsacdistmem/commlib)
 
 # added an include to sac2crc.local so that sac2c can find header files
 CONFIGURE_FILE("${ISAC2CLOCAL}" "${LSAC2CLOCAL}" @ONLY)

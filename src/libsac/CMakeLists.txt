@@ -42,7 +42,9 @@ FOREACH(name ${LIBSAC_SRC})
     OUTPUT "${dst}"
     DEPENDS "${src}"
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
-    COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -noprelude -cc ccmod -o "${dst}" "${src}"
+    COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH}
+            DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -noprelude
+            -cc ccmod -o "${dst}" "${src}"
     COMMENT "Generating ${dst}"
   )
   LIST (APPEND LIBSAC_OBJS "${dst}")
@@ -52,7 +54,10 @@ ADD_CUSTOM_TARGET (libsac-${TARGET}-objs DEPENDS ${LIBSAC_OBJS})
 ADD_CUSTOM_COMMAND (
     OUTPUT "${LIBSAC_LIB}"
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
-    COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT} -o "${LIBSAC_LIB}" ${LIBSAC_OBJS}
+    COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH}
+            DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0
+            -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT}
+            -o "${LIBSAC_LIB}" ${LIBSAC_OBJS}
     DEPENDS libsac-${TARGET}-objs
     COMMENT "Linking for target `${TARGET}' libsac")
 ADD_CUSTOM_TARGET (libsac-${TARGET} ALL DEPENDS "${LIBSAC_LIB}")

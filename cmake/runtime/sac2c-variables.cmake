@@ -3,7 +3,16 @@ SET (SAC2C_T ${SAC2C_EXEC} -target ${TARGET})
 SET (SAC2C ${SAC2C_T} -Xc "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"")
 SET (SAC2C_NT ${SAC2C_EXEC} -Xc "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"") # defaults to SEQ
 
+# set environment vars - these are only used during configuration and are lost there after
+# we them because EXECUTE_PROCESS does not support passing in vars via the command.
+SET (ENV{LD_LIBRARY_PATH} ${LD_LIB_PATH})
+SET (ENV{DYLD_LIBRARY_PATH} ${DYLD_LIB_PATH})
+SET (ENV{SAC2CRC} "${SAC2C_BUILD_DIR}/sac2crc")
+
+# get the target environment - possibly `x64' or similar...
 EXECUTE_PROCESS (COMMAND ${SAC2C_T} -CTARGET_ENV OUTPUT_VARIABLE TARGET_ENV OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+# do several tests to make sure that SBI data is sane...
 IF (NOT TARGET_ENV)
     MESSAGE (FATAL_ERROR "${SAC2C_T} seems not to work, cannot determine SBI data, exiting...")
 ELSE ()
@@ -19,6 +28,7 @@ ELSE ()
     GET_SAC2C_VAR (RTSPEC)
 
     # FIXME(artem) Isn't SHARED_LIB_EXT and MODEXT the same thing?
+    # XXX(hans): yes, but not in the case when the target environment is set by the sac2crc file...
 ENDIF ()
 
 IF ("${SBI}" STREQUAL "XXXXX")
