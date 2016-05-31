@@ -692,9 +692,20 @@ struct token *
 parser_get_until_tval (struct parser *parser, enum token_kind tkind)
 {
     struct token *tok;
-    int pc = parser->paren_count;
-    int bc = parser->brace_count;
-    int sc = parser->square_count;
+
+    /* We need to subtract one in case we are searching for closing
+       paren/square/brace.  That is because:
+
+                    bc = 3                bc = 4   bc = 3
+       tok-stream:     x            .....    {  ....  }
+                       ^
+                       |____ start searching for '}'
+
+       so in order to skip the group of braces we would have to stop
+       when bc == 2, or in general case original bc - 1.  */
+    int pc = parser->paren_count - (tkind == tv_rparen ? 1 : 0);
+    int bc = parser->brace_count - (tkind == tv_rbrace ? 1 : 0);
+    int sc = parser->square_count - (tkind == tv_rsquare ? 1 : 0);
 
     do {
         tok = parser_get_token (parser);
