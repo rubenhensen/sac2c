@@ -230,6 +230,17 @@ ProjectObjects (node *fundef, info *info)
         if (INFO_OBJECTS (info) != NULL) {
             FUNDEF_OBJECTS (fundef) = DUPdoDupTree (INFO_OBJECTS (info));
         }
+    } else if (global.runtime == 1) {
+        /*
+         * We're in runtime mode and want to pretend as though all instances
+         * are local, so runtime loaded specializations work as expected.
+         */
+        if (FUNDEF_OBJECTS (fundef) != NULL) {
+            FUNDEF_OBJECTS (fundef) = FREEdoFreeTree (FUNDEF_OBJECTS (fundef));
+        }
+        if (INFO_OBJECTS (info) != NULL) {
+            FUNDEF_OBJECTS (fundef) = DUPdoDupTree (INFO_OBJECTS (info));
+        }
     } else {
         /*
          * we cannot modify the object dependencies for non local functions
