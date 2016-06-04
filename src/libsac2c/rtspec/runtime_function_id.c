@@ -34,10 +34,12 @@
 struct INFO {
     node *module;
     bool isgeneric;
+    bool isuser;
 };
 
 #define INFO_MODULE(n) ((n)->module)
 #define INFO_ISGENERIC(n) ((n)->isgeneric)
+#define INFO_ISUSER(n) ((n)->isuser)
 
 static info *
 MakeInfo (info *arg_info)
@@ -82,6 +84,11 @@ UIDarg (node *arg_node, info *arg_info)
 
     ntype *argtype = ARG_NTYPE (arg_node);
 
+    if (TYisArray (argtype) && TYisUser (TYgetScalar (argtype))
+        && !ARG_ISARTIFICIAL (arg_node)) {
+        INFO_ISUSER (arg_info) = TRUE;
+    }
+
     if (!TYisAKS (argtype)) {
         INFO_ISGENERIC (arg_info) = TRUE;
     }
@@ -125,12 +132,13 @@ UIDfundef (node *arg_node, info *arg_info)
         && !FUNDEF_ISWRAPPERFUN (arg_node) && !FUNDEF_ISCONDFUN (arg_node)
         && !FUNDEF_ISLOOPFUN (arg_node) && FUNDEF_ARGS (arg_node) != NULL) {
         INFO_ISGENERIC (arg_info) = FALSE;
+        INFO_ISUSER (arg_info) = FALSE;
 
         if (FUNDEF_ARGS (arg_node) != NULL) {
             FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
         }
 
-        if (INFO_ISGENERIC (arg_info)) {
+        if (INFO_ISGENERIC (arg_info) && !INFO_ISUSER (arg_info)) {
             FUNDEF_RTSPECID (arg_node) = (char *)MEMmalloc (sizeof (char) * 37);
 
 #if ENABLE_UUID
