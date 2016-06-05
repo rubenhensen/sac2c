@@ -690,8 +690,8 @@ GSCprintMainBegin (void)
 
     if (global.backend != BE_cuda) {
         INDENT;
-        fprintf (global.outfile, "SAC_RTSPEC_SETUP_INITIAL(%i, \"%s\");\n",
-                 global.rtspec_mode, global.command_line);
+        fprintf (global.outfile, "SAC_RTSPEC_SETUP_INITIAL(%i, \"%s\", \"%s\");\n",
+                 global.rtspec_mode, global.command_line, global.argv[0]);
     }
 
     INDENT;

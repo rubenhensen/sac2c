@@ -39,6 +39,8 @@ static int rtspec_mode;
 
 static char *cli_arguments;
 
+static char *executable_name;
+
 /******************************************************************************
  *
  * function:
@@ -52,11 +54,12 @@ static char *cli_arguments;
  ******************************************************************************/
 void
 SAC_RTSPEC_SetupInitial (int argc, char *argv[], unsigned int num_threads, int trace,
-                         int mode, char *command_line)
+                         int mode, char *command_line, char *binary_name)
 {
     do_trace = trace;
     rtspec_mode = mode;
     cli_arguments = command_line;
+    executable_name = binary_name;
 
     int i;
     bool rtc_option_exists = FALSE;
@@ -131,9 +134,9 @@ SAC_setupController (char *dir)
     SAC_RTSPEC_TR_Print ("Runtime specialization: Setup controller.");
 
     if (rtspec_mode == RTSPEC_MODE_SIMPLE) {
-        SAC_Simple_setupController (dir, do_trace, cli_arguments);
+        SAC_Simple_setupController (dir, do_trace, cli_arguments, executable_name);
     } else {
-        SAC_UUID_setupController (dir, do_trace, cli_arguments);
+        SAC_UUID_setupController (dir, do_trace, cli_arguments, executable_name);
     }
 
     int result;

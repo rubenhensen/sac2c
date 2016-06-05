@@ -10,7 +10,8 @@
 #ifndef _SAC_SIMPLE_CONTROLLER_H_
 #define _SAC_SIMPLE_CONTROLLER_H_
 
-extern void SAC_Simple_setupController (char *dir, int trace, char *command_line);
+extern void SAC_Simple_setupController (char *dir, int trace, char *command_line,
+                                        char *binary_name);
 
 extern void *SAC_Simple_runController (void);
 

@@ -33,7 +33,7 @@
 #define RTSPEC_MODULE_PREFIX "RTSpec_"
 #define RTSPEC_MODULE_PREFIX_LENGTH 7
 #define MAX_INT_DIGITS 21
-#define CALL_FORMAT_STRLEN 144
+#define CALL_FORMAT_STRLEN 141
 
 #define SAC_RTC_ENV_VAR_NAME "SAC_RTSPEC_CONTROLLER"
 
@@ -43,10 +43,12 @@ static char *tmpdir_name = NULL;
 static char *rtspec_syscall = NULL;
 static int tmpdir_strlen = 0;
 static char *cli_arguments;
+static char *executable_name;
 static int sbi_strlen = 0;
 static int target_env_strlen = 0;
 static int modext_strlen = 0;
 static int cli_arguments_strlen = 0;
+static int executable_name_strlen = 0;
 
 /* TLS key to retrieve the Thread Self ID Ptr */
 pthread_key_t SAC_RTSPEC_self_id_key;
@@ -107,7 +109,8 @@ CreateTmpDir (char *dir)
 
 /** <!--*******************************************************************-->
  *
- * @fn SAC_UUID_setupController( char *dir, int trace, char *command_line )
+ * @fn SAC_UUID_setupController( char *dir, int trace, char *command_line, char
+ **binary_name)
  *
  * @brief Initializes the request queue and starts the optimization controller
  *        in a separate thread.
@@ -115,12 +118,14 @@ CreateTmpDir (char *dir)
  ****************************************************************************/
 
 void
-SAC_UUID_setupController (char *dir, int trace, char *command_line)
+SAC_UUID_setupController (char *dir, int trace, char *command_line, char *binary_name)
 {
     do_trace = trace;
     cli_arguments = command_line;
+    executable_name = binary_name;
 
     cli_arguments_strlen = strlen (cli_arguments);
+    executable_name_strlen = strlen (executable_name);
     sbi_strlen = strlen (SAC_SBI_STRING);
     target_env_strlen = strlen (SAC_TARGET_ENV_STRING);
     modext_strlen = strlen (SAC_MODEXT_STRING);
@@ -206,7 +211,7 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
     SAC_RTSPEC_TR_Print ("Runtime specialization: Handling new specialization request.");
     SAC_RTSPEC_TR_Print ("Runtime specialization: UUID: %s", request->uuid);
 
-    static char call_format[CALL_FORMAT_STRLEN] = "sac2c -v%i -runtime "
+    static char call_format[CALL_FORMAT_STRLEN] = "%s -v%i -runtime "
                                                   "-rt_old_mod %s -rt_new_mod %s "
                                                   "-rtfunname %s -rtnewname %s "
                                                   "-rttypeinfo %s -rtshapeinfo %s "
@@ -243,18 +248,18 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
 
     sprintf (new_module, "%s%s_%d", RTSPEC_MODULE_PREFIX, request->mod_name, counter++);
 
-    char *syscall
-      = (char *)malloc (sizeof (char)
-                        * (strlen (request->func_name) * 2 + strlen (request->type_info)
-                           + strlen (request->shape) + target_env_strlen * 2 + sbi_strlen
-                           + cli_arguments_strlen + CALL_FORMAT_STRLEN + old_module_strlen
-                           + new_module_strlen + tmpdir_strlen * 2 + 1));
+    char *syscall = (char *)malloc (
+      sizeof (char)
+      * (strlen (request->func_name) * 2 + strlen (request->type_info)
+         + strlen (request->shape) + target_env_strlen * 2 + sbi_strlen
+         + executable_name_strlen + cli_arguments_strlen + CALL_FORMAT_STRLEN
+         + old_module_strlen + new_module_strlen + tmpdir_strlen * 2 + 1));
 
     /* Build the system call. */
-    sprintf (syscall, call_format, (do_trace == 1) ? 3 : 0, request->mod_name, new_module,
-             request->func_name, request->func_name, request->type_info, request->shape,
-             SAC_TARGET_ENV_STRING, SAC_SBI_STRING, SAC_TARGET_ENV_STRING, tmpdir_name,
-             cli_arguments);
+    sprintf (syscall, call_format, executable_name, (do_trace == 1) ? 3 : 0,
+             request->mod_name, new_module, request->func_name, request->func_name,
+             request->type_info, request->shape, SAC_TARGET_ENV_STRING, SAC_SBI_STRING,
+             SAC_TARGET_ENV_STRING, tmpdir_name, cli_arguments);
 
     SAC_RTSPEC_TR_Print ("Runtime specialization: Calling runtime compiler with:\n%s",
                          syscall);

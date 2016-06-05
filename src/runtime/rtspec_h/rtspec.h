@@ -13,9 +13,9 @@
 
 #if SAC_DO_RTSPEC
 
-#define SAC_RTSPEC_SETUP_INITIAL(mode, command_line)                                     \
+#define SAC_RTSPEC_SETUP_INITIAL(mode, command_line, binary_name)                        \
     SAC_RTSPEC_SetupInitial (__argc, __argv, SAC_SET_RTSPEC_THREADS,                     \
-                             SAC_DO_TRACE_RTSPEC, mode, command_line);                   \
+                             SAC_DO_TRACE_RTSPEC, mode, command_line, binary_name);      \
     SAC_registry_init (SAC_DO_TRACE_RTSPEC);                                             \
     SAC_persistence_init (__argc, __argv, SAC_DO_TRACE_RTSPEC);
 
@@ -183,7 +183,7 @@
 #else /* SAC_DO_RTSPEC */
 
 #define SAC_RTSPEC_SETUP()
-#define SAC_RTSPEC_SETUP_INITIAL(mode, command_line)
+#define SAC_RTSPEC_SETUP_INITIAL(mode, command_line, binary_name)
 #define SAC_RTSPEC_FINALIZE()
 
 #define SAC_RTSPEC_CURRENT_THREAD_ID() 0;

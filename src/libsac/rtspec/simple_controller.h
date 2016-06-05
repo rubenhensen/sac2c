@@ -15,7 +15,8 @@
 #include "simple_reqqueue.h"
 #include "persistence.h"
 
-extern void SAC_Simple_setupController (char *dir, int trace, char *command_line);
+extern void SAC_Simple_setupController (char *dir, int trace, char *command_line,
+                                        char *binary_name);
 
 extern void *SAC_Simple_runController (void *);
 
