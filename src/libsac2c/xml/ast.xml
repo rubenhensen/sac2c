@@ -154,6 +154,7 @@
           <node name="Module" />
           <node name="Fundef" />
           <node name="Arg" />
+          <node name="Ret" />
         </travuser>
       </traversal>
       <traversal id="TFTOP" name="Do a topological sort of the subtyping hierarchy" default="sons" include="topo.h" >
