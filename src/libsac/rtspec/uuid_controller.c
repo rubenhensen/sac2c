@@ -281,28 +281,23 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
     /* Execute the system call and act according to the return value. */
     switch (system (syscall)) {
     default:
-        fprintf (stderr, "ERROR -- \t [RTSpec Controller: "
-                         "SAC_UUID_handle_request()] Compilation failed!\n");
-
-        exit (EXIT_FAILURE);
+        SAC_RTSPEC_TR_Print ("Runtime specialization: Generating specialization failed!");
         break;
 
     case -1:
-        fprintf (stderr, "ERROR -- \t [RTSpec Controller: "
-                         "SAC_UUID_handle_request()] System call failed!\n");
-
-        exit (EXIT_FAILURE);
+        SAC_RTSPEC_TR_Print ("Runtime specialization: System call failed!");
+        break;
 
     case 0:
         lib = SAC_persistence_add (filename, request->func_name, request->uuid,
                                    request->type_info, request->shape, request->mod_name);
 
         SAC_persistence_load (lib, request->func_name, request->key);
+        free (lib);
     }
 
     free (filename);
     free (syscall);
-    free (lib);
 }
 
 /** <!--*******************************************************************-->
