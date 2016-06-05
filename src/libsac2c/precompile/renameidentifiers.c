@@ -193,6 +193,7 @@ static node *
 RenameFun (node *fun)
 {
     char *new_name;
+    const char *mod_name;
 
     DBUG_ENTER ();
 
@@ -218,12 +219,16 @@ RenameFun (node *fun)
          * SAC functions which may be overloaded
          */
 
-        if (global.runtime && STReq (FUNDEF_NAME (fun), global.rt_fun_name)
+        mod_name = NSgetModule (FUNDEF_NS (fun));
+
+        if (global.runtime && STReq (mod_name, global.rt_new_module)
+            && STReq (FUNDEF_NAME (fun), global.rt_fun_name)
             && FUNDEF_ISINDIRECTWRAPPERFUN (fun)) {
             // rtspec mode simple
             new_name = STRcpy (global.rt_new_name);
-        } else if (global.runtime && STReq (FUNDEF_NAME (fun), global.rt_fun_name)
-                   && FUNDEF_ISSPECIALISATION (fun)) {
+        } else if (global.runtime && STReq (mod_name, global.rt_new_module)
+                   && STReq (FUNDEF_NAME (fun), global.rt_fun_name)
+                   && FUNDEF_ISSPECIALISATION (fun) && !FUNDEF_ISWRAPPERFUN (fun)) {
             // rtspec mode uuid/hash
             new_name = STRcpy (global.rt_new_name);
         } else {
@@ -235,7 +240,6 @@ RenameFun (node *fun)
 
         FUNDEF_NAME (fun) = MEMfree (FUNDEF_NAME (fun));
         FUNDEF_NAME (fun) = new_name;
-        FUNDEF_NS (fun) = NSfreeNamespace (FUNDEF_NS (fun));
     }
 
     DBUG_RETURN (fun);

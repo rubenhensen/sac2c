@@ -2128,19 +2128,20 @@ MakeFunApArgIdNtThread (node *id)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *MakeFunApArgs( node *ap)
+ * @fn  node *MakeFunApArgs( node *ap, info *arg_info)
  *
  * @brief  Builds N_exprs chain of ICM arguments for function applications
  *
  ******************************************************************************/
 
 static node *
-MakeFunApArgs (node *ap)
+MakeFunApArgs (node *ap, info *arg_info)
 {
     argtab_t *argtab;
     int i;
     node *icm_args = NULL;
     node *fundef;
+    bool fundef_in_current_namespace;
 
     DBUG_ENTER ();
 
@@ -2150,6 +2151,10 @@ MakeFunApArgs (node *ap)
 
     argtab = AP_ARGTAB (ap);
     DBUG_ASSERT (argtab != NULL, "no argtab found!");
+
+    fundef_in_current_namespace
+      = STReq (NSgetModule (FUNDEF_NS (fundef)),
+               NSgetModule (MODULE_NAMESPACE (INFO_MODUL (arg_info))));
 
     /* arguments */
     for (i = argtab->size - 1; i >= 1; i--) {
@@ -2166,8 +2171,9 @@ MakeFunApArgs (node *ap)
                   = TBmakeExprs (MakeFunApArgIdsNtThread (argtab->ptr_out[i]), icm_args);
             }
 
-            if (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef)
-                && global.config.rtspec) {
+            if (FUNDEF_RTSPECID (fundef) != NULL && global.config.rtspec
+                && ((fundef_in_current_namespace && FUNDEF_ISEXPORTED (fundef))
+                    || !fundef_in_current_namespace)) {
                 shape = NTUgetShapeClassFromTypes (IDS_TYPE (argtab->ptr_out[i]));
                 dim = TCgetDim (IDS_TYPE (argtab->ptr_out[i]));
                 exprs = TBmakeExprs (TBmakeNum (shape), exprs);
@@ -2212,8 +2218,9 @@ MakeFunApArgs (node *ap)
                     }
                 }
 
-                if (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef)
-                    && global.config.rtspec) {
+                if (FUNDEF_RTSPECID (fundef) != NULL && global.config.rtspec
+                    && ((fundef_in_current_namespace && FUNDEF_ISEXPORTED (fundef))
+                        || !fundef_in_current_namespace)) {
                     shape = NTUgetShapeClassFromTypes (
                       ID_TYPE (EXPRS_EXPR (argtab->ptr_in[i])));
                     dim = TCgetDim (ID_TYPE (EXPRS_EXPR (argtab->ptr_in[i])));
@@ -2259,8 +2266,9 @@ MakeFunApArgs (node *ap)
                                      icm_args);
                 }
 
-                if (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef)
-                    && global.config.rtspec) {
+                if (FUNDEF_RTSPECID (fundef) != NULL && global.config.rtspec
+                    && ((fundef_in_current_namespace && FUNDEF_ISEXPORTED (fundef))
+                        || !fundef_in_current_namespace)) {
                     shape = NTUgetShapeClassFromTypes (
                       ID_TYPE (EXPRS_EXPR (argtab->ptr_in[i])));
                     dim = TCgetDim (ID_TYPE (EXPRS_EXPR (argtab->ptr_in[i])));
@@ -2301,8 +2309,9 @@ MakeFunApArgs (node *ap)
     }
 
     if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)
-        || (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef)
-            && global.config.rtspec)) {
+        || (FUNDEF_RTSPECID (fundef) != NULL && global.config.rtspec
+            && ((fundef_in_current_namespace && FUNDEF_ISEXPORTED (fundef))
+                || !fundef_in_current_namespace))) {
         argtab_t *fundef_argtab;
 
         fundef_argtab = FUNDEF_ARGTAB (fundef);
@@ -2320,8 +2329,9 @@ MakeFunApArgs (node *ap)
         }
     }
 
-    if (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef)
-        && global.config.rtspec) {
+    if (FUNDEF_RTSPECID (fundef) != NULL && global.config.rtspec
+        && ((fundef_in_current_namespace && FUNDEF_ISEXPORTED (fundef))
+            || !fundef_in_current_namespace)) {
         icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_RTSPECID (fundef)), icm_args);
         icm_args
           = TBmakeExprs (TCmakeIdCopyString (FUNDEF_SOURCENAME (fundef)), icm_args);
@@ -4335,6 +4345,7 @@ COMPap (node *arg_node, info *arg_info)
     node **icm_data, **icm_conf_expr = NULL;
     int *recommendations;
     int data_size, dims, seg_dim, op_offset, op, nr_segs, idx;
+    bool fundef_in_current_namespace;
 
     static int spmdfun_count = 0;
 
@@ -4342,6 +4353,10 @@ COMPap (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
     fundef = AP_FUNDEF (arg_node);
+
+    fundef_in_current_namespace
+      = STReq (NSgetModule (FUNDEF_NS (fundef)),
+               NSgetModule (MODULE_NAMESPACE (INFO_MODUL (arg_info))));
 
     DBUG_ASSERT (CheckAp (arg_node, arg_info),
                  "application of a user-defined function without own"
@@ -4362,7 +4377,7 @@ COMPap (node *arg_node, info *arg_info)
 
     assigns = TCappendAssign (assigns1, assigns2);
 
-    icm_args = MakeFunApArgs (arg_node);
+    icm_args = MakeFunApArgs (arg_node, arg_info);
 
     if (FUNDEF_ISSPMDFUN (fundef)) {
         if (global.mt_smart_mode > 0) {
@@ -4542,11 +4557,11 @@ COMPap (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("CUDA_ST_GLOBALFUN_AP", icm_args);
     } else if (FUNDEF_ISINDIRECTWRAPPERFUN (fundef)) {
         icm = TBmakeIcm ("WE_FUN_AP", icm_args);
-    } else if (FUNDEF_RTSPECID (fundef) != NULL && FUNDEF_ISEXPORTED (fundef)
-               && global.config.rtspec) {
-        icm_args = TBmakeExprs (TCmakeIdCopyString (
-                                  NSgetModule (MODULE_NAMESPACE (INFO_MODUL (arg_info)))),
-                                icm_args);
+    } else if (FUNDEF_RTSPECID (fundef) != NULL && global.config.rtspec
+               && ((fundef_in_current_namespace && FUNDEF_ISEXPORTED (fundef))
+                   || !fundef_in_current_namespace)) {
+        icm_args
+          = TBmakeExprs (TCmakeIdCopyString (NSgetModule (FUNDEF_NS (fundef))), icm_args);
         icm = TBmakeIcm ("RTSPEC_FUN_AP", icm_args);
     } else if (global.backend == BE_distmem && AP_DISTMEMHASSIDEEFFECTS (arg_node)) {
         /* This function application has side effects. We have to treat it in a special
