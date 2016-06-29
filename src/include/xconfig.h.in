@@ -41,8 +41,16 @@
 #cmakedefine01 ENABLE_RTSPEC
 #cmakedefine01 ENABLE_UUID
 #cmakedefine01 HAVE_GCC_SIMD_OPERATIONS
-#cmakedefine01 HAVE_GETTIME
+#cmakedefine01 ENABLE_GETTIME
+#if ENABLE_GETTIME
+#  define HAVE_GETTIME 1
+#else
+#  undef HAVE_GETTIME
+#endif
 #cmakedefine01 HAVE_MALLOC_H
+#if HAVE_MALLOC_H == 0
+#  undef HAVE_MALLOC_H
+#endif
 #cmakedefine01 HAVE_MKDTEMP
 #cmakedefine01 HAVE_OPENMP
 #cmakedefine01 HAVE_STRRCHR

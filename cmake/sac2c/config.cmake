@@ -100,6 +100,30 @@ CHECK_FUNCTION_EXISTS (strtok HAVE_STRTOK)
 CHECK_FUNCTION_EXISTS (strrchr HAVE_STRRCHR)
 CHECK_FUNCTION_EXISTS (mkdtemp HAVE_MKDTEMP)
 
+# Check if we have clock_gettime and whether we need -lrt
+SET (ENABLE_GETTIME OFF)
+SET (LIB_RT "")
+FIND_LIBRARY (RT_LIB      "rt")
+IF (RT_LIB)
+    GET_FILENAME_COMPONENT (RT_PATH  ${RT_LIB} PATH)
+    CHECK_LIBRARY_EXISTS (${RT_LIB} "clock_gettime" ${RT_PATH} RT_FOUND)
+ENDIF ()
+IF (RT_LIB AND RT_FOUND)
+   CHECK_C_SOURCE_COMPILES ("
+       #include <time.h>
+       #include <sys/times.h>
+       int main (void) {
+         struct timespec ts;
+         clock_gettime(CLOCK_MONOTONIC, &ts);
+         return 0;
+       }
+   "
+   ENABLE_GETTIME
+   )
+   IF (ENABLE_GETTIME)
+      SET (LIB_RT  -Xl -lrt)
+   ENDIF ()
+ENDIF ()
 
 
 # Check functions in libs
@@ -217,10 +241,6 @@ CHECK_C_SOURCE_COMPILES ("
 
 FILE *_db_fp_ = stderr;
 " STDERR_IS_CONSTANT)
-
-
-# FIXME This doesn't check if CLOCK_PROCESS_CPUTIME_ID is supported
-CHECK_LIBRARY_EXISTS ("rt" "clock_gettime" "" HAVE_GETTIME)
 
 
 # Check compiler identities variables.

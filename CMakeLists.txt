@@ -83,6 +83,7 @@ ExternalProject_Add(runtime_libraries
         -DSAC2CRC_BUILD_CONF=${SAC2CRC_BUILD_CONF}
         # FIXME(artem) Shouldn't we use MODEXT from sac2crc instead?
         -DSHARED_LIB_EXT=${SHARED_LIB_EXT}
+        -DLIB_RT=${LIB_RT}
 )
 
 # Installing the sac2c project files.
