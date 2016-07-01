@@ -92,6 +92,12 @@ ExternalProject_Add(runtime_libraries
 INSTALL (TARGETS sac2c RUNTIME DESTINATION "${DLL_DIR}")
 IF (CMAKE_HOST_UNIX AND SYMLINKS)
     # FIXME(artem) Create symlinks for other tools we install
+    # A better way to create symlinks is:
+    #    INSTALL(CODE "
+    #              EXEC_PROGRAM(${CMAKE_COMMAND} ARGS -E create_symlink
+    #              ...
+    #              )
+    #    ")
     INSTALL (CODE "
         FILE (MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
         EXECUTE_PROCESS (
