@@ -89,7 +89,7 @@ ExternalProject_Add(runtime_libraries
 # Installing the sac2c project files.
 # XXX(artem) in case we are doing packaging, symbolic links should be
 #            avoided.
-INSTALL (TARGETS sac2c RUNTIME DESTINATION "${DLL_DIR}")
+INSTALL (TARGETS sac2c RUNTIME DESTINATION "${DLL_DIR}" COMPONENT applications)
 IF (CMAKE_HOST_UNIX AND SYMLINKS)
     # FIXME(artem) Create symlinks for other tools we install
     # A better way to create symlinks is:
@@ -105,19 +105,25 @@ IF (CMAKE_HOST_UNIX AND SYMLINKS)
             WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
     ")
 ELSE ()
-    INSTALL (TARGETS sac2c RUNTIME DESTINATION bin)
-    INSTALL (TARGETS sac4c RUNTIME DESTINATION bin)
-    INSTALL (TARGETS sac2tex RUNTIME DESTINATION bin)
+    INSTALL (TARGETS sac2c RUNTIME DESTINATION bin COMPONENT applications)
+    INSTALL (TARGETS sac4c RUNTIME DESTINATION bin COMPONENT applications)
+    INSTALL (TARGETS sac2tex RUNTIME DESTINATION bin COMPONENT applications)
 ENDIF ()
 
 # install sac2crc stuff...
-INSTALL (FILES "${SAC2CRC_BUILD_CONF}" DESTINATION "${SAC2CRC_DIR}")
+INSTALL (FILES "${SAC2CRC_BUILD_CONF}"
+         DESTINATION "${SAC2CRC_DIR}"
+         COMPONENT config)
 
 # install sac2c-related binaries stuff...
-INSTALL (FILES "${PROJECT_BINARY_DIR}/saccc" DESTINATION bin)
+INSTALL (FILES "${PROJECT_BINARY_DIR}/saccc"
+         DESTINATION bin 
+         COMPONENT applications)
 
 # install include files
-INSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/" DESTINATION "${INCPATH_CONF}")
+INSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/" 
+         DESTINATION "${INCPATH_CONF}"
+         COMPONENT headers)
 
 ## We need to install the runtime libraries and sacprelude into a directory
 ## hiearchy that is different from the `local' hiearchy. Under out local `lib/' we
@@ -133,18 +139,25 @@ INSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/" DESTINATION "${INCPATH_CONF}
 ## 'tree' instead.
 INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/
     DESTINATION ${RTPATH_CONF}
+    COMPONENT libraries
     FILES_MATCHING PATTERN "*"
     PATTERN "prelude" EXCLUDE)
 INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/
     DESTINATION ${MODPATH_CONF}
+    COMPONENT libraries
     FILES_MATCHING PATTERN "*"
     PATTERN "tree" EXCLUDE)
 
 # install runtime-related binaries
-INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/bin/ DESTINATION bin FILES_MATCHING PATTERN "*")
+INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/bin/
+         DESTINATION bin
+         COMPONENT applications
+         FILES_MATCHING PATTERN "*")
 
 # install sacprelude
-INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/tree DESTINATION ${TREEPATH_CONF})
+INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/tree
+         DESTINATION ${TREEPATH_CONF}
+         COMPONENT libraries)
 
 # Cpack information
 # INCLUDE(InstallRequiredSystemLibraries)
@@ -158,10 +171,13 @@ SET (CPACK_GENERATOR "TGZ")
 # XXX(artem) This allows one to use absolute pathes during installation,
 #            but it doesn't seem to work on windows and friends.
 SET (CPACK_SET_DESTDIR ON)
-
-SET (CPACK_PACKAGE_VERSION_MAJOR "${SAC2C_VERSION_MAJOR}")
-SET (CPACK_PACKAGE_VERSION_MINOR "${SAC2C_VERSION_MINOR}")
-SET (CPACK_PACKAGE_VERSION_PATCH "${SAC2C_VERSION_PATCH}")
+SET (CPACK_PACKAGE_NAME              "sac2c-compiler")
+SET (CPACK_PACKAGE_VENDOR            "SaC Development Team")
+SET (CPACK_PACKAGE_VERSION           "${SAC2C_VERSION}")
+SET (CPACK_PACKAGE_VERSION_MAJOR     "${SAC2C_VERSION_MAJOR}")
+SET (CPACK_PACKAGE_VERSION_MINOR     "${SAC2C_VERSION_MINOR}")
+SET (CPACK_PACKAGE_VERSION_PATCH     "${SAC2C_VERSION_PATCH}")
+SET (CPACK_PACKAGE_INSTALL_DIRECTORY "sac2c-${SAC2C_VERSION}")
 
 # SET (CPACK_PACKAGE_DESCRIPTION_FILE ...)
 SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY
@@ -170,6 +186,16 @@ SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY
 #SET (CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 SET (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
 
+# Debian-specific variables
 SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Jack the Ripper")
+
+SET (CPACK_COMPONENTS_ALL applications libraries headers conf)
+# Set the displayed names for each of the components to install.
+# These will be displayed in the list of components inside the installer.
+SET (CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "SaC Binaries")
+SET (CPACK_COMPONENT_LIBRARIES_DISPLAY_NAME "SaC Libraries")
+SET (CPACK_COMPONENT_HEADERS_DISPLAY_NAME "SaC Headers")
+SET (CPACK_COMPONENT_CONF_DISPLAY_NAME "SaC Configs")
+
 
 INCLUDE(CPack)
