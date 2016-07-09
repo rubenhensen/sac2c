@@ -276,8 +276,8 @@ SAC_Simple_handleRequest (simple_queue_node_t *request)
              "%s/" SAC_TARGET_ENV_STRING "/" SAC_SBI_STRING "/lib%sMod" SAC_MODEXT_STRING,
              tmpdir_name, new_module);
 
-    SAC_TR_Print ("Runtime specialization: Generating specialized library at:\n%s",
-                  filename);
+    SAC_RTSPEC_TR_Print ("Runtime specialization: Generating specialized library at:\n%s",
+                         filename);
 
     // Mark specialization as processed early to avoid concurrently processing
     // it twice by two individual controllers
