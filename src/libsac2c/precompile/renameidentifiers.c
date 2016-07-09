@@ -24,6 +24,7 @@
 #include "convert.h"
 #include "namespaces.h"
 #include "globals.h"
+#include "rtspec_modes.h"
 
 /*
  * INFO structure
@@ -221,12 +222,14 @@ RenameFun (node *fun)
 
         mod_name = NSgetModule (FUNDEF_NS (fun));
 
-        if (global.runtime && STReq (mod_name, global.rt_new_module)
+        if (global.runtime && global.rtspec_mode == RTSPEC_MODE_SIMPLE
+            && STReq (mod_name, global.rt_new_module)
             && STReq (FUNDEF_NAME (fun), global.rt_fun_name)
             && FUNDEF_ISINDIRECTWRAPPERFUN (fun)) {
             // rtspec mode simple
             new_name = STRcpy (global.rt_new_name);
-        } else if (global.runtime && STReq (mod_name, global.rt_new_module)
+        } else if (global.runtime && global.rtspec_mode != RTSPEC_MODE_SIMPLE
+                   && STReq (mod_name, global.rt_new_module)
                    && STReq (FUNDEF_NAME (fun), global.rt_fun_name)
                    && FUNDEF_ISSPECIALISATION (fun) && !FUNDEF_ISWRAPPERFUN (fun)) {
             // rtspec mode uuid/hash
