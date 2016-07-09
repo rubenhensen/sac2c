@@ -301,7 +301,6 @@ SAC_UUID_handleRequest (uuid_queue_node_t *request)
         free (lib);
     }
 
-    free (filename);
     free (syscall);
 }
 
