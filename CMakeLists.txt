@@ -14,6 +14,7 @@ include ("cmake/sac2c/config.cmake")
 include ("cmake/sac2c/sac2crc.cmake")
 include ("cmake/settings.cmake")
 
+
 # Include common directories for the project.
 INCLUDE_DIRECTORIES(
   "include"
@@ -177,6 +178,7 @@ SET (CPACK_PACKAGE_VERSION           "${SAC2C_VERSION}")
 SET (CPACK_PACKAGE_VERSION_MAJOR     "${SAC2C_VERSION_MAJOR}")
 SET (CPACK_PACKAGE_VERSION_MINOR     "${SAC2C_VERSION_MINOR}")
 SET (CPACK_PACKAGE_VERSION_PATCH     "${SAC2C_VERSION_PATCH}")
+SET (CPACK_PACKAGE_FILE_NAME         "sac2c-${SAC2C_VERSION}-${CMAKE_BUILD_TYPE}")
 SET (CPACK_PACKAGE_INSTALL_DIRECTORY "sac2c-${SAC2C_VERSION}")
 
 # SET (CPACK_PACKAGE_DESCRIPTION_FILE ...)
