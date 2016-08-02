@@ -168,7 +168,10 @@ INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-bui
 # SET (CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION ON)
 
 SET (CPACK_GENERATOR "TGZ")
-
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    SET (CPACK_GENERATOR "Bundle")
+ENDIF()
+    
 # XXX(artem) This allows one to use absolute pathes during installation,
 #            but it doesn't seem to work on windows and friends.
 SET (CPACK_SET_DESTDIR ON)
@@ -180,6 +183,15 @@ SET (CPACK_PACKAGE_VERSION_MINOR     "${SAC2C_VERSION_MINOR}")
 SET (CPACK_PACKAGE_VERSION_PATCH     "${SAC2C_VERSION_PATCH}")
 SET (CPACK_PACKAGE_FILE_NAME         "sac2c-${SAC2C_VERSION}-${CMAKE_BUILD_TYPE}")
 SET (CPACK_PACKAGE_INSTALL_DIRECTORY "sac2c-${SAC2C_VERSION}")
+SET (CPACK_PACKAGE_ICON              "${PROJECT_SOURCE_DIR}/cmake/cpack/dmg-bundle/sac_logo.png")
+
+# DMG Bundle related configuration
+SET (CPACK_BUNDLE_NAME "sac2c-${SAC2C_VERSION}-${CMAKE_BUILD_TYPE}")
+SET (CPACK_BUNDLE_ICON "${PROJECT_SOURCE_DIR}/cmake/cpack/dmg-bundle/sac_logo.png")
+SET (CPACK_BUNDLE_PLIST "${PROJECT_BINARY_DIR}/Info.plist")
+SET (CPACK_BUNDLE_STARTUP_COMMAND "${PROJECT_BINARY_DIR}/Install.command")
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/cmake/cpack/dmg-bundle/bundle.plist" "${PROJECT_BINARY_DIR}/Info.plist")
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/cmake/cpack/dmg-bundle/install-sac-dmg.sh" "${PROJECT_BINARY_DIR}/Install.command")
 
 # SET (CPACK_PACKAGE_DESCRIPTION_FILE ...)
 SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY

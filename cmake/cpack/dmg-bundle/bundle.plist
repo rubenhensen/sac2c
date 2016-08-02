@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Based on http://stackoverflow.com/questions/1596945 -->
+<plist version="1.0">
+    <dict>
+        <key>CFBundleGetInfoString</key>
+        <string>Foo</string>
+        <key>CFBundleExecutable</key>
+        <string>@CPACK_BUNDLE_NAME@</string>
+        <key>CFBundleIdentifier</key>
+        <string>com.sac.compiler</string>
+        <key>CFBundleName</key>
+        <string>SAC Compiler Installer</string>
+        <key>CFBundleIconFile</key>
+        <string>@CPACK_BUNDLE_NAME@</string>
+        <key>CFBundleShortVersionString</key>
+        <string>@SAC2C_VERSION@</string>
+        <key>CFBundleInfoDictionaryVersion</key>
+        <string>6.0</string>
+        <key>CFBundlePackageType</key>
+        <string>APPL</string>
+        <key>IFMajorVersion</key>
+        <integer>@SAC2C_VERSION_MAJOR@</integer>
+        <key>IFMinorVersion</key>
+        <integer>@SAC2C_VERSION_MINOR@</integer>
+    </dict>
+</plist>
