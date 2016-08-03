@@ -187,7 +187,7 @@ SET (CPACK_PACKAGE_ICON              "${PROJECT_SOURCE_DIR}/cmake/cpack/dmg-bund
 
 # DMG Bundle related configuration
 SET (CPACK_BUNDLE_NAME "sac2c-${SAC2C_VERSION}-${CMAKE_BUILD_TYPE}")
-SET (CPACK_BUNDLE_ICON "${PROJECT_SOURCE_DIR}/cmake/cpack/dmg-bundle/sac_logo.png")
+SET (CPACK_BUNDLE_ICON "${PROJECT_SOURCE_DIR}/cmake/cpack/dmg-bundle/sac.icns")
 SET (CPACK_BUNDLE_PLIST "${PROJECT_BINARY_DIR}/Info.plist")
 SET (CPACK_BUNDLE_STARTUP_COMMAND "${PROJECT_BINARY_DIR}/Install.command")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/cmake/cpack/dmg-bundle/Info.plist.in" "${PROJECT_BINARY_DIR}/Info.plist")
