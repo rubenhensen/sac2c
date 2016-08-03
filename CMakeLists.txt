@@ -1,7 +1,16 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.4)
 
 # Name of the project
 PROJECT (sac2c C)
+
+# Handle Policies
+#FIXME hans: currently we set the policy to the DEFAULT
+#            used by cersion 3.4 of CMAKE. The alternative
+#            is to specify individual policies for different
+#            features regardless of version. The danger with
+#            this is that newer version will not even support
+#            that policy option anymore...
+CMAKE_POLICY (VERSION 3.4)
 
 # Extra cmake packages
 INCLUDE (ExternalProject)
@@ -13,7 +22,6 @@ include ("cmake/options.cmake")
 include ("cmake/sac2c/config.cmake")
 include ("cmake/sac2c/sac2crc.cmake")
 include ("cmake/settings.cmake")
-
 
 # Include common directories for the project.
 INCLUDE_DIRECTORIES(
