@@ -3,8 +3,8 @@
 <!-- Based on http://stackoverflow.com/questions/1596945 -->
 <plist version="1.0">
     <dict>
-        <key>CFBundleGetInfoString</key>
-        <string>Foo</string>
+        <key>NSHumanReadableCopyright</key>
+        <string>Copyright 1994-2016, SAC Reseach Group</string>
         <key>CFBundleExecutable</key>
         <string>@CPACK_BUNDLE_NAME@</string>
         <key>CFBundleIdentifier</key>
