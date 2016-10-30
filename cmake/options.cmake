@@ -1,6 +1,9 @@
-
+# These options are both used to turn on and off compilation options for the compiler
+# as well as part of the CMake configuration stage as status flags. Please don't be
+# surprised if an option flips once configuration has completed - it is likely that
+# one or more dependencies could not be satisifed.
 OPTION (DOT       "Build sac with dot-file support for visualising AST"               OFF)
-OPTION (CPLUSPLUS  "Use C++ compiler to build sac2c"                                   OFF)
+OPTION (CPLUSPLUS "Use C++ compiler to build sac2c"                                   OFF)
 OPTION (LTO       "Use Link Time Optimisations if supported by the C compiler"        OFF)
 OPTION (MT        "Build sac2c with thread-based backend support"                     ON)
 OPTION (OMP       "Build sac2c with openmp-based backend support"                     ON)

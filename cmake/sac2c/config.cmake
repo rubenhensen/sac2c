@@ -305,16 +305,18 @@ IF (ENABLE_DL AND ENABLE_MT AND ENABLE_UUID AND ENABLE_CRYPT)
 ENDIF ()
 
 # Check if sbrk exists which yields ENABLE_PHM
-SET (ENABLE_PHM  OFF)
 SET (CAN_USE_PHM "0")
 SET (SBRK_T)
-CHECK_FUNCTION_EXISTS ("sbrk" HAVE_SBRK)
-IF (HAVE_SBRK)
-  SET (ENABLE_PHM  ON)
-  SET (CAN_USE_PHM "1")
-  # FIXME Select the right type from "intptr_t ptrdiff_t ssize_t int"
-  # currently this is just a hack.
-  SET (SBRK_T      "intptr_t")
+IF (PHM)
+  CHECK_FUNCTION_EXISTS ("sbrk" HAVE_SBRK)
+  IF (HAVE_SBRK)
+    SET (CAN_USE_PHM "1")
+    # FIXME Select the right type from "intptr_t ptrdiff_t ssize_t int"
+    # currently this is just a hack.
+    SET (SBRK_T      "intptr_t")
+  ELSE ()
+    SET (PHM OFF)
+  ENDIF ()
 ENDIF ()
 
 # Check if "%p" format of printf routines prints "0x"
@@ -700,7 +702,7 @@ MESSAGE ("
 * CMake Varient:           ${CMAKE_BUILD_TYPE}
 *
 * Run-time specialization: ${ENABLE_RTSPEC}
-* Private heap manager:    ${ENABLE_PHM}
+* Private heap manager:    ${PHM}
 * Back-ends:
 * - MT/pthread:            ${ENABLE_MT}
 * - MT/LPEL:               ${ENABLE_MT_LPEL}

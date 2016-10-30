@@ -36,7 +36,6 @@
 #cmakedefine01 ENABLE_MT_LPEL
 #cmakedefine01 ENABLE_MUTC
 #cmakedefine01 ENABLE_OMP
-#cmakedefine01 ENABLE_PHM
 #cmakedefine01 ENABLE_HASH
 #cmakedefine01 ENABLE_RTSPEC
 #cmakedefine01 ENABLE_UUID
