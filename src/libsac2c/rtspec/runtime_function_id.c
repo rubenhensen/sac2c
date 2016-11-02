@@ -30,7 +30,7 @@
 #include <unistd.h>
 #ifdef __APPLE__
 #include <unistd.h>
-#elif
+#else
 #include <crypt.h>
 #endif /* __APPLE__ */
 #endif /* ENABLE_HASH */
