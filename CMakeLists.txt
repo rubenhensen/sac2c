@@ -213,6 +213,11 @@ SET (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
 SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "Jack the Ripper")
 SET(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
 
+# RPM-specific variables
+# FIXME(hans) this may not be exhaustive - does not take into account if the user
+# changes the install prefix
+SET(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "/usr/local" "/usr/local/include" "/usr/local/lib" "/usr/local/libexec" "/usr/local/share")
+
 SET (CPACK_COMPONENTS_ALL applications libraries headers conf)
 # Set the displayed names for each of the components to install.
 # These will be displayed in the list of components inside the installer.
