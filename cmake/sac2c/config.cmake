@@ -257,10 +257,7 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 ELSE ()
   CHECK_INCLUDE_FILES ("crypt.h" HAVE_CRYPT_H)
 ENDIF ()
-ENABLE_VAR_IF (ENABLE_CRYPT  HAVE_CRYPT_H AND CRYPT_LIB)
-# This is needed for the config.h file
-# FIXME(artem) we can use the ENABLE_CRYPT directly
-SET (ENABLE_HASH  ${ENABLE_CRYPT})
+ENABLE_VAR_IF (ENABLE_HASH  HAVE_CRYPT_H AND CRYPT_LIB)
 
 SET (LPEL_PATH)
 IF (LPEL)
@@ -311,8 +308,12 @@ ENDIF ()
 
 # Check and see if we can enable RTSPEC
 SET (ENABLE_RTSPEC OFF)
-IF (ENABLE_DL AND ENABLE_MT AND ENABLE_UUID AND ENABLE_CRYPT)
+IF (ENABLE_DL AND ENABLE_MT AND ENABLE_UUID AND ENABLE_HASH)
   SET (ENABLE_RTSPEC ON)
+ELSE ()
+  # We do this to prevent the compilation of rtspec components
+  UNSET(ENABLE_HASH)
+  UNSET(ENABLE_UUID)
 ENDIF ()
 
 # Check if sbrk exists which yields ENABLE_PHM
