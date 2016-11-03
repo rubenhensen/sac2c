@@ -585,7 +585,6 @@ ELSE ()
     TARGET_LINK_LIBRARIES (sac2cShared
         ${M_LIB}
         ${DL_LIB}
-        ${CRYPT_LIB}
     )
 ENDIF ()
 INSTALL (TARGETS sac2cShared LIBRARY DESTINATION "${DLL_DIR}")
