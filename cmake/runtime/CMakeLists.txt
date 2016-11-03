@@ -44,6 +44,13 @@ INCLUDE_DIRECTORIES(
   "${PROJECT_BINARY_DIR}/include"
 )
 
+# This is a path to libsac2c library. Make sure that
+# ALL the subsequent targets in the runtime library
+# add a dependency to this variable.  Otherwised they
+# won't get rebuild when libsac2c is modified.
+FIND_LIBRARY (LIB_SAC2C NAMES "libsac2c${CMAKE_SHARED_LIBRARY_SUFFIX}"
+              PATHS ${SAC2C_BUILD_DIR}/lib NO_DEFAULT_PATH)
+
 # Include the runtime subdirectory and pre-set the variables
 # of the variant that we want to compile.
 MACRO (ADD_LIBSAC_TARGET SRC_DIR VARIANT_TARGET)

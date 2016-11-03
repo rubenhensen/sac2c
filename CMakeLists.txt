@@ -77,8 +77,34 @@ ADD_EXECUTABLE (sac2tex src/tools/sac2tex/sac2tex.c)
 ADD_DEPENDENCIES (sac2tex sac_h)
 TARGET_LINK_LIBRARIES (sac2tex ${DL_LIB})
 
-## This is where we call the build of the sac2c shared-libraries
-## XXX: this *depends* on sac2c having been build first!
+
+# XXX(artem) This is an alternative way to acheive what ExternalProject +
+#            ExternalProject_AddStep are doing.
+#ADD_CUSTOM_TARGET (
+#    build-runtime-libs ALL
+#    DEPENDS
+#        sac2c sac2cShared
+#    COMMAND
+#        ${CMAKE_COMMAND} -E make_directory runtime_build
+#    COMMAND
+#        ${CMAKE_COMMAND} 
+#            -E chdir runtime_build
+#            ${CMAKE_COMMAND}
+#                -DSAC2C_BUILD_DIR=${PROJECT_BINARY_DIR}
+#                -DSAC2C_SOURCE_DIR=${PROJECT_SOURCE_DIR}
+#                -DSAC2CRC_BUILD_CONF=${SAC2CRC_BUILD_CONF}
+#                # FIXME(artem) Shouldn't we use MODEXT from sac2crc instead?
+#                -DSHARED_LIB_EXT=${SHARED_LIB_EXT}
+#                -DLIB_RT=${LIB_RT}
+#                ${PROJECT_SOURCE_DIR}/cmake/runtime
+#    COMMAND
+#        ${CMAKE_COMMAND} --build runtime_build
+#    COMMENT
+#        "Build runtime sac2c libraries for targets: ${targets}"
+#)
+
+# This is where we call the build of the sac2c shared-libraries
+# XXX: this *depends* on sac2c having been build first!
 ExternalProject_Add(runtime_libraries
     DEPENDS sac2cShared sac2c
     DOWNLOAD_COMMAND "" # this is to prevent any download target from being called
@@ -94,6 +120,14 @@ ExternalProject_Add(runtime_libraries
         -DSHARED_LIB_EXT=${SHARED_LIB_EXT}
         -DLIB_RT=${LIB_RT}
 )
+
+# Force runtime_libraries to reconfigure every time we run make.
+ExternalProject_Add_Step(runtime_libraries forceconfigure
+            COMMAND ${CMAKE_COMMAND} -E echo "Force configure of runtime libraries"
+            DEPENDEES update
+            DEPENDERS configure
+            ALWAYS 1)
+
 
 # Installing the sac2c project files.
 # XXX(artem) in case we are doing packaging, symbolic links should be

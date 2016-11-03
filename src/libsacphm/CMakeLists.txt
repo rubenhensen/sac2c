@@ -29,14 +29,14 @@ FOREACH(name ${LIBSAC_SRC})
   SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}${OBJEXT}")
   ADD_CUSTOM_COMMAND (
     OUTPUT "${dst}"
-    DEPENDS "${src}"
+    DEPENDS "${src}" ${LIB_SAC2C}
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
     COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -noprelude -cc ccmod -o "${dst}" "${src}"
     COMMENT "Generating ${dst}"
   )
   LIST (APPEND LIBSAC_OBJS "${dst}")
 ENDFOREACH(name)
-ADD_CUSTOM_TARGET (libsacphm-${TARGET}-objs DEPENDS ${LIBSAC_OBJS})
+#ADD_CUSTOM_TARGET (libsacphm-${TARGET}-objs DEPENDS ${LIBSAC_OBJS})
 
 SET(LIBSAC_OBJSD)
 FOREACH(name ${LIBSAC_SRC})
@@ -45,27 +45,27 @@ FOREACH(name ${LIBSAC_SRC})
   SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}.diag${OBJEXT}")
   ADD_CUSTOM_COMMAND (
     OUTPUT "${dst}"
-    DEPENDS "${src}"
+    DEPENDS "${src}" ${LIB_SAC2C}
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
 COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -noprelude -cc ccmod -Xc -DDIAG -o "${dst}" "${src}"
 COMMENT "Generating ${dst} (diag)"
   )
   LIST (APPEND LIBSAC_OBJSD "${dst}")
 ENDFOREACH(name)
-ADD_CUSTOM_TARGET (libsacphm-${TARGET}-objsd DEPENDS ${LIBSAC_OBJSD})
+#ADD_CUSTOM_TARGET (libsacphm-${TARGET}-objsd DEPENDS ${LIBSAC_OBJSD})
 
 ADD_CUSTOM_COMMAND (
     OUTPUT "${LIBSAC_LIB}"
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
     COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT} -o "${LIBSAC_LIB}" ${LIBSAC_OBJS}
-    DEPENDS libsacphm-${TARGET}-objs
+    DEPENDS ${LIBSAC_OBJS} #libsacphm-${TARGET}-objs
     COMMENT "Linking for target `${TARGET}' libsacphm")
 
 ADD_CUSTOM_COMMAND (
     OUTPUT "${LIBSAC_LIBD}"
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
 COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT} -o "${LIBSAC_LIBD}" ${LIBSAC_OBJSD}
-    DEPENDS libsacphm-${TARGET}-objsd
+DEPENDS ${LIBSAC_OBJSD} #libsacphm-${TARGET}-objsd
     COMMENT "Linking for target `${TARGET}' libsacphm (diag)")
 
 # Create and link both the normal and DIAG version of libsacphm

@@ -15,6 +15,6 @@ ADD_CUSTOM_COMMAND (
     OUTPUT "${LIBSAC_MOD}" "${LIBSAC_TREE}"
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
 COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH} DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -linksetsize 0 -noprelude -o ${PRELUDE_DIR} ${LIBSAC_SRC}
-    DEPENDS ${LIBSAC_SRC}
+    DEPENDS ${LIBSAC_SRC} ${LIB_SAC2C}
     COMMENT "Generating libsacprelude for target `${TARGET}'")
 ADD_CUSTOM_TARGET (libsacprelude-${TARGET} ALL DEPENDS "${LIBSAC_MOD}" "${LIBSAC_TREE}")

@@ -40,7 +40,7 @@ FOREACH(name ${LIBSAC_SRC})
   SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}.libsac${OBJEXT}")
   ADD_CUSTOM_COMMAND (
     OUTPUT "${dst}"
-    DEPENDS "${src}"
+    DEPENDS "${src}" ${LIB_SAC2C}
 # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
     COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH}
             DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -noprelude
@@ -49,7 +49,7 @@ FOREACH(name ${LIBSAC_SRC})
   )
   LIST (APPEND LIBSAC_OBJS "${dst}")
 ENDFOREACH(name)
-ADD_CUSTOM_TARGET (libsac-${TARGET}-objs DEPENDS ${LIBSAC_OBJS})
+#ADD_CUSTOM_TARGET (libsac-${TARGET}-objs DEPENDS ${LIBSAC_OBJS})
 
 ADD_CUSTOM_COMMAND (
     OUTPUT "${LIBSAC_LIB}"
@@ -58,6 +58,6 @@ ADD_CUSTOM_COMMAND (
             DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0
             -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT}
             -o "${LIBSAC_LIB}" ${LIBSAC_OBJS}
-    DEPENDS libsac-${TARGET}-objs
+            DEPENDS ${LIBSAC_OBJS} #libsac-${TARGET}-objs
     COMMENT "Linking for target `${TARGET}' libsac")
 ADD_CUSTOM_TARGET (libsac-${TARGET} ALL DEPENDS "${LIBSAC_LIB}")
