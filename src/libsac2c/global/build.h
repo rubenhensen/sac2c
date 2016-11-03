@@ -21,6 +21,8 @@ extern char build_user[];
 extern char build_host[];
 extern char build_os[];
 extern char build_style[];
+extern char build_rev[];
+extern char build_srev[];
 extern char build_ast[];
 
 #endif /* _SAC_BUILD_H_ */

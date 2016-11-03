@@ -11,17 +11,6 @@ MACRO (HEADER_DIRECTORIES ret)
     SET (${ret} ${dirlist})
 ENDMACRO ()
 
-
-# Implement OS-independent "date" command for retreiving current date and time.
-function (CURRENT_TIME var)
-    set (t "${PROJECT_SOURCE_DIR}/__timestamp_file")
-    file (WRITE "${t}"  "x")
-    file (TIMESTAMP ${t} curtime UTC)
-    file (REMOVE ${t})
-    set (${var} ${curtime} PARENT_SCOPE)
-endfunction ()
-
-
 # Get current user.
 MACRO (GET_USERNAME RES)
   SET (${RES} "<unknown-user>")

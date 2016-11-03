@@ -471,7 +471,7 @@ SET (PF_MAXFUNNAMELEN   100)
 SET (SAC_PRELUDE_NAME   "sacprelude")
 
 # Get current date and time.
-CURRENT_TIME (DATE)
+STRING(TIMESTAMP DATE)
 
 # Get the name of the machine we are compiling sac2c on.
 SITE_NAME (HOST_NAME)
@@ -480,18 +480,6 @@ SITE_NAME (HOST_NAME)
 # FIXME why the hell this is useful?
 GET_USERNAME (USER_NAME)
 
-# XXX(artem) This is an old way of generating MD5.  Several lines down we
-#            Introduced the CMake-based MD5 sum generation, with an extra
-#            dependency on the ast.xml.  This allows us to get rid of local
-#            MD5 dependency.
-## SET (MD5CALC)
-## EXECUTE_PROCESS (
-##   COMMAND   ${XSLT_EXEC}  "${XMLDIR}/ast2fingerprint.xsl" "${XMLDIR}/ast.xml"
-##   COMMAND   "${PROJECT_BINARY_DIR}/md5"
-##   OUTPUT_VARIABLE AST_MD5
-## )
-
-
 # Get an md5 hash of the `ast.xml'.
 EXECUTE_PROCESS (
     COMMAND
@@ -499,7 +487,7 @@ EXECUTE_PROCESS (
         "${PROJECT_SOURCE_DIR}/src/libsac2c/xml/ast2fingerprint.xsl"
         "${PROJECT_SOURCE_DIR}/src/libsac2c/xml/ast.xml"
     OUTPUT_FILE "${CMAKE_BINARY_DIR}/__ast-xml-fingerprint")
-FILE (MD5 "${CMAKE_BINARY_DIR}/__ast-xml-fingerprint" NEW_AST_MD5)
+FILE (MD5 "${CMAKE_BINARY_DIR}/__ast-xml-fingerprint" AST_MD5)
 # Create a configure dependency that will trigger cmake reconfiguration
 # every time when ast.xml is touched.
 # XXX This might be too heavy-weight, as we might not need to rebuild
@@ -507,7 +495,6 @@ FILE (MD5 "${CMAKE_BINARY_DIR}/__ast-xml-fingerprint" NEW_AST_MD5)
 # to rebuild.
 CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/src/libsac2c/xml/ast.xml
                 ${PROJECT_BINARY_DIR}/src/libsac2c/xml/ast.xml)
-
 
 SET (CC  ${CMAKE_C_COMPILER})
 # FIXME(artem) A better way to get preprocessor command is by replacing
