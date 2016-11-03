@@ -193,6 +193,7 @@ CHECK_C_SOURCE_COMPILES ("
     HAVE_GCC_SIMD_OPERATIONS
 )
 
+
 # Check headers.
 CHECK_INCLUDE_FILES (inttypes.h HAVE_INTTYPES_H)
 CHECK_INCLUDE_FILES (malloc.h HAVE_MALLOC_H)
@@ -532,12 +533,12 @@ SET (CCDLLINK    "")
 
 IF (CMAKE_COMPILER_IS_GNUCC AND NOT MACC)
   SET (GCC_FLAGS   "")
-  CHECK_GCC_FLAG ("-Wall" GCC_FLAGS)
-  CHECK_GCC_FLAG ("-Wextra" GCC_FLAGS)
-  CHECK_GCC_FLAG ("-Wstrict-prototypes" GCC_FLAGS)
-  CHECK_GCC_FLAG ("-Wno-unused-parameter" GCC_FLAGS)
-  CHECK_GCC_FLAG ("-march=native" GCC_FLAGS)
-  CHECK_GCC_FLAG ("-mtune=native" GCC_FLAGS)
+  CHECK_CC_FLAG ("-Wall" GCC_FLAGS)
+  CHECK_CC_FLAG ("-Wextra" GCC_FLAGS)
+  CHECK_CC_FLAG ("-Wstrict-prototypes" GCC_FLAGS)
+  CHECK_CC_FLAG ("-Wno-unused-parameter" GCC_FLAGS)
+  CHECK_CC_FLAG ("-march=native" GCC_FLAGS)
+  CHECK_CC_FLAG ("-mtune=native" GCC_FLAGS)
   # FIXME(artem) Can we get these flags from the Pthread checking macro?
   EXECUTE_PROCESS (
     COMMAND ${CC} -pthread
@@ -594,15 +595,20 @@ ELSEIF (DECC)
   SET (CCMTLINK      "-pthread")
   SET (CCDLLINK      "-ldl")
 ELSEIF (MACC)
+  SET (CC_FLAGS   "")
+  # TODO(artem) Check whether this helps to handle the bracket error!
+  IF ("${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
+     CHECK_CC_FLAG ("-fbracket-depth=2048" CC_FLAGS)
+  ENDIF ()
   SET (OPT_O0        "")
   SET (OPT_O1        "-O1")
   SET (OPT_O2        "-O2")
   SET (OPT_O3        "-O3")
   SET (OPT_g         "-g")
   SET (RCLDFLAGS     "")
-  SET (RCCCFLAGS     "-Wall -no-cpp-precomp -Wno-unused -fno-builtin -std=c99")
-  SET (MKCCFLAGS     "-Wall -std=c99 -g")
-  SET (PDCCFLAGS     "-std=c99")
+  SET (RCCCFLAGS     "${CC_FLAGS} -Wall -no-cpp-precomp -Wno-unused -fno-builtin -std=c99")
+  SET (MKCCFLAGS     "${CC_FLAGS} -Wall -std=c99 -g")
+  SET (PDCCFLAGS     "${CC_FLAGS} -std=c99")
   SET (GENPIC        "")
   SET (DEPSFLAG      "-M")
   SET (CPPFILE       "${CPP_CMD} -C -x c")

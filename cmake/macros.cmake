@@ -45,7 +45,7 @@ MACRO (ASSERT_LIB VAR lib_name lib_func)
 ENDMACRO ()
 
 # Check if compiler `flag' is supported, and if so append it to the `var' string.
-MACRO (CHECK_GCC_FLAG flag var)
+MACRO (CHECK_CC_FLAG flag var)
     SET (OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
     SET (CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Werror ${flag}")
     # Generate the name of the check as it is cached
