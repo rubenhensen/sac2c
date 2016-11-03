@@ -279,6 +279,8 @@ IF (LPEL)
 ENDIF ()
 
 # If Option MT is set
+SET (CCMT_PTH_CFLAGS "")
+SET (CCMT_PTH_LINK "")
 IF (MT)
     # Prefer -pthread over -lpthread and stuff.
     SET (THREADS_PREFER_PTHREAD_FLAG ON)
@@ -286,8 +288,12 @@ IF (MT)
     IF (THREADS_FOUND AND NOT WIN32)
         MESSAGE (STATUS "Enabling MT")
         SET (ENABLE_MT  ON)
-        # FIXME propagate ${CMAKE_THREAD_LIBS_INIT} into sac2crc
-        #MESSAGE (STATUS "Threading library is '${CMAKE_THREAD_LIBS_INIT}'")
+        IF (THREADS_HAVE_PTHREAD_ARG)
+          # XXX(artem) dobule check that it substitutes adeauately with
+          #            non GCC compilers.
+          SET (CCMT_PTH_CFLAGS " -pthread")
+          SET (CCMT_PTH_LINK "${CMAKE_THREAD_LIBS_INIT}")
+        ENDIF ()
     ENDIF ()
 ENDIF ()
 
