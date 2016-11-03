@@ -365,6 +365,7 @@ FILE *_db_fp_ = stderr;
 CHECK_COMPILER (__SUNPRO_C  SUNC)
 CHECK_COMPILER (__DECC  DECC)
 CHECK_COMPILER (__APPLE__  MACC)
+CHECK_COMPILER (__clang__ CLANG)
 
 # Check tools which required for compilation.
 # Find BASH interpreter.
@@ -508,7 +509,6 @@ SET (CC  ${CMAKE_C_COMPILER})
 #              <...> strings int he CMAKE_C_CREATE_PREPROCESSED_SOURCE
 #              variable.
 SET (CPP_CMD "${CMAKE_C_COMPILER} -E ")
-
 SET (OPT_O0      "")
 SET (OPT_O1      "")
 SET (OPT_O2      "")
@@ -525,7 +525,7 @@ SET (CPP         "${CPP_CMD} -P")
 SET (CCMTLINK    "")
 SET (CCDLLINK    "")
 
-IF (CMAKE_COMPILER_IS_GNUCC AND NOT MACC)
+IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (GCC_FLAGS   "")
   CHECK_CC_FLAG ("-Wall" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wextra" GCC_FLAGS)
