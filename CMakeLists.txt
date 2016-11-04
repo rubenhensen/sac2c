@@ -23,6 +23,35 @@ include ("cmake/sac2c/config.cmake")
 include ("cmake/sac2c/sac2crc.cmake")
 include ("cmake/settings.cmake")
 
+# If the status of git repository is "dirty", installation targets should
+# be not available.
+# FIXME(artem) replace this flag with one that Hans will provide
+SET (DIRTY  OFF)
+IF (DIRTY)
+    MACRO (XINSTALL)
+    ENDMACRO ()
+    INSTALL(CODE 
+        "EXECUTE_PROCESS (
+            COMMAND ${CMAKE_COMMAND} -E echo 
+                \"\"
+                \"\"
+                \"The current build includes local changes that are not \"
+                \"comitted to the git repository, as indicated by \"
+                \"`git describe --dirty'.  Therefore, it is NOT POSSIBLE \"
+                \"to install the current version.  Either get rid of locac \"
+                \"changes or make a commit.\"
+         )
+         MESSAGE (FATAL_ERROR \"Exiting now\")"
+    )
+ELSE ()
+    MACRO (XINSTALL)
+        INSTALL (${ARGV})
+    ENDMACRO ()
+ENDIF ()
+
+
+
+
 # Include common directories for the project.
 INCLUDE_DIRECTORIES(
   "include"
@@ -145,7 +174,7 @@ ExternalProject_Add_Step(runtime_libraries forceconfigure
 # Installing the sac2c project files.
 # XXX(artem) in case we are doing packaging, symbolic links should be
 #            avoided.
-INSTALL (TARGETS sac2c RUNTIME DESTINATION "${DLL_DIR}" COMPONENT applications)
+XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${DLL_DIR}" COMPONENT applications)
 IF (CMAKE_HOST_UNIX AND SYMLINKS)
     # FIXME(artem) Create symlinks for other tools we install
     # A better way to create symlinks is:
@@ -154,30 +183,30 @@ IF (CMAKE_HOST_UNIX AND SYMLINKS)
     #              ...
     #              )
     #    ")
-    INSTALL (CODE "
+    XINSTALL (CODE "
         FILE (MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
         EXECUTE_PROCESS (
             COMMAND ln -s ${DLL_DIR}/sac2c sac2c
             WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
     ")
 ELSE ()
-    INSTALL (TARGETS sac2c RUNTIME DESTINATION bin COMPONENT applications)
-    INSTALL (TARGETS sac4c RUNTIME DESTINATION bin COMPONENT applications)
-    INSTALL (TARGETS sac2tex RUNTIME DESTINATION bin COMPONENT applications)
+    XINSTALL (TARGETS sac2c RUNTIME DESTINATION bin COMPONENT applications)
+    XINSTALL (TARGETS sac4c RUNTIME DESTINATION bin COMPONENT applications)
+    XINSTALL (TARGETS sac2tex RUNTIME DESTINATION bin COMPONENT applications)
 ENDIF ()
 
 # install sac2crc stuff...
-INSTALL (FILES "${SAC2CRC_BUILD_CONF}"
+XINSTALL (FILES "${SAC2CRC_BUILD_CONF}"
          DESTINATION "${SAC2CRC_DIR}"
          COMPONENT config)
 
 # install sac2c-related binaries stuff...
-INSTALL (FILES "${PROJECT_BINARY_DIR}/saccc"
+XINSTALL (FILES "${PROJECT_BINARY_DIR}/saccc"
          DESTINATION bin 
          COMPONENT applications)
 
 # install include files
-INSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/" 
+XINSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/" 
          DESTINATION "${INCPATH_CONF}"
          COMPONENT headers)
 
@@ -193,25 +222,25 @@ INSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
 ## avoid installing prelude, we have use the EXCLUDE directive with the pattern
 ## "prelude". We do the same for the local directory `lib/prelude', but exlude
 ## 'tree' instead.
-INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/
+XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/
     DESTINATION ${RTPATH_CONF}
     COMPONENT libraries
     FILES_MATCHING PATTERN "*"
     PATTERN "prelude" EXCLUDE)
-INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/
+XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/
     DESTINATION ${MODPATH_CONF}
     COMPONENT libraries
     FILES_MATCHING PATTERN "*"
     PATTERN "tree" EXCLUDE)
 
 # install runtime-related binaries
-INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/bin/
+XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/bin/
          DESTINATION bin
          COMPONENT applications
          FILES_MATCHING PATTERN "*")
 
 # install sacprelude
-INSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/tree
+XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/tree
          DESTINATION ${TREEPATH_CONF}
          COMPONENT libraries)
 
