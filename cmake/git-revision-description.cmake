@@ -104,13 +104,9 @@ function(git_describe _var)
 
 	#message(STATUS "Arguments to execute_process: ${ARGN}")
 
-        #message ("GIT CALL: git describe ${hash} ${ARGN}")
 	execute_process(COMMAND
 		"${GIT_EXECUTABLE}"
 		describe
-                --tags 
-                --abbrev=4
-                --dirty                
                 #${hash}
 		${ARGN}
 		WORKING_DIRECTORY
