@@ -1210,6 +1210,7 @@ typedef struct CYG_FUN_TABLE {
 
 typedef struct GLOBAL_T {
 #define GLOBAL(type, name, val, ...) type name;
+#define GLOBAL_NOINIT(type, name, val, ...) type name;
 #include "globals.mac"
 } global_t;
 

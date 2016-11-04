@@ -94,6 +94,9 @@ extern "C" {
 int SACrunSac2c (int argc, char *argv[]);
 int SACrunSac4c (int argc, char *argv[]);
 int SACrunSac2tex (int argc, char *argv[]);
+int SACrunSac2cLocal (int argc, char *argv[]);
+int SACrunSac4cLocal (int argc, char *argv[]);
+int SACrunSac2texLocal (int argc, char *argv[]);
 }
 #endif
 
@@ -148,4 +151,27 @@ SACrunSac2tex (int argc, char *argv[])
     DBUG_RETURN (0);
 }
 
+/*! An entry function for local builds of sac2c.  */
+int
+SACrunSac2cLocal (int argc, char *argv[])
+{
+    global.local_build = TRUE;
+    return SACrunSac2c (argc, argv);
+}
+
+/*! An entry function for local builds of sac4c.  */
+int
+SACrunSac4cLocal (int argc, char *argv[])
+{
+    global.local_build = TRUE;
+    return SACrunSac4c (argc, argv);
+}
+
+/*! An entry function for local builds of sac2tex.  */
+int
+SACrunSac2texLocal (int argc, char *argv[])
+{
+    global.local_build = TRUE;
+    return SACrunSac2tex (argc, argv);
+}
 #undef DBUG_PREFIX

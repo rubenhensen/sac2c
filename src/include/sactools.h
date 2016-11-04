@@ -36,40 +36,38 @@ report_error (void)
 }
 
 static inline int
-launch_function_from_library (const char *library, const char *mainfun, int argc,
-                              char *argv[])
+launch_function_from_library (const char *library, const char *mainfun, int local_build,
+                              int argc, char *argv[])
 {
     void *libsac2c = dlopen (library, DLOPEN_FLAGS);
     sacmain_u mainptr;
     int ret;
 
     if (!libsac2c) {
-        char *tmp = malloc (strlen (DLL_DIR) + strlen (library) + 2);
-        strcpy (tmp, DLL_DIR);
-        strcat (tmp, "/");
-        strcat (tmp, library);
-        libsac2c = dlopen (tmp, DLOPEN_FLAGS);
-        if (!libsac2c) {
-            char *tmp2 = malloc (strlen (DLL_BUILD_DIR) + strlen (library) + 2);
-            strcpy (tmp2, DLL_BUILD_DIR);
-            strcat (tmp2, "/");
-            strcat (tmp2, library);
-            fprintf (stderr,
-                     "WARNING: library '%s' not found;\n"
-                     "         neither via LD_LIBRARY_PATH nor as '%s';\n"
-                     "         attempting use of local build '%s' now.\n",
-                     library, tmp, tmp2);
-            libsac2c = dlopen (tmp2, DLOPEN_FLAGS);
-            if (!libsac2c) {
-                fprintf (stderr, "ERROR: library '%s' not found.\n", library);
-                report_error ();
-                exit (10);
-            }
-            fprintf (stderr,
-                     "         Running 'make install' would avoid this warning.\n");
-            free (tmp2);
+        if (local_build) {
+            char *tmp = malloc (strlen (DLL_BUILD_DIR) + strlen (library) + 2);
+            strcpy (tmp, DLL_BUILD_DIR);
+            strcat (tmp, "/");
+            strcat (tmp, library);
+            libsac2c = dlopen (tmp, DLOPEN_FLAGS);
+            free (tmp);
+        } else {
+            char *tmp = malloc (strlen (DLL_DIR) + strlen (library) + 2);
+            strcpy (tmp, DLL_DIR);
+            strcat (tmp, "/");
+            strcat (tmp, library);
+            libsac2c = dlopen (tmp, DLOPEN_FLAGS);
+            free (tmp);
         }
-        free (tmp);
+
+        if (!libsac2c) {
+            fprintf (stderr,
+                     "ERROR: library '%s' not found nor via "
+                     "LD_LIBRARY_PATH nor via %s.\n",
+                     library, local_build ? DLL_BUILD_DIR : DLL_DIR);
+            report_error ();
+            exit (10);
+        }
     }
 
     mainptr.v = dlsym (libsac2c, mainfun);

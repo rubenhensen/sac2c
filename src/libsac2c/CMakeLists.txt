@@ -588,3 +588,7 @@ ELSE ()
     )
 ENDIF ()
 INSTALL (TARGETS sac2cShared LIBRARY DESTINATION "${DLL_DIR}")
+ADD_CUSTOM_COMMAND (TARGET sac2cShared POST_BUILD 
+  COMMAND "${CMAKE_COMMAND}" -E copy 
+	$<TARGET_FILE:sac2cShared> $<TARGET_FILE_DIR:sac2cShared>/libsac2c-local${SHARED_LIB_EXT}
+  COMMENT "Copying libsac2c to libsac2c-local.")

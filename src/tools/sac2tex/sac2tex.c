@@ -7,5 +7,5 @@
 int
 main (int argc, char *argv[])
 {
-    return launch_function_from_library (LIBRARY, MAINFUN, argc, argv);
+    return launch_function_from_library (LIBRARY, MAINFUN, FALSE, argc, argv);
 }
