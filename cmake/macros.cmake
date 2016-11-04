@@ -54,6 +54,7 @@ ENDMACRO ()
 # distribution and .git directory is not available?  We need to have a
 # mechanism to deal with this situation.  For example checking for SAC2C_VERSION
 # file in case .git directory is not present.
+# XXX DEPRECATED MACRO
 FUNCTION (GET_VERSION ver)
     FIND_PACKAGE (Git)
 

@@ -13,6 +13,9 @@ INCLUDE (CheckLibraryExists)
 INCLUDE (CheckCSourceRuns)
 INCLUDE (CheckCCompilerFlag)
 
+# The pathes here are computed from ${CMAKE_SOURCE_DIR}
+INCLUDE ("cmake/git-revision-description.cmake")
+
 # Check for support of MPI
 MACRO(CHECK_DISTMEM_MPI)
   MESSAGE(STATUS "Checking for MPI support")
@@ -158,7 +161,10 @@ SET (SHARED_LIB_EXT "${CMAKE_SHARED_LIBRARY_SUFFIX}")
 SET (EXEEXT "${CMAKE_EXECUTABLE_SUFFIX}")
 
 # Get sac2c version
-GET_VERSION (SAC2C_VERSION)
+# We intentionally don't put '--dirty' flag there.
+git_describe(SAC2C_VERSION --tags --abbrev=4)
+STRING (REGEX REPLACE "^v" "" SAC2C_VERSION "${SAC2C_VERSION}")
+STRING (REGEX REPLACE "\n" "" SAC2C_VERSION "${SAC2C_VERSION}")
 STRING (REGEX REPLACE "^([0-9]+)\\..*" "\\1" SAC2C_VERSION_MAJOR "${SAC2C_VERSION}")
 STRING (REGEX REPLACE "^([0-9]+)\\.([0-9]+).*" "\\2" SAC2C_VERSION_MINOR "${SAC2C_VERSION}")
 SET (SAC2C_VERSION_PATCH  0)
