@@ -25,21 +25,19 @@ include ("cmake/settings.cmake")
 
 # If the status of git repository is "dirty", installation targets should
 # be not available.
-# FIXME(artem) replace this flag with one that Hans will provide
-SET (DIRTY  OFF)
-IF (DIRTY)
+STRING (FIND "${SAC2C_VERSION}" "dirty" GITDIRTY)
+IF (GITDIRTY GREATER 0) # If 'dirty' not found, we are -1, otherwise something
+                        # greater than 0.
     MACRO (XINSTALL)
     ENDMACRO ()
     INSTALL(CODE 
         "EXECUTE_PROCESS (
             COMMAND ${CMAKE_COMMAND} -E echo 
-                \"\"
-                \"\"
-                \"The current build includes local changes that are not \"
-                \"comitted to the git repository, as indicated by \"
-                \"`git describe --dirty'.  Therefore, it is NOT POSSIBLE \"
-                \"to install the current version.  Either get rid of locac \"
-                \"changes or make a commit.\"
+                \"\n\n The current build includes local changes that are\n\"
+                \"not committed to the git repository, as indicated by\n\"
+                \"git describe --dirty'. Therefore, it is NOT POSSIBLE\n\"
+                \"to install the current version. Either get rid of local\n\"
+                \"changes or make a commit.\n\"
          )
          MESSAGE (FATAL_ERROR \"Exiting now\")"
     )
@@ -48,9 +46,6 @@ ELSE ()
         INSTALL (${ARGV})
     ENDMACRO ()
 ENDIF ()
-
-
-
 
 # Include common directories for the project.
 INCLUDE_DIRECTORIES(
@@ -82,6 +77,33 @@ ADD_EXECUTABLE (icmt  src/maketools/icmt/icmt.c)
 # extra tool file...
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/saccc.in" "${PROJECT_BINARY_DIR}/saccc" @ONLY)
 
+# We create a state file of the GIT repo and use it
+# to initiat automatic re-configuration of the build
+# system.
+# FIXME (hans): we need a way to have the flags in
+#               one place, and not here, the script,
+#               and config.cmake...
+EXECUTE_PROCESS (
+    COMMAND
+      ${GIT_EXECUTABLE} describe --tags --abbrev=4 --dirty
+    OUTPUT_FILE
+      "${PROJECT_BINARY_DIR}/__version-git.txt"
+)
+CONFIGURE_FILE ("${PROJECT_BINARY_DIR}/__version-git.txt" "${PROJECT_BINARY_DIR}/__version-git.txt" COPYONLY)
+# XXX We add a target to the build system that *MUST* dependency
+# of all other targets relating to the GIT repo source files.
+ADD_CUSTOM_TARGET (check_git_version
+    COMMAND
+      ${CMAKE_COMMAND} 
+        -D GIT_COMMAND="${GIT_EXECUTABLE}"
+        -D BUILD_DIR="${PROJECT_BINARY_DIR}"
+        -P "${PROJECT_SOURCE_DIR}/cmake/check-git-version.cmake"
+    BYPRODUCTS
+      "${PROJECT_BINARY_DIR}/__version-git.txt"
+    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+    COMMENT "Checking GIT repo version"
+)
+
 # generate files necessary to compile sac2c
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xconfig.h.in" "${PROJECT_BINARY_DIR}/include/config.h")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xsacdirs.h.in" "${PROJECT_BINARY_DIR}/include/sacdirs.h")
@@ -89,34 +111,36 @@ CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/libsac2c/global/build.c.in" "${PROJEC
 
 # Build sac.h
 ADD_SUBDIRECTORY (src/runtime)
+ADD_DEPENDENCIES (sac_h check_git_version)
 
 # Build libsac2c
 ADD_SUBDIRECTORY (src/libsac2c)
+ADD_DEPENDENCIES (sac2cShared check_git_version)
 
 # Make sac2c-related binaryies
 ADD_EXECUTABLE (sac2c src/tools/sac2c/sac2c.c)
-ADD_DEPENDENCIES (sac2c sac_h)
+ADD_DEPENDENCIES (sac2c sac_h check_git_version)
 TARGET_LINK_LIBRARIES (sac2c ${DL_LIB})
 
 ADD_EXECUTABLE (sac4c src/tools/sac4c/sac4c.c)
-ADD_DEPENDENCIES (sac4c sac_h)
+ADD_DEPENDENCIES (sac4c sac_h check_git_version)
 TARGET_LINK_LIBRARIES (sac4c ${DL_LIB})
 
 ADD_EXECUTABLE (sac2tex src/tools/sac2tex/sac2tex.c)
-ADD_DEPENDENCIES (sac2tex sac_h)
+ADD_DEPENDENCIES (sac2tex sac_h check_git_version)
 TARGET_LINK_LIBRARIES (sac2tex ${DL_LIB})
 
 # Make sac2c-related binraries for local build.
 ADD_EXECUTABLE (sac2c-local src/tools/sac2c/sac2c-local.c)
-ADD_DEPENDENCIES (sac2c-local sac_h)
+ADD_DEPENDENCIES (sac2c-local sac_h check_git_version)
 TARGET_LINK_LIBRARIES (sac2c-local ${DL_LIB})
 
 ADD_EXECUTABLE (sac4c-local src/tools/sac4c/sac4c-local.c)
-ADD_DEPENDENCIES (sac4c-local sac_h)
+ADD_DEPENDENCIES (sac4c-local sac_h check_git_version)
 TARGET_LINK_LIBRARIES (sac4c-local ${DL_LIB})
 
 ADD_EXECUTABLE (sac2tex-local src/tools/sac2tex/sac2tex-local.c)
-ADD_DEPENDENCIES (sac2tex-local sac_h)
+ADD_DEPENDENCIES (sac2tex-local sac_h check_git_version)
 TARGET_LINK_LIBRARIES (sac2tex-local ${DL_LIB})
 
 
@@ -148,7 +172,7 @@ TARGET_LINK_LIBRARIES (sac2tex-local ${DL_LIB})
 # This is where we call the build of the sac2c shared-libraries
 # XXX: this *depends* on sac2c having been build first!
 ExternalProject_Add(runtime_libraries
-    DEPENDS sac2cShared sac2c
+    DEPENDS sac2cShared sac2c check_git_version
     DOWNLOAD_COMMAND "" # this is to prevent any download target from being called
     INSTALL_COMMAND "" # this is to prevent any install target from being called
     PREFIX runtime_build
