@@ -76,6 +76,7 @@ ADD_EXECUTABLE (echo  src/maketools/echo/echo.c)
 ADD_EXECUTABLE (icmt  src/maketools/icmt/icmt.c)
 # extra tool file...
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/saccc.in" "${PROJECT_BINARY_DIR}/saccc" @ONLY)
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/libsac2c/modules/cctools.c.in" "${PROJECT_BINARY_DIR}/src/cctools.c" @ONLY)
 
 # We create a state file of the GIT repo and use it
 # to initiat automatic re-configuration of the build
@@ -118,15 +119,18 @@ ADD_SUBDIRECTORY (src/libsac2c)
 ADD_DEPENDENCIES (sac2cShared check_git_version)
 
 # Make sac2c-related binaryies
-ADD_EXECUTABLE (sac2c src/tools/sac2c/sac2c.c)
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/sac2c/sac2c.c.in" "${PROJECT_BINARY_DIR}/src/tools/sac2c/sac2c.c" @ONLY)
+ADD_EXECUTABLE (sac2c "${PROJECT_BINARY_DIR}/src/tools/sac2c/sac2c.c")
 ADD_DEPENDENCIES (sac2c sac_h check_git_version)
 TARGET_LINK_LIBRARIES (sac2c ${DL_LIB})
 
-ADD_EXECUTABLE (sac4c src/tools/sac4c/sac4c.c)
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/sac4c/sac4c.c.in" "${PROJECT_BINARY_DIR}/src/tools/sac4c/sac4c.c" @ONLY)
+ADD_EXECUTABLE (sac4c "${PROJECT_BINARY_DIR}/src/tools/sac4c/sac4c.c")
 ADD_DEPENDENCIES (sac4c sac_h check_git_version)
 TARGET_LINK_LIBRARIES (sac4c ${DL_LIB})
 
-ADD_EXECUTABLE (sac2tex src/tools/sac2tex/sac2tex.c)
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/sac2tex/sac2tex.c.in" "${PROJECT_BINARY_DIR}/src/tools/sac2tex/sac2tex.c" @ONLY)
+ADD_EXECUTABLE (sac2tex "${PROJECT_BINARY_DIR}/src/tools/sac2tex/sac2tex.c")
 ADD_DEPENDENCIES (sac2tex sac_h check_git_version)
 TARGET_LINK_LIBRARIES (sac2tex ${DL_LIB})
 

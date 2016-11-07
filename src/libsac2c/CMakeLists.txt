@@ -339,7 +339,9 @@ ${CMAKE_CURRENT_SOURCE_DIR}/memory/staticreuse.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/wrci.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/addspecialfuns.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/annotatenamespace.c
-${CMAKE_CURRENT_SOURCE_DIR}/modules/cctools.c
+## We take the source from out of source
+#${CMAKE_CURRENT_SOURCE_DIR}/modules/cctools.c
+${PROJECT_BINARY_DIR}/src/cctools.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/dependencies.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/export.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/gatherdependencies.c
