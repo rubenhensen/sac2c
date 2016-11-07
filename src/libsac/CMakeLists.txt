@@ -2,7 +2,7 @@ INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/runtime/sac2c-variables.cmake")
 
 # create directory
 FILE (MAKE_DIRECTORY "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}")
-SET (LIBSAC_LIB "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsac${SHARED_LIB_EXT}")
+SET (LIBSAC_LIB "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsac${BUILD_TYPE_POSTFIX}${SHARED_LIB_EXT}")
 
 SET (LIBSAC_SRC
   cachesim/access_detailed.c

@@ -48,7 +48,7 @@ INCLUDE_DIRECTORIES(
 # ALL the subsequent targets in the runtime library
 # add a dependency to this variable.  Otherwised they
 # won't get rebuild when libsac2c is modified.
-FIND_LIBRARY (LIB_SAC2C NAMES "libsac2c${CMAKE_SHARED_LIBRARY_SUFFIX}"
+FIND_LIBRARY (LIB_SAC2C NAMES "libsac2c${BUILD_TYPE_POSTFIX}${CMAKE_SHARED_LIBRARY_SUFFIX}"
               PATHS ${SAC2C_BUILD_DIR}/lib NO_DEFAULT_PATH)
 
 # Include the runtime subdirectory and pre-set the variables

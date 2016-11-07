@@ -6,7 +6,7 @@ SET (LSAC2CLOCAL "${PROJECT_BINARY_DIR}/sac2crc.local")
 # Make sure that sac2c is available and is located in the build directory.
 # Note the 'NO_DEFAULT_PATH' specifier to the following FIND_PROGRAM command
 # which makes sure that any sac2c on the PATH is not considered.
-FIND_PROGRAM (SAC2C_EXEC NAMES sac2c PATHS ${SAC2C_BUILD_DIR} NO_DEFAULT_PATH)
+FIND_PROGRAM (SAC2C_EXEC NAMES "sac2c${BUILD_TYPE_POSTFIX}" PATHS ${SAC2C_BUILD_DIR} NO_DEFAULT_PATH)
 IF (NOT SAC2C_EXEC)
     MESSAGE (FATAL_ERROR "Could not located the sac2c binary, exiting...")
 ENDIF ()

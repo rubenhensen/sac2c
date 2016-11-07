@@ -658,7 +658,7 @@ ELSE ()
   SET (LD_FLAGS     "-Wl,-allow-shlib-undefined")
 ENDIF ()
 
-# Prpeare C flags for the debug version of the compiler
+# Prepare C flags for the debug version of the compiler
 SET (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DSANITYCHECKS -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED -DCHECK_NODE_ACCESS -DINLINE_MACRO_CHECKS ${MKCCFLAGS}"
 )
 
@@ -666,9 +666,20 @@ SET (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DSANITYCHECKS -DWLAA_DEACTIVAT
 SET (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DDBUG_OFF -DPRODUCTION -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED ${PDCCFLAGS}"
 )
 
+SET (CMAKE_RELEASE_POSTFIX "-p")
+SET (CMAKE_DEBUG_POSTFIX "-d")
+
 # If we don't explicitly set build type, then we default to debug
-IF (NOT CMAKE_BUILD_TYPE)
-    SET (CMAKE_BUILD_TYPE DEBUG)
+IF (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+  SET (CMAKE_BUILD_TYPE DEBUG)
+  SET (BUILD_TYPE_POSTFIX "${CMAKE_DEBUG_POSTFIX}")
+ELSEIF (CMAKE_BUILD_TYPE STREQUAL "RELEASE")
+  SET (BUILD_TYPE_POSTFIX "${CMAKE_RELEASE_POSTFIX}")
+ELSE ()
+# FIXME (hans): we must not forget to update the executables target properties as well!!!
+  MESSAGE (FATAL_ERROR "Build type '${CMAKE_BUILD_TYPE}' is not known to us, please "
+                       "make sure to pass -DCMAKE_${CMAKE_BUILD_TYPE}_POSTFIX=\"...\" "
+                       "with your chosen postfix.")
 ENDIF ()
 
 # These CC flags are always present

@@ -2,8 +2,8 @@ INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/runtime/sac2c-variables.cmake")
 
 # create directory
 FILE (MAKE_DIRECTORY "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}")
-SET (LIBSAC_LIB "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsacphmc${SHARED_LIB_EXT}")
-SET (LIBSAC_LIBD "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsacphmc.diag${SHARED_LIB_EXT}")
+SET (LIBSAC_LIB "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsacphmc${BUILD_TYPE_POSTFIX}${SHARED_LIB_EXT}")
+SET (LIBSAC_LIBD "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsacphmc.diag${BUILD_TYPE_POSTFIX}${SHARED_LIB_EXT}")
 
 SET (LIBSAC_SRC wrappers/nophm.c)
 

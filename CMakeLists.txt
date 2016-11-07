@@ -35,7 +35,7 @@ IF (GITDIRTY GREATER 0) # If 'dirty' not found, we are -1, otherwise something
             COMMAND ${CMAKE_COMMAND} -E echo 
                 \"\n\n The current build includes local changes that are\n\"
                 \"not committed to the git repository, as indicated by\n\"
-                \"git describe --dirty'. Therefore, it is NOT POSSIBLE\n\"
+                \"'git describe --dirty'. Therefore, it is NOT POSSIBLE\n\"
                 \"to install the current version. Either get rid of local\n\"
                 \"changes or make a commit.\n\"
          )
@@ -130,6 +130,11 @@ ADD_EXECUTABLE (sac2tex src/tools/sac2tex/sac2tex.c)
 ADD_DEPENDENCIES (sac2tex sac_h check_git_version)
 TARGET_LINK_LIBRARIES (sac2tex ${DL_LIB})
 
+# Set the postfix of the executables depending on build type
+SET_TARGET_PROPERTIES (sac2c sac4c sac2tex
+    PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX}
+               RELEASE_POSTFIX ${CMAKE_RELEASE_POSTFIX})
+
 # XXX(artem) This is an alternative way to acheive what ExternalProject +
 #            ExternalProject_AddStep are doing.
 #ADD_CUSTOM_TARGET (
@@ -168,6 +173,10 @@ ExternalProject_Add(runtime_libraries
         -DSAC2C_BUILD_DIR=${PROJECT_BINARY_DIR}
         -DSAC2C_SOURCE_DIR=${PROJECT_SOURCE_DIR}
         -DSAC2CRC_BUILD_CONF=${SAC2CRC_BUILD_CONF}
+        -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DCMAKE_RELEASE_POSTFIX=${CMAKE_RELEASE_POSTFIX}
+        -DCMAKE_DEBUG_POSTFIX=${CMAKE_DEBUG_POSTFIX}
+        -DBUILD_TYPE_POSTFIX=${BUILD_TYPE_POSTFIX}
         # FIXME(artem) Shouldn't we use MODEXT from sac2crc instead?
         -DSHARED_LIB_EXT=${SHARED_LIB_EXT}
         -DLIB_RT=${LIB_RT}
