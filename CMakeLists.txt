@@ -130,20 +130,6 @@ ADD_EXECUTABLE (sac2tex src/tools/sac2tex/sac2tex.c)
 ADD_DEPENDENCIES (sac2tex sac_h check_git_version)
 TARGET_LINK_LIBRARIES (sac2tex ${DL_LIB})
 
-# Make sac2c-related binraries for local build.
-ADD_EXECUTABLE (sac2c-local src/tools/sac2c/sac2c-local.c)
-ADD_DEPENDENCIES (sac2c-local sac_h check_git_version)
-TARGET_LINK_LIBRARIES (sac2c-local ${DL_LIB})
-
-ADD_EXECUTABLE (sac4c-local src/tools/sac4c/sac4c-local.c)
-ADD_DEPENDENCIES (sac4c-local sac_h check_git_version)
-TARGET_LINK_LIBRARIES (sac4c-local ${DL_LIB})
-
-ADD_EXECUTABLE (sac2tex-local src/tools/sac2tex/sac2tex-local.c)
-ADD_DEPENDENCIES (sac2tex-local sac_h check_git_version)
-TARGET_LINK_LIBRARIES (sac2tex-local ${DL_LIB})
-
-
 # XXX(artem) This is an alternative way to acheive what ExternalProject +
 #            ExternalProject_AddStep are doing.
 #ADD_CUSTOM_TARGET (

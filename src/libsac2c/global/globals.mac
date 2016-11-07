@@ -29,12 +29,6 @@
 GLOBAL (size_t, file_table_size, 0, xfree_dummy, )
 GLOBAL (char **, file_table, NULL, xfree_char_ptr_ptr, , global.file_table_size)
 
-/* Distinguish between local and installed uses of sac2c/sac4c/...
-   The implication is that for local builds we read sac2crc only from
-   SAC2CRC_BUILD_CONF.  For installed instances, i.e. !global.local_build,
-   we only read files from SAC2CRC_CONF.  */
-GLOBAL_NOINIT (bool, local_build, FALSE, xfree_dummy, )
-
 /*
  * Memory allocation
  */

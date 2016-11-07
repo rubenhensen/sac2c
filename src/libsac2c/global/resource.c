@@ -442,8 +442,13 @@ ParseResourceFiles (void)
 #ifndef SAC2CRC_CONF
 #error SAC2CRC_CONF not set, please check flags in config.mkf
 #endif
-        if (global.local_build) {
+        if (!FMGRcheckExistFile (SAC2CRC_CONF)) {
 
+            CTIwarn ("sac2crc not found; neither via SAC2CRC nor in '%s';\n"
+                     "attempting to load local sac2crc files: '%s' and "
+                     "'%s.local'.\n"
+                     "Running 'make install' would avoid this warning.",
+                     SAC2CRC_CONF, SAC2CRC_BUILD_CONF, SAC2CRC_BUILD_CONF);
             /* We have to load the original sac2crc with all the targets.  */
             ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF);
             if (!ok) {
