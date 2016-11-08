@@ -98,8 +98,6 @@ SET_SOURCE_FILES_PROPERTIES(
     PROPERTIES
     OBJECT_DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/fancy_icm_vars.c")
 
-
-
 SET (SAC2C_SRC
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/SSAWLF.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/SSAWLI.c
@@ -339,9 +337,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/memory/staticreuse.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/wrci.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/addspecialfuns.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/annotatenamespace.c
-## We take the source from out of source
-#${CMAKE_CURRENT_SOURCE_DIR}/modules/cctools.c
-${PROJECT_BINARY_DIR}/src/cctools.c
+${CMAKE_CURRENT_SOURCE_DIR}/modules/cctools.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/dependencies.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/export.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/gatherdependencies.c
@@ -568,7 +564,6 @@ ${CMAKE_CURRENT_SOURCE_DIR}/wltransform/wltransform.c
 ${XSL_DONE_FILES}
 ${PROJECT_BINARY_DIR}/src/build.c
 )
-
 
 ADD_LIBRARY (sac2cShared SHARED ${SAC2C_SRC})
 SET_TARGET_PROPERTIES (sac2cShared

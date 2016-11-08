@@ -82,3 +82,15 @@ FUNCTION (GET_VERSION ver)
         MESSAGE (FATAL_ERROR "Git executable not found")
     ENDIF ()
 ENDFUNCTION ()
+
+# Do variable substitution like `configure_file' but without
+# attaching to the configure stage
+MACRO (SUBSTITUTE_FILE infile outfile)
+  FILE (READ "${infile}" infilev)
+  MESSAGE (STATUS "Parsing ${infile}")
+  STRING (CONFIGURE "${infilev}" parsed @ONLY)
+  MESSAGE (STATUS "Writing ${outfile}")
+  FILE (WRITE "${outfile}" "${parsed}")
+ENDMACRO ()
+
+# vim: ts=2 sw=2 et:

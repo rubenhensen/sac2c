@@ -18,15 +18,15 @@ ADD_CUSTOM_COMMAND (
 #ADD_CUSTOM_TARGET (csima-prog-objs DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/csima/csima.o")
 
 ADD_CUSTOM_COMMAND (
-    OUTPUT "${BINDIR}/csima"
+    OUTPUT "${BINDIR}/csima${BUILD_TYPE_POSTFIX}"
     # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
     COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH}
             DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C_NT} -target seq
             -L "${DLL_BUILD_DIR}" -v0 -cc ldprog ${LIB_M} ${LIB_RT}
-            -o "${BINDIR}/csima" "${CMAKE_CURRENT_BINARY_DIR}/csima/csima.o"
+            -o "${BINDIR}/csima${BUILD_TYPE_POSTFIX}" "${CMAKE_CURRENT_BINARY_DIR}/csima/csima.o"
     DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/csima/csima.o" #csima-prog-objs
-    COMMENT "Linking for `csimt' program")
-ADD_CUSTOM_TARGET (csima-prog ALL DEPENDS "${BINDIR}/csima")
+    COMMENT "Linking for `csima' program")
+ADD_CUSTOM_TARGET (csima-prog ALL DEPENDS "${BINDIR}/csima${BUILD_TYPE_POSTFIX}")
 
 ADD_CUSTOM_COMMAND (
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/csimt/csimt.o"
@@ -40,12 +40,12 @@ ADD_CUSTOM_COMMAND (
 #ADD_CUSTOM_TARGET (csimt-prog-objs DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/csimt/csimt.o")
 
 ADD_CUSTOM_COMMAND (
-    OUTPUT "${BINDIR}/csimt"
+    OUTPUT "${BINDIR}/csimt${BUILD_TYPE_POSTFIX}"
     # FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
     COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH}
             DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C_NT} -target seq
             -L "${DLL_BUILD_DIR}" -v0 -cc ldprog ${LIB_M} ${LIB_RT}
-            -o "${BINDIR}/csimt" "${CMAKE_CURRENT_BINARY_DIR}/csimt/csimt.o"
+            -o "${BINDIR}/csimt${BUILD_TYPE_POSTFIX}" "${CMAKE_CURRENT_BINARY_DIR}/csimt/csimt.o"
     DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/csimt/csimt.o" #csimt-prog-objs
     COMMENT "Linking for `csimt' program")
-ADD_CUSTOM_TARGET (csimt-prog ALL DEPENDS "${BINDIR}/csimt")
+ADD_CUSTOM_TARGET (csimt-prog ALL DEPENDS "${BINDIR}/csimt${BUILD_TYPE_POSTFIX}")
