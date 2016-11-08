@@ -1270,7 +1270,7 @@ BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnu
             newavis = AWLFIflattenScalarNode (zelnew, arg_info);
             curavis = AWLFIflattenScalarNode (zelcur, arg_info);
             fncall
-              = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fn,
+              = DSdispatchFunCall (NSgetNamespace (global.preludename), fn,
                                    TCcreateExprsChainFromAvises (2, curavis, newavis));
             zprime = FLATGexpression2Avis (fncall, &INFO_VARDECS (arg_info),
                                            &INFO_PREASSIGNS (arg_info),

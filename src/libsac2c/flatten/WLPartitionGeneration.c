@@ -352,7 +352,8 @@ CutSlices (node *min_avis, node *max_avis, int fdim, node *part_lb_avis,
         assigns = TBmakeAssign (
           TBmakeLet (TCcreateIdsChainFromAvises (4, lmax_avis, umin_avis, nmin_avis,
                                                  nmax_avis),
-                     DSdispatchFunCall (NSgetNamespace ("sacprelude"), "partitionSlicer",
+                     DSdispatchFunCall (NSgetNamespace (global.preludename),
+                                        "partitionSlicer",
                                         TCcreateExprsChainFromAvises (5, min_avis,
                                                                       max_avis, axis_avis,
                                                                       part_lb_avis,
@@ -436,15 +437,15 @@ CompleteGrid (node *lb_avis, node *ub_avis, node *step_avis, node *width_avis, i
           = CreateAvisAndInsertVardec ("nwidth", TYcopyType (bound_type), arg_info);
         nmaxwidth_avis
           = CreateAvisAndInsertVardec ("nmaxwidth", TYcopyType (bound_type), arg_info);
-        assigns
-          = TBmakeAssign (TBmakeLet (TCcreateIdsChainFromAvises (3, nlb_avis, nwidth_avis,
-                                                                 nmaxwidth_avis),
-                                     DSdispatchFunCall (NSgetNamespace ("sacprelude"),
-                                                        "gridFiller",
-                                                        TCcreateExprsChainFromAvises (
-                                                          5, lb_avis, ub_avis, width_avis,
-                                                          axis_avis, maxwidth_avis))),
-                          NULL);
+        assigns = TBmakeAssign (
+          TBmakeLet (TCcreateIdsChainFromAvises (3, nlb_avis, nwidth_avis,
+                                                 nmaxwidth_avis),
+                     DSdispatchFunCall (NSgetNamespace (global.preludename), "gridFiller",
+                                        TCcreateExprsChainFromAvises (5, lb_avis, ub_avis,
+                                                                      width_avis,
+                                                                      axis_avis,
+                                                                      maxwidth_avis))),
+          NULL);
         AVIS_SSAASSIGN (nlb_avis) = assigns;
         AVIS_SSAASSIGN (nwidth_avis) = assigns;
         AVIS_SSAASSIGN (nmaxwidth_avis) = assigns;
