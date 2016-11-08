@@ -28,6 +28,9 @@ SET (SAC2C_EXTRA_INC
     -I${SAC2C_SOURCE_DIR}/src/libsacphm/heap
     -I${SAC2C_SOURCE_DIR}/src/libsacdistmem/commlib)
 
+# add sacprelude file with postfix in module and file name.
+CONFIGURE_FILE ("${SAC2C_SOURCE_DIR}/src/libsacprelude/sacprelude.sac" "${PROJECT_BINARY_DIR}/sacprelude${BUILD_TYPE_POSTFIX}.sac" @ONLY)
+
 # added an include to sac2crc.local so that sac2c can find header files
 CONFIGURE_FILE("${ISAC2CLOCAL}" "${LSAC2CLOCAL}" @ONLY)
 IF (EXISTS ${LSAC2CLOCAL})

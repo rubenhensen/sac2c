@@ -1,4 +1,4 @@
-module sacprelude;
+module sacprelude@BUILD_TYPE_POSTFIX@;
 
 /* NB: Be SURE that, for any names you add here, that you also add
  * them to "addspecialfuns.c" in the modules subdirectory,
@@ -136,7 +136,7 @@ bool eq( a[*] A, a[*] B)                                             \
   res = with {                                                       \
           ( _mul_SxV_(0, _shape_A_(A)) <= iv < _shape_A_(A) )        \
           : _eq_SxS_(_sel_VxA_( iv, A), _sel_VxA_( iv, B));          \
-        } : fold( sacprelude::and, true );                           \
+        } : fold( sacprelude@BUILD_TYPE_POSTFIX@::and, true );       \
   return( res);                                                      \
 }
 

@@ -209,19 +209,21 @@ IF (CMAKE_HOST_UNIX AND SYMLINKS)
             WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
     ")
 ELSE ()
-    XINSTALL (TARGETS sac2c RUNTIME DESTINATION bin COMPONENT applications)
-    XINSTALL (TARGETS sac4c RUNTIME DESTINATION bin COMPONENT applications)
-    XINSTALL (TARGETS sac2tex RUNTIME DESTINATION bin COMPONENT applications)
+    XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${TREEPATH_CONF}" COMPONENT applications)
+    XINSTALL (TARGETS sac4c RUNTIME DESTINATION "${TREEPATH_CONF}" COMPONENT applications)
+    XINSTALL (TARGETS sac2tex RUNTIME DESTINATION "${TREEPATH_CONF}" COMPONENT applications)
 ENDIF ()
 
 # install sac2crc stuff...
 XINSTALL (FILES "${SAC2CRC_BUILD_CONF}"
          DESTINATION "${SAC2CRC_DIR}"
+         RENAME "sac2crc${BUILD_TYPE_POSTFIX}"
          COMPONENT config)
 
 # install sac2c-related binaries stuff...
 XINSTALL (FILES "${PROJECT_BINARY_DIR}/saccc"
-         DESTINATION bin 
+         DESTINATION "${TREEPATH_CONF}"
+         RENAME "saccc${BUILD_TYPE_POSTFIX}"
          COMPONENT applications)
 
 # install include files
@@ -254,7 +256,7 @@ XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-bu
 
 # install runtime-related binaries
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/bin/
-         DESTINATION bin
+         DESTINATION "${TREEPATH_CONF}"
          COMPONENT applications
          FILES_MATCHING PATTERN "*")
 
