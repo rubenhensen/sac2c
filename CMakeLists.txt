@@ -221,7 +221,7 @@ XINSTALL (FILES "${SAC2CRC_BUILD_CONF}"
          COMPONENT config)
 
 # install sac2c-related binaries stuff...
-XINSTALL (FILES "${PROJECT_BINARY_DIR}/saccc"
+XINSTALL (PROGRAMS "${PROJECT_BINARY_DIR}/saccc"
          DESTINATION "${TREEPATH_CONF}"
          RENAME "saccc${BUILD_TYPE_POSTFIX}"
          COMPONENT applications)
@@ -258,7 +258,8 @@ XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-bu
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/bin/
          DESTINATION "${TREEPATH_CONF}"
          COMPONENT applications
-         FILES_MATCHING PATTERN "*")
+         FILES_MATCHING PATTERN "*"
+         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_READ WORLD_EXECUTE)
 
 # install sacprelude
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/tree
