@@ -193,7 +193,7 @@ ExternalProject_Add_Step(runtime_libraries forceconfigure
 # Installing the sac2c project files.
 # XXX(artem) in case we are doing packaging, symbolic links should be
 #            avoided.
-XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${DLL_DIR}" COMPONENT applications)
+XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${PACKAGE_PREFIX}${DLL_DIR}" COMPONENT applications)
 IF (CMAKE_HOST_UNIX AND SYMLINKS)
     # FIXME(artem) Create symlinks for other tools we install
     # A better way to create symlinks is:
@@ -209,26 +209,26 @@ IF (CMAKE_HOST_UNIX AND SYMLINKS)
             WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
     ")
 ELSE ()
-    XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${TREEPATH_CONF}" COMPONENT applications)
-    XINSTALL (TARGETS sac4c RUNTIME DESTINATION "${TREEPATH_CONF}" COMPONENT applications)
-    XINSTALL (TARGETS sac2tex RUNTIME DESTINATION "${TREEPATH_CONF}" COMPONENT applications)
+    XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}" COMPONENT applications)
+    XINSTALL (TARGETS sac4c RUNTIME DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}" COMPONENT applications)
+    XINSTALL (TARGETS sac2tex RUNTIME DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}" COMPONENT applications)
 ENDIF ()
 
 # install sac2crc stuff...
 XINSTALL (FILES "${SAC2CRC_BUILD_CONF}"
-         DESTINATION "${SAC2CRC_DIR}"
+         DESTINATION "${PACKAGE_PREFIX}${SAC2CRC_DIR}"
          RENAME "sac2crc${BUILD_TYPE_POSTFIX}"
          COMPONENT config)
 
 # install sac2c-related binaries stuff...
 XINSTALL (PROGRAMS "${PROJECT_BINARY_DIR}/saccc"
-         DESTINATION "${TREEPATH_CONF}"
+    DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}"
          RENAME "saccc${BUILD_TYPE_POSTFIX}"
          COMPONENT applications)
 
 # install include files
 XINSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/" 
-         DESTINATION "${INCPATH_CONF}"
+         DESTINATION "${PACKAGE_PREFIX}${INCPATH_CONF}"
          COMPONENT headers)
 
 ## We need to install the runtime libraries and sacprelude into a directory
@@ -244,26 +244,26 @@ XINSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
 ## "prelude". We do the same for the local directory `lib/prelude', but exlude
 ## 'tree' instead.
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/
-    DESTINATION ${RTPATH_CONF}
+    DESTINATION "${PACKAGE_PREFIX}${RTPATH_CONF}"
     COMPONENT libraries
     FILES_MATCHING PATTERN "*"
     PATTERN "prelude" EXCLUDE)
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/
-    DESTINATION ${MODPATH_CONF}
+    DESTINATION "${PACKAGE_PREFIX}${MODPATH_CONF}"
     COMPONENT libraries
     FILES_MATCHING PATTERN "*"
     PATTERN "tree" EXCLUDE)
 
 # install runtime-related binaries
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/bin/
-         DESTINATION "${TREEPATH_CONF}"
+         DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}"
          COMPONENT applications
          FILES_MATCHING PATTERN "*"
          PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_READ WORLD_EXECUTE)
 
 # install sacprelude
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/tree
-         DESTINATION ${TREEPATH_CONF}
+         DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}"
          COMPONENT libraries)
 
 # Cpack information
