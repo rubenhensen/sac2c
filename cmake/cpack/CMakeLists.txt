@@ -83,7 +83,7 @@ INSTALL (CODE
 # install the thing to root
 INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/${CMAKE_INSTALL_PREFIX}/"
   DESTINATION "${CMAKE_INSTALL_PREFIX}" USE_SOURCE_PERMISSIONS
-  COMPONET complete)
+  COMPONENT complete)
 
 SET (CPACK_PACKAGE_NAME              "sac2c-compiler")
 SET (CPACK_PACKAGE_VENDOR            "SaC Development Team")
