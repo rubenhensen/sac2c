@@ -161,7 +161,6 @@ SET (SHARED_LIB_EXT "${CMAKE_SHARED_LIBRARY_SUFFIX}")
 SET (EXEEXT "${CMAKE_EXECUTABLE_SUFFIX}")
 
 # Get sac2c version
-# We intentionally don't put '--dirty' flag there.
 git_describe(SAC2C_VERSION --tags --abbrev=4 --dirty)
 STRING (REGEX REPLACE "^v" "" SAC2C_VERSION "${SAC2C_VERSION}")
 STRING (REGEX REPLACE "\n" "" SAC2C_VERSION "${SAC2C_VERSION}")

@@ -191,28 +191,9 @@ ExternalProject_Add_Step(runtime_libraries forceconfigure
 
 
 # Installing the sac2c project files.
-# XXX(artem) in case we are doing packaging, symbolic links should be
-#            avoided.
-XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${PACKAGE_PREFIX}${DLL_DIR}" COMPONENT applications)
-IF (CMAKE_HOST_UNIX AND SYMLINKS)
-    # FIXME(artem) Create symlinks for other tools we install
-    # A better way to create symlinks is:
-    #    INSTALL(CODE "
-    #              EXEC_PROGRAM(${CMAKE_COMMAND} ARGS -E create_symlink
-    #              ...
-    #              )
-    #    ")
-    XINSTALL (CODE "
-        FILE (MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
-        EXECUTE_PROCESS (
-            COMMAND ln -s ${DLL_DIR}/sac2c sac2c
-            WORKING_DIRECTORY ${CMAKE_INSTALL_PREFIX}/bin)
-    ")
-ELSE ()
-    XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}" COMPONENT applications)
-    XINSTALL (TARGETS sac4c RUNTIME DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}" COMPONENT applications)
-    XINSTALL (TARGETS sac2tex RUNTIME DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}" COMPONENT applications)
-ENDIF ()
+XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}" COMPONENT applications)
+XINSTALL (TARGETS sac4c RUNTIME DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}" COMPONENT applications)
+XINSTALL (TARGETS sac2tex RUNTIME DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}" COMPONENT applications)
 
 # install sac2crc stuff...
 XINSTALL (FILES "${SAC2CRC_BUILD_CONF}"
