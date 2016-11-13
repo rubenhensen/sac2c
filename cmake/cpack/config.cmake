@@ -54,12 +54,14 @@ CONFIGURE_FILE ("${SAC2C_SOURCE_DIR}/cmake/cpack/dmg-bundle/Install.command.in" 
 # Debian-specific variables
 SET (CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_VENDOR} <${CPACK_PACKAGE_CONTACT}>")
 SET (CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+#SET (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON) # non-functional
+SET (CPACK_DEBIAN_PACKAGE_DEPENDS "gcc, libc6 (>= 2.13), uuid-runtime (>= 2.20)")
 
 # RPM-specific variables
 # XXX (hans): this may not be exhaustive - does not take into account if the user
 # changes the install prefix
 SET (CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/local /usr/local/bin /usr/local/include /usr/local/lib /usr/local/libexec /usr/local/share)
-SET (CPACK_RPM_PACKAGE_REQUIRES "gcc")
+SET (CPACK_RPM_PACKAGE_REQUIRES "gcc") # we don't need to go crazy here as rpmbuild handles most of this for us
 
 INCLUDE(CPack)
 # vim: ts=2 sw=2 et:
