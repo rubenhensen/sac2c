@@ -118,7 +118,7 @@ SET (CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
 # XXX (hans): this may not be exhaustive - does not take into account if the user
 # changes the install prefix
 SET (CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "/usr/local" "/usr/local/include" "/usr/local/lib" "/usr/local/libexec" "/usr/local/share")
-SET (CPACK_RPM_PACKAGE_AUTOREQ " no") # disable automatic dependency matching
+SET (CPACK_RPM_PACKAGE_REQUIRES "gcc")
 
 INCLUDE(CPack)
 # vim: ts=2 sw=2 et:

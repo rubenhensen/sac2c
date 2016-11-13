@@ -545,12 +545,13 @@ SET (CCDLLINK    "")
 
 IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (GCC_FLAGS   "")
+  SET (GCC_ARCH_FLAGS  "")
   CHECK_CC_FLAG ("-Wall" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wextra" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wstrict-prototypes" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wno-unused-parameter" GCC_FLAGS)
-  CHECK_CC_FLAG ("-march=native" GCC_FLAGS)
-  CHECK_CC_FLAG ("-mtune=native" GCC_FLAGS)
+  CHECK_CC_FLAG ("-march=native" GCC_ARCH_FLAGS)
+  CHECK_CC_FLAG ("-mtune=native" GCC_ARCH_FLAGS)
   # FIXME(artem) Can we get these flags from the Pthread checking macro?
   EXECUTE_PROCESS (
     COMMAND ${CC} -pthread
@@ -565,9 +566,13 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (OPT_O2       "-O2")
   SET (OPT_O3       "-O3")
   SET (OPT_g        "-g")
-  SET (RCCCFLAGS    "${GCC_FLAGS} -std=gnu99 -pedantic -Wno-unused -fno-builtin")
-  SET (MKCCFLAGS    "${GCC_FLAGS} -std=gnu99 -pedantic -g ${FLAGS_LTO}")
-  SET (PDCCFLAGS    "${GCC_FLAGS} -std=gnu99 -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
+  # FIXME (hans): we currently are using these flags for building the compiler as well as
+  #               the SAC sources - which it not optimal for packaging
+  SET (RCCCFLAGS    "${GCC_FLAGS} ${GCC_ARCH_FLAGS} -std=gnu99 -pedantic -Wno-unused -fno-builtin")
+  SET (MKCCFLAGS    "${GCC_FLAGS} ${GCC_ARCH_FLAGS} -std=gnu99 -pedantic -g ${FLAGS_LTO}")
+  SET (DEV_FLAGS    "${GCC_FLAGS} -mtune=generic -std=gnu99 -pedantic -g ${FLAGS_LTO}")
+  SET (PDCCFLAGS    "${GCC_FLAGS} ${GCC_ARCH_FLAGS} -std=gnu99 -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
+  SET (PROD_FLAGS   "${GCC_FLAGS} -mtune=generic -std=gnu99 -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
   SET (GENPIC       "-fPIC -DPIC")
   SET (DEPSFLAG     "-M")
   SET (CPPFILE      "${CPP_CMD} -C -x c")
@@ -584,6 +589,8 @@ ELSEIF (SUNC)
   SET (RCCCFLAGS     "-dalign -fsimple -xsafe=mem -xc99=all")
   SET (MKCCFLAGS     "-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xc99=all")
   SET (PDCCFLAGS     "-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4 -xc99=all -KPIC")
+  SET (DEV_FLAGS     "${MKCCFLAGS}")
+  SET (PROD_FLAGS    "${PDCCFLAGS}")
   SET (GENPIC        "-KPIC")
   SET (DEPSFLAG      "-xM")
   SET (CPPFILE       "${CPP_CMD} -C -x c")
@@ -600,6 +607,8 @@ ELSEIF (DECC)
   SET (RCCCFLAGS     "")
   SET (MKCCFLAGS     "-g")
   SET (PDCCFLAGS     "-g3")
+  SET (DEV_FLAGS     "${MKCCFLAGS}")
+  SET (PROD_FLAGS    "${PDCCFLAGS}")
   SET (GENPIC        "")
   SET (DEPSFLAG      "-M")
   SET (CPPFILE       "${CPP_CMD} -C -x c")
@@ -621,6 +630,8 @@ ELSEIF (MACC)
   SET (RCCCFLAGS     "${CC_FLAGS} -Wall -no-cpp-precomp -Wno-unused -fno-builtin -std=c99")
   SET (MKCCFLAGS     "${CC_FLAGS} -Wall -std=c99 -g")
   SET (PDCCFLAGS     "${CC_FLAGS} -std=c99")
+  SET (DEV_FLAGS     "${MKCCFLAGS}")
+  SET (PROD_FLAGS    "${PDCCFLAGS}")
   SET (GENPIC        "")
   SET (DEPSFLAG      "-M")
   SET (CPPFILE       "${CPP_CMD} -C -x c")
@@ -671,11 +682,11 @@ ELSE ()
 ENDIF ()
 
 # Prepare C flags for the debug version of the compiler
-SET (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DSANITYCHECKS -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED -DCHECK_NODE_ACCESS -DINLINE_MACRO_CHECKS ${MKCCFLAGS}"
+SET (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DSANITYCHECKS -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED -DCHECK_NODE_ACCESS -DINLINE_MACRO_CHECKS ${DEV_FLAGS}"
 )
 
 # Prepare C flags for the product version of the compiler
-SET (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DDBUG_OFF -DPRODUCTION -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED ${PDCCFLAGS}"
+SET (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DDBUG_OFF -DPRODUCTION -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED ${PROD_FLAGS}"
 )
 
 SET (CMAKE_RELEASE_POSTFIX "_p")
@@ -685,8 +696,10 @@ SET (CMAKE_DEBUG_POSTFIX "_d")
 IF (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
   SET (CMAKE_BUILD_TYPE DEBUG)
   SET (BUILD_TYPE_POSTFIX "${CMAKE_DEBUG_POSTFIX}")
+  SET (BUILD_TYPE_C_FLAGS "${CMAKE_C_FLAGS_DEBUG}")
 ELSEIF (CMAKE_BUILD_TYPE STREQUAL "RELEASE")
   SET (BUILD_TYPE_POSTFIX "${CMAKE_RELEASE_POSTFIX}")
+  SET (BUILD_TYPE_C_FLAGS "${CMAKE_C_FLAGS_RELEASE}")
 ELSE ()
 # FIXME (hans): we must not forget to update the executables target properties as well!!!
   MESSAGE (FATAL_ERROR "Build type '${CMAKE_BUILD_TYPE}' is not known to us, please "
@@ -746,7 +759,9 @@ MESSAGE ("
 * - OpenMP:                ${ENABLE_OMP}
 * - SL:                    ${ENABLE_SL}
 * - Distributed memory:    ${ENABLE_DISTMEM}$distmem_details_print
+* => distmen is still non functional <=
 * - CC:                    ${CMAKE_C_COMPILER} (${CMAKE_C_COMPILER_ID})
+* - CCFLAGS:               ${BUILD_TYPE_C_FLAGS}
 * - SaC compiler CFLAGS:   ${MKCCFLAGS}
 * - SaC programs CFLAGS:   ${RCCCFLAGS}
 *
