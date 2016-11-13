@@ -252,7 +252,7 @@ XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-bu
 
 # By setting this on we can see where installation targets are specified via
 # absolute pathes.  For portability pruroses this should be avoided.
-# SET (CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION ON)
+SET (CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION ON)
 
 SET (CPACK_GENERATOR "TGZ")
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")

@@ -82,8 +82,13 @@ ENDIF ()
 # )
 
 # install the thing to root
+# XXX (hans) if we specify the destination as an absolute path, e.g. /usr/local
+#            CPack generators RPM and DEB get confused, which leads to badly
+#            build spec files, resulting in the erronous addition of tons of
+#            other files. For instance, all directories and tmp files are copied
+#            which leads to conflicts with other installed packages.
 INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/${CMAKE_INSTALL_PREFIX}/"
-  DESTINATION "${CMAKE_INSTALL_PREFIX}" USE_SOURCE_PERMISSIONS
+  DESTINATION local USE_SOURCE_PERMISSIONS
   COMPONENT complete)
 
 # now lets setup packaging (using CPack)
