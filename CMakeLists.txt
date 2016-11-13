@@ -258,51 +258,9 @@ SET (CPACK_GENERATOR "TGZ")
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET (CPACK_GENERATOR "Bundle")
 ENDIF()
-    
-# XXX(artem) This allows one to use absolute pathes during installation,
-#            but it doesn't seem to work on windows and friends.
-SET (CPACK_SET_DESTDIR ON)
-SET (CPACK_PACKAGE_NAME              "sac2c-compiler")
-SET (CPACK_PACKAGE_VENDOR            "SaC Development Team")
-SET (CPACK_PACKAGE_VERSION           "${SAC2C_VERSION}")
-SET (CPACK_PACKAGE_VERSION_MAJOR     "${SAC2C_VERSION_MAJOR}")
-SET (CPACK_PACKAGE_VERSION_MINOR     "${SAC2C_VERSION_MINOR}")
-SET (CPACK_PACKAGE_VERSION_PATCH     "${SAC2C_VERSION_PATCH}")
-SET (CPACK_PACKAGE_FILE_NAME         "sac2c-${SAC2C_VERSION}-${CMAKE_BUILD_TYPE}")
-SET (CPACK_PACKAGE_INSTALL_DIRECTORY "sac2c-${SAC2C_VERSION}")
-SET (CPACK_PACKAGE_ICON              "${PROJECT_SOURCE_DIR}/cmake/cpack/dmg-bundle/sac_logo.png")
+SET(SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 
-# DMG Bundle related configuration
-SET (CPACK_BUNDLE_NAME "sac2c-${SAC2C_VERSION}-${CMAKE_BUILD_TYPE}")
-## Use Macports 'makeicns' tool to generate MAC OS X icons 
-SET (CPACK_BUNDLE_ICON "${PROJECT_SOURCE_DIR}/cmake/cpack/dmg-bundle/sac.icns")
-SET (CPACK_BUNDLE_PLIST "${PROJECT_BINARY_DIR}/Info.plist")
-SET (CPACK_BUNDLE_STARTUP_COMMAND "${PROJECT_BINARY_DIR}/Install.command")
-CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/cmake/cpack/dmg-bundle/Info.plist.in" "${PROJECT_BINARY_DIR}/Info.plist")
-CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/cmake/cpack/dmg-bundle/Install.command.in" "${PROJECT_BINARY_DIR}/Install.command")
+# now lets setup packaging (using CPack)
+INCLUDE ("${PROJECT_SOURCE_DIR}/cmake/cpack/config.cmake")
 
-# SET (CPACK_PACKAGE_DESCRIPTION_FILE ...)
-SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY
-    "The sac2c compiler for a data-parallel array-based functional language SAC")
-# FIXME(artem) We need to decide on where do we put the stuff on the target system...)
-#SET (CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
-SET (CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
-
-# Debian-specific variables
-SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "SAC Development Team <info@sac-home.org>")
-SET(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
-
-# RPM-specific variables
-# FIXME(hans) this may not be exhaustive - does not take into account if the user
-# changes the install prefix
-SET(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "/usr/local" "/usr/local/include" "/usr/local/lib" "/usr/local/libexec" "/usr/local/share")
-
-SET (CPACK_COMPONENTS_ALL applications libraries headers conf)
-# Set the displayed names for each of the components to install.
-# These will be displayed in the list of components inside the installer.
-SET (CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "SaC Binaries")
-SET (CPACK_COMPONENT_LIBRARIES_DISPLAY_NAME "SaC Libraries")
-SET (CPACK_COMPONENT_HEADERS_DISPLAY_NAME "SaC Headers")
-SET (CPACK_COMPONENT_CONF_DISPLAY_NAME "SaC Configs")
-
-INCLUDE(CPack)
+# vim: ts=2 sw=2 et:
