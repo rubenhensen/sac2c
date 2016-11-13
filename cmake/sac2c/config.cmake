@@ -1,3 +1,17 @@
+## FIXME(artem)
+##
+## I am collecting here a list of *.m4 files in setup/config that
+## were not propertly ported into CMake.
+##
+##    * check_isl.m4, we don't check for libisl at all!  Figire out whether
+##                    this library is still relevant (ask Bob), and port this
+##                    file if needed.
+##    * check_lex_yacc.m4 -- deprecated.
+##    * check_sl.m4 -- I don't know if it is still useful.
+##    * check_stdlib.m4 -- Is it useful at all?
+##    * check_brackets.m4 -- The check is not properly implemented, port it!
+## 
+
 ## This files is analogous to configure.ac (*.m4 files) used in the 
 ## autotools build system.
 ##
