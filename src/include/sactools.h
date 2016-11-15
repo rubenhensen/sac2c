@@ -56,51 +56,90 @@ get_pointer_to_symbol (void *library, const char *libname, const char *symbolnam
     return ptr;
 }
 
-static inline int
-launch_function_from_library (const char *library, const char *mainfun, int argc,
-                              char *argv[])
+/**
+ * Try to load the local build library, if this does not
+ * work we exit.
+ */
+static inline void *
+load_local_library (const char *library)
 {
-    void *libsac2c = dlopen (library, DLOPEN_FLAGS);
-    sacmain_u mainptr;
-    version_u libversion;
-    int ret;
+    void *libptr;
+    char *tmp = malloc (strlen (DLL_BUILD_DIR) + strlen (library) + 2);
 
-    if (!libsac2c) {
+    strcpy (tmp, DLL_BUILD_DIR);
+    strcat (tmp, "/");
+    strcat (tmp, library);
+
+    libptr = dlopen (tmp, DLOPEN_FLAGS);
+
+    free (tmp);
+
+    if (!libptr) {
+        fprintf (stderr, "ERROR: library '%s' not found.\n", library);
+        report_error ();
+        exit (10);
+    }
+
+    return libptr;
+}
+
+/**
+ * Try to load the global library, if this does not work,
+ * we fallback on loading the local build library.
+ */
+static inline void *
+load_global_library (const char *library)
+{
+    void *libptr;
+
+    // we try to load via ldconfig/LD_LIBRARY_PATH
+    libptr = dlopen (library, DLOPEN_FLAGS);
+    if (!libptr) {
+        // if this fails, we load via an absolute path
         char *tmp = malloc (strlen (DLL_DIR) + strlen (library) + 2);
         strcpy (tmp, DLL_DIR);
         strcat (tmp, "/");
         strcat (tmp, library);
-        libsac2c = dlopen (tmp, DLOPEN_FLAGS);
-        if (!libsac2c) {
-            char *tmp2 = malloc (strlen (DLL_BUILD_DIR) + strlen (library) + 2);
-            strcpy (tmp2, DLL_BUILD_DIR);
-            strcat (tmp2, "/");
-            strcat (tmp2, library);
-            fprintf (stderr,
-                     "WARNING: library '%s' not found;\n"
-                     "         neither via LD_LIBRARY_PATH nor as '%s';\n"
-                     "         attempting use of local build '%s' now.\n",
-                     library, tmp, tmp2);
-            libsac2c = dlopen (tmp2, DLOPEN_FLAGS);
-            if (!libsac2c) {
-                fprintf (stderr, "ERROR: library '%s' not found.\n", library);
-                report_error ();
-                exit (10);
-            }
-            fprintf (stderr,
-                     "         Running 'make install' would avoid this warning.\n");
-            free (tmp2);
+        libptr = dlopen (tmp, DLOPEN_FLAGS);
+        if (!libptr) {
+            // finally we give up on global scope, and look in the build dir
+            libptr = load_local_library (library);
         }
         free (tmp);
     }
 
+    return libptr;
+}
+
+static inline int
+launch_function_from_library (const char *library, const char *mainfun, int argc,
+                              char *argv[])
+{
+    void *libsac2c; // library pointer
+    const char *version = SAC2C_VERSION;
+    int len = strlen (version);
+    const char *dirty_test = &version[len - 5]; // 'dirty' is 5 chars long
+    sacmain_u mainptr;
+    version_u libversion;
+    int ret;
+
+    /**
+     * The idea here is that when `dirty', we only
+     * try to load the local build version.
+     */
+    if (strcmp ("dirty", dirty_test)) {
+        libsac2c = load_global_library (library);
+    } else {
+        libsac2c = load_local_library (library);
+    }
+
     libversion.v = get_pointer_to_symbol (libsac2c, library, "getLibsac2cVersion");
-    if (strcmp (SAC2C_VERSION, libversion.f ())) {
+    if (strcmp (version, libversion.f ())) {
         fprintf (stderr,
                  "ERROR: version mismatch between this binary and the library.\n"
-                 "        binary: %s\n"
-                 "       library: %s\n",
-                 SAC2C_VERSION, libversion.f ());
+                 "   binary: %s\n"
+                 "  library: %s\n",
+                 version, libversion.f ());
         exit (20);
     }
 
