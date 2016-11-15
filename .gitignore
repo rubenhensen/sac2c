@@ -9,12 +9,6 @@ src/bin/*
 .make_track
 
 # SaC generated files.
-.revision.txt
-sac2crc
-autom4te.cache/
-config.log
-config.status
-setup/sac2crc
 src/doc/ast.html
 src/doc/ast.png
 src/include/.fingerprint
