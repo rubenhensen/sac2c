@@ -148,4 +148,21 @@ SACrunSac2tex (int argc, char *argv[])
     DBUG_RETURN (0);
 }
 
+/**
+ * This function is intended to be used only by the binaries sac2c,
+ * sac4c, and sac2tex. It is used to do a version comparison between
+ * what is set in the binary and what is set here in the library.
+ * The idea is that with version checking, we can more smartly decide
+ * on whether we should look for/load the globally install version of
+ * this library or only load the build version.
+ *
+ * The use of the `-dirty' postfix given by `git describe' helps us to
+ * determine whether the binary is from a non-committed build or not.
+ */
+char *
+getLibsac2cVersion (void)
+{
+    return SAC2C_VERSION;
+}
+
 #undef DBUG_PREFIX

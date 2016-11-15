@@ -12,6 +12,11 @@ typedef union {
     int (*f) (int, char **);
 } sacmain_u;
 
+typedef union {
+    void *v;
+    char *(*f) (void);
+} version_u;
+
 #ifdef DBUG_OFF
 #define DLOPEN_FLAGS RTLD_GLOBAL | RTLD_LAZY
 #else /* DBUG_OFF */
@@ -35,12 +40,29 @@ report_error (void)
         fprintf (stderr, "dlopen: %s\n", error);
 }
 
+static inline void *
+get_pointer_to_symbol (void *library, const char *libname, const char *symbolname)
+{
+    void *ptr;
+    ptr = dlsym (library, symbolname);
+
+    if (!ptr) {
+        fprintf (stderr, "ERROR: symbol '%s' not found in library '%s'.\n", symbolname,
+                 libname);
+        report_error ();
+        exit (10);
+    }
+
+    return ptr;
+}
+
 static inline int
 launch_function_from_library (const char *library, const char *mainfun, int argc,
                               char *argv[])
 {
     void *libsac2c = dlopen (library, DLOPEN_FLAGS);
     sacmain_u mainptr;
+    version_u libversion;
     int ret;
 
     if (!libsac2c) {
@@ -72,15 +94,17 @@ launch_function_from_library (const char *library, const char *mainfun, int argc
         free (tmp);
     }
 
-    mainptr.v = dlsym (libsac2c, mainfun);
-
-    if (!mainptr.f) {
-        fprintf (stderr, "ERROR: symbol '%s' not found in library '%s'.\n", mainfun,
-                 library);
-        report_error ();
-        exit (10);
+    libversion.v = get_pointer_to_symbol (libsac2c, library, "getLibsac2cVersion");
+    if (strcmp (SAC2C_VERSION, libversion.f ())) {
+        fprintf (stderr,
+                 "ERROR: version mismatch between this binary and the library.\n"
+                 "        binary: %s\n"
+                 "       library: %s\n",
+                 SAC2C_VERSION, libversion.f ());
+        exit (20);
     }
 
+    mainptr.v = get_pointer_to_symbol (libsac2c, library, mainfun);
     ret = mainptr.f (argc, argv);
 
     if (dlclose (libsac2c) != 0) {
@@ -93,3 +117,4 @@ launch_function_from_library (const char *library, const char *mainfun, int argc
 }
 
 #endif
+// vim: ts=2 sw=2 et:

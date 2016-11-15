@@ -1,4 +1,3 @@
-#include "sac.h"
 #include "sactools.h"
 
 #define LIBRARY "libsac2c" BUILD_TYPE_POSTFIX SHARED_LIB_EXT
