@@ -10,7 +10,6 @@ src/bin/*
 
 # SaC generated files.
 .revision.txt
-include/sac.h
 sac2crc
 autom4te.cache/
 config.log
@@ -19,7 +18,6 @@ setup/sac2crc
 src/doc/ast.html
 src/doc/ast.png
 src/include/.fingerprint
-src/include/config.h
 src/libsac/.last_style
 src/libsac2c/.fingerprint
 src/libsac2c/.last_style
