@@ -1133,7 +1133,7 @@ CTInote (const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTInote( int line, const char *format, ...)
+ * @fn void CTInoteLine( int line, const char *format, ...)
  *
  *   @brief  produces basic compile time information output (verbose level 2)
  *
@@ -1162,7 +1162,7 @@ CTInoteLine (int line, const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTInote( const char *format, ...)
+ * @fn void CTItell( int verbose_level, const char *format, ...)
  *
  *   @brief produces compile time information at given verbosity level
  *
