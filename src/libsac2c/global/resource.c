@@ -416,6 +416,8 @@ RSCparseResourceFile (char *buffer)
  *  This function does all the file handling. First, the public configuration
  *  file is read and parsed. If existing, the private configuration file is
  *  parsed afterwards.
+ *  If we are of a `dirty' version, we only read from the build directory sac2crc
+ *  file and sac2crc.local file.
  *  This depends on the environment variables HOME and SAC2CRC.
  *
  ******************************************************************************/
@@ -425,56 +427,57 @@ ParseResourceFiles (void)
 {
     char *filename;
     char *envvar;
+    bool isdirty;
     bool ok;
 
     DBUG_ENTER ();
 
+    /* If we are dirty, we should only read the sac2crc file from the build directory
+     * otherwise try to read from env SAC2CRC, global install location, and then fallback
+     * on build directory.
+     */
+    isdirty = STRsub ("dirty", global.version_id);
+
     /* If the configuration is done via SAC2CRC environment variable we assume
-       that it is a special case, parse the file and do no more file loading.  */
+     * that it is a special case, parse the file and do no more file loading.
+     */
     envvar = getenv ("SAC2CRC");
-    if (envvar != NULL) {
+    if (envvar != NULL && FMGRcheckExistFile (envvar) && !isdirty) {
         ok = RSCparseResourceFile (envvar);
 
         if (!ok) {
             CTIabort ("Error while parsing '%s' (via SAC2CRC).", envvar);
         }
-    } else {
-#ifndef SAC2CRC_CONF
-#error SAC2CRC_CONF not set, please check flags in config.mkf
-#endif
-        if (!FMGRcheckExistFile (SAC2CRC_CONF)) {
+    } else if (!FMGRcheckExistFile (SAC2CRC_CONF) || isdirty) {
+        CTInote ("%sReading sac2crc from %s.\n",
+                 isdirty ? "In a dirty state. " : "No global sac2crc file found. ",
+                 SAC2CRC_BUILD_CONF);
 
-            CTIwarn ("sac2crc not found; neither via SAC2CRC nor in '%s';\n"
-                     "attempting to load local sac2crc files: '%s' and "
-                     "'%s.local'.\n"
-                     "Running 'make install' would avoid this warning.",
-                     SAC2CRC_CONF, SAC2CRC_BUILD_CONF, SAC2CRC_BUILD_CONF);
-            /* We have to load the original sac2crc with all the targets.  */
-            ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF);
-            if (!ok) {
-                CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF);
-            }
-            /* And the sac2crc.local where pathes to libs and includes
-               are specified relatively to the build directory.  */
-            ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF ".local");
-            if (!ok) {
-                CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF ".local");
-            }
-        } else {
-            ok = RSCparseResourceFile (SAC2CRC_CONF);
-            if (!ok) {
-                CTIabort ("Error while parsing '%s'.", SAC2CRC_CONF);
-            }
+        /* We have to load the original sac2crc with all the targets.  */
+        ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF);
+        if (!ok) {
+            CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF);
+        }
+        /* And the sac2crc.local where pathes to libs and includes
+         * are specified relatively to the build directory.
+         */
+        ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF ".local");
+        if (!ok) {
+            CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF ".local");
+        }
+    } else {
+        ok = RSCparseResourceFile (SAC2CRC_CONF);
+        if (!ok) {
+            CTIabort ("Error while parsing '%s'.", SAC2CRC_CONF);
         }
     }
 
-    /*
-     * Second, the private sac2crc file ist read.
+    /* Second, the private sac2crc file ist read.
      * This file resides optionally in the user's home directory.
      */
     envvar = getenv ("HOME");
 
-    if (envvar != NULL) {
+    if (envvar != NULL && !isdirty) {
         filename = STRcat (envvar, "/.sac2crc");
         if (FMGRcheckExistFile (filename)) {
             ok = RSCparseResourceFile (filename);
@@ -717,3 +720,5 @@ xfree_configuration (configuration_t conf)
 }
 
 #undef DBUG_PREFIX
+
+// vim: ts=2 sw=2 et:
