@@ -8,6 +8,13 @@ IF (NOT DEFINED SAC2C_SOURCE_DIR OR "${SAC2C_SOURCE_DIR}" STREQUAL "")
     " One solution would be to make SAC2C_SOURCE_DIR == PROJECT_SOURCE_DIR.")
 ENDIF ()
 
+SET (CPACK_ARCHIVE_COMPONENT_INSTALL ON)
+SET (CPACK_RPM_COMPONENT_INSTALL ON)
+SET (CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE)
+
+# We create seperate config files for different generators
+set(CPACK_PROJECT_CONFIG_FILE "${SAC2C_SOURCE_DIR}/cmake/cpack/options.cmake")
+
 # We need to make sure that we name the output package sanely.
 IF ("${CMAKE_BUILD_TYPE}" STREQUAL "")
   # we assume that an empty build type means we are building both.
@@ -34,7 +41,7 @@ SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY "The sac2c compiler for a data-parallel a
 #SET (CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 SET (CPACK_RESOURCE_FILE_LICENSE "${SAC2C_SOURCE_DIR}/LICENSE")
 
-SET (CPACK_COMPONENTS_ALL applications libraries headers conf)
+#SET (CPACK_COMPONENTS_ALL applications libraries headers conf)
 # Set the displayed names for each of the components to install.
 # These will be displayed in the list of components inside the installer.
 SET (CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "SaC Binaries")

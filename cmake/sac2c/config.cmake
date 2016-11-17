@@ -724,7 +724,19 @@ ADD_DEFINITIONS (
 #              to figure out basic call for building shared library on all
 #              the systems.
 SET (CMAKE_SHARED_LINKER_FLAGS ${LD_DYNAMIC})
-STRING (TOLOWER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_NAME)
+
+# these are the install paths, they are *intentionally* not absolute! This
+# is to make package relocatable - be aware that CMAKE_INSTALL_PREFIX is used
+# for `make install' whereas CPACK_PACKAGE_INSTALL_PREFIX is used by CPack. Both
+# are automatically added to the install paths below - they *do not* need to be
+# explicitly added!
+SET (RTPATH_INSTALL "${PACKAGE_PREFIX}lib/sac2c/${SAC2C_VERSION}/rt")
+SET (MODPATH_INSTALL "${PACKAGE_PREFIX}lib/sac2c/${SAC2C_VERSION}/modlibs")
+SET (INCPATH_INSTALL "${PACKAGE_PREFIX}include/sac2c/${SAC2C_VERSION}/${BUILD_TYPE_NAME}")
+SET (TREEPATH_INSTALL "${PACKAGE_PREFIX}libexec/sac2c/${SAC2C_VERSION}")
+SET (SAC2CRC_INSTALL  "${PACKAGE_PREFIX}share/sac2c/${SAC2C_VERSION}")
+
+# FIXME (hans): clean this up!?
 SET (RTPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/rt")
 SET (MODPATH_CONF "${CMAKE_INSTALL_PREFIX}/lib/sac2c/${SAC2C_VERSION}/modlibs")
 SET (INCPATH_CONF "${CMAKE_INSTALL_PREFIX}/include/sac2c/${SAC2C_VERSION}/${BUILD_TYPE_NAME}")

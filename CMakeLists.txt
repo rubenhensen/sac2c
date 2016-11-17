@@ -191,26 +191,26 @@ ExternalProject_Add_Step(runtime_libraries forceconfigure
 
 
 # Installing the sac2c project files.
-XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}" COMPONENT applications)
-XINSTALL (TARGETS sac4c RUNTIME DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}" COMPONENT applications)
-XINSTALL (TARGETS sac2tex RUNTIME DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}" COMPONENT applications)
+XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${TREEPATH_INSTALL}" COMPONENT applications)
+XINSTALL (TARGETS sac4c RUNTIME DESTINATION "${TREEPATH_INSTALL}" COMPONENT applications)
+XINSTALL (TARGETS sac2tex RUNTIME DESTINATION "${TREEPATH_INSTALL}" COMPONENT applications)
 
 # install sac2crc stuff...
 XINSTALL (FILES "${SAC2CRC_BUILD_CONF}"
-         DESTINATION "${PACKAGE_PREFIX}${SAC2CRC_DIR}"
-         RENAME "sac2crc${BUILD_TYPE_POSTFIX}"
-         COMPONENT config)
+  DESTINATION "${SAC2CRC_INSTALL}"
+  RENAME "sac2crc${BUILD_TYPE_POSTFIX}"
+  COMPONENT config)
 
 # install sac2c-related binaries stuff...
 XINSTALL (PROGRAMS "${PROJECT_BINARY_DIR}/saccc"
-    DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}"
-         RENAME "saccc${BUILD_TYPE_POSTFIX}"
-         COMPONENT applications)
+  DESTINATION "${TREEPATH_INSTALL}"
+  RENAME "saccc${BUILD_TYPE_POSTFIX}"
+  COMPONENT applications)
 
 # install include files
 XINSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/" 
-         DESTINATION "${PACKAGE_PREFIX}${INCPATH_CONF}"
-         COMPONENT headers)
+  DESTINATION "${INCPATH_INSTALL}"
+  COMPONENT headers)
 
 ## We need to install the runtime libraries and sacprelude into a directory
 ## hiearchy that is different from the `local' hiearchy. Under out local `lib/' we
@@ -225,27 +225,38 @@ XINSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
 ## "prelude". We do the same for the local directory `lib/prelude', but exlude
 ## 'tree' instead.
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/
-    DESTINATION "${PACKAGE_PREFIX}${RTPATH_CONF}"
-    COMPONENT libraries
-    FILES_MATCHING PATTERN "*"
-    PATTERN "prelude" EXCLUDE)
+  DESTINATION "${RTPATH_INSTALL}"
+  COMPONENT libraries
+  FILES_MATCHING PATTERN "*"
+  PATTERN "prelude" EXCLUDE)
+
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/
-    DESTINATION "${PACKAGE_PREFIX}${MODPATH_CONF}"
-    COMPONENT libraries
-    FILES_MATCHING PATTERN "*"
-    PATTERN "tree" EXCLUDE)
+  DESTINATION "${MODPATH_INSTALL}"
+  COMPONENT libraries
+  FILES_MATCHING PATTERN "*"
+  PATTERN "tree" EXCLUDE)
 
 # install runtime-related binaries
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/bin/
-         DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}"
-         COMPONENT applications
-         FILES_MATCHING PATTERN "*"
-         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_READ WORLD_EXECUTE)
+  DESTINATION "${TREEPATH_INSTALL}"
+  COMPONENT rtapplications
+  FILES_MATCHING PATTERN "*"
+  PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_READ WORLD_EXECUTE)
 
 # install sacprelude
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/tree
-         DESTINATION "${PACKAGE_PREFIX}${TREEPATH_CONF}"
-         COMPONENT libraries)
+  DESTINATION "${TREEPATH_INSTALL}"
+  COMPONENT libraries)
+  
+# we install sources of binaries
+XINSTALL (FILES
+    ${PROJECT_SOURCE_DIR}/src/tools/sac2c/sac2c.c
+    ${PROJECT_SOURCE_DIR}/src/tools/sac2tex/sac2tex.c
+    ${PROJECT_SOURCE_DIR}/src/tools/sac4c/sac4c.c
+    ${PROJECT_SOURCE_DIR}/src/include/sactools.h
+    ${PROJECT_BINARY_DIR}/include/sacdirs.h
+  DESTINATION src
+  COMPONENT sources)
 
 # Cpack information
 # INCLUDE(InstallRequiredSystemLibraries)
@@ -254,10 +265,10 @@ XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-bu
 # absolute pathes.  For portability pruroses this should be avoided.
 SET (CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION ON)
 
-SET (CPACK_GENERATOR "TGZ")
-IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    SET (CPACK_GENERATOR "Bundle")
-ENDIF()
+#SET (CPACK_GENERATOR "TGZ")
+#IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+#    SET (CPACK_GENERATOR "Bundle")
+#ENDIF()
 SET(SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 
 # now lets setup packaging (using CPack)
