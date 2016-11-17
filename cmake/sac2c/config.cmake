@@ -706,13 +706,15 @@ ELSE ()
                        "make sure to pass -DCMAKE_${CMAKE_BUILD_TYPE}_POSTFIX=\"...\" "
                        "with your chosen postfix.")
 ENDIF ()
+# ensure that we have filename appropriate version of the build type
+STRING (TOLOWER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_NAME)
 
 # These CC flags are always present
 ADD_DEFINITIONS (
     ${OSFLAGS}
     -DSHARED_LIB_EXT="${SHARED_LIB_EXT}"
     -DBUILD_TYPE_POSTFIX="${BUILD_TYPE_POSTFIX}"
-    -Wfatal-errors
+    -Wfatal-errors # in GCC 4.4.7 this leads to a false error
     -D_POSIX_C_SOURCE=200809L
 )
 
