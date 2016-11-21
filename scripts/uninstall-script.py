@@ -413,7 +413,7 @@ def handle_switch (argv):
 
     assert build_type is not None
 
-    switch_version (prefix, options.sac2c_version, SAC2C_BUILD_TYPE_POSTFIXES[build_type])
+    switch_version (prefix, versions[0][0], SAC2C_BUILD_TYPE_POSTFIXES[build_type])
 
 
 if __name__ == "__main__":
