@@ -299,6 +299,7 @@ AddModuleToPool (const char *name)
         checkWasBuildUsingSameFlags (result);
         break;
     case TOOL_sac4c:
+    case TOOL_sac2tex:
         break;
     default:
         DBUG_UNREACHABLE ("unknown tool!");
