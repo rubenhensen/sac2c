@@ -514,13 +514,6 @@ EXECUTE_PROCESS (
         "${PROJECT_SOURCE_DIR}/src/libsac2c/xml/ast.xml"
     OUTPUT_FILE "${CMAKE_BINARY_DIR}/__ast-xml-fingerprint")
 FILE (MD5 "${CMAKE_BINARY_DIR}/__ast-xml-fingerprint" AST_MD5)
-# Create a configure dependency that will trigger cmake reconfiguration
-# every time when ast.xml is touched.
-# XXX This might be too heavy-weight, as we might not need to rebuild
-# everything, but I am not sure how to figure out which targets exactly
-# to rebuild.
-CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/src/libsac2c/xml/ast.xml
-                ${PROJECT_BINARY_DIR}/src/libsac2c/xml/ast.xml)
 
 SET (CC  ${CMAKE_C_COMPILER})
 # FIXME(artem) A better way to get preprocessor command is by replacing
