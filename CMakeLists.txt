@@ -258,6 +258,13 @@ XINSTALL (FILES
   DESTINATION src
   COMPONENT sources)
 
+# we install readme and install script
+XINSTALL (FILES
+    ${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/README
+    ${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/install.sh
+  DESTINATION "."
+  COMPONENT sources)
+
 # Cpack information
 # INCLUDE(InstallRequiredSystemLibraries)
 

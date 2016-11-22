@@ -1,0 +1,40 @@
+SaC Archive
+===========
+
+What?
+-----
+
+This archive contains the SaC compiler and runtime libraries.
+
+Install?
+--------
+
+Run the `install.sh' script, ensure that you specify:
+  -l location of the SaC compiler and library files, e.g. the location you unpacked
+     the tarball.
+  -p the location of where to install the files
+
+Additionaly Details
+-------------------
+
+The standard library of SaC-Lang can be found at github.com/sacbase. After compiling
+the library, you are going to have to create a config file in your home directory
+called `.sac2crc'. In this file you'll need to add the search path of the stdlib's
+.so files in order for the compiler to use them. An example of what this file contains
+is given:
+
+```
+target add_stdlib_local:
+TREE_OUTPUTDIR += ":STDLIB-BUILD_DIR/lib"
+LIB_OUTPUTDIR  += ":STDLIB-BUILD_DIR/lib"
+
+target default_sbi :: add_default_sbi :: add_local :: add_stdlib_local:
+```
+
+Need Help
+---------
+
+Head on over to www.sac-home.org and have a look at the `Download' pages for more
+up-to-date details. Or if all else fails, email us yetis at info@sac-home.org.
+
+
