@@ -6,5 +6,6 @@
 #define DLL_DIR "${DLL_DIR}"
 #define DLL_BUILD_DIR "${DLL_BUILD_DIR}"
 #define SAC2C_VERSION "${SAC2C_VERSION}"
+#define SAC2C_IS_DIRTY ${SAC2C_IS_DIRTY}
 
 #endif // __SACDIRS_H__

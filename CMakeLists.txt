@@ -28,6 +28,7 @@ include ("cmake/settings.cmake")
 STRING (FIND "${SAC2C_VERSION}" "dirty" GITDIRTY)
 IF (GITDIRTY GREATER 0) # If 'dirty' not found, we are -1, otherwise something
                         # greater than 0.
+    SET(SAC2C_IS_DIRTY 1)
     MACRO (XINSTALL)
     ENDMACRO ()
     INSTALL(CODE 
@@ -42,6 +43,7 @@ IF (GITDIRTY GREATER 0) # If 'dirty' not found, we are -1, otherwise something
          MESSAGE (FATAL_ERROR \"Exiting now\")"
     )
 ELSE ()
+    SET(SAC2C_IS_DIRTY 0)
     MACRO (XINSTALL)
         INSTALL (${ARGV})
     ENDMACRO ()

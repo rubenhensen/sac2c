@@ -117,8 +117,7 @@ launch_function_from_library (const char *library, const char *mainfun, int argc
 {
     void *libsac2c; // library pointer
     const char *version = SAC2C_VERSION;
-    int len = strlen (version);
-    const char *dirty_test = &version[len - 5]; // 'dirty' is 5 chars long
+    const int is_dirty = SAC2C_IS_DIRTY;
     sacmain_u mainptr;
     version_u libversion;
     int ret;
@@ -127,7 +126,7 @@ launch_function_from_library (const char *library, const char *mainfun, int argc
      * The idea here is that when `dirty', we only
      * try to load the local build version.
      */
-    if (strcmp ("dirty", dirty_test)) {
+    if (is_dirty) {
         libsac2c = load_global_library (library);
     } else {
         libsac2c = load_local_library (library);
