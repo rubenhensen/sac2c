@@ -115,8 +115,11 @@ PrintFeatureSet (void)
     DBUG_ENTER ();
 
     printf ("\n\nINSTALLATION-SPECIFIC FEATURE SET:\n\n"
-            " - default path to sac2crc: " SAC2CRC_CONF "\n"
-            " - default path to libsac2c: " DLL_DIR "\n\n");
+            " - default path to sac2crc: %s\n"
+            " - default path to libsac2c: %s\n\n",
+            global.global_sac2crc_location == '\0' ? "???"
+                                                   : global.global_sac2crc_location,
+            global.config.tree_outputdir == '\0' ? "???" : global.config.tree_outputdir);
 
     DBUG_RETURN ();
 }
