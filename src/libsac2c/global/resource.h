@@ -26,6 +26,7 @@
  ******************************************************************************/
 extern void RSCprintConfigEntry (char *config);
 extern bool RSCparseResourceFile (char *file);
+extern void RSCsetSac2crcLocations (char *global_location, char *build_location);
 
 extern inheritence_list_t *RSCmakeInheritenceListEntry (char *name,
                                                         inheritence_list_t *next);

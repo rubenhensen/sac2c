@@ -10,11 +10,11 @@ IF (NOT SAC2C_SOURCE_DIR)
     MESSAGE (FATAL_ERROR "The SAC2C_SOURCE_DIR is not set!")
 ENDIF ()
 
-IF (NOT EXISTS "${SAC2C_BUILD_DIR}/sac2crc.local")
+IF (NOT EXISTS "${SAC2C_BUILD_DIR}/sac2crc${BUILD_TYPE_POSTFIX}.local")
     MESSAGE (FATAL_ERROR
-        "The content of SAC2C_BUILD_DIR does not contain sac2crc.local.\
+        "The content of SAC2C_BUILD_DIR does not contain sac2crc${BUILD_TYPE_POSTFIX}.local.\
         Please ensure that you have compiled the sac2c project and that\
-        sac2crc.local has been generated.")
+        sac2crc${BUILD_TYPE_POSTFIX}.local has been generated.")
 ENDIF ()
 #XXX: maybe we should check for something else, like cmake/ dir?
 IF (NOT EXISTS "${SAC2C_SOURCE_DIR}/src/libsac/essentials/commandline.c")

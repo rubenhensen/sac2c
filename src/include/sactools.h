@@ -3,6 +3,7 @@
 
 #include <dlfcn.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <string.h>
 #include <stdio.h>
 #include "sacdirs.h"
@@ -16,6 +17,11 @@ typedef union {
     void *v;
     char *(*f) (void);
 } version_u;
+
+typedef union {
+    void *v;
+    void (*f) (char *, char *);
+} sac2crc_u;
 
 #ifdef DBUG_OFF
 #define DLOPEN_FLAGS RTLD_GLOBAL | RTLD_LAZY
@@ -112,14 +118,17 @@ load_global_library (const char *library)
 }
 
 static inline int
-launch_function_from_library (const char *library, const char *mainfun, int argc,
-                              char *argv[])
+launch_function_from_library (const char *library, const char *sac2crc,
+                              const char *mainfun, int argc, char *argv[])
 {
     void *libsac2c; // library pointer
     const char *version = SAC2C_VERSION;
     const int is_dirty = SAC2C_IS_DIRTY;
     sacmain_u mainptr;
     version_u libversion;
+    sac2crc_u set_sac2crc_location;
+    char global_sac2crc_path[PATH_MAX];
+    char build_sac2crc_path[PATH_MAX];
     int ret;
 
     /**
@@ -142,13 +151,31 @@ launch_function_from_library (const char *library, const char *mainfun, int argc
         exit (20);
     }
 
+    libversion.v = get_pointer_to_symbol (libsac2c, library, "getLibsac2cVersion");
+    if (strcmp (version, libversion.f ())) {
+        fprintf (stderr,
+                 "ERROR: version mismatch between this binary and the library.\n"
+                 "   binary: %s\n"
+                 "  library: %s\n",
+                 version, libversion.f ());
+        exit (20);
+    }
+
+    set_sac2crc_location.v
+      = get_pointer_to_symbol (libsac2c, library, "RSCsetSac2crcLocations");
+    snprintf (global_sac2crc_path, sizeof (global_sac2crc_path), "%s/%s", SAC2CRC_DIR,
+              sac2crc);
+    snprintf (build_sac2crc_path, sizeof (build_sac2crc_path), "%s/%s", SAC2CRC_BUILD_DIR,
+              sac2crc);
+    set_sac2crc_location.f (global_sac2crc_path, build_sac2crc_path);
+
     mainptr.v = get_pointer_to_symbol (libsac2c, library, mainfun);
     ret = mainptr.f (argc, argv);
 
     if (dlclose (libsac2c) != 0) {
         fprintf (stderr, "ERROR: cannot unload library '%s'.\n", library);
         report_error ();
-        exit (10);
+        exit (30);
     }
 
     return ret;

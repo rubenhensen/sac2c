@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Created by SaC Development Team (C) 2016 - 2017
+
 # This is the install script for the SaC Compiler and Runtime libraries.
 # It is designed to install/copy the files in the TAR.GZ. release of the
 # compiler.
@@ -8,16 +10,12 @@
 # 
 # This script takes two *required* parameters, the location of the extracted
 # tarball files, and the prefix of where to install/copy them over to.
-#
-# NOTE this script is only designed to install on Linux - the issue is that
-#      we can't trivial get the correct lib extension - why is this relevent?
-#      The binary sources need to know in order to find/open libsac.
 
 #
 # Globals
 #
 
-VERSION="1.0"
+VERSION="1.1"
 VERBOSE=0
 
 #
@@ -129,7 +127,10 @@ SAC_VERSION="$(awk '/SAC2C_VERSION/{ gsub(/"/,"",$3); print $3 }' "$location/src
 verbose "Determined compiler version is \`$SAC_VERSION'"
 
 # determine postfix for binaries
-binpostfix="$(gawk 'match($0, /.*(_[pd])"$/, ary) { print ary[1] }' "$location/src/sacdirs.h" )"
+binpostfix="$(find . -type f -name '*_[pd]' | grep -o '_[dp]$' | uniq)"
+if [[ "x$binpostfix" == "x" || $(echo $binpostfix | wc -l) > 1 ]]; then
+  fatal_error "Incorrect build type postfix found: \`$binpostfix'"
+fi
 
 verbose "Determined binary postfix is \`$binpostfix'"
 
@@ -150,9 +151,18 @@ for dir in "${dirs[@]}"; do
   fi
 done
 
+# determine shared library extension
+_sharedlibext="$(find . -type f -name 'libsac2c*' -exec basename {} \;)"
+sharedlibext=".${_sharedlibext##*.}"
+if [[ "x$sharedlibext" == "x" ]]; then
+  fatal_error "Unable to determine shared library extension"
+fi
+
+verbose "Shared library extension is: \`$sharedlibext'"
+
 # we now need to update sacdir.h, we assume not to know the current
-# prefix, but do assume that it is the same for both SAC2CRC_CONF and DLL
-cprefix="$(awk '/SAC2CRC_CONF/{ sub(/\/share.*/,"",$3); gsub(/"/,"",$3); print $3 }' "$location/src/sacdirs.h")"
+# prefix, but do assume that it is the same for both SAC2CRC_DIR and DLL
+cprefix="$(awk '/SAC2CRC_DIR/{ sub(/\/share.*/,"",$3); gsub(/"/,"",$3); print $3 }' "$location/src/sacdirs.h")"
 if [[ "x$cprefix" == "x" ]]; then
   fatal_error "Unable to read sacdirs.h file"
 fi
@@ -166,12 +176,14 @@ verbose "Updated sacdirs.h file with new prefix: $prefix"
 
 # create tmp makefile with targets
 tmpfile=$(mktemp)
+# ensure we delete the tmpfile when anything happens - including
+# exiting the script correctly.
 trap "rm -f -- $tmpfile" INT TERM HUP EXIT
 stab=$'\t' # hackish way of getting tabs into heredoc
 
-# FIXME
+# FIXME: there might be a better way of doing this... 
 cat <<-WHATWHAT > "$tmpfile"
-CFLAGS+= -I. -DBUILD_TYPE_POSTFIX=\"$binpostfix\" -DSHARED_LIB_EXT=\".so\"
+CFLAGS+= -I. -DBUILD_TYPE_POSTFIX=\"$binpostfix\" -DSHARED_LIB_EXT=\"$sharedlibext\"
 LDFLAGS+= -ldl
 all: sac2c$binpostfix sac4c$binpostfix sac2tex$binpostfix
 sac2c$binpostfix: sac2c.c sactools.h sacdirs.h

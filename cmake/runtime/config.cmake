@@ -1,7 +1,7 @@
 # file include checks to find sac2c, etc.
 
 SET (ISAC2CLOCAL "${SAC2C_SOURCE_DIR}/cmake/runtime/sac2crc.local.in")
-SET (LSAC2CLOCAL "${PROJECT_BINARY_DIR}/sac2crc.local")
+SET (LSAC2CLOCAL "${PROJECT_BINARY_DIR}/sac2crc${BUILD_TYPE_POSTFIX}.local")
 
 # Make sure that sac2c is available and is located in the build directory.
 # Note the 'NO_DEFAULT_PATH' specifier to the following FIND_PROGRAM command

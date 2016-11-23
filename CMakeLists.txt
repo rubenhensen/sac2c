@@ -200,7 +200,6 @@ XINSTALL (TARGETS sac2tex RUNTIME DESTINATION "${TREEPATH_INSTALL}" COMPONENT ap
 # install sac2crc stuff...
 XINSTALL (FILES "${SAC2CRC_BUILD_CONF}"
   DESTINATION "${SAC2CRC_INSTALL}"
-  RENAME "sac2crc${BUILD_TYPE_POSTFIX}"
   COMPONENT config)
 
 # install sac2c-related binaries stuff...

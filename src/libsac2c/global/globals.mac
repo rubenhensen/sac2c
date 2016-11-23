@@ -1262,6 +1262,18 @@ GLOBAL (configuration_t, config, config_init, xfree_configuration, )
  * which is read from the sac2crc file.
  */
 
+GLOBAL (char *, global_sac2crc_location, NULL, xfree_dummy, )
+GLOBAL (char *, build_sac2crc_location, NULL, xfree_dummy, )
+/*
+ * These global (static) variables are used during runtime to locate the
+ * sac2crc file. Because we now allow for the user to compile the
+ * sac2c/sac2tex/sac4c/etc. binaries in order to `burn-in' there own
+ * install paths, we can no longer use the defuncted SAC2CRC_CONF and
+ * SAC2CRC_BUILD_CONF macros to search for the sac2crc file. These
+ * globals are meant to be modified by launch_function_from_library
+ * in sactools.h *before* we call the main function.
+ */
+
 /*
  * Storing module dependencies
  */

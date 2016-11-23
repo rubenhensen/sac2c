@@ -98,6 +98,20 @@ static struct {
   {"", (enum tag_t)0, NULL},
 };
 
+/* These global (static) variables are used during runtime to locate the sac2crc
+ * file. Because we now allow for the user to compile the sac2c/sac2tex/sac4c/etc.
+ * binaries in order to `burn-in' there own install paths, we can no longer use
+ * the defuncted SAC2CRC_CONF and SAC2CRC_BUILD_CONF macros to search for the
+ * sac2crc file. These globals are meant to be modified by launch_function_from_library
+ * in sactools.h *before* we call the main function.
+ *
+ * These variables here are only used within this file, but need to be propagated
+ * to other parts of libsac2c, e.g. usage.c - this is achieved by setting their
+ * `globals' counterpart (see globals.mac).
+ */
+static char *global_sac2crc_location = SAC2CRC_DIR "/sac2crc";
+static char *build_sac2crc_location = SAC2CRC_BUILD_DIR "/sac2crc";
+
 /** <!--********************************************************************-->
  *
  * @fn void RSCprintConfigEntry( char *config)
@@ -410,6 +424,32 @@ RSCparseResourceFile (char *buffer)
 /******************************************************************************
  *
  * function:
+ *  void RSCsetSac2crcLocations()
+ *
+ * description:
+ *   This function is meant to be called using dlsym (for instance in
+ *   sactool.h), with it one can alter the global variables
+ *   `global_sac2crc_location' and `build_sac2crc_location'.
+ *
+ *   The expected parameters are to have to from PATH + "sac2crc" + POSTFIX,
+ *   e.g. `/usr/local/share/sac2c/VERSION/sac2crc_d' for debug sac2crc file.
+ *
+ ******************************************************************************/
+
+void
+RSCsetSac2crcLocations (char *global_location, char *build_location)
+{
+    DBUG_ENTER ();
+
+    global_sac2crc_location = global_location;
+    build_sac2crc_location = build_location;
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
  *  void ParseResourceFiles()
  *
  * description:
@@ -427,7 +467,7 @@ ParseResourceFiles (void)
 {
     char *filename;
     char *envvar;
-    bool isdirty;
+    bool is_dirty;
     bool ok;
 
     DBUG_ENTER ();
@@ -436,40 +476,43 @@ ParseResourceFiles (void)
      * otherwise try to read from env SAC2CRC, global install location, and then fallback
      * on build directory.
      */
-    isdirty = STRsub ("dirty", global.version_id);
+    is_dirty = (bool)SAC2C_IS_DIRTY;
 
     /* If the configuration is done via SAC2CRC environment variable we assume
      * that it is a special case, parse the file and do no more file loading.
      */
     envvar = getenv ("SAC2CRC");
-    if (envvar != NULL && FMGRcheckExistFile (envvar) && !isdirty) {
-        ok = RSCparseResourceFile (envvar);
 
+    if (!is_dirty && envvar != NULL && FMGRcheckExistFile (envvar)) {
+        ok = RSCparseResourceFile (envvar);
         if (!ok) {
             CTIabort ("Error while parsing '%s' (via SAC2CRC).", envvar);
         }
-    } else if (!FMGRcheckExistFile (SAC2CRC_CONF) || isdirty) {
-        CTInote ("%sReading sac2crc from %s.\n",
-                 isdirty ? "In a dirty state. " : "No global sac2crc file found. ",
-                 SAC2CRC_BUILD_CONF);
+    } else if (!is_dirty && FMGRcheckExistFile (global_sac2crc_location)) {
+        ok = RSCparseResourceFile (global_sac2crc_location);
+        if (!ok) {
+            CTIabort ("Error while parsing '%s'.", global_sac2crc_location);
+        }
+    } else {
+        CTInote ("%sTrying to read sac2crc from %s.\n",
+                 is_dirty ? "In a dirty state. " : "No global sac2crc file found. ",
+                 build_sac2crc_location);
 
         /* We have to load the original sac2crc with all the targets.  */
-        ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF);
+        ok = RSCparseResourceFile (build_sac2crc_location);
         if (!ok) {
-            CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF);
+            CTIabort ("Error while parsing '%s'.", build_sac2crc_location);
         }
         /* And the sac2crc.local where pathes to libs and includes
          * are specified relatively to the build directory.
          */
-        ok = RSCparseResourceFile (SAC2CRC_BUILD_CONF ".local");
+        filename = STRcat (build_sac2crc_location, ".local");
+        ok = RSCparseResourceFile (filename);
         if (!ok) {
-            CTIabort ("Error while parsing '%s'.", SAC2CRC_BUILD_CONF ".local");
+            CTIabort ("Error while parsing '%s'.", filename);
         }
-    } else {
-        ok = RSCparseResourceFile (SAC2CRC_CONF);
-        if (!ok) {
-            CTIabort ("Error while parsing '%s'.", SAC2CRC_CONF);
-        }
+
+        MEMfree (filename);
     }
 
     /* Second, the private sac2crc file ist read.
@@ -477,7 +520,7 @@ ParseResourceFiles (void)
      */
     envvar = getenv ("HOME");
 
-    if (envvar != NULL && !isdirty) {
+    if (envvar != NULL && !is_dirty) {
         filename = STRcat (envvar, "/.sac2crc");
         if (FMGRcheckExistFile (filename)) {
             ok = RSCparseResourceFile (filename);
@@ -490,6 +533,8 @@ ParseResourceFiles (void)
     }
 
     global.filename = global.puresacfilename; /* What is this good for ? */
+    global.global_sac2crc_location = global_sac2crc_location;
+    global.build_sac2crc_location = build_sac2crc_location;
 
     DBUG_RETURN ();
 }
