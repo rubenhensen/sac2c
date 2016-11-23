@@ -15,7 +15,7 @@
 # Globals
 #
 
-VERSION="1.1"
+VERSION="1.2"
 VERBOSE=0
 
 #
@@ -169,10 +169,15 @@ fi
 
 verbose "Found old prefix: $cprefix"
 
-# do an inplace replacement
-sed -e "s|$cprefix|$prefix|" -i "$location/src/sacdirs.h"
+if [[ "x$prefix" != "x$cprefix" ]]; then
+  # do an inplace replacement
+  sed -e "s|$cprefix|$prefix|" -i "$location/src/sacdirs.h"
 
-verbose "Updated sacdirs.h file with new prefix: $prefix"
+  # and lets not for get to update the sac2crc file
+  sed -re "s|$cprefix(.*sac2c.*)|$prefix\1|" -i "$location/share/sac2c/$SAC_VERSION/sac2crc$binpostfix"
+
+  verbose "Updated sacdirs.h and sac2crc files with new prefix: $prefix"
+fi
 
 # create tmp makefile with targets
 tmpfile=$(mktemp)
