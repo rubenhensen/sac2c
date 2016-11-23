@@ -893,11 +893,6 @@ GLOBAL (bool, makedeps, FALSE, xfree_dummy, )
  * Don't actually compile, but infer module dependencies.
  */
 
-GLOBAL (bool, makelibdeps, FALSE, xfree_dummy, )
-/*
- * Don't actually compile, but infer extended module dependencies.
- */
-
 GLOBAL (char *, printConfig, NULL, xfree_dummy, )
 /*
  * Don't actually compile, but print an entry from the config file

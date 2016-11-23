@@ -934,7 +934,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION_END ("minarrayrep");
 
     ARGS_FLAG ("M", global.makedeps = TRUE);
-    ARGS_FLAG ("Mlib", global.makedeps = global.makelibdeps = TRUE);
 
     /* mutc options */
     ARGS_FLAG ("mutc_benchmark", global.mutc_benchmark = TRUE);
