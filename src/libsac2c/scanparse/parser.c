@@ -5830,20 +5830,81 @@ handle_definitions (struct parser *parser)
     return error_mark_node;
 }
 
+enum dep_type { dep_use, dep_import, dep_obj, dep_lib, dep__max };
+
+struct dependency {
+    char *name;
+    UT_hash_handle hh;
+};
+
+static int
+dependency_sort (struct dependency *d1, struct dependency *d2)
+{
+    return strcmp (d1->name, d2->name);
+}
+
+static struct dependency *
+add_dependency (struct dependency *dependencies, const char *name, enum dep_type type)
+{
+    struct dependency *t;
+    char *dep_name;
+    size_t l;
+
+    /* Construct the name for the dependency using its type.  */
+    switch (type) {
+    case dep_use:
+        l = strlen ("lib") + strlen (name) + strlen ("Mod")
+            + strlen (global.config.tree_dllext) + 1;
+        dep_name = malloc (l);
+        snprintf (dep_name, l, "lib%sMod%s", name, global.config.tree_dllext);
+        break;
+    case dep_import:
+        l = strlen ("lib") + strlen (name) + strlen ("Tree")
+            + strlen (global.config.tree_dllext) + 1;
+        dep_name = malloc (l);
+        snprintf (dep_name, l, "lib%sTree%s", name, global.config.tree_dllext);
+        break;
+    case dep_obj:
+        dep_name = strdup (name);
+        break;
+    case dep_lib:
+        l = strlen ("-l") + strlen (name) + 1;
+        dep_name = malloc (l);
+        snprintf (dep_name, l, "-l%s", name);
+        break;
+    default:
+        unreachable ("unknown dependency type");
+    }
+
+    HASH_FIND_STR (dependencies, dep_name, t);
+    if (!t) {
+        t = (struct dependency *)malloc (sizeof *t);
+        t->name = dep_name;
+        HASH_ADD_KEYPTR (hh, dependencies, t->name, strlen (t->name), t);
+
+        HASH_FIND_STR (dependencies, dep_name, t);
+    } else
+        free (dep_name);
+
+    return dependencies;
+}
+
 int
 parse_for_dependencies (struct parser *parser)
 {
+    struct dependency *dependencies = NULL;
+
     struct token *tok;
     while (tok_eof != token_class (tok = parser_get_token (parser))) {
         /* use or import dependency.  */
         if (token_is_keyword (tok, IMPORT) || token_is_keyword (tok, USE)) {
+            enum dep_type dt = token_is_keyword (tok, IMPORT) ? dep_import : dep_use;
             struct token *name_tok = parser_get_token (parser);
             if (tok_id == token_class (name_tok)) {
                 tok = parser_get_token (parser);
                 if (token_is_operator (tok, tv_colon))
-                    /* we found a dependency, which is stored in `tok'  */
-                    printf ("-- use/import dep -- '%s.sac'\n",
-                            token_as_string (name_tok));
+                    dependencies
+                      = add_dependency (dependencies, token_as_string (name_tok), dt);
                 else
                     parser_unget (parser);
             } else
@@ -5854,7 +5915,8 @@ parse_for_dependencies (struct parser *parser)
             parser_unget2 (parser);
             tok = parser_get_token (parser);
             if (tok_id == token_class (tok)) {
-                printf ("-- implicit use dep -- '%s.sac'\n", token_as_string (tok));
+                dependencies
+                  = add_dependency (dependencies, token_as_string (tok), dep_use);
                 parser_get_token (parser), parser_get_token (parser);
             } else
                 parser_get_token (parser);
@@ -5872,9 +5934,13 @@ parse_for_dependencies (struct parser *parser)
                     tok = parser_get_token (parser);
                     if (tok_string == token_class (tok)) {
                         if (linkwith_p)
-                            printf ("-- library dep -- '%s'\n", token_as_string (tok));
+                            dependencies
+                              = add_dependency (dependencies, token_as_string (tok),
+                                                dep_lib);
                         else
-                            printf ("-- object dep -- '%s'\n", token_as_string (tok));
+                            dependencies
+                              = add_dependency (dependencies, token_as_string (tok),
+                                                dep_obj);
                     } else {
                         error_loc (token_location (tok),
                                    "object or library used in pragma has to be a "
@@ -5888,6 +5954,26 @@ parse_for_dependencies (struct parser *parser)
                 /* WTF is '#' not followed by the 'pragma'?  Skip it.  */
                 parser_unget (parser);
         }
+    }
+
+    struct dependency *d;
+    struct dependency *tmp;
+
+    /* XXX consider whether sorting by name is a good thing...  */
+    HASH_SORT (dependencies, dependency_sort);
+
+    /* Print the list of dependencies for the given file.
+       TODO(artem) Depending on the format of output, create a
+                   Make rule or CMake-appropriate format.  For
+                   The time being we simply print a list.  */
+    HASH_ITER (hh, dependencies, d, tmp)
+        fprintf (stdout, "%s\n", d->name);
+
+    /* Free the hash table with dependencies.  */
+    HASH_ITER (hh, dependencies, d, tmp) {
+        HASH_DEL (dependencies, d);
+        free (d->name);
+        free (d);
     }
 
     return 0;
