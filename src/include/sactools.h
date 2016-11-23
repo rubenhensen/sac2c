@@ -127,9 +127,9 @@ launch_function_from_library (const char *library, const char *mainfun, int argc
      * try to load the local build version.
      */
     if (is_dirty) {
-        libsac2c = load_global_library (library);
-    } else {
         libsac2c = load_local_library (library);
+    } else {
+        libsac2c = load_global_library (library);
     }
 
     libversion.v = get_pointer_to_symbol (libsac2c, library, "getLibsac2cVersion");
