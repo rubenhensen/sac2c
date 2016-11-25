@@ -374,44 +374,46 @@ PrintTargetName (node *tree)
     DBUG_RETURN ();
 }
 
-node *
-DEPdoPrintDependencies (node *syntax_tree)
+#if 0
+node *DEPdoPrintDependencies( node *syntax_tree)
 {
-    DBUG_ENTER ();
+  DBUG_ENTER ();
 
-    printf ("#\n# dependencies for file %s\n#\n\n", global.filename);
+  printf( "#\n# dependencies for file %s\n#\n\n",
+      global.filename);
 
-    printf ("ifeq ($(RECURSIVE_DEPEND),yes)\n");
-    STRSfold (&PrintDepInclude, global.dependencies, NULL);
-    printf ("endif\n\n");
+  printf( "ifeq ($(RECURSIVE_DEPEND),yes)\n");
+  STRSfold( &PrintDepInclude, global.dependencies, NULL);
+  printf( "endif\n\n");
 
-    /*
-     * first, print how the output will be named
-     */
-    PrintTargetName (syntax_tree);
+  /*
+   * first, print how the output will be named
+   */
+  PrintTargetName( syntax_tree);
 
-    /*
-     * now add the dependencies
-     */
-    STRSfold (&PrintDepFoldFun, global.dependencies, NULL);
+  /*
+   * now add the dependencies
+   */
+  STRSfold( &PrintDepFoldFun, global.dependencies, NULL);
 
-    /*
-     * and finally two newline to make it look nicer
-     */
-    printf ("\n\n");
+  /*
+   * and finally two newline to make it look nicer
+   */
+  printf( "\n\n");
 
-    /*
-     * if we are in special Mlib (aka sbs) mode, we have to print
-     * some more dependencies, handeled by doPrintLibDependencies
-     */
-    if (global.makelibdeps) {
-        doPrintLibDependencies (syntax_tree);
-    }
+  /*
+   * if we are in special Mlib (aka sbs) mode, we have to print
+   * some more dependencies, handeled by doPrintLibDependencies
+   */
+  if (global.makelibdeps) {
+    doPrintLibDependencies( syntax_tree);
+  }
 
-    CTIterminateCompilation (syntax_tree);
+  CTIterminateCompilation( syntax_tree);
 
-    DBUG_RETURN (syntax_tree);
+  DBUG_RETURN (syntax_tree);
 }
+#endif
 
 /*
  * We use a rather weird signature here to fit the framework of the
