@@ -151,16 +151,6 @@ launch_function_from_library (const char *library, const char *sac2crc,
         exit (20);
     }
 
-    libversion.v = get_pointer_to_symbol (libsac2c, library, "getLibsac2cVersion");
-    if (strcmp (version, libversion.f ())) {
-        fprintf (stderr,
-                 "ERROR: version mismatch between this binary and the library.\n"
-                 "   binary: %s\n"
-                 "  library: %s\n",
-                 version, libversion.f ());
-        exit (20);
-    }
-
     set_sac2crc_location.v
       = get_pointer_to_symbol (libsac2c, library, "RSCsetSac2crcLocations");
     snprintf (global_sac2crc_path, sizeof (global_sac2crc_path), "%s/%s", SAC2CRC_DIR,
