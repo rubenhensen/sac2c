@@ -1262,8 +1262,8 @@ GLOBAL (configuration_t, config, config_init, xfree_configuration, )
  * which is read from the sac2crc file.
  */
 
-GLOBAL (char *, global_sac2crc_location, NULL, xfree_dummy, )
-GLOBAL (char *, build_sac2crc_location, NULL, xfree_dummy, )
+GLOBAL_NOINIT (char *, global_sac2crc_location, NULL, xfree_dummy, )
+GLOBAL_NOINIT (char *, build_sac2crc_location, NULL, xfree_dummy, )
 /*
  * These global (static) variables are used during runtime to locate the
  * sac2crc file. Because we now allow for the user to compile the

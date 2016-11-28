@@ -1206,10 +1206,15 @@ typedef struct CYG_FUN_TABLE {
 
 /*
  * Read in global variables from globals.mac
+ *
+ * GLOBAL_NOINIT is a special case whereby the global variable is not
+ *               initialised, this is used in the case where it must be set
+ *               *before* the initialisation of all global variables occur.
  */
 
 typedef struct GLOBAL_T {
 #define GLOBAL(type, name, val, ...) type name;
+#define GLOBAL_NOINIT(type, name, val, ...) type name;
 #include "globals.mac"
 } global_t;
 
