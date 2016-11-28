@@ -53,12 +53,6 @@ SUBPHASE (ans, "Annotating namespaces", ANSdoAnnotateNamespace, ALWAYS, mod)
 
 SUBPHASE (gdp, "Gathering dependencies", GDPdoGatherDependencies, ALWAYS, mod)
 
-/*SUBPHASE( pdp,
-          "Printing dependencies",
-          DEPdoPrintDependencies,
-          global.makedeps,
-          mod)*/
-
 SUBPHASE (imp, "Retrieving imported symbols", IMPdoImportSymbols, ALWAYS, mod)
 
 SUBPHASE (uss, "Retrieving used symbols", USSdoUseSymbols, ALWAYS, mod)
