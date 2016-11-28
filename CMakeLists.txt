@@ -191,6 +191,35 @@ ExternalProject_Add_Step(runtime_libraries forceconfigure
             DEPENDERS configure
             ALWAYS 1)
 
+# these target facilitate the installing of individual components
+ADD_CUSTOM_TARGET (applications-install
+  DEPENDS sac2c sac4c sac2tex "${PROJECT_BINARY_DIR}/saccc"
+  COMMAND
+    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=applications -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
+
+ADD_CUSTOM_TARGET (config-install
+  DEPENDS "${SAC2CRC_BUILD_CONF}"
+  COMMAND
+    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=config -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
+
+ADD_CUSTOM_TARGET (headers-install
+  DEPENDS sac2cShared
+  COMMAND
+    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=headers -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
+
+ADD_CUSTOM_TARGET (libraries-install
+  DEPENDS sac2cShared runtime_libraries
+  COMMAND
+    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=libraries -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
+
+ADD_CUSTOM_TARGET (rtapplications-install
+  DEPENDS runtime_libraries
+  COMMAND
+    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=rtapplications -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
+
+ADD_CUSTOM_TARGET (sources-install
+  COMMAND
+    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=sources -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
 
 # Installing the sac2c project files.
 XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${TREEPATH_INSTALL}" COMPONENT applications)
@@ -256,7 +285,7 @@ XINSTALL (FILES
     ${PROJECT_SOURCE_DIR}/src/tools/sac4c/sac4c.c
     ${PROJECT_SOURCE_DIR}/src/include/sactools.h
     ${PROJECT_BINARY_DIR}/include/sacdirs.h
-  DESTINATION src
+  DESTINATION "${SOURCE_INSTALL}"
   COMPONENT sources)
 
 # we install readme and install script

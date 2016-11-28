@@ -36,26 +36,41 @@ ENDIF ()
 
 # Let use build packages of both the debug and production release types
 # debug
+# XXX (hans) Notice that we manually do the install, this is to ensure that the
+#            components (applications, libraries, etc.) are placed into a directory
+#            structure that is trivial to understand and sort through. This is needed
+#            as within this build context we still have CPack's notions of components
+#            for different package types.
 ExternalProject_Add(sac2c-debug
     DOWNLOAD_COMMAND "" # this is to prevent any download target from being called
     PREFIX sac2c-debug
     SOURCE_DIR "${SAC2C_SOURCE_DIR}"
-    INSTALL_DIR "${PROJECT_BINARY_DIR}/toplevel"
+    INSTALL_DIR "${PROJECT_BINARY_DIR}/toplevel/"
+    INSTALL_COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/applications applications-install
+      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/libraries libraries-install
+      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/rtapplications rtapplications-install
+      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/sources sources-install
+      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/config config-install
+      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/headers headers-install
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=DEBUG
       -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-      -DPACKAGE_PREFIX=${PROJECT_BINARY_DIR}/toplevel
 )
 # release
 ExternalProject_Add(sac2c-release
     DOWNLOAD_COMMAND "" # this is to prevent any download target from being called
     PREFIX sac2c-release
     SOURCE_DIR "${SAC2C_SOURCE_DIR}"
-    INSTALL_DIR "${PROJECT_BINARY_DIR}/toplevel"
+    INSTALL_DIR "${PROJECT_BINARY_DIR}/toplevel/"
+    INSTALL_COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/applications applications-install
+      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/libraries libraries-install
+      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/rtapplications rtapplications-install
+      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/sources sources-install
+      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/config config-install
+      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/headers headers-install
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=RELEASE
       -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-      -DPACKAGE_PREFIX=${PROJECT_BINARY_DIR}/toplevel
 )
 
 # Ensure that we can create symbolic links - only possible on UNIX systems
@@ -86,10 +101,34 @@ ENDIF ()
 #            CPack generators RPM and DEB get confused, which leads to badly
 #            build spec files, resulting in the erronous addition of tons of
 #            other files. For instance, all directories and tmp files are copied
-#            which leads to conflicts with other installed packages.
-INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/${CMAKE_INSTALL_PREFIX}/"
-  DESTINATION local USE_SOURCE_PERMISSIONS
-  COMPONENT complete)
+#            which leads to conflicts with other installed packages. This is why
+#            the destination must be kept ".".
+# XXX (hans) The directory to be copied needs to be ended by a slash '/', otherwise
+#            the last part of the path is included in the install.
+INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/sources/${CMAKE_INSTALL_PREFIX}/"
+  DESTINATION "." USE_SOURCE_PERMISSIONS
+  COMPONENT sources)
+
+INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/libraries/${CMAKE_INSTALL_PREFIX}/"
+  DESTINATION "." USE_SOURCE_PERMISSIONS
+  COMPONENT libraries)
+
+INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/applications/${CMAKE_INSTALL_PREFIX}/"
+  DESTINATION "." USE_SOURCE_PERMISSIONS
+  COMPONENT applications)
+
+INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/rtapplications/${CMAKE_INSTALL_PREFIX}/"
+  DESTINATION "." USE_SOURCE_PERMISSIONS
+  COMPONENT rtapplications)
+
+INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/config/${CMAKE_INSTALL_PREFIX}/"
+  DESTINATION "." USE_SOURCE_PERMISSIONS
+  COMPONENT config)
+
+INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/headers/${CMAKE_INSTALL_PREFIX}/"
+  DESTINATION "." USE_SOURCE_PERMISSIONS
+  COMPONENT headers)
+
 
 # now lets setup packaging (using CPack)
 INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/cpack/config.cmake")
