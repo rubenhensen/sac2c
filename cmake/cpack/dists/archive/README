@@ -10,9 +10,9 @@ Install?
 --------
 
 Run the `install.sh' script, ensure that you specify:
-  -l location of the SaC compiler and library files, e.g. the location you unpacked
-     the tarball.
-  -p the location of where to install the files
+  -s for the source location of the SaC compiler and library files, e.g. the
+     location you unpacked the tarball.
+  -i for the install location of where to place the files
 
 Additionaly Details
 -------------------
