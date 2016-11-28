@@ -5830,7 +5830,7 @@ handle_definitions (struct parser *parser)
     return error_mark_node;
 }
 
-enum dep_type { dep_use, dep_import, dep_obj, dep_lib, dep__max };
+enum dep_type { dep_mod, dep_tree, dep_obj, dep_lib, dep__max };
 
 struct dependency {
     char *name;
@@ -5852,13 +5852,13 @@ add_dependency (struct dependency *dependencies, const char *name, enum dep_type
 
     /* Construct the name for the dependency using its type.  */
     switch (type) {
-    case dep_use:
+    case dep_mod:
         l = strlen ("lib") + strlen (name) + strlen ("Mod")
             + strlen (global.config.tree_dllext) + 1;
         dep_name = malloc (l);
         snprintf (dep_name, l, "lib%sMod%s", name, global.config.tree_dllext);
         break;
-    case dep_import:
+    case dep_tree:
         l = strlen ("lib") + strlen (name) + strlen ("Tree")
             + strlen (global.config.tree_dllext) + 1;
         dep_name = malloc (l);
@@ -5898,14 +5898,21 @@ parse_for_dependencies (struct parser *parser)
     while (tok_eof != token_class (tok = parser_get_token (parser))) {
         /* use or import dependency.  */
         if (token_is_keyword (tok, IMPORT) || token_is_keyword (tok, USE)) {
-            enum dep_type dt = token_is_keyword (tok, IMPORT) ? dep_import : dep_use;
+            bool need_mod = token_is_keyword (tok, USE);
             struct token *name_tok = parser_get_token (parser);
             if (tok_id == token_class (name_tok)) {
                 tok = parser_get_token (parser);
-                if (token_is_operator (tok, tv_colon))
-                    dependencies
-                      = add_dependency (dependencies, token_as_string (name_tok), dt);
-                else
+                if (token_is_operator (tok, tv_colon)) {
+                    /* No matter whether we us or import we need a Tree file.  */
+                    dependencies = add_dependency (dependencies,
+                                                   token_as_string (name_tok), dep_tree);
+
+                    /* When we use a module, we need its Mod file.  */
+                    if (need_mod)
+                        dependencies
+                          = add_dependency (dependencies, token_as_string (name_tok),
+                                            dep_mod);
+                } else
                     parser_unget (parser);
             } else
                 parser_unget (parser);
@@ -5916,7 +5923,9 @@ parse_for_dependencies (struct parser *parser)
             tok = parser_get_token (parser);
             if (tok_id == token_class (tok)) {
                 dependencies
-                  = add_dependency (dependencies, token_as_string (tok), dep_use);
+                  = add_dependency (dependencies, token_as_string (tok), dep_tree);
+                dependencies
+                  = add_dependency (dependencies, token_as_string (tok), dep_mod);
                 parser_get_token (parser), parser_get_token (parser);
             } else
                 parser_get_token (parser);
