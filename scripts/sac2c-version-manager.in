@@ -1,3 +1,5 @@
+#! /bin/env python2
+
 # This scripts makes it possible to manage multiple installations
 # of sac2c on the system.  The scripts provide the following
 # functionality:
@@ -14,11 +16,17 @@ import re
 import sys
 import glob
 import fnmatch
+import platform
 from optparse import OptionParser
 
 # TODO(artem) abstract common version operations into a class
 
 SHARED_LIB_EXT = ".so"
+# FIXME(artem) be smarter here --- on OSX they switched to .dylib
+#              only after a certain version, they were using
+#              different extension before.
+if platform.system () == "Darwin":
+    SHARED_LIB_EXT = ".dylib"
 
 # a list of binaries provided by one build type
 SAC2C_BINARIES = [
@@ -30,12 +38,8 @@ SAC2C_BINARIES = [
         ("saccc", ),
 ]
 
-
 # a map of build-type to postfix
-SAC2C_BUILD_TYPE_POSTFIXES = {
-        "debug": "_d",
-        "release": "_p",
-}
+SAC2C_BUILD_TYPE_POSTFIXES = @BUILD_TYPE_DICTIONARY@
 
 
 def die (msg):
@@ -93,7 +97,7 @@ def max_version (lst):
 
     # Find maximum version amongst the list of version tuples
     v = max (lst, key=lambda x: vertotup (x[0]))
-    
+
     # Return all the buildtypes of the given version
     return filter (lambda x: x[0] == v[0], lst)
 
@@ -312,7 +316,7 @@ BUILD_TYPE = `%s'""" % (os.path.split (d)[1], binary_to_version (sac2c_binary))
 
 def switch_version (prefix, version, sac2c_postfix):
     "create symbolic links for the relevant files"
-    
+
     # First, for every binary, we create a postfixed version that points
     # to the corresponding libexec location.
     for p in SAC2C_BINARIES:
@@ -496,7 +500,7 @@ def handle_switch (argv):
         build_type = options.build_type
 
     assert build_type is not None
-    
+
     info ("switching sac2c to version `%s' (buildtype: `%s')" % versions[0])
     switch_version (prefix, versions[0][0], SAC2C_BUILD_TYPE_POSTFIXES[build_type])
 

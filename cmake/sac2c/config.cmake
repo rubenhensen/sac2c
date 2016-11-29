@@ -717,6 +717,18 @@ IF (NOT CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE})
              "`cmake/sac2c/config.cmake'")
 ENDIF ()
 
+# configure version-control script 
+SET (BUILD_TYPE_DICTIONARY)
+FOREACH (t ${KNOWN_BUILD_TYPES})
+  STRING (APPEND BUILD_TYPE_DICTIONARY "'${t}': '${CMAKE_${t}_POSTFIX}',")
+ENDFOREACH ()
+SET (BUILD_TYPE_DICTIONARY "{ ${BUILD_TYPE_DICTIONARY} }")
+
+CONFIGURE_FILE (
+  "${PROJECT_SOURCE_DIR}/scripts/sac2c-version-manager.in"
+  "${PROJECT_BINARY_DIR}/scripts/sac2c-version-manager" @ONLY)
+
+
 # Setting build-type-related variables
 SET (BUILD_TYPE_POSTFIX "${CMAKE_DEBUG_POSTFIX}")
 SET (BUILD_TYPE_C_FLAGS "${CMAKE_C_FLAGS_DEBUG}")
