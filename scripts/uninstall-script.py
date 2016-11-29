@@ -1,8 +1,22 @@
+# This scripts makes it possible to manage multiple installations
+# of sac2c on the system.  The scripts provide the following
+# functionality:
+#
+#       * list available versions under the given prefix
+#       * switch to the selected version
+#       * delete selected versions
+#       * show current version of sac2c
+#
+# See help outputs of individual commands to learn about arguments.
+
 import os
+import re
 import sys
 import glob
 import fnmatch
 from optparse import OptionParser
+
+# TODO(artem) abstract common version operations into a class
 
 SHARED_LIB_EXT = ".so"
 
@@ -62,6 +76,36 @@ def rmdir_rec (d):
             os.rmdir (os.path.join (root, name))
     os.rmdir (d)
 
+def max_version (lst):
+    "Filter the latest (lexicographically) sac version"
+    def vertotup (v):
+        # Assumption is that v == "<num>(.num)*-<tag-name>(-<commits>)?-g<hash>"
+        t = v.split ('-')
+        assert re.match (r"^([0-9]+)(\.[0-9]+)*$", t[0])
+        assert re.match (r"^g[0-9a-f]+$", t[-1])
+
+        l = map (int, t[0].split ('.'))
+
+        if len (t) > 2 and re.match (r"^[0-9]+$", t[-2]):
+            l.append (int (t[-2]))
+
+        return l
+
+    # Find maximum version amongst the list of version tuples
+    v = max (lst, key=lambda x: vertotup (x[0]))
+    
+    # Return all the buildtypes of the given version
+    return filter (lambda x: x[0] == v[0], lst)
+
+def recent_version (prefix, lst):
+    "Find the most recently installed version"
+    p = [(os.path.join (prefix, "libexec", "sac2c", x[0], "sac2c" + SAC2C_BUILD_TYPE_POSTFIXES[x[1]]), x)
+         for x in lst]
+    v = max (p, key=lambda x: os.path.getctime (x[0]))
+    return v[1]
+
+
+
 def list_of_files (prefix, ver, build_type):
     assert build_type in SAC2C_BUILD_TYPE_POSTFIXES
 
@@ -93,21 +137,20 @@ def list_of_files (prefix, ver, build_type):
     # $prefix/include/sac2c/$version/$build_type/*
     l.extend (find_files_rec (os.path.join (prefix, "include", "sac2c", ver, build_type), "*"))
 
-    # XXX This is internal sanity check
+    # This is internal sanity check
     lbad = []
     for f in l:
         if not os.path.isfile (f):
             lbad.append (f)
 
     if lbad != []:
-        print >>sys.stderr, """\
+        die ("""\
 innternal error:
     The `list_of_files' function returned inconsistent list of files,
     the following files don't exist:
 \t%s
 
-    Please fix the function in %s""" % ("\n\t".join (lbad), __file__)
-        exit (-1)
+    Please fix the function in %s""" % ("\n\t".join (lbad), __file__))
 
     return l
 
@@ -201,9 +244,9 @@ def glob_versions (prefix, glob_expr, build_type=None):
 
     return versions
 
-def confirm_removal (prefix, versions):
+def confirm_removal (text):
     "Ask a user if he/she really wants to delete those files"
-    sys.stdout.write ("delete %r sac2c versions in %s [Y/N] " % (versions, prefix))
+    sys.stdout.write ("%s [Y/N] " % text)
     choice = raw_input ().lower ()
     return choice in ["y", "ye", "yes", "aye", "i don't give shit"]
 
@@ -220,7 +263,7 @@ def delete_versions (prefix, glob_expr, dryrun, build_type):
         dry_run_delete (prefix, versions)
         exit (0)
 
-    if confirm_removal (prefix, versions):
+    if confirm_removal ("delete %r sac2c versions in %s?" % (versions, prefix)):
         for v in versions:
             remove_version (prefix, v)
     else:
@@ -250,7 +293,9 @@ def current_version (prefix):
 
     sac2c_symlink = os.path.join (prefix, "bin", "sac2c")
     if not os.path.islink (sac2c_symlink):
-        error ("broken sac2c installation: `%s' should be a symbolic link" % sac2c_symlink)
+        error ("broken sac2c installation: `%s' should be a symbolic link.\n"
+               "please remvoe files manually or run switch command of this"
+               "script" % sac2c_symlink)
 
     # resolve symlink
     sac2c_path = os.path.realpath (sac2c_symlink)
@@ -267,7 +312,7 @@ BUILD_TYPE = `%s'""" % (os.path.split (d)[1], binary_to_version (sac2c_binary))
 
 def switch_version (prefix, version, sac2c_postfix):
     "create symbolic links for the relevant files"
-
+    
     # First, for every binary, we create a postfixed version that points
     # to the corresponding libexec location.
     for p in SAC2C_BINARIES:
@@ -279,7 +324,11 @@ def switch_version (prefix, version, sac2c_postfix):
         if os.path.islink (link_name):
             os.unlink (link_name)
         elif os.path.isfile (link_name):
-            os.remove (link_name)
+            if confirm_removal ("`%s' is a file, not a symlink; delete it?" % link_name):
+                os.remove (link_name)
+            else:
+                info ("exiting")
+                sys.exit (0)
 
         os.symlink (link_src, link_name)
 
@@ -295,7 +344,11 @@ def switch_version (prefix, version, sac2c_postfix):
         if os.path.islink (link_name):
             os.unlink (link_name)
         elif os.path.isfile (link_name):
-            os.remove (link_name)
+            if confirm_removal ("`%s' is a file, not a symlink; delete it?" % link_name):
+                os.remove (link_name)
+            else:
+                info ("exiting")
+                sys.exit (0)
 
         os.symlink (link_src, link_name)
 
@@ -380,7 +433,14 @@ def handle_switch (argv):
     parser.add_option ("-v", "--sac2c-version", dest="sac2c_version", type="string",
                        help="version(-s) of sac2c to uninstall (regexps accepted)")
     parser.add_option ("-b", "--build-type", dest="build_type", type="string",
-            help="build type {%s} of sac2c to switch to" % ",".join (SAC2C_BUILD_TYPE_POSTFIXES.keys()))
+                       help="build type {%s} of sac2c to switch to"
+                       % ",".join (SAC2C_BUILD_TYPE_POSTFIXES.keys()))
+
+    parser.add_option ("-l", "--latest-version", dest="latest_version", action="store_true",
+                       help="switcht to the latest (ver 1.4 > ver 0.9) version of the sac2c compiler")
+    parser.add_option ("-r", "--recent-install", dest="recent_install", action="store_true",
+                       help="switcht to the recently installed version of the sac2c compiler")
+
 
     (options, args) = parser.parse_args (argv)
     if args != []:
@@ -391,13 +451,37 @@ def handle_switch (argv):
 
     prefix = os.path.expanduser (options.prefix)
 
-    if options.sac2c_version is None:
-        error ("which sac2c versoin under `%s' should be used?  "
-               "(use --sac2c-version to set it up)" % options.prefix)
+    # Verify that only one of sac2c-version, latest-version or recent-version
+    # have been specified.  Otherwise produce an error.
+    ver_opt_tuple = (options.latest_version,
+                     options.recent_install,
+                     options.sac2c_version)
 
-    versions = glob_versions (prefix, options.sac2c_version)
-    if versions == []:
-        error ("sac2c version `%s' does not exist" % options.sac2c_version)
+    if len ([x for x in ver_opt_tuple if x is not None]) > 1:
+        error ("only one of `--latest-version', `--recent-version', '--sac2c-version' "
+               "can be specified")
+
+    if len ([x for x in ver_opt_tuple if x is not None]) == 0:
+        error ("which sac2c versoin under `%s' should be used?"
+               % options.prefix)
+
+    if options.sac2c_version is not None:
+        versions = glob_versions (prefix, options.sac2c_version)
+        if versions == []:
+            error ("sac2c version `%s' does not exist" % options.sac2c_version)
+    elif options.recent_install:
+        versions = glob_versions (prefix, "*")
+        if versions == []:
+            error ("no installations of sac2c under prefix `%s' found" % prefix)
+        versions = [recent_version (prefix, versions)]
+    elif options.latest_version:
+        versions = glob_versions (prefix, "*")
+        versions = max_version (versions)
+        if versions == []:
+            error ("no installations of sac2c under prefix `%s' found" % prefix)
+    else:
+        die ("internal-error: option resolution failed --- "
+             "cannot figure out which sac2c option to use")
 
     build_type = None
     if options.build_type is None:
@@ -412,7 +496,8 @@ def handle_switch (argv):
         build_type = options.build_type
 
     assert build_type is not None
-
+    
+    info ("switching sac2c to version `%s' (buildtype: `%s')" % versions[0])
     switch_version (prefix, versions[0][0], SAC2C_BUILD_TYPE_POSTFIXES[build_type])
 
 
