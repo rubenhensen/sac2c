@@ -75,7 +75,7 @@ SET (CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/local /usr/local/bin /us
 SET (CPACK_RPM_PACKAGE_REQUIRES "gcc") # we don't need to go crazy here as rpmbuild handles most of this for us
 
 # Disable CPack if we are dirty
-IF (SAC2C_IS_DIRTY EQUAL 1)
+IF (NOT SAC2C_IS_DIRTY)
   INCLUDE (CPack)
 ENDIF ()
 # vim: ts=2 sw=2 et:

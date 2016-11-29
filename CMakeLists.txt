@@ -25,28 +25,30 @@ include ("cmake/settings.cmake")
 
 # If the status of git repository is "dirty", installation targets should
 # be not available.
+# XXX (hans) The SAC2C_IS_DIRTY flag needs to have a numerical value, as it is
+#            popograted to sacdirs.h file.
 STRING (FIND "${SAC2C_VERSION}" "dirty" GITDIRTY)
 IF (GITDIRTY GREATER 0) # If 'dirty' not found, we are -1, otherwise something
                         # greater than 0.
-    SET(SAC2C_IS_DIRTY 1)
-    MACRO (XINSTALL)
-    ENDMACRO ()
-    INSTALL(CODE 
-        "EXECUTE_PROCESS (
-            COMMAND ${CMAKE_COMMAND} -E echo 
-                \"\n\n The current build includes local changes that are\n\"
-                \"not committed to the git repository, as indicated by\n\"
-                \"'git describe --dirty'. Therefore, it is NOT POSSIBLE\n\"
-                \"to install the current version. Either get rid of local\n\"
-                \"changes or make a commit.\n\"
-         )
-         MESSAGE (FATAL_ERROR \"Exiting now\")"
-    )
+  SET(SAC2C_IS_DIRTY 1)
+  MACRO (XINSTALL)
+  ENDMACRO ()
+  INSTALL(CODE 
+      "EXECUTE_PROCESS (
+          COMMAND ${CMAKE_COMMAND} -E echo 
+              \"\n\n The current build includes local changes that are\n\"
+              \"not committed to the git repository, as indicated by\n\"
+              \"'git describe --dirty'. Therefore, it is NOT POSSIBLE\n\"
+              \"to install the current version. Either get rid of local\n\"
+              \"changes or make a commit.\n\"
+       )
+       MESSAGE (FATAL_ERROR \"Exiting now\")"
+  )
 ELSE ()
-    SET(SAC2C_IS_DIRTY 0)
-    MACRO (XINSTALL)
-        INSTALL (${ARGV})
-    ENDMACRO ()
+  SET(SAC2C_IS_DIRTY 0)
+  MACRO (XINSTALL)
+    INSTALL (${ARGV})
+  ENDMACRO ()
 ENDIF ()
 
 # Include common directories for the project.
