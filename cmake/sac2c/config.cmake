@@ -27,8 +27,8 @@ INCLUDE (CheckLibraryExists)
 INCLUDE (CheckCSourceRuns)
 INCLUDE (CheckCCompilerFlag)
 
-# The pathes here are computed from ${CMAKE_SOURCE_DIR}
-INCLUDE ("cmake/git-revision-description.cmake")
+## Include other config files
+INCLUDE ("cmake/sac2c-version-related.cmake")
 
 # Check for support of MPI
 MACRO(CHECK_DISTMEM_MPI)
@@ -173,17 +173,6 @@ SET (IS_CYGWIN  ${CYGWIN})
 # These will be substituted in the sac2crc file.
 SET (SHARED_LIB_EXT "${CMAKE_SHARED_LIBRARY_SUFFIX}")
 SET (EXEEXT "${CMAKE_EXECUTABLE_SUFFIX}")
-
-# Get sac2c version
-git_describe(SAC2C_VERSION --tags --abbrev=4 --dirty)
-STRING (REGEX REPLACE "^v" "" SAC2C_VERSION "${SAC2C_VERSION}")
-STRING (REGEX REPLACE "\n" "" SAC2C_VERSION "${SAC2C_VERSION}")
-STRING (REGEX REPLACE "^([0-9]+)\\..*" "\\1" SAC2C_VERSION_MAJOR "${SAC2C_VERSION}")
-STRING (REGEX REPLACE "^([0-9]+)\\.([0-9]+).*" "\\2" SAC2C_VERSION_MINOR "${SAC2C_VERSION}")
-SET (SAC2C_VERSION_PATCH  0)
-IF ("${SAC2C_VERSION}" MATCHES "-([0-9]+)(-g[a-f0-9]+)?(-dirty)?$")
-    SET (SAC2C_VERSION_PATCH  "${CMAKE_MATCH_1}")
-ENDIF ()
 
 # Check for Link Time Optimisation
 SET (HAVE_LTO   OFF)
@@ -468,12 +457,6 @@ SET (XSLT   "${XSLT_EXEC}")
 SET (M4     "${M4_EXEC}")
 SET (DOT    "${DOT_FLAG}")
 
-# Get GIT version.
-FIND_PACKAGE (Git)
-IF (NOT GIT_FOUND)
-    MESSAGE (FATAL_ERROR "Could not find GIT on the system!")
-ENDIF ()
-
 # Check if we should add distmem support...
 MESSAGE(STATUS "Checking for Distmem backends (MPI, ARMCI, GASNET, GPI)")
 CHECK_DISTMEM_MPI()
@@ -505,6 +488,12 @@ SITE_NAME (HOST_NAME)
 # Get current user.
 # FIXME why the hell this is useful?
 GET_USERNAME (USER_NAME)
+
+# Get the sac2c repository version
+GET_SAC2C_VERSION (SAC2C_VERSION SAC2C_VERSION_MAJOR SAC2C_VERSION_MINOR SAC2C_VERSION_PATCH)
+
+# Check and see if the repo is dirty
+CHECK_IF_DIRTY ()
 
 # Get an md5 hash of the `ast.xml'.
 EXECUTE_PROCESS (

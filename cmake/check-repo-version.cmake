@@ -12,7 +12,7 @@
 #  version to be updated *until* the user manually calls `make rebuild_cache'
 #  or calls `cmake ..'. Doing this though is inconvenient, and will be easily
 #  forgotten. This script does this for the user, by checking for changes in
-#  the GIT repo version and causing to to re-configure during the build phase.
+#  the GIT repo version and causing it to re-configure during the build phase.
 #
 # Tested with CMake v3.6
 ##
@@ -35,7 +35,7 @@ EXECUTE_PROCESS (
 )
 
 ## Read the GIT repo state from last CMake configuration
-FILE (READ "__version-git.txt" OVER)
+FILE (READ "__version-repo.txt" OVER)
 
 ## Compare both versions
 IF (NOT "${NVER}" STREQUAL "${OVER}")
@@ -43,7 +43,7 @@ IF (NOT "${NVER}" STREQUAL "${OVER}")
   # By updating the file we break the dependency with the configure phase
   # which will cause CMake to re-configure the build system. However, this
   # will not occur until the next build...
-  FILE (REMOVE "__version-git.txt")
+  FILE (REMOVE "__version-repo.txt")
   # So, we force CMake to do the re-configure NOW
   EXECUTE_PROCESS(
     COMMAND

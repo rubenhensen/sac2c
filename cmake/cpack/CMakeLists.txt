@@ -21,17 +21,18 @@ INCLUDE (ExternalProject)
 GET_FILENAME_COMPONENT (SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../../" ABSOLUTE)
 MESSAGE(AUTHOR_WARNING "We have set our source directory to ${SAC2C_SOURCE_DIR}.")
 
-# Get sac2c version
-# FIXME (hans): We should modularise this more - no code repetition
-INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/git-revision-description.cmake")
-git_describe(SAC2C_VERSION --tags --abbrev=4 --dirty)
-STRING (REGEX REPLACE "^v" "" SAC2C_VERSION "${SAC2C_VERSION}")
-STRING (REGEX REPLACE "\n" "" SAC2C_VERSION "${SAC2C_VERSION}")
-STRING (REGEX REPLACE "^([0-9]+)\\..*" "\\1" SAC2C_VERSION_MAJOR "${SAC2C_VERSION}")
-STRING (REGEX REPLACE "^([0-9]+)\\.([0-9]+).*" "\\2" SAC2C_VERSION_MINOR "${SAC2C_VERSION}")
-SET (SAC2C_VERSION_PATCH  0)
-IF ("${SAC2C_VERSION}" MATCHES "-([0-9]+)(-g[a-f0-9]+)?(-dirty)?$")
-  SET (SAC2C_VERSION_PATCH  "${CMAKE_MATCH_1}")
+# Include CMake config
+INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/sac2c-version-related.cmake")
+
+# Get the sac2c repository version
+GET_SAC2C_VERSION (SAC2C_VERSION SAC2C_VERSION_MAJOR SAC2C_VERSION_MINOR SAC2C_VERSION_PATCH)
+
+# Check and see if the repo is dirty
+CHECK_IF_DIRTY ()
+
+# Ensure that we can create symbolic links - only possible on UNIX systems
+IF (NOT UNIX)
+  MESSAGE (FATAL_ERROR "We are unable to generate packages on non-Unix systems at the moment")
 ENDIF ()
 
 # Let use build packages of both the debug and production release types
@@ -73,11 +74,6 @@ ExternalProject_Add(sac2c-release
       -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
 )
 
-# Ensure that we can create symbolic links - only possible on UNIX systems
-IF (NOT UNIX)
-  MESSAGE (FATAL_ERROR "We are unable to generate packages on non-Unix systems at the moment")
-ENDIF ()
-
 # create symbolic links to binaries
 # XXX(hans) we should not do this for distributable packages
 # INSTALL (CODE
@@ -105,30 +101,29 @@ ENDIF ()
 #            the destination must be kept ".".
 # XXX (hans) The directory to be copied needs to be ended by a slash '/', otherwise
 #            the last part of the path is included in the install.
-INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/sources/${CMAKE_INSTALL_PREFIX}/"
+XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/sources/${CMAKE_INSTALL_PREFIX}/"
   DESTINATION "." USE_SOURCE_PERMISSIONS
   COMPONENT sources)
 
-INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/libraries/${CMAKE_INSTALL_PREFIX}/"
+XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/libraries/${CMAKE_INSTALL_PREFIX}/"
   DESTINATION "." USE_SOURCE_PERMISSIONS
   COMPONENT libraries)
 
-INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/applications/${CMAKE_INSTALL_PREFIX}/"
+XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/applications/${CMAKE_INSTALL_PREFIX}/"
   DESTINATION "." USE_SOURCE_PERMISSIONS
   COMPONENT applications)
 
-INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/rtapplications/${CMAKE_INSTALL_PREFIX}/"
+XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/rtapplications/${CMAKE_INSTALL_PREFIX}/"
   DESTINATION "." USE_SOURCE_PERMISSIONS
   COMPONENT rtapplications)
 
-INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/config/${CMAKE_INSTALL_PREFIX}/"
+XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/config/${CMAKE_INSTALL_PREFIX}/"
   DESTINATION "." USE_SOURCE_PERMISSIONS
   COMPONENT config)
 
-INSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/headers/${CMAKE_INSTALL_PREFIX}/"
+XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/headers/${CMAKE_INSTALL_PREFIX}/"
   DESTINATION "." USE_SOURCE_PERMISSIONS
   COMPONENT headers)
-
 
 # now lets setup packaging (using CPack)
 INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/cpack/config.cmake")

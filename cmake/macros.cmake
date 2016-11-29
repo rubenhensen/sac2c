@@ -49,40 +49,6 @@ MACRO (CHECK_CC_FLAG flag var)
     SET (CMAKE_REQUIRED_FLAGS "${OLD_CMAKE_REQUIRED_FLAGS}")
 ENDMACRO ()
 
-# Generate version using `git describe'
-# FIXME(artem) what happens if we are compiling from withing the source 
-# distribution and .git directory is not available?  We need to have a
-# mechanism to deal with this situation.  For example checking for SAC2C_VERSION
-# file in case .git directory is not present.
-# XXX DEPRECATED MACRO
-FUNCTION (GET_VERSION ver)
-    FIND_PACKAGE (Git)
-
-    IF (Git_FOUND)
-        EXECUTE_PROCESS (COMMAND
-            "${GIT_EXECUTABLE}"
-            describe
-            --tags 
-            --abbrev=4
-            --dirty
-            WORKING_DIRECTORY
-                "${CMAKE_CURRENT_SOURCE_DIR}"
-            RESULT_VARIABLE
-                res
-            OUTPUT_VARIABLE
-                out
-            ERROR_QUIET
-            OUTPUT_STRIP_TRAILING_WHITESPACE)
-        IF (NOT res EQUAL 0)
-            MESSAGE (FATAL_ERROR "Failing to get git version")
-        ENDIF ()
-        STRING (REGEX REPLACE "^v" "" out "${out}")
-        SET (${ver} "${out}" PARENT_SCOPE)
-    ELSE ()
-        MESSAGE (FATAL_ERROR "Git executable not found")
-    ENDIF ()
-ENDFUNCTION ()
-
 # Do variable substitution like `configure_file' but without
 # attaching to the configure stage
 MACRO (SUBSTITUTE_FILE infile outfile)
