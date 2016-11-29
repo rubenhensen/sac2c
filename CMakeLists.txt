@@ -291,10 +291,15 @@ XINSTALL (FILES
   COMPONENT sources)
 
 # we install readme and install script
-CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/install.sh.in ${PROJECT_BINARY_DIR}/archive/install.sh @ONLY) 
+CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/installer.sh.in ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh @ONLY) 
 XINSTALL (FILES
+    ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh
+  DESTINATION "${INSTALLER_INSTALL}"
+  COMPONENT sources)
+
+XINSTALL (FILES
+    ${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/install.sh
     ${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/README
-    ${PROJECT_BINARY_DIR}/archive/install.sh
   DESTINATION "${TOP_INSTALL}"
   COMPONENT sources)
 

@@ -2,7 +2,7 @@
 
 # Created by SaC Development Team (C) 2016 - 2017
 
-# This is the install script for the SaC Compiler and Runtime libraries.
+# This is the installer script for the SaC Compiler and Runtime libraries.
 #
 # This script takes two *required* parameters, the location of the extracted
 # tarball files, and the prefix of where to install/copy them over to.
