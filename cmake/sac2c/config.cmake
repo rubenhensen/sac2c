@@ -674,35 +674,57 @@ ELSE ()
   SET (LD_FLAGS     "-Wl,-allow-shlib-undefined")
 ENDIF ()
 
-# Prepare C flags for the debug version of the compiler
-SET (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DSANITYCHECKS -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED -DCHECK_NODE_ACCESS -DINLINE_MACRO_CHECKS ${DEV_FLAGS}"
-)
 
+# A list of supported build types.  Every supported build type must
+# come with a postfix and a set of C flags that must be defined in
+# variables CMAKE_<build-type>_POSTFIX and CMAKE_C_FLAGS_<build-type>
+SET (KONWN_BUILD_TYPES)
+LIST (APPEND KNOWN_BUILD_TYPES "DEBUG")
+LIST (APPEND KNOWN_BUILD_TYPES "RELEASE")
+IF (NOT CMAKE_BUILD_TYPE)
+  SET (CMAKE_BUILD_TYPE "DEBUG")
+ENDIF ()
+
+# Checking internal consistency
+IF (NOT "${CMAKE_BUILD_TYPE}" IN_LIST KNOWN_BUILD_TYPES)
+  MESSAGE (FATAL_ERROR 
+             "The build type `${CMAKE_BUILD_TYPE}' is unknown. "
+             "Please add it to KNOWN_BUILD_TYPES in "
+             "`cmake/sac2c/config.cmake'")
+ENDIF ()
+
+# Prepare C flags for the debug version of the compiler
+SET (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DSANITYCHECKS -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED -DCHECK_NODE_ACCESS -DINLINE_MACRO_CHECKS ${DEV_FLAGS}")
 # Prepare C flags for the product version of the compiler
-SET (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DDBUG_OFF -DPRODUCTION -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED ${PROD_FLAGS}"
-)
+SET (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DDBUG_OFF -DPRODUCTION -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED ${PROD_FLAGS}")
 
 SET (CMAKE_RELEASE_POSTFIX "_p")
 SET (CMAKE_DEBUG_POSTFIX "_d")
 
-# If we don't explicitly set build type, then we default to debug
-IF (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-  SET (CMAKE_BUILD_TYPE DEBUG)
-  SET (BUILD_TYPE_POSTFIX "${CMAKE_DEBUG_POSTFIX}")
-  SET (BUILD_TYPE_C_FLAGS "${CMAKE_C_FLAGS_DEBUG}")
-ELSEIF (CMAKE_BUILD_TYPE STREQUAL "RELEASE")
-  SET (BUILD_TYPE_POSTFIX "${CMAKE_RELEASE_POSTFIX}")
-  SET (BUILD_TYPE_C_FLAGS "${CMAKE_C_FLAGS_RELEASE}")
-ELSE ()
-# FIXME (hans): we must not forget to update the executables target properties as well!!!
-  MESSAGE (FATAL_ERROR "Build type '${CMAKE_BUILD_TYPE}' is not known to us, please "
-                       "make sure to pass -DCMAKE_${CMAKE_BUILD_TYPE}_POSTFIX=\"...\" "
-                       "with your chosen postfix.")
+# Checking internal consistency
+IF (NOT CMAKE_${CMAKE_BUILD_TYPE}_POSTFIX)
+  MESSAGE (FATAL_ERROR 
+             "The postfix for the binaries for the build type "
+             "`${CMAKE_BUILD_TYPE}' is not defined.  Please set "
+             "CMAKE_${CMAKE_BUILD_TYPE}_POSTFIX in "
+             "`cmake/sac2c/config.cmake'")
 ENDIF ()
-# ensure that we have filename appropriate version of the build type
+                       
+# Checking internal consistency
+IF (NOT CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE})
+  MESSAGE (FATAL_ERROR 
+             "The C flags for the build type ${CMAKE_BUILD_TYPE} "
+             "are not defined.  Please set "
+             "CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE} variable in "
+             "`cmake/sac2c/config.cmake'")
+ENDIF ()
+
+# Setting build-type-related variables
+SET (BUILD_TYPE_POSTFIX "${CMAKE_DEBUG_POSTFIX}")
+SET (BUILD_TYPE_C_FLAGS "${CMAKE_C_FLAGS_DEBUG}")
 STRING (TOLOWER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_NAME)
 
-# These CC flags are always present
+# These CC flags that are always present
 ADD_DEFINITIONS (
     ${OSFLAGS}
     -DSHARED_LIB_EXT="${SHARED_LIB_EXT}"
