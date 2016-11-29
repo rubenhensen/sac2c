@@ -678,9 +678,7 @@ ENDIF ()
 # A list of supported build types.  Every supported build type must
 # come with a postfix and a set of C flags that must be defined in
 # variables CMAKE_<build-type>_POSTFIX and CMAKE_C_FLAGS_<build-type>
-SET (KONWN_BUILD_TYPES)
-LIST (APPEND KNOWN_BUILD_TYPES "DEBUG")
-LIST (APPEND KNOWN_BUILD_TYPES "RELEASE")
+SET (KNOWN_BUILD_TYPES "DEBUG;RELEASE")
 IF (NOT CMAKE_BUILD_TYPE)
   SET (CMAKE_BUILD_TYPE "DEBUG")
 ENDIF ()
