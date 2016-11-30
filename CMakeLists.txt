@@ -248,20 +248,8 @@ XINSTALL (FILES
   DESTINATION "${TOP_INSTALL}"
   COMPONENT sources)
 
-# Cpack information
-# INCLUDE(InstallRequiredSystemLibraries)
-
-# By setting this on we can see where installation targets are specified via
-# absolute pathes.  For portability pruroses this should be avoided.
-SET (CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION ON)
-
-#SET (CPACK_GENERATOR "TGZ")
-#IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-#    SET (CPACK_GENERATOR "Bundle")
-#ENDIF()
-SET(SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
-
 # now lets setup packaging (using CPack)
+SET(SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 INCLUDE ("${PROJECT_SOURCE_DIR}/cmake/cpack/config.cmake")
 
-# vim: ts=2 sw=2 et:
+# vim:ts=2:sw=2:et:

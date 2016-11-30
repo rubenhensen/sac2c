@@ -12,11 +12,22 @@ IF (NOT DEFINED SAC2C_SOURCE_DIR OR "${SAC2C_SOURCE_DIR}" STREQUAL "")
     " One solution would be to make SAC2C_SOURCE_DIR == PROJECT_SOURCE_DIR.")
 ENDIF ()
 
+# By setting this on we can see where installation targets are specified via
+# absolute paths. XXX (???) For portability purposes this should be avoided.
+SET (CPACK_WARN_ON_ABSOLUTE_INSTALL_DESTINATION ON)
+
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  SET (CPACK_GENERATOR "Bundle;TGZ")
+ELSE ()
+  SET (CPACK_GENERATOR "RPM;DEB;TGZ")
+ENDIF ()
+
 SET (CPACK_ARCHIVE_COMPONENT_INSTALL ON)
 SET (CPACK_RPM_COMPONENT_INSTALL ON)
+SET (CPACK_DEB_COMPONENT_INSTALL ON)
 SET (CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE)
 
-# We create seperate config files for different generators
+# We create separate config files for different generators
 set(CPACK_PROJECT_CONFIG_FILE "${SAC2C_SOURCE_DIR}/cmake/cpack/options.cmake")
 
 # We need to make sure that we name the output package sanely.
@@ -66,12 +77,14 @@ CONFIGURE_FILE ("${SAC2C_SOURCE_DIR}/cmake/cpack/dmg-bundle/Install.command.in" 
 SET (CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_VENDOR} <${CPACK_PACKAGE_CONTACT}>")
 SET (CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
 #SET (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON) # non-functional
+# FIXME Can we auto-generate these dependencies?
 SET (CPACK_DEBIAN_PACKAGE_DEPENDS "gcc, libc6 (>= 2.13), uuid-runtime (>= 2.20)")
 
 # RPM-specific variables
 # XXX (hans): this may not be exhaustive - does not take into account if the user
 # changes the install prefix
 SET (CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/local /usr/local/bin /usr/local/include /usr/local/lib /usr/local/libexec /usr/local/share)
+# FIXME Can we auto-generate these dependencies?
 SET (CPACK_RPM_PACKAGE_REQUIRES "gcc") # we don't need to go crazy here as rpmbuild handles most of this for us
 
 # Disable CPack if we are dirty
