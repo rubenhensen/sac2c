@@ -136,35 +136,26 @@ ExternalProject_Add_Step(runtime_libraries forceconfigure
             DEPENDERS configure
             ALWAYS 1)
 
-# these target facilitate the installing of individual components
-ADD_CUSTOM_TARGET (applications-install
-  DEPENDS sac2c sac4c sac2tex "${PROJECT_BINARY_DIR}/saccc"
-  COMMAND
-    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=applications -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
+# Create custom install-<component> target for a component provided
+# as a first argument of the macro, and dependencies, pvovided as
+# N arguments after the first one.
+MACRO (ADD_INSTALL_TARGET)
+  SET (name ${ARGV0})
+  SET (deps ${ARGN})
+  LIST (REMOVE_AT deps 0)
+  ADD_CUSTOM_TARGET (${name}-install
+    DEPENDS ${deps} 
+    COMMAND
+      "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=${name} -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
+ENDMACRO ()
 
-ADD_CUSTOM_TARGET (config-install
-  DEPENDS "${SAC2CRC_BUILD_CONF}"
-  COMMAND
-    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=config -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
-
-ADD_CUSTOM_TARGET (headers-install
-  DEPENDS sac2cShared
-  COMMAND
-    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=headers -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
-
-ADD_CUSTOM_TARGET (libraries-install
-  DEPENDS sac2cShared runtime_libraries
-  COMMAND
-    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=libraries -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
-
-ADD_CUSTOM_TARGET (rtapplications-install
-  DEPENDS runtime_libraries
-  COMMAND
-    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=rtapplications -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
-
-ADD_CUSTOM_TARGET (sources-install
-  COMMAND
-    "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=sources -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
+# Create install-<component> target for all the existing components.
+ADD_INSTALL_TARGET ("applications" sac2c sac4c sac2tex "${PROJECT_BINARY_DIR}/saccc")
+ADD_INSTALL_TARGET ("config" "${SAC2CRC_BUILD_CONF}")
+ADD_INSTALL_TARGET ("headers" sac2cShared)
+ADD_INSTALL_TARGET ("libraries" sac2cShared runtime_libraries)
+ADD_INSTALL_TARGET ("rtapplications" runtime_libraries)
+ADD_INSTALL_TARGET ("sources")
 
 # Installing the sac2c project files.
 XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${TREEPATH_INSTALL}" COMPONENT applications)
