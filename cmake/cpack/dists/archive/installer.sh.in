@@ -233,11 +233,11 @@ CFLAGS+= -I. -DBUILD_TYPE_POSTFIX=\"$BINPOSTFIX\" -DSHARED_LIB_EXT=\"$SHAREDLIBE
 LDFLAGS+= -ldl
 all: sac2c$BINPOSTFIX sac4c$BINPOSTFIX sac2tex$BINPOSTFIX
 sac2c$BINPOSTFIX: sac2c.c sactools.h sacdirs.h
-$stab\$(CC) \$(CFLAGS) \$(LDFLAGS) \$^ -o \$@
+$stab\$(CC) \$(CFLAGS) \$(LDFLAGS) \$< -o \$@
 sac4c$BINPOSTFIX: sac4c.c sactools.h sacdirs.h
-$stab\$(CC) \$(CFLAGS) \$(LDFLAGS) \$^ -o \$@
+$stab\$(CC) \$(CFLAGS) \$(LDFLAGS) \$< -o \$@
 sac2tex$BINPOSTFIX: sac2tex.c sactools.h sacdirs.h
-$stab\$(CC) \$(CFLAGS) \$(LDFLAGS) \$^ -o \$@
+$stab\$(CC) \$(CFLAGS) \$(LDFLAGS) \$< -o \$@
 WHATWHAT
 
 verbose "Created temp Makefile, now building"
