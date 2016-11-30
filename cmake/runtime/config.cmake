@@ -8,7 +8,7 @@ SET (LSAC2CLOCAL "${PROJECT_BINARY_DIR}/sac2crc${BUILD_TYPE_POSTFIX}.local")
 # which makes sure that any sac2c on the PATH is not considered.
 FIND_PROGRAM (SAC2C_EXEC NAMES "sac2c${BUILD_TYPE_POSTFIX}" PATHS ${SAC2C_BUILD_DIR} NO_DEFAULT_PATH)
 IF (NOT SAC2C_EXEC)
-    MESSAGE (FATAL_ERROR "Could not located the sac2c binary, exiting...")
+    MESSAGE (FATAL_ERROR "Could not located the sac2c${BUILD_TYPE_POSTFIX} binary, exiting...")
 ENDIF ()
 # Check that sac2c actually works by calling "sac2c -V"
 EXECUTE_PROCESS (COMMAND ${SAC2C_EXEC} -V RESULT_VARIABLE sac2c_exec_res OUTPUT_QUIET ERROR_QUIET)
