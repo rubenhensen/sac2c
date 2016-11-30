@@ -22,8 +22,19 @@ ENDIF ()
 EXECUTE_PROCESS (
     COMMAND
         ${GIT_EXECUTABLE} describe --tags --abbrev=4 --dirty
+    WORKING_DIRECTORY
+        ${PROJECT_SOURCE_DIR}
     OUTPUT_FILE
         "${PROJECT_BINARY_DIR}/__version-repo.txt")
+
+# We determine if we are in a dirty state or not
+EXECUTE_PROCESS (
+    COMMAND
+        ${GIT_EXECUTABLE} diff-index --quiet HEAD
+    WORKING_DIRECTORY
+        ${PROJECT_SOURCE_DIR}
+    RESULT_VARIABLE
+        SAC2C_IS_DIRTY)
 
 # This set a hook on the configuration system
 CONFIGURE_FILE (
@@ -37,11 +48,34 @@ ADD_CUSTOM_TARGET (check_repo_version
         ${CMAKE_COMMAND}
         -D GIT_COMMAND="${GIT_EXECUTABLE}"
         -D BUILD_DIR="${PROJECT_BINARY_DIR}"
+        -D SOURCE_DIR="${PROJECT_SOURCE_DIR}"
         -P "${PROJECT_SOURCE_DIR}/cmake/check-repo-version.cmake"
     BYPRODUCTS
         "${PROJECT_BINARY_DIR}/__version-repo.txt"
     WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
     COMMENT "Checking git repo version")
+
+# If the status of git repository is "dirty", installation targets should
+# be not available.
+IF (SAC2C_IS_DIRTY)
+  MACRO (XINSTALL)
+  ENDMACRO ()
+  INSTALL(CODE 
+      "EXECUTE_PROCESS (
+          COMMAND ${CMAKE_COMMAND} -E echo 
+              \"\n\n The current build includes local changes that are\n\"
+              \"not committed to the git repository, as indicated by\n\"
+              \"'git describe --dirty'. Therefore, it is NOT POSSIBLE\n\"
+              \"to install the current version. Either get rid of local\n\"
+              \"changes or make a commit.\n\"
+       )
+       MESSAGE (FATAL_ERROR \"Exiting now\")"
+  )
+ELSE ()
+  MACRO (XINSTALL)
+    INSTALL (${ARGV})
+  ENDMACRO ()
+ENDIF ()
 
 #
 # Callable functions/macros
@@ -69,32 +103,3 @@ FUNCTION (GET_SAC2C_VERSION version major minor patch)
     SET (${patch} ${_patch} PARENT_SCOPE)
 ENDFUNCTION ()
 
-# If the status of git repository is "dirty", installation targets should
-# be not available.
-# XXX The SAC2C_IS_DIRTY flag needs to have a numerical value, as it is
-#     propagated to sacdirs.h file.
-MACRO (CHECK_IF_DIRTY) # oh yeah baby!
-    STRING (FIND "${SAC2C_VERSION}" "dirty" _gitdirty)
-    IF (_gitdirty GREATER 0) # If 'dirty' not found, we are -1, otherwise something
-                            # greater than 0.
-      SET(SAC2C_IS_DIRTY 1)
-      MACRO (XINSTALL)
-      ENDMACRO ()
-      INSTALL(CODE 
-          "EXECUTE_PROCESS (
-              COMMAND ${CMAKE_COMMAND} -E echo 
-                  \"\n\n The current build includes local changes that are\n\"
-                  \"not committed to the git repository, as indicated by\n\"
-                  \"'git describe --dirty'. Therefore, it is NOT POSSIBLE\n\"
-                  \"to install the current version. Either get rid of local\n\"
-                  \"changes or make a commit.\n\"
-           )
-           MESSAGE (FATAL_ERROR \"Exiting now\")"
-      )
-    ELSE ()
-      SET(SAC2C_IS_DIRTY 0)
-      MACRO (XINSTALL)
-        INSTALL (${ARGV})
-      ENDMACRO ()
-    ENDIF ()
-ENDMACRO ()

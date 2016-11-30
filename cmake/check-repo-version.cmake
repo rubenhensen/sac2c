@@ -22,7 +22,7 @@
 #  -D BUILD_DIR=<Path to build directory> (Mandatory)
 ##
 
-IF (NOT (DEFINED BUILD_DIR AND DEFINED GIT_COMMAND))
+IF (NOT (DEFINED BUILD_DIR AND DEFINED GIT_COMMAND AND DEFINED SOURCE_DIR))
   MESSAGE (SEND_ERROR "Did you forgot to pass the right parameters?")
   RETURN ()
 ENDIF ()
@@ -31,6 +31,8 @@ ENDIF ()
 EXECUTE_PROCESS (
   COMMAND
     ${GIT_COMMAND} describe --tags --abbrev=4 --dirty
+  WORKING_DIRECTORY
+    "${SOURCE_DIR}"
   OUTPUT_VARIABLE NVER
 )
 

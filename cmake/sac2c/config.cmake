@@ -492,9 +492,6 @@ GET_USERNAME (USER_NAME)
 # Get the sac2c repository version
 GET_SAC2C_VERSION (SAC2C_VERSION SAC2C_VERSION_MAJOR SAC2C_VERSION_MINOR SAC2C_VERSION_PATCH)
 
-# Check and see if the repo is dirty
-CHECK_IF_DIRTY ()
-
 # Get an md5 hash of the `ast.xml'.
 EXECUTE_PROCESS (
     COMMAND

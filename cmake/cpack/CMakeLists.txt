@@ -27,9 +27,6 @@ INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/sac2c-version-related.cmake")
 # Get the sac2c repository version
 GET_SAC2C_VERSION (SAC2C_VERSION SAC2C_VERSION_MAJOR SAC2C_VERSION_MINOR SAC2C_VERSION_PATCH)
 
-# Check and see if the repo is dirty
-CHECK_IF_DIRTY ()
-
 # Ensure that we can create symbolic links - only possible on UNIX systems
 IF (NOT UNIX)
   MESSAGE (FATAL_ERROR "We are unable to generate packages on non-Unix systems at the moment")
