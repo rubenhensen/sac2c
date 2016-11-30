@@ -84,33 +84,9 @@ SET_TARGET_PROPERTIES (sac2c sac4c sac2tex
     PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX}
                RELEASE_POSTFIX ${CMAKE_RELEASE_POSTFIX})
 
-# XXX(artem) This is an alternative way to acheive what ExternalProject +
-#            ExternalProject_AddStep are doing.
-#ADD_CUSTOM_TARGET (
-#    build-runtime-libs ALL
-#    DEPENDS
-#        sac2c sac2cShared
-#    COMMAND
-#        ${CMAKE_COMMAND} -E make_directory runtime_build
-#    COMMAND
-#        ${CMAKE_COMMAND} 
-#            -E chdir runtime_build
-#            ${CMAKE_COMMAND}
-#                -DSAC2C_BUILD_DIR=${PROJECT_BINARY_DIR}
-#                -DSAC2C_SOURCE_DIR=${PROJECT_SOURCE_DIR}
-#                -DSAC2CRC_BUILD_CONF=${SAC2CRC_BUILD_CONF}
-#                # FIXME(artem) Shouldn't we use MODEXT from sac2crc instead?
-#                -DSHARED_LIB_EXT=${SHARED_LIB_EXT}
-#                -DLIB_RT=${LIB_RT}
-#                ${PROJECT_SOURCE_DIR}/cmake/runtime
-#    COMMAND
-#        ${CMAKE_COMMAND} --build runtime_build
-#    COMMENT
-#        "Build runtime sac2c libraries for targets: ${targets}"
-#)
 
 # This is where we call the build of the sac2c shared-libraries
-# XXX: this *depends* on sac2c having been build first!
+# This *depends* on sac2c having been build first!
 ExternalProject_Add(runtime_libraries
     DEPENDS sac2cShared sac2c check_repo_version
     DOWNLOAD_COMMAND "" # this is to prevent any download target from being called
