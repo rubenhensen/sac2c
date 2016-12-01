@@ -19,29 +19,45 @@ INCLUDE (ExternalProject)
 #     therefore, for simplicity we set the following variables, indicating the
 #     actual top source directory.
 GET_FILENAME_COMPONENT (SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}/../../" ABSOLUTE)
-MESSAGE(AUTHOR_WARNING "We have set our source directory to ${SAC2C_SOURCE_DIR}.")
+MESSAGE (STATUS "We have set our source directory to ${SAC2C_SOURCE_DIR}.")
 
 # Include CMake config
 INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/sac2c-version-related.cmake")
 
 # Get the sac2c repository version
 GET_SAC2C_VERSION (SAC2C_VERSION SAC2C_VERSION_MAJOR SAC2C_VERSION_MINOR SAC2C_VERSION_PATCH)
+MESSAGE (STATUS "SaC2C Version is `${SAC2C_VERSION}'")
+
+# Set what variants of sac2c we want to build
+SET (BUILDTYPELIST "DEBUG;RELEASE")
+MESSAGE (STATUS "Going to build `${BUILDTYPELIST}'")
 
 # Ensure that we can create symbolic links - only possible on UNIX systems
 IF (NOT UNIX)
   MESSAGE (FATAL_ERROR "We are unable to generate packages on non-Unix systems at the moment")
 ENDIF ()
 
-# Let use build packages of both the debug and production release types
-# debug
-# XXX (hans) Notice that we manually do the install, this is to ensure that the
-#            components (applications, libraries, etc.) are placed into a directory
-#            structure that is trivial to understand and sort through. This is needed
-#            as within this build context we still have CPack's notions of components
-#            for different package types.
-ExternalProject_Add(sac2c-debug
+# This target will cause all build dirs (including externalprojects) to be cleaned
+ADD_CUSTOM_TARGET(fullclean
+  COMMAND
+    ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target clean
+  COMMENT "Cleaning all build dirs...")
+
+# This macro generates an `externalproject' for a sac2c build variant.
+# Is only parameter is the build type, which is one supported by the
+# CMAKE_BUILD_TYPE variable.
+# This macro also creates a target to do a clean of the build directory
+# of the externalproject, which is attached to the target `fullclean'. 
+MACRO (ADD_SAC2C_BUILD _build_type)
+  STRING (TOLOWER "${_build_type}" _build_type_name)
+  #  Notice that we manually do the install, this is to ensure that the
+  #  components (applications, libraries, etc.) are placed into a directory
+  #  structure that is trivial to understand and sort through. This is needed
+  #  as within this build context we still have CPack's notions of components
+  #  for different package types.
+  ExternalProject_Add (sac2c-${_build_type_name}
     DOWNLOAD_COMMAND "" # this is to prevent any download target from being called
-    PREFIX sac2c-debug
+    PREFIX "sac2c-${_build_type_name}"
     SOURCE_DIR "${SAC2C_SOURCE_DIR}"
     INSTALL_DIR "${PROJECT_BINARY_DIR}/toplevel/"
     INSTALL_COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/applications applications-install
@@ -51,25 +67,30 @@ ExternalProject_Add(sac2c-debug
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/config config-install
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/headers headers-install
     CMAKE_ARGS
-      -DCMAKE_BUILD_TYPE=DEBUG
-      -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-)
-# release
-ExternalProject_Add(sac2c-release
-    DOWNLOAD_COMMAND "" # this is to prevent any download target from being called
-    PREFIX sac2c-release
-    SOURCE_DIR "${SAC2C_SOURCE_DIR}"
-    INSTALL_DIR "${PROJECT_BINARY_DIR}/toplevel/"
-    INSTALL_COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/applications applications-install
-      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/libraries libraries-install
-      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/rtapplications rtapplications-install
-      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/sources sources-install
-      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/config config-install
-      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/headers headers-install
-    CMAKE_ARGS
-      -DCMAKE_BUILD_TYPE=RELEASE
-      -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-)
+      -DCMAKE_BUILD_TYPE=${_build_type}
+      -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
+  # Get the location where the externalproject is built
+  ExternalProject_Get_Property (sac2c-${_build_type_name} BINARY_DIR)
+  # Create a step to clean the build directory
+  ExternalProject_Add_Step (sac2c-${_build_type_name} clean
+    COMMAND
+      ${CMAKE_COMMAND} --build ${BINARY_DIR} --target clean
+    DEPENDEES configure
+    COMMENT "Cleaning `sac2c-${_build_type_name}', in ${BINARY_DIR}"
+    ALWAYS 1)
+  # Create a target which links to the clean step
+  ExternalProject_Add_StepTargets(sac2c-${_build_type_name} clean)
+  # Add the target as a dependency to the `fullclean' target 
+  ADD_DEPENDENCIES (fullclean sac2c-${_build_type_name}-clean)
+  # unset temporary variables (this prevents any overlap that may happen)
+  UNSET (BINARY_DIR)
+  UNSET (_build_type_name)
+  UNSET (_build_type)
+ENDMACRO ()
+
+FOREACH (type ${BUILDTYPELIST})
+  ADD_SAC2C_BUILD (${type})
+ENDFOREACH ()
 
 # create symbolic links to binaries
 # XXX(hans) we should not do this for distributable packages
