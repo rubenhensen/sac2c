@@ -669,39 +669,22 @@ IF (NOT CMAKE_BUILD_TYPE)
   SET (CMAKE_BUILD_TYPE "DEBUG")
 ENDIF ()
 
-# Checking internal consistency
-IF (NOT "${CMAKE_BUILD_TYPE}" IN_LIST KNOWN_BUILD_TYPES)
-  MESSAGE (FATAL_ERROR 
-             "The build type `${CMAKE_BUILD_TYPE}' is unknown. "
-             "Please add it to KNOWN_BUILD_TYPES in "
-             "`cmake/sac2c/config.cmake'")
-ENDIF ()
-
 # Prepare C flags for the debug version of the compiler
-SET (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DSANITYCHECKS -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED -DCHECK_NODE_ACCESS -DINLINE_MACRO_CHECKS ${DEV_FLAGS}")
+SET (CMAKE_C_FLAGS_DEBUG 
+     "${CMAKE_C_FLAGS_DEBUG} -DSANITYCHECKS -DWLAA_DEACTIVATED \
+      -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED \
+      -DCHECK_NODE_ACCESS -DINLINE_MACRO_CHECKS ${DEV_FLAGS}")
+
 # Prepare C flags for the product version of the compiler
-SET (CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DDBUG_OFF -DPRODUCTION -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED ${PROD_FLAGS}")
+SET (CMAKE_C_FLAGS_RELEASE
+     "${CMAKE_C_FLAGS_RELEASE} -DDBUG_OFF -DPRODUCTION \
+      -DWLAA_DEACTIVATED -DAE_DEACTIVATED -DTSI_DEACTIVATED \
+      -DPADT_DEACTIVATED ${PROD_FLAGS}")
 
 SET (CMAKE_RELEASE_POSTFIX "_p")
 SET (CMAKE_DEBUG_POSTFIX "_d")
 
-# Checking internal consistency
-IF (NOT CMAKE_${CMAKE_BUILD_TYPE}_POSTFIX)
-  MESSAGE (FATAL_ERROR 
-             "The postfix for the binaries for the build type "
-             "`${CMAKE_BUILD_TYPE}' is not defined.  Please set "
-             "CMAKE_${CMAKE_BUILD_TYPE}_POSTFIX in "
-             "`cmake/sac2c/config.cmake'")
-ENDIF ()
-                       
-# Checking internal consistency
-IF (NOT CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE})
-  MESSAGE (FATAL_ERROR 
-             "The C flags for the build type ${CMAKE_BUILD_TYPE} "
-             "are not defined.  Please set "
-             "CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE} variable in "
-             "`cmake/sac2c/config.cmake'")
-ENDIF ()
+INCLUDE ("cmake/sac2c/buildtype-related.cmake")
 
 # Setting build-type-related variables
 SET (BUILD_TYPE_POSTFIX "${CMAKE_${CMAKE_BUILD_TYPE}_POSTFIX}")
