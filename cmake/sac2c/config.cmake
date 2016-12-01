@@ -27,7 +27,17 @@ INCLUDE (CheckLibraryExists)
 INCLUDE (CheckCSourceRuns)
 INCLUDE (CheckCCompilerFlag)
 
-## Include other config files
+# If a user specified additional flags during a cmake call, we
+# mark the state of the repository as dirty, as we don't allow
+# non-standard compilations of sac2c.
+IF (CMAKE_C_FLAGS)
+  SET (SAC2C_IS_DIRTY 1)
+  MESSAGE (STATUS
+           "NOTE: Additional C flags passed; changing the state of the "
+           "build to dirty; no install targets will be generated.")
+ENDIF ()
+
+# Include other config files
 INCLUDE ("cmake/sac2c-version-related.cmake")
 
 # Macros with distmem checks
@@ -580,7 +590,17 @@ SET (CMAKE_C_FLAGS_RELEASE
 SET (CMAKE_RELEASE_POSTFIX "_p")
 SET (CMAKE_DEBUG_POSTFIX "_d")
 
+# Check consistency of buildtype-related definitions.
 INCLUDE ("cmake/sac2c/buildtype-related.cmake")
+
+# Add CMAKE_C_FLAGS to the CFLAGS used by the chosen buildtype.
+SET (CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}
+     "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
+
+# After we have used the value of the variable, remove it from
+# the cache, so that next call to cmake without specifying
+# -DCMAKE_C_FLAGS results in normal (non dirty) build.
+UNSET (CMAKE_C_FLAGS CACHE)
 
 # Setting build-type-related variables
 SET (BUILD_TYPE_POSTFIX "${CMAKE_${CMAKE_BUILD_TYPE}_POSTFIX}")
@@ -665,6 +685,9 @@ MESSAGE ("
 *
 * Optional packages:
 * - Integer Set Library (ISL): ${ENABLE_ISL}
+*
+* Status:
+* - sac2c is in dirty state: ${SAC2C_IS_DIRTY}
 *
 ")
 

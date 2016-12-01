@@ -27,14 +27,19 @@ EXECUTE_PROCESS (
     OUTPUT_FILE
         "${PROJECT_BINARY_DIR}/__version-repo.txt")
 
-# We determine if we are in a dirty state or not
-EXECUTE_PROCESS (
-    COMMAND
-        ${GIT_EXECUTABLE} diff-index --quiet HEAD
-    WORKING_DIRECTORY
-        ${PROJECT_SOURCE_DIR}
-    RESULT_VARIABLE
-        SAC2C_IS_DIRTY)
+# If the state of the repo is dirty because of non-standard flags
+# or other unallowed buildsystem modifications, there is no need
+# to check the state of the repository.
+IF (NOT SAC2C_IS_DIRTY)
+    # We determine if the repository is in a dirty state or not.
+    EXECUTE_PROCESS (
+        COMMAND
+            ${GIT_EXECUTABLE} diff-index --quiet HEAD
+        WORKING_DIRECTORY
+            ${PROJECT_SOURCE_DIR}
+        RESULT_VARIABLE
+            SAC2C_IS_DIRTY)
+ENDIF ()
 
 # This set a hook on the configuration system
 CONFIGURE_FILE (
@@ -63,7 +68,9 @@ IF (SAC2C_IS_DIRTY)
   INSTALL(CODE 
       "EXECUTE_PROCESS (
           COMMAND ${CMAKE_COMMAND} -E echo 
-              \"\n\n The current build includes local changes that are\n\"
+              \"\n\n The state of the current build is dirty.  This is\n\"
+              \"either because of additional CMAKE_C_FLAGS passed to\n\"
+              \"to cmake or because of local changes that are\n\"
               \"not committed to the git repository, as indicated by\n\"
               \"'git describe --dirty'. Therefore, it is NOT POSSIBLE\n\"
               \"to install the current version. Either get rid of local\n\"
