@@ -5850,6 +5850,10 @@ add_dependency (struct dependency *dependencies, const char *name, enum dep_type
     char *dep_name;
     size_t l;
 
+    /* If we found a Tree/Mod dependency for the module we are compiling, ignore it.  */
+    if ((type == dep_mod || type == dep_tree) && !strcmp (name, global.modulename))
+        return dependencies;
+
     /* Construct the name for the dependency using its type.  */
     switch (type) {
     case dep_mod:
@@ -5894,10 +5898,23 @@ parse_for_dependencies (struct parser *parser)
 {
     struct dependency *dependencies = NULL;
 
+    global.modulename = strdup ("");
+
     struct token *tok;
     while (tok_eof != token_class (tok = parser_get_token (parser))) {
+
+        if (token_is_keyword (tok, MODULE) || token_is_keyword (tok, CLASS)) {
+            struct token *name_tok = parser_get_token (parser);
+            if (tok_id == token_class (name_tok)) {
+                if (token_is_operator (parser_get_token (parser), tv_semicolon))
+                    global.modulename = strdup (token_as_string (name_tok));
+                else
+                    parser_unget2 (parser);
+            } else
+                parser_unget (parser);
+        }
         /* use or import dependency.  */
-        if (token_is_keyword (tok, IMPORT) || token_is_keyword (tok, USE)) {
+        else if (token_is_keyword (tok, IMPORT) || token_is_keyword (tok, USE)) {
             bool need_mod = token_is_keyword (tok, USE);
             struct token *name_tok = parser_get_token (parser);
             if (tok_id == token_class (name_tok)) {
@@ -5964,6 +5981,9 @@ parse_for_dependencies (struct parser *parser)
                 parser_unget (parser);
         }
     }
+
+    free (global.modulename);
+    global.modulename = NULL;
 
     struct dependency *d;
     struct dependency *tmp;
