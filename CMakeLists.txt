@@ -173,18 +173,18 @@ XINSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
   DESTINATION "${INCPATH_INSTALL}"
   COMPONENT headers)
 
-## We need to install the runtime libraries and sacprelude into a directory
-## hiearchy that is different from the `local' hiearchy. Under out local `lib/' we
-## have the 'prelude' directory and then one or more other directories - these are
-## the 'TARGET_ENV' or target environment specific libries, e.g. 'x64' is for AMD64
-## system and 'x86' is for i386 systems. How these directories are named can not be
-## known before hand, as this is defined through that target within the sac2crc
-## file. Because of this, we use pattern matching to select the correct directories
-## to be installed in the new heirchy. The pattern match is a generic start (*)
-## glob, which means we get all directories within `lib' - including `prelude'. To
-## avoid installing prelude, we have use the EXCLUDE directive with the pattern
-## "prelude". We do the same for the local directory `lib/prelude', but exlude
-## 'tree' instead.
+# We need to install the runtime libraries and sacprelude into a directory
+# hiearchy that is different from the `local' hiearchy. Under out local `lib/' we
+# have the 'prelude' directory and then one or more other directories - these are
+# the 'TARGET_ENV' or target environment specific libries, e.g. 'x64' is for AMD64
+# system and 'x86' is for i386 systems. How these directories are named can not be
+# known before hand, as this is defined through that target within the sac2crc
+# file. Because of this, we use pattern matching to select the correct directories
+# to be installed in the new heirchy. The pattern match is a generic start (*)
+# glob, which means we get all directories within `lib' - including `prelude'. To
+# avoid installing prelude, we have use the EXCLUDE directive with the pattern
+# "prelude". We do the same for the local directory `lib/prelude', but exlude
+# 'tree' instead.
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/
   DESTINATION "${RTPATH_INSTALL}"
   COMPONENT libraries
