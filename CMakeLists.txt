@@ -84,6 +84,11 @@ SET_TARGET_PROPERTIES (sac2c sac4c sac2tex
     PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX}
                RELEASE_POSTFIX ${CMAKE_RELEASE_POSTFIX})
 
+# This target will cause all build dirs (including externalprojects) to be cleaned
+ADD_CUSTOM_TARGET(fullclean
+  COMMAND
+    ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target clean
+  COMMENT "Cleaning sac2c and runtime libraries")
 
 # This is where we call the build of the sac2c shared-libraries
 # This *depends* on sac2c having been build first!
@@ -94,23 +99,35 @@ ExternalProject_Add(runtime_libraries
     PREFIX runtime_build
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/cmake/runtime
     INSTALL_DIR ${PROJECT_BINARY_DIR} #XXX: this is not used...
+    BUILD_ALWAYS 1 # this is so we react on changes within the source tree
     CMAKE_ARGS
         -DSAC2C_BUILD_DIR=${PROJECT_BINARY_DIR}
         -DSAC2C_SOURCE_DIR=${PROJECT_SOURCE_DIR}
         -DSAC2CRC_BUILD_CONF=${SAC2CRC_BUILD_CONF}
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DBUILD_TYPE_POSTFIX=${BUILD_TYPE_POSTFIX}
-        # FIXME(artem) Shouldn't we use MODEXT from sac2crc instead?
         -DSHARED_LIB_EXT=${SHARED_LIB_EXT}
         -DLIB_RT=${LIB_RT}
 )
-
-# Force runtime_libraries to reconfigure every time we run make.
-ExternalProject_Add_Step(runtime_libraries forceconfigure
-            COMMAND ${CMAKE_COMMAND} -E echo "Force configure of runtime libraries"
-            DEPENDEES update
-            DEPENDERS configure
-            ALWAYS 1)
+# We set dependencies on the configure step, this makes sure we propogate
+# certain values (such as from sac2crc).
+ExternalProject_Add_StepDependencies(runtime_libraries configure sac2c sac2cShared check_repo_version)
+# Get runtime library build directory
+ExternalProject_Get_Property (runtime_libraries BINARY_DIR STAMP_DIR)
+# Create a step to clean the build directory
+ExternalProject_Add_Step (runtime_libraries clean
+  COMMAND
+    ${CMAKE_COMMAND} --build ${BINARY_DIR} --target clean
+  DEPENDEES configure
+  COMMENT "Cleaning runtime libraries, in ${BINARY_DIR}"
+  EXCLUDE_FROM_MAIN 1
+  ALWAYS 1)
+UNSET (BINARY_DIR) # make sure we don't cause a conflict
+UNSET (STAMP_DIR) # make sure we don't cause a conflict
+# Create a target which links to the clean step
+ExternalProject_Add_StepTargets(runtime_libraries clean)
+# Add the target as a dependency to the `fullclean' target 
+ADD_DEPENDENCIES (fullclean runtime_libraries-clean)
 
 # Create custom install-<component> target for a component provided
 # as a first argument of the macro, and dependencies, pvovided as
@@ -123,6 +140,8 @@ MACRO (ADD_INSTALL_TARGET)
     DEPENDS ${deps} 
     COMMAND
       "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=${name} -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
+  UNSET (name)
+  UNSET (deps)
 ENDMACRO ()
 
 # Create install-<component> target for all the existing components.

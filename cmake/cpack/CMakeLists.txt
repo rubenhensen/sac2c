@@ -5,7 +5,7 @@ PROJECT (sac2c-packages NONE)
 
 # Handle Policies
 #FIXME hans: currently we set the policy to the DEFAULT
-#            used by cersion 3.4 of CMAKE. The alternative
+#            used by version 3.4 of CMAKE. The alternative
 #            is to specify individual policies for different
 #            features regardless of version. The danger with
 #            this is that newer version will not even support
@@ -66,6 +66,7 @@ MACRO (ADD_SAC2C_BUILD _build_type)
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/sources sources-install
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/config config-install
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/headers headers-install
+    BUILD_ALWAYS 1
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${_build_type}
       -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
@@ -74,9 +75,10 @@ MACRO (ADD_SAC2C_BUILD _build_type)
   # Create a step to clean the build directory
   ExternalProject_Add_Step (sac2c-${_build_type_name} clean
     COMMAND
-      ${CMAKE_COMMAND} --build ${BINARY_DIR} --target clean
+      ${CMAKE_COMMAND} --build ${BINARY_DIR} --target fullclean
     DEPENDEES configure
     COMMENT "Cleaning `sac2c-${_build_type_name}', in ${BINARY_DIR}"
+    EXCLUDE_FROM_MAIN 1
     ALWAYS 1)
   # Create a target which links to the clean step
   ExternalProject_Add_StepTargets(sac2c-${_build_type_name} clean)
