@@ -119,6 +119,11 @@ CHECK_FUNCTION_EXISTS (strrchr HAVE_STRRCHR)
 CHECK_FUNCTION_EXISTS (mkdtemp HAVE_MKDTEMP)
 
 # Check if we have clock_gettime and whether we need -lrt
+# FIXME(artem) This check doesn't do what it claims it is
+#              doing.  Instead of checking whether we *need*
+#              rtlib (not needed if glibc >= 2.17) to compile
+#              the piece of code, it finds the rt library and adds
+#              it to definitions if the code *can* be compiled.
 SET (ENABLE_GETTIME OFF)
 SET (LIB_RT "")
 FIND_LIBRARY (RT_LIB      "rt")
