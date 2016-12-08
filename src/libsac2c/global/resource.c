@@ -476,7 +476,7 @@ MapParse (const char *path, const char *file, void *params)
     bool ok;
     char *filename;
 
-    filename = STRncat (3, path, "/", file);
+    filename = STRcatn (3, path, "/", file);
     ok = RSCparseResourceFile (filename);
 
     if (!ok) {
