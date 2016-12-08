@@ -968,6 +968,9 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
      */
 
+    /* Avoid generating Tree file for modules; do only Mod.  */
+    ARGS_FLAG ("notree", global.notree = TRUE;);
+
     ARGS_FLAG ("nofoldfusion", global.no_fold_fusion = TRUE);
 
     ARGS_FLAG ("nofoldparallel", global.no_fold_parallel = TRUE);

@@ -82,6 +82,9 @@ GLOBAL (bool, loadprelude, TRUE, xfree_dummy, )
 GLOBAL (FILE *, outfile, NULL, xfree_dummy, )
 GLOBAL (bool, install, FALSE, xfree_dummy, )
 
+/* Avoid compiling Tree files.  */
+GLOBAL (bool, notree, FALSE, xfree_dummy, )
+
 /*
  * stream to write result to
  */

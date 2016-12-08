@@ -1068,7 +1068,10 @@ PrintLibraryOptions (void)
             "\n"
             "    -on_demand_lib   Do prepare the library provided as source for on "
             "demand\n"
-            "                     compilation when needed by other source files.\n",
+            "                     compilation when needed by other source files.\n"
+            "\n"
+            "    -notree          Avoid generating tree file when compiling a module or "
+            "a class.\n",
             global.linksetsize == INT_MAX ? 0 : global.linksetsize, global.preludename);
 
     DBUG_RETURN ();

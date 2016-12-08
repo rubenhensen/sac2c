@@ -416,7 +416,7 @@ CCTperformTask (ccm_task_t task)
                             "sacargcopy", );
                 DO_COMPILE (global.config.compile_mod, global.tmp_dirname,
                             "sacargfree", );
-            } else {
+            } else if (!global.notree) {
                 DO_COMPILE (global.config.compile_tree, global.tmp_dirname, "serialize",
                             tree_);
                 DO_COMPILE (global.config.compile_tree, global.tmp_dirname, "filenames",
@@ -474,7 +474,7 @@ CCTperformTask (ccm_task_t task)
 
             DO_LINK (global.config.link_mod, objects);
 
-            if (global.filetype != FT_cmod) {
+            if (global.filetype != FT_cmod && !global.notree) {
 
                 MEMfree (path_subst);
                 MEMfree (target_subst);
