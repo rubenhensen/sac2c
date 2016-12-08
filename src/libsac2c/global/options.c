@@ -437,7 +437,7 @@ OPTcheckOptionConsistency (void)
     }
 
     if ((global.mtmode == MT_none) && (global.num_threads != 1)) {
-        CTInote ("MT_MODE = 0 in target, forcing -numthreads to 1.");
+        CTItell (4, "MT_MODE = 0 in target, forcing -numthreads to 1.");
         global.num_threads = 1;
     }
 

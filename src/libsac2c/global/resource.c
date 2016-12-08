@@ -10,15 +10,27 @@
  *  architectures including their operating system pecularities as well
  *  as their different C compilers.
  *
- *  The concrete behaviour of sac2c may be configured by using three different
- *  configuration files. There is an installation specific configuration
- *  file as well as a user specific on. While the former is mandatory, the
- *  latter is optional. The installation specific configuration file is
- *  $PREFIX/sac2crc, where PREFIX is given while configuring sac2c.
- *  The user specific configuration file must be called .sac2crc and ought
- *  to reside in the user's home directory.
- *  Finally the configuration can be given by the variable SAC2CRC which is
- *  treated as a special case and none of the other configurations are checked.
+ *  The concrete behaviour of sac2c may be configured by using configuration
+ *  files. There are 2 different kinds of configuration files:
+ *  1) *system-files* which are generated when compiling and installing sac2c
+ *  2) *customisation-files* which are either set up when downloadin packages
+ *     or which are set up manually
+ *  While the former are mandatory, the latter are optional. The *system-files*
+ *  are searched in 3 possible locations:
+ *  1a) If there is an environment variable SAC2CRC it defines the first search
+ *      option
+ *  1b) The sac2c binary has its install prefix hard-encoded as second search
+ *      option. However, this option is skipped if the current version is "dirty"
+ *      ie it has been compiled from local sources that have not yet been
+ *      committed to the git repo!
+ *  1c) If the sac2c sources are present, the compiler also searches within its
+ *      build directory!
+ *
+ *  The *customisation-files* reside in the user's home directory. They are
+ *  either just a file ".sac2crc" or an entire directory ".sac2crc/" with
+ *  files that match the pattern "sac2crc\..*". Typically, each package
+ *  from sacbase adds one such file named sac2crc.<package>. It contains
+ *  extensions to the search pathes for mod/tree files of the compiler.
  *
  *  Each configuration file defines a sequence of target configuration or
  *  targets for short. A special target named 'default' is required which
@@ -27,6 +39,9 @@
  *  A target may inherit resource specifications from other targets.
  *  This includes multiple inheritence.
  *  All targets implicitly inherit the default resources.
+ *  NOTE also, that all but the default target can be specified more than
+ *  once! If that happens, the entries are processed in the order they have
+ *  been parsed! This allows incremental definitions as used for the packages.
  *
  * Caution:
  *  sac2c will not check for recursively inheriting targets.
@@ -456,6 +471,20 @@ RSCsetSac2crcLocations (char *global_location, char *build_location)
  ******************************************************************************/
 
 static void
+MapParse (const char *path, const char *file, void *params)
+{
+    bool ok;
+    char *filename;
+
+    filename = STRcat (path, file);
+    ok = RSCparseResourceFile (filename);
+
+    if (!ok) {
+        CTIabort ("Error while parsing '%s'.", filename);
+    }
+}
+
+static void
 ParseResourceFiles (void)
 {
     char *filename;
@@ -476,7 +505,7 @@ ParseResourceFiles (void)
      */
     envvar = getenv ("SAC2CRC");
 
-    if (!is_dirty && envvar != NULL && FMGRcheckExistFile (envvar)) {
+    if (envvar != NULL && FMGRcheckExistFile (envvar)) {
         ok = RSCparseResourceFile (envvar);
         if (!ok) {
             CTIabort ("Error while parsing '%s' (via SAC2CRC).", envvar);
@@ -487,7 +516,7 @@ ParseResourceFiles (void)
             CTIabort ("Error while parsing '%s'.", global.global_sac2crc_location);
         }
     } else {
-        CTInote ("%sTrying to read sac2crc from %s.\n",
+        CTItell (4, "%sTrying to read sac2crc from %s.\n",
                  is_dirty ? "In a dirty state. " : "No global sac2crc file found. ",
                  global.build_sac2crc_location);
 
@@ -508,14 +537,18 @@ ParseResourceFiles (void)
         MEMfree (filename);
     }
 
-    /* Second, the private sac2crc file ist read.
+    /* Second, the private sac2crc file(s) is/are read.
      * This file resides optionally in the user's home directory.
      */
     envvar = getenv ("HOME");
 
-    if (envvar != NULL && !is_dirty) {
-        filename = STRcat (envvar, "/.sac2crc");
-        if (FMGRcheckExistFile (filename)) {
+    if (envvar != NULL) {
+        filename = STRcat (envvar, "/.sac2crc/");
+        if (FMGRcheckExistDir (filename)) {
+            DBUG_PRINT ("local resource directory '%s` found", filename);
+            FMGRforEach (filename, "sac2crc\\..*", NULL, MapParse);
+        } else if (FMGRcheckExistFile (filename)) {
+            DBUG_PRINT ("local resource file '%s` found", filename);
             ok = RSCparseResourceFile (filename);
 
             if (!ok) {
@@ -530,6 +563,107 @@ ParseResourceFiles (void)
     DBUG_RETURN ();
 }
 
+/*******************************************************************************
+ *
+ * function:
+ *  target_list_t * FindTarget( char *target_name, target_list_t *target)
+ *
+ * description:
+ *  searches for the first occurrance of the specified target name within
+ *  the list. If found, the corresponding pointer is returned; otherwise
+ *  NULL is returned.
+ *
+ ******************************************************************************/
+static target_list_t *
+FindTarget (char *target_name, target_list_t *target)
+{
+    while ((target != NULL) && (!STReq (target->name, target_name))) {
+        target = target->next;
+    }
+    return target;
+}
+
+/*******************************************************************************
+ *
+ * function:
+ *  resource_list_t * FindResource( char * resource_name, resource_list_t *resource)
+ *
+ * description:
+ *  searches for the first occurrance of the specified resource_name within
+ *  the list. If found, the corresponding pointer is returned; otherwise
+ *  NULL is returned.
+ *
+ ******************************************************************************/
+static resource_list_t *
+FindResource (char *resource_name, resource_list_t *resource)
+{
+    while ((resource != NULL) && (!STReq (resource_name, resource->name))) {
+        resource = resource->next;
+    }
+    return resource;
+}
+
+/*******************************************************************************
+ *
+ * function:
+ *  void UpdateResourceTable( int i, char *target_name,
+ *                            resource_list_t *resource, bool allow_inc)
+ *
+ * description:
+ *   updates the i-th entry in the global resource table with the provided
+ *   resource.
+ *   The allow_inc parameter signals whether the use of "+=" is permitted.
+ *
+ *
+ ******************************************************************************/
+static void
+UpdateResourceTable (int i, char *target_name, resource_list_t *resource, bool allow_inc)
+{
+    switch (resource_table[i].tag) {
+    case str:
+        if (resource->value_str == NULL) {
+            CTIabort ("'%s` target: specification of resource '%s` illegal", target_name,
+                      resource_table[i].name);
+        } else if (resource->add_flag) {
+            if (!allow_inc) {
+                CTIabort (
+                  "'%s` target: specification of '+=` on resource '%s` is illegal",
+                  target_name, resource_table[i].name);
+            } else {
+                char *new_res;
+                new_res
+                  = STRcat (*((char **)(resource_table[i].store)), resource->value_str);
+                MEMfree (*((char **)(resource_table[i].store)));
+                *((char **)(resource_table[i].store)) = new_res;
+            }
+        } else {
+            MEMfree (*((char **)(resource_table[i].store)));
+            *((char **)(resource_table[i].store)) = STRcpy (resource->value_str);
+        }
+        break;
+
+    case num:
+        if (resource->value_str != NULL) {
+            CTIabort ("'%s` target: specification of resource '%s` illegal", target_name,
+                      resource_table[i].name);
+        } else if (resource->add_flag) {
+            if (!allow_inc) {
+                CTIabort (
+                  "'%s` target: specification of '+=` on resource '%s` is illegal",
+                  target_name, resource_table[i].name);
+            } else {
+                *((int *)(resource_table[i].store)) += resource->value_num;
+            }
+        } else {
+            *((int *)(resource_table[i].store)) = resource->value_num;
+        }
+        break;
+
+    default:
+        CTIabort ("Internal data structure resource_table corrupted");
+    }
+}
+
 /******************************************************************************
  *
  * function:
@@ -541,9 +675,12 @@ ParseResourceFiles (void)
  *  Each resource is looked for in the resource list of the default target
  *  found before. Upon a match, the particular resource configuration is stored
  *  in the static configuration structure config.
+ *  NOTE that this function is different from the CustomTarget version as the
+ *  Default target has special requirements! It is required to have valid
+ *  entries for ALL resources, it cannot inherit from any target, it cannot
+ *  use the += form, and it must be uniquely defined!
  *
  ******************************************************************************/
-
 static void
 EvaluateDefaultTarget (target_list_t *target)
 {
@@ -552,57 +689,42 @@ EvaluateDefaultTarget (target_list_t *target)
 
     DBUG_ENTER ();
 
-    while ((target != NULL) && (!STReq (target->name, "default"))) {
-        target = target->next;
-    }
+    target = FindTarget ("default", target);
 
     if (target == NULL) {
         CTIabort ("Configuration files do not contain default target specification");
     }
 
+    if (target->super_targets != NULL) {
+        CTIabort (
+          "The default target specification must not inherit from any other target");
+    }
+
     for (i = 0; resource_table[i].name[0] != '\0'; i++) {
 
-        resource = target->resource_list;
-
-        while ((resource != NULL) && (!STReq (resource_table[i].name, resource->name))) {
-            resource = resource->next;
-        }
+        resource = FindResource (resource_table[i].name, target->resource_list);
 
         if (resource == NULL) {
             CTIerror ("Default target specification of resource '%s` missing",
                       resource_table[i].name);
         } else {
-            switch (resource_table[i].tag) {
-            case str:
-                if (resource->value_str == NULL) {
-                    CTIabort ("Default target specification of resource '%s` illegal",
-                              resource_table[i].name);
-                }
-                *((char **)(resource_table[i].store)) = resource->value_str;
-                resource->value_str = NULL;
-                break;
-
-            case num:
-                if (resource->value_str != NULL) {
-                    CTIabort ("Default target specification of resource '%s` illegal",
-                              resource_table[i].name);
-                }
-                *((int *)(resource_table[i].store)) = resource->value_num;
-                break;
-
-            default:
-                CTIabort ("Internal data structure resource_table corrupted");
-            }
+            UpdateResourceTable (i, "default", resource, FALSE);
         }
     }
 
+    // Now we check for uniqueness of the default target:
+    if (FindTarget ("default", target->next) != NULL) {
+        CTIabort (
+          "Configuration files contain more than one default target specification");
+    }
     DBUG_RETURN ();
 }
 
 /******************************************************************************
  *
  * function:
- *  void EvaluateCustomTarget(char *target, target_list_t *target_list)
+ *  void EvaluateCustomTarget(char *target, target_list_t *remaining_list,
+ *                             target_list_t *target_list)
  *
  * description:
  *  This function traverses the target_list until the given target is found.
@@ -615,7 +737,8 @@ EvaluateDefaultTarget (target_list_t *target)
  ******************************************************************************/
 
 static void
-EvaluateCustomTarget (char *target, target_list_t *target_list)
+EvaluateCustomTarget (char *target, target_list_t *remaining_list,
+                      target_list_t *target_list)
 {
     target_list_t *tmp;
     resource_list_t *resource;
@@ -624,77 +747,52 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
 
     DBUG_ENTER ();
 
-    tmp = target_list;
-
-    while ((tmp != NULL) && (!STReq (tmp->name, target))) {
-        tmp = tmp->next;
-    }
+    tmp = FindTarget (target, remaining_list);
 
     if (tmp == NULL) {
-        CTIabort ("Configuration files do not contain specification of custom "
-                  "target '%s`",
-                  target);
-    }
-
-    super_target = tmp->super_targets;
-
-    while (super_target != NULL) {
-        EvaluateCustomTarget (super_target->name, target_list);
-        super_target = super_target->next;
-    }
-
-    resource = tmp->resource_list;
-
-    while (resource != NULL) {
-        i = 0;
-        while ((resource_table[i].name[0] != '\0')
-               && (!STReq (resource_table[i].name, resource->name))) {
-            i++;
+        // This is only an error if we started with the whole list!
+        if (remaining_list == target_list) {
+            CTIabort ("Configuration files do not contain specification of "
+                      "target '%s`",
+                      target);
         }
+        DBUG_PRINT ("                   none found.");
+    } else {
 
-        if (resource_table[i].name[0] == '\0') {
-            CTIwarn ("Specification of target '%s` contains unrecognized resource '%s`",
-                     target, resource->name);
-        } else {
-            switch (resource_table[i].tag) {
-            case str:
-                if (resource->value_str == NULL) {
-                    CTIwarn ("Specification of target '%s` contains illegal value for "
-                             "resource '%s`",
-                             target, resource->name);
-                } else {
-                    if (resource->add_flag) {
-                        char *new_res;
-                        new_res = STRcat (*((char **)(resource_table[i].store)),
-                                          resource->value_str);
-                        MEMfree (*((char **)(resource_table[i].store)));
-                        *((char **)(resource_table[i].store)) = new_res;
-                    } else {
-                        MEMfree (*((char **)(resource_table[i].store)));
-                        *((char **)(resource_table[i].store))
-                          = STRcpy (resource->value_str);
-                    }
-                }
-                break;
-            case num:
-                if (resource->value_str != NULL) {
-                    CTIwarn ("Specification of target '%s` contains illegal value for "
-                             "resource '%s`",
-                             target, resource->name);
-                } else {
-                    if (resource->add_flag) {
-                        *((int *)(resource_table[i].store)) += resource->value_num;
-                    } else {
-                        *((int *)(resource_table[i].store)) = resource->value_num;
-                    }
-                }
-                break;
-            default:
-                CTIabort ("Internal data structure resource_table corrupted");
+        DBUG_PRINT ("found target '%s`, looking for previous definitions...", target);
+        // recursively look for potential "previous" definitions of the same target!
+        EvaluateCustomTarget (target, tmp->next, target_list);
+
+        DBUG_PRINT ("                 scanning inheritances...", target);
+        // Evaluate inheritance targets left to right
+        super_target = tmp->super_targets;
+        while (super_target != NULL) {
+            EvaluateCustomTarget (super_target->name, target_list, target_list);
+            super_target = super_target->next;
+        }
+        DBUG_PRINT ("                 scanning inheritances done.", target);
+
+        resource = tmp->resource_list;
+
+        DBUG_PRINT ("                 scanning ressources...", target);
+        while (resource != NULL) {
+            i = 0;
+            while ((resource_table[i].name[0] != '\0')
+                   && (!STReq (resource_table[i].name, resource->name))) {
+                i++;
             }
-        }
 
-        resource = resource->next;
+            if (resource_table[i].name[0] == '\0') {
+                CTIwarn (
+                  "Specification of target '%s` contains unrecognized resource '%s`",
+                  target, resource->name);
+            } else {
+                UpdateResourceTable (i, target, resource, TRUE);
+            }
+
+            resource = resource->next;
+        }
+        DBUG_PRINT ("                 scanning ressources done.", target);
     }
 
     DBUG_RETURN ();
@@ -724,7 +822,7 @@ RSCevaluateConfiguration ()
         target = STRtok (global.target_name, ":");
         while (target != NULL) {
             if (!STReq (target, "")) { /* allow for multiple colons! */
-                EvaluateCustomTarget (target, global.target_list);
+                EvaluateCustomTarget (target, global.target_list, global.target_list);
             }
             target = STRtok (NULL, ":");
         }

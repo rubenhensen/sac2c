@@ -799,6 +799,7 @@ FMGRforEach (const char *path, const char *filterexpr, void *funargs,
      * ensure the pattern only matches entire lines
      */
     fullpattern = STRcatn (3, "^", filterexpr, "$");
+    DBUG_PRINT ("looking for pattern '%s`", fullpattern);
 
     currdir = opendir (path);
 
@@ -811,7 +812,9 @@ FMGRforEach (const char *path, const char *filterexpr, void *funargs,
 
     direntry = readdir (currdir);
     while (direntry != NULL) {
+        DBUG_PRINT ("trying '%s`", direntry->d_name);
         if (regexec (&regexpr, direntry->d_name, 0, NULL, 0) == 0) {
+            DBUG_PRINT ("...match!");
             fun (path, direntry->d_name, funargs);
         }
         direntry = readdir (currdir);
