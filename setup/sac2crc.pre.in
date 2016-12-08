@@ -477,11 +477,11 @@ LINK_MOD         :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %targ
  * The next 2 targets are dummies that allow later extension of the default_sbi
  */
 target add_local:
-target add_stdlib_local:
+target package:
 
-target default_sbi:: add_default_sbi :: add_local :: add_stdlib_local:
+target default_sbi :: add_default_sbi :: add_local :: package:
 
-target default_mt:: default_sbi:
+target default_mt :: default_sbi:
 SBI              := "mt"
 MT_MODE          :=  2
 USE_PHM_API      :=  @CAN_USE_PHM@

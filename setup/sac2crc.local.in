@@ -5,5 +5,4 @@ LIBPATH        += "@abs_top_srcdir@/lib:"
 TREE_OUTPUTDIR += ":@abs_top_srcdir@/lib/prelude"
 LIB_OUTPUTDIR  += ":@abs_top_srcdir@/lib/prelude"
 
-target default_sbi :: add_default_sbi :: add_local :: add_stdlib_local:
-
+target default_sbi :: add_local:
