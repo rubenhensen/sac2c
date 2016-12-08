@@ -13,7 +13,7 @@
  *  The concrete behaviour of sac2c may be configured by using configuration
  *  files. There are 2 different kinds of configuration files:
  *  1) *system-files* which are generated when compiling and installing sac2c
- *  2) *customisation-files* which are either set up when downloadin packages
+ *  2) *customisation-files* which are either set up when downloading packages
  *     or which are set up manually
  *  While the former are mandatory, the latter are optional. The *system-files*
  *  are searched in 3 possible locations:
@@ -476,7 +476,7 @@ MapParse (const char *path, const char *file, void *params)
     bool ok;
     char *filename;
 
-    filename = STRcat (path, file);
+    filename = STRncat (3, path, "/", file);
     ok = RSCparseResourceFile (filename);
 
     if (!ok) {
@@ -543,10 +543,17 @@ ParseResourceFiles (void)
     envvar = getenv ("HOME");
 
     if (envvar != NULL) {
-        filename = STRcat (envvar, "/.sac2crc/");
+        filename = STRcat (envvar, "/.sac2crc");
         if (FMGRcheckExistDir (filename)) {
             DBUG_PRINT ("local resource directory '%s` found", filename);
             FMGRforEach (filename, "sac2crc\\..*", NULL, MapParse);
+            // Fixme: _d and _p should not be hard-wired here but automagically
+            // inserted by CMAKE....
+#ifndef DBUG_OFF
+            FMGRforEach (filename, "sac2crc_d\\..*", NULL, MapParse);
+#else
+            FMGRforEach (filename, "sac2crc_p\\..*", NULL, MapParse);
+#endif
         } else if (FMGRcheckExistFile (filename)) {
             DBUG_PRINT ("local resource file '%s` found", filename);
             ok = RSCparseResourceFile (filename);
