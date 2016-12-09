@@ -24,9 +24,8 @@ PrintToolName (void)
             "---------------------------------------------------------------------------"
             "\n"
             "\n"
-            "\n"
-            "NAME:          %s\n"
-            "VERSION:       %s\n",
+            "name:          %s\n"
+            "version:       %s\n",
             global.toolname, (global.version_id[0] == '\0') ? "???" : global.version_id);
 
     DBUG_RETURN ();
@@ -1296,11 +1295,13 @@ USGprintVersion ()
 {
     DBUG_ENTER ();
 
-    printf ("%s %s\n %s\n (%s by %s)\n", global.toolname,
-            (global.version_id[0] == '\0') ? "???" : global.version_id,
+    printf ("%s %s\n"
+            "build-type: %s\n"
+            "built-by: \"%s\" at %s\n",
+            global.toolname, (global.version_id[0] == '\0') ? "???" : global.version_id,
             (build_style[0] == '\0') ? "" : build_style,
-            (build_date[0] == '\0') ? "???" : build_date,
-            (build_user[0] == '\0') ? "???" : build_user);
+            (build_user[0] == '\0') ? "???" : build_user,
+            (build_date[0] == '\0') ? "???" : build_date);
 
     DBUG_RETURN ();
 }
@@ -1312,25 +1313,19 @@ USGprintVersionVerbose ()
 
     PrintToolName ();
 
-    printf ("\n"
-            "BUILD:         %s (%s)\n"
-            "AT DATE:       %s\n"
-            "BY USER:       %s\n"
-            "ON HOST:       %s\n"
-            "\n"
-
+    printf ("build-type:    %s\n"
+            "date:          %s\n"
+            "user:          %s\n"
+            "host:          %s\n"
             "\n",
-            global.version_id, (build_style[0] == '\0') ? "" : build_style,
+            (build_style[0] == '\0') ? "" : build_style,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user,
             (build_host[0] == '\0') ? "???" : build_host);
 
-    printf ("(c) Copyright 1994-2015 by\n\n"
-
-            "  SAC Development Team\n\n"
-
-            "  http://www.sac-home.org\n"
-            "  email:info@sac-home.org\n\n");
+    printf ("homepage: http://www.sac-home.org\n"
+            "email: info@sac-home.org\n\n"
+            "Copyright (c) 1994-2017 SAC Development Team\n\n");
 
     DBUG_RETURN ();
 }

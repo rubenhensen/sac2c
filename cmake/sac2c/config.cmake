@@ -397,7 +397,6 @@ STRING (TIMESTAMP DATE)
 SITE_NAME (HOST_NAME)
 
 # Get current user.
-# FIXME why the hell this is useful?
 GET_USERNAME (USER_NAME)
 
 # Get the sac2c repository version
