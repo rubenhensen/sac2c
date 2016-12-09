@@ -545,15 +545,14 @@ ParseResourceFiles (void)
     if (envvar != NULL) {
         filename = STRcat (envvar, "/.sac2crc");
         if (FMGRcheckExistDir (filename)) {
+            char *sac2crc_pat = STRcatn (3, "sac2crc", SAC2C_POSTFIX, "\\..*");
+
             DBUG_PRINT ("local resource directory '%s` found", filename);
             FMGRforEach (filename, "sac2crc\\..*", NULL, MapParse);
-            // Fixme: _d and _p should not be hard-wired here but automagically
-            // inserted by CMAKE....
-#ifndef DBUG_OFF
-            FMGRforEach (filename, "sac2crc_d\\..*", NULL, MapParse);
-#else
-            FMGRforEach (filename, "sac2crc_p\\..*", NULL, MapParse);
-#endif
+
+            /* Depending on SAC2C_POSTFIX read in all files that start with
+               "sac2crc_<postfix>".  */
+            FMGRforEach (filename, sac2crc_pat, NULL, MapParse);
         } else if (FMGRcheckExistFile (filename)) {
             DBUG_PRINT ("local resource file '%s` found", filename);
             ok = RSCparseResourceFile (filename);
