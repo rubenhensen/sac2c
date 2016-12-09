@@ -17,9 +17,6 @@ IF (NOT "${sac2c_exec_res}" STREQUAL "0")
                          "wrong with the sac2c binary")
 ENDIF ()
 
-
-SET (LD_LIB_PATH "${SAC2C_BUILD_DIR}/lib:${PROJECT_BUILD_DIR}/lib:$ENV{LD_LIBRARY_PATH}")
-SET (DYLD_LIB_PATH "${SAC2C_BUILD_DIR}/lib:${PROJECT_BUILD_DIR}/lib:$ENV{LD_LIBRARY_PATH}")
 # FIXME: Are the headers in the correct places?
 SET (SAC2C_EXTRA_INC
     -I${SAC2C_BUILD_DIR}/include
@@ -40,9 +37,6 @@ ELSE ()
 ENDIF ()
 
 # Make sure that all the libraries are found here.
-# FIXME(artem) The name DLL_BUILD_DIR is really confusing, as sac libraries live
-# in a separate project now, the DLL_BUILD_DIR of the sac2c project points into
-# a different location.  Rename it?
 SET (DLL_BUILD_DIR "${PROJECT_BINARY_DIR}/lib")
 SET (LIBRARY_OUTPUT_PATH "${DLL_BUILD_DIR}")
 # Make sure that this directory exists.

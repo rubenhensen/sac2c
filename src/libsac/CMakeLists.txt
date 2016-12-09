@@ -27,10 +27,10 @@ SET (LIBSAC_SRC
 )
 
 IF(${RTSPEC} EQUAL 1)
-    MESSAGE ("Target `${TARGET}' does support RTSPEC")
+  MESSAGE ("Target `${TARGET}' does support RTSPEC")
 ELSE ()
-    MESSAGE ("Target `${TARGET}' does *not* support RTSPEC")
-    LIST (APPEND LIBSAC_SRC rtspec/empty.c)
+  MESSAGE ("Target `${TARGET}' does *not* support RTSPEC")
+  LIST (APPEND LIBSAC_SRC rtspec/empty.c)
 ENDIF ()
 
 SET(LIBSAC_OBJS)
@@ -41,23 +41,16 @@ FOREACH(name ${LIBSAC_SRC})
   ADD_CUSTOM_COMMAND (
     OUTPUT "${dst}"
     DEPENDS "${src}" ${LIB_SAC2C}
-# FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
-    COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH}
-            DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0 -noprelude
-            -cc ccmod -o "${dst}" "${src}"
+    COMMAND ${SAC2C} -v0 -noprelude -cc ccmod -o "${dst}" "${src}"
     COMMENT "Generating ${dst}"
   )
   LIST (APPEND LIBSAC_OBJS "${dst}")
 ENDFOREACH(name)
-#ADD_CUSTOM_TARGET (libsac-${TARGET}-objs DEPENDS ${LIBSAC_OBJS})
 
 ADD_CUSTOM_COMMAND (
-    OUTPUT "${LIBSAC_LIB}"
-# FIXME: we currently pass some environment variables as is... is this compatible on other platforms?
-    COMMAND SAC2CRC=${SAC2CRC_BUILD_CONF} LD_LIBRARY_PATH=${LD_LIB_PATH}
-            DYLD_LIBRARY_PATH=${DYLD_LIB_PATH} ${SAC2C} -v0
-            -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT}
-            -o "${LIBSAC_LIB}" ${LIBSAC_OBJS}
-            DEPENDS ${LIBSAC_OBJS} #libsac-${TARGET}-objs
-    COMMENT "Linking for target `${TARGET}' libsac")
+  OUTPUT "${LIBSAC_LIB}"
+  COMMAND  ${SAC2C} -v0 -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT}
+           -o "${LIBSAC_LIB}" ${LIBSAC_OBJS}
+  DEPENDS ${LIBSAC_OBJS}
+  COMMENT "Linking for target `${TARGET}' libsac")
 ADD_CUSTOM_TARGET (libsac-${TARGET} ALL DEPENDS "${LIBSAC_LIB}")
