@@ -17,6 +17,7 @@ SET (LIBSAC_SRC
   interface/sacargconvert.c
   interface/sacmt.c
   mt/mt.c
+  mt/hwloc_data.c
   mt_beehive/mt_beehive.c
   mt_lpel/mt_lpel_std.c
   mt_lpel/mt_lpel_trace.c

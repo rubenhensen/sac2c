@@ -73,6 +73,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/extras_h/profile.h
 ${CMAKE_CURRENT_SOURCE_DIR}/extras_h/runtimecheck.h
 ${CMAKE_CURRENT_SOURCE_DIR}/extras_h/trace.h
 ${CMAKE_CURRENT_SOURCE_DIR}/mt_h/mt.h
+${CMAKE_CURRENT_SOURCE_DIR}/mt_h/hwloc_data.h
 ${CMAKE_CURRENT_SOURCE_DIR}/mt_omp_h/mt_omp.h
 ${CMAKE_CURRENT_SOURCE_DIR}/mt_beehive_h/schedule.h
 ${CMAKE_CURRENT_SOURCE_DIR}/mt_beehive_h/mt_beehive.h

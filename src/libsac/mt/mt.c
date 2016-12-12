@@ -127,7 +127,7 @@ SAC_COMMON_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
     pus = atoi (char_dump);
 
     if (sockets != 0 && cores != 0 && pus != 0) {
-        if (SAC_MT_threads > sockets * cores * pus)
+        if (SAC_MT_global_threads > sockets * cores * pus)
             SAC_RuntimeError (
               "sockets*cores*PUs is less than the number of threads desired");
         SAC_TR_PRINT (("Pinning on %u sockets, %u cores and %u processing units. Total "

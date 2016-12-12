@@ -1,8 +1,9 @@
 #if ENABLE_HWLOC
 #include "../runtime/mt_h/hwloc_data.h"
 #include <sac.h>
-hwloc_cpuset_t *cpu_sets;
-hwloc_topology_t topology;
+
+hwloc_cpuset_t *SAC_HWLOC_cpu_sets;
+hwloc_topology_t SAC_HWLOC_topology;
 
 /*
 Traverses the topology tree to create a flat array of PUs (cpu_sets).
@@ -81,7 +82,7 @@ SAC_HWLOC_dont_bind ()
 {
     SAC_TR_PRINT (
       "sockets, cores or pus env variables not set or set to 0, not binding threads");
-    topology = 0;
+    SAC_HWLOC_topology = 0;
 }
 
 #else
