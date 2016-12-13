@@ -381,7 +381,7 @@ IMPPATH          :=  ".:"
                      "@STDLIB_SOURCES@/auxiliary/random:"
                      "@STDLIB_SOURCES@/classes/random:"
                      "@STDLIB_SOURCES@/utrace:"
-EXTLIBPATH       :=  "/usr/local/dislin:/opt/local/lib:"
+EXTLIBPATH       :=  "/usr/local/dislin:/opt/local/lib:@EXTLIBPATH@"
 INCPATH          :=  ".:"
 
 CACHE1_SIZE      :=  0
@@ -415,7 +415,7 @@ COMPILE_PROG     := "%cc% %compileflags% -c -o %target% %source%"
 LINK_PROG        := "%ld% %objects% %linkflags% -o %target%"
 
 CFLAGS           :=  ""
-LIBS             :=  ""
+LIBS             :=  "@LIBS@"
 LDFLAGS          :=  ""
 
 TARGET_ENV       :=  "XXXXX"

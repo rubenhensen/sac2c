@@ -1,5 +1,6 @@
-#if ENABLE_HWLOC
 #include "../runtime/mt_h/hwloc_data.h"
+
+#if ENABLE_HWLOC
 #include <sac.h>
 
 hwloc_cpuset_t *SAC_HWLOC_cpu_sets;

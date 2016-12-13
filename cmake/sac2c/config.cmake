@@ -194,6 +194,18 @@ IF (LPEL)
     ENDIF ()
 ENDIF ()
 
+# check for HWLOC (relevent for runtime system)
+SET (HWLOC_LIB_PATH "")
+IF (HWLOC)
+    FIND_LIBRARY (LIB_HWLOC "hwloc")
+    CHECK_INCLUDE_FILES (hwloc.h HAVE_HWLOC_H)
+    IF (LIB_HWLOC AND HAVE_HWLOC_H)
+      GET_FILENAME_COMPONENT (HWLOC_LIB_PATH ${LIB_HWLOC} PATH)
+      SET (ENABLE_HWLOC ON)
+      SET (HWLOC_LIB "-lhwloc")
+    ENDIF ()
+ENDIF ()
+
 # If Option MT is set
 SET (CCMT_PTH_CFLAGS "")
 SET (CCMT_PTH_LINK "")
@@ -428,6 +440,8 @@ SET (CPP         "${CPP_CMD} -P")
 # FIXME(artem) These are named differently now in the configure.ac
 SET (CCMTLINK    "")
 SET (CCDLLINK    "")
+SET (EXTLIBPATH  "${HWLOC_LIB_PATH}:") # all variables need to be colon seperated
+SET (LIBS        " ${HWLOC_LIB}")
 
 IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (GCC_FLAGS   "")
@@ -694,8 +708,9 @@ MESSAGE ("
 * - CUDA:                  ${ENABLE_CUDA}
 * - OpenMP:                ${ENABLE_OMP}
 * - SL:                    ${ENABLE_SL}
+* - HWLOC:                 ${ENABLE_HWLOC}
 * - Distributed memory:    ${ENABLE_DISTMEM}$distmem_details_print
-* => distmen is still non functional <=
+* ====== distmen is non-functional ======
 * - CC:                    ${CMAKE_C_COMPILER} (${CMAKE_C_COMPILER_ID})
 * - CCFLAGS:               ${BUILD_TYPE_C_FLAGS}
 * - SaC compiler CFLAGS:   ${MKCCFLAGS}
