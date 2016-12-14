@@ -462,6 +462,8 @@ GLOBAL (int, num_threads, 0, xfree_dummy, )
  *  >1 : exact number of threads to be started
  */
 
+GLOBAL (cpubindstrategy_t, cpubindstrategy, HWLOC_off, xfree_dummy, )
+
 GLOBAL (bool, no_fold_parallel, FALSE, xfree_dummy, )
 /*
  * Switch whether or not to parallelize fold with-loops.

@@ -1329,6 +1329,14 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
+    ARGS_OPTION_BEGIN ("cpubindstrategy");
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("off", global.cpubindstrategy = HWLOC_off);
+        ARG_CHOICE ("simple", global.cpubindstrategy = HWLOC_simple);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("mt_smart_mode");
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
      */
