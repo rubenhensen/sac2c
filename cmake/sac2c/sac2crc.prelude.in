@@ -6,7 +6,5 @@
 target add_local:
 TREEPATH       += "@RUNTIME_BINARY_DIR@/lib/prelude:"
 LIBPATH        += "@RUNTIME_BINARY_DIR@/lib/prelude:"
-TREE_OUTPUTDIR += ":@RUNTIME_BINARY_DIR@/lib/prelude"
-LIB_OUTPUTDIR  += ":@RUNTIME_BINARY_DIR@/lib/prelude"
 
 target default_sbi :: add_local:

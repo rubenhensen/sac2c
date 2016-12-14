@@ -130,6 +130,17 @@ ExternalProject_Add_StepTargets(runtime_libraries clean)
 # Add the target as a dependency to the `fullclean' target 
 ADD_DEPENDENCIES (fullclean runtime_libraries-clean)
 
+# this target is meant to copy over the sac2crc prelude file to the users
+# .sac2crc directory...
+# XXX This assumes that the files exists once configuration is done...
+ADD_CUSTOM_TARGET (copy-sac2crc-prelude-file ALL
+  COMMAND
+    ${CMAKE_COMMAND}
+    -DUSER_HOME="$ENV{HOME}"
+    -DSAC2CRC_PATH="${PROJECT_BINARY_DIR}/sac2crc.${BUILD_TYPE_NAME}.prelude"
+    -P "${PROJECT_SOURCE_DIR}/cmake/place-sac2crc-prelude-file.cmake"
+  COMMENT "Copying over sac2crc file to user's .sac2crc directory")
+
 # Create custom install-<component> target for a component provided
 # as a first argument of the macro, and dependencies, pvovided as
 # N arguments after the first one.
