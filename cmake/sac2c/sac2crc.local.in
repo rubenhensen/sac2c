@@ -1,7 +1,7 @@
 target add_local:
 TREEPATH       += "@PROJECT_BINARY_DIR@/lib/prelude:"
-SACINCLUDES    += " -I@SAC2C_BUILD_DIR@/include -I@PROJECT_BINARY_DIR@/include -I@SAC2C_SOURCE_DIR@/include"
-LIBPATH        += "@SAC2C_BUILD_DIR@/lib:@PROJECT_BINARY_DIR@/lib:"
+SACINCLUDES    += " -I@RUNTIME_BINARY_DIR@/include -I@PROJECT_BINARY_DIR@/include -I@PROJECT_SOURCE_DIR@/include"
+LIBPATH        += "@RUNTIME_BINARY_DIR@/lib:@PROJECT_BINARY_DIR@/lib:"
 TREE_OUTPUTDIR += ":@PROJECT_BINARY_DIR@/lib/prelude"
 LIB_OUTPUTDIR  += ":@PROJECT_BINARY_DIR@/lib/prelude"
 

@@ -1,8 +1,5 @@
 # file include checks to find sac2c, etc.
 
-SET (ISAC2CLOCAL "${SAC2C_SOURCE_DIR}/cmake/runtime/sac2crc.local.in")
-SET (LSAC2CLOCAL "${PROJECT_BINARY_DIR}/sac2crc${BUILD_TYPE_POSTFIX}.local")
-
 # Make sure that sac2c is available and is located in the build directory.
 # Note the 'NO_DEFAULT_PATH' specifier to the following FIND_PROGRAM command
 # which makes sure that any sac2c on the PATH is not considered.
@@ -27,14 +24,6 @@ SET (SAC2C_EXTRA_INC
 
 # add sacprelude file with postfix in module and file name.
 CONFIGURE_FILE ("${SAC2C_SOURCE_DIR}/src/libsacprelude/sacprelude.sac" "${PROJECT_BINARY_DIR}/sacprelude${BUILD_TYPE_POSTFIX}.sac" @ONLY)
-
-# added an include to sac2crc.local so that sac2c can find header files
-CONFIGURE_FILE("${ISAC2CLOCAL}" "${LSAC2CLOCAL}" @ONLY)
-IF (EXISTS ${LSAC2CLOCAL})
-    FILE(COPY ${LSAC2CLOCAL} DESTINATION ${SAC2C_BUILD_DIR})
-ELSE ()
-    MESSAGE(FATAL_ERROR "Unable to copy over sac2crc.local, does not exist, exiting...")
-ENDIF ()
 
 # Make sure that all the libraries are found here.
 SET (DLL_BUILD_DIR "${PROJECT_BINARY_DIR}/lib")

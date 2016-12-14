@@ -1,0 +1,12 @@
+/****************************************************************************
+ * The purpose of this sac2c file is to povide the path information
+ * of the sac prelude to the compiler at the global scope.
+ * This is especially relevent for compiling and using the stdlib.
+ ****************************************************************************/
+target add_local:
+TREEPATH       += "@RUNTIME_BINARY_DIR@/lib/prelude:"
+LIBPATH        += "@RUNTIME_BINARY_DIR@/lib/prelude:"
+TREE_OUTPUTDIR += ":@RUNTIME_BINARY_DIR@/lib/prelude"
+LIB_OUTPUTDIR  += ":@RUNTIME_BINARY_DIR@/lib/prelude"
+
+target default_sbi :: add_local:

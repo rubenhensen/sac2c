@@ -17,11 +17,10 @@ INCLUDE (ExternalProject)
 INCLUDE (FeatureSummary)
 
 # Include config related cmake files
-include ("cmake/macros.cmake")
-include ("cmake/options.cmake")
-include ("cmake/sac2c/config.cmake")
-include ("cmake/sac2c/sac2crc.cmake")
-include ("cmake/settings.cmake")
+INCLUDE ("cmake/macros.cmake")
+INCLUDE ("cmake/options.cmake")
+INCLUDE ("cmake/sac2c/config.cmake")
+INCLUDE ("cmake/settings.cmake")
 
 # Include common directories for the project.
 INCLUDE_DIRECTORIES(
@@ -121,6 +120,9 @@ ExternalProject_Add_Step (runtime_libraries clean
   COMMENT "Cleaning runtime libraries, in ${BINARY_DIR}"
   EXCLUDE_FROM_MAIN 1
   ALWAYS 1)
+# create both the local sac2crc file and the prelude sac2crc file
+SET (RUNTIME_BINARY_DIR ${BINARY_DIR})
+INCLUDE ("cmake/sac2c/sac2crc.cmake")
 UNSET (BINARY_DIR) # make sure we don't cause a conflict
 UNSET (STAMP_DIR) # make sure we don't cause a conflict
 # Create a target which links to the clean step
