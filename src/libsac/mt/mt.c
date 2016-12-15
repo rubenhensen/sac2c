@@ -126,37 +126,22 @@ SAC_COMMON_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 #if ENABLE_HWLOC
     if (SAC_MT_cpu_bind_strategy != 0) { // HWLOC is not OFF!
         char *char_dump;
-        unsigned int sockets;
-        unsigned int cores;
-        unsigned int pus;
+        int sockets;
+        int cores;
+        int pus;
 
         char_dump = getenv (SAC_HWLOC_NUM_SOCKETS_VAR_NAME);
-        if (char_dump == NULL)
-            goto SAC_HWLOC_DONT_BIND_LBL;
-        sockets = atoi (char_dump);
+        sockets = (char_dump == NULL ? 0 : atoi (char_dump));
 
         char_dump = getenv (SAC_HWLOC_NUM_CORES_VAR_NAME);
-        if (char_dump == NULL)
-            goto SAC_HWLOC_DONT_BIND_LBL;
-        cores = atoi (char_dump);
+        cores = (char_dump == NULL ? 0 : atoi (char_dump));
 
         char_dump = getenv (SAC_HWLOC_NUM_PUS_VAR_NAME);
-        if (char_dump == NULL)
-            goto SAC_HWLOC_DONT_BIND_LBL;
-        pus = atoi (char_dump);
+        pus = (char_dump == NULL ? 0 : atoi (char_dump));
 
-        if (sockets != 0 && cores != 0 && pus != 0) {
-            if (SAC_MT_global_threads > sockets * cores * pus)
-                SAC_RuntimeError (
-                  "sockets*cores*PUs is less than the number of threads desired");
-            SAC_TR_PRINT (("Pinning on %u sockets, %u cores and %u processing units. "
-                           "Total processing units used: %u",
-                           sockets, cores, pus, sockets * cores * pus));
-            SAC_HWLOC_init (sockets, cores, pus);
-        } else {
-        SAC_HWLOC_DONT_BIND_LBL:
-            SAC_HWLOC_dont_bind ();
-        }
+        SAC_HWLOC_init (SAC_MT_global_threads, sockets, cores, pus);
+    } else {
+        SAC_HWLOC_dont_bind ();
     }
 #endif
 }
