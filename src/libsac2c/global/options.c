@@ -443,7 +443,7 @@ OPTcheckOptionConsistency (void)
 
 #if ENABLE_HWLOC
 #else
-    if (cpubindstrategy != HWLOC_off) {
+    if (global.cpubindstrategy != HWLOC_off) {
         CTIwarn (
           "sac2c was compiled without hwloc support, forcing cpubindstrategy to OFF.");
     }
