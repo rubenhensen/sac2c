@@ -289,14 +289,9 @@ SAC_C_EXTERN pthread_attr_t SAC_MT_thread_attribs;
 
 SAC_C_EXTERN void SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                                        unsigned int max_threads);
-SAC_C_EXTERN void SAC_MT_TR_SetupInitial (int argc, char *argv[],
-                                          unsigned int num_threads,
-                                          unsigned int max_threads);
 
 SAC_C_EXTERN void SAC_MT_PTH_SetupStandalone (int num_schedulers);
-SAC_C_EXTERN void SAC_MT_PTH_TR_SetupStandalone (int num_schedulers);
 
-SAC_C_EXTERN void SAC_MT_TR_SetupAsLibraryInitial (void);
 SAC_C_EXTERN void SAC_MT_SetupAsLibraryInitial (void);
 
 SAC_C_EXTERN unsigned int SAC_Get_CurrentBee_GlobalID (void);

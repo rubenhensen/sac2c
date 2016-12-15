@@ -12,16 +12,6 @@
  *
  * remark:
  *
- *   By means of the make tool, this source file is used to produce two
- *   different object files:
- *   1. mt_pth.o        which contains the normal routines
- *   2. mt_pth.trace.o  which contains variants of the normal routines along
- *                      with some extra routines and identifiers for tracing
- *                      program execution.
- *
- *   The compiler produces different object files by setting or unsetting
- *   the preprocessor flag TRACE.
- *
  *****************************************************************************/
 
 #include "config.h"
@@ -34,7 +24,6 @@
  *
  ******************************************************************************/
 static UNUSED int dummy_mt_pth;
-int barrier_type;
 
 /*
  * In case we do not have mt available, we have to make sure this file
@@ -50,18 +39,13 @@ int barrier_type;
 #include <stdlib.h>
 #include <assert.h>
 
-#if TRACE
-#define SAC_DO_TRACE 1
-#else
-#define SAC_DO_TRACE 0
-#endif
-
+// FIXME: sort out the mess of using sac.h from code as well as from libsac !
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_MT_PTHREAD 1
 #define SAC_DO_THREADS_STATIC 1
 #define SAC_DO_COMPILE_MODULE 1
 #define SAC_SET_NUM_SCHEDULERS 10
-#define SAC_DO_PHM 1
+// FIXME: do we need this? doesn't that undermine noPHM? #define SAC_DO_PHM    1
 
 #include "sac.h"
 
@@ -71,37 +55,10 @@ int barrier_type;
 #undef SAC_DO_COMPILE_MODULE
 #undef SAC_SET_NUM_SCHEDULERS
 
-#if ENABLE_HWLOC
-#include <../runtime/mt_h/hwloc_data.h>
-#endif
-
-#if TRACE
-#define __ReleaseHive SAC_MT_TR_ReleaseHive
-#define __AllocHive SAC_MT_TR_AllocHive
-#define __ThreadServeLoop SAC_MT_LPEL_TR_ThreadServeLoop
-#define __AttachHive SAC_MT_TR_AttachHive
-#define __DetachHive SAC_MT_TR_DetachHive
-#define __ReleaseQueen SAC_MT_TR_ReleaseQueen
-#else
-/* no trace */
-#define __ReleaseHive SAC_MT_ReleaseHive
-#define __AllocHive SAC_MT_AllocHive
-#define __ThreadServeLoop SAC_MT_LPEL_ThreadServeLoop
-#define __AttachHive SAC_MT_AttachHive
-#define __DetachHive SAC_MT_DetachHive
-#define __ReleaseQueen SAC_MT_ReleaseQueen
-#endif
-
 /*
  *  Definition of global variables.
  *
  *    These variables define the multi-threaded runtime system.
- */
-#if !TRACE
-
-/*
- * If we compile for mt_trace.o, we don't need the global variables since
- * these always remain in mt.o.
  */
 
 /* pthreads default thread attributes (const after init) */
@@ -109,12 +66,6 @@ pthread_attr_t SAC_MT_thread_attribs;
 
 /* TLS key to retrieve the Thread Self Bee Ptr */
 pthread_key_t SAC_MT_self_bee_key;
-
-#else
-
-/* defined when !TRACE, declared when TRACE */
-
-#endif /* TRACE */
 
 /******************************************************************************
  *
@@ -183,7 +134,7 @@ tls_destroy_self_bee_key (void *data)
     /* slave bees should be cleaned up via spmd_kill_pth_bee */
     assert (self->c.local_id == 0);
 
-    __ReleaseQueen ();
+    SAC_MT_ReleaseQueen ();
 
     /* check that no value was left in there */
     assert (pthread_getspecific (SAC_MT_self_bee_key) == NULL);
@@ -213,11 +164,11 @@ ThreadServeLoop (struct sac_bee_pth_t *SAC_MT_self)
         SAC_TR_LIBSAC_PRINT (("Worker thread H:%p, L:%d ready.", SAC_MT_self->c.hive,
                               SAC_MT_self->c.local_id));
         SAC_TR_LIBSAC_PRINT (("Worker thread L:%d takes barrier type: %i.",
-                              SAC_MT_self->c.local_id, barrier_type));
+                              SAC_MT_self->c.local_id, SAC_MT_barrier_type));
 
         /* wait on start lock: the queen will release it when all is ready
          * for an SPMD execution */
-        switch (barrier_type) {
+        switch (SAC_MT_barrier_type) {
         case 1:
             take_mutex_barrier ();
             break;
@@ -436,9 +387,6 @@ do_setup_pth (void)
 /******************************************************************************
  *
  * function:
- *   void SAC_MT_PTH_TR_SetupInitial( int argc, char *argv[],
- *                                unsigned int num_threads,
- *                                unsigned int max_threads)
  *   void SAC_MT_PTH_SetupInitial( int argc, char *argv[],
  *                             unsigned int num_threads,
  *                             unsigned int max_threads)
@@ -459,15 +407,9 @@ do_setup_pth (void)
  *
  ******************************************************************************/
 
-#if TRACE
-void
-SAC_MT_TR_SetupInitial (int argc, char *argv[], unsigned int num_threads,
-                        unsigned int max_threads)
-#else
 void
 SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                      unsigned int max_threads)
-#endif
 {
     SAC_MT_BEEHIVE_SetupInitial (argc, argv, num_threads, max_threads);
 
@@ -481,7 +423,7 @@ SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 /******************************************************************************
  *
  * function:
- *   void SAC_MT_TR_SetupAsLibraryInitial(void)
+ *   void SAC_MT_SetupAsLibraryInitial(void)
  *
  * description:
  *
@@ -490,13 +432,8 @@ SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
  *  some defaults, and do not initialize the thread-id registry.
  *
  ******************************************************************************/
-#if TRACE
-void
-SAC_MT_TR_SetupAsLibraryInitial (void)
-#else
 void
 SAC_MT_SetupAsLibraryInitial (void)
-#endif
 {
     SAC_MT_BEEHIVE_SetupInitial (0, NULL, 1024, 1024);
 
@@ -562,7 +499,6 @@ EnsureThreadHasBee (void)
 /******************************************************************************
  *
  * function:
- *    void SAC_MT_TR_ReleaseHive(struct sac_hive_common_t* h)
  *    void SAC_MT_ReleaseHive(struct sac_hive_common_t* h)
  *
  * description:
@@ -571,13 +507,8 @@ EnsureThreadHasBee (void)
  *  All bees in the hive will be killed and the memory deallocated.
  *
  ******************************************************************************/
-#if TRACE
-void
-SAC_MT_TR_ReleaseHive (struct sac_hive_common_t *h)
-#else
 void
 SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
-#endif
 {
     if (!h) {
         /* no hive, no work */
@@ -585,7 +516,7 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
     }
     if (h->bees[0]) {
         /* there is a queen! */
-        SAC_RuntimeError ("SAC_MT_*_ReleaseHive: Cannot release a hive with a queen."
+        SAC_RuntimeError ("SAC_MT_ReleaseHive: Cannot release a hive with a queen."
                           " Call DetachHive() first.");
         return;
     }
@@ -597,7 +528,7 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
     volatile unsigned *sharedfl = &hive->start_barr_sharedfl;
 
     /* start slave bees */
-    switch (barrier_type) {
+    switch (SAC_MT_barrier_type) {
     case 1:
         take_mutex_barrier ();
         break;
@@ -635,7 +566,7 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
 /******************************************************************************
  *
  * function:
- *   struct sac_hive_common_t* SAC_MT_TR_AllocHive( unsigned int num_bees, int
+ *   struct sac_hive_common_t* SAC_MT_AllocHive( unsigned int num_bees, int
  *num_schedulers, const int *places, void *thdata)
  *
  * description:
@@ -644,15 +575,10 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
  *  The places and thdata arguments are ignored.
  *
  ******************************************************************************/
-#if TRACE
-struct sac_hive_common_t *
-SAC_MT_TR_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
-                     void *thdata)
-#else
+
 struct sac_hive_common_t *
 SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
                   void *thdata)
-#endif
 {
     SAC_TR_LIBSAC_PRINT (("Initializing the bee data structure."));
 
@@ -708,7 +634,6 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
 /******************************************************************************
  *
  * function:
- *   void SAC_MT_TR_ReleaseQueen(void)
  *   void SAC_MT_ReleaseQueen(void)
  *
  * description:
@@ -717,13 +642,8 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
  *  If a hive is attached, it will be released as well.
  *
  ******************************************************************************/
-#if TRACE
-void
-SAC_MT_TR_ReleaseQueen (void)
-#else
 void
 SAC_MT_ReleaseQueen (void)
-#endif
 {
     SAC_TR_LIBSAC_PRINT (("Finalizing hive."));
 
@@ -741,7 +661,7 @@ SAC_MT_ReleaseQueen (void)
         }
 
         /* destroy the hive */
-        __ReleaseHive (__DetachHive ());
+        SAC_MT_ReleaseHive (SAC_MT_DetachHive ());
     }
 
     /* the queen must be free of a hive now */
@@ -761,7 +681,6 @@ SAC_MT_ReleaseQueen (void)
 /******************************************************************************
  *
  * function:
- *   void SAC_MT_TR_AttachHive(struct sac_hive_common_t* h)
  *   void SAC_MT_AttachHive(struct sac_hive_common_t* h)
  *
  * description:
@@ -770,18 +689,13 @@ SAC_MT_ReleaseQueen (void)
  *  The generic version from mt_beehive is used.
  *
  ******************************************************************************/
-#if TRACE
-void
-SAC_MT_TR_AttachHive (struct sac_hive_common_t *h)
-#else
 void
 SAC_MT_AttachHive (struct sac_hive_common_t *h)
-#endif
 {
     SAC_TR_LIBSAC_PRINT (("Attaching hive to a queen."));
 
     if (!h) {
-        SAC_RuntimeError ("__AttachHive called with a NULL hive!");
+        SAC_RuntimeError ("SAC_MT_AttachHive called with a NULL hive!");
         return;
     }
 
@@ -794,7 +708,6 @@ SAC_MT_AttachHive (struct sac_hive_common_t *h)
 /******************************************************************************
  *
  * function:
- *   struct sac_hive_common_t* SAC_MT_TR_DetachHive()
  *   struct sac_hive_common_t* SAC_MT_DetachHive()
  *
  * description:
@@ -803,13 +716,8 @@ SAC_MT_AttachHive (struct sac_hive_common_t *h)
  *  The generic version from mt_beehive is used.
  *
  ******************************************************************************/
-#if TRACE
-struct sac_hive_common_t *
-SAC_MT_TR_DetachHive ()
-#else
 struct sac_hive_common_t *
 SAC_MT_DetachHive ()
-#endif
 {
     SAC_TR_LIBSAC_PRINT (("Detaching hive from a queen."));
 
@@ -824,7 +732,6 @@ SAC_MT_DetachHive ()
 /******************************************************************************
  *
  * function:
- *   void SAC_MT_PTH_TR_SetupStandalone( int num_schedulers)
  *   void SAC_MT_PTH_SetupStandalone( int num_schedulers)
  *
  * description:
@@ -833,23 +740,17 @@ SAC_MT_DetachHive ()
  *  Allocates and attaches a new hive to the calling thread.
  *
  ******************************************************************************/
-#if TRACE
-void
-SAC_MT_PTH_TR_SetupStandalone (int num_schedulers)
-#else
 void
 SAC_MT_PTH_SetupStandalone (int num_schedulers)
-#endif
 {
     struct sac_hive_common_t *hive
-      = __AllocHive (SAC_MT_global_threads, num_schedulers, NULL, NULL);
-    __AttachHive (hive);
+      = SAC_MT_AllocHive (SAC_MT_global_threads, num_schedulers, NULL, NULL);
+    SAC_MT_AttachHive (hive);
     /* In standalone programs there is only a single global queen-bee. Place her in the
      * global variable. All the ST functions will take it from there. */
     SAC_MT_singleton_queen = hive->bees[0];
 }
 
-#if !TRACE
 /******************************************************************************
  * function:
  *   struct sac_bee_common_t* SAC_MT_CurrentBee()
@@ -896,14 +797,8 @@ SAC_MT_Internal_CurrentThreadId (void)
     }
 }
 
-#endif
-
 #else /* MT */
 
-#if !TRACE
-/* !MT && !TRACE */
 int SAC_MT_self_bee_key; /* dummy */
-
-#endif /* TRACE */
 
 #endif /* PTH */

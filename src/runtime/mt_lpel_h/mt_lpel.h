@@ -219,20 +219,6 @@ SAC_MT_LPEL_do_spmd_execute (struct sac_bee_lpel_t *const SAC_MT_self)
 
 #define SAC_MT_SETUP()
 
-#if SAC_DO_TRACE_MT
-
-#define SAC_MT_SETUP_INITIAL()                                                           \
-    SAC_MT_TR_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);
-
-#define SAC_INVOKE_MAIN_FUN(fname, arg)                                                  \
-    SAC_MT_LPEL_TR_SetupAndRunStandalone (fname, arg, SAC_SET_NUM_SCHEDULERS);
-
-/* NOTE: SAC_MT_ReleaseHive() is called via SAC_MT_LPEL_SetupAndRunStandalone()
- * because we have to be inside a hive to be able to release it */
-#define SAC_MT_FINALIZE() /* empty */
-
-#else /* SAC_DO_TRACE_MT */
-
 #define SAC_MT_SETUP_INITIAL()                                                           \
     SAC_MT_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);
 
@@ -242,8 +228,6 @@ SAC_MT_LPEL_do_spmd_execute (struct sac_bee_lpel_t *const SAC_MT_self)
 /* NOTE: SAC_MT_ReleaseHive() is called via SAC_MT_LPEL_SetupAndRunStandalone()
  * because we have to be inside a hive to be able to release it */
 #define SAC_MT_FINALIZE() /* empty */
-
-#endif
 
 /*****************************************************************************/
 
@@ -257,11 +241,7 @@ typedef void (*SAC_main_fun_t) (int *);
 
 SAC_C_EXTERN void SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                                        unsigned int max_threads);
-SAC_C_EXTERN void SAC_MT_TR_SetupInitial (int argc, char *argv[],
-                                          unsigned int num_threads,
-                                          unsigned int max_threads);
 
-SAC_C_EXTERN void SAC_MT_TR_SetupAsLibraryInitial (void);
 SAC_C_EXTERN void SAC_MT_SetupAsLibraryInitial (void);
 
 SAC_C_EXTERN void SAC_MT_LPEL_SetupAndRunStandalone (SAC_main_fun_t main_fn,

@@ -590,32 +590,20 @@ SAC_MT_DECLARE_LOCK (SAC_MT_output_lock)
 
 SAC_C_EXTERN void SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                                        unsigned int max_threads);
-SAC_C_EXTERN void SAC_MT_TR_SetupInitial (int argc, char *argv[],
-                                          unsigned int num_threads,
-                                          unsigned int max_threads);
 
-SAC_C_EXTERN void SAC_MT_TR_SetupAsLibraryInitial (void);
 SAC_C_EXTERN void SAC_MT_SetupAsLibraryInitial (void);
 
 SAC_C_EXTERN struct sac_hive_common_t *SAC_MT_AllocHive (unsigned int num_bees,
                                                          int num_schedulers,
                                                          const int *places, void *thdata);
-SAC_C_EXTERN struct sac_hive_common_t *SAC_MT_TR_AllocHive (unsigned int num_bees,
-                                                            int num_schedulers,
-                                                            const int *places,
-                                                            void *thdata);
 
 SAC_C_EXTERN void SAC_MT_ReleaseHive (struct sac_hive_common_t *h);
-SAC_C_EXTERN void SAC_MT_TR_ReleaseHive (struct sac_hive_common_t *h);
 
 SAC_C_EXTERN void SAC_MT_AttachHive (struct sac_hive_common_t *h);
-SAC_C_EXTERN void SAC_MT_TR_AttachHive (struct sac_hive_common_t *h);
 
 SAC_C_EXTERN struct sac_hive_common_t *SAC_MT_DetachHive (void);
-SAC_C_EXTERN struct sac_hive_common_t *SAC_MT_TR_DetachHive (void);
 
 SAC_C_EXTERN void SAC_MT_ReleaseQueen (void);
-SAC_C_EXTERN void SAC_MT_TR_ReleaseQueen (void);
 
 /** Internal interface functions */
 

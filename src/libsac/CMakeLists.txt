@@ -19,11 +19,9 @@ SET (LIBSAC_SRC
   mt/mt.c
   mt/hwloc_data.c
   mt_beehive/mt_beehive.c
-  mt_lpel/mt_lpel_std.c
-  mt_lpel/mt_lpel_trace.c
+  mt_lpel/mt_lpel.c
   mt_omp/mt_omp.c
-  mt_pth/mt_pth_std.c
-  mt_pth/mt_pth_trace.c
+  mt_pth/mt_pth.c
   mt_smart/mt_smart.c
 )
 

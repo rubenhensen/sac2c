@@ -24,12 +24,6 @@ static UNUSED int _dummy_mt_beehive;
 #include <stdlib.h>
 #include <assert.h>
 
-#if TRACE
-#define SAC_DO_TRACE 1
-#else
-#define SAC_DO_TRACE 0
-#endif
-
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_COMPILE_MODULE 1
 #define SAC_SET_NUM_SCHEDULERS 10 /* ?? */
@@ -225,21 +219,15 @@ SAC_MT_Helper_FreeHiveCommons (struct sac_hive_common_t *hive)
 
 /****************************************************************************
  *
- * @fn void SAC_MT_TR_Generic_AttachHive(struct sac_hive_common_t* hive,
+ * @fn void SAC_MT_Generic_AttachHive(struct sac_hive_common_t* hive,
  *                                       struct sac_bee_common_t *queen)
  *
  * @brief Attach the hive to the queen.
  *  A generic code that works both for LPEL and PTH backends.
  *
  *****************************************************************************/
-#if TRACE
-void
-SAC_MT_TR_Generic_AttachHive (struct sac_hive_common_t *hive,
-                              struct sac_bee_common_t *queen)
-#else
 void
 SAC_MT_Generic_AttachHive (struct sac_hive_common_t *hive, struct sac_bee_common_t *queen)
-#endif
 {
     /* check: the hive must not be already attached */
     if (hive->bees[0]) {
@@ -264,19 +252,13 @@ SAC_MT_Generic_AttachHive (struct sac_hive_common_t *hive, struct sac_bee_common
 
 /**************************************************************************
  *
- * @fn struct sac_hive_common_t* SAC_MT_TR_Generic_DetachHive(struct sac_bee_common_t
- **queen)
+ * @fn struct sac_hive_common_t* SAC_MT_Generic_DetachHive(struct sac_bee_common_t *queen)
  *
  * @brief Detach a hive from the queen bee and return a handle to it.
  *
  *****************************************************************************/
-#if TRACE
-struct sac_hive_common_t *
-SAC_MT_TR_Generic_DetachHive (struct sac_bee_common_t *queen)
-#else
 struct sac_hive_common_t *
 SAC_MT_Generic_DetachHive (struct sac_bee_common_t *queen)
-#endif
 {
     if (!queen) {
         /* no queen, no hive */
@@ -319,7 +301,6 @@ SAC_MT_BEEHIVE_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 
 #else /* defined(PTH) || defined(LPEL) else */
 
-#if !TRACE
 /*
  * The following symbols are provided even in the sequential case because
  * each module contains SEQ, ST and MT versions of each function. The latter
@@ -337,7 +318,5 @@ volatile unsigned int SAC_MT_cnt_hives = 0;       /* dummy */
 volatile unsigned int SAC_MT_cnt_worker_bees = 0; /* dummy */
 volatile unsigned int SAC_MT_cnt_queen_bees = 0;  /* dummy */
 void *SAC_MT_singleton_queen = 0;                 /* dummy */
-
-#endif /* !TRACE */
 
 #endif /* defined(PTH) || defined(LPEL) */
