@@ -257,28 +257,12 @@ SAC_MT_PTH_do_spmd_execute (struct sac_bee_pth_t *const SAC_MT_self)
  *  Macros for setting up the multi-threaded runtime system
  */
 
-#if SAC_DO_TRACE_MT
-
 #define SAC_MT_SETUP_INITIAL()                                                           \
-    SAC_MT_TR_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);       \
-    SAC_MT_PTH_INIT_BARRIER (SAC_MT_GLOBAL_THREADS ());                                  \
-    barrier_type = SAC_SET_BARRIER_TYPE;                                                 \
-    SAC_MT_SMART_INIT (SAC_MT_global_threads);
-
-#define SAC_MT_SETUP() SAC_MT_PTH_TR_SetupStandalone (SAC_SET_NUM_SCHEDULERS);
-
-#define SAC_MT_FINALIZE()                                                                \
-    SAC_MT_TR_ReleaseHive (SAC_MT_TR_DetachHive ());                                     \
-    SAC_MT_TR_ReleaseQueen ();                                                           \
-    SAC_MT_PTH_DESTROY_BARRIER ();                                                       \
-    SAC_MT_SMART_FINALIZE ();
-
-#else /* SAC_DO_TRACE_MT */
-
-#define SAC_MT_SETUP_INITIAL()                                                           \
+    SAC_MT_barrier_type = SAC_SET_BARRIER_TYPE;                                          \
+    SAC_MT_cpu_bind_strategy = SAC_SET_CPU_BIND_STRATEGY;                                \
+    SAC_MT_do_trace = SAC_DO_TRACE_MT;                                                   \
     SAC_MT_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);          \
     SAC_MT_PTH_INIT_BARRIER (SAC_MT_GLOBAL_THREADS ());                                  \
-    barrier_type = SAC_SET_BARRIER_TYPE;                                                 \
     SAC_MT_SMART_INIT (SAC_MT_global_threads);
 
 #define SAC_MT_SETUP() SAC_MT_PTH_SetupStandalone (SAC_SET_NUM_SCHEDULERS);
@@ -289,8 +273,6 @@ SAC_MT_PTH_do_spmd_execute (struct sac_bee_pth_t *const SAC_MT_self)
     SAC_MT_singleton_queen = NULL;                                                       \
     SAC_MT_PTH_DESTROY_BARRIER ();                                                       \
     SAC_MT_SMART_FINALIZE ();
-
-#endif
 
 #define SAC_INVOKE_MAIN_FUN(fname, arg) fname (arg)
 

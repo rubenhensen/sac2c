@@ -431,6 +431,17 @@ PrintGlobalSettings (node *syntax_tree)
              (int)global.mtmode);
     fprintf (global.outfile, "#endif\n\n");
 
+    switch (global.cpubindstrategy) {
+    case HWLOC_off:
+        fprintf (global.outfile, "#define SAC_SET_CPU_BIND_STRATEGY 0\n");
+        break;
+    case HWLOC_simple:
+        fprintf (global.outfile, "#define SAC_SET_CPU_BIND_STRATEGY 1\n");
+        break;
+    default:
+        CTIerror ("internal error: missing strategy in gen_startup_code");
+    }
+
     fprintf (global.outfile, "#define SAC_SET_BARRIER_TYPE               %d\n",
              global.mt_barrier_type);
 

@@ -441,6 +441,14 @@ OPTcheckOptionConsistency (void)
         global.num_threads = 1;
     }
 
+#if ENABLE_HWLOC
+#else
+    if (cpubindstrategy != HWLOC_off) {
+        CTIwarn (
+          "sac2c was compiled without hwloc support, forcing cpubindstrategy to OFF.");
+    }
+#endif
+
     if ((global.mt_smart_mode > 0) && (global.min_parallel_size != 0)) {
         CTIwarn ("Cannot use both -minmtsize and -mt_smart_mode simultaniously, "
                  "setting -minmtsize to 0.");
