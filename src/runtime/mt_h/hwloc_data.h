@@ -24,8 +24,7 @@ binding threads will result in undefined behaviour
 extern hwloc_cpuset_t *SAC_HWLOC_cpu_sets;
 extern hwloc_topology_t SAC_HWLOC_topology;
 
-void SAC_HWLOC_init (int threads, int sockets, int cores, int PUs);
-void SAC_HWLOC_dont_bind (void);
+void SAC_HWLOC_init (int threads);
 void SAC_HWLOC_cleanup (void);
 
 #endif

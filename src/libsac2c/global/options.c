@@ -656,11 +656,18 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("cppI")
 
+    /*
+     * NB: if you want to add a new strategy, you need to add it to:
+     *     types/types.h
+     *     codegen/gen_startup_code.c
+     *     libsac/mt/hwloc_data.c
+     */
     ARGS_OPTION_BEGIN ("cpubindstrategy")
     {
         ARG_CHOICE_BEGIN ();
         ARG_CHOICE ("off", global.cpubindstrategy = HWLOC_off);
         ARG_CHOICE ("simple", global.cpubindstrategy = HWLOC_simple);
+        ARG_CHOICE ("env", global.cpubindstrategy = HWLOC_env);
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("cpubindstrategy");

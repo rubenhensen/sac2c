@@ -31,13 +31,6 @@
 
 #define SAC_PARALLEL_ENV_VAR_NAME "SAC_PARALLEL"
 
-#if ENABLE_HWLOC
-#include "../runtime/mt_h/hwloc_data.h"
-#define SAC_HWLOC_NUM_SOCKETS_VAR_NAME "SAC_NUM_SOCKETS"
-#define SAC_HWLOC_NUM_CORES_VAR_NAME "SAC_NUM_CORES"
-#define SAC_HWLOC_NUM_PUS_VAR_NAME "SAC_NUM_PUS"
-#endif
-
 /** Global Variables */
 
 /* The global number of threads in the environment, or at least the maximum.
@@ -125,23 +118,9 @@ SAC_COMMON_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 
 #if ENABLE_HWLOC
     if (SAC_MT_cpu_bind_strategy != 0) { // HWLOC is not OFF!
-        char *char_dump;
-        int sockets;
-        int cores;
-        int pus;
-
-        char_dump = getenv (SAC_HWLOC_NUM_SOCKETS_VAR_NAME);
-        sockets = (char_dump == NULL ? 0 : atoi (char_dump));
-
-        char_dump = getenv (SAC_HWLOC_NUM_CORES_VAR_NAME);
-        cores = (char_dump == NULL ? 0 : atoi (char_dump));
-
-        char_dump = getenv (SAC_HWLOC_NUM_PUS_VAR_NAME);
-        pus = (char_dump == NULL ? 0 : atoi (char_dump));
-
-        SAC_HWLOC_init (SAC_MT_global_threads, sockets, cores, pus);
+        SAC_HWLOC_init (SAC_MT_global_threads);
     } else {
-        SAC_HWLOC_dont_bind ();
+        SAC_TR_LIBSAC_PRINT (("cpu binding turned off"));
     }
 #endif
 }
