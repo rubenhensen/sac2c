@@ -22,6 +22,37 @@
 
 #define SAC_MT_INVALID_GLOBAL_ID 0xdeadbeef
 
+#if SAC_DO_MULTITHREAD || (SAC_MT_MODE > 0)
+
+/* number of total threads in the environment */
+SAC_C_EXTERN unsigned int SAC_MT_global_threads;
+
+/* barrier implementation to use for mt-sync */
+SAC_C_EXTERN unsigned int SAC_MT_barrier_type;
+
+/* how to use hwloc for cpu binding */
+SAC_C_EXTERN unsigned int SAC_MT_cpu_bind_strategy;
+
+/* Whether DO_TRACE_MT is enabled or not */
+SAC_C_EXTERN unsigned int SAC_MT_do_trace;
+
+/* number of runtime specialization controller threads in the environment */
+SAC_C_EXTERN unsigned int SAC_RTSPEC_controller_threads;
+
+/* Only a single thread in the environment?
+ * Used for PHM optimizations.
+ */
+SAC_C_EXTERN unsigned int SAC_MT_globally_single;
+
+SAC_C_EXTERN void SAC_COMMON_MT_SetupInitial (int argc, char *argv[],
+                                              unsigned int num_threads,
+                                              unsigned int max_threads);
+
+/*  Called from PHM if it does not maintain its own thread ids. */
+SAC_C_EXTERN unsigned int SAC_MT_Internal_CurrentThreadId (void);
+
+#endif
+
 #if SAC_DO_MULTITHREAD
 
 /***
@@ -120,34 +151,6 @@ extern void *memcpy (void *dest, const void *src, size_t n);
 #define SAC_HM_RTSPEC_THREADS() SAC_RTSPEC_controller_threads
 
 #endif /* SAC_DO_THREADS_STATIC */
-
-/* number of total threads in the environment */
-SAC_C_EXTERN unsigned int SAC_MT_global_threads;
-
-/* barrier implementation to use for mt-sync */
-SAC_C_EXTERN unsigned int SAC_MT_barrier_type;
-
-/* how to use hwloc for cpu binding */
-SAC_C_EXTERN unsigned int SAC_MT_cpu_bind_strategy;
-
-/* Whether DO_TRACE_MT is enabled or not */
-SAC_C_EXTERN unsigned int SAC_MT_do_trace;
-
-/* number of runtime specialization controller threads in the environment */
-SAC_C_EXTERN unsigned int SAC_RTSPEC_controller_threads;
-
-/* Only a single thread in the environment?
- * Used for PHM optimizations.
- */
-SAC_C_EXTERN unsigned int SAC_MT_globally_single;
-
-SAC_C_EXTERN void SAC_COMMON_MT_SetupInitial (int argc, char *argv[],
-                                              unsigned int num_threads,
-                                              unsigned int max_threads);
-
-/*  Called from PHM if it does not maintain its own thread ids. */
-SAC_C_EXTERN unsigned int SAC_MT_Internal_CurrentThreadId (void);
-
 /*****************************************************************************/
 
 #else /* SAC_DO_MULTITHREAD */

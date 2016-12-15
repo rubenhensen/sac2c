@@ -1,10 +1,11 @@
-#if ENABLE_HWLOC
+#include "sac.h"
 
-#include "../runtime/mt_h/hwloc_data.h"
-#include <sac.h>
+#if ENABLE_HWLOC
 
 hwloc_cpuset_t *SAC_HWLOC_cpu_sets;
 hwloc_topology_t SAC_HWLOC_topology;
+
+#if SAC_MT_MODE > 0
 
 /*
 Traverses the topology tree to create a flat array of PUs (cpu_sets).
@@ -124,9 +125,11 @@ SAC_HWLOC_cleanup ()
 void
 SAC_HWLOC_dont_bind ()
 {
-    SAC_TR_LIBSAC_PRINT ("binding disabled");
+    SAC_TR_LIBSAC_PRINT (("binding disabled"));
     SAC_HWLOC_topology = 0;
 }
+
+#endif /* SAC_MT_MODE > 0 */
 
 #else
 static int this_translation_unit = 0xdead;
