@@ -50,12 +50,27 @@ SAC_HWLOC_init (int threads, int sockets, int cores, int PUs)
     int num_sockets_available;
     num_sockets_available
       = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_SOCKET);
+    if (num_sockets_available < 1) {
+        SAC_RuntimeError ("hwloc returned %d sockets available. Set cpu bind strategy"
+                          " to \"off\".",
+                          num_sockets_available);
+    }
 
     int num_cores_available;
     num_cores_available = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_CORE);
+    if (num_cores_available < 1) {
+        SAC_RuntimeError ("hwloc returned %d cores available. Set cpu bind strategy"
+                          " to \"off\".",
+                          num_cores_available);
+    }
 
     int num_pus_available;
     num_pus_available = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_PU);
+    if (num_pus_available < 1) {
+        SAC_RuntimeError ("hwloc returned %d pus available. Set cpu bind strategy"
+                          " to \"off\".",
+                          num_pus_available);
+    }
 
     if (sockets == 0) {
         SAC_TR_LIBSAC_PRINT (

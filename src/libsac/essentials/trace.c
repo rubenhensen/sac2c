@@ -66,12 +66,9 @@ void
 SAC_TR_Print (char *format, ...)
 {
     va_list arg_p;
-    // unsigned int *thread_id_ptr;
     unsigned int thread_id;
 
-    // thread_id_ptr = (unsigned int *) pthread_getspecific( SAC_MT_threadid_key);
-    thread_id = SAC_HM_CurrentThreadId ();
-    // thread_id = SAC_Get_CurrentBee_GlobalID();
+    thread_id = SAC_MT_Internal_CurrentThreadId ();
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
