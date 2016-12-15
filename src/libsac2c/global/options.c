@@ -1590,6 +1590,19 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
 
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
+    ARGS_OPTION_BEGIN ("cppI")
+    {
+        char *tmp;
+        if (global.cpp_options == NULL) {
+            tmp = STRcat (" -I", ARG);
+        } else {
+            tmp = STRcatn (3, global.cpp_options, " -I", ARG);
+            MEMfree (global.cpp_options);
+        }
+        global.cpp_options = tmp;
+    }
+    ARGS_OPTION_END ("cppI")
+
     /*
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
      */
