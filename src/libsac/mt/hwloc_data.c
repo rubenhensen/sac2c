@@ -57,16 +57,17 @@ SAC_HWLOC_init (int threads, int sockets, int cores, int PUs)
     num_pus_available = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_PU);
 
     if (sockets == 0) {
-        SAC_TR_PRINT (("No number of sockets specified; presetting to number of sockets"
-                       " available: %d",
-                       num_sockets_available));
+        SAC_TR_LIBSAC_PRINT (
+          ("No number of sockets specified; presetting to number of sockets"
+           " available: %d",
+           num_sockets_available));
         sockets = num_sockets_available;
     } else if (num_sockets_available < sockets) {
         SAC_RuntimeError ("Tried to use more sockets than available on the system");
     };
 
     if (cores == 0) {
-        SAC_TR_PRINT (
+        SAC_TR_LIBSAC_PRINT (
           ("No number of cores per socket specified; presetting to number of cores"
            " per socket available: %d",
            num_cores_available / num_sockets_available));
@@ -77,7 +78,7 @@ SAC_HWLOC_init (int threads, int sockets, int cores, int PUs)
     };
 
     if (PUs == 0) {
-        SAC_TR_PRINT (
+        SAC_TR_LIBSAC_PRINT (
           ("No number of processing units per socket specified; presetting to number of"
            " processing units per core available: %d",
            num_pus_available / num_cores_available));
@@ -92,7 +93,7 @@ SAC_HWLOC_init (int threads, int sockets, int cores, int PUs)
           "sockets*cores*PUs (%d) is less than the number of threads desired %d",
           sockets * cores * PUs, threads);
     }
-    SAC_TR_PRINT (
+    SAC_TR_LIBSAC_PRINT (
       ("Pinning on %u sockets, %u cores and %u processing units. Maximum number"
        " of processing units potentially used: %u",
        sockets, cores, PUs, sockets * cores * PUs));
@@ -102,13 +103,13 @@ SAC_HWLOC_init (int threads, int sockets, int cores, int PUs)
     unsigned int counter, i;
     counter = 0;
     for (i = 0; i < sockets; ++i) {
-        SAC_TR_PRINT (("traversing socket %d", i));
+        SAC_TR_LIBSAC_PRINT (("traversing socket %d", i));
         hwloc_obj_t socket;
         socket = hwloc_get_obj_by_type (SAC_HWLOC_topology, HWLOC_OBJ_SOCKET, i);
         traverse_topology_tree (socket, &counter, cores, PUs);
-        SAC_TR_PRINT (("traversing socket %d done", i));
+        SAC_TR_LIBSAC_PRINT (("traversing socket %d done", i));
     }
-    SAC_TR_PRINT (("Pinning done"));
+    SAC_TR_LIBSAC_PRINT (("Pinning done"));
 }
 
 void
@@ -123,7 +124,7 @@ SAC_HWLOC_cleanup ()
 void
 SAC_HWLOC_dont_bind ()
 {
-    SAC_TR_PRINT ("binding disabled");
+    SAC_TR_LIBSAC_PRINT ("binding disabled");
     SAC_HWLOC_topology = 0;
 }
 

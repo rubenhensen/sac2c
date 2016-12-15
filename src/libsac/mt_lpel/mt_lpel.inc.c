@@ -113,8 +113,8 @@ SAC_MT_LPEL_determine_self (void)
 static unsigned int
 spmd_kill_lpel_bee (struct sac_bee_lpel_t *const SAC_MT_self)
 {
-    SAC_TR_PRINT (("Bee H:%p, L:%d, W:%d is terminating.", SAC_MT_self->c.hive,
-                   SAC_MT_self->c.local_id, SAC_MT_self->worker_id));
+    SAC_TR_LIBSAC_PRINT (("Bee H:%p, L:%d, W:%d is terminating.", SAC_MT_self->c.hive,
+                          SAC_MT_self->c.local_id, SAC_MT_self->worker_id));
     LpelBiSemaSignal (&SAC_MT_self->stop_lck);
     LpelSetUserData (SAC_MT_self->tsk, NULL);
     LpelTaskExit ();
@@ -161,8 +161,9 @@ static
 {
     assert (SAC_MT_self->magic1 == SAC_MT_LPEL_MAGIC_1);
     for (;;) {
-        SAC_TR_PRINT (("LPEL-based bee H:%p, L:%d, W:%d ready.", SAC_MT_self->c.hive,
-                       SAC_MT_self->c.local_id, SAC_MT_self->worker_id));
+        SAC_TR_LIBSAC_PRINT (("LPEL-based bee H:%p, L:%d, W:%d ready.",
+                              SAC_MT_self->c.hive, SAC_MT_self->c.local_id,
+                              SAC_MT_self->worker_id));
 
         /* wait on start lock: the queen will release it when all is ready
          * for an SPMD execution */
@@ -213,9 +214,9 @@ ThreadControl (void *arg)
         SAC_MT_self->c.b_class >>= 1;
     }
 
-    SAC_TR_PRINT (("This is bee H:%p, L:%u with class %u at LPEL worker W:%d.",
-                   SAC_MT_self->c.hive, SAC_MT_self->c.local_id, SAC_MT_self->c.b_class,
-                   SAC_MT_self->worker_id));
+    SAC_TR_LIBSAC_PRINT (("This is bee H:%p, L:%u with class %u at LPEL worker W:%d.",
+                          SAC_MT_self->c.hive, SAC_MT_self->c.local_id,
+                          SAC_MT_self->c.b_class, SAC_MT_self->worker_id));
 
     struct sac_hive_lpel_t *const hive = CAST_HIVE_COMMON_TO_LPEL (SAC_MT_self->c.hive);
 
@@ -227,7 +228,7 @@ ThreadControl (void *arg)
           = CAST_BEE_COMMON_TO_LPEL (hive->c.bees[SAC_MT_self->c.local_id + i]);
         bee->c.b_class = (i >> 1);
 
-        SAC_TR_PRINT (
+        SAC_TR_LIBSAC_PRINT (
           ("Creating task L:%u with maximum class %u at LPEL worker W:%d, %d.",
            bee->c.local_id, bee->c.b_class, bee->worker_id, SAC_MT_global_threads));
 
@@ -277,8 +278,8 @@ ThreadControlInitialWorker (void *arg)
     SAC_MT_self->c.thread_id
       = (SAC_HM_DiscoversThreads ()) ? SAC_HM_CurrentThreadId () : SAC_MT_self->worker_id;
 
-    SAC_TR_PRINT (("This is bee H:%p, L:1 with class 0 at LPEL worker W:%d.",
-                   SAC_MT_self->c.hive, SAC_MT_self->worker_id));
+    SAC_TR_LIBSAC_PRINT (("This is bee H:%p, L:1 with class 0 at LPEL worker W:%d.",
+                          SAC_MT_self->c.hive, SAC_MT_self->worker_id));
     SAC_MT_self->c.b_class = 0;
 
     /* start creating other bees */
@@ -291,8 +292,9 @@ ThreadControlInitialWorker (void *arg)
         struct sac_bee_lpel_t *bee = CAST_BEE_COMMON_TO_LPEL (hive->c.bees[i]);
         bee->c.b_class = (i >> 1);
 
-        SAC_TR_PRINT (("Creating task L:%u with maximum class %u on LPEL worker W:%d.", i,
-                       bee->c.b_class, bee->worker_id));
+        SAC_TR_LIBSAC_PRINT (
+          ("Creating task L:%u with maximum class %u on LPEL worker W:%d.", i,
+           bee->c.b_class, bee->worker_id));
 
         bee->tsk
           = LpelTaskCreate (bee->worker_id, ThreadControl, bee, SAC_MT_LPEL_STACK_SIZE);
@@ -343,7 +345,7 @@ SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 {
     SAC_MT_BEEHIVE_SetupInitial (argc, argv, num_threads, max_threads);
 
-    SAC_TR_PRINT (("SAC/LPEL Init"));
+    SAC_TR_LIBSAC_PRINT (("SAC/LPEL Init"));
 
     /* none */
 
@@ -374,7 +376,7 @@ SAC_MT_SetupAsLibraryInitial (void)
 {
     SAC_MT_BEEHIVE_SetupInitial (0, NULL, 1024, 1024);
 
-    SAC_TR_PRINT (("SAC/LPEL Init as library"));
+    SAC_TR_LIBSAC_PRINT (("SAC/LPEL Init as library"));
 
     /* none */
 
@@ -407,7 +409,7 @@ EnsureThreadHasBee (void)
         return self;
     }
 
-    SAC_TR_PRINT (("Creating a queen bee in an existing LPEL task."));
+    SAC_TR_LIBSAC_PRINT (("Creating a queen bee in an existing LPEL task."));
 
     /* allocate the bee structure */
     self = SAC_CALLOC (1, sizeof (struct sac_bee_lpel_t));
@@ -430,7 +432,7 @@ EnsureThreadHasBee (void)
     SAC_MT_INIT_START_LCK (self);
     SAC_MT_INIT_BARRIER (self);
 
-    SAC_TR_PRINT (
+    SAC_TR_LIBSAC_PRINT (
       ("The queen bee is registered as H:%p, W:%d.", self->c.hive, self->worker_id));
 
     /* set self bee ptr, and destructor */
@@ -477,7 +479,7 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
     }
 
     struct sac_hive_lpel_t *const hive = CAST_HIVE_COMMON_TO_LPEL (h);
-    SAC_TR_PRINT (("Releasing hive with %d bees.", hive->c.num_bees));
+    SAC_TR_LIBSAC_PRINT (("Releasing hive with %d bees.", hive->c.num_bees));
 
     /* setup spmd function which kills each bee */
     hive->spmd_fun = spmd_kill_lpel_bee;
@@ -533,7 +535,7 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
      * when can I be sure that we've been moved under LPEL? */
     SAC_MT_hopefully_under_lpel = 1;
 
-    SAC_TR_PRINT (("Allocating a hive with %d bees.", num_bees));
+    SAC_TR_LIBSAC_PRINT (("Allocating a hive with %d bees.", num_bees));
     assert (num_bees >= 1);
 
     struct sac_hive_lpel_t *hive = CAST_HIVE_COMMON_TO_LPEL (
@@ -568,12 +570,13 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
         }
     }
 
-    SAC_TR_PRINT (("Thread class of the queen task is %d.", (int)hive->c.queen_class));
+    SAC_TR_LIBSAC_PRINT (
+      ("Thread class of the queen task is %d.", (int)hive->c.queen_class));
 
     if (hive->c.num_bees > 1) {
         struct sac_bee_lpel_t *const bee = CAST_BEE_COMMON_TO_LPEL (hive->c.bees[1]);
 
-        SAC_TR_PRINT (
+        SAC_TR_LIBSAC_PRINT (
           ("Creating bee L:1 of class 0 on LPEL worker W:%d", bee->worker_id));
 
         bee->tsk = LpelTaskCreate (bee->worker_id, ThreadControlInitialWorker,
@@ -609,7 +612,7 @@ void
 SAC_MT_ReleaseQueen (void)
 #endif
 {
-    SAC_TR_PRINT (("Finalizing the queen."));
+    SAC_TR_LIBSAC_PRINT (("Finalizing the queen."));
 
     struct sac_bee_lpel_t *self = SAC_MT_LPEL_determine_self ();
 
@@ -665,7 +668,7 @@ void
 SAC_MT_AttachHive (struct sac_hive_common_t *h)
 #endif
 {
-    SAC_TR_PRINT (("Attaching hive to a queen."));
+    SAC_TR_LIBSAC_PRINT (("Attaching hive to a queen."));
 
     if (!h) {
         SAC_RuntimeError ("__AttachHive called with a NULL hive!");
@@ -698,7 +701,7 @@ struct sac_hive_common_t *
 SAC_MT_DetachHive ()
 #endif
 {
-    SAC_TR_PRINT (("Detaching hive from a queen."));
+    SAC_TR_LIBSAC_PRINT (("Detaching hive from a queen."));
 
     struct sac_bee_lpel_t *queen = SAC_MT_LPEL_determine_self ();
     /* generic detach func */
@@ -787,7 +790,7 @@ sac_lpel_run_main_wrapper (void *arg)
     /* This will switch off global_ids in SAC_Get_CurrentBee_GlobalID */
     SAC_MT_hopefully_under_lpel = 0;
 
-    SAC_TR_PRINT (("SAC_Main*() has finished inside its LPEL wrapper task."));
+    SAC_TR_LIBSAC_PRINT (("SAC_Main*() has finished inside its LPEL wrapper task."));
     /* signal the main thread it may start shuttind down LPEL.
      * It just means that unused LPEL workes will be removed. */
     pthread_cond_signal (&c->done_sig);
@@ -808,7 +811,7 @@ SAC_MT_LPEL_SetupAndRunStandalone (SAC_main_fun_t main_fn, int *main_arg,
      * task, move ourselves into it, then continue with AllocHive() (which does most of
      * the initializations) and then we run the SAC main function.
      */
-    SAC_TR_PRINT (("Starting LPEL: num_workers=%d", SAC_MT_global_threads));
+    SAC_TR_LIBSAC_PRINT (("Starting LPEL: num_workers=%d", SAC_MT_global_threads));
 
     /* init LPEL */
     lpel_config_t cfg;
@@ -843,7 +846,7 @@ SAC_MT_LPEL_SetupAndRunStandalone (SAC_main_fun_t main_fn, int *main_arg,
     /* wait until sac has completed its LPEL work */
     pthread_cond_wait (&c.done_sig, &done_lock);
 
-    SAC_TR_PRINT (("Stopping LPEL."));
+    SAC_TR_LIBSAC_PRINT (("Stopping LPEL."));
 
     pthread_cond_destroy (&c.done_sig);
     pthread_mutex_destroy (&done_lock);
@@ -852,7 +855,7 @@ SAC_MT_LPEL_SetupAndRunStandalone (SAC_main_fun_t main_fn, int *main_arg,
     LpelStop ();
     LpelCleanup ();
 
-    SAC_TR_PRINT (("LPEL stopped."));
+    SAC_TR_LIBSAC_PRINT (("LPEL stopped."));
 }
 
 #else /* defined(LPEL) else */

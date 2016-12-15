@@ -102,7 +102,7 @@ SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
         SAC_RuntimeError ("Could not allocate memory for an array of ptrs to bees.");
     }
 
-    // SAC_TR_PRINT( ("Initializing Tasklocks."));
+    // SAC_TR_LIBSAC_PRINT( ("Initializing Tasklocks."));
     if (num_schedulers > 0) {
         /* allocate scheduler's data structures in the hive */
         hive->SAC_MT_Tasklock = (pthread_mutex_t *)SAC_MALLOC (

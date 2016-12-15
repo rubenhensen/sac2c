@@ -210,10 +210,10 @@ ThreadServeLoop (struct sac_bee_pth_t *SAC_MT_self)
         sharedfl = &CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive)->start_barr_sharedfl;
         locfl = &SAC_MT_self->start_barr_locfl;
 
-        SAC_TR_PRINT (("Worker thread H:%p, L:%d ready.", SAC_MT_self->c.hive,
-                       SAC_MT_self->c.local_id));
-        SAC_TR_PRINT (("Worker thread L:%d takes barrier type: %i.",
-                       SAC_MT_self->c.local_id, barrier_type));
+        SAC_TR_LIBSAC_PRINT (("Worker thread H:%p, L:%d ready.", SAC_MT_self->c.hive,
+                              SAC_MT_self->c.local_id));
+        SAC_TR_LIBSAC_PRINT (("Worker thread L:%d takes barrier type: %i.",
+                              SAC_MT_self->c.local_id, barrier_type));
 
         /* wait on start lock: the queen will release it when all is ready
          * for an SPMD execution */
@@ -279,9 +279,9 @@ ThreadControl (void *arg)
         SAC_MT_self->c.b_class >>= 1;
     }
 
-    SAC_TR_PRINT (("This is worker thread H:%p, L:%u, T:%u with class %u.",
-                   SAC_MT_self->c.hive, SAC_MT_self->c.local_id, SAC_MT_self->c.thread_id,
-                   SAC_MT_self->c.b_class));
+    SAC_TR_LIBSAC_PRINT (("This is worker thread H:%p, L:%u, T:%u with class %u.",
+                          SAC_MT_self->c.hive, SAC_MT_self->c.local_id,
+                          SAC_MT_self->c.thread_id, SAC_MT_self->c.b_class));
 
     struct sac_hive_pth_t *const hive = CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive);
 
@@ -292,8 +292,8 @@ ThreadControl (void *arg)
           = CAST_BEE_COMMON_TO_PTH (hive->c.bees[SAC_MT_self->c.local_id + i]);
         bee->c.b_class = (i >> 1);
 
-        SAC_TR_PRINT (("Creating thread L:%u with maximum class %u.", bee->c.local_id,
-                       bee->c.b_class));
+        SAC_TR_LIBSAC_PRINT (("Creating thread L:%u with maximum class %u.",
+                              bee->c.local_id, bee->c.b_class));
 
         if (0 != pthread_create (&bee->pth, &SAC_MT_thread_attribs, ThreadControl, bee)) {
 
@@ -347,8 +347,8 @@ ThreadControlInitialWorker (void *arg)
     SAC_MT_self->c.thread_id = (SAC_HM_DiscoversThreads ()) ? SAC_HM_CurrentThreadId ()
                                                             : SAC_MT_self->c.local_id;
 
-    SAC_TR_PRINT (("This is worker thread L:1, H:%p, T:%d with class 0.",
-                   SAC_MT_self->c.hive, SAC_MT_self->c.thread_id));
+    SAC_TR_LIBSAC_PRINT (("This is worker thread L:1, H:%p, T:%d with class 0.",
+                          SAC_MT_self->c.hive, SAC_MT_self->c.thread_id));
 
     /* start creating other bees */
     struct sac_hive_pth_t *const hive = CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive);
@@ -359,7 +359,8 @@ ThreadControlInitialWorker (void *arg)
         struct sac_bee_pth_t *bee = CAST_BEE_COMMON_TO_PTH (hive->c.bees[i]);
         bee->c.b_class = (i >> 1);
 
-        SAC_TR_PRINT (("Creating thread #%u with maximum class %u.", i, bee->c.b_class));
+        SAC_TR_LIBSAC_PRINT (
+          ("Creating thread #%u with maximum class %u.", i, bee->c.b_class));
 
         if (0 != pthread_create (&bee->pth, &SAC_MT_thread_attribs, ThreadControl, bee)) {
 
@@ -398,7 +399,7 @@ ThreadControlInitialWorker (void *arg)
 static void
 do_setup_pth (void)
 {
-    SAC_TR_PRINT (("Setting up POSIX thread attributes"));
+    SAC_TR_LIBSAC_PRINT (("Setting up POSIX thread attributes"));
 
     if (0 != pthread_key_create (&SAC_MT_self_bee_key, tls_destroy_self_bee_key)) {
         SAC_RuntimeError (
@@ -653,7 +654,7 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
                   void *thdata)
 #endif
 {
-    SAC_TR_PRINT (("Initializing the bee data structure."));
+    SAC_TR_LIBSAC_PRINT (("Initializing the bee data structure."));
 
     if (places) {
         SAC_RuntimeWarning ("SAC_MT_AllocHive: places not used in the PTH backed.");
@@ -676,10 +677,11 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
         SAC_MT_INIT_BARRIER (b);
     }
 
-    SAC_TR_PRINT (("Thread class of master thread is %d.", (int)hive->c.queen_class));
+    SAC_TR_LIBSAC_PRINT (
+      ("Thread class of master thread is %d.", (int)hive->c.queen_class));
 
     if (hive->c.num_bees > 1) {
-        SAC_TR_PRINT (("Creating worker thread #1 of class 0"));
+        SAC_TR_LIBSAC_PRINT (("Creating worker thread #1 of class 0"));
 
         if (0
             != pthread_create (&CAST_BEE_COMMON_TO_PTH (hive->c.bees[1])->pth,
@@ -723,7 +725,7 @@ void
 SAC_MT_ReleaseQueen (void)
 #endif
 {
-    SAC_TR_PRINT (("Finalizing hive."));
+    SAC_TR_LIBSAC_PRINT (("Finalizing hive."));
 
     struct sac_bee_pth_t *self = SAC_MT_PTH_determine_self ();
 
@@ -776,7 +778,7 @@ void
 SAC_MT_AttachHive (struct sac_hive_common_t *h)
 #endif
 {
-    SAC_TR_PRINT (("Attaching hive to a queen."));
+    SAC_TR_LIBSAC_PRINT (("Attaching hive to a queen."));
 
     if (!h) {
         SAC_RuntimeError ("__AttachHive called with a NULL hive!");
@@ -809,7 +811,7 @@ struct sac_hive_common_t *
 SAC_MT_DetachHive ()
 #endif
 {
-    SAC_TR_PRINT (("Detaching hive from a queen."));
+    SAC_TR_LIBSAC_PRINT (("Detaching hive from a queen."));
 
     struct sac_bee_pth_t *queen = SAC_MT_PTH_determine_self ();
     /* generic detach func */

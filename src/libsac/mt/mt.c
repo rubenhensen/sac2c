@@ -121,7 +121,7 @@ SAC_COMMON_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
         SAC_MT_global_threads = num_threads;
     }
 
-    SAC_TR_PRINT (("Number of threads determined as %u.", SAC_MT_global_threads));
+    SAC_TR_LIBSAC_PRINT (("Number of threads determined as %u.", SAC_MT_global_threads));
 
 #if ENABLE_HWLOC
     if (SAC_MT_cpu_bind_strategy != 0) { // HWLOC is not OFF!
