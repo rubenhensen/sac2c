@@ -62,13 +62,13 @@ unsigned int SAC_MT_globally_single = 1;
 unsigned int SAC_MT_barrier_type;
 
 /* The cpu_bind_strategy encodes whether/ how to use hwloc for cpu binding.
- * AGain, configurability through sac2c dictates its existance. It is initialised in
+ * Again, configurability through sac2c dictates its existance. It is initialised in
  * mt_xx.h in the definition of the macro SAC_MT_SETUP_INITIAL.
  */
 unsigned int SAC_MT_cpu_bind_strategy;
 
-/* The barrier type encodes which barrier implementation to use for mt-sync.
- * AGain, configurability through sac2c dictates its existance. It is initialised in
+/* Whether DO_TRACE_MT is enabled or not.
+ * Again, configurability through sac2c dictates its existance. It is initialised in
  * mt_xx.h in the definition of the macro SAC_MT_SETUP_INITIAL.
  */
 unsigned int SAC_MT_do_trace;
@@ -121,9 +121,7 @@ SAC_COMMON_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
         SAC_MT_global_threads = num_threads;
     }
 
-    if (SAC_MT_do_trace) {
-        printf ("Number of threads determined as %u.", SAC_MT_global_threads);
-    }
+    SAC_TR_PRINT (("Number of threads determined as %u.", SAC_MT_global_threads));
 
 #if ENABLE_HWLOC
     if (SAC_MT_cpu_bind_strategy != 0) { // HWLOC is not OFF!

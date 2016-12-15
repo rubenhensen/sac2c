@@ -69,25 +69,27 @@ SAC_TR_Print (char *format, ...)
     // unsigned int *thread_id_ptr;
     unsigned int thread_id;
 
-    // thread_id_ptr = (unsigned int *) pthread_getspecific( SAC_MT_threadid_key);
-    thread_id = SAC_HM_CurrentThreadId ();
-    //   thread_id = SAC_Get_CurrentBee_GlobalID();
+    if (SAC_MT_do_trace) {
+        // thread_id_ptr = (unsigned int *) pthread_getspecific( SAC_MT_threadid_key);
+        thread_id = SAC_HM_CurrentThreadId ();
+        // thread_id = SAC_Get_CurrentBee_GlobalID();
 
-    SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
+        SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
-    if (thread_id == SAC_HM_THREADID_INVALID) {
-        fprintf (stderr, "TR:??:-> ");
-    } else {
-        fprintf (stderr, "TR:%2u:-> ", thread_id);
+        if (thread_id == SAC_HM_THREADID_INVALID) {
+            fprintf (stderr, "TR:??:-> ");
+        } else {
+            fprintf (stderr, "TR:%2u:-> ", thread_id);
+        }
+
+        va_start (arg_p, format);
+        vfprintf (stderr, format, arg_p);
+        va_end (arg_p);
+
+        fprintf (stderr, "\n");
+
+        SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
     }
-
-    va_start (arg_p, format);
-    vfprintf (stderr, format, arg_p);
-    va_end (arg_p);
-
-    fprintf (stderr, "\n");
-
-    SAC_MT_RELEASE_LOCK (SAC_MT_output_lock);
 }
 
 #else /* MT */

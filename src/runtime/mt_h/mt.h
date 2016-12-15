@@ -124,6 +124,15 @@ extern void *memcpy (void *dest, const void *src, size_t n);
 /* number of total threads in the environment */
 SAC_C_EXTERN unsigned int SAC_MT_global_threads;
 
+/* barrier implementation to use for mt-sync */
+SAC_C_EXTERN unsigned int SAC_MT_barrier_type;
+
+/* how to use hwloc for cpu binding */
+SAC_C_EXTERN unsigned int SAC_MT_cpu_bind_strategy;
+
+/* Whether DO_TRACE_MT is enabled or not */
+SAC_C_EXTERN unsigned int SAC_MT_do_trace;
+
 /* number of runtime specialization controller threads in the environment */
 SAC_C_EXTERN unsigned int SAC_RTSPEC_controller_threads;
 
