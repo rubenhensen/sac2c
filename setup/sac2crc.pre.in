@@ -382,7 +382,7 @@ IMPPATH          :=  ".:"
                      "@STDLIB_SOURCES@/classes/random:"
                      "@STDLIB_SOURCES@/utrace:"
 EXTLIBPATH       :=  "/usr/local/dislin:/opt/local/lib:@EXTLIBPATH@"
-INCPATH          :=  ".:"
+INCPATH          :=  ".:@INCS@"
 
 CACHE1_SIZE      :=  0
 CACHE1_LINE      :=  0
