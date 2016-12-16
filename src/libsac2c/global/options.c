@@ -659,6 +659,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /*
      * NB: if you want to add a new strategy, you need to add it to:
      *     types/types.h
+     *     global/usage.c
      *     codegen/gen_startup_code.c
      *     libsac/mt/hwloc_data.c
      */
