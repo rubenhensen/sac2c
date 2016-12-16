@@ -262,6 +262,8 @@ ThreadControl (void *arg)
                                  HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
         if (ret == -1) {
             SAC_RuntimeError (("Could not bind thread; set -cpubindstrategy off"));
+        } else {
+            SAC_TR_LIBSAC_PRINT (("bound thread %d", SAC_MT_self->c.local_id));
         }
     }
 #endif
@@ -329,6 +331,8 @@ ThreadControlInitialWorker (void *arg)
                                  HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
         if (ret == -1) {
             SAC_RuntimeError (("Could not bind thread; set -cpubindstrategy off"));
+        } else {
+            SAC_TR_LIBSAC_PRINT (("bound thread %d", SAC_MT_self->c.local_id));
         }
     }
 #endif
@@ -624,6 +628,8 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
                                  HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
         if (ret == -1) {
             SAC_RuntimeError (("Could not bind thread; set -cpubindstrategy off"));
+        } else {
+            SAC_TR_LIBSAC_PRINT (("bound thread 0"));
         }
     }
 #endif
@@ -792,7 +798,8 @@ SAC_MT_Internal_CurrentThreadId (void)
         if (bee == NULL) {
             return SAC_RTSPEC_CURRENT_THREAD_ID ();
         } else {
-            return SAC_MT_CurrentBee ()->thread_id;
+            return SAC_MT_CurrentBee ()
+              ->local_id; // LPEL may require this to be thread_id...
         }
     }
 }
