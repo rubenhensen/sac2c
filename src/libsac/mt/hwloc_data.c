@@ -110,10 +110,11 @@ strategyEnv (int threads, int sockets_avail, int cores_avail, int pus_avail)
     for (i = 0; i < sockets; i++) {
         for (j = 0; j < cores; j++) {
             for (k = 0; k < pus; k++) {
-                if (idx < threads) {
+                if (threads > 0) {
                     res[idx] = SAC_PULIST_FULL_CHAR;
-                    idx++;
+                    threads--;
                 }
+                idx++;
             }
             idx += pus_avail - pus;
         }
