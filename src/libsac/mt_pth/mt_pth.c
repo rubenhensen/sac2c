@@ -261,7 +261,7 @@ ThreadControl (void *arg)
                                  SAC_HWLOC_cpu_sets[SAC_MT_self->c.local_id],
                                  HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
         if (ret == -1) {
-            SAC_RuntimeError (("Could not bind thread"));
+            SAC_RuntimeError (("Could not bind thread; set -cpubindstrategy off"));
         }
     }
 #endif
@@ -328,7 +328,7 @@ ThreadControlInitialWorker (void *arg)
                                  SAC_HWLOC_cpu_sets[SAC_MT_self->c.local_id],
                                  HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
         if (ret == -1) {
-            SAC_RuntimeError (("Could not bind thread"));
+            SAC_RuntimeError (("Could not bind thread; set -cpubindstrategy off"));
         }
     }
 #endif
@@ -623,7 +623,7 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
         ret = hwloc_set_cpubind (SAC_HWLOC_topology, SAC_HWLOC_cpu_sets[0],
                                  HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
         if (ret == -1) {
-            SAC_RuntimeError (("Could not bind thread"));
+            SAC_RuntimeError (("Could not bind thread; set -cpubindstrategy off"));
         }
     }
 #endif

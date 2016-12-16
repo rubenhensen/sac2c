@@ -163,22 +163,26 @@ SAC_HWLOC_init (int threads)
     num_sockets_available
       = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_SOCKET);
     if (num_sockets_available < 1) {
+#if HWLOC_API_VERSION >= 0x00010b00
         num_sockets_available
           = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_PACKAGE);
         if (num_sockets_available < 1) {
             num_sockets_available
               = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_NUMANODE);
             if (num_sockets_available < 1) {
+#endif
                 SAC_RuntimeError (
                   "hwloc returned %d sockets, packages and numanodes available. "
                   "Set cpu bind strategy to \"off\".",
                   num_sockets_available);
+#if HWLOC_API_VERSION >= 0x00010b00
             } else {
                 socket_obj = HWLOC_OBJ_NUMANODE;
             }
         } else {
             socket_obj = HWLOC_OBJ_PACKAGE;
         }
+#endif
     } else {
         socket_obj = HWLOC_OBJ_SOCKET;
     }
