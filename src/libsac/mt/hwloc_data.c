@@ -25,7 +25,7 @@ strategySimple (int threads, int sockets_avail, int cores_avail, int pus_avail)
                           "Either decrease the number of threads or turn -mt_bind off",
                           threads, sockets_avail * cores_avail * pus_avail);
     }
-    res = (char *)SAC_MALLOC (sizeof (bool)
+    res = (char *)SAC_MALLOC (sizeof (char)
                               * (sockets_avail * cores_avail * pus_avail + 1));
     for (i = 0; i < sockets_avail * cores_avail * pus_avail; i++) {
         res[i] = SAC_PULIST_EMPTY_CHAR;
@@ -98,7 +98,7 @@ strategyEnv (int threads, int sockets_avail, int cores_avail, int pus_avail)
           threads, sockets * cores * pus);
     }
 
-    res = (char *)SAC_MALLOC (sizeof (bool)
+    res = (char *)SAC_MALLOC (sizeof (char)
                               * (sockets_avail * cores_avail * pus_avail + 1));
     for (i = 0; i < sockets_avail * cores_avail * pus_avail; i++) {
         res[i] = SAC_PULIST_EMPTY_CHAR;
@@ -155,9 +155,22 @@ SAC_HWLOC_init (int threads)
 {
     char *pus_string;
     hwloc_obj_type_t socket_obj;
+
+    /*
+     * First we grab the host's topology and store it in the global variable:
+     */
     hwloc_topology_init (&SAC_HWLOC_topology);
     hwloc_topology_load (SAC_HWLOC_topology);
 
+    /*
+     * Now, we derive how many sockets, cores and pus we have.
+     * We store those values in the variables
+     * - num_sockets_available
+     * - num_cores_available
+     * - num_pus_available
+     * Note here, that these values are the *total* number of the
+     * corresponding entities, not the relative numbers!
+     */
     int num_sockets_available;
     num_sockets_available
       = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_SOCKET);
@@ -200,16 +213,23 @@ SAC_HWLOC_init (int threads)
                           num_pus_available);
     }
 
+    /*
+     * Now we compute the intended PU usage from the available sockets,
+     * cores and pus (assuming a symmetric architecture), the number
+     * of threads we want to create and the strategy provided in -mt_bind
+     *
+     * The strategy functions return a string of the length of all PUS
+     * available. All individual characters in the string either indicate
+     * a to-be-used PU ('*') or a not-to -be-used PU ('-').
+     */
     if (SAC_MT_cpu_bind_strategy == 1) {
         pus_string = strategySimple (threads, num_sockets_available,
                                      num_cores_available / num_sockets_available,
-                                     num_pus_available
-                                       / (num_sockets_available * num_cores_available));
+                                     num_pus_available / num_cores_available);
     } else if (SAC_MT_cpu_bind_strategy == 2) {
         pus_string = strategyEnv (threads, num_sockets_available,
                                   num_cores_available / num_sockets_available,
-                                  num_pus_available
-                                    / (num_sockets_available * num_cores_available));
+                                  num_pus_available / num_cores_available);
     } else {
         SAC_RuntimeError (
           "chosen cpubindstrategy is not yet implemented in the runtime system");
@@ -218,6 +238,10 @@ SAC_HWLOC_init (int threads)
     SAC_TR_LIBSAC_PRINT (
       ("pinning strategy lead to PU pinning string \"%s\"", pus_string));
 
+    /*
+     * Eventually, the pus-string is being used to preset the global structure
+     * used for the binding process through hwloc:
+     */
     SAC_HWLOC_cpu_sets = pusString2cpuSets (pus_string, num_pus_available);
 
     SAC_TR_LIBSAC_PRINT (("Pinning done"));
