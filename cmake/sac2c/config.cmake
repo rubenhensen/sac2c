@@ -476,6 +476,8 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   CHECK_CC_FLAG ("-Wextra" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wstrict-prototypes" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wno-unused-parameter" GCC_FLAGS)
+  #Turn this if you want to be cruel
+  #CHECK_CC_FLAG ("-Wconversion" GCC_FLAGS)
   CHECK_CC_FLAG ("-march=native" GCC_ARCH_FLAGS)
   CHECK_CC_FLAG ("-mtune=native" GCC_ARCH_FLAGS)
   # FIXME(artem) Can we get these flags from the Pthread checking macro?
@@ -562,6 +564,8 @@ ELSEIF (MACC)
   CHECK_CC_FLAG ("-Wno-undef" MACCC_FLAGS)
   CHECK_CC_FLAG ("-Wno-conversion" MACCC_FLAGS)
   CHECK_CC_FLAG ("-Wno-missing-prototypes" MACCC_FLAGS)
+  #Turn this if you want to be cruel
+  #CHECK_CC_FLAG ("-Wconversion" MACCC_FLAGS)
   CHECK_CC_FLAG ("-march=native" MACCC_ARCH_FLAGS)
   CHECK_CC_FLAG ("-mtune=native" MACCC_ARCH_FLAGS)
   CHECK_CC_FLAG ("-mtune=generic" MACCC_TUNE_GENERIC)
