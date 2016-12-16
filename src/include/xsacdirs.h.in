@@ -9,4 +9,9 @@
 #define SAC2C_POSTFIX "${CMAKE_${CMAKE_BUILD_TYPE}_POSTFIX}"
 #define SAC2C_IS_DIRTY ${SAC2C_IS_DIRTY}
 
+/* Keep the build status here for the time being.  This might
+   be not the best place, but the alternative is to put it into
+   config.h, which propagates into sac.h  */
+#define BUILD_STATUS "@CPP_BUILD_STATUS@"
+
 #endif // __SACDIRS_H__

@@ -24,8 +24,8 @@ PrintToolName (void)
             "---------------------------------------------------------------------------"
             "\n"
             "\n"
-            "name:          %s\n"
-            "version:       %s\n",
+            "Name:                    %s\n"
+            "Version:                 %s\n",
             global.toolname, (global.version_id[0] == '\0') ? "???" : global.version_id);
 
     DBUG_RETURN ();
@@ -1324,18 +1324,19 @@ USGprintVersionVerbose ()
 
     PrintToolName ();
 
-    printf ("build-type:    %s\n"
-            "date:          %s\n"
-            "user:          %s\n"
-            "host:          %s\n"
-            "\n",
+    printf ("Build-type:              %s\n"
+            "Date:                    %s\n"
+            "User:                    %s\n"
+            "Host:                    %s\n",
             (build_style[0] == '\0') ? "" : build_style,
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user,
             (build_host[0] == '\0') ? "???" : build_host);
 
-    printf ("homepage: http://www.sac-home.org\n"
-            "email: info@sac-home.org\n\n"
+    printf ("%s\n", BUILD_STATUS);
+
+    printf ("Homepage: http://www.sac-home.org\n"
+            "Email: info@sac-home.org\n\n"
             "Copyright (c) 1994-2017 SAC Development Team\n\n");
 
     DBUG_RETURN ();

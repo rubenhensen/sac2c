@@ -717,14 +717,12 @@ FILE (MAKE_DIRECTORY "${DLL_BUILD_DIR}")
 
 # Print out configuration information
 #FIXME(hans): we are missing a few details here.
-MESSAGE ("
-* Configuration done.
-*
+SET (BUILD_STATUS "
 * Detected OS string:      ${CMAKE_SYSTEM}
 * Detected CPU string:     ${CMAKE_SYSTEM_PROCESSOR}
 * 
 * CMake Generator:         ${CMAKE_GENERATOR}
-* CMake Varient:           ${CMAKE_BUILD_TYPE}
+* CMake Variant:           ${CMAKE_BUILD_TYPE}
 *
 * Run-time specialization: ${ENABLE_RTSPEC}
 * Private heap manager:    ${PHM}
@@ -747,7 +745,13 @@ MESSAGE ("
 *
 * Status:
 * - sac2c is in dirty state: ${SAC2C_IS_DIRTY}
-*
-")
+*")
+
+STRING (REPLACE "\n" "\\n\\\n" CPP_BUILD_STATUS ${BUILD_STATUS})
+STRING (REGEX REPLACE "\n[*][ ]*" "\n" CPP_BUILD_STATUS ${CPP_BUILD_STATUS})
+
+MESSAGE ("
+* Configuration done.
+${BUILD_STATUS}")
 
 # vim: ts=2 sw=2
