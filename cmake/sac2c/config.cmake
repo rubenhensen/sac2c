@@ -73,6 +73,25 @@ ENDMACRO ()
 SET (OS       "${CMAKE_SYSTEM}")
 SET (ARCH     "${CMAKE_SYSTEM_PROCESSOR}")
 
+# Search paths for includes
+# Here we can add a list of paths for finding header files...
+SET (CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} /opt/local/include)
+IF (DEFINED ENV{CPATH})
+  STRING (REPLACE ":" ";" cpathList $ENV{CPATH})
+  SET (CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} ${cpathList})
+  UNSET (cpathList)
+ENDIF ()
+# Used by check_include_files macro
+SET (CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${CMAKE_INCLUDE_PATH})
+
+# Search paths for libraries
+SET (CMAKE_LIBARAY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib /opt/local/lib64)
+IF (DEFINED ENV{LD_LIBRARY_PATH}) #FIXME (hans) : DYLD_... on darwin
+  STRING (REPLACE ":" ";" ldpathList $ENV{LD_LIBRARY_PATH})
+  SET (CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${ldpathList})
+  UNSET (ldpathList)
+ENDIF ()
+
 # FIXME(artem) use CYGWIN value directly. [after the move to cmake]
 SET (IS_CYGWIN  ${CYGWIN})
 
@@ -200,12 +219,11 @@ ENDIF ()
 SET (HWLOC_LIB_PATH "")
 SET (ENABLE_HWLOC OFF)
 IF (HWLOC)
-    FIND_LIBRARY (LIB_HWLOC NAMES "hwloc" PATHS /opt/local/lib /opt/local/lib64)
-    SET (CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} /opt/local/include)
+    FIND_LIBRARY (LIB_HWLOC NAMES "hwloc")
     CHECK_INCLUDE_FILES (hwloc.h HAVE_HWLOC_H)
     IF (LIB_HWLOC AND HAVE_HWLOC_H)
       GET_FILENAME_COMPONENT (HWLOC_LIB_PATH ${LIB_HWLOC} PATH)
-      FIND_PATH (HWLOC_INC_PATH NAMES "hwloc.h" PATHS /opt/local/include)
+      FIND_PATH (HWLOC_INC_PATH NAMES "hwloc.h")
       SET (ENABLE_HWLOC ON)
       SET (HWLOC_LIB "-lhwloc")
     ENDIF ()
