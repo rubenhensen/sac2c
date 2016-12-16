@@ -22,7 +22,7 @@ strategySimple (int threads, int sockets_avail, int cores_avail, int pus_avail)
 
     if (threads > sockets_avail * cores_avail * pus_avail) {
         SAC_RuntimeError ("Asking for %d threads on a machine with %d processing units; "
-                          "Either decrease the number of threads or turn cpu binding off",
+                          "Either decrease the number of threads or turn -mt_bind off",
                           threads, sockets_avail * cores_avail * pus_avail);
     }
     res = (char *)SAC_MALLOC (sizeof (bool)
@@ -91,14 +91,11 @@ strategyEnv (int threads, int sockets_avail, int cores_avail, int pus_avail)
           pus, pus_avail);
     };
 
-    if (sockets * cores * pus != threads) {
-        SAC_RuntimeWarning (
-          "sockets*cores*PUs (%d) does not match the number of threads specified %d; "
-          "choosing %d",
-          sockets * cores * pus, threads, sockets * cores * pus);
-        SAC_MT_global_threads = sockets * cores * pus;
-        SAC_TR_LIBSAC_PRINT (
-          ("Number of threads overridden as %u.", SAC_MT_global_threads));
+    if (threads > sockets * cores * pus) {
+        SAC_RuntimeError (
+          "Specified %d threads which exceeds socket/core/PU-constraintss (%d); "
+          "reduce the thread # or set fewer constraints/increase their values.",
+          threads, sockets * cores * pus);
     }
 
     res = (char *)SAC_MALLOC (sizeof (bool)
@@ -113,8 +110,10 @@ strategyEnv (int threads, int sockets_avail, int cores_avail, int pus_avail)
     for (i = 0; i < sockets; i++) {
         for (j = 0; j < cores; j++) {
             for (k = 0; k < pus; k++) {
-                res[idx] = SAC_PULIST_FULL_CHAR;
-                idx++;
+                if (idx < threads) {
+                    res[idx] = SAC_PULIST_FULL_CHAR;
+                    idx++;
+                }
             }
             idx += pus_avail - pus;
         }
@@ -138,8 +137,7 @@ pusString2cpuSets (char *pus_string, int num_pus)
         if (pus_string[i] == SAC_PULIST_FULL_CHAR) {
             pu = hwloc_get_obj_by_type (SAC_HWLOC_topology, HWLOC_OBJ_PU, i);
             if (pu == NULL) {
-                SAC_RuntimeError (
-                  "hwloc not behaving as expected; turn cpu bind strategy off.");
+                SAC_RuntimeError ("hwloc not behaving as expected; turn -mt_bind off.");
             }
             res[idx] = hwloc_bitmap_dup (pu->cpuset);
             idx++;
@@ -172,7 +170,7 @@ SAC_HWLOC_init (int threads)
             if (num_sockets_available < 1) {
 #endif
                 SAC_RuntimeError (
-                  "hwloc returned %d sockets, packages and numanodes available. "
+                  "hwloc returned %d sockets, packages and NUMAnodes available. "
                   "Set cpu bind strategy to \"off\".",
                   num_sockets_available);
 #if HWLOC_API_VERSION >= 0x00010b00
@@ -190,16 +188,14 @@ SAC_HWLOC_init (int threads)
     int num_cores_available;
     num_cores_available = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_CORE);
     if (num_cores_available < 1) {
-        SAC_RuntimeError ("hwloc returned %d cores available. Set cpu bind strategy"
-                          " to \"off\".",
+        SAC_RuntimeError ("hwloc returned %d cores available. Turn -mt_bind off",
                           num_cores_available);
     }
 
     int num_pus_available;
     num_pus_available = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_PU);
     if (num_pus_available < 1) {
-        SAC_RuntimeError ("hwloc returned %d pus available. Set cpu bind strategy"
-                          " to \"off\".",
+        SAC_RuntimeError ("hwloc returned %d pus available. Turn -mt_bind off",
                           num_pus_available);
     }
 

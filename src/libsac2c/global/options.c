@@ -656,23 +656,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("cppI")
 
-    /*
-     * NB: if you want to add a new strategy, you need to add it to:
-     *     types/types.h
-     *     global/usage.c
-     *     codegen/gen_startup_code.c
-     *     libsac/mt/hwloc_data.c
-     */
-    ARGS_OPTION_BEGIN ("cpubindstrategy")
-    {
-        ARG_CHOICE_BEGIN ();
-        ARG_CHOICE ("off", global.cpubindstrategy = HWLOC_off);
-        ARG_CHOICE ("simple", global.cpubindstrategy = HWLOC_simple);
-        ARG_CHOICE ("env", global.cpubindstrategy = HWLOC_env);
-        ARG_CHOICE_END ();
-    }
-    ARGS_OPTION_END ("cpubindstrategy");
-
     ARGS_OPTION_BEGIN ("csdefaults")
     {
         ARG_FLAGMASK_BEGIN ();
@@ -903,6 +886,23 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("mt_barrier_type");
+
+    /*
+     * NB: if you want to add a new strategy, you need to add it to:
+     *     types/types.h
+     *     global/usage.c
+     *     codegen/gen_startup_code.c
+     *     libsac/mt/hwloc_data.c
+     */
+    ARGS_OPTION_BEGIN ("mt_bind")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("off", global.cpubindstrategy = HWLOC_off);
+        ARG_CHOICE ("simple", global.cpubindstrategy = HWLOC_simple);
+        ARG_CHOICE ("env", global.cpubindstrategy = HWLOC_env);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("cpubindstrategy");
 
     ARGS_OPTION_BEGIN ("mt_smart_mode")
     {
@@ -1354,15 +1354,6 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
-    ARGS_OPTION_BEGIN ("cpubindstrategy")
-    {
-        ARG_CHOICE_BEGIN ();
-        ARG_CHOICE ("off", global.cpubindstrategy = HWLOC_off);
-        ARG_CHOICE ("simple", global.cpubindstrategy = HWLOC_simple);
-        ARG_CHOICE_END ();
-    }
-    ARGS_OPTION_END ("cpubindstrategy");
-
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
      */
@@ -1442,6 +1433,23 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     /*
      * Options starting with mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
      */
+
+    /*
+     * NB: if you want to add a new strategy, you need to add it to:
+     *     types/types.h
+     *     global/usage.c
+     *     codegen/gen_startup_code.c
+     *     libsac/mt/hwloc_data.c
+     */
+    ARGS_OPTION_BEGIN ("mt_bind")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("off", global.cpubindstrategy = HWLOC_off);
+        ARG_CHOICE ("simple", global.cpubindstrategy = HWLOC_simple);
+        ARG_CHOICE ("env", global.cpubindstrategy = HWLOC_env);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("cpubindstrategy");
 
     /*
      * Options starting with nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
