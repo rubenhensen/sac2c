@@ -215,12 +215,20 @@ FreeInfo (info *info)
 #define RC_IS_INACTIVE(rc) ((rc) == RC_INACTIVE)
 #define RC_IS_ACTIVE(rc) ((rc) >= 0) /* == (RC_IS_ZERO(rc) || RC_IS_VITAL(rc)) */
 
-#define RC_INIT(rc) (RC_IS_ACTIVE (rc) ? 1 : (rc))
-
 #define RC_IS_LEGAL(rc) ((RC_IS_INACTIVE (rc)) || (RC_IS_ACTIVE (rc)))
 
-#define RC_IS_ZERO(rc) ((rc) == 0)
 #define RC_IS_VITAL(rc) ((rc) > 0)
+
+#if 0 
+/* These macros seem not to be used.
+ * The only reason I keep them here is that they might shed a light on how RC 
+ * is meant to be used.... (Bodo 2016)
+ */
+#define RC_INIT(rc) (RC_IS_ACTIVE (rc) ? 1 : (rc))
+
+#define RC_IS_ZERO(rc) ((rc) == 0)
+
+#endif
 
 /******************************************************************************
  *
@@ -259,10 +267,14 @@ static node *wlstride = NULL;
 /* postfix for goto labels */
 #define LABEL_POSTFIX "SAC_label"
 
+#if 0
 /*
  * This macro indicates whether there are multiple segments present or not.
+ * However, it seems not to be used. Again, I only keep it as it may shed some
+ * light on the remaining code ... (Bodo 2016)
  */
 #define MULTIPLE_SEGS(seg) ((seg != NULL) && (WLSEGX_NEXT (seg) != NULL))
+#endif
 
 /******************************************************************************
  *
@@ -4261,7 +4273,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
                     pY = (measurements[i]->max_time - measurements[i]->fun_time[j - 1])
                          / diff;
                     slope = pX - pY;
-                    angle = atan (slope);
+                    angle = atanf (slope);
                     if (angle <= t_angle || angle <= 0) {
                         recommendations[2 * (i + 1)] = j; // use j threads
                         break;
@@ -4295,7 +4307,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
                     pY = reg[0] + (j - 1) * reg[1] + (j - 1) * (j - 1) * reg[2]
                          + (j - 1) * (j - 1) * (j - 1) * reg[3];
                     slope = pX - pY;
-                    angle = atan (slope);
+                    angle = atanf (slope);
                     if (angle <= t_angle || angle <= 0) {
                         recommendations[2 * (i + 1)] = j; // use j threads
                         break;
@@ -4338,14 +4350,14 @@ COMPdoDecideSmart (info *info, int spmd_id)
 node *
 COMPap (node *arg_node, info *arg_info)
 {
-    node *let_ids, *icm, *icm_conf, *icm_args, *icm_pre, *icm_post;
+    node *let_ids, *icm, *icm_conf = NULL, *icm_args, *icm_pre = NULL, *icm_post = NULL;
     node *fundef, *with2, *cond, *seg, *array_inf, *array_sup;
     node *assigns, *assigns1 = NULL, *assigns2 = NULL, *assigns4 = NULL;
 
-    node **icm_data, **icm_conf_expr = NULL;
+    node **icm_data = NULL, **icm_conf_expr = NULL;
     int *recommendations;
-    int data_size, dims, seg_dim, op_offset, op, nr_segs, idx;
     bool fundef_in_current_namespace;
+    int data_size = 0, dims, seg_dim, op_offset, op, nr_segs, idx = 0;
 
     static int spmdfun_count = 0;
 
