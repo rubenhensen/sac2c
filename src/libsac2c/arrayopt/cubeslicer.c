@@ -313,9 +313,9 @@ matchGeneratorField (node *fa, node *fb)
  *
  * @brief Functions for determining Null intersection of two WLs
  *
- * @params arg_node: An F_noteintersect null-intersection entry.
+ * @param   arg_node: An F_noteintersect null-intersection entry.
  *
- * @result: IsNullIntersect: TRUE if any element of the
+ * @result  IsNullIntersect: TRUE if any element of the
  *          intersection between the index vector set and producerWL
  *          partition is empty.
  *
@@ -366,11 +366,11 @@ isNotNullIntersect (node *arg_node)
  * @brief Functions for determining if WL intersection does not
  *        cross PWL partition boundaries.
  *
- * @params arg_node: An F_noteintersect WLINTERSECT1PART entry.
- *         cwlb1, cwlb2: Consumer-WL partition bounds
- *         cwlproj1, cwlproj2: Consumer-WL inverse projection bounds
+ * @param  arg_node: An F_noteintersect WLINTERSECT1PART entry.
+ * @param  cwlb1, cwlb2: Consumer-WL partition bounds
+ * @param  cwlproj1, cwlproj2: Consumer-WL inverse projection bounds
  *
- * @result: isInt1Part: TRUE if ALL elements of the
+ * @result  isInt1Part: TRUE if ALL elements of the
  *          intersection of the index vector set and producerWL
  *          lie within a single partition of the PWL.
  *
@@ -427,9 +427,9 @@ isNotInt1Part (node *arg_node)
  *
  * @brief Side-effect setter for findIntersection
  *
- * @params noteint: An F_noteintersect N_prf node
- *         intersectListNo: which PWL partition number we are looking at
- *         arg_info: your basic arg_info
+ * @param noteint: An F_noteintersect N_prf node
+ *        intersectListNo: which PWL partition number we are looking at
+ *        arg_info: your basic arg_info
  *
  * @result:
  *
@@ -456,8 +456,8 @@ SetWLProjections (node *noteint, int intersectListNo, info *arg_info)
  *
  * @brief Get npart[partno] for npart.
  *
- * @params partno: non_negative integer partition index
- *         npart: A WITH_PART node.
+ * @param  partno: non_negative integer partition index
+ * @param  npart: A WITH_PART node.
  *
  * @result: The partno'th N_part of npart.
  *
@@ -487,10 +487,10 @@ GetNthPart (int partno, node *npart)
  *        that could match the current producerWL partition.
  *        Side effect is to set INFO_INTERSECTBOUND1/2( arg_info).
  *
- * @params idx: N_id node of _noteintersect() list.
- *         producerWLGenerator: PART_GENERATOR of producerWL
- *         cwlp: consumer WL partition, or NULL if naked consumer
- *         arg_info: Your basic arg_info
+ * @param  idx: N_id node of _noteintersect() list.
+ * @param  producerWLGenerator: PART_GENERATOR of producerWL
+ * @param  cwlp: consumer WL partition, or NULL if naked consumer
+ * @param  arg_info: Your basic arg_info
  *
  * @result: Type of WL intersection between cwlp and
  *          current producerWL partition.
@@ -635,12 +635,12 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
  *
  * @brief Return a string that describes the intersect type
  *
- * @params:
+ * @param:
  *
  * @result: A pointer to a character string constant.
  *
  *****************************************************************************/
-static UNUSED char *
+static char *
 IntersectTypeName (intersect_type_t itype)
 {
     char *z;
@@ -707,11 +707,11 @@ IntersectTypeName (intersect_type_t itype)
  *               Folding is possible, but the ConsumerWL partition
  *               must be split into two or three partitions.
  *
- * @params arg_node: the N_prf of the sel(idx, pwl).
- *         cwlp: the consumerWL partition containing arg_node,
+ * @param  arg_node: the N_prf of the sel(idx, pwl).
+ * @param  cwlp: the consumerWL partition containing arg_node,
  *           or NULL, if we have a naked consumer.
- *         pwl: the N_with of the pwl.
- *         arg_info: Either arg_info or NULL.
+ * @param  pwl: the N_with of the pwl.
+ * @param  arg_info: Either arg_info or NULL.
  *
  * @result: The type of match we found; NULL if none is found.
  *          We also set INFO_PRODUCERPART, if a match is found.
@@ -848,7 +848,7 @@ populateFoldLut (node *arg_node, info *arg_info, shape *shp)
  *
  *        Also, iv, i, j, k are placed into the LUT.
  *
- * @params arg_node: An N_assign node.
+ * @param  arg_node: An N_assign node.
  *
  * @result: an N_assign chain as above.
  *
@@ -961,7 +961,7 @@ BypassNoteintersect (node *arg_node)
  *
  * @fn static node *FindMarkedSelAssignParent( node *assgn)
  *
- * @params assgn: The N_assign chain for the current N_part/N_code block
+ * @param  assgn: The N_assign chain for the current N_part/N_code block
  *
  * @brief: Find the N_assign node that has the marked sel() primitive
  *         as its RHS, and return its predecessor. We do this
@@ -1022,10 +1022,9 @@ FindMarkedSelAssignParent (node *assgn)
  *     tmp = PWL)
  *     elc = tmp;
  *
- * @params
- *    cwlpart: cwl N_part
- *    partno: pwl partition number that will be folded
- *    PWL: N_part node of pwl.
+ * @param cwlpart: cwl N_part
+ * @param partno: pwl partition number that will be folded
+ * @param PWL: N_part node of pwl.
  *
  * @result: new cwlpart with pwl partno folded into it.
  *
@@ -1108,7 +1107,7 @@ performFold (node *cwlpart, int partno, info *arg_info)
  *
  * @brief Clone a WL code block, renaming any LHS definitions.
  *
- * @params arg_node: an N_code
+ * @param arg_node: an N_code
  *
  * @result: a cloned and renamed N_code
  *          INFO_LUT remains with the new names, because we need
@@ -1139,13 +1138,13 @@ CloneCode (node *arg_node, info *arg_info)
  *
  * @fn static node *BuildSubcube(...)
  *
- * @params arg_node: an N_part of the consumerWL.
- *         arg_info: your basic info node
- *         lb: the generator lower bound for the new partition
- *         ub: the generator upper bound for the new partition
- *         step: the generator step for the new partition
- *         width: the generator width for the new partition
- *         withid: the WITHID for the new partition
+ * @param arg_node: an N_part of the consumerWL.
+ * @param arg_info: your basic info node
+ * @param lb: the generator lower bound for the new partition
+ * @param ub: the generator upper bound for the new partition
+ * @param step: the generator step for the new partition
+ * @param width: the generator width for the new partition
+ * @param withid: the WITHID for the new partition
  *
  * @result: Build new partition from arg_node and new bounds.
  *          New N_code node is also built.
@@ -1177,8 +1176,8 @@ BuildSubcube (node *arg_node, info *arg_info, node *lb, node *ub, node *step, no
  *
  * @fn static node *BuildSubcubes(...)
  *
- * @params arg_node: an N_part of the consumerWL.
- *         arg_info: your basic info node
+ * @param arg_node: an N_part of the consumerWL.
+ * @param arg_info: your basic info node
  *
  * @result: New N_part node, or NULL (if this is simple composition)
  *          New N_code nodes are also built.

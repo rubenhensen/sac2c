@@ -551,7 +551,7 @@ GetNextFloat (float *ret, node *exprs)
     DBUG_ASSERT (NODE_TYPE (expr) == N_float, "wrong icm-arg: N_float expected");
     (*ret) = FLOAT_VAL (expr);
 
-    DBUG_PRINT ("icm-arg found: %d", (*ret));
+    DBUG_PRINT ("icm-arg found: %d", (double)(*ret));
 
     exprs = EXPRS_NEXT (exprs);
 

@@ -244,8 +244,8 @@ RemoveRcaAssign (node *relarg, node *rca)
 {
     DBUG_ENTER ();
 
-    node *z = NULL;
 #ifdef FIXME // not sure why we are removing RCA... this will help us to find out.
+    node *z = NULL;
     node *exprsouter;
     node *exprs;
     node *exprs2;

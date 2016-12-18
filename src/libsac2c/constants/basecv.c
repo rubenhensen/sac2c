@@ -40,8 +40,6 @@
  *
  ******************************************************************************/
 
-#define str(s) #s
-
 #define CObaseCvTEMPLATE(fun_ext, s_type, arg_t, arg_ext, value)                         \
     constant *CObaseCv##arg_ext##fun_ext (shape *shp)                                    \
     {                                                                                    \

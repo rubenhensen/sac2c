@@ -1446,7 +1446,7 @@ COcreateAllIndicesAndFold (shape *shp, void *(*foldfun) (constant *idx, void *, 
     int *datav;
     int max_d, d, len;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();

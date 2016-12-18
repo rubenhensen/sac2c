@@ -528,12 +528,12 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
  *        i  --> i'
  *        j  --> j'
  *
- * @param: arg_node: one N_avis node of the PWL generator (e.g., iv),
+ * @param  arg_node: one N_avis node of the PWL generator (e.g., iv),
  *                   to serve as iv for above assigns.
- *         arg_info: your basic arg_info.
- *         shp:      the shape descriptor of the new LHS.
+ * @param  arg_info: your basic arg_info.
+ * @param  shp:      the shape descriptor of the new LHS.
  *
- * @result: New N_avis node, e.g, iv'.
+ * @result  New N_avis node, e.g, iv'.
  *          Side effect: mapping iv -> iv' entry is now in LUT.
  *                       New vardec for iv'.
  *
@@ -576,9 +576,9 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
  *
  *        Then, iv, i, j will all be SSA-renamed by the caller.
  *
- * @params arg_node: An N_assign node.
+ * @param arg_node: An N_assign node.
  *
- * @result: an N_assign chain as above.
+ * @result  an N_assign chain as above.
  *
  *****************************************************************************/
 static node *
@@ -654,10 +654,10 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
  *        When modified to do sum(matmul()), the pragma on the matmul
  *        was lost. This is an attempt to propagate it into the cwl.
  *
- * @params pwl: producer N_with
- *         cwl: consumer N_with
-
- * @result:  none. Side effect on cwl N_with
+ * @param pwl: producer N_with
+ * @param cwl: consumer N_with
+ *
+ * @result  none. Side effect on cwl N_with
  *
  *****************************************************************************/
 static void
@@ -695,9 +695,8 @@ CopyWithPragma (node *pwl, node *cwl)
  *     tmp = PWL)
  *     elc = tmp;
  *
- * @params
- *    arg_node: N_assign for the sel()
- *    PWL: N_part node of PWL.
+ * @param arg_node: N_assign for the sel()
+ * #param PWL: N_part node of PWL.
  *
  *****************************************************************************/
 node *
@@ -778,11 +777,11 @@ AWLFperformFold (node *arg_node, node *producerWLPart, info *arg_info)
  *
  *        where iota() comprises pwl, and sum() comprises cwl.
  *
- * @params arg_node: the _sel_VxA() or _idx_sel_() op in the cwl
- *         pwl: The producer-WL N_id
- *         cwlids The consumer-WL N_ids
- *         defdepth: the nesting depth of the cwl.
- *         cwlpart: the current cwl partition
+ * @param arg_node: the _sel_VxA() or _idx_sel_() op in the cwl
+ * @param pwl: The producer-WL N_id
+ * @param cwlids The consumer-WL N_ids
+ * @param defdepth: the nesting depth of the cwl.
+ * @param cwlpart: the current cwl partition
  *
  * @result: TRUE if the pair of WLs form a simple composition.
  *

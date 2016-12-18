@@ -563,6 +563,24 @@ ELSEIF (MACC)
   CHECK_CC_FLAG ("-Wno-undef" MACCC_FLAGS)
   CHECK_CC_FLAG ("-Wno-conversion" MACCC_FLAGS)
   CHECK_CC_FLAG ("-Wno-missing-prototypes" MACCC_FLAGS)
+
+  # if all cases are covered, we do add a DBUG_ASSERT to ensure we notice
+  # when an extension of the type has not been consciously been dealt with!
+  CHECK_CC_FLAG("-Wno-covered-switch-default" MACCC_FLAGS)
+
+  # needed for passing format strings to vsprintf!
+  CHECK_CC_FLAG ("-Wno-format-nonliteral" MACCC_FLAGS)
+
+  # needed for switches over large enum types e.g. over nodetype_t!
+  CHECK_CC_FLAG ("-Wno-switch-enum" MACCC_FLAGS)
+
+  # if non-returning functions are marked as such we get dead-code warnings
+  # whenever a call to such function is followed by asserts or breaks or the like
+  CHECK_CC_FLAG ("-Wno-missing-noreturn" MACCC_FLAGS)
+
+  # temporarily disabled; needs to be reactivated with doxygen:
+  CHECK_CC_FLAG ("-Wno-documentation-unknown-command" MACCC_FLAGS)
+
   #Turn this if you want to be cruel
   #CHECK_CC_FLAG ("-Wconversion" MACCC_FLAGS)
   CHECK_CC_FLAG ("-march=native" MACCC_ARCH_FLAGS)

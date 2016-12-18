@@ -299,9 +299,9 @@ AWLFIdoAlgebraicWithLoopFolding (node *arg_node)
  *              As an example of why this is needed, look at
  *              apex/iotan/iotan.sac when compiled without it!
  *
- * @params  arg_node: an N_fundef node.
+ * @param  arg_node: an N_fundef node.
  *
- * @result: an updated N_fundef node.
+ * @result an updated N_fundef node.
  *
  * I do not like having this function present, but have no better
  * ideas at present.
@@ -311,7 +311,7 @@ static node *
 SimplifySymbioticExpression (node *arg_node, info *arg_info)
 {
     int i = 0;
-    int ct;
+    int ct = 0;
     int countDLIR = 0;
     int countWLIR = global.optcounters.wlir_expr;
     int countINL = 0;
@@ -906,18 +906,18 @@ AWLFIisHasInverseProjection (node *arg_node)
  * @brief Chase one element of an N_array back to its WITHID_IDS,
  *        if possible.
  *
- * @params:  iprime: The current expression we are tracing,
- *           An N_id or an N_num.
+ * @param  iprime: The current expression we are tracing,
+ * @param  An N_id or an N_num.
  *           Or, it can be the N_avis of a WITHID_IDS node.
  *
- *           arg_info: Your basic arg_info node.
+ * @param  arg_info: Your basic arg_info node.
  *
- *           lbub[ ivindx]: The current inverse projection.
+ * @param  lbub[ ivindx]: The current inverse projection.
  *                This is normalized, a la WL bounds.
  *                If this is a recursive call, lbub is scalar, and
  *                is an N_avis.
  *
- * @result: An N_avis node that gives the result of the F-inverse mapping
+ * @result An N_avis node that gives the result of the F-inverse mapping
  *          function to take us from iv'->iv, or
  *          a N_num or else NULL, if no such node can be found.
  *
@@ -1181,10 +1181,10 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
  *
  * @brief: Flatten a scalar node, if not already flattened.
  *
- * @params: arg_node: an N_num or N_id node
- *          arg_info: your basic arg_info node.
+ * @param  arg_node: an N_num or N_id node
+ * @param  arg_info: your basic arg_info node.
  *
- * @result:  N_avis for possibly flattened node
+ * @result  N_avis for possibly flattened node
  *
  *****************************************************************************/
 node *
@@ -1218,24 +1218,23 @@ AWLFIflattenScalarNode (node *arg_node, info *arg_info)
  *         In that case, we take the maximum of the minimum bound
  *         and the minimum of the maximum bound.
  *
- * @params:
- *          idx: index into result of this element.
+ * @param: idx: index into result of this element.
  *
- *          zarr: the N_array result we are overwriting.
+ * @param   zarr: the N_array result we are overwriting.
  *
- *          zelnew: The inverse intersect, of the shape of the CWL bounds,
+ * @param   zelnew: The inverse intersect, of the shape of the CWL bounds,
  *          as an element of the ARRAY_AELEMS N_exprs chain.
  *
- *          bndel: Current element of the generator bound.
+ * @param   bndel: Current element of the generator bound.
  *                 This is used to determine whether to
  *                 overwrite current result element or if we need min/max.
  *
- *          boundnum: 0 if we are computing BOUND1,
+ * @param   boundnum: 0 if we are computing BOUND1,
  *                    1 if we are computing BOUND2
  *
- *          arg_info: your basic arg_info node.
+ * @param   arg_info: your basic arg_info node.
  *
- * @result: If zarr[ idx] is not used yet:
+ * @result If zarr[ idx] is not used yet:
  *
  *              zarr[ idx] = zelnew;
  *
@@ -1291,21 +1290,21 @@ BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnu
  * @brief: Permute and/or merge inverse intersection elements, to
  *         construct CUBSL argument.
  *
- * @params: zelu: an N_exprs chain of an intersect calculation
+ * @param zelu: an N_exprs chain of an intersect calculation
  *          Its length matches that of iv in the sel( iv, producerWL)
  *          in the consumerWL.
  *          These are in denormalized form.
  *
- *          zwithids: an N_ids chain, of the same shape as
+ * @param   zwithids: an N_ids chain, of the same shape as
  *          zelu, comprising the WITHID_IDS related to the
  *          corresponding element of zelu.
  *
- *          arg_info: your basic arg_info node.
+ * @param   arg_info: your basic arg_info node.
  *
- *          boundnum: 0 if we are computing BOUND1,
+ * @param   boundnum: 0 if we are computing BOUND1,
  *                    1 if we are computing BOUND2
  *
- * @result: The permuted and/or confluenced N_avis for an
+ * @result  The permuted and/or confluenced N_avis for an
  *          N_exprs chain
  *          whose length matches that of the consumerWL GENERATOR_BOUND.
  *
@@ -1432,12 +1431,12 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
  *
  *            iv = F_1( iv');
  *
- * @params: arg_node is an F_noteintersect node.
+ * @param   arg_node is an F_noteintersect node.
  *
- *          arriv: The iv' N_array node, or the WITHID_VEC for the
+ * @param   arriv: The iv' N_array node, or the WITHID_VEC for the
  *                 consumerWL.
  *
- *          lbub: the WLintersect N_array node for lb or ub.
+ * @param   lbub: the WLintersect N_array node for lb or ub.
  *                This is denormalized, so that ub and lb are
  *                treated identically. I.e., if we have this WL generator:
  *                  ( [0] <= iv < [50])
@@ -1446,7 +1445,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
  *                  Normalized:    [0]  [50]
  *                  Denormlized:   [0]  [49]
  *
- * @result: An N_exprs node, which represents the result of
+ * @result  An N_exprs node, which represents the result of
  *          mapping the WLintersect extrema back to consumerWL space,
  *          for those elements where we can do so.
  *
@@ -1519,9 +1518,9 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *arriv, node *lb
  *        with the consumerWL's index vector, iv', back into
  *        the consumerWL's partition bounds.
  *
- * @params: arg_node, arg_info.
+ * @param  arg_node, arg_info.
  *
- * @result: Updated F_noteintersect node.
+ * @result Updated F_noteintersect node.
  *
  *          We may return non-updated node if we can not
  *          compute the inverse projection.
@@ -1695,8 +1694,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
  * @brief Given an N_id, return its N_with node, or NULL, if arg_node
  *        was not created by a WL.
  *
- * @params: arg_node, perhaps
- * @result: The N_with node of the WL
+ * @param  arg_node, perhaps
+ * @result The N_with node of the WL
  *          NULL if arg_node is not an N_id
  *
  *****************************************************************************/
@@ -1881,11 +1880,11 @@ AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
  *            we can distinguish it from non-null intersects,
  *             for the cases where cube slicing will be required.
  *
- * @params arg_node: the _sel_VxA_( idx, producerWL)
- * @params arg_info.
- * @params producerPart: An N_part of the producerWL.
- * @params boundnum: 1 for bound1,     or 2 for bound2
- * @params ivmin, ivmax AVIS_MIN/MAX for iv in  _sel_( iv, PWL)
+ * @param  arg_node: the _sel_VxA_( idx, producerWL)
+ * @param  arg_info.
+ * @param  producerPart: An N_part of the producerWL.
+ * @param  boundnum: 1 for bound1,     or 2 for bound2
+ * @param  ivmin, ivmax AVIS_MIN/MAX for iv in  _sel_( iv, PWL)
  *
  * @return An N_avis pointing to an N_exprs for the two intersect expressions,
  *         or NULL if we were unable to compute the inverse projection.
@@ -1957,13 +1956,13 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
  *            isnull = _or_VxV_( _le_VxV_( idxavismax, bound1),
  *                               _ge_VxV_( idxavismin, bound2));
  *
- * @params: idxmin: AVIS_MIN( consumerWL partition index vector)
- * @params: idxmax: AVIS_MAX( consumerWL partition index vector)
- * @params: bound1: N_avis of GENERATOR_BOUND1 of producerWL partition.
- * @params: bound2: N_avis of GENERATOR_BOUND2 of producerWL partition.
- * @params: arg_info: your basic arg_info node
+ * @param   idxmin: AVIS_MIN( consumerWL partition index vector)
+ * @param   idxmax: AVIS_MAX( consumerWL partition index vector)
+ * @param   bound1: N_avis of GENERATOR_BOUND1 of producerWL partition.
+ * @param   bound2: N_avis of GENERATOR_BOUND2 of producerWL partition.
+ * @param   arg_info: your basic arg_info node
  *
- * @result: N_avis node of generated computation's boolean result.
+ * @result  N_avis node of generated computation's boolean result.
  *
  *****************************************************************************/
 
@@ -2027,14 +2026,14 @@ IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node 
  *              with:  idxavismax == bound2, whereas we otherwise have
  *                     idxavismax >  bound2.
  *
- * @params: idxavismin: AVIS_MIN( consumerWL partn index vector)
- * @params: idxavismax: normalized AVIS_MAX( consumerWL partn index vector)
- * @params: bound1: N_avis of GENERATOR_BOUND1 of producerWL partn.
- * @params: bound2: N_avis of GENERATOR_BOUND2 of
+ * @param   idxavismin: AVIS_MIN( consumerWL partn index vector)
+ * @param   idxavismax: normalized AVIS_MAX( consumerWL partn index vector)
+ * @param   bound1: N_avis of GENERATOR_BOUND1 of producerWL partn.
+ * @param   bound2: N_avis of GENERATOR_BOUND2 of
  *                  producerWL partn.
- * @params: arg_info: your basic arg_info node
+ * @param   arg_info: your basic arg_info node
  *
- * @result: N_avis node of generated computation's boolean result.
+ * @result  N_avis node of generated computation's boolean result.
  *
  *****************************************************************************/
 static node *
@@ -2087,10 +2086,10 @@ Intersect1PartBuilder (node *idxmin, node *idxmax, node *bound1, node *bound2,
  *        We traverse all producerWL partitions, building a set of
  *        intersect calcuations for each of them.
  *
- * @params arg_node: The _sel_VxA( iv, producerWL).
- * @params arg_info.
- * @params boundnum: 1 for bound1,        2 for bound2
- * @params ivavis: the N_avis of the index vector used by the sel() operation.
+ * @param  arg_node: The _sel_VxA( iv, producerWL).
+ * @param  arg_info.
+ * @param  boundnum: 1 for bound1,        2 for bound2
+ * @param  ivavis: the N_avis of the index vector used by the sel() operation.
  *
  * @return An N_exprs node containing the ( 2 * # producerwlPart partitions)
  *         intersect expressions, in the form:
