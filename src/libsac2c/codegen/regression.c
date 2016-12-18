@@ -97,7 +97,7 @@ Inverse (float **a, int n, float **inv)
 
     for (int j = 0; j < n; j++) {
         for (int i = 0; i < n; i++) {
-            inv[i][j] = 1.0 / det * cof[j][i];
+            inv[i][j] = (float)1.0 / det * cof[j][i];
         }
     }
 
@@ -142,7 +142,7 @@ Determinant (float **a, int n)
                 }
             }
 
-            det += pow (-1.0, j1 + 2.0) * a[0][j1] * Determinant (m, n - 1);
+            det += (float)pow (-1.0, j1 + 2.0) * a[0][j1] * Determinant (m, n - 1);
         }
         DelMatrix (m, n - 1, n - 1);
     }
@@ -188,7 +188,7 @@ CoFactor (float **a, int n, float **b)
             det = Determinant (c, n - 1);
 
             /* Fill in the elements of the cofactor */
-            b[i][j] = pow (-1.0, i + j + 2.0) * det;
+            b[i][j] = (float)pow (-1.0, i + j + 2.0) * det;
         }
     }
 

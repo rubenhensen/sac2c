@@ -492,7 +492,7 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (global.outfile, "#define SAC_SET_CACHE_1_WRITEPOL     SAC_CS_%s\n",
              global.config.cache1_writepol);
     fprintf (global.outfile, "#define SAC_SET_CACHE_1_MSCA_FACTOR  %.2f\n\n",
-             ((float)global.config.cache1_msca_factor) / 100);
+             ((double)global.config.cache1_msca_factor) / 100.0);
 
     fprintf (global.outfile, "#define SAC_SET_CACHE_2_SIZE         %d\n",
              global.config.cache2_size == 0 ? -1 : global.config.cache2_size);
@@ -503,7 +503,7 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (global.outfile, "#define SAC_SET_CACHE_2_WRITEPOL     SAC_CS_%s\n",
              global.config.cache2_writepol);
     fprintf (global.outfile, "#define SAC_SET_CACHE_2_MSCA_FACTOR  %.2f\n\n",
-             ((float)global.config.cache2_msca_factor) / 100);
+             ((double)global.config.cache2_msca_factor) / 100.0);
 
     fprintf (global.outfile, "#define SAC_SET_CACHE_3_SIZE         %d\n",
              global.config.cache3_size == 0 ? -1 : global.config.cache3_size);
@@ -514,7 +514,7 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (global.outfile, "#define SAC_SET_CACHE_3_WRITEPOL     SAC_CS_%s\n",
              global.config.cache3_writepol);
     fprintf (global.outfile, "#define SAC_SET_CACHE_3_MSCA_FACTOR  %.2f\n\n",
-             ((float)global.config.cache3_msca_factor) / 100);
+             ((double)global.config.cache3_msca_factor) / 100.0);
 
     fprintf (global.outfile, "#define SAC_SET_CACHESIM_HOST        \"%s\"\n",
              STRonNull ("", global.cachesim_host));
