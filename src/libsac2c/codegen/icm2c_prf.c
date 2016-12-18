@@ -641,8 +641,13 @@ ICMCompileND_PRF_SEL_VxA__DATA_arr_Local (char *to_NT, int to_sdim, char *from_N
         new_from_NT = from_NT;
     }
 
-    ICMCompileND_PRF_SEL_VxA__DATA_arr_Local (to_NT, to_sdim, new_from_NT, from_sdim,
-                                              idx_size, idxs_ANY, copyfun);
+    /*
+     * This used to be a recursive call; as this would be a non-terminating
+     * recursion and due to the comment in the top of ICMCompileND_PRF_SEL_VxA__DATA_arr
+     * I change this into a call to the latter (Bodo 2016)
+     */
+    ICMCompileND_PRF_SEL_VxA__DATA_arr (to_NT, to_sdim, new_from_NT, from_sdim, idx_size,
+                                        idxs_ANY, copyfun);
 
 /* Undefine here to not print two ICMs. */
 #undef ND_PRF_SEL_VxA__DATA_arr_Local

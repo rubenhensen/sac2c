@@ -586,8 +586,8 @@ COoverSel (constant *idx, constant *a, constant *tmp1)
     /* Initialize counter and related vars*/
     int i = 0;
     int frame_shape_len = SHgetDim (frame_shape);
-    int idx_counter[frame_shape_len];
-    int idx_counter_upbound[frame_shape_len];
+    int *idx_counter = (int *)MEMmalloc (sizeof (int) * frame_shape_len);
+    int *idx_counter_upbound = (int *)MEMmalloc (sizeof (int) * frame_shape_len);
     bool loop_done = FALSE;
     int idx_pos = 0;
     int to_offset = 0;
@@ -639,6 +639,8 @@ COoverSel (constant *idx, constant *a, constant *tmp1)
     /* Free shapes*/
     SHfreeShape (frame_shape);
     SHfreeShape (cell_shape);
+    MEMfree (idx_counter);
+    MEMfree (idx_counter_upbound);
 
     DBUG_RETURN (res);
 }

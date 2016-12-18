@@ -22,27 +22,27 @@ typedef int bool;
 
 #define MAXLEN 4096
 
-char string[MAXLEN]; /* input line max. length */
+static char string[MAXLEN]; /* input line max. length */
 
-int pos = 0;
-int c_level = 0;
-int save_p_flg[20][10];
-bool save_ind[20][10];
-int if_lev = 0;
-bool if_flg = FALSE;
-int level = 0;
+static int pos = 0;
+static int c_level = 0;
+static int save_p_flg[20][10];
+static bool save_ind[20][10];
+static int if_lev = 0;
+static bool if_flg = FALSE;
+static int level = 0;
 static bool ind[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 static int p_flg[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char p_char;
-bool a_flg = FALSE;
-int save_tabs[20][10];
+static char p_char;
+static bool a_flg = FALSE;
+static int save_tabs[20][10];
 
-char cc;
-bool s_flg = TRUE;
-int peek = (-1);
-int tabs = 0;
-int last_char;
-int c;
+static char cc;
+static bool s_flg = TRUE;
+static int peek = (-1);
+static int tabs = 0;
+static int last_char;
+static int c;
 
 /* prints usage info to stdout */
 static void
