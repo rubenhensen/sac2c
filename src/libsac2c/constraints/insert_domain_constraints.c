@@ -812,7 +812,7 @@ IDCaddTypeConstraint (ntype *type, node *avis)
     node *res = NULL;
     ntype *act_type;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();

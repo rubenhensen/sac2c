@@ -578,6 +578,9 @@ ELSEIF (MACC)
   # whenever a call to such function is followed by asserts or breaks or the like
   CHECK_CC_FLAG ("-Wno-missing-noreturn" MACCC_FLAGS)
 
+  # needed as we want to provide == and != as is in C in SaC as well!
+  CHECK_CC_FLAG ("-Wno-float-equal" MACCC_FLAGS)
+
   # temporarily disabled; needs to be reactivated with doxygen:
   CHECK_CC_FLAG ("-Wno-documentation-unknown-command" MACCC_FLAGS)
 

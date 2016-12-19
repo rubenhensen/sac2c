@@ -263,9 +263,9 @@ LUBprocessBlockMinArray (dynarray *a)
 
                 halfstep = getMatrixValue (m, i, j - 1);
 
-                if (i + (int)pow (2, j - 1) < totalelems) {
+                if (i + (1 << (j - 1)) < totalelems) {
 
-                    fullstep = getMatrixValue (m, i + (int)pow (2, j - 1), j - 1);
+                    fullstep = getMatrixValue (m, i + (1 << (j - 1)), j - 1);
 
                 } else {
 

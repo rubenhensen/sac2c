@@ -88,8 +88,8 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
     ntype *ftype, *ctype;
     node *newavis, *oldavis;
 #ifndef DBUG_OFF
-    char *tmp_str;
-    char *tmp_str2;
+    char *tmp_str = NULL;
+    char *tmp_str2 = NULL;
 #endif
 
     DBUG_ENTER ();

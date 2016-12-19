@@ -71,7 +71,12 @@ typedef struct RANGE_SET_T {
 #define RS_NONBLOCKED_RANGES(n) (n->nonblocked_ranges)
 #define RS_BLOCKED_RANGES_CNT(n) (n->blocked_ranges_count)
 #define RS_NONBLOCKED_RANGES_CNT(n) (n->nonblocked_ranges_count)
+
+#if 0
+//currently not used....
 #define RS_RANGES_CNT(n) (((n->blocked_ranges_count) + (n->nonblocked_ranges_count)))
+#endif
+
 #define RS_PREV(n) (n->prev)
 #define RS_NEXT(n) (n->next)
 

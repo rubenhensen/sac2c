@@ -440,7 +440,7 @@ node *
 CWLEcode (node *arg_node, info *arg_info)
 {
     node *cexpr;
-    node *srcwl;
+    node *srcwl = NULL;
     char *lhs;
     info *subinfo;
 

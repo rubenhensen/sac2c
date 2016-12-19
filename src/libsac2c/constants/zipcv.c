@@ -134,6 +134,11 @@
         DBUG_RETURN ();                                                                  \
     }
 
+#if 0
+
+/*
+ * The following macro is not yet used but might prove useful in the future:
+ */
 #define COzipCvTOCTEMPLATE(fun, fun_ext, arg_t, arg_ext, res_t)                          \
     void COzipCv##arg_ext##fun_ext (void *arg1, int pos1, void *arg2, int pos2,          \
                                     void *res, int res_pos)                              \
@@ -145,6 +150,7 @@
         ((res_t *)res)[res_pos] = (res_t) ((arg_t *)arg1[pos1]);                         \
         DBUG_RETURN ();                                                                  \
     }
+#endif
 
 /* macro expansion for all basetypes - or dummy if not useful */
 #define MAP_NUMxNUM_NUM(fun, fname)                                                      \
@@ -235,6 +241,10 @@
                                 COzipCvTEMPLATE (fun, fname, unsigned char, Char, bool)  \
                                   COzipCvDUMMYTEMP (Dummy, fname)
 
+#if 0
+/*
+ * Currently not used but potentially in the future.
+ */
 #define MAP_NUMxNUM_BOOL(fun, fname)                                                     \
     COzipCvTEMPLATE (fun, fname, unsigned char, UByte, bool)                             \
       COzipCvTEMPLATE (fun, fname, unsigned short, UShort, bool)                         \
@@ -252,6 +262,7 @@
                               COzipCvDUMMYTEMP (Bool, fname)                             \
                                 COzipCvDUMMYTEMP (Char, fname)                           \
                                   COzipCvDUMMYTEMP (Dummy, fname)
+#endif
 
 #define MAP_BOOL_BOOL(fun, fname)                                                        \
     COzipCvDUMMYTEMP (UByte, fname) COzipCvDUMMYTEMP (UShort, fname)                     \
@@ -264,6 +275,10 @@
                   COzipCvUNARYTEMPLATE (fun, fname, bool, Bool, bool)                    \
                     COzipCvDUMMYTEMP (Dummy, fname)
 
+#if 0
+/*
+ * Currently not used but potentially in the future.
+ */
 #define MAP_NUM_TYPE(fun, fname, target_t)                                               \
     COzipCvUNARYTEMPLATE (fun, fname, unsigned char, UByte, target_t)                    \
       COzipCvUNARYTEMPLATE (fun, fname, unsigned short, UShort, target_t)                \
@@ -282,6 +297,7 @@
                               COzipCvDUMMYTEMP (Char, fname)                             \
                                 COzipCvDUMMYTEMP (Bool, fname)                           \
                                   COzipCvDUMMYTEMP (Dummy, fname)
+#endif
 
 #define MAP_ANY_TYPE(fun, fname, target_t)                                               \
     COzipCvUNARYTEMPLATE (fun, fname, unsigned char, UByte, target_t)                    \

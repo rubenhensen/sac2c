@@ -242,7 +242,6 @@ struct INFO {
  */
 #define SSA_TRAV_FUNDEFS 0
 #define SSA_TRAV_SPECIALS 1
-#define SSA_TRAV_NONE 2
 
 /*
  * access macros:
