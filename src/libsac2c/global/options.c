@@ -56,9 +56,6 @@
  *
  ******************************************************************************/
 
-#undef ARGS_ERROR
-#define ARGS_ERROR(msg)
-
 void
 OPTcheckPreSetupOptions (int argc, char *argv[])
 {

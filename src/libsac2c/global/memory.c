@@ -16,9 +16,9 @@
 
 #include <stdlib.h>
 
-mallocinfo_t *malloctable = 0;
-mallocphaseinfo_t phasetable[PH_final + 1] = {{0, 0, 0, 0, 0, 0, 0, 0}};
-FILE *mreport = 0;
+static mallocinfo_t *malloctable = 0;
+static mallocphaseinfo_t phasetable[PH_final + 1] = {{0, 0, 0, 0, 0, 0, 0, 0}};
+static FILE *mreport = 0;
 
 void *
 _MEMmalloc (int size, char *file, int line, const char *func)
@@ -163,8 +163,8 @@ foldmallocreport (void *init, void *key, void *value)
 static int
 SortMemreport (const void *a, const void *b)
 {
-    mallocphaseinfo_t *aa = (mallocphaseinfo_t *)a;
-    mallocphaseinfo_t *bb = (mallocphaseinfo_t *)b;
+    const mallocphaseinfo_t *aa = a;
+    const mallocphaseinfo_t *bb = b;
 
     return bb->leakedsize - aa->leakedsize;
 }

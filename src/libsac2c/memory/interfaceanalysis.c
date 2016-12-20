@@ -36,7 +36,7 @@
 /**
  * Convergence counter
  */
-int unaliased;
+static int unaliased;
 
 /**
  * CONTEXT enumeration: ia_context_t

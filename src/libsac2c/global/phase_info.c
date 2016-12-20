@@ -21,7 +21,6 @@
 #define SUBPHASEfun(fun) extern node *fun (node *syntax_tree);
 #define CYCLEPHASEfun(fun) extern node *fun (node *syntax_tree);
 #define CYCLEPHASEFUNfun(fun) extern node *fun (node *syntax_tree);
-#define CYCLEPHASEFUNOLDfun(fun) extern node *fun (node *syntax_tree);
 
 #include "phase_sac2c.mac"
 #include "phase_sac4c.mac"
@@ -30,7 +29,6 @@
 #undef SUBPHASEfun
 #undef CYCLEPHASEfun
 #undef CYCLEPHASEFUNfun
-#undef CYCLEPHASEFUNOLDfun
 
 /****************************************************************************/
 

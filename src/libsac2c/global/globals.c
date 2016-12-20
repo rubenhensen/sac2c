@@ -634,6 +634,7 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname)
     DBUG_ENTER ();
 
 #define GLOBAL(type, name, val, ...) global.name = val;
+#define GLOBAL_NOINIT(...)
 #include "globals.mac"
 
     global.argc = argc;

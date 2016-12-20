@@ -1342,3 +1342,4 @@ GLOBAL (cyg_fun_table_t *, cyg_fun_table, NULL, xfree_dummy)
 #undef GLOBALname
 #undef GLOBALinit
 #undef GLOBAL
+#undef GLOBAL_NOINIT
