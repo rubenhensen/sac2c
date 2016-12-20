@@ -24,6 +24,8 @@ typedef struct mallocinfo_t {
     struct UT_hash_handle hh;
 } mallocinfo_t;
 
+extern mallocinfo_t *malloctable; // needed by check_mem
+
 /*
  * mallocphaseinfo_t is a struct we use to store information about a phase
  * regarding memory managment
@@ -38,6 +40,8 @@ typedef struct mallocphaseinfo_t {
     mallocinfo_t *leaked;
     compiler_phase_t phase;
 } mallocphaseinfo_t;
+
+extern mallocphaseinfo_t phasetable[]; // needed by check_mem
 
 /*
  *   When debugging is enabled, _MEMmalloc is called instead of malloc

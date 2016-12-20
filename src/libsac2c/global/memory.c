@@ -16,8 +16,9 @@
 
 #include <stdlib.h>
 
-static mallocinfo_t *malloctable = 0;
-static mallocphaseinfo_t phasetable[PH_final + 1] = {{0, 0, 0, 0, 0, 0, 0, 0}};
+mallocinfo_t *malloctable = 0;
+mallocphaseinfo_t phasetable[PH_final + 1] = {{0, 0, 0, 0, 0, 0, 0, 0}};
+
 static FILE *mreport = 0;
 
 void *
