@@ -564,6 +564,11 @@ ELSEIF (MACC)
   CHECK_CC_FLAG ("-Wno-conversion" MACCC_FLAGS)
   CHECK_CC_FLAG ("-Wno-missing-prototypes" MACCC_FLAGS)
 
+  # we have some functions that are only for debug purposes;
+  # they are not called anywhere in the individual versions but
+  # come in handy when using a debugger.
+  CHECK_CC_FLAG("-Wno-unused-function" MACCC_FLAGS)
+
   # if all cases are covered, we do add a DBUG_ASSERT to ensure we notice
   # when an extension of the type has not been consciously been dealt with!
   CHECK_CC_FLAG("-Wno-covered-switch-default" MACCC_FLAGS)
