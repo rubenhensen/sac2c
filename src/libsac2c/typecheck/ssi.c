@@ -266,7 +266,7 @@ NewMax (tvar *var, ntype *cmax, bool outer)
     ct_res cmp;
     int i = 0;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -410,7 +410,7 @@ NewMin (tvar *var, ntype *cmin, bool outer)
     ntype *tmp;
     int i = 0;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -661,7 +661,7 @@ SSIfixLow (tvar *var)
     bool res;
     int i, n;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();

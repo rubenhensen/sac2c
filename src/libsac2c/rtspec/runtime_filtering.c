@@ -92,7 +92,7 @@ RTFILTERarg (node *arg_node, info *arg_info)
     ct_res cmp;
 
 #ifndef DBUG_OFF
-    char *tmp_str_a, *tmp_str_b;
+    char *tmp_str_a = NULL, *tmp_str_b = NULL;
 #endif
 
     local = ARG_NTYPE (arg_node);

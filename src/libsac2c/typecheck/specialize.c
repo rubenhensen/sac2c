@@ -251,7 +251,7 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
     node *arg;
     int i;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -544,7 +544,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
     node *res;
     node *res_ret, *fundef_ret;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();

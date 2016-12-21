@@ -1115,7 +1115,7 @@ node *
 UPRFprf (node *arg_node, info *arg_info)
 {
     node *argavis1, *argavis2, *resavis;
-    node *ids;
+    node *ids = NULL;
     bool monadic;
     bool valltshp;
     int i;

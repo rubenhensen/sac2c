@@ -442,8 +442,6 @@ UpdateFundefExecmode (node *fundef, mtexecmode_t execmode)
         case MUTH_ANY:
             FUNDEF_EXECMODE (fundef) = MUTH_SINGLE;
             break;
-
-            break;
         }
         break;
     case MUTH_MULTI:

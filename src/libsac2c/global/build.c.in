@@ -1,3 +1,5 @@
+#include "build.h"
+
 char build_style[] = "@CMAKE_BUILD_TYPE@";
 char build_date[]  = "@DATE@";
 char build_user[]  = "@USER_NAME@";

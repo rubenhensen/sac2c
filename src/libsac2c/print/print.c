@@ -3870,6 +3870,7 @@ node *
 PRTfloatvec (node *arg_node, info *arg_info)
 {
     floatvec val;
+    float scal;
 
     DBUG_ENTER ();
 
@@ -3879,11 +3880,13 @@ PRTfloatvec (node *arg_node, info *arg_info)
 
     val = FLOATVEC_VAL (arg_node);
     fprintf (global.outfile, "((floatvec){");
-    for (size_t i = 0; i < sizeof (floatvec) / sizeof (float); i++)
+    for (size_t i = 0; i < sizeof (floatvec) / sizeof (float); i++) {
+        scal = ((float *)&val)[i];
         if (i != sizeof (floatvec) / sizeof (float) - 1)
-            fprintf (global.outfile, "%f, ", ((float *)&val)[i]);
+            fprintf (global.outfile, "%f, ", (double)scal);
         else
-            fprintf (global.outfile, "%f})", ((float *)&val)[i]);
+            fprintf (global.outfile, "%f})", (double)scal);
+    }
 
     DBUG_RETURN (arg_node);
 }

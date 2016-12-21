@@ -806,7 +806,7 @@ f (struct m_func mfunc, loopc_t init, double iter)
     } else
         DBUG_UNREACHABLE ("Unreachable situation");
 
-    return NAN;
+    return nan ("");
 }
 
 static double
@@ -838,7 +838,7 @@ f_prime (struct m_func mfunc, loopc_t init, double iter)
     } else
         DBUG_UNREACHABLE ("Unreachable situation");
 
-    return NAN;
+    return nan ("");
 }
 
 /** <!--********************************************************************-->

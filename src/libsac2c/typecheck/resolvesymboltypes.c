@@ -28,7 +28,7 @@ static ntype *
 RSTntype (ntype *arg_type, info *arg_info)
 {
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -137,7 +137,7 @@ node *
 RSTtypedef (node *arg_node, info *arg_info)
 {
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
     char *err_str1, *err_str2;
     usertype udt, alias;

@@ -1195,7 +1195,7 @@ TUsignatureMatches (node *formal, ntype *actual_prod_type, bool exact)
     int pos;
     bool match = TRUE;
 #ifndef DBUG_OFF
-    char *tmp_str, *tmp2_str;
+    char *tmp_str = NULL, *tmp2_str = NULL;
 #endif
 
     DBUG_ENTER ();

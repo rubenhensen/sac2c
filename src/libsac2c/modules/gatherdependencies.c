@@ -35,7 +35,6 @@ struct INFO {
  */
 #define INFO_GDP_DEPS(n) ((n)->deps)
 #define INFO_GDP_MODULE(n) ((n)->module)
-#define INFO_GDP_MODULE(n) ((n)->module)
 
 /*
  * INFO functions

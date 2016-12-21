@@ -535,7 +535,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
     int i, inf_n, spec_n;
     bool ok;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
     node *arg;
 #endif
 
@@ -813,7 +813,7 @@ NTCvardec (node *arg_node, info *arg_info)
     ntype *type;
 
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -991,7 +991,7 @@ NTClet (node *arg_node, info *arg_info)
     bool ok;
 
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -1416,7 +1416,7 @@ NTCarray (node *arg_node, info *arg_info)
     ntype *type, *elems;
     te_info *info;
 #ifndef DBUG_OFF
-    char *tmp_str1, *tmp_str2;
+    char *tmp_str1 = NULL, *tmp_str2 = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -1810,7 +1810,7 @@ NTCwith (node *arg_node, info *arg_info)
 {
     ntype *gen, *body, *mem_outer_accu, *mem_outer_prop_objs;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();

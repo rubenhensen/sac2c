@@ -586,6 +586,16 @@ ELSEIF (MACC)
   # needed as we want to provide == and != as is in C in SaC as well!
   CHECK_CC_FLAG ("-Wno-float-equal" MACCC_FLAGS)
 
+  # we want to ensure all access macros for <xyz>.mac files are always defined 
+  # even if some of them are not actually used in one particular use of the 
+  # mac file!
+  CHECK_CC_FLAG ("-Wno-unused-macros" MACCC_FLAGS)
+
+  # these are needed to avoid a warning deep within uthash.h which has been
+  # pulled from sourceforge....
+  CHECK_CC_FLAG ("-Wno-cast-align" MACCC_FLAGS)
+  CHECK_CC_FLAG ("-Wno-cast-qual" MACCC_FLAGS)
+
   # temporarily disabled; needs to be reactivated with doxygen:
   CHECK_CC_FLAG ("-Wno-documentation-unknown-command" MACCC_FLAGS)
 

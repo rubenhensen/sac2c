@@ -201,7 +201,7 @@ SplitWrapper (node *fundef, info *arg_info)
     node *new_fundef;
     node *new_fundefs = NULL;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();

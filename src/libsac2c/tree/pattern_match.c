@@ -1059,8 +1059,8 @@ constMatcher (pattern *pat, node *stack)
 {
     node *arg;
 #ifndef DBUG_OFF
-    constant *c;
-    char *tmp_str;
+    constant *c = NULL;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_PRINT (PMSTART "matching a constant:", matching_level);

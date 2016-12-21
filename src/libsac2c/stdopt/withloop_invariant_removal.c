@@ -247,6 +247,7 @@ depthmask_mark_level (info *inf, int level)
     DBUG_RETURN ();
 }
 
+#ifndef DBUG_OFF
 /******************************************************************************
  *
  * function:
@@ -256,7 +257,7 @@ depthmask_mark_level (info *inf, int level)
  * Use for debug prints only!
  *
  *****************************************************************************/
-static UNUSED uint64_t
+static uint64_t
 dmask2ui64 (info *inf)
 {
     DBUG_ENTER ();
@@ -269,6 +270,7 @@ dmask2ui64 (info *inf)
 
     DBUG_RETURN (v);
 }
+#endif
 
 /******************************************************************************
  *
@@ -670,12 +672,14 @@ WLIRassign (node *arg_node, info *arg_info)
     node *pre_assign;
     node *tmp;
     bool *old_dmask;
-    bool new_dmask_buf[INFO_WITHDEPTH (arg_info) + 1];
+    bool *new_dmask_buf;
     int deepest_lvl;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (ASSIGN_STMT (arg_node), "missing instruction in assignment");
+
+    new_dmask_buf = (bool *)MEMmalloc ((INFO_WITHDEPTH (arg_info) + 1) * sizeof (bool));
 
     /* init traversal flags */
     INFO_PREASSIGN (arg_info) = NULL;
@@ -771,6 +775,8 @@ WLIRassign (node *arg_node, info *arg_info)
      * collected because it tracks the real dependency in the tree. */
     merge_dmask (old_dmask, INFO_DEPTHMASK (arg_info), INFO_WITHDEPTH (arg_info));
     INFO_DEPTHMASK (arg_info) = old_dmask;
+
+    MEMfree (new_dmask_buf);
 
     DBUG_RETURN (arg_node);
 }
@@ -890,11 +896,13 @@ WLIRid (node *arg_node, info *arg_info)
 node *
 WLIRwith (node *arg_node, info *arg_info)
 {
-    bool larger_dmask_buf[INFO_WITHDEPTH (arg_info) + 2];
+    bool *larger_dmask_buf;
     bool *old_dmask;
 
     DBUG_ENTER ();
 
+    larger_dmask_buf
+      = (bool *)MEMmalloc ((INFO_WITHDEPTH (arg_info) + 2) * sizeof (bool));
     DBUG_PRINT ("Looking at %s=with...", AVIS_NAME (INFO_LHSAVIS (arg_info)));
     /* clear current InsertListFrame */
     INFO_INSLIST (arg_info)
@@ -945,6 +953,8 @@ WLIRwith (node *arg_node, info *arg_info)
     /* clear this frame */
     INFO_INSLIST (arg_info)
       = InsListSetAssigns (INFO_INSLIST (arg_info), NULL, INFO_WITHDEPTH (arg_info));
+
+    MEMfree (larger_dmask_buf);
 
     DBUG_RETURN (arg_node);
 }

@@ -1418,7 +1418,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     ntype *aks = NULL;
 
 #ifndef DBUG_OFF
-    char *tmp;
+    char *tmp = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -1927,7 +1927,7 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
     ntype *res;
     int i;
 #ifndef DBUG_OFF
-    char *tmp, *tmp2;
+    char *tmp = NULL, *tmp2 = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -1996,7 +1996,7 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
     int new_num_luts;
 #ifndef DBUG_OFF
     tvar **new_alphas;
-    char *tmpstring;
+    char *tmpstring = NULL;
 #endif
     lut_t **new_luts;
 
@@ -2263,7 +2263,6 @@ foldFunctionInstances (ntype *type, void *(*foldfun) (node *, void *), void *res
             } else {
                 result = foldFunctionInstances (IRES_TYPE (type), foldfun, result);
             }
-            break;
             break;
 
         case TC_fun:
@@ -3012,7 +3011,7 @@ TYdispatchFunType (ntype *fun, ntype *args)
     dft_res *res;
     dft_state *state = NULL;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -3736,7 +3735,7 @@ ct_res
 TYcmpTypes (ntype *t1, ntype *t2)
 {
 #ifndef DBUG_OFF
-    char *tmp_str, *tmp_str2;
+    char *tmp_str = NULL, *tmp_str2 = NULL;
 #endif
 
     int cnt;
@@ -4684,7 +4683,7 @@ TYcopyType (ntype *type)
     ntype *res;
     int i;
 #ifndef DBUG_OFF
-    int mem_entry;
+    int mem_entry = 0;
 #endif
 
     DBUG_ENTER ();
@@ -5875,7 +5874,7 @@ TYoldType2ScalarType (types *old)
     usertype udt;
 
 #ifndef DBUG_OFF
-    char *tmp, *tmp2;
+    char *tmp = NULL, *tmp2 = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -5953,7 +5952,7 @@ TYoldType2Type (types *old)
     ntype *res;
 
 #ifndef DBUG_OFF
-    char *tmp, *tmp2;
+    char *tmp = NULL, *tmp2 = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -6149,7 +6148,7 @@ TYtype2OldType (ntype *xnew)
 {
     types *res;
 #ifndef DBUG_OFF
-    char *tmp_str, *tmp_str2;
+    char *tmp_str = NULL, *tmp_str2 = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -6248,7 +6247,7 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
     int i, pos, pathes_found;
     int mandatory = 1;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -6375,7 +6374,7 @@ TYsplitWrapperType (ntype *type, int *pathes_remaining)
     int n;
     ntype **frame;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -7051,7 +7050,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
     int i;
     node *dimnum;
 #ifndef DBUG_OFF
-    char *dbug_str;
+    char *dbug_str = NULL;
 #endif
 
     DBUG_ENTER ();

@@ -4,7 +4,7 @@
 /* strings for primitve types */
 
 #define TYP_IFpr_str(str) str
-char *type_string[] = {
+static char *type_string[] = {
 #include "type_info.mac"
 };
 

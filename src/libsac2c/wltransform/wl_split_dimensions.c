@@ -2314,7 +2314,8 @@ static node *
 ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node **code,
              node *next, info *arg_info)
 {
-    node *index, *max, *body, *res, *result, *rangeoffsets, *resultindices;
+    node *index, *max, *body, *res = NULL, *result, *rangeoffsets = NULL,
+                              *resultindices = NULL;
 
     DBUG_ENTER ();
 

@@ -324,7 +324,7 @@ EATavis (node *arg_node, info *arg_info)
 {
     ntype *type, *scalar;
 #ifndef DBUG_OFF
-    char *tmp_str, *tmp_str2;
+    char *tmp_str = NULL, *tmp_str2 = NULL;
 #endif
 
     DBUG_ENTER ();

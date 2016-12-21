@@ -80,7 +80,7 @@ str_buf *
 SBUFprintf (str_buf *s, const char *format, ...)
 {
     va_list arg_p;
-    int len, rem;
+    int len = 0, rem;
     bool ok;
 
     DBUG_ENTER ();

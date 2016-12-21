@@ -1638,6 +1638,7 @@ postmortem (char *s)
 
 #else /* DBUG_OFF */
 
+extern int DBUG_almost_useless_dummy_var;
 int DBUG_almost_useless_dummy_var = 0;
 
 /*

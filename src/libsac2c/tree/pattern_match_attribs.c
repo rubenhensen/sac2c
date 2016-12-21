@@ -391,7 +391,7 @@ attribGetVal (attrib *attr, node *arg)
 {
     constant **c;
 #ifndef DBUG_OFF
-    char *co_str;
+    char *co_str = NULL;
 #endif
 
     c = PATTR_C1 (attr);
@@ -433,7 +433,7 @@ attribIsVal (attrib *attr, node *arg)
     constant *c2;
     bool res;
 #ifndef DBUG_OFF
-    char *co_str;
+    char *co_str = NULL;
 #endif
 
     c = *PATTR_C1 (attr);
@@ -474,7 +474,7 @@ attribAnyLeVal (attrib *attr, node *arg)
     bool res;
     constant *c, *c2, *c3;
 #ifndef DBUG_OFF
-    char *co_str;
+    char *co_str = NULL;
 #endif
 
     c = *PATTR_C1 (attr);
@@ -668,7 +668,7 @@ bool
 attribGetFS (attrib *attr, node *arg)
 {
 #ifndef DBUG_OFF
-    char *co_str;
+    char *co_str = NULL;
 #endif
 
     DBUG_PRINT (PMASTART "PMAgetFS( " F_PTR " ):", PATTR_C1 (attr));
@@ -710,7 +710,7 @@ attribHasFS (attrib *attr, node *arg)
     constant *c2;
     bool res;
 #ifndef DBUG_OFF
-    char *co_str;
+    char *co_str = NULL;
 #endif
 
     DBUG_EXECUTE (co_str = COconstant2String (*PATTR_C1 (attr)));

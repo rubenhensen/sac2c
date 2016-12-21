@@ -396,15 +396,11 @@ NSgetXTNamespace (const namespace_t *orig)
 }
 
 namespace_t *
-NSdupNamespace (const namespace_t *ns)
+NSdupNamespace (namespace_t *ns)
 {
-    namespace_t *result;
-
     DBUG_ENTER ();
 
-    result = (namespace_t *)ns;
-
-    DBUG_RETURN (result);
+    DBUG_RETURN (ns);
 }
 
 namespace_t *

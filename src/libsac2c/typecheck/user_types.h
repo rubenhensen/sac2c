@@ -44,7 +44,7 @@ extern usertype UTgetUnAliasedType (usertype udt);
 extern void UTsetTypedef (usertype t1, ntype *type);
 extern void UTsetBaseType (usertype t1, ntype *type);
 extern void UTsetName (usertype t1, const char *name);
-extern void UTsetNamespace (usertype t1, const namespace_t *ns);
+extern void UTsetNamespace (usertype t1, namespace_t *ns);
 
 extern bool UTeq (usertype udt1, usertype udt2);
 extern bool UTisAlias (usertype udt);

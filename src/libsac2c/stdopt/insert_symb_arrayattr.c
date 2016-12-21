@@ -722,7 +722,7 @@ ISAAretraverse (node *fun, bool save_args, node *newargs, info *arg_info)
     node *preassign;
     node *postassign;
     node *fundef;
-    node *args;
+    node *args = NULL;
 
     DBUG_ENTER ();
 

@@ -154,8 +154,7 @@ GGTCdoGenerateGenericTypeConversions (node *syntax_tree)
  * @return N_fundef node representing the type conversion
  ******************************************************************************/
 static node *
-BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype *to,
-                     prf prf)
+BuildTypeConversion (const char *name, namespace_t *ns, ntype *from, ntype *to, prf prf)
 {
     node *result;
     node *avisarg;

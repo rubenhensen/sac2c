@@ -20,7 +20,6 @@
  *****************************************************************************/
 #include "generate_nested_type_conversions.h"
 
-#define SACARG_NAME "SACarg"
 /*
  * Other includes go here
  */
@@ -133,8 +132,7 @@ GNTCdoGenerateNestedTypeConversions (node *syntax_tree)
  * @return N_fundef node representing the type conversion
  ******************************************************************************/
 static node *
-BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype *to,
-                     prf prf)
+BuildTypeConversion (const char *name, namespace_t *ns, ntype *from, ntype *to, prf prf)
 {
     node *result;
     node *avisarg;

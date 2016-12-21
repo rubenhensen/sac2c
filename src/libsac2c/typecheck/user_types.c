@@ -416,7 +416,7 @@ UTsetName (usertype udt, const char *name)
 }
 
 void
-UTsetNamespace (usertype udt, const namespace_t *ns)
+UTsetNamespace (usertype udt, namespace_t *ns)
 {
     DBUG_ENTER ();
     DBUG_ASSERT (udt < udt_no, "UTsetNamespace called with illegal udt!");

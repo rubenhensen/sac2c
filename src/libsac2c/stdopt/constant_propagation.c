@@ -54,10 +54,10 @@
  *
  */
 
-const int PROP_nothing = 0;
-const int PROP_scalarconst = 2;
-const int PROP_arrayconst = 4;
-const int PROP_array = 8;
+static const int PROP_nothing = 0;
+static const int PROP_scalarconst = 2;
+static const int PROP_arrayconst = 4;
+static const int PROP_array = 8;
 
 /*
  * INFO structure

@@ -52,7 +52,7 @@ DispatchFunType (node *wrapper, ntype *args)
 {
     dft_res *res;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();
@@ -128,7 +128,7 @@ NTCCTdispatchFunType (node *wrapper, ntype *args)
 {
     dft_res *res;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();

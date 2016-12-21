@@ -239,12 +239,13 @@ computeDemand (node *ids, node *fundef_arg, int num_rets, bool is_ext_fun)
     constant *current_fundef_arg_demand = NULL;
     constant *selection_matrix = NULL;
 #ifndef DBUG_OFF
-    char *string;
+    char *string = NULL;
 #endif
     if (AVIS_DEMAND (ARG_AVIS (fundef_arg)) == NULL) { /* if no demand exists, ...*/
-        int elems[num_rets * 4];
+        int *elems;
         int shape[2] = {num_rets, 4};
 
+        elems = (int *)MEMmalloc (num_rets * 4 * sizeof (int));
         for (i = 0; i < num_rets; i++) {
             pos = i * 4;
             for (j = 0; j < 4; j++) {
@@ -253,6 +254,7 @@ computeDemand (node *ids, node *fundef_arg, int num_rets, bool is_ext_fun)
         }
         AVIS_DEMAND (ARG_AVIS (fundef_arg))
           = COmakeConstantFromArray (T_int, 2, shape, elems);
+        MEMfree (elems);
     }
 
     /* get demands*/
@@ -620,7 +622,7 @@ getReturnDemand (constant *demand, int row)
     int num_rets = SHgetExtent (COgetShape (demand), 0);
     int dim = SHgetDim (COgetShape (demand));
     int new_shape[2] = {num_rets, 4};
-    int elems[num_rets * 4];
+    int *elems;
     int i = 0;
     int j = 0;
     int pos = 0;
@@ -629,6 +631,7 @@ getReturnDemand (constant *demand, int row)
     char *string = NULL;
 #endif
 
+    elems = (int *)MEMmalloc (num_rets * 4 * sizeof (int));
     for (i = 0; i < num_rets; i++) {
         pos = i * 4;
         for (j = 0; j < 4; j++) {
@@ -649,6 +652,7 @@ getReturnDemand (constant *demand, int row)
     DBUG_PRINT (">-------------------<");
     COfreeConstant (idx);
     COfreeConstant (res_row);
+    MEMfree (elems);
     DBUG_RETURN (res);
 }
 
@@ -823,7 +827,7 @@ SOSSKassign (node *arg_node, info *arg_info)
     int num_rets = SHgetExtent (COgetShape (old_demand), 0);
     int dim = SHgetDim (COgetShape (old_demand));
     int new_shape[2] = {num_rets, 4};
-    int elems[num_rets * 4];
+    int *elems;
     int i = 0;
     int j = 0;
     int pos = 0;
@@ -831,6 +835,7 @@ SOSSKassign (node *arg_node, info *arg_info)
     char *string = NULL;
 #endif
 
+    elems = (int *)MEMmalloc (num_rets * 4 * sizeof (int));
     /* Constuct the demand [0,1,2,3] for the lamda app.*/
     for (i = 0; i < num_rets; i++) {
         pos = i * 4;
@@ -859,6 +864,8 @@ SOSSKassign (node *arg_node, info *arg_info)
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     DBUG_PRINT_TAG ("SOSSK_PATH", "<<< LEAVE SOSSKassign");
+
+    MEMfree (elems);
     DBUG_RETURN (arg_node);
 }
 
@@ -888,10 +895,11 @@ SOSSKcond (node *arg_node, info *arg_info)
     int num_rets = SHgetExtent (COgetShape (INFO_DEMAND (arg_info)), 0);
     int dim = SHgetDim (COgetShape (INFO_DEMAND (arg_info)));
     int new_shape[2] = {num_rets, 4};
-    int elems[num_rets * 4];
+    int *elems;
     int i = 0;
     int offset = 0;
 
+    elems = (int *)MEMmalloc (num_rets * 4 * sizeof (int));
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
@@ -1034,10 +1042,11 @@ SOSSKfold (node *arg_node, info *arg_info)
     int num_rets = SHgetExtent (COgetShape (old_demand), 0);
     int dim = SHgetDim (COgetShape (old_demand));
     int new_shape[2] = {num_rets, 4};
-    int elems[num_rets * 4];
+    int *elems;
     int i = 0;
     int offset = 0;
 
+    elems = (int *)MEMmalloc (num_rets * 4 * sizeof (int));
     /* construct demand [0,1,2,3]*/
     for (i = 0; i < num_rets; i++) {
         offset = 4 * i;
@@ -1064,6 +1073,7 @@ SOSSKfold (node *arg_node, info *arg_info)
     }
 
     DBUG_PRINT_TAG ("SOSSK_PATH", "<<< LEAVE SOSSKfold");
+    MEMfree (elems);
     DBUG_RETURN (arg_node);
 }
 
@@ -1092,10 +1102,11 @@ SOSSKgenarray (node *arg_node, info *arg_info)
     int num_rets = SHgetExtent (COgetShape (old_demand), 0);
     int dim = SHgetDim (COgetShape (old_demand));
     int new_shape[2] = {num_rets, 4};
-    int elems[num_rets * 4];
+    int *elems;
     int i = 0;
     int offset = 0;
 
+    elems = (int *)MEMmalloc (num_rets * 4 * sizeof (int));
     /* construct demand [0,2,3,3]*/
     for (i = 0; i < num_rets; i++) {
         offset = 4 * i;
@@ -1126,6 +1137,7 @@ SOSSKgenarray (node *arg_node, info *arg_info)
     }
 
     DBUG_PRINT_TAG ("SOSSK_PATH", "<<< LEAVE SOSSKgenarray");
+    MEMfree (elems);
     DBUG_RETURN (arg_node);
 }
 
@@ -1153,10 +1165,11 @@ SOSSKmodarray (node *arg_node, info *arg_info)
     int num_rets = SHgetExtent (COgetShape (old_demand), 0);
     int dim = SHgetDim (COgetShape (old_demand));
     int new_shape[2] = {num_rets, 4};
-    int elems[num_rets * 4];
+    int *elems;
     int i = 0;
     int offset = 0;
 
+    elems = (int *)MEMmalloc (num_rets * 4 * sizeof (int));
     /* construct demand [0,2,3,3]*/
     for (i = 0; i < num_rets; i++) {
         offset = 4 * i;
@@ -1183,6 +1196,7 @@ SOSSKmodarray (node *arg_node, info *arg_info)
     }
 
     DBUG_PRINT_TAG ("SOSSK_PATH", "<<< LEAVE SOSSKmodarray");
+    MEMfree (elems);
     DBUG_RETURN (arg_node);
 }
 
@@ -1325,7 +1339,7 @@ SOSSKids (node *arg_node, info *arg_info)
     /* If the demand is NULL, the variable is not used below. So demand is
      * (0, 0, 0, 0)*/
     if (ids_demand == NULL) {
-        int elems[INFO_NUM_RETS (arg_info) * 4];
+        int *elems;
         int shape[2] = {INFO_NUM_RETS (arg_info), 4};
         int i = 0;
         int j = 0;
@@ -1334,6 +1348,7 @@ SOSSKids (node *arg_node, info *arg_info)
         char *string = NULL;
 #endif
 
+        elems = (int *)MEMmalloc (INFO_NUM_RETS (arg_info) * 4 * sizeof (int));
         for (i = 0; i < INFO_NUM_RETS (arg_info); i++) {
             pos = i * 4;
             for (j = 0; j < 4; j++) {
@@ -1347,6 +1362,7 @@ SOSSKids (node *arg_node, info *arg_info)
         DBUG_EXECUTE_TAG ("SOSSK", string = demand2String (ids_demand));
         DBUG_PRINT_TAG ("SOSSK", "Add demand %s to ids %s", string, IDS_NAME (arg_node));
         DBUG_EXECUTE_TAG ("SOSSK", string = MEMfree (string));
+        MEMfree (elems);
     }
 
     INFO_DEMAND (arg_info) = doOverSelMatrix (old_demand, ids_demand);
@@ -1522,8 +1538,10 @@ SOSSKfundef (node *arg_node, info *arg_info)
 #ifndef DBUG_OFF
                 char *string = NULL;
 #endif
-                int elems[INFO_NUM_RETS (arg_info) * 4];
+                int *elems;
                 int shape[2] = {INFO_NUM_RETS (arg_info), 4};
+
+                elems = (int *)MEMmalloc (INFO_NUM_RETS (arg_info) * 4 * sizeof (int));
                 for (i = 0; i < INFO_NUM_RETS (arg_info); i++) {
                     pos = i * 4;
                     for (j = 0; j < 4; j++) {
@@ -1551,6 +1569,7 @@ SOSSKfundef (node *arg_node, info *arg_info)
                     FUNDEF_FIXPOINTFOUND (arg_node) = TRUE;
                     DBUG_PRINT_TAG ("SOSSK", "FIXPOINT FOUND");
                 }
+                MEMfree (elems);
             } else { /* Fundef is Wrapper*/
                 /* Set flag, if fixpoint is not found, this will be reseted in the
                  * fold-fun*/

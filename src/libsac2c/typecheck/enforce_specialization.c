@@ -147,7 +147,7 @@ ESPfundef (node *arg_node, info *arg_info)
     ntype *args, *rets;
     dft_res *disp_res;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_ENTER ();

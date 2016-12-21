@@ -767,7 +767,7 @@ f_prime (struct m_func mfunc, loopc_t init, double iter)
         DBUG_UNREACHABLE ("Unreachable situation");
     }
 
-    return NAN;
+    return nan ("");
 }
 
 static double
@@ -794,7 +794,7 @@ NewtonF (struct m_func mfunc, loopc_t init, double iter)
     } else
         DBUG_UNREACHABLE ("Unreachable situation");
 
-    return NAN;
+    return nan ("");
 }
 /** <!--********************************************************************-->
  *

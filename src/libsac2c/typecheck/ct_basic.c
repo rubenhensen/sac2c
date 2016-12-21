@@ -47,7 +47,7 @@ ComputeType (ct_funptr CtFun, te_info *info, ntype *args, bool strict)
     ntype *res, *bottom;
     int i, num_res;
 #ifndef DBUG_OFF
-    char *tmp_str;
+    char *tmp_str = NULL;
 #endif
 
     DBUG_EXECUTE (tmp_str = TYtype2String (args, 0, 0));

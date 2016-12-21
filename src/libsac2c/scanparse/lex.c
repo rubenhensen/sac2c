@@ -13,6 +13,7 @@
 #define DBUG_PRINT(Hai, ...) (void)0
 #endif
 
+#include "globals.h"
 #include "lex.h"
 
 #define TOKEN_KIND(a, b) b,
@@ -493,8 +494,13 @@ lexer_trie_read (struct lexer *lex, struct trie *trie, char **buf, size_t writte
         }
     }
 
-    if (index)
-        buffer_add_char (buf, &index, size, 0);
+#if 0
+  /*
+   * the next two lines appear to be dead code.... (Bodo 2016)
+   */
+  if (index)
+    buffer_add_char (buf, &index, size, 0);
+#endif
 }
 
 /* This function checks if buffer can be appended with the
