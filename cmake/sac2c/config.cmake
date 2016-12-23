@@ -476,6 +476,12 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   CHECK_CC_FLAG ("-Wextra" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wstrict-prototypes" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wno-unused-parameter" GCC_FLAGS)
+  # in several places (e.g. everywhere), we have defined and assigned variables
+  # whose value are not used. This is likely due to how some function/macro calls
+  # work, which return some value/pointer. Removing these is inconvenient to say the
+  # least as it would require changing around how some macros are defined. This flag
+  # disables the warning that identifies these unused but assigned variables.
+  CHECK_CC_FLAG ("-Wno-unused-but-set-variable" GCC_FLAGS)
   #Turn this if you want to be cruel
   #CHECK_CC_FLAG ("-Wconversion" GCC_FLAGS)
   CHECK_CC_FLAG ("-march=native" GCC_ARCH_FLAGS)
