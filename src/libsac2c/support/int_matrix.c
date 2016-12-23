@@ -471,7 +471,7 @@ MatrixEqual (IntMatrix m1, IntMatrix m2)
 
     DBUG_ENTER ();
 
-    if ((m1->dim_y != m2->dim_y) || (m2->dim_x != m2->dim_x)) {
+    if ((m1->dim_y != m2->dim_y) || (m1->dim_x != m2->dim_x)) {
         equal = FALSE;
     } else {
         for (iy = 0; iy < m1->dim_y; iy++) {
