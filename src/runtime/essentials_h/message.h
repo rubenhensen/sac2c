@@ -17,6 +17,7 @@
 #define SAC_C_EXTERN extern
 #endif /* SAC_C_EXTERN */
 
+SAC_C_EXTERN void (*SAC_MessageExtensionCallback) (void);
 SAC_C_EXTERN void SAC_RuntimeError (char *format, ...);
 SAC_C_EXTERN void SAC_RuntimeError_Mult (int cnt, ...);
 SAC_C_EXTERN void SAC_RuntimeErrorLine (int line, char *format, ...);

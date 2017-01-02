@@ -60,6 +60,7 @@ typedef void (*tFunRWAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
  * ´libsac_cachesim_basic.c´-file. Changes there have to be done here
  * too!!!  */
 extern char SAC_CS_separator[];
+extern char SAC_CS_separator_2[];
 
 extern tCacheLevel *SAC_CS_cachelevel[MAX_CACHELEVEL + 1];
 /* SAC_CS_cachelevel[0] is unused */

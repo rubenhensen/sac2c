@@ -41,7 +41,7 @@ strtok (char *str, const char *delim)
 }
 #endif
 
-void (*SAC_HM_ShowDiagnostics_callback) (void) = 0;
+void (*SAC_MessageExtensionCallback) (void) = 0;
 
 /*
  * Function definitions
@@ -56,8 +56,8 @@ SAC_RuntimeError (char *format, ...)
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
-    if (SAC_HM_ShowDiagnostics_callback)
-        SAC_HM_ShowDiagnostics_callback ();
+    if (SAC_MessageExtensionCallback)
+        SAC_MessageExtensionCallback ();
 
 #if ENABLE_DISTMEM
     if (SAC_DISTMEM_rank != SAC_DISTMEM_RANK_UNDEFINED) {
@@ -102,8 +102,8 @@ SAC_RuntimeError_Mult (int cnt, ...)
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
-    if (SAC_HM_ShowDiagnostics_callback)
-        SAC_HM_ShowDiagnostics_callback ();
+    if (SAC_MessageExtensionCallback)
+        SAC_MessageExtensionCallback ();
 
     fprintf (stderr, "\n\n*** SAC runtime error\n");
 
@@ -140,8 +140,8 @@ SAC_RuntimeErrorLine (int line, char *format, ...)
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
-    if (SAC_HM_ShowDiagnostics_callback)
-        SAC_HM_ShowDiagnostics_callback ();
+    if (SAC_MessageExtensionCallback)
+        SAC_MessageExtensionCallback ();
 
     fprintf (stderr, "\n\n*** SAC runtime error\n");
     fprintf (stderr, "*** line %d\n*** ", line);

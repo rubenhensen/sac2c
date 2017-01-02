@@ -72,9 +72,6 @@ SAC_HM_DEFINE__IMPL ()
 SAC_MT_DEFINE_LOCK (SAC_HM_top_arena_lock)
 SAC_MT_DEFINE_LOCK (SAC_HM_diag_counter_lock)
 
-/* The following is defined in libsac/messages.c. */
-extern void (*SAC_HM_ShowDiagnostics_callback) (void);
-
 /******************************************************************************
  *
  * function:
@@ -97,7 +94,7 @@ SAC_HM_SetupMaster ()
 
 #ifdef DIAG
     /* Register the diagnostics function. */
-    SAC_HM_ShowDiagnostics_callback = &SAC_HM_ShowDiagnostics;
+    SAC_MessageExtensionCallback = &SAC_HM_ShowDiagnostics;
 #endif
 
     /*

@@ -4,6 +4,7 @@
  * within a sac program
  *
  */
+#include "sac.h"
 
 char **SAC_commandline_argv = (char **)0;
 int SAC_commandline_argc = 0;

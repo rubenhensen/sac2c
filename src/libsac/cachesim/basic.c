@@ -65,7 +65,7 @@ tFunRWAccess SAC_CS_ReadAccess, SAC_CS_WriteAccess,
    SAC_CS_xxx_access_table[MAX_CACHELEVEL+1] for dummy/MainMem */
 /* END: */
 
-FILE *SAC_CS_pipehandle;
+static FILE *SAC_CS_pipehandle;
 
 void (*SAC_CS_Finalize) (void);
 void (*SAC_CS_RegisterArray) (void * /*baseaddress*/, int /*size*/);
@@ -1088,10 +1088,10 @@ static void
 PrintSimpleCounters (char *cachelevel_str, int digits, CNT_T hit, CNT_T miss)
 {
     CNT_T accesses;
-    float hit_ratio;
+    double hit_ratio;
 
     accesses = hit + miss;
-    hit_ratio = (accesses == 0) ? (0) : (((float)hit / (float)accesses) * 100.0);
+    hit_ratio = (accesses == 0) ? (0) : (((double)hit / (double)accesses) * 100.0);
 
     fprintf (stderr,
              "# %s:  accesses:  %*llu\n"
@@ -1138,16 +1138,16 @@ PrintAdvancedCounters (int digits, CNT_T hit, CNT_T miss, CNT_T cold, CNT_T cros
              "%%)\n"
              "#               invalidation:               %*llu  ( %5.1f %%)  ( %5.1f "
              "%%)\n",
-             digits, cold, (miss == 0) ? (0) : (((float)cold / (float)miss) * 100.0),
-             (accesses == 0) ? (0) : (((float)cold / (float)accesses) * 100.0), digits,
-             cross, (miss == 0) ? (0) : (((float)cross / (float)miss) * 100.0),
-             (accesses == 0) ? (0) : (((float)cross / (float)accesses) * 100.0), digits,
-             self, (miss == 0) ? (0) : (((float)self / (float)miss) * 100.0),
-             (accesses == 0) ? (0) : (((float)self / (float)accesses) * 100.0), digits,
-             both, (miss == 0) ? (0) : (((float)both / (float)miss) * 100.0),
-             (accesses == 0) ? (0) : (((float)both / (float)accesses) * 100.0), digits,
-             invalid, (miss == 0) ? (0) : (((float)invalid / (float)miss) * 100.0),
-             (accesses == 0) ? (0) : (((float)invalid / (float)accesses) * 100.0));
+             digits, cold, (miss == 0) ? (0) : (((double)cold / (double)miss) * 100.0),
+             (accesses == 0) ? (0) : (((double)cold / (double)accesses) * 100.0), digits,
+             cross, (miss == 0) ? (0) : (((double)cross / (double)miss) * 100.0),
+             (accesses == 0) ? (0) : (((double)cross / (double)accesses) * 100.0), digits,
+             self, (miss == 0) ? (0) : (((double)self / (double)miss) * 100.0),
+             (accesses == 0) ? (0) : (((double)self / (double)accesses) * 100.0), digits,
+             both, (miss == 0) ? (0) : (((double)both / (double)miss) * 100.0),
+             (accesses == 0) ? (0) : (((double)both / (double)accesses) * 100.0), digits,
+             invalid, (miss == 0) ? (0) : (((double)invalid / (double)miss) * 100.0),
+             (accesses == 0) ? (0) : (((double)invalid / (double)accesses) * 100.0));
 
     /*
      * Detection of invalidation misses is not yet implemented, so we don't want

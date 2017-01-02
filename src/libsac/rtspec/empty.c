@@ -1,1 +1,1 @@
-unsigned int SAC_RTSPEC_controller_threads = 0;
+static unsigned int SAC_RTSPEC_controller_threads = 0;
