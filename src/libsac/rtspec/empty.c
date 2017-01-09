@@ -1,1 +1,3 @@
-static unsigned int SAC_RTSPEC_controller_threads = 0;
+#include "sac.h"
+
+unsigned int SAC_RTSPEC_controller_threads = 0;
