@@ -124,6 +124,69 @@ strategyEnv (int threads, int sockets_avail, int cores_avail, int pus_avail)
     return (res);
 }
 
+static char *
+strategyAlternate (int threads, int sockets_avail, int cores_avail, int pus_avail)
+{
+    int i;
+    char *res;
+
+    if (threads > (sockets_avail * cores_avail * pus_avail) / 2) {
+        SAC_RuntimeError ("Asking for %d threads on a machine with %d processing units; "
+                          "Either decrease the number of threads or turn -mt_bind off",
+                          threads, sockets_avail * cores_avail * pus_avail);
+    }
+
+    res = (char *)SAC_MALLOC (sizeof (char)
+                              * (sockets_avail * cores_avail * pus_avail + 1));
+
+    for (i = 0; i < sockets_avail * cores_avail * pus_avail; i++) {
+        res[i] = SAC_PULIST_EMPTY_CHAR;
+    }
+    res[i] = '\0';
+
+    for (i = 0; i < threads * 2; i++) {
+        if (i % 2 != 0) {
+            res[i] = SAC_PULIST_FULL_CHAR;
+        }
+    }
+    return res;
+}
+
+static char *
+strategyThrPerSocket (int threads, int sockets_avail, int cores_avail, int pus_avail)
+{
+    int i;
+    char *res;
+    int inc = sockets_avail * cores_avail * pus_avail / sockets_avail;
+
+    if (threads > sockets_avail) {
+        SAC_RuntimeError ("Asking for %d threads on a machine with %d sockets; "
+                          "Either decrease the number of threads or turn -mt_bind off",
+                          threads, sockets_avail * cores_avail * pus_avail);
+    }
+
+    res = (char *)SAC_MALLOC (sizeof (char)
+                              * (sockets_avail * cores_avail * pus_avail + 1));
+
+    for (i = 0; i < sockets_avail * cores_avail * pus_avail; i++) {
+        res[i] = SAC_PULIST_EMPTY_CHAR;
+    }
+    res[i] = '\0';
+
+    SAC_TR_LIBSAC_PRINT (("Create Pinning String"));
+
+    i = 0;
+    while (i <= sockets_avail * cores_avail * pus_avail) {
+        SAC_TR_LIBSAC_PRINT (("pus = %d, socks = %d\n", pus_avail, sockets_avail));
+
+        res[i] = SAC_PULIST_FULL_CHAR;
+        i += inc;
+    }
+
+    SAC_TR_LIBSAC_PRINT (("Created Pinning string"));
+    return res;
+}
+
 static hwloc_cpuset_t *
 pusString2cpuSets (char *pus_string, int num_pus)
 {
@@ -230,7 +293,18 @@ SAC_HWLOC_init (int threads)
         pus_string = strategyEnv (threads, num_sockets_available,
                                   num_cores_available / num_sockets_available,
                                   num_pus_available / num_cores_available);
-    } else {
+    } else if (SAC_MT_cpu_bind_strategy == 3) {
+        pus_string = strategyAlternate (threads, num_sockets_available,
+                                        num_cores_available / num_sockets_available,
+                                        num_pus_available / num_cores_available);
+    } else if (SAC_MT_cpu_bind_strategy == 4) {
+        pus_string = strategyThrPerSocket (threads, num_sockets_available,
+                                           num_cores_available / num_sockets_available,
+                                           num_pus_available / num_cores_available);
+    }
+
+    else {
+
         SAC_RuntimeError (
           "chosen cpubindstrategy is not yet implemented in the runtime system");
     }
