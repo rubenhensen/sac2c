@@ -776,31 +776,49 @@ MSEwith (node *arg_node, info *arg_info)
         node *fsavis;
         node *csavis;
         node *genshp;
+        shape *cshp = NULL;
+        node *code = WITH_CODE (arg_node);
+        ntype *min_type = NULL;
 
-        if (GENARRAY_DEFAULT (withop) != NULL) {
-            csavis = MakeAssignForIdShape (GENARRAY_DEFAULT (withop),
-                                           INFO_FUNDEF (arg_info), &preass);
-        } else {
-            shape *cshp = NULL;
-            node *code = WITH_CODE (arg_node);
+        /* Search for the most precise body type of all partitions
+         * and provide it in min_type.
+         */
+        while (code != NULL) {
+            int i;
+            node *exprs = CODE_CEXPRS (code);
 
-            while (code != NULL) {
-                int i;
-                node *exprs = CODE_CEXPRS (code);
-                for (i = 0; i < woc; i++)
-                    exprs = EXPRS_NEXT (exprs);
+            for (i = 0; i < woc; i++)
+                exprs = EXPRS_NEXT (exprs);
 
-                if (TUshapeKnown (ID_NTYPE (EXPRS_EXPR (exprs)))) {
-                    cshp = TYgetShape (ID_NTYPE (EXPRS_EXPR (exprs)));
-                    break;
-                }
-
-                code = CODE_NEXT (code);
+            if ((min_type == NULL)
+                || TYleTypes (ID_NTYPE (EXPRS_EXPR (exprs)), min_type)) {
+                min_type = ID_NTYPE (EXPRS_EXPR (exprs));
             }
 
-            DBUG_ASSERT (cshp != NULL, "Genarray WL without default element requires "
-                                       "AKS elements!");
+            code = CODE_NEXT (code);
+        }
 
+        /*
+         * we prefer using the default elem to compute the cell shape from.
+         * However, if the min_type is AKS while the default elem type is not,
+         * we potentially loose type precision which does not go down well with
+         * the subsequent type upgrade (cf. bug 1185).
+         * In that case, we have to create a constant for the shape derived
+         * from the AKS type of min_type (first else-part of the conditional!).
+         *
+         * We still face a problem if the min_type is more precise
+         * than the default element type BUT the min_type is NOT AKS.
+         * We deal with that in the second else clause.
+         *
+         */
+        if ((GENARRAY_DEFAULT (withop) != NULL)
+            && ((TYleTypes (ID_NTYPE (GENARRAY_DEFAULT (withop)), min_type))
+                || !TUshapeKnown (min_type))) {
+            csavis = MakeAssignForIdShape (GENARRAY_DEFAULT (withop),
+                                           INFO_FUNDEF (arg_info), &preass);
+        } else if (TUshapeKnown (min_type)) {
+
+            cshp = TYgetShape (min_type);
             csavis = TBmakeAvis (TRAVtmpVar (),
                                  TYmakeAKS (TYmakeSimpleType (T_int),
                                             SHcreateShape (1, SHgetDim (cshp))));
@@ -816,6 +834,11 @@ MSEwith (node *arg_node, info *arg_info)
                               NULL);
 
             AVIS_SSAASSIGN (csavis) = preass;
+        } else {
+            DBUG_ASSERT (GENARRAY_DEFAULT (withop) != NULL,
+                         "Genarray WL without default element requires "
+                         "AKS elements!");
+        Be creative :-)
         }
 
         genshp = GENARRAY_SHAPE (withop);

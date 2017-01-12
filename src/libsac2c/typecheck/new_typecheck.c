@@ -2208,8 +2208,15 @@ NTCgenarray (node *arg_node, info *arg_info)
         dexpr = TYcopyType (body);
     }
 
+    if (TYcountNoMinAlpha (body) > 0) {
+        bool ok;
+        DBUG_PRINT ("inserting type dependency in potentially non-terminating WL");
+        ok = SSInewTypeRel (dexpr, body);
+        DBUG_ASSERT (ok, "default elem type <= body type trick failed!");
+    }
     args = TYmakeProductType (4, gen, shp, body, dexpr);
     info = TEmakeInfo (global.linenum, global.filename, TE_with, "genarray");
+
     res = NTCCTcomputeType (NTCCTwl_gen, info, args);
 
     GENARRAY_NEXT (arg_node) = HandleMultiOperators (GENARRAY_NEXT (arg_node), arg_info);
