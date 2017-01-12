@@ -157,6 +157,7 @@ strategyThrPerSocket (int threads, int sockets_avail, int cores_avail, int pus_a
 {
     int i;
     char *res;
+
     int inc = sockets_avail * cores_avail * pus_avail / sockets_avail;
 
     if (threads > sockets_avail) {
@@ -173,17 +174,63 @@ strategyThrPerSocket (int threads, int sockets_avail, int cores_avail, int pus_a
     }
     res[i] = '\0';
 
-    SAC_TR_LIBSAC_PRINT (("Create Pinning String"));
-
     i = 0;
     while (i <= sockets_avail * cores_avail * pus_avail) {
-        SAC_TR_LIBSAC_PRINT (("pus = %d, socks = %d\n", pus_avail, sockets_avail));
 
         res[i] = SAC_PULIST_FULL_CHAR;
         i += inc;
     }
 
-    SAC_TR_LIBSAC_PRINT (("Created Pinning string"));
+    return res;
+}
+
+static char *
+strategyExtString (int threads, int sockets_avail, int cores_avail, int pus_avail)
+{
+    int i, len, pus_pinned;
+    char *pus_string;
+    char *res;
+
+    pus_string = getenv ("SAC_HWLOC_PUS_STRING");
+
+    if (pus_string == NULL) {
+        SAC_RuntimeError ("Set environment variable SAC_HWLOC_PUS_STRING");
+    }
+
+    len = strlen (pus_string);
+    SAC_TR_LIBSAC_PRINT (("pus_string_length=%d | pus avail=%d", len,
+                          sockets_avail * cores_avail * pus_avail));
+
+    if (len != sockets_avail * cores_avail * pus_avail) {
+        SAC_RuntimeError ("SAC_HWLOC_PUS_STRING incorrect length");
+    }
+
+    pus_pinned = 0;
+    for (i = 0; i < len; i++) {
+        SAC_TR_LIBSAC_PRINT (("pus_string=%c (idx:%d)", pus_string[i], i));
+        if (pus_string[i] == SAC_PULIST_EMPTY_CHAR
+            || pus_string[i] == SAC_PULIST_FULL_CHAR) {
+            if (pus_string[i] == SAC_PULIST_FULL_CHAR)
+                pus_pinned++;
+            continue;
+        }
+        SAC_RuntimeError ("SAC_HWLOC_PUS_STRING is not constructed correctly");
+    }
+    if (pus_pinned != threads) {
+        SAC_RuntimeError (
+          "SAC_HWLOC_PUS_STRING, pinning config does not match thread num");
+    }
+
+    res = (char *)SAC_MALLOC (sizeof (char)
+                              * (sockets_avail * cores_avail * pus_avail + 1));
+
+    for (i = 0; i < sockets_avail * cores_avail * pus_avail; i++) {
+        res[i] = SAC_PULIST_EMPTY_CHAR;
+    }
+    res[i] = '\0';
+
+    strcpy (res, pus_string);
+
     return res;
 }
 
@@ -301,9 +348,12 @@ SAC_HWLOC_init (int threads)
         pus_string = strategyThrPerSocket (threads, num_sockets_available,
                                            num_cores_available / num_sockets_available,
                                            num_pus_available / num_cores_available);
-    }
+    } else if (SAC_MT_cpu_bind_strategy == 5) {
 
-    else {
+        pus_string = strategyExtString (threads, num_sockets_available,
+                                        num_cores_available / num_sockets_available,
+                                        num_pus_available / num_cores_available);
+    } else {
 
         SAC_RuntimeError (
           "chosen cpubindstrategy is not yet implemented in the runtime system");

@@ -180,7 +180,8 @@ typedef enum {
     HWLOC_simple,
     HWLOC_env,
     HWLOC_alt,
-    HWLOC_socket
+    HWLOC_socket,
+    HWLOC_envString
 } cpubindstrategy_t;
 
 typedef enum { FT_prog, FT_modimp, FT_classimp, FT_cmod, FT_unknown } file_type;

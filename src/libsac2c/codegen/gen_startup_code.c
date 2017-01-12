@@ -447,6 +447,10 @@ PrintGlobalSettings (node *syntax_tree)
     case HWLOC_socket:
         fprintf (global.outfile, "#define SAC_SET_CPU_BIND_STRATEGY 4\n");
         break;
+    case HWLOC_envString:
+        fprintf (global.outfile, "#define SAC_SET_CPU_BIND_STRATEGY 5\n");
+        break;
+
     default:
         CTIerror ("internal error: missing strategy in gen_startup_code");
     }
