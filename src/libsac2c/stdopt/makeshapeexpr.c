@@ -141,6 +141,27 @@ MakeAssignForIdShape (node *id, node *fundef, node **preass)
     DBUG_RETURN (res);
 }
 
+/*
+ * function node * InjectTypeConv( int dim, node *avis)
+ *
+ * modify SSA_ASSIGN(avis)
+ * from    mse_var = def_shp_id;
+ * into    mse_var = F_type_conv( int[dim], def_shp_id);
+ */
+static node *
+InjectTypeConv (int dim, node *avis)
+{
+    ntype *type;
+    node *let;
+
+    DBUG_ENTER ();
+    let = ASSIGN_STMT (AVIS_SSAASSIGN (avis));
+    type = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim));
+    LET_EXPR (let) = TCmakePrf2 (F_type_conv, TBmakeType (type), LET_EXPR (let));
+
+    DBUG_RETURN (avis);
+}
+
 node *
 MakeVectAvis (char *name, node *dim)
 {
@@ -799,25 +820,12 @@ MSEwith (node *arg_node, info *arg_info)
         }
 
         /*
-         * we prefer using the default elem to compute the cell shape from.
-         * However, if the min_type is AKS while the default elem type is not,
-         * we potentially loose type precision which does not go down well with
-         * the subsequent type upgrade (cf. bug 1185).
-         * In that case, we have to create a constant for the shape derived
-         * from the AKS type of min_type (first else-part of the conditional!).
-         *
-         * We still face a problem if the min_type is more precise
-         * than the default element type BUT the min_type is NOT AKS.
-         * We deal with that in the second else clause.
-         *
+         * If the min_type is AKS, we can provide the cell shape of the WL
+         * as a constant. This is always better than using the shape of the default
+         * element (see bug 1185 which was a result of earlier code that preferred
+         * using the default element!)
          */
-        if ((GENARRAY_DEFAULT (withop) != NULL)
-            && ((TYleTypes (ID_NTYPE (GENARRAY_DEFAULT (withop)), min_type))
-                || !TUshapeKnown (min_type))) {
-            csavis = MakeAssignForIdShape (GENARRAY_DEFAULT (withop),
-                                           INFO_FUNDEF (arg_info), &preass);
-        } else if (TUshapeKnown (min_type)) {
-
+        if (TUshapeKnown (min_type)) {
             cshp = TYgetShape (min_type);
             csavis = TBmakeAvis (TRAVtmpVar (),
                                  TYmakeAKS (TYmakeSimpleType (T_int),
@@ -835,10 +843,37 @@ MSEwith (node *arg_node, info *arg_info)
 
             AVIS_SSAASSIGN (csavis) = preass;
         } else {
+            /*
+             * We do not know the cell shape from the bodies, this means we must have
+             * a default element; otherwise the compiler should have complained earlier!
+             */
             DBUG_ASSERT (GENARRAY_DEFAULT (withop) != NULL,
-                         "Genarray WL without default element requires "
-                         "AKS elements!");
-        Be creative :-)
+                         "Genarray WL without AKS elements"
+                         "requires default element!");
+            /*
+             * Since we do have the default element we can use it to determine the
+             * cell shape dynamically.
+             */
+            csavis = MakeAssignForIdShape (GENARRAY_DEFAULT (withop),
+                                           INFO_FUNDEF (arg_info), &preass);
+            /*
+             * If the default shape is at least as good as the shape info from the bodies
+             * in min_type, we are good. Unfortunately, we can have one constellation
+             * where the bodies provide more information that the default element while
+             * not being AKS: if the min_type is AKD while the default type is less
+             * precise In that situation we potentially can run into bug 1185 again, ie
+             * have a temporary loss of type precision which is not appreciated by the
+             * subsequent type upgrade. To prevent from that, we insert an F_type_conv:
+             */
+            if (!TUdimKnown (ID_NTYPE (GENARRAY_DEFAULT (withop)))
+                && TUdimKnown (min_type)) {
+                /*
+                 * modify SSA_ASSIGN(csavis)
+                 * from    mse_var = def_shp_id;
+                 * into    mse_var = F_type_conv( int[dim(min_type)], def_shp_id);
+                 */
+                csavis = InjectTypeConv (TYgetDim (min_type), csavis);
+            }
         }
 
         genshp = GENARRAY_SHAPE (withop);
