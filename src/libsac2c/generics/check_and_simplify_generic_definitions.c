@@ -42,7 +42,7 @@
  * Other includes go here
  */
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "CSGD"
 #include "debug.h"
 
 #include "traverse.h"
@@ -156,17 +156,11 @@ FreeInfo (info *info)
 node *
 CSGDdoCheckAndSimplifyGenericDefinitions (node *syntax_tree)
 {
-    info *info;
-
     DBUG_ENTER ();
 
-    info = MakeInfo ();
-
     TRAVpush (TR_csgd);
-    syntax_tree = TRAVdo (syntax_tree, info);
+    syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
-
-    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -336,11 +330,16 @@ AnnotateDefinedVars (ntype *type, ntype *def, info *arg_info)
 node *
 CSGDmodule (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ();
+
+    arg_info = MakeInfo ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
+
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
