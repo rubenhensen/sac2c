@@ -66,6 +66,7 @@ MACRO (ADD_SAC2C_BUILD _build_type)
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/sources sources-install
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/config config-install
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/headers headers-install
+      COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/symlinks symlinks-install
     BUILD_ALWAYS 1
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${_build_type}
@@ -144,6 +145,10 @@ XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/config/${CMAKE_INSTALL_PREFI
 XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/headers/${CMAKE_INSTALL_PREFIX}/"
   DESTINATION "." USE_SOURCE_PERMISSIONS
   COMPONENT headers)
+
+XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/symlinks/${CMAKE_INSTALL_PREFIX}/"
+  DESTINATION "." USE_SOURCE_PERMISSIONS
+  COMPONENT symlinks)
 
 # now lets setup packaging (using CPack)
 INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/cpack/config.cmake")
