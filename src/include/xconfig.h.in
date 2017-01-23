@@ -42,6 +42,9 @@
 #cmakedefine01 ENABLE_UUID
 #cmakedefine01 HAVE_GCC_SIMD_OPERATIONS
 #cmakedefine01 ENABLE_GETTIME
+
+#cmakedefine01 ENABLE_ISL
+#cmakedefine01 ENABLE_BARVINOK
 #if ENABLE_GETTIME
 #  define HAVE_GETTIME 1
 #else

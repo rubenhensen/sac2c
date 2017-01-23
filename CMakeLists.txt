@@ -38,6 +38,8 @@ ADD_FEATURE_INFO(MT MT "use POSIX-thread backend for sac2c multithreading")
 ADD_FEATURE_INFO(LTO LTO "adds Link Time Optimisations to the C compiler")
 ADD_FEATURE_INFO(Dot DOT "used to generate a visual of the AST")
 ADD_FEATURE_INFO(C++ CPLUSPLUS "to compile sac2c with")
+ADD_FEATURE_INFO(ISL ISL "use Integer Set Library in sac2c")
+ADD_FEATURE_INFO(BARVINOK BARVINOK "use Barvinok Library in sac2c")
 FEATURE_SUMMARY(WHAT ALL)
 
 # Build executables for the tools.

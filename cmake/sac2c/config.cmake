@@ -3,10 +3,6 @@
 ## I am collecting here a list of *.m4 files in setup/config that
 ## were not propertly ported into CMake.
 ##
-##    * check_isl.m4, we don't check for libisl at all!  Figire out whether
-##                    this library is still relevant (ask Bob), and port this
-##                    file if needed.
-##    * check_lex_yacc.m4 -- deprecated.
 ##    * check_sl.m4 -- I don't know if it is still useful.
 ##    * check_stdlib.m4 -- Is it useful at all?
 ##    * check_brackets.m4 -- The check is not properly implemented, port it!
@@ -167,10 +163,19 @@ IF (RT_LIB AND RT_FOUND)
    ENDIF ()
 ENDIF ()
 
+# Check libraries for optional isl support
+FIND_LIBRARY (ISL_LIB NAMES "isl")
+CHECK_INCLUDE_FILES ("isl/ctx.h" HAVE_ISL_H)
+ENABLE_VAR_IF (ENABLE_ISL HAVE_ISL_H AND ISL_LIB)
+
+# Check headers for  optional barvinok support
+FIND_LIBRARY (BARVINOK_LIB NAMES "barvinok")
+CHECK_INCLUDE_FILES ("barvinok/barvinok.h" HAVE_BARVINOK_H)
+ENABLE_VAR_IF (ENABLE_BARVINOK HAVE_BARVINOK_H AND BARVINOK_LIB)
+
 
 # Check functions in libs
 ASSERT_LIB (M     "m"     "sqrt")
-
 ASSERT_LIB (DL    "dl"    "dlopen")
 CHECK_INCLUDE_FILES ("dlfcn.h" HAVE_DLFCN_H)
 ENABLE_VAR_IF (ENABLE_DL  HAVE_DLFCN_H AND DL_LIB)
@@ -788,6 +793,7 @@ SET (BUILD_STATUS "
 *
 * Optional packages:
 * - Integer Set Library (ISL): ${ENABLE_ISL}
+* - Barvinok Library (BARVINOK): ${ENABLE_BARVINOK}
 *
 * Status:
 * - sac2c is in dirty state: ${SAC2C_IS_DIRTY}

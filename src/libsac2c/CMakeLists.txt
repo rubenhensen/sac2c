@@ -565,25 +565,33 @@ ${XSL_DONE_FILES}
 ${PROJECT_BINARY_DIR}/src/build.c
 )
 
+# Generate lList of needed libs for linker
+
+SET (LIB_LIST ${M_LIB} ${DL_LIB})
+
+IF (ENABLE_RTSPEC)
+    LIST (APPEND LIB_LIST ${UUID_LIB} ${CRYPT_LIB})
+ENDIF ()
+
+# ISL needed for POGO, PWLF
+IF (ENABLE_ISL)
+    LIST (APPEND LIB_LIST ${ISL_LIB})
+ENDIF ()
+
+# BARVINOK needed for PLUT
+IF (ENABLE_BAVINOK)
+    LIST (APPEND LIB_LIST ${ISL_BAVINOK})
+ENDIF ()
+
 ADD_LIBRARY (sac2cShared SHARED ${SAC2C_SRC})
 SET_TARGET_PROPERTIES (sac2cShared
   PROPERTIES 
     OUTPUT_NAME sac2c
 )
 
-IF (ENABLE_RTSPEC)
-    TARGET_LINK_LIBRARIES (sac2cShared
-        ${M_LIB}
-        ${DL_LIB}
-        ${UUID_LIB}
-        ${CRYPT_LIB}
-    )
-ELSE ()
-    TARGET_LINK_LIBRARIES (sac2cShared
-        ${M_LIB}
-        ${DL_LIB}
-    )
-ENDIF ()
+TARGET_LINK_LIBRARIES (sac2cShared ${LIB_LIST})
+
+
 XINSTALL (TARGETS sac2cShared LIBRARY DESTINATION "${TREEPATH_INSTALL}" COMPONENT libraries)
 #ADD_CUSTOM_COMMAND (TARGET sac2cShared POST_BUILD 
 #  COMMAND "${CMAKE_COMMAND}" -E copy 
