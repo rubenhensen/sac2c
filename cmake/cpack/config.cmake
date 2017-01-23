@@ -50,7 +50,7 @@ SET (CPACK_PACKAGE_VERSION_MINOR     "${SAC2C_VERSION_MINOR}")
 SET (CPACK_PACKAGE_VERSION_PATCH     "${SAC2C_VERSION_PATCH}")
 SET (CPACK_PACKAGE_FILE_NAME         "sac2c-${SAC2C_VERSION}-${PACKAGE_POSTFIX}")
 SET (CPACK_PACKAGE_INSTALL_DIRECTORY "sac2c-${SAC2C_VERSION}") # XXX is this really needed?
-SET (CPACK_PACKAGE_ICON              "${SAC2C_SOURCE_DIR}/cmake/cpack/dmg-bundle/sac_logo.png")
+SET (CPACK_PACKAGE_ICON              "${SAC2C_SOURCE_DIR}/cmake/cpack/sac_logo.png")
 
 # SET (CPACK_PACKAGE_DESCRIPTION_FILE ...)
 SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY "The sac2c compiler for a data-parallel array-based functional language SAC")
@@ -70,15 +70,6 @@ SET (CPACK_COMPONENT_HEADERS_DISPLAY_NAME "SaC Headers")
 SET (CPACK_COMPONENT_CONFIG_DISPLAY_NAME "SaC Configs")
 SET (CPACK_COMPONENT_SOURCES_DISPLAY_NAME "SaC Binary Sources")
 SET (CPACK_COMPONENT_SYMLINKS_DISPLAY_NAME "SaC Symlinks")
-
-# DMG Bundle related configuration
-SET (CPACK_BUNDLE_NAME "sac2c-${SAC2C_VERSION}-${PACKAGE_POSTFIX}")
-## Use Macports 'makeicns' tool to generate MAC OS X icons
-SET (CPACK_BUNDLE_ICON "${SAC2C_SOURCE_DIR}/cmake/cpack/dmg-bundle/sac.icns")
-SET (CPACK_BUNDLE_PLIST "${PROJECT_BINARY_DIR}/Info.plist")
-SET (CPACK_BUNDLE_STARTUP_COMMAND "${PROJECT_BINARY_DIR}/Install.command")
-CONFIGURE_FILE ("${SAC2C_SOURCE_DIR}/cmake/cpack/dmg-bundle/Info.plist.in" "${PROJECT_BINARY_DIR}/Info.plist")
-CONFIGURE_FILE ("${SAC2C_SOURCE_DIR}/cmake/cpack/dmg-bundle/Install.command.in" "${PROJECT_BINARY_DIR}/Install.command")
 
 # Debian-specific variables
 SET (CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_VENDOR} <${CPACK_PACKAGE_CONTACT}>")
