@@ -247,6 +247,29 @@ XINSTALL (FILES
   COMPONENT sources
   EXCLUDE_FROM_ALL)
 
+# we create symlinks for the bins (this is to make using the MacOS package nicer)
+# this can also ease users in there initial setup of SaC
+IF (UNIX)
+  ADD_CUSTOM_TARGET (bin-symlinks ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory bin 
+    COMMAND ${CMAKE_COMMAND} -E create_symlink "${TREEPATH_CONF}/sac2c${BUILD_TYPE_POSTFIX}" "bin/sac2c${BUILD_TYPE_POSTFIX}"
+    COMMAND ${CMAKE_COMMAND} -E create_symlink "${TREEPATH_CONF}/sac4c${BUILD_TYPE_POSTFIX}" "bin/sac4c${BUILD_TYPE_POSTFIX}"
+    COMMAND ${CMAKE_COMMAND} -E create_symlink "${TREEPATH_CONF}/sac2tex${BUILD_TYPE_POSTFIX}" "bin/sac2tex${BUILD_TYPE_POSTFIX}"
+    COMMAND ${CMAKE_COMMAND} -E create_symlink "${TREEPATH_CONF}/saccc${BUILD_TYPE_POSTFIX}" "bin/saccc${BUILD_TYPE_POSTFIX}"
+    COMMAND ${CMAKE_COMMAND} -E create_symlink "${TREEPATH_CONF}/csimt${BUILD_TYPE_POSTFIX}" "bin/csimt${BUILD_TYPE_POSTFIX}"
+    COMMAND ${CMAKE_COMMAND} -E create_symlink "${TREEPATH_CONF}/csima${BUILD_TYPE_POSTFIX}" "bin/csima${BUILD_TYPE_POSTFIX}"
+    DEPENDS check_repo_version
+    COMMENT "Creating Symlinks"
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
+  ADD_INSTALL_TARGET ("symlinks" bin-symlinks)
+
+  XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/bin
+    DESTINATION "${TOP_INSTALL}"
+    COMPONENT symlinks
+    EXCLUDE_FROM_ALL)
+ENDIF ()
+
 # now lets setup packaging (using CPack)
 SET(SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 INCLUDE ("${PROJECT_SOURCE_DIR}/cmake/cpack/config.cmake")
