@@ -229,20 +229,23 @@ XINSTALL (FILES
     ${PROJECT_SOURCE_DIR}/src/include/sactools.h
     ${PROJECT_BINARY_DIR}/include/sacdirs.h
   DESTINATION "${SOURCE_INSTALL}"
-  COMPONENT sources)
+  COMPONENT sources
+  EXCLUDE_FROM_ALL)
 
 # we install readme and install script
 CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/installer.sh.in ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh @ONLY) 
 XINSTALL (FILES
     ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh
   DESTINATION "${INSTALLER_INSTALL}"
-  COMPONENT sources)
+  COMPONENT sources
+  EXCLUDE_FROM_ALL)
 
 XINSTALL (FILES
     ${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/install.sh
     ${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/README
   DESTINATION "${TOP_INSTALL}"
-  COMPONENT sources)
+  COMPONENT sources
+  EXCLUDE_FROM_ALL)
 
 # now lets setup packaging (using CPack)
 SET(SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
