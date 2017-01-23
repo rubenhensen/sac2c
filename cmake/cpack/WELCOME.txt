@@ -1,0 +1,10 @@
+Single-Assignment C - Installer
+===============================
+
+This package install will copy/move the SaC binaries and libraries onto
+your system.
+
+Symbolic links to the binaries like `sac2c_p` and `sac4c_p` are located
+in /usr/local/bin - please make sure to have this in your $PATH.
+
+For more information, head on over to http://www.sac-home.org/.

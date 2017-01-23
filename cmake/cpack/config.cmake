@@ -57,6 +57,8 @@ SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY "The sac2c compiler for a data-parallel a
 # FIXME(artem) We need to decide on where do we put the stuff on the target system...)
 #SET (CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 SET (CPACK_RESOURCE_FILE_LICENSE "${SAC2C_SOURCE_DIR}/LICENSE.txt")
+SET (CPACK_RESOURCE_FILE_README "${SAC2C_SOURCE_DIR}/cmake/cpack/README.txt")
+SET (CPACK_RESOURCE_FILE_WELCOME "${SAC2C_SOURCE_DIR}/cmake/cpack/WELCOME.txt")
 
 #SET (CPACK_COMPONENTS_ALL applications libraries headers conf)
 # Set the displayed names for each of the components to install.
