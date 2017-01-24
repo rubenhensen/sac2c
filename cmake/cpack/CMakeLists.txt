@@ -113,7 +113,7 @@ ADD_CUSTOM_TARGET (generic-symlinks ALL
   COMMAND ${CMAKE_COMMAND} -E create_symlink "csima_p" "bin/csima"
   DEPENDS ${SAC_TARGETS}
   COMMENT "Creating Genereic Symlinks"
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/top_level/symlinks)
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/toplevel/symlinks/${CMAKE_INSTALL_PREFIX})
 
 # create symbolic links to binaries
 # XXX(hans) we should not do this for distributable packages
