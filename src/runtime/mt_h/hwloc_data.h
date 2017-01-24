@@ -1,5 +1,3 @@
-#include "config.h"
-
 /**
 Initialization expects a number of things:
 - The system is homogeneous (e.g. same number of cores on each socket and same number of
