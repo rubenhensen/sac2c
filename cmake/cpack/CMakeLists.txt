@@ -96,11 +96,23 @@ MACRO (ADD_SAC2C_BUILD _build_type)
   UNSET (BINARY_DIR)
   UNSET (_build_type_name)
   UNSET (_build_type)
+  LIST (APPEND SAC_TARGETS "sac2c-${_build_type_name}")
 ENDMACRO ()
 
 FOREACH (type ${BUILDTYPELIST})
   ADD_SAC2C_BUILD (${type})
 ENDFOREACH ()
+  
+ADD_CUSTOM_TARGET (generic-symlinks ALL
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "sac2c_p" "bin/sac2c"
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "sac4c_p" "bin/sac4c"
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "sac2tex_p" "bin/sac2tex"
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "saccc_p" "bin/saccc"
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "csimt_p" "bin/csimt"
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "csima_p" "bin/csima"
+  DEPENDS ${SAC_TARGETS}
+  COMMENT "Creating Genereic Symlinks"
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/top_level/symlinks)
 
 # create symbolic links to binaries
 # XXX(hans) we should not do this for distributable packages
