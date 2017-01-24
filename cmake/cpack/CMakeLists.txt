@@ -92,11 +92,12 @@ MACRO (ADD_SAC2C_BUILD _build_type)
   ExternalProject_Add_StepTargets(sac2c-${_build_type_name} clean)
   # Add the target as a dependency to the `fullclean' target 
   ADD_DEPENDENCIES (fullclean sac2c-${_build_type_name}-clean)
+  # Add targets to list, to do dependencies
+  LIST (APPEND SAC_TARGETS "sac2c-${_build_type_name}")
   # unset temporary variables (this prevents any overlap that may happen)
   UNSET (BINARY_DIR)
   UNSET (_build_type_name)
   UNSET (_build_type)
-  LIST (APPEND SAC_TARGETS "sac2c-${_build_type_name}")
 ENDMACRO ()
 
 FOREACH (type ${BUILDTYPELIST})
