@@ -37,6 +37,12 @@ IF (NOT UNIX)
   MESSAGE (FATAL_ERROR "We are unable to generate packages on non-Unix systems at the moment")
 ENDIF ()
 
+# We use this variable to pass arguments to the sub-cmake calls (via ExternalProject)
+IF (DEFINED BUILD_OPTIONS)
+  SEPARATE_ARGUMENTS (MORE_CMAKE_OPTIONS UNIX_COMMAND "${BUILD_OPTIONS}")
+  MESSAGE (STATUS "Passing `${MORE_CMAKE_OPTIONS}' to sub-CMake calls")
+ENDIF ()
+
 # This target will cause all build dirs (including externalprojects) to be cleaned
 ADD_CUSTOM_TARGET(fullclean
   COMMAND
@@ -70,7 +76,8 @@ MACRO (ADD_SAC2C_BUILD _build_type)
     BUILD_ALWAYS 1
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${_build_type}
-      -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX})
+      -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+      ${MORE_CMAKE_OPTIONS})
   # Get the location where the externalproject is built
   ExternalProject_Get_Property (sac2c-${_build_type_name} BINARY_DIR)
   # Create a step to clean the build directory
