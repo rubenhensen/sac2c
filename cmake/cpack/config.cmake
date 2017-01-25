@@ -84,6 +84,23 @@ SET (CPACK_DEBIAN_PACKAGE_DEPENDS "gcc, libc6 (>= 2.13), uuid-runtime (>= 2.20)"
 SET (CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/local /usr/local/bin /usr/local/include /usr/local/lib /usr/local/libexec /usr/local/share)
 # FIXME Can we auto-generate these dependencies?
 SET (CPACK_RPM_PACKAGE_REQUIRES "gcc") # we don't need to go crazy here as rpmbuild handles most of this for us
+# rpmbuild tools is very smart, but also not smart enough. It knows
+# that sac2c has dependencies on libsac_p and libsac_d, but figure out that
+# SaC provides these, as such we get dependency issues. The real reason is
+# that rpmbuild does not look under subdirs of /lib/ as such all runtime
+# libraries are missed in the search. FIXME the current solution is a bandaid
+# and should be replaced with something dynamic - one idea is to inject RPM SPEC
+# file commands into CPACK_RPM_PACKAGE_PROVIDES, of the form `%(echo ${LOC_OF LIBS} | /usr/lib/rpm/rpmdeps -P)` which will generate the dependencies for us.
+# This needs to be tested though first!!!
+SET (_RPM_PROVIDES_DEBUG "libsac_d.so()(64bit), libsacdistmem_d.so()(64bit), libsac_d.so()(64bit), libsacphmc.diag_d.so()(64bit), libsacphmc_d.so()(64bit), libsacphm.diag_d.so()(64bit), libsacphm_d.so()(64bit), libsacrtspec_d.so()(64bit)")
+SET (_RPM_PROVIDES_RELEASE "libsac_p.so()(64bit), libsacdistmem_p.so()(64bit), libsac_p.so()(64bit), libsacphmc.diag_p.so()(64bit), libsacphmc_p.so()(64bit), libsacphm.diag_p.so()(64bit), libsacphm_p.so()(64bit), libsacrtspec_p.so()(64bit)")
+IF ("${PACKAGE_POSTFIX}" STREQUAL "omnibus")
+  SET (CPACK_RPM_PACKAGE_PROVIDES "${_RPM_PROVIDES_DEBUG}, ${_RPM_PROVIDES_RELEASE}")
+ELSEIF ("${PACKAGE_POSTFIX}" STREQUAL "debug")
+  SET (CPACK_RPM_PACKAGE_PROVIDES "${_RPM_PROVIDES_DEBUG}")
+ELSE ()
+  SET (CPACK_RPM_PACKAGE_PROVIDES "${_RPM_PROVIDES_RELEASE}")
+ENDIF ()
 
 # Disable CPack if we are dirty
 IF (NOT SAC2C_IS_DIRTY)
