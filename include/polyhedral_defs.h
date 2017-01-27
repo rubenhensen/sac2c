@@ -1,6 +1,9 @@
 #ifndef _SAC_PHDEFS_H_
 #define _SAC_PHDEFS_H_
 
+// LUR uses this for "loop count unknown", so we do, too.
+#define UNR_NONE (-1)
+
 /** <!--********************************************************************-->
  *
  * Prefix: PHDEFS
@@ -49,5 +52,22 @@
 #define POLY_RET_EMPTYSET_BC 64
 #define POLY_RET_CCONTAINSB 128
 #define POLY_RET_SLICENEEDED 256
+
+// ISL entry classes
+// This loop:
+//     for ( IV=0, IV<N; IV+=4} {
+//       S;
+//     }
+//
+// can be represented in ISL as:
+//
+//   [N] -> { [IV] : exists P : 0 <= IV < N and IV = 4 P }
+//                          ^--- existentially qualified variable
+//             ^---------------- ISL set-variable
+//    ^------------------------- ISL parameter
+#define AVIS_ISLCLASSUNDEFINED 0
+#define AVIS_ISLCLASSSETVARIABLE 1
+#define AVIS_ISLCLASSPARAMETER 2
+#define AVIS_ISLCLASSEXISTENTIAL 3
 
 #endif /* _SAC_PHDEFS_H_ */

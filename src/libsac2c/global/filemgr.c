@@ -435,11 +435,13 @@ FMGRfile2id (const char *path)
 /*
  *
  *  functionname  : FMGRwriteOpen
+ *  functionname  : FMGRreadWriteOpen
  *  arguments     : 1) format string like that of printf
  *                  2) variable argument list for 1)
- *  description   : opens the given file for writing. If this fails,
- *                  an error message
- *                  occurs and compilation is aborted.
+ *  description   : FMGRwriteOpen opens the given file for writing.
+ *                  If this fails, an error message occurs and compilation is aborted.
+ *                  FMGRreadWriteOpen opens the given file for both reading and writing.
+ *                  If this fails, an error message occurs and compilation is aborted.
  *  global vars   : ---
  *  internal funs : ---
  *  external funs : vsprintf, va_start, va_end, fopen,
@@ -468,6 +470,30 @@ FMGRwriteOpen (const char *format, ...)
         CTIabort ("Unable to write file \"%s\"", buffer);
     } else {
         DBUG_PRINT ("Opening file \"%s\" for writing", buffer);
+    }
+
+    DBUG_RETURN (file);
+}
+
+FILE *
+FMGRreadWriteOpen (const char *format, ...)
+{
+    va_list arg_p;
+    static char buffer[PATH_MAX];
+    FILE *file;
+
+    DBUG_ENTER ();
+
+    va_start (arg_p, format);
+    vsnprintf (buffer, PATH_MAX - 1, format, arg_p);
+    va_end (arg_p);
+
+    file = fopen (buffer, "w+");
+
+    if (file == NULL) {
+        CTIabort ("Unable to write file \"%s\"", buffer);
+    } else {
+        DBUG_PRINT ("Opening file \"%s\" for writing and reading", buffer);
     }
 
     DBUG_RETURN (file);
@@ -799,7 +825,6 @@ FMGRforEach (const char *path, const char *filterexpr, void *funargs,
      * ensure the pattern only matches entire lines
      */
     fullpattern = STRcatn (3, "^", filterexpr, "$");
-    DBUG_PRINT ("looking for pattern '%s`", fullpattern);
 
     currdir = opendir (path);
 
@@ -812,9 +837,7 @@ FMGRforEach (const char *path, const char *filterexpr, void *funargs,
 
     direntry = readdir (currdir);
     while (direntry != NULL) {
-        DBUG_PRINT ("trying '%s`", direntry->d_name);
         if (regexec (&regexpr, direntry->d_name, 0, NULL, 0) == 0) {
-            DBUG_PRINT ("...match!");
             fun (path, direntry->d_name, funargs);
         }
         direntry = readdir (currdir);

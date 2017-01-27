@@ -273,7 +273,7 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
         if ((NULL == AVIS_MIN (lfa)) && (!TYisAKV (typ)) && (NULL != AVIS_MIN (argavis))
             && (FUNDEF_ISCONDFUN (arg_node)
                 || ((NULL != rca)
-                    && ((LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca))) ||
+                    && ((!LFUisLoopFunDependent (arg_node, lfa)) ||
                         // FIXME: Next line is KLUDGE for Bug #1022
                         (IsSameExtremum (lfa, EXPRS_EXPR (rca))))))) {
             minmax = AVIS_MIN (argavis);
@@ -292,7 +292,7 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
         // More likely, we can just burn it, once we get rid of extrema.
         // Support for LOOPFUN induction variable
         if ((NULL == AVIS_MIN (lfa)) && (!TYisAKV (typ)) && (NULL != rca)
-            && (!LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca)))) {
+            && (LFUisLoopFunDependent (arg_node, lfa))) {
             af = LFUfindAffineFunctionForLIV (NULL, arg_node);
             if (NULL != af) {
                 PRTdoPrint (af);
@@ -303,7 +303,7 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
         if ((NULL == AVIS_MAX (lfa)) && (!TYisAKV (typ)) && (NULL != AVIS_MAX (argavis))
             && (FUNDEF_ISCONDFUN (arg_node)
                 || ((NULL != rca)
-                    && ((LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca))) ||
+                    && ((!LFUisLoopFunDependent (arg_node, lfa)) ||
                         // FIXME: Next line is KLUDGE for Bug #1022
                         (IsSameExtremum (lfa, EXPRS_EXPR (rca))))))) {
             minmax = AVIS_MAX (argavis);

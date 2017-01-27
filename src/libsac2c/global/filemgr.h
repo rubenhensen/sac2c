@@ -27,6 +27,7 @@ extern void FMGRappendPath (pathkind_t p, const char *path);
 extern void FMGRprependPath (pathkind_t p, const char *path);
 extern void FMGRsetupPaths (void);
 extern FILE *FMGRwriteOpen (const char *format, ...);
+extern FILE *FMGRreadWriteOpen (const char *format, ...);
 extern FILE *FMGRreadOpen (const char *format, ...);
 extern FILE *FMGRwriteOpenExecutable (const char *format, ...);
 extern FILE *FMGRappendOpen (const char *format, ...);

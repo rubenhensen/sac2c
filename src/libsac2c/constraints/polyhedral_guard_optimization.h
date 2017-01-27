@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 #ifndef _SAC_POLYHEDRAL_GUARD_OPTIMIZATION_H_
 #define _SAC_POLYHEDRAL_GUARD_OPTIMIZATION_H_
 

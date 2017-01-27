@@ -146,27 +146,26 @@ OPTIMIZE ("ctzg", ctzg, FALSE, FALSE, "comparisons to zero for guards")
 OPTIMIZE ("ctz", ctz, TRUE, TRUE, "comparisons to zero")
 OPTIMIZE ("uctz", uctz, TRUE, TRUE, "eliminating comparisons to zero")
 OPTIMIZE ("ggs", ggs, TRUE, TRUE, "generating guard solvers")
+OPTIMIZE ("plur", plur, FALSE, FALSE, "polyhedral loop unrolling")
 OPTIMIZE ("pogo", pogo, FALSE, FALSE, "polyhedral guard optimization")
 OPTIMIZE ("pwlf", pwlf, FALSE, FALSE, "polyhedral WLF")
 OPTIMIZE ("wls_aggressive", wls_aggressive, FALSE, FALSE, "aggressive loop scalarization")
 OPTIMIZE ("sse", sse, FALSE, FALSE, "simplify symbiotic expressions")
 OPTIMIZE ("safa", safa, TRUE, TRUE, "sort associative fun arguments")
+
+// OPTIMIZE entries after this point are intended for developer use only.
 OPTIMIZE ("scs", scs, TRUE, TRUE, "Symbolic Constant Simplification")
 OPTIMIZE ("sccf", sccf, TRUE, TRUE, "Structural constant constant folding")
 OPTIMIZE ("saacf", saacf, TRUE, TRUE, "SAA constant folding")
 OPTIMIZE ("scwlf", scwlf, TRUE, TRUE, "Simple composition AWLF")
 OPTIMIZE ("relcf", relcf, TRUE, TRUE, "CF on relationals and guards")
+OPTIMIZE ("ewlcf", ewlcf, TRUE, TRUE, "enhancing with-loop CF")
+OPTIMIZE ("ssawl", ssawl, TRUE, TRUE, "SSA on with-loops")
+
 // relcf is intended only as a debugging and performance measurement aid.
 // It should probably be removed once POGO stablizes.
 
-/* OPTIMIZE entries after this point are intended for
- * developer use only.
- */
-OPTIMIZE ("ewlcf", ewlcf, TRUE, TRUE, "enhancing with-loop CF")
-
-/*
- * End of developer-use-only OPTIMIZE entries.
- */
+// End of developer-use-only OPTIMIZE entries
 
 OPTCOUNTER (lacsi_expr, TRUE, "loops & conditional arguments(s) scalarized")
 OPTCOUNTER (lacso_expr, TRUE, "loops & conditional result(s) scalarized")
@@ -178,6 +177,7 @@ OPTCOUNTER (dlir_expr, TRUE, "do-loop invariant expression(s) moved")
 OPTCOUNTER (wlir_expr, TRUE, "with-loop invariant expression(s) moved")
 OPTCOUNTER (inl_fun, TRUE, "function(s) inlined")
 OPTCOUNTER (elim_arrays, TRUE, "array(s) eliminated")
+OPTCOUNTER (plur_expr, TRUE, "loop(s) unrolled polyhedrally")
 OPTCOUNTER (lunr_expr, TRUE, "loop(s) unrolled")
 OPTCOUNTER (wlunr_expr, TRUE, "with-loop(s) unrolled")
 OPTCOUNTER (cse_expr, TRUE, "common subexpression(s) eliminated")
@@ -217,6 +217,7 @@ OPTCOUNTER (uesd_expr, TRUE, "undo-eliminated sub/div expression(s)")
 OPTCOUNTER (safa_expr, TRUE, "associative function argument(s) sorted")
 OPTCOUNTER (pogo_expr, FALSE, "guards removed by pogo")
 OPTCOUNTER (pwlf_expr, FALSE, "with-loops folded using polyhedra")
+OPTCOUNTER (ssawl_expr, FALSE, "with-loops converted to SSA form")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr

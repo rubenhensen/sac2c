@@ -12,6 +12,7 @@
  *    FUNDEF_CALLAP
  *    AVIS_NPART
  *    FUNDEF_LOOPCOUNT
+ *    AVIS_ISLTREE
  *
  * These are needed by polyhedral-based optimizations.
  *
@@ -46,6 +47,7 @@ struct INFO {
     node *with;
     node *nassign;
     node *lacfun;
+    bool issetup;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -54,6 +56,7 @@ struct INFO {
 #define INFO_WITH(n) ((n)->with)
 #define INFO_NASSIGN(n) ((n)->nassign)
 #define INFO_LACFUN(n) ((n)->lacfun)
+#define INFO_ISSETUP(n) ((n)->issetup)
 
 static info *
 MakeInfo (void)
@@ -70,6 +73,7 @@ MakeInfo (void)
     INFO_WITH (result) = NULL;
     INFO_NASSIGN (result) = NULL;
     INFO_LACFUN (result) = NULL;
+    INFO_ISSETUP (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -102,6 +106,49 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 
+#ifdef DEADCODE
+/** <!-- ****************************************************************** -->
+ * @fn node *POLYSclearAvisIslTree( node *arg_node)
+ *
+ * @brief Clear AVIS_ISLTREE attributes for N_fundef arg_node
+ *        variables
+ *
+ * @param arg_node: An N_fundef
+ *
+ * @return arg_node, unchanged. Side effects on the relevant N_avis nodes.
+ *
+ ******************************************************************************/
+node *
+POLYSclearAvisIslTree (node *arg_node)
+{
+    node *args;
+    node *vardecs;
+
+    DBUG_ENTER ();
+
+    args = FUNDEF_ARGS (arg_node);
+    while (NULL != args) {
+        if (NULL != AVIS_ISLTREE (ARG_AVIS (args))) {
+            AVIS_ISLTREE (ARG_AVIS (args))
+              = FREEdoFreeTree (AVIS_ISLTREE (ARG_AVIS (args)));
+        }
+        args = ARG_NEXT (args);
+    }
+
+    vardecs = BLOCK_VARDECS (FUNDEF_BODY (arg_node));
+    while (NULL != vardecs) {
+        if (NULL != AVIS_ISLTREE (VARDEC_AVIS (vardecs))) {
+            AVIS_ISLTREE (VARDEC_AVIS (vardecs))
+              = FREEdoFreeTree (AVIS_ISLTREE (VARDEC_AVIS (vardecs)));
+        }
+        vardecs = VARDEC_NEXT (vardecs);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+#endif // DEADCODE
+
 /** <!--*******************************************************************-->
  *
  * @fn node *POLYSfundef( node *arg_node, info *arg_info)
@@ -119,6 +166,10 @@ POLYSfundef (node *arg_node, info *arg_info)
 
     fundefold = INFO_FUNDEF (arg_info);
     INFO_FUNDEF (arg_info) = arg_node;
+
+#ifdef DEADCODE
+    arg_node = POLYSclearAvisIslTree (arg_node);
+#endif // DEADCODE
 
     if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
         if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_node == INFO_LACFUN (arg_info))) {
@@ -156,6 +207,7 @@ POLYSpart (node *arg_node, info *arg_info)
     arg_node = POLYSsetClearAvisPart (arg_node, arg_node);
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
+    arg_node = POLYSsetClearAvisPart (arg_node, NULL);
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -233,6 +285,7 @@ POLYSap (node *arg_node, info *arg_info)
         DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
                     FUNDEF_NAME (lacfundef), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         POLYSsetClearCallAp (lacfundef, INFO_FUNDEF (arg_info), INFO_NASSIGN (arg_info));
+
         /* Traverse into the LACFUN */
         INFO_LACFUN (arg_info) = lacfundef; /* The called lacfun */
         newfundef = TRAVdo (lacfundef, arg_info);
@@ -280,6 +333,7 @@ POLYSprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = arg_node;
+
     DBUG_RETURN (res);
 }
 
@@ -300,6 +354,35 @@ POLYSdoPolyhedralSetup (node *arg_node)
     DBUG_ENTER ();
 
     arg_info = MakeInfo ();
+    INFO_ISSETUP (arg_info) = TRUE;
+
+    TRAVpush (TR_polys);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *POLYSdoPolyhedralTearDown( node *arg_node)
+ *
+ *   @brief
+ *   @param arg_node
+ *   @return modified AST.
+ *
+ *****************************************************************************/
+node *
+POLYSdoPolyhedralTearDown (node *arg_node)
+{
+    info *arg_info;
+
+    DBUG_ENTER ();
+
+    arg_info = MakeInfo ();
+    INFO_ISSETUP (arg_info) = TRUE;
 
     TRAVpush (TR_polys);
     arg_node = TRAVdo (arg_node, arg_info);
@@ -321,11 +404,17 @@ POLYSdoPolyhedralSetup (node *arg_node)
  *
  * @return arg_node, unchanged. Side effects on the relevant N_avis nodes.
  *
+ * NB. Since WITHID elements are NOT SSA, elements in multiple partitions will share
+ *     the same N_AVIS nodes. This means that AVIS_NPART MUST be set on
+ *     a traversal into a partition, and cleared on exiting from that partition.
+ *     Hence, the DBUG_ASSERT statements below, in case you were not paying attention.
+ *
  ******************************************************************************/
 node *
 POLYSsetClearAvisPart (node *arg_node, node *val)
 {
     node *ids;
+    node *partn;
 
     DBUG_ENTER ();
 
@@ -335,12 +424,18 @@ POLYSsetClearAvisPart (node *arg_node, node *val)
 
     ids = WITHID_IDS (PART_WITHID (arg_node));
     while (NULL != ids) {
+        partn = AVIS_NPART (IDS_AVIS (ids));
+        DBUG_ASSERT ((val == partn) || (NULL == val) || (NULL == partn),
+                     "Invalid AVIS_NPART for WITHID_IDS");
         AVIS_NPART (IDS_AVIS (ids)) = val;
         ids = IDS_NEXT (ids);
     }
 
     ids = WITHID_IDXS (PART_WITHID (arg_node));
     while (NULL != ids) {
+        partn = AVIS_NPART (IDS_AVIS (ids));
+        DBUG_ASSERT ((val == partn) || (NULL == val) || (NULL == partn),
+                     "Invalid AVIS_NPART for WITHID_IDXS");
         AVIS_NPART (IDS_AVIS (ids)) = val;
         ids = IDS_NEXT (ids);
     }

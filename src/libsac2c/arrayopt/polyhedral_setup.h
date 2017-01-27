@@ -9,6 +9,7 @@
 #include "types.h"
 
 extern node *POLYSdoPolyhedralSetup (node *arg_node);
+extern node *POLYSdoPolyhedralTearDown (node *arg_node);
 
 extern node *POLYSfundef (node *arg_node, info *arg_info);
 extern node *POLYSpart (node *arg_node, info *arg_info);

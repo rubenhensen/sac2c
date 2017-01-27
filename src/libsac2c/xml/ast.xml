@@ -786,6 +786,12 @@
           <node name="Prf" />
         </travuser>
       </traversal> 
+      <traversal id="PLUR" name="Polyhedral Loop Unrolling" default="sons" include="polyhedral_loop_unrolling.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Part" />
+        </travuser>
+      </traversal> 
       <traversal id="POGO" name="Polyhedral Guard Optimization" default="sons" include="polyhedral_guard_optimization.h" >
         <travuser>
           <node name="Fundef" />
@@ -5714,6 +5720,7 @@ N_tfarg :
                 <node name="Assign" />
                 <phases>
                   <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
+                  <range from="opt_saacyc_plur" to="opt_saacyc_plur" />
                   <range from="opt_saacyc_pogo" to="opt_saacyc_pogo" />
                   <range from="opt_saacyc_pwlf" to="opt_saacyc_pwlf" />
                 </phases>
@@ -5736,6 +5743,7 @@ N_tfarg :
                 <node name="Ap" />
                 <phases>
                   <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
+                  <range from="opt_saacyc_plur" to="opt_saacyc_plur" />
                   <range from="opt_saacyc_pogo" to="opt_saacyc_pogo" />
                   <range from="opt_saacyc_pwlf" to="opt_saacyc_pwlf" />
                 </phases>
@@ -5746,6 +5754,19 @@ N_tfarg :
         <attribute name="RtspecId" inconstructor="no">
           <description>Used by rtspec to uniquely identify a function</description>
           <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="LoopCount" inconstructor="no" default="-1">
+          <description>Loop function iteration count, as computed by LUR. If -1, then count is unknown.</description>
+          <type name="Integer">
             <targets>
               <target mandatory="no">
                 <any />
@@ -8941,6 +8962,36 @@ N_tfarg :
 	    Index into ISL namelist.
           </description>
           <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="opt_saacyc_polys" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="IslClass" inconstructor="no" default="0">
+          <description>
+	    Class of ISL entry. These are defined in polyhedral_defs.h.
+          </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="opt_saacyc_polys" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="IslTree" inconstructor="no" default="NULL">
+          <description>
+	    ISL Affine Function Tree.
+          </description>
+          <type name="Link">
             <targets>
               <target mandatory="no">
                 <any />

@@ -1,8 +1,3 @@
-/*
- *
- * $Id$
- */
-
 /**
  *
  * @file Polyhedral Guard Optimization
@@ -19,6 +14,8 @@
  *     iv4, p = _val_lt_val_SxS_( iv3, m);
  *
  * The code in AL/DL/AS/GGS is unable to solve this one.
+ * FIXME: BODO WANTS annotation of above, and how ISL (POLYSTUFF)
+ * can solve this.
  *
  *
  #ifdef DEADCODE
@@ -50,6 +47,8 @@
  *
  */
 
+int FIXME; // See Bodo above
+
 #define DBUG_PREFIX "POGO"
 #include "debug.h"
 
@@ -67,6 +66,7 @@
 #include "polyhedral_guard_optimization.h"
 #include "polyhedral_utilities.h"
 #include "polyhedral_defs.h"
+#include "polyhedral_setup.h"
 #include "print.h"
 #include "tree_utils.h"
 #include "LookUpTable.h"
@@ -87,6 +87,7 @@ struct INFO {
     lut_t *varlut;
     node *nassign;
     node *lacfun;
+    node *lacfunprf;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -96,6 +97,7 @@ struct INFO {
 #define INFO_VARLUT(n) ((n)->varlut)
 #define INFO_NASSIGN(n) ((n)->nassign)
 #define INFO_LACFUN(n) ((n)->lacfun)
+#define INFO_LACFUNPRF(n) ((n)->lacfunprf)
 
 static info *
 MakeInfo (void)
@@ -113,6 +115,7 @@ MakeInfo (void)
     INFO_VARLUT (result) = NULL;
     INFO_NASSIGN (result) = NULL;
     INFO_LACFUN (result) = NULL;
+    INFO_LACFUNPRF (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -202,37 +205,34 @@ GetXYmatch (prf nprf)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn bool POGOisPogoPrf( prf nprf)
+ * @fn prf POGOmapPrf( prf nprf)
  *
- * @brief Predicate for determining if N_prf is supported by POGO.
+ * @brief Map guard N_prfs to relationals.
  *
  * @param An N_prf
  *
- * @return TRUE if nprf is supported by POGO; else FALSE;
+ * @return An N_prf.
  *
  ******************************************************************************/
-bool
-POGOisPogoPrf (prf nprf)
+static prf
+POGOmapPrf (prf nprf)
 {
-    bool z;
+    prf z;
 
     DBUG_ENTER ();
 
+    z = nprf;
     switch (nprf) {
-    case F_lt_SxS:
-    case F_le_SxS:
-    case F_eq_SxS:
-    case F_ge_SxS:
-    case F_gt_SxS:
-    case F_neq_SxS:
     case F_val_lt_val_SxS:
+        z = F_lt_SxS;
+        break;
+
     case F_val_le_val_SxS:
-    case F_non_neg_val_S:
-        z = TRUE;
+        z = F_le_SxS;
         break;
 
     default:
-        z = FALSE;
+        z = nprf;
         break;
     }
 
@@ -251,11 +251,15 @@ node *
 POGOfundef (node *arg_node, info *arg_info)
 {
     node *fundefold;
+    node *lacfunprfold;
+    node *lacfunprf;
 
     DBUG_ENTER ();
 
     fundefold = INFO_FUNDEF (arg_info);
     INFO_FUNDEF (arg_info) = arg_node;
+    lacfunprfold = INFO_LACFUNPRF (arg_info);
+    INFO_LACFUNPRF (arg_info) = NULL;
 
     if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
         if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_node == INFO_LACFUN (arg_info))) {
@@ -263,11 +267,18 @@ POGOfundef (node *arg_node, info *arg_info)
             DBUG_PRINT ("Starting to traverse %s %s",
                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                         FUNDEF_NAME (arg_node));
+            lacfunprf = LFUfindLacfunConditional (arg_node);
+            if (NULL != lacfunprf) { // LOOPFUNs only
+                lacfunprf = ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf)));
+                INFO_LACFUNPRF (arg_info) = LET_EXPR (lacfunprf);
+            }
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+            INFO_LACFUNPRF (arg_info) = NULL;
         }
     }
 
     INFO_FUNDEF (arg_info) = fundefold;
+    INFO_LACFUNPRF (arg_info) = lacfunprfold;
     DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
@@ -290,8 +301,12 @@ POGOpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    arg_node = POLYSsetClearAvisPart (arg_node, arg_node);
+
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
+
+    arg_node = POLYSsetClearAvisPart (arg_node, NULL);
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -438,15 +453,6 @@ POGOlet (node *arg_node, info *arg_info)
  *            If the intersection of B,C,RFN is empty, the result is FALSE; else unknown.
  *            If the intersection of B,C,CFN is empty, the result is TRUE; else unknown.
  *
- *            For x = y and x != y, things are a bit harder, because PolyLib
- *            does not provide a direct way to represent not-equal.
- *            We use an approach suggested by Vincent Loechner:
- *            " The different operator can be represented as a union
- *             (which is what isl does):
- *                pA := { [i,N] : 0 <= i < N; };
- *                pB := { [i,N] : i < N;  } + { [i,N] : i > N;  } ;
- *            "
- *
  *****************************************************************************/
 node *
 POGOprf (node *arg_node, info *arg_info)
@@ -455,8 +461,6 @@ POGOprf (node *arg_node, info *arg_info)
     node *exprsY = NULL;
     node *exprsFn = NULL;
     node *exprsCfn = NULL;
-    node *exprsUfn = NULL;
-    node *exprsUcfn = NULL;
     bool z = FALSE;
     bool resval = FALSE;
     node *res;
@@ -464,13 +468,14 @@ POGOprf (node *arg_node, info *arg_info)
     node *guardp;
     node *arg1 = NULL;
     node *arg2 = NULL;
+    prf mappedprf;
     bool dopoly = FALSE;
     int emp = POLY_RET_UNKNOWN;
 
     DBUG_ENTER ();
 
     res = arg_node;
-    if ((PHUTisCompatibleAffinePrf (PRF_PRF (arg_node)))
+    if ((PHUTisCompatibleAffinePrf (PRF_PRF (arg_node))) && (global.optimize.dopogo)
         && (PHUTisCompatibleAffineTypes (arg_node))) {
 
         switch (PRF_PRF (arg_node)) {
@@ -485,12 +490,18 @@ POGOprf (node *arg_node, info *arg_info)
             DBUG_PRINT ("Looking at dyadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
+            // I don't like this, but we have to get both PRF_ARGs
+            // as set variables before we get the AFT built.
             arg1 = PHUTskipChainedAssigns (PRF_ARG1 (arg_node));
-            arg2 = PHUTskipChainedAssigns (PRF_ARG2 (arg_node));
+            AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
             exprsX = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
-                                              INFO_VARLUT (arg_info));
+                                              INFO_VARLUT (arg_info),
+                                              AVIS_ISLCLASSSETVARIABLE);
+            arg2 = PHUTskipChainedAssigns (PRF_ARG2 (arg_node));
+            AVIS_ISLCLASS (ID_AVIS (arg2)) = AVIS_ISLCLASSSETVARIABLE;
             exprsY = PHUTgenerateAffineExprs (arg2, INFO_FUNDEF (arg_info),
-                                              INFO_VARLUT (arg_info));
+                                              INFO_VARLUT (arg_info),
+                                              AVIS_ISLCLASSSETVARIABLE);
             dopoly = (NULL != exprsX) || (NULL != exprsY);
             break;
 
@@ -498,8 +509,10 @@ POGOprf (node *arg_node, info *arg_info)
             DBUG_PRINT ("Looking at monadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             arg1 = PHUTskipChainedAssigns (PRF_ARG1 (arg_node));
+            AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
             exprsX = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
-                                              INFO_VARLUT (arg_info));
+                                              INFO_VARLUT (arg_info),
+                                              AVIS_ISLCLASSSETVARIABLE);
             exprsY = NULL;
             dopoly = (NULL != exprsX);
             break;
@@ -511,17 +524,29 @@ POGOprf (node *arg_node, info *arg_info)
 
         if (dopoly) {
             // Don't bother calling ISL if it can't do anything for us.
-            exprsFn = PHUTgenerateAffineExprsForGuard (PRF_PRF (arg_node), arg1, arg2,
-                                                       INFO_FUNDEF (arg_info),
-                                                       PRF_PRF (arg_node),
-                                                       INFO_VARLUT (arg_info));
-            exprsCfn = PHUTgenerateAffineExprsForGuard (PRF_PRF (arg_node), arg1, arg2,
+            mappedprf = POGOmapPrf (PRF_PRF (arg_node));
+            exprsFn = PHUTgenerateAffineExprsForGuard (mappedprf, arg1, arg2,
+                                                       INFO_FUNDEF (arg_info), mappedprf,
+                                                       INFO_VARLUT (arg_info), 0);
+            exprsCfn = PHUTgenerateAffineExprsForGuard (mappedprf, arg1, arg2,
                                                         INFO_FUNDEF (arg_info),
                                                         LFUdualFun (PRF_PRF (arg_node)),
-                                                        INFO_VARLUT (arg_info));
-            emp = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn, exprsUfn,
-                                         exprsUcfn, INFO_VARLUT (arg_info),
-                                         POLY_OPCODE_INTERSECT);
+                                                        INFO_VARLUT (arg_info), 0);
+
+#ifdef DEADCODE
+            // This is needed for sacislinterface, but I do not yet
+            // understand why.
+            exprsX = TCappendExprs (exprsX, exprsY);
+            exprsY = NULL;
+#endif // DEADCODE
+
+            emp = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn,
+                                         INFO_VARLUT (arg_info), POLY_OPCODE_INTERSECT,
+                                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+            exprsX = NULL; // PHUTcheckIntersection consumes the N_exprs
+            exprsY = NULL;
+            exprsFn = NULL;
+            exprsCfn = NULL;
             DBUG_PRINT ("PHUTcheckIntersection result for %s is %d",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), emp);
 
@@ -575,8 +600,6 @@ POGOprf (node *arg_node, info *arg_info)
         exprsY = (NULL != exprsY) ? FREEdoFreeTree (exprsY) : NULL;
         exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
         exprsCfn = (NULL != exprsCfn) ? FREEdoFreeTree (exprsCfn) : NULL;
-
-        LUTremoveContentLut (INFO_VARLUT (arg_info));
     }
 
     DBUG_RETURN (res);
@@ -604,6 +627,7 @@ POGOdoPolyhedralGuardOptimization (node *arg_node)
     TRAVpush (TR_pogo);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
+    PHUTclearAvisIslAttributes (INFO_VARLUT (arg_info));
     INFO_VARLUT (arg_info) = LUTremoveLut (INFO_VARLUT (arg_info));
 
     arg_info = FreeInfo (arg_info);
@@ -617,7 +641,10 @@ POGOdoPolyhedralGuardOptimization (node *arg_node)
  * function: Predicate for determining if an argument is known to
  *           be positive.
  *
- * @brief: arg_node: An N_exprs ISL chain
+ * @param: arg_node: An N_exprs ISL chain
+ * @param: aft: An AFT
+ * @param: fundef : The N_fundef we are in.
+ * @param: varlut: The LUT used by PHUT/POGO.
  *
  * result: True if argument is known to be positive.
  *         Else false.
@@ -652,11 +679,10 @@ POGOisPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         zro = TBmakeNum (0);
         // We look for NULL intersect on the dual function: arg1 <= 0
         exprsFn = PHUTgenerateAffineExprsForGuard (F_le_SxS, arg1, zro, fundef, F_le_SxS,
-                                                   varlut);
-        emp = PHUTcheckIntersection (aft, NULL, exprsFn, NULL, NULL, NULL, varlut,
-                                     POLY_OPCODE_INTERSECT);
+                                                   varlut, 0);
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT, "POGOisPositive");
         z = 0 != (emp & POLY_RET_EMPTYSET_BCR);
-        exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
         FREEdoFreeNode (zro);
     }
 
@@ -669,7 +695,10 @@ POGOisPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
  * function: Predicate for determining if an argument is known to
  *           be negative.
  *
- * @brief: arg_node: An N_exprs ISL chain
+ * @param: arg_node: An N_exprs ISL chain
+ * @param: aft: An AFT
+ * @param: fundef : The N_fundef we are in.
+ * @param: varlut: The LUT used by PHUT/POGO.
  *
  * result: True if argument is known to be negative.
  *         Else false.
@@ -704,11 +733,10 @@ POGOisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         zro = TBmakeNum (0);
         // We look for NULL intersect on the dual function: arg1 >= 0
         exprsFn = PHUTgenerateAffineExprsForGuard (F_ge_SxS, arg1, zro, fundef, F_ge_SxS,
-                                                   varlut);
-        emp = PHUTcheckIntersection (aft, NULL, exprsFn, NULL, NULL, NULL, varlut,
-                                     POLY_OPCODE_INTERSECT);
+                                                   varlut, 0);
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT, "POGOisNegative");
         z = 0 != (emp & POLY_RET_EMPTYSET_BCR);
-        exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
         FREEdoFreeNode (zro);
     }
 
@@ -721,7 +749,10 @@ POGOisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
  * function: Predicate for determining if an argument is known to
  *           be non-positive.
  *
- * @brief: arg_node: An N_exprs ISL chain
+ * @param: arg_node: An N_exprs ISL chain
+ * @param: aft: An AFT
+ * @param: fundef : The N_fundef we are in.
+ * @param: varlut: The LUT used by PHUT/POGO.
  *
  * result: True if argument is known to be non-positive.
  *         Else false.
@@ -756,11 +787,10 @@ POGOisNonPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         zro = TBmakeNum (0);
         // We look for NULL intersect on the dual function  arg1 > 0
         exprsFn = PHUTgenerateAffineExprsForGuard (F_gt_SxS, arg1, zro, fundef, F_gt_SxS,
-                                                   varlut);
-        emp = PHUTcheckIntersection (aft, NULL, exprsFn, NULL, NULL, NULL, varlut,
-                                     POLY_OPCODE_INTERSECT);
+                                                   varlut, 0);
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT, "POGOisNonPositive");
         z = 0 != (emp & POLY_RET_EMPTYSET_BCR);
-        exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
         FREEdoFreeNode (zro);
     }
 
@@ -773,7 +803,10 @@ POGOisNonPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
  * function: Predicate for determining if an argument is known to
  *           be non-negative.
  *
- * @brief: arg_node: An N_exprs ISL chain
+ * @param: arg_node: An N_exprs ISL chain
+ * @param: aft: An AFT
+ * @param: fundef : The N_fundef we are in.
+ * @param: varlut: The LUT used by PHUT/POGO.
  *
  * result: True if argument is known to be non-negative.
  *         Else false.
@@ -808,11 +841,10 @@ POGOisNonNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         zro = TBmakeNum (0);
         // We look for NULL intersect on the dual function  arg1 < 0
         exprsFn = PHUTgenerateAffineExprsForGuard (F_lt_SxS, arg1, zro, fundef, F_lt_SxS,
-                                                   varlut);
-        emp = PHUTcheckIntersection (aft, NULL, exprsFn, NULL, NULL, NULL, varlut,
-                                     POLY_OPCODE_INTERSECT);
+                                                   varlut, 0);
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT, "POGOisNonNegative");
         z = 0 != (emp & POLY_RET_EMPTYSET_BCR);
-        exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
         FREEdoFreeNode (zro);
     }
 

@@ -88,6 +88,7 @@
 #include "polyhedral_defs.h"
 #include "algebraic_wlfi.h"
 #include "polyhedral_wlf.h"
+#include "polyhedral_setup.h"
 
 /** <!--********************************************************************-->
  *
@@ -383,25 +384,25 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *cwlpart, node *pwlpart)
  *
  * @fn node *PWLFperformFold( ... )
  *
- * @brief
- *   In
+ * @brief Generate preassign code for producerWL block being
+ *        folded by the arg_node sel().
+ *
  *    pwl = with...  elb = _sel_VxA_(iv=[i,j], AAA) ...
  *    consumerWL = with...  elc = _sel_VxA_(idx, pwl) ...
  *
- *   Replace, in the consumerWL:
- *     elc = _sel_VxA_( idx, pwl)
- *   by
+ *   We generate:
  *     iv = idx;
  *     i = _sel_VxA_([0], idx);
  *     j = _sel_VxA_([1], idx);
  *     tmp = {code block from pwl, with SSA renames}
- *     elc = tmp;
+ *     z = tmp;
  *
  * @params
  *    arg_node: the _sel_(iv, pwl) N_prf
  *    pwlpart: pwl N_part
  *
- * @result: new rhs to replace sel.
+ * @result: new rhs for sel. As side effect, append the
+ *          generated assigns to the preassigns list for the sel().
  *
  *****************************************************************************/
 static node *
@@ -428,7 +429,7 @@ PWLFperformFold (node *arg_node, node *pwlpart, info *arg_info)
         // If PWL code block is empty, don't duplicate code block.
         // If the cell is non-scalar, we still need a _sel_() to pick
         // the proper cell element.
-        newblock = DUPdoDupNodeLutSsa (pwlblock, INFO_FOLDLUT (arg_info),
+        newblock = DUPdoDupTreeLutSsa (pwlblock, INFO_FOLDLUT (arg_info),
                                        INFO_FUNDEF (arg_info));
         INFO_PREASSIGNS (arg_info)
           = TCappendAssign (INFO_PREASSIGNS (arg_info), newblock);
@@ -438,10 +439,7 @@ PWLFperformFold (node *arg_node, node *pwlpart, info *arg_info)
     newsel = TBmakeId (cellexpr);
     LUTremoveContentLut (INFO_FOLDLUT (arg_info));
 
-    FREEdoFreeNode (arg_node); // Kill the old sel()
-    arg_node = newsel;         // New folded wl result
-
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (newsel);
 }
 
 #ifdef NEEDSWORK
@@ -784,7 +782,7 @@ BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnu
             newavis = AWLFIflattenScalarNode (zelnew, arg_info);
             curavis = AWLFIflattenScalarNode (zelcur, arg_info);
             fncall
-              = DSdispatchFunCall (NSgetNamespace (global.preludename), fn,
+              = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fn,
                                    TCcreateExprsChainFromAvises (2, curavis, newavis));
             zprime = FLATGexpression2Avis (fncall, &INFO_VARDECS (arg_info),
                                            &INFO_PREASSIGNS (arg_info),
@@ -1276,26 +1274,31 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
             i = 0;
             while ((i < shp) && isCanStillFold (z)) {
                 // pre-cleanup
-                ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
                 pwlelavis = TCgetNthIds (i, WITHID_IDS (PART_WITHID (pwlpart)));
                 ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
+                ivel = PHUTskipChainedAssigns (ivel);
 
                 exprscwl = PHUTgenerateAffineExprs (ivel, INFO_FUNDEF (arg_info),
-                                                    INFO_VARLUT (arg_info));
+                                                    INFO_VARLUT (arg_info),
+                                                    AVIS_ISLCLASSSETVARIABLE);
                 exprspwl = PHUTgenerateAffineExprs (pwlelavis, INFO_FUNDEF (arg_info),
-                                                    INFO_VARLUT (arg_info));
+                                                    INFO_VARLUT (arg_info),
+                                                    AVIS_ISLCLASSSETVARIABLE);
+
+                exprspwl = TCappendExprs (exprspwl, DUPdoDupTree (exprscwl));
+
                 // Collect affine exprs for PWL
                 exprsintr
                   = PHUTgenerateAffineExprsForPwlfIntersect (ivel, pwlelavis,
                                                              INFO_VARLUT (arg_info),
                                                              INFO_FUNDEF (arg_info));
 
-                // Don't bother calling Polylib if it can't do anything for us.
+                // Don't bother calling ISL if it can't do anything for us.
                 if ((NULL != exprscwl) && (NULL != exprspwl)) {
-                    z = z
-                        | PHUTcheckIntersection (exprspwl, exprscwl, exprsintr, NULL,
-                                                 NULL, NULL, INFO_VARLUT (arg_info),
-                                                 POLY_OPCODE_PWLF);
+                    z = PHUTcheckIntersection (exprspwl, exprscwl, exprsintr, NULL,
+                                               INFO_VARLUT (arg_info), POLY_OPCODE_PWLF,
+                                               AVIS_NAME (IDS_AVIS (
+                                                 INFO_CONSUMERWLIDS (arg_info))));
                 }
 
                 // Post-cleanup
@@ -1370,8 +1373,11 @@ PWLFfundef (node *arg_node, info *arg_info)
  *            D = WITH3(B,C);
  *
  *         If we fold top-down, we skip WITH1, because it can't fold.
- *         WITH2 will not fold, because B is referenced by WITH2 and WITH3,
- *         and folding could double the work required to create B.
+ *         WITH2 will not be folded, because B is referenced by WITH2 and WITH3,
+ *         and folding could double the work required to create B, so
+ *         a conscious decision is made to avoid folding.
+ *         (NB. We could apply a cost function to allow folding when the
+ *          "cost" is low, but that's a frill.)
  *         WITH3 will fold C into D, but not B, because it is referenced
  *         by WITH2. On the next pass, we have:
  *
@@ -1518,9 +1524,13 @@ PWLFpart (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_CONSUMERWLPART (arg_info) = arg_node;
+    arg_node = POLYSsetClearAvisPart (arg_node, arg_node);
+
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVdo (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
+
     INFO_CONSUMERWLPART (arg_info) = NULL;
+    arg_node = POLYSsetClearAvisPart (arg_node, NULL);
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -1605,6 +1615,7 @@ PWLFprf (node *arg_node, info *arg_info)
     node *pwlid;
     node *pwlpart;
     node *foldpwlpart = NULL;
+    node *z = NULL;
     char *cwlnm;
     int plresult = POLY_RET_UNKNOWN;
 
@@ -1628,6 +1639,7 @@ PWLFprf (node *arg_node, info *arg_info)
 
         if (INFO_PRODUCERWLFOLDABLE (arg_info)) {
             pwlpart = WITH_PART (INFO_PRODUCERWL (arg_info));
+            pwlpart = POLYSsetClearAvisPart (pwlpart, pwlpart);
             while ((POLY_RET_UNKNOWN == plresult) && (NULL != pwlpart)) {
                 foldpwlpart = pwlpart;
                 plresult = IntersectBoundsPolyhedral (arg_node, pwlpart, arg_info);
@@ -1639,12 +1651,15 @@ PWLFprf (node *arg_node, info *arg_info)
                                 AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);
                     DBUG_PRINT ("Building inverse projection for cwl=%s", cwlnm);
                     // FIXME arg_node = BuildInverseProjections( arg_node, arg_info);
-                    arg_node = PWLFperformFold (arg_node, foldpwlpart, arg_info);
+                    z = PWLFperformFold (arg_node, foldpwlpart, arg_info);
+                    FREEdoFreeNode (arg_node);
+                    arg_node = z;
                     global.optcounters.pwlf_expr += 1;
                 } else {
                     DBUG_PRINT ("Unable to fold PWL %s into CWL %s with plresult %d",
                                 AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);
                 }
+                pwlpart = POLYSsetClearAvisPart (pwlpart, NULL);
                 pwlpart = PART_NEXT (pwlpart);
             }
             LUTremoveContentLut (INFO_FOLDLUT (arg_info));

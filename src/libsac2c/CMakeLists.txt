@@ -110,6 +110,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/cubeslicer.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/detectdependencies.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/eliminate_duplicate_fundef_args.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/indexvectorutils.c
+${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/isl_utilities.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/ive_reusewl_and_scalarize.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/ive_split_loop_invariants.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/ive_split_selections.c
@@ -126,6 +127,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/pad_collect.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/pad_infer.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/pad_info.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/pad_transform.c
+${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/polyhedral_loop_unrolling.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/polyhedral_setup.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/polyhedral_utilities.c
 ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/polyhedral_wlf.c

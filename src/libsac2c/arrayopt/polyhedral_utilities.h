@@ -8,20 +8,34 @@
  * Prefix: PHUT
  *
  *****************************************************************************/
-extern node *PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut);
+extern node *PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut,
+                                      int islclass);
 extern node *PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2,
-                                              node *fundef, prf relfn, lut_t *varlut);
-extern node *PHUTcollectAffineExprsLocal (node *arg_node, info *arg_info, node *res);
-extern int PHUTcheckIntersection (node *exprs1, node *exprs2, node *exprs3, node *exprs4,
-                                  node *exprsuf, node *exprsuc, lut_t *varlut,
-                                  char opcode);
+                                              node *fundef, prf relfn, lut_t *varlut,
+                                              int stridesignum);
+extern node *PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut,
+                                          node *res, int islclass);
+extern int PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprsintr,
+                                  node *exprs4, lut_t *varlut, char opcode,
+                                  char *lhsname);
 extern node *PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, lut_t *varlut);
 extern node *PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, lut_t *varlut);
 extern node *PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv,
                                                       lut_t *varlut, node *fundef);
-extern node *PHUTcollectWlGenerator (node *arg_node, info *arg_info, node *res);
+extern node *PHUTcollectWlGenerator (node *arg_node, node *fundef, lut_t *varlut,
+                                     node *res);
 extern bool PHUTisCompatibleAffineTypes (node *arg_node);
 extern bool PHUTisCompatibleAffinePrf (prf nprf);
 extern node *PHUTskipChainedAssigns (node *arg_node);
+extern int PHUTgetLoopCount (node *exprs, lut_t *varlut);
+extern void PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag,
+                               bool isrelation, char *lhsname);
+extern node *analyzeLoopDependentVariable (node *nid, node *rcv, node *fundef,
+                                           lut_t *varlut);
+extern bool PHUTinsertVarIntoLut (node *arg_node, lut_t *varlut, node *fundef,
+                                  int islclass);
+extern void PHUTsetIslClass (node *arg_node, int islclass);
+extern void PHUTsetIslTree (node *avis, node *aft);
+extern void PHUTclearAvisIslAttributes (lut_t *varlut);
 
 #endif /* _SAC_PHUT_H_ */

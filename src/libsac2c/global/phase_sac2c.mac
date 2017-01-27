@@ -396,11 +396,11 @@ CYCLEPHASEFUN (xvp, "Propagating variables", VPdoVarPropagation, global.optimize
 CYCLEPHASEFUN (xrea, "Reorder arguments of equality primitive function ",
                REAdoReorderEqualityprfArguments, global.optimize.dorea, opt, cyc)
 
-CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
-               opt, cyc)
+CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling,
+               global.optimize.dolur || global.optimize.doplur, opt, cyc)
 
 CYCLEPHASEFUNOLD (lurssa, "Restoring SSA form after loop unrolling", SSATdoTransform,
-                  global.optimize.dolur, opt, cyc)
+                  global.optimize.dolur || global.optimize.doplur, opt, cyc)
 
 CYCLEPHASEFUNOLD (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
                   global.optimize.dowlur, opt, cyc)
@@ -564,14 +564,25 @@ CYCLEPHASEFUN (pcse, "Eliminating common subexpressions for polyhedral optimizat
 CYCLEPHASEFUN (pdcr, "Removing dead code for polyhedral optimizations",
                DCRdoDeadCodeRemoval, global.optimize.dodcr, opt, saacyc)
 
+// Start of Polyhedral-based optimizations. Please keep these in
+// a contiguous block, delimited by polys and polyt.
 CYCLEPHASEFUN (polys, "Polyhedral analysis setup", POLYSdoPolyhedralSetup,
-               global.optimize.dopogo || global.optimize.dopwlf, opt, saacyc)
+               global.optimize.dopogo || global.optimize.dopwlf || global.optimize.doplur,
+               opt, saacyc)
+
+CYCLEPHASEFUN (plur, "Polyhedral loop unrolling", PLURdoPolyhedralLoopUnrolling,
+               global.optimize.doplur, opt, saacyc)
 
 CYCLEPHASEFUN (pogo, "Polyhedral guard optimization", POGOdoPolyhedralGuardOptimization,
                global.optimize.dopogo, opt, saacyc)
 
 CYCLEPHASEFUN (pwlf, "Polyhedral with loop folding", PWLFdoPolyhedralWithLoopFolding,
                global.optimize.dopwlf, opt, saacyc)
+
+CYCLEPHASEFUN (polyt, "Polyhedral analysis tear down", POLYSdoPolyhedralTearDown,
+               global.optimize.dopogo || global.optimize.dopwlf || global.optimize.doplur,
+               opt, saacyc)
+// End of Polyhedral-based optimizations.
 
 CYCLEPHASEFUN (awlfi, "Inferring algebraically foldable with-loops",
                AWLFIdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
@@ -608,11 +619,11 @@ CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariant
 CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                global.optimize.dowls, opt, saacyc)
 
-CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
-               opt, saacyc)
+CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling,
+               global.optimize.dolur || global.optimize.doplur, opt, saacyc)
 
 CYCLEPHASEFUNOLD (lurssa, "Restoring SSA form after loop unrolling", SSATdoTransform,
-                  global.optimize.dolur, opt, saacyc)
+                  global.optimize.dolur || global.optimize.doplur, opt, saacyc)
 
 CYCLEPHASEFUNOLD (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
                   global.optimize.dowlur, opt, saacyc)
