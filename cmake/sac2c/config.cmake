@@ -798,10 +798,6 @@ SET (BUILD_STATUS "
 * - SaC compiler CFLAGS:   ${MKCCFLAGS}
 * - SaC programs CFLAGS:   ${RCCCFLAGS}
 *
-* Optional packages:
-* - Integer Set Library (ISL): ${ENABLE_ISL}
-* - Barvinok Library (BARVINOK): ${ENABLE_BARVINOK}
-*
 * Status:
 * - sac2c is in dirty state: ${SAC2C_IS_DIRTY}
 *")
