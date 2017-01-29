@@ -164,21 +164,31 @@ IF (RT_LIB AND RT_FOUND)
 ENDIF ()
 
 # Check libraries for optional isl support
+SET (ISL_LIB_PATH "")
+SET (ENABLE_ISL OFF)
 IF (ISL)
-  FIND_LIBRARY (ISL_LIB NAMES "isl")
+  FIND_LIBRARY (LIB_ISL NAMES "isl")
   CHECK_INCLUDE_FILES ("isl/ctx.h" HAVE_ISL_H)
-  ENABLE_VAR_IF (ENABLE_ISL HAVE_ISL_H AND ISL_LIB)
-ELSE ()
-  SET (ENABLE_ISL OFF)
+  IF (LIB_ISL AND HAVE_ISL_H)
+    GET_FILENAME_COMPONENT (ISL_LIB_PATH ${LIB_ISL} PATH)
+    FIND_PATH (ISL_INC_PATH NAMES "isl/isl.h")
+   SET (ENABLE_ISL ON)
+   SET (ISL_LIB "-lisl")
+  ENDIF ()
 ENDIF ()
 
-# Check headers for  optional barvinok support
+# Check libraries for optiona barvinok support
+SET (BARVINOK_LIB_PATH "")
+SET (ENABLE_BARVINOK OFF)
 IF (BARVINOK)
-  FIND_LIBRARY (BARVINOK_LIB NAMES "barvinok")
+  FIND_LIBRARY (LIB_BARVINOK NAMES "isl")
   CHECK_INCLUDE_FILES ("barvinok/barvinok.h" HAVE_BARVINOK_H)
-  ENABLE_VAR_IF (ENABLE_BARVINOK HAVE_BARVINOK_H AND BARVINOK_LIB)
-ELSE ()
-  SET (ENABLE_BARVINOK OFF)
+  IF (LIB_BARVINOK AND HAVE_BARVINOK_H)
+    GET_FILENAME_COMPONENT (BARVINOK_LIB_PATH ${LIB_BARVINOK} PATH)
+    FIND_PATH (BARVINOK_INC_PATH NAMES "isl/isl.h")
+   SET (ENABLE_BARVINOK ON)
+   SET (BARVINOK_LIB "-lbarvinok")
+  ENDIF ()
 ENDIF ()
 
 # Check functions in libs
@@ -227,7 +237,7 @@ IF (LPEL)
     ENDIF ()
 ENDIF ()
 
-# check for HWLOC (relevent for runtime system)
+# check for HWLOC (relevant for runtime system)
 SET (HWLOC_LIB_PATH "")
 SET (ENABLE_HWLOC OFF)
 IF (HWLOC)
@@ -477,9 +487,9 @@ SET (CPP         "${CPP_CMD} -P")
 # FIXME(artem) These are named differently now in the configure.ac
 SET (CCMTLINK    "")
 SET (CCDLLINK    "")
-SET (EXTLIBPATH  "${HWLOC_LIB_PATH}:") # all variables need to be colon seperated
-SET (LIBS        " ${HWLOC_LIB}")
-SET (INCS        "${HWLOC_INC_PATH}:")
+SET (EXTLIBPATH  "${HWLOC_LIB_PATH}:${ISL_LIB_PATH}:${BARVINOK_LIB_PATH}") # all variables need to be colon separated
+SET (LIBS        " ${HWLOC_LIB} ${ISL_LIB} ${BARVINOK_LIB} ")
+SET (INCS        "${HWLOC_INC_PATH}:${ISL_INC_PATH}:${BARVINOK_INC_PATH}")
 
 IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (GCC_FLAGS   "")
