@@ -143,6 +143,7 @@ ISLUexprs2String (node *exprs, lut_t *varlut, char *lbl, bool isunionset, char *
 {
     FILE *matrix_file;
     long fsize;
+    size_t sz;
     char polyhedral_arg_filename[PATH_MAX];
     static const char *argfile = "polyhedral_args";
     char *str = NULL;
@@ -165,7 +166,8 @@ ISLUexprs2String (node *exprs, lut_t *varlut, char *lbl, bool isunionset, char *
     fsize = ftell (matrix_file);
     rewind (matrix_file);
     str = (char *)MEMmalloc ((1 + fsize) * sizeof (char));
-    fread (str, sizeof (char), (size_t)fsize, matrix_file);
+    sz = fread (str, sizeof (char), (size_t)fsize, matrix_file);
+    DBUG_ASSERT (sz == (size_t)fsize, "fread did not return expected size");
     FMGRclose (matrix_file);
 
     DBUG_RETURN (str);
