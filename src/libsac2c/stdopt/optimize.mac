@@ -160,7 +160,7 @@ OPTIMIZE ("saacf", saacf, TRUE, TRUE, "SAA constant folding")
 OPTIMIZE ("scwlf", scwlf, TRUE, TRUE, "Simple composition AWLF")
 OPTIMIZE ("relcf", relcf, TRUE, TRUE, "CF on relationals and guards")
 OPTIMIZE ("ewlcf", ewlcf, TRUE, TRUE, "enhancing with-loop CF")
-OPTIMIZE ("ssawl", ssawl, TRUE, TRUE, "SSA on with-loops")
+OPTIMIZE ("ssawl", ssawl, FALSE, FALSE, "SSA on with-loops")
 
 // relcf is intended only as a debugging and performance measurement aid.
 // It should probably be removed once POGO stablizes.
