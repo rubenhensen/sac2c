@@ -483,12 +483,9 @@ SET (CPP         "${CPP_CMD} -P")
 # FIXME(artem) These are named differently now in the configure.ac
 SET (CCMTLINK    "")
 SET (CCDLLINK    "")
-SET (EXTLIBPATH  "${HWLOC_LIB_PATH}:${ISL_LIB_PATH}:${BARVINOK_LIB_PATH}") # all variables need to be colon separated
-## debug rbe MESSAGE (EXTLIBPATH IS ${EXTLIBPATH})
-SET (LIBS        " ${HWLOC_LIB} ${ISL_LIB} ${BARVINOK_LIB} ")
-SET (INCS        "${HWLOC_INC_PATH}:${ISL_INC_PATH}:${BARVINOK_INC_PATH}")
-## debug rbe MESSAGE (LIBS is  ${LIBS})
-## debug rbe MESSAGE (INCS is  ${INCS})
+SET (EXTLIBPATH  "${HWLOC_LIB_PATH}") # all variables need to be colon separated
+SET (LIBS        " ${HWLOC_LIB}")
+SET (INCS        "${HWLOC_INC_PATH}")
 
 IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (GCC_FLAGS   "")
