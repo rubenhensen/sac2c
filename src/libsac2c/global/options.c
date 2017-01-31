@@ -64,14 +64,15 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
     ARGS_BEGIN (argc, argv);
 
 #ifndef DBUG_OFF
-    ARGS_OPTION_BEGIN ("d")
+    // We look for "d " to avoid tripping over "-docf", etc.
+    ARGS_OPTION_BEGIN ("d ")
     {
         ARG_CHOICE_BEGIN ();
         ARG_CHOICE ("memcheck", global.memcheck = TRUE);
         ARG_CHOICE ("noclean", global.memclean = FALSE);
         ARG_CHOICE_END ();
     }
-    ARGS_OPTION_END ("d");
+    ARGS_OPTION_END ("d ");
 #endif /* DBUG_OFF */
 
     ARGS_END ();
