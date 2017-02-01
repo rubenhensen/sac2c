@@ -419,6 +419,18 @@ OPTcheckOptionConsistency (void)
         global.optimize.dowlur = TRUE;
     }
 
+    // Any polyhedral optimizations enabled
+    if ((global.optimize.dopwlf || global.optimize.dopogo || global.optimize.doplur)) {
+        if (!global.insertconformitychecks) {
+            global.insertconformitychecks = TRUE;
+            CTIwarn ("PLUR/POGO/PWLF is enabled: -ecc enabled.");
+        }
+        if (!global.optimize.dossawl) {
+            global.optimize.dossawl = TRUE;
+            CTIwarn ("PLUR/POGO/PWLF is enabled: -dossawl enabled.");
+        }
+    }
+
     if (global.optimize.doawlf && (!global.insertconformitychecks)) {
         global.insertconformitychecks = TRUE;
         CTIwarn ("AWLF is enabled: -ecc enabled.");
