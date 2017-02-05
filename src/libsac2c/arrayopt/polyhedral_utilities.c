@@ -360,11 +360,11 @@ PHUTsetIslClass (node *arg_node, int islclass)
  *                  it may be an N_num or N_bool, which we ignore.
  *        varlut: The address of the LUT we use for collecting names
  *        fundef: The fundef containing arg_node.
- *                We store fundef and arg_node in the LUT, and
- *                then catenate those when building the
- *                ISL input variables. We have to do this in order
- *                to disambiguate duplicate names across LACFUN
- *                calls.
+ *                We store fundef and arg_node in the LUT, then
+ *                catenate them when building the
+ *                ISL input variables: [fundef,avis].
+ *                We have to do this in order
+ *                to disambiguate duplicate names across LACFUN calls.
  *        islclass: the AVIS_ISLCLASS to be associated with this variable.
  *
  * @return TRUE if we the variables was inserted; FALSE if it was already there
@@ -389,11 +389,9 @@ PHUTinsertVarIntoLut (node *arg_node, lut_t *varlut, node *fundef, int islclass)
             PHUTsetIslClass (avis, islclass);
             DBUG_PRINT ("Inserted %s:%s into VARLUT with ISLCLASS %d",
                         FUNDEF_NAME (fundef), AVIS_NAME (avis), AVIS_ISLCLASS (avis));
-            // DEAD        DBUG_ASSERT( NULL == AVIS_ISLTREE( avis), "isltree not NULL!");
         } else {
             DBUG_PRINT ("%s:%s already in VARLUT with ISLCLASS %d", FUNDEF_NAME (fundef),
                         AVIS_NAME (avis), AVIS_ISLCLASS (avis));
-            // DEAD DBUG_ASSERT( NULL != AVIS_ISLTREE( avis), "isltree is NULL!");
         }
     }
 
@@ -517,7 +515,7 @@ PHUTclearAvisIslAttributes (lut_t *varlut)
  *
  * @fn void GetIslSetVariablesFromLut(
  *
- * @brief Build the set variables used by the contraints.
+ * @brief Build the set variables used by the constraints.
  *
  *        The result is an N_exprs chain of the N_avis nodes comprising the
  *        set variables, prefixed by the fundef name. E.g.,
@@ -770,6 +768,7 @@ findBoundEl (node *arg_node, node *bnd, int k)
  *
  *        We generate ISL constraints as follows:
  *
+ *          N >= 0
  *          iv' = lb + stp * N   for some N
  *          0 <= ivw < wid
  *          iv = iv' + ivw
@@ -881,40 +880,49 @@ PHUTcollectWlGenerator (node *arg_node, node *fundef, lut_t *varlut, node *res)
             ivpavis
               = TBmakeAvis (TRAVtmpVarName ("IV"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            if (!PHUTinsertVarIntoLut (ivpavis, varlut, fundef,
-                                       AVIS_ISLCLASSSETVARIABLE)) {
-                res = TCappendExprs (res, DUPdoDupTree (AVIS_ISLTREE (ivpavis)));
+            if (PHUTinsertVarIntoLut (ivpavis, varlut, fundef,
+                                      AVIS_ISLCLASSSETVARIABLE)) {
+                z = DUPdoDupTree (AVIS_ISLTREE (ivpavis));
+                res = TCappendExprs (res, z);
             }
 
             ivppavis
               = TBmakeAvis (TRAVtmpVarName ("IVP"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            if (!PHUTinsertVarIntoLut (ivppavis, varlut, fundef,
-                                       AVIS_ISLCLASSEXISTENTIAL)) {
-                res = TCappendExprs (res, DUPdoDupTree (AVIS_ISLTREE (ivppavis)));
+            if (PHUTinsertVarIntoLut (ivppavis, varlut, fundef,
+                                      AVIS_ISLCLASSEXISTENTIAL)) {
+                z = DUPdoDupTree (AVIS_ISLTREE (ivppavis));
+                res = TCappendExprs (res, z);
             }
 
             // Generate: 0 <= ivw < wid
             ivwavis
               = TBmakeAvis (TRAVtmpVarName ("IVW"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            if (!PHUTinsertVarIntoLut (ivwavis, varlut, fundef,
-                                       AVIS_ISLCLASSSETVARIABLE)) {
-                res = TCappendExprs (res, DUPdoDupTree (AVIS_ISLTREE (ivwavis)));
+            if (PHUTinsertVarIntoLut (ivwavis, varlut, fundef,
+                                      AVIS_ISLCLASSSETVARIABLE)) {
+                z = DUPdoDupTree (AVIS_ISLTREE (ivwavis));
+                res = TCappendExprs (res, z);
+                z = BuildIslSimpleConstraint (TBmakeNum (0), F_le_SxS, ivwavis, F_lt_SxS,
+                                              widel);
+                res = TCappendExprs (res, z);
             }
-            z = BuildIslSimpleConstraint (TBmakeNum (0), F_le_SxS, ivwavis, F_lt_SxS,
-                                          widel);
-            res = TCappendExprs (res, z);
 
             // Generate iv' = lb + stp * N
+            //          N >= 0
             navis = TBmakeAvis (TRAVtmpVarName ("N"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            if (!PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL)) {
-                res = TCappendExprs (res, DUPdoDupTree (AVIS_ISLTREE (navis)));
+            if (PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL)) {
+                z = DUPdoDupTree (AVIS_ISLTREE (navis));
+                res = TCappendExprs (res, z);
+                // Generate N >= 0
+                z = BuildIslSimpleConstraint (navis, F_ge_SxS, TBmakeNum (0), NOPRFOP,
+                                              NULL);
+                res = TCappendExprs (res, z);
+                z = BuildIslStrideConstraint (ivpavis, F_eq_SxS, DUPdoDupNode (lbel),
+                                              F_add_SxS, stpel, F_mul_SxS, navis);
+                res = TCappendExprs (res, z);
             }
-            z = BuildIslStrideConstraint (ivpavis, F_eq_SxS, DUPdoDupNode (lbel),
-                                          F_add_SxS, stpel, F_mul_SxS, navis);
-            res = TCappendExprs (res, z);
 
             // Generate iv = iv' + ivw
             z = BuildIslSimpleConstraint (ivavis, F_eq_SxS, ivpavis, F_add_SxS, ivwavis);
@@ -2161,6 +2169,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
                                 // arg_node is a withid element.
                                 res3
                                   = PHUTcollectWlGenerator (avis, fundef, varlut, NULL);
+                                PHUTsetIslTree (avis, res3);
                                 res2 = TCappendExprs (res2, res3);
                             } else {
                                 // non-constant function parameter
@@ -2416,6 +2425,7 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprsfn, node *expr
 
     res
       = ISLUgetSetIntersections (exprspwl, exprscwl, exprsfn, exprscfn, varlut, lhsname);
+
     DBUG_PRINT ("ISLU intersection result is %d", res);
     exprspwl = (NULL != exprspwl) ? FREEdoFreeTree (exprspwl) : NULL;
     exprscwl = (NULL != exprscwl) ? FREEdoFreeTree (exprscwl) : NULL;

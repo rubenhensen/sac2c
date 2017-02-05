@@ -35,6 +35,9 @@
  *         iv', p1 = iv, TRUE;
  *         if we can know that all elements of iv are >= 0.
  *
+ *    Also, if we discover ANY predicates that are false,
+ *    signal an error, and abort compilation.
+ *
  *  For the redesign of AS/AL/DL, the following optimizations
  *  are introduced:
  *
@@ -955,6 +958,11 @@ MatchNegS (node *arg1, node *arg2)
  *
  * @fn static node *StripTrues( node *args)
  * Takes N_exprs chain and returns same with TRUE predicates removed.
+ *
+ * If we find a FALSE predicate, we complain, bitterly. The other choice
+ * is to have TC complain, and it gives no hint as to what might be
+ * wrong.
+ *
  *****************************************************************************/
 
 static node *
@@ -963,12 +971,19 @@ StripTrues (node *args)
     ntype *predtyp;
 
     if (args != NULL) {
-        DBUG_ASSERT (N_exprs == NODE_TYPE (args), "StripTrues expected exprs chain");
+        DBUG_ASSERT (N_exprs == NODE_TYPE (args), "expected exprs chain");
         EXPRS_NEXT (args) = StripTrues (EXPRS_NEXT (args));
         /* Delete predicate if true */
         predtyp = ID_NTYPE (EXPRS_EXPR (args));
-        if (TYisAKV (predtyp) && (COisTrue (TYgetValue (predtyp), TRUE))) {
-            args = FREEdoFreeNode (args); /* Pops one off the chain */
+        DBUG_PRINT ("Looking at: %s", AVIS_NAME (ID_AVIS (EXPRS_EXPR (args))));
+        if (TYisAKV (predtyp)) {
+            if (COisTrue (TYgetValue (predtyp), TRUE)) {
+                args = FREEdoFreeNode (args); /* Pop one predicate off the chain */
+            } else {
+                if (COisFalse (TYgetValue (predtyp), TRUE)) {
+                    DBUG_UNREACHABLE ("afterguard with FALSE element found");
+                }
+            }
         }
     }
     return (args);
