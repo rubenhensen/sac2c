@@ -2026,10 +2026,6 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
  * @param avis: an N_avis node
  * @param aft: the Affine Function Tree for this N_avis node.
  *
- * NB. If avis is a WITHIDS element, do nothing. This is because
- * NB. the duplication of names across WL partitions would
- * NB. give us very wrong answers if we cached stuff in AVIS_ISLTREE.
- *
  * @return void
  *
  ******************************************************************************/
@@ -2038,7 +2034,7 @@ PHUTsetIslTree (node *avis, node *aft)
 {
     DBUG_ENTER ();
 
-    if ((NULL != aft) && (NULL == AVIS_NPART (avis))) {
+    if (NULL != aft) {
         DBUG_ASSERT (NULL == AVIS_ISLTREE (avis), "AVIS_ISLTREE not NULL");
         AVIS_ISLTREE (avis) = DUPdoDupTree (aft);
     }
@@ -2137,11 +2133,13 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
                         res2 = HandleNprf (avis, rhs, fundef, varlut, NULL);
                         res3 = HandleComposition (avis, rhs, fundef, varlut, NULL);
                         res2 = TCappendExprs (res2, res3);
+                        PHUTsetIslTree (avis, res2);
                         break;
 
                     case N_bool:
                     case N_num:
                         res2 = HandleNumber (avis, rhs, fundef, varlut, NULL);
+                        PHUTsetIslTree (avis, res2);
                         break;
 
                     case N_ap: // The buck stops here - we can't look any further.
@@ -2158,6 +2156,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
                     if (TYisAKV (AVIS_TYPE (avis))) {
                         res3 = HandleNumber (avis, rhs, fundef, varlut, NULL);
                         res2 = TCappendExprs (res2, res3);
+                        PHUTsetIslTree (avis, res2);
                     } else {
                         // This presumes that AVIS_NPART is being maintained by our
                         // caller.
@@ -2169,26 +2168,19 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
                                 // arg_node is a withid element.
                                 res3
                                   = PHUTcollectWlGenerator (avis, fundef, varlut, NULL);
-                                PHUTsetIslTree (avis, res3);
                                 res2 = TCappendExprs (res2, res3);
+                                PHUTsetIslTree (avis, res3);
                             } else {
                                 // non-constant function parameter
                                 DBUG_ASSERT (FALSE, "Coding time for lacfun args");
                             }
-                        } else {
+                        } else { // Not WITHID. Must be function parameter
                             res3 = PHUThandleLacfunArg (nid, fundef, varlut, NULL);
                             res2 = TCappendExprs (res2, res3);
+                            PHUTsetIslTree (avis, res2);
                         }
                     }
                 }
-                // Cache a copy of avis's AFT
-                PHUTsetIslTree (avis, res2);
-            } else {
-                // avis is already in LUT.
-                // No ISLTREE is bad, unless this avis is a WITHID.
-                // Ahem. Or, it is a loop-carried variable...
-                // DBUG_ASSERT( NULL != AVIS_NPART(avis),
-                //     "avis already in LUT, but no AVIS_ISLTREE");
             }
         }
     }

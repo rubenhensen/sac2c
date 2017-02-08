@@ -573,9 +573,13 @@ POGOprf (node *arg_node, info *arg_info)
             }
 
             if (z) { // guard/primitive can be removed
-                DBUG_PRINT ("Guard/relational for result %s removed",
-                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+                DBUG_PRINT ("Guard/relational for result %s replaced, predicate is %d",
+                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), resval);
                 resp = TBmakeBool (resval);
+                if (!resval) {
+                    CTIwarn ("Guard failure detected for result %s",
+                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+                }
 
                 if (TUisPrfGuard (arg_node)) { // Need two results
                     res = DUPdoDupNode (PRF_ARG1 (arg_node));
