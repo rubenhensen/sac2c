@@ -3797,6 +3797,15 @@
         <node name="Let" />
       </travuser>
     </traversal>
+   <traversal id="SSAW" name="Convert N_withid to/from SSA form" default="sons" include="ssawithid.h" >
+     <travuser>
+        <node name="Fundef"  />
+        <node name="With"    />
+        <node name="Part"    />
+        <node name="Withid"  />
+        <node name="Ids"     />
+     </travuser>
+    </traversal>
 </traversals>
 
   <nodesets>

@@ -564,6 +564,14 @@ CYCLEPHASEFUN (pcse, "Eliminating common subexpressions for polyhedral optimizat
 CYCLEPHASEFUN (pdcr, "Removing dead code for polyhedral optimizations",
                DCRdoDeadCodeRemoval, global.optimize.dodcr, opt, saacyc)
 
+// At present, SSA form for N_withid nodes is supported only
+// during polyhedral optimizations. Ideally, the whole
+// compiler would allow this, so if you need with-loops in SSA form,
+// get out your coding pencil.
+CYCLEPHASEFUN (ssawl, "Convert withids to SSA form", SSAWdoTransformToSSA,
+               global.optimize.dopogo || global.optimize.dopwlf || global.optimize.doplur,
+               opt, saacyc)
+
 // Start of Polyhedral-based optimizations. Please keep these in
 // a contiguous block, delimited by polys and polyt.
 CYCLEPHASEFUN (polys, "Polyhedral analysis setup", POLYSdoPolyhedralSetup,
@@ -580,6 +588,9 @@ CYCLEPHASEFUN (pwlf, "Polyhedral with loop folding", PWLFdoPolyhedralWithLoopFol
                global.optimize.dopwlf, opt, saacyc)
 
 CYCLEPHASEFUN (polyt, "Polyhedral analysis tear down", POLYSdoPolyhedralTearDown,
+               global.optimize.dopogo || global.optimize.dopwlf || global.optimize.doplur,
+               opt, saacyc)
+CYCLEPHASEFUN (ussawl, "Convert withids from SSA form", SSAWdoTransformFromSSA,
                global.optimize.dopogo || global.optimize.dopwlf || global.optimize.doplur,
                opt, saacyc)
 // End of Polyhedral-based optimizations.

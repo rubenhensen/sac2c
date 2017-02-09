@@ -266,6 +266,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/flatten/while2do.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flatten/wlanalysis.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flatten/wlbounds2structconsts.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flatten/wldefaultpartition.c
+${CMAKE_CURRENT_SOURCE_DIR}/flatten/ssawithid.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/binheap.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/ctransitive.c
 ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dag.c
