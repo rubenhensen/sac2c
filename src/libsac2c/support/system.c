@@ -14,12 +14,11 @@
 #include "globals.h"
 #include "memory.h"
 #include "str.h"
+#include "str_buffer.h"
 #include "filemgr.h"
 
 /**
  * buffer size for construction of system call strings
- *
- * STATIC BUFFERS SHOULD BE REPLACED BY USING str_buffer
  */
 
 #define MAX_SYSCALL 10000
@@ -123,24 +122,26 @@ void
 SYScall (char *format, ...)
 {
     va_list arg_p;
-    static char syscall[MAX_SYSCALL];
+    str_buf *syscall;
     int exit_code;
 
     DBUG_ENTER ();
 
+    syscall = SBUFcreate (MAX_SYSCALL);
+
     va_start (arg_p, format);
-    vsprintf (syscall, format, arg_p);
+    syscall = SBUFvprintf (syscall, format, arg_p);
     va_end (arg_p);
 
     /* if -d syscall flag is set print all syscalls !
      * This allows for easy C-code patches.
      */
     if (global.show_syscall) {
-        CTInote ("System call:\n %s", syscall);
+        CTInote ("System call:\n %s", SBUF2str (syscall));
     }
 
-    TrackSystemCall (syscall);
-    exit_code = system (syscall);
+    TrackSystemCall (SBUF2str (syscall));
+    exit_code = system (SBUF2str (syscall));
 
     if (exit_code == -1) {
         CTIabort ("System failure while trying to execute shell command.\n"
@@ -148,19 +149,19 @@ SYScall (char *format, ...)
     } else if (WEXITSTATUS (exit_code) > 0) {
         CTIabort ("System failed to execute shell command\n%s\n"
                   "with exit code %d",
-                  syscall, WEXITSTATUS (exit_code));
+                  SBUF2strAndFree (&syscall), WEXITSTATUS (exit_code));
     } else if (WIFSIGNALED (exit_code)) {
         if (WTERMSIG (exit_code) == SIGINT) {
             CTIabort ("Child recieved SIGINT when executing shell command \n%s\n",
-                      syscall);
+                      SBUF2strAndFree (&syscall));
         } else if (WTERMSIG (exit_code) == SIGQUIT) {
             CTIabort ("Child recieved SIGQUIT when executing shell command \n%s\n",
-                      syscall);
+                      SBUF2strAndFree (&syscall));
         }
     } else if (exit_code != 0) {
         CTIabort ("Unknown failure while executing shell command \n%s\n"
                   "Return value was %d",
-                  syscall, exit_code);
+                  SBUF2strAndFree (&syscall), exit_code);
     }
 
     DBUG_RETURN ();
@@ -182,24 +183,26 @@ int
 SYScallNoErr (char *format, ...)
 {
     va_list arg_p;
-    static char syscall[MAX_SYSCALL];
+    str_buf *syscall;
 
     DBUG_ENTER ();
 
+    syscall = SBUFcreate (MAX_SYSCALL);
+
     va_start (arg_p, format);
-    vsprintf (syscall, format, arg_p);
+    syscall = SBUFvprintf (syscall, format, arg_p);
     va_end (arg_p);
 
     /* if -dnocleanup flag is set print all syscalls !
      * This allows for easy C-code patches.
      */
     if (global.show_syscall) {
-        CTInote ("System call:\n%s", syscall);
+        CTInote ("System call:\n%s", SBUF2str (syscall));
     }
 
-    TrackSystemCall (syscall);
+    TrackSystemCall (SBUF2str (syscall));
 
-    DBUG_RETURN (system (syscall));
+    DBUG_RETURN (system (SBUF2strAndFree (&syscall)));
 }
 
 /******************************************************************************
@@ -218,19 +221,20 @@ int
 SYStest (char *format, ...)
 {
     va_list arg_p;
-    static char buffer[MAX_SYSCALL];
+    str_buf *buffer;
     int exit_code;
     char *extended_format;
 
     DBUG_ENTER ();
 
     extended_format = STRcat ("test ", format);
+    buffer = SBUFcreate (MAX_SYSCALL);
 
     va_start (arg_p, format);
-    vsprintf (buffer, extended_format, arg_p);
+    buffer = SBUFvprintf (buffer, extended_format, arg_p);
     va_end (arg_p);
 
-    exit_code = system (buffer);
+    exit_code = system (SBUF2str (buffer));
 
     if (exit_code == 0) {
         exit_code = 1;
@@ -239,6 +243,7 @@ SYStest (char *format, ...)
     }
 
     extended_format = MEMfree (extended_format);
+    buffer = SBUFfree (buffer);
 
     DBUG_PRINT ("test returns %d", exit_code);
 

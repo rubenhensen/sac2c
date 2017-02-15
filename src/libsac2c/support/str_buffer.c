@@ -8,6 +8,7 @@
 #define DBUG_PREFIX "SBUF"
 #include "debug.h"
 
+#include "ctinfo.h"
 #include "memory.h"
 #include "str.h"
 
@@ -80,6 +81,20 @@ str_buf *
 SBUFprintf (str_buf *s, const char *format, ...)
 {
     va_list arg_p;
+
+    DBUG_ENTER ();
+
+    va_start (arg_p, format);
+    s = SBUFvprintf (s, format, arg_p);
+    va_end (arg_p);
+
+    DBUG_RETURN (s);
+}
+
+str_buf *
+SBUFvprintf (str_buf *s, const char *format, va_list arg_list)
+{
+    va_list arg_list_copy;
     int len = 0, rem;
     bool ok;
 
@@ -90,9 +105,10 @@ SBUFprintf (str_buf *s, const char *format, ...)
     while (!ok) {
         rem = s->size - s->pos;
 
-        va_start (arg_p, format);
-        len = vsnprintf (&s->buf[s->pos], rem, format, arg_p);
-        va_end (arg_p);
+        // determine needed size
+        va_copy (arg_list_copy, arg_list);
+        len = vsnprintf (&s->buf[s->pos], rem, format, arg_list_copy);
+        va_end (arg_list_copy);
 
         if ((len >= 0) && (len < rem)) {
             ok = TRUE;
