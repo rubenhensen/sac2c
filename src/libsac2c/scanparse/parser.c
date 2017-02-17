@@ -1002,7 +1002,7 @@ token_starts_expr (struct parser *parser, struct token *tok)
         struct known_symbol *ks;
 
         HASH_FIND_STR (parser->known_symbols, token_as_string (tok), ks);
-        return !!symbol_is_unary (ks);
+        return ks && !!symbol_is_unary (ks);
     }
     case tok_operator:
         switch (token_value (tok)) {
