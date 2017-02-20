@@ -2,7 +2,7 @@
 
 #include "elim_alpha_types.h"
 
-#define DBUG_PREFIX "FIXNT"
+#define DBUG_PREFIX "ETV"
 #include "debug.h"
 
 #include "globals.h"

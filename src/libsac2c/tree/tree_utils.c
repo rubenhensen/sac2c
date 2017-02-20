@@ -339,6 +339,7 @@ checkBoundShape (node *arg1, node *arg2)
  *
  * Nodes may be anything that can appear in a GENERATOR_BOUND node.
  * I.e.: N_num, N_id, or  N_array, in any combination.
+ * NB. N_avis nodes do NOT work.
  *
  * We can safely skip guards and extrema, because this is a predicate
  * only.
@@ -368,6 +369,8 @@ TULSisValuesMatch (node *arg1, node *arg2)
 
     DBUG_ENTER ();
 
+    DBUG_ASSERT (N_avis != NODE_TYPE (arg1), "arg1 not expected to be N_avis");
+    DBUG_ASSERT (N_avis != NODE_TYPE (arg2), "arg2 not expected to be N_avis");
     pat1 = PMvar (1, PMAgetNode (&elem), 0);
     pat2 = PMvar (1, PMAisVar (&elem), 0);
 
