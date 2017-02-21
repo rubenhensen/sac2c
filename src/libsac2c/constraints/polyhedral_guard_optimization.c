@@ -332,7 +332,9 @@ POGOwith (node *arg_node, info *arg_info)
     INFO_WITH (arg_info) = arg_node;
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+#ifdef FIXME
     WITH_CODE (arg_node) = TUremoveUnusedCodes (WITH_CODE (arg_node));
+#endif // FIXME  crash after some opts in POGO
     INFO_WITH (arg_info) = lastwith;
 
     DBUG_RETURN (arg_node);
@@ -587,7 +589,8 @@ POGOprf (node *arg_node, info *arg_info)
                     guardp = IDS_NEXT (INFO_LHS (arg_info));
                     resp = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
                     AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resp;
-                    IDS_NEXT (INFO_LHS (arg_info)) = NULL;
+                    IDS_NEXT (INFO_LHS (arg_info))
+                      = FREEdoFreeNode (IDS_NEXT (INFO_LHS (arg_info)));
                     INFO_PREASSIGNS (arg_info)
                       = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
                 } else {
