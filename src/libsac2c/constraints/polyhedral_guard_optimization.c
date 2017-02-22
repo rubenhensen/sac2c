@@ -332,9 +332,9 @@ POGOwith (node *arg_node, info *arg_info)
     INFO_WITH (arg_info) = arg_node;
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-#ifdef FIXME
+#ifdef DEADCODE
     WITH_CODE (arg_node) = TUremoveUnusedCodes (WITH_CODE (arg_node));
-#endif // FIXME  crash after some opts in POGO
+#endif // DEADCODE  crash after some opts in POGO
     INFO_WITH (arg_info) = lastwith;
 
     DBUG_RETURN (arg_node);
@@ -467,6 +467,7 @@ POGOprf (node *arg_node, info *arg_info)
     bool resval = FALSE;
     node *res;
     node *resp;
+    node *resa;
     node *guardp;
     node *arg1 = NULL;
     node *arg2 = NULL;
@@ -578,22 +579,20 @@ POGOprf (node *arg_node, info *arg_info)
                 DBUG_PRINT ("Guard/relational for result %s replaced, predicate is %d",
                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), resval);
                 resp = TBmakeBool (resval);
-                if (!resval) {
-                    CTIwarn ("Guard failure detected for result %s",
-                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-                }
-
-                if (TUisPrfGuard (arg_node)) { // Need two results
+                if (TUisPrfGuard (arg_node)) { // Guard needs two results
+                    if (!resval) {
+                        CTIwarn ("Guard failure detected for result %s",
+                                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+                    }
                     res = DUPdoDupNode (PRF_ARG1 (arg_node));
                     arg_node = FREEdoFreeNode (arg_node);
                     guardp = IDS_NEXT (INFO_LHS (arg_info));
-                    resp = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
-                    AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resp;
-                    IDS_NEXT (INFO_LHS (arg_info))
-                      = FREEdoFreeNode (IDS_NEXT (INFO_LHS (arg_info)));
+                    resa = TBmakeAssign (TBmakeLet (guardp, resp), NULL);
+                    AVIS_SSAASSIGN (IDS_AVIS (guardp)) = resa;
+                    IDS_NEXT (INFO_LHS (arg_info)) = NULL;
                     INFO_PREASSIGNS (arg_info)
-                      = TCappendAssign (INFO_PREASSIGNS (arg_info), resp);
-                } else {
+                      = TCappendAssign (INFO_PREASSIGNS (arg_info), resa);
+                } else { // Successful removal of non-guard
                     res = resp;
                     arg_node = FREEdoFreeNode (arg_node);
                 }
