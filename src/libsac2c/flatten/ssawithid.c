@@ -42,13 +42,13 @@
 #include "LookUpTable.h"
 #include "shape.h"
 #include "new_types.h"
+#include "tree_utils.h"
 
 struct INFO {
     node *fundef;
     node *vardecs;
     node *withid0;
     lut_t *lut;
-    node *withcode;
     bool tossa;
 };
 
@@ -59,7 +59,6 @@ struct INFO {
 #define INFO_VARDECS(n) (n->vardecs)
 #define INFO_WITHID0(n) (n->withid0)
 #define INFO_LUT(n) (n->lut)
-#define INFO_WITHCODE(n) (n->withcode)
 #define INFO_TOSSA(n) (n->tossa)
 
 /*
@@ -78,7 +77,6 @@ MakeInfo (node *fundef)
     INFO_VARDECS (result) = NULL;
     INFO_WITHID0 (result) = NULL;
     INFO_LUT (result) = NULL;
-    INFO_WITHCODE (result) = NULL;
     INFO_TOSSA (result) = 0;
 
     DBUG_RETURN (result);
@@ -166,10 +164,8 @@ SSAWwith (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_WITHID0 (arg_info) = NULL;
-    INFO_WITHCODE (arg_info) = WITH_CODE (arg_node);
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
     INFO_WITHID0 (arg_info) = NULL;
-    INFO_WITHCODE (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -190,8 +186,8 @@ node *
 SSAWpart (node *arg_node, info *arg_info)
 {
     node *cellexpr;
-    node *pcode;
-    node *pcodenew;
+    node *blk;
+    node *blknew;
 
     DBUG_ENTER ();
 
@@ -210,17 +206,16 @@ SSAWpart (node *arg_node, info *arg_info)
     }
 
     // Do renames in code block AND enforce SSA on all LHS
-    // in the block.
+    // in the block. We do not create a new N_code node, so
+    // do not have to mess with CODE_NEXT, etc.
     cellexpr = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (arg_node))));
-    pcode = PART_CODE (arg_node);
+    blk = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node)));
 
-    if (NULL != pcode) { // Do not dup code block if empty
-        pcodenew
-          = DUPdoDupTreeLutSsa (pcode, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
-        CODE_DEC_USED (PART_CODE (arg_node));
-        CODE_INC_USED (pcodenew);
-        INFO_WITHCODE (arg_info) = TCappendCode (INFO_WITHCODE (arg_info), pcodenew);
-        PART_CODE (arg_node) = pcodenew;
+    if (NULL != blk) { // Do not dup empty code block
+        blknew = DUPdoDupTreeLutSsa (blk, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
+        BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node)))
+          = FREEdoFreeTree (BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node))));
+        BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node))) = blknew;
     }
 
     // Rename CODE_CEXPRS
@@ -289,7 +284,7 @@ populateLut (node *arg_node, node *vardecs, lut_t *lut, node *oldavis, bool toss
     DBUG_ENTER ();
 
     // Generate a new LHS name for WITHID_VEC/IDS, if doing TO SSA form,
-    // but use N_part 0 name if going from SSA form.
+    // but use N_part 0 name, if going from SSA form.
 
     navis = tossa ? TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
                                 TYcopyType (AVIS_TYPE (arg_node)))
@@ -297,7 +292,7 @@ populateLut (node *arg_node, node *vardecs, lut_t *lut, node *oldavis, bool toss
     vardecs = TBmakeVardec (navis, vardecs);
     LUTinsertIntoLutP (lut, arg_node, navis);
 
-    DBUG_PRINT ("Inserted WITHID_VEC into lut: oldname: %s, newname %s",
+    DBUG_PRINT ("Inserted WITHID element into lut: oldname: %s, newname %s",
                 AVIS_NAME (arg_node), AVIS_NAME (navis));
     DBUG_RETURN (navis);
 }

@@ -546,7 +546,7 @@ WLIRfundef (node *arg_node, info *arg_info)
     /* top level (not [directly] contained in any withloop) */
     INFO_WITHDEPTH (info) = 0;
 
-    /* init InsertList for with-loop independed removal */
+    /* init InsertList for with-loop-independent removal */
     INFO_INSLIST (info) = InsListPushFrame (NULL);
 
     /* traverse function body */
@@ -1001,9 +1001,10 @@ WLIRids (node *arg_ids, info *arg_info)
     DBUG_ENTER ();
 
     avis = IDS_AVIS (arg_ids);
-
     /* set current withloop depth as definition depth */
     AVIS_DEFDEPTH (avis) = INFO_SETDEPTH (arg_info);
+    DBUG_PRINT ("Looking at N_ids for %s, with depth %d", AVIS_NAME (avis),
+                AVIS_DEFDEPTH (avis));
 
     /* traverse to next expression */
     IDS_NEXT (arg_ids) = TRAVopt (IDS_NEXT (arg_ids), arg_info);

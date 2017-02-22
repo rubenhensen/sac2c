@@ -332,9 +332,7 @@ POGOwith (node *arg_node, info *arg_info)
     INFO_WITH (arg_info) = arg_node;
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-#ifdef DEADCODE
     WITH_CODE (arg_node) = TUremoveUnusedCodes (WITH_CODE (arg_node));
-#endif // DEADCODE  crash after some opts in POGO
     INFO_WITH (arg_info) = lastwith;
 
     DBUG_RETURN (arg_node);

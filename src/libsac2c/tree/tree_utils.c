@@ -550,8 +550,9 @@ TUremoveUnusedCodeBlock (node *arg_node)
 {
     DBUG_ENTER ();
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_code, "Expected N_code");
+    DBUG_ASSERT (0 <= CODE_USED (arg_node), "Negative CODE_USED!");
 
-    if (CODE_USED (arg_node) == 0) {
+    if (0 == CODE_USED (arg_node)) {
         arg_node = FLASfreeLhsAvisSons (arg_node);
         arg_node = FREEdoFreeNode (arg_node);
     }
@@ -567,6 +568,7 @@ TUremoveUnusedCodeBlock (node *arg_node)
  *
  *   @param  node *codes : N_code chain
  *   @return node *      : modified N_code chain
+ *
  ******************************************************************************/
 node *
 TUremoveUnusedCodes (node *codes)
