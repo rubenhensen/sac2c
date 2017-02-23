@@ -444,4 +444,34 @@ WLUTisEmptyGenerator (node *partn)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn nodeWLUTremoveUnusedCodes(node *codes)
+ *
+ *   @brief removes all unused N_codes recursively
+ *
+ *   @param  node *codes : N_code chain
+ *   @return node *      : modified N_code chain
+ *
+ ******************************************************************************/
+node *
+WLUTremoveUnusedCodes (node *codes)
+{
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (codes != NULL, "no codes available!");
+
+    DBUG_ASSERT (NODE_TYPE (codes) == N_code, "type of codes is not N_code!");
+
+    if (CODE_NEXT (codes) != NULL) {
+        CODE_NEXT (codes) = WLUTremoveUnusedCodes (CODE_NEXT (codes));
+    }
+
+    if (CODE_USED (codes) == 0) {
+        codes = FREEdoFreeNode (codes);
+    }
+
+    DBUG_RETURN (codes);
+}
+
 #undef DBUG_PREFIX

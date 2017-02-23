@@ -105,6 +105,7 @@
 #include "deserialize.h"
 #include "namespaces.h"
 #include "wls.h"
+#include "with_loop_utilities.h"
 
 /**
  * INFO structure
@@ -539,35 +540,6 @@ CreateFullPartition (node *parts, node *withop, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node RemoveUnusedCodes(node *codes)
- *
- *   @brief removes all unused N_codes recursively
- *
- *   @param  node *codes : N_code chain
- *   @return node *      : modified N_code chain
- ******************************************************************************/
-static node *
-RemoveUnusedCodes (node *codes)
-{
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (codes != NULL, "no codes available!");
-
-    DBUG_ASSERT (NODE_TYPE (codes) == N_code, "type of codes is not N_code!");
-
-    if (CODE_NEXT (codes) != NULL) {
-        CODE_NEXT (codes) = RemoveUnusedCodes (CODE_NEXT (codes));
-    }
-
-    if (CODE_USED (codes) == 0) {
-        codes = FREEdoFreeNode (codes);
-    }
-
-    DBUG_RETURN (codes);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *WLPGmodule(node *arg_node, info *arg_info)
  *
  *   @brief first traversal of function definitions of WLPartitionGeneration
@@ -727,7 +699,7 @@ WLPGwith (node *arg_node, info *arg_info)
              * delete default partition:
              */
             PART_NEXT (parts) = FREEdoFreeTree (PART_NEXT (parts));
-            WITH_CODE (arg_node) = RemoveUnusedCodes (WITH_CODE (arg_node));
+            WITH_CODE (arg_node) = WLUTremoveUnusedCodes (WITH_CODE (arg_node));
 
         } else {
             DBUG_UNREACHABLE ("more than one partition alongside a default partition!");

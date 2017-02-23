@@ -23,11 +23,10 @@
  *
  *   A) it eliminates zero-trip generators from With-Loops
  *      In case all generators are eliminated, the entire With-Loop
- *      is being replaced by some appropriate alternative code (for details
+ *      is replaced by some appropriate alternative code (for details
  *      see below!).
  *
  *   B) it creates GENERATOR_GENWIDTH annotations
- *
  *
  * The optimization ASSUMES that all With-Loops are full partitions
  * ( i.e., WLPG has been run prior to the optimization).
@@ -112,6 +111,7 @@
 #include "check.h"
 #include "phase.h"
 #include "ctinfo.h"
+#include "with_loop_utilities.h"
 #include "tree_utils.h"
 #include "flattengenerators.h"
 
@@ -604,7 +604,7 @@ WLSIMPcode (node *arg_node, info *arg_info)
 
     CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
-    arg_node = TUremoveUnusedCodeBlock (arg_node);
+    arg_node = WLUTremoveUnusedCodes (arg_node);
 
     if (0 != arg_node) {
         CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);

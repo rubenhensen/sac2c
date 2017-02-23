@@ -72,6 +72,7 @@ int FIXME; // See Bodo above
 #include "LookUpTable.h"
 #include "lacfun_utilities.h"
 #include "symbolic_constant_simplification.h"
+#include "with_loop_utilities.h"
 
 /** <!--********************************************************************-->
  *
@@ -332,7 +333,7 @@ POGOwith (node *arg_node, info *arg_info)
     INFO_WITH (arg_info) = arg_node;
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    WITH_CODE (arg_node) = TUremoveUnusedCodes (WITH_CODE (arg_node));
+    WITH_CODE (arg_node) = WLUTremoveUnusedCodes (WITH_CODE (arg_node));
     INFO_WITH (arg_info) = lastwith;
 
     DBUG_RETURN (arg_node);

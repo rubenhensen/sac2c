@@ -5,8 +5,6 @@
 
 extern bool TULSisZeroTripGenerator (node *lb, node *ub, node *width);
 extern bool TULSisFullGenerator (node *generator, node *op);
-extern node *TUremoveUnusedCodes (node *arg_node);
-extern node *TUremoveUnusedCodeBlock (node *arg_node);
 extern node *TUmakeIntVec (int i, node **preassign, node **vardec);
 extern node *TUscalarizeVector (node *arg_node, node **preassigns, node **vardecs);
 extern node *TUmoveAssign (node *avismax, node *preassigns);

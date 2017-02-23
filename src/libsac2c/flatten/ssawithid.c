@@ -43,11 +43,13 @@
 #include "shape.h"
 #include "new_types.h"
 #include "tree_utils.h"
+#include "with_loop_utilities.h"
 
 struct INFO {
     node *fundef;
     node *vardecs;
     node *withid0;
+    node *code;
     lut_t *lut;
     bool tossa;
 };
@@ -58,6 +60,7 @@ struct INFO {
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_VARDECS(n) (n->vardecs)
 #define INFO_WITHID0(n) (n->withid0)
+#define INFO_CODE(n) (n->code)
 #define INFO_LUT(n) (n->lut)
 #define INFO_TOSSA(n) (n->tossa)
 
@@ -76,6 +79,7 @@ MakeInfo (node *fundef)
     INFO_FUNDEF (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_WITHID0 (result) = NULL;
+    INFO_CODE (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_TOSSA (result) = 0;
 
@@ -167,6 +171,12 @@ SSAWwith (node *arg_node, info *arg_info)
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
     INFO_WITHID0 (arg_info) = NULL;
 
+    if (NULL != INFO_CODE (arg_info)) {
+        WITH_CODE (arg_node) = TCappendCode (WITH_CODE (arg_node), INFO_CODE (arg_info));
+        INFO_CODE (arg_info) = NULL;
+        WITH_CODE (arg_node) = WLUTremoveUnusedCodes (WITH_CODE (arg_node));
+    }
+
     DBUG_RETURN (arg_node);
 }
 
@@ -192,15 +202,15 @@ SSAWpart (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     LUTremoveContentLut (INFO_LUT (arg_info));
-    // Ignore N_default partition
+    // Ignore N_default partition, and leave first non-default partition as is.
     if (N_generator == NODE_TYPE (PART_GENERATOR (arg_node))) {
         if (NULL == INFO_WITHID0 (arg_info)) {
             INFO_WITHID0 (arg_info) = PART_WITHID (arg_node);
         } else {
-            // This is some partition following a non-default one.
-            // Rename this one.
+            // This is some partition following a non-default one, so
+            // rename it.
             // We rename the N_withid elements in SSAWwithid,
-            // and rename the references to those elements here.
+            // and also rename all references to those elements.
             PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
         }
     }
@@ -209,14 +219,14 @@ SSAWpart (node *arg_node, info *arg_info)
     // in the block. We do not create a new N_code node, so
     // do not have to mess with CODE_NEXT, etc.
     cellexpr = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (arg_node))));
-    blk = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node)));
-
-    if (NULL != blk) { // Do not dup empty code block
-        blknew = DUPdoDupTreeLutSsa (blk, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
-        BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node)))
-          = FREEdoFreeTree (BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node))));
-        BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node))) = blknew;
-    }
+    // Copy entire code block.
+    blk = PART_CODE (arg_node);
+    blknew = DUPdoDupTreeLutSsa (blk, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
+    CODE_INC_USED (blknew);
+    CODE_DEC_USED (blk);
+    // Append new block to N_code chain later
+    INFO_CODE (arg_info) = TCappendCode (INFO_CODE (arg_info), blknew);
+    PART_CODE (arg_node) = blknew;
 
     // Rename CODE_CEXPRS
     cellexpr = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), cellexpr);
@@ -286,10 +296,14 @@ populateLut (node *arg_node, node *vardecs, lut_t *lut, node *oldavis, bool toss
     // Generate a new LHS name for WITHID_VEC/IDS, if doing TO SSA form,
     // but use N_part 0 name, if going from SSA form.
 
-    navis = tossa ? TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
-                                TYcopyType (AVIS_TYPE (arg_node)))
-                  : oldavis;
-    vardecs = TBmakeVardec (navis, vardecs);
+    if (tossa) {
+        navis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
+                            TYcopyType (AVIS_TYPE (arg_node)));
+        vardecs = TBmakeVardec (navis, vardecs);
+    } else {
+        navis = oldavis;
+    }
+
     LUTinsertIntoLutP (lut, arg_node, navis);
 
     DBUG_PRINT ("Inserted WITHID element into lut: oldname: %s, newname %s",

@@ -535,59 +535,7 @@ TULSisFullGenerator (node *generator, node *op)
     DBUG_RETURN (z);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node TUremoveUnusedCodeBlock(node *arg_node)
- *
- *   @brief Free N_code block if unused
- *
- *   @param  arg_node: N_code node
- *   @return arg_node or NULL
- *
- ******************************************************************************/
-node *
-TUremoveUnusedCodeBlock (node *arg_node)
-{
-    DBUG_ENTER ();
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_code, "Expected N_code");
-    DBUG_ASSERT (0 <= CODE_USED (arg_node), "Negative CODE_USED!");
-
-    if (0 == CODE_USED (arg_node)) {
-        arg_node = FLASfreeLhsAvisSons (arg_node);
-        arg_node = FREEdoFreeNode (arg_node);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node TUremoveUnusedCodes(node *codes)
- *
- *   @brief removes all unused N_codes recursively
- *
- *   @param  node *codes : N_code chain
- *   @return node *      : modified N_code chain
- *
- ******************************************************************************/
-node *
-TUremoveUnusedCodes (node *codes)
-{
-    DBUG_ENTER ();
-    DBUG_ASSERT (codes != NULL, "no codes available!");
-    DBUG_ASSERT (NODE_TYPE (codes) == N_code, "type of codes is not N_code!");
-
-    if (CODE_NEXT (codes) != NULL) {
-        CODE_NEXT (codes) = TUremoveUnusedCodes (CODE_NEXT (codes));
-    }
-
-    codes = TUremoveUnusedCodeBlock (codes);
-
-    DBUG_RETURN (codes);
-}
-
-/** <!--********************************************************************-->
- *
+/** <!--********************************************************************--> *
  * @fn void  TUclearSsaAssign( node *arg_node)
  *
  * @brief Clear AVIS_SSAASSIGN nodes associated with arg_node

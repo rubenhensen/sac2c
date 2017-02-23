@@ -11,5 +11,6 @@ extern bool WLUTisCopyPartition (node *partn);
 extern node *WLUTfindCopyPartition (node *partn);
 extern node *WLUTfindCopyPartitionFromCexpr (node *cexpr, node *withidvec);
 extern bool WLUTisEmptyGenerator (node *partn);
+extern node *WLUTremoveUnusedCodes (node *codes);
 
 #endif /* _SAC_WITH_LOOP_UTILITIES_H_ */

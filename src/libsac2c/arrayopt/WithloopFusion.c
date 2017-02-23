@@ -25,7 +25,7 @@
 #include "tagdependencies.h"
 #include "resolvedependencies.h"
 #include "math_utils.h"
-#include "tree_utils.h"
+#include "with_loop_utilities.h"
 
 typedef enum { WOT_gen_mod, WOT_fold, WOT_gen_mod_fold, WOT_unknown } wo_type_t;
 
@@ -1441,13 +1441,13 @@ BuildNewGens (node *current_wl, node *fusionable_wl)
 
         WITH_PART (fusionable_wl) = FREEdoFreeTree (WITH_PART (fusionable_wl));
         WITH_PART (fusionable_wl) = new_parts_fwl;
-        WITH_CODE (fusionable_wl) = TUremoveUnusedCodes (WITH_CODE (fusionable_wl));
+        WITH_CODE (fusionable_wl) = WLUTremoveUnusedCodes (WITH_CODE (fusionable_wl));
         DBUG_ASSERT (WITH_CODE (fusionable_wl) != NULL,
                      "all ncodes have been removed!!!");
 
         WITH_PART (current_wl) = FREEdoFreeTree (WITH_PART (current_wl));
         WITH_PART (current_wl) = new_parts_cwl;
-        WITH_CODE (current_wl) = TUremoveUnusedCodes (WITH_CODE (current_wl));
+        WITH_CODE (current_wl) = WLUTremoveUnusedCodes (WITH_CODE (current_wl));
         DBUG_ASSERT (WITH_CODE (fusionable_wl) != NULL,
                      "all ncodes have been removed!!!");
     }

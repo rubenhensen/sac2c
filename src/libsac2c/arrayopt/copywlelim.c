@@ -366,8 +366,13 @@ CWLEwith (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_PRINT ("Looking at WL %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+
     INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
-    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+    // We only care about WLs with a single partition.
+    if (NULL == PART_NEXT (WITH_PART (arg_node))) {
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    }
 
     /*
      * if our codes indicate that we are still on the run we have to check
