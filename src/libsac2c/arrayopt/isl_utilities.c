@@ -160,7 +160,7 @@ ISLUexprs2String (node *exprs, lut_t *varlut, char *lbl, bool isunionset, char *
     DBUG_PRINT ("ISL arg filename: %s", polyhedral_arg_filename);
     matrix_file = FMGRreadWriteOpen (polyhedral_arg_filename, "w+");
     PHUTwriteUnionSet (matrix_file, exprs, varlut, lbl, isunionset, lhsname);
-    // fflush( matrix_file); // DEBUG ONLY
+    fflush (matrix_file); // This is NOT optional, apparently.
 
     // Get entire file into a string buffer
     fsize = ftell (matrix_file);
@@ -168,6 +168,8 @@ ISLUexprs2String (node *exprs, lut_t *varlut, char *lbl, bool isunionset, char *
     str = (char *)MEMmalloc ((1 + fsize) * sizeof (char));
     sz = fread (str, sizeof (char), (size_t)fsize, matrix_file);
     DBUG_ASSERT (sz == (size_t)fsize, "fread did not return expected size");
+    str[sz] = '\0'; // Terminate string
+    DBUG_PRINT ("sz=%d, strlen(str)=%d", sz, strlen (str));
     FMGRclose (matrix_file);
 
     DBUG_RETURN (str);
@@ -270,26 +272,26 @@ ISLUgetSetIntersections (node *exprspwl, node *exprscwl, node *exprsfn, node *ex
 
     str = ISLUexprs2String (exprspwl, varlut, "pwl for intersect", TRUE, lhsname);
     dompwl = isl_union_set_read_from_str (ctx, str);
+    DBUG_PRINT ("pwl is %s", str);
     str = MEMfree (str);
-    DBUG_PRINT ("dompwl is %s", str);
     DBUG_EXECUTE (ISLUprintUnionSet (stderr, dompwl, "dompwl"));
 
     str = ISLUexprs2String (exprscwl, varlut, "cwl for intersect", TRUE, lhsname);
     domcwl = isl_union_set_read_from_str (ctx, str);
+    DBUG_PRINT ("cwl is %s", str);
     str = MEMfree (str);
-    DBUG_PRINT ("domcwl is %s", str);
     DBUG_EXECUTE (ISLUprintUnionSet (stderr, domcwl, "domcwl"));
 
     str = ISLUexprs2String (exprsfn, varlut, "fn for intersect", FALSE, lhsname);
     mapfn = isl_union_map_read_from_str (ctx, str);
+    DBUG_PRINT ("fn is %s", str);
     str = MEMfree (str);
-    DBUG_PRINT ("mapfn is %s", str);
     DBUG_EXECUTE (ISLUprintUnionMap (stderr, mapfn, "mapfn"));
 
     str = ISLUexprs2String (exprscfn, varlut, "cfn for intersect", FALSE, lhsname);
     mapcfn = isl_union_map_read_from_str (ctx, str);
+    DBUG_PRINT ("cfn is %s", str);
     str = MEMfree (str);
-    DBUG_PRINT ("mapcfn is %s", str);
     DBUG_EXECUTE (ISLUprintUnionMap (stderr, mapcfn, "mapcfn"));
 
     intersectpc = isl_union_set_intersect (isl_union_set_copy (dompwl),
