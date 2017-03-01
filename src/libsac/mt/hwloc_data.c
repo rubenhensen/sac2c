@@ -15,6 +15,65 @@ hwloc_topology_t SAC_HWLOC_topology;
 #if SAC_MT_MODE > 0
 
 static char *
+numaDist (int threads, int pus_per_numa, int numa_nodes_avail, char *res, int rem)
+{
+    int i, j, idx;
+
+    if (threads < pus_per_numa) {
+
+        for (i = 0; i < threads; i++) {
+            res[i * pus_per_numa] = SAC_PULIST_FULL_CHAR;
+        }
+    } else if (threads % pus_per_numa == 0) {
+        idx = (int)((double)threads / 8.0);
+    } else {
+        threads--;
+        rem++;
+        numaDist (threads, pus_per_numa, numa_nodes_avail, res, rem);
+    }
+
+    int numa_node = 0;
+    for (i = 0; i < numa_nodes_avail; i++) {
+        for (j = 0; j < idx; j++) {
+            res[i * pus_per_numa + j] = SAC_PULIST_FULL_CHAR;
+
+            if (rem > 0) {
+                res[numa_node + idx] = SAC_PULIST_FULL_CHAR;
+                rem--;
+                numa_node += pus_per_numa;
+            }
+        }
+    }
+    return res;
+}
+
+static char *
+strategyNuma (int threads, int sockets_avail, int cores_avail, int pus_avail)
+{
+
+    int i;
+    int numa_nodes_avail = 8;
+    int pus_per_numa = 8;
+
+    char *res;
+
+    if (threads > sockets_avail * cores_avail * pus_avail) {
+        SAC_RuntimeError ("Asking for %d threads on a machine with %d processing units; "
+                          "Either decrease the number of threads or turn -mt_bind off",
+                          threads, sockets_avail * cores_avail * pus_avail);
+    }
+    res = (char *)SAC_MALLOC (sizeof (char)
+                              * (sockets_avail * cores_avail * pus_avail + 1));
+    for (i = 0; i < sockets_avail * cores_avail * pus_avail; i++) {
+        res[i] = SAC_PULIST_EMPTY_CHAR;
+    }
+    res[i] = '\0';
+
+    res = numaDist (threads, pus_per_numa, numa_nodes_avail, res, 0);
+    return res;
+}
+
+static char *
 strategySimple (int threads, int sockets_avail, int cores_avail, int pus_avail)
 {
     int i;
@@ -325,6 +384,8 @@ SAC_HWLOC_init (int threads)
 
     /*
      * Now we compute the intended PU usage from the available sockets,
+
+
      * cores and pus (assuming a symmetric architecture), the number
      * of threads we want to create and the strategy provided in -mt_bind
      *
@@ -344,11 +405,20 @@ SAC_HWLOC_init (int threads)
         pus_string = strategyAlternate (threads, num_sockets_available,
                                         num_cores_available / num_sockets_available,
                                         num_pus_available / num_cores_available);
-    } else if (SAC_MT_cpu_bind_strategy == 4) {
-        pus_string = strategyThrPerSocket (threads, num_sockets_available,
-                                           num_cores_available / num_sockets_available,
-                                           num_pus_available / num_cores_available);
     } else if (SAC_MT_cpu_bind_strategy == 5) {
+
+        /* pus_string = strategyThrPerSocket(
+                        threads,
+                          num_sockets_available,
+                            num_cores_available / num_sockets_available,
+                              num_pus_available / num_cores_available);
+        */
+
+        pus_string = strategyNuma (threads, num_sockets_available,
+                                   num_cores_available / num_sockets_available,
+                                   num_pus_available / num_cores_available);
+
+    } else if (SAC_MT_cpu_bind_strategy == 4) {
 
         pus_string = strategyExtString (threads, num_sockets_available,
                                         num_cores_available / num_sockets_available,
