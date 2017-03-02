@@ -19,7 +19,7 @@ if ! test -x "$sac2c"; then
     die "$sac2c is not found or not executable"
 fi
 
-cmdline=("$sac2c" -target "$target")
+cmdline=
 firstfile=
 prev_arg=
 outfile=
@@ -71,6 +71,9 @@ for arg in "$@"; do
 done
 if test -n "${prev_arg:-}"; then die "argument to \`$arg' is missing"; fi
 
+
+cmdline=("$sac2c" -target "$target" -noprelude -cc $mode$kind ${cmdline[@]})
+
 if test -n "$outfile"; then
    cmdline+=(-o "$outfile")
 else
@@ -90,5 +93,4 @@ else
     fi
 fi
 
-cmdline+=(-noprelude -cc $mode$kind)
 exec "${cmdline[@]}"
