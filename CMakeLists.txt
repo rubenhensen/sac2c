@@ -80,6 +80,14 @@ ADD_EXECUTABLE (sac2tex "${PROJECT_SOURCE_DIR}/src/tools/sac2tex/sac2tex.c")
 ADD_DEPENDENCIES (sac2tex sac_h check_repo_version)
 TARGET_LINK_LIBRARIES (sac2tex ${DL_LIB})
 
+IF (ENABLE_ISL AND ENABLE_BARVINOK)
+  ADD_EXECUTABLE (sacislinterface src/tools/sacislinterface/sacislinterface.c)
+  ADD_DEPENDENCIES (sac2cShared check_repo_version)
+  TARGET_LINK_LIBRARIES (sacislinterface ${LIB_ISL} ${LIB_BARVINOK} ${BARVINOK_LIB})
+  TARGET_INCLUDE_DIRECTORIES (sacislinterface PUBLIC ${BARVINOK_INC_PATH} ${ISL_INC_PATH})
+ENDIF ()
+
+
 # Set the postfix of the executables depending on build type
 SET_TARGET_PROPERTIES (sac2c sac4c sac2tex
     PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX}
