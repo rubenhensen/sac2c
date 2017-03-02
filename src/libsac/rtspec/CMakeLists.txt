@@ -1,3 +1,4 @@
+HEADER_DIRECTORIES (DIR_LIST)
 INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/runtime/sac2c-variables.cmake")
 
 # create directory
@@ -20,23 +21,10 @@ ELSE ()
   SET (LIBSAC_SRC ../../libsacphm/empty/empty.c)
 ENDIF ()
 
-SET(LIBSAC_OBJS)
-FOREACH(name ${LIBSAC_SRC})
-  SET (src "${CMAKE_CURRENT_SOURCE_DIR}/${name}")
-  GET_FILENAME_COMPONENT (dst ${name} NAME_WE)
-  SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}.rtspec${OBJEXT}")
-  ADD_CUSTOM_COMMAND (
-    OUTPUT "${dst}"
-    DEPENDS "${src}" ${LIB_SAC2C}
-    COMMAND ${SAC2C} -v0 -noprelude -cc ccmod -o "${dst}" "${src}"
-    COMMENT "Generating ${dst}"
-  )
-  LIST (APPEND LIBSAC_OBJS "${dst}")
-ENDFOREACH(name)
-
-ADD_CUSTOM_COMMAND (
-    OUTPUT "${LIBSAC_LIB}"
-    COMMAND ${SAC2C} -v0 -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT} -o "${LIBSAC_LIB}" ${LIBSAC_OBJS}
-    DEPENDS ${LIBSAC_OBJS}
-    COMMENT "Linking for target `${TARGET}' libsacrtspec")
-ADD_CUSTOM_TARGET (libsacrtspec-${TARGET} ALL DEPENDS "${LIBSAC_LIB}")
+INCLUDE_DIRECTORIES (${DIR_LIST})
+ADD_LIBRARY (libsacrtspec-${TARGET} SHARED ${LIBSAC_SRC})
+SET_TARGET_PROPERTIES (libsacrtspec-${TARGET}
+  PROPERTIES
+    OUTPUT_NAME sacrtspec
+    LIBRARY_OUTPUT_DIRECTORY  "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}"
+)
