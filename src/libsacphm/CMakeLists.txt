@@ -1,9 +1,8 @@
+HEADER_DIRECTORIES (DIR_LIST)
 INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/runtime/sac2c-variables.cmake")
 
 # create directory
 FILE (MAKE_DIRECTORY "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}")
-SET (LIBSAC_LIB "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsacphm${BUILD_TYPE_POSTFIX}${SHARED_LIB_EXT}")
-SET (LIBSAC_LIBD "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}/libsacphm.diag${BUILD_TYPE_POSTFIX}${SHARED_LIB_EXT}")
 
 IF(${USE_PHM_API} EQUAL 1)
   MESSAGE ("Target `${TARGET}' does support PHM")
@@ -22,45 +21,18 @@ ELSE ()
   SET (LIBSAC_SRC empty/empty.c)
 ENDIF ()
 
-SET(LIBSAC_OBJS)
-FOREACH(name ${LIBSAC_SRC})
-  SET (src "${CMAKE_CURRENT_SOURCE_DIR}/${name}")
-  GET_FILENAME_COMPONENT (dst ${name} NAME_WE)
-  SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}${OBJEXT}")
-  ADD_CUSTOM_COMMAND (
-    OUTPUT "${dst}"
-    DEPENDS "${src}" ${LIB_SAC2C}
-    COMMAND ${SAC2C} -v0 -noprelude -cc ccmod -o "${dst}" "${src}"
-    COMMENT "Generating ${dst}"
-  )
-  LIST (APPEND LIBSAC_OBJS "${dst}")
-ENDFOREACH(name)
+INCLUDE_DIRECTORIES (${DIR_LIST})
+ADD_LIBRARY (libsacphm-${TARGET} SHARED ${LIBSAC_SRC})
+SET_TARGET_PROPERTIES (libsacphm-${TARGET}
+  PROPERTIES
+    OUTPUT_NAME sacphm
+    LIBRARY_OUTPUT_DIRECTORY  "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}"
+)
 
-SET(LIBSAC_OBJSD)
-FOREACH(name ${LIBSAC_SRC})
-  SET (src "${CMAKE_CURRENT_SOURCE_DIR}/${name}")
-  GET_FILENAME_COMPONENT (dst ${name} NAME_WE)
-  SET (dst "${CMAKE_CURRENT_BINARY_DIR}/${dst}.diag${OBJEXT}")
-  ADD_CUSTOM_COMMAND (
-    OUTPUT "${dst}"
-    DEPENDS "${src}" ${LIB_SAC2C}
-  COMMAND  ${SAC2C} -v0 -noprelude -cc ccmod -Xc -DDIAG -o "${dst}" "${src}"
-  COMMENT "Generating ${dst} (diag)"
-  )
-  LIST (APPEND LIBSAC_OBJSD "${dst}")
-ENDFOREACH(name)
-
-ADD_CUSTOM_COMMAND (
-  OUTPUT "${LIBSAC_LIB}"
-  COMMAND ${SAC2C} -v0 -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT} -o "${LIBSAC_LIB}" ${LIBSAC_OBJS}
-  DEPENDS ${LIBSAC_OBJS}
-  COMMENT "Linking for target `${TARGET}' libsacphm")
-
-ADD_CUSTOM_COMMAND (
-  OUTPUT "${LIBSAC_LIBD}"
-  COMMAND ${SAC2C} -v0 -linksetsize 0 -noprelude -cc ldmod ${LIB_M} ${LIB_RT} -o "${LIBSAC_LIBD}" ${LIBSAC_OBJSD}
-  DEPENDS ${LIBSAC_OBJSD}
-  COMMENT "Linking for target `${TARGET}' libsacphm (diag)")
-
-# Create and link both the normal and DIAG version of libsacphm
-ADD_CUSTOM_TARGET (libsacphm-${TARGET} ALL DEPENDS "${LIBSAC_LIB}" "${LIBSAC_LIBD}")
+ADD_LIBRARY (libsacphmdiag-${TARGET} SHARED ${LIBSAC_SRC})
+SET_TARGET_PROPERTIES (libsacphmdiag-${TARGET}
+  PROPERTIES
+    COMPILE_DEFINITIONS DIAG
+    OUTPUT_NAME sacphm.diag
+    LIBRARY_OUTPUT_DIRECTORY  "${DLL_BUILD_DIR}/${TARGET_ENV}/${SBI}"
+)
