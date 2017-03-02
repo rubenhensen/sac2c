@@ -53,6 +53,13 @@ for arg in "$@"; do
       -g*) cmdline+=(-g -Xc "$arg" -Xl "$arg") ;;
       -O[0-3]) cmdline+=($arg -Xc "$arg" -Xl "$arg") ;;
       -o) prev_arg=outfile ;;
+      -install_name*)
+      if [ "$arg" == "-install_name" ]; then
+         followaction=ccarg; ccarg=$arg
+      else
+         cmdline+=( -Xc "$arg" -Xl "$arg")
+      fi
+      ;;
       -save-temps) cmdline+=(-d nocleanup -Xc -save-temps -Xl -save-temps) ;;
       -i*|-MF|-MT|-MQ)    followaction=ccarg; ccarg=$arg ;;
       -W*|-d*|-pedantic*|-ansi|-std*|-S|-E|-I*|-P|-A*|-D*|-U*|-C*|-H|-M*) cmdline+=(-Xc "$arg" -Xl "$arg") ;;
