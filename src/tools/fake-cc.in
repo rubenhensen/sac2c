@@ -1,0 +1,14 @@
+#! @BASH@
+
+# This script should trigger an error message when it is called directly.
+# We use this to make sure that we have overloaded all the necessary
+# cmake-related calls for building C programs.
+
+echo -e \
+"\t--- ERROR: A direct call to FAKE CC has occured.\n\
+\t--- This suggests that one or more of the CMAKE_C_<...>\n\
+\t--- \`recepies' in then cmake/runtime/CMakeLists.txt were not\n\
+\t--- covered.  Please figure out which and fix it, so that\n\
+\t--- building C files is kept under full control." 1>&2;
+
+exit 1;

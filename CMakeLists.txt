@@ -53,6 +53,7 @@ ADD_EXECUTABLE (echo  src/maketools/echo/echo.c)
 ADD_EXECUTABLE (icmt  src/maketools/icmt/icmt.c)
 # extra tool file...
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/saccc.in" "${PROJECT_BINARY_DIR}/saccc" @ONLY)
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/fake-cc.in" "${PROJECT_BINARY_DIR}/fake-cc" @ONLY)
 
 # generate files necessary to compile sac2c
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xconfig.h.in" "${PROJECT_BINARY_DIR}/include/config.h")
