@@ -3,6 +3,8 @@ CMAKE_MINIMUM_REQUIRED (VERSION 3.4)
 # Name of the project
 PROJECT (sac2c_runtime C)
 
+
+
 IF (NOT SAC2C_BUILD_DIR)
     MESSAGE (FATAL_ERROR "The SAC2C_BUILD_DIR is not set!")
 ENDIF ()
@@ -40,7 +42,7 @@ include ("${SAC2C_SOURCE_DIR}/cmake/runtime/config.cmake")
 # Include common directories for the project.
 INCLUDE_DIRECTORIES(
   "${SAC2C_BUILD_DIR}/include"
-  "${SAC2C_BUILD_DIR}/src/include"
+  "${SAC2C_SOURCE_DIR}/src/include"
   "${SAC2C_BUILD_DIR}/src/libsacphm/heap"
   "${SAC2C_BUILD_DIR}/src/libsacdistmem/commlib"
   "${PROJECT_BINARY_DIR}/include"
@@ -57,7 +59,27 @@ FIND_LIBRARY (LIB_SAC2C NAMES "libsac2c${BUILD_TYPE_POSTFIX}${CMAKE_SHARED_LIBRA
 # of the variant that we want to compile.
 MACRO (ADD_LIBSAC_TARGET SRC_DIR VARIANT_TARGET)
     SET (TARGET                     ${VARIANT_TARGET})
-    # FIXME: this isn't very `clean'... 
+
+    # We overload recepies on how to build .c -> .o and *.o -> .so
+    # First we set the actual C compile to the script that will print
+    # an error message and die.
+    SET (CMAKE_C_COMPILER "${SAC2C_BUILD_DIR}/fake-cc")
+
+    # Further, we overload the build-recepies for building object files,
+    # libraries and executables.  Hopefully this is enough to build everything
+    # we need.
+    SET (SACCC "${SAC2C_BUILD_DIR}/saccc ${SAC2C_EXEC} mod ${TARGET}")
+    SET (CMAKE_C_COMPILE_OBJECT
+         "${SACCC} <DEFINES> <INCLUDES> -o <OBJECT>   -c <SOURCE>")
+     #     <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT>   -c <SOURCE>")
+    SET (CMAKE_C_CREATE_SHARED_LIBRARY
+         "${SACCC} <SONAME_FLAG><TARGET_SONAME> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>")
+    SET (CMAKE_C_LINK_EXECUTABLE
+         "${SACCC} <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> \
+          <OBJECTS>  -o <TARGET> <LINK_LIBRARIES>")
+
+    SET (CMAKE_SHARED_LIBRARY_SUFFIX ${SHARED_LIB_EXT})
+
     ADD_SUBDIRECTORY (${SAC2C_SOURCE_DIR}/${SRC_DIR}    ${SRC_DIR}-${TARGET})
 ENDMACRO ()
 
