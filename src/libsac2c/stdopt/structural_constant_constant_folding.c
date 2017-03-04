@@ -58,6 +58,7 @@
 #include "ivextrema.h"
 #include "flattengenerators.h"
 #include "narray_utilities.h"
+#include "with_loop_utilities.h"
 
 /******************************************************************************
  *
@@ -2254,6 +2255,57 @@ IdxselEmptyScalar (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *HandleCompositionWithGenarray( node *arg_node...)
+ *
+ * @brief Handler for compositions of indexing on genarray result:
+ *        Currently supported:
+ *          Q = genarray([shp], scalar);
+ *          el = idx_sel( offset, Q);  OR
+ *          el = _sel_VxA_( iv, Q);
+ *
+ * @param  arg_node: The putative N_prf for el
+ *
+ * @return If we can prove that all elements of Q are identical,
+ *         we can replace the selection operation by el = scalar.
+ *
+ *         This code assumes that -check c will ensure that
+ *         shp satisfies rank, shape, and value requirements
+ *         ( index error checking) for the index operation.
+ *
+ ******************************************************************************/
+static node *
+HandleCompositionWithGenarray (node *arg_node)
+{
+    node *z = NULL;
+    pattern *pat1;
+    pattern *pat2;
+    node *iv = NULL;
+    node *q = NULL;
+    node *s = NULL;
+
+    DBUG_ENTER ();
+
+    /* z = _sel_VxA_( iv, q); */
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&q), 0));
+    /* z = _idx_sel( offset, q); */
+    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&q), 0));
+    if ((PMmatchFlat (pat1, arg_node) || PMmatchFlat (pat2, arg_node))) {
+        // Emit el = s;
+        s = WLUTgetGenarrayScalar (q);
+        z = (NULL != s) ? TBmakeId (s) : NULL;
+    }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
+    DBUG_PRINT ("Leaving HandleCompositionWithGenarray for lhs=%s", AVIS_NAME (arg_node));
+
+    DBUG_RETURN (z);
+}
+
 /******************************************************************************
  *
  * function:
@@ -2295,6 +2347,10 @@ SCCFprf_idx_sel (node *arg_node, info *arg_info)
 
     if (NULL == res) {
         res = IdxselProxyArray (arg_node, arg_info);
+    }
+
+    if (NULL == res) {
+        res = HandleCompositionWithGenarray (arg_node);
     }
 
     DBUG_RETURN (res);

@@ -12,7 +12,6 @@
 #include "types.h"
 
 extern node *AWLFIdoAlgebraicWithLoopFolding (node *arg_node);
-extern bool AWLFIisSingleOpWL (node *arg_node);
 extern node *AWLFIfindWL (node *arg_node);
 extern node *AWLFIfindWlId (node *arg_node);
 extern bool AWLFIisHasNoteintersect (node *arg_node);

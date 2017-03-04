@@ -272,55 +272,71 @@ ISLUgetSetIntersections (node *exprspwl, node *exprscwl, node *exprsfn, node *ex
 
     str = ISLUexprs2String (exprspwl, varlut, "pwl for intersect", TRUE, lhsname);
     dompwl = isl_union_set_read_from_str (ctx, str);
+    DBUG_ASSERT (NULL != dompwl, "ISL did not like exprspwl as union set");
     DBUG_PRINT ("pwl is %s", str);
     str = MEMfree (str);
     DBUG_EXECUTE (ISLUprintUnionSet (stderr, dompwl, "dompwl"));
-
-    str = ISLUexprs2String (exprscwl, varlut, "cwl for intersect", TRUE, lhsname);
-    domcwl = isl_union_set_read_from_str (ctx, str);
-    DBUG_PRINT ("cwl is %s", str);
-    str = MEMfree (str);
-    DBUG_EXECUTE (ISLUprintUnionSet (stderr, domcwl, "domcwl"));
-
-    str = ISLUexprs2String (exprsfn, varlut, "fn for intersect", FALSE, lhsname);
-    mapfn = isl_union_map_read_from_str (ctx, str);
-    DBUG_PRINT ("fn is %s", str);
-    str = MEMfree (str);
-    DBUG_EXECUTE (ISLUprintUnionMap (stderr, mapfn, "mapfn"));
-
-    str = ISLUexprs2String (exprscfn, varlut, "cfn for intersect", FALSE, lhsname);
-    mapcfn = isl_union_map_read_from_str (ctx, str);
-    DBUG_PRINT ("cfn is %s", str);
-    str = MEMfree (str);
-    DBUG_EXECUTE (ISLUprintUnionMap (stderr, mapcfn, "mapcfn"));
-
-    intersectpc = isl_union_set_intersect (isl_union_set_copy (dompwl),
-                                           isl_union_set_copy (domcwl));
-    DBUG_EXECUTE (ISLUprintUnionSet (stderr, intersectpc, "intersectpc"));
-
-    if (POLY_RET_UNKNOWN == z) { // Intersect dompwl,domcwl,mapfn
-        intersectpcf = isl_union_set_apply (isl_union_set_copy (intersectpc),
-                                            isl_union_map_copy (mapfn));
-        DBUG_EXECUTE (ISLUprintUnionSet (stderr, intersectpcf, "intersectpcf"));
-        if (isl_union_set_is_empty (intersectpcf)) {
-            z = z | POLY_RET_EMPTYSET_BCR;
-            z = z & ~POLY_RET_UNKNOWN;
-            DBUG_PRINT ("no intersect for pwl,cwl,fn\n");
-        } else {
-            DBUG_PRINT ("(pwl, cwl) intersects fn\n");
-        }
+    // If dompwl is empty set, we stop right now.
+    if (isl_union_set_is_empty (dompwl)) {
+        z = z | POLY_RET_EMPTYSET_BC;
+        z = z & ~POLY_RET_UNKNOWN;
+        DBUG_PRINT ("pwl is null set\n");
+    } else {
+        DBUG_PRINT ("pwl is non-null set\n");
     }
 
-    if (POLY_RET_UNKNOWN == z) { // Intersect dompwl,domcwl,mapcfn
-        intersectpcc = isl_union_set_apply (isl_union_set_copy (intersectpc),
-                                            isl_union_map_copy (mapcfn));
-        DBUG_EXECUTE (ISLUprintUnionSet (stderr, intersectpcc, "intersectpcc"));
-        if (isl_union_set_is_empty (intersectpcc)) {
-            DBUG_PRINT ("no intersect in pwl,cwl,cfn");
-            z = z | POLY_RET_EMPTYSET_BCC;
-            z = z & ~POLY_RET_UNKNOWN;
-        } else {
-            DBUG_PRINT ("(pwl, cwl) intersects cfn");
+    if (POLY_RET_UNKNOWN == z) {
+        str = ISLUexprs2String (exprscwl, varlut, "cwl for intersect", TRUE, lhsname);
+        domcwl = isl_union_set_read_from_str (ctx, str);
+        // No check on domcwl, as it can be elided for monadic calls
+        DBUG_PRINT ("cwl is %s", str);
+        str = MEMfree (str);
+        DBUG_EXECUTE (ISLUprintUnionSet (stderr, domcwl, "domcwl"));
+
+        str = ISLUexprs2String (exprsfn, varlut, "fn for intersect", FALSE, lhsname);
+        mapfn = isl_union_map_read_from_str (ctx, str);
+        DBUG_ASSERT (NULL != mapfn, "ISL did not like mapfn as union map");
+        DBUG_PRINT ("fn is %s", str);
+        str = MEMfree (str);
+        DBUG_EXECUTE (ISLUprintUnionMap (stderr, mapfn, "mapfn"));
+
+        str = ISLUexprs2String (exprscfn, varlut, "cfn for intersect", FALSE, lhsname);
+        mapcfn = isl_union_map_read_from_str (ctx, str);
+        DBUG_PRINT ("cfn is %s", str);
+        DBUG_ASSERT (NULL != mapcfn, "ISL did not like mapcfn as union map");
+        str = MEMfree (str);
+        DBUG_EXECUTE (ISLUprintUnionMap (stderr, mapcfn, "mapcfn"));
+
+        intersectpc = isl_union_set_intersect (isl_union_set_copy (dompwl),
+                                               isl_union_set_copy (domcwl));
+        DBUG_ASSERT (NULL != intersectpc,
+                     "ISL did not like intersectpc as union set intersect");
+        DBUG_EXECUTE (ISLUprintUnionSet (stderr, intersectpc, "intersectpc"));
+
+        if (POLY_RET_UNKNOWN == z) { // Intersect dompwl,domcwl,mapfn
+            intersectpcf = isl_union_set_apply (isl_union_set_copy (intersectpc),
+                                                isl_union_map_copy (mapfn));
+            DBUG_EXECUTE (ISLUprintUnionSet (stderr, intersectpcf, "intersectpcf"));
+            if (isl_union_set_is_empty (intersectpcf)) {
+                z = z | POLY_RET_EMPTYSET_BCR;
+                z = z & ~POLY_RET_UNKNOWN;
+                DBUG_PRINT ("no intersect for pwl,cwl,fn\n");
+            } else {
+                DBUG_PRINT ("(pwl, cwl) intersects fn\n");
+            }
+        }
+
+        if (POLY_RET_UNKNOWN == z) { // Intersect dompwl,domcwl,mapcfn
+            intersectpcc = isl_union_set_apply (isl_union_set_copy (intersectpc),
+                                                isl_union_map_copy (mapcfn));
+            DBUG_EXECUTE (ISLUprintUnionSet (stderr, intersectpcc, "intersectpcc"));
+            if (isl_union_set_is_empty (intersectpcc)) {
+                DBUG_PRINT ("no intersect in pwl,cwl,cfn");
+                z = z | POLY_RET_EMPTYSET_BCC;
+                z = z & ~POLY_RET_UNKNOWN;
+            } else {
+                DBUG_PRINT ("(pwl, cwl) intersects cfn");
+            }
         }
     }
 

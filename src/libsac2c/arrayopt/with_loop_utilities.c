@@ -474,4 +474,133 @@ WLUTremoveUnusedCodes (node *codes)
     DBUG_RETURN (codes);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool WLUTisSingleOpWl( node *arg_node)
+ *
+ * @brief: predicate for determining if node is single-op WL
+ *
+ * @param: arg_node: an N_with
+ *
+ * @return: TRUE if only one result from WL
+ *
+ *****************************************************************************/
+bool
+WLUTisSingleOpWl (node *arg_node)
+{
+    bool z;
+
+    DBUG_ENTER ();
+
+    switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
+    default:
+        z = FALSE;
+        DBUG_UNREACHABLE ("WITHOP confusion");
+        break;
+    case N_genarray:
+        z = (NULL == GENARRAY_NEXT (WITH_WITHOP (arg_node)));
+        break;
+    case N_modarray:
+        z = (NULL == MODARRAY_NEXT (WITH_WITHOP (arg_node)));
+        break;
+    case N_fold:
+        z = (NULL == FOLD_NEXT (WITH_WITHOP (arg_node)));
+        break;
+    case N_spfold:
+        z = (NULL == SPFOLD_NEXT (WITH_WITHOP (arg_node)));
+        break;
+    case N_propagate:
+        z = (NULL == PROPAGATE_NEXT (WITH_WITHOP (arg_node)));
+        break;
+    case N_break:
+        z = (NULL == BREAK_NEXT (WITH_WITHOP (arg_node)));
+        break;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool  WLUTisGenarrayScalar( node *arg_node)
+ * @brief:   Predicate for WLUTgetGenarrayScalar
+ *
+ * @fn node *WLUTgetGenarrayScalar( node *arg_node)
+ *
+ * @brief: If N_with arg_node is a
+ *         genarray,
+ *         single-generator,
+ *         single-partition with-loop
+ *         with a scalar value that is NOT a member of WITHID_IDS,
+ *         as its CODE_CEXPRS value, return that scalar N_id, else NULL.
+ *
+ *         If not NULL, then all elements of the resulting with-loop
+ *         are identical. E.g.:
+ *
+ *           Q = with {
+ *                 ( [0] <= iv < [ub])  : scalar;
+ *               } : genarray( [shp, scalar);
+ *
+ *         FIXME: I think we have a utility like this around
+ *                somewhere, but I can not find it.
+ *
+ * @param: wl: An N_with, or N_id.
+ *
+ * @result: N_avis of the value of all elements of the with-loop result, or NULL.
+ *
+ * NB. This code currently handles only "scalar". It could be
+ *     fancied up to handle simple expressions, such as "scalar+2".
+ *     But not anything involving iv, of course!
+ *
+ *****************************************************************************/
+node *
+WLUTgetGenarrayScalar (node *arg_node)
+{
+    pattern *pat;
+    node *wl;
+    bool z;
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    wl = arg_node;
+    if (N_id == NODE_TYPE (arg_node)) { // Find N_with from N_id
+        pat = PMwith (1, PMAgetNode (&wl), 0);
+        PMmatchFlatWith (pat, wl);
+        pat = PMfree (pat);
+    }
+
+    z = (N_with == NODE_TYPE (wl));
+    z = z && (N_genarray == NODE_TYPE (WITH_WITHOP (wl)));
+    z = z && WLUTisSingleOpWl (wl);
+    z = z && (NULL == BLOCK_ASSIGNS (CODE_CBLOCK (WITH_CODE (wl))));
+    z = z && (NULL == GENARRAY_NEXT (WITH_WITHOP (wl)));
+    z = z && (1 == TCcountParts (WITH_PART (wl)));
+    z = z
+        && (TUisScalar (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (WITH_CODE (wl)))))));
+    if (z) {
+        res = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (WITH_CODE (wl))));
+
+        // We are almost there. We have to ensure that res is NOT
+        // a member of WITHID_IDS.
+        z = z && (-1 == TClookupIdsNode (WITHID_IDS (PART_WITHID (WITH_PART (wl))), res));
+
+        res = z ? res : NULL;
+    }
+
+    DBUG_RETURN (res);
+}
+
+bool
+WLUTisGenarrayScalar (node *arg_node)
+{
+    bool z;
+
+    DBUG_ENTER ();
+
+    z = NULL != WLUTgetGenarrayScalar (arg_node);
+
+    DBUG_RETURN (z);
+}
+
 #undef DBUG_PREFIX

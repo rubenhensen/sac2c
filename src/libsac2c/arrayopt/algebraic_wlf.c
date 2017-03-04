@@ -438,8 +438,7 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
         if (AWLFIisNakedWL (level, AVIS_DEFDEPTH (producerWLavis))) {
             cwlp = NULL; /* cwlp was a lie anyway, in this case */
         }
-        if (((AVIS_DEFDEPTH (producerWLavis) + 1) >= level)
-            && (AWLFIisSingleOpWL (PWL))) {
+        if (((AVIS_DEFDEPTH (producerWLavis) + 1) >= level) && (WLUTisSingleOpWl (PWL))) {
             DBUG_PRINT ("PWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
                         AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
                         AVIS_WL_NEEDCOUNT (producerWLavis));
@@ -822,7 +821,7 @@ isSimpleComposition (node *arg_node, node *pwlid, node *cwlids, int defdepth,
         cwlwith = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (IDS_AVIS (cwlids))));
         z = (1 == TCcountParts (WITH_PART (pwlwith)))
             && (1 == TCcountParts (WITH_PART (cwlwith)));
-        z = z && AWLFIisSingleOpWL (cwlwith);
+        z = z && WLUTisSingleOpWl (cwlwith);
         z = z && AWLFIcheckProducerWLFoldable (pwlid);
         z = z && AWLFIcheckBothFoldable (pwlid, cwlids, defdepth);
 

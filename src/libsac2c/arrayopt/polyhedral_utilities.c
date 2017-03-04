@@ -1723,14 +1723,13 @@ HandleNumber (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *HandleComposition( node *arg_node...)
+ * @fn node *HandleCompositionWithShape( node *arg_node...)
  *
- * @brief Handler for compositions of primitive functions.
+ * @brief Handler for compositions of indexing on shape:
  *        Currently supported:
  *          shpel = idx_sel( offset, _shape_A_( var));
  *          shpel = _sel_VxA_( iv, _shape_A_( var));
  *          Both of these will generate shpel >= 0.
- *
  *
  * @param  arg_node: The N_avis for an assign.
  * @param  rhs: The assign's rhs
@@ -1742,7 +1741,8 @@ HandleNumber (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
  *
  ******************************************************************************/
 static node *
-HandleComposition (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
+HandleCompositionWithShape (node *arg_node, node *rhs, node *fundef, lut_t *varlut,
+                            node *res)
 {
     node *z = NULL;
     pattern *pat1;
@@ -1771,7 +1771,7 @@ HandleComposition (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node 
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
 
-    DBUG_PRINT ("Leaving HandleComposition for lhs=%s", AVIS_NAME (arg_node));
+    DBUG_PRINT ("Leaving HandleCompositionWithShape for lhs=%s", AVIS_NAME (arg_node));
 
     DBUG_RETURN (res);
 }
@@ -2131,7 +2131,8 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
 
                     case N_prf:
                         res2 = HandleNprf (avis, rhs, fundef, varlut, NULL);
-                        res3 = HandleComposition (avis, rhs, fundef, varlut, NULL);
+                        res3
+                          = HandleCompositionWithShape (avis, rhs, fundef, varlut, NULL);
                         res2 = TCappendExprs (res2, res3);
                         PHUTsetIslTree (avis, res2);
                         break;

@@ -2345,52 +2345,6 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivavis)
 
 /** <!--********************************************************************-->
  *
- * @fn bool AWLFIisSingleOpWL( node *arg_node)
- *
- * @brief: predicate for determining if node is single-op WL
- *
- * @param: arg_node: an N_with
- *
- * @return: TRUE if only one result from WL
- *
- *****************************************************************************/
-bool
-AWLFIisSingleOpWL (node *arg_node)
-{
-    bool z;
-
-    DBUG_ENTER ();
-
-    switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
-    default:
-        z = FALSE;
-        DBUG_UNREACHABLE ("WITHOP confusion");
-        break;
-    case N_genarray:
-        z = (NULL == GENARRAY_NEXT (WITH_WITHOP (arg_node)));
-        break;
-    case N_modarray:
-        z = (NULL == MODARRAY_NEXT (WITH_WITHOP (arg_node)));
-        break;
-    case N_fold:
-        z = (NULL == FOLD_NEXT (WITH_WITHOP (arg_node)));
-        break;
-    case N_spfold:
-        z = (NULL == SPFOLD_NEXT (WITH_WITHOP (arg_node)));
-        break;
-    case N_propagate:
-        z = (NULL == PROPAGATE_NEXT (WITH_WITHOP (arg_node)));
-        break;
-    case N_break:
-        z = (NULL == BREAK_NEXT (WITH_WITHOP (arg_node)));
-        break;
-    }
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn bool AWLFIcheckProducerWLFoldable( node *arg_node)
  *
  * @brief We are looking at an N_id, arg_node, that may point to a WL, p.
@@ -2465,7 +2419,7 @@ AWLFIcheckProducerWLFoldable (node *arg_node)
     DBUG_ENTER ();
 
     p = AWLFIfindWL (arg_node);
-    if ((NULL != p) && (AWLFIisSingleOpWL (p)) && (noDefaultPartition (p))
+    if ((NULL != p) && (WLUTisSingleOpWl (p)) && (noDefaultPartition (p))
         && (WITHOP_NEXT (WITH_WITHOP (p)) == NULL)
         && ((NODE_TYPE (WITH_WITHOP (p)) == N_genarray)
             || (NODE_TYPE (WITH_WITHOP (p)) == N_modarray))) {

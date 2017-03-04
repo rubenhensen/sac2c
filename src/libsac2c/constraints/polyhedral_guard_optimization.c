@@ -192,8 +192,8 @@ GetXYmatch (prf nprf)
         z = TRUE;
         break;
     case F_non_neg_val_S:
-        z = FALSE;
-        break; // NB. Kludge (dyadic vs. monadic!)
+        z = TRUE;
+        break;
 
     default:
         DBUG_ASSERT (FALSE, "Oopsie. Expected relational prf!");
@@ -535,13 +535,6 @@ POGOprf (node *arg_node, info *arg_info)
                                                         LFUdualFun (PRF_PRF (arg_node)),
                                                         INFO_VARLUT (arg_info), 0);
 
-#ifdef DEADCODE
-            // This is needed for sacislinterface, but I do not yet
-            // understand why.
-            exprsX = TCappendExprs (exprsX, exprsY);
-            exprsY = NULL;
-#endif // DEADCODE
-
             emp = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn,
                                          INFO_VARLUT (arg_info), POLY_OPCODE_INTERSECT,
                                          AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
@@ -552,8 +545,8 @@ POGOprf (node *arg_node, info *arg_info)
             DBUG_PRINT ("PHUTcheckIntersection result for %s is %d",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), emp);
 
-            // Match analysis for B,C, but not for monadic prf.
-            if ((emp & POLY_RET_MATCH_BC) && (F_non_neg_val_S != PRF_PRF (arg_node))) {
+            // Match analysis for B,C
+            if (emp & POLY_RET_MATCH_BC) {
                 DBUG_PRINT ("Matching arguments for %s",
                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
                 resval = GetXYmatch (PRF_PRF (arg_node));
