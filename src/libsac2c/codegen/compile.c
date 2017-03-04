@@ -328,10 +328,14 @@ GetBasetypeStr (types *type)
         DBUG_ASSERT (str != NULL, "Name of user-defined type not found");
     } else if (basetype == T_bool_dev) {
         str = "bool";
-    } else if (basetype == T_float_dev || basetype == T_float_shmem) {
-        str = "float";
     } else if (basetype == T_int_dev || basetype == T_int_shmem) {
         str = "int";
+    } else if (basetype == T_long_dev || basetype == T_long_shmem) {
+        str = "long";
+    } else if (basetype == T_longlong_dev || basetype == T_longlong_shmem) {
+        str = "long long";
+    } else if (basetype == T_float_dev || basetype == T_float_shmem) {
+        str = "float";
     } else if (basetype == T_double_dev || basetype == T_double_shmem
                || basetype == T_double) {
         /* If the enforce_float flag is set,
@@ -341,7 +345,8 @@ GetBasetypeStr (types *type)
         } else {
             str = "double";
         }
-    } else if (basetype == T_int_dist || basetype == T_float_dist
+    } else if (basetype == T_int_dist || basetype == T_long_dist
+               || basetype == T_longlong_dist || basetype == T_float_dist
                || basetype == T_double_dist) {
         str = "struct dist_var";
     } else {
@@ -856,7 +861,8 @@ MakeSetRcIcm (char *name, types *type, int rc, node *assigns)
                   = TCmakeAssignIcm2 ("CUDA_FREE", TCmakeIdCopyStringNt (name, type),
                                       TCmakeIdCopyString (GenericFun (GF_free, type)),
                                       assigns);
-            } else if (basetype == T_float_dist || basetype == T_int_dist
+            } else if (basetype == T_int_dist || basetype == T_long_dist
+                       || basetype == T_longlong_dist || basetype == T_float_dist
                        || basetype == T_double_dist) {
                 assigns
                   = TCmakeAssignIcm2 ("DIST_FREE", TCmakeIdCopyStringNt (name, type),
@@ -919,7 +925,9 @@ MakeDecRcIcm (char *name, types *type, int num, node *assigns)
     DBUG_ASSERT (num >= 0, "decrement for rc must be >= 0.");
 
     if (num > 0) {
-        if (TCgetBasetype (type) == T_float_dist || TCgetBasetype (type) == T_int_dist
+        if (TCgetBasetype (type) == T_int_dist || TCgetBasetype (type) == T_long_dist
+            || TCgetBasetype (type) == T_longlong_dist
+            || TCgetBasetype (type) == T_float_dist
             || TCgetBasetype (type) == T_double_dist) {
             icm = "DIST_DEC_RC_FREE";
         } else if (CUisDeviceTypeOld (type)) {
@@ -983,14 +991,21 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
 #endif
             }
             /* This is a distributed array, we allocate a control structure for it */
-            else if (baseType == T_float_dist || baseType == T_int_dist
+            else if (baseType == T_int_dist || baseType == T_long_dist
+                     || baseType == T_longlong_dist || baseType == T_float_dist
                      || baseType == T_double_dist) {
                 switch (baseType) {
-                case T_float_dist:
-                    typeArg = TCmakeIdCopyString ("float");
-                    break;
                 case T_int_dist:
                     typeArg = TCmakeIdCopyString ("int");
+                    break;
+                case T_long_dist:
+                    typeArg = TCmakeIdCopyString ("long");
+                    break;
+                case T_longlong_dist:
+                    typeArg = TCmakeIdCopyString ("long long");
+                    break;
+                case T_float_dist:
+                    typeArg = TCmakeIdCopyString ("float");
                     break;
                 case T_double_dist:
                     typeArg = TCmakeIdCopyString ("double");

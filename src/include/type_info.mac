@@ -159,37 +159,63 @@ TYP_IF (T_dots, "...", "...", "d", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy
 TYP_IF (T_user, "user", "SAC_user", "", COcv2ScalarDummy, COcv2CvDummy, COcv2StrDummy, 0,
         COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused, C_btother)
 
+/* Types relevent to the CUDA/CUDAHybrid backend */
+
 TYP_IF (T_bool_dev, "bool_dev", "bool_dev", "bld", COcv2Bool, COcv2CvBool, COcv2StrBool,
         sizeof (bool), COzipCvBool, CObaseCvBool, MUTC_SC_INT, unused, C_btother)
+
+TYP_IF (T_int_dev, "int_dev", "int_dev", "id", COcv2Num, COcv2CvInt, COcv2StrInt,
+        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused, C_btother)
+
+TYP_IF (T_long_dev, "long_dev", "long_dev", "lid", COcv2Numlong, COcv2CvLong,
+        COcv2StrLong, sizeof (long int), COzipCvLong, CObaseCvLong, MUTC_SC_INT, unused,
+        C_btother)
+
+TYP_IF (T_longlong_dev, "longlong_dev", "longlong_dev", "llid", COcv2Numlonglong,
+        COcv2CvLongLong, COcv2StrLongLong, sizeof (long long int), COzipCvLongLong,
+        CObaseCvLongLong, MUTC_SC_INT, unused, C_btother)
 
 TYP_IF (T_float_dev, "float_dev", "float_dev", "fd", COcv2Float, COcv2CvFloat,
         COcv2StrFloat, sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused,
         C_btother)
 
-TYP_IF (T_int_dev, "int_dev", "int_dev", "id", COcv2Num, COcv2CvInt, COcv2StrInt,
-        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused, C_btother)
-
 TYP_IF (T_double_dev, "double_dev", "double_dev", "dd", COcv2Double, COcv2CvDouble,
         COcv2StrDouble, sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT,
         unused, C_btother)
+
+TYP_IF (T_int_shmem, "int_shmem", "int_shmem", "ish", COcv2Num, COcv2CvInt, COcv2StrInt,
+        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused, C_btother)
+
+TYP_IF (T_long_shmem, "long_shmem", "long_shmem", "lsh", COcv2Numlong, COcv2CvLong,
+        COcv2StrLong, sizeof (long int), COzipCvLong, CObaseCvLong, MUTC_SC_INT, unused,
+        C_btother)
+
+TYP_IF (T_longlong_shmem, "longlong_shmem", "longlong_shmem", "llsh", COcv2Numlonglong,
+        COcv2CvLongLong, COcv2StrLongLong, sizeof (long long int), COzipCvLongLong,
+        CObaseCvLongLong, MUTC_SC_INT, unused, C_btother)
 
 TYP_IF (T_float_shmem, "float_shmem", "float_shmem", "fsh", COcv2Float, COcv2CvFloat,
         COcv2StrFloat, sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused,
         C_btother)
 
-TYP_IF (T_int_shmem, "int_shmem", "int_shmem", "ish", COcv2Num, COcv2CvInt, COcv2StrInt,
-        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused, C_btother)
-
 TYP_IF (T_double_shmem, "double_shmem", "double_shmem", "dsh", COcv2Double, COcv2CvDouble,
         COcv2StrDouble, sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT,
         unused, C_btother)
 
+TYP_IF (T_int_dist, "int_dist", "int_dist", "idi", COcv2Num, COcv2CvInt, COcv2StrInt,
+        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused, C_btother)
+
+TYP_IF (T_long_dist, "long_dist", "long_dist", "ldi", COcv2Numlong, COcv2CvLong,
+        COcv2StrLong, sizeof (long int), COzipCvLong, CObaseCvLong, MUTC_SC_INT, unused,
+        C_btother)
+
+TYP_IF (T_longlong_dist, "longlong_dist", "longlong_dist", "lldi", COcv2Numlonglong,
+        COcv2CvLongLong, COcv2StrLongLong, sizeof (long long int), COzipCvLongLong,
+        CObaseCvLongLong, MUTC_SC_INT, unused, C_btother)
+
 TYP_IF (T_float_dist, "float_dist", "float_dist", "fdi", COcv2Float, COcv2CvFloat,
         COcv2StrFloat, sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused,
         C_btother)
-
-TYP_IF (T_int_dist, "int_dist", "int_dist", "idi", COcv2Num, COcv2CvInt, COcv2StrInt,
-        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused, C_btother)
 
 TYP_IF (T_double_dist, "double_dist", "double_dist", "ddi", COcv2Double, COcv2CvDouble,
         COcv2StrDouble, sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT,

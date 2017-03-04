@@ -8,7 +8,7 @@
 #include "memory.h"
 #include "globals.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "CUTIL"
 #include "debug.h"
 
 #include "ctinfo.h"
@@ -38,7 +38,8 @@ bool
 CUisSupportedHostSimpletype (simpletype st)
 {
     DBUG_ENTER ();
-    DBUG_RETURN ((st == T_bool) || (st == T_int) || (st == T_float) || (st == T_double));
+    DBUG_RETURN ((st == T_bool) || (st == T_int) || (st == T_long) || (st == T_longlong)
+                 || (st == T_float) || (st == T_double));
 }
 
 simpletype
@@ -54,6 +55,12 @@ CUh2dSimpleTypeConversion (simpletype sty)
         break;
     case T_int:
         res = T_int_dev;
+        break;
+    case T_long:
+        res = T_long_dev;
+        break;
+    case T_longlong:
+        res = T_longlong_dev;
         break;
     case T_float:
         res = T_float_dev;
@@ -83,6 +90,12 @@ CUd2hSimpleTypeConversion (simpletype sty)
     case T_int_dev:
         res = T_int;
         break;
+    case T_long_dev:
+        res = T_long;
+        break;
+    case T_longlong_dev:
+        res = T_longlong;
+        break;
     case T_float_dev:
         res = T_float;
         break;
@@ -106,6 +119,14 @@ CUd2shSimpleTypeConversion (simpletype sty)
     case T_int_dev:
     case T_int_dist:
         res = T_int_shmem;
+        break;
+    case T_long_dev:
+    case T_long_dist:
+        res = T_long_shmem;
+        break;
+    case T_longlong_dev:
+    case T_longlong_dist:
+        res = T_longlong_shmem;
         break;
     case T_float_dev:
     case T_float_dist:
@@ -132,6 +153,12 @@ CUh2shSimpleTypeConversion (simpletype sty)
     case T_int:
         res = T_int_shmem;
         break;
+    case T_long:
+        res = T_long_shmem;
+        break;
+    case T_longlong:
+        res = T_longlong_shmem;
+        break;
     case T_float:
         res = T_float_shmem;
         break;
@@ -151,10 +178,18 @@ CUisDeviceTypeNew (ntype *ty)
 
     DBUG_ENTER ();
 
-    res = TYgetSimpleType (TYgetScalar (ty)) == T_float_dev
-          || TYgetSimpleType (TYgetScalar (ty)) == T_int_dev
-          || TYgetSimpleType (TYgetScalar (ty)) == T_bool_dev
-          || TYgetSimpleType (TYgetScalar (ty)) == T_double_dev;
+    switch (TYgetSimpleType (TYgetScalar (ty))) {
+    case T_bool_dev:
+    case T_int_dev:
+    case T_long_dev:
+    case T_longlong_dev:
+    case T_float_dev:
+    case T_double_dev:
+        res = TRUE;
+        break;
+    default:
+        res = FALSE;
+    }
 
     DBUG_RETURN (res);
 }
@@ -166,9 +201,17 @@ CUisShmemTypeNew (ntype *ty)
 
     DBUG_ENTER ();
 
-    res = TYgetSimpleType (TYgetScalar (ty)) == T_float_shmem
-          || TYgetSimpleType (TYgetScalar (ty)) == T_int_shmem
-          || TYgetSimpleType (TYgetScalar (ty)) == T_double_shmem;
+    switch (TYgetSimpleType (TYgetScalar (ty))) {
+    case T_int_shmem:
+    case T_long_shmem:
+    case T_longlong_shmem:
+    case T_float_shmem:
+    case T_double_shmem:
+        res = TRUE;
+        break;
+    default:
+        res = FALSE;
+    }
 
     DBUG_RETURN (res);
 }
@@ -180,8 +223,17 @@ CUisShmemTypeOld (types *ty)
 
     DBUG_ENTER ();
 
-    res = TCgetBasetype (ty) == T_float_shmem || TCgetBasetype (ty) == T_int_shmem
-          || TCgetBasetype (ty) == T_double_shmem;
+    switch (TCgetBasetype (ty)) {
+    case T_int_shmem:
+    case T_long_shmem:
+    case T_longlong_shmem:
+    case T_float_shmem:
+    case T_double_shmem:
+        res = TRUE;
+        break;
+    default:
+        res = FALSE;
+    }
 
     DBUG_RETURN (res);
 }
@@ -193,8 +245,18 @@ CUisDeviceTypeOld (types *ty)
 
     DBUG_ENTER ();
 
-    res = TCgetBasetype (ty) == T_float_dev || TCgetBasetype (ty) == T_int_dev
-          || TCgetBasetype (ty) == T_bool_dev || TCgetBasetype (ty) == T_double_dev;
+    switch (TCgetBasetype (ty)) {
+    case T_bool_dev:
+    case T_int_dev:
+    case T_long_dev:
+    case T_longlong_dev:
+    case T_float_dev:
+    case T_double_dev:
+        res = TRUE;
+        break;
+    default:
+        res = FALSE;
+    }
 
     DBUG_RETURN (res);
 }
