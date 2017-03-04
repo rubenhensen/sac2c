@@ -81,7 +81,7 @@ ENDIF ()
 SET (CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${CMAKE_INCLUDE_PATH})
 
 # Search paths for libraries
-SET (CMAKE_LIBARAY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib /opt/local/lib64)
+SET (CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib /opt/local/lib64)
 IF (DEFINED ENV{LD_LIBRARY_PATH}) #FIXME (hans) : DYLD_... on darwin
   STRING (REPLACE ":" ";" ldpathList $ENV{LD_LIBRARY_PATH})
   SET (CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${ldpathList})
