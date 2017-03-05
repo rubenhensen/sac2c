@@ -522,10 +522,40 @@ WLUTisSingleOpWl (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool  WLUTisGenarrayScalar( node *arg_node)
+ * @fn node *WLUTid2With( node *arg_node)
+ *
+ * @brief: Given an N_id, if its value is derived from a with-loop,
+ *         return that N_with. Otherwise, arg_node.
+ *
+ * @param: arg_node: an N_id
+ *
+ * @return: The N_with code that created arg_node, or arg_node
+ *
+ *****************************************************************************/
+node *
+WLUTid2With (node *arg_node)
+{
+    node *wl;
+    pattern *pat;
+
+    DBUG_ENTER ();
+
+    wl = arg_node;
+    if (N_id == NODE_TYPE (arg_node)) { // Find N_with from N_id
+        pat = PMwith (1, PMAgetNode (&wl), 0);
+        PMmatchFlatWith (pat, wl);
+        pat = PMfree (pat);
+    }
+
+    DBUG_RETURN (wl);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool  WLUTisGenarrayScalar( node *arg_node, bool nowithid)
  * @brief:   Predicate for WLUTgetGenarrayScalar
  *
- * @fn node *WLUTgetGenarrayScalar( node *arg_node)
+ * @fn node *WLUTgetGenarrayScalar( node *arg_node, bool nowithid)
  *
  * @brief: If N_with arg_node is a
  *         genarray,
@@ -538,37 +568,36 @@ WLUTisSingleOpWl (node *arg_node)
  *         are identical. E.g.:
  *
  *           Q = with {
- *                 ( [0] <= iv < [ub])  : scalar;
- *               } : genarray( [shp, scalar);
+ *                 ( [0] <= iv < [ub])  : Scalar;
+ *               } : genarray( [shp, Scalar);
  *
- *         FIXME: I think we have a utility like this around
+ *         FIXME: I think we already have a utility like this around
  *                somewhere, but I can not find it.
  *
  * @param: wl: An N_with, or N_id.
+ * @param: nowithid: If TRUE, then do not allow Scalar to be
+ *                   a member of WITHID_IDS.
+ *                   If FALSE, require Scalar to be
+ *                   a member of WITHID_IDS.
  *
- * @result: N_avis of the value of all elements of the with-loop result, or NULL.
+ * @result: N_avis of the value Scalar (representing all
+ *          elements of the with-loop result), or NULL.
  *
- * NB. This code currently handles only "scalar". It could be
- *     fancied up to handle simple expressions, such as "scalar+2".
- *     But not anything involving iv, of course!
+ * NB. This code currently handles only "Scalar". It could be
+ *     fancied up to handle simple expressions, such as "Scalar+2".
  *
  *****************************************************************************/
 node *
-WLUTgetGenarrayScalar (node *arg_node)
+WLUTgetGenarrayScalar (node *arg_node, bool nowithid)
 {
-    pattern *pat;
     node *wl;
-    bool z;
     node *res = NULL;
+    bool z;
+    bool memberwithids;
 
     DBUG_ENTER ();
 
-    wl = arg_node;
-    if (N_id == NODE_TYPE (arg_node)) { // Find N_with from N_id
-        pat = PMwith (1, PMAgetNode (&wl), 0);
-        PMmatchFlatWith (pat, wl);
-        pat = PMfree (pat);
-    }
+    wl = WLUTid2With (arg_node);
 
     z = (N_with == NODE_TYPE (wl));
     z = z && (N_genarray == NODE_TYPE (WITH_WITHOP (wl)));
@@ -581,10 +610,11 @@ WLUTgetGenarrayScalar (node *arg_node)
     if (z) {
         res = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (WITH_CODE (wl))));
 
-        // We are almost there. We have to ensure that res is NOT
+        // We are almost there. We have to ensure that res [IS/ IS NOT]
         // a member of WITHID_IDS.
-        z = z && (-1 == TClookupIdsNode (WITHID_IDS (PART_WITHID (WITH_PART (wl))), res));
-
+        memberwithids
+          = -1 != TClookupIdsNode (WITHID_IDS (PART_WITHID (WITH_PART (wl))), res);
+        z = memberwithids ^ nowithid; // XOR corrects value
         res = z ? res : NULL;
     }
 
@@ -592,13 +622,13 @@ WLUTgetGenarrayScalar (node *arg_node)
 }
 
 bool
-WLUTisGenarrayScalar (node *arg_node)
+WLUTisGenarrayScalar (node *arg_node, bool nowithid)
 {
     bool z;
 
     DBUG_ENTER ();
 
-    z = NULL != WLUTgetGenarrayScalar (arg_node);
+    z = NULL != WLUTgetGenarrayScalar (arg_node, nowithid);
 
     DBUG_RETURN (z);
 }

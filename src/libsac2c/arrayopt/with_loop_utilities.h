@@ -12,8 +12,9 @@ extern node *WLUTfindCopyPartition (node *partn);
 extern node *WLUTfindCopyPartitionFromCexpr (node *cexpr, node *withidvec);
 extern bool WLUTisEmptyGenerator (node *partn);
 extern node *WLUTremoveUnusedCodes (node *codes);
-extern bool WLUTisGenarrayScalar (node *arg_node);
-extern node *WLUTgetGenarrayScalar (node *arg_node);
+extern bool WLUTisGenarrayScalar (node *arg_node, bool nowithid);
+extern node *WLUTgetGenarrayScalar (node *arg_node, bool nowithid);
 extern bool WLUTisSingleOpWl (node *arg_node);
+extern node *WLUTid2With (node *arg_node);
 
 #endif /* _SAC_WITH_LOOP_UTILITIES_H_ */

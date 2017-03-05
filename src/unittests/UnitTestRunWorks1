@@ -18,7 +18,6 @@ sac2c -v0 -target seq -O3 $1 -o $1.exe $optson   | tee -a $logfile
           echo Worktest: $1 OK  | tee -a $logfile
           junk=0
 	else 
-           echo -e '\a\a'            
            echo Worktest: $1 failed with completion code $z  | tee -a $logfile
 	fi
 rm -f $1.exe $1.exe.c

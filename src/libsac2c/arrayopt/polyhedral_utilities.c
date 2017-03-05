@@ -1778,6 +1778,107 @@ HandleCompositionWithShape (node *arg_node, node *rhs, node *fundef, lut_t *varl
 
 /** <!-- ****************************************************************** -->
  *
+ * @fn node *HandleIota( node *arg_node...)
+ *
+ * @brief Handler for indexing from iota(N)
+ *        Currently supported:
+ *          Q = genarray([shp], Scalar);
+ *          el = idx_sel( offset, Q);  OR
+ *          el = _sel_VxA_( iv, Q);
+ *
+ * @param  arg_node: The N_ids node that defines el.
+ *
+ * @return: If arg_node selects from a with-loop, and that
+ *          loop is simple (See WLUTgetGenarrayScalar for details),
+ *          we return constraints on the values in the with-loop.
+ *          Else NULL.
+ *
+ * NB.     This code assumes that -check c will ensure that
+ *         shp satisfies rank, shape, and value requirements
+ *         ( index error checking) for the index operation.
+ *
+ ******************************************************************************/
+static node *
+HandleIota (node *arg_node, node *fundef, lut_t *varlut)
+{
+    node *res = NULL;
+    node *z = NULL;
+    pattern *pat1;
+    pattern *pat2;
+    node *iv = NULL;
+    node *q = NULL;
+    node *s = NULL;
+    node *wl = NULL;
+    node *lb = NULL;
+    node *ub = NULL;
+    node *lbub = NULL;
+    node *withidids = NULL;
+    node *id;
+    int idsidx;
+
+    DBUG_ENTER ();
+
+    id = TBmakeId (IDS_AVIS (arg_node));
+    /* z = _sel_VxA_( iv, q); */
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&q), 0));
+    /* z = _idx_sel( offset, q); */
+    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&iv), 0),
+                  PMvar (1, PMAgetNode (&q), 0));
+    if ((PMmatchFlat (pat1, id) || PMmatchFlat (pat2, id))) {
+        // We are doing a select from a with-loop.
+        s = WLUTgetGenarrayScalar (q, FALSE);
+        if (NULL != s) { // s is a member of N_WITHIDS.
+            // Find the WL
+            wl = WLUTid2With (q);
+            if (N_with == NODE_TYPE (wl)) {
+                // Find generator elements for LB and UB.
+                withidids = WITHID_IDS (PART_WITHID (WITH_PART (wl)));
+                idsidx = TClookupIdsNode (withidids, s);
+                DBUG_ASSERT (-1 != idsidx, "Could not find withidids element");
+                lbub = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (wl)));
+                if (N_array == NODE_TYPE (lbub)) {
+                    // Emit lb <= s
+                    lb = TCgetNthExprsExpr (idsidx, ARRAY_AELEMS (lbub));
+                    lb = PHUTskipChainedAssigns (lb);
+                    z = PHUTcollectAffineExprsLocal (lb, fundef, varlut, NULL,
+                                                     AVIS_ISLCLASSEXISTENTIAL);
+                    res = TCappendExprs (res, z);
+                    z = PHUTcollectAffineExprsLocal (s, fundef, varlut, NULL,
+                                                     AVIS_ISLCLASSSETVARIABLE);
+                    res = TCappendExprs (res, z);
+                    z = BuildIslSimpleConstraint (lb, F_le_SxS, s, NOPRFOP, NULL);
+                    res = TCappendExprs (res, z);
+                }
+
+                lbub = GENERATOR_BOUND2 (PART_GENERATOR (WITH_PART (wl)));
+                if (N_array == NODE_TYPE (lbub)) {
+                    // Emit s < ub
+                    ub = TCgetNthExprsExpr (idsidx, ARRAY_AELEMS (lbub));
+                    ub = PHUTskipChainedAssigns (ub);
+                    z = PHUTcollectAffineExprsLocal (ub, fundef, varlut, NULL,
+                                                     AVIS_ISLCLASSEXISTENTIAL);
+                    res = TCappendExprs (res, z);
+                    z = BuildIslSimpleConstraint (s, F_lt_SxS, ub, NOPRFOP, NULL);
+                    res = TCappendExprs (res, z);
+                }
+            }
+            // Now make el = s (in iv=[i,j,s,k] in the WL generator)
+            z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, s, NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
+        }
+    }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
+    DBUG_PRINT ("Leaving HandleIota for lhs=%s", AVIS_NAME (ID_AVIS (id)));
+    id = FREEdoFreeNode (id);
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
  * @fn node *HandleNprf( node *arg_node...
  *
  * @brief If rhs is an affine function, generate ISL contraints for it.
@@ -1842,6 +1943,9 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
 
             case F_non_neg_val_S:
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, NOPRFOP, NULL);
+                res = TCappendExprs (res, z);
+                z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
+                                              NULL);
                 res = TCappendExprs (res, z);
                 break;
 
@@ -1970,6 +2074,8 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                 // z = PRF_ARG1;
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, NOPRFOP, NULL);
                 res = TCappendExprs (res, z);
+                z = BuildIslSimpleConstraint (arg1, PRF_PRF (rhs), arg2, NOPRFOP, NULL);
+                res = TCappendExprs (res, z);
                 break;
 
             case F_neg_S: //  z = -y;  -->  z = 0 - y
@@ -1980,13 +2086,7 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
 
             case F_idx_sel:
             case F_sel_VxA:
-                // For primitive fun args that we are unable to deduce anything
-                // about the LHS, we merely mark it as an ISL parameter.
-                // unless we already have marked it otherwise.
-                AVIS_ISLCLASS (arg_node)
-                  = (AVIS_ISLCLASS (arg_node) == AVIS_ISLCLASSUNDEFINED)
-                      ? AVIS_ISLCLASSPARAMETER
-                      : AVIS_ISLCLASS (arg_node);
+                res = TCappendExprs (res, HandleIota (ids, fundef, varlut));
                 break;
 
             case F_saabind: // z = PRF_ARG3( rhs);
@@ -2041,41 +2141,6 @@ PHUTsetIslTree (node *avis, node *aft)
 
     DBUG_RETURN ();
 }
-
-#ifdef DEADCODE
-/** <!-- ****************************************************************** -->
- * @fn bool isMemberRes( ...)
- *
- * @brief Predicate for avis being an element of ISLVAR in res.
- *
- * @param avis: an N_avis node
- * @param res: Partially built N_exprs chain
- *
- * @return TRUE if avis definition is already in res, else FALSE.
- *
- *
- ******************************************************************************/
-static bool
-isMemberRes (node *avis, node *res)
-{
-    node *expr = NULL;
-    bool z = FALSE;
-    int n;
-    int k;
-
-    DBUG_ENTER ();
-
-    n = TCcountExprs (res);
-    k = 0;
-    while ((!z) && (k < n)) {
-        expr = TCgetNthExprsExpr (k, res);
-        z = avis == ID_AVIS (ISLVAR (expr));
-        k++;
-    }
-
-    DBUG_RETURN (z);
-}
-#endif // DEADCODE
 
 /** <!-- ****************************************************************** -->
  *

@@ -2295,7 +2295,7 @@ HandleCompositionWithGenarray (node *arg_node)
                   PMvar (1, PMAgetNode (&q), 0));
     if ((PMmatchFlat (pat1, arg_node) || PMmatchFlat (pat2, arg_node))) {
         // Emit el = s;
-        s = WLUTgetGenarrayScalar (q);
+        s = WLUTgetGenarrayScalar (q, TRUE);
         z = (NULL != s) ? TBmakeId (s) : NULL;
     }
     pat1 = PMfree (pat1);
