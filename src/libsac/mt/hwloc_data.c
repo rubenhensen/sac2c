@@ -15,46 +15,10 @@ hwloc_topology_t SAC_HWLOC_topology;
 #if SAC_MT_MODE > 0
 
 static char *
-numaDist (int threads, int pus_per_numa, int numa_nodes_avail, char *res, int rem)
-{
-    int i, j, idx;
-
-    if (threads < pus_per_numa) {
-
-        for (i = 0; i < threads; i++) {
-            res[i * pus_per_numa] = SAC_PULIST_FULL_CHAR;
-        }
-    } else if (threads % pus_per_numa == 0) {
-        idx = (int)((double)threads / 8.0);
-    } else {
-        threads--;
-        rem++;
-        numaDist (threads, pus_per_numa, numa_nodes_avail, res, rem);
-    }
-
-    int numa_node = 0;
-    for (i = 0; i < numa_nodes_avail; i++) {
-        for (j = 0; j < idx; j++) {
-            res[i * pus_per_numa + j] = SAC_PULIST_FULL_CHAR;
-
-            if (rem > 0) {
-                res[numa_node + idx] = SAC_PULIST_FULL_CHAR;
-                rem--;
-                numa_node += pus_per_numa;
-            }
-        }
-    }
-    return res;
-}
-
-static char *
-strategyNuma (int threads, int sockets_avail, int cores_avail, int pus_avail)
+strategySocket (int threads, int sockets_avail, int cores_avail, int pus_avail)
 {
 
-    int i;
-    int numa_nodes_avail = 8;
-    int pus_per_numa = 8;
-
+    int i, j, idx, socket;
     char *res;
 
     if (threads > sockets_avail * cores_avail * pus_avail) {
@@ -69,7 +33,78 @@ strategyNuma (int threads, int sockets_avail, int cores_avail, int pus_avail)
     }
     res[i] = '\0';
 
-    res = numaDist (threads, pus_per_numa, numa_nodes_avail, res, 0);
+    int rem = 0;
+    while (threads % sockets_avail != 0) {
+        threads--;
+        rem++;
+    }
+    idx = (int)((double)threads / (double)sockets_avail);
+    socket = 0;
+
+    for (i = 0; i < sockets_avail; i++) {
+        for (j = 0; j < idx; j++) {
+            res[i * ((cores_avail * pus_avail * sockets_avail) / sockets_avail) + j]
+              = SAC_PULIST_FULL_CHAR;
+            if (rem > 0) {
+                res[socket + idx] = SAC_PULIST_FULL_CHAR;
+                rem--;
+                socket += (cores_avail * pus_avail * sockets_avail) / sockets_avail;
+            }
+        }
+    }
+    return res;
+}
+
+static char *
+strategyNuma (int threads, int numa_nodes_avail, int sockets_avail, int cores_avail,
+              int pus_avail)
+{
+
+    int i, j, idx, numa_node;
+    char *res;
+
+    if (threads > sockets_avail * cores_avail * pus_avail) {
+        SAC_RuntimeError ("Asking for %d threads on a machine with %d processing units; "
+                          "Either decrease the number of threads or turn -mt_bind off",
+                          threads, sockets_avail * cores_avail * pus_avail);
+    }
+    res = (char *)SAC_MALLOC (sizeof (char)
+                              * (sockets_avail * cores_avail * pus_avail + 1));
+    for (i = 0; i < sockets_avail * cores_avail * pus_avail; i++) {
+        res[i] = SAC_PULIST_EMPTY_CHAR;
+    }
+    res[i] = '\0';
+
+    if (threads < numa_nodes_avail) {
+
+        for (i = 0; i < threads; i++) {
+            res[i * ((sockets_avail * cores_avail * pus_avail) / numa_nodes_avail)]
+              = SAC_PULIST_FULL_CHAR;
+        }
+        return res;
+    }
+
+    int rem = 0;
+    while (threads % ((sockets_avail * cores_avail * pus_avail) / numa_nodes_avail)
+           != 0) {
+        threads--;
+        rem++;
+    }
+    idx = (int)((double)threads / (double)numa_nodes_avail);
+    numa_node = 0;
+
+    for (i = 0; i < numa_nodes_avail; i++) {
+        for (j = 0; j < idx; j++) {
+            res[i * ((sockets_avail * cores_avail * pus_avail) / numa_nodes_avail) + j]
+              = SAC_PULIST_FULL_CHAR;
+
+            if (rem > 0) {
+                res[numa_node + idx] = SAC_PULIST_FULL_CHAR;
+                rem--;
+                numa_node += (sockets_avail * cores_avail * pus_avail) / numa_nodes_avail;
+            }
+        }
+    }
     return res;
 }
 
@@ -181,66 +216,6 @@ strategyEnv (int threads, int sockets_avail, int cores_avail, int pus_avail)
     }
 
     return (res);
-}
-
-static char *
-strategyAlternate (int threads, int sockets_avail, int cores_avail, int pus_avail)
-{
-    int i;
-    char *res;
-
-    if (threads > (sockets_avail * cores_avail * pus_avail) / 2) {
-        SAC_RuntimeError ("Asking for %d threads on a machine with %d processing units; "
-                          "Either decrease the number of threads or turn -mt_bind off",
-                          threads, sockets_avail * cores_avail * pus_avail);
-    }
-
-    res = (char *)SAC_MALLOC (sizeof (char)
-                              * (sockets_avail * cores_avail * pus_avail + 1));
-
-    for (i = 0; i < sockets_avail * cores_avail * pus_avail; i++) {
-        res[i] = SAC_PULIST_EMPTY_CHAR;
-    }
-    res[i] = '\0';
-
-    for (i = 0; i < threads * 2; i++) {
-        if (i % 2 != 0) {
-            res[i] = SAC_PULIST_FULL_CHAR;
-        }
-    }
-    return res;
-}
-
-static char *
-strategyThrPerSocket (int threads, int sockets_avail, int cores_avail, int pus_avail)
-{
-    int i;
-    char *res;
-
-    int inc = sockets_avail * cores_avail * pus_avail / sockets_avail;
-
-    if (threads > sockets_avail) {
-        SAC_RuntimeError ("Asking for %d threads on a machine with %d sockets; "
-                          "Either decrease the number of threads or turn -mt_bind off",
-                          threads, sockets_avail * cores_avail * pus_avail);
-    }
-
-    res = (char *)SAC_MALLOC (sizeof (char)
-                              * (sockets_avail * cores_avail * pus_avail + 1));
-
-    for (i = 0; i < sockets_avail * cores_avail * pus_avail; i++) {
-        res[i] = SAC_PULIST_EMPTY_CHAR;
-    }
-    res[i] = '\0';
-
-    i = 0;
-    while (i <= sockets_avail * cores_avail * pus_avail) {
-
-        res[i] = SAC_PULIST_FULL_CHAR;
-        i += inc;
-    }
-
-    return res;
 }
 
 static char *
@@ -368,6 +343,13 @@ SAC_HWLOC_init (int threads)
         socket_obj = HWLOC_OBJ_SOCKET;
     }
 
+    int num_numa_nodes_avail
+      = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_NUMANODE);
+    if (num_numa_nodes_avail < 1) {
+        SAC_RuntimeError ("hwloc returned %d numa nodes available. Turn -mt_bind off",
+                          num_numa_nodes_avail);
+    }
+
     int num_cores_available;
     num_cores_available = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_CORE);
     if (num_cores_available < 1) {
@@ -402,24 +384,15 @@ SAC_HWLOC_init (int threads)
                                   num_cores_available / num_sockets_available,
                                   num_pus_available / num_cores_available);
     } else if (SAC_MT_cpu_bind_strategy == 3) {
-        pus_string = strategyAlternate (threads, num_sockets_available,
-                                        num_cores_available / num_sockets_available,
-                                        num_pus_available / num_cores_available);
-    } else if (SAC_MT_cpu_bind_strategy == 5) {
-
-        /* pus_string = strategyThrPerSocket(
-                        threads,
-                          num_sockets_available,
-                            num_cores_available / num_sockets_available,
-                              num_pus_available / num_cores_available);
-        */
-
-        pus_string = strategyNuma (threads, num_sockets_available,
+        pus_string = strategyNuma (threads, num_numa_nodes_avail, num_sockets_available,
                                    num_cores_available / num_sockets_available,
                                    num_pus_available / num_cores_available);
-
     } else if (SAC_MT_cpu_bind_strategy == 4) {
+        pus_string = strategySocket (threads, num_sockets_available,
+                                     num_cores_available / num_sockets_available,
+                                     num_pus_available / num_cores_available);
 
+    } else if (SAC_MT_cpu_bind_strategy == 5) {
         pus_string = strategyExtString (threads, num_sockets_available,
                                         num_cores_available / num_sockets_available,
                                         num_pus_available / num_cores_available);

@@ -910,8 +910,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE ("off", global.cpubindstrategy = HWLOC_off);
         ARG_CHOICE ("simple", global.cpubindstrategy = HWLOC_simple);
         ARG_CHOICE ("env", global.cpubindstrategy = HWLOC_env);
-        ARG_CHOICE ("alt_pus", global.cpubindstrategy = HWLOC_alt);
-        ARG_CHOICE ("thr_per_socket", global.cpubindstrategy = HWLOC_socket);
+        ARG_CHOICE ("numa", global.cpubindstrategy = HWLOC_numa);
+        ARG_CHOICE ("socket", global.cpubindstrategy = HWLOC_socket);
         ARG_CHOICE ("env_pus_string", global.cpubindstrategy = HWLOC_envString);
 
         ARG_CHOICE_END ();

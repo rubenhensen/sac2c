@@ -441,7 +441,7 @@ PrintGlobalSettings (node *syntax_tree)
     case HWLOC_env:
         fprintf (global.outfile, "#define SAC_SET_CPU_BIND_STRATEGY 2\n");
         break;
-    case HWLOC_alt:
+    case HWLOC_numa:
         fprintf (global.outfile, "#define SAC_SET_CPU_BIND_STRATEGY 3\n");
         break;
     case HWLOC_socket:

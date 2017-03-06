@@ -179,7 +179,7 @@ typedef enum {
     HWLOC_off,
     HWLOC_simple,
     HWLOC_env,
-    HWLOC_alt,
+    HWLOC_numa,
     HWLOC_socket,
     HWLOC_envString
 } cpubindstrategy_t;
