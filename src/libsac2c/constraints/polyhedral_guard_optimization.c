@@ -553,14 +553,16 @@ POGOprf (node *arg_node, info *arg_info)
                 z = TRUE;
             }
 
-            if ((!z) && (emp & POLY_RET_EMPTYSET_BCR)) {
+            if ((!z) && (emp & POLY_RET_EMPTYSET_BCF)) {
                 DBUG_PRINT ("Matching Fn sets for %s",
                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
                 resval = FALSE;
                 z = TRUE;
             }
 
-            if ((!z) && (emp & POLY_RET_EMPTYSET_BCC)) {
+            // We treat an empty set exprsX as TRUE.
+            if ((!z)
+                && ((emp & POLY_RET_EMPTYSET_B) || ((emp & POLY_RET_EMPTYSET_BCG)))) {
                 DBUG_PRINT ("Matching DualFun sets for %s",
                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
                 resval = TRUE;
@@ -680,7 +682,7 @@ POGOisPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
                                                    varlut, 0);
         emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
                                      POLY_OPCODE_INTERSECT, "POGOisPositive");
-        z = 0 != (emp & POLY_RET_EMPTYSET_BCR);
+        z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
 
@@ -734,7 +736,7 @@ POGOisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
                                                    varlut, 0);
         emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
                                      POLY_OPCODE_INTERSECT, "POGOisNegative");
-        z = 0 != (emp & POLY_RET_EMPTYSET_BCR);
+        z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
 
@@ -788,7 +790,7 @@ POGOisNonPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
                                                    varlut, 0);
         emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
                                      POLY_OPCODE_INTERSECT, "POGOisNonPositive");
-        z = 0 != (emp & POLY_RET_EMPTYSET_BCR);
+        z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
 
@@ -842,7 +844,7 @@ POGOisNonNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
                                                    varlut, 0);
         emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
                                      POLY_OPCODE_INTERSECT, "POGOisNonNegative");
-        z = 0 != (emp & POLY_RET_EMPTYSET_BCR);
+        z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
 

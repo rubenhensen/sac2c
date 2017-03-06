@@ -1598,9 +1598,11 @@ PWLFid (node *arg_node, info *arg_info)
  *   the intersect between the index set of iv,
  *   and each partition of the producerWL.
  *
- *   If the intersect is POLY_RET_MATCH_BC  or POLY_RET_CCONTAINSB,
- *   we perform the fold.
- *   If the intersect is POLY_RET_EMPTYSET_BC, we go on to the next PWL partition.
+ *   If the intersect is POLY_RET_MATCH_BC  or POLY_RET_CCONTAINSB
+ *   or POLY_RET_EMPTY_SET_B, *   we perform the fold.
+ *
+ *   If the intersect is POLY_RET_EMPTYSET_BC, we go on to next PWL partition.
+ *
  *   Otherwise, we use the result of intersect to slice the CWL, then
  *   perform the fold.
  *

@@ -40,6 +40,7 @@ printBasicSet (struct isl_basic_set *pset, char *titl)
     return;
 }
 
+#ifdef DEADCODE
 // This from Roman Gareev, isl-development google group
 // 2014-03-08.
 
@@ -55,6 +56,7 @@ set_options (__isl_take isl_ast_build *control, __isl_keep isl_union_map *schedu
     isl_union_map *options = isl_union_map_from_domain_and_range (domain, range);
     return isl_ast_build_set_options (control, options);
 }
+#endif // DEADCODE
 
 void
 printSchedule (FILE *fd, isl_schedule *sched, char *titl, int verbose, int fmt)
@@ -313,7 +315,7 @@ PolyhedralWLFIntersectCalc (int verbose)
         }
     } else {
         if (isl_union_set_is_empty (intr)) {
-            z = z | POLY_RET_EMPTYSET_BCR;
+            z = z | POLY_RET_EMPTYSET_BCF;
             z = z & ~POLY_RET_UNKNOWN;
             if (verbose) {
                 fprintf (stderr, "cwleq and pwleq do not intersect\n");
@@ -364,10 +366,10 @@ PolyhedralRelationalCalc (int verbose)
     //   and where rfn represents the relational itself;
     //   cfn represents the complementary function for the relational.
     //   E.g., for B < C, the complementary relational is B >= C.
-    //   Intersect B,C,rfn, and return result of POLY_RET_EMPTYSET_BCR if the
+    //   Intersect B,C,rfn, and return result of POLY_RET_EMPTYSET_BCF if the
     //   intersect is a NULL set.
     //
-    //   Else, intersect B,C,cfn and return result of POLY_RET_EMPTYSET_BCC if the
+    //   Else, intersect B,C,cfn and return result of POLY_RET_EMPTYSET_BCG if the
     //   intersect is a NULL set.
     //
     //   Else, return POLY_RET_UNKNOWN.
@@ -413,7 +415,7 @@ PolyhedralRelationalCalc (int verbose)
     if (POLY_RET_UNKNOWN == z) { // Intersect b,c,rfn
         intersectbcr = doIntersect (intersectbc, unionrfn, "intersectbcr", verbose);
         if (isl_union_set_is_empty (intersectbcr)) {
-            z = z | POLY_RET_EMPTYSET_BCR;
+            z = z | POLY_RET_EMPTYSET_BCF;
             z = z & ~POLY_RET_UNKNOWN;
             if (verbose) {
                 fprintf (stderr, "no intersect in b,c,rfn\n");
@@ -431,7 +433,7 @@ PolyhedralRelationalCalc (int verbose)
             if (verbose) {
                 fprintf (stderr, "no intersect in b,c,cfn\n");
             }
-            z = z | POLY_RET_EMPTYSET_BCC;
+            z = z | POLY_RET_EMPTYSET_BCG;
             z = z & ~POLY_RET_UNKNOWN;
         } else {
             if (verbose) {
@@ -466,15 +468,9 @@ LoopCount (__isl_keep isl_union_set *domain, int verbose)
 
     isl_val *V;
     int Dim = -1;
-    struct isl_union_map *sched;
     struct isl_set *LoopDomain = NULL;
 
     printUnion (stderr, domain, "domain for LoopCount is ", verbose, 0);
-    sched = isl_schedule_from_domain (domain);
-
-    LoopDomain = isl_set_from_union_set (isl_union_map_range (sched));
-    Dim = isl_set_dim (LoopDomain, isl_dim_set);
-    printf ("Dim is %d\n", Dim);
     Dim = 1; // Vector only
 
     // Calculate a map similar to the identity map, but with the last input
@@ -514,11 +510,6 @@ LoopCount (__isl_keep isl_union_set *domain, int verbose)
     } else {
         isl_set_free (Elements);
     }
-
-#ifdef CRUD
-    sched = isl_schedule_constraints_free (sched);
-#endif // CRUD
-
     return (z);
 }
 

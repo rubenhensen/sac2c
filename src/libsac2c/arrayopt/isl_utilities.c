@@ -278,7 +278,7 @@ ISLUgetSetIntersections (node *exprspwl, node *exprscwl, node *exprsfn, node *ex
     DBUG_EXECUTE (ISLUprintUnionSet (stderr, dompwl, "dompwl"));
     // If dompwl is empty set, we stop right now.
     if (isl_union_set_is_empty (dompwl)) {
-        z = z | POLY_RET_EMPTYSET_BC;
+        z = z | POLY_RET_EMPTYSET_B;
         z = z & ~POLY_RET_UNKNOWN;
         DBUG_PRINT ("pwl is null set\n");
     } else {
@@ -318,7 +318,7 @@ ISLUgetSetIntersections (node *exprspwl, node *exprscwl, node *exprsfn, node *ex
                                                 isl_union_map_copy (mapfn));
             DBUG_EXECUTE (ISLUprintUnionSet (stderr, intersectpcf, "intersectpcf"));
             if (isl_union_set_is_empty (intersectpcf)) {
-                z = z | POLY_RET_EMPTYSET_BCR;
+                z = z | POLY_RET_EMPTYSET_BCF;
                 z = z & ~POLY_RET_UNKNOWN;
                 DBUG_PRINT ("no intersect for pwl,cwl,fn\n");
             } else {
@@ -332,7 +332,7 @@ ISLUgetSetIntersections (node *exprspwl, node *exprscwl, node *exprsfn, node *ex
             DBUG_EXECUTE (ISLUprintUnionSet (stderr, intersectpcc, "intersectpcc"));
             if (isl_union_set_is_empty (intersectpcc)) {
                 DBUG_PRINT ("no intersect in pwl,cwl,cfn");
-                z = z | POLY_RET_EMPTYSET_BCC;
+                z = z | POLY_RET_EMPTYSET_BCG;
                 z = z & ~POLY_RET_UNKNOWN;
             } else {
                 DBUG_PRINT ("(pwl, cwl) intersects cfn");
