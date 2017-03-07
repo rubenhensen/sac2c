@@ -2296,12 +2296,13 @@ HandleCompositionWithGenarray (node *arg_node)
     if ((PMmatchFlat (pat1, arg_node) || PMmatchFlat (pat2, arg_node))) {
         // Emit el = s;
         s = WLUTgetGenarrayScalar (q, TRUE);
-        z = (NULL != s) ? TBmakeId (s) : NULL;
+        if (NULL != s) {
+            z = TBmakeId (s);
+            DBUG_PRINT ("Replaced F_sel by %s", AVIS_NAME (s));
+        }
     }
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
-
-    DBUG_PRINT ("Leaving HandleCompositionWithGenarray for lhs=%s", AVIS_NAME (arg_node));
 
     DBUG_RETURN (z);
 }

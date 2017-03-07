@@ -2816,6 +2816,9 @@ analyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *varlut)
     node *args = NULL;
     node *strideid = NULL;
     node *argvar = NULL;
+    node *v0;
+    node *v1;
+    node *navis;
     prf exprspfn = NOPRFOP;
     prf prfi;
     prf prfz;
@@ -2878,56 +2881,36 @@ analyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *varlut)
         res = TCappendExprs (res, resel);
 
         // Build: rcv prf2 limit.        E.g., II' < limit
-        limavis = TBmakeAvis (TRAVtmpVarName ("LIMD1"),
+        // lastvalue = outeriv + stride*loopcount;
+        limavis = TBmakeAvis (TRAVtmpVarName ("LIMD2"),
                               TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
         PHUTinsertVarIntoLut (limavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-#ifdef BREAKSBUG1178
-        // What was happening is that POGO used the computed loop count,
-        // and determined that the relational (the one controlling the
-        // iteration!!) was not needed.
-        //
-        // If other opts need FUNDEF_LOOPCOUNT in here, we need to
-        // get creative.
+        // We add 1 because LOOPCOUNT excludes first iteration (tail recursion).
         lim = (UNR_NONE != FUNDEF_LOOPCOUNT (fundef))
-                ? TBmakeNum (FUNDEF_LOOPCOUNT (fundef))
+                ? TBmakeNum (1 + FUNDEF_LOOPCOUNT (fundef))
                 : limavis;
-#else  // BREAKSBUG1178
-        lim = limavis;
-#endif // BREAKSBUG1178
-        resel = BuildIslStrideConstraint (rcv, prfz, outeriv, F_add_SxS, strideid,
+        resel = BuildIslStrideConstraint (limavis, F_eq_SxS, outeriv, F_add_SxS, strideid,
                                           F_mul_SxS, lim);
         res = TCappendExprs (res, resel);
+
+        v0 = (1 == stridesignum) ? outeriv : TBmakeId (limavis);
+        v1 = (1 == stridesignum) ? TBmakeId (limavis) : outeriv;
+
+        if ((NULL != v0) && (NULL != v1)) {
+
+            // iv = v0 + stp * N
+            navis = TBmakeAvis (TRAVtmpVarName ("N"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+            PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
+            resel = BuildIslStrideConstraint (nid, F_eq_SxS, v0, F_add_SxS, strideid,
+                                              F_mul_SxS, navis);
+            res = TCappendExprs (res, resel);
+
+            // iv <= nid < lastvalue
+            resel = BuildIslSimpleConstraint (v0, prfi, nid, prfz, v1);
+            res = TCappendExprs (res, resel);
+        }
     }
-
-#ifdef DUNNO
-    // lastvalue = outeriv + stride*loopcount;
-    limavis = TBmakeAvis (TRAVtmpVarName ("LIMD2"),
-                          TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-    PHUTinsertVarIntoLut (limavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-    lim = (UNR_NONE != FUNDEF_LOOPCOUNT (fundef)) ? TBmakeNum (FUNDEF_LOOPCOUNT (fundef))
-                                                  : limavis;
-    resel = BuildIslStrideConstraint (limavis, F_eq_SxS, outeriv, F_add_SxS, strideid,
-                                      F_mul_SxS, lim);
-    res = TCappendExprs (res, resel);
-
-    v0 = (1 == stridesignum) ? outeriv : TBmakeId (limavis);
-    v1 = (1 == stridesignum) ? TBmakeId (limavis) : outeriv;
-
-    if ((NULL != v0) && (NULL != v1)) {
-
-        // iv = v0 + stp * N
-        navis = TBmakeAvis (TRAVtmpVarName ("N"),
-                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-        PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-        resel = BuildIslStrideConstraint (nid, F_eq_SxS, v0, F_add_SxS, strideid,
-                                          F_mul_SxS, navis);
-        res = TCappendExprs (res, resel);
-
-        // iv <= nid < lastvalue
-        resel = BuildIslSimpleConstraint (v0, prfi, nid, prfz, v1);
-        res = TCappendExprs (res, resel);
-    }
-#endif // DUNNO
 
     DBUG_RETURN (res);
 }

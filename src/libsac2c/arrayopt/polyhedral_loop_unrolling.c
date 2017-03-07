@@ -7,10 +7,10 @@
  *            FUNDEF_LOOPCOUNT, and will perform the actual code
  *            unrolling if it deems the value appropriate.
  *
- *            NB. The loop count is reduced by one. Because
- *            NB. sac2c uses tail recursion, one iteration has
- *            NB. already been performed, so we have to compensate
- *            NB. for that.
+ *            NB. The loop count is one less than the number of
+ *            NB. iterations, because sac2c uses tail recursion:
+ *            NB  One iteration has already been performed,
+ *            NB. so we have to compensate for that.
  *
  *****************************************************************************/
 
