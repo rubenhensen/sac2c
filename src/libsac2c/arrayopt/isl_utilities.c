@@ -238,9 +238,13 @@ ISLUgetLoopCount (char *str, lut_t *varlut)
  *        A NULL result is the only interesting one, used by
  *        POGO.
  *
+ *        If exprscond is supplied, we blindly intersect it with exprspwl
+ *        before proceeding.
+ *
  * @param: exprs*: Four PHUTish N_exprs chains, each
  *         comprising ISL union set, or equivalent.
- *
+ * @param: exprscond: An optional N_exprs chain, representing the
+ *         AFT for the COND_COND of a loopfun.
  * @param: varlut: Address of the LUT containing the union set variable names.
  * @param: lhsname: the AVIS_NAME of the LHS of the expression
  *         we are trying to simplify. This is for debugging only...
@@ -250,8 +254,8 @@ ISLUgetLoopCount (char *str, lut_t *varlut)
  *
  ******************************************************************************/
 int
-ISLUgetSetIntersections (node *exprspwl, node *exprscwl, node *exprsfn, node *exprscfn,
-                         lut_t *varlut, char *lhsname)
+ISLUgetSetIntersections (node *exprspwl, node *exprscwl, node *exprscond, node *exprsfn,
+                         node *exprscfn, lut_t *varlut, char *lhsname)
 {
     int z = POLY_RET_UNKNOWN;
 #if ENABLE_ISL && ENABLE_BARVINOK
@@ -259,6 +263,7 @@ ISLUgetSetIntersections (node *exprspwl, node *exprscwl, node *exprsfn, node *ex
     char *str;
     struct isl_union_set *dompwl = NULL;
     struct isl_union_set *domcwl = NULL;
+    struct isl_union_set *domcond = NULL;
     struct isl_union_map *mapfn = NULL;
     struct isl_union_map *mapcfn = NULL;
     struct isl_union_set *intpc = NULL;
@@ -283,6 +288,17 @@ ISLUgetSetIntersections (node *exprspwl, node *exprscwl, node *exprsfn, node *ex
         DBUG_PRINT ("pwl is null set\n");
     } else {
         DBUG_PRINT ("pwl is non-null set\n");
+    }
+
+    // If caller supplied exprscond, blindly intersect it with exprspwl
+    if ((POLY_RET_UNKNOWN == z) && (NULL != exprscond)) {
+        str = ISLUexprs2String (exprscond, varlut, "cond for intersect", TRUE, lhsname);
+        domcond = isl_union_set_read_from_str (ctx, str);
+        DBUG_PRINT ("cond is %s", str);
+        str = MEMfree (str);
+        DBUG_EXECUTE (ISLUprintUnionSet (stderr, domcond, "domcond"));
+        dompwl = isl_union_set_intersect (isl_union_set_copy (dompwl),
+                                          isl_union_set_copy (domcond));
     }
 
     if (POLY_RET_UNKNOWN == z) {
@@ -342,6 +358,7 @@ ISLUgetSetIntersections (node *exprspwl, node *exprscwl, node *exprsfn, node *ex
 
     isl_union_set_free (dompwl);
     isl_union_set_free (domcwl);
+    isl_union_set_free (domcond);
     isl_union_map_free (mapfn);
     isl_union_map_free (mapcfn);
     isl_union_set_free (intpc);

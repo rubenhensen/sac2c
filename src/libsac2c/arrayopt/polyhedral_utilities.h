@@ -15,9 +15,9 @@ extern node *PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2,
                                               int stridesignum);
 extern node *PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut,
                                           node *res, int islclass);
-extern int PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprsintr,
-                                  node *exprs4, lut_t *varlut, char opcode,
-                                  char *lhsname);
+extern int PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprscond,
+                                  node *exprsintr, node *exprs4, lut_t *varlut,
+                                  char opcode, char *lhsname);
 extern node *PHUTgenerateAffineExprsForPwl (node *arg_node, node *fundef, lut_t *varlut);
 extern node *PHUTgenerateAffineExprsForCwl (node *arg_node, node *fundef, lut_t *varlut);
 extern node *PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv,

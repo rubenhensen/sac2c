@@ -1322,6 +1322,7 @@ PHUTisCompatibleAffinePrf (prf nprf)
     case F_shape_A:
     case F_not_S:
     case F_saabind:
+    case F_dim_A:
         z = TRUE;
         break;
 
@@ -1375,6 +1376,7 @@ isDyadicPrf (prf nprf)
     case F_non_neg_val_S:
     case F_shape_A:
     case F_not_S:
+    case F_dim_A:
         z = FALSE;
         break;
 
@@ -1393,6 +1395,9 @@ isDyadicPrf (prf nprf)
  * @brief ISL only supports integer (and Booleans, due to
  *        coercions made here), so we forbid other types.
  *
+ *        dim() and shape() produce integer results, so we accept them,
+ *        regardless of argument type.
+ *
  * @param arg_node: An N_prf
  *
  * @return TRUE if arg_node arguments are all Boolean and/or integer
@@ -1406,8 +1411,9 @@ PHUTisCompatibleAffineTypes (node *arg_node)
 
     DBUG_ENTER ();
 
+    z = (F_dim_A == PRF_PRF (arg_node)) || (F_shape_A == PRF_PRF (arg_node));
     avis = Node2Avis (PRF_ARG1 (arg_node));
-    z = TUisBoolScalar (AVIS_TYPE (avis)) || TUisIntScalar (AVIS_TYPE (avis));
+    z = z || TUisBoolScalar (AVIS_TYPE (avis)) || TUisIntScalar (AVIS_TYPE (avis));
     if (isDyadicPrf (PRF_PRF (arg_node))) {
         avis = Node2Avis (PRF_ARG2 (arg_node));
         z = z && (TUisBoolScalar (AVIS_TYPE (avis)) || TUisIntScalar (AVIS_TYPE (avis)));
@@ -1457,6 +1463,7 @@ HandleNid (node *arg_node, node *rhs, node *fundef, lut_t *varlut)
         res = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
         PHUTsetIslTree (ID_AVIS (arg_node), res);
     } else {
+        DBUG_ASSERT (NULL != AVIS_ISLTREE (ID_AVIS (arg_node)), "No ISLTREE found");
         res = DUPdoDupTree (AVIS_ISLTREE (ID_AVIS (arg_node)));
     }
 
@@ -1983,6 +1990,13 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                 }
                 break;
 
+            case F_dim_A:
+                // z >= 0
+                z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
+                                              NULL);
+                res = TCappendExprs (res, z);
+                break;
+
             case F_not_S: // Treat Booleans as integers(for POGO)
                 // z = !y  --->  ( z = 1 - y) and (y >= 0) and (y <= 1)
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, TBmakeNum (1), F_sub_SxS,
@@ -2473,16 +2487,16 @@ PHUTgenerateAffineExprsForCondprf (prf fn, node *arg1, node *arg2, node *fundef,
  *
  *****************************************************************************/
 int
-PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprsfn, node *exprscfn,
-                       lut_t *varlut, char opcode, char *lhsname)
+PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprscond, node *exprsfn,
+                       node *exprscfn, lut_t *varlut, char opcode, char *lhsname)
 {
 
     int res = POLY_RET_INVALID;
 
     DBUG_ENTER ();
 
-    res
-      = ISLUgetSetIntersections (exprspwl, exprscwl, exprsfn, exprscfn, varlut, lhsname);
+    res = ISLUgetSetIntersections (exprspwl, exprscwl, exprscond, exprsfn, exprscfn,
+                                   varlut, lhsname);
 
     DBUG_PRINT ("ISLU intersection result is %d", res);
     exprspwl = (NULL != exprspwl) ? FREEdoFreeTree (exprspwl) : NULL;
@@ -2816,8 +2830,8 @@ analyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *varlut)
     node *args = NULL;
     node *strideid = NULL;
     node *argvar = NULL;
-    node *v0;
-    node *v1;
+    node *lb;
+    node *ub;
     node *navis;
     prf exprspfn = NOPRFOP;
     prf prfi;
@@ -2832,84 +2846,90 @@ analyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *varlut)
     rcvel = PHUTskipChainedAssigns (rcv);
 
     // Recursive call variable is existential.
-    PHUTinsertVarIntoLut (rcvel, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
+    if (PHUTinsertVarIntoLut (rcvel, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL)) {
+        // trace rcv back
+        swap = FALSE;
+        strideid = NULL;
 
-    // trace rcv back
-    swap = FALSE;
-    strideid = NULL;
+        exprs = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (rcvel))));
+        exprspfn = PRF_PRF (exprs);
+        exprsvar = nid;
+        exprslarg = PRF_ARG1 (exprs);
+        exprsrarg = PRF_ARG2 (exprs);
 
-    exprs = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (rcvel))));
-    exprspfn = PRF_PRF (exprs);
-    exprsvar = nid;
-    exprslarg = PRF_ARG1 (exprs);
-    exprsrarg = PRF_ARG2 (exprs);
-
-    // Find value of stride. We are looking for: rcv = nid +- something, etc.
-    if ((F_add_SxS == exprspfn) && (N_id == NODE_TYPE (exprslarg))
-        && (ID_AVIS (nid) == ID_AVIS (exprslarg))) {
-        strideid = exprsrarg; // nid + something
-    } else if ((F_add_SxS == exprspfn) && (N_id == NODE_TYPE (exprsrarg))
-               && (ID_AVIS (nid) == ID_AVIS (exprsrarg))) {
-        strideid = exprslarg; // something + nid
-    } else if ((F_sub_SxS == exprspfn) && (N_id == NODE_TYPE (exprslarg))
-               && (ID_AVIS (nid) == ID_AVIS (exprslarg))) {
-        strideid = exprsrarg; // nid - something
-        mathsign = -1;
-    }
-
-    // Find sign of stride, correct for F_sub.
-    if (NULL != strideid) {
-        stridesignum
-          = mathsign * SCSisPositive (strideid) ? 1 : SCSisNegative (strideid) ? -1 : 0;
-    }
-
-    // If we know sign of stride and loop count, we can generate an ISL directive
-    if (0 != stridesignum) {
-        prfi = (stridesignum > 0) ? F_le_SxS : F_lt_SxS;
-        prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
-
-        //  rcv = outeriv
-        argvar = LFUgetArgFromRecursiveCallVariable (rcv, fundef);
-        args = AP_ARGS (LET_EXPR (ASSIGN_STMT (FUNDEF_CALLAP (fundef))));
-        outeriv = LFUgetRecursiveCallVariableFromArgs (argvar, fundef, args);
-        outerexprs
-          = PHUTgenerateAffineExprs (outeriv, fundef, varlut, AVIS_ISLCLASSEXISTENTIAL);
-        res = TCappendExprs (res, outerexprs);
-
-        // Build: initial value prfi nid, e.g., 0 <= II
-        resel = BuildIslSimpleConstraint (outeriv, prfi, nid, NOPRFOP, NULL);
-        res = TCappendExprs (res, resel);
-
-        // Build: rcv prf2 limit.        E.g., II' < limit
-        // lastvalue = outeriv + stride*loopcount;
-        limavis = TBmakeAvis (TRAVtmpVarName ("LIMD2"),
-                              TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-        PHUTinsertVarIntoLut (limavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-        // We add 1 because LOOPCOUNT excludes first iteration (tail recursion).
-        lim = (UNR_NONE != FUNDEF_LOOPCOUNT (fundef))
-                ? TBmakeNum (1 + FUNDEF_LOOPCOUNT (fundef))
-                : limavis;
-        resel = BuildIslStrideConstraint (limavis, F_eq_SxS, outeriv, F_add_SxS, strideid,
-                                          F_mul_SxS, lim);
-        res = TCappendExprs (res, resel);
-
-        v0 = (1 == stridesignum) ? outeriv : TBmakeId (limavis);
-        v1 = (1 == stridesignum) ? TBmakeId (limavis) : outeriv;
-
-        if ((NULL != v0) && (NULL != v1)) {
-
-            // iv = v0 + stp * N
-            navis = TBmakeAvis (TRAVtmpVarName ("N"),
-                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-            resel = BuildIslStrideConstraint (nid, F_eq_SxS, v0, F_add_SxS, strideid,
-                                              F_mul_SxS, navis);
-            res = TCappendExprs (res, resel);
-
-            // iv <= nid < lastvalue
-            resel = BuildIslSimpleConstraint (v0, prfi, nid, prfz, v1);
-            res = TCappendExprs (res, resel);
+        // Find value of stride. We are looking for: rcv = nid +- something, etc.
+        if ((F_add_SxS == exprspfn) && (N_id == NODE_TYPE (exprslarg))
+            && (ID_AVIS (nid) == ID_AVIS (exprslarg))) {
+            strideid = exprsrarg; // nid + something
+        } else if ((F_add_SxS == exprspfn) && (N_id == NODE_TYPE (exprsrarg))
+                   && (ID_AVIS (nid) == ID_AVIS (exprsrarg))) {
+            strideid = exprslarg; // something + nid
+        } else if ((F_sub_SxS == exprspfn) && (N_id == NODE_TYPE (exprslarg))
+                   && (ID_AVIS (nid) == ID_AVIS (exprslarg))) {
+            strideid = exprsrarg; // nid - something
+            mathsign = -1;
         }
+
+        // Find sign of stride, correct for F_sub.
+        if (NULL != strideid) {
+            stridesignum = mathsign * SCSisPositive (strideid)
+                             ? 1
+                             : SCSisNegative (strideid) ? -1 : 0;
+        }
+
+        // If we know stride sign & loop count, we can generate an ISL directive
+        if (0 != stridesignum) {
+            prfi = (stridesignum > 0) ? F_le_SxS : F_lt_SxS;
+            prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
+
+            //  rcv = outeriv
+            argvar = LFUgetArgFromRecursiveCallVariable (rcv, fundef);
+            args = AP_ARGS (LET_EXPR (ASSIGN_STMT (FUNDEF_CALLAP (fundef))));
+            outeriv = LFUgetRecursiveCallVariableFromArgs (argvar, fundef, args);
+            outerexprs = PHUTgenerateAffineExprs (outeriv, fundef, varlut,
+                                                  AVIS_ISLCLASSEXISTENTIAL);
+            res = TCappendExprs (res, outerexprs);
+
+            // Build: initial value prfi nid, e.g., 0 <= II
+            resel = BuildIslSimpleConstraint (outeriv, prfi, nid, NOPRFOP, NULL);
+            res = TCappendExprs (res, resel);
+
+            // Build: rcv prf2 limit.        E.g., II' < limit
+            // lastvalue = outeriv + stride*loopcount;
+            limavis
+              = TBmakeAvis (TRAVtmpVarName ("LIMD2"),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+            PHUTinsertVarIntoLut (limavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
+#ifdef CRUD
+            // We add 1 because LOOPCOUNT excludes first iteration (tail recursion).
+            lim = (UNR_NONE != FUNDEF_LOOPCOUNT (fundef))
+                    ? TBmakeNum (1 + FUNDEF_LOOPCOUNT (fundef))
+                    : limavis;
+            resel = BuildIslStrideConstraint (limavis, F_eq_SxS, outeriv, F_add_SxS,
+                                              strideid, F_mul_SxS, lim);
+            res = TCappendExprs (res, resel);
+#endif // CRUD
+            int fixme;
+
+            lb = (1 == stridesignum) ? outeriv : TBmakeId (limavis);
+            ub = (1 == stridesignum) ? TBmakeId (limavis) : outeriv;
+
+            if ((NULL != lb) && (NULL != ub)) {
+                // iv = lb + stp * N
+                navis
+                  = TBmakeAvis (TRAVtmpVarName ("N"),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+                PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
+                resel = BuildIslStrideConstraint (nid, F_eq_SxS, lb, F_add_SxS, strideid,
+                                                  F_mul_SxS, navis);
+                res = TCappendExprs (res, resel);
+
+                // iv <= nid < lastvalue
+                resel = BuildIslSimpleConstraint (lb, prfi, nid, prfz, ub);
+                res = TCappendExprs (res, resel);
+            }
+        }
+        PHUTsetIslTree (ID_AVIS (rcvel), res);
     }
 
     DBUG_RETURN (res);

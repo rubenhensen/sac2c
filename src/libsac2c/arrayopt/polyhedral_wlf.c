@@ -1295,7 +1295,7 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
 
                 // Don't bother calling ISL if it can't do anything for us.
                 if ((NULL != exprscwl) && (NULL != exprspwl)) {
-                    z = PHUTcheckIntersection (exprspwl, exprscwl, exprsintr, NULL,
+                    z = PHUTcheckIntersection (exprspwl, exprscwl, NULL, exprsintr, NULL,
                                                INFO_VARLUT (arg_info), POLY_OPCODE_PWLF,
                                                AVIS_NAME (IDS_AVIS (
                                                  INFO_CONSUMERWLIDS (arg_info))));

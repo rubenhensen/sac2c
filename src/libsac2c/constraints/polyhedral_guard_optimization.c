@@ -89,6 +89,7 @@ struct INFO {
     node *nassign;
     node *lacfun;
     node *lacfunprf;
+    node *lacfunaft;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -99,6 +100,7 @@ struct INFO {
 #define INFO_NASSIGN(n) ((n)->nassign)
 #define INFO_LACFUN(n) ((n)->lacfun)
 #define INFO_LACFUNPRF(n) ((n)->lacfunprf)
+#define INFO_LACFUNAFT(n) ((n)->lacfunaft)
 
 static info *
 MakeInfo (void)
@@ -117,6 +119,7 @@ MakeInfo (void)
     INFO_NASSIGN (result) = NULL;
     INFO_LACFUN (result) = NULL;
     INFO_LACFUNPRF (result) = NULL;
+    INFO_LACFUNAFT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -272,6 +275,11 @@ POGOfundef (node *arg_node, info *arg_info)
             if (NULL != lacfunprf) { // LOOPFUNs only
                 lacfunprf = ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf)));
                 INFO_LACFUNPRF (arg_info) = LET_EXPR (lacfunprf);
+                INFO_LACFUNAFT (arg_info)
+                  = PHUTgenerateAffineExprs (IDS_AVIS (LET_IDS (lacfunprf)),
+                                             INFO_FUNDEF (arg_info),
+                                             INFO_VARLUT (arg_info),
+                                             AVIS_ISLCLASSSETVARIABLE);
             }
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
             INFO_LACFUNPRF (arg_info) = NULL;
@@ -280,6 +288,10 @@ POGOfundef (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = fundefold;
     INFO_LACFUNPRF (arg_info) = lacfunprfold;
+    INFO_LACFUNAFT (arg_info) = (NULL != INFO_LACFUNAFT (arg_info))
+                                  ? FREEdoFreeTree (INFO_LACFUNAFT (arg_info))
+                                  : NULL;
+
     DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
@@ -462,17 +474,18 @@ POGOprf (node *arg_node, info *arg_info)
     node *exprsY = NULL;
     node *exprsFn = NULL;
     node *exprsCfn = NULL;
-    bool z = FALSE;
-    bool resval = FALSE;
     node *res;
     node *resp;
     node *resa;
     node *guardp;
     node *arg1 = NULL;
     node *arg2 = NULL;
-    prf mappedprf;
-    bool dopoly = FALSE;
+    node *exprscondcond = NULL;
     int emp = POLY_RET_UNKNOWN;
+    bool dopoly = FALSE;
+    bool z = FALSE;
+    bool resval = FALSE;
+    prf mappedprf;
 
     DBUG_ENTER ();
 
@@ -504,7 +517,7 @@ POGOprf (node *arg_node, info *arg_info)
             exprsY = PHUTgenerateAffineExprs (arg2, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
                                               AVIS_ISLCLASSSETVARIABLE);
-            dopoly = (NULL != exprsX) || (NULL != exprsY);
+            dopoly = (NULL != exprsX) && (NULL != exprsY);
             break;
 
         case F_non_neg_val_S:
@@ -535,7 +548,14 @@ POGOprf (node *arg_node, info *arg_info)
                                                         LFUdualFun (PRF_PRF (arg_node)),
                                                         INFO_VARLUT (arg_info), 0);
 
-            emp = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn,
+            // Pass in loopfun information, unless we are looking at
+            // the loopfun's COND_COND.
+            exprscondcond = ((NULL != INFO_LACFUNAFT (arg_info))
+                             && (INFO_LACFUNPRF (arg_info) != arg_node))
+                              ? DUPdoDupTree (INFO_LACFUNAFT (arg_info))
+                              : NULL;
+
+            emp = PHUTcheckIntersection (exprsX, exprsY, exprscondcond, exprsFn, exprsCfn,
                                          INFO_VARLUT (arg_info), POLY_OPCODE_INTERSECT,
                                          AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             exprsX = NULL; // PHUTcheckIntersection consumes the N_exprs
@@ -680,8 +700,8 @@ POGOisPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         // We look for NULL intersect on the dual function: arg1 <= 0
         exprsFn = PHUTgenerateAffineExprsForGuard (F_le_SxS, arg1, zro, fundef, F_le_SxS,
                                                    varlut, 0);
-        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
-                                     POLY_OPCODE_INTERSECT, "POGOisPositive");
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, NULL, exprsFn, NULL,
+                                     varlut, POLY_OPCODE_INTERSECT, "POGOisPositive");
         z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
@@ -734,8 +754,8 @@ POGOisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         // We look for NULL intersect on the dual function: arg1 >= 0
         exprsFn = PHUTgenerateAffineExprsForGuard (F_ge_SxS, arg1, zro, fundef, F_ge_SxS,
                                                    varlut, 0);
-        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
-                                     POLY_OPCODE_INTERSECT, "POGOisNegative");
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, NULL, exprsFn, NULL,
+                                     varlut, POLY_OPCODE_INTERSECT, "POGOisNegative");
         z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
@@ -788,8 +808,8 @@ POGOisNonPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         // We look for NULL intersect on the dual function  arg1 > 0
         exprsFn = PHUTgenerateAffineExprsForGuard (F_gt_SxS, arg1, zro, fundef, F_gt_SxS,
                                                    varlut, 0);
-        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
-                                     POLY_OPCODE_INTERSECT, "POGOisNonPositive");
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, NULL, exprsFn, NULL,
+                                     varlut, POLY_OPCODE_INTERSECT, "POGOisNonPositive");
         z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
@@ -842,8 +862,8 @@ POGOisNonNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         // We look for NULL intersect on the dual function  arg1 < 0
         exprsFn = PHUTgenerateAffineExprsForGuard (F_lt_SxS, arg1, zro, fundef, F_lt_SxS,
                                                    varlut, 0);
-        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
-                                     POLY_OPCODE_INTERSECT, "POGOisNonNegative");
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, NULL, exprsFn, NULL,
+                                     varlut, POLY_OPCODE_INTERSECT, "POGOisNonNegative");
         z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
