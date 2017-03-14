@@ -267,7 +267,37 @@ GDBprintAvisName (node *avis)
 {
 
     if (NULL != avis) {
-        printf ("%s\n", AVIS_NAME (avis));
+        printf ("Avis for %s is:%0x\n", AVIS_NAME (avis), avis);
+    }
+    return;
+}
+
+/******************************************************************************
+ *
+ * function: GDBprintAvisForFundef( node *fundef)
+ *
+ * description: Print avis names and addresses for fundef.
+ *
+ *
+ ******************************************************************************/
+void
+GDBprintAvisForFundef (node *fundef)
+{
+    node *args;
+    node *vardecs;
+
+    args = FUNDEF_ARGS (fundef);
+    printf ("Fundef is %s\n Args are:\n", FUNDEF_NAME (fundef));
+    while (NULL != args) {
+        GDBprintAvisName (ARG_AVIS (args));
+        args = ARG_NEXT (args);
+    }
+
+    printf ("\nVardecs are:\n");
+    vardecs = FUNDEF_VARDECS (fundef);
+    while (NULL != vardecs) {
+        GDBprintAvisName (VARDEC_AVIS (vardecs));
+        vardecs = VARDEC_NEXT (vardecs);
     }
 
     return;

@@ -8,5 +8,6 @@ extern void GDBwhatIsNid (node *arg_node, node *fundef);
 extern void GDBwhatAreNid (node *arg_node, node *fundef);
 extern void GDBprintPrfArgs (node *arg_node, node *fundef);
 extern void GDBprintAvisName (node *avis);
+extern void GDBprintAvisForFundef (node *fundef);
 
 #endif /*_GDB_UTILS_H_ */
