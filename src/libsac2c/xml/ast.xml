@@ -5730,8 +5730,7 @@ N_tfarg :
                 <phases>
                   <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
                   <range from="opt_saacyc_plur" to="opt_saacyc_plur" />
-                  <range from="opt_saacyc_pogo" to="opt_saacyc_pogo" />
-                  <range from="opt_saacyc_pwlf" to="opt_saacyc_pwlf" />
+                  <range from="opt_saacyc_polys" to="opt_saacyc_polyt" />
                 </phases>
               </target>
             </targets>
@@ -5753,8 +5752,7 @@ N_tfarg :
                 <phases>
                   <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
                   <range from="opt_saacyc_plur" to="opt_saacyc_plur" />
-                  <range from="opt_saacyc_pogo" to="opt_saacyc_pogo" />
-                  <range from="opt_saacyc_pwlf" to="opt_saacyc_pwlf" />
+                  <range from="opt_saacyc_polys" to="opt_saacyc_polyt" />
                 </phases>
               </target>
             </targets>
