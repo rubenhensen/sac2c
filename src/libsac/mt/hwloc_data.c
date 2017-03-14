@@ -18,7 +18,7 @@ static char *
 strategySocket (int threads, int sockets_avail, int cores_avail, int pus_avail)
 {
 
-    int i, j, idx, socket;
+    int i, j, idx, rem, socket;
     char *res;
 
     if (threads > sockets_avail * cores_avail * pus_avail) {
@@ -33,23 +33,32 @@ strategySocket (int threads, int sockets_avail, int cores_avail, int pus_avail)
     }
     res[i] = '\0';
 
-    int rem = 0;
-    while (threads % sockets_avail != 0) {
-        threads--;
-        rem++;
-    }
-    idx = (int)((double)threads / (double)sockets_avail);
-    socket = 0;
+    if (threads > sockets_avail) {
 
-    for (i = 0; i < sockets_avail; i++) {
-        for (j = 0; j < idx; j++) {
-            res[i * ((cores_avail * pus_avail * sockets_avail) / sockets_avail) + j]
-              = SAC_PULIST_FULL_CHAR;
-            if (rem > 0) {
-                res[socket + idx] = SAC_PULIST_FULL_CHAR;
-                rem--;
-                socket += (cores_avail * pus_avail * sockets_avail) / sockets_avail;
+        rem = 0;
+        while (threads % sockets_avail != 0) {
+            threads--;
+            rem++;
+        }
+        idx = (int)((double)threads / (double)sockets_avail);
+
+        socket = 0;
+
+        for (i = 0; i < sockets_avail; i++) {
+            for (j = 0; j < idx; j++) {
+                res[i * ((cores_avail * pus_avail * sockets_avail) / sockets_avail) + j]
+                  = SAC_PULIST_FULL_CHAR;
+                if (rem > 0) {
+                    res[socket + idx] = SAC_PULIST_FULL_CHAR;
+                    rem--;
+                    socket += (cores_avail * pus_avail * sockets_avail) / sockets_avail;
+                }
             }
+        }
+    } else {
+        for (i = 0; i < threads; i++) {
+            res[i * ((cores_avail * pus_avail * sockets_avail) / sockets_avail)]
+              = SAC_PULIST_FULL_CHAR;
         }
     }
     return res;
