@@ -1463,10 +1463,14 @@ HandleNid (node *arg_node, node *rhs, node *fundef, lut_t *varlut, int loopcount
         AVIS_ISLCLASS (arg_node)
           = (NULL == res) ? AVIS_ISLCLASSPARAMETER : AVIS_ISLCLASSSETVARIABLE;
         res = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
-        PHUTsetIslTree (ID_AVIS (arg_node), res);
+        PHUTsetIslTree (arg_node, res);
     } else {
-        DBUG_ASSERT (NULL != AVIS_ISLTREE (ID_AVIS (arg_node)), "No ISLTREE found");
-        res = DUPdoDupTree (AVIS_ISLTREE (ID_AVIS (arg_node)));
+        int fixmetoo;
+#ifdef FIXME
+        DBUG_ASSERT (NULL != AVIS_ISLTREE (arg_node), "No ISLTREE found");
+#endif // FIXME
+        res = (NULL != AVIS_ISLTREE (arg_node)) ? DUPdoDupTree (AVIS_ISLTREE (arg_node))
+                                                : NULL;
     }
 
     DBUG_PRINT ("Leaving HandleNid for lhs=%s", AVIS_NAME (arg_node));
