@@ -9,7 +9,6 @@
  *
  * This traversal initializes several fields:
  *
- *    FUNDEF_CALLAP
  *    AVIS_NPART
  *    FUNDEF_LOOPCOUNT
  *    AVIS_ISLTREE
@@ -106,49 +105,6 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 
-#ifdef DEADCODE
-/** <!-- ****************************************************************** -->
- * @fn node *POLYSclearAvisIslTree( node *arg_node)
- *
- * @brief Clear AVIS_ISLTREE attributes for N_fundef arg_node
- *        variables
- *
- * @param arg_node: An N_fundef
- *
- * @return arg_node, unchanged. Side effects on the relevant N_avis nodes.
- *
- ******************************************************************************/
-node *
-POLYSclearAvisIslTree (node *arg_node)
-{
-    node *args;
-    node *vardecs;
-
-    DBUG_ENTER ();
-
-    args = FUNDEF_ARGS (arg_node);
-    while (NULL != args) {
-        if (NULL != AVIS_ISLTREE (ARG_AVIS (args))) {
-            AVIS_ISLTREE (ARG_AVIS (args))
-              = FREEdoFreeTree (AVIS_ISLTREE (ARG_AVIS (args)));
-        }
-        args = ARG_NEXT (args);
-    }
-
-    vardecs = BLOCK_VARDECS (FUNDEF_BODY (arg_node));
-    while (NULL != vardecs) {
-        if (NULL != AVIS_ISLTREE (VARDEC_AVIS (vardecs))) {
-            AVIS_ISLTREE (VARDEC_AVIS (vardecs))
-              = FREEdoFreeTree (AVIS_ISLTREE (VARDEC_AVIS (vardecs)));
-        }
-        vardecs = VARDEC_NEXT (vardecs);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-#endif // DEADCODE
-
 /** <!--*******************************************************************-->
  *
  * @fn node *POLYSfundef( node *arg_node, info *arg_info)
@@ -166,10 +122,6 @@ POLYSfundef (node *arg_node, info *arg_info)
 
     fundefold = INFO_FUNDEF (arg_info);
     INFO_FUNDEF (arg_info) = arg_node;
-
-#ifdef DEADCODE
-    arg_node = POLYSclearAvisIslTree (arg_node);
-#endif // DEADCODE
 
     if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
         if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_node == INFO_LACFUN (arg_info))) {
@@ -267,8 +219,7 @@ POLYSassign (node *arg_node, info *arg_info)
  * @fn node *POLYSap( node *arg_node, info *arg_info)
  *
  * @brief: If this is a non-recursive call of a LACFUN,
- *         set FUNDEF_CALLAP to point to this N_ap's N_assign node,
- *         then traverse the LACFUN.
+ *         traverse the LACFUN.
  *
  *****************************************************************************/
 node *
@@ -284,6 +235,10 @@ POLYSap (node *arg_node, info *arg_info)
         (lacfundef != INFO_FUNDEF (arg_info))) { /* Ignore recursive call */
         DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
                     FUNDEF_NAME (lacfundef), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+
+        // The following is insufficient, as pogorelational unit tests
+        // crash with this code only. I have changed POGO and PLUR to
+        // set CALLAP, etc., from the N_ap that calls the lacfun.
         POLYSsetClearCallAp (lacfundef, INFO_FUNDEF (arg_info), INFO_NASSIGN (arg_info));
 
         /* Traverse into the LACFUN */
@@ -404,10 +359,16 @@ POLYSdoPolyhedralTearDown (node *arg_node)
  *
  * @return arg_node, unchanged. Side effects on the relevant N_avis nodes.
  *
- * NB. Since WITHID elements are NOT SSA, elements in multiple partitions will share
+ * NB. Since WITHID elements are NOT SSA,
+ *     elements in multiple partitions will share
  *     the same N_AVIS nodes. This means that AVIS_NPART MUST be set on
  *     a traversal into a partition, and cleared on exiting from that partition.
- *     Hence, the DBUG_ASSERT statements below, in case you were not paying attention.
+ *     Hence, the DBUG_ASSERT statements below, in case you were not
+ *     paying attention.
+ *
+ *     The above paragraph is probably no longer correct, now that we operate
+ *     in -dossawl mode. However, I am not sure how/if we can maintain
+ *     AVIS_NPART even in SSA mode.
  *
  ******************************************************************************/
 node *

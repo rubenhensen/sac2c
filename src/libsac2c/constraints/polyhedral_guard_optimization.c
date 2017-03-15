@@ -17,23 +17,6 @@
  * FIXME: BODO WANTS annotation of above, and how ISL (POLYSTUFF)
  * can solve this.
  *
- *
- #ifdef DEADCODE
- * NB. This traversal runs within SAACYC, because PRFUNR and friends
- *     may create new guards on the fly.
- *
- * NB. In removing guards, we want to be sure that we have
- *     extrema on the guard result, based on the guard itself.
- *     For that reason, I moved the POGO traversal to follow
- *     IVEXP. I hope that is adequate. Before that change,
- *     the AWLF unit test nakedConsumerAndSumAKD.sac would fail to
- *     fold the naked consumer if -dopogo was active.
- *
- *     A better approach would be to make POGO operate only
- *     on nodes where the lhs (e.g., iv4 in the above example) has
- *     its appropriate extrema present.
-#endif // DEADCODE
- *
  *     2015-02-25: Extended POGO to operate on some relationals:
  *
  *        x <  y
@@ -264,7 +247,7 @@ POGOfundef (node *arg_node, info *arg_info)
 
     if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
         if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_node == INFO_LACFUN (arg_info))) {
-            /* Vanilla traversal or LACFUN via POGOap */
+            //  LACFUN traveral is in POGOap
             DBUG_PRINT ("Starting to traverse %s %s",
                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                         FUNDEF_NAME (arg_node));
@@ -370,6 +353,7 @@ POGOassign (node *arg_node, info *arg_info)
  *
  * @brief: If this is a non-recursive call of a LACFUN,
  *         set FUNDEF_CALLAP to point to this N_ap's N_assign node,
+ *         and FUNDEF_CALLERFUNDEF to pint to this N_ap's fundef node,
  *         then traverse the LACFUN.
  *
  *****************************************************************************/
@@ -382,17 +366,24 @@ POGOap (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     lacfundef = AP_FUNDEF (arg_node);
-    if ((FUNDEF_ISLACFUN (lacfundef)) &&         /* Ignore call to non-lacfun */
-        (lacfundef != INFO_FUNDEF (arg_info))) { /* Ignore recursive call */
+    if ((FUNDEF_ISLACFUN (lacfundef)) &&         // Ignore call to non-lacfun
+        (lacfundef != INFO_FUNDEF (arg_info))) { // Ignore recursive call
         DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
                     FUNDEF_NAME (lacfundef), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
-        /* Traverse into the LACFUN */
-        INFO_LACFUN (arg_info) = lacfundef; /* The called lacfun */
+
+        // Traverse into the LACFUN
+        INFO_LACFUN (arg_info) = lacfundef; // The called lacfun
+        FUNDEF_CALLAP (lacfundef) = INFO_NASSIGN (arg_info);
+        FUNDEF_CALLERFUNDEF (lacfundef) = INFO_FUNDEF (arg_info);
         newfundef = TRAVdo (lacfundef, arg_info);
         DBUG_ASSERT (newfundef = lacfundef,
                      "Did not expect N_fundef of LACFUN to change");
-        INFO_LACFUN (arg_info) = NULL; /* Back to normal traversal */
+        INFO_LACFUN (arg_info) = NULL; // Back to normal traversal
+        FUNDEF_CALLAP (lacfundef) = NULL;
+        FUNDEF_CALLERFUNDEF (lacfundef) = NULL;
     }
+
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }

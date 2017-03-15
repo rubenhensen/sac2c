@@ -790,6 +790,9 @@
         <travuser>
           <node name="Fundef" />
           <node name="Part" />
+          <node name="Assign" />
+          <node name="Ap" />
+          <node name="Let" />
         </travuser>
       </traversal> 
       <traversal id="POGO" name="Polyhedral Guard Optimization" default="sons" include="polyhedral_guard_optimization.h" >

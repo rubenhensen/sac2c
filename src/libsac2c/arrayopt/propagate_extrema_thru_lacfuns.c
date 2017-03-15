@@ -639,6 +639,7 @@ PETLap (node *arg_node, info *arg_info)
         INFO_LACFUN (arg_info) = calledfn; /* The called lacfun */
         calledfn = TRAVdo (calledfn, arg_info);
         INFO_LACFUN (arg_info) = NULL; /* Back to normal traversal */
+
         /* Append new outer call arguments if the LACFUN generated them for us */
         if (NULL != INFO_NEWOUTERAPARGS (arg_info)) {
             DBUG_PRINT ("Appending new arguments to call of %s from %s",

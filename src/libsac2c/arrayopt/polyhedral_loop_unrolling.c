@@ -66,10 +66,14 @@
 struct INFO {
     node *fundef;
     lut_t *varlut;
+    node *lacfun;
+    node *nassign;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_VARLUT(n) ((n)->varlut)
+#define INFO_LACFUN(n) ((n)->lacfun)
+#define INFO_NASSIGN(n) ((n)->nassign)
 
 static info *
 MakeInfo (void)
@@ -82,6 +86,8 @@ MakeInfo (void)
 
     INFO_FUNDEF (result) = NULL;
     INFO_VARLUT (result) = NULL;
+    INFO_LACFUN (result) = NULL;
+    INFO_NASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -109,6 +115,48 @@ FreeInfo (info *info)
 
 /** <!--*******************************************************************-->
  *
+ * @fn node *PLURap( node *arg_node, info *arg_info)
+ *
+ * @brief: If this is a non-recursive call of a LACFUN,
+ *         set FUNDEF_CALLAP to point to this N_ap's N_assign node,
+ *         and FUNDEF_CALLERFUNDEF to pint to this N_ap's fundef node,
+ *         then traverse the LACFUN.
+ *
+ *****************************************************************************/
+node *
+PLURap (node *arg_node, info *arg_info)
+{
+    node *lacfundef;
+    node *newfundef;
+
+    DBUG_ENTER ();
+
+    lacfundef = AP_FUNDEF (arg_node);
+    if ((FUNDEF_ISLACFUN (lacfundef)) &&         // Ignore call to non-lacfun
+        (NULL != INFO_LACFUN (arg_info)) &&      // Ignore vanilla traversal
+        (lacfundef != INFO_FUNDEF (arg_info))) { // Ignore recursive call
+        DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
+                    FUNDEF_NAME (lacfundef), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+
+        // Traverse into the LACFUN
+        INFO_LACFUN (arg_info) = lacfundef; // The called lacfun
+        FUNDEF_CALLAP (lacfundef) = INFO_NASSIGN (arg_info);
+        FUNDEF_CALLERFUNDEF (lacfundef) = INFO_FUNDEF (arg_info);
+        newfundef = TRAVdo (lacfundef, arg_info);
+        DBUG_ASSERT (newfundef = lacfundef,
+                     "Did not expect N_fundef of LACFUN to change");
+        INFO_LACFUN (arg_info) = NULL; // Back to normal traversal
+        FUNDEF_CALLAP (lacfundef) = NULL;
+        FUNDEF_CALLERFUNDEF (lacfundef) = NULL;
+    }
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
  * @fn node *PLURfundef( node *arg_node, info *arg_info)
  *
  * @brief Traverse LOOPFUNs only.
@@ -125,7 +173,9 @@ PLURfundef (node *arg_node, info *arg_info)
     fundefold = INFO_FUNDEF (arg_info);
     INFO_FUNDEF (arg_info) = arg_node;
 
-    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_ISLOOPFUN (arg_node))) {
+    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) &&    // Ignore wrappers
+        (arg_node != INFO_LACFUN (arg_info)) && // Ignore recursive call
+        (FUNDEF_ISLOOPFUN (arg_node))) {        // loopfuns only
         DBUG_PRINT ("Starting to traverse LOOPFUN %s", FUNDEF_NAME (arg_node));
         lc = PHUTgetLoopCount (arg_node, INFO_VARLUT (arg_info));
         if (UNR_NONE != lc) {
@@ -143,8 +193,41 @@ PLURfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = fundefold;
     DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
 
-    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *PLURlet( node *arg_node, info *arg_info)
+ *
+ *
+ *****************************************************************************/
+node *
+PLURlet (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ();
+
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *PLURassign( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+PLURassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    INFO_NASSIGN (arg_info) = arg_node;
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+    INFO_NASSIGN (arg_info) = NULL;
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
