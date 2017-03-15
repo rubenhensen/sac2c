@@ -8,6 +8,7 @@ extern node *LFUprefixFunctionArgument (node *arg_node, node *calleravis,
 extern bool LFUisLoopFunDependent (node *fundef, node *var);
 extern node *LFUgetRecursiveCallVariableFromArgs (node *var, node *fundef,
                                                   node *reccallargs);
+extern node *LFUgetCallerVariableFromArg (node *var, node *fundef);
 extern node *LFUgetArgFromRecursiveCallVariable (node *rcv, node *fundef);
 extern node *LFUgetStrideForAffineFun (node *rcv, node *lcv);
 extern int LFUgetMathSignumForAffineFun (node *rcv, node *lcv);

@@ -1254,6 +1254,7 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
     node *arrid;
     node *exprsintr;
     int i;
+    int loopcount = -1;
     int shp;
     int z = POLY_RET_UNKNOWN;
 
@@ -1280,10 +1281,10 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
 
                 exprscwl = PHUTgenerateAffineExprs (ivel, INFO_FUNDEF (arg_info),
                                                     INFO_VARLUT (arg_info),
-                                                    AVIS_ISLCLASSSETVARIABLE);
+                                                    AVIS_ISLCLASSSETVARIABLE, loopcount);
                 exprspwl = PHUTgenerateAffineExprs (pwlelavis, INFO_FUNDEF (arg_info),
                                                     INFO_VARLUT (arg_info),
-                                                    AVIS_ISLCLASSSETVARIABLE);
+                                                    AVIS_ISLCLASSSETVARIABLE, loopcount);
 
                 exprspwl = TCappendExprs (exprspwl, DUPdoDupTree (exprscwl));
 
@@ -1295,7 +1296,7 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
 
                 // Don't bother calling ISL if it can't do anything for us.
                 if ((NULL != exprscwl) && (NULL != exprspwl)) {
-                    z = PHUTcheckIntersection (exprspwl, exprscwl, NULL, exprsintr, NULL,
+                    z = PHUTcheckIntersection (exprspwl, exprscwl, exprsintr, NULL,
                                                INFO_VARLUT (arg_info), POLY_OPCODE_PWLF,
                                                AVIS_NAME (IDS_AVIS (
                                                  INFO_CONSUMERWLIDS (arg_info))));
@@ -1729,8 +1730,7 @@ PWLFmodarray (node *arg_node, info *arg_info)
  * @fn node *PWLFap( node *arg_node, info *arg_info)
  *
  * @brief: If this is a non-recursive call of a LACFUN,
- *         set FUNDEF_CALLAP to point to this N_ap's N_assign node,
- *         then traverse the LACFUN.
+ *         traverse the LACFUN.
  *
  *****************************************************************************/
 node *
@@ -1742,17 +1742,17 @@ PWLFap (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     lacfundef = AP_FUNDEF (arg_node);
-    if ((NULL == INFO_LACFUN (arg_info)) &&      /* Vanilla traversal */
-        (FUNDEF_ISLACFUN (lacfundef)) &&         /* Ignore non-lacfun call */
-        (lacfundef != INFO_FUNDEF (arg_info))) { /* Ignore recursive call */
+    if ((NULL == INFO_LACFUN (arg_info)) &&      // Vanilla traversal
+        (FUNDEF_ISLACFUN (lacfundef)) &&         // Ignore non-lacfun call
+        (lacfundef != INFO_FUNDEF (arg_info))) { // Ignore recursive call
         DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
                     FUNDEF_NAME (lacfundef), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         /* Traverse into the LACFUN */
-        INFO_LACFUN (arg_info) = lacfundef; /* The called lacfun */
+        INFO_LACFUN (arg_info) = lacfundef; // The called lacfun
         newfundef = TRAVdo (lacfundef, arg_info);
         DBUG_ASSERT (newfundef = lacfundef,
                      "Did not expect N_fundef of LACFUN to change");
-        INFO_LACFUN (arg_info) = NULL; /* Back to normal traversal */
+        INFO_LACFUN (arg_info) = NULL; // Back to normal traversal
     }
 
     DBUG_RETURN (arg_node);

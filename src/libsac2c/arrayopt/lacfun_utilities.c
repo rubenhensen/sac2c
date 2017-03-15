@@ -206,69 +206,6 @@ LFUisLoopFunDependent (node *fundef, node *arg)
     DBUG_RETURN (z);
 }
 
-#ifdef DEADCODE
-/** <!--********************************************************************-->
- *
- * @fn node *LFUgetCallArg (node *id, node *fundef, node *ext_assign)
- *
- * @params id: An N_id node in fundef, a LACFUN.
- *         fundef: the N_fundef entry for the LACFUN.
- *         ext_assign: The N_assign of the external call to the LACFUN.
- *
- * @brief 1. Ensure that N_id/N_Avis id is an N_arg of fundef.
- *
- *        2. Search the parameter list of the fundef arg chain for
- *           id, and return the ext_assign element that corresponds to
- *           that.
- *
- *           I.e., ext_assign[ FUNDEF_ARGS( fundef) iota id]
- *
- * @result The appropriate N_id from the external call argument list.
- *
- ******************************************************************************/
-node *
-LFUgetCallArg (node *id, node *fundef, node *ext_assign)
-{
-    node *arg_chain;
-    node *param_chain;
-    node *param;
-    node *avis;
-    int pos;
-    int i;
-
-    DBUG_ENTER ();
-
-    avis = (N_avis == NODE_TYPE (id)) ? id : ID_AVIS (id);
-    /* Check if id is an arg of this fundef */
-    if (NODE_TYPE (AVIS_DECL (avis)) != N_arg) {
-        DBUG_PRINT ("identifier %s is not fundef argument", AVIS_NAME (avis));
-        DBUG_RETURN (NULL);
-    }
-
-    /* Get argument position in fundef arg chain */
-    arg_chain = FUNDEF_ARGS (fundef);
-    pos = 1;
-    while ((arg_chain != NULL) && (arg_chain != AVIS_DECL (avis))) {
-        arg_chain = ARG_NEXT (arg_chain);
-        pos++;
-    }
-
-    DBUG_ASSERT (arg_chain != NULL, "arg not found in fundef arg chain");
-
-    /* Get matching parameter expr-node */
-    param_chain = AP_ARGS (ASSIGN_RHS (ext_assign));
-
-    for (i = 1; i < pos; i++) {
-        param_chain = EXPRS_NEXT (param_chain);
-    }
-
-    DBUG_ASSERT (param_chain != NULL, "missing matching parameter");
-    param = EXPRS_EXPR (param_chain);
-
-    DBUG_RETURN (param);
-}
-#endif // DEADCODE
-
 /** <!--********************************************************************-->
  *
  * @fn node *LFUgetRecursiveCallVariableFromArgs(node *var, node *fundef, node *args)
@@ -278,7 +215,7 @@ LFUgetCallArg (node *id, node *fundef, node *ext_assign)
  *        Almost: We chase back across any direct assigns for the args element,
  *        a la VP, so as to reduce the number of variables involved.
  *
- *        I.e.,  args[ FUNDEF_ARGS iota var]
+ *        I.e.,  reccallargs[ FUNDEF_ARGS iota var]
  *
  *        if var does not appear in args, we return NULL.
  *
@@ -288,9 +225,7 @@ LFUgetCallArg (node *id, node *fundef, node *ext_assign)
  *                 or its N_avis node.
  * @param: fundef: the LACFUN N_fundef node
  * @param: reccallargs:
- *                 An N_exprs chain:  Either a recursive call AP_ARGS list, or
- *                 an outer call AP_ARGS list.
- *                 If you want to search the FUNDEF_ARGS chain, look elsewhere.
+ *                 An N_exprs chain:  a recursive call AP_ARGS list.
  *
  * @result: The N_id of the calling function's args that corresponds to var.
  *
@@ -323,17 +258,69 @@ LFUgetRecursiveCallVariableFromArgs (node *var, node *fundef, node *reccallargs)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *LFUgetCallerVariableFromArg(node *var, node *fundef)
+ *
+ * @brief Given an N_id, var, that may appear in FUNDEF_ARGS( fundef),
+ *        return the N_id that has the same position in args.
+ *
+ *        I.e.,  callerargs[ FUNDEF_ARGS iota var]
+ *
+ *        if var does not appear in args, we return NULL.
+ *
+ *        if var does not appear in params, we return NULL.
+ *
+ * @param: var:    an N_id node in the LACFUNs N_arg list,
+ *                 or its N_avis node.
+ * @param: fundef: the LACFUN N_fundef node
+ *
+ * @result: The N_avis of the calling function's arg that corresponds to var.
+ *
+ *****************************************************************************/
+node *
+LFUgetCallerVariableFromArg (node *var, node *fundef)
+{
+    node *z = NULL;
+    node *fargs = NULL;
+    node *avis = NULL;
+    node *callerargs;
+
+    DBUG_ENTER ();
+
+    callerargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (FUNDEF_CALLAP (fundef))));
+    fargs = FUNDEF_ARGS (fundef);
+    avis = (N_id == NODE_TYPE (var)) ? ID_AVIS (var) : var;
+    while (callerargs && fargs && (avis != ARG_AVIS (fargs))) {
+        callerargs = EXPRS_NEXT (callerargs);
+        fargs = ARG_NEXT (fargs);
+    }
+
+    if (callerargs) {
+        z = ID_AVIS (EXPRS_EXPR (callerargs));
+        DBUG_PRINT ("LACFUN %s arg %s has caller value of %s", FUNDEF_NAME (fundef),
+                    AVIS_NAME (avis), AVIS_NAME (z));
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *LFUgetArgFromRecursiveCallVariable( node *rcv,
               node *fundef);
  *
  * @brief Given, rcv, an N_id or N_avis that is a recursive
  *        call variable in fundef, find the N_id node in
- *        the formal arguments (FUNDEF_ARGS) that corresponds to it,
- *        or NULL if not found.
+ *        the formal arguments (FUNDEF_ARGS) that corresponds to it.
+ *        I.e.:
+ *               FUNDEF_ARGS[ reccallargs iota rcv]
  *
  * @param: rcv:    an N_id node that appears in the recursive call
  *                 to the LOOPFUN, fundef.
  * @param: fundef: the LACFUN N_fundef node
+ *
+ * @result: The N_avis of the formal argument that corresponds to rcv.
+ *          If we do not find rcv in the recursive call, or if this
+ *          is a condfun, we return the rcv N_avis as the result.
  *
  *****************************************************************************/
 node *
@@ -342,7 +329,7 @@ LFUgetArgFromRecursiveCallVariable (node *rcv, node *fundef)
     node *z = NULL;
     node *fargs;
     node *reccallass;
-    node *reccallargs;
+    node *reccallargs = NULL;
     node *avis;
 
     DBUG_ENTER ();
@@ -350,17 +337,18 @@ LFUgetArgFromRecursiveCallVariable (node *rcv, node *fundef)
     fargs = FUNDEF_ARGS (fundef);
     avis = (N_avis == NODE_TYPE (rcv)) ? rcv : ID_AVIS (rcv);
     reccallass = LFUfindRecursiveCallAssign (fundef);
-    reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallass)));
-    while (reccallargs && fargs && (avis != ID_AVIS (EXPRS_EXPR (reccallargs)))) {
-        reccallargs = EXPRS_NEXT (reccallargs);
-        fargs = ARG_NEXT (fargs);
+    if (NULL != reccallass) { // loopfun
+        reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallass)));
+        while (reccallargs && fargs && (NULL == z)) {
+            z = (avis == ID_AVIS (EXPRS_EXPR (reccallargs))) ? ARG_AVIS (fargs) : NULL;
+            reccallargs = EXPRS_NEXT (reccallargs);
+            fargs = ARG_NEXT (fargs);
+        }
     }
 
-    if (fargs) {
-        z = ARG_AVIS (fargs);
-        DBUG_PRINT ("LACFUN %s arg %s has recursive call value of %s",
-                    FUNDEF_NAME (fundef), AVIS_NAME (avis), AVIS_NAME (z));
-    }
+    z = (NULL != z) ? z : avis;
+    DBUG_PRINT ("LACFUN %s arg %s has recursive call value of %s", FUNDEF_NAME (fundef),
+                AVIS_NAME (z), AVIS_NAME (avis));
 
     DBUG_RETURN (z);
 }

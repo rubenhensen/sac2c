@@ -89,7 +89,6 @@ struct INFO {
     node *nassign;
     node *lacfun;
     node *lacfunprf;
-    node *lacfunaft;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -100,7 +99,6 @@ struct INFO {
 #define INFO_NASSIGN(n) ((n)->nassign)
 #define INFO_LACFUN(n) ((n)->lacfun)
 #define INFO_LACFUNPRF(n) ((n)->lacfunprf)
-#define INFO_LACFUNAFT(n) ((n)->lacfunaft)
 
 static info *
 MakeInfo (void)
@@ -119,7 +117,6 @@ MakeInfo (void)
     INFO_NASSIGN (result) = NULL;
     INFO_LACFUN (result) = NULL;
     INFO_LACFUNPRF (result) = NULL;
-    INFO_LACFUNAFT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -275,11 +272,6 @@ POGOfundef (node *arg_node, info *arg_info)
             if (NULL != lacfunprf) { // LOOPFUNs only
                 lacfunprf = ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf)));
                 INFO_LACFUNPRF (arg_info) = LET_EXPR (lacfunprf);
-                INFO_LACFUNAFT (arg_info)
-                  = PHUTgenerateAffineExprs (IDS_AVIS (LET_IDS (lacfunprf)),
-                                             INFO_FUNDEF (arg_info),
-                                             INFO_VARLUT (arg_info),
-                                             AVIS_ISLCLASSSETVARIABLE);
             }
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
             INFO_LACFUNPRF (arg_info) = NULL;
@@ -288,9 +280,6 @@ POGOfundef (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = fundefold;
     INFO_LACFUNPRF (arg_info) = lacfunprfold;
-    INFO_LACFUNAFT (arg_info) = (NULL != INFO_LACFUNAFT (arg_info))
-                                  ? FREEdoFreeTree (INFO_LACFUNAFT (arg_info))
-                                  : NULL;
 
     DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
 
@@ -355,7 +344,6 @@ POGOwith (node *arg_node, info *arg_info)
  *
  * @fn node *POGOassign( node *arg_node, info *arg_info)
  *
- *
  *****************************************************************************/
 node *
 POGOassign (node *arg_node, info *arg_info)
@@ -370,6 +358,7 @@ POGOassign (node *arg_node, info *arg_info)
         arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
         INFO_PREASSIGNS (arg_info) = NULL;
     }
+
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -427,6 +416,41 @@ POGOlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!-- ****************************************************************** -->
+ *
+ * @fn int getLoopCountForFundef( node *arg_node, node *fundef)
+ *
+ * @brief Get the loopcount for the arithmetic progression vector
+ *        of this loopfun.
+ *
+ * @param  nid - the parameter variable we are analyzing
+ * @param  fundef - the N_fundef node for this loopfun
+ *
+ * @return: If nid is not part of the COND_COND that controls this
+ *          loopfun, return the loopcount. Otherwise, return -1.
+ *
+ ******************************************************************************/
+static int
+getLoopCountForFundef (node *arg_node, node *fundef)
+{
+    node *lacfunprf;
+    int z = -1;
+
+    DBUG_ENTER ();
+
+    lacfunprf = LFUfindLacfunConditional (fundef);
+    if (NULL != lacfunprf) { // LOOPFUNs only
+        lacfunprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf))));
+        if (lacfunprf != arg_node) { // THis is the COND_COND
+            // We add 1 because LOOPCOUNT excludes first iteration (tail recursion).
+            z = (UNR_NONE != FUNDEF_LOOPCOUNT (fundef)) ? 1 + FUNDEF_LOOPCOUNT (fundef)
+                                                        : -1;
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
 /** <!--*******************************************************************-->
  *
  * @fn node *POGOprf( node *arg_node, info *arg_info)
@@ -463,8 +487,10 @@ POGOlet (node *arg_node, info *arg_info)
  *            Next, if the result is still unknown, we look for empty
  *            set intersections:
  *
- *            If the intersection of B,C,RFN is empty, the result is FALSE; else unknown.
- *            If the intersection of B,C,CFN is empty, the result is TRUE; else unknown.
+ *            If the intersection of B,C,RFN is empty, the result is FALSE;
+ *               else unknown.
+ *            If the intersection of B,C,CFN is empty, the result is TRUE;
+ *               else unknown.
  *
  *****************************************************************************/
 node *
@@ -480,8 +506,8 @@ POGOprf (node *arg_node, info *arg_info)
     node *guardp;
     node *arg1 = NULL;
     node *arg2 = NULL;
-    node *exprscondcond = NULL;
     int emp = POLY_RET_UNKNOWN;
+    int loopcount = -1;
     bool dopoly = FALSE;
     bool z = FALSE;
     bool resval = FALSE;
@@ -492,7 +518,6 @@ POGOprf (node *arg_node, info *arg_info)
     res = arg_node;
     if ((PHUTisCompatibleAffinePrf (PRF_PRF (arg_node))) && (global.optimize.dopogo)
         && (PHUTisCompatibleAffineTypes (arg_node))) {
-
         switch (PRF_PRF (arg_node)) {
         case F_eq_SxS:
         case F_neq_SxS:
@@ -504,30 +529,33 @@ POGOprf (node *arg_node, info *arg_info)
         case F_val_le_val_SxS:
             DBUG_PRINT ("Looking at dyadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-
+            loopcount = getLoopCountForFundef (arg_node, INFO_FUNDEF (arg_info));
             // I don't like this, but we have to get both PRF_ARGs
             // as set variables before we get the AFT built.
             arg1 = PHUTskipChainedAssigns (PRF_ARG1 (arg_node));
             AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
             exprsX = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
-                                              AVIS_ISLCLASSSETVARIABLE);
+                                              AVIS_ISLCLASSSETVARIABLE, loopcount);
+
             arg2 = PHUTskipChainedAssigns (PRF_ARG2 (arg_node));
             AVIS_ISLCLASS (ID_AVIS (arg2)) = AVIS_ISLCLASSSETVARIABLE;
             exprsY = PHUTgenerateAffineExprs (arg2, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
-                                              AVIS_ISLCLASSSETVARIABLE);
+                                              AVIS_ISLCLASSSETVARIABLE, loopcount);
+
             dopoly = (NULL != exprsX) && (NULL != exprsY);
             break;
 
         case F_non_neg_val_S:
             DBUG_PRINT ("Looking at monadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+            loopcount = getLoopCountForFundef (arg_node, INFO_FUNDEF (arg_info));
             arg1 = PHUTskipChainedAssigns (PRF_ARG1 (arg_node));
             AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
             exprsX = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
-                                              AVIS_ISLCLASSSETVARIABLE);
+                                              AVIS_ISLCLASSSETVARIABLE, loopcount);
             exprsY = NULL;
             dopoly = (NULL != exprsX);
             break;
@@ -548,14 +576,7 @@ POGOprf (node *arg_node, info *arg_info)
                                                         LFUdualFun (PRF_PRF (arg_node)),
                                                         INFO_VARLUT (arg_info), 0);
 
-            // Pass in loopfun information, unless we are looking at
-            // the loopfun's COND_COND.
-            exprscondcond = ((NULL != INFO_LACFUNAFT (arg_info))
-                             && (INFO_LACFUNPRF (arg_info) != arg_node))
-                              ? DUPdoDupTree (INFO_LACFUNAFT (arg_info))
-                              : NULL;
-
-            emp = PHUTcheckIntersection (exprsX, exprsY, exprscondcond, exprsFn, exprsCfn,
+            emp = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn,
                                          INFO_VARLUT (arg_info), POLY_OPCODE_INTERSECT,
                                          AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             exprsX = NULL; // PHUTcheckIntersection consumes the N_exprs
@@ -700,8 +721,8 @@ POGOisPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         // We look for NULL intersect on the dual function: arg1 <= 0
         exprsFn = PHUTgenerateAffineExprsForGuard (F_le_SxS, arg1, zro, fundef, F_le_SxS,
                                                    varlut, 0);
-        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, NULL, exprsFn, NULL,
-                                     varlut, POLY_OPCODE_INTERSECT, "POGOisPositive");
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT, "POGOisPositive");
         z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
@@ -754,8 +775,8 @@ POGOisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         // We look for NULL intersect on the dual function: arg1 >= 0
         exprsFn = PHUTgenerateAffineExprsForGuard (F_ge_SxS, arg1, zro, fundef, F_ge_SxS,
                                                    varlut, 0);
-        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, NULL, exprsFn, NULL,
-                                     varlut, POLY_OPCODE_INTERSECT, "POGOisNegative");
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT, "POGOisNegative");
         z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
@@ -808,8 +829,8 @@ POGOisNonPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         // We look for NULL intersect on the dual function  arg1 > 0
         exprsFn = PHUTgenerateAffineExprsForGuard (F_gt_SxS, arg1, zro, fundef, F_gt_SxS,
                                                    varlut, 0);
-        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, NULL, exprsFn, NULL,
-                                     varlut, POLY_OPCODE_INTERSECT, "POGOisNonPositive");
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT, "POGOisNonPositive");
         z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
@@ -862,8 +883,8 @@ POGOisNonNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         // We look for NULL intersect on the dual function  arg1 < 0
         exprsFn = PHUTgenerateAffineExprsForGuard (F_lt_SxS, arg1, zro, fundef, F_lt_SxS,
                                                    varlut, 0);
-        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, NULL, exprsFn, NULL,
-                                     varlut, POLY_OPCODE_INTERSECT, "POGOisNonNegative");
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT, "POGOisNonNegative");
         z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
