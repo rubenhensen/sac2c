@@ -21,6 +21,7 @@ MACRO (GET_USERNAME RES)
   ENDIF ()
 ENDMACRO ()
 
+# ensure that a library is present
 MACRO (ASSERT_LIB VAR lib_name lib_func)
     FIND_LIBRARY (${VAR}_LIB      "${lib_name}")
     IF (${VAR}_LIB)
@@ -31,6 +32,29 @@ MACRO (ASSERT_LIB VAR lib_name lib_func)
     IF (NOT ${VAR}_FOUND OR NOT ${VAR}_LIB)
         MESSAGE (FATAL_ERROR "Cannot find '${lib_name}' library which must be present to compile sac2c")
     ENDIF ()
+ENDMACRO ()
+
+# check if a library is needed or not
+# this function updates both the CMAKE_REQUIRED_LIBRARIES
+# macro *and* the SAC2CRC_LIBS macro.
+MACRO (LIB_NEEDED LIBNAME FUNCNAME SOURCE)
+  CHECK_C_SOURCE_COMPILES ("${SOURCE}" ${LIBNAME}_COMPILE_TEST)
+  IF (NOT ${LIBNAME}_COMPILE_TEST)
+    CHECK_LIBRARY_EXISTS ("${LIBNAME}" "${FUNCNAME}" "" LIB_FOUND)
+    IF (NOT LIB_FOUND)
+      MESSAGE (FATAL_ERROR "Lib${LIBNAME} is needed, but cannot be found!")
+    ENDIF ()
+    UNSET (LIB_FOUND CACHE)
+    UNSET (${LIBNAME}_COMPILE_TEST CACHE)
+    LIST (APPEND CMAKE_REQUIRED_LIBRARIES "${LIBNAME}")
+    CHECK_C_SOURCE_COMPILES ("${SOURCE}" ${LIBNAME}_COMPILE_TEST)
+    IF (${LIBNAME}_COMPILE_TEST)
+      LIST (APPEND SAC2CRC_LIBS "-l${LIBNAME}")
+    ELSE ()
+      MESSAGE (FATAL_ERROR "Unable to compile `${FUNCNAME}' example!")
+    ENDIF ()
+  ENDIF ()
+  UNSET (${LIBNAME}_COMPILE_TEST CACHE)
 ENDMACRO ()
 
 # Check if compiler `flag' is supported, and if so append it to the `var' string.

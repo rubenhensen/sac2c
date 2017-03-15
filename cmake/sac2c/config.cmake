@@ -138,34 +138,23 @@ CHECK_FUNCTION_EXISTS (strrchr HAVE_STRRCHR)
 CHECK_FUNCTION_EXISTS (mkdtemp HAVE_MKDTEMP)
 
 # Check if we have clock_gettime and whether we need -lrt
-# FIXME(artem) This check doesn't do what it claims it is
-#              doing.  Instead of checking whether we *need*
-#              rtlib (not needed if glibc >= 2.17) to compile
-#              the piece of code, it finds the rt library and adds
-#              it to definitions if the code *can* be compiled.
-SET (ENABLE_GETTIME OFF)
-SET (LIB_RT "")
-FIND_LIBRARY (RT_LIB      "rt")
-IF (RT_LIB)
-    GET_FILENAME_COMPONENT (RT_PATH  ${RT_LIB} PATH)
-    CHECK_LIBRARY_EXISTS (${RT_LIB} "clock_gettime" ${RT_PATH} RT_FOUND)
-ENDIF ()
-IF (RT_LIB AND RT_FOUND)
-   CHECK_C_SOURCE_COMPILES ("
-       #include <time.h>
-       #include <sys/times.h>
-       int main (void) {
-         struct timespec ts;
-         clock_gettime(CLOCK_MONOTONIC, &ts);
-         return 0;
-       }
-   "
-   ENABLE_GETTIME
-   )
-   IF (ENABLE_GETTIME)
-      SET (LIB_RT  -Xl -lrt)
-   ENDIF ()
-ENDIF ()
+LIB_NEEDED ("rt" "clock_gettime" "
+  #include <time.h>
+  #include <sys/times.h>
+  int main (void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return 0;
+  }
+")
+
+# check if we have 'pow' and if we need libm
+LIB_NEEDED ("m" "pow" "
+  #include <math.h>
+  int main(void) {
+    return pow(3, 1.4);
+  }
+")
 
 # Check libraries for optional isl support
 SET (ISL_LIB_PATH "")
