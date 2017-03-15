@@ -133,7 +133,6 @@ PLURap (node *arg_node, info *arg_info)
 
     lacfundef = AP_FUNDEF (arg_node);
     if ((FUNDEF_ISLACFUN (lacfundef)) &&         // Ignore call to non-lacfun
-        (NULL != INFO_LACFUN (arg_info)) &&      // Ignore vanilla traversal
         (lacfundef != INFO_FUNDEF (arg_info))) { // Ignore recursive call
         DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
                     FUNDEF_NAME (lacfundef), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
@@ -173,25 +172,32 @@ PLURfundef (node *arg_node, info *arg_info)
     fundefold = INFO_FUNDEF (arg_info);
     INFO_FUNDEF (arg_info) = arg_node;
 
-    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) &&    // Ignore wrappers
-        (arg_node != INFO_LACFUN (arg_info)) && // Ignore recursive call
-        (FUNDEF_ISLOOPFUN (arg_node))) {        // loopfuns only
-        DBUG_PRINT ("Starting to traverse LOOPFUN %s", FUNDEF_NAME (arg_node));
-        lc = PHUTgetLoopCount (arg_node, INFO_VARLUT (arg_info));
-        if (UNR_NONE != lc) {
-            DBUG_PRINT ("Loop count for LOOPFUN %s was %d, is now %d",
-                        FUNDEF_NAME (INFO_FUNDEF (arg_info)), FUNDEF_LOOPCOUNT (arg_node),
-                        lc);
-            FUNDEF_LOOPCOUNT (arg_node) = lc;
-            global.optcounters.plur_expr++;
+    if (!FUNDEF_ISWRAPPERFUN (arg_node)) { // Ignore wrappers
+        if (FUNDEF_ISLOOPFUN (arg_node)) { // loopfuns only
+            DBUG_PRINT ("Starting to traverse LOOPFUN %s", FUNDEF_NAME (arg_node));
+            lc = PHUTgetLoopCount (arg_node, INFO_VARLUT (arg_info));
+            if (UNR_NONE != lc) {
+                DBUG_PRINT ("FUNDEF_LOOPCOUNT for LOOPFUN %s was %d, is now %d",
+                            FUNDEF_NAME (INFO_FUNDEF (arg_info)),
+                            FUNDEF_LOOPCOUNT (arg_node), lc);
+                FUNDEF_LOOPCOUNT (arg_node) = lc;
+                global.optcounters.plur_expr++;
+            } else {
+                DBUG_PRINT ("FUNDEF_LOOPCOUNT for LOOPFUN %s not found",
+                            FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+            }
+        } else {
+            // Traverse normal function
+            DBUG_PRINT ("Starting to traverse normal fun %s", FUNDEF_NAME (arg_node));
+            FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         }
-    }
 
-    PHUTclearAvisIslAttributes (INFO_VARLUT (arg_info));
-    DBUG_PRINT ("Removing content from VARLUT");
-    LUTremoveContentLut (INFO_VARLUT (arg_info));
-    INFO_FUNDEF (arg_info) = fundefold;
-    DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
+        PHUTclearAvisIslAttributes (INFO_VARLUT (arg_info));
+        DBUG_PRINT ("Removing content from VARLUT");
+        LUTremoveContentLut (INFO_VARLUT (arg_info));
+        INFO_FUNDEF (arg_info) = fundefold;
+        DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }

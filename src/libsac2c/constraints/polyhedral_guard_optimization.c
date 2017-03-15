@@ -245,20 +245,17 @@ POGOfundef (node *arg_node, info *arg_info)
     lacfunprfold = INFO_LACFUNPRF (arg_info);
     INFO_LACFUNPRF (arg_info) = NULL;
 
-    if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
-        if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_node == INFO_LACFUN (arg_info))) {
-            //  LACFUN traveral is in POGOap
-            DBUG_PRINT ("Starting to traverse %s %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                        FUNDEF_NAME (arg_node));
+    if (!FUNDEF_ISWRAPPERFUN (arg_node)) { // Ignore wrappers
+        DBUG_PRINT ("Starting to traverse function %s", FUNDEF_NAME (arg_node));
+        if (!FUNDEF_ISLACFUN (arg_node)) {
             lacfunprf = LFUfindLacfunConditional (arg_node);
-            if (NULL != lacfunprf) { // LOOPFUNs only
+            if (NULL != lacfunprf) {
                 lacfunprf = ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf)));
                 INFO_LACFUNPRF (arg_info) = LET_EXPR (lacfunprf);
             }
-            FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-            INFO_LACFUNPRF (arg_info) = NULL;
         }
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+        INFO_LACFUNPRF (arg_info) = NULL;
     }
 
     INFO_FUNDEF (arg_info) = fundefold;

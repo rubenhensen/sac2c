@@ -1330,6 +1330,8 @@ PWLFfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    int fixme; // go see how POGO does this. We also have to fix PWLFap
+               // the same way.
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("Begin %s %s",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
