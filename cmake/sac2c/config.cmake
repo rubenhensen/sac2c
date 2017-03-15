@@ -6,9 +6,9 @@
 ##    * check_sl.m4 -- I don't know if it is still useful.
 ##    * check_stdlib.m4 -- Is it useful at all?
 ##    * check_brackets.m4 -- The check is not properly implemented, port it!
-## 
+##
 
-## This files is analogous to configure.ac (*.m4 files) used in the 
+## This files is analogous to configure.ac (*.m4 files) used in the
 ## autotools build system.
 ##
 ## The configuration is organised as follows:
@@ -88,6 +88,11 @@ IF (DEFINED ENV{LD_LIBRARY_PATH}) #FIXME (hans) : DYLD_... on darwin
   UNSET (ldpathList)
 ENDIF ()
 
+# Some global macros to populate various SAC2CRC variables
+SET (SAC2CRC_LIBS) # Libraries, e.g. '-lname'
+SET (SAC2CRC_LIBS_PATHS) # Library paths, e.g. /usr/lib
+SET (SAC2CRC_INCS) # Header paths, e.g. /usr/include
+
 # FIXME(artem) use CYGWIN value directly. [after the move to cmake]
 SET (IS_CYGWIN  ${CYGWIN})
 
@@ -121,7 +126,6 @@ CHECK_C_SOURCE_COMPILES ("
     "
     HAVE_GCC_SIMD_OPERATIONS
 )
-
 
 # Check headers.
 CHECK_INCLUDE_FILES (inttypes.h HAVE_INTTYPES_H)
@@ -234,16 +238,19 @@ IF (LPEL)
 ENDIF ()
 
 # check for HWLOC (relevant for runtime system)
-SET (HWLOC_LIB_PATH "")
 SET (ENABLE_HWLOC OFF)
 IF (HWLOC)
     FIND_LIBRARY (LIB_HWLOC NAMES "hwloc")
     CHECK_INCLUDE_FILES (hwloc.h HAVE_HWLOC_H)
     IF (LIB_HWLOC AND HAVE_HWLOC_H)
-      GET_FILENAME_COMPONENT (HWLOC_LIB_PATH ${LIB_HWLOC} PATH)
-      FIND_PATH (HWLOC_INC_PATH NAMES "hwloc.h")
+      GET_FILENAME_COMPONENT (hwloc_lib_path ${LIB_HWLOC} PATH)
+      LIST (APPEND SAC2CRC_LIBS_PATHS "${hwloc_lib_path}")
+      UNSET (hwloc_lib_path)
+      FIND_PATH (hwloc_inc_path NAMES "hwloc.h")
+      LIST (APPEND SAC2CRC_INCS "${hwloc_inc_path}")
+      UNSET (hwloc_inc_path)
       SET (ENABLE_HWLOC ON)
-      SET (HWLOC_LIB "-lhwloc")
+      LIST (APPEND SAC2CRC_LIBS "-lhwloc")
     ENDIF ()
 ENDIF ()
 
@@ -483,9 +490,12 @@ SET (CPP         "${CPP_CMD} -P")
 # FIXME(artem) These are named differently now in the configure.ac
 SET (CCMTLINK    "")
 SET (CCDLLINK    "")
-SET (EXTLIBPATH  "${HWLOC_LIB_PATH}:") # all variables need to be colon separated, including one at the end
-SET (LIBS        " ${HWLOC_LIB}")
-SET (INCS        "${HWLOC_INC_PATH}:") # all variables need to be colon separated, including one at the end
+STRING (REPLACE ";" ":" SAC2CRC_LIBS_PATHS_STR "${SAC2CRC_LIBS_PATHS}")
+SET (EXTLIBPATH  "${SAC2CRC_LIBS_PATHS_STR}:") # all variables need to be colon separated, including one at the end
+STRING (REPLACE ";" " " SAC2CRC_LIBS_STR "${SAC2CRC_LIBS}")
+SET (LIBS        " ${SAC2CRC_LIBS_STR}")
+STRING (REPLACE ";" ":" SAC2CRC_INCS_STR "${SAC2CRC_INCS}")
+SET (INCS        "${SAC2CRC_INCS_STR}:") # all variables need to be colon separated, including one at the end
 
 IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (GCC_FLAGS   "")
