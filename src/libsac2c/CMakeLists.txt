@@ -587,6 +587,10 @@ IF (ENABLE_BARVINOK)
     LIST (APPEND LIB_LIST ${LIB_BARVINOK})
 ENDIF ()
 
+# Add INTERNAL_MALLOC definition that makes it possible to use `malloc'
+# as an alias fo MEMmalloc within libsac2c code.
+ADD_DEFINITIONS (-DINTERNAL_MALLOC)
+
 ADD_LIBRARY (sac2cShared SHARED ${SAC2C_SRC})
 SET_TARGET_PROPERTIES (sac2cShared
   PROPERTIES 
