@@ -116,7 +116,6 @@ ExternalProject_Add(runtime_libraries
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DBUILD_TYPE_POSTFIX=${BUILD_TYPE_POSTFIX}
         -DSHARED_LIB_EXT=${SHARED_LIB_EXT}
-        -DLIB_RT=${LIB_RT}
 )
 # We set dependencies on the configure step, this makes sure we propogate
 # certain values (such as from sac2crc).
