@@ -2353,8 +2353,11 @@ LURfundef (node *arg_node, info *arg_info)
     /* traverse block of fundef */
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-    /* analyse fundef for possible unrolling */
-    unrolling = GetLoopUnrolling (arg_node, INFO_EXT_ASSIGN (arg_info));
+    // analyse fundef for possible unrolling
+    // Use FUNDEF_LOOPCOUNT, if available
+    unrolling = (UNR_NONE != FUNDEF_LOOPCOUNT (arg_node))
+                  ? FUNDEF_LOOPCOUNT (arg_node)
+                  : GetLoopUnrolling (arg_node, INFO_EXT_ASSIGN (arg_info));
 
     if (unrolling != UNR_NONE) {
         if (unrolling <= global.unrnum) {
@@ -2362,8 +2365,7 @@ LURfundef (node *arg_node, info *arg_info)
 
             global.optcounters.lunr_expr++;
 
-            /* start do-loop unrolling - this leads to non ssa form
-             * code */
+            // start do-loop unrolling - this leads to non ssa form code
             arg_node = UnrollLoopBody (arg_node, unrolling, arg_info);
 
         } else {

@@ -5,6 +5,40 @@
  * @brief: This file contains utilities that are common to
  *         traversals operating on LOOPFUNs and CONDFUNs.
  *
+ *
+ *  Loopfun nomenclature:
+ *
+ *        Here is a typical loop:
+ *
+ *        iv = 0;
+ *        lim = id(666);
+ *        zin = 0;
+ *        z = loop( iv, lim);
+ *
+ *        int loop( II, lim, zin )
+ *        {
+ *          incr = 2;
+ *          incr2 = 3;
+ *          II' = II + incr;
+ *          II'' = II' + incr2;
+ *          zin = zin + 1;
+ *          if( II'' < lim)
+ *          {
+ *            z = loop( II'', lim, z);
+ *          } else {
+ *            return( z);
+ *          }
+ *       }
+ *
+ *       initial value: iv
+ *       limit value: lim
+ *       increment: incr, incr2
+ *       loop-dependent value: II, II', II'', zin
+ *       loop-dependent argument: II
+ *          All loop-dependent arguments are members of the
+ *          loopfun's N_arg formal parameter list
+ *       recursive call value: II'', z
+ *
  **************************************************************************/
 
 #include "tree_basic.h"
@@ -99,19 +133,17 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
 }
 
 /** <!--***********************************************************************-->
- *
- * @fn bool LFUisLoopFunInvariant( node *fundef, node *arg,
- *                                 node *rca)
+ * @fn bool LFUisLoopfunInvariant(...)
  *
  * @brief true if fundef is not a LOOPFUN.
- *        true if fundef IS a LOOPFUN, and arg (the current
- *        LOOPFUN N_arg element) is the same as rca (recursivecallavis),
- *        the current inner N_ap recursive call element.
+ *        true if fundef IS a LOOPFUN, and arg is the same as
+ *        the LOOPFUN's N_ap recursive call element that corresponds
+ *        to avis.
  *
- * @param fundef:    LACFUN N_fundef in question
- *        arg:       The current N_id or N_avis element of the lacfun's N_arg.
- *        rca:       The current N_id of the recursive call of fundef.
- *                   In the example below, this is iv'.
+ * @param
+ *        avis:      An N_avis node, which must be an N_arg element
+ *                   of a loopfun
+ *        fundef:    LACFUN N_fundef in question
  *
  * @result: True if the above brief holds.
  *
@@ -121,86 +153,42 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
  *
  *             outer call:   Loop( outeriv...)
  *
- *             int Loop( arg...)
+ *             int Loop( avis...)
  *                ...
- *               s0 = arg[0];
- *               s1 = arg[1];
- *               iv' = [ s0, s1];
- *               Loop( iv'...);
+ *               s0 = avis[0];
+ *               s1 = avis[1];
+ *               rca = [ s0, s1];
+ *               Loop( rca...);
  *
- *            This code recognizes that iv' and arg are the same.
- *
- ******************************************************************************/
-static bool
-LFUisLoopFunInvariant (node *fundef, node *arg, node *rca)
-{
-    bool z = TRUE;
-    node *proxy;
-    node *avis;
-
-    DBUG_ENTER ();
-
-    avis = (N_avis == NODE_TYPE (arg)) ? arg : ID_AVIS (arg);
-    if (FUNDEF_ISLOOPFUN (fundef)) {
-        z = avis == ID_AVIS (rca);
-        if (!z) {
-            proxy = IVUTarrayFromProxySel (rca);
-            if (NULL != proxy) {
-                z = (avis == ID_AVIS (proxy));
-            }
-        }
-
-        if (!z) {
-            proxy = IVUTarrayFromProxyIdxsel (rca);
-            if (NULL != proxy) {
-                z = (avis == ID_AVIS (proxy));
-            }
-        }
-    }
-    DBUG_PRINT ("inneriv=%s and rca=%s are %s loop-invariant", AVIS_NAME (avis),
-                ((NULL != rca) ? AVIS_NAME (ID_AVIS (rca)) : "notrecursive!"),
-                ((z ? "" : "not")));
-
-    DBUG_RETURN (z);
-}
-
-/** <!--***********************************************************************-->
- *
- * @fn bool LFUisLoopFunDependent( node *fundef, node *var)
- *
- * @brief false if fundef is not a LOOPFUN.
- *        true if fundef IS a LOOPFUN, and arg (some variable in the LOOPFUN)
- *        is loop-dependent
- *
- * @param fundef:    LACFUN N_fundef in question
- *        arg:   An N_id or N_avis, corresponding to a variable in FUNDEF_ARGS
- *
- * @result: True if the above brief holds.
- *
- * @comment: See comment in LFUisLoopFunInvariant re selproxy
+ *            This function does recognize that rca and avis are the same,
+ *            when a selproxy is present.
  *
  ******************************************************************************/
 bool
-LFUisLoopFunDependent (node *fundef, node *arg)
+LFUisLoopfunInvariant (node *avis, node *fundef)
 {
-    node *avis = NULL;
-    node *reccallass;
-    node *reccallargs;
-    node *rcv;
-    char *isisnot;
     bool z = FALSE;
+    node *proxy;
+    node *rca;
 
     DBUG_ENTER ();
 
-    if (FUNDEF_ISLOOPFUN (fundef)) {
-        avis = (N_avis == NODE_TYPE (arg)) ? arg : ID_AVIS (arg);
-        reccallass = LFUfindRecursiveCallAssign (fundef);
-        reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallass)));
-        rcv = LFUgetRecursiveCallVariableFromArgs (avis, fundef, reccallargs);
-        z = (NULL != rcv) && (!LFUisLoopFunInvariant (fundef, avis, rcv));
-        isisnot = z ? "" : "not ";
-        DBUG_PRINT ("arg=%s is %sloop-dependent in %d", AVIS_NAME (avis), isisnot,
-                    FUNDEF_NAME (fundef));
+    z = TYisAKV (AVIS_TYPE (avis)); // Constants are loop-invariant
+    rca = LFUgetRecursiveCallVariableFromArg (avis, fundef);
+    DBUG_ASSERT (NULL != rca, "Did not find recursive call variable");
+    if ((!z)) {
+        if (FUNDEF_ISLOOPFUN (fundef)) {
+            z = avis == ID_AVIS (rca);
+            if (!z) {
+                proxy = IVUTarrayFromProxySel (rca);
+                if (NULL != proxy) {
+                    z = (avis == ID_AVIS (proxy));
+                }
+            }
+        }
+        DBUG_PRINT ("Loopfun %s arg=%s and rca=%s are %s loop-invariant",
+                    FUNDEF_NAME (fundef), AVIS_NAME (avis), AVIS_NAME (ID_AVIS (rca)),
+                    ((z ? "" : "not")));
     }
 
     DBUG_RETURN (z);
@@ -230,7 +218,7 @@ LFUisLoopFunDependent (node *fundef, node *arg)
  * @result: The N_id of the calling function's args that corresponds to var.
  *
  *****************************************************************************/
-node *
+static node *
 LFUgetRecursiveCallVariableFromArgs (node *var, node *fundef, node *reccallargs)
 {
     node *z = NULL;
@@ -645,14 +633,14 @@ LFUfindLoopInductionVariable (node *arg_node)
  * @brief: Predicate for checking that an N_avis node is
  *         a member of an N_arg chain.
  *
- * @param: arg_node - an N_avis node.
- *         args     - an N_arg chain.
+ * @param: avis - an N_avis node
+ *         args - an N_arg chain
  *
- * @result: TRUE if arg_node is a member of the N_arg chain.
+ * @result: TRUE if avis is a member of the N_arg chain
  *
  *****************************************************************************/
 bool
-LFUisAvisMemberArg (node *arg_node, node *args)
+LFUisAvisMemberArg (node *avis, node *args)
 {
     bool z = FALSE;
 
@@ -660,7 +648,7 @@ LFUisAvisMemberArg (node *arg_node, node *args)
 
     DBUG_ASSERT (N_arg == NODE_TYPE (args), "Expected N_arg chain");
     while ((NULL != args) && (!z)) {
-        z = (arg_node == ARG_AVIS (args));
+        z = (avis == ARG_AVIS (args));
         args = ARG_NEXT (args);
     }
 
@@ -1298,6 +1286,7 @@ LFUdualFun (prf nprf)
  * @brief Given a recursive call variable, rcv, attempt to find the
  *        N_id of its stride. E.g., if rcv is II', then
  *        we look for:
+ *
  *         II' = II +- stride
  *        or
  *         II' = stride + II
@@ -1377,8 +1366,119 @@ LFUgetMathSignumForAffineFun (node *rcv, node *lcv)
         mathsignum
           = (F_add_SxS == PRF_PRF (fn)) ? 1 : (F_sub_SxS == PRF_PRF (fn)) ? -1 : 0;
     }
+    DBUG_PRINT ("Stride signum for %s is %d", AVIS_NAME (ID_AVIS (rcv)), mathsignum);
 
     DBUG_RETURN (mathsignum);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *LFUgetGetRecursiveCallVariableFromArg(...)
+ *
+ * @brief  Find the II' corresponding to II, in a LOOPFUN such as:
+ *
+ *          Loop( II)
+ *          { II' = II + 1;
+ *            if (cond...) Loop( II')
+ *          }
+ *
+ * @param fundef - the N_fundef LOOPFUN we are interested in
+ * @param arg - the N_avis for an N_arg variable in a LOOPFUN (II)
+ *
+ * @return The recursive call variable, II'
+ *
+ ******************************************************************************/
+node *
+LFUgetRecursiveCallVariableFromArg (node *arg, node *fundef)
+{
+    node *z = NULL;
+    node *reccallass;
+    node *reccallargs;
+
+    DBUG_ENTER ();
+
+    reccallass = LFUfindRecursiveCallAssign (fundef);
+    reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallass)));
+    z = LFUgetRecursiveCallVariableFromArgs (arg, fundef, reccallargs);
+
+    DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *LFUgetStrideInfo(...)
+ *
+ * @brief Get strideid, stridesign, and mathsign from
+ *        the N_prf expn that controls recursion in a loopfun
+ *
+ *        We have a loopfun such as:
+ *
+ *          Loop( II)
+ *          { II' = II + strideid;
+ *           or
+ *            II' = II - strideid;
+ *           or
+ *            II' = strideid + II;
+ *            if ( II' < limit) Loop( II')
+ *          }
+ *
+ *
+ * @param expn: The N_prf giving II'
+ * @param lcv: N_avis for II, the incoming loop-carried variable
+ * @param stridesign: address of the stride sign of the increment,
+ *        corrected for subtraction
+ *                 0 = unknown
+ *                 1 = +
+ *                -1 = -
+ *
+ * @return strideid, if known, else NULL.
+ *
+ * @side effects: Set stridesignum in caller.
+ *
+ ******************************************************************************/
+node *
+LFUgetStrideInfo (node *expn, node *lcv, int *stridesgn)
+{
+    node *exprslarg = NULL;
+    node *exprsrarg = NULL;
+    node *strideid = NULL;
+    prf exprspfn;
+    int mathsign = 1;
+    int stridesignum = 0;
+
+    DBUG_ENTER ();
+
+    exprspfn = PRF_PRF (expn);
+    exprslarg = PRF_ARG1 (expn);
+    exprsrarg = PRF_ARG2 (expn);
+
+    // Find value of stride. We are looking for: rcv = nid +- something, etc.
+    if ((F_add_SxS == exprspfn) && (N_id == NODE_TYPE (exprslarg))
+        && (lcv == ID_AVIS (exprslarg))) {
+        strideid = exprsrarg; // nid + stride
+        mathsign = 1;
+
+    } else if ((F_add_SxS == exprspfn) && (N_id == NODE_TYPE (exprsrarg))
+               && (lcv == ID_AVIS (exprsrarg))) {
+        strideid = exprslarg; // stride + nid
+        mathsign = 1;
+
+    } else if ((F_sub_SxS == exprspfn) && (N_id == NODE_TYPE (exprslarg))
+               && (lcv == ID_AVIS (exprslarg))) {
+        strideid = exprsrarg; // nid - stride
+        mathsign = -1;
+    }
+
+    // Find sign of stride, corrected for F_sub.
+    if (NULL != strideid) {
+        stridesignum
+          = mathsign * SCSisPositive (strideid) ? 1 : SCSisNegative (strideid) ? -1 : 0;
+    }
+
+    // Do side effects on caller
+    *stridesgn = stridesignum;
+
+    DBUG_RETURN (strideid);
 }
 
 #undef DBUG_PREFIX

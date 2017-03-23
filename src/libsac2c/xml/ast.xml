@@ -9016,9 +9016,13 @@ N_tfarg :
 
       <flags>
         <flag name="SSADefined" />
-        <flag name="SSALPINV" />
+        <flag name="SSALPINV" >
+          <description>
+	    True denotes that this variable is loop-invariant.
+          </description>
+        </flag>
         <flag name="IsAlias" default="TRUE" >
-          <description>Set by the Alias Analysis traversel, AVIS_ISALIAS 
+          <description>Set by the Alias Analysis traversal, AVIS_ISALIAS 
             denotes whether there can be more than one identifier for a 
             given data object.</description>
         </flag>

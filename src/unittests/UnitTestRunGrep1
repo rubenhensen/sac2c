@@ -17,7 +17,7 @@ function getargs
  s5=$8
  s6=$9
 }
- ## HUSH         echo RunGrep1 testing: $1
+ echo RunGrep1 testing: $1
  # Extract result-checking args from source file
  args=`grep RESULT: $1`
  args=${args#/* RESULT: }
@@ -82,3 +82,4 @@ echo $( date)       >> $logfile
  # This test leaves grepn.$1 and grepd.$1 around for possible later
  # inspection by the puzzled programmer.
 
+ echo RunGrep1 done testing: $1

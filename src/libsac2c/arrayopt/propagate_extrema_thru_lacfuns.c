@@ -251,9 +251,10 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
     ntype *typ;
     node *reccall;
     node *newrecursiveapargs = NULL;
-    node *lfa;
+    node *lfaavis = NULL;
 
     DBUG_ENTER ();
+
     DBUG_PRINT ("Attempting to enhance LACFUN %s header", FUNDEF_NAME (arg_node));
     INFO_NEWARGS (arg_info) = NULL;
     INFO_NEWOUTERAPARGS (arg_info) = NULL;
@@ -267,51 +268,38 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
     while (NULL != apargs) {
         callarg = EXPRS_EXPR (apargs);
         argavis = ID_AVIS (callarg);
-        lfa = ARG_AVIS (lacfunargs);
+        lfaavis = ARG_AVIS (lacfunargs);
 
         typ = AVIS_TYPE (argavis);
-        if ((NULL == AVIS_MIN (lfa)) && (!TYisAKV (typ)) && (NULL != AVIS_MIN (argavis))
+        if ((NULL == AVIS_MIN (lfaavis)) && (!TYisAKV (typ))
+            && (NULL != AVIS_MIN (argavis))
             && (FUNDEF_ISCONDFUN (arg_node)
                 || ((NULL != rca)
-                    && ((!LFUisLoopFunDependent (arg_node, lfa)) ||
+                    && ((LFUisLoopfunInvariant (lfaavis, arg_node)) ||
                         // FIXME: Next line is KLUDGE for Bug #1022
-                        (IsSameExtremum (lfa, EXPRS_EXPR (rca))))))) {
+                        (IsSameExtremum (lfaavis, EXPRS_EXPR (rca))))))) {
             minmax = AVIS_MIN (argavis);
             newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
                                                  &INFO_NEWOUTERAPARGS (arg_info));
-            AVIS_MIN (lfa) = TBmakeId (newavis);
+            AVIS_MIN (lfaavis) = TBmakeId (newavis);
             DBUG_PRINT ("Adding AVIS_MIN(%s) for formal parameter %s",
-                        AVIS_NAME (newavis), AVIS_NAME (lfa));
+                        AVIS_NAME (newavis), AVIS_NAME (lfaavis));
             global.optcounters.petl_expr++;
         }
 
-#ifdef FIXME
-
-        node *af = NULL;
-        // FIXME This is rubbish. It need to be burned and/or rewritten to use PHUT.
-        // More likely, we can just burn it, once we get rid of extrema.
-        // Support for LOOPFUN induction variable
-        if ((NULL == AVIS_MIN (lfa)) && (!TYisAKV (typ)) && (NULL != rca)
-            && (LFUisLoopFunDependent (arg_node, lfa))) {
-            af = LFUfindAffineFunctionForLIV (NULL, arg_node);
-            if (NULL != af) {
-                PRTdoPrint (af);
-            }
-        }
-#endif // FIXME
-
-        if ((NULL == AVIS_MAX (lfa)) && (!TYisAKV (typ)) && (NULL != AVIS_MAX (argavis))
+        if ((NULL == AVIS_MAX (lfaavis)) && (!TYisAKV (typ))
+            && (NULL != AVIS_MAX (argavis))
             && (FUNDEF_ISCONDFUN (arg_node)
                 || ((NULL != rca)
-                    && ((!LFUisLoopFunDependent (arg_node, lfa)) ||
+                    && ((LFUisLoopfunInvariant (lfaavis, arg_node)) ||
                         // FIXME: Next line is KLUDGE for Bug #1022
-                        (IsSameExtremum (lfa, EXPRS_EXPR (rca))))))) {
+                        (IsSameExtremum (lfaavis, EXPRS_EXPR (rca))))))) {
             minmax = AVIS_MAX (argavis);
             newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
                                                  &INFO_NEWOUTERAPARGS (arg_info));
-            AVIS_MAX (lfa) = TBmakeId (newavis);
+            AVIS_MAX (lfaavis) = TBmakeId (newavis);
             DBUG_PRINT ("Adding AVIS_MAX(%s) for formal parameter %s",
-                        AVIS_NAME (newavis), AVIS_NAME (lfa));
+                        AVIS_NAME (newavis), AVIS_NAME (lfaavis));
             global.optcounters.petl_expr++;
         }
 

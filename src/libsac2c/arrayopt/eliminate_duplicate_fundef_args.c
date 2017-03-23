@@ -326,7 +326,7 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
         argavis = ID_AVIS (argid);
         rcaid = (NULL != rca) ? EXPRS_EXPR (rca) : NULL;
 
-        if (!LFUisLoopFunDependent (lacfundef, ARG_AVIS (fundefargs))) {
+        if ((NULL != rcaid) && LFUisLoopfunInvariant (ARG_AVIS (fundefargs), lacfundef)) {
             lutitem = (node **)LUTsearchInLutP (INFO_LUTARGS (arg_info), argavis);
             if (NULL == lutitem) {
                 /* Entry not in LUT. This is a new argument.
