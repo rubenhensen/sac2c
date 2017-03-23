@@ -2873,7 +2873,7 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
     node *exprs;
     node *res = NULL;
     node *limavis = NULL;
-    node *calleriv = NULL;
+    node *calleravis = NULL;
     node *outerexprs = NULL;
     node *strideid = NULL;
     node *lpcnt = NULL;
@@ -2892,7 +2892,14 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
     rcvel = PHUTskipChainedAssigns (rcv);
 
     // Recursive call variable is existential.
+    int FIXME;
+    ;
+#ifdef FIXME
     if (PHUTinsertVarIntoLut (rcvel, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL)) {
+#else  // FIXME
+    PHUTinsertVarIntoLut (rcvel, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
+    if (TRUE) {
+#endif // FIXME
         // trace rcv back
         swap = FALSE;
         strideid = NULL;
@@ -2906,19 +2913,19 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
             prfi = (stridesignum > 0) ? F_le_SxS : F_lt_SxS;
             prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
 
-            //  rcv = calleriv
-            calleriv = rcv2CallerVar (rcv, fundef);
+            //  rcv = calleravis
+            calleravis = rcv2CallerVar (rcv, fundef);
             outerexprs
-              = PHUTgenerateAffineExprs (calleriv, FUNDEF_CALLERFUNDEF (fundef), varlut,
+              = PHUTgenerateAffineExprs (calleravis, FUNDEF_CALLERFUNDEF (fundef), varlut,
                                          AVIS_ISLCLASSEXISTENTIAL, loopcount);
             res = TCappendExprs (res, outerexprs);
 
             // Build: initial value prfi nid, e.g., 0 <= II
-            resel = BuildIslSimpleConstraint (calleriv, prfi, nid, NOPRFOP, NULL);
+            resel = BuildIslSimpleConstraint (calleravis, prfi, nid, NOPRFOP, NULL);
             res = TCappendExprs (res, resel);
 
             // Build: rcv prf2 limit.        E.g., II' < limit
-            // lastvalue = calleriv + stride*loopcount;
+            // lastvalue = calleravis + stride*loopcount;
             // If we know the loopcount, and we are NOT dealing
             // with the COND_COND that controls the loop, we specify
             // it in the code. If we are dealing with the COND_COND,
@@ -2936,12 +2943,12 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (limavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
 
-            resel = BuildIslStrideConstraint (limavis, F_eq_SxS, calleriv, F_add_SxS,
+            resel = BuildIslStrideConstraint (limavis, F_eq_SxS, calleravis, F_add_SxS,
                                               strideid, F_mul_SxS, lpcnt);
             res = TCappendExprs (res, resel);
 
-            lb = (1 == stridesignum) ? calleriv : TBmakeId (limavis);
-            ub = (1 == stridesignum) ? TBmakeId (limavis) : calleriv;
+            lb = (1 == stridesignum) ? calleravis : limavis;
+            ub = (1 == stridesignum) ? limavis : calleravis;
 
             if ((NULL != lb) && (NULL != ub)) {
                 // iv = lb + stp * N
@@ -2959,6 +2966,36 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
             }
         }
         PHUTsetIslTree (ID_AVIS (rcvel), res);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *PHUTvar2Arg( node *avis)
+ *
+ * @brief Convert a variable to an N_arg, if possible.
+ *        N_arg -> N_arg
+ *        Recursive call variable -> N_arg
+ *        Other -> avis
+ *
+ *
+ * @param An N_avis
+ *
+ * @return the N_arg avis, or argument avis
+ *
+ ******************************************************************************/
+static node *
+PHUTvar2Arg (node *avis, node *fundef)
+{
+    node *res = NULL;
+    node *arg = NULL;
+
+    DBUG_ENTER ();
+
+    res = (LFUisAvisMemberArg (avis, FUNDEF_ARGS (fundef))) ? avis : NULL;
+    if (NULL == res) { // User may have given us rcv
+        res = LFUgetArgFromRecursiveCallVariable (avis, fundef);
     }
 
     DBUG_RETURN (res);
@@ -3004,6 +3041,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     int stridesignum = 0;
     int z = UNR_NONE;
     int loopcount = -1;
+    int nldv = 0;
     prf prfi;
     prf prfz;
 
@@ -3047,53 +3085,60 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 // -doctz is clearly problematic here, but this should be enough to
                 // make some cases of PLUR work.
 
-                if ((LFUisAvisMemberArg (ID_AVIS (arg1), FUNDEF_ARGS (fundef)))
-                    && (LFUisLoopfunInvariant (ID_AVIS (arg1), fundef))) {
+                arg1 = PHUTvar2Arg (ID_AVIS (arg1), fundef);
+                arg2 = PHUTvar2Arg (ID_AVIS (arg2), fundef);
+                if (LFUisLoopfunInvariant (arg1, fundef)) {
                     rcv = arg2;
                     liv = arg1;
                 } else {
+                    nldv++; // # of loop-dependent arguments
                     rcv = arg1;
                     liv = arg2;
                 }
 
-                if (NULL == rcv) {
-                    if ((LFUisAvisMemberArg (ID_AVIS (arg2), FUNDEF_ARGS (fundef)))
-                        && (LFUisLoopfunInvariant (ID_AVIS (arg2), fundef))) {
-                        rcv = arg1;
-                        liv = arg2;
-                    } else {
-                        rcv = arg2;
-                        liv = arg1;
+                if (LFUisLoopfunInvariant (arg2, fundef)) {
+                    rcv = arg1;
+                    liv = arg2;
+                } else {
+                    nldv++; // # of loop-dependent arguments
+                    rcv = arg2;
+                    liv = arg1;
+                }
+
+                if (1 == nldv) { // We require a single loop-dependent argument
+                    // ISL (Barvinok, actually) computes loop count of Set Variable
+                    AVIS_ISLCLASS (rcv) = AVIS_ISLCLASSSETVARIABLE;
+
+                    // If we know stride sign & loop count, generate ISL directive,
+                    // based on the prf modifying the recursive call variable, rcv
+                    modprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (rcv)));
+                    // Get N_arg corresponding to rcv
+                    arg = LFUgetArgFromRecursiveCallVariable (rcv, fundef);
+                    strideid = LFUgetStrideInfo (modprf, arg, &stridesignum);
+                    if (0 != stridesignum) {
+                        prfi = (stridesignum > 0) ? F_le_SxS : F_lt_SxS;
+                        prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
                     }
+
+                    // Generate ISL constraint for condprf
+                    ex1 = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2,
+                                                    NOPRFOP, NULL);
+                    exprs = TCappendExprs (exprs, ex1);
+
+                    str = ISLUexprs2String (exprs, varlut, "LoopCount", TRUE,
+                                            FUNDEF_NAME (fundef));
+                    z = ISLUgetLoopCount (str, varlut);
+                    DBUG_PRINT ("Loop count for %s is %d", FUNDEF_NAME (fundef), z);
+                    DBUG_ASSERT ((UNR_NONE == z) || (0 < z), "Got negative loop count!");
+                    MEMfree (str);
+                } else {
+                    DBUG_PRINT (
+                      "Unable to get loop count: fn %s has %d loop-dependent args");
                 }
-
-                // If we know stride sign & loop count, generate ISL directive,
-                // based on the prf modifying the recursive call variable, rcv
-
-                modprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (rcv))));
-                // Get N_arg corresponding to rcv
-                arg = LFUgetArgFromRecursiveCallVariable (rcv, fundef);
-                strideid = LFUgetStrideInfo (modprf, arg, &stridesignum);
-                if (0 != stridesignum) {
-                    prfi = (stridesignum > 0) ? F_le_SxS : F_lt_SxS;
-                    prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
-                }
-
-                // Generate ISL constraint for condprf
-                ex1 = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2, NOPRFOP,
-                                                NULL);
-                exprs = TCappendExprs (exprs, ex1);
-
-                str = ISLUexprs2String (exprs, varlut, "LoopCount", TRUE,
-                                        FUNDEF_NAME (fundef));
-                z = ISLUgetLoopCount (str, varlut);
-                DBUG_PRINT ("ISLU computed loop count for %s as %d", FUNDEF_NAME (fundef),
-                            z);
-                DBUG_ASSERT ((UNR_NONE == z) || (0 < z), "ISL got negative loop count!");
-                MEMfree (str);
             }
         }
     }
+
     DBUG_RETURN (z);
 }
 

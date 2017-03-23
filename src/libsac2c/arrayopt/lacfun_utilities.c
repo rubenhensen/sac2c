@@ -135,17 +135,16 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
 /** <!--***********************************************************************-->
  * @fn bool LFUisLoopfunInvariant(...)
  *
- * @brief true if fundef is not a LOOPFUN.
- *        true if fundef IS a LOOPFUN, and arg is the same as
- *        the LOOPFUN's N_ap recursive call element that corresponds
- *        to avis.
+ * @brief true if fundef IS a LOOPFUN, and arg is the same as
+ *        the LOOPFUN's N_ap recursive call variable (rcv)
+ *        that corresponds to avis.
+ *        Also true if arg is the rcv and matches the N_arg.
  *
- * @param
- *        avis:      An N_avis node, which must be an N_arg element
+ * @param avis:      An N_avis node, which must be an N_arg element
  *                   of a loopfun
- *        fundef:    LACFUN N_fundef in question
+ *        fundef:    Loopfun N_fundef in question
  *
- * @result: True if the above brief holds.
+ * @result: See above
  *
  * @comment: The match check on the elements is somewhat
  *           subtle, because of the possibility of a selproxy
@@ -167,27 +166,36 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
 bool
 LFUisLoopfunInvariant (node *avis, node *fundef)
 {
-    bool z = FALSE;
     node *proxy;
-    node *rca;
+    node *rcv;
+    node *argavis;
+    bool z = FALSE;
 
     DBUG_ENTER ();
 
     z = TYisAKV (AVIS_TYPE (avis)); // Constants are loop-invariant
-    rca = LFUgetRecursiveCallVariableFromArg (avis, fundef);
-    DBUG_ASSERT (NULL != rca, "Did not find recursive call variable");
+    z = z || (!FUNDEF_ISLOOPFUN (fundef));
+    if (!z) {
+        argavis = avis;
+        rcv = LFUgetRecursiveCallVariableFromArg (avis, fundef);
+        if (NULL == rcv) { // We were called with rcv. Get the arg.
+            rcv = avis;
+            argavis = LFUgetCallerVariableFromArg (avis, fundef);
+            DBUG_ASSERT (NULL != argavis,
+                         "Did not find recursive call variable (or N_arg)");
+        }
+    }
+
     if ((!z)) {
-        if (FUNDEF_ISLOOPFUN (fundef)) {
-            z = avis == ID_AVIS (rca);
-            if (!z) {
-                proxy = IVUTarrayFromProxySel (rca);
-                if (NULL != proxy) {
-                    z = (avis == ID_AVIS (proxy));
-                }
+        z = argavis == ID_AVIS (rcv);
+        if (!z) {
+            proxy = IVUTarrayFromProxySel (rcv);
+            if (NULL != proxy) {
+                z = (argavis == ID_AVIS (proxy));
             }
         }
-        DBUG_PRINT ("Loopfun %s arg=%s and rca=%s are %s loop-invariant",
-                    FUNDEF_NAME (fundef), AVIS_NAME (avis), AVIS_NAME (ID_AVIS (rca)),
+        DBUG_PRINT ("Loopfun %s arg=%s and rcv=%s are %s loop-invariant",
+                    FUNDEF_NAME (fundef), AVIS_NAME (argavis), AVIS_NAME (ID_AVIS (rcv)),
                     ((z ? "" : "not")));
     }
 
