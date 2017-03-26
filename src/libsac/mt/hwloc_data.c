@@ -325,35 +325,48 @@ SAC_HWLOC_init (int threads)
      * corresponding entities, not the relative numbers!
      */
     int num_sockets_available;
+#if HWLOC_API_VERSION < 0x00010b00
     num_sockets_available
       = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_SOCKET);
+#else
+    num_sockets_available
+      = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_PACKAGE);
+#endif
     if (num_sockets_available < 1) {
-#if HWLOC_API_VERSION >= 0x00010b00
+#if HWLOC_API_VERSION < 0x00010b00
         num_sockets_available
-          = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_PACKAGE);
+          = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_NODE);
+#else
+        num_sockets_available
+          = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_NUMANODE);
+#endif
         if (num_sockets_available < 1) {
-            num_sockets_available
-              = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_NUMANODE);
-            if (num_sockets_available < 1) {
-#endif
-                SAC_RuntimeError (
-                  "hwloc returned %d sockets, packages and NUMAnodes available. "
-                  "Set cpu bind strategy to \"off\".",
-                  num_sockets_available);
-#if HWLOC_API_VERSION >= 0x00010b00
-            } else {
-                socket_obj = HWLOC_OBJ_NUMANODE;
-            }
+            SAC_RuntimeError (
+              "hwloc returned %d sockets, packages and NUMAnodes available. "
+              "Set cpu bind strategy to \"off\".",
+              num_sockets_available);
         } else {
-            socket_obj = HWLOC_OBJ_PACKAGE;
-        }
+#if HWLOC_API_VERSION < 0x00010b00
+            socket_obj = HWLOC_OBJ_NODE;
+#else
+            socket_obj = HWLOC_OBJ_NUMANODE;
 #endif
+        }
     } else {
+#if HWLOC_API_VERSION < 0x00010b00
         socket_obj = HWLOC_OBJ_SOCKET;
+#else
+        socket_obj = HWLOC_OBJ_PACKAGE;
+#endif
     }
 
+#if HWLOC_API_VERSION < 0x00010b00
+    int num_numa_nodes_avail
+      = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_NODE);
+#else
     int num_numa_nodes_avail
       = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_NUMANODE);
+#endif
     if (num_numa_nodes_avail < 1) {
         SAC_RuntimeError ("hwloc returned %d numa nodes available. Turn -mt_bind off",
                           num_numa_nodes_avail);
