@@ -8,6 +8,9 @@ src/bin/*
 /.project
 .make_track
 
+# cmake directories
+build*/
+
 # SaC generated files.
 src/doc/ast.html
 src/doc/ast.png
