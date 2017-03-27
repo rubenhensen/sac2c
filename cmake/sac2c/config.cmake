@@ -69,6 +69,9 @@ ENDMACRO ()
 SET (OS       "${CMAKE_SYSTEM}")
 SET (ARCH     "${CMAKE_SYSTEM_PROCESSOR}")
 
+# Sac2c variables
+SET (LINKSETSIZE "0" CACHE STRING "Set a value for -linksetsize parameter of sac2c")
+
 # Search paths for includes
 # Here we can add a list of paths for finding header files...
 SET (CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} /opt/local/include)
@@ -783,7 +786,7 @@ FILE (MAKE_DIRECTORY "${DLL_BUILD_DIR}")
 SET (BUILD_STATUS "
 * Detected OS string:      ${CMAKE_SYSTEM}
 * Detected CPU string:     ${CMAKE_SYSTEM_PROCESSOR}
-* 
+*
 * CMake Generator:         ${CMAKE_GENERATOR}
 * CMake Variant:           ${CMAKE_BUILD_TYPE}
 *
@@ -802,6 +805,7 @@ SET (BUILD_STATUS "
 * - CCFLAGS:               ${BUILD_TYPE_C_FLAGS}
 * - SaC compiler CFLAGS:   ${MKCCFLAGS}
 * - SaC programs CFLAGS:   ${RCCCFLAGS}
+* - SaC Linksetsize:       ${LINKSETSIZE}
 *
 * Status:
 * - sac2c is in dirty state: ${SAC2C_IS_DIRTY}
