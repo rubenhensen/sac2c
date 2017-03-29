@@ -38,6 +38,13 @@ ENDMACRO ()
 # this function updates both the CMAKE_REQUIRED_LIBRARIES
 # macro *and* the SAC2CRC_LIBS macro.
 MACRO (LIB_NEEDED LIBNAME FUNCNAME SOURCE)
+  # Make sure that we exclude builtin function definitions in the GCC compiler
+  # by providing corresponding flags.
+  SET (OLD_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+  SET (NOBUILTIN_FLAGS "")
+  CHECK_CC_FLAG ("-fno-builtin" NOBUILTIN_FLAGS)
+  CHECK_CC_FLAG ("-fno-builtin-function" NOBUILTIN_FLAGS)
+  SET (CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} -Werror ${NOBUILTIN_FLAGS}")
   CHECK_C_SOURCE_COMPILES ("${SOURCE}" ${LIBNAME}_COMPILE_TEST)
   IF (NOT ${LIBNAME}_COMPILE_TEST)
     CHECK_LIBRARY_EXISTS ("${LIBNAME}" "${FUNCNAME}" "" LIB_FOUND)
@@ -55,6 +62,7 @@ MACRO (LIB_NEEDED LIBNAME FUNCNAME SOURCE)
     ENDIF ()
   ENDIF ()
   UNSET (${LIBNAME}_COMPILE_TEST CACHE)
+  SET (CMAKE_REQUIRED_FLAGS "${OLD_CMAKE_REQUIRED_FLAGS}")
 ENDMACRO ()
 
 # Check if compiler `flag' is supported, and if so append it to the `var' string.
