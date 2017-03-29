@@ -2854,12 +2854,12 @@ PHUThandleAPV (node *exprsall, node *fundef, lut_t *varlut, int *stridesign, nod
  *         This lets us generate, for positive stride:
  *
  *           nid >= initialvalue
- *           nid < initialvalue + (stride *loopcount)
+ *           nid < initialvalue + (stride * loopcount)
  *
  *         Negative stride is the same, except the signs are reversed:
  *
  *           nid <= initialvalue
- *           nid >  initialvalue + (stride *loopcount)
+ *           nid >  initialvalue + (stride * loopcount)
  *
  *
  ******************************************************************************/
@@ -3036,8 +3036,16 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     node *exprs = NULL;
     node *rcv = NULL;
     node *liv = NULL;
+    node *lcv1 = NULL;
+    node *lcv2 = NULL;
     char *str = NULL;
+    node *resel1 = NULL;
+    node *resel2 = NULL;
+    node *strideid1 = NULL;
+    node *strideid2 = NULL;
     node *strideid = NULL;
+    int stridesign1 = 0;
+    int stridesign2 = 0;
     int stridesignum = 0;
     int z = UNR_NONE;
     int loopcount = -1;
@@ -3061,29 +3069,57 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 arg1 = PHUTskipChainedAssigns (PRF_ARG1 (condprf));
                 ex1 = PHUTgenerateAffineExprs (arg1, fundef, varlut,
                                                AVIS_ISLCLASSEXISTENTIAL, loopcount);
+                resel1 = PHUThandleAPV (ex1, fundef, varlut, &stridesign1, &lcv1,
+                                        &strideid1, loopcount);
 
                 arg2 = PHUTskipChainedAssigns (PRF_ARG2 (condprf));
                 ex2 = PHUTgenerateAffineExprs (arg2, fundef, varlut,
                                                AVIS_ISLCLASSEXISTENTIAL, loopcount);
+                resel2 = PHUThandleAPV (ex2, fundef, varlut, &stridesign2, &lcv2,
+                                        &strideid2, loopcount);
                 exprs = TCappendExprs (ex1, ex2);
+
+                // Generate ISL constraint for condprf
+                ex1 = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2, NOPRFOP,
+                                                NULL);
+                exprs = TCappendExprs (exprs, ex1);
 
                 // This section of code needs work. At present, it supports ONLY
                 // the following code patterns, where arg is an N_arg of the
                 // loopfun, and const is a loop-invariant value whose sign we
                 // can determine. I.e., const may be an element of an AKD shape
-                // vector, so it is not constant, but we do know const to be non-negative:
+                // vector, so it is not constant, but we do know const to be non-negative.
+                // There are two cases, depending on -doctz:
                 //
-                //         arg   + const
-                //         const + arg
-                //         arg   - const
+                // Case 1: In the -noctz case, we have (where lim is loop-invariant):
                 //
-                // Regarding the requirement that one argument only be loop-invariant:
-                // the Bodo1.sac unit test has an upper bound on the loop that
+                //         arg' = arg   + const      or
+                //         arg' = const + arg        or
+                //         arg' = arg   - const
+                //
+                //         if( arg' < lim) Loop( arg')
+                //
+                // Case 2: The -doctz case is slightly more convoluted, as it makes
+                // condprf compare against zero:
+                //
+                //         arg' = arg   + const      or
+                //         arg' = const + arg        or
+                //         arg' = arg   - const
+                //
+                //         arg'' = arg - lim
+                //         if( arg'' < 0) Loop( arg')
+                //
+                // Regarding the requirement that one condprf argument be loop-invariant:
+                // the Bodo1.sac unit test has an upper limit on the loop that
                 // changes on each iteration. There may be a way to find the loop count
-                // with polyhedra, but I don't see one.
+                // with polyhedra, but I don't see one, offhand.
+
+                // This section of code has two purposes:
+                //   1. Find the loop-dependent variable that controls the looping,
+                //      and make it an ISL Set Variable.
                 //
-                // -doctz is clearly problematic here, but this should be enough to
-                // make some cases of PLUR work.
+                //   2. Create an ISL constraint on the loop-dependent variable,
+                //      based on the signum of the loop increment.
 
                 arg1 = PHUTvar2Arg (ID_AVIS (arg1), fundef);
                 arg2 = PHUTvar2Arg (ID_AVIS (arg2), fundef);
@@ -3119,12 +3155,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                         prfi = (stridesignum > 0) ? F_le_SxS : F_lt_SxS;
                         prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
                     }
-
-                    // Generate ISL constraint for condprf
-                    ex1 = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2,
-                                                    NOPRFOP, NULL);
-                    exprs = TCappendExprs (exprs, ex1);
-
+                    int fixme; // missing bits pre prfi, prfz
                     str = ISLUexprs2String (exprs, varlut, "LoopCount", TRUE,
                                             FUNDEF_NAME (fundef));
                     z = ISLUgetLoopCount (str, varlut);
