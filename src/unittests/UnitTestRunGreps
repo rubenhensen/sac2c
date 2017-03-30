@@ -2,7 +2,7 @@
 
 # Run all unit tests, and check results.
 
-logfile="logGreps"$( sac2c-p -V | grep rev | cut -f 4 -d\ )
+logfile="logGreps"$( sac2c -V | grep rev | cut -f 4 -d\ )
 rm -f $logfile
 
 for i in *.sac;
