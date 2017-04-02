@@ -162,6 +162,9 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
  *            This function does recognize that rca and avis are the same,
  *            when a selproxy is present.
  *
+ * NB. Do not use a result of false: It may mean that the avis is
+ * NB. loop-invariant, but this function is too dumb to tell that.
+ *
  ******************************************************************************/
 bool
 LFUisLoopfunInvariant (node *avis, node *fundef)
@@ -304,19 +307,21 @@ LFUgetCallerVariableFromArg (node *var, node *fundef)
  * @fn node *LFUgetArgFromRecursiveCallVariable( node *rcv,
               node *fundef);
  *
- * @brief Given, rcv, an N_id or N_avis that is a recursive
- *        call variable in fundef, find the N_id node in
- *        the formal arguments (FUNDEF_ARGS) that corresponds to it.
+ * @brief Given, rcv, an N_id or N_avis that is either a recursive
+ *        call variable in fundef, or an N_arg,
+ *        find the N_id node in the formal arguments
+ *        (FUNDEF_ARGS) that corresponds to it.
  *        I.e.:
  *               FUNDEF_ARGS[ reccallargs iota rcv]
  *
  * @param: rcv:    an N_id node that appears in the recursive call
- *                 to the LOOPFUN, fundef.
+ *                 to the LOOPFUN, fundef, or an N_arg of the LOOPFUN
  * @param: fundef: the LACFUN N_fundef node
  *
  * @result: The N_avis of the formal argument that corresponds to rcv.
+ *          If rcv is an N_arg, we just return rcv.
  *          If we do not find rcv in the recursive call, or if this
- *          is a condfun, we return the rcv N_avis as the result.
+ *          is a condfun, NULL.
  *
  *****************************************************************************/
 node *
@@ -332,19 +337,28 @@ LFUgetArgFromRecursiveCallVariable (node *rcv, node *fundef)
 
     fargs = FUNDEF_ARGS (fundef);
     avis = (N_avis == NODE_TYPE (rcv)) ? rcv : ID_AVIS (rcv);
-    reccallass = LFUfindRecursiveCallAssign (fundef);
-    if (NULL != reccallass) { // loopfun
-        reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallass)));
-        while (reccallargs && fargs && (NULL == z)) {
-            z = (avis == ID_AVIS (EXPRS_EXPR (reccallargs))) ? ARG_AVIS (fargs) : NULL;
-            reccallargs = EXPRS_NEXT (reccallargs);
-            fargs = ARG_NEXT (fargs);
+    if (LFUisAvisMemberArg (avis, fargs)) {
+        z = avis;
+    } else {
+        reccallass = LFUfindRecursiveCallAssign (fundef);
+        if (NULL != reccallass) { // loopfun
+            reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallass)));
+            while (reccallargs && fargs && (NULL == z)) {
+                z = (avis == ID_AVIS (EXPRS_EXPR (reccallargs))) ? ARG_AVIS (fargs)
+                                                                 : NULL;
+                reccallargs = EXPRS_NEXT (reccallargs);
+                fargs = ARG_NEXT (fargs);
+            }
         }
     }
 
-    z = (NULL != z) ? z : avis;
-    DBUG_PRINT ("LACFUN %s arg %s has recursive call value of %s", FUNDEF_NAME (fundef),
-                AVIS_NAME (z), AVIS_NAME (avis));
+    if (NULL != z) {
+        DBUG_PRINT ("LACFUN %s arg %s has recursive call value of %s",
+                    FUNDEF_NAME (fundef), AVIS_NAME (z), AVIS_NAME (avis));
+    } else {
+        DBUG_PRINT ("LACFUN %s avis %s is not a recursive call value",
+                    FUNDEF_NAME (fundef), AVIS_NAME (avis));
+    }
 
     DBUG_RETURN (z);
 }

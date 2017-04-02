@@ -2079,7 +2079,7 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res,
                 // maximum:  z < abs( arg2)
                 // So, if arg2 > 0 --->   z < arg2
                 //     If arg2 < 0 --->   z < -arg2
-                if (POGOisPositive (arg2, arg2aft, fundef, varlut)) {
+                if (PHUTisPositive (arg2, arg2aft, fundef, varlut)) {
                     z = BuildIslSimpleConstraint (ids, F_lt_SxS, arg2, NOPRFOP, NULL);
                     res = TCappendExprs (res, z);
                 } else {
@@ -2100,8 +2100,8 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res,
                  *               PRF_ARG1?
                  */
                 // minimum
-                if ((POGOisNonNegative (arg1, arg1aft, fundef, varlut))
-                    && (POGOisPositive (arg2, arg2aft, fundef, varlut))) {
+                if ((PHUTisNonNegative (arg1, arg1aft, fundef, varlut))
+                    && (PHUTisPositive (arg2, arg2aft, fundef, varlut))) {
                     // z >= 0
                     z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
                                                   NULL);
@@ -2695,6 +2695,16 @@ extractInitialValue (node *outerexprs, node *outerinitialvalue)
  *      This appears to be introduced by AL and/or DL.
  *      Therefore, we have to look for either II or II' in the if() tree.
  *
+ *
+ *      We use the ISL N_exprs AFT as the argument for this function
+ *      for several reasons:
+ *
+ *         1. The AFT is interprocedural
+ *         2. The AFT includes micro-optimizations, such as sel(iota(N))
+ *         3. The could be fed to ISL, if that proves a better way to
+ *            do this function's job.
+ *         4. The AFT elides boring nodes such as saabind
+ *
  ******************************************************************************/
 node *
 PHUThandleAPV (node *exprsall, node *fundef, lut_t *varlut, int *stridesign, node **lcv,
@@ -2933,6 +2943,8 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
             // loopcount there, POGO would happily replace the
             // COND_COND by TRUE, thereby creating an infinite loop in
             // the generated code.
+            int rubbish; // Above comment is crap, I hope
+
             lpavis = TBmakeAvis (TRAVtmpVarName ("LOOPCT"),
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (lpavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
@@ -2977,12 +2989,12 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
  * @brief Convert a variable to an N_arg, if possible.
  *        N_arg -> N_arg
  *        Recursive call variable -> N_arg
- *        Other -> avis
+ *        Other -> NULL
  *
  *
  * @param An N_avis
  *
- * @return the N_arg avis, or argument avis
+ * @return the N_arg avis, or NULL, if avis is not an N_arg
  *
  ******************************************************************************/
 static node *
@@ -3031,6 +3043,8 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     node *arg = NULL;
     node *arg1 = NULL;
     node *arg2 = NULL;
+    node *funarg1 = NULL;
+    node *funarg2 = NULL;
     node *ex1 = NULL;
     node *ex2 = NULL;
     node *exprs = NULL;
@@ -3121,27 +3135,42 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 //   2. Create an ISL constraint on the loop-dependent variable,
                 //      based on the signum of the loop increment.
 
-                arg1 = PHUTvar2Arg (ID_AVIS (arg1), fundef);
-                arg2 = PHUTvar2Arg (ID_AVIS (arg2), fundef);
-                if (LFUisLoopfunInvariant (arg1, fundef)) {
-                    rcv = arg2;
-                    liv = arg1;
-                } else {
-                    nldv++; // # of loop-dependent arguments
-                    rcv = arg1;
-                    liv = arg2;
+                funarg1 = PHUTvar2Arg (ID_AVIS (arg1), fundef);
+                // If arg1/2 is not an N_arg, it may be a constant
+                if ((NULL == funarg1) && (TYisAKV (AVIS_TYPE (ID_AVIS (arg1))))) {
+                    funarg1 = ID_AVIS (arg1);
                 }
 
-                if (LFUisLoopfunInvariant (arg2, fundef)) {
-                    rcv = arg1;
-                    liv = arg2;
-                } else {
-                    nldv++; // # of loop-dependent arguments
-                    rcv = arg2;
-                    liv = arg1;
+                funarg2 = PHUTvar2Arg (ID_AVIS (arg2), fundef);
+                if ((NULL == funarg2) && (TYisAKV (AVIS_TYPE (ID_AVIS (arg2))))) {
+                    funarg2 = ID_AVIS (arg2);
+                }
+
+                if ((NULL != funarg1) && (NULL != funarg2)) {
+                    if (LFUisLoopfunInvariant (funarg1, fundef)) {
+                        rcv = funarg2;
+                        liv = funarg1;
+                    } else {
+                        nldv++; // # of loop-dependent arguments
+                        rcv = funarg1;
+                        liv = funarg2;
+                    }
+
+                    if (LFUisLoopfunInvariant (funarg2, fundef)) {
+                        rcv = funarg1;
+                        liv = funarg2;
+                    } else {
+                        nldv++; // # of loop-dependent arguments
+                        rcv = funarg2;
+                        liv = funarg1;
+                    }
+                } else { // Could not satisfy requirements
+                    nldv = 0;
                 }
 
                 if (1 == nldv) { // We require a single loop-dependent argument
+                    rcv = LFUgetRecursiveCallVariableFromArg (rcv, fundef);
+                    rcv = ID_AVIS (rcv);
                     // ISL (Barvinok, actually) computes loop count of Set Variable
                     AVIS_ISLCLASS (rcv) = AVIS_ISLCLASSSETVARIABLE;
 
@@ -3168,6 +3197,222 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 }
             }
         }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ * bool PHUTisPositive( node *arg_node)
+ *
+ * function: Predicate for determining if an argument is known to
+ *           be positive.
+ *
+ * @param: arg_node: An N_exprs ISL chain
+ * @param: aft: An AFT
+ * @param: fundef : The N_fundef we are in.
+ * @param: varlut: The LUT used by PHUT/POGO.
+ *
+ * result: True if argument is known to be positive.
+ *         Else false.
+ *
+ *         NB. False does NOT imply that the argument is non-positive.
+ *
+ * NB. This function is used in PHUT for mod() and aplmod(), where
+ *     SCSisPositive is too weak to do the job.
+ *
+ *     It must only be called from code that invokes PHUT. I.e.,
+ *     the caller maintains AVIS_NPART and FUNDEF_CALLAP.
+ *
+ *     In particular, all elements of arg_node are already in the LUT.
+ *     This is why we can't just call PHUTgenerateAffineExprs - it would
+ *     do nothing.
+ *
+ *****************************************************************************/
+bool
+PHUTisPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
+{
+    bool z;
+    node *exprsFn;
+    node *zro;
+    node *arg1;
+    int emp = POLY_RET_UNKNOWN;
+
+    DBUG_ENTER ();
+
+    z = SCSisPositive (arg_node);
+    if (!z) {
+        arg1 = PHUTskipChainedAssigns (arg_node);
+        zro = TBmakeNum (0);
+        // We look for NULL intersect on the dual function: arg1 <= 0
+        exprsFn = PHUTgenerateAffineExprsForGuard (F_le_SxS, arg1, zro, fundef, F_le_SxS,
+                                                   varlut, 0);
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT, "PHUTisPositive");
+        z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
+        FREEdoFreeNode (zro);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ * bool PHUTisNegative( node *arg_node)
+ *
+ * function: Predicate for determining if an argument is known to
+ *           be negative.
+ *
+ * @param: arg_node: An N_exprs ISL chain
+ * @param: aft: An AFT
+ * @param: fundef : The N_fundef we are in.
+ * @param: varlut: The LUT used by PHUT/POGO.
+ *
+ * result: True if argument is known to be negative.
+ *         Else false.
+ *
+ *         NB. False does NOT imply that the argument is non-negative.
+ *
+ * NB. This function is used in PHUT for mod() and aplmod(), where
+ *     SCSisNegative is too weak to do the job.
+ *
+ *     It must only be called from code that invokes PHUT. I.e.,
+ *     the caller maintains AVIS_NPART and FUNDEF_CALLAP.
+ *
+ *     In particular, all elements of arg_node are already in the LUT.
+ *     This is why we can't just call PHUTgenerateAffineExprs - it would
+ *     do nothing.
+ *
+ *****************************************************************************/
+bool
+PHUisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
+{
+    bool z;
+    node *exprsFn;
+    node *zro;
+    node *arg1;
+    int emp = POLY_RET_UNKNOWN;
+
+    DBUG_ENTER ();
+
+    z = SCSisPositive (arg_node);
+    if (!z) {
+        arg1 = PHUTskipChainedAssigns (arg_node);
+        zro = TBmakeNum (0);
+        // We look for NULL intersect on the dual function: arg1 >= 0
+        exprsFn = PHUTgenerateAffineExprsForGuard (F_ge_SxS, arg1, zro, fundef, F_ge_SxS,
+                                                   varlut, 0);
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT, "PHUTisNegative");
+        z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
+        FREEdoFreeNode (zro);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ * bool PHUTisNonPositive( node *arg_node)
+ *
+ * function: Predicate for determining if an argument is known to
+ *           be non-positive.
+ *
+ * @param: arg_node: An N_exprs ISL chain
+ * @param: aft: An AFT
+ * @param: fundef : The N_fundef we are in.
+ * @param: varlut: The LUT used by PHUT/POGO.
+ *
+ * result: True if argument is known to be non-positive.
+ *         Else false.
+ *
+ *         NB. False does NOT imply that the argument is positive.
+ *
+ * NB. This function is used in PHUT for mod() and aplmod(), where
+ *     SCSisNonPositive is too weak to do the job.
+ *
+ *     It must only be called from code that invokes PHUT. I.e.,
+ *     the caller maintains AVIS_NPART and FUNDEF_CALLAP.
+ *
+ *     In particular, all elements of arg_node are already in the LUT.
+ *     This is why we can't just call PHUTgenerateAffineExprs - it would
+ *     do nothing.
+ *
+ *****************************************************************************/
+bool
+PHUTisNonPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
+{
+    bool z;
+    node *exprsFn;
+    node *zro;
+    node *arg1;
+    int emp = POLY_RET_UNKNOWN;
+
+    DBUG_ENTER ();
+
+    z = SCSisNonnegative (arg_node);
+    if (!z) {
+        arg1 = PHUTskipChainedAssigns (arg_node);
+        zro = TBmakeNum (0);
+        // We look for NULL intersect on the dual function  arg1 > 0
+        exprsFn = PHUTgenerateAffineExprsForGuard (F_gt_SxS, arg1, zro, fundef, F_gt_SxS,
+                                                   varlut, 0);
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT, "PHUTisNonPositive");
+        z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
+        FREEdoFreeNode (zro);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ * bool PHUTisNonNegative( node *arg_node)
+ *
+ * function: Predicate for determining if an argument is known to
+ *           be non-negative.
+ *
+ * @param: arg_node: An N_exprs ISL chain
+ * @param: aft: An AFT
+ * @param: fundef : The N_fundef we are in.
+ * @param: varlut: The LUT used by PHUT/POGO.
+ *
+ * result: True if argument is known to be non-negative.
+ *         Else false.
+ *
+ *         NB. False does NOT imply that the argument is negative.
+ *
+ * NB. This function is used in PHUT for mod() and aplmod(), where
+ *     SCSisNonNegative is too weak to do the job.
+ *
+ *     It must only be called from code that invokes PHUT. I.e.,
+ *     the caller maintains AVIS_NPART and FUNDEF_CALLAP.
+ *
+ *     In particular, all elements of arg_node are already in the LUT.
+ *     This is why we can't just call PHUTgenerateAffineExprs - it would
+ *     do nothing.
+ *
+ *****************************************************************************/
+bool
+PHUTisNonNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
+{
+    bool z;
+    node *exprsFn;
+    node *zro;
+    node *arg1;
+    int emp = POLY_RET_UNKNOWN;
+
+    DBUG_ENTER ();
+
+    z = SCSisNonnegative (arg_node);
+    if (!z) {
+        arg1 = PHUTskipChainedAssigns (arg_node);
+        zro = TBmakeNum (0);
+        // We look for NULL intersect on the dual function  arg1 < 0
+        exprsFn = PHUTgenerateAffineExprsForGuard (F_lt_SxS, arg1, zro, fundef, F_lt_SxS,
+                                                   varlut, 0);
+        emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
+                                     POLY_OPCODE_INTERSECT, "PHUTisNonNegative");
+        z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
+        FREEdoFreeNode (zro);
     }
 
     DBUG_RETURN (z);
