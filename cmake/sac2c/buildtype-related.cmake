@@ -3,6 +3,12 @@
 # are consistent.
 
 
+FUNCTION (BUILD_TYPE_TO_DIRNAME BT DIRNAME)
+    STRING (TOLOWER "${BT}" BT_DIR)
+    SET (${DIRNAME} ${BT_DIR} PARENT_SCOPE)
+ENDFUNCTION ()
+
+
 # 1. Check whether the given <build-type> is supported, i.e.
 #    it can be found in KNOWN_BUILD_TYPES
 IF (NOT "${CMAKE_BUILD_TYPE}" IN_LIST KNOWN_BUILD_TYPES)

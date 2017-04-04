@@ -39,7 +39,9 @@ SAC2C_BINARIES = [
 ]
 
 # a map of build-type to postfix
-SAC2C_BUILD_TYPE_POSTFIXES = @BUILD_TYPE_DICTIONARY@
+SAC2C_BUILD_TYPE_POSTFIXES = @BUILD_TYPE_POSTFIX_DICT@
+
+SAC2C_BUILD_TYPE_DIRS = @BUILD_TYPE_DIRECTORY_DICT@
 
 
 def die (msg):
@@ -139,7 +141,7 @@ def list_of_files (prefix, ver, build_type):
     l.append (os.path.join (prefix, "share", "sac2c", ver, "sac2crc" + bt_postfix))
 
     # $prefix/include/sac2c/$version/$build_type/*
-    l.extend (find_files_rec (os.path.join (prefix, "include", "sac2c", ver, build_type), "*"))
+    l.extend (find_files_rec (os.path.join (prefix, "include", "sac2c", ver, SAC2C_BUILD_TYPE_DIRS[build_type]), "*"))
 
     # This is internal sanity check
     lbad = []

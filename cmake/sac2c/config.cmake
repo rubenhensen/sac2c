@@ -728,7 +728,7 @@ UNSET (CMAKE_C_FLAGS CACHE)
 # Setting build-type-related variables
 SET (BUILD_TYPE_POSTFIX "${CMAKE_${CMAKE_BUILD_TYPE}_POSTFIX}")
 SET (BUILD_TYPE_C_FLAGS "${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
-STRING (TOLOWER "${CMAKE_BUILD_TYPE}" BUILD_TYPE_NAME)
+BUILD_TYPE_TO_DIRNAME ("${CMAKE_BUILD_TYPE}" BUILD_TYPE_NAME)
 
 # Configure sac2c-version-manager script
 INCLUDE ("cmake/sac2c/version-manager-related.cmake")
