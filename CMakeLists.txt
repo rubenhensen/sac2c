@@ -57,6 +57,7 @@ CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/tools/fake-cc.in" "${PROJECT_BINARY_D
 
 # generate files necessary to compile sac2c
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xconfig.h.in" "${PROJECT_BINARY_DIR}/include/config.h")
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/fun-attrs.h.in" "${PROJECT_BINARY_DIR}/include/fun-attrs.h")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xsacdirs.h.in" "${PROJECT_BINARY_DIR}/include/sacdirs.h")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/libsac2c/global/build.c.in" "${PROJECT_BINARY_DIR}/src/build.c")
 

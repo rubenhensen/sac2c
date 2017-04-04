@@ -39,6 +39,9 @@ INCLUDE ("cmake/sac2c-version-related.cmake")
 # Macros with distmem checks
 INCLUDE ("cmake/sac2c/distmem-related.cmake")
 
+# Generate a list of function attributes supported by the given C compiler.
+INCLUDE ("cmake/sac2c/fun-attrs.cmake")
+
 # Checks if the C compiler defines a macro called DEF.
 # In case macro is defined the ${FLAG} will be set on.
 MACRO (CHECK_COMPILER DEF FLAG)
@@ -129,6 +132,8 @@ CHECK_C_SOURCE_COMPILES ("
     "
     HAVE_GCC_SIMD_OPERATIONS
 )
+
+
 
 # Check headers.
 CHECK_INCLUDE_FILES (inttypes.h HAVE_INTTYPES_H)

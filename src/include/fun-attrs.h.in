@@ -1,0 +1,17 @@
+#ifndef __FUN_ATTRS_H__
+#define __FUN_ATTRS_H__
+
+/* By defining NO_FUN_ATTRS before including this file,
+   all the attributes will be defined to empty string.  */
+
+#ifndef NO_FUN_ATTRS
+@MACRO_FORMAT_PRINTF@
+@MACRO_UNUSED@
+#endif
+
+#ifdef NO_FUN_ATTRS
+@MACRO_FORMAT_PRINTF_NONE@
+@MACRO_UNUSED_NONE@
+#endif
+
+#endif // __FUN_ATTRS_H_
