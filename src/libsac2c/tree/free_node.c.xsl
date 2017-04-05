@@ -147,7 +147,7 @@ version="1.0">
     </xsl:with-param>
     <xsl:with-param name="field">Name</xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="', arg_node);'"/>
+  <xsl:value-of select="', (void *)arg_node);'"/>
   <xsl:value-of select="'NODE_ERROR( arg_node) = FREETRAV( NODE_ERROR( arg_node), arg_info);'"/>
   <xsl:value-of select="'arg_node = FREEzombify( arg_node);'"/>
   <!-- first free everything downwards in the ast -->
@@ -203,7 +203,7 @@ version="1.0">
   <!-- variable for result -->
   <xsl:value-of select="'node *result = NULL;'"/>
   <!-- give hint we start to free now -->
-  <xsl:value-of select="'DBUG_PRINT(&quot;Processing node %s at &quot; F_PTR, NODE_TEXT( arg_node), arg_node);'"/>
+  <xsl:value-of select="'DBUG_PRINT(&quot;Processing node %s at &quot; F_PTR, NODE_TEXT( arg_node), (void *)arg_node);'"/>
   <xsl:value-of select="'NODE_ERROR( arg_node) = FREETRAV( NODE_ERROR( arg_node), arg_info);'"/>
   <!-- first free everything downwards in the ast -->
   <xsl:apply-templates select="sons/son[@name = &quot;Next&quot;]"/>
@@ -245,7 +245,7 @@ version="1.0">
     <xsl:value-of select="' = NULL;'" />
   </xsl:if>
   <!-- calculate return value and free node -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;Freeing node %s at &quot; F_PTR, NODE_TEXT( arg_node), arg_node);'"/>
+  <xsl:value-of select="'DBUG_PRINT( &quot;Freeing node %s at &quot; F_PTR, NODE_TEXT( arg_node), (void *)arg_node);'"/>
   <xsl:choose>
     <xsl:when test="sons/son[@name = &quot;Next&quot;]">
       <xsl:value-of select="'arg_node = MEMfree( arg_node);'"/>
