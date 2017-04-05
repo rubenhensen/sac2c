@@ -11,7 +11,7 @@
  *
  *****************************************************************************/
 
-#include "config.h"
+#include "fun-attrs.h"
 
 /* By default, we do not use tracing. */
 #ifndef COMPILE_TRACE
