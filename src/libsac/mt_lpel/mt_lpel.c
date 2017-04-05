@@ -12,7 +12,7 @@
  *
  *****************************************************************************/
 
-#include "config.h"
+#include "fun-attrs.h"
 
 /* ensure the file is not empty when mt lpel is disabled */
 static UNUSED int dummy_mt_lpel;
