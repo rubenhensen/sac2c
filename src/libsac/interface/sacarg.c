@@ -17,14 +17,12 @@
 #error SAC_RC_METHOD is defined to an invalid value!
 #endif
 
-/*
- * Attribute posibly unused variable to stop warnings
- * Used for mirrors only
- */
 #ifndef SAC_BACKEND_MUTC
-#define UNUSED __attribute__ ((unused))
+#include "fun-attrs.h"
 #else
-#define UNUSED
+#define NO_FUN_ATTRS
+#include "fun-attrs.h"
+#undef NO_FUN_ATTRS
 #endif
 
 /*#undef SAC_FREE

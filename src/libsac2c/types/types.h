@@ -37,9 +37,6 @@ typedef unsigned int bool;
 #define FALSE 0
 #define TRUE 1
 
-/* Mark a global variable or function as unused. */
-#define UNUSED __attribute__ ((unused))
-
 /* Structcure to store where a token came from.  */
 struct location {
     const char *fname;

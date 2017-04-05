@@ -78,6 +78,4 @@
 
 #cmakedefine STDERR_IS_CONSTANT
 
-#define UNUSED __attribute__((unused))
-
 #endif /* __CONFIG_H__  */
