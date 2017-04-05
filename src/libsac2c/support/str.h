@@ -2,6 +2,7 @@
 #define _STR_H_
 
 #include "types.h"
+#include "fun-attrs.h"
 
 extern void STRtoupper (char *source, int start, int stop);
 extern char *STRcpy (const char *source);
@@ -9,25 +10,25 @@ extern char *STRncpy (const char *source, int maxlen);
 extern char *STRcat (const char *first, const char *second);
 extern char *STRcatn (int n, ...);
 extern char *STRtok (const char *str, const char *tok);
-extern bool STReq (const char *first, const char *second);
-extern bool STReqci (const char *first, const char *second);
+extern bool STReq (const char *first, const char *second) FUN_ATTR_PURE;
+extern bool STReqci (const char *first, const char *second) FUN_ATTR_PURE;
 extern bool STReqhex (const char *first, const char *second);
 extern bool STReqoct (const char *first, const char *second);
-extern bool STRprefix (const char *prefix, const char *str);
-extern bool STRsuffix (const char *suffix, const char *str);
-extern bool STReqn (const char *first, const char *second, int n);
-extern bool STRgt (const char *first, const char *second);
-extern bool STRsub (const char *sub, const char *str);
-extern int STRlen (const char *str);
-extern char *STRonNull (char *alt, char *str);
+extern bool STRprefix (const char *prefix, const char *str) FUN_ATTR_PURE;
+extern bool STRsuffix (const char *suffix, const char *str) FUN_ATTR_PURE;
+extern bool STReqn (const char *first, const char *second, int n) FUN_ATTR_PURE;
+extern bool STRgt (const char *first, const char *second) FUN_ATTR_PURE;
+extern bool STRsub (const char *sub, const char *str) FUN_ATTR_PURE;
+extern int STRlen (const char *str) FUN_ATTR_PURE;
+extern char *STRonNull (char *alt, char *str) FUN_ATTR_PURE;
 extern char *STRsubStr (const char *string, int start, int len);
-extern char *STRnull (void);
+extern char *STRnull (void) FUN_ATTR_PURE;
 
-extern int STRsizeInt (void);
+extern int STRsizeInt (void) FUN_ATTR_CONST;
 
-extern char *STRitoa (int number);
-extern char *STRitoa_oct (int number);
-extern char *STRitoa_hex (int number);
+extern char *STRitoa (int number) FUN_ATTR_PURE;
+extern char *STRitoa_oct (int number) FUN_ATTR_PURE;
+extern char *STRitoa_hex (int number) FUN_ATTR_PURE;
 
 extern unsigned char *STRhex2Bytes (unsigned char *array, const char *string);
 extern char *STRbytes2Hex (int len, unsigned char *array);

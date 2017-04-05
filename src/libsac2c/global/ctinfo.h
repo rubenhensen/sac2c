@@ -6,7 +6,7 @@
 #include <stdarg.h>
 
 extern int CTIgetErrorCount (void);
-extern void CTIexit (int);
+extern void CTIexit (int) FUN_ATTR_NORETURN;
 extern void CTIinstallInterruptHandlers (void);
 extern char *CTIgetErrorMessageVA (int line, const char *file, const char *format,
                                    va_list arg_p);
@@ -18,9 +18,10 @@ extern void CTIerrorContinued (const char *format, ...) PRINTF_FORMAT (1, 2);
 extern void CTIerrorInternal (const char *format, ...) PRINTF_FORMAT (1, 2);
 extern int CTIgetErrorMessageLineLength (void);
 extern void CTIabortOnBottom (char *err_msg);
-extern void CTIabort (const char *format, ...) PRINTF_FORMAT (1, 2);
-extern void CTIabortLine (int line, const char *format, ...) PRINTF_FORMAT (2, 3);
-extern void CTIabortOutOfMemory (unsigned int request);
+extern void CTIabort (const char *format, ...) PRINTF_FORMAT (1, 2) FUN_ATTR_NORETURN;
+extern void CTIabortLine (int line, const char *format, ...)
+  PRINTF_FORMAT (2, 3) FUN_ATTR_NORETURN;
+extern void CTIabortOutOfMemory (unsigned int request) FUN_ATTR_NORETURN;
 extern void CTIabortOnError (void);
 extern void CTIwarn (const char *format, ...) PRINTF_FORMAT (1, 2);
 extern void CTIwarnLoc (struct location loc, const char *format, ...)

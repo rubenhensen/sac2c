@@ -356,11 +356,11 @@ CleanUpInterrupted (void)
  *
  ******************************************************************************/
 
+FUN_ATTR_NORETURN
 static void
 AbortCompilation (void)
 {
     int ecode = (int)global.compiler_phase;
-    DBUG_ENTER ();
 
     if (ecode == 0) {
         ecode = 255;
@@ -379,17 +379,13 @@ AbortCompilation (void)
     (void)fprintf (stderr, ".\n");
 
     exit (ecode);
-
-    DBUG_RETURN ();
 }
 
 void
 CTIexit (int status)
 {
-    DBUG_ENTER ();
     CleanUp ();
     exit (status);
-    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -837,8 +833,6 @@ CTIabortOnBottom (char *err_msg)
 {
     char *line;
 
-    DBUG_ENTER ();
-
     fprintf (stderr, "\n");
 
     line = strtok (err_msg, "@");
@@ -849,8 +843,6 @@ CTIabortOnBottom (char *err_msg)
     }
 
     AbortCompilation ();
-
-    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -869,8 +861,6 @@ CTIabort (const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ();
-
     va_start (arg_p, format);
 
     PrintMessage (abort_message_header, format, arg_p);
@@ -878,8 +868,6 @@ CTIabort (const char *format, ...)
     va_end (arg_p);
 
     AbortCompilation ();
-
-    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -899,8 +887,6 @@ CTIabortLine (int line, const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ();
-
     va_start (arg_p, format);
 
     fprintf (stderr, "%s %d ", global.filename, line);
@@ -909,8 +895,6 @@ CTIabortLine (int line, const char *format, ...)
     va_end (arg_p);
 
     AbortCompilation ();
-
-    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -934,8 +918,6 @@ CTIabortLine (int line, const char *format, ...)
 void
 CTIabortOutOfMemory (unsigned int request)
 {
-    DBUG_ENTER ();
-
     fprintf (stderr,
              "%sOut of memory:\n"
              "%s %u bytes requested\n",
@@ -945,8 +927,6 @@ CTIabortOutOfMemory (unsigned int request)
              global.current_allocated_mem);
 
     AbortCompilation ();
-
-    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->

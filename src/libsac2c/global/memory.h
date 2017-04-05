@@ -50,7 +50,8 @@ extern mallocphaseinfo_t phasetable[]; // needed by check_mem
  *
  *   Should be used instead of `malloc'.
  */
-extern void *_MEMmalloc (int size, char *file, int line, const char *func);
+extern void *_MEMmalloc (int size, char *file, int line,
+                         const char *func) FUN_ATTR_MALLOC;
 #define MEMmalloc(size) _MEMmalloc (size, __FILE__, __LINE__, __func__)
 #define MEMmallocAt(size, file, line) _MEMmalloc (size, file, line, __func__)
 
