@@ -5,39 +5,67 @@
  * @brief: This file contains utilities that are common to
  *         traversals operating on LOOPFUNs and CONDFUNs.
  *
+ *   Here is a typical loop:
  *
- *  Loopfun nomenclature:
- *
- *        Here is a typical loop:
- *
+ *      int Case1()
+ *      { // This arises when using -noctz
  *        iv = 0;
  *        lim = id(666);
  *        zin = 0;
- *        z = loop( iv, lim);
+ *        z = Loop1( iv, lim, zin);
+ *      }
  *
- *        int loop( II, lim, zin )
- *        {
- *          incr = 2;
- *          incr2 = 3;
- *          II' = II + incr;
- *          II'' = II' + incr2;
- *          zin = zin + 1;
- *          if( II'' < lim)
- *          {
- *            z = loop( II'', lim, z);
- *          } else {
- *            return( z);
- *          }
+ *      int Loop1( lda, lim, z)
+ *      {
+ *         incr = 2;
+ *         rcv = lda + incr;
+ *         zin = z + 1;
+ *         if( rcv < lim)
+ *         {
+ *           z = Loop1( rcv, lim, zin);
+ *         } else {
+ *           return( z);
+ *         }
  *       }
  *
- *       initial value: iv
- *       limit value: lim
- *       increment: incr, incr2
- *       loop-dependent value: II, II', II'', zin
- *       loop-dependent argument: II
+ *  Here is another typical loop:
+ *
+ *      int Case2()
+ *      {  // This arises when using -doctz
+ *        iv = 0;
+ *        lim = id(666);
+ *        zin = 0;
+ *        z = Loop2( iv, lim);
+ *      }
+ *
+ *      int Loop2( lda, lim, zin )
+ *      {
+ *        incr = 2;
+ *        incr2 = 3;
+ *        ldna = lda + incr;
+ *        rcv = ldna + incr2;
+ *        zin = zin + 1;
+ *        ldna2 = rcv - lim;
+ *        if( ldna2 < 0)
+ *        {
+ *          z = Loop2( rcv, lim, z);
+ *        } else {
+ *          return( z);
+ *        }
+ *     }
+ *
+ *  Loopfun nomenclature:
+ *
+ *       loop initial value: iv
+ *       loop limit value: lim
+ *       loop increment: incr, incr2
+ *       loop-dependent non-argument: ldna, ldna2
+ *          Note that these are neither a lda nor rcv
+ *       loop-dependent argument: lda
  *          All loop-dependent arguments are members of the
  *          loopfun's N_arg formal parameter list
- *       recursive call value: II'', z
+ *       recursive call value: rcv, z
+ *       loop-independent local value: incr, incr2
  *
  **************************************************************************/
 
@@ -180,10 +208,10 @@ LFUisLoopfunInvariant (node *avis, node *fundef)
     z = z || (!FUNDEF_ISLOOPFUN (fundef));
     if (!z) {
         argavis = avis;
-        rcv = LFUgetRecursiveCallVariableFromArg (avis, fundef);
+        rcv = LFUarg2Rcv (avis, fundef);
         if (NULL == rcv) { // We were called with rcv. Get the arg.
             rcv = avis;
-            argavis = LFUgetCallerVariableFromArg (avis, fundef);
+            argavis = LFUarg2Caller (avis, fundef);
             DBUG_ASSERT (NULL != argavis,
                          "Did not find recursive call variable (or N_arg)");
         }
@@ -207,7 +235,7 @@ LFUisLoopfunInvariant (node *avis, node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @fn node *LFUgetRecursiveCallVariableFromArgs(node *var, node *fundef, node *args)
+ * @fn node *LFUarg2Rcv(node *var, node *fundef)
  *
  * @brief Given an N_id, var, that may appear in FUNDEF_ARGS( fundef),
  *        return the N_id that has the same position in args.
@@ -223,21 +251,23 @@ LFUisLoopfunInvariant (node *avis, node *fundef)
  * @param: var:    an N_id node in the LACFUNs N_arg list,
  *                 or its N_avis node.
  * @param: fundef: the LACFUN N_fundef node
- * @param: reccallargs:
- *                 An N_exprs chain:  a recursive call AP_ARGS list.
  *
  * @result: The N_id of the calling function's args that corresponds to var.
  *
  *****************************************************************************/
-static node *
-LFUgetRecursiveCallVariableFromArgs (node *var, node *fundef, node *reccallargs)
+node *
+LFUarg2Rcv (node *var, node *fundef)
 {
     node *z = NULL;
     node *fargs = NULL;
     node *avis = NULL;
+    node *reccallargs;
+    node *reccallass;
 
     DBUG_ENTER ();
 
+    reccallass = LFUfindRecursiveCallAssign (fundef);
+    reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallass)));
     fargs = FUNDEF_ARGS (fundef);
     avis = (N_id == NODE_TYPE (var)) ? ID_AVIS (var) : var;
     while (reccallargs && fargs && (avis != ARG_AVIS (fargs))) {
@@ -257,7 +287,7 @@ LFUgetRecursiveCallVariableFromArgs (node *var, node *fundef, node *reccallargs)
 
 /** <!--********************************************************************-->
  *
- * @fn node *LFUgetCallerVariableFromArg(node *var, node *fundef)
+ * @fn node *LFUarg2Caller(node *var, node *fundef)
  *
  * @brief Given an N_id, var, that may appear in FUNDEF_ARGS( fundef),
  *        return the N_id that has the same position in args.
@@ -276,7 +306,7 @@ LFUgetRecursiveCallVariableFromArgs (node *var, node *fundef, node *reccallargs)
  *
  *****************************************************************************/
 node *
-LFUgetCallerVariableFromArg (node *var, node *fundef)
+LFUarg2Caller (node *var, node *fundef)
 {
     node *z = NULL;
     node *fargs = NULL;
@@ -304,7 +334,7 @@ LFUgetCallerVariableFromArg (node *var, node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @fn node *LFUgetArgFromRecursiveCallVariable( node *rcv,
+ * @fn node *LFUrcv2Arg( node *rcv,
               node *fundef);
  *
  * @brief Given, rcv, an N_id or N_avis that is either a recursive
@@ -325,7 +355,7 @@ LFUgetCallerVariableFromArg (node *var, node *fundef)
  *
  *****************************************************************************/
 node *
-LFUgetArgFromRecursiveCallVariable (node *rcv, node *fundef)
+LFUrcv2Arg (node *rcv, node *fundef)
 {
     node *z = NULL;
     node *fargs;
@@ -1166,7 +1196,7 @@ LFUfindAffineFunctionForLIV (node *arg_node, node *lacfundef)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *LFUgetLoopIncrementFromIslChain( node *rca, node *islchain)
+ * @fn node *LFUisl2Incr( node *rca, node *islchain)
  *
  * @brief Search islchain for a + or - on the induction variable, rca.
  *        If found, return the other argument to the +/-. If not, return NULL.
@@ -1186,7 +1216,7 @@ LFUfindAffineFunctionForLIV (node *arg_node, node *lacfundef)
  *
  ******************************************************************************/
 node *
-LFUgetLoopIncrementFromIslChain (node *rca, node *islchain)
+LFUisl2Incr (node *rca, node *islchain)
 {
     node *z = NULL;
     node *exprs;
@@ -1222,7 +1252,7 @@ LFUgetLoopIncrementFromIslChain (node *rca, node *islchain)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *LFUgetLoopIncrementFromCondprf( node *arg_node, node *rca)
+ * @fn node *LFUcondprf2Incr( node *arg_node, node *rca)
  *
  * @brief arg_node is an N_prf relational. Return the argument that is
  *        not rca.
@@ -1234,7 +1264,7 @@ LFUgetLoopIncrementFromIslChain (node *rca, node *islchain)
  *
  ******************************************************************************/
 node *
-LFUgetLoopIncrementFromCondprf (node *arg_node, node *rca)
+LFUcondprf2Incr (node *arg_node, node *rca)
 {
     node *z;
 
@@ -1350,6 +1380,7 @@ LFUgetStrideForAffineFun (node *rcv, node *lcv)
             break;
 
         default:
+            DBUG_PRINT ("Unable to find stride for %s", AVIS_NAME (ID_AVIS (rcv)));
             break;
         }
     }
@@ -1395,39 +1426,6 @@ LFUgetMathSignumForAffineFun (node *rcv, node *lcv)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *LFUgetGetRecursiveCallVariableFromArg(...)
- *
- * @brief  Find the II' corresponding to II, in a LOOPFUN such as:
- *
- *          Loop( II)
- *          { II' = II + 1;
- *            if (cond...) Loop( II')
- *          }
- *
- * @param fundef - the N_fundef LOOPFUN we are interested in
- * @param arg - the N_avis for an N_arg variable in a LOOPFUN (II)
- *
- * @return The recursive call variable, II'
- *
- ******************************************************************************/
-node *
-LFUgetRecursiveCallVariableFromArg (node *arg, node *fundef)
-{
-    node *z = NULL;
-    node *reccallass;
-    node *reccallargs;
-
-    DBUG_ENTER ();
-
-    reccallass = LFUfindRecursiveCallAssign (fundef);
-    reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallass)));
-    z = LFUgetRecursiveCallVariableFromArgs (arg, fundef, reccallargs);
-
-    DBUG_RETURN (z);
-}
-
-/** <!-- ****************************************************************** -->
- *
  * @fn node *LFUgetStrideInfo(...)
  *
  * @brief Get strideid, stridesign, and mathsign from
@@ -1452,6 +1450,9 @@ LFUgetRecursiveCallVariableFromArg (node *arg, node *fundef)
  *                 0 = unknown
  *                 1 = +
  *                -1 = -
+ * @param aft: the Affine Function Tree for expn
+ * @param fundef: the N_fundef node for the loopfun
+ * @param varlut: the PHUT LUT
  *
  * @return strideid, if known, else NULL.
  *
@@ -1459,7 +1460,8 @@ LFUgetRecursiveCallVariableFromArg (node *arg, node *fundef)
  *
  ******************************************************************************/
 node *
-LFUgetStrideInfo (node *expn, node *lcv, int *stridesgn)
+LFUgetStrideInfo (node *expn, node *lcv, int *stridesgn, node *aft, node *fundef,
+                  lut_t *varlut)
 {
     node *exprslarg = NULL;
     node *exprsrarg = NULL;
@@ -1493,8 +1495,9 @@ LFUgetStrideInfo (node *expn, node *lcv, int *stridesgn)
 
     // Find sign of stride, corrected for F_sub.
     if (NULL != strideid) {
-        stridesignum
-          = mathsign * SCSisPositive (strideid) ? 1 : SCSisNegative (strideid) ? -1 : 0;
+        stridesignum = mathsign * PHUTisPositive (strideid, aft, fundef, varlut)
+                         ? 1
+                         : PHUTisNegative (strideid, aft, fundef, varlut) ? -1 : 0;
     }
 
     // Do side effects on caller

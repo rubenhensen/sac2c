@@ -5,11 +5,9 @@
 
 extern node *LFUprefixFunctionArgument (node *arg_node, node *calleravis,
                                         node **callerapargs);
-// extern node *LFUgetRecursiveCallVariableFromArgs( node *var,
-// dead              node *fundef, node *reccallargs);
-extern node *LFUgetRecursiveCallVariableFromArg (node *arg, node *fundef);
-extern node *LFUgetCallerVariableFromArg (node *var, node *fundef);
-extern node *LFUgetArgFromRecursiveCallVariable (node *rcv, node *fundef);
+extern node *LFUarg2Rcv (node *arg, node *fundef);
+extern node *LFUarg2Caller (node *var, node *fundef);
+extern node *LFUrcv2Arg (node *rcv, node *fundef);
 extern node *LFUfindRecursiveCallAssign (node *arg_node);
 extern node *LFUgetStrideForAffineFun (node *rcv, node *lcv);
 extern int LFUgetMathSignumForAffineFun (node *rcv, node *lcv);
@@ -30,9 +28,10 @@ extern node *LFUscalarizeArray (node *avis, node **preassigns, node **vardecs,
                                 shape *shp);
 extern node *LFUcorrectSSAAssigns (node *arg_node, node *nassgn);
 extern node *LFUfindAffineFunctionForLIV (node *arg_node, node *lacfundef);
-extern node *LFUgetLoopIncrementFromCondprf (node *arg_node, node *rca);
-extern node *LFUgetLoopIncrementFromIslChain (node *rca, node *islchain);
+extern node *LFUcondprf2Incr (node *arg_node, node *rca);
+extern node *LFUisl2Incr (node *rca, node *islchain);
 extern prf LFUdualFun (prf nprf);
-extern node *LFUgetStrideInfo (node *expn, node *lcv, int *stridesgn);
+extern node *LFUgetStrideInfo (node *expn, node *lcv, int *stridesgn, node *aft,
+                               node *fundef, lut_t *varlut);
 
 #endif /* _SAC_LACFUN_UTILITIES_H_ */

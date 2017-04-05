@@ -31,7 +31,7 @@ extern int PHUTgetLoopCount (node *exprs, lut_t *varlut);
 extern void PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag,
                                bool isrelation, char *lhsname);
 extern node *PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef,
-                                               lut_t *varlut, int loopcount);
+                                               lut_t *varlut, int loopcount, node *aft);
 extern bool PHUTinsertVarIntoLut (node *arg_node, lut_t *varlut, node *fundef,
                                   int islclass);
 extern void PHUTsetIslClass (node *arg_node, int islclass);

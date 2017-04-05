@@ -1573,10 +1573,10 @@ PHUThandleLoopfunArg (node *nid, node *fundef, lut_t *varlut, node *res,
     // ~/sac/testsuite/optimizations/pogorelationals/SCSprf_lt_SxS.LIR.sac
 
     if (!LFUisLoopfunInvariant (avis, fundef)) {
-        rcv = LFUgetRecursiveCallVariableFromArg (avis, fundef);
+        rcv = LFUarg2Rcv (avis, fundef);
         DBUG_PRINT ("LACFUN %s arg %s has recursive call value of %s",
                     FUNDEF_NAME (fundef), AVIS_NAME (avis), AVIS_NAME (ID_AVIS (rcv)));
-        z = PHUTanalyzeLoopDependentVariable (nid, rcv, fundef, varlut, loopcount);
+        z = PHUTanalyzeLoopDependentVariable (nid, rcv, fundef, varlut, loopcount, res);
         res = TCappendExprs (res, z);
     } else {
         DBUG_PRINT ("LACFUN %s arg %s is loop-independent", FUNDEF_NAME (fundef),
@@ -1650,8 +1650,8 @@ rcv2CallerVar (node *rcv, node *fundef)
     DBUG_ENTER ();
 
     // II' -> II  (because we search FUNDEF_ARGS)
-    argvar = LFUgetArgFromRecursiveCallVariable (rcv, fundef);
-    res = LFUgetCallerVariableFromArg (argvar, fundef);
+    argvar = LFUrcv2Arg (rcv, fundef);
+    res = LFUarg2Caller (argvar, fundef);
 
     DBUG_RETURN (res);
 }
@@ -2744,7 +2744,7 @@ PHUThandleAPV (node *exprsall, node *fundef, lut_t *varlut, int *stridesign, nod
         if (3 < TCcountExprs (exprs)) {
             exprspfn = ISLFN (exprs);
             exprsrarg = ISLRARG (exprs);
-            argvar = LFUgetArgFromRecursiveCallVariable (exprsres, fundef);
+            argvar = LFUrcv2Arg (exprsres, fundef);
             if (NULL != argvar) {
                 // Look for a function of a loop-dependent call argument.
                 // (Code pattern 1, above).
@@ -2763,6 +2763,7 @@ PHUThandleAPV (node *exprsall, node *fundef, lut_t *varlut, int *stridesign, nod
                 }
 
             } else {
+#ifdef FIXMELATER
                 // Look for code pattern 2.
                 //
                 // Try IItmp = II +- stride
@@ -2773,7 +2774,7 @@ PHUThandleAPV (node *exprsall, node *fundef, lut_t *varlut, int *stridesign, nod
                     && (LFUisAvisMemberArg (ID_AVIS (exprslarg), FUNDEF_ARGS (fundef)))) {
 
                     // Find II' = II +- stride   or  II' = stride + II
-                    iiprime = LFUgetRecursiveCallVariableFromArg (exprslarg, fundef);
+                    iiprime = LFUarg2Rcv (exprslarg, fundef);
                     strideid = LFUgetStrideForAffineFun (iiprime, exprslarg);
                     mathsignum = LFUgetMathSignumForAffineFun (iiprime, exprslarg);
                     argvar = ID_AVIS (exprslarg);
@@ -2785,15 +2786,17 @@ PHUThandleAPV (node *exprsall, node *fundef, lut_t *varlut, int *stridesign, nod
                         && ((F_add_SxS == exprspfn))
                         && (LFUisAvisMemberArg (ID_AVIS (exprsrarg),
                                                 FUNDEF_ARGS (fundef)))) {
-                        iiprime = LFUgetRecursiveCallVariableFromArg (exprsrarg, fundef);
+                        iiprime = LFUarg2Rcv (exprsrarg, fundef);
                         strideid = LFUgetStrideForAffineFun (iiprime, exprsrarg);
                         mathsignum = LFUgetMathSignumForAffineFun (iiprime, exprsrarg);
                         argvar = ID_AVIS (exprsrarg);
                     }
                 }
+#endif // FIXMELATER
             }
 
             // Find sign of stride, correct for F_sub.
+            int moldy; // should use PHUT below
             stridesignum = (NULL == strideid) ? 0
                                               : mathsignum * SCSisPositive (strideid)
                                                   ? 1
@@ -2875,7 +2878,7 @@ PHUThandleAPV (node *exprsall, node *fundef, lut_t *varlut, int *stridesign, nod
  ******************************************************************************/
 node *
 PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *varlut,
-                                  int loopcount)
+                                  int loopcount, node *aft)
 {
     node *resel = NULL;
     node *rcvel = NULL;
@@ -2915,8 +2918,8 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
         strideid = NULL;
 
         exprs = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (rcvel))));
-        arg = LFUgetArgFromRecursiveCallVariable (rcvel, fundef);
-        strideid = LFUgetStrideInfo (exprs, arg, &stridesignum);
+        arg = LFUrcv2Arg (rcvel, fundef);
+        strideid = LFUgetStrideInfo (exprs, arg, &stridesignum, aft, fundef, varlut);
 
         // If we know stride sign & loop count, we can generate an ISL directive
         if (0 != stridesignum) {
@@ -3007,7 +3010,7 @@ PHUTvar2Arg (node *avis, node *fundef)
 
     res = (LFUisAvisMemberArg (avis, FUNDEF_ARGS (fundef))) ? avis : NULL;
     if (NULL == res) { // User may have given us rcv
-        res = LFUgetArgFromRecursiveCallVariable (avis, fundef);
+        res = LFUrcv2Arg (avis, fundef);
     }
 
     DBUG_RETURN (res);
@@ -3029,14 +3032,16 @@ PHUTvar2Arg (node *avis, node *fundef)
  *     within the POLYS framework. If not, you will get VERY wrong answers.
  *
  *  This code requires that one argument to the LOOPFUN's condprf
- *  is loop-dependent, and that the other is not. [We may have
- *  to relax this requirement, and blindly pick one of them, or
- *  give up on determining loop count. For now, we just crash.]
+ *  is loop-dependent, and that the other is not.
+ *  It would be nice to relax this requirement, so that we can
+ *  handle the Bodo1.sac unit test.
  *
  ******************************************************************************/
 int
 PHUTgetLoopCount (node *fundef, lut_t *varlut)
 {
+
+#ifdef REDESIGNNEEDED
     node *condvar = NULL;
     node *condprf = NULL;
     node *modprf = NULL;
@@ -3045,8 +3050,9 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     node *arg2 = NULL;
     node *funarg1 = NULL;
     node *funarg2 = NULL;
-    node *ex1 = NULL;
-    node *ex2 = NULL;
+    node *aft1 = NULL;
+    node *aft2 = NULL;
+    node *aft3 = NULL;
     node *exprs = NULL;
     node *rcv = NULL;
     node *liv = NULL;
@@ -3081,47 +3087,29 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 && (PHUTisCompatibleAffineTypes (condprf))) {
 
                 arg1 = PHUTskipChainedAssigns (PRF_ARG1 (condprf));
-                ex1 = PHUTgenerateAffineExprs (arg1, fundef, varlut,
-                                               AVIS_ISLCLASSEXISTENTIAL, loopcount);
-                resel1 = PHUThandleAPV (ex1, fundef, varlut, &stridesign1, &lcv1,
+                aft1 = PHUTgenerateAffineExprs (arg1, fundef, varlut,
+                                                AVIS_ISLCLASSEXISTENTIAL, loopcount);
+                resel1 = PHUThandleAPV (aft1, fundef, varlut, &stridesign1, &lcv1,
                                         &strideid1, loopcount);
 
                 arg2 = PHUTskipChainedAssigns (PRF_ARG2 (condprf));
-                ex2 = PHUTgenerateAffineExprs (arg2, fundef, varlut,
-                                               AVIS_ISLCLASSEXISTENTIAL, loopcount);
-                resel2 = PHUThandleAPV (ex2, fundef, varlut, &stridesign2, &lcv2,
+                aft2 = PHUTgenerateAffineExprs (arg2, fundef, varlut,
+                                                AVIS_ISLCLASSEXISTENTIAL, loopcount);
+                resel2 = PHUThandleAPV (aft2, fundef, varlut, &stridesign2, &lcv2,
                                         &strideid2, loopcount);
-                exprs = TCappendExprs (ex1, ex2);
+                exprs = TCappendExprs (aft1, aft2);
 
                 // Generate ISL constraint for condprf
-                ex1 = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2, NOPRFOP,
-                                                NULL);
-                exprs = TCappendExprs (exprs, ex1);
+                aft3 = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2, NOPRFOP,
+                                                 NULL);
+                exprs = TCappendExprs (exprs, aft3);
 
                 // This section of code needs work. At present, it supports ONLY
                 // the following code patterns, where arg is an N_arg of the
                 // loopfun, and const is a loop-invariant value whose sign we
                 // can determine. I.e., const may be an element of an AKD shape
                 // vector, so it is not constant, but we do know const to be non-negative.
-                // There are two cases, depending on -doctz:
-                //
-                // Case 1: In the -noctz case, we have (where lim is loop-invariant):
-                //
-                //         arg' = arg   + const      or
-                //         arg' = const + arg        or
-                //         arg' = arg   - const
-                //
-                //         if( arg' < lim) Loop( arg')
-                //
-                // Case 2: The -doctz case is slightly more convoluted, as it makes
-                // condprf compare against zero:
-                //
-                //         arg' = arg   + const      or
-                //         arg' = const + arg        or
-                //         arg' = arg   - const
-                //
-                //         arg'' = arg - lim
-                //         if( arg'' < 0) Loop( arg')
+                // There are two cases, depending on -doctz. See lacfun_utilities.c
                 //
                 // Regarding the requirement that one condprf argument be loop-invariant:
                 // the Bodo1.sac unit test has an upper limit on the loop that
@@ -3129,6 +3117,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 // with polyhedra, but I don't see one, offhand.
 
                 // This section of code has two purposes:
+                //
                 //   1. Find the loop-dependent variable that controls the looping,
                 //      and make it an ISL Set Variable.
                 //
@@ -3169,7 +3158,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 }
 
                 if (1 == nldv) { // We require a single loop-dependent argument
-                    rcv = LFUgetRecursiveCallVariableFromArg (rcv, fundef);
+                    rcv = LFUarg2Rcv (rcv, fundef);
                     rcv = ID_AVIS (rcv);
                     // ISL (Barvinok, actually) computes loop count of Set Variable
                     AVIS_ISLCLASS (rcv) = AVIS_ISLCLASSSETVARIABLE;
@@ -3178,13 +3167,17 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                     // based on the prf modifying the recursive call variable, rcv
                     modprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (rcv)));
                     // Get N_arg corresponding to rcv
-                    arg = LFUgetArgFromRecursiveCallVariable (rcv, fundef);
-                    strideid = LFUgetStrideInfo (modprf, arg, &stridesignum);
+                    arg = LFUrcv2Arg (rcv, fundef);
+                    strideid = LFUgetStrideInfo (modprf, arg, &stridesignum, aft1, fundef,
+                                                 varlut);
+                    int fixme2; // aft1 above is wrong, at least par of the time
                     if (0 != stridesignum) {
                         prfi = (stridesignum > 0) ? F_le_SxS : F_lt_SxS;
                         prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
                     }
+
                     int fixme; // missing bits pre prfi, prfz
+
                     str = ISLUexprs2String (exprs, varlut, "LoopCount", TRUE,
                                             FUNDEF_NAME (fundef));
                     z = ISLUgetLoopCount (str, varlut);
@@ -3200,10 +3193,17 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     }
 
     DBUG_RETURN (z);
+#else  // REDESIGNNEEDED
+    DBUG_ENTER ();
+    int z = UNR_NONE;
+    ;
+
+    DBUG_RETURN (z);
+#endif // REDESIGNNEEDED
 }
 
 /******************************************************************************
- * bool PHUTisPositive( node *arg_node)
+ * bool PHUTisPositive(...)
  *
  * function: Predicate for determining if an argument is known to
  *           be positive.
@@ -3257,7 +3257,7 @@ PHUTisPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
 }
 
 /******************************************************************************
- * bool PHUTisNegative( node *arg_node)
+ * bool PHUTisNegative(...)
  *
  * function: Predicate for determining if an argument is known to
  *           be negative.
@@ -3284,7 +3284,7 @@ PHUTisPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
  *
  *****************************************************************************/
 bool
-PHUisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
+PHUTisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
 {
     bool z;
     node *exprsFn;
@@ -3311,7 +3311,7 @@ PHUisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
 }
 
 /******************************************************************************
- * bool PHUTisNonPositive( node *arg_node)
+ * bool PHUTisNonPositive(...)
  *
  * function: Predicate for determining if an argument is known to
  *           be non-positive.
@@ -3365,7 +3365,7 @@ PHUTisNonPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
 }
 
 /******************************************************************************
- * bool PHUTisNonNegative( node *arg_node)
+ * bool PHUTisNonNegative(...)
  *
  * function: Predicate for determining if an argument is known to
  *           be non-negative.

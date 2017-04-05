@@ -1950,7 +1950,10 @@ NTCpart (node *arg_node, info *arg_info)
      * Now, we check the other parts:
      */
 
-    if (global.ssaiv || global.optimize.dossawl) {
+    if ((global.ssaiv) ||
+        // Not always in ssalw mode &&
+        ((global.optimize.dossawl) && (global.compiler_anyphase >= PH_opt_saacyc_ssawl)
+         && (global.compiler_anyphase < PH_opt_saacyc_ussawl))) {
         if (PART_NEXT (arg_node) != NULL) {
             this_idx = TYgetProductMember (INFO_TYPE (arg_info), 0);
             INFO_TYPE (arg_info) = TYfreeTypeConstructor (INFO_TYPE (arg_info));

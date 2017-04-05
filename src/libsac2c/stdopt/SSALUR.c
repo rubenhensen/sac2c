@@ -41,7 +41,7 @@
 #include "pattern_match.h"
 #include "tree_utils.h"
 
-#define DBUG_PREFIX "SSALUR"
+#define DBUG_PREFIX "LUR"
 #include "debug.h"
 
 /* INFO structure and macros */
@@ -2358,6 +2358,9 @@ LURfundef (node *arg_node, info *arg_info)
     unrolling = (UNR_NONE != FUNDEF_LOOPCOUNT (arg_node))
                   ? FUNDEF_LOOPCOUNT (arg_node)
                   : GetLoopUnrolling (arg_node, INFO_EXT_ASSIGN (arg_info));
+
+    // Even if we do not unroll, this value may be of use to PHUT, etc.
+    FUNDEF_LOOPCOUNT (arg_node) = unrolling;
 
     if (unrolling != UNR_NONE) {
         if (unrolling <= global.unrnum) {

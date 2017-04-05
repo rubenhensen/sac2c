@@ -415,24 +415,22 @@ POGOlet (node *arg_node, info *arg_info)
  * @param  fundef - the N_fundef node for this loopfun
  *
  * @return: If nid is not part of the COND_COND that controls this
- *          loopfun, return the loopcount. Otherwise, return -1.
+ *          loopfun, return the loopcount. Otherwise, return UNR_NONE.
  *
  ******************************************************************************/
 static int
 getLoopCountForFundef (node *arg_node, node *fundef)
 {
     node *lacfunprf;
-    int z = -1;
+    int z = UNR_NONE;
 
     DBUG_ENTER ();
 
     lacfunprf = LFUfindLacfunConditional (fundef);
     if (NULL != lacfunprf) { // LOOPFUNs only
         lacfunprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf))));
-        if (lacfunprf != arg_node) { // THis is the COND_COND
-            // We add 1 because LOOPCOUNT excludes first iteration (tail recursion).
-            z = (UNR_NONE != FUNDEF_LOOPCOUNT (fundef)) ? 1 + FUNDEF_LOOPCOUNT (fundef)
-                                                        : -1;
+        if (lacfunprf != arg_node) { // This is the COND_COND
+            z = FUNDEF_LOOPCOUNT (fundef);
         }
     }
 
@@ -630,6 +628,8 @@ POGOprf (node *arg_node, info *arg_info)
         exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
         exprsCfn = (NULL != exprsCfn) ? FREEdoFreeTree (exprsCfn) : NULL;
     }
+
+    INFO_VARLUT (arg_info) = LUTremoveContentLut (INFO_VARLUT (arg_info));
 
     DBUG_RETURN (res);
 }
