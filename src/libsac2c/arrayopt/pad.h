@@ -16,8 +16,9 @@
 #define _SAC_PAD_H_
 
 #include "types.h"
+#include "fun-attrs.h"
 
-extern void APprintDiag (char *format, ...);
+extern void APprintDiag (char *format, ...) PRINTF_FORMAT (1, 2);
 extern node *APdoArrayPadding (node *arg_node);
 
 #endif /* _SAC_PAD_H_  */
