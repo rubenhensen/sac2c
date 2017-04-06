@@ -13,4 +13,6 @@ extern char *ISLUexprs2String (node *exprs, lut_t *varlut, char *lbl, bool isuni
                                char *lhsname);
 extern int ISLUgetSetIntersections (node *exprspwl, node *exprscwl, node *exprsfn,
                                     node *exprscfn, lut_t *varlut, char *lhsname);
+extern int ISLUpwlfIntersect (node *exprspwl, node *exprscwl, node *exprseq,
+                              lut_t *varlut, char *lhsname);
 #endif /* _SAC_ISLU_H_ */

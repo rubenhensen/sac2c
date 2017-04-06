@@ -1249,10 +1249,10 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
     node *pwlelavis;
     node *exprscwl = NULL;
     node *exprspwl = NULL;
+    node *exprseq = NULL;
     pattern *pat;
     node *arravis;
     node *arrid;
-    node *exprsintr;
     int i;
     int loopcount = -1;
     int shp;
@@ -1262,6 +1262,7 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
 
     // Must find N_array node for iv, or give up.
     iv = PRF_ARG1 (arg_node);
+    // If iv is a scalar, we build an N_array for it
     arravis
       = IVUToffset2Vect (arg_node, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
                          INFO_CONSUMERWLPART (arg_info), pwlpart);
@@ -1279,34 +1280,34 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
                 ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
                 ivel = PHUTskipChainedAssigns (ivel);
 
-                exprscwl = PHUTgenerateAffineExprs (ivel, INFO_FUNDEF (arg_info),
+                exprspwl = PHUTgenerateAffineExprs (pwlelavis, INFO_FUNDEF (arg_info),
                                                     INFO_VARLUT (arg_info),
                                                     AVIS_ISLCLASSSETVARIABLE, loopcount);
-                exprspwl = PHUTgenerateAffineExprs (pwlelavis, INFO_FUNDEF (arg_info),
+                exprscwl = PHUTgenerateAffineExprs (ivel, INFO_FUNDEF (arg_info),
                                                     INFO_VARLUT (arg_info),
                                                     AVIS_ISLCLASSSETVARIABLE, loopcount);
 
                 exprspwl = TCappendExprs (exprspwl, DUPdoDupTree (exprscwl));
 
                 // Collect affine exprs for PWL
-                exprsintr
+                exprseq
                   = PHUTgenerateAffineExprsForPwlfIntersect (ivel, pwlelavis,
                                                              INFO_VARLUT (arg_info),
                                                              INFO_FUNDEF (arg_info));
 
                 // Don't bother calling ISL if it can't do anything for us.
                 if ((NULL != exprscwl) && (NULL != exprspwl)) {
-                    z = PHUTcheckIntersection (exprspwl, exprscwl, exprsintr, NULL,
-                                               INFO_VARLUT (arg_info), POLY_OPCODE_PWLF,
-                                               AVIS_NAME (IDS_AVIS (
-                                                 INFO_CONSUMERWLIDS (arg_info))));
+                    z = ISLUpwlfIntersect (exprspwl, exprscwl, exprseq,
+                                           INFO_VARLUT (arg_info),
+                                           AVIS_NAME (
+                                             ID_AVIS (INFO_PRODUCERWLLHS (arg_info))));
+                    // lhsname, above, is slightly misleading, as it indicates
+                    // the producer, rather than the consumer
                 }
 
                 // Post-cleanup
                 ivel = TCgetNthExprsExpr (i, ARRAY_AELEMS (ivarr));
                 pwlelavis = TCgetNthIds (i, WITHID_IDS (PART_WITHID (pwlpart)));
-                exprscwl = (NULL != exprscwl) ? FREEdoFreeTree (exprscwl) : NULL;
-                exprspwl = (NULL != exprspwl) ? FREEdoFreeTree (exprspwl) : NULL;
                 i++;
             }
         }

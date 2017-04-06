@@ -881,7 +881,7 @@ PHUTcollectWlGenerator (node *arg_node, node *fundef, lut_t *varlut, node *res,
               = TBmakeAvis (TRAVtmpVarName ("IV"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             if (PHUTinsertVarIntoLut (ivpavis, varlut, fundef,
-                                      AVIS_ISLCLASSSETVARIABLE)) {
+                                      AVIS_ISLCLASSEXISTENTIAL)) {
                 z = DUPdoDupTree (AVIS_ISLTREE (ivpavis));
                 res = TCappendExprs (res, z);
             }
@@ -900,7 +900,7 @@ PHUTcollectWlGenerator (node *arg_node, node *fundef, lut_t *varlut, node *res,
               = TBmakeAvis (TRAVtmpVarName ("IVW"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             if (PHUTinsertVarIntoLut (ivwavis, varlut, fundef,
-                                      AVIS_ISLCLASSSETVARIABLE)) {
+                                      AVIS_ISLCLASSEXISTENTIAL)) {
                 z = DUPdoDupTree (AVIS_ISLTREE (ivwavis));
                 res = TCappendExprs (res, z);
                 z = BuildIslSimpleConstraint (TBmakeNum (0), F_le_SxS, ivwavis, F_lt_SxS,

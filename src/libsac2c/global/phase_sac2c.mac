@@ -568,6 +568,13 @@ CYCLEPHASEFUN (pdcr, "Removing dead code for polyhedral optimizations",
 // during polyhedral optimizations. Ideally, the whole
 // compiler would allow this, so if you need with-loops in SSA form,
 // get out your coding pencil.
+//
+// NB. Some functions, such as NTCpart, have to know when
+// NB. in ssawl mode. They find this out by looking at
+// NB. global.compiler_anyphase. If you change ssawl and/or
+// NB. ussawl, these checks must also be adjusted, to
+// NB. reflect the new limits of ssawl mode.
+
 CYCLEPHASEFUN (ssawl, "Convert withids to SSA form", SSAWdoTransformToSSA,
                global.optimize.dopogo || global.optimize.dopwlf || global.optimize.doplur,
                opt, saacyc)

@@ -67,8 +67,8 @@
 //             ^---------------- ISL set-variable
 //    ^------------------------- ISL parameter
 #define AVIS_ISLCLASSUNDEFINED 0
-#define AVIS_ISLCLASSSETVARIABLE 1
-#define AVIS_ISLCLASSPARAMETER 2
+#define AVIS_ISLCLASSPARAMETER 1
+#define AVIS_ISLCLASSSETVARIABLE 2
 #define AVIS_ISLCLASSEXISTENTIAL 3
 
 #endif /* _SAC_PHDEFS_H_ */
