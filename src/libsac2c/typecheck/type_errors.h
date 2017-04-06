@@ -2,6 +2,7 @@
 #define _SAC_TYPE_ERRORS_H_
 
 #include "types.h"
+#include "fun-attrs.h"
 
 extern char *TEprfArg2Obj (const char *prf_str, int pos);
 extern char *TEarg2Obj (int pos);
@@ -60,7 +61,8 @@ extern int TEval (ntype *args);
 
 extern void TEfreeAllTypeErrorInfos (void);
 
-extern void TEhandleError (int line, const char *file, const char *format, ...);
+extern void TEhandleError (int line, const char *file, const char *format, ...)
+  PRINTF_FORMAT (3, 4);
 extern char *TEfetchErrors (void);
 extern void TEextendedAbort (void);
 extern int TEgetLine (te_info *info);

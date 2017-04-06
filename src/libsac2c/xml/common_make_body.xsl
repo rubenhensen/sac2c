@@ -118,7 +118,7 @@
   </xsl:call-template>
   <xsl:value-of select="';'" />
 
-  <xsl:value-of select="'DBUG_PRINT (&quot;address: &quot;F_PTR, xthis);'"/>
+  <xsl:value-of select="'DBUG_PRINT (&quot;address: &quot;F_PTR, (void *)xthis);'"/>
   <!-- set node type -->
   <xsl:value-of select="'DBUG_PRINT (&quot;setting node type&quot;);'"/>
   <xsl:value-of select="'NODE_TYPE(xthis) = '" />
@@ -163,7 +163,7 @@
 <xsl:template match="sons/son" mode="make-body">
   <xsl:value-of select="'DBUG_PRINT (&quot;assigning son '"/>
   <xsl:value-of select="@name"/>
-  <xsl:value-of select="' initial value: &quot;F_PTR, '"/>
+  <xsl:value-of select="' initial value: &quot;F_PTR, (void *)'"/>
   <xsl:choose>
     <xsl:when test="@default">
       <xsl:value-of select="@default" />

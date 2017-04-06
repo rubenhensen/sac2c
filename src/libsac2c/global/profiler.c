@@ -1,5 +1,6 @@
-
 #include "config.h"
+#include "fun-attrs.h"
+
 #ifdef HAVE_GETTIME
 
 #define DBUG_PREFIX "TIME"

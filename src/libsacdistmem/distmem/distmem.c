@@ -24,7 +24,7 @@
 
 extern char *strerror (int errnum);
 
-#include "config.h"
+#include "fun-attrs.h"
 
 /* By default, we do not use tracing. */
 #if !defined(COMPILE_TRACE) && !defined(COMPILE_PROFILE)

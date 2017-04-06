@@ -12,7 +12,7 @@
  *
  *****************************************************************************/
 
-#include "config.h"
+#include "fun-attrs.h"
 
 static UNUSED int _dummy_mt_beehive;
 

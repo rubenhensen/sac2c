@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "fun-attrs.h"
 
 #ifndef DBUG_PREFIX
 #warning DBUG_PREFIX is undefined. Using the current file name.
@@ -70,13 +71,14 @@ extern void _db_pop_ (void);      /* Pop previous debug state */
 extern void _db_enter_ (const char *, char *, int, const char **, const char **,
                         int *); /* New user function entered */
 extern void _db_return_ (int, const char **, const char **,
-                         int *);                        /* User function return */
-extern void _db_pargs_ (int, char *);                   /* Remember args for line */
-extern void _db_doprnt_ (char *, ...);                  /* Print debug output */
-extern void _db_doprnt_assert_1_ (char *, int, char *); /* Print debug output */
-extern void _db_doprnt_assert_2_ (char *, ...);         /* Print debug output */
-extern void _db_setjmp_ (void);                         /* Save debugger environment */
-extern void _db_longjmp_ (void);                        /* Restore debugger environment */
+                         int *);                            /* User function return */
+extern void _db_pargs_ (int, char *);                       /* Remember args for line */
+extern void _db_doprnt_ (char *, ...) PRINTF_FORMAT (1, 2); /* Print debug output */
+extern void _db_doprnt_assert_1_ (char *, int, char *);     /* Print debug output */
+extern void _db_doprnt_assert_2_ (char *, ...)
+  PRINTF_FORMAT (1, 2);          /* Print debug output */
+extern void _db_setjmp_ (void);  /* Save debugger environment */
+extern void _db_longjmp_ (void); /* Restore debugger environment */
 
 #endif
 
