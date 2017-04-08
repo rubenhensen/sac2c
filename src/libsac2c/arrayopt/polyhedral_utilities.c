@@ -1819,6 +1819,42 @@ HandleCompositionWithShape (node *arg_node, node *rhs, node *fundef, lut_t *varl
 
 /** <!-- ****************************************************************** -->
  *
+ * @fn node * HandleAbs(...)
+ *
+ * @brief Construct constraint for absolute value of arg, if
+ *        we can determine its sign
+ *
+ * @param arg: an N_id or N_avis
+ * @param aft: the Affine Function Tree associated with arg
+ * @param fundef: The N_fundef we are in
+ * @param varlut: The LUT for PHUT and friends
+ * @param ids: The LHS for this primitive
+ *
+ * @result An aft for arg, if we can generate one, or NULL
+ *
+ ******************************************************************************/
+static node *
+HandleAbs (node *arg, node *aft, node *fundef, lut_t *varlut, node *ids)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    // If arg2 > 0 --->   z < arg2
+    if (PHUTisPositive (arg, aft, fundef, varlut)) {
+        res = BuildIslSimpleConstraint (ids, F_lt_SxS, arg, NOPRFOP, NULL);
+    }
+
+    // If arg2 < 0 --->   z < -arg2
+    if (PHUTisNegative (arg, aft, fundef, varlut)) {
+        res = BuildIslSimpleConstraint (ids, F_lt_SxS, TBmakeNum (0), F_sub_SxS, arg);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
  * @fn node *HandleIota( node *arg_node...)
  *
  * @brief Handler for indexing from iota(N)
@@ -2054,6 +2090,8 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res,
                 z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
                                               NULL);
                 res = TCappendExprs (res, z);
+                z = HandleAbs (arg1, arg1aft, fundef, varlut, ids);
+                res = TCappendExprs (res, z);
                 break;
 
             case F_aplmod_SxS:
@@ -2077,16 +2115,8 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res,
                 res = TCappendExprs (res, z);
 
                 // maximum:  z < abs( arg2)
-                // So, if arg2 > 0 --->   z < arg2
-                //     If arg2 < 0 --->   z < -arg2
-                if (PHUTisPositive (arg2, arg2aft, fundef, varlut)) {
-                    z = BuildIslSimpleConstraint (ids, F_lt_SxS, arg2, NOPRFOP, NULL);
-                    res = TCappendExprs (res, z);
-                } else {
-                    z = BuildIslSimpleConstraint (ids, F_lt_SxS, TBmakeNum (0), F_sub_SxS,
-                                                  arg2);
-                    res = TCappendExprs (res, z);
-                }
+                z = HandleAbs (arg2, arg2aft, fundef, varlut, ids);
+                res = TCappendExprs (res, z);
                 break;
 
             case F_mod_SxS:
@@ -3294,7 +3324,7 @@ PHUTisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
 
     DBUG_ENTER ();
 
-    z = SCSisPositive (arg_node);
+    z = SCSisNegative (arg_node);
     if (!z) {
         arg1 = PHUTskipChainedAssigns (arg_node);
         zro = TBmakeNum (0);
@@ -3348,7 +3378,7 @@ PHUTisNonPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
 
     DBUG_ENTER ();
 
-    z = SCSisNonnegative (arg_node);
+    z = SCSisNonPositive (arg_node);
     if (!z) {
         arg1 = PHUTskipChainedAssigns (arg_node);
         zro = TBmakeNum (0);
@@ -3402,7 +3432,7 @@ PHUTisNonNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
 
     DBUG_ENTER ();
 
-    z = SCSisNonnegative (arg_node);
+    z = SCSisNonNegative (arg_node);
     if (!z) {
         arg1 = PHUTskipChainedAssigns (arg_node);
         zro = TBmakeNum (0);

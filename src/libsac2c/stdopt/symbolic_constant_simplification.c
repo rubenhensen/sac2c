@@ -149,7 +149,7 @@ SCSisSelOfShape (node *arg_node)
 }
 
 /******************************************************************************
- * bool SCSisNonnegative( node *arg_node)
+ * bool SCSisNonNegative( node *arg_node)
  *
  * function: Predicate for determining if an argument is known to
  *           be non-negative.
@@ -166,7 +166,7 @@ SCSisSelOfShape (node *arg_node)
  *
  *****************************************************************************/
 bool
-SCSisNonnegative (node *arg_node)
+SCSisNonNegative (node *arg_node)
 {
     pattern *pat;
     constant *con = NULL;
@@ -1052,14 +1052,14 @@ SawingTheBoardInTwo (node *arg_node, info *arg_info)
     iv = PRF_ARG1 (arg_node);
     shpa = PRF_ARG2 (arg_node);
 
-    if ((SCSisNonnegative (shpa)) && (PMmatchFlatSkipGuards (patsub, iv))
-        && (SCSisNonnegative (count))) {
+    if ((SCSisNonNegative (shpa)) && (PMmatchFlatSkipGuards (patsub, iv))
+        && (SCSisNonNegative (count))) {
         res = TBmakeExprs (DUPdoDupNode (iv), TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT ("removed guard Case 7a( %s)", AVIS_NAME (ID_AVIS (iv)));
     }
 
     // Case 7b
-    if ((NULL == res) && (SCSisNonnegative (shpa))
+    if ((NULL == res) && (SCSisNonNegative (shpa))
         && ((PMmatchFlatSkipGuards (patadd1, iv))
             || (PMmatchFlatSkipGuards (patadd2, iv)))
         && (SCSisNegative (count))) {
@@ -1116,12 +1116,12 @@ isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info, bool signum)
     patadd2 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAgetNode (&v2), 0),
                      PMvar (1, PMAisVar (&arg1), 0));
 
-    z = (SCSisNonnegative (arg1)) && (SCSisNonnegative (arg2));
+    z = (SCSisNonNegative (arg1)) && (SCSisNonNegative (arg2));
     z = z
         && (PMmatchFlat (patadd1, arg2) || // prf( arg1, arg1 + arg2);
             PMmatchFlat (patadd2, arg2));  // prf( arg1, arg2 + arg1);
     if (signum) {
-        z = z && SCSisNonnegative (v2);
+        z = z && SCSisNonNegative (v2);
     } else {
         z = z && SCSisNegative (v2);
     }
@@ -1318,10 +1318,10 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisNegative (Y));
 
         // (x + nonnegY) <  x
-        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNonnegative (Y));
+        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNonNegative (Y));
         // (x + nonnegY) <= x         dunno
         // (x + nonnegY) >= x
-        SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNonnegative (Y));
+        SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNonNegative (Y));
         // (x + nonnegY) > x          dunno
 
         // (x + posY) <= x
@@ -1335,9 +1335,9 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
 
         // (x - nonnegY) <   x         dunno
         // (x - nonnegY) <=  x
-        SCSECI (F_sub_SxS, F_le_SxS, TRUE, SCSisNonnegative (Y));
+        SCSECI (F_sub_SxS, F_le_SxS, TRUE, SCSisNonNegative (Y));
         // (x - nonnegY) > x
-        SCSECI (F_sub_SxS, F_gt_SxS, FALSE, SCSisNonnegative (Y));
+        SCSECI (F_sub_SxS, F_gt_SxS, FALSE, SCSisNonNegative (Y));
         // (x - nonnegY) >= x         dunno
 
         // In these functions, myres == FALSE means PRF_ARG2 is the result;
@@ -1372,9 +1372,9 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         SCSECI (F_add_SxS, F_gt_SxS, TRUE, SCSisNegative (Y));
 
         // x <= (x + nonnegY)
-        SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisNonnegative (Y));
+        SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisNonNegative (Y));
         // x >  (x + nonnegY)
-        SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisNonnegative (Y));
+        SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisNonNegative (Y));
 
         // x <= (x + posY)
         SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisPositive (Y));
@@ -1386,10 +1386,10 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisPositive (Y));
 
         // x <  (x - nonnegY)
-        SCSECI (F_sub_SxS, F_lt_SxS, FALSE, SCSisNonnegative (Y));
+        SCSECI (F_sub_SxS, F_lt_SxS, FALSE, SCSisNonNegative (Y));
         // x <= (x - nonnegY)         dunno
         // x >= (x - nonnegY)
-        SCSECI (F_sub_SxS, F_ge_SxS, TRUE, SCSisNonnegative (Y));
+        SCSECI (F_sub_SxS, F_ge_SxS, TRUE, SCSisNonNegative (Y));
         // x >  (x - nonnegY)         dunno
 
         // max( min( x, y), x) --> x
@@ -3278,7 +3278,7 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* Case 1*/
-    if (SCSisNonnegative (PRF_ARG1 (arg_node))) {
+    if (SCSisNonNegative (PRF_ARG1 (arg_node))) {
 
         DBUG_PRINT ("Removed non_neg guard on %s",
                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));

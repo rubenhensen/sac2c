@@ -267,7 +267,7 @@ GDBprintAvisName (node *avis)
 {
 
     if (NULL != avis) {
-        printf ("Avis for %s is:%x, AVIS_ISLCLASS=%d\n", AVIS_NAME (avis), avis,
+        printf ("Avis for %s is:%p, AVIS_ISLCLASS=%d\n", AVIS_NAME (avis), (void *)avis,
                 AVIS_ISLCLASS (avis));
     }
     return;

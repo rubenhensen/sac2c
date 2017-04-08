@@ -961,9 +961,9 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
     // MINVAL
     if ((!IVEXPisAvisHasMin (lhsavis))
         && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))) {
-        isok = (SCSisNonnegative (PRF_ARG1 (rhs)))
+        isok = (SCSisNonNegative (PRF_ARG1 (rhs)))
                && (((!aplmod) && SCSisPositive (PRF_ARG2 (rhs)))
-                   || ((aplmod) && SCSisNonnegative (PRF_ARG2 (rhs))));
+                   || ((aplmod) && SCSisNonNegative (PRF_ARG2 (rhs))));
         isok = isok || (aplmod && SCSisPositive (PRF_ARG2 (rhs)));
         if (isok) {
             zr = SCSmakeZero (nsa); /* Create zero minval */
@@ -981,7 +981,7 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
     if ((!IVEXPisAvisHasMax (lhsavis))
         && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))
         && (SCSisPositive (PRF_ARG2 (rhs)))
-        && (((!aplmod) && SCSisNonnegative (PRF_ARG1 (rhs)))
+        && (((!aplmod) && SCSisNonNegative (PRF_ARG1 (rhs)))
             || ((aplmod) && SCSisPositive (PRF_ARG1 (rhs))))) {
         /* Create maximum from PRF_ARG2, unless it is scalar and
          * PRF_ARG1 is vector. We cheat here a bit because
@@ -1342,7 +1342,7 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
 
     /* AVIS_MIN is present */
     if (min1) {
-        if ((!IVEXPisAvisHasMin (lhsavis)) && (SCSisNonnegative (PRF_ARG2 (rhs)))) {
+        if ((!IVEXPisAvisHasMin (lhsavis)) && (SCSisNonNegative (PRF_ARG2 (rhs)))) {
             minarg1 = ID_AVIS (AVIS_MIN (arg1avis));
             minarg2 = arg2avis;
         }
@@ -1353,7 +1353,7 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
     }
 
     if (min2) {
-        if ((!IVEXPisAvisHasMin (lhsavis)) && (SCSisNonnegative (PRF_ARG1 (rhs)))) {
+        if ((!IVEXPisAvisHasMin (lhsavis)) && (SCSisNonNegative (PRF_ARG1 (rhs)))) {
             minarg1 = arg1avis;
             minarg2 = ID_AVIS (AVIS_MIN (arg2avis));
         }
@@ -1365,7 +1365,7 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
 
     /* AVIS_MAX1 is present */
     if (max1) {
-        if ((!IVEXPisAvisHasMax (lhsavis)) && (SCSisNonnegative (PRF_ARG2 (rhs)))) {
+        if ((!IVEXPisAvisHasMax (lhsavis)) && (SCSisNonNegative (PRF_ARG2 (rhs)))) {
             maxarg1 = ID_AVIS (AVIS_MAX (arg1avis));
             maxarg1 = IVEXPadjustExtremaBound (/* Denormalize maxv */
                                                maxarg1, -1, &INFO_VARDECS (arg_info),
@@ -1384,7 +1384,7 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
 
     /* AVIS_MAX2 is present */
     if (max2) {
-        if ((!IVEXPisAvisHasMax (lhsavis)) && (SCSisNonnegative (PRF_ARG1 (rhs)))) {
+        if ((!IVEXPisAvisHasMax (lhsavis)) && (SCSisNonNegative (PRF_ARG1 (rhs)))) {
             maxarg1 = arg1avis;
             maxarg2 = ID_AVIS (AVIS_MAX (arg2avis));
             maxarg2 = IVEXPadjustExtremaBound (/* Denormalize maxv */
@@ -2418,7 +2418,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
           // Otherwise, we will generate a minval (elsewhere).
           rhsavis
           = ID_AVIS (PRF_ARG1 (rhs));
-        if ((NULL != AVIS_MIN (rhsavis)) && SCSisNonnegative (AVIS_MIN (rhsavis))) {
+        if ((NULL != AVIS_MIN (rhsavis)) && SCSisNonNegative (AVIS_MIN (rhsavis))) {
             AVIS_MIN (lhsavis)
               = (NULL != AVIS_MIN (lhsavis)) ? FREEdoFreeNode (AVIS_MIN (lhsavis)) : NULL;
             IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)), TRUE);
