@@ -1368,6 +1368,8 @@ isDyadicPrf (prf nprf)
     case F_max_SxS:
     case F_mod_SxS:
     case F_aplmod_SxS:
+    case F_sel_VxA:
+    case F_idx_sel:
         z = TRUE;
         break;
 
@@ -1395,7 +1397,7 @@ isDyadicPrf (prf nprf)
  * @brief ISL only supports integer (and Booleans, due to
  *        coercions made here), so we forbid other types.
  *
- *        dim() and shape() produce integer results, so we accept them,
+ *        dim() shape(), etc., produce integer results, so we accept them,
  *        regardless of argument type.
  *
  * @param arg_node: An N_prf
@@ -1411,12 +1413,19 @@ PHUTisCompatibleAffineTypes (node *arg_node)
 
     DBUG_ENTER ();
 
-    z = (F_dim_A == PRF_PRF (arg_node)) || (F_shape_A == PRF_PRF (arg_node));
-    avis = Node2Avis (PRF_ARG1 (arg_node));
-    z = z || TUisBoolScalar (AVIS_TYPE (avis)) || TUisIntScalar (AVIS_TYPE (avis));
-    if (isDyadicPrf (PRF_PRF (arg_node))) {
-        avis = Node2Avis (PRF_ARG2 (arg_node));
-        z = z && (TUisBoolScalar (AVIS_TYPE (avis)) || TUisIntScalar (AVIS_TYPE (avis)));
+    // All argument types good for these primitives
+    z = (F_dim_A == PRF_PRF (arg_node)) || (F_sel_VxA == PRF_PRF (arg_node))
+        || (F_idx_sel == PRF_PRF (arg_node)) || (F_shape_A == PRF_PRF (arg_node));
+
+    if (!z) { // These primitives require Boolean or Int arguments
+        avis = Node2Avis (PRF_ARG1 (arg_node));
+        z = z || TUisBoolScalar (AVIS_TYPE (avis)) || TUisIntScalar (AVIS_TYPE (avis));
+        if (isDyadicPrf (PRF_PRF (arg_node))) {
+            avis = Node2Avis (PRF_ARG2 (arg_node));
+            z = z
+                && (TUisBoolScalar (AVIS_TYPE (avis))
+                    || TUisIntScalar (AVIS_TYPE (avis)));
+        }
     }
 
     DBUG_RETURN (z);
@@ -1762,7 +1771,7 @@ HandleNumber (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *HandleCompositionWithShape( node *arg_node...)
+ * @fn node *HandleSelectWithShape( node *arg_node...)
  *
  * @brief Handler for compositions of indexing on shape:
  *        Currently supported:
@@ -1770,11 +1779,7 @@ HandleNumber (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
  *          shpel = _sel_VxA_( iv, _shape_A_( var));
  *          Both of these will generate shpel >= 0.
  *
- * @param  arg_node: The N_avis for an assign.
- * @param  rhs: The assign's rhs
- * @param  res: Incoming N_exprs chain
- * @param  loopcount: The loopcount to be used for the APV in a loopfun;
- *                    else -1.
+ * @param  arg_node: PRF_ARG2 for sel()
  *
  * @return An N_exprs chain (or NULL)
  *         representing an ISL constraint, appended to res.
@@ -1782,47 +1787,36 @@ HandleNumber (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
  *
  ******************************************************************************/
 static node *
-HandleCompositionWithShape (node *arg_node, node *rhs, node *fundef, lut_t *varlut,
-                            node *res, int loopcount)
+HandleSelectWithShape (node *arg_node)
 {
     node *z = NULL;
-    pattern *pat1;
-    pattern *pat2;
-    pattern *pat3;
-    node *iv = NULL;
-    node *x = NULL;
+    pattern *pat;
     node *m = NULL;
 
     DBUG_ENTER ();
 
-    /* z = _sel_VxA_( iv, x); */
-    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
-                  PMvar (1, PMAgetNode (&x), 0));
-    /* z = _idx_sel( offset, x); */
-    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&iv), 0),
-                  PMvar (1, PMAgetNode (&x), 0));
-    /* x = _shape_A_( m ); */
-    pat3 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&m), 0));
+    // x = _shape_A_( m );
+    pat = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&m), 0));
 
-    if ((PMmatchFlat (pat1, rhs) || PMmatchFlat (pat2, rhs)) && PMmatchFlat (pat3, x)) {
+    if (PMmatchFlat (pat, arg_node)) {
         z = BuildIslSimpleConstraint (arg_node, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
-        res = TCappendExprs (res, z);
     }
-    pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
-    pat3 = PMfree (pat3);
+    pat = PMfree (pat);
 
-    DBUG_PRINT ("Leaving HandleCompositionWithShape for lhs=%s", AVIS_NAME (arg_node));
+    DBUG_PRINT ("Leaving HandleSelectWithShape for %s", AVIS_NAME (ID_AVIS (arg_node)));
 
-    DBUG_RETURN (res);
+    DBUG_RETURN (z);
 }
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node * HandleAbs(...)
+ * @fn int PHUTsignum(...)
  *
- * @brief Construct constraint for absolute value of arg, if
- *        we can determine its sign
+ * @brief Signum for arg:
+ *         arg < 0  --> -1
+ *         arg = 0  -->  0
+ *         arg > 0  -->  1
+ *         unknown  -->  2
  *
  * @param arg: an N_id or N_avis
  * @param aft: the Affine Function Tree associated with arg
@@ -1830,24 +1824,27 @@ HandleCompositionWithShape (node *arg_node, node *rhs, node *fundef, lut_t *varl
  * @param varlut: The LUT for PHUT and friends
  * @param ids: The LHS for this primitive
  *
- * @result An aft for arg, if we can generate one, or NULL
+ * @result signum arg, if we can find it, else 2.
  *
  ******************************************************************************/
-static node *
-HandleAbs (node *arg, node *aft, node *fundef, lut_t *varlut, node *ids)
+int
+PHUTsignum (node *arg, node *aft, node *fundef, lut_t *varlut, node *ids)
 {
-    node *res = NULL;
+    int res = 2;
 
     DBUG_ENTER ();
 
-    // If arg2 > 0 --->   z < arg2
+    // If arg2 > 0 --->   z = 1
     if (PHUTisPositive (arg, aft, fundef, varlut)) {
-        res = BuildIslSimpleConstraint (ids, F_lt_SxS, arg, NOPRFOP, NULL);
-    }
-
-    // If arg2 < 0 --->   z < -arg2
-    if (PHUTisNegative (arg, aft, fundef, varlut)) {
-        res = BuildIslSimpleConstraint (ids, F_lt_SxS, TBmakeNum (0), F_sub_SxS, arg);
+        res = 1;
+    } else { // If arg2 < 0 --->   z = -1
+        if (PHUTisNegative (arg, aft, fundef, varlut)) {
+            res = -1;
+        } else {
+            if (SCSisConstantZero (arg)) {
+                res = 0;
+            }
+        }
     }
 
     DBUG_RETURN (res);
@@ -1905,10 +1902,10 @@ HandleIota (node *arg_node, node *fundef, lut_t *varlut, int loopcount)
     pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&iv), 0),
                   PMvar (1, PMAgetNode (&q), 0));
     if ((PMmatchFlat (pat1, id) || PMmatchFlat (pat2, id))) {
-        // We are doing a select from a with-loop.
+        // We are doing a select, perhaps from a with-loop.
         s = WLUTgetGenarrayScalar (q, FALSE);
         if (NULL != s) { // s is a member of N_WITHIDS.
-            // Find the WL
+            // Find the WL, if it exists
             wl = WLUTid2With (q);
             if (N_with == NODE_TYPE (wl)) {
                 // Find generator elements for LB and UB.
@@ -1988,12 +1985,14 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res,
     node *ids = NULL;
     node *argavis;
     node *z = NULL;
+    node *z2 = NULL;
     node *arg1 = NULL;
     node *arg2 = NULL;
     node *arg3 = NULL;
     node *arg1aft = NULL;
     node *arg2aft = NULL;
     node *arg3aft = NULL;
+    int sig;
 
     DBUG_ENTER ();
 
@@ -2090,7 +2089,16 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res,
                 z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
                                               NULL);
                 res = TCappendExprs (res, z);
-                z = HandleAbs (arg1, arg1aft, fundef, varlut, ids);
+                z = NULL;
+                sig = PHUTsignum (arg1, arg1aft, fundef, varlut, ids);
+                if (1 == sig) { // z = arg
+                    z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, NOPRFOP, NULL);
+                } else {
+                    if (-1 == sig) { // z = 0 - arg
+                        z = BuildIslSimpleConstraint (ids, F_eq_SxS, TBmakeNum (0),
+                                                      F_sub_SxS, arg1);
+                    }
+                }
                 res = TCappendExprs (res, z);
                 break;
 
@@ -2115,7 +2123,17 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res,
                 res = TCappendExprs (res, z);
 
                 // maximum:  z < abs( arg2)
-                z = HandleAbs (arg2, arg2aft, fundef, varlut, ids);
+                sig = PHUTsignum (arg2, arg2aft, fundef, varlut, ids);
+
+                z = NULL;
+                if (1 == sig) { // z < arg2
+                    z = BuildIslSimpleConstraint (ids, F_le_SxS, arg2, NOPRFOP, NULL);
+                } else {
+                    if (-1 == sig) { // z < 0 - arg2
+                        z = BuildIslSimpleConstraint (ids, F_lt_SxS, TBmakeNum (0),
+                                                      F_sub_SxS, arg2);
+                    }
+                }
                 res = TCappendExprs (res, z);
                 break;
 
@@ -2170,7 +2188,19 @@ HandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res,
 
             case F_idx_sel:
             case F_sel_VxA:
-                res = TCappendExprs (res, HandleIota (ids, fundef, varlut, loopcount));
+                z = HandleIota (ids, fundef, varlut, loopcount);
+                res = TCappendExprs (res, z);
+
+                z2 = HandleSelectWithShape (arg2);
+                res = TCappendExprs (res, z2);
+
+                // We may want to clean up IdxselArrayOfEqualElements
+                // and call it here, in case we have sel(iv, [ i,i,i,i...,i]
+
+                if ((NULL == z) && (NULL == z2)) { // unknown sel
+                    // We know nothing about arg2, so we make it a parameter
+                    AVIS_ISLCLASS (IDS_AVIS (ids)) = AVIS_ISLCLASSPARAMETER;
+                }
                 break;
 
             case F_saabind: // z = PRF_ARG3( rhs);
@@ -2291,9 +2321,6 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
 
                     case N_prf:
                         res2 = HandleNprf (avis, rhs, fundef, varlut, NULL, loopcount);
-                        res3 = HandleCompositionWithShape (avis, rhs, fundef, varlut,
-                                                           NULL, loopcount);
-                        res2 = TCappendExprs (res2, res3);
                         PHUTsetIslTree (avis, res2);
                         break;
 

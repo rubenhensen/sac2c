@@ -393,8 +393,8 @@ ISLUpwlfIntersect (node *exprspwl, node *exprscwl, node *exprseq, lut_t *varlut,
     str = ISLUexprs2String (exprspwl, varlut, "pwl for intersect", TRUE, lhsname);
     dompwl = isl_union_set_read_from_str (ctx, str);
     DBUG_ASSERT (NULL != dompwl, "ISL did not like exprspwl as union set");
-    str = MEMfree (str);
     DBUG_EXECUTE (ISLUprintUnionSet (stderr, dompwl, "dompwl"));
+    str = MEMfree (str);
     // If dompwl is empty set, we stop right now.
     if (isl_union_set_is_empty (dompwl)) {
         z = z | POLY_RET_EMPTYSET_B;
@@ -407,14 +407,14 @@ ISLUpwlfIntersect (node *exprspwl, node *exprscwl, node *exprseq, lut_t *varlut,
     if (POLY_RET_UNKNOWN == z) {
         str = ISLUexprs2String (exprscwl, varlut, "cwl for intersect", TRUE, lhsname);
         domcwl = isl_union_set_read_from_str (ctx, str);
-        str = MEMfree (str);
         DBUG_EXECUTE (ISLUprintUnionSet (stderr, domcwl, "domcwl"));
+        str = MEMfree (str);
 
         str = ISLUexprs2String (exprseq, varlut, "eq for intersect", TRUE, lhsname);
         domeq = isl_union_set_read_from_str (ctx, str);
         DBUG_ASSERT (NULL != domeq, "ISL did not like domeq");
-        str = MEMfree (str);
         DBUG_EXECUTE (ISLUprintUnionSet (stderr, domeq, "domeq"));
+        str = MEMfree (str);
 
         intersectpe = isl_union_set_intersect (isl_union_set_copy (dompwl),
                                                isl_union_set_copy (domeq));
