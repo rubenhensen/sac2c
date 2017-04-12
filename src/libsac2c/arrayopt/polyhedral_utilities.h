@@ -36,7 +36,7 @@ extern bool PHUTinsertVarIntoLut (node *arg_node, lut_t *varlut, node *fundef,
                                   int islclass);
 extern void PHUTsetIslClass (node *arg_node, int islclass);
 extern void PHUTsetIslTree (node *avis, node *aft);
-extern void PHUTclearAvisIslAttributes (lut_t *varlut);
+extern void PHUTpolyEpilogOne (lut_t *varlut);
 extern bool PHUTisPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut);
 extern bool PHUTisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut);
 extern bool PHUTisNonPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut);

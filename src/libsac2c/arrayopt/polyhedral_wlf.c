@@ -85,6 +85,7 @@
 #include "set_withloop_depth.h"
 #include "symbolic_constant_simplification.h"
 #include "polyhedral_utilities.h"
+#include "isl_utilities.h"
 #include "polyhedral_defs.h"
 #include "algebraic_wlfi.h"
 #include "polyhedral_wlf.h"
@@ -437,7 +438,6 @@ PWLFperformFold (node *arg_node, node *pwlpart, info *arg_info)
 
     cellexpr = (node *)LUTsearchInLutPp (INFO_FOLDLUT (arg_info), cellexpr);
     newsel = TBmakeId (cellexpr);
-    LUTremoveContentLut (INFO_FOLDLUT (arg_info));
 
     DBUG_RETURN (newsel);
 }
@@ -1667,8 +1667,9 @@ PWLFprf (node *arg_node, info *arg_info)
                 }
                 pwlpart = POLYSsetClearAvisPart (pwlpart, NULL);
                 pwlpart = PART_NEXT (pwlpart);
+                // Clear LUT, AVIS_ISLCLASS, AVIS_ISLTREE
+                PHUTpolyEpilogOne (INFO_VARLUT (arg_info));
             }
-            LUTremoveContentLut (INFO_FOLDLUT (arg_info));
         }
         break;
     }

@@ -629,7 +629,8 @@ POGOprf (node *arg_node, info *arg_info)
         exprsCfn = (NULL != exprsCfn) ? FREEdoFreeTree (exprsCfn) : NULL;
     }
 
-    INFO_VARLUT (arg_info) = LUTremoveContentLut (INFO_VARLUT (arg_info));
+    // Clear LUT, AVIS_ISLCLASS, AVIS_ISLTREE
+    PHUTpolyEpilogOne (INFO_VARLUT (arg_info));
 
     DBUG_RETURN (res);
 }
@@ -656,7 +657,9 @@ POGOdoPolyhedralGuardOptimization (node *arg_node)
     TRAVpush (TR_pogo);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
-    PHUTclearAvisIslAttributes (INFO_VARLUT (arg_info));
+
+    // Clear LUT, AVIS_ISLCLASS, AVIS_ISLTREE
+    PHUTpolyEpilogOne (INFO_VARLUT (arg_info));
     INFO_VARLUT (arg_info) = LUTremoveLut (INFO_VARLUT (arg_info));
 
     arg_info = FreeInfo (arg_info);

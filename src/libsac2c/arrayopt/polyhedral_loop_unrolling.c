@@ -192,9 +192,9 @@ PLURfundef (node *arg_node, info *arg_info)
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         }
 
-        PHUTclearAvisIslAttributes (INFO_VARLUT (arg_info));
-        DBUG_PRINT ("Removing content from VARLUT");
-        LUTremoveContentLut (INFO_VARLUT (arg_info));
+        // Clear LUT, AVIS_ISLCLASS, AVIS_ISLTREE
+        PHUTpolyEpilogOne (INFO_VARLUT (arg_info));
+
         INFO_FUNDEF (arg_info) = fundefold;
         DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
     }
