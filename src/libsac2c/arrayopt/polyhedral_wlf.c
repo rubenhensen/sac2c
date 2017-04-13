@@ -109,6 +109,11 @@ struct INFO {
     node *producerwllhs;     /* The producerWL LHS for this consumerWL */
     node *let;               /* The N_let node */
     node *withids;           /* the WITHID_IDS entry for an iv element */
+    node *zwithids;          /* zwithids for GENERATOR_BOUNDs */
+    lut_t *foldlut;          /* LUT for renames during fold */
+    lut_t *varlut;           /* LUT for ISL set variables */
+    node *lacfun;            /* Marker that this is a LACFUN call */
+    node *nassign;           /* The N_assign node of a LACFUN N_ap call */
     int defdepth;            /* The current nesting level of WLs. This
                               * is used to ensure that an index expression
                               * refers to an earlier WL in the same code
@@ -119,11 +124,6 @@ struct INFO {
                              /* (If index sets prove to be OK)     */
     bool finverseswap;       /* If TRUE, must swp min/max */
     bool finverseintroduced; /* If TRUE, most simplify F-inverse */
-    node *zwithids;          /* zwithids for GENERATOR_BOUNDs */
-    lut_t *foldlut;          /* LUT for renames during fold */
-    lut_t *varlut;           /* LUT for ISL set variables */
-    node *lacfun;            /* Marker that this is a LACFUN call */
-    node *nassign;           /* The N_assign node of a LACFUN N_ap call */
 };
 
 /**
@@ -140,15 +140,15 @@ struct INFO {
 #define INFO_PRODUCERWLLHS(n) ((n)->producerwllhs)
 #define INFO_LET(n) ((n)->let)
 #define INFO_WITHIDS(n) ((n)->withids)
-#define INFO_DEFDEPTH(n) ((n)->defdepth)
-#define INFO_PRODUCERWLFOLDABLE(n) ((n)->producerwlfoldable)
-#define INFO_FINVERSESWAP(n) ((n)->finverseswap)
-#define INFO_FINVERSEINTRODUCED(n) ((n)->finverseintroduced)
 #define INFO_ZWITHIDS(n) ((n)->zwithids)
 #define INFO_FOLDLUT(n) ((n)->foldlut)
 #define INFO_VARLUT(n) ((n)->varlut)
 #define INFO_LACFUN(n) ((n)->lacfun)
 #define INFO_NASSIGN(n) ((n)->nassign)
+#define INFO_DEFDEPTH(n) ((n)->defdepth)
+#define INFO_PRODUCERWLFOLDABLE(n) ((n)->producerwlfoldable)
+#define INFO_FINVERSESWAP(n) ((n)->finverseswap)
+#define INFO_FINVERSEINTRODUCED(n) ((n)->finverseintroduced)
 
 static info *
 MakeInfo (node *fundef)
@@ -170,15 +170,15 @@ MakeInfo (node *fundef)
     INFO_PRODUCERWLLHS (result) = NULL;
     INFO_LET (result) = NULL;
     INFO_WITHIDS (result) = NULL;
-    INFO_DEFDEPTH (result) = 0;
-    INFO_PRODUCERWLFOLDABLE (result) = TRUE;
-    INFO_FINVERSESWAP (result) = FALSE;
-    INFO_FINVERSEINTRODUCED (result) = FALSE;
     INFO_ZWITHIDS (result) = NULL;
     INFO_FOLDLUT (result) = NULL;
     INFO_VARLUT (result) = NULL;
     INFO_LACFUN (result) = NULL;
     INFO_NASSIGN (result) = NULL;
+    INFO_DEFDEPTH (result) = 0;
+    INFO_PRODUCERWLFOLDABLE (result) = TRUE;
+    INFO_FINVERSESWAP (result) = FALSE;
+    INFO_FINVERSEINTRODUCED (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -438,6 +438,7 @@ PWLFperformFold (node *arg_node, node *pwlpart, info *arg_info)
 
     cellexpr = (node *)LUTsearchInLutPp (INFO_FOLDLUT (arg_info), cellexpr);
     newsel = TBmakeId (cellexpr);
+    LUTremoveContentLut (INFO_FOLDLUT (arg_info));
 
     DBUG_RETURN (newsel);
 }
