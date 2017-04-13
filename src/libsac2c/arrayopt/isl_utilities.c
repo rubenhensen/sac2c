@@ -444,6 +444,13 @@ ISLUpwlfIntersect (node *exprspwl, node *exprscwl, node *exprseq, lut_t *varlut,
         }
     }
 
+    // If intersect is non-null, and not subset, we need to slice
+    if (POLY_RET_UNKNOWN == z) {
+        z = z | POLY_RET_SLICENEEDED;
+        z = z & ~POLY_RET_UNKNOWN;
+        DBUG_PRINT ("slicing needed");
+    }
+
     isl_union_set_free (dompwl);
     isl_union_set_free (domcwl);
     isl_union_set_free (domeq);
