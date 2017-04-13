@@ -1663,8 +1663,13 @@ PWLFprf (node *arg_node, info *arg_info)
                     arg_node = z;
                     global.optcounters.pwlf_expr += 1;
                 } else {
-                    DBUG_PRINT ("Unable to fold PWL %s into CWL %s with plresult %d",
-                                AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);
+                    if (POLY_RET_SLICENEEDED & plresult) {
+                        DBUG_PRINT ("Slicing needed to fold PWL %s into CWL %s",
+                                    AVIS_NAME (ID_AVIS (pwlid)), cwlnm);
+                    } else {
+                        DBUG_PRINT ("Unable to fold PWL %s into CWL %s with plresult %d",
+                                    AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);
+                    }
                 }
                 pwlpart = POLYSsetClearAvisPart (pwlpart, NULL);
                 pwlpart = PART_NEXT (pwlpart);

@@ -738,39 +738,6 @@ LFUisAvisMemberExprs (node *arg_node, node *exprs)
 
 /** <!--********************************************************************-->
  *
- * @fn bool LFUisAvisMemberIds( node *arg_node, node *ids)
- *
- * @brief: Predicate for checking that an N_avis node is
- *         a member of an N_ids chain.
- *
- * @param: arg_node - an N_avis node.
- *         ids      - an N_ids chain.
- *
- * @result: TRUE if arg_node is a member of the ids chain.
- *
- * FIXME: This function will be dead code later today. I'm leaving
- *        it here until LFUindexOfMemberIds is in place and
- *        has replaced all refernces to LFUisAvisMemberIds.
- *
- *****************************************************************************/
-bool
-LFUisAvisMemberIds (node *arg_node, node *ids)
-{
-    bool z = FALSE;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (N_avis == NODE_TYPE (arg_node), "Expected N_avis node");
-    while ((NULL != ids) && (!z)) {
-        z = (arg_node == IDS_AVIS (ids));
-        ids = IDS_NEXT (ids);
-    }
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn int LFUindexOfMemberIds( node *arg_node, node *ids)
  *
  * @brief: Function for finding the index of an N_avis node

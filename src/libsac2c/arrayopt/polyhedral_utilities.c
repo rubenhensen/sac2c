@@ -2336,7 +2336,8 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
                     }
                 } else {
                     DBUG_ASSERT (NULL == assgn, "Confusion about AVIS_SSAASSIGN");
-                    // This may be a WITHID or a function parameter.
+                    // This may be a WITHID_IDS member, a function parameter,
+                    // or a WITHID_VEC. If the latter, we ignore it.
                     // If it is constant, then we treat it as a number.
                     if (TYisAKV (AVIS_TYPE (avis))) {
                         res3 = HandleNumber (avis, rhs, fundef, varlut, NULL);
@@ -2346,7 +2347,8 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
                         // This presumes that AVIS_NPART is being maintained by our
                         // caller.
                         npart = AVIS_NPART (avis);
-                        if (NULL != npart) {
+                        if ((NULL != npart)
+                            && (avis != IDS_AVIS (WITHID_VEC (PART_WITHID (npart))))) {
                             if (-1
                                 != LFUindexOfMemberIds (avis, WITHID_IDS (
                                                                 PART_WITHID (npart)))) {
