@@ -2312,7 +2312,6 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
                     switch (NODE_TYPE (rhs)) {
                     case N_id: // straight assign: var2 = var1.
                         res2 = HandleNid (avis, rhs, fundef, varlut, loopcount);
-                        PHUTsetIslTree (avis, res2);
                         break;
 
                     case N_prf:
