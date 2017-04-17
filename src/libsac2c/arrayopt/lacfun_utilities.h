@@ -21,7 +21,7 @@ extern bool LFUisAvisMemberArg (node *arg_node, node *arg);
 extern int LFUindexOfMemberIds (node *arg_node, node *ids);
 extern bool LFUisAvisMemberExprs (node *arg_node, node *exprs);
 extern node *LFUinsertAssignIntoLacfun (node *arg_node, node *assign, node *oldavis);
-extern bool LFUisLoopfunInvariant (node *arg, node *fundef);
+extern int LFUisLoopfunInvariant (node *arg, node *fundef);
 extern node *LFUfindFundefReturn (node *arg_node);
 extern node *LFUarg2Vardec (node *arg_node, node *lacfundef);
 extern node *LFUscalarizeArray (node *avis, node **preassigns, node **vardecs,

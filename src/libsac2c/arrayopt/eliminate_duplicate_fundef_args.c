@@ -326,7 +326,8 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
         argavis = ID_AVIS (argid);
         rcaid = (NULL != rca) ? EXPRS_EXPR (rca) : NULL;
 
-        if ((NULL != rcaid) && LFUisLoopfunInvariant (ARG_AVIS (fundefargs), lacfundef)) {
+        if ((NULL != rcaid)
+            && (1 == LFUisLoopfunInvariant (ARG_AVIS (fundefargs), lacfundef))) {
             lutitem = (node **)LUTsearchInLutP (INFO_LUTARGS (arg_info), argavis);
             if (NULL == lutitem) {
                 /* Entry not in LUT. This is a new argument.
@@ -353,6 +354,7 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
                 lutnonempty = TRUE;
             }
         } else {
+            // Not loop-invariant, or LFUisLoopfunInvariant does not know
             DBUG_PRINT ("argument %s (%s in lacfun) is not loop-invariant",
                         AVIS_NAME (argavis), AVIS_NAME (ARG_AVIS (fundefargs)));
         }

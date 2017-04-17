@@ -284,8 +284,6 @@ Node2Value (node *arg_node)
         if (NULL != z) {
             if (TYisAKV (AVIS_TYPE (z))) {
                 if (TUisIntScalar (AVIS_TYPE (z))) {
-                    // DEADCODE pogo/condfun.sac AVIS_ISLCLASS( z) =
-                    // AVIS_ISLCLASSEXISTENTIAL;
                     z = TBmakeNum (TUtype2Int (AVIS_TYPE (z)));
                 } else {
                     if (TUisBoolScalar (AVIS_TYPE (z))) {
@@ -639,11 +637,15 @@ BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
     DBUG_ENTER ();
 
     DBUG_PRINT ("Generating simple constraint");
+#ifdef DEADCODEIHOPE
     idsv = Node2Avis (ids);
     idsv = (NULL == idsv) ? ids : idsv; // N_num support
     if ((NULL != idsv) && (N_avis == NODE_TYPE (idsv))) {
         idsv = TBmakeId (idsv);
     }
+#else  // DEADCODEIHOPE
+    idsv = Node2Value (ids);
+#endif // DEADCODEIHOPE
     DBUG_ASSERT (NULL != idsv, "Expected non-NULL ids");
     arg1v = Node2Value (arg1);
     arg2v = Node2Value (arg2);
@@ -693,12 +695,16 @@ BuildIslStrideConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
 
     DBUG_ENTER ();
 
+#ifdef DEADCODEIHOPE
     idsv = Node2Avis (ids);
     idsv = (NULL == idsv) ? ids : idsv; // N_num support
     if ((NULL != idsv) && (N_avis == NODE_TYPE (idsv))) {
         DBUG_PRINT ("Generated ISL stride constraint for %s", AVIS_NAME (idsv));
         idsv = TBmakeId (idsv);
     }
+#else  // DEADCODEIHOPE
+    idsv = Node2Value (ids);
+#endif // DEADCODEIHOPE
     DBUG_ASSERT (NULL != idsv, "Expected non-NULL ids");
     arg1v = Node2Value (arg1);
     arg2v = Node2Value (arg2);
@@ -1466,18 +1472,21 @@ HandleNid (node *arg_node, node *rhs, node *fundef, lut_t *varlut, int loopcount
     DBUG_ENTER ();
 
     DBUG_PRINT ("Entering HandleNid for lhs=%s", AVIS_NAME (arg_node));
-    islclass = AVIS_ISLCLASSEXISTENTIAL;
-    if (PHUTinsertVarIntoLut (rhs, varlut, fundef, islclass)) {
-        res = PHUTcollectAffineExprsLocal (rhs, fundef, varlut, NULL,
-                                           AVIS_ISLCLASSUNDEFINED, loopcount);
-        AVIS_ISLCLASS (arg_node)
-          = (NULL == res) ? AVIS_ISLCLASSPARAMETER : AVIS_ISLCLASSSETVARIABLE;
-        res = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
-        PHUTsetIslTree (arg_node, res);
-    } else {
-        DBUG_ASSERT (NULL != AVIS_ISLTREE (arg_node), "No ISLTREE found");
-        res = (NULL != AVIS_ISLTREE (arg_node)) ? DUPdoDupTree (AVIS_ISLTREE (arg_node))
-                                                : NULL;
+    if (!TYisAKV (AVIS_TYPE (arg_node))) { // Ignore numeric constants
+        islclass = AVIS_ISLCLASSEXISTENTIAL;
+        if (PHUTinsertVarIntoLut (rhs, varlut, fundef, islclass)) {
+            res = PHUTcollectAffineExprsLocal (rhs, fundef, varlut, NULL,
+                                               AVIS_ISLCLASSUNDEFINED, loopcount);
+            AVIS_ISLCLASS (arg_node)
+              = (NULL == res) ? AVIS_ISLCLASSPARAMETER : AVIS_ISLCLASSSETVARIABLE;
+            res = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
+            PHUTsetIslTree (arg_node, res);
+        } else {
+            DBUG_ASSERT (NULL != AVIS_ISLTREE (arg_node), "No ISLTREE found");
+            res = (NULL != AVIS_ISLTREE (arg_node))
+                    ? DUPdoDupTree (AVIS_ISLTREE (arg_node))
+                    : NULL;
+        }
     }
 
     DBUG_PRINT ("Leaving HandleNid for lhs=%s", AVIS_NAME (arg_node));
@@ -1572,6 +1581,7 @@ PHUThandleLoopfunArg (node *nid, node *fundef, lut_t *varlut, node *res,
     node *rcv = NULL;
     node *avis;
     node *z = NULL;
+    int li;
 
     DBUG_ENTER ();
 
@@ -1584,17 +1594,25 @@ PHUThandleLoopfunArg (node *nid, node *fundef, lut_t *varlut, node *res,
     // See unit test:
     // ~/sac/testsuite/optimizations/pogorelationals/SCSprf_lt_SxS.LIR.sac
 
-    if (!LFUisLoopfunInvariant (avis, fundef)) {
+    li = LFUisLoopfunInvariant (avis, fundef);
+    if (0 == li) {
         rcv = LFUarg2Rcv (avis, fundef);
-        DBUG_PRINT ("LACFUN %s arg %s has recursive call value of %s",
+        DBUG_PRINT ("LACFUN %s loop-dependent arg %s has recursive call value of %s",
                     FUNDEF_NAME (fundef), AVIS_NAME (avis), AVIS_NAME (ID_AVIS (rcv)));
         z = PHUTanalyzeLoopDependentVariable (nid, rcv, fundef, varlut, loopcount, res);
         res = TCappendExprs (res, z);
-    } else {
+    }
+
+    if (1 == li) {
         DBUG_PRINT ("LACFUN %s arg %s is loop-independent", FUNDEF_NAME (fundef),
                     AVIS_NAME (avis));
         // Propagate caller's Loop-independent value into LOOPFUN.
         res = BuildIslSimpleConstraint (nid, F_eq_SxS, calleriv, NOPRFOP, NULL);
+    }
+
+    if (-1 == li) {
+        DBUG_PRINT ("LACFUN %s arg %s may or may not be loop-independent",
+                    FUNDEF_NAME (fundef), AVIS_NAME (avis));
     }
 
     DBUG_RETURN (res);
@@ -2523,46 +2541,6 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
     DBUG_RETURN (z);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn node *PHUTgenerateAffineExprsForCondprf(...)
- *
- * @brief Construct an ISL transform for the condprf that controls
- *        iteration in a LOOPFUN
- *
- * @param fn: PRF_PRF for the condprf
- * @param arg1: PRF_ARG1 for the condprf
- * @param arg2: PRF_ARG2 for the condprf
- * @param fundef: The N_fundef for the current function, for debugging
- * @param relfn:  Either PRF_PRF( arg_node) or its companion function,
- *                e.g., if PRF_PRF is _gt_SxS_, its companion is _le_SxS.
- * @param stridesign: 1 or -1 for positive or negative stride; 0 if
- *                    stride is unknown.
- *                    Used only for X != Y
- *
- * @return A maximal N_exprs chain of expressions for the condprf.
- *
- * NB. The tricky part here is that we have to use the incoming
- *     loop-carried variable, and since we are using tail recursion,
- *     it has already been incremented/decremented.
- *     See various unit tests testsuite/optimization/plur.
- *
- *
- *
- ******************************************************************************/
-node *
-PHUTgenerateAffineExprsForCondprf (prf fn, node *arg1, node *arg2, node *fundef,
-                                   prf relfn, lut_t *varlut, int stridesignum)
-{
-    node *z = NULL;
-
-    DBUG_ENTER ();
-
-    z = PHUTgenerateAffineExprsForGuard (fn, arg1, arg2, fundef, fn, varlut,
-                                         stridesignum);
-
-    DBUG_RETURN (z);
-}
-
 /** <!--********************************************************************-->
  *
  * @fn node
@@ -2818,13 +2796,11 @@ PHUThandleAPV (node *exprsall, node *fundef, lut_t *varlut, int *stridesign, nod
                 }
 
             } else {
-#ifdef FIXMELATER
                 // Look for code pattern 2.
                 //
                 // Try IItmp = II +- stride
-                int CRAP; // Must not use !LFUis...
                 if ((N_id == NODE_TYPE (exprslarg))
-                    && (!LFUisLoopfunInvariant (ID_AVIS (exprslarg), fundef))
+                    && (0 == LFUisLoopfunInvariant (ID_AVIS (exprslarg), fundef))
                     && ((F_add_SxS == exprspfn) || (F_sub_SxS == exprspfn))
                     && (LFUisAvisMemberArg (ID_AVIS (exprslarg), FUNDEF_ARGS (fundef)))) {
 
@@ -2834,10 +2810,9 @@ PHUThandleAPV (node *exprsall, node *fundef, lut_t *varlut, int *stridesign, nod
                     mathsignum = LFUgetMathSignumForAffineFun (iiprime, exprslarg);
                     argvar = ID_AVIS (exprslarg);
 
-                } else {       // Try IItmp = stride + II
-                    int CRAP2; // Must not use !LFUis...
+                } else { // Try IItmp = stride + II
                     if ((N_id == NODE_TYPE (exprsrarg))
-                        && (!LFUisLoopfunInvariant (ID_AVIS (exprsrarg), fundef))
+                        && (0 == LFUisLoopfunInvariant (ID_AVIS (exprsrarg), fundef))
                         && ((F_add_SxS == exprspfn))
                         && (LFUisAvisMemberArg (ID_AVIS (exprsrarg),
                                                 FUNDEF_ARGS (fundef)))) {
@@ -2847,7 +2822,6 @@ PHUThandleAPV (node *exprsall, node *fundef, lut_t *varlut, int *stridesign, nod
                         argvar = ID_AVIS (exprsrarg);
                     }
                 }
-#endif // FIXMELATER
             }
 
             // Find sign of stride, correct for F_sub.
@@ -3118,6 +3092,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     int z = UNR_NONE;
     int loopcount = -1;
     int nldv = 0;
+    int li;
     prf prfi;
     prf prfz;
 
@@ -3184,19 +3159,25 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 }
 
                 if ((NULL != funarg1) && (NULL != funarg2)) {
-                    if (LFUisLoopfunInvariant (funarg1, fundef)) {
+                    li = LFUisLoopfunInvariant (funarg1, fundef);
+                    if (1 == li) {
                         rcv = funarg2;
                         liv = funarg1;
-                    } else {
+                    }
+
+                    if (0 == li) {
                         nldv++; // # of loop-dependent arguments
                         rcv = funarg1;
                         liv = funarg2;
                     }
 
-                    if (LFUisLoopfunInvariant (funarg2, fundef)) {
+                    li = LFUisLoopfunInvariant (funarg2, fundef);
+                    if (1 == li) {
                         rcv = funarg1;
                         liv = funarg2;
-                    } else {
+                    }
+
+                    if (0 == li) {
                         nldv++; // # of loop-dependent arguments
                         rcv = funarg2;
                         liv = funarg1;

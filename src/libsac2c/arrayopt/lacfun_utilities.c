@@ -161,12 +161,15 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
 }
 
 /** <!--***********************************************************************-->
- * @fn bool LFUisLoopfunInvariant(...)
+ * @fn int LFUisLoopfunInvariant(...)
  *
- * @brief true if fundef IS a LOOPFUN, and arg is the same as
- *        the LOOPFUN's N_ap recursive call variable (rcv)
- *        that corresponds to avis.
- *        Also true if arg is the rcv and matches the N_arg.
+ * @brief Signum-like result:
+ *        Result is 1 if fundef IS a LOOPFUN, and arg is the same as
+ *          the LOOPFUN's N_ap recursive call variable (rcv)
+ *          that corresponds to avis.
+ *        Result also 1 if arg is the rcv and matches the N_arg.
+ *        Result is 0 if arg is definitely NOT loop-invariant
+ *        Result is -1 if we do not know if it is loop-invariant or not
  *
  * @param avis:      An N_avis node, which must be an N_arg element
  *                   of a loopfun
@@ -190,23 +193,26 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
  *            This function does recognize that rca and avis are the same,
  *            when a selproxy is present.
  *
- * NB. Do not use a result of false: It may mean that the avis is
- * NB. loop-invariant, but this function is too dumb to tell that.
  *
  ******************************************************************************/
-bool
+int
 LFUisLoopfunInvariant (node *avis, node *fundef)
 {
     node *proxy;
     node *rcv;
     node *argavis;
-    bool z = FALSE;
+    int res = -1; // Don't know
 
     DBUG_ENTER ();
 
-    z = TYisAKV (AVIS_TYPE (avis)); // Constants are loop-invariant
-    z = z || (!FUNDEF_ISLOOPFUN (fundef));
-    if (!z) {
+    if ((TYisAKV (AVIS_TYPE (avis))) || (!FUNDEF_ISLOOPFUN (fundef))) {
+        // constants and non-loopfun args are definitely loop-invariant
+        res = 1;
+        DBUG_PRINT ("Fun %s arg=%s is loop-invariant (N_num, or Fun not loop",
+                    FUNDEF_NAME (fundef), AVIS_NAME (argavis));
+    }
+
+    if (-1 == res) { // Don't know yet
         argavis = avis;
         rcv = LFUarg2Rcv (avis, fundef);
         if (NULL == rcv) { // We were called with rcv. Get the arg.
@@ -217,20 +223,25 @@ LFUisLoopfunInvariant (node *avis, node *fundef)
         }
     }
 
-    if ((!z)) {
-        z = argavis == ID_AVIS (rcv);
-        if (!z) {
-            proxy = IVUTarrayFromProxySel (rcv);
-            if (NULL != proxy) {
-                z = (argavis == ID_AVIS (proxy));
-            }
-        }
-        DBUG_PRINT ("Loopfun %s arg=%s and rcv=%s are %s loop-invariant",
-                    FUNDEF_NAME (fundef), AVIS_NAME (argavis), AVIS_NAME (ID_AVIS (rcv)),
-                    ((z ? "" : "not")));
+    if ((-1 == res) && (argavis == ID_AVIS (rcv))) {
+        res = 1; // Definitely loop-invariant
+        DBUG_PRINT ("Fun %s arg=%s is loop-invariant", FUNDEF_NAME (fundef),
+                    AVIS_NAME (argavis));
     }
 
-    DBUG_RETURN (z);
+    if (-1 == res) { // May be selproxy
+        proxy = IVUTarrayFromProxySel (rcv);
+        if (NULL != proxy) {
+            res = (argavis == ID_AVIS (proxy));
+        }
+    }
+
+    if (-1 == res) {
+        DBUG_PRINT ("Do not know if Loopfun %s arg=%s is loop-invariant",
+                    FUNDEF_NAME (fundef), AVIS_NAME (argavis));
+    }
+
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
