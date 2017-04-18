@@ -26,25 +26,14 @@
  *
  *    A Presburger formula is a union of one or more constraints.
  *
- * NB. This code assumes, in at least one place, that AVIS_NPART is
- *     maintained for all WITHID elements by the calling traversal.
- *
  * NB. General assumptions made in these functions about the calling
  *     envionment:
  *
- *      1. The caller must maintain AVIS_NPART for WITHID_xxx nodes.
- *         It would be nice if this were maintained throughout compilation,
- *         but things can change underfoot so that we are unsure where we should
- *         invalidate it. Hence, we assume the calling traversal
- *         will pass through N_part codes on its way down, and set AVIS_NPART.
- *         Similarly, on its way up, it will unset AVIS_NPART.
+ *      1. POLYS sets up AVIS_NPART for WITHID_xxx nodes.
+ *         Partitions can change underfoot by (at least) PWLF,
+ *         so caution is advised.
  *
- *         The main problem with maintaining AVIS_NPART is that WITHID nodes
- *         are NOT SSA, so multiple N_part nodes share the
- *         same WITHID N_avis nodes.
- *
- *      2. Similarly, the caller must maintain FUNDEF_CALLAP and
- *         FUNDEF_CALLERFUNDEF
+ *      2. POLYS sets up FUNDEF_CALLAP and FUNDEF_CALLERFUNDEF.
  *
  *      3. All callers must SKIP chained assigns. Failure to do this will result
  *         in complaints from ISL about "unknown identifier".
@@ -53,7 +42,6 @@
  *         (Look at ~/sac/testsuite/optimizations/pogo/condfun.sac to see
  *          why we need to look at the LACFUN caller to build
  *          an affine function tree for XXX's shape vector.
- *
  *
  * NB. A few notes on LOOPFUNs:
  *
@@ -2361,8 +2349,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
                         res2 = TCappendExprs (res2, res3);
                         PHUTsetIslTree (avis, res2);
                     } else {
-                        // This presumes that AVIS_NPART is being maintained by our
-                        // caller.
+                        // This presumes that AVIS_NPART is maintained properly
                         npart = AVIS_NPART (avis);
                         if ((NULL != npart)
                             && (avis != IDS_AVIS (WITHID_VEC (PART_WITHID (npart))))) {

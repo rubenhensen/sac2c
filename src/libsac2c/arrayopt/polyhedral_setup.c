@@ -144,7 +144,8 @@ POLYSfundef (node *arg_node, info *arg_info)
  * @fn node *POLYSpart( node *arg_node, info *arg_info)
  *
  * @brief Mark the WITHID_VEC, WITHID_IDS, and WITHID_IDXS of this N_part
- *        with the N_part address when we enter, and NULL them on the way out.
+ *        with the N_part address when we are doing setup,
+ *        and NULL them when we are doing tear down.
  *
  *        These values are used by PHUT to locate GENERATOR_BOUND values
  *        for the WL variables. Those bounds are then used to create
@@ -156,10 +157,16 @@ POLYSpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    arg_node = POLYSsetClearAvisPart (arg_node, arg_node);
+    if (INFO_ISSETUP (arg_info)) {
+        arg_node = POLYSsetClearAvisPart (arg_node, arg_node);
+    }
+
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
-    arg_node = POLYSsetClearAvisPart (arg_node, NULL);
+
+    if (!INFO_ISSETUP (arg_info)) {
+        arg_node = POLYSsetClearAvisPart (arg_node, NULL);
+    }
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -236,17 +243,15 @@ POLYSap (node *arg_node, info *arg_info)
         DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
                     FUNDEF_NAME (lacfundef), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
 
-        // The following is insufficient, as pogorelational unit tests
-        // crash with this code only. I have changed POGO and PLUR to
-        // set CALLAP, etc., from the N_ap that calls the lacfun.
-        POLYSsetClearCallAp (lacfundef, INFO_FUNDEF (arg_info), INFO_NASSIGN (arg_info));
+        POLYSsetClearCallAp (lacfundef, INFO_FUNDEF (arg_info), INFO_NASSIGN (arg_info),
+                             INFO_ISSETUP (arg_info));
 
-        /* Traverse into the LACFUN */
-        INFO_LACFUN (arg_info) = lacfundef; /* The called lacfun */
+        // Traverse into the LACFUN
+        INFO_LACFUN (arg_info) = lacfundef;
         newfundef = TRAVdo (lacfundef, arg_info);
         DBUG_ASSERT (newfundef == lacfundef,
                      "Did not expect N_fundef of LACFUN to change");
-        INFO_LACFUN (arg_info) = NULL; /* Back to normal traversal */
+        INFO_LACFUN (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -337,7 +342,7 @@ POLYSdoPolyhedralTearDown (node *arg_node)
     DBUG_ENTER ();
 
     arg_info = MakeInfo ();
-    INFO_ISSETUP (arg_info) = TRUE;
+    INFO_ISSETUP (arg_info) = FALSE;
 
     TRAVpush (TR_polys);
     arg_node = TRAVdo (arg_node, arg_info);
@@ -386,8 +391,10 @@ POLYSsetClearAvisPart (node *arg_node, node *val)
     ids = WITHID_IDS (PART_WITHID (arg_node));
     while (NULL != ids) {
         partn = AVIS_NPART (IDS_AVIS (ids));
+#ifdef DEADCODE // Overly enthusiastic, I think
         DBUG_ASSERT ((val == partn) || (NULL == val) || (NULL == partn),
                      "Invalid AVIS_NPART for WITHID_IDS");
+#endif // DEADCODE // Overly enthusiastic, I think
         AVIS_NPART (IDS_AVIS (ids)) = val;
         ids = IDS_NEXT (ids);
     }
@@ -395,8 +402,10 @@ POLYSsetClearAvisPart (node *arg_node, node *val)
     ids = WITHID_IDXS (PART_WITHID (arg_node));
     while (NULL != ids) {
         partn = AVIS_NPART (IDS_AVIS (ids));
+#ifdef DEADCODE // Overly enthusiastic, I think
         DBUG_ASSERT ((val == partn) || (NULL == val) || (NULL == partn),
                      "Invalid AVIS_NPART for WITHID_IDXS");
+#endif // DEADCODE // Overly enthusiastic, I think
         AVIS_NPART (IDS_AVIS (ids)) = val;
         ids = IDS_NEXT (ids);
     }
@@ -406,7 +415,7 @@ POLYSsetClearAvisPart (node *arg_node, node *val)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node node *POLYSsetClearCallAp( node *arg_node, node *callerfundef, node *nassign)
+ * @fn node node *POLYSsetClearCallAp()
  *
  * @brief Set or clear FUNDEF_CALLAP in a LACFUN
  *        "nassign" should be set to the external function's N_assign node
@@ -422,19 +431,20 @@ POLYSsetClearAvisPart (node *arg_node, node *val)
  * @param arg_node: The N_fundef of a LACFUN.
  * @param callerfundef: The N_fundef of the caller function of the LACFUN
  * @param nassign: The N_assign node of the caller's N_ap of this LACFUN
+ * @param setclear: TRUE for set; FALSE for clear
  *
  * @return none
  *
  *
  ******************************************************************************/
 void
-POLYSsetClearCallAp (node *arg_node, node *callerfundef, node *nassign)
+POLYSsetClearCallAp (node *arg_node, node *callerfundef, node *nassign, bool setclear)
 {
 
     DBUG_ENTER ();
 
-    FUNDEF_CALLAP (arg_node) = nassign;
-    FUNDEF_CALLERFUNDEF (arg_node) = callerfundef;
+    FUNDEF_CALLAP (arg_node) = setclear ? nassign : NULL;
+    FUNDEF_CALLERFUNDEF (arg_node) = setclear ? callerfundef : NULL;
 
     DBUG_RETURN ();
 }

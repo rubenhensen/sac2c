@@ -223,16 +223,24 @@ LFUisLoopfunInvariant (node *avis, node *fundef)
         }
     }
 
-    if ((-1 == res) && (argavis == ID_AVIS (rcv))) {
-        res = 1; // Definitely loop-invariant
-        DBUG_PRINT ("Fun %s arg=%s is loop-invariant", FUNDEF_NAME (fundef),
-                    AVIS_NAME (argavis));
+    if (-1 == res) {
+        if (argavis == ID_AVIS (rcv)) {
+            res = 1;
+            DBUG_PRINT ("Fun %s arg=%s is loop-invariant", FUNDEF_NAME (fundef),
+                        AVIS_NAME (argavis));
+        } else {
+            res = 0;
+            DBUG_PRINT ("Fun %s arg=%s is loop-dependent", FUNDEF_NAME (fundef),
+                        AVIS_NAME (argavis));
+        }
     }
 
     if (-1 == res) { // May be selproxy
         proxy = IVUTarrayFromProxySel (rcv);
         if (NULL != proxy) {
             res = (argavis == ID_AVIS (proxy));
+            DBUG_PRINT ("Fun %s selproxy arg=%s is loop-invariant", FUNDEF_NAME (fundef),
+                        AVIS_NAME (argavis));
         }
     }
 

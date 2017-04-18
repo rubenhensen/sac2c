@@ -19,6 +19,7 @@ extern node *POLYSap (node *arg_node, info *arg_info);
 extern node *POLYSlet (node *arg_node, info *arg_info);
 extern node *POLYSprf (node *arg_node, info *arg_info);
 extern node *POLYSsetClearAvisPart (node *arg_node, node *val);
-extern void POLYSsetClearCallAp (node *arg_node, node *callerfundef, node *nassign);
+extern void POLYSsetClearCallAp (node *arg_node, node *callerfundef, node *nassign,
+                                 bool setclear);
 
 #endif // _SAC_POLYHEDRAL_SETUP_H_

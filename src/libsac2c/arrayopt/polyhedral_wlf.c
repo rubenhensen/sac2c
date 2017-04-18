@@ -1529,13 +1529,17 @@ PWLFpart (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_CONSUMERWLPART (arg_info) = arg_node;
+#ifdef DEADCODE // POLYS traversal sets/clears this
     arg_node = POLYSsetClearAvisPart (arg_node, arg_node);
+#endif // DEADCODE  // POLYS traversal sets/clears this
 
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVdo (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
 
     INFO_CONSUMERWLPART (arg_info) = NULL;
+#ifdef DEADCODE // POLYS traversal sets/clears this
     arg_node = POLYSsetClearAvisPart (arg_node, NULL);
+#endif // DEADCODE  // POLYS traversal sets/clears this
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -1646,7 +1650,7 @@ PWLFprf (node *arg_node, info *arg_info)
 
         if (INFO_PRODUCERWLFOLDABLE (arg_info)) {
             pwlpart = WITH_PART (INFO_PRODUCERWL (arg_info));
-            pwlpart = POLYSsetClearAvisPart (pwlpart, pwlpart);
+            // FIXME        pwlpart = POLYSsetClearAvisPart( pwlpart, pwlpart);
             while ((POLY_RET_UNKNOWN == plresult) && (NULL != pwlpart)) {
                 foldpwlpart = pwlpart;
                 plresult = IntersectBoundsPolyhedral (arg_node, pwlpart, arg_info);
@@ -1666,12 +1670,13 @@ PWLFprf (node *arg_node, info *arg_info)
                     if (POLY_RET_SLICENEEDED & plresult) {
                         DBUG_PRINT ("Slicing needed to fold PWL %s into CWL %s",
                                     AVIS_NAME (ID_AVIS (pwlid)), cwlnm);
+                        int FIXAVISNPART; // after cube slicing
                     } else {
                         DBUG_PRINT ("Unable to fold PWL %s into CWL %s with plresult %d",
                                     AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);
                     }
                 }
-                pwlpart = POLYSsetClearAvisPart (pwlpart, NULL);
+                // FIXME          pwlpart = POLYSsetClearAvisPart( pwlpart, NULL);
                 pwlpart = PART_NEXT (pwlpart);
                 // Clear LUT, AVIS_ISLCLASS, AVIS_ISLTREE
                 PHUTpolyEpilogOne (INFO_VARLUT (arg_info));
