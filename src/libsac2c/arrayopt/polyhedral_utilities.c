@@ -2553,6 +2553,10 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
  * @param: opcode - the POLY_OPCODE to select a sacislinterface operation.
  * @param: lhsname - the AVIS_NAME of the LHS of the expression we
  *         are trying to simplify.
+ * @param: setvaravis - if not NULL, set AVIS_ISLCLASS(setvaravis)
+ *         to set variable for this intersect only. Reset ISLCLASS when done.
+ *         This is used for internal PHUT functions, such as
+ *         PHUTisPositive.
  *
  * @result: a POLY_RET return code
  *
@@ -2561,13 +2565,18 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
  *****************************************************************************/
 int
 PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprsfn, node *exprscfn,
-                       lut_t *varlut, char opcode, char *lhsname)
+                       lut_t *varlut, char opcode, char *lhsname, node *setvaravis)
 {
+    int islcl;
 
     int res = POLY_RET_INVALID;
 
     DBUG_ENTER ();
 
+    if (NULL != setvaravis) {
+        islcl = AVIS_ISLCLASS (setvaravis);
+        AVIS_ISLCLASS (setvaravis) = AVIS_ISLCLASSSETVARIABLE;
+    }
     res
       = ISLUgetSetIntersections (exprspwl, exprscwl, exprsfn, exprscfn, varlut, lhsname);
     DBUG_PRINT ("ISLU intersection result is %d", res);
@@ -2575,6 +2584,9 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprsfn, node *expr
     exprscwl = (NULL != exprscwl) ? FREEdoFreeTree (exprscwl) : NULL;
     exprsfn = (NULL != exprsfn) ? FREEdoFreeTree (exprsfn) : NULL;
     exprscfn = (NULL != exprscfn) ? FREEdoFreeTree (exprscfn) : NULL;
+    if (NULL != setvaravis) { // Restore isl class
+        AVIS_ISLCLASS (setvaravis) = islcl;
+    }
 
     DBUG_RETURN (res);
 }
@@ -2912,6 +2924,7 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
     node *navis;
     prf prfi;
     prf prfz;
+    prf prfiv;
     int stridesignum = 0; // -1 for negative, 1 for positive, 0 for unknown or 0.
     bool swap;
 
@@ -2942,20 +2955,10 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
                                          AVIS_ISLCLASSEXISTENTIAL, loopcount);
             res = TCappendExprs (res, outerexprs);
 
-            // Build: initial value prfi nid, e.g., 0 <= II
-            resel = BuildIslSimpleConstraint (calleravis, prfi, nid, NOPRFOP, NULL);
+            // Build: II >= iv or II <= iv, where iv is initial value
+            prfiv = (stridesignum > 0) ? F_ge_SxS : F_le_SxS;
+            resel = BuildIslSimpleConstraint (nid, prfiv, calleravis, NOPRFOP, NULL);
             res = TCappendExprs (res, resel);
-
-            // Build: rcv prf2 limit.        E.g., II' < limit
-            // lastvalue = calleravis + stride*loopcount;
-            // If we know the loopcount, and we are NOT dealing
-            // with the COND_COND that controls the loop, we specify
-            // it in the code. If we are dealing with the COND_COND,
-            // we leave the loopcount unknown. If we did specify the
-            // loopcount there, POGO would happily replace the
-            // COND_COND by TRUE, thereby creating an infinite loop in
-            // the generated code.
-            int rubbish; // Above comment is crap, I hope
 
             lpavis = TBmakeAvis (TRAVtmpVarName ("LOOPCT"),
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
@@ -3264,7 +3267,8 @@ PHUTisPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         exprsFn = PHUTgenerateAffineExprsForGuard (F_le_SxS, arg1, zro, fundef, F_le_SxS,
                                                    varlut, 0);
         emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
-                                     POLY_OPCODE_INTERSECT, "PHUTisPositive");
+                                     POLY_OPCODE_INTERSECT, "PHUTisPositive",
+                                     ID_AVIS (arg1));
         z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
@@ -3318,7 +3322,8 @@ PHUTisNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         exprsFn = PHUTgenerateAffineExprsForGuard (F_ge_SxS, arg1, zro, fundef, F_ge_SxS,
                                                    varlut, 0);
         emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
-                                     POLY_OPCODE_INTERSECT, "PHUTisNegative");
+                                     POLY_OPCODE_INTERSECT, "PHUTisNegative",
+                                     ID_AVIS (arg1));
         z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
@@ -3372,7 +3377,8 @@ PHUTisNonPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         exprsFn = PHUTgenerateAffineExprsForGuard (F_gt_SxS, arg1, zro, fundef, F_gt_SxS,
                                                    varlut, 0);
         emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
-                                     POLY_OPCODE_INTERSECT, "PHUTisNonPositive");
+                                     POLY_OPCODE_INTERSECT, "PHUTisNonPositive",
+                                     ID_AVIS (arg1));
         z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }
@@ -3426,7 +3432,8 @@ PHUTisNonNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
         exprsFn = PHUTgenerateAffineExprsForGuard (F_lt_SxS, arg1, zro, fundef, F_lt_SxS,
                                                    varlut, 0);
         emp = PHUTcheckIntersection (DUPdoDupTree (aft), NULL, exprsFn, NULL, varlut,
-                                     POLY_OPCODE_INTERSECT, "PHUTisNonNegative");
+                                     POLY_OPCODE_INTERSECT, "PHUTisNonNegative",
+                                     ID_AVIS (arg1));
         z = 0 != (emp & POLY_RET_EMPTYSET_BCF);
         FREEdoFreeNode (zro);
     }

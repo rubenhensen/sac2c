@@ -566,9 +566,10 @@ POGOprf (node *arg_node, info *arg_info)
                                                         LFUdualFun (PRF_PRF (arg_node)),
                                                         INFO_VARLUT (arg_info), 0);
 
-            emp = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn,
-                                         INFO_VARLUT (arg_info), POLY_OPCODE_INTERSECT,
-                                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+            emp
+              = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn,
+                                       INFO_VARLUT (arg_info), POLY_OPCODE_INTERSECT,
+                                       AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), NULL);
             exprsX = NULL; // PHUTcheckIntersection consumes the N_exprs
             exprsY = NULL;
             exprsFn = NULL;
