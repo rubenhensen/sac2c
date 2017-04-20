@@ -203,51 +203,6 @@ PHUTprintIslAffineFunctionTree (node *arg_node)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *Node2Avis( node *arg_node)
- *
- * @brief Find N_avis node for arg_node
- *
- * @param An N_avis, N_id, or N_ids node
- *
- * @return the associated N_avis node, or NULL if this is an N_num
- *         or if arg_node is NULL
- *
- ******************************************************************************/
-static node *
-Node2Avis (node *arg_node)
-{
-    node *avis = NULL;
-
-    DBUG_ENTER ();
-
-    if (NULL != arg_node) {
-        switch (NODE_TYPE (arg_node)) {
-        case N_id:
-            avis = ID_AVIS (arg_node);
-            break;
-
-        case N_ids:
-            avis = IDS_AVIS (arg_node);
-            break;
-
-        case N_avis:
-            avis = arg_node;
-            break;
-
-        case N_num:
-        case N_bool:
-            break;
-
-        default:
-            DBUG_ASSERT (NULL != avis, "Expected N_id, N_avis, or N_ids node");
-        }
-    }
-
-    DBUG_RETURN (avis);
-}
-
-/** <!-- ****************************************************************** -->
- *
  * @fn node *Node2Value( node *arg_node)
  *
  * @brief Find N_avis node for arg_node, unless it is
@@ -257,6 +212,7 @@ Node2Avis (node *arg_node)
  *
  * @return An N_id if the argument is an N_id, N_avis, or N_ids.
  *         Otherwise, the associated N_avis node,
+ *         except that we return N_num for AKV values
  *
  ******************************************************************************/
 static node *
@@ -268,7 +224,7 @@ Node2Value (node *arg_node)
     DBUG_ENTER ();
 
     if (NULL != arg_node) {
-        z = Node2Avis (arg_node);
+        z = TUnode2Avis (arg_node);
         if (NULL != z) {
             if (TYisAKV (AVIS_TYPE (z))) {
                 if (TUisIntScalar (AVIS_TYPE (z))) {
@@ -282,7 +238,7 @@ Node2Value (node *arg_node)
                     }
                 }
             } else {
-                DBUG_ASSERT (N_avis == NODE_TYPE (z), "Expected N_avis from Node2Avis");
+                DBUG_ASSERT (N_avis == NODE_TYPE (z), "Expected N_avis from TUnode2Avis");
                 z = TBmakeId (z);
             }
         } else {
@@ -325,7 +281,7 @@ PHUTsetIslClass (node *arg_node, int islclass)
 
     DBUG_ENTER ();
 
-    avis = Node2Avis (arg_node);
+    avis = TUnode2Avis (arg_node);
     if ((NULL != avis) && (AVIS_ISLCLASSUNDEFINED == AVIS_ISLCLASS (avis))) {
         AVIS_ISLCLASS (avis) = islclass;
         DBUG_PRINT ("Set %s ISLCLASS to %d", AVIS_NAME (avis), AVIS_ISLCLASS (avis));
@@ -366,7 +322,7 @@ PHUTinsertVarIntoLut (node *arg_node, lut_t *varlut, node *fundef, int islclass)
 
     DBUG_ENTER ();
 
-    avis = Node2Avis (arg_node);
+    avis = TUnode2Avis (arg_node);
     if (NULL != avis) {
         DBUG_ASSERT (NULL != varlut, "NULL VARLUT");
         LUTupdateLutP (varlut, avis, fundef, (void **)&founditem);
@@ -631,14 +587,14 @@ BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
                    || (N_avis == NODE_TYPE (ids)),
                  "ids not N_id or N_avis");
 #ifdef DEADCODEIHOPE
-    idsv = Node2Avis (ids);
+    idsv = TUnode2Avis (ids);
     idsv = (NULL == idsv) ? ids : idsv; // N_num support
     if ((NULL != idsv) && (N_avis == NODE_TYPE (idsv))) {
         idsv = TBmakeId (idsv);
     }
 #else  // DEADCODEIHOPE
     idsv = Node2Value (ids);
-    idsavis = Node2Avis (ids);
+    idsavis = TUnode2Avis (ids);
 #endif // DEADCODEIHOPE
     DBUG_ASSERT (NULL != idsv, "Expected non-NULL ids");
     arg1v = Node2Value (arg1);
@@ -690,7 +646,7 @@ BuildIslStrideConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
     DBUG_ENTER ();
 
 #ifdef DEADCODEIHOPE
-    idsv = Node2Avis (ids);
+    idsv = TUnode2Avis (ids);
     idsv = (NULL == idsv) ? ids : idsv; // N_num support
     if ((NULL != idsv) && (N_avis == NODE_TYPE (idsv))) {
         DBUG_PRINT ("Generated ISL stride constraint for %s", AVIS_NAME (idsv));
@@ -1429,10 +1385,10 @@ PHUTisCompatibleAffineTypes (node *arg_node)
         || (F_idx_sel == PRF_PRF (arg_node)) || (F_shape_A == PRF_PRF (arg_node));
 
     if (!z) { // These primitives require Boolean or Int arguments
-        avis = Node2Avis (PRF_ARG1 (arg_node));
+        avis = TUnode2Avis (PRF_ARG1 (arg_node));
         z = z || TUisBoolScalar (AVIS_TYPE (avis)) || TUisIntScalar (AVIS_TYPE (avis));
         if (isDyadicPrf (PRF_PRF (arg_node))) {
-            avis = Node2Avis (PRF_ARG2 (arg_node));
+            avis = TUnode2Avis (PRF_ARG2 (arg_node));
             z = z
                 && (TUisBoolScalar (AVIS_TYPE (avis))
                     || TUisIntScalar (AVIS_TYPE (avis)));
@@ -1584,7 +1540,7 @@ PHUThandleLoopfunArg (node *nid, node *fundef, lut_t *varlut, node *res,
 
     DBUG_ENTER ();
 
-    avis = Node2Avis (nid);
+    avis = TUnode2Avis (nid);
     DBUG_PRINT ("Looking at variable %s in LOOPFUN %s", AVIS_NAME (avis),
                 FUNDEF_NAME (fundef));
 
@@ -1720,7 +1676,7 @@ PHUThandleLacfunArg (node *nid, node *fundef, lut_t *varlut, node *res, int loop
 
     DBUG_ENTER ();
 
-    avis = Node2Avis (nid);
+    avis = TUnode2Avis (nid);
     // N_assign of External call (N_ap) to LACFUN
     ext_assign = FUNDEF_CALLAP (fundef);
     if (NULL != ext_assign) { // Current function may not be a LACFUN
@@ -2315,7 +2271,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
     DBUG_ENTER ();
 
     nid = PHUTskipChainedAssigns (arg_node);
-    avis = Node2Avis (nid);
+    avis = TUnode2Avis (nid);
     if ((NULL != avis)) { // N_num exits here
         DBUG_PRINT ("Looking at %s", AVIS_NAME (avis));
         assgn = AVIS_SSAASSIGN (avis);
@@ -2659,7 +2615,7 @@ extractInitialValue (node *outerexprs, node *outerinitialvalue)
 
     DBUG_ENTER ();
 
-    oavis = Node2Avis (outerinitialvalue);
+    oavis = TUnode2Avis (outerinitialvalue);
     numexprs = TCcountExprs (outerexprs);
     curexprs = 0;
     while ((NULL == z) && (curexprs < numexprs)) {
@@ -2949,7 +2905,10 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
     rcvel = PHUTskipChainedAssigns (rcv);
 
     // Recursive call variable is existential.
-    if (PHUTinsertVarIntoLut (rcvel, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL)) {
+    PHUTinsertVarIntoLut (rcvel, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
+    if (NULL != AVIS_ISLTREE (ID_AVIS (rcvel))) {
+        res = DUPdoDupTree (AVIS_ISLTREE (ID_AVIS (rcvel)));
+    } else {
         // trace rcv back
         swap = FALSE;
         strideid = NULL;
@@ -3007,7 +2966,6 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
                 res = TCappendExprs (res, resel);
             }
         }
-        PHUTsetIslTree (ID_AVIS (rcvel), res);
     }
 
     DBUG_RETURN (res);

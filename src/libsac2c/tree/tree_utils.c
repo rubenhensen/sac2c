@@ -922,4 +922,49 @@ TUisPrfGuard (node *arg_node)
     DBUG_RETURN (z);
 }
 
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *TUnode2Avis( node *arg_node)
+ *
+ * @brief Find N_avis node for arg_node
+ *
+ * @param An N_avis, N_id, or N_ids node
+ *
+ * @return the associated N_avis node, or NULL if this is an N_num
+ *         or if arg_node is NULL
+ *
+ ******************************************************************************/
+node *
+TUnode2Avis (node *arg_node)
+{
+    node *avis = NULL;
+
+    DBUG_ENTER ();
+
+    if (NULL != arg_node) {
+        switch (NODE_TYPE (arg_node)) {
+        case N_id:
+            avis = ID_AVIS (arg_node);
+            break;
+
+        case N_ids:
+            avis = IDS_AVIS (arg_node);
+            break;
+
+        case N_avis:
+            avis = arg_node;
+            break;
+
+        case N_num:
+        case N_bool:
+            break;
+
+        default:
+            DBUG_ASSERT (NULL != avis, "Expected N_id, N_avis, or N_ids node");
+        }
+    }
+
+    DBUG_RETURN (avis);
+}
+
 #undef DBUG_PREFIX

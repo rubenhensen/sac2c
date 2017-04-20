@@ -213,18 +213,17 @@ LFUisLoopfunInvariant (node *avis, node *fundef)
                     FUNDEF_NAME (fundef), AVIS_NAME (avis));
     }
 
-    if (-1 == res) { // Don't know yet
+    if (-1 == res) { // Don't know yet. Resolve rcv vs. arg
         rcv = LFUarg2Rcv (avis, fundef);
-        if (NULL == rcv) { // We were called with rcv. Get the arg.
-            rcv = avis;
+        if (NULL == rcv) { // We were called with rcv. Try to get arg
             argavis = LFUarg2Caller (avis, fundef);
-            DBUG_ASSERT (NULL != argavis,
-                         "Did not find recursive call variable (or N_arg)");
+            DBUG_PRINT ("Did not find recursive call variable (or N_arg) %s",
+                        AVIS_NAME (avis));
         }
     }
 
     if (-1 == res) {
-        if (argavis == ID_AVIS (rcv)) {
+        if (argavis == rcv) {
             res = 1;
             DBUG_PRINT ("Fun %s arg=%s is loop-invariant", FUNDEF_NAME (fundef),
                         AVIS_NAME (avis));
@@ -235,8 +234,8 @@ LFUisLoopfunInvariant (node *avis, node *fundef)
         }
     }
 
-    if (-1 == res) { // May be selproxy
-        proxy = IVUTarrayFromProxySel (rcv);
+    if (-1 == res) {                         // May be selproxy
+        proxy = IVUTarrayFromProxySel (rcv); // rcv must be N_id here
         if (NULL != proxy) {
             res = (argavis == ID_AVIS (proxy));
             DBUG_PRINT ("Fun %s selproxy arg=%s is loop-invariant", FUNDEF_NAME (fundef),
