@@ -600,10 +600,11 @@ printIslName (FILE *handle, node *avis)
  *        an N_exprs chain of the constraint.
  *
  *        For ids nprf1  arg1 nprf2 arg2, we get, e.g.,
- *              0 <=     arg1 <     arg2
+ *              lb <=     arg1 <     ub
  *
- * @param ids, arg1, arg2: N_id, N_avis or N_num nodes
+ * @param arg1, arg2: N_id, N_avis or N_num nodes
  *        nprf1, nprf2: the function(s) to be used, or NULL
+ *        ids must be N_id or N_avis
  *
  * @return The result is a one-element N_exprs comprising an N_exprs chain
  *         of the constraint, which will eventually
@@ -611,7 +612,7 @@ printIslName (FILE *handle, node *avis)
  *         The two-deep nesting is so that we can introduce "and" conjunctions
  *         among the contraints when constructing the ISL input.
  *
- *         If ids, arg1, or arg2 is AKV, we replace it by its value.
+ *         If arg1, or arg2 is AKV, we replace it by its value.
  *
  ******************************************************************************/
 static node *
@@ -619,12 +620,16 @@ BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
 {
     node *z;
     node *idsv;
+    node *idsavis;
     node *arg1v;
     node *arg2v;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Generating simple constraint");
+    DBUG_ASSERT ((N_id == NODE_TYPE (ids)) || (N_ids == NODE_TYPE (ids))
+                   || (N_avis == NODE_TYPE (ids)),
+                 "ids not N_id or N_avis");
 #ifdef DEADCODEIHOPE
     idsv = Node2Avis (ids);
     idsv = (NULL == idsv) ? ids : idsv; // N_num support
@@ -633,12 +638,13 @@ BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
     }
 #else  // DEADCODEIHOPE
     idsv = Node2Value (ids);
+    idsavis = Node2Avis (ids);
 #endif // DEADCODEIHOPE
     DBUG_ASSERT (NULL != idsv, "Expected non-NULL ids");
     arg1v = Node2Value (arg1);
     arg2v = Node2Value (arg2);
 
-    z = TBmakeExprs (idsv, NULL);
+    z = TBmakeExprs (TBmakeId (idsavis), NULL);
     z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf1, NULL), NULL));
     z = TCappendExprs (z, TBmakeExprs (arg1v, NULL));
 
@@ -895,7 +901,7 @@ PHUTcollectWlGenerator (node *arg_node, node *fundef, lut_t *varlut, node *res,
                 res = TCappendExprs (res, z);
             }
 
-            // Generate: 0 <= ivw < wid
+            // Generate: ivw >= 0   and   ivw < wid
             ivwavis
               = TBmakeAvis (TRAVtmpVarName ("IVW"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
@@ -903,8 +909,10 @@ PHUTcollectWlGenerator (node *arg_node, node *fundef, lut_t *varlut, node *res,
                                       AVIS_ISLCLASSEXISTENTIAL)) {
                 z = DUPdoDupTree (AVIS_ISLTREE (ivwavis));
                 res = TCappendExprs (res, z);
-                z = BuildIslSimpleConstraint (TBmakeNum (0), F_le_SxS, ivwavis, F_lt_SxS,
-                                              widel);
+                z = BuildIslSimpleConstraint (ivwavis, F_ge_SxS, TBmakeNum (0), NOPRFOP,
+                                              NULL);
+                res = TCappendExprs (res, z);
+                z = BuildIslSimpleConstraint (ivwavis, F_lt_SxS, widel, NOPRFOP, NULL);
                 res = TCappendExprs (res, z);
             }
 
@@ -928,9 +936,12 @@ PHUTcollectWlGenerator (node *arg_node, node *fundef, lut_t *varlut, node *res,
             z = BuildIslSimpleConstraint (ivavis, F_eq_SxS, ivpavis, F_add_SxS, ivwavis);
             res = TCappendExprs (res, z);
 
-            // Generate lb <= iv < ub
-            z = BuildIslSimpleConstraint (DUPdoDupNode (lbel), F_le_SxS, ivavis, F_lt_SxS,
-                                          DUPdoDupNode (ubel));
+            // Generate iv >= lb  and  iv <  ub
+            z = BuildIslSimpleConstraint (ivavis, F_ge_SxS, DUPdoDupNode (lbel), NOPRFOP,
+                                          NULL);
+            res = TCappendExprs (res, z);
+            z = BuildIslSimpleConstraint (ivavis, F_lt_SxS, DUPdoDupNode (ubel), NOPRFOP,
+                                          NULL);
             res = TCappendExprs (res, z);
         }
     }
@@ -1577,7 +1588,7 @@ PHUThandleLoopfunArg (node *nid, node *fundef, lut_t *varlut, node *res,
     DBUG_PRINT ("Looking at variable %s in LOOPFUN %s", AVIS_NAME (avis),
                 FUNDEF_NAME (fundef));
 
-    // If the variable is loop-independent, we are done, except for
+    // If the variable is loop-invariant, we are done, except for
     // grabbing outside initial value.
     // See unit test:
     // ~/sac/testsuite/optimizations/pogorelationals/SCSprf_lt_SxS.LIR.sac
@@ -1932,7 +1943,8 @@ HandleIota (node *arg_node, node *fundef, lut_t *varlut, int loopcount)
                     z = PHUTcollectAffineExprsLocal (s, fundef, varlut, NULL,
                                                      AVIS_ISLCLASSSETVARIABLE, loopcount);
                     res = TCappendExprs (res, z);
-                    z = BuildIslSimpleConstraint (lb, F_le_SxS, s, NOPRFOP, NULL);
+                    // Generate s >= lb
+                    z = BuildIslSimpleConstraint (s, F_ge_SxS, lb, NOPRFOP, NULL);
                     res = TCappendExprs (res, z);
                 }
 
@@ -1944,6 +1956,7 @@ HandleIota (node *arg_node, node *fundef, lut_t *varlut, int loopcount)
                     z = PHUTcollectAffineExprsLocal (ub, fundef, varlut, NULL,
                                                      AVIS_ISLCLASSEXISTENTIAL, loopcount);
                     res = TCappendExprs (res, z);
+                    // Generate s < ub
                     z = BuildIslSimpleConstraint (s, F_lt_SxS, ub, NOPRFOP, NULL);
                     res = TCappendExprs (res, z);
                 }
@@ -2641,6 +2654,7 @@ extractInitialValue (node *outerexprs, node *outerinitialvalue)
     node *z = NULL;
     node *expr = NULL;
     node *oavis = NULL;
+    node *avis;
     int numexprs, curexprs;
 
     DBUG_ENTER ();
@@ -2650,7 +2664,8 @@ extractInitialValue (node *outerexprs, node *outerinitialvalue)
     curexprs = 0;
     while ((NULL == z) && (curexprs < numexprs)) {
         expr = TCgetNthExprsExpr (curexprs, outerexprs);
-        if (oavis == ID_AVIS (TCgetNthExprsExpr (0, expr))) {
+        avis = TCgetNthExprsExpr (0, expr);
+        if ((N_id == NODE_TYPE (avis)) && (oavis == ID_AVIS (avis))) {
             z = DUPdoDupNode (TCgetNthExprsExpr (2, expr));
         }
         curexprs++;
@@ -3045,15 +3060,15 @@ PHUTvar2Arg (node *avis, node *fundef)
  *
  *  This code requires that one argument to the LOOPFUN's condprf
  *  is loop-dependent, and that the other is not.
- *  It would be nice to relax this requirement, so that we can
- *  handle the Bodo1.sac unit test.
+ *  It would be nice to relax this requirement, to allow both
+ *  arguments to be loop-dependent, so that we can
+ *  maybe handle the Bodo1.sac unit test.
  *
  ******************************************************************************/
 int
 PHUTgetLoopCount (node *fundef, lut_t *varlut)
 {
 
-#ifdef REDESIGNNEEDED
     node *condvar = NULL;
     node *condprf = NULL;
     node *modprf = NULL;
@@ -3212,13 +3227,6 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     }
 
     DBUG_RETURN (z);
-#else  // REDESIGNNEEDED
-    DBUG_ENTER ();
-    int z = UNR_NONE;
-    ;
-
-    DBUG_RETURN (z);
-#endif // REDESIGNNEEDED
 }
 
 /******************************************************************************
