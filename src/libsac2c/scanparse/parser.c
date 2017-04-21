@@ -494,6 +494,8 @@ handle_type_subscript_expr (struct parser *parser)
         t = TBmakeSpid (NULL, strdup ("*"));
     else {
         parser_unget (parser);
+        /* FIXME handle_expr might be an overkill here: as expr has
+           conditionals, binary operations, etc.  */
         t = handle_expr (parser);
     }
 
