@@ -4196,6 +4196,17 @@ handle_rettype_list (struct parser *parser)
         return TBmakeRet (res, NULL);
     }
 
+    /* Check if the next token is '...', in whcih case
+       we have reached the end of the list.  If we don't have
+       this code, then the next recursive invocation will emit
+       an error.  */
+    tok = parser_get_token (parser);
+    if (token_is_operator (tok, tv_threedots)) {
+        parser_unget2 (parser);
+        return TBmakeRet (res, NULL);
+    } else
+        parser_unget (parser);
+
     t = handle_rettype_list (parser);
     if (t == NULL || t == error_mark_node) {
         error_loc (token_location (tok), "valid type expected after comma");
