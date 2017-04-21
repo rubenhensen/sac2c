@@ -583,9 +583,14 @@ BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
     DBUG_ENTER ();
 
     DBUG_PRINT ("Generating simple constraint");
+
+#ifdef BADIDEA // PWLF does this, due to WL generators not being
+    // flattened all the time
     DBUG_ASSERT ((N_id == NODE_TYPE (ids)) || (N_ids == NODE_TYPE (ids))
                    || (N_avis == NODE_TYPE (ids)),
                  "ids not N_id or N_avis");
+#endif // BADIDEA
+
 #ifdef DEADCODEIHOPE
     idsv = TUnode2Avis (ids);
     idsv = (NULL == idsv) ? ids : idsv; // N_num support
@@ -2958,6 +2963,7 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
             ub = (1 == stridesignum) ? limavis : calleravis;
 
             if ((NULL != lb) && (NULL != ub)) {
+#ifdef CONFUSION
                 // Generate iv = lb + stp * N
                 navis
                   = TBmakeAvis (TRAVtmpVarName ("N"),
@@ -2971,6 +2977,7 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
                 resel = BuildIslSimpleConstraint (navis, F_ge_SxS, TBmakeNum (0), NOPRFOP,
                                                   NULL);
                 res = TCappendExprs (res, resel);
+#endif // CONFUSION
 
                 // iv <= nid < lastvalue
                 resel = BuildIslSimpleConstraint (lb, prfi, nid, prfz, ub);
