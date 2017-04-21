@@ -67,7 +67,6 @@ struct parser {
 
     /* Context-dependend parser variables.  */
     bool in_return;
-    bool in_rettypes;
     bool in_subscript;
 
     /* In case we are parsing a module.  */
