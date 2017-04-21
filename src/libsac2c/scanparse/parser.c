@@ -3443,7 +3443,7 @@ handle_assign (struct parser *parser)
            are allowed to act as expressions.  */
         else if ((!strcmp (SPID_NAME (SPAP_ID (lhs)), "++")
                   || !strcmp (SPID_NAME (SPAP_ID (lhs)), "--"))
-                 && SPID_NS (SPAP_ID (lhs)) == NULL
+                 && SPID_NS (SPAP_ID (lhs)) == NULL && TCcountExprs (SPAP_ARGS (lhs)) == 1
                  && NODE_TYPE (EXPRS_EXPR (SPAP_ARGS (lhs))) == N_spid) {
             node *id = EXPRS_EXPR (SPAP_ARGS (lhs));
             if (SPID_NS (id) != NULL) {
