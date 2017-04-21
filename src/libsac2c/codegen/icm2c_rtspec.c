@@ -205,8 +205,11 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
             }
         }
 
+        out ("#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ "
+             "== 4) && (__GNUC_MINOR__ > 5))))\n");
         out ("#pragma GCC diagnostic push\n");
         out ("#pragma GCC diagnostic ignored \"-Wpedantic\"\n");
+        out ("#endif\n");
         indout ("SAC_RTSPEC_PTR_CAST( %s, %s, ", name, types);
 
         if (rettype_NT[0] != '\0') {
@@ -229,7 +232,10 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
     out (");\n");
 
     if (STReq (retname, "")) {
+        out ("#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) || ((__GNUC__ "
+             "== 4) && (__GNUC_MINOR__ > 5))))\n");
         out ("#pragma GCC diagnostic pop\n");
+        out ("#endif\n");
         indout ("SAC_RTSPEC_BLOCK_END()\n");
     }
 
@@ -287,8 +293,11 @@ ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, int vararg_cnt
             }
         }
 
+        fprintf (global.outfile, "#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ "
+                                 "> 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))\n");
         fprintf (global.outfile, "#pragma GCC diagnostic push\n");
         fprintf (global.outfile, "#pragma GCC diagnostic ignored \"-Wpedantic\"\n");
+        fprintf (global.outfile, "#endif\n");
         INDENT;
         fprintf (global.outfile, "SAC_WE_FUNAP2(%s, %s)\n", types, name);
         INDENT;
@@ -313,7 +322,10 @@ ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, int vararg_cnt
 
     fprintf (global.outfile, ");\n");
 
+    fprintf (global.outfile, "#if defined (__clang__) || ((__GNUC__)  && ((__GNUC__ > 4) "
+                             "|| ((__GNUC__ == 4) && (__GNUC_MINOR__ > 5))))\n");
     fprintf (global.outfile, "#pragma GCC diagnostic pop\n");
+    fprintf (global.outfile, "#endif\n");
 
     DBUG_RETURN ();
 }
