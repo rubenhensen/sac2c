@@ -497,8 +497,8 @@ handle_type_subscript_expr (struct parser *parser)
         t = handle_expr (parser);
     }
 
-    if (t == error_mark_node) {
-        error_loc (token_location (tok), "invalid type dimension expression");
+    if (t == NULL || t == error_mark_node) {
+        error_loc (token_location (tok), "invalid or missing type dimension expression");
         return error_mark_node;
     }
 
