@@ -1858,7 +1858,8 @@ handle_primary_expr (struct parser *parser)
                   warning_loc (token_location (tok), "using deprecated type-cast "
                                "syntax, please remove the `:' character");  */
 
-                type = handle_type (parser);
+                if (error_type_node == (type = handle_type (parser)))
+                    return error_mark_node;
 
                 if (!TYisAKS (type)) {
                     error_loc (loc, "Empty array with non-constant "
