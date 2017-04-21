@@ -260,27 +260,6 @@ lexer_change_file_name (struct lexer *lex, const char *fname)
     return f->name;
 }
 
-static inline bool
-is_operator_symbol (const int c)
-{
-    return !(isspace (c) || isalnum (c) || c == '(' || c == ')' || c == '[' || c == ']'
-             || c == '{' || c == '}' || c == ';' || c == ',' || c == '\'' || c == '"'
-             || c == EOF);
-}
-
-static inline bool
-LEXERisOperator (const char *name)
-{
-    for (size_t i = 0; i < strlen (name); i++)
-        if (!is_operator_symbol (name[i]))
-            return false;
-
-    return true;
-}
-
-/* If the value of the token needs a character buffer or it is
-   stored as an enum token_kind variable.  */
-
 //__BEGIN_DECLS
 bool lexer_init_file (struct lexer *, FILE *, const char *);
 bool lexer_init (struct lexer *, const char *);
@@ -296,4 +275,9 @@ bool is_normal_id (const char *);
 bool is_operator (const char *);
 //__END_DECLS
 
+static inline bool
+LEXERisOperator (const char *name)
+{
+    return !is_normal_id (name);
+}
 #endif /* __LEX_H__  */
