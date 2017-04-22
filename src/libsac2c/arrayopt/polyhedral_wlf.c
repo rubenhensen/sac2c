@@ -1529,17 +1529,11 @@ PWLFpart (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_CONSUMERWLPART (arg_info) = arg_node;
-#ifdef DEADCODE // POLYS traversal sets/clears this
-    arg_node = POLYSsetClearAvisPart (arg_node, arg_node);
-#endif // DEADCODE  // POLYS traversal sets/clears this
 
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVdo (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
 
     INFO_CONSUMERWLPART (arg_info) = NULL;
-#ifdef DEADCODE // POLYS traversal sets/clears this
-    arg_node = POLYSsetClearAvisPart (arg_node, NULL);
-#endif // DEADCODE  // POLYS traversal sets/clears this
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
