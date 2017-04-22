@@ -1295,6 +1295,8 @@ PHUTisCompatibleAffinePrf (prf nprf)
     case F_not_S:
     case F_saabind:
     case F_dim_A:
+    case F_noteminval:
+    case F_notemaxval:
         z = TRUE;
         break;
 
@@ -1351,6 +1353,8 @@ isDyadicPrf (prf nprf)
     case F_shape_A:
     case F_not_S:
     case F_dim_A:
+    case F_noteminval: // dyadic, but we ignore PRF_ARG2
+    case F_notemaxval: // dyadic, but we ignore PRF_ARG2
         z = FALSE;
         break;
 
@@ -2186,6 +2190,15 @@ PHUThandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *re
                 }
                 break;
 
+            case F_noteminval:
+            case F_notemaxval:
+                // These will be dead soon, but they're not dead yet
+                // We treat them the same as simple assign
+                // and ignore PRF_ARG2.
+                z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, NOPRFOP, NULL);
+                res = TCappendExprs (res, z);
+                break;
+
             case F_saabind: // z = PRF_ARG3( rhs);
                 // We need to capture the relationship among initial and final values
                 // of LACFUN parameters. E.g., in simpleNonconstantUp.sac, we have a
@@ -2852,12 +2865,9 @@ PHUThandleAPV (node *exprsall, node *fundef, lut_t *varlut, int *stridesign, nod
  * @brief Analyze a loop-dependent loopfun argument (not necessarily the
  *        one controlling the loop count)
  *
- * @param  nid - the N_arg variable we are analyzing;
- *               nid is already in varlut.
- * @param: rcv - the recursive call value that corresponds to nid
- * @param: initialexprs - The ISL exprs chain for the initial value of the loop
- * @param: initialvalue - The external N_id name of the initial value
- *               of the loop
+ * @param  vid - the N_arg variable we are analyzing;
+ *               vid is already in varlut.
+ * @param: rcv - the recursive call value that corresponds to vid
  * @param: loopcount - the loopcount to be used for the arithmetic
  *               progression vector we generate, or -1 otherwise.
  *
@@ -2868,20 +2878,21 @@ PHUThandleAPV (node *exprsall, node *fundef, lut_t *varlut, int *stridesign, nod
  *         We obtain the ISL exprs chain for the loop itself,
  *         then decide whether the stride is positive or negative.
  *
- *         This lets us generate, for positive stride:
+ *         This lets us generate, for positive stride, where
+ *         v0 is the initial value, and vz is the loop limit:
  *
- *           nid >= initialvalue
- *           nid < initialvalue + (stride * loopcount)
+ *           vid >= v0
+ *           vid < v0 + (stride * loopcount)
  *
  *         Negative stride is the same, except the signs are reversed:
  *
- *           nid <= initialvalue
- *           nid >  initialvalue + (stride * loopcount)
+ *           vid <= v0
+ *           vid >  v0 + (stride * loopcount)
  *
  *
  ******************************************************************************/
 node *
-PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *varlut,
+PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *varlut,
                                   int loopcount, node *aft)
 {
     node *resel = NULL;
@@ -2890,7 +2901,7 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
     node *exprs;
     node *res = NULL;
     node *limavis = NULL;
-    node *calleravis = NULL;
+    node *v0avis = NULL;
     node *outerexprs = NULL;
     node *strideid = NULL;
     node *lpcnt = NULL;
@@ -2906,7 +2917,7 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
 
     DBUG_ENTER ();
 
-    resel = PHUTskipChainedAssigns (nid);
+    resel = PHUTskipChainedAssigns (vid);
     rcvel = PHUTskipChainedAssigns (rcv);
 
     // Recursive call variable is existential.
@@ -2927,16 +2938,16 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
             prfi = (stridesignum > 0) ? F_le_SxS : F_lt_SxS;
             prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
 
-            //  rcv = calleravis
-            calleravis = rcv2CallerVar (rcv, fundef);
+            //  rcv = v0
+            v0avis = rcv2CallerVar (rcv, fundef);
             outerexprs
-              = PHUTgenerateAffineExprs (calleravis, FUNDEF_CALLERFUNDEF (fundef), varlut,
+              = PHUTgenerateAffineExprs (v0avis, FUNDEF_CALLERFUNDEF (fundef), varlut,
                                          AVIS_ISLCLASSEXISTENTIAL, loopcount);
             res = TCappendExprs (res, outerexprs);
 
-            // Build: II >= iv or II <= iv, where iv is initial value
+            // Build: vid >= v0 or vid <= v0, where v0 is initial value
             prfiv = (stridesignum > 0) ? F_ge_SxS : F_le_SxS;
-            resel = BuildIslSimpleConstraint (nid, prfiv, calleravis, NOPRFOP, NULL);
+            resel = BuildIslSimpleConstraint (vid, prfiv, v0avis, NOPRFOP, NULL);
             res = TCappendExprs (res, resel);
 
             lpavis = TBmakeAvis (TRAVtmpVarName ("LOOPCT"),
@@ -2950,37 +2961,37 @@ PHUTanalyzeLoopDependentVariable (node *nid, node *rcv, node *fundef, lut_t *var
                 res = TCappendExprs (res, resel);
             }
 
+            // Generate LIM = v0 + stride * loopcount
             limavis
               = TBmakeAvis (TRAVtmpVarName ("LIM2"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (limavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
 
-            resel = BuildIslStrideConstraint (limavis, F_eq_SxS, calleravis, F_add_SxS,
+            resel = BuildIslStrideConstraint (limavis, F_eq_SxS, v0avis, F_add_SxS,
                                               strideid, F_mul_SxS, lpcnt);
             res = TCappendExprs (res, resel);
 
-            lb = (1 == stridesignum) ? calleravis : limavis;
-            ub = (1 == stridesignum) ? limavis : calleravis;
+            lb = (1 == stridesignum) ? v0avis : limavis;
+            ub = (1 == stridesignum) ? limavis : v0avis;
 
             if ((NULL != lb) && (NULL != ub)) {
-#ifdef CONFUSION
-                // Generate iv = lb + stp * N
+                // Generate iv = initialvalue + stride * N,
+                // where N is existential, as iv is a set.
                 navis
                   = TBmakeAvis (TRAVtmpVarName ("N"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
                 PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-                resel = BuildIslStrideConstraint (nid, F_eq_SxS, lb, F_add_SxS, strideid,
-                                                  F_mul_SxS, navis);
+                resel = BuildIslStrideConstraint (vid, F_eq_SxS, v0avis, F_add_SxS,
+                                                  strideid, F_mul_SxS, navis);
                 res = TCappendExprs (res, resel);
 
                 // Generate N >= 0
                 resel = BuildIslSimpleConstraint (navis, F_ge_SxS, TBmakeNum (0), NOPRFOP,
                                                   NULL);
                 res = TCappendExprs (res, resel);
-#endif // CONFUSION
 
-                // iv <= nid < lastvalue
-                resel = BuildIslSimpleConstraint (lb, prfi, nid, prfz, ub);
+                // Generate lb <= vid < ub
+                resel = BuildIslSimpleConstraint (lb, prfi, vid, prfz, ub);
                 res = TCappendExprs (res, resel);
             }
         }
