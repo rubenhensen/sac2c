@@ -28,9 +28,7 @@
 #if ENABLE_HASH
 #include <time.h>
 #include <unistd.h>
-#ifdef __APPLE__
-#include <unistd.h>
-#else
+#ifndef __APPLE__
 #include <crypt.h>
 #endif /* __APPLE__ */
 #endif /* ENABLE_HASH */
