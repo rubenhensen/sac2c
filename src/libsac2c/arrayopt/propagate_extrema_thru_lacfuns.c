@@ -275,7 +275,7 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
             && (NULL != AVIS_MIN (argavis))
             && (FUNDEF_ISCONDFUN (arg_node)
                 || ((NULL != rca)
-                    && ((1 == LFUisLoopfunInvariant (lfaavis, arg_node)) ||
+                    && ((1 == LFUisLoopInvariantArg (lfaavis, arg_node)) ||
                         // FIXME: Next line is KLUDGE for Bug #1022
                         (IsSameExtremum (lfaavis, EXPRS_EXPR (rca))))))) {
             minmax = AVIS_MIN (argavis);
@@ -291,7 +291,7 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
             && (NULL != AVIS_MAX (argavis))
             && (FUNDEF_ISCONDFUN (arg_node)
                 || ((NULL != rca)
-                    && ((1 == LFUisLoopfunInvariant (lfaavis, arg_node)) ||
+                    && ((1 == LFUisLoopInvariantArg (lfaavis, arg_node)) ||
                         // FIXME: Next line is KLUDGE for Bug #1022
                         (IsSameExtremum (lfaavis, EXPRS_EXPR (rca))))))) {
             minmax = AVIS_MAX (argavis);

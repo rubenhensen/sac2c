@@ -214,6 +214,7 @@ ISLUgetLoopCount (char *str, lut_t *varlut)
     if (NULL == dom) {
         fprintf (stderr, "LoopCount expected union set, got something invalid\n");
     }
+    DBUG_EXECUTE (ISLUprintUnionSet (stderr, dom, "dom"));
     pwcard = isl_union_set_card (dom);
 
     // Attempt to extract value from pwcard.

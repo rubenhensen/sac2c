@@ -1501,7 +1501,7 @@ PHUThandleLoopfunArg (node *nid, node *fundef, lut_t *varlut, node *res,
     // See unit test:
     // ~/sac/testsuite/optimizations/pogorelationals/SCSprf_lt_SxS.LIR.sac
 
-    li = LFUisLoopfunInvariant (avis, fundef);
+    li = LFUisLoopInvariantArg (avis, fundef);
     if (0 == li) {
         rcv = LFUarg2Rcv (avis, fundef);
         DBUG_PRINT ("LACFUN %s loop-dependent arg %s has recursive call value of %s",
@@ -2730,6 +2730,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     char *str = NULL;
     int z = UNR_NONE;
     int loopcount = -1;
+    int li;
 
     DBUG_ENTER ();
 
@@ -2752,6 +2753,20 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 aft2 = PHUTgenerateAffineExprs (arg2, fundef, varlut,
                                                 AVIS_ISLCLASSEXISTENTIAL, loopcount);
                 exprs = TCappendExprs (aft1, aft2);
+
+                // arg1 or arg2 must be a set variable
+                li = LFUisLoopInvariantArg (ID_AVIS (arg1), fundef);
+                if (0 == li) {
+                    AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
+                } else {
+                    if (0 == LFUisLoopInvariantArg (ID_AVIS (arg2), fundef)) {
+                        AVIS_ISLCLASS (ID_AVIS (arg2)) = AVIS_ISLCLASSSETVARIABLE;
+                    } else {
+                        DBUG_PRINT (
+                          "Loopfun cond args (%s), arg2 (%s) are not loop-dependent",
+                          AVIS_NAME (ID_AVIS (arg1)), AVIS_NAME (ID_AVIS (arg2)));
+                    }
+                }
 
                 // Generate ISL constraint for condprf
                 aft3 = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2, NOPRFOP,

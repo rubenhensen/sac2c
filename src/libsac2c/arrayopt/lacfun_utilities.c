@@ -161,7 +161,7 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
 }
 
 /** <!--***********************************************************************-->
- * @fn int LFUisLoopfunInvariant(...)
+ * @fn int LFUisLoopInvariantArg(...)
  *
  * @brief Signum-like result:
  *        Result is 1 if fundef IS a LOOPFUN, and arg is the same as
@@ -171,8 +171,8 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
  *        Result is 0 if arg is definitely NOT loop-invariant
  *        Result is -1 if we do not know if it is loop-invariant or not
  *
- * @param avis:      An N_avis node, which must be an N_arg element
- *                   of a loopfun
+ * @param avis:      An N_avis node, which MUST be an N_arg element
+ *                   of a loopfun.
  *        fundef:    Loopfun N_fundef in question
  *
  * @result: See above
@@ -193,13 +193,14 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
  *            This function does recognize that rca and avis are the same,
  *            when a selproxy is present.
  *
+ * NB. This function does NOT detect non-arguments that are loop-dependent.
  *
  ******************************************************************************/
 int
-LFUisLoopfunInvariant (node *avis, node *fundef)
+LFUisLoopInvariantArg (node *avis, node *fundef)
 {
-    node *proxy;
-    node *rcvid;
+    node *proxy = NULL;
+    node *rcvid = NULL;
     node *argavis;
     int res = -1; // Don't know
 
@@ -215,23 +216,17 @@ LFUisLoopfunInvariant (node *avis, node *fundef)
 
     if (-1 == res) { // Don't know yet. Resolve rcvid vs. arg
         rcvid = LFUarg2Rcv (avis, fundef);
-        if (NULL == rcvid) { // We were called with rcvid. Try to get arg
-            argavis = LFUarg2Caller (avis, fundef);
-            DBUG_PRINT ("Did not find recursive call variable (or N_arg) %s",
-                        AVIS_NAME (avis));
+        if ((NULL != rcvid) && (argavis = ID_AVIS (rcvid))) {
+            res = 1; // arg and rcv match, so is loop-invariant
         }
     }
 
-    if ((-1 == res) && (NULL != rcvid)) {
-        // Found rcvid
-        if (argavis == ID_AVIS (rcvid)) {
-            res = 1;
-            DBUG_PRINT ("Fun %s arg=%s is loop-invariant", FUNDEF_NAME (fundef),
-                        AVIS_NAME (avis));
-        } else {
-            res = 0;
-            DBUG_PRINT ("Fun %s arg=%s is loop-dependent", FUNDEF_NAME (fundef),
-                        AVIS_NAME (avis));
+    if ((-1 == res) && (NULL == rcvid)) {
+        DBUG_PRINT ("Not called with arg %s", AVIS_NAME (avis));
+        // Try to find arg from putative rcv
+        argavis = LFUrcv2Arg (avis, fundef);
+        if (NULL != argavis) {       // Found arg from rcv.
+            res = (argavis == avis); // loop-invariant if they match
         }
     }
 
@@ -239,15 +234,11 @@ LFUisLoopfunInvariant (node *avis, node *fundef)
         proxy = IVUTarrayFromProxySel (rcvid);
         if (NULL != proxy) {
             res = (argavis == ID_AVIS (proxy));
-            DBUG_PRINT ("Fun %s selproxy arg=%s is loop-invariant", FUNDEF_NAME (fundef),
-                        AVIS_NAME (avis));
         }
     }
 
-    if (-1 == res) {
-        DBUG_PRINT ("Do not know if Loopfun %s arg=%s is loop-invariant",
-                    FUNDEF_NAME (fundef), AVIS_NAME (avis));
-    }
+    DBUG_PRINT ("Loopfun %s arg=%s loop-invariance result is %d", FUNDEF_NAME (fundef),
+                AVIS_NAME (avis), res);
 
     DBUG_RETURN (res);
 }
