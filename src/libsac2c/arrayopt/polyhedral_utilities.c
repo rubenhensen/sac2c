@@ -2754,13 +2754,14 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                                                 AVIS_ISLCLASSEXISTENTIAL, loopcount);
                 exprs = TCappendExprs (aft1, aft2);
 
-                // arg1 or arg2 must be a set variable
+                // N_arg for arg1 or arg2 must be a set variable
                 li = LFUisLoopInvariantArg (ID_AVIS (arg1), fundef);
                 if (0 == li) {
-                    AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
+                    AVIS_ISLCLASS (LFUrcv2Arg (arg1, fundef)) = AVIS_ISLCLASSSETVARIABLE;
                 } else {
                     if (0 == LFUisLoopInvariantArg (ID_AVIS (arg2), fundef)) {
-                        AVIS_ISLCLASS (ID_AVIS (arg2)) = AVIS_ISLCLASSSETVARIABLE;
+                        AVIS_ISLCLASS (LFUrcv2Arg (arg2, fundef))
+                          = AVIS_ISLCLASSSETVARIABLE;
                     } else {
                         DBUG_PRINT (
                           "Loopfun cond args (%s), arg2 (%s) are not loop-dependent",
