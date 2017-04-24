@@ -1139,9 +1139,8 @@ CFprf (node *arg_node, info *arg_info)
         /* free this primitive function and replace it by new node */
         arg_node = FREEdoFreeTree (arg_node);
         arg_node = res;
-
-        /* increment constant folding counter */
-        global.optcounters.cf_expr++;
+        global.optcounters.cf_expr++; // increment constant folding counter
+        DBUG_PRINT ("Optimized %s", AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
     }
 
     DBUG_RETURN (arg_node);
