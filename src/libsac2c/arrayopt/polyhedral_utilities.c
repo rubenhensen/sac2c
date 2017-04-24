@@ -2730,7 +2730,8 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     char *str = NULL;
     int z = UNR_NONE;
     int loopcount = -1;
-    int li;
+    int li1;
+    int li2;
 
     DBUG_ENTER ();
 
@@ -2755,17 +2756,23 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 exprs = TCappendExprs (aft1, aft2);
 
                 // N_arg for arg1 or arg2 must be a set variable
-                li = LFUisLoopInvariantArg (ID_AVIS (arg1), fundef);
-                if (0 == li) {
-                    AVIS_ISLCLASS (LFUrcv2Arg (arg1, fundef)) = AVIS_ISLCLASSSETVARIABLE;
+                // If we know that one of them is loop-invariant,
+                // we blindly pick the other as the set variable.
+                // This is needed for -doctz, at least until
+                // the invariance analysis improves enough to handle
+                // that case.
+                //
+                li1 = LFUisLoopInvariantArg (ID_AVIS (arg1), fundef);
+                li2 = LFUisLoopInvariantArg (ID_AVIS (arg2), fundef);
+                if (1 == li1) { // If arg1 invariant, arg2 is set variable
+                    AVIS_ISLCLASS (ID_AVIS (arg2)) = AVIS_ISLCLASSSETVARIABLE;
                 } else {
-                    if (0 == LFUisLoopInvariantArg (ID_AVIS (arg2), fundef)) {
-                        AVIS_ISLCLASS (LFUrcv2Arg (arg2, fundef))
-                          = AVIS_ISLCLASSSETVARIABLE;
+                    if (1 == li2) { // If arg2 invariant, arg1 is set variable
+                        AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
                     } else {
-                        DBUG_PRINT (
-                          "Loopfun cond args (%s), arg2 (%s) are not loop-dependent",
-                          AVIS_NAME (ID_AVIS (arg1)), AVIS_NAME (ID_AVIS (arg2)));
+                        DBUG_PRINT ("Did not find loop-dependent arg1(%s) or arg2(%s)",
+                                    AVIS_NAME (ID_AVIS (arg1)),
+                                    AVIS_NAME (ID_AVIS (arg2)));
                     }
                 }
 
