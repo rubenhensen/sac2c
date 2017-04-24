@@ -21,6 +21,7 @@
 #include <isl/band.h>
 #include <isl/schedule.h>
 #include <isl/ast_build.h>
+#include <barvinok/isl.h>
 #include "polyhedral_defs.h"
 
 void
@@ -456,6 +457,44 @@ PolyhedralRelationalCalc (int verbose)
     return (z);
 }
 
+/** <!-- ****************************************************************** -->
+ *
+ * @fn int ISLUgetLoopCount(...)
+ *
+ * stolen from ISLU
+ *
+ *
+ ******************************************************************************/
+static int
+ISLUgetLoopCount (__isl_keep isl_union_set *dom, int verbose)
+{
+
+    int z = UNR_NONE;
+    struct isl_union_pw_qpolynomial *pwcard = NULL;
+    struct isl_ctx *ctx;
+    isl_space *dim = NULL;
+    isl_point *zro = NULL;
+    isl_val *val = NULL;
+
+    ctx = isl_union_set_get_ctx (dom);
+    if (NULL == dom) {
+        fprintf (stderr, "LoopCount expected union set, got something invalid\n");
+    }
+
+    // Attempt to extract value from pwcard.
+    pwcard = isl_union_set_card (dom);
+    dim = isl_union_pw_qpolynomial_get_space (pwcard);
+    zro = isl_point_zero (isl_space_copy (dim));
+    val = isl_union_pw_qpolynomial_eval (pwcard, zro);
+    z = (NULL != val) ? isl_val_get_num_si (val) : z;
+    z = (0 == z) ? UNR_NONE : z;
+    isl_val_free (val);
+    isl_space_free (dim);
+    isl_ctx_free (ctx);
+
+    return (z);
+}
+
 int
 LoopCount (__isl_keep isl_union_set *domain, int verbose)
 {
@@ -518,12 +557,15 @@ PolyhedralLoopCount (int verbose)
 { // Attempt to determine a constant loop count for a FOR-loop,
     // from a union set.
     int z;
+    int z2;
     struct isl_union_set *islus;
     struct isl_ctx *ctx = isl_ctx_alloc ();
 
     islus = isl_union_set_read_from_file (ctx, stdin);
 
     z = LoopCount (islus, verbose);
+    z2 = ISLUgetLoopCount (islus, verbose);
+    printf ("LoopCount: %d, ISLgetLoopCount: %d\n", z, z2);
 
     isl_union_set_free (islus);
 

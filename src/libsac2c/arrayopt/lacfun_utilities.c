@@ -214,19 +214,23 @@ LFUisLoopInvariantArg (node *avis, node *fundef)
                     FUNDEF_NAME (fundef), AVIS_NAME (avis));
     }
 
-    if (-1 == res) { // Don't know yet. Resolve rcvid vs. arg
+    if (-1 == res) { // Don't know yet. Look for rcv matching arg
         rcvid = LFUarg2Rcv (avis, fundef);
-        if ((NULL != rcvid) && (argavis = ID_AVIS (rcvid))) {
-            res = 1; // arg and rcv match, so is loop-invariant
+        if (NULL != rcvid) {
+            // If avis and rcv match, they are loop-invariant
+            // If they do not match, they are loop-dependent
+            res = (argavis == ID_AVIS (rcvid));
         }
     }
 
-    if ((-1 == res) && (NULL == rcvid)) {
-        DBUG_PRINT ("Not called with arg %s", AVIS_NAME (avis));
+    if (-1 == res) {
+        DBUG_PRINT ("%s is not an N_arg", AVIS_NAME (avis));
         // Try to find arg from putative rcv
         argavis = LFUrcv2Arg (avis, fundef);
-        if (NULL != argavis) {       // Found arg from rcv.
-            res = (argavis == avis); // loop-invariant if they match
+        if (NULL != argavis) {
+            // We found avis N_arg from rcv
+            // If they match, they are loop-invariant
+            res = (argavis == avis);
         }
     }
 
@@ -255,8 +259,6 @@ LFUisLoopInvariantArg (node *avis, node *fundef)
  *        I.e.,  reccallargs[ FUNDEF_ARGS iota var]
  *
  *        if var does not appear in args, we return NULL.
- *
- *        if var does not appear in params, we return NULL.
  *
  * @param: var:    an N_id node in the LACFUNs N_arg list,
  *                 or its N_avis node.
@@ -358,8 +360,8 @@ LFUarg2Caller (node *var, node *fundef)
  *                 to the LOOPFUN, fundef, or an N_arg of the LOOPFUN
  * @param: fundef: the LACFUN N_fundef node
  *
- * @result: The N_avis of the formal argument that corresponds to rcv.
- *          If rcv is an N_arg, we just return rcv.
+ * @result: The N_avis of the formal argument (N_arg) that corresponds to rcv.
+ *          If rcv is itself an N_arg, we just return rcv.
  *          If we do not find rcv in the recursive call, or if this
  *          is a condfun, NULL.
  *
