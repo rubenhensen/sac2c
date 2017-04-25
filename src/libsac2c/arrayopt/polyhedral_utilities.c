@@ -2732,6 +2732,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     int loopcount = -1;
     int li1;
     int li2;
+    bool dopoly = FALSE;
 
     DBUG_ENTER ();
 
@@ -2762,13 +2763,19 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 // the invariance analysis improves enough to handle
                 // that case.
                 //
+                // If arg1 and arg2 are both loop-dependent, we do nothing.
+                //
                 li1 = LFUisLoopInvariantArg (ID_AVIS (arg1), fundef);
                 li2 = LFUisLoopInvariantArg (ID_AVIS (arg2), fundef);
-                if (1 == li1) { // If arg1 invariant, arg2 is set variable
+                if ((1 == li1) && (1 != li2)) {
+                    // If arg1 invariant, arg2 is set variable
                     AVIS_ISLCLASS (ID_AVIS (arg2)) = AVIS_ISLCLASSSETVARIABLE;
+                    dopoly = TRUE;
                 } else {
-                    if (1 == li2) { // If arg2 invariant, arg1 is set variable
+                    if ((1 == li2) && (1 != li1)) {
+                        // If arg2 invariant, arg1 is set variable
                         AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
+                        dopoly = TRUE;
                     } else {
                         DBUG_PRINT ("Did not find loop-dependent arg1(%s) or arg2(%s)",
                                     AVIS_NAME (ID_AVIS (arg1)),
@@ -2776,19 +2783,26 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                     }
                 }
 
-                // Generate ISL constraint for condprf
-                aft3 = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2, NOPRFOP,
-                                                 NULL);
-                exprs = TCappendExprs (exprs, aft3);
+                if (dopoly) { // Must have exactly one loop-dependent argument
+                    // Generate ISL constraint for condprf
+                    aft3 = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2,
+                                                     NOPRFOP, NULL);
+                    exprs = TCappendExprs (exprs, aft3);
 
-                str = ISLUexprs2String (exprs, varlut, "LoopCount", TRUE,
-                                        FUNDEF_NAME (fundef));
-                z = ISLUgetLoopCount (str, varlut);
-                DBUG_PRINT ("Loop count for %s is %d", FUNDEF_NAME (fundef), z);
-                DBUG_ASSERT ((UNR_NONE == z) || (0 < z), "Got negative loop count!");
-                MEMfree (str);
+                    str = ISLUexprs2String (exprs, varlut, "LoopCount", TRUE,
+                                            FUNDEF_NAME (fundef));
+                    z = ISLUgetLoopCount (str, varlut);
+                    DBUG_PRINT ("Loop count for %s is %d", FUNDEF_NAME (fundef), z);
+                    DBUG_ASSERT ((UNR_NONE == z) || (0 < z), "Got negative loop count!");
+                    MEMfree (str);
+                } else {
+                    DBUG_PRINT (
+                      "Can not get loop count for %s: both args may be loop-dependent",
+                      FUNDEF_NAME (fundef));
+                }
             } else {
-                DBUG_PRINT ("Unable to get loop count: fn %s has %d loop-dependent args");
+                DBUG_PRINT ("Can not get loop count for %s: condprf not suitable",
+                            FUNDEF_NAME (fundef));
             }
         }
     }
