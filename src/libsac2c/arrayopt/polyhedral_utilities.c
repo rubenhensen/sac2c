@@ -504,42 +504,34 @@ GetIslSetVariablesFromLut (lut_t *varlut)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn void printIslName( FILE *handle, node *avis)
+ * @fn void printIslName( FILE *handle, node *avis, lut_t *varlut)
  *
  * @brief print (to file) an ISL-acceptable, unique version of avisname.
  *        For fundefname of "foo", and avisname of nid", we generate:
- *          _3_foo_nid, where 3 is the length of "foo".
+ *          Q3_fooQ_nid, where 3 is the length of "foo".
+ *          The Q is to keep ISL happy and to perhaps make it more
+ *          human-readable
  *
  * @param handle: a file handle for the output
- *        avis: the SAC N_avis for the variable
+ * @param avis: the SAC N_avis for the variable
+ * @param varlut: The LUT containing the avis list and their fundefs
  *
  * @return void
  *         Side effect: print the generated ISL name.
- *         Side effect: Set AVIS_ISLINDEX, if not already set.
- *
- *         NB. AVIS_ISLINDEX is used only to provide a unique ISL name for
- *             each variable in an Affine Function Tree(AFT). Since each call
- *             to ISL (via sacislinterface) is independent of the others,
- *             we could use the AVIS's address for this purpose. The idea
- *             here is to come up with something that is slightly more
- *             human-readable (for debugging only). It could also
- *             serve to identify those nodes that already possess an AFT, but
- *             we do not do that yet.
  *
  ******************************************************************************/
 static void
-printIslName (FILE *handle, node *avis)
+printIslName (FILE *handle, node *avis, lut_t *varlut)
 {
+    node *fn;
+    int nmlen;
 
     DBUG_ENTER ();
 
-    if (0 == AVIS_ISLINDEX (avis)) {
-        islvarnum++;
-        AVIS_ISLINDEX (avis) = islvarnum;
-        DBUG_PRINT ("Generated V%d for %s", AVIS_ISLINDEX (avis), AVIS_NAME (avis));
-    }
-
-    fprintf (handle, "V%d", AVIS_ISLINDEX (avis));
+    fn = (node *)LUTsearchInLutPp (varlut, avis);
+    DBUG_ASSERT (NULL != fn, "Did not find %s", AVIS_NAME (avis));
+    nmlen = strlen (FUNDEF_NAME (fn));
+    fprintf (handle, "Q%d%sQ%s", nmlen, FUNDEF_NAME (fn), AVIS_NAME (avis));
 
     DBUG_RETURN ();
 }
@@ -927,7 +919,7 @@ CountVariablesInIslclass (node *idlist, int islclass)
 }
 
 static void
-WriteSetVariables (FILE *handle, node *idlist)
+WriteSetVariables (FILE *handle, node *idlist, lut_t *varlut)
 {
     node *avis;
     int i;
@@ -950,8 +942,8 @@ WriteSetVariables (FILE *handle, node *idlist)
         avis = ID_AVIS (TCgetNthExprsExpr (i + 1, idlist));
         if (AVIS_ISLCLASSSETVARIABLE == AVIS_ISLCLASS (avis)) {
             // Print SAC set variable info
-            printIslName (handle, avis);
-            fprintf (handle, " # %s:%s\n", funname, AVIS_NAME (avis));
+            printIslName (handle, avis, varlut);
+            fprintf (handle, "\n");
             numleft--;
             if (numleft > 0) {
                 fprintf (handle, "  , ");
@@ -986,7 +978,7 @@ WriteSetVariables (FILE *handle, node *idlist)
  *
  ******************************************************************************/
 static bool
-WriteExistsSetVariables (FILE *handle, node *idlist)
+WriteExistsSetVariables (FILE *handle, node *idlist, lut_t *varlut)
 {
     node *avis;
     char *funname;
@@ -1003,8 +995,8 @@ WriteExistsSetVariables (FILE *handle, node *idlist)
         if (AVIS_ISLCLASSEXISTENTIAL == AVIS_ISLCLASS (avis)) {
             funname = STR_STRING (TCgetNthExprsExpr (i, idlist));
             fprintf (handle, " exists ");
-            printIslName (handle, avis);
-            fprintf (handle, " : # %s:%s\n", funname, AVIS_NAME (avis));
+            printIslName (handle, avis, varlut);
+            fprintf (handle, " :\n");
         }
     }
 
@@ -1026,10 +1018,9 @@ WriteExistsSetVariables (FILE *handle, node *idlist)
  *
  ******************************************************************************/
 static void
-WriteParameterVariables (FILE *handle, node *idlist)
+WriteParameterVariables (FILE *handle, node *idlist, lut_t *varlut)
 {
     node *avis;
-    char *funname;
     int i;
     int n;
     int inclass;
@@ -1045,9 +1036,8 @@ WriteParameterVariables (FILE *handle, node *idlist)
     for (i = 0; i < n; i = i + 2) {
         avis = ID_AVIS (TCgetNthExprsExpr (i + 1, idlist));
         if (AVIS_ISLCLASSPARAMETER == AVIS_ISLCLASS (avis)) {
-            printIslName (handle, avis);
-            funname = STR_STRING (TCgetNthExprsExpr (i, idlist));
-            fprintf (handle, " # %s:%s\n", funname, AVIS_NAME (avis));
+            printIslName (handle, avis, varlut);
+            fprintf (handle, "\n");
             numleft--;
             if (numleft > 0) {
                 fprintf (handle, " , ");
@@ -1090,14 +1080,14 @@ WriteParameterVariables (FILE *handle, node *idlist)
  *
  ******************************************************************************/
 void
-printIslArg (FILE *handle, node *expr)
+printIslArg (FILE *handle, node *expr, lut_t *varlut)
 {
 
     DBUG_ENTER ();
 
     switch (NODE_TYPE (expr)) {
     case N_id:
-        printIslName (handle, ID_AVIS (expr));
+        printIslName (handle, ID_AVIS (expr), varlut);
         break;
 
     case N_num:
@@ -1139,16 +1129,16 @@ PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag, bool isu
     if (0 != n) {
 
         fprintf (handle, "\n# %s: %s\n\n", tag, lhsname); // Write vars
-        WriteParameterVariables (handle, idlist);         // Write parameter variables
+        WriteParameterVariables (handle, idlist, varlut);
         fprintf (handle, " \n { \n");
-        WriteSetVariables (handle, idlist);
+        WriteSetVariables (handle, idlist, varlut);
         if (!isunionset) { // Write union map
             fprintf (handle, " ->");
-            WriteSetVariables (handle, idlist);
+            WriteSetVariables (handle, idlist, varlut);
         }
         fprintf (handle, " :\n");
         // Write existentially qualified vars
-        WriteExistsSetVariables (handle, idlist);
+        WriteExistsSetVariables (handle, idlist, varlut);
         fprintf (handle, "\n");
 
         // Append constraints
@@ -1163,15 +1153,15 @@ PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag, bool isu
             if ((5 == TCcountExprs (exprsone))
                 && ((F_min_SxS == ISLFN (exprsone)) || (F_max_SxS == ISLFN (exprsone)))) {
                 avis = ID_AVIS (TCgetNthExprsExpr (0, exprsone));
-                printIslName (handle, avis);
+                printIslName (handle, avis, varlut);
                 fprintf (handle, "%s",
                          Prf2Isl (PRF_PRF (TCgetNthExprsExpr (1, exprsone)))); // =
                 // min/max
                 fprintf (handle, "%s(",
                          Prf2Isl (PRF_PRF (TCgetNthExprsExpr (3, exprsone))));
-                printIslArg (handle, TCgetNthExprsExpr (2, exprsone));
+                printIslArg (handle, TCgetNthExprsExpr (2, exprsone), varlut);
                 fprintf (handle, ",");
-                printIslArg (handle, TCgetNthExprsExpr (4, exprsone));
+                printIslArg (handle, TCgetNthExprsExpr (4, exprsone), varlut);
                 fprintf (handle, ")");
             } else {
                 for (k = 0; k < mone; k++) { // Emit one constraint
@@ -1184,7 +1174,7 @@ PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag, bool isu
                     case N_id:
                     case N_num:
                     case N_bool:
-                        printIslArg (handle, expr);
+                        printIslArg (handle, expr, varlut);
                         break;
 
                     case N_prf:
@@ -2604,7 +2594,6 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
     node *navis;
     prf prfi;
     prf prfz;
-    prf prfs;
     prf prfiv;
     int stridesignum = 0; // -1 for negative, 1 for positive, 0 for unknown or 0.
     bool swap;
@@ -2631,7 +2620,6 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
         if (0 != stridesignum) {
             prfi = (stridesignum > 0) ? F_le_SxS : F_lt_SxS;
             prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
-            prfs = (stridesignum > 0) ? F_add_SxS : F_sub_SxS;
 
             //  rcv = v0
             v0avis = rcv2CallerVar (rcv, fundef);
@@ -2677,13 +2665,12 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
             ub = (1 == stridesignum) ? limavis : v0avis;
             DBUG_ASSERT ((NULL != lb) && (NULL != ub), "bobbo still kant kode");
 
-            // Generate iv = v0 + stride * N  (positive stride)
-            // or       iv = v0 - stride * N  (negative stride)
+            // Generate iv = v0 + stride * N
             // where N is existential, and iv is a set.
             navis = TBmakeAvis (TRAVtmpVarName ("N"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-            resel = BuildIslStrideConstraint (vid, F_eq_SxS, v0avis, prfs, strideid,
+            resel = BuildIslStrideConstraint (vid, F_eq_SxS, v0avis, F_add_SxS, strideid,
                                               F_mul_SxS, lpcnt);
             res = TCappendExprs (res, resel);
 

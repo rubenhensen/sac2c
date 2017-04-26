@@ -102,6 +102,25 @@ printAst (FILE *fd, isl_ast_node *ast, char *titl, int verbose, int fmt)
 }
 
 void
+printMap (FILE *fd, struct isl_union_map *pmap, char *titl, int verbose, int fmt)
+{
+    // Print a union_map. Use fmt as format, if non-zero.
+    // no fmt support
+    isl_printer *p;
+    struct isl_ctx *ctx;
+
+    if (verbose) {
+        ctx = isl_union_map_get_ctx (pmap);
+        fprintf (fd, "Union %s is:\n", titl);
+        p = isl_printer_to_file (ctx, fd);
+        p = isl_printer_print_union_map (p, pmap);
+        p = isl_printer_end_line (p);
+        isl_printer_free (p);
+    }
+    return;
+}
+
+void
 printUnion (FILE *fd, struct isl_union_set *pset, char *titl, int verbose, int fmt)
 {
     // Print a union_set. Use fmt as format, if non-zero.
@@ -258,7 +277,21 @@ Codegen (FILE *fd, struct isl_union_set *pset)
 }
 #endif // CRUD
 
-struct isl_union_set *
+static struct isl_union_set *
+doMap (struct isl_union_set *unionb, struct isl_union_map *mapc, char *titl, int verbose)
+{ // apply map to set and return the resulting set
+    struct isl_union_set *intersectbc;
+
+    intersectbc
+      = isl_union_set_apply (isl_union_set_copy (unionb), isl_union_map_copy (mapc));
+    if (verbose) {
+        printUnion (stderr, intersectbc, titl, verbose, 0);
+    }
+
+    return (intersectbc);
+}
+
+static struct isl_union_set *
 doIntersect (struct isl_union_set *unionb, struct isl_union_set *unionc, char *titl,
              int verbose)
 { // Intersect two sets and return the resulting set
@@ -379,24 +412,24 @@ PolyhedralRelationalCalc (int verbose)
 
     struct isl_union_set *unionb = NULL;
     struct isl_union_set *unionc = NULL;
-    struct isl_union_set *unionrfn = NULL;
-    struct isl_union_set *unioncfn = NULL;
+    struct isl_union_map *fn = NULL;
+    struct isl_union_map *cfn = NULL;
     struct isl_union_set *intersectbc = NULL;
     struct isl_union_set *intersectbcr = NULL;
     struct isl_union_set *intersectbcc = NULL;
     struct isl_ctx *ctx = isl_ctx_alloc ();
 
-    unionb = isl_union_set_read_from_file (ctx, stdin); // PRF_ARG1 affine exprs tree
+    unionb = isl_union_set_read_from_file (ctx, stdin);
     printUnion (stderr, unionb, "unionb", verbose, 0);
 
-    unionc = isl_union_set_read_from_file (ctx, stdin); // PRF_ARG2 affine exprs tree
+    unionc = isl_union_set_read_from_file (ctx, stdin);
     printUnion (stderr, unionc, "unionc", verbose, 0);
 
-    unionrfn = isl_union_set_read_from_file (ctx, stdin); // Relational fn
-    printUnion (stderr, unionrfn, "unionrfn", verbose, 0);
+    fn = isl_union_map_read_from_file (ctx, stdin);
+    printMap (stderr, fn, "fn", verbose, 0);
 
-    unioncfn = isl_union_set_read_from_file (ctx, stdin); // Complementary relational fn
-    printUnion (stderr, unioncfn, "unioncfn", verbose, 0);
+    cfn = isl_union_map_read_from_file (ctx, stdin);
+    printMap (stderr, cfn, "cfn", verbose, 0);
 
     if (POLY_RET_UNKNOWN == z) { // Intersect b,c
         intersectbc = doIntersect (unionb, unionc, "intersectbc", verbose);
@@ -413,23 +446,23 @@ PolyhedralRelationalCalc (int verbose)
         }
     }
 
-    if (POLY_RET_UNKNOWN == z) { // Intersect b,c,rfn
-        intersectbcr = doIntersect (intersectbc, unionrfn, "intersectbcr", verbose);
+    if (POLY_RET_UNKNOWN == z) { // Intersect b,c,fn
+        intersectbcr = doMap (intersectbc, fn, "intersectbcr", verbose);
         if (isl_union_set_is_empty (intersectbcr)) {
             z = z | POLY_RET_EMPTYSET_BCF;
             z = z & ~POLY_RET_UNKNOWN;
             if (verbose) {
-                fprintf (stderr, "no intersect in b,c,rfn\n");
+                fprintf (stderr, "no intersect in b,c,fn\n");
             }
         } else {
             if (verbose) {
-                fprintf (stderr, "(b,c) intersects rfn\n");
+                fprintf (stderr, "(b,c) intersects fn\n");
             }
         }
     }
 
     if (POLY_RET_UNKNOWN == z) { // Intersect b,c,cfn
-        intersectbcc = doIntersect (intersectbc, unioncfn, "intersectbcc", verbose);
+        intersectbcc = doMap (intersectbc, cfn, "intersectbcc", verbose);
         if (isl_union_set_is_empty (intersectbcc)) {
             if (verbose) {
                 fprintf (stderr, "no intersect in b,c,cfn\n");
@@ -445,14 +478,14 @@ PolyhedralRelationalCalc (int verbose)
 
     isl_union_set_free (unionb);
     isl_union_set_free (unionc);
-    isl_union_set_free (unionrfn);
-    isl_union_set_free (unioncfn);
+    isl_union_map_free (fn);
+    isl_union_map_free (cfn);
     isl_union_set_free (intersectbc);
     isl_union_set_free (intersectbcr);
     isl_union_set_free (intersectbcc);
     isl_ctx_free (ctx);
 
-    printf ("%d\n", z); // This is the result that PHUT reads.
+    printf ("%d\n", z);
 
     return (z);
 }
