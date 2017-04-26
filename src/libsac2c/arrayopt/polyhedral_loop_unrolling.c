@@ -175,25 +175,27 @@ PLURfundef (node *arg_node, info *arg_info)
     if (!FUNDEF_ISWRAPPERFUN (arg_node)) { // Ignore wrappers
         if (FUNDEF_ISLOOPFUN (arg_node)) { // loopfuns only
             DBUG_PRINT ("Starting to traverse LOOPFUN %s", FUNDEF_NAME (arg_node));
-            lc = PHUTgetLoopCount (arg_node, INFO_VARLUT (arg_info));
-            if (UNR_NONE != lc) {
-                DBUG_PRINT ("FUNDEF_LOOPCOUNT for LOOPFUN %s was %d, is now %d",
-                            FUNDEF_NAME (INFO_FUNDEF (arg_info)),
-                            FUNDEF_LOOPCOUNT (arg_node), lc);
-                FUNDEF_LOOPCOUNT (arg_node) = lc;
-                global.optcounters.plur_expr++;
-            } else {
-                DBUG_PRINT ("FUNDEF_LOOPCOUNT for LOOPFUN %s not found",
-                            FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+            if (UNR_NONE == FUNDEF_LOOPCOUNT (arg_node)) {
+                lc = PHUTgetLoopCount (arg_node, INFO_VARLUT (arg_info));
+                // Clear LUT, AVIS_ISLCLASS, AVIS_ISLTREE
+                PHUTpolyEpilogOne (INFO_VARLUT (arg_info));
+
+                if (UNR_NONE != lc) {
+                    DBUG_PRINT ("FUNDEF_LOOPCOUNT for LOOPFUN %s was %d, is now %d",
+                                FUNDEF_NAME (INFO_FUNDEF (arg_info)),
+                                FUNDEF_LOOPCOUNT (arg_node), lc);
+                    FUNDEF_LOOPCOUNT (arg_node) = lc;
+                    global.optcounters.plur_expr++;
+                } else {
+                    DBUG_PRINT ("FUNDEF_LOOPCOUNT for LOOPFUN %s not found",
+                                FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+                }
             }
         } else {
             // Traverse normal function
             DBUG_PRINT ("Starting to traverse normal fun %s", FUNDEF_NAME (arg_node));
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         }
-
-        // Clear LUT, AVIS_ISLCLASS, AVIS_ISLTREE
-        PHUTpolyEpilogOne (INFO_VARLUT (arg_info));
 
         INFO_FUNDEF (arg_info) = fundefold;
         DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));

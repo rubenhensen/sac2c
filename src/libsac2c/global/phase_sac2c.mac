@@ -396,8 +396,8 @@ CYCLEPHASEFUN (xvp, "Propagating variables", VPdoVarPropagation, global.optimize
 CYCLEPHASEFUN (xrea, "Reorder arguments of equality primitive function ",
                REAdoReorderEqualityprfArguments, global.optimize.dorea, opt, cyc)
 
-CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling,
-               global.optimize.dolur || global.optimize.doplur, opt, cyc)
+CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
+               opt, cyc)
 
 CYCLEPHASEFUNOLD (lurssa, "Restoring SSA form after loop unrolling", SSATdoTransform,
                   global.optimize.dolur || global.optimize.doplur, opt, cyc)

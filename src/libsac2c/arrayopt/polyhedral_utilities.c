@@ -2604,6 +2604,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
     node *navis;
     prf prfi;
     prf prfz;
+    prf prfs;
     prf prfiv;
     int stridesignum = 0; // -1 for negative, 1 for positive, 0 for unknown or 0.
     bool swap;
@@ -2630,6 +2631,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
         if (0 != stridesignum) {
             prfi = (stridesignum > 0) ? F_le_SxS : F_lt_SxS;
             prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
+            prfs = (stridesignum > 0) ? F_add_SxS : F_sub_SxS;
 
             //  rcv = v0
             v0avis = rcv2CallerVar (rcv, fundef);
@@ -2654,39 +2656,48 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
                 res = TCappendExprs (res, resel);
             }
 
-            // Generate LIM = v0 + stride * loopcount
             limavis
-              = TBmakeAvis (TRAVtmpVarName ("LIM2"),
+              = TBmakeAvis (TRAVtmpVarName ("LIM"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (limavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
 
+#ifdef DEADCODEIHOPE
+            // Generate LIM = v0 + stride * loopcount
             resel = BuildIslStrideConstraint (limavis, F_eq_SxS, v0avis, F_add_SxS,
                                               strideid, F_mul_SxS, lpcnt);
+            res = TCappendExprs (res, resel);
+#else  // DEADCODEIHOPE
+
+            // Generate LIM >= 0
+            resel = BuildIslSimpleConstraint (limavis, F_ge_SxS, TBmakeNum (0), NOPRFOP,
+                                              NULL);
             res = TCappendExprs (res, resel);
 
             lb = (1 == stridesignum) ? v0avis : limavis;
             ub = (1 == stridesignum) ? limavis : v0avis;
+            DBUG_ASSERT ((NULL != lb) && (NULL != ub), "bobbo still kant kode");
 
-            if ((NULL != lb) && (NULL != ub)) {
-                // Generate iv = initialvalue + stride * N,
-                // where N is existential, as iv is a set.
-                navis
-                  = TBmakeAvis (TRAVtmpVarName ("N"),
+            // Generate iv = v0 + stride * N  (positive stride)
+            // or       iv = v0 - stride * N  (negative stride)
+            // where N is existential, and iv is a set.
+            navis = TBmakeAvis (TRAVtmpVarName ("N"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-                PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-                resel = BuildIslStrideConstraint (vid, F_eq_SxS, v0avis, F_add_SxS,
-                                                  strideid, F_mul_SxS, navis);
-                res = TCappendExprs (res, resel);
+            PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
+            resel = BuildIslStrideConstraint (vid, F_eq_SxS, v0avis, prfs, strideid,
+                                              F_mul_SxS, lpcnt);
+            res = TCappendExprs (res, resel);
 
-                // Generate N >= 0
-                resel = BuildIslSimpleConstraint (navis, F_ge_SxS, TBmakeNum (0), NOPRFOP,
-                                                  NULL);
-                res = TCappendExprs (res, resel);
+            // Generate N >= 0
+            resel
+              = BuildIslSimpleConstraint (navis, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
+            res = TCappendExprs (res, resel);
 
-                // Generate lb <= vid < ub
-                resel = BuildIslSimpleConstraint (lb, prfi, vid, prfz, ub);
-                res = TCappendExprs (res, resel);
-            }
+            // Generate lb <= vid  and   vid < ub
+            resel = BuildIslSimpleConstraint (lb, prfi, vid, NOPRFOP, NULL);
+            res = TCappendExprs (res, resel);
+            resel = BuildIslSimpleConstraint (vid, prfz, ub, NOPRFOP, NULL);
+            res = TCappendExprs (res, resel);
+#endif // DEADCODEIHOPE
         }
     }
 
