@@ -1534,9 +1534,17 @@ LUTprintLut (FILE *handle, lut_t *lut)
             for (i = 0; i < lut[k].size; i++) {
                 fprintf (handle, "%i: [ " F_PTR " -> " F_PTR " ]\n", i, tmp[0], tmp[1]);
                 if (N_avis == NODE_TYPE ((node *)tmp[0])) {
-                    fprintf (handle, "%s  ->  %s\n", AVIS_NAME ((node *)tmp[0]),
-                             AVIS_NAME ((node *)tmp[1]));
+                    fprintf (handle, "%s  ->  ", AVIS_NAME ((node *)tmp[0]));
                 }
+
+                if (N_avis == NODE_TYPE ((node *)tmp[1])) {
+                    fprintf (handle, "%s\n", AVIS_NAME ((node *)tmp[1]));
+                } else {
+                    if (N_fundef == NODE_TYPE ((node *)tmp[1])) {
+                        fprintf (handle, "%s\n", FUNDEF_NAME ((node *)tmp[1]));
+                    }
+                }
+
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */

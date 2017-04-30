@@ -1292,7 +1292,7 @@ IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
 
                 // Collect affine exprs for PWL
                 exprseq
-                  = PHUTgenerateAffineExprsForPwlfIntersect (ivel, pwlelavis,
+                  = PHUTgenerateAffineExprsForPwlfIntersect (pwlelavis, ivel,
                                                              INFO_VARLUT (arg_info),
                                                              INFO_FUNDEF (arg_info));
 

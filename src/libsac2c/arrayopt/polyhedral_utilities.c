@@ -425,8 +425,8 @@ ClearAvisIslAttributesOne (void *rest, void *fundef, void *avis)
     avis2 = (node *)avis;
 
     if (NULL != avis2) {
-        DBUG_PRINT ("Clearing AVIS_ISLCLASS, AVIS_ISLTREE in function %s, variable %s",
-                    FUNDEF_NAME ((node *)fundef), AVIS_NAME (avis2));
+        DBUG_PRINT ("Clearing AVIS_ISLCLASS, AVIS_ISLTREE in variable %s",
+                    AVIS_NAME (avis2));
         AVIS_ISLCLASS (avis2) = AVIS_ISLCLASSUNDEFINED;
         AVIS_ISLTREE (avis2)
           = (NULL != AVIS_ISLTREE (avis2)) ? FREEdoFreeTree (AVIS_ISLTREE (avis2)) : NULL;
@@ -479,9 +479,8 @@ GetIslSetVariablesFromLutOne (void *rest, void *fundef, void *avis)
     DBUG_ENTER ();
 
     if (NULL != avis) {
-        DBUG_PRINT ("Found function %s, variable %s in VARLUT",
-                    FUNDEF_NAME ((node *)fundef), AVIS_NAME (avis));
-        z = TBmakeExprs (TBmakeStr (FUNDEF_NAME ((node *)fundef)),
+        DBUG_PRINT ("Found variable %s in VARLUT", AVIS_NAME (avis));
+        z = TBmakeExprs (TBmakeStr (FUNDEF_NAME (fundef)),
                          TBmakeExprs (TBmakeId (avis), NULL));
         z = TCappendExprs (z, rest);
     }
@@ -508,9 +507,9 @@ GetIslSetVariablesFromLut (lut_t *varlut)
  *
  * @brief print (to file) an ISL-acceptable, unique version of avisname.
  *        For fundefname of "foo", and avisname of nid", we generate:
- *          Q3_fooQ_nid, where 3 is the length of "foo".
- *          The Q is to keep ISL happy and to perhaps make it more
- *          human-readable
+ *          _3_foo_nid, where 3 is the length of "foo".
+ *          The _s are to keep ISL happy, and to perhaps make
+ *          the string more human-readable
  *
  * @param handle: a file handle for the output
  * @param avis: the SAC N_avis for the variable
@@ -531,7 +530,7 @@ printIslName (FILE *handle, node *avis, lut_t *varlut)
     fn = (node *)LUTsearchInLutPp (varlut, avis);
     DBUG_ASSERT (NULL != fn, "Did not find %s", AVIS_NAME (avis));
     nmlen = strlen (FUNDEF_NAME (fn));
-    fprintf (handle, "Q%d%sQ%s", nmlen, FUNDEF_NAME (fn), AVIS_NAME (avis));
+    fprintf (handle, "_%d_%s_%s", nmlen, FUNDEF_NAME (fn), AVIS_NAME (avis));
 
     DBUG_RETURN ();
 }
@@ -573,10 +572,10 @@ BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
     DBUG_PRINT ("Generating simple constraint");
 
     idsv = Node2Value (ids);
-    idsavis = TUnode2Avis (ids);
     DBUG_ASSERT (NULL != idsv, "Expected non-NULL ids");
     arg1v = Node2Value (arg1);
     arg2v = Node2Value (arg2);
+    idsavis = TUnode2Avis (ids);
 
     z = TBmakeExprs (TBmakeId (idsavis), NULL);
     z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf1, NULL), NULL));
@@ -644,7 +643,6 @@ BuildIslStrideConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
         z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf3, NULL), NULL));
     }
     z = TCappendExprs (z, TBmakeExprs (arg3v, NULL));
-
     z = TBmakeExprs (z, NULL);
 
     DBUG_RETURN (z);
@@ -2512,13 +2510,13 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprsfn, node *expr
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *PHUTgenerateAffineExprsForPwlfIntersect( node *cwliv, node *pwliv,
+ * @fn node *PHUTgenerateAffineExprsForPwlfIntersect( node *pwliv, node *cwliv,
  *           lut_t *varlut)
  *
  * @brief Construct an ISL constraint for the intersect of a consumerWL
  *
- * @param cwliv: The N_avis for the consumerWL index vector.
  * @param pwliv: THe N_avis for the producerWL generator index vector
+ * @param cwliv: The N_avis for the consumerWL index vector.
  * @param varlut: The lut we use to collect set variable names.
  * @param fundef: the N_fundef for the function containing cwliv and pwliv
  *
@@ -2527,16 +2525,64 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprsfn, node *expr
  *
  ******************************************************************************/
 node *
-PHUTgenerateAffineExprsForPwlfIntersect (node *cwliv, node *pwliv, lut_t *varlut,
+PHUTgenerateAffineExprsForPwlfIntersect (node *pwliv, node *cwliv, lut_t *varlut,
                                          node *fundef)
 {
     node *res;
 
     DBUG_ENTER ();
 
-    PHUTinsertVarIntoLut (cwliv, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
     PHUTinsertVarIntoLut (pwliv, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
+    PHUTinsertVarIntoLut (cwliv, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
     res = BuildIslSimpleConstraint (cwliv, F_eq_SxS, pwliv, NOPRFOP, NULL);
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *PHUTcollectCondprf( node *fundef, lut_t *varlut)
+ *
+ * @brief Collect AFT constraints for condprf in loopfun
+ *
+ * @param fundef: the N_fundef for the loopfun
+ * @param varlut: The lut we use to collect set variable names.
+ *
+ * @return The AFT for the condprf, or NULL
+ *
+ ******************************************************************************/
+static node *
+PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount)
+{
+    node *res = NULL;
+    node *resel;
+    node *condprf;
+    node *arg1;
+    node *arg2;
+
+    DBUG_ENTER ();
+
+    condprf = LFUfindLacfunConditional (fundef);
+    condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
+
+    if ((N_prf == NODE_TYPE (condprf)) && (PHUTisCompatibleAffinePrf (PRF_PRF (condprf)))
+        && (PHUTisCompatibleAffineTypes (condprf))) {
+
+        arg1 = PHUTskipChainedAssigns (PRF_ARG1 (condprf));
+        resel = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
+                                             AVIS_ISLCLASSEXISTENTIAL, loopcount);
+        res = TCappendExprs (res, resel);
+
+        if (isDyadicPrf (PRF_PRF (condprf))) {
+            arg2 = PHUTskipChainedAssigns (PRF_ARG2 (condprf));
+            resel = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
+                                                 AVIS_ISLCLASSEXISTENTIAL, loopcount);
+            res = TCappendExprs (res, resel);
+        }
+
+        // Generate ISL constraint for condprf
+        resel = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2, NOPRFOP, NULL);
+        res = TCappendExprs (res, resel);
+    }
 
     DBUG_RETURN (res);
 }
@@ -2589,14 +2635,9 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
     node *strideid = NULL;
     node *lpcnt = NULL;
     node *lpavis = NULL;
-    node *lb;
-    node *ub;
     node *navis;
-    prf prfi;
-    prf prfz;
     prf prfiv;
     int stridesignum = 0; // -1 for negative, 1 for positive, 0 for unknown or 0.
-    bool swap;
 
     DBUG_ENTER ();
 
@@ -2609,7 +2650,6 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
         res = DUPdoDupTree (AVIS_ISLTREE (ID_AVIS (rcvel)));
     } else {
         // trace rcv back
-        swap = FALSE;
         strideid = NULL;
 
         exprs = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (rcvel))));
@@ -2618,8 +2658,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
 
         // If we know stride sign & loop count, we can generate an ISL directive
         if (0 != stridesignum) {
-            prfi = (stridesignum > 0) ? F_le_SxS : F_lt_SxS;
-            prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
+            prfiv = (stridesignum > 0) ? F_ge_SxS : F_le_SxS;
 
             //  rcv = v0
             v0avis = rcv2CallerVar (rcv, fundef);
@@ -2629,7 +2668,6 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
             res = TCappendExprs (res, outerexprs);
 
             // Build: vid >= v0 or vid <= v0, where v0 is initial value
-            prfiv = (stridesignum > 0) ? F_ge_SxS : F_le_SxS;
             resel = BuildIslSimpleConstraint (vid, prfiv, v0avis, NOPRFOP, NULL);
             res = TCappendExprs (res, resel);
 
@@ -2649,29 +2687,18 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (limavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
 
-#ifdef DEADCODEIHOPE
-            // Generate LIM = v0 + stride * loopcount
-            resel = BuildIslStrideConstraint (limavis, F_eq_SxS, v0avis, F_add_SxS,
-                                              strideid, F_mul_SxS, lpcnt);
-            res = TCappendExprs (res, resel);
-#else  // DEADCODEIHOPE
-
             // Generate LIM >= 0
             resel = BuildIslSimpleConstraint (limavis, F_ge_SxS, TBmakeNum (0), NOPRFOP,
                                               NULL);
             res = TCappendExprs (res, resel);
 
-            lb = (1 == stridesignum) ? v0avis : limavis;
-            ub = (1 == stridesignum) ? limavis : v0avis;
-            DBUG_ASSERT ((NULL != lb) && (NULL != ub), "bobbo still kant kode");
-
-            // Generate iv = v0 + stride * N
+            // Generate vid = v0 + stride * N
             // where N is existential, and iv is a set.
             navis = TBmakeAvis (TRAVtmpVarName ("N"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
             resel = BuildIslStrideConstraint (vid, F_eq_SxS, v0avis, F_add_SxS, strideid,
-                                              F_mul_SxS, lpcnt);
+                                              F_mul_SxS, navis);
             res = TCappendExprs (res, resel);
 
             // Generate N >= 0
@@ -2679,12 +2706,18 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
               = BuildIslSimpleConstraint (navis, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
             res = TCappendExprs (res, resel);
 
-            // Generate lb <= vid  and   vid < ub
-            resel = BuildIslSimpleConstraint (lb, prfi, vid, NOPRFOP, NULL);
+#ifdef FIXMENOW
+            // Generate vid < (or <=) ub
+            v0avis = something;
+            wrongub = (1 == stridesignum) ? limavis : v0avis;
+            prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
+            resel = BuildIslSimpleConstraint (vid, prfz, vzavis, NOPRFOP, NULL);
             res = TCappendExprs (res, resel);
-            resel = BuildIslSimpleConstraint (vid, prfz, ub, NOPRFOP, NULL);
+#endif // FIXMENOW
+
+            // Constrain result on condprf
+            resel = PHUTcollectCondprf (fundef, varlut, loopcount);
             res = TCappendExprs (res, resel);
-#endif // DEADCODEIHOPE
         }
     }
 
@@ -2717,90 +2750,65 @@ int
 PHUTgetLoopCount (node *fundef, lut_t *varlut)
 {
 
-    node *condvar = NULL;
-    node *condprf = NULL;
-    node *arg1 = NULL;
-    node *arg2 = NULL;
-    node *aft1 = NULL;
-    node *aft2 = NULL;
-    node *aft3 = NULL;
-    node *exprs = NULL;
+    node *resel = NULL;
     char *str = NULL;
-    int z = UNR_NONE;
-    int loopcount = -1;
+    node *arg1;
+    node *arg2;
+    node *condprf;
     int li1;
     int li2;
-    bool dopoly = FALSE;
+    int z = UNR_NONE;
+    bool dopoly;
 
     DBUG_ENTER ();
 
     if (FUNDEF_ISLOOPFUN (fundef)) {
         if (UNR_NONE != FUNDEF_LOOPCOUNT (fundef)) {
             z = FUNDEF_LOOPCOUNT (fundef);
+            DBUG_PRINT ("Using FUNDEF_LOOPCOUNT (%s) of %d", FUNDEF_NAME (fundef), z);
         } else {
-            condvar = LFUfindLacfunConditional (fundef);
-            condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condvar))));
+            resel = PHUTcollectCondprf (fundef, varlut, UNR_NONE);
+            // N_arg for arg1 or arg2 must be a set variable
+            // If we know that one of them is loop-invariant,
+            // we blindly pick the other as the set variable.
+            // This is needed for -doctz, at least until
+            // the invariance analysis improves enough to handle
+            // that case.
+            //
+            // If arg1 and arg2 are both loop-dependent, we do nothing.
+            //
 
-            if ((N_prf == NODE_TYPE (condprf))
-                && (PHUTisCompatibleAffinePrf (PRF_PRF (condprf)))
-                && (PHUTisCompatibleAffineTypes (condprf))) {
-
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (condprf));
-                aft1 = PHUTgenerateAffineExprs (arg1, fundef, varlut,
-                                                AVIS_ISLCLASSEXISTENTIAL, loopcount);
-
+            condprf = LFUfindLacfunConditional (fundef);
+            condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
+            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (condprf));
+            if (isDyadicPrf (PRF_PRF (condprf))) {
                 arg2 = PHUTskipChainedAssigns (PRF_ARG2 (condprf));
-                aft2 = PHUTgenerateAffineExprs (arg2, fundef, varlut,
-                                                AVIS_ISLCLASSEXISTENTIAL, loopcount);
-                exprs = TCappendExprs (aft1, aft2);
+            }
 
-                // N_arg for arg1 or arg2 must be a set variable
-                // If we know that one of them is loop-invariant,
-                // we blindly pick the other as the set variable.
-                // This is needed for -doctz, at least until
-                // the invariance analysis improves enough to handle
-                // that case.
-                //
-                // If arg1 and arg2 are both loop-dependent, we do nothing.
-                //
-                li1 = LFUisLoopInvariantArg (ID_AVIS (arg1), fundef);
-                li2 = LFUisLoopInvariantArg (ID_AVIS (arg2), fundef);
-                if ((1 == li1) && (1 != li2)) {
-                    // If arg1 invariant, arg2 is set variable
-                    AVIS_ISLCLASS (ID_AVIS (arg2)) = AVIS_ISLCLASSSETVARIABLE;
+            li1 = LFUisLoopInvariantArg (ID_AVIS (arg1), fundef);
+            li2 = LFUisLoopInvariantArg (ID_AVIS (arg2), fundef);
+            if ((1 == li1) && (1 != li2)) {
+                // If arg1 invariant, arg2 is set variable
+                AVIS_ISLCLASS (ID_AVIS (arg2)) = AVIS_ISLCLASSSETVARIABLE;
+                dopoly = TRUE;
+            } else {
+                if ((1 == li2) && (1 != li1)) {
+                    // If arg2 invariant, arg1 is set variable
+                    AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
                     dopoly = TRUE;
                 } else {
-                    if ((1 == li2) && (1 != li1)) {
-                        // If arg2 invariant, arg1 is set variable
-                        AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
-                        dopoly = TRUE;
-                    } else {
-                        DBUG_PRINT ("Did not find loop-dependent arg1(%s) or arg2(%s)",
-                                    AVIS_NAME (ID_AVIS (arg1)),
-                                    AVIS_NAME (ID_AVIS (arg2)));
-                    }
+                    DBUG_PRINT ("Did not find loop-dependent arg1(%s) or arg2(%s)",
+                                AVIS_NAME (ID_AVIS (arg1)), AVIS_NAME (ID_AVIS (arg2)));
                 }
+            }
 
-                if (dopoly) { // Must have exactly one loop-dependent argument
-                    // Generate ISL constraint for condprf
-                    aft3 = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2,
-                                                     NOPRFOP, NULL);
-                    exprs = TCappendExprs (exprs, aft3);
-
-                    str = ISLUexprs2String (exprs, varlut, "LoopCount", TRUE,
-                                            FUNDEF_NAME (fundef));
-                    z = ISLUgetLoopCount (str, varlut);
-                    DBUG_PRINT ("Loop count for %s is %d", FUNDEF_NAME (fundef), z);
-                    DBUG_ASSERT ((UNR_NONE == z) || (0 < z), "Got negative loop count!");
-                    MEMfree (str);
-                } else {
-                    DBUG_PRINT (
-                      "Can not get loop count for %s: both args may be loop-dependent",
-                      FUNDEF_NAME (fundef));
-                }
-            } else {
-                DBUG_PRINT ("Can not get loop count for %s: condprf not suitable",
-                            FUNDEF_NAME (fundef));
+            if (dopoly) { // Must have exactly one loop-dependent argument
+                str = ISLUexprs2String (resel, varlut, "LoopCount", TRUE,
+                                        FUNDEF_NAME (fundef));
+                z = ISLUgetLoopCount (str, varlut);
+                DBUG_PRINT ("Loop count for %s is %d", FUNDEF_NAME (fundef), z);
+                DBUG_ASSERT ((UNR_NONE == z) || (0 < z), "Got negative loop count!");
+                MEMfree (str);
             }
         }
     }
