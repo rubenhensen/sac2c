@@ -2629,14 +2629,15 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
     node *arg = NULL;
     node *exprs;
     node *res = NULL;
-    node *limavis = NULL;
+    node *vzavis = NULL;
     node *v0avis = NULL;
     node *outerexprs = NULL;
     node *strideid = NULL;
     node *lpcnt = NULL;
     node *lpavis = NULL;
-    node *navis;
+    node *navis = NULL;
     prf prfiv;
+    prf prfz;
     int stridesignum = 0; // -1 for negative, 1 for positive, 0 for unknown or 0.
 
     DBUG_ENTER ();
@@ -2682,21 +2683,20 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
                 res = TCappendExprs (res, resel);
             }
 
-            limavis
-              = TBmakeAvis (TRAVtmpVarName ("LIM"),
-                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            PHUTinsertVarIntoLut (limavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-
-            // Generate LIM >= 0
-            resel = BuildIslSimpleConstraint (limavis, F_ge_SxS, TBmakeNum (0), NOPRFOP,
-                                              NULL);
-            res = TCappendExprs (res, resel);
-
-            // Generate vid = v0 + stride * N
-            // where N is existential, and iv is a set.
+            vzavis = TBmakeAvis (TRAVtmpVarName ("VZ"),
+                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+            PHUTinsertVarIntoLut (vzavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
             navis = TBmakeAvis (TRAVtmpVarName ("N"),
                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
+
+            // Generate vz >= 0
+            resel
+              = BuildIslSimpleConstraint (vzavis, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
+            res = TCappendExprs (res, resel);
+
+            // Generate vz = v0 + stride * N
+            // where N is existential.
             resel = BuildIslStrideConstraint (vid, F_eq_SxS, v0avis, F_add_SxS, strideid,
                                               F_mul_SxS, navis);
             res = TCappendExprs (res, resel);
@@ -2706,14 +2706,10 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
               = BuildIslSimpleConstraint (navis, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
             res = TCappendExprs (res, resel);
 
-#ifdef FIXMENOW
-            // Generate vid < (or <=) ub
-            v0avis = something;
-            wrongub = (1 == stridesignum) ? limavis : v0avis;
+            // Generate vid < (or <=) vz
             prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
             resel = BuildIslSimpleConstraint (vid, prfz, vzavis, NOPRFOP, NULL);
             res = TCappendExprs (res, resel);
-#endif // FIXMENOW
 
             // Constrain result on condprf
             resel = PHUTcollectCondprf (fundef, varlut, loopcount);
