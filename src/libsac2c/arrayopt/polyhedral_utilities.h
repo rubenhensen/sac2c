@@ -42,5 +42,6 @@ extern bool PHUTisNegative (node *arg_node, node *aft, node *fundef, lut_t *varl
 extern bool PHUTisNonPositive (node *arg_node, node *aft, node *fundef, lut_t *varlut);
 extern bool PHUTisNonNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut);
 extern int PHUTsignum (node *arg, node *aft, node *fundef, lut_t *varlut, node *ids);
+extern node *PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount);
 
 #endif /* _SAC_PHUT_H_ */

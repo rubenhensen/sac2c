@@ -8967,21 +8967,6 @@ N_tfarg :
             </targets>
           </type>
         </attribute>	 
-        <attribute name="IslIndex" inconstructor="no" default="0">
-          <description>
-	    Index into ISL namelist.
-          </description>
-          <type name="Integer">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <range from="opt_saacyc_polys" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="IslClass" inconstructor="no" default="0">
           <description>
 	    Class of ISL entry. These are defined in polyhedral_defs.h.

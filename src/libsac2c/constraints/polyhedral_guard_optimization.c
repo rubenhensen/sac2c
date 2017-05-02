@@ -252,6 +252,8 @@ POGOfundef (node *arg_node, info *arg_info)
             if (NULL != lacfunprf) {
                 lacfunprf = ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf)));
                 INFO_LACFUNPRF (arg_info) = LET_EXPR (lacfunprf);
+                // Attach AFT for condprf to its LHS
+                PHUTcollectCondprf (arg_node, INFO_VARLUT (arg_info), UNR_NONE);
             }
         }
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
