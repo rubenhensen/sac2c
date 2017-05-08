@@ -44,5 +44,6 @@ extern bool PHUTisNonNegative (node *arg_node, node *aft, node *fundef, lut_t *v
 extern int PHUTsignum (node *arg, node *aft, node *fundef, lut_t *varlut, node *ids);
 extern node *PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount);
 extern void PHUTprintIslAffineFunctionTree (node *arg_node);
+extern node *PHUThandleRelational (int stridesign, node *arg1, node *arg2, prf relprf);
 
 #endif /* _SAC_PHUT_H_ */

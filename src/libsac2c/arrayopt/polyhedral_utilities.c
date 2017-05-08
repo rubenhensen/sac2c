@@ -2065,12 +2065,17 @@ PHUThandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *re
                 }
                 break;
 
+            case F_neq_SxS:
+                // We do not know stride
+                z = PHUThandleRelational (0, arg1, arg2, PRF_PRF (rhs));
+                res = TCappendExprs (res, z);
+                break;
+
             case F_lt_SxS:
             case F_le_SxS:
             case F_eq_SxS:
             case F_ge_SxS:
             case F_gt_SxS:
-            case F_neq_SxS:
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, PRF_PRF (rhs), arg2);
                 res = TCappendExprs (res, z);
                 break;
@@ -2353,6 +2358,48 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut, int islcla
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *PHUThandleRelational( stridesign, arg1, arg2, relprf)
+ *
+ * @brief F_neq_SxS not supported directly by ISL, so we
+ *        use Boolean algebra for that case.
+ *
+ * @param arg1: PRF_ARG1 for a guard/relational primitive
+ * @param arg2: PRF_ARG2 for a guard/relational primitive
+ * @param fundef: The N_fundef for the current function, for debugging
+ * @param relprf:  Either PRF_PRF( arg_node) or its companion function,
+ *                e.g., if PRF_PRF is _gt_SxS_, its companion is _le_SxS.
+ * @param stridesign: 1 or -1 for positive or negative stride; 0 if
+ *                    stride is unknown.
+ *                    Used only for X != Y
+ *
+ * @return A maximal N_exprs chain of expressions for F_neq_SxS
+ *
+ ******************************************************************************/
+node *
+PHUThandleRelational (int stridesign, node *arg1, node *arg2, prf relprf)
+{
+    node *z = NULL;
+
+    DBUG_ENTER ();
+
+    // This is harder. We need to construct a union
+    // of (x<y) OR (x>y).
+    if (F_neq_SxS != relprf) {
+        z = BuildIslSimpleConstraint (arg1, relprf, arg2, NOPRFOP, NULL);
+    } else {
+        if (stridesign == 0) { // do not know stride, or may not be in for-loop
+            z = BuildIslStrideConstraint (arg1, F_gt_SxS, arg2, F_or_SxS, arg1, F_lt_SxS,
+                                          arg2);
+        } else { // stride is known to be + or -
+            relprf = (stridesign > 0) ? F_lt_SxS : F_gt_SxS;
+            z = BuildIslSimpleConstraint (arg1, relprf, arg2, NOPRFOP, NULL);
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *PHUTgenerateAffineExprsForGuard(...)
  *
  * @brief Construct an ISL transform for an N_prf guard or relational
@@ -2408,15 +2455,7 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
         break;
 
     case F_neq_SxS:
-        // This is harder. We need to construct a union
-        // of (x<y) OR (x>y).
-        if (stridesign == 0) { // do not know stride, or may not be in for-loop
-            z = BuildIslStrideConstraint (arg1, F_gt_SxS, arg2, F_or_SxS, arg1, F_lt_SxS,
-                                          arg2);
-        } else { // stride is known to be + or -
-            relprf = (stridesign > 0) ? F_lt_SxS : F_gt_SxS;
-            z = BuildIslSimpleConstraint (arg1, relprf, arg2, NOPRFOP, NULL);
-        }
+        z = PHUThandleRelational (stridesign, arg1, arg2, relfn);
         break;
 
     default:
@@ -2782,9 +2821,8 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 }
             }
 
-            // Generate ISL constraint for condprf, assign AFT to its result
-            resel
-              = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2, NOPRFOP, NULL);
+            // Built constraint for condprf
+            resel = PHUThandleRelational (0, arg1, arg2, PRF_PRF (condprf));
             res = TCappendExprs (res, resel);
 
             if (dopoly) { // Must have exactly one loop-dependent argument
