@@ -3,6 +3,7 @@
 #include "new_types.h"
 #include "print.h"
 #include "tree_compound.h"
+#include "polyhedral_utilities.h"
 #include <str.h>
 
 #include "gdb_utils.h"
@@ -269,6 +270,7 @@ GDBprintAvisName (node *avis)
     if (NULL != avis) {
         printf ("Avis for %s is:%p, AVIS_ISLCLASS=%d\n", AVIS_NAME (avis), (void *)avis,
                 AVIS_ISLCLASS (avis));
+        PHUTprintIslAffineFunctionTree (AVIS_ISLTREE (avis));
     }
     return;
 }

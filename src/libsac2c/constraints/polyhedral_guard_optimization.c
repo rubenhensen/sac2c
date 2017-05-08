@@ -247,13 +247,11 @@ POGOfundef (node *arg_node, info *arg_info)
 
     if (!FUNDEF_ISWRAPPERFUN (arg_node)) { // Ignore wrappers
         DBUG_PRINT ("Starting to traverse function %s", FUNDEF_NAME (arg_node));
-        if (!FUNDEF_ISLACFUN (arg_node)) {
+        if (FUNDEF_ISLACFUN (arg_node)) {
             lacfunprf = LFUfindLacfunConditional (arg_node);
             if (NULL != lacfunprf) {
                 lacfunprf = ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf)));
                 INFO_LACFUNPRF (arg_info) = LET_EXPR (lacfunprf);
-                // Attach AFT for condprf to its LHS
-                PHUTcollectCondprf (arg_node, INFO_VARLUT (arg_info), UNR_NONE);
             }
         }
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -480,16 +478,17 @@ getLoopCountForFundef (node *arg_node, node *fundef)
 node *
 POGOprf (node *arg_node, info *arg_info)
 {
-    node *exprsX = NULL;
-    node *exprsY = NULL;
-    node *exprsFn = NULL;
-    node *exprsCfn = NULL;
+    node *exprsx = NULL;
+    node *exprsy = NULL;
+    node *exprsfn = NULL;
+    node *exprscfn = NULL;
     node *res;
     node *resp;
     node *resa;
     node *guardp;
     node *arg1 = NULL;
     node *arg2 = NULL;
+    node *condprfaft = NULL;
     int emp = POLY_RET_UNKNOWN;
     int loopcount = -1;
     bool dopoly = FALSE;
@@ -514,34 +513,32 @@ POGOprf (node *arg_node, info *arg_info)
             DBUG_PRINT ("Looking at dyadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             loopcount = getLoopCountForFundef (arg_node, INFO_FUNDEF (arg_info));
-            // I don't like this, but we have to get both PRF_ARGs
-            // as set variables before we get the AFT built.
-            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (arg_node));
+            arg1 = PRF_ARG1 (arg_node);
             AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
-            exprsX = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
+            exprsx = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
                                               AVIS_ISLCLASSSETVARIABLE, loopcount);
 
-            arg2 = PHUTskipChainedAssigns (PRF_ARG2 (arg_node));
+            arg2 = PRF_ARG2 (arg_node);
             AVIS_ISLCLASS (ID_AVIS (arg2)) = AVIS_ISLCLASSSETVARIABLE;
-            exprsY = PHUTgenerateAffineExprs (arg2, INFO_FUNDEF (arg_info),
+            exprsy = PHUTgenerateAffineExprs (arg2, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
                                               AVIS_ISLCLASSSETVARIABLE, loopcount);
 
-            dopoly = (NULL != exprsX) && (NULL != exprsY);
+            dopoly = (NULL != exprsx) && (NULL != exprsy);
             break;
 
         case F_non_neg_val_S:
             DBUG_PRINT ("Looking at monadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             loopcount = getLoopCountForFundef (arg_node, INFO_FUNDEF (arg_info));
-            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (arg_node));
+            arg1 = PRF_ARG1 (arg_node);
             AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
-            exprsX = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
+            exprsx = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
                                               AVIS_ISLCLASSSETVARIABLE, loopcount);
-            exprsY = NULL;
-            dopoly = (NULL != exprsX);
+            exprsy = NULL;
+            dopoly = (NULL != exprsx);
             break;
 
         default:
@@ -549,25 +546,27 @@ POGOprf (node *arg_node, info *arg_info)
             break;
         }
 
+        // Don't call ISL if it can't do anything for us.
         if (dopoly) {
-            // Don't bother calling ISL if it can't do anything for us.
+            condprfaft = PHUTcollectCondprf (INFO_FUNDEF (arg_info),
+                                             INFO_VARLUT (arg_info), loopcount);
+            exprsx = TCappendExprs (exprsx, DUPdoDupTree (condprfaft));
+            exprsx = TCappendExprs (exprsx, condprfaft);
+            condprfaft = NULL;
+
             mappedprf = POGOmapPrf (PRF_PRF (arg_node));
-            exprsFn = PHUTgenerateAffineExprsForGuard (mappedprf, arg1, arg2,
+            exprsfn = PHUTgenerateAffineExprsForGuard (mappedprf, arg1, arg2,
                                                        INFO_FUNDEF (arg_info), mappedprf,
                                                        INFO_VARLUT (arg_info), 0);
-            exprsCfn = PHUTgenerateAffineExprsForGuard (mappedprf, arg1, arg2,
+            exprscfn = PHUTgenerateAffineExprsForGuard (mappedprf, arg1, arg2,
                                                         INFO_FUNDEF (arg_info),
                                                         LFUdualFun (PRF_PRF (arg_node)),
                                                         INFO_VARLUT (arg_info), 0);
 
             emp
-              = PHUTcheckIntersection (exprsX, exprsY, exprsFn, exprsCfn,
+              = PHUTcheckIntersection (exprsx, exprsy, exprsfn, exprscfn,
                                        INFO_VARLUT (arg_info), POLY_OPCODE_INTERSECT,
                                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), NULL);
-            exprsX = NULL; // PHUTcheckIntersection consumes the N_exprs
-            exprsY = NULL;
-            exprsFn = NULL;
-            exprsCfn = NULL;
             DBUG_PRINT ("PHUTcheckIntersection result for %s is %d",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), emp);
 
@@ -620,12 +619,12 @@ POGOprf (node *arg_node, info *arg_info)
                 DBUG_PRINT ("Unable to remove guard/primitive for result %s",
                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             }
+        } else {
+            exprsx = (NULL != exprsx) ? FREEdoFreeTree (exprsx) : NULL;
+            exprsy = (NULL != exprsy) ? FREEdoFreeTree (exprsy) : NULL;
+            exprsfn = (NULL != exprsfn) ? FREEdoFreeTree (exprsfn) : NULL;
+            exprscfn = (NULL != exprscfn) ? FREEdoFreeTree (exprscfn) : NULL;
         }
-
-        exprsX = (NULL != exprsX) ? FREEdoFreeTree (exprsX) : NULL;
-        exprsY = (NULL != exprsY) ? FREEdoFreeTree (exprsY) : NULL;
-        exprsFn = (NULL != exprsFn) ? FREEdoFreeTree (exprsFn) : NULL;
-        exprsCfn = (NULL != exprsCfn) ? FREEdoFreeTree (exprsCfn) : NULL;
     }
 
     // Clear LUT, AVIS_ISLCLASS, AVIS_ISLTREE
