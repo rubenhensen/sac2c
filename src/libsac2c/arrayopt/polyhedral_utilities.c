@@ -2832,6 +2832,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 DBUG_PRINT ("Loop count for %s is %d", FUNDEF_NAME (fundef), z);
                 DBUG_ASSERT ((UNR_NONE == z) || (0 < z), "Got negative loop count!");
                 MEMfree (str);
+                z = (UNR_NONE != z) ? z + 1 : z; // Loop count is one too low
             }
         }
     }
