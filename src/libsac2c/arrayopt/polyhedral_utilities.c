@@ -138,7 +138,7 @@
  *        then PHUTskipChainedAssigns( z) will give us x.
  *
  * @param  arg_node: The N_id we want to chase
- * @return The last N_id in the chain
+ * @return The uppermost N_id in the chain
  *
  * NB. I thought there was some way to make PM do this, but I can't
  *     make it work now. Hence, this crude function.
@@ -155,8 +155,8 @@ PHUTskipChainedAssigns (node *arg_node)
     DBUG_ENTER ();
 
     z = arg_node;
-    if (N_id == NODE_TYPE (arg_node)) {
-        avis = ID_AVIS (arg_node);
+    avis = TUnode2Avis (arg_node);
+    if ((NULL != avis) && (N_avis == NODE_TYPE (avis))) {
         assgn = AVIS_SSAASSIGN (avis);
         if ((NULL != assgn) && (N_let == NODE_TYPE (ASSIGN_STMT (assgn)))) {
             rhs = LET_EXPR (ASSIGN_STMT (assgn));
@@ -393,6 +393,9 @@ Prf2Isl (prf arg_node)
         break;
     case F_max_SxS:
         z = "max";
+        break;
+    case F_div_SxS:
+        z = "/";
         break;
     }
 
@@ -1253,6 +1256,7 @@ PHUTisCompatibleAffinePrf (prf nprf)
     case F_not_S:
     case F_saabind:
     case F_dim_A:
+    case F_div_SxS:
     case F_noteminval:
     case F_notemaxval:
         z = TRUE;
@@ -1302,6 +1306,7 @@ isDyadicPrf (prf nprf)
     case F_aplmod_SxS:
     case F_sel_VxA:
     case F_idx_sel:
+    case F_div_SxS:
         z = TRUE;
         break;
 
@@ -1393,14 +1398,7 @@ HandleNid (node *arg_node, node *rhs, node *fundef, lut_t *varlut, int loopcount
     DBUG_ENTER ();
 
     DBUG_PRINT ("Entering for lhs=%s", AVIS_NAME (arg_node));
-#ifdef CRASHES
-    if (!TYisAKV (AVIS_TYPE (arg_node))) { // Ignore numeric constants
-        res = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
-    }
-#else  // CRASHES
     res = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
-#endif // CRASHES
-
     DBUG_PRINT ("Leaving for lhs=%s", AVIS_NAME (arg_node));
 
     DBUG_RETURN (res);
@@ -1616,6 +1614,7 @@ PHUThandleLacfunArg (node *nid, node *fundef, lut_t *varlut, node *res, int loop
 
         // Find caller's value for avis.
         calleriv = rcv2CallerVar (avis, fundef);
+        calleriv = PHUTskipChainedAssigns (calleriv);
         callerfundef = FUNDEF_CALLERFUNDEF (fundef);
         outerexprs = PHUTcollectAffineExprsLocal (calleriv, callerfundef, varlut, NULL,
                                                   AVIS_ISLCLASSEXISTENTIAL, loopcount);
@@ -1922,6 +1921,12 @@ PHUThandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *re
             }
 
             switch (PRF_PRF (rhs)) {
+
+            case F_div_SxS:
+                z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, PRF_PRF (rhs), arg2);
+                res = TCappendExprs (res, z);
+                break;
+
             case F_add_SxS:
             case F_sub_SxS:
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, PRF_PRF (rhs), arg2);
@@ -2535,7 +2540,7 @@ PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprsfn, node *expr
  *
  * @brief Construct an ISL constraint for the intersect of a consumerWL
  *
- * @param pwliv: THe N_avis for the producerWL generator index vector
+ * @param pwliv: The N_avis for the producerWL generator index vector
  * @param cwliv: The N_avis for the consumerWL index vector.
  * @param varlut: The lut we use to collect set variable names.
  * @param fundef: the N_fundef for the function containing cwliv and pwliv
@@ -2558,6 +2563,28 @@ PHUTgenerateAffineExprsForPwlfIntersect (node *pwliv, node *cwliv, lut_t *varlut
 
     DBUG_RETURN (res);
 }
+
+#ifdef DEADCODE // may want to be revived someday
+/** <!-- ****************************************************************** -->
+ * @fn node *PHUTfreeAvisIslFields( node *avis)
+ *
+ * @brief Free any ISL-related fields in N_avis avis
+ *
+ * @brief avis
+ *
+ ******************************************************************************/
+node *
+PHUTfreeAvisIslFields (node *avis)
+{
+
+    DBUG_ENTER ();
+
+    AVIS_ISLTREE (avis) = (NULL != AVIS_ISLTREE (avis)) ? FREEdoFreeTree (avis) : NULL;
+    AVIS_ISLCLASS (avis) = AVIS_ISLCLASSUNDEFINED;
+
+    DBUG_RETURN (avis);
+}
+#endif // DEADCODE // may want to be revived someday
 
 /** <!-- ****************************************************************** -->
  * @fn node *PHUTcollectCondprf( node *fundef, lut_t *varlut)

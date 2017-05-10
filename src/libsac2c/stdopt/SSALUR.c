@@ -2335,7 +2335,7 @@ LURmodule (node *arg_node, info *arg_info)
 node *
 LURfundef (node *arg_node, info *arg_info)
 {
-    loopc_t unrolling;
+    loopc_t unrolling = UNR_NONE;
 
     DBUG_ENTER ();
 
@@ -2354,10 +2354,15 @@ LURfundef (node *arg_node, info *arg_info)
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     // analyse fundef for possible unrolling
+
     // Use FUNDEF_LOOPCOUNT, if available
-    unrolling = (UNR_NONE != FUNDEF_LOOPCOUNT (arg_node))
-                  ? FUNDEF_LOOPCOUNT (arg_node)
-                  : GetLoopUnrolling (arg_node, INFO_EXT_ASSIGN (arg_info));
+    if (UNR_NONE != FUNDEF_LOOPCOUNT (arg_node)) {
+        unrolling = FUNDEF_LOOPCOUNT (arg_node);
+    } else {
+        if (global.optimize.dolur) {
+            unrolling = GetLoopUnrolling (arg_node, INFO_EXT_ASSIGN (arg_info));
+        }
+    }
 
     // Even if we do not unroll, this value may be of use to PHUT, etc.
     FUNDEF_LOOPCOUNT (arg_node) = unrolling;
