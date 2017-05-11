@@ -17,10 +17,32 @@
 
 /*****************************************************************************
  *
- * ICMs for CUDA realated memory allocation and deallocation
+ * ICMs for CUDA related memory allocation and deallocation
  * =================
  *
  *****************************************************************************/
+
+// Allocate on the device
+#if !defined(SAC_DO_CUDA_ALLOC) || SAC_DO_CUDA_ALLOC == SAC_CA_system                    \
+  || SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define SAC_CUDA_ALLOC(var_NT, basetype)                                                 \
+    cudaMalloc ((void **)&SAC_ND_A_FIELD (var_NT),                                       \
+                SAC_ND_A_SIZE (var_NT) * sizeof (basetype));                             \
+    SAC_GET_CUDA_MALLOC_ERROR ();
+#else
+#define SAC_CUDA_ALLOC(var_NT, basetype)
+#endif
+
+// Free device memory
+#if !defined(SAC_DO_CUDA_ALLOC) || SAC_DO_CUDA_ALLOC == SAC_CA_system                    \
+  || SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define SAC_CUDA_FREE(var_NT, freefun)                                                   \
+    cudaFree (SAC_ND_A_FIELD (var_NT));                                                  \
+    SAC_GET_CUDA_FREE_ERROR ();
+#else
+#define SAC_CUDA_FREE(var_NT, freefun)
+#endif
+
 #define SAC_CUDA_ALLOC_BEGIN__DAO(var_NT, rc, dim, basetype)                             \
     {                                                                                    \
         SAC_ND_ALLOC__DESC (var_NT, dim)                                                 \
@@ -38,26 +60,11 @@
     SAC_CUDA_ALLOC__DATA (var_NT, basetype)                                              \
     }
 
-#define SAC_CUDA_FREE(var_NT, freefun)                                                   \
-    cudaFree (SAC_ND_A_FIELD (var_NT));                                                  \
-    SAC_GET_CUDA_FREE_ERROR ();
-//  cutilSafeCall( cudaFree( SAC_ND_A_FIELD( var_NT)));
-
 #define SAC_CUDA_ALLOC__DATA__NOOP(var_NT, basetype) SAC_NOOP ()
 
-#define SAC_CUDA_ALLOC__DATA__AKS(var_NT, basetype)                                      \
-    cudaMalloc ((void **)&SAC_ND_A_FIELD (var_NT),                                       \
-                SAC_ND_A_SIZE (var_NT) * sizeof (basetype));                             \
-    SAC_GET_CUDA_MALLOC_ERROR ();
-//  cutilSafeCall( cudaMalloc((void**)& SAC_ND_A_FIELD( var_NT), SAC_ND_A_SIZE( var_NT)*
-//  sizeof( basetype)));
+#define SAC_CUDA_ALLOC__DATA__AKS(var_NT, basetype) SAC_CUDA_ALLOC (var_NT, basetype)
 
-#define SAC_CUDA_ALLOC__DATA__AKD_AUD(var_NT, basetype)                                  \
-    cudaMalloc ((void **)&SAC_ND_A_FIELD (var_NT),                                       \
-                SAC_ND_A_SIZE (var_NT) * sizeof (basetype));                             \
-    SAC_GET_CUDA_MALLOC_ERROR ();
-//  cutilSafeCall( cudaMalloc((void**)& SAC_ND_A_FIELD( var_NT), SAC_ND_A_SIZE( var_NT)*
-//  sizeof( basetype)));
+#define SAC_CUDA_ALLOC__DATA__AKD_AUD(var_NT, basetype) SAC_CUDA_ALLOC (var_NT, basetype)
 
 #define SAC_CUDA_DEC_RC_FREE__UNQ(var_NT, rc, freefun) SAC_CUDA_FREE (var_NT, freefun)
 
@@ -84,22 +91,38 @@
 /*
  * Transfer scalar on host to an array position on device
  */
+#if !defined(SAC_DO_CUDA_ALLOC) || SAC_DO_CUDA_ALLOC == SAC_CA_system
 #define SAC_CUDA_MEM_TRANSFER_SxA(to_NT, offset, from_NT, basetype)                      \
     cudaMemcpy (SAC_ND_A_FIELD (to_NT) + offset, &from_NT, sizeof (basetype),            \
                 cudaMemcpyHostToDevice);                                                 \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
-//  cutilSafeCall( cudaMemcpy(SAC_ND_A_FIELD( to_NT)+offset, &from_NT, sizeof(basetype),
-//  cudaMemcpyHostToDevice));
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define SAC_CUDA_MEM_TRANSFER_SxA(to_NT, offset, from_NT, basetype)                      \
+    cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT) + offset, &from_NT, sizeof (basetype),       \
+                     cudaMemcpyHostToDevice, 0);                                         \
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
+#else
+#define SAC_CUDA_MEM_TRANSFER_SxA(to_NT, offset, from_NT, basetype)                      \
+    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);
+#endif
 
 /*
- * Transfer data element in an array position on deive to a host scalar
+ * Transfer data element in an array position on device to a host scalar
  */
+#if !defined(SAC_DO_CUDA_ALLOC) || SAC_DO_CUDA_ALLOC == SAC_CA_system
 #define SAC_CUDA_MEM_TRANSFER_AxS(to_NT, offset, from_NT, basetype)                      \
     cudaMemcpy (&SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT) + offset,              \
                 sizeof (basetype), cudaMemcpyDeviceToHost);                              \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
-//  cutilSafeCall( cudaMemcpy(&SAC_ND_A_FIELD( to_NT), SAC_ND_A_FIELD( from_NT)+offset,
-//  sizeof(basetype), cudaMemcpyDeviceToHost));
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define SAC_CUDA_MEM_TRANSFER_AxS(to_NT, offset, from_NT, basetype)                      \
+    cudaMemcpyAsync (&SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT) + offset,         \
+                     sizeof (basetype), cudaMemcpyDeviceToHost, 0);                      \
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
+#else
+#define SAC_CUDA_MEM_TRANSFER_AxS(to_NT, offset, from_NT, basetype)                      \
+    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);
+#endif
 
 /*
  * Transfer data from a device array to another device array
@@ -108,23 +131,28 @@
     cudaMemcpy (SAC_ND_A_FIELD (to_NT) + offset, SAC_ND_A_FIELD (from_NT),               \
                 sizeof (basetype) * SAC_ND_A_SIZE (from_NT), cudaMemcpyDeviceToDevice);  \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
-//  cutilSafeCall( cudaMemcpy( SAC_ND_A_FIELD( to_NT) + offset, SAC_ND_A_FIELD( from_NT),
-//  sizeof( basetype) * SAC_ND_A_SIZE( from_NT), cudaMemcpyDeviceToDevice));
 
+// XXX what is this for???
+#if !defined(SAC_DO_CUDA_ALLOC) || SAC_DO_CUDA_ALLOC == SAC_CA_system
 #define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
     cudaMemcpy (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                        \
                 SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction);          \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
-//  cutilSafeCall( cudaMemcpy( SAC_ND_A_FIELD( to_NT), SAC_ND_A_FIELD( from_NT),
-//  SAC_ND_A_MIRROR_SIZE(from_NT)*sizeof(basetype), direction));
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
+    cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                   \
+                     SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction, 0);  \
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
+#else
+#define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
+    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);
+#endif
 
 #define SAC_CUDA_COPY__ARRAY(to_NT, from_NT, basetype, freefun)                          \
     cudaMemcpy (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                        \
                 SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype),                      \
                 cudaMemcpyDeviceToDevice);                                               \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
-//  cutilSafeCall( cudaMemcpy( SAC_ND_A_FIELD( to_NT), SAC_ND_A_FIELD( from_NT),
-//  SAC_ND_A_MIRROR_SIZE(from_NT) * sizeof( basetype), cudaMemcpyDeviceToDevice));
 
 #define SAC_CUDA_FUN_DEF_END(...)
 

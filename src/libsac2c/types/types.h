@@ -723,6 +723,7 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (DISTMEM_COMMLIB, distmem_commlib, char *, str)                         \
     DEF_RESOURCE (COMMLIB_CONDUIT, commlib_conduit, char *, str)                         \
     DEF_RESOURCE (RC_METHOD, rc_method, char *, str)                                     \
+    DEF_RESOURCE (CUDA_ALLOC, cuda_alloc, char *, str)                                   \
     DEF_RESOURCE (CUDA_ARCH, cuda_arch, char *, str)                                     \
     DEF_RESOURCE (USE_PHM_API, use_phm_api, int, num)                                    \
     DEF_RESOURCE (RTSPEC, rtspec, int, num)                                              \

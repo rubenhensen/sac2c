@@ -38,7 +38,9 @@
 #include <sys/syscall.h>
 #include <linux/futex.h>
 
+#ifndef __CUDACC__
 long syscall (long number, ...);
+#endif
 #endif
 
 #include "runtime/essentials_h/rt_misc.h" // SAC_C_EXTERN
@@ -344,4 +346,3 @@ lift_futex_barrier (volatile unsigned int *glflag)
 #endif
 
 #endif
-

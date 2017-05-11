@@ -9,7 +9,9 @@
  *
  * NOTE: CUDA targets assume CUDA version 6.0 >= is used...
  */
-target cuda_base :: default_sbi:
+
+target default_cuda :: default_sbi:
+//SBI              :=  "cuda"
 BACKEND          :=  "Cuda"
 
 CUDA_ARCH        :=  "@CUDA_ARCH@"
@@ -19,14 +21,40 @@ CC               :=  "@NVCC_PATH@"
 CFLAGS           :=  "@CUDA_ARCH@ --maxrregcount 20 -Xcompiler -Wall "
                      "-Xcompiler -Wno-unused -Xcompiler -fno-builtin "
                      "-Xcudafe '--diag_suppress=set_but_not_used --diag_suppress=declared_but_not_referenced' "
-                     " -I@CUDA_ROOT@/include "
+                     "-I@CUDA_ROOT@/include "
+                     "-DSAC_CA_system=0 -DSAC_CA_cureg=1 -DSAC_CA_cualloc=2 -DSAC_CA_cuman=3 "
 LIBS             :=  " @CCDLLINK@ -lcudart -lcublas"
 
-target cuda :: cuda_base:
+target cuda :: default_cuda:
 EXTLIBPATH       +=  "@CUDA_ROOT@/lib64:"
 
-target cuda32 :: cuda_base:
+target cuda32 :: default_cuda:
 EXTLIBPATH       +=  "@CUDA_ROOT@/lib:"
+
+/*
+ * These targets expose the CUDA host memory allocators
+ *   Default is 'system' from `default_sbi'
+ */
+
+target cuda_alloc_registered:
+//SBI              +=  "-reg"
+CUDA_ALLOC       :=  "cureg"
+
+target cuda_alloc_allocated:
+//SBI              +=  "-alloc"
+CUDA_ALLOC       :=  "cualloc"
+
+target cuda_alloc_managed:
+//SBI              +=  "-man"
+CUDA_ALLOC       :=  "cuman"
+
+target cuda_reg :: cuda :: cuda_alloc_registered:
+target cuda_alloc :: cuda :: cuda_alloc_allocated:
+target cuda_man :: cuda :: cuda_alloc_managed:
+
+/*
+ * These targets are only relevent for the `Hybrid' backend
+ */
 
 target cudahybrid :: cuda:
 BACKEND          :=  "CudaHybrid"

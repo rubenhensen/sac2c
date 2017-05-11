@@ -223,6 +223,11 @@
  *                  For the list of the reference counting methods
  *                  see the file doc/ref-counting-methods.txt
  *
+ *  CUDA_ALLOC      Defines which form of memory allocation we use, system/PHM
+ *                  or CUDA's. Choices: 'system' = use system/PHM, 'cureg' = use CUDA
+ *                  registered, 'cualloc' = use CUDA HostAlloc, 'cuman' = use CUDA
+ *                  managed.
+ *
  *  RTSPEC          Instrument the code for run-time generation of specialized
  *                  functions.
  *
@@ -406,7 +411,7 @@ CEXT             :=  ".c"
 OBJEXT           :=  ".o"
 
 VARIANT          :=  ""
-CUDA_ARCH        :=  "@CUDA_ARCH@"
+CUDA_ARCH        :=  ""
 MT_LIB           :=  ""
 MT_MODE          :=  0
 
@@ -422,6 +427,7 @@ TARGET_ENV       :=  "XXXXX"
 SBI              :=  "XXXXX"
 BACKEND          :=  "XXXXX"
 RC_METHOD        :=  "XXXXX"
+CUDA_ALLOC       :=  "XXXXX"
 USE_PHM_API      :=  0
 RTSPEC           :=  0
 MODEXT           :=  "XXXXX"
@@ -455,6 +461,7 @@ SBI              :=  "seq"
 MT_MODE          :=  0
 BACKEND          :=  "C99"
 RC_METHOD        :=  "local"
+CUDA_ALLOC       :=  "system"
 
 MODEXT           :=  "@SHARED_LIB_EXT@"
 EXEEXT           :=  "@EXEEXT@"
