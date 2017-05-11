@@ -2427,7 +2427,6 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
                                  lut_t *varlut, int stridesign)
 {
     node *z = NULL;
-    prf relprf;
 
     DBUG_ENTER ();
 
@@ -2564,41 +2563,23 @@ PHUTgenerateAffineExprsForPwlfIntersect (node *pwliv, node *cwliv, lut_t *varlut
     DBUG_RETURN (res);
 }
 
-#ifdef DEADCODE // may want to be revived someday
 /** <!-- ****************************************************************** -->
- * @fn node *PHUTfreeAvisIslFields( node *avis)
- *
- * @brief Free any ISL-related fields in N_avis avis
- *
- * @brief avis
- *
- ******************************************************************************/
-node *
-PHUTfreeAvisIslFields (node *avis)
-{
-
-    DBUG_ENTER ();
-
-    AVIS_ISLTREE (avis) = (NULL != AVIS_ISLTREE (avis)) ? FREEdoFreeTree (avis) : NULL;
-    AVIS_ISLCLASS (avis) = AVIS_ISLCLASSUNDEFINED;
-
-    DBUG_RETURN (avis);
-}
-#endif // DEADCODE // may want to be revived someday
-
-/** <!-- ****************************************************************** -->
- * @fn node *PHUTcollectCondprf( node *fundef, lut_t *varlut)
+ * @fn node *PHUTcollectCondprf()
  *
  * @brief Collect AFT constraints for condprf in loopfun
  *
  * @param fundef: the N_fundef for the loopfun
  * @param varlut: The lut we use to collect set variable names.
+ * @param loopcount: used by subfns
+ * @param docondprf: TRUE if we are to generate constraints for
+ *        condprf itself (NOT to be used with PHUTgetLoopCount,
+ *        or we get infinite loops!)
  *
  * @return The AFT for the condprf, or NULL
  *
  ******************************************************************************/
 node *
-PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount)
+PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
 {
     node *res = NULL;
     node *resel;
@@ -2631,6 +2612,11 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount)
                                                      AVIS_ISLCLASSEXISTENTIAL, loopcount);
                 res = TCappendExprs (res, resel);
             }
+        }
+        if (docondprf) {
+            resel
+              = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2, NOPRFOP, NULL);
+            res = TCappendExprs (res, resel);
         }
     }
 
@@ -2712,6 +2698,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
         // If we know stride sign & loop count, we can generate an ISL directive
         if (0 != stridesignum) {
             prfiv = (stridesignum > 0) ? F_ge_SxS : F_le_SxS;
+            AVIS_STRIDESIGNUM (ID_AVIS (rcvel)) = stridesignum;
 
             //  rcv = v0
             v0avis = rcv2CallerVar (rcv, fundef);
@@ -2812,7 +2799,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
             z = FUNDEF_LOOPCOUNT (fundef);
             DBUG_PRINT ("Using FUNDEF_LOOPCOUNT (%s) of %d", FUNDEF_NAME (fundef), z);
         } else {
-            res = PHUTcollectCondprf (fundef, varlut, UNR_NONE);
+            res = PHUTcollectCondprf (fundef, varlut, UNR_NONE, FALSE);
             condprf = LFUfindLacfunConditional (fundef);
             condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
 
@@ -2848,7 +2835,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 }
             }
 
-            // Built constraint for condprf
+            // Build constraint for condprf
             resel = PHUThandleRelational (0, arg1, arg2, PRF_PRF (condprf));
             res = TCappendExprs (res, resel);
 
@@ -3087,4 +3074,53 @@ PHUTisNonNegative (node *arg_node, node *aft, node *fundef, lut_t *varlut)
     DBUG_RETURN (z);
 }
 
+#ifdef DEADCODE // may want to be revived someday
+/** <!-- ****************************************************************** -->
+ * @fn node *PHUTfreeAvisIslFields( node *avis)
+ *
+ * @brief Free any ISL-related fields in N_avis avis
+ *
+ * @brief avis
+ *
+ ******************************************************************************/
+node *
+PHUTfreeAvisIslFields (node *avis)
+{
+
+    DBUG_ENTER ();
+
+    AVIS_ISLTREE (avis) = (NULL != AVIS_ISLTREE (avis)) ? FREEdoFreeTree (avis) : NULL;
+    AVIS_ISLCLASS (avis) = AVIS_ISLCLASSUNDEFINED;
+
+    DBUG_RETURN (avis);
+}
+#endif // DEADCODE // may want to be revived someday
+
+#ifdef MAYBEBADIDEA
+// what about when both args are loop-dependent, with different signums?
+/** <!-- ****************************************************************** -->
+ * @fn node *PHUTmodifyEqNeqPrf( node *arg_node)
+ *
+ * @brief Change = and != N_prf to a simpler relational,
+ *        if a PRF_ARG has known signum.
+ *
+ * @param arg_node: N_prf
+ *
+ * @result: Possibly modified N_prf
+ *
+ *
+ *
+ *
+ ******************************************************************************/
+node *
+PHUTmodifyEqNeqPrf (node *arg_node)
+{
+    DBUG_ENTER ();
+
+    if ((F_eq_SxS == PRF_PRF (arg_node)) || (F_neq_SxS == PRF_PRF (arg_node))) {
+        if
+    }
+    DBUG_RETURN (arg_node);
+}
+#endif // MAYBEBADIDEA
 #undef DBUG_PREFIX

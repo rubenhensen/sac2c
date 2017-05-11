@@ -8997,6 +8997,22 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="StrideSignum" inconstructor="no" default="0">
+          <description>
+	    Signum of stride for LOOPFUN recursive call variable: 0 if unknown,
+	    1 if positive, -1 if negative
+          </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="opt_saacyc_polys" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
 
       <flags>
