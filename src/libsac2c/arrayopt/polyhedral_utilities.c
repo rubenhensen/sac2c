@@ -1181,8 +1181,8 @@ PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag, bool isu
                             fprintf (handle, "%s", Prf2Isl (PRF_PRF (expr)));
                             break;
                         case F_or_SxS:
-                            fprintf (handle, "\n   or\n ");
-                            wasor = TRUE;
+                            fprintf (handle, "\n  or \n ");
+                            // probably wrong          wasor = TRUE;
                             break;
                         case F_min_SxS:
                         case F_max_SxS:
@@ -1201,7 +1201,7 @@ PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag, bool isu
             }
 
             if (j < (m - 1)) { // Handle conjunctions of constraints
-                txt = wasor ? "" : "\n   and\n ";
+                txt = wasor ? "" : "\n and\n ";
                 wasor = FALSE;
                 fprintf (handle, "%s", txt);
             }
@@ -2614,8 +2614,7 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
             }
         }
         if (docondprf) {
-            resel
-              = BuildIslSimpleConstraint (arg1, PRF_PRF (condprf), arg2, NOPRFOP, NULL);
+            resel = PHUThandleRelational (0, arg1, arg2, PRF_PRF (condprf));
             res = TCappendExprs (res, resel);
         }
     }
