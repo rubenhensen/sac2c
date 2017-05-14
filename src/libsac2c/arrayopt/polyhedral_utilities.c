@@ -1104,6 +1104,56 @@ printIslArg (FILE *handle, node *expr, lut_t *varlut)
     DBUG_RETURN ();
 }
 
+static void
+EmitOneConstraint (FILE *handle, int mone, node *exprsone, lut_t *varlut)
+{ // Bog-standard constraints
+    node *expr;
+    int k;
+    bool wasor;
+
+    DBUG_ENTER ();
+
+    for (k = 0; k < mone; k++) { // Emit one constraint
+        expr = TCgetNthExprsExpr (k, exprsone);
+        switch (NODE_TYPE (expr)) {
+        default:
+            DBUG_ASSERT (FALSE, "Unexpected constraint node type");
+            break;
+
+        case N_id:
+        case N_num:
+        case N_bool:
+            printIslArg (handle, expr, varlut);
+            break;
+
+        case N_prf:
+            switch (PRF_PRF (expr)) {
+            default:
+                fprintf (handle, "%s", Prf2Isl (PRF_PRF (expr)));
+                break;
+            case F_or_SxS:
+                fprintf (handle, "\n  or \n ");
+                wasor = TRUE;
+                break;
+            case F_min_SxS:
+            case F_max_SxS:
+            case F_neq_SxS:
+                DBUG_ASSERT (FALSE, "coding error");
+                break;
+            }
+            break;
+
+        case N_char: // Support for disjunction: ISL does not support !=
+            DBUG_ASSERT ('|' == CHAR_VAL (expr), "Expected disjunction |");
+            wasor = TRUE;
+            break;
+        }
+        fprintf (handle, " ");
+    }
+
+    DBUG_RETURN ();
+}
+
 void
 PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag, bool isunionset,
                    char *lhsname)
@@ -1147,56 +1197,39 @@ PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag, bool isu
             DBUG_ASSERT (N_exprs == NODE_TYPE (exprsone), "Wrong constraint type");
             mone = TCcountExprs (exprsone);
 
-            // min() and max() are non-infix fns
-            if ((5 == TCcountExprs (exprsone))
-                && ((F_min_SxS == ISLFN (exprsone)) || (F_max_SxS == ISLFN (exprsone)))) {
-                avis = ID_AVIS (TCgetNthExprsExpr (0, exprsone));
-                printIslName (handle, avis, varlut);
-                fprintf (handle, "%s",
-                         Prf2Isl (PRF_PRF (TCgetNthExprsExpr (1, exprsone)))); // =
-                // min/max
-                fprintf (handle, "%s(",
-                         Prf2Isl (PRF_PRF (TCgetNthExprsExpr (3, exprsone))));
-                printIslArg (handle, TCgetNthExprsExpr (2, exprsone), varlut);
-                fprintf (handle, ",");
-                printIslArg (handle, TCgetNthExprsExpr (4, exprsone), varlut);
-                fprintf (handle, ")");
+            int FIXME; // clean up hard-coded offsets
+
+            if (5 == TCcountExprs (exprsone)) {
+                switch (ISLFN (exprsone)) {
+
+                case F_min_SxS: // Non-infix fns, e.g., min( x,y)
+                case F_max_SxS:
+                    avis = ID_AVIS (ISLVAR (exprsone));
+                    printIslName (handle, avis, varlut);
+                    fprintf (handle, "%s",
+                             Prf2Isl (PRF_PRF (TCgetNthExprsExpr (1, exprsone))));
+                    fprintf (handle, "%s(",
+                             Prf2Isl (PRF_PRF (TCgetNthExprsExpr (3, exprsone))));
+                    printIslArg (handle, TCgetNthExprsExpr (2, exprsone), varlut);
+                    fprintf (handle, ",");
+                    printIslArg (handle, TCgetNthExprsExpr (4, exprsone), varlut);
+                    fprintf (handle, ")");
+                    break;
+
+                default:
+                    EmitOneConstraint (handle, mone, exprsone, varlut);
+                    break;
+                }
             } else {
-                for (k = 0; k < mone; k++) { // Emit one constraint
-                    expr = TCgetNthExprsExpr (k, exprsone);
-                    switch (NODE_TYPE (expr)) {
-                    default:
-                        DBUG_ASSERT (FALSE, "Unexpected constraint node type");
-                        break;
-
-                    case N_id:
-                    case N_num:
-                    case N_bool:
-                        printIslArg (handle, expr, varlut);
-                        break;
-
-                    case N_prf:
-                        switch (PRF_PRF (expr)) {
-                        default:
-                            fprintf (handle, "%s", Prf2Isl (PRF_PRF (expr)));
-                            break;
-                        case F_or_SxS:
-                            fprintf (handle, "\n  or \n ");
-                            // probably wrong          wasor = TRUE;
-                            break;
-                        case F_min_SxS:
-                        case F_max_SxS:
-                            DBUG_ASSERT (FALSE, "coding error");
-                            break;
-                        }
-                        break;
-
-                    case N_char: // Support for disjunction: ISL does not support !=
-                        DBUG_ASSERT ('|' == CHAR_VAL (expr), "Expected disjunction |");
-                        wasor = TRUE;
-                        break;
-                    }
-                    fprintf (handle, " ");
+                if (F_neq_SxS == PRF_PRF (ISLEQ (exprsone))) {
+                    // Kludge. Sorry.
+                    fprintf (handle, "not( ");
+                    printIslArg (handle, ISLVAR (exprsone), varlut); // LARG
+                    fprintf (handle, " = ");
+                    printIslArg (handle, ISLLARG (exprsone), varlut); // RARG
+                    fprintf (handle, ")");
+                } else {
+                    EmitOneConstraint (handle, mone, exprsone, varlut);
                 }
             }
 
@@ -1206,7 +1239,6 @@ PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag, bool isu
                 fprintf (handle, "%s", txt);
             }
         }
-
         fprintf (handle, "\n  }\n\n");
     }
 
@@ -2387,14 +2419,11 @@ PHUThandleRelational (int stridesign, node *arg1, node *arg2, prf relprf)
 
     DBUG_ENTER ();
 
-    // This is harder. We need to construct a union
-    // of (x<y) OR (x>y).
     if (F_neq_SxS != relprf) {
         z = BuildIslSimpleConstraint (arg1, relprf, arg2, NOPRFOP, NULL);
     } else {
         if (stridesign == 0) { // do not know stride, or may not be in for-loop
-            z = BuildIslStrideConstraint (arg1, F_gt_SxS, arg2, F_or_SxS, arg1, F_lt_SxS,
-                                          arg2);
+            z = BuildIslSimpleConstraint (arg1, relprf, arg2, NOPRFOP, NULL);
         } else { // stride is known to be + or -
             relprf = (stridesign > 0) ? F_lt_SxS : F_gt_SxS;
             z = BuildIslSimpleConstraint (arg1, relprf, arg2, NOPRFOP, NULL);
@@ -3095,31 +3124,4 @@ PHUTfreeAvisIslFields (node *avis)
 }
 #endif // DEADCODE // may want to be revived someday
 
-#ifdef MAYBEBADIDEA
-// what about when both args are loop-dependent, with different signums?
-/** <!-- ****************************************************************** -->
- * @fn node *PHUTmodifyEqNeqPrf( node *arg_node)
- *
- * @brief Change = and != N_prf to a simpler relational,
- *        if a PRF_ARG has known signum.
- *
- * @param arg_node: N_prf
- *
- * @result: Possibly modified N_prf
- *
- *
- *
- *
- ******************************************************************************/
-node *
-PHUTmodifyEqNeqPrf (node *arg_node)
-{
-    DBUG_ENTER ();
-
-    if ((F_eq_SxS == PRF_PRF (arg_node)) || (F_neq_SxS == PRF_PRF (arg_node))) {
-        if
-    }
-    DBUG_RETURN (arg_node);
-}
-#endif // MAYBEBADIDEA
 #undef DBUG_PREFIX
