@@ -108,6 +108,7 @@
 #include "polyhedral_guard_optimization.h"
 #include "isl_utilities.h"
 #include "compare_tree.h"
+#include "ctype.h"
 
 // There is a not-an-N_prf value for N_prf somewhere, but I can't find it.
 #define NOPRFOP 0
@@ -164,6 +165,45 @@ PHUTskipChainedAssigns (node *arg_node)
                 z = PHUTskipChainedAssigns (rhs);
             }
         }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn bool PHUTisFundefKludge()
+ *
+ * @brief ISL gets uppity about fundef names that are
+ *        not acceptable identifiers (on their planet).
+ *        For example, an Array version of != causes trouble with
+ *        ipbb.breaks.sac.
+ *
+ *        Until we come up with a new scheme for mapping
+ *        SAC fundef::variable names to/from ISL names, we just
+ *        ignore troublesome fundef names.
+ *
+ *        This function alerts its caller to skip such functions
+ *
+ * @param arg_node: An N_fundef
+ *
+ * @return TRUE is fundef is safe for ISL inclusion
+ *
+ ******************************************************************************/
+bool
+PHUTisFundefKludge (node *arg_node)
+{
+    bool z;
+    char c;
+
+    DBUG_ENTER ();
+
+    c = FUNDEF_NAME (arg_node)[0];
+    z = isalpha (c) || ('_' == c);
+
+    if (!z) {
+        DBUG_PRINT ("Function %s is not suitable for ISL because of its odd name",
+                    FUNDEF_NAME (arg_node));
     }
 
     DBUG_RETURN (z);
@@ -1159,12 +1199,10 @@ PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag, bool isu
                    char *lhsname)
 {
     int j;
-    int k;
     int m;
     int mone;
     int n;
     node *idlist;
-    node *expr;
     node *exprsone;
     node *avis;
     char *txt;

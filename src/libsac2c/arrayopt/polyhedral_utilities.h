@@ -46,5 +46,6 @@ extern node *PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount,
                                  bool docondprf);
 extern void PHUTprintIslAffineFunctionTree (node *arg_node);
 extern node *PHUThandleRelational (int stridesign, node *arg1, node *arg2, prf relprf);
+extern bool PHUTisFundefKludge (node *arg_node);
 
 #endif /* _SAC_PHUT_H_ */

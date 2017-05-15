@@ -172,8 +172,9 @@ PLURfundef (node *arg_node, info *arg_info)
     fundefold = INFO_FUNDEF (arg_info);
     INFO_FUNDEF (arg_info) = arg_node;
 
-    if (!FUNDEF_ISWRAPPERFUN (arg_node)) { // Ignore wrappers
-        if (FUNDEF_ISLOOPFUN (arg_node)) { // loopfuns only
+    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && // Ignore wrappers
+        (PHUTisFundefKludge (arg_node))) {   // Ignore fns such as "!="
+        if (FUNDEF_ISLOOPFUN (arg_node)) {   // loopfuns only
             DBUG_PRINT ("Starting to traverse LOOPFUN %s", FUNDEF_NAME (arg_node));
             if (UNR_NONE == FUNDEF_LOOPCOUNT (arg_node)) {
                 lc = PHUTgetLoopCount (arg_node, INFO_VARLUT (arg_info));

@@ -245,7 +245,8 @@ POGOfundef (node *arg_node, info *arg_info)
     lacfunprfold = INFO_LACFUNPRF (arg_info);
     INFO_LACFUNPRF (arg_info) = NULL;
 
-    if (!FUNDEF_ISWRAPPERFUN (arg_node)) { // Ignore wrappers
+    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && // Ignore wrappers
+        (PHUTisFundefKludge (arg_node))) {   // Ignore fns such as "!="
         DBUG_PRINT ("Starting to traverse function %s", FUNDEF_NAME (arg_node));
         if (FUNDEF_ISLACFUN (arg_node)) {
             lacfunprf = LFUfindLacfunConditional (arg_node);

@@ -1334,7 +1334,8 @@ PWLFfundef (node *arg_node, info *arg_info)
 
     int fixme; // go see how POGO does this. We also have to fix PWLFap
                // the same way.
-    if (FUNDEF_BODY (arg_node) != NULL) {
+    if ((FUNDEF_BODY (arg_node) != NULL)
+        && (PHUTisFundefKludge (arg_node))) { // Ignore fns named !=, etc.
         DBUG_PRINT ("Begin %s %s",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                     FUNDEF_NAME (arg_node));
@@ -1674,6 +1675,7 @@ PWLFprf (node *arg_node, info *arg_info)
                 pwlpart = PART_NEXT (pwlpart);
                 // Clear LUT, AVIS_ISLCLASS, AVIS_ISLTREE
                 PHUTpolyEpilogOne (INFO_VARLUT (arg_info));
+                plresult = POLY_RET_UNKNOWN;
             }
         }
         break;
