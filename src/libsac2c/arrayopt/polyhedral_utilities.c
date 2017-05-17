@@ -2698,6 +2698,7 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
                 res = TCappendExprs (res, resel);
             }
         }
+
         if (docondprf) {
             resel = PHUThandleRelational (0, arg1, arg2, PRF_PRF (condprf));
             res = TCappendExprs (res, resel);
@@ -2883,7 +2884,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
             z = FUNDEF_LOOPCOUNT (fundef);
             DBUG_PRINT ("Using FUNDEF_LOOPCOUNT (%s) of %d", FUNDEF_NAME (fundef), z);
         } else {
-            res = PHUTcollectCondprf (fundef, varlut, UNR_NONE, TRUE);
+            res = PHUTcollectCondprf (fundef, varlut, UNR_NONE, FALSE);
             condprf = LFUfindLacfunConditional (fundef);
             condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
 

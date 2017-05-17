@@ -1646,7 +1646,8 @@ PWLFprf (node *arg_node, info *arg_info)
         if (INFO_PRODUCERWLFOLDABLE (arg_info)) {
             pwlpart = WITH_PART (INFO_PRODUCERWL (arg_info));
             // FIXME        pwlpart = POLYSsetClearAvisPart( pwlpart, pwlpart);
-            while ((POLY_RET_UNKNOWN == plresult) && (NULL != pwlpart)) {
+            while ((POLY_RET_UNKNOWN == plresult) && (N_prf == NODE_TYPE (arg_node))
+                   && (NULL != pwlpart)) {
                 foldpwlpart = pwlpart;
                 plresult = IntersectBoundsPolyhedral (arg_node, pwlpart, arg_info);
                 cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
