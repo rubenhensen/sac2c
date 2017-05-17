@@ -2435,8 +2435,10 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut, int islcla
 /** <!-- ****************************************************************** -->
  * @fn node *PHUThandleRelational( stridesign, arg1, arg2, relprf)
  *
- * @brief F_neq_SxS not supported directly by ISL, so we
- *        use Boolean algebra for that case.
+ * @brief F_neq_SxS is not supported directly by ISL
+ *
+ *        If we know stridesignum for arg1 or arg2, we can
+ *        replace the != by < or >.
  *
  * @param arg1: PRF_ARG1 for a guard/relational primitive
  * @param arg2: PRF_ARG2 for a guard/relational primitive
@@ -2454,18 +2456,32 @@ node *
 PHUThandleRelational (int stridesign, node *arg1, node *arg2, prf relprf)
 {
     node *z = NULL;
+    int s1;
+    int s2;
 
     DBUG_ENTER ();
 
     if (F_neq_SxS != relprf) {
         z = BuildIslSimpleConstraint (arg1, relprf, arg2, NOPRFOP, NULL);
     } else {
-        if (stridesign == 0) { // do not know stride, or may not be in for-loop
-            z = BuildIslSimpleConstraint (arg1, relprf, arg2, NOPRFOP, NULL);
-        } else { // stride is known to be + or -
-            relprf = (stridesign > 0) ? F_lt_SxS : F_gt_SxS;
-            z = BuildIslSimpleConstraint (arg1, relprf, arg2, NOPRFOP, NULL);
+        s1 = AVIS_STRIDESIGNUM (ID_AVIS (arg1));
+        s2 = AVIS_STRIDESIGNUM (ID_AVIS (arg2));
+        if ((0 != s1) && (0 != s2)) {
+            DBUG_PRINT ("Both condprf( %s,%s) arguments have stride: arg1=%d, arg2=%d",
+                        AVIS_NAME (ID_AVIS (arg1)), AVIS_NAME (ID_AVIS (arg2)),
+                        AVIS_STRIDESIGNUM (ID_AVIS (arg1)),
+                        AVIS_STRIDESIGNUM (ID_AVIS (arg2)));
         }
+
+        // If only one argument has known stride, we are in good shape
+        if ((0 != s1) && (0 == s2)) {
+            relprf = (s1 > 0) ? F_lt_SxS : F_gt_SxS;
+        }
+        if ((0 != s2) && (0 == s1)) {
+            relprf = (s2 > 0) ? F_gt_SxS : F_lt_SxS;
+        }
+
+        z = BuildIslSimpleConstraint (arg1, relprf, arg2, NOPRFOP, NULL);
     }
 
     DBUG_RETURN (z);
@@ -2667,7 +2683,9 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
             && (PHUTisCompatibleAffinePrf (PRF_PRF (condprf)))
             && (PHUTisCompatibleAffineTypes (condprf))) {
             lhsavis = IDS_AVIS (LET_IDS (condass));
+#ifdef PROBABLYWRONG
             PHUTinsertVarIntoLut (lhsavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
+#endif // PROBABLYWRONG
             arg1 = PRF_ARG1 (condprf);
             resel = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
                                                  AVIS_ISLCLASSEXISTENTIAL, loopcount);
@@ -2865,7 +2883,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
             z = FUNDEF_LOOPCOUNT (fundef);
             DBUG_PRINT ("Using FUNDEF_LOOPCOUNT (%s) of %d", FUNDEF_NAME (fundef), z);
         } else {
-            res = PHUTcollectCondprf (fundef, varlut, UNR_NONE, FALSE);
+            res = PHUTcollectCondprf (fundef, varlut, UNR_NONE, TRUE);
             condprf = LFUfindLacfunConditional (fundef);
             condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
 

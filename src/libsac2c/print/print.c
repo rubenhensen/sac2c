@@ -2192,7 +2192,9 @@ PRTfundef (node *arg_node, info *arg_info)
                         }
                     } else if (FUNDEF_ISLOOPFUN (arg_node)) {
                         if (INFO_NONLOCCALFUN (arg_info) == NULL) {
-                            fprintf (global.outfile, " * Loop function:\n");
+                            fprintf (global.outfile,
+                                     " * Loop function with Loop Count %d:\n",
+                                     FUNDEF_LOOPCOUNT (arg_node));
                         } else {
                             fprintf (global.outfile, " * Loop function of ");
                             if (FUNDEF_NS (INFO_NONLOCCALFUN (arg_info)) != NULL) {
@@ -2201,8 +2203,9 @@ PRTfundef (node *arg_node, info *arg_info)
                                            FUNDEF_NS (INFO_NONLOCCALFUN (arg_info))));
                             }
                             if (FUNDEF_NAME (arg_node) != NULL) {
-                                fprintf (global.outfile, "%s(...):\n",
-                                         FUNDEF_NAME (INFO_NONLOCCALFUN (arg_info)));
+                                fprintf (global.outfile, "%s(...): with Loop Count %d\n",
+                                         FUNDEF_NAME (INFO_NONLOCCALFUN (arg_info)),
+                                         FUNDEF_LOOPCOUNT (arg_node));
                             }
                         }
                     }
