@@ -1369,48 +1369,12 @@ LFUgetStrideForAffineFun (node *rcv, node *lcv)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn int LFUgetMathSignumForAffineFun( node *rcv, node *lcv)
- *
- * @brief Given a recursive call variable, rcv, attempt to find the
- *        mathsignum of its stride. The mathsignum is 1 if the N_prf
- *        is +, and -1 if the N_prf is -.
- *        we look for:
- *         II' = II +- stride
- *        or
- *         II' = stride + II
- *
- * @param rcv - a recursive call variable in a LOOPFUN (II')
- * @param lcv - the FUNDEF_ARG value in LOOPFUN corresponding to rcv (II)
- *
- * @return the mathsignum, or zero if we are unable to determine it.
- *
- ******************************************************************************/
-int
-LFUgetMathSignumForAffineFun (node *rcv, node *lcv)
-{
-    node *fn;
-    int mathsignum = 0;
-
-    DBUG_ENTER ();
-
-    fn = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (rcv))));
-    if (N_prf == NODE_TYPE (fn)) {
-        mathsignum
-          = (F_add_SxS == PRF_PRF (fn)) ? 1 : (F_sub_SxS == PRF_PRF (fn)) ? -1 : 0;
-    }
-    DBUG_PRINT ("Stride signum for %s is %d", AVIS_NAME (ID_AVIS (rcv)), mathsignum);
-
-    DBUG_RETURN (mathsignum);
-}
-
-/** <!-- ****************************************************************** -->
- *
  * @fn node *LFUgetStrideInfo(...)
  *
  * @brief Get strideid, stridesign, and mathsign from
  *        the N_prf expn that controls recursion in a loopfun
  *
- *        We have a loopfun such as:
+ *        Case 1: We have a -noctz loopfun such as:
  *
  *          Loop( II)
  *          { II' = II + strideid;
@@ -1418,9 +1382,22 @@ LFUgetMathSignumForAffineFun (node *rcv, node *lcv)
  *            II' = II - strideid;
  *           or
  *            II' = strideid + II;
+ *
  *            if ( II' < limit) Loop( II')
  *          }
  *
+ *        Case 2: We have a -doctz loopfun such as:
+ *
+ *          Loop( II)
+ *          { II' = II + strideid;
+ *           or
+ *            II' = II - strideid;
+ *           or
+ *            II' = strideid + II;
+ *
+ *            IZ = II - limit;
+ *            if ( IZ < 0) Loop( II')
+ *          }
  *
  * @param expn: The N_prf giving II'
  * @param lcv: N_avis for II, the incoming loop-carried variable
@@ -1455,7 +1432,8 @@ LFUgetStrideInfo (node *expn, node *lcv, int *stridesgn, node *aft, node *fundef
     exprslarg = PRF_ARG1 (expn);
     exprsrarg = PRF_ARG2 (expn);
 
-    // Find value of stride. We are looking for: rcv = nid +- something, etc.
+    // Case 1: Find value of stride.
+    // We are looking for: rcv = nid +- something, etc.
     if ((F_add_SxS == exprspfn) && (N_id == NODE_TYPE (exprslarg))
         && (lcv == ID_AVIS (exprslarg))) {
         strideid = exprsrarg; // nid + stride
@@ -1477,6 +1455,10 @@ LFUgetStrideInfo (node *expn, node *lcv, int *stridesgn, node *aft, node *fundef
         stridesignum = mathsign * PHUTisPositive (strideid, aft, fundef, varlut)
                          ? 1
                          : PHUTisNegative (strideid, aft, fundef, varlut) ? -1 : 0;
+    }
+
+    if (NULL == strideid) {
+        // Case 2
     }
 
     // Do side effects on caller

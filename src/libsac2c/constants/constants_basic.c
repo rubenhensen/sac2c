@@ -1179,10 +1179,12 @@ COmakeFalse (shape *shp)
  *
  * function:
  *   bool COisZero  ( constant *a, bool all)
+ *   bool COisNonNeg( constant *a, bool all)
+ *   bool COisNeg   ( constant *a, bool all)
+ *   bool COisPos   ( constant *a, bool all)
  *   bool COisOne   ( constant *a, bool all)
  *   bool COisTrue  ( constant *a, bool all)
  *   bool COisFalse ( constant *a, bool all)
- *   bool COisNonNeg( constant *a, bool all)
  *
  * description:
  *   checks if the given constant consists of 0 or 1 elements (TRUE/FALSE).
@@ -1292,6 +1294,47 @@ COisNeg (constant *a, bool all)
     if (zero != NULL) {
         /* vector-compare constants */
         eq = COlt (a, zero, NULL);
+
+        /* compute result dependent on flag "all" */
+        if (all) {
+            result = TRUE; /* and-reduce */
+            for (i = 0; i < CONSTANT_VLEN (eq); i++) {
+                result = result && ((bool *)(CONSTANT_ELEMS (eq)))[i];
+            }
+        } else {
+            result = FALSE; /* or-reduce */
+            for (i = 0; i < CONSTANT_VLEN (eq); i++) {
+                result = result || ((bool *)(CONSTANT_ELEMS (eq)))[i];
+            }
+        }
+        eq = COfreeConstant (eq);
+        zero = COfreeConstant (zero);
+    } else {
+        result = FALSE;
+    }
+
+    DBUG_RETURN (result);
+}
+
+bool
+COisPos (constant *a, bool all)
+{
+    bool result;
+    constant *zero;
+    constant *eq;
+    int i;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (a != NULL, "COisPos called with NULL pointer");
+
+    /* create a "zero" constant with one element */
+    zero = COmakeZero (COgetType (a), SHmakeShape (0));
+
+    /* check for correct constant */
+    if (zero != NULL) {
+        /* vector-compare constants */
+        eq = COgt (a, zero, NULL);
 
         /* compute result dependent on flag "all" */
         if (all) {

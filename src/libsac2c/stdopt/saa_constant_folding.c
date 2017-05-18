@@ -84,6 +84,9 @@
  *
  * returns: constant or NULL.
  *
+ * NB. If the argument is already a constant, and we are looking for
+ *     AVIS_MAX, we have to add 1 to the result!
+ *
  *****************************************************************************/
 constant *
 SAACFchaseMinMax (node *arg_node, bool minmax)
@@ -91,16 +94,21 @@ SAACFchaseMinMax (node *arg_node, bool minmax)
     DBUG_ENTER ();
 
     constant *z = NULL;
+    constant *cone = NULL;
+    constant *consum = NULL;
     node *extr;
     pattern *pat;
 
     if (NULL != arg_node) {
         pat = PMconst (1, PMAgetVal (&z));
         if ((N_id == NODE_TYPE (arg_node)) && (PMmatchFlatSkipExtrema (pat, arg_node))) {
-            /* The AVIS_SSAASSIGN check arises from CF unit test aes.sac, where
-             * AVIS_MAX( prfarg1) is an N_parm to a LACFUN. I'm not sure
-             * how to reproduce that fault easily...
-             */
+            if (SAACFCHASEMAX == minmax) { // arg_node is already constant
+                cone = COmakeConstantFromInt (1);
+                consum = COadd (cone, z, NULL);
+                cone = COfreeConstant (cone);
+                z = COfreeConstant (z);
+                z = consum;
+            }
         } else {
             extr = minmax ? AVIS_MAX (ID_AVIS (arg_node)) : AVIS_MIN (ID_AVIS (arg_node));
             z = SAACFchaseMinMax (extr, minmax);

@@ -264,7 +264,7 @@ SCSisNonPositive (node *arg_node)
         pat = PMconst (1, PMAgetVal (&con));
         z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNeg (con, TRUE);
         if (!z) {
-            // If maximum value is <= 1, then arg_node is negative.
+            // If maximum value is <= 1, then arg_node is non-positive
             con = SAACFchaseMinMax (arg_node, SAACFCHASEMAX);
             z = (NULL != con)
                 && (COisNeg (con, TRUE) || COisZero (con, TRUE) || COisOne (con, TRUE));
@@ -304,10 +304,11 @@ SCSisPositive (node *arg_node)
     z = (N_num == NODE_TYPE (arg_node)) && (NUM_VAL (arg_node) > 0);
     if ((!z) && N_id == NODE_TYPE (arg_node)) {
         pat = PMconst (1, PMAgetVal (&con));
-        z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
+        z = PMmatchFlatSkipExtrema (pat, arg_node) && COisPos (con, TRUE);
         if (!z) {
+            // If minimum value is > 0, then arg_node is positive.
             con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
-            z = (NULL != con) && COisNonNeg (con, TRUE) && (!COisZero (con, TRUE));
+            z = ((NULL != con) && ((!COisNeg (con, TRUE)) && (!COisZero (con, TRUE))));
         }
 
         con = (NULL != con) ? COfreeConstant (con) : con;
