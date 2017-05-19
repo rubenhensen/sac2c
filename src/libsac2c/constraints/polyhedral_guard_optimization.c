@@ -563,8 +563,10 @@ POGOprf (node *arg_node, info *arg_info)
             condprfaft
               = PHUTcollectCondprf (INFO_FUNDEF (arg_info), INFO_VARLUT (arg_info),
                                     loopcount, docondprf);
-            exprsx = TCappendExprs (exprsx, DUPdoDupTree (condprfaft));
             exprsx = TCappendExprs (exprsx, condprfaft);
+#ifdef MAYBENOTNEEDED
+            exprsy = TCappendExprs (exprsy, condprfaft);
+#endif // MAYBENOTNEEDED
             condprfaft = NULL;
 
             mappedprf = POGOmapPrf (PRF_PRF (arg_node));
