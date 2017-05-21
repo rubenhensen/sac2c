@@ -520,7 +520,7 @@ GetIslSetVariablesFromLutOne (void *rest, void *fundef, void *avis)
 
     if (NULL != avis) {
         DBUG_PRINT ("Found variable %s in VARLUT", AVIS_NAME (avis));
-        z = TBmakeExprs (TBmakeStr (FUNDEF_NAME (fundef)),
+        z = TBmakeExprs (TBmakeStr (FUNDEF_NAME ((node *)fundef)),
                          TBmakeExprs (TBmakeId (avis), NULL));
         z = TCappendExprs (z, rest);
     }
@@ -2647,6 +2647,41 @@ PHUTgenerateAffineExprsForPwlfIntersect (node *pwliv, node *cwliv, lut_t *varlut
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *PHUTfindLoopDependentVarinAft( node *arg_node, node *fundef)
+ *
+ * @brief Find a loop-dependent variable in AFT arg_node
+ *
+ *        E.g., in a -doctz environment, we might have:
+ *
+ *         int Loop( II)
+ *           II'  = II + 1
+ *           II'' = II' - lim
+ *           if( II'' != 0) ...Loop( II')
+ *
+ *         Here, given II'', we want to return II
+ *
+ * @param arg_node: An Affine Function Tree (AFT), as stored in
+ *        AVIS_ISLTREE
+ *
+ * @return If we find a loop-dependent variable for arg_node,
+ *         return its N_avis node; else NULL.
+ *
+ ******************************************************************************/
+node *
+PHUTfindLoopDependentVarinAft (node *arg_node, node *fundef)
+{
+    node *res = NULL;
+    node *aft = NULL;
+
+    DBUG_ENTER ();
+
+    while ((NULL == res) && (NULL != aft)) {
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *PHUTcollectCondprf()
  *
  * @brief Collect AFT constraints for condprf in loopfun
@@ -2660,6 +2695,8 @@ PHUTgenerateAffineExprsForPwlfIntersect (node *pwliv, node *cwliv, lut_t *varlut
  *
  * @return The AFT for the condprf, or NULL
  *
+ * NB. Side effect: set ISLCLASS, if we find a set variable.
+ *
  ******************************************************************************/
 node *
 PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
@@ -2668,8 +2705,10 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
     node *resel;
     node *condprf;
     node *condass;
-    node *arg1;
-    node *arg2;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    node *setvar1 = NULL;
+    node *setvar2 = NULL;
     node *lhsavis;
 
     DBUG_ENTER ();
@@ -2683,18 +2722,19 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
             && (PHUTisCompatibleAffinePrf (PRF_PRF (condprf)))
             && (PHUTisCompatibleAffineTypes (condprf))) {
             lhsavis = IDS_AVIS (LET_IDS (condass));
-#ifdef PROBABLYWRONG
-            PHUTinsertVarIntoLut (lhsavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-#endif // PROBABLYWRONG
+
+            // Find the loop-dependent variable to use as the set variable
             arg1 = PRF_ARG1 (condprf);
             resel = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
                                                  AVIS_ISLCLASSEXISTENTIAL, loopcount);
+            setvar1 = PHUTfindLoopDependentVarinAft (arg1, fundef);
             res = TCappendExprs (res, resel);
 
             if (isDyadicPrf (PRF_PRF (condprf))) {
                 arg2 = PRF_ARG2 (condprf);
                 resel = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
                                                      AVIS_ISLCLASSEXISTENTIAL, loopcount);
+                setvar2 = PHUTfindLoopDependentVarinAft (arg2, fundef);
                 res = TCappendExprs (res, resel);
             }
         }
