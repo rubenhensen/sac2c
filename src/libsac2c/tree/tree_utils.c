@@ -928,7 +928,7 @@ TUisPrfGuard (node *arg_node)
  *
  * @brief Find N_avis node for arg_node
  *
- * @param An N_avis, N_id, or N_ids node
+ * @param An N_avis, N_id, N_num, or N_ids node
  *
  * @return the associated N_avis node, or NULL if this is an N_num
  *         or if arg_node is NULL

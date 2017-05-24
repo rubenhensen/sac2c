@@ -552,6 +552,7 @@ POGOprf (node *arg_node, info *arg_info)
         // Don't call ISL if it can't do anything for us.
         if (dopoly) {
 
+#ifdef KILLSSIMPLECONSTANTSDOWN
             // If this is a LOOPFUN condprf, do not build constraint
             // for the relational. Otherwise, we get infinite loops!
             condprf = LFUfindLacfunConditional (INFO_FUNDEF (arg_info));
@@ -564,10 +565,8 @@ POGOprf (node *arg_node, info *arg_info)
               = PHUTcollectCondprf (INFO_FUNDEF (arg_info), INFO_VARLUT (arg_info),
                                     loopcount, docondprf);
             exprsx = TCappendExprs (exprsx, condprfaft);
-#ifdef MAYBENOTNEEDED
-            exprsy = TCappendExprs (exprsy, condprfaft);
-#endif // MAYBENOTNEEDED
             condprfaft = NULL;
+#endif // KILLSSIMPLECONSTANTSDOWN
 
             mappedprf = POGOmapPrf (PRF_PRF (arg_node));
             exprsfn = PHUTgenerateAffineExprsForGuard (mappedprf, arg1, arg2,

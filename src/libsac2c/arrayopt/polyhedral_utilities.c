@@ -2647,35 +2647,55 @@ PHUTgenerateAffineExprsForPwlfIntersect (node *pwliv, node *cwliv, lut_t *varlut
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *PHUTfindLoopDependentVarinAft( node *arg_node, node *fundef)
+ * @fn node *PHUTfindLoopDependentVarinAft( node *arg_node,
+ *            node *aft, node *fundef)
  *
- * @brief Find a loop-dependent variable in AFT arg_node
+ * @brief Find a loop-dependent variable, arg_node, in aft
  *
  *        E.g., in a -doctz environment, we might have:
  *
  *         int Loop( II)
  *           II'  = II + 1
  *           II'' = II' - lim
- *           if( II'' != 0) ...Loop( II')
+ *           ZERO = 0;
+ *           if( II'' != ZERO) ...Loop( II')
  *
  *         Here, given II'', we want to return II
  *
- * @param arg_node: An Affine Function Tree (AFT), as stored in
+ * @param arg_node: An N_id from condprf, e.g., II'' or ZERO
+ * @param aft: An Affine Function Tree (AFT), as stored in
  *        AVIS_ISLTREE
+ * @param fundef: The Loopfun's N_fundef node
  *
  * @return If we find a loop-dependent variable for arg_node,
  *         return its N_avis node; else NULL.
  *
  ******************************************************************************/
 node *
-PHUTfindLoopDependentVarinAft (node *arg_node, node *fundef)
+PHUTfindLoopDependentVarinAft (node *arg_node, node *aft, node *fundef)
 {
     node *res = NULL;
-    node *aft = NULL;
+    node *aftone;
+    int cnt;
 
     DBUG_ENTER ();
 
     while ((NULL == res) && (NULL != aft)) {
+        aftone = EXPRS_EXPR (aft); // one-take aft
+        cnt = TCcountExprs (aftone);
+        switch (cnt) {
+        default: // We are confused. Do nothing
+            break;
+
+        case 5:
+            if (ID_AVIS (ISLVAR (aftone)) == ID_AVIS (arg_node)) {
+                // we have arg_node = ...
+                res = LFUrcv2Arg (ISLLARG (aftone), fundef);
+                res = (NULL != res) ? res : LFUrcv2Arg (ISLRARG (aftone), fundef);
+            }
+            break;
+        }
+        aft = EXPRS_NEXT (aft);
     }
 
     DBUG_RETURN (res);
@@ -2707,8 +2727,7 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
     node *condass;
     node *arg1 = NULL;
     node *arg2 = NULL;
-    node *setvar1 = NULL;
-    node *setvar2 = NULL;
+    node *setvar = NULL;
     node *lhsavis;
 
     DBUG_ENTER ();
@@ -2727,14 +2746,24 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
             arg1 = PRF_ARG1 (condprf);
             resel = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
                                                  AVIS_ISLCLASSEXISTENTIAL, loopcount);
-            setvar1 = PHUTfindLoopDependentVarinAft (arg1, fundef);
+            setvar = PHUTfindLoopDependentVarinAft (arg1, resel, fundef);
+            if (NULL != setvar) {
+                //        PHUTsetIslClass( setvar, AVIS_ISLCLASSSETVARIABLE);
+                AVIS_ISLCLASS (setvar) = AVIS_ISLCLASSSETVARIABLE;
+            }
             res = TCappendExprs (res, resel);
 
             if (isDyadicPrf (PRF_PRF (condprf))) {
                 arg2 = PRF_ARG2 (condprf);
                 resel = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
                                                      AVIS_ISLCLASSEXISTENTIAL, loopcount);
-                setvar2 = PHUTfindLoopDependentVarinAft (arg2, fundef);
+                if (NULL == setvar) {
+                    setvar = PHUTfindLoopDependentVarinAft (arg2, resel, fundef);
+                    if (NULL != setvar) {
+                        AVIS_ISLCLASS (setvar) = AVIS_ISLCLASSSETVARIABLE;
+                        //            PHUTsetIslClass( setvar, AVIS_ISLCLASSSETVARIABLE);
+                    }
+                }
                 res = TCappendExprs (res, resel);
             }
         }
@@ -2943,6 +2972,8 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 arg2 = PHUTskipChainedAssigns (PRF_ARG2 (condprf));
             }
 
+            dopoly = TRUE;
+#ifdef DEADCODEIHOPE
             li1 = LFUisLoopInvariantArg (ID_AVIS (arg1), fundef);
             li2 = LFUisLoopInvariantArg (ID_AVIS (arg2), fundef);
             if ((1 == li1) && (1 != li2)) {
@@ -2959,6 +2990,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                                 AVIS_NAME (ID_AVIS (arg1)), AVIS_NAME (ID_AVIS (arg2)));
                 }
             }
+#endif // DEADCODEIHOPE
 
             // Build constraint for condprf
             resel = PHUThandleRelational (0, arg1, arg2, PRF_PRF (condprf));

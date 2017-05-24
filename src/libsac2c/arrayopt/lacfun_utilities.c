@@ -83,6 +83,7 @@
 #include "constants.h"
 #include "shape.h"
 #include "tree_compound.h"
+#include "tree_utils.h"
 #include "lacfun_utilities.h"
 #include "indexvectorutils.h"
 #include "pattern_match.h"
@@ -378,18 +379,20 @@ LFUrcv2Arg (node *rcv, node *fundef)
     DBUG_ENTER ();
 
     fargs = FUNDEF_ARGS (fundef);
-    avis = (N_avis == NODE_TYPE (rcv)) ? rcv : ID_AVIS (rcv);
-    if (LFUisAvisMemberArg (avis, fargs)) {
-        z = avis;
-    } else {
-        reccallass = LFUfindRecursiveCallAssign (fundef);
-        if (NULL != reccallass) { // loopfun
-            reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallass)));
-            while (reccallargs && fargs && (NULL == z)) {
-                z = (avis == ID_AVIS (EXPRS_EXPR (reccallargs))) ? ARG_AVIS (fargs)
-                                                                 : NULL;
-                reccallargs = EXPRS_NEXT (reccallargs);
-                fargs = ARG_NEXT (fargs);
+    avis = TUnode2Avis (rcv);
+    if (NULL != avis) {
+        if (LFUisAvisMemberArg (avis, fargs)) {
+            z = avis;
+        } else {
+            reccallass = LFUfindRecursiveCallAssign (fundef);
+            if (NULL != reccallass) { // loopfun
+                reccallargs = AP_ARGS (LET_EXPR (ASSIGN_STMT (reccallass)));
+                while (reccallargs && fargs && (NULL == z)) {
+                    z = (avis == ID_AVIS (EXPRS_EXPR (reccallargs))) ? ARG_AVIS (fargs)
+                                                                     : NULL;
+                    reccallargs = EXPRS_NEXT (reccallargs);
+                    fargs = ARG_NEXT (fargs);
+                }
             }
         }
     }
@@ -398,8 +401,8 @@ LFUrcv2Arg (node *rcv, node *fundef)
         DBUG_PRINT ("LACFUN %s arg %s has recursive call value of %s",
                     FUNDEF_NAME (fundef), AVIS_NAME (z), AVIS_NAME (avis));
     } else {
-        DBUG_PRINT ("LACFUN %s avis %s is not a recursive call value",
-                    FUNDEF_NAME (fundef), AVIS_NAME (avis));
+        DBUG_PRINT ("rcv is not a recursive call value for LACFUN %s",
+                    FUNDEF_NAME (fundef));
     }
 
     DBUG_RETURN (z);
