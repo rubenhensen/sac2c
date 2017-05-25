@@ -459,19 +459,20 @@ Prf2Isl (prf arg_node)
 static void *
 ClearAvisIslAttributesOne (void *rest, void *fundef, void *avis)
 { // helper function
+
     node *z = NULL;
     node *avis2;
 
     DBUG_ENTER ();
 
     avis2 = (node *)avis;
-
     if (NULL != avis2) {
         DBUG_PRINT ("Clearing AVIS_ISLCLASS, AVIS_ISLTREE in variable %s",
                     AVIS_NAME (avis2));
         AVIS_ISLCLASS (avis2) = AVIS_ISLCLASSUNDEFINED;
         AVIS_ISLTREE (avis2)
           = (NULL != AVIS_ISLTREE (avis2)) ? FREEdoFreeTree (AVIS_ISLTREE (avis2)) : NULL;
+        AVIS_STRIDESIGNUM (avis2) = 0;
     }
 
     DBUG_RETURN (z);
@@ -2445,15 +2446,14 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut, int islcla
  * @param fundef: The N_fundef for the current function, for debugging
  * @param relprf:  Either PRF_PRF( arg_node) or its companion function,
  *                e.g., if PRF_PRF is _gt_SxS_, its companion is _le_SxS.
- * @param stridesign: 1 or -1 for positive or negative stride; 0 if
- *                    stride is unknown.
- *                    Used only for X != Y
+ * @param stridesignum: 1 or -1 for positive or negative stride; 0 if
+ *                       stride is unknown.
  *
  * @return A maximal N_exprs chain of expressions for F_neq_SxS
  *
  ******************************************************************************/
 node *
-PHUThandleRelational (int stridesign, node *arg1, node *arg2, prf relprf)
+PHUThandleRelational (int stridesignum, node *arg1, node *arg2, prf relprf)
 {
     node *z = NULL;
     int s1;
@@ -2498,16 +2498,15 @@ PHUThandleRelational (int stridesign, node *arg1, node *arg2, prf relprf)
  * @param fundef: The N_fundef for the current function, for debugging
  * @param relfn:  Either PRF_PRF( arg_node) or its companion function,
  *                e.g., if PRF_PRF is _gt_SxS_, its companion is _le_SxS.
- * @param stridesign: 1 or -1 for positive or negative stride; 0 if
- *                    stride is unknown.
- *                    Used only for X != Y
+ * @param stridesignum: 1 or -1 for positive or negative stride; 0 if
+ *                      stride is unknown.
  *
  * @return A maximal N_exprs chain of expressions for the guard.
  *
  ******************************************************************************/
 node *
 PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, prf relfn,
-                                 lut_t *varlut, int stridesign)
+                                 lut_t *varlut, int stridesignum)
 {
     node *z = NULL;
 
@@ -2542,7 +2541,7 @@ PHUTgenerateAffineExprsForGuard (prf fn, node *arg1, node *arg2, node *fundef, p
         break;
 
     case F_neq_SxS:
-        z = PHUThandleRelational (stridesign, arg1, arg2, relfn);
+        z = PHUThandleRelational (stridesignum, arg1, arg2, relfn);
         break;
 
     default:
@@ -2692,6 +2691,11 @@ PHUTfindLoopDependentVarinAft (node *arg_node, node *aft, node *fundef)
                 // we have arg_node = ...
                 res = LFUrcv2Arg (ISLLARG (aftone), fundef);
                 res = (NULL != res) ? res : LFUrcv2Arg (ISLRARG (aftone), fundef);
+                if (NULL != res) {
+                    // This is an attempt to propagate stride information to
+                    // condprf in a -doctz-like environment.
+                    AVIS_STRIDESIGNUM (ID_AVIS (arg_node)) = AVIS_STRIDESIGNUM (res);
+                }
             }
             break;
         }
@@ -2729,6 +2733,7 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
     node *arg2 = NULL;
     node *setvar = NULL;
     node *lhsavis;
+    int stridesignum = 0;
 
     DBUG_ENTER ();
 
@@ -2748,8 +2753,8 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
                                                  AVIS_ISLCLASSEXISTENTIAL, loopcount);
             setvar = PHUTfindLoopDependentVarinAft (arg1, resel, fundef);
             if (NULL != setvar) {
-                //        PHUTsetIslClass( setvar, AVIS_ISLCLASSSETVARIABLE);
                 AVIS_ISLCLASS (setvar) = AVIS_ISLCLASSSETVARIABLE;
+                stridesignum = AVIS_STRIDESIGNUM (setvar);
             }
             res = TCappendExprs (res, resel);
 
@@ -2761,7 +2766,7 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
                     setvar = PHUTfindLoopDependentVarinAft (arg2, resel, fundef);
                     if (NULL != setvar) {
                         AVIS_ISLCLASS (setvar) = AVIS_ISLCLASSSETVARIABLE;
-                        //            PHUTsetIslClass( setvar, AVIS_ISLCLASSSETVARIABLE);
+                        stridesignum = AVIS_STRIDESIGNUM (setvar);
                     }
                 }
                 res = TCappendExprs (res, resel);
@@ -2769,7 +2774,7 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
         }
 
         if (docondprf) {
-            resel = PHUThandleRelational (0, arg1, arg2, PRF_PRF (condprf));
+            resel = PHUThandleRelational (stridesignum, arg1, arg2, PRF_PRF (condprf));
             res = TCappendExprs (res, resel);
         }
     }
@@ -2816,7 +2821,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
 {
     node *resel = NULL;
     node *rcvel = NULL;
-    node *videl = NULL;
+    node *vidavis = NULL;
     node *arg = NULL;
     node *exprs;
     node *res = NULL;
@@ -2832,8 +2837,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
 
     DBUG_ENTER ();
 
-    videl = PHUTskipChainedAssigns (vid);
-    videl = TUnode2Avis (videl);
+    vidavis = TUnode2Avis (PHUTskipChainedAssigns (vid));
     rcvel = PHUTskipChainedAssigns (rcv);
 
     if (NULL != AVIS_ISLTREE (ID_AVIS (rcvel))) {
@@ -2853,6 +2857,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
         if (0 != stridesignum) {
             prfiv = (stridesignum > 0) ? F_ge_SxS : F_le_SxS;
             AVIS_STRIDESIGNUM (ID_AVIS (rcvel)) = stridesignum;
+            AVIS_STRIDESIGNUM (vidavis) = stridesignum;
 
             //  rcv = v0
             v0avis = rcv2CallerVar (rcv, fundef);
@@ -2862,7 +2867,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
             res = TCappendExprs (res, resel);
 
             // Build: vid >= v0 or vid <= v0, where v0 is initial value
-            resel = BuildIslSimpleConstraint (videl, prfiv, v0avis, NOPRFOP, NULL);
+            resel = BuildIslSimpleConstraint (vidavis, prfiv, v0avis, NOPRFOP, NULL);
             res = TCappendExprs (res, resel);
 
             lpavis = TBmakeAvis (TRAVtmpVarName ("LOOPCT"),
@@ -2890,7 +2895,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
 
             // Generate vz = v0 + stride * N
             // where N is existential.
-            resel = BuildIslStrideConstraint (videl, F_eq_SxS, v0avis, F_add_SxS,
+            resel = BuildIslStrideConstraint (vidavis, F_eq_SxS, v0avis, F_add_SxS,
                                               strideid, F_mul_SxS, navis);
             res = TCappendExprs (res, resel);
 
@@ -2901,7 +2906,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
 
             // Generate vid < (or <=) vz
             prfz = (stridesignum > 0) ? F_lt_SxS : F_le_SxS;
-            resel = BuildIslSimpleConstraint (videl, prfz, vzavis, NOPRFOP, NULL);
+            resel = BuildIslSimpleConstraint (vidavis, prfz, vzavis, NOPRFOP, NULL);
             res = TCappendExprs (res, resel);
         }
     }
@@ -2944,6 +2949,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     int li1;
     int li2;
     int z = UNR_NONE;
+    int stridesignum = 0;
     bool dopoly = FALSE;
 
     DBUG_ENTER ();
@@ -2972,7 +2978,6 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 arg2 = PHUTskipChainedAssigns (PRF_ARG2 (condprf));
             }
 
-            dopoly = TRUE;
 #ifdef DEADCODEIHOPE
             li1 = LFUisLoopInvariantArg (ID_AVIS (arg1), fundef);
             li2 = LFUisLoopInvariantArg (ID_AVIS (arg2), fundef);
@@ -2990,10 +2995,12 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                                 AVIS_NAME (ID_AVIS (arg1)), AVIS_NAME (ID_AVIS (arg2)));
                 }
             }
+#else  // DEADCODEIHOPE
+            dopoly = TRUE;
 #endif // DEADCODEIHOPE
 
             // Build constraint for condprf
-            resel = PHUThandleRelational (0, arg1, arg2, PRF_PRF (condprf));
+            resel = PHUThandleRelational (stridesignum, arg1, arg2, PRF_PRF (condprf));
             res = TCappendExprs (res, resel);
 
             if (dopoly) { // Must have exactly one loop-dependent argument

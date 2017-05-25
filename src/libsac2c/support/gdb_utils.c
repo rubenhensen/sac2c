@@ -268,8 +268,9 @@ GDBprintAvisName (node *avis)
 {
 
     if (NULL != avis) {
-        printf ("Avis for %s is:%p, AVIS_ISLCLASS=%d\n", AVIS_NAME (avis), (void *)avis,
-                AVIS_ISLCLASS (avis));
+        printf ("Avis for %s is:%p, AVIS_ISLCLASS=%d, AVIS_STRIDESIGNUM=%d\n",
+                AVIS_NAME (avis), (void *)avis, AVIS_ISLCLASS (avis),
+                AVIS_STRIDESIGNUM (avis));
         PHUTprintIslAffineFunctionTree (AVIS_ISLTREE (avis));
     }
     return;
