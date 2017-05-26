@@ -552,6 +552,8 @@ POGOprf (node *arg_node, info *arg_info)
         // Don't call ISL if it can't do anything for us.
         if (dopoly) {
 
+#define KILLSSIMPLECONSTANTSDOWN
+            // see if this makes pogo/ForSimpleConstantsUp.sac work again.
 #ifdef KILLSSIMPLECONSTANTSDOWN
             // If this is a LOOPFUN condprf, do not build constraint
             // for the relational. Otherwise, we get infinite loops!
