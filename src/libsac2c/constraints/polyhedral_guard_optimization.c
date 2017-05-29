@@ -553,7 +553,6 @@ POGOprf (node *arg_node, info *arg_info)
         if (dopoly) {
 
 #define KILLSSIMPLECONSTANTSDOWN
-            // see if this makes pogo/ForSimpleConstantsUp.sac work again.
 #ifdef KILLSSIMPLECONSTANTSDOWN
             // If this is a LOOPFUN condprf, do not build constraint
             // for the relational. Otherwise, we get infinite loops!
@@ -563,6 +562,7 @@ POGOprf (node *arg_node, info *arg_info)
                 docondprf = (arg_node != condprf);
             }
 
+            docondprf = FALSE; // FIXME
             condprfaft
               = PHUTcollectCondprf (INFO_FUNDEF (arg_info), INFO_VARLUT (arg_info),
                                     loopcount, docondprf);

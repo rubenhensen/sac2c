@@ -2434,7 +2434,7 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut, int islcla
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *PHUThandleRelational( stridesign, arg1, arg2, relprf)
+ * @fn node *PHUThandleRelational( stridesignum, arg1, arg2, relprf)
  *
  * @brief F_neq_SxS is not supported directly by ISL
  *
@@ -2828,9 +2828,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
     node *vzavis = NULL;
     node *v0avis = NULL;
     node *strideid = NULL;
-    node *lpcnt = NULL;
     node *lpavis = NULL;
-    node *navis = NULL;
     prf prfiv;
     prf prfz;
     int stridesignum = 0; // -1 for negative, 1 for positive, 0 for unknown or 0.
@@ -2870,38 +2868,33 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
             resel = BuildIslSimpleConstraint (vidavis, prfiv, v0avis, NOPRFOP, NULL);
             res = TCappendExprs (res, resel);
 
-            lpavis = TBmakeAvis (TRAVtmpVarName ("LOOPCT"),
-                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            PHUTinsertVarIntoLut (lpavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-            lpcnt = (-1 != loopcount) ? TBmakeNum (loopcount) : lpavis;
-            // If lpcnt is symbolic, constrain it to a non-negative value
-            if (N_avis == NODE_TYPE (lpcnt)) {
-                resel = BuildIslSimpleConstraint (lpcnt, F_ge_SxS, TBmakeNum (0), NOPRFOP,
-                                                  NULL);
-                res = TCappendExprs (res, resel);
-            }
-
             vzavis = TBmakeAvis (TRAVtmpVarName ("VZ"),
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (vzavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-            navis = TBmakeAvis (TRAVtmpVarName ("N"),
-                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            PHUTinsertVarIntoLut (navis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
+
+            // Constrain loopcount to a non-negative value
+            // If constant, also constrain its maximum value
+            lpavis = TBmakeAvis (TRAVtmpVarName ("LOOPCT"),
+                                 TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
+            PHUTinsertVarIntoLut (lpavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
+            if (-1 != loopcount) { // known, constant loopcount
+                resel = BuildIslSimpleConstraint (lpavis, F_lt_SxS, TBmakeNum (loopcount),
+                                                  NOPRFOP, NULL);
+                res = TCappendExprs (res, resel);
+            }
+            resel
+              = BuildIslSimpleConstraint (lpavis, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
+            res = TCappendExprs (res, resel);
 
             // Generate vz >= 0
             resel
               = BuildIslSimpleConstraint (vzavis, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
             res = TCappendExprs (res, resel);
 
-            // Generate vz = v0 + stride * N
+            // Generate vz = v0 + stride * loopcount
             // where N is existential.
             resel = BuildIslStrideConstraint (vidavis, F_eq_SxS, v0avis, F_add_SxS,
-                                              strideid, F_mul_SxS, navis);
-            res = TCappendExprs (res, resel);
-
-            // Generate N >= 0
-            resel
-              = BuildIslSimpleConstraint (navis, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
+                                              strideid, F_mul_SxS, lpavis);
             res = TCappendExprs (res, resel);
 
             // Generate vid < (or <=) vz
