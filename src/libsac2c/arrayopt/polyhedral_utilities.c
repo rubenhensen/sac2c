@@ -2442,7 +2442,9 @@ PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut, int islcla
  *        replace the != by < or >.
  *
  * @param arg1: PRF_ARG1 for a guard/relational primitive
+ *              or N_avis for same
  * @param arg2: PRF_ARG2 for a guard/relational primitive
+ *              or N_avis for same
  * @param fundef: The N_fundef for the current function, for debugging
  * @param relprf:  Either PRF_PRF( arg_node) or its companion function,
  *                e.g., if PRF_PRF is _gt_SxS_, its companion is _le_SxS.
@@ -2456,21 +2458,25 @@ node *
 PHUThandleRelational (int stridesignum, node *arg1, node *arg2, prf relprf)
 {
     node *z = NULL;
+    node *arg1avis;
+    node *arg2avis;
     int s1;
     int s2;
 
     DBUG_ENTER ();
 
+    arg1avis = TUnode2Avis (arg1);
+    arg2avis = TUnode2Avis (arg2);
+
     if (F_neq_SxS != relprf) {
-        z = BuildIslSimpleConstraint (arg1, relprf, arg2, NOPRFOP, NULL);
+        z = BuildIslSimpleConstraint (arg1avis, relprf, arg2avis, NOPRFOP, NULL);
     } else {
-        s1 = AVIS_STRIDESIGNUM (ID_AVIS (arg1));
-        s2 = AVIS_STRIDESIGNUM (ID_AVIS (arg2));
+        s1 = AVIS_STRIDESIGNUM (arg1avis);
+        s2 = AVIS_STRIDESIGNUM (arg2avis);
         if ((0 != s1) && (0 != s2)) {
             DBUG_PRINT ("Both condprf( %s,%s) arguments have stride: arg1=%d, arg2=%d",
-                        AVIS_NAME (ID_AVIS (arg1)), AVIS_NAME (ID_AVIS (arg2)),
-                        AVIS_STRIDESIGNUM (ID_AVIS (arg1)),
-                        AVIS_STRIDESIGNUM (ID_AVIS (arg2)));
+                        AVIS_NAME (arg1avis), AVIS_NAME (arg2avis),
+                        AVIS_STRIDESIGNUM (arg1avis), AVIS_STRIDESIGNUM (arg2avis));
         }
 
         // If only one argument has known stride, we are in good shape
@@ -2481,7 +2487,7 @@ PHUThandleRelational (int stridesignum, node *arg1, node *arg2, prf relprf)
             relprf = (s2 > 0) ? F_gt_SxS : F_lt_SxS;
         }
 
-        z = BuildIslSimpleConstraint (arg1, relprf, arg2, NOPRFOP, NULL);
+        z = BuildIslSimpleConstraint (arg1avis, relprf, arg2avis, NOPRFOP, NULL);
     }
 
     DBUG_RETURN (z);
@@ -2731,6 +2737,7 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
     node *condass;
     node *arg1 = NULL;
     node *arg2 = NULL;
+    node *arg4rcv = NULL;
     node *setvar = NULL;
     node *lhsavis;
     int stridesignum = 0;
@@ -2741,6 +2748,7 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
         condprf = LFUfindLacfunConditional (fundef);
         condass = ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf)));
         condprf = LET_EXPR (condass);
+        docondprf = docondprf && (N_prf == NODE_TYPE (condprf));
 
         if ((N_prf == NODE_TYPE (condprf))
             && (PHUTisCompatibleAffinePrf (PRF_PRF (condprf)))
@@ -2774,6 +2782,17 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
         }
 
         if (docondprf) {
+            // If a condprf arg is the rcv, replace it by its arg
+            arg4rcv = LFUrcv2Arg (arg1, fundef);
+            if (NULL != arg4rcv) {
+                arg1 = arg4rcv;
+            }
+
+            arg4rcv = LFUrcv2Arg (arg2, fundef);
+            if (NULL != arg4rcv) {
+                arg2 = arg4rcv;
+            }
+
             resel = PHUThandleRelational (stridesignum, arg1, arg2, PRF_PRF (condprf));
             res = TCappendExprs (res, resel);
         }
