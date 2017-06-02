@@ -1332,8 +1332,6 @@ PWLFfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    int fixme; // go see how POGO does this. We also have to fix PWLFap
-               // the same way.
     if ((FUNDEF_BODY (arg_node) != NULL)
         && (PHUTisFundefKludge (arg_node))) { // Ignore fns named !=, etc.
         DBUG_PRINT ("Begin %s %s",
@@ -1666,7 +1664,7 @@ PWLFprf (node *arg_node, info *arg_info)
                     if (POLY_RET_SLICENEEDED & plresult) {
                         DBUG_PRINT ("Slicing needed to fold PWL %s into CWL %s",
                                     AVIS_NAME (ID_AVIS (pwlid)), cwlnm);
-                        int FIXAVISNPART; // after cube slicing
+                        // FIXME  int FIXAVISNPART; // after cube slicing
                     } else {
                         DBUG_PRINT ("Unable to fold PWL %s into CWL %s with plresult %d",
                                     AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);

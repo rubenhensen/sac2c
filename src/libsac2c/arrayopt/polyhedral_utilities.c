@@ -1236,8 +1236,6 @@ PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag, bool isu
             DBUG_ASSERT (N_exprs == NODE_TYPE (exprsone), "Wrong constraint type");
             mone = TCcountExprs (exprsone);
 
-            int FIXME; // clean up hard-coded offsets
-
             if (5 == TCcountExprs (exprsone)) {
                 switch (ISLFN (exprsone)) {
 
@@ -1245,6 +1243,7 @@ PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag, bool isu
                 case F_max_SxS:
                     avis = ID_AVIS (ISLVAR (exprsone));
                     printIslName (handle, avis, varlut);
+                    // FIXME: It would be nice to fix up the hard-coded offsets below.
                     fprintf (handle, "%s",
                              Prf2Isl (PRF_PRF (TCgetNthExprsExpr (1, exprsone))));
                     fprintf (handle, "%s(",
@@ -2958,8 +2957,6 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     node *arg1 = NULL;
     node *arg2 = NULL;
     node *condprf;
-    int li1;
-    int li2;
     int z = UNR_NONE;
     int stridesignum = 0;
     bool dopoly = FALSE;
