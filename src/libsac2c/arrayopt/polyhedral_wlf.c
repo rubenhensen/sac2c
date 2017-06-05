@@ -1643,9 +1643,9 @@ PWLFprf (node *arg_node, info *arg_info)
 
         if (INFO_PRODUCERWLFOLDABLE (arg_info)) {
             pwlpart = WITH_PART (INFO_PRODUCERWL (arg_info));
-            // FIXME        pwlpart = POLYSsetClearAvisPart( pwlpart, pwlpart);
             while ((POLY_RET_UNKNOWN == plresult) && (N_prf == NODE_TYPE (arg_node))
                    && (NULL != pwlpart)) {
+                pwlpart = POLYSsetClearAvisPart (pwlpart, pwlpart);
                 foldpwlpart = pwlpart;
                 plresult = IntersectBoundsPolyhedral (arg_node, pwlpart, arg_info);
                 cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
@@ -1670,7 +1670,7 @@ PWLFprf (node *arg_node, info *arg_info)
                                     AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);
                     }
                 }
-                // FIXME          pwlpart = POLYSsetClearAvisPart( pwlpart, NULL);
+                pwlpart = POLYSsetClearAvisPart (pwlpart, NULL);
                 pwlpart = PART_NEXT (pwlpart);
                 // Clear LUT, AVIS_ISLCLASS, AVIS_ISLTREE
                 PHUTpolyEpilogOne (INFO_VARLUT (arg_info));
