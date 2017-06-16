@@ -18,6 +18,7 @@
 #define _SAC_STD_H_
 #include <stdint.h> /* intptr_t */
 #include <limits.h> /* INT_MAX */
+#include <cuda_runtime.h>
 
 #include "rc_methods.h" // SAC_RCM_local, ...
 #include "icm.h" // Item0, ...
@@ -2319,6 +2320,20 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_ND_DEC_RC_FREE__NOOP(var_NT, rc, freefun) SAC_NOOP ()
 
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman
+#define SAC_ND_DEC_RC_FREE__C99(var_NT, rc, freefun)                                     \
+    {                                                                                    \
+        cudaDeviceSynchronize (); /* FIXME This is not good! */                          \
+        SAC_TR_REF_PRINT (                                                               \
+          ("ND_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))                \
+        if ((SAC_ND_A_RC__C99 (var_NT) -= rc) == 0) {                                    \
+            SAC_TR_REF_PRINT_RC (var_NT)                                                 \
+            SAC_ND_FREE (var_NT, freefun)                                                \
+        } else {                                                                         \
+            SAC_TR_REF_PRINT_RC (var_NT)                                                 \
+        }                                                                                \
+    }
+#else
 #define SAC_ND_DEC_RC_FREE__C99(var_NT, rc, freefun)                                     \
     {                                                                                    \
         SAC_TR_REF_PRINT (                                                               \
@@ -2330,7 +2345,18 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
         }                                                                                \
     }
+#endif
 
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman
+#define SAC_DESC_DEC_RC_FREE__C99(desc, rc, q_waslast)                                   \
+    {                                                                                    \
+        cudaDeviceSynchronize (); /* FIXME This is not good! */                          \
+        q_waslast = ((DESC_RC (desc) -= rc) == 0);                                       \
+        if (q_waslast) {                                                                 \
+            SAC_FREE (desc);                                                             \
+        }                                                                                \
+    }
+#else
 #define SAC_DESC_DEC_RC_FREE__C99(desc, rc, q_waslast)                                   \
     {                                                                                    \
         q_waslast = ((DESC_RC (desc) -= rc) == 0);                                       \
@@ -2338,6 +2364,7 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_FREE (desc);                                                             \
         }                                                                                \
     }
+#endif
 
 /*
  * SAC_ND_A_RC implementations (referenced by sac_std_gen.h)

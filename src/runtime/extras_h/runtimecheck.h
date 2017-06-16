@@ -315,8 +315,8 @@
     do {                                                                                 \
         cudaError_t error = cudaGetLastError ();                                         \
         if (error != cudaSuccess) {                                                      \
-            SAC_RuntimeError ("%s ERROR: %s (%d): %s\n", ERROR_MSG, __FILE__, __LINE__,  \
-                              cudaGetErrorString (error));                               \
+            SAC_RuntimeError ("%s::%s(%d) [%s ERROR]: %s\n", __FILE__, __func__,         \
+                              __LINE__, ERROR_MSG, cudaGetErrorString (error));          \
         }                                                                                \
     } while (0)
 

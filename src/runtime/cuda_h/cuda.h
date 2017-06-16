@@ -29,18 +29,23 @@
     cudaMalloc ((void **)&SAC_ND_A_FIELD (var_NT),                                       \
                 SAC_ND_A_SIZE (var_NT) * sizeof (basetype));                             \
     SAC_GET_CUDA_MALLOC_ERROR ();
-#else
-#define SAC_CUDA_ALLOC(var_NT, basetype)
+#else // Managed case
+#define SAC_CUDA_ALLOC(var_NT, basetype)                                                 \
+    cudaMallocManaged ((void **)&SAC_ND_A_FIELD (var_NT),                                \
+                       SAC_ND_A_SIZE (var_NT) * sizeof (basetype));                      \
+    SAC_GET_CUDA_MALLOC_ERROR ();
 #endif
 
 // Free device memory
-#if !defined(SAC_DO_CUDA_ALLOC) || SAC_DO_CUDA_ALLOC == SAC_CA_system                    \
-  || SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman
 #define SAC_CUDA_FREE(var_NT, freefun)                                                   \
+    cudaDeviceSynchronize ();                                                            \
     cudaFree (SAC_ND_A_FIELD (var_NT));                                                  \
     SAC_GET_CUDA_FREE_ERROR ();
 #else
-#define SAC_CUDA_FREE(var_NT, freefun)
+#define SAC_CUDA_FREE(var_NT, freefun)                                                   \
+    cudaFree (SAC_ND_A_FIELD (var_NT));                                                  \
+    SAC_GET_CUDA_FREE_ERROR ();
 #endif
 
 #define SAC_CUDA_ALLOC_BEGIN__DAO(var_NT, rc, dim, basetype)                             \
@@ -70,6 +75,20 @@
 
 #define SAC_CUDA_DEC_RC_FREE__NOOP(var_NT, rc, freefun) SAC_NOOP ()
 
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman
+#define SAC_CUDA_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                               \
+    {                                                                                    \
+        cudaDeviceSynchronize ();                                                        \
+        SAC_TR_REF_PRINT (                                                               \
+          ("CUDA_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))              \
+        if ((SAC_ND_A_RC (var_NT) -= rc) == 0) {                                         \
+            SAC_TR_REF_PRINT_RC (var_NT)                                                 \
+            SAC_CUDA_FREE (var_NT, freefun)                                              \
+        } else {                                                                         \
+            SAC_TR_REF_PRINT_RC (var_NT)                                                 \
+        }                                                                                \
+    }
+#else
 #define SAC_CUDA_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                               \
     {                                                                                    \
         SAC_TR_REF_PRINT (                                                               \
@@ -81,6 +100,7 @@
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
         }                                                                                \
     }
+#endif
 
 /*****************************************************************************
  *
@@ -101,9 +121,10 @@
     cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT) + offset, &from_NT, sizeof (basetype),       \
                      cudaMemcpyHostToDevice, 0);                                         \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
-#else
+#else /* managed */
 #define SAC_CUDA_MEM_TRANSFER_SxA(to_NT, offset, from_NT, basetype)                      \
-    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);
+    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);                                   \
+    SAC_ND_INC_RC (from_NT, SAC_ND_A_RC (to_NT));
 #endif
 
 /*
@@ -119,9 +140,10 @@
     cudaMemcpyAsync (&SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT) + offset,         \
                      sizeof (basetype), cudaMemcpyDeviceToHost, 0);                      \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
-#else
+#else /* managed */
 #define SAC_CUDA_MEM_TRANSFER_AxS(to_NT, offset, from_NT, basetype)                      \
-    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);
+    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);                                   \
+    SAC_ND_INC_RC (from_NT, SAC_ND_A_RC (to_NT));
 #endif
 
 /*
@@ -143,9 +165,10 @@
     cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                   \
                      SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction, 0);  \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
-#else
+#else /* managed */
 #define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
-    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);
+    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);                                   \
+    SAC_ND_INC_RC (from_NT, SAC_ND_A_RC (to_NT));
 #endif
 
 #define SAC_CUDA_COPY__ARRAY(to_NT, from_NT, basetype, freefun)                          \

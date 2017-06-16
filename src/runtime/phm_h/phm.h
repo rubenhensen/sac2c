@@ -444,6 +444,7 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
                            && "An ST/SEQ call in the MT/XT context!! (1)");              \
             var = (basetype *)SAC_HM_MallocAnyChunk_st (size);                           \
             cudaHostRegister (var, sizeof (basetype) * size, cudaHostRegisterPortable);  \
+            SAC_GET_CUDA_MALLOC_ERROR ();                                                \
             break;                                                                       \
         case SAC_HM_multi_threaded:                                                      \
             var = (basetype *)SAC_HM_MallocAnyChunk_mt (size, SAC_MT_SELF_THREAD_ID ()); \
@@ -457,12 +458,14 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
 #define SAC_HM_MALLOC(var, size, basetype)                                               \
     {                                                                                    \
         cudaHostAlloc ((void **)&var, sizeof (basetype) * size, cudaHostAllocPortable);  \
+        SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
     }
 #else /* managed */
 #define SAC_HM_MALLOC(var, size, basetype)                                               \
     {                                                                                    \
         cudaMallocManaged ((void **)&var, sizeof (basetype) * size,                      \
                            cudaMemAttachGlobal);                                         \
+        SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
     }
 #endif
 
@@ -492,6 +495,7 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
                            && "An ST/SEQ call in the MT/XT context!! (2)");              \
             var = (basetype)SAC_HM_MallocAnyChunk_st (size);                             \
             cudaHostRegister (var, size, cudaHostRegisterPortable);                      \
+            SAC_GET_CUDA_MALLOC_ERROR ();                                                \
             break;                                                                       \
         case SAC_HM_multi_threaded:                                                      \
             var = (basetype)SAC_HM_MallocAnyChunk_mt (size, SAC_MT_SELF_THREAD_ID ());   \
@@ -505,11 +509,13 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
 #define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype)                                     \
     {                                                                                    \
         cudaHostAlloc ((void **)&var, size, cudaHostAllocPortable);                      \
+        SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
     }
 #else /* managed */
 #define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype)                                     \
     {                                                                                    \
         cudaMallocManaged ((void **)&var, size, cudaMemAttachGlobal);                    \
+        SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
     }
 #endif
 
@@ -782,12 +788,22 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
 #define SAC_HM_FREE(addr)                                                                \
     do {                                                                                 \
         cudaHostUnregister (addr);                                                       \
+        SAC_GET_CUDA_FREE_ERROR ();                                                      \
         free (addr);                                                                     \
     } while (0);
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
-#define SAC_HM_FREE(addr) cudaFreeHost (addr);
+#define SAC_HM_FREE(addr)                                                                \
+    do {                                                                                 \
+        cudaFreeHost (addr);                                                             \
+        SAC_GET_CUDA_FREE_ERROR ();                                                      \
+    } while (0);
 #else /* managed */
-#define SAC_HM_FREE(addr) cudaFree (addr);
+#define SAC_HM_FREE(addr)                                                                \
+    do {                                                                                 \
+        cudaDeviceSynchronize ();                                                        \
+        cudaFree (addr);                                                                 \
+        SAC_GET_CUDA_FREE_ERROR ();                                                      \
+    } while (0);
 #endif
 
 #if SAC_DO_APS
@@ -943,13 +959,16 @@ SAC_C_EXTERN void *SAC_HM_MallocCheck (unsigned int);
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg
 #define SAC_HM_MALLOC(var, size, basetype)                                               \
     var = (basetype *)malloc (size);                                                     \
-    cudaHostRegister (var, sizeof (basetype) * size, cudaHostRegisterPortable);
+    cudaHostRegister (var, sizeof (basetype) * size, cudaHostRegisterPortable);          \
+    SAC_GET_CUDA_MALLOC_ERROR ();
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_HM_MALLOC(var, size, basetype)                                               \
-    cudaHostAlloc ((void **)&var, sizeof (basetype) * size, cudaHostAllocPortable);
+    cudaHostAlloc ((void **)&var, sizeof (basetype) * size, cudaHostAllocPortable);      \
+    SAC_GET_CUDA_MALLOC_ERROR ();
 #else /* managed */
 #define SAC_HM_MALLOC(var, size, basetype)                                               \
-    cudaMallocManaged ((void **)&var, sizeof (basetype) * size, cudaMemAttachGlobal);
+    cudaMallocManaged ((void **)&var, sizeof (basetype) * size, cudaMemAttachGlobal);    \
+    SAC_GET_CUDA_MALLOC_ERROR ();
 #endif
 
 #if !defined(SAC_DO_CUDA_ALLOC) || SAC_DO_CUDA_ALLOC == SAC_CA_system
@@ -957,13 +976,16 @@ SAC_C_EXTERN void *SAC_HM_MallocCheck (unsigned int);
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg
 #define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype)                                     \
     var = (basetype)malloc (size);                                                       \
-    cudaHostRegister (var, size, cudaHostRegisterPortable);
+    cudaHostRegister (var, size, cudaHostRegisterPortable);                              \
+    SAC_GET_CUDA_MALLOC_ERROR ();
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype)                                     \
-    cudaHostAlloc ((void **)&var, size, cudaHostAllocPortable);
+    cudaHostAlloc ((void **)&var, size, cudaHostAllocPortable);                          \
+    SAC_GET_CUDA_MALLOC_ERROR ();
 #else /* managed */
 #define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype)                                     \
-    cudaMallocManaged ((void **)&var, size, cudaMemAttachGlobal);
+    cudaMallocManaged ((void **)&var, size, cudaMemAttachGlobal);                        \
+    SAC_GET_CUDA_MALLOC_ERROR ();
 #endif
 #endif /* SAC_DO_CHECK_MALLOC */
 
