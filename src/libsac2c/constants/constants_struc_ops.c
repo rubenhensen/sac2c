@@ -1258,7 +1258,6 @@ COvect2offset (constant *shp, constant *iv, constant *nothing)
     DBUG_ASSERT (lenshp >= leniv, "shape(shp) must be >= shape(iv)");
 
     if (leniv > 0) {
-        DBUG_ASSERT (cviv[0] < cvshp[0], "Index error: iv[0] >= shp([0]");
         offset = cviv[0];
     } else {
         offset = 0;

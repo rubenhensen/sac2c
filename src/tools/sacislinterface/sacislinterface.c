@@ -381,6 +381,7 @@ PolyhedralWLFIntersectCalc (int verbose)
     isl_union_set_free (pwl);
     isl_union_set_free (cwl);
     isl_union_set_free (peq);
+    isl_union_set_free (intr);
     isl_union_set_free (cwleq);
     isl_union_set_free (pwleq);
     isl_schedule_free (sched);

@@ -1329,6 +1329,7 @@ PHUTisCompatibleAffinePrf (prf nprf)
     case F_div_SxS:
     case F_noteminval:
     case F_notemaxval:
+    case F_mask_SxSxS:
         z = TRUE;
         break;
 
@@ -1377,6 +1378,7 @@ isDyadicPrf (prf nprf)
     case F_sel_VxA:
     case F_idx_sel:
     case F_div_SxS:
+    case F_mask_SxSxS: // Triadic, but close enough
         z = TRUE;
         break;
 
@@ -1929,7 +1931,7 @@ HandleIota (node *arg_node, node *fundef, lut_t *varlut, int loopcount)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *PHUThandleNprf( node *arg_node...
+ * @fn node *PHUTprf( node *arg_node...
  *
  * @brief If rhs is an affine function, generate ISL contraints for it.
  *
@@ -1952,8 +1954,7 @@ HandleIota (node *arg_node, node *fundef, lut_t *varlut, int loopcount)
  *
  ******************************************************************************/
 static node *
-PHUThandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res,
-                int loopcount)
+PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res, int loopcount)
 {
     node *assgn;
     node *ids = NULL;
@@ -2211,6 +2212,25 @@ PHUThandleNprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *re
                 res = TCappendExprs (res, z);
                 break;
 
+            case F_mask_SxSxS:
+                // This is an attempt to deal with unit test
+                // pwlf/TakeScalarOvertake.nostdlib.sac, in which
+                // we have a take() PRG_ARG1 with unknown signum.
+                // I think this is unlikely to arise in realistic
+                // applications, just as rotate/shift with counts
+                // of unknown signum are unlikely, but the PWLF
+                // inference code wants to do a fold, which is utterly wrong.
+                // The idea here is to make the result an ISL parameter,
+                // which should defeat the evil spirits of PWLF inference.
+                //
+                // This seems to work as desired. Background:
+                // If we encounter an N_prf for which we are unable to
+                // collect any useful information, we make its result
+                // an ISL parameter, rather than an existential variable.
+
+                AVIS_ISLCLASS (IDS_AVIS (ids)) = AVIS_ISLCLASSPARAMETER;
+                break;
+
             default:
                 DBUG_UNREACHABLE ("Nprf coding time, senor");
                 break;
@@ -2308,8 +2328,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
                         res2 = HandleNid (avis, rhs, fundef, varlut, loopcount);
                         break;
                     case N_prf:
-                        res2
-                          = PHUThandleNprf (avis, rhs, fundef, varlut, NULL, loopcount);
+                        res2 = PHUTprf (avis, rhs, fundef, varlut, NULL, loopcount);
                         break;
                     case N_bool:
                     case N_num:
