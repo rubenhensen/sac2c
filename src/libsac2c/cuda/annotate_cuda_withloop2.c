@@ -144,6 +144,32 @@ InitCudaBlockSizes (void)
         global.cuda_blocking_factor = 32;
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
+    } else if (STReq (global.config.cuda_arch, "-arch=sm_35")) {
+        global.optimal_threads = 512;
+        global.optimal_blocks = 3;
+        global.cuda_1d_block_large = 1024;
+        /*
+        1D block size was 512, but to get better performance, it's
+        now set to 64 (See above). We need mechanism to automatically
+        select the best block size
+        */
+        global.cuda_1d_block_small = 64;
+        global.cuda_blocking_factor = 32;
+        global.cuda_2d_block_x = 16;
+        global.cuda_2d_block_y = 16;
+    } else if (STReq (global.config.cuda_arch, "-arch=sm_50")) {
+        global.optimal_threads = 512;
+        global.optimal_blocks = 3;
+        global.cuda_1d_block_large = 1024;
+        /*
+        1D block size was 512, but to get better performance, it's
+        now set to 64 (See above). We need mechanism to automatically
+        select the best block size
+        */
+        global.cuda_1d_block_small = 64;
+        global.cuda_blocking_factor = 32;
+        global.cuda_2d_block_x = 32;
+        global.cuda_2d_block_y = 32;
     } else {
         if (STReq (global.config.cuda_arch, "no")) {
             CTIwarn ("CUDA architecture was not detected during install, setting to "
