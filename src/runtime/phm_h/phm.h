@@ -443,7 +443,7 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
             SAC_HM_ASSERT (SAC_MT_globally_single                                        \
                            && "An ST/SEQ call in the MT/XT context!! (1)");              \
             var = (basetype *)SAC_HM_MallocAnyChunk_st (size);                           \
-            cudaHostRegister (var, sizeof (basetype) * size, cudaHostRegisterPortable);  \
+            cudaHostRegister (var, size, cudaHostRegisterPortable);                      \
             SAC_GET_CUDA_MALLOC_ERROR ();                                                \
             break;                                                                       \
         case SAC_HM_multi_threaded:                                                      \
@@ -959,15 +959,15 @@ SAC_C_EXTERN void *SAC_HM_MallocCheck (unsigned int);
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg
 #define SAC_HM_MALLOC(var, size, basetype)                                               \
     var = (basetype *)malloc (size);                                                     \
-    cudaHostRegister (var, sizeof (basetype) * size, cudaHostRegisterPortable);          \
+    cudaHostRegister (var, size, cudaHostRegisterPortable);                              \
     SAC_GET_CUDA_MALLOC_ERROR ();
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_HM_MALLOC(var, size, basetype)                                               \
-    cudaHostAlloc ((void **)&var, sizeof (basetype) * size, cudaHostAllocPortable);      \
+    cudaHostAlloc ((void **)&var, size, cudaHostAllocPortable);                          \
     SAC_GET_CUDA_MALLOC_ERROR ();
 #else /* managed */
 #define SAC_HM_MALLOC(var, size, basetype)                                               \
-    cudaMallocManaged ((void **)&var, sizeof (basetype) * size, cudaMemAttachGlobal);    \
+    cudaMallocManaged ((void **)&var, size, cudaMemAttachGlobal);                        \
     SAC_GET_CUDA_MALLOC_ERROR ();
 #endif
 
