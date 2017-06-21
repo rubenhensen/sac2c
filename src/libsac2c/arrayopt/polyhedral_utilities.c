@@ -2978,7 +2978,6 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
     node *condprf;
     int z = UNR_NONE;
     int stridesignum = 0;
-    bool dopoly = FALSE;
 
     DBUG_ENTER ();
 
@@ -3006,40 +3005,17 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
                 arg2 = PHUTskipChainedAssigns (PRF_ARG2 (condprf));
             }
 
-#ifdef DEADCODEIHOPE
-            li1 = LFUisLoopInvariantArg (ID_AVIS (arg1), fundef);
-            li2 = LFUisLoopInvariantArg (ID_AVIS (arg2), fundef);
-            if ((1 == li1) && (1 != li2)) {
-                // If arg1 invariant, arg2 is set variable
-                AVIS_ISLCLASS (ID_AVIS (arg2)) = AVIS_ISLCLASSSETVARIABLE;
-                dopoly = TRUE;
-            } else {
-                if ((1 == li2) && (1 != li1)) {
-                    // If arg2 invariant, arg1 is set variable
-                    AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
-                    dopoly = TRUE;
-                } else {
-                    DBUG_PRINT ("Did not find loop-dependent arg1(%s) or arg2(%s)",
-                                AVIS_NAME (ID_AVIS (arg1)), AVIS_NAME (ID_AVIS (arg2)));
-                }
-            }
-#else  // DEADCODEIHOPE
-            dopoly = TRUE;
-#endif // DEADCODEIHOPE
-
             // Build constraint for condprf
             resel = PHUThandleRelational (stridesignum, arg1, arg2, PRF_PRF (condprf));
             res = TCappendExprs (res, resel);
 
-            if (dopoly) { // Must have exactly one loop-dependent argument
-                str = ISLUexprs2String (res, varlut, "LoopCount", TRUE,
-                                        FUNDEF_NAME (fundef));
-                z = ISLUgetLoopCount (str, varlut);
-                DBUG_PRINT ("Loop count for %s is %d", FUNDEF_NAME (fundef), z);
-                DBUG_ASSERT ((UNR_NONE == z) || (0 < z), "Got negative loop count!");
-                MEMfree (str);
-                z = (UNR_NONE != z) ? z + 1 : z; // Loop count is one too low
-            }
+            // Must have exactly one loop-dependent argument
+            str = ISLUexprs2String (res, varlut, "LoopCount", TRUE, FUNDEF_NAME (fundef));
+            z = ISLUgetLoopCount (str, varlut);
+            DBUG_PRINT ("Loop count for %s is %d", FUNDEF_NAME (fundef), z);
+            DBUG_ASSERT ((UNR_NONE == z) || (0 < z), "Got negative loop count!");
+            MEMfree (str);
+            z = (UNR_NONE != z) ? z + 1 : z; // Loop count is one too low
         }
     }
 

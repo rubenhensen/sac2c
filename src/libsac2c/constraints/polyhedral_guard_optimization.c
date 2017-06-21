@@ -31,6 +31,7 @@
  */
 
 int FIXME; // See Bodo above
+// FIXME: Add example from POGO paper
 
 #define DBUG_PREFIX "POGO"
 #include "debug.h"

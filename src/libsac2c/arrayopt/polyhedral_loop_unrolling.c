@@ -258,16 +258,8 @@ PLURpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-#ifdef DEADCODE // set/cleared by POLYS traversal
-    arg_node = POLYSsetClearAvisPart (arg_node, arg_node);
-#endif // DEADCODE // set/cleared by POLYS traversal
-
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
-
-#ifdef DEADCODE // set/cleared by POLYS traversal
-    arg_node = POLYSsetClearAvisPart (arg_node, NULL);
-#endif // DEADCODE // set/cleared by POLYS traversal
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 

@@ -1154,28 +1154,6 @@ LFUcorrectSSAAssigns (node *arg_node, node *nassgn)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
- * @fn node *LFUfindAffineFunctionForLIV( node *arg_node, node *lacfundef)
- *
- * @brief: Find the maximal affine function tree for the variable that
- *         controls the recursive call in a LOOPFUN.
- *
- * @params: arg_node - not sure yet FIXME
- *          lacfundef - the N_fundef node for the loopfun
- *
- * @result: xxxx FIXME or NULL, if lacfundef is not a LOOPFUN.
- *
- *****************************************************************************/
-node *
-LFUfindAffineFunctionForLIV (node *arg_node, node *lacfundef)
-{
-    node *z = NULL;
-
-    DBUG_ENTER ();
-
-    DBUG_RETURN (z);
-}
-
 /** <!-- ****************************************************************** -->
  *
  * @fn node *LFUisl2Incr( node *rca, node *islchain)

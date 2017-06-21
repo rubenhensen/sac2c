@@ -26,7 +26,6 @@ extern node *LFUarg2Vardec (node *arg_node, node *lacfundef);
 extern node *LFUscalarizeArray (node *avis, node **preassigns, node **vardecs,
                                 shape *shp);
 extern node *LFUcorrectSSAAssigns (node *arg_node, node *nassgn);
-extern node *LFUfindAffineFunctionForLIV (node *arg_node, node *lacfundef);
 extern node *LFUcondprf2Incr (node *arg_node, node *rca);
 extern node *LFUisl2Incr (node *rca, node *islchain);
 extern prf LFUdualFun (prf nprf);

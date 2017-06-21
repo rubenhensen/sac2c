@@ -1,8 +1,3 @@
-/*
- *
- * $Id$
- */
-
 /**
  *
  * @file Polyhedral Analysis Setup
@@ -391,10 +386,6 @@ POLYSsetClearAvisPart (node *arg_node, node *val)
     ids = WITHID_IDS (PART_WITHID (arg_node));
     while (NULL != ids) {
         partn = AVIS_NPART (IDS_AVIS (ids));
-#ifdef DEADCODE // Overly enthusiastic, I think
-        DBUG_ASSERT ((val == partn) || (NULL == val) || (NULL == partn),
-                     "Invalid AVIS_NPART for WITHID_IDS");
-#endif // DEADCODE // Overly enthusiastic, I think
         AVIS_NPART (IDS_AVIS (ids)) = val;
         ids = IDS_NEXT (ids);
     }
@@ -402,10 +393,6 @@ POLYSsetClearAvisPart (node *arg_node, node *val)
     ids = WITHID_IDXS (PART_WITHID (arg_node));
     while (NULL != ids) {
         partn = AVIS_NPART (IDS_AVIS (ids));
-#ifdef DEADCODE // Overly enthusiastic, I think
-        DBUG_ASSERT ((val == partn) || (NULL == val) || (NULL == partn),
-                     "Invalid AVIS_NPART for WITHID_IDXS");
-#endif // DEADCODE // Overly enthusiastic, I think
         AVIS_NPART (IDS_AVIS (ids)) = val;
         ids = IDS_NEXT (ids);
     }
