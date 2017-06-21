@@ -173,19 +173,19 @@ InitCudaBlockSizes (void)
     } else {
         if (STReq (global.config.cuda_arch, "no")) {
             CTIwarn ("CUDA architecture was not detected during install, setting to "
-                     "default(-arch=sm_20)\n");
+                     "default(-arch=sm_35)\n");
             CTIwarn ("Please edit the CUDA_ARCH variable in sac2crc and set it to "
                      "-arch=sm_xx where xx is the capability version of your CUDA card"
-                     " (ex. -arch=sm_20).\n");
+                     " (ex. -arch=sm_35).\n");
         } else {
             CTIwarn ("CUDA architecture specified in sac2crc (%s) does not yet have "
                      "special support,"
-                     " setting to default(-arch=sm_20)\n",
+                     " setting to default(-arch=sm_35)\n",
                      global.config.cuda_arch);
             CTIwarn ("Current set of architectures supported is: sm_10, sm_11, sm_12, "
-                     "sm_13, sm_20\n");
+                     "sm_13, sm_20, sm_35, sm_50\n");
         }
-        global.config.cuda_arch = STRcpy ("-arch=sm_20");
+        global.config.cuda_arch = STRcpy ("-arch=sm_35");
         InitCudaBlockSizes ();
     }
 
