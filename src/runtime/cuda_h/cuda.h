@@ -123,6 +123,7 @@
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #else /* managed */
 #define SAC_CUDA_MEM_TRANSFER_SxA(to_NT, offset, from_NT, basetype)                      \
+    SAC_CUDA_FREE (to_NT, );                                                             \
     SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);                                   \
     SAC_ND_INC_RC (from_NT, SAC_ND_A_RC (to_NT));
 #endif
@@ -142,6 +143,7 @@
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #else /* managed */
 #define SAC_CUDA_MEM_TRANSFER_AxS(to_NT, offset, from_NT, basetype)                      \
+    SAC_CUDA_FREE (to_NT, );                                                             \
     SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);                                   \
     SAC_ND_INC_RC (from_NT, SAC_ND_A_RC (to_NT));
 #endif
@@ -167,6 +169,7 @@
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #else /* managed */
 #define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
+    SAC_CUDA_FREE (to_NT, );                                                             \
     SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);                                   \
     SAC_ND_INC_RC (from_NT, SAC_ND_A_RC (to_NT));
 #endif
