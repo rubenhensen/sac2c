@@ -258,100 +258,103 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
 void
 ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
 {
-    /*
-      int array_dim;
-    */
-
     DBUG_ENTER ();
 
 #define CUDA_GRID_BLOCK
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef CUDA_GRID_BLOCK
-    /*
-      array_dim = bounds_count/2;
-    */
+
+#define CUDA_SET_GRID(fmt, ...)                                                          \
+    fprintf (global.outfile, "dim3 grid(" fmt ");\n", __VA_ARGS__);                      \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    fprintf (global.outfile, "if (grid.x > %u || grid.y > %u || grid.z > %u) {\n",       \
+               global.cuda_max_x_dim, global.cuda_max_yz_dim, global.cuda_max_yz_dim);   \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    fprintf (global.outfile,                                                             \
+             "SAC_RuntimeError(\"CUDA XYZ grid dimension exceeds compute "               \
+             "compatibilities max value: %u x %u x %u\");\n",                            \
+             global.cuda_max_x_dim, global.cuda_max_yz_dim, global.cuda_max_yz_dim);     \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    fprintf (global.outfile, "}\n");
+
+#define CUDA_SET_BLOCK(fmt, ...)                                                         \
+    fprintf (global.outfile, "dim3 block(" fmt ");", __VA_ARGS__);                       \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    fprintf (global.outfile, "if (block.x > %u || block.y > %u || block.z > %u) {\n",    \
+               global.cuda_max_x_dim, global.cuda_max_yz_dim, global.cuda_max_yz_dim);   \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    fprintf (global.outfile,                                                             \
+             "SAC_RuntimeError(\"CUDA XYZ block dimension exceeds compute "              \
+             "compatibilities max value: %u x %u x %u\");\n",                            \
+             global.cuda_max_x_dim, global.cuda_max_yz_dim, global.cuda_max_yz_dim);     \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    fprintf (global.outfile, "}\n");
+
+#define CUDA_DIM_GRID_1D(arr)                                                            \
+    CUDA_SET_GRID ("(%s-%s)/%s+1", arr[0], arr[1], arr[2])                               \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    CUDA_SET_BLOCK ("%s", arr[2])
+
+#define CUDA_DIM_GRID_2D(arr)                                                            \
+    CUDA_SET_GRID ("(%s-%s)/%s+1, (%s-%s)/%s+1", arr[0], arr[2], arr[5], arr[1], arr[3], \
+                   arr[4])                                                               \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    CUDA_SET_BLOCK ("%s, %s", arr[5], arr[4])
+
+#define CUDA_DIM_GRID_3D(arr)                                                            \
+    CUDA_SET_GRID ("(%s-%s), (%s-%s)", arr[1], arr[4], arr[2], arr[5])                   \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    CUDA_SET_BLOCK ("(%s-%s)", arr[0], arr[3])
+
+#define CUDA_DIM_GRID_4D(arr)                                                            \
+    CUDA_SET_GRID ("(%s-%s), (%s-%s)", arr[2], arr[6], arr[3], arr[7])                   \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    CUDA_SET_BLOCK ("(%s-%s), (%s-%s)", arr[0], arr[4], arr[1], arr[5])
+
+#define CUDA_DIM_GRID_5D(arr)                                                            \
+    CUDA_SET_GRID ("(%s-%s), (%s-%s)", arr[3], arr[8], arr[4], arr[9])                   \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    CUDA_SET_BLOCK ("(%s-%s), (%s-%s), (%s-%s)", arr[0], arr[5], arr[1], arr[6], arr[2], \
+                    arr[7])
+
     INDENT;
     fprintf (global.outfile, "{\n");
 
     if (bounds_count == 3) { /* 1D CUDA withloop */
         INDENT;
         INDENT;
-        /*
-            fprintf( global.outfile, "dim3 grid((%s-%s)/%d+1);\n",
-                     var_ANY[0], var_ANY[1], global.cuda_1d_block_large);
-            INDENT;INDENT;
-            fprintf( global.outfile, "dim3 block(%d);", global.cuda_1d_block_large);
-        */
-        fprintf (global.outfile, "dim3 grid((%s-%s)/%s+1);\n", var_ANY[0], var_ANY[1],
-                 var_ANY[2]);
-        INDENT;
-        INDENT;
-        fprintf (global.outfile, "dim3 block(%s);", var_ANY[2]);
-
+        CUDA_DIM_GRID_1D (var_ANY)
     } else if (bounds_count == 6) { /* 2D CUDA withloop */
         INDENT;
         INDENT;
-        /*
-            fprintf( global.outfile,
-                     "dim3 grid((%s-%s)/%d+1, (%s-%s)/%d+1);\n",
-                     var_ANY[0], var_ANY[2], global.cuda_2d_block_x,
-                     var_ANY[1], var_ANY[3], global.cuda_2d_block_y);
-            INDENT;INDENT;
-            fprintf( global.outfile, "dim3 block(%d, %d);",
-                     global.cuda_2d_block_x, global.cuda_2d_block_y);
-        */
-        fprintf (global.outfile, "dim3 grid((%s-%s)/%s+1, (%s-%s)/%s+1);\n", var_ANY[0],
-                 var_ANY[2], var_ANY[5], var_ANY[1], var_ANY[3], var_ANY[4]);
-        INDENT;
-        INDENT;
-        fprintf (global.outfile, "dim3 block(%s, %s);", var_ANY[5], var_ANY[4]);
+        CUDA_DIM_GRID_2D (var_ANY)
     } else {
         if (bounds_count == 9) { /* 3D CUDA withloop */
             INDENT;
             INDENT;
-            /*
-            fprintf( global.outfile, "dim3 grid((%s-%s), (%s-%s));\n",
-                     var_ANY[2], var_ANY[5], var_ANY[1], var_ANY[4]);
-            */
-            fprintf (global.outfile, "dim3 grid((%s-%s), (%s-%s));\n", var_ANY[1],
-                     var_ANY[4], var_ANY[2], var_ANY[5]);
-            INDENT;
-            INDENT;
-            fprintf (global.outfile, "dim3 block((%s-%s));", var_ANY[0], var_ANY[3]);
+            CUDA_DIM_GRID_3D (var_ANY)
         } else if (bounds_count == 12) { /* 4D CUDA withloop */
             INDENT;
             INDENT;
-            /*
-            fprintf( global.outfile, "dim3 grid((%s-%s), (%s-%s));\n",
-                     var_ANY[3], var_ANY[7], var_ANY[2], var_ANY[6]);
-            INDENT;INDENT;
-            fprintf( global.outfile, "dim3 block((%s-%s), (%s-%s));",
-                     var_ANY[1], var_ANY[5], var_ANY[0], var_ANY[4]);
-            */
-            fprintf (global.outfile, "dim3 grid((%s-%s), (%s-%s));\n", var_ANY[2],
-                     var_ANY[6], var_ANY[3], var_ANY[7]);
-            INDENT;
-            INDENT;
-            fprintf (global.outfile, "dim3 block((%s-%s), (%s-%s));", var_ANY[0],
-                     var_ANY[4], var_ANY[1], var_ANY[5]);
+            CUDA_DIM_GRID_4D (var_ANY)
         } else {
             INDENT;
             INDENT;
-            /*
-            fprintf( global.outfile, "dim3 grid((%s-%s), (%s-%s));\n",
-                     var_ANY[4], var_ANY[9], var_ANY[3], var_ANY[8]);
-            INDENT;INDENT;
-            fprintf( global.outfile, "dim3 block((%s-%s), (%s-%s), (%s-%s));",
-                     var_ANY[2], var_ANY[7], var_ANY[1], var_ANY[6],
-                     var_ANY[0], var_ANY[5]);
-            */
-            fprintf (global.outfile, "dim3 grid((%s-%s), (%s-%s));\n", var_ANY[3],
-                     var_ANY[8], var_ANY[4], var_ANY[9]);
-            INDENT;
-            INDENT;
-            fprintf (global.outfile, "dim3 block((%s-%s), (%s-%s), (%s-%s));", var_ANY[0],
-                     var_ANY[5], var_ANY[1], var_ANY[6], var_ANY[2], var_ANY[7]);
+            CUDA_DIM_GRID_5D (var_ANY)
         }
     }
 
