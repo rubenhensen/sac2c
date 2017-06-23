@@ -1206,7 +1206,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn int IntersectBoundsPolyhedral(
+ * @fn int PWLFintersectBoundsPolyhedral(
  *
  * @brief Intersect each element of index vector iv with a single producerWL partition,
  *        pwlpart.
@@ -1244,7 +1244,7 @@ isCanStillFold (int el)
 }
 
 static int
-IntersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
+PWLFintersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
 {
     node *ivarr = NULL;
     node *iv;
@@ -1529,8 +1529,10 @@ PWLFpart (node *arg_node, info *arg_info)
 
     INFO_CONSUMERWLPART (arg_info) = arg_node;
 
+    arg_node = POLYSsetClearAvisPart (arg_node, arg_node);
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVdo (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
+    arg_node = POLYSsetClearAvisPart (arg_node, NULL);
 
     INFO_CONSUMERWLPART (arg_info) = NULL;
 
@@ -1647,7 +1649,7 @@ PWLFprf (node *arg_node, info *arg_info)
                    && (NULL != pwlpart)) {
                 pwlpart = POLYSsetClearAvisPart (pwlpart, pwlpart);
                 foldpwlpart = pwlpart;
-                plresult = IntersectBoundsPolyhedral (arg_node, pwlpart, arg_info);
+                plresult = PWLFintersectBoundsPolyhedral (arg_node, pwlpart, arg_info);
                 cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
                           ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
                           : "(naked consumer)";
