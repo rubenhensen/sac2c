@@ -18,7 +18,10 @@
 #define _SAC_STD_H_
 #include <stdint.h> /* intptr_t */
 #include <limits.h> /* INT_MAX */
+
+#if ENABLE_CUDA
 #include <cuda_runtime.h>
+#endif
 
 #include "rc_methods.h" // SAC_RCM_local, ...
 #include "icm.h" // Item0, ...

@@ -13,7 +13,10 @@
 #define _SAC_HEAPMGR_H
 
 #include <assert.h>
+
+#if ENABLE_CUDA
 #include <cuda_runtime.h>
+#endif
 
 #include "runtime/essentials_h/rt_misc.h" // SAC_MAX
 #include "runtime/mt_h/rt_mt.h" // SAC_MT_DECLARE_LOCK
