@@ -4,13 +4,13 @@ SET (DIR_LIST)
 FOREACH (dir ${tmplst})
   SET (mask "CMakeLists.txt|Makefile|m4")
   IF (NOT ${dir} MATCHES ${mask})
-    LIST (APPEND DIR_LIST ${dir}) 
+    LIST (APPEND DIR_LIST ${dir})
   ENDIF (NOT ${dir} MATCHES ${mask})
 ENDFOREACH (dir)
 
 # Create a list of directories in the project binary dir
 # in order to generate .h.m4 files.
-FOREACH (dir ${DIR_LIST}) 
+FOREACH (dir ${DIR_LIST})
   FILE (MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${dir}")
 ENDFOREACH (dir)
 

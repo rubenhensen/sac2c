@@ -22,7 +22,6 @@ CFLAGS           :=  "@CUDA_ARCH@ --maxrregcount 20 -Xcompiler -Wall "
                      "-Xcompiler -Wno-unused -Xcompiler -fno-builtin "
                      "-Xcudafe '--diag_suppress=set_but_not_used --diag_suppress=declared_but_not_referenced' "
                      "-I@CUDA_ROOT@/include "
-                     "-DSAC_CA_system=0 -DSAC_CA_cureg=1 -DSAC_CA_cualloc=2 -DSAC_CA_cuman=3 "
 LIBS             :=  " @CCDLLINK@ -lcudart -lcublas"
 
 target cuda :: default_cuda:
