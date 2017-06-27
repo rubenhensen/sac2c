@@ -18,6 +18,8 @@ SET (LIBSAC_SRC
   interface/sacarg.c
   interface/sacargconvert.c
   interface/sacmt.c
+  cuda/cuda.c
+  hwloc/hwloc.c
   mt/mt.c
   mt/hwloc_data.c
   mt/mt_beehive.c

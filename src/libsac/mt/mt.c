@@ -25,6 +25,7 @@
 #define SAC_DO_THREADS_STATIC 1
 
 #include "mt.h"
+#include "runtime/hwloc_h/hwloc.h"
 #include "hwloc_data.h"
 #include "runtime/essentials_h/bool.h"
 #include "runtime/essentials_h/std.h"
@@ -123,7 +124,7 @@ SAC_COMMON_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 
 #if ENABLE_HWLOC
     if (SAC_MT_cpu_bind_strategy != 0) { // HWLOC is not OFF!
-        SAC_HWLOC_init (SAC_MT_global_threads);
+        SAC_MT_HWLOC_init (SAC_MT_global_threads);
     } else {
         SAC_TR_LIBSAC_PRINT (("cpu binding turned off"));
     }

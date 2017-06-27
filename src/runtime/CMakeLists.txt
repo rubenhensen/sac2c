@@ -39,11 +39,11 @@ FOREACH(name ${M4_FILES})
   LIST (APPEND M4_HEADERS ${dst})
 ENDFOREACH (name)
 
-
 FILE (GLOB_RECURSE RUNTIME_HEADERS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.h")
 
 SET (ORDERED_RUNTIME_HEADERS
 essentials_h/rc_methods.h
+essentials_h/cuda_transfer_methods.h
 essentials_h/types.h
 essentials_h/audwl.h
 essentials_h/rt_commandline.h
@@ -69,6 +69,7 @@ extras_h/rt_profile.h
 extras_h/runtimecheck.h
 extras_h/rt_trace.h
 mt_h/rt_mt.h
+hwloc_h/hwloc.h
 ../libsac/mt/mt.h
 mt_h/rt_mt_omp.h
 ../libsac/mt/mt_omp.h

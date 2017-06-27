@@ -15,6 +15,30 @@
 #ifndef _SAC_CUDA_H_
 #define _SAC_CUDA_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*****************************************************************************
+ *
+ * Prototype declarations
+ * =================
+ *
+ *****************************************************************************/
+
+extern void SAC_CUDA_HWLOC_init (int);
+
+/*****************************************************************************
+ *
+ * ICMs for CUDA startup and finalization
+ * =================
+ *
+ *****************************************************************************/
+
+#define SAC_CUDA_SETUP() SAC_CUDA_HWLOC_init (0);
+
+#define SAC_CUDA_FINALIZE() SAC_NOOP ();
+
 /*****************************************************************************
  *
  * ICMs for CUDA related memory allocation and deallocation
@@ -413,4 +437,8 @@
 
 #define SAC_CUDA_FORLOOP_END() }
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* _SAC_CUDA_H */

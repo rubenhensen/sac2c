@@ -22,13 +22,7 @@
 
 #if ENABLE_HWLOC
 
-#include <hwloc.h>
-
-extern hwloc_cpuset_t *SAC_HWLOC_cpu_sets;
-extern hwloc_topology_t SAC_HWLOC_topology;
-
-void SAC_HWLOC_init (int threads);
-void SAC_HWLOC_cleanup (void);
+void SAC_MT_HWLOC_init (int threads);
 
 #endif // ENABLE_HWLOC
 
