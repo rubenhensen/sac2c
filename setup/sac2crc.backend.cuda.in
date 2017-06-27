@@ -7,28 +7,21 @@
  *       are deactivated (see CFLAGS). A list of valid keys to use can be
  *       found in doc/cuda_warning_codes.txt.
  *
- * NOTE: CUDA targets assume CUDA version 6.0 >= is used...
+ * NOTE: CUDA targets assume CUDA version 6.5 > is used... support for 32-bit
+ *       has been dropped (as CUDA not longer develops this).
  */
 
-target default_cuda :: default_sbi:
-//SBI              :=  "cuda"
+target cuda :: default_sbi:
 BACKEND          :=  "Cuda"
 
 CUDA_ARCH        :=  "@CUDA_ARCH@"
 
 CEXT             :=  ".cu"
-CC               :=  "@NVCC_PATH@"
+CC               :=  "@NVCC_PATH@/nvcc"
 CFLAGS           :=  "@CUDA_ARCH@ --maxrregcount 20 -Xcompiler -Wall "
                      "-Xcompiler -Wno-unused -Xcompiler -fno-builtin "
                      "-Xcudafe '--diag_suppress=set_but_not_used --diag_suppress=declared_but_not_referenced' "
-                     "-I@CUDA_ROOT@/include "
-LIBS             :=  " @CCDLLINK@ -lcudart -lcublas"
-
-target cuda :: default_cuda:
-EXTLIBPATH       +=  "@CUDA_ROOT@/lib64:"
-
-target cuda32 :: default_cuda:
-EXTLIBPATH       +=  "@CUDA_ROOT@/lib:"
+LIBS             +=  " @CCDLLINK@"
 
 /*
  * These targets expose the CUDA host memory allocators
@@ -36,15 +29,12 @@ EXTLIBPATH       +=  "@CUDA_ROOT@/lib:"
  */
 
 target cuda_alloc_registered:
-//SBI              +=  "-reg"
 CUDA_ALLOC       :=  "cureg"
 
 target cuda_alloc_allocated:
-//SBI              +=  "-alloc"
 CUDA_ALLOC       :=  "cualloc"
 
 target cuda_alloc_managed:
-//SBI              +=  "-man"
 CUDA_ALLOC       :=  "cuman"
 
 target cuda_reg :: cuda :: cuda_alloc_registered:
@@ -56,9 +46,5 @@ target cuda_man :: cuda :: cuda_alloc_managed:
  */
 
 target cudahybrid :: cuda:
-BACKEND          :=  "CudaHybrid"
-MT_MODE          :=  2
-
-target cudahybrid32 :: cuda32:
 BACKEND          :=  "CudaHybrid"
 MT_MODE          :=  2
