@@ -492,6 +492,9 @@ CYCLEPHASEFUN (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
 CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS, opt,
                saacyc)
 
+CYCLEPHASEFUN (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval,
+               global.optimize.dodfr, opt, saacyc)
+
 CYCLEPHASEFUNOLD (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt,
                   saacyc)
 

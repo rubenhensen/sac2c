@@ -56,10 +56,7 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/*
- * Anonymous traversal to clear IS_NEEDED flags
- */
-
+// Anonymous traversal to clear IS_NEEDED flags
 static node *
 ATravDFRCmodule (node *arg_node, info *arg_info)
 {
@@ -77,8 +74,8 @@ ATravDFRCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Initializing fundef %s as NOT needed", CTIitemName (arg_node));
     FUNDEF_ISNEEDED (arg_node) = FALSE;
-
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
@@ -91,7 +88,6 @@ ATravDFRCobjdef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     OBJDEF_ISNEEDED (arg_node) = FALSE;
-
     OBJDEF_NEXT (arg_node) = TRAVopt (OBJDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -108,17 +104,13 @@ ClearIsNeededFlags (node *syntax_tree)
     DBUG_ENTER ();
 
     TRAVpushAnonymous (dfrc_trav, &TRAVsons);
-
     syntax_tree = TRAVopt (syntax_tree, NULL);
-
     TRAVpop ();
 
     DBUG_RETURN (syntax_tree);
 }
 
-/*
- * helper functions
- */
+// helper functions
 
 static node *
 tagFundefAsNeeded (node *fundef, info *info)
@@ -128,16 +120,14 @@ tagFundefAsNeeded (node *fundef, info *info)
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
-                 "tagFundefAsNeeded applied to non fundef node");
+                 "tagFundefAsNeeded applied to non-fundef node");
 
     DBUG_ASSERT (!FUNDEF_ISWRAPPERFUN (fundef),
                  "tagFundefAsNeeded called on wrapper fun");
 
     if (!FUNDEF_ISNEEDED (fundef)) {
         DBUG_PRINT (">>> tagging fundef %s as needed", CTIitemName (fundef));
-
         FUNDEF_ISNEEDED (fundef) = TRUE;
-
         oldspine = INFO_SPINE (info);
         INFO_SPINE (info) = FALSE;
 
@@ -183,12 +173,11 @@ tagWrapperAsNeeded (node *wrapper, info *info)
 
     if (!FUNDEF_ISNEEDED (wrapper)) {
         DBUG_PRINT (">>> tagging wrapper %s as needed", CTIitemName (wrapper));
-
         FUNDEF_ISNEEDED (wrapper) = TRUE;
 
         /*
-         * the wrapper body is no reliable source of needed
-         * instances for a wrapper! it may contain less
+         * the wrapper body is not a reliable source of needed
+         * instances for a wrapper! it may contain fewer
          * instances than the wrapper type (e.g. one instance
          * returns a constant value and its call within the
          * wrapper is thus replaced by that value). but as the
@@ -234,7 +223,7 @@ tagWrapperAsNeeded (node *wrapper, info *info)
         } else {
             DBUG_UNREACHABLE (
               "found a wrapper with neither FUNDEF_IMPL, nor wrappertype");
-#endif
+#endif // DBUG_OFF
         }
     }
 
@@ -308,7 +297,6 @@ freeObjdefs (node *objdef)
  *
  *
  ******************************************************************************/
-
 node *
 DFRdoDeadFunctionRemoval (node *arg_node)
 {
@@ -316,20 +304,24 @@ DFRdoDeadFunctionRemoval (node *arg_node)
 
     DBUG_ENTER ();
 
-    //  DBUG_ASSERT (NODE_TYPE( arg_node) == N_module, "DFR must be called on module");
-
     DBUG_ASSERT (DUPgetCopiedSpecialFundefsHook () == NULL,
                  "DFR found LaC funs on hook.");
-
     DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
                     global.current_allocated_mem);
-
     arg_info = MakeInfo ();
 
     TRAVpush (TR_dfr);
-    arg_node = TRAVdo (arg_node, arg_info);
-    TRAVpop ();
 
+    // If this is a fundef-based traversal (e.g., from saacyc), we
+    // just check the fundef's localfns
+    if ((N_fundef == NODE_TYPE (arg_node))) {
+        arg_node = ClearIsNeededFlags (arg_node);
+        arg_node = tagFundefAsNeeded (arg_node, arg_info);
+        INFO_SPINE (arg_info) = TRUE;
+        arg_node = TRAVdo (arg_node, arg_info);
+    }
+
+    TRAVpop ();
     arg_info = FreeInfo (arg_info);
 
     DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
@@ -348,7 +340,6 @@ DFRdoDeadFunctionRemoval (node *arg_node)
  *   in programs the DFR starts in fundef main.
  *
  ******************************************************************************/
-
 node *
 DFRmodule (node *arg_node, info *arg_info)
 {
@@ -428,7 +419,6 @@ DFRobjdef (node *arg_node, info *arg_info)
  *   Traverses instruction- and function-chain in this order.
  *
  ******************************************************************************/
-
 node *
 DFRfundef (node *arg_node, info *arg_info)
 {
@@ -439,9 +429,7 @@ DFRfundef (node *arg_node, info *arg_info)
                 CTIitemName (arg_node));
 
     if (INFO_SPINE (arg_info)) {
-        /*
-         * remark: main is always tagged as provided
-         */
+        //  remark: main is always marked as provided
         if (FUNDEF_ISSTICKY (arg_node) || FUNDEF_ISPROVIDED (arg_node)) {
             DBUG_PRINT (">>> %s is %s",
                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
@@ -454,21 +442,17 @@ DFRfundef (node *arg_node, info *arg_info)
             }
         }
 
-        /* traverse next fundef */
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
         if (!FUNDEF_ISNEEDED (arg_node)) {
-            DBUG_PRINT ("Going to delete %s for %s",
+            DBUG_PRINT ("Deleting: %s for function: %s",
                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                         CTIitemName (arg_node));
             if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
                 global.optcounters.dead_fun++;
             }
             arg_node = FREEdoFreeNode (arg_node);
-        } else {
-            /* search for dead local functions. */
+        } else { // search for dead local functions
             INFO_LOCALFUNS (arg_info) = TRUE;
             FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
             INFO_LOCALFUNS (arg_info) = FALSE;
@@ -476,11 +460,11 @@ DFRfundef (node *arg_node, info *arg_info)
     } else if (INFO_LOCALFUNS (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         if (!FUNDEF_ISNEEDED (arg_node)) {
-            DBUG_PRINT ("Going to delete %s", CTIitemName (arg_node));
+            DBUG_PRINT ("Deleting function: %s", CTIitemName (arg_node));
             arg_node = FREEdoFreeNode (arg_node);
         }
     } else {
-        /* we came via AP_FUNDEF */
+        // we came via AP_FUNDEF
         if (!FUNDEF_ISNEEDED (arg_node)) {
             if (FUNDEF_ISWRAPPERFUN (arg_node)) {
                 arg_node = tagWrapperAsNeeded (arg_node, arg_info);
@@ -509,9 +493,7 @@ DFRarg (node *arg_node, info *arg_info)
         ARG_OBJDEF (arg_node) = tagObjdefAsNeeded (ARG_OBJDEF (arg_node), arg_info);
     }
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
-    }
+    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -531,10 +513,8 @@ DFRap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /*
-     * we have found a function application. SO move into the called
-     * function and mark it as needed.
-     */
+    // This is a function application. Move into the called
+    // function and mark it as needed.
     DBUG_PRINT ("Traversing N_ap for function %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
     AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
     DBUG_PRINT ("Return from traversing N_ap for function %s",
@@ -559,10 +539,7 @@ DFRfold (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     FOLD_FUNDEF (arg_node) = TRAVdo (FOLD_FUNDEF (arg_node), arg_info);
-
-    if (FOLD_NEXT (arg_node) != NULL) {
-        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
-    }
+    FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
