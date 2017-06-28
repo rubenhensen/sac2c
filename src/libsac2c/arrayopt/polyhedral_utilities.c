@@ -1692,7 +1692,7 @@ PHUThandleLacfunArg (node *nid, node *fundef, lut_t *varlut, node *res, int loop
                                                   AVIS_ISLCLASSEXISTENTIAL, loopcount);
 
         DBUG_PRINT ("Building AFT for LACFUN var %s from caller's %s", AVIS_NAME (avis),
-                    AVIS_NAME (calleriv));
+                    AVIS_NAME (ID_AVIS (calleriv)));
 
         if (FUNDEF_ISCONDFUN (fundef)) {
             res = PHUThandleCondfunArg (nid, fundef, varlut, res, ext_assign,
