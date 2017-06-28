@@ -20,6 +20,7 @@
 struct INFO {
     bool spine;
     bool localfuns;
+    bool isonefundef;
 };
 
 /*
@@ -27,6 +28,7 @@ struct INFO {
  */
 #define INFO_SPINE(n) ((n)->spine)
 #define INFO_LOCALFUNS(n) ((n)->localfuns)
+#define INFO_ISONEFUNDEF(n) ((n)->isonefundef)
 
 /*
  * INFO functions
@@ -42,6 +44,7 @@ MakeInfo (void)
 
     INFO_SPINE (result) = FALSE;
     INFO_LOCALFUNS (result) = FALSE;
+    INFO_ISONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -315,6 +318,7 @@ DFRdoDeadFunctionRemoval (node *arg_node)
     // If this is a fundef-based traversal (e.g., from saacyc), we
     // just check the fundef's localfns
     if ((N_fundef == NODE_TYPE (arg_node))) {
+        INFO_ISONEFUNDEF (arg_info) = TRUE;
         arg_node = ClearIsNeededFlags (arg_node);
         arg_node = tagFundefAsNeeded (arg_node, arg_info);
         INFO_SPINE (arg_info) = TRUE;
@@ -449,7 +453,11 @@ DFRfundef (node *arg_node, info *arg_info)
                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                         CTIitemName (arg_node));
             if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
-                global.optcounters.dead_fun++;
+                if (INFO_ISONEFUNDEF (arg_info)) {
+                    global.optcounters.dead_localfun++;
+                } else {
+                    global.optcounters.dead_fun++;
+                }
             }
             arg_node = FREEdoFreeNode (arg_node);
         } else { // search for dead local functions
@@ -462,6 +470,11 @@ DFRfundef (node *arg_node, info *arg_info)
         if (!FUNDEF_ISNEEDED (arg_node)) {
             DBUG_PRINT ("Deleting function: %s", CTIitemName (arg_node));
             arg_node = FREEdoFreeNode (arg_node);
+            if (INFO_ISONEFUNDEF (arg_info)) {
+                global.optcounters.dead_localfun++;
+            } else {
+                global.optcounters.dead_fun++;
+            }
         }
     } else {
         // we came via AP_FUNDEF
