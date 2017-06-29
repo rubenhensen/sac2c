@@ -1668,7 +1668,7 @@ static node *
 PHUThandleLacfunArg (node *nid, node *fundef, lut_t *varlut, node *res, int loopcount)
 {
     node *ext_assign;
-    node *calleriv;
+    node *calleravis;
     node *outerexprs;
     node *callerfundef;
     node *avis;
@@ -1685,24 +1685,24 @@ PHUThandleLacfunArg (node *nid, node *fundef, lut_t *varlut, node *res, int loop
                      "Expected FUNDEF_CALLAP to point to its N_ap node");
 
         // Find caller's value for avis.
-        calleriv = rcv2CallerVar (avis, fundef);
-        calleriv = PHUTskipChainedAssigns (calleriv);
+        calleravis = rcv2CallerVar (avis, fundef);
+        calleravis = TUnode2Avis (PHUTskipChainedAssigns (calleravis));
         callerfundef = FUNDEF_CALLERFUNDEF (fundef);
-        outerexprs = PHUTcollectAffineExprsLocal (calleriv, callerfundef, varlut, NULL,
+        outerexprs = PHUTcollectAffineExprsLocal (calleravis, callerfundef, varlut, NULL,
                                                   AVIS_ISLCLASSEXISTENTIAL, loopcount);
 
         DBUG_PRINT ("Building AFT for LACFUN var %s from caller's %s", AVIS_NAME (avis),
-                    AVIS_NAME (ID_AVIS (calleriv)));
+                    AVIS_NAME (calleravis));
 
         if (FUNDEF_ISCONDFUN (fundef)) {
             res = PHUThandleCondfunArg (nid, fundef, varlut, res, ext_assign,
-                                        callerfundef, outerexprs, calleriv);
+                                        callerfundef, outerexprs, calleravis);
             res = TCappendExprs (res, outerexprs);
         }
 
         if (FUNDEF_ISLOOPFUN (fundef)) {
             res = PHUThandleLoopfunArg (nid, fundef, varlut, res, ext_assign,
-                                        callerfundef, outerexprs, calleriv, loopcount);
+                                        callerfundef, outerexprs, calleravis, loopcount);
             res = TCappendExprs (res, outerexprs);
         }
     }
