@@ -1529,8 +1529,10 @@ PWLFpart (node *arg_node, info *arg_info)
 
     INFO_CONSUMERWLPART (arg_info) = arg_node;
 
+    arg_node = POLYSsetClearAvisPart (arg_node, arg_node);
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVdo (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
+    arg_node = POLYSsetClearAvisPart (arg_node, NULL);
 
     INFO_CONSUMERWLPART (arg_info) = NULL;
 
