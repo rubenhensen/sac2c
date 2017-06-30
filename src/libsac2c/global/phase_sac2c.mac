@@ -695,11 +695,6 @@ CYCLEPHASEFUN (safa, "Sorting associative function arguments",
 CYCLEPHASEFUN (dcr2, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
                opt, saacyc)
 
-#ifdef CRUD
-CYCLEPHASEFUN (dfr4, "Removing dead functions", DFRdoDeadFunctionRemoval,
-               global.optimize.dodfr, opt, saacyc)
-#endif // CRUD
-
 CYCLEPHASEFUNOLD (linl3, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, saacyc)
 

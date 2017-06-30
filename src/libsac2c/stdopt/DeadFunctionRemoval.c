@@ -316,17 +316,15 @@ DFRdoDeadFunctionRemoval (node *arg_node)
     TRAVpush (TR_dfr);
 
     // If this is a fundef-based traversal (e.g., from saacyc), we
-    // just check the fundef's localfns
-#ifdef CRASHCOMPLEXBASICS
+    // just remove the fundef's dead localfns
     if ((N_fundef == NODE_TYPE (arg_node))) {
         INFO_ISONEFUNDEF (arg_info) = TRUE;
         arg_node = ClearIsNeededFlags (arg_node);
         arg_node = tagFundefAsNeeded (arg_node, arg_info);
         INFO_SPINE (arg_info) = TRUE;
-        arg_node = TRAVdo (arg_node, arg_info);
     }
-#endif // CRASHCOMPLEXBASICS
 
+    arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
     arg_info = FreeInfo (arg_info);
 
