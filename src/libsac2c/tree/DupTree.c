@@ -356,6 +356,11 @@ DupFlags (node *new_node, node *old_node)
         RANGE_NEEDCUDAUNROLL (new_node) = RANGE_NEEDCUDAUNROLL (old_node);
     }
 
+    int KLUDGE;
+    if (NODE_TYPE (new_node) == N_fundef) {
+        FUNDEF_LOOPCOUNT (new_node) = FUNDEF_LOOPCOUNT (old_node);
+    }
+
     DBUG_RETURN (new_node);
 }
 
