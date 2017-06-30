@@ -250,7 +250,7 @@ POGOfundef (node *arg_node, info *arg_info)
         (PHUTisFundefKludge (arg_node))) {   // Ignore fns such as "!="
         DBUG_PRINT ("Starting to traverse function %s", FUNDEF_NAME (arg_node));
         if (FUNDEF_ISLACFUN (arg_node)) {
-            lacfunprf = LFUfindLacfunConditional (arg_node);
+            lacfunprf = LFUfindLoopfunConditional (arg_node);
             if (NULL != lacfunprf) {
                 lacfunprf = ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf)));
                 INFO_LACFUNPRF (arg_info) = LET_EXPR (lacfunprf);
@@ -424,7 +424,7 @@ getLoopCountForFundef (node *arg_node, node *fundef)
 
     DBUG_ENTER ();
 
-    lacfunprf = LFUfindLacfunConditional (fundef);
+    lacfunprf = LFUfindLoopfunConditional (fundef);
     if (NULL != lacfunprf) { // LOOPFUNs only
         lacfunprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf))));
         if (lacfunprf != arg_node) { // This is the COND_COND
@@ -557,7 +557,7 @@ POGOprf (node *arg_node, info *arg_info)
 #ifdef KILLSSIMPLECONSTANTSDOWN
             // If this is a LOOPFUN condprf, do not build constraint
             // for the relational. Otherwise, we get infinite loops!
-            condprf = LFUfindLacfunConditional (INFO_FUNDEF (arg_info));
+            condprf = LFUfindLoopfunConditional (INFO_FUNDEF (arg_info));
             if (NULL != condprf) {
                 condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
                 docondprf = (arg_node != condprf);

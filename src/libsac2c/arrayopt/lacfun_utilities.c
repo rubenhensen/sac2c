@@ -410,7 +410,7 @@ LFUrcv2Arg (node *rcv, node *fundef)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *LFUfindLacfunConditional
+ * @fn node *LFUfindLoopfunConditional
  *
  * @brief Find N_prf for conditional governing recursive call in LOOPFUN.
  *
@@ -420,7 +420,7 @@ LFUrcv2Arg (node *rcv, node *fundef)
  *
  ******************************************************************************/
 node *
-LFUfindLacfunConditional (node *arg_node)
+LFUfindLoopfunConditional (node *arg_node)
 {
     node *z = NULL;
 
