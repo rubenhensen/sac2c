@@ -1243,7 +1243,7 @@ isCanStillFold (int el)
     DBUG_RETURN (z);
 }
 
-static int
+int
 PWLFintersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
 {
     node *ivarr = NULL;
