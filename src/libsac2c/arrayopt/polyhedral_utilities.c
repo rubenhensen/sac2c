@@ -2987,7 +2987,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
             DBUG_PRINT ("Using FUNDEF_LOOPCOUNT (%s) of %d", FUNDEF_NAME (fundef), z);
         } else {
             res = PHUTcollectCondprf (fundef, varlut, UNR_NONE, FALSE);
-            condprf = LFUfindLoopacfunConditional (fundef);
+            condprf = LFUfindLoopfunConditional (fundef);
             condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
 
             // N_arg for arg1 or arg2 must be a set variable
