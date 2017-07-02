@@ -3009,13 +3009,12 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
             resel = PHUThandleRelational (stridesignum, arg1, arg2, PRF_PRF (condprf));
             res = TCappendExprs (res, resel);
 
-            // Must have exactly one loop-dependent argument
             str = ISLUexprs2String (res, varlut, "LoopCount", TRUE, FUNDEF_NAME (fundef));
             z = ISLUgetLoopCount (str, varlut);
             DBUG_PRINT ("Loop count for %s is %d", FUNDEF_NAME (fundef), z);
             DBUG_ASSERT ((UNR_NONE == z) || (0 < z), "Got negative loop count!");
             MEMfree (str);
-            z = (UNR_NONE != z) ? z + 1 : z; // Loop count is one too low
+            z = (UNR_NONE != z) ? z + 1 : z; // ISL loop count is one too low
         }
     }
 

@@ -419,15 +419,15 @@ POGOlet (node *arg_node, info *arg_info)
 static int
 getLoopCountForFundef (node *arg_node, node *fundef)
 {
-    node *lacfunprf;
+    node *loopfunprf;
     int z = UNR_NONE;
 
     DBUG_ENTER ();
 
-    lacfunprf = LFUfindLoopfunConditional (fundef);
-    if (NULL != lacfunprf) { // LOOPFUNs only
-        lacfunprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf))));
-        if (lacfunprf != arg_node) { // This is the COND_COND
+    loopfunprf = LFUfindLoopfunConditional (fundef);
+    if (NULL != loopfunprf) { // LOOPFUNs only
+        loopfunprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (loopfunprf))));
+        if (loopfunprf != arg_node) { // This is the COND_COND
             z = FUNDEF_LOOPCOUNT (fundef);
         }
     }

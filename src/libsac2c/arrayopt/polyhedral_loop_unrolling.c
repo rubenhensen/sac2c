@@ -149,7 +149,8 @@ PLURap (node *arg_node, info *arg_info)
         FUNDEF_CALLERFUNDEF (lacfundef) = NULL;
     }
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    int fixme; // not sure about next line
+               //  arg_node = TRAVcont( arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
