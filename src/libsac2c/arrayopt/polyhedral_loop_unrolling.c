@@ -142,7 +142,7 @@ PLURap (node *arg_node, info *arg_info)
         FUNDEF_CALLAP (lacfundef) = INFO_NASSIGN (arg_info);
         FUNDEF_CALLERFUNDEF (lacfundef) = INFO_FUNDEF (arg_info);
         newfundef = TRAVdo (lacfundef, arg_info);
-        DBUG_ASSERT (newfundef = lacfundef,
+        DBUG_ASSERT (newfundef == lacfundef,
                      "Did not expect N_fundef of LACFUN to change");
         INFO_LACFUN (arg_info) = NULL; // Back to normal traversal
         FUNDEF_CALLAP (lacfundef) = NULL;
