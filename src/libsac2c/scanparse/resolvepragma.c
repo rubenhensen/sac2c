@@ -466,7 +466,7 @@ RSPfundef (node *arg_node, info *arg_info)
         }
 
         if (PRAGMA_CUDALINKNAME (pragma) != NULL) {
-            if (FUNDEF_LINKNAME (pragma) == NULL) {
+            if (FUNDEF_LINKNAME (arg_node) == NULL) {
                 CTIwarnLoc (NODE_LOCATION (arg_node),
                             "Implicit declaration of 'C' version of external function"
                             " use linkname to explicitly declare 'C' version");
