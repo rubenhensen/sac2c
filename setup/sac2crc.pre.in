@@ -82,6 +82,8 @@
  *
  * %dbg%           OPT_g if -g was provided on the sac2c command line, empty otherwise
  *
+ * %cuda_arch%     Current value of CUDA_ARCH
+ *
  * %cflags%        Concatenation of:
  *                 - current value of CFLAGS
  *                 - "-I<D>" for each <D> in INCPATH
@@ -223,11 +225,6 @@
  *                  For the list of the reference counting methods
  *                  see the file doc/ref-counting-methods.txt
  *
- *  CUDA_ALLOC      Defines which form of memory allocation we use, system/PHM
- *                  or CUDA's. Choices: 'system' = use system/PHM, 'cureg' = use CUDA
- *                  registered, 'cualloc' = use CUDA HostAlloc, 'cuman' = use CUDA
- *                  managed.
- *
  *  RTSPEC          Instrument the code for run-time generation of specialized
  *                  functions.
  *
@@ -237,6 +234,12 @@
  *  MT_LIB          Back-end threading system to use for the "MT" back-end.
  *
  *  CUDA_ARCH       CUDA architecture flag (only used by the "Cuda" back-end)
+ *                  Can be substituted with `%cuda_arch%'.
+ *
+ *  CUDA_ALLOC      Defines which form of memory allocation we use, system/PHM
+ *                  or CUDA's. Choices: 'system' = use system/PHM, 'cureg' = use CUDA
+ *                  registered, 'cualloc' = use CUDA HostAlloc, 'cuman' = use CUDA
+ *                  managed.
  *
  * ***
  *

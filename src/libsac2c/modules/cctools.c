@@ -231,6 +231,9 @@ CCTperformTask (ccm_task_t task)
     // %cc%
     const char *cc_subst = global.config.cc;
 
+    // %cuda_arch%
+    const char *cuda_arch_subst = global.config.cuda_arch;
+
     /******************* link flags ***********************/
 
     // %extlibdirs%
@@ -330,12 +333,13 @@ CCTperformTask (ccm_task_t task)
 
 #define SUBST(Name) "%" #Name "%", Name##_subst
 #define DO_SUBST(CommandString)                                                          \
-    STRsubstTokens (CommandString, 21, SUBST (cc), SUBST (ld), SUBST (opt), SUBST (dbg), \
-                    SUBST (sacincludes), SUBST (tree_cflags), SUBST (cflags),            \
-                    SUBST (compileflags), SUBST (extlibdirs), SUBST (modlibdirs),        \
-                    SUBST (modlibs), SUBST (saclibs), SUBST (libs), SUBST (ldflags),     \
-                    SUBST (tree_ldflags), SUBST (linkflags), SUBST (path),               \
-                    SUBST (target), SUBST (libname), SUBST (objects), SUBST (source))
+    STRsubstTokens (CommandString, 22, SUBST (cc), SUBST (ld), SUBST (opt), SUBST (dbg), \
+                    SUBST (cuda_arch), SUBST (sacincludes), SUBST (tree_cflags),         \
+                    SUBST (cflags), SUBST (compileflags), SUBST (extlibdirs),            \
+                    SUBST (modlibdirs), SUBST (modlibs), SUBST (saclibs), SUBST (libs),  \
+                    SUBST (ldflags), SUBST (tree_ldflags), SUBST (linkflags),            \
+                    SUBST (path), SUBST (target), SUBST (libname), SUBST (objects),      \
+                    SUBST (source))
 
 #define DO_COMPILE(CompileString, SourceDir, Source, Kind)                               \
     do {                                                                                 \
