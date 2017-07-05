@@ -368,14 +368,16 @@ POGOap (node *arg_node, info *arg_info)
 
         // Traverse into the LACFUN
         INFO_LACFUN (arg_info) = lacfundef; // The called lacfun
-        FUNDEF_CALLAP (lacfundef) = INFO_NASSIGN (arg_info);
-        FUNDEF_CALLERFUNDEF (lacfundef) = INFO_FUNDEF (arg_info);
+        POLYSsetClearCallAp (lacfundef, INFO_FUNDEF (arg_info), INFO_NASSIGN (arg_info),
+                             TRUE);
+
         newfundef = TRAVdo (lacfundef, arg_info);
+
         DBUG_ASSERT (newfundef = lacfundef,
                      "Did not expect N_fundef of LACFUN to change");
         INFO_LACFUN (arg_info) = NULL; // Back to normal traversal
-        FUNDEF_CALLAP (lacfundef) = NULL;
-        FUNDEF_CALLERFUNDEF (lacfundef) = NULL;
+        POLYSsetClearCallAp (lacfundef, INFO_FUNDEF (arg_info), INFO_NASSIGN (arg_info),
+                             FALSE);
     }
 
     arg_node = TRAVcont (arg_node, arg_info);
