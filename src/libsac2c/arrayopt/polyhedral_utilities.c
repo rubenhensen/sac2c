@@ -1678,8 +1678,8 @@ PHUThandleLacfunArg (node *nid, node *fundef, lut_t *varlut, node *res, int loop
     avis = TUnode2Avis (nid);
     // N_assign of External call (N_ap) to LACFUN
     ext_assign = FUNDEF_CALLAP (fundef);
-    DBUG_ASSERT ((NULL != ext_assign) == FUNDEF_ISLOOPFUN (fundef),
-                 "Only loopfun must have ext_assign");
+    DBUG_ASSERT ((NULL != ext_assign) == FUNDEF_ISLACFUN (fundef),
+                 "Only lacfun must have ext_assign");
     if (NULL != ext_assign) { // Current function may not be a LACFUN
         DBUG_ASSERT (N_assign == NODE_TYPE (ext_assign),
                      "Expected FUNDEF_CALLAP to be N_assign");
