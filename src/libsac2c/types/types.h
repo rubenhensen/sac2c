@@ -803,7 +803,13 @@ typedef bool (*php_cmp_fun) (void *elem1, void *elem2);
  * moved from stringset.h
  */
 
-typedef enum { STRS_unknown, STRS_saclib, STRS_extlib, STRS_objfile } strstype_t;
+typedef enum {
+    STRS_unknown,
+    STRS_saclib,
+    STRS_extlib,
+    STRS_objfile,
+    STRS_headers
+} strstype_t;
 typedef void *(*strsfoldfun_p) (const char *elem, strstype_t kind, void *rest);
 
 /* string sets, see stringset.h */

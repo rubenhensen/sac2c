@@ -7,6 +7,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "new_types.h"
+#include "str_buffer.h"
 #include "type_utils.h"
 #include "DupTree.h"
 
@@ -1208,6 +1209,24 @@ PRTspids (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
+static void *
+AddHeadersDependency (const char *header, strstype_t kind, void *buf)
+{
+    DBUG_ENTER ();
+
+    str_buf *sbuf = (str_buf *)buf;
+
+    switch (kind) {
+    case STRS_headers:
+        SBUFprintf (sbuf, "#include %s\n", header);
+        break;
+    default:
+        break;
+    }
+
+    DBUG_RETURN (buf);
+}
+
 node *
 PRTmodule (node *arg_node, info *arg_info)
 {
@@ -1242,6 +1261,17 @@ PRTmodule (node *arg_node, info *arg_info)
 
         global.outfile = FMGRwriteOpen ("%s/header.h", global.tmp_dirname);
         GSCprintFileHeader (arg_node);
+
+        if (NULL != MODULE_HEADERS (arg_node)) {
+            fprintf (global.outfile,
+                     "/* Additional headers for external function declarations */\n");
+            str_buf *headers_buf = SBUFcreate (1);
+            STRSfold (AddHeadersDependency, MODULE_HEADERS (arg_node), headers_buf);
+            char *headers_subst = SBUF2strAndFree (&headers_buf);
+            /* print external headers */
+            fprintf (global.outfile, "%s\n", headers_subst);
+            MEMfree (headers_subst);
+        }
 
         if (NULL != MODULE_STRUCTS (arg_node)) {
             fprintf (global.outfile, "\n\n");
@@ -2072,27 +2102,20 @@ PRTfundef (node *arg_node, info *arg_info)
              * print function declaration
              */
 
-            if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
-                && FUNDEF_NS (arg_node) != NULL
-                && (STReq (NSgetModule (FUNDEF_NS (arg_node)), "Math")
-                    || STReq (FUNDEF_NAME (arg_node), "srandom"))) {
-                /* If the function is a math function, we do not print
-                 * it's declaration as CUDA has already provided that. */
-            } else {
-                if (!FUNDEF_ISZOMBIE (arg_node)) {
-                    if ((FUNDEF_BODY (arg_node) == NULL)
-                        || ((FUNDEF_RETURN (arg_node) != NULL)
-                            && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
-                        fprintf (global.outfile, "%s ", PRINT_EXTERN);
+            if (!FUNDEF_ISZOMBIE (arg_node)) {
+                if (((FUNDEF_BODY (arg_node) == NULL) && !FUNDEF_HEADER (arg_node))
+                    || ((FUNDEF_RETURN (arg_node) != NULL)
+                        && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
+                    fprintf (global.outfile, "%s ", PRINT_EXTERN);
 
-                        if ((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
-                            || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm)) {
-                            PrintFunctionHeader (arg_node, arg_info, FALSE);
-                        } else {
-                            /* print N_icm ND_FUN_DEC */
-                            fprintf (global.outfile, "\n");
-                            TRAVdo (FUNDEF_ICMDECL (arg_node), arg_info);
-                        }
+                    if ((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
+                        || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm)) {
+                        PrintFunctionHeader (arg_node, arg_info, FALSE);
+                    } else {
+                        /* print N_icm ND_FUN_DEC */
+                        fprintf (global.outfile, "\n");
+                        TRAVdo (FUNDEF_ICMDECL (arg_node), arg_info);
+                    }
 
 #if 0
           if (!((FUNDEF_ICMDEFBEGIN (arg_node) == NULL) ||
@@ -2100,18 +2123,17 @@ PRTfundef (node *arg_node, info *arg_info)
             fprintf (global.outfile, ";\n");
           }
 #else
-                        fprintf (global.outfile, ";\n");
+                    fprintf (global.outfile, ";\n");
 #endif
 
-                        if ((global.compiler_subphase != PH_cg_prt)
-                            && (global.compiler_subphase != PH_ccg_prt)) {
-                            if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                                TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
-                            }
+                    if ((global.compiler_subphase != PH_cg_prt)
+                        && (global.compiler_subphase != PH_ccg_prt)) {
+                        if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                            TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
                         }
-
-                        fprintf (global.outfile, "\n");
                     }
+
+                    fprintf (global.outfile, "\n");
                 }
             }
         } else {

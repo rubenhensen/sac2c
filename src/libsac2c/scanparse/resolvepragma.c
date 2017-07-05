@@ -21,6 +21,7 @@ enum travmode_t { RSP_default, RSP_refcnt, RSP_linksign };
 
 struct INFO {
     node *nums;
+    node *module;
     int counter;
     enum travmode_t travmode;
 };
@@ -29,6 +30,7 @@ struct INFO {
  * INFO macros
  */
 #define INFO_NUMS(n) ((n)->nums)
+#define INFO_MODULE(n) ((n)->module)
 #define INFO_COUNTER(n) ((n)->counter)
 #define INFO_TRAVMODE(n) ((n)->travmode)
 
@@ -45,6 +47,7 @@ MakeInfo (void)
     result = (info *)MEMmalloc (sizeof (info));
 
     INFO_NUMS (result) = NULL;
+    INFO_MODULE (result) = NULL;
     INFO_COUNTER (result) = 0;
     INFO_TRAVMODE (result) = RSP_default;
 
@@ -420,6 +423,15 @@ RSPfundef (node *arg_node, info *arg_info)
             DBUG_PRINT_TAG ("RSP-A", "Set %s to noinline", CTIitemName (arg_node));
         }
 
+        if (PRAGMA_HEADER (pragma)) {
+            MODULE_HEADERS (INFO_MODULE (arg_info))
+              = STRSadd (PRAGMA_HEADER (pragma), STRS_headers,
+                         MODULE_HEADERS (INFO_MODULE (arg_info)));
+
+            FUNDEF_HEADER (arg_node) = TRUE;
+            PRAGMA_HEADER (pragma) = NULL;
+        }
+
         /*
          * if this function needs an external module, add it to
          * the external dependencies of this module.
@@ -466,8 +478,8 @@ RSPfundef (node *arg_node, info *arg_info)
         if ((PRAGMA_LINKNAME (pragma) == NULL) && (PRAGMA_CUDALINKNAME (pragma) == NULL)
             && (PRAGMA_LINKOBJ (pragma) == NULL) && (PRAGMA_LINKSIGN (pragma) == NULL)
             && (PRAGMA_LINKMOD (pragma) == NULL) && (PRAGMA_LINKSIGN (pragma) == NULL)
-            && (PRAGMA_EFFECT (pragma) == NULL)
-            && (PRAGMA_REFCOUNTING (pragma) == NULL)) {
+            && (PRAGMA_EFFECT (pragma) == NULL) && (PRAGMA_REFCOUNTING (pragma) == NULL)
+            && (PRAGMA_HEADER (pragma) == NULL)) {
             FUNDEF_PRAGMA (arg_node) = FREEdoFreeNode (pragma);
         }
     }
@@ -486,6 +498,8 @@ RSPmodule (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("Processing modules...");
 
+    INFO_MODULE (arg_info) = arg_node;
+
     if (MODULE_OBJS (arg_node) != NULL) {
         MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
     }
@@ -497,6 +511,8 @@ RSPmodule (node *arg_node, info *arg_info)
     if (MODULE_FUNDECS (arg_node) != NULL) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
+
+    INFO_MODULE (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }

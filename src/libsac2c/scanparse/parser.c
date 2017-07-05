@@ -4612,6 +4612,17 @@ handle_pragmas (struct parser *parser, enum pragma_type ptype)
             CHECK_PRAGMA (FREEFUN, ptype != pragma_typedef,
                           PRAGMA_FREEFUN (pragmas) != NULL);
             PRAGMA_FREEFUN (pragmas) = strdup (token_as_string (tok));
+        } else if (token_is_keyword (tok, HEADER)) {
+            if (parser_expect_tclass (parser, tok_string))
+                tok = parser_get_token (parser);
+            else {
+                parse_error = true;
+                continue;
+            }
+
+            CHECK_PRAGMA (HEADER, ptype != pragma_fundec && ptype != pragma_fundef,
+                          false);
+            PRAGMA_HEADER (pragmas) = strdup (token_as_string (tok));
         } else {
             error_loc (loc, "undefined pragma `%s' found", token_as_string (tok));
             goto error;

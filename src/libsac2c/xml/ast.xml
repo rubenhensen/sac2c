@@ -4083,6 +4083,19 @@
             </targets>
           </type>
         </attribute>
+        <attribute name="Headers" default="NULL" inconstructor="no">
+          <description>Set of header files "&gt;file.h&lt;" used for external declarations</description>
+          <type name="StringSet">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
     </node>
@@ -5159,6 +5172,7 @@ N_tfarg :
           </targets>
         </son>
       </sons>
+      <!-- Attributes for FUNDEF -->
       <attributes>
         <attribute name="Name" inconstructor="yes">
           <type name="String">
@@ -5932,6 +5946,9 @@ N_tfarg :
           <phases>
             <range from="dm_dmisef" to="final" />
           </phases>
+        </flag>
+        <flag name="Header" default="FALSE">
+            <description>Indicates whether or not we need to generate a declaration within header.c when linking to an external library.</description>
         </flag>
       </flags>
     <checks>
@@ -8286,6 +8303,19 @@ N_tfarg :
             <targets>
               <target mandatory="no">
                 <any />
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Header" default="NULL" inconstructor="no" >
+          <description>Declare that we wish to use an external declaration/header file instead.</description>
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
               </target>
             </targets>
           </type>
