@@ -1280,19 +1280,19 @@ PRTmodule (node *arg_node, info *arg_info)
         }
 
         if (NULL != MODULE_STRUCTS (arg_node)) {
-            fprintf (global.outfile, "\n\n");
+            fprintf (global.outfile, "\n/* Structure Declarations */\n");
             /* print structdefs */
             TRAVdo (MODULE_STRUCTS (arg_node), arg_info);
         }
 
         if (NULL != MODULE_TYPEFAMILIES (arg_node)) {
-            fprintf (global.outfile, "\n\n");
+            fprintf (global.outfile, "\n/* Type Families */\n");
             /* print typefamilies */
             TRAVdo (MODULE_TYPEFAMILIES (arg_node), arg_info);
         }
 
         if (NULL != MODULE_TYPES (arg_node)) {
-            fprintf (global.outfile, "\n\n");
+            fprintf (global.outfile, "\n/* Type Definitions */\n");
             /* print typedefs */
             TRAVdo (MODULE_TYPES (arg_node), arg_info);
         }
