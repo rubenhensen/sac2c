@@ -1988,13 +1988,13 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_ND_ASSIGN__DATA__AUD_SCL_NHD(to_NT, from_NT, copyfun)                        \
     {                                                                                    \
-        SAC_ND_ALLOC__DATA (to_NT)                                                       \
+        SAC_ND_ALLOC__DATA_BASETYPE (to_NT, SAC_NT_CBASETYPE (to_NT))                    \
         SAC_ND_WRITE_READ_COPY (to_NT, 0, from_NT, 0, copyfun)                           \
     }
 
 #define SAC_ND_ASSIGN__DATA__AUD_SCL_UNQ(to_NT, from_NT, copyfun)                        \
     {                                                                                    \
-        SAC_ND_ALLOC__DATA (to_NT)                                                       \
+        SAC_ND_ALLOC__DATA_BASETYPE (to_NT, SAC_NT_CBASETYPE (to_NT))                    \
         SAC_ND_WRITE_READ (to_NT, 0, from_NT, 0);                                        \
     }
 
