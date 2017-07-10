@@ -313,14 +313,12 @@ GDBprintAvisForFundef (node *fundef)
  *
  * description: Print fundef names from fundef, onwards
  *
- *
  ******************************************************************************/
 void
 GDBprintFundefChain (node *fundef)
 {
-    node *args;
 
-    while (NULL != fundef) {
+    if (NULL != fundef) {
         printf ("Fundef:%s\n", FUNDEF_NAME (fundef));
         if (NULL != FUNDEF_LOCALFUNS (fundef)) {
             printf ("Local functions: [\n");
