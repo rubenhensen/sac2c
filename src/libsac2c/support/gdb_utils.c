@@ -312,11 +312,16 @@ GDBprintAvisForFundef (node *fundef)
  * function: GDBprintFundefChain( node *fundef)
  *
  * description: Print fundef names from fundef, onwards
+ *              If argument is module, print all fundefs
  *
  ******************************************************************************/
 void
 GDBprintFundefChain (node *fundef)
 {
+
+    if (N_module == NODE_TYPE (fundef)) {
+        fundef = MODULE_FUNS (fundef);
+    }
 
     if (NULL != fundef) {
         printf ("Fundef:%s\n", FUNDEF_NAME (fundef));
