@@ -326,13 +326,13 @@ GDBprintFundefChain (node *fundef)
     if (NULL != fundef) {
         printf ("Fundef:%s\n", FUNDEF_NAME (fundef));
         if (NULL != FUNDEF_LOCALFUNS (fundef)) {
-            printf ("Local functions: [\n");
+            printf ("Local functions: [ ");
             GDBprintFundefChain (FUNDEF_LOCALFUNS (fundef));
-            printf ("Local functions: \n");
+            printf ("End Local functions: \n");
         }
 
         if (NULL != FUNDEF_NEXT (fundef)) {
-            printf ("FUNDEF_NEXT chain(\n");
+            printf ("FUNDEF_NEXT chain( ");
             GDBprintFundefChain (FUNDEF_NEXT (fundef));
             printf (") FUNDEF_NEXT chain\n");
         }

@@ -380,7 +380,7 @@ POGOap (node *arg_node, info *arg_info)
                              FALSE);
     }
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    // arg_node = TRAVcont( arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
