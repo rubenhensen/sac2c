@@ -519,13 +519,13 @@ POGOprf (node *arg_node, info *arg_info)
             DBUG_PRINT ("Looking at dyadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             loopcount = getLoopCountForFundef (arg_node, INFO_FUNDEF (arg_info));
-            arg1 = PRF_ARG1 (arg_node);
+            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (arg_node));
             AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
             exprsx = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
                                               AVIS_ISLCLASSSETVARIABLE, loopcount);
 
-            arg2 = PRF_ARG2 (arg_node);
+            arg2 = PHUTskipChainedAssigns (PRF_ARG2 (arg_node));
             AVIS_ISLCLASS (ID_AVIS (arg2)) = AVIS_ISLCLASSSETVARIABLE;
             exprsy = PHUTgenerateAffineExprs (arg2, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
@@ -538,7 +538,7 @@ POGOprf (node *arg_node, info *arg_info)
             DBUG_PRINT ("Looking at monadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             loopcount = getLoopCountForFundef (arg_node, INFO_FUNDEF (arg_info));
-            arg1 = PRF_ARG1 (arg_node);
+            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (arg_node));
             AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
             exprsx = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
