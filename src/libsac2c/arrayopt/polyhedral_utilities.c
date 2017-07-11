@@ -2384,8 +2384,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *PHUTgenerateAffineExprs( node *arg_node, node *fundef, lut_t *varlut,
- *            int islclass)
+ * @fn node *PHUTgenerateAffineExprs(...)
  *
  * @brief Does a recursive search, starting at arg_node,
  *        for a maximal chain of affine instructions.
@@ -2916,8 +2915,11 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
             lpavis = TBmakeAvis (TRAVtmpVarName ("LOOPCT"),
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (lpavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-            if (-1 != loopcount) { // known, constant loopcount
-                resel = BuildIslSimpleConstraint (lpavis, F_lt_SxS, TBmakeNum (loopcount),
+
+            // If this is a loopfun with known loopcount, use it.
+            if (FUNDEF_ISLOOPFUN (fundef) && (-1 != FUNDEF_LOOPCOUNT (fundef))) {
+                resel = BuildIslSimpleConstraint (lpavis, F_lt_SxS,
+                                                  TBmakeNum (FUNDEF_LOOPCOUNT (fundef)),
                                                   NOPRFOP, NULL);
                 res = TCappendExprs (res, resel);
             }
