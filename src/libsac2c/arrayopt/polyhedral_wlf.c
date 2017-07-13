@@ -443,9 +443,6 @@ PWLFperformFold (node *arg_node, node *pwlpart, info *arg_info)
     DBUG_RETURN (newsel);
 }
 
-#ifdef NEEDSWORK
-// This code is still under construction, as of 2017-06-21.
-
 /** <!--********************************************************************-->
  *
  * @fn node *BuildInverseProjectionScalar(...)
@@ -1202,7 +1199,6 @@ BuildInverseProjections (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-#endif // NEEDSWORK
 
 /** <!--********************************************************************-->
  *
@@ -1656,7 +1652,7 @@ PWLFprf (node *arg_node, info *arg_info)
                     DBUG_PRINT ("We now fold PWL %s into CWL %s with plresult %d",
                                 AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);
                     DBUG_PRINT ("Building inverse projection for cwl=%s", cwlnm);
-                    // FIXME arg_node = BuildInverseProjections( arg_node, arg_info);
+                    arg_node = BuildInverseProjections (arg_node, arg_info);
                     z = PWLFperformFold (arg_node, foldpwlpart, arg_info);
                     FREEdoFreeNode (arg_node);
                     arg_node = z;
