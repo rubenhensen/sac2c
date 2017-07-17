@@ -10,7 +10,7 @@ extern node *LFUarg2Caller (node *var, node *fundef);
 extern node *LFUrcv2Arg (node *rcv, node *fundef);
 extern node *LFUfindRecursiveCallAssign (node *arg_node);
 extern node *LFUgetStrideForAffineFun (node *rcv, node *lcv);
-extern node *LFUfindLacfunConditional (node *arg_node);
+extern node *LFUfindLoopfunConditional (node *arg_node);
 extern node *LFUfindAssignForCond (node *arg_node);
 extern node *LFUfindAssignBeforeCond (node *arg_node);
 extern node *LFUfindAssignOfType (node *assigns, nodetype n);

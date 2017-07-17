@@ -250,7 +250,7 @@ POGOfundef (node *arg_node, info *arg_info)
         (PHUTisFundefKludge (arg_node))) {   // Ignore fns such as "!="
         DBUG_PRINT ("Starting to traverse function %s", FUNDEF_NAME (arg_node));
         if (FUNDEF_ISLACFUN (arg_node)) {
-            lacfunprf = LFUfindLacfunConditional (arg_node);
+            lacfunprf = LFUfindLoopfunConditional (arg_node);
             if (NULL != lacfunprf) {
                 lacfunprf = ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf)));
                 INFO_LACFUNPRF (arg_info) = LET_EXPR (lacfunprf);
@@ -368,17 +368,19 @@ POGOap (node *arg_node, info *arg_info)
 
         // Traverse into the LACFUN
         INFO_LACFUN (arg_info) = lacfundef; // The called lacfun
-        FUNDEF_CALLAP (lacfundef) = INFO_NASSIGN (arg_info);
-        FUNDEF_CALLERFUNDEF (lacfundef) = INFO_FUNDEF (arg_info);
+        POLYSsetClearCallAp (lacfundef, INFO_FUNDEF (arg_info), INFO_NASSIGN (arg_info),
+                             TRUE);
+
         newfundef = TRAVdo (lacfundef, arg_info);
+
         DBUG_ASSERT (newfundef = lacfundef,
                      "Did not expect N_fundef of LACFUN to change");
         INFO_LACFUN (arg_info) = NULL; // Back to normal traversal
-        FUNDEF_CALLAP (lacfundef) = NULL;
-        FUNDEF_CALLERFUNDEF (lacfundef) = NULL;
+        POLYSsetClearCallAp (lacfundef, INFO_FUNDEF (arg_info), INFO_NASSIGN (arg_info),
+                             FALSE);
     }
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    // arg_node = TRAVcont( arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -400,39 +402,6 @@ POGOlet (node *arg_node, info *arg_info)
     INFO_LHS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
-}
-
-/** <!-- ****************************************************************** -->
- *
- * @fn int getLoopCountForFundef( node *arg_node, node *fundef)
- *
- * @brief Get the loopcount for the arithmetic progression vector
- *        of this loopfun.
- *
- * @param  nid - the parameter variable we are analyzing
- * @param  fundef - the N_fundef node for this loopfun
- *
- * @return: If nid is not part of the COND_COND that controls this
- *          loopfun, return the loopcount. Otherwise, return UNR_NONE.
- *
- ******************************************************************************/
-static int
-getLoopCountForFundef (node *arg_node, node *fundef)
-{
-    node *lacfunprf;
-    int z = UNR_NONE;
-
-    DBUG_ENTER ();
-
-    lacfunprf = LFUfindLacfunConditional (fundef);
-    if (NULL != lacfunprf) { // LOOPFUNs only
-        lacfunprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (lacfunprf))));
-        if (lacfunprf != arg_node) { // This is the COND_COND
-            z = FUNDEF_LOOPCOUNT (fundef);
-        }
-    }
-
-    DBUG_RETURN (z);
 }
 
 /** <!--*******************************************************************-->
@@ -493,7 +462,6 @@ POGOprf (node *arg_node, info *arg_info)
     node *condprf = NULL;
     node *condprfaft = NULL;
     int emp = POLY_RET_UNKNOWN;
-    int loopcount = -1;
     bool dopoly = FALSE;
     bool z = FALSE;
     bool resval = FALSE;
@@ -516,18 +484,17 @@ POGOprf (node *arg_node, info *arg_info)
         case F_val_le_val_SxS:
             DBUG_PRINT ("Looking at dyadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-            loopcount = getLoopCountForFundef (arg_node, INFO_FUNDEF (arg_info));
-            arg1 = PRF_ARG1 (arg_node);
+            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (arg_node));
             AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
             exprsx = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
-                                              AVIS_ISLCLASSSETVARIABLE, loopcount);
+                                              AVIS_ISLCLASSSETVARIABLE);
 
-            arg2 = PRF_ARG2 (arg_node);
+            arg2 = PHUTskipChainedAssigns (PRF_ARG2 (arg_node));
             AVIS_ISLCLASS (ID_AVIS (arg2)) = AVIS_ISLCLASSSETVARIABLE;
             exprsy = PHUTgenerateAffineExprs (arg2, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
-                                              AVIS_ISLCLASSSETVARIABLE, loopcount);
+                                              AVIS_ISLCLASSSETVARIABLE);
 
             dopoly = (NULL != exprsx) && (NULL != exprsy);
             break;
@@ -535,12 +502,11 @@ POGOprf (node *arg_node, info *arg_info)
         case F_non_neg_val_S:
             DBUG_PRINT ("Looking at monadic N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-            loopcount = getLoopCountForFundef (arg_node, INFO_FUNDEF (arg_info));
-            arg1 = PRF_ARG1 (arg_node);
+            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (arg_node));
             AVIS_ISLCLASS (ID_AVIS (arg1)) = AVIS_ISLCLASSSETVARIABLE;
             exprsx = PHUTgenerateAffineExprs (arg1, INFO_FUNDEF (arg_info),
                                               INFO_VARLUT (arg_info),
-                                              AVIS_ISLCLASSSETVARIABLE, loopcount);
+                                              AVIS_ISLCLASSSETVARIABLE);
             exprsy = NULL;
             dopoly = (NULL != exprsx);
             break;
@@ -553,22 +519,18 @@ POGOprf (node *arg_node, info *arg_info)
         // Don't call ISL if it can't do anything for us.
         if (dopoly) {
 
-#define KILLSSIMPLECONSTANTSDOWN
-#ifdef KILLSSIMPLECONSTANTSDOWN
             // If this is a LOOPFUN condprf, do not build constraint
             // for the relational. Otherwise, we get infinite loops!
-            condprf = LFUfindLacfunConditional (INFO_FUNDEF (arg_info));
+            condprf = LFUfindLoopfunConditional (INFO_FUNDEF (arg_info));
             if (NULL != condprf) {
                 condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
                 docondprf = (arg_node != condprf);
             }
 
-            condprfaft
-              = PHUTcollectCondprf (INFO_FUNDEF (arg_info), INFO_VARLUT (arg_info),
-                                    loopcount, docondprf);
+            condprfaft = PHUTcollectCondprf (INFO_FUNDEF (arg_info),
+                                             INFO_VARLUT (arg_info), docondprf);
             exprsx = TCappendExprs (exprsx, condprfaft);
             condprfaft = NULL;
-#endif // KILLSSIMPLECONSTANTSDOWN
 
             mappedprf = POGOmapPrf (PRF_PRF (arg_node));
             exprsfn = PHUTgenerateAffineExprsForGuard (mappedprf, arg1, arg2,
