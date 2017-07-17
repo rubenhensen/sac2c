@@ -90,6 +90,7 @@
 #include "algebraic_wlfi.h"
 #include "polyhedral_wlf.h"
 #include "polyhedral_setup.h"
+#include "deserialize.h"
 
 /** <!--********************************************************************-->
  *
