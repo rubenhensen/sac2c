@@ -1,4 +1,7 @@
-# configure version-manager script 
+# configure version-manager script
+
+# The version manager requires Puthon 2.
+FIND_PACKAGE (PythonInterp 2 EXACT REQUIRED)
 
 # create a dictionary that relates build type and the build postfix
 SET (BUILD_TYPE_POSTFIX_DICT)
@@ -20,4 +23,4 @@ SET (BUILD_TYPE_DIRECTORY_DICT "{ ${BUILD_TYPE_DIRECTORY_DICT} }")
 
 CONFIGURE_FILE (
   "${PROJECT_SOURCE_DIR}/scripts/sac2c-version-manager.in"
-  "${PROJECT_BINARY_DIR}/scripts/sac2c-version-manager" @ONLY)
+  "${PROJECT_BINARY_DIR}/script/sac2c-version-manager" @ONLY)
