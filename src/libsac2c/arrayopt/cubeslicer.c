@@ -194,7 +194,6 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
     info *arg_info;
 
     DBUG_ENTER ();
-#ifdef FIXME
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "called with non-fundef node");
 
     arg_info = MakeInfo (arg_node);
@@ -206,7 +205,6 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
 
     INFO_FOLDLUT (arg_info) = LUTremoveLut (INFO_FOLDLUT (arg_info));
     arg_info = FreeInfo (arg_info);
-#endif // FIXME
 
     DBUG_RETURN (arg_node);
 }

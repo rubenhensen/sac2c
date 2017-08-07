@@ -1742,7 +1742,7 @@ HandleNumber (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *HandleSelectWithShape( node *arg_node...)
+ * @fn node *HandleSelectWithShape( node *ids, node *arg_node...)
  *
  * @brief Handler for compositions of indexing on shape:
  *        Currently supported:
@@ -1750,17 +1750,18 @@ HandleNumber (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
  *          shpel = _sel_VxA_( iv, _shape_A_( var));
  *          Both of these will generate shpel >= 0.
  *
- * @param  arg_node: PRF_ARG2 for sel()
+ * @param  ids: the N_ids node for the result of the sel()
+ *         arg_node: PRF_ARG2 for sel()
  *
- * @return An N_exprs chain (or NULL)
- *         representing an ISL constraint, appended to res.
- *         Otherwise, incoming res.
+ * @return An N_exprs chain, representing ISL constraints
+ *         on arg_node and ids. Else, NULL.
  *
  ******************************************************************************/
 static node *
-HandleSelectWithShape (node *arg_node)
+HandleSelectWithShape (node *ids, node *arg_node)
 {
     node *z = NULL;
+    node *z2 = NULL;
     pattern *pat;
     node *m = NULL;
 
@@ -1771,10 +1772,12 @@ HandleSelectWithShape (node *arg_node)
 
     if (PMmatchFlat (pat, arg_node)) {
         z = BuildIslSimpleConstraint (arg_node, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
+        z2 = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
+        z = TCappendExprs (z, z2);
     }
     pat = PMfree (pat);
 
-    DBUG_PRINT ("Leaving HandleSelectWithShape for %s", AVIS_NAME (ID_AVIS (arg_node)));
+    DBUG_PRINT ("Finshed with %s", AVIS_NAME (ID_AVIS (arg_node)));
 
     DBUG_RETURN (z);
 }
@@ -1823,19 +1826,33 @@ PHUTsignum (node *arg, node *aft, node *fundef, lut_t *varlut, node *ids)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *HandleIota( node *arg_node...)
+ * @fn node *HandleIota(...)
  *
- * @brief Handler for indexing from iota(N)
- *        Currently supported:
+ * @brief Handler for:
+ *         Case 1: sel() from iota(N)
+ *         and
+ *         Case 2: sel() from genarray of scalar.
+ *
+ *        Case 1:
+ *          Q = iota(n);
+ *          ids = idx_sel( offset, Q);  OR
+ *          ids = _sel_VxA_( iv, Q);
+ *
+ *        Case 2:
  *          Q = genarray([shp], Scalar);
- *          el = idx_sel( offset, Q);  OR
- *          el = _sel_VxA_( iv, Q);
+ *          ids = idx_sel( offset, Q);  OR
+ *          ids = _sel_VxA_( iv, Q);
  *
- * @param  arg_node: The N_ids node that defines el.
+ * @param  ids:  The N_ids node that defines ids.
+ *         q: The N_id node that is PRF_ARG2 of the sel()
  *
- * @return: If arg_node selects from a with-loop, and that
+ * @return: Case 1: If q is a with-loop, and that
  *          loop is simple (See WLUTgetGenarrayScalar for details),
  *          we return constraints on the values in the with-loop.
+ *
+ *          Case 2: If q is all the same scalar, we return
+ *          constraints on that scalar.
+ *
  *          Else NULL.
  *
  * NB.     This code assumes that -check c will ensure that
@@ -1844,80 +1861,66 @@ PHUTsignum (node *arg, node *aft, node *fundef, lut_t *varlut, node *ids)
  *
  ******************************************************************************/
 static node *
-HandleIota (node *arg_node, node *fundef, lut_t *varlut)
+HandleIota (node *ids, node *q, node *fundef, lut_t *varlut)
 {
     node *res = NULL;
     node *z = NULL;
-    pattern *pat1;
-    pattern *pat2;
-    node *iv = NULL;
-    node *q = NULL;
     node *s = NULL;
     node *wl = NULL;
     node *lb = NULL;
     node *ub = NULL;
     node *lbub = NULL;
     node *withidids = NULL;
-    node *id;
     int idsidx;
 
     DBUG_ENTER ();
 
-    id = TBmakeId (IDS_AVIS (arg_node));
-    /* z = _sel_VxA_( iv, q); */
-    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
-                  PMvar (1, PMAgetNode (&q), 0));
-    /* z = _idx_sel( offset, q); */
-    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&iv), 0),
-                  PMvar (1, PMAgetNode (&q), 0));
-    if ((PMmatchFlat (pat1, id) || PMmatchFlat (pat2, id))) {
-        // We are doing a select, perhaps from a with-loop.
-        s = WLUTgetGenarrayScalar (q, FALSE);
-        if (NULL != s) { // s is a member of N_WITHIDS.
-            // Find the WL, if it exists
-            wl = WLUTid2With (q);
-            if (N_with == NODE_TYPE (wl)) {
-                // Find generator elements for LB and UB.
-                withidids = WITHID_IDS (PART_WITHID (WITH_PART (wl)));
-                idsidx = TClookupIdsNode (withidids, s);
-                DBUG_ASSERT (-1 != idsidx, "Could not find withidids element");
-                lbub = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (wl)));
-                if (N_array == NODE_TYPE (lbub)) {
-                    // Emit lb <= s
-                    lb = TCgetNthExprsExpr (idsidx, ARRAY_AELEMS (lbub));
-                    z = PHUTcollectAffineExprsLocal (lb, fundef, varlut, NULL,
-                                                     AVIS_ISLCLASSEXISTENTIAL);
-                    res = TCappendExprs (res, z);
-                    z = PHUTcollectAffineExprsLocal (s, fundef, varlut, NULL,
-                                                     AVIS_ISLCLASSSETVARIABLE);
-                    res = TCappendExprs (res, z);
-                    // Generate s >= lb
-                    z = BuildIslSimpleConstraint (s, F_ge_SxS, lb, NOPRFOP, NULL);
-                    res = TCappendExprs (res, z);
-                }
-
-                lbub = GENERATOR_BOUND2 (PART_GENERATOR (WITH_PART (wl)));
-                if (N_array == NODE_TYPE (lbub)) {
-                    // Emit s < ub
-                    ub = TCgetNthExprsExpr (idsidx, ARRAY_AELEMS (lbub));
-                    z = PHUTcollectAffineExprsLocal (ub, fundef, varlut, NULL,
-                                                     AVIS_ISLCLASSEXISTENTIAL);
-                    res = TCappendExprs (res, z);
-                    // Generate s < ub
-                    z = BuildIslSimpleConstraint (s, F_lt_SxS, ub, NOPRFOP, NULL);
-                    res = TCappendExprs (res, z);
-                }
+    //  Case 1: Are we selecting from a with-loop?
+    s = WLUTgetGenarrayScalar (q, FALSE);
+    if (NULL != s) { // s is a member of N_WITHIDS.
+        // Find the WL, if it exists
+        wl = WLUTid2With (q);
+        if (N_with == NODE_TYPE (wl)) {
+            // Find generator elements for LB and UB.
+            withidids = WITHID_IDS (PART_WITHID (WITH_PART (wl)));
+            idsidx = TClookupIdsNode (withidids, s);
+            DBUG_ASSERT (-1 != idsidx, "Could not find withidids element");
+            lbub = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (wl)));
+            if (N_array == NODE_TYPE (lbub)) {
+                // Emit lb <= s
+                lb = TCgetNthExprsExpr (idsidx, ARRAY_AELEMS (lbub));
+                z = PHUTcollectAffineExprsLocal (lb, fundef, varlut, NULL,
+                                                 AVIS_ISLCLASSEXISTENTIAL);
+                res = TCappendExprs (res, z);
+                z = PHUTcollectAffineExprsLocal (s, fundef, varlut, NULL,
+                                                 AVIS_ISLCLASSSETVARIABLE);
+                res = TCappendExprs (res, z);
+                // Generate s >= lb
+                z = BuildIslSimpleConstraint (s, F_ge_SxS, lb, NOPRFOP, NULL);
+                res = TCappendExprs (res, z);
             }
-            // Now make el = s (in iv=[i,j,s,k] in the WL generator)
-            z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, s, NOPRFOP, NULL);
-            res = TCappendExprs (res, z);
-        }
-    }
-    pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
 
-    DBUG_PRINT ("Leaving HandleIota for lhs=%s", AVIS_NAME (ID_AVIS (id)));
-    id = FREEdoFreeNode (id);
+            lbub = GENERATOR_BOUND2 (PART_GENERATOR (WITH_PART (wl)));
+            if (N_array == NODE_TYPE (lbub)) {
+                // Emit s < ub
+                ub = TCgetNthExprsExpr (idsidx, ARRAY_AELEMS (lbub));
+                z = PHUTcollectAffineExprsLocal (ub, fundef, varlut, NULL,
+                                                 AVIS_ISLCLASSEXISTENTIAL);
+                res = TCappendExprs (res, z);
+                // Generate s < ub
+                z = BuildIslSimpleConstraint (s, F_lt_SxS, ub, NOPRFOP, NULL);
+                res = TCappendExprs (res, z);
+            }
+        }
+        // Now make ids = s (in iv=[i,j,s,k] in the WL generator)
+        z = BuildIslSimpleConstraint (ids, F_eq_SxS, s, NOPRFOP, NULL);
+        res = TCappendExprs (res, z);
+    } else {
+        // Case 2: Selecting from all-same-value?
+        // this case may be handled by SCCF already...
+    }
+
+    DBUG_PRINT ("Finished with lhs=%s", AVIS_NAME (IDS_AVIS (ids)));
 
     DBUG_RETURN (res);
 }
@@ -2283,14 +2286,15 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                                                  AVIS_ISLCLASSEXISTENTIAL);
                 res = TCappendExprs (res, z);
 
-                z = HandleIota (ids, fundef, varlut);
+                z = HandleIota (ids, arg2, fundef, varlut);
                 res = TCappendExprs (res, z);
 
-                z2 = HandleSelectWithShape (arg2);
+                z2 = HandleSelectWithShape (ids, arg2);
                 res = TCappendExprs (res, z2);
 
                 // We may want to clean up IdxselArrayOfEqualElements
                 // and call it here, in case we have sel(iv, [ i,i,i,i...,i]
+                // Actually, this should be handled by CF, I think.
 
                 if ((NULL == z) && (NULL == z2)) { // unknown sel
                     // We know nothing about arg2, so we make it a parameter
