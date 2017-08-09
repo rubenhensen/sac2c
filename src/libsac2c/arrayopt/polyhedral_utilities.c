@@ -2282,9 +2282,6 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
             case F_idx_sel:
             case F_sel_VxA:
                 arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
 
                 z = HandleIota (ids, arg2, fundef, varlut);
                 res = TCappendExprs (res, z);
