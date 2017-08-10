@@ -1761,7 +1761,6 @@ static node *
 HandleSelectWithShape (node *ids, node *arg_node)
 {
     node *z = NULL;
-    node *z2 = NULL;
     pattern *pat;
     node *m = NULL;
 
@@ -1771,9 +1770,7 @@ HandleSelectWithShape (node *ids, node *arg_node)
     pat = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&m), 0));
 
     if (PMmatchFlat (pat, arg_node)) {
-        z = BuildIslSimpleConstraint (arg_node, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
-        z2 = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
-        z = TCappendExprs (z, z2);
+        z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP, NULL);
     }
     pat = PMfree (pat);
 
