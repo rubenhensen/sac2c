@@ -140,7 +140,16 @@ extern void SAC_CUDA_HWLOC_init (int);
     cudaMemcpy (SAC_ND_A_FIELD (to_NT) + offset, &from_NT, sizeof (basetype),            \
                 cudaMemcpyHostToDevice);                                                 \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
-#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg
+#define SAC_CUDA_MEM_TRANSFER_SxA(to_NT, offset, from_NT, basetype)                      \
+    cudaHostRegister (&from_NT, sizeof (basetype), cudaHostRegisterPortable);            \
+    SAC_GET_CUDA_MALLOC_ERROR ();                                                        \
+    cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT) + offset, &from_NT, sizeof (basetype),       \
+                     cudaMemcpyHostToDevice, 0);                                         \
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();                                                  \
+    cudaHostUnregister (&from_NT);                                                       \
+    SAC_GET_CUDA_FREE_ERROR ();
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_CUDA_MEM_TRANSFER_SxA(to_NT, offset, from_NT, basetype)                      \
     cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT) + offset, &from_NT, sizeof (basetype),       \
                      cudaMemcpyHostToDevice, 0);                                         \
@@ -160,7 +169,17 @@ extern void SAC_CUDA_HWLOC_init (int);
     cudaMemcpy (&SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT) + offset,              \
                 sizeof (basetype), cudaMemcpyDeviceToHost);                              \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
-#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg
+#define SAC_CUDA_MEM_TRANSFER_AxS(to_NT, offset, from_NT, basetype)                      \
+    cudaHostRegister (&SAC_ND_A_FIELD (to_NT), sizeof (basetype),                        \
+                      cudaHostRegisterPortable);                                         \
+    SAC_GET_CUDA_MALLOC_ERROR ();                                                        \
+    cudaMemcpyAsync (&SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT) + offset,         \
+                     sizeof (basetype), cudaMemcpyDeviceToHost, 0);                      \
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();                                                  \
+    cudaHostUnregister (&SAC_ND_A_FIELD (to_NT));                                        \
+    SAC_GET_CUDA_FREE_ERROR ();
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_CUDA_MEM_TRANSFER_AxS(to_NT, offset, from_NT, basetype)                      \
     cudaMemcpyAsync (&SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT) + offset,         \
                      sizeof (basetype), cudaMemcpyDeviceToHost, 0);                      \
@@ -186,7 +205,30 @@ extern void SAC_CUDA_HWLOC_init (int);
     cudaMemcpy (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                        \
                 SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction);          \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
-#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg
+#define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
+    if (direction == cudaMemcpyHostToDevice) {                                           \
+        cudaHostRegister (SAC_ND_A_FIELD (from_NT),                                      \
+                          SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype),            \
+                          cudaHostRegisterPortable);                                     \
+        SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
+    } else if (direction == cudaMemcpyDeviceToHost) {                                    \
+        cudaHostRegister (SAC_ND_A_FIELD (to_NT),                                        \
+                          SAC_ND_A_MIRROR_SIZE (to_NT) * sizeof (basetype),              \
+                          cudaHostRegisterPortable);                                     \
+        SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
+    }                                                                                    \
+    cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                   \
+                     SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction, 0);  \
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();                                                  \
+    if (direction == cudaMemcpyHostToDevice) {                                           \
+        cudaHostUnregister (SAC_ND_A_FIELD (from_NT));                                   \
+        SAC_GET_CUDA_FREE_ERROR ();                                                      \
+    } else if (direction == cudaMemcpyDeviceToHost) {                                    \
+        cudaHostUnregister (SAC_ND_A_FIELD (to_NT));                                     \
+        SAC_GET_CUDA_FREE_ERROR ();                                                      \
+    }
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
     cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                   \
                      SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction, 0);  \
