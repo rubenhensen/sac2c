@@ -537,6 +537,15 @@ CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
 CYCLEPHASEFUN (cwle, "Eliminate copy with-loops", CWLEdoCopyWithLoopElimination,
                global.optimize.docwle, opt, saacyc)
 
+CYCLEPHASEFUN (wli, "Inferring foldable with-loops", WLIdoWLI, global.optimize.dowlf, opt,
+               saacyc)
+
+CYCLEPHASEFUN (wlf, "Applying with-loop folding", WLFdoWLF, global.optimize.dowlf, opt,
+               saacyc)
+
+CYCLEPHASEFUNOLD (wlfssa, "Restoring SSA form after with-loop folding", SSATdoTransform,
+                  global.optimize.dowlf, opt, saacyc)
+
 #ifdef MISGUIDED // Causes woes in AWLFI inverse projection. Should be post-opt
 CYCLEPHASEFUNOLD (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
                   IVERASdoWithloopReuseAndOptimisation,
