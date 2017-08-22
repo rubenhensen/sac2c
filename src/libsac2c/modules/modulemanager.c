@@ -7,6 +7,7 @@
 #include "debug.h"
 #include "build.h"
 #include "str.h"
+#include "stringset.h"
 #include "memory.h"
 #include "tree_basic.h"
 #include "globals.h"
@@ -31,6 +32,11 @@ typedef union {
     void *v;
     stringset_t *(*f) (void);
 } deptabfun_u;
+
+typedef union {
+    void *v;
+    stringset_t *(*f) (void);
+} modheaders_u;
 
 typedef union {
     void *v;
@@ -196,6 +202,25 @@ checkWhetherDeprecated (module_t *module)
     DBUG_RETURN ();
 }
 
+static stringset_t *
+loadModuleHeaders (const char *modname, dynlib_t lib)
+{
+    modheaders_u result;
+    char *name;
+
+    DBUG_ENTER ();
+
+    name = (char *)MEMmalloc (sizeof (char) * (STRlen (modname) + 11));
+    sprintf (name, "__%s_HEADERS", modname);
+    result.v = LIBMgetLibraryFunction (name, lib);
+    MEMfree (name);
+
+    DBUG_ASSERT (result.f != NULL, "Attributes function for `%s' does not seem to exist!",
+                 modname);
+
+    DBUG_RETURN (result.f ());
+}
+
 static void
 addNamespaceMappings (module_t *module)
 {
@@ -273,6 +298,7 @@ AddModuleToPool (const char *name)
 
     result->name = STRcpy (name);
     result->lib = LIBMloadLibrary (result->sofile);
+    result->headers = loadModuleHeaders (name, result->lib);
     result->stable = NULL;
     result->next = modulepool;
     modulepool = result;

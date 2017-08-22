@@ -22,6 +22,8 @@
 #include "traverse.h"
 #include "tree_compound.h"
 #include "str.h"
+#include "str_buffer.h"
+#include "stringset.h"
 #include "memory.h"
 #include "new_types.h"
 #include "shape.h"
@@ -144,6 +146,41 @@ SATserializeSharedString (info *info, const char *attr, node *parent)
     DBUG_ENTER ();
 
     SATserializeString (info, attr, parent);
+
+    DBUG_RETURN ();
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeStringSet
+ *
+ * @brief generates code to serialize a StringSet attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param strs   the string set
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+void
+SATserializeStringSet (info *info, stringset_t *strs, node *parent)
+{
+    str_buf *sbuf;
+
+    DBUG_ENTER ();
+
+    if (strs == NULL) {
+        DBUG_PRINT ("Processing StringSet (null)");
+
+        fprintf (INFO_SER_FILE (info), "NULL");
+    } else {
+        DBUG_PRINT ("Processing StringSet");
+
+        sbuf = SBUFcreate (1024);
+        sbuf = SBUFprintf (sbuf, "NULL");
+        sbuf = STRSfold (&STRStoSafeCEncodedStringFold, strs, sbuf);
+        fprintf (INFO_SER_FILE (info), "%s", SBUF2str (sbuf));
+        sbuf = SBUFfree (sbuf);
+    }
 
     DBUG_RETURN ();
 }

@@ -80,7 +80,7 @@
     <type name="CudaExecMode" ctype="cudaexecmode_t" init="MUTH_ANY"
     copy="literal" />
     <type name="StringSet" ctype="stringset_t*" init="NULL"
-    copy="function" persist="no" />
+    copy="function" />
     <type name="IndexInfo" ctype="index_info*" init="NULL"
     copy="function" persist="no" />
     <type name="TypeCheckingStatus" ctype="NTC_stat" init="NTC_not_checked"
@@ -4084,7 +4084,7 @@
           </type>
         </attribute>
         <attribute name="Headers" default="NULL" inconstructor="no">
-          <description>Set of header files "&gt;file.h&lt;" used for external declarations</description>
+          <description>Set of header files "&lt;file.h&gt;" used for external declarations</description>
           <type name="StringSet">
             <targets>
               <target mandatory="no">

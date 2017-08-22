@@ -148,6 +148,7 @@ GenerateSerFileModuleInfo (node *module, FILE *file)
     DBUG_ENTER ();
 
     char *uppercase;
+    str_buf *sbuf;
 
     uppercase = STRcpy (NSgetName (MODULE_NAMESPACE (module)));
 
@@ -172,6 +173,15 @@ GenerateSerFileModuleInfo (node *module, FILE *file)
              "int __%s_USEDFLAGS( void) {\n"
              "  return( %d); \n}\n\n",
              NSgetName (MODULE_NAMESPACE (module)), GLOBALS_MODFLAGS);
+
+    sbuf = SBUFcreate (1024);
+    sbuf = SBUFprintf (sbuf, "NULL");
+    sbuf = STRSfold (&STRStoSafeCEncodedStringFold, MODULE_HEADERS (module), sbuf);
+    fprintf (file,
+             "void * __%s_HEADERS( void) {\n"
+             "  return( %s); \n}\n\n",
+             NSgetName (MODULE_NAMESPACE (module)), SBUF2str (sbuf));
+    sbuf = SBUFfree (sbuf);
 
     if (MODULE_DEPRECATED (module) == NULL) {
         fprintf (file,

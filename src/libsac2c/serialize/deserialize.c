@@ -169,7 +169,7 @@ makeAliasing (node *target, ds_aliasing_t *next)
  */
 
 static void
-InsertIntoState (node *item)
+InsertIntoState (node *item, module_t *module)
 {
     usertype udt, alias;
 
@@ -189,6 +189,21 @@ InsertIntoState (node *item)
         FUNDEF_ISPROVIDED (item) = FALSE;
         FUNDEF_WASUSED (item) = FALSE;
         FUNDEF_WASIMPORTED (item) = FALSE;
+
+        /*
+         * check and see if the fundef has a external header dependency:
+         *  if so we append the use/import modules HEADERS attribute
+         *  to the current module HEADERS.
+         */
+        if (FUNDEF_HEADER (item)) {
+            DBUG_ASSERT (module->headers != NULL,
+                         "Module does not have a HEADERS attribute!");
+
+            // join HEADERS to current module
+            MODULE_HEADERS (INFO_MODULE (DSstate))
+              = STRSjoin (MODULE_HEADERS (INFO_MODULE (DSstate)),
+                          STRSduplicate (module->headers));
+        }
 
         if (FUNDEF_ISEXTERN (item)) {
             INFO_FUNDECS (DSstate) = TCappendFundef (INFO_FUNDECS (DSstate), item);
@@ -646,7 +661,7 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
 
                 entryp = serfun (DSstate);
                 /* add to ast */
-                InsertIntoState (entryp);
+                InsertIntoState (entryp, module);
 
                 updateContextInformation (entryp);
             }
@@ -714,7 +729,7 @@ AddSymbolById (const char *symbid, const char *module, bool resetimport)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Adding symbol '%s' from module '5s'...", symbid, module);
+    DBUG_PRINT ("Adding symbol '%s' from module '%s'...", symbid, module);
 
     if (resetimport) {
         resetimport = INFO_IMPORTMODE (DSstate);
@@ -730,7 +745,7 @@ AddSymbolById (const char *symbid, const char *module, bool resetimport)
     entryp = ((serfun0_p)fun) ();
 
     /* add to ast */
-    InsertIntoState (entryp);
+    InsertIntoState (entryp, mod);
 
     updateContextInformation (entryp);
 

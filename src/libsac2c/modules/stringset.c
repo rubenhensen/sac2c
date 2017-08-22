@@ -4,6 +4,7 @@
 #include "debug.h"
 
 #include "str.h"
+#include "str_buffer.h"
 #include "memory.h"
 #include "check_mem.h"
 
@@ -117,6 +118,30 @@ STRStouch (stringset_t *set, info *arg_info)
     DBUG_RETURN ();
 }
 
+/*
+ * This is a helper function used with the STRSfold operation.
+ * It sanitizes each entry in the STRS and creates a nested iteration of
+ * STRSadds.
+ */
+void *
+STRStoSafeCEncodedStringFold (const char *entity, strstype_t kind, void *rest)
+{
+    char *safe_entity, *tmp_str;
+    str_buf *buf = (str_buf *)rest;
+
+    DBUG_ENTER ();
+
+    safe_entity = STRstring2SafeCEncoding (entity);
+    tmp_str = SBUF2str (buf);
+    SBUFflush (buf);
+    buf = SBUFprintf (buf, "STRSadd( \"%s\", %d, %s)", safe_entity, kind, tmp_str);
+
+    MEMfree (safe_entity);
+    MEMfree (tmp_str);
+
+    DBUG_RETURN ((void *)buf);
+}
+
 void *
 STRSprintFoldFun (const char *entry, strstype_t kind, void *rest)
 {
@@ -130,6 +155,9 @@ STRSprintFoldFun (const char *entry, strstype_t kind, void *rest)
         break;
     case STRS_extlib:
         printf ("(external library)\n");
+        break;
+    case STRS_headers:
+        printf ("(module headers)\n");
         break;
     default:
         printf ("(unknown)\n");

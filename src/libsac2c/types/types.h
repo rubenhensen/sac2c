@@ -944,6 +944,7 @@ typedef struct MODULE_T {
     char *name;
     char *sofile;
     dynlib_t lib;
+    stringset_t *headers;
     sttable_t *stable;
     struct MODULE_T *next;
     int usecount;
