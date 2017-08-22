@@ -1210,21 +1210,34 @@ PRTspids (node *arg_node, info *arg_info)
  ******************************************************************************/
 
 static void *
-AddHeadersDependency (const char *header, strstype_t kind, void *buf)
+AddHeadersDependency (const char *header, strstype_t kind, void *nil)
 {
     DBUG_ENTER ();
 
-    str_buf *sbuf = (str_buf *)buf;
-
     switch (kind) {
     case STRS_headers:
-        SBUFprintf (sbuf, "#include %s\n", header);
+        fprintf (global.outfile, "#include %s\n", header);
         break;
     default:
+        CTIerrorInternal ("Unable to print module headers!\n");
         break;
     }
 
-    DBUG_RETURN (buf);
+    DBUG_RETURN ((void *)NULL);
+}
+
+static void
+PrintModuleHeaders (stringset_t *headers)
+{
+    DBUG_ENTER ();
+
+    fprintf (global.outfile,
+             "\n\n/* Additional headers for external function declarations */\n");
+
+    /* print external headers */
+    STRSfold (&AddHeadersDependency, headers, NULL);
+
+    DBUG_RETURN ();
 }
 
 node *
@@ -1263,14 +1276,7 @@ PRTmodule (node *arg_node, info *arg_info)
         GSCprintFileHeader (arg_node);
 
         if (NULL != MODULE_HEADERS (arg_node)) {
-            fprintf (global.outfile,
-                     "/* Additional headers for external function declarations */\n");
-            str_buf *headers_buf = SBUFcreate (1);
-            STRSfold (AddHeadersDependency, MODULE_HEADERS (arg_node), headers_buf);
-            char *headers_subst = SBUF2strAndFree (&headers_buf);
-            /* print external headers */
-            fprintf (global.outfile, "%s\n", headers_subst);
-            MEMfree (headers_subst);
+            PrintModuleHeaders (MODULE_HEADERS (arg_node));
         }
 
         if (NULL != MODULE_STRUCTS (arg_node)) {
@@ -1390,6 +1396,10 @@ PRTmodule (node *arg_node, info *arg_info)
             break;
         default:
             break;
+        }
+
+        if (NULL != MODULE_HEADERS (arg_node)) {
+            PrintModuleHeaders (MODULE_HEADERS (arg_node));
         }
 
         /*
