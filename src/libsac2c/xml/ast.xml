@@ -2952,8 +2952,10 @@
     <traversal id="WRCI" name="With-loop reuse candidate inference" default="sons" include="wrci.h">
       <travuser>
         <node name="Fundef" />
+        <node name="Arg" />
         <node name="Assign" />
         <node name="Let" />
+        <node name="Ids" />
         <node name="With" />     
         <node name="Genarray" />     
         <node name="Modarray" />     

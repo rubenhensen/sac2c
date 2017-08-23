@@ -1,8 +1,61 @@
 /**
  * @defgroup wrci With-loop reuse candidate inference
  *
- * WL reuse candidates are all arrays A that are accessed only
- * by means of selection at A[iv]
+ * This module tries to identify With-loop reuse candidates.
+ * It supports 4 kinds of reuse candidates, each of which can be
+ * turned on/off separately. These are:
+ * 1) RIP (Reuse with In-Place selection) [implemented in ReuseWithArrays.c]
+ *    WL reuse candidates are all arrays A that are accessed only
+ *    by means of selection at A[iv]i within the given WL.
+ * 2) RWO (Reuse With Offset) [implemented in reusewithoffset.c]
+ *    Looks for a WL that contains n-1 copy partitions and exactly one non-copy partition.
+ *    If that is found, it makes allows th non-copy partition to have an access into the
+ *    copy-from-source (ie potential reuse candidate) of the form A[iv +- offset] where
+ *    offset is bigger than the generator width. This guarantees accesses into the copy
+ * partitions (at least if the accesses are legal :-) 3) PRA (Polyhedral Reuse Analysis)
+ * [implemented in polyhedral_reuse_analysis.c] Refines RWO and uses polyhedral stuff to
+ * enable accesses of the form A[ linear_expr( iv)] provided we can show all these
+ * accesses fall into copy partitions or non-modified partitions... 4) EMR (Extended
+ * Memory Reuse) [implemented here :-)] Here, we add arrays that are of the same shape and
+ * tha are defined in the current function but are not referenced in WL-body at all. This
+ * may sound counter-intuitive at first, but it enables memory reuse of the following
+ * kind:
+ *
+ *    Consider:
+ *      int main( )
+ *      {
+ *         a = genarray( [15], 0);
+ *
+ *         print(a);
+ *
+ *         b = genarray( [15], 1);
+ *         print(b);
+ *
+ *         return(0);
+ *      }
+ *
+ *    Here, we would like to reuse the memory allocated for a when compting b.
+ *
+ *    The ability to do such reuse is instrumental when trying to achieve a dual buffer
+ *    swapping solution for a loop around something like     a = relax( a);
+ *
+ * Note here, that all these reuse candidate inferences potentially over-approximate the
+ * set of candidates (eg arrays that are still refered to later); however, those cases are
+ * being narrowed by subphases of the mem-phase, specifically SRCE and FRC, and by dynamic
+ * reference count inspections at runtime :-)
+ *
+ *
+ * For some reason WRCI it is run prior to Index Vector Elimination (IVE). I think the
+ * reason might initially have been so that there is no need to deal with sel and idx_sel
+ * but I am not sure about this :-( It seems that all the anylyses actually do support
+ * idx_sel now and the whole thing might be run later but I am not sure; more intensive
+ * testing would be required to do this! How far later is not entirely clear. Since it
+ * builds on N_with and not Nwith2, it definitly needs to be run before WLT (or adapted to
+ * cope with N_with2).
+ *
+ * However, 4) does NEED to run later as we must not add reuse candidates that might have
+ * been optimised away in the meantime.... For this very purpose we offer a second entry
+ * point which applies EMR only and potentially adds more reuse candidates.
  *
  * @ingroup mm
  *
@@ -20,6 +73,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
+#include "DupTree.h"
 
 #define DBUG_PREFIX "WRCI"
 #include "debug.h"
@@ -43,6 +97,8 @@ struct INFO {
     node *fundef;
     node *lhs;
     node *rc;
+    node *emr_rc;
+    bool run_emr;
 };
 
 /*
@@ -51,6 +107,8 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_RC(n) ((n)->rc)
+#define INFO_EMR_RC(n) ((n)->emr_rc)
+#define INFO_RUN_EMR(n) ((n)->run_emr)
 
 /*
  * INFO functions
@@ -67,6 +125,8 @@ MakeInfo (void)
     INFO_FUNDEF (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_RC (result) = NULL;
+    INFO_EMR_RC (result) = NULL;
+    INFO_RUN_EMR (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -110,11 +170,42 @@ WRCIdoWithloopReuseCandidateInference (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIdoInferWithloopExtendedMemoryReuseCandidates( node *syntax_tree)
+ *
+ * @brief
+ *
+ * @param syntax_tree
+ *
+ * @return modified syntax_tree.
+ *
+ *****************************************************************************/
+node *
+WRCIdoWithloopExtendedMemoryReuseCandidateInference (node *syntax_tree)
+{
+    info *arg_info;
+
+    DBUG_ENTER ();
+
+    arg_info = MakeInfo ();
+    INFO_RUN_EMR (arg_info) = TRUE;
+
+    TRAVpush (TR_wrci);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
 /******************************************************************************
  *
  * Helper functions
  *
  *****************************************************************************/
+
 static node *
 ElimDupesOfAvis (node *avis, node *exprs)
 {
@@ -146,6 +237,15 @@ ElimDupes (node *exprs)
     }
 
     DBUG_RETURN (exprs);
+}
+
+static node *
+EMRid (node *id, info *arg_info)
+{
+    DBUG_ENTER ();
+    DBUG_PRINT ("filtering out %s", ID_NAME (id));
+    INFO_EMR_RC (arg_info) = ElimDupesOfAvis (ID_AVIS (id), INFO_EMR_RC (arg_info));
+    DBUG_RETURN (id);
 }
 
 static bool
@@ -228,12 +328,54 @@ WRCIfundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("\nchecking function %s ...", FUNDEF_NAME (arg_node));
         INFO_FUNDEF (arg_info) = arg_node;
+        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        if (INFO_EMR_RC (arg_info) != NULL) {
+            INFO_EMR_RC (arg_info) = FREEdoFreeTree (INFO_EMR_RC (arg_info));
+        }
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIarg( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCIarg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("adding emr_rc %s ...", ARG_NAME (arg_node));
+    INFO_EMR_RC (arg_info)
+      = TBmakeExprs (TBmakeId (ARG_AVIS (arg_node)), INFO_EMR_RC (arg_info));
+
+    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIids( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCIids (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("adding emr_rc %s ...", IDS_NAME (arg_node));
+    INFO_EMR_RC (arg_info)
+      = TBmakeExprs (TBmakeId (IDS_AVIS (arg_node)), INFO_EMR_RC (arg_info));
+
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -271,6 +413,9 @@ WRCIlet (node *arg_node, info *arg_info)
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
+    /* Only AFTER we traversed the body we add the defined vars in the EMR_RCs */
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -289,7 +434,7 @@ WRCIwith (node *arg_node, info *arg_info)
      * These are all arrays A that are accessed only by means of selection at
      * A[iv]
      */
-    if (global.optimize.dorip) {
+    if (global.optimize.dorip && !INFO_RUN_EMR (arg_info)) {
         DBUG_PRINT ("Looking for A[iv] only use...");
         INFO_RC (arg_info) = REUSEdoGetReuseArrays (arg_node, INFO_FUNDEF (arg_info));
         DBUG_PRINT ("candidates after conventional reuse: ");
@@ -301,7 +446,7 @@ WRCIwith (node *arg_node, info *arg_info)
     /*
      * Find more complex reuse candidates
      */
-    if (global.optimize.dorwo) {
+    if (global.optimize.dorwo && !INFO_RUN_EMR (arg_info)) {
         DBUG_PRINT ("Looking for more complex reuse candidates...");
         INFO_RC (arg_info)
           = TCappendExprs (INFO_RC (arg_info),
@@ -312,7 +457,7 @@ WRCIwith (node *arg_node, info *arg_info)
         });
     }
 
-    if (global.optimize.dopra) {
+    if (global.optimize.dopra && !INFO_RUN_EMR (arg_info)) {
         /*
          * Find more complex reuse candidates
          */
@@ -327,11 +472,39 @@ WRCIwith (node *arg_node, info *arg_info)
         });
     }
 
+    if (INFO_RUN_EMR (arg_info)) {
+        DBUG_PRINT ("potential EMR candidates:");
+        DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
+            PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
+        });
+
+        /* first filter out those vars that are being used in the WL body: */
+        anontrav_t emrtrav[2] = {{N_id, &EMRid}, {(nodetype)0, NULL}};
+        TRAVpushAnonymous (emrtrav, &TRAVsons);
+        arg_node = TRAVdo (arg_node, arg_info);
+        TRAVpop ();
+
+        DBUG_PRINT ("potential EMR candidates after pruning those used in WL body:");
+        DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
+            PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
+        });
+
+        INFO_RC (arg_info) = TCappendExprs (WITHOP_RC (WITH_WITHOP (arg_node)),
+                                            DUPdoDupTree (INFO_EMR_RC (arg_info)));
+        DBUG_PRINT ("candidates after extended memory reuse: ");
+        DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
+            PRTdoPrintFile (stderr, INFO_RC (arg_info));
+        });
+    }
+
     /*
      * Eliminate duplicates of reuse candidates
      */
     INFO_RC (arg_info) = ElimDupes (INFO_RC (arg_info));
 
+    DBUG_PRINT ("final candidates after ElimDupes: ");
+    DBUG_EXECUTE (
+      if (INFO_RC (arg_info) != NULL) { PRTdoPrintFile (stderr, INFO_RC (arg_info)); });
     /*
      * Annotate RCs and find further reuse candidates if appropriate
      */
