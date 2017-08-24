@@ -435,73 +435,84 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
         PWL = AWLFIfindWL (PWL); /* Now the N_with */
 
         /* Allow naked _sel_() of WL */
-        if (AWLFIisNakedWL (level, AVIS_DEFDEPTH (producerWLavis))) {
-            cwlp = NULL; /* cwlp was a lie anyway, in this case */
-        }
-        if (((AVIS_DEFDEPTH (producerWLavis) + 1) >= level) && (WLUTisSingleOpWl (PWL))) {
-            DBUG_PRINT ("PWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
-                        AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
-                        AVIS_WL_NEEDCOUNT (producerWLavis));
-            /* Search for pwlp that intersects cwlp */
-            INFO_INTERSECTTYPE (arg_info)
-              = CUBSLfindMatchingPart (arg_node, cwlp, PWL, NULL,
-                                       &INFO_PRODUCERPART (arg_info));
+        // TEMP DEBUG logd.sac by killing naked CWL folding
+        if (NULL != cwlp) {
 
-            switch (INFO_INTERSECTTYPE (arg_info)) {
+            if (AWLFIisNakedWL (level, AVIS_DEFDEPTH (producerWLavis))) {
+                cwlp = NULL; /* cwlp was a lie anyway, in this case */
+            }
+            if (((AVIS_DEFDEPTH (producerWLavis) + 1) >= level)
+                && (WLUTisSingleOpWl (PWL))) {
+                DBUG_PRINT ("PWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
+                            AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
+                            AVIS_WL_NEEDCOUNT (producerWLavis));
+                /* Search for pwlp that intersects cwlp */
+                INFO_INTERSECTTYPE (arg_info)
+                  = CUBSLfindMatchingPart (arg_node, cwlp, PWL, NULL,
+                                           &INFO_PRODUCERPART (arg_info));
 
-            default:
-                DBUG_PRINT ("Should not get here.");
-                DBUG_UNREACHABLE ("We are confused");
-                break;
+                switch (INFO_INTERSECTTYPE (arg_info)) {
 
-            case INTERSECT_unknown:
-            case INTERSECT_sliceneeded:
-            case INTERSECT_null:
-                DBUG_PRINT ("Cube can not be intersected exactly");
-                pwlp = NULL;
-                break;
+                default:
+                    DBUG_PRINT ("Should not get here.");
+                    DBUG_UNREACHABLE ("We are confused");
+                    break;
 
-            case INTERSECT_exact:
-                DBUG_PRINT ("Cube can be folded");
-                pwlp = INFO_PRODUCERPART (arg_info);
-                break;
+                case INTERSECT_unknown:
+                case INTERSECT_sliceneeded:
+                case INTERSECT_null:
+                    DBUG_PRINT ("Cube can not be intersected exactly");
+                    pwlp = NULL;
+                    break;
+
+                case INTERSECT_exact:
+                    DBUG_PRINT ("Cube can be folded");
+                    pwlp = INFO_PRODUCERPART (arg_info);
+                    break;
+                }
+
+                /* Allow fold if needcounts match OR if pwlp
+                 * has empty code block. This is a crude cost function:
+                 * We should allow "cheap" PWL partitions to fold.
+                 * E.g., toi(iota(N)).
+                 */
+                if ((NULL != pwlp) &&
+                    // I am disabling this check. We'll see who complains about duplicate
+                    // work (when PWL gets copied into several CWLs).
+                    // I think a better fix is to write a cost function for each PWL
+                    // partition, and allow AWLF if the cost is "low enough".
+                    //
+                    // Oops: we need the cost function: ipbb.sac ended up folding the
+                    // _aplmod_() reshape function into the inner loop of the matrix
+                    // product. That was a bad idea, as it turns out, as it's quite
+                    // expensive.
+                    //
+                    ((AVIS_NEEDCOUNT (producerWLavis)
+                      != AVIS_WL_NEEDCOUNT (producerWLavis)))
+                    && (!WLUTisEmptyPartitionCodeBlock (pwlp))) {
+                    DBUG_PRINT (
+                      "Can't intersect PWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
+                      AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
+                      AVIS_WL_NEEDCOUNT (producerWLavis));
+                    pwlp = NULL;
+                }
+            } else {
+                DBUG_PRINT ("PWL %s will never fold. AVIS_DEFDEPTH: %d, level: %d",
+                            AVIS_NAME (producerWLavis), AVIS_DEFDEPTH (producerWLavis),
+                            level);
             }
 
-            /* Allow fold if needcounts match OR if pwlp
-             * has empty code block. This is a crude cost function:
-             * We should allow "cheap" PWL partitions to fold.
-             * E.g., toi(iota(N)).
-             */
-            if ((NULL != pwlp) &&
-                // I am disabling this check. We'll see who complains about duplicate
-                // work (when PWL gets copied into several CWLs).
-                // I think a better fix is to write a cost function for each PWL
-                // partition, and allow AWLF if the cost is "low enough".
-                //
-                // Oops: we need the cost function: ipbb.sac ended up folding the
-                // _aplmod_() reshape function into the inner loop of the matrix
-                // product. That was a bad idea, as it turns out, as it's quite expensive.
-                //
-                ((AVIS_NEEDCOUNT (producerWLavis) != AVIS_WL_NEEDCOUNT (producerWLavis)))
-                && (!WLUTisEmptyPartitionCodeBlock (pwlp))) {
-                DBUG_PRINT (
-                  "Can't intersect PWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
-                  AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
-                  AVIS_WL_NEEDCOUNT (producerWLavis));
-                pwlp = NULL;
+            if (NULL != pwlp) {
+                DBUG_PRINT ("PWL %s will be folded.", AVIS_NAME (producerWLavis));
+            } else {
+                DBUG_PRINT ("PWL %s can not be folded, at present.",
+                            AVIS_NAME (producerWLavis));
             }
-        } else {
-            DBUG_PRINT ("PWL %s will never fold. AVIS_DEFDEPTH: %d, level: %d",
-                        AVIS_NAME (producerWLavis), AVIS_DEFDEPTH (producerWLavis),
-                        level);
         }
 
-        if (NULL != pwlp) {
-            DBUG_PRINT ("PWL %s will be folded.", AVIS_NAME (producerWLavis));
-        } else {
-            DBUG_PRINT ("PWL %s can not be folded, at present.",
-                        AVIS_NAME (producerWLavis));
-        }
+    } else {
+        // TEMP DEBUG logd.sac by killing naked consumer WLF
+        pwlp = NULL;
     }
 
     DBUG_RETURN (pwlp);

@@ -903,8 +903,9 @@ IVEXIpart (node *arg_node, info *arg_info)
     /* Don't try this on empty code blocks, kids. */
     /* Or default partitions, either! */
     if ((NULL != BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node))))
-        && (!WLUTisEmptyGenerator (arg_node)) && (!CODE_HASEXTREMA (PART_CODE (arg_node)))
-        && (N_default != NODE_TYPE (PART_GENERATOR (arg_node)))) {
+        && (N_default != NODE_TYPE (PART_GENERATOR (arg_node)))
+        && (!WLUTisEmptyGenerator (arg_node))
+        && (!CODE_HASEXTREMA (PART_CODE (arg_node)))) {
 
         populateLUTVars (arg_node, arg_info);
 
