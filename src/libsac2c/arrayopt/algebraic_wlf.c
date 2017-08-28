@@ -437,11 +437,10 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
         /* Allow naked _sel_() of WL */
         // TEMP DEBUG logd.sac by killing naked CWL folding
         if (NULL != cwlp) {
-
             if (AWLFIisNakedWL (level, AVIS_DEFDEPTH (producerWLavis))) {
                 cwlp = NULL; /* cwlp was a lie anyway, in this case */
             }
-            if (((AVIS_DEFDEPTH (producerWLavis) + 1) >= level)
+            if (((AVIS_DEFDEPTH (producerWLavis) + 1) >= level) && (NULL != cwlp)
                 && (WLUTisSingleOpWl (PWL))) {
                 DBUG_PRINT ("PWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
                             AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
