@@ -10,6 +10,7 @@ OPTION (OMP       "Build sac2c with openmp-based backend support"               
 OPTION (LPEL      "Build sac2c with LPEL support"                                     OFF)
 OPTION (PHM       "Build sac2c with Private Heap Manager"                             ON)
 OPTION (DISTMEM   "Build sac2c with distributed memory support"                       OFF)
+OPTION (CUDA      "Build sac2c with CUDA backend support"                             ON)
 OPTION (HWLOC     "Build sac2c with hwloc support"                                    ON)
 OPTION (ISL       "Build sac2c with Integer Set Library"                              ON)
 OPTION (BARVINOK  "Build sac2c with Barvinok Library"                                 ON)

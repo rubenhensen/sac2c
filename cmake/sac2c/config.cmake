@@ -401,14 +401,16 @@ ELSE ()
 ENDIF ()
 
 # Cuda
-FIND_PACKAGE (CUDA)
 SET (ENABLE_CUDA OFF)
 SET (CUDA_ARCH)
-IF (CUDA_FOUND)
-  SET (ENABLE_CUDA ON)
-  SET (CUDA_ARCH  "-arch=sm_20") # TODO: update sac2c to make better use of newer architectures...
-  SET (CUDA_ROOT  "${CUDA_TOOLKIT_ROOT_DIR}") # FIXME: switch to package var?
-  SET (NVCC_PATH  "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc")
+IF (CUDA)
+  FIND_PACKAGE (CUDA)
+  IF (CUDA_FOUND)
+    SET (ENABLE_CUDA ON)
+    SET (CUDA_ARCH  "-arch=sm_20") # TODO: update sac2c to make better use of newer architectures...
+    SET (CUDA_ROOT  "${CUDA_TOOLKIT_ROOT_DIR}") # FIXME: switch to package var?
+    SET (NVCC_PATH  "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc")
+  ENDIF ()
 ENDIF ()
 
 # Indenting the code
