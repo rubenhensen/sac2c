@@ -1,6 +1,6 @@
 #include "update_wrapper_type.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "UWT"
 #include "debug.h"
 
 #include "traverse.h"

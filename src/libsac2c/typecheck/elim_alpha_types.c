@@ -423,9 +423,14 @@ EATarray (node *arg_node, info *arg_info)
             || (TYgetSimpleType (TYgetScalar (arrayelem)) != T_unknown)) {
 
             if (!TYleTypes (elemtype, arrayelem)) {
-                DBUG_PRINT ("new element type of array does not match old type of LHS!",
-                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-                DBUG_UNREACHABLE ("new element type of array does not match old type!");
+                char *elemtype_str = TYtype2String (elemtype, FALSE, 0);
+                char *arrayelem_str = TYtype2String (arrayelem, FALSE, 0);
+
+                DBUG_UNREACHABLE ("new element type `%s' of array `%s' does not "
+                                  "match old type `%s' on the left hand side",
+                                  elemtype_str,
+                                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                                  arrayelem_str);
             }
         }
 #endif
