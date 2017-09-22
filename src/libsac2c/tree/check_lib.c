@@ -471,7 +471,14 @@ CHKavisReflection (node *arg_node)
  * @fn node *CHKavisSsaassignNodeType( node *arg_node)
  *
  * @brief: arg_node is an N_avis. If running in SSA mode,
- *         check that AVIS_SSAASSIGN is either NULL or a pointer to an N_assign node.
+ *         check that AVIS_SSAASSIGN is either NULL or
+ *         a pointer to an N_assign node.
+ *
+ *         NB. This function can report an error falsely in the case
+ *             where a variable exists, but has no definition,
+ *             such as a dead variable in a copy WL eliminated
+ *             by CWLE. (See apex/ipbb/ipbb.sac for an example.)
+ *             I have no idea how to correct this shortcoming.
  *
  * @params: arg_node: N_avis.
  *

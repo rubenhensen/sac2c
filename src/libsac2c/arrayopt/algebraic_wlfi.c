@@ -1342,6 +1342,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
 
     if (NULL == INFO_CONSUMERWLPART (arg_info)) {
         xrho = TCcountExprs (zelu);
+        DBUG_ASSERT (xrho >= 1, "Expected non-empty N_exprs node");
         typ = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0));
         z = TBmakeArray (typ, SHcreateShape (1, xrho), zelu);
         z = FLATGexpression2Avis (z, &INFO_VARDECS (arg_info),
