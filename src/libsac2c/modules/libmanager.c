@@ -116,13 +116,11 @@ LIBMgetLibraryFunction (const char *name, dynlib_t lib)
 
     result = dlsym (lib, name);
 
-#ifndef DBUG_OFF
-    if (result != NULL) {
-        DBUG_PRINT ("Done getting library function");
-    } else {
-        DBUG_PRINT ("Failed getting library function: ", LibManagerError ());
+    if (result == NULL) {
+        setError ("Failed getting library function: %s", LibManagerError ());
     }
-#endif
+
+    DBUG_PRINT ("Done getting library function");
 
     DBUG_RETURN (result);
 }

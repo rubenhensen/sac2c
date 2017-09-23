@@ -203,20 +203,23 @@ checkWhetherDeprecated (module_t *module)
 }
 
 static stringset_t *
-loadModuleHeaders (const char *modname, dynlib_t lib)
+loadModuleHeaders (module_t *module)
 {
     modheaders_u result;
     char *name;
 
     DBUG_ENTER ();
 
-    name = (char *)MEMmalloc (sizeof (char) * (STRlen (modname) + 11));
-    sprintf (name, "__%s_HEADERS", modname);
-    result.v = LIBMgetLibraryFunction (name, lib);
-    MEMfree (name);
+    name = (char *)MEMmalloc (sizeof (char) * (STRlen (module->name) + 11));
+    sprintf (name, "__%s_HEADERS", module->name);
+    result.v = LIBMgetLibraryFunction (name, module->lib);
 
-    DBUG_ASSERT (result.f != NULL, "Attributes function for `%s' does not seem to exist!",
-                 modname);
+    if (result.f == NULL)
+        CTIabort ("Error loading external header information for "
+                  "module `%s' (%s): %s",
+                  module->name, module->sofile, LIBMgetError ());
+
+    name = MEMfree (name);
 
     DBUG_RETURN (result.f ());
 }
@@ -298,7 +301,7 @@ AddModuleToPool (const char *name)
 
     result->name = STRcpy (name);
     result->lib = LIBMloadLibrary (result->sofile);
-    result->headers = loadModuleHeaders (name, result->lib);
+    result->headers = loadModuleHeaders (result);
     result->stable = NULL;
     result->next = modulepool;
     modulepool = result;
