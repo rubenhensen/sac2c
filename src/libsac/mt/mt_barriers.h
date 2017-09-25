@@ -38,7 +38,10 @@
 #include <sys/syscall.h>
 #include <linux/futex.h>
 
-#ifndef __CUDACC__
+// Activating HWLOC pulls in unistd.h (which pulls in prototype of syscall())
+// When using most compiler, this redefinition below doesn't cause any problems,
+// except for NVCC, which complains about function redfinition.
+#if !ENABLE_HWLOC
 long syscall (long number, ...);
 #endif
 #endif
