@@ -28,9 +28,7 @@ SAC_CUDA_HWLOC_init (int cuda_ordinal)
     // bind current process to cpuset
     SAC_HWLOC_bind_on_cpuset (*SAC_HWLOC_cpu_sets);
 
-    // bind all further memory allocations to the current NODE/NUMANODE - on systems with
-    // no NUMA nodes, this just means the current SOCKET. The binding is `strict' meaning,
-    // that overallocation will result in a segfault.
+    // bind all further memory allocations to the current NODE/NUMANODE
     if (hwloc_set_membind (SAC_HWLOC_topology, *SAC_HWLOC_cpu_sets, HWLOC_MEMBIND_BIND,
                            HWLOC_MEMBIND_STRICT))
         SAC_RuntimeError (
@@ -44,5 +42,10 @@ SAC_CUDA_HWLOC_init (int cuda_ordinal)
 }
 
 #else
+void
+SAC_CUDA_HWLOC_init (int cuda_ordinal)
+{
+    SAC_NOOP ();
+}
 static int nothing_is_here = 0xdead;
 #endif /* ENABLE_HWLOC && ENABLE_CUDA */

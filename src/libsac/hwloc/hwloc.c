@@ -229,8 +229,9 @@ SAC_HWLOC_init ()
       = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_NUMANODE);
 #endif
     if (SAC_HWLOC_topo_data->num_numa_nodes_avail < 1) {
-        SAC_RuntimeWarning ("hwloc returned %d numa nodes available. It might be a good "
-                            "idea to disable HWLOC support",
+        SAC_RuntimeWarning ("hwloc returned %d numa nodes available. Memory binding will "
+                            "not work, perhaps you"
+                            " should turn -mt_bind off",
                             SAC_HWLOC_topo_data->num_numa_nodes_avail);
     }
 

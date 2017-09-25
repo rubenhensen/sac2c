@@ -35,7 +35,13 @@ extern void SAC_CUDA_HWLOC_init (int);
  *
  *****************************************************************************/
 
+// FIXME this is a slight hack to allow use to disable via commandline hwloc binding
+// when not on a NUMA system
+#if SAC_SET_CPU_BIND_STRATEGY > 0
 #define SAC_CUDA_SETUP() SAC_CUDA_HWLOC_init (0);
+#else
+#define SAC_CUDA_SETUP() SAC_NOOP ();
+#endif
 
 #define SAC_CUDA_FINALIZE() SAC_NOOP ();
 
