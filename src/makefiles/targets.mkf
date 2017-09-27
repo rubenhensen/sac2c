@@ -155,6 +155,7 @@ libsac2c_generics    := remove_generic_definitions \
 
 libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
 			deadcoderemoval SSACSE \
+			dead_local_function_removal             \
 			iteration_invariant_parameter_inference \
 			SSAWLUnroll rmcasts \
 			ElimSubDiv UndoElimSubDiv \

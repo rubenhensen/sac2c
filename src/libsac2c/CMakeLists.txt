@@ -432,6 +432,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/serialize/serialize_filenames.c
 ${CMAKE_CURRENT_SOURCE_DIR}/serialize/serialize_stack.c
 ${CMAKE_CURRENT_SOURCE_DIR}/serialize/serialize_symboltable.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/DeadFunctionRemoval.c
+${CMAKE_CURRENT_SOURCE_DIR}/stdopt/dead_local_function_removal.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/ElimSubDiv.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSACSE.c
 ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSALUR.c

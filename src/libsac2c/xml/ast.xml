@@ -1726,6 +1726,12 @@
 	  <node name="Fold" />
 	</travuser>
       </traversal>
+      <traversal id="DLFR" name="Dead Local Function Removal" default="sons" include="dead_local_function_removal.h" >
+        <travuser>
+	  <node name="Fundef" />
+	  <node name="Ap" />
+	</travuser>
+      </traversal>
       <traversal id="DFR" name="Dead Function Removal" default="sons" include="DeadFunctionRemoval.h" >
         <travuser>
 	  <node name="Module" />
