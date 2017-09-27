@@ -138,11 +138,10 @@ DLFRfundef (node *arg_node, info *arg_info)
         break;
 
     case TS_markalldead:
-        DBUG_ASSERT (FUNDEF_ISLACFUN (arg_node), "Saw non_lacfun: %s",
-                     CTIitemName (arg_node));
-        DBUG_PRINT ("Marking %s as dead", CTIitemName (arg_node));
-        FUNDEF_ISNEEDED (arg_node) = FALSE;
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        if (FUNDEF_ISLACFUN (arg_node)) {
+            DBUG_PRINT ("Marking lacfun %s as dead", CTIitemName (arg_node));
+            FUNDEF_ISNEEDED (arg_node) = FALSE;
+        }
         break;
 
     case TS_searchfordead:
@@ -168,6 +167,7 @@ DLFRfundef (node *arg_node, info *arg_info)
         break;
     }
 
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     INFO_FUNDEF (arg_info) = oldfundef;
 
     DBUG_RETURN (arg_node);
@@ -195,7 +195,7 @@ DLFRap (node *arg_node, info *arg_info)
     DBUG_PRINT ("Looking at function %s call to lacfun  %s",
                 FUNDEF_NAME (INFO_FUNDEF (arg_info)), FUNDEF_NAME (calledfun));
     if (FUNDEF_ISLACFUN (calledfun)) {
-        DBUG_PRINT ("Marking called lacfun %s as not dead", FUNDEF_NAME (calledfun));
+        DBUG_PRINT ("Marking called lacfun %s as not dead", CTIitemName (arg_node));
         FUNDEF_ISNEEDED (calledfun) = TRUE;
         if (INFO_FUNDEF (arg_info) != calledfun) { // Ignore recursive call
             INFO_ISCALL (arg_info) = TRUE;
@@ -205,6 +205,7 @@ DLFRap (node *arg_node, info *arg_info)
     }
 
     DBUG_PRINT ("Return from traversing N_ap for function %s", FUNDEF_NAME (calledfun));
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
