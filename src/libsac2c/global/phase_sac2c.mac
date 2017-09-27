@@ -492,9 +492,6 @@ CYCLEPHASEFUN (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
 CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS, opt,
                saacyc)
 
-CYCLEPHASEFUN (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval,
-               global.optimize.dodfr, opt, saacyc)
-
 CYCLEPHASEFUNOLD (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt,
                   saacyc)
 
@@ -703,6 +700,9 @@ CYCLEPHASEFUN (safa, "Sorting associative function arguments",
 
 CYCLEPHASEFUN (dcr2, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
                opt, saacyc)
+
+CYCLEPHASEFUNOLD (dlfr, "Removing dead local functions", DLFRdoDeadLocalFunctionRemoval,
+                  global.optimize.dodlfr, opt, saacyc)
 
 CYCLEPHASEFUNOLD (linl3, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, saacyc)

@@ -454,7 +454,7 @@ DFRfundef (node *arg_node, info *arg_info)
                         CTIitemName (arg_node));
             if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
                 if (INFO_ISONEFUNDEF (arg_info)) {
-                    global.optcounters.dead_localfun++;
+                    global.optcounters.dead_lfun++;
                 } else {
                     global.optcounters.dead_fun++;
                 }
@@ -471,7 +471,7 @@ DFRfundef (node *arg_node, info *arg_info)
             DBUG_PRINT ("Deleting function: %s", CTIitemName (arg_node));
             arg_node = FREEdoFreeNode (arg_node);
             if (INFO_ISONEFUNDEF (arg_info)) {
-                global.optcounters.dead_localfun++;
+                global.optcounters.dead_lfun++;
             } else {
                 global.optcounters.dead_fun++;
             }
