@@ -200,7 +200,7 @@ DLFRap (node *arg_node, info *arg_info)
     DBUG_PRINT ("Looking at function %s call to lacfun  %s",
                 FUNDEF_NAME (INFO_FUNDEF (arg_info)), FUNDEF_NAME (calledfun));
     if (FUNDEF_ISLACFUN (calledfun)) {
-        DBUG_PRINT ("Marking called lacfun %s as not dead", CTIitemName (arg_node));
+        DBUG_PRINT ("Marking called lacfun %s as not dead", CTIitemName (calledfun));
         FUNDEF_ISNEEDED (calledfun) = TRUE;
         if (INFO_FUNDEF (arg_info) != calledfun) { // Ignore recursive call
             INFO_ISCALL (arg_info) = TRUE;
