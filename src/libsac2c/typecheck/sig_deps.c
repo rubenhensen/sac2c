@@ -192,7 +192,7 @@ SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args, bool s
     DBUG_ASSERT (ok, "Something went wrong creating a signature dependency");
 
     DBUG_EXECUTE (tmp_str = SDsigDep2DebugString (sig));
-    DBUG_PRINT ("sig dep created: handle %p : %s", sig, tmp_str);
+    DBUG_PRINT ("sig dep created: handle %p : %s", (void *)sig, tmp_str);
     DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     /*

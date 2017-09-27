@@ -280,8 +280,8 @@ UnshareIV (node *outp_id, info *arg_info)
 {
     DBUG_ENTER ();
     DBUG_ASSERT (NODE_TYPE (outp_id) == N_id, "expected id");
-    DBUG_PRINT ("replacing id '%s' (id:%p, avis:%p)", ID_NAME (outp_id), outp_id,
-                ID_AVIS (outp_id));
+    DBUG_PRINT ("replacing id '%s' (id:%p, avis:%p)", ID_NAME (outp_id), (void *)outp_id,
+                (void *)ID_AVIS (outp_id));
 
     /* type of the result */
     ntype *n_tp = TYcopyType ((ntype *)AVIS_TYPE (ID_AVIS (outp_id)));
@@ -320,8 +320,9 @@ UnshareIV (node *outp_id, info *arg_info)
 
     DBUG_PRINT (
       "new assignment: '%s' (id:%p, avis:%p) = unshare( '%s' (id:%p, avis:%p), ...)",
-      ID_NAME (new_outp_id), new_outp_id, ID_AVIS (new_outp_id),
-      ID_NAME (PRF_ARG1 (n_unsh)), PRF_ARG1 (n_unsh), ID_AVIS (PRF_ARG1 (n_unsh)));
+      ID_NAME (new_outp_id), (void *)new_outp_id, (void *)ID_AVIS (new_outp_id),
+      ID_NAME (PRF_ARG1 (n_unsh)), (void *)PRF_ARG1 (n_unsh),
+      (void *)ID_AVIS (PRF_ARG1 (n_unsh)));
 
     DBUG_RETURN (new_outp_id);
 }

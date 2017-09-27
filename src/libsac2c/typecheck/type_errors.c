@@ -463,7 +463,7 @@ TEextendedAbort ()
     ntype *args;
 
     DBUG_ENTER ();
-    DBUG_PRINT ("act_info_chn is %p", global.act_info_chn);
+    DBUG_PRINT ("act_info_chn is %p", (void *)global.act_info_chn);
     if (global.act_info_chn != NULL) {
         CTIerrorContinued ("\nTYPE ERROR TRACE:");
         while (global.act_info_chn != NULL) {
