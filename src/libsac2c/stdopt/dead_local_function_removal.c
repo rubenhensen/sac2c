@@ -170,6 +170,11 @@ DLFRfundef (node *arg_node, info *arg_info)
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     INFO_FUNDEF (arg_info) = oldfundef;
 
+    DBUG_PRINT ("Ending Dead Local Function Removal in %s: %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                CTIitemName (arg_node));
+    oldfundef = INFO_FUNDEF (arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
