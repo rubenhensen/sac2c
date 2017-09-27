@@ -95,8 +95,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-// helper functions
-
 /******************************************************************************
  *
  * Function:
@@ -197,7 +195,7 @@ DLFRap (node *arg_node, info *arg_info)
     DBUG_PRINT ("Looking at function %s call to lacfun  %s",
                 FUNDEF_NAME (INFO_FUNDEF (arg_info)), FUNDEF_NAME (calledfun));
     if (FUNDEF_ISLACFUN (calledfun)) {
-        DBUG_PRINT ("Marking called function %s as not dead", FUNDEF_NAME (calledfun));
+        DBUG_PRINT ("Marking called lacfun %s as not dead", FUNDEF_NAME (calledfun));
         FUNDEF_ISNEEDED (calledfun) = TRUE;
         if (INFO_FUNDEF (arg_info) != calledfun) { // Ignore recursive call
             INFO_ISCALL (arg_info) = TRUE;
@@ -230,9 +228,12 @@ DLFRdoDeadLocalFunctionRemoval (node *arg_node)
     arg_info = MakeInfo ();
     TRAVpush (TR_dlfr);
 
+    DBUG_PRINT ("Looking at %s", FUNDEF_NAME (arg_node));
+    DBUG_ASSERT (!FUNDEF_ISLACFUN (arg_node), "Found LACFUN on fundef chain");
     // Pass 1: mark all local functions as dead
     INFO_TRAVERSALTYPE (arg_info) = TS_markalldead;
     DBUG_PRINT ("Start of pass to mark all local functions as dead");
+    arg_node = TRAVdo (arg_node, arg_info);
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     // Pass 2: search for live local functions, and mark same as live
