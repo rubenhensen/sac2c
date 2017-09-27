@@ -683,7 +683,7 @@ SSIfixLow (tvar *var)
         TVAR_HANDS (var) = NULL;
 
         for (i = 0; i < n; i++) {
-            DBUG_PRINT ("Deleting handle : %p", hands[i]);
+            DBUG_PRINT ("Deleting handle : %p", (void *)hands[i]);
             res = res && ass_fix_handle (hands[i]);
         }
 
