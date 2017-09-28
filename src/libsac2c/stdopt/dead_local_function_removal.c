@@ -237,6 +237,7 @@ DLFRdoDeadLocalFunctionRemoval (node *arg_node)
 
     DBUG_PRINT ("Looking at %s", FUNDEF_NAME (arg_node));
     DBUG_ASSERT (!FUNDEF_ISLACFUN (arg_node), "Found LACFUN on fundef chain");
+
     // Pass 1: mark all local functions as dead
     INFO_TRAVERSALTYPE (arg_info) = TS_markalldead;
     DBUG_PRINT ("Start of pass to mark all local functions as dead");
@@ -249,7 +250,7 @@ DLFRdoDeadLocalFunctionRemoval (node *arg_node)
     DBUG_PRINT ("Start of pass to find and mark local functions as live");
     arg_node = TRAVdo (arg_node, arg_info);
 
-    // Pass 1: mark all local functions as dead
+    // Pass 3: Free any dead local functions
     INFO_TRAVERSALTYPE (arg_info) = TS_bringoutyourdead;
     DBUG_PRINT ("Start of pass to remove dead local functions");
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
