@@ -142,6 +142,7 @@ DLFRfundef (node *arg_node, info *arg_info)
         if (FUNDEF_ISLACFUN (arg_node)) {
             DBUG_PRINT ("Marking lacfun %s as dead", CTIitemName (arg_node));
             FUNDEF_ISNEEDED (arg_node) = FALSE;
+            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         }
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
         break;
@@ -165,6 +166,7 @@ DLFRfundef (node *arg_node, info *arg_info)
                 arg_node = FREEdoFreeNode (arg_node);
                 global.optcounters.dead_lfun++;
             }
+            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         }
         break;
     }
