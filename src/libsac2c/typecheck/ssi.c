@@ -233,7 +233,7 @@ SSImakeVariable ()
     TVAR_HANDS (res) = NULL;
 
     DBUG_PRINT ("new type var generated: #%d", var_cntr - 1);
-    DBUG_PRINT_TAG ("SSIMEM", "type var #%d allocated at %p", var_cntr - 1, res);
+    DBUG_PRINT_TAG ("SSIMEM", "type var #%d allocated at %p", var_cntr - 1, (void *)res);
 
     DBUG_RETURN (res);
 }
@@ -376,7 +376,7 @@ InsertMinAndCheckAssumption (tvar *var, ntype *new_min)
 
         TVAR_MIN (var) = new_min;
         for (i = 0; i < TVAR_NASS (var); i++) {
-            DBUG_PRINT ("Handling contradiction : %p", TVAR_HAND (var, i));
+            DBUG_PRINT ("Handling contradiction : %p", (void *)TVAR_HAND (var, i));
             ok = ok && ass_contra_handle (TVAR_HAND (var, i));
         }
 
@@ -639,7 +639,8 @@ SSIassumeLow (tvar *var, sig_dep *handle)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("adding assumption for variable #%d, handle %p", TVAR_NO (var), handle);
+    DBUG_PRINT ("adding assumption for variable #%d, handle %p", TVAR_NO (var),
+                (void *)handle);
     AddHandle (var, handle);
     DBUG_RETURN (ass_system_active);
 }

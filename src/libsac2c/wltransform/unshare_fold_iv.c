@@ -280,8 +280,8 @@ UnshareIV (node *outp_id, info *arg_info)
 {
     DBUG_ENTER ();
     DBUG_ASSERT (NODE_TYPE (outp_id) == N_id, "expected id");
-    DBUG_PRINT ("replacing id '%s' (id:%p, avis:%p)", ID_NAME (outp_id), outp_id,
-                ID_AVIS (outp_id));
+    DBUG_PRINT ("replacing id '%s' (id:%p, avis:%p)", ID_NAME (outp_id), (void *)outp_id,
+                (void *)ID_AVIS (outp_id));
 
     /* type of the result */
     ntype *n_tp = TYcopyType ((ntype *)AVIS_TYPE (ID_AVIS (outp_id)));

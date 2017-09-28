@@ -104,18 +104,19 @@ FreeInfo (info *info)
  *
  *  Operation here depends on which pass we are in:
  *
- *  In pass 1, we mark all lacfuns as dead.
- *  In pass 2, we traverse the body of the non-lacfun,
- *             and recurse into the body of any lacfun call we
- *             observe at an N_ap.
+ *  Pass 1, traverse all local functions, marking all lacfuns as dead.
  *
- *             For lacfuns, we recurse as above.
- *             For any lacfun we encounter, we mark it as not dead.
+ *  Pass 2, traverse the body of any non-lacfun,
+ *          and recurse into the body of any lacfun call we
+ *          observe at an N_ap.
  *
- *   In pass 3, we do a bottom-up traversal of the non-lacfun's
- *             FUNDEF_LOCALFUN chain, freeing any lacfuns that
- *             are dead, and updating the FUNDEF_LOCALFUN
- *             chain as appropriae.
+ *          For lacfuns, we recurse as above.
+ *          Mark any lacfun we call as not-dead.
+ *
+ *  Pass 3, do a bottom-up traversal of the non-lacfun's
+ *          FUNDEF_LOCALFUN chain, freeing any lacfuns that
+ *          are dead, and updating the FUNDEF_LOCALFUN
+ *          chain as appropriae.
  *
  ******************************************************************************/
 node *
@@ -137,16 +138,15 @@ DLFRfundef (node *arg_node, info *arg_info)
         DBUG_UNREACHABLE ("Bad enum type");
         break;
 
-    case TS_markalldead:
+    case TS_markalldead: // Pass 1
         if (FUNDEF_ISLACFUN (arg_node)) {
             DBUG_PRINT ("Marking lacfun %s as dead", CTIitemName (arg_node));
             FUNDEF_ISNEEDED (arg_node) = FALSE;
-        } else {
-            FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
         }
+        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
         break;
 
-    case TS_searchfordead:
+    case TS_searchfordead: // Pass 2
         // If non-lacfun, or if called from N_ap,
         // search the body of this function
         if ((!FUNDEF_ISLACFUN (arg_node)) || INFO_ISCALL (arg_info)) {
@@ -154,25 +154,26 @@ DLFRfundef (node *arg_node, info *arg_info)
         }
         break;
 
-    case TS_bringoutyourdead:
+    case TS_bringoutyourdead: // Pass 3
         if (!FUNDEF_ISLACFUN (arg_node)) {
             // bottom-up traversal
             FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-
-            // If function is dead, free it, and update fundef chain
+        } else {
+            // If lacfun is dead, free it, and update fundef chain
             if (!FUNDEF_ISNEEDED (arg_node)) {
                 DBUG_PRINT ("Freeing %s", CTIitemName (arg_node));
-                FUNDEF_LOCALFUNS (arg_node) = FREEdoFreeNode (arg_node);
+                arg_node = FREEdoFreeNode (arg_node);
                 global.optcounters.dead_lfun++;
             }
         }
         break;
     }
 
-    INFO_FUNDEF (arg_info) = oldfundef;
     DBUG_PRINT ("Ending Dead Local Function Removal in %s: %s",
-                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                (FUNDEF_ISWRAPPERFUN (INFO_FUNDEF (arg_info)) ? "wrapper" : "fundef"),
                 CTIitemName (arg_node));
+    INFO_FUNDEF (arg_info) = oldfundef;
+
     DBUG_RETURN (arg_node);
 }
 
