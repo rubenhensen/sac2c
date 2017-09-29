@@ -169,7 +169,7 @@ ISLUexprs2String (node *exprs, lut_t *varlut, char *lbl, bool isunionset, char *
     sz = fread (str, sizeof (char), (size_t)fsize, matrix_file);
     DBUG_ASSERT (sz == (size_t)fsize, "fread did not return expected size");
     str[sz] = '\0'; // Terminate string
-    DBUG_PRINT ("sz=%d, strlen(str)=%d", sz, strlen (str));
+    DBUG_PRINT ("sz=%zu, strlen(str)=%zu", sz, strlen (str));
     DBUG_PRINT ("ISL string for lhsname %s is: %s", lhsname, str);
     FMGRclose (matrix_file);
 

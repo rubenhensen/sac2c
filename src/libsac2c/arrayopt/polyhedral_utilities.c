@@ -793,7 +793,8 @@ StepOrWidthHelper (node *stpwid)
 }
 
 node *
-PHUTcollectWlGenerator (node *arg_node, node *fundef, lut_t *varlut, node *res)
+PHUTcollectWlGenerator (node *arg_node, node *fundef, lut_t *varlut, node *res,
+                        int loopcount)
 {
     node *z = NULL;
     node *res2 = NULL;
@@ -839,10 +840,10 @@ PHUTcollectWlGenerator (node *arg_node, node *fundef, lut_t *varlut, node *res)
             widel = PHUTskipChainedAssigns (widel);
 
             res2 = PHUTcollectAffineExprsLocal (lbel, fundef, varlut, NULL,
-                                                AVIS_ISLCLASSUNDEFINED);
+                                                AVIS_ISLCLASSUNDEFINED, loopcount);
             res = TCappendExprs (res, res2);
             res2 = PHUTcollectAffineExprsLocal (ubel, fundef, varlut, NULL,
-                                                AVIS_ISLCLASSUNDEFINED);
+                                                AVIS_ISLCLASSUNDEFINED, loopcount);
             res = TCappendExprs (res, res2);
 
             // Generate new set variables for ISL. Apart from ISL analysis, these
@@ -1454,13 +1455,15 @@ PHUTisCompatibleAffineTypes (node *arg_node)
  *
  * @param  arg_node: The N_avis for an assign with N_id as rhs
  * @param  rhs: The N_id
+ * @param  loopcount: The loopcount to be used for the APV in a loopfun,
+ *                    or -1.
  *
  * NB. In normal operation, calls to this code should be infrequent, due to
  *     the work done by CSE and VP.
  *
  ******************************************************************************/
 static node *
-HandleNid (node *arg_node, node *rhs, node *fundef, lut_t *varlut)
+HandleNid (node *arg_node, node *rhs, node *fundef, lut_t *varlut, int loopcount)
 {
     node *res = NULL;
 
@@ -1492,6 +1495,8 @@ HandleNid (node *arg_node, node *rhs, node *fundef, lut_t *varlut)
  * @param  outerexprs: The ISL N_exprs chain for the external initial value
  * @param  calleriv: The N_id node representing avis' initial value, from the
  *                       external caller.
+ * @param  loopcount: The loopcount to be used for the APV in a loopfun,
+ *                    or -1 if otherwise.
  *
  * @return An N_exprs chain representing the ISL induction-variable constraint,
  *         appended to res.
@@ -1523,7 +1528,7 @@ HandleNid (node *arg_node, node *rhs, node *fundef, lut_t *varlut)
 static node *
 PHUThandleLoopfunArg (node *nid, node *fundef, lut_t *varlut, node *res,
                       node *callerassign, node *callerfundef, node *outerexprs,
-                      node *calleriv)
+                      node *calleriv, int loopcount)
 {
     node *rcv = NULL;
     node *avis;
@@ -1546,7 +1551,7 @@ PHUThandleLoopfunArg (node *nid, node *fundef, lut_t *varlut, node *res,
         rcv = LFUarg2Rcv (avis, fundef);
         DBUG_PRINT ("LACFUN %s loop-dependent arg %s has recursive call value of %s",
                     FUNDEF_NAME (fundef), AVIS_NAME (avis), AVIS_NAME (ID_AVIS (rcv)));
-        z = PHUTanalyzeLoopDependentVariable (nid, rcv, fundef, varlut, res);
+        z = PHUTanalyzeLoopDependentVariable (nid, rcv, fundef, varlut, loopcount, res);
         res = TCappendExprs (res, z);
     }
 
@@ -1646,6 +1651,8 @@ rcv2CallerVar (node *rcv, node *fundef)
  *         we are in a LACFUN (or defined fun), looking at one of the
  *         function's arguments.
  *         avis is already in varlut.
+ * @param  loopcount: the loopcount to be used for the APV in a
+ *         loopfun, or -1 otherwise.
  *
  *         Our condfun unit test is
  *         ~/sac/testsuite/optimizations/pogo/condfun.sac.
@@ -1658,7 +1665,7 @@ rcv2CallerVar (node *rcv, node *fundef)
  *
  ******************************************************************************/
 static node *
-PHUThandleLacfunArg (node *nid, node *fundef, lut_t *varlut, node *res)
+PHUThandleLacfunArg (node *nid, node *fundef, lut_t *varlut, node *res, int loopcount)
 {
     node *ext_assign;
     node *calleravis;
@@ -1684,7 +1691,7 @@ PHUThandleLacfunArg (node *nid, node *fundef, lut_t *varlut, node *res)
         calleravis = TUnode2Avis (PHUTskipChainedAssigns (calleravis));
         callerfundef = FUNDEF_CALLERFUNDEF (fundef);
         outerexprs = PHUTcollectAffineExprsLocal (calleravis, callerfundef, varlut, NULL,
-                                                  AVIS_ISLCLASSEXISTENTIAL);
+                                                  AVIS_ISLCLASSEXISTENTIAL, loopcount);
 
         DBUG_PRINT ("Building AFT for LACFUN var %s from caller's %s", AVIS_NAME (avis),
                     AVIS_NAME (calleravis));
@@ -1697,7 +1704,7 @@ PHUThandleLacfunArg (node *nid, node *fundef, lut_t *varlut, node *res)
 
         if (FUNDEF_ISLOOPFUN (fundef)) {
             res = PHUThandleLoopfunArg (nid, fundef, varlut, res, ext_assign,
-                                        callerfundef, outerexprs, calleravis);
+                                        callerfundef, outerexprs, calleravis, loopcount);
             res = TCappendExprs (res, outerexprs);
         }
     }
@@ -1774,7 +1781,7 @@ HandleSelectWithShape (node *ids, node *arg_node)
     }
     pat = PMfree (pat);
 
-    DBUG_PRINT ("Finshed with %s", AVIS_NAME (ID_AVIS (arg_node)));
+    DBUG_PRINT ("Leaving HandleSelectWithShape for %s", AVIS_NAME (ID_AVIS (arg_node)));
 
     DBUG_RETURN (z);
 }
@@ -1823,33 +1830,22 @@ PHUTsignum (node *arg, node *aft, node *fundef, lut_t *varlut, node *ids)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *HandleIota(...)
+ * @fn node *HandleSelectWithIota(...)
  *
- * @brief Handler for:
- *         Case 1: sel() from iota(N)
- *         and
- *         Case 2: sel() from genarray of scalar.
+ * @brief Handler for sel() from iota(N)
  *
- *        Case 1:
  *          Q = iota(n);
  *          ids = idx_sel( offset, Q);  OR
  *          ids = _sel_VxA_( iv, Q);
  *
- *        Case 2:
- *          Q = genarray([shp], Scalar);
- *          ids = idx_sel( offset, Q);  OR
- *          ids = _sel_VxA_( iv, Q);
- *
  * @param  ids:  The N_ids node that defines ids.
- *         q: The N_id node that is PRF_ARG2 of the sel()
+ * @param  q: The N_id node that is PRF_ARG2 of the sel()
+ * @param  loopcount: The loopcount to be used for the APV in a loopfun,
+ *                    else UNR_NONE.
  *
- * @return: Case 1: If q is a with-loop, and that
+ * @return: If q is a with-loop, and that
  *          loop is simple (See WLUTgetGenarrayScalar for details),
  *          we return constraints on the values in the with-loop.
- *
- *          Case 2: If q is all the same scalar, we return
- *          constraints on that scalar.
- *
  *          Else NULL.
  *
  * NB.     This code assumes that -check c will ensure that
@@ -1858,7 +1854,7 @@ PHUTsignum (node *arg, node *aft, node *fundef, lut_t *varlut, node *ids)
  *
  ******************************************************************************/
 static node *
-HandleIota (node *ids, node *q, node *fundef, lut_t *varlut)
+HandleSelectWithIota (node *ids, node *q, node *fundef, lut_t *varlut, int loopcount)
 {
     node *res = NULL;
     node *z = NULL;
@@ -1872,7 +1868,6 @@ HandleIota (node *ids, node *q, node *fundef, lut_t *varlut)
 
     DBUG_ENTER ();
 
-    //  Case 1: Are we selecting from a with-loop?
     s = WLUTgetGenarrayScalar (q, FALSE);
     if (NULL != s) { // s is a member of N_WITHIDS.
         // Find the WL, if it exists
@@ -1887,10 +1882,10 @@ HandleIota (node *ids, node *q, node *fundef, lut_t *varlut)
                 // Emit lb <= s
                 lb = TCgetNthExprsExpr (idsidx, ARRAY_AELEMS (lbub));
                 z = PHUTcollectAffineExprsLocal (lb, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
+                                                 AVIS_ISLCLASSEXISTENTIAL, loopcount);
                 res = TCappendExprs (res, z);
                 z = PHUTcollectAffineExprsLocal (s, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSSETVARIABLE);
+                                                 AVIS_ISLCLASSSETVARIABLE, loopcount);
                 res = TCappendExprs (res, z);
                 // Generate s >= lb
                 z = BuildIslSimpleConstraint (s, F_ge_SxS, lb, NOPRFOP, NULL);
@@ -1902,7 +1897,7 @@ HandleIota (node *ids, node *q, node *fundef, lut_t *varlut)
                 // Emit s < ub
                 ub = TCgetNthExprsExpr (idsidx, ARRAY_AELEMS (lbub));
                 z = PHUTcollectAffineExprsLocal (ub, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
+                                                 AVIS_ISLCLASSEXISTENTIAL, loopcount);
                 res = TCappendExprs (res, z);
                 // Generate s < ub
                 z = BuildIslSimpleConstraint (s, F_lt_SxS, ub, NOPRFOP, NULL);
@@ -1912,12 +1907,9 @@ HandleIota (node *ids, node *q, node *fundef, lut_t *varlut)
         // Now make ids = s (in iv=[i,j,s,k] in the WL generator)
         z = BuildIslSimpleConstraint (ids, F_eq_SxS, s, NOPRFOP, NULL);
         res = TCappendExprs (res, z);
-    } else {
-        // Case 2: Selecting from all-same-value?
-        // this case may be handled by SCCF already...
     }
 
-    DBUG_PRINT ("Finished with lhs=%s", AVIS_NAME (IDS_AVIS (ids)));
+    DBUG_PRINT ("Leaving for lhs=%s", AVIS_NAME (IDS_AVIS (ids)));
 
     DBUG_RETURN (res);
 }
@@ -1945,17 +1937,19 @@ HandleIota (node *ids, node *q, node *fundef, lut_t *varlut)
  *
  ******************************************************************************/
 static node *
-PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
+PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res, int loopcount)
 {
     node *assgn;
     node *ids = NULL;
     node *argavis;
     node *z = NULL;
-    node *z1 = NULL;
     node *z2 = NULL;
     node *arg1 = NULL;
     node *arg2 = NULL;
     node *arg3 = NULL;
+    node *arg1aft = NULL;
+    node *arg2aft = NULL;
+    node *arg3aft = NULL;
     int sig;
 
     DBUG_ENTER ();
@@ -1967,45 +1961,33 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
             && (PHUTisCompatibleAffineTypes (rhs))) {
             DBUG_PRINT ("Called with ids=%s", AVIS_NAME (IDS_AVIS (ids)));
 
+            // Deal with PRF_ARGs
+            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
+            arg1aft = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
+                                                   AVIS_ISLCLASSEXISTENTIAL, loopcount);
+            res = TCappendExprs (res, arg1aft);
+            if (isDyadicPrf (PRF_PRF (rhs))) {
+                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
+                arg2aft
+                  = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
+                                                 AVIS_ISLCLASSEXISTENTIAL, loopcount);
+                res = TCappendExprs (res, arg2aft);
+            }
+
             switch (PRF_PRF (rhs)) {
 
             case F_div_SxS:
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, PRF_PRF (rhs), arg2);
                 res = TCappendExprs (res, z);
                 break;
 
             case F_add_SxS:
             case F_sub_SxS:
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, PRF_PRF (rhs), arg2);
                 res = TCappendExprs (res, z);
                 break;
 
             case F_non_neg_val_S:
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, NOPRFOP, NULL);
                 res = TCappendExprs (res, z);
                 z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
@@ -2015,31 +1997,11 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
 
             case F_min_SxS:
             case F_max_SxS:
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, PRF_PRF (rhs), arg2);
                 res = TCappendExprs (res, z);
                 break;
 
             case F_mul_SxS: // We need one constant argument
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 argavis = ID_AVIS (arg1);
                 if ((TYisAKV (AVIS_TYPE (argavis)))
                     || (TYisAKV (AVIS_TYPE (ID_AVIS (arg2))))) {
@@ -2051,11 +2013,6 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                 break;
 
             case F_shape_A:
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 argavis = ID_AVIS (arg1);
                 if ((TYisAKS (AVIS_TYPE (argavis))) || (TYisAKV (AVIS_TYPE (argavis)))) {
                     // z >= 0
@@ -2073,11 +2030,6 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                 break;
 
             case F_dim_A:
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 // z >= 0
                 z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
                                               NULL);
@@ -2085,18 +2037,12 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                 break;
 
             case F_not_S: // Treat Booleans as integers(for POGO)
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 // z = !y  --->  ( z = 1 - y) and (y >= 0) and (y <= 1)
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, TBmakeNum (1), F_sub_SxS,
                                               arg1);
                 res = TCappendExprs (res, z);
                 z = BuildIslSimpleConstraint (PRF_ARG1 (rhs), F_ge_SxS, TBmakeNum (0),
                                               NOPRFOP, NULL);
-
                 res = TCappendExprs (res, z);
                 z = BuildIslSimpleConstraint (PRF_ARG1 (rhs), F_le_SxS, TBmakeNum (1),
                                               NOPRFOP, NULL);
@@ -2104,16 +2050,11 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                 break;
 
             case F_abs_S: // z >= 0
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z2 = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                  AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z2);
-
                 z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
                                               NULL);
                 res = TCappendExprs (res, z);
                 z = NULL;
-                sig = PHUTsignum (arg1, z2, fundef, varlut, ids);
+                sig = PHUTsignum (arg1, arg1aft, fundef, varlut, ids);
                 if (1 == sig) { // z = arg
                     z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, NOPRFOP, NULL);
                 } else {
@@ -2126,15 +2067,6 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                 break;
 
             case F_aplmod_SxS:
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z2 = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                  AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z2);
-
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
                 /*
                  *               Per the APL ISO N8485 standard:
                  *               For aplmod modulus: z = aplmod( x, y),
@@ -2155,7 +2087,7 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                 res = TCappendExprs (res, z);
 
                 // maximum:  z < abs( arg2)
-                sig = PHUTsignum (arg2, z2, fundef, varlut, ids);
+                sig = PHUTsignum (arg2, arg2aft, fundef, varlut, ids);
 
                 z = NULL;
                 if (1 == sig) { // z < arg2
@@ -2167,23 +2099,9 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                     }
                 }
                 res = TCappendExprs (res, z);
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
                 break;
 
             case F_mod_SxS:
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z1 = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                  AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z1);
-
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-                z2 = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                  AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z2);
-
                 /*
                  *               For C99, if (arg1 >=0 ) && ( arg2 > 0), then:
                  *                        0 <= z < arg2
@@ -2194,8 +2112,8 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                  *               PRF_ARG1?
                  */
                 // minimum
-                if ((PHUTisNonNegative (arg1, z1, fundef, varlut))
-                    && (PHUTisPositive (arg2, z2, fundef, varlut))) {
+                if ((PHUTisNonNegative (arg1, arg1aft, fundef, varlut))
+                    && (PHUTisPositive (arg2, arg2aft, fundef, varlut))) {
                     // z >= 0
                     z = BuildIslSimpleConstraint (ids, F_ge_SxS, TBmakeNum (0), NOPRFOP,
                                                   NULL);
@@ -2204,24 +2122,11 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                     z = BuildIslSimpleConstraint (ids, F_lt_SxS, arg2, NOPRFOP, NULL);
                     res = TCappendExprs (res, z);
                 }
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
                 break;
 
             case F_neq_SxS:
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 // We do not know stride
                 z = PHUThandleRelational (0, arg1, arg2, PRF_PRF (rhs));
-                res = TCappendExprs (res, z);
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
                 res = TCappendExprs (res, z);
                 break;
 
@@ -2230,47 +2135,21 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
             case F_eq_SxS:
             case F_ge_SxS:
             case F_gt_SxS:
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, PRF_PRF (rhs), arg2);
                 res = TCappendExprs (res, z);
                 break;
 
             case F_val_lt_val_SxS:
             case F_val_le_val_SxS:
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 // Treat a guard within an affine expression as assignment.
                 // z = PRF_ARG1;
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg1, NOPRFOP, NULL);
                 res = TCappendExprs (res, z);
-
                 z = BuildIslSimpleConstraint (arg1, PRF_PRF (rhs), arg2, NOPRFOP, NULL);
                 res = TCappendExprs (res, z);
                 break;
 
             case F_neg_S: //  z = -y;  -->  z = 0 - y
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, TBmakeNum (0), F_sub_SxS,
                                               arg1);
                 res = TCappendExprs (res, z);
@@ -2278,9 +2157,7 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
 
             case F_idx_sel:
             case F_sel_VxA:
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
-
-                z = HandleIota (ids, arg2, fundef, varlut);
+                z = HandleSelectWithIota (ids, arg2, fundef, varlut, loopcount);
                 res = TCappendExprs (res, z);
 
                 z2 = HandleSelectWithShape (ids, arg2);
@@ -2288,7 +2165,6 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
 
                 // We may want to clean up IdxselArrayOfEqualElements
                 // and call it here, in case we have sel(iv, [ i,i,i,i...,i]
-                // Actually, this should be handled by CF, I think.
 
                 if ((NULL == z) && (NULL == z2)) { // unknown sel
                     // We know nothing about arg2, so we make it a parameter
@@ -2298,11 +2174,6 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
 
             case F_noteminval:
             case F_notemaxval:
-                arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
                 // These will be dead soon, but they're not dead yet
                 // We treat them the same as simple assign
                 // and ignore PRF_ARG2.
@@ -2315,11 +2186,11 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
                 // of LACFUN parameters. E.g., in simpleNonconstantUp.sac, we have a
                 // loop from START to START+5, where the value of START is the result
                 // of a function call [id(0)].
-                arg3 = PHUTskipChainedAssigns (PRF_ARG3 (rhs));
-                z = PHUTcollectAffineExprsLocal (arg3, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
-                res = TCappendExprs (res, z);
-
+                arg3 = PRF_ARG3 (rhs);
+                arg3aft
+                  = PHUTcollectAffineExprsLocal (arg3, fundef, varlut, NULL,
+                                                 AVIS_ISLCLASSEXISTENTIAL, loopcount);
+                res = TCappendExprs (res, arg3aft);
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg3, NOPRFOP, NULL);
                 res = TCappendExprs (res, z);
                 break;
@@ -2398,6 +2269,8 @@ PHUTsetIslTree (node *avis, node *aft)
  * @param res: Partially built N_exprs chain
  * @param islclass: optional islclass value to be set on
  *                  arg_node.
+ * @param loopcount: the loopcount to be used in generating the APV
+ *                   for a loopfun, or -1 otherwise.
  *
  * @return A maximal N_exprs chain of expressions, appended to the incoming res.
  *
@@ -2406,7 +2279,7 @@ PHUTsetIslTree (node *avis, node *aft)
  ******************************************************************************/
 node *
 PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *res,
-                             int islclass)
+                             int islclass, int loopcount)
 {
     node *assgn = NULL;
     node *res2 = NULL;
@@ -2435,10 +2308,10 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
 
                     switch (NODE_TYPE (rhs)) {
                     case N_id: // straight assign: var2 = var1.
-                        res2 = HandleNid (avis, rhs, fundef, varlut);
+                        res2 = HandleNid (avis, rhs, fundef, varlut, loopcount);
                         break;
                     case N_prf:
-                        res2 = PHUTprf (avis, rhs, fundef, varlut, NULL);
+                        res2 = PHUTprf (avis, rhs, fundef, varlut, NULL, loopcount);
                         break;
                     case N_bool:
                     case N_num:
@@ -2468,15 +2341,16 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
                                 != LFUindexOfMemberIds (avis, WITHID_IDS (
                                                                 PART_WITHID (npart)))) {
                                 // arg_node is a withid element.
-                                res3
-                                  = PHUTcollectWlGenerator (avis, fundef, varlut, NULL);
+                                res3 = PHUTcollectWlGenerator (avis, fundef, varlut, NULL,
+                                                               loopcount);
                                 res2 = TCappendExprs (res2, res3);
                             } else {
                                 // non-constant function parameter
                                 DBUG_ASSERT (FALSE, "Coding time for lacfun args");
                             }
                         } else { // Not WITHID. Must be function parameter
-                            res3 = PHUThandleLacfunArg (nid, fundef, varlut, NULL);
+                            res3 = PHUThandleLacfunArg (nid, fundef, varlut, NULL,
+                                                        loopcount);
                             res2 = TCappendExprs (res2, res3);
                         }
                     }
@@ -2500,6 +2374,8 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
  * @param fundef: The N_fundef for the current function. Used only for debugging.
  * @param varlut: The address of a LUT that serves to accumulate names for ISL
  * @param islclass: The AVIS_ISLCLASS value to be set for arg_node.
+ * @param loopcount: The loopcount to be used by the APV in a loopfun;
+ *                   else -1.
  *
  * @return A maximal N_exprs chain of expressions, whose elements may be
  *         either N_num or N_id nodes.
@@ -2544,13 +2420,15 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
  *
  ******************************************************************************/
 node *
-PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut, int islclass)
+PHUTgenerateAffineExprs (node *arg_node, node *fundef, lut_t *varlut, int islclass,
+                         int loopcount)
 {
     node *res = NULL;
 
     DBUG_ENTER ();
 
-    res = PHUTcollectAffineExprsLocal (arg_node, fundef, varlut, res, islclass);
+    res
+      = PHUTcollectAffineExprsLocal (arg_node, fundef, varlut, res, islclass, loopcount);
 
     DBUG_RETURN (res);
 }
@@ -2774,8 +2652,7 @@ PHUTgenerateAffineExprsForPwlfIntersect (node *pwliv, node *cwliv, lut_t *varlut
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *PHUTfindLoopDependentVarinAft( node *arg_node,
- *            node *aft, node *fundef)
+ * @fn node *PHUTfindLoopDependentVarinAft()
  *
  * @brief Find a loop-dependent variable, arg_node, in aft
  *
@@ -2840,6 +2717,7 @@ PHUTfindLoopDependentVarinAft (node *arg_node, node *aft, node *fundef)
  *
  * @param fundef: the N_fundef for the loopfun
  * @param varlut: The lut we use to collect set variable names.
+ * @param loopcount: used by subfns
  * @param docondprf: TRUE if we are to generate constraints for
  *        condprf itself (NOT to be used with PHUTgetLoopCount,
  *        or we get infinite loops!)
@@ -2850,7 +2728,7 @@ PHUTfindLoopDependentVarinAft (node *arg_node, node *aft, node *fundef)
  *
  ******************************************************************************/
 node *
-PHUTcollectCondprf (node *fundef, lut_t *varlut, bool docondprf)
+PHUTcollectCondprf (node *fundef, lut_t *varlut, int loopcount, bool docondprf)
 {
     node *res = NULL;
     node *resel;
@@ -2879,7 +2757,7 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, bool docondprf)
             // Find the loop-dependent variable to use as the set variable
             arg1 = PRF_ARG1 (condprf);
             resel = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
-                                                 AVIS_ISLCLASSEXISTENTIAL);
+                                                 AVIS_ISLCLASSEXISTENTIAL, loopcount);
             setvar = PHUTfindLoopDependentVarinAft (arg1, resel, fundef);
             if (NULL != setvar) {
                 AVIS_ISLCLASS (setvar) = AVIS_ISLCLASSSETVARIABLE;
@@ -2890,7 +2768,7 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, bool docondprf)
             if (isDyadicPrf (PRF_PRF (condprf))) {
                 arg2 = PRF_ARG2 (condprf);
                 resel = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
-                                                     AVIS_ISLCLASSEXISTENTIAL);
+                                                     AVIS_ISLCLASSEXISTENTIAL, loopcount);
                 if (NULL == setvar) {
                     setvar = PHUTfindLoopDependentVarinAft (arg2, resel, fundef);
                     if (NULL != setvar) {
@@ -2932,6 +2810,8 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, bool docondprf)
  * @param  vid - the N_arg variable we are analyzing;
  *               vid is already in varlut.
  * @param: rcv - the recursive call value that corresponds to vid
+ * @param: loopcount - the loopcount to be used for the arithmetic
+ *               progression vector we generate, or -1 otherwise.
  *
  * @return An N_exprs chain representing an ISL constraint for the
  *         loop induction variable, or NULL, if we are unable to
@@ -2955,7 +2835,7 @@ PHUTcollectCondprf (node *fundef, lut_t *varlut, bool docondprf)
  ******************************************************************************/
 node *
 PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *varlut,
-                                  node *aft)
+                                  int loopcount, node *aft)
 {
     node *resel = NULL;
     node *rcvel = NULL;
@@ -2981,7 +2861,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
     } else {
         // Recursive call variable is existential.
         res = PHUTcollectAffineExprsLocal (rcvel, fundef, varlut, NULL,
-                                           AVIS_ISLCLASSEXISTENTIAL);
+                                           AVIS_ISLCLASSEXISTENTIAL, loopcount);
 
         // trace rcv back to calling environment
         strideid = NULL;
@@ -2997,8 +2877,9 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
 
             //  rcv = v0
             v0avis = rcv2CallerVar (rcv, fundef);
-            resel = PHUTcollectAffineExprsLocal (v0avis, FUNDEF_CALLERFUNDEF (fundef),
-                                                 varlut, NULL, AVIS_ISLCLASSEXISTENTIAL);
+            resel
+              = PHUTcollectAffineExprsLocal (v0avis, FUNDEF_CALLERFUNDEF (fundef), varlut,
+                                             NULL, AVIS_ISLCLASSEXISTENTIAL, loopcount);
             res = TCappendExprs (res, resel);
 
             // Build: vid >= v0 or vid <= v0, where v0 is initial value
@@ -3014,11 +2895,9 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
             lpavis = TBmakeAvis (TRAVtmpVarName ("LOOPCT"),
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (lpavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
-
             // If this is a loopfun with known loopcount, use it.
-            if (FUNDEF_ISLOOPFUN (fundef) && (-1 != FUNDEF_LOOPCOUNT (fundef))) {
-                resel = BuildIslSimpleConstraint (lpavis, F_lt_SxS,
-                                                  TBmakeNum (FUNDEF_LOOPCOUNT (fundef)),
+            if (FUNDEF_ISLOOPFUN (fundef) && (UNR_NONE != FUNDEF_LOOPCOUNT (fundef))) {
+                resel = BuildIslSimpleConstraint (lpavis, F_lt_SxS, TBmakeNum (loopcount),
                                                   NOPRFOP, NULL);
                 res = TCappendExprs (res, resel);
             }
@@ -3089,7 +2968,7 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
             z = FUNDEF_LOOPCOUNT (fundef);
             DBUG_PRINT ("Using FUNDEF_LOOPCOUNT (%s) of %d", FUNDEF_NAME (fundef), z);
         } else {
-            res = PHUTcollectCondprf (fundef, varlut, FALSE);
+            res = PHUTcollectCondprf (fundef, varlut, UNR_NONE, FALSE);
             condprf = LFUfindLoopfunConditional (fundef);
             condprf = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (condprf))));
 
@@ -3111,7 +2990,6 @@ PHUTgetLoopCount (node *fundef, lut_t *varlut)
             // Build constraint for condprf
             resel = PHUThandleRelational (stridesignum, arg1, arg2, PRF_PRF (condprf));
             res = TCappendExprs (res, resel);
-
             str = ISLUexprs2String (res, varlut, "LoopCount", TRUE, FUNDEF_NAME (fundef));
             z = ISLUgetLoopCount (str, varlut);
             DBUG_PRINT ("Loop count for %s is %d", FUNDEF_NAME (fundef), z);
