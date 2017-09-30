@@ -1944,9 +1944,6 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res, int 
     node *argavis;
     node *z = NULL;
     node *z2 = NULL;
-    node *arg1 = NULL;
-    node *arg2 = NULL;
-    node *arg3 = NULL;
     node *arg1aft = NULL;
     node *arg2aft = NULL;
     node *arg3aft = NULL;
@@ -1962,14 +1959,12 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res, int 
             DBUG_PRINT ("Called with ids=%s", AVIS_NAME (IDS_AVIS (ids)));
 
             // Deal with PRF_ARGs
-            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
-            arg1aft = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
+            arg1aft = PHUTcollectAffineExprsLocal (PRF_ARG1 (rhs), fundef, varlut, NULL,
                                                    AVIS_ISLCLASSEXISTENTIAL, loopcount);
             res = TCappendExprs (res, arg1aft);
             if (isDyadicPrf (PRF_PRF (rhs))) {
-                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
                 arg2aft
-                  = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
+                  = PHUTcollectAffineExprsLocal (PRF_ARG2 (rhs), fundef, varlut, NULL,
                                                  AVIS_ISLCLASSEXISTENTIAL, loopcount);
                 res = TCappendExprs (res, arg2aft);
             }
@@ -2157,6 +2152,7 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res, int 
 
             case F_idx_sel:
             case F_sel_VxA:
+#ifdef FIXME // very bad results from Build #600-G86784 2017-09-30
                 z = HandleSelectWithIota (ids, arg2, fundef, varlut, loopcount);
                 res = TCappendExprs (res, z);
 
@@ -2170,6 +2166,7 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res, int 
                     // We know nothing about arg2, so we make it a parameter
                     AVIS_ISLCLASS (IDS_AVIS (ids)) = AVIS_ISLCLASSPARAMETER;
                 }
+#endif // FIXME  // very bad results from Build #600-G86784 2017-09-30
                 break;
 
             case F_noteminval:
@@ -2186,9 +2183,8 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res, int 
                 // of LACFUN parameters. E.g., in simpleNonconstantUp.sac, we have a
                 // loop from START to START+5, where the value of START is the result
                 // of a function call [id(0)].
-                arg3 = PRF_ARG3 (rhs);
                 arg3aft
-                  = PHUTcollectAffineExprsLocal (arg3, fundef, varlut, NULL,
+                  = PHUTcollectAffineExprsLocal (PRF_ARG3 (rhs), fundef, varlut, NULL,
                                                  AVIS_ISLCLASSEXISTENTIAL, loopcount);
                 res = TCappendExprs (res, arg3aft);
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg3, NOPRFOP, NULL);
