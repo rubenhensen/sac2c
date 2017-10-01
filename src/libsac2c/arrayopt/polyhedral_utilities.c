@@ -2158,7 +2158,6 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res, int 
 
             case F_idx_sel:
             case F_sel_VxA:
-#ifdef FIXME // very bad results from Build #600-G86784 2017-09-30
                 z = HandleSelectWithIota (ids, arg2, fundef, varlut, loopcount);
                 res = TCappendExprs (res, z);
 
@@ -2172,7 +2171,6 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res, int 
                     // We know nothing about arg2, so we make it a parameter
                     AVIS_ISLCLASS (IDS_AVIS (ids)) = AVIS_ISLCLASSPARAMETER;
                 }
-#endif // FIXME  // very bad results from Build #600-G86784 2017-09-30
                 break;
 
             case F_noteminval:
