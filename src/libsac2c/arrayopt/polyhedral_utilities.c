@@ -2189,8 +2189,9 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res, int 
                 // of LACFUN parameters. E.g., in simpleNonconstantUp.sac, we have a
                 // loop from START to START+5, where the value of START is the result
                 // of a function call [id(0)].
+                arg3 = PHUTskipChainedAssigns (PRF_ARG3 (rhs));
                 arg3aft
-                  = PHUTcollectAffineExprsLocal (PRF_ARG3 (rhs), fundef, varlut, NULL,
+                  = PHUTcollectAffineExprsLocal (arg3, fundef, varlut, NULL,
                                                  AVIS_ISLCLASSEXISTENTIAL, loopcount);
                 res = TCappendExprs (res, arg3aft);
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, arg3, NOPRFOP, NULL);
