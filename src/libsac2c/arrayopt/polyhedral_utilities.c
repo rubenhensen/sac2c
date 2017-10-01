@@ -1888,7 +1888,7 @@ HandleSelectWithIota (node *ids, node *q, node *fundef, lut_t *varlut, int loopc
                 z = PHUTcollectAffineExprsLocal (s, fundef, varlut, NULL,
                                                  AVIS_ISLCLASSSETVARIABLE, loopcount);
                 res = TCappendExprs (res, z);
-                // Generate s >= lb
+                // Emit s >= lb
                 z = BuildIslSimpleConstraint (s, F_ge_SxS, lb, NOPRFOP, NULL);
                 res = TCappendExprs (res, z);
             }
@@ -1900,14 +1900,14 @@ HandleSelectWithIota (node *ids, node *q, node *fundef, lut_t *varlut, int loopc
                 z = PHUTcollectAffineExprsLocal (ub, fundef, varlut, NULL,
                                                  AVIS_ISLCLASSEXISTENTIAL, loopcount);
                 res = TCappendExprs (res, z);
-                // Generate s < ub
+                // Emit s < ub
                 z = BuildIslSimpleConstraint (s, F_lt_SxS, ub, NOPRFOP, NULL);
                 res = TCappendExprs (res, z);
             }
+            // Emit ids = s (in iv=[i,j,s,k] in the WL generator)
+            z = BuildIslSimpleConstraint (ids, F_eq_SxS, s, NOPRFOP, NULL);
+            res = TCappendExprs (res, z);
         }
-        // Now make ids = s (in iv=[i,j,s,k] in the WL generator)
-        z = BuildIslSimpleConstraint (ids, F_eq_SxS, s, NOPRFOP, NULL);
-        res = TCappendExprs (res, z);
     }
 
     DBUG_PRINT ("Leaving for lhs=%s", AVIS_NAME (IDS_AVIS (ids)));
