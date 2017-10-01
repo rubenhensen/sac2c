@@ -629,7 +629,7 @@ BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
     }
 
     z = TBmakeExprs (z, NULL);
-    PHUTprintIslAffineFunctionTree (z);
+    DBUG_EXECUTE (PHUTprintIslAffineFunctionTree (z));
     DBUG_PRINT ("Finished generating constraint for %s", AVIS_NAME (idsavis));
 
     DBUG_RETURN (z);
