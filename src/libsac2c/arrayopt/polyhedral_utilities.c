@@ -2042,11 +2042,11 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res, int 
                 z = BuildIslSimpleConstraint (ids, F_eq_SxS, TBmakeNum (1), F_sub_SxS,
                                               arg1);
                 res = TCappendExprs (res, z);
-                z = BuildIslSimpleConstraint (PRF_ARG1 (rhs), F_ge_SxS, TBmakeNum (0),
-                                              NOPRFOP, NULL);
+                z = BuildIslSimpleConstraint (arg1, F_ge_SxS, TBmakeNum (0), NOPRFOP,
+                                              NULL);
                 res = TCappendExprs (res, z);
-                z = BuildIslSimpleConstraint (PRF_ARG1 (rhs), F_le_SxS, TBmakeNum (1),
-                                              NOPRFOP, NULL);
+                z = BuildIslSimpleConstraint (arg1, F_le_SxS, TBmakeNum (1), NOPRFOP,
+                                              NULL);
                 res = TCappendExprs (res, z);
                 break;
 
