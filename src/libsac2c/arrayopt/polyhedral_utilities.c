@@ -610,13 +610,12 @@ BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Generating simple constraint");
-
     idsv = Node2Value (ids);
     DBUG_ASSERT (NULL != idsv, "Expected non-NULL ids");
     arg1v = Node2Value (arg1);
     arg2v = Node2Value (arg2);
     idsavis = TUnode2Avis (ids);
+    DBUG_PRINT ("Generating constraint for %s", AVIS_NAME (idsavis));
 
     z = TBmakeExprs (TBmakeId (idsavis), NULL);
     z = TCappendExprs (z, TBmakeExprs (TBmakePrf (nprf1, NULL), NULL));
@@ -630,6 +629,8 @@ BuildIslSimpleConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
     }
 
     z = TBmakeExprs (z, NULL);
+    PHUTprintIslAffineFunctionTree (z);
+    DBUG_PRINT ("Finished generating constraint for %s", AVIS_NAME (idsavis));
 
     DBUG_RETURN (z);
 }
