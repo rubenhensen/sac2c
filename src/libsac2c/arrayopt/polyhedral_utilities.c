@@ -1963,12 +1963,12 @@ PHUTprf (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res, int 
             DBUG_PRINT ("Called with ids=%s", AVIS_NAME (IDS_AVIS (ids)));
 
             // Deal with PRF_ARGs
-            arg1 = PRF_ARG1 (rhs);
+            arg1 = PHUTskipChainedAssigns (PRF_ARG1 (rhs));
             arg1aft = PHUTcollectAffineExprsLocal (arg1, fundef, varlut, NULL,
                                                    AVIS_ISLCLASSEXISTENTIAL, loopcount);
             res = TCappendExprs (res, arg1aft);
             if (isDyadicPrf (PRF_PRF (rhs))) {
-                arg2 = PRF_ARG2 (rhs);
+                arg2 = PHUTskipChainedAssigns (PRF_ARG2 (rhs));
                 arg2aft
                   = PHUTcollectAffineExprsLocal (arg2, fundef, varlut, NULL,
                                                  AVIS_ISLCLASSEXISTENTIAL, loopcount);
