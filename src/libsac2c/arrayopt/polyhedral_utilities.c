@@ -2897,7 +2897,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (lpavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
             // If this is a loopfun with known loopcount, use it.
-            if (FUNDEF_ISLOOPFUN (fundef) && (UNR_NONE != FUNDEF_LOOPCOUNT (fundef))) {
+            if ((FUNDEF_ISLOOPFUN (fundef)) && (UNR_NONE != loopcount)) {
                 resel = BuildIslSimpleConstraint (lpavis, F_lt_SxS, TBmakeNum (loopcount),
                                                   NOPRFOP, NULL);
                 res = TCappendExprs (res, resel);
