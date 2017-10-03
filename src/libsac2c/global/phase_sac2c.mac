@@ -752,7 +752,7 @@ SUBPHASE (vp2, "Propagating variables", VPdoVarPropagation, global.optimize.dovp
 SUBPHASE (cse3, "Eliminating common subexpression", CSEdoCommonSubexpressionElimination,
           global.optimize.docse, opt)
 
-SUBPHASE (dcr5, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, opt)
+SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, opt)
 
 SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
 
@@ -858,6 +858,17 @@ SUBPHASE (wlflt, "Trying to flatten multi-dimensional withloops",
 SUBPHASE (esaa, "Eliminating symbolic array attributes", ESVdoEliminateShapeVariables,
           global.optimize.dosaa, opt)
 
+/*
+ * Deadcode removal should be done after ESV to make
+ * sure we don't keep carrying around ssa-variables and
+ * -functions, which are no longer used for anything.
+ */
+
+SUBPHASE (dcr5, "Removing dead code", DCRdoDeadCodeRemoval,
+          (global.optimize.dosaa || !global.runtimecheck.conformity)
+            && global.optimize.dodcr,
+          opt)
+
 SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
           SCCdoStripConformityChecks,
           global.doivext || global.optimize.doawlf || global.insertconformitychecks, opt)
@@ -939,9 +950,8 @@ SUBPHASE (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
 SUBPHASE (ivevp2, "Propagating variables (for IVERAS)", VPdoVarPropagation,
           global.optimize.doive &&global.optimize.dovp, opt)
 
-SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemoval,
-          (global.optimize.dosaa || global.optimize.doive
-           || !global.runtimecheck.conformity)
+SUBPHASE (dcr6, "Removing dead code", DCRdoDeadCodeRemoval,
+          (global.optimize.doive || !global.runtimecheck.conformity)
             && global.optimize.dodcr,
           opt)
 
