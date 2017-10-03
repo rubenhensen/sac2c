@@ -560,7 +560,10 @@ CYCLEPHASEFUN (petl, "Propagate extrema thru lacfuns", PETLdoPropagateExtremaThr
 
 // Polyhedral optimizations can be very expensive, so
 // we clean up the AST before performing them, by doing
-// CSE, VP, and DCR.
+// DLFR, CSE, VP, and DCR.
+
+CYCLEPHASEFUNOLD (dlfr, "Removing dead local functions", DLFRdoDeadLocalFunctionRemoval,
+                  global.optimize.dodlfr, opt, saacyc)
 
 #ifdef BUG1147 // still
 CYCLEPHASEFUN (pvp, "Propagating variables for polyhedral optimizations",
@@ -700,9 +703,6 @@ CYCLEPHASEFUN (safa, "Sorting associative function arguments",
 
 CYCLEPHASEFUN (dcr2, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
                opt, saacyc)
-
-CYCLEPHASEFUNOLD (dlfr, "Removing dead local functions", DLFRdoDeadLocalFunctionRemoval,
-                  global.optimize.dodlfr, opt, saacyc)
 
 CYCLEPHASEFUNOLD (linl3, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, saacyc)
