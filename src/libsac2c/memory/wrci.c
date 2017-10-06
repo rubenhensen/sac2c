@@ -36,6 +36,15 @@
  *
  *    Here, we would like to reuse the memory allocated for a when compting b.
  *
+ *    NOTE: that EMR does not update the WL RC, but instead collects potnetial
+ *          candidates within another strucutre, ERC (extended reuse candidates),
+ *          on both WL-OPs and LoopFuns. The overall intention is to optimise
+ *          reuse candidates present within WL RC and allow for memeory reuse
+ *          in loops (do/for/while) by propogating reuse candidates from a higher
+ *          scope. XXX this will be achieved via two new phases (which have yet
+ *          to be implemented) - in the mean time, docs/projects/prealloc has
+ *          some formalism on how this is to be implemented.
+ *
  *    The ability to do such reuse is instrumental when trying to achieve a dual buffer
  *    swapping solution for a loop around something like     a = relax( a);
  *
@@ -344,6 +353,42 @@ WRCIfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *WRCIap( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCIap (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (INFO_RUN_EMR (arg_info)) {
+        /* check to see if we have found the recursive loopfun call */
+        if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
+            if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
+
+                if (INFO_EMR_RC (arg_info) != NULL && AP_ARGS (arg_node) != NULL) {
+                    /* filter out all vars that are args of loopfun: */
+                    anontrav_t emrtrav[2] = {{N_id, &EMRid}, {(nodetype)0, NULL}};
+                    TRAVpushAnonymous (emrtrav, &TRAVsons);
+                    AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
+                    TRAVpop ();
+                }
+
+                FUNDEF_ERC (AP_FUNDEF (arg_node)) = DUPdoDupTree (INFO_EMR_RC (arg_info));
+
+                DBUG_PRINT ("extended reuse candidates for loopfun:");
+                DBUG_EXECUTE (if (FUNDEF_ERC (AP_FUNDEF (arg_node)) != NULL) {
+                    PRTdoPrintFile (stderr, FUNDEF_ERC (AP_FUNDEF (arg_node)));
+                });
+            }
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WRCIarg( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
@@ -488,13 +533,6 @@ WRCIwith (node *arg_node, info *arg_info)
         DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
             PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
         });
-
-        INFO_RC (arg_info) = TCappendExprs (WITHOP_RC (WITH_WITHOP (arg_node)),
-                                            DUPdoDupTree (INFO_EMR_RC (arg_info)));
-        DBUG_PRINT ("candidates after extended memory reuse: ");
-        DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
-            PRTdoPrintFile (stderr, INFO_RC (arg_info));
-        });
     }
 
     /*
@@ -561,6 +599,13 @@ WRCIgenarray (node *arg_node, info *arg_info)
      * Annotate reuse candidates.
      */
     GENARRAY_RC (arg_node) = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), NULL);
+    /*
+     * Annotate extended reuse candidates.
+     */
+    if (INFO_RUN_EMR (arg_info)) {
+        GENARRAY_ERC (arg_node)
+          = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
+    }
 
     if (global.optimize.dopr) {
         /*
@@ -592,6 +637,13 @@ WRCImodarray (node *arg_node, info *arg_info)
      */
     MODARRAY_RC (arg_node)
       = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
+    /*
+     * Annotate extended reuse candidates.
+     */
+    if (INFO_RUN_EMR (arg_info)) {
+        MODARRAY_ERC (arg_node)
+          = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
+    }
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));

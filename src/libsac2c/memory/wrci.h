@@ -11,8 +11,10 @@
  *
  *****************************************************************************/
 extern node *WRCIdoWithloopReuseCandidateInference (node *syntax_tree);
+extern node *WRCIdoWithloopExtendedMemoryReuseCandidateInference (node *syntax_tree);
 
 extern node *WRCIfundef (node *arg_node, info *arg_info);
+extern node *WRCIap (node *arg_node, info *arg_info);
 extern node *WRCIarg (node *arg_node, info *arg_info);
 extern node *WRCIassign (node *arg_node, info *arg_info);
 extern node *WRCIlet (node *arg_node, info *arg_info);

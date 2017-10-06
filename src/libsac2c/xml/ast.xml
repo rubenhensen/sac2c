@@ -2952,14 +2952,15 @@
     <traversal id="WRCI" name="With-loop reuse candidate inference" default="sons" include="wrci.h">
       <travuser>
         <node name="Fundef" />
+        <node name="Ap" />
         <node name="Arg" />
         <node name="Assign" />
         <node name="Let" />
         <node name="Ids" />
-        <node name="With" />     
-        <node name="Genarray" />     
-        <node name="Modarray" />     
-        <node name="Fold" />     
+        <node name="With" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+        <node name="Fold" />
         <node name="Generator" />
       </travuser>
     </traversal>
@@ -5181,6 +5182,17 @@ N_tfarg :
             </target>
           </targets>
         </son>
+	    <son name="ERC" default="NULL">
+          <description>Stores all WL reuse candidates that might need to be appended to args of the loopfun.</description>
+            <targets>
+              <target mandatory="no" >
+                <node name="Exprs" />
+                <phases>
+                  <range from="opt_emr" to="final" />
+                </phases>
+              </target>
+            </targets>
+	    </son>
       </sons>
       <!-- Attributes for FUNDEF -->
       <attributes>
@@ -10378,6 +10390,20 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="ERC" default="NULL" >
+          <description>
+            Contains a list of Extra Reuse Candidates for WL memory reuse
+            within scope.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                <range from="opt_emr" to="final" />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="DefShapeExpr" default="NULL">
           <description>For with3 loops, the default element is given by genarray( DefShapeExpr, Default) where default denotes the default element of the genarray. Only present if a default element is present, as well.</description>
           <targets>
@@ -10480,6 +10506,20 @@ N_tfarg :
               <node name="Exprs" />
               <phases>
                 <range from="opt_wrci" to="mem_rci" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="ERC" default="NULL" >
+          <description>
+            Contains a list of Extra Reuse Candidates for WL memory reuse
+            within scope.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                <range from="opt_emr" to="final" />
               </phases>
             </target>
           </targets>
