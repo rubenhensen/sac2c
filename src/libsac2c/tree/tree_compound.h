@@ -1329,6 +1329,25 @@ extern size_t TCcountWithopsNeq (node *withop, nodetype neq);
             DBUG_UNREACHABLE ("Illegal node type");                                      \
         }
 
+#define WITHOP_ERC(n)                                                                    \
+    ((NODE_TYPE (n) == N_genarray)                                                       \
+       ? GENARRAY_ERC (n)                                                                \
+       : (NODE_TYPE (n) == N_modarray) ? MODARRAY_ERC (n) : NULL)
+
+#define L_WITHOP_ERC(n, rhs)                                                             \
+    switch                                                                               \
+        NODE_TYPE (n)                                                                    \
+        {                                                                                \
+        case N_genarray:                                                                 \
+            GENARRAY_ERC (n) = rhs;                                                      \
+            break;                                                                       \
+        case N_modarray:                                                                 \
+            MODARRAY_ERC (n) = rhs;                                                      \
+            break;                                                                       \
+        default:                                                                         \
+            DBUG_UNREACHABLE ("Illegal node type");                                      \
+        }
+
 /*--------------------------------------------------------------------------*/
 
 /***

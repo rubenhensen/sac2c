@@ -2964,6 +2964,21 @@
         <node name="Generator" />
       </travuser>
     </traversal>
+    <traversal id="MRC" name="Memory reuse consolidation" default="sons" include="memory_reuse_consolidation.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="With" />
+      </travuser>
+    </traversal>
+    <traversal id="MRP" name="Memory reuse preallocation" default="sons" include="memory_reuse_preallocation.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+        <!-- <node name="With" /> -->
+        <node name="Genarray" />
+        <node name="Modarray" />
+      </travuser>
+    </traversal>
     <traversal id="RWO" name="Reuse With-loop arrays with offsets" default="sons" include="reusewithoffset.h">
       <travuser>
         <node name="Prf" />

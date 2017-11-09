@@ -384,6 +384,8 @@ WRCIap (node *arg_node, info *arg_info)
         }
     }
 
+    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -397,9 +399,11 @@ WRCIarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("adding emr_rc %s ...", ARG_NAME (arg_node));
-    INFO_EMR_RC (arg_info)
-      = TBmakeExprs (TBmakeId (ARG_AVIS (arg_node)), INFO_EMR_RC (arg_info));
+    if (INFO_RUN_EMR (arg_info)) {
+        DBUG_PRINT ("adding emr_rc %s ...", ARG_NAME (arg_node));
+        INFO_EMR_RC (arg_info)
+          = TBmakeExprs (TBmakeId (ARG_AVIS (arg_node)), INFO_EMR_RC (arg_info));
+    }
 
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
@@ -416,9 +420,11 @@ WRCIids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("adding emr_rc %s ...", IDS_NAME (arg_node));
-    INFO_EMR_RC (arg_info)
-      = TBmakeExprs (TBmakeId (IDS_AVIS (arg_node)), INFO_EMR_RC (arg_info));
+    if (INFO_RUN_EMR (arg_info)) {
+        DBUG_PRINT ("adding emr_rc %s ...", IDS_NAME (arg_node));
+        INFO_EMR_RC (arg_info)
+          = TBmakeExprs (TBmakeId (IDS_AVIS (arg_node)), INFO_EMR_RC (arg_info));
+    }
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
@@ -533,6 +539,9 @@ WRCIwith (node *arg_node, info *arg_info)
         DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
             PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
         });
+
+        INFO_RC (arg_info)
+          = TCappendExprs (INFO_RC (arg_info), WITHOP_RC (WITH_WITHOP (arg_node)));
     }
 
     /*
@@ -540,7 +549,7 @@ WRCIwith (node *arg_node, info *arg_info)
      */
     INFO_RC (arg_info) = ElimDupes (INFO_RC (arg_info));
 
-    DBUG_PRINT ("final candidates after ElimDupes: ");
+    DBUG_PRINT ("final RCs after ElimDupes: ");
     DBUG_EXECUTE (
       if (INFO_RC (arg_info) != NULL) { PRTdoPrintFile (stderr, INFO_RC (arg_info)); });
     /*
@@ -599,12 +608,21 @@ WRCIgenarray (node *arg_node, info *arg_info)
      * Annotate reuse candidates.
      */
     GENARRAY_RC (arg_node) = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), NULL);
+
+    DBUG_PRINT ("Genarray RCs: ");
+    DBUG_EXECUTE (if (GENARRAY_RC (arg_node) != NULL) {
+        PRTdoPrintFile (stderr, GENARRAY_RC (arg_node));
+    });
     /*
      * Annotate extended reuse candidates.
      */
     if (INFO_RUN_EMR (arg_info)) {
         GENARRAY_ERC (arg_node)
           = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
+        DBUG_PRINT ("Genarray ERCs: ");
+        DBUG_EXECUTE (if (GENARRAY_ERC (arg_node) != NULL) {
+            PRTdoPrintFile (stderr, GENARRAY_ERC (arg_node));
+        });
     }
 
     if (global.optimize.dopr) {
@@ -637,12 +655,20 @@ WRCImodarray (node *arg_node, info *arg_info)
      */
     MODARRAY_RC (arg_node)
       = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
+    DBUG_PRINT ("Modarray RCs: ");
+    DBUG_EXECUTE (if (MODARRAY_RC (arg_node) != NULL) {
+        PRTdoPrintFile (stderr, MODARRAY_RC (arg_node));
+    });
     /*
      * Annotate extended reuse candidates.
      */
     if (INFO_RUN_EMR (arg_info)) {
         MODARRAY_ERC (arg_node)
           = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
+        DBUG_PRINT ("Modarray ERCs: ");
+        DBUG_EXECUTE (if (MODARRAY_ERC (arg_node) != NULL) {
+            PRTdoPrintFile (stderr, MODARRAY_ERC (arg_node));
+        });
     }
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
