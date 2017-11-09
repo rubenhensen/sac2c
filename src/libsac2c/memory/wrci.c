@@ -478,6 +478,7 @@ WRCIlet (node *arg_node, info *arg_info)
 node *
 WRCIwith (node *arg_node, info *arg_info)
 {
+    node *emr_chain;
     DBUG_ENTER ();
 
     /*
@@ -529,7 +530,29 @@ WRCIwith (node *arg_node, info *arg_info)
             PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
         });
 
-        /* first filter out those vars that are being used in the WL body: */
+        /*
+         * First filter out those vars that are being used in the WL body.
+         * However, we have to make sure that we preserve the current INFO_EMR_RC
+         * chain when leaving the N_with again! Otherwise, we may loose RC
+         * candidates. Consider:
+         * int[1000000] f( int[1000000] a)
+         * {
+         *   res = with{
+         *          (. <= [i] <=.) : a[[i]] + a[[999999-i]];
+         *         } : modarray(a);
+         *   ArrayIO::print( res);
+         *   res2 = with{
+         *          (. <= [i] <=.) : res[[i]] + res[[999999-i]];
+         *         } : modarray(res);
+         *   return (res2);
+         * }
+         * The argument "a" gets filtered out in the first WL but should be
+         * a candidate for the second!
+         *
+         * To achieve this, we stack the chain here and restore it just before leaving
+         * the N_with!
+         */
+        emr_chain = DUPdoDupTree (INFO_EMR_RC (arg_info));
         anontrav_t emrtrav[2] = {{N_id, &EMRid}, {(nodetype)0, NULL}};
         TRAVpushAnonymous (emrtrav, &TRAVsons);
         arg_node = TRAVdo (arg_node, arg_info);
@@ -573,6 +596,15 @@ WRCIwith (node *arg_node, info *arg_info)
      * Continue RC inference for nested WLs
      */
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+    if (INFO_RUN_EMR (arg_info)) {
+        /*
+         * Here, we have to resurrect the emr-candidates as we had them before
+         * processing this with loop:
+         */
+        FREEdoFreeTree (INFO_EMR_RC (arg_info));
+        INFO_EMR_RC (arg_info) = emr_chain;
+    }
 
     DBUG_RETURN (arg_node);
 }
