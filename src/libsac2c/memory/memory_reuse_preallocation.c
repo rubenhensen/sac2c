@@ -79,6 +79,20 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *FindUniqOfAvis( node *id, node *exprs, node *result)
+ *
+ * @brief tries to find an identifyer within a list of identifyers.
+ *        It returns the N_id if found, NULL otherwise.
+ *
+ * @param id     N_id node
+ * @param exprs  N_exprs of N_id nodes
+ * @param result initially empty ?!
+ *
+ * @return
+ *
+ *****************************************************************************/
 static node *
 FindUniqOfAvis (node *id, node *exprs, node *result)
 {
@@ -254,6 +268,32 @@ MRPgenarray (node *arg_node, info *arg_info)
         anontrav_t mrptrav[2] = {{N_id, &MRPid}, {(nodetype)0, NULL}};
         TRAVpushAnonymous (mrptrav, &TRAVsons);
         GENARRAY_ERC (arg_node) = TRAVopt (GENARRAY_ERC (arg_node), arg_info);
+        /*
+         *
+         *  Filtering out all occurrences of variables in INFO_USED_RCS( arg_info) from
+         *  the references in GENARRAY_ERC( arg_node):
+         *
+         *  filtered_out = TCfilterExprsArg( isInExprs, INFO_USED_RCS( arg_info),
+        &GENARRAY_ERC( arg_node));
+         *  filtered_out = FREEdoFreeTree( filtered_out);
+         *
+
+        bool  isInExprs( node *exprs, node *id)
+          {
+             if( exprs == NULL) {
+               return FALSE;
+             } else {
+               if( ID_AVIS( id) == ID_AVIS( EXPRS_EXPR( exprs)) ) {
+                 return TRUE;
+               } else {
+                 return isInExprs( id, EXPRS_NEXT( exprs));
+               }
+          }
+
+
+         *
+         */
+
         TRAVpop ();
 
         if (INFO_UNUSED_ERC (arg_info) == NULL) {
