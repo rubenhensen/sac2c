@@ -562,9 +562,6 @@ WRCIwith (node *arg_node, info *arg_info)
         DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
             PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
         });
-
-        INFO_RC (arg_info)
-          = TCappendExprs (INFO_RC (arg_info), WITHOP_RC (WITH_WITHOP (arg_node)));
     }
 
     /*
