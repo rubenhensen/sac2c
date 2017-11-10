@@ -2,6 +2,16 @@
  *
  * @defgroup frc Filter Reuse Candidates
  *
+ * This traversal removes reuse candidates that are being referenced at a later
+ * stage and, thus, can never have an RC of 1!
+ *
+ * This is implemented by a bottum up traversal. Whenever an identifier is being
+ * met in an argument position (N_id), a correposnding entry in a dataflow mask
+ * is being set.
+ * When finding the argument of a _fill_ or traversing into a N_genarray or
+ * N_modarray, we simply filter out all those reuse candidates whose data
+ * flow masks are being set!
+ *
  * @ingroup mm
  *
  * @{

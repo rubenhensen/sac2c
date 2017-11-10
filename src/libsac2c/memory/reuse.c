@@ -1,15 +1,49 @@
 /**
  * @defgroup emri Reuse Inference
  *
- * This phase identifies reuse candidates and puts them into the corrsponding
- * _alloc_ call as additional arguments. By doing so, it also replaces the _alloc_
- * with either _alloc_or_reuse_ or _alloc_or_resize_ .
+ * This phase identifies reuse candidates for primitive functions and
+ * it replaces the corresponding _alloc_ calls for the results by
+ * either _alloc_or_reuse_ or _alloc_or_resize_. In doing so,
+ * it also expands the arguments from the previous _alloc_ by adding
+ * the reuse candidates in the replacement for _alloc_.
  *
- * This replacement affects two classes of allocations: those for the results of
- * primitive functions and those for the results of With-Loops.
- * For With-Loops it builds on the availability of GENARRAY_RC, GENARRAY_PRC and
- * MODARRAY_RC which are inferred by wrci, run within the optimisations just before
- * ive.
+ * For example:
+ *
+  ...
+  _emal_4840_a = _alloc_( 1, [ 14 ]);
+  a = _fill_( _add_VxV_( _flat_16, _flat_0), _emal_4840_a);
+  ...
+ * is replaced by
+ *
+  ...
+  _emal_4840_a = _alloc_or_reuse_( 1, [ 14 ], _flat_16, _flat_0);
+  a = _fill_( _add_VxV_( _flat_16, _flat_0), _emal_4840_a);
+  ...
+ *
+ * Note here, that this is done without checking whether the arguments of
+ * the primitive function under consideration are being referenced later!
+ *
+ * This phase applies the same transformation to the _alloc_ operations for
+ * the results of with-loops. In those cases, the reuse candidates are taken
+ * from GENARRAY_RC, GENARRAY_PRC and MODARRAY_RC which are inferred by wrci,
+ * run within the optimisations just before ive.
+ *
+ * Again, it should be noted that this replacement is being done without
+ * analysing whether there are later references to the reuse candidates
+ * which render them unapplicable.
+ * FRC elides those.
+ *
+ *******************************************************************************
+ *
+ * Implementation notes:
+ *
+ *  This traversal has two modes. The mode ri_default traverses through the
+ *  program to identify suitable prfs or with-loops. Once found, INFO_RHSCAND
+ *  is loaded with the exprs list of candidate ids and the _alloc_ assignment
+ *  is being traversed in ri_annotate mode.
+ *  This switch is being triggered
+ *    for prfs: when _fill_( <a suitable prf>, mem) is found
+ *    for WLFs: when non-empty WITHOP_RC/PRC are being found
  *
  * @ingroup mm
  *
