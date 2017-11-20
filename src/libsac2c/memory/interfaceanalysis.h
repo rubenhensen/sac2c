@@ -12,6 +12,8 @@
  ****************************************************************************/
 extern node *EMIAdoInterfaceAnalysis (node *syntax_tree);
 
+extern node *SHALprintPreFun (node *arg_node, info *arg_info);
+
 extern node *EMIAap (node *arg_node, info *arg_info);
 extern node *EMIAarg (node *arg_node, info *arg_info);
 extern node *EMIAassign (node *arg_node, info *arg_info);

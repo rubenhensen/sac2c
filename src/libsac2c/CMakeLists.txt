@@ -337,7 +337,6 @@ ${CMAKE_CURRENT_SOURCE_DIR}/memory/reuseelimination.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/reusewithoffset.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/rm_alias_results_cc.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/scoperce.c
-${CMAKE_CURRENT_SOURCE_DIR}/memory/show_alias.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/staticreuse.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/wrci.c
 ${CMAKE_CURRENT_SOURCE_DIR}/modules/addspecialfuns.c
@@ -520,6 +519,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/tree/remove_dfms.c
 ${CMAKE_CURRENT_SOURCE_DIR}/tree/rename.c
 ${CMAKE_CURRENT_SOURCE_DIR}/tree/sanity_checks.c
 ${CMAKE_CURRENT_SOURCE_DIR}/tree/traverse.c
+${CMAKE_CURRENT_SOURCE_DIR}/tree/traverse_inject.c
 #${CMAKE_CURRENT_SOURCE_DIR}/tree/traverse_helper.c
 #${CMAKE_CURRENT_SOURCE_DIR}/tree/traverse_tables.c
 ${CMAKE_CURRENT_SOURCE_DIR}/tree/tree_basic.c

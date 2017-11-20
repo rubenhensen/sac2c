@@ -4,6 +4,40 @@
 
 #define RESET TRUE
 
+/*** pre/post fun macros ***/
+
+#ifndef ADDPREFUNfun
+#define ADDPREFUNfun(fun)
+#define ADDPREFUNfun__defined
+#endif
+
+#ifndef ADDPREFUN
+#define ADDPREFUN(travname, fun) ADDPREFUNfun(fun)
+#define ADDPREFUN__defined
+#endif
+
+#ifndef ADDPOSTFUNfun
+#define ADDPOSTFUNfun(fun)
+#define ADDPOSTFUNfun__defined
+#endif
+
+#ifndef ADDPOSTFUN
+#define ADDPOSTFUN(travname, fun) ADDPOSTFUNfun(fun)
+#define ADDPOSTFUN__defined
+#endif
+
+#ifndef REMOVEPREFUN
+#define REMOVEPREFUN(travname, fun)
+#define REMOVEPREFUN__defined
+#endif
+
+#ifndef REMOVEPOSTFUN
+#define REMOVEPOSTFUN(travname, fun)
+#define REMOVEPOSTFUN__defined
+#endif
+
+/*** phase macros ***/
+
 #ifndef PHASEname
 #define PHASEname(name)
 #define PHASEname__defined
