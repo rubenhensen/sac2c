@@ -990,12 +990,6 @@ SUBPHASE (stat, "Displaying optimisation statistics", STATdoPrintStatistics,
 SUBPHASE (emr, "Inferencing with-loop extended memory reuse candidates",
           WRCIdoWithloopExtendedMemoryReuseCandidateInference, global.optimize.doemr, opt)
 
-SUBPHASE (mrc, "Consolidate reference counting with ERC", MRCdoRefConsolidation,
-          global.optimize.domrc &&global.optimize.doemr, opt)
-
-SUBPHASE (mrp, "Performan preallocation for ERC", MRPdoPreallocation,
-          global.optimize.domrp &&global.optimize.domrc &&global.optimize.doemr, opt)
-
 ENDPHASE (opt)
 
 /******************************************************************************/
@@ -1243,6 +1237,9 @@ SUBPHASE (srce, "Removing non-local reuse-candidates", SRCEdoRemoveReuseCandidat
 
 SUBPHASE (frc, "Removing invalid reuse candidates", FRCdoFilterReuseCandidates,
           global.optimize.douip, mem)
+
+SUBPHASE (mrp, "Perform reuse preallocation for ERC", MRPdoPreallocation,
+          global.optimize.domrp &&global.optimize.doemr, mem)
 
 SUBPHASE (sr, "Static reuse", EMSRdoStaticReuse,
           global.optimize.douip &&global.optimize.dosrf, mem)

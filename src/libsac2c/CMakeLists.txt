@@ -328,7 +328,6 @@ ${CMAKE_CURRENT_SOURCE_DIR}/memory/interfaceanalysis.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/loopallocopt.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/loopreuseopt.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/movesharedmeminstr.c
-${CMAKE_CURRENT_SOURCE_DIR}/memory/memory_reuse_consolidation.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/memory_reuse_preallocation.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/polyhedral_reuse_analysis.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/rcminimize.c
