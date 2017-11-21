@@ -1,0 +1,200 @@
+# This is the CI/build script for the GitLab-CI system for building/testing
+# the SaC compiler
+
+# we'll likely need to ensure that basic build tools are available
+#before_script:
+
+# here we define specific groups of actions (which are run in parallel)
+stages:
+    - build
+    - package
+
+build-archlinux:
+    stage: build
+    # here we define the commands to run
+    script:
+        - mkdir $HOME/.sac2crc
+        - mkdir build && cd build
+        - cmake ../cmake/cpack
+        - make -j2
+    # ensure that we build on the correct docker container (there should
+    # only be one tag listed below!)
+    tags:
+        - archlinux
+    # ensure we capture the build blob
+    artifacts:
+        expire_in: 12 hrs
+        paths:
+            - build/
+    only:
+        # we use the trigger mechanism as this is currently the only
+        # feasible way of actually having stuff build via merge-requests.
+        - triggers
+        - web
+
+package-archlinux:
+    stage: package
+    script:
+        - cd build
+        - cpack -G TGZ
+    tags:
+        - archlinux
+    artifacts:
+        expire_in: 4 weeks
+        paths:
+            - build/*.tar.gz
+    dependencies:
+        - build-archlinux
+    only:
+        - schedules
+        - web
+
+build-centos7:
+    stage: build
+    # here we define the commands to run
+    script:
+        - mkdir $HOME/.sac2crc
+        - mkdir build && cd build
+        - cmake3 ../cmake/cpack
+        - make -j2
+    # ensure that we build on the correct docker container (there should
+    # only be one tag listed below!)
+    tags:
+        - centos7
+    # ensure we capture the build blob
+    artifacts:
+        expire_in: 12 hrs
+        paths:
+            - build/
+    only:
+        - triggers
+        - web
+
+package-centos7:
+    stage: package
+    script:
+        - cd build
+        - cpack -G RPM
+    tags:
+        - centos7
+    artifacts:
+        expire_in: 4 weeks
+        paths:
+            - build/*.rpm
+    dependencies:
+        - build-centos7
+    only:
+        - schedules
+        - web
+
+build-centos6:
+    stage: build
+    # here we define the commands to run
+    script:
+        - mkdir $HOME/.sac2crc
+        - mkdir build && cd build
+        - cmake ../cmake/cpack
+        - make -j2
+    # ensure that we build on the correct docker container (there should
+    # only be one tag listed below!)
+    tags:
+        - centos6
+    # ensure we capture the build blob
+    artifacts:
+        expire_in: 12 hrs
+        paths:
+            - build/
+    only:
+        - web
+
+package-centos6:
+    stage: package
+    script:
+        - cd build
+        - cpack -G RPM
+    tags:
+        - centos6
+    artifacts:
+        expire_in: 4 weeks
+        paths:
+            - build/*.rpm
+    dependencies:
+        - build-centos6
+    only:
+        - schedules
+        - web
+
+build-ubuntu16:
+    stage: build
+    # here we define the commands to run
+    script:
+        - mkdir $HOME/.sac2crc
+        - mkdir build && cd build
+        - cmake ../cmake/cpack
+        - make -j2
+    # ensure that we build on the correct docker container (there should
+    # only be one tag listed below!)
+    tags:
+        - ubuntu16
+    # ensure we capture the build blob
+    artifacts:
+        expire_in: 12 hrs
+        paths:
+            - build/
+    only:
+        - triggers
+        - web
+
+package-ubuntu16:
+    stage: package
+    script:
+        - cd build
+        - cpack -G DEB
+    tags:
+        - ubuntu16
+    artifacts:
+        expire_in: 4 weeks
+        paths:
+            - build/*.deb
+    dependencies:
+        - build-ubuntu16
+    only:
+        - schedules
+        - web
+
+build-ubuntu14:
+    stage: build
+    # here we define the commands to run
+    script:
+        - mkdir $HOME/.sac2crc
+        - mkdir build && cd build
+        - cmake ../cmake/cpack
+        - make -j2
+    # ensure that we build on the correct docker container (there should
+    # only be one tag listed below!)
+    tags:
+        - ubuntu14
+    # ensure we capture the build blob
+    artifacts:
+        expire_in: 12 hrs
+        paths:
+            - build/
+    only:
+        - web
+
+package-ubuntu14:
+    stage: package
+    script:
+        - cd build
+        - cpack -G DEB
+    tags:
+        - ubuntu14
+    artifacts:
+        expire_in: 4 weeks
+        paths:
+            - build/*.deb
+    dependencies:
+        - build-ubuntu14
+    only:
+        - schedules
+        - web
