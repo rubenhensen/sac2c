@@ -1,6 +1,6 @@
 /*****************************************************************************
  *
- * file:   sac_message.h
+ * file:   message.h
  *
  * description:
  *
@@ -17,7 +17,7 @@
 #define SAC_C_EXTERN extern
 #endif /* SAC_C_EXTERN */
 
-#include "std.h"
+#include "runtime/essentials_h/std.h"
 
 SAC_C_EXTERN void (*SAC_MessageExtensionCallback) (void);
 SAC_C_EXTERN void SAC_RuntimeError (char *format, ...);
@@ -29,3 +29,4 @@ SAC_C_EXTERN const char *SAC_PrintShape (SAC_array_descriptor_t desc);
 SAC_C_EXTERN void SAC_Print (char *format, ...);
 
 #endif /* _SAC_MESSAGE_H_ */
+

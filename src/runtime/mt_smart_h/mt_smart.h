@@ -92,3 +92,4 @@ SAC_C_EXTERN void SAC_MT_smart_finalize (void);
 #endif
 
 #endif /* _MT_SMART */
+

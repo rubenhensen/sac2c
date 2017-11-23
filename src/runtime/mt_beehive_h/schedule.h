@@ -21,6 +21,7 @@
 
 #if SAC_DO_MT_PTHREAD || SAC_DO_MT_LPEL || SAC_DO_MT_BEEHIVE
 
+#include <pthread.h>
 /*
  *  Macros for global symbol definitions
  */

@@ -117,6 +117,8 @@ extern void *memcpy (void *dest, const void *src, size_t n);
  * Definition of macros implementing a general locking mechanism
  */
 
+#define SAC_MT_STATIC static
+
 #define SAC_MT_DEFINE_LOCK(name) pthread_mutex_t name = PTHREAD_MUTEX_INITIALIZER;
 
 #define SAC_MT_DECLARE_LOCK(name) SAC_C_EXTERN pthread_mutex_t name;
@@ -174,6 +176,8 @@ SAC_C_EXTERN unsigned int SAC_RTSPEC_controller_threads;
 #define SAC_MT_SETUP_INITIAL()
 
 #define SAC_MT_DEFINE()
+
+#define SAC_MT_STATIC 
 
 #define SAC_MT_DEFINE_LOCK(name)
 

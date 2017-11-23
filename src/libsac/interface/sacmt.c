@@ -12,7 +12,8 @@
 #define SAC_DO_MT_BEEHIVE 1
 #define SAC_DO_PHM 1
 
-#include "sac.h"
+#include "runtime/mt_beehive_h/mt_beehive.h" // SAC_MT_SetupAsLibraryInitial, ...
+#include "runtime/essentials_h/message.h"    // SAC_RuntimeWarning, ...
 
 /** --------------------------------------------------------------------------------------
  *

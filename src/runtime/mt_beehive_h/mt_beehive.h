@@ -17,6 +17,13 @@
 /* NOTE: SAC_DO_MT_BEEHIVE is defined only when including from mt_beehive.c */
 #if SAC_DO_MULTITHREAD && (SAC_DO_MT_BEEHIVE || SAC_DO_MT_PTHREAD || SAC_DO_MT_LPEL)
 
+#include "schedule.h" // SAC_MT_DEFINE, ...
+#include "runtime/mt_h/mt.h" //SAC_MT_DECLARE_LOCK, ...
+
+#ifndef SAC_C_EXTERN
+#define SAC_C_EXTERN extern
+#endif /* SAC_C_EXTERN */
+
 struct sac_bee_common_t;
 struct sac_hive_common_t;
 

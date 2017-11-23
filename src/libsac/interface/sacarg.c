@@ -1,9 +1,13 @@
 #include "sacarg.h"
-#include "sac.h"
 #include <stdio.h>
 #include <assert.h>
 #include "config.h"
 #include "string.h"
+
+#include "runtime/essentials_h/types.h" // floatvec (through type_info.mac)
+#include "runtime/essentials_h/bool.h" // bool
+#include "runtime/essentials_h/std_gen.h" // SAC_ND_DECL__DESC
+
 
 #ifdef __cplusplus
 #define va_copy(a, b) __builtin_va_copy (a, b)
@@ -103,8 +107,8 @@ SACARGmakeDescriptor (int dim, va_list args)
     va_list argp;
 
     SAC_ND_DECL__DESC (result_nt, );
-    int UNUSED SAC_ND_A_MIRROR_SIZE (result_nt) = 1;
-    int UNUSED SAC_ND_A_MIRROR_DIM (result_nt) = dim;
+    int SAC_ND_A_MIRROR_SIZE (result_nt) = 1;
+    int SAC_ND_A_MIRROR_DIM (result_nt) = dim;
 
     SAC_ND_ALLOC__DESC (result_nt, dim);
     SAC_ND_INIT__RC (result_nt, 0);
@@ -127,8 +131,8 @@ SACARGmakeDescriptorVect (int dim, int *shape)
     int pos;
 
     SAC_ND_DECL__DESC (result_nt, );
-    int UNUSED SAC_ND_A_MIRROR_SIZE (result_nt) = 1;
-    int UNUSED SAC_ND_A_MIRROR_DIM (result_nt) = dim;
+    int SAC_ND_A_MIRROR_SIZE (result_nt) = 1;
+    int SAC_ND_A_MIRROR_DIM (result_nt) = dim;
 
     SAC_ND_ALLOC__DESC (result_nt, dim);
     SAC_ND_INIT__RC (result_nt, 0);
@@ -210,8 +214,8 @@ SACARGfree (SACarg *arg)
 
     SAC_ND_DECL__DATA (data_nt, void, );
     SAC_ND_DECL__DESC (data_nt, );
-    int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
-    int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = 0;
+    int SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
+    int SAC_ND_A_MIRROR_DIM (data_nt) = 0;
 
     SAC_ND_A_FIELD (data_nt) = SACARG_DATA (arg);
     SAC_ND_A_DESC (data_nt) = SACARG_DESC (arg);
@@ -287,8 +291,8 @@ SACARGextractData (SACarg *arg)
     void *result = NULL;
     SAC_ND_DECL__DATA (data_nt, void, );
     SAC_ND_DECL__DESC (data_nt, );
-    int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
-    int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = 0;
+    int SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
+    int SAC_ND_A_MIRROR_DIM (data_nt) = 0;
     int rc = 0;
 
     SAC_ND_A_FIELD (data_nt) = SACARG_DATA (arg);
@@ -357,8 +361,8 @@ static inline void SACARG_common_unwrap (SAC_ND_PARAM_out (out_nt, void),
 
     SAC_ND_DECL__DATA (data_nt, void, );
     SAC_ND_DECL__DESC (data_nt, );
-    int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
-    int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = 0;
+    int SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
+    int SAC_ND_A_MIRROR_DIM (data_nt) = 0;
 
     SAC_ND_A_FIELD (data_nt) = SACARG_DATA (SAC_ND_A_FIELD (param_nt));
     SAC_ND_A_DESC (data_nt) = SACARG_DESC (SAC_ND_A_FIELD (param_nt));

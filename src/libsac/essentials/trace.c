@@ -20,6 +20,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <stdbool.h>
+
+#include "trace.h"
 
 #if SAC_MT_MODE > 0
 #define SAC_DO_MULTITHREAD 1
@@ -31,18 +34,23 @@
 
 #define SAC_DO_PHM 1
 
-#include "sac.h"
+#include "runtime/mt_h/mt.h" // needed for SAC_MT_DEFINE_LOCK, SAC_MT_STATIC
+#include "runtime/mt_beehive_h/schedule.h" // needed for SAC_MT_ACQUIRE_LOCK
+#include "runtime/mt_beehive_h/mt_beehive.h" // needed for SAC_MT_output_lock
+#include "runtime/phm_h/phm.h" // needed for SAC_HM_THREADID_INVALID
 
 #undef SAC_DO_MULTITHREAD
 #undef SAC_DO_MT_PTHREAD
 #undef SAC_DO_THREADS_STATIC
 #undef SAC_DO_PHM
 
+
+
 int SAC_TR_array_memcnt = 0;
 int SAC_TR_hidden_memcnt = 0;
 
-SAC_MT_DEFINE_LOCK (SAC_TR_array_memcnt_lock)
-SAC_MT_DEFINE_LOCK (SAC_TR_hidden_memcnt_lock)
+SAC_MT_STATIC SAC_MT_DEFINE_LOCK (SAC_TR_array_memcnt_lock)
+SAC_MT_STATIC SAC_MT_DEFINE_LOCK (SAC_TR_hidden_memcnt_lock)
 
 /******************************************************************************
  *

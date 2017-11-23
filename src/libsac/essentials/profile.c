@@ -16,11 +16,9 @@
 #ifndef SAC_BACKEND_MUTC
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <sys/resource.h>
 
-#include "sac.h"
+#include "profile.h"
+
 
 /*
  *  Internal type definitions

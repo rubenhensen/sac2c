@@ -1,6 +1,6 @@
 /*****************************************************************************
  *
- * file:   sac_trace.h
+ * file:   sac_rt_trace.h
  *
  * description:
  *
@@ -15,43 +15,10 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_TRACE_H
-#define _SAC_TRACE_H
-
-#ifndef SAC_C_EXTERN
-#define SAC_C_EXTERN extern
-#endif /* SAC_C_EXTERN */
-
-/*
- *  External declarations of global variables and functions defined in trace.c
- *  as part of libsac.
- */
-SAC_C_EXTERN void SAC_TR_Print (char *format, ...);
-
-#define SAC_TR_LIBSAC_PRINT(msg) (SAC_MT_do_trace ? SAC_TR_Print msg : (void)0)
+#ifndef _SAC_RT_TRACE_H
+#define _SAC_RT_TRACE_H
 
 #if SAC_DO_TRACE
-
-/*
- * FIXME: Bug 978
- * This should never be included here.
- * As a quick fix, only include for TRACE_MT
- * so that the other tracing options work.
- */
-#if SAC_DO_TRACE_MT
-#include <stdio.h>
-#endif
-
-#include <string.h>
-
-SAC_C_EXTERN int SAC_TR_hidden_memcnt;
-SAC_C_EXTERN int SAC_TR_array_memcnt;
-
-SAC_C_EXTERN void SAC_TR_IncArrayMemcnt (int size);
-SAC_C_EXTERN void SAC_TR_DecArrayMemcnt (int size);
-SAC_C_EXTERN void SAC_TR_IncHiddenMemcnt (int size);
-SAC_C_EXTERN void SAC_TR_DecHiddenMemcnt (int size);
-
 /*
  * CAUTION!
  * This should be an expression (due to SAC_TR_AA_PRINT), therefore,
@@ -266,4 +233,5 @@ typedef enum {
 #endif /* SAC_DO_TRACE_MEM */
 #else
 #define SAC_HM_DEFINE()
-#endif /* _SAC_TRACE_H */
+#endif /* _SAC_RT_TRACE_H */
+

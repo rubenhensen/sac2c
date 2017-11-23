@@ -1,6 +1,6 @@
 /*****************************************************************************
  *
- * file:   sac_profile.h
+ * file:   rt_profile.h
  *
  * description:
  *   This file is part of the SAC standard header file sac.h
@@ -32,8 +32,8 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_PROFILE_H
-#define _SAC_PROFILE_H
+#ifndef _SAC_RT_PROFILE_H
+#define _SAC_RT_PROFILE_H
 
 #ifndef SAC_C_EXTERN
 #define SAC_C_EXTERN extern
@@ -831,4 +831,5 @@ SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
 #define SAC_PF_DEFINE()
 #endif /* mutc */
 
-#endif /* _SAC_PROFILE_H */
+#endif /* _SAC_RT_PROFILE_H */
+

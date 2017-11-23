@@ -10,15 +10,10 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_COMMANDLINE_H_
-#define _SAC_COMMANDLINE_H_
+#ifndef _SAC_RT_COMMANDLINE_H_
+#define _SAC_RT_COMMANDLINE_H_
 
-#ifndef SAC_C_EXTERN_VAR
-#define SAC_C_EXTERN_VAR extern
-#endif /* SAC_C_EXTERN_VAR */
-
-SAC_C_EXTERN_VAR char **SAC_commandline_argv;
-SAC_C_EXTERN_VAR int SAC_commandline_argc;
+#include "libsac/essentials/commandline.h"
 
 #define SAC_COMMANDLINE_GET(argc, argv)                                                  \
     argc = SAC_commandline_argc;                                                         \
@@ -28,4 +23,4 @@ SAC_C_EXTERN_VAR int SAC_commandline_argc;
     SAC_commandline_argc = argc;                                                         \
     SAC_commandline_argv = argv;
 
-#endif /* _SAC_COMMANDLINE_H_ */
+#endif /* _SAC_RT_COMMANDLINE_H_ */

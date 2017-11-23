@@ -1,6 +1,13 @@
-#include "sacinterface.h"
-#include "sac.h"
-#include "sacarg.h"
+/*
+ * This library is only used from C programs.
+ * It solely provides conversion functions between void * pointers
+ * and SACarg objects. The interface only exists as part of 
+ * sacinterface.h which lives in sac2c/include !
+ */
+#include "sacinterface.h" // serves as superset of the own interface
+#include "runtime/essentials_h/types.h"   // byte,...
+#include "runtime/essentials_h/message.h" // SAC_RuntimeError,...
+#include "sacarg.h"                       // SACARGextractData, ...
 
 /**
  * conversion functions SACarg -> C
