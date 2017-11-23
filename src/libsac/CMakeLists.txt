@@ -20,11 +20,11 @@ SET (LIBSAC_SRC
   interface/sacmt.c
   mt/mt.c
   mt/hwloc_data.c
-  mt_beehive/mt_beehive.c
-  mt_lpel/mt_lpel.c
-  mt_omp/mt_omp.c
-  mt_pth/mt_pth.c
-  mt_smart/mt_smart.c
+  mt/mt_beehive.c
+  mt/mt_lpel.c
+  mt/mt_omp.c
+  mt/mt_pth.c
+  mt/mt_smart.c
 )
 
 IF(${RTSPEC} EQUAL 1)

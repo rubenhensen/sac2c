@@ -6,10 +6,13 @@
  *
  *****************************************************************************/
 
-#include "config.h"
+#include "persistence.h"
 
 #if SAC_DO_RTSPEC
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -17,14 +20,13 @@
 #include <pwd.h>
 #include <dlfcn.h>
 
-#include "registry.h"
-#include "trace.h"
+#include "registry.h"                 // SAC_register_specialization
+#include "trace.h"                    // SAC_RTSPEC_TR_Print
 
 #define SAC_DO_TRACE 1
-#include "sac.h"
-#include "stdio.h"
-#include "string.h"
-#include "stdlib.h"
+
+#include "runtime/essentials_h/std.h" // TRUE, ...
+
 
 #define MAX_INT_DIGITS 21
 
@@ -32,9 +34,9 @@ static int do_trace;
 
 static bool persistence_enabled;
 
-char *cachedir;
-int strlen_cachedir;
-int strlen_extension;
+static char *cachedir;
+static int strlen_cachedir;
+static int strlen_extension;
 
 /** <!--*******************************************************************-->
  *

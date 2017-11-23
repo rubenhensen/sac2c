@@ -17,6 +17,8 @@
 #define SAC_C_EXTERN extern
 #endif /* SAC_C_EXTERN */
 
+#include "runtime/essentials_h/bool.h"
+
 /*
  *  External declarations of global variables and functions defined in trace.c
  *  as part of libsac.

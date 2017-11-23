@@ -15,13 +15,16 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+#include "supervisor.h"
 #include "rtspec_modes.h"
-#include "simple_controller.h"
-#include "uuid_controller.h"
+#include "simple_controller.h" // SAC_Simple_setupController
+#include "uuid_controller.h"   // SAC_UUID_setupController
 #include "trace.h"
 
 #define SAC_DO_TRACE 1
-#include "sac.h"
+#include "runtime/essentials_h/bool.h"
+#include "runtime/essentials_h/std.h"
+#include "libsac/essentials/message.h"
 
 #define SAC_RTC_ENV_VAR_NAME "SAC_RTSPEC_CONTROLLER"
 
@@ -31,7 +34,7 @@ pthread_key_t SAC_RTSPEC_self_id_key;
 /* The number of controller threads used for runtime specialization. */
 unsigned int SAC_RTSPEC_controller_threads;
 
-pthread_t *controller_threads;
+static pthread_t *controller_threads;
 
 static int do_trace;
 
@@ -142,8 +145,10 @@ SAC_setupController (char *dir)
     int result;
     pthread_t controller_thread;
     result = 0;
-    unsigned int rtspec_thread_ids[SAC_HM_RTSPEC_THREADS ()];
+    unsigned int *rtspec_thread_ids;
 
+    rtspec_thread_ids
+         = (unsigned int *)malloc(SAC_HM_RTSPEC_THREADS () * sizeof( unsigned int));
     for (unsigned int i = 0; i < SAC_HM_RTSPEC_THREADS (); i++) {
         rtspec_thread_ids[i] = SAC_MT_GLOBAL_THREADS () + i;
     }

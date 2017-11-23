@@ -9,5 +9,5 @@ SET (SETTINGS_DIAG          -DDIAG)
 SET (SETTINGS_XT            -DMT -DPHM_XT)
 
 # BUILD TARGETS
-SET (TARGETS                seq mt_pth mt_pth_xt)
+SET (TARGETS                seq seq_rt mt_pth mt_pth_rt mt_pth_xt)
 

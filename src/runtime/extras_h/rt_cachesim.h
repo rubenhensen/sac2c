@@ -1,6 +1,6 @@
 /*****************************************************************************
  *
- * file:   sac_cachesim.h
+ * file:   rt_cachesim.h
  *
  * prefix: SAC_CS_
  *
@@ -19,8 +19,8 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_CACHESIM_H
-#define _SAC_CACHESIM_H
+#ifndef _SAC_RT_CACHESIM_H
+#define _SAC_RT_CACHESIM_H
 
 #ifndef SAC_C_EXTERN
 #define SAC_C_EXTERN extern
@@ -33,173 +33,6 @@
 #define SAC_CS_FILE 1
 #define SAC_CS_SIMPLE 2
 #define SAC_CS_ADVANCED 3
-
-typedef enum eWritePolicy {
-    SAC_CS_default,
-    SAC_CS_fetch_on_write,
-    SAC_CS_write_validate,
-    SAC_CS_write_around
-} tWritePolicy;
-
-typedef enum eProfilingLevel {
-    SAC_CS_none,
-    SAC_CS_file,
-    SAC_CS_simple,
-    SAC_CS_advanced,
-    SAC_CS_piped_simple,
-    SAC_CS_piped_advanced
-} tProfilingLevel;
-
-/******************************************************************************
- *
- * function:
- *   void SAC_CS_CheckArguments(...)
- *
- * description:
- *
- *   checks the command line arguments of the running SAC application for
- *   additional cache specifications that overwrite the default set when
- *   the application was compiled.
- *
- ******************************************************************************/
-
-SAC_C_EXTERN
-void SAC_CS_CheckArguments (int argc, char *argv[], tProfilingLevel *profilinglevel,
-                            int *cs_global, char **cshost, char **csfile, char **csdir,
-                            unsigned long int *cachesize1, int *cachelinesize1,
-                            int *associativity1, tWritePolicy *writepolicy1,
-                            unsigned long int *cachesize2, int *cachelinesize2,
-                            int *associativity2, tWritePolicy *writepolicy2,
-                            unsigned long int *cachesize3, int *cachelinesize3,
-                            int *associativity3, tWritePolicy *writepolicy3);
-
-/******************************************************************************
- *
- * function:
- *   void SAC_CS_Initialize( ...)
- *
- * description:
- *   Initiates all neccesary structures according to the specified cache-
- *   parameters.
- *   About specifying the cacheparameters:
- *     profilinglevel decides between a simple or more detailed analysis
- *     cachesize in kilobyte (1kbyte=1024byte)
- *     cachesize==0 means that this cachelevel is not installed
- *     cachelinesize in byte
- *     associativity==1                       -> direct mapped cache
- *     associativity==cachesize/cachelinesize -> full associative cache
- *     writepolicy specifies on of the three writemisspolicies
- *
- *****************************************************************************/
-
-SAC_C_EXTERN
-void SAC_CS_Initialize (int nr_of_cpu, tProfilingLevel profilinglevel, int cs_global,
-                        char *cshost, char *csfile, char *csdir,
-                        unsigned long int cachesize1, int cachelinesize1,
-                        int associativity1, tWritePolicy writepolicy1,
-                        unsigned long int cachesize2, int cachelinesize2,
-                        int associativity2, tWritePolicy writepolicy2,
-                        unsigned long int cachesize3, int cachelinesize3,
-                        int associativity3, tWritePolicy writepolicy3);
-
-/******************************************************************************
- *
- * function:
- *   void SAC_CS_Finalize( void)
- *
- * description:
- *   Frees all the memory which has been allocated during the run.
- *
- *****************************************************************************/
-
-SAC_C_EXTERN void (*SAC_CS_Finalize) (void);
-
-/******************************************************************************
- *
- * function:
- *   void SAC_CS_RegisterArray( void* baseaddress, int size)
- *
- * description:
- *   Prepares an 1-dimensional array for a detailed profilinglevel analysis.
- *   The array will be identified by its baseaddress. Size has to be given in
- *   byte.
- *
- *****************************************************************************/
-
-SAC_C_EXTERN void (*SAC_CS_RegisterArray) (void * /*baseaddress*/, int /*size*/);
-
-/******************************************************************************
- *
- * function:
- *   void SAC_CS_UnregisterArray( void* baseaddress)
- *
- * description:
- *   Opposite to SAC_CS_RegisterArray. Frees all memory which was used for the
- *   detailed profilinglevel analysis.
- *
- *****************************************************************************/
-
-SAC_C_EXTERN void (*SAC_CS_UnregisterArray) (void * /*baseaddress*/);
-
-/******************************************************************************
- *
- * function:
- *   void SAC_CS_ReadAccess( void* baseaddress, void* elemaddress)
- *
- * description:
- *   To simulate the cache every readaccess to an arrayelement has to execute
- *   this function. To identify the array this function gets the baseaddress
- *   of the affected array. The accessed element is given as a full address
- *   (not only the offset to the baseaddress).
- *
- *****************************************************************************/
-
-SAC_C_EXTERN void (*SAC_CS_ReadAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
-
-/******************************************************************************
- *
- * function:
- *   void SAC_CS_WriteAccess( void* baseaddress, void* elemaddress)
- *
- * description:
- *   To simulate the cache every writeaccess to an arrayelement has to execute
- *   this function. To identify the array this function gets the baseaddress
- *   of the affected array. The accessed element is given as a full address
- *   (not only the offset to the baseaddress).
- *
- *****************************************************************************/
-
-SAC_C_EXTERN void (*SAC_CS_WriteAccess) (void * /*baseaddress*/, void * /*elemaddress*/);
-
-/******************************************************************************
- *
- * function:
- *   void SAC_CS_Start( char* tag)
- *
- * description:
- *   Starts the analysis and offers the possibility to mark it by a
- *   userdefined tag.
- *
- *****************************************************************************/
-
-SAC_C_EXTERN void (*SAC_CS_Start) (char * /*tag*/);
-
-/******************************************************************************
- *
- * function:
- *   void SAC_CS_Stop( void)
- *
- * description:
- *   Stops the analysis and prints its tag (defined in SAC_CS_Start) and
- *   their results.
- *   simple & detailed profilinglevel:
- *     hit- and missrate for each cachelevel
- *   detailed profilinglevel only:
- *     classification of misses as coldstart, self- or crossinterference
- *
- *****************************************************************************/
-
-SAC_C_EXTERN void (*SAC_CS_Stop) (void);
 
 #endif
 
@@ -310,4 +143,5 @@ SAC_C_EXTERN void (*SAC_CS_Stop) (void);
 
 #endif /* SAC_DO_CACHESIM */
 
-#endif /* _SAC_CACHESIM_H */
+#endif /* _SAC_RT_CACHESIM_H */
+

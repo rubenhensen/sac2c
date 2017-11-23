@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "sac.h"
+#include "libsac/cachesim/basic.h" // SAC_CS_Initialize, ...
 
 int
 main (void)

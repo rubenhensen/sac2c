@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "sac.h"
+#include "basic.h"
 #include "cachesim.h"
 
 /******************************************************************************

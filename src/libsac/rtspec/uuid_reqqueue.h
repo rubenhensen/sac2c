@@ -11,8 +11,6 @@
 #ifndef _SAC_UUID_REQQUEUE_H_
 #define _SAC_UUID_REQQUEUE_H_
 
-#include "registry.h"
-
 /**
  * @brief A node of the request queue.
  */

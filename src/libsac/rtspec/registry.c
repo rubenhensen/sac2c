@@ -15,22 +15,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "registry.h"
-#include "persistence.h"
-#include "trace.h"
+#include "persistence.h"   // encodeShapes
+#include "trace.h"         // SAC_RTSPEC_TR_Print
+#include "uuid_reqqueue.h" // SAC_UUID_enqueueRequest
 
 #define SAC_DO_TRACE 1
-#include "sac.h"
-
-#include "uthash.h"
 
 static int do_trace;
 
-reg_item_t *registry = NULL;
+static reg_item_t *registry = NULL;
 
 /* Lock for accessing the registry */
-pthread_rwlock_t SAC_RTSPEC_registry_lock;
+static pthread_rwlock_t SAC_RTSPEC_registry_lock;
 
 /** <!--*******************************************************************-->
  *

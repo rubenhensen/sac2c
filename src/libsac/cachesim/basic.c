@@ -17,9 +17,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "sac.h"
-
-#include "cachesim.h"
+#include "basic.h"
+#include "libsac/essentials/message.h" // SAC_RuntimeError, ...
 #include "getoptions.h"
 
 /*

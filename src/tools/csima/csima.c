@@ -15,8 +15,9 @@
 
 #include <stdio.h>
 
-#include "sac.h"
-#include "cachesim.h"
+#include "libsac/cachesim/basic.h"        // SAC_CS_CheckArguments, ...
+#include "libsac/cachesim/cachesim.h"     // tProfilingLevel, ...
+#include "libsac/essentials/message.h"    // SAC_RuntimeError, ...
 
 static void
 AnalyserSetup (int argc, char *argv[])

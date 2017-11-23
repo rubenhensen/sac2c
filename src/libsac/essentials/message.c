@@ -33,8 +33,8 @@
 
 #include "libsac/essentials/message.h"
 #include "runtime/mt_h/mt.h" // needed for SAC_MT_ACQUIRE_LOCK!
-#include "runtime/mt_beehive_h/schedule.h" // needed for mt_beehive.h!
-#include "runtime/mt_beehive_h/mt_beehive.h" // needed for SAC_MT_output_lock!
+#include "runtime/mt_h/schedule.h" // needed for mt_beehive.h!
+#include "runtime/mt_h/mt_beehive.h" // needed for SAC_MT_output_lock!
 
 
 

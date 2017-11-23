@@ -18,8 +18,8 @@ SET (M4_FILES
     cuda_h/cuda_gen.h
     essentials_h/rc_impl_gen.h
     essentials_h/std_gen.h
-    mt_beehive_h/mt_gen.h
-    mt_pth_h/fp_gen.h
+    mt_h/mt_gen.h
+    mt_h/fp_gen.h
     mutc_h/mutc_gen.h
     mutc_h/mutc_rc_gen.h
     nested_h/nested_gen.h
@@ -57,29 +57,28 @@ essentials_h/rcm_local_pasync.h
 essentials_h/rcm_local_pasync_norc_desc.h
 essentials_h/rc_stubs.h
 essentials_h/rc_impl_gen.h
-essentials_h/message.h
 essentials_h/bool.h
 essentials_h/errors.h
 essentials_h/idx.h
 essentials_h/rt_misc.h
 essentials_h/wl.h
 essentials_h/tuple.h
-extras_h/cachesim.h
+extras_h/rt_cachesim.h
 extras_h/rt_profile.h
 extras_h/runtimecheck.h
 extras_h/rt_trace.h
 mt_h/mt.h
 mt_h/hwloc_data.h
-mt_omp_h/mt_omp.h
-mt_beehive_h/schedule.h
-mt_beehive_h/mt_beehive.h
-mt_beehive_h/mt_gen.h
-mt_pth_h/mt_barriers.h
-mt_pth_h/mt_pth.h
-mt_pth_h/fp.h
-mt_pth_h/fp_gen.h
-mt_smart_h/mt_smart.h
-mt_lpel_h/mt_lpel.h
+mt_h/mt_omp.h
+mt_h/schedule.h
+mt_h/mt_beehive.h
+mt_h/mt_gen.h
+mt_h/mt_barriers.h
+mt_h/mt_pth.h
+mt_h/fp.h
+mt_h/fp_gen.h
+mt_h/mt_smart.h
+mt_h/mt_lpel.h
 phm_h/phm.h
 mutc_h/mutc.h
 mutc_h/mutc_world.h

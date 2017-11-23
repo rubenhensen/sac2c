@@ -21,13 +21,11 @@
 #include <string.h>
 
 #include "simple_controller.h"
-#include "simple_reqqueue.h"
-#include "registry.h"
-#include "persistence.h"
+#include "supervisor.h"   //SAC_RTSPEC_self_id_key
 #include "trace.h"
 
 #define SAC_DO_TRACE 1
-#include "sac.h"
+#include "libsac/essentials/message.h"
 
 #define TMP_DIR_NAME_PREFIX "SACrt_"
 #define RTSPEC_MODULE_PREFIX "RTSpec_"
@@ -50,13 +48,6 @@ static int modext_strlen = 0;
 static int cli_arguments_strlen = 0;
 static int executable_name_strlen = 0;
 
-/* TLS key to retrieve the Thread Self ID Ptr */
-pthread_key_t SAC_RTSPEC_self_id_key;
-
-/* The number of controller threads used for runtime specialization. */
-unsigned int SAC_RTSPEC_controller_threads;
-
-pthread_t *controller_threads;
 
 /** <!--*******************************************************************-->
  *
@@ -290,7 +281,6 @@ SAC_Simple_handleRequest (simple_queue_node_t *request)
                          "SAC_Simple_handle_request()] Compilation failed!\n");
 
         exit (EXIT_FAILURE);
-        break;
 
     case -1:
         fprintf (stderr, "ERROR -- \t [RTSpec Controller: "

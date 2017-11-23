@@ -17,21 +17,19 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "registry.h"
 #include "simple_reqqueue.h"
 #include "trace.h"
 
 #define SAC_DO_TRACE 1
-#include "sac.h"
 
 simple_reqqueue_t *simple_request_queue = NULL;
-pthread_mutex_t simple_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t simple_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t simple_empty_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t simple_processed_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t simple_processed_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t simple_empty_queue_cond = PTHREAD_COND_INITIALIZER;
 
 static int do_trace;
-simple_reqqueue_t *simple_processed = NULL;
+static simple_reqqueue_t *simple_processed = NULL;
 
 /** <!--*******************************************************************-->
  *

@@ -36,9 +36,6 @@ SAC_C_EXTERN unsigned int SAC_MT_cpu_bind_strategy;
 /* Whether DO_TRACE_MT is enabled or not */
 SAC_C_EXTERN unsigned int SAC_MT_do_trace;
 
-/* number of runtime specialization controller threads in the environment */
-SAC_C_EXTERN unsigned int SAC_RTSPEC_controller_threads;
-
 /* Only a single thread in the environment?
  * Used for PHM optimizations.
  */
