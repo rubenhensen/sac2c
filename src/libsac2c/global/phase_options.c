@@ -174,38 +174,33 @@ CheckStartStopPhase (void)
             CTIerror ("Illegal compiler phase specification in options: \n"
                       "  -printstart and -printstop\n"
                       "Start or Stop cycle specified without the other.\n"
-                      "Both options must specify the same cycle.",
-                      global.toolname);
+                      "Both options must specify the same cycle." );
         }
         /* PHASE */
         else if (global.prtphafun_start_phase > global.prtphafun_stop_phase) {
             CTIerror ("Illegal compiler phase specification in options: \n"
                       "  -printstart and -printstop\n"
-                      "Start phase occurs after stop phase.",
-                      global.toolname);
+                      "Start phase occurs after stop phase." );
         } else if (global.prtphafun_start_phase == global.prtphafun_stop_phase) {
             /* SUBPHASE*/
             if (global.prtphafun_start_subphase > global.prtphafun_stop_subphase) {
                 CTIerror ("Illegal compiler phase specification in options: \n"
                           "  -printstart and -printstop\n"
-                          "Start subphase occurs after stop subphase.",
-                          global.toolname);
+                          "Start subphase occurs after stop subphase." );
             } else if (global.prtphafun_start_subphase
                        == global.prtphafun_stop_subphase) {
                 /* CYCLE PHASE */
                 if (global.prtphafun_start_cycle != global.prtphafun_stop_cycle) {
                     CTIerror ("Illegal compiler phase specification in options: \n"
                               "  -printstart and -printstop\n"
-                              "Start cycle and stop cycle must be the same.",
-                              global.toolname);
+                              "Start cycle and stop cycle must be the same." );
                 } else {
                     /* CYCLE PASS */
                     if (global.prtphafun_start_cycle_specifier
                         > global.prtphafun_stop_cycle_specifier + 1) {
                         CTIerror ("Illegal compiler phase specification in options: \n"
                                   "  -printstart and -printstop\n"
-                                  "Start cycle pass occurs after stop cycle pass.",
-                                  global.toolname);
+                                  "Start cycle pass occurs after stop cycle pass." );
                     }
                 }
             }

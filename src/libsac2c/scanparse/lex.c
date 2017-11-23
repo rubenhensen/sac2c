@@ -544,31 +544,31 @@ quote_string (const char *s, char *res, int pos)
     while (*ptr != '\0' && count < BUF_SIZE - 5) {
         switch (*ptr) {
         case '\a':
-            buffer[count++] = '\\', buffer[count++] = 'a';
+            buffer[count++] = '\\'; buffer[count++] = 'a';
             break;
         case '\b':
-            buffer[count++] = '\\', buffer[count++] = 'b';
+            buffer[count++] = '\\'; buffer[count++] = 'b';
             break;
         case '\f':
-            buffer[count++] = '\\', buffer[count++] = 'f';
+            buffer[count++] = '\\'; buffer[count++] = 'f';
             break;
         case '\n':
-            buffer[count++] = '\\', buffer[count++] = 'n';
+            buffer[count++] = '\\'; buffer[count++] = 'n';
             break;
         case '\r':
-            buffer[count++] = '\\', buffer[count++] = 'r';
+            buffer[count++] = '\\'; buffer[count++] = 'r';
             break;
         case '\t':
-            buffer[count++] = '\\', buffer[count++] = 't';
+            buffer[count++] = '\\'; buffer[count++] = 't';
             break;
         case '\v':
-            buffer[count++] = '\\', buffer[count++] = 'v';
+            buffer[count++] = '\\'; buffer[count++] = 'v';
             break;
         case '\"':
-            buffer[count++] = '\\', buffer[count++] = '\"';
+            buffer[count++] = '\\'; buffer[count++] = '\"';
             break;
         case '\'':
-            buffer[count++] = '\\', buffer[count++] = '\'';
+            buffer[count++] = '\\'; buffer[count++] = '\'';
             break;
         default: {
             int x1, x2;

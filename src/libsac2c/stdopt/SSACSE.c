@@ -362,7 +362,7 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
                 || ((FUNDEF_ISLOOPFUN (fundef))
                     && (AVIS_SSALPINV (ARG_AVIS (act_fun_arg))))) {
 
-                DBUG_PRINT ("type of formal LaC-fun (%s) arg specialized in line %d:"
+                DBUG_PRINT ("type of formal LaC-fun (%s) arg specialized in line %zu:"
                             "  %s:%s->%s",
                             CTIitemName (fundef), NODE_LINE (act_fun_arg),
                             ARG_NAME (act_fun_arg), stype1, stype2);
@@ -376,7 +376,7 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
              * special function application with incompatible types found
              */
             DBUG_PRINT ("application of LaC-function %s with incompatible types"
-                        " in line %d:  %s:%s->%s",
+                        " in line %zu:  %s:%s->%s",
                         FUNDEF_NAME (fundef), NODE_LINE (act_fun_arg),
                         ARG_NAME (act_fun_arg), stype1, stype2);
         }
@@ -1015,7 +1015,7 @@ CSElet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Looking at %s in line %d", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))),
+    DBUG_PRINT ("Looking at %s in line %zu", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))),
                 NODE_LINE (arg_node));
     /*
      * traverse left-hand side t0 do variable substitutions for extrema
@@ -1046,7 +1046,7 @@ CSElet (node *arg_node, info *arg_info)
         /* set subst attributes for results */
         LET_IDS (arg_node) = SetSubstAttributes (LET_IDS (arg_node), LET_IDS (match));
 
-        DBUG_PRINT ("Common subexpression eliminated for %s in line %d",
+        DBUG_PRINT ("Common subexpression eliminated for %s in line %zu",
                     AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))), NODE_LINE (arg_node));
         global.optcounters.cse_expr++;
 

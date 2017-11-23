@@ -1221,7 +1221,7 @@ CTIterminateCompilation (node *syntax_tree)
               = STRcatn (8, DOT_CMD, visual_output, " -T", global.visual_format, " -o ",
                          global.outfilename, ".", global.visual_format);
             DBUG_PRINT ("\n %s \n", shell_command);
-            SYScall (shell_command);
+            SYScall ("%s", shell_command);
             MEMfree (shell_command);
             MEMfree (visual_output);
         }

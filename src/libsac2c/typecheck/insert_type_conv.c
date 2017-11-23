@@ -371,7 +371,7 @@ INSTCreturn (node *arg_node, info *arg_info)
 
     if (INFO_INSTC_RETS (arg_info) != NULL) {
         CTIerrorLoc (NODE_LOCATION (arg_node),
-                     "fewer expressions returned than return types specified in line %d!",
+                     "fewer expressions returned than return types specified in line %zu!",
                      NODE_LINE (INFO_INSTC_RETS (arg_info)));
     }
 

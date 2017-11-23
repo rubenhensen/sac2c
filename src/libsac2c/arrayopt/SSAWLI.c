@@ -792,7 +792,7 @@ WLIid (node *arg_node, info *arg_info)
          * arg_node describes a WL, so WITH_REFERENCED has to be incremented
          */
         (WITH_REFERENCED (ASSIGN_RHS (assignn))) += 1;
-        DBUG_PRINT ("WLIid WITH_REFERENCED(%s) = %d (line %d)",
+        DBUG_PRINT ("WLIid WITH_REFERENCED(%s) = %d (line %zu)",
                     AVIS_NAME (ID_AVIS (arg_node)),
                     WITH_REFERENCED (ASSIGN_RHS (assignn)), NODE_LINE (arg_node));
     } else {
@@ -968,7 +968,7 @@ WLIwith (node *arg_node, info *arg_info)
     INFO_FOLDABLE (arg_info) = TRUE;
 
     /* determine FOLDABLE */
-    DBUG_PRINT ("WLIwith determining foldability of  WL in line %d",
+    DBUG_PRINT ("WLIwith determining foldability of  WL in line %zu",
                 NODE_LINE (arg_node));
     INFO_DETFOLDABLE (arg_info) = TRUE;
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
@@ -978,7 +978,7 @@ WLIwith (node *arg_node, info *arg_info)
     INFO_DETFOLDABLE (arg_info) = FALSE;
 
     /* traverse all parts and, implicitly, bodies) */
-    DBUG_PRINT ("WLIwith searching code of  WL in line %d", NODE_LINE (arg_node));
+    DBUG_PRINT ("WLIwith searching code of  WL in line %zu", NODE_LINE (arg_node));
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     DBUG_PRINT ("WLIwith searching done");
 

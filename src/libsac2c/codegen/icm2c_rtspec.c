@@ -191,7 +191,8 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
         i = 0;
         for (; i < vararg_cnt * 5; i += 5) {
             if (STReq (vararg[i], "in")) {
-                shape_class = (shape_class_t)strtol (vararg[i + 3], NULL, 10);
+//FIXME: check the result of strol for validity!
+                shape_class = (shape_class_t)(int)strtol (vararg[i + 3], NULL, 10);
                 if (shape_class == C_akd || shape_class == C_aks) {
                     dim = (int)strtol (vararg[i + 2], NULL, 10);
                     indout ("SAC_RTSPEC_GET_DIM_FOR_SHAPE( %s)\n", vararg[i + 4]);

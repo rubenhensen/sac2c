@@ -289,7 +289,7 @@ HWLOassign (node *arg_node, info *arg_info)
 
     mem_last_assign = INFO_HWLO_LASTASSIGN (arg_info);
     INFO_HWLO_LASTASSIGN (arg_info) = arg_node;
-    DBUG_PRINT ("LASTASSIGN set to %08x!", arg_node);
+    DBUG_PRINT ("LASTASSIGN set to %p!", (void *)arg_node);
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     /*
@@ -300,10 +300,12 @@ HWLOassign (node *arg_node, info *arg_info)
     return_node = INFO_HWLO_LASTASSIGN (arg_info);
 
     if (return_node != arg_node) {
-        DBUG_PRINT ("node %08x will be inserted instead of %08x", return_node, arg_node);
+        DBUG_PRINT ("node %p will be inserted instead of %p",
+                     (void *)return_node,
+                     (void *)arg_node);
     }
     INFO_HWLO_LASTASSIGN (arg_info) = mem_last_assign;
-    DBUG_PRINT ("LASTASSIGN (re)set to %08x!", mem_last_assign);
+    DBUG_PRINT ("LASTASSIGN (re)set to %p!", (void *)mem_last_assign);
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);

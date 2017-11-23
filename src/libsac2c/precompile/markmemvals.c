@@ -755,10 +755,10 @@ MMVprfWLAssign (node *arg_node, info *arg_info)
      * 2. insert pair ( a', a) into LUT
      */
     LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (INFO_LHS (arg_info)),
-                       ID_NAME (PRF_ARG1 (arg_node))),
+                       ID_NAME (PRF_ARG1 (arg_node)));
 
-      LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
-                         ID_AVIS (PRF_ARG1 (arg_node)));
+    LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
+                       ID_AVIS (PRF_ARG1 (arg_node)));
 
     DBUG_RETURN (arg_node);
 }

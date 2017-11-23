@@ -383,7 +383,7 @@ WLDPwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("traversing With-Loop in line #%d ", NODE_LINE (arg_node));
+    DBUG_PRINT ("traversing With-Loop in line #%zu ", NODE_LINE (arg_node));
     /*
      * We have to stack the withloop info here to cater for nested withloops
      */

@@ -1396,7 +1396,7 @@ SSATids (node *arg_node, info *arg_info)
         AVIS_SSASTACK_TOP (avis) = avis;
         AVIS_SSADEFINED (avis) = TRUE;
         DBUG_PRINT ("first definition, no renaming: %s (" F_PTR ")", AVIS_NAME (avis),
-                    avis);
+                    (void *)avis);
 
     } else {
         /*
@@ -1457,7 +1457,7 @@ SSATids (node *arg_node, info *arg_info)
           = TBmakeVardec (new_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         DBUG_PRINT ("re-definition, renaming: %s (" F_PTR ") -> %s", AVIS_NAME (avis),
-                    avis, AVIS_NAME (new_avis));
+                    (void *)avis, AVIS_NAME (new_avis));
 
         /* new rename-to target for old vardec */
         AVIS_SSASTACK_TOP (avis) = new_avis;

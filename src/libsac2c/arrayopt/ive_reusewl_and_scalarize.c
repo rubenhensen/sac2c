@@ -192,7 +192,7 @@ GenOffsetInfo (node *lhs, node *withops)
              */
 
             DBUG_PRINT_TAG ("IVEO", "adding offset %s and lhs id %s",
-                            WITHOP_IDX (withops), AVIS_NAME (IDS_AVIS (lhs)));
+                            AVIS_NAME( WITHOP_IDX (withops)), AVIS_NAME (IDS_AVIS (lhs)));
 
             result = (offsetinfo *)MEMmalloc (sizeof (offsetinfo));
 

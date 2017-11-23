@@ -238,7 +238,7 @@ EnsureStructConstant (node *bound, ntype *type, info *arg_info)
                 /* but maybe flattened */
                 new_bound = array;
 
-                DBUG_PRINT ("...potentially already inline, store" F_PTR, array);
+                DBUG_PRINT ("...potentially already inline, store" F_PTR, (void *)array);
 
                 if (!PMmatchExact (pat, bound)) {
                     /* it is flattened -> de-flatten */

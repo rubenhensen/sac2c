@@ -435,7 +435,9 @@ WLSCcode (node *arg_node, info *arg_info)
         if (!TYeqTypes (ID_NTYPE (INFO_CEXPR (arg_info)),
                         ID_NTYPE (CODE_CEXPR (arg_node)))) {
             INFO_POSSIBLE (arg_info) = FALSE;
-            DBUG_PRINT ("Inner CEXPRS have different types!!!", AVIS_NAME (lhs));
+            DBUG_PRINT ("Inner CEXPRS have different types detected at "
+                        "with-loop  body expression \"%s\"!!!",
+                        ID_NAME (CODE_CEXPR (arg_node)));
         }
     }
 
@@ -515,7 +517,7 @@ genhelper (node *arg_node, info *arg_info, char *nm)
     pat = PMarray (1, PMAgetNode (&argnarray), 0);
     if ((NULL != arg_node) && (!PMmatchFlatSkipExtrema (pat, arg_node))) {
         INFO_POSSIBLE (arg_info) = FALSE;
-        DBUG_PRINT ("%s: %s is not an N_array", nm, lhs);
+        DBUG_PRINT ("%s: %s is not an N_array", nm, IDS_NAME(lhs));
     }
     PMfree (pat);
 
@@ -890,7 +892,8 @@ WLSCpropagate (node *arg_node, info *arg_info)
 
     INFO_POSSIBLE (arg_info) = FALSE;
     lhs = IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_NASSIGN (arg_info))));
-    DBUG_PRINT ("Inner with-loop is not a genarray/modarray with-loop", AVIS_NAME (lhs));
+    DBUG_PRINT ("Inner with-loop is not a genarray/modarray with-loop"
+                "next assignment lhs is %s", AVIS_NAME (lhs));
 
     DBUG_RETURN (arg_node);
 }

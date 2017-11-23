@@ -189,7 +189,7 @@ CHKLACFfundef (node *arg_node, info *arg_info)
             FUNDEF_CALLFUN (arg_node) = INFO_FUNDEF (arg_info);
         } else {
             CTIerror ("LaC function %s called again in %s.\n"
-                      "Previous call site in %s",
+                      "Previous call site in FIXME:print where",
                       FUNDEF_NAME (arg_node), FUNDEF_NAME (FUNDEF_CALLFUN (arg_node)));
         }
 

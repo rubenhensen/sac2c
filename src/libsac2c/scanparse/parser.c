@@ -1359,7 +1359,7 @@ is_function_call (struct parser *parser)
 
     if (id->xnamespace) {
         bool ret = false;
-        parser_get_token (parser), parser_get_token (parser), parser_get_token (parser);
+        parser_get_token (parser); parser_get_token (parser); parser_get_token (parser);
         ret = token_is_operator (parser_get_token (parser), tv_lparen);
         parser_unget3 (parser);
         parser_unget (parser);
@@ -1495,7 +1495,7 @@ handle_ext_id (struct parser *parser)
         node *ret
           = loc_annotated (loc, TBmakeSpid (NSgetNamespace (id->xnamespace), id->id));
         /* eat two more tokens: '::' and ID  */
-        parser_get_token (parser), parser_get_token (parser);
+        parser_get_token (parser); parser_get_token (parser);
         free (id);
 
         return ret;
@@ -2195,9 +2195,9 @@ handle_unary_expr (struct parser *parser)
     if (!is_unary (parser, id->xnamespace, id->id) || !id->is_operation)
         goto out;
 
-    if (id->xnamespace)
-        parser_get_token (parser), parser_get_token (parser), parser_get_token (parser);
-    else if (!id->xnamespace && id->id)
+    if (id->xnamespace) {
+        parser_get_token (parser); parser_get_token (parser); parser_get_token (parser);
+    } else if (!id->xnamespace && id->id)
         parser_get_token (parser);
     else
         unreachable ("identifier structure with empty id field");
@@ -2469,9 +2469,9 @@ handle_binary_expr (struct parser *parser, bool no_relop)
             return error_mark_node;
         } else if (!strcmp (id->id, "++") || !strcmp (id->id, "--")) {
             parser_get_token (parser);
-            if (id->xnamespace)
-                parser_get_token (parser), parser_get_token (parser);
-
+            if (id->xnamespace) {
+                parser_get_token (parser); parser_get_token (parser);
+            }
             /* Assume that this is a postfix ++ or -- used in the assignment.  */
             if (!token_starts_expr (parser, parser_get_token (parser))) {
                 parser_unget2 (parser);
@@ -2542,8 +2542,9 @@ handle_binary_expr (struct parser *parser, bool no_relop)
            can be used as a binary operation.  */
         if (need_parser_shift) {
             parser_get_token (parser);
-            if (id->xnamespace)
-                parser_get_token (parser), parser_get_token (parser);
+            if (id->xnamespace) {
+                parser_get_token (parser); parser_get_token (parser);
+            }
         }
 
         /* NOTE: body of this loop must be equivalent to the code at lable OUT.  */
@@ -4706,26 +4707,30 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
             if (fundef_p) {
                 attribute_error = true;
                 FUNDEF_ERROR (tok);
-            } else
-                fundec_p = true, extern_p = true;
+            } else {
+                fundec_p = true; extern_p = true;
+            }
         } else if (token_is_keyword (tok, SPECIALIZE)) {
             if (fundef_p) {
                 attribute_error = true;
                 FUNDEF_ERROR (tok);
-            } else
-                fundec_p = true, specialize_p = true;
+            } else {
+                fundec_p = true; specialize_p = true;
+            }
         } else if (token_is_keyword (tok, INLINE)) {
             if (fundec_p) {
                 attribute_error = true;
                 FUNDEC_ERROR (tok);
-            } else
-                fundef_p = true, inline_p = true;
+            } else {
+                fundef_p = true; inline_p = true;
+            }
         } else if (token_is_keyword (tok, NOINLINE)) {
             if (fundec_p) {
                 attribute_error = true;
                 FUNDEC_ERROR (tok);
-            } else
-                fundef_p = true, noinline_p = true;
+            } else {
+                fundef_p = true; noinline_p = true;
+            }
         } else if (token_is_keyword (tok, THREAD)) {
             if (global.backend != BE_mutc) {
                 warning_loc (token_location (tok),
@@ -4736,8 +4741,9 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
             } else if (fundec_p) {
                 FUNDEC_ERROR (tok);
                 attribute_error = true;
-            } else
-                fundef_p = true, inline_p = true;
+            } else {
+                fundef_p = true; inline_p = true;
+            }
         } else {
             parser_unget (parser);
             break;
@@ -4921,9 +4927,9 @@ pragmas:
         node *t = args;
 
         /* Number of argumets.  */
-        while (t)
-            argc++, t = ARG_NEXT (t);
-
+        while (t) {
+            argc++; t = ARG_NEXT (t);
+        }
         /* Add symbol to the known_types.  */
         HASH_FIND_STR (parser->known_symbols, SPID_NAME (fname), ks);
         if (!ks) {
@@ -5343,9 +5349,9 @@ handle_typedef (struct parser *parser)
         }
     } else if (token_is_keyword (tok, TYPEDEF))
         loc = token_location (tok);
-    else if (token_is_keyword (tok, NESTED))
-        loc = token_location (tok), nested = true;
-    else {
+    else if (token_is_keyword (tok, NESTED)) {
+        loc = token_location (tok); nested = true;
+    } else {
         error_loc (token_location (tok), "`%s' or `%s %s' expected, `%s' found",
                    token_kind_as_string (TYPEDEF), token_kind_as_string (EXTERN),
                    token_kind_as_string (TYPEDEF), token_as_string (tok));
@@ -5957,7 +5963,7 @@ parse_for_dependencies (struct parser *parser)
                   = add_dependency (dependencies, token_as_string (tok), dep_tree);
                 dependencies
                   = add_dependency (dependencies, token_as_string (tok), dep_mod);
-                parser_get_token (parser), parser_get_token (parser);
+                parser_get_token (parser); parser_get_token (parser);
             } else
                 parser_get_token (parser);
         }
@@ -6153,7 +6159,7 @@ parse (struct parser *parser)
             error_loc (token_location (tok), "`%s' or `%s %s' expected, `%s' found",
                        token_kind_as_string (CLASSTYPE), token_kind_as_string (EXTERN),
                        token_kind_as_string (CLASSTYPE), token_as_string (tok));
-            parser_unget (parser), parser_get_until_tval (parser, tv_semicolon);
+            parser_unget (parser); parser_get_until_tval (parser, tv_semicolon);
         } else if (parser_expect_tval (parser, tv_semicolon))
             parser_get_token (parser);
 

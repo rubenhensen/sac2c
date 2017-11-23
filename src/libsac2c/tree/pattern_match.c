@@ -1240,7 +1240,7 @@ rangeSelector (pattern *pat, node *stack)
     node *arg;
 
     DBUG_ENTER ();
-    DBUG_PRINT (PMSTART "matching range");
+    DBUG_PRINT (PMSTART "matching range", matching_level);
 
     stack = extractOneArg (stack, &arg);
 

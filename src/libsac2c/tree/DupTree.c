@@ -356,7 +356,6 @@ DupFlags (node *new_node, node *old_node)
         RANGE_NEEDCUDAUNROLL (new_node) = RANGE_NEEDCUDAUNROLL (old_node);
     }
 
-    int KLUDGE;
     if (NODE_TYPE (new_node) == N_fundef) {
         FUNDEF_LOOPCOUNT (new_node) = FUNDEF_LOOPCOUNT (old_node);
     }
@@ -487,8 +486,9 @@ DupTypes (types *arg_types, info *arg_info)
         TYPES_MUTC_SCOPE (new_types) = TYPES_MUTC_SCOPE (arg_types);
         TYPES_MUTC_USAGE (new_types) = TYPES_MUTC_USAGE (arg_types);
 
-        DBUG_PRINT_TAG ("TYPE", "new type" F_PTR ",old " F_PTR, new_types, arg_types);
-        DBUG_PRINT_TAG ("TYPE", "new name" F_PTR ", old name" F_PTR,
+        DBUG_PRINT_TAG ("TYPE", "new type" F_PTR ",old " F_PTR,
+                        (void *)new_types, (void *)arg_types);
+        DBUG_PRINT_TAG ("TYPE", "new name %s, old name %s",
                         TYPES_NAME (new_types), TYPES_NAME (arg_types));
 
         TYPES_NEXT (new_types) = DupTypes (TYPES_NEXT (arg_types), arg_info);
@@ -1683,7 +1683,7 @@ DUPassign (node *arg_node, info *arg_info)
         new_node = NULL;
     }
 
-    DBUG_PRINT ("Duplicating N_assign node %p to %p", arg_node, new_node);
+    DBUG_PRINT ("Duplicating N_assign node %p to %p", (void *)arg_node, (void *)new_node);
 
     DBUG_RETURN (new_node);
 }

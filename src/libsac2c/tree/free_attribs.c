@@ -96,7 +96,7 @@ FREEattribString (char *attr, node *parent)
     DBUG_ENTER ();
 
     if (attr != NULL) {
-        DBUG_PRINT ("Freeing string '%s' at " F_PTR, attr, attr);
+        DBUG_PRINT ("Freeing string '%s' at " F_PTR, attr, (void *)attr);
         attr = MEMfree (attr);
     }
 
@@ -168,7 +168,7 @@ FREEattribNode (node *attr, node *parent)
 
     if (attr != NULL) {
         DBUG_PRINT ("Starting to free %s node attribute at " F_PTR, NODE_TEXT (attr),
-                    attr);
+                    (void *)attr);
         attr = FREEdoFreeTree (attr);
     }
 
@@ -455,7 +455,7 @@ FREEattribNewType (ntype *attr, node *parent)
     DBUG_ENTER ();
 
     if (attr != NULL) {
-        DBUG_PRINT ("Freeing ntype at " F_PTR, attr);
+        DBUG_PRINT ("Freeing ntype at " F_PTR, (void *)attr);
         attr = TYfreeType (attr);
     }
 

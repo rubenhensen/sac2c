@@ -601,7 +601,8 @@ HeterogeneousArrayCompare (node *arg_node, info *arg_info)
     if (TUisScalar (ARRAY_ELEMTYPE (arg_node)) && TYisAKV (ARRAY_ELEMTYPE (arg_node))
         && TYisAKV (ARRAY_ELEMTYPE (INFO_TREE (arg_info)))) {
 
-        pat1 = PMconst (1, PMAgetNode (&c1)), pat2 = PMconst (1, PMAgetNode (&c2)),
+        pat1 = PMconst (1, PMAgetNode (&c1));
+        pat2 = PMconst (1, PMAgetNode (&c2));
         n1 = ARRAY_AELEMS (arg_node);
         n2 = ARRAY_AELEMS (INFO_TREE (arg_info));
         while ((NULL != n1) && (PMmatchFlat (pat1, ARRAY_AELEMS (n1)))

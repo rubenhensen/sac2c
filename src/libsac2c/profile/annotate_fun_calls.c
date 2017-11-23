@@ -341,7 +341,7 @@ PFassign (node *arg_node, info *arg_info)
         if (global.profile_funapcntr[funno] == PF_MAXFUNAP) {
             str_buff = Fundef2ProfileString (INFO_PF_FUNDEF (arg_info));
             CTIwarn ("\"PF_MAXFUNAP\" too low!\n"
-                     "Application of function \"%s\" in line %d will not "
+                     "Application of function \"%s\" in line %zu will not "
                      "be profiled separately, but be accounted to the application "
                      "in line %d",
                      str_buff, NODE_LINE (arg_node), global.profile_funapline[funno][0]);

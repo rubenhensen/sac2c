@@ -1264,12 +1264,14 @@ NTCap (node *arg_node, info *arg_info)
       = TEmakeInfoUdf (global.linenum, global.filename, TE_udf,
                        NSgetName (FUNDEF_NS (wrapper)), FUNDEF_NAME (wrapper), wrapper,
                        INFO_LAST_ASSIGN (arg_info), global.act_info_chn);
-    DBUG_PRINT_TAG ("TEINFO", "TE info %p created for udf ap %p", global.act_info_chn,
-                    arg_node);
+    DBUG_PRINT_TAG ("TEINFO", "TE info %p created for udf ap %p",
+                    (void *)global.act_info_chn,
+                    (void *)arg_node);
     res = NTCCTcomputeType (ntc_fun, global.act_info_chn, args);
 
     global.act_info_chn = old_info_chn;
-    DBUG_PRINT_TAG ("NTC_INFOCHN", "global.act_info_chn set back to %p", old_info_chn);
+    DBUG_PRINT_TAG ("NTC_INFOCHN", "global.act_info_chn set back to %p",
+                    (void *)old_info_chn);
 
     TYfreeType (args);
     INFO_TYPE (arg_info) = res;

@@ -183,7 +183,7 @@ NTCCTudf (te_info *info, ntype *args)
 
     old_info_chn = global.act_info_chn;
     global.act_info_chn = info;
-    DBUG_PRINT_TAG ("NTC_INFOCHN", "global.act_info_chn set to %p", info);
+    DBUG_PRINT_TAG ("NTC_INFOCHN", "global.act_info_chn set to %p", (void *)info);
 
     if (FUNDEF_ISLACFUN (fundef)) {
         /*
@@ -264,7 +264,7 @@ NTCCTudf (te_info *info, ntype *args)
     if (!dispatcherror) {
         global.act_info_chn = old_info_chn;
         DBUG_PRINT_TAG ("NTC_INFOCHN", "global.act_info_chn reset to %p",
-                        global.act_info_chn);
+                        (void *)global.act_info_chn);
 
         tmp = TYtype2String (args, FALSE, 0);
         TEhandleError (global.linenum, global.filename, " -- in %s%s@",

@@ -323,7 +323,7 @@ ComputeHashStat (lut_t *lut, char *note, hash_key_t min_key, hash_key_t max_key)
     DBUG_ENTER ();
 
     if (lut != NULL) {
-        DBUG_PRINT ("lut " F_PTR ", %s ---", lut, note);
+        DBUG_PRINT ("lut " F_PTR ", %s ---", (void *)lut, note);
         DBUG_EXECUTE (fprintf (stderr, "  key:  "); for (k = min_key; k < max_key; k++) {
             fprintf (stderr, HASH_KEY_CONVT " ", k);
         } fprintf (stderr, "\n");
@@ -455,7 +455,7 @@ SearchInLUT (lut_t *lut, void *old_item, hash_key_t hash_key, is_equal_fun_t is_
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("> lut (" F_PTR ")", lut);
+    DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     if (lut != NULL) {
         if (old_item != NULL) {
@@ -510,7 +510,7 @@ SearchInLUT_state (lut_t *lut, void *old_item, hash_key_t hash_key,
          */
         store_lut = lut;
 
-        DBUG_PRINT ("> lut (" F_PTR "), initial search", store_lut);
+        DBUG_PRINT ("> lut (" F_PTR "), initial search", (void *)store_lut);
 
         if (store_lut != NULL) {
             store_old_item = old_item;
@@ -536,7 +536,7 @@ SearchInLUT_state (lut_t *lut, void *old_item, hash_key_t hash_key,
         /*
          * go to next entry in LUT
          */
-        DBUG_PRINT ("> lut (" F_PTR "), search for doubles", store_lut);
+        DBUG_PRINT ("> lut (" F_PTR "), search for doubles", (void *)store_lut);
 
         if (store_lut != NULL) {
             if (store_old_item != NULL) {
@@ -590,7 +590,7 @@ InsertIntoLUT_noDBUG (lut_t *lut, void *old_item, void *new_item, hash_key_t has
         /* the last table entry has been used -> allocate a new one */
         *lut[hash_key].next = (void **)MEMmalloc ((2 * (LUT_SIZE) + 1) * sizeof (void *));
 
-        DBUG_PRINT ("new LUT segment created: " F_PTR, lut[hash_key].next);
+        DBUG_PRINT ("new LUT segment created: " F_PTR, (void *)lut[hash_key].next);
 
         /* move 'next' to the first entry of the new table */
         lut[hash_key].next = (void **)*lut[hash_key].next;
@@ -617,7 +617,7 @@ InsertIntoLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key,
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("> lut (" F_PTR ")", lut);
+    DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     if (lut != NULL) {
         DBUG_ASSERT (old_item != NULL, "NULL not allowed in LUT");
@@ -627,7 +627,7 @@ InsertIntoLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key,
                       fprintf (stderr, old_format, old_item); fprintf (stderr, " -> ");
                       fprintf (stderr, new_format, new_item); fprintf (stderr, " ]\n"));
 
-        DBUG_PRINT ("< finished: new LUT size (hash key %i) == %i", hash_key,
+        DBUG_PRINT ("< finished: new LUT size (hash key %lu) == %i", hash_key,
                     lut[hash_key].size);
 
         DBUG_EXECUTE_TAG ("LUT_CHECK", /* check quality of hash key function */
@@ -663,7 +663,7 @@ UpdateLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key,
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("> lut (" F_PTR ")", lut);
+    DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     found_item_p
       = SearchInLUT (lut, old_item, hash_key, is_equal_fun, old_format, new_format);
@@ -719,7 +719,7 @@ MapLUT (lut_t *lut, void *(*fun) (void *, void *), hash_key_t start, hash_key_t 
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("> lut (" F_PTR ")", lut);
+    DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     if (lut != NULL) {
         for (k = start; k < stop; k++) {
@@ -766,7 +766,7 @@ FoldLUT (lut_t *lut, void *init, void *(*fun) (void *, void *, void *), hash_key
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("> lut (" F_PTR ")", lut);
+    DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     if (lut != NULL) {
         for (k = start; k < stop; k++) {
@@ -815,7 +815,7 @@ LUTgenerateLut (void)
 
     lut = (lut_t *)MEMmalloc ((HASH_KEYS) * sizeof (lut_t));
 
-    DBUG_PRINT ("> lut (" F_PTR ")", lut);
+    DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     for (k = 0; k < (HASH_KEYS); k++) {
         lut[k].first = (void **)MEMmalloc ((2 * (LUT_SIZE) + 1) * sizeof (void *));
@@ -848,7 +848,7 @@ LUTduplicateLut (lut_t *lut)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("> lut (" F_PTR ")", lut);
+    DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     if (lut != NULL) {
         new_lut = LUTgenerateLut ();
@@ -908,7 +908,7 @@ LUTremoveContentLut (lut_t *lut)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("> lut (" F_PTR ")", lut);
+    DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     if (lut != NULL) {
         /* init LUT for pointers */
@@ -968,7 +968,7 @@ LUTremoveLut (lut_t *lut)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("> lut (" F_PTR ")", lut);
+    DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     if (lut != NULL) {
         /* remove content of LUT */
@@ -1008,7 +1008,7 @@ LUTtouchContentLut (lut_t *lut, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("> lut (" F_PTR ")", lut);
+    DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     if (lut != NULL) {
         /* init LUT for pointers */
@@ -1064,7 +1064,7 @@ LUTtouchLut (lut_t *lut, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("> lut (" F_PTR ")", lut);
+    DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     if (lut != NULL) {
         /* touch content of LUT */
@@ -1520,7 +1520,7 @@ LUTprintLut (FILE *handle, lut_t *lut)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("> lut (" F_PTR ")", lut);
+    DBUG_PRINT ("> lut (" F_PTR ")", (void *)lut);
 
     if (handle == NULL) {
         handle = stderr;

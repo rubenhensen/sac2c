@@ -1764,7 +1764,7 @@ WLFlet (node *arg_node, info *arg_info)
                ASSIGN_INDEX provides the correct index_info.*/
             transformation = ASSIGN_INDEX (INFO_ASSIGN (arg_info));
 
-            DBUG_PRINT ("folding array %s in line %d now...", ID_NAME (idn),
+            DBUG_PRINT ("folding array %s in line %zu now...", ID_NAME (idn),
                         NODE_LINE (arg_node));
             Fold (idn, transformation, targetwln, substwln);
             DBUG_PRINT ("                               ...successful");
@@ -1830,7 +1830,7 @@ WLFwith (node *arg_node, info *arg_info)
            2. and then try to fold references to other WLs.
            */
         INFO_FLAG (arg_info) = 0;
-        DBUG_PRINT ("traversing body of WL in line %d", NODE_LINE (arg_node));
+        DBUG_PRINT ("traversing body of WL in line %zu", NODE_LINE (arg_node));
         arg_node = TRAVcont (arg_node, arg_info);
 
         if (INFO_FLAG (arg_info)) {
@@ -1847,7 +1847,7 @@ WLFwith (node *arg_node, info *arg_info)
             intersect_grids_ot = (int *)MEMmalloc (sizeof (int) * dim);
             intersect_grids_os = (int *)MEMmalloc (sizeof (int) * dim);
 
-            DBUG_PRINT ("=> found something to fold in WL in line %d",
+            DBUG_PRINT ("=> found something to fold in WL in line %zu",
                         NODE_LINE (arg_node));
             WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
@@ -1878,7 +1878,7 @@ WLFwith (node *arg_node, info *arg_info)
             /* this WL is finished. Search other WLs on same level. */
             wlf_mode = wlfm_search_WL;
         } else {
-            DBUG_PRINT ("=> found nothing to fold in WL in line %d",
+            DBUG_PRINT ("=> found nothing to fold in WL in line %zu",
                         NODE_LINE (arg_node));
         }
 

@@ -292,7 +292,8 @@ PINLvardec (node *arg_node, info *arg_info)
          * in the return statement. This identifier is renamed to a let-bound
          * variable in the calling context. Hence, the vardec must be eliminated.
          */
-        DBUG_PRINT ("Removing vardec %p avis %p (%s)", arg_node, VARDEC_AVIS (arg_node),
+        DBUG_PRINT ("Removing vardec %p avis %p (%s)", (void *)arg_node,
+                    (void *)VARDEC_AVIS (arg_node),
                     AVIS_NAME (VARDEC_AVIS (arg_node)));
 
         arg_node = FREEdoFreeNode (arg_node);
@@ -466,9 +467,9 @@ PINLid (node *arg_node, info *arg_info)
               = AVIS_SSAASSIGN (ID_AVIS (arg_node));
 
             DBUG_PRINT ("Relinking SSA assign of avis %p (%s) to %p",
-                        IDS_AVIS (INFO_LETIDS (arg_info)),
+                        (void *)IDS_AVIS (INFO_LETIDS (arg_info)),
                         AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))),
-                        AVIS_SSAASSIGN (ID_AVIS (arg_node)));
+                        (void *)AVIS_SSAASSIGN (ID_AVIS (arg_node)));
 
         } else {
             /*
@@ -496,9 +497,9 @@ PINLid (node *arg_node, info *arg_info)
             }
 
             DBUG_PRINT ("Relinking SSA assign of avis %p (%s) to %p",
-                        IDS_AVIS (INFO_LETIDS (arg_info)),
+                        (void *)IDS_AVIS (INFO_LETIDS (arg_info)),
                         AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))),
-                        INFO_INSERT (arg_info));
+                        (void *)INFO_INSERT (arg_info));
         }
     } else {
         /*
@@ -524,9 +525,9 @@ PINLid (node *arg_node, info *arg_info)
         }
 
         DBUG_PRINT ("Relinking SSA assign of avis %p (%s) to %p",
-                    IDS_AVIS (INFO_LETIDS (arg_info)),
+                    (void *)IDS_AVIS (INFO_LETIDS (arg_info)),
                     AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))),
-                    INFO_INSERT (arg_info));
+                    (void *)INFO_INSERT (arg_info));
     }
 
     INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));

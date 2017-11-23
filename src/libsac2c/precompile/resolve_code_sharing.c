@@ -41,7 +41,7 @@ ResolvePotentialSharing (node *code)
     if (code != NULL) {
         if (CODE_USED (code) == 0) {
             CODE_USED (code) = 1;
-            DBUG_PRINT ("CODE_USED( %p) = 1", code);
+            DBUG_PRINT ("CODE_USED( %p) = 1", (void *)code);
 
             new_code = code;
         } else {
@@ -63,7 +63,7 @@ ResolvePotentialSharing (node *code)
              */
             CODE_NEXT (code) = new_code;
             CODE_NEXT (new_code) = next_code;
-            DBUG_PRINT ("duplicated %p into %p", code, new_code);
+            DBUG_PRINT ("duplicated %p into %p", (void *)code, (void *)new_code);
         }
     } else {
         new_code = code;
@@ -136,7 +136,7 @@ RCScode (node *arg_node, info *arg_info)
 
     CODE_USED (arg_node) = 0;
 
-    DBUG_PRINT ("CODE_USED( %p) = 0", arg_node);
+    DBUG_PRINT ("CODE_USED( %p) = 0", (void *)arg_node);
 
     arg_node = TRAVcont (arg_node, arg_info);
 

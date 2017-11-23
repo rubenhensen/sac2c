@@ -31,7 +31,7 @@ SBUFcreate (int size)
     res->pos = 0;
     res->size = size;
 
-    DBUG_PRINT ("allocating buffer size %d : %p", size, res);
+    DBUG_PRINT ("allocating buffer size %d : %p", size, (void *)res);
 
     DBUG_RETURN (res);
 }
@@ -48,7 +48,7 @@ EnsureStrBufSpace (str_buf *s, int len)
 
         new_size = (len >= s->size ? s->size + 2 * len : 2 * s->size);
 
-        DBUG_PRINT ("increasing buffer %p from size %d to size %d", s, s->size, new_size);
+        DBUG_PRINT ("increasing buffer %p from size %d to size %d", (void *)s, s->size, new_size);
 
         new_buf = (char *)MEMmalloc (new_size * sizeof (char));
         memcpy (new_buf, s->buf, s->pos + 1);
@@ -72,7 +72,7 @@ SBUFprint (str_buf *s, const char *string)
     s = EnsureStrBufSpace (s, len);
 
     s->pos += sprintf (&s->buf[s->pos], "%s", string);
-    DBUG_PRINT ("pos of buffer %p now is %d", s, s->pos);
+    DBUG_PRINT ("pos of buffer %p now is %d", (void *)s, s->pos);
 
     DBUG_RETURN (s);
 }
@@ -147,7 +147,7 @@ SBUFflush (str_buf *s)
     DBUG_ENTER ();
 
     s->pos = 0;
-    DBUG_PRINT ("pos of buffer %p reset to %d", s, s->pos);
+    DBUG_PRINT ("pos of buffer %p reset to %d", (void *)s, s->pos);
 
     DBUG_RETURN ();
 }

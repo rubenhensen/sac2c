@@ -2598,7 +2598,7 @@ int
 PHUTcheckIntersection (node *exprspwl, node *exprscwl, node *exprsfn, node *exprscfn,
                        lut_t *varlut, char opcode, char *lhsname, node *setvaravis)
 {
-    int islcl;
+    int islcl=0;
 
     int res = POLY_RET_INVALID;
 

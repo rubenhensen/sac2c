@@ -81,7 +81,7 @@ CheckRefReadNums (struct location loc, int size, node *nums)
         if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) >= size)) {
             CTIerrorLoc (loc,
                          "Invalid argument of pragma 'readonly` or 'refcounting`: "
-                         "Entry no. %d does not match a function parameter",
+                         "Entry no. %d with value %d does not match a function parameter",
                          i, NUMS_VAL (tmp));
         }
 

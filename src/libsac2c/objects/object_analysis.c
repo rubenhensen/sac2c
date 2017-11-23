@@ -119,7 +119,7 @@ CreateObjectWrapper (node *wrapper, node *fundef)
     DBUG_ENTER ();
 
     DBUG_PRINT ("Creating object wrapper for %s for " F_PTR "...", CTIitemName (fundef),
-                fundef);
+                (void *)fundef);
     DBUG_PRINT ("The corresponding wrapper is %s...", CTIitemName (wrapper));
 
     /*

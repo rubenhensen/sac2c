@@ -292,7 +292,7 @@ MTCMwith2 (node *arg_node, info *arg_info)
     INFO_CONDITION (arg_info) = NULL;
     INFO_WITH2 (arg_info) = arg_node;
 
-    DBUG_PRINT ("considering with2 in line %d ...", NODE_LINE (arg_node));
+    DBUG_PRINT ("considering with2 in line %zu ...", NODE_LINE (arg_node));
 
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 

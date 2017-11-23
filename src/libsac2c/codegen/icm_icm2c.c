@@ -389,7 +389,7 @@ GetNextUbyte (unsigned char *ret, node *exprs)
     DBUG_ASSERT (NODE_TYPE (expr) == N_numubyte, "wrong icm-arg: N_numubyte expected");
     (*ret) = NUMUBYTE_VAL (expr);
 
-    DBUG_PRINT ("icm-arg found: %hu", (*ret));
+    DBUG_PRINT ("icm-arg found: %hhu", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -574,7 +574,7 @@ GetNextFloatvec (floatvec *ret, node *exprs)
     DBUG_ASSERT (NODE_TYPE (expr) == N_floatvec, "wrong icm-arg: N_float expected");
     (*ret) = FLOATVEC_VAL (expr);
 
-    DBUG_PRINT ("icm-arg found: %g", (*ret));
+    DBUG_PRINT ("icm-arg found: [%f,...]", (double)(((float *)ret)[0]));
 
     exprs = EXPRS_NEXT (exprs);
 

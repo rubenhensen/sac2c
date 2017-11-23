@@ -1068,14 +1068,14 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
                         switch (markiv) {
                         case 1:
                             nprf = F_add_SxS;
-                            id1 = TBmakeId (FlattenLbubel (lbub, ivindx, arg_info)),
+                            id1 = TBmakeId (FlattenLbubel (lbub, ivindx, arg_info));
                             id2 = TBmakeId (ID_AVIS (xarg));
                             break;
 
                         case 2:
                             nprf = F_sub_SxS;
                             id1 = TBmakeId (ID_AVIS (xarg));
-                            id2 = TBmakeId (FlattenLbubel (lbub, ivindx, arg_info)),
+                            id2 = TBmakeId (FlattenLbubel (lbub, ivindx, arg_info));
                             INFO_FINVERSESWAP (arg_info) = !INFO_FINVERSESWAP (arg_info);
                             break;
 

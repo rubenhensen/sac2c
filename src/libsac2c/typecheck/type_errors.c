@@ -1688,7 +1688,9 @@ TEassureShpMatchesInt (char *obj, ntype *shp, int len)
         shpel = SHgetUnrLen (TYgetShape (shp));
         if (len != shpel) {
             TEhandleError (global.linenum, global.filename,
-                           "%s should be %d elements, but is %d elements.", shp, shpel,
+                           "%s should be %d elements, but is %d elements.",
+                           TYtype2String (shp, FALSE, 0),
+                           shpel,
                            len);
         }
     }

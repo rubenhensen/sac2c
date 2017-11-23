@@ -556,10 +556,11 @@ InsertMappingsIntoLUT (lut_t *move_table, nodelist *mappings)
         DBUG_PRINT ("update %s(" F_PTR ", " F_PTR ")"
                     " -> %s(" F_PTR ", " F_PTR ") into LUT for mapping",
                     VARDEC_OR_ARG_NAME (AVIS_DECL (NODELIST_NODE (mappings))),
-                    NODELIST_NODE (mappings), AVIS_DECL (NODELIST_NODE (mappings)),
+                    (void *)NODELIST_NODE (mappings),
+                    (void *)AVIS_DECL (NODELIST_NODE (mappings)),
                     AVIS_NAME (((node *)NODELIST_ATTRIB2 (mappings))),
-                    ((node *)NODELIST_ATTRIB2 (mappings)),
-                    AVIS_DECL (((node *)NODELIST_ATTRIB2 (mappings))));
+                    (void *)((node *)NODELIST_ATTRIB2 (mappings)),
+                    (void *)AVIS_DECL (((node *)NODELIST_ATTRIB2 (mappings))));
 
         mappings = NODELIST_NEXT (mappings);
     }

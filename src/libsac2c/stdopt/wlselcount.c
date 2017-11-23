@@ -193,7 +193,7 @@ WLSELCwith (node *arg_node, info *arg_info)
     old = INFO_WLSELSMAX (arg_info);
     INFO_WLSELSMAX (arg_info) = 0;
 
-    DBUG_PRINT ("> analysing With-Loop in line %d", NODE_LINE (arg_node));
+    DBUG_PRINT ("> analysing With-Loop in line %zu", NODE_LINE (arg_node));
     /**
      * traverse into with-loop
      */
@@ -214,7 +214,7 @@ WLSELCwith (node *arg_node, info *arg_info)
           = INFO_WLFUNAPPS (arg_info) || WITH_CONTAINSFUNAPS (arg_node);
     }
 
-    DBUG_PRINT ("< done with With-Loop in line %d", NODE_LINE (arg_node));
+    DBUG_PRINT ("< done with With-Loop in line %zu", NODE_LINE (arg_node));
 
     DBUG_RETURN (arg_node);
 }

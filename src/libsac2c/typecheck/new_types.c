@@ -2793,11 +2793,12 @@ DFT_state2dft_res (dft_state *state)
                     irr = i;
                 }
                 DBUG_PRINT_TAG ("NTDIS", "  %p might shadow %p here",
-                                state->fundefs[dp2ud[dom]], state->fundefs[dp2ud[irr]]);
+                                (void *)state->fundefs[dp2ud[dom]],
+                                (void *)state->fundefs[dp2ud[irr]]);
                 if (AllArgTypesLe (state->fundefs[dp2ud[dom]],
                                    state->fundefs[dp2ud[irr]])) {
                     DBUG_PRINT_TAG ("NTDIS", "  eliminating %p",
-                                    state->fundefs[dp2ud[irr]]);
+                                    (void *)state->fundefs[dp2ud[irr]]);
                     EliminateDeriveablePartial (res->deriveable_partials, dp2ud,
                                                 res->num_deriveable_partials, irr);
                     res->num_deriveable_partials--;
@@ -2817,11 +2818,12 @@ DFT_state2dft_res (dft_state *state)
                 dom = j;
                 irr = i;
                 DBUG_PRINT_TAG ("NTDIS", "  %p might shadow %p here",
-                                state->fundefs[p2ud[dom]], state->fundefs[dp2ud[irr]]);
+                                (void *)state->fundefs[p2ud[dom]],
+                                (void *)state->fundefs[dp2ud[irr]]);
                 if (AllArgTypesLe (state->fundefs[p2ud[dom]],
                                    state->fundefs[dp2ud[irr]])) {
                     DBUG_PRINT_TAG ("NTDIS", "  eliminating %p",
-                                    state->fundefs[dp2ud[irr]]);
+                                    (void *)state->fundefs[dp2ud[irr]]);
                     EliminateDeriveablePartial (res->deriveable_partials, dp2ud,
                                                 res->num_deriveable_partials, irr);
                     res->num_deriveable_partials--;
@@ -2977,7 +2979,7 @@ DebugPrintDispatchInfo (char *dbug_str, ntype *ires)
     DBUG_ENTER ();
 
     for (i = 0; i < IRES_NUMFUNS (ires); i++) {
-        DBUG_PRINT_TAG (dbug_str, "  fundef %8p: %d", IRES_FUNDEF (ires, i),
+        DBUG_PRINT_TAG (dbug_str, "  fundef %8p: %d", (void *)IRES_FUNDEF (ires, i),
                         IRES_POS (ires, i));
     }
 
@@ -2992,7 +2994,7 @@ DebugPrintDFT_state (dft_state *state)
     DBUG_ENTER ();
 
     for (i = 0; i < state->max_funs; i++) {
-        DBUG_PRINT_TAG ("NTDIS", "  fundef %8p: ups %2d | downs %2d", state->fundefs[i],
+        DBUG_PRINT_TAG ("NTDIS", "  fundef %8p: ups %2d | downs %2d", (void *)state->fundefs[i],
                         state->ups[i], state->downs[i]);
     }
 
@@ -4183,11 +4185,11 @@ TYfixAndEliminateAlpha (ntype *t1)
     } else if (TYisAlpha (t1)) {
         if (SSIgetMin (TYgetAlpha (t1)) != NULL) {
             res = TYcopyType (SSIgetMin (ALPHA_SSI (t1)));
-            DBUG_PRINT_TAG ("SSIMEM", "fixing var at %p", TYgetAlpha (t1));
+            DBUG_PRINT_TAG ("SSIMEM", "fixing var at %p", (void *)TYgetAlpha (t1));
         } else {
             res = TYcopyType (t1);
-            DBUG_PRINT_TAG ("SSIMEM", "copying var at %p to %p", TYgetAlpha (t1),
-                            TYgetAlpha (res));
+            DBUG_PRINT_TAG ("SSIMEM", "copying var at %p to %p", (void *)TYgetAlpha (t1),
+                            (void *)TYgetAlpha (res));
         }
     } else {
         int cnt;
@@ -4235,11 +4237,11 @@ TYliftBottomFixAndEliminateAlpha (ntype *t1)
             } else {
                 res = TYcopyType (SSIgetMin (ALPHA_SSI (t1)));
             }
-            DBUG_PRINT_TAG ("SSIMEM", "fixing var at %p", TYgetAlpha (t1));
+            DBUG_PRINT_TAG ("SSIMEM", "fixing var at %p", (void *)TYgetAlpha (t1));
         } else {
             res = TYcopyType (t1);
-            DBUG_PRINT_TAG ("SSIMEM", "copying var at %p to %p", TYgetAlpha (t1),
-                            TYgetAlpha (res));
+            DBUG_PRINT_TAG ("SSIMEM", "copying var at %p to %p", (void *)TYgetAlpha (t1),
+                            (void *)TYgetAlpha (res));
         }
     } else {
         int cnt;
@@ -5221,7 +5223,7 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
             if (IRES_NUMFUNS (type) > 0) {
                 buf = SBUFprintf (buf, "fundefs: {");
                 for (i = 0; i < IRES_NUMFUNS (type); i++) {
-                    buf = SBUFprintf (buf, F_PTR " ", IRES_FUNDEF (type, i));
+                    buf = SBUFprintf (buf, F_PTR " ", (void *)IRES_FUNDEF (type, i));
                 }
                 buf = SBUFprintf (buf, "} ");
             }
@@ -6258,7 +6260,7 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
         new_type = CopyTypeConstructor (type, tv_id);
 
         DBUG_PRINT_TAG ("NTY_SPLIT", "processing %s node at" F_PTR "(cpy:" F_PTR ")",
-                        dbug_str[NTYPE_CON (type)], type, new_type);
+                        dbug_str[NTYPE_CON (type)], (void *)type, (void *)new_type);
         switch (NTYPE_CON (type)) {
 
         case TC_fun:
@@ -6288,8 +6290,9 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
                 son = SplitWrapperType (NTYPE_SON (type, pos), level + 1, frame,
                                         pathes_remaining);
 
-                DBUG_PRINT_TAG ("NTY_SPLIT", "--adding " F_PTR " to " F_PTR, son,
-                                new_type);
+                DBUG_PRINT_TAG ("NTY_SPLIT", "--adding " F_PTR " to " F_PTR,
+                                (void *)son,
+                                (void *)new_type);
                 new_type = MakeNewSon (new_type, NULL);
                 new_type = MakeNewSon (new_type, NULL);
                 new_type = MakeNewSon (new_type, son);
@@ -6297,7 +6300,7 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
                 if (*pathes_remaining == 1) {
                     *pathes_remaining = NTYPE_ARITY (type) - 2;
                     DBUG_PRINT_TAG ("NTY_SPLIT", "--deleting " F_PTR " from " F_PTR,
-                                    NTYPE_SON (type, pos), type);
+                                    (void *)NTYPE_SON (type, pos), (void *)type);
                     type = DeleteSon (type, pos);
                 } else {
                     *pathes_remaining *= NTYPE_ARITY (type) - 2;
@@ -6321,14 +6324,14 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
                      * NB: In certain situations NULL sons NEED to be inserted.
                      *     These are mandatory nodes such as [] and [*] in IBASE.
                      */
-                    DBUG_PRINT_TAG ("NTY_SPLIT", "--adding " F_PTR " to " F_PTR, son,
-                                    new_type);
+                    DBUG_PRINT_TAG ("NTY_SPLIT", "--adding " F_PTR " to " F_PTR, (void *)son,
+                                    (void *)new_type);
                     new_type = MakeNewSon (new_type, son);
                     if (*pathes_remaining == 1) {
                         if (i >= mandatory) {
                             DBUG_PRINT_TAG ("NTY_SPLIT",
                                             "**deleting " F_PTR " from " F_PTR,
-                                            NTYPE_SON (type, i), type);
+                                            (void *)NTYPE_SON (type, i), (void *)type);
                             type = DeleteSon (type, i);
                             /**
                              * ATTENTION: DeleteSons decrements our arity and thus the
@@ -6340,7 +6343,7 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
                         } else {
                             DBUG_PRINT_TAG ("NTY_SPLIT",
                                             "**setting " F_PTR " from " F_PTR " to NULL",
-                                            NTYPE_SON (type, i), type);
+                                            (void *)NTYPE_SON (type, i), (void *)type);
                             NTYPE_SON (type, i) = NULL;
                         }
                     }
@@ -6357,10 +6360,10 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
 
         if (*pathes_remaining == 0) {
             DBUG_PRINT_TAG ("NTY_SPLIT", "--killing %s node at" F_PTR,
-                            dbug_str[NTYPE_CON (type)], new_type);
+                            dbug_str[NTYPE_CON (type)], (void *)new_type);
             new_type = MEMfree (new_type);
         } else if (*pathes_remaining == 1) {
-            DBUG_PRINT_TAG ("NTY_SPLIT", "**freeing " F_PTR, type);
+            DBUG_PRINT_TAG ("NTY_SPLIT", "**freeing " F_PTR, (void *)type);
             type = TYfreeTypeConstructor (type);
         }
     }

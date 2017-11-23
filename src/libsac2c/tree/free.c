@@ -386,7 +386,7 @@ FreeZombie (node *fundef)
 
     if (FUNDEF_ISZOMBIE (fundef)) {
 
-        DBUG_PRINT ("removing zombie at " F_PTR, fundef);
+        DBUG_PRINT ("removing zombie at " F_PTR, (void *)fundef);
 
         /*
          * remove all the zombie data

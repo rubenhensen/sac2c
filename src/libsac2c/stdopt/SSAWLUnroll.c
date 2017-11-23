@@ -846,7 +846,7 @@ CheckUnrollGenarray (node *wln, node *lhs, info *arg_info)
     if (ok && (length > global.wlunrnum)) {
         ok = FALSE;
         if (length <= 32) {
-            CTInote ("WLUR: -maxwlur %d would unroll genarray with-loop", length);
+            CTInote ("WLUR: -maxwlur %lld would unroll genarray with-loop", length);
         }
     }
 

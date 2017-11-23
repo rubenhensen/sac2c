@@ -218,7 +218,7 @@ SplitWrapper (node *fundef, info *arg_info)
             tmp_type = NULL;
         }
         DBUG_EXECUTE (tmp_str = TYtype2String (new_type, TRUE, 0));
-        DBUG_PRINT ("  new wrapper split off: \n%s : " F_PTR, tmp_str, new_fundef);
+        DBUG_PRINT ("  new wrapper split off: \n%s : " F_PTR, tmp_str, (void *)new_fundef);
         DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
         DBUG_EXECUTE (tmp_str = TYtype2String (tmp_type, TRUE, 0));
         DBUG_PRINT ("  remaining wrapper : \n%s : ", tmp_str);
@@ -564,13 +564,13 @@ SWRap (node *arg_node, info *arg_info)
     }
 
     DBUG_PRINT ("Ap of function %s::%s pointed to " F_PTR ".",
-                NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node));
+                NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), (void *)AP_FUNDEF (arg_node));
 
     arg_types = TUactualArgs2Ntype (AP_ARGS (arg_node));
     AP_FUNDEF (arg_node) = CorrectFundefPointer (AP_FUNDEF (arg_node), arg_types);
 
     DBUG_PRINT ("Ap of function %s::%s now points to " F_PTR ".",
-                NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node));
+                NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), (void *)AP_FUNDEF (arg_node));
     arg_types = TYfreeType (arg_types);
 
     DBUG_RETURN (arg_node);

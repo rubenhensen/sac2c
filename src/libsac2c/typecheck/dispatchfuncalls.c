@@ -359,13 +359,13 @@ DFCap (node *arg_node, info *arg_info)
     AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
     DBUG_PRINT ("Ap of function %s::%s pointed to " F_PTR ".",
-                NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node));
+                NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), (void *)AP_FUNDEF (arg_node));
 
     arg_types = TUactualArgs2Ntype (AP_ARGS (arg_node));
     AP_FUNDEF (arg_node) = DispatchFunCall (AP_FUNDEF (arg_node), arg_types, arg_info);
 
     DBUG_PRINT ("Ap of function %s:%s now points to " F_PTR ".",
-                NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node));
+                NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), (void *)AP_FUNDEF (arg_node));
     arg_types = TYfreeType (arg_types);
 
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))

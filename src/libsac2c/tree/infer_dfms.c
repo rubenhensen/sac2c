@@ -606,7 +606,7 @@ EnsureDFMbase (node *fundef)
           = DFMgenMaskBase (FUNDEF_ARGS (fundef), FUNDEF_VARDECS (fundef));
 
         DBUG_PRINT_TAG ("INFDFMS_ALL", "no DFM base found -> created (" F_PTR ")",
-                        FUNDEF_DFM_BASE (fundef));
+                        (void *)FUNDEF_DFM_BASE (fundef));
     } else {
         FUNDEF_DFM_BASE (fundef) = DFMupdateMaskBase (old_dfm_base, FUNDEF_ARGS (fundef),
                                                       FUNDEF_VARDECS (fundef));
@@ -615,7 +615,7 @@ EnsureDFMbase (node *fundef)
                      "address of DFM base has changed during update!");
 
         DBUG_PRINT_TAG ("INFDFMS_ALL", "DFM base found -> updated (" F_PTR ")",
-                        FUNDEF_DFM_BASE (fundef));
+                        (void *)FUNDEF_DFM_BASE (fundef));
     }
 
     DBUG_RETURN (fundef);

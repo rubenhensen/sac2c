@@ -769,18 +769,18 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
         // recursively look for potential "previous" definitions of the same target!
         EvaluateCustomTarget (target, tmp->next, target_list);
 
-        DBUG_PRINT ("                 scanning inheritances...", target);
+        DBUG_PRINT ("                 scanning inheritances...");
         // Evaluate inheritance targets left to right
         super_target = tmp->super_targets;
         while (super_target != NULL) {
             EvaluateCustomTarget (super_target->name, target_list, target_list);
             super_target = super_target->next;
         }
-        DBUG_PRINT ("                 scanning inheritances done.", target);
+        DBUG_PRINT ("                 scanning inheritances done.");
 
         resource = tmp->resource_list;
 
-        DBUG_PRINT ("                 scanning ressources...", target);
+        DBUG_PRINT ("                 scanning ressources...");
         while (resource != NULL) {
             i = 0;
             while ((resource_table[i].name[0] != '\0')
@@ -798,7 +798,7 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
 
             resource = resource->next;
         }
-        DBUG_PRINT ("                 scanning ressources done.", target);
+        DBUG_PRINT ("                 scanning ressources done.");
     }
 
     DBUG_RETURN ();

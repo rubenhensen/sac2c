@@ -1247,7 +1247,7 @@ PRTmodule (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
     INFO_NAMESPACE (arg_info) = STRcpy (NSgetName (MODULE_NAMESPACE (arg_node)));
 
@@ -1657,7 +1657,7 @@ PRTtypedef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
@@ -1740,7 +1740,7 @@ PRTobjdef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
@@ -1806,7 +1806,7 @@ PRTret (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
@@ -2079,7 +2079,7 @@ PRTfundef (node *arg_node, info *arg_info)
             && global.prt_cycle_range == FALSE)
         || INFO_NONLOCCALFUN (arg_info) != NULL) {
 
-        DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+        DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
         //    if( INFO_NONLOCCALFUN( arg_info) != NULL) {
         //    }
@@ -2391,7 +2391,7 @@ PRTannotate (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
@@ -2714,7 +2714,7 @@ PRTblock (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
@@ -2818,7 +2818,7 @@ PRTassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
@@ -3104,7 +3104,7 @@ PRTlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
@@ -3185,7 +3185,7 @@ PRTprf (node *arg_node, info *arg_info)
     }
 
     DBUG_PRINT ("%s (%s)" F_PTR, NODE_TEXT (arg_node),
-                global.prf_name[PRF_PRF (arg_node)], arg_node);
+                global.prf_name[PRF_PRF (arg_node)], (void *)arg_node);
 
     fprintf (global.outfile, "%s(", global.prf_name[PRF_PRF (arg_node)]);
 
@@ -4047,7 +4047,7 @@ PRTtype (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
@@ -6097,7 +6097,7 @@ PRTtravPre (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT_TAG ("PRINT_LINE", "line (%s) %s:%i\n", NODE_TEXT (arg_node),
+    DBUG_PRINT_TAG ("PRINT_LINE", "line (%s) %s:%zu\n", NODE_TEXT (arg_node),
                     NODE_FILE (arg_node), NODE_LINE (arg_node));
 
     if (NODE_ERROR (arg_node) != NULL) {

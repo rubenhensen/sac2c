@@ -238,9 +238,9 @@ USSATid (node *arg_node, info *arg_info)
 
     if (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
         DBUG_PRINT ("rename id %s(" F_PTR ") in %s(" F_PTR ")",
-                    AVIS_NAME (ID_AVIS (arg_node)), ID_AVIS (arg_node),
+                    AVIS_NAME (ID_AVIS (arg_node)), (void *)ID_AVIS (arg_node),
                     AVIS_NAME (AVIS_SUBST (ID_AVIS (arg_node))),
-                    AVIS_SUBST (ID_AVIS (arg_node)));
+                    (void *)AVIS_SUBST (ID_AVIS (arg_node)));
 
         /* restore rename back to undo vardec */
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
@@ -264,9 +264,9 @@ USSATids (node *arg_ids, info *arg_info)
 
     if (AVIS_SUBST (IDS_AVIS (arg_ids)) != NULL) {
         DBUG_PRINT ("rename ids %s(" F_PTR ") in %s(" F_PTR ")",
-                    AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids),
+                    AVIS_NAME (IDS_AVIS (arg_ids)), (void *)IDS_AVIS (arg_ids),
                     AVIS_NAME (AVIS_SUBST (IDS_AVIS (arg_ids))),
-                    AVIS_SUBST (IDS_AVIS (arg_ids)));
+                    (void *)AVIS_SUBST (IDS_AVIS (arg_ids)));
 
         /* restore rename back to undo vardec */
         IDS_AVIS (arg_ids) = AVIS_SUBST (IDS_AVIS (arg_ids));

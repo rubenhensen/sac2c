@@ -342,7 +342,7 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
     if (unroll == UNR_NONE)
         set_extrema (predicate, modifier, &ext_ivs, fundef, ext_assign);
 
-    DBUG_PRINT ("predicate unrollable returned %i", unroll);
+    DBUG_PRINT ("predicate unrollable returned %li", unroll);
 
 cleanup:
     if (!TAILQ_EMPTY (&ext_ivs)) {
@@ -408,11 +408,11 @@ make_additions (node *target, node *var, bool *var_found, node *loopvar,
     }
 
     if (NODE_TYPE (target) == N_id) {
-        if (ID_AVIS (target) == ID_AVIS (var))
-            *var_found = TRUE, *var_or_loopvar_sign = sign;
-        else if (ID_AVIS (target) == ID_AVIS (loopvar))
-            *loopvar_found = TRUE, *var_or_loopvar_sign = sign;
-        else {
+        if (ID_AVIS (target) == ID_AVIS (var)) {
+            *var_found = TRUE; *var_or_loopvar_sign = sign;
+        } else if (ID_AVIS (target) == ID_AVIS (loopvar)) {
+            *loopvar_found = TRUE; *var_or_loopvar_sign = sign;
+        } else {
             struct addition *add;
             add = (struct addition *)MEMmalloc (sizeof (struct addition));
             add->sign = sign;
@@ -428,11 +428,11 @@ make_additions (node *target, node *var, bool *var_found, node *loopvar,
         node *arg1, *arg2;
         bool b1, b2;
 
-        if (PRF_PRF (target) == F_add_SxS)
-            s1 = arg_plus, s2 = arg_plus;
-        else if (PRF_PRF (target) == F_sub_SxS)
-            s1 = arg_plus, s2 = arg_minus;
-        else
+        if (PRF_PRF (target) == F_add_SxS) {
+            s1 = arg_plus; s2 = arg_plus;
+        } else if (PRF_PRF (target) == F_sub_SxS) {
+            s1 = arg_plus; s2 = arg_minus;
+        } else
             return FALSE;
 
         arg1 = PRF_ARG1 (target);
@@ -682,7 +682,7 @@ FindAssignOfType (node *assigns, nodetype n)
 
     DBUG_ENTER ();
 
-    linfo.res = NULL, linfo.nt = n;
+    linfo.res = NULL; linfo.nt = n;
 
     TRAVpushAnonymous ((anontrav_t[]){{N_assign, &ATravFilter}, {(nodetype)0, NULL}},
                        &TRAVsons);
@@ -2010,7 +2010,7 @@ GetConstantArg (node *id, node *fundef, node *ext_assign, loopc_t *init_counter)
     /* free temp. data */
     num = FREEdoFreeNode (num);
 
-    DBUG_PRINT ("loop entrance counter: %s = %d", AVIS_NAME (ID_AVIS (id)),
+    DBUG_PRINT ("loop entrance counter: %s = %li", AVIS_NAME (ID_AVIS (id)),
                 (*init_counter));
 
     DBUG_RETURN (TRUE);
@@ -2369,7 +2369,7 @@ LURfundef (node *arg_node, info *arg_info)
 
     if (unrolling != UNR_NONE) {
         if (unrolling <= global.unrnum) {
-            DBUG_PRINT ("unrolling loop %s %d times ", FUNDEF_NAME (arg_node), unrolling);
+            DBUG_PRINT ("unrolling loop %s %ld times ", FUNDEF_NAME (arg_node), unrolling);
 
             global.optcounters.lunr_expr++;
 
@@ -2377,11 +2377,11 @@ LURfundef (node *arg_node, info *arg_info)
             arg_node = UnrollLoopBody (arg_node, unrolling, arg_info);
 
         } else {
-            DBUG_PRINT ("no unrolling of %s: should be %d (but set to maxlur %d)",
+            DBUG_PRINT ("no unrolling of %s: should be %ld (but set to maxlur %d)",
                         FUNDEF_NAME (arg_node), unrolling, global.unrnum);
 
             if (unrolling <= 32) {
-                CTInote ("LUR: -maxlur %d would unroll loop", unrolling);
+                CTInote ("LUR: -maxlur %ld would unroll loop", unrolling);
                 /*
                  * We use the hard-wired constant 32 here because otherwise
                  * we become annoyed by messages like "-maxlur 1000000000

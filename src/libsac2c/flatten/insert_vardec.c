@@ -408,7 +408,7 @@ INSVDspids (node *arg_node, info *arg_info)
 
         INFO_VARDECS (arg_info) = vardec;
 
-        DBUG_PRINT ("inserting new vardec (" F_PTR ") for id %s.", vardec,
+        DBUG_PRINT ("inserting new vardec (" F_PTR ") for id %s.", (void *)vardec,
                     SPIDS_NAME (arg_node));
     }
 

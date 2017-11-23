@@ -657,7 +657,7 @@ CRTWRPspap (node *arg_node, info *arg_info)
                            INFO_EXPRETS (arg_info), INFO_WRAPPERFUNS (arg_info));
 
     DBUG_PRINT ("Adding backreference to %s:%s as " F_PTR ".",
-                NSgetName (SPAP_NS (arg_node)), SPAP_NAME (arg_node), wrapper);
+                NSgetName (SPAP_NS (arg_node)), SPAP_NAME (arg_node), (void *)wrapper);
 
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),

@@ -560,8 +560,9 @@ SerializeFundefHead (node *fundef, info *info)
 
             if (!FUNDEF_HASDOTARGS (fundef) && !FUNDEF_HASDOTRETS (fundef)) {
                 node *args = FUNDEF_ARGS (fundef);
-                while (args)
-                    argc++, args = ARG_NEXT (args);
+                while (args) {
+                    argc++; args = ARG_NEXT (args);
+                }
             }
 
             STadd (FUNDEF_NAME (fundef), vis, funname,

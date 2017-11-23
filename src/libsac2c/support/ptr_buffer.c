@@ -36,7 +36,7 @@ PBUFcreate (int size)
     res->pos = 0;
     res->size = size;
 
-    DBUG_PRINT ("allocating buffer size %d : %p", size, res);
+    DBUG_PRINT ("allocating buffer size %d : %p", size, (void *)res);
 
     DBUG_RETURN (res);
 }
@@ -64,7 +64,10 @@ PBUFadd (ptr_buf *s, void *ptr)
 
     if (s->pos == s->size) {
         new_size = 2 * s->size;
-        DBUG_PRINT ("increasing buffer %p from size %d to size %d", s, s->size, new_size);
+        DBUG_PRINT ("increasing buffer %p from size %d to size %d",
+                    (void *)s,
+                    s->size,
+                    new_size);
 
         new_buf = (void **)MEMmalloc (new_size * sizeof (void *));
         for (i = 0; i < s->pos; i++) {
@@ -76,8 +79,8 @@ PBUFadd (ptr_buf *s, void *ptr)
     }
     s->buf[s->pos] = ptr;
     s->pos++;
-    DBUG_PRINT ("%p added to buffer %p", ptr, s);
-    DBUG_PRINT ("pos of buffer %p now is %d", s, s->pos);
+    DBUG_PRINT ("%p added to buffer %p", (void *)ptr, (void *)s);
+    DBUG_PRINT ("pos of buffer %p now is %d", (void *)s, s->pos);
 
     DBUG_RETURN (s);
 }
@@ -160,7 +163,7 @@ PBUFflush (ptr_buf *s)
     DBUG_ENTER ();
 
     s->pos = 0;
-    DBUG_PRINT ("pos of buffer %p reset to %d", s, s->pos);
+    DBUG_PRINT ("pos of buffer %p reset to %d", (void *)s, s->pos);
 
     DBUG_RETURN ();
 }
@@ -185,7 +188,7 @@ PBUFflushFrom (ptr_buf *s, int pos)
     if (pos < s->size) {
         s->pos = pos;
     }
-    DBUG_PRINT ("pos of buffer %p reset to %d", s, s->pos);
+    DBUG_PRINT ("pos of buffer %p reset to %d", (void *)s, s->pos);
 
     DBUG_RETURN ();
 }
@@ -205,7 +208,7 @@ PBUFfree (ptr_buf *s)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("freeing buffer %p", s);
+    DBUG_PRINT ("freeing buffer %p", (void *)s);
     s->buf = MEMfree (s->buf);
     s = MEMfree (s);
 

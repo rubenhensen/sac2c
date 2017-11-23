@@ -553,7 +553,8 @@ LFUfindAssignOfType (node *assigns, nodetype n)
 
     DBUG_ENTER ();
 
-    linfo.res = NULL, linfo.nt = n;
+    linfo.res = NULL;
+    linfo.nt = n;
 
     TRAVpushAnonymous ((anontrav_t[]){{N_assign, &ATravFilter}, {(nodetype)0, NULL}},
                        &TRAVsons);

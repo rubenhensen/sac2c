@@ -403,7 +403,7 @@ WLSIMPwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("examining With-Loop: %s in line %d",
+    DBUG_PRINT ("examining With-Loop: %s in line %zu",
                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), NODE_LINE (arg_node));
 
     INFO_NUM_GENPARTS (arg_info) = 0;

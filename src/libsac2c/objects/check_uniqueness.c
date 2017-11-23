@@ -324,7 +324,7 @@ CUid (node *arg_node, info *arg_info)
 
         if (AVIS_WITHLOOPLEVEL (avis) != INFO_WITHLOOPLEVEL (arg_info)) {
             CTIerrorLoc (NODE_LOCATION (arg_node),
-                         "Unique var %s of type %s not propagated into this WithLoop",
+                         "Unique var %s of type %s not propagated into this WithLoop at level %d",
                          AVIS_NAME (avis), UTgetName (TYgetUserType (TYgetScalar (type))),
                          INFO_WITHLOOPLEVEL (arg_info));
         }

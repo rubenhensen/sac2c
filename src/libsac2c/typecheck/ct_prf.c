@@ -173,7 +173,7 @@ NTCCTprf_cast (te_info *info, ntype *elems)
     TEassureSameScalarType ("cast-type", cast_bt, "expr-type", expr_bt);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
-        CTIerror (err_msg);
+        CTIerror ("%s", err_msg);
         TEextendedAbort ();
     }
 
@@ -456,7 +456,7 @@ NTCCTprf_guard (te_info *info, ntype *args)
     TEassureBoolS ("predicate (last argument of guard())", pred);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
-        CTIabort (err_msg);
+        CTIabort ("%s", err_msg);
     }
 
     res = TYmakeEmptyProductType (num_rets);
@@ -490,7 +490,7 @@ NTCCTprf_guardhold (te_info *info, ntype *args)
     TEassureBoolS ("requires predicate", pred);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
-        CTIabort (err_msg);
+        CTIabort ("%s", err_msg);
     }
 
     res = TYcopyType (pred);
