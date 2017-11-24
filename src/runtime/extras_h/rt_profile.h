@@ -46,15 +46,6 @@
 
 #if !SAC_MUTC_MACROS
 
-/* For profiling communications */
-
-#if SAC_DO_COMPILE_MODULE
-
-SAC_C_EXTERN void SAC_PF_BeginComm (void);
-
-SAC_C_EXTERN void SAC_PF_EndComm (void);
-
-#endif
 
 /*
  *  General profiling macros and declarations
@@ -62,82 +53,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #if SAC_DO_PROFILE
 
-/*
- * Type definitions
- */
-
-#include <sys/time.h>
-/*
- * for struct timeval
- */
-
-#include <sys/resource.h>
-/*
- * for struct rusage
- */
-
-#include <stdlib.h>
-/*
- * for size_t
- */
-
-typedef struct timeval SAC_PF_TIMER;
-
-typedef enum {
-    PF_ow_fun = 0,
-    PF_ow_genarray = 1,
-    PF_ow_modarray = 2,
-    PF_ow_fold = 3,
-    PF_iw_fun = 4,
-    PF_iw_genarray = 5,
-    PF_iw_modarray = 6,
-    PF_iw_fold = 7
-
 #if SAC_DO_PROFILE_DISTMEM
-    /* Distributed memory backend profiling options */
-    ,
-    PF_distmem_exec_rep = 8,
-    PF_distmem_exec_dist = 9,
-    PF_distmem_exec_side_effects = 10,
-    PF_distmem_rep_barrier = 11,
-    PF_distmem_dist_barrier = 12,
-    PF_distmem_side_effects_barrier = 13,
-    PF_distmem_comm = 14
-#endif /* SAC_DO_PROFILE_DISTMEM  */
-
-} SAC_PF_timer_type;
-
-#if SAC_DO_PROFILE_DISTMEM
-
-#define SAC_PF_NUM_TIMER_TYPES 15
-
-#if SAC_DO_COMPILE_MODULE
-
-#define SAC_PF_DISTMEM_DEFINE()                                                          \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_initial_record;                      \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD *SAC_PF_distmem_act_record;                         \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_rep_record;                          \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_dist_record;                         \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_side_effects_record;                 \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_rep_barrier_record;                  \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_dist_barrier_record;                 \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_side_effects_barrier_record;         \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_comm_record;
-
-#else /* SAC_DO_COMPILE_MODULE */
-
-#define SAC_PF_DISTMEM_DEFINE()                                                          \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_initial_record;                                   \
-    SAC_PF_TIMER_RECORD *SAC_PF_distmem_act_record = &SAC_PF_distmem_initial_record;     \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_rep_record;                                       \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_dist_record;                                      \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_side_effects_record;                              \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_rep_barrier_record;                               \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_dist_barrier_record;                              \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_side_effects_barrier_record;                      \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_comm_record;
-
-#endif /* SAC_DO_COMPILE_MODULE */
 
 #define SAC_PF_DISTMEM_SETUP()                                                           \
     SAC_PF_distmem_rep_record.timer_type = PF_distmem_exec_rep;                          \
@@ -156,94 +72,13 @@ typedef enum {
 
 #else /* SAC_DO_PROFILE_DISTMEM */
 
-#define SAC_PF_NUM_TIMER_TYPES 8
-
-#define SAC_PF_DISTMEM_DEFINE()
-
 #define SAC_PF_DISTMEM_SETUP()
 
 #endif /* SAC_DO_PROFILE_DISTMEM  */
 
-typedef struct timer_record {
-    int funno;
-    int funapno;
-    SAC_PF_timer_type timer_type;
-    struct timer_record *parent;
-    int *cycle_tag;
-} SAC_PF_TIMER_RECORD;
-
-/*
- * External declarations of C library functions needed
- */
-
-SAC_C_EXTERN int getrusage (int who, struct rusage *rusage);
-
-/*
- * External declarations of library functions defined in libsac
- */
-
-SAC_C_EXTERN void SAC_PF_PrintHeader (char *title);
-SAC_C_EXTERN void SAC_PF_PrintHeaderNode (char *title, size_t rank);
-SAC_C_EXTERN void SAC_PF_PrintSubHeader (char *title, int lineno);
-SAC_C_EXTERN void SAC_PF_PrintTime (char *title, char *space, SAC_PF_TIMER *time);
-SAC_C_EXTERN void SAC_PF_PrintCount (char *title, char *space, unsigned long count);
-SAC_C_EXTERN void SAC_PF_PrintTimePercentage (char *title, char *space,
-                                              SAC_PF_TIMER *time1, SAC_PF_TIMER *time2);
-
-/*
- * External declarations of global variables defined in libsac
- */
-
-SAC_C_EXTERN int SAC_PF_act_funno;
-SAC_C_EXTERN int SAC_PF_act_funapno;
-SAC_C_EXTERN int SAC_PF_with_level;
-SAC_C_EXTERN struct rusage SAC_PF_start_timer;
-SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
-
 /*
  *  Macro definitions
  */
-
-#if SAC_DO_COMPILE_MODULE
-#define SAC_PF_DEFINE()                                                                  \
-    SAC_C_EXTERN SAC_PF_TIMER ***SAC_PF_timer;                                           \
-    SAC_C_EXTERN int **SAC_PF_cycle_tag;                                                 \
-                                                                                         \
-    SAC_C_EXTERN int SAC_PF_act_cycle_tag;                                               \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD *SAC_PF_act_record;                                 \
-                                                                                         \
-    SAC_PF_DISTMEM_DEFINE ()                                                             \
-                                                                                         \
-    SAC_C_EXTERN char **SAC_PF_fun_name;                                                 \
-    SAC_C_EXTERN int *SAC_PF_maxfunap;                                                   \
-    SAC_C_EXTERN int **SAC_PF_funapline;                                                 \
-    SAC_C_EXTERN int **SAC_PF_parentfunno;
-#else
-#define SAC_PF_DEFINE()                                                                  \
-    SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP][SAC_PF_NUM_TIMER_TYPES]; \
-    int SAC_PF_cycle_tag[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                              \
-                                                                                         \
-    int SAC_PF_act_cycle_tag;                                                            \
-    SAC_PF_TIMER_RECORD SAC_PF_initial_record;                                           \
-    SAC_PF_TIMER_RECORD *SAC_PF_act_record = &SAC_PF_initial_record;                     \
-                                                                                         \
-    SAC_PF_DISTMEM_DEFINE ()                                                             \
-                                                                                         \
-    char *SAC_PF_fun_name[SAC_SET_MAXFUN] = SAC_SET_FUN_NAMES;                           \
-    int SAC_PF_maxfunap[SAC_SET_MAXFUN] = SAC_SET_FUN_APPS;                              \
-    int SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_AP_LINES;       \
-    int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_PARENTS;      \
-                                                                                         \
-    void SAC_PF_BeginComm (void)                                                         \
-    {                                                                                    \
-        SAC_PF_BEGIN_COMM ();                                                            \
-    }                                                                                    \
-                                                                                         \
-    void SAC_PF_EndComm (void)                                                           \
-    {                                                                                    \
-        SAC_PF_END_COMM ();                                                              \
-    }
-#endif
 
 #define SAC_PF_SETUP()                                                                   \
     {                                                                                    \

@@ -42,6 +42,8 @@
 long syscall (long number, ...);
 #endif
 
+#include "libsac/mt/mt_pth.h" // SAC_MT_PTH_signal_barrier
+
 // make spin lock the default barrier type
 #define SAC_MT_PTH_INIT_BARRIER(nrthreads)
 #define SAC_MT_PTH_SIGNAL_BARRIER(glflag) SAC_MT_PTH_signal_barrier (NULL, glflag)

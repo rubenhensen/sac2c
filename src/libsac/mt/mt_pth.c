@@ -45,9 +45,16 @@ static UNUSED int dummy_mt_pth;
 #define SAC_DO_THREADS_STATIC 1
 #define SAC_DO_COMPILE_MODULE 1
 #define SAC_SET_NUM_SCHEDULERS 10
-// FIXME: do we need this? doesn't that undermine noPHM? #define SAC_DO_PHM    1
+// FIXME: do we need this? doesn't that undermine noPHM?
+//        well, SAC_HM_DiscoversThreads requires this....
+#define SAC_DO_PHM    1
 
-#include "sac.h"
+#include "mt_pth.h"
+#include "runtime/mt_h/mt_barriers.h" // SAC_MT_PTH_SIGNAL_BARRIER
+#include "libsac/essentials/trace.h" // SAC_TR_LIBSAC_PRINT
+#include "runtime/phm_h/phm.h" // SAC_HM_DiscoversThreads
+#include "runtime/rtspec_h/rtspec.h" // SAC_RTSPEC_CURRENT_THREAD_ID
+#include "libsac/essentials/message.h"
 
 #undef SAC_DO_MULTITHREAD
 #undef SAC_DO_MT_PTHREAD
@@ -102,7 +109,6 @@ spmd_kill_pth_bee (struct sac_bee_pth_t *const SAC_MT_self)
     pthread_setspecific (SAC_MT_self_bee_key, NULL);
     pthread_exit (NULL);
     /* never reached here */
-    return 0;
 }
 
 /******************************************************************************
@@ -805,6 +811,8 @@ SAC_MT_Internal_CurrentThreadId (void)
 }
 
 #else /* MT */
+
+#include "mt_pth.h"
 
 int SAC_MT_self_bee_key; /* dummy */
 

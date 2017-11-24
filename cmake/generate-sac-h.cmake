@@ -19,7 +19,7 @@ FOREACH( name ${STUPID_LIST})
 ENDFOREACH( name)
 #STRING( REPLACE " " ";" STUPID_LIST ${REL_LIB_HEADERS})
 #FOREACH( name ${STUPID_LIST})
-#  FILE(APPEND "${OUTPUT}" "#include \"libsac/${name}\"\n")
+  #FILE(APPEND "${OUTPUT}" "#include \"libsac/${name}\"\n")
 #ENDFOREACH( name)
 FILE(APPEND "${OUTPUT}" "\n")
 

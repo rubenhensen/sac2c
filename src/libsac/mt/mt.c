@@ -24,7 +24,11 @@
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_THREADS_STATIC 1
 
-#include "sac.h"
+#include "mt.h"
+#include "runtime/essentials_h/bool.h"
+#include "runtime/essentials_h/std.h"
+#include "libsac/essentials/message.h"
+#include "libsac/essentials/trace.h"
 
 #undef SAC_DO_MULTITHREAD
 #undef SAC_DO_THREADS_STATIC
@@ -128,7 +132,8 @@ SAC_COMMON_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 #else /* MT */
 /* !MT */
 
-#include "sac.h"
+#include "mt.h"
+#include "runtime/rtspec_h/rtspec.h" // SAC_RTSPEC_CURRENT_THREAD_ID
 
 /******************************************************************************
  * function:

@@ -33,20 +33,12 @@ static UNUSED int dummy_mt_omp;
 
 #ifdef SAC_BACKEND_omp /* the code is only loaded into libsac.mt.omp */
 
+#include "mt_omp.h"
+
 #include <pthread.h>
 /* #include <omp.h> */
 #include <stdio.h>
 #include <stdlib.h>
-
-#define SAC_DO_MULTITHREAD 1
-#define SAC_DO_MT_OMP 1
-#define SAC_DO_THREADS_STATIC 1
-
-#include "sac.h"
-
-#undef SAC_DO_MULTITHREAD
-#undef SAC_DO_MT_OMP
-#undef SAC_DO_THREADS_STATIC
 
 /******************************************************************************
  *

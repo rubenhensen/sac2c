@@ -12,8 +12,8 @@
  *
  *****************************************************************************/
 
-#ifndef _SAC_MT_OMP_H_
-#define _SAC_MT_OMP_H_
+#ifndef _SAC_RT_MT_OMP_H_
+#define _SAC_RT_MT_OMP_H_
 
 /*****************************************************************************/
 
@@ -21,8 +21,7 @@
 
 #if SAC_DO_MT_OMP
 
-SAC_C_EXTERN void SAC_OMP_SetupInitial (int argc, char *argv[], unsigned int num_threads,
-                                        unsigned int max_threads);
+#include "libsac/mt/mt_omp.h"
 
 #define SAC_MT_SETUP_INITIAL()                                                           \
     SAC_OMP_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);
@@ -46,4 +45,4 @@ SAC_C_EXTERN void SAC_OMP_SetupInitial (int argc, char *argv[], unsigned int num
 
 #endif /* SAC_DO_MULTITHREAD */
 
-#endif /* _SAC_MT_OMP_H_ */
+#endif /* _SAC_RT_MT_OMP_H_ */

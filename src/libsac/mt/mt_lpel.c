@@ -35,7 +35,7 @@ static UNUSED int dummy_mt_lpel;
 #undef SAC_DO_MT_PTHREAD
 #undef SAC_DO_THREADS_STATIC
 
-#include "sac.h"
+//#include "sac.h"
 
 #undef SAC_DO_MULTITHREAD
 #undef SAC_DO_MT_LPEL

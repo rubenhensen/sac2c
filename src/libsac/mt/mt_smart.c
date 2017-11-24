@@ -50,7 +50,7 @@
 #include <time.h>
 #include <math.h>
 
-#include "sac.h"
+#include "mt_smart.h"
 
 // A struct that contains some parameters
 // that needs to be shared between SAC_MT_smart_init
@@ -310,7 +310,7 @@ SAC_MT_smart_decide (int size, const int (*recommendations)[2])
             dY = (float)(problem_size - recommendations[i - 1][0]);
             dX = (float)(recommendations[i][0] - recommendations[i - 1][0]);
             perc = dY / dX;
-            nr_threads = (unsigned)roundf (
+            nr_threads = (unsigned)llroundf (
               perc * (recommendations[i][1] - recommendations[i - 1][1])
               + recommendations[i - 1][1]);
             if (share.tot_nr_threads < nr_threads) {

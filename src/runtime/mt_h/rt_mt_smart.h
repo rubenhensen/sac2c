@@ -1,6 +1,6 @@
 /*****************************************************************************
  *
- * file:   mt_smart.h
+ * file:   rt_mt_smart.h
  *
  * prefix: SAC_MT_
  *
@@ -40,20 +40,10 @@
  *
  *****************************************************************************/
 
-#ifndef _MT_SMART
-#define _MT_SMART
-
-SAC_C_EXTERN unsigned current_nr_threads;
-SAC_C_EXTERN unsigned smart_sample_size;
-SAC_C_EXTERN unsigned problem_size;
-SAC_C_EXTERN struct timespec begin, end;
+#ifndef _SAC_RT_MT_SMART_H_
+#define _SAC_RT_MT_SMART_H_
 
 #ifdef SAC_SET_SMART_DECISIONS
-SAC_C_EXTERN void SAC_MT_smart_init (int type, char *file_id, char *arch_id,
-                                     unsigned nr_threads);
-SAC_C_EXTERN int SAC_MT_smart_train (int spmd_id, int64_t measurement_period);
-SAC_C_EXTERN void SAC_MT_smart_decide (int size, const int (*recommendations)[2]);
-SAC_C_EXTERN void SAC_MT_smart_finalize (void);
 
 #if SAC_SET_SMART_DECISIONS == 1
 #define SAC_MT_SMART_INIT(nr_threads)                                                    \
@@ -91,5 +81,5 @@ SAC_C_EXTERN void SAC_MT_smart_finalize (void);
 #endif
 #endif
 
-#endif /* _MT_SMART */
+#endif /* _SAC_RT_MT_SMART_H_ */
 

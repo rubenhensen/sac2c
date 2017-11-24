@@ -35,7 +35,9 @@ static UNUSED int _dummy_mt_beehive;
 #undef SAC_DO_MT_PTHREAD
 #undef SAC_DO_THREADS_STATIC
 
-#include "sac.h"
+#include "mt_beehive.h"
+#include "runtime/phm_h/phm.h"         // SAC_CALLOC
+#include "libsac/essentials/message.h"
 
 #undef SAC_DO_MULTITHREAD
 #undef SAC_DO_MT_PTHREAD
@@ -311,6 +313,8 @@ SAC_MT_BEEHIVE_SetupInitial (int argc, char *argv[], unsigned int num_threads,
  * If we compile for mt_trace.o, we don't need the global variables since
  * these always remain in mt.o.
  */
+
+#include "mt_beehive.h"
 
 int SAC_MT_propagate_lock;                        /* dummy */
 int SAC_MT_output_lock;                           /* dummy */

@@ -19,6 +19,8 @@
 
 #include "runtime/essentials_h/bool.h"
 
+#define SAC_TR_LIBSAC_PRINT(msg) (SAC_MT_do_trace ? SAC_TR_Print msg : (void)0)
+
 /*
  *  External declarations of global variables and functions defined in trace.c
  *  as part of libsac.

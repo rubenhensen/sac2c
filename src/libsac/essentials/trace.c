@@ -36,7 +36,7 @@
 
 #include "runtime/mt_h/mt.h" // needed for SAC_MT_DEFINE_LOCK, SAC_MT_STATIC
 #include "runtime/mt_h/schedule.h" // needed for SAC_MT_ACQUIRE_LOCK
-#include "runtime/mt_h/mt_beehive.h" // needed for SAC_MT_output_lock
+#include "libsac/mt/mt_beehive.h" // needed for SAC_MT_output_lock
 #include "runtime/phm_h/phm.h" // needed for SAC_HM_THREADID_INVALID
 
 #undef SAC_DO_MULTITHREAD
