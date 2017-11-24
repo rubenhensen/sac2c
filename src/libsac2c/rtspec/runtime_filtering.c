@@ -156,7 +156,7 @@ RTFILTERret (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
 #ifndef DBUG_OFF
-    char *tmp_str_a=NULL;
+    char *tmp_str_a = NULL;
 #endif
 
     DBUG_PRINT (">>>>>> Checking return values ...");

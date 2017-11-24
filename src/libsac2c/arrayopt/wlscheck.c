@@ -517,7 +517,7 @@ genhelper (node *arg_node, info *arg_info, char *nm)
     pat = PMarray (1, PMAgetNode (&argnarray), 0);
     if ((NULL != arg_node) && (!PMmatchFlatSkipExtrema (pat, arg_node))) {
         INFO_POSSIBLE (arg_info) = FALSE;
-        DBUG_PRINT ("%s: %s is not an N_array", nm, IDS_NAME(lhs));
+        DBUG_PRINT ("%s: %s is not an N_array", nm, IDS_NAME (lhs));
     }
     PMfree (pat);
 

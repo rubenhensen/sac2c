@@ -251,8 +251,8 @@ HWLGassign (node *arg_node, info *arg_info)
 
     if (return_node != arg_node) {
         DBUG_PRINT ("node %p will be inserted instead of %p",
-                     (void *)return_node,
-                     (void *)arg_node);
+                    (void *)return_node,
+                    (void *)arg_node);
     }
     INFO_HWLG_LASTASSIGN (arg_info) = mem_last_assign;
     DBUG_PRINT ("LASTASSIGN (re)set to %p!", (void *)mem_last_assign);
