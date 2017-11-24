@@ -15,7 +15,7 @@
 #include <assert.h>
 
 #include "runtime/essentials_h/rt_misc.h" // SAC_MAX
-#include "runtime/mt_h/mt.h" // SAC_MT_DECLARE_LOCK
+#include "runtime/mt_h/rt_mt.h" // SAC_MT_DECLARE_LOCK
 
 #if SAC_MUTC_MACROS
 #define SAC_DO_PHM 0

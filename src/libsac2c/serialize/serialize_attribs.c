@@ -470,7 +470,13 @@ SATserializeFloat (info *info, float attr, node *parent)
 
     data = STRbytes2Hex (sizeof (float), (unsigned char *)&attr);
 
-    fprintf (INFO_SER_FILE (info), "DShex2Float( \"%s\")", data);
+    /**
+     * on some systems, all floats in vararg position are implicitly casted
+     * to double (eg on OSX 10.13). This may result in an "implicit cast"
+     * warning. To avoid this we explicitly cast to a double and hope
+     * that the assignment to a float will work out :-)
+     */
+    fprintf (INFO_SER_FILE (info), "(double)DShex2Float( \"%s\")", data);
 
     data = MEMfree (data);
 

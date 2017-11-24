@@ -22,6 +22,8 @@
 #if SAC_DO_MT_PTHREAD || SAC_DO_MT_LPEL || SAC_DO_MT_BEEHIVE
 
 #include <pthread.h>
+#include "runtime/essentials_h/rt_misc.h"
+
 /*
  *  Macros for global symbol definitions
  */
@@ -54,20 +56,28 @@
   volatile int SAC_MT_Taskcount[SAC_SET_NUM_SCHEDULERS];
 */
 
+SAC_C_EXTERN pthread_mutex_t *SAC_MT_Tasklock;
 #define SAC_MT_DEFINE_TASKLOCKS() pthread_mutex_t *SAC_MT_Tasklock;
 
+SAC_C_EXTERN volatile int *SAC_MT_Task;
 #define SAC_MT_DEFINE_TASKS() volatile int *SAC_MT_Task;
 
+SAC_C_EXTERN volatile int *SAC_MT_LAST_Task;
 #define SAC_MT_DEFINE_LAST_TASKS() volatile int *SAC_MT_LAST_Task;
 
+SAC_C_EXTERN volatile int *SAC_MT_rest_iterations;
 #define SAC_MT_DEFINE_REST_ITERATIONS() volatile int *SAC_MT_rest_iterations;
 
+SAC_C_EXTERN volatile int *SAC_MT_act_tasksize;
 #define SAC_MT_DEFINE_ACT_TASKSIZE() volatile int *SAC_MT_act_tasksize;
 
+SAC_C_EXTERN volatile int *SAC_MT_last_taskend;
 #define SAC_MT_DEFINE_LAST_TASKEND() volatile int *SAC_MT_last_taskend;
 
+SAC_C_EXTERN pthread_mutex_t *SAC_MT_TS_Tasklock;
 #define SAC_MT_DEFINE_TS_TASKLOCKS() pthread_mutex_t *SAC_MT_TS_Tasklock;
 
+SAC_C_EXTERN volatile int *SAC_MT_Taskcount;
 #define SAC_MT_DEFINE_TASKCOUNT() volatile int *SAC_MT_Taskcount;
 
 /*****************************************************************************/

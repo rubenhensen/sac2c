@@ -25,6 +25,7 @@ SET (LIBSAC_SRC
   mt/mt_omp.c
   mt/mt_pth.c
   mt/mt_smart.c
+  mt/mt_barriers.c
 )
 
 IF(${RTSPEC} EQUAL 1)

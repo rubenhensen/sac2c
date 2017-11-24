@@ -139,7 +139,7 @@ SAC_Simple_setupController (char *dir, int trace, char *command_line, char *bina
 
 /** <!--*******************************************************************-->
  *
- * @fn  SAC_Simple_runController (void)
+ * @fn  SAC_Simple_runController (void *)
  *
  * @brief  Controls all the aspects of dynamically optimizing functions.
  *

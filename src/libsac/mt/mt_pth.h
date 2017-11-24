@@ -21,8 +21,9 @@
 
 #if SAC_DO_MULTITHREAD && SAC_DO_MT_PTHREAD
 
+#include "mt.h" // SAC_MT_globally_single
 #include "mt_beehive.h" // SAC_MT_SPMDFUN_REAL_RETTYPE
-#include "runtime/mt_h/mt_barriers.h" // SAC_MT_PTH_SIGNAL_BARRIER
+#include "runtime/mt_h/rt_mt_barriers.h" // SAC_MT_PTH_SIGNAL_BARRIER
 
 /*****************************************************************************/
 
@@ -108,19 +109,6 @@ SAC_MT_PTH_wait_on_barrier (unsigned *locfl, volatile unsigned *sharedfl)
 
     /* remember the new value locally */
     *locfl = new_fl;
-}
-
-static inline void
-SAC_MT_PTH_signal_barrier (unsigned *locfl, volatile unsigned *sharedfl)
-{
-    /* Read the current shared flag, invert it, and store back.
-     * We are guaranteed to be the only writer, hence this is safe */
-    unsigned new_fl = ~(*sharedfl);
-    *sharedfl = new_fl;
-
-    if (locfl != NULL) {
-        *locfl = new_fl;
-    }
 }
 
 /** ------------------------------------------------------------------------- */

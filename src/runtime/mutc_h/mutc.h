@@ -127,18 +127,16 @@
 #define SAC_MUTC_ARG_FUN(name, nt, t) name
 #endif
 
-#undef SAC_ND_REAL_PARAM
 #define SAC_ND_REAL_PARAM(type, name, nt) SAC_MUTC_PARAM (type, name, nt)
 
-#undef SAC_ND_REAL_ARG
 #define SAC_ND_REAL_ARG(name, nt, type) SAC_MUTC_ARG (name, nt, type)
 
-#undef SAC_ND_REAL_ARG_out
 #define SAC_ND_REAL_ARG_out(name, nt, type) SAC_MUTC_ARG_out (name, nt, type)
 
 #if SAC_MUTC_FUNAP_AS_CREATE
-#undef SAC_ND_FUNAP2
 #define SAC_ND_FUNAP2(name, ...) SAC_MUTC_THREAD_FUNAP (name, __VA_ARGS__);
+#else
+#define SAC_ND_FUNAP2(name, ...) name (__VA_ARGS__); // same as in std.h!
 #endif /* FUNAP_AS_CREATE */
 
 #define SAC_MUTC_THREAD_FUNAP(name, ...) sl_proccall (name, __VA_ARGS__);
@@ -152,31 +150,33 @@
 #define SAC_MUTC_GETFUNPAR(var_NT, name) name
 #endif
 
-#undef SAC_INIT_LOCAL_MEM
-#undef SAC_CLEANUP_LOCAL_MEM
 #define SAC_INIT_LOCAL_MEM() SAC_MUTC_THREAD_INIT_MALLOC
 #define SAC_CLEANUP_LOCAL_MEM() SAC_MUTC_THREAD_CLEANUP_MALLOC
 
 #if SAC_MUTC_FUNAP_AS_CREATE
-#undef SAC_ND_FUN_DEF_END2
 #define SAC_ND_FUN_DEF_END2() SAC_MUTC_THREADFUN_DEF_END ()
 #else  /* FUNAP_AS_CREATE */
+#define SAC_ND_FUN_DEF_END2(...) } // same as in std.h!
 #endif /* FUNAP_AS_CREATE */
 
 #if SAC_MUTC_FUNAP_AS_CREATE
-#undef SAC_ND_DECL_FUN2
 #define SAC_ND_DECL_FUN2(name, type, ...)                                                \
     SAC_MUTC_DECL_FUN2_##type (name, type, __VA_ARGS__)
 #define SAC_MUTC_DECL_FUN2_void(name, type, ...)                                         \
     SAC_MUTC_DECL_THREADFUN2 (name, type, __VA_ARGS__)
+#else
+#define SAC_ND_DECL_FUN2(name, type, ...) type name (__VA_ARGS__) // same as in std.h!
 #endif /* FUNAP_AS_CREATE */
 
 #if SAC_MUTC_FUNAP_AS_CREATE
-#undef SAC_ND_DEF_FUN_BEGIN2
 #define SAC_ND_DEF_FUN_BEGIN2(name, type, ...)                                           \
     SAC_MUTC_DEF_FUN_BEGIN2_##type (name, type, __VA_ARGS__)
 #define SAC_MUTC_DEF_FUN_BEGIN2_void(name, type, ...)                                    \
     SAC_MUTC_DEF_THREADFUN_BEGIN2 (name, type, __VA_ARGS__)
+#else
+#define SAC_ND_DEF_FUN_BEGIN2(name, type, ...)                                           \
+    SAC_ND_DECL_FUN2 (name, type, __VA_ARGS__)                                           \
+    {
 #endif /* FUNAP_AS_CREATE */
 
 #define SAC_MUTC_LOCAL_ALLOC__DESC__NOOP(var_NT, dim) SAC_NOOP ()

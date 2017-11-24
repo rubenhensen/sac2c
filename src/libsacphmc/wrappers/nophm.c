@@ -20,10 +20,17 @@
 #define SAC_DO_MULTITHREAD 0
 #define SAC_DO_PHM 1
 
-#include "sac.h"
+#include "runtime/phm_h/phm.h"
+#include "libsac/essentials/message.h"
 
 #undef SAC_DO_PHM
 #undef SAC_DO_MULTITHREAD
+
+extern SAC_HM_arena_t SAC_HM_arenas[1][SAC_HM_NUM_ARENAS + 2];
+extern const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size;
+extern const SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size;
+extern const SAC_HM_size_byte_t SAC_HM_initial_top_arena_size;
+extern const unsigned int SAC_HM_max_worker_threads;
 
 SAC_HM_arena_t SAC_HM_arenas[1][SAC_HM_NUM_ARENAS + 2];
 const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size;

@@ -13,7 +13,7 @@
 
 #if SAC_DO_RTSPEC
 
-#include "supervisor.h" // SAC_RTSPEC_CurrentThreadId
+#include "libsac/rtspec/supervisor.h" // SAC_RTSPEC_CurrentThreadId
 
 #define SAC_RTSPEC_SETUP_INITIAL(mode, command_line, binary_name)                        \
     SAC_RTSPEC_SetupInitial (__argc, __argv, SAC_SET_RTSPEC_THREADS,                     \

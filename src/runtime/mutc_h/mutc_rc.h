@@ -23,6 +23,8 @@
 #define SAC_RC_METHOD -1
 #endif
 
+#include "runtime/essentials_h/rc_methods.h"
+
 #if SAC_DEBUG_RC
 #include <stdio.h>
 #define SAC_MUTC_RC_PRINT(var_NT)                                                        \

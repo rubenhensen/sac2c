@@ -19,7 +19,14 @@
 
 /*****************************************************************************/
 
+#ifndef SAC_C_EXTERN_VAR
+#define SAC_C_EXTERN_VAR extern
+#endif
+
+#include <stdlib.h>
 #include <inttypes.h>
+#include "runtime/essentials_h/bool.h"
+#include "runtime/essentials_h/rt_misc.h" // SAC_MAX
 
 /* Rank of this node
  * We always declare this variable for tracing purposes. */

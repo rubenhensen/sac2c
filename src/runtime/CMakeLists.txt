@@ -166,9 +166,9 @@ ADD_CUSTOM_COMMAND (
   OUTPUT    ${SAC_H}
   DEPENDS   ${M4_HEADERS} ${RUNTIME_HEADERS}
   COMMAND   ${CMAKE_COMMAND} -DOUTPUT="${SAC_H}"
-# should be this             -DREL_HEADERS="${M4_FILES};${RUNTIME_HEADERS}"
-# however, current;y the M4 files are included manually to maintain order...
-                             -DREL_HEADERS="${ORDERED_RUNTIME_HEADERS}"
+                             -DREL_HEADERS="${M4_FILES};${RUNTIME_HEADERS}"
+# however, currently the M4 files are included manually to maintain order...
+#                            -DREL_HEADERS="${ORDERED_RUNTIME_HEADERS}"
                              -DREL_LIB_HEADERS="${LIBSAC_HEADERS}"
                              -P ${PROJECT_SOURCE_DIR}/cmake/generate-sac-h.cmake
 )

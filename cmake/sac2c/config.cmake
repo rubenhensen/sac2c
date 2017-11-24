@@ -627,6 +627,8 @@ ELSEIF (MACC)
   # needed as we want to provide == and != as is in C in SaC as well!
   CHECK_CC_FLAG ("-Wno-float-equal" MACCC_FLAGS)
 
+  # needed for SPMD_BEGIN when compiling sac programs -tmt_pth!
+  CHECK_CC_FLAG ("-Wno-vla" MACCC_FLAGS)
   # we want to ensure all access macros for <xyz>.mac files are always defined 
   # even if some of them are not actually used in one particular use of the 
   # mac file!

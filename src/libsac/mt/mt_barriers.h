@@ -26,11 +26,10 @@
  *
  *****************************************************************************/
 
-#ifndef _MT_BARRIERS
-#define _MT_BARRIERS
+#ifndef _SAC_MT_BARRIERS_H_
+#define _SAC_MT_BARRIERS_H_
 
 #include <pthread.h>
-//#include <unistd.h>
 
 // futex barrier libraries. The futex barrier is only made available on linux
 // systems, because not all systems support this technique.
@@ -42,87 +41,43 @@
 long syscall (long number, ...);
 #endif
 
-#include "libsac/mt/mt_pth.h" // SAC_MT_PTH_signal_barrier
+#include "runtime/essentials_h/rt_misc.h" // SAC_C_EXTERN
 
-// make spin lock the default barrier type
-#define SAC_MT_PTH_INIT_BARRIER(nrthreads)
-#define SAC_MT_PTH_SIGNAL_BARRIER(glflag) SAC_MT_PTH_signal_barrier (NULL, glflag)
-#define SAC_MT_PTH_DESTROY_BARRIER()
+SAC_C_EXTERN int mutex_nr_threads;
+SAC_C_EXTERN int mutex_thread_count;
+SAC_C_EXTERN pthread_mutex_t mutex_sacred;
+SAC_C_EXTERN pthread_mutex_t mutex_lock_sacred;
+SAC_C_EXTERN pthread_mutex_t mutex_barrier;
 
-// if the user has selected a barrier type, the default barrier is replaced by
-// one of the other options
-#ifdef SAC_SET_BARRIER_TYPE
-
-#ifndef __APPLE__
-#define ACCEPT_PTHREAD 1
-#else
-#define ACCEPT_PTHREAD 0
-#endif
-
-// the futex barrier is only made available on linux systems
-#ifdef __linux__
-#define ACCEPT_FUTEX 1
-#else
-#define ACCEPT_FUTEX 0
-#endif
-
-// unset default barrier type
-#undef SAC_MT_PTH_INIT_BARRIER
-#undef SAC_MT_PTH_SIGNAL_BARRIER
-#undef SAC_MT_PTH_DESTROY_BARRIER
-
-// set barrier type based on the users choice
-#if SAC_SET_BARRIER_TYPE == 1
-#define SAC_MT_PTH_INIT_BARRIER(nrthreads) init_mutex_barrier (nrthreads)
-#define SAC_MT_PTH_SIGNAL_BARRIER(glflag) take_mutex_barrier ()
-#define SAC_MT_PTH_DESTROY_BARRIER() destroy_mutex_barrier ()
-#elif SAC_SET_BARRIER_TYPE == 2
-#define SAC_MT_PTH_INIT_BARRIER(nrthreads) init_cond_barrier ()
-#define SAC_MT_PTH_SIGNAL_BARRIER(glflag) lift_cond_barrier (glflag)
-#define SAC_MT_PTH_DESTROY_BARRIER() destroy_cond_barrier ()
-#elif SAC_SET_BARRIER_TYPE == 3 && ACCEPT_PTHREAD == 1
-#define SAC_MT_PTH_INIT_BARRIER(nrthreads) init_pthread_barrier (nrthreads)
-#define SAC_MT_PTH_SIGNAL_BARRIER(glflag) take_pthread_barrier ()
-#define SAC_MT_PTH_DESTROY_BARRIER() destroy_pthread_barrier ()
-#elif SAC_SET_BARRIER_TYPE == 4 && ACCEPT_FUTEX == 1
-#define SAC_MT_PTH_INIT_BARRIER(nrthreads)
-#define SAC_MT_PTH_SIGNAL_BARRIER(glflag) lift_futex_barrier (glflag)
-#define SAC_MT_PTH_DESTROY_BARRIER()
-#else
-#define SAC_MT_PTH_INIT_BARRIER(nrthreads)
-#define SAC_MT_PTH_SIGNAL_BARRIER(glflag) SAC_MT_PTH_signal_barrier (NULL, glflag)
-#define SAC_MT_PTH_DESTROY_BARRIER()
-#endif
-
-#undef ACCEPT_FUTEX
-#undef ACCEPT_PTHREAD
-
-#endif
-
-// this header file is included in many c files, however the variables below
-// should only be declared once. The variables should also be globally available.
-// The construct below guarantees that the variables are declared once (as part
-// of the main sac file) and are seen as extern variables by all other c files.
-#ifdef SAC_SET_BARRIER_TYPE
-#define SAC_MT_PTH_EXTERN
-#else
-#define SAC_MT_PTH_EXTERN SAC_C_EXTERN
-#endif
-
-SAC_MT_PTH_EXTERN int mutex_nr_threads;
-SAC_MT_PTH_EXTERN int mutex_thread_count;
-SAC_MT_PTH_EXTERN pthread_mutex_t mutex_sacred;
-SAC_MT_PTH_EXTERN pthread_mutex_t mutex_lock_sacred;
-SAC_MT_PTH_EXTERN pthread_mutex_t mutex_barrier;
-
-SAC_MT_PTH_EXTERN pthread_cond_t cond_barrier;
-SAC_MT_PTH_EXTERN pthread_mutex_t cond_mutex;
+SAC_C_EXTERN pthread_cond_t cond_barrier;
+SAC_C_EXTERN pthread_mutex_t cond_mutex;
 
 #ifndef __APPLE__
-SAC_MT_PTH_EXTERN pthread_barrier_t pthread_barrier;
+SAC_C_EXTERN pthread_barrier_t pthread_barrier;
 #endif
 
-#undef SAC_MT_PTH_EXTERN
+/******************************************************************************
+ *
+ * function:
+ *    void SAC_MT_PTH_signal_barrier(unsigned *locfl, volatile unsigned *sharedfl)
+ *
+ * description:
+ *    Read the current shared flag, invert it, and store back.
+ *    We are guaranteed to be the only writer, hence this is safe.
+ *
+ ******************************************************************************/
+static inline void
+SAC_MT_PTH_signal_barrier (unsigned *locfl, volatile unsigned *sharedfl)
+{
+    /* Read the current shared flag, invert it, and store back.
+     * We are guaranteed to be the only writer, hence this is safe */
+    unsigned new_fl = ~(*sharedfl);
+    *sharedfl = new_fl;
+
+    if (locfl != NULL) {
+        *locfl = new_fl;
+    }
+}
 
 /******************************************************************************
  *

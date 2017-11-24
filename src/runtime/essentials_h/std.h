@@ -290,46 +290,45 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define PARENT_DESC_NCHILD(desc)                                                         \
     (((SAC_ND_DESC_PARENT_TYPE) (desc))[PARDESC_OFFSET_NCHILD])
 
-/* Overloaded by MUTC */
+/*
+ * The following macros are overloaded in mutc_gen.h:
+ */
+#ifndef SAC_BACKEND_MUTC
+
+#define SAC_ND_GETVAR(nt, name) name
+#define SAC_ND_GETVAR_INOUT(nt, name) SAC_ND_GETVAR (nt, name)
+
+#endif
+
+/*
+ * The following macros are overloaded in mutc.h:
+ */
+#ifndef SAC_BACKEND_MUTC
+
+#define SAC_ND_REAL_PARAM(type, name, var_NT) type name
+#define SAC_ND_REAL_ARG(name, var_NT, type) name
+#define SAC_ND_REAL_ARG_out(name, var_NT, type) name
+#define SAC_ND_FUNAP2(name, ...) name (__VA_ARGS__);
+#define SAC_ND_DECL_FUN2(name, type, ...) type name (__VA_ARGS__)
 #define SAC_ND_DEF_FUN_BEGIN2(name, type, ...)                                           \
     SAC_ND_DECL_FUN2 (name, type, __VA_ARGS__)                                           \
     {
-
-/* Overloaded by MUTC */
 #define SAC_ND_FUN_DEF_END2(...) }
-
-/* Overloaded by MUTC */
-#define SAC_ND_DECL_FUN2(name, type, ...) type name (__VA_ARGS__)
-
-/* Overloaded by MUTC */
-#define SAC_ND_FUNAP2(name, ...) name (__VA_ARGS__);
-
-/* Overloaded by MUTC */
-#define SAC_ND_GETVAR(nt, name) name
-
-/* Overloaded by MUTC */
-#define SAC_ND_GETVAR_INOUT(nt, name) SAC_ND_GETVAR (nt, name)
-
-/* Overloaded by MUTC */
-#define SAC_ND_REAL_PARAM(type, name, var_NT) type name
-
-/* Overloaded by MUTC */
-#define SAC_ND_REAL_ARG(name, var_NT, type) name
-
-/* Overloaded by MUTC */
-#define SAC_ND_REAL_ARG_out(name, var_NT, type) name
-
-/* Overloaded by MUTC */
 #define SAC_INIT_LOCAL_MEM()
-
-/* Overloaded by MUTC */
 #define SAC_CLEANUP_LOCAL_MEM()
 
-/* Overloaded by MUTC */
-#define SAC_ND_PRF_RESTORERC(array, desc)
+#endif
 
-/* Overloaded by MUTC */
+/*
+ * The following macros are replaced by tag-dispatched versions in mutc_rc_gen.h:
+ * I (sbs) leave them here in case someone wants to strip out the mutc stuff...
+ */
+#if 0
+
+#define SAC_ND_PRF_RESTORERC(array, desc)
 #define SAC_ND_PRF_2NORC(desc, array)
+
+#endif
 
 #define SAC_NOP(...)
 

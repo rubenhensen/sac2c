@@ -7,6 +7,7 @@
 #include "runtime/essentials_h/types.h" // floatvec (through type_info.mac)
 #include "runtime/essentials_h/bool.h" // bool
 #include "runtime/essentials_h/std_gen.h" // SAC_ND_DECL__DESC
+#include "runtime/essentials_h/std.h" // SAC_array_descriptor_t
 
 
 #ifdef __cplusplus

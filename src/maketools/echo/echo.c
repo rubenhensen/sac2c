@@ -65,7 +65,7 @@ on System V systems with the -E option.
 #endif /* !V9_ECHO */
 
 /* The name this program was run with. */
-char *program_name;
+static char *program_name;
 
 void
 usage (int status)

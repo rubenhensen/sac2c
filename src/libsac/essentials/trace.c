@@ -34,10 +34,11 @@
 
 #define SAC_DO_PHM 1
 
-#include "runtime/mt_h/mt.h" // needed for SAC_MT_DEFINE_LOCK, SAC_MT_STATIC
+#include "runtime/mt_h/rt_mt.h"    // needed for SAC_MT_DEFINE_LOCK, SAC_MT_STATIC
+#include "libsac/mt/mt.h"          // needed for SAC_MT_Internal_CurrentThreadId
 #include "runtime/mt_h/schedule.h" // needed for SAC_MT_ACQUIRE_LOCK
-#include "libsac/mt/mt_beehive.h" // needed for SAC_MT_output_lock
-#include "runtime/phm_h/phm.h" // needed for SAC_HM_THREADID_INVALID
+#include "libsac/mt/mt_beehive.h"  // needed for SAC_MT_output_lock
+#include "runtime/phm_h/phm.h"     // needed for SAC_HM_THREADID_INVALID
 
 #undef SAC_DO_MULTITHREAD
 #undef SAC_DO_MT_PTHREAD

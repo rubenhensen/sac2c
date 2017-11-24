@@ -231,7 +231,6 @@ typedef enum {
 #define SAC_TR_DEC_HIDDEN_MEMCNT(size)
 
 #endif /* SAC_DO_TRACE_MEM */
-#else
-#define SAC_HM_DEFINE()
+
 #endif /* _SAC_RT_TRACE_H */
 

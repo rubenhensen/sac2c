@@ -39,6 +39,10 @@
 
 #define SAC_NOTHING()
 
+#ifndef SAC_C_EXTERN
+#define SAC_C_EXTERN extern
+#endif
+
 #define SAC_BLOCK_BEGIN() {
 #define SAC_BLOCK_END() }
 

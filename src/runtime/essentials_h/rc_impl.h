@@ -7,6 +7,8 @@
  * see the file doc/ref-counting-methods.txt
  */
 
+#include "rc_methods.h"
+
 /*
  * The following ICMs are used in sacarg interface code when accessing
  * objects via explicit descriptors.
