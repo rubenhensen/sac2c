@@ -1,0 +1,12 @@
+#include "mini-stdlib.sac"
+
+// SAC_TEST:include common.mk
+// SAC_TEST:run-sac-prog: test-scalar-sum
+// SAC_TEST:<tab>$(call retstateq,./$<,4)
+
+int main ()
+{
+    a = 2;
+    b = 2;
+    return a + b;
+}

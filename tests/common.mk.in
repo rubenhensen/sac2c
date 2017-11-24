@@ -1,0 +1,21 @@
+count = $(1) | grep $(2) | wc -l
+
+counteq = @if test $$($(call count, $(1) 2>/dev/null, $(2))) -ne $(3); then \
+	      echo "'$(1)' call expected to produce $(3) instances of '$(2)'"; \
+	      exit 1; \
+	  fi
+
+retstateq = @$(1); \
+	    if test $(2) -ne $$?; then \
+               echo "test $< failed!"; \
+	       exit 1; \
+            fi
+
+
+SAC2C := @SAC2C_EXEC@
+
+SAC2C_FLAGS := -v0
+
+%:%.sac
+	$(SAC2C) $(SAC2C_FLAGS) -o $@ $<
+
