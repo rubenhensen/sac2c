@@ -512,10 +512,8 @@ ReadScalar (void *scl, char *idx_str, int idx)
     DBUG_ENTER ();
 
     DBUG_ASSERT (scl != NULL, "scalar for ReadScalar() not found!");
-    DBUG_PRINT ("scalar = " F_PTR ", idx_s = %s, idx = %d", scl, STRonNull ("", idx_str),
-                idx);
-    DBUG_PRINT ("scalar = \"%s\", idx_s = %s, idx = %d", scl, STRonNull ("", idx_str),
-                idx);
+    DBUG_PRINT ("scalar = " F_PTR " (\"%s\"), idx_s = %s, idx = %d",
+                scl, (char *)scl, STRonNull ("", idx_str), idx);
 
     if (((char *)scl)[0] == '(') {
         /* 'scl' is a tagged id */

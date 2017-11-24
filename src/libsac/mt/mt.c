@@ -25,6 +25,7 @@
 #define SAC_DO_THREADS_STATIC 1
 
 #include "mt.h"
+#include "hwloc_data.h"
 #include "runtime/essentials_h/bool.h"
 #include "runtime/essentials_h/std.h"
 #include "libsac/essentials/message.h"

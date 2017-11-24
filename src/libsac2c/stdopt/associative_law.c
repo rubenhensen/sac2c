@@ -985,7 +985,6 @@ ALfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL && !FUNDEF_ISWRAPPERFUN (arg_node)) {
-        DBUG_PRINT ("");
         DBUG_PRINT ("traversing body of %s", FUNDEF_NAME (arg_node));
 
         INFO_ISLOOPBODY (arg_info) = FUNDEF_ISLOOPFUN (arg_node);

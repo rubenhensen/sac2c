@@ -65,13 +65,14 @@
  *   The length of the bool array is always WITHDEPTH+1 elements because
  *   an N_id on the level WITHDEPTH can be seen at the worst.
  *   When backtracking from N_with node the array is shortened by 1 and the superfluous
- *   element is simply discarded. The discarded flag belongs to the level that is
- *sub-local to the parent and thus unimportant to it. In N_assign a clean array is created
- *for sons traversal. When backtracking, the mask obtained from sons is merged using a
- *logical-OR into a mask returned to parent. This is because the mask in fact represents
- *data dependencies of the whole subtree, potentially consisting of several assignments.
+ *   elements is simply discarded. The discarded flag belongs to the level that is
+ *   sub-local to the parent and thus unimportant to it. In N_assign a clean array is created
+ *   for sons traversal. When backtracking, the mask obtained from sons is merged using a
+ *   logical-OR into a mask returned to parent. This is because the mask in fact represents
+ *   data dependencies of the whole subtree, potentially consisting of several assignments.
  *
  *****************************************************************************/
+#include <inttypes.h>
 #include "withloop_invariant_removal.h"
 
 #define DBUG_PREFIX "WLIR"
@@ -814,7 +815,7 @@ WLIRlet (node *arg_node, info *arg_info)
     DBUG_ASSERT (deepest_lvl <= INFO_WITHDEPTH (arg_info),
                  "expression reported to depend on a nested variable");
 
-    DBUG_PRINT ("expression %s on level %d has max. dep. on level %d (dmask=0x%llX)",
+    DBUG_PRINT ("expression %s on level %d has max. dep. on level %d (dmask=0x%" PRIu64 "X)",
                 AVIS_NAME (INFO_LHSAVIS (arg_info)), INFO_WITHDEPTH (arg_info),
                 deepest_lvl, dmask2ui64 (arg_info));
 
@@ -873,7 +874,7 @@ WLIRid (node *arg_node, info *arg_info)
      * expression */
     depthmask_mark_level (arg_info, AVIS_DEFDEPTH (ID_AVIS (arg_node)));
 
-    DBUG_PRINT ("id %s: DEFDEPTH=%d; SETDEPTH=%d; dmask=0x%llX",
+    DBUG_PRINT ("id %s: DEFDEPTH=%d; SETDEPTH=%d; dmask=0x%" PRIu64 "X",
                 AVIS_NAME (ID_AVIS (arg_node)), AVIS_DEFDEPTH (ID_AVIS (arg_node)),
                 INFO_SETDEPTH (arg_info), dmask2ui64 (arg_info));
 
