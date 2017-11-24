@@ -24,17 +24,18 @@ build-archlinux:
     # ensure we capture the build blob
     artifacts:
         expire_in: 12 hrs
-        paths:
-            - build/
+        untracked: true
     only:
         # we use the trigger mechanism as this is currently the only
         # feasible way of actually having stuff build via merge-requests.
         - triggers
+        - schedules
         - web
 
 package-archlinux:
     stage: package
     script:
+        - mkdir $HOME/.sac2crc
         - cd build
         - cpack -G TGZ
     tags:
@@ -64,17 +65,18 @@ build-centos7:
     # ensure we capture the build blob
     artifacts:
         expire_in: 12 hrs
-        paths:
-            - build/
+        untracked: true
     only:
         - triggers
+        - schedules
         - web
 
 package-centos7:
     stage: package
     script:
+        - mkdir $HOME/.sac2crc
         - cd build
-        - cpack -G RPM
+        - cpack3 -G RPM
     tags:
         - centos7
     artifacts:
@@ -102,14 +104,15 @@ build-centos6:
     # ensure we capture the build blob
     artifacts:
         expire_in: 12 hrs
-        paths:
-            - build/
+        untracked: true
     only:
+        - schedules
         - web
 
 package-centos6:
     stage: package
     script:
+        - mkdir $HOME/.sac2crc
         - cd build
         - cpack -G RPM
     tags:
@@ -139,15 +142,16 @@ build-ubuntu16:
     # ensure we capture the build blob
     artifacts:
         expire_in: 12 hrs
-        paths:
-            - build/
+        untracked: true
     only:
         - triggers
+        - schedules
         - web
 
 package-ubuntu16:
     stage: package
     script:
+        - mkdir $HOME/.sac2crc
         - cd build
         - cpack -G DEB
     tags:
@@ -177,14 +181,15 @@ build-ubuntu14:
     # ensure we capture the build blob
     artifacts:
         expire_in: 12 hrs
-        paths:
-            - build/
+        untracked: true
     only:
+        - schedules
         - web
 
 package-ubuntu14:
     stage: package
     script:
+        - mkdir $HOME/.sac2crc
         - cd build
         - cpack -G DEB
     tags:
