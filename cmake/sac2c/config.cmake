@@ -521,6 +521,8 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   #CHECK_CC_FLAG ("-Wconversion" GCC_FLAGS)
   # We have some functions that we want to keep for debugging but which are not called
   CHECK_CC_FLAG ("-Wno-unused-function" GCC_FLAGS)
+  # Even level 1 delivers weird false positives
+  CHECK_CC_FLAG ("-Wno-strict-overflow" GCC_FLAGS)
   # allow fall through by virtue of comment
   CHECK_CC_FLAG ("-Wimplicit-fallthrough=3" GCC_FLAGS)
   CHECK_CC_FLAG ("-march=native" GCC_ARCH_FLAGS)
