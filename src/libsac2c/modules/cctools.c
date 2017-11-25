@@ -37,10 +37,16 @@ AddLibPath (const char *path, void *buf)
     /* make path absolute as the linker can get confused otherwise. */
     char *abspath = FMGRabsName (path);
 
-    char *str = STRsubstToken (global.config.ldpath, "%path%", abspath);
-    sbuf = SBUFprintf (sbuf, " %s", str);
+    /* only include the path if the the path does actually exist.
+     * This is needed for picky linkers that issue warnings for 
+     * paths that do not exist such as OSX's clang.
+     */
+    if (FMGRcheckExistDir (abspath)) {
+        char *str = STRsubstToken (global.config.ldpath, "%path%", abspath);
+        sbuf = SBUFprintf (sbuf, " %s", str);
+        str = MEMfree (str);
+    }
 
-    str = MEMfree (str);
     abspath = MEMfree (abspath);
 
     DBUG_RETURN (buf);
@@ -58,10 +64,16 @@ AddModLibPath (const char *path, void *buf)
     /* make path absolute as the linker can get confused otherwise. */
     char *absfpath = FMGRabsName (fpath);
 
-    char *str = STRsubstToken (global.config.ldpath, "%path%", absfpath);
-    sbuf = SBUFprintf (sbuf, " %s", str);
+    /* only include the path if the the path does actually exist.
+     * This is needed for picky linkers that issue warnings for 
+     * paths that do not exist such as OSX's clang.
+     */
+    if (FMGRcheckExistDir (absfpath)) {
+        char *str = STRsubstToken (global.config.ldpath, "%path%", absfpath);
+        sbuf = SBUFprintf (sbuf, " %s", str);
+        str = MEMfree (str);
+    }
 
-    str = MEMfree (str);
     absfpath = MEMfree (absfpath);
     fpath = MEMfree (fpath);
 
