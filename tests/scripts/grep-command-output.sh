@@ -1,6 +1,6 @@
 #!/bin/sh
 
-source ./common.sh
+source $(dirname $0)/common.sh
 
 # What are we grepping for
 what=$1

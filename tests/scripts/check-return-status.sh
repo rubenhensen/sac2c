@@ -1,6 +1,6 @@
 #!/bin/sh
 
-source ./common.sh
+source $(dirname $0)/common.sh
 
 # We check the return status of this binary:
 binary=$1
