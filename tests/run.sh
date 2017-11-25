@@ -7,8 +7,8 @@ makefile=${namewe}.mk
 
 # Generate the Makefile form a sac test:
 cpp -C $SAC_FILE \
-     | grep "^// SAC_TEST:" \
-     | sed -e 's/^\/\/ SAC_TEST://g'\
+     | grep "^// SAC_TEST|" \
+     | sed -e 's/^\/\/ SAC_TEST|//g'\
            -e 's/<tab>/\t/g' \
            -e 's/<nlslash>/\\/g' > $makefile
 

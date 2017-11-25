@@ -1,6 +1,6 @@
-// SAC_TEST:include common.mk
-// SAC_TEST:run-sac-prog: test-trivial
-// SAC_TEST:<tab>./$<
+// SAC_TEST|include common.mk
+// SAC_TEST|all: test-trivial
+// SAC_TEST|<tab>./$<
 
 /* If you cannot compile this,
    then something is seriously wrong!  */

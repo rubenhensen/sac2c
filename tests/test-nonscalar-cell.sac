@@ -15,11 +15,9 @@
 
 #include "mini-stdlib.sac"
 
-// SAC_TEST:include common.mk
-
-// Here we invoke `counteq function from common.mk
-// SAC_TEST:all: test-nonscalar-cell.sac
-// SAC_TEST:<tab>$(call counteq,$(SAC2C) $(SAC2C_FLAGS) -b3 -printfun main $<,iv,2)
+// SAC_TEST|include common.mk
+// SAC_TEST|all: test-nonscalar-cell.sac
+// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -b3 -printfun main $< | $(GREP_COMMAND_OUTPUT) iv 2
 
 int main()
 { 

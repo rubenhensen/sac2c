@@ -1,8 +1,8 @@
 #include "mini-stdlib.sac"
 
-// SAC_TEST:include common.mk
-// SAC_TEST:run-sac-prog: test-scalar-sum
-// SAC_TEST:<tab>$(call retstateq,./$<,4)
+// SAC_TEST|include common.mk
+// SAC_TEST|all: test-scalar-sum
+// SAC_TEST|<tab>@$(CHECK_RETURN_STATUS) $< 4
 
 int main ()
 {

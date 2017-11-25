@@ -1,20 +1,16 @@
-count = $(1) | grep $(2) | wc -l
-
-counteq = @if test $$($(call count, $(1) 2>/dev/null, $(2))) -ne $(3); then \
-	      echo "'$(1)' call expected to produce $(3) instances of '$(2)'"; \
-	      exit 1; \
-	  fi
-
-retstateq = @$(1); \
-	    if test $(2) -ne $$?; then \
-               echo "test $< failed!"; \
-	       exit 1; \
-            fi
-
-
 SAC2C := @SAC2C_EXEC@
-
 SAC2C_FLAGS := -v0
+
+# Name wrapper around the shell script that takes two arguments
+# `what' and `num' and verifies that $what is found $num times
+# on the stdout.
+GREP_COMMAND_OUTPUT := ./grep-command-output.sh
+
+
+# Namewrapper for a script of two arguments `binary' and `ret'
+# that veirfies that return status of executing $binary is $ret.
+CHECK_RETURN_STATUS := ./check-return-status.sh
+
 
 %:%.sac
 	$(SAC2C) $(SAC2C_FLAGS) -o $@ $<
