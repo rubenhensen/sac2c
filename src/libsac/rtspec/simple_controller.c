@@ -20,6 +20,10 @@
 #include <dlfcn.h>
 #include <string.h>
 
+#define INCLUDED_FROM_LIBSAC
+#include "registry.h"
+#undef INCLUDED_FROM_LIBSAC
+
 #include "simple_controller.h"
 #include "supervisor.h"   //SAC_RTSPEC_self_id_key
 #include "trace.h"

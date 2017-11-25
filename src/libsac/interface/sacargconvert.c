@@ -7,7 +7,10 @@
 #include "sacinterface.h" // serves as superset of the own interface
 #include "runtime/essentials_h/types.h"   // byte,...
 #include "libsac/essentials/message.h"    // SAC_RuntimeError,...
+
+#define INCLUDED_FROM_LIBSAC
 #include "sacarg.h"                       // SACARGextractData, ...
+#undef INCLUDED_FROM_LIBSAC
 
 /**
  * conversion functions SACarg -> C

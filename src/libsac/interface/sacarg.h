@@ -1,6 +1,15 @@
 #ifndef _SAC_SACARG_H_
 #define _SAC_SACARG_H_
 
+/*
+ * sbs: not sure who needs this ..... SACARGcopy and SACARGfree conflict with
+ * compiler generated ones in the object code...... so made this only available
+ * upon inclusion from sacarg.c and sacargconvert.c
+ * FIXME: requires future investigation....
+ */
+
+#ifdef INCLUDED_FROM_LIBSAC
+
 #include "sacinterface.h"
 #include "runtime/essentials_h/std.h"
 #include <stdarg.h>
@@ -25,16 +34,8 @@ extern SAC_array_descriptor_t SACARGmakeDescriptor (int dim, va_list args);
 extern SAC_array_descriptor_t SACARGmakeDescriptorVect (int dim, int *shape);
 extern SACarg *SACARGmakeSacArg (basetype btype, SAC_array_descriptor_t desc, void *data);
 
-/*
- * sbs: not sure who needs this ..... SACARGcopy and SACARGfree conflict with
- * compiler generated ones in the object code...... so commented out to avoid
- * automated inclusion in sac.h 
- * FIXME: requires future investigation....
- */
-#if 0
 extern SACarg *SACARGcopy (SACarg *arg);
 extern void SACARGfree (SACarg *arg);
-#endif
 
 extern void *SACARGextractData (SACarg *arg);
 
@@ -54,5 +55,6 @@ extern int SACARGgetShape (SACarg *arg, int pos);
 extern int SACARGgetBasetype (SACarg *arg);
 extern SACarg *SACARGnewReference (SACarg *arg);
 
+#endif
 
 #endif /* _SAC_SACARG_H_ */

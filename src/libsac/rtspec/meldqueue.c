@@ -19,7 +19,10 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+#define INCLUDED_FROM_LIBSAC
 #include "registry.h"
+#undef INCLUDED_FROM_LIBSAC
+
 #include "meldqueue.h"
 
 meldqueue_t *request_queue = NULL;

@@ -17,7 +17,10 @@
 #include <string.h>
 #include <pthread.h>
 
+#define INCLUDED_FROM_LIBSAC
 #include "registry.h"
+#undef INCLUDED_FROM_LIBSAC
+
 #include "persistence.h"   // encodeShapes
 #include "trace.h"         // SAC_RTSPEC_TR_Print
 #include "uuid_reqqueue.h" // SAC_UUID_enqueueRequest

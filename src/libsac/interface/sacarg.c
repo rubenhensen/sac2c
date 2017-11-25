@@ -1,4 +1,7 @@
+#define INCLUDED_FROM_LIBSAC
 #include "sacarg.h"
+#undef INCLUDED_FROM_LIBSAC
+
 #include <stdio.h>
 #include <assert.h>
 #include "config.h"

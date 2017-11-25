@@ -11,24 +11,37 @@
 #ifndef _SAC_REGISTRY_H_
 #define _SAC_REGISTRY_H_
 
+struct reg_obj;
+struct reg_item;
+
+typedef struct reg_obj reg_obj_t;
+typedef struct reg_item reg_item_t;
+
+/*
+ * We want to hide the implementation of the data types from sac.h
+ */
+#ifdef INCLUDED_FROM_LIBSAC
+
 #include "uthash.h"
 
 /**
  * @brief  Struct representing a specialized function.
  */
-typedef struct {
+struct reg_obj {
     char *module;
     void *func_ptr;
     void *dl_handle;
-} reg_obj_t;
+};
 
-typedef struct {
+struct reg_item {
     char *key;
     void *func_ptr;
     void *dl_handle;
 
     UT_hash_handle hh;
-} reg_item_t;
+};
+
+#endif
 
 reg_obj_t *SAC_registrate (char *, void *);
 
