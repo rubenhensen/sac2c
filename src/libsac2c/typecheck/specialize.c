@@ -191,6 +191,7 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
             /**
              * Now, we inherit the return type:
              */
+            /* Falls through. */
         case TY_gt:
             if (global.runtime && STReq (FUNDEF_NAME (fundef), global.rt_fun_name)) {
                 if (TYisAUD (inherited_type) || TYisAUDGZ (inherited_type)

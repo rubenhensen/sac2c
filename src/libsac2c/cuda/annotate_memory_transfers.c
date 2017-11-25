@@ -608,6 +608,7 @@ AMTRANprf (node *arg_node, info *arg_info)
                     ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (INFO_LASTASSIGN (arg_info)) = TRUE;
                 }
             }
+            break;
         default:
             PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
             break;

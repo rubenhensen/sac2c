@@ -517,8 +517,12 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   # least as it would require changing around how some macros are defined. This flag
   # disables the warning that identifies these unused but assigned variables.
   CHECK_CC_FLAG ("-Wno-unused-but-set-variable" GCC_FLAGS)
-  #Turn this if you want to be cruel
+  # Turn this if you want to be cruel
   #CHECK_CC_FLAG ("-Wconversion" GCC_FLAGS)
+  # We have some functions that we want to keep for debugging but which are not called
+  CHECK_CC_FLAG ("-Wno-unused-function GCC_FLAGS)
+  # allow fall through by virtue of comment
+  CHECK_CC_FLAG ("-Wimplicit-fallthrough=3 GCC_FLAGS)
   CHECK_CC_FLAG ("-march=native" GCC_ARCH_FLAGS)
   CHECK_CC_FLAG ("-mtune=native" GCC_ARCH_FLAGS)
   # FIXME(artem) Can we get these flags from the Pthread checking macro?

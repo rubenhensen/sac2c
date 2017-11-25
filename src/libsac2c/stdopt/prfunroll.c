@@ -876,7 +876,7 @@ MakeTrueScalar (node *arg_node, info *arg_info)
                           INFO_PREASSIGN (arg_info));
         AVIS_SSAASSIGN (shpavis) = INFO_PREASSIGN (arg_info);
         INFO_SHPAVIS (arg_info) = shpavis;
-        /* Break intentionally elided */
+        /* Falls through. */
 
     case F_non_neg_val_V:
     case F_val_le_val_VxV:

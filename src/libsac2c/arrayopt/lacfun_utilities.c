@@ -1434,9 +1434,9 @@ LFUgetStrideInfo (node *expn, node *lcv, int *stridesgn, node *aft, node *fundef
 
     // Find sign of stride, corrected for F_sub.
     if (NULL != strideid) {
-        stridesignum = mathsign * PHUTisPositive (strideid, aft, fundef, varlut)
+        stridesignum = mathsign * (PHUTisPositive (strideid, aft, fundef, varlut)
                          ? 1
-                         : PHUTisNegative (strideid, aft, fundef, varlut) ? -1 : 0;
+                         : (PHUTisNegative (strideid, aft, fundef, varlut) ? -1 : 0));
     }
 
     if (NULL == strideid) {

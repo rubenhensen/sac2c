@@ -650,6 +650,7 @@ IMAprf (node *arg_node, info *arg_info)
                 INFO_LUT (arg_info)
                   = updateOffsetsTable (INFO_LUT (arg_info), src_avis, val, FALSE, TRUE);
             }
+            break;
         default:
             DBUG_PRINT ("Found other prf.");
             break;

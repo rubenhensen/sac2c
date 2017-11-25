@@ -1027,7 +1027,7 @@ COaST2Constant (node *n)
 
         case N_id:
             n = ID_AVIS (n);
-            /* break intentionally omitted */
+            /* Falls through. */
 
         case N_avis:
             if (TYisAKV (AVIS_TYPE (n))) {
@@ -1101,7 +1101,7 @@ COisConstant (node *n)
 
         case N_id:
             n = ID_AVIS (n);
-            /* break omission is intentional */
+            /* Falls through. */
 
         case N_avis:
             res = (TYisAKV (AVIS_TYPE (n)));

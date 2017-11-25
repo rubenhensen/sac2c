@@ -1460,6 +1460,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
          * At a later stage, this has to be replaced by proper code suporting
          * value specialized function instances.
          */
+        /* Falls through. */
 
     case TC_aks:
         DBUG_PRINT_TAG ("NTY", "AKS");
@@ -6310,6 +6311,7 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
 
         case TC_ibase:
             mandatory = 3;
+            /* Falls through. */
         case TC_iarr:
         case TC_idim:
         case TC_ishape:

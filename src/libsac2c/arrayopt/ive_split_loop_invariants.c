@@ -635,7 +635,7 @@ SplitComputation (node *index, node **arg1, node **arg2, bool *invert)
         case F_sub_SxS:
         case F_sub_VxV:
             needsInvert = TRUE;
-            /* no break missing here */
+            /* Falls through. */
 
         case F_add_SxS:
         case F_add_VxV:

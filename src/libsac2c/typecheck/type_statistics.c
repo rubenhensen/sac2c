@@ -145,7 +145,7 @@ PrintStatistics (node *fundef, info *info)
             flag = TRUE;
             INFO_TS_ANY (info) = TRUE;
         }
-        /* here no break is missing! */
+        /* Falls through. */
     case (SS_akd):
         if (INFO_TS_AUD (info) > 0) {
             buf = SBUFprintf (buf, "    %d aud variables left\n", INFO_TS_AUD (info));

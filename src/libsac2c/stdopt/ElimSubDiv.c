@@ -175,7 +175,7 @@ InversionPrf (prf op, simpletype stype)
                 inv_prf = F_unknown;
             }
         }
-        /* There is no break missing here. */
+        /* Falls through. */
 
     case T_byte:
     case T_short:

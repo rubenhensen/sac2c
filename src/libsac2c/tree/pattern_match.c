@@ -637,6 +637,7 @@ getInner (node *arg_node)
         break;
     case N_range:
         inner = RANGE_RESULTS (arg_node);
+        break;
     case N_prf:
         inner = PRF_ARGS (arg_node);
         break;
