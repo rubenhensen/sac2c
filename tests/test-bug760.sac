@@ -1,0 +1,33 @@
+// This bug is ported from: testsuite/optimizations/as/bug760.sac
+// Bug # 760
+//
+//
+// RESULT: mul 0 1 -noprelude -maxwlur 1 -noprfunr
+// For some strange reason, DL replaces the add(a,a) by mul(2,a)
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -doas -noprelude -maxwlur 1 -noprfunr
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bopt:wlbscnf2  -printfun main
+//
+// SAC_TEST|all: test-bug760.sac
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< | $(GREP_COMMAND_OUTPUT) _mul_ 0
+
+
+int[*] aud(int[*] y, bool b)
+{ 
+ if( b) {
+   z = [3];
+ } else {
+   z = y;
+ }
+ return(z);
+}
+
+int main()
+{
+  _flat_2 = 2;
+  a = aud( _flat_2, false) ;
+  _flat_3 = _add_SxS_( a, a);
+  z = _sub_SxS_( _flat_3, 4);
+  return( z);
+}
