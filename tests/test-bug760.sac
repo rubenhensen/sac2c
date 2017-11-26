@@ -9,7 +9,7 @@
 // SAC_TEST|SAC2C_FLAGS += -doas -noprelude -maxwlur 1 -noprfunr
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bopt:wlbscnf2  -printfun main
 //
-// SAC_TEST|all: test-bug760.sac
+// SAC_TEST|all: <file-name>
 // SAC_TEST|<tab>@$(CALL_SAC2C) $< | $(GREP_COMMAND_OUTPUT) _mul_ 0
 
 

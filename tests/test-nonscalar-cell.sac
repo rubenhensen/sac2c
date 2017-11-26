@@ -16,7 +16,7 @@
 #include "mini-stdlib.sac"
 
 // SAC_TEST|include common.mk
-// SAC_TEST|all: test-nonscalar-cell.sac
+// SAC_TEST|all: <file-name>
 // SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -b3 -printfun main $< | $(GREP_COMMAND_OUTPUT) iv 2
 
 int main()

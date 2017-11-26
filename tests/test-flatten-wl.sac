@@ -6,7 +6,7 @@
 // The make rule below ensures that within a function call or a
 // generator specification, there are no explicit numbers.
 //
-// SAC_TEST|all: test-flatten-wl.sac
+// SAC_TEST|all: <file-name>
 // SAC_TEST|<tab>@$(CALL_SAC2C) $< | $(GREP_COMMAND_OUTPUT) "(.*\b[0-9][0-9]*\b.*)" 0
 
 

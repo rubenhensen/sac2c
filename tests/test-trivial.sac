@@ -1,5 +1,5 @@
 // SAC_TEST|include common.mk
-// SAC_TEST|all: test-trivial
+// SAC_TEST|all: <file-name-we>
 // SAC_TEST|<tab>./$<
 
 /* If you cannot compile this,
