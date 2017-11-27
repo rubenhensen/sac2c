@@ -6,7 +6,7 @@ a specific functionality of `sac2c`.  Each unit test in its code encodes how
 it should be run and what are criteria for pass.
 
 The encoding is done using a series of line comments that start with a tag
-`// SAC_TEST|' from the first column of any line.  `// SAC_TEST|...` lines
+`// SAC_TEST|` from the first column of any line.  `// SAC_TEST|...` lines
 are read in order they appear in the file, and are combined in a makefile
 by cutting `// SAC_TEST|` prefix.  Consider an example:
 
