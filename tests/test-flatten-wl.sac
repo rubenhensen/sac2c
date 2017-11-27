@@ -1,0 +1,92 @@
+// This test is ported from: sac/testsuite/flatten/flattenwl.sac
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)  -bewl:adp -ssaiv -noprelude -printfun main
+//
+// The make rule below ensures that within a function call or a
+// generator specification, there are no explicit numbers.
+//
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< | $(GREP_COMMAND_OUTPUT) "(.*\b[0-9][0-9]*\b.*)" 0
+
+
+// Unit test for flattening
+//
+//  sac2c flattenwl.sac -bewl:adp -noprelude -ssaiv
+//  phase b10:wlpg destroys flattening, presently
+//
+//  If this code works properly, -b11 should not have any
+//  constants as function arguments.
+
+int main()
+{
+ x = [1,2,3,4,5,6,7];
+ z = with {
+            ([1] <= iv=[i] < [6]) {
+              val = _add_SxS_(100, i);
+            } :val;
+         } : modarray(x);
+
+ return(_toi_S_( _eq_SxS_(103, _sel_VxA_( [3], z))));
+}
+
+// Unit tests for sac2c flattening code.
+//
+// In the SAC compiler {\em flattening} refers to the transformation
+// of the abstract syntax tree for
+// source code into a form in which all function arguments
+// are identifiers, rather than scalar constants or array
+// constants. (I am not aware of any use of this term elsewhere
+// in the world of computer science. I also don't know of any
+// term that describes what flattening does in the SAC compiler.)
+//
+// E.g.,  the source code:
+//
+//  x = [ 1, 2, 3, 4, 5, 6, 7 ];
+//  z = with {
+//             ([1] <= iv=[i] < [6]) {
+//               val = _add_SxS_(100, i);
+//             } :val;
+//          } : modarray(x);
+//
+// is transformed by flattening into:
+//
+//   x = [ 1, 2, 3, 4, 5, 6, 7 ];
+//   _flat_1 = [ 6 ];                             NB. !!
+//   _flat_0 = [ 1 ];                             NB. !!
+//   z = with {
+//         (_flat_0 <= iv=[i] < _flat_1           NB. !!
+//         {
+//           _flat_2 = 100;                       NB. !!
+//           val = _add_SxS_( _flat_2, i);
+//         } : val ;
+//  } :
+//       modarray( x);
+//
+// Flattening is useful because it ensures that {\em all} function
+// arguments are identifiers, thereby regularizing compiler code.
+// Optimizations, such as constant folding (CF) might appear to be
+// made more complicated by flattened code, but they are, in fact,
+// simpler.
+//
+// To see why this is so, consider the _add_SxS_ above. The
+// constant folder will detect addition of zero, and replace
+// the addition by the non-zero argument. In the absence
+// of flattened code, either or both arguments could be
+// scalar constants or identifiers. The CF code would have to
+// check explicitly for both cases of both arguments.
+//
+// With flattened code, the arguments are known to be identifiers,
+// and a pattern-matching function, such as PMconst, can be used to
+// chase back an identifier chain to its point of origin,
+// including a check for a constant value. The result is simple
+// and concise code.
+//
+// As of 2009-01-13, some sac2c post-optimizer phases require
+// that the AST be in NON-flattened form. Phases before that
+// are, at present, a mish-mash, with no guarantee made that
+// flattening exists across the entire AST. One intent of the
+// index vector extrema project is to make sure that all
+// function arguments are flattened, and that they remain
+// flattened, until the completion of the optimization phase.
+

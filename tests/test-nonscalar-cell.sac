@@ -1,0 +1,32 @@
+/*
+ * This test is ported from testsuite/scanparse/nonscalarcell.sac
+ *
+ * Non-scalar cell created by producerWL.
+ *
+ * No bug was filed for this, but it appeared around
+ * the same time as Bug #959.
+ *
+ * Symptoms are that, at -b1, the WL only has a single partition!
+ * We stop after -b3 because filterop, by default, looks for
+ *   _MAIN::main
+ * and that does not exist until -b3.
+ *
+ */
+
+#include "mini-stdlib.sac"
+
+// SAC_TEST|include common.mk
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -b3 -printfun main $< | $(GREP_COMMAND_OUTPUT) iv 2
+
+int main()
+{ 
+ siz = [5, 4];
+ PWL = with {
+        ( [0, 0] <= iv=[i,j] < [ 2, 4]) : _add_SxV_( j, [ 10, 20, 30, 40]);
+        ( [2, 3] <= iv=[i,j] <    siz)  : _add_SxV_( j, [ 100, 200, 300, 400]);
+       } : genarray( siz, [ 666, 667, 668, 669]);
+ z = sum( PWL);
+ z = z - 27914;
+ return(z);
+}

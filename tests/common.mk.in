@@ -1,0 +1,17 @@
+SAC2C := @SAC2C_EXEC@
+SAC2C_FLAGS := -v0
+
+# Name wrapper around the shell script that takes two arguments
+# `what' and `num' and verifies that $what is found $num times
+# on the stdout.
+GREP_COMMAND_OUTPUT := ./scripts/grep-command-output.sh
+
+
+# Namewrapper for a script of two arguments `binary' and `ret'
+# that veirfies that return status of executing $binary is $ret.
+CHECK_RETURN_STATUS := ./scripts/check-return-status.sh
+
+
+%:%.sac
+	$(SAC2C) $(SAC2C_FLAGS) -o $@ $<
+

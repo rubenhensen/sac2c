@@ -286,4 +286,10 @@ ENDIF ()
 SET(SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 INCLUDE ("${PROJECT_SOURCE_DIR}/cmake/cpack/config.cmake")
 
+
+# Here we describe what happens when we test stuff.
+ENABLE_TESTING ()
+ADD_SUBDIRECTORY (tests)
+
+
 # vim:ts=2:sw=2:et:

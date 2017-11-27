@@ -1,0 +1,45 @@
+## testsuite/aud_wl
+    EMPY.
+
+## testsuite/constraints
+    Do we want simply run those tests?
+
+
+## testsuite/flatten
+    DONE.
+
+## testsuite/mt
+    Is the criterion for these tests is just the fact that they run?
+
+## testsuite/mutc
+    Not sure how to test it.  We don't have mutc-related tools.
+
+## testsuite/nested
+    Nested arrays.  As far as I understand they are not fully supported.
+    What shall we expect from the tests?
+
+## testsuite/object
+    Requires Stdlib, not sure what to expect from these tests.
+
+
+## testsuite/optimizations
+    Work in progress.  A lot of tests!
+
+
+## testsuite/partial_ap
+    As far as I understand, this is unfinished project from Jara to
+    support hiher-order reductions.  Not sure what are the expectations.
+
+## testsuite/scanparse
+    DONE.
+
+## testsuite/simd
+    I don't understand what is the criterion for the test to pass.  Just compile and run?
+
+## testsuite/stdlib
+    I don't understand what is the criterion for the test to pass.  Just compile and run?
+
+## testsuite/unibench
+    This requires non-trivial standard library, and it seem to test very
+    specific unibench functionality.  I don't really think that this is
+    useful anymore.
