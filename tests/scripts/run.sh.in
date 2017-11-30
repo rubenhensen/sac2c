@@ -1,4 +1,4 @@
-#!/bin/sh
+#!@BASH@
 source $(dirname $0)/common.sh
 
 function namewe () {
@@ -18,7 +18,7 @@ makefile=${base_fname}.mk
 base_fname_we=$(namewe "$base_fname")
 
 # Generate the Makefile form a sac test:
-cpp -C $SAC_FILE \
+@CMAKE_C_COMPILER@ -E -C -x c $SAC_FILE \
      | grep "^// SAC_TEST|" \
      | sed -e 's/^\/\/ SAC_TEST|//g'\
            -e 's/<tab>/\t/g' \
