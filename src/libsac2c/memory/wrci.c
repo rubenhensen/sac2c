@@ -150,6 +150,55 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+void
+printRC (node *arg_node)
+{
+    DBUG_ENTER ();
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_exprs:
+        if (EXPRS_EXPR (arg_node)) {
+            printRC (EXPRS_EXPR (arg_node));
+        }
+        if (EXPRS_NEXT (arg_node)) {
+            printRC (EXPRS_NEXT (arg_node));
+        }
+        break;
+    case N_id:
+        if (ID_AVIS (arg_node)) {
+            fprintf (global.outfile, " /* %s */", ID_NAME (arg_node));
+        }
+        break;
+    default:
+        break;
+    }
+
+    DBUG_RETURN ();
+}
+
+/***/
+node *
+EMRprintRCs (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (NODE_TYPE (arg_node) == N_genarray || NODE_TYPE (arg_node) == N_modarray) {
+        if (WITHOP_RC (arg_node)) {
+            fprintf (global.outfile, " /* RCs: ");
+            printRC (WITHOP_RC (arg_node));
+            fprintf (global.outfile, " */\n");
+        }
+        if (WITHOP_ERC (arg_node)) {
+            fprintf (global.outfile, " /* ERCs: ");
+            printRC (WITHOP_ERC (arg_node));
+            fprintf (global.outfile, " */\n");
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+/***/
+
 /** <!--********************************************************************-->
  *
  * @fn node *WRCIdoInferWithloopReuseCandidates( node *syntax_tree)
