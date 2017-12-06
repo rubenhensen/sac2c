@@ -8,7 +8,7 @@ GREP_COMMAND_OUTPUT := ./scripts/grep-command-output.sh
 
 
 # Namewrapper for a script of two arguments `binary' and `ret'
-# that veirfies that return status of executing $binary is $ret.
+# that verifies that return status of executing $binary is $ret.
 CHECK_RETURN_STATUS := ./scripts/check-return-status.sh
 
 

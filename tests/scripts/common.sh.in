@@ -1,5 +1,5 @@
 # This file implements basic/common functionality that is to be
-# include in the variosu test scripts. This file should *not* be
+# include in the various test scripts. This file should *not* be
 # called directly, but be sourced instead.
 
 function die () {
