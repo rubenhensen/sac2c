@@ -21,6 +21,7 @@ stages:
 #                  really mind.
 #  - CPACK_BUILD:  specifies to CPack what type of package we want to generate
 #  - RELEASE_FILE: the Glob for selecting the CPack generate package
+#  - STDLIB_URL:   the git-pull URL for the repo, defaults to `sacbase/StdLib'
 #  - SAC2CP_EXEC:  location of product version of sac2c - for building stdlib
 #  - SAC2CD_EXEC:  location of debug version of sac2c - for building stdlib
 #
@@ -78,7 +79,11 @@ stages:
         # get latest release of stdlib
         # XXX would be nice if we could use `--single-branch`, as it would
         # save on bandwidth + time. But some OSs don't have > git 1.7 (?!)
-        - git clone https://github.com/SacBase/Stdlib.git stdlib
+        - if [ -z ${STDLIB_URL} ]; then
+            git clone https://github.com/SacBase/Stdlib.git stdlib;
+          else
+            git clone ${STDLIB_URL} stdlib;
+          fi
         - cd stdlib
         - git submodule init
         - git submodule update
