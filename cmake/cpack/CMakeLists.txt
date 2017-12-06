@@ -49,6 +49,9 @@ ADD_CUSTOM_TARGET(fullclean
     ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target clean
   COMMENT "Cleaning all build dirs...")
 
+# Dummy target to expose `test' target in external projects
+ADD_CUSTOM_TARGET(fulltest COMMENT "Testing all build dirs...")
+
 # This macro generates an `externalproject' for a sac2c build variant.
 # Is only parameter is the build type, which is one supported by the
 # CMAKE_BUILD_TYPE variable.
@@ -73,6 +76,8 @@ MACRO (ADD_SAC2C_BUILD _build_type)
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/config config-install
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/headers headers-install
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/symlinks symlinks-install
+    TEST_EXCLUDE_FROM_MAIN 1
+    TEST_COMMAND ctest
     BUILD_ALWAYS 1
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${_build_type}
@@ -92,6 +97,9 @@ MACRO (ADD_SAC2C_BUILD _build_type)
   ExternalProject_Add_StepTargets(sac2c-${_build_type_name} clean)
   # Add the target as a dependency to the `fullclean' target 
   ADD_DEPENDENCIES (fullclean sac2c-${_build_type_name}-clean)
+  # Create step target to expose `test' and attach it to out `fulltest' target
+  ExternalProject_Add_StepTargets(sac2c-${_build_type_name} test)
+  ADD_DEPENDENCIES (fulltest sac2c-${_build_type_name}-test)
   # Add targets to list, to do dependencies
   LIST (APPEND SAC_TARGETS "sac2c-${_build_type_name}")
   # unset temporary variables (this prevents any overlap that may happen)
@@ -103,7 +111,8 @@ ENDMACRO ()
 FOREACH (type ${BUILDTYPELIST})
   ADD_SAC2C_BUILD (${type})
 ENDFOREACH ()
-  
+
+# TODO (hans): this is buggy when building dirty...
 ADD_CUSTOM_TARGET (generic-symlinks ALL
   COMMAND ${CMAKE_COMMAND} -E create_symlink "sac2c_p" "bin/sac2c"
   COMMAND ${CMAKE_COMMAND} -E create_symlink "sac4c_p" "bin/sac4c"
