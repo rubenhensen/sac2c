@@ -171,7 +171,7 @@ ENDMACRO ()
 # Create install-<component> target for all the existing components.
 ADD_INSTALL_TARGET ("applications" sac2c sac4c sac2tex "${PROJECT_BINARY_DIR}/saccc")
 ADD_INSTALL_TARGET ("config" "${SAC2CRC_BUILD_CONF}")
-ADD_INSTALL_TARGET ("headers" sac2cShared)
+ADD_INSTALL_TARGET ("headers" sac_h)
 ADD_INSTALL_TARGET ("libraries" sac2cShared runtime_libraries)
 ADD_INSTALL_TARGET ("rtapplications" runtime_libraries)
 ADD_INSTALL_TARGET ("sources")
@@ -191,11 +191,6 @@ XINSTALL (PROGRAMS "${PROJECT_BINARY_DIR}/saccc"
   DESTINATION "${TREEPATH_INSTALL}"
   RENAME "saccc${BUILD_TYPE_POSTFIX}"
   COMPONENT applications)
-
-# install include files
-XINSTALL (DIRECTORY "${PROJECT_SOURCE_DIR}/include/" 
-  DESTINATION "${INCPATH_INSTALL}"
-  COMPONENT headers)
 
 # We need to install the runtime libraries and sacprelude into a directory
 # hiearchy that is different from the `local' hiearchy. Under out local `lib/' we

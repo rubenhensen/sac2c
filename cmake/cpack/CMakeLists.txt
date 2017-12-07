@@ -112,17 +112,18 @@ FOREACH (type ${BUILDTYPELIST})
   ADD_SAC2C_BUILD (${type})
 ENDFOREACH ()
 
-# TODO (hans): this is buggy when building dirty...
+# TODO (hans): this is buggy when building dirty as we can't stop this from running.
 ADD_CUSTOM_TARGET (generic-symlinks ALL
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "sac2c_p" "bin/sac2c"
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "sac4c_p" "bin/sac4c"
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "sac2tex_p" "bin/sac2tex"
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "saccc_p" "bin/saccc"
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "csimt_p" "bin/csimt"
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "csima_p" "bin/csima"
+  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/toplevel/symlinks/${CMAKE_INSTALL_PREFIX}/bin"
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "sac2c_p" "sac2c"
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "sac4c_p" "sac4c"
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "sac2tex_p" "sac2tex"
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "saccc_p" "saccc"
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "csimt_p" "csimt"
+  COMMAND ${CMAKE_COMMAND} -E create_symlink "csima_p" "csima"
   DEPENDS ${SAC_TARGETS}
-  COMMENT "Creating Genereic Symlinks"
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/toplevel/symlinks/${CMAKE_INSTALL_PREFIX})
+  COMMENT "Creating generic symlinks"
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/toplevel/symlinks/${CMAKE_INSTALL_PREFIX}/bin)
 
 # create symbolic links to binaries
 # XXX(hans) we should not do this for distributable packages
