@@ -15,7 +15,7 @@ stages:
 # the board - if this is not the case things may need to be changed).
 
 # VARIABLES
-# 
+#
 #  - DO_SCHEDULE:  if set, we *ignore* warnings. Is useful for when we want
 #                  to do packaging, as for nightly/weekly release we don't
 #                  really mind.
@@ -58,6 +58,13 @@ stages:
     artifacts:
         expire_in: 12 hrs
         untracked: true
+    only:
+        # we use the trigger mechanism as this is currently the only
+        # feasible way of actually having stuff build via merge-requests.
+        - triggers
+        - schedules
+        - web
+        - tags
 
 .test-template: &test-template
     stage: test
@@ -68,6 +75,13 @@ stages:
     artifacts:
         expire_in: 12 hrs
         untracked: true
+    only:
+        # we use the trigger mechanism as this is currently the only
+        # feasible way of actually having stuff build via merge-requests.
+        - triggers
+        - schedules
+        - web
+        - tags
 
 .build-stdlib-template: &build-stdlib-template
     stage: stdlib
@@ -81,8 +95,10 @@ stages:
         # save on bandwidth + time. But some OSs don't have > git 1.7 (?!)
         - if [ -z ${STDLIB_URL} ]; then
             git clone https://github.com/SacBase/Stdlib.git stdlib;
+            echo "Clone from SacBase/Stdlib master HEAD";
           else
             git clone ${STDLIB_URL} stdlib;
+            echo "Clone from ${STDLIB_URL}";
           fi
         - cd stdlib
         - git submodule init
@@ -104,6 +120,13 @@ stages:
         untracked: true
         paths:
             - stdlib/
+    only:
+        # we use the trigger mechanism as this is currently the only
+        # feasible way of actually having stuff build via merge-requests.
+        - triggers
+        - schedules
+        - web
+        - tags
 
 .package-template: &package-template
     stage: package
@@ -118,6 +141,9 @@ stages:
         paths:
             - build/${RELEASE_FILE}
             - stdlib-build/${RELEASE_FILE}
+    only:
+        - schedules
+        - tags
 
 .weekly-release-template: &weekly-release-template
     stage: release
@@ -131,6 +157,9 @@ stages:
         - scp -p -i ${HOME}/.ssh/release -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no
           build/${RELEASE_FILE} stdlib-build/${RELEASE_FILE} ${RELEASE_URL}:${RELEASE_TOPDIR}/${INNER_PATH}
         - echo "Release has been sent, have a look at the sac-home.org download page :)"
+    only:
+        - schedules
+        - tags
 
 # Here we define the actual jobs - we must specify each build OS separately as GitLab-CI
 # does not support launch a job on all OSs as such.
@@ -143,12 +172,6 @@ build-archlinux:
     # only be one tag listed below!)
     tags:
         - archlinux
-    only:
-        # we use the trigger mechanism as this is currently the only
-        # feasible way of actually having stuff build via merge-requests.
-        - triggers
-        - schedules
-        - web
 
 test-archlinux:
     <<: *test-template
@@ -158,12 +181,6 @@ test-archlinux:
         - archlinux
     dependencies:
         - build-archlinux
-    only:
-        # we use the trigger mechanism as this is currently the only
-        # feasible way of actually having stuff build via merge-requests.
-        - triggers
-        - schedules
-        - web
 
 stdlib-archlinux:
     <<: *build-stdlib-template
@@ -171,12 +188,6 @@ stdlib-archlinux:
         - archlinux
     dependencies:
         - test-archlinux
-    only:
-        # we use the trigger mechanism as this is currently the only
-        # feasible way of actually having stuff build via merge-requests.
-        - triggers
-        - schedules
-        - web
 
 package-archlinux:
     variables:
@@ -187,8 +198,6 @@ package-archlinux:
         - archlinux
     dependencies:
         - stdlib-archlinux
-    only:
-        - schedules
 
 release-weekly-archlinux:
     variables:
@@ -200,8 +209,6 @@ release-weekly-archlinux:
         - archlinux
     dependencies:
         - package-archlinux
-    only:
-        - schedules
 
 ### CENTOS 7 ###
 
@@ -209,10 +216,6 @@ build-centos7:
     <<: *build-template
     tags:
         - centos7
-    only:
-        - triggers
-        - schedules
-        - web
 
 test-centos7:
     <<: *test-template
@@ -220,10 +223,6 @@ test-centos7:
         - centos7
     dependencies:
         - build-centos7
-    only:
-        - triggers
-        - schedules
-        - web
 
 stdlib-centos7:
     <<: *build-stdlib-template
@@ -231,10 +230,6 @@ stdlib-centos7:
         - centos7
     dependencies:
         - test-centos7
-    only:
-        - triggers
-        - schedules
-        - web
 
 package-centos7:
     variables:
@@ -245,8 +240,6 @@ package-centos7:
         - centos7
     dependencies:
         - stdlib-centos7
-    only:
-        - schedules
 
 release-weekly-centos7:
     variables:
@@ -258,8 +251,6 @@ release-weekly-centos7:
         - centos7
     dependencies:
         - package-centos7
-    only:
-        - schedules
 
 ### CENTOS 6 ###
 
@@ -267,10 +258,6 @@ build-centos6:
     <<: *build-template
     tags:
         - centos6
-    only:
-        - triggers
-        - schedules
-        - web
 
 test-centos6:
     <<: *test-template
@@ -278,10 +265,6 @@ test-centos6:
         - centos6
     dependencies:
         - build-centos6
-    only:
-        - triggers
-        - schedules
-        - web
 
 stdlib-centos6:
     <<: *build-stdlib-template
@@ -289,10 +272,6 @@ stdlib-centos6:
         - centos6
     dependencies:
         - test-centos6
-    only:
-        - triggers
-        - schedules
-        - web
 
 package-centos6:
     variables:
@@ -303,8 +282,6 @@ package-centos6:
         - centos6
     dependencies:
         - stdlib-centos6
-    only:
-        - schedules
 
 release-weekly-centos6:
     variables:
@@ -316,8 +293,6 @@ release-weekly-centos6:
         - centos6
     dependencies:
         - package-centos6
-    only:
-        - schedules
 
 ### UBUNTU 16 ###
 
@@ -325,10 +300,6 @@ build-ubuntu16:
     <<: *build-template
     tags:
         - ubuntu16
-    only:
-        - triggers
-        - schedules
-        - web
 
 test-ubuntu16:
     <<: *test-template
@@ -336,10 +307,6 @@ test-ubuntu16:
         - ubuntu16
     dependencies:
         - build-ubuntu16
-    only:
-        - triggers
-        - schedules
-        - web
 
 stdlib-ubuntu16:
     <<: *build-stdlib-template
@@ -347,10 +314,6 @@ stdlib-ubuntu16:
         - ubuntu16
     dependencies:
         - test-ubuntu16
-    only:
-        - triggers
-        - schedules
-        - web
 
 package-ubuntu16:
     variables:
@@ -361,8 +324,6 @@ package-ubuntu16:
         - ubuntu16
     dependencies:
         - stdlib-ubuntu16
-    only:
-        - schedules
 
 release-weekly-ubuntu16:
     variables:
@@ -374,8 +335,6 @@ release-weekly-ubuntu16:
         - ubuntu16
     dependencies:
         - package-ubuntu16
-    only:
-        - schedules
 
 ### UBUNTU 14 ###
 
@@ -383,10 +342,6 @@ build-ubuntu14:
     <<: *build-template
     tags:
         - ubuntu14
-    only:
-        - triggers
-        - schedules
-        - web
 
 test-ubuntu14:
     <<: *test-template
@@ -394,10 +349,6 @@ test-ubuntu14:
         - ubuntu14
     dependencies:
         - build-ubuntu14
-    only:
-        - triggers
-        - schedules
-        - web
 
 stdlib-ubuntu14:
     <<: *build-stdlib-template
@@ -405,10 +356,6 @@ stdlib-ubuntu14:
         - ubuntu14
     dependencies:
         - test-ubuntu14
-    only:
-        - triggers
-        - schedules
-        - web
 
 package-ubuntu14:
     variables:
@@ -419,8 +366,6 @@ package-ubuntu14:
         - ubuntu14
     dependencies:
         - stdlib-ubuntu14
-    only:
-        - schedules
 
 release-weekly-ubuntu14:
     variables:
@@ -432,5 +377,3 @@ release-weekly-ubuntu14:
         - ubuntu14
     dependencies:
         - package-ubuntu14
-    only:
-        - schedules
