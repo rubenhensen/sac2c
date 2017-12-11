@@ -11,7 +11,7 @@
  *
  *****************************************************************************/
 extern node *WRCIdoWithloopReuseCandidateInference (node *syntax_tree);
-extern node *WRCIdoWithloopExtendedMemoryReuseCandidateInference (node *syntax_tree);
+extern node *WRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree);
 
 extern node *WRCIfundef (node *arg_node, info *arg_info);
 extern node *WRCIap (node *arg_node, info *arg_info);
@@ -25,6 +25,6 @@ extern node *WRCImodarray (node *arg_node, info *arg_info);
 extern node *WRCIfold (node *arg_node, info *arg_info);
 extern node *WRCIgenerator (node *arg_node, info *arg_info);
 
-extern node *EMRprintRCs (node *arg_node, info *arg_info);
+extern node *WRCIprintRCs (node *arg_node, info *arg_info);
 
 #endif /* _SAC_WRCI_H_ */

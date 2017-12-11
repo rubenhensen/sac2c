@@ -2947,6 +2947,8 @@
         <node name="Prf" />
         <node name="Genarray" />
         <node name="Modarray" />
+        <node name="Ap" />
+        <node name="Fundef" />
       </travuser>
     </traversal>
     <traversal id="WRCI" name="With-loop reuse candidate inference" default="sons" include="wrci.h">
@@ -2962,15 +2964,6 @@
         <node name="Modarray" />
         <node name="Fold" />
         <node name="Generator" />
-      </travuser>
-    </traversal>
-    <traversal id="MRP" name="Memory reuse preallocation" default="sons" include="memory_reuse_preallocation.h" >
-      <travuser>
-        <node name="Fundef" />
-        <node name="Ap" />
-        <!-- <node name="With" /> -->
-        <node name="Genarray" />
-        <node name="Modarray" />
       </travuser>
     </traversal>
     <traversal id="RWO" name="Reuse With-loop arrays with offsets" default="sons" include="reusewithoffset.h">
@@ -5192,12 +5185,17 @@ N_tfarg :
           </targets>
         </son>
 	    <son name="ERC" default="NULL">
-          <description>Stores all WL reuse candidates that might need to be appended to args of the loopfun.</description>
+            <description>
+                Stores all WL reuse candidate found up to the initial
+                application of a loop function. These ERCs will only be
+                used to supply arguments when the fundef args have been
+                extended.
+            </description>
             <targets>
               <target mandatory="no" >
                 <node name="Exprs" />
                 <phases>
-                  <range from="opt_emr" to="final" />
+                  <range from="opt_wrci" to="mem_rci" />
                 </phases>
               </target>
             </targets>
@@ -10408,7 +10406,7 @@ N_tfarg :
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                <range from="opt_emr" to="final" />
+                  <range from="opt_wrci" to="mem_rci" />
               </phases>
             </target>
           </targets>
@@ -10528,7 +10526,7 @@ N_tfarg :
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                <range from="opt_emr" to="final" />
+                  <range from="opt_wrci" to="mem_rci" />
               </phases>
             </target>
           </targets>

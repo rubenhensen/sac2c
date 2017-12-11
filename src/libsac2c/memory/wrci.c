@@ -12,14 +12,15 @@
  *    If that is found, it makes allows th non-copy partition to have an access into the
  *    copy-from-source (ie potential reuse candidate) of the form A[iv +- offset] where
  *    offset is bigger than the generator width. This guarantees accesses into the copy
- * partitions (at least if the accesses are legal :-) 3) PRA (Polyhedral Reuse Analysis)
- * [implemented in polyhedral_reuse_analysis.c] Refines RWO and uses polyhedral stuff to
- * enable accesses of the form A[ linear_expr( iv)] provided we can show all these
- * accesses fall into copy partitions or non-modified partitions... 4) EMR (Extended
- * Memory Reuse) [implemented here :-)] Here, we add arrays that are of the same shape and
- * tha are defined in the current function but are not referenced in WL-body at all. This
- * may sound counter-intuitive at first, but it enables memory reuse of the following
- * kind:
+ *    partitions (at least if the accesses are legal :-)
+ * 3) PRA (Polyhedral Reuse Analysis) [implemented in polyhedral_reuse_analysis.c] Refines
+ *    RWO and uses polyhedral stuff to enable accesses of the form A[ linear_expr( iv)]
+ *    provided we can show all these accesses fall into copy partitions or non-modified
+ *    partitions...
+ * 4) EMR (Extended Memory Reuse) [implemented here :-)] Here, we add arrays that are of
+ *    the same shape and tha are defined in the current function but are not referenced
+ *    in WL-body at all. This may sound counter-intuitive at first, but it enables memory
+ *    reuse of the following kind:
  *
  *    Consider:
  *      int main( )
@@ -53,7 +54,7 @@
  * being narrowed by subphases of the mem-phase, specifically SRCE and FRC, and by dynamic
  * reference count inspections at runtime :-)
  *
- *
+ * XXX:
  * For some reason WRCI it is run prior to Index Vector Elimination (IVE). I think the
  * reason might initially have been so that there is no need to deal with sel and idx_sel
  * but I am not sure about this :-( It seems that all the anylyses actually do support
@@ -106,8 +107,9 @@ struct INFO {
     node *fundef;
     node *lhs;
     node *rc;
+    /* extended reuse */
+    bool do_emr;
     node *emr_rc;
-    bool run_emr;
 };
 
 /*
@@ -116,8 +118,8 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_RC(n) ((n)->rc)
+#define INFO_DO_EMR(n) ((n)->do_emr)
 #define INFO_EMR_RC(n) ((n)->emr_rc)
-#define INFO_RUN_EMR(n) ((n)->run_emr)
 
 /*
  * INFO functions
@@ -134,8 +136,8 @@ MakeInfo (void)
     INFO_FUNDEF (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_RC (result) = NULL;
+    INFO_DO_EMR (result) = FALSE;
     INFO_EMR_RC (result) = NULL;
-    INFO_RUN_EMR (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -150,54 +152,125 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-void
+static void
 printRC (node *arg_node)
 {
     DBUG_ENTER ();
 
     switch (NODE_TYPE (arg_node)) {
     case N_exprs:
-        if (EXPRS_EXPR (arg_node)) {
+        if (EXPRS_EXPR (arg_node) != NULL) {
             printRC (EXPRS_EXPR (arg_node));
         }
-        if (EXPRS_NEXT (arg_node)) {
+        if (EXPRS_NEXT (arg_node) != NULL) {
             printRC (EXPRS_NEXT (arg_node));
         }
         break;
     case N_id:
-        if (ID_AVIS (arg_node)) {
-            fprintf (global.outfile, " /* %s */", ID_NAME (arg_node));
+        if (ID_AVIS (arg_node) != NULL && NODE_TYPE (ID_AVIS (arg_node)) == N_avis) {
+            printRC (ID_AVIS (arg_node));
+        } else {
+            fprintf (global.outfile, " #removed#,");
         }
         break;
+    case N_avis:
+        fprintf (global.outfile, " %s,", AVIS_NAME (arg_node));
+        break;
     default:
+        CTIerrorInternal("Node reference that should not be possible. Expected N_avis, "
+                "found NODE_TYPE(%d) instead.\n", NODE_TYPE (arg_node));
         break;
     }
 
     DBUG_RETURN ();
 }
 
-/***/
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIprintRCs( node *arg_node, info* arg_info)
+ *
+ * @brief a traversal prefun that annotates the output of TR_prt with information
+ *        about RCs and ERCs associated to N_genarray and N_modarray.
+ *
+ * @param arg_node  syntax tree (specifically a N_genarray or N_modarray)
+ * @param arg_info  unused
+ *
+ * @return unmodified arg_node.
+ *
+ *****************************************************************************/
 node *
-EMRprintRCs (node *arg_node, info *arg_info)
+WRCIprintRCs (node *arg_node, info *arg_info)
 {
+    node *rc = NULL, *erc = NULL, *prc = NULL;
     DBUG_ENTER ();
 
-    if (NODE_TYPE (arg_node) == N_genarray || NODE_TYPE (arg_node) == N_modarray) {
-        if (WITHOP_RC (arg_node)) {
-            fprintf (global.outfile, " /* RCs: ");
-            printRC (WITHOP_RC (arg_node));
-            fprintf (global.outfile, " */\n");
-        }
-        if (WITHOP_ERC (arg_node)) {
-            fprintf (global.outfile, " /* ERCs: ");
-            printRC (WITHOP_ERC (arg_node));
-            fprintf (global.outfile, " */\n");
-        }
+    switch (NODE_TYPE (arg_node)) {
+    case N_genarray:
+        prc = GENARRAY_PRC (arg_node);
+        /* Falls through. */
+    case N_modarray:
+        rc = WITHOP_RC (arg_node);
+        erc = WITHOP_ERC (arg_node);
+        break;
+    /*
+    case N_fundef:
+        // TODO printing this is not nice...
+        erc = FUNDEF_ERC (arg_node);
+        break;
+    */
+    default:
+        break;
+    }
+
+    if (rc != NULL) {
+        INDENT;
+        fprintf (global.outfile, " /* RCs: ");
+        printRC (rc);
+        fprintf (global.outfile, " */\n");
+    }
+    if (erc != NULL) {
+        INDENT;
+        fprintf (global.outfile, " /* ERCs: ");
+        printRC (erc);
+        fprintf (global.outfile, " */\n");
+    }
+    if (prc != NULL) {
+        INDENT;
+        fprintf (global.outfile, " /* PRCs: ");
+        printRC (prc);
+        fprintf (global.outfile, " */\n");
     }
 
     DBUG_RETURN (arg_node);
 }
-/***/
+
+/**
+ * @brief
+ *
+ * @param syntax_tree
+ *
+ * @return modified syntax_tree.
+ *
+ *****************************************************************************/
+node *
+WRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
+{
+    info *arg_info;
+
+    DBUG_ENTER ();
+
+    arg_info = MakeInfo ();
+
+    INFO_DO_EMR (arg_info) = TRUE;
+
+    TRAVpush (TR_wrci);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (syntax_tree);
+}
 
 /** <!--********************************************************************-->
  *
@@ -218,36 +291,6 @@ WRCIdoWithloopReuseCandidateInference (node *syntax_tree)
     DBUG_ENTER ();
 
     arg_info = MakeInfo ();
-
-    TRAVpush (TR_wrci);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-    TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WRCIdoInferWithloopExtendedMemoryReuseCandidates( node *syntax_tree)
- *
- * @brief
- *
- * @param syntax_tree
- *
- * @return modified syntax_tree.
- *
- *****************************************************************************/
-node *
-WRCIdoWithloopExtendedMemoryReuseCandidateInference (node *syntax_tree)
-{
-    info *arg_info;
-
-    DBUG_ENTER ();
-
-    arg_info = MakeInfo ();
-    INFO_RUN_EMR (arg_info) = TRUE;
 
     TRAVpush (TR_wrci);
     syntax_tree = TRAVdo (syntax_tree, arg_info);
@@ -332,6 +375,8 @@ MatchingRCs (node *rcs, node *ids, node *modarray)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("  looking for matching RC -> %s", IDS_NAME (ids));
+
     if (rcs != NULL) {
         match = MatchingRCs (EXPRS_NEXT (rcs), ids, modarray);
 
@@ -393,9 +438,7 @@ WRCIfundef (node *arg_node, info *arg_info)
         }
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -410,26 +453,15 @@ WRCIap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_RUN_EMR (arg_info)) {
+    if (INFO_DO_EMR (arg_info)) {
         /* check to see if we have found the recursive loopfun call */
-        if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
-            if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
-
-                if (INFO_EMR_RC (arg_info) != NULL && AP_ARGS (arg_node) != NULL) {
-                    /* filter out all vars that are args of loopfun: */
-                    anontrav_t emrtrav[2] = {{N_id, &EMRid}, {(nodetype)0, NULL}};
-                    TRAVpushAnonymous (emrtrav, &TRAVsons);
-                    AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
-                    TRAVpop ();
-                }
-
-                FUNDEF_ERC (AP_FUNDEF (arg_node)) = DUPdoDupTree (INFO_EMR_RC (arg_info));
-
-                DBUG_PRINT ("extended reuse candidates for loopfun:");
-                DBUG_EXECUTE (if (FUNDEF_ERC (AP_FUNDEF (arg_node)) != NULL) {
-                    PRTdoPrintFile (stderr, FUNDEF_ERC (AP_FUNDEF (arg_node)));
-                });
-            }
+        if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
+                && AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
+            FUNDEF_ERC (INFO_FUNDEF (arg_info)) = TCappendExprs (FUNDEF_ERC (INFO_FUNDEF (arg_info)), DUPdoDupTree (INFO_EMR_RC (arg_info)));
+            DBUG_PRINT ("extended reuse candidates for rec loopfun application:");
+            DBUG_EXECUTE (if (FUNDEF_ERC (INFO_FUNDEF (arg_info)) != NULL) {
+                PRTdoPrintFile (stderr, FUNDEF_ERC (INFO_FUNDEF (arg_info)));
+            });
         }
     }
 
@@ -448,8 +480,8 @@ WRCIarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_RUN_EMR (arg_info)) {
-        DBUG_PRINT ("adding emr_rc %s ...", ARG_NAME (arg_node));
+    if (INFO_DO_EMR (arg_info)) {
+        DBUG_PRINT ("adding emr_rc %s arg ...", ARG_NAME (arg_node));
         INFO_EMR_RC (arg_info)
           = TBmakeExprs (TBmakeId (ARG_AVIS (arg_node)), INFO_EMR_RC (arg_info));
     }
@@ -469,8 +501,8 @@ WRCIids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_RUN_EMR (arg_info)) {
-        DBUG_PRINT ("adding emr_rc %s ...", IDS_NAME (arg_node));
+    if (INFO_DO_EMR (arg_info)) {
+        DBUG_PRINT ("adding emr_rc %s ids ...", IDS_NAME (arg_node));
         INFO_EMR_RC (arg_info)
           = TBmakeExprs (TBmakeId (IDS_AVIS (arg_node)), INFO_EMR_RC (arg_info));
     }
@@ -535,7 +567,7 @@ WRCIwith (node *arg_node, info *arg_info)
      * These are all arrays A that are accessed only by means of selection at
      * A[iv]
      */
-    if (global.optimize.dorip && !INFO_RUN_EMR (arg_info)) {
+    if (global.optimize.dorip && !INFO_DO_EMR (arg_info)) {
         DBUG_PRINT ("Looking for A[iv] only use...");
         INFO_RC (arg_info) = REUSEdoGetReuseArrays (arg_node, INFO_FUNDEF (arg_info));
         DBUG_PRINT ("candidates after conventional reuse: ");
@@ -547,7 +579,7 @@ WRCIwith (node *arg_node, info *arg_info)
     /*
      * Find more complex reuse candidates
      */
-    if (global.optimize.dorwo && !INFO_RUN_EMR (arg_info)) {
+    if (global.optimize.dorwo && !INFO_DO_EMR (arg_info)) {
         DBUG_PRINT ("Looking for more complex reuse candidates...");
         INFO_RC (arg_info)
           = TCappendExprs (INFO_RC (arg_info),
@@ -558,7 +590,7 @@ WRCIwith (node *arg_node, info *arg_info)
         });
     }
 
-    if (global.optimize.dopra && !INFO_RUN_EMR (arg_info)) {
+    if (global.optimize.dopra && !INFO_DO_EMR (arg_info)) {
         /*
          * Find more complex reuse candidates
          */
@@ -573,7 +605,7 @@ WRCIwith (node *arg_node, info *arg_info)
         });
     }
 
-    if (INFO_RUN_EMR (arg_info)) {
+    if (INFO_DO_EMR (arg_info)) {
         DBUG_PRINT ("potential EMR candidates:");
         DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
             PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
@@ -643,7 +675,7 @@ WRCIwith (node *arg_node, info *arg_info)
      */
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-    if (INFO_RUN_EMR (arg_info)) {
+    if (INFO_DO_EMR (arg_info)) {
         /*
          * Here, we have to resurrect the emr-candidates as we had them before
          * processing this with loop:
@@ -685,16 +717,18 @@ WRCIgenarray (node *arg_node, info *arg_info)
     /*
      * Annotate reuse candidates.
      */
-    GENARRAY_RC (arg_node) = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), NULL);
+    if (!INFO_DO_EMR (arg_info)) {
+        GENARRAY_RC (arg_node) = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), NULL);
+        DBUG_PRINT ("Genarray RCs: ");
+        DBUG_EXECUTE (if (GENARRAY_RC (arg_node) != NULL) {
+            PRTdoPrintFile (stderr, GENARRAY_RC (arg_node));
+        });
+    }
 
-    DBUG_PRINT ("Genarray RCs: ");
-    DBUG_EXECUTE (if (GENARRAY_RC (arg_node) != NULL) {
-        PRTdoPrintFile (stderr, GENARRAY_RC (arg_node));
-    });
     /*
      * Annotate extended reuse candidates.
      */
-    if (INFO_RUN_EMR (arg_info)) {
+    if (INFO_DO_EMR (arg_info)) {
         GENARRAY_ERC (arg_node)
           = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
         DBUG_PRINT ("Genarray ERCs: ");
@@ -703,7 +737,7 @@ WRCIgenarray (node *arg_node, info *arg_info)
         });
     }
 
-    if (global.optimize.dopr) {
+    if (global.optimize.dopr && !INFO_DO_EMR (arg_info)) {
         /*
          * Annotate partial reuse candidates
          */
@@ -731,18 +765,21 @@ WRCImodarray (node *arg_node, info *arg_info)
     /*
      * Annotate conventional reuse candidates.
      */
-    MODARRAY_RC (arg_node)
-      = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
-    DBUG_PRINT ("Modarray RCs: ");
-    DBUG_EXECUTE (if (MODARRAY_RC (arg_node) != NULL) {
-        PRTdoPrintFile (stderr, MODARRAY_RC (arg_node));
-    });
+    if (!INFO_DO_EMR (arg_info)) {
+        MODARRAY_RC (arg_node)
+          = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
+        DBUG_PRINT ("Modarray RCs: ");
+        DBUG_EXECUTE (if (MODARRAY_RC (arg_node) != NULL) {
+            PRTdoPrintFile (stderr, MODARRAY_RC (arg_node));
+        });
+    }
+
     /*
      * Annotate extended reuse candidates.
      */
-    if (INFO_RUN_EMR (arg_info)) {
+    if (INFO_DO_EMR (arg_info)) {
         MODARRAY_ERC (arg_node)
-          = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
+          = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
         DBUG_PRINT ("Modarray ERCs: ");
         DBUG_EXECUTE (if (MODARRAY_ERC (arg_node) != NULL) {
             PRTdoPrintFile (stderr, MODARRAY_ERC (arg_node));

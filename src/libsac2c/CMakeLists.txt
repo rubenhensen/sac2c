@@ -328,7 +328,6 @@ ${CMAKE_CURRENT_SOURCE_DIR}/memory/interfaceanalysis.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/loopallocopt.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/loopreuseopt.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/movesharedmeminstr.c
-${CMAKE_CURRENT_SOURCE_DIR}/memory/memory_reuse_preallocation.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/polyhedral_reuse_analysis.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/rcminimize.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/rcopt.c
@@ -674,7 +673,7 @@ ADD_DEFINITIONS (-DINTERNAL_MALLOC)
 
 ADD_LIBRARY (sac2cShared SHARED ${SAC2C_SRC})
 SET_TARGET_PROPERTIES (sac2cShared
-  PROPERTIES 
+  PROPERTIES
     OUTPUT_NAME sac2c
 )
 
@@ -682,7 +681,7 @@ TARGET_LINK_LIBRARIES (sac2cShared ${LIB_LIST})
 
 
 XINSTALL (TARGETS sac2cShared LIBRARY DESTINATION "${TREEPATH_INSTALL}" COMPONENT libraries)
-#ADD_CUSTOM_COMMAND (TARGET sac2cShared POST_BUILD 
-#  COMMAND "${CMAKE_COMMAND}" -E copy 
+#ADD_CUSTOM_COMMAND (TARGET sac2cShared POST_BUILD
+#  COMMAND "${CMAKE_COMMAND}" -E copy
 #	$<TARGET_FILE:sac2cShared> $<TARGET_FILE_DIR:sac2cShared>/libsac2c-local${SHARED_LIB_EXT}
 #  COMMENT "Copying libsac2c to libsac2c-local.")

@@ -987,8 +987,8 @@ SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls, global.d
 SUBPHASE (stat, "Displaying optimisation statistics", STATdoPrintStatistics,
           global.verbose_level >= 3, opt)
 
-SUBPHASE (emr, "Inferencing with-loop extended memory reuse candidates",
-          WRCIdoWithloopExtendedMemoryReuseCandidateInference, global.optimize.doemr, opt)
+SUBPHASE (emr, "Collect extended WL reuse candidates", WRCIdoWithloopExtendedReuseCandidateInference,
+          global.optimize.doemr, opt)
 
 ENDPHASE (opt)
 
@@ -1237,9 +1237,6 @@ SUBPHASE (srce, "Removing non-local reuse-candidates", SRCEdoRemoveReuseCandidat
 
 SUBPHASE (frc, "Removing invalid reuse candidates", FRCdoFilterReuseCandidates,
           global.optimize.douip, mem)
-
-SUBPHASE (mrp, "Perform reuse preallocation for ERC", MRPdoPreallocation,
-          global.optimize.domrp &&global.optimize.doemr, mem)
 
 SUBPHASE (sr, "Static reuse", EMSRdoStaticReuse,
           global.optimize.douip &&global.optimize.dosrf, mem)
