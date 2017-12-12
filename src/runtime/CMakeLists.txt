@@ -177,7 +177,9 @@ ADD_CUSTOM_TARGET (sac_h ALL DEPENDS ${SAC_H} ${RUNTIME_HEADERS_DONE} ${M4_HEADE
 
 
 # install include files
-XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/include/runtime"
+XINSTALL (
+  DIRECTORY "${PROJECT_BINARY_DIR}/include/runtime"
+            "${PROJECT_BINARY_DIR}/include/libsac"
   DESTINATION "${INCPATH_INSTALL}"
   COMPONENT headers)
 XINSTALL (FILES "${SAC_H}"
