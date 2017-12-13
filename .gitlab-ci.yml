@@ -47,6 +47,10 @@ stages:
         - mkdir build && cd build
         - cmake ../cmake/cpack
         - make -j2 2>&1 | tee build.log
+        - if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "!!! ERROR detected in build !!!";
+            exit 1;
+          fi
         - if [ $(grep -i 'warning' build.log | wc -l) -gt 0 ]; then
             echo "+++ ${WARN_NUM} warnings detected +++";
             grep -i 'warning' build.log;
@@ -107,6 +111,10 @@ stages:
         - mkdir stdlib-build && cd stdlib-build
         - cmake -DSAC2C_EXEC=${SAC2CP_EXEC} ../stdlib
         - make -j2 2>&1 | tee build.log
+        - if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "!!! ERROR detected in build !!!";
+            exit 1;
+          fi
         - if [ $(grep -i 'warning' build.log | wc -l) -gt 0 ]; then
             echo "+++ ${WARN_NUM} warnings detected +++";
             grep -i 'warning' build.log;
@@ -145,6 +153,21 @@ stages:
         - schedules
         - tags
 
+.tag-release-template: &tag-release-template
+    stage: release
+    script:
+        # skip if we don't want to ship the release
+        - if [ ! -d ${HOME}/.ssh ]; then mkdir ${HOME}/.ssh; fi
+        - chmod 700 ${HOME}/.ssh
+        - echo "${SSH_RELEASE_KEY}" > $HOME/.ssh/release
+        - chmod 600 ${HOME}/.ssh/release
+        - if [ ! -d build ] || [ ! -d stdlib-build ]; then echo "Unable to find artifacts"; exit 1; fi
+        - scp -p -i ${HOME}/.ssh/release -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no
+          build/${RELEASE_FILE} stdlib-build/${RELEASE_FILE} ${RELEASE_URL}:${RELEASE_TOPDIR}/${INNER_PATH}
+        - echo "Tag release has been sent, have a look at the sac-home.org download page :)"
+    only:
+        - tags
+
 .weekly-release-template: &weekly-release-template
     stage: release
     script:
@@ -156,10 +179,9 @@ stages:
         - if [ ! -d build ] || [ ! -d stdlib-build ]; then echo "Unable to find artifacts"; exit 1; fi
         - scp -p -i ${HOME}/.ssh/release -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no
           build/${RELEASE_FILE} stdlib-build/${RELEASE_FILE} ${RELEASE_URL}:${RELEASE_TOPDIR}/${INNER_PATH}
-        - echo "Release has been sent, have a look at the sac-home.org download page :)"
+        - echo "Weekly release has been sent, have a look at the sac-home.org download page :)"
     only:
         - schedules
-        - tags
 
 # Here we define the actual jobs - we must specify each build OS separately as GitLab-CI
 # does not support launch a job on all OSs as such.
@@ -199,9 +221,20 @@ package-archlinux:
     dependencies:
         - stdlib-archlinux
 
+release-tag-archlinux:
+    variables:
+        INNER_PATH: "release/Linux"
+        RELEASE_FILE: "*.tar.gz"
+        GIT_STRATEGY: none
+    <<: *tag-release-template
+    tags:
+        - archlinux
+    dependencies:
+        - package-archlinux
+
 release-weekly-archlinux:
     variables:
-        INNER_PATH: "TGZ-weekly/Linux"
+        INNER_PATH: "weekly/Linux"
         RELEASE_FILE: "*.tar.gz"
         GIT_STRATEGY: none
     <<: *weekly-release-template
@@ -241,9 +274,20 @@ package-centos7:
     dependencies:
         - stdlib-centos7
 
+release-tag-centos7:
+    variables:
+        INNER_PATH: "release/RHEL7"
+        RELEASE_FILE: "*.rpm"
+        GIT_STRATEGY: none
+    <<: *tag-release-template
+    tags:
+        - centos7
+    dependencies:
+        - package-centos7
+
 release-weekly-centos7:
     variables:
-        INNER_PATH: "RPM-weekly/RHEL7"
+        INNER_PATH: "weekly/RHEL7"
         RELEASE_FILE: "*.rpm"
         GIT_STRATEGY: none
     <<: *weekly-release-template
@@ -283,9 +327,20 @@ package-centos6:
     dependencies:
         - stdlib-centos6
 
+release-tag-centos6:
+    variables:
+        INNER_PATH: "release/RHEL6"
+        RELEASE_FILE: "*.rpm"
+        GIT_STRATEGY: none
+    <<: *weekly-release-template
+    tags:
+        - centos6
+    dependencies:
+        - package-centos6
+
 release-weekly-centos6:
     variables:
-        INNER_PATH: "RPM-weekly/RHEL6"
+        INNER_PATH: "release/RHEL6"
         RELEASE_FILE: "*.rpm"
         GIT_STRATEGY: none
     <<: *weekly-release-template
@@ -325,9 +380,20 @@ package-ubuntu16:
     dependencies:
         - stdlib-ubuntu16
 
+release-tag-ubuntu16:
+    variables:
+        INNER_PATH: "release/Ubl16"
+        RELEASE_FILE: "*.deb"
+        GIT_STRATEGY: none
+    <<: *tag-release-template
+    tags:
+        - ubuntu16
+    dependencies:
+        - package-ubuntu16
+
 release-weekly-ubuntu16:
     variables:
-        INNER_PATH: "DEB-weekly/Ubl16"
+        INNER_PATH: "weekly/Ubl16"
         RELEASE_FILE: "*.deb"
         GIT_STRATEGY: none
     <<: *weekly-release-template
@@ -367,9 +433,20 @@ package-ubuntu14:
     dependencies:
         - stdlib-ubuntu14
 
+release-tag-ubuntu14:
+    variables:
+        INNER_PATH: "release/Ubl14"
+        RELEASE_FILE: "*.deb"
+        GIT_STRATEGY: none
+    <<: *tag-release-template
+    tags:
+        - ubuntu14
+    dependencies:
+        - package-ubuntu14
+
 release-weekly-ubuntu14:
     variables:
-        INNER_PATH: "DEB-weekly/Ubl14"
+        INNER_PATH: "weekly/Ubl14"
         RELEASE_FILE: "*.deb"
         GIT_STRATEGY: none
     <<: *weekly-release-template
