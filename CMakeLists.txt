@@ -227,7 +227,13 @@ XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-bu
 XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/runtime_build/src/runtime_libraries-build/lib/prelude/tree
   DESTINATION "${TREEPATH_INSTALL}"
   COMPONENT libraries)
-  
+
+# install further includes
+XINSTALL (
+  DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
+  DESTINATION "${INCPATH_INSTALL}"
+  COMPONENT headers)
+
 # we install sources of binaries
 XINSTALL (FILES
     ${PROJECT_SOURCE_DIR}/src/tools/sac2c/sac2c.c
