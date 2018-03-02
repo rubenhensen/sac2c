@@ -27,4 +27,13 @@ extern node *WRCIgenerator (node *arg_node, info *arg_info);
 
 extern node *WRCIprintRCs (node *arg_node, info *arg_info);
 
+/*
+ * EMR Loop Application Arg Filtering
+ */
+extern node *ELAAFfundef (node *arg_node, info *arg_info);
+extern node *ELAAFap (node *arg_node, info *arg_info);
+extern node *ELAAFassign (node *arg_node, info *arg_info);
+extern node *ELAAFgenarray (node *arg_node, info *arg_info);
+extern node *ELAAFmodarray (node *arg_node, info *arg_info);
+
 #endif /* _SAC_WRCI_H_ */

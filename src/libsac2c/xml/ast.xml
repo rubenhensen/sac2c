@@ -2966,6 +2966,15 @@
         <node name="Generator" />
       </travuser>
     </traversal>
+    <traversal id="ELAAF" name="EMR loop application argument filtering" default="sons" include="wrci.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+        <node name="Assign" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+      </travuser>
+    </traversal>
     <traversal id="RWO" name="Reuse With-loop arrays with offsets" default="sons" include="reusewithoffset.h">
       <travuser>
         <node name="Prf" />

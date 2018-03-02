@@ -268,6 +268,14 @@ WRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
+    arg_info = MakeInfo ();
+
+    // FIXME probably should push this out into its own file
+    TRAVpush (TR_elaaf);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -349,6 +357,56 @@ EMRid (node *id, info *arg_info)
     DBUG_RETURN (id);
 }
 
+/**
+ * @brief
+ *
+ * @param exprs N_exprs chain
+ * @param id N_id
+ *
+ * @return true or false
+ */
+static bool
+doAvisMatch (node * exprs, node * id)
+{
+    if (exprs == NULL) {
+        return FALSE;
+    } else {
+        if (ID_AVIS (id) == ID_AVIS (EXPRS_EXPR (exprs))) {
+            return TRUE;
+        } else {
+            return doAvisMatch (EXPRS_NEXT (exprs), id);
+        }
+    }
+}
+
+/**
+ * @brief
+ *
+ * @param fexprs N_exprs chain of N_id that are to be found
+ * @param exprs N_exprs chain of N_id that is to be filtered
+ *
+ * @return node N_exprs chain after filtering
+ */
+static node *
+filterDuplicateArgs (node * fexprs, node ** exprs)
+{
+    node * filtered;
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("filtering out duplicate N_avis");
+
+    filtered = TCfilterExprsArg (doAvisMatch, fexprs, exprs);
+
+    /* we delete all duplicates from col */
+    if (filtered != NULL) {
+        DBUG_PRINT ("  found and removed the following duplicates:");
+        DBUG_EXECUTE (PRTdoPrintFile (stderr, filtered));
+        filtered = FREEdoFreeTree (filtered);
+    }
+
+    DBUG_RETURN (*exprs);
+}
+
 static bool
 ShapeMatch (ntype *t1, ntype *t2)
 {
@@ -375,7 +433,7 @@ MatchingRCs (node *rcs, node *ids, node *modarray)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("  looking for matching RC -> %s", IDS_NAME (ids));
+    DBUG_PRINT ("looking for matching RC -> %s", IDS_NAME (ids));
 
     if (rcs != NULL) {
         match = MatchingRCs (EXPRS_NEXT (rcs), ids, modarray);
@@ -680,7 +738,8 @@ WRCIwith (node *arg_node, info *arg_info)
          * Here, we have to resurrect the emr-candidates as we had them before
          * processing this with loop:
          */
-        FREEdoFreeTree (INFO_EMR_RC (arg_info));
+        if (INFO_EMR_RC (arg_info) != NULL)
+            FREEdoFreeTree (INFO_EMR_RC (arg_info));
         INFO_EMR_RC (arg_info) = emr_chain;
     }
 
@@ -808,6 +867,112 @@ WRCIfold (node *arg_node, info *arg_info)
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
         FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/*
+ * EMR Loop Application Arg Filtering
+ */
+
+node *
+ELAAFgenarray (node * arg_node, info * arg_info)
+{
+    DBUG_ENTER ();
+
+    if (GENARRAY_ERC (arg_node) != NULL) {
+        GENARRAY_ERC (arg_node) = filterDuplicateArgs (INFO_EMR_RC (arg_info), &GENARRAY_ERC (arg_node));
+        DBUG_PRINT ("filtering genarray ERC:");
+        DBUG_EXECUTE (if (GENARRAY_ERC (arg_node) != NULL) {
+            PRTdoPrintFile (stderr, GENARRAY_ERC (arg_node));
+        });
+    }
+
+    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ELAAFmodarray (node * arg_node, info * arg_info)
+{
+    DBUG_ENTER ();
+
+    if (MODARRAY_ERC (arg_node) != NULL) {
+        MODARRAY_ERC (arg_node) = filterDuplicateArgs (INFO_EMR_RC (arg_info), &MODARRAY_ERC (arg_node));
+        DBUG_PRINT ("filtering modarray ERC:");
+        DBUG_EXECUTE (if (MODARRAY_ERC (arg_node) != NULL) {
+            PRTdoPrintFile (stderr, MODARRAY_ERC (arg_node));
+        });
+
+        INFO_EMR_RC (arg_info) = TCappendExprs (INFO_EMR_RC (arg_info), TBmakeExprs(DUPdoDupNode (MODARRAY_ARRAY (arg_node)), NULL));
+    }
+
+    MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ELAAFap (node * arg_node, info * arg_info)
+{
+    DBUG_ENTER ();
+
+    /* check to see if we have found the recursive loopfun call */
+    if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
+            && AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
+        DBUG_PRINT ("at loop rec N_ap, copying args:");
+        DBUG_EXECUTE (PRTdoPrintFile (stderr, AP_ARGS (arg_node)));
+        INFO_EMR_RC (arg_info) = TCappendExprs (INFO_EMR_RC (arg_info), DUPdoDupTree (AP_ARGS (arg_node)));
+
+        DBUG_PRINT ("filtering fun ERC:");
+        FUNDEF_ERC (INFO_FUNDEF (arg_info)) = filterDuplicateArgs (AP_ARGS (arg_node), &FUNDEF_ERC (INFO_FUNDEF (arg_info)));
+        DBUG_EXECUTE (if (FUNDEF_ERC (INFO_FUNDEF (arg_info)) != NULL) {
+            PRTdoPrintFile (stderr, FUNDEF_ERC (INFO_FUNDEF (arg_info)));
+        });
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ELAAFassign (node * arg_node, info * arg_info)
+{
+    DBUG_ENTER ();
+
+    /*
+     * Bottom-up
+     */
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ELAAFfundef (node * arg_node, info * arg_info)
+{
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("inspecting N_fundef %s ...", FUNDEF_NAME (arg_node));
+
+    /*
+     * Top-down N_fundef chain
+     */
+
+    /* store fundef */
+    INFO_FUNDEF (arg_info) = arg_node;
+
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
+    if (INFO_EMR_RC (arg_info) != NULL)
+        INFO_EMR_RC (arg_info) = FREEdoFreeTree (INFO_EMR_RC (arg_info));
+
+    /* reset */
+    INFO_FUNDEF (arg_info) = NULL;
+
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
