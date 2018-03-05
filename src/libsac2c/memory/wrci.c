@@ -110,6 +110,9 @@ struct INFO {
     /* extended reuse */
     bool do_emr;
     node *emr_rc;
+    /* loop memory propogation */
+    bool do_update;
+    node *tmp_rcs;
 };
 
 /*
@@ -120,6 +123,8 @@ struct INFO {
 #define INFO_RC(n) ((n)->rc)
 #define INFO_DO_EMR(n) ((n)->do_emr)
 #define INFO_EMR_RC(n) ((n)->emr_rc)
+#define INFO_DO_UPDATE(n) ((n)->do_update)
+#define INFO_TMP_RCS(n) ((n)->tmp_rcs)
 
 /*
  * INFO functions
@@ -138,6 +143,8 @@ MakeInfo (void)
     INFO_RC (result) = NULL;
     INFO_DO_EMR (result) = FALSE;
     INFO_EMR_RC (result) = NULL;
+    INFO_DO_UPDATE (result) = FALSE;
+    INFO_TMP_RCS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -276,6 +283,21 @@ WRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
+    arg_info = MakeInfo ();
+
+    // FIXME probably should push this out into its own file
+    TRAVpush (TR_elmp);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
+
+    INFO_DO_UPDATE (arg_info) = TRUE;
+
+    TRAVpush (TR_elmp);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
 
     DBUG_RETURN (syntax_tree);
 }
@@ -871,8 +893,9 @@ WRCIfold (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
+/* XXX
  * EMR Loop Application Arg Filtering
+ * XXX
  */
 
 node *
@@ -976,6 +999,287 @@ ELAAFfundef (node * arg_node, info * arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/* XXX
+ * EMR Loop Memory Propogation
+ * XXX
+ */
+
+/* runs in two modes - INFO_DO_UPDATE is:
+ *   FALSE : fundef top-down traversal looking for loop funs, and
+ *           updating fundef args and rec loop ap. We unset fundef_erc
+ *           as these are no longer needed.
+ *   TRUE  : fundef top-down looking at fun_body at initil loop app -
+ *           if the fundef has an updated signiture, update the app
+ *           args
+ */
+
+/**
+ * @brief
+ *
+ * @param avis
+ * @param exprs
+ *
+ * @return
+ */
+static node *
+isSameShapeAvis (node * avis, node * exprs)
+{
+    node * ret;
+    DBUG_ENTER ();
+
+    if (exprs == NULL) {
+        ret = NULL;
+    } else {
+        if (ShapeMatch (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs))))
+            ret = EXPRS_EXPR (exprs);
+        else
+            ret = isSameShapeAvis (avis, EXPRS_NEXT (exprs));
+    }
+
+    DBUG_RETURN (ret);
+}
+
+/**
+ * @brief
+ *
+ * @param id
+ * @param exprs
+ *
+ * @return
+ */
+static node *
+isSameShape (node * id, node * exprs)
+{
+    node * ret;
+    DBUG_ENTER ();
+
+    ret = isSameShapeAvis (ID_AVIS (id), exprs);
+
+    DBUG_RETURN (ret);
+}
+
+/**
+ * @brief
+ *
+ * @param exprs  exprs chain of N_id nodes
+ * @param pot
+ *
+ * @return
+ */
+static node *
+findMatchingArgs (node * exprs, node * pot)
+{
+    int size, i;
+    node * res = NULL,
+         * tmp,
+         * find;
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("finding suitable args inplace of tmp vars:");
+    DBUG_EXECUTE (if (pot != NULL) {
+            PRTdoPrintFile (stderr, pot); });
+
+    if (pot != NULL) {
+        /* for each var in tmp RC, find a suitable var in ERC and replace it */
+        size = TCcountExprs (exprs);
+        for (i = 0; i < size; i++)
+        {
+            tmp = TCgetNthExprsExpr (i, exprs);
+            find = isSameShape (tmp, pot);
+            if (find == NULL)
+            {
+                DBUG_UNREACHABLE ("  unable to find a valid extended reuse candidate to replace tmp arg in recurisve loopfun!");
+            } else {
+                DBUG_PRINT ("  found match for tmp arg %s => %s", ID_NAME (tmp), ID_NAME (find));
+
+                /* adding res to args of ap_fundef */
+                res = TBmakeExprs (find, res);
+            }
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
+node *
+ELMPlet (node * arg_node, info * arg_info)
+{
+    DBUG_ENTER ();
+
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+
+    DBUG_PRINT ("LHS vars are:");
+    DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_LHS (arg_info)));
+
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ELMPwith (node * arg_node, info * arg_info)
+{
+    DBUG_ENTER ();
+
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ELMPgenarray (node * arg_node, info * arg_info)
+{
+    node * new_avis;
+    DBUG_ENTER ();
+
+    if (!INFO_DO_UPDATE (arg_info)
+            && GENARRAY_RC (arg_node) == NULL
+            && GENARRAY_ERC (arg_node) == NULL
+            && TYisAKS (IDS_NTYPE (INFO_LHS (arg_info)))) {
+        DBUG_PRINT (" genarray in loopfun has no RCs or ERCs, generating tmp one!");
+
+        // the new avis must have the same type/shape as genarray shape
+        new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_tmp"),
+                TYcopyType (IDS_NTYPE (INFO_LHS (arg_info)))
+                );
+
+        // extend the fundef arguments to include the new var
+        FUNDEF_ARGS (INFO_FUNDEF (arg_info)) = TCappendArgs (FUNDEF_ARGS (INFO_FUNDEF (arg_info)), TBmakeArg (new_avis, NULL));
+
+        // add the new var to RC
+        GENARRAY_RC (arg_node) = TBmakeExprs( TBmakeId (new_avis), NULL);
+        INFO_TMP_RCS (arg_info) = TCappendExprs (INFO_TMP_RCS (arg_info), DUPdoDupNode (GENARRAY_RC (arg_node)));
+    }
+
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ELMPmodarray (node * arg_node, info * arg_info)
+{
+    node * new_avis;
+    DBUG_ENTER ();
+
+    if (!INFO_DO_UPDATE (arg_info)
+            && MODARRAY_RC (arg_node) == NULL
+            && MODARRAY_ERC (arg_node) == NULL
+            && TYisAKS (IDS_NTYPE (INFO_LHS (arg_info)))) {
+        DBUG_PRINT (" modarray in loopfun has no RCs or ERCs, generating tmp one!");
+
+        // the new avis must have the same type/shape as genarray shape
+        new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_tmp"),
+                TYcopyType (IDS_NTYPE (INFO_LHS (arg_info)))
+                );
+
+        // extend the fundef arguments to include the new var
+        FUNDEF_ARGS (INFO_FUNDEF (arg_info)) = TCappendArgs (FUNDEF_ARGS (INFO_FUNDEF (arg_info)), TBmakeArg (new_avis, NULL));
+
+        // add the new var to RC
+        MODARRAY_RC (arg_node) = TBmakeExprs( TBmakeId (new_avis), NULL);
+        INFO_TMP_RCS (arg_info) = TCappendExprs (INFO_TMP_RCS (arg_info), DUPdoDupNode (MODARRAY_RC (arg_node)));
+    }
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ELMPap (node * arg_node, info * arg_info)
+{
+    node * rec_filt, * new_args;
+    DBUG_ENTER ();
+
+    if (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))) {
+        DBUG_PRINT ("checking application of %s ...", FUNDEF_NAME (AP_FUNDEF (arg_node)));
+
+        /* check to see if we have found the recursive loopfun call */
+        if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)
+                && !INFO_DO_UPDATE (arg_info)) {
+            DBUG_PRINT ("  this is the recursive loop application");
+
+            if (INFO_TMP_RCS (arg_info) != NULL) {
+                DBUG_PRINT ("  have found tmp vars at application's fundef");
+
+                /* we filter out current application args */
+                rec_filt = filterDuplicateArgs (AP_ARGS (arg_node), &FUNDEF_ERC (INFO_FUNDEF (arg_info)));
+
+                /* for each var in tmp RC, find a suitable var in ERC and replace it */
+                new_args = findMatchingArgs (INFO_TMP_RCS (arg_info), rec_filt);
+                AP_ARGS (arg_node) = TCappendExprs (AP_ARGS (arg_node), DUPdoDupTree (new_args));
+
+                DBUG_PRINT ("  args are now:");
+                DBUG_EXECUTE (if (AP_ARGS (arg_node) != NULL) {
+                        PRTdoPrintFile (stderr, AP_ARGS (arg_node));});
+
+                /* clear tmp rcs */
+                INFO_TMP_RCS (arg_info) = FREEdoFreeTree (INFO_TMP_RCS (arg_info));
+
+                /* clear the fundef ERC */
+                FUNDEF_ERC (INFO_FUNDEF (arg_info)) = FREEdoFreeTree (FUNDEF_ERC (INFO_FUNDEF (arg_info)));
+            }
+        } else if (INFO_DO_UPDATE (arg_info)) { /* we are at the initial application */
+            int ap_arg_len = TCcountExprs (AP_ARGS (arg_node));
+            int fun_arg_len = TCcountArgs (FUNDEF_ARGS (AP_FUNDEF (arg_node)));
+
+            if (ap_arg_len != fun_arg_len) {
+                DBUG_PRINT ("  number args for ap do not match fundef: %d != %d", ap_arg_len, fun_arg_len);
+
+                /* we *always* append new args on fundef */
+                for (; ap_arg_len < fun_arg_len; ap_arg_len++)
+                {
+                    node * tmp = TCgetNthArg (ap_arg_len, FUNDEF_ARGS (AP_FUNDEF (arg_node)));
+                    node * res = isSameShapeAvis (ARG_AVIS (tmp), AP_ARGS (arg_node));
+                    if (res != NULL) {
+                        DBUG_PRINT ("  appending %s", ID_NAME (res));
+                        AP_ARGS (arg_node) = TCappendExprs (AP_ARGS (arg_node), TBmakeExprs (TBmakeId (ID_AVIS (res)), NULL));
+                    } else {
+                        DBUG_UNREACHABLE ("  unable to find arg!");
+                    }
+                }
+            }
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ELMPfundef (node * arg_node, info * arg_info)
+{
+    DBUG_ENTER ();
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_PRINT ("at N_fundef %s ...", FUNDEF_NAME (arg_node));
+        INFO_FUNDEF (arg_info) = arg_node;
+
+        if (!INFO_DO_UPDATE (arg_info) && FUNDEF_ISLOOPFUN (arg_node)) {
+            DBUG_PRINT ("  found loopfun, inspecting body...");
+
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        } else if (INFO_DO_UPDATE (arg_info) && !FUNDEF_ISLOOPFUN (arg_node)) {
+            DBUG_PRINT ("  inspecting body...");
+
+            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+        }
+
+        INFO_FUNDEF (arg_info) = NULL;
+    }
+
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 
 /* @} */
 

@@ -91,8 +91,6 @@ struct INFO {
     prf allocator;
     /* extended memory reuse */
     node *used_rcs;
-    node *tmp_rcs;
-    node *loop_fundef;
 };
 
 /**
@@ -103,8 +101,6 @@ struct INFO {
 #define INFO_RHSCAND(n) ((n)->rhscand)
 #define INFO_ALLOCATOR(n) ((n)->allocator)
 #define INFO_USED_RCS(n) ((n)->used_rcs)
-#define INFO_TMP_RCS(n) ((n)->tmp_rcs)
-#define INFO_LOOP_FUNDEF(n) ((n)->loop_fundef)
 
 /**
  * INFO functions
@@ -123,8 +119,6 @@ MakeInfo (void)
     INFO_TRAVMODE (result) = ri_default;
     INFO_ALLOCATOR (result) = F_unknown;
     INFO_USED_RCS (result) = NULL;
-    INFO_TMP_RCS (result) = NULL;
-    INFO_LOOP_FUNDEF (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -164,79 +158,6 @@ doIdsMatch (node * exprs, node * id)
 /**
  * @brief
  *
- * @param t1
- * @param t2
- *
- * @return
- */
-static bool
-ShapeMatch (ntype *t1, ntype *t2)
-{
-    ntype *aks1, *aks2;
-    bool res;
-
-    DBUG_ENTER ();
-
-    aks1 = TYeliminateAKV (t1);
-    aks2 = TYeliminateAKV (t2);
-
-    res = TYisAKS (aks1) && TYeqTypes (aks1, aks2);
-
-    aks1 = TYfreeType (aks1);
-    aks2 = TYfreeType (aks2);
-
-    DBUG_RETURN (res);
-}
-
-/**
- * @brief
- *
- * @param avis
- * @param exprs
- *
- * @return
- */
-static node *
-isSameShapeAvis (node * avis, node * exprs)
-{
-    node * ret;
-    DBUG_ENTER ();
-
-    if (exprs == NULL) {
-        ret = NULL;
-    } else {
-        if (ShapeMatch (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs))))
-            ret = EXPRS_EXPR (exprs);
-        else
-            ret = isSameShapeAvis (avis, EXPRS_NEXT (exprs));
-    }
-
-    DBUG_RETURN (ret);
-}
-
-/**
- * @brief
- *
- * @param id
- * @param exprs
- *
- * @return
- */
-static node *
-isSameShape (node * id, node * exprs)
-{
-    node * ret;
-    DBUG_ENTER ();
-
-    ret = isSameShapeAvis (ID_AVIS (id), exprs);
-
-    DBUG_RETURN (ret);
-}
-
-
-/**
- * @brief
- *
  * @param a
  * @param col
  *
@@ -261,131 +182,6 @@ filterDuplicateIds (node * a, node ** col)
 
     DBUG_RETURN (*col);
 }
-
-/**
- * @brief
- *
- * @param id
- *
- * @return true or false
- */
-static bool
-avisExist (node * id)
-{
-    bool ret = FALSE;
-    if (ID_AVIS (id) == NULL || NODE_TYPE (ID_AVIS (id)) != N_avis)
-        ret = TRUE;
-    return ret;
-}
-
-/**
- * @brief
- *
- * @param exprs
- *
- * @return node chain after filtering
- */
-static node *
-filterInvalidAvis (node ** exprs)
-{
-    node * filtered;
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("filtering out invalid N_avis");
-
-    filtered = TCfilterExprs (avisExist, exprs);
-
-    /* we delete all invalid N_avis from exprs */
-    if (filtered != NULL) {
-        int size = TCcountExprs (filtered);
-        DBUG_PRINT ("  found %d invalid N_avis, removing", size);
-        filtered = FREEdoFreeTree (filtered);
-    }
-
-    DBUG_RETURN (*exprs);
-}
-
-/**
- * @brief
- *
- * @param exprs  exprs chain of N_id nodes
- * @param pot
- *
- * @return
- */
-static node *
-EMRIfindAndAppendArgs (node * exprs, node * pot)
-{
-    int size, i;
-    node * res = NULL,
-         * tmp,
-         * find;
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("finding suitable args inplace of tmp vars");
-
-    if (pot != NULL) {
-        /* for each var in tmp RC, find a suitable var in ERC and replace it */
-        size = TCcountExprs (exprs);
-        for (i = 0; i < size; i++)
-        {
-            tmp = TCgetNthExprsExpr (i, exprs);
-            find = isSameShape (tmp, pot);
-            if (find == NULL)
-            {
-                DBUG_UNREACHABLE ("  unable to find a valid extended reuse candidate to replace tmp arg in recurisve loopfun!");
-            } else {
-                DBUG_PRINT ("  found match for tmp arg %s => %s", ID_NAME (tmp), ID_NAME (find));
-
-                /* adding res to args of ap_fundef */
-                res = TBmakeExprs (find, res);
-            }
-        }
-    }
-
-    DBUG_RETURN (res);
-}
-
-/**
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
- */
-static node *
-EMREap (node * arg_node, info * arg_info)
-{
-    DBUG_ENTER ();
-
-    if (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))) {
-        DBUG_PRINT ("inspecting application of %s ...", FUNDEF_NAME (AP_FUNDEF (arg_node)));
-
-        int ap_arg_len = TCcountExprs (AP_ARGS (arg_node));
-        int fun_arg_len = TCcountArgs (FUNDEF_ARGS (AP_FUNDEF (arg_node)));
-
-        if (ap_arg_len != fun_arg_len) {
-            DBUG_PRINT ("  number args for ap do not match fundef: %d != %d", ap_arg_len, fun_arg_len);
-
-            /* we *always* append new args on fundef */
-            for (; ap_arg_len < fun_arg_len; ap_arg_len++)
-            {
-                node * tmp = TCgetNthArg (ap_arg_len, FUNDEF_ARGS (AP_FUNDEF (arg_node)));
-                node * res = isSameShapeAvis (ARG_AVIS (tmp), AP_ARGS (arg_node));
-                if (res != NULL) {
-                    DBUG_PRINT ("  appending %s", ID_NAME (res));
-                    AP_ARGS (arg_node) = TCappendExprs (AP_ARGS (arg_node), TBmakeExprs (TBmakeId (ID_AVIS (res)), NULL));
-                } else {
-                    DBUG_UNREACHABLE ("  unable to find arg!");
-                }
-            }
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
 
 /**
  *  @brief expects and exprs-chain (cand) and an ids-node (lhs) and deletes
@@ -450,21 +246,6 @@ EMRIdoReuseInference (node *arg_node)
     TRAVpush (TR_emri);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
-
-    /* In order to fully do EMR, we need to update the args
-     * of the initial loop application to match that of the
-     * fundef --- we do not use any ECRs for thus but replicate
-     * the args as appropriate.
-     */
-    if (global.optimize.doemr) {
-        anontrav_t emretrav[2] = {{N_ap, &EMREap}, {(nodetype)0, NULL}};
-
-        DBUG_PRINT ("starting anon trav to update application args");
-
-        TRAVpushAnonymous (emretrav, &TRAVsons);
-        arg_node = TRAVdo (arg_node, arg_info);
-        TRAVpop ();
-    }
 
     arg_info = FreeInfo (arg_info);
 
@@ -736,8 +517,7 @@ EMRIprf (node *arg_node, info *arg_info)
 node *
 EMRIgenarray (node *arg_node, info *arg_info)
 {
-    bool using_tmp_rc = FALSE;
-    node * new_avis;
+    bool using_erc = FALSE;
     DBUG_ENTER ();
 
     if (INFO_RHSCAND (arg_info) != NULL) {
@@ -771,6 +551,7 @@ EMRIgenarray (node *arg_node, info *arg_info)
                 if (EXPRS_NEXT (INFO_RHSCAND (arg_info)) != NULL) {
                     EXPRS_NEXT (INFO_RHSCAND (arg_info)) = FREEdoFreeTree (EXPRS_NEXT (INFO_RHSCAND (arg_info)));
                 }
+                using_erc = TRUE;
                 INFO_USED_RCS (arg_info) = TCappendExprs (INFO_USED_RCS (arg_info), DUPdoDupNode (INFO_RHSCAND (arg_info)));
                 INFO_TRAVMODE (arg_info) = ri_annotate;
                 INFO_ALLOCATOR (arg_info) = F_alloc_or_reuse;
@@ -782,41 +563,10 @@ EMRIgenarray (node *arg_node, info *arg_info)
                   = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node))), arg_info);
                 INFO_TRAVMODE (arg_info) = ri_default;
                 INFO_ALLOCATOR (arg_info) = F_unknown;
-            } else { // no usable ERC found, creating tmp_var from LOOPFUN ERCs
-                if (INFO_LOOP_FUNDEF (arg_info) != NULL
-                  && TYisAKS (ID_NTYPE (GENARRAY_MEM (arg_node)))) {
-                    DBUG_PRINT ("no extended candidate was found, generating tmp one!");
-
-                    // we need this to stop from going using PRCs
-                    using_tmp_rc = TRUE;
-
-                    // the new avis must have the same type/shape as genarray shape
-                    new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_tmp"),
-                            TYcopyType (ID_NTYPE (GENARRAY_MEM (arg_node)))
-                            );
-
-                    // extend the fundef arguments to include the new var
-                    FUNDEF_ARGS (INFO_LOOP_FUNDEF (arg_info)) = TCappendArgs (FUNDEF_ARGS (INFO_LOOP_FUNDEF (arg_info)), TBmakeArg (new_avis, NULL));
-
-                    // add the new var to RC
-                    INFO_RHSCAND (arg_info) = TBmakeExprs( TBmakeId (new_avis), NULL);
-                    INFO_TMP_RCS (arg_info) = TCappendExprs (INFO_TMP_RCS (arg_info), DUPdoDupNode (INFO_RHSCAND (arg_info)));
-
-                    DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
-                    INFO_TRAVMODE (arg_info) = ri_annotate;
-                    INFO_ALLOCATOR (arg_info) = F_alloc_or_reuse;
-                    DBUG_PRINT ("created new candidate, annotating memory allocation of \"%s\"...",
-                                IDS_NAME (LET_IDS (
-                                  ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))))));
-                    AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))
-                      = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node))), arg_info);
-                    INFO_TRAVMODE (arg_info) = ri_default;
-                    INFO_ALLOCATOR (arg_info) = F_unknown;
-                }
             }
         }
 
-        if (INFO_RHSCAND (arg_info) == NULL && !using_tmp_rc) { // try to use partials
+        if (INFO_RHSCAND (arg_info) == NULL && !using_erc) { 
             DBUG_PRINT ("no candidates found; resetting RHSCAND to partial candidates");
             INFO_RHSCAND (arg_info) = GENARRAY_PRC (arg_node);
             GENARRAY_PRC (arg_node) = NULL;
@@ -856,7 +606,6 @@ EMRIgenarray (node *arg_node, info *arg_info)
 node *
 EMRImodarray (node *arg_node, info *arg_info)
 {
-    node * new_avis;
     DBUG_ENTER ();
 
     if (INFO_RHSCAND (arg_info) != NULL) {
@@ -901,34 +650,6 @@ EMRImodarray (node *arg_node, info *arg_info)
                   = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node))), arg_info);
                 INFO_TRAVMODE (arg_info) = ri_default;
                 INFO_ALLOCATOR (arg_info) = F_unknown;
-            } else { // no usable ERC found, creating tmp_var from LOOPFUN ERCs
-                if (INFO_LOOP_FUNDEF (arg_info) != NULL
-                        && TYisAKS (ID_NTYPE (MODARRAY_MEM (arg_node)))) {
-                    DBUG_PRINT ("no extended candidate was found, generating tmp one!");
-
-                    // the new avis must have the same type/shape as modarray array
-                    new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_tmp"),
-                            TYcopyType (ID_NTYPE (MODARRAY_MEM (arg_node)))
-                            );
-
-                    // extend the fundef arguments to include the new var
-                    FUNDEF_ARGS (INFO_LOOP_FUNDEF (arg_info)) = TCappendArgs (FUNDEF_ARGS (INFO_LOOP_FUNDEF (arg_info)), TBmakeArg (new_avis, NULL));
-
-                    // add the new var to RC
-                    INFO_RHSCAND (arg_info) = TBmakeExprs( TBmakeId (new_avis), NULL);
-                    INFO_TMP_RCS (arg_info) = TCappendExprs (INFO_TMP_RCS (arg_info), DUPdoDupNode (INFO_RHSCAND (arg_info)));
-
-                    DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
-                    INFO_TRAVMODE (arg_info) = ri_annotate;
-                    INFO_ALLOCATOR (arg_info) = F_alloc_or_reuse;
-                    DBUG_PRINT ("created new candidate, annotating memory allocation of \"%s\"...",
-                                IDS_NAME (LET_IDS (
-                                  ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node)))))));
-                    AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node)))
-                      = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node))), arg_info);
-                    INFO_TRAVMODE (arg_info) = ri_default;
-                    INFO_ALLOCATOR (arg_info) = F_unknown;
-                }
             }
         }
     }
@@ -950,82 +671,18 @@ EMRImodarray (node *arg_node, info *arg_info)
  * @return
  */
 node *
-EMRIap (node * arg_node, info * arg_info)
-{
-    node * rec_filt, * new_args;
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("checking application of %s ...", FUNDEF_NAME (AP_FUNDEF (arg_node)));
-
-    if (global.optimize.doemr) {
-        if (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))) {
-            // we inside the loop
-            if (INFO_LOOP_FUNDEF (arg_info) != NULL
-                    && AP_FUNDEF (arg_node) == INFO_LOOP_FUNDEF (arg_info)) {
-                DBUG_PRINT ("  this is a recursive loop application");
-
-                if (INFO_TMP_RCS (arg_info) != NULL) {
-                    DBUG_PRINT ("have found tmp vars at application's fundef");
-
-                    /* remove all N_id that point to N_avis that does not exist anymore */
-                    rec_filt = filterInvalidAvis (&FUNDEF_ERC (AP_FUNDEF (arg_node)));
-
-                    /* we filter out current application args */
-                    rec_filt = filterDuplicateIds (AP_ARGS (arg_node), &rec_filt);
-
-                    /* for each var in tmp RC, find a suitable var in ERC and replace it */
-                    new_args = EMRIfindAndAppendArgs (INFO_TMP_RCS (arg_info), rec_filt);
-                    AP_ARGS (arg_node) = TCappendExprs (AP_ARGS (arg_node), DUPdoDupTree (new_args));
-
-                    DBUG_PRINT ("  args are now:");
-                    DBUG_EXECUTE (if (AP_ARGS (arg_node) != NULL) {
-                            PRTdoPrintFile (stderr, AP_ARGS (arg_node));});
-
-                    /* clear tmp rcs */
-                    INFO_TMP_RCS (arg_info) = FREEdoFreeTree (INFO_TMP_RCS (arg_info));
-
-                    /* clear the fundef ERC */
-                    FUNDEF_ERC (AP_FUNDEF (arg_node)) = FREEdoFreeTree (FUNDEF_ERC (AP_FUNDEF (arg_node)));
-                }
-            }
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/**
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
- */
-node *
 EMRIfundef (node * arg_node, info * arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("checking function %s ...", FUNDEF_NAME (arg_node));
+    
     /* Top-down Traversal */
-    if (global.optimize.doemr) {
-        DBUG_PRINT ("checking function %s ...", FUNDEF_NAME (arg_node));
-        if (FUNDEF_ISLOOPFUN (arg_node)) {
-            INFO_LOOP_FUNDEF (arg_info) = arg_node;
-        }
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-
-        /* we only need to carry the loop fundef within its body */
-        INFO_LOOP_FUNDEF (arg_info) = NULL;
-
-        /* used RCs are specific to each fundef body */
-        if (INFO_USED_RCS (arg_info) != NULL) {
-            INFO_USED_RCS (arg_info) = FREEdoFreeTree (INFO_USED_RCS (arg_info));
-        }
-    } else {
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-    }
+    /* used RCs are specific to each fundef body */
+    if (INFO_USED_RCS (arg_info) != NULL)
+        INFO_USED_RCS (arg_info) = FREEdoFreeTree (INFO_USED_RCS (arg_info));
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 

@@ -2947,7 +2947,6 @@
         <node name="Prf" />
         <node name="Genarray" />
         <node name="Modarray" />
-        <node name="Ap" />
         <node name="Fundef" />
       </travuser>
     </traversal>
@@ -2971,6 +2970,16 @@
         <node name="Fundef" />
         <node name="Ap" />
         <node name="Assign" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+      </travuser>
+    </traversal>
+    <traversal id="ELMP" name="EMR loop memory propogation" default="sons" include="wrci.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+        <node name="Let" />
+        <node name="With" />
         <node name="Genarray" />
         <node name="Modarray" />
       </travuser>
