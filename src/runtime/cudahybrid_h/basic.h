@@ -13,6 +13,9 @@
 #ifndef _SAC_CUDAHYBRID_BASIC_H_
 #define _SAC_CUDAHYBRID_BASIC_H_
 
+#include "runtime/cudahybrid_h/dist_var_memsave.h"
+#include "runtime/cudahybrid_h/dist_var_nomemsave.h"
+
 #ifdef __CUDACC__
 
 #define getDeviceNumber(SAC_MT_mythread)                                                 \

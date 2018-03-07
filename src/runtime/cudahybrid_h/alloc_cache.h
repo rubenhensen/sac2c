@@ -1,7 +1,11 @@
 #ifndef _SAC_ALLOCCACHE_H_
 #define _SAC_ALLOCCACHE_H_
 
+#include "libsac/essentials/message.h"
+
 #ifdef __CUDACC__
+
+#include <cuda_runtime.h>
 
 void cache_init ();
 

@@ -1,6 +1,13 @@
-#include "hwloc_data.h"
+#include "config.h"
 
 #if ENABLE_HWLOC
+
+#include <hwloc.h>
+
+#include "libsac/essentials/trace.h"
+#include "libsac/mt/mt.h"
+#include "libsac/essentials/message.h"
+#include "hwloc_data.h"
 
 hwloc_cpuset_t *SAC_HWLOC_cpu_sets;
 hwloc_topology_t SAC_HWLOC_topology;

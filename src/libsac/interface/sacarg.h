@@ -10,10 +10,10 @@
 
 #ifdef INCLUDED_FROM_LIBSAC
 
+#include "config.h"
 #include "sacinterface.h"
 #include "runtime/essentials_h/std.h"
 #include <stdarg.h>
-#include "config.h"
 
 /*
  * names for types

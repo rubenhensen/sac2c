@@ -38,7 +38,7 @@ extern CNT_T SAC_CS_rhit[MAX_CACHELEVEL + 1], SAC_CS_rinvalid[MAX_CACHELEVEL + 1
 
 extern int SAC_CS_level;
 
-extern tFunRWAccess SAC_CS_ReadAccess, SAC_CS_WriteAccess,
+extern tFunRWAccess
   SAC_CS_read_access_table[MAX_CACHELEVEL + 2],
   SAC_CS_write_access_table[MAX_CACHELEVEL + 2];
 /* SAC_CS_xxx_access_table[0] is unused,
