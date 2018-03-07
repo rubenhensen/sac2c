@@ -275,29 +275,34 @@ WRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
-    arg_info = MakeInfo ();
 
-    // FIXME probably should push this out into its own file
-    TRAVpush (TR_elaaf);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-    TRAVpop ();
+    if (global.optimize.doelaaf) {
+        arg_info = MakeInfo ();
 
-    arg_info = FreeInfo (arg_info);
-    arg_info = MakeInfo ();
+        // FIXME probably should push this out into its own file
+        TRAVpush (TR_elaaf);
+        syntax_tree = TRAVdo (syntax_tree, arg_info);
+        TRAVpop ();
 
-    // FIXME probably should push this out into its own file
-    TRAVpush (TR_elmp);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-    TRAVpop ();
+        arg_info = FreeInfo (arg_info);
+    }
 
-    INFO_DO_UPDATE (arg_info) = TRUE;
+    if (global.optimize.doelmp) {
+        arg_info = MakeInfo ();
 
-    TRAVpush (TR_elmp);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-    TRAVpop ();
+        // FIXME probably should push this out into its own file
+        TRAVpush (TR_elmp);
+        syntax_tree = TRAVdo (syntax_tree, arg_info);
+        TRAVpop ();
 
-    arg_info = FreeInfo (arg_info);
+        INFO_DO_UPDATE (arg_info) = TRUE;
 
+        TRAVpush (TR_elmp);
+        syntax_tree = TRAVdo (syntax_tree, arg_info);
+        TRAVpop ();
+
+        arg_info = FreeInfo (arg_info);
+    }
 
     DBUG_RETURN (syntax_tree);
 }

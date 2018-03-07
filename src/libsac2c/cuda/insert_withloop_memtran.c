@@ -340,6 +340,7 @@ ATravGenarray (node *arg_node, info *arg_info)
     }
 
     GENARRAY_RC (arg_node) = TRAVopt (GENARRAY_RC (arg_node), arg_info);
+    GENARRAY_ERC (arg_node) = TRAVopt (GENARRAY_ERC (arg_node), arg_info);
     GENARRAY_PRC (arg_node) = TRAVopt (GENARRAY_PRC (arg_node), arg_info);
     GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
@@ -819,6 +820,7 @@ IWLMEMgenarray (node *arg_node, info *arg_info)
         }
 
         GENARRAY_RC (arg_node) = TRAVopt (GENARRAY_RC (arg_node), arg_info);
+        GENARRAY_ERC (arg_node) = TRAVopt (GENARRAY_ERC (arg_node), arg_info);
 
         GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
     }
@@ -845,6 +847,7 @@ IWLMEMmodarray (node *arg_node, info *arg_info)
         MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
         INFO_IS_MODARR (arg_info) = FALSE;
         MODARRAY_RC (arg_node) = TRAVopt (MODARRAY_RC (arg_node), arg_info);
+        MODARRAY_ERC (arg_node) = TRAVopt (MODARRAY_ERC (arg_node), arg_info);
         MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
     }
 

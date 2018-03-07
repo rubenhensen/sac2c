@@ -676,7 +676,7 @@ EMRIfundef (node * arg_node, info * arg_info)
     DBUG_ENTER ();
 
     DBUG_PRINT ("checking function %s ...", FUNDEF_NAME (arg_node));
-    
+
     /* Top-down Traversal */
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
