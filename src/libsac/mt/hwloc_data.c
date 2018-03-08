@@ -288,24 +288,28 @@ static hwloc_cpuset_t *
 pusString2cpuSets (char *pus_string, int num_pus)
 {
     int i, idx;
-    hwloc_cpuset_t *res;
+    hwloc_cpuset_t *res = NULL;
     hwloc_obj_t pu;
 
-    res = (hwloc_cpuset_t *)SAC_MALLOC (SAC_MT_global_threads * sizeof (hwloc_cpuset_t));
+    if (pus_string != NULL) {
+        res = (hwloc_cpuset_t *)SAC_MALLOC (SAC_MT_global_threads * sizeof (hwloc_cpuset_t));
 
-    idx = 0;
-    for (i = 0; i < num_pus; i++) {
-        if (pus_string[i] == SAC_PULIST_FULL_CHAR) {
-            pu = hwloc_get_obj_by_type (SAC_HWLOC_topology, HWLOC_OBJ_PU, i);
-            if (pu == NULL) {
-                SAC_RuntimeError ("hwloc not behaving as expected; turn -mt_bind off.");
+        idx = 0;
+        for (i = 0; i < num_pus; i++) {
+            if (pus_string[i] == SAC_PULIST_FULL_CHAR) {
+                pu = hwloc_get_obj_by_type (SAC_HWLOC_topology, HWLOC_OBJ_PU, i);
+                if (pu == NULL) {
+                    SAC_RuntimeError ("hwloc not behaving as expected; turn -mt_bind off.");
+                }
+                res[idx] = hwloc_bitmap_dup (pu->cpuset);
+                idx++;
             }
-            res[idx] = hwloc_bitmap_dup (pu->cpuset);
-            idx++;
         }
-    }
 
-    SAC_FREE (pus_string);
+        SAC_FREE (pus_string);
+    } else {
+        SAC_RuntimeError ("No PUS string given, unable to create hwloc cpuset.");
+    }
 
     return res;
 }
@@ -313,7 +317,7 @@ pusString2cpuSets (char *pus_string, int num_pus)
 void
 SAC_HWLOC_init (int threads)
 {
-    char *pus_string;
+    char *pus_string = NULL;
     hwloc_obj_type_t socket_obj;
 
     /*
