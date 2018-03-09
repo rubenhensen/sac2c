@@ -116,6 +116,8 @@ InitCudaBlockSizes (void)
         global.cuda_blocking_factor = 16;
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
+        global.cuda_max_x_dim = 65535;
+        global.cuda_max_yz_dim = 65535;
     } else if (STReq (global.config.cuda_arch, "-arch=sm_12")
                || STReq (global.config.cuda_arch, "-arch=sm_13")) {
         global.optimal_threads = 256;
@@ -125,6 +127,8 @@ InitCudaBlockSizes (void)
         global.cuda_blocking_factor = 16;
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
+        global.cuda_max_x_dim = 65535;
+        global.cuda_max_yz_dim = 65535;
     } else if (STReq (global.config.cuda_arch, "-arch=sm_20")) {
         /*
             global.optimal_threads = 512;
@@ -144,22 +148,54 @@ InitCudaBlockSizes (void)
         global.cuda_blocking_factor = 32;
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
+        global.cuda_max_x_dim = 65535;
+        global.cuda_max_yz_dim = 65535;
+    } else if (STReq (global.config.cuda_arch, "-arch=sm_35")) {
+        global.optimal_threads = 512;
+        global.optimal_blocks = 3;
+        global.cuda_1d_block_large = 1024;
+        /*
+        1D block size was 512, but to get better performance, it's
+        now set to 64 (See above). We need mechanism to automatically
+        select the best block size
+        */
+        global.cuda_1d_block_small = 64;
+        global.cuda_blocking_factor = 32;
+        global.cuda_2d_block_x = 16;
+        global.cuda_2d_block_y = 16;
+        global.cuda_max_x_dim = 2147483647;
+        global.cuda_max_yz_dim = 65535;
+    } else if (STReq (global.config.cuda_arch, "-arch=sm_50")) {
+        global.optimal_threads = 512;
+        global.optimal_blocks = 3;
+        global.cuda_1d_block_large = 1024;
+        /*
+        1D block size was 512, but to get better performance, it's
+        now set to 64 (See above). We need mechanism to automatically
+        select the best block size
+        */
+        global.cuda_1d_block_small = 64;
+        global.cuda_blocking_factor = 32;
+        global.cuda_2d_block_x = 32;
+        global.cuda_2d_block_y = 32;
+        global.cuda_max_x_dim = 2147483647;
+        global.cuda_max_yz_dim = 65535;
     } else {
         if (STReq (global.config.cuda_arch, "no")) {
             CTIwarn ("CUDA architecture was not detected during install, setting to "
-                     "default(-arch=sm_20)\n");
+                     "default(-arch=sm_35)\n");
             CTIwarn ("Please edit the CUDA_ARCH variable in sac2crc and set it to "
                      "-arch=sm_xx where xx is the capability version of your CUDA card"
-                     " (ex. -arch=sm_20).\n");
+                     " (ex. -arch=sm_35).\n");
         } else {
             CTIwarn ("CUDA architecture specified in sac2crc (%s) does not yet have "
                      "special support,"
-                     " setting to default(-arch=sm_20)\n",
+                     " setting to default(-arch=sm_35)\n",
                      global.config.cuda_arch);
             CTIwarn ("Current set of architectures supported is: sm_10, sm_11, sm_12, "
-                     "sm_13, sm_20\n");
+                     "sm_13, sm_20, sm_35, sm_50\n");
         }
-        global.config.cuda_arch = STRcpy ("-arch=sm_20");
+        global.config.cuda_arch = STRcpy ("-arch=sm_35");
         InitCudaBlockSizes ();
     }
 

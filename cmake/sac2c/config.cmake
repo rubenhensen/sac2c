@@ -406,10 +406,43 @@ SET (CUDA_ARCH)
 IF (CUDA)
   FIND_PACKAGE (CUDA)
   IF (CUDA_FOUND)
-    SET (ENABLE_CUDA ON)
-    SET (CUDA_ARCH  "-arch=sm_20") # TODO: update sac2c to make better use of newer architectures...
-    SET (CUDA_ROOT  "${CUDA_TOOLKIT_ROOT_DIR}") # FIXME: switch to package var?
-    SET (NVCC_PATH  "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc")
+    MESSAGE (STATUS "Testing CUDA Device...")
+    # the TRY_RUN uses the system CC to compile a program that
+    # probes the system for a CUDA device and determines the
+    # CUDA Compatibility of that devices - this is stored within
+    # the sac2crc as CUDA_ARCH. We use CC, rather than NVCC, as
+    # the code only calls CUDA runtime functions, no kernel or
+    # other GPU related operation is done (or can be done).
+    # If the code fails (either because the system doesn't have
+    # a CUDA device, or because of some runtime error), we still
+    # setup of build for CUDA, but use the lowest CC value
+    # per default.
+    TRY_RUN (CUDA_R_RESULT CUDA_C_RESULT
+      ${CMAKE_BINARY_DIR} ${PROJECT_SOURCE_DIR}/cmake/sac2c/cuda_get_compute_com.c
+      CMAKE_FLAGS
+        -DINCLUDE_DIRECTORIES:STRING=${CUDA_TOOLKIT_INCLUDE}
+        -DLINK_LIBRARIES:STRING=${CUDA_CUDART_LIBRARY}
+      COMPILE_OUTPUT_VARIABLE CUDA_C_OUTPUT
+      RUN_OUTPUT_VARIABLE CUDA_R_OUTPUT)
+    # C_RESULT it TRUE when compilation works
+    # R_RESULT is the status return (which should be 0, i.e. FALSE)
+    IF (CUDA_C_RESULT AND NOT CUDA_R_RESULT)
+      MESSAGE (STATUS "Setting CUDA Device-CC: `${CUDA_R_OUTPUT}'")
+      SET (ENABLE_CUDA ON)
+      SET (CUDA_ARCH  "${CUDA_R_OUTPUT}")
+      SET (CUDA_ROOT  "${CUDA_TOOLKIT_ROOT_DIR}") # FIXME: switch to package var?
+      SET (NVCC_PATH  "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc")
+      LIST (APPEND SAC2CRC_INCS "${CUDA_INCLUDE_DIRS}")
+    ELSEIF (CUDA_C_RESULT AND CUDA_R_RESULT) # no CUDA device
+      MESSAGE (STATUS "Unable to determine CUDA Device-CC, setting default as `-arch=sm_35'")
+      SET (ENABLE_CUDA ON)
+      SET (CUDA_ARCH  "-arch=sm_35")
+      SET (CUDA_ROOT  "${CUDA_TOOLKIT_ROOT_DIR}") # FIXME: switch to package var?
+      SET (NVCC_PATH  "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc")
+      LIST (APPEND SAC2CRC_INCS "${CUDA_INCLUDE_DIRS}")
+    ELSE () # something wrong with CUDA install
+      MESSAGE (WARNING "CUDA installation is not working: ${CUDA_C_OUTPUT}")
+    ENDIF ()
   ENDIF ()
 ENDIF ()
 

@@ -7,6 +7,10 @@
 #include "config.h"
 #include "string.h"
 
+#ifdef ENABLE_CUDA
+#include <cuda_runtime.h>
+#endif
+
 #include "runtime/essentials_h/types.h" // floatvec (through type_info.mac)
 #include "runtime/essentials_h/bool.h" // bool
 #include "runtime/essentials_h/std_gen.h" // SAC_ND_DECL__DESC

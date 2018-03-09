@@ -13,6 +13,8 @@
  *
  *****************************************************************************/
 
+#include "config.h"
+
 #ifndef SAC_BACKEND_MUTC
 
 #include <stdio.h>
