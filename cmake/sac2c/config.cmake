@@ -167,24 +167,45 @@ LIB_NEEDED ("m" "pow" "
 # Check libraries for optional isl support
 SET (ISL_LIB_PATH "")
 SET (ENABLE_ISL OFF)
-IF (ISL)
+MESSAGE(STATUS "ISL setting is ${ISL}")
+IF (${ISL} MATCHES "ON")
+  MESSAGE(STATUS "ISL was set to ON")
   FIND_LIBRARY (LIB_ISL NAMES "isl")
   CHECK_INCLUDE_FILES ("isl/ctx.h" HAVE_ISL_H)
   IF (LIB_ISL AND HAVE_ISL_H)
     FIND_PATH (ISL_INC_PATH NAMES "isl/ctx.h")
     SET (ENABLE_ISL ON)
+    MESSAGE(STATUS "ISL include library found")
+  ELSE ()
+    MESSAGE(STATUS "ISL include library NOT found")
+  ENDIF ()
+ELSE ()
+  IF (${ISL} MATCHES "OFF")
+    MESSAGE(STATUS "ISL was set to OFF")
+  ELSE ()
+    MESSAGE(FATAL_ERROR "ISL setting not valid; was: " ${ISL})
   ENDIF ()
 ENDIF ()
 
 # Check libraries for optional barvinok support
 SET (BARVINOK_LIB_PATH "")
 SET (ENABLE_BARVINOK OFF)
-IF (BARVINOK)
+MESSAGE(STATUS "BARVINOK setting is ${BARVINOK}")
+IF (${BARVINOK} MATCHES "ON")
   FIND_LIBRARY (LIB_BARVINOK NAMES "barvinok")
   CHECK_INCLUDE_FILES ("barvinok/barvinok.h" HAVE_BARVINOK_H)
   IF (LIB_BARVINOK AND HAVE_BARVINOK_H)
     FIND_PATH (BARVINOK_INC_PATH NAMES "barvinok/barvinok.h")
     SET (ENABLE_BARVINOK ON)
+    MESSAGE(STATUS "BARVINOK include library found")
+  ELSE ()
+    MESSAGE(STATUS "BARVINOK include library NOT found")
+  ENDIF ()
+ELSE ()
+  IF (${BARVINOK} MATCHES "OFF")
+    MESSAGE(STATUS "BARVINOK was set to OFF")
+  ELSE ()
+    MESSAGE(FATAL_ERROR "BARVINOK setting not valid; was: " ${BARVINOK})
   ENDIF ()
 ENDIF ()
 
@@ -848,14 +869,18 @@ SET (BUILD_STATUS "
 *
 * Run-time specialization: ${ENABLE_RTSPEC}
 * Private heap manager:    ${PHM}
-* Back-ends:
+* Polyhedral optional packages: 
+* - ISL:                   ${ENABLE_ISL}
+* - BARVINOK:              ${ENABLE_BARVINOK}
+* Back ends:
 * - MT/pthread:            ${ENABLE_MT}
 * - MT/LPEL:               ${ENABLE_MT_LPEL}
 * - CUDA:                  ${ENABLE_CUDA}
 * - OpenMP:                ${ENABLE_OMP}
 * - SL:                    ${ENABLE_SL}
 * - HWLOC:                 ${ENABLE_HWLOC}
-* - Distributed memory:    ${ENABLE_DISTMEM}$distmem_details_print
+* - Distributed memory:    ${ENABLE_DISTMEM}
+*                          ${distmem_details_print}
 * ====== distmen is non-functional ======
 * - CC:                    ${CMAKE_C_COMPILER} (${CMAKE_C_COMPILER_ID})
 * - CCFLAGS:               ${BUILD_TYPE_C_FLAGS}
@@ -864,7 +889,7 @@ SET (BUILD_STATUS "
 * - SaC Linksetsize:       ${LINKSETSIZE}
 *
 * Status:
-* - sac2c is in dirty state: ${SAC2C_IS_DIRTY}
+* - sac2c dirty state is: ${SAC2C_IS_DIRTY}
 *")
 
 STRING (REPLACE "\n" "\\n\\\n" CPP_BUILD_STATUS ${BUILD_STATUS})
