@@ -946,6 +946,7 @@ PrintRuntimeProfilingOptions (void)
       "                      i: Analyse time spent in inline functions.\n"
       "                      l: Analyse time spent in library functions.\n"
       "                      w: Analyse time spent in with-loops.\n"
+      "                      m: Analyse number of memory operations.\n"
       "                      d: Analyse performance of distributed memory backend.\n");
 
     DBUG_RETURN ();

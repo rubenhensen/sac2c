@@ -129,6 +129,8 @@ PrintGlobalSwitches (void)
              (global.profile.inl) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_PROFILE_LIB     %d\n",
              (global.profile.lib) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_PROFILE_MEM     %d\n",
+             (global.profile.mem) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_PROFILE_DISTMEM %d\n",
              (global.profile.distmem) ? 1 : 0);
     fprintf (global.outfile, "\n");

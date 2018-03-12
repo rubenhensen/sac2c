@@ -45,10 +45,9 @@
 #undef SAC_DO_THREADS_STATIC
 #undef SAC_DO_PHM
 
-
-
-int SAC_TR_array_memcnt = 0;
-int SAC_TR_hidden_memcnt = 0;
+/* globals used for collecting memory operation statistics */
+static unsigned long SAC_TR_array_memcnt = 0; /* size of memory allocated */
+static unsigned long SAC_TR_hidden_memcnt = 0; /* size of memory allocated */
 
 SAC_MT_STATIC SAC_MT_DEFINE_LOCK (SAC_TR_array_memcnt_lock)
 SAC_MT_STATIC SAC_MT_DEFINE_LOCK (SAC_TR_hidden_memcnt_lock)
@@ -143,7 +142,7 @@ SAC_TR_IncArrayMemcnt (int size)
 {
     SAC_MT_ACQUIRE_LOCK (SAC_TR_array_memcnt_lock);
     SAC_TR_array_memcnt += size;
-    SAC_TR_Print ("%d array elements allocated, total now: %d.", size,
+    SAC_TR_Print ("%d array elements allocated, total now: %lu.", size,
                   SAC_TR_array_memcnt);
     SAC_MT_RELEASE_LOCK (SAC_TR_array_memcnt_lock);
 }
@@ -153,7 +152,7 @@ SAC_TR_DecArrayMemcnt (int size)
 {
     SAC_MT_ACQUIRE_LOCK (SAC_TR_array_memcnt_lock);
     SAC_TR_array_memcnt -= size;
-    SAC_TR_Print ("%d array elements deallocated, total now: %d.", size,
+    SAC_TR_Print ("%d array elements deallocated, total now: %lu.", size,
                   SAC_TR_array_memcnt);
     SAC_MT_RELEASE_LOCK (SAC_TR_array_memcnt_lock);
 }
@@ -179,7 +178,7 @@ SAC_TR_IncHiddenMemcnt (int size)
 {
     SAC_MT_ACQUIRE_LOCK (SAC_TR_hidden_memcnt_lock);
     SAC_TR_hidden_memcnt += size;
-    SAC_TR_Print ("%d hidden objects allocated, total now: %d.", size,
+    SAC_TR_Print ("%d hidden objects allocated, total now: %lu.", size,
                   SAC_TR_hidden_memcnt);
     SAC_MT_RELEASE_LOCK (SAC_TR_hidden_memcnt_lock);
 }
@@ -189,7 +188,7 @@ SAC_TR_DecHiddenMemcnt (int size)
 {
     SAC_MT_ACQUIRE_LOCK (SAC_TR_hidden_memcnt_lock);
     SAC_TR_hidden_memcnt -= size;
-    SAC_TR_Print ("%d hidden objects allocated, total now: %d.", size,
+    SAC_TR_Print ("%d hidden objects allocated, total now: %lu.", size,
                   SAC_TR_hidden_memcnt);
     SAC_MT_RELEASE_LOCK (SAC_TR_hidden_memcnt_lock);
 }
