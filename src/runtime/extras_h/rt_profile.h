@@ -152,6 +152,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
         }                                                                                \
         }                                                                                \
                                                                                          \
+        SAC_PF_MEM_PRINT_STAT();                                                         \
         SAC_PF_PRINT_FUNS (grand_total);                                                 \
     }
 
@@ -168,15 +169,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
         }                                                                                \
         SAC_PF_ADD_TIMERS (total, with_total, SAC_PF_timer[0][0][PF_ow_fun]);            \
                                                                                          \
-        if (SAC_DO_PROFILE_DISTMEM) {                                                    \
-        if (SAC_DISTMEM_rank == SAC_DISTMEM_RANK_UNDEFINED) {                            \
-            SAC_PF_PrintHeader ("Overall Profile");                                      \
-        } else {                                                                         \
-            SAC_PF_PrintHeaderNode ("Overall Profile", SAC_DISTMEM_rank);                \
-        }                                                                                \
-        }                                                                                \
-                                                                                         \
-        SAC_PF_MEM_PRINT_STAT();                                                         \
+        SAC_PF_PrintHeader ("Overall Profile");                                          \
                                                                                          \
         SAC_PF_PrintTime ("time used", SAC_PF_TIMER_SPACE, &total);                      \
                                                                                          \
@@ -336,8 +329,8 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
         totimer.tv_usec = fromtimer.tv_usec;                                             \
     }
 
-#define SAC_PF_TIMER_SPACE "              "
-#define SAC_PF_COUNT_SPACE "              "
+#define SAC_PF_TIMER_SPACE ""
+#define SAC_PF_COUNT_SPACE ""
 
 #else /* SAC_DO_PROFILE */
 
@@ -739,15 +732,15 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #if (SAC_DO_PROFILE_MEM && SAC_DO_PROFILE)
 
-#define SAC_PF_MEM_INC_ALLOC(size) SAC_PF_MEM_AllocMemcnt(size);
-#define SAC_PF_MEM_INC_FREE(size) SAC_PF_MEM_FreeMemcnt(size);
+#define SAC_PF_MEM_INC_ALLOC(size, typesize) SAC_PF_MEM_AllocMemcnt(size, typesize);
+#define SAC_PF_MEM_INC_FREE(size, typesize) SAC_PF_MEM_FreeMemcnt(size, typesize);
 #define SAC_PF_MEM_INC_REUSE() SAC_PF_MEM_ReuseMemcnt();
 #define SAC_PF_MEM_PRINT_STAT() SAC_PF_MEM_PrintStats();
 
 #else /* SAC_DO_PROFILE_MEM */
 
-#define SAC_PF_MEM_INC_ALLOC(size)
-#define SAC_PF_MEM_INC_FREE(size)
+#define SAC_PF_MEM_INC_ALLOC(size, typesize)
+#define SAC_PF_MEM_INC_FREE(size, typesize)
 #define SAC_PF_MEM_INC_REUSE()
 #define SAC_PF_MEM_PRINT_STAT()
 

@@ -75,6 +75,7 @@ SAC_C_EXTERN void SAC_PF_PrintHeaderNode (char *title, size_t rank);
 SAC_C_EXTERN void SAC_PF_PrintSubHeader (char *title, int lineno);
 SAC_C_EXTERN void SAC_PF_PrintTime (char *title, char *space, SAC_PF_TIMER *time);
 SAC_C_EXTERN void SAC_PF_PrintCount (char *title, char *space, unsigned long count);
+SAC_C_EXTERN void SAC_PF_PrintSize (char *title, char *space, unsigned long size, char *unit);
 SAC_C_EXTERN void SAC_PF_PrintTimePercentage (char *title, char *space,
                                               SAC_PF_TIMER *time1, SAC_PF_TIMER *time2);
 
