@@ -9314,6 +9314,14 @@ N_tfarg :
 	  more than once.
 	  </description>
         </flag>	 
+	<flag name="IsAllocLift" default="FALSE" >
+      <description> 
+      This flag is set when the AVIS is created in order to
+      lift a memory allocation out of a loop body. This is
+      primarily set by ELMP and later the AVIS is alloc'd
+      by LRO.
+	  </description>
+        </flag>	 
   </flags>
   <checks>
     <check name="CHKavisReflection" />

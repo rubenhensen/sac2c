@@ -1233,6 +1233,8 @@ ELMPap (node * arg_node, info * arg_info)
                 FUNDEF_ERC (INFO_FUNDEF (arg_info)) = FREEdoFreeTree (FUNDEF_ERC (INFO_FUNDEF (arg_info)));
             }
         } else if (INFO_DO_UPDATE (arg_info)) { /* we are at the initial application */
+            node * new_avis = NULL;
+            node * new_vardec = NULL;
             int ap_arg_len = TCcountExprs (AP_ARGS (arg_node));
             int fun_arg_len = TCcountArgs (FUNDEF_ARGS (AP_FUNDEF (arg_node)));
 
@@ -1248,7 +1250,22 @@ ELMPap (node * arg_node, info * arg_info)
                         DBUG_PRINT ("  appending %s", ID_NAME (res));
                         AP_ARGS (arg_node) = TCappendExprs (AP_ARGS (arg_node), TBmakeExprs (TBmakeId (ID_AVIS (res)), NULL));
                     } else {
-                        DBUG_UNREACHABLE ("  unable to find arg!");
+                        /* we create a new variable, lifting the allocation out of the loop */
+                        DBUG_PRINT ("  unable to find arg that matches shape! Creating new one...");
+
+                        /* the new avis must have the same type/shape as tmp arg in the fundef */
+                        new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_lifted"),
+                                TYcopyType (ARG_NTYPE (tmp)));
+                        AVIS_ISALLOCLIFT (new_avis) = TRUE;
+
+                        /* append the avis to the args of ap */
+                        AP_ARGS (arg_node) = TCappendExprs (AP_ARGS (arg_node), TBmakeExprs (TBmakeId (new_avis), NULL));
+
+                        /* append to the current fundef's vardecs */
+                        new_vardec = TBmakeVardec (new_avis, NULL);
+                        AVIS_DECLTYPE (VARDEC_AVIS (new_vardec)) = TYcopyType (ARG_NTYPE (tmp));
+                        INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), new_vardec);
+                        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  appended %s to fundef %s vardecs", AVIS_NAME (new_avis), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
                     }
                 }
             }
