@@ -272,13 +272,13 @@ PFfundef (node *arg_node, info *arg_info)
 
         } else if (FUNDEF_ISWRAPPERFUN (arg_node)) {
             wrappertype = FUNDEF_WRAPPERTYPE (arg_node);
-            if (TYisProd (wrappertype)) {
+            if (wrappertype == NULL) {
+                DBUG_ASSERT (FUNDEF_WASUSED (arg_node),
+                             "non-used wrapperfun w/o wrappertype found");
+            } else if (TYisProd (wrappertype)) {
                 DBUG_ASSERT (FUNDEF_IMPL (arg_node) != NULL,
                              "product wrapper type without IMPL found!");
                 FUNDEF_IMPL (arg_node) = TRAVdo (FUNDEF_IMPL (arg_node), arg_info);
-            } else if (wrappertype == NULL) {
-                DBUG_ASSERT (FUNDEF_WASUSED (arg_node),
-                             "non-used wrapperfun w/o wrappertype found");
             } else {
                 FUNDEF_WRAPPERTYPE (arg_node)
                   = TYmapFunctionInstances (wrappertype, PFfundef, arg_info);
