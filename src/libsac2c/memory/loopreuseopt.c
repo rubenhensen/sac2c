@@ -212,7 +212,7 @@ EMLRap (node *arg_node, info *arg_info)
         while (doargs != NULL) {
             if (AVIS_ISALLOCLIFT (ID_AVIS (EXPRS_EXPR (apargs))) == TRUE) {
                 /*
-                 * We inster an alloc instruction
+                 * We insert an alloc instruction
                  *
                  * b     = do (a);
                  *
@@ -225,7 +225,7 @@ EMLRap (node *arg_node, info *arg_info)
 
                 avis = ID_AVIS (EXPRS_EXPR (apargs));
                 DBUG_PRINT ("Setting avis %s", AVIS_NAME (avis));
-                
+
                 /*
                  * Create alloc assignment
                  */
