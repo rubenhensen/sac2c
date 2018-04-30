@@ -7,7 +7,7 @@
 #include "config.h"
 #include "string.h"
 
-#ifdef ENABLE_CUDA
+#if ENABLE_CUDA
 #include <cuda_runtime.h>
 #endif
 
