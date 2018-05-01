@@ -1,7 +1,7 @@
 # configure version-manager script
 
-# The version manager requires Puthon 2.
-FIND_PACKAGE (PythonInterp 2 EXACT REQUIRED)
+# The version manager requires Puthon 2.7.
+FIND_PACKAGE (PythonInterp 2.7 EXACT REQUIRED)
 
 # create a dictionary that relates build type and the build postfix
 SET (BUILD_TYPE_POSTFIX_DICT)

@@ -17,7 +17,7 @@ import sys
 import glob
 import fnmatch
 import platform
-from optparse import OptionParser
+import argparse
 
 # TODO(artem) abstract common version operations into a class
 
@@ -153,7 +153,7 @@ def list_of_files (prefix, ver, build_type):
 
     if lbad != []:
         die ("""\
-innternal error:
+internal error:
     The `list_of_files' function returned inconsistent list of files,
     the following files don't exist:
 \t%s
@@ -186,7 +186,7 @@ def remove_version (prefix, ver_tuple):
                          "as directory `%s' is not empty" % (version, d))
                 exit (0)
 
-        print "removing directory structure for sac2c versoin `%s'" % version
+        print "removing directory structure for sac2c version `%s'" % version
         for d in dirs_to_remove:
             rmdir_rec (d)
 
@@ -302,7 +302,7 @@ def current_version (prefix):
     sac2c_symlink = os.path.join (prefix, "bin", "sac2c")
     if not os.path.islink (sac2c_symlink):
         error ("broken sac2c installation: `%s' should be a symbolic link.\n"
-               "please remvoe files manually or run switch command of this"
+               "please remove files manually or run switch command of this"
                "script" % sac2c_symlink)
 
     # resolve symlink
@@ -361,128 +361,86 @@ def switch_version (prefix, version, sac2c_postfix):
         os.symlink (link_src, link_name)
 
 
-def usage (basename):
-    print >>sys.stderr, """\
-sac2c versions manager
-
-usage:
-  %(base)s list-versions
-  %(base)s current-version
-  %(base)s remove
-  %(base)s switch
-
-Type --help at the end of every option to get list of
-command-specific options""" % {'base' : basename}
-    sys.exit (0)
-
 def handle_remove (argv):
-    parser = OptionParser ("Remove sac2c versions")
-    parser.add_option ("-p", "--prefix", dest="prefix", type="string", default=SAC2C_DEFAULT_INSTALL_PREFIX,
+    parser = argparse.ArgumentParser (description='Remove sac2c versions')
+    parser.add_argument ("-p", "--prefix", dest="prefix", default=SAC2C_DEFAULT_INSTALL_PREFIX,
                        help="installation prefix of sac2c versions")
-    parser.add_option ("-v", "--sac2c-version", dest="sac2c_version", type="string",
+    parser.add_argument ("-v", "--sac2c-version", dest="sac2c_version", required=True,
                        help="version(-s) of sac2c to uninstall (regexps accepted)")
-    parser.add_option ("-d", "--dry-run", dest="dryrun", action="store_true",
-                       default=False, help="list the files that will be uninstalled")
-    parser.add_option ("-b", "--build-type", dest="build_type", type="string",
+    parser.add_argument ("-d", "--dry-run", dest="dryrun", action="store_true",
+                       help="list the files that will be uninstalled")
+    parser.add_argument ("-b", "--build-type", dest="build_type",
             help="build type {%s} of sac2c to remove (ALL by default)"
                  % ",".join (SAC2C_BUILD_TYPE_POSTFIXES.keys()))
 
-    (options, args) = parser.parse_args (argv)
-    if args != []:
-        error ("this script does not take arguments, (%s) found" %  ",".join (args))
-
-    if options.prefix is None:
-        error ("sac2c installation prefix is not specified (use --prefix to set it up)")
-
-    if options.sac2c_version is None:
-        error ("which sac2c versoin under `%s' should be uninstalled?  "\
-               "(use --sac2c-version to set it up)" % options.prefix)
+    args = parser.parse_args (argv)
 
     # Expand home/user in the prefix
-    prefix = os.path.expanduser (options.prefix)
+    prefix = os.path.expanduser (args.prefix)
 
     # Make sure that the directory structure is sane
     verify_dirs_under_prefix (prefix)
-    delete_versions (prefix, options.sac2c_version, options.dryrun, options.build_type)
-
+    delete_versions (prefix, args.sac2c_version, args.dryrun, args.build_type)
 
 def handle_list_versions (argv):
-    parser = OptionParser ("List sac2c versions")
-    parser.add_option ("-p", "--prefix", dest="prefix", type="string", default=SAC2C_DEFAULT_INSTALL_PREFIX,
-                       help="installation prefix of sac2c versions")
-    (options, args) = parser.parse_args (argv)
-    if args != []:
-        error ("this script does not take arguments, (%s) found" %  ",".join (args))
-
-    if options.prefix is None:
-        error ("please specify sac2c installation prefix")
-
-    prefix = os.path.expanduser (options.prefix)
+    parser = argparse.ArgumentParser (description="List sac2c versions")
+    parser.add_argument ("-p", "--prefix", dest="prefix", default=SAC2C_DEFAULT_INSTALL_PREFIX,
+                       help='installation prefix of sac2c versions')
+    args = parser.parse_args (argv)
+    prefix = os.path.expanduser (args.prefix)
     print_available_versions (prefix)
 
 def handle_current_version (argv):
-    parser = OptionParser ("List current version of sac2c")
-    parser.add_option ("-p", "--prefix", dest="prefix", type="string", default=SAC2C_DEFAULT_INSTALL_PREFIX,
+    parser = argparse.ArgumentParser (description="List current version of sac2c")
+    parser.add_argument ("-p", "--prefix", dest="prefix", default=SAC2C_DEFAULT_INSTALL_PREFIX,
                        help="installation prefix of sac2c versions")
-    (options, args) = parser.parse_args (argv)
-    if args != []:
-        error ("this script does not take arguments, (%s) found" %  ",".join (args))
-
-    if options.prefix is None:
-        error ("please specify sac2c installation prefix")
-
-    prefix = os.path.expanduser (options.prefix)
+    args = parser.parse_args (argv)
+    prefix = os.path.expanduser (args.prefix)
     current_version (prefix)
 
 def handle_switch (argv):
-    parser = OptionParser ("List sac2c versions")
-    parser.add_option ("-p", "--prefix", dest="prefix", type="string", default=SAC2C_DEFAULT_INSTALL_PREFIX,
+    parser = argparse.ArgumentParser ("List sac2c versions")
+    parser.add_argument ("-p", "--prefix", dest="prefix", default=SAC2C_DEFAULT_INSTALL_PREFIX,
                        help="installation prefix of sac2c versions")
-    parser.add_option ("-v", "--sac2c-version", dest="sac2c_version", type="string",
-                       help="version(-s) of sac2c to uninstall (regexps accepted)")
-    parser.add_option ("-b", "--build-type", dest="build_type", type="string",
+    parser.add_argument ("-b", "--build-type", dest="build_type",
                        help="build type {%s} of sac2c to switch to"
                        % ",".join (SAC2C_BUILD_TYPE_POSTFIXES.keys()))
 
-    parser.add_option ("-l", "--latest-version", dest="latest_version", action="store_true",
-                       help="switcht to the latest (ver 1.4 > ver 0.9) version of the sac2c compiler")
-    parser.add_option ("-r", "--recent-install", dest="recent_install", action="store_true",
-                       help="switcht to the recently installed version of the sac2c compiler")
+    parser.add_argument ("-v", "--sac2c-version", dest="sac2c_version",
+                       help="version(-s) of sac2c to uninstall (regexps accepted)")
+    parser.add_argument ("-l", "--latest-version", dest="latest_version", action="store_true",
+                       default=None, help="switch to the latest (ver 1.4 > ver 0.9) version of the sac2c compiler")
+    parser.add_argument ("-r", "--recent-install", dest="recent_install", action="store_true",
+                       default=None, help="switch to the recently installed version of the sac2c compiler")
 
 
-    (options, args) = parser.parse_args (argv)
-    if args != []:
-        error ("this script does not take arguments, (%s) found" %  ",".join (args))
-
-    if options.prefix is None:
-        error ("please specify sac2c installation prefix")
-
-    prefix = os.path.expanduser (options.prefix)
+    args = parser.parse_args (argv)
+    prefix = os.path.expanduser (args.prefix)
 
     # Verify that only one of sac2c-version, latest-version or recent-version
     # have been specified.  Otherwise produce an error.
-    ver_opt_tuple = (options.latest_version,
-                     options.recent_install,
-                     options.sac2c_version)
+    ver_opt_tuple = (args.latest_version,
+                     args.recent_install,
+                     args.sac2c_version)
 
     if len ([x for x in ver_opt_tuple if x is not None]) > 1:
         error ("only one of `--latest-version', `--recent-version', '--sac2c-version' "
                "can be specified")
 
     if len ([x for x in ver_opt_tuple if x is not None]) == 0:
-        error ("which sac2c versoin under `%s' should be used?"
-               % options.prefix)
+        error ("which sac2c version under `%s' should be used?"
+               % prefix)
 
-    if options.sac2c_version is not None:
-        versions = glob_versions (prefix, options.sac2c_version)
+    if args.sac2c_version is not None:
+        versions = glob_versions (prefix, args.sac2c_version)
         if versions == []:
-            error ("sac2c version `%s' does not exist" % options.sac2c_version)
-    elif options.recent_install:
+            error ("sac2c version `%s' does not exist" % args.sac2c_version)
+    elif args.recent_install:
         versions = glob_versions (prefix, "*")
         if versions == []:
             error ("no installations of sac2c under prefix `%s' found" % prefix)
         versions = [recent_version (prefix, versions)]
-    elif options.latest_version:
+    elif args.latest_version:
         versions = glob_versions (prefix, "*")
         versions = max_version (versions)
         if versions == []:
@@ -492,16 +450,16 @@ def handle_switch (argv):
              "cannot figure out which sac2c option to use")
 
     build_type = None
-    if options.build_type is None:
+    if args.build_type is None:
         if len (versions) > 1:
             error ("there are multiple build types for version `%s', please "
-                   "set which one you want to use" % options.sac2c_version)
+                   "set which one you want to use" % args.sac2c_version)
         else:
             build_type = versions[0][1]
-    elif options.build_type not in SAC2C_BUILD_TYPE_POSTFIXES:
+    elif args.build_type not in SAC2C_BUILD_TYPE_POSTFIXES:
         error ("invalid build type `%s'")
     else:
-        build_type = options.build_type
+        build_type = args.build_type
 
     assert build_type is not None
 
@@ -510,19 +468,22 @@ def handle_switch (argv):
 
 
 if __name__ == "__main__":
-    if len (sys.argv) < 2:
-        usage (sys.argv[0])
+    commands = {'remove': handle_remove,
+                'list-versions': handle_list_versions,
+                'switch': handle_switch,
+                'current-version': handle_current_version}
 
-    command = sys.argv[1]
-    args = sys.argv[2:]
+    parser = argparse.ArgumentParser(
+        description='This is the sac2c version manager - it handles installing'
+            'symbolic links to various installed versions of the sac2c binaries.',
+        usage='%(prog)s COMMAND [FLAGS] ...')
+    parser.add_argument('command', metavar='COMMAND', help='The following commands'
+            'are supported: list-versions, current-version, remove, switch.')
 
-    if command == "remove":
-        handle_remove (args)
-    elif command == "list-versions":
-        handle_list_versions (args)
-    elif command == "switch":
-        handle_switch (args)
-    elif command == "current-version":
-        handle_current_version (args)
+    args = parser.parse_args(sys.argv[1:2])
+    if args.command in commands:
+        commands[args.command](sys.argv[2:])
     else:
-        usage (sys.argv[0])
+        print 'Unrecognised command...'
+        parser.print_help()
+        exit(1)
