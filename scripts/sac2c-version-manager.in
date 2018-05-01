@@ -1,4 +1,4 @@
-#! @PYTHON_EXECUTABLE@
+#!@PYTHON_EXECUTABLE@
 
 # This scripts makes it possible to manage multiple installations
 # of sac2c on the system.  The scripts provide the following
@@ -43,6 +43,8 @@ SAC2C_BUILD_TYPE_POSTFIXES = @BUILD_TYPE_POSTFIX_DICT@
 
 SAC2C_BUILD_TYPE_DIRS = @BUILD_TYPE_DIRECTORY_DICT@
 
+# default prefix
+SAC2C_DEFAULT_INSTALL_PREFIX = '@CMAKE_INSTALL_PREFIX@'
 
 def die (msg):
     print >>sys.stderr, msg
@@ -375,7 +377,7 @@ command-specific options""" % {'base' : basename}
 
 def handle_remove (argv):
     parser = OptionParser ("Remove sac2c versions")
-    parser.add_option ("-p", "--prefix", dest="prefix", type="string",
+    parser.add_option ("-p", "--prefix", dest="prefix", type="string", default=SAC2C_DEFAULT_INSTALL_PREFIX,
                        help="installation prefix of sac2c versions")
     parser.add_option ("-v", "--sac2c-version", dest="sac2c_version", type="string",
                        help="version(-s) of sac2c to uninstall (regexps accepted)")
@@ -406,7 +408,7 @@ def handle_remove (argv):
 
 def handle_list_versions (argv):
     parser = OptionParser ("List sac2c versions")
-    parser.add_option ("-p", "--prefix", dest="prefix", type="string",
+    parser.add_option ("-p", "--prefix", dest="prefix", type="string", default=SAC2C_DEFAULT_INSTALL_PREFIX,
                        help="installation prefix of sac2c versions")
     (options, args) = parser.parse_args (argv)
     if args != []:
@@ -420,7 +422,7 @@ def handle_list_versions (argv):
 
 def handle_current_version (argv):
     parser = OptionParser ("List current version of sac2c")
-    parser.add_option ("-p", "--prefix", dest="prefix", type="string",
+    parser.add_option ("-p", "--prefix", dest="prefix", type="string", default=SAC2C_DEFAULT_INSTALL_PREFIX,
                        help="installation prefix of sac2c versions")
     (options, args) = parser.parse_args (argv)
     if args != []:
@@ -434,7 +436,7 @@ def handle_current_version (argv):
 
 def handle_switch (argv):
     parser = OptionParser ("List sac2c versions")
-    parser.add_option ("-p", "--prefix", dest="prefix", type="string",
+    parser.add_option ("-p", "--prefix", dest="prefix", type="string", default=SAC2C_DEFAULT_INSTALL_PREFIX,
                        help="installation prefix of sac2c versions")
     parser.add_option ("-v", "--sac2c-version", dest="sac2c_version", type="string",
                        help="version(-s) of sac2c to uninstall (regexps accepted)")

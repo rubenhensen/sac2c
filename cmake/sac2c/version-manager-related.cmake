@@ -23,4 +23,4 @@ SET (BUILD_TYPE_DIRECTORY_DICT "{ ${BUILD_TYPE_DIRECTORY_DICT} }")
 
 CONFIGURE_FILE (
   "${PROJECT_SOURCE_DIR}/scripts/sac2c-version-manager.in"
-  "${PROJECT_BINARY_DIR}/script/sac2c-version-manager" @ONLY)
+  "${PROJECT_BINARY_DIR}/scripts/sac2c-version-manager" @ONLY)
