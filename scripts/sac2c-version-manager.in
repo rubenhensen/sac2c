@@ -8,6 +8,8 @@
 #       * switch to the selected version
 #       * delete selected versions
 #       * show current version of sac2c
+#       * install symlinks for arbitrary version of sac2c
+#         (useful only in build system)!
 #
 # See help outputs of individual commands to learn about arguments.
 
@@ -318,55 +320,56 @@ VERSION    = `%s'
 BUILD_TYPE = `%s'""" % (os.path.split (d)[1], binary_to_version (sac2c_binary))
 
 
+def create_link (link_src, link_name):
+    "create a link after checking that the links doesn't already exist or refer to a file"
+
+    if os.path.islink (link_name):
+        os.unlink (link_name)
+    elif os.path.isfile (link_name):
+        if confirm_removal ("`%s' is a file, not a symlink; delete it?" % link_name):
+            os.remove (link_name)
+        else:
+            info ("exiting")
+            sys.exit (0)
+
+    os.symlink (link_src, link_name)
+
+def do_install (version, sac2c_postfix, prefix, install):
+    "create symbolic links for assumed files and place these in specified directory"
+
+    # we assume prefix is correct but make sure that install actually exists
+    if not os.path.isdir (install):
+        os.makedirs (install)
+
+    # create symlinks for both postfixes and standard binaries
+    for p in SAC2C_BINARIES:
+        pp = [x for x in p]
+        pp[-1] += sac2c_postfix
+        link_name = os.path.join (install, *p)
+        link_name_postfix = os.path.join (install, *pp)
+        link_src = os.path.join (prefix, "libexec", "sac2c", version, *pp)
+
+        # install links to postfixed binaries
+        create_link (link_src, link_name_postfix)
+
+        # install links to without postfix to binaries
+        create_link (link_src, link_name)
+
+
 def switch_version (prefix, version, sac2c_postfix):
     "create symbolic links for the relevant files"
 
-    # First, for every binary, we create a postfixed version that points
-    # to the corresponding libexec location.
-    for p in SAC2C_BINARIES:
-        pp = [x for x in p]
-        pp[-1] += sac2c_postfix
-        link_name = os.path.join (prefix, "bin", *pp)
-        link_src = os.path.join (prefix, "libexec", "sac2c", version,  *pp)
-        # FIXME check whether we have permissions to delete the file
-        if os.path.islink (link_name):
-            os.unlink (link_name)
-        elif os.path.isfile (link_name):
-            if confirm_removal ("`%s' is a file, not a symlink; delete it?" % link_name):
-                os.remove (link_name)
-            else:
-                info ("exiting")
-                sys.exit (0)
-
-        os.symlink (link_src, link_name)
-
-    # Secondly, we create links for every binary.
-    for p in SAC2C_BINARIES:
-        pp = [x for x in p]
-        pp[-1] += sac2c_postfix
-        link_name = os.path.join (prefix, "bin", *p)
-        link_src = os.path.join (prefix, "libexec", "sac2c", version,  *pp)
-
-        link_name = os.path.join (prefix, "bin", *p)
-        # FIXME check whether we have permissions to delete the file
-        if os.path.islink (link_name):
-            os.unlink (link_name)
-        elif os.path.isfile (link_name):
-            if confirm_removal ("`%s' is a file, not a symlink; delete it?" % link_name):
-                os.remove (link_name)
-            else:
-                info ("exiting")
-                sys.exit (0)
-
-        os.symlink (link_src, link_name)
+    bin_dir = os.path.join (prefix, "bin")
+    do_install (version, sac2c_postfix, prefix, bin_dir)
 
 
 def handle_remove (argv):
     parser = argparse.ArgumentParser (description='Remove sac2c versions')
     parser.add_argument ("-p", "--prefix", dest="prefix", default=SAC2C_DEFAULT_INSTALL_PREFIX,
-                       help="installation prefix of sac2c versions")
+                       help="installation prefix of sac2c versions (default: `%s\')"
+                       % SAC2C_DEFAULT_INSTALL_PREFIX)
     parser.add_argument ("-v", "--sac2c-version", dest="sac2c_version", required=True,
-                       help="version(-s) of sac2c to uninstall (regexps accepted)")
+                       help="version(s) of sac2c to uninstall (regexps accepted)")
     parser.add_argument ("-d", "--dry-run", dest="dryrun", action="store_true",
                        help="list the files that will be uninstalled")
     parser.add_argument ("-b", "--build-type", dest="build_type",
@@ -380,12 +383,20 @@ def handle_remove (argv):
 
     # Make sure that the directory structure is sane
     verify_dirs_under_prefix (prefix)
-    delete_versions (prefix, args.sac2c_version, args.dryrun, args.build_type)
+
+    try:
+        delete_versions (prefix, args.sac2c_version, args.dryrun, args.build_type)
+    except OSError as e:
+        if e.errno == 13: # permission denied
+            error ("you need root permission!")
+        else:
+            error (e.strerro)
 
 def handle_list_versions (argv):
     parser = argparse.ArgumentParser (description="List sac2c versions")
     parser.add_argument ("-p", "--prefix", dest="prefix", default=SAC2C_DEFAULT_INSTALL_PREFIX,
-                       help='installation prefix of sac2c versions')
+                       help="installation prefix of sac2c versions (default: `%s\')"
+                       % SAC2C_DEFAULT_INSTALL_PREFIX)
     args = parser.parse_args (argv)
     prefix = os.path.expanduser (args.prefix)
     print_available_versions (prefix)
@@ -393,38 +404,39 @@ def handle_list_versions (argv):
 def handle_current_version (argv):
     parser = argparse.ArgumentParser (description="List current version of sac2c")
     parser.add_argument ("-p", "--prefix", dest="prefix", default=SAC2C_DEFAULT_INSTALL_PREFIX,
-                       help="installation prefix of sac2c versions")
+                       help="installation prefix of sac2c versions (default: `%s\')"
+                       % SAC2C_DEFAULT_INSTALL_PREFIX)
     args = parser.parse_args (argv)
     prefix = os.path.expanduser (args.prefix)
     current_version (prefix)
 
 def handle_switch (argv):
-    parser = argparse.ArgumentParser ("List sac2c versions")
+    parser = argparse.ArgumentParser (description="Switch to a different installed version of sac2c")
     parser.add_argument ("-p", "--prefix", dest="prefix", default=SAC2C_DEFAULT_INSTALL_PREFIX,
-                       help="installation prefix of sac2c versions")
+                       help="installation prefix of sac2c versions (default: `%s\')"
+                       % SAC2C_DEFAULT_INSTALL_PREFIX)
     parser.add_argument ("-b", "--build-type", dest="build_type",
                        help="build type {%s} of sac2c to switch to"
                        % ",".join (SAC2C_BUILD_TYPE_POSTFIXES.keys()))
 
     parser.add_argument ("-v", "--sac2c-version", dest="sac2c_version",
-                       help="version(-s) of sac2c to uninstall (regexps accepted)")
+                       help="version(s) of sac2c to uninstall (regexps accepted)")
     parser.add_argument ("-l", "--latest-version", dest="latest_version", action="store_true",
                        default=None, help="switch to the latest (ver 1.4 > ver 0.9) version of the sac2c compiler")
     parser.add_argument ("-r", "--recent-install", dest="recent_install", action="store_true",
                        default=None, help="switch to the recently installed version of the sac2c compiler")
 
-
     args = parser.parse_args (argv)
     prefix = os.path.expanduser (args.prefix)
 
-    # Verify that only one of sac2c-version, latest-version or recent-version
+    # Verify that only one of sac2c-version, latest-version, or recent-version
     # have been specified.  Otherwise produce an error.
     ver_opt_tuple = (args.latest_version,
                      args.recent_install,
                      args.sac2c_version)
 
     if len ([x for x in ver_opt_tuple if x is not None]) > 1:
-        error ("only one of `--latest-version', `--recent-version', '--sac2c-version' "
+        error ("only one of `--latest-version', `--recent-version', or '--sac2c-version' "
                "can be specified")
 
     if len ([x for x in ver_opt_tuple if x is not None]) == 0:
@@ -451,39 +463,81 @@ def handle_switch (argv):
 
     build_type = None
     if args.build_type is None:
-        if len (versions) > 1:
+        if versions is None:
+            error ("unable to determine build type, please specify `--build-type'")
+        elif len (versions) > 1:
             error ("there are multiple build types for version `%s', please "
                    "set which one you want to use" % args.sac2c_version)
         else:
             build_type = versions[0][1]
     elif args.build_type not in SAC2C_BUILD_TYPE_POSTFIXES:
-        error ("invalid build type `%s'")
+        error ("invalid build type `%s'" % args.build_type)
     else:
         build_type = args.build_type
 
     assert build_type is not None
 
-    info ("switching sac2c to version `%s' (buildtype: `%s')" % versions[0])
-    switch_version (prefix, versions[0][0], SAC2C_BUILD_TYPE_POSTFIXES[build_type])
+    try:
+        info ("switching sac2c to version `%s' (buildtype: `%s')" % (versions[0], build_type))
+        switch_version (prefix, versions[0][0], SAC2C_BUILD_TYPE_POSTFIXES[build_type])
+    except OSError as e:
+        if e.errno == 13: # permission denied
+            error ("you need root permission!")
+        else:
+            error (e.strerror)
 
+def handle_install (argv):
+    parser = argparse.ArgumentParser(description="This command should only be used by the "
+                "build system - users should be careful when using this command as you could "
+                "damage your system with it.")
+    parser.add_argument ('version', metavar='VERSION', help='sac2c version')
+    parser.add_argument ('buildtype', metavar='BTYPE', help='sac2c build type (one of {%s})'
+                        % ",".join (SAC2C_BUILD_TYPE_POSTFIXES.keys()))
+    parser.add_argument ('prefix', metavar='PREFIX', help='intended link prefix')
+    parser.add_argument ('install', metavar='INSTALL', help='directory to place the links')
+
+    args = parser.parse_args (argv)
+    prefix = os.path.expanduser (args.prefix)
+    prefix = os.path.normpath (prefix) # so that we get clean paths
+    install = os.path.expanduser (args.install)
+    install = os.path.normpath (install) # so that we get clean paths
+
+    postfix = SAC2C_BUILD_TYPE_POSTFIXES.get(args.buildtype, None)
+    if not postfix:
+        error ("invalid build type `%s'" % args.buildtype)
+
+    try:
+        info ("installing sac2c to version `%s' (buildtype: `%s')" % (args.version, args.buildtype))
+        do_install (args.version, postfix, prefix, install)
+    except OSError as e:
+        if e.errno == 13: # permission denied
+            error ("you need root permission!")
+        else:
+            error (e.strerror)
 
 if __name__ == "__main__":
     commands = {'remove': handle_remove,
                 'list-versions': handle_list_versions,
                 'switch': handle_switch,
-                'current-version': handle_current_version}
+                'current-version': handle_current_version,
+                'install': handle_install}
 
-    parser = argparse.ArgumentParser(
-        description='This is the sac2c version manager - it handles installing'
-            'symbolic links to various installed versions of the sac2c binaries.',
-        usage='%(prog)s COMMAND [FLAGS] ...')
-    parser.add_argument('command', metavar='COMMAND', help='The following commands'
-            'are supported: list-versions, current-version, remove, switch.')
+    parser = argparse.ArgumentParser (
+        description='This is the sac2c version manager - it handles creating symbolic links to various\n'
+                    'installed versions of the sac2c binaries. It is STRONGLY advised to not use this\n'
+                    'script with sac2c installs done through a package manager - unintended consequences\n'
+                    'could occur from this.\n\n'
+                    'This script tool is provided without warranty or guarantees - you have been warned.',
+        usage='%(prog)s COMMAND [ARGS]',
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument ('command', metavar='COMMAND', help='The following commands '
+            'are supported: list-versions, current-version, remove, switch, and install.')
+    parser.add_argument ('-v', '--version', action='version', version='%(prog)s 0.2')
 
-    args = parser.parse_args(sys.argv[1:2])
+    args = parser.parse_args (sys.argv[1:2])
     if args.command in commands:
-        commands[args.command](sys.argv[2:])
+        commands[args.command] (sys.argv[2:])
     else:
         print 'Unrecognised command...'
         parser.print_help()
-        exit(1)
+        exit (1)
