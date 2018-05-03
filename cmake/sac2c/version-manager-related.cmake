@@ -1,7 +1,25 @@
 # configure version-manager script
 
-# The version manager requires Puthon 2.7.
-FIND_PACKAGE (PythonInterp 2.7 EXACT REQUIRED)
+# minor macro that checks to see if a python module is available or not
+MACRO (CHECK_PYTHON_MODULE module)
+    EXECUTE_PROCESS (COMMAND "${PYTHON_EXECUTABLE}" "-c"
+        "import ${module}"
+        RESULT_VARIABLE _module_status
+        ERROR_QUIET)
+
+    IF (_module_status) # not found
+        MESSAGE (FATAL_ERROR "Python module `${module}' is missing!")
+    ELSE ()
+        MESSAGE (STATUS "Python module `${module}' found")
+    ENDIF ()
+    UNSET (_module_status)
+ENDMACRO ()
+
+# The version manager requires Puthon 2.
+FIND_PACKAGE (PythonInterp 2 EXACT REQUIRED)
+
+# make sure we have the Python argparse module available
+CHECK_PYTHON_MODULE ("argparse")
 
 # create a dictionary that relates build type and the build postfix
 SET (BUILD_TYPE_POSTFIX_DICT)
@@ -18,8 +36,6 @@ FOREACH (t ${KNOWN_BUILD_TYPES})
   STRING (APPEND BUILD_TYPE_DIRECTORY_DICT "'${t}': '${dirname}',")
 ENDFOREACH ()
 SET (BUILD_TYPE_DIRECTORY_DICT "{ ${BUILD_TYPE_DIRECTORY_DICT} }")
-
-
 
 CONFIGURE_FILE (
   "${PROJECT_SOURCE_DIR}/scripts/sac2c-version-manager.in"
