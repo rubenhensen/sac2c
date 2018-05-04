@@ -23,12 +23,13 @@ import argparse
 
 # TODO(artem) abstract common version operations into a class
 
-SHARED_LIB_EXT = ".so"
-# FIXME(artem) be smarter here --- on OSX they switched to .dylib
-#              only after a certain version, they were using
-#              different extension before.
-if platform.system () == "Darwin":
-    SHARED_LIB_EXT = ".dylib"
+## GLOBAL ATTRIBUTES ##
+__version__ = "0.2"
+
+## GLOBAL VARIABLES ##
+
+# shared library extension of SAC libraries and the prelude
+SHARED_LIB_EXT = "@CMAKE_SHARED_LIBRARY_SUFFIX@"
 
 # a list of binaries provided by one build type
 SAC2C_BINARIES = [
@@ -43,10 +44,13 @@ SAC2C_BINARIES = [
 # a map of build-type to postfix
 SAC2C_BUILD_TYPE_POSTFIXES = @BUILD_TYPE_POSTFIX_DICT@
 
+# a map of build-type to directory name scheme
 SAC2C_BUILD_TYPE_DIRS = @BUILD_TYPE_DIRECTORY_DICT@
 
-# default prefix
+# default install prefix
 SAC2C_DEFAULT_INSTALL_PREFIX = '@CMAKE_INSTALL_PREFIX@'
+
+## FUNCTIONS ##
 
 def die (msg):
     print >>sys.stderr, msg
@@ -393,7 +397,7 @@ def handle_remove (argv):
             error (e.strerro)
 
 def handle_list_versions (argv):
-    parser = argparse.ArgumentParser (description="List sac2c versions")
+    parser = argparse.ArgumentParser (description="List installed sac2c versions")
     parser.add_argument ("-p", "--prefix", dest="prefix", default=SAC2C_DEFAULT_INSTALL_PREFIX,
                        help="installation prefix of sac2c versions (default: `%s\')"
                        % SAC2C_DEFAULT_INSTALL_PREFIX)
@@ -402,7 +406,7 @@ def handle_list_versions (argv):
     print_available_versions (prefix)
 
 def handle_current_version (argv):
-    parser = argparse.ArgumentParser (description="List current version of sac2c")
+    parser = argparse.ArgumentParser (description="List current installed version of sac2c")
     parser.add_argument ("-p", "--prefix", dest="prefix", default=SAC2C_DEFAULT_INSTALL_PREFIX,
                        help="installation prefix of sac2c versions (default: `%s\')"
                        % SAC2C_DEFAULT_INSTALL_PREFIX)
@@ -487,14 +491,18 @@ def handle_switch (argv):
             error (e.strerror)
 
 def handle_install (argv):
-    parser = argparse.ArgumentParser(description="This command should only be used by the "
-                "build system - users should be careful when using this command as you could "
-                "damage your system with it.")
-    parser.add_argument ('version', metavar='VERSION', help='sac2c version')
-    parser.add_argument ('buildtype', metavar='BTYPE', help='sac2c build type (one of {%s})'
+    parser = argparse.ArgumentParser(description='This command is similar to the `switch\' command, '
+            'except that is does not expect SAC to be actually present on the filesystem (specifically '
+            'where `--prefix\' points to). If you are dealing with a previously installed version of '
+            'SAC, use the `switch\' command instead! This command is useful when creating symlinks for '
+            'packages, or other contexts where the actual install location of SAC does not exist. If not '
+            'used with care, this command can overwrite existing symlinks and cause damage to your '
+            'system.')
+    parser.add_argument ('version', metavar='VERSION', help='intended sac2c version to create links for')
+    parser.add_argument ('buildtype', metavar='BTYPE', help='the build type of the sac2c installation (one of {%s})'
                         % ",".join (SAC2C_BUILD_TYPE_POSTFIXES.keys()))
-    parser.add_argument ('prefix', metavar='PREFIX', help='intended link prefix')
-    parser.add_argument ('install', metavar='INSTALL', help='directory to place the links')
+    parser.add_argument ('prefix', metavar='PREFIX', help='intended install location of sac2c')
+    parser.add_argument ('install', metavar='INSTALL', help='directory to place the symlinks')
 
     args = parser.parse_args (argv)
     prefix = os.path.expanduser (args.prefix)
@@ -507,7 +515,7 @@ def handle_install (argv):
         error ("invalid build type `%s'" % args.buildtype)
 
     try:
-        info ("installing sac2c to version `%s' (buildtype: `%s')" % (args.version, args.buildtype))
+        info ("installing sac2c version `%s' (buildtype: `%s')" % (args.version, args.buildtype))
         do_install (args.version, postfix, prefix, install)
     except OSError as e:
         if e.errno == 13: # permission denied
@@ -526,13 +534,13 @@ if __name__ == "__main__":
         description='This is the sac2c version manager - it handles creating symbolic links to various\n'
                     'installed versions of the sac2c binaries. It is STRONGLY advised to not use this\n'
                     'script with sac2c installs done through a package manager - unintended consequences\n'
-                    'could occur from this.\n\n'
-                    'This script tool is provided without warranty or guarantees - you have been warned.',
+                    'could occur from this.',
         usage='%(prog)s COMMAND [ARGS]',
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument ('command', metavar='COMMAND', help='The following commands '
-            'are supported: list-versions, current-version, remove, switch, and install.')
-    parser.add_argument ('-v', '--version', action='version', version='%(prog)s 0.2')
+            'are supported:\n {%s}\n\n'
+            'Use `--help\' to show usage information for each command.' % ', '.join(commands.keys()))
+    parser.add_argument ('-v', '--version', action='version', version=__version__)
 
     args = parser.parse_args (sys.argv[1:2])
     if args.command in commands:
