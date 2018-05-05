@@ -6,29 +6,27 @@ BUILD_DIR_DEVEL  := build_d
 BUILD_DIR_RELEASE := build_r
 MAKE_NUMTHREADS ?= 4
 
+define BUILD =
+  if [ -d $(1) ]; then \
+    cd $(1); make -j$(MAKE_NUMTHREADS); cd -; \
+  else \
+    mkdir -p $(1); \
+    cd $(1); \
+    cmake -DCMAKE_BUILD_TYPE=$(2) ..; \
+    make -j$(MAKE_NUMTHREADS); \
+    cd -; \
+  fi
+endef
+
+
+
 all: release devel
 
 release:
-	if [ -d $(BUILD_DIR_RELEASE) ]; then \
-          cd $(BUILD_DIR_RELEASE); make -j$(MAKE_NUMTHREADS); cd -; \
-        else \
-          mkdir -p $(BUILD_DIR_RELEASE); \
-          cd $(BUILD_DIR_RELEASE); \
-          cmake -DCMAKE_BUILD_TYPE=RELEASE ..; \
-          make -j$(MAKE_NUMTHREADS); \
-          cd -; \
-        fi
+	$(call BUILD,$(BUILD_DIR_RELEASE),RELEASE)
 
 devel:
-	if [ -d $(BUILD_DIR_DEVEL) ]; then \
-          cd $(BUILD_DIR_DEVEL); make -j$(MAKE_NUMTHREADS); cd -; \
-        else \
-          mkdir -p $(BUILD_DIR_DEVEL); \
-          cd $(BUILD_DIR_DEVEL); \
-          cmake -DCMAKE_BUILD_TYPE=DEBUG ..; \
-          make -j$(MAKE_NUMTHREADS); \
-          cd -; \
-        fi
+	$(call BUILD,$(BUILD_DIR_DEVEL),DEBUG)
 
 clean: clean-release clean-devel
 
