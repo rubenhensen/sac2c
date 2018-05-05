@@ -641,8 +641,8 @@ main (int argc, char *argv[])
 
     default:
         fprintf (stderr, "caller is confused. We got opcode=%c\n", opcode);
-        // break elision is intentional
-        /* Falls through. */
+        break;
+
     case POLY_OPCODE_HELP:
     case POLY_OPCODE_HELPLC:
         fprintf (stderr, "legal opcodes are %c, %c, %c, %c, %c\n", POLY_OPCODE_INTERSECT,
