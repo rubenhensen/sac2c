@@ -2,7 +2,7 @@
 # make default build and install of product and development versions
 # of the compiler.
 
-BUILD_DIR_DEVEL  := build_d
+BUILD_DIR_DEBUG  := build_d
 BUILD_DIR_RELEASE := build_r
 MAKE_NUMTHREADS ?= 4
 
@@ -20,32 +20,32 @@ endef
 
 
 
-all: release devel
+all: release debug
 
 release:
 	$(call BUILD,$(BUILD_DIR_RELEASE),RELEASE)
 
-devel:
-	$(call BUILD,$(BUILD_DIR_DEVEL),DEBUG)
+debug:
+	$(call BUILD,$(BUILD_DIR_DEBUG),DEBUG)
 
-clean: clean-release clean-devel
+clean: clean-release clean-debug
 
 clean-release:
 	$(RM) -rf $(BUILD_DIR_RELEASE)
 
-clean-devel:
-	$(RM) -rf  $(BUILD_DIR_DEVEL)
+clean-debug:
+	$(RM) -rf  $(BUILD_DIR_DEBUG)
 
-install: install-devel install-release
+install: install-debug install-release
 
 install-release: release
 	cd $(BUILD_DIR_RELEASE); make install; cd -
 	@echo "Please run $(BUILD_DIR_RELEASE)/scripts/sac2c-version-manager " \
               "now to set symlinks correctly."
 
-install-devel: devel
-	cd $(BUILD_DIR_DEVEL); make install; cd -
-	@echo "Please run $(BUILD_DIR_DEVEL)/scripts/sac2c-version-manager " \
+install-debug: debug
+	cd $(BUILD_DIR_DEBUG); make install; cd -
+	@echo "Please run $(BUILD_DIR_DEBUG)/scripts/sac2c-version-manager " \
               "now to set symlinks correctly."
 
 
