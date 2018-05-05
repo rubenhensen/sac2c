@@ -3,19 +3,19 @@
 # of the compiler.
 
 BUILD_DIR_DEVEL  := build_d
-BUILD_DIR_PROD := build_p
-MAKE_NUMTHREAD ?= 4
+BUILD_DIR_RELEASE := build_r
+MAKE_NUMTHREADS ?= 4
 
-all: prod devel
+all: release devel
 
-prod:
-	if [ -d $(BUILD_DIR_PROD) ]; then \
-          cd $(BUILD_DIR_PROD); make -j$(MAKE_NUMTHREADS); cd -; \
+release:
+	if [ -d $(BUILD_DIR_RELEASE) ]; then \
+          cd $(BUILD_DIR_RELEASE); make -j$(MAKE_NUMTHREADS); cd -; \
         else \
-          mkdir -p $(BUILD_DIR_PROD); \
-          cd $(BUILD_DIR_PROD); \
+          mkdir -p $(BUILD_DIR_RELEASE); \
+          cd $(BUILD_DIR_RELEASE); \
           cmake -DCMAKE_BUILD_TYPE=RELEASE ..; \
-          make -j$(NUMTHREADS); \
+          make -j$(MAKE_NUMTHREADS); \
           cd -; \
         fi
 
@@ -26,23 +26,23 @@ devel:
           mkdir -p $(BUILD_DIR_DEVEL); \
           cd $(BUILD_DIR_DEVEL); \
           cmake -DCMAKE_BUILD_TYPE=DEBUG ..; \
-          make -j$(NUMTHREADS); \
+          make -j$(MAKE_NUMTHREADS); \
           cd -; \
         fi
 
-clean: clean-prod clean-devel
+clean: clean-release clean-devel
 
-clean-prod:
-	$(RM) -rf $(BUILD_DIR_PROD)
+clean-release:
+	$(RM) -rf $(BUILD_DIR_RELEASE)
 
 clean-devel:
 	$(RM) -rf  $(BUILD_DIR_DEVEL)
 
-install: install-dev install-prod
+install: install-devel install-release
 
-install-prod: prod
-	cd $(BUILD_DIR_PROD); make install; cd -
-	@echo "Please run $(BUILD_DIR_PROD)/scripts/sac2c-version-manager " \
+install-release: release
+	cd $(BUILD_DIR_RELEASE); make install; cd -
+	@echo "Please run $(BUILD_DIR_RELEASE)/scripts/sac2c-version-manager " \
               "now to set symlinks correctly."
 
 install-devel: devel
