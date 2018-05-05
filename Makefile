@@ -13,7 +13,7 @@ define BUILD =
     mkdir -p $(1); \
     cd $(1); \
     cmake -DCMAKE_BUILD_TYPE=$(2) ..; \
-    make -j$(MAKE_NUMTHREADS); \
+    $(MAKE) -j$(MAKE_NUMTHREADS); \
     cd -; \
   fi
 endef
