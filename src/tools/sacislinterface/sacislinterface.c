@@ -520,7 +520,8 @@ ISLUgetLoopCount (__isl_keep isl_union_set *dom, int verbose)
     dim = isl_union_pw_qpolynomial_get_space (pwcard);
     zro = isl_point_zero (isl_space_copy (dim));
     val = isl_union_pw_qpolynomial_eval (pwcard, zro);
-    z = (NULL != val) ? isl_val_get_num_si (val) : z;
+    z = ((NULL != val) && (isl_val_is_rat (val)))
+        ? isl_val_get_num_si (val) : z;
     z = (0 == z) ? UNR_NONE : z;
     isl_val_free (val);
     isl_space_free (dim);
