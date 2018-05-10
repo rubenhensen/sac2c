@@ -59,15 +59,16 @@ MakePrec (assoc_t assoc, int val)
 /******************************************************************************
  *
  * function:
- *    prec_t *FreePrec( prec_t * prec)
+ *    prec_t *FreePrecInLUT( prec_t * prec, void * ignored)
  *
  * description:
- *    ...
+ *    Free PREC structure via LUTmap* functions - second argument is unused
+ *    but obligatory with LUTmap* function.
  *
  ******************************************************************************/
 
 static prec_t *
-FreePrec (prec_t *prec)
+FreePrecInLUT (prec_t *prec, void *ignored)
 {
     DBUG_ENTER ();
 
@@ -308,7 +309,7 @@ HMdoHandleMops (node *arg_node)
     arg_node = TRAVdo (arg_node, NULL);
     TRAVpop ();
 
-    prec_lut = LUTmapLutS (prec_lut, (void *(*)(void *, void *))FreePrec);
+    prec_lut = LUTmapLutS (prec_lut, (void *(*)(void *, void *))FreePrecInLUT);
     prec_lut = LUTremoveLut (prec_lut);
 
     DBUG_RETURN (arg_node);

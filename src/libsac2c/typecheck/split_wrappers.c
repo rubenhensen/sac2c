@@ -144,17 +144,17 @@ SWRmodule (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-bool
-isLocalInstance (node *fundef, bool result)
+static bool *
+isLocalInstance (node *fundef, bool *result)
 {
     DBUG_ENTER ();
 
-    result = result | FUNDEF_ISLOCAL (fundef);
+    *result = *result | FUNDEF_ISLOCAL (fundef);
 
     DBUG_RETURN (result);
 }
 
-bool
+static bool
 containsLocalInstances (node *wrapper)
 {
     bool result;
@@ -165,10 +165,11 @@ containsLocalInstances (node *wrapper)
         result = FUNDEF_ISLOCAL (FUNDEF_IMPL (wrapper));
     } else {
         void *fold;
+        bool check = FALSE;
 
         fold = TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (wrapper),
                                         (void *(*)(node *, void *))isLocalInstance,
-                                        (void *)FALSE);
+                                        (void *)&check);
 
         /*
          * we have to use this instead of casting fold to bool

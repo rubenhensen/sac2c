@@ -2386,10 +2386,12 @@ PRTfundef (node *arg_node, info *arg_info)
 node *
 PRTannotate (node *arg_node, info *arg_info)
 {
-    static char strbuffer1[256];
-    static char strbuffer2[512];
+    str_buf *buf1, *buf2;
 
     DBUG_ENTER ();
+
+    buf1 = SBUFcreate (512);
+    buf2 = SBUFcreate (512);
 
     DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), (void *)arg_node);
 
@@ -2398,11 +2400,11 @@ PRTannotate (node *arg_node, info *arg_info)
     }
 
     if (ANNOTATE_TAG (arg_node) & CALL_FUN) {
-        sprintf (strbuffer1, "PROFILE_BEGIN_UDF( %d, %d)", ANNOTATE_FUNNUMBER (arg_node),
+        SBUFprintf (buf1, "PROFILE_BEGIN_UDF( %d, %d)", ANNOTATE_FUNNUMBER (arg_node),
                  ANNOTATE_FUNAPNUMBER (arg_node));
     } else {
         if (ANNOTATE_TAG (arg_node) & RETURN_FROM_FUN) {
-            sprintf (strbuffer1, "PROFILE_END_UDF( %d, %d)",
+            SBUFprintf (buf1, "PROFILE_END_UDF( %d, %d)",
                      ANNOTATE_FUNNUMBER (arg_node), ANNOTATE_FUNAPNUMBER (arg_node));
         } else {
             DBUG_UNREACHABLE ("wrong tag at N_annotate");
@@ -2410,22 +2412,25 @@ PRTannotate (node *arg_node, info *arg_info)
     }
 
     if (ANNOTATE_TAG (arg_node) & INL_FUN) {
-        sprintf (strbuffer2, "PROFILE_INLINE( %s)", strbuffer1);
+        SBUFprintf (buf2, "PROFILE_INLINE( %s)", SBUFgetBuffer (buf1));
         if (ANNOTATE_TAG (arg_node) & LIB_FUN) {
-            sprintf (strbuffer1, "PROFILE_LIBRARY( %s)", strbuffer2);
+            SBUFprintf (buf1, "PROFILE_LIBRARY( %s)", SBUFgetBuffer (buf2));
         } else {
-            sprintf (strbuffer1, "%s", strbuffer2);
+            SBUFprintf (buf1, "%s", SBUFgetBuffer (buf2));
         }
     } else {
-        sprintf (strbuffer2, "%s", strbuffer1);
+        SBUFprintf (buf2, "%s", SBUFgetBuffer (buf1));
         if (ANNOTATE_TAG (arg_node) & LIB_FUN) {
-            sprintf (strbuffer1, "PROFILE_LIBRARY( %s)", strbuffer2);
+            SBUFprintf (buf1, "PROFILE_LIBRARY( %s)", SBUFgetBuffer (buf2));
         } else {
-            sprintf (strbuffer1, "%s", strbuffer2);
+            SBUFprintf (buf1, "%s", SBUFgetBuffer (buf2));
         }
     }
 
-    fprintf (global.outfile, "%s;", strbuffer1);
+    fprintf (global.outfile, "%s;", SBUFgetBuffer (buf1));
+
+    buf1 = SBUFfree (buf1);
+    buf2 = SBUFfree (buf2);
 
     DBUG_RETURN (arg_node);
 }

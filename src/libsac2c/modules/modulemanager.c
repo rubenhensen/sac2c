@@ -472,7 +472,7 @@ MODMgetDeSerializeFunction (const char *name, module_t *module)
 
     result.v = LIBMgetLibraryFunction (name, module->lib);
 
-    DBUG_RETURN ((serfun_p)result.f);
+    DBUG_RETURN (result.f);
 }
 
 #undef DBUG_PREFIX

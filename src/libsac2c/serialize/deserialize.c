@@ -659,7 +659,7 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
                              "module is inconsistent. cannot find function referenced in"
                              "symbol table");
 
-                entryp = serfun (DSstate);
+                entryp = serfun ();
                 /* add to ast */
                 InsertIntoState (entryp, module);
 
@@ -742,7 +742,7 @@ AddSymbolById (const char *symbid, const char *module, bool resetimport)
 
     DBUG_ASSERT (fun != NULL, "requested symbol does not exist!");
 
-    entryp = ((serfun0_p)fun) ();
+    entryp = fun ();
 
     /* add to ast */
     InsertIntoState (entryp, mod);
@@ -820,7 +820,7 @@ DSimportInstancesByName (const char *name, const char *module)
              *                even imported.
              */
 
-            entryp = serfun (DSstate);
+            entryp = serfun ();
 
             /*
              * free object wrappers: a wrapper may point to object wrappers which
@@ -1023,7 +1023,7 @@ DSloadFunctionBody (node *fundef)
                  "deserializer not found. module seems to be inconsistent!");
 
     global.valid_ssaform = FALSE;
-    result = ((serfun0_p)serfun) ();
+    result = serfun ();
     global.valid_ssaform = TRUE;
 
     SetCurrentFundefHead (NULL);
