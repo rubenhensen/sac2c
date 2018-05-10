@@ -498,12 +498,11 @@ target add_local:
 target package:
 
 target default_sbi :: add_default_sbi :: add_local :: package:
+USE_PHM_API      :=  @CAN_USE_PHM@
 
 target default_mt :: default_sbi:
 SBI              := "mt"
 MT_MODE          :=  2
-USE_PHM_API      :=  @CAN_USE_PHM@
-
 
 target omp :: default_sbi:
 SBI              := "omp"

@@ -17,6 +17,7 @@ BACKEND          :=  "Cuda"
 
 CUDA_ARCH        :=  "@CUDA_ARCH@"
 
+USE_PHM_API      :=  0
 CEXT             :=  ".cu"
 CC               :=  "@NVCC_PATH@/nvcc"
 CFLAGS           :=  "--maxrregcount 20 -Xcompiler -Wall -Xcompiler -fPIC "
