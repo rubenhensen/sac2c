@@ -578,12 +578,19 @@ GLOBAL (char *, cpp_options, NULL, xfree_char_ptr, )
 GLOBAL (bool, cc_debug, FALSE, xfree_dummy, )
 /* Enable/disable inclusion of debug code into object files. */
 
+GLOBAL (bool, cc_debug_extra, FALSE, xfree_dummy, )
+/* On enable, this causes more debug information to be added to the
+ * generated C source code that can be read by tools like GDB -
+ * this sets cc_debug to TRUE as well.
+ */
+
 #ifdef PRODUCTION
 GLOBAL (int, cc_optimize, 3, xfree_dummy, )
 #else  /* PRODUCTION */
 GLOBAL (int, cc_optimize, 0, xfree_dummy, )
-#endif /* PRODUCTION                                                                     \
-          C compiler level of optimization */
+#endif /* PRODUCTION
+        * C compiler level of optimization
+        */
 
 /*
  * Optimization counters

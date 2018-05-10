@@ -2688,7 +2688,7 @@ PRTvardec (node *arg_node, info *arg_info)
 
         fprintf (global.outfile, "\n");
     } else {
-        if (global.cc_debug
+        if (global.cc_debug_extra
             && ((global.compiler_subphase == PH_cg_prt)
                 || (global.compiler_subphase == PH_ccg_prt))) {
             fprintf (global.outfile, "\n#line %zu \"%s\"\n", global.linenum,
@@ -2835,7 +2835,7 @@ PRTassign (node *arg_node, info *arg_info)
     DBUG_EXECUTE_TAG ("PRINT_LINENO", fprintf (global.outfile, "\n#line %zu \"%s\"\n",
                                                global.linenum, global.filename););
 
-    if (global.cc_debug
+    if (global.cc_debug_extra
         && ((global.compiler_subphase == PH_cg_prt)
             || (global.compiler_subphase == PH_ccg_prt))) {
         fprintf (global.outfile, "\n#line %zu \"%s\"\n", global.linenum, global.filename);
