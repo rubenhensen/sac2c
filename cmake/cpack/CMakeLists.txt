@@ -56,7 +56,7 @@ ADD_CUSTOM_TARGET(fulltest COMMENT "Testing all build dirs...")
 # Is only parameter is the build type, which is one supported by the
 # CMAKE_BUILD_TYPE variable.
 # This macro also creates a target to do a clean of the build directory
-# of the externalproject, which is attached to the target `fullclean'. 
+# of the externalproject, which is attached to the target `fullclean'.
 MACRO (ADD_SAC2C_BUILD _build_type)
   STRING (TOLOWER "${_build_type}" _build_type_name)
   #  Notice that we manually do the install, this is to ensure that the
@@ -95,7 +95,7 @@ MACRO (ADD_SAC2C_BUILD _build_type)
     ALWAYS 1)
   # Create a target which links to the clean step
   ExternalProject_Add_StepTargets(sac2c-${_build_type_name} clean)
-  # Add the target as a dependency to the `fullclean' target 
+  # Add the target as a dependency to the `fullclean' target
   ADD_DEPENDENCIES (fullclean sac2c-${_build_type_name}-clean)
   # Create step target to expose `test' and attach it to out `fulltest' target
   ExternalProject_Add_StepTargets(sac2c-${_build_type_name} test)
@@ -111,37 +111,6 @@ ENDMACRO ()
 FOREACH (type ${BUILDTYPELIST})
   ADD_SAC2C_BUILD (${type})
 ENDFOREACH ()
-
-# TODO (hans): this is buggy when building dirty as we can't stop this from running.
-ADD_CUSTOM_TARGET (generic-symlinks ALL
-  COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/toplevel/symlinks/${CMAKE_INSTALL_PREFIX}/bin"
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "sac2c_p" "sac2c"
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "sac4c_p" "sac4c"
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "sac2tex_p" "sac2tex"
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "saccc_p" "saccc"
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "csimt_p" "csimt"
-  COMMAND ${CMAKE_COMMAND} -E create_symlink "csima_p" "csima"
-  DEPENDS ${SAC_TARGETS}
-  COMMENT "Creating generic symlinks"
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/toplevel/symlinks/${CMAKE_INSTALL_PREFIX}/bin)
-
-# create symbolic links to binaries
-# XXX(hans) we should not do this for distributable packages
-# INSTALL (CODE
-#   "FILE (MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/toplevel/${CMAKE_INSTALL_PREFIX}/bin)
-#   FILE (GLOB bin_files LIST_DIRECTORIES FALSE
-#     RELATIVE ${PROJECT_BINARY_DIR}/toplevel/${CMAKE_INSTALL_PREFIX}/libexec/sac2c/${SAC2C_VERSION}/
-#     ${PROJECT_BINARY_DIR}/toplevel/${CMAKE_INSTALL_PREFIX}/libexec/sac2c/${SAC2C_VERSION}/*_?
-#   )
-#   FOREACH (bin \${bin_files})
-#     EXECUTE_PROCESS (COMMAND
-#       ${CMAKE_COMMAND} -E create_symlink
-#         \"${CMAKE_INSTALL_PREFIX}/libexec/sac2c/${SAC2C_VERSION}/\${bin}\"
-#         \"${PROJECT_BINARY_DIR}/toplevel/${CMAKE_INSTALL_PREFIX}/bin/\${bin}\"
-#     )
-#   ENDFOREACH ()"
-#   COMPONENT symlinks
-# )
 
 # install the thing to root
 # XXX (hans) if we specify the destination as an absolute path, e.g. /usr/local
@@ -176,6 +145,11 @@ XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/headers/${CMAKE_INSTALL_PREF
   DESTINATION "." USE_SOURCE_PERMISSIONS
   COMPONENT headers)
 
+# XXX (hans) NOTE: that for DEB/RPM/distributable packages (except TGZ), any
+# CMAKE_INSTALL_PREFIX value given is explicily ignored/overridden by the CPACK*
+# generator - as such, symlinks generated with a non-default CMAKE_INSTALL_PREFIX
+# value *will be wrong*. Given though that we are only concerned with generating
+# real packages for default situtations, this it OK for the moment.
 XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/symlinks/${CMAKE_INSTALL_PREFIX}/"
   DESTINATION "." USE_SOURCE_PERMISSIONS
   COMPONENT symlinks)

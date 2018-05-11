@@ -139,7 +139,7 @@ UNSET (BINARY_DIR) # make sure we don't cause a conflict
 UNSET (STAMP_DIR) # make sure we don't cause a conflict
 # Create a target which links to the clean step
 ExternalProject_Add_StepTargets(runtime_libraries clean)
-# Add the target as a dependency to the `fullclean' target 
+# Add the target as a dependency to the `fullclean' target
 ADD_DEPENDENCIES (fullclean runtime_libraries-clean)
 
 # this target is meant to copy over the sac2crc prelude file to the users
@@ -161,7 +161,7 @@ MACRO (ADD_INSTALL_TARGET)
   SET (deps ${ARGN})
   LIST (REMOVE_AT deps 0)
   ADD_CUSTOM_TARGET (${name}-install
-    DEPENDS ${deps} 
+    DEPENDS ${deps}
     COMMAND
       "${CMAKE_COMMAND}" -DCMAKE_INSTALL_COMPONENT=${name} -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
   UNSET (name)
@@ -175,6 +175,7 @@ ADD_INSTALL_TARGET ("headers" sac_h)
 ADD_INSTALL_TARGET ("libraries" sac2cShared runtime_libraries)
 ADD_INSTALL_TARGET ("rtapplications" runtime_libraries)
 ADD_INSTALL_TARGET ("sources")
+ADD_INSTALL_TARGET ("symlinks")
 
 # Installing the sac2c project files.
 XINSTALL (TARGETS sac2c RUNTIME DESTINATION "${TREEPATH_INSTALL}" COMPONENT applications)
@@ -246,7 +247,7 @@ XINSTALL (FILES
   EXCLUDE_FROM_ALL)
 
 # we install readme and install script
-CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/installer.sh.in ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh @ONLY) 
+CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/installer.sh.in ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh @ONLY)
 XINSTALL (FILES
     ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh
   DESTINATION "${INSTALLER_INSTALL}"
@@ -260,28 +261,53 @@ XINSTALL (FILES
   COMPONENT sources
   EXCLUDE_FROM_ALL)
 
-# we create symlinks for the bins (this is to make using the MacOS package nicer)
-# this can also ease users in there initial setup of SaC
-IF (UNIX)
-  ADD_CUSTOM_TARGET (bin-symlinks ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory bin 
-    COMMAND ${CMAKE_COMMAND} -E create_symlink "${TREEPATH_CONF}/sac2c${BUILD_TYPE_POSTFIX}" "bin/sac2c${BUILD_TYPE_POSTFIX}"
-    COMMAND ${CMAKE_COMMAND} -E create_symlink "${TREEPATH_CONF}/sac4c${BUILD_TYPE_POSTFIX}" "bin/sac4c${BUILD_TYPE_POSTFIX}"
-    COMMAND ${CMAKE_COMMAND} -E create_symlink "${TREEPATH_CONF}/sac2tex${BUILD_TYPE_POSTFIX}" "bin/sac2tex${BUILD_TYPE_POSTFIX}"
-    COMMAND ${CMAKE_COMMAND} -E create_symlink "${TREEPATH_CONF}/saccc${BUILD_TYPE_POSTFIX}" "bin/saccc${BUILD_TYPE_POSTFIX}"
-    COMMAND ${CMAKE_COMMAND} -E create_symlink "${TREEPATH_CONF}/csimt${BUILD_TYPE_POSTFIX}" "bin/csimt${BUILD_TYPE_POSTFIX}"
-    COMMAND ${CMAKE_COMMAND} -E create_symlink "${TREEPATH_CONF}/csima${BUILD_TYPE_POSTFIX}" "bin/csima${BUILD_TYPE_POSTFIX}"
-    DEPENDS check_repo_version
-    COMMENT "Creating Symlinks"
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-
-  ADD_INSTALL_TARGET ("symlinks" bin-symlinks)
-
-  XINSTALL (DIRECTORY ${PROJECT_BINARY_DIR}/bin
-    DESTINATION "${TOP_INSTALL}"
-    COMPONENT symlinks
-    EXCLUDE_FROM_ALL)
+# (hans) NOTE: We need to create the `_top_install` and `_bin_install` variables
+# for when we install symlinks using `INSTALL (CODE ...)`. These two variables
+# are based upon the `TOP_INSTALL` and `BIN_INSTALL` variables found in
+# sac2c/config.cmake - these variables are automatically generated and are
+# prepended with a ``package prefix'' when using CPack directly. The `*_INSTALL`
+# variables are relative paths on where to install the generated SAC binaries
+# and libraries during the install stage of the build system. The `_*_install`
+# variables are only needed for the symlinks because we are using the `INSTALL
+# (CODE ...)` function instead of the `INSTALL(... DESTINATION ...)` function.
+# In the latter's case, internally any relative path given as a parameter to
+# DESTINATION is prepended with CMAKE_INSTALL_PREFIX (and also `ENV(DESTDIR)`).
+# This is so that the install stage can correctly place the resulting
+# files/dirs. `DESTDIR` is set via `make DESTDIR=... install`, typically only
+# called by CPack packagers that don't support directly changing
+# CMAKE_INSTALL_PREFIX, or defining their own pakaging prefix via
+# `PACKAGE_PREFIX...` (see sac2c/config.cmake). In our case, because we are
+# using a CODE block to run the sac2c-version-manager script, this internal
+# facility is not given. The generation of the two variables mimics the internal
+# action and allows for the script to be prepended with CMAKE_INSTALL_PREFIX.
+IF (NOT IS_ABSOLUTE "${BIN_INSTALL}")
+  # We escape ${CMAKE_INSTALL_PREFIX} because the install stage resolves this
+  # variable independently of the configure stage - this allows CPack and other
+  # tools to affect where files/dirs are installed too.
+  SET (_bin_install "\\\$ENV{DESTDIR}\\\${CMAKE_INSTALL_PREFIX}/${BIN_INSTALL}")
+ELSE ()
+  SET (_bin_install "${BIN_INSTALL}")
 ENDIF ()
+
+IF (NOT IS_ABSOLUTE "${TOP_INSTALL}")
+  # We escape ${CMAKE_INSTALL_PREFIX} because the install stage resolves this
+  # variable independently of the configure stage - this allows CPack and other
+  # tools to affect where files/dirs are installed too.
+  SET (_top_install "\\\${CMAKE_INSTALL_PREFIX}/${TOP_INSTALL}")
+ELSE ()
+  SET (_top_install "${TOP_INSTALL}")
+ENDIF ()
+
+# We use the sac2c-version-manager script instead of the CMAKE's facility to
+# create symlinks because the scripts does additional checks to make sure
+# that the links are sanely done and don't accidentally overwrite anything
+# that should t be overwritten.
+XINSTALL (
+  CODE "EXECUTE_PROCESS(COMMAND
+    ${PROJECT_BINARY_DIR}/scripts/sac2c-version-manager install
+      \"${SAC2C_VERSION}\" \"${CMAKE_BUILD_TYPE}\"
+      \"${_top_install}\" \"${_bin_install}\")"
+  COMPONENT symlinks)
 
 # now lets setup packaging (using CPack)
 SET(SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
