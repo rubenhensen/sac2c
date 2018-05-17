@@ -21,14 +21,17 @@ ApplyCF (te_info *info, ntype *args)
 
     switch (TYgetProductSize (args)) {
     case 1:
-        res = ((monCF)TEgetCFFun (info)) (TYgetValue (TYgetProductMember (args, 0)));
+        res = (TEgetCFFun (info)) (TYgetValue (TYgetProductMember (args, 0)),
+                                          NULL,
+                                          NULL);
         break;
     case 2:
-        res = ((binCF)TEgetCFFun (info)) (TYgetValue (TYgetProductMember (args, 0)),
-                                          TYgetValue (TYgetProductMember (args, 1)));
+        res = (TEgetCFFun (info)) (TYgetValue (TYgetProductMember (args, 0)),
+                                          TYgetValue (TYgetProductMember (args, 1)),
+                                          NULL);
         break;
     case 3:
-        res = ((triCF)TEgetCFFun (info)) (TYgetValue (TYgetProductMember (args, 0)),
+        res = (TEgetCFFun (info)) (TYgetValue (TYgetProductMember (args, 0)),
                                           TYgetValue (TYgetProductMember (args, 1)),
                                           TYgetValue (TYgetProductMember (args, 2)));
         break;

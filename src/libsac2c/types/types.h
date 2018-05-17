@@ -950,8 +950,12 @@ typedef struct MODULE_T {
     int usecount;
 } module_t;
 
-typedef node *(*serfun_p) (void *);
-typedef node *(*serfun0_p) (void);
+/*
+ * The serfun_* types are used by modulemanager and the serialise/de-serialise
+ * traversals to access serialised functions. The functions are *never* defined
+ * as having an argument (i.e. void *(*)(void)).
+ */
+typedef node *(*serfun_p) (void);
 
 typedef union {
     void *v;
