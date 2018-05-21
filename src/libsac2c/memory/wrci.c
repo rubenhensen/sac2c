@@ -638,6 +638,48 @@ WRCIlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *WRCIlet( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCIprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (INFO_DO_EMR (arg_info)) {
+        DBUG_PRINT ("checking N_prf referencing an emr...");
+
+        switch (PRF_PRF (arg_node)) {
+            case F_idx_modarray_AxSxS:
+            case F_idx_modarray_AxSxA:
+                /*
+                 * We intentionally drop all referenced ERCs because from observation, the
+                 * result is typically stored in the referenced array (reused). As such, we
+                 * force these arrays to be used as ERCs, then we force an extra allocation
+                 * *and* copy operation.
+                 *
+                 * XXX this is somewhat harsh as it removes a large number of possible ERCs
+                 *     without regard for whether or not the actual memory is being reused
+                 *     in place. Within OPT this can't be determined, we would need to move
+                 *     this filtering to MEM phases.
+                 */
+                INFO_EMR_RC (arg_info) = filterDuplicateArgs (PRF_ARGS (arg_node), &INFO_EMR_RC (arg_info));
+                DBUG_PRINT ("EMR RCs left after filtering out N_prf args");
+                DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
+                    PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
+                });
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WRCIwith( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
@@ -1036,7 +1078,9 @@ isSameShapeAvis (node * avis, node * exprs)
     if (exprs == NULL) {
         ret = NULL;
     } else {
-        if (ShapeMatch (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs))))
+        if ((ShapeMatch (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs)))
+              || TCshapeVarsMatch (avis, ID_AVIS (EXPRS_EXPR (exprs))))
+             && TUeqElementSize (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs))))
             ret = EXPRS_EXPR (exprs);
         else
             ret = isSameShapeAvis (avis, EXPRS_NEXT (exprs));
@@ -1099,7 +1143,10 @@ findMatchingArgs (node * exprs, node * pot)
                 DBUG_PRINT ("  found match for tmp arg %s => %s", ID_NAME (tmp), ID_NAME (find));
 
                 /* adding res to args of ap_fundef */
-                res = TBmakeExprs (find, res);
+                if (res == NULL)
+                    res = TBmakeExprs (find, NULL);
+                else
+                    res = TCappendExprs (res, TBmakeExprs (find, NULL));
             }
         }
     }
