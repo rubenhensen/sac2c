@@ -734,6 +734,8 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #define SAC_PF_MEM_INC_ALLOC(size, typesize) SAC_PF_MEM_AllocMemcnt(size, typesize);
 #define SAC_PF_MEM_INC_FREE(size, typesize) SAC_PF_MEM_FreeMemcnt(size, typesize);
+#define SAC_PF_MEM_INC_ALLOC_DESC(size, typesize) SAC_PF_MEM_AllocDescnt(size, typesize);
+#define SAC_PF_MEM_INC_FREE_DESC(size, typesize) SAC_PF_MEM_FreeDescnt(size, typesize);
 #define SAC_PF_MEM_INC_REUSE() SAC_PF_MEM_ReuseMemcnt();
 #define SAC_PF_MEM_PRINT_STAT() SAC_PF_MEM_PrintStats();
 
@@ -741,6 +743,8 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #define SAC_PF_MEM_INC_ALLOC(size, typesize)
 #define SAC_PF_MEM_INC_FREE(size, typesize)
+#define SAC_PF_MEM_INC_ALLOC_DESC(size, typesize)
+#define SAC_PF_MEM_INC_FREE_DESC(size, typesize)
 #define SAC_PF_MEM_INC_REUSE()
 #define SAC_PF_MEM_PRINT_STAT()
 

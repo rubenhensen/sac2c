@@ -1508,6 +1508,8 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_PF_MEM_INC_ALLOC_DESC (SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)),          \
+                                   sizeof(SAC_ND_DESC_BASETYPE (var_NT)))                \
     }
 
 #define SAC_ND_ALLOC__DESC__FIXED_C99__DIS(var_NT, dim)                                  \
@@ -1524,6 +1526,8 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_PF_MEM_INC_ALLOC_DESC (SIZE_OF_DIST_DESC (SAC_ND_A_MIRROR_DIM (var_NT)),     \
+                                   sizeof(SAC_ND_DESC_BASETYPE (var_NT)))                \
     }
 
 /* Overloaded in mutc */
@@ -1544,6 +1548,8 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_PF_MEM_INC_ALLOC_DESC (SIZE_OF_DESC (dim),                                   \
+                                   sizeof(SAC_ND_DESC_BASETYPE (var_NT)))                \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
 
@@ -1559,6 +1565,8 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_PF_MEM_INC_ALLOC_DESC (SIZE_OF_DIST_DESC (dim),                              \
+                                   sizeof(SAC_ND_DESC_BASETYPE (var_NT)))                \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
 
@@ -1762,6 +1770,8 @@ FIXME Do not initialize for the time being, as value 0                          
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT), sizeof(*SAC_ND_A_FIELD (var_NT)))  \
+        SAC_PF_MEM_INC_ALLOC_DESC (SIZE_OF_DESC (SAC_ND_A_MIRROR_SIZE (var_NT)),         \
+                                   sizeof(SAC_ND_DESC_BASETYPE (var_NT)))                \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1790,6 +1800,8 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
             SAC_PF_MEM_INC_ALLOC (SAC_ND_A_FIRST_ELEMS (var_NT),                         \
                                   sizeof(basetype))                                      \
+            SAC_PF_MEM_INC_ALLOC_DESC (SIZE_OF_DIST_DESC (dim),                          \
+                                   sizeof(SAC_ND_DESC_BASETYPE (var_NT)))                \
             SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT)                  \
               = SAC_DISTMEM_DET_OFFS (SAC_ND_A_FIELD (var_NT));                          \
             SAC_DISTMEM_MOVE_PTR_FOR_WRITES (SAC_ND_A_FIELD (var_NT),                    \
@@ -1840,6 +1852,8 @@ FIXME Do not initialize for the time being, as value 0                          
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_FREE__DESC( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_DESC (var_NT)))   \
+        SAC_PF_MEM_INC_FREE_DESC (SIZE_OF_DESC (SAC_ND_A_MIRROR_SIZE (var_NT)),          \
+                                   sizeof(SAC_ND_DESC_BASETYPE (var_NT)))                \
         SAC_HM_FREE_DESC (SAC_REAL_DESC (SAC_ND_A_DESC (var_NT)))                        \
     }
 
