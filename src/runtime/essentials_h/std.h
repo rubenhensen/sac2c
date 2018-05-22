@@ -1006,7 +1006,6 @@ typedef intptr_t *SAC_array_descriptor_t;
         SAC_TR_MEM_PRINT (                                                               \
           ("new hidden object at addr: %p", SAC_ND_READ (to_NT, to_pos)))                \
         SAC_TR_INC_HIDDEN_MEMCNT (0)                                                     \
-        SAC_PF_MEM_INC_ALLOC (0, 0)                                                      \
     }
 
 /******************************************************************************
@@ -1856,7 +1855,6 @@ FIXME Do not initialize for the time being, as value 0                          
                            #freefun, SAC_ND_A_FIELD (var_NT)))                           \
         freefun (SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT)));                       \
         SAC_TR_DEC_HIDDEN_MEMCNT (1)                                                     \
-        SAC_PF_MEM_INC_FREE (1, 1)                                                       \
     }
 
 #define SAC_ND_FREE__DATA__AKS_NHD(var_NT, freefun)                                      \
