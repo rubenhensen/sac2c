@@ -31,6 +31,7 @@ extern node *WRCIprintRCs (node *arg_node, info *arg_info);
 /*
  * EMR Loop Application Arg Filtering
  */
+extern node *ELAAFdoLoopRCFiltering (node *syntax_tree);
 extern node *ELAAFfundef (node *arg_node, info *arg_info);
 extern node *ELAAFap (node *arg_node, info *arg_info);
 extern node *ELAAFassign (node *arg_node, info *arg_info);
@@ -40,6 +41,7 @@ extern node *ELAAFmodarray (node *arg_node, info *arg_info);
 /*
  * EMR Loop Memory Propogation
  */
+extern node *ELMPdoExtendLoopMemoryPropagation (node *syntax_tree);
 extern node *ELMPfundef (node *arg_node, info *arg_info);
 extern node *ELMPap (node *arg_node, info *arg_info);
 extern node *ELMPlet (node *arg_node, info *arg_info);

@@ -99,6 +99,7 @@
 #include "reusewithoffset.h"
 #include "compare_tree.h"
 #include "polyhedral_reuse_analysis.h"
+#include "filterrc.h"
 
 /*
  * INFO structure
@@ -277,31 +278,11 @@ WRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
     arg_info = FreeInfo (arg_info);
 
     if (global.optimize.doelaaf) {
-        arg_info = MakeInfo ();
-
-        // FIXME probably should push this out into its own file
-        TRAVpush (TR_elaaf);
-        syntax_tree = TRAVdo (syntax_tree, arg_info);
-        TRAVpop ();
-
-        arg_info = FreeInfo (arg_info);
+        syntax_tree = ELAAFdoLoopRCFiltering (syntax_tree);
     }
 
     if (global.optimize.doelmp) {
-        arg_info = MakeInfo ();
-
-        // FIXME probably should push this out into its own file
-        TRAVpush (TR_elmp);
-        syntax_tree = TRAVdo (syntax_tree, arg_info);
-        TRAVpop ();
-
-        INFO_DO_UPDATE (arg_info) = TRUE;
-
-        TRAVpush (TR_elmp);
-        syntax_tree = TRAVdo (syntax_tree, arg_info);
-        TRAVpop ();
-
-        arg_info = FreeInfo (arg_info);
+        syntax_tree = ELMPdoExtendLoopMemoryPropagation (syntax_tree);
     }
 
     DBUG_RETURN (syntax_tree);
@@ -940,10 +921,36 @@ WRCIfold (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* XXX
+/**
  * EMR Loop Application Arg Filtering
- * XXX
+ *
+ * This traversal does two things: (1) it removes N_id that share the same N_avis
+ * from with-loop operator ERC field, and (2) calls FRC (Filter Reuse Candidates)
+ * traversal (in mode 2) which filters away _invalid_ *RC candidates. This last
+ * part is especially important as otherwise cases where ELMP (EMR Loop Memory
+ * Propagation) could be applied might get missed.
  */
+node *ELAAFdoLoopRCFiltering (node *syntax_tree)
+{
+    info *arg_info;
+
+    DBUG_ENTER();
+
+    arg_info = MakeInfo ();
+
+    TRAVpush (TR_elaaf);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    /*
+     * Filter out invalid RCs (and ERCs)
+     */
+    syntax_tree = FRCdoFilterReuseCandidatesNoPrf (syntax_tree);
+
+    DBUG_RETURN (syntax_tree);
+}
 
 node *
 ELAAFgenarray (node * arg_node, info * arg_info)
@@ -1047,12 +1054,19 @@ ELAAFfundef (node * arg_node, info * arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* XXX
- * EMR Loop Memory Propogation
- * XXX
- */
-
-/* runs in two modes - INFO_DO_UPDATE is:
+/**
+ * EMR Loop Memory Propagation
+ *
+ * This traversal lifts with-loop memory allocations out of the
+ * inner-most loop. This is achieved by creating new arguments to the
+ * loop function and updating the RC value of the with-loop operator.
+ *
+ * This traversal can only work if RS (Reuse Optimisation) *and*
+ * LRO (Loop Reuse Optimisation) are activated (functioning?). We
+ * intentionally avoid creating allocation calls at this stage, and leave
+ * this to the two mentioned traversals.
+ *
+ * runs in two modes - INFO_DO_UPDATE is:
  *   FALSE : fundef top-down traversal looking for loop funs, and
  *           updating fundef args and rec loop ap. We unset fundef_erc
  *           as these are no longer needed.
@@ -1060,6 +1074,28 @@ ELAAFfundef (node * arg_node, info * arg_info)
  *           if the fundef has an updated signiture, update the app
  *           args
  */
+node *ELMPdoExtendLoopMemoryPropagation (node *syntax_tree)
+{
+    info *arg_info;
+
+    DBUG_ENTER ();
+
+    arg_info = MakeInfo ();
+
+    TRAVpush (TR_elmp);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
+
+    INFO_DO_UPDATE (arg_info) = TRUE;
+
+    TRAVpush (TR_elmp);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (syntax_tree);
+}
 
 /**
  * @brief

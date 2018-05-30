@@ -5,6 +5,13 @@
  * This traversal removes reuse candidates that are being referenced at a later
  * stage and, thus, can never have an RC of 1!
  *
+ * The traversal works in two modes: (1) scans arguments of alloc/reuse/alloc_or_*
+ * N_prf that allocate the memory of with-loops (WITHOP_MEM), or (2) scans N_with
+ * WITHOP_*RC N_id elements. These two modes exist as the traversal is used in
+ * both the Optimisations Phase and in the Memory Phase - in the former we have
+ * no N_prf dealing with allocations, while in the latter the WITHOP_*RC fields
+ * are empty.
+ *
  * This is implemented by a bottum up traversal. Whenever an identifier is being
  * met in an argument position (N_id), a correposnding entry in a dataflow mask
  * is being set.
@@ -53,6 +60,7 @@ struct INFO {
     dfmask_t *thenmask;
     dfmask_t *elsemask;
     node *condargs;
+    bool check_prf;
 };
 
 #define INFO_USEMASK(n) (n->usemask)
@@ -60,6 +68,7 @@ struct INFO {
 #define INFO_THENMASK(n) (n->thenmask)
 #define INFO_ELSEMASK(n) (n->elsemask)
 #define INFO_CONDARGS(n) (n->condargs)
+#define INFO_CHECK_PRF(n) (n->check_prf)
 
 static info *
 MakeInfo (void)
@@ -75,6 +84,7 @@ MakeInfo (void)
     INFO_CONDARGS (result) = NULL;
     INFO_THENMASK (result) = NULL;
     INFO_ELSEMASK (result) = NULL;
+    INFO_CHECK_PRF (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -104,7 +114,7 @@ FreeInfo (info *info)
  *
  * @fn node *FRCdoFilterReuseCandidates( node *syntax_tree)
  *
- * @brief starting point of filter reuse candidates traversal
+ * @brief starting point of filter reuse candidates traversal (mode 1)
  *
  * @param syntax_tree
  *
@@ -118,9 +128,43 @@ FRCdoFilterReuseCandidates (node *syntax_tree)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Starting to filter reuse candidates...");
+    DBUG_PRINT ("Starting to filter reuse candidates (mode 1)...");
 
     info = MakeInfo ();
+
+    TRAVpush (TR_frc);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_PRINT ("Filtering of reuse candidates complete.");
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *FRCdoFilterReuseCandidatesNoPrf ( node *syntax_tree)
+ *
+ * @brief starting point of filter reuse candidates traversal (mode 2)
+ *
+ * @param syntax_tree
+ *
+ * @return modified syntax_tree.
+ *
+ *****************************************************************************/
+node *
+FRCdoFilterReuseCandidatesNoPrf (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Starting to filter reuse candidates (mode 2)...");
+
+    info = MakeInfo ();
+    INFO_CHECK_PRF (info) = FALSE;
 
     TRAVpush (TR_frc);
     syntax_tree = TRAVdo (syntax_tree, info);
@@ -156,17 +200,19 @@ FilterTrav (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (EXPRS_NEXT (arg_node) != NULL) {
-        EXPRS_NEXT (arg_node) = FilterTrav (EXPRS_NEXT (arg_node), arg_info);
-    }
+    if (arg_node != NULL ) {
+        if (EXPRS_NEXT (arg_node) != NULL) {
+            EXPRS_NEXT (arg_node) = FilterTrav (EXPRS_NEXT (arg_node), arg_info);
+        }
 
-    if (DFMtestMaskEntry (INFO_USEMASK (arg_info), NULL,
-                          ID_AVIS (EXPRS_EXPR (arg_node)))) {
-        DBUG_PRINT ("Invalid reuse candidate removed: %s",
-                    ID_NAME (EXPRS_EXPR (arg_node)));
-        arg_node = FREEdoFreeNode (arg_node);
-    } else {
-        EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
+        if (DFMtestMaskEntry (INFO_USEMASK (arg_info), NULL,
+                              ID_AVIS (EXPRS_EXPR (arg_node)))) {
+            DBUG_PRINT ("Invalid reuse candidate removed: %s",
+                        ID_NAME (EXPRS_EXPR (arg_node)));
+            arg_node = FREEdoFreeNode (arg_node);
+        } else {
+            EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -174,13 +220,13 @@ FilterTrav (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *FilterRCs( node *arg_node, info *arg_info)
+ * @fn node *FilterRCsInPrf ( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 static node *
-FilterRCs (node *arg_node, info *arg_info)
+FilterRCsInPrf (node *arg_node, info *arg_info)
 {
     node *alloc;
 
@@ -461,12 +507,14 @@ FRCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (PRF_PRF (arg_node) == F_fill) {
-        PRF_ARG2 (arg_node) = FilterRCs (PRF_ARG2 (arg_node), arg_info);
-    }
+    if (INFO_CHECK_PRF (arg_info)) {
+        if (PRF_PRF (arg_node) == F_fill) {
+            PRF_ARG2 (arg_node) = FilterRCsInPrf (PRF_ARG2 (arg_node), arg_info);
+        }
 
-    if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+        if (PRF_ARGS (arg_node) != NULL) {
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -583,7 +631,14 @@ FRCgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    GENARRAY_MEM (arg_node) = FilterRCs (GENARRAY_MEM (arg_node), arg_info);
+    if (INFO_CHECK_PRF (arg_info)) {
+        GENARRAY_MEM (arg_node) = FilterRCsInPrf (GENARRAY_MEM (arg_node), arg_info);
+    } else {
+        GENARRAY_RC (arg_node) = FilterTrav (GENARRAY_RC (arg_node), arg_info);
+        GENARRAY_PRC (arg_node) = FilterTrav (GENARRAY_PRC (arg_node), arg_info);
+        GENARRAY_ERC (arg_node) = FilterTrav (GENARRAY_ERC (arg_node), arg_info);
+    }
+
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
 
     if (GENARRAY_DEFAULT (arg_node) != NULL) {
@@ -609,7 +664,13 @@ FRCmodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    MODARRAY_MEM (arg_node) = FilterRCs (MODARRAY_MEM (arg_node), arg_info);
+    if (INFO_CHECK_PRF (arg_info)) {
+        MODARRAY_MEM (arg_node) = FilterRCsInPrf (MODARRAY_MEM (arg_node), arg_info);
+    } else {
+        MODARRAY_RC (arg_node) = FilterTrav (MODARRAY_RC (arg_node), arg_info);
+        MODARRAY_ERC (arg_node) = FilterTrav (MODARRAY_ERC (arg_node), arg_info);
+    }
+
     MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
