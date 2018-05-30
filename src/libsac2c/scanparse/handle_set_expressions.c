@@ -18,7 +18,7 @@
 #include <strings.h>
 
 /**
- * @file handle_dots.c
+ * @file handle_set_expressions.c
  *
  * This file contains any code needed to eleminate dots within
  * sac source code. Dots can appear in the following positions:
@@ -45,21 +45,7 @@
  * set this to defined in order to create explanatory ids. use this only
  * for debugging as it might create very long identifier names.
  */
-#define HD_USE_EXPLANATORY_NAMES
-
-/**
- * set this to use build in take/drop instead of withloops.
- *
- * NOTE: the withloop code was never tested and may contain bugs.
- */
-#define HD_USE_BUILTIN_TAKEDROP
-
-/**
- * set this to use build in concat instead of withloops.
- *
- * NOTE: the withloop code was never tested and may contain bugs.
- */
-#define HD_USE_BUILTIN_CONCAT
+#define HSE_USE_EXPLANATORY_NAMES
 
 /**
  * set this to enable support for vectors as index of a set notation.
@@ -68,7 +54,7 @@
  *       -no support of partial selection on arrays of different
  *        dimenionality
  */
-#define HD_SETWL_VECTOR
+#define HSE_SETWL_VECTOR
 
 /**
  * Structures to store all information about dots occuring in select state-
@@ -96,9 +82,9 @@ typedef struct DOTINFO {
 
 /**
  * Structures to store ids and shapes during shape-scan. Filled during
- * traversal in HD_sacn mode.
+ * traversal in HSE_scan mode.
  */
-typedef enum TRAVSTATE { HD_sel, HD_scan, HD_default } travstate;
+typedef enum TRAVSTATE { HSE_scan, HSE_default } travstate;
 typedef enum IDTYPE { ID_notfound = 0, ID_vector = 1, ID_scalar = 2 } idtype;
 
 typedef struct SHPCHAIN {
@@ -116,34 +102,23 @@ typedef struct IDTABLE {
 
 /**
  * arg_info in this file:
- * DOTSHAPE:    this field is used in order to transport the generic shape
- *              from Nwithid (via Nwith) to Ngenerator, where it may be used
- *              in order to replace . generator boundaries.
  * TRAVSTATE:   this field is used to determine the current traversalmode
- *              HD_sel in normal mode (eliminate dots)
- *              HD_scan in shape scanning mode
- *              HD_default to build default values for withloops
+ *              HSE_scan in shape scanning mode
+ *              HSE_default to build default values for withloops
  * IDTABLE:     used to reference the current idtable.
- *
- * ASSIGNS:     stores any assigns that have to be inserted prior to
- *              the current one. Used to build shape for WLs.
  */
 
 /* INFO structure */
 struct INFO {
-    node *dotshape;
     travstate state;
     idtable *idtab;
-    node *assigns;
-    node *setassigns;
     node *wlshape;
 };
 
 /* access macros */
-#define INFO_HD_DOTSHAPE(n) ((n)->dotshape)
-#define INFO_HD_TRAVSTATE(n) ((n)->state)
-#define INFO_HD_IDTABLE(n) ((n)->idtab)
-#define INFO_HD_WLSHAPE(n) ((n)->wlshape)
+#define INFO_HSE_TRAVSTATE(n) ((n)->state)
+#define INFO_HSE_IDTABLE(n) ((n)->idtab)
+#define INFO_HSE_WLSHAPE(n) ((n)->wlshape)
 
 /**
  * builds an info structure.
@@ -159,10 +134,9 @@ MakeInfo (void)
 
     result = (info *)MEMmalloc (sizeof (info));
 
-    INFO_HD_DOTSHAPE (result) = NULL;
-    INFO_HD_TRAVSTATE (result) = HD_sel;
-    INFO_HD_IDTABLE (result) = NULL;
-    INFO_HD_WLSHAPE (result) = NULL;
+    INFO_HSE_TRAVSTATE (result) = HSE_scan;
+    INFO_HSE_IDTABLE (result) = NULL;
+    INFO_HSE_WLSHAPE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -180,30 +154,6 @@ FreeInfo (info *info)
     info = MEMfree (info);
 
     DBUG_RETURN (info);
-}
-
-/**
- * builds an assign-let construct.
- *
- * @param var_name the name of the identifier to use
- * @param let_expr right side expression of the assignment
- *
- * @return the ready built assignment to be inserted into the AST
- */
-static node *
-MakeAssignLetNV (char *var_name, node *let_expr)
-{
-    node *tmp_ids;
-    node *tmp_node;
-
-    DBUG_ENTER ();
-
-    tmp_ids = TBmakeSpids (var_name, NULL);
-
-    tmp_node = TBmakeLet (tmp_ids, let_expr);
-    tmp_node = TBmakeAssign (tmp_node, NULL);
-
-    DBUG_RETURN (tmp_node);
 }
 
 /**
@@ -314,103 +264,10 @@ FreeDotInfo (dotinfo *node)
     DBUG_RETURN ();
 }
 
-/**
- * @fn int LDot2Pos(int dot, dotinfo* info)
- *
- * transforms a given number of a dot (counted from the left) into its
- * position within the selection vector. Counting starts at 1.
- *
- * @return the position of the given dot within the selection vector
- */
-static int
-LDot2Pos (int dot, dotinfo *info)
-{
-    dotlist *dots = info->left;
-    int cnt;
-
-    DBUG_ENTER ();
-
-    for (cnt = 1; cnt < dot; cnt++) {
-        dots = dots->next;
-    }
-
-    DBUG_RETURN (dots->position);
-}
-
-/**
- * transforms a given number of a dot (counted from the right) into its
- * postion within the selection vector. Counting starts with 1.
- *
- * @return the position of the given dot within the selection vector
- */
-static int
-RDot2Pos (int dot, dotinfo *info)
-{
-    dotlist *dots = info->right;
-    int cnt;
-
-    DBUG_ENTER ();
-
-    for (cnt = 1; cnt < dot; cnt++) {
-        dots = dots->prev;
-    }
-
-    DBUG_RETURN (info->selcnt - dots->position + 1);
-}
-
-/**
- * checks whether the expression at position dot within the selection vector
- * is a dot or not. If it is a dot, its number counted from the left is
- * returned, zero otherwise. Counting starts with one.
- *
- * @return dot position counted from left or zero if not a dot
- */
-static int
-LIsDot (int dot, dotinfo *info)
-{
-    int result = 0;
-    dotlist *list = info->left;
-
-    DBUG_ENTER ();
-
-    while ((list != NULL) && (list->position <= dot)) {
-        if (list->position == dot) {
-            result = list->no;
-            break;
-        }
-
-        list = list->next;
-    }
-
-    DBUG_RETURN (result);
-}
-
-/**
- * Checks whether the expression at position dot within the selection vector
- * is a dot or not. If it is a dot, its number counted from the right is
- * returned, zero otherwise. Counting starts at one.
- *
- * @return position counted from the right or zero
- */
-static int
-RIsDot (int dot, dotinfo *info)
-{
-    int result = 0;
-
-    DBUG_ENTER ();
-
-    result = LIsDot (info->selcnt - dot + 1, info);
-
-    if (result != 0) {
-        result = info->dotcnt - result + 1;
-    }
-
-    DBUG_RETURN (result);
-}
 
 /**
  * builds an id with a free name by calling TmpVarName. If
- * HD_USE_EXPLANATORY_NAMES is set, name is appended to the new id,
+ * HSE_USE_EXPLANATORY_NAMES is set, name is appended to the new id,
  * Use this feature only for debugging, as it might create very long
  * identifier names.
  *
@@ -424,7 +281,7 @@ MakeTmpId (char *name)
 
     DBUG_ENTER ();
 
-#ifdef HD_USE_EXPLANATORY_NAMES
+#ifdef HSE_USE_EXPLANATORY_NAMES
     result = TBmakeSpid (NULL, TRAVtmpVarName (name));
 #else
     result = TBmakeSpid (NULL, TRAVtmpVar ());
@@ -433,459 +290,6 @@ MakeTmpId (char *name)
     DBUG_RETURN (result);
 }
 
-/**
- * builds code for a drop operation used to isolate the middle part
- * of an index or shape vector.
- *
- * @param left a sac expression that can be evaluated to an integer. Amount
- *             of elements to drop on the left side.
- * @param right a sac expression that can be evaluated to an integer. Amount
- *              of elements to drop on the right side.
- * @param vector vector to operate on
- * @return part of the AST that evaluates to the requested desired middle part.
- */
-static node *
-BuildDrop (node *left, node *right, node *vector)
-{
-#ifdef HD_USE_BUILTIN_TAKEDROP
-    node *result;
-
-    DBUG_ENTER ();
-
-    result = MAKE_BIN_PRF (F_drop_SxV, left,
-                           MAKE_BIN_PRF (F_drop_SxV,
-                                         MAKE_BIN_PRF (F_mul_SxS, TBmakeNum (-1), right),
-                                         vector));
-
-    DBUG_RETURN (result);
-#else
-    /*
-     * use function Stdlib:drop instead
-     */
-    result = TCmakeSpap2 (STRcpy ("Stdlib"), STRcpy ("drop"), left,
-                          TCmakeSpap2 (STRcpy ("Stdlib"), STRcpy ("drop"),
-                                       MAKE_BIN_PRF (F_mul_SxS, TBmakeNum (-1), right),
-                                       vector));
-#endif
-}
-
-/**
- * builds code that concatenates two vectors.
- *
- * @param a sac expression that evaluates to a vector.
- * @param b sac expression that evaluates to a vector.
- * @return part if the AST containing the code concatenating the two
- *         vectors
- */
-static node *
-BuildConcat (node *a, node *b)
-{
-#ifdef HD_USE_BUILTIN_CONCAT
-    node *result;
-
-    DBUG_ENTER ();
-
-    result = MAKE_BIN_PRF (F_cat_VxV, a, b);
-
-    DBUG_RETURN (result);
-#else
-    result = TCmakeSpap2 (STRcpy ("Stdlib"), STRcpy ("concat"), a, b);
-#endif
-}
-
-/**
- * builds the left part of the result shape vector containing any
- * shape information based upon dots found before a tripledot. For
- * every dot within the selection vector, the corresponding shape
- * of the current array is inserted. The shape at non-dot positions
- * is ignored.
- *
- * @param array the id of the array on that the selection operates
- * @param info the dotinfo structure
- * @return sac code representing the shape vector
- */
-static node *
-BuildLeftShape (node *array, dotinfo *info)
-{
-    int cnt;
-    int maxdot;
-    node *result = NULL;
-
-    DBUG_ENTER ();
-
-    if (info->tripledot == 0)
-        maxdot = info->dotcnt;
-    else
-        maxdot = info->tripledot - 1;
-
-    for (cnt = maxdot; cnt > 0; cnt--) {
-        result = TBmakeExprs (MAKE_BIN_PRF (F_sel_VxA,
-                                            TCmakeIntVector (
-                                              TBmakeExprs (TBmakeNum (LDot2Pos (cnt, info)
-                                                                      - 1),
-                                                           NULL)),
-                                            TBmakePrf (F_shape_A,
-                                                       TBmakeExprs (DUPdoDupTree (array),
-                                                                    NULL))),
-                              result);
-    }
-
-    /* do not create empty array */
-    if (result != NULL) {
-        result = TCmakeIntVector (result);
-    }
-
-    DBUG_RETURN (result);
-}
-
-/**
- * Builds the middle part of the result shape vector. The middle shape is
- * built by removing all elements corresponding to entries wihtin the
- * selection vector occuring prior to the triple dot from the left and
- * removing those entries occuring past the triple dot from the right.
- *
- * @param array array that the selection operates on
- * @param info dotinfo structure
- * @return sac code representing the middle shape vector
- */
-static node *
-BuildMiddleShape (node *array, dotinfo *info)
-{
-    node *result = NULL;
-    node *shape = NULL;
-    node *left = NULL;
-    node *right = NULL;
-
-    DBUG_ENTER ();
-
-    shape = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL));
-
-    left = TBmakeNum (info->triplepos - 1);
-
-    right = TBmakeNum (info->selcnt - info->triplepos);
-
-    result = BuildDrop (left, right, shape);
-
-    DBUG_RETURN (result);
-}
-
-/**
- * builds the right part of the result shape vector. For every dot occuring
- * on the right side of the triple dot, the corresponding shape of the
- * array the selection operartes on, is inserted. The shape information
- * corresponding to non dot entries is ignored.
- *
- * @param array array the selection operates on
- * @param info dotinfo structure
- * @return sac representation of the right result shape vector
- */
-static node *
-BuildRightShape (node *array, dotinfo *info)
-{
-    int cnt;
-    int maxdot;
-    node *result = NULL;
-
-    DBUG_ENTER ();
-
-    maxdot = info->dotcnt - info->tripledot;
-
-    for (cnt = 1; cnt <= maxdot; cnt++) {
-        result = TBmakeExprs (
-          MAKE_BIN_PRF (
-            F_sel_VxA,
-            TCmakeIntVector (TBmakeExprs (
-              MAKE_BIN_PRF (
-                F_sub_SxS,
-                MAKE_BIN_PRF (F_sel_VxA,
-                              TCmakeIntVector (TBmakeExprs (TBmakeNum (0), NULL)),
-                              TBmakePrf (F_shape_A,
-                                         TBmakeExprs (TBmakePrf (F_shape_A,
-                                                                 TBmakeExprs (DUPdoDupTree (
-                                                                                array),
-                                                                              NULL)),
-                                                      NULL))),
-                TBmakeNum (RDot2Pos (cnt, info))),
-              NULL)),
-            TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL))),
-          result);
-    }
-
-    /* do not create empty array */
-    if (result != NULL) {
-        result = TCmakeIntVector (result);
-    }
-
-    DBUG_RETURN (result);
-}
-
-/**
- * Build the result shape vector of the selection. The shape consists of
- * three parts, the left, middle and right shape vector. See
- * BuildMiddle/Left/RightShape for details. The parts are assigned to
- * temporary identifiers and concatenated by runtime code. See
- * BuildConcat for details.
- * In order to insert the new identifiers, they are added to the
- * assigns chain and inserted by HDap in front of the selection.
- *
- * @param array array the selection operates on
- * @param info dotinfo structure
- * @result sac representation of the result shape vector
- */
-static node *
-BuildShape (node *array, dotinfo *info)
-{
-    node *leftshape = NULL;
-    node *middleshape = NULL;
-    node *rightshape = NULL;
-
-    DBUG_ENTER ();
-
-    if (info->triplepos != 1) {
-        leftshape = BuildLeftShape (array, info);
-    }
-
-    if (info->triplepos != 0) {
-        middleshape = BuildMiddleShape (array, info);
-    }
-
-    if ((info->triplepos != 0) && (info->triplepos != info->selcnt)) {
-        rightshape = BuildRightShape (array, info);
-    }
-
-    if (rightshape != NULL) {
-        middleshape = BuildConcat (middleshape, rightshape);
-        rightshape = NULL;
-    }
-
-    if (middleshape != NULL) {
-        if (leftshape == NULL) {
-            leftshape = middleshape;
-            middleshape = NULL;
-        } else {
-            leftshape = BuildConcat (leftshape, middleshape);
-            middleshape = NULL;
-        }
-    }
-
-    DBUG_ASSERT (leftshape != NULL, "error building shape: the shape is empty!");
-
-    DBUG_RETURN (leftshape);
-}
-
-/**
- * builds the left part of the index vector that is used to select each
- * element of the result within the withloop. For every dot within the
- * selection vector, the corresponding part of the withloops index vector
- * is inserted, otherwise the element within the selection vector is inserted.
- *
- * @param args selection vector the selection operates on
- * @param iv identifier of the withloop index vector
- * @param info dotinfo structure
- * @return left part of the index vector
- */
-static node *
-BuildLeftIndex (node *args, node *iv, dotinfo *info)
-{
-    int cnt;
-    int maxcnt;
-    node *result = NULL;
-
-    DBUG_ENTER ();
-
-    if (info->tripledot == 0) {
-        maxcnt = info->selcnt;
-    } else {
-        maxcnt = info->triplepos - 1;
-    }
-
-    for (cnt = maxcnt; cnt > 0; cnt--) {
-        if (LIsDot (cnt, info)) {
-            /* Make selection iv[ldot(cnt)-1] */
-            result = TBmakeExprs (MAKE_BIN_PRF (F_sel_VxA,
-                                                TCmakeIntVector (
-                                                  TBmakeExprs (TBmakeNum (
-                                                                 LIsDot (cnt, info) - 1),
-                                                               NULL)),
-                                                DUPdoDupTree (iv)),
-                                  result);
-        } else {
-            result
-              = TBmakeExprs (DUPdoDupTree (TCgetNthExprsExpr (cnt - 1, args)), result);
-        }
-    }
-
-    result = TCmakeIntVector (result);
-
-    DBUG_RETURN (result);
-}
-
-/**
- * build the middle part of the index vector used within the withloop
- * to select the elements of the result. The middle part is constructed
- * by dropping the elements not belonging to the triple dot, thus already
- * matched by another element of the selection vector.
- *
- * @param args selection vector the selection operates on
- * @param iv id of the withloops index vector
- * @param info dotinfo structure
- * @return sac representation of the middle index vector
- */
-static node *
-BuildMiddleIndex (node *args, node *iv, dotinfo *info)
-{
-    node *result = NULL;
-    node *left = NULL;
-    node *right = NULL;
-
-    DBUG_ENTER ();
-
-    left = TBmakeNum (info->tripledot - 1);
-    right = TBmakeNum (info->dotcnt - info->tripledot);
-
-    result = BuildDrop (left, right, DUPdoDupTree (iv));
-
-    DBUG_RETURN (result);
-}
-
-/**
- * builds the right part of selection vector used within the withloop
- * to select every element of the result. For every dot within the
- * selection vector the corresponding element of the indexvector is inserted.
- * For non dot elements, those are inserted.
- *
- * @param args selection vector the selection operates on
- * @param iv identifier of the withloops indexvector
- * @param info dotinfo structure
- * @return sac representation of the index vectors right part
- */
-static node *
-BuildRightIndex (node *args, node *iv, dotinfo *info)
-{
-    int cnt;
-    int maxcnt;
-    node *result = NULL;
-
-    DBUG_ENTER ();
-
-    maxcnt = info->selcnt - info->triplepos;
-
-    for (cnt = 1; cnt <= maxcnt; cnt++) {
-        if (RIsDot (cnt, info)) {
-            /* Make selection iv[selcnt - rdot(cnt)] */
-            result = TBmakeExprs (
-              MAKE_BIN_PRF (
-                F_sel_VxA,
-                TCmakeIntVector (TBmakeExprs (
-                  MAKE_BIN_PRF (F_sub_SxS,
-                                MAKE_BIN_PRF (F_sel_VxA,
-                                              TCmakeIntVector (
-                                                TBmakeExprs (TBmakeNum (0), NULL)),
-                                              TBmakePrf (F_shape_A,
-                                                         TBmakeExprs (DUPdoDupTree (iv),
-                                                                      NULL))),
-                                TBmakeNum (RIsDot (cnt, info))),
-                  NULL)),
-                DUPdoDupTree (iv)),
-              result);
-        } else {
-            result
-              = TBmakeExprs (DUPdoDupTree (TCgetNthExprsExpr (info->selcnt - cnt, args)),
-                             result);
-        }
-    }
-
-    result = TCmakeVector (TYmakeAUD (TYmakeSimpleType (T_unknown)), result);
-
-    DBUG_RETURN (result);
-}
-
-/**
- * builds the indexvector used within the withloop to select each element
- * of the result. The indexvector is built out of three parts. See
- * BuildMiddle/Left/RightIndex for details. The three parts are concatenated
- * during runtime. The sac code is built by BuildConcat.
- *
- * @param args selection vector the selection operates on
- * @param iv identifier of the withloops index vector
- * @param block returns the code block of the withloop used to concatenate
- *              the three parts during runtime
- * @param info dotinfo structure
- * @return identifiert of the selection index created
- */
-static node *
-BuildIndex (node *args, node *iv, node *block, dotinfo *info)
-{
-    node *leftindex = NULL;
-    node *leftid = NULL;
-    node *middleindex = NULL;
-    node *middleid = NULL;
-    node *rightindex = NULL;
-    node *rightid = NULL;
-
-    DBUG_ENTER ();
-
-    if (info->triplepos != 1) {
-        leftindex = BuildLeftIndex (args, iv, info);
-        leftid = MakeTmpId ("left_index");
-        BLOCK_ASSIGNS (block)
-          = TCappendAssign (BLOCK_ASSIGNS (block),
-                            MakeAssignLetNV (STRcpy (SPID_NAME (leftid)), leftindex));
-    }
-
-    if (info->triplepos != 0) {
-        middleindex = BuildMiddleIndex (args, iv, info);
-        middleid = MakeTmpId ("middle_index");
-        BLOCK_ASSIGNS (block)
-          = TCappendAssign (BLOCK_ASSIGNS (block),
-                            MakeAssignLetNV (STRcpy (SPID_NAME (middleid)), middleindex));
-    }
-
-    if ((info->triplepos != 0) && (info->triplepos != info->selcnt)) {
-        rightindex = BuildRightIndex (args, iv, info);
-        rightid = MakeTmpId ("right_index");
-        BLOCK_ASSIGNS (block)
-          = TCappendAssign (BLOCK_ASSIGNS (block),
-                            MakeAssignLetNV (STRcpy (SPID_NAME (rightid)), rightindex));
-    }
-
-    if (rightid != NULL) {
-        node *tmpid = NULL;
-
-        tmpid = MakeTmpId ("middle_and_right_index");
-
-        BLOCK_ASSIGNS (block)
-          = TCappendAssign (BLOCK_ASSIGNS (block),
-                            MakeAssignLetNV (STRcpy (SPID_NAME (tmpid)),
-                                             BuildConcat (middleid, rightid)));
-
-        middleid = tmpid;
-        rightid = NULL;
-    }
-
-    if (middleid != NULL) {
-        if (leftid == NULL) {
-            leftid = middleid;
-            middleid = NULL;
-        } else {
-            node *tmpid = NULL;
-
-            tmpid = MakeTmpId ("complete_index");
-
-            BLOCK_ASSIGNS (block)
-              = TCappendAssign (BLOCK_ASSIGNS (block),
-                                MakeAssignLetNV (STRcpy (SPID_NAME (tmpid)),
-                                                 BuildConcat (leftid, middleid)));
-
-            leftid = tmpid;
-            middleid = NULL;
-        }
-    }
-
-    DBUG_ASSERT (leftid != NULL, "error building index: the index is empty!");
-
-    DBUG_RETURN (leftid);
-}
 
 /**
  * builds a withloop generating an array containing
@@ -918,99 +322,6 @@ BuildDefaultWithloop (node *array, node *shape)
     GENARRAY_DEFAULT (WITH_WITHOP (result))
       = TCmakeSpap1 (NSgetNamespace (global.preludename), STRcpy ("zero"),
                      DUPdoDupTree (array));
-
-    CODE_USED (WITH_CODE (result))++;
-    PART_CODE (WITH_PART (result)) = WITH_CODE (result);
-
-    DBUG_RETURN (result);
-}
-
-/**
- * builds the shape of an selected element. There is no expansion
- * of dot shapes.
- *
- * @param array AST of the array the selection takes place on
- * @param info corresponding dotinfo structure
- * @return AST of the shape
- */
-
-static node *
-BuildSelectionElementShape (node *array, dotinfo *info)
-{
-    node *shape = NULL;
-
-    DBUG_ENTER ();
-
-    shape
-      = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (info->selcnt),
-                      TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL)));
-
-    DBUG_RETURN (shape);
-}
-
-/**
- * builds a default value for the selection.
- * @param array AST node of the array
- * @param info dotinfo structure of the array
- */
-
-static node *
-BuildSelectionDefault (node *array, dotinfo *info)
-{
-    node *result = NULL;
-
-    DBUG_ENTER ();
-
-    if (info->triplepos == 0) {
-        /* no tripledot, build default */
-
-        node *shape = BuildSelectionElementShape (array, info);
-
-        result = BuildDefaultWithloop (array, shape);
-    } else {
-        /* default is just a scalar */
-
-        result = TBmakeExprs (DUPdoDupTree (array), NULL);
-        result
-          = TBmakeSpap (TBmakeSpid (NSgetNamespace (global.preludename), STRcpy ("zero")),
-                        result);
-    }
-
-    DBUG_RETURN (result);
-}
-
-/**
- * builds the withloop construct replacing the selection.
- *
- * @param shape shape vector of the withloop
- * @param iv identifier of the index vector
- * @param array array the withloop operates ib
- * @param index index of the selection
- * @param block the withloops inner code block
- * @return sac code of the withloop
- */
-static node *
-BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block,
-               dotinfo *info)
-{
-    node *result;
-    node *ap;
-    node *ids;
-
-    DBUG_ENTER ();
-
-    ap = TBmakeSpap (TBmakeSpid (NULL, STRcpy ("sel")),
-                     TBmakeExprs (index, TBmakeExprs (DUPdoDupTree (array), NULL)));
-
-    ids = TBmakeSpids (STRcpy (SPID_NAME (iv)), NULL);
-
-    result = TBmakeWith (TBmakePart (NULL, TBmakeWithid (ids, NULL),
-                                     TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
-                                                      TBmakeDot (1), NULL, NULL)),
-                         TBmakeCode (block, TBmakeExprs (ap, NULL)),
-                         TBmakeGenarray (shape, NULL));
-
-    GENARRAY_DEFAULT (WITH_WITHOP (result)) = BuildSelectionDefault (array, info);
 
     CODE_USED (WITH_CODE (result))++;
     PART_CODE (WITH_PART (result)) = WITH_CODE (result);
@@ -1057,7 +368,7 @@ BuildIdTable (node *ids, idtable *appendto)
             ids = EXPRS_NEXT (ids);
         }
     } else if (NODE_TYPE (ids) == N_spid)
-#ifdef HD_SETWL_VECTOR
+#ifdef HSE_SETWL_VECTOR
     {
         idtable *newtab = (idtable *)MEMmalloc (sizeof (idtable));
         newtab->id = STRcpy (SPID_NAME (ids));
@@ -1156,7 +467,7 @@ ScanVector (node *vector, node *array, info *arg_info)
     int poscnt = 0;
     int tripledotflag = 0;
     int exprslen = TCcountExprs (vector);
-    idtable *ids = INFO_HD_IDTABLE (arg_info);
+    idtable *ids = INFO_HSE_IDTABLE (arg_info);
 
     DBUG_ENTER ();
 
@@ -1222,7 +533,7 @@ ScanVector (node *vector, node *array, info *arg_info)
     DBUG_RETURN ();
 }
 
-#ifdef HD_SETWL_VECTOR
+#ifdef HSE_SETWL_VECTOR
 /**
  * scans a selection vector given as a single vector variable. If it
  * exists within ids, the corresponding shape is stored in ids.
@@ -1234,7 +545,7 @@ ScanVector (node *vector, node *array, info *arg_info)
 static void
 ScanId (node *id, node *array, info *arg_info)
 {
-    idtable *ids = INFO_HD_IDTABLE (arg_info);
+    idtable *ids = INFO_HSE_IDTABLE (arg_info);
     DBUG_ENTER ();
 
     while (ids != NULL) {
@@ -1359,7 +670,7 @@ BuildWLShape (idtable *table, idtable *end)
 
         result = TCmakeIntVector (result);
     }
-#ifdef HD_SETWL_VECTOR
+#ifdef HSE_SETWL_VECTOR
     else if (table->type == ID_vector) {
         if (table->shapes == NULL) {
             CTIerrorLine (global.linenum,
@@ -1869,16 +1180,16 @@ BuildPermutatedVector (node *ids, node *vect)
  * @result transformed AST without dots and dot constructs
  */
 node *
-HDdoEliminateSelDots (node *arg_node)
+HSEdoEliminateSetExpressions (node *arg_node)
 {
     info *arg_info;
 
     DBUG_ENTER ();
 
     arg_info = MakeInfo ();
-    INFO_HD_TRAVSTATE (arg_info) = HD_sel;
+    INFO_HSE_TRAVSTATE (arg_info) = HSE_scan;
 
-    TRAVpush (TR_hd);
+    TRAVpush (TR_hse);
 
     arg_node = TRAVdo (arg_node, arg_info);
 
@@ -1887,250 +1198,6 @@ HDdoEliminateSelDots (node *arg_node)
     arg_info = FreeInfo (arg_info);
 
     CTIabortOnError ();
-
-    DBUG_RETURN (arg_node);
-}
-
-/**
- * hook for with nodes. Needed to normalize dots within withloop
- * generators. At first, the withop node is traversed in order to
- * get the result shape of the withloop, needed to calculate the
- * replacements. The shape is stored in the arg_info structure.
- * Afterwards the rest is traversed in order to replace the dots.
- *
- * @param arg_node current node within the AST
- * @param arg_info info node
- * @result transformed AST
- */
-
-node *
-HDwith (node *arg_node, info *arg_info)
-{
-    /* INFO_HD_DOTSHAPE is used for '.'-substitution in WLgenerators */
-    /* in order to handle nested WLs correct, olddotshape stores not */
-    /* processed shapes until this (maybe inner) WL is processed.    */
-    /* NOTE: We have to set it to NULL here, as it might be freed    */
-    /*       in HDpart otherwise (this can happen as the DOTSHAPE is */
-    /*       not collected in all traversal modes!                   */
-
-    node *olddotshape = INFO_HD_DOTSHAPE (arg_info);
-    INFO_HD_DOTSHAPE (arg_info) = NULL;
-
-    DBUG_ENTER ();
-
-    /*
-     * by default (TravSons), withop would be traversed last, but
-     * some information from withop is needed in order to traverse
-     * the rest, so the withop is handeled first.
-     */
-
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
-
-    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-
-    INFO_HD_DOTSHAPE (arg_info) = olddotshape;
-
-    DBUG_RETURN (arg_node);
-}
-
-/**
- * scans the withop node for the shape of the current withloop and stores
- * it within the arg_info node. For fold withloops a null is stored as
- * there is no shape information in fold withop nodes.
- *
- * @param arg_node current node of the AST
- * @param arg_info info node
- * @return current node of the AST
- */
-node *
-HDgenarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
-        INFO_HD_DOTSHAPE (arg_info) = DUPdoDupTree (GENARRAY_SHAPE (arg_node));
-    }
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/**
- * scans the withop node for the shape of the current withloop and stores
- * it within the arg_info node. For fold withloops a null is stored as
- * there is no shape information in fold withop nodes.
- *
- * @param arg_node current node of the AST
- * @param arg_info info node
- * @return current node of the AST
- */
-node *
-HDmodarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
-        INFO_HD_DOTSHAPE (arg_info)
-          = TCmakePrf1 (F_shape_A, DUPdoDupTree (MODARRAY_ARRAY (arg_node)));
-    }
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/**
- * scans the withop node for the shape of the current withloop and stores
- * it within the arg_info node. For fold withloops a null is stored as
- * there is no shape information in fold withop nodes.
- *
- * @param arg_node current node of the AST
- * @param arg_info info node
- * @return current node of the AST
- */
-node *
-HDfold (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
-        INFO_HD_DOTSHAPE (arg_info) = NULL;
-    }
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/**
- * removes the DOTINFO within the info structure, as it is no more needed
- * now.
- *
- * @param arg_node current node of the AST
- * @param arg_info info node
- * @return current node of the AST
- */
-node *
-HDpart (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    if ((INFO_HD_TRAVSTATE (arg_info) == HD_sel)
-        && (INFO_HD_DOTSHAPE (arg_info) != NULL)) {
-        /**
-         * the shape info in INFO_HD_DOTSHAPE(arg_info) has been used now!
-         * Note here, that it may not be consumed in HDgenerator, as there may
-         * exist more than one generators for a single WL now!
-         */
-        INFO_HD_DOTSHAPE (arg_info) = FREEdoFreeTree (INFO_HD_DOTSHAPE (arg_info));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/**
- * replaces dots in generators and normalizes the generator.
- * A dot as left boundary is replaced by 0 * shape, a right boundary
- * dot is replaced by shape. the left comparison operator is normalized
- * to <= by adding 1 to the left boundary if necessary, the right
- * boundary is normalized to < by decreasing the right boundary by 1 if
- * necessary.
- *
- * @param arg_node current node of the AST
- * @param arg_info info node
- * @return transformed AST
- */
-node *
-HDgenerator (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
-        /*
-         * Dots are replaced by the "shape" expressions, that are imported via
-         * INFO_HD_DOTSHAPE( arg_info)    (cf. HDWithop),
-         * and the bounds are adjusted so that the operator can be
-         * "normalized" to:   bound1 <= iv = [...] < bound2     .
-         */
-
-        if ((INFO_HD_DOTSHAPE (arg_info) == NULL)
-            && (DOT_ISSINGLE (GENERATOR_BOUND1 (arg_node))
-                || DOT_ISSINGLE (GENERATOR_BOUND2 (arg_node)))) {
-            CTIabortLine (global.linenum, "Dot notation is not allowed in fold and "
-                                          "propagate with loops");
-        }
-
-        if (DOT_ISSINGLE (GENERATOR_BOUND1 (arg_node))) {
-            /* replace "." by "0 * shp" */
-            GENERATOR_BOUND1 (arg_node) = FREEdoFreeTree (GENERATOR_BOUND1 (arg_node));
-            GENERATOR_BOUND1 (arg_node)
-              = TCmakePrf2 (F_mul_SxV, TBmakeNum (0),
-                            DUPdoDupTree (INFO_HD_DOTSHAPE (arg_info)));
-        }
-
-        if (GENERATOR_OP1 (arg_node) == F_wl_lt) {
-            /* make <= from < and add 1 to bound */
-            GENERATOR_OP1 (arg_node) = F_wl_le;
-            GENERATOR_BOUND1 (arg_node)
-              = TCmakePrf2 (F_add_VxS, GENERATOR_BOUND1 (arg_node), TBmakeNum (1));
-        }
-
-        if (DOT_ISSINGLE (GENERATOR_BOUND2 (arg_node))) {
-            if (GENERATOR_OP2 (arg_node) == F_wl_le) {
-                /* make < from <= and replace "." by "shp"  */
-                GENERATOR_OP2 (arg_node) = F_wl_lt;
-                GENERATOR_BOUND2 (arg_node)
-                  = FREEdoFreeTree (GENERATOR_BOUND2 (arg_node));
-                GENERATOR_BOUND2 (arg_node) = DUPdoDupTree (INFO_HD_DOTSHAPE (arg_info));
-            } else {
-                /* replace "." by "shp - 1"  */
-                GENERATOR_BOUND2 (arg_node)
-                  = FREEdoFreeTree (GENERATOR_BOUND2 (arg_node));
-                GENERATOR_BOUND2 (arg_node)
-                  = TCmakePrf2 (F_sub_VxS, DUPdoDupTree (INFO_HD_DOTSHAPE (arg_info)),
-                                TBmakeNum (1));
-            }
-        } else {
-            if (GENERATOR_OP2 (arg_node) == F_wl_le) {
-                /* make < from <= and add 1 to bound */
-                GENERATOR_OP2 (arg_node) = F_wl_lt;
-                GENERATOR_BOUND2 (arg_node)
-                  = TCmakePrf2 (F_add_VxS, GENERATOR_BOUND2 (arg_node), TBmakeNum (1));
-            }
-        }
-    }
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/**
- * hook for dot nodes used to generate a warning if an unhandled dot is
- * found.
- *
- * @param arg_node current node of the AST
- * @param arg_info info node
- * @return current node of the AST
- */
-node *
-HDdot (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
-        if (DOT_NUM (arg_node) == 1) {
-            CTIerrorLine (global.linenum, "'.' not allowed here.");
-        } else {
-            CTIerrorLine (global.linenum, "'...' not allowed here.");
-        }
-    }
 
     DBUG_RETURN (arg_node);
 }
@@ -2147,52 +1214,21 @@ HDdot (node *arg_node, info *arg_info)
  * @return transformed AST
  */
 node *
-HDspap (node *arg_node, info *arg_info)
+HSEspap (node *arg_node, info *arg_info)
 {
     node *result = arg_node;
 
     DBUG_ENTER ();
 
-    /* only sel statements are of interest here, so just return */
-    /* on anything else                                         */
-    /* besides ARG1 must be an array. because otherwise there   */
-    /* is no possibility to find any dot...                     */
+    /* if in HSE_scan mode, scan for shapes */
 
-    if ((INFO_HD_TRAVSTATE (arg_info) == HD_sel) && (STReq (SPAP_NAME (arg_node), "sel"))
-        && (SPAP_NS (arg_node) == NULL)
-        && (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array)) {
-        dotinfo *info = MakeDotInfo (ARRAY_AELEMS (SPAP_ARG1 (arg_node)));
-
-        if (info->dotcnt != 0) {
-            node *shape;
-            node *iv;
-            node *index;
-            node *block;
-
-            iv = MakeTmpId ("index");
-            block = MAKE_EMPTY_BLOCK ();
-            shape = BuildShape (SPAP_ARG2 (arg_node), info);
-
-            index = BuildIndex (ARRAY_AELEMS (SPAP_ARG1 (arg_node)), iv, block, info);
-
-            result = BuildWithLoop (shape, iv, SPAP_ARG2 (arg_node), index, block, info);
-
-            arg_node = FREEdoFreeTree (arg_node);
-            iv = FREEdoFreeNode (iv);
-        }
-
-        FreeDotInfo (info);
-    }
-
-    /* if in HD_scan mode, scan for shapes */
-
-    if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan) && (STReq (SPAP_NAME (arg_node), "sel"))
+    if ((INFO_HSE_TRAVSTATE (arg_info) == HSE_scan) && (STReq (SPAP_NAME (arg_node), "sel"))
         && (SPAP_NS (arg_node) == NULL)) {
         if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array) {
             ScanVector (ARRAY_AELEMS (SPAP_ARG1 (arg_node)), SPAP_ARG2 (arg_node),
                         arg_info);
         }
-#ifdef HD_SETWL_VECTOR
+#ifdef HSE_SETWL_VECTOR
         else if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_spid) {
             ScanId (SPAP_ARG1 (arg_node), SPAP_ARG2 (arg_node), arg_info);
         }
@@ -2200,9 +1236,9 @@ HDspap (node *arg_node, info *arg_info)
     }
 
     /*
-     * if in HD_default mode, build default
+     * if in HSE_default mode, build default
      */
-    if ((INFO_HD_TRAVSTATE (arg_info) == HD_default)
+    if ((INFO_HSE_TRAVSTATE (arg_info) == HSE_default)
         && (STReq (SPAP_NAME (arg_node), "sel")) && (SPAP_NS (arg_node) == NULL)) {
         if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array) {
             /*
@@ -2317,7 +1353,7 @@ HDspap (node *arg_node, info *arg_info)
             FreeDotInfo (info);
         } else if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_spid) {
             idtype type = IdTableContains (SPID_NAME (SPAP_ARG1 (arg_node)),
-                                           INFO_HD_IDTABLE (arg_info));
+                                           INFO_HSE_IDTABLE (arg_info));
 
             if (type == ID_vector) {
                 /*
@@ -2334,7 +1370,7 @@ HDspap (node *arg_node, info *arg_info)
                                               TBmakeExprs (TBmakeNum (0), NULL)),
                                             TCmakePrf1 (F_shape_A,
                                                         DUPdoDupTree (
-                                                          INFO_HD_WLSHAPE (arg_info)))),
+                                                          INFO_HSE_WLSHAPE (arg_info)))),
                                 TCmakePrf1 (F_shape_A,
                                             DUPdoDupTree (SPAP_ARG2 (arg_node))));
 
@@ -2385,42 +1421,23 @@ HDspap (node *arg_node, info *arg_info)
  * @return current node of the AST
  */
 node *
-HDprf (node *arg_node, info *arg_info)
+HSEprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /* if in HD_scan mode, scan for shapes */
+    /* if in HSE_scan mode, scan for shapes */
 
-    if ((INFO_HD_TRAVSTATE (arg_info) == HD_scan) && (PRF_PRF (arg_node) == F_sel_VxA)) {
+    if ((INFO_HSE_TRAVSTATE (arg_info) == HSE_scan) && (PRF_PRF (arg_node) == F_sel_VxA)) {
         if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array) {
             ScanVector (ARRAY_AELEMS (PRF_ARG1 (arg_node)), PRF_ARG2 (arg_node),
                         arg_info);
         }
-#ifdef HD_SETWL_VECTOR
+#ifdef HSE_SETWL_VECTOR
         else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_spid) {
             ScanId (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info);
         }
 #endif
     }
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/**
- * hook used to insert pending assings created by BuildShape prior
- * to the axis control selection. The code is parsed and afterwards any pending
- * assignments are inserted prior to this node.
- *
- * @param arg_node current node of the AST
- * @param arg_info info node
- * @result current node of the AST and inserted assigns
- */
-node *
-HDassign (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -2439,12 +1456,12 @@ HDassign (node *arg_node, info *arg_info)
  * @return transformed AST
  */
 node *
-HDsetwl (node *arg_node, info *arg_info)
+HSEsetwl (node *arg_node, info *arg_info)
 {
     node *result = NULL;
-    travstate oldstate = INFO_HD_TRAVSTATE (arg_info);
-    idtable *oldtable = INFO_HD_IDTABLE (arg_info);
-    node *oldshape = INFO_HD_WLSHAPE (arg_info);
+    travstate oldstate = INFO_HSE_TRAVSTATE (arg_info);
+    idtable *oldtable = INFO_HSE_IDTABLE (arg_info);
+    node *oldshape = INFO_HSE_WLSHAPE (arg_info);
     node *defexpr = NULL;
     node *ids = NULL;
     int dotcnt;
@@ -2463,15 +1480,15 @@ HDsetwl (node *arg_node, info *arg_info)
 
     /* from here on, it is a set notation without any dots */
 
-    INFO_HD_TRAVSTATE (arg_info) = HD_scan;
-    INFO_HD_IDTABLE (arg_info) = BuildIdTable (ids, INFO_HD_IDTABLE (arg_info));
+    INFO_HSE_TRAVSTATE (arg_info) = HSE_scan;
+    INFO_HSE_IDTABLE (arg_info) = BuildIdTable (ids, INFO_HSE_IDTABLE (arg_info));
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    INFO_HD_WLSHAPE (arg_info) = BuildWLShape (INFO_HD_IDTABLE (arg_info), oldtable);
+    INFO_HSE_WLSHAPE (arg_info) = BuildWLShape (INFO_HSE_IDTABLE (arg_info), oldtable);
 
-    if (INFO_HD_WLSHAPE (arg_info) != NULL) {
-        if (INFO_HD_IDTABLE (arg_info)->type == ID_scalar) {
+    if (INFO_HSE_WLSHAPE (arg_info) != NULL) {
+        if (INFO_HSE_IDTABLE (arg_info)->type == ID_scalar) {
             result
               = TBmakeWith (TBmakePart (NULL, TBmakeWithid (NULL, Exprs2Ids (ids)),
                                         TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
@@ -2479,10 +1496,10 @@ HDsetwl (node *arg_node, info *arg_info)
                             TBmakeCode (MAKE_EMPTY_BLOCK (),
                                         TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
                                                      NULL)),
-                            TBmakeGenarray (DUPdoDupTree (INFO_HD_WLSHAPE (arg_info)),
+                            TBmakeGenarray (DUPdoDupTree (INFO_HSE_WLSHAPE (arg_info)),
                                             NULL));
         }
-#ifdef HD_SETWL_VECTOR
+#ifdef HSE_SETWL_VECTOR
         else {
             node *newids = TBmakeSpids (STRcpy (SPID_NAME (ids)), NULL);
 
@@ -2493,16 +1510,16 @@ HDsetwl (node *arg_node, info *arg_info)
                             TBmakeCode (MAKE_EMPTY_BLOCK (),
                                         TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
                                                      NULL)),
-                            TBmakeGenarray (DUPdoDupTree (INFO_HD_WLSHAPE (arg_info)),
+                            TBmakeGenarray (DUPdoDupTree (INFO_HSE_WLSHAPE (arg_info)),
                                             NULL));
         }
 #endif
 
         /* build a default value for the withloop */
         defexpr = DUPdoDupTree (SETWL_EXPR (arg_node));
-        INFO_HD_TRAVSTATE (arg_info) = HD_default;
+        INFO_HSE_TRAVSTATE (arg_info) = HSE_default;
         defexpr = TRAVdo (defexpr, arg_info);
-        INFO_HD_TRAVSTATE (arg_info) = HD_scan;
+        INFO_HSE_TRAVSTATE (arg_info) = HSE_scan;
 
         CODE_USED (WITH_CODE (result))++;
         PART_CODE (WITH_PART (result)) = WITH_CODE (result);
@@ -2558,14 +1575,14 @@ HDsetwl (node *arg_node, info *arg_info)
         FREEdoFreeTree (arg_node);
         FREEdoFreeTree (ids);
 
-        FreeIdTable (INFO_HD_IDTABLE (arg_info), oldtable);
+        FreeIdTable (INFO_HSE_IDTABLE (arg_info), oldtable);
 
-        INFO_HD_WLSHAPE (arg_info) = FREEdoFreeTree (INFO_HD_WLSHAPE (arg_info));
+        INFO_HSE_WLSHAPE (arg_info) = FREEdoFreeTree (INFO_HSE_WLSHAPE (arg_info));
     }
 
-    INFO_HD_IDTABLE (arg_info) = oldtable;
-    INFO_HD_TRAVSTATE (arg_info) = oldstate;
-    INFO_HD_WLSHAPE (arg_info) = oldshape;
+    INFO_HSE_IDTABLE (arg_info) = oldtable;
+    INFO_HSE_TRAVSTATE (arg_info) = oldstate;
+    INFO_HSE_WLSHAPE (arg_info) = oldshape;
 
     if (result != NULL) {
         arg_node = TRAVdo (result, arg_info);
@@ -2584,12 +1601,12 @@ HDsetwl (node *arg_node, info *arg_info)
  * @return transformed AST
  */
 node *
-HDspid (node *arg_node, info *arg_info)
+HSEspid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_HD_TRAVSTATE (arg_info) == HD_default) {
-        idtype type = IdTableContains (SPID_NAME (arg_node), INFO_HD_IDTABLE (arg_info));
+    if (INFO_HSE_TRAVSTATE (arg_info) == HSE_default) {
+        idtype type = IdTableContains (SPID_NAME (arg_node), INFO_HSE_IDTABLE (arg_info));
 
         if (type == ID_scalar) {
             CTInoteLine (NODE_LINE (arg_node),
@@ -2612,7 +1629,7 @@ HDspid (node *arg_node, info *arg_info)
             arg_node = TBmakePrf (F_mul_SxV,
                                   TBmakeExprs (TBmakeNum (0),
                                                TBmakeExprs (DUPdoDupTree (
-                                                              INFO_HD_WLSHAPE (arg_info)),
+                                                              INFO_HSE_WLSHAPE (arg_info)),
                                                             NULL)));
         }
     }
