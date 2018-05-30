@@ -360,7 +360,7 @@ static node *
 EMRid (node *id, info *arg_info)
 {
     DBUG_ENTER ();
-    DBUG_PRINT ("filtering out %s", ID_NAME (id));
+    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering out %s", ID_NAME (id));
     INFO_EMR_RC (arg_info) = ElimDupesOfAvis (ID_AVIS (id), INFO_EMR_RC (arg_info));
     DBUG_RETURN (id);
 }
@@ -401,14 +401,14 @@ filterDuplicateArgs (node * fexprs, node ** exprs)
     node * filtered;
     DBUG_ENTER ();
 
-    DBUG_PRINT ("filtering out duplicate N_avis");
+    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering out duplicate N_avis");
 
     filtered = TCfilterExprsArg (doAvisMatch, fexprs, exprs);
 
     /* we delete all duplicates from col */
     if (filtered != NULL) {
-        DBUG_PRINT ("  found and removed the following duplicates:");
-        DBUG_EXECUTE (PRTdoPrintFile (stderr, filtered));
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  found and removed the following duplicates:");
+        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", PRTdoPrintFile (stderr, filtered));
         filtered = FREEdoFreeTree (filtered);
     }
 
@@ -496,6 +496,7 @@ WRCIfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("\nchecking function %s ...", FUNDEF_NAME (arg_node));
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "\nchecking function %s ...", FUNDEF_NAME (arg_node));
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -524,8 +525,8 @@ WRCIap (node *arg_node, info *arg_info)
         if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
                 && AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
             FUNDEF_ERC (INFO_FUNDEF (arg_info)) = TCappendExprs (FUNDEF_ERC (INFO_FUNDEF (arg_info)), DUPdoDupTree (INFO_EMR_RC (arg_info)));
-            DBUG_PRINT ("extended reuse candidates for rec loopfun application:");
-            DBUG_EXECUTE (if (FUNDEF_ERC (INFO_FUNDEF (arg_info)) != NULL) {
+            DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "extended reuse candidates for rec loopfun application:");
+            DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (FUNDEF_ERC (INFO_FUNDEF (arg_info)) != NULL) {
                 PRTdoPrintFile (stderr, FUNDEF_ERC (INFO_FUNDEF (arg_info)));
             });
         }
@@ -547,7 +548,7 @@ WRCIarg (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_DO_EMR (arg_info)) {
-        DBUG_PRINT ("adding emr_rc %s arg ...", ARG_NAME (arg_node));
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "adding emr_rc %s arg ...", ARG_NAME (arg_node));
         INFO_EMR_RC (arg_info)
           = TBmakeExprs (TBmakeId (ARG_AVIS (arg_node)), INFO_EMR_RC (arg_info));
     }
@@ -568,7 +569,7 @@ WRCIids (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_DO_EMR (arg_info)) {
-        DBUG_PRINT ("adding emr_rc %s ids ...", IDS_NAME (arg_node));
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "adding emr_rc %s ids ...", IDS_NAME (arg_node));
         INFO_EMR_RC (arg_info)
           = TBmakeExprs (TBmakeId (IDS_AVIS (arg_node)), INFO_EMR_RC (arg_info));
     }
@@ -628,7 +629,7 @@ WRCIprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_DO_EMR (arg_info)) {
-        DBUG_PRINT ("checking N_prf referencing an emr...");
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "checking N_prf referencing an emr...");
 
         switch (PRF_PRF (arg_node)) {
             case F_idx_modarray_AxSxS:
@@ -645,8 +646,8 @@ WRCIprf (node *arg_node, info *arg_info)
                  *     this filtering to MEM phases.
                  */
                 INFO_EMR_RC (arg_info) = filterDuplicateArgs (PRF_ARGS (arg_node), &INFO_EMR_RC (arg_info));
-                DBUG_PRINT ("EMR RCs left after filtering out N_prf args");
-                DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
+                DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "EMR RCs left after filtering out N_prf args");
+                DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (INFO_EMR_RC (arg_info) != NULL) {
                     PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
                 });
                 break;
@@ -714,8 +715,8 @@ WRCIwith (node *arg_node, info *arg_info)
     }
 
     if (INFO_DO_EMR (arg_info)) {
-        DBUG_PRINT ("potential EMR candidates:");
-        DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "potential EMR candidates:");
+        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (INFO_EMR_RC (arg_info) != NULL) {
             PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
         });
 
@@ -747,8 +748,8 @@ WRCIwith (node *arg_node, info *arg_info)
         arg_node = TRAVdo (arg_node, arg_info);
         TRAVpop ();
 
-        DBUG_PRINT ("potential EMR candidates after pruning those used in WL body:");
-        DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "potential EMR candidates after pruning those used in WL body:");
+        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (INFO_EMR_RC (arg_info) != NULL) {
             PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
         });
     }
@@ -840,8 +841,8 @@ WRCIgenarray (node *arg_node, info *arg_info)
     if (INFO_DO_EMR (arg_info)) {
         GENARRAY_ERC (arg_node)
           = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
-        DBUG_PRINT ("Genarray ERCs: ");
-        DBUG_EXECUTE (if (GENARRAY_ERC (arg_node) != NULL) {
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "Genarray ERCs: ");
+        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (GENARRAY_ERC (arg_node) != NULL) {
             PRTdoPrintFile (stderr, GENARRAY_ERC (arg_node));
         });
     }
@@ -889,8 +890,8 @@ WRCImodarray (node *arg_node, info *arg_info)
     if (INFO_DO_EMR (arg_info)) {
         MODARRAY_ERC (arg_node)
           = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
-        DBUG_PRINT ("Modarray ERCs: ");
-        DBUG_EXECUTE (if (MODARRAY_ERC (arg_node) != NULL) {
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "Modarray ERCs: ");
+        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (MODARRAY_ERC (arg_node) != NULL) {
             PRTdoPrintFile (stderr, MODARRAY_ERC (arg_node));
         });
     }
@@ -959,8 +960,8 @@ ELAAFgenarray (node * arg_node, info * arg_info)
 
     if (GENARRAY_ERC (arg_node) != NULL) {
         GENARRAY_ERC (arg_node) = filterDuplicateArgs (INFO_EMR_RC (arg_info), &GENARRAY_ERC (arg_node));
-        DBUG_PRINT ("filtering genarray ERC:");
-        DBUG_EXECUTE (if (GENARRAY_ERC (arg_node) != NULL) {
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering genarray ERC:");
+        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (GENARRAY_ERC (arg_node) != NULL) {
             PRTdoPrintFile (stderr, GENARRAY_ERC (arg_node));
         });
     }
@@ -977,8 +978,8 @@ ELAAFmodarray (node * arg_node, info * arg_info)
 
     if (MODARRAY_ERC (arg_node) != NULL) {
         MODARRAY_ERC (arg_node) = filterDuplicateArgs (INFO_EMR_RC (arg_info), &MODARRAY_ERC (arg_node));
-        DBUG_PRINT ("filtering modarray ERC:");
-        DBUG_EXECUTE (if (MODARRAY_ERC (arg_node) != NULL) {
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering modarray ERC:");
+        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (MODARRAY_ERC (arg_node) != NULL) {
             PRTdoPrintFile (stderr, MODARRAY_ERC (arg_node));
         });
 
@@ -998,13 +999,13 @@ ELAAFap (node * arg_node, info * arg_info)
     /* check to see if we have found the recursive loopfun call */
     if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
             && AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
-        DBUG_PRINT ("at loop rec N_ap, copying args:");
-        DBUG_EXECUTE (PRTdoPrintFile (stderr, AP_ARGS (arg_node)));
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "at loop rec N_ap, copying args:");
+        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", PRTdoPrintFile (stderr, AP_ARGS (arg_node)));
         INFO_EMR_RC (arg_info) = TCappendExprs (INFO_EMR_RC (arg_info), DUPdoDupTree (AP_ARGS (arg_node)));
 
-        DBUG_PRINT ("filtering fun ERC:");
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering fun ERC:");
         FUNDEF_ERC (INFO_FUNDEF (arg_info)) = filterDuplicateArgs (AP_ARGS (arg_node), &FUNDEF_ERC (INFO_FUNDEF (arg_info)));
-        DBUG_EXECUTE (if (FUNDEF_ERC (INFO_FUNDEF (arg_info)) != NULL) {
+        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (FUNDEF_ERC (INFO_FUNDEF (arg_info)) != NULL) {
             PRTdoPrintFile (stderr, FUNDEF_ERC (INFO_FUNDEF (arg_info)));
         });
     }
@@ -1032,7 +1033,7 @@ ELAAFfundef (node * arg_node, info * arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("inspecting N_fundef %s ...", FUNDEF_NAME (arg_node));
+    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "inspecting N_fundef %s ...", FUNDEF_NAME (arg_node));
 
     /*
      * Top-down N_fundef chain
@@ -1087,6 +1088,7 @@ node *ELMPdoExtendLoopMemoryPropagation (node *syntax_tree)
     TRAVpop ();
 
     INFO_DO_UPDATE (arg_info) = TRUE;
+    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "Repeating traversal, updating loop N_ap");
 
     TRAVpush (TR_elmp);
     syntax_tree = TRAVdo (syntax_tree, arg_info);
@@ -1161,8 +1163,8 @@ findMatchingArgs (node * exprs, node * pot)
          * find;
     DBUG_ENTER ();
 
-    DBUG_PRINT ("finding suitable args inplace of tmp vars:");
-    DBUG_EXECUTE (if (pot != NULL) {
+    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "finding suitable args inplace of tmp vars:");
+    DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (pot != NULL) {
             PRTdoPrintFile (stderr, pot); });
 
     if (pot != NULL) {
@@ -1176,7 +1178,7 @@ findMatchingArgs (node * exprs, node * pot)
             {
                 DBUG_UNREACHABLE ("  unable to find a valid extended reuse candidate to replace tmp arg in recurisve loopfun!");
             } else {
-                DBUG_PRINT ("  found match for tmp arg %s => %s", ID_NAME (tmp), ID_NAME (find));
+                DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  found match for tmp arg %s => %s", ID_NAME (tmp), ID_NAME (find));
 
                 /* adding res to args of ap_fundef */
                 if (res == NULL)
@@ -1196,9 +1198,6 @@ ELMPlet (node * arg_node, info * arg_info)
     DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
-
-    DBUG_PRINT ("LHS vars are:");
-    DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_LHS (arg_info)));
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -1225,7 +1224,7 @@ ELMPgenarray (node * arg_node, info * arg_info)
             && GENARRAY_RC (arg_node) == NULL
             && GENARRAY_ERC (arg_node) == NULL
             && TYisAKS (IDS_NTYPE (INFO_LHS (arg_info)))) {
-        DBUG_PRINT (" genarray in loopfun has no RCs or ERCs, generating tmp one!");
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", " genarray in loopfun has no RCs or ERCs, generating tmp one!");
 
         // the new avis must have the same type/shape as genarray shape
         new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_tmp"),
@@ -1258,7 +1257,7 @@ ELMPmodarray (node * arg_node, info * arg_info)
             && MODARRAY_RC (arg_node) == NULL
             && MODARRAY_ERC (arg_node) == NULL
             && TYisAKS (IDS_NTYPE (INFO_LHS (arg_info)))) {
-        DBUG_PRINT (" modarray in loopfun has no RCs or ERCs, generating tmp one!");
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", " modarray in loopfun has no RCs or ERCs, generating tmp one!");
 
         // the new avis must have the same type/shape as genarray shape
         new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_tmp"),
@@ -1288,15 +1287,15 @@ ELMPap (node * arg_node, info * arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))) {
-        DBUG_PRINT ("checking application of %s ...", FUNDEF_NAME (AP_FUNDEF (arg_node)));
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "checking application of %s ...", FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
         /* check to see if we have found the recursive loopfun call */
         if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)
                 && !INFO_DO_UPDATE (arg_info)) {
-            DBUG_PRINT ("  this is the recursive loop application");
+            DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  this is the recursive loop application");
 
             if (INFO_TMP_RCS (arg_info) != NULL) {
-                DBUG_PRINT ("  have found tmp vars at application's fundef");
+                DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  have found tmp vars at application's fundef");
 
                 /* we filter out current application args */
                 rec_filt = filterDuplicateArgs (AP_ARGS (arg_node), &FUNDEF_ERC (INFO_FUNDEF (arg_info)));
@@ -1305,8 +1304,8 @@ ELMPap (node * arg_node, info * arg_info)
                 new_args = findMatchingArgs (INFO_TMP_RCS (arg_info), rec_filt);
                 AP_ARGS (arg_node) = TCappendExprs (AP_ARGS (arg_node), DUPdoDupTree (new_args));
 
-                DBUG_PRINT ("  args are now:");
-                DBUG_EXECUTE (if (AP_ARGS (arg_node) != NULL) {
+                DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  args are now:");
+                DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (AP_ARGS (arg_node) != NULL) {
                         PRTdoPrintFile (stderr, AP_ARGS (arg_node));});
 
                 /* clear tmp rcs */
@@ -1322,7 +1321,7 @@ ELMPap (node * arg_node, info * arg_info)
             int fun_arg_len = TCcountArgs (FUNDEF_ARGS (AP_FUNDEF (arg_node)));
 
             if (ap_arg_len != fun_arg_len) {
-                DBUG_PRINT ("  number args for ap do not match fundef: %d != %d", ap_arg_len, fun_arg_len);
+                DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  number args for ap do not match fundef: %d != %d", ap_arg_len, fun_arg_len);
 
                 /* we *always* append new args on fundef */
                 for (; ap_arg_len < fun_arg_len; ap_arg_len++)
@@ -1332,7 +1331,7 @@ ELMPap (node * arg_node, info * arg_info)
                      * allocated using that shape information.
                      */
                     node * tmp = TCgetNthArg (ap_arg_len, FUNDEF_ARGS (AP_FUNDEF (arg_node)));
-                    DBUG_PRINT ("  creating a new arg...");
+                    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  creating a new arg...");
 
                     /* the new avis must have the same type/shape as tmp arg in the fundef */
                     new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_lifted"),
@@ -1346,7 +1345,7 @@ ELMPap (node * arg_node, info * arg_info)
                     new_vardec = TBmakeVardec (new_avis, NULL);
                     AVIS_DECLTYPE (VARDEC_AVIS (new_vardec)) = TYcopyType (ARG_NTYPE (tmp));
                     INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), new_vardec);
-                    DBUG_PRINT ("  appended %s to fundef %s vardecs", AVIS_NAME (new_avis), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+                    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  appended %s to fundef %s vardecs", AVIS_NAME (new_avis), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
                 }
             }
         }
@@ -1361,15 +1360,15 @@ ELMPfundef (node * arg_node, info * arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("at N_fundef %s ...", FUNDEF_NAME (arg_node));
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "at N_fundef %s ...", FUNDEF_NAME (arg_node));
         INFO_FUNDEF (arg_info) = arg_node;
 
         if (!INFO_DO_UPDATE (arg_info) && FUNDEF_ISLOOPFUN (arg_node)) {
-            DBUG_PRINT ("  found loopfun, inspecting body...");
+            DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  found loopfun, inspecting body...");
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         } else if (INFO_DO_UPDATE (arg_info) && !FUNDEF_ISLOOPFUN (arg_node)) {
-            DBUG_PRINT ("  inspecting body...");
+            DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  inspecting body...");
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         }
