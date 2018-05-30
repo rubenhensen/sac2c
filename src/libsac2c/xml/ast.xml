@@ -1167,7 +1167,22 @@
 		  <node name="Withid" />
 		</travnone>
 	      </traversal>
-	      <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
+	      <traversal id="HWLD" name="Handle With Loop Dots" default="sons" include="handle_with_loop_dots.h">
+		<travuser>
+		  <node name="With" />
+		  <node name="Genarray" />
+		  <node name="Modarray" />
+		  <node name="Fold" />
+		  <node name="Part" />
+		  <node name="Generator" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HSD" name="Handle Selection Dots" default="sons" include="handle_selection_dots.h">
+		<travuser>
+		  <node name="SPAp" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HD" name="Handle Dots" default="sons" include="handle_set_expressions.h">
 		<travuser>
 		  <node name="SPId" />
 		  <node name="With" />

@@ -8,7 +8,6 @@
 #include "globals.h"
 #include "memory.h"
 #include "filemgr.h"
-#include "handle_dots.h"
 #include "build.h"
 #include "system.h"
 
