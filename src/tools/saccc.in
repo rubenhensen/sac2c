@@ -37,7 +37,7 @@ for arg in "$@"; do
      act=$followaction
      followaction=
      case $act in
-        ccarg)  cmdline+=(-Xc "$arg" -Xl "$arg"); continue;;
+        ccarg)  cmdline+=(-Xc "$ccarg" -Xc "$arg" -Xl "$ccarg" -Xl "$arg"); continue;;
         ldarg)  cmdline+=(-Xl "$arg"); continue;;
         sacarg) cmdline+=("$arg"); continue;;
      esac
@@ -65,7 +65,7 @@ for arg in "$@"; do
       -W*|-d*|-pedantic*|-ansi|-std*|-S|-E|-I*|-P|-A*|-D*|-U*|-C*|-H|-M*) cmdline+=(-Xc "$arg" -Xl "$arg") ;;
       -L*|-Wl,*|-l*)      cmdline+=(-Xl "$arg");;
       -Xs)    followaction=sacarg ;;
-      -Xc)    followaction=ccarg  ;;
+      -Xc)    followaction=ccarg ; ccarg= ;;
       -Xl)    followaction=ldarg  ;;
       -)     ;;
       -c)    ;;
