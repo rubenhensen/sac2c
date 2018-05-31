@@ -24,6 +24,9 @@ SUBPHASE (iotc, "Introducing user-tracing calls", IUTCdoIntroduceUserTraceCalls,
 SUBPHASE (hsd, "Handling dots in selections", HSDdoEliminateSelDots, ALWAYS,
           pre)
 
+SUBPHASE (hsed, "Handling dots in Set Notation", HSEDdoEliminateSetExpressionDots, ALWAYS,
+          pre)
+
 SUBPHASE (hse, "Translating Set Notation into With-Loops", HSEdoEliminateSetExpressions, ALWAYS,
           pre)
 

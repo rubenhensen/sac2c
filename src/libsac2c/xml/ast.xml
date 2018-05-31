@@ -1182,6 +1182,11 @@
 		  <node name="SPAp" />
 		</travuser>
 	      </traversal>
+	      <traversal id="HSED" name="Handle Set Expression Dots" default="sons" include="handle_set_expression_dots.h">
+		<travuser>
+		  <node name="SetWL" />
+		</travuser>
+	      </traversal>
 	      <traversal id="HSE" name="Handle Set Expressions" default="sons" include="handle_set_expressions.h">
 		<travuser>
 		  <node name="SPAp" />

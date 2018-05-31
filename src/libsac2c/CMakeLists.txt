@@ -412,6 +412,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/rtspec/runtime_function_id.c
 ${CMAKE_CURRENT_SOURCE_DIR}/rtspec/runtime_specialization.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_with_loop_dots.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_selection_dots.c
+${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_set_expression_dots.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_set_expressions.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_with_loop_generators.c
 ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_with_loop_operators.c

@@ -84,7 +84,7 @@ typedef struct DOTINFO {
  * Structures to store ids and shapes during shape-scan. Filled during
  * traversal in HSE_scan mode.
  */
-typedef enum TRAVSTATE { HSE_scan, HSE_default } travstate;
+typedef enum TRAVSTATE { HSE_none, HSE_scan, HSE_default } travstate;
 typedef enum IDTYPE { ID_notfound = 0, ID_vector = 1, ID_scalar = 2 } idtype;
 
 typedef struct SHPCHAIN {
@@ -134,7 +134,7 @@ MakeInfo (void)
 
     result = (info *)MEMmalloc (sizeof (info));
 
-    INFO_HSE_TRAVSTATE (result) = HSE_scan;
+    INFO_HSE_TRAVSTATE (result) = HSE_none;
     INFO_HSE_IDTABLE (result) = NULL;
     INFO_HSE_WLSHAPE (result) = NULL;
 
@@ -1187,7 +1187,7 @@ HSEdoEliminateSetExpressions (node *arg_node)
     DBUG_ENTER ();
 
     arg_info = MakeInfo ();
-    INFO_HSE_TRAVSTATE (arg_info) = HSE_scan;
+    INFO_HSE_TRAVSTATE (arg_info) = HSE_none;
 
     TRAVpush (TR_hse);
 
