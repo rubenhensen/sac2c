@@ -56,15 +56,15 @@ typedef enum {
     PF_distmem_side_effects_barrier = 13,
     PF_distmem_comm = 14
 
-} SAC_PF_timer_type;
+} SAC_PF_record_type;
 
-typedef struct timer_record {
+typedef struct profile_record {
     int funno;
     int funapno;
-    SAC_PF_timer_type timer_type;
-    struct timer_record *parent;
+    SAC_PF_record_type record_type;
+    struct profile_record *parent;
     int *cycle_tag;
-} SAC_PF_TIMER_RECORD;
+} SAC_PROFILE_RECORD;
 
 /*
  * External declarations of library functions defined in libsac
@@ -73,6 +73,8 @@ typedef struct timer_record {
 SAC_C_EXTERN void SAC_PF_PrintHeader (char *title);
 SAC_C_EXTERN void SAC_PF_PrintHeaderNode (char *title, size_t rank);
 SAC_C_EXTERN void SAC_PF_PrintSubHeader (char *title, int lineno);
+SAC_C_EXTERN void SAC_PF_PrintSection (char *title);
+SAC_C_EXTERN int SAC_PF_Printf (const char *format, ...);
 SAC_C_EXTERN void SAC_PF_PrintTime (char *title, char *space, SAC_PF_TIMER *time);
 SAC_C_EXTERN void SAC_PF_PrintCount (char *title, char *space, unsigned long count);
 SAC_C_EXTERN void SAC_PF_PrintSize (char *title, char *space, unsigned long size, char *unit);

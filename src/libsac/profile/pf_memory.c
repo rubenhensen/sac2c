@@ -9,7 +9,7 @@
 
 #include "pf_memory.h"
 
-#include "libsac/essentials/profile.h"
+#include "libsac/profile/profile.h"
 
 /* Global Variables */
 
@@ -96,11 +96,11 @@ SAC_PF_MEM_PrintStats ()
     SAC_PF_PrintHeader ("Memory Profile");
 
     fprintf (stderr, "\n*** %-72s\n", "Memory operation counters:");
-    fprintf (stderr, "### %-72s\n", "For Arrays:");
+    SAC_PF_PrintSection ("For Arrays");
     SAC_PF_PrintCount ("no. calls to (m)alloc", "", SAC_PF_MEM_alloc_memcnt);
     SAC_PF_PrintCount ("no. calls to free", "", SAC_PF_MEM_free_memcnt);
     SAC_PF_PrintCount ("no. reuses of memory", "", SAC_PF_MEM_reuse_memcnt);
-    fprintf (stderr, "### %-72s\n", "For Descriptors:");
+    SAC_PF_PrintSection ("For Descriptors");
     SAC_PF_PrintCount ("no. calls to (m)alloc", "", SAC_PF_MEM_alloc_descnt);
     SAC_PF_PrintCount ("no. calls to free", "", SAC_PF_MEM_free_descnt);
 

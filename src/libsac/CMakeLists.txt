@@ -13,8 +13,8 @@ SET (LIBSAC_SRC
   essentials/commandline.c
   essentials/message.c
   essentials/misc.c
-  essentials/profile.c
   essentials/trace.c
+  profile/profile.c
   profile/pf_memory.c
   interface/sacarg.c
   interface/sacargconvert.c

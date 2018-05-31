@@ -46,7 +46,7 @@
 #define SAC_PF_END_WITH(str)
 #define SAC_PF_DEFINE()
 
-#else /*SAC_MUTC_MACROS */
+#else /* SAC_MUTC_MACROS */
 
 /* For profiling communications */
 #if SAC_DO_COMPILE_MODULE
@@ -69,9 +69,10 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     SAC_C_EXTERN int **SAC_PF_cycle_tag;                                                 \
                                                                                          \
     SAC_C_EXTERN int SAC_PF_act_cycle_tag;                                               \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD *SAC_PF_act_record;                                 \
+    SAC_C_EXTERN SAC_PROFILE_RECORD *SAC_PF_act_record;                                  \
                                                                                          \
-    SAC_PF_DISTMEM_DEFINE ()                                                             \
+    SAC_PF_MEM_DEFINE()                                                                  \
+    SAC_PF_DISTMEM_DEFINE()                                                              \
                                                                                          \
     SAC_C_EXTERN char **SAC_PF_fun_name;                                                 \
     SAC_C_EXTERN int *SAC_PF_maxfunap;                                                   \
@@ -81,14 +82,15 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #else /* SAC_DO_COMPILE_MODULE */
 
 #define SAC_PF_DEFINE()                                                                  \
-    SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP][SAC_PF_NUM_TIMER_TYPES]; \
+    SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP][SAC_PF_NUM_RECORD_TYPES];\
     int SAC_PF_cycle_tag[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                              \
                                                                                          \
     int SAC_PF_act_cycle_tag;                                                            \
-    SAC_PF_TIMER_RECORD SAC_PF_initial_record;                                           \
-    SAC_PF_TIMER_RECORD *SAC_PF_act_record = &SAC_PF_initial_record;                     \
+    SAC_PROFILE_RECORD SAC_PF_initial_record;                                            \
+    SAC_PROFILE_RECORD *SAC_PF_act_record = &SAC_PF_initial_record;                      \
                                                                                          \
-    SAC_PF_DISTMEM_DEFINE ()                                                             \
+    SAC_PF_MEM_DEFINE()                                                                  \
+    SAC_PF_DISTMEM_DEFINE()                                                              \
                                                                                          \
     char *SAC_PF_fun_name[SAC_SET_MAXFUN] = SAC_SET_FUN_NAMES;                           \
     int SAC_PF_maxfunap[SAC_SET_MAXFUN] = SAC_SET_FUN_APPS;                              \
@@ -107,6 +109,29 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #endif /* SAC_DO_COMPILE_MODULE */
 
+/*
+ * Macros that do profiling for user-defined functions
+ */
+#define PROFILE_BEGIN_UDF(funno_in, funapno_in)                                          \
+    {                                                                                    \
+        SAC_PROFILE_RECORD SAC_PF_new_record;                                            \
+        SAC_PF_BEGIN_FUNCTION_START ()                                                   \
+        SAC_PF_new_record.parent = SAC_PF_act_record;                                    \
+        SAC_PF_new_record.funno = funno_in;                                              \
+        SAC_PF_new_record.funapno = funapno_in;                                          \
+        SAC_PF_new_record.record_type = (SAC_PF_with_level == 0 ? PF_ow_fun : PF_iw_fun);\
+        SAC_PF_new_record.cycle_tag = &SAC_PF_cycle_tag[funno_in][funapno_in];           \
+        SAC_PF_act_record = &SAC_PF_new_record;                                          \
+        SAC_PF_BEGIN_MEM ()                                                              \
+        SAC_PF_BEGIN_FUNCTION_END ()
+
+#define PROFILE_END_UDF(funno, funapno)                                                  \
+        SAC_PF_END_FUNCTION_START ()                                                     \
+        SAC_PF_act_record = SAC_PF_act_record->parent;                                   \
+        SAC_PF_END_MEM ()                                                                \
+        SAC_PF_END_FUNCTION_END ()                                                       \
+    }
+
 #define SAC_PF_SETUP()                                                                   \
     {                                                                                    \
         int i, j, k;                                                                     \
@@ -114,7 +139,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
         SAC_PF_INIT_CLOCK ();                                                            \
         for (i = 0; i < SAC_SET_MAXFUN; i++) {                                           \
             for (j = 0; j < SAC_PF_maxfunap[i]; j++) {                                   \
-                for (k = 0; k < SAC_PF_NUM_TIMER_TYPES; k++) {                           \
+                for (k = 0; k < SAC_PF_NUM_RECORD_TYPES; k++) {                          \
                     SAC_PF_INIT_TIMER (SAC_PF_timer[i][j][k]);                           \
                 }                                                                        \
                 SAC_PF_cycle_tag[i][j] = 0;                                              \
@@ -122,11 +147,12 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
         }                                                                                \
         SAC_PF_act_record->funno = 0;                                                    \
         SAC_PF_act_record->funapno = 0;                                                  \
-        SAC_PF_act_record->timer_type = PF_ow_fun;                                       \
+        SAC_PF_act_record->record_type = PF_ow_fun;                                      \
         SAC_PF_act_record->parent = NULL;                                                \
         SAC_PF_act_record->cycle_tag = &SAC_PF_cycle_tag[0][0];                          \
         SAC_PF_act_cycle_tag = 0;                                                        \
                                                                                          \
+        SAC_PF_MEM_SETUP ()                                                              \
         SAC_PF_DISTMEM_SETUP ()                                                          \
                                                                                          \
         SAC_PF_START_CLOCK ();                                                           \
@@ -147,9 +173,8 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
                                                         */                               \
             || SAC_DISTMEM_trace_profile_rank                                            \
                  == (int)SAC_DISTMEM_rank) { /* Print profiling for this node */         \
-                                                                                         \
-            SAC_PF_PRINT_DISTMEM (grand_total);                                          \
-        }                                                                                \
+                SAC_PF_PRINT_DISTMEM (grand_total);                                      \
+            }                                                                            \
         }                                                                                \
                                                                                          \
         SAC_PF_MEM_PRINT_STAT();                                                         \
@@ -258,7 +283,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #define SAC_PF_STOP_CLOCK() getrusage (RUSAGE_SELF, &SAC_PF_stop_timer)
 
 #define SAC_PF_RECORD_TIMER(record)                                                      \
-    (SAC_PF_timer[record->funno][record->funapno][record->timer_type])
+    (SAC_PF_timer[record->funno][record->funapno][record->record_type])
 
 #define SAC_PF_ADD_TO_TIMER(record)                                                      \
     {                                                                                    \
@@ -280,7 +305,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #define SAC_PF_ADD_TO_TIMER_CHAIN(record)                                                \
     {                                                                                    \
-        SAC_PF_TIMER_RECORD *tmp;                                                        \
+        SAC_PROFILE_RECORD *tmp;                                                         \
         tmp = record;                                                                    \
         SAC_PF_act_cycle_tag++;                                                          \
         do {                                                                             \
@@ -358,6 +383,8 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #endif /* SAC_DO_COMPILE_MODULE */
 
+#define PROFILE_BEGIN_UDF(funno_in, funapno_in)
+#define PROFILE_END_UDF(funno, funapno)
 #define SAC_PF_SETUP()
 #define SAC_PF_PRINT()
 
@@ -371,14 +398,14 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #define SAC_PF_BEGIN_WITH(str)                                                           \
     {                                                                                    \
-        SAC_PF_TIMER_RECORD SAC_PF_new_record;                                           \
+        SAC_PROFILE_RECORD SAC_PF_new_record;                                            \
                                                                                          \
         SAC_PF_STOP_CLOCK ();                                                            \
         SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
         SAC_PF_new_record.parent = SAC_PF_act_record;                                    \
         SAC_PF_new_record.funno = SAC_PF_act_record->funno;                              \
         SAC_PF_new_record.funapno = SAC_PF_act_record->funapno;                          \
-        SAC_PF_new_record.timer_type                                                     \
+        SAC_PF_new_record.record_type                                                    \
           = (SAC_PF_with_level == 0 ? PF_ow_##str : PF_iw_##str);                        \
         SAC_PF_new_record.cycle_tag = SAC_PF_act_record->cycle_tag;                      \
         SAC_PF_act_record = &SAC_PF_new_record;                                          \
@@ -386,11 +413,11 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
         SAC_PF_START_CLOCK ();
 
 #define SAC_PF_END_WITH(str)                                                             \
-    SAC_PF_STOP_CLOCK ();                                                                \
-    SAC_PF_with_level--;                                                                 \
-    SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                       \
-    SAC_PF_act_record = SAC_PF_act_record->parent;                                       \
-    SAC_PF_START_CLOCK ();                                                               \
+        SAC_PF_STOP_CLOCK ();                                                            \
+        SAC_PF_with_level--;                                                             \
+        SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
+        SAC_PF_act_record = SAC_PF_act_record->parent;                                   \
+        SAC_PF_START_CLOCK ();                                                           \
     }
 
 #define SAC_PF_DISPLAY_WITH 1
@@ -409,48 +436,48 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #if (SAC_DO_PROFILE_DISTMEM && SAC_DO_PROFILE)
 
-#define SAC_PF_NUM_TIMER_TYPES 15
+#define SAC_PF_NUM_RECORD_TYPES 15
 
 #if SAC_DO_COMPILE_MODULE
 
 #define SAC_PF_DISTMEM_DEFINE()                                                          \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_initial_record;                      \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD *SAC_PF_distmem_act_record;                         \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_rep_record;                          \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_dist_record;                         \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_side_effects_record;                 \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_rep_barrier_record;                  \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_dist_barrier_record;                 \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_side_effects_barrier_record;         \
-    SAC_C_EXTERN SAC_PF_TIMER_RECORD SAC_PF_distmem_comm_record;
+    SAC_C_EXTERN SAC_PROFILE_RECORD SAC_PF_distmem_initial_record;                       \
+    SAC_C_EXTERN SAC_PROFILE_RECORD *SAC_PF_distmem_act_record;                          \
+    SAC_C_EXTERN SAC_PROFILE_RECORD SAC_PF_distmem_rep_record;                           \
+    SAC_C_EXTERN SAC_PROFILE_RECORD SAC_PF_distmem_dist_record;                          \
+    SAC_C_EXTERN SAC_PROFILE_RECORD SAC_PF_distmem_side_effects_record;                  \
+    SAC_C_EXTERN SAC_PROFILE_RECORD SAC_PF_distmem_rep_barrier_record;                   \
+    SAC_C_EXTERN SAC_PROFILE_RECORD SAC_PF_distmem_dist_barrier_record;                  \
+    SAC_C_EXTERN SAC_PROFILE_RECORD SAC_PF_distmem_side_effects_barrier_record;          \
+    SAC_C_EXTERN SAC_PROFILE_RECORD SAC_PF_distmem_comm_record;
 
 #else /* SAC_DO_COMPILE_MODULE */
 
 #define SAC_PF_DISTMEM_DEFINE()                                                          \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_initial_record;                                   \
-    SAC_PF_TIMER_RECORD *SAC_PF_distmem_act_record = &SAC_PF_distmem_initial_record;     \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_rep_record;                                       \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_dist_record;                                      \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_side_effects_record;                              \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_rep_barrier_record;                               \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_dist_barrier_record;                              \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_side_effects_barrier_record;                      \
-    SAC_PF_TIMER_RECORD SAC_PF_distmem_comm_record;
+    SAC_PROFILE_RECORD SAC_PF_distmem_initial_record;                                    \
+    SAC_PROFILE_RECORD *SAC_PF_distmem_act_record = &SAC_PF_distmem_initial_record;      \
+    SAC_PROFILE_RECORD SAC_PF_distmem_rep_record;                                        \
+    SAC_PROFILE_RECORD SAC_PF_distmem_dist_record;                                       \
+    SAC_PROFILE_RECORD SAC_PF_distmem_side_effects_record;                               \
+    SAC_PROFILE_RECORD SAC_PF_distmem_rep_barrier_record;                                \
+    SAC_PROFILE_RECORD SAC_PF_distmem_dist_barrier_record;                               \
+    SAC_PROFILE_RECORD SAC_PF_distmem_side_effects_barrier_record;                       \
+    SAC_PROFILE_RECORD SAC_PF_distmem_comm_record;
 
 #endif /* SAC_DO_COMPILE_MODULE */
 
 #define SAC_PF_DISTMEM_SETUP()                                                           \
-    SAC_PF_distmem_rep_record.timer_type = PF_distmem_exec_rep;                          \
-    SAC_PF_distmem_dist_record.timer_type = PF_distmem_exec_dist;                        \
-    SAC_PF_distmem_side_effects_record.timer_type = PF_distmem_exec_side_effects;        \
-    SAC_PF_distmem_rep_barrier_record.timer_type = PF_distmem_rep_barrier;               \
-    SAC_PF_distmem_dist_barrier_record.timer_type = PF_distmem_dist_barrier;             \
-    SAC_PF_distmem_side_effects_barrier_record.timer_type                                \
+    SAC_PF_distmem_rep_record.record_type = PF_distmem_exec_rep;                         \
+    SAC_PF_distmem_dist_record.record_type = PF_distmem_exec_dist;                       \
+    SAC_PF_distmem_side_effects_record.record_type = PF_distmem_exec_side_effects;       \
+    SAC_PF_distmem_rep_barrier_record.record_type = PF_distmem_rep_barrier;              \
+    SAC_PF_distmem_dist_barrier_record.record_type = PF_distmem_dist_barrier;            \
+    SAC_PF_distmem_side_effects_barrier_record.record_type                               \
       = PF_distmem_side_effects_barrier;                                                 \
-    SAC_PF_distmem_comm_record.timer_type = PF_distmem_comm;                             \
+    SAC_PF_distmem_comm_record.record_type = PF_distmem_comm;                            \
     SAC_PF_distmem_act_record->funno = 0;                                                \
     SAC_PF_distmem_act_record->funapno = 0;                                              \
-    SAC_PF_distmem_act_record->timer_type = PF_distmem_exec_rep;                         \
+    SAC_PF_distmem_act_record->record_type = PF_distmem_exec_rep;                        \
     SAC_PF_distmem_act_record->parent = NULL;                                            \
     SAC_PF_distmem_act_record->cycle_tag = NULL;
 
@@ -580,10 +607,10 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #define SAC_PF_ADD_TO_DISTMEM_TIMER_CHAIN()                                              \
     SAC_PF_ADD_TO_TIMER (SAC_PF_distmem_act_record);                                     \
-    if (SAC_PF_distmem_act_record->timer_type == PF_distmem_rep_barrier                  \
-        || SAC_PF_distmem_act_record->timer_type == PF_distmem_dist_barrier              \
-        || SAC_PF_distmem_act_record->timer_type == PF_distmem_side_effects_barrier      \
-        || SAC_PF_distmem_act_record->timer_type == PF_distmem_comm) {                   \
+    if (SAC_PF_distmem_act_record->record_type == PF_distmem_rep_barrier                 \
+        || SAC_PF_distmem_act_record->record_type == PF_distmem_dist_barrier             \
+        || SAC_PF_distmem_act_record->record_type == PF_distmem_side_effects_barrier     \
+        || SAC_PF_distmem_act_record->record_type == PF_distmem_comm) {                  \
         SAC_PF_ADD_TO_TIMER (SAC_PF_distmem_act_record->parent);                         \
     }
 
@@ -606,7 +633,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #else /* SAC_DO_PROFILE_DISTMEM && SAC_DO_PROFILE */
 
-#define SAC_PF_NUM_TIMER_TYPES 8
+#define SAC_PF_NUM_RECORD_TYPES 8
 #define SAC_PF_DISTMEM_DEFINE()
 #define SAC_PF_DISTMEM_SETUP()
 #define SAC_PF_ADD_STIME_TO_TIMER(record)
@@ -632,11 +659,11 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #define DEBUG_PROFILE_PRINT(record)                                                      \
     {                                                                                    \
-        SAC_PF_TIMER_RECORD *tmp;                                                        \
+        SAC_PROFILE_RECORD *tmp;                                                         \
         tmp = SAC_PF_act_record;                                                         \
         while (tmp != NULL) {                                                            \
-            fprintf (stderr, "funno: %d funapno: %d timer_type: %d\n", tmp->funno,       \
-                     tmp->funapno, tmp->timer_type);                                     \
+            fprintf (stderr, "funno: %d funapno: %d record_type: %d\n", tmp->funno,      \
+                     tmp->funapno, tmp->record_type);                                    \
             tmp = tmp->parent;                                                           \
         }                                                                                \
     }
@@ -665,35 +692,30 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #if (SAC_DO_PROFILE_FUN && SAC_DO_PROFILE)
 
-#define PROFILE_BEGIN_UDF(funno_in, funapno_in)                                          \
-    {                                                                                    \
-        SAC_PF_TIMER_RECORD SAC_PF_new_record;                                           \
-                                                                                         \
+#define SAC_PF_BEGIN_FUNCTION_START()                                                    \
         SAC_PF_STOP_CLOCK ();                                                            \
-        SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
-        SAC_PF_new_record.parent = SAC_PF_act_record;                                    \
-        SAC_PF_new_record.funno = funno_in;                                              \
-        SAC_PF_new_record.funapno = funapno_in;                                          \
-        SAC_PF_new_record.timer_type = (SAC_PF_with_level == 0 ? PF_ow_fun : PF_iw_fun); \
-        SAC_PF_new_record.cycle_tag = &SAC_PF_cycle_tag[funno_in][funapno_in];           \
-        SAC_PF_act_record = &SAC_PF_new_record;                                          \
+        SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);
+
+#define SAC_PF_BEGIN_FUNCTION_END()                                                      \
         DEBUG_PROFILE_ENTER (SAC_PF_act_record);                                         \
         SAC_PF_START_CLOCK ();
 
-#define PROFILE_END_UDF(funno, funapno)                                                  \
-    SAC_PF_STOP_CLOCK ();                                                                \
-    SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                       \
-    SAC_PF_act_record = SAC_PF_act_record->parent;                                       \
-    DEBUG_PROFILE_LEAVE (SAC_PF_act_record);                                             \
-    SAC_PF_START_CLOCK ();                                                               \
-    }
+#define SAC_PF_END_FUNCTION_START()                                                      \
+        SAC_PF_STOP_CLOCK ();                                                            \
+        SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);
+
+#define SAC_PF_END_FUNCTION_END()                                                        \
+        DEBUG_PROFILE_LEAVE (SAC_PF_act_record);                                         \
+        SAC_PF_START_CLOCK ();
 
 #define SAC_PF_DISPLAY_FUN 1
 
 #else /* SAC_DO_PROFILE_FUN */
 
-#define PROFILE_BEGIN_UDF(funno, funapno)
-#define PROFILE_END_UDF(funno, funapno)
+#define SAC_PF_BEGIN_FUNCTION_START()
+#define SAC_PF_BEGIN_FUNCTION_END()
+#define SAC_PF_END_FUNCTION_START()
+#define SAC_PF_END_FUNCTION_END()
 #define SAC_PF_DISPLAY_FUN 0
 
 #endif /* SAC_DO_PROFILE_FUN */
@@ -732,15 +754,91 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #if (SAC_DO_PROFILE_MEM && SAC_DO_PROFILE)
 
-#define SAC_PF_MEM_INC_ALLOC(size, typesize) SAC_PF_MEM_AllocMemcnt(size, typesize);
-#define SAC_PF_MEM_INC_FREE(size, typesize) SAC_PF_MEM_FreeMemcnt(size, typesize);
-#define SAC_PF_MEM_INC_ALLOC_DESC(size, typesize) SAC_PF_MEM_AllocDescnt(size, typesize);
-#define SAC_PF_MEM_INC_FREE_DESC(size, typesize) SAC_PF_MEM_FreeDescnt(size, typesize);
-#define SAC_PF_MEM_INC_REUSE() SAC_PF_MEM_ReuseMemcnt();
-#define SAC_PF_MEM_PRINT_STAT() SAC_PF_MEM_PrintStats();
+#define SAC_PF_DISPLAY_MEM 1
+
+#if SAC_DO_COMPILE_MODULE
+
+#define SAC_PF_MEM_DEFINE()                                                          \
+    SAC_C_EXTERN SAC_PF_MEMORY_RECORD **SAC_PF_memory;                               \
+    SAC_C_EXTERN SAC_PF_MEMORY_RECORD *SAC_PF_memory_record;
+
+#else /* SAC_DO_COMPILE_MODULE */
+
+#define SAC_PF_MEM_DEFINE()                                                          \
+    SAC_PF_MEMORY_RECORD SAC_PF_memory[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];            \
+    SAC_PF_MEMORY_RECORD *SAC_PF_memory_record;
+
+#endif /* SAC_DO_COMPILE_MODULE */
+
+#define SAC_PF_MEM_INIT_RECORD(mem_record)                                           \
+    mem_record.alloc_mem_count = mem_record.free_mem_count = 0;                      \
+    mem_record.alloc_desc_count = mem_record.free_desc_count = 0;                    \
+    mem_record.reuse_mem_count = 0;
+
+#define SAC_PF_MEM_SETUP()                                                           \
+        for (i = 0; i < SAC_SET_MAXFUN; i++) {                                       \
+            for (j = 0; j < SAC_PF_maxfunap[i]; j++) {                               \
+                SAC_PF_MEM_INIT_RECORD (SAC_PF_memory[i][j]);                        \
+            }                                                                        \
+        }                                                                            \
+        SAC_PF_memory_record = &SAC_PF_memory[0][0];
+
+#define SAC_PF_MEM_INC_ALLOC(size, typesize)                                         \
+    SAC_PF_MEM_AllocMemcnt(size, typesize);                                          \
+    SAC_PF_memory_record->alloc_mem_count += 1;
+
+#define SAC_PF_MEM_INC_FREE(size, typesize)                                          \
+    SAC_PF_MEM_FreeMemcnt(size, typesize);                                           \
+    SAC_PF_memory_record->free_mem_count += 1;
+
+#define SAC_PF_MEM_INC_ALLOC_DESC(size, typesize)                                    \
+    SAC_PF_MEM_AllocDescnt(size, typesize);                                          \
+    SAC_PF_memory_record->alloc_desc_count += 1;
+
+#define SAC_PF_MEM_INC_FREE_DESC(size, typesize)                                     \
+    SAC_PF_MEM_FreeDescnt(size, typesize);                                           \
+    SAC_PF_memory_record->free_desc_count += 1;
+
+#define SAC_PF_MEM_INC_REUSE()                                                       \
+    SAC_PF_MEM_ReuseMemcnt();                                                        \
+    SAC_PF_memory_record->reuse_mem_count += 1;
+
+#define SAC_PF_MEM_PRINT_STAT()                                                      \
+    {                                                                                \
+        int i, j;                                                                    \
+        SAC_PF_MEM_PrintStats();                                                     \
+        for (i = 0; i < SAC_SET_MAXFUN; i += 1) {                                    \
+            SAC_PF_PrintHeader (SAC_PF_fun_name[i]);                                 \
+            for (j = 0; j < SAC_PF_maxfunap[i]; j++) {                               \
+                if (SAC_PF_maxfunap[i] > 1) {                                        \
+                    SAC_PF_Printf ("--- Application %d\n", j);                       \
+                }                                                                    \
+                SAC_PF_PrintSection ("For Arrays");                                  \
+                SAC_PF_PrintCount ("   no. calls to (m)alloc", "", SAC_PF_memory[i][j].alloc_mem_count); \
+                SAC_PF_PrintCount ("   no. calls to free", "", SAC_PF_memory[i][j].free_mem_count);      \
+                SAC_PF_PrintCount ("   no. reuses of memory", "", SAC_PF_memory[i][j].reuse_mem_count);  \
+                SAC_PF_PrintSection ("For Descriptors");                             \
+                SAC_PF_PrintCount ("   no. calls to (m)alloc", "", SAC_PF_memory[i][j].alloc_desc_count);\
+                SAC_PF_PrintCount ("   no. calls to free", "", SAC_PF_memory[i][j].free_desc_count);     \
+            }                                                                        \
+        }                                                                            \
+    }
+
+#define SAC_PF_BEGIN_MEM()                                                           \
+        SAC_PF_memory_record = &SAC_PF_memory[SAC_PF_act_record->funno][SAC_PF_act_record->funapno];
+
+#define SAC_PF_END_MEM()                                                             \
+        SAC_PF_memory_record = &SAC_PF_memory[SAC_PF_act_record->funno][SAC_PF_act_record->funapno];
 
 #else /* SAC_DO_PROFILE_MEM */
 
+#define SAC_PF_DISPLAY_MEM 0
+
+#define SAC_PF_MEM_DEFINE()
+#define SAC_PF_MEM_INIT_RECORD(mem_record)
+#define SAC_PF_MEM_SETUP()
+#define SAC_PF_BEGIN_MEM()
+#define SAC_PF_END_MEM()
 #define SAC_PF_MEM_INC_ALLOC(size, typesize)
 #define SAC_PF_MEM_INC_FREE(size, typesize)
 #define SAC_PF_MEM_INC_ALLOC_DESC(size, typesize)

@@ -14,6 +14,7 @@
 #ifndef SAC_BACKEND_MUTC
 
 #include <stdio.h>
+#include <stdarg.h>
 
 #include "profile.h"
 
@@ -94,7 +95,40 @@ SAC_PF_PrintHeaderNode (char *title, size_t rank)
 void
 SAC_PF_PrintSubHeader (char *title, int lineno)
 {
-    fprintf (stderr, "call to %s in line #%d:\n", title, lineno);
+    fprintf (stderr, "call to `%-56.56s' in line #%d:\n", title, lineno);
+}
+
+/**
+ * @brief This function prints out a section heading using the
+ *        given title information.
+ *
+ * @param title Title of the section
+ */
+void
+SAC_PF_PrintSection (char *title)
+{
+    fprintf (stderr, " ## %-72s\n", title);
+}
+
+/**
+ * @brief This function accepts a format string and subsequent argument
+ *        and prints these out to stderr.
+ *
+ * @param format Format string
+ * @param ...    Further arguments that match the format string
+ * @return Number of characters printed, or negative number on error
+ */
+int
+SAC_PF_Printf (const char *format, ...)
+{
+    int num;
+    va_list va;
+
+    va_start(va, format);
+    num = vfprintf(stderr, format, va);
+    va_end(va);
+
+    return num;
 }
 
 /**
