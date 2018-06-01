@@ -8081,6 +8081,26 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="Generator" default="NULL" >
+          <targets>
+            <target mandatory="no">
+              <node name="Generator" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next" default="NULL" >
+          <targets>
+            <target mandatory="no">
+              <node name="SetWL" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
       </sons>
       <attributes></attributes>
       <flags> <flag name="DummyFlag" default="FALSE"/> </flags>
