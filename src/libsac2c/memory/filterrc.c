@@ -200,19 +200,19 @@ FilterTrav (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (arg_node != NULL ) {
-        if (EXPRS_NEXT (arg_node) != NULL) {
-            EXPRS_NEXT (arg_node) = FilterTrav (EXPRS_NEXT (arg_node), arg_info);
-        }
+    DBUG_ASSERT (arg_node != NULL, "Must pass N_exprs!");
 
-        if (DFMtestMaskEntry (INFO_USEMASK (arg_info), NULL,
-                              ID_AVIS (EXPRS_EXPR (arg_node)))) {
-            DBUG_PRINT ("Invalid reuse candidate removed: %s",
-                        ID_NAME (EXPRS_EXPR (arg_node)));
-            arg_node = FREEdoFreeNode (arg_node);
-        } else {
-            EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
-        }
+    if (EXPRS_NEXT (arg_node) != NULL) {
+        EXPRS_NEXT (arg_node) = FilterTrav (EXPRS_NEXT (arg_node), arg_info);
+    }
+
+    if (DFMtestMaskEntry (INFO_USEMASK (arg_info), NULL,
+                          ID_AVIS (EXPRS_EXPR (arg_node)))) {
+        DBUG_PRINT ("Invalid reuse candidate removed: %s",
+                    ID_NAME (EXPRS_EXPR (arg_node)));
+        arg_node = FREEdoFreeNode (arg_node);
+    } else {
+        EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -511,10 +511,10 @@ FRCprf (node *arg_node, info *arg_info)
         if (PRF_PRF (arg_node) == F_fill) {
             PRF_ARG2 (arg_node) = FilterRCsInPrf (PRF_ARG2 (arg_node), arg_info);
         }
+    }
 
-        if (PRF_ARGS (arg_node) != NULL) {
-            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        }
+    if (PRF_ARGS (arg_node) != NULL) {
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -634,9 +634,15 @@ FRCgenarray (node *arg_node, info *arg_info)
     if (INFO_CHECK_PRF (arg_info)) {
         GENARRAY_MEM (arg_node) = FilterRCsInPrf (GENARRAY_MEM (arg_node), arg_info);
     } else {
-        GENARRAY_RC (arg_node) = FilterTrav (GENARRAY_RC (arg_node), arg_info);
-        GENARRAY_PRC (arg_node) = FilterTrav (GENARRAY_PRC (arg_node), arg_info);
-        GENARRAY_ERC (arg_node) = FilterTrav (GENARRAY_ERC (arg_node), arg_info);
+        if (GENARRAY_RC (arg_node) != NULL) {
+            GENARRAY_RC (arg_node) = FilterTrav (GENARRAY_RC (arg_node), arg_info);
+        }
+        if (GENARRAY_PRC (arg_node) != NULL) {
+            GENARRAY_PRC (arg_node) = FilterTrav (GENARRAY_PRC (arg_node), arg_info);
+        }
+        if (GENARRAY_ERC (arg_node) != NULL) {
+            GENARRAY_ERC (arg_node) = FilterTrav (GENARRAY_ERC (arg_node), arg_info);
+        }
     }
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
@@ -667,8 +673,12 @@ FRCmodarray (node *arg_node, info *arg_info)
     if (INFO_CHECK_PRF (arg_info)) {
         MODARRAY_MEM (arg_node) = FilterRCsInPrf (MODARRAY_MEM (arg_node), arg_info);
     } else {
-        MODARRAY_RC (arg_node) = FilterTrav (MODARRAY_RC (arg_node), arg_info);
-        MODARRAY_ERC (arg_node) = FilterTrav (MODARRAY_ERC (arg_node), arg_info);
+        if (MODARRAY_RC (arg_node) != NULL) {
+            MODARRAY_RC (arg_node) = FilterTrav (MODARRAY_RC (arg_node), arg_info);
+        }
+        if (MODARRAY_ERC (arg_node) != NULL) {
+            MODARRAY_ERC (arg_node) = FilterTrav (MODARRAY_ERC (arg_node), arg_info);
+        }
     }
 
     MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);

@@ -629,7 +629,7 @@ WRCIprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_DO_EMR (arg_info)) {
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "checking N_prf referencing an emr...");
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "checking if N_prf references an ERC...");
 
         switch (PRF_PRF (arg_node)) {
             case F_idx_modarray_AxSxS:
@@ -925,11 +925,17 @@ WRCIfold (node *arg_node, info *arg_info)
 /**
  * EMR Loop Application Arg Filtering
  *
- * This traversal does two things: (1) it removes N_id that share the same N_avis
- * from with-loop operator ERC field, and (2) calls FRC (Filter Reuse Candidates)
+ * This traversal does three things: (1) it removes N_id that share the same N_avis
+ * from with-loop operator ERC field, (2) filters out ERCs that are already RCs (as it
+ * is not possible to use an existing RC later on, there is no point in keeping these
+ * as ERCs. This opens further opertunnities for lifting allocations out of loops. Finally,
+ * (3) we filter out invalid RCs (calls FRC (Filter Reuse Candidates)
  * traversal (in mode 2) which filters away _invalid_ *RC candidates. This last
  * part is especially important as otherwise cases where ELMP (EMR Loop Memory
  * Propagation) could be applied might get missed.
+ *
+ * NOTE: INFO_DO_UPDATE is used to switch between (1) and (2). FALSE is for (1) and
+ *       TRUE is for (2).
  */
 node *ELAAFdoLoopRCFiltering (node *syntax_tree)
 {
@@ -938,6 +944,19 @@ node *ELAAFdoLoopRCFiltering (node *syntax_tree)
     DBUG_ENTER();
 
     arg_info = MakeInfo ();
+
+    TRAVpush (TR_elaaf);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+    arg_info = MakeInfo ();
+
+    /*
+     * Filter out ERCs that are RCs
+     */
+    INFO_DO_UPDATE (arg_info) = TRUE;
+    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "Filtering out RCs from ERCs");
 
     TRAVpush (TR_elaaf);
     syntax_tree = TRAVdo (syntax_tree, arg_info);
@@ -958,9 +977,13 @@ ELAAFgenarray (node * arg_node, info * arg_info)
 {
     DBUG_ENTER ();
 
+    if (INFO_DO_UPDATE (arg_info) && GENARRAY_RC (arg_node) != NULL)
+        INFO_EMR_RC (arg_info) = TCappendExprs (INFO_EMR_RC (arg_info), DUPdoDupTree (GENARRAY_RC (arg_node)));
+
     if (GENARRAY_ERC (arg_node) != NULL) {
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering N_genarray ERC:");
         GENARRAY_ERC (arg_node) = filterDuplicateArgs (INFO_EMR_RC (arg_info), &GENARRAY_ERC (arg_node));
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering genarray ERC:");
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "ERCs left after filering:");
         DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (GENARRAY_ERC (arg_node) != NULL) {
             PRTdoPrintFile (stderr, GENARRAY_ERC (arg_node));
         });
@@ -976,14 +999,16 @@ ELAAFmodarray (node * arg_node, info * arg_info)
 {
     DBUG_ENTER ();
 
+    if (INFO_DO_UPDATE (arg_info) && MODARRAY_RC (arg_node) != NULL)
+        INFO_EMR_RC (arg_info) = TCappendExprs (INFO_EMR_RC (arg_info), DUPdoDupTree (MODARRAY_RC (arg_node)));
+
     if (MODARRAY_ERC (arg_node) != NULL) {
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering N_modarray ERC:");
         MODARRAY_ERC (arg_node) = filterDuplicateArgs (INFO_EMR_RC (arg_info), &MODARRAY_ERC (arg_node));
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering modarray ERC:");
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "ERCs left after filering:");
         DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (MODARRAY_ERC (arg_node) != NULL) {
             PRTdoPrintFile (stderr, MODARRAY_ERC (arg_node));
         });
-
-        INFO_EMR_RC (arg_info) = TCappendExprs (INFO_EMR_RC (arg_info), TBmakeExprs(DUPdoDupNode (MODARRAY_ARRAY (arg_node)), NULL));
     }
 
     MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
@@ -998,13 +1023,25 @@ ELAAFap (node * arg_node, info * arg_info)
 
     /* check to see if we have found the recursive loopfun call */
     if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
-            && AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
+            && AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)
+            && !INFO_DO_UPDATE (arg_info)) {
         DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "at loop rec N_ap, copying args:");
         DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", PRTdoPrintFile (stderr, AP_ARGS (arg_node)));
         INFO_EMR_RC (arg_info) = TCappendExprs (INFO_EMR_RC (arg_info), DUPdoDupTree (AP_ARGS (arg_node)));
 
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering fun ERC:");
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering N_ap -> N_fundef ERC:");
         FUNDEF_ERC (INFO_FUNDEF (arg_info)) = filterDuplicateArgs (AP_ARGS (arg_node), &FUNDEF_ERC (INFO_FUNDEF (arg_info)));
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "ERCs left after filtering:");
+        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (FUNDEF_ERC (INFO_FUNDEF (arg_info)) != NULL) {
+            PRTdoPrintFile (stderr, FUNDEF_ERC (INFO_FUNDEF (arg_info)));
+        });
+    } else if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
+            && AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)
+            && INFO_DO_UPDATE (arg_info)) {
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "at loop rec N_ap");
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering N_ap -> N_fundef of ERCs of RCs:");
+        FUNDEF_ERC (INFO_FUNDEF (arg_info)) = filterDuplicateArgs (INFO_EMR_RC (arg_info), &FUNDEF_ERC (INFO_FUNDEF (arg_info)));
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "ERCs left after filtering:");
         DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (FUNDEF_ERC (INFO_FUNDEF (arg_info)) != NULL) {
             PRTdoPrintFile (stderr, FUNDEF_ERC (INFO_FUNDEF (arg_info)));
         });
@@ -1018,12 +1055,21 @@ ELAAFassign (node * arg_node, info * arg_info)
 {
     DBUG_ENTER ();
 
-    /*
-     * Bottom-up
-     */
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    if (!INFO_DO_UPDATE (arg_info)) {
+        /*
+         * Bottom-up
+         */
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+    } else {
+        /*
+         * Top-down
+         */
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1071,8 +1117,8 @@ ELAAFfundef (node * arg_node, info * arg_info)
  *   FALSE : fundef top-down traversal looking for loop funs, and
  *           updating fundef args and rec loop ap. We unset fundef_erc
  *           as these are no longer needed.
- *   TRUE  : fundef top-down looking at fun_body at initil loop app -
- *           if the fundef has an updated signiture, update the app
+ *   TRUE  : fundef top-down looking at fun_body at initial loop app -
+ *           if the fundef has an updated signature, update the app
  *           args
  */
 node *ELMPdoExtendLoopMemoryPropagation (node *syntax_tree)
