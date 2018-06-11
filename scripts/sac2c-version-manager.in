@@ -241,10 +241,9 @@ def glob_versions (prefix, glob_expr, build_type=None):
     # version.  If the `build_type' argument is None then we consider
     # all the build_types.
     if build_type is None:
-        binary_to_build_types = {
-            "sac2c" + SAC2C_BUILD_TYPE_POSTFIXES[x]: x
-            for x in SAC2C_BUILD_TYPE_POSTFIXES
-        }
+        binary_to_build_types = {}
+        for x in SAC2C_BUILD_TYPE_POSTFIXES:
+            binary_to_build_types["sac2c" + SAC2C_BUILD_TYPE_POSTFIXES[x]] = x
     else:
         binary_to_build_types = {"sac2c" + SAC2C_BUILD_TYPE_POSTFIXES[build_type] : build_type}
 
@@ -284,10 +283,9 @@ def delete_versions (prefix, glob_expr, dryrun, build_type):
         print "Nothing removed"
 
 def binary_to_version (sac2c_binary):
-    binary_to_build_types = {
-        "sac2c" + SAC2C_BUILD_TYPE_POSTFIXES[x]: x
-        for x in SAC2C_BUILD_TYPE_POSTFIXES
-    }
+    binary_to_build_types = {}
+    for x in SAC2C_BUILD_TYPE_POSTFIXES:
+        binary_to_build_types["sac2c" + SAC2C_BUILD_TYPE_POSTFIXES[x]] = x
     if not sac2c_binary in binary_to_build_types:
         error ("undefined build type `%s' of sac2c found" % sac2c_binary)
 
