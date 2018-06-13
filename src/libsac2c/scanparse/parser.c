@@ -5179,7 +5179,7 @@ handle_interface (struct parser *parser, enum interface_kind interface)
     if (interface == int_import || interface == int_use) {
         tok = parser_get_token (parser);
         if (token_class (tok) != tok_id) {
-            error_loc (token_location (tok), 
+            error_loc (token_location (tok),
                        "expected module name for use/import, "
                        "`%s' found instead", token_as_string (tok));
             parser_unget (parser);
