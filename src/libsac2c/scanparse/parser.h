@@ -170,4 +170,19 @@ struct pre_post_expr {
     node *parent_exprs;
 };
 
+
+/* Create versions to unget several tokens.  */
+#define parser_unget2(parser)                                                            \
+    do {                                                                                 \
+        parser_unget (parser);                                                           \
+        parser_unget (parser);                                                           \
+    } while (0)
+
+#define parser_unget3(parser)                                                            \
+    do {                                                                                 \
+        parser_unget2 (parser);                                                          \
+        parser_unget (parser);                                                           \
+    } while (0)
+
+
 #endif /* __PARSER_H__  */

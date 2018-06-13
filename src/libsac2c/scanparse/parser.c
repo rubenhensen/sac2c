@@ -653,18 +653,6 @@ parser_unget (struct parser *parser)
     } while (token_class (tok) == tok_whitespace || token_class (tok) == tok_comments);
 }
 
-/* Create versions to unget several tokens.  */
-#define parser_unget2(parser)                                                            \
-    do {                                                                                 \
-        parser_unget (parser);                                                           \
-        parser_unget (parser);                                                           \
-    } while (0)
-
-#define parser_unget3(parser)                                                            \
-    do {                                                                                 \
-        parser_unget2 (parser);                                                          \
-        parser_unget (parser);                                                           \
-    } while (0)
 
 /* Skip tokens until token with value TKIND would be found.  */
 struct token *
