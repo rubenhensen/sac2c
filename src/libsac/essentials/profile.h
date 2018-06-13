@@ -67,12 +67,6 @@ typedef struct timer_record {
 } SAC_PF_TIMER_RECORD;
 
 /*
- * External declarations of C library functions needed
- */
-
-SAC_C_EXTERN int getrusage (int who, struct rusage *rusage);
-
-/*
  * External declarations of library functions defined in libsac
  */
 
