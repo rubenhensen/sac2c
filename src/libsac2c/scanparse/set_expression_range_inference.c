@@ -14,6 +14,7 @@
 #include "new_types.h"
 #include "globals.h"
 #include "tree_compound.h"
+#include "print.h"
 
 #include <strings.h>
 
@@ -189,6 +190,7 @@ BuildIdTable (node *ids, idtable *appendto)
             newtab->next = result;
             result = newtab;
             ids = EXPRS_NEXT (ids);
+            DBUG_PRINT( "adding scalar id \"%s\"", newtab->id);
         }
     } else if (NODE_TYPE (ids) == N_spid) {
         idtable *newtab = (idtable *)MEMmalloc (sizeof (idtable));
@@ -197,6 +199,7 @@ BuildIdTable (node *ids, idtable *appendto)
         newtab->shapes = NULL;
         newtab->next = result;
         result = newtab;
+        DBUG_PRINT( "adding vector id \"%s\"", newtab->id);
     } else {
         CTIabortLine (global.linenum, "Malformed index vector in WL set notation");
     }
@@ -295,6 +298,7 @@ ScanVector (node *vector, node *array, info *arg_info)
 
             while (handle != NULL) {
                 if (STReq (handle->id, SPID_NAME (EXPRS_EXPR (vector)))) {
+                    DBUG_PRINT ("id \"%s\" found", handle->id);
                     if (handle->type == ID_scalar) {
                         node *position = NULL;
                         node *shape = NULL;
@@ -324,6 +328,8 @@ ScanVector (node *vector, node *array, info *arg_info)
                         chain->next = handle->shapes;
                         handle->shapes = chain;
 
+                        DBUG_PRINT ("shape added:");
+                        DBUG_EXECUTE (PRTdoPrint( shape));
                         break;
                     } else if (handle->type == ID_vector) {
                         CTInoteLine (NODE_LINE (vector),
@@ -368,6 +374,7 @@ ScanId (node *id, node *array, info *arg_info)
 
     while (ids != NULL) {
         if (STReq (ids->id, SPID_NAME (id))) {
+            DBUG_PRINT ("id \"%s\" found", ids->id);
             if (ids->type == ID_vector) {
                 node *shape
                   = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL));
@@ -377,6 +384,8 @@ ScanId (node *id, node *array, info *arg_info)
                 chain->next = ids->shapes;
                 ids->shapes = chain;
 
+                DBUG_PRINT ("shape added:");
+                DBUG_EXECUTE (PRTdoPrint( shape));
                 break;
             }
         } else if (ids->type == ID_scalar) {
@@ -416,7 +425,7 @@ DBUG_EXECUTE(
     arg_info = MakeInfo (NULL);
     TRAVpush (TR_seri);
 
-    arg_node = TRAVdo (arg_node, NULL);
+    arg_node = TRAVdo (arg_node, arg_info);
 
     TRAVpop ();
 
@@ -442,10 +451,12 @@ SERIprf (node *arg_node, info *arg_info)
 
     if (PRF_PRF (arg_node) == F_sel_VxA) {
         if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array) {
+            DBUG_PRINT_TAG ("SERI_ACT", "Primitive selection with N_array index found; scanning for genvars..." );
             ScanVector (ARRAY_AELEMS (PRF_ARG1 (arg_node)), PRF_ARG2 (arg_node),
                         arg_info);
         }
         else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_spid) {
+            DBUG_PRINT_TAG ("SERI_ACT", "Primitive selection with N_spid index found; scanning for genvar..." );
             ScanId (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info);
         }
     }
@@ -471,23 +482,21 @@ SERIspap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /* if in HSE_scan mode, scan for shapes */
-
     if (STReq (SPAP_NAME (arg_node), "sel")
         && (SPAP_NS (arg_node) == NULL)) {
         if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_array) {
+            DBUG_PRINT_TAG ("SERI_ACT", "Spap selection with N_array index found; scanning for genvars..." );
             ScanVector (ARRAY_AELEMS (SPAP_ARG1 (arg_node)), SPAP_ARG2 (arg_node),
                         arg_info);
-        }
-        else if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_spid) {
+        } else if (NODE_TYPE (SPAP_ARG1 (arg_node)) == N_spid) {
+            DBUG_PRINT_TAG ("SERI_ACT", "Spap selection with N_spid index found; scanning for genvar..." );
             ScanId (SPAP_ARG1 (arg_node), SPAP_ARG2 (arg_node), arg_info);
         }
-    } else {
+    } 
 
-        /* Otherwise, look for info inside */
+    /* Check for nested info */
 
-        arg_node = TRAVdo (arg_node, arg_info);
-    }
+    SPAP_ARGS (arg_node) = TRAVdo (SPAP_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -510,6 +519,7 @@ SERIsetwl (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("looking at Set-Expression in line %d:", global.linenum);
     arg_info = MakeInfo (arg_info);
+    DBUG_PUSH( "-d,SERI,SERI_ACT");
 
     /*
      * First, we check which ranges are missing
@@ -541,7 +551,6 @@ SERIsetwl (node *arg_node, info *arg_info)
         SETWL_GENERATOR (arg_node) = TBmakeGenerator (F_noop, F_noop, NULL, NULL, NULL, NULL);
     }
     INFO_SERI_ISLASTPART (arg_info) = (SETWL_NEXT (arg_node) == NULL);
-    DBUG_PRINT( "traversing generator...");
     SETWL_GENERATOR (arg_node) = TRAVdo (SETWL_GENERATOR (arg_node), arg_info);
 
     SETWL_NEXT (arg_node) = TRAVopt (SETWL_NEXT (arg_node), arg_info);
@@ -549,6 +558,7 @@ SERIsetwl (node *arg_node, info *arg_info)
     FreeIdTable (INFO_SERI_IDTABLE (arg_info), INFO_SERI_IDTABLE (INFO_SERI_NEXT (arg_info)));
     INFO_SERI_IDTABLE (arg_info) = NULL;
     arg_info = FreeInfo (arg_info);
+    DBUG_POP();
 
     DBUG_RETURN (arg_node);
 }
@@ -568,19 +578,19 @@ SERIgenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("traversing generator...");
+    DBUG_PRINT_TAG ("SERI_ACT", "traversing generator...");
     if (INFO_SERI_LBMISSING (arg_info)) {
         if ( FALSE) {
             /* We now insert the information we found */
         } else {
-            CTIwarn ("Unable to infer lower bound for a partition of"
+            CTInote ("Unable to infer lower bound for a partition of"
                      " a set expression; using \".\" instead.");
             GENERATOR_BOUND1 (arg_node) = TBmakeDot (1);
             GENERATOR_OP1 (arg_node) = F_wl_le;
         }
         
     }
-    if (INFO_SERI_LBMISSING (arg_info)) {
+    if (INFO_SERI_UBMISSING (arg_info)) {
         if ( FALSE) {
             /* We now insert the information we found */
         } else {
@@ -596,6 +606,7 @@ SERIgenerator (node *arg_node, info *arg_info)
         }
         
     }
+    DBUG_PRINT_TAG ("SERI_ACT", "traversing generator done");
     DBUG_RETURN (arg_node);
 }
 
