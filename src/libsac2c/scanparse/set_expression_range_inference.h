@@ -1,9 +1,12 @@
-#ifndef _HANDLE_SET_EXPRESSION_DOTS_H_
-#define _HANDLE_SET_EXPRESSION_DOTS_H_
+#ifndef _SET_EXPRESSSION_RANGE_INFERENCE_H_
+#define _SET_EXPRESSSION_RANGE_INFERENCE_H_
 
 #include "types.h"
 
-extern node *HSEDdoEliminateSetExpressionDots (node *arg_node);
-extern node *HSEDsetwl (node *arg_node, info *arg_info);
+extern node *SERIdoInferRanges (node *arg_node);
+extern node *SERIprf (node *arg_node, info *arg_info);
+extern node *SERIspap (node *arg_node, info *arg_info);
+extern node *SERIsetwl (node *arg_node, info *arg_info);
+extern node *SERIgenerator (node *arg_node, info *arg_info);
 
-#endif /* _HANDLE_SET_EXPRESSION_DOTS_H_ */
+#endif /* _SET_EXPRESSSION_RANGE_INFERENCE_H_ */

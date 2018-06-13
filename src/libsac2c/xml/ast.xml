@@ -1182,6 +1182,14 @@
 		  <node name="SPAp" />
 		</travuser>
 	      </traversal>
+	      <traversal id="SERI" name="Set Expression Range Inference" default="sons" include="set_expression_range_inference.h">
+		<travuser>
+		  <node name="SPAp" />
+		  <node name="Prf" />
+		  <node name="SetWL" />
+		  <node name="Generator" />
+		</travuser>
+	      </traversal>
 	      <traversal id="HSED" name="Handle Set Expression Dots" default="sons" include="handle_set_expression_dots.h">
 		<travuser>
 		  <node name="SetWL" />

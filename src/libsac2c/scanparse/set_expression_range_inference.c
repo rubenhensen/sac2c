@@ -1,4 +1,4 @@
-#include "set_expression_dots.h"
+#include "set_expression_range_inference.h"
 #include "traverse.h"
 
 #define DBUG_PREFIX "SERI"
@@ -18,7 +18,7 @@
 #include <strings.h>
 
 /**
- * @file handle_set_expressions.c
+ * @file set_expression_range_inference.c
  *
  * This file contains any code needed to eleminate dots within
  * sac source code. Dots can appear in the following positions:
@@ -54,15 +54,36 @@
  *         match (potentially at runtime)
  */
 
+typedef enum IDTYPE { ID_notfound = 0, ID_vector = 1, ID_scalar = 2 } idtype;
+
+typedef struct SHPCHAIN {
+    node *shape;
+    node *code;
+    struct SHPCHAIN *next;
+} shpchain;
+
+typedef struct IDTABLE {
+    char *id;
+    idtype type;
+    shpchain *shapes;
+    struct IDTABLE *next;
+} idtable;
+
 /* INFO structure */
 struct INFO {
-    node *ids;
-    node *lentd;
+    bool lbmissing;
+    bool ubmissing;
+    bool islastpart;
+    idtable *idtable;
+    struct INFO *next;
 };
 
 /* access macros */
-#define INFO_HSED_IDS(n) ((n)->ids)
-#define INFO_HSED_LENTD(n) ((n)->lentd)
+#define INFO_SERI_LBMISSING(n) ((n)->lbmissing)
+#define INFO_SERI_UBMISSING(n) ((n)->ubmissing)
+#define INFO_SERI_ISLASTPART(n) ((n)->islastpart)
+#define INFO_SERI_IDTABLE(n) ((n)->idtable)
+#define INFO_SERI_NEXT(n) ((n)->next)
 
 /**
  * builds an info structure.
@@ -70,7 +91,7 @@ struct INFO {
  * @return new info structure
  */
 static info *
-MakeInfo (void)
+MakeInfo (info *oldinfo)
 {
     info *result;
 
@@ -78,8 +99,11 @@ MakeInfo (void)
 
     result = (info *)MEMmalloc (sizeof (info));
 
-    INFO_HSED_IDS (result) = NULL;
-    INFO_HSED_LENTD (result) = NULL;
+    INFO_SERI_LBMISSING (result) = FALSE;
+    INFO_SERI_UBMISSING (result) = FALSE;
+    INFO_SERI_ISLASTPART (result) = FALSE;
+    INFO_SERI_IDTABLE (result) = NULL;
+    INFO_SERI_NEXT (result) = oldinfo;
 
     DBUG_RETURN (result);
 }
@@ -90,13 +114,16 @@ MakeInfo (void)
  * @param info the info structure to free
  */
 static info *
-FreeInfo (info *info)
+FreeInfo (info *arg_info)
 {
+    info *next;
+
     DBUG_ENTER ();
 
-    info = MEMfree (info);
+    next = INFO_SERI_NEXT (arg_info);
+    arg_info = MEMfree (arg_info);
 
-    DBUG_RETURN (info);
+    DBUG_RETURN (next);
 }
 
 /**
@@ -125,6 +152,248 @@ MakeTmpId (char *name)
 }
 
 
+/**
+ * appends all ids within ids to the idtable appendto. The gathered
+ * information is used to collect shapes of arrays these ids are
+ * used on within a selection. New ids are appended on top in order
+ * to hide lower ones.
+ *
+ * @param ids EXPRS node containing ids
+ * @param appendto idtable to append the ids to (may be null)
+ * @return new idtable containing found ids
+ */
+static idtable *
+BuildIdTable (node *ids, idtable *appendto)
+{
+    idtable *result = appendto;
+
+    DBUG_ENTER ();
+
+    if (NODE_TYPE (ids) == N_exprs) {
+        while (ids != NULL) {
+            node *id = EXPRS_EXPR (ids);
+            idtable *newtab = (idtable *)MEMmalloc (sizeof (idtable));
+
+            if (NODE_TYPE (id) != N_spid) {
+                CTIerrorLine (global.linenum, "Found non-id as index in WL set notation");
+
+                /* we create a dummy entry within the idtable in order */
+                /* to go on and search for further errors.             */
+                newtab->id = STRcpy ("_non_id_expr");
+            } else {
+                newtab->id = STRcpy (SPID_NAME (id));
+            }
+
+            newtab->type = ID_scalar;
+            newtab->shapes = NULL;
+            newtab->next = result;
+            result = newtab;
+            ids = EXPRS_NEXT (ids);
+        }
+    } else if (NODE_TYPE (ids) == N_spid) {
+        idtable *newtab = (idtable *)MEMmalloc (sizeof (idtable));
+        newtab->id = STRcpy (SPID_NAME (ids));
+        newtab->type = ID_vector;
+        newtab->shapes = NULL;
+        newtab->next = result;
+        result = newtab;
+    } else {
+        CTIabortLine (global.linenum, "Malformed index vector in WL set notation");
+    }
+
+    DBUG_RETURN (result);
+}
+
+/**
+ * checks for id in idtable.
+ *
+ * @param id the id
+ * @param ids the table
+ * @return 1 if found, 0 otherwise
+ */
+
+static idtype
+IdTableContains (char *id, idtable *ids)
+{
+    idtype result = ID_notfound;
+
+    DBUG_ENTER ();
+
+    while (ids != NULL) {
+        if (STReq (id, ids->id)) {
+            result = ids->type;
+            break;
+        }
+        ids = ids->next;
+    }
+
+    DBUG_RETURN (result);
+}
+
+
+/**
+ * frees all elements in idtable until the element until is reached.
+ * Used to clean up the idtable after the code of a lamination was
+ * parsed. After a clean up until points to the top of the idtable.
+ * The shapes stored in the idtable are not freed as they are reused
+ * to build the withloop replacing the lamination.
+ *
+ * @param table table to clean up
+ * @param until marker where to stop
+ */
+static void
+FreeIdTable (idtable *table, idtable *until)
+{
+    DBUG_ENTER ();
+
+    while (table != until) {
+        idtable *next = table->next;
+
+        /* free shape-chain but NOT shapes itself */
+        while (table->shapes != NULL) {
+            shpchain *next = table->shapes->next;
+            MEMfree (table->shapes);
+            table->shapes = next;
+        }
+
+        /* free table */
+        MEMfree (table->id);
+        MEMfree (table);
+        table = next;
+    }
+
+    DBUG_RETURN ();
+}
+
+
+
+/**
+ * scans a selection vector for occurancies of an id in ids within it
+ * and stores the corresponding shape of the array the selection
+ * is performed on in ids. Used to gather shape information to build
+ * the withloop replacing the lamination.
+ * The shape is taken from the corresponding element of array w.r.t.
+ * occurencies of any tripledot.
+ *
+ * @param vector selection vector to scan
+ * @param array array the selection operates on
+ * @param arg_info info node containing ids to scan
+ */
+static void
+ScanVector (node *vector, node *array, info *arg_info)
+{
+    int poscnt = 0;
+    int tripledotflag = 0;
+    int exprslen = TCcountExprs (vector);
+    idtable *ids = INFO_SERI_IDTABLE (arg_info);
+
+    DBUG_ENTER ();
+
+    while (vector != NULL) {
+        if (NODE_TYPE (EXPRS_EXPR (vector)) == N_spid) {
+            idtable *handle = ids;
+
+            while (handle != NULL) {
+                if (STReq (handle->id, SPID_NAME (EXPRS_EXPR (vector)))) {
+                    if (handle->type == ID_scalar) {
+                        node *position = NULL;
+                        node *shape = NULL;
+                        shpchain *chain = NULL;
+
+                        if (tripledotflag) {
+                            position
+                              = MAKE_BIN_PRF (F_sub_SxS,
+                                              TBmakePrf (F_dim_A,
+                                                         TBmakeExprs (DUPdoDupTree (
+                                                                        array),
+                                                                      NULL)),
+                                              TBmakeNum (exprslen - poscnt));
+                        } else {
+                            position = TBmakeNum (poscnt);
+                        }
+
+                        shape
+                          = MAKE_BIN_PRF (F_sel_VxA,
+                                          TCmakeIntVector (TBmakeExprs (position, NULL)),
+                                          TBmakePrf (F_shape_A,
+                                                     TBmakeExprs (DUPdoDupTree (array),
+                                                                  NULL)));
+                        chain = (shpchain *)MEMmalloc (sizeof (shpchain));
+
+                        chain->shape = shape;
+                        chain->next = handle->shapes;
+                        handle->shapes = chain;
+
+                        break;
+                    } else if (handle->type == ID_vector) {
+                        CTInoteLine (NODE_LINE (vector),
+                                     "Set notation index vector '%s' is used in a scalar "
+                                     "context.",
+                                     handle->id);
+                    }
+                }
+
+                handle = handle->next;
+            }
+        }
+
+        /* check for occurence of '...' */
+
+        if ((NODE_TYPE (EXPRS_EXPR (vector)) == N_dot)
+            && (DOT_NUM (EXPRS_EXPR (vector)) == 3)) {
+            tripledotflag = 1;
+        }
+
+        poscnt++;
+        vector = EXPRS_NEXT (vector);
+    }
+
+    DBUG_RETURN ();
+}
+
+
+/**
+ * scans a selection vector given as a single vector variable. If it
+ * exists within ids, the corresponding shape is stored in ids.
+ *
+ * @param id selection vector id
+ * @param array array the selection operates on
+ * @param ids idtable structure
+ */
+static void
+ScanId (node *id, node *array, info *arg_info)
+{
+    idtable *ids = INFO_SERI_IDTABLE (arg_info);
+    DBUG_ENTER ();
+
+    while (ids != NULL) {
+        if (STReq (ids->id, SPID_NAME (id))) {
+            if (ids->type == ID_vector) {
+                node *shape
+                  = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL));
+                shpchain *chain = (shpchain *)MEMmalloc (sizeof (shpchain));
+
+                chain->shape = shape;
+                chain->next = ids->shapes;
+                ids->shapes = chain;
+
+                break;
+            }
+        } else if (ids->type == ID_scalar) {
+            CTInoteLine (NODE_LINE (id),
+                         "Set notation index scalar '%s' is used in a vector "
+                         "context.",
+                         ids->id);
+        }
+
+        ids = ids->next;
+    }
+
+    DBUG_RETURN ();
+}
+
+
+
 
 /**
  * hook to start the handle dots traversal of the AST.
@@ -138,17 +407,20 @@ SERIdoInferRanges (node *arg_node)
     info *arg_info;
     DBUG_ENTER ();
 
+#if 0
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_setwl,
                 "SERIdoInferRanges called on non-Nsetwl node!");
+#endif
 
-    arg_info = MakeInfo ();
+DBUG_EXECUTE( 
+    arg_info = MakeInfo (NULL);
     TRAVpush (TR_seri);
 
     arg_node = TRAVdo (arg_node, NULL);
 
     TRAVpop ();
 
-    arg_info = FreeInfo (arg_info);
+    arg_info = FreeInfo (arg_info););
 
     DBUG_RETURN (arg_node);
 }
@@ -258,20 +530,21 @@ SERIsetwl (node *arg_node, info *arg_info)
          * new ids to INFO_SETWL_IDTABLE:
          */
         DBUG_PRINT( "adding new ids to idtable");
-        INFO_SERI_IDTABLE (arg_info) = BuildIdTable (ids, INFO_SERI_IDTABLE (INFO_SERI_NEXT (arg_info)));
+        INFO_SERI_IDTABLE (arg_info) = BuildIdTable (SETWL_VEC (arg_node),
+                                                     INFO_SERI_IDTABLE (INFO_SERI_NEXT (arg_info)));
     } else {
-        INFO_SERI_IDTABLE (arg_info) = INFO_SERI_OLDIDTABLE (INFO_SERI_NEXT (arg_info));
+        INFO_SERI_IDTABLE (arg_info) = INFO_SERI_IDTABLE (INFO_SERI_NEXT (arg_info));
     }
     DBUG_PRINT( "traversing expression...");
-    SETWL_EXPR (arg_node) = TRAV (SETWL_EXPR (arg_node), arg_info);
+    SETWL_EXPR (arg_node) = TRAVdo (SETWL_EXPR (arg_node), arg_info);
     if (SETWL_GENERATOR (arg_node) == NULL) {
         SETWL_GENERATOR (arg_node) = TBmakeGenerator (F_noop, F_noop, NULL, NULL, NULL, NULL);
     }
     INFO_SERI_ISLASTPART (arg_info) = (SETWL_NEXT (arg_node) == NULL);
     DBUG_PRINT( "traversing generator...");
-    SETWL_GENERATOR (arg_node) = TRAV (SETWL_GENERATOR (arg_node), arg_info);
+    SETWL_GENERATOR (arg_node) = TRAVdo (SETWL_GENERATOR (arg_node), arg_info);
 
-    SETWL_NEXT (arg_node) = TRAVopt (SETWL_NEXT (arg_node, arg_info));
+    SETWL_NEXT (arg_node) = TRAVopt (SETWL_NEXT (arg_node), arg_info);
 
     FreeIdTable (INFO_SERI_IDTABLE (arg_info), INFO_SERI_IDTABLE (INFO_SERI_NEXT (arg_info)));
     INFO_SERI_IDTABLE (arg_info) = NULL;
@@ -300,8 +573,8 @@ SERIgenerator (node *arg_node, info *arg_info)
         if ( FALSE) {
             /* We now insert the information we found */
         } else {
-            CTIwarning ("Unable to infer lower bound for a partition of"
-                        " a set expression; using \".\" instead.");
+            CTIwarn ("Unable to infer lower bound for a partition of"
+                     " a set expression; using \".\" instead.");
             GENERATOR_BOUND1 (arg_node) = TBmakeDot (1);
             GENERATOR_OP1 (arg_node) = F_wl_le;
         }
@@ -311,12 +584,12 @@ SERIgenerator (node *arg_node, info *arg_info)
         if ( FALSE) {
             /* We now insert the information we found */
         } else {
-            if (INFO_SERI_ISLASTPART (arg_info) {
+            if (INFO_SERI_ISLASTPART (arg_info)) {
                 CTIerror ("Unable to infer upper bound for final partition of"
                           " set expression; please specify an upper bound.");
             } else {
-                CTIwarning ("Unable to infer upper bound for a partition of"
-                            " a set expression; using \".\" instead.");
+                CTIwarn ("Unable to infer upper bound for a partition of"
+                         " a set expression; using \".\" instead.");
                 GENERATOR_BOUND1 (arg_node) = TBmakeDot (1);
                 GENERATOR_OP1 (arg_node) = F_wl_le;
             }
