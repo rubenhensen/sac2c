@@ -1592,6 +1592,72 @@ handle_id_or_function_call (struct parser *parser)
     return res;
 }
 
+
+/* ::= '{' id '->' expr '}'
+       |
+       '{' '[' (id|'.') (',' (id|'.'))* ']' '->' expr '}'  */
+static node *
+handle_array_comprehension (struct parser *parser)
+{
+    struct token *tok;
+    node *lhs = NULL;
+    node *expr = NULL;
+
+#define GOOUT_IF(__cond)                        \
+    do {                                        \
+        if (__cond)                             \
+            goto out;                           \
+    } while (0)
+
+    parser_peek_token (parser, tok);
+
+    if (token_is_operator (tok, tv_lsquare)) {
+        parser_get_token (parser);
+        parser_peek_token (parser, tok);
+
+        if (!token_is_operator (tok, tv_rsquare)) {
+            /* Allow dots and three dots being a valid expr.  */
+            parser->in_subscript = true;
+            lhs = handle_expr_list (parser);
+            parser->in_subscript = false;
+        }
+
+        /* FIXME(artem) Check that expressions are actually id or '.',
+           or don't use handle_expr_list abobe.  */
+
+        GOOUT_IF (lhs == error_mark_node);
+
+        GOOUT_IF (!parser_expect_tval (parser, tv_rsquare));
+        parser_get_token (parser);
+
+        GOOUT_IF (!parser_expect_tval (parser, tv_rightarrow));
+        parser_get_token (parser);
+
+    } else if (is_id (parser)) {
+        GOOUT_IF (error_mark_node == (lhs = handle_id (parser)));
+
+        GOOUT_IF (!parser_expect_tval (parser, tv_rightarrow));
+        parser_get_token (parser);
+
+    } else
+        error_loc (token_location (tok), "invalid axis notation --- identifier "
+                   "or list of dots/identifiers expected");
+
+    expr = handle_expr (parser);
+
+    GOOUT_IF (expr == error_mark_node || !parser_expect_tval (parser, tv_rbrace));
+    parser_get_token (parser);
+    return TBmakeSetwl (lhs, expr);
+
+out:
+    free_tree (lhs);
+    free_tree (expr);
+    return error_mark_node;
+#undef GOTOOUT_IF
+}
+
+
+
 /* primary-expression:
      constant
      identifier
@@ -1910,92 +1976,11 @@ handle_primary_expr (struct parser *parser)
             break;
         }
 
-        /* ::= '{' id '->' expr '}'
-               |
-               '{' '[' exprs ']' '->' expr '}'
-           Axis notation.  */
+        /* Axis notation.  */
         /* FIXME do a propper skipping to the right brace.  */
-        case tv_lbrace: {
-            tok = parser_get_token (parser);
-            parser_unget (parser);
-
-            if (token_is_operator (tok, tv_lsquare)) {
-                node *exprs = NULL;
-                node *expr = NULL;
-
-                parser_get_token (parser);
-                tok = parser_get_token (parser);
-                parser_unget (parser);
-
-                if (!token_is_operator (tok, tv_rsquare)) {
-                    /* Allow dots and three dots being a valid expr.  */
-                    parser->in_subscript = true;
-                    exprs = handle_expr_list (parser);
-                    parser->in_subscript = false;
-                }
-
-                if (exprs == error_mark_node)
-                    return error_mark_node;
-
-                if (parser_expect_tval (parser, tv_rsquare))
-                    parser_get_token (parser);
-                else {
-                    free_tree (exprs);
-                    return error_mark_node;
-                }
-
-                if (parser_expect_tval (parser, tv_rightarrow))
-                    parser_get_token (parser);
-                else {
-                    free_tree (exprs);
-                    return error_mark_node;
-                }
-
-                expr = handle_expr (parser);
-
-                if (expr != error_mark_node && parser_expect_tval (parser, tv_rbrace)) {
-                    parser_get_token (parser);
-                    res = TBmakeSetwl (exprs, expr);
-                } else {
-                    free_tree (expr);
-                    free_tree (exprs);
-                    return error_mark_node;
-                }
-
-            } else if (is_id (parser)) {
-                node *id = NULL;
-                node *expr = NULL;
-
-                id = handle_id (parser);
-
-                if (id == error_mark_node)
-                    return error_mark_node;
-
-                if (parser_expect_tval (parser, tv_rightarrow))
-                    parser_get_token (parser);
-                else {
-                    free_tree (id);
-                    return error_mark_node;
-                }
-
-                expr = handle_expr (parser);
-
-                if (expr != error_mark_node && parser_expect_tval (parser, tv_rbrace)) {
-                    parser_get_token (parser);
-                    res = TBmakeSetwl (id, expr);
-                } else {
-                    free_tree (id);
-                    free_tree (expr);
-                    return error_mark_node;
-                }
-            } else {
-                error_loc (token_location (tok),
-                           "invalid axis notation --- identifier or list of "
-                           "identifiers expected");
-                res = error_mark_node;
-            }
+        case tv_lbrace:
+            res = handle_array_comprehension (parser);
             break;
-        }
 
         default:
             error_loc (token_location (tok), "token %s cannot start an expression.",
