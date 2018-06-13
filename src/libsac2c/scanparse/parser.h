@@ -184,5 +184,11 @@ struct pre_post_expr {
         parser_unget (parser);                                                           \
     } while (0)
 
+#define parser_peek_token(__parser, __tok)                                               \
+    do {                                                                                 \
+        __tok = parser_get_token (__parser);                                             \
+        parser_unget (__parser);                                                         \
+    } while (0)
+
 
 #endif /* __PARSER_H__  */
