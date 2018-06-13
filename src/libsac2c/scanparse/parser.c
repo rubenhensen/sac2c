@@ -235,6 +235,9 @@ node *handle_stmt_list (struct parser *, unsigned);
 node *handle_list_of_stmts (struct parser *);
 node *handle_stmt (struct parser *);
 node *handle_pragmas (struct parser *, enum pragma_type);
+static node *handle_generator_body (struct parser *parser, bool array_comprehension_p,
+                                    node **bound_variables);
+
 void cache_module (struct parser *, const char *);
 
 /* Set of flags to deffirentiate between the list of statments used
@@ -263,7 +266,8 @@ expr_constructor (node *a, node *b)
 #define handle_expr_list(parser)                                                         \
     handle_generic_list (parser, handle_expr, expr_constructor)
 
-/* Handle list of variables.  */
+/* Append id to the ids, propogate the location and return the node
+   of type N_spids.  */
 static node *
 id_constructor (node *id, node *next)
 {
@@ -829,6 +833,7 @@ parser_init (struct parser *parser, struct lexer *lex)
 
     parser->in_return = false;
     parser->in_subscript = false;
+    parser->in_arraycomp_expr = false;
     parser->in_module = false;
     parser->current_module = NULL;
 
@@ -1602,6 +1607,7 @@ handle_array_comprehension (struct parser *parser)
     struct token *tok;
     node *lhs = NULL;
     node *expr = NULL;
+    node **bound = NULL;
 
 #define GOOUT_IF(__cond)                        \
     do {                                        \
@@ -1622,10 +1628,32 @@ handle_array_comprehension (struct parser *parser)
             parser->in_subscript = false;
         }
 
-        /* FIXME(artem) Check that expressions are actually id or '.',
-           or don't use handle_expr_list abobe.  */
+        /* Verify that we have dots and ids in the lhs and count the
+           number of identifiers.  */
+        node *t = lhs;
+        size_t bound_sz = 0;
+        while (t) {
+            node *x = EXPRS_EXPR (t);
+            if (NODE_TYPE (x) != N_dot && NODE_TYPE (x) != N_spid)
+                error_loc (NODE_LOCATION (x), "only `.' or identifiers are allowed "
+                           "on the left hand side of `->' in array comprehensions");
+            bound_sz += (NODE_TYPE (x) == N_spid);
+            t = EXPRS_NEXT (t);
+        }
+
+        bound = (node **)malloc (sizeof (node *) * (bound_sz + 1));
+        node **tt = bound;
+        t = lhs;
+        while (t) {
+            node *x = EXPRS_EXPR (t);
+            if (NODE_TYPE (x) == N_spid)
+                *tt++ = x;
+            t = EXPRS_NEXT (t);
+        }
+        *tt = NULL;
 
         GOOUT_IF (lhs == error_mark_node);
+        /* FIXME skip till rbrace.  */
 
         GOOUT_IF (!parser_expect_tval (parser, tv_rsquare));
         parser_get_token (parser);
@@ -1635,6 +1663,11 @@ handle_array_comprehension (struct parser *parser)
 
     } else if (is_id (parser)) {
         GOOUT_IF (error_mark_node == (lhs = handle_id (parser)));
+        /* FIXME skip till rbrace.  */
+
+        bound = (node **)malloc (sizeof (node *) * 2);
+        bound[0] = lhs;
+        bound[1] = NULL;
 
         GOOUT_IF (!parser_expect_tval (parser, tv_rightarrow));
         parser_get_token (parser);
@@ -1643,15 +1676,30 @@ handle_array_comprehension (struct parser *parser)
         error_loc (token_location (tok), "invalid axis notation --- identifier "
                    "or list of dots/identifiers expected");
 
+    parser->in_arraycomp_expr = true;
     expr = handle_expr (parser);
+    parser->in_arraycomp_expr = false;
 
-    GOOUT_IF (expr == error_mark_node || !parser_expect_tval (parser, tv_rbrace));
+    GOOUT_IF (expr == error_mark_node);
+
+    parser_peek_token (parser, tok);
+    if (token_is_operator (tok, tv_or)) {
+        node *cond = NULL;
+
+        parser_get_token (parser);
+        GOOUT_IF (error_mark_node == (cond = handle_generator_body (parser, true, bound)));
+    }
+
+    GOOUT_IF (!parser_expect_tval (parser, tv_rbrace));
     parser_get_token (parser);
+
+    free (bound);
     return TBmakeSetwl (lhs, expr);
 
 out:
     free_tree (lhs);
     free_tree (expr);
+    free (bound);
     return error_mark_node;
 #undef GOTOOUT_IF
 }
@@ -2350,7 +2398,13 @@ handle_binary_expr (struct parser *parser, bool no_relop)
     } stack[num_precs];
 
     int sp = 0;
+
+    /* If we are parsing an expression within array comprehensions, we
+       need to avoid a '|', but not if it is inside the cast expression.  */
+    bool old_parser_in_arraycomp_expr = parser->in_arraycomp_expr;
+    parser->in_arraycomp_expr = false;
     struct pre_post_expr t = handle_cast_expr (parser);
+    parser->in_arraycomp_expr = old_parser_in_arraycomp_expr;
 
     if (t.expr == error_mark_node || t.expr == NULL)
         return t.expr;
@@ -2473,8 +2527,12 @@ handle_binary_expr (struct parser *parser, bool no_relop)
                 goto out;
             else
                 oprec = prec_rel;
-        } else if (!strcmp (id->id, "|"))
-            oprec = prec_bitor;
+        } else if (!strcmp (id->id, "|")) {
+            if (parser->in_arraycomp_expr)
+                goto out;
+            else
+                oprec = prec_bitor;
+        }
         else if (!strcmp (id->id, "&"))
             oprec = prec_bitand;
         else if (!strcmp (id->id, "^"))
@@ -2652,31 +2710,87 @@ handle_square_bracketed_ids (struct parser *parser)
     return ids;
 }
 
+
+static inline bool
+id_memberof_ids (node *id, node **ids)
+{
+    if (NODE_TYPE (id) != N_spid && NODE_TYPE (id) != N_spids)
+        return false;
+
+    while (*ids) {
+        if (NODE_TYPE (*ids) == N_spid
+            && ((NODE_TYPE (id) == N_spid 
+                 && !strcmp (SPID_NAME (id), SPID_NAME (*ids)))
+                || (NODE_TYPE (id) == N_spids 
+                    && !strcmp (SPIDS_NAME (id), SPID_NAME (*ids)))))
+            return true;
+        ids++;
+    }
+    return false;
+}
+
+static inline bool
+exprs_are_memebersof_ids (node *exprs, node **ids)
+{
+    node *e = exprs;
+    while (e) {
+        if (!id_memberof_ids (EXPRS_EXPR (e), ids))
+            return false;
+        e = EXPRS_NEXT (e);
+    }
+    return true;
+}
+
+static inline bool
+spids_are_memebersof_ids (node *spids, node **ids)
+{
+    node *e = spids;
+    while (e) {
+        if (!id_memberof_ids (e, ids))
+            return false;
+        e = SPIDS_NEXT (e);
+    }
+    return true;
+}
+
+
+
+static inline node *
+exprs_to_ids (node *exprs)
+{
+    if (!exprs) 
+        return NULL;
+        
+    node *x = EXPRS_EXPR (exprs);
+    assert (x && NODE_TYPE (x) == N_spid, "a chain of ids expected");
+    return id_constructor (x, exprs_to_ids (EXPRS_NEXT (exprs)));
+}
+
 /* generator ::=
         '(' expr (< | <=) ((id = [ ids ]) | id | [ ids ]) (< | <=) expr
             ( 'step' expr ( 'width' expr )? )?  ')'
 */
-node *
-handle_generator (struct parser *parser)
+static node *
+handle_generator_body (struct parser *parser,
+                       bool array_comprehension_p, node **bound_ids)
 {
     struct token *tok;
     struct location loc;
     struct location generator_loc;
-    node *gen_start = error_mark_node;
-    node *gen_end = error_mark_node;
+    node *gen_start = NULL;
+    node *gen_end = NULL;
     node *gen_idx = error_mark_node;
     node *step = NULL;
     node *width = NULL;
     prf gen_first_op, gen_last_op;
 
-    /* eat '(' and save its location.  */
-    if (parser_expect_tval (parser, tv_lparen))
-        generator_loc = token_location (parser_get_token (parser));
-    else
-        goto error;
+    bool ub_only = false;
+    bool lb_only = false;
 
     /* '.' | expr  */
     tok = parser_get_token (parser);
+    generator_loc = token_location (tok);
+
     if (token_is_operator (tok, tv_dot))
         gen_start = loc_annotated (token_location (tok), TBmakeDot (1));
     else {
@@ -2684,6 +2798,26 @@ handle_generator (struct parser *parser)
         gen_start = handle_conditional_expr (parser, true);
         if (error_mark_node == gen_start)
             goto error;
+    }
+
+    /* If we are parsing for array comprehensions, we check if the first
+       expression is a bound variable.  If it is, we are dealing with a
+       short generator of the form (iv ('<' | '<=') ub).  */
+    if (array_comprehension_p) {
+        if (id_memberof_ids (gen_start, bound_ids)) {
+           gen_idx = loc_annotated (loc, 
+                                    TBmakeWithid (id_constructor (gen_start, NULL),
+                                                  NULL));
+           gen_start = NULL;
+           ub_only = true;
+        } else if (NODE_TYPE (gen_start) == N_array
+                   && exprs_are_memebersof_ids (ARRAY_AELEMS (gen_start), bound_ids)) {
+           gen_idx = loc_annotated (loc, 
+                                    TBmakeWithid (NULL, 
+                                                  exprs_to_ids (ARRAY_AELEMS (gen_start))));
+           gen_start = NULL;
+           ub_only = true;
+        }
     }
 
     tok = parser_get_token (parser);
@@ -2698,39 +2832,67 @@ handle_generator (struct parser *parser)
         goto error;
     }
 
-    tok = parser_get_token (parser);
-    loc = token_location (tok);
-    if (token_is_operator (tok, tv_lsquare)) {
-        node *ids;
+    /* If the generator only specifies the upper bound (iv <= ub)
+       then the above '<' or '<=' corresponds to the `gen_last_op`.  */
+    if (ub_only) {
+        gen_last_op = gen_first_op;
+        gen_first_op = F_wl_le;
 
-        parser_unget (parser);
-        ids = handle_square_bracketed_ids (parser);
-        if (ids == error_mark_node)
-            goto error;
-
-        gen_idx = loc_annotated (loc, TBmakeWithid (NULL, ids));
     } else {
-        node *id;
+        /* Parse the variable part of the generator.  */
 
-        parser_unget (parser);
-        id = handle_id (parser);
-        if (id == error_mark_node)
-            /* FIXME skip something.  */
-            goto error;
+        parser_peek_token (parser, tok);
+        loc = token_location (tok);
+        if (token_is_operator (tok, tv_lsquare)) {
+            node *ids;
 
-        id = id_constructor (id, NULL);
-        tok = parser_get_token (parser);
-        if (token_is_operator (tok, tv_assign)) {
-            node *ids = handle_square_bracketed_ids (parser);
+            ids = handle_square_bracketed_ids (parser);
             if (ids == error_mark_node)
                 goto error;
 
-            gen_idx = loc_annotated (loc, TBmakeWithid (id, ids));
-        } else {
-            parser_unget (parser);
+            /* Within array comprehensions, this variable has to correspond to
+               one of the bound variables, otherwise this is illegal expression.  */
+            if (array_comprehension_p
+                && !spids_are_memebersof_ids (ids, bound_ids)) {
+                error_loc (NODE_LOCATION (ids), "all variables must be bound in the "
+                           "left hand side of the `->' in the array comprehension");
+                goto error;
+            }
 
-            gen_idx = loc_annotated (loc, TBmakeWithid (id, NULL));
+            gen_idx = loc_annotated (loc, TBmakeWithid (NULL, ids));
+        } else {
+            node *id;
+
+            id = handle_id (parser);
+            if (id == error_mark_node)
+                /* FIXME skip something.  */
+                goto error;
+
+
+            /* Within array comprehensions, this variable has to correspond to
+               one of the bound variables, otherwise this is illegal expression.  */
+            if (array_comprehension_p
+                && !id_memberof_ids (id, bound_ids)) {
+                error_loc (NODE_LOCATION (id), "this variable must be bound in the "
+                           "left hand side of the `->' in the array comprehension");
+                goto error;
+            }
+
+            id = id_constructor (id, NULL);
+
+            parser_peek_token (parser, tok);
+            if (!array_comprehension_p && token_is_operator (tok, tv_assign)) {
+                parser_get_token (parser);
+                node *ids = handle_square_bracketed_ids (parser);
+                if (ids == error_mark_node)
+                    goto error;
+
+                gen_idx = loc_annotated (loc, TBmakeWithid (id, ids));
+            } else {
+                gen_idx = loc_annotated (loc, TBmakeWithid (id, NULL));
+            }
         }
+
     }
 
     tok = parser_get_token (parser);
@@ -2738,20 +2900,30 @@ handle_generator (struct parser *parser)
         gen_last_op = F_wl_lt;
     else if (token_is_operator (tok, tv_lt_eq))
         gen_last_op = F_wl_le;
-    else {
+    else if (array_comprehension_p) {
+        /* We can omit the upper bound specification in array comprehensions.  */
+        parser_unget (parser);
+        /* If we don't have '<' or '<=', and we are not parsing the upper bound
+           of the generator only, we are parsing for the lower bound.  */
+        lb_only = !ub_only;
+
+    } else {
         error_loc (token_location (tok),
                    "`<' or `<=' operator expected in the generator");
-        parser_get_until_tval (parser, tv_rparen);
+        //parser_get_until_tval (parser, tv_rparen);
         goto error;
     }
 
-    tok = parser_get_token (parser);
-    if (token_is_operator (tok, tv_dot))
-        gen_end = loc_annotated (token_location (tok), TBmakeDot (1));
-    else {
-        parser_unget (parser);
-        if (error_mark_node == (gen_end = handle_expr (parser)))
-            goto error;
+    
+    if (!lb_only) {
+        tok = parser_get_token (parser);
+        if (token_is_operator (tok, tv_dot)) {
+            gen_end = loc_annotated (token_location (tok), TBmakeDot (1));
+        } else {
+            parser_unget (parser);
+            if (error_mark_node == (gen_end = handle_expr (parser)))
+                goto error;
+        }
     }
 
     tok = parser_get_token (parser);
@@ -2777,11 +2949,7 @@ handle_generator (struct parser *parser)
     } else
         parser_unget (parser);
 
-    /* eat ')'  */
-    if (parser_expect_tval (parser, tv_rparen))
-        parser_get_token (parser);
-    else
-        goto error;
+
 
     return loc_annotated (generator_loc,
                           TBmakePart (NULL, gen_idx,
@@ -2836,9 +3004,25 @@ handle_npart (struct parser *parser)
     node *exprs = NULL;
     node *ret = error_mark_node;
 
-    generator = handle_generator (parser);
-    if (generator == error_mark_node)
+    /* eat '(' and save its location.  */
+    if (parser_expect_tval (parser, tv_lparen))
+        parser_get_token (parser);
+    else
         goto error;
+
+    generator = handle_generator_body (parser, false, NULL);
+
+    if (generator == error_mark_node) {
+        parser_get_until_tval (parser, tv_rparen);
+        goto error;
+    }
+
+    /* eat ')'  */
+    if (parser_expect_tval (parser, tv_rparen))
+        parser_get_token (parser);
+    else
+        goto error;
+
 
     block = handle_wl_assign_block (parser);
     if (block == error_mark_node)
