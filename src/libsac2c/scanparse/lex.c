@@ -416,8 +416,8 @@ lexer_read_user_op (struct lexer *lex, struct token *tok, char **buf, size_t *si
         }
 
         /* FIXME we can adjust it later.  */
-        if ((i == 0 && isdigit (c)) || c == '"' || c == '\'' || c == '(' || c == ','
-            || c == '[' || c == ']' || c == ']') {
+        if ((i == 0 && isdigit (c)) || c == '"' || c == '\'' || c == ',' || c == '['
+            || c == ']') {
             lexer_ungetch (lex, c);
             error_loc (lex->loc,
                        "unallowed symbol `%c' inside the name "
@@ -431,6 +431,12 @@ lexer_read_user_op (struct lexer *lex, struct token *tok, char **buf, size_t *si
     }
 
     buffer_add_char (buf, &index, size, 0);
+
+    if (strlen (*buf) == 0) {
+        error_loc (lex->loc, "the length of the name of the function is zero");
+        return tok_unknown;
+    }
+
     search = trie_search (lex->trie, *buf, strlen (*buf));
     if (search == TRIE_NOT_LAST) {
         if (!is_normal_id (*buf))

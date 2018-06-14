@@ -307,25 +307,6 @@ assign_constructor (node *a, node *b)
 #define handle_assign_list(parser)                                                       \
     handle_generic_list (parser, handle_assign, assign_constructor)
 
-/* Handle list of types.  Here we de-reference the pointers
-   node* <--> ntype*, in order to use handle_generic_list routines.  */
-static node *
-rettype_constructor (node *a, node *b)
-{
-    /* FIXME types do not have location for the time
-       being, so we cannot set it here.  */
-    return TBmakeRet ((ntype *)a, b);
-}
-static node *
-__handle_type (struct parser *parser)
-{
-    /* FIXME types do not have location for the time
-       being, so we cannot set it here.  */
-    return (node *)handle_type (parser);
-}
-#define handle_rettype_list(parser)                                                      \
-    handle_generic_list (parser, __handle_type, rettype_constructor)
-
 /* This function pushes back all the tokens that are in the token_buffer
    of the parser back into the lexer.  */
 static void
@@ -513,11 +494,13 @@ handle_type_subscript_expr (struct parser *parser)
         t = TBmakeSpid (NULL, strdup ("*"));
     else {
         parser_unget (parser);
+        /* FIXME handle_expr might be an overkill here: as expr has
+           conditionals, binary operations, etc.  */
         t = handle_expr (parser);
     }
 
-    if (t == error_mark_node) {
-        error_loc (token_location (tok), "invalid type dimension expression");
+    if (t == NULL || t == error_mark_node) {
+        error_loc (token_location (tok), "invalid or missing type dimension expression");
         return error_mark_node;
     }
 
@@ -861,7 +844,6 @@ parser_init (struct parser *parser, struct lexer *lex)
     parser->used_modules = NULL;
 
     parser->in_return = false;
-    parser->in_rettypes = false;
     parser->in_subscript = false;
     parser->in_module = false;
     parser->current_module = NULL;
@@ -1878,7 +1860,8 @@ handle_primary_expr (struct parser *parser)
                   warning_loc (token_location (tok), "using deprecated type-cast "
                                "syntax, please remove the `:' character");  */
 
-                type = handle_type (parser);
+                if (error_type_node == (type = handle_type (parser)))
+                    return error_mark_node;
 
                 if (!TYisAKS (type)) {
                     error_loc (loc, "Empty array with non-constant "
@@ -3462,7 +3445,7 @@ handle_assign (struct parser *parser)
            are allowed to act as expressions.  */
         else if ((!strcmp (SPID_NAME (SPAP_ID (lhs)), "++")
                   || !strcmp (SPID_NAME (SPAP_ID (lhs)), "--"))
-                 && SPID_NS (SPAP_ID (lhs)) == NULL
+                 && SPID_NS (SPAP_ID (lhs)) == NULL && TCcountExprs (SPAP_ARGS (lhs)) == 1
                  && NODE_TYPE (EXPRS_EXPR (SPAP_ARGS (lhs))) == N_spid) {
             node *id = EXPRS_EXPR (SPAP_ARGS (lhs));
             if (SPID_NS (id) != NULL) {
@@ -4188,16 +4171,6 @@ handle_generic_list (struct parser *parser, node *(*handle) (struct parser *),
         return constructor (res, NULL);
     }
 
-    if (parser->in_rettypes) {
-        tok = parser_get_token (parser);
-        if (token_is_operator (tok, tv_threedots)) {
-            parser_unget (parser);
-            parser_unget (parser);
-            return constructor (res, NULL);
-        } else
-            parser_unget (parser);
-    }
-
     t = handle_generic_list (parser, handle, constructor);
     if (t == NULL || t == error_mark_node) {
         error_loc (token_location (tok), "nothing follows the comma");
@@ -4205,6 +4178,44 @@ handle_generic_list (struct parser *parser, node *(*handle) (struct parser *),
     }
 
     return constructor (res, t);
+}
+
+static node *
+handle_rettype_list (struct parser *parser)
+{
+    struct token *tok;
+    ntype *res = handle_type (parser);
+    node *t;
+
+    if (res == NULL)
+        return NULL;
+    if (res == error_type_node)
+        return error_mark_node;
+
+    tok = parser_get_token (parser);
+    if (!token_is_operator (tok, tv_comma)) {
+        parser_unget (parser);
+        return TBmakeRet (res, NULL);
+    }
+
+    /* Check if the next token is '...', in whcih case
+       we have reached the end of the list.  If we don't have
+       this code, then the next recursive invocation will emit
+       an error.  */
+    tok = parser_get_token (parser);
+    if (token_is_operator (tok, tv_threedots)) {
+        parser_unget2 (parser);
+        return TBmakeRet (res, NULL);
+    } else
+        parser_unget (parser);
+
+    t = handle_rettype_list (parser);
+    if (t == NULL || t == error_mark_node) {
+        error_loc (token_location (tok), "valid type expected after comma");
+        return error_mark_node;
+    }
+
+    return TBmakeRet (res, t);
 }
 
 /* rettypes ::= type-list | type-list ',' '...' | '...'  */
@@ -4223,12 +4234,22 @@ handle_rettypes (struct parser *parser, bool vaargs, bool *three_dots_p)
         parser_get_token (parser);
         return NULL;
     }
+    /* XXX decide whether we support just three dots without the first argument.
+       This used to be the case in the sac bison definition, but it contradicts
+       with the syntax specification.  */
+    else if (token_is_operator (tok, tv_threedots)) {
+        parser_get_token (parser);
+        if (!vaargs) {
+            error_loc (token_location (tok), "... type is only allowed "
+                                             "for function declarations");
+            return error_mark_node;
+        } else {
+            *three_dots_p = true;
+            return NULL;
+        }
+    }
 
-    parser->in_rettypes = true;
-    ret = handle_rettype_list (parser);
-    parser->in_rettypes = false;
-
-    if (ret == error_mark_node)
+    if (error_mark_node == (ret = handle_rettype_list (parser)))
         return ret;
 
     if (ret != NULL && vaargs) {
@@ -4240,12 +4261,6 @@ handle_rettypes (struct parser *parser, bool vaargs, bool *three_dots_p)
             else
                 parser_unget (parser);
         } else
-            parser_unget (parser);
-    } else {
-        tok = parser_get_token (parser);
-        if (token_is_operator (tok, tv_threedots))
-            *three_dots_p = true;
-        else
             parser_unget (parser);
     }
 

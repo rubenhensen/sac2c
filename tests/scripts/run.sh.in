@@ -19,6 +19,7 @@ base_fname_we=$(namewe "$base_fname")
 
 # Generate the Makefile form a sac test:
 @CMAKE_C_COMPILER@ -E -C -x c $SAC_FILE \
+     | sed 's/[^[:print:]]//g' \
      | grep "^// SAC_TEST|" \
      | sed -e 's/^\/\/ SAC_TEST|//g'\
            -e 's/<tab>/\t/g' \
