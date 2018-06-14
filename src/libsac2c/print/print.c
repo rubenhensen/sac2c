@@ -4146,7 +4146,8 @@ PRTsetwl (node *arg_node, info *arg_info)
     TRAVdo (SETWL_EXPR (arg_node), arg_info);
 
     if (SETWL_GENERATOR (arg_node) != NULL) {
-        fprintf (global.outfile, " | ");
+        fprintf (global.outfile, "| ");
+        INFO_INSETWL (arg_info) = TRUE;
         TRAVdo (SETWL_GENERATOR (arg_node), arg_info);
     }
 
@@ -4158,7 +4159,8 @@ PRTsetwl (node *arg_node, info *arg_info)
     }
 
     if (!old_insetwl) {
-        fprintf (global.outfile, " }");
+        INDENT;
+        fprintf (global.outfile, "}");
     }
 
     DBUG_RETURN (arg_node);
@@ -4785,19 +4787,25 @@ PRTwithid (node *arg_node, info *arg_info)
 node *
 PRTgenerator (node *arg_node, info *arg_info)
 {
+    bool insetwl;
     DBUG_ENTER ();
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "(");
+    insetwl = INFO_INSETWL (arg_info);
+    INFO_INSETWL (arg_info) = FALSE;
+
+    if (!insetwl) {
+        fprintf (global.outfile, "(");
+    }
 
     /* print upper bound */
     if (GENERATOR_BOUND1 (arg_node)) {
         TRAVdo (GENERATOR_BOUND1 (arg_node), arg_info);
     } else {
-        fprintf (global.outfile, ". (NULL)");
+        fprintf (global.outfile, "(NULL)");
     }
 
     /* print first operator */
@@ -4830,7 +4838,7 @@ PRTgenerator (node *arg_node, info *arg_info)
     if (GENERATOR_BOUND2 (arg_node)) {
         TRAVdo (GENERATOR_BOUND2 (arg_node), arg_info);
     } else {
-        fprintf (global.outfile, ". (NULL)");
+        fprintf (global.outfile, "(NULL)");
     }
 
     /* print step and width */
@@ -4847,7 +4855,9 @@ PRTgenerator (node *arg_node, info *arg_info)
         fprintf (global.outfile, " genwidth ");
         TRAVdo (GENERATOR_GENWIDTH (arg_node), arg_info);
     }
-    fprintf (global.outfile, ")\n");
+    if (!insetwl) {
+        fprintf (global.outfile, ")\n");
+    }
 
     DBUG_RETURN (arg_node);
 }

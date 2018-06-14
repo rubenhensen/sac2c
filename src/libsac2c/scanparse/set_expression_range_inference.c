@@ -595,7 +595,7 @@ SERIgenerator (node *arg_node, info *arg_info)
             /* We now insert the information we found */
         } else {
             if (INFO_SERI_ISLASTPART (arg_info)) {
-                CTIerror ("Unable to infer upper bound for final partition of"
+                CTIwarn ("Unable to infer upper bound for final partition of"
                           " set expression; please specify an upper bound.");
             } else {
                 CTIwarn ("Unable to infer upper bound for a partition of"
