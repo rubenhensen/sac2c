@@ -236,7 +236,7 @@ node *handle_list_of_stmts (struct parser *);
 node *handle_stmt (struct parser *);
 node *handle_pragmas (struct parser *, enum pragma_type);
 static node *handle_generator_body (struct parser *parser, bool array_comprehension_p,
-                                    node **bound_variables);
+                                    struct array_comp_ctxt *ctxt);
 
 void cache_module (struct parser *, const char *);
 
@@ -1605,9 +1605,17 @@ static node *
 handle_array_comprehension (struct parser *parser)
 {
     struct token *tok;
+    struct location loc;
+
     node *lhs = NULL;
     node *expr = NULL;
+    node *constr = NULL;
     node **bound = NULL;
+    size_t bound_sz = 0;
+
+    /* A flag that determines whether we have seen a single bound variable
+       on the left hand side of `->' (true) or a list of these (false).  */
+    bool single_bound_variable = false;
 
 #define GOOUT_IF(__cond)                        \
     do {                                        \
@@ -1616,6 +1624,7 @@ handle_array_comprehension (struct parser *parser)
     } while (0)
 
     tok = parser_peek_token (parser);
+    loc = token_location (tok);
 
     if (token_is_operator (tok, tv_lsquare)) {
         parser_get_token (parser);
@@ -1631,17 +1640,17 @@ handle_array_comprehension (struct parser *parser)
         /* Verify that we have dots and ids in the lhs and count the
            number of identifiers.  */
         node *t = lhs;
-        size_t bound_sz = 0;
         while (t) {
             node *x = EXPRS_EXPR (t);
             if (NODE_TYPE (x) != N_dot && NODE_TYPE (x) != N_spid)
                 error_loc (NODE_LOCATION (x), "only `.' or identifiers are allowed "
-                           "on the left hand side of `->' in array comprehensions");
+                           "in the list on the left hand side of `->' in array "
+                           "comprehensions");
             bound_sz += (NODE_TYPE (x) == N_spid);
             t = EXPRS_NEXT (t);
         }
 
-        bound = (node **)malloc (sizeof (node *) * (bound_sz + 1));
+        bound = (node **)malloc (sizeof (node *) * bound_sz);
         node **tt = bound;
         t = lhs;
         while (t) {
@@ -1650,7 +1659,6 @@ handle_array_comprehension (struct parser *parser)
                 *tt++ = x;
             t = EXPRS_NEXT (t);
         }
-        *tt = NULL;
 
         GOOUT_IF (lhs == error_mark_node);
         /* FIXME skip till rbrace.  */
@@ -1661,16 +1669,20 @@ handle_array_comprehension (struct parser *parser)
         GOOUT_IF (!parser_expect_tval (parser, tv_rightarrow));
         parser_get_token (parser);
 
+        single_bound_variable = false;
+
     } else if (is_id (parser)) {
         GOOUT_IF (error_mark_node == (lhs = handle_id (parser)));
         /* FIXME skip till rbrace.  */
 
-        bound = (node **)malloc (sizeof (node *) * 2);
+        bound_sz = 1;
+        bound = (node **)malloc (sizeof (node *));
         bound[0] = lhs;
-        bound[1] = NULL;
 
         GOOUT_IF (!parser_expect_tval (parser, tv_rightarrow));
         parser_get_token (parser);
+
+        single_bound_variable = true;
 
     } else
         error_loc (token_location (tok), "invalid axis notation --- identifier "
@@ -1684,21 +1696,45 @@ handle_array_comprehension (struct parser *parser)
 
     tok = parser_peek_token (parser);
     if (token_is_operator (tok, tv_or)) {
-        node *cond = NULL;
+        struct array_comp_ctxt ctxt = {
+            .single_bound_variable = single_bound_variable,
+            .bound_sz = bound_sz,
+            .bound = bound
+        };
 
         parser_get_token (parser);
-        GOOUT_IF (error_mark_node == (cond = handle_generator_body (parser, true, bound)));
+        GOOUT_IF (error_mark_node == (constr = handle_generator_body (parser, true, &ctxt)));
+        /* We are getting N_part from the handle_generator, so we
+           extract the generator and destroy the WithId.  */
+        free_node (PART_WITHID (constr));
+        PART_WITHID (constr) = NULL;
+        node *t = PART_GENERATOR (constr);
+        PART_GENERATOR (constr) = NULL;
+        free_tree (constr);
+        constr = t;
     }
 
-    GOOUT_IF (!parser_expect_tval (parser, tv_rbrace));
-    parser_get_token (parser);
+    /* The next expression in the array comprehension.  */
+    tok = parser_peek_token (parser);
+    
+    node *next = NULL;
+
+    if (token_is_operator (tok, tv_semicolon)) {
+        parser_get_token (parser);
+        GOOUT_IF (error_mark_node == (next = handle_array_comprehension (parser)));
+    }
 
     free (bound);
-    return TBmakeSetwl (lhs, expr);
+    node *r = TBmakeSetwl (lhs, expr);
+    NODE_LOCATION (r) = loc;
+    SETWL_GENERATOR (r) = constr;
+    SETWL_NEXT (r) = next;
+    return r;
 
 out:
     free_tree (lhs);
     free_tree (expr);
+    free_tree (constr);
     free (bound);
     return error_mark_node;
 #undef GOTOOUT_IF
@@ -2028,6 +2064,11 @@ handle_primary_expr (struct parser *parser)
         /* FIXME do a propper skipping to the right brace.  */
         case tv_lbrace:
             res = handle_array_comprehension (parser);
+            if (!parser_expect_tval (parser, tv_rbrace)) {
+                free_tree (res);
+                return error_mark_node;
+            }
+            parser_get_token (parser);
             break;
 
         default:
@@ -2714,12 +2755,12 @@ handle_square_bracketed_ids (struct parser *parser)
    be found within the NULL-terminated list of nodes, where all
    the nodes are N_spid.  */
 static inline bool
-id_memberof_ids (node *id, node **ids)
+id_memberof_ids (node *id, node **ids, size_t sz)
 {
     if (NODE_TYPE (id) != N_spid && NODE_TYPE (id) != N_spids)
         return false;
 
-    while (*ids) {
+    for (size_t i = 0; i < sz; i++) {
         if (NODE_TYPE (*ids) == N_spid
             && ((NODE_TYPE (id) == N_spid 
                  && !strcmp (SPID_NAME (id), SPID_NAME (*ids)))
@@ -2734,13 +2775,15 @@ id_memberof_ids (node *id, node **ids)
 /* For the chain of exprs, check that each expr can be found in the
    NULL-terminated list of ids.  */
 static inline bool
-exprs_are_memebersof_ids (node *exprs, node **ids)
+exprs_are_ids (node *exprs, node **ids, size_t sz)
 {
-    node *e = exprs;
-    while (e) {
-        if (!id_memberof_ids (EXPRS_EXPR (e), ids))
+    for (size_t i = 0; i < sz; i++) {
+        node *x = EXPRS_EXPR (exprs);
+        if (NODE_TYPE (x) != N_spid
+            || strcmp (SPID_NAME (x), SPID_NAME (*ids)))
             return false;
-        e = EXPRS_NEXT (e);
+        ids++;
+        exprs = EXPRS_NEXT (exprs);
     }
     return true;
 }
@@ -2748,17 +2791,16 @@ exprs_are_memebersof_ids (node *exprs, node **ids)
 /* For the N_spids chain, check that each id can be found in the
    NULL-terminated list of ids.  */
 static inline bool
-spids_are_memebersof_ids (node *spids, node **ids)
+spids_are_ids (node *spids, node **ids, size_t sz)
 {
-    node *e = spids;
-    while (e) {
-        if (!id_memberof_ids (e, ids))
+    for (size_t i = 0; i < sz; i++) {
+        if (strcmp (SPIDS_NAME (spids), SPID_NAME (*ids)))
             return false;
-        e = SPIDS_NEXT (e);
+        ids++;
+        spids = SPIDS_NEXT (spids);
     }
     return true;
 }
-
 
 /* Convert an expr chain into N_spids, under te assumption that
    each expr in the chain is N_spid.  */
@@ -2779,7 +2821,7 @@ exprs_to_ids (node *exprs)
 */
 static node *
 handle_generator_body (struct parser *parser,
-                       bool array_comprehension_p, node **bound_ids)
+                       bool array_comprehension_p, struct array_comp_ctxt *ctxt)
 {
     struct token *tok;
     struct location loc;
@@ -2811,15 +2853,20 @@ handle_generator_body (struct parser *parser,
        expression is a bound variable.  If it is, we are dealing with a
        short generator of the form (iv ('<' | '<=') ub).  */
     if (array_comprehension_p) {
-        if (id_memberof_ids (gen_start, bound_ids)) {
-           gen_idx = loc_annotated (loc, 
+        if (ctxt->single_bound_variable
+            && NODE_TYPE (gen_start) == N_spid
+            && !strcmp (SPID_NAME (gen_start), SPID_NAME (*ctxt->bound))) {
+           gen_idx = loc_annotated (generator_loc, 
                                     TBmakeWithid (id_constructor (gen_start, NULL),
                                                   NULL));
            gen_start = NULL;
            ub_only = true;
-        } else if (NODE_TYPE (gen_start) == N_array
-                   && exprs_are_memebersof_ids (ARRAY_AELEMS (gen_start), bound_ids)) {
-           gen_idx = loc_annotated (loc, 
+        }
+    
+        if (!ctxt->single_bound_variable
+            && NODE_TYPE (gen_start) == N_array
+            && exprs_are_ids (ARRAY_AELEMS (gen_start), ctxt->bound, ctxt->bound_sz)) {
+           gen_idx = loc_annotated (generator_loc, 
                                     TBmakeWithid (NULL, 
                                                   exprs_to_ids (ARRAY_AELEMS (gen_start))));
            gen_start = NULL;
@@ -2859,10 +2906,17 @@ handle_generator_body (struct parser *parser,
 
             /* Within array comprehensions, this variable has to correspond to
                one of the bound variables, otherwise this is illegal expression.  */
+            if (array_comprehension_p && ctxt->single_bound_variable) {
+                error_loc (NODE_LOCATION (ids), "cannot use the list of variables "
+                           "here: use `%s' variable isntead", SPID_NAME (*ctxt->bound));
+                goto error;
+            }
+
             if (array_comprehension_p
-                && !spids_are_memebersof_ids (ids, bound_ids)) {
-                error_loc (NODE_LOCATION (ids), "all variables must be bound in the "
-                           "left hand side of the `->' in the array comprehension");
+                && !spids_are_ids (ids, ctxt->bound, ctxt->bound_sz)) {
+                error_loc (NODE_LOCATION (ids), "this variable list must match "
+                           "the list of varibales on the left hand side of the "
+                           "`->' without the '.'-s");
                 goto error;
             }
 
@@ -2878,10 +2932,16 @@ handle_generator_body (struct parser *parser,
 
             /* Within array comprehensions, this variable has to correspond to
                one of the bound variables, otherwise this is illegal expression.  */
+            if (array_comprehension_p && !ctxt->single_bound_variable) {
+                error_loc (NODE_LOCATION (id), "cannot use a single variable "
+                           "here: use variable list isntead");
+                goto error;
+            }
+
             if (array_comprehension_p
-                && !id_memberof_ids (id, bound_ids)) {
-                error_loc (NODE_LOCATION (id), "this variable must be bound in the "
-                           "left hand side of the `->' in the array comprehension");
+                && strcmp (SPID_NAME (id), SPID_NAME (*ctxt->bound))) {
+                error_loc (NODE_LOCATION (id), "variable must be the same as at the"
+                           "left hand side of the `->' without the '.'-s");
                 goto error;
             }
 
@@ -2913,7 +2973,7 @@ handle_generator_body (struct parser *parser,
         /* If we don't have '<' or '<=', and we are not parsing the upper bound
            of the generator only, we are parsing for the lower bound.  */
         lb_only = !ub_only;
-
+        gen_last_op = F_wl_le;
     } else {
         error_loc (token_location (tok),
                    "`<' or `<=' operator expected in the generator");

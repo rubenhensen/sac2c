@@ -172,6 +172,23 @@ struct pre_post_expr {
 };
 
 
+/* A data structure to pass the array comprehension context.  */
+struct array_comp_ctxt {
+    /* Whether we have a comprehension:
+            { iv -> ... }                   (true)
+            { [(iv | ',') list] -> ... }    (false)  */
+    bool single_bound_variable;  
+
+    /* The number of bound variables.  */
+    size_t bound_sz;
+
+    /* A list of N_spid nodes, each of which repesents a bound
+       variable, preserving an order they came at the left hand
+       side of the `->'.  */
+    node **bound;
+};
+
+
 /* Create versions to unget several tokens.  */
 #define parser_unget2(parser)                                                            \
     do {                                                                                 \
@@ -187,8 +204,6 @@ struct pre_post_expr {
 
 struct token *parser_get_token (struct parser *parser);
 void parser_unget (struct parser *parser);
-
-
 
 static inline struct token *
 parser_peek_token (struct parser *parser)
