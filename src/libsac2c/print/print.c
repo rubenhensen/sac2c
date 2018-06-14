@@ -83,6 +83,7 @@ struct INFO {
     int ofp;
     bool specialization;
     bool prototype;
+    bool in_setwl;
     int separate;
     int dim;
     shpseg *shape;
@@ -115,6 +116,7 @@ struct INFO {
 #define INFO_OMIT_FORMAL_PARAMS(n) ((n)->ofp)
 #define INFO_SPECIALIZATION(n) ((n)->specialization)
 #define INFO_PROTOTYPE(n) ((n)->prototype)
+#define INFO_INSETWL(n) ((n)->in_setwl)
 #define INFO_SEPARATE(n) ((n)->separate)
 #define INFO_DIM(n) ((n)->dim)
 #define INFO_SHAPE(n) ((n)->shape)
@@ -254,6 +256,7 @@ MakeInfo (void)
     INFO_OMIT_FORMAL_PARAMS (result) = 0;
     INFO_SPECIALIZATION (result) = FALSE;
     INFO_PROTOTYPE (result) = FALSE;
+    INFO_INSETWL (result) = FALSE;
     INFO_SEPARATE (result) = 0;
     INFO_DIM (result) = 0;
     INFO_SHAPE (result) = NULL;
@@ -4118,24 +4121,45 @@ PRTdot (node *arg_node, info *arg_info)
 node *
 PRTsetwl (node *arg_node, info *arg_info)
 {
+    bool old_insetwl;
     DBUG_ENTER ();
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
+    old_insetwl = INFO_INSETWL (arg_info);
+    if (!INFO_INSETWL (arg_info)) {
+        fprintf (global.outfile, "{ ");
+    } else {
+        INFO_INSETWL (arg_info) = FALSE;
+    }
     if (NODE_TYPE (SETWL_VEC (arg_node)) == N_exprs) {
-        fprintf (global.outfile, "{ [");
+        fprintf (global.outfile, "[");
         TRAVdo (SETWL_VEC (arg_node), arg_info);
         fprintf (global.outfile, "] -> ");
     } else {
-        fprintf (global.outfile, "{ ");
         TRAVdo (SETWL_VEC (arg_node), arg_info);
         fprintf (global.outfile, " -> ");
     }
 
     TRAVdo (SETWL_EXPR (arg_node), arg_info);
-    fprintf (global.outfile, " }");
+
+    if (SETWL_GENERATOR (arg_node) != NULL) {
+        fprintf (global.outfile, " | ");
+        TRAVdo (SETWL_GENERATOR (arg_node), arg_info);
+    }
+
+    if (SETWL_NEXT (arg_node) != NULL) {
+        fprintf (global.outfile, ";\n");
+        INDENT;
+        INFO_INSETWL (arg_info) = TRUE;
+        TRAVdo (SETWL_NEXT (arg_node), arg_info);
+    }
+
+    if (!old_insetwl) {
+        fprintf (global.outfile, " }");
+    }
 
     DBUG_RETURN (arg_node);
 }
