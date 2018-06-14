@@ -233,7 +233,156 @@ IdTableContains (char *id, idtable *ids)
     DBUG_RETURN (result);
 }
 
+/**
+ * builds runtime code that calculates the minimum of all shapes
+ * found in vectors. This is only used if the selection vector
+ * was a single indentifier.
+ *
+ * @param vectors shapechain containing vectors to build the minimum of
+ * @return sac code representing the minimum of all given shapes
+ */
+static node *
+BuildShapeVectorMin (shpchain *vectors)
+{
+    node *result = NULL;
+    node *index = MakeTmpId ("index_min");
+    node *shape = NULL;
+    node *expr = NULL;
+    node *indexids = NULL;
 
+    DBUG_ENTER ();
+
+    indexids = TBmakeSpids (STRcpy (SPID_NAME (index)), NULL);
+
+    shape = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (vectors->shape), NULL));
+
+    expr = MAKE_BIN_PRF (F_sel_VxA, DUPdoDupTree (index), DUPdoDupTree (vectors->shape));
+
+    vectors = vectors->next;
+
+    while (vectors != NULL) {
+        expr = MAKE_BIN_PRF (F_min_SxS,
+                             MAKE_BIN_PRF (F_sel_VxA, DUPdoDupTree (index),
+                                           DUPdoDupTree (vectors->shape)),
+                             expr);
+        vectors = vectors->next;
+    }
+
+    result = TBmakeWith (TBmakePart (NULL, TBmakeWithid (indexids, NULL),
+                                     TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
+                                                      TBmakeDot (1), NULL, NULL)),
+                         TBmakeCode (MAKE_EMPTY_BLOCK (), TBmakeExprs (expr, NULL)),
+                         TBmakeGenarray (shape, NULL));
+
+    GENARRAY_DEFAULT (WITH_WITHOP (result)) = TBmakeNum (0);
+    CODE_USED (WITH_CODE (result))++;
+    PART_CODE (WITH_PART (result)) = WITH_CODE (result);
+
+    FREEdoFreeTree (index);
+
+    DBUG_RETURN (result);
+}
+
+
+/**
+ * builds the shape for the withloop replacing the lamination. For each
+ * identifier within the lamination vector the shape is built as the
+ * minimum of all shapes of arrays the identifier is used with within a
+ * selection. If the lamination vector is given as a single vector,
+ * BuildMinShapeVector is used instead of primitive functions.
+ *
+ * @param table idtable structure
+ * @param end first identifier within idtable not belonging to this lamination
+ * @return sac code representing the shape vector
+ */
+static node *
+BuildWLShape (idtable *table, idtable *end)
+{
+    node *result = NULL;
+
+    DBUG_ENTER ();
+
+    if (table->type == ID_scalar) {
+        while (table != end) {
+            node *shape = NULL;
+            shpchain *handle = table->shapes;
+
+            if (handle == NULL) {
+                CTIerrorLine (global.linenum,
+                              "No shape information found for index "
+                              "scalar '%s'.",
+                              table->id);
+            } else {
+                shape = handle->shape;
+                handle = handle->next;
+
+                while (handle != NULL) {
+                    shape = MAKE_BIN_PRF (F_min_SxS, shape, handle->shape);
+                    handle = handle->next;
+                }
+            }
+
+            result = TBmakeExprs (shape, result);
+            table = table->next;
+        }
+
+        result = TCmakeIntVector (result);
+    } else if (table->type == ID_vector) {
+        if (table->shapes == NULL) {
+            CTIerrorLine (global.linenum,
+                          "No shape information found for index "
+                          "vector '%s'.",
+                          table->id);
+        } else {
+            /*
+             * do not build min-WL if there is only one shape
+             */
+
+            if (table->shapes->next == NULL) {
+                result = table->shapes->shape;
+            } else {
+                result = BuildShapeVectorMin (table->shapes);
+            }
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+/**
+ * builds the shape for the withloop replacing the lamination. For each
+ * identifier within the lamination vector the shape is built as the
+ * minimum of all shapes of arrays the identifier is used with within a
+ * selection. If the lamination vector is given as a single vector,
+ * BuildMinShapeVector is used instead of primitive functions.
+ *
+ * @param table idtable structure
+ * @param end first identifier within idtable not belonging to this lamination
+ * @return sac code representing the shape vector
+ */
+static bool
+ShapeInfoComplete (idtable *table, idtable *end)
+{
+    bool result = TRUE;
+
+    DBUG_ENTER ();
+
+    if (table->type == ID_scalar) {
+        while (table != end) {
+            if (table->shapes == NULL) {
+                result = FALSE;
+            }
+            table = table->next;
+        }
+
+    } else if (table->type == ID_vector) {
+        if (table->shapes == NULL) {
+            result = FALSE;
+        }
+    }
+
+    DBUG_RETURN (result);
+}
 /**
  * frees all elements in idtable until the element until is reached.
  * Used to clean up the idtable after the code of a lamination was
@@ -591,17 +740,22 @@ SERIgenerator (node *arg_node, info *arg_info)
         
     }
     if (INFO_SERI_UBMISSING (arg_info)) {
-        if ( FALSE) {
+        if (ShapeInfoComplete (INFO_SERI_IDTABLE (arg_info),
+                               INFO_SERI_IDTABLE (INFO_SERI_NEXT (arg_info)))) {
             /* We now insert the information we found */
+            GENERATOR_BOUND2 (arg_node)
+                = BuildWLShape (INFO_SERI_IDTABLE (arg_info),
+                                INFO_SERI_IDTABLE (INFO_SERI_NEXT (arg_info)));
+            GENERATOR_OP2 (arg_node) = F_wl_lt;
         } else {
             if (INFO_SERI_ISLASTPART (arg_info)) {
-                CTIwarn ("Unable to infer upper bound for final partition of"
+                CTIerror ("Unable to infer upper bound for final partition of"
                           " set expression; please specify an upper bound.");
             } else {
                 CTIwarn ("Unable to infer upper bound for a partition of"
                          " a set expression; using \".\" instead.");
-                GENERATOR_BOUND1 (arg_node) = TBmakeDot (1);
-                GENERATOR_OP1 (arg_node) = F_wl_le;
+                GENERATOR_BOUND2 (arg_node) = TBmakeDot (1);
+                GENERATOR_OP2 (arg_node) = F_wl_le;
             }
         }
         
