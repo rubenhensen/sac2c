@@ -433,7 +433,7 @@ lexer_read_user_op (struct lexer *lex, struct token *tok, char **buf, size_t *si
     buffer_add_char (buf, &index, size, 0);
 
     if (strlen (*buf) == 0) {
-        error_loc (lex->loc, "the length of the name of the functtion is zero");
+        error_loc (lex->loc, "the length of the name of the function is zero");
         return tok_unknown;
     }
 
