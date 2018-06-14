@@ -1615,11 +1615,11 @@ handle_array_comprehension (struct parser *parser)
             goto out;                           \
     } while (0)
 
-    parser_peek_token (parser, tok);
+    tok = parser_peek_token (parser);
 
     if (token_is_operator (tok, tv_lsquare)) {
         parser_get_token (parser);
-        parser_peek_token (parser, tok);
+        tok = parser_peek_token (parser);
 
         if (!token_is_operator (tok, tv_rsquare)) {
             /* Allow dots and three dots being a valid expr.  */
@@ -1682,7 +1682,7 @@ handle_array_comprehension (struct parser *parser)
 
     GOOUT_IF (expr == error_mark_node);
 
-    parser_peek_token (parser, tok);
+    tok = parser_peek_token (parser);
     if (token_is_operator (tok, tv_or)) {
         node *cond = NULL;
 
@@ -2841,7 +2841,7 @@ handle_generator_body (struct parser *parser,
     } else {
         /* Parse the variable part of the generator.  */
 
-        parser_peek_token (parser, tok);
+        tok = parser_peek_token (parser);
         loc = token_location (tok);
         if (token_is_operator (tok, tv_lsquare)) {
             node *ids;
@@ -2880,7 +2880,7 @@ handle_generator_body (struct parser *parser,
 
             id = id_constructor (id, NULL);
 
-            parser_peek_token (parser, tok);
+            tok = parser_peek_token (parser);
             if (!array_comprehension_p && token_is_operator (tok, tv_assign)) {
                 parser_get_token (parser);
                 node *ids = handle_square_bracketed_ids (parser);
