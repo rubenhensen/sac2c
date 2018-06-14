@@ -1716,7 +1716,7 @@ handle_array_comprehension (struct parser *parser)
 
     /* The next expression in the array comprehension.  */
     tok = parser_peek_token (parser);
-    
+
     node *next = NULL;
 
     if (token_is_operator (tok, tv_semicolon)) {
@@ -2762,9 +2762,9 @@ id_memberof_ids (node *id, node **ids, size_t sz)
 
     for (size_t i = 0; i < sz; i++) {
         if (NODE_TYPE (*ids) == N_spid
-            && ((NODE_TYPE (id) == N_spid 
+            && ((NODE_TYPE (id) == N_spid
                  && !strcmp (SPID_NAME (id), SPID_NAME (*ids)))
-                || (NODE_TYPE (id) == N_spids 
+                || (NODE_TYPE (id) == N_spids
                     && !strcmp (SPIDS_NAME (id), SPID_NAME (*ids)))))
             return true;
         ids++;
@@ -2807,9 +2807,9 @@ spids_are_ids (node *spids, node **ids, size_t sz)
 static inline node *
 exprs_to_ids (node *exprs)
 {
-    if (!exprs) 
+    if (!exprs)
         return NULL;
-        
+
     node *x = EXPRS_EXPR (exprs);
     assert (x && NODE_TYPE (x) == N_spid, "a chain of ids expected");
     return id_constructor (x, exprs_to_ids (EXPRS_NEXT (exprs)));
@@ -2856,18 +2856,18 @@ handle_generator_body (struct parser *parser,
         if (ctxt->single_bound_variable
             && NODE_TYPE (gen_start) == N_spid
             && !strcmp (SPID_NAME (gen_start), SPID_NAME (*ctxt->bound))) {
-           gen_idx = loc_annotated (generator_loc, 
+           gen_idx = loc_annotated (generator_loc,
                                     TBmakeWithid (id_constructor (gen_start, NULL),
                                                   NULL));
            gen_start = NULL;
            ub_only = true;
         }
-    
+
         if (!ctxt->single_bound_variable
             && NODE_TYPE (gen_start) == N_array
             && exprs_are_ids (ARRAY_AELEMS (gen_start), ctxt->bound, ctxt->bound_sz)) {
-           gen_idx = loc_annotated (generator_loc, 
-                                    TBmakeWithid (NULL, 
+           gen_idx = loc_annotated (generator_loc,
+                                    TBmakeWithid (NULL,
                                                   exprs_to_ids (ARRAY_AELEMS (gen_start))));
            gen_start = NULL;
            ub_only = true;
@@ -2981,7 +2981,7 @@ handle_generator_body (struct parser *parser,
         goto error;
     }
 
-    
+
     if (!lb_only) {
         tok = parser_get_token (parser);
         if (token_is_operator (tok, tv_dot)) {
