@@ -4,6 +4,7 @@
 #define DBUG_PREFIX "HSE"
 #include "debug.h"
 
+#include "print.h"
 #include "free.h"
 #include "ctinfo.h"
 #include "DupTree.h"
@@ -364,17 +365,22 @@ HSEsetwl (node *arg_node, info *arg_info)
     INFO_HSE_VEC (arg_info) = SETWL_VEC (arg_node);
 
     /* traverse the generator (may contain setwls!) */
+    DBUG_PRINT ("traversing generator");
     SETWL_GENERATOR (arg_node) = TRAVdo (SETWL_GENERATOR (arg_node), arg_info);
 
     /* traverse the expression (may contain setwls!)
      * This traversal also infers INFO_HSE_GENREF and INFO_HSE_COPY_FROM
      * in case INFO_HSE_LASTPART is TRUE!
      */
+    DBUG_PRINT ("traversing expression");
     SETWL_EXPR (arg_node) = TRAVdo (SETWL_EXPR (arg_node), arg_info);
 
     /* We build the WLs bottom up! */
-    INFO_HSE_OUTSIDE (arg_info) = FALSE;
-    SETWL_NEXT (arg_node) = TRAVopt (SETWL_NEXT (arg_node), arg_info);
+    if (SETWL_NEXT (arg_node) != NULL) {
+        INFO_HSE_OUTSIDE (arg_info) = FALSE;
+        SETWL_NEXT (arg_node) = TRAVdo (SETWL_NEXT (arg_node), arg_info);
+        INFO_HSE_LASTPART (arg_info) = FALSE;
+    }
 
     /* Now, we add a new partition to arg_info, iff we are 
      *   not the last partition
@@ -383,6 +389,7 @@ HSEsetwl (node *arg_node, info *arg_info)
      */
     if (!INFO_HSE_LASTPART (arg_info)
          || (INFO_HSE_GENREF (arg_info) && (INFO_HSE_COPY_FROM (arg_info) == NULL))) {
+        DBUG_PRINT ("building code and partition");
 
         code = TBmakeCode ( MAKE_EMPTY_BLOCK (),
                             TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
@@ -402,11 +409,14 @@ HSEsetwl (node *arg_node, info *arg_info)
         }
         PART_NEXT (part) = INFO_HSE_PART (arg_info);
         INFO_HSE_PART (arg_info) = part;
+        DBUG_PRINT ("partition inserted:");
+        DBUG_EXECUTE (PRTdoPrint( part));
 
     }
 
     /* if we are the last partition, we generate the operator part now: */
     if (INFO_HSE_LASTPART (arg_info)) {
+        DBUG_PRINT ("building withop");
         if (INFO_HSE_GENREF (arg_info)) {
             if (INFO_HSE_COPY_FROM (arg_info) != NULL) {
                 /* we can generate a modarray WL and elide the last partition */
@@ -421,11 +431,16 @@ HSEsetwl (node *arg_node, info *arg_info)
             INFO_HSE_WITHOP (arg_info) = TBmakeGenarray (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
                                                          DUPdoDupTree (SETWL_EXPR (arg_node)) );
         }
+        DBUG_PRINT ("withop inserted:");
+        DBUG_EXECUTE (PRTdoPrint (INFO_HSE_WITHOP (arg_info)));
     }
 
-    FREEdoFreeTree (arg_node);
+    arg_node = FREEdoFreeTree (arg_node);
 
     if (oldinfo != NULL) {
+        arg_node = TBmakeWith (INFO_HSE_PART( arg_info), 
+                               INFO_HSE_CODE( arg_info),
+                               INFO_HSE_WITHOP( arg_info));
         arg_info = FreeInfo( arg_info);
     }
 
