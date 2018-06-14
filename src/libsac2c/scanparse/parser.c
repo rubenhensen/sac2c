@@ -2710,7 +2710,9 @@ handle_square_bracketed_ids (struct parser *parser)
     return ids;
 }
 
-
+/* Chek whether `id' which can be either N_spid or N_spids can
+   be found within the NULL-terminated list of nodes, where all
+   the nodes are N_spid.  */
 static inline bool
 id_memberof_ids (node *id, node **ids)
 {
@@ -2729,6 +2731,8 @@ id_memberof_ids (node *id, node **ids)
     return false;
 }
 
+/* For the chain of exprs, check that each expr can be found in the
+   NULL-terminated list of ids.  */
 static inline bool
 exprs_are_memebersof_ids (node *exprs, node **ids)
 {
@@ -2741,6 +2745,8 @@ exprs_are_memebersof_ids (node *exprs, node **ids)
     return true;
 }
 
+/* For the N_spids chain, check that each id can be found in the
+   NULL-terminated list of ids.  */
 static inline bool
 spids_are_memebersof_ids (node *spids, node **ids)
 {
@@ -2754,7 +2760,8 @@ spids_are_memebersof_ids (node *spids, node **ids)
 }
 
 
-
+/* Convert an expr chain into N_spids, under te assumption that
+   each expr in the chain is N_spid.  */
 static inline node *
 exprs_to_ids (node *exprs)
 {
