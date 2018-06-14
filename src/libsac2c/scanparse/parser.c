@@ -2907,14 +2907,14 @@ handle_generator_body (struct parser *parser,
             /* Within array comprehensions, this variable has to correspond to
                one of the bound variables, otherwise this is illegal expression.  */
             if (array_comprehension_p && ctxt->single_bound_variable) {
-                error_loc (NODE_LOCATION (ids), "cannot use the list of variables "
+                error_loc (NODE_LOCATION (ids), "cannot use the list of constraint variables "
                            "here: use `%s' variable isntead", SPID_NAME (*ctxt->bound));
                 goto error;
             }
 
             if (array_comprehension_p
                 && !spids_are_ids (ids, ctxt->bound, ctxt->bound_sz)) {
-                error_loc (NODE_LOCATION (ids), "this variable list must match "
+                error_loc (NODE_LOCATION (ids), "constraint variable list must match "
                            "the list of varibales on the left hand side of the "
                            "`->' without the '.'-s");
                 goto error;
@@ -2933,15 +2933,15 @@ handle_generator_body (struct parser *parser,
             /* Within array comprehensions, this variable has to correspond to
                one of the bound variables, otherwise this is illegal expression.  */
             if (array_comprehension_p && !ctxt->single_bound_variable) {
-                error_loc (NODE_LOCATION (id), "cannot use a single variable "
+                error_loc (NODE_LOCATION (id), "cannot use a single constraint variable "
                            "here: use variable list isntead");
                 goto error;
             }
 
             if (array_comprehension_p
                 && strcmp (SPID_NAME (id), SPID_NAME (*ctxt->bound))) {
-                error_loc (NODE_LOCATION (id), "variable must be the same as at the"
-                           "left hand side of the `->' without the '.'-s");
+                error_loc (NODE_LOCATION (id), "constraint variable must be `%s'",
+                           SPID_NAME (*ctxt->bound));
                 goto error;
             }
 
