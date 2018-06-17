@@ -114,6 +114,7 @@ struct INFO {
     bool outside;
     bool lastpart;
     bool genref;
+    bool fullpart;
     node *vec;
     node *copy_from;
     node *part;
@@ -125,6 +126,7 @@ struct INFO {
 /* access macros */
 #define INFO_HSE_OUTSIDE(n) ((n)->outside)
 #define INFO_HSE_LASTPART(n) ((n)->lastpart)
+#define INFO_HSE_FULLPART(n) ((n)->fullpart)
 #define INFO_HSE_GENREF(n) ((n)->genref)
 #define INFO_HSE_VEC(n) ((n)->vec)
 #define INFO_HSE_COPY_FROM(n) ((n)->copy_from)
@@ -149,6 +151,7 @@ MakeInfo (info * previous)
 
     INFO_HSE_OUTSIDE (result) = TRUE;
     INFO_HSE_LASTPART (result) = FALSE;
+    INFO_HSE_FULLPART (result) = FALSE;
     INFO_HSE_GENREF (result) = FALSE;
     INFO_HSE_VEC (result) = NULL;
     INFO_HSE_COPY_FROM (result) = NULL;
@@ -178,25 +181,9 @@ FreeInfo (info *arg_info)
 }
 
 static node *
-BuildDefault (node *expr)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN (expr);
-}
-
-/**
- * builds a withloop generating an array containing
- * zeroes with given shape
- *
- * @param array AST node of the array
- * @param shape AST node of shape, is consumed
- */
-
-static node *
-BuildDefaultWithloop (node *array, node *shape)
+BuildSimpleWl( node *shape, node *def)
 {
     node *result = NULL;
-
     DBUG_ENTER ();
 
     result
@@ -205,21 +192,98 @@ BuildDefaultWithloop (node *array, node *shape)
                                 TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
                                                  TBmakeDot (1), NULL, NULL)),
                     TBmakeCode (MAKE_EMPTY_BLOCK (),
-                                TBmakeExprs (TCmakeSpap1 (NSgetNamespace (
-                                                            global.preludename),
-                                                          STRcpy ("zero"),
-                                                          DUPdoDupTree (array)),
-                                             NULL)),
+                                TBmakeExprs (def, NULL)),
                     TBmakeGenarray (shape, NULL));
 
-    GENARRAY_DEFAULT (WITH_WITHOP (result))
-      = TCmakeSpap1 (NSgetNamespace (global.preludename), STRcpy ("zero"),
-                     DUPdoDupTree (array));
+    GENARRAY_DEFAULT (WITH_WITHOP (result)) = DUPdoDupTree (def);
 
     CODE_USED (WITH_CODE (result))++;
     PART_CODE (WITH_PART (result)) = WITH_CODE (result);
 
     DBUG_RETURN (result);
+}
+
+
+static node *
+ATravRBZspid( node *arg_node, info *arg_info)
+{
+    node *handle;
+    DBUG_ENTER ();
+
+    handle = INFO_HSE_VEC (arg_info);
+
+    if (handle != NULL) {
+        if (NODE_TYPE (handle) == N_spid) {
+            /* we are dealing with the vector variable case */
+            if (STReq (SPID_NAME (handle), SPID_NAME (arg_node))) {
+                node *gen_shape, *gen_default;
+
+                gen_shape = TCmakePrf1(
+                                F_shape_A,
+                                DUPdoDupTree (GENERATOR_BOUND2 (PART_GENERATOR (INFO_HSE_PART (arg_info)))));
+                gen_default = TBmakeNum (0);
+                arg_node = FREEdoFreeTree( arg_node);
+                arg_node = BuildSimpleWl( gen_shape, gen_default);
+            }
+            
+        } else {
+            /* we are dealing with the scalar variables case */
+            while (handle != NULL) {
+                if (STReq (SPID_NAME (EXPRS_EXPR (handle)), SPID_NAME (arg_node))) {
+                    arg_node = FREEdoFreeTree( arg_node);
+                    arg_node = TBmakeNum( 0);
+                    handle = NULL;
+                } else {
+                    handle = EXPRS_NEXT (handle);
+                }
+            }
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+
+static node *
+ReplaceByZeros( node *arg_node, info *arg_info)
+{
+    anontrav_t rbz_trav[2]
+      = {{N_spid, &ATravRBZspid}, {(nodetype)0, NULL}};
+
+    DBUG_ENTER ();
+
+    TRAVpushAnonymous (rbz_trav, &TRAVsons);
+
+    arg_node = TRAVopt (arg_node, arg_info);
+
+    TRAVpop ();
+
+    DBUG_RETURN (arg_node);
+}
+
+/**
+ * builds a withloop generating an array of the same shape
+ * as the shape of "expr" whose elements are all "zero( expr)" .
+ * It is assumed that expr does NOT contain any references to
+ * the generator variables!
+ *
+ * @param expr AST copy of the expression
+ */
+
+static node *
+BuildDefault (node *expr)
+{
+    node *shape, *def;
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Building Default Element WL from expression:");
+    DBUG_EXECUTE (PRTdoPrint( expr));
+
+    shape = TCmakePrf1( F_shape_A, expr);
+    def = TCmakeSpap1 (NSgetNamespace (global.preludename),
+                       STRcpy ("zero"),
+                       DUPdoDupTree (expr));
+    DBUG_RETURN (BuildSimpleWl (shape, def));
 }
 
 
@@ -308,9 +372,40 @@ DBUG_EXECUTE(
 node *
 HSEspap (node *arg_node, info *arg_info)
 {
+    node *handle, *idx;
     DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
+
+    handle = INFO_HSE_VEC (arg_info);
+    if (handle != NULL) {
+        INFO_HSE_COPY_FROM (arg_info) = NULL;
+
+        if (STReq (SPID_NAME (SPAP_ID (arg_node)), "sel")
+            && (NODE_TYPE (EXPRS_EXPR2 (SPAP_ARGS (arg_node))) == N_spid) ) {
+
+            idx = EXPRS_EXPR1 (SPAP_ARGS (arg_node));
+
+            if ((NODE_TYPE (handle) == N_spid) && (NODE_TYPE (idx) == N_spid)
+                && STReq (SPID_NAME (handle), SPID_NAME (idx))) {
+                INFO_HSE_COPY_FROM (arg_info) = EXPRS_EXPR2 (SPAP_ARGS (arg_node));
+
+            } else if (NODE_TYPE (idx) == N_array) {
+                idx = ARRAY_AELEMS (idx);
+                INFO_HSE_COPY_FROM (arg_info) = EXPRS_EXPR2 (SPAP_ARGS (arg_node));
+                while ((handle != NULL) && (idx != NULL)) {
+                    if ((NODE_TYPE (EXPRS_EXPR( idx)) == N_spid)
+                        && STReq (SPID_NAME (EXPRS_EXPR (handle)), SPID_NAME ( EXPRS_EXPR (idx)))) {
+                        handle = EXPRS_NEXT (handle);
+                        idx = EXPRS_NEXT (idx);
+                    } else {
+                        INFO_HSE_COPY_FROM (arg_info) = NULL;
+                        handle = NULL;
+                    }
+                }
+            }
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -333,6 +428,49 @@ HSEprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/**
+ * Used to scan selections for ids found in a prior lamination.
+ * Depending on the type of the selection vector, ScanId or ScanVector
+ * is called.
+ *
+ * @param arg_node current node of the AST
+ * @param arg_info info node
+ * @return current node of the AST
+ */
+node *
+HSEgenerator (node *arg_node, info *arg_info)
+{
+    node *handle;
+    DBUG_ENTER ();
+
+    arg_node = TRAVcont (arg_node, arg_info);
+    
+    INFO_HSE_FULLPART (arg_info) = FALSE;
+    if ((GENERATOR_STEP (arg_node) == NULL)
+        && (GENERATOR_WIDTH (arg_node) == NULL)
+        && (GENERATOR_OP1 (arg_node) == F_wl_le)) {
+        if (NODE_TYPE( GENERATOR_BOUND1 (arg_node)) == N_dot) {
+            INFO_HSE_FULLPART (arg_info) = TRUE;
+        } else if (NODE_TYPE( GENERATOR_BOUND1 (arg_node)) == N_array) {
+            handle = ARRAY_AELEMS (GENERATOR_BOUND1 (arg_node));
+            INFO_HSE_FULLPART (arg_info) = TRUE;
+            while (handle != NULL) {
+                if ((NODE_TYPE (EXPRS_EXPR (handle)) == N_num)
+                    && (NUM_VAL (EXPRS_EXPR (handle)) == 0)) {
+                    handle = EXPRS_NEXT (handle);
+                } else {
+                    INFO_HSE_FULLPART (arg_info) = FALSE;
+                    handle = NULL;
+                }
+            }
+        }
+    }
+    
+
+    DBUG_RETURN (arg_node);
+}
+
 
 /**
  * hook to handle any lamination operators. The inner expression is parsed for
@@ -364,17 +502,27 @@ HSEsetwl (node *arg_node, info *arg_info)
     INFO_HSE_LASTPART (arg_info) = (SETWL_NEXT (arg_node) == NULL);
     INFO_HSE_VEC (arg_info) = SETWL_VEC (arg_node);
 
-    /* traverse the generator (may contain setwls!) */
+    /* traverse the generator (may contain setwls!) 
+     * This traversal also infers INFO_HSE_FULLPART
+     * in case INFO_HSE_LASTPART is TRUE!
+     */
     DBUG_PRINT ("traversing generator");
     SETWL_GENERATOR (arg_node) = TRAVdo (SETWL_GENERATOR (arg_node), arg_info);
+    DBUG_PRINT ("generator is %s", (INFO_HSE_FULLPART (arg_info) ? "full" : "not full"));
 
     /* traverse the expression (may contain setwls!)
      * This traversal also infers INFO_HSE_GENREF and INFO_HSE_COPY_FROM
      * in case INFO_HSE_LASTPART is TRUE!
      */
     DBUG_PRINT ("traversing expression");
+    INFO_HSE_GENREF (arg_info) = FALSE;
     SETWL_EXPR (arg_node) = TRAVdo (SETWL_EXPR (arg_node), arg_info);
-
+    DBUG_PRINT( "generator variable %s in expression!",
+                (INFO_HSE_GENREF (arg_info)? "found" : "not found"));
+    DBUG_PRINT( "expression is %s%s!",
+                (INFO_HSE_COPY_FROM (arg_info) == NULL ? "not a copy partition" : "copy of "),
+                (INFO_HSE_COPY_FROM (arg_info) == NULL ? "" : SPID_NAME (INFO_HSE_COPY_FROM (arg_info))));
+    
     /* We build the WLs bottom up! */
     if (SETWL_NEXT (arg_node) != NULL) {
         INFO_HSE_OUTSIDE (arg_info) = FALSE;
@@ -387,7 +535,7 @@ HSEsetwl (node *arg_node, info *arg_info)
      *   or, in case we are the last part, we refer to the generator variable(s)
      *   and do so in a way different from a copying expression (ie a[iv])
      */
-    if (!INFO_HSE_LASTPART (arg_info)
+    if (!INFO_HSE_LASTPART (arg_info) || !INFO_HSE_FULLPART (arg_info)
          || (INFO_HSE_GENREF (arg_info) && (INFO_HSE_COPY_FROM (arg_info) == NULL))) {
         DBUG_PRINT ("building code and partition");
 
@@ -417,19 +565,17 @@ HSEsetwl (node *arg_node, info *arg_info)
     /* if we are the last partition, we generate the operator part now: */
     if (INFO_HSE_LASTPART (arg_info)) {
         DBUG_PRINT ("building withop");
-        if (INFO_HSE_GENREF (arg_info)) {
-            if (INFO_HSE_COPY_FROM (arg_info) != NULL) {
-                /* we can generate a modarray WL and elide the last partition */
-                INFO_HSE_WITHOP (arg_info) = TBmakeModarray (DUPdoDupTree (INFO_HSE_COPY_FROM (arg_info)));
-            } else {
-                INFO_HSE_WITHOP (arg_info)
-                    = TBmakeGenarray (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
-                                      BuildDefault (DUPdoDupTree (SETWL_EXPR (arg_node)) ) );
-            }
-        } else {
+        if (INFO_HSE_FULLPART (arg_info) && (INFO_HSE_COPY_FROM (arg_info) != NULL)) {
+            /* we can generate a modarray WL (the last partition has not been generated!) */
+            INFO_HSE_WITHOP (arg_info) = TBmakeModarray (DUPdoDupTree (INFO_HSE_COPY_FROM (arg_info)));
+        } else if (INFO_HSE_FULLPART (arg_info) && !INFO_HSE_GENREF (arg_info)) {
             /* As there is no reference to the generator, we use the expression as default */
             INFO_HSE_WITHOP (arg_info) = TBmakeGenarray (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
                                                          DUPdoDupTree (SETWL_EXPR (arg_node)) );
+        } else {
+            INFO_HSE_WITHOP (arg_info)
+                = TBmakeGenarray (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
+                                  BuildDefault (ReplaceByZeros (DUPdoDupTree (SETWL_EXPR (arg_node)), arg_info)) );
         }
         DBUG_PRINT ("withop inserted:");
         DBUG_EXECUTE (PRTdoPrint (INFO_HSE_WITHOP (arg_info)));
@@ -459,10 +605,27 @@ HSEsetwl (node *arg_node, info *arg_info)
 node *
 HSEspid (node *arg_node, info *arg_info)
 {
+    node *handle;
+    bool found;
     DBUG_ENTER ();
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    handle = INFO_HSE_VEC (arg_info);
 
+    if (handle != NULL) {
+        if (NODE_TYPE (handle) == N_spid) {
+            /* we are dealing with the vector variable case */
+            found = STReq (SPID_NAME (handle), SPID_NAME (arg_node));
+            INFO_HSE_GENREF (arg_info) = INFO_HSE_GENREF (arg_info) || found;
+        } else {
+            /* we are dealing with the scalar variables case */
+            while (handle != NULL) {
+                found = STReq (SPID_NAME (EXPRS_EXPR (handle)), SPID_NAME (arg_node));
+                INFO_HSE_GENREF (arg_info) = INFO_HSE_GENREF (arg_info) || found;
+                handle = EXPRS_NEXT (handle);
+            }
+        }
+    }
+    
     DBUG_RETURN (arg_node);
 }
 

@@ -1199,6 +1199,7 @@
 		<travuser>
 		  <node name="SPAp" />
 		  <node name="Prf" />
+		  <node name="Generator" />
 		  <node name="SetWL" />
 		  <node name="SPId" />
 		</travuser>

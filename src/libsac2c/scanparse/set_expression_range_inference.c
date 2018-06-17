@@ -76,6 +76,7 @@ struct INFO {
     bool ubmissing;
     bool islastpart;
     idtable *idtable;
+    node *shp;
     struct INFO *next;
 };
 
@@ -84,6 +85,7 @@ struct INFO {
 #define INFO_SERI_UBMISSING(n) ((n)->ubmissing)
 #define INFO_SERI_ISLASTPART(n) ((n)->islastpart)
 #define INFO_SERI_IDTABLE(n) ((n)->idtable)
+#define INFO_SERI_SHP(n) ((n)->shp)
 #define INFO_SERI_NEXT(n) ((n)->next)
 
 /**
@@ -104,6 +106,7 @@ MakeInfo (info *oldinfo)
     INFO_SERI_UBMISSING (result) = FALSE;
     INFO_SERI_ISLASTPART (result) = FALSE;
     INFO_SERI_IDTABLE (result) = NULL;
+    INFO_SERI_SHP (result) = NULL;
     INFO_SERI_NEXT (result) = oldinfo;
 
     DBUG_RETURN (result);
@@ -231,6 +234,25 @@ IdTableContains (char *id, idtable *ids)
     }
 
     DBUG_RETURN (result);
+}
+
+
+static int
+CountIdsInIdTable (info *arg_info)
+{
+    int res=0;
+    idtable *first, *last;
+
+    DBUG_ENTER ();
+
+    first = INFO_SERI_IDTABLE (arg_info);
+    last = INFO_SERI_IDTABLE (INFO_SERI_NEXT (arg_info));
+    while (first != last) {
+        first = first->next;
+        res++;
+    }
+
+    DBUG_RETURN (res);
 }
 
 /**
@@ -667,6 +689,18 @@ SERIsetwl (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_PRINT ("looking at Set-Expression in line %d:", global.linenum);
+
+    /* we do this bottom up to ensure we have a shape! Only the last
+     * partition is guaranteed to produce an upper bound!
+     * A reference to that upper bound is put into INFO_SERI_SHP of
+     * the *surrounding* arg_info, i.e. into the *current* arg_info.
+     */
+    if (SETWL_NEXT (arg_node) != NULL) {
+        SETWL_NEXT (arg_node) = TRAVdo (SETWL_NEXT (arg_node), arg_info);
+        DBUG_ASSERT (INFO_SERI_SHP (arg_info) != NULL, "last setWL partition"
+                     " did not insert shape!");
+    }
+
     arg_info = MakeInfo (arg_info);
     DBUG_PUSH( "-d,SERI,SERI_ACT");
 
@@ -700,9 +734,8 @@ SERIsetwl (node *arg_node, info *arg_info)
         SETWL_GENERATOR (arg_node) = TBmakeGenerator (F_noop, F_noop, NULL, NULL, NULL, NULL);
     }
     INFO_SERI_ISLASTPART (arg_info) = (SETWL_NEXT (arg_node) == NULL);
-    SETWL_GENERATOR (arg_node) = TRAVdo (SETWL_GENERATOR (arg_node), arg_info);
 
-    SETWL_NEXT (arg_node) = TRAVopt (SETWL_NEXT (arg_node), arg_info);
+    SETWL_GENERATOR (arg_node) = TRAVdo (SETWL_GENERATOR (arg_node), arg_info);
 
     FreeIdTable (INFO_SERI_IDTABLE (arg_info), INFO_SERI_IDTABLE (INFO_SERI_NEXT (arg_info)));
     INFO_SERI_IDTABLE (arg_info) = NULL;
@@ -728,17 +761,6 @@ SERIgenerator (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_PRINT_TAG ("SERI_ACT", "traversing generator...");
-    if (INFO_SERI_LBMISSING (arg_info)) {
-        if ( FALSE) {
-            /* We now insert the information we found */
-        } else {
-            CTInote ("Unable to infer lower bound for a partition of"
-                     " a set expression; using \".\" instead.");
-            GENERATOR_BOUND1 (arg_node) = TBmakeDot (1);
-            GENERATOR_OP1 (arg_node) = F_wl_le;
-        }
-        
-    }
     if (INFO_SERI_UBMISSING (arg_info)) {
         if (ShapeInfoComplete (INFO_SERI_IDTABLE (arg_info),
                                INFO_SERI_IDTABLE (INFO_SERI_NEXT (arg_info)))) {
@@ -752,14 +774,61 @@ SERIgenerator (node *arg_node, info *arg_info)
                 CTIerror ("Unable to infer upper bound for final partition of"
                           " set expression; please specify an upper bound.");
             } else {
-                CTIwarn ("Unable to infer upper bound for a partition of"
-                         " a set expression; using \".\" instead.");
-                GENERATOR_BOUND2 (arg_node) = TBmakeDot (1);
-                GENERATOR_OP2 (arg_node) = F_wl_le;
+                if (INFO_SERI_IDTABLE (arg_info)->type == ID_vector) {
+                    CTIwarn ("Unable to infer upper bound for a partition of"
+                             " a set expression; using \".\" instead.");
+                    GENERATOR_BOUND2 (arg_node) = TBmakeDot (1);
+                    GENERATOR_OP2 (arg_node) = F_wl_le;
+                } else if (INFO_SERI_IDTABLE (arg_info)->type == ID_scalar) {
+                    CTIwarn ("Unable to infer upper bound for a partition of"
+                             " a set expression; using upper bound from last partition instead.");
+                    GENERATOR_BOUND2 (arg_node)
+                        = TCmakePrf2 (F_take_SxV,
+                                      TBmakeNum (CountIdsInIdTable (arg_info)),
+                                      DUPdoDupTree (INFO_SERI_SHP (INFO_SERI_NEXT (arg_info))));
+                    GENERATOR_OP2 (arg_node) = F_wl_lt;
+                }
             }
         }
         
+    } else {
+        GENERATOR_BOUND2 (arg_node) = TRAVdo (GENERATOR_BOUND2 (arg_node), arg_info);
     }
+
+    if (INFO_SERI_ISLASTPART (arg_info)) {
+        /* Now, we add the shape information into the "surrounding" arg_info!
+         * We need to put it there as it is needed by all other partitions of the
+         * current setwl as well and the current arg_info will be gone as soon as we
+         * leave the last partition!
+         */
+        INFO_SERI_SHP (INFO_SERI_NEXT (arg_info)) = GENERATOR_BOUND2 (arg_node);
+    }
+
+    if (INFO_SERI_LBMISSING (arg_info)) {
+        if ( FALSE) {
+            /* We now insert the information we found */
+        } else {
+            if (INFO_SERI_IDTABLE (arg_info)->type == ID_vector) {
+                CTInote ("Unable to infer lower bound for a partition of"
+                         " a set expression; using \".\" instead.");
+                GENERATOR_BOUND1 (arg_node) = TBmakeDot (1);
+            } else if (INFO_SERI_IDTABLE (arg_info)->type == ID_scalar) {
+                CTInote ("Unable to infer lower bound for a partition of"
+                         " a set expression; using vector of 0s instead.");
+                GENERATOR_BOUND1 (arg_node)
+                    = TCcreateIntVector (CountIdsInIdTable (arg_info),0,0);
+            }
+            GENERATOR_OP1 (arg_node) = F_wl_le;
+        }
+        
+    } else {
+        GENERATOR_BOUND1 (arg_node) = TRAVdo (GENERATOR_BOUND1 (arg_node), arg_info);
+    }
+
+    GENERATOR_STEP (arg_node) = TRAVopt (GENERATOR_STEP (arg_node), arg_info);
+
+    GENERATOR_WIDTH (arg_node) = TRAVopt (GENERATOR_WIDTH (arg_node), arg_info);
+
     DBUG_PRINT_TAG ("SERI_ACT", "traversing generator done");
     DBUG_RETURN (arg_node);
 }
