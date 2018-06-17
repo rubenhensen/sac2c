@@ -1,0 +1,17 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bscp -printfun main
+// SAC_TEST|all: <file-name>
+
+
+// Here we make sure that generator parsing is actually doing the right job,
+// i.e. we expect to find expression "<= [17]" in the printput.
+//
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< | $(GREP_COMMAND_OUTPUT) "<=[ ]*\[[ ]*17[ ]*\]" 1 
+
+
+#include "mini-stdlib.sac"
+
+int main ()
+{
+    b = { iv -> a[iv] + 1 | iv <= [17] };
+}

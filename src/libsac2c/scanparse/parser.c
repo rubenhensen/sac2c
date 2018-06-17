@@ -2831,7 +2831,7 @@ handle_generator_body (struct parser *parser,
     node *gen_idx = error_mark_node;
     node *step = NULL;
     node *width = NULL;
-    prf gen_first_op, gen_last_op;
+    prf gen_first_op = F_wl_le, gen_last_op = F_wl_le;
 
     bool ub_only = false;
     bool lb_only = false;
@@ -2973,7 +2973,6 @@ handle_generator_body (struct parser *parser,
         /* If we don't have '<' or '<=', and we are not parsing the upper bound
            of the generator only, we are parsing for the lower bound.  */
         lb_only = !ub_only;
-        gen_last_op = F_wl_le;
     } else {
         error_loc (token_location (tok),
                    "`<' or `<=' operator expected in the generator");
