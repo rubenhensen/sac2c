@@ -592,7 +592,6 @@ SERIdoInferRanges (node *arg_node)
                 "SERIdoInferRanges called on non-Nsetwl node!");
 #endif
 
-DBUG_EXECUTE( 
     arg_info = MakeInfo (NULL);
     TRAVpush (TR_seri);
 
@@ -600,7 +599,7 @@ DBUG_EXECUTE(
 
     TRAVpop ();
 
-    arg_info = FreeInfo (arg_info););
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -667,7 +666,7 @@ SERIspap (node *arg_node, info *arg_info)
 
     /* Check for nested info */
 
-    SPAP_ARGS (arg_node) = TRAVdo (SPAP_ARGS (arg_node), arg_info);
+    SPAP_ARGS (arg_node) = TRAVopt (SPAP_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

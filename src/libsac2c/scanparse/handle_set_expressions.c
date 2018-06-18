@@ -342,7 +342,6 @@ HSEdoEliminateSetExpressions (node *arg_node)
 
     DBUG_ENTER ();
 
-DBUG_EXECUTE(
     arg_info = MakeInfo (NULL);
 
     TRAVpush (TR_hse);
@@ -351,7 +350,7 @@ DBUG_EXECUTE(
 
     TRAVpop ();
 
-    arg_info = FreeInfo (arg_info););
+    arg_info = FreeInfo (arg_info);
 
     CTIabortOnError ();
 
