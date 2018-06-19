@@ -41,16 +41,6 @@ typedef struct timeval __PF_TIMER;
        : (timer1.tv_sec + timer1.tv_usec / 1000000.0) * 100                              \
            / (timer2.tv_sec + timer2.tv_usec / 1000000.0))
 
-/*
- * Global variables
- */
-
-int SAC_PF_act_funno = 0;
-int SAC_PF_act_funapno = 0;
-int SAC_PF_with_level = 0;
-struct rusage SAC_PF_start_timer;
-struct rusage SAC_PF_stop_timer;
-
 /**
  * @brief This function prints some header lines for presenting profiling
  *        information.

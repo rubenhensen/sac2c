@@ -80,17 +80,6 @@ SAC_C_EXTERN void SAC_PF_PrintCount (char *title, char *space, unsigned long cou
 SAC_C_EXTERN void SAC_PF_PrintSize (char *title, char *space, unsigned long size, char *unit);
 SAC_C_EXTERN void SAC_PF_PrintTimePercentage (char *title, char *space,
                                               SAC_PF_TIMER *time1, SAC_PF_TIMER *time2);
-
-/*
- * External declarations of global variables defined in libsac
- */
-
-SAC_C_EXTERN int SAC_PF_act_funno;
-SAC_C_EXTERN int SAC_PF_act_funapno;
-SAC_C_EXTERN int SAC_PF_with_level;
-SAC_C_EXTERN struct rusage SAC_PF_start_timer;
-SAC_C_EXTERN struct rusage SAC_PF_stop_timer;
-
 #endif /* _SAC_PROFILE_H */
 
 

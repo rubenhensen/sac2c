@@ -69,7 +69,10 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     SAC_C_EXTERN int **SAC_PF_cycle_tag;                                                 \
                                                                                          \
     SAC_C_EXTERN int SAC_PF_act_cycle_tag;                                               \
+    SAC_C_EXTNER unsigned SAC_PF_with_level;                                             \
     SAC_C_EXTERN SAC_PROFILE_RECORD *SAC_PF_act_record;                                  \
+    SAC_C_EXTERN struct rusage SAC_PF_start_timer;                                       \
+    SAC_C_EXTERN struct rusage SAC_PF_stop_timer;                                        \
                                                                                          \
     SAC_PF_MEM_DEFINE()                                                                  \
     SAC_PF_DISTMEM_DEFINE()                                                              \
@@ -86,8 +89,11 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     int SAC_PF_cycle_tag[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                              \
                                                                                          \
     int SAC_PF_act_cycle_tag;                                                            \
+    unsigned SAC_PF_with_level = 0;                                                      \
     SAC_PROFILE_RECORD SAC_PF_initial_record;                                            \
     SAC_PROFILE_RECORD *SAC_PF_act_record = &SAC_PF_initial_record;                      \
+    struct rusage SAC_PF_start_timer;                                                    \
+    struct rusage SAC_PF_stop_timer;                                                     \
                                                                                          \
     SAC_PF_MEM_DEFINE()                                                                  \
     SAC_PF_DISTMEM_DEFINE()                                                              \
