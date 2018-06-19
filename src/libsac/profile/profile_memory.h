@@ -1,9 +1,9 @@
 /**
- * Header file for memory.c
+ * Header file for profile_memory.c
  */
 
-#ifndef _SAC_PF_MEM_H
-#define _SAC_PF_MEM_H
+#ifndef _SAC_PROFILE_MEM_H
+#define _SAC_PROFILE_MEM_H
 
 #ifndef SAC_C_EXTERN
 #define SAC_C_EXTERN extern
@@ -26,4 +26,4 @@ typedef struct memory_record {
     unsigned long reuse_mem_count;
 } SAC_PF_MEMORY_RECORD;
 
-#endif /* _SAC_PF_MEM_H */
+#endif /* _SAC_PROFILE_MEM_H */

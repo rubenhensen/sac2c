@@ -69,7 +69,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     SAC_C_EXTERN int **SAC_PF_cycle_tag;                                                 \
                                                                                          \
     SAC_C_EXTERN int SAC_PF_act_cycle_tag;                                               \
-    SAC_C_EXTNER unsigned SAC_PF_with_level;                                             \
+    SAC_C_EXTERN unsigned SAC_PF_with_level;                                             \
     SAC_C_EXTERN SAC_PROFILE_RECORD *SAC_PF_act_record;                                  \
     SAC_C_EXTERN struct rusage SAC_PF_start_timer;                                       \
     SAC_C_EXTERN struct rusage SAC_PF_stop_timer;                                        \

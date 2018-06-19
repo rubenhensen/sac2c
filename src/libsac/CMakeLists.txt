@@ -14,8 +14,8 @@ SET (LIBSAC_SRC
   essentials/message.c
   essentials/misc.c
   essentials/trace.c
-  profile/profile.c
-  profile/pf_memory.c
+  profile/profile_print.c
+  profile/profile_memory.c
   interface/sacarg.c
   interface/sacargconvert.c
   interface/sacmt.c

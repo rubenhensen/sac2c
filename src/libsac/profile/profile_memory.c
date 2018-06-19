@@ -1,15 +1,12 @@
 /**
- * @file pf_memory.c
- *
- * This file specifies a set of functions used by profile.c to profile memory
- * operations, specifically count and size(s).
+ * @brief This file specifies a set of functions used by profile.c to profile memory
+ *        operations, specifically count and size(s).
  */
 
 #include <stdio.h>
 
-#include "pf_memory.h"
-
-#include "libsac/profile/profile.h"
+#include "libsac/profile/profile_print.h"
+#include "libsac/profile/profile_memory.h"
 
 /* Global Variables */
 

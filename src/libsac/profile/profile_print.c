@@ -1,5 +1,4 @@
 /**
- * @file profile.c
  * @brief Provides a set of functions to manipulate the SAC profiler.
  *
  * This file is part of the implementation of the SAC runtime library.
@@ -16,8 +15,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "profile.h"
-
+#include "libsac/profile/profile_print.h"
 
 /*
  *  Internal type definitions
