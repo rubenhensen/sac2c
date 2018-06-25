@@ -60,7 +60,9 @@ struct INFO {
     dfmask_t *thenmask;
     dfmask_t *elsemask;
     node *condargs;
+    /* handle ERC case */
     bool check_prf;
+    bool is_erc;
 };
 
 #define INFO_USEMASK(n) (n->usemask)
@@ -69,6 +71,7 @@ struct INFO {
 #define INFO_ELSEMASK(n) (n->elsemask)
 #define INFO_CONDARGS(n) (n->condargs)
 #define INFO_CHECK_PRF(n) (n->check_prf)
+#define INFO_IS_ERC(n) (n->is_erc)
 
 static info *
 MakeInfo (void)
@@ -85,6 +88,7 @@ MakeInfo (void)
     INFO_THENMASK (result) = NULL;
     INFO_ELSEMASK (result) = NULL;
     INFO_CHECK_PRF (result) = TRUE;
+    INFO_IS_ERC (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -212,7 +216,13 @@ FilterTrav (node *arg_node, info *arg_info)
                     ID_NAME (EXPRS_EXPR (arg_node)));
         arg_node = FREEdoFreeNode (arg_node);
     } else {
-        EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
+        /* when dealing with ERCs, we don't want to add these to the mask
+         * as we eliminate all earlier references in other WLs. Furthermore,
+         * we treat ERCs differently within EMRI (reuse.c) by eliminating them
+         * from being selected more than once within a function scope.
+         */
+        if (!INFO_IS_ERC (arg_info))
+            EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -641,7 +651,9 @@ FRCgenarray (node *arg_node, info *arg_info)
             GENARRAY_PRC (arg_node) = FilterTrav (GENARRAY_PRC (arg_node), arg_info);
         }
         if (GENARRAY_ERC (arg_node) != NULL) {
+            INFO_IS_ERC (arg_info) = TRUE;
             GENARRAY_ERC (arg_node) = FilterTrav (GENARRAY_ERC (arg_node), arg_info);
+            INFO_IS_ERC (arg_info) = FALSE;
         }
     }
 
@@ -677,7 +689,9 @@ FRCmodarray (node *arg_node, info *arg_info)
             MODARRAY_RC (arg_node) = FilterTrav (MODARRAY_RC (arg_node), arg_info);
         }
         if (MODARRAY_ERC (arg_node) != NULL) {
+            INFO_IS_ERC (arg_info) = TRUE;
             MODARRAY_ERC (arg_node) = FilterTrav (MODARRAY_ERC (arg_node), arg_info);
+            INFO_IS_ERC (arg_info) = FALSE;
         }
     }
 

@@ -42,9 +42,7 @@
  *          on both WL-OPs and LoopFuns. The overall intention is to optimise
  *          reuse candidates present within WL RC and allow for memeory reuse
  *          in loops (do/for/while) by propogating reuse candidates from a higher
- *          scope. XXX this will be achieved via two new phases (which have yet
- *          to be implemented) - in the mean time, docs/projects/prealloc has
- *          some formalism on how this is to be implemented.
+ *          scope. More details in docs/projects/prealloc
  *
  *    The ability to do such reuse is instrumental when trying to achieve a dual buffer
  *    swapping solution for a loop around something like     a = relax( a);
@@ -925,8 +923,8 @@ WRCIfold (node *arg_node, info *arg_info)
 /**
  * EMR Loop Application Arg Filtering
  *
- * This traversal does three things: (1) it removes N_id that share the same N_avis
- * from with-loop operator ERC field, (2) filters out ERCs that are already RCs (as it
+ * This traversal does three things: (1) it removes WL ERCs that share the same N_avis
+ * in the rec-loop argument list, (2) filters out ERCs that are already RCs (as it
  * is not possible to use an existing RC later on, there is no point in keeping these
  * as ERCs. This opens further opertunnities for lifting allocations out of loops. Finally,
  * (3) we filter out invalid RCs (calls FRC (Filter Reuse Candidates)
@@ -943,26 +941,26 @@ node *ELAAFdoLoopRCFiltering (node *syntax_tree)
 
     DBUG_ENTER();
 
-    arg_info = MakeInfo ();
+    //arg_info = MakeInfo ();
 
-    TRAVpush (TR_elaaf);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-    TRAVpop ();
+    //TRAVpush (TR_elaaf);
+    //syntax_tree = TRAVdo (syntax_tree, arg_info);
+    //TRAVpop ();
 
-    arg_info = FreeInfo (arg_info);
-    arg_info = MakeInfo ();
+    //arg_info = FreeInfo (arg_info);
+    //arg_info = MakeInfo ();
 
-    /*
-     * Filter out ERCs that are RCs
-     */
-    INFO_DO_UPDATE (arg_info) = TRUE;
-    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "Filtering out RCs from ERCs");
+    ///*
+    // * Filter out ERCs that are RCs
+    // */
+    //INFO_DO_UPDATE (arg_info) = TRUE;
+    //DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "Filtering out RCs from ERCs");
 
-    TRAVpush (TR_elaaf);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-    TRAVpop ();
+    //TRAVpush (TR_elaaf);
+    //syntax_tree = TRAVdo (syntax_tree, arg_info);
+    //TRAVpop ();
 
-    arg_info = FreeInfo (arg_info);
+    //arg_info = FreeInfo (arg_info);
 
     /*
      * Filter out invalid RCs (and ERCs)
