@@ -6,12 +6,12 @@ SAC - Single Assignment C
 
 SAC COPYRIGHT NOTICE, LICENSE, AND DISCLAIMER
 
-(c) Copyright 1994 - 2016 by
+(c) Copyright 1994 - 2018 by
 
   SAC Development Team
 
-  http://www.sac-home.org
-  email:info@sac-home.org
+   web: http://www.sac-home.org
+ email: info@sac-home.org
 
 ---------------------------------------------------------------------------
 
@@ -42,4 +42,3 @@ performance of this software is with you. Should this software prove
 defective, you assume the cost of all servicing, repair, or correction.
 
 ---------------------------------------------------------------------------
- 
