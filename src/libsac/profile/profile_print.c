@@ -139,7 +139,7 @@ SAC_PF_PrintCount (const char *title, const char *space, unsigned long count)
 void
 SAC_PF_PrintSize (const char *title, const char *space, unsigned long size, const char *unit)
 {
-    fprintf (stderr, "%-40s: %s %lu %s\n", title, space, size, unit);
+    fprintf (stderr, "%-40s: %s %8lu %s\n", title, space, size, unit);
 }
 
 /**

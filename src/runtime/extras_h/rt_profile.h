@@ -791,6 +791,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #define SAC_PF_MEM_INC_ALLOC(size, typesize)                                         \
     SAC_PF_MEM_AllocMemcnt(size, typesize);                                          \
+    SAC_PF_MEM_AddToMax(size, typesize);                                             \
     SAC_PF_memory_record->alloc_mem_count += 1;
 
 #define SAC_PF_MEM_INC_FREE(size, typesize)                                          \

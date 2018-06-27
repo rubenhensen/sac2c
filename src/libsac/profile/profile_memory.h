@@ -28,5 +28,6 @@ SAC_C_EXTERN void SAC_PF_MEM_FreeMemcnt (int size, int typesize);
 SAC_C_EXTERN void SAC_PF_MEM_AllocDescnt (int size, int typesize);
 SAC_C_EXTERN void SAC_PF_MEM_FreeDescnt (int size, int typesize);
 SAC_C_EXTERN void SAC_PF_MEM_ReuseMemcnt (void);
+SAC_C_EXTERN void SAC_PF_MEM_AddToMax (int size, int typesize);
 
 #endif /* _SAC_PROFILE_MEM_H */

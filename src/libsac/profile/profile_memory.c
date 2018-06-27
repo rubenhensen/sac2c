@@ -13,6 +13,7 @@
 /* these counter are for all memory operations */
 static unsigned long SAC_PF_MEM_alloc_memsize = 0; /**< Holds the total size of memory allocated in bits */
 static unsigned long SAC_PF_MEM_free_memsize = 0; /**< Holds the total size of memory freed in bits */
+static unsigned long SAC_PF_MEM_max_alloc = 0; /**< Holds max memory allocated size in bits */
 
 /* these counters deal with arrays */
 static unsigned long SAC_PF_MEM_alloc_memcnt = 0; /**< Holds the count of calls to malloc/calloc/realloc */
@@ -82,6 +83,19 @@ void
 SAC_PF_MEM_ReuseMemcnt ()
 {
     SAC_PF_MEM_reuse_memcnt += 1;
+}
+
+/**
+ * @brief Adds to the global maximum memory allocated value.
+ *
+ * @param size  unit size
+ * @param typesize size of type in bits
+ */
+void
+SAC_PF_MEM_AddToMax (int size, int typesize)
+{
+    if ((unsigned long) size * typesize > SAC_PF_MEM_max_alloc)
+        SAC_PF_MEM_max_alloc = size * typesize;
 }
 
 /**
@@ -162,6 +176,7 @@ SAC_PF_MEM_PrintStats ()
     SAC_PF_PrintCount ("no. calls to free", "", SAC_PF_MEM_free_descnt);
 
     fprintf (stderr, "\n*** %-72s\n", "Memory usage counters:");
-    SAC_PF_PrintSize ("total size of memory allocated", "", SAC_PF_MEM_alloc_memsize/8, "bytes");
-    SAC_PF_PrintSize ("total size of memory freed", "", SAC_PF_MEM_free_memsize/8, "bytes");
+    SAC_PF_PrintSize ("total size of memory allocated", "", SAC_PF_MEM_alloc_memsize/8/1024, "Kbytes");
+    SAC_PF_PrintSize ("total size of memory freed", "", SAC_PF_MEM_free_memsize/8/1024, "Kbytes");
+    SAC_PF_PrintSize ("size of largest allocation", "", SAC_PF_MEM_max_alloc/8/1024, "Kbytes");
 }
