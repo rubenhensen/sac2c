@@ -44,7 +44,6 @@ ENDIF ()
 SET (CPACK_PACKAGE_NAME              "sac2c-compiler")
 SET (CPACK_PACKAGE_VENDOR            "SaC Development Team")
 SET (CPACK_PACKAGE_CONTACT           "info@sac-home.org")
-SET (CPACK_PACKAGE_VERSION           "${SAC2C_VERSION}")
 SET (CPACK_PACKAGE_VERSION_MAJOR     "${SAC2C_VERSION_MAJOR}")
 SET (CPACK_PACKAGE_VERSION_MINOR     "${SAC2C_VERSION_MINOR}")
 SET (CPACK_PACKAGE_VERSION_PATCH     "${SAC2C_VERSION_PATCH}")
@@ -53,7 +52,7 @@ SET (CPACK_PACKAGE_INSTALL_DIRECTORY "sac2c-${SAC2C_VERSION}") # XXX is this rea
 SET (CPACK_PACKAGE_ICON              "${SAC2C_SOURCE_DIR}/cmake/cpack/sac_logo.png")
 
 # SET (CPACK_PACKAGE_DESCRIPTION_FILE ...)
-SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY "The sac2c compiler for a data-parallel array-based functional language SAC")
+SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY "The sac2c compiler for a data-parallel array-based functional language SaC")
 # FIXME(artem) We need to decide on where do we put the stuff on the target system...)
 #SET (CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 SET (CPACK_RESOURCE_FILE_LICENSE "${SAC2C_SOURCE_DIR}/LICENSE.txt")
@@ -74,9 +73,8 @@ SET (CPACK_COMPONENT_SYMLINKS_DISPLAY_NAME "SaC Symlinks")
 # Debian-specific variables
 SET (CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_VENDOR} <${CPACK_PACKAGE_CONTACT}>")
 SET (CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
-#SET (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON) # non-functional
-# FIXME Can we auto-generate these dependencies?
-SET (CPACK_DEBIAN_PACKAGE_DEPENDS "gcc, libc6 (>= 2.13), uuid-runtime (>= 2.20)")
+SET (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+SET (CPACK_DEBIAN_PACKAGE_DEPENDS "gcc, libc6 (>= 2.13), uuid-runtime (>= 2.20), hwloc")
 
 # RPM-specific variables
 # XXX (hans): this may not be exhaustive - does not take into account if the user
