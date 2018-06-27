@@ -46,7 +46,7 @@ typedef struct timeval __PF_TIMER;
  * @param title Title of header
  */
 void
-SAC_PF_PrintHeader (char *title)
+SAC_PF_PrintHeader (const char *title)
 {
     fprintf (stderr, "\n****************************************"
                      "****************************************\n");
@@ -64,7 +64,7 @@ SAC_PF_PrintHeader (char *title)
  * @param rank Distmem rank
  */
 void
-SAC_PF_PrintHeaderNode (char *title, size_t rank)
+SAC_PF_PrintHeaderNode (const char *title, size_t rank)
 {
     fprintf (stderr, "\n****************************************"
                      "****************************************\n");
@@ -81,7 +81,7 @@ SAC_PF_PrintHeaderNode (char *title, size_t rank)
  * @param lineno Line number
  */
 void
-SAC_PF_PrintSubHeader (char *title, int lineno)
+SAC_PF_PrintSubHeader (const char *title, int lineno)
 {
     fprintf (stderr, "call to `%-56.56s' in line #%d:\n", title, lineno);
 }
@@ -93,30 +93,9 @@ SAC_PF_PrintSubHeader (char *title, int lineno)
  * @param title Title of the section
  */
 void
-SAC_PF_PrintSection (char *title)
+SAC_PF_PrintSection (const char *title)
 {
     fprintf (stderr, " ## %-72s\n", title);
-}
-
-/**
- * @brief This function accepts a format string and subsequent argument
- *        and prints these out to stderr.
- *
- * @param format Format string
- * @param ...    Further arguments that match the format string
- * @return Number of characters printed, or negative number on error
- */
-int
-SAC_PF_Printf (const char *format, ...)
-{
-    int num;
-    va_list va;
-
-    va_start(va, format);
-    num = vfprintf(stderr, format, va);
-    va_end(va);
-
-    return num;
 }
 
 /**
@@ -127,7 +106,7 @@ SAC_PF_Printf (const char *format, ...)
  * @param time Time structure
  */
 void
-SAC_PF_PrintTime (char *title, char *space, __PF_TIMER *time)
+SAC_PF_PrintTime (const char *title, const char *space, const __PF_TIMER *time)
 {
     fprintf (stderr,
              "%-40s: %s "__PF_TIMER_FORMAT
@@ -143,7 +122,7 @@ SAC_PF_PrintTime (char *title, char *space, __PF_TIMER *time)
  * @param count Integer value
  */
 void
-SAC_PF_PrintCount (char *title, char *space, unsigned long count)
+SAC_PF_PrintCount (const char *title, const char *space, unsigned long count)
 {
     fprintf (stderr, "%-40s: %s %lu\n", title, space, count);
 }
@@ -158,7 +137,7 @@ SAC_PF_PrintCount (char *title, char *space, unsigned long count)
  * @param unit Name of unit, which is appended to the string
  */
 void
-SAC_PF_PrintSize (char *title, char *space, unsigned long size, char *unit)
+SAC_PF_PrintSize (const char *title, const char *space, unsigned long size, const char *unit)
 {
     fprintf (stderr, "%-40s: %s %lu %s\n", title, space, size, unit);
 }
@@ -173,8 +152,8 @@ SAC_PF_PrintSize (char *title, char *space, unsigned long size, char *unit)
  * @param time2 Global total measured time, used to compute percentage
  */
 void
-SAC_PF_PrintTimePercentage (char *title, char *space, __PF_TIMER *time1,
-                            __PF_TIMER *time2)
+SAC_PF_PrintTimePercentage (const char *title, const char *space, const __PF_TIMER *time1,
+                            const __PF_TIMER *time2)
 {
     fprintf (stderr,
              "%-40s:%s  "__PF_TIMER_FORMAT

@@ -14,16 +14,15 @@
  * External declarations of library functions defined in libsac
  */
 
-SAC_C_EXTERN void SAC_PF_PrintHeader (char *title);
-SAC_C_EXTERN void SAC_PF_PrintHeaderNode (char *title, size_t rank);
-SAC_C_EXTERN void SAC_PF_PrintSubHeader (char *title, int lineno);
-SAC_C_EXTERN void SAC_PF_PrintSection (char *title);
-SAC_C_EXTERN int SAC_PF_Printf (const char *format, ...);
-SAC_C_EXTERN void SAC_PF_PrintTime (char *title, char *space, SAC_PF_TIMER *time);
-SAC_C_EXTERN void SAC_PF_PrintCount (char *title, char *space, unsigned long count);
-SAC_C_EXTERN void SAC_PF_PrintSize (char *title, char *space, unsigned long size, char *unit);
-SAC_C_EXTERN void SAC_PF_PrintTimePercentage (char *title, char *space,
-                                              SAC_PF_TIMER *time1, SAC_PF_TIMER *time2);
+SAC_C_EXTERN void SAC_PF_PrintHeader (const char *title);
+SAC_C_EXTERN void SAC_PF_PrintHeaderNode (const char *title, size_t rank);
+SAC_C_EXTERN void SAC_PF_PrintSubHeader (const char *title, int lineno);
+SAC_C_EXTERN void SAC_PF_PrintSection (const char *title);
+SAC_C_EXTERN void SAC_PF_PrintTime (const char *title, const char *space, const SAC_PF_TIMER *time);
+SAC_C_EXTERN void SAC_PF_PrintCount (const char *title, const char *space, unsigned long count);
+SAC_C_EXTERN void SAC_PF_PrintSize (const char *title, const char *space, unsigned long size, const char *unit);
+SAC_C_EXTERN void SAC_PF_PrintTimePercentage (const char *title, const char *space,
+                                              const SAC_PF_TIMER *time1, const SAC_PF_TIMER *time2);
 #endif /* _SAC_PROFILE_PRINT_H */
 
 

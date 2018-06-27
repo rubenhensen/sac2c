@@ -811,22 +811,11 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #define SAC_PF_MEM_PRINT_STAT()                                                      \
     {                                                                                \
-        int i, j;                                                                    \
-        SAC_PF_MEM_PrintStats();                                                     \
+        int i;                                                                       \
+        SAC_PF_MEM_PrintStats ();                                                    \
         for (i = 0; i < SAC_SET_MAXFUN; i += 1) {                                    \
-            SAC_PF_PrintHeader (SAC_PF_fun_name[i]);                                 \
-            for (j = 0; j < SAC_PF_maxfunap[i]; j++) {                               \
-                if (SAC_PF_maxfunap[i] > 1) {                                        \
-                    SAC_PF_Printf ("--- Application %d\n", j);                       \
-                }                                                                    \
-                SAC_PF_PrintSection ("For Arrays");                                  \
-                SAC_PF_PrintCount ("   no. calls to (m)alloc", "", SAC_PF_memory[i][j].alloc_mem_count); \
-                SAC_PF_PrintCount ("   no. calls to free", "", SAC_PF_memory[i][j].free_mem_count);      \
-                SAC_PF_PrintCount ("   no. reuses of memory", "", SAC_PF_memory[i][j].reuse_mem_count);  \
-                SAC_PF_PrintSection ("For Descriptors");                             \
-                SAC_PF_PrintCount ("   no. calls to (m)alloc", "", SAC_PF_memory[i][j].alloc_desc_count);\
-                SAC_PF_PrintCount ("   no. calls to free", "", SAC_PF_memory[i][j].free_desc_count);     \
-            }                                                                        \
+            SAC_PF_MEM_PrintFunStats (SAC_PF_fun_name[i], SAC_PF_maxfunap[i],        \
+                    SAC_PF_memory[i]);                                               \
         }                                                                            \
     }
 

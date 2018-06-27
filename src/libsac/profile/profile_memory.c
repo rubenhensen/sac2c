@@ -85,6 +85,66 @@ SAC_PF_MEM_ReuseMemcnt ()
 }
 
 /**
+ * @brief Test if a record's fields are all zero.
+ *
+ * @param record the record to check
+ */
+inline int
+SAC_PF_MEM_IsRecordZero (SAC_PF_MEMORY_RECORD record)
+{
+    return !(record.alloc_mem_count
+        | record.free_mem_count
+        | record.reuse_mem_count
+        | record.alloc_desc_count
+        | record.free_desc_count);
+}
+
+/**
+ * @brief Print memory profiling statistics for current record.
+ *
+ * @param record the record to print
+ */
+inline void
+SAC_PF_MEM_PrintRecordStats (SAC_PF_MEMORY_RECORD record)
+{
+    SAC_PF_PrintSection ("For Arrays");
+    SAC_PF_PrintCount ("   no. calls to (m)alloc", "", record.alloc_mem_count);
+    SAC_PF_PrintCount ("   no. calls to free", "", record.free_mem_count);
+    SAC_PF_PrintCount ("   no. reuses of memory", "", record.reuse_mem_count);
+    SAC_PF_PrintSection ("For Descriptors");
+    SAC_PF_PrintCount ("   no. calls to (m)alloc", "", record.alloc_desc_count);
+    SAC_PF_PrintCount ("   no. calls to free", "", record.free_desc_count);
+}
+
+/**
+ * @brief Print statistics for given function.
+ *
+ */
+void
+SAC_PF_MEM_PrintFunStats (const char * func_name, int num_ap, const SAC_PF_MEMORY_RECORD * records)
+{
+    int zero, i;
+
+    /* lets check that there is actually something useful to print */
+    for (i = 0, zero = 0; i < num_ap; i++) {
+        zero |= SAC_PF_MEM_IsRecordZero(records[i]);
+    }
+
+    /* if at least one record is non-zero */
+    if (!zero) {
+        SAC_PF_PrintHeader (func_name);
+        for (i = 0; i < num_ap; i++) {
+            if (!SAC_PF_MEM_IsRecordZero(records[i])) {
+                if (num_ap > 1) {
+                    fprintf (stderr, "--- Application %d\n", i);
+                }
+                SAC_PF_MEM_PrintRecordStats (records[i]);
+            }
+        }
+    }
+}
+
+/**
  * @brief Call to print memory profiling statistics.
  */
 void
