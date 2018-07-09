@@ -74,7 +74,7 @@ SET (CPACK_COMPONENT_SYMLINKS_DISPLAY_NAME "SaC Symlinks")
 SET (CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_VENDOR} <${CPACK_PACKAGE_CONTACT}>")
 SET (CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
 SET (CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-SET (CPACK_DEBIAN_PACKAGE_DEPENDS "gcc, libc6 (>= 2.13), uuid-runtime (>= 2.20), hwloc")
+SET (CPACK_DEBIAN_PACKAGE_DEPENDS "gcc, libc6 (>= 2.13), uuid-runtime (>= 2.20), libhwloc-dev")
 
 # RPM-specific variables
 # XXX (hans): this may not be exhaustive - does not take into account if the user
