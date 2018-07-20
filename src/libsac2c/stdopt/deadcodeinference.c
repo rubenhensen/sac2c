@@ -568,6 +568,7 @@ DCIap (node *arg_node, info *arg_info)
             argexprs = AP_ARGS (arg_node);
 
             while (args != NULL) {
+                DBUG_ASSERT (argexprs != NULL, "number of arguments at function declaration and application do not match!");
                 if (!AVIS_ISDEAD (ARG_AVIS (args))) {
                     DBUG_PRINT ("Marking fn argument %s alive in function %s",
                                 AVIS_NAME (ID_AVIS (EXPRS_EXPR (argexprs))),

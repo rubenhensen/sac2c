@@ -1214,13 +1214,17 @@ findMatchingArgs (node * exprs, node * pot, node * last_resort)
     DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "finding suitable args inplace of tmp vars:");
     DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (pot != NULL) {
             PRTdoPrintFile (stderr, pot); });
+    DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (last_resort != NULL) {
+            PRTdoPrintFile (stderr, last_resort); });
 
-    if (pot != NULL) {
+    if (pot != NULL || last_resort != NULL) {
         /* for each var in tmp RC, find a suitable var in ERC and replace it */
         size = TCcountExprs (exprs);
         for (i = 0; i < size; i++)
         {
             tmp = TCgetNthExprsExpr (i, exprs);
+            DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  must match %s %s\n", ID_NAME (tmp), TYtype2String (ID_NTYPE (tmp), FALSE, 0));
+
             find = isSameShape (tmp, pot);
 
             /* if we can't find a candidate from the N_fundef ERC list, then
@@ -1251,6 +1255,8 @@ findMatchingArgs (node * exprs, node * pot, node * last_resort)
                     res = TCappendExprs (res, TBmakeExprs (find, NULL));
             }
         }
+    } else {
+        DBUG_UNREACHABLE ("  no candidates to search for...!");
     }
 
     DBUG_RETURN (res);
@@ -1284,7 +1290,7 @@ ELMPgenarray (node * arg_node, info * arg_info)
     node * new_avis;
     DBUG_ENTER ();
 
-    if (!INFO_DO_UPDATE (arg_info) ) {
+    if (!INFO_DO_UPDATE (arg_info) && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
         if (GENARRAY_RC (arg_node) == NULL
             && GENARRAY_ERC (arg_node) == NULL
             && TYisAKS (IDS_NTYPE (INFO_LHS (arg_info)))) {
@@ -1334,7 +1340,7 @@ ELMPmodarray (node * arg_node, info * arg_info)
     node * new_avis;
     DBUG_ENTER ();
 
-    if (!INFO_DO_UPDATE (arg_info)) {
+    if (!INFO_DO_UPDATE (arg_info) && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
         if (MODARRAY_RC (arg_node) == NULL
             && MODARRAY_ERC (arg_node) == NULL
             && TYisAKS (IDS_NTYPE (INFO_LHS (arg_info)))) {
@@ -1348,7 +1354,7 @@ ELMPmodarray (node * arg_node, info * arg_info)
             FUNDEF_ARGS (INFO_FUNDEF (arg_info)) = TCappendArgs (FUNDEF_ARGS (INFO_FUNDEF (arg_info)), TBmakeArg (new_avis, NULL));
 
             // add the new var to RC
-            MODARRAY_RC (arg_node) = TBmakeExprs( TBmakeId (new_avis), NULL);
+            MODARRAY_RC (arg_node) = TBmakeExprs (TBmakeId (new_avis), NULL);
             INFO_TMP_RCS (arg_info) = TCappendExprs (INFO_TMP_RCS (arg_info), DUPdoDupNode (MODARRAY_RC (arg_node)));
         }
 
@@ -1357,9 +1363,8 @@ ELMPmodarray (node * arg_node, info * arg_info)
          * when trying to populate the loop functions recursive call. We only
          * take candidates with more than one candidate to ensure that we still
          * achieve a reuse case without causing conflict - we are fairly sure
-         * that this is OK to do as we have already filter the RC/ERC before
-         * hand, meaning we have a high confidence that they will be used for a
-         * reuse case
+         * that this is OK to do as we have already filtered the RC/ERC beforehand,
+         * meaning we have a high confidence that they will be used for a reuse case
          */
         if (MODARRAY_RC (arg_node) != NULL && (TCcountExprs (MODARRAY_RC (arg_node)) > 1)) {
             INFO_EMR_RC (arg_info) = TCappendExprs (INFO_EMR_RC (arg_info), DUPdoDupTree (MODARRAY_RC (arg_node)));
@@ -1461,15 +1466,12 @@ ELMPfundef (node * arg_node, info * arg_info)
         DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "at N_fundef %s ...", FUNDEF_NAME (arg_node));
         INFO_FUNDEF (arg_info) = arg_node;
 
-        if (!INFO_DO_UPDATE (arg_info) && FUNDEF_ISLOOPFUN (arg_node)) {
+        if (FUNDEF_ISLOOPFUN (arg_node))
             DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  found loopfun, inspecting body...");
-
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        } else if (INFO_DO_UPDATE (arg_info) && !FUNDEF_ISLOOPFUN (arg_node)) {
+        else
             DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  inspecting body...");
 
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        }
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         /* list of RC/ERC candidates that we might use as a last resort */
         if (INFO_EMR_RC (arg_info) != NULL)
