@@ -95,7 +95,8 @@ struct timespec begin, end;
 int
 ndigits (int nr)
 {
-    return floor (log10 (abs (nr + 0.0))) + 1;
+    /* INT based log10 may be better in the future */
+    return  (int)(floor (log10 (fabs (nr + 0.0))) + 1.0); 
 }
 
 /******************************************************************************

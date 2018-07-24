@@ -572,7 +572,7 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   # disables the warning that identifies these unused but assigned variables.
   CHECK_CC_FLAG ("-Wno-unused-but-set-variable" GCC_FLAGS)
   # Turn this if you want to be cruel
-  #CHECK_CC_FLAG ("-Wconversion" GCC_FLAGS)
+  CHECK_CC_FLAG ("-Wconversion" GCC_FLAGS)
   # We have some functions that we want to keep for debugging but which are not called
   CHECK_CC_FLAG ("-Wno-unused-function" GCC_FLAGS)
   # Even level 1 delivers weird false positives
