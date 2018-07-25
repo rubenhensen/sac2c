@@ -694,7 +694,7 @@ AWLFIdetachNoteintersect (node *arg_node)
  *
  *****************************************************************************/
 static node *
-FakeUpConstantExtremum (node *elem, info *arg_info, int emax)
+FakeUpConstantExtremum (node *elem, info *arg_info, bool emax)
 {
     constant *elminco = NULL;
     node *elavis = NULL;
