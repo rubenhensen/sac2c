@@ -42,7 +42,7 @@ static special_char_t
 special_char (char c, FILE *infile)
 {
     special_char_t special;
-    char cc;
+    int cc;
 
     switch (c) {
     case '/':
