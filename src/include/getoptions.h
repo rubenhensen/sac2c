@@ -238,7 +238,7 @@
         char *ARGS_str;                                                                  \
                                                                                          \
         if (ARG != NULL) {                                                               \
-            ARGS_tmp = strtol (ARG, &ARGS_str, 10);                                      \
+            ARGS_tmp = (int) strtol (ARG, &ARGS_str, 10);                                      \
             if ((ARGS_str[0] == '\0') && (ARGS_tmp >= 0)) {                              \
                 id = CONVERT_TO_TYPEOF (id) ARGS_tmp;                                    \
             } else {                                                                     \
@@ -272,7 +272,7 @@
         char *ARGS_str;                                                                  \
                                                                                          \
         if (ARG != NULL) {                                                               \
-            ARGS_tmp = strtol (ARG, &ARGS_str, 10);                                      \
+            ARGS_tmp = (int) strtol (ARG, &ARGS_str, 10);                                \
             if (ARGS_str[0] == '\0') {                                                   \
                 if ((ARGS_tmp >= min) && (ARGS_tmp <= max)) {                            \
                     id = CONVERT_TO_TYPEOF (id) ARGS_tmp;                                \
@@ -351,11 +351,11 @@ CheckOption (const char *pattern, char *argv1, char *argv2, char **option,
              char **argument)
 {
     static char *buffer = NULL;
-    static int buffer_size = 0;
+    static size_t buffer_size = 0;
 
     int i = 0;
     int res = 1;
-    int request;
+    size_t request;
 
     if (buffer == NULL) {
         buffer = (char *)malloc (64);
