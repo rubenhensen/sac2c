@@ -283,7 +283,7 @@ Node2Value (node *arg_node)
                 break;
 
             case N_bool:
-                z = TBmakeNum (BOOL_VAL (arg_node));
+                z = TBmakeNum ((int) BOOL_VAL (arg_node));
                 break;
 
             default:
