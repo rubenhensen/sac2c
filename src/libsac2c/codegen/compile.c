@@ -2738,7 +2738,7 @@ COMPdoPrepareSmart (info *info)
 
     struct dirent *inode;
     int n, i = 0, nr_files = 0, max_nr_threads = 0;
-    unsigned filename_len
+    size_t filename_len
       = strlen (global.mt_smart_filename) + strlen (global.mt_smart_arch) + 14;
 
     if (dp == NULL) {
