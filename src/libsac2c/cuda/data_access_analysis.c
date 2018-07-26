@@ -139,7 +139,7 @@ FreeInfo (info *info)
 }
 
 static part_info_t *
-CreatePartInfo (int dim, int type, node *wlids, node *step, node *width)
+CreatePartInfo (int dim, unsigned int type, node *wlids, node *step, node *width)
 {
     part_info_t *info;
 
@@ -855,7 +855,8 @@ CreateBlockingPragma (node *ids, int dim, info *arg_info)
 node *
 DAApart (node *arg_node, info *arg_info)
 {
-    int dim, ids_type;
+    int dim;
+    unsigned int ids_type;
     part_info_t *p_info;
     node *old_wlidx, *ids;
     bool outermost_part;
