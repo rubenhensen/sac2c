@@ -221,10 +221,10 @@ SearchIndex (part_info_t *infos, node *avis)
     DBUG_RETURN (res);
 }
 
-static unsigned int
+static int
 DecideThreadIdx (node *ids, int dim, node *avis)
 {
-    unsigned int res = -1;
+    int res = -1;
 
     DBUG_ENTER ();
 
@@ -247,7 +247,7 @@ DecideThreadIdx (node *ids, int dim, node *avis)
 }
 
 static void
-AddIndex (unsigned int type, int coefficient, node *idx, int looplevel, int dim,
+AddIndex (int type, int coefficient, node *idx, int looplevel, int dim,
           info *arg_info)
 {
     DBUG_ENTER ();
@@ -307,7 +307,7 @@ ActOnId (node *avis, info *arg_info)
         }
         /* This is a withloop ids. We search for the exact ids */
         else if ((part_info = SearchIndex (INFO_PART_INFO (arg_info), avis)) != NULL) {
-            unsigned int type = IDX_LOOPIDX;
+            int type = IDX_LOOPIDX;
             DBUG_ASSERT ((PART_INFO_TYPE (part_info) == IDX_THREADIDX
                           || PART_INFO_TYPE (part_info) == IDX_LOOPIDX),
                          "Index is neither thread index nor loop index!");

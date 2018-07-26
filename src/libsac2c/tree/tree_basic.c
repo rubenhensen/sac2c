@@ -178,7 +178,7 @@ TBmakeReuseCandidate (node *array, int dim, rc_t *next)
 /*--------------------------------------------------------------------------*/
 
 cuda_index_t *
-TBmakeCudaIndex (unsigned int type, int coefficient, node *id, int looplevel,
+TBmakeCudaIndex (int type, int coefficient, node *id, int looplevel,
                  cuda_index_t *next)
 {
     cuda_index_t *idx;
