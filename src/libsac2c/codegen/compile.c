@@ -4178,7 +4178,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
 
     float slope, angle;
     float pX, pY, diff;
-    const float t_angle = global.mt_smart_gradient * (M_PI / 180.0);
+    const float t_angle = global.mt_smart_gradient * (M_PI / 180.0f);
 
     // Handle trivial cases
     if (global.mt_smart_gradient < 0 || global.mt_smart_gradient > 90) {
