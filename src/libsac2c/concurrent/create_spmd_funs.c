@@ -52,11 +52,11 @@ struct INFO {
     node *vardecs;
     node *rets;
     node *retexprs;
-    bool collect;
-    bool lift;
-    bool withid;
-    bool isxtfun;
-    bool inwiths;
+    bool collect :1;
+    bool lift:1;
+    bool withid :1;
+    bool isxtfun :1;
+    bool inwiths :1;
 };
 
 /**

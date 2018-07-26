@@ -43,9 +43,9 @@ struct INFO {
     node *lhs;
     node *fundefargs;
     node *apargs;
-    bool dofunargs;
-    bool at_iscudarizable;
-    int at_wlcount;
+    bool dofunargs :1;
+    bool at_iscudarizable :1;
+    int at_wlcount :1;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
@@ -815,7 +815,7 @@ CUTEMap (node *arg_node, info *arg_info)
     DBUG_ASSERT (fundef != NULL, "Null fundef found!");
 
     if (INFO_TRAVMODE (arg_info) == cutem_tag) {
-        /* If the ap is conditional */
+        /* If the ap is conditional */ 
         if (FUNDEF_ISCONDFUN (fundef)) {
             /* If at least one of the arguments of the cond-fun
              * is CUDA defined, we check the suitability of executing

@@ -63,8 +63,8 @@
  */
 
 struct INFO {
-    bool mtcontext;
-    bool onspine;
+    bool mtcontext :1;
+    bool onspine :1;
     node *vardecs;
     node *companions;
     node *spmdassigns;
