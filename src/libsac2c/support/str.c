@@ -27,9 +27,9 @@
  *******************************************************************************/
 
 void
-STRtoupper (char *source, int start, int stop)
+STRtoupper (char *source, size_t start, size_t stop)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -630,10 +630,10 @@ STRsub (const char *sub, const char *str)
  *
  *******************************************************************************/
 
-int
+size_t
 STRlen (const char *s)
 {
-    int len;
+    size_t len;
 
     DBUG_ENTER ();
 

@@ -4,7 +4,7 @@
 #include "types.h"
 #include "fun-attrs.h"
 
-extern void STRtoupper (char *source, int start, int stop);
+extern void STRtoupper (char *source, size_t start, size_t stop);
 extern char *STRcpy (const char *source);
 extern char *STRncpy (const char *source, int maxlen);
 extern char *STRcat (const char *first, const char *second);
@@ -19,7 +19,7 @@ extern bool STRsuffix (const char *suffix, const char *str) FUN_ATTR_PURE;
 extern bool STReqn (const char *first, const char *second, int n) FUN_ATTR_PURE;
 extern bool STRgt (const char *first, const char *second) FUN_ATTR_PURE;
 extern bool STRsub (const char *sub, const char *str) FUN_ATTR_PURE;
-extern int STRlen (const char *str) FUN_ATTR_PURE;
+extern size_t STRlen (const char *str) FUN_ATTR_PURE;
 extern char *STRonNull (char *alt, char *str) FUN_ATTR_PURE;
 extern char *STRsubStr (const char *string, int start, int len);
 extern char *STRnull (void) FUN_ATTR_PURE;
