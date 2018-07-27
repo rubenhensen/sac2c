@@ -2795,7 +2795,7 @@ COMPdoPrepareSmart (info *info)
             strtok (NULL, ".");            // <filename>
             strtok (NULL, ".");            // <architecture>
             n = atoi (strtok (NULL, ".")); // <threads>
-            INFO_LINE_COUNT (info)[i] = n + 3;
+            INFO_LINE_COUNT (info)[i] = (size_t) (n + 3);
 
             fp = fopen (inode->d_name, "r");
             if (fp == NULL) {
