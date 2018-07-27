@@ -425,6 +425,12 @@ SWLDisDefinedInThisBlock (node *avis, int wldepth)
  * @result: TRUE if iv is defined in this block.
  *
  *****************************************************************************/
+
+#if 0
+// I am commenting out this function for the time being, as it is not used
+// anywhere in the compiler.  It has a weird bug in it that makes it evaluate
+// to true all the time.  I'll leave the resolution to the person whp will
+// actually want to use this.
 bool
 SWLDisDefinedInNextOuterBlock (node *avis, int wldepth)
 {
@@ -432,6 +438,9 @@ SWLDisDefinedInNextOuterBlock (node *avis, int wldepth)
 
     DBUG_ENTER ();
 
+    // FIXME: I guess this expression should be
+    // z = (1 + wldepth) == AVIS_DEPTH (avis), othewise it evaluates to
+    // true all the time, which is weird.
     z = 1 + (wldepth == AVIS_DEFDEPTH (avis));
 
     if (z) {
@@ -442,5 +451,6 @@ SWLDisDefinedInNextOuterBlock (node *avis, int wldepth)
 
     DBUG_RETURN (z);
 }
+#endif
 
 #undef DBUG_PREFIX
