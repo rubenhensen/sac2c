@@ -110,14 +110,15 @@
 #include <stdlib.h>
 #include <ctype.h> /* for tolower() */
 
-/* This trick makes compilation possible with C++ compiler
-   but uses non-standard __typeof feature.  So for now on
-   we use it only in case __cplusplus is enabled.  */
-#ifdef __cplusplus
+/* This trick makes compilation possible with the -Wconversion flag 
+   enabled to change type within getoptions.h as it was not clear 
+   how globals should be changed to fix all conversion warnings.
+   The main reason for the change within getoptions.h was because 
+   we did not want to change the globals structure.
+   FIXME: check __typeof in CMake and expand this macro to nothing
+   in case the chosen C compiler does not support it.  */
 #define CONVERT_TO_TYPEOF(x) (__typeof(x))
-#else
-#define CONVERT_TO_TYPEOF(x)
-#endif
+
 
 #define ARGS_BEGIN(argc, argv)                                                           \
     {                                                                                    \
@@ -234,13 +235,13 @@
 
 #define ARG_NUM(id)                                                                      \
     {                                                                                    \
-        int ARGS_tmp;                                                                    \
+        long ARGS_tmp;                                                                   \
         char *ARGS_str;                                                                  \
                                                                                          \
         if (ARG != NULL) {                                                               \
-            ARGS_tmp = (int) strtol (ARG, &ARGS_str, 10);                                      \
+            ARGS_tmp =  strtol (ARG, &ARGS_str, 10);                                      \
             if ((ARGS_str[0] == '\0') && (ARGS_tmp >= 0)) {                              \
-                id = CONVERT_TO_TYPEOF (id) ARGS_tmp;                                    \
+                id = CONVERT_TO_TYPEOF (id)  ARGS_tmp;                                    \
             } else {                                                                     \
                 ARGS_ERROR ("Number argument expected for option");                      \
             }                                                                            \
@@ -268,11 +269,11 @@
 
 #define ARG_RANGE(id, min, max)                                                          \
     {                                                                                    \
-        int ARGS_tmp;                                                                    \
+        long ARGS_tmp;                                                                   \
         char *ARGS_str;                                                                  \
                                                                                          \
         if (ARG != NULL) {                                                               \
-            ARGS_tmp = (int) strtol (ARG, &ARGS_str, 10);                                \
+            ARGS_tmp = strtol (ARG, &ARGS_str, 10);                                      \
             if (ARGS_str[0] == '\0') {                                                   \
                 if ((ARGS_tmp >= min) && (ARGS_tmp <= max)) {                            \
                     id = CONVERT_TO_TYPEOF (id) ARGS_tmp;                                \
