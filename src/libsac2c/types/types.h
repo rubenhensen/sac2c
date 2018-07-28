@@ -18,24 +18,9 @@
 #include <stdarg.h>
 #endif
 
-/*
- * bool values
- */
-
-#ifdef __bool_true_false_are_defined
-
-#undef bool
-#undef true
-#undef false
-
-#endif /* __bool_true_false_are_defined */
-
-#ifndef __cplusplus
-typedef unsigned int bool;
-#endif
-
-#define FALSE 0
-#define TRUE 1
+#include <stdbool.h>
+#define TRUE true
+#define FALSE false
 
 /* Structcure to store where a token came from.  */
 struct location {
