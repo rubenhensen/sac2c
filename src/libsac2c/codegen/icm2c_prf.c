@@ -1974,7 +1974,7 @@ ICMCompileND_PRF_TYPE_CONSTRAINT_AKS (char *to_NT, char *from_NT, int dim, int *
 
     BLOCK_NOVAR_BEGIN ()
         ;
-        out ("SAC_RuntimeErrorLine(%d, \"Array '\" TO_STR( NT_NAME( %s)) \"' does not "
+        out ("SAC_RuntimeErrorLine(%zu, \"Array '\" TO_STR( NT_NAME( %s)) \"' does not "
              "adhere "
              "to type constraint\");\n",
              global.linenum, from_NT);

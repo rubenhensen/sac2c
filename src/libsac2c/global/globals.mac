@@ -1065,12 +1065,12 @@ GLOBAL (bool, run_stabilization_cycle, FALSE, xfree_dummy, )
  * only run stabilization cycle if main cycle pass limit exhausted
  */
 
-GLOBAL (int, linenum, 1, xfree_dummy, )
+GLOBAL (size_t, linenum, 1, xfree_dummy, )
 /*
  * Current line number
  */
 
-GLOBAL (int, colnum, 1, xfree_dummy, )
+GLOBAL (size_t, colnum, 1, xfree_dummy, )
 /*
  * Current column number
  */

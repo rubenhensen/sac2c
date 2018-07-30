@@ -67,7 +67,7 @@
 #undef exit
 
 static char *message_buffer = NULL;
-static int message_buffer_size = 0;
+static size_t message_buffer_size = 0;
 static int message_line_length = 80;
 
 static char *abort_message_header = "abort: ";
@@ -183,7 +183,7 @@ Format2Buffer (const char *format, va_list arg_p)
 
         message_buffer = (char *)MEMmalloc (len + 2);
         CHKMdoNotReport (message_buffer);
-        message_buffer_size = len + 2;
+        message_buffer_size = (size_t) (len + 2);
 
         va_copy (arg_p_copy, arg_p);
         len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy);
@@ -197,7 +197,7 @@ Format2Buffer (const char *format, va_list arg_p)
         MEMfree (message_buffer);
         message_buffer = (char *)MEMmalloc (len + 2);
         CHKMdoNotReport (message_buffer);
-        message_buffer_size = len + 2;
+        message_buffer_size = (size_t) (len + 2);
 
         va_copy (arg_p_copy, arg_p);
         len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy);
@@ -229,7 +229,7 @@ Format2Buffer (const char *format, va_list arg_p)
  ******************************************************************************/
 
 char *
-CTIgetErrorMessageVA (int line, const char *file, const char *format, va_list arg_p)
+CTIgetErrorMessageVA (size_t line, const char *file, const char *format, va_list arg_p)
 {
     char *res;
     str_buf *buffer;
@@ -633,7 +633,7 @@ CTIerror (const char *format, ...)
  ******************************************************************************/
 
 void
-CTIerrorLine (int line, const char *format, ...)
+CTIerrorLine (size_t line, const char *format, ...)
 {
     va_list arg_p;
 
@@ -641,7 +641,7 @@ CTIerrorLine (int line, const char *format, ...)
 
     va_start (arg_p, format);
 
-    fprintf (stderr, "%s %d ", global.filename, line);
+    fprintf (stderr, "%s %zu ", global.filename, line);
     PrintMessage (error_message_header, format, arg_p);
 
     va_end (arg_p);
@@ -883,7 +883,7 @@ CTIabort (const char *format, ...)
  ******************************************************************************/
 
 void
-CTIabortLine (int line, const char *format, ...)
+CTIabortLine (size_t line, const char *format, ...)
 {
     va_list arg_p;
 
@@ -961,7 +961,7 @@ CTIabortOnError ()
  ******************************************************************************/
 
 void
-CTIwarnLine (int line, const char *format, ...)
+CTIwarnLine (size_t line, const char *format, ...)
 {
     va_list arg_p;
 
@@ -1122,7 +1122,7 @@ CTInote (const char *format, ...)
  ******************************************************************************/
 
 void
-CTInoteLine (int line, const char *format, ...)
+CTInoteLine (size_t line, const char *format, ...)
 {
     va_list arg_p;
 
@@ -1131,7 +1131,7 @@ CTInoteLine (int line, const char *format, ...)
     if (global.verbose_level >= 3) {
         va_start (arg_p, format);
 
-        fprintf (stderr, "%s %d ", global.filename, line);
+        fprintf (stderr, "%s %zu ", global.filename, line);
         PrintMessage (note_message_header, format, arg_p);
 
         va_end (arg_p);

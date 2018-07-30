@@ -3,12 +3,12 @@
 
 #include "types.h"
 
-extern bool ExtractNaiveCompPragma (node *pragma, int line);
+extern bool ExtractNaiveCompPragma (node *pragma, size_t line);
 
-extern node *ExtractAplPragma (node *pragma, int line);
+extern node *ExtractAplPragma (node *pragma, size_t line);
 
 #define WLP(fun, str, ieee)                                                              \
-    extern node *fun (node *segs, node *parms, node *cubes, int dims, int line);
+    extern node *fun (node *segs, node *parms, node *cubes, int dims, size_t line);
 #include "wlpragma_funs.mac"
 #undef WLP
 

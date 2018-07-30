@@ -35,7 +35,7 @@
  ******************************************************************************/
 
 static node *
-ExtractNaiveCompPragmaAp (bool *do_naive_comp, node *exprs, int line)
+ExtractNaiveCompPragmaAp (bool *do_naive_comp, node *exprs, size_t line)
 {
     node *ap;
 
@@ -75,7 +75,7 @@ ExtractNaiveCompPragmaAp (bool *do_naive_comp, node *exprs, int line)
  ******************************************************************************/
 
 bool
-ExtractNaiveCompPragma (node *pragma, int line)
+ExtractNaiveCompPragma (node *pragma, size_t line)
 {
     bool do_naive_comp = FALSE;
 
@@ -106,7 +106,7 @@ ExtractNaiveCompPragma (node *pragma, int line)
  ******************************************************************************/
 
 static node *
-ExtractAplPragmaAp (node *exprs, node *pragma, int line)
+ExtractAplPragmaAp (node *exprs, node *pragma, size_t line)
 {
     node *ap;
     int size;
@@ -165,7 +165,7 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
  ******************************************************************************/
 
 node *
-ExtractAplPragma (node *pragma, int line)
+ExtractAplPragma (node *pragma, size_t line)
 {
     node *res;
 
@@ -228,7 +228,7 @@ ExtractAplPragma (node *pragma, int line)
  ******************************************************************************/
 
 static node *
-IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
+IntersectStridesArray (node *strides, node *aelems1, node *aelems2, size_t line)
 {
     node *isect, *nextdim, *code, *new_grids, *grids;
     int bound1, bound2, step, width, offset, grid1_b1, grid1_b2, grid2_b1, grid2_b2;
@@ -376,7 +376,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
  ******************************************************************************/
 
 static node *
-Array2Bv (node *array, int dims, char *fun_name, int line)
+Array2Bv (node *array, int dims, char *fun_name, size_t line)
 {
     int d;
     node *result, *tmp;
@@ -431,7 +431,7 @@ Array2Bv (node *array, int dims, char *fun_name, int line)
  ******************************************************************************/
 
 static node *
-StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int line)
+StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, size_t line)
 {
     node *seg = segs;
     node *abv;
@@ -515,7 +515,7 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
  ******************************************************************************/
 
 node *
-WLCOMP_All (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_All (node *segs, node *parms, node *cubes, int dims, size_t line)
 {
     DBUG_ENTER ();
 
@@ -549,7 +549,7 @@ WLCOMP_All (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, size_t line)
 {
     node *new_seg;
     node *last_seg = NULL;
@@ -607,7 +607,7 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, size_t line)
 {
     node *new_cubes, *new_seg;
     node *last_seg = NULL;
@@ -679,7 +679,7 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, size_t line)
 {
     int b;
     node *seg = segs;
@@ -726,7 +726,7 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-WLCOMP_BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_BvL0 (node *segs, node *parms, node *cubes, int dims, size_t line)
 {
     DBUG_ENTER ();
 
@@ -749,7 +749,7 @@ WLCOMP_BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-WLCOMP_BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_BvL1 (node *segs, node *parms, node *cubes, int dims, size_t line)
 {
     DBUG_ENTER ();
 
@@ -772,7 +772,7 @@ WLCOMP_BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-WLCOMP_BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_BvL2 (node *segs, node *parms, node *cubes, int dims, size_t line)
 {
     DBUG_ENTER ();
 
@@ -795,7 +795,7 @@ WLCOMP_BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-WLCOMP_Ubv (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_Ubv (node *segs, node *parms, node *cubes, int dims, size_t line)
 {
     DBUG_ENTER ();
 
@@ -820,7 +820,7 @@ WLCOMP_Ubv (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, size_t line)
 {
     node *arg;
     node *seg = segs;
@@ -893,7 +893,7 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
  ******************************************************************************/
 
 node *
-WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
+WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, size_t line)
 {
     node *arg;
     node *seg = segs;

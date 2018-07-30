@@ -108,7 +108,7 @@ struct INFO {
     char *with3_dist;
     node *with2_cond;
     FILE **fp_list;
-    int *line_count;
+    size_t *line_count;
     int nr_threads;
     int nr_files;
 };
@@ -4238,7 +4238,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
                     moved = false;
                 }
                 // combine profiles
-                for (int j = 0; j < INFO_LINE_COUNT (info)[i] - 3; j++) {
+                for (int j = 0; j < (int)INFO_LINE_COUNT (info)[i] - 3; j++) {
                     measurements[idx]->nr_measurements[j] += line[2];
                     measurements[idx]->cum_time[j] += line[j + 3];
                     measurements[idx]->fun_time[j]
