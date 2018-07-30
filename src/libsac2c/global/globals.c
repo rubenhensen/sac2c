@@ -751,7 +751,7 @@ xfree_node (node *node)
 }
 
 static void
-xfree_apline (int **ptr, size_t maxfun)
+xfree_apline (size_t **ptr, size_t maxfun)
 {
     size_t i;
 
