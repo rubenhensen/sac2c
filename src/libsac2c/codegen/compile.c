@@ -4224,14 +4224,14 @@ COMPdoDecideSmart (info *info, int spmd_id)
                 // profile.
                 if (idx < nr_measurements && measurements[idx]->problem_size != line[1]) {
                     memmove (&measurements[idx + 1], &measurements[idx],
-                             (nr_measurements - idx)
+                             (size_t) (nr_measurements - idx)
                                * sizeof (struct smart_decision_t *));
                     moved = true;
                 }
                 // create a new profile
                 if (idx == nr_measurements || moved == true) {
                     measurements[idx] = create_smart_decision_data (info);
-                    measurements[idx]->problem_size = line[1];
+                    measurements[idx]->problem_size = (int) line[1];
                     measurements[idx]->max_time = 0.0;
                     measurements[idx]->min_time = INFINITY;
                     nr_measurements++;
@@ -4242,7 +4242,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
                     measurements[idx]->nr_measurements[j] += line[2];
                     measurements[idx]->cum_time[j] += line[j + 3];
                     measurements[idx]->fun_time[j]
-                      = measurements[idx]->cum_time[j]
+                      = (float) measurements[idx]->cum_time[j]
                         / (float)measurements[idx]->nr_measurements[j];
                     if (measurements[idx]->fun_time[j] > measurements[idx]->max_time) {
                         measurements[idx]->max_time = measurements[idx]->fun_time[j];
@@ -4303,28 +4303,32 @@ COMPdoDecideSmart (info *info, int spmd_id)
                 X = Matrix (INFO_NR_THREADS (info), 4);
 
                 // collect data for regression
-                for (int j = 0; j < INFO_NR_THREADS (info); j++) {
+                for (int g = 0; g < INFO_NR_THREADS (info); g++) {
+                    float jj = (float) (g + 1);
                     diff = measurements[i]->max_time - measurements[i]->min_time;
-                    X[j][0] = 1.0;
-                    X[j][1] = (float)(j + 1);
-                    X[j][2] = X[j][1] * (j + 1);
-                    X[j][3] = X[j][2] * (j + 1);
-                    y[j]
-                      = (measurements[i]->max_time - measurements[i]->fun_time[j]) / diff;
+                    X[g][0] = 1.0;
+                    X[g][1] = jj;
+                    X[g][2] = X[g][1] * jj;
+                    X[g][3] = X[g][2] * jj;
+                    y[g]
+                      = (measurements[i]->max_time - measurements[i]->fun_time[g]) / diff;
+
                 }
 
                 // apply regression
                 PolyRegression (X, INFO_NR_THREADS (info), 4, y, reg);
 
                 // do recommendation
-                for (int j = 1; j < INFO_NR_THREADS (info); j++) {
+                for (int g = 1; g < INFO_NR_THREADS (info); g++) {
+                    float j = (float) g;
+                    float jj = (float) (g - 1);
                     pX = reg[0] + j * reg[1] + j * j * reg[2] + j * j * j * reg[3];
-                    pY = reg[0] + (j - 1) * reg[1] + (j - 1) * (j - 1) * reg[2]
-                         + (j - 1) * (j - 1) * (j - 1) * reg[3];
+                    pY = reg[0] + jj * reg[1] + jj * jj * reg[2]
+                         + jj * jj * jj * reg[3];
                     slope = pX - pY;
                     angle = atanf (slope);
                     if (angle <= t_angle || angle <= 0) {
-                        recommendations[2 * (i + 1)] = j; // use j threads
+                        recommendations[2 * (i + 1)] = g; // use j threads
                         break;
                     }
                 }
