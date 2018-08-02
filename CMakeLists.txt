@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 3.4)
 
 # Name of the project
-PROJECT (sac2c C)
+PROJECT (sac2c)
 
 # Handle Policies
 #FIXME hans: currently we set the policy to the DEFAULT
