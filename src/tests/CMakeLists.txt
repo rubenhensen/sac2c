@@ -24,3 +24,9 @@ INCLUDE_DIRECTORIES (${PROJECT_BINARY_DIR}/src/include)
 ADD_EXECUTABLE (string-tests string-tests.cpp)
 TARGET_LINK_LIBRARIES (string-tests GTest::GTest GTest::Main sac2cShared)
 GTEST_ADD_TESTS(string-tests "" AUTO)  # maket it a part of ctest call
+
+ADD_EXECUTABLE (test-assoc-law test-assoc-law.cpp)
+TARGET_LINK_LIBRARIES (test-assoc-law GTest::GTest GTest::Main sac2cShared)
+GTEST_ADD_TESTS(test-assoc-law "" AUTO)
+
+
