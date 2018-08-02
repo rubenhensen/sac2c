@@ -40,6 +40,8 @@ ADD_FEATURE_INFO(Dot DOT "used to generate a visual of the AST")
 ADD_FEATURE_INFO(C++ CPLUSPLUS "to compile sac2c with")
 ADD_FEATURE_INFO(ISL ISL "use Integer Set Library in sac2c")
 ADD_FEATURE_INFO(BARVINOK BARVINOK "use Barvinok Library in sac2c")
+ADD_FEATURE_INFO(FUNCTESTS FUNCTESTS
+                 "enable functional tests (gtest is required)")
 FEATURE_SUMMARY(WHAT ALL)
 
 # Build executables for the tools.
@@ -317,6 +319,9 @@ INCLUDE ("${PROJECT_SOURCE_DIR}/cmake/cpack/config.cmake")
 # Here we describe what happens when we test stuff.
 ENABLE_TESTING ()
 ADD_SUBDIRECTORY (tests)
+IF (FUNCTESTS)
+  ADD_SUBDIRECTORY ("src/tests")
+ENDIF ()
 
 
 # vim:ts=2:sw=2:et:
