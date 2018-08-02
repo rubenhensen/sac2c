@@ -28,7 +28,7 @@
     <type name="Float" ctype="float" vtype="double" init="0.0" copy="literal" />
     <type name="Floatvec" ctype="floatvec" vtype="floatvec" init="(floatvec){0., 0., 0., 0.}" copy="literal" />
     <type name="Double" ctype="double" init="0.0" copy="literal" />
-    <type name="Char" ctype="unsigned char" vtype="int" init="'\0'" 
+    <type name="Char" ctype="char" vtype="int" init="'\0'" 
           copy="literal" />
     <type name="OldType" ctype="types*" init="NULL"
     copy="function" persist="no" />
