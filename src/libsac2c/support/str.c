@@ -552,7 +552,7 @@ STRprefix (const char *prefix, const char *str)
         if (str == NULL) {
             res = FALSE;
         } else {
-            int plen = STRlen (prefix);
+            size_t plen = STRlen (prefix);
 
             if (STRlen (str) < plen) {
                 res = FALSE;
@@ -791,19 +791,19 @@ STRitoa_oct (int number)
 {
     char *str;
     int tmp;
-    int length;
+    size_t length;
     int base = 8;
 
     DBUG_ENTER ();
 
     tmp = number;
-    length = 1;
+    length = 1UL;
     while (tmp >= base) {
         tmp /= base;
         length++;
     }
 
-    str = (char *)MEMmalloc (sizeof (char) * length + 3);
+    str = (char *)MEMmalloc (sizeof (char) * length + 3UL);
 
     sprintf (str, "0%o", number);
 
@@ -825,19 +825,19 @@ STRitoa_hex (int number)
 {
     char *str;
     int tmp;
-    int length;
+    size_t length;
     int base = 16;
 
     DBUG_ENTER ();
 
     tmp = number;
-    length = 1;
+    length = 1UL;
     while (tmp >= base) {
         tmp /= base;
         length++;
     }
 
-    str = (char *)MEMmalloc (sizeof (char) * length + 3);
+    str = (char *)MEMmalloc (sizeof (char) * length + 3UL);
 
     sprintf (str, "0x%x", number);
 
@@ -859,7 +859,7 @@ STRitoa_hex (int number)
 static unsigned char
 Hex2Dig (const char x)
 {
-    unsigned char res;
+    int res; /* char literals and arithmetic operations with char => int
 
     DBUG_ENTER ();
 
@@ -869,7 +869,7 @@ Hex2Dig (const char x)
         res = 10 + x - 'A';
     }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN ((unsigned char) res);
 }
 
 unsigned char *
@@ -886,7 +886,7 @@ STRhex2Bytes (unsigned char *array, const char *string)
         low = Hex2Dig (string[pos * 2 + 1]);
         high = Hex2Dig (string[pos * 2]);
 
-        array[pos] = high * 16 + low;
+        array[pos] = (unsigned char)(high * 16 + low);
         pos++;
     }
 
@@ -907,7 +907,7 @@ STRhex2Bytes (unsigned char *array, const char *string)
 static char
 Dig2Hex (unsigned char x)
 {
-    char res;
+    int res;
 
     DBUG_ENTER ();
 
@@ -917,7 +917,7 @@ Dig2Hex (unsigned char x)
         res = 'A' + x - 10;
     }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN ((char) res);
 }
 
 char *
@@ -960,7 +960,7 @@ STRreplaceSpecialCharacters (const char *name)
 {
     char *new_name;
     char *tmp;
-    int i, j;
+    size_t i, j;
 
     DBUG_ENTER ();
 
@@ -1125,7 +1125,7 @@ char *
 STRstring2SafeCEncoding (const char *string)
 {
     char *result, *tmp;
-    int i, len;
+    size_t i, len;
 
     DBUG_ENTER ();
 
@@ -1196,7 +1196,7 @@ node *
 STRstring2Array (const char *str)
 {
     node *new_exprs;
-    int i, cnt;
+    size_t i, cnt;
     node *array;
     node *len_expr;
     node *res;
@@ -1207,7 +1207,7 @@ STRstring2Array (const char *str)
 
     cnt = 0;
 
-    for (i = STRlen (str) - 1; i >= 0; i--) {
+    for (i = STRlen (str); i-- > 0; ) {
         if ((i > 0) && (str[i - 1] == '\\')) {
             switch (str[i]) {
             case 'n':
@@ -1282,7 +1282,7 @@ STRstring2Array (const char *str)
 char *
 STRsubstToken (const char *str, const char *token, const char *subst)
 {
-    int occurrences, tlen, slen;
+    size_t occurrences, tlen, slen;
     const char *found;
     char *pos;
     char *result;
@@ -1302,7 +1302,7 @@ STRsubstToken (const char *str, const char *token, const char *subst)
 
     /* Make substitutions */
     result = (char *)MEMmalloc (
-      (STRlen (str) + (occurrences * (STRlen (subst) - tlen)) + 1) * sizeof (char));
+      (STRlen (str) + (occurrences * (STRlen (subst) - tlen)) + 1UL) * sizeof (char));
 
     pos = result;
     while (*str != '\0') {
