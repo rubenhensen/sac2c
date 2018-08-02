@@ -1168,7 +1168,7 @@ STRcommentify (const char *string)
     DBUG_ENTER ();
 
     if (string != NULL) {
-        buffer = SBUFcreate (STRlen (string) + 42);
+        buffer = SBUFcreate (STRlen (string) + 42UL);
         split = STRtok (string, "\n");
 
         while (split != NULL) {
