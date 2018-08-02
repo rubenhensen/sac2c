@@ -34,9 +34,6 @@ extern "C" {
     TBmakePrf (prf, TBmakeExprs (arg1, TBmakeExprs (arg2, NULL)))
 #define make_let(avis, rhs) TBmakeLet (TBmakeIds (avis, NULL), rhs)
 
-extern "C" node *
-SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname);
-
 
 static char *
 read_from_fd (int fd)
