@@ -20,7 +20,7 @@ COserializeConstant (FILE *file, constant *cnst)
     if (cnst == NULL) {
         fprintf (file, "NULL");
     } else {
-        int max;
+        size_t max;
         char *data;
 
         fprintf (file, "COdeserializeConstant( %d, ", CONSTANT_TYPE (cnst));

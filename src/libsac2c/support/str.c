@@ -82,10 +82,10 @@ STRcpy (const char *source)
  *******************************************************************************/
 
 char *
-STRncpy (const char *source, int maxlen)
+STRncpy (const char *source, size_t maxlen)
 {
     char *ret;
-    int max;
+    size_t max;
 
     DBUG_ENTER ();
 
@@ -172,10 +172,10 @@ STRnull ()
  *        does not count the sine (+-)!!
  *
  *****************************************************************************/
-int
+size_t
 STRsizeInt ()
 {
-    int size = 0;
+    size_t size = 0;
     int s = sizeof (int) * 8;
     DBUG_ENTER ();
 
@@ -506,7 +506,7 @@ STReqci (const char *first, const char *second)
  *******************************************************************************/
 
 bool
-STReqn (const char *first, const char *second, int n)
+STReqn (const char *first, const char *second, size_t n)
 {
     bool res;
 
@@ -922,15 +922,15 @@ Dig2Hex (unsigned char x)
 }
 
 char *
-STRbytes2Hex (int len, unsigned char *array)
+STRbytes2Hex (size_t len, unsigned char *array)
 {
-    int pos;
+    size_t pos;
     char *result;
     unsigned char low, high;
 
     DBUG_ENTER ();
 
-    result = (char *)MEMmalloc ((1 + len * 2) * sizeof (char));
+    result = (char *)MEMmalloc (((len * 2) + 1) * sizeof (char));
 
     for (pos = 0; pos < len; pos++) {
         low = array[pos] % 16;
@@ -1338,20 +1338,20 @@ STRsubstTokend (char *str, const char *token, const char *subst)
  * @return A new String or NULL if str is NULL
  ******************************************************************************/
 char *
-STRsubstTokens (const char *str, int n, ...)
+STRsubstTokens (const char *str, size_t n, ...)
 {
     char *result;
     va_list arg_list;
     const char **patterns;
     const char **values;
-    int *sizes;
-    int i, j;
+    size_t *sizes;
+    size_t i, j;
 
     DBUG_ENTER ();
 
     patterns = (const char **)MEMmalloc (n * sizeof (char *));
     values = (const char **)MEMmalloc (n * sizeof (char *));
-    sizes = (int *)MEMmalloc (n * sizeof (int));
+    sizes = (size_t *)MEMmalloc (n * sizeof (size_t));
 
     va_start (arg_list, n);
 
@@ -1369,7 +1369,7 @@ STRsubstTokens (const char *str, int n, ...)
         for (j = 0; j < n; ++j) {
             if (strncmp (patterns[j], str + i, sizes[j]) == 0) {
                 SBUFprint (buf, values[j]);
-                i += sizes[j] - 1;
+                i += sizes[j] - 1UL;
                 break;
             }
         }

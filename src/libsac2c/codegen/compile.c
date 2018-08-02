@@ -4923,7 +4923,7 @@ COMPprfTypeConv (node *arg_node, info *arg_info)
     char *lhs_type_string = NULL, *rhs_type_string = NULL;
     char *error = NULL;
     const char *fmt = "%s:%d\\nCan not assign %s %s to %s %s type mismatch\\n";
-    int error_len = 0;
+    size_t error_len = 0;
     node *id = NULL;
 
     DBUG_ENTER ();
@@ -4934,7 +4934,7 @@ COMPprfTypeConv (node *arg_node, info *arg_info)
     lhs_type_string = CVtype2String (GetType (let_ids), 0, FALSE);
     rhs_type_string = CVtype2String (GetType (id), 0, FALSE);
 
-    error_len = STRlen (fmt) - (2 * 6) + STRlen (NODE_FILE (arg_node)) + STRsizeInt ()
+    error_len = STRlen (fmt) - (2UL * 6UL) + STRlen (NODE_FILE (arg_node)) + STRsizeInt ()
                 + STRlen (rhs_type_string) + STRlen (AVIS_NAME (ID_AVIS (id)))
                 + STRlen (lhs_type_string) + STRlen (AVIS_NAME (IDS_AVIS (let_ids)));
     error = (char *)MEMmalloc (sizeof (char) * error_len);
