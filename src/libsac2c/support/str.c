@@ -35,7 +35,7 @@ STRtoupper (char *source, size_t start, size_t stop)
 
     if (source != NULL) {
         for (i = start; i < stop; i++) {
-            source[i] = toupper (source[i]);
+            source[i] = (char) toupper (source[i]);
         }
     }
 
@@ -249,7 +249,7 @@ char *
 STRcatn (int n, ...)
 {
     int i;
-    int length;
+    size_t length;
     char *result;
     const char *ptr;
     va_list arg_list;
