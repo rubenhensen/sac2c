@@ -860,6 +860,7 @@ static unsigned char
 Hex2Dig (const char x)
 {
     int res; /* char literals and arithmetic operations with char => int
+                chosen for the smallest impact to original code */
 
     DBUG_ENTER ();
 
