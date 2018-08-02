@@ -17,3 +17,10 @@ INCLUDE_DIRECTORIES (${dirlist})
 
 # All the generated files
 INCLUDE_DIRECTORIES (${PROJECT_BINARY_DIR}/src/libsac2c)
+
+# Generated global files like config, fun-attrs, etc.
+INCLUDE_DIRECTORIES (${PROJECT_BINARY_DIR}/src/include)
+
+ADD_EXECUTABLE (string-tests string-tests.cpp)
+TARGET_LINK_LIBRARIES (string-tests GTest::GTest GTest::Main sac2cShared)
+GTEST_ADD_TESTS(string-tests "" AUTO)  # maket it a part of ctest call
