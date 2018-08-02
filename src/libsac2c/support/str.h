@@ -21,7 +21,7 @@ extern bool STRgt (const char *first, const char *second) FUN_ATTR_PURE;
 extern bool STRsub (const char *sub, const char *str) FUN_ATTR_PURE;
 extern size_t STRlen (const char *str) FUN_ATTR_PURE;
 extern char *STRonNull (char *alt, char *str) FUN_ATTR_PURE;
-extern char *STRsubStr (const char *string, int start, int len);
+extern char *STRsubStr (const char *string, size_t start, ssize_t len);
 extern char *STRnull (void) FUN_ATTR_PURE;
 
 extern size_t STRsizeInt (void) FUN_ATTR_CONST;

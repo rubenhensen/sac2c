@@ -32,7 +32,7 @@ STRtoupper (char *source, size_t start, size_t stop)
     size_t i;
 
     DBUG_ENTER ();
-
+    
     if (source != NULL) {
         for (i = start; i < stop; i++) {
             source[i] = (char) toupper (source[i]);
@@ -116,30 +116,31 @@ STRncpy (const char *source, size_t maxlen)
  *
  *****************************************************************************/
 char *
-STRsubStr (const char *string, int start, int len)
+STRsubStr (const char *string, size_t start, ssize_t len)
 {
-    int strlen = 0;
+    size_t strlen = 0;
     char *ret = NULL;
 
     DBUG_ENTER ();
 
     strlen = STRlen (string);
 
-    if (len < 0) {
-        len = strlen + len; /* + - => - */
+    // Normalizing len against the length of `str`.
+    size_t l = len < 0 
+               ? strlen - (size_t)(-len)
+               : (size_t)len;
+
+    if ((start + l) > strlen) { /* to long take what we can */
+        l = strlen - start;
     }
 
-    if ((start + len) > strlen) { /* to long take what we can */
-        len = strlen - start;
-    }
-
-    if (start > len) {
+    if (start > l) {
         ret = STRnull ();
     } else {
-        ret = (char *)memcpy (MEMmalloc (sizeof (char) * (len + 1)),
+        ret = (char *)memcpy (MEMmalloc (sizeof (char) * (l + 1)),
                               string + start, /* move to start of sub string */
-                              len);
-        ret[len] = '\0';
+                              l);
+        ret[l] = '\0';
     }
 
     DBUG_RETURN (ret);
@@ -930,7 +931,7 @@ STRbytes2Hex (size_t len, unsigned char *array)
 
     DBUG_ENTER ();
 
-    result = (char *)MEMmalloc (((len * 2) + 1) * sizeof (char));
+    result = (char *)MEMmalloc ((1 + len * 2) * sizeof (char));
 
     for (pos = 0; pos < len; pos++) {
         low = array[pos] % 16;
@@ -1169,7 +1170,7 @@ STRcommentify (const char *string)
     DBUG_ENTER ();
 
     if (string != NULL) {
-        buffer = SBUFcreate (STRlen (string) + 42UL);
+        buffer = SBUFcreate (STRlen (string) + 42);
         split = STRtok (string, "\n");
 
         while (split != NULL) {
