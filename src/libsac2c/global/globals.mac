@@ -41,7 +41,7 @@ GLOBAL (unsigned int, max_allocated_mem, 0, xfree_dummy, )
  */
 
 GLOBAL (tool_t, tool, TOOL_sac2c, xfree_dummy, )
-GLOBAL (char *, toolname, NULL, xfree_dummy, )
+GLOBAL (const char *, toolname, NULL, xfree_dummy, )
 
 /*
  * Syntax tree root

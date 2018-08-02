@@ -629,7 +629,7 @@ get_terminal_size (void)
  */
 
 void
-GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname)
+GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, const char *toolname)
 {
     DBUG_ENTER ();
 
