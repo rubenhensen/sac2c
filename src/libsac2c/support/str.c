@@ -1259,7 +1259,7 @@ STRstring2Array (const char *str)
         cnt += 1;
     }
 
-    len_expr = TBmakeNum (cnt);
+    len_expr = TBmakeNumulong (cnt);
     array
       = TCmakeVector (TYmakeAKS (TYmakeSimpleType (T_char), SHmakeShape (0)), new_exprs);
 
