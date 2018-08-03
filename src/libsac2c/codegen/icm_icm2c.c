@@ -58,14 +58,14 @@
     }
 
 /* forward declarations */
-static node *GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs);
+static node *GetNextVarAny (char ***ret, size_t *ret_len, int cnt, node *exprs);
 
 static node *
 GetNextIcm (char **ret, node *exprs)
 {
     node *expr;
-    int cnt, len;
-    int i;
+    size_t len;
+    int i, cnt;
     char **v, *tmp;
 
     DBUG_ENTER ();
@@ -112,7 +112,7 @@ static
 node *GetNextPrf( char **ret, node *exprs)
 {
   node *expr;
-  int cnt, len;
+  size_t cnt, len;
   char **v;
 
   DBUG_ENTER ();
@@ -741,10 +741,10 @@ GetNextAny (char **ret, node *exprs)
 }
 
 static node *
-GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs)
+GetNextVarAny (char ***ret, size_t *ret_len, int cnt, node *exprs)
 {
     int i;
-    int len = 0;
+    size_t len = 0;
 
     DBUG_ENTER ();
 
