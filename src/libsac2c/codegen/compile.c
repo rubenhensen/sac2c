@@ -247,10 +247,10 @@ typedef enum { GF_copy, GF_free } generic_fun_t;
 struct smart_decision_t {
     int64_t *nr_measurements;
     int64_t *cum_time;
+    int64_t problem_size;
     float *fun_time;
     float max_time;
     float min_time;
-    int problem_size;
 };
 
 /******************************************************************************
@@ -4160,7 +4160,7 @@ destroy_smart_decision_data (struct smart_decision_t *data)
  * @param spmd_id: unique identifier for the current with loop.
  *
  ******************************************************************************/
-static int *
+static int64_t *
 COMPdoDecideSmart (info *info, int spmd_id)
 {
     DBUG_ENTER ();
@@ -4172,7 +4172,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
     FILE *fp;
     int64_t *line;
     struct smart_decision_t **measurements;
-    int *recommendations;
+    int64_t *recommendations;
     float *y;
     float *reg;
     float **X;
@@ -4232,7 +4232,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
                 // create a new profile
                 if (idx == nr_measurements || moved == true) {
                     measurements[idx] = create_smart_decision_data (info);
-                    measurements[idx]->problem_size = (int)line[1];
+                    measurements[idx]->problem_size = line[1];
                     measurements[idx]->max_time = 0.0;
                     measurements[idx]->min_time = INFINITY;
                     nr_measurements++;
@@ -4260,7 +4260,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
     // Handle case when there are no measurements
     if (nr_measurements == 0) {
         DBUG_PRINT ("SAC will use all threads to compute SPMD function %i.\n", spmd_id);
-        recommendations = MEMmalloc (3 * sizeof (int));
+        recommendations = (int64_t *)MEMmalloc (3 * sizeof (int));
         recommendations[0] = 1; // one recommendation
         recommendations[1] = 0; // for any problem size of 0 or larger
         recommendations[2] = 0; // use all threads
@@ -4270,7 +4270,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
         DBUG_PRINT ("SAC will use a recommendation table to decide how many threads "
                     "should be used to compute SPMD function %i.\n",
                     spmd_id);
-        recommendations = MEMmalloc ((2 * nr_measurements + 1) * sizeof (int));
+        recommendations = (int64_t *)MEMmalloc (sizeof (int64_t)* (2 * (size_t)nr_measurements + 1) );
         recommendations[0]
           = nr_measurements; // N recommendations (N is defined by 'nr_measurements')
 
@@ -4375,9 +4375,10 @@ COMPap (node *arg_node, info *arg_info)
     node *assigns, *assigns1 = NULL, *assigns2 = NULL, *assigns4 = NULL;
 
     node **icm_data = NULL, **icm_conf_expr = NULL;
-    int *recommendations;
+    int64_t *recommendations;
     bool fundef_in_current_namespace;
-    int data_size = 0, dims, seg_dim, op_offset, op, nr_segs, idx = 0;
+    size_t data_size = 0;
+    int dims, seg_dim, op_offset, op, nr_segs, idx = 0;
 
     static int spmdfun_count = 0;
 
@@ -4544,14 +4545,14 @@ COMPap (node *arg_node, info *arg_info)
                 recommendations = COMPdoDecideSmart (arg_info, spmdfun_count);
                 // create set of ICM's to compile the recommendation tabel in the SAC
                 // code.
-                data_size = recommendations[0];
+                data_size = (size_t) recommendations[0]; //used in malloc therefore can't be negative 
                 icm_data = MEMmalloc ((data_size + 2) * sizeof (node *));
-                icm_data[0] = TCmakeIcm1 ("MT_SMART_DATA_BEGIN", TBmakeNum (data_size));
-                for (int i = 0; i < data_size; i++) {
+                icm_data[0] = TCmakeIcm1 ("MT_SMART_DATA_BEGIN", TBmakeNumulong (data_size));
+                for (size_t i = 0; i < data_size; i++) {
                     icm_data[i + 1]
                       = TCmakeIcm2 ("MT_SMART_DATA_ADD",
-                                    TBmakeNum (recommendations[2 * i + 1]),
-                                    TBmakeNum (recommendations[2 * (i + 1)]));
+                                    TBmakeNumlong (recommendations[2 * i + 1]),
+                                    TBmakeNumlong (recommendations[2 * (i + 1)]));
                 }
                 icm_data[data_size + 1] = TBmakeIcm ("MT_SMART_DATA_END", NULL);
             }
@@ -4663,7 +4664,7 @@ COMPap (node *arg_node, info *arg_info)
                                                                  TBmakeAssign (icm_post,
                                                                                NULL))));
             if (global.mt_smart_mode == 2) {
-                for (int i = data_size + 1; i >= 0; i--) {
+                for (size_t i = data_size + 2; i-- > 0;) {
                     arg_node = TBmakeAssign (icm_data[i], arg_node);
                 }
                 MEMfree (icm_data);
