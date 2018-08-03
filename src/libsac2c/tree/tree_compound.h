@@ -695,7 +695,7 @@ extern node *TCmakeExprsNum (int num);
  *   Computes the length of the given N_exprs chain.
  *
  ******************************************************************************/
-
+/* FIXME may be better to make this unsigned int in the future */
 extern int TCcountExprs (node *exprs);
 
 extern node *TCgetNthExprs (int n, node *exprs);
