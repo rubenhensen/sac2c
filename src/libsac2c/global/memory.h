@@ -11,7 +11,7 @@
 typedef struct mallocinfo_t {
     void *key;
     compiler_phase_t phase;
-    int size;
+    size_t size;
     bool isfreed;
     bool isreachable;
     bool wasintree;
@@ -70,7 +70,7 @@ extern void *_MEMfree (void *address);
  *
  *   should be used instead of realloc
  */
-extern void *_MEMrealloc (void *, int);
+extern void *_MEMrealloc (void *, size_t);
 
 /*
  *   MEMcopy copies SIZE bytes starting from MEM to the newly allocated memory

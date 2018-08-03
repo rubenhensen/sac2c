@@ -83,7 +83,7 @@ _MEMmalloc (size_t size, const char *file, int line, const char *func)
 }
 
 void *
-_MEMrealloc (void *ptr, int size)
+_MEMrealloc (void *ptr, size_t size)
 {
 #ifndef DBUG_OFF
     mallocinfo_t *info, *newinfo;
@@ -206,7 +206,7 @@ MEMreport (node *arg_node, info *arg_info)
         }
         while (iterator) {
             fprintf (mreport,
-                     "     ** file: %s, line: %d, occurrence: %d, size: %d, from phase: "
+                     "     ** file: %s, line: %d, occurrence: %d, size: %zu, from phase: "
                      "%s, from func: %s\n",
                      iterator->file, iterator->line, iterator->occurrence, iterator->size,
                      PHIphaseIdent (iterator->phase), iterator->callingfunc);
@@ -222,7 +222,7 @@ MEMreport (node *arg_node, info *arg_info)
                      "  ** The following mallocs from this phase where not freed\n");
         }
         while (iterator) {
-            fprintf (mreport, "     ** file: %s, line: %d, occurrence: %d, size: %d\n",
+            fprintf (mreport, "     ** file: %s, line: %d, occurrence: %d, size: %zu\n",
                      iterator->file, iterator->line, iterator->occurrence,
                      iterator->size);
             iterator = iterator->next;
