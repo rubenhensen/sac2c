@@ -540,11 +540,11 @@ SATserializeDouble (info *info, double attr, node *parent)
  ***************************************************************************/
 
 void
-SATserializeChar (info *info, unsigned char attr, node *parent)
+SATserializeChar (info *info, char attr, node *parent)
 {
     DBUG_ENTER ();
 
-    fprintf (INFO_SER_FILE (info), "%u", attr);
+    fprintf (INFO_SER_FILE (info), "%d", attr);
 
     DBUG_RETURN ();
 }
