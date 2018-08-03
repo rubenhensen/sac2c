@@ -1422,7 +1422,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
 #endif
 
     DBUG_ENTER ();
-    DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on entering TYmakeFunType: %u",
+    DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on entering TYmakeFunType: %zu",
                     global.current_allocated_mem);
     DBUG_PRINT_TAG ("NTY", "fun: %s", CTIitemName (fundef));
     DBUG_PRINT_TAG ("NTY", "rets: %d", TCcountRets (FUNDEF_RETS (fundef)));
@@ -1550,7 +1550,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     DBUG_PRINT ("fun type built: %s\n", tmp);
     DBUG_EXECUTE (tmp = MEMfree (tmp));
 
-    DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on leaving  TYmakeFunType: %u",
+    DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on leaving  TYmakeFunType: %zu",
                     global.current_allocated_mem);
 
     DBUG_RETURN (fun);
@@ -4686,7 +4686,7 @@ TYcopyType (ntype *type)
     ntype *res;
     int i;
 #ifndef DBUG_OFF
-    int mem_entry = 0;
+    size_t mem_entry = 0;
 #endif
 
     DBUG_ENTER ();
@@ -4702,7 +4702,7 @@ TYcopyType (ntype *type)
         }
     }
 
-    DBUG_PRINT_TAG ("NTY_MEM", "size of type copied by TYcopyType: %u",
+    DBUG_PRINT_TAG ("NTY_MEM", "size of type copied by TYcopyType: %zu",
                     global.current_allocated_mem - mem_entry);
 
     if (res != NULL) {

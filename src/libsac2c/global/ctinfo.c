@@ -925,7 +925,7 @@ CTIabortOutOfMemory (unsigned int request)
              "%s %u bytes requested\n",
              abort_message_header, abort_message_header, request);
 
-    fprintf (stderr, "%s %u bytes already allocated\n", abort_message_header,
+    fprintf (stderr, "%s %zu bytes already allocated\n", abort_message_header,
              global.current_allocated_mem);
 
     AbortCompilation ();

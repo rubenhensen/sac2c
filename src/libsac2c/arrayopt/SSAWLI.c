@@ -1164,7 +1164,7 @@ WLIdoWLI (node *arg_node)
 
     INFO_ONEFUNDEF (info) = TRUE;
 
-    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %zu bytes",
                     global.current_allocated_mem);
 
     TRAVpush (TR_wli);

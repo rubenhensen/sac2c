@@ -1990,7 +1990,7 @@ WLFdoWLF (node *arg_node)
 
     info = MakeInfo ();
 
-    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %zu bytes",
                     global.current_allocated_mem);
 
     global.valid_ssaform = FALSE;
@@ -2004,7 +2004,7 @@ WLFdoWLF (node *arg_node)
     arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
-    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %zu bytes",
                     global.current_allocated_mem);
 
     info = FreeInfo (info);

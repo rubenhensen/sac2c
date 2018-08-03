@@ -368,12 +368,12 @@ CVbasetype2ShortString (simpletype type)
  ******************************************************************************/
 
 char *
-CVintBytes2String (unsigned int bytes)
+CVintBytes2String (size_t bytes)
 {
     static char res[32];
     char *tmp = &res[0];
-    int factor = 1000000000;
-    int num;
+    size_t factor = 1000000000;
+    size_t num;
 
     DBUG_ENTER ();
 
@@ -381,17 +381,17 @@ CVintBytes2String (unsigned int bytes)
         factor /= 1000;
         tmp += sprintf (tmp, "    ");
     }
-    tmp += sprintf (tmp, "%3u", (bytes / factor));
+    tmp += sprintf (tmp, "%3zu", (bytes / factor));
     while (factor >= 1000) {
         bytes = bytes % factor;
         factor /= 1000;
         num = bytes / factor;
         if (num < 10) {
-            tmp += sprintf (tmp, ".00%1u", num);
+            tmp += sprintf (tmp, ".00%1zu", num);
         } else if (num < 100) {
-            tmp += sprintf (tmp, ".0%2u", num);
+            tmp += sprintf (tmp, ".0%2zu", num);
         } else {
-            tmp += sprintf (tmp, ".%3u", num);
+            tmp += sprintf (tmp, ".%3zu", num);
         }
     }
 

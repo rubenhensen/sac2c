@@ -443,7 +443,7 @@ LINLdoLACInlining (node *arg_node)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %zu bytes",
                     global.current_allocated_mem);
 
     arg_info = MakeInfo ();
@@ -454,7 +454,7 @@ LINLdoLACInlining (node *arg_node)
 
     FreeInfo (arg_info);
 
-    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %zu bytes",
                     global.current_allocated_mem);
 
     DBUG_RETURN (arg_node);

@@ -33,8 +33,8 @@ GLOBAL (char **, file_table, NULL, xfree_char_ptr_ptr, , global.file_table_size)
  * Memory allocation
  */
 
-GLOBAL (unsigned int, current_allocated_mem, 0, xfree_dummy, )
-GLOBAL (unsigned int, max_allocated_mem, 0, xfree_dummy, )
+GLOBAL (size_t, current_allocated_mem, 0, xfree_dummy, )
+GLOBAL (size_t, max_allocated_mem, 0, xfree_dummy, )
 
 /*
  * Tool type
