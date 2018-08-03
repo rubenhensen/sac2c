@@ -2738,6 +2738,7 @@ COMPdoPrepareSmart (info *info)
 
     struct dirent *inode;
     int n, i = 0, nr_files = 0, max_nr_threads = 0;
+    size_t n_ul;
     size_t filename_len
       = strlen (global.mt_smart_filename) + strlen (global.mt_smart_arch) + 14;
 
@@ -2794,8 +2795,8 @@ COMPdoPrepareSmart (info *info)
             strtok (filename, ".");        // stat
             strtok (NULL, ".");            // <filename>
             strtok (NULL, ".");            // <architecture>
-            n = atoi (strtok (NULL, ".")); // <threads>
-            INFO_LINE_COUNT (info)[i] = (size_t)(n + 3);
+            n_ul = strtoul (strtok (NULL, "."),NULL,0); // <threads>
+            INFO_LINE_COUNT (info)[i] = n_ul + 3;
 
             fp = fopen (inode->d_name, "r");
             if (fp == NULL) {
