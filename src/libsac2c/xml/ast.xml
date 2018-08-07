@@ -24,6 +24,7 @@
     <type name="Uint" ctype="unsigned int" vtype="unsigned int" init="0" copy="literal" />
     <type name="Ulong" ctype="unsigned long" vtype="unsigned long int" init="0" copy="literal" />
     <type name="Ulonglong" ctype="unsigned long long" vtype="unsigned long long int" init="0" copy="literal" />
+    <type name="Sizet" ctype="size_t" vtype="size_t" init="0" copy="literal" />
     <type name="Bool" ctype="bool" vtype="int" init="FALSE" copy="literal" />
     <type name="Float" ctype="float" vtype="double" init="0.0" copy="literal" />
     <type name="Floatvec" ctype="floatvec" vtype="floatvec" init="(floatvec){0., 0., 0., 0.}" copy="literal" />
@@ -8105,7 +8106,7 @@ N_tfarg :
         </attribute>
         <attribute name="Indent_Before" default="0" inconstructor="no" >
           <description>the default value has to be fixed!</description>
-          <type name="Ulong">
+          <type name="Sizet">
             <targets>
               <target mandatory="yes">
                 <any />
@@ -8118,7 +8119,7 @@ N_tfarg :
         </attribute>
         <attribute name="Indent_After" default="0" inconstructor="no" >
           <description>the default value has to be fixed!</description>
-          <type name="Ulong">
+          <type name="Sizet">
             <targets>
               <target mandatory="yes">
                 <any />
