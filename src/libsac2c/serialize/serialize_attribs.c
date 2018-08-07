@@ -187,6 +187,27 @@ SATserializeStringSet (info *info, stringset_t *strs, node *parent)
 
 /** <!--******************************************************************-->
  *
+ * @fn SATserializeSizet
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeSizet (info *info, size_t attr, node *parent)
+{
+    DBUG_ENTER ();
+
+    fprintf (INFO_SER_FILE (info), "%zu", attr);
+
+    DBUG_RETURN ();
+}
+/** <!--******************************************************************-->
+ *
  * @fn SATserializeInteger
  *
  * @brief generates code to serialize the given attribute
