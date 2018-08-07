@@ -1010,8 +1010,8 @@ COaST2Constant (node *n)
             break;
 
         case N_char:
-            element = (unsigned char *)MEMmalloc (sizeof (unsigned char));
-            *((unsigned char *)element) = CHAR_VAL (n);
+            element = (char *)MEMmalloc (sizeof (char));
+            *((char *)element) = CHAR_VAL (n);
             new_co = COmakeConstant (T_char, SHmakeShape (0), element);
             break;
 
