@@ -123,7 +123,7 @@ CreateCacheSpec (int size, int line_size, int assoc, int el_size)
         cache->line_size = line_size / el_size;
         cache->set_num = (size / line_size) / assoc;
 
-        cache->mask = cache->set_num - 1;
+        cache->mask = (unsigned int) cache->set_num - 1;
 
         tmp = 1;
         cnt = 0;
