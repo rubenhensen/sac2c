@@ -114,7 +114,7 @@ struct INFO {
     node *wl;
     node *assign;
     node *fundef;
-    int foldable;
+    unsigned int foldable :1;
     bool detfoldable;
     lut_t *pmlut;
     bool localfun;
