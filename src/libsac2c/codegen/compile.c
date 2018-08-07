@@ -4239,7 +4239,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
                     moved = false;
                 }
                 // combine profiles
-                for (int j = 0; j < (int)INFO_LINE_COUNT (info)[i] - 3; j++) {
+                for (size_t j = 0; j < INFO_LINE_COUNT (info)[i] - 3; j++) {
                     measurements[idx]->nr_measurements[j] += line[2];
                     measurements[idx]->cum_time[j] += line[j + 3];
                     measurements[idx]->fun_time[j]
