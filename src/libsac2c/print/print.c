@@ -2009,13 +2009,13 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
         if (FUNDEF_NAME (arg_node) != NULL) {
             fprintf (global.outfile, "%s :: ", FUNDEF_NAME (arg_node));
             if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
-                char *(*t2s_fun) (ntype *, bool, int);
+                char *(*t2s_fun) (ntype *, bool, size_t);
                 t2s_fun = TYtype2String;
                 DBUG_EXECUTE_TAG ("PRINT_NTY", t2s_fun = TYtype2DebugString);
 
                 fprintf (global.outfile, "%s\n",
                          t2s_fun (FUNDEF_WRAPPERTYPE (arg_node), TRUE,
-                                  global.indent + STRlen (FUNDEF_NAME (arg_node)) + 8));
+                                  (size_t) global.indent + STRlen (FUNDEF_NAME (arg_node)) + 8)); 
                 fprintf (global.outfile, " *  dispatching to: ");
                 if (TYisProd (FUNDEF_WRAPPERTYPE (arg_node))) {
                     PrintFunName (FUNDEF_IMPL (arg_node), arg_info);
@@ -2054,7 +2054,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 node *
 PRTfundef (node *arg_node, info *arg_info)
 {
-    int old_indent = global.indent;
+    size_t old_indent = global.indent;
 
     bool is_userdefined_function = FALSE;
 
@@ -2365,8 +2365,8 @@ PRTfundef (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (global.indent == old_indent,
                  "Indentation unbalanced while printing function '%s`.\n"
-                 " Indentation at beginning of function: %i.\n"
-                 " Indentation at end of function: %i\n",
+                 " Indentation at beginning of function: %zu.\n"
+                 " Indentation at end of function: %zu\n",
                  FUNDEF_NAME (arg_node), old_indent, global.indent);
 
     if (FUNDEF_NEXT (arg_node) != NULL) { /* traverse next function */
@@ -2718,7 +2718,7 @@ PRTvardec (node *arg_node, info *arg_info)
 node *
 PRTblock (node *arg_node, info *arg_info)
 {
-    int old_indent = global.indent;
+    size_t old_indent = global.indent;
 
     DBUG_ENTER ();
 
@@ -2770,8 +2770,8 @@ PRTblock (node *arg_node, info *arg_info)
     if (INFO_FUNDEF (arg_info) != NULL) {
         DBUG_ASSERT (global.indent == old_indent,
                      "Indentation unbalanced while printing function '%s`.\n"
-                     " Indentation at beginning of function: %i.\n"
-                     " Indentation at end of function: %i\n",
+                     " Indentation at beginning of function: %zu.\n"
+                     " Indentation at end of function: %zu\n",
                      FUNDEF_NAME (INFO_FUNDEF (arg_info)), old_indent, global.indent);
     }
 

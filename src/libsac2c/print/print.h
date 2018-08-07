@@ -7,7 +7,7 @@
 
 #define DO_INDENT(cnt)                                                                   \
     {                                                                                    \
-        int j;                                                                           \
+        size_t j;                                                                           \
         for (j = 0; j < cnt; j++) {                                                      \
             fprintf (global.outfile, INDENT_STR);                                        \
         }                                                                                \

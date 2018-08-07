@@ -4885,7 +4885,7 @@ ArrayType2String (ntype *type)
 }
 
 static str_buf *
-PrintFunSep (str_buf *buf, bool multiline, int offset)
+PrintFunSep (str_buf *buf, bool multiline, size_t offset)
 {
     DBUG_ENTER ();
     if (multiline) {
@@ -4897,13 +4897,13 @@ PrintFunSep (str_buf *buf, bool multiline, int offset)
 }
 
 static char *
-FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
+FunType2String (ntype *type, char *scal_str, bool multiline, size_t offset)
 {
     str_buf *buf;
     char *tmp_str, *shp_str;
     shape *empty_shape;
     int i;
-    int scal_len = 0;
+    size_t scal_len = 0;
     bool sep_needed = FALSE;
 
     DBUG_ENTER ();
@@ -5062,7 +5062,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
 }
 
 char *
-TYtype2String (ntype *type, bool multiline, int offset)
+TYtype2String (ntype *type, bool multiline, size_t offset)
 {
     str_buf *buf;
     char *tmp_str, *res;
@@ -5135,7 +5135,7 @@ TYtype2String (ntype *type, bool multiline, int offset)
  ******************************************************************************/
 
 char *
-TYtype2DebugString (ntype *type, bool multiline, int offset)
+TYtype2DebugString (ntype *type, bool multiline, size_t offset)
 {
     str_buf *buf;
     char *tmp_str;

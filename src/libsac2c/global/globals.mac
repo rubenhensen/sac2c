@@ -1122,7 +1122,7 @@ GLOBAL (int, object_counter, 0, xfree_dummy, )
  *  are written to separate files.
  */
 
-GLOBAL (int, indent, 0, xfree_dummy, )
+GLOBAL (size_t, indent, 0, xfree_dummy, )
 /*
  *  This global variable is used for indenting while printing SAC-code.
  *  It has to be made global since printing is not only done in the printing-

@@ -8105,7 +8105,7 @@ N_tfarg :
         </attribute>
         <attribute name="Indent_Before" default="0" inconstructor="no" >
           <description>the default value has to be fixed!</description>
-          <type name="Integer">
+          <type name="Ulong">
             <targets>
               <target mandatory="yes">
                 <any />
@@ -8118,7 +8118,7 @@ N_tfarg :
         </attribute>
         <attribute name="Indent_After" default="0" inconstructor="no" >
           <description>the default value has to be fixed!</description>
-          <type name="Integer">
+          <type name="Ulong">
             <targets>
               <target mandatory="yes">
                 <any />
