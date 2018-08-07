@@ -14,7 +14,7 @@ struct CONSTANT {
     simpletype type;
     shape *mshape;
     void *elems;
-    int vlen;
+    size_t vlen;
 };
 
 /*
@@ -30,6 +30,8 @@ struct CONSTANT {
 #define CONSTANT_DIM(c) (SHgetDim (CONSTANT_SHAPE (c)))
 #define CONSTANT_ELEMDIM(c) (SHSubarrayDim (CONSTANT_SHAPE (c), CONSTANT_VLEN (c)))
 #define CONSTANT_ELEMSIZE(c) (SHgetUnrLen (CONSTANT_SHAPE (c)) / CONSTANT_VLEN (c))
+
+#define CONSTANT_SIZE(__c, __t) ( CONSTANT_VLEN (__c) * global.basetype_size[__t])
 
 /*
  * here some extern decls for helper functions defined in constants_basic.c

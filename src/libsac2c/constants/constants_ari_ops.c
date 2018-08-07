@@ -59,8 +59,7 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
          */
         if (target_type != T_unknown) {
             res = COmakeConstant (target_type, SHcopyShape (COgetShape (b)),
-                                  MEMmalloc (CONSTANT_VLEN (b)
-                                             * global.basetype_size[target_type]));
+                                  MEMmalloc (CONSTANT_SIZE(a,target_type)));
         } else {
             res = COcopyConstant (b);
         }
@@ -77,8 +76,7 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
              */
             if (target_type != T_unknown) {
                 res = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
-                                      MEMmalloc (CONSTANT_VLEN (a)
-                                                 * global.basetype_size[target_type]));
+                                      MEMmalloc (CONSTANT_SIZE(a,target_type)));
             } else {
                 res = COcopyConstant (a);
             }
@@ -98,8 +96,7 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
                 if (target_type != T_unknown) {
                     res
                       = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
-                                        MEMmalloc (CONSTANT_VLEN (a)
-                                                   * global.basetype_size[target_type]));
+                                        MEMmalloc (CONSTANT_SIZE(a,target_type)));
                 } else {
                     res = COcopyConstant (a);
                 }
@@ -146,8 +143,7 @@ COzipUnary (const zipcvfunptr *fun_arr, constant *a, simpletype target_type)
 
     if (target_type != T_unknown) {
         res = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
-                              MEMmalloc (CONSTANT_VLEN (a)
-                                         * global.basetype_size[target_type]));
+                              MEMmalloc (CONSTANT_SIZE(a,target_type)));
     } else {
         res = COcopyConstant (a);
     }

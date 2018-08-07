@@ -1129,7 +1129,7 @@ GLOBAL (size_t, indent, 0, xfree_dummy, )
  *  directory but from within icm2c_xxx.c as well!
  */
 
-GLOBAL (const int *, basetype_size, basetype_size_init, xfree_dummy, )
+GLOBAL (const size_t *, basetype_size, basetype_size_init, xfree_dummy, )
 /*
  * This array of integers keeps the lengths of all simpletypes.
  * It at least is used in compile.c, tile_size_inference.c, and constants.c!

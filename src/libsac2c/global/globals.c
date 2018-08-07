@@ -101,7 +101,7 @@ static const char *argtag_string_init[] = {
 #undef SELECTtext
 };
 
-static const int basetype_size_init[] = {
+static const size_t basetype_size_init[] = {
 #define TYP_IFsize(sz) sz
 #include "type_info.mac"
 };

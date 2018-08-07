@@ -27,7 +27,7 @@ COserializeConstant (FILE *file, constant *cnst)
 
         SHserializeShape (file, CONSTANT_SHAPE (cnst));
 
-        max = global.basetype_size[CONSTANT_TYPE (cnst)] * CONSTANT_VLEN (cnst);
+        max = CONSTANT_SIZE(cnst,CONSTANT_TYPE (cnst));
         data = STRbytes2Hex (max, (unsigned char *)CONSTANT_ELEMS (cnst));
 
         fprintf (file, ", %d, \"%s\")", CONSTANT_VLEN (cnst), data);
