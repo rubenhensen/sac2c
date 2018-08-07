@@ -41,10 +41,11 @@
         char format[10];                                                                 \
         char *buffer;                                                                    \
         char *buffer_act;                                                                \
+        size_t max = (size_t) max_char;                                                  \
                                                                                          \
         DBUG_ENTER ();                                                                   \
         sprintf (format, ",%s", form);                                                   \
-        buffer = (char *)MEMmalloc ((100 + max_char) * sizeof (char));                   \
+        buffer = (char *)MEMmalloc ((100 + max) * sizeof (char));                   \
         buffer_act = buffer;                                                             \
                                                                                          \
         if (len > 0) {                                                                   \
