@@ -65,7 +65,7 @@ extern void TEhandleError (size_t line, const char *file, const char *format, ..
   PRINTF_FORMAT (3, 4);
 extern char *TEfetchErrors (void);
 extern void TEextendedAbort (void);
-extern int TEgetLine (te_info *info);
+extern size_t TEgetLine (te_info *info);
 extern const char *TEgetFile (te_info *info);
 extern char *TEgetKindStr (te_info *info);
 extern te_kind_t TEgetKind (te_info *info);
