@@ -572,7 +572,6 @@ ${PROJECT_BINARY_DIR}/src/build.c
 )
 
 
-
 # XXX (artem): For the time being we exclude the files that do not yet adhere
 #	       with -Wconversion.
 SET_SOURCE_FILES_PROPERTIES(
@@ -676,7 +675,6 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_BINARY_DIR}/serialize_helper.c
     PROPERTIES COMPILE_FLAGS "${COMPILE_FLAGS} -Wno-conversion"
 )
-
 
 
 # Generate lList of needed libs for linker
