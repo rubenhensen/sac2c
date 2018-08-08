@@ -11,7 +11,7 @@
 
 extern void *SHLPmakeNode (int ntype, char *sfile, size_t lineno, size_t col, ...);
 extern void *SHLPfixLink (void *stack, int a, int b, int c);
-extern void *COdeserializeConstant (int type, void *shp, int vlen, char *vec);
+extern void *COdeserializeConstant (int type, void *shp, size_t vlen, char *vec);
 extern void *SHcreateShape (int dim, ...);
 extern void *TYdeserializeType (int con, ...);
 extern void *STRcpy (const char *s1);

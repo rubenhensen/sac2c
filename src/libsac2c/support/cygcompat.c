@@ -146,7 +146,7 @@ SERbuildSerStack (node *arg_node)
 }
 
 constant *
-COdeserializeConstant (simpletype type, shape *shp, int vlen, char *vec)
+COdeserializeConstant (simpletype type, shape *shp, size_t vlen, char *vec)
 {
     return CALL_FROM_TABLE (COdeserializeConstant_fp (type, shp, vlen, vec));
 }

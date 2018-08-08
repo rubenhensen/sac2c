@@ -37,11 +37,11 @@ struct CONSTANT {
  * here some extern decls for helper functions defined in constants_basic.c
  */
 
-extern constant *COINTmakeConstant (simpletype type, shape *shp, void *elems, int vlen);
-extern void *COINTallocCV (simpletype type, int length);
-extern void *COINTpickNElemsFromCV (simpletype type, void *elems, int offset, int length);
-extern void COINTcopyElemsFromCVToCV (simpletype type, void *from, int off, int len,
-                                      void *to, int to_off);
+extern constant *COINTmakeConstant (simpletype type, shape *shp, void *elems, size_t vlen);
+extern void *COINTallocCV (simpletype type, size_t length);
+extern void *COINTpickNElemsFromCV (simpletype type, void *elems, int offset, size_t length);
+extern void COINTcopyElemsFromCVToCV (simpletype type, void *from, int off, size_t len,
+                                      void *to, size_t to_off);
 extern void COINTdbugPrintBinOp (char *fun, constant *arg1, constant *arg2,
                                  constant *res);
 extern void COINTdbugPrintUnaryOp (char *fun, constant *arg1, constant *res);
