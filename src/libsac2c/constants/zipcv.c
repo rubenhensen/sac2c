@@ -50,7 +50,8 @@
                                     void *res, int res_pos)                              \
     {                                                                                    \
         DBUG_ENTER ();                                                                   \
-        ((res_t *)res)[res_pos] = ((arg_t *)arg1)[pos1] fun ((arg_t *)arg2)[pos2];       \
+        ((res_t *)res)[res_pos] = (res_t) (((arg_t *)arg1)[pos1] fun                     \
+                                           ((arg_t *)arg2)[pos2]);                       \
         DBUG_RETURN ();                                                                  \
     }
 
@@ -79,7 +80,7 @@
                                     void *res, int res_pos)                              \
     {                                                                                    \
         DBUG_ENTER ();                                                                   \
-        ((res_t *)res)[res_pos] = fun (((arg_t *)arg1)[pos1]);                           \
+        ((res_t *)res)[res_pos] = (res_t) fun (((arg_t *)arg1)[pos1]);                   \
         DBUG_RETURN ();                                                                  \
     }
 
@@ -91,17 +92,17 @@
     void COzipCv##arg_ext##fun_ext (void *arg1, int pos1, void *arg2, int pos2,          \
                                     void *res, int res_pos)                              \
     {                                                                                    \
-        int x;                                                                           \
-        int y;                                                                           \
-        int z;                                                                           \
+        arg_t x;                                                                         \
+        arg_t y;                                                                         \
+        arg_t z;                                                                         \
         DBUG_ENTER ();                                                                   \
         x = ((arg_t *)arg1)[pos1];                                                       \
         y = ((arg_t *)arg2)[pos2];                                                       \
-        z = (0 == y) ? x : x - (y * (x / y));                                            \
+        z = (arg_t)((0 == y) ? x : x - (y * (x / y)));                                   \
         if ((0 != z) && (SIGNUM (x) != SIGNUM (y))) {                                    \
-            z = z + y;                                                                   \
+            z = (arg_t)(z + y);                                                          \
         }                                                                                \
-        ((res_t *)res)[res_pos] = z;                                                     \
+        ((res_t *)res)[res_pos] = (arg_t)z;                                              \
         DBUG_RETURN ();                                                                  \
     }
 
@@ -110,8 +111,9 @@
                                     void *res, int res_pos)                              \
     {                                                                                    \
         DBUG_ENTER ();                                                                   \
-        ((res_t *)res)[res_pos] = (((arg_t *)arg1)[pos1]) < 0 ? (-((arg_t *)arg1)[pos1]) \
-                                                              : (((arg_t *)arg1)[pos1]); \
+        ((res_t *)res)[res_pos] = (res_t)(((arg_t *)arg1)[pos1] < 0                      \
+                                          ? (-((arg_t *)arg1)[pos1])                     \
+                                          : ((arg_t *)arg1)[pos1]);                      \
         DBUG_RETURN ();                                                                  \
     }
 
