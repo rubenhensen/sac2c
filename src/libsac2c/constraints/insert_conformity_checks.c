@@ -205,7 +205,7 @@ EmitAfterguards (node **lhs, node **assigns, node *cids, node **vardecs)
  * @return constraint type or NULL if none needed
  ******************************************************************************/
 static ntype *
-ArgEncodingToTypeConstraint (prf fun, int argno, ntype *scalartype)
+ArgEncodingToTypeConstraint (prf fun, unsigned int argno, ntype *scalartype)
 {
     ntype *result = NULL;
 
@@ -486,7 +486,7 @@ ICCprf (node *arg_node, info *arg_info)
 {
     node *cids = NULL;
     node *args;
-    int arg_cnt;
+    unsigned int arg_cnt;
     ntype *constraint_type, *scalartype;
 
     DBUG_ENTER ();
