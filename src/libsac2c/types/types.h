@@ -570,7 +570,7 @@ typedef char *(*cv2strfunptr) (void *, int, int, int);
  * moved from zipcv.h
  */
 
-typedef void (*zipcvfunptr) (void *, int, void *, int, void *, int);
+typedef void (*zipcvfunptr) (void *, size_t, void *, size_t, void *, size_t);
 
 /*******************************************************************************
  *

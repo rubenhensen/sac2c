@@ -47,7 +47,7 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
 {
     constant *res;
     void *cv;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
     DBUG_ASSERT (CONSTANT_TYPE (a) == CONSTANT_TYPE (b),
@@ -137,7 +137,7 @@ COzipUnary (const zipcvfunptr *fun_arr, constant *a, simpletype target_type)
 {
     constant *res;
     void *cv;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
