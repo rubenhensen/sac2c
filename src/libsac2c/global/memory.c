@@ -238,7 +238,7 @@ MEMreport (node *arg_node, info *arg_info)
  * Can we unify them?
  */
 void *
-MEMcopy (int size, void *mem)
+MEMcopy (size_t size, void *mem)
 {
     void *result;
 

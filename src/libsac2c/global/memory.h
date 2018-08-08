@@ -76,7 +76,7 @@ extern void *_MEMrealloc (void *, size_t);
  *   MEMcopy copies SIZE bytes starting from MEM to the newly allocated memory
  *   location.
  */
-extern void *MEMcopy (int size, void *mem);
+extern void *MEMcopy (size_t size, void *mem);
 
 #ifdef __cplusplus
 #define MEMfree(x) (__typeof(x)) _MEMfree ((void *)x)

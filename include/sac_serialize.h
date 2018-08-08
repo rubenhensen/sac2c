@@ -15,7 +15,7 @@ extern void *COdeserializeConstant (int type, void *shp, size_t vlen, char *vec)
 extern void *SHcreateShape (int dim, ...);
 extern void *TYdeserializeType (int con, ...);
 extern void *STRcpy (const char *s1);
-extern void *MEMcopy (int size, void *mem);
+extern void *MEMcopy (size_t size, void *mem);
 extern void *SERbuildSerStack (void *node);
 extern void *DSlookupFunction (const char *s, const char *t);
 extern void *DSlookupObject (const char *s, const char *t);
