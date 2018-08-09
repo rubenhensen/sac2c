@@ -350,14 +350,15 @@ FMGRdirname (const char *path)
 
     const char *last = strrchr (path, '/');
     char *result;
+    size_t len = (size_t)(last - path);
 
     if (last == NULL) {
         /* No dir */
         result = STRcpy (".");
     } else {
-        result = MEMmalloc (last - path + 1);
-        memcpy (result, path, last - path);
-        result[last - path] = '\0';
+        result = MEMmalloc (len + 1);
+        memcpy (result, path, len);
+        result[len] = '\0';
     }
 
     char *newresult = FMGRabsName (result);
