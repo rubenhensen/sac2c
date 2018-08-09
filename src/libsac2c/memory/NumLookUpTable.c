@@ -14,7 +14,7 @@
  *
  *****************************************************************************/
 struct NLUT_T {
-    int size;
+    size_t size;
     int *nums;
     node **avis;
 };
@@ -48,7 +48,7 @@ NLUTgenerateNlut (node *args, node *vardecs)
 
     nlut = (nlut_t *)MEMmalloc (sizeof (nlut_t));
 
-    NLUT_SIZE (nlut) = TCcountArgs (args) + TCcountVardecs (vardecs);
+    NLUT_SIZE (nlut) = (size_t)(TCcountArgs (args) + TCcountVardecs (vardecs));
     NLUT_NUMS (nlut) = (int *)MEMmalloc (NLUT_SIZE (nlut) * sizeof (int));
     NLUT_AVIS (nlut) = (node **)MEMmalloc (NLUT_SIZE (nlut) * sizeof (node *));
 
@@ -86,7 +86,7 @@ NLUTgenerateNlut (node *args, node *vardecs)
 nlut_t *
 NLUTgenerateNlutFromNlut (nlut_t *nlut)
 {
-    int i;
+    size_t i;
     nlut_t *newnlut;
 
     DBUG_ENTER ();
@@ -117,7 +117,7 @@ NLUTgenerateNlutFromNlut (nlut_t *nlut)
 nlut_t *
 NLUTduplicateNlut (nlut_t *nlut)
 {
-    int i;
+    size_t i;
     nlut_t *newnlut;
 
     DBUG_ENTER ();
@@ -170,7 +170,7 @@ NLUTremoveNlut (nlut_t *nlut)
 nlut_t *
 NLUTaddNluts (nlut_t *nlut1, nlut_t *nlut2)
 {
-    int i;
+    size_t i;
     nlut_t *res;
 
     DBUG_ENTER ();
@@ -257,7 +257,7 @@ NLUTgetNonZeroAvis (nlut_t *nlut)
     node *res;
 
     static nlut_t *store;
-    static int i;
+    static size_t i;
 
     DBUG_ENTER ();
 
