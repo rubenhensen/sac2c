@@ -167,12 +167,12 @@ COINTcopyCVToMem (simpletype type, size_t length, void *cv)
  ******************************************************************************/
 
 static void *
-COINTcopyCVVaListToMem (simpletype type, int length, va_list cv)
+COINTcopyCVVaListToMem (simpletype type, size_t length, va_list cv)
 {
     DBUG_ENTER ();
 
     void *res;
-    int i;
+    size_t i;
 
     res = MEMmalloc (global.basetype_size[type] * length);
     switch (type) {
@@ -482,7 +482,7 @@ COmakeConstantFromDynamicArguments (simpletype type, int dim, ...)
     constant *res = NULL;
 
     /* constant facilities*/
-    int res_elems_num = 0;
+    size_t res_elems_num = 0;
 
     /* Counter*/
     int i = 0;
