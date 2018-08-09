@@ -5275,7 +5275,7 @@ N_tfarg :
           </type>
         </attribute>
         <attribute name="FunNo" default="0" mandatory="no" inconstructor="no">
-          <type name="Integer">
+          <type name="Sizet">
             <targets>
               <target mandatory="no">
                 <any />
@@ -7072,7 +7072,7 @@ N_tfarg :
           </type>
         </attribute>
         <attribute name="FunNumber" inconstructor="yes">
-          <type name="Integer">
+          <type name="Sizet">
             <targets>
               <target mandatory="yes">
                 <any />
