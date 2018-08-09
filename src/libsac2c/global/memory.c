@@ -29,7 +29,6 @@ _MEMmalloc (size_t size, const char *file, int line, const char *func)
     mallocinfo_t *info;
 
     DBUG_ENTER ();
-    DBUG_ASSERT (size >= 0, "MEMmalloc called with negative size!");
 
     if (!(size > 0)) {
         ptr = NULL;
