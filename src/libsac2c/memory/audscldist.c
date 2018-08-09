@@ -796,7 +796,7 @@ ASDprf (node *arg_node, info *arg_info)
     ntype *tg, *nt;
     shape_class_t actual_cls;
     shape_class_t tg_cls;
-    int arg_cnt;
+    unsigned int arg_cnt;
 
     DBUG_ENTER ();
 
