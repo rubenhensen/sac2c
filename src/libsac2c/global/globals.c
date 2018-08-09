@@ -593,9 +593,10 @@ static char *sigspec_mode_str_init[] = {"akv", "aks", "akd", "aud"};
  */
 
 static int **
-BuildFunApLine (int maxfun, int maxfunap)
+BuildFunApLine (size_t maxfun, size_t maxfunap)
 {
-    int i, **aps;
+    int **aps;
+    size_t i;
 
     DBUG_ENTER ();
 
