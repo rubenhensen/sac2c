@@ -36,7 +36,7 @@ typedef struct mallocphaseinfo_t {
     int nfreed;
     int nleaked;
     int leakedsize;
-    int notfreedsize;
+    size_t notfreedsize;
     mallocinfo_t *notfreed;
     mallocinfo_t *leaked;
     compiler_phase_t phase;

@@ -901,7 +901,7 @@ CTIabortLine (size_t line, const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIabortOutOfMemory( unsigned int request)
+ * @fn void CTIabortOutOfMemory( size_t request)
  *
  *   @brief   produces a specific "out of memory" error message
  *            without file name and line number and terminates the
@@ -918,11 +918,11 @@ CTIabortLine (size_t line, const char *format, ...)
  ******************************************************************************/
 
 void
-CTIabortOutOfMemory (unsigned int request)
+CTIabortOutOfMemory (size_t request)
 {
     fprintf (stderr,
              "%sOut of memory:\n"
-             "%s %u bytes requested\n",
+             "%s %zu bytes requested\n",
              abort_message_header, abort_message_header, request);
 
     fprintf (stderr, "%s %zu bytes already allocated\n", abort_message_header,
