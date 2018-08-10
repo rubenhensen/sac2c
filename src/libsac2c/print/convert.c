@@ -70,10 +70,10 @@ CVfloatvec2String (floatvec val)
 {
     char *s;
     int len;
-    const unsigned vec_len = sizeof (floatvec) / sizeof (float);
-    const unsigned mem
+    const size_t vec_len = sizeof (floatvec) / sizeof (float);
+    const size_t mem
       = 270 * vec_len + vec_len * strlen (", ") + strlen ("(floatvec){}");
-    const unsigned buf_size = sizeof(char) * mem;
+    const size_t buf_size = sizeof(char) * mem;
 
     s = (char *)MEMmalloc (buf_size);
     len = snprintf (s, buf_size, "(floatvec){");
@@ -81,7 +81,7 @@ CVfloatvec2String (floatvec val)
     for (unsigned i = 0; i < vec_len; i++) {
         char *t = CVfloat2String (FLOATVEC_IDX (val, i));
         /* offset by len to append to string s */
-        len += snprintf (s+len, buf_size - len, "%s%s", t, i == vec_len - 1 ? "}" : ", ");
+        len += snprintf (s+len, buf_size - (size_t)len, "%s%s", t, i == vec_len - 1 ? "}" : ", ");
         MEMfree (t);
     }
 
