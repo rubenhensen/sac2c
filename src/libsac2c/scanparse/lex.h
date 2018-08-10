@@ -236,6 +236,8 @@ extern const char *token_kind_name[];
 #define token_class_as_string(tcls) token_class_name[(int)tcls]
 #define token_location(tok) (tok)->loc
 
+#define CIRCULAR_BUF_SUBT(_a, _b, _X) ((_a + _X - _b) % (_X))
+
 /* Safely increment or decrement index of character buffer. Make
 sure that negative index equals to size - idx. */
 static inline ssize_t

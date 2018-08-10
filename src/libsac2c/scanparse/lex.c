@@ -218,14 +218,13 @@ lexer_getch (struct lexer *lex)
 
         return ch;
     } else {
-        ssize_t s;
+        size_t s;
 
         /* Return a token from the buffer.  */
         assert (lex->unget_idx < LEXER_BUFFER,
                 "parser buffer holds only up to %i values.", LEXER_BUFFER);
 
-        s = lex->buf_end - lex->unget_idx;
-        s = s < 0 ? LEXER_BUFFER + s : s;
+        s = CIRCULAR_BUF_SUBT(lex->buf_end, lex->unget_idx, LEXER_BUFFER);
         lex->unget_idx--;
         lex->loc = lex->location_buffer[s];
 
@@ -244,15 +243,14 @@ lexer_getch (struct lexer *lex)
 static inline void
 lexer_ungetch (struct lexer *lex, int ch)
 {
-    ssize_t s;
+    size_t s;
     (void)ch; /* Surpress unused variable warning */
 
     lex->unget_idx++;
     assert (lex->unget_idx < LEXER_BUFFER, "parser buffer holds only up to %i values.",
             LEXER_BUFFER);
 
-    s = lex->buf_end - lex->unget_idx;
-    s = s < 0 ? LEXER_BUFFER + s : s;
+    s = CIRCULAR_BUF_SUBT(lex->buf_end, lex->unget_idx, LEXER_BUFFER);
 }
 
 /* Adds the character C to the string *BUFFER that has length *SIZE

@@ -567,7 +567,6 @@ parser_get_token (struct parser *parser)
         } while (token_class (tok) == tok_whitespace
                  || token_class (tok) == tok_comments);
     } else {
-        ssize_t s;
         size_t idx;
 
         do {
@@ -575,8 +574,7 @@ parser_get_token (struct parser *parser)
             assert (parser->unget_idx < parser->buf_size,
                     "parser buffer holds only up to %zu values.", parser->buf_size);
 
-            s = parser->buf_end - parser->unget_idx;
-            idx = s < 0 ? (size_t) (parser->buf_size + s) : (size_t)s;
+            idx = CIRCULAR_BUF_SUBT(parser->buf_end, parser->unget_idx, parser->buf_size);
             parser->unget_idx--;
 
             tok = parser->token_buffer[idx];
@@ -651,8 +649,7 @@ parser_unget (struct parser *parser)
         parser->unget_idx++;
         assert (parser->unget_idx < parser->buf_size,
                 "parser buffer holds only up to %zu values.", parser->buf_size);
-        s = parser->buf_end - parser->unget_idx;
-        idx = s < 0 ? (size_t) (parser->buf_size + s) : (size_t)s;
+        idx = CIRCULAR_BUF_SUBT(parser->buf_end, parser->unget_idx, parser->buf_size);
         tok = parser->token_buffer[idx];
     } while (token_class (tok) == tok_whitespace || token_class (tok) == tok_comments);
 }
