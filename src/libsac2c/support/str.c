@@ -1208,7 +1208,7 @@ STRstring2Array (const char *str)
     new_exprs = TBmakeExprs (TBmakeChar ('\0'), NULL);
 
     cnt = 0;
-
+    // Iterate from `STRlem (str) - 1` to `0` inclusively
     for (i = STRlen (str); i-- > 0; ) {
         if ((i > 0) && (str[i - 1] == '\\')) {
             switch (str[i]) {
