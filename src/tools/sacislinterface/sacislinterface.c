@@ -41,24 +41,6 @@ printBasicSet (struct isl_basic_set *pset, char *titl)
     return;
 }
 
-#ifdef DEADCODE
-// This from Roman Gareev, isl-development google group
-// 2014-03-08.
-
-static __isl_give isl_ast_build *
-set_options (__isl_take isl_ast_build *control, __isl_keep isl_union_map *schedule)
-{
-    isl_ctx *ctx = isl_union_map_get_ctx (schedule);
-    isl_space *range_space = isl_space_set_alloc (ctx, 0, 1);
-    range_space = isl_space_set_tuple_name (range_space, isl_dim_set, "separate");
-    isl_union_set *range = isl_union_set_from_set (isl_set_universe (range_space));
-    isl_union_set *domain = isl_union_map_range (isl_union_map_copy (schedule));
-    domain = isl_union_set_universe (domain);
-    isl_union_map *options = isl_union_map_from_domain_and_range (domain, range);
-    return isl_ast_build_set_options (control, options);
-}
-#endif // DEADCODE
-
 void
 printSchedule (FILE *fd, isl_schedule *sched, char *titl, int verbose, int fmt)
 {
