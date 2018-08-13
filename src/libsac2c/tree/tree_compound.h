@@ -77,7 +77,7 @@ extern node *TCshpseg2Array (shpseg *shape, int dim);
 
 extern types *TCappendTypes (types *chain, types *item);
 extern int TCcountTypes (types *type);
-extern types *TCgetTypesLine (types *type, int line);
+extern types *TCgetTypesLine (types *type, size_t line);
 extern types *TCgetTypes (types *type);
 extern int TCgetShapeDim (types *type);
 extern int TCgetDim (types *type);
