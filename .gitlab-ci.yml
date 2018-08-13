@@ -76,6 +76,7 @@ stages:
         - cp -r build/.sac2crc $HOME
         - cd build
         - make fulltest
+        - ctest --output-on-failure
     artifacts:
         expire_in: 12 hrs
         untracked: true
