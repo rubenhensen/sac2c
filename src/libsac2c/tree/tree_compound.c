@@ -1629,13 +1629,13 @@ TCmakeAssignInstr (node *instr, node *next)
 
 /** <!--********************************************************************-->
  *
- * @fn int TCcountAssigns( node *arg_node)
+ * @fn size_t TCcountAssigns( node *arg_node)
  *
  *****************************************************************************/
-int
+size_t
 TCcountAssigns (node *arg_node)
 {
-    int res = 0;
+    size_t res = 0;
 
     DBUG_ENTER ();
 

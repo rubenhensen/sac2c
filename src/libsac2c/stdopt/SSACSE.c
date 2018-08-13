@@ -85,13 +85,13 @@
  *****************************************************************************/
 typedef struct CSEINFO {
     struct CSEINFO *nextlayer;
-    int entries;
+    size_t entries;
     int current;
     node **lets;
 } cseinfo;
 
 static cseinfo *
-AddCseInfoLayer (cseinfo *nextlayer, int entries)
+AddCseInfoLayer (cseinfo *nextlayer, size_t entries)
 {
     cseinfo *res;
 
@@ -847,7 +847,7 @@ CSEavis (node *arg_node, info *arg_info)
 node *
 CSEblock (node *arg_node, info *arg_info)
 {
-    int assigns;
+    size_t assigns;
     node *oldwithid = NULL;
     node *ivlet = NULL;
 
