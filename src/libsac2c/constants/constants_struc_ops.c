@@ -144,11 +144,11 @@ Idx2Offset (constant *idx, constant *a)
 constant *
 IncrementIndex (constant *min, constant *idx, constant *max)
 {
-    int dim;
+    ssize_t dim;
 
     DBUG_ENTER ();
 
-    dim = CONSTANT_VLEN (idx) - 1;
+    dim = (ssize_t)CONSTANT_VLEN (idx) - 1;
     if (dim >= 0) {
         /*
          * 'idx' is non-empty
