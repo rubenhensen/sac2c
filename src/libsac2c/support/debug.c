@@ -210,7 +210,7 @@ LOCAL VOID ChangeOwner ();     /* Change file owner and group */
 
 LOCAL BOOLEAN DoTrace (void);            /* Test for TRACING enabled */
 LOCAL BOOLEAN Writable (char *pathname); /* Test to see if file is writable */
-LOCAL char *DbugMalloc (int size);       /* Allocate memory for runtime support */
+LOCAL char *DbugMalloc (size_t size);       /* Allocate memory for runtime support */
 LOCAL char *BaseName (char *pathname);   /* Remove leading pathname components */
 
 /* Supplied in Sys V runtime environ */
@@ -1340,11 +1340,11 @@ DbugExit (char *why)
  */
 
 LOCAL char *
-DbugMalloc (int size)
+DbugMalloc (size_t size)
 {
     register char *xnew;
 
-    xnew = (char *)malloc ((unsigned int)size);
+    xnew = (char *)malloc (size);
     if (xnew == NULL) {
         DbugExit ("out of memory");
     }
