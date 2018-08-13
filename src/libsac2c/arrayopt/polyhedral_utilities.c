@@ -283,7 +283,7 @@ Node2Value (node *arg_node)
                 break;
 
             case N_bool:
-                z = TBmakeNum ((int)BOOL_VAL (arg_node));
+                z = TBmakeNum ((int)BOOL_VAL (arg_node)); //FIXME there may be a better solution, but this temporarily fixes the warning
                 break;
 
             default:
