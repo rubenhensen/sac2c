@@ -3,7 +3,7 @@ Unittests for sac2c
 
 The unit tests in this directory are supposed to ensure correct operation of
 a specific functionality of `sac2c`.  Each unit test in its code encodes how
-it should be run and what are criteria for pass.
+it should be run and what are its criteria for success.
 
 The encoding is done using a series of line comments that start with a tag
 `// SAC_TEST|` from the first column of any line.  `// SAC_TEST|...` lines
@@ -33,7 +33,8 @@ Meta tags section below.
 
 ## Running unit tests
 
-Running unit tests is acheived via
+Running unit tests is achieved via
+
 ```sh
 make test
 ```
@@ -43,9 +44,9 @@ can become important if the number of tests increases, use
 ctests -j5
 ```
 
-For each test cmake generates a call to a script
+For each test, cmake generates a call to a script
 `<cmake-build-dir>/tests/scripts/run.sh <sac-test-file>`.  For debugging
-purposes this process can be done manually:
+purposes, this process can be done manually:
 ```
 cd build/tests
 ./scripts/run.sh test-trivial.sac
@@ -72,7 +73,7 @@ are often used.  It is very likely that every unit test should start with
 ```
 // SAC_TEST|include common.mk
 ```
-definiton.  Further, common functionality that is relevant to a set of unit
+definition.  Further, common functionality that is relevant to a set of unit
 tests can be abstracted in the header files and sed via includes.  For example:
 
 ```sh
@@ -101,13 +102,15 @@ The following variables are defined: `SAC2C_FLAGS`, `GREP_COMMAND_OUTPUT`,
 `CHECK_RETURN_STATUS` and a generic rule to build sac programs from sac sources.
 For explanation see comments in `common.mk`.
 
-Two shell scripts are defined in scripts tha are used in `common.mk`:
+Several shell scripts are defined in scripts, to be used in `common.mk`:
 
   * `check-return-status.sh` --- runs the binary passed as a first argument
     and checks that its return status is equal to the second argument.
     
   * `grep-command-output.sh` --- a wrapper around grep that counts the number
     of occurrences of the first argument is equal to the second argument.
+
+  * `runttest:
 
 
 ## Meta tags
