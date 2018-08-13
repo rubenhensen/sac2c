@@ -1654,6 +1654,8 @@ PWLFprf (node *arg_node, info *arg_info)
                                 AVIS_NAME (ID_AVIS (pwlid)), cwlnm, plresult);
                     DBUG_PRINT ("Building inverse projection for cwl=%s", cwlnm);
                     arg_node = BuildInverseProjections (arg_node, arg_info);
+                    DBUG_ASSERT (POLY_RET_CCONTAINSB == plresult,
+                                 "Coding time, Bobbo. We need to slice cwl");
                     z = PWLFperformFold (arg_node, foldpwlpart, arg_info);
                     FREEdoFreeNode (arg_node);
                     arg_node = z;
