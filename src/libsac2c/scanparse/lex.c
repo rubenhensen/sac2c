@@ -539,13 +539,13 @@ lexer_is_user_op (struct lexer *lex, struct token *tok, char **buf, size_t *size
 }
 
 char *
-quote_string (const char *s, char *res, int pos)
+quote_string (const char *s, char *res, size_t pos)
 {
 #define BUF_SIZE 512
 
     char buffer[BUF_SIZE];
     const char *ptr = s;
-    int count = 0;
+    size_t count = 0;
 
     while (*ptr != '\0' && count < BUF_SIZE - 5) {
         switch (*ptr) {
