@@ -39,7 +39,7 @@ typedef struct UDT_ENTRY {
     ntype *type;
     ntype *base;
     usertype alias;
-    int line;
+    size_t line;
     node *tdef;
     bool nested;
 } udt_entry;
@@ -122,7 +122,7 @@ InsertIntoRepository (udt_entry *entry)
  *
  * function:
  *    usertype UTaddUserType( char *name, namespace_t *ns, ntype *type,
- *                            ntype *base, int lineno, node *tdef)
+ *                            ntype *base, size_t lineno, node *tdef)
  *
  * description:
  *   adds a udt to the repository and enlarges it whenever (udt_no % CHUNKSIZE)
@@ -131,7 +131,7 @@ InsertIntoRepository (udt_entry *entry)
  ******************************************************************************/
 
 usertype
-UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, int lineno,
+UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, size_t lineno,
                node *tdef, bool nested)
 {
     udt_entry *entry;
@@ -173,7 +173,7 @@ UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, int lineno
  * @return
  ******************************************************************************/
 usertype
-UTaddAlias (char *name, namespace_t *ns, usertype alias, int lineno, node *tdef)
+UTaddAlias (char *name, namespace_t *ns, usertype alias, size_t lineno, node *tdef)
 {
     udt_entry *entry;
     int result;
@@ -318,7 +318,7 @@ UTgetBaseType (usertype udt)
     DBUG_RETURN (ENTRY_BASE (udt_rep[udt]));
 }
 
-int
+size_t
 UTgetLine (usertype udt)
 {
     DBUG_ENTER ();
@@ -505,7 +505,7 @@ UTprintRepository (FILE *outfile)
     fprintf (outfile, "\n %4.4s " UTPRINT_FORMAT " %6s | %9s | %7s\n", "udt:", "module:",
              "name:", "defining type:", "base type:", "line:", "def node:", "alias:");
     for (i = 0; i < udt_no; i++) {
-        fprintf (outfile, " %4d " UTPRINT_FORMAT " %6d |  %8p | %7d\n", i,
+        fprintf (outfile, " %4d " UTPRINT_FORMAT " %6zu |  %8p | %7d\n", i,
                  NSgetName (UTgetNamespace (i)), UTgetName (i),
                  TYtype2String (UTgetTypedef (i), TRUE, 0),
                  TYtype2String (UTgetBaseType (i), TRUE, 0), UTgetLine (i),
