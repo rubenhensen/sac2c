@@ -1,0 +1,52 @@
+// gitlab unit test boilerplate
+
+#include "ut-flags.mk"
+// SAC_TEST|GREP_STR=val_l
+// SAC_TEST|GREP_COUNT=0
+
+#include "mini-stdlib.sac"
+
+// ipbb, converted to run under mini-stdlib
+// and give entirely different answers...
+
+/* RESULT: val_l 12 0 */
+
+inline
+int[+] ordotandBBBSTARLIKE(int[+]x, int[+]y)
+{ /* CDC STAR-100 APL Algorithm for inner product */
+  rowsx = shape(x)[0];
+  colsx = shape(x)[1];
+  colsy = shape(y)[1];
+  Zrow = genarray([colsy],0);
+  z = with {
+    (. <= [row] <= .) {
+      Crow = Zrow;
+      for (colx=0; colx<colsx; colx++) {
+        xel = x[row,colx];
+        if( 0 != xel) { /* Skip iteration if it's an f identity */
+          Crow = Crow + y[colx];
+        }
+      }
+    } : Crow;
+  }: genarray( [rowsx], Zrow);
+  return(z);
+}
+
+inline
+int ipbbXII(int siz)
+{ 
+ ipt = reshape([siz, siz], iota(siz*siz));
+ ipt2 = { [i,j] -> ipt[j,i] }; // Transpose
+ mres = ordotandBBBSTARLIKE(ipt2, ipt);
+ z = sum(mres);
+ return(z);
+}
+
+int main()
+{ 
+ z = ipbbXII( 10);
+ z2 = z == 49455;
+ zz = 1 - _toi_S_(z2);
+ return(zz);
+}
+
