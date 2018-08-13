@@ -783,8 +783,9 @@ CheckPredicateNF (node *expr, int *cst_count, int *cst_value)
 }
 
 static double
-f (struct m_func mfunc, loopc_t init, double iter)
+f (struct m_func mfunc, loopc_t init_l, double iter)
 {
+    double init = (double)init_l;
     if (mfunc.a == 1)
         return init + mfunc.b * iter;
 
@@ -810,8 +811,9 @@ f (struct m_func mfunc, loopc_t init, double iter)
 }
 
 static double
-f_prime (struct m_func mfunc, loopc_t init, double iter)
+f_prime (struct m_func mfunc, loopc_t init_l, double iter)
 {
+    double init = (double)init_l;
     if (mfunc.a == 1)
         /* iff f(x) = bx, then f'(x) = b  */
         return mfunc.b;
@@ -996,8 +998,8 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
      * k = (term - (x0 + x1 + ... + xn + cst_value)) / (b0 + b1 + ... + bn) */
     if (additions_only == count) {
         int b_sum = 0;
-        int c_sum = 0;
-        int t;
+        loopc_t c_sum = 0;
+        loopc_t t;
 
         /* c_sum = x0 + x1 + ... + xn + cst_value
          * b_sum = b0 + b1 + ... + bn */
@@ -1057,7 +1059,7 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
                 if (loop_pred == F_le_SxS) {
                     double res = log ((double)(t / ivtmp->init_value))
                                  / log ((double)(ivtmp->mfunc.a));
-                    DBUG_RETURN (res > 0 ? floor (res) + 1 : 1);
+                    DBUG_RETURN (res > 0 ? (loopc_t)floor (res) + 1 : 1);
                 } else if (loop_pred == F_ge_SxS)
                     DBUG_RETURN (ivtmp->init_value * ivtmp->mfunc.a < t ? 1 : UNR_NONE);
             }
@@ -1066,7 +1068,7 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
                 if (loop_pred == F_ge_SxS) {
                     double res = log ((double)(t / ivtmp->init_value))
                                  / log ((double)(ivtmp->mfunc.a));
-                    DBUG_RETURN (res > 0 ? floor (res) + 1 : 1);
+                    DBUG_RETURN (res > 0 ? (loopc_t)floor (res) + 1 : 1);
                 } else if (loop_pred == F_le_SxS)
                     DBUG_RETURN (ivtmp->init_value * ivtmp->mfunc.a > t ? 1 : UNR_NONE);
             }
@@ -1084,7 +1086,7 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
                 if (loop_pred == F_ge_SxS) {
                     double res = log ((double)(ivtmp->init_value / t))
                                  / log ((double)(ivtmp->mfunc.a));
-                    DBUG_RETURN (res > 0 ? floor (res) + 1 : 1);
+                    DBUG_RETURN (res > 0 ? (loopc_t)floor (res) + 1 : 1);
                 } else if (loop_pred == F_le_SxS)
                     DBUG_RETURN (ivtmp->init_value / ivtmp->mfunc.a > t ? 1 : UNR_NONE);
             }
@@ -1093,7 +1095,7 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
                 if (loop_pred == F_le_SxS) {
                     double res = log ((double)(ivtmp->init_value / t))
                                  / log ((double)(ivtmp->mfunc.a));
-                    DBUG_RETURN (res > 0 ? floor (res) + 1 : 1);
+                    DBUG_RETURN (res > 0 ? (loopc_t)floor (res) + 1 : 1);
                 } else if (loop_pred == F_ge_SxS)
                     DBUG_RETURN (ivtmp->init_value / ivtmp->mfunc.a < t ? 1 : UNR_NONE);
             }
@@ -1105,7 +1107,7 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
 
         if (Newton (ivs, loop_pred, term - cst_value, 0, tol, max_iter, &res)
             && res > 0) {
-            loopc_t iter_count = floor (res) + 1;
+            loopc_t iter_count = (loopc_t)floor (res) + 1;
             loopc_t res_val = 0;
 
             /* Numerical methods are great of course, but we have to check
@@ -2365,7 +2367,7 @@ LURfundef (node *arg_node, info *arg_info)
     }
 
     // Even if we do not unroll, this value may be of use to PHUT, etc.
-    FUNDEF_LOOPCOUNT (arg_node) = unrolling;
+    FUNDEF_LOOPCOUNT (arg_node) = (int)unrolling;
 
     if (unrolling != UNR_NONE) {
         if (unrolling <= global.unrnum) {
