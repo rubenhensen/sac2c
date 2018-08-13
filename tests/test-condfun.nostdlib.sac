@@ -1,13 +1,7 @@
 
-
-// gitlab unit test boilerplate
-// SAC_TEST|SAC2C_FLAGS += -check c -dopogo -noggs -dolacsi -dowlf -nopwlf -noctz -norelcf -noainl -doplur
-// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bopt:wlbscnf2  -printfun main
-
-// SAC_TEST|include common.mk
-// SAC_TEST|all: <file-name-we>
-// SAC_TEST|<tab>@$(CHECK_RETURN_STATUS) $< 4
-
+#include "ut-flags.mk"
+// SAC_TEST|GREP_STR=_val_
+// SAC_TEST|GREP_COUNT=0
 /*
  *
  * Try to find crc.sac bug that puts -ecc code above if() in

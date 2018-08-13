@@ -1,17 +1,18 @@
 SAC2C := @SAC2C_EXEC@
 SAC2C_FLAGS := -v0
 
-# Name wrapper around the shell script that takes two arguments
-# `what' and `num' and verifies that $what is found $num times
+# Name wrapper around shell script taking two arguments
+# specifying a grep string and wc for same
 # on the stdout.
 GREP_COMMAND_OUTPUT := ./scripts/grep-command-output.sh
 
+# Namewrapper for predicate script that returns true if
+# all sac2c optional packages are enabled
+ISALLOPTIONSON := ./scripts/isalloptionson.sh
 
 # Namewrapper for a script of two arguments `binary' and `ret'
 # that verifies that return status of executing $binary is $ret.
 CHECK_RETURN_STATUS := ./scripts/check-return-status.sh
 
-
 %:%.sac
 	$(SAC2C) $(SAC2C_FLAGS) -o $@ $<
-
