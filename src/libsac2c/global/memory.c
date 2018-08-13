@@ -166,7 +166,7 @@ SortMemreport (const void *a, const void *b)
     const mallocphaseinfo_t *aa = a;
     const mallocphaseinfo_t *bb = b;
 
-    return bb->leakedsize - aa->leakedsize;
+    return (int)(bb->leakedsize - aa->leakedsize);
 }
 
 node *
@@ -195,7 +195,7 @@ MEMreport (node *arg_node, info *arg_info)
 
     for (int i = 0; i <= PH_final; i++) {
         fprintf (mreport, "** description: %s\n", PHIphaseText (phasetable[i].phase));
-        fprintf (mreport, "     ident: %s, leaked: %d, total bytes leaked %d\n",
+        fprintf (mreport, "     ident: %s, leaked: %d, total bytes leaked %zu\n",
                  PHIphaseIdent (phasetable[i].phase), phasetable[i].nleaked,
                  phasetable[i].leakedsize);
         iterator = phasetable[i].leaked;
