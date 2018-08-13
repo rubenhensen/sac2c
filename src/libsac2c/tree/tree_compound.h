@@ -82,7 +82,7 @@ extern types *TCgetTypes (types *type);
 extern int TCgetShapeDim (types *type);
 extern int TCgetDim (types *type);
 extern simpletype TCgetBasetype (types *type);
-extern int TCgetBasetypeSize (types *type);
+extern size_t TCgetBasetypeSize (types *type);
 extern int TCgetTypesLength (types *type);
 extern shpseg *TCtype2Shpseg (types *type, int *ret_dim);
 extern shape *TCtype2Shape (types *type);

@@ -522,10 +522,10 @@ TCgetBasetype (types *type)
  *
  ******************************************************************************/
 
-int
+size_t
 TCgetBasetypeSize (types *type)
 {
-    int size;
+    size_t size;
 
     DBUG_ENTER ();
 
