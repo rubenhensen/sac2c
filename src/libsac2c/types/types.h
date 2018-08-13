@@ -558,7 +558,7 @@ typedef void (*cv2cvfunptr) (void *, size_t, size_t, void *, size_t);
  * moved from cv2scalar.h
  */
 
-typedef node *(*cv2scalarfunptr) (void *, int);
+typedef node *(*cv2scalarfunptr) (void *, size_t);
 
 /*
  * moved from cv2internal_lib.h
