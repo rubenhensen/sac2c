@@ -270,14 +270,15 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
     INDENT;                                                                              \
     INDENT;                                                                              \
     fprintf (global.outfile, "if (grid.x > %u || grid.y > %u || grid.z > %u) {\n",       \
-               global.cuda_max_x_dim, global.cuda_max_yz_dim, global.cuda_max_yz_dim);   \
+             global.cuda_max_x_grid, global.cuda_max_yz_grid, global.cuda_max_yz_grid);  \
     INDENT;                                                                              \
     INDENT;                                                                              \
     INDENT;                                                                              \
     fprintf (global.outfile,                                                             \
-             "SAC_RuntimeError(\"CUDA XYZ grid dimension exceeds compute "               \
-             "compatibilities max value: %u x %u x %u\");\n",                            \
-             global.cuda_max_x_dim, global.cuda_max_yz_dim, global.cuda_max_yz_dim);     \
+             "SAC_RuntimeError(\"CUDA XYZ grid dimension of %%u x %%u x %%u exceeds "    \
+             "the compute capability's max value: %u x %u x %u\","                       \
+             " grid.x, grid.y, grid.z );\n",                                             \
+             global.cuda_max_x_grid, global.cuda_max_yz_grid, global.cuda_max_yz_grid);  \
     INDENT;                                                                              \
     INDENT;                                                                              \
     fprintf (global.outfile, "}\n");
@@ -287,14 +288,32 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
     INDENT;                                                                              \
     INDENT;                                                                              \
     fprintf (global.outfile, "if (block.x > %u || block.y > %u || block.z > %u) {\n",    \
-               global.cuda_max_x_dim, global.cuda_max_yz_dim, global.cuda_max_yz_dim);   \
+             global.cuda_max_xy_block, global.cuda_max_xy_block,                         \
+             global.cuda_max_z_block);                                                   \
     INDENT;                                                                              \
     INDENT;                                                                              \
     INDENT;                                                                              \
     fprintf (global.outfile,                                                             \
-             "SAC_RuntimeError(\"CUDA XYZ block dimension exceeds compute "              \
-             "compatibilities max value: %u x %u x %u\");\n",                            \
-             global.cuda_max_x_dim, global.cuda_max_yz_dim, global.cuda_max_yz_dim);     \
+             "SAC_RuntimeError(\"CUDA XYZ block dimension of %%u x %%u x %%u exceeds "   \
+             "the compute capability's max value: %u x %u x %u\", "                      \
+             "block.x, block.y, block.z);\n",                                            \
+             global.cuda_max_xy_block, global.cuda_max_xy_block,                         \
+             global.cuda_max_z_block);                                                   \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    fprintf (global.outfile, "}\n");                                                     \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    fprintf (global.outfile, "if (block.x * block.y *block.z > %u ) {\n",                \
+             global.cuda_max_threads_block);                                             \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    INDENT;                                                                              \
+    fprintf (global.outfile,                                                             \
+             "SAC_RuntimeError(\"CUDA XYZ block dimension of %%u x %%u x %%u = %%u "     \
+             "exceeds compute capability's max number of threads per block: %u\", "      \
+             " block.x, block.y, block.zi, block.x * block.y *block.z );\n",             \
+             global.cuda_max_threads_block);                                             \
     INDENT;                                                                              \
     INDENT;                                                                              \
     fprintf (global.outfile, "}\n");
