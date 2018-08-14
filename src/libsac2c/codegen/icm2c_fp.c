@@ -36,7 +36,7 @@
 
 #define ScanArglist(cnt, inc, sep_str, sep_code, code)                                   \
     {                                                                                    \
-        int i;                                                                           \
+        unsigned int i;                                                                           \
         for (i = 0; i < cnt * inc; i += inc) {                                           \
             if (i > 0) {                                                                 \
                 fprintf (global.outfile, "%s", sep_str);                                 \
@@ -63,7 +63,7 @@
  ******************************************************************************/
 
 void
-ICMCompileFP_SLOWCLONE_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileFP_SLOWCLONE_DECL (char *name, char *rettype_NT, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -80,7 +80,7 @@ ICMCompileFP_SLOWCLONE_DECL (char *name, char *rettype_NT, int vararg_cnt, char 
 }
 
 void
-ICMCompileFP_SLOWCLONE_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
+ICMCompileFP_SLOWCLONE_DEF_BEGIN (char *name, char *rettype_NT, unsigned int vararg_cnt,
                                   char **vararg)
 {
     DBUG_ENTER ();
@@ -107,7 +107,7 @@ ICMCompileFP_SLOWCLONE_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
 }
 
 void
-ICMCompileFP_FUN_RET (char *framename, char *retname, int vararg_cnt, char **vararg)
+ICMCompileFP_FUN_RET (char *framename, char *retname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -132,7 +132,7 @@ ICMCompileFP_FUN_RET (char *framename, char *retname, int vararg_cnt, char **var
 }
 
 void
-ICMCompileFP_FUN_AP (char *framename, char *name, char *retname, int vararg_cnt,
+ICMCompileFP_FUN_AP (char *framename, char *name, char *retname, unsigned int vararg_cnt,
                      char **vararg)
 {
     char *tmp;

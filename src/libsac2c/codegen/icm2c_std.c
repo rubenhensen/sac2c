@@ -27,7 +27,7 @@
 
 #define SCAN_ARG_LIST(cnt, inc, sep_str, sep_code, code)                                 \
     do {                                                                                 \
-        for (int i = 0; i < cnt * inc; i += inc) {                                       \
+        for (size_t i = 0; i < cnt * inc; i += inc) {                                       \
             if (i > 0) {                                                                 \
                 out ("%s", sep_str);                                                     \
                 sep_code;                                                                \
@@ -40,7 +40,7 @@
  *
  * function:
  *   void ICMCompileND_FUN_DECL( char *name, char *rettype_NT,
- *                              int vararg_cnt, char **vararg)
+ *                              unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -52,7 +52,7 @@
  ******************************************************************************/
 
 void
-ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileND_FUN_DECL (char *name, char *rettype_NT, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -85,7 +85,7 @@ ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vara
  *
  * function:
  *   void ICMCompileND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS ( char *name, char *rettype_NT,
- *                                                          int vararg_cnt, char **vararg)
+ *                                                          unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   Currently, this ICM only serves debugging purposes in the C code by showing which
@@ -96,7 +96,7 @@ ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vara
 
 void
 ICMCompileND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS (char *name, char *rettype_NT,
-                                                 int vararg_cnt, char **vararg)
+                                                 unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -114,7 +114,7 @@ ICMCompileND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS (char *name, char *rettype_NT,
  *
  * function:
  *   void ICMCompileND_FUN_DEF_BEGIN( char *name, char *rettype_NT,
- *                                    int vararg_cnt, char **vararg)
+ *                                    unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -126,7 +126,7 @@ ICMCompileND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS (char *name, char *rettype_NT,
  ******************************************************************************/
 
 void
-ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, unsigned vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -174,7 +174,7 @@ ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
  *
  * function:
  *   void ICMCompileND_FUN_DEF_END( char *name, char *rettype_NT,
- *                                  int vararg_cnt, char **vararg)
+ *                                  unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -188,7 +188,7 @@ ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
  ******************************************************************************/
 
 void
-ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -207,14 +207,14 @@ ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **v
 /** <!--*********************************************************************-->
  *
  * @fn void ICMCompileMUTC_THREADFUN_DECL( char *name, char *rettype_NT,
- *                                         int vararg_cnt, char **vararg)
+ *                                         unsigned int vararg_cnt, char **vararg)
  *
  * @brief
  *
  ******************************************************************************/
 
 void
-ICMCompileMUTC_THREADFUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
+ICMCompileMUTC_THREADFUN_DECL (char *name, char *rettype_NT, unsigned int vararg_cnt,
                                char **vararg)
 {
     DBUG_ENTER ();
@@ -240,7 +240,7 @@ ICMCompileMUTC_THREADFUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
 }
 
 void
-ICMCompileMUTC_THREADFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
+ICMCompileMUTC_THREADFUN_DEF_BEGIN (char *name, char *rettype_NT, unsigned int vararg_cnt,
                                     char **vararg)
 {
     DBUG_ENTER ();
@@ -268,14 +268,14 @@ ICMCompileMUTC_THREADFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt
 /** <!--*********************************************************************-->
  *
  * @fn void ICMCompileMUTC_SPAWNFUN_DECL( char *name, char *rettype_NT,
- *                                         int vararg_cnt, char **vararg)
+ *                                         unsigned int vararg_cnt, char **vararg)
  *
  * @brief
  *
  ******************************************************************************/
 
 void
-ICMCompileMUTC_SPAWNFUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileMUTC_SPAWNFUN_DECL (char *name, char *rettype_NT, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -300,7 +300,7 @@ ICMCompileMUTC_SPAWNFUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char
 }
 
 void
-ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
+ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT, unsigned int vararg_cnt,
                                    char **vararg)
 {
     DBUG_ENTER ();
@@ -329,7 +329,7 @@ ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
  *
  * function:
  *   void ICMCompileND_FUN_AP( char *name, char *retname,
- *                             int vararg_cnt, char **vararg)
+ *                             unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -341,7 +341,7 @@ ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
  ******************************************************************************/
 
 void
-ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
+ICMCompileND_FUN_AP (char *name, char *retname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -397,7 +397,7 @@ DBUG_RETURN ();
  *
  * function:
  *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK( char *name, char
- **retname, char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg)
+ **retname, char *ret_NT, unsigned int vararg_cnt, char **vararg_NT, char **vararg)
  *
  * description:
  *
@@ -411,7 +411,7 @@ DBUG_RETURN ();
 
 static void
 ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (char *name, char *retname,
-                                                             char *ret_NT, int vararg_cnt,
+                                                             char *ret_NT, unsigned int vararg_cnt,
                                                              char **vararg_NT,
                                                              char **vararg)
 {
@@ -435,7 +435,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (char *name, char *r
     }
 
     /* Raise compile time warning if there is a hidden out argument. */
-    for (int i = 0; i < vararg_cnt * 3; i += 3) {
+    for (unsigned int i = 0; i < vararg_cnt * 3; i += 3) {
 #define SEPargtag
 #define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
     if (STReq (it_text, vararg[i]) && it_out                                             \
@@ -460,7 +460,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (char *name, char *r
  *
  * function:
  *   void  ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_INIT( char *name, char
- **retname, char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg)
+ **retname, char *ret_NT, unsigned int vararg_cnt, char **vararg_NT, char **vararg)
  *
  * description:
  *
@@ -472,7 +472,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (char *name, char *r
 
 static void
 ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_INIT (char *name, char *retname,
-                                                            char *ret_NT, int vararg_cnt,
+                                                            char *ret_NT, unsigned int vararg_cnt,
                                                             char **vararg_NT,
                                                             char **vararg)
 {
@@ -491,7 +491,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_INIT (char *name, char *re
      * For now we assume that the out argument value is unique (and therefore only used by
      * the master node) and initialize it to NULL at the worker nodes. Inout arguments
      * should always be unique. We initialize them to NULL if they are hidden. */
-    for (int i = 0; i < vararg_cnt * 3; i += 3) {
+    for (unsigned int i = 0; i < vararg_cnt * 3; i += 3) {
 #define SEPargtag
 #define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
     if (STReq (it_text, vararg[i]) && (it_out || it_inout)                               \
@@ -507,7 +507,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_INIT (char *name, char *re
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_INCRC( int vararg_cnt, char
+ *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_INCRC( unsigned int vararg_cnt, char
  ***vararg_NT, char **vararg)
  *
  * description:
@@ -521,7 +521,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_INIT (char *name, char *re
  ******************************************************************************/
 
 static void
-ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_INCRC (int vararg_cnt, char **vararg_NT,
+ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_INCRC (unsigned int vararg_cnt, char **vararg_NT,
                                                      char **vararg)
 {
     DBUG_ENTER ();
@@ -532,7 +532,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_INCRC (int vararg_cnt, char **vara
      * the same order. By increasing the reference counter before the function
      * application, we prevent that the variable is freed within the function.
      */
-    for (int i = 0; i < vararg_cnt * 3; i += 3) {
+    for (unsigned int i = 0; i < vararg_cnt * 3; i += 3) {
 #define SEPargtag
 #define SELECTtextin(it_text, it_in)                                                     \
     if (STReq (it_text, vararg[i]) && it_in                                              \
@@ -557,7 +557,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_INCRC (int vararg_cnt, char **vara
  *
  * function:
  *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST( char *retname, char
- **rettype, char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg, char
+ **rettype, char *ret_NT, unsigned int vararg_cnt, char **vararg_NT, char **vararg, char
  **broadcast_operation)
  *
  * description:
@@ -569,7 +569,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_INCRC (int vararg_cnt, char **vara
 
 static void
 ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (char *retname, char *rettype,
-                                                         char *ret_NT, int vararg_cnt,
+                                                         char *ret_NT, unsigned int vararg_cnt,
                                                          char **vararg_NT, char **vararg,
                                                          char *broadcast_operation)
 {
@@ -588,7 +588,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (char *retname, char *re
                 rettype, ret_NT);
     }
 
-    for (int i = 0; i < vararg_cnt * 3; i += 3) {
+    for (unsigned int i = 0; i < vararg_cnt * 3; i += 3) {
 /*
  * Create code for broadcast operations for non-hidden out and in-out arguments.
  * Inout arguments should always be unique but for the time being we broadcast them
@@ -631,7 +631,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (char *retname, char *re
  *
  * function:
  *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER( char *retname,
- *char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg)
+ *char *ret_NT, unsigned int vararg_cnt, char **vararg_NT, char **vararg)
  *
  * description:
  *   Creates code for a barrier operation to be used between broadcast operations for
@@ -642,7 +642,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST (char *retname, char *re
 
 static void
 ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER (
-  char *retname, char *ret_NT, int vararg_cnt, char **vararg_NT, char **vararg)
+  char *retname, char *ret_NT, unsigned int vararg_cnt, char **vararg_NT, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -654,7 +654,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER (
     }
 
     if (!do_barrier) {
-        for (int i = 0; i < vararg_cnt * 3; i += 3) {
+        for (unsigned int i = 0; i < vararg_cnt * 3; i += 3) {
 /* Check whether there was a broadcast operation for a non-hidden out or inout argument.
  */
 #define SEPargtag
@@ -690,7 +690,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER (
  *
  * function:
  *   void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS( int vararg_NT_cnt, char
- ***vararg_NT, char *rettype, char *ret_NT, char *name, char *retname, int vararg_cnt,
+ ***vararg_NT, char *rettype, char *ret_NT, char *name, char *retname, unsigned int vararg_cnt,
  *char **vararg)
  *
  * description:
@@ -705,9 +705,9 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_BROADCAST_BARRIER (
  ******************************************************************************/
 
 void
-ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt, char **vararg_NT,
+ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (unsigned int vararg_NT_cnt, char **vararg_NT,
                                                char *rettype, char *ret_NT, char *name,
-                                               char *retname, int vararg_cnt,
+                                               char *retname, unsigned int vararg_cnt,
                                                char **vararg)
 {
     DBUG_ENTER ();
@@ -881,7 +881,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt, char **vararg_
  * function:
  *   void ICMCompileMUTC_THREADFUN_AP( char *name,
  *                                     char *retname,
- *                                     int vararg_cnt,
+ *                                     unsigned int vararg_cnt,
  *                                     char **vararg)
  *
  * description:
@@ -894,7 +894,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt, char **vararg_
  ******************************************************************************/
 
 void
-ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
+ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -918,7 +918,7 @@ ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt, char **v
  * function:
  *   void ICMCompileMUTC_FUNTHREADFUN_AP( char *name,
  *                                     char *retname,
- *                                     int vararg_cnt,
+ *                                     unsigned int vararg_cnt,
  *                                     char **vararg)
  *
  * description:
@@ -931,7 +931,7 @@ ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt, char **v
  ******************************************************************************/
 
 void
-ICMCompileMUTC_FUNTHREADFUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
+ICMCompileMUTC_FUNTHREADFUN_AP (char *name, char *retname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -957,7 +957,7 @@ ICMCompileMUTC_FUNTHREADFUN_AP (char *name, char *retname, int vararg_cnt, char 
  *                                    char *place,
  *                                    char *name,
  *                                    char *retname,
- *                                    int vararg_cnt,
+ *                                    unsigned int vararg_cnt,
  *                                    char **vararg)
  *
  * description:
@@ -972,7 +972,7 @@ ICMCompileMUTC_FUNTHREADFUN_AP (char *name, char *retname, int vararg_cnt, char 
 
 void
 ICMCompileMUTC_SPAWNFUN_AP (char *var_NT, char *place, char *name, char *retname,
-                            int vararg_cnt, char **vararg)
+                            unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -993,7 +993,7 @@ ICMCompileMUTC_SPAWNFUN_AP (char *var_NT, char *place, char *name, char *retname
 /******************************************************************************
  *
  * function:
- *   void ICMCompileND_FUN_RET( char *retname, int vararg_cnt, char **vararg)
+ *   void ICMCompileND_FUN_RET( char *retname, unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -1005,7 +1005,7 @@ ICMCompileMUTC_SPAWNFUN_AP (char *var_NT, char *place, char *name, char *retname
  ******************************************************************************/
 
 void
-ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
+ICMCompileND_FUN_RET (char *retname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -1035,7 +1035,7 @@ ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
  *
  * function:
  *   void ICMCompileMUTC_THREADFUN_RET( char *retname,
- *                                      int vararg_cnt,
+ *                                      unsigned int vararg_cnt,
  *                                      char **vararg)
  *
  * description:
@@ -1048,7 +1048,7 @@ ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
  *****************************************************************************/
 
 void
-ICMCompileMUTC_THREADFUN_RET (char *retname, int vararg_cnt, char **vararg)
+ICMCompileMUTC_THREADFUN_RET (char *retname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 

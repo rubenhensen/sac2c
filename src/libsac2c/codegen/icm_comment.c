@@ -29,6 +29,11 @@
     fprintf (global.outfile, "%d", name);                                                \
     sep = 1;
 
+#define ICM_UINT(name)                                                                    \
+    SEP;                                                                                 \
+    fprintf (global.outfile, "%u", name);                                                \
+    sep = 1;
+
 #define ICM_BOOL(name) ICM_INT (name)
 
 /* dim and i needs to be signed due to function in tree_compound.c
@@ -37,7 +42,7 @@
  */
 #define ICM_VARANY(dim, name)                                                            \
     {                                                                                    \
-        int i;                                                                           \
+        size_t i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
             ICM_ANY (name[i])                                                            \
         }                                                                                \
@@ -45,7 +50,7 @@
 
 #define ICM_VARNT(dim, name)                                                             \
     {                                                                                    \
-        int i;                                                                           \
+        size_t i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
             ICM_NT (name[i])                                                             \
         }                                                                                \
@@ -53,7 +58,7 @@
 
 #define ICM_VARID(dim, name)                                                             \
     {                                                                                    \
-        int i;                                                                           \
+        size_t i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
             ICM_ID (name[i])                                                             \
         }                                                                                \
@@ -61,7 +66,7 @@
 
 #define ICM_VARINT(dim, name)                                                            \
     {                                                                                    \
-        int i;                                                                           \
+        size_t i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
             ICM_INT (name[i])                                                            \
         }                                                                                \
@@ -84,6 +89,7 @@
 #undef ICM_ID
 #undef ICM_STR
 #undef ICM_INT
+#undef ICM_UINT
 #undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT

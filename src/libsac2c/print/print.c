@@ -204,6 +204,7 @@ static node *last_assignment_icm = NULL;
 #define ICM_ID(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
+#define ICM_UINT(name)
 #define ICM_BOOL(name)
 #define ICM_VARANY(dim, name)
 #define ICM_VARNT(dim, name)
@@ -218,6 +219,7 @@ static node *last_assignment_icm = NULL;
 #undef ICM_ID
 #undef ICM_STR
 #undef ICM_INT
+#undef ICM_UINT
 #undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT
@@ -4236,6 +4238,7 @@ PRTicm (node *arg_node, info *arg_info)
 #define ICM_ID(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
+#define ICM_UINT(name)
 #define ICM_BOOL(name)
 #define ICM_VARANY(dim, name)
 #define ICM_VARNT(dim, name)
@@ -4250,6 +4253,8 @@ PRTicm (node *arg_node, info *arg_info)
 #undef ICM_NT
 #undef ICM_ID
 #undef ICM_STR
+#undef ICM_INT
+#undef ICM_UINT
 #undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT

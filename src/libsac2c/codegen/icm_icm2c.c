@@ -29,26 +29,28 @@
 
 #define ICM_INT(name) exprs = GetNextInt (&name, exprs);
 
+#define ICM_UINT(name) exprs = GetNextUint(&name, exprs);
+
 #define ICM_BOOL(name) exprs = GetNextBool (&name, exprs);
 
 #define ICM_VARANY(cnt, name)                                                            \
     if (cnt > 0) {                                                                       \
-        exprs = GetNextVarAny (&name, NULL, cnt, exprs);                        \
+        exprs = GetNextVarAny (&name, NULL, cnt, exprs);                                 \
     }
 
 #define ICM_VARNT(cnt, name)                                                             \
     if (cnt > 0) {                                                                       \
-        exprs = GetNextVarNt (&name, cnt, exprs);                               \
+        exprs = GetNextVarNt (&name, cnt, exprs);                                        \
     }
 
 #define ICM_VARID(cnt, name)                                                             \
     if (cnt > 0) {                                                                       \
-        exprs = GetNextVarId (&name, cnt, exprs);                                \
+        exprs = GetNextVarId (&name, cnt, exprs);                                        \
     }
 
 #define ICM_VARINT(cnt, name)                                                            \
     if (cnt > 0) {                                                                       \
-        exprs = GetNextVarInt (&name, cnt, exprs);                               \
+        exprs = GetNextVarInt (&name, cnt, exprs);                                       \
     }
 
 #define ICM_END(prf, args)                                                               \
@@ -838,6 +840,7 @@ GetNextVarInt (int **ret, size_t cnt, node *exprs)
 #undef ICM_ID
 #undef ICM_STR
 #undef ICM_INT
+#undef ICM_UINT
 #undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT
