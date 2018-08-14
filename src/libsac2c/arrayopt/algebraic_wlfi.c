@@ -312,20 +312,20 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 {
     int i = 0;
     int ct = 0;
-    int countDLIR = 0;
-    int countWLIR = global.optcounters.wlir_expr;
-    int countINL = 0;
-    int countCSE = global.optcounters.cse_expr;
-    int countTUP = 0;
-    int countCF = 0;
-    int countVP = 0;
-    int countREA = 0;
-    int countAS = 0;
-    int countAL = 0;
-    int countDL = 0;
-    int countESD = global.optcounters.esd_expr;
-    int countUESD = 0;
-    int countDCR = 0;
+    size_t countDLIR = 0;
+    size_t countWLIR = global.optcounters.wlir_expr;
+    size_t countINL = 0;
+    size_t countCSE = global.optcounters.cse_expr;
+    size_t countTUP = 0;
+    size_t countCF = 0;
+    size_t countVP = 0;
+    size_t countREA = 0;
+    size_t countAS = 0;
+    size_t countAL = 0;
+    size_t countDL = 0;
+    size_t countESD = global.optcounters.esd_expr;
+    size_t countUESD = 0;
+    size_t countDCR = 0;
 
     DBUG_ENTER ();
 
@@ -415,9 +415,9 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 
             /* We do not count DCR, as it's merely for cleanup */
             DBUG_PRINT_TAG ("SSE",
-                            "DLIR= %d, WLIR= %d, INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, "
-                            "AS=%d, AL=%d, DL=%d, "
-                            "ESD=%d, UESD=%d, DCR=%d",
+                            "DLIR= %zu, WLIR= %zu, INL=%zu, CSE=%zu, TUP=%zu, CF=%zu, VP=%zu, "
+                            "AS=%zu, AL=%zu, DL=%zu, "
+                            "ESD=%zu, UESD=%zu, DCR=%zu",
                             (global.optcounters.dlir_expr - countDLIR),
                             (global.optcounters.wlir_expr - countWLIR),
                             (global.optcounters.inl_fun - countINL),
@@ -2637,7 +2637,7 @@ AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel)
 node *
 AWLFIfundef (node *arg_node, info *arg_info)
 {
-    int optctr;
+    size_t optctr;
 
     DBUG_ENTER ();
 
@@ -2648,7 +2648,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
                     FUNDEF_NAME (arg_node));
 
         optctr = global.optcounters.awlfi_expr;
-        DBUG_PRINT ("At AWLFIfundef entry, global.optcounters.awlfi_expr is %d", optctr);
+        DBUG_PRINT ("At AWLFIfundef entry, global.optcounters.awlfi_expr is %zu", optctr);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             arg_node = SWLDdoSetWithloopDepth (arg_node);
@@ -2663,7 +2663,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
             }
 
             if (global.optcounters.awlfi_expr != optctr) {
-                DBUG_PRINT ("optcounters was %d; is now %d", optctr,
+                DBUG_PRINT ("optcounters was %zu; is now %zu", optctr,
                             global.optcounters.awlfi_expr);
                 arg_node = SimplifySymbioticExpression (arg_node, arg_info);
             }

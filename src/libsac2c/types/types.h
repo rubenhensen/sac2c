@@ -967,7 +967,7 @@ typedef enum {
  */
 
 typedef struct OPTIMIZE_COUNTER_T {
-#define OPTCOUNTERid(id) int id;
+#define OPTCOUNTERid(id) size_t id;
 #include "optimize.mac"
 } optimize_counter_t;
 
