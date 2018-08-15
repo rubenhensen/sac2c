@@ -850,6 +850,7 @@ PrintRuntimeTraceOptions (void)
       "                      p: Trace primitive function calls.\n"
       "                      w: Trace with-loop execution.\n"
       "                      s: Trace array accesses.\n"
+      "                      g: Trace CUDA runtime.\n"
       "                      t: Trace multi-threading specific operations.\n"
       "                      c: Trace runtime enviroment init/exit when\n"
       "                         using SAC libraries in C programs.\n"
