@@ -2851,6 +2851,7 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
     prf prfiv;
     prf prfz;
     int stridesignum = 0; // -1 for negative, 1 for positive, 0 for unknown or 0.
+    int lpcount = UNR_NONE;
 
     DBUG_ENTER ();
 
@@ -2897,8 +2898,9 @@ PHUTanalyzeLoopDependentVariable (node *vid, node *rcv, node *fundef, lut_t *var
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             PHUTinsertVarIntoLut (lpavis, varlut, fundef, AVIS_ISLCLASSEXISTENTIAL);
             // If this is a loopfun with known loopcount, use it.
-            if ((FUNDEF_ISLOOPFUN (fundef)) && (UNR_NONE != loopcount)) {
-                resel = BuildIslSimpleConstraint (lpavis, F_lt_SxS, TBmakeNum (loopcount),
+            lpcount = FUNDEF_LOOPCOUNT (fundef);
+            if ((FUNDEF_ISLOOPFUN (fundef)) && (UNR_NONE != lpcount)) {
+                resel = BuildIslSimpleConstraint (lpavis, F_lt_SxS, TBmakeNum (lpcount),
                                                   NOPRFOP, NULL);
                 res = TCappendExprs (res, resel);
             }

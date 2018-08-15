@@ -10,7 +10,8 @@ MACRO (REGISTER_TEST sac_file)
 ENDMACRO ()
 
 SET (SAC2C_EXEC "${PROJECT_BINARY_DIR}/sac2c${BUILD_TYPE_POSTFIX}")
-SET (SCRIPT_LIST common.sh run.sh grep-command-output.sh check-return-status.sh)
+SET (SCRIPT_LIST common.sh run.sh grep-command-output.sh
+check-return-status.sh isalloptionson.sh)
 
 FOREACH (script ${SCRIPT_LIST})
     CONFIGURE_FILE(
@@ -20,6 +21,14 @@ ENDFOREACH ()
 CONFIGURE_FILE (
     "${PROJECT_SOURCE_DIR}/tests/common.mk.in"
     "${PROJECT_BINARY_DIR}/tests/common.mk" @ONLY)
+
+CONFIGURE_FILE (
+    "${PROJECT_SOURCE_DIR}/tests/ut-optional-packages.h.in"
+    "${PROJECT_BINARY_DIR}/tests/ut-optional-packages.h" COPYONLY)
+CONFIGURE_FILE (
+    "${PROJECT_SOURCE_DIR}/tests/ut-flags.mk.in"
+    "${PROJECT_BINARY_DIR}/tests/ut-flags.mk" COPYONLY)
+
 
 FILE (GLOB sac_test_files "${PROJECT_SOURCE_DIR}/tests/*.sac")
 #FILE (GLOB scripts "${PROJECT_SOURCE_DIR}/tests/*.sh")

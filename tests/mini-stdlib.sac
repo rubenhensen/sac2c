@@ -7,20 +7,57 @@ inline int + (int a, int b) { return _add_SxS_ (a, b); }
 inline int - (int a, int b) { return _sub_SxS_ (a, b); }
 inline int * (int a, int b) { return _mul_SxS_ (a, b); }
 inline int / (int a, int b) { return _div_SxS_ (a, b); }
+inline int - (int b) { return _sub_SxS_ (0, b); }
 
-// Logical operationns
+
+// Logical operations
 inline bool <  (int a, int b) { return _lt_SxS_ (a, b); }
 inline bool <= (int a, int b) { return _le_SxS_ (a, b); }
 inline bool >  (int a, int b) { return _gt_SxS_ (a, b); }
 inline bool >= (int a, int b) { return _ge_SxS_ (a, b); }
 inline bool == (int a, int b) { return _eq_SxS_ (a, b); }
 inline bool != (int a, int b) { return _neq_SxS_ (a, b); }
+inline bool != (bool a, bool b) { return _neq_SxS_ (a, b); }
 
-// Selection
-inline int sel (int[.] iv, int[*] a) { return _sel_VxA_ (iv, a); }
+
+// Selection functions
+inline int[*] sel(int[.] idx, int[*] array)
+{
+  new_shape = _drop_SxV_ (_sel_VxA_ ([0], _shape_A_ (idx)),
+                          _shape_A_ (array));
+  return with {
+          (. <= iv <= .) {
+            new_idx = _cat_VxV_ (idx, iv);
+          } : _sel_VxA_ (new_idx, array);
+        } : genarray (new_shape, 0);
+}
+
+inline int[*] sel (int idx, int[*] a)
+{
+  return sel ([idx], a);
+}
+
+inline bool[*] sel (int[.] idx, bool[*] array)
+{
+  new_shape = _drop_SxV_ (_sel_VxA_ ([0], _shape_A_ (idx)),
+                          _shape_A_ (array));
+  return with {
+          (. <= iv <= .) {
+            new_idx = _cat_VxV_ (idx, iv);
+          } : _sel_VxA_ (new_idx, array);
+        } : genarray (new_shape, false);
+}
+
 
 // Shape
+inline int[.] shape (bool[*] a) { return _shape_A_ (a); }
+inline int    dim (bool[*] a) { return _dim_A_ (a); }
 inline int[.] shape (int[*] a) { return _shape_A_ (a); }
+inline int    dim (int[*] a) { return _dim_A_ (a); }
+
+// Scalar-vector take/drop
+inline int[.] take (int a, int[.] b) { return _take_SxV_ (a,b); }
+inline int[.] drop (int a, int[.] b) { return _drop_SxV_ (a,b); }
 
 // Increment
 inline int ++ (int a) { return _add_SxS_ (a, 1); }
@@ -42,11 +79,51 @@ inline int[.] / (int a, int[.] b)    { return _div_SxV_ (a, b); }
 inline int[.] / (int[.] b, int a)    { return _div_VxS_ (b, a); }
 inline int[.] / (int[.] a, int[.] b) { return _div_VxV_ (a, b); }
 
+// Reshape
+inline int[*] reshape (int[.] a, int[*] b) { return _reshape_VxA_(a,b); }
+inline bool[*] reshape (int[.] a, bool[*] b) { return _reshape_VxA_(a,b); }
 
-inline int sum (int[*] a)
+// Integer utilities
+inline int[.] iota (int a)
+{
+    return with {
+             (. <= iv=[k] <= .) : k;
+           }: genarray ([a], 0);
+}
+
+// Reductions
+inline int sum (bool[+] a)
+{
+    sh = shape (a);
+    return with {
+             (0*sh <= iv < sh): _toi_S_(a[iv]);
+           }: fold (+, 0);
+}
+
+inline int sum (int[+] a)
 {
     sh = shape (a);
     return with {
              (0*sh <= iv < sh): a[iv];
            }: fold (+, 0);
 }
+
+inline int prod (int[*] a)
+{
+    sh = shape (a);
+    return with {
+             (0*sh <= iv < sh): a[iv];
+           }: fold (*, 1);
+}
+
+// Array generation from scalar b
+inline int[*] genarray (int[.] shp, int b)
+{
+    return with {}: genarray (shp, b);
+}
+
+inline bool[*] genarray (int[.] shp, bool b)
+{
+    return with {}: genarray (shp, b);
+}
+

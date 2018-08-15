@@ -2,13 +2,15 @@
 
 source $(dirname $0)/common.sh
 
-# We check the return status of this binary:
+# We check the return status of binary:
+# arguments are: binary, desired return status
+#
 binary=$1
-
 # The return status should be this value:
 ret=$2
 
 ./$binary
-if test $? -ne $ret; then
-    die "'$binary' expected to return $ret as exit code"
+exit_status=$?
+if test $exit_status -ne $ret; then
+    die "'$binary' expected $ret as exit_status, but got $exit_status"
 fi

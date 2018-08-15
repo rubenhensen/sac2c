@@ -1,0 +1,68 @@
+
+#include "ut-flags.mk"
+// SAC_TEST|GREP_STR=_val_
+// SAC_TEST|GREP_COUNT=0
+/*
+ *
+ * Try to find crc.sac bug that puts -ecc code above if() in
+ * condfun.
+ *
+ * See Bug #1079 to see why this does not work properly.
+ *
+ * This test requires that we run with -dolacsi to ensure
+ * that the guards on the two sel() ops are removed.
+ * It also requires -ecc or -doawlf.
+ *
+ * PWLF note:
+ * As of sac2c Build #18548 (or earlier), without -doawlf 
+ * (for our purposes, -doivext would suffice, were it an option)
+ * one guard is not removed, because we need extrema information
+ * about N within the N_cond. If we want to eliminate the need
+ * to drag extrema around with us, we might want to make
+ * PHUT treat LACFUNs better. I.e., make it do interprocedural 
+ * analysis. This might also supplant the need for -dolacsi/-dolacso.
+ *
+ * The above PHUT extension should work.
+ *
+ */
+
+/* RESULT: _val_ 5 0 */
+
+int[*] id( int[*] y)
+{ 
+  return(y);
+}
+
+bool[*] cond( bool[*]y) 
+{ 
+  return(y);
+}
+
+inline
+int[.] iota( int y)
+{
+  z = with{ ( . <= iv=[k] <= .) : k;
+         } : genarray([y],42);
+  return( z);
+
+}
+
+
+int main()
+{
+  N = id( 50);
+  N = _max_SxS_( N, 50);
+  XXX = iota( N);
+  ndx1 = 23;
+  ndx2 = 4;
+
+  if( cond(true)) {
+    z = _sel_VxA_( [ _add_SxS_( ndx1, 1)], XXX);
+  } else {
+    z = _sel_VxA_( [ _add_SxS_( ndx2, 1)], XXX);
+  }
+
+  z = _sub_SxS_(z, 24);
+  return(z);
+}
+

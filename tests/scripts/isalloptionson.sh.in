@@ -1,0 +1,21 @@
+#!@BASH@
+
+# predicate: return true(0) if all script arguments are configured ON in sac2c,
+# and print yes/no on stdout. Caller decisions are driven by the stdout value.
+
+# Arguments are: sac2c name, optionalpackage1, optionalpackage2,...
+
+sac=$1
+shift 
+
+for i in $@; do
+  res=$($sac -VV | grep $i:)
+  res=${res##*:\ }
+  res=$(echo $res | tr -d '[:space:]')
+  if [ "$res" != "ON" ]; then
+   echo "no"; exit 1
+  fi
+done
+# All arguments were configured ON in sac2c
+   echo "yes"; exit 0
+
