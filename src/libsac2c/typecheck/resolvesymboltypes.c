@@ -48,8 +48,8 @@ RSTntype (ntype *arg_type, info *arg_info)
         scalar = RSTntype (scalar, arg_info);
         arg_type = TYsetScalar (arg_type, scalar);
     } else if (TYisProd (arg_type)) {
-        int max = TYgetProductSize (arg_type);
-        int cnt;
+        size_t max = TYgetProductSize (arg_type);
+        size_t cnt;
         ntype *member;
 
         for (cnt = 0; cnt < max; cnt++) {

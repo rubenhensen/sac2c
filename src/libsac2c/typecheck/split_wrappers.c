@@ -678,7 +678,7 @@ SWRfold (node *arg_node, info *arg_info)
     ntype *arg_type, *arg_types;
     node *arg;
     int num_args;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 

@@ -101,9 +101,9 @@ NTCCTprf_array (te_info *info, ntype *elems)
     ntype *outer, *elem, *elem2, *res;
     constant *val, *tmp;
     shape *shp;
-    int num_elems;
+    size_t num_elems;
     char *err_msg;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -407,7 +407,7 @@ NTCCTprf_dispatch_error (te_info *info, ntype *args)
 {
     ntype *num_rets_t, *res;
     constant *co;
-    int num_rets, i;
+    unsigned int num_rets, i;
 
     DBUG_ENTER ();
 
@@ -419,7 +419,7 @@ NTCCTprf_dispatch_error (te_info *info, ntype *args)
                                           " first argument not an integer");
     DBUG_ASSERT (COgetDim (co) == 0, "illegal construction of _dispatch_error_:"
                                      " first argument not a scalar");
-    num_rets = ((int *)COgetDataVec (co))[0];
+    num_rets = ((unsigned int *)COgetDataVec (co))[0];
 
     res = TYmakeEmptyProductType (num_rets);
     for (i = 0; i < num_rets; i++) {
@@ -448,8 +448,8 @@ NTCCTprf_guard (te_info *info, ntype *args)
     ntype *res;
     char *err_msg;
     ntype *pred;
-    int num_rets;
-    int i;
+    size_t num_rets;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -516,7 +516,7 @@ NTCCTprf_afterguard (te_info *info, ntype *args)
     ntype *arg;
     ntype *res = NULL, *pred;
     char *err_msg;
-    int i;
+    size_t i;
     bool all_true = TRUE;
 
     DBUG_ENTER ();
@@ -3892,8 +3892,7 @@ NTCCTprf_idxs2offset (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *idx, *shp;
-    int len;
-    int i;
+    size_t i, len;
     char *err_msg;
 
     DBUG_ENTER ();
