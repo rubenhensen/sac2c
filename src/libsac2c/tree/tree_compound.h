@@ -1220,9 +1220,9 @@ extern node *TCappendCode (node *code1, node *code2);
  ***  withop :
  ***/
 
-extern int TCcountWithops (node *withop);
-extern int TCcountWithopsEq (node *withop, nodetype eq);
-extern int TCcountWithopsNeq (node *withop, nodetype neq);
+extern size_t TCcountWithops (node *withop);
+extern size_t TCcountWithopsEq (node *withop, nodetype eq);
+extern size_t TCcountWithopsNeq (node *withop, nodetype neq);
 
 /*
  * DON'T USE THE FOLLOWING MACROS

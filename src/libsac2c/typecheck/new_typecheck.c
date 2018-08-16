@@ -1881,8 +1881,7 @@ NTCwith (node *arg_node, info *arg_info)
 
     if (TYgetProductSize (body) != TCcountWithops (WITH_WITHOP (arg_node))) {
         CTIabortLine (global.linenum,
-                      "Inconsistent with loop: %d operator(s) "
-                      "but %d value(s) specified in the body",
+                      "Inconsistent with loop: %zu operator(s) "
                       "but %zu value(s) specified in the body",
                       TCcountWithops (WITH_WITHOP (arg_node)), TYgetProductSize (body));
     }

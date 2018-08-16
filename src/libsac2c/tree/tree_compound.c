@@ -3695,10 +3695,10 @@ TCappendCode (node *code1, node *code2)
  ***  N_withop :
  ***/
 
-int
+size_t
 TCcountWithops (node *withop)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -3710,10 +3710,10 @@ TCcountWithops (node *withop)
     DBUG_RETURN (counter);
 }
 
-int
+size_t
 TCcountWithopsEq (node *withop, nodetype eq)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -3727,10 +3727,10 @@ TCcountWithopsEq (node *withop, nodetype eq)
     DBUG_RETURN (counter);
 }
 
-int
+size_t
 TCcountWithopsNeq (node *withop, nodetype neq)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
