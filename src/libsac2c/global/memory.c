@@ -22,7 +22,7 @@ mallocphaseinfo_t phasetable[PH_final + 1] = {{0, 0, 0, 0, 0, 0, 0, 0}};
 static FILE *mreport = 0;
 
 void *
-_MEMmalloc (int size, char *file, int line, const char *func)
+_MEMmalloc (int size, const char *file, int line, const char *func)
 {
 #ifndef DBUG_OFF
     void *ptr;

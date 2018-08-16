@@ -49,7 +49,7 @@ version="1.0">
   <xsl:if test="sons/son[ not( @default)]" >
     <xsl:value-of select="' ,'"/>
   </xsl:if>
-  <xsl:value-of select="'char *file, int line)'"/>
+  <xsl:value-of select="'const char *file, int line)'"/>
 </xsl:template>
 
 

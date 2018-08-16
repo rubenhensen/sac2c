@@ -33,7 +33,7 @@
 extern FILE *yyin;
 extern global_t global;
 
-extern void GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname);
+extern void GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, const char *toolname);
 extern void GLOBsetupBackend (void);
 extern void GLOBsetupDistMemCommLib (void);
 extern void GLOBfinalizeGlobal (void);
