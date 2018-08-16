@@ -116,8 +116,11 @@ InitCudaBlockSizes (void)
         global.cuda_blocking_factor = 16;
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
-        global.cuda_max_x_dim = 65535;
-        global.cuda_max_yz_dim = 65535;
+        global.cuda_max_x_grid = 65535;
+        global.cuda_max_yz_grid = 65535;
+        global.cuda_max_xy_block = 512;
+        global.cuda_max_z_block = 64;
+        global.cuda_max_threads_block = 512;
     } else if (STReq (global.config.cuda_arch, "-arch=sm_12")
                || STReq (global.config.cuda_arch, "-arch=sm_13")) {
         global.optimal_threads = 256;
@@ -127,8 +130,11 @@ InitCudaBlockSizes (void)
         global.cuda_blocking_factor = 16;
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
-        global.cuda_max_x_dim = 65535;
-        global.cuda_max_yz_dim = 65535;
+        global.cuda_max_x_grid = 65535;
+        global.cuda_max_yz_grid = 65535;
+        global.cuda_max_xy_block = 512;
+        global.cuda_max_z_block = 64;
+        global.cuda_max_threads_block = 512;
     } else if (STReq (global.config.cuda_arch, "-arch=sm_20")) {
         /*
             global.optimal_threads = 512;
@@ -148,8 +154,11 @@ InitCudaBlockSizes (void)
         global.cuda_blocking_factor = 32;
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
-        global.cuda_max_x_dim = 65535;
-        global.cuda_max_yz_dim = 65535;
+        global.cuda_max_x_grid = 65535;
+        global.cuda_max_yz_grid = 65535;
+        global.cuda_max_xy_block = 1024;
+        global.cuda_max_z_block = 64;
+        global.cuda_max_threads_block = 1024;
     } else if (STReq (global.config.cuda_arch, "-arch=sm_35")) {
         global.optimal_threads = 512;
         global.optimal_blocks = 3;
@@ -163,8 +172,11 @@ InitCudaBlockSizes (void)
         global.cuda_blocking_factor = 32;
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
-        global.cuda_max_x_dim = 2147483647;
-        global.cuda_max_yz_dim = 65535;
+        global.cuda_max_x_grid = 2147483647;
+        global.cuda_max_yz_grid = 65535;
+        global.cuda_max_xy_block = 1024;
+        global.cuda_max_z_block = 64;
+        global.cuda_max_threads_block = 1024;
     } else if (STReq (global.config.cuda_arch, "-arch=sm_50")) {
         global.optimal_threads = 512;
         global.optimal_blocks = 3;
@@ -178,8 +190,11 @@ InitCudaBlockSizes (void)
         global.cuda_blocking_factor = 32;
         global.cuda_2d_block_x = 32;
         global.cuda_2d_block_y = 32;
-        global.cuda_max_x_dim = 2147483647;
-        global.cuda_max_yz_dim = 65535;
+        global.cuda_max_x_grid = 2147483647;
+        global.cuda_max_yz_grid = 65535;
+        global.cuda_max_xy_block = 1024;
+        global.cuda_max_z_block = 64;
+        global.cuda_max_threads_block = 1024;
     } else {
         if (STReq (global.config.cuda_arch, "no")) {
             CTIwarn ("CUDA architecture was not detected during install, setting to "

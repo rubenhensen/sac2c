@@ -1320,8 +1320,11 @@ GLOBAL (int, cuda_1d_block_small, 0, xfree_dummy, )
 GLOBAL (int, cuda_2d_block_x, 0, xfree_dummy, )
 GLOBAL (int, cuda_2d_block_y, 0, xfree_dummy, )
 GLOBAL (int, cuda_blocking_factor, 0, xfree_dummy, )
-GLOBAL (unsigned int, cuda_max_x_dim, 0, xfree_dummy, )
-GLOBAL (unsigned int, cuda_max_yz_dim, 0, xfree_dummy, ) /* for both the Y and Z dimensions */
+GLOBAL (unsigned int, cuda_max_x_grid, 0, xfree_dummy, )
+GLOBAL (unsigned int, cuda_max_yz_grid, 0, xfree_dummy, ) /* for both the Y and Z dimensions */
+GLOBAL (unsigned int, cuda_max_xy_block, 0, xfree_dummy, )
+GLOBAL (unsigned int, cuda_max_z_block, 0, xfree_dummy, )
+GLOBAL (unsigned int, cuda_max_threads_block, 0, xfree_dummy, )
 
 /*
  * DistMem backend options

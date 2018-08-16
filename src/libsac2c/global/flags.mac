@@ -27,6 +27,7 @@ TRACE (mem, 'm', FALSE)
 TRACE (wl, 'w', FALSE)
 TRACE (aa, 's', FALSE)
 TRACE (mt, 't', FALSE)
+TRACE (gpu, 'g', FALSE) /* CUDA backend */
 TRACE (cenv, 'c', FALSE)
 TRACE (distmem, 'd', FALSE) /* Distributed memory backend */
 

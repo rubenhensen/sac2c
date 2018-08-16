@@ -176,6 +176,12 @@ typedef enum {
 
 #endif /* SAC_DO_TRACE_MT */
 
+#if SAC_DO_TRACE_GPU
+#define SAC_TR_GPU_PRINT(...) SAC_TR_PRINT (("GPU -> " __VA_ARGS__))
+#else  /* SAC_DO_TRACE_GPU */
+#define SAC_TR_GPU_PRINT( ...)
+#endif /* SAC_DO_TRACE_GPU */
+
 #if SAC_DO_TRACE_DISTMEM
 
 #define SAC_TR_DISTMEM_PRINT(...) SAC_TR_PRINT (("DSM -> " __VA_ARGS__))
