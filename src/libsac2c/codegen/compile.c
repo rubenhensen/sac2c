@@ -1965,9 +1965,9 @@ MakeFunctionArgs (node *fundef)
     }
 
     if (FUNDEF_HASDOTARGS (fundef) || FUNDEF_HASDOTRETS (fundef)) {
-        icm_args = TBmakeExprs (TBmakeNum (argtab->size), icm_args);
+        icm_args = TBmakeExprs (TBmakeNumuint (argtab->size), icm_args);
     } else {
-        icm_args = TBmakeExprs (TBmakeNum (argtab->size - 1), icm_args);
+        icm_args = TBmakeExprs (TBmakeNumuint (argtab->size - 1), icm_args);
     }
 
     /* return value */
@@ -2324,7 +2324,7 @@ MakeFunApArgs (node *ap, info *arg_info)
         }
     }
 
-    icm_args = TBmakeExprs (TBmakeNum (argtab->size - 1), icm_args);
+    icm_args = TBmakeExprs (TBmakeNumuint (argtab->size - 1), icm_args);
 
     if (!FUNDEF_ISSPMDFUN (fundef) && !FUNDEF_ISCUDAGLOBALFUN (fundef)
         && !FUNDEF_ISCUDASTGLOBALFUN (fundef)) {
@@ -3700,7 +3700,7 @@ MakeFunRetArgs (node *arg_node, info *arg_info)
         funargs = ARG_NEXT (funargs);
     }
 
-    icm_args = TBmakeExprs (TBmakeNum (ret_cnt), icm_args);
+    icm_args = TBmakeExprs (TBmakeNumuint (ret_cnt), icm_args);
 
     if (cret_node == NULL) {
         icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
@@ -4632,7 +4632,7 @@ COMPap (node *arg_node, info *arg_info)
             }
         }
 
-        icm_args = TBmakeExprs (TBmakeNum (AP_ARGTAB (arg_node)->size - 1), icm_args);
+        icm_args = TBmakeExprs (TBmakeNumuint (AP_ARGTAB (arg_node)->size - 1), icm_args);
 
         icm = TBmakeIcm ("ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS", icm_args);
     } else {
@@ -8175,9 +8175,9 @@ COMPprfDispatchError (node *arg_node, info *arg_info)
     funname = EXPRS_EXPR (args);
     funargs = EXPRS_NEXT (args);
 
-    ret_node = TCmakeAssignIcm5 ("DISPATCH_ERROR", TBmakeNum (TCcountIds (let_ids)),
+    ret_node = TCmakeAssignIcm5 ("DISPATCH_ERROR", TBmakeNumuint (TCcountIds (let_ids)),
                                  TCids2ExprsNt (let_ids), DUPdoDupNode (funname),
-                                 TBmakeNum (TCcountExprs (funargs)),
+                                 TBmakeNumuint (TCcountExprs (funargs)),
                                  DUPdupExprsNt (funargs), NULL);
 
     DBUG_RETURN (ret_node);
