@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include <errno.h> 
+#include <cstdlib>
 
 extern "C" {
 #include "options.h"
@@ -20,33 +20,7 @@ extern "C" {
 #include "limits.h"
 }
 
-#include "err.h"
 #include "macros.h"
-
-
-static char *
-read_from_fd (int fd)
-{
-    char buf[1024];
-    ssize_t bytes_read;
-    char *str = NULL;
-    size_t len = 0;
-
-    while (bytes_read = read (fd, buf, sizeof buf)) {
-        if (bytes_read < 0) {
-            if (errno == EAGAIN)
-                continue;
-            err (EXIT_FAILURE, "read");
-            break;
-        }
-        str = (char *)realloc (str, len + bytes_read + 1);
-        memcpy (str + len, buf, bytes_read);
-        len += bytes_read;
-        str[len] = '\0';
-    }
-
-    return str;
-}
 
 
 static const char out[] =
@@ -154,35 +128,14 @@ TEST (AssociativeLaw, test01)
     // Call the traversal.
     node * nfundef = ALdoAssocLawOptimization (fundef);
 
-    int pipefd[2];
+    size_t len;
     char *s;
+    FILE *f = open_memstream (&s, &len);
 
-    if (-1 == pipe (pipefd))
-        err (EXIT_FAILURE, "pipe");
-
-    // FIXME(artem) I don't see an easy way to compare results of the
-    //              traversal other than comparing its string output.
-    //              However, as we only can print to a file, I pipe
-    //              the stdout into the child process...  Improvements
-    //              are welcome.
-    if (fork () == 0) {
-        close (pipefd[0]);
-
-        dup2 (pipefd[1], 1);
-        dup2 (pipefd[1], 2);
-
-        close (pipefd[1]);
-
-        // Print the block of the function to stderr.
-        node * _2 = PRTdoPrintFile (stderr, FUNDEF_BODY (nfundef));
-        fundef = FREEdoFreeTree (fundef);
-        fundef = FREEdoFreeTree (nfundef);
-    } else  {
-        close (pipefd[1]);
-        // Catch the output of the child process in the parent
-        // process and store it in a string.
-        s = read_from_fd (pipefd[0]);
-    }
+    node * _2 = PRTdoPrintFile (f, FUNDEF_BODY (nfundef));
+    fundef = FREEdoFreeTree (fundef);
+    fundef = FREEdoFreeTree (nfundef);
+    fclose (f);
 
     // The output should be identical to the program we defined above.
     EXPECT_STREQ (s, out);
