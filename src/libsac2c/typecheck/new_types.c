@@ -1052,15 +1052,13 @@ TYmakeProductType (size_t size, ...)
 }
 
 ntype *
-TYmakeEmptyProductType (int size)
+TYmakeEmptyProductType (size_t size)
 {
     ntype *res;
 
     DBUG_ENTER ();
     
-    DBUG_ASSERT(size >= 0, "Arity size cannot be negative");
-
-    res = MakeNtype (TC_prod, (size_t)size);
+    res = MakeNtype (TC_prod, size);
 
     DBUG_RETURN (res);
 }
@@ -6009,7 +6007,7 @@ TYoldTypes2ProdType (types *old)
     ntype *res;
 
     num_types = TCcountTypes (old);
-    res = TYmakeEmptyProductType ((int)num_types);
+    res = TYmakeEmptyProductType (num_types);
     for (i = 0; i < num_types; i++) {
         res = TYsetProductMember (res, i, TYoldType2Type (old));
         old = TYPES_NEXT (old);

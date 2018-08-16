@@ -190,7 +190,7 @@ extern ntype *TYmakeUnionType (ntype *t1, ntype *t2);
  * Product Types:
  */
 extern ntype *TYmakeProductType (size_t size, ...);
-extern ntype *TYmakeEmptyProductType (int size);
+extern ntype *TYmakeEmptyProductType (size_t size);
 extern ntype *TYsetProductMember (ntype *prod, size_t pos, ntype *member);
 
 extern size_t TYgetProductSize (ntype *prod);
