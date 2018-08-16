@@ -33,3 +33,4 @@ ENDMACRO ()
 
 ADD_FUNC_TEST (string-tests string-tests.cpp)
 ADD_FUNC_TEST (test-assoc-law test-assoc-law.cpp)
+ADD_FUNC_TEST (test-icm-compilation test-icm-compilation.cpp)
