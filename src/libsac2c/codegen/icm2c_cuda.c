@@ -268,20 +268,21 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
 #define CUDA_SET_GRID(fmt, ...)                                                          \
     fprintf (global.outfile, "dim3 grid(" fmt ");\n", __VA_ARGS__);                      \
     INDENT;                                                                              \
-    fprintf (global.outfile, "SAC_TR_GPU_PRINT (\"CUDA XYZ grid dimension of "           \
-                             "%%u x %%u x %%u\", grid.x , grid.y , grid.z );\n" );       \
+    fprintf (global.outfile,                                                             \
+             "SAC_TR_GPU_PRINT (\"CUDA XYZ grid dimension of "                           \
+             "%%u x %%u x %%u\", grid.x , grid.y , grid.z );\n");                        \
     INDENT;                                                                              \
     fprintf (global.outfile, "if (grid.x <= 0 ) {\n"                                     \
              "SAC_RuntimeError(\"CUDA X grid dimension must be bigger than zero. Current"\
-             " value is %%u\", grid.x);" );                                              \
+             " value is %%u\", grid.x);");                                               \
     fprintf (global.outfile, "}\n");                                                     \
     fprintf (global.outfile, "if (grid.y <= 0 ) {\n"                                     \
              "SAC_RuntimeError(\"CUDA Y grid dimension must be bigger than zero. Current"\
-             " value is %%u\", grid.y);" );                                              \
+             " value is %%u\", grid.y);");                                               \
     fprintf (global.outfile, "}\n");                                                     \
     fprintf (global.outfile, "if (grid.z <= 0 ) {\n"                                     \
              "SAC_RuntimeError(\"CUDA Z grid dimension must be bigger than zero. Current"\
-             " value is %%u\", grid.z);" );                                              \
+             " value is %%u\", grid.z);");                                               \
     fprintf (global.outfile, "}\n");                                                     \
     fprintf (global.outfile, "if (grid.x > %u || grid.y > %u || grid.z > %u) {\n",       \
              global.cuda_max_x_grid, global.cuda_max_yz_grid, global.cuda_max_yz_grid);  \
@@ -300,20 +301,21 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
 #define CUDA_SET_BLOCK(fmt, ...)                                                         \
     fprintf (global.outfile, "dim3 block(" fmt ");", __VA_ARGS__);                       \
     INDENT;                                                                              \
-    fprintf (global.outfile, "SAC_TR_GPU_PRINT (\"CUDA XYZ block dimension of "          \
-                             "%%u x %%u x %%u\\n\", block.x , block.y , block.z );\n" ); \
+    fprintf (global.outfile,                                                             \
+             "SAC_TR_GPU_PRINT (\"CUDA XYZ block dimension of "                          \
+             "%%u x %%u x %%u\\n\", block.x , block.y , block.z );\n");                  \
     INDENT;                                                                              \
-    fprintf (global.outfile, "if (block.x <= 0 ) {\n"                                     \
-             "SAC_RuntimeError(\"CUDA X block dimension must be bigger than zero. Current"\
-             " value is %%u\", block.x);" );                                              \
+    fprintf (global.outfile, "if (block.x <= 0 ) {\n"                                    \
+             "SAC_RuntimeError(\"CUDA X block dimension must be bigger than zero. "      \
+             "Current value is %%u\", block.x);");                                       \
     fprintf (global.outfile, "}\n");                                                     \
-    fprintf (global.outfile, "if (block.y <= 0 ) {\n"                                     \
-             "SAC_RuntimeError(\"CUDA Y block dimension must be bigger than zero. Current"\
-             " value is %%u\", block.y);" );                                              \
+    fprintf (global.outfile, "if (block.y <= 0 ) {\n"                                    \
+             "SAC_RuntimeError(\"CUDA Y block dimension must be bigger than zero. "      \
+             "Current value is %%u\", block.y);");                                       \
     fprintf (global.outfile, "}\n");                                                     \
-    fprintf (global.outfile, "if (block.z <= 0 ) {\n"                                     \
-             "SAC_RuntimeError(\"CUDA Z block dimension must be bigger than zero. Current"\
-             " value is %%u\", block.z);" );                                              \
+    fprintf (global.outfile, "if (block.z <= 0 ) {\n"                                    \
+             "SAC_RuntimeError(\"CUDA Z block dimension must be bigger than zero. "      \
+             "Current value is %%u\", block.z);");                                       \
     fprintf (global.outfile, "}\n");                                                     \
     fprintf (global.outfile, "if (block.x > %u || block.y > %u || block.z > %u) {\n",    \
              global.cuda_max_xy_block, global.cuda_max_xy_block,                         \
@@ -340,7 +342,7 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
     fprintf (global.outfile,                                                             \
              "SAC_RuntimeError(\"CUDA XYZ block dimension of %%u x %%u x %%u = %%u "     \
              "exceeds compute capability's max number of threads per block: %u\", "      \
-             " block.x, block.y, block.z, block.x * block.y *block.z );\n",              \
+             "block.x, block.y, block.z, block.x * block.y * block.z);\n",               \
              global.cuda_max_threads_block);                                             \
     INDENT;                                                                              \
     INDENT;                                                                              \
