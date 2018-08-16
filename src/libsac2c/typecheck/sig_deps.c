@@ -155,8 +155,7 @@ SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args, bool s
 {
     sig_dep *sig;
     ntype *arg_t, *res_t;
-    int num_res;
-    size_t num_args, i;
+    size_t num_args, num_res, i;
     bool ok = TRUE;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;

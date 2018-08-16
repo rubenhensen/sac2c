@@ -1425,7 +1425,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on entering TYmakeFunType: %zu",
                     global.current_allocated_mem);
     DBUG_PRINT_TAG ("NTY", "fun: %s", CTIitemName (fundef));
-    DBUG_PRINT_TAG ("NTY", "rets: %d", TCcountRets (FUNDEF_RETS (fundef)));
+    DBUG_PRINT_TAG ("NTY", "rets: %zu", TCcountRets (FUNDEF_RETS (fundef)));
 
     node *r = FUNDEF_RETS (fundef);
     int i = 0;

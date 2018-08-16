@@ -1463,17 +1463,17 @@ TCappendRet (node *ret_chain, node *item)
 /******************************************************************************
  *
  * function:
- *   int TCcountRets( node *rets)
+ *   size_t TCcountRets( node *rets)
  *
  * description:
  *   Counts the number of N_arg nodes.
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountRets (node *rets)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
