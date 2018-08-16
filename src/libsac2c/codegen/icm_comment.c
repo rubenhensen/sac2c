@@ -31,6 +31,10 @@
 
 #define ICM_BOOL(name) ICM_INT (name)
 
+/* dim and i needs to be signed due to function in tree_compound.c
+   called TCgetShapeDim as it uses negatives to encode other
+   shape information.
+ */
 #define ICM_VARANY(dim, name)                                                            \
     {                                                                                    \
         int i;                                                                           \
