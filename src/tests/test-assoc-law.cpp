@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include <errno.h> 
 
 extern "C" {
 #include "options.h"
