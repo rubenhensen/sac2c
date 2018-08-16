@@ -157,7 +157,8 @@ TEST (AssociativeLaw, test01)
     int pipefd[2];
     char *s;
 
-    pipe (pipefd);
+    if (-1 == pipe (pipefd))
+        err (EXIT_FAILURE, "pipe");
 
     // FIXME(artem) I don't see an easy way to compare results of the
     //              traversal other than comparing its string output.
