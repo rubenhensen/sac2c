@@ -97,7 +97,7 @@ TEST (AssociativeLaw, test01)
     //    x = a _add_SxS_ 1;
     //    y = c _add_VxS_ 1;
     //    z = b _add_SxV_ d;
-    //   
+    //
     //    r = x + y
     //    s = r + z
     //    return s;
@@ -118,14 +118,14 @@ TEST (AssociativeLaw, test01)
     // normal akd type, this wouldn't work.
     node *avis_o = int_akv_avis ("o", 1);
 
-   
+
     // Now we just compose block statements in the reverse order.
     node * ret_stmt = TBmakeReturn (TBmakeExprs (TBmakeId (avis_s), NULL));
     node * t = TBmakeAssign (ret_stmt, NULL);
-        
+
     node * s_let = make_let (avis_s, binary_prf (F_add_VxV, TBmakeId (avis_r), TBmakeId (avis_z)));
     t = AVIS_SSAASSIGN (avis_s) = TBmakeAssign (s_let, t);
-    
+
     node * r_let = make_let (avis_r, binary_prf (F_add_SxV, TBmakeId (avis_x), TBmakeId (avis_y)));
     t = AVIS_SSAASSIGN (avis_r) = TBmakeAssign (r_let, t);
 
@@ -134,18 +134,18 @@ TEST (AssociativeLaw, test01)
 
     node * y_let = make_let (avis_y, binary_prf (F_add_VxS, TBmakeId (avis_c), TBmakeId (avis_o)));
     t = AVIS_SSAASSIGN (avis_y) = TBmakeAssign (y_let, t);
-    
+
     node * x_let = make_let (avis_x, binary_prf (F_add_SxS, TBmakeId (avis_a), TBmakeId (avis_o)));
     t = AVIS_SSAASSIGN (avis_x) = TBmakeAssign (x_let, t);
 
     node * o_let = make_let (avis_o, TBmakeNum (1));
     t = AVIS_SSAASSIGN (avis_o) = TBmakeAssign (o_let, t);
-   
+
     // Make a function foo.
     node * fundef
       = TBmakeFundef (strdup ("foo"), NULL,
                       TBmakeRet (make_vec_type (T_int), NULL),
-                      TBmakeArg (avis_a, 
+                      TBmakeArg (avis_a,
                                  TBmakeArg (avis_b,
                                             TBmakeArg (avis_c, TBmakeArg (avis_d, NULL)))),
                       TBmakeBlock (t, NULL), NULL);
@@ -156,7 +156,7 @@ TEST (AssociativeLaw, test01)
     int pipefd[2];
     char *s;
 
-    pipe(pipefd);
+    pipe (pipefd);
 
     // FIXME(artem) I don't see an easy way to compare results of the
     //              traversal other than comparing its string output.
@@ -164,24 +164,24 @@ TEST (AssociativeLaw, test01)
     //              the stdout into the child process...  Improvements
     //              are welcome.
     if (fork () == 0) {
-        close(pipefd[0]);
+        close (pipefd[0]);
 
-        dup2(pipefd[1], 1);
-        dup2(pipefd[1], 2);
+        dup2 (pipefd[1], 1);
+        dup2 (pipefd[1], 2);
 
-        close(pipefd[1]);
+        close (pipefd[1]);
 
         // Print the block of the function to stderr.
         node * _2 = PRTdoPrintFile (stderr, FUNDEF_BODY (nfundef));
         fundef = FREEdoFreeTree (fundef);
         fundef = FREEdoFreeTree (nfundef);
     } else  {
-        close(pipefd[1]);
+        close (pipefd[1]);
         // Catch the output of the child process in the parent
         // process and store it in a string.
         s = read_from_fd (pipefd[0]);
     }
-    
+
     // The output should be identical to the program we defined above.
     EXPECT_STREQ (s, out);
     free (s);
