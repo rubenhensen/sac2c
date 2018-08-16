@@ -6005,13 +6005,13 @@ TYoldType2Type (types *old)
 ntype *
 TYoldTypes2ProdType (types *old)
 {
-    int i, num_types;
+    size_t i, num_types;
     ntype *res;
 
     num_types = TCcountTypes (old);
-    res = TYmakeEmptyProductType (num_types);
+    res = TYmakeEmptyProductType ((int)num_types);
     for (i = 0; i < num_types; i++) {
-        res = TYsetProductMember (res, (size_t)i, TYoldType2Type (old));
+        res = TYsetProductMember (res, i, TYoldType2Type (old));
         old = TYPES_NEXT (old);
     }
     return (res);

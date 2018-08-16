@@ -290,17 +290,17 @@ TCappendTypes (types *chain, types *item)
 /******************************************************************************
  *
  * function:
- *   int TCcountTypes( types *type)
+ *   unsigned int TCcountTypes( types *type)
  *
  * description:
  *   Counts the number of types.
  *
  ******************************************************************************/
 
-int
+unsigned int
 TCcountTypes (types *type)
 {
-    int count = 0;
+    unsigned int count = 0;
 
     DBUG_ENTER ();
 
