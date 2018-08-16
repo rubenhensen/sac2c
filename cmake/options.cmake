@@ -14,4 +14,4 @@ OPTION (CUDA      "Build sac2c with CUDA backend support"                       
 OPTION (HWLOC     "Build sac2c with hwloc support"                                    ON)
 OPTION (ISL       "Build sac2c with Integer Set Library"                              ON)
 OPTION (BARVINOK  "Build sac2c with Barvinok Library"                                 ON)
-OPTION (FUNCTESTS "Enable functional tests (requires GTest library)"                  OFF)
+OPTION (FUNCTESTS "Enable functional tests (requires GTest library)"                  ON)
