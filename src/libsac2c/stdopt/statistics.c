@@ -165,7 +165,7 @@ STATprint (optimize_counter_t *oc)
 
 #define OPTCOUNTER(id, redo, text)                                                       \
     if (oc->id > 0) {                                                                    \
-        CTInote ("  %d %s", oc->id, text);                                               \
+        CTInote ("  %zu %s", oc->id, text);                                               \
     }
 #include "optimize.mac"
 #undef OPTCOUNTER
