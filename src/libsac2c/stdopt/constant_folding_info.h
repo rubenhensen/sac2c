@@ -9,7 +9,7 @@
 #define _SAC__CONSTANTFOLDING_H_
 
 struct INFO {
-    int numidssofar;
+    size_t numidssofar;
     ntype *lhstype;
     node *fundef;
     node *preassign;
