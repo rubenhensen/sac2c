@@ -6635,7 +6635,7 @@ PRTfunbundle (node *arg_node, info *arg_info)
                  "\n\n "
                  "/**********************************************************************"
                  "*******\n"
-                 " * Function Bundle %s::%s (%d)\n"
+                 " * Function Bundle %s::%s (%zu)\n"
                  " **********************************************************************"
                  "*******/\n\n",
                  NSgetName (FUNBUNDLE_NS (arg_node)), FUNBUNDLE_NAME (arg_node),
