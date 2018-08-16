@@ -6949,7 +6949,7 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
     lhs = NULL;
     ret_type = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
     i = NTYPE_ARITY (ret_type) - 1; //i = ar,j = 0, i--, j++ 
-    while ( j <= (NTYPE_ARITY (ret_type) - 1)) {
+    while (j <= (NTYPE_ARITY (ret_type) - 1)) {
         
         DBUG_ASSERT (vardecs != NULL, "inconsistant application found");
 
