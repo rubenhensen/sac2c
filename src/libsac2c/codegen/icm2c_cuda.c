@@ -192,6 +192,9 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
 
     INDENT;
     INDENT;
+    fprintf (global.outfile,
+             "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");",
+             funname); 
     if (global.backend == BE_cudahybrid) {
         // on cudahybrid, we make use of streams, which have a fixed name
         fprintf (global.outfile, "%s<<<grid, block, 0, *stream>>>(", funname);
@@ -269,7 +272,7 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
     fprintf (global.outfile, "dim3 grid(" fmt ");\n", __VA_ARGS__);                      \
     INDENT;                                                                              \
     fprintf (global.outfile,                                                             \
-             "SAC_TR_GPU_PRINT (\"CUDA XYZ grid dimension of "                           \
+             "SAC_TR_GPU_PRINT (\"   CUDA XYZ grid dimension of "                        \
              "%%u x %%u x %%u\", grid.x , grid.y , grid.z );\n");                        \
     INDENT;                                                                              \
     fprintf (global.outfile, "if (grid.x <= 0 ) {\n"                                     \
@@ -302,8 +305,8 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
     fprintf (global.outfile, "dim3 block(" fmt ");", __VA_ARGS__);                       \
     INDENT;                                                                              \
     fprintf (global.outfile,                                                             \
-             "SAC_TR_GPU_PRINT (\"CUDA XYZ block dimension of "                          \
-             "%%u x %%u x %%u\\n\", block.x , block.y , block.z );\n");                  \
+             "SAC_TR_GPU_PRINT (\"   CUDA XYZ block dimension of "                       \
+             "%%u x %%u x %%u\", block.x , block.y , block.z );\n");                     \
     INDENT;                                                                              \
     fprintf (global.outfile, "if (block.x <= 0 ) {\n"                                    \
              "SAC_RuntimeError(\"CUDA X block dimension must be bigger than zero. "      \
@@ -383,7 +386,9 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
     INDENT;
     fprintf (global.outfile, "{\n");
 
-    fprintf (global.outfile, "SAC_TR_GPU_PRINT (\"launching %dD kernel\");", bounds_count/3); 
+    fprintf (global.outfile,
+             "SAC_TR_GPU_PRINT (\"launching kernel for %dD With-Loop\");",
+             bounds_count/3); 
     INDENT;
     if (bounds_count == 3) { /* 1D CUDA withloop */
         INDENT;
@@ -453,6 +458,9 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     */
     INDENT;
     INDENT;
+    fprintf (global.outfile,
+             "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");",
+             funname); 
     fprintf (global.outfile, "%s<<<1, 1>>>(", funname);
     for (i = 0; i < 4 * vararg_cnt; i += 4) {
         if (STReq (vararg[i + 1], "float_dev")) {
@@ -832,7 +840,11 @@ ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype, char *d
                  ASSURE_TEXT ("cudaMemcpy: Destionation and source arrays "
                               "should have equal sizes!"));
 
-    INDENT;
+    INDENT; 
+    fprintf (global.outfile,
+             "SAC_TR_GPU_PRINT (\"%s size %%d\\n\", SAC_ND_A_SIZE( %s));",
+             direction, from_NT);
+
     fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER(%s, %s, %s, %s)", to_NT, from_NT,
              basetype, direction);
 
