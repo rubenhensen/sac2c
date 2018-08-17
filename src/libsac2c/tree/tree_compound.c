@@ -1489,7 +1489,7 @@ TCcountRets (node *rets)
 /******************************************************************************
  *
  * function:
- *   int TCcountRetsIgnoreArtificials( node *rets)
+ *   size_t TCcountRetsIgnoreArtificials( node *rets)
  *
  * description:
  *   Counts the number of N_arg nodes, ignoring those that are marked as
@@ -1497,10 +1497,10 @@ TCcountRets (node *rets)
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountRetsIgnoreArtificials (node *rets)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 

@@ -424,7 +424,7 @@ extern node *TCgetNthArg (int n, node *args);
  ***/
 
 extern size_t TCcountRets (node *rets);
-extern int TCcountRetsIgnoreArtificials (node *rets);
+extern size_t TCcountRetsIgnoreArtificials (node *rets);
 extern node *TCappendRet (node *chain, node *item);
 extern node *TCcreateIdsFromRets (node *rets, node **vardecs);
 extern node *TCcreateExprsFromArgs (node *args);
