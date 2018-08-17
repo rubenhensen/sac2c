@@ -36,8 +36,6 @@ FILE (GLOB_RECURSE headers
 FILE (GLOB_RECURSE mk 
       RELATIVE "${TESTS_SRC_DIR}" "*.mk")
 
-MESSAGE ("sac_test_files: ${sac_test_files}")
-
 FOREACH (f ${sac_test_files} ${headers} ${mk})
     GET_FILENAME_COMPONENT (localdir "${f}" DIRECTORY)
     FILE (COPY ${TESTS_SRC_DIR}/${f} 
