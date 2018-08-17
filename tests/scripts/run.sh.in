@@ -9,8 +9,14 @@ function namewe () {
 # Source file that we are about to run tests on.
 SAC_FILE=$1
 
+# Location of the toplevel tests directory.
+TOP_DIR=$2
+
 # Cut the path off.
 base_fname=$(basename $SAC_FILE)
+
+# Cut the filename off.
+dir_name=$(dirname $SAC_FILE)
 
 # Generate the name for the extracted makefile.
 makefile=${base_fname}.mk
@@ -25,13 +31,13 @@ base_fname_we=$(namewe "$base_fname")
            -e 's/<tab>/\t/g' \
            -e "s/<file-name>/$base_fname/g" \
            -e "s/<file-name-we>/$base_fname_we/g" \
-           -e 's/<nlslash>/\\/g' > $makefile
+           -e 's/<nlslash>/\\/g' > ${dir_name}/$makefile
 
 if test $? -ne 0; then
     die "cannot parse SAC_TEST specification in $SAC_FILE"
 fi
 
-if ! make -f $makefile; then
+if ! (cd ${dir_name}; make -I$TOP_DIR -f $makefile); then
     die "test $SAC_FILE failed"
 fi
 

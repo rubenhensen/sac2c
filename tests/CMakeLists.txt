@@ -1,41 +1,51 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 3.4)
 
+SET (TESTS_SRC_DIR ${PROJECT_SOURCE_DIR}/tests)
+SET (TESTS_BIN_DIR ${PROJECT_BINARY_DIR}/tests)
+
+
 MACRO (REGISTER_TEST sac_file)
     GET_FILENAME_COMPONENT (namewe "${sac_file}" NAME_WE)
     SET (test_name "test-${namewe}")
 
     ADD_TEST (
         NAME ${test_name}
-        COMMAND ${PROJECT_BINARY_DIR}/tests/scripts/run.sh ${sac_file})
+        COMMAND 
+            ${PROJECT_BINARY_DIR}/tests/scripts/run.sh 
+            ${sac_file} ${TESTS_BIN_DIR})
 ENDMACRO ()
 
 SET (SAC2C_EXEC "${PROJECT_BINARY_DIR}/sac2c${BUILD_TYPE_POSTFIX}")
 SET (SCRIPT_LIST common.sh run.sh grep-command-output.sh
-check-return-status.sh isalloptionson.sh)
+                 check-return-status.sh isalloptionson.sh)
 
 FOREACH (script ${SCRIPT_LIST})
     CONFIGURE_FILE(
-        "${PROJECT_SOURCE_DIR}/tests/scripts/${script}.in"
-        "${PROJECT_BINARY_DIR}/tests/scripts/${script}" @ONLY)
+        "${TESTS_SRC_DIR}/scripts/${script}.in"
+        "${TESTS_BIN_DIR}/scripts/${script}" @ONLY)
 ENDFOREACH ()
-CONFIGURE_FILE (
-    "${PROJECT_SOURCE_DIR}/tests/common.mk.in"
-    "${PROJECT_BINARY_DIR}/tests/common.mk" @ONLY)
 
 CONFIGURE_FILE (
-    "${PROJECT_SOURCE_DIR}/tests/ut-optional-packages.h.in"
-    "${PROJECT_BINARY_DIR}/tests/ut-optional-packages.h" COPYONLY)
-CONFIGURE_FILE (
-    "${PROJECT_SOURCE_DIR}/tests/ut-flags.mk.in"
-    "${PROJECT_BINARY_DIR}/tests/ut-flags.mk" COPYONLY)
+    "${TESTS_SRC_DIR}/common.mk.in"
+    "${TESTS_BIN_DIR}/common.mk" @ONLY)
 
+FILE (GLOB_RECURSE sac_test_files 
+      RELATIVE "${TESTS_SRC_DIR}" "*.sac")
+FILE (GLOB_RECURSE headers 
+      RELATIVE "${TESTS_SRC_DIR}" "*.h")
+FILE (GLOB_RECURSE mk 
+      RELATIVE "${TESTS_SRC_DIR}" "*.mk")
 
-FILE (GLOB sac_test_files "${PROJECT_SOURCE_DIR}/tests/*.sac")
-#FILE (GLOB scripts "${PROJECT_SOURCE_DIR}/tests/*.sh")
-FILE (GLOB mk "${PROJECT_SOURCE_DIR}/tests/*.mk")
+MESSAGE ("sac_test_files: ${sac_test_files}")
 
-FILE (COPY ${sac_test_files} ${mk}  DESTINATION "${PROJECT_BINARY_DIR}/tests")
-FILE (GLOB tests "${PROJECT_BINARY_DIR}/tests/test-*.sac")
+FOREACH (f ${sac_test_files} ${headers} ${mk})
+    GET_FILENAME_COMPONENT (localdir "${f}" DIRECTORY)
+    FILE (COPY ${TESTS_SRC_DIR}/${f} 
+          DESTINATION "${TESTS_BIN_DIR}/${localdir}")
+ENDFOREACH ()
+
+FILE (GLOB_RECURSE tests 
+      RELATIVE "${TESTS_SRC_DIR}" "test-*.sac")
 
 FOREACH (test ${tests})
     REGISTER_TEST ("${test}")
