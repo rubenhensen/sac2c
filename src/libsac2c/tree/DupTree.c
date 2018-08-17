@@ -548,7 +548,7 @@ static argtab_t *
 DupArgtab (argtab_t *argtab, info *arg_info)
 {
     argtab_t *new_argtab;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 

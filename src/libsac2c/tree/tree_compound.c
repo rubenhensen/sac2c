@@ -1316,17 +1316,17 @@ TCcountVardecs (node *vardecs)
 /******************************************************************************
  *
  * function:
- *   int TCcountArgs( node *args)
+ *   size_t TCcountArgs( node *args)
  *
  * description:
  *   Counts the number of N_arg nodes.
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountArgs (node *args)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -1342,7 +1342,7 @@ TCcountArgs (node *args)
 /******************************************************************************
  *
  * function:
- *   int TCcountArgsIgnoreArtificials( node *args)
+ *   size_t TCcountArgsIgnoreArtificials( node *args)
  *
  * description:
  *   Counts the number of N_arg nodes, ignoring those that are marked
@@ -1350,10 +1350,10 @@ TCcountArgs (node *args)
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountArgsIgnoreArtificials (node *args)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 

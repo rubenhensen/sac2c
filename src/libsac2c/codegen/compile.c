@@ -1723,7 +1723,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
  ******************************************************************************/
 
 static node *
-MakeArgNode (int idx, types *arg_type, bool thread)
+MakeArgNode (size_t idx, types *arg_type, bool thread)
 {
     node *id;
     char *name;
@@ -1741,7 +1741,7 @@ MakeArgNode (int idx, types *arg_type, bool thread)
     }
 
     name = (char *)MEMmalloc (20 * sizeof (char));
-    sprintf (name, "SAC_arg_%d", idx);
+    sprintf (name, "SAC_arg_%zu", idx);
 
     if (type != NULL) {
         id = TCmakeIdCopyStringNt (name, type);
@@ -1770,8 +1770,8 @@ static node *
 MakeFunctionArgsSpmd (node *fundef)
 {
     argtab_t *argtab;
-    int size;
-    int i;
+    size_t size;
+    size_t i;
     node *icm_args = NULL;
 
     DBUG_ENTER ();
@@ -1784,7 +1784,7 @@ MakeFunctionArgsSpmd (node *fundef)
     DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab inconsistent!");
 
     /* arguments */
-    for (i = argtab->size - 1; i >= 1; i--) {
+    for (i = argtab->size; i-- > 1;) {
         char *name;
         node *id;
         types *type;
@@ -1838,8 +1838,8 @@ static node *
 MakeFunctionArgsCuda (node *fundef)
 {
     argtab_t *argtab;
-    int size;
-    int i;
+    size_t size;
+    size_t i;
     node *icm_args = NULL;
 
     DBUG_ENTER ();
@@ -1852,7 +1852,7 @@ MakeFunctionArgsCuda (node *fundef)
     DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab inconsistent!");
 
     /* arguments */
-    for (i = argtab->size - 1; i >= 1; i--) {
+    for (i = argtab->size; i-- >= 1;) {
         char *name;
         node *id;
         types *type;
@@ -1914,7 +1914,7 @@ MakeFunctionArgs (node *fundef)
 {
     node *icm_args = NULL;
     argtab_t *argtab;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1934,7 +1934,7 @@ MakeFunctionArgs (node *fundef)
     }
 
     /* arguments */
-    for (i = argtab->size - 1; i >= 1; i--) {
+    for (i = argtab->size; i-- > 1;) {
         argtag_t tag;
         types *type;
         char *name;
@@ -2165,7 +2165,7 @@ static node *
 MakeFunApArgs (node *ap, info *arg_info)
 {
     argtab_t *argtab;
-    int i;
+    size_t i;
     node *icm_args = NULL;
     node *fundef;
     bool fundef_in_current_namespace;
@@ -2184,7 +2184,7 @@ MakeFunApArgs (node *ap, info *arg_info)
                NSgetModule (MODULE_NAMESPACE (INFO_MODUL (arg_info))));
 
     /* arguments */
-    for (i = argtab->size - 1; i >= 1; i--) {
+    for (i = argtab->size; i-- > 1;) {
         node *exprs = NULL;
         bool shared = FALSE; /* MUTC shared parameter? */
         shape_class_t shape;
@@ -2545,7 +2545,7 @@ CheckAp (node *ap, info *arg_info)
     argtab_t *argtab;
     node *arg, *arg_id;
     node *let_ids;
-    int ids_idx, arg_idx;
+    size_t ids_idx, arg_idx;
     bool ok = TRUE;
 
     DBUG_ENTER ();
@@ -3025,7 +3025,7 @@ COMPFundefArgs (node *fundef, info *arg_info)
 {
     argtab_t *argtab;
     node *arg;
-    int i;
+    size_t i;
     node *assigns = NULL;
 
     DBUG_ENTER ();
@@ -3608,8 +3608,8 @@ MakeFunRetArgs (node *arg_node, info *arg_info)
     node *funargs;
     node *newid;
     node *new_args;
-    int i;
-    int ret_cnt;
+    size_t i;
+    unsigned int ret_cnt;
     node *cret_node = NULL;
     node *icm_args = NULL;
     node *last_arg = NULL;
@@ -3727,7 +3727,7 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
     node *ret_exprs;
     node *new_args;
     int ret_cnt;
-    int i;
+    size_t i;
     node *icm_args = NULL;
     node *last_arg = NULL;
     node *vardecs;
@@ -3931,7 +3931,7 @@ COMPApIds (node *ap, info *arg_info)
     argtab_t *argtab;
     argtag_t tag;
     node *let_ids;
-    int i;
+    size_t i;
     node *ret_node = NULL;
 
     DBUG_ENTER ();
@@ -3941,7 +3941,7 @@ COMPApIds (node *ap, info *arg_info)
     argtab = AP_ARGTAB (ap);
     DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
-    for (i = argtab->size - 1; i >= 0; i--) {
+    for (i = argtab->size; i-- > 1;) {
         if (argtab->ptr_out[i] != NULL) {
             let_ids = argtab->ptr_out[i];
             tag = argtab->tag[i];
@@ -4005,7 +4005,7 @@ COMPApArgs (node *ap, info *arg_info)
     argtab_t *argtab;
     argtag_t tag;
     node *arg;
-    int i;
+    size_t i;
     node *ret_node = NULL;
 
     DBUG_ENTER ();
@@ -4013,7 +4013,7 @@ COMPApArgs (node *ap, info *arg_info)
     argtab = AP_ARGTAB (ap);
     DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
-    for (i = argtab->size - 1; i >= 0; i--) {
+    for (i = argtab->size; i-- > 1;) {
         if (argtab->ptr_in[i] != NULL) {
             DBUG_ASSERT (NODE_TYPE (argtab->ptr_in[i]) == N_exprs,
                          "no N_exprs node found in argtab");
@@ -4613,7 +4613,7 @@ COMPap (node *arg_node, info *arg_info)
         }
 
         /* Append NT of out arguments to ICM arguments. */
-        for (int i = AP_ARGTAB (arg_node)->size - 1; i >= 1; i--) {
+        for (size_t i = AP_ARGTAB (arg_node)->size; i-- > 1;) {
             if (AP_ARGTAB (arg_node)->ptr_out[i] == NULL) {
                 /* in/inout argument, append NT. */
                 if (NODE_TYPE (EXPRS_EXPR (AP_ARGTAB (arg_node)->ptr_in[i])) == N_id) {

@@ -154,7 +154,7 @@ extern nodelist *TBmakeNodelistNode (node *node, nodelist *next);
  ***    argtag_t   TAG[]
  ***/
 
-extern argtab_t *TBmakeArgtab (int size);
+extern argtab_t *TBmakeArgtab (size_t size);
 
 /*--------------------------------------------------------------------------*/
 

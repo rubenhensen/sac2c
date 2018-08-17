@@ -400,8 +400,8 @@ extern int TCcountVardecs (node *vardecs);
 #define ARG_DIM(n) (TYPES_DIM (ARG_TYPE (n)))
 #define ARG_TNAME(n) (TYPES_NAME (ARG_TYPE (n)))
 
-extern int TCcountArgs (node *args);
-extern int TCcountArgsIgnoreArtificials (node *args);
+extern size_t TCcountArgs (node *args);
+extern size_t TCcountArgsIgnoreArtificials (node *args);
 extern node *TCappendArgs (node *arg_chain, node *arg);
 extern node *TCgetNthArg (int n, node *args);
 

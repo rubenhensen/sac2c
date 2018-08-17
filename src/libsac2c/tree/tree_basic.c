@@ -267,10 +267,10 @@ TBfreeCudaAccessInfo (cuda_access_info_t *access_info)
 /*--------------------------------------------------------------------------*/
 
 argtab_t *
-TBmakeArgtab (int size)
+TBmakeArgtab (size_t size)
 {
     argtab_t *argtab;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 

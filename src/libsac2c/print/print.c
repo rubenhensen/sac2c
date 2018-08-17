@@ -813,7 +813,7 @@ printSOSSKdemand (node *arg_node, info *arg_info)
 void
 PRTprintArgtab (argtab_t *argtab, bool is_def)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -889,7 +889,7 @@ Argtab2Fundef (node *fundef)
 {
     node *new_fundef;
     argtab_t *argtab;
-    int i;
+    size_t i;
     node *rets = NULL;
     node *args = NULL;
 
@@ -907,7 +907,7 @@ Argtab2Fundef (node *fundef)
      */
     rets = DUPdoDupNode (argtab->ptr_out[0]);
 
-    for (i = argtab->size - 1; i >= 1; i--) {
+    for (i = argtab->size; i-- > 1;) {
         if (argtab->ptr_in[i] != NULL) {
             node *arg = DUPdoDupNode (argtab->ptr_in[i]);
             ARG_NEXT (arg) = args;
@@ -944,7 +944,7 @@ Argtab2Let (node *ap)
 {
     node *new_let, *new_ap;
     argtab_t *argtab;
-    int i;
+    size_t i;
     node *ids = NULL;
     node *exprs = NULL;
     node *expr = NULL;
@@ -960,7 +960,7 @@ Argtab2Let (node *ap)
         ids = DUPdoDupNode (argtab->ptr_out[0]);
     }
 
-    for (i = argtab->size - 1; i >= 1; i--) {
+    for (i = argtab->size; i-- > 1;) {
         if (argtab->ptr_out[i] != NULL) {
             exprs = TBmakeExprs (TBmakeId (IDS_AVIS (argtab->ptr_out[i])), exprs);
         } else if (argtab->ptr_in[i] != NULL) {
@@ -990,7 +990,7 @@ Argtab2Let (node *ap)
 static void
 PrintArgtags (argtab_t *argtab, bool in_comment)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 

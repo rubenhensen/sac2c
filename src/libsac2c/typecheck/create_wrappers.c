@@ -165,11 +165,11 @@ RefArgMatch (node *arg1, node *arg2)
  ******************************************************************************/
 
 static node *
-FindWrapper (namespace_t *ns, char *name, int num_args, size_t num_rets, lut_t *lut)
+FindWrapper (namespace_t *ns, char *name, size_t num_args, size_t num_rets, lut_t *lut)
 {
     bool last_parm_is_dots;
     bool last_res_is_dots;
-    int num_parms;
+    size_t num_parms;
     size_t num_res;
     node **wrapper_p;
     node *wrapper = NULL;
@@ -177,7 +177,7 @@ FindWrapper (namespace_t *ns, char *name, int num_args, size_t num_rets, lut_t *
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Searching for %s:%s %d args %zu rets", NSgetName (ns), name, num_args,
+    DBUG_PRINT ("Searching for %s:%s %zu args %zu rets", NSgetName (ns), name, num_args,
                 num_rets);
 
     /* initial search for wrapper in LUT */
@@ -188,7 +188,7 @@ FindWrapper (namespace_t *ns, char *name, int num_args, size_t num_rets, lut_t *
         last_res_is_dots = FUNDEF_HASDOTRETS (wrapper);
         num_parms = TCcountArgsIgnoreArtificials (FUNDEF_ARGS (wrapper));
         num_res = TCcountRetsIgnoreArtificials (FUNDEF_RETS (wrapper));
-        DBUG_PRINT (" ... checking %s %s%d args %s%zu rets", FUNDEF_NAME (wrapper),
+        DBUG_PRINT (" ... checking %s %s%zu args %s%zu rets", FUNDEF_NAME (wrapper),
                     (last_parm_is_dots ? ">=" : ""), num_parms,
                     (last_res_is_dots ? ">=" : ""), num_res);
         if (((num_res == num_rets) || (last_res_is_dots && (num_res <= num_rets)))
@@ -254,7 +254,7 @@ CreateWrapperFor (node *fundef, info *info)
     node *body, *wrapper;
 
     DBUG_ENTER ();
-    DBUG_PRINT ("Creating wrapper for %s %s%d args %zu rets", CTIitemName (fundef),
+    DBUG_PRINT ("Creating wrapper for %s %s%zu args %zu rets", CTIitemName (fundef),
                 (FUNDEF_HASDOTARGS (fundef) ? ">=" : ""),
                 TCcountArgsIgnoreArtificials (FUNDEF_ARGS (fundef)),
                 TCcountRetsIgnoreArtificials (FUNDEF_RETS (fundef)));
@@ -347,7 +347,7 @@ CreateWrapperFor (node *fundef, info *info)
 static node *
 SpecFundef (node *arg_node, info *arg_info)
 {
-    int num_args;
+    size_t num_args;
     size_t num_rets;
     node *wrapper;
 
@@ -363,7 +363,7 @@ SpecFundef (node *arg_node, info *arg_info)
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),
                       "No definition found for a function \"%s::%s\" that expects"
-                      " %i argument(s) and yields %zu return value(s)",
+                      " %zu argument(s) and yields %zu return value(s)",
                       NSgetName (FUNDEF_NS (arg_node)), FUNDEF_NAME (arg_node), num_args,
                       num_rets);
 
@@ -453,7 +453,7 @@ node *
 CRTWRPfundef (node *arg_node, info *arg_info)
 {
     node *wrapper = NULL;
-    int num_args; 
+    size_t num_args; 
     size_t num_rets;
     bool dot_args, dot_rets;
 
@@ -528,10 +528,10 @@ CRTWRPfundef (node *arg_node, info *arg_info)
             if ((dot_args != FUNDEF_HASDOTARGS (wrapper))
                 || (dot_rets != FUNDEF_HASDOTRETS (wrapper))) {
                 CTIabortLine (global.linenum,
-                              "Trying to overload function \"%s\" that expects %s %d "
+                              "Trying to overload function \"%s\" that expects %s %zu "
                               "argument(s) "
                               "and %s %zu return value(s) with a version that expects %s "
-                              "%d argument(s) "
+                              "%zu argument(s) "
                               "and %s %zu return value(s)",
                               CTIitemName (wrapper),
                               (FUNDEF_HASDOTARGS (wrapper) ? ">=" : ""),
@@ -548,7 +548,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
          */
         if (!RefArgMatch (FUNDEF_ARGS (wrapper), FUNDEF_ARGS (arg_node))) {
             CTIabortLine (NODE_LINE (arg_node),
-                          "Trying to overload function \"%s\" that expects %d "
+                          "Trying to overload function \"%s\" that expects %zu "
                           "argument(s) and yields "
                           "%zu return value(s) with an instance that expects the same "
                           "number of "

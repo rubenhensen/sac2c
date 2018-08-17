@@ -448,7 +448,7 @@ typedef enum {
 } argtag_t;
 
 typedef struct ARGTAB_T {
-    int size;
+    size_t size;
     node **ptr_in;  /* N_arg or N_exprs node */
     node **ptr_out; /* N_ret or N_ids node */
     argtag_t *tag;
