@@ -22,7 +22,7 @@ CC               :=  "@NVCC_PATH@/nvcc"
 CFLAGS           :=  "--maxrregcount 20 -Xcompiler -Wall -Xcompiler -fPIC "
                      "-Xcompiler -Wno-unused -Xcompiler -fno-builtin "
                      "-Xcudafe '--diag_suppress=set_but_not_used --diag_suppress=declared_but_not_referenced' "
-LIBS             +=  " @CCDLLINK@"
+LIBS             +=  " @CCDLLINK@ -lstdc++"
 
 COMPILE_PROG     :=  "%cc% %cuda_arch% %compileflags% -c -o %target% %source%"
 COMPILE_MOD      :=  "%cc% %cuda_arch% %compileflags% -dw -o %target% %source%"
