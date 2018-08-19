@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+#include "runtime/essentials_h/cuda_transfer_methods.h"
+
 /*****************************************************************************
  *
  * Prototype declarations

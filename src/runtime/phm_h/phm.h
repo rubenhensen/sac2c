@@ -20,6 +20,7 @@
 
 #include "runtime/essentials_h/rt_misc.h" // SAC_MAX
 #include "runtime/mt_h/rt_mt.h" // SAC_MT_DECLARE_LOCK
+#include "runtime/essentials_h/cuda_transfer_methods.h"
 
 #if SAC_MUTC_MACROS
 #define SAC_DO_PHM 0
