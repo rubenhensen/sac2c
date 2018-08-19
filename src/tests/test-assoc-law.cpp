@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include <cstdlib>
 
 extern "C" {
 #include "options.h"
@@ -19,45 +20,7 @@ extern "C" {
 #include "limits.h"
 }
 
-#include "err.h"
-
-// Some convenience macros.
-#define make_vec_type(__x) TYmakeAKD (TYmakeSimpleType (__x), 1, SHmakeShape (0))
-#define make_scalar_type(__x) TYmakeAKS (TYmakeSimpleType (__x), SHmakeShape (0))
-
-#define int_akv_avis(__n, __v) TBmakeAvis (strdup (__n), \
-        TYmakeAKV (TYmakeSimpleType (T_int), COmakeConstantFromInt (__v))) 
-#define int_avis(__x) TBmakeAvis (strdup (__x), make_scalar_type (T_int))
-#define int_vec_avis(__x) TBmakeAvis (strdup (__x), make_vec_type (T_int))
-
-#define binary_prf(prf, arg1, arg2)                                                      \
-    TBmakePrf (prf, TBmakeExprs (arg1, TBmakeExprs (arg2, NULL)))
-#define make_let(avis, rhs) TBmakeLet (TBmakeIds (avis, NULL), rhs)
-
-
-static char *
-read_from_fd (int fd)
-{
-    char buf[1024];
-    ssize_t bytes_read;
-    char *str = NULL;
-    size_t len = 0;
-
-    while (bytes_read = read (fd, buf, sizeof buf)) {
-        if (bytes_read < 0) {
-            if (errno == EAGAIN)
-                continue;
-            err (EXIT_FAILURE, "read");
-            break;
-        }
-        str = (char *)realloc (str, len + bytes_read + 1);
-        memcpy (str + len, buf, bytes_read);
-        len += bytes_read;
-        str[len] = '\0';
-    }
-
-    return str;
-}
+#include "macros.h"
 
 
 static const char out[] =
@@ -97,8 +60,9 @@ TEST (AssociativeLaw, test01)
     //
     //_db_on_ = 1;
     //_db_push_ ("-#d,AL");
-    GLOBinitializeGlobal (0, NULL, TOOL_sac2c, "test");
-
+    char **argv = (char **)malloc (sizeof (char *));
+    argv[0] = strdup ("test");
+    GLOBinitializeGlobal (1, argv, TOOL_sac2c, argv[0]);
 
     // This is the program that we want to create and
     // run AL on.  This is a direct copy from the comments
@@ -108,7 +72,7 @@ TEST (AssociativeLaw, test01)
     //    x = a _add_SxS_ 1;
     //    y = c _add_VxS_ 1;
     //    z = b _add_SxV_ d;
-    //   
+    //
     //    r = x + y
     //    s = r + z
     //    return s;
@@ -129,14 +93,14 @@ TEST (AssociativeLaw, test01)
     // normal akd type, this wouldn't work.
     node *avis_o = int_akv_avis ("o", 1);
 
-   
+
     // Now we just compose block statements in the reverse order.
     node * ret_stmt = TBmakeReturn (TBmakeExprs (TBmakeId (avis_s), NULL));
     node * t = TBmakeAssign (ret_stmt, NULL);
-        
+
     node * s_let = make_let (avis_s, binary_prf (F_add_VxV, TBmakeId (avis_r), TBmakeId (avis_z)));
     t = AVIS_SSAASSIGN (avis_s) = TBmakeAssign (s_let, t);
-    
+
     node * r_let = make_let (avis_r, binary_prf (F_add_SxV, TBmakeId (avis_x), TBmakeId (avis_y)));
     t = AVIS_SSAASSIGN (avis_r) = TBmakeAssign (r_let, t);
 
@@ -145,18 +109,18 @@ TEST (AssociativeLaw, test01)
 
     node * y_let = make_let (avis_y, binary_prf (F_add_VxS, TBmakeId (avis_c), TBmakeId (avis_o)));
     t = AVIS_SSAASSIGN (avis_y) = TBmakeAssign (y_let, t);
-    
+
     node * x_let = make_let (avis_x, binary_prf (F_add_SxS, TBmakeId (avis_a), TBmakeId (avis_o)));
     t = AVIS_SSAASSIGN (avis_x) = TBmakeAssign (x_let, t);
 
     node * o_let = make_let (avis_o, TBmakeNum (1));
     t = AVIS_SSAASSIGN (avis_o) = TBmakeAssign (o_let, t);
-   
+
     // Make a function foo.
     node * fundef
       = TBmakeFundef (strdup ("foo"), NULL,
                       TBmakeRet (make_vec_type (T_int), NULL),
-                      TBmakeArg (avis_a, 
+                      TBmakeArg (avis_a,
                                  TBmakeArg (avis_b,
                                             TBmakeArg (avis_c, TBmakeArg (avis_d, NULL)))),
                       TBmakeBlock (t, NULL), NULL);
@@ -164,35 +128,15 @@ TEST (AssociativeLaw, test01)
     // Call the traversal.
     node * nfundef = ALdoAssocLawOptimization (fundef);
 
-    int pipefd[2];
+    size_t len;
     char *s;
+    FILE *f = open_memstream (&s, &len);
 
-    pipe(pipefd);
+    node * _2 = PRTdoPrintFile (f, FUNDEF_BODY (nfundef));
+    fundef = FREEdoFreeTree (fundef);
+    fundef = FREEdoFreeTree (nfundef);
+    fclose (f);
 
-    // FIXME(artem) I don't see an easy way to compare results of the
-    //              traversal other than comparing its string output.
-    //              However, as we only can print to a file, I pipe
-    //              the stdout into the child process...  Improvements
-    //              are welcome.
-    if (fork () == 0) {
-        close(pipefd[0]);
-
-        dup2(pipefd[1], 1);
-        dup2(pipefd[1], 2);
-
-        close(pipefd[1]);
-
-        // Print the block of the function to stderr.
-        node * _2 = PRTdoPrintFile (stderr, FUNDEF_BODY (nfundef));
-        fundef = FREEdoFreeTree (fundef);
-        fundef = FREEdoFreeTree (nfundef);
-    } else  {
-        close(pipefd[1]);
-        // Catch the output of the child process in the parent
-        // process and store it in a string.
-        s = read_from_fd (pipefd[0]);
-    }
-    
     // The output should be identical to the program we defined above.
     EXPECT_STREQ (s, out);
     free (s);

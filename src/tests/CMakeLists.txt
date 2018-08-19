@@ -21,12 +21,16 @@ INCLUDE_DIRECTORIES (${PROJECT_BINARY_DIR}/src/libsac2c)
 # Generated global files like config, fun-attrs, etc.
 INCLUDE_DIRECTORIES (${PROJECT_BINARY_DIR}/src/include)
 
-ADD_EXECUTABLE (string-tests string-tests.cpp)
-TARGET_LINK_LIBRARIES (string-tests GTest::GTest GTest::Main sac2cShared)
-GTEST_ADD_TESTS(string-tests "" AUTO)  # maket it a part of ctest call
+MACRO (ADD_FUNC_TEST BIN_NAME SRC_NAME)
+    # Compile the test
+    ADD_EXECUTABLE (${BIN_NAME} ${SRC_NAME})
+    # Link against Gtest
+    TARGET_LINK_LIBRARIES (${BIN_NAME} GTest::GTest GTest::Main sac2cShared)
+    # Make it a part of the global testsuite
+    # so that it is executed via ctests.
+    GTEST_ADD_TESTS (${BIN_NAME} "" AUTO)  # maket it a part of ctest call
+ENDMACRO ()
 
-ADD_EXECUTABLE (test-assoc-law test-assoc-law.cpp)
-TARGET_LINK_LIBRARIES (test-assoc-law GTest::GTest GTest::Main sac2cShared)
-GTEST_ADD_TESTS(test-assoc-law "" AUTO)
-
-
+ADD_FUNC_TEST (string-tests string-tests.cpp)
+ADD_FUNC_TEST (test-assoc-law test-assoc-law.cpp)
+ADD_FUNC_TEST (test-icm-compilation test-icm-compilation.cpp)
