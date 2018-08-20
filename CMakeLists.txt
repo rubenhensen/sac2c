@@ -16,11 +16,13 @@ CMAKE_POLICY (VERSION 3.4)
 INCLUDE (ExternalProject)
 INCLUDE (FeatureSummary)
 
+# DEFAULT Build Targets for Runtime Libraries
+SET (RT_TARGETS seq seq_rt mt_pth mt_pth_rt mt_pth_xt)
+
 # Include config related cmake files
 INCLUDE ("cmake/macros.cmake")
 INCLUDE ("cmake/options.cmake")
 INCLUDE ("cmake/sac2c/config.cmake")
-INCLUDE ("cmake/settings.cmake")
 
 # Include common directories for the project.
 INCLUDE_DIRECTORIES(
@@ -103,6 +105,10 @@ ADD_CUSTOM_TARGET(fullclean
     ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target clean
   COMMENT "Cleaning sac2c and runtime libraries")
 
+# we need to convert the target `list' into a string in order to pass it to the
+# runtime build system - we convert it back into a list on the other end.
+STRING (REPLACE ";" ":" _TARGETS "${RT_TARGETS}")
+
 # This is where we call the build of the sac2c shared-libraries
 # This *depends* on sac2c having been build first!
 ExternalProject_Add(runtime_libraries
@@ -120,6 +126,7 @@ ExternalProject_Add(runtime_libraries
         -DBUILD_TYPE_POSTFIX=${BUILD_TYPE_POSTFIX}
         -DSHARED_LIB_EXT=${SHARED_LIB_EXT}
         -DLINKSETSIZE=${LINKSETSIZE}
+        -DRT_TARGETS:STRING=${_TARGETS}
 )
 # We set dependencies on the configure step, this makes sure we propogate
 # certain values (such as from sac2crc).

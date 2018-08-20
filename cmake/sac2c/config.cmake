@@ -449,6 +449,8 @@ IF (CUDA)
     # R_RESULT is the status return (which should be 0, i.e. FALSE)
     IF (CUDA_C_RESULT)
       SET (ENABLE_CUDA ON)
+      # add further RT lib build targets
+      LIST (APPEND RT_TARGETS cuda cuda_reg cuda_alloc cuda_man)
       LIST (APPEND SAC2CRC_LIBS_PATHS "${CUDA_TOOLKIT_ROOT_DIR}/lib64")
       LIST (APPEND SAC2CRC_INCS "${CUDA_INCLUDE_DIRS}")
       LIST (APPEND SAC2CRC_LIBS "-lcudart" "-lcublas")

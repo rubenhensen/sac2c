@@ -11,6 +11,9 @@ ENDIF ()
 IF (NOT SAC2C_SOURCE_DIR)
     MESSAGE (FATAL_ERROR "The SAC2C_SOURCE_DIR is not set!")
 ENDIF ()
+IF (NOT RT_TARGETS)
+    MESSAGE (FATAL_ERROR "Build targets are missing!")
+ENDIF ()
 
 SET (CMAKE_${CMAKE_BUILD_TYPE}_POSTFIX "${BUILD_TYPE_POSTFIX}")
 
@@ -33,7 +36,6 @@ GET_FILENAME_COMPONENT (SAC2C_SOURCE_DIR "${SAC2C_SOURCE_DIR}" ABSOLUTE)
 # we include the global config files
 include ("${SAC2C_SOURCE_DIR}/cmake/macros.cmake")
 include ("${SAC2C_SOURCE_DIR}/cmake/options.cmake")
-include ("${SAC2C_SOURCE_DIR}/cmake/settings.cmake")
 
 # and include our for checks on sac2c
 include ("${SAC2C_SOURCE_DIR}/cmake/runtime/config.cmake")
@@ -82,7 +84,11 @@ MACRO (ADD_LIBSAC_TARGET SRC_DIR VARIANT_TARGET)
     ADD_SUBDIRECTORY (${SAC2C_SOURCE_DIR}/${SRC_DIR}    ${SRC_DIR}-${TARGET})
 ENDMACRO ()
 
-FOREACH (TARGET IN ITEMS ${TARGETS})
+# convert RT target string back into list
+STRING (REPLACE ":" ";" _TARGETS ${RT_TARGETS})
+MESSAGE (STATUS "Building the following targets: ${_TARGETS}")
+
+FOREACH (TARGET IN ITEMS ${_TARGETS})
     ADD_LIBSAC_TARGET (src/libsac ${TARGET})
     ADD_LIBSAC_TARGET (src/libsacphm ${TARGET})
     ADD_LIBSAC_TARGET (src/libsacphmc ${TARGET})
