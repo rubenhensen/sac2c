@@ -131,9 +131,9 @@ extern node *TCcreateIdsChainFromExprs (node *arg_node);
  ******************************************************************************/
 
 extern node *TClookupIds (const char *name, node *ids_chain);
-extern int TClookupIdsNode (node *ids_chain, node *idsavis);
+extern size_t TClookupIdsNode (node *ids_chain, node *idsavis, int *ptr_null);
 
-extern node *TCgetNthIds (int n, node *ids_chain);
+extern node *TCgetNthIds (size_t n, node *ids_chain);
 
 extern int TCcountNums (node *nums);
 extern bool TCnumsContains (int val, node *nums);
@@ -689,18 +689,18 @@ extern node *TCmakeExprsNum (int num);
 /******************************************************************************
  *
  * function:
- *   int TCcountExprs( node *exprs)
+ *   size_t TCcountExprs( node *exprs)
  *
  * description:
  *   Computes the length of the given N_exprs chain.
  *
  ******************************************************************************/
 /* FIXME may be better to make this unsigned int in the future */
-extern int TCcountExprs (node *exprs);
+extern size_t TCcountExprs (node *exprs);
 
-extern node *TCgetNthExprs (int n, node *exprs);
-extern node *TCputNthExprs (int n, node *exprs, node *val);
-extern node *TCgetNthExprsExpr (int n, node *exprs);
+extern node *TCgetNthExprs (size_t n, node *exprs);
+extern node *TCputNthExprs (size_t n, node *exprs, node *val);
+extern node *TCgetNthExprsExpr (size_t n, node *exprs);
 extern node *TCtakeDropExprs (int takecount, int dropcount, node *exprs);
 
 extern node *TCcreateExprsFromIds (node *ids);
@@ -1178,7 +1178,7 @@ extern node *TCmakeIcm8 (const char *name, node *arg1, node *arg2, node *arg3, n
 #define PART_CEXPRS(n) (CODE_CEXPRS (PART_CODE (n)))
 #define PART_CBLOCK(n) (CODE_CBLOCK (PART_CODE (n)))
 
-extern int TCcountParts (node *parts);
+extern size_t TCcountParts (node *parts);
 extern node *TCappendPart (node *parts1, node *parts2);
 extern node *TCgetNthPart (node *parts, int n);
 extern bool TCcontainsDefaultPartition (node *parts);

@@ -787,20 +787,22 @@ TClookupIds (const char *name, node *ids_chain)
     DBUG_RETURN (ids_chain);
 }
 
-int
-TClookupIdsNode (node *ids_chain, node *idsavis)
+/* ptr_null : -1 if ids_chain is NULL post-loop, 
+               0 if it is non-null */
+size_t
+TClookupIdsNode (node *ids_chain, node *idsavis, int *ptr_null)
 {
-    int z;
+    size_t z;
 
     DBUG_ENTER ();
-
+    *ptr_null = 0;
     z = 0;
     while ((ids_chain != NULL) && (IDS_AVIS (ids_chain) != idsavis)) {
         ids_chain = IDS_NEXT (ids_chain);
         z++;
     }
 
-    z = (NULL != ids_chain) ? z : -1;
+    *ptr_null = (NULL != ids_chain) ? 0 : -1;
 
     DBUG_RETURN (z);
 }
@@ -815,10 +817,10 @@ TClookupIdsNode (node *ids_chain, node *idsavis)
  *
  ******************************************************************************/
 node *
-TCgetNthIds (int n, node *ids_chain)
+TCgetNthIds (size_t n, node *ids_chain)
 {
     DBUG_ENTER ();
-    int i = 0;
+    size_t i = 0;
 
     while ((ids_chain != NULL) && (i != n)) {
         ids_chain = IDS_NEXT (ids_chain);
@@ -2169,17 +2171,17 @@ TCmakeExprsNum (int num)
 /******************************************************************************
  *
  * function:
- *   int TCcountExprs( node *exprs)
+ *   size_t TCcountExprs( node *exprs)
  *
  * description:
  *   Computes the length of the given N_exprs chain.
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountExprs (node *exprs)
 {
-    int count;
+    size_t count;
 
     DBUG_ENTER ();
 
@@ -2318,9 +2320,9 @@ TCcreateExprsFromArgs (node *args)
  * @return N_exprs node
  ******************************************************************************/
 node *
-TCgetNthExprsNext (int n, node *exprs)
+TCgetNthExprsNext (size_t n, node *exprs)
 {
-    int cnt;
+    size_t cnt;
     node *result;
 
     DBUG_ENTER ();
@@ -2349,9 +2351,9 @@ TCgetNthExprsNext (int n, node *exprs)
  * @return N_exprs node
  ******************************************************************************/
 node *
-TCgetNthExprs (int n, node *exprs)
+TCgetNthExprs (size_t n, node *exprs)
 {
-    int cnt;
+    size_t cnt;
     node *result = NULL;
 
     DBUG_ENTER ();
@@ -2381,9 +2383,9 @@ TCgetNthExprs (int n, node *exprs)
  * @return updated N_exprs chain
  ******************************************************************************/
 node *
-TCputNthExprs (int n, node *oldexprs, node *val)
+TCputNthExprs (size_t n, node *oldexprs, node *val)
 {
-    int cnt;
+    size_t cnt;
     node *exprs;
 
     DBUG_ENTER ();
@@ -2417,7 +2419,7 @@ TCputNthExprs (int n, node *oldexprs, node *val)
  * @return N_node of some sort
  ******************************************************************************/
 node *
-TCgetNthExprsExpr (int n, node *exprs)
+TCgetNthExprsExpr (size_t n, node *exprs)
 {
     node *result = NULL;
 
@@ -3539,10 +3541,10 @@ TCmakeIcm8 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
  * @return number of parts
  *
  *****************************************************************************/
-int
+size_t
 TCcountParts (node *parts)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 

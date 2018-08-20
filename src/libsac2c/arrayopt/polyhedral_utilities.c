@@ -1865,7 +1865,8 @@ HandleSelectWithIota (node *ids, node *q, node *fundef, lut_t *varlut, int loopc
     node *ub = NULL;
     node *lbub = NULL;
     node *withidids = NULL;
-    int idsidx;
+    size_t idsidx;
+    int ptr_flag = -1;
 
     DBUG_ENTER ();
 
@@ -1876,8 +1877,8 @@ HandleSelectWithIota (node *ids, node *q, node *fundef, lut_t *varlut, int loopc
         if (N_with == NODE_TYPE (wl)) {
             // Find generator elements for LB and UB.
             withidids = WITHID_IDS (PART_WITHID (WITH_PART (wl)));
-            idsidx = TClookupIdsNode (withidids, s);
-            DBUG_ASSERT (-1 != idsidx, "Could not find withidids element");
+            idsidx = TClookupIdsNode (withidids, s, &ptr_flag);
+            DBUG_ASSERT (-1 != ptr_flag, "Could not find withidids element");
             lbub = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (wl)));
             if (N_array == NODE_TYPE (lbub)) {
                 // Emit lb <= s

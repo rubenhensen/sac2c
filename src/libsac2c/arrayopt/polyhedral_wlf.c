@@ -509,7 +509,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
     node *rhs;
     node *withidids;
     node *ipavis;
-    int tcindex;
+    size_t tcindex;
+    int ptr_flag = -1;
     prf nprf;
 
     pattern *pat;
@@ -544,8 +545,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
 
             switch (NODE_TYPE (idx)) {
             case N_id:
-                tcindex = TClookupIdsNode (withidids, ID_AVIS (idx));
-                if (-1 != tcindex) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (idx), &ptr_flag);
+                if (-1 != ptr_flag) {
                     DBUG_PRINT ("Found %s as source of iv'=%s", AVIS_NAME (ID_AVIS (idx)),
                                 AVIS_NAME (ipavis));
                     INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
@@ -842,7 +843,8 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
     int shpids;
     int shpzelu;
     int i;
-    int idx;
+    size_t idx;
+    int ptr_flag = -1;
     pattern *pat;
     node *bndarr = NULL;
     node *zarr;
@@ -902,8 +904,8 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
         shpzelu = TCcountExprs (zelu);
 
         for (i = 0; i < shpzelu; i++) {
-            idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids));
-            if (-1 != idx) { /* skip places where idx is a constant, etc. */
+            idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids), &ptr_flag);
+            if (-1 != ptr_flag) { /* skip places where idx is a constant, etc. */
                              /* E.g., sel( [ JJ, 2], PWL);                */
                 zelnew = TCgetNthExprsExpr (i, zelu);
                 bndel = TCgetNthExprsExpr (idx, ARRAY_AELEMS (bndarr));

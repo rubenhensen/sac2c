@@ -594,6 +594,7 @@ WLUTgetGenarrayScalar (node *arg_node, bool nowithid)
     node *res = NULL;
     bool z;
     bool memberwithids;
+    int ptr_flag;
 
     DBUG_ENTER ();
 
@@ -612,8 +613,8 @@ WLUTgetGenarrayScalar (node *arg_node, bool nowithid)
 
         // We are almost there. We have to ensure that res [IS/ IS NOT]
         // a member of WITHID_IDS.
-        memberwithids
-          = -1 != TClookupIdsNode (WITHID_IDS (PART_WITHID (WITH_PART (wl))), res);
+        TClookupIdsNode (WITHID_IDS (PART_WITHID (WITH_PART (wl))), res, &ptr_flag);
+        memberwithids = -1 != ptr_flag;
         z = memberwithids ^ nowithid; // XOR corrects value
         res = z ? res : NULL;
     }
