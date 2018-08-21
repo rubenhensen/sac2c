@@ -787,22 +787,22 @@ TClookupIds (const char *name, node *ids_chain)
     DBUG_RETURN (ids_chain);
 }
 
-/* ptr_null : -1 if ids_chain is NULL post-loop, 
-               0 if it is non-null */
+/* isIdsMember - pointer passing back result of search for 
+*                whether arg_node is a member of the ids chain */
 size_t
-TClookupIdsNode (node *ids_chain, node *idsavis, int *ptr_null)
+TClookupIdsNode (node *ids_chain, node *idsavis, bool *isIdsMember)
 {
     size_t z;
 
     DBUG_ENTER ();
-    *ptr_null = 0;
+    *isIdsMember = TRUE;
     z = 0;
     while ((ids_chain != NULL) && (IDS_AVIS (ids_chain) != idsavis)) {
         ids_chain = IDS_NEXT (ids_chain);
         z++;
     }
 
-    *ptr_null = (NULL != ids_chain) ? 0 : -1;
+    *isIdsMember = (NULL != ids_chain) ? TRUE : FALSE;
 
     DBUG_RETURN (z);
 }
@@ -1409,14 +1409,13 @@ TCappendArgs (node *arg_chain, node *arg)
  * @return N_arg node
  ******************************************************************************/
 node *
-TCgetNthArg (int n, node *args)
+TCgetNthArg (size_t n, node *args)
 {
-    int cnt;
+    size_t cnt;
     node *result = NULL;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (n >= 0, "n<0");
     for (cnt = 0; cnt < n; cnt++) {
         if (NULL == args) {
             DBUG_UNREACHABLE ("n > N_arg chain length.");
@@ -2448,13 +2447,13 @@ TCgetNthExprsExpr (size_t n, node *exprs)
  * @return: N_exprs chain
  ******************************************************************************/
 node *
-TCtakeDropExprs (int takecount, int dropcount, node *exprs)
+TCtakeDropExprs (int takecount, size_t dropcount, node *exprs)
 {
     node *res = NULL;
     node *tail;
 
     DBUG_ENTER ();
-    DBUG_ASSERT ((takecount >= 0) && (dropcount >= 0),
+    DBUG_ASSERT ((takecount >= 0) ,
                  "TCtakeDropExprs take or drop count < 0");
     DBUG_ASSERT (N_exprs == NODE_TYPE (exprs),
                  "TCtakeDropExprs disappointed at not getting N_exprs");

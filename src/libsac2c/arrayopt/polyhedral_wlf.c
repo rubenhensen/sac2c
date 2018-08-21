@@ -470,7 +470,7 @@ PWLFperformFold (node *arg_node, node *pwlpart, info *arg_info)
  *
  *****************************************************************************/
 static node *
-FlattenLbubel (node *lbub, int ivindx, info *arg_info)
+FlattenLbubel (node *lbub, size_t ivindx, info *arg_info)
 {
     node *lbubelavis;
     node *lbubel;
@@ -494,7 +494,7 @@ FlattenLbubel (node *lbub, int ivindx, info *arg_info)
 }
 
 static node *
-BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivindx)
+BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, size_t ivindx)
 {
     node *z = NULL;
     int markiv;
@@ -510,7 +510,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
     node *withidids;
     node *ipavis;
     size_t tcindex;
-    int ptr_flag = -1;
+    bool isIdsMember;
     prf nprf;
 
     pattern *pat;
@@ -545,8 +545,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
 
             switch (NODE_TYPE (idx)) {
             case N_id:
-                tcindex = TClookupIdsNode (withidids, ID_AVIS (idx), &ptr_flag);
-                if (-1 != ptr_flag) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (idx), &isIdsMember);
+                if (isIdsMember) {
                     DBUG_PRINT ("Found %s as source of iv'=%s", AVIS_NAME (ID_AVIS (idx)),
                                 AVIS_NAME (ipavis));
                     INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
@@ -760,7 +760,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
  *
  *****************************************************************************/
 static node *
-BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnum,
+BuildAxisConfluence (node *zarr, size_t idx, node *zelnew, node *bndel, int boundnum,
                      info *arg_info)
 {
 
@@ -839,18 +839,18 @@ static node *
 PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundnum)
 {
     node *ids;
-    int shpz;
-    int shpids;
-    int shpzelu;
-    int i;
+    size_t shpz;
+    size_t shpids;
+    size_t shpzelu;
+    size_t i;
     size_t idx;
-    int ptr_flag = -1;
+    bool isIdsMember;
     pattern *pat;
     node *bndarr = NULL;
     node *zarr;
     node *z;
     node *zelnew;
-    int xrho = -1;
+    size_t xrho = -1;
     node *bndel;
     ntype *typ;
 
@@ -904,8 +904,8 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
         shpzelu = TCcountExprs (zelu);
 
         for (i = 0; i < shpzelu; i++) {
-            idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids), &ptr_flag);
-            if (-1 != ptr_flag) { /* skip places where idx is a constant, etc. */
+            idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids), &isIdsMember);
+            if (isIdsMember) { /* skip places where idx is a constant, etc. */
                              /* E.g., sel( [ JJ, 2], PWL);                */
                 zelnew = TCgetNthExprsExpr (i, zelu);
                 bndel = TCgetNthExprsExpr (idx, ARRAY_AELEMS (bndarr));
@@ -978,9 +978,9 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *arriv, node *lb
     node *zw = NULL;
     node *iprime;
     node *ziavis;
-    int dim;
+    size_t dim;
 
-    int ivindx;
+    size_t ivindx;
     DBUG_ENTER ();
 
     dim = SHgetUnrLen (ARRAY_FRAMESHAPE (lbub));

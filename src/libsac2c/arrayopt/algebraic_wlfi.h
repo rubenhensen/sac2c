@@ -27,7 +27,7 @@ extern int AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **infowith
 
 extern node *AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
                                      ntype *ztype);
-extern node *AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
+extern node *AWLFItakeDropIv (int takect, size_t dropct, node *arg_node, node **vardecs,
                               node **preassigns);
 extern bool AWLFIcheckProducerWLFoldable (node *arg_node);
 extern bool AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel);

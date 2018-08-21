@@ -100,7 +100,7 @@ struct INFO {
     travstate travstate;
     node *ap;
     node *lacfunarg;
-    int argnum;
+    size_t argnum;
     bool iscondfun;
     node *newlacfunargs;
     node *newlacfunreccall;
@@ -730,7 +730,7 @@ WLPROPid (node *arg_node, info *arg_info)
 
     if (S_withloop_prop == INFO_TRAVSTATE (arg_info)) {
 
-        DBUG_PRINT ("Checking argument number %i, N_id=%s", INFO_ARGNUM (arg_info),
+        DBUG_PRINT ("Checking argument number %zu, N_id=%s", INFO_ARGNUM (arg_info),
                     AVIS_NAME (ID_AVIS (arg_node)));
 
         /*

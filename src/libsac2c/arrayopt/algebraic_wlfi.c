@@ -483,7 +483,7 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
     ;
     pattern *pat;
     size_t tcindex = 0;
-    int ptr_flag = -1;
+    bool isIdsMember;
     node *id;
 
     DBUG_ENTER ();
@@ -495,8 +495,8 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
         case N_prf:
 
             if (NULL != PRF_EXPRS2 (arg_node)) {
-                tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG2 (arg_node)), &ptr_flag);
-                if (-1 != ptr_flag) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG2 (arg_node)), &isIdsMember);
+                if (isIdsMember) {
                     z = 2;
                 }
             }
@@ -505,8 +505,8 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
                                        * as PRF_ARG1.
                                        */
             if (N_id == NODE_TYPE (id)) {
-                tcindex = TClookupIdsNode (withidids, ID_AVIS (id), &ptr_flag);
-                if (-1 != ptr_flag) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (id), &isIdsMember);
+                if (isIdsMember) {
                     z = 1;
                 }
             }
@@ -524,8 +524,8 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
         case N_id:
             if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
                 if (N_id == NODE_TYPE (arg)) {
-                    tcindex = TClookupIdsNode (withidids, ID_AVIS (arg), &ptr_flag);
-                    if (-1 != ptr_flag) {
+                    tcindex = TClookupIdsNode (withidids, ID_AVIS (arg), &isIdsMember);
+                    if (isIdsMember) {
                         z = 1;
                     }
                 } else {
@@ -538,7 +538,7 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
             break;
         }
 
-        if ((NULL != withid) && (z != 0) && (-1 != ptr_flag)) {
+        if ((NULL != withid) && (z != 0) && (isIdsMember)) {
             *withid = TCgetNthIds (tcindex, withidids);
         }
 
@@ -967,7 +967,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, size_t i
     node *withidids;
     node *ipavis;
     size_t tcindex;
-    int ptr_flag;
+    bool isIdsMember;
     prf nprf;
 
     pattern *pat;
@@ -1002,8 +1002,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, size_t i
 
             switch (NODE_TYPE (idx)) {
             case N_id:
-                tcindex = TClookupIdsNode (withidids, ID_AVIS (idx), &ptr_flag);
-                if (-1 != ptr_flag) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (idx), &isIdsMember);
+                if (isIdsMember) {
                     DBUG_PRINT ("Found %s as source of iv'=%s", AVIS_NAME (ID_AVIS (idx)),
                                 AVIS_NAME (ipavis));
                     INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
@@ -1331,7 +1331,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
     size_t shpzelu;
     size_t i;
     size_t idx;
-    int ptr_flag = -1;
+    bool isIdsMember;
     pattern *pat;
     node *bndarr = NULL;
     node *zarr;
@@ -1392,8 +1392,8 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
         shpzelu = TCcountExprs (zelu);
 
         for (i = 0; i < shpzelu; i++) {
-            idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids), &ptr_flag);
-            if (-1 != ptr_flag) { /* skip places where idx is a constant, etc. */
+            idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids), &isIdsMember);
+            if (isIdsMember) { /* skip places where idx is a constant, etc. */
                              /* E.g., sel( [ JJ, 2], PWL);                */
                 zelnew = TCgetNthExprsExpr (i, zelu);
                 bndel = TCgetNthExprsExpr (idx, ARRAY_AELEMS (bndarr));
@@ -1808,7 +1808,7 @@ noDefaultPartition (node *arg_node)
  *
  ******************************************************************************/
 node *
-AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
+AWLFItakeDropIv (int takect, size_t dropct, node *arg_node, node **vardecs,
                  node **preassigns)
 {
     node *z;
