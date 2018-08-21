@@ -69,7 +69,9 @@ extras_h/rt_profile.h
 extras_h/runtimecheck.h
 extras_h/rt_trace.h
 mt_h/rt_mt.h
-hwloc_h/hwloc.h
+hwloc_h/cpubind.h
+../libsac/hwloc/cudabind.h
+../libsac/hwloc/cpubind.h
 ../libsac/mt/mt.h
 mt_h/rt_mt_omp.h
 ../libsac/mt/mt_omp.h

@@ -1,16 +1,23 @@
-#include "sac.h"
+#include "config.h"
+
+#include <stddef.h>
+
+#include "cudabind.h"
 
 #if ENABLE_CUDA && ENABLE_HWLOC
 
+#include <hwloc.h>
 #include <hwloc/cudart.h>
+
+#include "libsac/hwloc/cpubind.h"
+#include "libsac/essentials/message.h"
 
 // FIXME(hans) we currently use the same cpuset point as in the MT case, meaning that
 //            the cudahybrid backend could go boom!
 void
-SAC_CUDA_HWLOC_init (int cuda_ordinal)
+SAC_CUDA_HWLOC_init (int cuda_ordinal, char *str, size_t str_size)
 {
     hwloc_cpuset_t tmp_hw_cpuset;
-    char str[128];
 
     // cprintf(stderr, "-> Printing overall tree\n");
     // hwloc_print_topology_tree(hwloc_get_root_obj(SAC_HWLOC_topology), 0);
@@ -34,18 +41,15 @@ SAC_CUDA_HWLOC_init (int cuda_ordinal)
         SAC_RuntimeError (
           "HWLOC is unable to bind all memory allocations to current NODE!");
 
-    SAC_HWLOC_info_snprintf (str, sizeof (str), SAC_HWLOC_topology, tmp_hw_cpuset,
+    SAC_HWLOC_info_snprintf (str, str_size, SAC_HWLOC_topology, tmp_hw_cpuset,
                              *SAC_HWLOC_cpu_sets);
-    SAC_TR_PRINT (("-> bound to %s", str));
 
     hwloc_bitmap_free (tmp_hw_cpuset);
 }
-
 #else
 void
-SAC_CUDA_HWLOC_init (int cuda_ordinal)
+SAC_CUDA_HWLOC_init (int cuda_ordinal, char *str, size_t str_size)
 {
-    SAC_NOOP ();
+    SAC_RuntimeError ("CUDA HWLOC binding is disabled! This function should not be called!");
 }
-static int nothing_is_here = 0xdead;
 #endif /* ENABLE_HWLOC && ENABLE_CUDA */

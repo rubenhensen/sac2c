@@ -2,9 +2,11 @@
 
 #if ENABLE_HWLOC
 
-#include "runtime/hwloc_h/hwloc.h"
+#include <stddef.h>
+#include <hwloc.h>
+
+#include "cpubind.h"
 #include "libsac/essentials/message.h"
-#include "runtime/hwloc_h/hwloc.h"
 
 #define SAC_HWLOC_NUM_SOCKETS_VAR_NAME "SAC_NUM_SOCKETS"
 #define SAC_HWLOC_NUM_CORES_VAR_NAME "SAC_NUM_CORES"

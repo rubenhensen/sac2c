@@ -6,7 +6,7 @@
 
 #include "libsac/essentials/trace.h"
 #include "libsac/mt/mt.h"
-#include "runtime/hwloc_h/hwloc.h"
+#include "runtime/hwloc_h/cpubind.h"
 #include "libsac/essentials/message.h"
 #include "hwloc_data.h"
 

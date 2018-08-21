@@ -52,6 +52,7 @@ static UNUSED int dummy_mt_pth;
 #include "mt.h"
 #include "mt_pth.h"
 #include "runtime/mt_h/rt_mt_barriers.h" // SAC_MT_PTH_SIGNAL_BARRIER
+#include "libsac/hwloc/cpubind.h"
 #include "libsac/essentials/trace.h" // SAC_TR_LIBSAC_PRINT
 #include "runtime/phm_h/phm.h" // SAC_HM_DiscoversThreads
 #include "runtime/rtspec_h/rtspec.h" // SAC_RTSPEC_CURRENT_THREAD_ID

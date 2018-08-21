@@ -39,27 +39,9 @@
 extern "C" {
 #endif
 
-#if ENABLE_HWLOC
+#include "libsac/hwloc/cpubind.h"
 
-#include <hwloc.h>
-
-typedef struct hwloc_topo_data {
-    int num_sockets_available;
-    int num_numa_nodes_avail;
-    int num_cores_available;
-    int num_pus_available;
-} hwloc_topo_data_t;
-
-hwloc_topo_data_t *SAC_HWLOC_topo_data;
-extern hwloc_cpuset_t *SAC_HWLOC_cpu_sets;
-extern hwloc_topology_t SAC_HWLOC_topology;
-
-extern int SAC_HWLOC_info_snprintf (char *, size_t, hwloc_topology_t, hwloc_cpuset_t,
-                                    hwloc_cpuset_t);
-extern void SAC_HWLOC_bind_on_cpuset (hwloc_cpuset_t);
-extern hwloc_cpuset_t *SAC_HWLOC_get_core (hwloc_cpuset_t);
-extern void SAC_HWLOC_init (void);
-extern void SAC_HWLOC_cleanup (void);
+#if SAC_SET_CPU_BIND_STRATEGY > 0
 
 /*****************************************************************************
  *  These ICMs are used as part of the startup code for the MAIN method
@@ -69,12 +51,12 @@ extern void SAC_HWLOC_cleanup (void);
 
 #define SAC_HWLOC_FINALIZE() SAC_HWLOC_cleanup ();
 
-#else /* ENABLE_HWLOC */
+#else /* SAC_SET_CPU_BIND_STRATEGY */
 
 #define SAC_HWLOC_SETUP()
 #define SAC_HWLOC_FINALIZE()
 
-#endif /* ENABLE_HWLOC */
+#endif /* SAC_SET_CPU_BIND_STRATEGY */
 
 #ifdef __cplusplus
 }

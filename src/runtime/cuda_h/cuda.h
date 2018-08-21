@@ -20,15 +20,7 @@ extern "C" {
 #endif
 
 #include "runtime/essentials_h/cuda_transfer_methods.h"
-
-/*****************************************************************************
- *
- * Prototype declarations
- * =================
- *
- *****************************************************************************/
-
-extern void SAC_CUDA_HWLOC_init (int);
+#include "libsac/hwloc/cudabind.h"
 
 /*****************************************************************************
  *
@@ -37,13 +29,17 @@ extern void SAC_CUDA_HWLOC_init (int);
  *
  *****************************************************************************/
 
-// FIXME this is a slight hack to allow use to disable via commandline hwloc binding
-// when not on a NUMA system
 #if SAC_SET_CPU_BIND_STRATEGY > 0
-#define SAC_CUDA_SETUP() SAC_CUDA_HWLOC_init (0);
+#define SAC_CUDA_SETUP() { \
+    char _cuda_hwloc_status[1024]; \
+    SAC_TR_GPU_PRINT ("(hwloc) iniit CUDA binding for card %d", SAC_SET_CPU_BIND_STRATEGY, 0); \
+    SAC_CUDA_HWLOC_init (0, _cuda_hwloc_status, sizeof(_cuda_hwloc_status)); \
+    SAC_TR_GPU_PRINT ("(hwloc) bound to %s", _cuda_hwloc_status); \
+    }
+
 #else
 #define SAC_CUDA_SETUP() SAC_NOOP ();
-#endif
+#endif /* SAC_SET_CPU_BIND_STRATEGY */
 
 #define SAC_CUDA_FINALIZE() SAC_NOOP ();
 
