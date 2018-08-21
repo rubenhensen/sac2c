@@ -72,7 +72,7 @@ SAC_MT_STATIC SAC_MT_DEFINE_LOCK (SAC_TR_hidden_memcnt_lock)
 #if SAC_MT_MODE > 0
 
 void
-SAC_TR_Print (char *format, ...)
+SAC_TR_Print (const char *format, ...)
 {
     va_list arg_p;
     unsigned int thread_id;
@@ -99,7 +99,7 @@ SAC_TR_Print (char *format, ...)
 #else /* MT */
 
 void
-SAC_TR_Print (char *format, ...)
+SAC_TR_Print (const char *format, ...)
 {
     va_list arg_p;
 

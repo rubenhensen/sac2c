@@ -25,8 +25,7 @@
  *  External declarations of global variables and functions defined in trace.c
  *  as part of libsac.
  */
-SAC_C_EXTERN void SAC_TR_Print (char *format, ...);
-SAC_C_EXTERN void SAC_TR_OptPrint (bool doPrint, char *format, ...);
+SAC_C_EXTERN void SAC_TR_Print (const char *format, ...);
 
 SAC_C_EXTERN int SAC_TR_hidden_memcnt;
 SAC_C_EXTERN int SAC_TR_array_memcnt;
