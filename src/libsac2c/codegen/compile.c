@@ -10105,6 +10105,7 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
     int dims, dim;
     node *idx_min, *idx_max;
     int d;
+    size_t d_u;
     shpseg *shape;
     int icm_dim = (-1);
     node *withop;
@@ -10159,17 +10160,18 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
              */
             shape = TYPES_SHPSEG (IDS_TYPE (tmp_ids));
             d = dims - 1;
-
+            d_u = d;
             while (d >= 0) {
 
-                idx_min = TCgetNthExprs (d, ARRAY_AELEMS (WLSEG_IDXINF (wlseg)));
-                idx_max = TCgetNthExprs (d, ARRAY_AELEMS (WLSEG_IDXINF (wlseg)));
+                idx_min = TCgetNthExprs (d_u, ARRAY_AELEMS (WLSEG_IDXINF (wlseg)));
+                idx_max = TCgetNthExprs (d_u, ARRAY_AELEMS (WLSEG_IDXINF (wlseg)));
 
                 if ((NODE_TYPE (idx_min) == N_num) && (NODE_TYPE (idx_max) == N_num)
                     && (((NUM_VAL (idx_min) == 0) && (NUM_VAL (idx_max) == IDX_SHAPE))
                         || ((shape != NULL)
-                            && (NUM_VAL (idx_max) == SHPSEG_SHAPE (shape, d))))) {
+                            && (NUM_VAL (idx_max) == SHPSEG_SHAPE (shape, d_u))))) {
                     d--;
+                    d_u--;
                 } else {
                     break;
                 }

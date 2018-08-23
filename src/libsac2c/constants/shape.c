@@ -875,7 +875,7 @@ SHvalidArrayIntVector (node *array)
 {
     bool result = TRUE;
     node *exprs;
-    int cnt;
+    size_t cnt;
 
     DBUG_ENTER ();
 

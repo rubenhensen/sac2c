@@ -210,7 +210,7 @@ CBLfundef (node *arg_node, info *arg_info)
 
             arity = TCcountArgs (FUNDEF_ARGS (old_node));
 
-            DBUG_PRINT ("Adding function %s (%d) to bundle.", CTIitemName (old_node),
+            DBUG_PRINT ("Adding function %s (%zu) to bundle.", CTIitemName (old_node),
                         arity);
 
             INFO_BUNDLES (arg_info)
