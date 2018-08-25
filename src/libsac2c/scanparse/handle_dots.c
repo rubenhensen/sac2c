@@ -79,7 +79,7 @@
  */
 typedef struct DOTLIST {
     int no;               /* number of dots counted from left */
-    int position;         /* position of dot within selection */
+    unsigned int position;         /* position of dot within selection */
     int dottype;          /* type of dot; 1:'.' 3: '...' */
     struct DOTLIST *next; /* for building up a list ;) */
     struct DOTLIST *prev;
@@ -90,8 +90,8 @@ typedef struct DOTINFO {
     dotlist *right; /* right end */
     int dotcnt;     /* amount of dots found */
     int tripledot;  /* dotno of tripledot, 0 iff none found */
-    int triplepos;  /* position of tripledot, 0 iff none found */
-    int selcnt;     /* amount of selectors at all */
+    unsigned int triplepos;  /* position of tripledot, 0 iff none found */
+    unsigned int selcnt;     /* amount of selectors at all */
 } dotinfo;
 
 /**
@@ -322,7 +322,7 @@ FreeDotInfo (dotinfo *node)
  *
  * @return the position of the given dot within the selection vector
  */
-static int
+static unsigned int
 LDot2Pos (int dot, dotinfo *info)
 {
     dotlist *dots = info->left;
@@ -343,7 +343,7 @@ LDot2Pos (int dot, dotinfo *info)
  *
  * @return the position of the given dot within the selection vector
  */
-static int
+static unsigned int
 RDot2Pos (int dot, dotinfo *info)
 {
     dotlist *dots = info->right;
@@ -366,7 +366,7 @@ RDot2Pos (int dot, dotinfo *info)
  * @return dot position counted from left or zero if not a dot
  */
 static int
-LIsDot (int dot, dotinfo *info)
+LIsDot (unsigned int dot, dotinfo *info)
 {
     int result = 0;
     dotlist *list = info->left;
@@ -393,7 +393,7 @@ LIsDot (int dot, dotinfo *info)
  * @return position counted from the right or zero
  */
 static int
-RIsDot (int dot, dotinfo *info)
+RIsDot (unsigned int dot, dotinfo *info)
 {
     int result = 0;
 
@@ -404,7 +404,7 @@ RIsDot (int dot, dotinfo *info)
     if (result != 0) {
         result = info->dotcnt - result + 1;
     }
-
+    DBUG_ASSERT(result >=0, "RIsDot position from right is negative");
     DBUG_RETURN (result);
 }
 
@@ -687,8 +687,8 @@ BuildShape (node *array, dotinfo *info)
 static node *
 BuildLeftIndex (node *args, node *iv, dotinfo *info)
 {
-    int cnt;
-    int maxcnt;
+    unsigned int cnt;
+    unsigned int maxcnt;
     node *result = NULL;
 
     DBUG_ENTER ();
@@ -762,8 +762,8 @@ BuildMiddleIndex (node *args, node *iv, dotinfo *info)
 static node *
 BuildRightIndex (node *args, node *iv, dotinfo *info)
 {
-    int cnt;
-    int maxcnt;
+    unsigned int cnt;
+    unsigned int maxcnt;
     node *result = NULL;
 
     DBUG_ENTER ();
@@ -1153,9 +1153,9 @@ FreeIdTable (idtable *table, idtable *until)
 static void
 ScanVector (node *vector, node *array, info *arg_info)
 {
-    int poscnt = 0;
+    unsigned int poscnt = 0;
     int tripledotflag = 0;
-    int exprslen = TCcountExprs (vector);
+    size_t exprslen = TCcountExprs (vector);
     idtable *ids = INFO_HD_IDTABLE (arg_info);
 
     DBUG_ENTER ();
@@ -1531,10 +1531,12 @@ BuildInversePermutatedVector (node *ids, node *vect)
     node *left = NULL;
     node *left_expr = NULL;
     node *trav = ids;
-    int single_pre_t = 0, triple = 0, others_pre_t = 0;
-    int single_post_t = 0, others_post_t = 0;
-    int pos = 0, dpos = 0, allpos = 0;
-    int cnt;
+    unsigned int single_pre_t = 0, single_post_t = 0;
+    int triple = 0;
+    unsigned int others_pre_t = 0, others_post_t = 0;
+    unsigned int allpos = 0;
+    unsigned int pos = 0, dpos = 0;
+    unsigned int cnt;
 
     DBUG_ENTER ();
 
@@ -1593,7 +1595,7 @@ BuildInversePermutatedVector (node *ids, node *vect)
     trav = ids;
 
     while (trav != NULL) {
-        int target;
+        unsigned int target;
         node *texpr;
 
         if (NODE_TYPE (EXPRS_EXPR (trav)) == N_dot) {
