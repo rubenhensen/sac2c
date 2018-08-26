@@ -649,7 +649,7 @@ CRTWRPlet (node *arg_node, info *arg_info)
 node *
 CRTWRPspap (node *arg_node, info *arg_info)
 {
-    int num_args;
+    size_t num_args;
     node *wrapper;
     node *new_node = NULL;
 
@@ -665,7 +665,7 @@ CRTWRPspap (node *arg_node, info *arg_info)
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),
                       "No definition found for a function \"%s::%s\" that expects"
-                      " %i argument(s) and yields %zu return value(s)",
+                      " %zu argument(s) and yields %zu return value(s)",
                       NSgetName (SPAP_NS (arg_node)), SPAP_NAME (arg_node), num_args,
                       INFO_EXPRETS (arg_info));
     } else {
@@ -723,7 +723,7 @@ CRTWRPgenarray (node *arg_node, info *arg_info)
 node *
 CRTWRPspfold (node *arg_node, info *arg_info)
 {
-    int num_args;
+    size_t num_args;
     node *wrapper;
     node *new_node = NULL;
 
@@ -741,7 +741,7 @@ CRTWRPspfold (node *arg_node, info *arg_info)
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),
                       "No definition found for a function \"%s::%s\" that expects"
-                      " %d arguments and yields 1 return value",
+                      " %zu arguments and yields 1 return value",
                       NSgetName (SPFOLD_NS (arg_node)), SPFOLD_FUN (arg_node), num_args);
     } else {
         new_node = TBmakeFold (wrapper, SPFOLD_NEUTRAL (arg_node));

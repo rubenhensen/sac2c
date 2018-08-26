@@ -1156,7 +1156,7 @@ ntype *
 TUactualArgs2Ntype (node *actual)
 {
     ntype *actual_type, *tmp_type, *prod_type;
-    int size;
+    size_t size;
     size_t pos;
 
     DBUG_ENTER ();

@@ -1433,7 +1433,7 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
 {
     node *set, *inner, *sarray, *exprs, *lhs;
     shape *shape;
-    int outerdims;
+    size_t outerdims;
     bool match;
     pattern *pat;
 

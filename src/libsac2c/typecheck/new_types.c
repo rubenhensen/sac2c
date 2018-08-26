@@ -100,7 +100,7 @@
 
 typedef struct ATTR_AKD {
     shape *shp;
-    int dots;
+    size_t dots;
 } attr_akd;
 
 typedef struct ATTR_SYMBOL {
@@ -816,7 +816,7 @@ TYmakeAKS (ntype *scalar, shape *shp)
 }
 
 ntype *
-TYmakeAKD (ntype *scalar, int dots, shape *shp)
+TYmakeAKD (ntype *scalar, size_t dots, shape *shp)
 {
     ntype *res;
 
@@ -5972,7 +5972,8 @@ TYoldType2Type (types *old)
             res
               = TYmakeAKS (res, SHoldShpseg2Shape (TYPES_DIM (old), TYPES_SHPSEG (old)));
         } else if (TYPES_DIM (old) < KNOWN_DIM_OFFSET) {
-            res = TYmakeAKD (res, KNOWN_DIM_OFFSET - TYPES_DIM (old), SHmakeShape (0));
+            /* the result of this subtraction is always positive so safe  */
+            res = TYmakeAKD (res, (size_t)(KNOWN_DIM_OFFSET - TYPES_DIM (old)), SHmakeShape (0));
         } else if (TYPES_DIM (old) == UNKNOWN_SHAPE) {
             res = TYmakeAUDGZ (res);
         } else if (TYPES_DIM (old) == ARRAY_OR_SCALAR) {
@@ -6067,7 +6068,7 @@ Type2OldType (ntype *xnew)
         break;
     case TC_akd:
         res = Type2OldType (AKD_BASE (xnew));
-        TYPES_DIM (res) = KNOWN_DIM_OFFSET - AKD_DOTS (xnew);
+        TYPES_DIM (res) = KNOWN_DIM_OFFSET - (int)AKD_DOTS (xnew);
         break;
     case TC_audgz:
         res = Type2OldType (AUDGZ_BASE (xnew));
@@ -7390,7 +7391,7 @@ SerializeAKDType (FILE *file, ntype *type)
 
     TYserializeType (file, AKD_BASE (type));
 
-    fprintf (file, ", %d, ", AKD_DOTS (type));
+    fprintf (file, ", %zu, ", AKD_DOTS (type));
 
     SHserializeShape (file, AKD_SHP (type));
 
@@ -7863,14 +7864,14 @@ TYdeserializeType (int _con, ...)
     } break;
     case TC_akd: {
         ntype *type;
-        int dim;
+        ssize_t dim;
         shape *shp;
 
         type = va_arg (args, ntype *);
-        dim = va_arg (args, int);
+        dim = va_arg (args, ssize_t);
         shp = va_arg (args, shape *);
-
-        result = TYmakeAKD (type, dim, shp);
+        DBUG_ASSERT(dim >= 0, "TC_akd va_arg was negative, dim must be 0+");
+        result = TYmakeAKD (type, (size_t)dim, shp);
     } break;
     case TC_aud: {
         result = TYmakeAUD (va_arg (args, ntype *));

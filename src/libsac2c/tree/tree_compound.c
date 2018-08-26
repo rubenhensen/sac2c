@@ -2357,7 +2357,6 @@ TCgetNthExprs (size_t n, node *exprs)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (n >= 0, "n<0");
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
             DBUG_UNREACHABLE ("n > N_exprs chain length.");
@@ -2390,7 +2389,6 @@ TCputNthExprs (size_t n, node *oldexprs, node *val)
     DBUG_ENTER ();
 
     exprs = oldexprs;
-    DBUG_ASSERT (n >= 0, "n<0");
 
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
@@ -2768,7 +2766,7 @@ TCcreateIntVector (int length, int value, int step)
  * @return value at that position
  ******************************************************************************/
 int
-TCgetIntVectorNthValue (int pos, node *vect)
+TCgetIntVectorNthValue (size_t pos, node *vect)
 {
     node *elem;
 

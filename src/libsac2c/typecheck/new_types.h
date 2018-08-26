@@ -170,7 +170,7 @@ extern ntype *TYsetNamespace (ntype *symb, namespace_t *ns);
  */
 extern ntype *TYmakeAKV (ntype *scalar, constant *val);
 extern ntype *TYmakeAKS (ntype *scalar, shape *shp);
-extern ntype *TYmakeAKD (ntype *scalar, int dots, shape *shp);
+extern ntype *TYmakeAKD (ntype *scalar, size_t dots, shape *shp);
 extern ntype *TYmakeAUDGZ (ntype *scalar);
 extern ntype *TYmakeAUD (ntype *scalar);
 

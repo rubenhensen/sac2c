@@ -880,7 +880,7 @@ MSEwith (node *arg_node, info *arg_info)
         if (NODE_TYPE (genshp) == N_id) {
             fsavis = ID_AVIS (genshp);
         } else {
-            int framedim = TCcountExprs (ARRAY_AELEMS (genshp));
+            size_t framedim = TCcountExprs (ARRAY_AELEMS (genshp));
 
             fsavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                            SHcreateShape (1, framedim)));

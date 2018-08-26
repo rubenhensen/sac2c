@@ -58,7 +58,7 @@ static node *specialized_fundefs = NULL;
  ******************************************************************************/
 
 node *
-InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
+InsertTypeConv (node *fundef, size_t pos_of_ret, ntype *spec_type)
 {
     node *last_assign, *ret, *id, *avis, *new_avis;
 
@@ -101,7 +101,7 @@ InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
 }
 
 node *
-InsertHideInfo (node *fundef, int pos_of_ret, ntype *spec_type)
+InsertHideInfo (node *fundef, size_t pos_of_ret, ntype *spec_type)
 {
     node *last_assign, *ret, *id, *avis, *new_avis;
 
@@ -163,7 +163,7 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
      * conversion should be inserted.  */
     node *ret;
     size_t i;
-    int j;
+    size_t j;
     ntype *spec_type, *inherited_type, *new_type;
 
     DBUG_ENTER ();

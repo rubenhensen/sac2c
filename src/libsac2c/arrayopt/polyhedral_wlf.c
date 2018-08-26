@@ -850,7 +850,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
     node *zarr;
     node *z;
     node *zelnew;
-    size_t xrho = -1;
+    size_t xrho = 0;
     node *bndel;
     ntype *typ;
 
@@ -1069,10 +1069,10 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
-    int numpart;
-    int curpart;
-    int curelidxlb;
-    int curelidxub;
+    size_t numpart;
+    size_t curpart;
+    size_t curelidxlb;
+    size_t curelidxub;
     bool swaplb = FALSE;
     bool swapub = FALSE;
     node *tmp;
@@ -1106,7 +1106,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
         for (curpart = 0; curpart < numpart; curpart++) {
             curelidxlb = WLPROJECTION1 (curpart);
             curelidxub = WLPROJECTION2 (curpart);
-            DBUG_PRINT ("Building inverse projection for %s, partition #%d",
+            DBUG_PRINT ("Building inverse projection for %s, partition #%zu",
                         AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), curpart);
             intrlb = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
             intrub = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
@@ -1170,7 +1170,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                         zeu = tmp;
                     }
 
-                    DBUG_PRINT ("Building axis permute & confluence for %s, partn #%d",
+                    DBUG_PRINT ("Building axis permute & confluence for %s, partn #%zu",
                                 AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), curpart);
                     zlb = PermuteIntersectElements (zel, zwlb, arg_info, 0);
 
@@ -1255,8 +1255,8 @@ PWLFintersectBoundsPolyhedral (node *arg_node, node *pwlpart, info *arg_info)
     pattern *pat;
     node *arravis;
     node *arrid;
-    int i;
-    int shp;
+    size_t i;
+    size_t shp;
     int z = POLY_RET_UNKNOWN;
 
     DBUG_ENTER ();
