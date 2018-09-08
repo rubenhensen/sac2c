@@ -397,7 +397,7 @@ FindApargFromFunarg (node *funargs, node *apargs, node *funarg)
  *
  *****************************************************************************/
 static void
-AddIndex (int type, int coefficient, node *idx, int looplevel, int dim,
+AddIndex (unsigned int type, int coefficient, node *idx, int looplevel, int dim,
           info *arg_info)
 {
     DBUG_ENTER ();
