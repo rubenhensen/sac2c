@@ -72,10 +72,10 @@ MATHipow (int base, int exp)
  *
  ******************************************************************************/
 
-int
+unsigned int
 MATHnumDigits (int number)
 {
-    int digits = 1;
+    unsigned int digits = 1;
 
     DBUG_ENTER ();
 

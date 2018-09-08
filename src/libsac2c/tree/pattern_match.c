@@ -146,7 +146,7 @@
  * All pattern constructing functions of the first 2 categories adhere to
  * the following structure:
  *
- * pattern *PM<xyz>( int num_attribs, attr_1, ..., attr_{num_attribs},
+ * pattern *PM<xyz>( unsigned int num_attribs, attr_1, ..., attr_{num_attribs},
  *                   int num_subpats, pat_1, ..., pat_{num_subpats} )
  *
  * However, singleton patterns do not expect any of the arguments in the
@@ -292,9 +292,9 @@ struct PAT {
     bool follow;
     int *i1;
     int *i2;
-    int num_attr;
+    unsigned int num_attr;
     attrib **attr;
-    int num_pats;
+    unsigned int num_pats;
     pattern **pats;
     matchFun *matcher;
     pattern **pattern_link;
@@ -336,7 +336,7 @@ makePattern (nodetype nt, matchFun f)
 /** <!--*******************************************************************-->
  *
  * @fn pattern *genericFillPattern( pattern *res, bool nested,
- *                                  int num_attribs, va_list arg_p)
+ *                                  unsigned int num_attribs, va_list arg_p)
  *
  * @brief fills the given pattern with the attribs and (if nested==TRUE)
  *        the subsequent subpattern contained in va_list.
@@ -344,10 +344,10 @@ makePattern (nodetype nt, matchFun f)
  *
  *****************************************************************************/
 static pattern *
-genericFillPattern (pattern *res, bool nested, int num_attribs, va_list arg_p)
+genericFillPattern (pattern *res, bool nested, unsigned int num_attribs, va_list arg_p)
 {
     va_list arg_p_copy;
-    int i;
+    unsigned int i;
 
     DBUG_ENTER ();
     va_copy (arg_p_copy, arg_p);
@@ -359,7 +359,7 @@ genericFillPattern (pattern *res, bool nested, int num_attribs, va_list arg_p)
         PAT_PATTRS (res)[i] = va_arg (arg_p_copy, attrib *);
     }
     if (nested) {
-        PAT_NP (res) = va_arg (arg_p_copy, int);
+        PAT_NP (res) = va_arg (arg_p_copy, unsigned int);
         PAT_PATS (res) = (pattern **)MEMmalloc (PAT_NP (res) * sizeof (pattern *));
         for (i = 0; i < PAT_NP (res); i++) {
             PAT_PATS (res)[i] = va_arg (arg_p_copy, pattern *);
@@ -375,17 +375,17 @@ genericFillPattern (pattern *res, bool nested, int num_attribs, va_list arg_p)
 /** <!--*******************************************************************-->
  *
  * @fn pattern *genericFillPatternNoAttribs( pattern *res,
- *                                           int num_pats, va_list arg_p)
+ *                                           unsigned int num_pats, va_list arg_p)
  *
  * @brief fills the given pattern with the subpattern contained in va_list.
  * @return the filled pattern
  *
  *****************************************************************************/
 static pattern *
-genericFillPatternNoAttribs (pattern *res, int num_pats, va_list arg_p)
+genericFillPatternNoAttribs (pattern *res, unsigned int num_pats, va_list arg_p)
 {
     va_list arg_p_copy;
-    int i;
+    unsigned int i;
 
     DBUG_ENTER ();
     va_copy (arg_p_copy, arg_p);
@@ -704,7 +704,7 @@ skipVarDefs (node *expr)
 static node *
 genericAtribMatcher (pattern *pat, node *arg, node *stack)
 {
-    int i;
+    unsigned int i;
     attrib *attr;
     DBUG_ENTER ();
 
@@ -731,7 +731,7 @@ static node *
 genericSubPatternMatcher (pattern *pat, node *inner_stack)
 {
     pattern *inner_pat;
-    int i;
+    unsigned int i;
     DBUG_ENTER ();
 
     if (PAT_NESTED (pat)) {
@@ -808,7 +808,7 @@ genericPatternMatcher (pattern *pat, node *stack)
 
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMmulti( int num_pats, ...)
+ * pattern *PMmulti( unsigned int num_pats, ...)
  *
  * @brief matches num_pats inner pattern
  *
@@ -826,7 +826,7 @@ multiMatcher (pattern *pat, node *stack)
 }
 
 pattern *
-PMmulti (int num_pats, ...)
+PMmulti (unsigned int num_pats, ...)
 {
     va_list ap;
     pattern *res;
@@ -860,7 +860,7 @@ linkMatcher (pattern *pat, node *stack)
 }
 
 pattern *
-PMlink (int num_pats, ...)
+PMlink (unsigned int num_pats, ...)
 {
     va_list ap;
     pattern *res;
@@ -883,14 +883,14 @@ PMlink (int num_pats, ...)
 
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMvar( int num_attribs, ... , num_pats, ...);
+ * pattern *PMvar( unsigned int num_attribs, ... , num_pats, ...);
  *
  * @brief matches an IMMEDIATE identifier (N_id)
  *        - up to one inner pattern
  *
  ******************************************************************************/
 pattern *
-PMvar (int num_attribs, ...)
+PMvar (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -907,7 +907,7 @@ PMvar (int num_attribs, ...)
 
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMparam( int num_attribs, ... );
+ * pattern *PMparam( unsigned int num_attribs, ... );
  *
  * @brief matches an identifier (N_id) that has no SSA_ASSIGN and, thus,
  *        relates to either an N_arg or to a WL-index-variable!
@@ -916,7 +916,7 @@ PMvar (int num_attribs, ...)
  *
  ******************************************************************************/
 pattern *
-PMparam (int num_attribs, ...)
+PMparam (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -931,7 +931,7 @@ PMparam (int num_attribs, ...)
 
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMany( int num_attribs, ... );
+ * pattern *PMany( unsigned int num_attribs, ... );
  *
  * @brief matches any node ...
  *        - no inner pattern
@@ -968,7 +968,7 @@ anyMatcher (pattern *pat, node *stack)
 }
 
 pattern *
-PMany (int num_attribs, ...)
+PMany (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -982,7 +982,7 @@ PMany (int num_attribs, ...)
 
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMfalse( int num_attribs, ... );
+ * pattern *PMfalse( unsigned int num_attribs, ... );
  *
  * @brief always fail
  *
@@ -1001,7 +1001,7 @@ falseMatcher (pattern *pat, node *stack)
 }
 
 pattern *
-PMfalse (int num_attribs, ...)
+PMfalse (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -1016,7 +1016,7 @@ PMfalse (int num_attribs, ...)
 
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMtrue( int num_attribs, ... );
+ * pattern *PMtrue( unsigned int num_attribs, ... );
  *
  * @brief always match
  *
@@ -1033,7 +1033,7 @@ trueMatcher (pattern *pat, node *stack)
 }
 
 pattern *
-PMtrue (int num_attribs, ...)
+PMtrue (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -1048,7 +1048,7 @@ PMtrue (int num_attribs, ...)
 
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMconst( int num_attribs, ...);
+ * pattern *PMconst( unsigned int num_attribs, ...);
  *
  * @brief matches constant nodes...
  *        - no inner pattern
@@ -1086,7 +1086,7 @@ constMatcher (pattern *pat, node *stack)
 }
 
 pattern *
-PMconst (int num_attribs, ...)
+PMconst (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -1101,7 +1101,7 @@ PMconst (int num_attribs, ...)
 
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMint( int num_attribs, ...)
+ * pattern *PMint( unsigned int num_attribs, ...)
  *
  * @brief matching N_num
  *        - no inner pattern
@@ -1109,7 +1109,7 @@ PMconst (int num_attribs, ...)
  *
  ******************************************************************************/
 pattern *
-PMint (int num_attribs, ...)
+PMint (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -1124,7 +1124,7 @@ PMint (int num_attribs, ...)
 
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMarray( int num_attribs, ..., int num_pats, ...)
+ * pattern *PMarray( unsigned int num_attribs, ..., unsigned int num_attribs, ...)
  *
  * @brief array pattern:  [ sub_pat_1, ..., sub_pat_{num_pats}]
  *        - num_pats inner pattern
@@ -1132,7 +1132,7 @@ PMint (int num_attribs, ...)
  *
  ******************************************************************************/
 pattern *
-PMarray (int num_attribs, ...)
+PMarray (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -1147,7 +1147,7 @@ PMarray (int num_attribs, ...)
 
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMprf( int num_attribs, ..., int num_pats, ...)
+ * pattern *PMprf( unsigned int num_attribs, ..., unsigned int num_attribs, ...)
  *
  * @brief prf pattern:  prf( sub_pat_1, ..., sub_pat_{num_pats})
  *        - num_pats inner pattern
@@ -1155,7 +1155,7 @@ PMarray (int num_attribs, ...)
  *
  ******************************************************************************/
 pattern *
-PMprf (int num_attribs, ...)
+PMprf (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -1170,13 +1170,13 @@ PMprf (int num_attribs, ...)
 
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMwith( int num_attribs, ..., int num_pats, ...)
+ * pattern *PMwith( unsigned int num_attribs, ..., unsigned int num_attribs, ...)
  *
  * @brief
  *
  *****************************************************************************/
 pattern *
-PMwith (int num_attribs, ...)
+PMwith (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -1190,13 +1190,13 @@ PMwith (int num_attribs, ...)
 }
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMwith3( int num_attribs, ..., 0)
+ * pattern *PMwith3( unsigned int num_attribs, ..., 0)
  *
  * @brief
  *
  *****************************************************************************/
 pattern *
-PMwith3 (int num_attribs, ...)
+PMwith3 (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -1210,13 +1210,13 @@ PMwith3 (int num_attribs, ...)
 }
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMrange( int num_attribs, ...,)
+ * pattern *PMrange( unsigned int num_attribs, ...,)
  *
  * @brief
  *
  *****************************************************************************/
 pattern *
-PMrange (int num_attribs, ...)
+PMrange (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -1230,7 +1230,7 @@ PMrange (int num_attribs, ...)
 }
 /** <!-- ****************************************************************** -->
  *
- * pattern *PMSrange( int num_attribs, ...)
+ * pattern *PMSrange( unsigned int num_attribs, ...)
  *
  * @brief range of current with3
  *
@@ -1262,7 +1262,7 @@ rangeSelector (pattern *pat, node *stack)
 }
 
 pattern *
-PMSrange (int num_attribs, ...)
+PMSrange (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -1277,7 +1277,7 @@ PMSrange (int num_attribs, ...)
 
 /** <!--*********************************************************************-->
  *
- * @fn pattern *PMretryAny( int *i, int *l, int num_pats, ...);
+ * @fn pattern *PMretryAny( int *i, int *l, unsigned int num_attribs, ...);
  *
  * @brief
  ******************************************************************************/
@@ -1307,7 +1307,7 @@ retryAnyMatcher (pattern *pat, node *stack)
 }
 
 pattern *
-PMretryAny (int *i, int *l, int num_pats, ...)
+PMretryAny (int *i, int *l, unsigned int num_pats, ...)
 {
     va_list ap;
     pattern *res;
@@ -1325,7 +1325,7 @@ PMretryAny (int *i, int *l, int num_pats, ...)
 
 /** <!--*********************************************************************-->
  *
- * @fn pattern *PMretryAll( int *i, int *l, int num_pats, ...);
+ * @fn pattern *PMretryAll( int *i, int *l, unsigned int num_attribs, ...);
  *
  * @brief
  ******************************************************************************/
@@ -1355,7 +1355,7 @@ retryAllMatcher (pattern *pat, node *stack)
 }
 
 pattern *
-PMretryAll (int *i, int *l, int num_pats, ...)
+PMretryAll (int *i, int *l, unsigned int num_pats, ...)
 {
     va_list ap;
     pattern *res;
@@ -1373,7 +1373,7 @@ PMretryAll (int *i, int *l, int num_pats, ...)
 
 /** <!--*********************************************************************-->
  *
- * @fn pattern *PMskip(  int num_attribs, ...)
+ * @fn pattern *PMskip(  unsigned int num_attribs, ...)
  *
  * @brief skipping pattern:   ...
  *        deletes stack and returnd NULL unless it contains FAIL which is
@@ -1400,7 +1400,7 @@ skipMatcher (pattern *pat, node *stack)
 }
 
 pattern *
-PMskip (int num_attribs, ...)
+PMskip (unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -1414,7 +1414,7 @@ PMskip (int num_attribs, ...)
 
 /** <!--*********************************************************************-->
  *
- * @fn pattern *PMskipN(  int * n, int num_attribs, ...)
+ * @fn pattern *PMskipN(  int * n, unsigned int num_attribs, ...)
  *
  * @brief skipping pattern:   ...
  *        consumes n entries from the stack
@@ -1442,7 +1442,7 @@ skipNMatcher (pattern *pat, node *stack)
 }
 
 pattern *
-PMskipN (int *n, int num_attribs, ...)
+PMskipN (int *n, unsigned int num_attribs, ...)
 {
     va_list ap;
     pattern *res;
@@ -1466,7 +1466,7 @@ PMskipN (int *n, int num_attribs, ...)
 pattern *
 PMfree (pattern *p)
 {
-    int i;
+    unsigned int i;
 
     DBUG_ENTER ();
     if (p != NULL) {

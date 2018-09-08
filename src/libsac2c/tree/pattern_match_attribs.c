@@ -834,6 +834,14 @@ attribHasCountWithop (attrib *attr, node *arg)
 {
     bool res;
 
+    /* 
+     * FIXME May need to change PATTR_I1 and where it is used -
+     * It is used for assignments, checks and printing. SHgetUnrLen
+     * and TCcountWithOps(modified) are not size int while i_arg1 is int pointer.
+     * Meanwhile, it gets used with NUM_VAL and attrib passing such as in PMAhasLen, 
+     * so not a simple change.
+     * 
+     */
     res = (TCcountWithops (WITH_OR_WITH2_OR_WITH3_WITHOP (arg)) == *PATTR_I1 (attr));
     DBUG_PRINT (PMARESULT "%s", (res ? "match" : "no match"));
 
