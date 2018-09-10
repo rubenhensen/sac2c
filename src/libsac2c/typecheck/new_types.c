@@ -149,7 +149,7 @@ typedef union {
     attr_akd a_akd;
     constant *a_akv;
     struct NTYPE *a_ibase;
-    int a_idim;
+    size_t a_idim;
     shape *a_ishape;
     attr_ires a_ires;
     tvar *a_alpha;
@@ -2868,7 +2868,7 @@ FindIbase (ntype *fun, ntype *scalar)
 }
 
 static ntype *
-FindIdim (ntype *iarr, int dim)
+FindIdim (ntype *iarr, size_t dim)
 {
     ntype *res = NULL;
     size_t i = 0;
@@ -5207,7 +5207,7 @@ TYtype2DebugString (ntype *type, bool multiline, size_t offset)
             tmp_str = MEMfree (tmp_str);
             break;
         case TC_idim:
-            buf = SBUFprintf (buf, "%d,", IDIM_DIM (type));
+            buf = SBUFprintf (buf, "%zu,", IDIM_DIM (type));
             break;
         case TC_ishape:
             tmp_str = SHshape2String (0, ISHAPE_SHAPE (type));
@@ -7543,7 +7543,7 @@ SerializeIDimType (FILE *file, ntype *type)
 
     DBUG_ENTER ();
 
-    fprintf (file, "TYdeserializeType( %d, %zu, %d, ", NTYPE_CON (type),
+    fprintf (file, "TYdeserializeType( %d, %zu, %zu, ", NTYPE_CON (type),
              NTYPE_ARITY (type), IDIM_DIM (type));
 
     TYserializeType (file, IDIM_GEN (type));
@@ -7920,7 +7920,7 @@ TYdeserializeType (int _con, ...)
     case TC_idim: {
         result = MakeNtype (TC_idim, va_arg (args, size_t));
 
-        IDIM_DIM (result) = va_arg (args, int);
+        IDIM_DIM (result) = va_arg (args, size_t);
 
         IDIM_GEN (result) = va_arg (args, ntype *);
 
