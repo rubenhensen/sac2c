@@ -1240,7 +1240,7 @@ typedef struct RC_T {
     node *arrayshp;
     node *sharray;
     node *sharrayshp;
-    int dim;
+    size_t dim;
     bool selfref;
     int posoffset[SHP_SEG_SIZE];
     int negoffset[SHP_SEG_SIZE];
@@ -1272,7 +1272,7 @@ typedef struct CUDA_INDEX_T {
     unsigned int type;
     int coefficient;
     node *id;
-    int looplevel; /* This attribute is only meaningful if type is LOOPIDX */
+    size_t looplevel; /* This attribute is only meaningful if type is LOOPIDX */
     struct CUDA_INDEX_T *next;
 } cuda_index_t;
 

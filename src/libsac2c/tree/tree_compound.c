@@ -831,10 +831,10 @@ TCgetNthIds (size_t n, node *ids_chain)
     DBUG_RETURN (ids_chain);
 }
 
-int
+size_t
 TCcountIds (node *ids_arg)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -2855,7 +2855,7 @@ TCcreateZeroScalar (simpletype btype)
 /******************************************************************************
  *
  * function:
- *   node *TCcreateZeroVector( int length, simpletype btype)
+ *   node *TCcreateZeroVector( size_t length, simpletype btype)
  *
  * description:
  *   Returns an N_array node with 'length' components, each 0.
@@ -2863,10 +2863,10 @@ TCcreateZeroScalar (simpletype btype)
  ******************************************************************************/
 
 node *
-TCcreateZeroVector (int length, simpletype btype)
+TCcreateZeroVector (size_t length, simpletype btype)
 {
     node *ret_node, *exprs_node;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 

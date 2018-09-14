@@ -111,7 +111,7 @@ extern bool TCisNested (types *type);
 
 extern node *TCcreateIdsChainFromAvises (int num_avises, ...);
 extern node *TCappendIds (node *chain, node *item);
-extern int TCcountIds (node *ids_arg);
+extern size_t TCcountIds (node *ids_arg);
 extern node *TCmakeIdsFromVardecs (node *vardecs);
 extern node *TCsetSSAAssignForIdsChain (node *ids, node *assign);
 extern node *TClastIds (node *ids);
@@ -857,7 +857,7 @@ extern node *TCcreateIntVector (int length, int value, int step);
 extern int TCgetIntVectorNthValue (size_t pos, node *vect);
 
 extern node *TCcreateZeroScalar (simpletype btype);
-extern node *TCcreateZeroVector (int length, simpletype btype);
+extern node *TCcreateZeroVector (size_t length, simpletype btype);
 
 extern node *TCcreateZeroNestedScalar (ntype *btype);
 extern node *TCcreateZeroNestedVector (int length, ntype *btype);

@@ -92,7 +92,7 @@
  *****************************************************************************/
 struct INFO {
     node *fundef;
-    int innerdims;
+    size_t innerdims;
     node *outerwithid;
     bool innertrav;
     node *depstack;
@@ -113,7 +113,7 @@ struct INFO {
 #define INFO_MUSTCOPY(n) (n->mustcopy)
 
 static info *
-MakeInfo (node *fundef, int innerdims)
+MakeInfo (node *fundef, size_t innerdims)
 {
     info *result;
 
@@ -168,7 +168,7 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-WLSWdoWithloopify (node *with, node *fundef, int innerdims)
+WLSWdoWithloopify (node *with, node *fundef, size_t innerdims)
 {
     info *info;
 
@@ -425,9 +425,13 @@ CreateCopyWithloop (node *array, info *arg_info)
     node *withop;
     node *vec_ids;
     node *scl_ids = NULL;
+    /* FIXME grzegorz: i, unrdim, dim and arraydim will need to be size_t 
+     * due to INFO_INNERDIMS as INFO_INNERDIMS takes input from TCcountIds.
+     * Leaving for now as passed to shape funcs and would create too many warnings
+     */
     int i;
     int unrdim = 0;
-    int dim;
+    int dim; 
     shape *maxshp;
 
     DBUG_ENTER ();

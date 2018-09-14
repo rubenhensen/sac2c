@@ -309,7 +309,7 @@ FreeInfo (info *info)
 static void
 IRAprintRcs (node *arg_node, info *arg_info)
 {
-    int i, dim;
+    size_t i, dim;
     rc_t *rcs;
     node *array, *sharray;
 
@@ -475,7 +475,7 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
                 fprintf (global.outfile, ")");
             }
 
-            fprintf (global.outfile, "[Type:%s, LoopLevel:%d]",
+            fprintf (global.outfile, "[Type:%s, LoopLevel:%zu]",
                      CUDA_IDX_NAMES[CUIDX_TYPE (idx)], CUIDX_LOOPLEVEL (idx));
 
             if (CUIDX_NEXT (idx) != NULL) {

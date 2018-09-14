@@ -1024,7 +1024,7 @@ NTClet (node *arg_node, info *arg_info)
             if ((PRF_PRF (LET_EXPR (arg_node)) != F_type_error)
                 && (TCcountIds (lhs) != TYgetProductSize (rhs_type))) {
                 CTIabortLine (global.linenum,
-                              "%s yields %zu instead of %d return value(s)",
+                              "%s yields %zu instead of %zu return value(s)",
                               global.prf_name[PRF_PRF (LET_EXPR (arg_node))],
                               TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
@@ -1032,7 +1032,7 @@ NTClet (node *arg_node, info *arg_info)
             if (TCcountIds (lhs) != TYgetProductSize (rhs_type)) {
                 CTIabortLine (global.linenum,
                               "with loop returns %zu value(s)"
-                              " but %d variable(s) specified on the lhs",
+                              " but %zu variable(s) specified on the lhs",
                               TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
         }
@@ -1123,7 +1123,7 @@ NTClet (node *arg_node, info *arg_info)
         /* lhs must be one ids only since rhs is not a function application! */
         if (TCcountIds (lhs) != 1) {
             CTIabortLine (global.linenum,
-                          "rhs yields one value, %d vars specified on the lhs",
+                          "rhs yields one value, %zu vars specified on the lhs",
                           TCcountIds (lhs));
         }
 
@@ -1917,7 +1917,7 @@ NTCpart (node *arg_node, info *arg_info)
     node *idxs;
     ntype *idx, *this_idx, *remaining_idx;
     te_info *info;
-    int num_ids;
+    size_t num_ids;
 
     DBUG_ENTER ();
 

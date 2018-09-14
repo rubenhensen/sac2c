@@ -189,7 +189,7 @@ extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t mclass,
  ***
  ***/
 
-extern rc_t *TBmakeReuseCandidate (node *array, int dim, rc_t *next);
+extern rc_t *TBmakeReuseCandidate (node *array, size_t dim, rc_t *next);
 
 #define RC_ARRAY(a) (a->array)
 #define RC_ARRAYSHP(a) (a->arrayshp)
@@ -212,7 +212,7 @@ extern rc_t *TBmakeReuseCandidate (node *array, int dim, rc_t *next);
  ***/
 
 extern cuda_index_t *TBmakeCudaIndex (unsigned int type, int coefficient, node *id,
-                                      int looplevel, cuda_index_t *next);
+                                      size_t looplevel, cuda_index_t *next);
 
 #define CUIDX_TYPE(a) (a->type)
 #define CUIDX_COEFFICIENT(a) (a->coefficient)
