@@ -1228,7 +1228,7 @@ typedef struct GLOBAL_T {
  */
 
 typedef struct sMtx {
-    int dim_x, dim_y;
+    unsigned int dim_x, dim_y;
     int *m_stor;
     int **mtx;
 } * IntMatrix, sMatrix;
@@ -1280,7 +1280,7 @@ typedef struct CUDA_ACCESS_INFO_T {
     IntMatrix coe_mtx;
     unsigned int type; /* Type of this access: either reuse or coalescing */
     int dim;
-    int nestlevel;
+    size_t nestlevel;
     node *array;
     node *arrayshp;
     node *sharray;
@@ -1288,7 +1288,7 @@ typedef struct CUDA_ACCESS_INFO_T {
     node
       *sharrayshp_log; /* Logical shape of the sahred memory(smaller than the physical
                           one) */
-    int cuwldim;       /* Dimesion of the containing cuda withloop */
+    size_t cuwldim;       /* Dimesion of the containing cuda withloop */
     node *tbshp;       /* shape of the thread block */
     cuda_index_t *indices[MAX_REUSE_DIM];
     bool isconstant[MAX_REUSE_DIM]; /* whether a dimension is constant, i.e. consists of

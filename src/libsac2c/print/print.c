@@ -454,7 +454,7 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
              CUAI_DIM (ASSIGN_ACCESS_INFO (arg_node)));
 
     INDENT;
-    fprintf (global.outfile, "     - Nest Level: %d\n",
+    fprintf (global.outfile, "     - Nest Level: %zu\n",
              CUAI_NESTLEVEL (ASSIGN_ACCESS_INFO (arg_node)));
 
     INDENT;

@@ -232,7 +232,7 @@ extern cuda_index_t *TBfreeCudaIndex (cuda_index_t *index);
  ***/
 
 extern cuda_access_info_t *TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim,
-                                                 int cuwldim, int nestlevel);
+                                                 size_t cuwldim, size_t nestlevel);
 
 #define CUAI_MATRIX(a) (a->coe_mtx)
 #define CUAI_TYPE(a) (a->type)

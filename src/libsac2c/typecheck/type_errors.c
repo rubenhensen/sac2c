@@ -1682,7 +1682,7 @@ TEval (ntype *args)
 void
 TEassureShpMatchesInt (char *obj, ntype *shp, size_t len)
 {
-    int shpel;
+    size_t shpel;
 
     DBUG_ENTER ();
 
@@ -1690,7 +1690,7 @@ TEassureShpMatchesInt (char *obj, ntype *shp, size_t len)
         shpel = SHgetUnrLen (TYgetShape (shp));
         if (len != shpel) {
             TEhandleError (global.linenum, global.filename,
-                           "%s should be %d elements, but is %zu elements.",
+                           "%s should be %zu elements, but is %zu elements.",
                            TYtype2String (shp, FALSE, 0),
                            shpel,
                            len);

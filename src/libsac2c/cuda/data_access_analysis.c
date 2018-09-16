@@ -251,7 +251,7 @@ DecideThreadIdx (node *ids, size_t dim, node *avis, bool *isValidWithids)
 }
 
 static void
-AddIndex (unsigned int type, int coefficient, node *idx, size_t looplevel, int dim,
+AddIndex (unsigned int type, int coefficient, node *idx, size_t looplevel, size_t dim,
           info *arg_info)
 {
     DBUG_ENTER ();
@@ -501,7 +501,8 @@ CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
 static cuda_access_info_t *
 CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info)
 {
-    int i, coefficient, shmem_size, dim, cuwl_dim;
+    int i, coefficient, shmem_size, dim;
+    size_t cuwl_dim;
     cuda_index_t *index;
     int block_sizes_2d[2] = {global.cuda_2d_block_y, global.cuda_2d_block_x};
     int blocking_factor = global.cuda_2d_block_x;
@@ -1096,7 +1097,7 @@ DAAprf (node *arg_node, info *arg_info)
         case F_idxs2offset:
             if (INFO_TRAVMODE (arg_info) == trav_collect) {
                 node *ids, *avis, *shape;
-                int rank;
+                size_t rank;
 
                 ids = PRF_EXPRS2 (arg_node);
                 shape = PRF_ARG1 (arg_node);

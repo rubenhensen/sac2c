@@ -216,7 +216,7 @@ TBfreeCudaIndex (cuda_index_t *index)
 /*--------------------------------------------------------------------------*/
 
 cuda_access_info_t *
-TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim, int cuwldim, int nestlevel)
+TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim, size_t cuwldim, size_t nestlevel)
 {
     cuda_access_info_t *info;
     int i;
