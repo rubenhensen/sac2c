@@ -598,6 +598,8 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   # FIXME (hans): we currently are using these flags for building the compiler as well as
   #               the SAC sources - which it not optimal for packaging
   SET (RCCCFLAGS    "${GCC_FLAGS} ${GCC_ARCH_FLAGS} -std=gnu99 -pedantic -Wno-unused -fno-builtin")
+  # FIXME (artem): This hack allows us to avoid propagating -Wconversion into default sac2c flags.
+  STRING (REGEX REPLACE "-Wconversion" "" RCCCFLAGS ${RCCCFLAGS})
   SET (MKCCFLAGS    "${GCC_FLAGS} ${GCC_ARCH_FLAGS} -std=gnu99 -pedantic -g ${FLAGS_LTO}")
   SET (DEV_FLAGS    "${GCC_FLAGS} -mtune=generic -std=gnu99 -pedantic -g ${FLAGS_LTO}")
   SET (PDCCFLAGS    "${GCC_FLAGS} ${GCC_ARCH_FLAGS} -std=gnu99 -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
