@@ -68,7 +68,7 @@
 
 static char *message_buffer = NULL;
 static size_t message_buffer_size = 0;
-static int message_line_length = 80;
+static size_t message_line_length = 80;
 
 static char *abort_message_header = "abort: ";
 static char *error_message_header = "error: ";
@@ -83,7 +83,7 @@ static int warnings = 0;
 #define MAX_ITEM_NAME_LENGTH 255
 
 void
-set_message_line_length (int l)
+set_message_line_length (size_t l)
 {
     message_line_length = l;
 }
@@ -109,9 +109,9 @@ CTIgetErrorCount (void)
  ******************************************************************************/
 
 static void
-ProcessMessage (char *buffer, int line_length)
+ProcessMessage (char *buffer, size_t line_length)
 {
-    int index, column, last_space;
+    size_t index, column, last_space;
 
     DBUG_ENTER ();
 
@@ -803,7 +803,7 @@ CTIerrorInternal (const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn int CTIgetErrorMessageLineLength( )
+ * @fn size_t CTIgetErrorMessageLineLength( )
  *
  *   @brief  yields useful line length for error messages
  *
@@ -811,7 +811,7 @@ CTIerrorInternal (const char *format, ...)
  *
  ******************************************************************************/
 
-int
+size_t
 CTIgetErrorMessageLineLength ()
 {
     DBUG_ENTER ();
@@ -1041,7 +1041,7 @@ CTIwarnContinued (const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn int CTIgetWarnMessageLineLength( )
+ * @fn size_t CTIgetWarnMessageLineLength( )
  *
  *   @brief  yields useful line length for warning messages
  *
@@ -1049,7 +1049,7 @@ CTIwarnContinued (const char *format, ...)
  *
  ******************************************************************************/
 
-int
+size_t
 CTIgetWarnMessageLineLength ()
 {
     DBUG_ENTER ();
@@ -1364,10 +1364,10 @@ CTIfunParams (node *fundef)
 {
     node *arg;
     char *tmp_str, *ret;
-    int tmp_str_size;
+    size_t tmp_str_size;
 
     static char argtype_buffer[80];
-    static int buffer_space;
+    static size_t buffer_space;
 
     DBUG_ENTER ();
 

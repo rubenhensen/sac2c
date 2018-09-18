@@ -657,7 +657,7 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, const char *toolname)
     memset (global.profile_funapcntr, 0, sizeof (int) * PF_MAXFUN);
 
     /* setup the line length for cti interface.  */
-    set_message_line_length ((int)get_terminal_size ());
+    set_message_line_length ((size_t)get_terminal_size ());
 
     global.cwd = getcwd (0, 0);
     if (!global.cwd)

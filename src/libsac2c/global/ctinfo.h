@@ -16,7 +16,7 @@ extern void CTIerrorLoc (struct location loc, const char *format, ...)
 extern void CTIerrorLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern void CTIerrorContinued (const char *format, ...) PRINTF_FORMAT (1, 2);
 extern void CTIerrorInternal (const char *format, ...) PRINTF_FORMAT (1, 2);
-extern int CTIgetErrorMessageLineLength (void);
+extern size_t CTIgetErrorMessageLineLength (void);
 extern void CTIabortOnBottom (char *err_msg);
 extern void CTIabort (const char *format, ...) PRINTF_FORMAT (1, 2) FUN_ATTR_NORETURN;
 extern void CTIabortLine (size_t line, const char *format, ...)
@@ -28,7 +28,7 @@ extern void CTIwarnLoc (struct location loc, const char *format, ...)
   PRINTF_FORMAT (2, 3);
 extern void CTIwarnLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern void CTIwarnContinued (const char *format, ...) PRINTF_FORMAT (1, 2);
-extern int CTIgetWarnMessageLineLength (void);
+extern size_t CTIgetWarnMessageLineLength (void);
 extern void CTIstate (const char *format, ...) PRINTF_FORMAT (1, 2);
 extern void CTInote (const char *format, ...) PRINTF_FORMAT (1, 2);
 extern void CTInoteLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
@@ -37,6 +37,6 @@ extern void CTIterminateCompilation (node *syntax_tree);
 extern const char *CTIitemName (node *item);
 extern const char *CTIitemNameDivider (node *item, const char *divider);
 extern const char *CTIfunParams (node *fundef);
-extern void set_message_line_length (int l);
+extern void set_message_line_length (size_t l);
 
 #endif /* _SAC_CTINFO_H_ */
