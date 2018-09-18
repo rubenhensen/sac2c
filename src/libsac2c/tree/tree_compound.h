@@ -135,7 +135,7 @@ extern size_t TClookupIdsNode (node *ids_chain, node *idsavis, bool *isIdsMember
 
 extern node *TCgetNthIds (size_t n, node *ids_chain);
 
-extern int TCcountNums (node *nums);
+extern size_t TCcountNums (node *nums);
 extern bool TCnumsContains (int val, node *nums);
 
 /*--------------------------------------------------------------------------*/
@@ -379,7 +379,7 @@ extern node *TCaddVardecs (node *fundef, node *vardecs);
 
 extern node *TCappendVardec (node *vardec_chain, node *vardec);
 
-extern int TCcountVardecs (node *vardecs);
+extern size_t TCcountVardecs (node *vardecs);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1354,7 +1354,7 @@ extern size_t TCcountWithopsNeq (node *withop, nodetype neq);
 #define WITH2_ARRAY(n) (MODARRAY_ARRAY (WITH2_WITHOP (n)))
 #define WITH2_NEUTRAL(n) (FOLD_NEUTRAL (WITH2_WITHOP (n)))
 
-extern int TCcountWlseg (node *withop);
+extern size_t TCcountWlseg (node *withop);
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1704,7 +1704,7 @@ extern node *TCappendError (node *chain, node *item);
  ***/
 
 extern node *TCappendRange (node *range_chain, node *range);
-extern int TCcountRanges (node *range);
+extern size_t TCcountRanges (node *range);
 
 extern bool TCisScalar (node *arg_node);
 extern bool TCisSignedType (ntype *typ);

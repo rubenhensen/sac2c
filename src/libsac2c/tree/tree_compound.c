@@ -906,10 +906,10 @@ TCconvertIds2Exprs (node *ids)
  ***  NUMS :
  ***/
 
-int
+size_t
 TCcountNums (node *nums)
 {
-    int cnt = 0;
+    size_t cnt = 0;
 
     DBUG_ENTER ();
 
@@ -1286,17 +1286,17 @@ TCappendVardec (node *vardec_chain, node *vardec)
 /******************************************************************************
  *
  * function:
- *   int TCcountVardecs( node *vardecs)
+ *   size_t TCcountVardecs( node *vardecs)
  *
  * description:
  *   Counts the number of N_vardec nodes.
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountVardecs (node *vardecs)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -3755,10 +3755,10 @@ TCcountWithopsNeq (node *withop, nodetype neq)
  ***  N_wlsegs :
  ***/
 
-int
+size_t
 TCcountWlseg (node *wlseg)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -4116,10 +4116,10 @@ TCappendRange (node *range_chain, node *range)
     DBUG_RETURN (ret);
 }
 
-int
+size_t
 TCcountRanges (node *range)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
