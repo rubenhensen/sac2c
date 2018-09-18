@@ -165,12 +165,13 @@ static void
 Format2Buffer (const char *format, va_list arg_p)
 {
     int len;
+    size_t len_p;
     va_list arg_p_copy;
 
     DBUG_ENTER ();
 
     va_copy (arg_p_copy, arg_p);
-    len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy);
+    len_p = (size_t)(len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy));
     va_end (arg_p_copy);
 
     if (len < 0) {
@@ -179,31 +180,32 @@ Format2Buffer (const char *format, va_list arg_p)
          * Output error due to non-existing message buffer
          */
 
-        len = 120;
+        len_p = 120;
 
-        message_buffer = (char *)MEMmalloc (len + 2);
+        message_buffer = (char *)MEMmalloc (len_p + 2);
         CHKMdoNotReport (message_buffer);
-        message_buffer_size = (size_t) (len + 2);
+        message_buffer_size = len_p + 2;
 
         va_copy (arg_p_copy, arg_p);
-        len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy);
+        len_p = (size_t) (len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy));
         va_end (arg_p_copy);
         DBUG_ASSERT (len >= 0, "message buffer corruption");
     }
 
-    if (len >= message_buffer_size) {
+    if (len_p >= message_buffer_size) {
         /* buffer too small  */
-
+        
         MEMfree (message_buffer);
-        message_buffer = (char *)MEMmalloc (len + 2);
+        message_buffer = (char *)MEMmalloc (len_p + 2);
         CHKMdoNotReport (message_buffer);
-        message_buffer_size = (size_t) (len + 2);
+        message_buffer_size = len_p + 2;
 
         va_copy (arg_p_copy, arg_p);
-        len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy);
+        len_p = (size_t)(len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy));
         va_end (arg_p_copy);
+        
 
-        DBUG_ASSERT (len < message_buffer_size, "message buffer corruption");
+        DBUG_ASSERT (len >= 0 || len_p < message_buffer_size, "message buffer corruption");
     }
 
     DBUG_RETURN ();
