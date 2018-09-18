@@ -475,7 +475,7 @@ TEextendedAbort ()
                  */
                 if (NODE_TYPE (ASSIGN_RHS (assign)) == N_with) {
                     CTIerrorContinued (
-                      "-- %s(?): %d: %s:%s (while checking fold with loop)",
+                      "-- %s(?): %zu: %s:%s (while checking fold with loop)",
                       global.filename, TI_LINE (global.act_info_chn),
                       ((TI_MOD (global.act_info_chn) != NULL)
                          ? TI_MOD (global.act_info_chn)
@@ -483,7 +483,7 @@ TEextendedAbort ()
                       TI_NAME (global.act_info_chn));
                 } else {
                     args = NTCnewTypeCheck_Expr (AP_ARGS (ASSIGN_RHS (assign)));
-                    CTIerrorContinued ("-- %s(?): %d: %s:%s%s", global.filename,
+                    CTIerrorContinued ("-- %s(?): %zu: %s:%s%s", global.filename,
                                        TI_LINE (global.act_info_chn),
                                        ((TI_MOD (global.act_info_chn) != NULL)
                                           ? TI_MOD (global.act_info_chn)

@@ -891,7 +891,7 @@ CTIabortLine (size_t line, const char *format, ...)
 
     va_start (arg_p, format);
 
-    fprintf (stderr, "%s %d ", global.filename, line);
+    fprintf (stderr, "%s %zu ", global.filename, line);
     PrintMessage (abort_message_header, format, arg_p);
 
     va_end (arg_p);
@@ -972,7 +972,7 @@ CTIwarnLine (size_t line, const char *format, ...)
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
-        fprintf (stderr, "%s %d ", global.filename, line);
+        fprintf (stderr, "%s %zu ", global.filename, line);
         PrintMessage (warn_message_header, format, arg_p);
 
         va_end (arg_p);
