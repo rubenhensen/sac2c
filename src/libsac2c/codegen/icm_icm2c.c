@@ -33,22 +33,22 @@
 
 #define ICM_VARANY(cnt, name)                                                            \
     if (cnt > 0) {                                                                       \
-        exprs = GetNextVarAny (&name, NULL, cnt, exprs);                                 \
+        exprs = GetNextVarAny (&name, NULL, cnt, exprs);                        \
     }
 
 #define ICM_VARNT(cnt, name)                                                             \
     if (cnt > 0) {                                                                       \
-        exprs = GetNextVarNt (&name, cnt, exprs);                                        \
+        exprs = GetNextVarNt (&name, cnt, exprs);                               \
     }
 
 #define ICM_VARID(cnt, name)                                                             \
     if (cnt > 0) {                                                                       \
-        exprs = GetNextVarId (&name, cnt, exprs);                                        \
+        exprs = GetNextVarId (&name, cnt, exprs);                                \
     }
 
 #define ICM_VARINT(cnt, name)                                                            \
     if (cnt > 0) {                                                                       \
-        exprs = GetNextVarInt (&name, cnt, exprs);                                       \
+        exprs = GetNextVarInt (&name, cnt, exprs);                               \
     }
 
 #define ICM_END(prf, args)                                                               \
@@ -77,7 +77,7 @@ GetNextIcm (char **ret, node *exprs)
 
     DBUG_ASSERT (NODE_TYPE (expr) == N_icm, "wrong icm-arg: N_icm expected");
 
-    //cast of TCcountXXX until changes get fixed in the next wconversion branch=
+    //cast of TCcountXXX until changes get fixed in the next wconversion branch
     cnt = (size_t)TCcountExprs (ICM_ARGS (expr));
 
     GetNextVarAny (&v, &len, cnt, ICM_ARGS (expr));
