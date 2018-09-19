@@ -673,7 +673,7 @@ SET_SOURCE_FILES_PROPERTIES(
     # Generated files
     ${CMAKE_CURRENT_BINARY_DIR}/node_basic.c
     ${CMAKE_CURRENT_BINARY_DIR}/serialize_helper.c
-    PROPERTIES COMPILE_FLAGS "${COMPILE_FLAGS} -Wno-conversion"
+    PROPERTIES COMPILE_FLAGS "${COMPILE_FLAGS} -Wno-conversion -Wno-sign-compare"
 )
 
 
