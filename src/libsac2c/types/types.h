@@ -552,7 +552,7 @@ typedef constant *(*basecvfunptr) (shape *shp);
  * moved from cv2cv.h
  */
 
-typedef void (*cv2cvfunptr) (void *, int, size_t, void *, size_t);
+typedef void (*cv2cvfunptr) (void *, size_t, size_t, void *, size_t);
 
 /*
  * moved from cv2scalar.h
@@ -564,7 +564,7 @@ typedef node *(*cv2scalarfunptr) (void *, int);
  * moved from cv2internal_lib.h
  */
 
-typedef char *(*cv2strfunptr) (void *, int, size_t, int);
+typedef char *(*cv2strfunptr) (void *, size_t, size_t, int);
 
 /*
  * moved from zipcv.h

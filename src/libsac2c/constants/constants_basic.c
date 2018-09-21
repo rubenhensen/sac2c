@@ -210,7 +210,7 @@ COINTcopyCVVaListToMem (simpletype type, size_t length, va_list cv)
  ******************************************************************************/
 
 void *
-COINTpickNElemsFromCV (simpletype type, void *elems, int offset, size_t length)
+COINTpickNElemsFromCV (simpletype type, void *elems, size_t offset, size_t length)
 {
     void *res;
 
@@ -236,7 +236,7 @@ COINTpickNElemsFromCV (simpletype type, void *elems, int offset, size_t length)
  ******************************************************************************/
 
 void
-COINTcopyElemsFromCVToCV (simpletype type, void *from, int off, size_t len, void *to,
+COINTcopyElemsFromCVToCV (simpletype type, void *from, size_t off, size_t len, void *to,
                           size_t to_off)
 {
     DBUG_ENTER ();

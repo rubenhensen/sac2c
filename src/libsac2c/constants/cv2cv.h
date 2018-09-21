@@ -3,27 +3,27 @@
 
 #include "types.h"
 
-extern void COcv2CvUByte (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvUShort (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvUInt (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvULong (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvULongLong (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvByte (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvShort (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvInt (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvLong (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvLongLong (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvBool (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvUByte (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvUShort (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvUInt (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvULong (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvULongLong (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvByte (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvShort (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvInt (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvLong (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvLongLong (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvBool (void *src, size_t off, size_t len, void *res, size_t res_off);
 
-extern void COcv2CvFloat (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvFloatvec (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvDouble (void *src, int off, int len, void *res, int res_off);
-extern void COcv2CvLongDouble (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvFloat (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvFloatvec (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvDouble (void *src, size_t off, size_t len, void *res, size_t res_off);
+extern void COcv2CvLongDouble (void *src, size_t off, size_t len, void *res, size_t res_off);
 
-extern void COcv2CvChar (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvChar (void *src, size_t off, size_t len, void *res, size_t res_off);
 
-extern void COcv2CvHidden (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvHidden (void *src, size_t off, size_t len, void *res, size_t res_off);
 
-extern void COcv2CvDummy (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvDummy (void *src, size_t off, size_t len, void *res, size_t res_off);
 
 #endif /* _SAC_CV2CV_H_ */

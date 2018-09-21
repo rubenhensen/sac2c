@@ -39,8 +39,8 @@ struct CONSTANT {
 
 extern constant *COINTmakeConstant (simpletype type, shape *shp, void *elems, size_t vlen);
 extern void *COINTallocCV (simpletype type, size_t length);
-extern void *COINTpickNElemsFromCV (simpletype type, void *elems, int offset, size_t length);
-extern void COINTcopyElemsFromCVToCV (simpletype type, void *from, int off, size_t len,
+extern void *COINTpickNElemsFromCV (simpletype type, void *elems, size_t offset, size_t length);
+extern void COINTcopyElemsFromCVToCV (simpletype type, void *from, size_t off, size_t len,
                                       void *to, size_t to_off);
 extern void COINTdbugPrintBinOp (char *fun, constant *arg1, constant *arg2,
                                  constant *res);

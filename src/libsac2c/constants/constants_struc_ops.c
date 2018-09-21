@@ -584,7 +584,7 @@ COoverSel (constant *idx, constant *a, constant *tmp1)
     constant *res = COINTmakeConstant (a_type, res_shape, res_cv, res_cv_len);
 
     /* Compute element size*/
-    int elem_len = SHgetUnrLen (cell_shape);
+    size_t elem_len = SHgetUnrLen (cell_shape);
 
     /* Initialize counter and related vars*/
     int i = 0;
@@ -594,7 +594,7 @@ COoverSel (constant *idx, constant *a, constant *tmp1)
     bool loop_done = FALSE;
     int idx_pos = 0;
     size_t to_offset = 0;
-    int from_offset = 0;
+    size_t from_offset = 0;
     int row_length = 0;
 
     for (i = 0; i < frame_shape_len; i++) {
