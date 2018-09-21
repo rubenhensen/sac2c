@@ -345,6 +345,16 @@ INCLUDE ("${PROJECT_SOURCE_DIR}/cmake/cpack/config.cmake")
 ENABLE_TESTING ()
 ADD_SUBDIRECTORY (tests)
 IF (FUNCTESTS)
+  # Make sure that we Have GTest so that we can run functional
+  # tests.  Abort cmake if the FUNCTESTS flag is on but the
+  # GTest is not present.
+  FIND_PACKAGE (GTest)
+  IF (NOT GTEST_FOUND)
+    MESSAGE (FATAL_ERROR "The FUNCTESTS option is ON, but the required\
+                          package GTest is not found.  Please either install\
+                          GTest or turn FUNCTESTS off (-DFUNCTESTS=OFF).")
+  ENDIF ()
+
   ADD_SUBDIRECTORY ("src/tests")
 ENDIF ()
 
