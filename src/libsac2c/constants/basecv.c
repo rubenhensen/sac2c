@@ -38,13 +38,14 @@
  *    Finally, we provide a dummy function for types where we cannot construct
  *    fixed values.
  *
+ * FIXME unrlen = SHgetUnrLen (shp) causes many warnings - will be key when adding sz_t data type
  ******************************************************************************/
 
 #define CObaseCvTEMPLATE(fun_ext, s_type, arg_t, arg_ext, value)                         \
     constant *CObaseCv##arg_ext##fun_ext (shape *shp)                                    \
     {                                                                                    \
-        int i;                                                                           \
-        int unrlen;                                                                      \
+        size_t i;                                                                        \
+        size_t unrlen;                                                                   \
         arg_t *data_vec;                                                                 \
         DBUG_ENTER ();                                                                   \
         unrlen = SHgetUnrLen (shp);                                                      \
