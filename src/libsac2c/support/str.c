@@ -127,11 +127,11 @@ STRsubStr (const char *string, size_t start, ssize_t len)
 
     // Normalizing len against the length of `str`.
     size_t l = len < 0 
-               ? strlen - (size_t)(-len)
-               : (size_t)len;
+                ? (size_t)MATH_MAX_ANY(0, (ssize_t)strlen + len)
+                : (size_t)len;
 
     if ((start + l) > strlen) { /* to long take what we can */
-        l = strlen - start;
+        l = strlen < start ? 0 : strlen - start;
     }
 
     if (start > l) {
