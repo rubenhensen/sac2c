@@ -694,7 +694,7 @@ COcopyScalar2OneElementVector (constant *a)
  ******************************************************************************/
 
 char *
-COconstantData2String (int max_char, constant *a)
+COconstantData2String (size_t max_char, constant *a)
 {
     char *res;
 

@@ -84,7 +84,7 @@ extern void *COcreateAllIndicesAndFold (shape *shp,
 
 extern constant *COcopyConstant (constant *a);
 extern constant *COcopyScalar2OneElementVector (constant *a);
-extern char *COconstantData2String (int max_char, constant *a);
+extern char *COconstantData2String (size_t max_char, constant *a);
 extern char *COconstant2String (constant *a);
 extern shape *COconstant2Shape (constant *a);
 extern int COconst2Int (constant *a);

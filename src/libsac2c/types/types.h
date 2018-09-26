@@ -564,7 +564,7 @@ typedef node *(*cv2scalarfunptr) (void *, size_t);
  * moved from cv2internal_lib.h
  */
 
-typedef char *(*cv2strfunptr) (void *, size_t, size_t, int);
+typedef char *(*cv2strfunptr) (void *, size_t, size_t, size_t);
 
 /*
  * moved from zipcv.h
