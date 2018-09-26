@@ -4547,12 +4547,12 @@ COMPap (node *arg_node, info *arg_info)
                 // code.
                 data_size = (size_t) recommendations[0]; //used in malloc therefore can't be negative 
                 icm_data = MEMmalloc ((data_size + 2) * sizeof (node *));
-                icm_data[0] = TCmakeIcm1 ("MT_SMART_DATA_BEGIN", TBmakeNumulong (data_size));
+                icm_data[0] = TCmakeIcm1 ("MT_SMART_DATA_BEGIN", TBmakeNum (data_size));
                 for (size_t i = 0; i < data_size; i++) {
                     icm_data[i + 1]
                       = TCmakeIcm2 ("MT_SMART_DATA_ADD",
-                                    TBmakeNumlong (recommendations[2 * i + 1]),
-                                    TBmakeNumlong (recommendations[2 * (i + 1)]));
+                                    TBmakeNum (recommendations[2 * i + 1]),
+                                    TBmakeNum (recommendations[2 * (i + 1)]));
                 }
                 icm_data[data_size + 1] = TBmakeIcm ("MT_SMART_DATA_END", NULL);
             }

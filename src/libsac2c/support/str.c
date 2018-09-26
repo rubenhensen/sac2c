@@ -1259,7 +1259,10 @@ STRstring2Array (const char *str)
         cnt += 1;
     }
 
-    len_expr = TBmakeNumulong (cnt);
+    //This modifies the 'length' arg in String::to_string for Stdlib
+    //FIXME grzegorz: update to_string to accept unsigned long arg
+    //before changing to TBmakeNumulong
+    len_expr = TBmakeNum (cnt);
     array
       = TCmakeVector (TYmakeAKS (TYmakeSimpleType (T_char), SHmakeShape (0)), new_exprs);
 
