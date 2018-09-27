@@ -1821,7 +1821,7 @@ MakeFunctionArgsSpmd (node *fundef)
     }
 
     icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                            TBmakeExprs (TBmakeNum (size), icm_args));
+                            TBmakeExprs (TBmakeNumuint (size), icm_args));
 
     DBUG_RETURN (icm_args);
 }
@@ -1895,7 +1895,7 @@ MakeFunctionArgsCuda (node *fundef)
     }
 
     icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                            TBmakeExprs (TBmakeNum (size), icm_args));
+                            TBmakeExprs (TBmakeNumuint (size), icm_args));
 
     DBUG_RETURN (icm_args);
 }
