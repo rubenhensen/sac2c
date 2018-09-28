@@ -587,6 +587,8 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/SSAWLI.c
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/WithloopFusion.c
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlswithloopification.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlsbuild.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlscheck.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/compile.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_prf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_sched.c
@@ -600,8 +602,13 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/constants/shape.c
     ${CMAKE_CURRENT_SOURCE_DIR}/constants/zipcv.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/cuda_cost_model.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cuda/data_access_analysis.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cuda/infer_reusable_arrays.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cuda/partial_fold.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/cuda/shared_memory_reuse.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/flatten/lac2fun.c
     ${CMAKE_CURRENT_SOURCE_DIR}/flatten/wlanalysis.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/flatten/wldefaultpartition.c
     ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynarray.c
     ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynarray.h
     ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynmatrix.c
@@ -613,6 +620,7 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSACSE.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSALUR.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSAWLUnroll.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/saa_constant_folding.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/structural_constant_constant_folding.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/withloop_invariant_removal.c
     ${CMAKE_CURRENT_SOURCE_DIR}/support/int_matrix.c
@@ -627,11 +635,13 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/tree/tree_utils.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ct_prf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/new_types.c         #fixed warnings in next batch
+    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ct_with.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/specialization_oracle_static_shape_knowledge.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ssi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/type_errors.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/type_utils.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/user_types.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/wltransform/wltransform.c
     ${CMAKE_CURRENT_SOURCE_DIR}/wltransform/wl_split_dimensions.c
     #${CMAKE_CURRENT_SOURCE_DIR}/constraints/insert_conformity_checks.c
     #${CMAKE_CURRENT_SOURCE_DIR}/memory/audscldist.c
