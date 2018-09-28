@@ -2399,7 +2399,7 @@ MakeIcm_PROP_OBJ_OUT (node *prop_obj, node *lhs, node *assigns)
         exprs = EXPRS_NEXT (exprs);
     }
 
-    icm_args = TBmakeExprs (TBmakeNum (count), icm_args);
+    icm_args = TBmakeExprs (TBmakeNumuint (count), icm_args);
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_PROP_OBJ_OUT", icm_args, assigns);
 
@@ -2436,7 +2436,7 @@ MakeIcm_PROP_OBJ_IN (node *prop_obj, node *lhs, node *assigns)
         exprs = EXPRS_NEXT (exprs);
     }
 
-    icm_args = TBmakeExprs (TBmakeNum (count), icm_args);
+    icm_args = TBmakeExprs (TBmakeNumuint (count), icm_args);
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_PROP_OBJ_IN", icm_args, assigns);
 
@@ -3815,7 +3815,7 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
     }
 
     icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (INFO_FUNDEF (arg_info))),
-                            TBmakeExprs (TBmakeNum (ret_cnt), icm_args));
+                            TBmakeExprs (TBmakeNumuint (ret_cnt), icm_args));
 
     DBUG_RETURN (icm_args);
 }
@@ -6281,7 +6281,7 @@ COMPprfCUDAGridBlock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm2 ("CUDA_GRID_BLOCK",
-                                 TBmakeNum (TCcountExprs (PRF_ARGS (arg_node))),
+                                 TBmakeNumuint (TCcountExprs (PRF_ARGS (arg_node))),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
@@ -8089,10 +8089,10 @@ COMPprfWrapperShapeEncode (node *arg_node, info *arg_info)
 
     if (args == NULL) {
         DBUG_PRINT_TAG ("RTSPEC", "Arguments are NULL!");
-        assigns = TCmakeAssignIcm1 ("WE_NO_SHAPE_ENCODE", TBmakeNum (0), NULL);
+        assigns = TCmakeAssignIcm1 ("WE_NO_SHAPE_ENCODE", TBmakeNumuint (0), NULL);
     } else {
         assigns = TCmakeAssignIcm1 ("WE_SHAPE_ENCODE",
-                                    TBmakeExprs (TBmakeNum (TCcountExprs (args)),
+                                    TBmakeExprs (TBmakeNumuint (TCcountExprs (args)),
                                                  DUPdupExprsNt (args)),
                                     NULL);
     }
