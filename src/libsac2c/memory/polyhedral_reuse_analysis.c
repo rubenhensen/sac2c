@@ -525,7 +525,7 @@ ActOnId (node *avis, info *arg_info)
 static unsigned int
 GetColumn (cuda_index_t *idx, unsigned int cols, info *arg_info)
 {
-    unsigned int col;
+    unsigned int col = 0;
 
     DBUG_ENTER ();
 
@@ -726,7 +726,7 @@ InitReadFas (IntMatrix fas, unsigned int read_dim, node *arr, info *arg_info)
 {
     index_exprs_t *ie;
     cuda_index_t *indices; 
-    unsigned int i, j, rows, cols, x, y;
+    unsigned int i, j, rows, cols, x =0, y = 0;
 
     DBUG_ENTER ();
 

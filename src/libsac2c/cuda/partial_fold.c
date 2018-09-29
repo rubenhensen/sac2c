@@ -1379,7 +1379,7 @@ node *
 PFDpart (node *arg_node, info *arg_info)
 {
     int tbshp_len, partshp_len, partialshp_len;
-    size_t  reduce_dim, dim;
+    size_t reduce_dim = 0, dim;
     node *tbshp_elems = NULL, *partshp_elems = NULL, *partialshp_elems = NULL;
     node *init_assigns, *load_assigns, *reduce_assigns, *store_assigns;
 
