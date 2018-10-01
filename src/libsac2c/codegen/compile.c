@@ -1852,7 +1852,7 @@ MakeFunctionArgsCuda (node *fundef)
     DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab inconsistent!");
 
     /* arguments */
-    for (i = argtab->size; i-- >= 1;) {
+    for (i = argtab->size; i-- > 1;) {
         char *name;
         node *id;
         types *type;
@@ -4013,7 +4013,7 @@ COMPApArgs (node *ap, info *arg_info)
     argtab = AP_ARGTAB (ap);
     DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
-    for (i = argtab->size; i-- > 1;) {
+    for (i = argtab->size; i-- > 0;) {
         if (argtab->ptr_in[i] != NULL) {
             DBUG_ASSERT (NODE_TYPE (argtab->ptr_in[i]) == N_exprs,
                          "no N_exprs node found in argtab");
