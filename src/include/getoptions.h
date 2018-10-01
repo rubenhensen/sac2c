@@ -239,9 +239,9 @@
         char *ARGS_str;                                                                  \
                                                                                          \
         if (ARG != NULL) {                                                               \
-            ARGS_tmp =  strtol (ARG, &ARGS_str, 10);                                      \
+            ARGS_tmp = strtol (ARG, &ARGS_str, 10);                                      \
             if ((ARGS_str[0] == '\0') && (ARGS_tmp >= 0)) {                              \
-                id = CONVERT_TO_TYPEOF (id)  ARGS_tmp;                                    \
+                id = CONVERT_TO_TYPEOF (id) ARGS_tmp;                                    \
             } else {                                                                     \
                 ARGS_ERROR ("Number argument expected for option");                      \
             }                                                                            \

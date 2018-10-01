@@ -115,7 +115,7 @@ static char
 getchr (FILE *infile)
 {
     if ((peek < 0) && (last_char != ' ') && (last_char != '\t')) {
-        p_char = (char) last_char;
+        p_char = (char)last_char;
     }
     last_char = (peek < 0) ? getc (infile) : peek;
     if (last_char == (-1)) {
@@ -123,7 +123,7 @@ getchr (FILE *infile)
     }
     peek = (-1);
 
-    return (char)((last_char == '\r') ? getchr (infile) : (char) last_char);
+    return (char)((last_char == '\r') ? getchr (infile) : (char)last_char);
 }
 
 /* put string with indent logic */
@@ -316,7 +316,7 @@ static void
 cpp_comment (FILE *infile, int indent, bool use_tabs)
 {
     while ((c = getchr (infile)) != '\n') {
-        string[pos++] = (char) c;
+        string[pos++] = (char)c;
     }
     cpp_putcoms (indent, use_tabs);
     s_flg = TRUE;
@@ -397,9 +397,9 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
 
         switch (c) {
         default:
-            string[pos++] = (char) c;
+            string[pos++] = (char)c;
             if (c != ',') {
-                l_char = (char) c;
+                l_char = (char)c;
             }
             break;
         case ' ':
@@ -407,7 +407,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             if (lookup (w_else)) {
                 gotelse ();
                 if ((!s_flg) || (pos > 0)) {
-                    string[pos++] = (char) c;
+                    string[pos++] = (char)c;
                 }
                 indent_puts (indent, use_tabs);
                 s_flg = FALSE;
@@ -416,7 +416,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             if ((!s_flg) || (pos > 0)) {
                 if ((pos == 0)
                     || ((string[pos - 1] != ' ') && (string[pos - 1] != '\t'))) {
-                    string[pos++] = (char) c;
+                    string[pos++] = (char)c;
                 }
             }
             break;
@@ -463,7 +463,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
                 p_flg[level]--;
                 tabs--;
             }
-            string[pos++] = (char) c;
+            string[pos++] = (char)c;
             indent_puts (indent, use_tabs);
             getnl (infile, indent, use_tabs);
             indent_puts (indent, use_tabs);
@@ -508,7 +508,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             break;
         case '"':
         case '\'':
-            string[pos++] = (char) c;
+            string[pos++] = (char)c;
             while ((cc = getchr (infile)) != c) {
                 if (check_MAXLEN ()) {
                     return (90); /* max. length of line should be MAXLEN */
@@ -529,7 +529,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             }
             break;
         case ';':
-            string[pos++] = (char) c;
+            string[pos++] = (char)c;
             indent_puts (indent, use_tabs);
             if ((p_flg[level] > 0) && (!ind[level])) {
                 tabs -= p_flg[level];
@@ -553,15 +553,15 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             }
             break;
         case '\\':
-            string[pos++] = (char) c;
+            string[pos++] = (char)c;
             string[pos++] = getchr (infile);
             break;
         case '?':
             q_flg = TRUE;
-            string[pos++] = (char) c;
+            string[pos++] = (char)c;
             break;
         case ':':
-            string[pos++] = (char) c;
+            string[pos++] = (char)c;
             peek = getchr (infile);
             if (peek == ':') {
                 indent_puts (indent, use_tabs);
@@ -593,9 +593,9 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             s_flg = TRUE;
             break;
         case '/':
-            string[pos++] = (char) c;
+            string[pos++] = (char)c;
             if ((peek = getchr (infile)) == '/') {
-                string[pos++] = (char) peek;
+                string[pos++] = (char)peek;
                 peek = (-1);
                 cpp_comment (infile, indent, use_tabs);
                 nl_flag = 2;
@@ -620,7 +620,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             break;
         case ')':
             paren--;
-            string[pos++] = (char) c;
+            string[pos++] = (char)c;
             indent_puts (indent, use_tabs);
             if (getnl (infile, indent, use_tabs)) {
                 peek = '\n';
@@ -634,7 +634,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             }
             break;
         case '#':
-            string[pos++] = (char) c;
+            string[pos++] = (char)c;
             while ((cc = getchr (infile)) != '\n') {
                 string[pos++] = cc;
             }
@@ -644,7 +644,7 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
             s_flg = TRUE;
             break;
         case '(':
-            string[pos++] = (char) c;
+            string[pos++] = (char)c;
             paren++;
             if (lookup (w_for)) {
                 int cnt;

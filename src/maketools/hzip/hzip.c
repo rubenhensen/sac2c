@@ -118,7 +118,7 @@ zipfile (char *filename, FILE *infile)
     col = 0;
 
     while (!feof (infile)) {
-        c = (char) getc (infile);
+        c = (char)getc (infile);
         special = special_char (c, infile);
         col++;
 

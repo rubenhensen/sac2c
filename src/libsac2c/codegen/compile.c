@@ -2795,7 +2795,7 @@ COMPdoPrepareSmart (info *info)
             strtok (NULL, ".");            // <filename>
             strtok (NULL, ".");            // <architecture>
             n = atoi (strtok (NULL, ".")); // <threads>
-            INFO_LINE_COUNT (info)[i] = (size_t) (n + 3);
+            INFO_LINE_COUNT (info)[i] = (size_t)(n + 3);
 
             fp = fopen (inode->d_name, "r");
             if (fp == NULL) {
@@ -4178,7 +4178,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
 
     float slope, angle;
     float pX, pY, diff;
-    const float t_angle = (float) global.mt_smart_gradient * ((float)M_PI / 180.0f);
+    const float t_angle = (float)global.mt_smart_gradient * ((float)M_PI / 180.0f);
 
     // Handle trivial cases
     if (global.mt_smart_gradient < 0 || global.mt_smart_gradient > 90) {
@@ -4224,14 +4224,14 @@ COMPdoDecideSmart (info *info, int spmd_id)
                 // profile.
                 if (idx < nr_measurements && measurements[idx]->problem_size != line[1]) {
                     memmove (&measurements[idx + 1], &measurements[idx],
-                             (size_t) (nr_measurements - idx)
+                             (size_t)(nr_measurements - idx)
                                * sizeof (struct smart_decision_t *));
                     moved = true;
                 }
                 // create a new profile
                 if (idx == nr_measurements || moved == true) {
                     measurements[idx] = create_smart_decision_data (info);
-                    measurements[idx]->problem_size = (int) line[1];
+                    measurements[idx]->problem_size = (int)line[1];
                     measurements[idx]->max_time = 0.0;
                     measurements[idx]->min_time = INFINITY;
                     nr_measurements++;
@@ -4242,7 +4242,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
                     measurements[idx]->nr_measurements[j] += line[2];
                     measurements[idx]->cum_time[j] += line[j + 3];
                     measurements[idx]->fun_time[j]
-                      = (float) measurements[idx]->cum_time[j]
+                      = (float)measurements[idx]->cum_time[j]
                         / (float)measurements[idx]->nr_measurements[j];
                     if (measurements[idx]->fun_time[j] > measurements[idx]->max_time) {
                         measurements[idx]->max_time = measurements[idx]->fun_time[j];
@@ -4304,7 +4304,7 @@ COMPdoDecideSmart (info *info, int spmd_id)
 
                 // collect data for regression
                 for (int g = 0; g < INFO_NR_THREADS (info); g++) {
-                    float jj = (float) (g + 1);
+                    float jj = (float)(g + 1);
                     diff = measurements[i]->max_time - measurements[i]->min_time;
                     X[g][0] = 1.0;
                     X[g][1] = jj;
@@ -4320,8 +4320,8 @@ COMPdoDecideSmart (info *info, int spmd_id)
 
                 // do recommendation
                 for (int g = 1; g < INFO_NR_THREADS (info); g++) {
-                    float j = (float) g;
-                    float jj = (float) (g - 1);
+                    float j = (float)g;
+                    float jj = (float)(g - 1);
                     pX = reg[0] + j * reg[1] + j * j * reg[2] + j * j * j * reg[3];
                     pY = reg[0] + jj * reg[1] + jj * jj * reg[2]
                          + jj * jj * jj * reg[3];

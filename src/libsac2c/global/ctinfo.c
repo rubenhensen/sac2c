@@ -187,7 +187,7 @@ Format2Buffer (const char *format, va_list arg_p)
         message_buffer_size = len_p + 2;
 
         va_copy (arg_p_copy, arg_p);
-        len_p = (size_t) (len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy));
+        len_p = (size_t)(len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy));
         va_end (arg_p_copy);
         DBUG_ASSERT (len >= 0, "message buffer corruption");
     }

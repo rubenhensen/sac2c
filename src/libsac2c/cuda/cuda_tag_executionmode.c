@@ -815,7 +815,7 @@ CUTEMap (node *arg_node, info *arg_info)
     DBUG_ASSERT (fundef != NULL, "Null fundef found!");
 
     if (INFO_TRAVMODE (arg_info) == cutem_tag) {
-        /* If the ap is conditional */ 
+        /* If the ap is conditional */
         if (FUNDEF_ISCONDFUN (fundef)) {
             /* If at least one of the arguments of the cond-fun
              * is CUDA defined, we check the suitability of executing
