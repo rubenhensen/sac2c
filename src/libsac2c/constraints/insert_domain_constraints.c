@@ -237,7 +237,7 @@ EraseRenamings (ptr_buf *stack, unsigned int pos)
     unsigned int i;
     node *avis;
 
-    for (i = PBUFpos (stack) - 1; i >= pos; i--) {
+    for (i = PBUFpos (stack); i-- > pos; ) {
         avis = (node *)PBUFptr (stack, i);
         AVIS_SUBST (avis) = NULL;
     }
