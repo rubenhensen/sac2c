@@ -1,3 +1,7 @@
+/**
+ * @file cpubind.c
+ * @brief Primary functions to initialise and interact with the HWLOC sub-system
+ */
 #include "config.h"
 
 #if ENABLE_HWLOC
@@ -15,6 +19,12 @@
 #define SAC_PULIST_EMPTY_CHAR '-'
 #define SAC_PULIST_FULL_CHAR '*'
 
+/**
+ * Print out a topological tree of the system using HWLOC-derived information
+ *
+ * @param obj HWLOC system information structure
+ * @param depth How many levels of the tree we want to traverse through
+ */
 static void
 hwloc_print_topology_tree (hwloc_obj_t obj, int depth)
 {
@@ -34,6 +44,13 @@ hwloc_print_topology_tree (hwloc_obj_t obj, int depth)
     }
 }
 
+/**
+ * Compare two HWLOC objects for equality
+ *
+ * @param a Object one
+ * @param b Object two
+ * @return Boolean integer value
+ */
 static int
 hwloc_compare_objs (hwloc_obj_t a, hwloc_obj_t b)
 {
@@ -41,13 +58,19 @@ hwloc_compare_objs (hwloc_obj_t a, hwloc_obj_t b)
            && hwloc_compare_types (a->type, b->type) == 0;
 }
 
+/**
+ * Print HWLOC object information
+ *
+ * @param obj The object to print
+ * @param length Print length
+ */
 static void
-hwloc_print_obj_info (hwloc_obj_t obj, unsigned depth)
+hwloc_print_obj_info (hwloc_obj_t obj, unsigned length)
 {
     char st[128];
 
     hwloc_obj_type_snprintf (st, sizeof (st), obj, 0);
-    printf ("## %*s%s", 2 * (depth + 2), "", st);
+    printf ("## %*s%s", 2 * (length + 2), "", st);
 
     switch (obj->type) {
     case HWLOC_OBJ_CORE:
@@ -62,6 +85,16 @@ hwloc_print_obj_info (hwloc_obj_t obj, unsigned depth)
     }
 }
 
+/**
+ * snprintf equivalent function for printing HWLOC object information.
+ *
+ * @param str An allocated string pointer
+ * @param size Length of string, not include `\0`
+ * @param topo HWLOC topology structure
+ * @param cpuset HWLOC cpuset structure
+ * @param bind HWLOC bind structure
+ * @returns EXIT_SUCCESS or EXIT_FAILURE
+ */
 int
 SAC_HWLOC_info_snprintf (char *str, size_t size, hwloc_topology_t topo,
                          hwloc_cpuset_t cpuset, hwloc_cpuset_t bind)
@@ -102,6 +135,14 @@ SAC_HWLOC_info_snprintf (char *str, size_t size, hwloc_topology_t topo,
     return exits;
 }
 
+/**
+ * Print human-readable list of HWLOC objects from topology information, and annotate
+ * those which match the selection
+ *
+ * @param sel HWLOC object to search for
+ * @param obj HWLOC object to search in and annotate output
+ * @param depth How many levels to traverse of the topology tree
+ */
 static void
 hwloc_print_topology_selection (hwloc_obj_t sel_obj, hwloc_obj_t obj, unsigned depth)
 {
@@ -120,6 +161,11 @@ hwloc_print_topology_selection (hwloc_obj_t sel_obj, hwloc_obj_t obj, unsigned d
     }
 }
 
+/**
+ * Bind current process to given HWLOC object
+ *
+ * @param cpuset HWLOC object to bind to
+ */
 void
 SAC_HWLOC_bind_on_cpuset (hwloc_cpuset_t cpuset)
 {
@@ -137,6 +183,13 @@ SAC_HWLOC_bind_on_cpuset (hwloc_cpuset_t cpuset)
     }
 }
 
+/**
+ * From a HWLOC object representing a CPU, find the first listed real core (not hyperthreaded)
+ * and return a copy of its HWLOC object representation.
+ *
+ * @param cpuset HWLOC CPU object to search in
+ * @returns A HWLOC cpuset representing a single real core
+ */
 hwloc_cpuset_t *
 SAC_HWLOC_get_core (hwloc_cpuset_t cpuset)
 {
@@ -160,6 +213,9 @@ SAC_HWLOC_get_core (hwloc_cpuset_t cpuset)
     return res;
 }
 
+/**
+ * Initialise the HWLOC sub-system
+ */
 void
 SAC_HWLOC_init ()
 {
@@ -252,6 +308,9 @@ SAC_HWLOC_init ()
     }
 }
 
+/**
+ * De-initialise the HWLOC sub-system
+ */
 void
 SAC_HWLOC_cleanup ()
 {
@@ -263,6 +322,9 @@ SAC_HWLOC_cleanup ()
         SAC_FREE (SAC_HWLOC_topo_data);
 }
 
-#else
+#else /* ENABLE_HWLOC */
+
+// compiling an empty file causes errors to be issued, this resolves it.
 static int this_translation_unit = 0xdead;
-#endif // ENABLE_HWLOC
+
+#endif /* ENABLE_HWLOC */

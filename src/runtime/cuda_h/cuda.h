@@ -32,7 +32,7 @@ extern "C" {
 #if SAC_SET_CPU_BIND_STRATEGY > 0
 #define SAC_CUDA_SETUP() { \
     char _cuda_hwloc_status[1024]; \
-    SAC_TR_GPU_PRINT ("(hwloc) iniit CUDA binding for card %d", SAC_SET_CPU_BIND_STRATEGY, 0); \
+    SAC_TR_GPU_PRINT ("(hwloc) init CUDA binding for card %d", SAC_SET_CPU_BIND_STRATEGY, 0); \
     SAC_CUDA_HWLOC_init (0, _cuda_hwloc_status, sizeof(_cuda_hwloc_status)); \
     SAC_TR_GPU_PRINT ("(hwloc) bound to %s", _cuda_hwloc_status); \
     }

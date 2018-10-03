@@ -1,4 +1,8 @@
-#include "config.h"
+/**
+ * @file cudabind.c
+ * @brief Runtime functions for performing HWLOC operations when using CUDA
+ */
+ #include "config.h"
 
 #include <stddef.h>
 
@@ -12,13 +16,23 @@
 #include "libsac/hwloc/cpubind.h"
 #include "libsac/essentials/message.h"
 
-// FIXME(hans) we currently use the same cpuset point as in the MT case, meaning that
-//            the cudahybrid backend could go boom!
+/**
+ * Function initialises the HWLOC sub-system for use with CUDA-backend.
+ *
+ * @FIXME we currently use the same cpuset point as in the MT case, meaning that
+ *        the cudahybrid backend could go boom!
+ *
+ * @param cuda_ordinal The CUDA device ordinal number (>= 0)
+ * @param str On successful initialisation of HWLOC sub-system, this variable
+ *            contains a human-readable description of the HWLOC topology
+ * @param  str_size Size of the allocated string str
+ */
 void
 SAC_CUDA_HWLOC_init (int cuda_ordinal, char *str, size_t str_size)
 {
     hwloc_cpuset_t tmp_hw_cpuset;
 
+    // FIXME might be good to make this a separate function?
     // cprintf(stderr, "-> Printing overall tree\n");
     // hwloc_print_topology_tree(hwloc_get_root_obj(SAC_HWLOC_topology), 0);
     // hwloc_print_topology_tree(hwloc_get_first_largest_obj_inside_cpuset(SAC_HWLOC_topology,
@@ -46,7 +60,18 @@ SAC_CUDA_HWLOC_init (int cuda_ordinal, char *str, size_t str_size)
 
     hwloc_bitmap_free (tmp_hw_cpuset);
 }
-#else
+
+#else /* ENABLE_HWLOC && ENABLE_CUDA */
+
+/**
+ * This is a dummy function that does no initialisation of the HWLOC sub-system.
+ * Calling this function will cause a Runtime Error.
+ *
+ * @param cuda_ordinal The CUDA device ordinal number (>= 0)
+ * @param str On successful initialisation of HWLOC sub-system, this variable
+ *            contains a human-readable description of the HWLOC topology
+ * @param  str_size Size of the allocated string str
+ */
 void
 SAC_CUDA_HWLOC_init (int cuda_ordinal, char *str, size_t str_size)
 {
