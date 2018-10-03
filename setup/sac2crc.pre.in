@@ -84,11 +84,12 @@
  *
  * %cuda_arch%     Current value of CUDA_ARCH
  *
- * %cflags%        Concatenation of:
- *                 - current value of CFLAGS
+ * %intcflags%     Contains flags generated internally by the compiler, includes:
  *                 - "-I<D>" for each <D> in INCPATH
  *                 - value(s) of -ccflag / -Xc on the command-line
  *                 - additional macro definitions for SAC_RC_METHOD, SAC_BACKEND_xxx, SAC_MT_LIB_xxx
+ *
+ * %cflags%        Concatenation of current CFLAGS and %intcflags%
  *
  * %compileflags%  Same as: %opt% %dbg% %cflags% %sacincludes%
  *
@@ -342,6 +343,10 @@
  *  LINK_PROG       Command line to link Program objects into a program executable.
  *                  Performs string substitutions as documented above.
  *
+ *  COMPILE_RMOD    Command line to compile a runtime-system Module C source into an
+ *                  object binary. Performs string substitutions as documented above.
+ *  LINK_RMOD       Command line to link runtime-system Module objects into a module
+ *                  library. Performs string substitutions as documented above.
  *
  ******************************************************************************/
 
@@ -420,6 +425,7 @@ MT_MODE          :=  0
 
 COMPILE_MOD      := "%cc% %compileflags% -c -o %target% %source%"
 COMPILE_PROG     := "%cc% %compileflags% -c -o %target% %source%"
+COMPILE_RMOD     := "%cc% %compileflags% -c -o %target% %source%"
 LINK_PROG        := "%ld% %objects% %linkflags% -o %target%"
 
 CFLAGS           :=  ""
@@ -444,6 +450,7 @@ OPT_O3           :=  "XXXXX"
 OPT_g            :=  "XXXXX"
 LDPATH           :=  "XXXXX"
 LINK_MOD         :=  "XXXXX"
+LINK_RMOD        :=  "XXXXX"
 
 /* FIXME I am not sure that this has to be specified here.  */
 DISTMEM_COMMLIB  :=  ""
@@ -482,6 +489,7 @@ OPT_O3           :=  "@OPT_O3@"
 OPT_g            :=  "@OPT_g@"
 
 LINK_MOD         :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %target%"
+LINK_RMOD        :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %target%"
 
 /*
  * The next 2 targets are dummies that allow later extension of the default_sbi
@@ -516,6 +524,7 @@ target add_static_link:
 SBI              +=  "-static"
 MODEXT           :=  ".a"
 LINK_MOD         :=  "rm -f %target% && ar cru %target% %objects% && @RANLIB@ %target%"
+LINK_RMOD        :=  "rm -f %target% && ar cru %target% %objects% && @RANLIB@ %target%"
 
 target add_pth:
 LIBS             +=  " @CCMT_PTH_CFLAGS@ @CCMT_PTH_LINK@"

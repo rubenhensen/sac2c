@@ -194,12 +194,11 @@ CCTperformTask (ccm_task_t task)
     // %sacincludes%
     const char *sacincludes_subst = global.config.sacincludes;
 
-    // %cflags%
-    str_buf *cflags_buf = SBUFcreate (1);
-    SBUFprint (cflags_buf, global.config.cflags);
-    FMGRmapPath (PK_inc_path, AddIncPath, cflags_buf);
-    SBUFprintf (cflags_buf, " %s", global.cflags);
-    SBUFprintf (cflags_buf,
+    // %intcflags%
+    str_buf *intcflags_buf = SBUFcreate (1);
+    FMGRmapPath (PK_inc_path, AddIncPath, intcflags_buf);
+    SBUFprintf (intcflags_buf, " %s", global.cflags);
+    SBUFprintf (intcflags_buf,
                 " -DSAC_TARGET_STRING=\\\"%s\\\""
                 " -DSAC_MODEXT_STRING=\\\"%s\\\""
                 " -DSAC_TARGET_ENV_STRING=\\\"%s\\\""
@@ -214,7 +213,10 @@ CCTperformTask (ccm_task_t task)
                 global.config.sbi, global.config.rc_method,
                 global.backend_string[global.backend], global.config.mt_lib,
                 global.config.mt_mode, global.config.rtspec, global.config.cuda_alloc);
-    char *cflags_subst = SBUF2strAndFree (&cflags_buf);
+    char *intcflags_subst = SBUF2strAndFree (&intcflags_buf);
+
+    // %cflags%
+    char *cflags_subst = STRcatn (3, global.config.cflags, " ", intcflags_subst);
 
     // %tree_cflags%
     char *tree_cflags_subst = global.tree_cflags;
@@ -333,13 +335,13 @@ CCTperformTask (ccm_task_t task)
 
 #define SUBST(Name) "%" #Name "%", Name##_subst
 #define DO_SUBST(CommandString)                                                          \
-    STRsubstTokens (CommandString, 22, SUBST (cc), SUBST (ld), SUBST (opt), SUBST (dbg), \
+    STRsubstTokens (CommandString, 23, SUBST (cc), SUBST (ld), SUBST (opt), SUBST (dbg), \
                     SUBST (cuda_arch), SUBST (sacincludes), SUBST (tree_cflags),         \
-                    SUBST (cflags), SUBST (compileflags), SUBST (extlibdirs),            \
-                    SUBST (modlibdirs), SUBST (modlibs), SUBST (saclibs), SUBST (libs),  \
-                    SUBST (ldflags), SUBST (tree_ldflags), SUBST (linkflags),            \
-                    SUBST (path), SUBST (target), SUBST (libname), SUBST (objects),      \
-                    SUBST (source))
+                    SUBST (intcflags), SUBST (cflags), SUBST (compileflags),             \
+                    SUBST (extlibdirs), SUBST (modlibdirs), SUBST (modlibs),             \
+                    SUBST (saclibs), SUBST (libs), SUBST (ldflags), SUBST (tree_ldflags),\
+                    SUBST (linkflags), SUBST (path), SUBST (target), SUBST (libname),    \
+                    SUBST (objects), SUBST (source))
 
 #define DO_COMPILE(CompileString, SourceDir, Source, Kind)                               \
     do {                                                                                 \
@@ -390,13 +392,15 @@ CCTperformTask (ccm_task_t task)
         if (task == CCT_ccompileonly) {
             source_subst = global.sacfilename;
             objects_subst = "";
-            cmd = global.do_ccompile == DO_C_mod ? global.config.compile_mod
+            cmd = global.do_ccompile == DO_C_rmod ? global.config.compile_rmod :
+                  global.do_ccompile == DO_C_mod ? global.config.compile_mod
                                                  : global.config.compile_prog;
             CTInote ("Compiling C source \"%s\"", source_subst);
         } else { // task == CCT_clinkonly
             source_subst = "";
             objects_subst = global.sacfilename;
-            cmd = global.do_clink == DO_C_mod ? global.config.link_mod
+            cmd = global.do_clink == DO_C_rmod ? global.config.link_rmod :
+                  global.do_clink == DO_C_mod ? global.config.link_mod
                                               : global.config.link_prog;
             CTInote ("Linking C objects \"%s\"", objects_subst);
         }

@@ -703,8 +703,10 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE_BEGIN ();
         ARG_CHOICE ("ldprog", global.do_clink = DO_C_prog);
         ARG_CHOICE ("ldmod", global.do_clink = DO_C_mod);
+        ARG_CHOICE ("ldrmod", global.do_clink = DO_C_rmod);
         ARG_CHOICE ("ccprog", global.do_ccompile = DO_C_prog);
         ARG_CHOICE ("ccmod", global.do_ccompile = DO_C_mod);
+        ARG_CHOICE ("ccrmod", global.do_ccompile = DO_C_rmod);
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("cc");

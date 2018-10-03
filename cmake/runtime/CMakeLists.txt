@@ -69,7 +69,9 @@ MACRO (ADD_LIBSAC_TARGET SRC_DIR VARIANT_TARGET)
     # Further, we overload the build-recepies for building object files,
     # libraries and executables.  Hopefully this is enough to build everything
     # we need.
-    SET (SACCC "${SAC2C_BUILD_DIR}/saccc ${SAC2C_EXEC} mod ${TARGET}")
+    # NOTE (hans) we use the `rmod` target which uses compiler and linker specified
+    # through the RCC and RLD sac2crc variables (additionally we use
+    SET (SACCC "${SAC2C_BUILD_DIR}/saccc ${SAC2C_EXEC} rmod ${TARGET}")
     SET (CMAKE_C_COMPILE_OBJECT
          "${SACCC} <DEFINES> <INCLUDES> -o <OBJECT>   -c <SOURCE>")
      #     <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT>   -c <SOURCE>")

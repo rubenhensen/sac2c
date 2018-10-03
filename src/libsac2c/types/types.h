@@ -762,7 +762,9 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (COMPILE_MOD, compile_mod, char *, str)                                 \
     DEF_RESOURCE (COMPILE_PROG, compile_prog, char *, str)                               \
     DEF_RESOURCE (LINK_MOD, link_mod, char *, str)                                       \
-    DEF_RESOURCE (LINK_PROG, link_prog, char *, str)
+    DEF_RESOURCE (LINK_PROG, link_prog, char *, str)                                     \
+    DEF_RESOURCE (COMPILE_RMOD, compile_rmod, char *, str)                               \
+    DEF_RESOURCE (LINK_RMOD, link_rmod, char *, str)
 
 typedef struct {
 #define DEF_RESOURCE(Name, Attr, Type1, Type2) Type1 Attr;
@@ -911,7 +913,7 @@ typedef struct ST_ENTRYITERATOR_T stentryiterator_t;
 typedef struct ST_SYMBOLTABLE_T sttable_t;
 typedef struct ST_SYMBOL_T stsymbol_t;
 
-typedef enum { DO_C_none = 0, DO_C_prog, DO_C_mod } do_c_type_t;
+typedef enum { DO_C_none = 0, DO_C_prog, DO_C_mod, DO_C_rmod } do_c_type_t;
 
 typedef enum {
     CCT_doall,        // regular compile/link for SAC programs/modules
