@@ -6937,7 +6937,7 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
     node *lhs;
     node *tmp_ids;
     ntype *ret_type;
-    size_t i,j = 0;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -6947,12 +6947,12 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
     assigns = NULL;
     lhs = NULL;
     ret_type = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
-    i = NTYPE_ARITY (ret_type) - 1; //i = ar,j = 0, i--, j++ 
-    while (j <= (NTYPE_ARITY (ret_type) - 1)) {
-        
+    i = NTYPE_ARITY (ret_type); 
+    while (i >= 1) {
+        //loop >=1 to avoid unsigned >=0 issues
         DBUG_ASSERT (vardecs != NULL, "inconsistant application found");
 
-        tmp_id = BuildTmpId (TYcopyType (PROD_MEMBER (ret_type, i)), new_vardecs);
+        tmp_id = BuildTmpId (TYcopyType (PROD_MEMBER (ret_type, i-1)), new_vardecs);
         assigns
           = TBmakeAssign (TBmakeLet (TBmakeIds (VARDEC_AVIS (vardecs), NULL), tmp_id),
                           assigns);
@@ -6962,7 +6962,6 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
         lhs = tmp_ids;
 
         i--;
-        j++;
         vardecs = VARDEC_NEXT (vardecs);
     }
     DBUG_ASSERT (vardecs == NULL, "inconsistant application found");
