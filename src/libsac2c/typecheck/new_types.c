@@ -7134,6 +7134,10 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 
         if (NTYPE_ARITY (type) >= 2) {
             tmp_ass = BuildDimAssign (arg, new_vardecs);
+            /* 
+             * decrement after check for > 0, safe method for reverse loop ending on 0
+             * i : (arity - 2) to 0
+             */
             for (i = NTYPE_ARITY (type) - 1; i-- > 0; ) {
                 if (IARR_IDIM (type, i) != NULL) {
                     dimnum = TBmakeNum (IDIM_DIM (IARR_IDIM (type, i)));
@@ -7158,6 +7162,10 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
 
         if (NTYPE_ARITY (type) >= 2) {
             tmp_ass = BuildShapeAssign (arg, new_vardecs);
+            /* 
+             * decrement after check for > 0, safe method for reverse loop ending on 0
+             * i : (arity - 2) to 0
+             */
             for (i = NTYPE_ARITY (type) - 1; i-- > 0; ) {
                 if (IDIM_ISHAPE (type, i) != NULL) {
                     assigns

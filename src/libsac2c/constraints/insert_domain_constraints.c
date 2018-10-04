@@ -236,7 +236,11 @@ EraseRenamings (ptr_buf *stack, unsigned int pos)
     DBUG_ENTER ();
     unsigned int i;
     node *avis;
-
+    
+    /* 
+     * decrement after check for > 0, safe method for reverse loop ending on 0
+     * i : (PBUFpos - 1) to pos(called with 0 at times)
+     */
     for (i = PBUFpos (stack); i-- > pos; ) {
         avis = (node *)PBUFptr (stack, i);
         AVIS_SUBST (avis) = NULL;

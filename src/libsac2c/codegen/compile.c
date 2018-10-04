@@ -1784,7 +1784,7 @@ MakeFunctionArgsSpmd (node *fundef)
     DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab inconsistent!");
 
     /* arguments */
-    for (i = argtab->size; i-- > 1;) {
+    for (i = argtab->size - 1; i >= 1; i--) {
         char *name;
         node *id;
         types *type;
@@ -1852,7 +1852,7 @@ MakeFunctionArgsCuda (node *fundef)
     DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab inconsistent!");
 
     /* arguments */
-    for (i = argtab->size; i-- > 1;) {
+    for (i = argtab->size - 1; i >= 1; i--) {
         char *name;
         node *id;
         types *type;
@@ -1934,7 +1934,7 @@ MakeFunctionArgs (node *fundef)
     }
 
     /* arguments */
-    for (i = argtab->size; i-- > 1;) {
+    for (i = argtab->size - 1; i >= 1; i--) {
         argtag_t tag;
         types *type;
         char *name;
@@ -2184,7 +2184,7 @@ MakeFunApArgs (node *ap, info *arg_info)
                NSgetModule (MODULE_NAMESPACE (INFO_MODUL (arg_info))));
 
     /* arguments */
-    for (i = argtab->size; i-- > 1;) {
+    for (i = argtab->size - 1; i >= 1; i--) {
         node *exprs = NULL;
         bool shared = FALSE; /* MUTC shared parameter? */
         shape_class_t shape;
@@ -3941,7 +3941,11 @@ COMPApIds (node *ap, info *arg_info)
     argtab = AP_ARGTAB (ap);
     DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
-    for (i = argtab->size; i-- > 1;) {
+    /* 
+     * decrement after check for > 0, safe method for reverse loop ending on 0
+     * i : (size - 1) to 0 
+     */
+    for (i = argtab->size; i-- > 0;) {
         if (argtab->ptr_out[i] != NULL) {
             let_ids = argtab->ptr_out[i];
             tag = argtab->tag[i];
@@ -4012,7 +4016,10 @@ COMPApArgs (node *ap, info *arg_info)
 
     argtab = AP_ARGTAB (ap);
     DBUG_ASSERT (argtab != NULL, "no argtab found!");
-
+    /* 
+     * decrement after check for > 0, safe method for reverse loop ending on 0
+     * i : (size - 1) to 0 
+     */
     for (i = argtab->size; i-- > 0;) {
         if (argtab->ptr_in[i] != NULL) {
             DBUG_ASSERT (NODE_TYPE (argtab->ptr_in[i]) == N_exprs,
@@ -4613,7 +4620,7 @@ COMPap (node *arg_node, info *arg_info)
         }
 
         /* Append NT of out arguments to ICM arguments. */
-        for (size_t i = AP_ARGTAB (arg_node)->size; i-- > 1;) {
+        for (size_t i = AP_ARGTAB (arg_node)->size - 1; i >= 1; i--) {
             if (AP_ARGTAB (arg_node)->ptr_out[i] == NULL) {
                 /* in/inout argument, append NT. */
                 if (NODE_TYPE (EXPRS_EXPR (AP_ARGTAB (arg_node)->ptr_in[i])) == N_id) {
@@ -4664,6 +4671,10 @@ COMPap (node *arg_node, info *arg_info)
                                                                  TBmakeAssign (icm_post,
                                                                                NULL))));
             if (global.mt_smart_mode == 2) {
+                /* 
+                 * decrement after check for > 0, safe method for reverse loop ending on 0
+                 * i : (data_size + 1) to 0 
+                 */
                 for (size_t i = data_size + 2; i-- > 0;) {
                     arg_node = TBmakeAssign (icm_data[i], arg_node);
                 }

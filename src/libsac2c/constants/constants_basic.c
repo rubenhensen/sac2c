@@ -882,6 +882,10 @@ COconstant2AST (constant *a)
     } else {
         /* First, we build the exprs! */
         exprs = NULL;
+        /* 
+         * decrement after check for > 0, safe method for reverse loop ending on 0
+         * i : (CONSTANT_VLEN - 1) to 0 
+         */
         for (i = CONSTANT_VLEN (a) ; i-- > 0; ) {
             exprs
               = TBmakeExprs (global.cv2scalar[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), i),

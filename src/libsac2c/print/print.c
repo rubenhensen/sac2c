@@ -909,7 +909,7 @@ Argtab2Fundef (node *fundef)
      */
     rets = DUPdoDupNode (argtab->ptr_out[0]);
 
-    for (i = argtab->size; i-- > 1;) {
+    for (i = argtab->size - 1; i >= 1; i--) {
         if (argtab->ptr_in[i] != NULL) {
             node *arg = DUPdoDupNode (argtab->ptr_in[i]);
             ARG_NEXT (arg) = args;
@@ -962,7 +962,7 @@ Argtab2Let (node *ap)
         ids = DUPdoDupNode (argtab->ptr_out[0]);
     }
 
-    for (i = argtab->size; i-- > 1;) {
+    for (i = argtab->size - 1; i >= 1; i--) {
         if (argtab->ptr_out[i] != NULL) {
             exprs = TBmakeExprs (TBmakeId (IDS_AVIS (argtab->ptr_out[i])), exprs);
         } else if (argtab->ptr_in[i] != NULL) {

@@ -400,6 +400,10 @@ CFcreateConstExprsFromType (ntype *type)
     DBUG_ENTER ();
 
     if (TYisProd (type)) {
+        /* 
+         * decrement after check for > 0, safe method for reverse loop ending on 0
+         * i : (ProductSize - 1) to 0
+         */
         for (i = TYgetProductSize (type); i-- > 0; ) {
             res = TBmakeExprs (CFcreateConstExprsFromType (TYgetProductMember (type, i)),
                                res);

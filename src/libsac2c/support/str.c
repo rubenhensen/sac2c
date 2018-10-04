@@ -1208,7 +1208,10 @@ STRstring2Array (const char *str)
     new_exprs = TBmakeExprs (TBmakeChar ('\0'), NULL);
 
     cnt = 0;
-    // Iterate from `STRlem (str) - 1` to `0` inclusively
+    /* 
+     * decrement after check for > 0, safe method for reverse loop ending on 0
+     * i : (STRlen - 1) to 0
+     */    
     for (i = STRlen (str); i-- > 0; ) {
         if ((i > 0) && (str[i - 1] == '\\')) {
             switch (str[i]) {

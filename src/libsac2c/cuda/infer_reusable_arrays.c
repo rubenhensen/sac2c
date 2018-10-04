@@ -184,7 +184,10 @@ ConsolidateRcs (rc_t *rc_list, info *arg_info)
             DBUG_UNREACHABLE ("Reusable array with dimension greater than 2!");
         }
 
-        //i => dim - 1... 0
+        /* 
+         * decrement after check for > 0, safe method for reverse loop ending on 0
+         * i : (dim - 1) to 0
+         */
         for (i = dim; i-- > 0;) {
             negoff = RC_NEGOFFSET (rc, i);
             posoff = RC_POSOFFSET (rc, i);
