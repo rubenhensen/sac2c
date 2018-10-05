@@ -164,12 +164,19 @@ hwloc_print_topology_selection (hwloc_obj_t sel_obj, hwloc_obj_t obj, unsigned d
 /**
  * Bind current process to given HWLOC object
  *
+ * @FIXME We assume that we are in a single-threaded mode!
  * @param cpuset HWLOC object to bind to
  */
 void
 SAC_HWLOC_bind_on_cpuset (hwloc_cpuset_t cpuset)
 {
     char *str;
+
+#if HWLOC_API_VERSION < 0x00010800
+    // bind current process to cpuset
+    if (hwloc_set_cpubind (SAC_HWLOC_topology, cpuset,
+                           HWLOC_CPUBIND_STRICT)) // assumes single-threaded execution
+#else
     hwloc_topology_t dup;
 
     // we need to duplicate the topology because cpubind consumes it
@@ -178,6 +185,7 @@ SAC_HWLOC_bind_on_cpuset (hwloc_cpuset_t cpuset)
     // bind current process to cpuset
     if (hwloc_set_cpubind (dup, cpuset,
                            HWLOC_CPUBIND_STRICT)) // assumes single-threaded execution
+#endif
     {
         SAC_RuntimeError ("Unable to bind to given HWLOC cpuset!");
     }
