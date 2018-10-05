@@ -45,7 +45,7 @@
 
 #define ICM_VARANY(dim, name)                                                            \
     {                                                                                    \
-        size_t i;                                                                           \
+        int i;                                                                           \
         name = (char **)malloc (dim * sizeof (char *));                                  \
         DBUG_PRINT ("BEtest", ("varany-arg with %d elems:\n", dim));                     \
         for (i = 0; i < dim; i++) {                                                      \
@@ -55,7 +55,7 @@
 
 #define ICM_VARNT(dim, name)                                                             \
     {                                                                                    \
-        size_t i;                                                                           \
+        int i;                                                                           \
         name = (char **)malloc (dim * sizeof (char *));                                  \
         DBUG_PRINT ("BEtest", ("varnt-arg with %d elems:\n", dim));                      \
         for (i = 0; i < dim; i++) {                                                      \
@@ -65,7 +65,7 @@
 
 #define ICM_VARID(dim, name)                                                             \
     {                                                                                    \
-        size_t i;                                                                           \
+        int i;                                                                           \
         name = (char **)malloc (dim * sizeof (char *));                                  \
         DBUG_PRINT ("BEtest", ("varid-arg with %d elems:\n", dim));                      \
         for (i = 0; i < dim; i++) {                                                      \
@@ -75,7 +75,7 @@
 
 #define ICM_VARINT(dim, varint)                                                          \
     {                                                                                    \
-        size_t i;                                                                           \
+        int i;                                                                           \
         varint = (int *)malloc (dim * sizeof (int));                                     \
         DBUG_PRINT ("BEtest", ("varint-arg with %d elems:\n", dim));                     \
         for (i = 0; i < dim; i++) {                                                      \

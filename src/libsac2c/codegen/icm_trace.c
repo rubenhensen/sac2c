@@ -48,7 +48,7 @@
 
 #define ICM_VARANY(dim, name)                                                            \
     {                                                                                    \
-        size_t i;                                                                        \
+        int i;                                                                        \
         for (i = 0; i < dim; i++) {                                                      \
             ICM_ANY (name[i])                                                            \
         }                                                                                \
@@ -56,7 +56,7 @@
 
 #define ICM_VARNT(dim, name)                                                             \
     {                                                                                    \
-        size_t i;                                                                        \
+        int i;                                                                        \
         for (i = 0; i < dim; i++) {                                                      \
             ICM_NT (name[i])                                                             \
         }                                                                                \
@@ -64,7 +64,7 @@
 
 #define ICM_VARID(dim, name)                                                             \
     {                                                                                    \
-        size_t i;                                                                           \
+        int i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
             ICM_ID (name[i])                                                             \
         }                                                                                \
@@ -72,7 +72,7 @@
 
 #define ICM_VARINT(dim, name)                                                            \
     {                                                                                    \
-        size_t i;                                                                           \
+        int i;                                                                           \
         for (i = 0; i < dim; i++) {                                                      \
             ICM_INT (name[i])                                                            \
         }                                                                                \
