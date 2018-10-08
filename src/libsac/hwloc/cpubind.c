@@ -322,12 +322,18 @@ SAC_HWLOC_init ()
 void
 SAC_HWLOC_cleanup ()
 {
-    if (SAC_HWLOC_topology)
+    if (SAC_HWLOC_topology) {
         hwloc_topology_destroy (SAC_HWLOC_topology);
-    if (SAC_HWLOC_cpu_sets)
+        SAC_HWLOC_topology = NULL;
+    }
+    if (SAC_HWLOC_cpu_sets) {
         SAC_FREE (SAC_HWLOC_cpu_sets);
-    if (SAC_HWLOC_topo_data)
+        SAC_HWLOC_cpu_sets = NULL;
+    }
+    if (SAC_HWLOC_topo_data) {
         SAC_FREE (SAC_HWLOC_topo_data);
+        SAC_HWLOC_topo_data = NULL;
+    }
 }
 
 #else /* ENABLE_HWLOC */

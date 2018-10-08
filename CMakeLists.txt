@@ -147,7 +147,7 @@ INCLUDE ("cmake/sac2c/sac2crc.cmake")
 UNSET (BINARY_DIR) # make sure we don't cause a conflict
 UNSET (STAMP_DIR) # make sure we don't cause a conflict
 # Create a target which links to the clean step
-ExternalProject_Add_StepTargets(runtime_libraries clean)
+ExternalProject_Add_StepTargets (runtime_libraries clean)
 # Add the target as a dependency to the `fullclean' target
 ADD_DEPENDENCIES (fullclean runtime_libraries-clean)
 
