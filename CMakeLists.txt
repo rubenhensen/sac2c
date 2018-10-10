@@ -102,7 +102,7 @@ SET_TARGET_PROPERTIES (sac2c sac4c sac2tex
 # This target will cause all build dirs (including externalprojects) to be cleaned
 ADD_CUSTOM_TARGET(fullclean
   COMMAND
-    ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target clean
+    +${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target clean
   COMMENT "Cleaning sac2c and runtime libraries")
 
 # we need to convert the target `list' into a string in order to pass it to the
@@ -138,7 +138,7 @@ UNSET (BINARY_DIR) # make sure we don't cause a conflict
 # Create a step to clean the build directory
 ExternalProject_Add_Step (runtime_libraries clean
   COMMAND
-    ${CMAKE_COMMAND} --build ${BINARY_DIR} --target clean
+  +${CMAKE_COMMAND} --build ${RUNTIME_BINARY_DIR} --target clean
   DEPENDEES configure
   COMMENT "Cleaning runtime libraries, in ${RUNTIME_BINARY_DIR}"
   EXCLUDE_FROM_MAIN 1
@@ -159,7 +159,7 @@ ADD_DEPENDENCIES (fullclean runtime_libraries-clean)
 ExternalProject_Add_StepTargets (runtime_libraries configure)
 FOREACH (__target ${RT_TARGETS})
   ADD_CUSTOM_TARGET (libsac-${__target}
-    COMMAND ${CMAKE_COMMAND} --build ${RUNTIME_BINARY_DIR} --target libsac-${__target}
+    COMMAND +${CMAKE_COMMAND} --build ${RUNTIME_BINARY_DIR} --target libsac-${__target}
   )
   ADD_DEPENDENCIES (libsac-${__target} runtime_libraries-configure)
   STRING (REPLACE "_" "-"  __sbi "${__target}") # FIXME not consistent
