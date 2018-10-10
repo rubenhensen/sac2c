@@ -18,11 +18,6 @@ TEST (HWLOCRuntime, HWLOCPrintStr)
     hwloc_obj_t obj1, obj2;
 
     hwloc_topology_init (&SAC_HWLOC_topology);
-
-    // read data from XML file to global var exposed by runtime library
-    ret = hwloc_topology_set_xml (SAC_HWLOC_topology, CMAKE_TESTS_PATH "/hwloc-test-topology.xml");
-    ASSERT_NE (ret, -1);
-
     hwloc_topology_load (SAC_HWLOC_topology);
 
 #if HWLOC_API_VERSION < 0x00010b00
@@ -36,7 +31,11 @@ TEST (HWLOCRuntime, HWLOCPrintStr)
     ret = SAC_HWLOC_info_snprintf (test_string, 1023, SAC_HWLOC_topology, obj1->cpuset, obj2->cpuset);
     EXPECT_NE (ret, EXIT_FAILURE);
 
+#if HWLOC_API_VERSION < 0x00010b00
+    ASSERT_STREQ (test_string, "Core #0 in Socket #0");
+#else
     ASSERT_STREQ (test_string, "Core #0 in Package #0");
+#endif
 
     hwloc_topology_destroy (SAC_HWLOC_topology);
 }
@@ -48,11 +47,6 @@ TEST (HWLOCRuntime, HWLOCGetCore)
     hwloc_cpuset_t * cpuset;
 
     hwloc_topology_init (&SAC_HWLOC_topology);
-
-    // read data from XML file to global var exposed by runtime library
-    ret = hwloc_topology_set_xml (SAC_HWLOC_topology, CMAKE_TESTS_PATH "/hwloc-test-topology.xml");
-    ASSERT_NE (ret, -1);
-
     hwloc_topology_load (SAC_HWLOC_topology);
 
 #if HWLOC_API_VERSION < 0x00010b00
@@ -75,11 +69,6 @@ TEST (HWLOCRuntime, HWLOCBind)
     hwloc_bitmap_t cpuset;
 
     hwloc_topology_init (&SAC_HWLOC_topology);
-
-    // read data from XML file to global var exposed by runtime library
-    ret = hwloc_topology_set_xml (SAC_HWLOC_topology, CMAKE_TESTS_PATH "/hwloc-test-topology.xml");
-    ASSERT_NE (ret, -1);
-
     hwloc_topology_load (SAC_HWLOC_topology);
 
     obj = hwloc_get_obj_by_type(SAC_HWLOC_topology, HWLOC_OBJ_CORE, 0);
