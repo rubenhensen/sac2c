@@ -43,7 +43,7 @@
 // Activating HWLOC pulls in unistd.h (which pulls in prototype of syscall())
 // When using most compiler, this redefinition below doesn't cause any problems,
 // except for NVCC, which complains about function redfinition.
-#if !SAC_CUDA_MACROS && ENABLE_HWLOC
+#if !__CUDACC__
 long syscall (long number, ...);
 #endif
 #endif
