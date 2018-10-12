@@ -712,6 +712,9 @@ GSCprintMainBegin (void)
     }
 
     INDENT;
+    fprintf (global.outfile, "SAC_HWLOC_SETUP();\n");
+
+    INDENT;
     fprintf (global.outfile, "SAC_MT_SETUP_INITIAL();\n");
 
     if (global.backend != BE_cuda) {
@@ -726,6 +729,11 @@ GSCprintMainBegin (void)
     fprintf (global.outfile, "SAC_HM_SETUP();\n");
     INDENT;
     fprintf (global.outfile, "SAC_MT_SETUP();\n");
+
+    if (global.backend == BE_cuda) {
+        INDENT;
+        fprintf (global.outfile, "SAC_CUDA_SETUP();\n");
+    }
 
     if (global.backend == BE_cudahybrid) {
         INDENT;
@@ -771,6 +779,15 @@ GSCprintMainEnd (void)
     fprintf (global.outfile, "SAC_CS_FINALIZE();\n");
     INDENT;
     fprintf (global.outfile, "SAC_MT_FINALIZE();\n");
+
+    if (global.backend == BE_cuda) {
+        INDENT;
+        fprintf (global.outfile, "SAC_CUDA_FINALIZE();\n");
+    }
+
+    INDENT;
+    fprintf (global.outfile, "SAC_HWLOC_FINALIZE();\n");
+
     INDENT;
     fprintf (global.outfile, "SAC_HM_PRINT();\n\n");
 

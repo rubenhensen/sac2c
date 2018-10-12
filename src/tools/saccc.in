@@ -7,7 +7,7 @@ die() {
 }
 
 if test $# -lt 3; then
-   echo "usage: $0 <sac2c> <prog|mod> <target> ..." >&2; exit 1
+   echo "usage: $0 <sac2c> <prog|mod|rmod> <target> ..." >&2; exit 1
 fi
 
 sac2c=${1:?}

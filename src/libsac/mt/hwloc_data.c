@@ -6,6 +6,7 @@
 
 #include "libsac/essentials/trace.h"
 #include "libsac/mt/mt.h"
+#include "runtime/hwloc_h/cpubind.h"
 #include "libsac/essentials/message.h"
 #include "hwloc_data.h"
 
@@ -315,92 +316,16 @@ pusString2cpuSets (char *pus_string, int num_pus)
 }
 
 void
-SAC_HWLOC_init (int threads)
+SAC_MT_HWLOC_init (int threads)
 {
     char *pus_string = NULL;
-    hwloc_obj_type_t socket_obj;
 
-    /*
-     * First we grab the host's topology and store it in the global variable:
-     */
-    hwloc_topology_init (&SAC_HWLOC_topology);
-    hwloc_topology_load (SAC_HWLOC_topology);
-
-    /*
-     * Now, we derive how many sockets, cores and pus we have.
-     * We store those values in the variables
-     * - num_sockets_available
-     * - num_cores_available
-     * - num_pus_available
-     * Note here, that these values are the *total* number of the
-     * corresponding entities, not the relative numbers!
-     */
-    int num_sockets_available;
-#if HWLOC_API_VERSION < 0x00010b00
-    num_sockets_available
-      = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_SOCKET);
-#else
-    num_sockets_available
-      = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_PACKAGE);
-#endif
-    if (num_sockets_available < 1) {
-#if HWLOC_API_VERSION < 0x00010b00
-        num_sockets_available
-          = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_NODE);
-#else
-        num_sockets_available
-          = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_NUMANODE);
-#endif
-        if (num_sockets_available < 1) {
-            SAC_RuntimeError (
-              "hwloc returned %d sockets, packages and NUMAnodes available. "
-              "Set cpu bind strategy to \"off\".",
-              num_sockets_available);
-        } else {
-#if HWLOC_API_VERSION < 0x00010b00
-            socket_obj = HWLOC_OBJ_NODE;
-#else
-            socket_obj = HWLOC_OBJ_NUMANODE;
-#endif
-        }
-    } else {
-#if HWLOC_API_VERSION < 0x00010b00
-        socket_obj = HWLOC_OBJ_SOCKET;
-#else
-        socket_obj = HWLOC_OBJ_PACKAGE;
-#endif
-    }
-
-#if HWLOC_API_VERSION < 0x00010b00
-    int num_numa_nodes_avail
-      = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_NODE);
-#else
-    int num_numa_nodes_avail
-      = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_NUMANODE);
-#endif
-    if (num_numa_nodes_avail < 1) {
-        SAC_RuntimeError ("hwloc returned %d numa nodes available. Turn -mt_bind off",
-                          num_numa_nodes_avail);
-    }
-
-    int num_cores_available;
-    num_cores_available = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_CORE);
-    if (num_cores_available < 1) {
-        SAC_RuntimeError ("hwloc returned %d cores available. Turn -mt_bind off",
-                          num_cores_available);
-    }
-
-    int num_pus_available;
-    num_pus_available = hwloc_get_nbobjs_by_type (SAC_HWLOC_topology, HWLOC_OBJ_PU);
-    if (num_pus_available < 1) {
-        SAC_RuntimeError ("hwloc returned %d pus available. Turn -mt_bind off",
-                          num_pus_available);
+    if (!SAC_HWLOC_topology) {
+        SAC_RuntimeError ("HWLOC topology is missing, was it allocated?");
     }
 
     /*
      * Now we compute the intended PU usage from the available sockets,
-
-
      * cores and pus (assuming a symmetric architecture), the number
      * of threads we want to create and the strategy provided in -mt_bind
      *
@@ -409,28 +334,39 @@ SAC_HWLOC_init (int threads)
      * a to-be-used PU ('*') or a not-to -be-used PU ('-').
      */
     if (SAC_MT_cpu_bind_strategy == 1) {
-        pus_string = strategySimple (threads, num_sockets_available,
-                                     num_cores_available / num_sockets_available,
-                                     num_pus_available / num_cores_available);
+        pus_string = strategySimple (threads, SAC_HWLOC_topo_data->num_sockets_available,
+                                     SAC_HWLOC_topo_data->num_cores_available
+                                       / SAC_HWLOC_topo_data->num_sockets_available,
+                                     SAC_HWLOC_topo_data->num_pus_available
+                                       / SAC_HWLOC_topo_data->num_cores_available);
     } else if (SAC_MT_cpu_bind_strategy == 2) {
-        pus_string = strategyEnv (threads, num_sockets_available,
-                                  num_cores_available / num_sockets_available,
-                                  num_pus_available / num_cores_available);
+        pus_string = strategyEnv (threads, SAC_HWLOC_topo_data->num_sockets_available,
+                                  SAC_HWLOC_topo_data->num_cores_available
+                                    / SAC_HWLOC_topo_data->num_sockets_available,
+                                  SAC_HWLOC_topo_data->num_pus_available
+                                    / SAC_HWLOC_topo_data->num_cores_available);
     } else if (SAC_MT_cpu_bind_strategy == 3) {
-        pus_string = strategyNuma (threads, num_numa_nodes_avail, num_sockets_available,
-                                   num_cores_available / num_sockets_available,
-                                   num_pus_available / num_cores_available);
+        pus_string = strategyNuma (threads, SAC_HWLOC_topo_data->num_numa_nodes_avail,
+                                   SAC_HWLOC_topo_data->num_sockets_available,
+                                   SAC_HWLOC_topo_data->num_cores_available
+                                     / SAC_HWLOC_topo_data->num_sockets_available,
+                                   SAC_HWLOC_topo_data->num_pus_available
+                                     / SAC_HWLOC_topo_data->num_cores_available);
     } else if (SAC_MT_cpu_bind_strategy == 4) {
-        pus_string = strategySocket (threads, num_sockets_available,
-                                     num_cores_available / num_sockets_available,
-                                     num_pus_available / num_cores_available);
+        pus_string = strategySocket (threads, SAC_HWLOC_topo_data->num_sockets_available,
+                                     SAC_HWLOC_topo_data->num_cores_available
+                                       / SAC_HWLOC_topo_data->num_sockets_available,
+                                     SAC_HWLOC_topo_data->num_pus_available
+                                       / SAC_HWLOC_topo_data->num_cores_available);
 
     } else if (SAC_MT_cpu_bind_strategy == 5) {
-        pus_string = strategyExtString (threads, num_sockets_available,
-                                        num_cores_available / num_sockets_available,
-                                        num_pus_available / num_cores_available);
+        pus_string
+          = strategyExtString (threads, SAC_HWLOC_topo_data->num_sockets_available,
+                               SAC_HWLOC_topo_data->num_cores_available
+                                 / SAC_HWLOC_topo_data->num_sockets_available,
+                               SAC_HWLOC_topo_data->num_pus_available
+                                 / SAC_HWLOC_topo_data->num_cores_available);
     } else {
-
         SAC_RuntimeError (
           "chosen cpubindstrategy is not yet implemented in the runtime system");
     }
@@ -442,18 +378,10 @@ SAC_HWLOC_init (int threads)
      * Eventually, the pus-string is being used to preset the global structure
      * used for the binding process through hwloc:
      */
-    SAC_HWLOC_cpu_sets = pusString2cpuSets (pus_string, num_pus_available);
+    SAC_HWLOC_cpu_sets
+      = pusString2cpuSets (pus_string, SAC_HWLOC_topo_data->num_pus_available);
 
     SAC_TR_LIBSAC_PRINT (("Pinning done"));
-}
-
-void
-SAC_HWLOC_cleanup ()
-{
-    if (SAC_HWLOC_topology) {
-        SAC_FREE (SAC_HWLOC_cpu_sets);
-        hwloc_topology_destroy (SAC_HWLOC_topology);
-    }
 }
 
 #endif /* SAC_MT_MODE > 0 */

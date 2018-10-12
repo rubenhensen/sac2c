@@ -11,6 +11,9 @@ ENDIF ()
 IF (NOT SAC2C_SOURCE_DIR)
     MESSAGE (FATAL_ERROR "The SAC2C_SOURCE_DIR is not set!")
 ENDIF ()
+IF (NOT RT_TARGETS)
+    MESSAGE (FATAL_ERROR "Build targets are missing!")
+ENDIF ()
 
 SET (CMAKE_${CMAKE_BUILD_TYPE}_POSTFIX "${BUILD_TYPE_POSTFIX}")
 
@@ -33,7 +36,6 @@ GET_FILENAME_COMPONENT (SAC2C_SOURCE_DIR "${SAC2C_SOURCE_DIR}" ABSOLUTE)
 # we include the global config files
 include ("${SAC2C_SOURCE_DIR}/cmake/macros.cmake")
 include ("${SAC2C_SOURCE_DIR}/cmake/options.cmake")
-include ("${SAC2C_SOURCE_DIR}/cmake/settings.cmake")
 
 # and include our for checks on sac2c
 include ("${SAC2C_SOURCE_DIR}/cmake/runtime/config.cmake")
@@ -67,7 +69,9 @@ MACRO (ADD_LIBSAC_TARGET SRC_DIR VARIANT_TARGET)
     # Further, we overload the build-recepies for building object files,
     # libraries and executables.  Hopefully this is enough to build everything
     # we need.
-    SET (SACCC "${SAC2C_BUILD_DIR}/saccc ${SAC2C_EXEC} mod ${TARGET}")
+    # NOTE (hans) we use the `rmod` target which uses compiler and linker specified
+    # through the RCC and RLD sac2crc variables (additionally we use
+    SET (SACCC "${SAC2C_BUILD_DIR}/saccc ${SAC2C_EXEC} rmod ${TARGET}")
     SET (CMAKE_C_COMPILE_OBJECT
          "${SACCC} <DEFINES> <INCLUDES> -o <OBJECT>   -c <SOURCE>")
      #     <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT>   -c <SOURCE>")
@@ -82,7 +86,11 @@ MACRO (ADD_LIBSAC_TARGET SRC_DIR VARIANT_TARGET)
     ADD_SUBDIRECTORY (${SAC2C_SOURCE_DIR}/${SRC_DIR}    ${SRC_DIR}-${TARGET})
 ENDMACRO ()
 
-FOREACH (TARGET IN ITEMS ${TARGETS})
+# convert RT target string back into list
+STRING (REPLACE ":" ";" _TARGETS ${RT_TARGETS})
+MESSAGE (STATUS "Building the following targets: ${_TARGETS}")
+
+FOREACH (TARGET IN ITEMS ${_TARGETS})
     ADD_LIBSAC_TARGET (src/libsac ${TARGET})
     ADD_LIBSAC_TARGET (src/libsacphm ${TARGET})
     ADD_LIBSAC_TARGET (src/libsacphmc ${TARGET})

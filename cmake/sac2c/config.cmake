@@ -447,20 +447,21 @@ IF (CUDA)
       RUN_OUTPUT_VARIABLE CUDA_R_OUTPUT)
     # C_RESULT it TRUE when compilation works
     # R_RESULT is the status return (which should be 0, i.e. FALSE)
-    IF (CUDA_C_RESULT AND NOT CUDA_R_RESULT)
-      MESSAGE (STATUS "Setting CUDA Device-CC: `${CUDA_R_OUTPUT}'")
+    IF (CUDA_C_RESULT)
       SET (ENABLE_CUDA ON)
-      SET (CUDA_ARCH  "${CUDA_R_OUTPUT}")
-      SET (CUDA_ROOT  "${CUDA_TOOLKIT_ROOT_DIR}") # FIXME: switch to package var?
-      SET (NVCC_PATH  "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc")
+      # add further RT lib build targets
+      LIST (APPEND RT_TARGETS cuda cuda_reg cuda_alloc cuda_man)
+      LIST (APPEND SAC2CRC_LIBS_PATHS "${CUDA_TOOLKIT_ROOT_DIR}/lib64")
       LIST (APPEND SAC2CRC_INCS "${CUDA_INCLUDE_DIRS}")
-    ELSEIF (CUDA_C_RESULT AND CUDA_R_RESULT) # no CUDA device
-      MESSAGE (STATUS "Unable to determine CUDA Device-CC, setting default as `-arch=sm_35'")
-      SET (ENABLE_CUDA ON)
-      SET (CUDA_ARCH  "-arch=sm_35")
-      SET (CUDA_ROOT  "${CUDA_TOOLKIT_ROOT_DIR}") # FIXME: switch to package var?
-      SET (NVCC_PATH  "${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc")
-      LIST (APPEND SAC2CRC_INCS "${CUDA_INCLUDE_DIRS}")
+      LIST (APPEND SAC2CRC_LIBS "-lcudart" "-lcublas")
+      SET (NVCC_PATH  "${CUDA_TOOLKIT_ROOT_DIR}/bin")
+      IF (NOT CUDA_R_RESULT)
+        MESSAGE (STATUS "Setting CUDA Device-CC: `${CUDA_R_OUTPUT}'")
+        SET (CUDA_ARCH  "${CUDA_R_OUTPUT}")
+      ELSEIF (CUDA_C_RESULT AND CUDA_R_RESULT) # no CUDA device
+        MESSAGE (STATUS "Unable to determine CUDA Device-CC, setting default as `-arch=sm_35'")
+        SET (CUDA_ARCH  "-arch=sm_35")
+      ENDIF ()
     ELSE () # something wrong with CUDA install
       MESSAGE (WARNING "CUDA installation is not working: ${CUDA_C_OUTPUT}")
     ENDIF ()

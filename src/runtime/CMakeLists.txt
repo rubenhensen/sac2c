@@ -4,13 +4,13 @@ SET (DIR_LIST)
 FOREACH (dir ${tmplst})
   SET (mask "CMakeLists.txt|Makefile|m4")
   IF (NOT ${dir} MATCHES ${mask})
-    LIST (APPEND DIR_LIST ${dir}) 
+    LIST (APPEND DIR_LIST ${dir})
   ENDIF (NOT ${dir} MATCHES ${mask})
 ENDFOREACH (dir)
 
 # Create a list of directories in the project binary dir
 # in order to generate .h.m4 files.
-FOREACH (dir ${DIR_LIST}) 
+FOREACH (dir ${DIR_LIST})
   FILE (MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${dir}")
 ENDFOREACH (dir)
 
@@ -39,11 +39,11 @@ FOREACH(name ${M4_FILES})
   LIST (APPEND M4_HEADERS ${dst})
 ENDFOREACH (name)
 
-
 FILE (GLOB_RECURSE RUNTIME_HEADERS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.h")
 
 SET (ORDERED_RUNTIME_HEADERS
 essentials_h/rc_methods.h
+essentials_h/cuda_transfer_methods.h
 essentials_h/types.h
 essentials_h/audwl.h
 essentials_h/rt_commandline.h
@@ -69,6 +69,9 @@ extras_h/rt_profile.h
 extras_h/runtimecheck.h
 extras_h/rt_trace.h
 mt_h/rt_mt.h
+hwloc_h/cpubind.h
+../libsac/hwloc/cudabind.h
+../libsac/hwloc/cpubind.h
 ../libsac/mt/mt.h
 mt_h/rt_mt_omp.h
 ../libsac/mt/mt_omp.h

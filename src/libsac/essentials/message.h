@@ -20,13 +20,13 @@
 #include "runtime/essentials_h/std.h"
 
 SAC_C_EXTERN void (*SAC_MessageExtensionCallback) (void);
-SAC_C_EXTERN void SAC_RuntimeError (char *format, ...);
+SAC_C_EXTERN void SAC_RuntimeError (const char *format, ...);
 SAC_C_EXTERN void SAC_RuntimeError_Mult (int cnt, ...);
-SAC_C_EXTERN void SAC_RuntimeErrorLine (int line, char *format, ...);
-SAC_C_EXTERN void SAC_RuntimeWarning (char *format, ...);
-SAC_C_EXTERN void SAC_RuntimeWarningMaster (char *format, ...);
+SAC_C_EXTERN void SAC_RuntimeErrorLine (int line, const char *format, ...);
+SAC_C_EXTERN void SAC_RuntimeWarning (const char *format, ...);
+SAC_C_EXTERN void SAC_RuntimeWarningMaster (const char *format, ...);
 SAC_C_EXTERN const char *SAC_PrintShape (SAC_array_descriptor_t desc);
-SAC_C_EXTERN void SAC_Print (char *format, ...);
+SAC_C_EXTERN void SAC_Print (const char *format, ...);
 
 #endif /* _SAC_MESSAGE_H_ */
 

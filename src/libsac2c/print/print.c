@@ -1280,19 +1280,19 @@ PRTmodule (node *arg_node, info *arg_info)
         }
 
         if (NULL != MODULE_STRUCTS (arg_node)) {
-            fprintf (global.outfile, "\n\n");
+            fprintf (global.outfile, "\n/* Structure Declarations */\n");
             /* print structdefs */
             TRAVdo (MODULE_STRUCTS (arg_node), arg_info);
         }
 
         if (NULL != MODULE_TYPEFAMILIES (arg_node)) {
-            fprintf (global.outfile, "\n\n");
+            fprintf (global.outfile, "\n/* Type Families */\n");
             /* print typefamilies */
             TRAVdo (MODULE_TYPEFAMILIES (arg_node), arg_info);
         }
 
         if (NULL != MODULE_TYPES (arg_node)) {
-            fprintf (global.outfile, "\n\n");
+            fprintf (global.outfile, "\n/* Type Definitions */\n");
             /* print typedefs */
             TRAVdo (MODULE_TYPES (arg_node), arg_info);
         }
@@ -1697,24 +1697,27 @@ PRTtypedef (node *arg_node, info *arg_info)
         fprintf (global.outfile, "\n");
     }
 
-    if (global.backend != BE_cuda && global.backend != BE_cudahybrid) {
-        if (TYPEDEF_COPYFUN (arg_node) != NULL) {
-            fprintf (global.outfile, "\n%s %s %s( %s);\n", PRINT_EXTERN,
-                     TYPEDEF_NAME (arg_node), TYPEDEF_COPYFUN (arg_node),
-                     TYPEDEF_NAME (arg_node));
-        }
-        if (TYPEDEF_FREEFUN (arg_node) != NULL) {
-            fprintf (global.outfile, "%s void %s( %s);\n\n", PRINT_EXTERN,
-                     TYPEDEF_FREEFUN (arg_node), TYPEDEF_NAME (arg_node));
-        }
-    } else {
-        if (TYPEDEF_COPYFUN (arg_node) != NULL) {
-            CTIwarn ("Discarding copy fun for %s\n", TYPEDEF_NAME (arg_node));
-        }
-        if (TYPEDEF_FREEFUN (arg_node) != NULL) {
-            CTIwarn ("Discarding free fun for %s\n", TYPEDEF_NAME (arg_node));
-        }
+    /** BEGINNOTE
+     * For the CUDA backends (`CUDA' and `CUDAHybrid') both the COPYFUN
+     * and the FREEFUN were intentionally being discarded. Why, is not know.
+     * I (Hans) have removed the if-block and now allow for the COPY- and
+     * FREEFUN to be printed.
+     *
+     * The following warning was issued when a discard happened:
+     *
+     *   CTIwarn("Discarding copy fun for %s\n", TYPEDEF_NAME( arg_node));
+     *
+     */
+    if (TYPEDEF_COPYFUN (arg_node) != NULL) {
+        fprintf (global.outfile, "\n%s %s %s( %s);\n", PRINT_EXTERN,
+                 TYPEDEF_NAME (arg_node), TYPEDEF_COPYFUN (arg_node),
+                 TYPEDEF_NAME (arg_node));
     }
+    if (TYPEDEF_FREEFUN (arg_node) != NULL) {
+        fprintf (global.outfile, "%s void %s( %s);\n\n", PRINT_EXTERN,
+                 TYPEDEF_FREEFUN (arg_node), TYPEDEF_NAME (arg_node));
+    }
+    /* ENDNOTE */
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
         PRINT_CONT (TRAVdo (TYPEDEF_NEXT (arg_node), arg_info), ;);

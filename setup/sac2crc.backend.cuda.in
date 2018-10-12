@@ -7,31 +7,57 @@
  *       are deactivated (see CFLAGS). A list of valid keys to use can be
  *       found in doc/cuda_warning_codes.txt.
  *
- * NOTE: CUDA targets assume CUDA version 6.0 >= is used...
+ * NOTE: CUDA targets assume CUDA version 6.5 > is used... support for 32-bit
+ *       has been dropped (as CUDA no longer develops this).
  */
-target cuda_base :: default_sbi:
+
+target cuda :: default_sbi:
+SBI              :=  "cuda"
 BACKEND          :=  "Cuda"
 
 CUDA_ARCH        :=  "@CUDA_ARCH@"
 
 CEXT             :=  ".cu"
-CC               :=  "@NVCC_PATH@"
-CFLAGS           :=  "@CUDA_ARCH@ --maxrregcount 20 -Xcompiler -Wall "
+CC               :=  "@NVCC_PATH@/nvcc"
+CFLAGS           :=  "--maxrregcount 20 -Xcompiler -Wall -Xcompiler -fPIC "
                      "-Xcompiler -Wno-unused -Xcompiler -fno-builtin "
-                     "-Xcudafe '--diag_suppress=set_but_not_used --diag_suppress=declared_but_not_referenced' "
-                     " -I@CUDA_ROOT@/include "
-LIBS             :=  " @CCDLLINK@ -lcudart -lcublas"
+                     "-Xcudafe '--diag_suppress=set_but_not_used --diag_suppress=declared_but_not_referenced --diag_suppress=expr_has_no_effect' "
+LIBS             +=  " @CCDLLINK@ -lstdc++"
 
-target cuda :: cuda_base:
-EXTLIBPATH       +=  "@CUDA_ROOT@/lib64:"
+COMPILE_PROG     :=  "%cc% %cuda_arch% %compileflags% -c -o %target% %source%"
+COMPILE_MOD      :=  "%cc% %cuda_arch% %compileflags% -dw -o %target% %source%"
+COMPILE_RMOD     :=  "@CC@ %opt% %dbg% -pedantic -g @GENPIC@ @RCCCFLAGS@ %intcflags% %sacincludes% -c -o %target% %source%"
+LINK_MOD         :=  "%cc% %cuda_arch% -Xcompiler -fPIC -dlink -o dlink.o %objects% "
+                     "&& %ld% %objects% dlink.o %linkflags% -shared -Wl,--allow-multiple-definition "
+                     "-Wl,-allow-shlib-undefined -O3 -L%path% -Wl,-rpath,%path% -o %target%"
+LINK_RMOD        :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %target%"
 
-target cuda32 :: cuda_base:
-EXTLIBPATH       +=  "@CUDA_ROOT@/lib:"
+
+/*
+ * These targets expose the CUDA host memory allocators
+ *   Default is 'system' from `default_sbi'
+ */
+
+target cuda_alloc_registered:
+SBI              +=  "-reg"
+CUDA_ALLOC       :=  "cureg"
+
+target cuda_alloc_allocated:
+SBI              +=  "-alloc"
+CUDA_ALLOC       :=  "cualloc"
+
+target cuda_alloc_managed:
+SBI              +=  "-man"
+CUDA_ALLOC       :=  "cuman"
+
+target cuda_reg :: cuda :: cuda_alloc_registered:
+target cuda_alloc :: cuda :: cuda_alloc_allocated:
+target cuda_man :: cuda :: cuda_alloc_managed:
+
+/*
+ * These targets are only relevent for the CUDA `Hybrid' backend
+ */
 
 target cudahybrid :: cuda:
-BACKEND          :=  "CudaHybrid"
-MT_MODE          :=  2
-
-target cudahybrid32 :: cuda32:
 BACKEND          :=  "CudaHybrid"
 MT_MODE          :=  2

@@ -16,11 +16,13 @@ CMAKE_POLICY (VERSION 3.4)
 INCLUDE (ExternalProject)
 INCLUDE (FeatureSummary)
 
+# DEFAULT Build Targets for Runtime Libraries
+SET (RT_TARGETS seq seq_rt mt_pth mt_pth_rt mt_pth_xt)
+
 # Include config related cmake files
 INCLUDE ("cmake/macros.cmake")
 INCLUDE ("cmake/options.cmake")
 INCLUDE ("cmake/sac2c/config.cmake")
-INCLUDE ("cmake/settings.cmake")
 
 # Include common directories for the project.
 INCLUDE_DIRECTORIES(
@@ -100,8 +102,12 @@ SET_TARGET_PROPERTIES (sac2c sac4c sac2tex
 # This target will cause all build dirs (including externalprojects) to be cleaned
 ADD_CUSTOM_TARGET(fullclean
   COMMAND
-    ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target clean
+    +${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR} --target clean
   COMMENT "Cleaning sac2c and runtime libraries")
+
+# we need to convert the target `list' into a string in order to pass it to the
+# runtime build system - we convert it back into a list on the other end.
+STRING (REPLACE ";" ":" _TARGETS "${RT_TARGETS}")
 
 # This is where we call the build of the sac2c shared-libraries
 # This *depends* on sac2c having been build first!
@@ -120,29 +126,48 @@ ExternalProject_Add(runtime_libraries
         -DBUILD_TYPE_POSTFIX=${BUILD_TYPE_POSTFIX}
         -DSHARED_LIB_EXT=${SHARED_LIB_EXT}
         -DLINKSETSIZE=${LINKSETSIZE}
+        -DRT_TARGETS:STRING=${_TARGETS}
 )
 # We set dependencies on the configure step, this makes sure we propogate
 # certain values (such as from sac2crc).
 ExternalProject_Add_StepDependencies(runtime_libraries configure sac2c sac2cShared check_repo_version)
 # Get runtime library build directory
-ExternalProject_Get_Property (runtime_libraries BINARY_DIR STAMP_DIR)
+ExternalProject_Get_Property (runtime_libraries BINARY_DIR)
+SET (RUNTIME_BINARY_DIR ${BINARY_DIR}) # redefine name to something more useful
+UNSET (BINARY_DIR) # make sure we don't cause a conflict
 # Create a step to clean the build directory
 ExternalProject_Add_Step (runtime_libraries clean
   COMMAND
-    ${CMAKE_COMMAND} --build ${BINARY_DIR} --target clean
+  +${CMAKE_COMMAND} --build ${RUNTIME_BINARY_DIR} --target clean
   DEPENDEES configure
-  COMMENT "Cleaning runtime libraries, in ${BINARY_DIR}"
+  COMMENT "Cleaning runtime libraries, in ${RUNTIME_BINARY_DIR}"
   EXCLUDE_FROM_MAIN 1
   ALWAYS 1)
 # create both the local sac2crc file and the prelude sac2crc file
-SET (RUNTIME_BINARY_DIR ${BINARY_DIR})
 INCLUDE ("cmake/sac2c/sac2crc.cmake")
-UNSET (BINARY_DIR) # make sure we don't cause a conflict
-UNSET (STAMP_DIR) # make sure we don't cause a conflict
 # Create a target which links to the clean step
-ExternalProject_Add_StepTargets(runtime_libraries clean)
+ExternalProject_Add_StepTargets (runtime_libraries clean)
 # Add the target as a dependency to the `fullclean' target
 ADD_DEPENDENCIES (fullclean runtime_libraries-clean)
+# We extend ExternalProject definition to include targets to directly
+# build specifc libraries (target specific), additionally we include some
+# properties in the target to make it easier to use.
+# XXX (hans) we are not creating a library target, meaning it can no be used
+# directly as part of e.g. target_link_libraries functions. As such we instead
+# force add target properties which we can access explicitly.
+# Expose configure step as target
+ExternalProject_Add_StepTargets (runtime_libraries configure)
+FOREACH (__target ${RT_TARGETS})
+  ADD_CUSTOM_TARGET (libsac-${__target}
+    COMMAND +${CMAKE_COMMAND} --build ${RUNTIME_BINARY_DIR} --target libsac-${__target}
+  )
+  ADD_DEPENDENCIES (libsac-${__target} runtime_libraries-configure)
+  STRING (REPLACE "_" "-"  __sbi "${__target}") # FIXME not consistent
+  SET_TARGET_PROPERTIES (libsac-${__target}
+    PROPERTIES
+    OUTPUT_NAME "${RUNTIME_BINARY_DIR}/lib/host/${__sbi}/libsac${BUILD_TYPE_POSTFIX}${SHARED_LIB_EXT}"
+    BUILD_RPATH "${RUNTIME_BINARY_DIR}/lib/host/${__sbi}")
+ENDFOREACH ()
 
 # this target is meant to copy over the sac2crc prelude file to the users
 # .sac2crc directory...

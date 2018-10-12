@@ -29,6 +29,8 @@
 #ifndef _SAC_MT_BARRIERS_H_
 #define _SAC_MT_BARRIERS_H_
 
+#include "config.h"
+
 #include <pthread.h>
 
 // futex barrier libraries. The futex barrier is only made available on linux
@@ -38,7 +40,12 @@
 #include <sys/syscall.h>
 #include <linux/futex.h>
 
+// Activating HWLOC pulls in unistd.h (which pulls in prototype of syscall())
+// When using most compiler, this redefinition below doesn't cause any problems,
+// except for NVCC, which complains about function redfinition.
+#if !__CUDACC__
 long syscall (long number, ...);
+#endif
 #endif
 
 #include "runtime/essentials_h/rt_misc.h" // SAC_C_EXTERN
@@ -344,4 +351,3 @@ lift_futex_barrier (volatile unsigned int *glflag)
 #endif
 
 #endif
-

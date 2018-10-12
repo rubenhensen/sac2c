@@ -53,7 +53,7 @@ void (*SAC_MessageExtensionCallback) (void) = 0;
  */
 
 void
-SAC_RuntimeError (char *format, ...)
+SAC_RuntimeError (const char *format, ...)
 {
     va_list arg_p;
     char *line;
@@ -139,7 +139,7 @@ SAC_RuntimeError_Mult (int cnt, ...)
 }
 
 void
-SAC_RuntimeErrorLine (int line, char *format, ...)
+SAC_RuntimeErrorLine (int line, const char *format, ...)
 {
     va_list arg_p;
 
@@ -167,7 +167,7 @@ SAC_RuntimeErrorLine (int line, char *format, ...)
 }
 
 void
-SAC_RuntimeWarning (char *format, ...)
+SAC_RuntimeWarning (const char *format, ...)
 {
     va_list arg_p;
 
@@ -194,7 +194,7 @@ SAC_RuntimeWarning (char *format, ...)
 /* Prints a runtime warning only at the master node.
  * Useful for warnings that are not node- but program-specific. */
 void
-SAC_RuntimeWarningMaster (char *format, ...)
+SAC_RuntimeWarningMaster (const char *format, ...)
 {
     va_list arg_p;
 
@@ -262,7 +262,7 @@ SAC_PrintShape (SAC_array_descriptor_t desc)
 }
 
 void
-SAC_Print (char *format, ...)
+SAC_Print (const char *format, ...)
 {
     va_list arg_p;
 
