@@ -605,7 +605,7 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (DEV_FLAGS    "${GCC_FLAGS} -mtune=generic -std=gnu99 -pedantic -g ${FLAGS_LTO}")
   SET (PDCCFLAGS    "${GCC_FLAGS} ${GCC_ARCH_FLAGS} -std=gnu99 -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
   SET (PROD_FLAGS   "${GCC_FLAGS} -mtune=generic -std=gnu99 -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
-  SET (GENPIC       "-fPIC -DPIC")
+  SET (GENPIC       "-fPIC")
   SET (DEPSFLAG     "-M")
   SET (CPPFILE      "${CPP_CMD} -C -x c")
   SET (CPP          "${CPP_CMD} -P -x c")
@@ -731,39 +731,45 @@ ENDIF ()
 
 # Operating system dependent flags
 SET (OSFLAGS)
+SET (DEFS)
 SET (LD_DYNAMIC)
 SET (LD_PATH)
 SET (LD_FLAGS)
 SET (RANLIB   "${CMAKE_RANLIB}")
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Solaris")
-  SET (OSFLAGS      "-D__EXTENSIONS__ -D_XPG6 -DMUST_INIT_YY -DPIC")
+  SET (DEFS         "-D__EXTENSIONS__ -D_XPG6 -DMUST_INIT_YY")
   SET (LD_DYNAMIC   "-G -dy")
   SET (LD_PATH      "-L%path% -R%path%")
   SET (LD_FLAGS     "-Wl,-z,nodefs,-z,lazyload")
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  SET (OSFLAGS      "-fPIC -DPIC -D_POSIX_SOURCE -D_DEFAULT_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE")
+  SET (OSFLAGS      "-fPIC")
+  SET (DEFS         "-D_POSIX_C_SOURCE=200809L -D_DEFAULT_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE")
   SET (LD_DYNAMIC   "-shared -Wl,-allow-shlib-undefined -O3 ${FLAGS_LTO}")
   SET (LD_PATH      "-L%path% -Wl,-rpath,%path%")
   SET (LD_FLAGS     "-Wl,-allow-shlib-undefined ${FLAGS_LTO}")
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES ".*osf.*")
-  SET (OSFLAGS      "-D_OSF_SOURCE")
+  SET (DEFS         "-D_OSF_SOURCE")
   SET (LD_DYNAMIC   "")
   SET (LD_PATH      "-L%path%")
   SET (LD_FLAGS     "")
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   SET (ENABLE_PHM   OFF)
   SET (RANLIB       "$RANLIB -c")
-  SET (OSFLAGS      "-D_DARWIN_C_SOURCE")
+  SET (DEFS         "-D_DARWIN_C_SOURCE")
   SET (LD_DYNAMIC   "-Qunused-arguments -undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%.dylib' ")
   SET (LD_PATH      "-L%path% -Wl,-rpath,%path%")
   SET (LD_FLAGS     "")
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES ".*bsd")
-  SET (OSFLAGS      "-fPIC -DPIC")
+  SET (OSFLAGS      "-fPIC")
   SET (LD_DYNAMIC   "-shared -Wl,-allow-shlib-undefined ${FLAGS_LTO}")
   SET (LD_PATH      "-L%path% -Wl,-rpath,%path%")
   SET (LD_FLAGS     "${FLAGS_LTO}")
 ELSE ()
-  SET (OSFLAGS      "-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE")
+  SET (OSFLAGS      "-fPIC")
+  # XXX (hans) _POSIX_SOURCE should perhaps be _POSIX_C_SOURCE? The latter gives
+  #            correct definitions, like pthread functions. This needs to be
+  #            tested though, so leaving unchanged for the moment.
+  SET (DEFS         "-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE")
   SET (LD_DYNAMIC   "-dy -shared -Wl,-allow-shlib-undefined")
   SET (LD_PATH      "-L%path% -Wl,-rpath,%path%")
   SET (LD_FLAGS     "-Wl,-allow-shlib-undefined")
@@ -813,13 +819,19 @@ BUILD_TYPE_TO_DIRNAME ("${CMAKE_BUILD_TYPE}" BUILD_TYPE_NAME)
 # Configure sac2c-version-manager script
 INCLUDE ("cmake/sac2c/version-manager-related.cmake")
 
-# These CC flags that are always present
+# These CC flags and definitions are always present
+# we split string arguments into list - this makes sure
+# that cmake correctly passed the flags.
+SEPARATE_ARGUMENTS (OSFLAGSLIST UNIX_COMMAND "${OSFLAGS}")
+ADD_COMPILE_OPTIONS (
+    ${OSFLAGSLIST}
+    -Wfatal-errors # in GCC 4.4.7 this leads to a false error
+)
+SEPARATE_ARGUMENTS (DEFSLIST UNIX_COMMAND "${DEFS}")
 ADD_DEFINITIONS (
-    ${OSFLAGS}
+    ${DEFSLIST}
     -DSHARED_LIB_EXT="${SHARED_LIB_EXT}"
     -DBUILD_TYPE_POSTFIX="${BUILD_TYPE_POSTFIX}"
-    -Wfatal-errors # in GCC 4.4.7 this leads to a false error
-    -D_POSIX_C_SOURCE=200809L
 )
 
 # These flags will be used by the linker when creating a shared library

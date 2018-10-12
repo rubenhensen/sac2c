@@ -373,7 +373,7 @@ SACINCLUDES      :=  "-I${INCPATH_CONF}"
 TREE_CEXT        :=  ".c"
 TREE_OBJEXT      :=  ".o"
 TREE_DLLEXT      :=  "@SHARED_LIB_EXT@"
-COMPILE_TREE     :=  "@CC@ @GENPIC@ @RCCCFLAGS@ -O1 %tree_cflags% %sacincludes% -c -o %target% %source%"
+COMPILE_TREE     :=  "@CC@ @GENPIC@ @DEFS@ @RCCCFLAGS@ -O1 %tree_cflags% %sacincludes% -c -o %target% %source%"
 LINK_TREE        :=  "@CC@ @LD_DYNAMIC@ %tree_ldflags% -o %target% %objects%"
 
 LIB_OUTPUTDIR    :=  "${MODPATH_CONF}"
@@ -477,7 +477,7 @@ MODEXT           :=  "@SHARED_LIB_EXT@"
 EXEEXT           :=  "@EXEEXT@"
 
 CC               :=  "@CC@"
-CFLAGS           :=  "-pedantic -g @GENPIC@ @RCCCFLAGS@"
+CFLAGS           :=  "-pedantic -g @GENPIC@ @DEFS@ @RCCCFLAGS@"
 
 LD               :=  "@CC@"
 LDPATH           :=  "@LD_PATH@"
