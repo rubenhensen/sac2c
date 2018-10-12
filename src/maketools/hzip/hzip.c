@@ -42,7 +42,7 @@ static special_char_t
 special_char (char c, FILE *infile)
 {
     special_char_t special;
-    char cc;
+    int cc;
 
     switch (c) {
     case '/':
@@ -118,7 +118,7 @@ zipfile (char *filename, FILE *infile)
     col = 0;
 
     while (!feof (infile)) {
-        c = getc (infile);
+        c = (char)getc (infile);
         special = special_char (c, infile);
         col++;
 

@@ -77,8 +77,8 @@
  *****************************************************************************/
 struct INFO {
     node *fundef;
-    bool in_wl;
-    bool cudarizable;
+    bool in_wl :1;
+    bool cudarizable :1;
     node *postassigns;
     node *preassigns;
     lut_t *lut;

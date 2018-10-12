@@ -43,9 +43,9 @@ struct INFO {
     node *lhs;
     node *fundefargs;
     node *apargs;
-    bool dofunargs;
-    bool at_iscudarizable;
-    int at_wlcount;
+    bool dofunargs :1;
+    bool at_iscudarizable :1;
+    int at_wlcount :1;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)

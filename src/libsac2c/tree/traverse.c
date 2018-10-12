@@ -44,8 +44,8 @@ node *
 TRAVdo (node *arg_node, info *arg_info)
 {
     nodetype arg_node_type;
-    int old_linenum = global.linenum;
-    int old_colnum = global.colnum;
+    size_t old_linenum = global.linenum;
+    size_t old_colnum = global.colnum;
     char *old_filename = global.filename;
     static node *arg_last = NULL;
     node *special_funs;

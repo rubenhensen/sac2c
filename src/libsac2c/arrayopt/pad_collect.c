@@ -35,7 +35,7 @@
  * INFO structure
  */
 struct INFO {
-    int unsupported;
+    bool unsupported;
     int count_changes;
     node *with;
 };

@@ -592,17 +592,18 @@ static char *sigspec_mode_str_init[] = {"akv", "aks", "akd", "aud"};
  * Initialization helper functions
  */
 
-static int **
-BuildFunApLine (int maxfun, int maxfunap)
+static size_t **
+BuildFunApLine (size_t maxfun, size_t maxfunap)
 {
-    int i, **aps;
+    size_t **aps;
+    size_t i;
 
     DBUG_ENTER ();
 
-    aps = (int **)MEMmalloc (maxfun * sizeof (int *));
+    aps = (size_t **)MEMmalloc (maxfun * sizeof (size_t *));
 
     for (i = 0; i < maxfunap; i++) {
-        aps[i] = (int *)MEMmalloc (maxfunap * sizeof (int));
+        aps[i] = (size_t *)MEMmalloc (maxfunap * sizeof (size_t));
     }
 
     DBUG_RETURN (aps);
@@ -751,7 +752,7 @@ xfree_node (node *node)
 }
 
 static void
-xfree_apline (int **ptr, size_t maxfun)
+xfree_apline (size_t **ptr, size_t maxfun)
 {
     size_t i;
 

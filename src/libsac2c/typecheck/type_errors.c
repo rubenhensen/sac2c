@@ -32,7 +32,7 @@ struct TE_INFO_PRF {
 };
 
 struct TE_INFO {
-    int line;             /* line where the application is situated */
+    size_t line;             /* line where the application is situated */
     const char *file;     /* file in which application is situated */
     te_kind_t kind;       /* kind of function we are dealing with */
     const char *name_str; /* name of the function */
@@ -217,7 +217,7 @@ MatchSimpleA (ntype *type)
  ******************************************************************************/
 
 te_info *
-TEmakeInfo (int linenum, const char *file, te_kind_t kind, const char *name_str)
+TEmakeInfo (size_t linenum, const char *file, te_kind_t kind, const char *name_str)
 {
     te_info *res;
 
@@ -238,7 +238,7 @@ TEmakeInfo (int linenum, const char *file, te_kind_t kind, const char *name_str)
 }
 
 te_info *
-TEmakeInfoUdf (int linenum, const char *file, te_kind_t kind, const char *mod_str,
+TEmakeInfoUdf (size_t linenum, const char *file, te_kind_t kind, const char *mod_str,
                const char *name_str, node *wrapper, node *assign, te_info *parent)
 {
     te_info *res;
@@ -255,7 +255,7 @@ TEmakeInfoUdf (int linenum, const char *file, te_kind_t kind, const char *mod_st
 }
 
 te_info *
-TEmakeInfoPrf (int linenum, const char *file, te_kind_t kind, const char *name_str,
+TEmakeInfoPrf (size_t linenum, const char *file, te_kind_t kind, const char *name_str,
                prf prf_no, int num_rets)
 {
     te_info *res;
@@ -409,7 +409,7 @@ static char *errors = NULL;
  ******************************************************************************/
 
 void
-TEhandleError (int line, const char *file, const char *format, ...)
+TEhandleError (size_t line, const char *file, const char *format, ...)
 {
     va_list arg_p;
 
@@ -475,7 +475,7 @@ TEextendedAbort ()
                  */
                 if (NODE_TYPE (ASSIGN_RHS (assign)) == N_with) {
                     CTIerrorContinued (
-                      "-- %s(?): %d: %s:%s (while checking fold with loop)",
+                      "-- %s(?): %zu: %s:%s (while checking fold with loop)",
                       global.filename, TI_LINE (global.act_info_chn),
                       ((TI_MOD (global.act_info_chn) != NULL)
                          ? TI_MOD (global.act_info_chn)
@@ -483,7 +483,7 @@ TEextendedAbort ()
                       TI_NAME (global.act_info_chn));
                 } else {
                     args = NTCnewTypeCheck_Expr (AP_ARGS (ASSIGN_RHS (assign)));
-                    CTIerrorContinued ("-- %s(?): %d: %s:%s%s", global.filename,
+                    CTIerrorContinued ("-- %s(?): %zu: %s:%s%s", global.filename,
                                        TI_LINE (global.act_info_chn),
                                        ((TI_MOD (global.act_info_chn) != NULL)
                                           ? TI_MOD (global.act_info_chn)

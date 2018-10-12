@@ -45,12 +45,12 @@ extern void TEassureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype 
 extern void TEassureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2);
 extern ntype *TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2);
 
-extern te_info *TEmakeInfo (int linenum, const char *file, te_kind_t kind,
+extern te_info *TEmakeInfo (size_t linenum, const char *file, te_kind_t kind,
                             const char *name_str);
-extern te_info *TEmakeInfoUdf (int linenum, const char *file, te_kind_t kind,
+extern te_info *TEmakeInfoUdf (size_t linenum, const char *file, te_kind_t kind,
                                const char *mod_str, const char *name_str, node *wrapper,
                                node *assign, te_info *parent);
-extern te_info *TEmakeInfoPrf (int linenum, const char *file, te_kind_t kind,
+extern te_info *TEmakeInfoPrf (size_t linenum, const char *file, te_kind_t kind,
                                const char *name_str, prf prf_no, int num_rets);
 extern int TEone (ntype *args);
 extern int TEtwo (ntype *args);
@@ -61,7 +61,7 @@ extern int TEval (ntype *args);
 
 extern void TEfreeAllTypeErrorInfos (void);
 
-extern void TEhandleError (int line, const char *file, const char *format, ...)
+extern void TEhandleError (size_t line, const char *file, const char *format, ...)
   PRINTF_FORMAT (3, 4);
 extern char *TEfetchErrors (void);
 extern void TEextendedAbort (void);

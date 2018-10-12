@@ -597,7 +597,7 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
     ubc = (ubc != NULL ? COfreeConstant (ubc) : NULL);
     lbc = (lbc != NULL ? COfreeConstant (lbc) : NULL);
 
-    DBUG_PRINT ("generator property of with loop in line %d : %s", global.linenum,
+    DBUG_PRINT ("generator property of with loop in line %zu : %s", global.linenum,
                 gen_prop_str[res]);
     DBUG_RETURN (res);
 }

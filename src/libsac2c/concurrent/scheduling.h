@@ -25,7 +25,7 @@
  *
  *****************************************************************************/
 extern sched_t *SCHmakeScheduling (char *discipline, ...);
-extern sched_t *SCHmakeSchedulingByPragma (node *ap_node, int line);
+extern sched_t *SCHmakeSchedulingByPragma (node *ap_node, size_t line);
 
 extern sched_t *SCHremoveScheduling (sched_t *sched);
 extern void SCHtouchScheduling (sched_t *sched, info *arg_info);
@@ -47,7 +47,7 @@ extern node *SCHcompileSchedulingInit (int seg_id, node *wl_ids, sched_t *sched,
                                        node *arg_node);
 
 extern tasksel_t *SCHmakeTasksel (char *discipline, ...);
-extern tasksel_t *SCHmakeTaskselByPragma (node *ap_node, int line);
+extern tasksel_t *SCHmakeTaskselByPragma (node *ap_node, size_t line);
 
 extern tasksel_t *SCHremoveTasksel (tasksel_t *tasksel);
 extern void SCHtouchTasksel (tasksel_t *tasksel, info *arg_info);

@@ -37,7 +37,7 @@
   </xsl:call-template>
   <xsl:value-of select="' *nodealloc;'" />
   <xsl:value-of select="'node *xthis;'" />
-  <xsl:value-of select="'int size;'" />
+  <xsl:value-of select="'size_t size;'" />
   <!-- counter for for-loops -->
   <xsl:if test="attributes/attribute/type[key( &quot;arraytypes&quot;, @name)]" >
     <xsl:value-of select="'int cnt;'" />
@@ -129,9 +129,9 @@
   </xsl:call-template>
   <xsl:value-of select="';'" />
   <!-- set lineno -->
-  <xsl:value-of select="'DBUG_PRINT (&quot;setting lineno to %d&quot;, global.linenum);'"/>
+  <xsl:value-of select="'DBUG_PRINT (&quot;setting lineno to %zu&quot;, global.linenum);'"/>
   <xsl:value-of select="'NODE_LINE( xthis) = global.linenum;'" />
-  <xsl:value-of select="'DBUG_PRINT (&quot;setting colno to %d&quot;, global.colnum);'"/>
+  <xsl:value-of select="'DBUG_PRINT (&quot;setting colno to %zu&quot;, global.colnum);'"/>
   <xsl:value-of select="'NODE_COL( xthis) = global.colnum;'" />
   <xsl:value-of select="'NODE_ERROR( xthis) = NULL;'" />
   <!-- set filename -->

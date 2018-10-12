@@ -117,7 +117,7 @@ OPTcheckPostSetupOptions (void)
      */
 #define CHECKDEFAULT(Opt, Default)                                                       \
     if (global.optimize.Opt != TRUE && global.optimize.Opt != FALSE) {                   \
-        global.optimize.Opt = Default;                                                   \
+        global.optimize.Opt = ((unsigned)Default) & 3;                                   \
     }
 
     CHECKDEFAULT (dophm, global.config.use_phm_api);

@@ -57,7 +57,7 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
 {
 #define ASSURE_TYPE_HEADER() indout ("SAC_ASSURE_TYPE_LINE ((")
 #define ASSURE_TYPE_FOOTER()                                                             \
-    out ("), %d, \"Assignment with incompatible types found!\""                          \
+    out ("), %zu, \"Assignment with incompatible types found!\""                          \
          ");\n",                                                                         \
          global.linenum)
     int i;

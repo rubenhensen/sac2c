@@ -110,14 +110,15 @@
 #include <stdlib.h>
 #include <ctype.h> /* for tolower() */
 
-/* This trick makes compilation possible with C++ compiler
-   but uses non-standard __typeof feature.  So for now on
-   we use it only in case __cplusplus is enabled.  */
-#ifdef __cplusplus
+/* This trick makes compilation possible with the -Wconversion flag 
+   enabled to change type within getoptions.h as it was not clear 
+   how globals should be changed to fix all conversion warnings.
+   The main reason for the change within getoptions.h was because 
+   we did not want to change the globals structure.
+   FIXME: check __typeof in CMake and expand this macro to nothing
+   in case the chosen C compiler does not support it.  */
 #define CONVERT_TO_TYPEOF(x) (__typeof(x))
-#else
-#define CONVERT_TO_TYPEOF(x)
-#endif
+
 
 #define ARGS_BEGIN(argc, argv)                                                           \
     {                                                                                    \
@@ -234,7 +235,7 @@
 
 #define ARG_NUM(id)                                                                      \
     {                                                                                    \
-        int ARGS_tmp;                                                                    \
+        long ARGS_tmp;                                                                   \
         char *ARGS_str;                                                                  \
                                                                                          \
         if (ARG != NULL) {                                                               \
@@ -268,7 +269,7 @@
 
 #define ARG_RANGE(id, min, max)                                                          \
     {                                                                                    \
-        int ARGS_tmp;                                                                    \
+        long ARGS_tmp;                                                                   \
         char *ARGS_str;                                                                  \
                                                                                          \
         if (ARG != NULL) {                                                               \
@@ -351,11 +352,11 @@ CheckOption (const char *pattern, char *argv1, char *argv2, char **option,
              char **argument)
 {
     static char *buffer = NULL;
-    static int buffer_size = 0;
+    static size_t buffer_size = 0;
 
     int i = 0;
     int res = 1;
-    int request;
+    size_t request;
 
     if (buffer == NULL) {
         buffer = (char *)malloc (64);

@@ -283,7 +283,7 @@ Node2Value (node *arg_node)
                 break;
 
             case N_bool:
-                z = TBmakeNum (BOOL_VAL (arg_node));
+                z = TBmakeNum ((int)BOOL_VAL (arg_node));
                 break;
 
             default:
@@ -564,14 +564,14 @@ static void
 printIslName (FILE *handle, node *avis, lut_t *varlut)
 {
     node *fn;
-    int nmlen;
+    size_t nmlen;
 
     DBUG_ENTER ();
 
     fn = (node *)LUTsearchInLutPp (varlut, avis);
     DBUG_ASSERT (avis != fn, "Did not find %s", AVIS_NAME (avis));
     nmlen = strlen (FUNDEF_NAME (fn));
-    fprintf (handle, "_%d_%s_%s", nmlen, FUNDEF_NAME (fn), AVIS_NAME (avis));
+    fprintf (handle, "_%lu_%s_%s", nmlen, FUNDEF_NAME (fn), AVIS_NAME (avis));
 
     DBUG_RETURN ();
 }

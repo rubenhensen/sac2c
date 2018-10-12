@@ -26,7 +26,7 @@ int
 main (void)
 {
     struct stat *buf;
-    int clock_screw;
+    long int clock_screw;
     time_t sti;
     FILE *f;
     int ignore;
@@ -60,7 +60,7 @@ main (void)
     }
 #else
     if (clock_screw > 0) {
-        printf ("%d\n", clock_screw + 1);
+        printf ("%ld\n", clock_screw + 1);
     } else {
         printf ("0\n");
     }

@@ -87,6 +87,10 @@ ADD_DEPENDENCIES (sac2tex sac_h check_repo_version)
 TARGET_LINK_LIBRARIES (sac2tex ${DL_LIB})
 
 IF (ENABLE_ISL AND ENABLE_BARVINOK)
+  SET_SOURCE_FILES_PROPERTIES(
+    src/tools/sacislinterface/sacislinterface.c
+    PROPERTIES COMPILE_FLAGS "${COMPILE_FLAGS} -Wno-conversion"
+  )
   ADD_EXECUTABLE (sacislinterface src/tools/sacislinterface/sacislinterface.c)
   ADD_DEPENDENCIES (sac2cShared check_repo_version)
   TARGET_LINK_LIBRARIES (sacislinterface ${LIB_ISL} ${LIB_BARVINOK} ${BARVINOK_LIB})

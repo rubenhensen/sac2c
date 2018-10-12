@@ -6911,11 +6911,11 @@ WLTRAwith (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
         DBUG_EXECUTE (
-          CTInote ("found With-loop s without full partition (line %d)", global.linenum));
+          CTInote ("found With-loop s without full partition (line %zu)", global.linenum));
         new_node = arg_node;
     } else if (WITH_CUDARIZABLE (arg_node)) {
         DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
-        DBUG_EXECUTE (CTInote ("Cudarizable with-loop found (line %d). Won't touch.",
+        DBUG_EXECUTE (CTInote ("Cudarizable with-loop found (line %zu). Won't touch.",
                                global.linenum));
         new_node = arg_node;
     } else {
@@ -6929,7 +6929,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("In wl %s,", AVIS_NAME (IDS_AVIS (INFO_WL_LHS (arg_info))));
         DBUG_EXECUTE (
-          CTInote ("with-loop with AKS withid found (line %d)", global.linenum));
+          CTInote ("with-loop with AKS withid found (line %zu)", global.linenum));
 
 #if 0
     DBUG_ASSERT ( WITH_PARTS( arg_node) > 0, "With-loop with AKS index vector is not fully partitioned!");

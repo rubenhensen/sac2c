@@ -246,7 +246,7 @@ CreateCFile (char *prefix, int *use_shp, int *use_hid, int *use_unq)
         int ch;
         int pos = 0;
         while ((ch = getc (stdin)) != '\n') {
-            input[pos++] = ch;
+            input[pos++] = (char)ch;
         }
         input[pos] = '\0';
     }

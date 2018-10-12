@@ -815,9 +815,9 @@ GLOBAL (char **, profile_funnme, (char **)MEMmalloc (PF_MAXFUN * sizeof (char *)
 GLOBAL (int *, profile_funapcntr, (int *)MEMmalloc (PF_MAXFUN * sizeof (int)),
         xfree_int_ptr, )
 /* FIXME: How do we free those guys?  */
-GLOBAL (int **, profile_funapline, BuildFunApLine (PF_MAXFUN, PF_MAXFUNAP), xfree_apline,
+GLOBAL (size_t **, profile_funapline, BuildFunApLine (PF_MAXFUN, PF_MAXFUNAP), xfree_apline,
         , PF_MAXFUN)
-GLOBAL (int **, profile_parentfunno, BuildFunApLine (PF_MAXFUN, PF_MAXFUNAP),
+GLOBAL (size_t **, profile_parentfunno, BuildFunApLine (PF_MAXFUN, PF_MAXFUNAP),
         xfree_apline, , PF_MAXFUN)
 GLOBAL (int, profile_funapmax, 1, xfree_dummy, )
 
@@ -1065,12 +1065,12 @@ GLOBAL (bool, run_stabilization_cycle, FALSE, xfree_dummy, )
  * only run stabilization cycle if main cycle pass limit exhausted
  */
 
-GLOBAL (int, linenum, 1, xfree_dummy, )
+GLOBAL (size_t, linenum, 1, xfree_dummy, )
 /*
  * Current line number
  */
 
-GLOBAL (int, colnum, 1, xfree_dummy, )
+GLOBAL (size_t, colnum, 1, xfree_dummy, )
 /*
  * Current column number
  */

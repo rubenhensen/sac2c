@@ -211,7 +211,7 @@ extern rc_t *TBmakeReuseCandidate (node *array, int dim, rc_t *next);
  ***
  ***/
 
-extern cuda_index_t *TBmakeCudaIndex (unsigned int type, int coefficient, node *id,
+extern cuda_index_t *TBmakeCudaIndex (int type, int coefficient, node *id,
                                       int looplevel, cuda_index_t *next);
 
 #define CUIDX_TYPE(a) (a->type)

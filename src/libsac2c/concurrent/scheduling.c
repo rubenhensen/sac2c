@@ -94,7 +94,7 @@ typedef struct {
 struct SCHED_T {
     char *discipline;
     sched_class_t mclass;
-    int line;
+    size_t line;
     int num_args;
     sched_arg_t *args;
 };
@@ -384,7 +384,7 @@ SCHmakeScheduling (char *discipline, ...)
  ******************************************************************************/
 
 sched_t *
-SCHmakeSchedulingByPragma (node *ap_node, int line)
+SCHmakeSchedulingByPragma (node *ap_node, size_t line)
 {
     sched_t *sched = NULL;
     int i = 0;
@@ -1258,7 +1258,7 @@ SCHmakeTasksel (char *discipline, ...)
  ******************************************************************************/
 
 tasksel_t *
-SCHmakeTaskselByPragma (node *ap_node, int line)
+SCHmakeTaskselByPragma (node *ap_node, size_t line)
 {
     tasksel_t *tasksel = NULL;
     int i = 0;

@@ -160,11 +160,11 @@ struct INFO {
                               * block, rather than to a WL within this
                               * WL.
                               */
-    bool producerWLFoldable; /* producerWL may be legally foldable. */
+    bool producerWLFoldable :1; /* producerWL may be legally foldable. */
                              /* (If index sets prove to be OK)     */
-    bool nofinverse;         /* no intersect to CWL mapping found */
-    bool finverseswap;       /* If TRUE, must swp min/max */
-    bool finverseintroduced; /* If TRUE, most simplify F-inverse */
+    bool nofinverse :1;         /* no intersect to CWL mapping found */
+    bool finverseswap :1;       /* If TRUE, must swp min/max */
+    bool finverseintroduced :1; /* If TRUE, most simplify F-inverse */
     node *zwithids;          /* zwithids for GENERATOR_BOUNDs */
 };
 
@@ -694,7 +694,7 @@ AWLFIdetachNoteintersect (node *arg_node)
  *
  *****************************************************************************/
 static node *
-FakeUpConstantExtremum (node *elem, info *arg_info, int emax)
+FakeUpConstantExtremum (node *elem, info *arg_info, bool emax)
 {
     constant *elminco = NULL;
     node *elavis = NULL;

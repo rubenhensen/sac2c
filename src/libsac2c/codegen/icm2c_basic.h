@@ -32,7 +32,7 @@ extern int print_comment; /* bool */
         out ("SAC_ASSURE_TYPE_LINE ((");                                                 \
         cond_stmt;                                                                       \
         /* FIXME Why global.linenum -- does it make sense?  */                           \
-        out ("), %d, \"", global.linenum);                                               \
+        out ("), %zu, \"", global.linenum);                                               \
         text_stmt;                                                                       \
         out ("\")");                                                                     \
     } while (0)
