@@ -1103,6 +1103,9 @@ PrintCCompilerOptions (void)
     printf ("\n\nC-COMPILER OPTIONS:\n\n"
 
             "    -g              Include debug information into object code.\n"
+            "    -gg             Same as `-g', with extra debug information included\n"
+            "                    into object code. (e.g. source line # mapping from\n"
+            "                    SAC source code, etc.)\n"
             "\n"
             "    -O <n>          Specify the C compiler level of optimization.\n"
             "                      0: no C compiler optimizations.\n"
