@@ -6,8 +6,7 @@
 # Issue is dealt with and reported here: https://stackoverflow.com/q/733475 and
 # https://gitlab.kitware.com/cmake/cmake/issues/8774.
 
-# Make sure that we Have GTest, and add some boilerplate definitions.
-FIND_PACKAGE (GTest REQUIRED)
+#  Add some boilerplate GTest definitions.
 INCLUDE_DIRECTORIES (${GTEST_INCLUDE_DIR})
 
 # As we are going to interface libsac2c.so, we want to define all the
