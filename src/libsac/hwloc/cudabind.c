@@ -6,6 +6,7 @@
 
 #include <stddef.h>
 
+#include "libsac/essentials/message.h"
 #include "cudabind.h"
 
 #if ENABLE_CUDA && ENABLE_HWLOC
@@ -14,7 +15,6 @@
 #include <hwloc/cudart.h>
 
 #include "libsac/hwloc/cpubind.h"
-#include "libsac/essentials/message.h"
 
 /**
  * Function initialises the HWLOC sub-system for use with CUDA-backend.
