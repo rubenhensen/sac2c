@@ -580,7 +580,6 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/ivexpropagation.c
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/loop_and_cond_scalarization_in.c
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/loop_and_cond_scalarization_out.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/pad_infer.c
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/pad_info.c
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/polyhedral_wlf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/SSAWithloopFolding.c
@@ -591,85 +590,52 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/compile.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_prf.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_rtspec.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_sched.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_std.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm_icm2c.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/regression.c
     ${CMAKE_CURRENT_SOURCE_DIR}/concurrent/cost_model.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/concurrent/scheduling.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/concurrent/scheduling.c       #fixed warnings in next batch
     ${CMAKE_CURRENT_SOURCE_DIR}/constants/basecv.c
     ${CMAKE_CURRENT_SOURCE_DIR}/constants/constants_basic.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/constants/constants_internal.h
     ${CMAKE_CURRENT_SOURCE_DIR}/constants/constants_struc_ops.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/constants/cv2scalar.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/constants/cv2str.c
     ${CMAKE_CURRENT_SOURCE_DIR}/constants/shape.c
     ${CMAKE_CURRENT_SOURCE_DIR}/constants/zipcv.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/cuda/create_cuda_kernels.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/cuda_cost_model.c
     ${CMAKE_CURRENT_SOURCE_DIR}/cuda/partial_fold.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/flatten/lac2fun.c
     ${CMAKE_CURRENT_SOURCE_DIR}/flatten/wlanalysis.c
     ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynarray.c
     ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynarray.h
     ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynmatrix.c
     ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynmatrix.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/lub.c
     ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/lubtree.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/global/ctinfo.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/global/filemgr.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/global/globals.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/global/memory.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/global/NameTuplesUtils.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/global/phase_options.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/global/private_heap.c
     ${CMAKE_CURRENT_SOURCE_DIR}/memory/alloc.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/memory/NumLookUpTable.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/memory/reusebranching.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/modules/modulemanager.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/precompile/renameidentifiers.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/print/convert.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/profile/annotate_fun_calls.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/lex.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/lex.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/parser.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/trie.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/print/convert.c               #CVshpseg2String dim warning
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/prfunroll.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSACSE.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSALUR.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSAWLUnroll.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/structural_constant_constant_folding.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/withloop_invariant_removal.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/support/debug.c
     ${CMAKE_CURRENT_SOURCE_DIR}/support/int_matrix.c
     ${CMAKE_CURRENT_SOURCE_DIR}/support/ptr_buffer.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/support/str_buffer.c
     ${CMAKE_CURRENT_SOURCE_DIR}/support/str.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/support/system.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tree/DataFlowMask.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tree/LookUpTable.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tree/pattern_match_attribs.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/pattern_match.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/traverse.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/tree_basic.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/tree_compound.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/tree_compound.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/tree/pattern_match.c          #fixed warnings in next batch
+    ${CMAKE_CURRENT_SOURCE_DIR}/tree/traverse.c               #fixed warnings in next batch
+    ${CMAKE_CURRENT_SOURCE_DIR}/tree/tree_basic.c             #fixed warnings in next batch
     ${CMAKE_CURRENT_SOURCE_DIR}/tree/tree_utils.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ct_prf.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/new_types.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/new_types.c         #fixed warnings in next batch
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/specialization_oracle_static_shape_knowledge.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ssi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/type_errors.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/type_utils.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/user_types.c
     ${CMAKE_CURRENT_SOURCE_DIR}/wltransform/wl_split_dimensions.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/constraints/insert_conformity_checks.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/memory/audscldist.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/print/print.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/serialize/deserialize.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/resolvesymboltypes.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/introduce_user_tracing_calls.c
+    #${CMAKE_CURRENT_SOURCE_DIR}/constraints/insert_conformity_checks.c
+    #${CMAKE_CURRENT_SOURCE_DIR}/memory/audscldist.c
     # Generated files
     ${CMAKE_CURRENT_BINARY_DIR}/node_basic.c
     ${CMAKE_CURRENT_BINARY_DIR}/serialize_helper.c

@@ -71,7 +71,7 @@ SBUFprint (str_buf *s, const char *string)
 
     s = EnsureStrBufSpace (s, len);
 
-    s->pos += sprintf (&s->buf[s->pos], "%s", string);
+    s->pos += (size_t)sprintf (&s->buf[s->pos], "%s", string);
     DBUG_PRINT ("pos of buffer %p now is %zu", (void *)s, s->pos);
 
     DBUG_RETURN (s);
