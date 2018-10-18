@@ -2015,7 +2015,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 
                 fprintf (global.outfile, "%s\n",
                          t2s_fun (FUNDEF_WRAPPERTYPE (arg_node), TRUE,
-                                  (size_t) global.indent + STRlen (FUNDEF_NAME (arg_node)) + 8)); 
+                                  global.indent + STRlen (FUNDEF_NAME (arg_node)) + 8)); 
                 fprintf (global.outfile, " *  dispatching to: ");
                 if (TYisProd (FUNDEF_WRAPPERTYPE (arg_node))) {
                     PrintFunName (FUNDEF_IMPL (arg_node), arg_info);

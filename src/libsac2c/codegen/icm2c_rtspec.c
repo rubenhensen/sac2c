@@ -156,7 +156,7 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
         i = 0;
         for (; i < vararg_cnt * 5; i += 5) {
             if (STReq (vararg[i], "in")) {
-                type_string_size += STRlen (vararg[i + 1]) + 1UL;
+                type_string_size += STRlen (vararg[i + 1]) + 1;
                 arg_cnt++;
             }
         }
@@ -278,7 +278,7 @@ ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, int vararg_cnt
         int i = 0;
         for (; i < vararg_cnt * 3; i += 3) {
             if (STReq (vararg[i], "in")) {
-                type_string_size += STRlen (vararg[i + 1]) + 1UL;
+                type_string_size += STRlen (vararg[i + 1]) + 1;
             }
         }
 

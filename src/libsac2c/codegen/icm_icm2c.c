@@ -77,7 +77,7 @@ GetNextIcm (char **ret, node *exprs)
 
     DBUG_ASSERT (NODE_TYPE (expr) == N_icm, "wrong icm-arg: N_icm expected");
 
-    //cast of TCcountXXX until changes get fixed in the next wconversion branch
+    //cast of TCcountXXX until changes get fixed in the next wconversion branch=
     cnt = (size_t)TCcountExprs (ICM_ARGS (expr));
 
     GetNextVarAny (&v, &len, cnt, ICM_ARGS (expr));

@@ -160,6 +160,10 @@ foldmallocreport (void *init, void *key, void *value)
     return NULL;
 }
 
+/* 
+ * This needs to return int as used as __compare_fn_t for qsort which has def:
+ * typedef int (*__compar_fn_t) (const void *, const void *); 
+ */
 static int
 SortMemreport (const void *a, const void *b)
 {

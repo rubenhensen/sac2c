@@ -564,7 +564,12 @@ void
 SATserializeChar (info *info, char attr, node *parent)
 {
     DBUG_ENTER ();
-
+    
+    /* 
+     * using %d instead of %c despite char
+     * due to a warning bug with the latter:
+     * "preserved zero in string literal" 
+     */
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
     DBUG_RETURN ();

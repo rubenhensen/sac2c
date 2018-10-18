@@ -27,7 +27,7 @@ COserializeConstant (FILE *file, constant *cnst)
 
         SHserializeShape (file, CONSTANT_SHAPE (cnst));
 
-        max = CONSTANT_SIZE(cnst,CONSTANT_TYPE (cnst));
+        max = CONSTANT_SIZEOF (cnst, CONSTANT_TYPE (cnst));
         data = STRbytes2Hex (max, (unsigned char *)CONSTANT_ELEMS (cnst));
 
         fprintf (file, ", %zu, \"%s\")", CONSTANT_VLEN (cnst), data);

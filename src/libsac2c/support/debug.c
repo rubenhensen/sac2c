@@ -174,7 +174,7 @@ LOCAL unsigned int DelayArg (int value);
 struct state {
     int flags;                /* Current state flags */
     int maxdepth;             /* Current maximum trace depth */
-    unsigned int delay;                /* Delay after each output line */
+    unsigned int delay;       /* Delay after each output line */
     int level;                /* Current function nesting level */
     FILE *out_file;           /* Current output stream */
     struct link *functions;   /* List of functions */
@@ -210,7 +210,7 @@ LOCAL VOID ChangeOwner ();     /* Change file owner and group */
 
 LOCAL BOOLEAN DoTrace (void);            /* Test for TRACING enabled */
 LOCAL BOOLEAN Writable (char *pathname); /* Test to see if file is writable */
-LOCAL char *DbugMalloc (size_t size);       /* Allocate memory for runtime support */
+LOCAL char *DbugMalloc (size_t size);    /* Allocate memory for runtime support */
 LOCAL char *BaseName (char *pathname);   /* Remove leading pathname components */
 
 /* Supplied in Sys V runtime environ */

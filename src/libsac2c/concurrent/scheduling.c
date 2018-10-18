@@ -307,7 +307,11 @@ SCHmakeScheduling (char *discipline, ...)
 
     sched->discipline = scheduler_table[disc_no].discipline;
     sched->mclass = scheduler_table[disc_no].mclass;
-    sched->line = (size_t)-1;
+    /*
+     * line can be safely treated as undefined on '0' as origin is '1'
+     * FIXME full location would be better than just line number  
+     */
+    sched->line = 0;
 
     sched->num_args = scheduler_table[disc_no].num_args;
 
@@ -1233,7 +1237,7 @@ SCHmakeTasksel (char *discipline, ...)
     } else {
         tasksel->arg = (int *)MEMmalloc (tasksel->num_args * sizeof (int));
     }
-    tasksel->line = (size_t) -1;
+    tasksel->line = 0;
 
     for (i = 0; i < tasksel->num_args; i++) {
         tasksel->arg[i] = va_arg (args, int);

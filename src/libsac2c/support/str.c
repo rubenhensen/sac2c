@@ -35,7 +35,7 @@ STRtoupper (char *source, size_t start, size_t stop)
     
     if (source != NULL) {
         for (i = start; i < stop; i++) {
-            source[i] = (char) toupper (source[i]);
+            source[i] = (char)toupper (source[i]);
         }
     }
 
@@ -127,8 +127,8 @@ STRsubStr (const char *string, size_t start, ssize_t len)
 
     // Normalizing len against the length of `str`.
     size_t l = len < 0 
-                ? (size_t)MATH_MAX_ANY(0, (ssize_t)strlen + len)
-                : (size_t)len;
+               ? (size_t)MATH_MAX (0, (ssize_t)strlen + len)
+               : (size_t)len;
 
     if ((start + l) > strlen) { /* to long take what we can */
         l = strlen < start ? 0 : strlen - start;
@@ -798,7 +798,7 @@ STRitoa_oct (int number)
     DBUG_ENTER ();
 
     tmp = number;
-    length = 1UL;
+    length = 1;
     while (tmp >= base) {
         tmp /= base;
         length++;
@@ -832,7 +832,7 @@ STRitoa_hex (int number)
     DBUG_ENTER ();
 
     tmp = number;
-    length = 1UL;
+    length = 1;
     while (tmp >= base) {
         tmp /= base;
         length++;
@@ -1307,7 +1307,7 @@ STRsubstToken (const char *str, const char *token, const char *subst)
 
     /* Make substitutions */
     result = (char *)MEMmalloc (
-      (STRlen (str) + (occurrences * (STRlen (subst) - tlen)) + 1UL) * sizeof (char));
+      (STRlen (str) + (occurrences * (STRlen (subst) - tlen)) + 1) * sizeof (char));
 
     pos = result;
     while (*str != '\0') {
@@ -1373,7 +1373,7 @@ STRsubstTokens (const char *str, size_t n, ...)
         for (j = 0; j < n; ++j) {
             if (strncmp (patterns[j], str + i, sizes[j]) == 0) {
                 SBUFprint (buf, values[j]);
-                i += sizes[j] - 1UL;
+                i += sizes[j] - 1;
                 break;
             }
         }

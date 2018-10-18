@@ -163,9 +163,9 @@ lexer_finalize (struct lexer *lex, bool close_file)
 
 static inline void
 add_char_to_buffer (struct lexer *lex, int ic)
-{   
+{
     size_t e = lex->buf_end;
-    char c = (char) ic;
+    char c = (char)ic;
 
     if ((lex->buf_end + 1) % LEXER_BUFFER == lex->buf_start) {
         lex->buf_start = (lex->buf_start + 1) % LEXER_BUFFER;
@@ -225,7 +225,7 @@ lexer_getch (struct lexer *lex)
         assert (lex->unget_idx < LEXER_BUFFER,
                 "parser buffer holds only up to %i values.", LEXER_BUFFER);
 
-        s = circbuf_idx_dec(lex->buf_end, lex->unget_idx, LEXER_BUFFER);
+        s = circbuf_idx_dec (lex->buf_end, lex->unget_idx, LEXER_BUFFER);
         lex->unget_idx--;
         lex->loc = lex->location_buffer[s];
 
@@ -251,7 +251,7 @@ lexer_ungetch (struct lexer *lex, int ch)
     assert (lex->unget_idx < LEXER_BUFFER, "parser buffer holds only up to %i values.",
             LEXER_BUFFER);
 
-    s = circbuf_idx_dec(lex->buf_end, lex->unget_idx, LEXER_BUFFER);
+    s = circbuf_idx_dec (lex->buf_end, lex->unget_idx, LEXER_BUFFER);
 }
 
 /* Adds the character C to the string *BUFFER that has length *SIZE
@@ -262,7 +262,7 @@ static inline void
 buffer_add_char (char **buffer, char **index, size_t *size, int ic)
 {
     const size_t initial_size = 16;
-    char c = (char) ic;
+    char c = (char)ic;
 
     if (*buffer == NULL) {
         *buffer = (char *)malloc (initial_size * sizeof (char));
@@ -591,8 +591,8 @@ quote_string (const char *s, char *res, size_t pos)
             x2 = x2 < 10 ? '0' + x2 : 'a' + x2 - 10;
 
             buffer[count++] = 'x';
-            buffer[count++] = (char) x1;
-            buffer[count++] = (char) x2;
+            buffer[count++] = (char)x1;
+            buffer[count++] = (char)x2;
         } break;
         }
         ptr++;

@@ -1,4 +1,4 @@
-#include <stdlib.h>
+    #include <stdlib.h>
 #include "str.h"
 #include "memory.h"
 
@@ -144,12 +144,12 @@ Idx2Offset (constant *idx, constant *a)
 constant *
 IncrementIndex (constant *min, constant *idx, constant *max)
 {
-    ssize_t dim;
+    size_t dim;
 
     DBUG_ENTER ();
 
-    dim = (ssize_t)CONSTANT_VLEN (idx) - 1;
-    if (dim >= 0) {
+    dim = CONSTANT_VLEN (idx) - 1;
+    if (CONSTANT_VLEN (idx) > 0) {
         /*
          * 'idx' is non-empty
          */

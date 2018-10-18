@@ -59,7 +59,7 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
          */
         if (target_type != T_unknown) {
             res = COmakeConstant (target_type, SHcopyShape (COgetShape (b)),
-                                  MEMmalloc (CONSTANT_SIZE(a,target_type)));
+                                  MEMmalloc (CONSTANT_SIZEOF (a,target_type)));
         } else {
             res = COcopyConstant (b);
         }
@@ -76,7 +76,7 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
              */
             if (target_type != T_unknown) {
                 res = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
-                                      MEMmalloc (CONSTANT_SIZE(a,target_type)));
+                                      MEMmalloc (CONSTANT_SIZEOF (a,target_type)));
             } else {
                 res = COcopyConstant (a);
             }
@@ -96,7 +96,7 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
                 if (target_type != T_unknown) {
                     res
                       = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
-                                        MEMmalloc (CONSTANT_SIZE(a,target_type)));
+                                        MEMmalloc (CONSTANT_SIZEOF (a,target_type)));
                 } else {
                     res = COcopyConstant (a);
                 }
@@ -143,7 +143,7 @@ COzipUnary (const zipcvfunptr *fun_arr, constant *a, simpletype target_type)
 
     if (target_type != T_unknown) {
         res = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
-                              MEMmalloc (CONSTANT_SIZE(a,target_type)));
+                              MEMmalloc (CONSTANT_SIZEOF (a,target_type)));
     } else {
         res = COcopyConstant (a);
     }
