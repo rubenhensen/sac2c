@@ -2458,7 +2458,7 @@ TCtakeDropExprs (int takecount, size_t dropcount, node *exprs)
     if (0 != takecount) {
         /* This does too much work, but I'm not sure of a nice way to fix it. */
         res = DUPdoDupTree (TCgetNthExprsNext (dropcount, exprs));  /* do drop */
-        tail = TCgetNthExprsNext (MATHmax (0, takecount - 1), res); /* do take */
+        tail = TCgetNthExprsNext ((size_t)MATHmax (0, takecount - 1), res); /* do take */
         if ((NULL != tail) && NULL != EXPRS_NEXT (tail)) {
             FREEdoFreeTree (EXPRS_NEXT (tail));
             EXPRS_NEXT (tail) = NULL;

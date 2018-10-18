@@ -590,12 +590,19 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlsbuild.c
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlscheck.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/compile.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm_icm2c.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_cuda.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_error.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_fp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_mt.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_prf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_sched.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_std.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_rtspec.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/regression.c
     ${CMAKE_CURRENT_SOURCE_DIR}/concurrent/cost_model.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/concurrent/scheduling.c       #fixed warnings in next batch
+    ${CMAKE_CURRENT_SOURCE_DIR}/concurrent/scheduling.c       #TBmakeNum warnings
     ${CMAKE_CURRENT_SOURCE_DIR}/constants/basecv.c
     ${CMAKE_CURRENT_SOURCE_DIR}/constants/constants_basic.c
     ${CMAKE_CURRENT_SOURCE_DIR}/constants/constants_struc_ops.c
@@ -615,7 +622,15 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynmatrix.h
     ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/lubtree.c
     ${CMAKE_CURRENT_SOURCE_DIR}/memory/alloc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/memory/polyhedral_reuse_analysis.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/print/print.c                 #SHgetDim dim warning
     ${CMAKE_CURRENT_SOURCE_DIR}/print/convert.c               #CVshpseg2String dim warning
+    ${CMAKE_CURRENT_SOURCE_DIR}/precompile/functionprecompile.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_dots.c       #TBmakeNum warnings
+    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/parser.c            #SHmakeShape (n) - n is size_t
+    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/resolvepragma.c     #PRAGMA_NUMPARAMS 
+    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/makedimexpr.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/makeshapeexpr.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/prfunroll.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSACSE.c
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSALUR.c
@@ -629,12 +644,9 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/tree/DataFlowMask.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tree/LookUpTable.c
     ${CMAKE_CURRENT_SOURCE_DIR}/tree/pattern_match_attribs.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/pattern_match.c          #fixed warnings in next batch
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/traverse.c               #fixed warnings in next batch
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/tree_basic.c             #fixed warnings in next batch
     ${CMAKE_CURRENT_SOURCE_DIR}/tree/tree_utils.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ct_prf.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/new_types.c         #fixed warnings in next batch
+    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/new_types.c         #DIM warnings from SH and TY
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ct_with.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/specialization_oracle_static_shape_knowledge.c
     ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ssi.c
