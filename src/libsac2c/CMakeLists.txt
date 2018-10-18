@@ -588,7 +588,6 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/WithloopFusion.c
     ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlswithloopification.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/compile.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_prf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_sched.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_std.c
