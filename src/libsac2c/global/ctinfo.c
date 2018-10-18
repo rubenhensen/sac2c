@@ -1367,7 +1367,7 @@ CTIfunParams (node *fundef)
     size_t tmp_str_size;
 
     static char argtype_buffer[80];
-    static long long buffer_space;
+    static size_t buffer_space;
 
     DBUG_ENTER ();
 
@@ -1383,9 +1383,9 @@ CTIfunParams (node *fundef)
             tmp_str = TYtype2String (AVIS_TYPE (ARG_AVIS (arg)), TRUE, 0);
             tmp_str_size = STRlen (tmp_str);
 
-            if (((long long)tmp_str_size + 3) <= buffer_space) {
+            if ((tmp_str_size + 3) <= buffer_space) {
                 strcat (argtype_buffer, tmp_str);
-                buffer_space -=(long long)tmp_str_size;
+                buffer_space -= tmp_str_size;
                 if (ARG_NEXT (arg) != NULL) {
                     strcat (argtype_buffer, ", ");
                     buffer_space -= 2;
