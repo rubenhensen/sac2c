@@ -2,7 +2,7 @@
 #define _MATH_UTILS_H_
 
 extern int MATHlcm (int x, int y);
-extern long MATHipow (int base, int exp);
+extern int MATHipow (int base, int exp);
 extern int MATHnumDigits (int number);
 
 extern int MATHmin (int x, int y);

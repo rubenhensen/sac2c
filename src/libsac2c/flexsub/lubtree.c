@@ -52,6 +52,7 @@
 #define DBUG_PREFIX "TFLUB"
 #include "debug.h"
 
+#include "math_utils.h"
 #include "memory.h"
 #include "tree_compound.h"
 #include "dynelem.h"
@@ -101,7 +102,7 @@ LUBsetBlockIds (dynarray *eulertour, int blocksize)
                  */
 
                 if (prevdepth > currdepth) {
-                    blockid += (int)pow (2.0,(double)(blocksize - 2 - (j - (i + 1))));
+                    blockid += MATHipow (2,blocksize - 2 - (j - (i + 1)));
                 }
 
                 prevdepth = currdepth;
@@ -481,14 +482,14 @@ LUBtreeLCAfromNodes (node *n1, node *n2, compinfo *ci)
         DBUG_ASSERT (blockmin != NULL, "No block minimum array found");
 
         if (upperid / blocksize > lowerid / blocksize + 1) {
-
+            //FIXME (grzegorz) There is integer log function so have to cast for now
             jump = (int)floor (log2 (upperid / blocksize - lowerid / blocksize - 2));
 
             base = lowerid / blocksize + 1;
             e = DYNARRAY_ELEMS_POS (blockmin, getMatrixValue (intermat, base, jump));
             etindices[1] = *(int *)ELEM_DATA (e);
 
-            base = upperid / blocksize - 1 - (int)pow (2.0, (double)jump);
+            base = upperid / blocksize - 1 - MATHipow (2, jump);
             e = DYNARRAY_ELEMS_POS (blockmin, getMatrixValue (intermat, base, jump));
             etindices[2] = *(int *)ELEM_DATA (e);
 
