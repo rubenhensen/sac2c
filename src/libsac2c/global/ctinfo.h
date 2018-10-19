@@ -4,8 +4,12 @@
 #include "types.h"
 #include "fun-attrs.h"
 #include <stdarg.h>
+//#include <stdio.h>
 
+FILE *CTIget_stderr (void);
+void CTIset_stderr (FILE * new_stderr);
 extern int CTIgetErrorCount (void);
+extern void CTIresetErrorCount (void);
 extern void CTIexit (int) FUN_ATTR_NORETURN;
 extern void CTIinstallInterruptHandlers (void);
 
