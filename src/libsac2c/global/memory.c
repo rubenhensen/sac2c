@@ -169,8 +169,13 @@ SortMemreport (const void *a, const void *b)
 {
     const mallocphaseinfo_t *aa = a;
     const mallocphaseinfo_t *bb = b;
+    size_t a_size = aa->leakedsize, b_size = bb->leakedsize;
 
-    return (int)(bb->leakedsize - aa->leakedsize);
+    return  a_size < b_size 
+            ? -1 
+            : a_size > b_size
+              ? 1
+              : 0;
 }
 
 node *
