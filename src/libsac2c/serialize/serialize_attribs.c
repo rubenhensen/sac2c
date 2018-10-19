@@ -570,7 +570,7 @@ SATserializeChar (info *info, char attr, node *parent)
      * due to a warning bug with the latter:
      * "preserved zero in string literal" 
      */
-    fprintf (INFO_SER_FILE (info), "%d", attr);
+    fprintf (INFO_SER_FILE (info), "'%c'", attr);
 
     DBUG_RETURN ();
 }
