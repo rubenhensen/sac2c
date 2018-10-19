@@ -96,7 +96,7 @@ done
 if test -n "${prev_arg:-}"; then die "argument to \`$arg' is missing"; fi
 
 
-cmdline=("$sac2c" -v0 -target "$target" -noprelude -cc $mode$kind ${cmdline[@]})
+cmdline=("$sac2c" -v0 -target "$target" -noprelude -nosaclibs -cc $mode$kind ${cmdline[@]})
 
 if test -n "$outfile"; then
    cmdline+=(-o "$outfile")

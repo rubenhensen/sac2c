@@ -268,7 +268,7 @@ CCTperformTask (ccm_task_t task)
 
     // %saclibs%
     char *saclibs_subst;
-    if (global.loadprelude == TRUE) {
+    if (global.loadsaclibs) {
         saclibs_subst
           = STRcatn (4,
                      " -lsac" BUILD_TYPE_POSTFIX " "
