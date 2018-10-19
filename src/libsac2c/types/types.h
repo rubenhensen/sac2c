@@ -11,6 +11,7 @@
 #include <inttypes.h>
 
 #include "config.h"
+#include "argcount-cpp.h"
 #include "types_nodetype.h"
 #include "types_trav.h"
 
@@ -120,21 +121,21 @@ typedef enum distmem_dis_t {
     distmem_dis_dsm
 } distmem_dis;
 
-/* XXX (hans) probably better to put this somewhere else... 
- * PHASENAME macro supports either 1, 2, or 3 arguments
- * these are not undefined below, as such they are available
- * where ever types.h is included.
+/**
+ * @brief Create PH_* based phase name, with different structures depending on
+ *        number of passed arguments.
+ *
+ * This macro is used in several places in the libsac2c sources.
+ *
+ * @see phase_drivers.c
+ * @see phase_info.c
  */
-#define GETPNMACRO(_1,_2,_3,fun,...) fun
 #define PHASENAME(...) \
-    GETPNMACRO(__VA_ARGS__, PNARG3, PNARG2, PNARG1, UNUSED)(__VA_ARGS__)
-#define PNARG1(phase) PH_##phase
-#define PNARG2(phase, name) PH_##phase##_##name
-#define PNARG3(phase, cycle, name) PH_##phase##_##cycle##_##name
+    MACRO_GLUE(__PNARG, MACRO_ARGCOUNT(__VA_ARGS__))(__VA_ARGS__)
+#define __PNARG1(phase) PH_##phase
+#define __PNARG2(phase, name) PH_##phase##_##name
+#define __PNARG3(phase, cycle, name) PH_##phase##_##cycle##_##name
 
-
-// XXX (hans) it interesting that this is repeated several times in
-//            both phase_driver.c and phase_info.c
 #define PHASE(name, text, cond) PHASENAME(name),
 
 #define SUBPHASE(name, text, fun, cond, phase) PHASENAME(phase, name),
