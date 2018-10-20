@@ -268,6 +268,17 @@ LookupModuleInPool (const char *name)
     DBUG_RETURN (result);
 }
 
+bool
+MODMmoduleExists (const char *name)
+{
+    char *treerelpath = STRcatn (6, "tree/", global.config.target_env, "/lib", name,
+                                 "Tree", global.config.tree_dllext);
+
+    bool r = !!FMGRfindFile (PK_tree_path, treerelpath);
+    MEMfree (treerelpath);
+    return r;
+}
+
 static module_t *
 AddModuleToPool (const char *name)
 {

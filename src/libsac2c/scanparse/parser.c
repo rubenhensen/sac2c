@@ -342,9 +342,12 @@ handle_symbol_list (struct parser *parser, const char *modname, bool except)
     struct token *tok;
     node *ret = NULL;
 
+
     if (modname) {
         HASH_FIND_STR (parser->used_modules, modname, mod);
-        assert (mod, "module `%s' has to be cached first", modname);
+        if (!modname)
+            return error_mark_node;
+        //assert (mod, "module `%s' has to be cached first", modname);
     } else
         parser->lex->is_read_user_op = true;
 
@@ -5030,6 +5033,12 @@ cache_module (struct parser *parser, const char *modname)
              (which may be fine, as potentially we have
               a problem with user-defined symbols).
          2)  The parser-internals would not be freed.  */
+    if (!MODMmoduleExists (modname)) {
+        struct location loc = token_location (parser_get_token (parser));
+        parser_unget (parser);
+        error_loc (loc, "cannot load module `%s'", modname);
+        return;
+    }
     module = MODMloadModule (modname);
     table = STcopy (MODMgetSymbolTable (module));
     iterator = STsymbolIteratorGet (table);

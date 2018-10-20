@@ -19,5 +19,7 @@ extern const sttable_t *MODMgetSymbolTable (module_t *module);
 extern stringset_t *MODMgetDependencyTable (module_t *module);
 
 extern serfun_p MODMgetDeSerializeFunction (const char *symbol, module_t *module);
+bool MODMmoduleExists (const char *name);
+
 
 #endif /* _SAC_MODULEMANAGER_H_ */
