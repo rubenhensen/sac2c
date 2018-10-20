@@ -286,6 +286,7 @@ void token_print (struct token *);
 const char *token_as_string (struct token *);
 bool token_uses_buf (enum token_class);
 char *quote_string (const char *, char *, size_t);
+char *quote_string_json (const char *, char *, size_t);
 bool is_normal_id (const char *);
 bool is_operator (const char *);
 //__END_DECLS
