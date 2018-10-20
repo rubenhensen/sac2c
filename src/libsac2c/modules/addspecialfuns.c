@@ -96,7 +96,7 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         DSaddSymbolByName ("++", SET_wrapperhead, global.preludename);
 
         node *last_fundef = MODULE_FUNS (syntaxtree);
-        while (FUNDEF_NEXT (last_fundef))
+        while (last_fundef && FUNDEF_NEXT (last_fundef))
           last_fundef = FUNDEF_NEXT (last_fundef);
 
         DSfinishDeserialize (syntaxtree);
