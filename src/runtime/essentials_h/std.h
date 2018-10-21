@@ -19,7 +19,7 @@
 #include <stdint.h> /* intptr_t */
 #include <limits.h> /* INT_MAX */
 
-#ifdef __CUDACC__
+#ifdef SAC_BACKEND_CUDA
 #include <cuda_runtime.h>
 #endif
 

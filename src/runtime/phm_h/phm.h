@@ -14,7 +14,7 @@
 
 #include <assert.h>
 
-#if ENABLE_CUDA
+#if SAC_BACKEND_CUDA
 #include <cuda_runtime.h>
 #endif
 
