@@ -678,7 +678,7 @@ WRCIprf (node *arg_node, info *arg_info)
 node *
 WRCIwith (node *arg_node, info *arg_info)
 {
-    node *emr_chain;
+    node *emr_chain = NULL;
     DBUG_ENTER ();
 
     /*
