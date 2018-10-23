@@ -83,6 +83,7 @@ MACRO (ADD_SAC2C_BUILD _build_type)
       -DCMAKE_BUILD_TYPE=${_build_type}
       -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
       -DFUNCTESTS=${FUNCTESTS}
+      -DBUILDGENERIC=${BUILDGENERIC}
       ${MORE_CMAKE_OPTIONS})
   # Get the location where the externalproject is built
   ExternalProject_Get_Property (sac2c-${_build_type_name} BINARY_DIR)
