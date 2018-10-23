@@ -1,9 +1,15 @@
-/*
- * global variables used for the pthread barriers.
+/**
+ * Global variables used for the pthread barriers.
+ *
+ * See mt_barriers.h file for further details.
+ *
  * FIXME: these should be prefixed with SACxxx
  */
 
+#include "config.h"
+
 #include <pthread.h>
+
 #include "mt_barriers.h"
 
 int mutex_nr_threads;
