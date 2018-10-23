@@ -75,15 +75,15 @@ ADD_DEPENDENCIES (sac2cShared check_repo_version)
 
 # Make sac2c-related binaries
 ADD_EXECUTABLE (sac2c "${PROJECT_SOURCE_DIR}/src/tools/sac2c/sac2c.c")
-ADD_DEPENDENCIES (sac2c sac_h check_repo_version)
+ADD_DEPENDENCIES (sac2c check_repo_version)
 TARGET_LINK_LIBRARIES (sac2c ${DL_LIB})
 
 ADD_EXECUTABLE (sac4c "${PROJECT_SOURCE_DIR}/src/tools/sac4c/sac4c.c")
-ADD_DEPENDENCIES (sac4c sac_h check_repo_version)
+ADD_DEPENDENCIES (sac4c check_repo_version)
 TARGET_LINK_LIBRARIES (sac4c ${DL_LIB})
 
 ADD_EXECUTABLE (sac2tex "${PROJECT_SOURCE_DIR}/src/tools/sac2tex/sac2tex.c")
-ADD_DEPENDENCIES (sac2tex sac_h check_repo_version)
+ADD_DEPENDENCIES (sac2tex check_repo_version)
 TARGET_LINK_LIBRARIES (sac2tex ${DL_LIB})
 
 IF (ENABLE_ISL AND ENABLE_BARVINOK)
@@ -116,7 +116,7 @@ STRING (REPLACE ";" ":" _TARGETS "${RT_TARGETS}")
 # This is where we call the build of the sac2c shared-libraries
 # This *depends* on sac2c having been build first!
 ExternalProject_Add(runtime_libraries
-    DEPENDS sac2cShared sac2c check_repo_version
+    DEPENDS sac2cShared sac2c check_repo_version sac_h
     DOWNLOAD_COMMAND "" # this is to prevent any download target from being called
     INSTALL_COMMAND "" # this is to prevent any install target from being called
     PREFIX runtime_build

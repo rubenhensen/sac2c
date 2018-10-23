@@ -25,7 +25,6 @@ SET (M4_FILES
     nested_h/nested_gen.h
 )
 
-
 SET (M4_HEADERS)
 FOREACH(name ${M4_FILES})
   SET(src "${CMAKE_CURRENT_SOURCE_DIR}/${name}.m4")
@@ -40,86 +39,20 @@ FOREACH(name ${M4_FILES})
 ENDFOREACH (name)
 
 FILE (GLOB_RECURSE RUNTIME_HEADERS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.h")
-
-SET (ORDERED_RUNTIME_HEADERS
-essentials_h/rc_methods.h
-essentials_h/cuda_transfer_methods.h
-essentials_h/types.h
-essentials_h/audwl.h
-essentials_h/rt_commandline.h
-essentials_h/icm.h
-essentials_h/prf.h
-essentials_h/std.h
-essentials_h/std_gen.h
-essentials_h/rc_impl.h
-essentials_h/rcm_local_async_norc_ptr.h
-essentials_h/rcm_local_pasync.h
-essentials_h/rcm_local_pasync_norc_desc.h
-essentials_h/rc_stubs.h
-essentials_h/rc_impl_gen.h
-essentials_h/bool.h
-essentials_h/errors.h
-essentials_h/idx.h
-essentials_h/rt_misc.h
-essentials_h/wl.h
-essentials_h/tuple.h
-extras_h/rt_cachesim.h
-extras_h/rt_profile.h
-../libsac/essentials/profile.h
-extras_h/runtimecheck.h
-extras_h/rt_trace.h
-mt_h/rt_mt.h
-hwloc_h/cpubind.h
-../libsac/hwloc/cudabind.h
-../libsac/hwloc/cpubind.h
-../libsac/mt/mt.h
-mt_h/rt_mt_omp.h
-../libsac/mt/mt_omp.h
-mt_h/schedule.h
-mt_h/rt_mt_beehive.h
-../libsac/mt/mt_beehive.h
-mt_h/mt_gen.h
-mt_h/mt_barriers.h
-mt_h/rt_mt_pth.h
-../libsac/mt/mt_pth.h
-mt_h/fp.h
-mt_h/fp_gen.h
-mt_h/rt_mt_smart.h
-../libsac/mt/mt_smart.h
-mt_h/mt_lpel.h
-phm_h/phm.h
-mutc_h/mutc.h
-mutc_h/mutc_world.h
-mutc_h/mutc_gen.h
-mutc_h/mutc_tostring.h
-mutc_h/mutc_startup.h
-mutc_h/mutc_rc.h
-mutc_h/mutc_rc_gen.h
-cuda_h/cuda.h
-cuda_h/cuda_gen.h
-rtspec_h/rtspec.h
-rtspec_h/registry.h
-rtspec_h/simple_reqqueue.h
-rtspec_h/uuid_reqqueue.h
-rtspec_h/supervisor.h
-rtspec_h/simple_controller.h
-rtspec_h/uuid_controller.h
-rtspec_h/persistence.h
-distmem_h/distmem.h
-cudahybrid_h/cudahybrid.h
-cudahybrid_h/alloc_cache.h
-cudahybrid_h/dist_var_nomemsave.h
-cudahybrid_h/basic.h
-nested_h/nested.h
-nested_h/nested_gen.h
-distmemphm_h/distmemphm.h
-)
-
 SET (CMAKE_LIBSAC_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../libsac")
-
 FILE (GLOB_RECURSE LIBSAC_HEADERS RELATIVE "${CMAKE_LIBSAC_SOURCE_DIR}" "${CMAKE_LIBSAC_SOURCE_DIR}/*.h")
 
+# XXX(artem) we can avoid copying this file by adding -I./include/
+#            to default flags.  Not sure whether it would brake something,
+#            so not doig it right now (2018/10).
 SET (SAC_H  "${PROJECT_BINARY_DIR}/include/sac.h")
+ADD_CUSTOM_COMMAND(
+  OUTPUT "${SAC_H}"
+  DEPENDS "${PROJECT_SOURCE_DIR}/include/sac.h"
+  COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/include/sac.h" ${SAC_H}
+  COMMENT "Copying sac.h"
+)
+
 
 # copy RUNTIME_HEADERS into ${PROJECT_BINARY_DIR}/include/runtime
 SET (RUNTIME_HEADERS_DONE)
@@ -163,18 +96,6 @@ FOREACH (name ${LIBSAC_HEADERS})
   )
   LIST (APPEND LIBSAC_HEADERS_DONE ${dst})
 ENDFOREACH (name)
-
-# generate sac.h from M4_HEADERS, RUNTIME_HEADERS, and LIBSAC_HEADERS:
-ADD_CUSTOM_COMMAND (
-  OUTPUT    ${SAC_H}
-  DEPENDS   ${M4_HEADERS} ${RUNTIME_HEADERS}
-  COMMAND   ${CMAKE_COMMAND} -DOUTPUT="${SAC_H}"
-                             -DREL_HEADERS="${M4_FILES};${RUNTIME_HEADERS}"
-# however, currently the M4 files are included manually to maintain order...
-#                            -DREL_HEADERS="${ORDERED_RUNTIME_HEADERS}"
-                             -DREL_LIB_HEADERS="${LIBSAC_HEADERS}"
-                             -P ${PROJECT_SOURCE_DIR}/cmake/generate-sac-h.cmake
-)
 
 ADD_CUSTOM_TARGET (sac_h ALL DEPENDS ${SAC_H} ${RUNTIME_HEADERS_DONE} ${M4_HEADERS_DONE} ${LIBSAC_HEADERS_DONE})
 
