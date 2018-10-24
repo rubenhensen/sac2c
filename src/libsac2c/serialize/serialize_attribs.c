@@ -566,11 +566,13 @@ SATserializeChar (info *info, char attr, node *parent)
     DBUG_ENTER ();
     
     /* 
-     * using %d instead of %c despite char
-     * due to a warning bug with the latter:
-     * "preserved zero in string literal" 
+     * Using %d instead of '%c' despite char as this 
+     * '%c' introduces warnings and errors when '\n' is passed during stdlib-build
+     * and are not contained leading to newlines being printed into actual code. 
+     * Going forward, will serialize char as int and read later as int, 
+     * as cannot introduce inconsistency here. 
      */
-    fprintf (INFO_SER_FILE (info), "'%c'", attr);
+    fprintf (INFO_SER_FILE (info), "%d", attr);
 
     DBUG_RETURN ();
 }
