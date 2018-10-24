@@ -430,7 +430,7 @@ LINK_PROG        := "%ld% %objects% %linkflags% -o %target%"
 
 CFLAGS           :=  ""
 LIBS             :=  "@LIBS@"
-LDFLAGS          :=  ""
+LDFLAGS          :=  "@LD_FLAGS@"
 
 TARGET_ENV       :=  "XXXXX"
 SBI              :=  "XXXXX"
