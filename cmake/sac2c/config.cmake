@@ -543,8 +543,6 @@ SET (OPT_O2      "")
 SET (OPT_O3      "")
 SET (OPT_g       "")
 SET (RCCCFLAGS   "")
-SET (MKCCFLAGS   "")
-SET (PDCCFLAGS   "")
 SET (GENPIC      "")
 SET (DEPSFLAG    "-M")
 SET (CPPFILE     "${CPP_CMD} -C")
@@ -561,7 +559,7 @@ SET (INCS        "${SAC2CRC_INCS_STR}:") # all variables need to be colon separa
 
 IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (GCC_FLAGS   "")
-  SET (GCC_ARCH_FLAGS  "")
+  SET (GCC_NATIVE_FLAGS  "")
   CHECK_CC_FLAG ("-Wall" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wextra" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wstrict-prototypes" GCC_FLAGS)
@@ -580,8 +578,16 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   CHECK_CC_FLAG ("-Wno-strict-overflow" GCC_FLAGS)
   # allow fall through by virtue of comment
   CHECK_CC_FLAG ("-Wimplicit-fallthrough=3" GCC_FLAGS)
-  CHECK_CC_FLAG ("-march=native" GCC_ARCH_FLAGS)
-  CHECK_CC_FLAG ("-mtune=native" GCC_ARCH_FLAGS)
+  CHECK_CC_FLAG ("-march=native" GCC_NATIVE_FLAGS)
+  CHECK_CC_FLAG ("-mtune=native" GCC_NATIVE_FLAGS)
+
+  # If the BUILDGENERIC flag is on, we build a compiler with -mtune=generic
+  # but we pass -march=native (if supported) to RCCCFLAGS.
+  SET (GCC_NATIVE_OR_GENERIC  "${GCC_NATIVE_FLAGS}")
+  IF (BUILDGENERIC)
+    SET (GCC_NATIVE_OR_GENERIC "-mtune=generic")
+  ENDIF ()
+
   # FIXME(artem) Can we get these flags from the Pthread checking macro?
   EXECUTE_PROCESS (
     COMMAND ${CC} -pthread
@@ -598,13 +604,11 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (OPT_g        "-g")
   # FIXME (hans): we currently are using these flags for building the compiler as well as
   #               the SAC sources - which it not optimal for packaging
-  SET (RCCCFLAGS    "${GCC_FLAGS} ${GCC_ARCH_FLAGS} -std=gnu99 -pedantic -Wno-unused -fno-builtin")
+  SET (RCCCFLAGS    "${GCC_FLAGS} ${GCC_NATIVE_FLAGS} -std=gnu99 -pedantic -Wno-unused -fno-builtin")
   # FIXME (artem): This hack allows us to avoid propagating -Wconversion into default sac2c flags.
   STRING (REGEX REPLACE "-Wconversion" "" RCCCFLAGS ${RCCCFLAGS})
-  SET (MKCCFLAGS    "${GCC_FLAGS} ${GCC_ARCH_FLAGS} -std=gnu99 -pedantic -g ${FLAGS_LTO}")
-  SET (DEV_FLAGS    "${GCC_FLAGS} -mtune=generic -std=gnu99 -pedantic -g ${FLAGS_LTO}")
-  SET (PDCCFLAGS    "${GCC_FLAGS} ${GCC_ARCH_FLAGS} -std=gnu99 -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
-  SET (PROD_FLAGS   "${GCC_FLAGS} -mtune=generic -std=gnu99 -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
+  SET (DEV_FLAGS    "${GCC_FLAGS} ${GCC_NATIVE_OR_GENERIC} -std=gnu99 -pedantic -g ${FLAGS_LTO}")
+  SET (PROD_FLAGS   "${GCC_FLAGS} ${GCC_NATIVE_OR_GENERIC} -std=gnu99 -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
   SET (GENPIC       "-fPIC")
   SET (DEPSFLAG     "-M")
   SET (CPPFILE      "${CPP_CMD} -C -x c")
@@ -619,10 +623,8 @@ ELSEIF (SUNC)
   SET (OPT_g         "-g")
   SET (RCLDFLAGS     "")
   SET (RCCCFLAGS     "-dalign -fsimple -xsafe=mem -xc99=all")
-  SET (MKCCFLAGS     "-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xc99=all")
-  SET (PDCCFLAGS     "-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4 -xc99=all -KPIC")
-  SET (DEV_FLAGS     "${MKCCFLAGS}")
-  SET (PROD_FLAGS    "${PDCCFLAGS}")
+  SET (DEV_FLAGS     "-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xc99=all")
+  SET (PROD_FLAGS    "-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4 -xc99=all -KPIC")
   SET (GENPIC        "-KPIC")
   SET (DEPSFLAG      "-xM")
   SET (CPPFILE       "${CPP_CMD} -C -x c")
@@ -637,10 +639,8 @@ ELSEIF (DECC)
   SET (OPT_g         "-g")
   SET (RCLDFLAGS     "")
   SET (RCCCFLAGS     "")
-  SET (MKCCFLAGS     "-g")
-  SET (PDCCFLAGS     "-g3")
-  SET (DEV_FLAGS     "${MKCCFLAGS}")
-  SET (PROD_FLAGS    "${PDCCFLAGS}")
+  SET (DEV_FLAGS     "-g")
+  SET (PROD_FLAGS    "-g3")
   SET (GENPIC        "")
   SET (DEPSFLAG      "-M")
   SET (CPPFILE       "${CPP_CMD} -C -x c")
@@ -649,8 +649,7 @@ ELSEIF (DECC)
   SET (CCDLLINK      "-ldl")
 ELSEIF (MACC)
   SET (MACCC_FLAGS   "")
-  SET (MACCC_ARCH_FLAGS  "")
-  SET (MACCC_TUNE_GENERIC "")
+  SET (MACCC_NATIVE_FLAGS  "")
   # TODO(artem) Check whether this helps to handle the bracket error!
   IF ("${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
     CHECK_CC_FLAG ("-fbracket-depth=2048" MACCC_FLAGS)
@@ -707,19 +706,23 @@ ELSEIF (MACC)
 
   #Turn this if you want to be cruel
   #CHECK_CC_FLAG ("-Wconversion" MACCC_FLAGS)
-  CHECK_CC_FLAG ("-march=native" MACCC_ARCH_FLAGS)
-  CHECK_CC_FLAG ("-mtune=native" MACCC_ARCH_FLAGS)
-  CHECK_CC_FLAG ("-mtune=generic" MACCC_TUNE_GENERIC)
+  CHECK_CC_FLAG ("-march=native" MACCC_NATIVE_FLAGS)
+  CHECK_CC_FLAG ("-mtune=native" MACCC_NATIVE_FLAGS)
+
+  # but we pass -march=native (if supported) to RCCCFLAGS.
+  SET (MACCC_NATIVE_OR_GENERIC  "${MACCC_NATIVE_FLAGS}")
+  IF (BUILDGENERIC)
+    SET (MACCC_NATIVE_OR_GENERIC "-mtune=generic")
+  ENDIF ()
+
   SET (OPT_O0        "")
   SET (OPT_O1        "-O1")
   SET (OPT_O2        "-O2")
   SET (OPT_O3        "-O3")
   SET (OPT_g         "-g")
-  SET (RCCCFLAGS    "${MACCC_FLAGS} ${MACCC_ARCH_FLAGS} -std=c99 -pedantic -Wno-unused -fno-builtin")
-  SET (MKCCFLAGS    "${MACCC_FLAGS} ${MACCC_ARCH_FLAGS} -std=c99 -pedantic -g ${FLAGS_LTO}")
-  SET (DEV_FLAGS    "${MACCC_FLAGS} ${MACCC_TUNE_GENERIC} -std=c99 -pedantic -g ${FLAGS_LTO}")
-  SET (PDCCFLAGS    "${MACCC_FLAGS} ${MACCC_ARCH_FLAGS} -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
-  SET (PROD_FLAGS   "${MACCC_FLAGS} ${MACCC_TUNE_GENERIC} -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
+  SET (RCCCFLAGS    "${MACCC_FLAGS} ${MACCC_NATIVE_FLAGS} -std=c99 -pedantic -Wno-unused -fno-builtin")
+  SET (DEV_FLAGS    "${MACCC_FLAGS} ${MACCC_NATIVE_OR_GENERIC} -std=c99 -pedantic -g ${FLAGS_LTO}")
+  SET (PROD_FLAGS   "${MACCC_FLAGS} ${MACCC_NATIVE_OR_GENERIC} -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
   SET (GENPIC        "")
   SET (DEPSFLAG      "-M")
   SET (CPPFILE       "${CPP_CMD} -C -x c")
@@ -898,9 +901,8 @@ SET (BUILD_STATUS "
 *                          ${distmem_details_print}
 * ====== distmen is non-functional ======
 * - CC:                    ${CMAKE_C_COMPILER} (${CMAKE_C_COMPILER_ID})
-* - CCFLAGS:               ${BUILD_TYPE_C_FLAGS}
-* - SaC compiler CFLAGS:   ${MKCCFLAGS}
-* - SaC programs CFLAGS:   ${RCCCFLAGS}
+* - CFLAGS to build sac2c: ${BUILD_TYPE_C_FLAGS}
+* - CFLAGS used by sac2c:  ${RCCCFLAGS}
 * - SaC Linksetsize:       ${LINKSETSIZE}
 *
 * Status:

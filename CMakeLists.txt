@@ -44,6 +44,8 @@ ADD_FEATURE_INFO(ISL ISL "use Integer Set Library in sac2c")
 ADD_FEATURE_INFO(BARVINOK BARVINOK "use Barvinok Library in sac2c")
 ADD_FEATURE_INFO(FUNCTESTS FUNCTESTS
                  "enable functional tests (gtest is required)")
+ADD_FEATURE_INFO(BUILDGENERIC BUILDGENERIC
+                 "build the compiler with -mtune=generic")
 FEATURE_SUMMARY(WHAT ALL)
 
 # Build executables for the tools.
