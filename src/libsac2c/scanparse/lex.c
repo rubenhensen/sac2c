@@ -586,6 +586,9 @@ _quote_string (const char *s, char *res, size_t pos, bool json_p)
             } else
                 buffer[count++] = '\'';
             break;
+        case '\\':
+            buffer[count++] = '\\'; buffer[count++] = '\\';
+            break;
         default: {
             int x1, x2;
 
@@ -621,12 +624,12 @@ _quote_string (const char *s, char *res, size_t pos, bool json_p)
 }
 
 char *
-quote_string (const char *s, char *res, int pos) {
+quote_string (const char *s, char *res, size_t pos) {
     return _quote_string (s, res, pos, false);
 }
 
 char *
-quote_string_json (const char *s, char *res, int pos) {
+quote_string_json (const char *s, char *res, size_t pos) {
     return _quote_string (s, res, pos, true);
 }
 
@@ -661,6 +664,8 @@ lexer_read_escape_char (struct lexer *lex, bool *error)
         return '\'';
     case '\"':
         return '\"';
+    case '\\':
+        return '\\';
     case '0':
     case '1':
     case '2':
