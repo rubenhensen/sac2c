@@ -241,14 +241,14 @@ extern const char *token_kind_name[];
 static inline size_t
 circbuf_idx_inc (const size_t idx, const size_t inc, const size_t size)
 {
-    assert (inc < size,"Size of buffer %zu too small for increment %zu", size, inc);
+    assert (inc < size, "Size of buffer %zu too small for increment %zu", size, inc);
     return (size + idx + inc) % size;
 }
 
 static inline size_t
 circbuf_idx_dec (const size_t idx, const size_t dec, const size_t size)
 {
-    assert (dec < size,"Size of buffer %zu too small for decrement %zu", size, dec);
+    assert (dec < size, "Size of buffer %zu too small for decrement %zu", size, dec);
     return (size + idx - dec) % size;
 }
 

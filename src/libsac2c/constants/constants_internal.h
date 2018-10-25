@@ -31,7 +31,7 @@ struct CONSTANT {
 #define CONSTANT_ELEMDIM(c) (SHSubarrayDim (CONSTANT_SHAPE (c), CONSTANT_VLEN (c)))
 #define CONSTANT_ELEMSIZE(c) (SHgetUnrLen (CONSTANT_SHAPE (c)) / CONSTANT_VLEN (c))
 
-#define CONSTANT_SIZEOF(__c, __t) ( CONSTANT_VLEN (__c) * global.basetype_size[__t])
+#define CONSTANT_SIZEOF(__c, __t) (CONSTANT_VLEN (__c) * global.basetype_size[__t])
 
 /*
  * here some extern decls for helper functions defined in constants_basic.c
