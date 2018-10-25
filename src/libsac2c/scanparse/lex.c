@@ -324,10 +324,11 @@ lexer_read_line_comment (struct lexer *lex, char **buf, size_t *size)
     while (true) {
         int c = lexer_getch (lex);
         if (c == EOF) {
-            error_loc (lex->loc, "unexpected end of file in the "
-                                 "middle of line comment");
-            buffer_add_char (buf, &index, size, 0);
-            return tok_unknown;
+            warning_loc (lex->loc, "unexpected end of file in the "
+                                   "middle of line comment");
+            //buffer_add_char (buf, &index, size, 0);
+            //return tok_unknown;
+            break;
         }
 
         buffer_add_char (buf, &index, size, c);
