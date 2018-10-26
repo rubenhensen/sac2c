@@ -1422,7 +1422,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
 #endif
 
     DBUG_ENTER ();
-    DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on entering TYmakeFunType: %u",
+    DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on entering TYmakeFunType: %zu",
                     global.current_allocated_mem);
     DBUG_PRINT_TAG ("NTY", "fun: %s", CTIitemName (fundef));
     DBUG_PRINT_TAG ("NTY", "rets: %d", TCcountRets (FUNDEF_RETS (fundef)));
@@ -1550,7 +1550,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     DBUG_PRINT ("fun type built: %s\n", tmp);
     DBUG_EXECUTE (tmp = MEMfree (tmp));
 
-    DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on leaving  TYmakeFunType: %u",
+    DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on leaving  TYmakeFunType: %zu",
                     global.current_allocated_mem);
 
     DBUG_RETURN (fun);
@@ -4686,7 +4686,7 @@ TYcopyType (ntype *type)
     ntype *res;
     int i;
 #ifndef DBUG_OFF
-    int mem_entry = 0;
+    size_t mem_entry = 0;
 #endif
 
     DBUG_ENTER ();
@@ -4702,7 +4702,7 @@ TYcopyType (ntype *type)
         }
     }
 
-    DBUG_PRINT_TAG ("NTY_MEM", "size of type copied by TYcopyType: %u",
+    DBUG_PRINT_TAG ("NTY_MEM", "size of type copied by TYcopyType: %zu",
                     global.current_allocated_mem - mem_entry);
 
     if (res != NULL) {
@@ -4885,7 +4885,7 @@ ArrayType2String (ntype *type)
 }
 
 static str_buf *
-PrintFunSep (str_buf *buf, bool multiline, int offset)
+PrintFunSep (str_buf *buf, bool multiline, size_t offset)
 {
     DBUG_ENTER ();
     if (multiline) {
@@ -4897,13 +4897,13 @@ PrintFunSep (str_buf *buf, bool multiline, int offset)
 }
 
 static char *
-FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
+FunType2String (ntype *type, char *scal_str, bool multiline, size_t offset)
 {
     str_buf *buf;
     char *tmp_str, *shp_str;
     shape *empty_shape;
     int i;
-    int scal_len = 0;
+    size_t scal_len = 0;
     bool sep_needed = FALSE;
 
     DBUG_ENTER ();
@@ -5062,7 +5062,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
 }
 
 char *
-TYtype2String (ntype *type, bool multiline, int offset)
+TYtype2String (ntype *type, bool multiline, size_t offset)
 {
     str_buf *buf;
     char *tmp_str, *res;
@@ -5135,7 +5135,7 @@ TYtype2String (ntype *type, bool multiline, int offset)
  ******************************************************************************/
 
 char *
-TYtype2DebugString (ntype *type, bool multiline, int offset)
+TYtype2DebugString (ntype *type, bool multiline, size_t offset)
 {
     str_buf *buf;
     char *tmp_str;

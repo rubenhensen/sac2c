@@ -187,6 +187,27 @@ SATserializeStringSet (info *info, stringset_t *strs, node *parent)
 
 /** <!--******************************************************************-->
  *
+ * @fn SATserializeSizet
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeSizet (info *info, size_t attr, node *parent)
+{
+    DBUG_ENTER ();
+
+    fprintf (INFO_SER_FILE (info), "%zu", attr);
+
+    DBUG_RETURN ();
+}
+/** <!--******************************************************************-->
+ *
  * @fn SATserializeInteger
  *
  * @brief generates code to serialize the given attribute
@@ -540,11 +561,18 @@ SATserializeDouble (info *info, double attr, node *parent)
  ***************************************************************************/
 
 void
-SATserializeChar (info *info, unsigned char attr, node *parent)
+SATserializeChar (info *info, char attr, node *parent)
 {
     DBUG_ENTER ();
-
-    fprintf (INFO_SER_FILE (info), "%u", attr);
+    
+    /* 
+     * Using %d instead of '%c' despite char as this 
+     * '%c' introduces warnings and errors when '\n' is passed during stdlib-build
+     * and are not contained leading to newlines being printed into actual code. 
+     * Going forward, will serialize char as int and read later as int, 
+     * as cannot introduce inconsistency here. 
+     */
+    fprintf (INFO_SER_FILE (info), "%d", attr);
 
     DBUG_RETURN ();
 }

@@ -317,7 +317,7 @@ TCcountTypes (types *type)
 /******************************************************************************
  *
  * Function:
- *   type *TCgetTypesLine( types* type, int line)
+ *   type *TCgetTypesLine( types* type, size_t line)
  *
  * Description:
  *   line > 0:  generate an error message if error occurs.
@@ -326,7 +326,7 @@ TCcountTypes (types *type)
  ******************************************************************************/
 
 types *
-TCgetTypesLine (types *type, int line)
+TCgetTypesLine (types *type, size_t line)
 {
     node *tdef;
     types *res_type = NULL;
@@ -522,10 +522,10 @@ TCgetBasetype (types *type)
  *
  ******************************************************************************/
 
-int
+size_t
 TCgetBasetypeSize (types *type)
 {
-    int size;
+    size_t size;
 
     DBUG_ENTER ();
 

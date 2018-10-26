@@ -33,8 +33,8 @@ GLOBAL (char **, file_table, NULL, xfree_char_ptr_ptr, , global.file_table_size)
  * Memory allocation
  */
 
-GLOBAL (unsigned int, current_allocated_mem, 0, xfree_dummy, )
-GLOBAL (unsigned int, max_allocated_mem, 0, xfree_dummy, )
+GLOBAL (size_t, current_allocated_mem, 0, xfree_dummy, )
+GLOBAL (size_t, max_allocated_mem, 0, xfree_dummy, )
 
 /*
  * Tool type
@@ -816,7 +816,7 @@ GLOBAL (char *, cachesim_dir, (char *)MEMmalloc (NAME_MAX), xfree_char_ptr, )
  * Profiling information storage facilities
  */
 
-GLOBAL (int, profile_funcntr, 0, xfree_dummy, )
+GLOBAL (size_t, profile_funcntr, 0, xfree_dummy, )
 GLOBAL (char **, profile_funnme, (char **)MEMmalloc (PF_MAXFUN * sizeof (char *)),
         xfree_char_ptr_ptr, , PF_MAXFUN)
 GLOBAL (int *, profile_funapcntr, (int *)MEMmalloc (PF_MAXFUN * sizeof (int)),
@@ -1129,14 +1129,14 @@ GLOBAL (int, object_counter, 0, xfree_dummy, )
  *  are written to separate files.
  */
 
-GLOBAL (int, indent, 0, xfree_dummy, )
+GLOBAL (size_t, indent, 0, xfree_dummy, )
 /*
  *  This global variable is used for indenting while printing SAC-code.
  *  It has to be made global since printing is not only done in the printing-
  *  directory but from within icm2c_xxx.c as well!
  */
 
-GLOBAL (const int *, basetype_size, basetype_size_init, xfree_dummy, )
+GLOBAL (const size_t *, basetype_size, basetype_size_init, xfree_dummy, )
 /*
  * This array of integers keeps the lengths of all simpletypes.
  * It at least is used in compile.c, tile_size_inference.c, and constants.c!

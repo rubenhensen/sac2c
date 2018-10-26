@@ -123,7 +123,7 @@ CreateCacheSpec (int size, int line_size, int assoc, int el_size)
         cache->line_size = line_size / el_size;
         cache->set_num = (size / line_size) / assoc;
 
-        cache->mask = cache->set_num - 1;
+        cache->mask = (unsigned int) cache->set_num - 1;
 
         tmp = 1;
         cnt = 0;
@@ -268,7 +268,7 @@ EqualVect (int dim, shpseg *a, shpseg *b)
 /******************************************************************************
  *
  * function:
- *   static void PrintCacheUtil(int dim, int rows, cache_util_t* cache_util)
+ *   static void PrintCacheUtil(int dim, unsigned int rows, cache_util_t* cache_util)
  *
  * description
  *
@@ -278,9 +278,9 @@ EqualVect (int dim, shpseg *a, shpseg *b)
  ******************************************************************************/
 
 static void
-PrintCacheUtil (int dim, int rows, cache_util_t *cache_util)
+PrintCacheUtil (int dim, unsigned int rows, cache_util_t *cache_util)
 {
-    int i;
+    unsigned int i;
 
     DBUG_ENTER ();
 
@@ -317,11 +317,11 @@ PrintCacheUtil (int dim, int rows, cache_util_t *cache_util)
  *
  ******************************************************************************/
 
-static int
+static unsigned int
 InitCacheUtil (cache_util_t **cache_util, pattern_t *pattern, array_type_t *array)
 {
-    int rows;
-    int i;
+    unsigned int rows;
+    unsigned int i;
     pattern_t *pt_ptr;
 
     DBUG_ENTER ();
@@ -374,7 +374,7 @@ InitCacheUtil (cache_util_t **cache_util, pattern_t *pattern, array_type_t *arra
  ******************************************************************************/
 
 static int
-IsSpatialReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
+IsSpatialReuseConflict (cache_util_t *cache_util, cache_t *cache, unsigned int a, unsigned int b)
 {
     int is_conflict = 0;
     int offset_diff, set_diff;
@@ -398,7 +398,7 @@ IsSpatialReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
  * function:
  *   static int IsPotentialTemporalReuse(cache_util_t *cache_util,
  *                                       cache_t cache,
- *                                       int a)
+ *                                       unsigned int a)
  *
  * description
  *
@@ -408,7 +408,7 @@ IsSpatialReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
  ******************************************************************************/
 
 static int
-IsPotentialTemporalReuse (cache_util_t *cache_util, cache_t *cache, int a)
+IsPotentialTemporalReuse (cache_util_t *cache_util, cache_t *cache, unsigned int a)
 {
     int is_reuse = 0;
 
@@ -427,7 +427,7 @@ IsPotentialTemporalReuse (cache_util_t *cache_util, cache_t *cache, int a)
  * function:
  *   static int IsTemporalReuseConflict(cache_util_t *cache_util,
  *                                      cache_t cache,
- *                                      int a, int b)
+ *                                      unsigned int a, unsigned int b)
  *
  * description
  *
@@ -438,7 +438,7 @@ IsPotentialTemporalReuse (cache_util_t *cache_util, cache_t *cache, int a)
  ******************************************************************************/
 
 static int
-IsTemporalReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
+IsTemporalReuseConflict (cache_util_t *cache_util, cache_t *cache, unsigned int a, unsigned int b)
 {
     int is_conflict = 0;
 
@@ -491,10 +491,10 @@ IsTemporalReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
  ******************************************************************************/
 
 static cache_util_t *
-ComputeAccessData (int rows, cache_util_t *cache_util, cache_t *cache, int dim,
+ComputeAccessData (unsigned int rows, cache_util_t *cache_util, cache_t *cache, int dim,
                    shpseg *shape)
 {
-    int a;
+    unsigned int a;
 
     DBUG_ENTER ();
 
@@ -515,7 +515,7 @@ ComputeAccessData (int rows, cache_util_t *cache_util, cache_t *cache, int dim,
 /******************************************************************************
  *
  * function:
- *   static cache_util_t *ComputeSpatialReuse(int rows,
+ *   static cache_util_t *ComputeSpatialReuse(unsigned int rows,
  *                                            cache_util_t *cache_util,
  *                                            cache_t *cache)
  *
@@ -529,9 +529,10 @@ ComputeAccessData (int rows, cache_util_t *cache_util, cache_t *cache, int dim,
  ******************************************************************************/
 
 static cache_util_t *
-ComputeSpatialReuse (int rows, cache_util_t *cache_util, cache_t *cache, int dim)
+ComputeSpatialReuse (unsigned int rows, cache_util_t *cache_util, cache_t *cache, int dim)
 {
-    int a, i, d, conflicts, minpaddim, maxpaddim;
+    unsigned int a, i;
+    int d, conflicts, minpaddim, maxpaddim;
 
     DBUG_ENTER ();
 
@@ -589,7 +590,7 @@ ComputeSpatialReuse (int rows, cache_util_t *cache_util, cache_t *cache, int dim
 /******************************************************************************
  *
  * function:
- *   static int ComputeTemporalMinpaddim(int rows,
+ *   static int ComputeTemporalMinpaddim(unsigned int rows,
  *                                       cache_util_t *cache_util,
  *                                       int a, int i,
  *                                       int current_minpaddim, int dim)
@@ -602,7 +603,7 @@ ComputeSpatialReuse (int rows, cache_util_t *cache_util, cache_t *cache, int dim
  ******************************************************************************/
 
 static int
-ComputeTemporalMinpaddim (int rows, cache_util_t *cache_util, int a, int i,
+ComputeTemporalMinpaddim (unsigned int rows, cache_util_t *cache_util, unsigned int a, unsigned int i,
                           int current_minpaddim, int dim)
 {
     int d, min1, min2, res, h;
@@ -659,7 +660,7 @@ ComputeTemporalMinpaddim (int rows, cache_util_t *cache_util, int a, int i,
  *
  * function:
  *   static int ComputeTemporalMaxpaddim(cache_util_t *cache_util,
- *                                       int a, int dim)
+ *                                       unsigned int a, int dim)
  *
  * description
  *
@@ -670,7 +671,7 @@ ComputeTemporalMinpaddim (int rows, cache_util_t *cache_util, int a, int i,
  ******************************************************************************/
 
 static int
-ComputeTemporalMaxpaddim (cache_util_t *cache_util, int a, int dim)
+ComputeTemporalMaxpaddim (cache_util_t *cache_util, unsigned int a, int dim)
 {
 
     int d;
@@ -694,7 +695,7 @@ ComputeTemporalMaxpaddim (cache_util_t *cache_util, int a, int dim)
 /******************************************************************************
  *
  * function:
- *   static cache_util_t *ComputeTemporalReuse(int rows,
+ *   static cache_util_t *ComputeTemporalReuse(unsigned int rows,
  *                                             cache_util_t *cache_util,
  *                                             cache_t *cache,
  *                                             int dim)
@@ -707,9 +708,10 @@ ComputeTemporalMaxpaddim (cache_util_t *cache_util, int a, int dim)
  ******************************************************************************/
 
 static cache_util_t *
-ComputeTemporalReuse (int rows, cache_util_t *cache_util, cache_t *cache, int dim)
+ComputeTemporalReuse (unsigned int rows, cache_util_t *cache_util, cache_t *cache, int dim)
 {
-    int a, i, conflicts, minpaddim;
+    unsigned int a, i;
+    int conflicts, minpaddim;
 
     DBUG_ENTER ();
 
@@ -915,7 +917,7 @@ static int ChoosePaddimForSpatialReuse(int rows,
  *
  * function:
  *   static int
- *   ComputeNumSpatialReuseConflicts( int rows, cache_util_t *cache_util)
+ *   ComputeNumSpatialReuseConflicts( unsigned int rows, cache_util_t *cache_util)
  *
  * description
  *
@@ -925,9 +927,10 @@ static int ChoosePaddimForSpatialReuse(int rows,
  ******************************************************************************/
 
 static int
-ComputeNumSpatialReuseConflicts (int rows, cache_util_t *cache_util)
+ComputeNumSpatialReuseConflicts (unsigned int rows, cache_util_t *cache_util)
 {
-    int a, res;
+    unsigned int a;
+    int res;
 
     DBUG_ENTER ();
 
@@ -944,7 +947,7 @@ ComputeNumSpatialReuseConflicts (int rows, cache_util_t *cache_util)
  *
  * function:
  *   static int
- *   ComputeNumTemporalReuseConflicts( int rows, cache_util_t *cache_util)
+ *   ComputeNumTemporalReuseConflicts( unsigned int rows, cache_util_t *cache_util)
  *
  * description
  *
@@ -954,9 +957,10 @@ ComputeNumSpatialReuseConflicts (int rows, cache_util_t *cache_util)
  ******************************************************************************/
 
 static int
-ComputeNumTemporalReuseConflicts (int rows, cache_util_t *cache_util)
+ComputeNumTemporalReuseConflicts (unsigned int rows, cache_util_t *cache_util)
 {
-    int a, res;
+    unsigned int a;
+    int res;
 
     DBUG_ENTER ();
 
@@ -979,7 +983,7 @@ ComputeNumTemporalReuseConflicts (int rows, cache_util_t *cache_util)
  *
  * function:
  *   static int
- *   ComputeSpatialReuseMinPadDim( int dim, int rows, cache_util_t *cache_util);
+ *   ComputeSpatialReuseMinPadDim( int dim, unsigned int rows, cache_util_t *cache_util);
  *
  * description
  *
@@ -989,9 +993,10 @@ ComputeNumTemporalReuseConflicts (int rows, cache_util_t *cache_util)
  ******************************************************************************/
 
 static int
-ComputeSpatialReuseMinPadDim (int dim, int rows, cache_util_t *cache_util)
+ComputeSpatialReuseMinPadDim (int dim, unsigned int rows, cache_util_t *cache_util)
 {
-    int min_paddim, a;
+    int min_paddim;
+    unsigned int a;
 
     DBUG_ENTER ();
 
@@ -1012,7 +1017,7 @@ ComputeSpatialReuseMinPadDim (int dim, int rows, cache_util_t *cache_util)
  *
  * function:
  *   static int
- *   ComputeSpatialReuseMaxPadDim( int dim, int rows, cache_util_t *cache_util);
+ *   ComputeSpatialReuseMaxPadDim( int dim, unsigned int rows, cache_util_t *cache_util);
  *
  * description
  *
@@ -1022,9 +1027,10 @@ ComputeSpatialReuseMinPadDim (int dim, int rows, cache_util_t *cache_util)
  ******************************************************************************/
 
 static int
-ComputeSpatialReuseMaxPadDim (int dim, int rows, cache_util_t *cache_util)
+ComputeSpatialReuseMaxPadDim (int dim, unsigned int rows, cache_util_t *cache_util)
 {
-    int max_paddim, a;
+    int max_paddim;
+    unsigned int a;
 
     DBUG_ENTER ();
 
@@ -1045,7 +1051,7 @@ ComputeSpatialReuseMaxPadDim (int dim, int rows, cache_util_t *cache_util)
  *
  * function:
  *   static int
- *   ComputeTemporalReuseMinPadDim( int dim, int rows, cache_util_t *cache_util);
+ *   ComputeTemporalReuseMinPadDim( int dim, unsigned int rows, cache_util_t *cache_util);
  *
  * description
  *
@@ -1055,9 +1061,10 @@ ComputeSpatialReuseMaxPadDim (int dim, int rows, cache_util_t *cache_util)
  ******************************************************************************/
 
 static int
-ComputeTemporalReuseMinPadDim (int dim, int rows, cache_util_t *cache_util)
+ComputeTemporalReuseMinPadDim (int dim, unsigned int rows, cache_util_t *cache_util)
 {
-    int min_paddim, a;
+    int min_paddim;
+    unsigned int a;
 
     DBUG_ENTER ();
 
@@ -1078,7 +1085,7 @@ ComputeTemporalReuseMinPadDim (int dim, int rows, cache_util_t *cache_util)
  *
  * function:
  *   static int
- *   ComputeTemporalReuseMaxPadDim( int dim, int rows, cache_util_t *cache_util);
+ *   ComputeTemporalReuseMaxPadDim( int dim, unsigned int rows, cache_util_t *cache_util);
  *
  * description
  *
@@ -1088,9 +1095,10 @@ ComputeTemporalReuseMinPadDim (int dim, int rows, cache_util_t *cache_util)
  ******************************************************************************/
 
 static int
-ComputeTemporalReuseMaxPadDim (int dim, int rows, cache_util_t *cache_util)
+ComputeTemporalReuseMaxPadDim (int dim, unsigned int rows, cache_util_t *cache_util)
 {
-    int max_paddim, a;
+    int max_paddim;
+    unsigned int a;
 
     DBUG_ENTER ();
 
@@ -1111,7 +1119,7 @@ ComputeTemporalReuseMaxPadDim (int dim, int rows, cache_util_t *cache_util)
  *
  * function:
  *   static shpseg *
- *   UpdatePaddingVectorForSpatialReuse(int rows, cache_util_t *cache_util,
+ *   UpdatePaddingVectorForSpatialReuse(unsigned int rows, cache_util_t *cache_util,
  *                                      int dim, shpseg *shape, shpseg *pv)
  *
  * description
@@ -1124,7 +1132,7 @@ ComputeTemporalReuseMaxPadDim (int dim, int rows, cache_util_t *cache_util)
  ******************************************************************************/
 
 static shpseg *
-UpdatePaddingVectorForSpatialReuse (int rows, cache_util_t *cache_util, int dim,
+UpdatePaddingVectorForSpatialReuse (unsigned int rows, cache_util_t *cache_util, int dim,
                                     shpseg *shape, shpseg *pv)
 {
     shpseg *res = NULL;
@@ -1172,7 +1180,7 @@ UpdatePaddingVectorForSpatialReuse (int rows, cache_util_t *cache_util, int dim,
  *
  * function:
  *   static shpseg *
- *   UpdatePaddingVectorForTemporalReuse(int rows, cache_util_t *cache_util,
+ *   UpdatePaddingVectorForTemporalReuse(unsigned int rows, cache_util_t *cache_util,
  *                                       int dim, shpseg *shape, shpseg *pv)
  *
  * description
@@ -1185,7 +1193,7 @@ UpdatePaddingVectorForSpatialReuse (int rows, cache_util_t *cache_util, int dim,
  ******************************************************************************/
 
 static shpseg *
-UpdatePaddingVectorForTemporalReuse (int rows, cache_util_t *cache_util, int dim,
+UpdatePaddingVectorForTemporalReuse (unsigned int rows, cache_util_t *cache_util, int dim,
                                      shpseg *shape, shpseg *pv)
 {
     shpseg *res = NULL;
@@ -1243,7 +1251,7 @@ UpdatePaddingVectorForTemporalReuse (int rows, cache_util_t *cache_util, int dim
  *    static int
  *    EvaluatePadding( int *ret,
  *                     int dim, cache_t *cache,
- *                     int rows, cache_util_t *cache_util,
+ *                     unsigned int rows, cache_util_t *cache_util,
  *                     shpseg* shape,
  *                     shpseg* pv)
  *
@@ -1256,7 +1264,7 @@ UpdatePaddingVectorForTemporalReuse (int rows, cache_util_t *cache_util, int dim
  ******************************************************************************/
 
 static int
-EvaluatePadding (int *ret, int dim, cache_t *cache, int rows, cache_util_t *cache_util,
+EvaluatePadding (int *ret, int dim, cache_t *cache, unsigned int rows, cache_util_t *cache_util,
                  shpseg *shape, shpseg *pv)
 {
     shpseg *actual_shape;
@@ -1305,7 +1313,7 @@ EvaluatePadding (int *ret, int dim, cache_t *cache, int rows, cache_util_t *cach
  * function:
  *   static shpseg *
  *   ComputePaddingForSpatialReuse( int dim, cache_t *cache,
- *                                  int rows, cache_util_t *cache_util,
+ *                                  unsigned int rows, cache_util_t *cache_util,
  *                                  shpseg* shape,
  *                                  shpseg* pv)
  *
@@ -1317,7 +1325,7 @@ EvaluatePadding (int *ret, int dim, cache_t *cache, int rows, cache_util_t *cach
  ******************************************************************************/
 
 static shpseg *
-ComputePaddingForSpatialReuse (int dim, cache_t *cache, int rows,
+ComputePaddingForSpatialReuse (int dim, cache_t *cache, unsigned int rows,
                                cache_util_t *cache_util, shpseg *shape, shpseg *pv)
 {
     shpseg *actual_shape;
@@ -1435,7 +1443,7 @@ ComputePaddingForSpatialReuse (int dim, cache_t *cache, int rows,
  * function:
  *   static shpseg *
  *   ComputePaddingForTemporalReuse( int dim, cache_t *cache,
- *                                   int rows, cache_util_t *cache_util,
+ *                                   unsigned int rows, cache_util_t *cache_util,
  *                                   shpseg* shape,
  *                                   shpseg* pv)
  *
@@ -1447,7 +1455,7 @@ ComputePaddingForSpatialReuse (int dim, cache_t *cache, int rows,
  ******************************************************************************/
 
 static shpseg *
-ComputePaddingForTemporalReuse (int dim, cache_t *cache, int rows,
+ComputePaddingForTemporalReuse (int dim, cache_t *cache, unsigned int rows,
                                 cache_util_t *cache_util, shpseg *shape, shpseg *pv)
 {
     shpseg *actual_shape;
@@ -1621,7 +1629,7 @@ ComputePadding (cache_t *cache_L1, cache_t *cache_L2, cache_t *cache_L3, int dim
                 shpseg *shape, shpseg *padding, pattern_t *pattern, array_type_t *array)
 {
     cache_util_t *cache_util;
-    int rows;
+    unsigned int rows;
     shpseg *padding_keep;
     shpseg *padding_store;
     int num_sr_conflicts_P1;

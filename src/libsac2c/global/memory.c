@@ -22,14 +22,13 @@ mallocphaseinfo_t phasetable[PH_final + 1] = {{0, 0, 0, 0, 0, 0, 0, 0}};
 static FILE *mreport = 0;
 
 void *
-_MEMmalloc (int size, const char *file, int line, const char *func)
+_MEMmalloc (size_t size, const char *file, int line, const char *func)
 {
 #ifndef DBUG_OFF
     void *ptr;
     mallocinfo_t *info;
 
     DBUG_ENTER ();
-    DBUG_ASSERT (size >= 0, "MEMmalloc called with negative size!");
 
     if (!(size > 0)) {
         ptr = NULL;
@@ -83,7 +82,7 @@ _MEMmalloc (int size, const char *file, int line, const char *func)
 }
 
 void *
-_MEMrealloc (void *ptr, int size)
+_MEMrealloc (void *ptr, size_t size)
 {
 #ifndef DBUG_OFF
     mallocinfo_t *info, *newinfo;
@@ -161,13 +160,22 @@ foldmallocreport (void *init, void *key, void *value)
     return NULL;
 }
 
+/* 
+ * This needs to return int as used as __compare_fn_t for qsort which has def:
+ * typedef int (*__compar_fn_t) (const void *, const void *); 
+ */
 static int
 SortMemreport (const void *a, const void *b)
 {
     const mallocphaseinfo_t *aa = a;
     const mallocphaseinfo_t *bb = b;
+    size_t a_size = aa->leakedsize, b_size = bb->leakedsize;
 
-    return bb->leakedsize - aa->leakedsize;
+    return  a_size < b_size 
+            ? -1 
+            : a_size > b_size
+              ? 1
+              : 0;
 }
 
 node *
@@ -196,7 +204,7 @@ MEMreport (node *arg_node, info *arg_info)
 
     for (int i = 0; i <= PH_final; i++) {
         fprintf (mreport, "** description: %s\n", PHIphaseText (phasetable[i].phase));
-        fprintf (mreport, "     ident: %s, leaked: %d, total bytes leaked %d\n",
+        fprintf (mreport, "     ident: %s, leaked: %d, total bytes leaked %zu\n",
                  PHIphaseIdent (phasetable[i].phase), phasetable[i].nleaked,
                  phasetable[i].leakedsize);
         iterator = phasetable[i].leaked;
@@ -206,7 +214,7 @@ MEMreport (node *arg_node, info *arg_info)
         }
         while (iterator) {
             fprintf (mreport,
-                     "     ** file: %s, line: %d, occurrence: %d, size: %d, from phase: "
+                     "     ** file: %s, line: %d, occurrence: %d, size: %zu, from phase: "
                      "%s, from func: %s\n",
                      iterator->file, iterator->line, iterator->occurrence, iterator->size,
                      PHIphaseIdent (iterator->phase), iterator->callingfunc);
@@ -222,7 +230,7 @@ MEMreport (node *arg_node, info *arg_info)
                      "  ** The following mallocs from this phase where not freed\n");
         }
         while (iterator) {
-            fprintf (mreport, "     ** file: %s, line: %d, occurrence: %d, size: %d\n",
+            fprintf (mreport, "     ** file: %s, line: %d, occurrence: %d, size: %zu\n",
                      iterator->file, iterator->line, iterator->occurrence,
                      iterator->size);
             iterator = iterator->next;
@@ -238,7 +246,7 @@ MEMreport (node *arg_node, info *arg_info)
  * Can we unify them?
  */
 void *
-MEMcopy (int size, void *mem)
+MEMcopy (size_t size, void *mem)
 {
     void *result;
 

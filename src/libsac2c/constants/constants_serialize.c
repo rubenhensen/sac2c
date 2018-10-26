@@ -20,17 +20,17 @@ COserializeConstant (FILE *file, constant *cnst)
     if (cnst == NULL) {
         fprintf (file, "NULL");
     } else {
-        int max;
+        size_t max;
         char *data;
 
         fprintf (file, "COdeserializeConstant( %d, ", CONSTANT_TYPE (cnst));
 
         SHserializeShape (file, CONSTANT_SHAPE (cnst));
 
-        max = global.basetype_size[CONSTANT_TYPE (cnst)] * CONSTANT_VLEN (cnst);
+        max = CONSTANT_SIZEOF (cnst, CONSTANT_TYPE (cnst));
         data = STRbytes2Hex (max, (unsigned char *)CONSTANT_ELEMS (cnst));
 
-        fprintf (file, ", %d, \"%s\")", CONSTANT_VLEN (cnst), data);
+        fprintf (file, ", %zu, \"%s\")", CONSTANT_VLEN (cnst), data);
 
         data = MEMfree (data);
     }
@@ -39,7 +39,7 @@ COserializeConstant (FILE *file, constant *cnst)
 }
 
 constant *
-COdeserializeConstant (simpletype type, shape *shp, int vlen, char *vec)
+COdeserializeConstant (simpletype type, shape *shp, size_t vlen, char *vec)
 {
     constant *result;
     void *data;

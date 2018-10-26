@@ -39,8 +39,8 @@
 
 struct HEAP {
     size_t elem_size;
-    int chunk_size;
-    int num_elems;
+    size_t chunk_size;
+    size_t num_elems;
     char *data;
     struct HEAP *next;
 };
@@ -64,7 +64,7 @@ struct HEAP {
  ******************************************************************************/
 
 heap *
-PHPcreateHeap (size_t elem_size, int chunk_size)
+PHPcreateHeap (size_t elem_size, size_t chunk_size)
 {
     char *data;
     heap *res;
@@ -135,7 +135,7 @@ PHPfindElem (heap *private_heap, php_cmp_fun fun, void *elem)
 {
     bool found = FALSE;
     void *current = NULL;
-    int i = 0;
+    size_t i = 0;
 
     DBUG_ENTER ();
 

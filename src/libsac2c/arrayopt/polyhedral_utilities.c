@@ -571,7 +571,7 @@ printIslName (FILE *handle, node *avis, lut_t *varlut)
     fn = (node *)LUTsearchInLutPp (varlut, avis);
     DBUG_ASSERT (avis != fn, "Did not find %s", AVIS_NAME (avis));
     nmlen = strlen (FUNDEF_NAME (fn));
-    fprintf (handle, "_%lu_%s_%s", nmlen, FUNDEF_NAME (fn), AVIS_NAME (avis));
+    fprintf (handle, "_%zu_%s_%s", nmlen, FUNDEF_NAME (fn), AVIS_NAME (avis));
 
     DBUG_RETURN ();
 }

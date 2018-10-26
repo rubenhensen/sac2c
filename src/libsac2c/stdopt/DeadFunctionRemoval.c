@@ -309,7 +309,7 @@ DFRdoDeadFunctionRemoval (node *arg_node)
 
     DBUG_ASSERT (DUPgetCopiedSpecialFundefsHook () == NULL,
                  "DFR found LaC funs on hook.");
-    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %zu bytes",
                     global.current_allocated_mem);
     arg_info = MakeInfo ();
 
@@ -328,7 +328,7 @@ DFRdoDeadFunctionRemoval (node *arg_node)
     TRAVpop ();
     arg_info = FreeInfo (arg_info);
 
-    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %zu bytes",
                     global.current_allocated_mem);
 
     DBUG_RETURN (arg_node);

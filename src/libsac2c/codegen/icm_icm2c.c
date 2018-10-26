@@ -58,14 +58,13 @@
     }
 
 /* forward declarations */
-static node *GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs);
+static node *GetNextVarAny (char ***ret, size_t *ret_len, size_t cnt, node *exprs);
 
 static node *
 GetNextIcm (char **ret, node *exprs)
 {
     node *expr;
-    int cnt, len;
-    int i;
+    size_t i,len,cnt;
     char **v, *tmp;
 
     DBUG_ENTER ();
@@ -78,7 +77,8 @@ GetNextIcm (char **ret, node *exprs)
 
     DBUG_ASSERT (NODE_TYPE (expr) == N_icm, "wrong icm-arg: N_icm expected");
 
-    cnt = TCcountExprs (ICM_ARGS (expr));
+    //cast of TCcountXXX until changes get fixed in the next wconversion branch=
+    cnt = (size_t)TCcountExprs (ICM_ARGS (expr));
 
     GetNextVarAny (&v, &len, cnt, ICM_ARGS (expr));
 
@@ -112,7 +112,7 @@ static
 node *GetNextPrf( char **ret, node *exprs)
 {
   node *expr;
-  int cnt, len;
+  size_t cnt, len;
   char **v;
 
   DBUG_ENTER ();
@@ -741,10 +741,9 @@ GetNextAny (char **ret, node *exprs)
 }
 
 static node *
-GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs)
+GetNextVarAny (char ***ret, size_t *ret_len, size_t cnt, node *exprs)
 {
-    int i;
-    int len = 0;
+    size_t i,len = 0;
 
     DBUG_ENTER ();
 
@@ -767,10 +766,10 @@ GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs)
 }
 
 static node *
-GetNextVarNt (char ***ret, int cnt, node *exprs)
+GetNextVarNt (char ***ret, size_t cnt, node *exprs)
 {
     node *expr;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -811,10 +810,10 @@ node *GetNextVarId( char ***ret, int cnt, node *exprs)
 #endif
 
 static node *
-GetNextVarInt (int **ret, int cnt, node *exprs)
+GetNextVarInt (int **ret, size_t cnt, node *exprs)
 {
     node *expr;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 

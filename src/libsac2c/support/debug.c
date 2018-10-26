@@ -161,7 +161,7 @@ struct link {
 LOCAL void Indent (int indent);
 LOCAL void FreeList (struct link *linkp);
 LOCAL void DoPrefix (int _line_);
-LOCAL int DelayArg (int value);
+LOCAL unsigned int DelayArg (int value);
 
 /*
  *     Debugging states can be pushed or popped off of a
@@ -174,7 +174,7 @@ LOCAL int DelayArg (int value);
 struct state {
     int flags;                /* Current state flags */
     int maxdepth;             /* Current maximum trace depth */
-    int delay;                /* Delay after each output line */
+    unsigned int delay;       /* Delay after each output line */
     int level;                /* Current function nesting level */
     FILE *out_file;           /* Current output stream */
     struct link *functions;   /* List of functions */
@@ -210,7 +210,7 @@ LOCAL VOID ChangeOwner ();     /* Change file owner and group */
 
 LOCAL BOOLEAN DoTrace (void);            /* Test for TRACING enabled */
 LOCAL BOOLEAN Writable (char *pathname); /* Test to see if file is writable */
-LOCAL char *DbugMalloc (int size);       /* Allocate memory for runtime support */
+LOCAL char *DbugMalloc (size_t size);    /* Allocate memory for runtime support */
 LOCAL char *BaseName (char *pathname);   /* Remove leading pathname components */
 
 /* Supplied in Sys V runtime environ */
@@ -290,7 +290,7 @@ IMPORT int processid;
 /* instead use:                                          */
 
 void
-Delay (int d_time)
+Delay (unsigned int d_time)
 {
     if (d_time != 0)
         sleep (d_time);
@@ -1340,11 +1340,11 @@ DbugExit (char *why)
  */
 
 LOCAL char *
-DbugMalloc (int size)
+DbugMalloc (size_t size)
 {
     register char *xnew;
 
-    xnew = (char *)malloc ((unsigned int)size);
+    xnew = (char *)malloc (size);
     if (xnew == NULL) {
         DbugExit ("out of memory");
     }
@@ -1613,13 +1613,13 @@ EXPORT void _db_longjmp_ (VOID)
 #endif
 
 /*ARGSUSED*/ /* lint: value used */
-LOCAL int
+LOCAL unsigned int
 DelayArg (int value)
 {
-    int delayarg;
+    unsigned int delayarg;
 #define UNIX
 #ifdef UNIX
-    delayarg = value / 10; /* Delay is in seconds for sleep () */
+    delayarg = (unsigned int)(value / 10); /* Delay is in seconds for sleep () */
 #else
     delayarg = 0;
 #endif

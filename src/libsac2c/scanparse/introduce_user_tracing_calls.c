@@ -145,7 +145,7 @@ IUTCdoIntroduceUserTraceCalls (node *syntax_tree)
  * @return          SPAp node.
  ******************************************************************************/
 static node *
-ApTraceFun (const char *funname, const char *filename, int pos, node *args)
+ApTraceFun (const char *funname, const char *filename, size_t pos, node *args)
 {
     node *result;
 
@@ -154,7 +154,7 @@ ApTraceFun (const char *funname, const char *filename, int pos, node *args)
     result
       = TBmakeSpap (TBmakeSpid (NSgetNamespace (TRACEFUN_NAMESPACE), STRcpy (funname)),
                     TBmakeExprs (STRstring2Array (filename),
-                                 TBmakeExprs (TBmakeNum (pos), args)));
+                                 TBmakeExprs (TBmakeNumulong (pos), args)));
 
     DBUG_RETURN (result);
 }

@@ -97,7 +97,7 @@
  ******************************************************************************/
 
 constant *
-COINTmakeConstant (simpletype type, shape *shp, void *elems, int vlen)
+COINTmakeConstant (simpletype type, shape *shp, void *elems, size_t vlen)
 {
     constant *res;
 
@@ -123,7 +123,7 @@ COINTmakeConstant (simpletype type, shape *shp, void *elems, int vlen)
  ******************************************************************************/
 
 void *
-COINTallocCV (simpletype type, int length)
+COINTallocCV (simpletype type, size_t length)
 {
     void *res;
 
@@ -145,7 +145,7 @@ COINTallocCV (simpletype type, int length)
  ******************************************************************************/
 
 static void *
-COINTcopyCVToMem (simpletype type, int length, void *cv)
+COINTcopyCVToMem (simpletype type, size_t length, void *cv)
 {
     DBUG_ENTER ();
 
@@ -167,12 +167,12 @@ COINTcopyCVToMem (simpletype type, int length, void *cv)
  ******************************************************************************/
 
 static void *
-COINTcopyCVVaListToMem (simpletype type, int length, va_list cv)
+COINTcopyCVVaListToMem (simpletype type, size_t length, va_list cv)
 {
     DBUG_ENTER ();
 
     void *res;
-    int i;
+    size_t i;
 
     res = MEMmalloc (global.basetype_size[type] * length);
     switch (type) {
@@ -210,7 +210,7 @@ COINTcopyCVVaListToMem (simpletype type, int length, va_list cv)
  ******************************************************************************/
 
 void *
-COINTpickNElemsFromCV (simpletype type, void *elems, int offset, int length)
+COINTpickNElemsFromCV (simpletype type, void *elems, size_t offset, size_t length)
 {
     void *res;
 
@@ -236,8 +236,8 @@ COINTpickNElemsFromCV (simpletype type, void *elems, int offset, int length)
  ******************************************************************************/
 
 void
-COINTcopyElemsFromCVToCV (simpletype type, void *from, int off, int len, void *to,
-                          int to_off)
+COINTcopyElemsFromCVToCV (simpletype type, void *from, size_t off, size_t len, void *to,
+                          size_t to_off)
 {
     DBUG_ENTER ();
 
@@ -440,7 +440,7 @@ constant *
 COmakeConstantFromShape (shape *shp)
 {
     constant *res;
-    int vlen;
+    size_t vlen;
 
     DBUG_ENTER ();
 
@@ -482,7 +482,7 @@ COmakeConstantFromDynamicArguments (simpletype type, int dim, ...)
     constant *res = NULL;
 
     /* constant facilities*/
-    int res_elems_num = 0;
+    size_t res_elems_num = 0;
 
     /* Counter*/
     int i = 0;
@@ -539,7 +539,7 @@ COmakeConstantFromArray (simpletype type, int dim, int *shp, void *elems)
     constant *res = NULL;
 
     /* constant facilities*/
-    int res_elems_num = 0;
+    size_t res_elems_num = 0;
 
     /* counters*/
     int i = 0;
@@ -871,7 +871,8 @@ node *
 COconstant2AST (constant *a)
 {
     node *res, *exprs;
-    int dim, i;
+    int dim;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -881,7 +882,7 @@ COconstant2AST (constant *a)
     } else {
         /* First, we build the exprs! */
         exprs = NULL;
-        for (i = CONSTANT_VLEN (a) - 1; i >= 0; i--) {
+        for (i = CONSTANT_VLEN (a) ; i-- > 0; ) {
             exprs
               = TBmakeExprs (global.cv2scalar[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), i),
                              exprs);
@@ -1010,8 +1011,8 @@ COaST2Constant (node *n)
             break;
 
         case N_char:
-            element = (unsigned char *)MEMmalloc (sizeof (unsigned char));
-            *((unsigned char *)element) = CHAR_VAL (n);
+            element = (char *)MEMmalloc (sizeof (char));
+            *((char *)element) = CHAR_VAL (n);
             new_co = COmakeConstant (T_char, SHmakeShape (0), element);
             break;
 
@@ -1198,7 +1199,7 @@ COisZero (constant *a, bool all)
     bool result;
     constant *zero;
     constant *eq;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1239,7 +1240,7 @@ COisNonNeg (constant *a, bool all)
     bool result;
     constant *zero;
     constant *eq;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1280,7 +1281,7 @@ COisNeg (constant *a, bool all)
     bool result;
     constant *zero;
     constant *eq;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1321,7 +1322,7 @@ COisPos (constant *a, bool all)
     bool result;
     constant *zero;
     constant *eq;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1362,7 +1363,7 @@ COisOne (constant *a, bool all)
     bool result;
     constant *one;
     constant *eq;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1437,7 +1438,7 @@ COcompareConstants (constant *c1, constant *c2)
 {
     bool result;
     constant *eq;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 

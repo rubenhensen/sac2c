@@ -101,7 +101,7 @@ static const char *argtag_string_init[] = {
 #undef SELECTtext
 };
 
-static const int basetype_size_init[] = {
+static const size_t basetype_size_init[] = {
 #define TYP_IFsize(sz) sz
 #include "type_info.mac"
 };
@@ -622,7 +622,7 @@ get_terminal_size (void)
         return 80;
 
     ioctl (STDERR_FILENO, TIOCGWINSZ, &ws);
-    return ws.ws_col > 4 ? ws.ws_col - 4 : 1;
+    return (unsigned short)(ws.ws_col > 4 ? ws.ws_col - 4 : 1);
 }
 
 /*
@@ -657,7 +657,7 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, const char *toolname)
     memset (global.profile_funapcntr, 0, sizeof (int) * PF_MAXFUN);
 
     /* setup the line length for cti interface.  */
-    set_message_line_length ((int)get_terminal_size ());
+    set_message_line_length ((size_t)get_terminal_size ());
 
     global.cwd = getcwd (0, 0);
     if (!global.cwd)

@@ -3,42 +3,42 @@
 
 #include "types.h"
 
-#define EXT_DECLS(fun)                                                                   \
-    extern void COzipCvUByte##fun (void *arg1, int pos1, void *arg2, int pos2,           \
-                                   void *res, int res_pos);                              \
-    extern void COzipCvUShort##fun (void *arg1, int pos1, void *arg2, int pos2,          \
-                                    void *res, int res_pos);                             \
-    extern void COzipCvUInt##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
-                                  int res_pos);                                          \
-    extern void COzipCvULong##fun (void *arg1, int pos1, void *arg2, int pos2,           \
-                                   void *res, int res_pos);                              \
-    extern void COzipCvULongLong##fun (void *arg1, int pos1, void *arg2, int pos2,       \
-                                       void *res, int res_pos);                          \
-    extern void COzipCvByte##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
-                                  int res_pos);                                          \
-    extern void COzipCvShort##fun (void *arg1, int pos1, void *arg2, int pos2,           \
-                                   void *res, int res_pos);                              \
-    extern void COzipCvInt##fun (void *arg1, int pos1, void *arg2, int pos2, void *res,  \
-                                 int res_pos);                                           \
-    extern void COzipCvLong##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
-                                  int res_pos);                                          \
-    extern void COzipCvLongLong##fun (void *arg1, int pos1, void *arg2, int pos2,        \
-                                      void *res, int res_pos);                           \
-                                                                                         \
-    extern void COzipCvFloat##fun (void *arg1, int pos1, void *arg2, int pos2,           \
-                                   void *res, int res_pos);                              \
-    extern void COzipCvDouble##fun (void *arg1, int pos1, void *arg2, int pos2,          \
-                                    void *res, int res_pos);                             \
-    extern void COzipCvLongDouble##fun (void *arg1, int pos1, void *arg2, int pos2,      \
-                                        void *res, int res_pos);                         \
-                                                                                         \
-    extern void COzipCvBool##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
-                                  int res_pos);                                          \
-    extern void COzipCvChar##fun (void *arg1, int pos1, void *arg2, int pos2, void *res, \
-                                  int res_pos);                                          \
-                                                                                         \
-    extern void COzipCvDummy##fun (void *arg1, int pos1, void *arg2, int pos2,           \
-                                   void *res, int res_pos);
+#define EXT_DECLS(fun)                                                                         \
+    extern void COzipCvUByte##fun (void *arg1, size_t pos1, void *arg2, size_t pos2,           \
+                                   void *res, size_t pes_pos);                                 \
+    extern void COzipCvUShort##fun (void *arg1, size_t pos1, void *arg2, size_t pos2,          \
+                                    void *res, size_t pes_pos);                                \
+    extern void COzipCvUInt##fun (void *arg1, size_t pos1, void *arg2, size_t pos2, void *res, \
+                                  size_t pes_pos);                                             \
+    extern void COzipCvULong##fun (void *arg1, size_t pos1, void *arg2, size_t pos2,           \
+                                   void *res, size_t pes_pos);                                 \
+    extern void COzipCvULongLong##fun (void *arg1, size_t pos1, void *arg2, size_t pos2,       \
+                                       void *res, size_t pes_pos);                             \
+    extern void COzipCvByte##fun (void *arg1, size_t pos1, void *arg2, size_t pos2, void *res, \
+                                  size_t res_pos);                                             \
+    extern void COzipCvShort##fun (void *arg1, size_t pos1, void *arg2, size_t pos2,           \
+                                   void *res, size_t pes_pos);                                 \
+    extern void COzipCvInt##fun (void *arg1, size_t pos1, void *arg2, size_t pos2, void *res,  \
+                                 size_t pes_pos);                                              \
+    extern void COzipCvLong##fun (void *arg1, size_t pos1, void *arg2, size_t pos2, void *res, \
+                                  size_t pes_pos);                                             \
+    extern void COzipCvLongLong##fun (void *arg1, size_t pos1, void *arg2, size_t pos2,        \
+                                      void *res, size_t pes_pos);                              \
+                                                                                               \
+    extern void COzipCvFloat##fun (void *arg1, size_t pos1, void *arg2, size_t pos2,           \
+                                   void *res, size_t pes_pos);                                 \
+    extern void COzipCvDouble##fun (void *arg1, size_t pos1, void *arg2, size_t pos2,          \
+                                    void *res, size_t pes_pos);                                \
+    extern void COzipCvLongDouble##fun (void *arg1, size_t pos1, void *arg2, size_t pos2,      \
+                                        void *res, size_t pes_pos);                            \
+                                                                                               \
+    extern void COzipCvBool##fun (void *arg1, size_t pos1, void *arg2, size_t pos2, void *res, \
+                                  size_t pes_pos);                                             \
+    extern void COzipCvChar##fun (void *arg1, size_t pos1, void *arg2, size_t pos2, void *res, \
+                                  size_t pes_pos);                                             \
+                                                                                               \
+    extern void COzipCvDummy##fun (void *arg1, size_t pos1, void *arg2, size_t pos2,           \
+                                   void *res, size_t pes_pos);
 
 EXT_DECLS (Plus)
 EXT_DECLS (Minus)

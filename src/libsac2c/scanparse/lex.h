@@ -236,13 +236,28 @@ extern const char *token_kind_name[];
 #define token_class_as_string(tcls) token_class_name[(int)tcls]
 #define token_location(tok) (tok)->loc
 
-/* Safely increment or decrement index of character buffer. Make
-sure that negative index equals to size - idx. */
-static inline ssize_t
-buf_idx_inc (const size_t idx, const ssize_t inc, const size_t size)
+/* These circbuf_idx safely perform an increment or decrement operation on the index
+   of a buffer with a given size,circling round when it has reached the boundaries.  */
+static inline size_t
+circbuf_idx_inc (const size_t idx, const size_t inc, const size_t size)
 {
-    ssize_t diff = ((ssize_t)idx + inc) % size;
-    return diff < (ssize_t)0 ? (ssize_t) (size - diff) : diff;
+    assert (inc < size, "Size of buffer %zu too small for increment %zu", size, inc);
+    return (size + idx + inc) % size;
+}
+
+static inline size_t
+circbuf_idx_dec (const size_t idx, const size_t dec, const size_t size)
+{
+    assert (dec < size, "Size of buffer %zu too small for decrement %zu", size, dec);
+    return (size + idx - dec) % size;
+}
+
+static inline size_t
+circbuf_idx_incdec (const size_t idx, const ssize_t incdec, const size_t size)
+{
+    return incdec < 0
+           ? circbuf_idx_dec (idx, (size_t)(-incdec), size)
+           : circbuf_idx_inc (idx, (size_t)incdec, size);
 }
 
 static inline const char *
@@ -270,7 +285,7 @@ void token_free (struct token *);
 void token_print (struct token *);
 const char *token_as_string (struct token *);
 bool token_uses_buf (enum token_class);
-char *quote_string (const char *, char *, int);
+char *quote_string (const char *, char *, size_t);
 bool is_normal_id (const char *);
 bool is_operator (const char *);
 //__END_DECLS

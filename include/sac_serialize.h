@@ -11,11 +11,11 @@
 
 extern void *SHLPmakeNode (int ntype, char *sfile, size_t lineno, size_t col, ...);
 extern void *SHLPfixLink (void *stack, int a, int b, int c);
-extern void *COdeserializeConstant (int type, void *shp, int vlen, char *vec);
+extern void *COdeserializeConstant (int type, void *shp, size_t vlen, char *vec);
 extern void *SHcreateShape (int dim, ...);
 extern void *TYdeserializeType (int con, ...);
 extern void *STRcpy (const char *s1);
-extern void *MEMcopy (int size, void *mem);
+extern void *MEMcopy (size_t size, void *mem);
 extern void *SERbuildSerStack (void *node);
 extern void *DSlookupFunction (const char *s, const char *t);
 extern void *DSlookupObject (const char *s, const char *t);

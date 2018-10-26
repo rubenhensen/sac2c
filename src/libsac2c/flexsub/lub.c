@@ -120,7 +120,7 @@ testPriorityQueue (void)
     int i, j, random, totalelements;
     dynarray *q;
 
-    srand (time (NULL));
+    srand ((unsigned int)time (NULL));
 
     for (j = 0; j < 10; j++) {
 

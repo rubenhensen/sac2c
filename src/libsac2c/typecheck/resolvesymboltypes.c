@@ -165,7 +165,7 @@ RSTtypedef (node *arg_node, info *arg_info)
             }
 
             CTIerrorLine (global.linenum,
-                          "%s %s collides with previously %s %s in line %d.",
+                          "%s %s collides with previously %s %s in line %zu.",
                           TYPEDEF_ISALIAS (arg_node) ? "Imported type"
                                                      : "Local definition of",
                           err_str1, UTisAlias (udt) ? "imported type" : "defined type",

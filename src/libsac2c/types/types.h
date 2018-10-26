@@ -552,25 +552,25 @@ typedef constant *(*basecvfunptr) (shape *shp);
  * moved from cv2cv.h
  */
 
-typedef void (*cv2cvfunptr) (void *, int, int, void *, int);
+typedef void (*cv2cvfunptr) (void *, size_t, size_t, void *, size_t);
 
 /*
  * moved from cv2scalar.h
  */
 
-typedef node *(*cv2scalarfunptr) (void *, int);
+typedef node *(*cv2scalarfunptr) (void *, size_t);
 
 /*
  * moved from cv2internal_lib.h
  */
 
-typedef char *(*cv2strfunptr) (void *, int, int, int);
+typedef char *(*cv2strfunptr) (void *, size_t, size_t, int);
 
 /*
  * moved from zipcv.h
  */
 
-typedef void (*zipcvfunptr) (void *, int, void *, int, void *, int);
+typedef void (*zipcvfunptr) (void *, size_t, void *, size_t, void *, size_t);
 
 /*******************************************************************************
  *
@@ -1194,7 +1194,7 @@ typedef struct CYG_FUN_TABLE {
     node *(*SHLPmakeNodeVa_fp) (int, char *, size_t, size_t, va_list);
     void (*SHLPfixLink_fp) (serstack_t *, int, int, int);
     serstack_t *(*SERbuildSerStack_fp) (node *);
-    constant *(*COdeserializeConstant_fp) (simpletype, shape *, int, char *);
+    constant *(*COdeserializeConstant_fp) (simpletype, shape *, size_t, char *);
     node *(*DSlookupFunction_fp) (const char *, const char *);
     node *(*DSlookupObject_fp) (const char *, const char *);
     node *(*DSfetchArgAvis_fp) (int);

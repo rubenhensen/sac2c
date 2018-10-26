@@ -316,13 +316,13 @@ parser_unlex_token_buffer (struct parser *parser)
     size_t e = parser->buf_end, s = parser->buf_size;
 
     for (i = 0; i < l; i++) {
-        size_t idx = buf_idx_inc (e, -(i + 1), s);
+        size_t idx = circbuf_idx_incdec (e, -(ssize_t)(i + 1), s);
         lexer_unget_token (parser->lex, parser->token_buffer[idx]);
         token_free (parser->token_buffer[idx]);
         parser->token_buffer[idx] = NULL;
     }
 
-    parser->buf_end = buf_idx_inc (e, -l, s);
+    parser->buf_end = circbuf_idx_incdec (e, -(ssize_t)l, s);
     parser->unget_idx = 0;
 }
 
@@ -567,7 +567,6 @@ parser_get_token (struct parser *parser)
         } while (token_class (tok) == tok_whitespace
                  || token_class (tok) == tok_comments);
     } else {
-        ssize_t s;
         size_t idx;
 
         do {
@@ -575,8 +574,7 @@ parser_get_token (struct parser *parser)
             assert (parser->unget_idx < parser->buf_size,
                     "parser buffer holds only up to %zu values.", parser->buf_size);
 
-            s = parser->buf_end - parser->unget_idx;
-            idx = s < 0 ? (size_t) (parser->buf_size + s) : (size_t)s;
+            idx = circbuf_idx_dec(parser->buf_end, parser->unget_idx, parser->buf_size);
             parser->unget_idx--;
 
             tok = parser->token_buffer[idx];
@@ -617,11 +615,10 @@ parser_get_token (struct parser *parser)
 void
 parser_unget (struct parser *parser)
 {
-    ssize_t s;
     size_t idx;
     struct token *tok;
 
-    tok = parser->token_buffer[buf_idx_inc (parser->buf_end, -1, parser->buf_size)];
+    tok = parser->token_buffer[circbuf_idx_incdec (parser->buf_end, -(ssize_t)1, parser->buf_size)];
 
     /* Keep track of brackets.  */
     if (token_class (tok) == tok_operator)
@@ -651,8 +648,7 @@ parser_unget (struct parser *parser)
         parser->unget_idx++;
         assert (parser->unget_idx < parser->buf_size,
                 "parser buffer holds only up to %zu values.", parser->buf_size);
-        s = parser->buf_end - parser->unget_idx;
-        idx = s < 0 ? (size_t) (parser->buf_size + s) : (size_t)s;
+        idx = circbuf_idx_dec(parser->buf_end, parser->unget_idx, parser->buf_size);
         tok = parser->token_buffer[idx];
     } while (token_class (tok) == tok_whitespace || token_class (tok) == tok_comments);
 }

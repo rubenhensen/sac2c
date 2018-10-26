@@ -45,11 +45,11 @@ MATHlcm (int x, int y)
  *
  ******************************************************************************/
 
-long
+int
 MATHipow (int base, int exp)
 {
     int i;
-    long res;
+    int res;
 
     DBUG_ENTER ();
 

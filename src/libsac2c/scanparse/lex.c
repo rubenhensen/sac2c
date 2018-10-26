@@ -162,9 +162,10 @@ lexer_finalize (struct lexer *lex, bool close_file)
 }
 
 static inline void
-add_char_to_buffer (struct lexer *lex, int c)
+add_char_to_buffer (struct lexer *lex, int ic)
 {
     size_t e = lex->buf_end;
+    char c = (char)ic;
 
     if ((lex->buf_end + 1) % LEXER_BUFFER == lex->buf_start) {
         lex->buf_start = (lex->buf_start + 1) % LEXER_BUFFER;
@@ -218,14 +219,13 @@ lexer_getch (struct lexer *lex)
 
         return ch;
     } else {
-        ssize_t s;
+        size_t s;
 
         /* Return a token from the buffer.  */
         assert (lex->unget_idx < LEXER_BUFFER,
                 "parser buffer holds only up to %i values.", LEXER_BUFFER);
 
-        s = lex->buf_end - lex->unget_idx;
-        s = s < 0 ? LEXER_BUFFER + s : s;
+        s = circbuf_idx_dec (lex->buf_end, lex->unget_idx, LEXER_BUFFER);
         lex->unget_idx--;
         lex->loc = lex->location_buffer[s];
 
@@ -244,15 +244,14 @@ lexer_getch (struct lexer *lex)
 static inline void
 lexer_ungetch (struct lexer *lex, int ch)
 {
-    ssize_t s;
+    size_t s;
     (void)ch; /* Surpress unused variable warning */
 
     lex->unget_idx++;
     assert (lex->unget_idx < LEXER_BUFFER, "parser buffer holds only up to %i values.",
             LEXER_BUFFER);
 
-    s = lex->buf_end - lex->unget_idx;
-    s = s < 0 ? LEXER_BUFFER + s : s;
+    s = circbuf_idx_dec (lex->buf_end, lex->unget_idx, LEXER_BUFFER);
 }
 
 /* Adds the character C to the string *BUFFER that has length *SIZE
@@ -260,9 +259,10 @@ lexer_ungetch (struct lexer *lex, int ch)
    If the *BUFFER is NULL then it is being allocated, if the *INDEX
    points at the end of the *BUFFER the *BUFFER will be reallocated. */
 static inline void
-buffer_add_char (char **buffer, char **index, size_t *size, int c)
+buffer_add_char (char **buffer, char **index, size_t *size, int ic)
 {
     const size_t initial_size = 16;
+    char c = (char)ic;
 
     if (*buffer == NULL) {
         *buffer = (char *)malloc (initial_size * sizeof (char));
@@ -478,7 +478,7 @@ lexer_trie_read (struct lexer *lex, struct trie *trie, char **buf, size_t writte
         return last;
     } else {
         ssize_t res;
-        size_t s = buf == NULL ? 0 : index - *buf;
+        size_t s = buf == NULL ? 0 : (size_t) (index - *buf);
 
         buffer_add_char (buf, &index, size, c);
         res = lexer_trie_read (lex, next, buf, s + 1, size);
@@ -539,13 +539,13 @@ lexer_is_user_op (struct lexer *lex, struct token *tok, char **buf, size_t *size
 }
 
 char *
-quote_string (const char *s, char *res, int pos)
+quote_string (const char *s, char *res, size_t pos)
 {
 #define BUF_SIZE 512
 
     char buffer[BUF_SIZE];
     const char *ptr = s;
-    int count = 0;
+    size_t count = 0;
 
     while (*ptr != '\0' && count < BUF_SIZE - 5) {
         switch (*ptr) {
@@ -591,8 +591,8 @@ quote_string (const char *s, char *res, int pos)
             x2 = x2 < 10 ? '0' + x2 : 'a' + x2 - 10;
 
             buffer[count++] = 'x';
-            buffer[count++] = x1;
-            buffer[count++] = x2;
+            buffer[count++] = (char)x1;
+            buffer[count++] = (char)x2;
         } break;
         }
         ptr++;
@@ -1017,12 +1017,12 @@ void
 read_line_directive (struct lexer *lex, int digit)
 {
     char fname[PATH_MAX];
-    int line = digit - '0';
+    size_t line = (size_t)(digit - '0');
     bool ret = true;
     int i = 0;
 
     while (isdigit (digit = lexer_getch (lex)))
-        line = line * 10 + (digit - '0');
+        line = line * 10 + (size_t)(digit - '0');
 
     while (isspace (digit = lexer_getch (lex)))
         digit = lexer_getch (lex);
@@ -1033,7 +1033,7 @@ read_line_directive (struct lexer *lex, int digit)
     }
 
     while ((digit = lexer_getch (lex)) != '"') {
-        fname[i++] = digit;
+        fname[i++] = (char)digit;
         if (i == PATH_MAX - 1) {
             error_loc (lex->loc, "filename is too long");
             ret = false;
@@ -1183,7 +1183,7 @@ lexer_get_token (struct lexer *lex)
     // assert (buf == NULL, "buf was used, but token_class is missing");
     if (!buf)
         buf = (char *)malloc (2 * sizeof (char));
-    buf[0] = c;
+    buf[0] = (char)c;
     buf[1] = 0;
     tok->tok_class = tok_unknown;
 
@@ -1239,7 +1239,7 @@ lexer_unget_token (struct lexer *lex, struct token *tok)
     size_t i;
 
     for (i = 0; i < LEXER_BUFFER; i++) {
-        size_t idx = buf_idx_inc (e, -(i + 1), LEXER_BUFFER);
+        size_t idx = circbuf_idx_incdec (e, -(ssize_t)(i + 1), LEXER_BUFFER);
 
         if (lex->location_buffer[idx].fname == loc.fname
             && lex->location_buffer[idx].line == loc.line

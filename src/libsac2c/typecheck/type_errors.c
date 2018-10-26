@@ -279,7 +279,7 @@ TEfreeAllTypeErrorInfos ()
     DBUG_RETURN ();
 }
 
-int
+size_t
 TEgetLine (te_info *info)
 {
     DBUG_ENTER ();

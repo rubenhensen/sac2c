@@ -14,7 +14,7 @@ struct CONSTANT {
     simpletype type;
     shape *mshape;
     void *elems;
-    int vlen;
+    size_t vlen;
 };
 
 /*
@@ -31,15 +31,17 @@ struct CONSTANT {
 #define CONSTANT_ELEMDIM(c) (SHSubarrayDim (CONSTANT_SHAPE (c), CONSTANT_VLEN (c)))
 #define CONSTANT_ELEMSIZE(c) (SHgetUnrLen (CONSTANT_SHAPE (c)) / CONSTANT_VLEN (c))
 
+#define CONSTANT_SIZEOF(__c, __t) (CONSTANT_VLEN (__c) * global.basetype_size[__t])
+
 /*
  * here some extern decls for helper functions defined in constants_basic.c
  */
 
-extern constant *COINTmakeConstant (simpletype type, shape *shp, void *elems, int vlen);
-extern void *COINTallocCV (simpletype type, int length);
-extern void *COINTpickNElemsFromCV (simpletype type, void *elems, int offset, int length);
-extern void COINTcopyElemsFromCVToCV (simpletype type, void *from, int off, int len,
-                                      void *to, int to_off);
+extern constant *COINTmakeConstant (simpletype type, shape *shp, void *elems, size_t vlen);
+extern void *COINTallocCV (simpletype type, size_t length);
+extern void *COINTpickNElemsFromCV (simpletype type, void *elems, size_t offset, size_t length);
+extern void COINTcopyElemsFromCVToCV (simpletype type, void *from, size_t off, size_t len,
+                                      void *to, size_t to_off);
 extern void COINTdbugPrintBinOp (char *fun, constant *arg1, constant *arg2,
                                  constant *res);
 extern void COINTdbugPrintUnaryOp (char *fun, constant *arg1, constant *res);

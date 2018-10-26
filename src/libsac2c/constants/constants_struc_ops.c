@@ -144,12 +144,12 @@ Idx2Offset (constant *idx, constant *a)
 constant *
 IncrementIndex (constant *min, constant *idx, constant *max)
 {
-    int dim;
+    size_t dim;
 
     DBUG_ENTER ();
 
     dim = CONSTANT_VLEN (idx) - 1;
-    if (dim >= 0) {
+    if (CONSTANT_VLEN (idx) > 0) {
         /*
          * 'idx' is non-empty
          */
@@ -193,7 +193,8 @@ IncrementIndex (constant *min, constant *idx, constant *max)
 constant *
 TileFromArray (constant *idx, shape *res_shp, constant *a)
 {
-    int res_vlen, res_off, chunk_size, off_size, off_len, i;
+    size_t i, res_vlen, off_len, res_off, chunk_size;
+    int off_size;
     void *res_elems, *off_elems;
     shape *off_shp;
     constant *min, *max, *off, *res;
@@ -332,7 +333,8 @@ constant *
 COreshape (constant *new_shp, constant *a, constant *tmp1)
 {
     void *elems;
-    int res_vlen, curr_ext_res, i;
+    int curr_ext_res;
+    size_t i, res_vlen;
     shape *res_shp;
     constant *res;
 
@@ -384,7 +386,8 @@ constant *
 COsel (constant *idx, constant *a, constant *tmp1)
 {
     void *elems;
-    int res_dim, res_vlen, curr_ext_a, i;
+    int res_dim, curr_ext_a, i;
+    size_t res_vlen;
     shape *res_shp;
     constant *res;
 
@@ -581,7 +584,7 @@ COoverSel (constant *idx, constant *a, constant *tmp1)
     constant *res = COINTmakeConstant (a_type, res_shape, res_cv, res_cv_len);
 
     /* Compute element size*/
-    int elem_len = SHgetUnrLen (cell_shape);
+    size_t elem_len = SHgetUnrLen (cell_shape);
 
     /* Initialize counter and related vars*/
     int i = 0;
@@ -590,8 +593,8 @@ COoverSel (constant *idx, constant *a, constant *tmp1)
     int *idx_counter_upbound = (int *)MEMmalloc (sizeof (int) * frame_shape_len);
     bool loop_done = FALSE;
     int idx_pos = 0;
-    int to_offset = 0;
-    int from_offset = 0;
+    size_t to_offset = 0;
+    size_t from_offset = 0;
     int row_length = 0;
 
     for (i = 0; i < frame_shape_len; i++) {
@@ -663,7 +666,8 @@ constant *
 COtake (constant *idx, constant *a, constant *tmp1)
 {
     shape *res_shp;
-    int i, curr_val_idx;
+    size_t i;
+    int curr_val_idx;
     int idx_i, shp_i;
     constant *offset, *res;
     constant *new_idx = NULL;
@@ -754,8 +758,9 @@ constant *
 COdrop (constant *idx, constant *a, constant *tmp1)
 {
     shape *res_shp;
-    int i, curr_val_idx;
+    int curr_val_idx;
     int idx_i;
+    size_t i;
     constant *offset;
     constant *res;
     constant *new_idx = NULL;
@@ -841,8 +846,8 @@ COdrop (constant *idx, constant *a, constant *tmp1)
 constant *
 COcat (constant *a, constant *b, constant *tmp1)
 {
-    int dim, vlen;
-    int i;
+    int dim,i;
+    size_t vlen;
     simpletype type;
     shape *shp;
     constant *res, *new_a = NULL, *new_b = NULL;

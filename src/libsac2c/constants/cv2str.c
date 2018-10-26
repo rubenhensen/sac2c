@@ -35,16 +35,17 @@
  ******************************************************************************/
 
 #define COcv2StrTEMPLATE(type, ext, form)                                                \
-    char *COcv2Str##ext (void *src, int off, int len, int max_char)                      \
+    char *COcv2Str##ext (void *src, size_t off, size_t len, int max_char)                \
     {                                                                                    \
-        int i;                                                                           \
+        size_t i;                                                                        \
         char format[10];                                                                 \
         char *buffer;                                                                    \
         char *buffer_act;                                                                \
+        size_t max = (size_t) max_char;                                                  \
                                                                                          \
         DBUG_ENTER ();                                                                   \
         sprintf (format, ",%s", form);                                                   \
-        buffer = (char *)MEMmalloc ((100 + max_char) * sizeof (char));                   \
+        buffer = (char *)MEMmalloc ((100 + max) * sizeof (char));                        \
         buffer_act = buffer;                                                             \
                                                                                          \
         if (len > 0) {                                                                   \
@@ -84,23 +85,27 @@ COcv2StrTEMPLATE (unsigned char, UByte, "%c")
 
   /* SIMD vectors are kind of special case.
      FIXME Do the implementation.  */
-  char *COcv2StrFloatvec (void *src, int off, int len, int max_char)
+  char *COcv2StrFloatvec (void *src, size_t off, size_t len, int max_char)
 {
     char *buf = (char *)MEMmalloc (1024);
     char *p = buf;
     char *end = p + 1024;
+    size_t n_left = (size_t) (end - p);
 
-    p += snprintf (p, end - p, "floatvec<%d>[", len);
+    p += snprintf (p,  n_left, "floatvec<%zu>[", len);
 
-    for (int i = 0; i < len; i++)
+    for (size_t i = 0; i < len; i++){
+        n_left = (size_t) (end - p);
         if (i < 3)
-            p += snprintf (p, end - p, "[%f,...]", *(float *)&((floatvec *)src)[i + off]);
+            p += snprintf (p, n_left, "[%f,...]", *(float *)&((floatvec *)src)[i + off]);
         else {
-            p += snprintf (p, end - p, "...");
+            p += snprintf (p, n_left, "...");
             break;
         }
+    }
 
-    p += snprintf (p, end - p, "]");
+    n_left = (size_t) (end - p);
+    p += snprintf (p, n_left, "]");
 
     return buf;
 }
@@ -112,7 +117,7 @@ COcv2StrTEMPLATE (unsigned char, UByte, "%c")
  */
 
 char *
-COcv2StrDummy (void *src, int off, int len, int max_char)
+COcv2StrDummy (void *src, size_t off, size_t len, int max_char)
 {
     DBUG_ENTER ();
     DBUG_UNREACHABLE ("COcv2StrDummy called!");

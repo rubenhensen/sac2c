@@ -305,7 +305,8 @@ PrintGlobalSwitches (void)
 static void
 PrintProfileData (void)
 {
-    int i, j;
+    size_t i;
+    int j;
 
     DBUG_ENTER ();
 
@@ -547,7 +548,7 @@ PrintGlobalSettings (node *syntax_tree)
                  global.cachesim_dir);
     }
 
-    fprintf (global.outfile, "#define SAC_SET_MAXFUN               %d\n",
+    fprintf (global.outfile, "#define SAC_SET_MAXFUN               %zu\n",
              (global.profile_funcntr));
     fprintf (global.outfile, "#define SAC_SET_MAXFUNAP             %d\n",
              global.profile_funapmax);

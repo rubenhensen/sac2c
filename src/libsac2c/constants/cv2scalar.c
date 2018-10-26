@@ -11,7 +11,7 @@
  */
 
 node *
-COcv2Num (void *elems, int offset)
+COcv2Num (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -19,7 +19,7 @@ COcv2Num (void *elems, int offset)
 }
 
 node *
-COcv2Numbyte (void *elems, int offset)
+COcv2Numbyte (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -27,7 +27,7 @@ COcv2Numbyte (void *elems, int offset)
 }
 
 node *
-COcv2Numshort (void *elems, int offset)
+COcv2Numshort (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -35,7 +35,7 @@ COcv2Numshort (void *elems, int offset)
 }
 
 node *
-COcv2Numint (void *elems, int offset)
+COcv2Numint (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -43,7 +43,7 @@ COcv2Numint (void *elems, int offset)
 }
 
 node *
-COcv2Numlong (void *elems, int offset)
+COcv2Numlong (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -51,7 +51,7 @@ COcv2Numlong (void *elems, int offset)
 }
 
 node *
-COcv2Numlonglong (void *elems, int offset)
+COcv2Numlonglong (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -59,7 +59,7 @@ COcv2Numlonglong (void *elems, int offset)
 }
 
 node *
-COcv2Numubyte (void *elems, int offset)
+COcv2Numubyte (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -67,7 +67,7 @@ COcv2Numubyte (void *elems, int offset)
 }
 
 node *
-COcv2Numushort (void *elems, int offset)
+COcv2Numushort (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -75,7 +75,7 @@ COcv2Numushort (void *elems, int offset)
 }
 
 node *
-COcv2Numuint (void *elems, int offset)
+COcv2Numuint (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -83,7 +83,7 @@ COcv2Numuint (void *elems, int offset)
 }
 
 node *
-COcv2Numulong (void *elems, int offset)
+COcv2Numulong (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -91,7 +91,7 @@ COcv2Numulong (void *elems, int offset)
 }
 
 node *
-COcv2Numulonglong (void *elems, int offset)
+COcv2Numulonglong (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -99,7 +99,7 @@ COcv2Numulonglong (void *elems, int offset)
 }
 
 node *
-COcv2Double (void *elems, int offset)
+COcv2Double (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -107,7 +107,7 @@ COcv2Double (void *elems, int offset)
 }
 
 node *
-COcv2Bool (void *elems, int offset)
+COcv2Bool (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -115,7 +115,7 @@ COcv2Bool (void *elems, int offset)
 }
 
 node *
-COcv2Float (void *elems, int offset)
+COcv2Float (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -123,7 +123,7 @@ COcv2Float (void *elems, int offset)
 }
 
 node *
-COcv2Floatvec (void *elems, int offset)
+COcv2Floatvec (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -131,7 +131,7 @@ COcv2Floatvec (void *elems, int offset)
 }
 
 node *
-COcv2Char (void *elems, int offset)
+COcv2Char (void *elems, size_t offset)
 {
     DBUG_ENTER ();
 
@@ -139,7 +139,7 @@ COcv2Char (void *elems, int offset)
 }
 
 node *
-COcv2ScalarDummy (void *elems, int offset)
+COcv2ScalarDummy (void *elems, size_t offset)
 {
     DBUG_UNREACHABLE ("COCv2SCalarDummy called!");
     return (NULL);

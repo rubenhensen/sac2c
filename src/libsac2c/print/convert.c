@@ -70,10 +70,10 @@ CVfloatvec2String (floatvec val)
 {
     char *s;
     int len;
-    const unsigned vec_len = sizeof (floatvec) / sizeof (float);
-    const unsigned mem
+    const size_t vec_len = sizeof (floatvec) / sizeof (float);
+    const size_t mem
       = 270 * vec_len + vec_len * strlen (", ") + strlen ("(floatvec){}");
-    const unsigned buf_size = sizeof(char) * mem;
+    const size_t buf_size = sizeof(char) * mem;
 
     s = (char *)MEMmalloc (buf_size);
     len = snprintf (s, buf_size, "(floatvec){");
@@ -81,7 +81,7 @@ CVfloatvec2String (floatvec val)
     for (unsigned i = 0; i < vec_len; i++) {
         char *t = CVfloat2String (FLOATVEC_IDX (val, i));
         /* offset by len to append to string s */
-        len += snprintf (s+len, buf_size - len, "%s%s", t, i == vec_len - 1 ? "}" : ", ");
+        len += snprintf (s+len, buf_size - (size_t)len, "%s%s", t, i == vec_len - 1 ? "}" : ", ");
         MEMfree (t);
     }
 
@@ -368,12 +368,12 @@ CVbasetype2ShortString (simpletype type)
  ******************************************************************************/
 
 char *
-CVintBytes2String (unsigned int bytes)
+CVintBytes2String (size_t bytes)
 {
     static char res[32];
     char *tmp = &res[0];
-    int factor = 1000000000;
-    int num;
+    size_t factor = 1000000000;
+    size_t num;
 
     DBUG_ENTER ();
 
@@ -381,17 +381,17 @@ CVintBytes2String (unsigned int bytes)
         factor /= 1000;
         tmp += sprintf (tmp, "    ");
     }
-    tmp += sprintf (tmp, "%3u", (bytes / factor));
+    tmp += sprintf (tmp, "%3zu", (bytes / factor));
     while (factor >= 1000) {
         bytes = bytes % factor;
         factor /= 1000;
         num = bytes / factor;
         if (num < 10) {
-            tmp += sprintf (tmp, ".00%1u", num);
+            tmp += sprintf (tmp, ".00%1zu", num);
         } else if (num < 100) {
-            tmp += sprintf (tmp, ".0%2u", num);
+            tmp += sprintf (tmp, ".0%2zu", num);
         } else {
-            tmp += sprintf (tmp, ".%3u", num);
+            tmp += sprintf (tmp, ".%3zu", num);
         }
     }
 

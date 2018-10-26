@@ -59,7 +59,7 @@ extern constant *COmakeFalse (shape *shp);
  */
 
 extern void COserializeConstant (FILE *file, constant *cnst);
-extern constant *COdeserializeConstant (simpletype type, shape *shp, int vlen, char *vec);
+extern constant *COdeserializeConstant (simpletype type, shape *shp, size_t vlen, char *vec);
 
 /*
  * Functions for extracting info from constants:

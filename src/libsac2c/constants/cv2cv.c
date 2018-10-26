@@ -26,9 +26,9 @@
 
 /* FIXME consider using memcpy -- it is faster ans simpler.  */
 #define COcv2CvTEMPLATE(type, ext)                                                       \
-    void COcv2Cv##ext (void *src, int off, int len, void *res, int res_off)              \
+    void COcv2Cv##ext (void *src, size_t off, size_t len, void *res, size_t res_off)     \
     {                                                                                    \
-        int i;                                                                           \
+        size_t i;                                                                        \
                                                                                          \
         DBUG_ENTER ();                                                                   \
         for (i = 0; i < len; i++) {                                                      \
@@ -61,7 +61,7 @@ COcv2CvTEMPLATE (unsigned char, UByte) COcv2CvTEMPLATE (unsigned short, UShort)
    * type_info.mac!
    */
 
-  void COcv2CvDummy (void *src, int off, int len, void *res, int res_off)
+  void COcv2CvDummy (void *src, size_t off, size_t len, void *res, size_t res_off)
 {
     DBUG_ENTER ();
     DBUG_UNREACHABLE ("COCv2CvDummy called!");

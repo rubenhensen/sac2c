@@ -234,8 +234,8 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
 
     /*PHASE */
     break_phase = STRtok (option, ":");
-
-    num = strtol (break_phase, &rest, 10);
+    
+    num = (int)strtol (break_phase, &rest, 10);
 
     if (rest == break_phase) {
         /*
@@ -354,7 +354,7 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
             break_cyclepass = STRtok (NULL, ":");
 
             if (break_cyclepass != NULL) {
-                num = strtol (break_cyclepass, &rest, 10);
+                num = (int)strtol (break_cyclepass, &rest, 10);
 
                 if ((rest[0] == '\0') && (num >= 1)) {
                     switch (mode) {
@@ -426,7 +426,7 @@ PHOinterpretBreakOption (char *option)
      */
     break_phase = STRtok (option, ":");
 
-    num = strtol (break_phase, &rest, 10);
+    num = (int)strtol (break_phase, &rest, 10);
 
     if (rest == break_phase) {
         /*
@@ -488,7 +488,7 @@ PHOinterpretBreakOption (char *option)
             break_cyclepass = STRtok (NULL, ":");
 
             if (break_cyclepass != NULL) {
-                num = strtol (break_cyclepass, &rest, 10);
+                num = (int)strtol (break_cyclepass, &rest, 10);
 
                 if ((rest[0] == '\0') && (num >= 1)) {
                     global.break_cycle_specifier = num;

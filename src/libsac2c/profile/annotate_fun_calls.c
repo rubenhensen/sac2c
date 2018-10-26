@@ -313,7 +313,8 @@ node *
 PFassign (node *arg_node, info *arg_info)
 {
     int funtypemask;
-    int funno, funap_cnt, parent_funno;
+    int funap_cnt;
+    size_t funno, parent_funno;
     node *old_next_assign, *res;
     char *str_buff;
 

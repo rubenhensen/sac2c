@@ -11,7 +11,7 @@
 typedef struct mallocinfo_t {
     void *key;
     compiler_phase_t phase;
-    int size;
+    size_t size;
     bool isfreed;
     bool isreachable;
     bool wasintree;
@@ -35,8 +35,8 @@ typedef struct mallocphaseinfo_t {
     int nmallocd;
     int nfreed;
     int nleaked;
-    int leakedsize;
-    int notfreedsize;
+    size_t leakedsize;
+    size_t notfreedsize;
     mallocinfo_t *notfreed;
     mallocinfo_t *leaked;
     compiler_phase_t phase;
@@ -51,7 +51,7 @@ extern mallocphaseinfo_t phasetable[]; // needed by check_mem
  *
  *   Should be used instead of `malloc'.
  */
-extern void *_MEMmalloc (int size, const char *file, int line,
+extern void *_MEMmalloc (size_t size, const char *file, int line,
                          const char *func) FUN_ATTR_MALLOC;
 #define MEMmalloc(size) _MEMmalloc (size, __FILE__, __LINE__, __func__)
 #define MEMmallocAt(size, file, line) _MEMmalloc (size, file, line, __func__)
@@ -70,13 +70,13 @@ extern void *_MEMfree (void *address);
  *
  *   should be used instead of realloc
  */
-extern void *_MEMrealloc (void *, int);
+extern void *_MEMrealloc (void *, size_t);
 
 /*
  *   MEMcopy copies SIZE bytes starting from MEM to the newly allocated memory
  *   location.
  */
-extern void *MEMcopy (int size, void *mem);
+extern void *MEMcopy (size_t size, void *mem);
 
 #ifdef __cplusplus
 #define MEMfree(x) (__typeof(x)) _MEMfree ((void *)x)

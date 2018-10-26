@@ -27,15 +27,15 @@
  *******************************************************************************/
 
 void
-STRtoupper (char *source, int start, int stop)
+STRtoupper (char *source, size_t start, size_t stop)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
-
+    
     if (source != NULL) {
         for (i = start; i < stop; i++) {
-            source[i] = toupper (source[i]);
+            source[i] = (char)toupper (source[i]);
         }
     }
 
@@ -82,10 +82,10 @@ STRcpy (const char *source)
  *******************************************************************************/
 
 char *
-STRncpy (const char *source, int maxlen)
+STRncpy (const char *source, size_t maxlen)
 {
     char *ret;
-    int max;
+    size_t max;
 
     DBUG_ENTER ();
 
@@ -116,30 +116,31 @@ STRncpy (const char *source, int maxlen)
  *
  *****************************************************************************/
 char *
-STRsubStr (const char *string, int start, int len)
+STRsubStr (const char *string, size_t start, ssize_t len)
 {
-    int strlen = 0;
+    size_t strlen = 0;
     char *ret = NULL;
 
     DBUG_ENTER ();
 
     strlen = STRlen (string);
 
-    if (len < 0) {
-        len = strlen + len; /* + - => - */
+    // Normalizing len against the length of `str`.
+    size_t l = len < 0 
+               ? (size_t)MATH_MAX (0, (ssize_t)strlen + len)
+               : (size_t)len;
+
+    if ((start + l) > strlen) { /* to long take what we can */
+        l = strlen < start ? 0 : strlen - start;
     }
 
-    if ((start + len) > strlen) { /* to long take what we can */
-        len = strlen - start;
-    }
-
-    if (start > len) {
+    if (start > l) {
         ret = STRnull ();
     } else {
-        ret = (char *)memcpy (MEMmalloc (sizeof (char) * (len + 1)),
+        ret = (char *)memcpy (MEMmalloc (sizeof (char) * (l + 1)),
                               string + start, /* move to start of sub string */
-                              len);
-        ret[len] = '\0';
+                              l);
+        ret[l] = '\0';
     }
 
     DBUG_RETURN (ret);
@@ -172,10 +173,10 @@ STRnull ()
  *        does not count the sine (+-)!!
  *
  *****************************************************************************/
-int
+size_t
 STRsizeInt ()
 {
-    int size = 0;
+    size_t size = 0;
     int s = sizeof (int) * 8;
     DBUG_ENTER ();
 
@@ -249,7 +250,7 @@ char *
 STRcatn (int n, ...)
 {
     int i;
-    int length;
+    size_t length;
     char *result;
     const char *ptr;
     va_list arg_list;
@@ -506,7 +507,7 @@ STReqci (const char *first, const char *second)
  *******************************************************************************/
 
 bool
-STReqn (const char *first, const char *second, int n)
+STReqn (const char *first, const char *second, size_t n)
 {
     bool res;
 
@@ -552,7 +553,7 @@ STRprefix (const char *prefix, const char *str)
         if (str == NULL) {
             res = FALSE;
         } else {
-            int plen = STRlen (prefix);
+            size_t plen = STRlen (prefix);
 
             if (STRlen (str) < plen) {
                 res = FALSE;
@@ -630,10 +631,10 @@ STRsub (const char *sub, const char *str)
  *
  *******************************************************************************/
 
-int
+size_t
 STRlen (const char *s)
 {
-    int len;
+    size_t len;
 
     DBUG_ENTER ();
 
@@ -791,7 +792,7 @@ STRitoa_oct (int number)
 {
     char *str;
     int tmp;
-    int length;
+    size_t length;
     int base = 8;
 
     DBUG_ENTER ();
@@ -803,7 +804,7 @@ STRitoa_oct (int number)
         length++;
     }
 
-    str = (char *)MEMmalloc (sizeof (char) * length + 3);
+    str = (char *)MEMmalloc (sizeof (char) * length + 3UL);
 
     sprintf (str, "0%o", number);
 
@@ -825,7 +826,7 @@ STRitoa_hex (int number)
 {
     char *str;
     int tmp;
-    int length;
+    size_t length;
     int base = 16;
 
     DBUG_ENTER ();
@@ -837,7 +838,7 @@ STRitoa_hex (int number)
         length++;
     }
 
-    str = (char *)MEMmalloc (sizeof (char) * length + 3);
+    str = (char *)MEMmalloc (sizeof (char) * length + 3UL);
 
     sprintf (str, "0x%x", number);
 
@@ -859,7 +860,8 @@ STRitoa_hex (int number)
 static unsigned char
 Hex2Dig (const char x)
 {
-    unsigned char res;
+    int res; /* char literals and arithmetic operations with char => int
+                chosen for the smallest impact to original code */
 
     DBUG_ENTER ();
 
@@ -869,7 +871,7 @@ Hex2Dig (const char x)
         res = 10 + x - 'A';
     }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN ((unsigned char) res);
 }
 
 unsigned char *
@@ -886,7 +888,7 @@ STRhex2Bytes (unsigned char *array, const char *string)
         low = Hex2Dig (string[pos * 2 + 1]);
         high = Hex2Dig (string[pos * 2]);
 
-        array[pos] = high * 16 + low;
+        array[pos] = (unsigned char)(high * 16 + low);
         pos++;
     }
 
@@ -907,7 +909,7 @@ STRhex2Bytes (unsigned char *array, const char *string)
 static char
 Dig2Hex (unsigned char x)
 {
-    char res;
+    int res;
 
     DBUG_ENTER ();
 
@@ -917,13 +919,13 @@ Dig2Hex (unsigned char x)
         res = 'A' + x - 10;
     }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN ((char) res);
 }
 
 char *
-STRbytes2Hex (int len, unsigned char *array)
+STRbytes2Hex (size_t len, unsigned char *array)
 {
-    int pos;
+    size_t pos;
     char *result;
     unsigned char low, high;
 
@@ -960,7 +962,7 @@ STRreplaceSpecialCharacters (const char *name)
 {
     char *new_name;
     char *tmp;
-    int i, j;
+    size_t i, j;
 
     DBUG_ENTER ();
 
@@ -1125,7 +1127,7 @@ char *
 STRstring2SafeCEncoding (const char *string)
 {
     char *result, *tmp;
-    int i, len;
+    size_t i, len;
 
     DBUG_ENTER ();
 
@@ -1196,7 +1198,7 @@ node *
 STRstring2Array (const char *str)
 {
     node *new_exprs;
-    int i, cnt;
+    size_t i, cnt;
     node *array;
     node *len_expr;
     node *res;
@@ -1207,7 +1209,7 @@ STRstring2Array (const char *str)
 
     cnt = 0;
 
-    for (i = STRlen (str) - 1; i >= 0; i--) {
+    for (i = STRlen (str); i-- > 0; ) {
         if ((i > 0) && (str[i - 1] == '\\')) {
             switch (str[i]) {
             case 'n':
@@ -1257,6 +1259,9 @@ STRstring2Array (const char *str)
         cnt += 1;
     }
 
+    //This modifies the 'length' arg in String::to_string for Stdlib
+    //FIXME grzegorz: update to_string to accept unsigned long arg
+    //before changing to TBmakeNumulong
     len_expr = TBmakeNum (cnt);
     array
       = TCmakeVector (TYmakeAKS (TYmakeSimpleType (T_char), SHmakeShape (0)), new_exprs);
@@ -1282,7 +1287,7 @@ STRstring2Array (const char *str)
 char *
 STRsubstToken (const char *str, const char *token, const char *subst)
 {
-    int occurrences, tlen, slen;
+    size_t occurrences, tlen, slen;
     const char *found;
     char *pos;
     char *result;
@@ -1337,20 +1342,20 @@ STRsubstTokend (char *str, const char *token, const char *subst)
  * @return A new String or NULL if str is NULL
  ******************************************************************************/
 char *
-STRsubstTokens (const char *str, int n, ...)
+STRsubstTokens (const char *str, size_t n, ...)
 {
     char *result;
     va_list arg_list;
     const char **patterns;
     const char **values;
-    int *sizes;
-    int i, j;
+    size_t *sizes;
+    size_t i, j;
 
     DBUG_ENTER ();
 
     patterns = (const char **)MEMmalloc (n * sizeof (char *));
     values = (const char **)MEMmalloc (n * sizeof (char *));
-    sizes = (int *)MEMmalloc (n * sizeof (int));
+    sizes = (size_t *)MEMmalloc (n * sizeof (size_t));
 
     va_start (arg_list, n);
 

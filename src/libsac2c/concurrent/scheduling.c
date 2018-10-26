@@ -157,7 +157,7 @@ static struct {
  *
  * function:
  *   sched_t *CheckSchedulingArgs( sched_t *sched, char *spec, node *exprs,
- *                                 int line)
+ *                                 size_t line)
  *
  * description:
  *   This function produces the arguments of a scheduling specification that
@@ -169,7 +169,7 @@ static struct {
  ******************************************************************************/
 
 static sched_t *
-CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, int line)
+CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, size_t line)
 {
     int i;
     char *arg_spec;
@@ -307,7 +307,11 @@ SCHmakeScheduling (char *discipline, ...)
 
     sched->discipline = scheduler_table[disc_no].discipline;
     sched->mclass = scheduler_table[disc_no].mclass;
-    sched->line = -1;
+    /*
+     * line can be safely treated as undefined on '0' as origin is '1'
+     * FIXME full location would be better than just line number  
+     */
+    sched->line = 0;
 
     sched->num_args = scheduler_table[disc_no].num_args;
 
@@ -1107,7 +1111,7 @@ SCHcompileSchedulingInit (int seg_id, node *wl_ids, sched_t *sched, node *arg_no
 
 struct TASKSEL_T {
     char *discipline;
-    int line;
+    size_t line;
     int num_args;
     int *arg;
     int dims;
@@ -1138,7 +1142,7 @@ static struct {
  *
  * function:
  *   tasksel_t *CheckTaskselArgs( tasksel_t *tasksel, node *exprs,
- *                                 int line)
+ *                                 size_t line)
  *
  * description:
  *   This function produces the arguments of a taskselector specification that
@@ -1148,7 +1152,7 @@ static struct {
  ******************************************************************************/
 
 static tasksel_t *
-CheckTaskselArgs (tasksel_t *tasksel, node *exprs, int line)
+CheckTaskselArgs (tasksel_t *tasksel, node *exprs, size_t line)
 {
     int i;
     node *expr;
@@ -1233,7 +1237,7 @@ SCHmakeTasksel (char *discipline, ...)
     } else {
         tasksel->arg = (int *)MEMmalloc (tasksel->num_args * sizeof (int));
     }
-    tasksel->line = -1;
+    tasksel->line = 0;
 
     for (i = 0; i < tasksel->num_args; i++) {
         tasksel->arg[i] = va_arg (args, int);
@@ -1247,7 +1251,7 @@ SCHmakeTasksel (char *discipline, ...)
 /******************************************************************************
  *
  * function:
- *   tasksel_t *SCHMakeTaskselByPragma( node *ap_node, int line)
+ *   tasksel_t *SCHMakeTaskselByPragma( node *ap_node, size_t line)
  *
  * description:
  *   This function constructs a taskselector specification from a 'Tasksel'
