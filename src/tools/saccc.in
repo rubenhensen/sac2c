@@ -37,7 +37,13 @@ for arg in "$@"; do
      act=$followaction
      followaction=
      case $act in
-        ccarg)  cmdline+=(-Xc "$ccarg" -Xc "$arg" -Xl "$ccarg" -Xl "$arg"); continue;;
+        ccarg)  
+            if test x"$ccarg" = x; then
+                cmdline+=(-Xc "$arg" -Xl "$arg")
+            else
+                cmdline+=(-Xc "$ccarg" -Xc "$arg" -Xl "$ccarg" -Xl "$arg")
+            fi
+            continue;;
         ldarg)  cmdline+=(-Xl "$arg"); continue;;
         sacarg) cmdline+=("$arg"); continue;;
      esac
