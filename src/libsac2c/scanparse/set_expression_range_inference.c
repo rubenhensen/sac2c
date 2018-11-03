@@ -274,7 +274,6 @@ SERIsetwl (node *arg_node, info *arg_info)
     }
 
     arg_info = MakeInfo (arg_info);
-    DBUG_PUSH( "-d,SERI,SERI_ACT");
 
     /*
      * First, we check which ranges are missing

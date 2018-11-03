@@ -400,7 +400,7 @@ HWLGlet (node *arg_node, info *arg_info)
 static node *
 SplitWith (node *arg_node, info *arg_info)
 {
-    node *part, *code, *first_wl, *lhs_rest, *wl_rest;
+    node *part, *code, *first_wl, *lhs_rest, *wl_rest, *assign_rest;
 
     DBUG_ENTER ();
 
@@ -427,15 +427,6 @@ SplitWith (node *arg_node, info *arg_info)
         CODE_NEXT (code) = NULL;
 
         /**
-         * steal the withop(s)!
-         */
-//      withop = WITH_WITHOP (arg_node);
-        /**
-         * and create the new first WL:
-         */
-//      first_wl = TBmakeWith (part, code, withop);
-
-        /**
          * Traversing the withops yields:
          *   a modifed withop chain in INFO_NEW_WITHOPS and
          *   a list of lhs variables (N_spids) for the first WL in INFO_HWLG_LHS
@@ -444,23 +435,22 @@ SplitWith (node *arg_node, info *arg_info)
             DBUG_ASSERT (INFO_HWLG_MODE (arg_info) == T_traverse,
                          "withop mode non traverse in HWLGwith found!");
             INFO_HWLG_MODE (arg_info) = T_create;
-//          WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
             WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
             INFO_HWLG_MODE (arg_info) = T_traverse;
         }
 
         first_wl = TBmakeWith (part, code, INFO_HWLG_NEW_WITHOPS (arg_info));
-//      WITH_WITHOP (arg_node) = INFO_HWLG_NEW_WITHOPS (arg_info);
         INFO_HWLG_NEW_WITHOPS (arg_info) = NULL;
 
-//      first_let = TBmakeLet (INFO_HWLG_LHS (arg_info), first_wl);
         lhs_rest = INFO_HWLG_LHS (arg_info);
         INFO_HWLG_LHS (arg_info) = NULL;
 
+        assign_rest = TBmakeAssign (TBmakeLet (lhs_rest, NULL), INFO_HWLG_LASTASSIGN (arg_info));
+        INFO_HWLG_LASTASSIGN (arg_info) = assign_rest;
+
         wl_rest = SplitWith (arg_node, arg_info);
 
-        INFO_HWLG_LASTASSIGN (arg_info)
-            = TBmakeAssign (TBmakeLet (lhs_rest, wl_rest), INFO_HWLG_LASTASSIGN (arg_info));
+        LET_EXPR (ASSIGN_STMT (assign_rest)) = wl_rest;
 
         arg_node = first_wl;
         /**
