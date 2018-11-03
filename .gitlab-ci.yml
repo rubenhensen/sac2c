@@ -19,6 +19,8 @@ stages:
 #  - DO_SCHEDULE:  if set, we *ignore* warnings. Is useful for when we want
 #                  to do packaging, as for nightly/weekly release we don't
 #                  really mind.
+#  - DO_LIMITED:   when creating a release, either weekly or tagged, we indicate
+#                  that we want to build sac2c with different options.
 #  - CPACK_BUILD:  specifies to CPack what type of package we want to generate
 #  - RELEASE_FILE: the Glob for selecting the CPack generate package
 #  - STDLIB_URL:   the git-pull URL for the repo, defaults to `sacbase/StdLib'
@@ -31,12 +33,6 @@ stages:
 #                  at all. Refers to the repo to which the CI is attached.
 #
 
-# TODO (hans) Trigger variables
-#  - to build *only* sac2c: BUILD_SAC2C must be set,
-#  - to build *only* stdlib: BUILD_STDLIB must be set,
-#  - to build all: _set *both* above_
-#  - to deploy packages: DO_RELEASE must be set
-
 # here we define specific templates for various actions:
 
 .build-template: &build-template
@@ -45,7 +41,11 @@ stages:
     script:
         - mkdir $HOME/.sac2crc
         - mkdir build && cd build
-        - cmake -DFUNCTESTS=ON -DBUILDGENERIC=ON ../cmake/cpack
+        - if [ -z "${DO_LIMITED}" ]; then
+            cmake -DBUILD_OPTIONS="-DFUNCTESTS=ON" ../cmake/cpack;
+          else
+            cmake -DBUILD_OPTIONS="-DFUNCTESTS=ON -DISL=OFF -DBARVINOK=OFF" ../cmake/cpack;
+          fi
         - make -j2 2>&1 | tee build.log
         - if [ ${PIPESTATUS[0]} -ne 0 ]; then
             echo "!!! ERROR detected in build !!!";
@@ -60,7 +60,7 @@ stages:
         - mv $HOME/.sac2crc $PWD
     # ensure we capture the build blob
     artifacts:
-        expire_in: 12 hrs
+        expire_in: 24 hrs
         untracked: true
     only:
         # we use the trigger mechanism as this is currently the only
@@ -76,9 +76,9 @@ stages:
         - cp -r build/.sac2crc $HOME
         - cd build
         - make fulltest
-        - ctest --output-on-failure
+        - ctest -j2 --output-on-failure
     artifacts:
-        expire_in: 12 hrs
+        expire_in: 24 hrs
         untracked: true
     only:
         # we use the trigger mechanism as this is currently the only
@@ -99,18 +99,15 @@ stages:
         # XXX would be nice if we could use `--single-branch`, as it would
         # save on bandwidth + time. But some OSs don't have > git 1.7 (?!)
         - if [ -z ${STDLIB_URL} ]; then
-            git clone https://github.com/SacBase/Stdlib.git stdlib;
+            git clone --recursive https://github.com/SacBase/Stdlib.git stdlib;
             echo "Clone from SacBase/Stdlib master HEAD";
           else
-            git clone ${STDLIB_URL} stdlib;
+            git clone --recursive ${STDLIB_URL} stdlib;
             echo "Clone from ${STDLIB_URL}";
           fi
         - cd stdlib
-        - git submodule init
-        - git submodule update
-        - cd ..
         - mkdir stdlib-build && cd stdlib-build
-        - cmake -DSAC2C_EXEC=${SAC2CP_EXEC} ../stdlib
+        - cmake -DSAC2C_EXEC=${SAC2CP_EXEC} ..
         - make -j2 2>&1 | tee build.log
         - if [ ${PIPESTATUS[0]} -ne 0 ]; then
             echo "!!! ERROR detected in build !!!";
@@ -125,7 +122,7 @@ stages:
         - mv -f $HOME/.sac2crc ${CI_PROJECT_DIR}/build/.sac2crc
     # ensure we capture the build blob
     artifacts:
-        expire_in: 12 hrs
+        expire_in: 24 hrs
         untracked: true
         paths:
             - stdlib/
@@ -142,11 +139,17 @@ stages:
     script:
         - cp -r build/.sac2crc $HOME
         - cd build
+        - echo "+++ building sac2c package +++";
         - cpack -G ${CPACK_BUILD}
+        - echo "+++ installing sac2c package +++";
+        - ../ci/install-package.sh ${RELEASE_FILE}
         - cd ../stdlib-build
+        - echo "+++ building stdlib package +++";
         - cpack -G ${CPACK_BUILD}
+        - echo "+++ installing stdlib package +++";
+        - ../ci/install-package.sh -S ${RELEASE_FILE}
     artifacts:
-        expire_in: 4 hrs
+        expire_in: 24 hrs
         paths:
             - build/${RELEASE_FILE}
             - stdlib-build/${RELEASE_FILE}

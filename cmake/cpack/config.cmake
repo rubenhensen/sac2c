@@ -52,7 +52,7 @@ SET (CPACK_PACKAGE_INSTALL_DIRECTORY "sac2c-${SAC2C_VERSION}") # XXX is this rea
 SET (CPACK_PACKAGE_ICON              "${SAC2C_SOURCE_DIR}/cmake/cpack/sac_logo.png")
 
 # SET (CPACK_PACKAGE_DESCRIPTION_FILE ...)
-SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY "The sac2c compiler for a data-parallel array-based functional language SaC")
+SET (CPACK_PACKAGE_DESCRIPTION_SUMMARY "This is the compiler for the data-parallel array-based functional language SaC")
 # FIXME(artem) We need to decide on where do we put the stuff on the target system...)
 #SET (CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 SET (CPACK_RESOURCE_FILE_LICENSE "${SAC2C_SOURCE_DIR}/LICENSE.txt")
