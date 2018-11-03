@@ -21,9 +21,6 @@ SUBPHASE (hs, "Hiding struct definitions behind typedefs and accessors", HSdoHid
 SUBPHASE (iotc, "Introducing user-tracing calls", IUTCdoIntroduceUserTraceCalls,
           global.dousertrace, pre)
 
-SUBPHASE (hsd, "Handling dots in selections", HSDdoEliminateSelDots, ALWAYS,
-          pre)
-
 SUBPHASE (seri, "Inferring Ranges for Set Expressions", SERIdoInferRanges, ALWAYS,
           pre)
 
@@ -31,6 +28,9 @@ SUBPHASE (hsed, "Handling dots in Set Notation", HSEDdoEliminateSetExpressionDot
           pre)
 
 SUBPHASE (hse, "Translating Set Notation into With-Loops", HSEdoEliminateSetExpressions, ALWAYS,
+          pre)
+
+SUBPHASE (hsd, "Handling dots in selections", HSDdoEliminateSelDots, ALWAYS,
           pre)
 
 SUBPHASE (zgwl, "Handling zero-generator with-loops", HZGWLdoHandleZeroGeneratorWithLoops,

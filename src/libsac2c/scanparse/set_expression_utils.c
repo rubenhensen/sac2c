@@ -472,15 +472,23 @@ bool SEUTshapeInfoComplete (idtable *table)
     end = table->nextframe;
     if (table->type == ID_scalar) {
         while (table != end) {
+            DBUG_PRINT( "info for \"%s\"...", table->id);
             if (table->shapes == NULL) {
                 result = FALSE;
+                DBUG_PRINT("   ... missing");
+            } else {
+                DBUG_PRINT("   ... found");
             }
             table = table->next;
         }
 
     } else if (table->type == ID_vector) {
+        DBUG_PRINT( "info for \"%s\"...", table->id);
         if (table->shapes == NULL) {
             result = FALSE;
+            DBUG_PRINT("   ... missing");
+        } else {
+            DBUG_PRINT("   ... found");
         }
     }
 
@@ -509,6 +517,7 @@ void SEUTscanSelectionForShapeInfo( node *idxvec, node *array, idtable *scope)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("scanning for shape info in selection");
     if ((scope != NULL) && !SEUTcontainsIdFromTable (array, scope, NULL)) {
     if (NODE_TYPE (idxvec) == N_array) {
         idxvec = ARRAY_AELEMS (idxvec);
