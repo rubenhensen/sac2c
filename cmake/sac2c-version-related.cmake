@@ -86,9 +86,14 @@ ENDIF ()
 
 #
 # Callable functions/macros
-# 
+#
 
 # Get sac2c version information
+# output for example repo version: v1.3.3-MijasCosta-164-g40956,
+#  version = 1.3.3-MijasCosta-164-g40956
+#  major = 1
+#  minor = 3.3
+#  patch = 164
 FUNCTION (GET_SAC2C_VERSION version major minor patch)
     SET (_version "")
     SET (_major "")
@@ -99,7 +104,7 @@ FUNCTION (GET_SAC2C_VERSION version major minor patch)
     STRING (REGEX REPLACE "^v" "" _version "${_version}")
     STRING (REGEX REPLACE "\n" "" _version "${_version}")
     STRING (REGEX REPLACE "^([0-9]+)\\..*" "\\1" _major "${_version}")
-    STRING (REGEX REPLACE "^([0-9]+)\\.([0-9]+).*" "\\2" _minor "${_version}")
+    STRING (REGEX REPLACE "^([0-9]+)\\.([0-9]+\\.[0-9]+|[0-9]+).*" "\\2" _minor "${_version}")
     IF ("${_version}" MATCHES "-([0-9]+)(-g[a-f0-9]+)?(-dirty)?$")
         SET (_patch "${CMAKE_MATCH_1}")
     ENDIF ()
