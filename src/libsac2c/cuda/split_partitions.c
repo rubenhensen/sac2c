@@ -206,7 +206,7 @@ MakePartition (size_t segs_cnt)
 
     new_part = (partition_t *)MEMmalloc (sizeof (partition_t));
     //FIXME grzegorz: may be good to use macros here to be consistent 
-    PARTITION_SEGS_CNT(new_part) = segs_cnt;
+    PARTITION_SEGS_CNT (new_part) = segs_cnt;
 
     new_part->segs[0] = NULL;
     new_part->segs[1] = NULL;

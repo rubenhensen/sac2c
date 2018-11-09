@@ -504,7 +504,7 @@ PopDim (info *arg_info)
 {
     DBUG_ENTER ();
 
-    //INFO_DIM_FRAME is set to -1 at times, so casting to fix sign-compare warning 
+    //INFO_DIM_FRAME is set to -1 at times, so casting to fix sign-compare warning
     DBUG_ASSERT ((ssize_t)TCcountIds (INFO_INDICES (arg_info)) > INFO_DIM_FRAME (arg_info),
                  "Stack eroding into frame");
     node *index = INFO_INDICES (arg_info);

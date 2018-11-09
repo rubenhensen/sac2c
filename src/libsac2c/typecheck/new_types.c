@@ -6947,12 +6947,11 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
     assigns = NULL;
     lhs = NULL;
     ret_type = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
-    i = NTYPE_ARITY (ret_type); 
-    while (i >= 1) {
-        //loop >=1 to avoid unsigned >=0 issues
+    //loop from ARITY - 1 to 0 
+    for (i = NTYPE_ARITY (ret_type); i-- > 0;){
         DBUG_ASSERT (vardecs != NULL, "inconsistant application found");
 
-        tmp_id = BuildTmpId (TYcopyType (PROD_MEMBER (ret_type, i-1)), new_vardecs);
+        tmp_id = BuildTmpId (TYcopyType (PROD_MEMBER (ret_type, i)), new_vardecs);
         assigns
           = TBmakeAssign (TBmakeLet (TBmakeIds (VARDEC_AVIS (vardecs), NULL), tmp_id),
                           assigns);
@@ -6961,7 +6960,6 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
         IDS_NEXT (tmp_ids) = lhs;
         lhs = tmp_ids;
 
-        i--;
         vardecs = VARDEC_NEXT (vardecs);
     }
     DBUG_ASSERT (vardecs == NULL, "inconsistant application found");
@@ -7531,12 +7529,12 @@ SerializeIArrType (FILE *file, ntype *type)
     fprintf (file, "TYdeserializeType( %d, %zu, ", NTYPE_CON (type), NTYPE_ARITY (type));
 
     TYserializeType (file, IARR_GEN (type));
-    if(NTYPE_ARITY (type) > 0)
-        for (cnt = 0; cnt < NTYPE_ARITY (type) - 1; cnt++) {
-            fprintf (file, ", ");
+    
+    for (cnt = 0; NTYPE_ARITY (type) > 0 && cnt < NTYPE_ARITY (type) - 1; cnt++) {
+        fprintf (file, ", ");
 
-            TYserializeType (file, IARR_IDIM (type, cnt));
-        }
+        TYserializeType (file, IARR_IDIM (type, cnt));
+    }
 
     fprintf (file, ")");
 
@@ -7554,12 +7552,12 @@ SerializeIDimType (FILE *file, ntype *type)
              NTYPE_ARITY (type), IDIM_DIM (type));
 
     TYserializeType (file, IDIM_GEN (type));
-    if(NTYPE_ARITY (type) > 0)
-        for (cnt = 0; cnt < NTYPE_ARITY (type) - 1; cnt++) {
-            fprintf (file, ", ");
 
-            TYserializeType (file, IDIM_ISHAPE (type, cnt));
-        }
+    for (cnt = 0; NTYPE_ARITY (type) > 0 && cnt < NTYPE_ARITY (type) - 1; cnt++) {
+        fprintf (file, ", ");
+
+        TYserializeType (file, IDIM_ISHAPE (type, cnt));
+    }
 
     fprintf (file, ")");
 
@@ -7877,7 +7875,7 @@ TYdeserializeType (int _con, ...)
         type = va_arg (args, ntype *);
         dim = va_arg (args, ssize_t);
         shp = va_arg (args, shape *);
-        DBUG_ASSERT(dim >= 0, "TC_akd va_arg was negative, dim must be 0+");
+        DBUG_ASSERT (dim >= 0, "TC_akd va_arg was negative, dim must be 0+");
         result = TYmakeAKD (type, (size_t)dim, shp);
     } break;
     case TC_aud: {

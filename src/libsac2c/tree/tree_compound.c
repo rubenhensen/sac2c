@@ -2451,7 +2451,7 @@ TCtakeDropExprs (int takecount, size_t dropcount, node *exprs)
     node *tail;
 
     DBUG_ENTER ();
-    DBUG_ASSERT ((takecount >= 0) ,
+    DBUG_ASSERT (takecount >= 0,
                  "TCtakeDropExprs take or drop count < 0");
     DBUG_ASSERT (N_exprs == NODE_TYPE (exprs),
                  "TCtakeDropExprs disappointed at not getting N_exprs");

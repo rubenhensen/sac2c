@@ -73,7 +73,7 @@ ExtendMask (mask_t *mask)
     DBUG_ENTER ();
 
     old = mask->bitfield;
-    mask->bitfield = (unsigned int*)MEMmalloc (mask->mask_base->num_bitfields
+    mask->bitfield = (unsigned int *)MEMmalloc (mask->mask_base->num_bitfields
                                                 * sizeof (unsigned int));
     for (i = 0; i < mask->num_bitfields; i++) {
         mask->bitfield[i] = old[i];

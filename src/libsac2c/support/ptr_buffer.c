@@ -95,7 +95,6 @@ PBUFadd (ptr_buf *s, void *ptr)
  *   @return size of the buffer
  *
  ******************************************************************************/
-//FIXME never used as far as I could see
 unsigned int
 PBUFsize (ptr_buf *s)
 {

@@ -769,7 +769,7 @@ LFUisAvisMemberExprs (node *arg_node, node *exprs)
  *
  *****************************************************************************/
 size_t
-LFUindexOfMemberIds (node *arg_node, node *ids, bool *isIdsMember) //change to bool
+LFUindexOfMemberIds (node *arg_node, node *ids, bool *isIdsMember)
 {
     size_t z = 0;
     size_t j = 0;

@@ -404,7 +404,7 @@ RIsDot (unsigned int dot, dotinfo *info)
     if (result != 0) {
         result = info->dotcnt - result + 1;
     }
-    DBUG_ASSERT(result >=0, "RIsDot position from right is negative");
+    DBUG_ASSERT (result >= 0, "RIsDot position from right is negative");
     DBUG_RETURN (result);
 }
 

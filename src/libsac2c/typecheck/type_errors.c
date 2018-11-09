@@ -1662,8 +1662,8 @@ TEval (ntype *args)
                                           " first argument not an integer");
     DBUG_ASSERT (COgetDim (co) == 0, "illegal construction of _dispatch_error_:"
                                      " first argument not a scalar");
-    DBUG_ASSERT(((int *)COgetDataVec (co))[0] >=0,"illegal number of returns:"
-                                                  " first argument cannot be negative" );
+    DBUG_ASSERT (((int *)COgetDataVec (co))[0] >= 0, "illegal number of returns:"
+                                                     " first argument cannot be negative" );
     num_rets = ((unsigned int *)COgetDataVec (co))[0];
 
     DBUG_RETURN (num_rets);
