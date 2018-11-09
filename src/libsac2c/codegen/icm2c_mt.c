@@ -33,18 +33,6 @@
 #include "free.h"
 #endif /* BEtest */
 
-#define ScanArglist(cnt, inc, sep_str, sep_code, code)                                   \
-    {                                                                                    \
-        size_t i;                                                                           \
-        for (i = 0; i < cnt * inc; i += inc) {                                           \
-            if (i > 0) {                                                                 \
-                fprintf (global.outfile, "%s", sep_str);                                 \
-                sep_code;                                                                \
-            }                                                                            \
-            code;                                                                        \
-        }                                                                                \
-    }
-
 void
 ICMCompileMT_SMART_BEGIN (int spmd_id)
 {
@@ -506,7 +494,7 @@ ICMCompileMT_MTFUN_DECL (char *funname, char *rettype_NT, unsigned int vararg_cn
     if (vararg_cnt > 0) {
         fprintf (global.outfile, ", ");
 
-        ScanArglist (vararg_cnt, 3, ",", ,
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
                      fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
                               vararg[i + 2], vararg[i + 1]));
     }
@@ -555,7 +543,7 @@ ICMCompileMT_MTFUN_DEF_BEGIN (char *funname, char *rettype_NT, unsigned int vara
     if (vararg_cnt > 0) {
         fprintf (global.outfile, ", ");
 
-        ScanArglist (vararg_cnt, 3, ",", ,
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
                      fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
                               vararg[i + 2], vararg[i + 1]));
     }
@@ -644,7 +632,7 @@ ICMCompileMT_MTFUN_AP (char *funname, char *retname_NT, unsigned int vararg_cnt,
         fprintf (global.outfile, ", ");
     }
 
-    ScanArglist (vararg_cnt, 3, ",", ,
+    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
                  fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
                           vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ");\n");
@@ -677,7 +665,7 @@ ICMCompileMT_MTFUN_RET (char *retname_NT, unsigned int vararg_cnt, char **vararg
 #undef MT_MTFUN_RET
 
     INDENT;
-    ScanArglist (vararg_cnt, 3, "\n", INDENT,
+    SCAN_ARG_LIST (vararg_cnt, 3, "\n", INDENT,
                  fprintf (global.outfile, "SAC_ND_RET_%s( %s, %s)", vararg[i],
                           vararg[i + 1], vararg[i + 2]));
     if (vararg_cnt > 0) {

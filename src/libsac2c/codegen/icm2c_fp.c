@@ -34,18 +34,6 @@
 #include "free.h"
 #endif /* BEtest */
 
-#define ScanArglist(cnt, inc, sep_str, sep_code, code)                                   \
-    {                                                                                    \
-        unsigned int i;                                                                           \
-        for (i = 0; i < cnt * inc; i += inc) {                                           \
-            if (i > 0) {                                                                 \
-                fprintf (global.outfile, "%s", sep_str);                                 \
-                sep_code;                                                                \
-            }                                                                            \
-            code;                                                                        \
-        }                                                                                \
-    }
-
 /******************************************************************************
  *
  * function:
@@ -117,8 +105,8 @@ ICMCompileFP_FUN_RET (char *framename, char *retname, unsigned int vararg_cnt, c
 #undef FP_FUN_RET
 
     INDENT;
-    ScanArglist (vararg_cnt, 3, "\n", INDENT,
-                 fprintf (global.outfile, "SAC_FP_SAVE_RESULT( %s, %d, %s)", framename,
+    SCAN_ARG_LIST (vararg_cnt, 3, "\n", INDENT,
+                 fprintf (global.outfile, "SAC_FP_SAVE_RESULT( %s, %zu, %s)", framename,
                           i / 3, vararg[i + 2]));
 
     if (vararg_cnt > 0) {
@@ -152,8 +140,8 @@ ICMCompileFP_FUN_AP (char *framename, char *name, char *retname, unsigned int va
     fprintf (global.outfile, "SAC_FP_AP_CHECK_START(%s)\n", tmp);
 
     INDENT;
-    ScanArglist (vararg_cnt, 3, "\n", INDENT,
-                 fprintf (global.outfile, "SAC_FP_GET_RESULT( %s, %s, %d, %s)", tmp,
+    SCAN_ARG_LIST (vararg_cnt, 3, "\n", INDENT,
+                 fprintf (global.outfile, "SAC_FP_GET_RESULT( %s, %s, %zu, %s)", tmp,
                           framename, i / 3, vararg[i + 2]));
 
     if (vararg_cnt > 0) {

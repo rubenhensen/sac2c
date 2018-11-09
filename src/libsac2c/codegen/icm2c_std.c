@@ -25,17 +25,6 @@
 #define MEMmalloc(x) malloc (x)
 #endif /* BEtest */
 
-#define SCAN_ARG_LIST(cnt, inc, sep_str, sep_code, code)                                 \
-    do {                                                                                 \
-        for (size_t i = 0; i < cnt * inc; i += inc) {                                       \
-            if (i > 0) {                                                                 \
-                out ("%s", sep_str);                                                     \
-                sep_code;                                                                \
-            }                                                                            \
-            code;                                                                        \
-        }                                                                                \
-    } while (0)
-
 /******************************************************************************
  *
  * function:

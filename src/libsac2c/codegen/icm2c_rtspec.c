@@ -24,31 +24,6 @@
 #define DBUG_PREFIX "UNDEFINED"
 #include "debug.h"
 
-// this is used for RTSPEC_MODE_SIMPLE
-#define ScanArglist(cnt, inc, sep_str, sep_code, code)                                   \
-    {                                                                                    \
-        unsigned int i;                                                                           \
-        for (i = 0; i < cnt * inc; i += inc) {                                           \
-            if (i > 0) {                                                                 \
-                fprintf (global.outfile, "%s", sep_str);                                 \
-                sep_code;                                                                \
-            }                                                                            \
-            code;                                                                        \
-        }                                                                                \
-    }
-
-// this is used for all other modes
-#define SCAN_ARG_LIST(cnt, inc, sep_str, sep_code, code)                                 \
-    do {                                                                                 \
-        for (unsigned int i = 0; i < cnt * inc; i += inc) {                                       \
-            if (i > 0) {                                                                 \
-                out ("%s", sep_str);                                                     \
-                sep_code;                                                                \
-            }                                                                            \
-            code;                                                                        \
-        }                                                                                \
-    } while (0)
-
 /******************************************************************************
  *
  * function:
@@ -86,7 +61,7 @@ ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, unsigned int vararg_cn
     }
 
     if (vararg_cnt > 0) {
-        ScanArglist (vararg_cnt, 3, ",", ,
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
                      fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
                               vararg[i + 2], vararg[i + 1]));
     } else {
@@ -310,14 +285,14 @@ ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, unsigned int v
             fprintf (global.outfile, "void, ");
         }
 
-        ScanArglist (vararg_cnt, 3, ",", ,
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
                      fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
                               vararg[i + 2], vararg[i + 1]));
 
         fprintf (global.outfile, ")(");
     }
 
-    ScanArglist (vararg_cnt, 3, ",", ,
+    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
                  fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
                           vararg[i + 2], vararg[i + 1]));
 
