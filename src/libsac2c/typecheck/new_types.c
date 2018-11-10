@@ -2661,7 +2661,7 @@ AllArgTypesLe (node *fundef, node *fundef2)
 }
 
 static void
-EliminateDeriveablePartial (node **dp_list, int *dp2ud, int length, int pos)
+EliminateDeriveablePartial (node **dp_list, size_t *dp2ud, int length, int pos)
 {
     int i;
 
@@ -2682,15 +2682,16 @@ DFT_state2dft_res (dft_state *state)
     int max_deriveable;
     bool exact_found = FALSE;
     int i, j;
+    size_t k;
     int dom, irr;
-    int *dp2ud;
-    int *p2ud;
+    size_t *dp2ud;
+    size_t *p2ud;
 
     DBUG_ENTER ();
 
     res = TYmakedft_res (NULL, state->cnt_funs);
-    dp2ud = (int *)MEMmalloc (state->cnt_funs * sizeof (int));
-    p2ud = (int *)MEMmalloc (state->cnt_funs * sizeof (int));
+    dp2ud = (size_t *)MEMmalloc (state->cnt_funs * sizeof (int));
+    p2ud = (size_t *)MEMmalloc (state->cnt_funs * sizeof (int));
 
     /*
      * First, we analyze the accumulated ups and downs:
@@ -2720,11 +2721,12 @@ DFT_state2dft_res (dft_state *state)
      */
     /* Due to a bug in limits.h (!!), we have to use INT_MAX here!! */
     max_deriveable = 1 - INT_MAX;
-    for (i = 0; i < (int)state->max_funs; i++) {
-        if (state->fundefs[i] != NULL) {
-            if (state->ups[i] == 0) {
-                if (state->downs[i] == 0) {
-                    res->def = state->fundefs[i];
+    i = 0;
+    for (k = 0; k < state->max_funs; k++, i++) {
+        if (state->fundefs[k] != NULL) {
+            if (state->ups[k] == 0) {
+                if (state->downs[k] == 0) {
+                    res->def = state->fundefs[k];
                     /* no down projections in case of an exact definition! */
                     max_deriveable = 0;
                     res->deriveable = NULL;
@@ -2732,21 +2734,21 @@ DFT_state2dft_res (dft_state *state)
                     exact_found = TRUE;
                     res->num_deriveable_partials = 0;
                 } else {
-                    if (state->downs[i] > max_deriveable) {
-                        res->deriveable = state->fundefs[i];
-                        max_deriveable = state->downs[i];
+                    if (state->downs[k] > max_deriveable) {
+                        res->deriveable = state->fundefs[k];
+                        max_deriveable = state->downs[k];
                     }
                 }
             } else {
-                if (state->downs[i] == 0) {
-                    res->partials[res->num_partials] = state->fundefs[i];
-                    p2ud[res->num_partials] = i;
+                if (state->downs[k] == 0) {
+                    res->partials[res->num_partials] = state->fundefs[k];
+                    p2ud[res->num_partials] = k;
                     res->num_partials++;
                 } else {
                     if (!exact_found) {
                         res->deriveable_partials[res->num_deriveable_partials]
-                          = state->fundefs[i];
-                        dp2ud[res->num_deriveable_partials] = i;
+                          = state->fundefs[k];
+                        dp2ud[res->num_deriveable_partials] = k;
                         res->num_deriveable_partials++;
                     } /* else ignore it */
                 }
