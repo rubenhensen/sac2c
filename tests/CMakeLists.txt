@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.4)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.10)
 
 SET (TESTS_SRC_DIR ${PROJECT_SOURCE_DIR}/tests)
 SET (TESTS_BIN_DIR ${PROJECT_BINARY_DIR}/tests)
@@ -10,8 +10,8 @@ MACRO (REGISTER_TEST sac_file)
 
     ADD_TEST (
         NAME ${test_name}
-        COMMAND 
-            ${PROJECT_BINARY_DIR}/tests/scripts/run.sh 
+        COMMAND
+            ${PROJECT_BINARY_DIR}/tests/scripts/run.sh
             ${sac_file} ${TESTS_BIN_DIR})
 ENDMACRO ()
 
@@ -29,20 +29,20 @@ CONFIGURE_FILE (
     "${TESTS_SRC_DIR}/common.mk.in"
     "${TESTS_BIN_DIR}/common.mk" @ONLY)
 
-FILE (GLOB_RECURSE sac_test_files 
+FILE (GLOB_RECURSE sac_test_files
       RELATIVE "${TESTS_SRC_DIR}" "*.sac")
-FILE (GLOB_RECURSE headers 
+FILE (GLOB_RECURSE headers
       RELATIVE "${TESTS_SRC_DIR}" "*.h")
-FILE (GLOB_RECURSE mk 
+FILE (GLOB_RECURSE mk
       RELATIVE "${TESTS_SRC_DIR}" "*.mk")
 
 FOREACH (f ${sac_test_files} ${headers} ${mk})
     GET_FILENAME_COMPONENT (localdir "${f}" DIRECTORY)
-    FILE (COPY ${TESTS_SRC_DIR}/${f} 
+    FILE (COPY ${TESTS_SRC_DIR}/${f}
           DESTINATION "${TESTS_BIN_DIR}/${localdir}")
 ENDFOREACH ()
 
-FILE (GLOB_RECURSE tests 
+FILE (GLOB_RECURSE tests
       RELATIVE "${TESTS_SRC_DIR}" "test-*.sac")
 
 FOREACH (test ${tests})

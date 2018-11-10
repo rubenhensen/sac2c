@@ -1,16 +1,7 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.4)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.10)
 
 # Name of the project - we intentionally do not indicate any language
 PROJECT (sac2c-packages NONE)
-
-# Handle Policies
-#FIXME hans: currently we set the policy to the DEFAULT
-#            used by version 3.4 of CMAKE. The alternative
-#            is to specify individual policies for different
-#            features regardless of version. The danger with
-#            this is that newer version will not even support
-#            that policy option anymore...
-CMAKE_POLICY (VERSION 3.4)
 
 # Extra cmake packages
 INCLUDE (ExternalProject)
