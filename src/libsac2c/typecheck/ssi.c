@@ -31,14 +31,14 @@ struct TVAR {
     int no;
     ntype *max;
     ntype *min;
-    int maxbig;
-    int nbig;
+    unsigned int maxbig;
+    unsigned int nbig;
     tvar **big;
-    int maxsmall;
-    int nsmall;
+    unsigned int maxsmall;
+    unsigned int nsmall;
     tvar **small;
-    int maxass;
-    int nass;
+    unsigned int maxass;
+    unsigned int nass;
     sig_dep **handles;
 };
 
@@ -98,10 +98,10 @@ static heap *tvar_heap = NULL;
  ***/
 
 static bool
-IsIn (tvar *var, int num, tvar **list)
+IsIn (tvar *var, unsigned int num, tvar **list)
 {
     bool res = FALSE;
-    int i = 0;
+    unsigned int i = 0;
 
     DBUG_ENTER ();
 
@@ -116,7 +116,7 @@ static void
 AddBigger (tvar *small, tvar *big)
 {
     tvar **xnew;
-    int i;
+    unsigned int i;
 
     DBUG_ENTER ();
     if (TVAR_MBIG (small) == TVAR_NBIG (small)) {
@@ -141,7 +141,7 @@ static void
 AddSmaller (tvar *big, tvar *small)
 {
     tvar **xnew;
-    int i;
+    unsigned int i;
 
     DBUG_ENTER ();
     if (TVAR_MSMALL (big) == TVAR_NSMALL (big)) {
@@ -166,7 +166,7 @@ static void
 AddHandle (tvar *var, sig_dep *handle)
 {
     sig_dep **xnew;
-    int i;
+    unsigned int i;
 
     DBUG_ENTER ();
     if (TVAR_MASS (var) == TVAR_NASS (var)) {
@@ -264,7 +264,7 @@ NewMax (tvar *var, ntype *cmax, bool outer)
 {
     bool res;
     ct_res cmp;
-    int i = 0;
+    unsigned int i = 0;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;
 #endif
@@ -364,7 +364,7 @@ InsertMinAndCheckAssumption (tvar *var, ntype *new_min)
 {
     bool ok = TRUE;
     ntype *old_min;
-    int i;
+    unsigned int i;
 
     DBUG_ENTER ();
 
@@ -408,7 +408,7 @@ NewMin (tvar *var, ntype *cmin, bool outer)
 {
     bool res = TRUE;
     ntype *tmp;
-    int i = 0;
+    unsigned int i = 0;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;
 #endif
@@ -492,7 +492,7 @@ bool
 SSInewRel (tvar *small, tvar *big)
 {
     bool res;
-    int i, j;
+    unsigned int i, j;
 
     DBUG_ENTER ();
 
@@ -660,7 +660,7 @@ SSIfixLow (tvar *var)
 {
     sig_dep **hands;
     bool res;
-    int i, n;
+    unsigned int i, n;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;
 #endif
@@ -786,7 +786,7 @@ SSIvariable2DebugString (tvar *var)
     static char buf[65536];
     char *tmp = &buf[0];
     char *tmp_str, *tmp_str2;
-    int i;
+    unsigned int i;
 
     DBUG_ENTER ();
     if (var == NULL) {
