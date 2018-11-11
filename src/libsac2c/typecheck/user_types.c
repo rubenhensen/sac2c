@@ -104,7 +104,7 @@ InsertIntoRepository (udt_entry *entry)
      * the repository is big enough!!
      */
     if (udt_no % CHUNKSIZE == 0) {
-        new_rep = (udt_entry **)MEMmalloc ((udt_no + CHUNKSIZE) * sizeof (udt_entry *));
+        new_rep = (udt_entry **)MEMmalloc ((size_t)(udt_no + CHUNKSIZE) * sizeof (udt_entry *));
         for (i = 0; i < udt_no; i++) {
             new_rep[i] = udt_rep[i];
         }

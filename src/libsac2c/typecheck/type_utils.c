@@ -1549,7 +1549,7 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
                     if (visited == NULL) {
                         /* This is the initial call, so visited has to be initialized! */
                         num_udt = UTgetNumberOfUserTypes ();
-                        visited = (int *)MEMmalloc (sizeof (int) * num_udt);
+                        visited = (int *)MEMmalloc (sizeof (int) * (size_t)num_udt);
                         for (i = 0; i < num_udt; i++)
                             visited[i] = 0;
                     }
