@@ -2383,7 +2383,7 @@ MakeIcm_PROP_OBJ_OUT (node *prop_obj, node *lhs, node *assigns)
     node *exprs;
     node *icm_args;
     node *ret_node;
-    int count;
+    unsigned int count;
 
     DBUG_ENTER ();
 
@@ -2420,7 +2420,7 @@ MakeIcm_PROP_OBJ_IN (node *prop_obj, node *lhs, node *assigns)
     node *exprs;
     node *icm_args;
     node *ret_node;
-    int count;
+    unsigned int count;
 
     DBUG_ENTER ();
 
