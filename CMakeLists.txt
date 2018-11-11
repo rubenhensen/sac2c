@@ -3,6 +3,11 @@ CMAKE_MINIMUM_REQUIRED (VERSION 3.10)
 # Name of the project
 PROJECT (sac2c)
 
+# CMake policy handling
+IF (POLICY CMP0075)
+  CMAKE_POLICY (SET CMP0075 OLD)
+ENDIF ()
+
 # Extra cmake packages
 INCLUDE (ExternalProject)
 INCLUDE (FeatureSummary)
