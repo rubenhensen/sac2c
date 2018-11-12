@@ -1027,16 +1027,14 @@ isSameShape (node * id, node * exprs)
  * @brief Given a N_exprs chain, for each element in the chain, find an N_avis
  *        that matches its type/shape. If we can't find one within our 'pot',
  *        we can try to find one within our 'last_resort'. If both fail, we
- *        have reached an impossible state and issue an assertion.
  *
  * @param exprs  exprs chain of N_id nodes
  * @param pot
- * @param last_resort exprs chain of all RC/ERC N_id which we could leach from
  *
  * @return N_exprs chain of N_avis that match those in 'exprs'.
  */
 static node *
-findMatchingArgs (node * exprs, node * pot, node * last_resort)
+findMatchingArgs (node * exprs, node * pot)
 {
     int size, i;
     node * res = NULL,
@@ -1047,10 +1045,8 @@ findMatchingArgs (node * exprs, node * pot, node * last_resort)
     DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "finding suitable args inplace of tmp vars:");
     DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (pot != NULL) {
             PRTdoPrintFile (stderr, pot); });
-    DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (last_resort != NULL) {
-            PRTdoPrintFile (stderr, last_resort); });
 
-    if (pot != NULL || last_resort != NULL) {
+    if (pot != NULL) {
         /* for each var in tmp RC, find a suitable var in ERC and replace it */
         size = TCcountExprs (exprs);
         for (i = 0; i < size; i++)
@@ -1060,21 +1056,6 @@ findMatchingArgs (node * exprs, node * pot, node * last_resort)
 
             find = isSameShape (tmp, pot);
 
-            /* if we can't find a candidate from the N_fundef ERC list, then
-             * we can try to leach one that is marked as a RC/ERC within one of
-             * the N_withops - this could be problematic as we might kill off
-             * a reuse case. To limit this from happening our list (last_resort)
-             * should only be populated with candidates IFF there is more than one.
-             * This way we still might be able to get a reuse case without causing
-             * conflict - we are fairly sure that this is OK to do as we have already
-             * filter the RC/ERC before hand, meaning we have a high confidence that
-             * they will be used for a reuse case
-             */
-            if (find == NULL) {
-                DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  failed to find ERC from N_fundef, trying to leach from N_withop candidates");
-                find = isSameShape (tmp, last_resort);
-            }
-
             if (find == NULL)
             {
                 DBUG_UNREACHABLE ("  unable to find a valid extended reuse candidate to replace tmp arg in recursive loopfun!");
@@ -1082,10 +1063,11 @@ findMatchingArgs (node * exprs, node * pot, node * last_resort)
                 DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  found match for tmp arg %s => %s", ID_NAME (tmp), ID_NAME (find));
 
                 /* adding res to args of ap_fundef */
-                if (res == NULL)
+                if (res == NULL) {
                     res = TBmakeExprs (find, NULL);
-                else
+                } else {
                     res = TCappendExprs (res, TBmakeExprs (find, NULL));
+                }
             }
         }
     } else {
@@ -1123,8 +1105,9 @@ ELMPgenarray (node * arg_node, info * arg_info)
     node * new_avis;
     DBUG_ENTER ();
 
-    if (!INFO_DO_UPDATE (arg_info) && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
-        if (GENARRAY_RC (arg_node) == NULL
+    if (!INFO_DO_UPDATE (arg_info)
+            && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
+            && GENARRAY_RC (arg_node) == NULL
             && GENARRAY_ERC (arg_node) == NULL
             && TYisAKS (IDS_NTYPE (INFO_LHS (arg_info)))) {
             DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", " genarray in loopfun has no RCs or ERCs, generating tmp one!");
@@ -1139,24 +1122,6 @@ ELMPgenarray (node * arg_node, info * arg_info)
             // add the new var to RC
             GENARRAY_RC (arg_node) = TBmakeExprs( TBmakeId (new_avis), NULL);
             INFO_TMP_RCS (arg_info) = TCappendExprs (INFO_TMP_RCS (arg_info), DUPdoDupNode (GENARRAY_RC (arg_node)));
-        }
-
-        /* Here we collect all RC/ERC candidates for which we have more than one
-         * within the N_exprs chain. These might be used as a last resort case
-         * when trying to populate the loop functions recursive call. We only
-         * take candidates with more than one candidate to ensure that we still
-         * achieve a reuse case without causing conflict - we are fairly sure
-         * that this is OK to do as we have already filter the RC/ERC before
-         * hand, meaning we have a high confidence that they will be used for a
-         * reuse case
-         */
-        if (GENARRAY_RC (arg_node) != NULL && (TCcountExprs (GENARRAY_RC (arg_node)) > 1)) {
-            INFO_EMR_RC (arg_info) = TCappendExprs (INFO_EMR_RC (arg_info), DUPdoDupTree (GENARRAY_RC (arg_node)));
-        }
-
-        if (GENARRAY_ERC (arg_node) != NULL && (TCcountExprs (GENARRAY_ERC (arg_node)) > 1)) {
-            INFO_EMR_RC (arg_info) = TCappendExprs (INFO_EMR_RC (arg_info), DUPdoDupTree (GENARRAY_ERC (arg_node)));
-        }
     }
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
@@ -1173,39 +1138,23 @@ ELMPmodarray (node * arg_node, info * arg_info)
     node * new_avis;
     DBUG_ENTER ();
 
-    if (!INFO_DO_UPDATE (arg_info) && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
-        if (MODARRAY_RC (arg_node) == NULL
+    if (!INFO_DO_UPDATE (arg_info)
+            && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
+            && MODARRAY_RC (arg_node) == NULL
             && MODARRAY_ERC (arg_node) == NULL
             && TYisAKS (IDS_NTYPE (INFO_LHS (arg_info)))) {
-            DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", " modarray in loopfun has no RCs or ERCs, generating tmp one!");
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", " modarray in loopfun has no RCs or ERCs, generating tmp one!");
 
-            // the new avis must have the same type/shape as genarray shape
-            new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_tmp"),
-                    TYcopyType (IDS_NTYPE (INFO_LHS (arg_info))));
+        // the new avis must have the same type/shape as genarray shape
+        new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_tmp"),
+                TYcopyType (IDS_NTYPE (INFO_LHS (arg_info))));
 
-            // extend the fundef arguments to include the new var
-            FUNDEF_ARGS (INFO_FUNDEF (arg_info)) = TCappendArgs (FUNDEF_ARGS (INFO_FUNDEF (arg_info)), TBmakeArg (new_avis, NULL));
+        // extend the fundef arguments to include the new var
+        FUNDEF_ARGS (INFO_FUNDEF (arg_info)) = TCappendArgs (FUNDEF_ARGS (INFO_FUNDEF (arg_info)), TBmakeArg (new_avis, NULL));
 
-            // add the new var to RC
-            MODARRAY_RC (arg_node) = TBmakeExprs (TBmakeId (new_avis), NULL);
-            INFO_TMP_RCS (arg_info) = TCappendExprs (INFO_TMP_RCS (arg_info), DUPdoDupNode (MODARRAY_RC (arg_node)));
-        }
-
-        /* Here we collect all RC/ERC candidates for which we have more than one
-         * within the N_exprs chain. These might be used as a last resort case
-         * when trying to populate the loop functions recursive call. We only
-         * take candidates with more than one candidate to ensure that we still
-         * achieve a reuse case without causing conflict - we are fairly sure
-         * that this is OK to do as we have already filtered the RC/ERC beforehand,
-         * meaning we have a high confidence that they will be used for a reuse case
-         */
-        if (MODARRAY_RC (arg_node) != NULL && (TCcountExprs (MODARRAY_RC (arg_node)) > 1)) {
-            INFO_EMR_RC (arg_info) = TCappendExprs (INFO_EMR_RC (arg_info), DUPdoDupTree (MODARRAY_RC (arg_node)));
-        }
-
-        if (MODARRAY_ERC (arg_node) != NULL && (TCcountExprs (MODARRAY_ERC (arg_node)) > 1)) {
-            INFO_EMR_RC (arg_info) = TCappendExprs (INFO_EMR_RC (arg_info), DUPdoDupTree (MODARRAY_ERC (arg_node)));
-        }
+        // add the new var to RC
+        MODARRAY_RC (arg_node) = TBmakeExprs (TBmakeId (new_avis), NULL);
+        INFO_TMP_RCS (arg_info) = TCappendExprs (INFO_TMP_RCS (arg_info), DUPdoDupNode (MODARRAY_RC (arg_node)));
     }
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
@@ -1237,7 +1186,7 @@ ELMPap (node * arg_node, info * arg_info)
                 rec_filt = filterDuplicateArgs (AP_ARGS (arg_node), &FUNDEF_ERC (INFO_FUNDEF (arg_info)));
 
                 /* for each var in tmp RC, find a suitable var in ERC and replace it */
-                new_args = findMatchingArgs (INFO_TMP_RCS (arg_info), rec_filt, INFO_EMR_RC (arg_info));
+                new_args = findMatchingArgs (INFO_TMP_RCS (arg_info), rec_filt);
                 AP_ARGS (arg_node) = TCappendExprs (AP_ARGS (arg_node), DUPdoDupTree (new_args));
 
                 DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  args are now:");
@@ -1299,16 +1248,13 @@ ELMPfundef (node * arg_node, info * arg_info)
         DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "at N_fundef %s ...", FUNDEF_NAME (arg_node));
         INFO_FUNDEF (arg_info) = arg_node;
 
-        if (FUNDEF_ISLOOPFUN (arg_node))
+        if (FUNDEF_ISLOOPFUN (arg_node)) {
             DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  found loopfun, inspecting body...");
-        else
+        } else {
             DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  inspecting body...");
+        }
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-        /* list of RC/ERC candidates that we might use as a last resort */
-        if (INFO_EMR_RC (arg_info) != NULL)
-            INFO_EMR_RC (arg_info) = FREEdoFreeTree (INFO_EMR_RC (arg_info));
 
         INFO_FUNDEF (arg_info) = NULL;
     }
