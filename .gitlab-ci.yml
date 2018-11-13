@@ -336,7 +336,7 @@ release-tag-centos6:
         INNER_PATH: "release/RHEL6"
         RELEASE_FILE: "*.rpm"
         GIT_STRATEGY: none
-    <<: *weekly-release-template
+    <<: *tag-release-template
     tags:
         - centos6
     dependencies:

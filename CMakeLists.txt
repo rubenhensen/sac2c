@@ -1,16 +1,12 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.4)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.10)
 
 # Name of the project
 PROJECT (sac2c)
 
-# Handle Policies
-#FIXME hans: currently we set the policy to the DEFAULT
-#            used by cersion 3.4 of CMAKE. The alternative
-#            is to specify individual policies for different
-#            features regardless of version. The danger with
-#            this is that newer version will not even support
-#            that policy option anymore...
-CMAKE_POLICY (VERSION 3.4)
+# CMake policy handling
+IF (POLICY CMP0075)
+  CMAKE_POLICY (SET CMP0075 OLD)
+ENDIF ()
 
 # Extra cmake packages
 INCLUDE (ExternalProject)
@@ -349,20 +345,9 @@ INCLUDE ("${PROJECT_SOURCE_DIR}/cmake/cpack/config.cmake")
 
 # Here we describe what happens when we test stuff.
 ENABLE_TESTING ()
-ADD_SUBDIRECTORY (tests)
+ADD_SUBDIRECTORY ("tests")
 IF (FUNCTESTS)
-  # Make sure that we Have GTest so that we can run functional
-  # tests.  Abort cmake if the FUNCTESTS flag is on but the
-  # GTest is not present.
-  FIND_PACKAGE (GTest)
-  IF (NOT GTEST_FOUND)
-    MESSAGE (FATAL_ERROR "The FUNCTESTS option is ON, but the required\
-                          package GTest is not found.  Please either install\
-                          GTest or turn FUNCTESTS off (-DFUNCTESTS=OFF).")
-  ENDIF ()
-
   ADD_SUBDIRECTORY ("src/tests")
 ENDIF ()
-
 
 # vim:ts=2:sw=2:et:
