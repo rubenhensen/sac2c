@@ -224,7 +224,7 @@ SearchIndex (part_info_t *infos, node *avis)
 static unsigned int
 DecideThreadIdx (node *ids, size_t dim, node *avis, bool *isValidWithids)
 {
-    unsigned int res = 99;
+    unsigned int res;
 
     DBUG_ENTER ();
     
