@@ -106,8 +106,8 @@ ICMCompileFP_FUN_RET (char *framename, char *retname, unsigned int vararg_cnt, c
 
     INDENT;
     SCAN_ARG_LIST (vararg_cnt, 3, "\n", INDENT,
-                 fprintf (global.outfile, "SAC_FP_SAVE_RESULT( %s, %zu, %s)", framename,
-                          i / 3, vararg[i + 2]));
+                   fprintf (global.outfile, "SAC_FP_SAVE_RESULT( %s, %zu, %s)", framename,
+                            i / 3, vararg[i + 2]));
 
     if (vararg_cnt > 0) {
         fprintf (global.outfile, "\n");
@@ -141,8 +141,8 @@ ICMCompileFP_FUN_AP (char *framename, char *name, char *retname, unsigned int va
 
     INDENT;
     SCAN_ARG_LIST (vararg_cnt, 3, "\n", INDENT,
-                 fprintf (global.outfile, "SAC_FP_GET_RESULT( %s, %s, %zu, %s)", tmp,
-                          framename, i / 3, vararg[i + 2]));
+                   fprintf (global.outfile, "SAC_FP_GET_RESULT( %s, %s, %zu, %s)", tmp,
+                            framename, i / 3, vararg[i + 2]));
 
     if (vararg_cnt > 0) {
         fprintf (global.outfile, "\n");

@@ -90,8 +90,8 @@ WLUTisIdsMemberPartition (node *arg_node, node *partn)
         nassgns = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (partn)));
         while ((NULL != nassgns) && (!z)) {
             LFUindexOfMemberIds (ID_AVIS (arg_node),
-                                        LET_IDS (ASSIGN_STMT (nassgns)),
-                                        &isIdsMember);
+                                 LET_IDS (ASSIGN_STMT (nassgns)),
+                                 &isIdsMember);
             if (isIdsMember) {
                 z = TRUE;
             }

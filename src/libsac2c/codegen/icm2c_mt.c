@@ -495,8 +495,8 @@ ICMCompileMT_MTFUN_DECL (char *funname, char *rettype_NT, unsigned int vararg_cn
         fprintf (global.outfile, ", ");
 
         SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                     fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
-                              vararg[i + 2], vararg[i + 1]));
+                       fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                                vararg[i + 2], vararg[i + 1]));
     }
     fprintf (global.outfile, ")");
 
@@ -544,8 +544,8 @@ ICMCompileMT_MTFUN_DEF_BEGIN (char *funname, char *rettype_NT, unsigned int vara
         fprintf (global.outfile, ", ");
 
         SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                     fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
-                              vararg[i + 2], vararg[i + 1]));
+                       fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                                vararg[i + 2], vararg[i + 1]));
     }
     fprintf (global.outfile, ")\n");
 
@@ -633,8 +633,8 @@ ICMCompileMT_MTFUN_AP (char *funname, char *retname_NT, unsigned int vararg_cnt,
     }
 
     SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
-                          vararg[i + 2], vararg[i + 1]));
+                   fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
+                            vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ");\n");
 
     DBUG_RETURN ();
@@ -666,8 +666,8 @@ ICMCompileMT_MTFUN_RET (char *retname_NT, unsigned int vararg_cnt, char **vararg
 
     INDENT;
     SCAN_ARG_LIST (vararg_cnt, 3, "\n", INDENT,
-                 fprintf (global.outfile, "SAC_ND_RET_%s( %s, %s)", vararg[i],
-                          vararg[i + 1], vararg[i + 2]));
+                   fprintf (global.outfile, "SAC_ND_RET_%s( %s, %s)", vararg[i],
+                            vararg[i + 1], vararg[i + 2]));
     if (vararg_cnt > 0) {
         fprintf (global.outfile, "\n");
         INDENT;

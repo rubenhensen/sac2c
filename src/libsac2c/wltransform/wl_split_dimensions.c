@@ -1525,7 +1525,7 @@ ATravCDLmodarray (node *arg_node, info *arg_info)
     set = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
     INFO_WITH2_LHS (arg_info) = lhs;
 
-    //FIXME outerdim should be changed to size_t but not yet as this is shape related
+    // FIXME grzegorz: outerdim should be changed to size_t but not yet as this is shape related
     outerdims = TCcountIds (INFO_WITH2_ISCLS (arg_info));
     /*
      * We need to figure out the size of the inner elements. For
