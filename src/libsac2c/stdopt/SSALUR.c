@@ -381,7 +381,7 @@ struct addition {
 
 TAILQ_HEAD (addition_queue, addition);
 
-#define flip_sign(sign) (sign == arg_plus ? arg_minus : arg_plus)
+#define flip_sign(sign) ((enum arg_sign)(sign == arg_plus ? arg_minus : arg_plus))
 
 /*  This function converts a nested addition/substraction expression
     of numbers and variables, creating a list of elements with the
