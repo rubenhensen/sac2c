@@ -2690,8 +2690,8 @@ DFT_state2dft_res (dft_state *state)
     DBUG_ENTER ();
 
     res = TYmakedft_res (NULL, state->cnt_funs);
-    dp2ud = (size_t *)MEMmalloc (state->cnt_funs * sizeof (int));
-    p2ud = (size_t *)MEMmalloc (state->cnt_funs * sizeof (int));
+    dp2ud = (size_t *)MEMmalloc (state->cnt_funs * sizeof (size_t));
+    p2ud = (size_t *)MEMmalloc (state->cnt_funs * sizeof (size_t));
 
     /*
      * First, we analyze the accumulated ups and downs:
