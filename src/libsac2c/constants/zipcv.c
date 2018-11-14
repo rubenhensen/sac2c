@@ -69,9 +69,10 @@
                                     void *res, size_t res_pos)                           \
     {                                                                                    \
         DBUG_ENTER ();                                                                   \
-        ((res_t *)res)[res_pos] = (((arg_t *)arg1)[pos1])fun (((arg_t *)arg2)[pos2])     \
-                                    ? (((arg_t *)arg1)[pos1])                            \
-                                    : (((arg_t *)arg2)[pos2]);                           \
+        ((res_t *)res)[res_pos]                                                          \
+          = (res_t)((((arg_t *)arg1)[pos1])fun (((arg_t *)arg2)[pos2])                   \
+            ? (((arg_t *)arg1)[pos1])                                                    \
+            : (((arg_t *)arg2)[pos2]));                                                  \
         DBUG_RETURN ();                                                                  \
     }
 
