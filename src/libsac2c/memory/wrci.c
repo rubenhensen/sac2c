@@ -573,6 +573,48 @@ WRCIap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *WRCIcond( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCIcond (node *arg_node, info *arg_info)
+{
+    node * old_chain;
+    DBUG_ENTER ();
+
+    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "We are at a cond");
+    COND_COND (arg_node) = TRAVopt (COND_COND (arg_node), arg_info);
+
+    if (INFO_DO_EMR (arg_info)) {
+        old_chain = INFO_EMR_RC (arg_info);
+
+        if (COND_THEN (arg_node) != NULL) {
+            INFO_EMR_RC (arg_info) = DUPdoDupTree (old_chain);
+            COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
+            if (INFO_EMR_RC (arg_info) != NULL) {
+                INFO_EMR_RC (arg_info) = FREEdoFreeTree (INFO_EMR_RC (arg_info));
+            }
+        }
+
+        if (COND_ELSE (arg_node) != NULL) {
+            INFO_EMR_RC (arg_info) = DUPdoDupTree (old_chain);
+            COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
+            if (INFO_EMR_RC (arg_info) != NULL) {
+                INFO_EMR_RC (arg_info) = FREEdoFreeTree (INFO_EMR_RC (arg_info));
+            }
+        }
+
+        INFO_EMR_RC (arg_info) = old_chain;
+    } else {
+        COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
+        COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WRCIarg( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
