@@ -213,7 +213,7 @@ ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_END (int operation)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMDFUN_DECL( char *name, int vararg_cnt, char **vararg)
+ *   void ICMCompileMT_SPMDFUN_DECL( char *name, unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -248,7 +248,7 @@ ICMCompileMT_SPMDFUN_DECL (char *funname, unsigned int vararg_cnt, char **vararg
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMDFUN_DEF_BEGIN( char *name, int vararg_cnt, char **vararg)
+ *   void ICMCompileMT_SPMDFUN_DEF_BEGIN( char *name, unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -301,7 +301,7 @@ ICMCompileMT_SPMDFUN_DEF_BEGIN (char *funname, unsigned int vararg_cnt, char **v
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMDFUN_DEF_END( char *name, int vararg_cnt, char **vararg)
+ *   void ICMCompileMT_SPMDFUN_DEF_END( char *name, unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -334,7 +334,7 @@ ICMCompileMT_SPMDFUN_DEF_END (char *funname, unsigned int vararg_cnt, char **var
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMDFUN_AP( char *name, int vararg_cnt, char **vararg)
+ *   void ICMCompileMT_SPMDFUN_AP( char *name, unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -389,7 +389,7 @@ ICMCompileMT_SPMDFUN_AP (char *funname, unsigned int vararg_cnt, char **vararg)
  *
  * function:
  *   void ICMCompileMT_SPMDFUN_RET( char *funname,
- *                                  int vararg_cnt, char **vararg)
+ *                                  unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -458,7 +458,7 @@ ICMCompileMT_SPMDFUN_RET (char *funname, unsigned int vararg_cnt, char **vararg)
  *
  * function:
  *   void ICMCompileMT_MTFUN_DECL( char *funname, char *rettype_NT,
- *                                 int vararg_cnt, char **vararg)
+ *                                 unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -507,7 +507,7 @@ ICMCompileMT_MTFUN_DECL (char *funname, char *rettype_NT, unsigned int vararg_cn
  *
  * function:
  *   void ICMCompileMT_MTFUN_DEF_BEGIN( char *funname, char *rettype_NT,
- *                                      int vararg_cnt, char **vararg)
+ *                                      unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -563,7 +563,7 @@ ICMCompileMT_MTFUN_DEF_BEGIN (char *funname, char *rettype_NT, unsigned int vara
  *
  * function:
  *   void ICMCompileMT_MTFUN_DEF_END( char *name, char *rettype_NT,
- *                                    int vararg_cnt, char **vararg)
+ *                                    unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -598,7 +598,7 @@ ICMCompileMT_MTFUN_DEF_END (char *funname, char *rettype_NT, unsigned int vararg
  *
  * function:
  *   void ICMCompileMT_MTFUN_AP( char *name, char *retname_NT,
- *                               int vararg_cnt, char **vararg)
+ *                               unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -643,7 +643,7 @@ ICMCompileMT_MTFUN_AP (char *funname, char *retname_NT, unsigned int vararg_cnt,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_MTFUN_RET( char *retname_NT, int vararg_cnt, char **vararg)
+ *   void ICMCompileMT_MTFUN_RET( char *retname_NT, unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -685,7 +685,7 @@ ICMCompileMT_MTFUN_RET (char *retname_NT, unsigned int vararg_cnt, char **vararg
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMD_FRAME_ELEMENT( char *name, int vararg_cnt, char **vararg)
+ *   void ICMCompileMT_SPMD_FRAME_ELEMENT( char *name, unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -730,7 +730,7 @@ ICMCompileMT_SPMD_FRAME_ELEMENT (char *funname, unsigned int vararg_cnt, char **
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMD_BARRIER_ELEMENT( char *name, int vararg_cnt, char **vararg)
+ *   void ICMCompileMT_SPMD_BARRIER_ELEMENT( char *name, unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:

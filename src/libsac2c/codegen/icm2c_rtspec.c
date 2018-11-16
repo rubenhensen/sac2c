@@ -338,23 +338,23 @@ ICMCompileWE_MODFUN_INFO (char *name, char *modname)
 
 /** <!--*******************************************************************-->
  *
- * @fn ICMCompileWE_SHAPE_ENCODE( int arg_cnt, char **arg)
+ * @fn ICMCompileWE_SHAPE_ENCODE( unsigned int arg_cnt, char **arg)
  *
  * @brief Implements the ICM that prints the necessary code for the wrapper
  * entry function to encode its arguments shape information at runtime.
  *
  ****************************************************************************/
 void
-ICMCompileWE_SHAPE_ENCODE (int arg_cnt, char **arg)
+ICMCompileWE_SHAPE_ENCODE (unsigned int arg_cnt, char **arg)
 {
     DBUG_ENTER ();
 
     fprintf (global.outfile, "SAC_WE_DECL_I_J()\n");
 
     INDENT;
-    fprintf (global.outfile, "SAC_WE_CALC_SIZE( %d", arg_cnt);
+    fprintf (global.outfile, "SAC_WE_CALC_SIZE( %u", arg_cnt);
 
-    int i = 0;
+    unsigned int i = 0;
     for (; i < arg_cnt; i++) {
         fprintf (global.outfile, " + SAC_WE_GET_DIM( %s)", arg[i]);
     }
@@ -365,7 +365,7 @@ ICMCompileWE_SHAPE_ENCODE (int arg_cnt, char **arg)
     fprintf (global.outfile, "SAC_WE_ALLOC_SHAPE_ARRAY()\n");
 
     INDENT;
-    fprintf (global.outfile, "SAC_WE_SET_NUM_ARGS( %d)\n", arg_cnt);
+    fprintf (global.outfile, "SAC_WE_SET_NUM_ARGS( %u)\n", arg_cnt);
 
     i = 0;
     for (; i < arg_cnt; i++) {
@@ -387,7 +387,7 @@ ICMCompileWE_SHAPE_ENCODE (int arg_cnt, char **arg)
  *
  ****************************************************************************/
 void
-ICMCompileWE_NO_SHAPE_ENCODE (int arg_cnt)
+ICMCompileWE_NO_SHAPE_ENCODE (unsigned int arg_cnt)
 {
     DBUG_ENTER ();
 

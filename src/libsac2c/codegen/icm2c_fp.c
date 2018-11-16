@@ -37,7 +37,7 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMDFUN_DECL( char *name, int vararg_cnt, char **vararg)
+ *   void ICMCompileMT_SPMDFUN_DECL( char *name, unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
