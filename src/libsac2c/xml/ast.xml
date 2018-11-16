@@ -2967,7 +2967,7 @@
         <node name="Generator" />
       </travuser>
     </traversal>
-    <traversal id="ELMP" name="EMR loop memory propogation" default="sons" include="wrci.h">
+    <traversal id="EMRL" name="EMR loop optimisation" default="sons" include="emr_loop_optimisation.h">
       <travuser>
         <node name="Fundef" />
         <node name="Ap" />

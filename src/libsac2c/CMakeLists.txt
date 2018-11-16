@@ -319,6 +319,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/memory/aliasanalysis.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/alloc.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/audscldist.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/datareuse.c
+${CMAKE_CURRENT_SOURCE_DIR}/memory/emr_loop_optimisation.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/explicitcopy.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/filter_partial_reuse_candidates.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/filterrc.c
