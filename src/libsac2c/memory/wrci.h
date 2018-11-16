@@ -29,15 +29,4 @@ extern node *WRCIgenerator (node *arg_node, info *arg_info);
 
 extern node *WRCIprintRCs (node *arg_node, info *arg_info);
 
-/*
- * EMR Loop Memory Propogation
- */
-extern node *ELMPdoExtendLoopMemoryPropagation (node *syntax_tree);
-extern node *ELMPfundef (node *arg_node, info *arg_info);
-extern node *ELMPap (node *arg_node, info *arg_info);
-extern node *ELMPlet (node *arg_node, info *arg_info);
-extern node *ELMPwith (node *arg_node, info *arg_info);
-extern node *ELMPgenarray (node *arg_node, info *arg_info);
-extern node *ELMPmodarray (node *arg_node, info *arg_info);
-
 #endif /* _SAC_WRCI_H_ */
