@@ -284,6 +284,7 @@ MTCMlet (node *arg_node, info *arg_info)
 node *
 MTCMwith2 (node *arg_node, info *arg_info)
 {
+    node *old_letids;
     DBUG_ENTER ();
 
     INFO_MAYPAR (arg_info) = TRUE;
@@ -294,7 +295,17 @@ MTCMwith2 (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("considering with2 in line %zu ...", NODE_LINE (arg_node));
 
+    /*
+     * we need to preserve INFO_LETIDS here.
+     * If we deal with a multi-operator WL, the operators
+     * follow the letids chain. However, the code after the
+     * operator traversal requires the full INFO_LETIDS chain
+     * to be present as, otherwise, the sequential branch will
+     * be mis-constructed!
+     */
+    old_letids = INFO_LETIDS (arg_info);
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    INFO_LETIDS (arg_info) = old_letids;
 
     if (INFO_MAYPAR (arg_info)) {
         if (INFO_ISWORTH (arg_info)) {
