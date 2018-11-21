@@ -44,6 +44,7 @@ extern node *CMPTdouble (node *arg_node, info *arg_info);
 extern node *CMPTtype (node *arg_node, info *arg_info);
 extern node *CMPTstr (node *arg_node, info *arg_info);
 extern node *CMPTid (node *arg_node, info *arg_info);
+extern node *CMPTspid (node *arg_node, info *arg_info);
 extern node *CMPTids (node *arg_node, info *arg_info);
 extern node *CMPTarray (node *arg_node, info *arg_info);
 extern node *CMPTprf (node *arg_node, info *arg_info);
