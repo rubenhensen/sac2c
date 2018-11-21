@@ -96,7 +96,7 @@ SBUFvprintf (str_buf *s, const char *format, va_list arg_list)
 {
     va_list arg_list_copy;
     int len = 0;
-    size_t rem, len_p;
+    size_t rem, len_p=0;
     bool ok;
 
     DBUG_ENTER ();
