@@ -987,8 +987,8 @@ SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls, global.d
 SUBPHASE (stat, "Displaying optimisation statistics", STATdoPrintStatistics,
           global.verbose_level >= 3, opt)
 
-SUBPHASE (emr, "Collect extended WL reuse candidates", WRCIdoWithloopExtendedReuseCandidateInference,
-          global.optimize.doemr, opt)
+SUBPHASE (emr, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInference,
+          global.optimize.doemrci, opt)
 
 ENDPHASE (opt)
 

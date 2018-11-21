@@ -1,26 +1,11 @@
 /**
- * @defgroup wrci With-loop reuse candidate inference
+ * @file
+ * @defgroup emrci Extended memory reuse candidate inference
  *
- * This module tries to identify With-loop reuse candidates.
- * It supports 4 kinds of reuse candidates, each of which can be
- * turned on/off separately. These are:
- * 1) RIP (Reuse with In-Place selection) [implemented in ReuseWithArrays.c]
- *    WL reuse candidates are all arrays A that are accessed only
- *    by means of selection at A[iv]i within the given WL.
- * 2) RWO (Reuse With Offset) [implemented in reusewithoffset.c]
- *    Looks for a WL that contains n-1 copy partitions and exactly one non-copy partition.
- *    If that is found, it makes allows th non-copy partition to have an access into the
- *    copy-from-source (ie potential reuse candidate) of the form A[iv +- offset] where
- *    offset is bigger than the generator width. This guarantees accesses into the copy
- *    partitions (at least if the accesses are legal :-)
- * 3) PRA (Polyhedral Reuse Analysis) [implemented in polyhedral_reuse_analysis.c] Refines
- *    RWO and uses polyhedral stuff to enable accesses of the form A[ linear_expr( iv)]
- *    provided we can show all these accesses fall into copy partitions or non-modified
- *    partitions...
- * 4) EMR (Extended Memory Reuse) [implemented here :-)] Here, we add arrays that are of
- *    the same shape and tha are defined in the current function but are not referenced
- *    in WL-body at all. This may sound counter-intuitive at first, but it enables memory
- *    reuse of the following kind:
+ * Here, we add arrays that are of
+ * the same shape and tha are defined in the current function but are not referenced
+ * in WL-body at all. This may sound counter-intuitive at first, but it enables memory
+ * reuse of the following kind:
  *
  *    Consider:
  *      int main( )
@@ -35,31 +20,23 @@
  *         return(0);
  *      }
  *
- *    Here, we would like to reuse the memory allocated for a when compting b.
+ * Here, we would like to reuse the memory allocated for a when compting b.
  *
- *    NOTE: that EMR does not update the WL RC, but instead collects potnetial
- *          candidates within another strucutre, ERC (extended reuse candidates),
- *          on both WL-OPs and LoopFuns. The overall intention is to optimise
- *          reuse candidates present within WL RC and allow for memeory reuse
- *          in loops (do/for/while) by propogating reuse candidates from a higher
- *          scope. More details in docs/projects/prealloc
+ * @note
+ * that EMR does not update the WL RC, but instead collects potnetial
+ * candidates within another strucutre, ERC (extended reuse candidates),
+ * on both WL-OPs and LoopFuns. The overall intention is to optimise
+ * reuse candidates present within WL RC and allow for memeory reuse
+ * in loops (do/for/while) by propogating reuse candidates from a higher
+ * scope. More details in docs/projects/prealloc
  *
- *    The ability to do such reuse is instrumental when trying to achieve a dual buffer
- *    swapping solution for a loop around something like     a = relax( a);
+ * The ability to do such reuse is instrumental when trying to achieve a dual buffer
+ * swapping solution for a loop around something like     a = relax( a);
  *
  * Note here, that all these reuse candidate inferences potentially over-approximate the
  * set of candidates (eg arrays that are still refered to later); however, those cases are
  * being narrowed by subphases of the mem-phase, specifically SRCE and FRC, and by dynamic
  * reference count inspections at runtime :-)
- *
- * XXX:
- * For some reason WRCI it is run prior to Index Vector Elimination (IVE). I think the
- * reason might initially have been so that there is no need to deal with sel and idx_sel
- * but I am not sure about this :-( It seems that all the anylyses actually do support
- * idx_sel now and the whole thing might be run later but I am not sure; more intensive
- * testing would be required to do this! How far later is not entirely clear. Since it
- * builds on N_with and not Nwith2, it definitly needs to be run before WLT (or adapted to
- * cope with N_with2).
  *
  * However, 4) does NEED to run later as we must not add reuse candidates that might have
  * been optimised away in the meantime.... For this very purpose we offer a second entry
@@ -69,13 +46,7 @@
  *
  * @{
  */
-
-/**
- * @file wrci.c
- *
- * Prefix: WRCI
- */
-#include "wrci.h"
+#include "emr_candidate_inference.h"
 
 #include "globals.h"
 #include "tree_basic.h"
@@ -83,7 +54,7 @@
 #include "traverse.h"
 #include "DupTree.h"
 
-#define DBUG_PREFIX "WRCI"
+#define DBUG_PREFIX "EMRCI"
 #include "debug.h"
 
 #include "print.h"
@@ -152,98 +123,6 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-static void
-printRC (node *arg_node)
-{
-    DBUG_ENTER ();
-
-    switch (NODE_TYPE (arg_node)) {
-    case N_exprs:
-        if (EXPRS_EXPR (arg_node) != NULL) {
-            printRC (EXPRS_EXPR (arg_node));
-        }
-        if (EXPRS_NEXT (arg_node) != NULL) {
-            printRC (EXPRS_NEXT (arg_node));
-        }
-        break;
-    case N_id:
-        if (ID_AVIS (arg_node) != NULL && NODE_TYPE (ID_AVIS (arg_node)) == N_avis) {
-            printRC (ID_AVIS (arg_node));
-        } else {
-            fprintf (global.outfile, " #removed#,");
-        }
-        break;
-    case N_avis:
-        fprintf (global.outfile, " %s,", AVIS_NAME (arg_node));
-        break;
-    default:
-        CTIerrorInternal("Node reference that should not be possible. Expected N_avis, "
-                "found NODE_TYPE(%d) instead.\n", NODE_TYPE (arg_node));
-        break;
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WRCIprintRCs( node *arg_node, info* arg_info)
- *
- * @brief a traversal prefun that annotates the output of TR_prt with information
- *        about RCs and ERCs associated to N_genarray and N_modarray.
- *
- * @param arg_node  syntax tree (specifically a N_genarray or N_modarray)
- * @param arg_info  unused
- *
- * @return unmodified arg_node.
- *
- *****************************************************************************/
-node *
-WRCIprintRCs (node *arg_node, info *arg_info)
-{
-    node *rc = NULL, *erc = NULL, *prc = NULL;
-    DBUG_ENTER ();
-
-    switch (NODE_TYPE (arg_node)) {
-    case N_genarray:
-        prc = GENARRAY_PRC (arg_node);
-        /* Falls through. */
-    case N_modarray:
-        rc = WITHOP_RC (arg_node);
-        erc = WITHOP_ERC (arg_node);
-        break;
-    /*
-    case N_fundef:
-        // TODO printing this is not nice...
-        erc = FUNDEF_ERC (arg_node);
-        break;
-    */
-    default:
-        break;
-    }
-
-    if (rc != NULL) {
-        INDENT;
-        fprintf (global.outfile, " /* RCs: ");
-        printRC (rc);
-        fprintf (global.outfile, " */\n");
-    }
-    if (erc != NULL) {
-        INDENT;
-        fprintf (global.outfile, " /* ERCs: ");
-        printRC (erc);
-        fprintf (global.outfile, " */\n");
-    }
-    if (prc != NULL) {
-        INDENT;
-        fprintf (global.outfile, " /* PRCs: ");
-        printRC (prc);
-        fprintf (global.outfile, " */\n");
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
 /**
  * @brief
  *
@@ -253,7 +132,7 @@ WRCIprintRCs (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-WRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
+EMRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
 {
     info *arg_info;
 
@@ -263,7 +142,7 @@ WRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
 
     INFO_DO_EMR (arg_info) = TRUE;
 
-    TRAVpush (TR_wrci);
+    TRAVpush (TR_emrci);
     syntax_tree = TRAVdo (syntax_tree, arg_info);
     TRAVpop ();
 
@@ -288,35 +167,6 @@ WRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
     if (global.optimize.doemrl) {
         syntax_tree = EMRLdoExtendLoopMemoryPropagation (syntax_tree);
     }
-
-    DBUG_RETURN (syntax_tree);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WRCIdoInferWithloopReuseCandidates( node *syntax_tree)
- *
- * @brief
- *
- * @param syntax_tree
- *
- * @return modified syntax_tree.
- *
- *****************************************************************************/
-node *
-WRCIdoWithloopReuseCandidateInference (node *syntax_tree)
-{
-    info *arg_info;
-
-    DBUG_ENTER ();
-
-    arg_info = MakeInfo ();
-
-    TRAVpush (TR_wrci);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-    TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -481,25 +331,19 @@ MatchingPRCs (node *rcs, node *ids)
     DBUG_RETURN (match);
 }
 
-/******************************************************************************
+/**
+ * @brief traverse N_fundef arguments and body
  *
- * With-loop reuse candidate inference traversal (wrci_tab)
- *
- * prefix: WRCI
- *
- *****************************************************************************/
-/** <!--********************************************************************-->
- *
- * @fn node *WRCIfundef( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
-WRCIfundef (node *arg_node, info *arg_info)
+EMRCIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("\nchecking function %s ...", FUNDEF_NAME (arg_node));
         DBUG_PRINT ("\nchecking function %s ...", FUNDEF_NAME (arg_node));
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
@@ -514,26 +358,29 @@ WRCIfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_ap for recursive loop function application
  *
- * @fn node *WRCIap( node *arg_node, info *arg_info)
+ * When we find the application, we update the current N_fundef ERC
+ * value with the current state of ERCs. We then continue through the
+ * arguments of the N_ap.
  *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
-WRCIap (node *arg_node, info *arg_info)
+EMRCIap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_DO_EMR (arg_info)) {
-        /* check to see if we have found the recursive loopfun call */
-        if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
-                && AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
-            FUNDEF_ERC (INFO_FUNDEF (arg_info)) = TCappendExprs (FUNDEF_ERC (INFO_FUNDEF (arg_info)), DUPdoDupTree (INFO_EMR_RC (arg_info)));
-            DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "extended reuse candidates for rec loopfun application:");
-            DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (FUNDEF_ERC (INFO_FUNDEF (arg_info)) != NULL) {
-                PRTdoPrintFile (stderr, FUNDEF_ERC (INFO_FUNDEF (arg_info)));
-            });
-        }
+    if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
+            && AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
+        FUNDEF_ERC (INFO_FUNDEF (arg_info)) = TCappendExprs (FUNDEF_ERC (INFO_FUNDEF (arg_info)), DUPdoDupTree (INFO_EMR_RC (arg_info)));
+        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "extended reuse candidates for rec loopfun application:");
+        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (FUNDEF_ERC (INFO_FUNDEF (arg_info)) != NULL) {
+            PRTdoPrintFile (stderr, FUNDEF_ERC (INFO_FUNDEF (arg_info)));
+        });
     }
 
     AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
@@ -541,97 +388,99 @@ WRCIap (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_cond branches collecting more ERCs
  *
- * @fn node *WRCIcond( node *arg_node, info *arg_info)
+ * We intentionally stack the INFO_EMR_RC for each branch to prevent
+ * incorrect updting of WLs within each branch.
  *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
-WRCIcond (node *arg_node, info *arg_info)
+EMRCIcond (node *arg_node, info *arg_info)
 {
     node * old_chain;
     DBUG_ENTER ();
 
-    DBUG_PRINT ("We are at a cond");
+    DBUG_PRINT (" inspecting cond ...");
     COND_COND (arg_node) = TRAVopt (COND_COND (arg_node), arg_info);
 
-    if (INFO_DO_EMR (arg_info)) {
-        old_chain = INFO_EMR_RC (arg_info);
+    old_chain = INFO_EMR_RC (arg_info);
 
-        if (COND_THEN (arg_node) != NULL) {
-            INFO_EMR_RC (arg_info) = DUPdoDupTree (old_chain);
-            COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
-            if (INFO_EMR_RC (arg_info) != NULL) {
-                INFO_EMR_RC (arg_info) = FREEdoFreeTree (INFO_EMR_RC (arg_info));
-            }
-        }
-
-        if (COND_ELSE (arg_node) != NULL) {
-            INFO_EMR_RC (arg_info) = DUPdoDupTree (old_chain);
-            COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
-            if (INFO_EMR_RC (arg_info) != NULL) {
-                INFO_EMR_RC (arg_info) = FREEdoFreeTree (INFO_EMR_RC (arg_info));
-            }
-        }
-
-        INFO_EMR_RC (arg_info) = old_chain;
-    } else {
+    if (COND_THEN (arg_node) != NULL) {
+        INFO_EMR_RC (arg_info) = DUPdoDupTree (old_chain);
         COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
-        COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
+        if (INFO_EMR_RC (arg_info) != NULL) {
+            INFO_EMR_RC (arg_info) = FREEdoFreeTree (INFO_EMR_RC (arg_info));
+        }
     }
+
+    if (COND_ELSE (arg_node) != NULL) {
+        INFO_EMR_RC (arg_info) = DUPdoDupTree (old_chain);
+        COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
+        if (INFO_EMR_RC (arg_info) != NULL) {
+            INFO_EMR_RC (arg_info) = FREEdoFreeTree (INFO_EMR_RC (arg_info));
+        }
+    }
+
+    INFO_EMR_RC (arg_info) = old_chain;
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_arg collecting ERCs
  *
- * @fn node *WRCIarg( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
-WRCIarg (node *arg_node, info *arg_info)
+EMRCIarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_DO_EMR (arg_info)) {
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "adding emr_rc %s arg ...", ARG_NAME (arg_node));
-        INFO_EMR_RC (arg_info)
-          = TBmakeExprs (TBmakeId (ARG_AVIS (arg_node)), INFO_EMR_RC (arg_info));
-    }
+    DBUG_PRINT ("adding emr_rc %s arg ...", ARG_NAME (arg_node));
+    INFO_EMR_RC (arg_info)
+      = TBmakeExprs (TBmakeId (ARG_AVIS (arg_node)), INFO_EMR_RC (arg_info));
 
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_ids collecting ERCs
  *
- * @fn node *WRCIids( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
-WRCIids (node *arg_node, info *arg_info)
+EMRCIids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_DO_EMR (arg_info)) {
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "adding emr_rc %s ids ...", IDS_NAME (arg_node));
-        INFO_EMR_RC (arg_info)
-          = TBmakeExprs (TBmakeId (IDS_AVIS (arg_node)), INFO_EMR_RC (arg_info));
-    }
+    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "adding emr_rc %s ids ...", IDS_NAME (arg_node));
+    INFO_EMR_RC (arg_info)
+      = TBmakeExprs (TBmakeId (IDS_AVIS (arg_node)), INFO_EMR_RC (arg_info));
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_assign top-down
  *
- * @fn node *WRCIassign( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
-WRCIassign (node *arg_node, info *arg_info)
+EMRCIassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -645,13 +494,15 @@ WRCIassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_let storing the LHS and collecting ERCs
  *
- * @fn node *WRCIlet( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
-WRCIlet (node *arg_node, info *arg_info)
+EMRCIlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -664,161 +515,103 @@ WRCIlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_prf removing some collected from ERCs
  *
- * @fn node *WRCIlet( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
-WRCIprf (node *arg_node, info *arg_info)
+EMRCIprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_DO_EMR (arg_info)) {
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "checking if N_prf references an ERC...");
+    DBUG_PRINT ("checking if N_prf references an ERC...");
 
-        switch (PRF_PRF (arg_node)) {
-            case F_idx_modarray_AxSxS:
-            case F_idx_modarray_AxSxA:
-                /*
-                 * We intentionally drop all referenced ERCs because from observation, the
-                 * result is typically stored in the referenced array (reused). As such, we
-                 * force these arrays to be used as ERCs, then we force an extra allocation
-                 * *and* copy operation.
-                 *
-                 * XXX this is somewhat harsh as it removes a large number of possible ERCs
-                 *     without regard for whether or not the actual memory is being reused
-                 *     in place. Within OPT this can't be determined, we would need to move
-                 *     this filtering to MEM phases.
-                 */
-                INFO_EMR_RC (arg_info) = filterDuplicateArgs (PRF_ARGS (arg_node), &INFO_EMR_RC (arg_info));
-                DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "EMR RCs left after filtering out N_prf args");
-                DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (INFO_EMR_RC (arg_info) != NULL) {
-                    PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
-                });
-                break;
+    switch (PRF_PRF (arg_node)) {
+        case F_idx_modarray_AxSxS:
+        case F_idx_modarray_AxSxA:
+            /*
+             * We intentionally drop all referenced ERCs because from observation, the
+             * result is typically stored in the referenced array (reused). As such, we
+             * force these arrays to be used as ERCs, then we force an extra allocation
+             * *and* copy operation.
+             *
+             * XXX this is somewhat harsh as it removes a large number of possible ERCs
+             *     without regard for whether or not the actual memory is being reused
+             *     in place. Within OPT this can't be determined, we would need to move
+             *     this filtering to MEM phases.
+             */
+            INFO_EMR_RC (arg_info) = filterDuplicateArgs (PRF_ARGS (arg_node), &INFO_EMR_RC (arg_info));
+            DBUG_PRINT ("EMR RCs left after filtering out N_prf args");
+            DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
+                PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
+            });
+            break;
 
-            default:
-                break;
-        }
+        default:
+            break;
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_with and inspect its body
  *
- * @fn node *WRCIwith( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
-WRCIwith (node *arg_node, info *arg_info)
+EMRCIwith (node *arg_node, info *arg_info)
 {
     node *emr_chain = NULL;
     DBUG_ENTER ();
 
-    /*
-     * First, find all conventional reuse candidates.
-     * These are all arrays A that are accessed only by means of selection at
-     * A[iv]
-     */
-    if (global.optimize.dorip && !INFO_DO_EMR (arg_info)) {
-        DBUG_PRINT ("Looking for A[iv] only use...");
-        INFO_RC (arg_info) = REUSEdoGetReuseArrays (arg_node, INFO_FUNDEF (arg_info));
-        DBUG_PRINT ("candidates after conventional reuse: ");
-        DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
-            PRTdoPrintFile (stderr, INFO_RC (arg_info));
-        });
-    }
+    DBUG_PRINT ("potential EMR candidates:");
+    DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
+        PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
+    });
 
     /*
-     * Find more complex reuse candidates
+     * First filter out those vars that are being used in the WL body.
+     * However, we have to make sure that we preserve the current INFO_EMR_RC
+     * chain when leaving the N_with again! Otherwise, we may loose RC
+     * candidates. Consider:
+     * int[1000000] f( int[1000000] a)
+     * {
+     *   res = with{
+     *          (. <= [i] <=.) : a[[i]] + a[[999999-i]];
+     *         } : modarray(a);
+     *   ArrayIO::print( res);
+     *   res2 = with{
+     *          (. <= [i] <=.) : res[[i]] + res[[999999-i]];
+     *         } : modarray(res);
+     *   return (res2);
+     * }
+     * The argument "a" gets filtered out in the first WL but should be
+     * a candidate for the second!
+     *
+     * To achieve this, we stack the chain here and restore it just before leaving
+     * the N_with!
      */
-    if (global.optimize.dorwo && !INFO_DO_EMR (arg_info)) {
-        DBUG_PRINT ("Looking for more complex reuse candidates...");
-        INFO_RC (arg_info)
-          = TCappendExprs (INFO_RC (arg_info),
-                           RWOdoOffsetAwareReuseCandidateInference (arg_node));
-        DBUG_PRINT ("candidates after reuse-with-offset: ");
-        DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
-            PRTdoPrintFile (stderr, INFO_RC (arg_info));
-        });
-    }
+    emr_chain = DUPdoDupTree (INFO_EMR_RC (arg_info));
+    anontrav_t emrtrav[2] = {{N_id, &EMRid}, {(nodetype)0, NULL}};
+    TRAVpushAnonymous (emrtrav, &TRAVsons);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
 
-    if (global.optimize.dopra && !INFO_DO_EMR (arg_info)) {
-        /*
-         * Find more complex reuse candidates
-         */
-        DBUG_PRINT ("Looking for polyhedra-analysis based reuse candidates...");
-        INFO_RC (arg_info)
-          = TCappendExprs (INFO_RC (arg_info),
-                           PRAdoPolyhedralReuseAnalysis (arg_node,
-                                                         INFO_FUNDEF (arg_info)));
-        DBUG_PRINT ("candidates after polyhedral reuse analysis: ");
-        DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
-            PRTdoPrintFile (stderr, INFO_RC (arg_info));
-        });
-    }
+    DBUG_PRINT ("potential EMR candidates after pruning those used in WL body:");
+    DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
+        PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
+    });
 
-    if (INFO_DO_EMR (arg_info)) {
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "potential EMR candidates:");
-        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (INFO_EMR_RC (arg_info) != NULL) {
-            PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
-        });
-
-        /*
-         * First filter out those vars that are being used in the WL body.
-         * However, we have to make sure that we preserve the current INFO_EMR_RC
-         * chain when leaving the N_with again! Otherwise, we may loose RC
-         * candidates. Consider:
-         * int[1000000] f( int[1000000] a)
-         * {
-         *   res = with{
-         *          (. <= [i] <=.) : a[[i]] + a[[999999-i]];
-         *         } : modarray(a);
-         *   ArrayIO::print( res);
-         *   res2 = with{
-         *          (. <= [i] <=.) : res[[i]] + res[[999999-i]];
-         *         } : modarray(res);
-         *   return (res2);
-         * }
-         * The argument "a" gets filtered out in the first WL but should be
-         * a candidate for the second!
-         *
-         * To achieve this, we stack the chain here and restore it just before leaving
-         * the N_with!
-         */
-        emr_chain = DUPdoDupTree (INFO_EMR_RC (arg_info));
-        anontrav_t emrtrav[2] = {{N_id, &EMRid}, {(nodetype)0, NULL}};
-        TRAVpushAnonymous (emrtrav, &TRAVsons);
-        arg_node = TRAVdo (arg_node, arg_info);
-        TRAVpop ();
-
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "potential EMR candidates after pruning those used in WL body:");
-        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (INFO_EMR_RC (arg_info) != NULL) {
-            PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
-        });
-    }
-
-    /*
-     * Eliminate duplicates of reuse candidates
-     */
-    INFO_RC (arg_info) = ElimDupes (INFO_RC (arg_info));
-
-    DBUG_PRINT ("final RCs after ElimDupes: ");
-    DBUG_EXECUTE (
-      if (INFO_RC (arg_info) != NULL) { PRTdoPrintFile (stderr, INFO_RC (arg_info)); });
     /*
      * Annotate RCs and find further reuse candidates if appropriate
      */
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-
-    /*
-     * Remove RC list
-     */
-    if (INFO_RC (arg_info) != NULL) {
-        INFO_RC (arg_info) = FREEdoFreeTree (INFO_RC (arg_info));
-    }
 
     /*
      * Be sure to remove all GENERATOR_GENWIDTH
@@ -830,75 +623,38 @@ WRCIwith (node *arg_node, info *arg_info)
      */
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-    if (INFO_DO_EMR (arg_info)) {
-        /*
-         * Here, we have to resurrect the emr-candidates as we had them before
-         * processing this with loop:
-         */
-        if (INFO_EMR_RC (arg_info) != NULL)
-            FREEdoFreeTree (INFO_EMR_RC (arg_info));
-        INFO_EMR_RC (arg_info) = emr_chain;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WRCIgenerator( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-WRCIgenerator (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (GENERATOR_GENWIDTH (arg_node) != NULL) {
-        GENERATOR_GENWIDTH (arg_node) = FREEdoFreeTree (GENERATOR_GENWIDTH (arg_node));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WRCIgenarray( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-WRCIgenarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
     /*
-     * Annotate reuse candidates.
+     * Here, we have to resurrect the emr-candidates as we had them before
+     * processing this with loop:
      */
-    if (!INFO_DO_EMR (arg_info)) {
-        GENARRAY_RC (arg_node) = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), NULL);
-        DBUG_PRINT ("Genarray RCs: ");
-        DBUG_EXECUTE (if (GENARRAY_RC (arg_node) != NULL) {
-            PRTdoPrintFile (stderr, GENARRAY_RC (arg_node));
-        });
-    }
+    if (INFO_EMR_RC (arg_info) != NULL)
+        FREEdoFreeTree (INFO_EMR_RC (arg_info));
+    INFO_EMR_RC (arg_info) = emr_chain;
+
+    DBUG_RETURN (arg_node);
+}
+
+/**
+ * @brief traverse N_genarray and set current ERCs
+ *
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
+node *
+EMRCIgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
 
     /*
      * Annotate extended reuse candidates.
      */
-    if (INFO_DO_EMR (arg_info)) {
-        GENARRAY_ERC (arg_node)
-          = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "Genarray ERCs: ");
-        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (GENARRAY_ERC (arg_node) != NULL) {
-            PRTdoPrintFile (stderr, GENARRAY_ERC (arg_node));
-        });
-    }
-
-    if (global.optimize.dopr && !INFO_DO_EMR (arg_info)) {
-        /*
-         * Annotate partial reuse candidates
-         */
-        GENARRAY_PRC (arg_node) = MatchingPRCs (INFO_RC (arg_info), INFO_LHS (arg_info));
-    }
+    GENARRAY_ERC (arg_node)
+      = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
+    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "Genarray ERCs: ");
+    DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (GENARRAY_ERC (arg_node) != NULL) {
+        PRTdoPrintFile (stderr, GENARRAY_ERC (arg_node));
+    });
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -908,61 +664,31 @@ WRCIgenarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_modarray and set current ERCs
  *
- * @fn node *WRCImodarray( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
-WRCImodarray (node *arg_node, info *arg_info)
+EMRCImodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
-
-    /*
-     * Annotate conventional reuse candidates.
-     */
-    if (!INFO_DO_EMR (arg_info)) {
-        MODARRAY_RC (arg_node)
-          = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
-        DBUG_PRINT ("Modarray RCs: ");
-        DBUG_EXECUTE (if (MODARRAY_RC (arg_node) != NULL) {
-            PRTdoPrintFile (stderr, MODARRAY_RC (arg_node));
-        });
-    }
 
     /*
      * Annotate extended reuse candidates.
      */
-    if (INFO_DO_EMR (arg_info)) {
-        MODARRAY_ERC (arg_node)
-          = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "Modarray ERCs: ");
-        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (MODARRAY_ERC (arg_node) != NULL) {
-            PRTdoPrintFile (stderr, MODARRAY_ERC (arg_node));
-        });
-    }
+    MODARRAY_ERC (arg_node)
+      = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
+    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "Modarray ERCs: ");
+    DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (MODARRAY_ERC (arg_node) != NULL) {
+        PRTdoPrintFile (stderr, MODARRAY_ERC (arg_node));
+    });
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
         MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WRCIfold( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-WRCIfold (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (FOLD_NEXT (arg_node) != NULL) {
-        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
-        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

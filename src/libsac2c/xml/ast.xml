@@ -2967,6 +2967,21 @@
         <node name="Generator" />
       </travuser>
     </traversal>
+    <traversal id="EMRCI" name="EMR candidate inference" default="sons" include="emr_candidate_inference.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+        <node name="Cond" />
+        <node name="Arg" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="Ids" />
+        <node name="With" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+      </travuser>
+    </traversal>
     <traversal id="EMRL" name="EMR loop optimisation" default="sons" include="emr_loop_optimisation.h">
       <travuser>
         <node name="Fundef" />
@@ -5206,7 +5221,7 @@ N_tfarg :
               <target mandatory="no" >
                 <node name="Exprs" />
                 <phases>
-                  <range from="opt_wrci" to="mem_rci" />
+                  <range from="opt_emr" to="mem_rci" />
                 </phases>
               </target>
             </targets>
@@ -10425,7 +10440,7 @@ N_tfarg :
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                  <range from="opt_wrci" to="mem_rci" />
+                  <range from="opt_emr" to="mem_rci" />
               </phases>
             </target>
           </targets>
@@ -10545,7 +10560,7 @@ N_tfarg :
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                  <range from="opt_wrci" to="mem_rci" />
+                  <range from="opt_emr" to="mem_rci" />
               </phases>
             </target>
           </targets>

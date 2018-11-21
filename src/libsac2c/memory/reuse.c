@@ -541,7 +541,7 @@ EMRIgenarray (node *arg_node, info *arg_info)
         INFO_TRAVMODE (arg_info) = ri_default;
         INFO_ALLOCATOR (arg_info) = F_unknown;
     } else {
-        if (global.optimize.doemr) {
+        if (global.optimize.doemrci) {
             DBUG_PRINT ("no candidates found; resetting RHSCAND to extended *or* partial candidates");
             // we need to filter the chain to make sure we don't select an ERC that was already used as an RC
             INFO_RHSCAND (arg_info) = filterDuplicateIds (INFO_USED_RCS (arg_info), &GENARRAY_ERC (arg_node));
@@ -629,7 +629,7 @@ EMRImodarray (node *arg_node, info *arg_info)
         INFO_TRAVMODE (arg_info) = ri_default;
         INFO_ALLOCATOR (arg_info) = F_unknown;
     } else {
-        if (global.optimize.doemr) {
+        if (global.optimize.doemrci) {
             DBUG_PRINT ("no candidates found; resetting RHSCAND to extended candidates");
             // we need to filter the chain to make sure we don't select an ERC that was already used as an RC
             INFO_RHSCAND (arg_info) = filterDuplicateIds (INFO_USED_RCS (arg_info), &MODARRAY_ERC (arg_node));
