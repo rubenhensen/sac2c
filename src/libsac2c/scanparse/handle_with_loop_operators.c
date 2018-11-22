@@ -5,6 +5,7 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "compare_tree.h"
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
@@ -22,6 +23,13 @@
  * support for Multi-Operator With-Loops with arbitrary ranges in the back-end.
  * (At the time being 10.10.2006, we require Multi-Operator With-Loops in the
  * back-end to have identical overall ranges....)
+ *
+ * As of 21.11.2018, we still do not support Multi-Operator With-Loops with
+ * arbitrary ranges in the back-end. However, as WLFS is not effective enough
+ * we want to avoid splitting multi-operator WLs that have only generators with
+ * identical range or propagate operators.
+ * We implement a check in the local function IsLegitimateMoWl (node *withop, info*)
+ * which is being used in HWLOwith to prevent splitting.
  *
  * To understand the basic principle, let us consider Multi-Operator With-Loops
  * that contain standard operators only, i.e., they do NOT contain propagates.
@@ -192,6 +200,8 @@ struct INFO {
     node *lhs;
     node *nlhs;
     node *withops;
+    bool legal;
+    node *range;
 };
 
 /**
@@ -204,6 +214,8 @@ struct INFO {
 #define INFO_HWLO_CEXPRS(n) (n->cexprs)
 #define INFO_HWLO_NEW_CEXPRS(n) (n->ncexprs)
 #define INFO_HWLO_NEW_WITHOPS(n) (n->withops)
+#define INFO_HWLO_LEGAL_MOWL(n) (n->legal)
+#define INFO_HWLO_RANGE(n) (n->range)
 
 /**
  * INFO functions
@@ -225,6 +237,9 @@ MakeInfo (void)
     INFO_HWLO_NEW_LHS (result) = NULL;
     INFO_HWLO_NEW_WITHOPS (result) = NULL;
 
+    INFO_HWLO_LEGAL_MOWL (result) = TRUE;
+    INFO_HWLO_RANGE (result) = NULL;
+
     DBUG_RETURN (result);
 }
 
@@ -236,6 +251,72 @@ FreeInfo (info *info)
     info = MEMfree (info);
 
     DBUG_RETURN (info);
+}
+
+static node *
+ATravILMOWLgenarray (node *genarray, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    // We know that (INFO_HWLO_LEGAL_MOWL (arg_info) == TRUE)!
+    if (INFO_HWLO_RANGE (arg_info) == NULL) {
+        // We see the first N_genarray!
+        INFO_HWLO_RANGE (arg_info) = GENARRAY_SHAPE (genarray);
+        GENARRAY_NEXT (genarray) = TRAVopt (GENARRAY_NEXT (genarray), arg_info);
+    } else {
+        if ( CMPTdoCompareTree (INFO_HWLO_RANGE (arg_info),
+                                GENARRAY_SHAPE (genarray)) == CMPT_EQ) {
+            GENARRAY_NEXT (genarray) = TRAVopt (GENARRAY_NEXT (genarray), arg_info);
+        } else {
+            INFO_HWLO_LEGAL_MOWL (arg_info) = FALSE;
+        }
+    }
+
+    DBUG_RETURN (genarray);
+}
+
+static node *
+ATravILMOWLpropagate (node *propagate, info *arg_info)
+{
+    DBUG_ENTER ();
+    PROPAGATE_NEXT (propagate) = TRAVopt (PROPAGATE_NEXT (propagate), arg_info);
+    DBUG_RETURN (propagate);
+}
+
+static node *
+ATravILMOWLother (node *operator, info *arg_info)
+{
+    DBUG_ENTER ();
+    INFO_HWLO_LEGAL_MOWL (arg_info) = FALSE;
+    DBUG_RETURN (operator);
+}
+
+static bool
+IsLegitimateMoWl (node *withop, info *arg_info)
+{
+    anontrav_t ilmowl_trav[5]
+      = {{N_genarray, &ATravILMOWLgenarray},
+         {N_modarray, &ATravILMOWLother},
+         {N_spfold, &ATravILMOWLother},
+         {N_propagate, &ATravILMOWLpropagate},
+         {(nodetype)0, NULL}};
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("checking multi-operator WL for splitting...\n");
+
+    TRAVpushAnonymous (ilmowl_trav, &TRAVsons);
+
+    INFO_HWLO_LEGAL_MOWL (arg_info) = TRUE;
+    INFO_HWLO_RANGE (arg_info) = NULL;
+
+    withop = TRAVopt (withop, arg_info);
+
+    TRAVpop ();
+
+    DBUG_PRINT ("... splitting is %s required\n",
+                (INFO_HWLO_LEGAL_MOWL (arg_info) ?  "not" : "")); 
+    DBUG_RETURN (INFO_HWLO_LEGAL_MOWL (arg_info));
 }
 
 /** <!--**********************************************************************
@@ -376,7 +457,8 @@ HWLOwith (node *arg_node, info *arg_info)
     INFO_HWLO_CEXPRS (arg_info)
       = (WITH_CODE (arg_node) == NULL) ? NULL : CODE_CEXPRS (WITH_CODE (arg_node));
 
-    if (TCcountExprs (INFO_HWLO_CEXPRS (arg_info)) > 1) {
+    if ( (TCcountExprs (INFO_HWLO_CEXPRS (arg_info)) > 1)
+         && !IsLegitimateMoWl (WITH_WITHOP (arg_node), arg_info)) {
         if (INFO_HWLO_LHS (arg_info) == NULL) {
             CTIerrorLine (global.linenum,
                           "Multi-Operator With-Loop used in expression position");

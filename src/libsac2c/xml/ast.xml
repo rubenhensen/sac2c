@@ -1076,6 +1076,7 @@
     		  <node name="Type" />
 		      <node name="Str" />
     		  <node name="Id" />
+    		  <node name="SPId" />
 		      <node name="Ids" />
     		  <node name="Array" />
 		      <node name="Prf" />

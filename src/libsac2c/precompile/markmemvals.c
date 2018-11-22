@@ -256,12 +256,14 @@ MMVfundef (node *arg_node, info *arg_info)
      */
     INFO_FUNDEF (arg_info) = arg_node;
 
+    DBUG_PRINT ("traversing body of function \"%s\":\n", FUNDEF_NAME (arg_node));
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     /*
      * Ensure all lhss have been changed.
      * In some cases the lhs in one side of ifs may be missed.
      */
+    DBUG_PRINT ("traversing body of function \"%s\": fixing missing LHS adjustments\n", FUNDEF_NAME (arg_node));
     TRAVpushAnonymous (anon, &TRAVsons);
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     TRAVpop ();
@@ -275,8 +277,10 @@ MMVfundef (node *arg_node, info *arg_info)
 
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     } else {
+        DBUG_PRINT ("traversing body of function \"%s\": fixing returns\n", FUNDEF_NAME (arg_node));
         FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
     }
+    DBUG_PRINT ("traversing body of function \"%s\": done\n", FUNDEF_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -382,13 +386,16 @@ MMVid (node *arg_node, info *arg_info)
      * need to keep renaming until we reach a fixpoint.
      */
 
+    DBUG_PRINT ("Looking for replacement of id \"%s\"\n", ID_NAME (arg_node));
     newavis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
 
     while (newavis != ID_AVIS (arg_node)) {
+        DBUG_PRINT ("Found \"%s\" now looking for further replacements\n", AVIS_NAME (newavis));
         ID_AVIS (arg_node) = newavis;
 
         newavis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
     }
+    DBUG_PRINT ("No (further) replacements\n");
 
     DBUG_RETURN (arg_node);
 }
@@ -1198,6 +1205,8 @@ MMVgenarray (node *arg_node, info *arg_info)
                        ID_AVIS (GENARRAY_MEM (arg_node)));
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
+        DBUG_ASSERT (IDS_NEXT (INFO_LHS (arg_info))!=NULL,
+                     "with-loop has more operators than LHS variables\n");
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
         GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
     }

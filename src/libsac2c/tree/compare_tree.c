@@ -17,6 +17,7 @@
 #include "new_types.h"
 #include "str.h"
 #include "memory.h"
+#include "namespaces.h"
 
 #define DBUG_PREFIX "CMPT"
 #include "debug.h"
@@ -538,6 +539,28 @@ CMPTid (node *arg_node, info *arg_info)
                        ID_AVIS (arg_node)
                          == (AVIS_ALT (avis) != NULL ? AVIS_ALT (avis) : avis));
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* CMPTspid(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   compares string of spid node
+ *
+ ******************************************************************************/
+node *
+CMPTspid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    INFO_EQFLAG (arg_info)
+      = CMPT_TEST (INFO_EQFLAG (arg_info),
+                   STReq (SPID_NAME (arg_node), SPID_NAME (INFO_TREE (arg_info)))
+                   && NSequals (SPID_NS (arg_node), SPID_NS (INFO_TREE (arg_info))));
 
     DBUG_RETURN (arg_node);
 }
