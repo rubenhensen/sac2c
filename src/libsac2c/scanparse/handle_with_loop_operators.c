@@ -28,7 +28,7 @@
  * arbitrary ranges in the back-end. However, as WLFS is not effective enough
  * we want to avoid splitting multi-operator WLs that have only generators with
  * identical range or propagate operators.
- * We implement a check in the local function IsLegitimateMoWl( node *withop, info*)
+ * We implement a check in the local function IsLegitimateMoWl (node *withop, info*)
  * which is being used in HWLOwith to prevent splitting.
  *
  * To understand the basic principle, let us consider Multi-Operator With-Loops
@@ -254,7 +254,7 @@ FreeInfo (info *info)
 }
 
 static node *
-ATravILMOWLgenarray( node *genarray, info *arg_info)
+ATravILMOWLgenarray (node *genarray, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -276,7 +276,7 @@ ATravILMOWLgenarray( node *genarray, info *arg_info)
 }
 
 static node *
-ATravILMOWLpropagate( node *propagate, info *arg_info)
+ATravILMOWLpropagate (node *propagate, info *arg_info)
 {
     DBUG_ENTER ();
     PROPAGATE_NEXT (propagate) = TRAVopt (PROPAGATE_NEXT (propagate), arg_info);
@@ -284,7 +284,7 @@ ATravILMOWLpropagate( node *propagate, info *arg_info)
 }
 
 static node *
-ATravILMOWLother( node *operator, info *arg_info)
+ATravILMOWLother (node *operator, info *arg_info)
 {
     DBUG_ENTER ();
     INFO_HWLO_LEGAL_MOWL (arg_info) = FALSE;
@@ -292,7 +292,7 @@ ATravILMOWLother( node *operator, info *arg_info)
 }
 
 static bool
-IsLegitimateMoWl( node *withop, info *arg_info)
+IsLegitimateMoWl (node *withop, info *arg_info)
 {
     anontrav_t ilmowl_trav[5]
       = {{N_genarray, &ATravILMOWLgenarray},
