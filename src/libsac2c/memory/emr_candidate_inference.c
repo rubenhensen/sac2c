@@ -148,7 +148,7 @@ EMRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
 
     arg_info = FreeInfo (arg_info);
 
-    if (global.optimize.doelaaf) {
+    if (global.optimize.doemrcf) {
 /*
  * EMR Loop Application Arg Filtering
  *
