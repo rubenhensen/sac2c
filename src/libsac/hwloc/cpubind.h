@@ -13,7 +13,7 @@ typedef struct hwloc_topo_data {
     int num_pus_available;
 } hwloc_topo_data_t;
 
-hwloc_topo_data_t *SAC_HWLOC_topo_data;
+extern hwloc_topo_data_t *SAC_HWLOC_topo_data;
 extern hwloc_cpuset_t *SAC_HWLOC_cpu_sets;
 extern hwloc_topology_t SAC_HWLOC_topology;
 

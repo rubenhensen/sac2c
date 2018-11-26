@@ -20,6 +20,12 @@
 #define SAC_PULIST_FULL_CHAR '*'
 
 /**
+ * Topology information for CPU-binding is stored here.
+ * This var is also accessed in mt/hwloc_data.c
+ */
+hwloc_topo_data_t *SAC_HWLOC_topo_data;
+
+/**
  * Print out a topological tree of the system using HWLOC-derived information
  *
  * @param obj HWLOC system information structure
