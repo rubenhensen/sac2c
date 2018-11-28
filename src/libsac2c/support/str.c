@@ -704,6 +704,7 @@ STRtok (const char *first, const char *sep)
     }
 
     if (current == NULL) {
+        keep_string = MEMfree (keep_string);
         ret = NULL;
     } else {
         i = 0;
