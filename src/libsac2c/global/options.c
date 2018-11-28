@@ -125,7 +125,7 @@ OPTcheckPostSetupOptions (void)
     CHECKDEFAULT (dodpa, global.config.use_phm_api);
     CHECKDEFAULT (domsca, global.config.use_phm_api);
 
-    if (global.print_help_and_exit == TRUE) {
+    if (global.print_help_and_exit) {
         USGprintUsage ();
         exit (0);
     }
