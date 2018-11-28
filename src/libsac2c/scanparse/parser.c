@@ -922,6 +922,7 @@ parser_finalize (struct parser *parser)
     /* Free the known symbols hash-table.  */
     HASH_ITER (hh, parser->known_symbols, elem, tmp) {
         HASH_DEL (parser->known_symbols, elem);
+        free (elem->name);
         free (elem);
     }
 
