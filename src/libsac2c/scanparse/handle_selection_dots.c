@@ -25,9 +25,61 @@
  * Multi dimensional selections are transfomed to their withloop
  * representation, thus eleminating all dots.
  *
+ * The selection pattern we support consists of a list of 
+ * either expressions, single- or triple-dopts. We can have at
+ * most one triple-dot though.
+ *
+ * For example:
+ *
+ *    array[[ x, ., y, ..., z, ., ., r]]
+ *
+ * translates into:
+ *
+ * with {
+ *    (. <= index <= .) : array[idx];
+ * } : genarray( shp, default);
+ *
+ * where
+ *    shp == [ shape(array)[1] ] 
+ *           ++ drop( 3, drop( -4, shape(array))) 
+ *           ++ [ shape(array)[dim(array)-3], shape(array)[dim(array)-2]]
+ *
+ *    idx == [ x, index[1], y]
+ *           ++ drop( 1, drop( -2, index))
+ *           ++ [ z, index[shape(index)-2], index[shape(index)-1], r]
+ *
+ *    default == zero (array);
+ *
+ *
  * Note here, that this traversal generates WLs with generators
  * that contain dots!
  * => HWLDdoEliminateWithLoopDots needs to be run *after* this traversal!
+ *
+ * Implementation notes:
+ *-----------------------
+ *
+ *   We store the selection vector ([ x, ., y, ..., z, ., ., r]) in our example
+ *   in a special data structure "dotinfo".
+ *   It is populated through a function "MakeDotInfo" which in turn uses
+ *   "BuildDotList".
+ *
+ *   The shape vector "shp" is computed by the local function "BuildShape"
+ *   which uses "BuildLeftShape", "BuildMiddleShape", and "BuildRightShape"
+ *   to construct the three parts shown above.
+ *
+ *   The selection index "idx" is computed by "BuildIndex" which, in turn,
+ *   uses "BuildLeftIndex", "BuildMiddleIndex", and "BuildRightIndex"
+ *   to construct the three parts shown above.
+ *
+ *   The default value is constructed by "BuildSelectionDefault". While this
+ *   in case of the presence of a triple-dot (as above) is simple, it gets
+ *   a little more intricate in cases without a triple-dot. Those are covered
+ *   by using the functionis "BuildSelectionElementShape" and 
+ *   "BuildDefaultWithloop".
+ *
+ *   Finally, the function "BuildWithLoop" constructs the overall result
+ *   with-loop shown for our example above.
+ *
  */
 
 /**
