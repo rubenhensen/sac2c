@@ -220,6 +220,7 @@ FMGRprependPath (pathkind_t p, const char *path)
     char *tmp = SBUF2str (path_bufs[p]);
     SBUFflush (path_bufs[p]);
     SBUFprintf (path_bufs[p], "%s:%s", path, tmp);
+    MEMfree (tmp);
 
     DBUG_PRINT ("prepending \"%s:\" to path %d", path, p);
 

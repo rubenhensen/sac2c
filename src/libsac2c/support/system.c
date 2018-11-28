@@ -140,8 +140,10 @@ SYScall (char *format, ...)
         CTInote ("System call:\n %s", SBUF2str (syscall));
     }
 
-    TrackSystemCall (SBUF2str (syscall));
-    exit_code = system (SBUF2str (syscall));
+    char *syscall_str = SBUF2str (syscall);
+    TrackSystemCall (syscall_str);
+    exit_code = system (syscall_str);
+    MEMfree (syscall_str);
 
     if (exit_code == -1) {
         CTIabort ("System failure while trying to execute shell command.\n"
@@ -162,6 +164,8 @@ SYScall (char *format, ...)
         CTIabort ("Unknown failure while executing shell command \n%s\n"
                   "Return value was %d",
                   SBUF2strAndFree (&syscall), exit_code);
+    } else {
+        SBUFfree (syscall);
     }
 
     DBUG_RETURN ();
