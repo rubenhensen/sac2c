@@ -127,7 +127,8 @@ OPTcheckPostSetupOptions (void)
 
     if (global.print_help_and_exit) {
         USGprintUsage ();
-        exit (0);
+        GLOBfinalizeGlobal ();
+        exit (EXIT_SUCCESS);
     }
 
     DBUG_RETURN ();
