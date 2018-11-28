@@ -6406,14 +6406,18 @@ cleanup:
         HASH_ITER (hh, lex->file_names, f, tmp)
             sz++;
 
-        global.file_table = (char **)malloc (sz * sizeof (char *));
-        global.file_table_size = sz;
+        /* We need this table to ensure that FILE* fields
+           in the locations in the AST are valid.  So here we
+           are simply extending this table, even though we may have
+           repeated filenames.  */
+        global.file_table = (char **)realloc (global.file_table,
+                                              (global.file_table_size + sz)
+                                              * sizeof (char *));
 
         /* Fill global.file_table and remove the filenams from lexer's
            hash table to avoid freeing.  */
-        sz = 0;
         HASH_ITER (hh, lex->file_names, f, tmp) {
-            global.file_table[sz++] = f->name;
+            global.file_table[global.file_table_size++] = f->name;
             HASH_DEL (lex->file_names, f);
             free (f);
         }
