@@ -396,11 +396,15 @@ node *
 CFcreateConstExprsFromType (ntype *type)
 {
     node *res = NULL;
-    int i;
+    size_t i;
     DBUG_ENTER ();
 
     if (TYisProd (type)) {
-        for (i = TYgetProductSize (type) - 1; i >= 0; i--) {
+        /* 
+         * decrement after check for > 0, safe method for reverse loop ending on 0
+         * i : (ProductSize - 1) to 0
+         */
+        for (i = TYgetProductSize (type); i-- > 0; ) {
             res = TBmakeExprs (CFcreateConstExprsFromType (TYgetProductMember (type, i)),
                                res);
         }
@@ -465,7 +469,7 @@ CreateAssignsFromIdsExprs (node *ids, node *exprs, ntype *restypes)
     node *cexpr = NULL;
     node *tmp;
     node *expr;
-    int pos = 0;
+    size_t pos = 0;
 
     DBUG_ENTER ();
 

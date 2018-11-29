@@ -230,7 +230,7 @@ InitCudaBlockSizes (void)
 static node *
 ATravPart (node *arg_node, info *arg_info)
 {
-    int dim;
+    size_t dim;
 
     DBUG_ENTER ();
 
@@ -249,7 +249,7 @@ ATravPart (node *arg_node, info *arg_info)
     } else {
         /* For other dimensionalities, since no blocking is needed,
          * we create an array of 0's */
-        int i = 0;
+        size_t i = 0;
         node *arr_elems = NULL;
         while (i < dim) {
             arr_elems = TBmakeExprs (TBmakeNum (0), arr_elems);

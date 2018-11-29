@@ -312,20 +312,20 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 {
     int i = 0;
     int ct = 0;
-    int countDLIR = 0;
-    int countWLIR = global.optcounters.wlir_expr;
-    int countINL = 0;
-    int countCSE = global.optcounters.cse_expr;
-    int countTUP = 0;
-    int countCF = 0;
-    int countVP = 0;
-    int countREA = 0;
-    int countAS = 0;
-    int countAL = 0;
-    int countDL = 0;
-    int countESD = global.optcounters.esd_expr;
-    int countUESD = 0;
-    int countDCR = 0;
+    size_t countDLIR = 0;
+    size_t countWLIR = global.optcounters.wlir_expr;
+    size_t countINL = 0;
+    size_t countCSE = global.optcounters.cse_expr;
+    size_t countTUP = 0;
+    size_t countCF = 0;
+    size_t countVP = 0;
+    size_t countREA = 0;
+    size_t countAS = 0;
+    size_t countAL = 0;
+    size_t countDL = 0;
+    size_t countESD = global.optcounters.esd_expr;
+    size_t countUESD = 0;
+    size_t countDCR = 0;
 
     DBUG_ENTER ();
 
@@ -415,9 +415,9 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 
             /* We do not count DCR, as it's merely for cleanup */
             DBUG_PRINT_TAG ("SSE",
-                            "DLIR= %d, WLIR= %d, INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, "
-                            "AS=%d, AL=%d, DL=%d, "
-                            "ESD=%d, UESD=%d, DCR=%d",
+                            "DLIR= %zu, WLIR= %zu, INL=%zu, CSE=%zu, TUP=%zu, CF=%zu, VP=%zu, "
+                            "AS=%zu, AL=%zu, DL=%zu, "
+                            "ESD=%zu, UESD=%zu, DCR=%zu",
                             (global.optcounters.dlir_expr - countDLIR),
                             (global.optcounters.wlir_expr - countWLIR),
                             (global.optcounters.inl_fun - countINL),
@@ -482,7 +482,8 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
     node *arg = NULL;
     ;
     pattern *pat;
-    int tcindex = -1;
+    size_t tcindex = 0;
+    bool isIdsMember;
     node *id;
 
     DBUG_ENTER ();
@@ -494,8 +495,8 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
         case N_prf:
 
             if (NULL != PRF_EXPRS2 (arg_node)) {
-                tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG2 (arg_node)));
-                if (-1 != tcindex) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG2 (arg_node)), &isIdsMember);
+                if (isIdsMember) {
                     z = 2;
                 }
             }
@@ -504,8 +505,8 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
                                        * as PRF_ARG1.
                                        */
             if (N_id == NODE_TYPE (id)) {
-                tcindex = TClookupIdsNode (withidids, ID_AVIS (id));
-                if (-1 != tcindex) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (id), &isIdsMember);
+                if (isIdsMember) {
                     z = 1;
                 }
             }
@@ -523,8 +524,8 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
         case N_id:
             if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
                 if (N_id == NODE_TYPE (arg)) {
-                    tcindex = TClookupIdsNode (withidids, ID_AVIS (arg));
-                    if (-1 != tcindex) {
+                    tcindex = TClookupIdsNode (withidids, ID_AVIS (arg), &isIdsMember);
+                    if (isIdsMember) {
                         z = 1;
                     }
                 } else {
@@ -537,7 +538,7 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
             break;
         }
 
-        if ((NULL != withid) && (z != 0) && (-1 != tcindex)) {
+        if ((NULL != withid) && (z != 0) && (isIdsMember)) {
             *withid = TCgetNthIds (tcindex, withidids);
         }
 
@@ -635,8 +636,8 @@ bool
 AWLFIisValidNoteintersect (node *arg_node, node *pwlid)
 {
     bool z;
-    int nexprs;
-    int npart;
+    size_t nexprs;
+    size_t npart;
 
     DBUG_ENTER ();
 
@@ -842,8 +843,8 @@ bool
 AWLFIisHasAllInverseProjections (node *arg_node)
 {
     bool z = TRUE;
-    int intersectListLim;
-    int intersectListNo;
+    size_t intersectListLim;
+    size_t intersectListNo;
     node *proj1;
     node *proj2;
 
@@ -926,7 +927,7 @@ AWLFIisHasInverseProjection (node *arg_node)
  *****************************************************************************/
 
 static node *
-FlattenLbubel (node *lbub, int ivindx, info *arg_info)
+FlattenLbubel (node *lbub, size_t ivindx, info *arg_info)
 {
     node *lbubelavis;
     node *lbubel;
@@ -950,7 +951,7 @@ FlattenLbubel (node *lbub, int ivindx, info *arg_info)
 }
 
 static node *
-BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivindx)
+BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, size_t ivindx)
 {
     node *z = NULL;
     int markiv;
@@ -965,7 +966,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
     node *rhs;
     node *withidids;
     node *ipavis;
-    int tcindex;
+    size_t tcindex;
+    bool isIdsMember;
     prf nprf;
 
     pattern *pat;
@@ -1000,8 +1002,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
 
             switch (NODE_TYPE (idx)) {
             case N_id:
-                tcindex = TClookupIdsNode (withidids, ID_AVIS (idx));
-                if (-1 != tcindex) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (idx), &isIdsMember);
+                if (isIdsMember) {
                     DBUG_PRINT ("Found %s as source of iv'=%s", AVIS_NAME (ID_AVIS (idx)),
                                 AVIS_NAME (ipavis));
                     INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
@@ -1245,7 +1247,7 @@ AWLFIflattenScalarNode (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 static node *
-BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnum,
+BuildAxisConfluence (node *zarr, size_t idx, node *zelnew, node *bndel, int boundnum,
                      info *arg_info)
 {
 
@@ -1324,17 +1326,18 @@ static node *
 PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundnum)
 {
     node *ids;
-    int shpz;
-    int shpids;
-    int shpzelu;
-    int i;
-    int idx;
+    size_t shpz;
+    size_t shpids;
+    size_t shpzelu;
+    size_t i;
+    size_t idx;
+    bool isIdsMember;
     pattern *pat;
     node *bndarr = NULL;
     node *zarr;
     node *z;
     node *zelnew;
-    int xrho = -1;
+    size_t xrho = 0;
     node *bndel;
     ntype *typ;
 
@@ -1389,8 +1392,8 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
         shpzelu = TCcountExprs (zelu);
 
         for (i = 0; i < shpzelu; i++) {
-            idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids));
-            if (-1 != idx) { /* skip places where idx is a constant, etc. */
+            idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids), &isIdsMember);
+            if (isIdsMember) { /* skip places where idx is a constant, etc. */
                              /* E.g., sel( [ JJ, 2], PWL);                */
                 zelnew = TCgetNthExprsExpr (i, zelu);
                 bndel = TCgetNthExprsExpr (idx, ARRAY_AELEMS (bndarr));
@@ -1463,9 +1466,9 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *arriv, node *lb
     node *zw = NULL;
     node *iprime;
     node *ziavis;
-    int dim;
+    size_t dim;
 
-    int ivindx;
+    size_t ivindx;
     DBUG_ENTER ();
 
     dim = SHgetUnrLen (ARRAY_FRAMESHAPE (lbub));
@@ -1554,10 +1557,10 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
-    int numpart;
-    int curpart;
-    int curelidxlb;
-    int curelidxub;
+    size_t numpart;
+    size_t curpart;
+    size_t curelidxlb;
+    size_t curelidxub;
     bool swaplb = FALSE;
     bool swapub = FALSE;
     node *tmp;
@@ -1591,7 +1594,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
         for (curpart = 0; curpart < numpart; curpart++) {
             curelidxlb = WLPROJECTION1 (curpart);
             curelidxub = WLPROJECTION2 (curpart);
-            DBUG_PRINT ("Building inverse projection for %s, partition #%d",
+            DBUG_PRINT ("Building inverse projection for %s, partition #%zu",
                         AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), curpart);
             intrlb = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
             intrub = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
@@ -1655,7 +1658,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                         zeu = tmp;
                     }
 
-                    DBUG_PRINT ("Building axis permute & confluence for %s, partn #%d",
+                    DBUG_PRINT ("Building axis permute & confluence for %s, partn #%zu",
                                 AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), curpart);
                     zlb = PermuteIntersectElements (zel, zwlb, arg_info, 0);
 
@@ -1805,7 +1808,7 @@ noDefaultPartition (node *arg_node)
  *
  ******************************************************************************/
 node *
-AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
+AWLFItakeDropIv (int takect, size_t dropct, node *arg_node, node **vardecs,
                  node **preassigns)
 {
     node *z;
@@ -2637,7 +2640,7 @@ AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel)
 node *
 AWLFIfundef (node *arg_node, info *arg_info)
 {
-    int optctr;
+    size_t optctr;
 
     DBUG_ENTER ();
 
@@ -2648,7 +2651,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
                     FUNDEF_NAME (arg_node));
 
         optctr = global.optcounters.awlfi_expr;
-        DBUG_PRINT ("At AWLFIfundef entry, global.optcounters.awlfi_expr is %d", optctr);
+        DBUG_PRINT ("At AWLFIfundef entry, global.optcounters.awlfi_expr is %zu", optctr);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             arg_node = SWLDdoSetWithloopDepth (arg_node);
@@ -2663,7 +2666,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
             }
 
             if (global.optcounters.awlfi_expr != optctr) {
-                DBUG_PRINT ("optcounters was %d; is now %d", optctr,
+                DBUG_PRINT ("optcounters was %zu; is now %zu", optctr,
                             global.optcounters.awlfi_expr);
                 arg_node = SimplifySymbioticExpression (arg_node, arg_info);
             }

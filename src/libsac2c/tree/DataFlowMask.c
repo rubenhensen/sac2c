@@ -40,14 +40,14 @@ static unsigned int *access_mask_table = NULL;
  */
 
 typedef struct MASK_BASE_T {
-    int num_ids;
-    int num_bitfields;
+    size_t num_ids;
+    size_t num_bitfields;
     char **ids;
     node **decls;
 } mask_base_t;
 
 typedef struct MASK_T {
-    int num_bitfields;
+    size_t num_bitfields;
     unsigned int *bitfield;
     mask_base_t *mask_base;
 } mask_t;
@@ -67,7 +67,7 @@ typedef struct MASK_T {
 static void
 ExtendMask (mask_t *mask)
 {
-    int i;
+    size_t i;
     unsigned int *old;
 
     DBUG_ENTER ();
@@ -102,7 +102,7 @@ mask_base_t *
 DFMgenMaskBase (node *arguments, node *vardecs)
 {
     mask_base_t *base;
-    int cnt;
+    size_t cnt;
     unsigned int access_mask;
     node *tmp;
 
@@ -122,7 +122,7 @@ DFMgenMaskBase (node *arguments, node *vardecs)
         access_mask = 1;
 
         for (cnt = 0; (size_t)cnt < 8 * sizeof (unsigned int); cnt++) {
-            DBUG_PRINT ("i %i mask %i", cnt, access_mask);
+            DBUG_PRINT ("i %zu mask %i", cnt, access_mask);
             access_mask_table[cnt] = access_mask;
             access_mask <<= 1;
         }
@@ -171,7 +171,7 @@ DFMgenMaskBase (node *arguments, node *vardecs)
     while (tmp != NULL) {
         base->decls[cnt] = tmp;
         base->ids[cnt] = ARG_NAME (tmp);
-        DBUG_PRINT ("Adding N_arg %s as element #%d", AVIS_NAME (ARG_AVIS (tmp)), cnt);
+        DBUG_PRINT ("Adding N_arg %s as element #%zu", AVIS_NAME (ARG_AVIS (tmp)), cnt);
         cnt += 1;
         tmp = ARG_NEXT (tmp);
     }
@@ -181,7 +181,7 @@ DFMgenMaskBase (node *arguments, node *vardecs)
     while (tmp != NULL) {
         base->decls[cnt] = tmp;
         base->ids[cnt] = VARDEC_NAME (tmp);
-        DBUG_PRINT ("Adding N_vardec %s as element #%d", VARDEC_NAME (tmp), cnt);
+        DBUG_PRINT ("Adding N_vardec %s as element #%zu", VARDEC_NAME (tmp), cnt);
         cnt += 1;
         tmp = VARDEC_NEXT (tmp);
     }
@@ -192,7 +192,7 @@ DFMgenMaskBase (node *arguments, node *vardecs)
 mask_base_t *
 DFMupdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
 {
-    int cnt, old_num_ids, i;
+    size_t cnt, old_num_ids, i;
     node *tmp;
     node **old_decls;
 
@@ -369,7 +369,7 @@ DFMgetMaskBase (mask_t *mask)
 mask_base_t *
 DFMupdateMaskBaseAfterRenaming (mask_base_t *mask_base, node *arguments, node *vardecs)
 {
-    int i;
+    size_t i;
     node *tmp;
 
     DBUG_ENTER ();
@@ -420,7 +420,7 @@ mask_base_t *
 DFMupdateMaskBaseAfterCompiling (mask_base_t *mask_base, node *arguments, node *vardecs)
 {
     node *tmp;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -460,7 +460,7 @@ mask_t *
 DFMgenMaskClear (mask_base_t *mask_base)
 {
     mask_t *new_mask;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -486,7 +486,7 @@ mask_t *
 DFMgenMaskSet (mask_base_t *mask_base)
 {
     mask_t *new_mask;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -512,7 +512,7 @@ mask_t *
 DFMgenMaskCopy (mask_t *mask)
 {
     mask_t *new_mask;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -540,7 +540,7 @@ mask_t *
 DFMgenMaskInv (mask_t *mask)
 {
     mask_t *new_mask;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -568,7 +568,7 @@ mask_t *
 DFMgenMaskAnd (mask_t *mask1, mask_t *mask2)
 {
     mask_t *new_mask;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -600,7 +600,7 @@ mask_t *
 DFMgenMaskOr (mask_t *mask1, mask_t *mask2)
 {
     mask_t *new_mask;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -632,7 +632,7 @@ mask_t *
 DFMgenMaskMinus (mask_t *mask1, mask_t *mask2)
 {
     mask_t *new_mask;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -667,7 +667,7 @@ DFMgenMaskMinus (mask_t *mask1, mask_t *mask2)
 void
 DFMsetMaskClear (mask_t *mask)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -685,7 +685,7 @@ DFMsetMaskClear (mask_t *mask)
 void
 DFMsetMaskSet (mask_t *mask)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -703,7 +703,7 @@ DFMsetMaskSet (mask_t *mask)
 void
 DFMsetMaskCopy (mask_t *mask, mask_t *mask2)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -725,7 +725,7 @@ DFMsetMaskCopy (mask_t *mask, mask_t *mask2)
 void
 DFMsetMaskInv (mask_t *mask)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -743,7 +743,7 @@ DFMsetMaskInv (mask_t *mask)
 void
 DFMsetMaskAnd (mask_t *mask, mask_t *mask2)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -765,7 +765,7 @@ DFMsetMaskAnd (mask_t *mask, mask_t *mask2)
 void
 DFMsetMaskOr (mask_t *mask, mask_t *mask2)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -787,7 +787,7 @@ DFMsetMaskOr (mask_t *mask, mask_t *mask2)
 void
 DFMsetMaskMinus (mask_t *mask, mask_t *mask2)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -810,7 +810,7 @@ DFMsetMaskMinus (mask_t *mask, mask_t *mask2)
  * functions for analyzing data flow masks
  */
 
-int
+size_t
 DFMnumIds (mask_base_t *mask)
 {
     DBUG_ENTER ();
@@ -823,7 +823,8 @@ DFMnumIds (mask_base_t *mask)
 int
 DFMtestMask (mask_t *mask)
 {
-    int i, j, res;
+    size_t i, j;
+    int res;
 
     DBUG_ENTER ();
 
@@ -833,7 +834,7 @@ DFMtestMask (mask_t *mask)
 
     res = 0;
 
-    DBUG_PRINT ("num_bitfields = %i", mask->num_bitfields);
+    DBUG_PRINT ("num_bitfields = %zu", mask->num_bitfields);
 
 #if 0
   this old version only tests whether any bit is set,
@@ -848,7 +849,7 @@ DFMtestMask (mask_t *mask)
 #endif
 
     for (i = 0; i < mask->num_bitfields; i++) {
-        for (j = 0; (size_t)j < (8 * sizeof (unsigned int)); j++) {
+        for (j = 0; j < (8 * sizeof (unsigned int)); j++) {
             if ((mask->bitfield[i] & access_mask_table[j]) > 0) {
                 res++;
             }
@@ -861,7 +862,8 @@ DFMtestMask (mask_t *mask)
 int
 DFMtest2Masks (mask_t *mask1, mask_t *mask2)
 {
-    int i, j, res;
+    size_t i, j;
+    int res;
 
     DBUG_ENTER ();
 
@@ -888,7 +890,7 @@ DFMtest2Masks (mask_t *mask1, mask_t *mask2)
 #endif
 
     for (i = 0; i < mask1->num_bitfields; i++) {
-        for (j = 0; (size_t)j < (8 * sizeof (unsigned int)); j++) {
+        for (j = 0; j < (8 * sizeof (unsigned int)); j++) {
             if (((mask1->bitfield[i] & access_mask_table[j]) > 0)
                 && ((mask2->bitfield[i] & access_mask_table[j]) > 0)) {
                 res++;
@@ -902,7 +904,8 @@ DFMtest2Masks (mask_t *mask1, mask_t *mask2)
 int
 DFMtest3Masks (mask_t *mask1, mask_t *mask2, mask_t *mask3)
 {
-    int i, j, res;
+    size_t i, j;
+    int res;
 
     DBUG_ENTER ();
 
@@ -932,7 +935,7 @@ DFMtest3Masks (mask_t *mask1, mask_t *mask2, mask_t *mask3)
 #endif
 
     for (i = 0; i < mask1->num_bitfields; i++) {
-        for (j = 0; (size_t)j < (8 * sizeof (unsigned int)); j++) {
+        for (j = 0; j < (8 * sizeof (unsigned int)); j++) {
             if (((mask1->bitfield[i] & access_mask_table[j]) > 0)
                 && ((mask2->bitfield[i] & access_mask_table[j]) > 0)
                 && ((mask3->bitfield[i] & access_mask_table[j]) > 0)) {
@@ -985,7 +988,7 @@ DFMtouchMask (mask_t *mask, info *arg_info)
 void
 DFMprintMask (FILE *handle, const char *format, mask_t *mask)
 {
-    int i, j, cnt;
+    size_t i, j, cnt;
 
     DBUG_ENTER ();
 
@@ -1026,7 +1029,7 @@ DFMprintMask (FILE *handle, const char *format, mask_t *mask)
 void
 DFMprintMaskDetailed (FILE *handle, mask_t *mask)
 {
-    int i, j, cnt;
+    size_t i, j, cnt;
 
     DBUG_ENTER ();
 
@@ -1076,7 +1079,7 @@ DFMprintMaskDetailed (FILE *handle, mask_t *mask)
 void
 DFMsetMaskEntryClear (mask_t *mask, const char *id, node *avis)
 {
-    int i;
+    size_t i;
     node *decl = NULL;
 
     DBUG_ENTER ();
@@ -1121,7 +1124,7 @@ DFMsetMaskEntryClear (mask_t *mask, const char *id, node *avis)
 void
 DFMsetMaskEntrySet (mask_t *mask, const char *id, node *avis)
 {
-    int i;
+    size_t i;
     node *decl = NULL;
 
     DBUG_ENTER ();
@@ -1171,7 +1174,7 @@ DFMsetMaskEntrySet (mask_t *mask, const char *id, node *avis)
 bool
 DFMtestMaskEntry (mask_t *mask, const char *id, node *avis)
 {
-    int i, res;
+    size_t i, res;
     bool bres;
     node *decl = NULL;
 
@@ -1211,7 +1214,7 @@ DFMtestMaskEntry (mask_t *mask, const char *id, node *avis)
     res = mask->bitfield[i / (8 * sizeof (unsigned int))]
           & access_mask_table[i % (8 * sizeof (unsigned int))];
 
-    DBUG_PRINT ("i %i mask %i acces %i res %i", i,
+    DBUG_PRINT ("i %zu mask %i acces %i res %zu", i,
                 mask->bitfield[i / (8 * sizeof (unsigned int))],
                 access_mask_table[i % (8 * sizeof (unsigned int))], res);
 
@@ -1225,7 +1228,7 @@ DFMgetMaskEntryNameClear (mask_t *mask)
     char *ret;
 
     static mask_t *store_mask;
-    static int i;
+    static size_t i;
 
     DBUG_ENTER ();
 
@@ -1252,7 +1255,7 @@ DFMgetMaskEntryNameSet (mask_t *mask)
     char *ret;
 
     static mask_t *store_mask;
-    static int i;
+    static size_t i;
 
     DBUG_ENTER ();
 
@@ -1263,7 +1266,7 @@ DFMgetMaskEntryNameSet (mask_t *mask)
     }
 
     while ((i < store_mask->mask_base->num_ids)
-           && (!(store_mask->bitfield[i / (8 * sizeof (unsigned int))]
+           && (!(store_mask->bitfield[i / (8 * sizeof (size_t))]
                  & access_mask_table[i % (8 * sizeof (unsigned int))]))) {
         i++;
     }
@@ -1279,7 +1282,7 @@ DFMgetMaskEntryDeclClear (mask_t *mask)
     node *ret;
 
     static mask_t *store_mask;
-    static int i;
+    static size_t i;
 
     DBUG_ENTER ();
 
@@ -1290,7 +1293,7 @@ DFMgetMaskEntryDeclClear (mask_t *mask)
     }
 
     while ((i < store_mask->mask_base->num_ids)
-           && (store_mask->bitfield[i / (8 * sizeof (unsigned int))]
+           && (store_mask->bitfield[i / (8 * sizeof (size_t))]
                & access_mask_table[i % (8 * sizeof (unsigned int))])) {
         i++;
     }
@@ -1307,7 +1310,7 @@ DFMgetMaskEntryDeclSet (mask_t *mask)
     node *ret;
 
     static mask_t *store_mask;
-    static int i;
+    static size_t i;
 
     DBUG_ENTER ();
 
@@ -1333,7 +1336,7 @@ node *
 DFMvar2Decl (mask_t *mask, char *var)
 {
     node *ret = NULL;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 

@@ -170,7 +170,7 @@ extern ntype *TYsetNamespace (ntype *symb, namespace_t *ns);
  */
 extern ntype *TYmakeAKV (ntype *scalar, constant *val);
 extern ntype *TYmakeAKS (ntype *scalar, shape *shp);
-extern ntype *TYmakeAKD (ntype *scalar, int dots, shape *shp);
+extern ntype *TYmakeAKD (ntype *scalar, size_t dots, shape *shp);
 extern ntype *TYmakeAUDGZ (ntype *scalar);
 extern ntype *TYmakeAUD (ntype *scalar);
 
@@ -189,12 +189,12 @@ extern ntype *TYmakeUnionType (ntype *t1, ntype *t2);
 /*
  * Product Types:
  */
-extern ntype *TYmakeProductType (int size, ...);
-extern ntype *TYmakeEmptyProductType (int size);
-extern ntype *TYsetProductMember (ntype *prod, int pos, ntype *member);
+extern ntype *TYmakeProductType (size_t size, ...);
+extern ntype *TYmakeEmptyProductType (size_t size);
+extern ntype *TYsetProductMember (ntype *prod, size_t pos, ntype *member);
 
-extern int TYgetProductSize (ntype *prod);
-extern ntype *TYgetProductMember (ntype *prod, int pos);
+extern size_t TYgetProductSize (ntype *prod);
+extern ntype *TYgetProductMember (ntype *prod, size_t pos);
 
 /*
  * Bottom Types:
@@ -229,7 +229,7 @@ extern ntype *TYmapFunctionInstances (ntype *funtype, node *(*mapfun) (node *, i
 extern void *TYfoldFunctionInstances (ntype *funtype, void *(*foldfun) (node *, void *),
                                       void *initial);
 
-extern int TYgetArity (ntype *fun);
+extern size_t TYgetArity (ntype *fun);
 
 extern dft_res *TYdispatchFunType (ntype *fun, ntype *args);
 
@@ -277,7 +277,7 @@ extern bool TYisAKSUdt (ntype *);
 extern bool TYisProdOfArray (ntype *);
 extern bool TYisProdOfArrayOrFixedAlpha (ntype *);
 extern bool TYisProdOfAKV (ntype *);
-extern bool TYisProdOfAKVafter (ntype *, int);
+extern bool TYisProdOfAKVafter (ntype *, size_t);
 extern bool TYisProdContainingAKV (ntype *);
 
 extern bool TYgetUnique (ntype *type);

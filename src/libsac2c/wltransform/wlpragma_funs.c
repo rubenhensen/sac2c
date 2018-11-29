@@ -475,10 +475,11 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, size_t 
                 }
 
                 if (level >= 0) {
-                    DBUG_ASSERT (level < WLSEG_BLOCKS (seg),
+                    unsigned int level_u = (unsigned int)level;
+                    DBUG_ASSERT (level_u < WLSEG_BLOCKS (seg),
                                  "illegal blocking level found!");
 
-                    abv = TCgetNthExprs (level, WLSEG_BV (seg));
+                    abv = TCgetNthExprs (level_u, WLSEG_BV (seg));
                     EXPRS_EXPR (abv) = FREEdoFreeTree (EXPRS_EXPR (abv));
 
                     EXPRS_EXPR (abv)
@@ -681,7 +682,7 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, size_t line)
 node *
 WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, size_t line)
 {
-    int b;
+    unsigned int b;
     node *seg = segs;
 
     DBUG_ENTER ();

@@ -448,7 +448,7 @@ typedef enum {
 } argtag_t;
 
 typedef struct ARGTAB_T {
-    int size;
+    size_t size;
     node **ptr_in;  /* N_arg or N_exprs node */
     node **ptr_out; /* N_ret or N_ids node */
     argtag_t *tag;
@@ -564,7 +564,7 @@ typedef node *(*cv2scalarfunptr) (void *, size_t);
  * moved from cv2internal_lib.h
  */
 
-typedef char *(*cv2strfunptr) (void *, size_t, size_t, int);
+typedef char *(*cv2strfunptr) (void *, size_t, size_t, size_t);
 
 /*
  * moved from zipcv.h
@@ -639,7 +639,7 @@ typedef enum {
 } te_kind_t;
 
 typedef struct TE_INFO te_info;
-typedef int (*te_funptr) (ntype *args);
+typedef size_t (*te_funptr) (ntype *args);
 
 /*******************************************************************************
  *
@@ -967,7 +967,7 @@ typedef enum {
  */
 
 typedef struct OPTIMIZE_COUNTER_T {
-#define OPTCOUNTERid(id) int id;
+#define OPTCOUNTERid(id) size_t id;
 #include "optimize.mac"
 } optimize_counter_t;
 
@@ -1228,7 +1228,7 @@ typedef struct GLOBAL_T {
  */
 
 typedef struct sMtx {
-    int dim_x, dim_y;
+    unsigned int dim_x, dim_y;
     int *m_stor;
     int **mtx;
 } * IntMatrix, sMatrix;
@@ -1240,7 +1240,7 @@ typedef struct RC_T {
     node *arrayshp;
     node *sharray;
     node *sharrayshp;
-    int dim;
+    size_t dim;
     bool selfref;
     int posoffset[SHP_SEG_SIZE];
     int negoffset[SHP_SEG_SIZE];
@@ -1272,7 +1272,7 @@ typedef struct CUDA_INDEX_T {
     unsigned int type;
     int coefficient;
     node *id;
-    int looplevel; /* This attribute is only meaningful if type is LOOPIDX */
+    size_t looplevel; /* This attribute is only meaningful if type is LOOPIDX */
     struct CUDA_INDEX_T *next;
 } cuda_index_t;
 
@@ -1280,7 +1280,7 @@ typedef struct CUDA_ACCESS_INFO_T {
     IntMatrix coe_mtx;
     unsigned int type; /* Type of this access: either reuse or coalescing */
     int dim;
-    int nestlevel;
+    size_t nestlevel;
     node *array;
     node *arrayshp;
     node *sharray;
@@ -1288,7 +1288,7 @@ typedef struct CUDA_ACCESS_INFO_T {
     node
       *sharrayshp_log; /* Logical shape of the sahred memory(smaller than the physical
                           one) */
-    int cuwldim;       /* Dimesion of the containing cuda withloop */
+    size_t cuwldim;       /* Dimesion of the containing cuda withloop */
     node *tbshp;       /* shape of the thread block */
     cuda_index_t *indices[MAX_REUSE_DIM];
     bool isconstant[MAX_REUSE_DIM]; /* whether a dimension is constant, i.e. consists of

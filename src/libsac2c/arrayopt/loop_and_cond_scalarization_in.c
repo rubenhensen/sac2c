@@ -373,7 +373,7 @@ struct INFO {
     node *ap;
     node *newlacfunargs;
     node *preassignslacfun;
-    int argnum;
+    size_t argnum;
     bool inap;
 };
 
@@ -451,7 +451,7 @@ CreateArg (constant *idx, void *accu, void *scalar_type)
  *
  *****************************************************************************/
 static bool
-LACSIargHasAvisScalars (int argnum, node *ap)
+LACSIargHasAvisScalars (size_t argnum, node *ap)
 {
     node *arg;
     bool z;

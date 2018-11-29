@@ -261,7 +261,7 @@ WLSBdoBuild (node *arg_node, node *fundef, node **preassigns)
  *
  *****************************************************************************/
 static node *
-CreateOneVector (int nr, info *arg_info)
+CreateOneVector (size_t nr, info *arg_info)
 {
     node *res;
     node *temp;
@@ -546,7 +546,7 @@ WLSBcode (node *arg_node, info *arg_info)
 node *
 WLSBgenerator (node *arg_node, info *arg_info)
 {
-    int outerdim, innerdim;
+    size_t outerdim, innerdim;
     node *newlb, *newub, *newstep, *newwidth;
 
     DBUG_ENTER ();
@@ -781,7 +781,7 @@ WLSBwithid (node *arg_node, info *arg_info)
         /*
          * Create new joint withid
          */
-        int dim;
+        size_t dim;
         ntype *vectype;
         node *vec, *scalars;
         node *avis;

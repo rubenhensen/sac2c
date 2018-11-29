@@ -290,17 +290,17 @@ TCappendTypes (types *chain, types *item)
 /******************************************************************************
  *
  * function:
- *   int TCcountTypes( types *type)
+ *   unsigned int TCcountTypes( types *type)
  *
  * description:
  *   Counts the number of types.
  *
  ******************************************************************************/
 
-int
+unsigned int
 TCcountTypes (types *type)
 {
-    int count = 0;
+    unsigned int count = 0;
 
     DBUG_ENTER ();
 
@@ -787,20 +787,22 @@ TClookupIds (const char *name, node *ids_chain)
     DBUG_RETURN (ids_chain);
 }
 
-int
-TClookupIdsNode (node *ids_chain, node *idsavis)
+/* isIdsMember - pointer passing back result of search for 
+*                whether arg_node is a member of the ids chain */
+size_t
+TClookupIdsNode (node *ids_chain, node *idsavis, bool *isIdsMember)
 {
-    int z;
+    size_t z;
 
     DBUG_ENTER ();
-
+    *isIdsMember = TRUE;
     z = 0;
     while ((ids_chain != NULL) && (IDS_AVIS (ids_chain) != idsavis)) {
         ids_chain = IDS_NEXT (ids_chain);
         z++;
     }
 
-    z = (NULL != ids_chain) ? z : -1;
+    *isIdsMember = (NULL != ids_chain) ? TRUE : FALSE;
 
     DBUG_RETURN (z);
 }
@@ -815,10 +817,10 @@ TClookupIdsNode (node *ids_chain, node *idsavis)
  *
  ******************************************************************************/
 node *
-TCgetNthIds (int n, node *ids_chain)
+TCgetNthIds (size_t n, node *ids_chain)
 {
     DBUG_ENTER ();
-    int i = 0;
+    size_t i = 0;
 
     while ((ids_chain != NULL) && (i != n)) {
         ids_chain = IDS_NEXT (ids_chain);
@@ -829,10 +831,10 @@ TCgetNthIds (int n, node *ids_chain)
     DBUG_RETURN (ids_chain);
 }
 
-int
+size_t
 TCcountIds (node *ids_arg)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -904,10 +906,10 @@ TCconvertIds2Exprs (node *ids)
  ***  NUMS :
  ***/
 
-int
+size_t
 TCcountNums (node *nums)
 {
-    int cnt = 0;
+    size_t cnt = 0;
 
     DBUG_ENTER ();
 
@@ -1284,17 +1286,17 @@ TCappendVardec (node *vardec_chain, node *vardec)
 /******************************************************************************
  *
  * function:
- *   int TCcountVardecs( node *vardecs)
+ *   size_t TCcountVardecs( node *vardecs)
  *
  * description:
  *   Counts the number of N_vardec nodes.
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountVardecs (node *vardecs)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -1316,17 +1318,17 @@ TCcountVardecs (node *vardecs)
 /******************************************************************************
  *
  * function:
- *   int TCcountArgs( node *args)
+ *   size_t TCcountArgs( node *args)
  *
  * description:
  *   Counts the number of N_arg nodes.
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountArgs (node *args)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -1342,7 +1344,7 @@ TCcountArgs (node *args)
 /******************************************************************************
  *
  * function:
- *   int TCcountArgsIgnoreArtificials( node *args)
+ *   size_t TCcountArgsIgnoreArtificials( node *args)
  *
  * description:
  *   Counts the number of N_arg nodes, ignoring those that are marked
@@ -1350,10 +1352,10 @@ TCcountArgs (node *args)
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountArgsIgnoreArtificials (node *args)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -1407,14 +1409,13 @@ TCappendArgs (node *arg_chain, node *arg)
  * @return N_arg node
  ******************************************************************************/
 node *
-TCgetNthArg (int n, node *args)
+TCgetNthArg (size_t n, node *args)
 {
-    int cnt;
+    size_t cnt;
     node *result = NULL;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (n >= 0, "n<0");
     for (cnt = 0; cnt < n; cnt++) {
         if (NULL == args) {
             DBUG_UNREACHABLE ("n > N_arg chain length.");
@@ -1463,17 +1464,17 @@ TCappendRet (node *ret_chain, node *item)
 /******************************************************************************
  *
  * function:
- *   int TCcountRets( node *rets)
+ *   size_t TCcountRets( node *rets)
  *
  * description:
  *   Counts the number of N_arg nodes.
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountRets (node *rets)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -1489,7 +1490,7 @@ TCcountRets (node *rets)
 /******************************************************************************
  *
  * function:
- *   int TCcountRetsIgnoreArtificials( node *rets)
+ *   size_t TCcountRetsIgnoreArtificials( node *rets)
  *
  * description:
  *   Counts the number of N_arg nodes, ignoring those that are marked as
@@ -1497,10 +1498,10 @@ TCcountRets (node *rets)
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountRetsIgnoreArtificials (node *rets)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -1629,13 +1630,13 @@ TCmakeAssignInstr (node *instr, node *next)
 
 /** <!--********************************************************************-->
  *
- * @fn int TCcountAssigns( node *arg_node)
+ * @fn size_t TCcountAssigns( node *arg_node)
  *
  *****************************************************************************/
-int
+size_t
 TCcountAssigns (node *arg_node)
 {
-    int res = 0;
+    size_t res = 0;
 
     DBUG_ENTER ();
 
@@ -2169,17 +2170,17 @@ TCmakeExprsNum (int num)
 /******************************************************************************
  *
  * function:
- *   int TCcountExprs( node *exprs)
+ *   size_t TCcountExprs( node *exprs)
  *
  * description:
  *   Computes the length of the given N_exprs chain.
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountExprs (node *exprs)
 {
-    int count;
+    size_t count;
 
     DBUG_ENTER ();
 
@@ -2318,9 +2319,9 @@ TCcreateExprsFromArgs (node *args)
  * @return N_exprs node
  ******************************************************************************/
 node *
-TCgetNthExprsNext (int n, node *exprs)
+TCgetNthExprsNext (size_t n, node *exprs)
 {
-    int cnt;
+    size_t cnt;
     node *result;
 
     DBUG_ENTER ();
@@ -2349,14 +2350,13 @@ TCgetNthExprsNext (int n, node *exprs)
  * @return N_exprs node
  ******************************************************************************/
 node *
-TCgetNthExprs (int n, node *exprs)
+TCgetNthExprs (size_t n, node *exprs)
 {
-    int cnt;
+    size_t cnt;
     node *result = NULL;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (n >= 0, "n<0");
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
             DBUG_UNREACHABLE ("n > N_exprs chain length.");
@@ -2381,15 +2381,14 @@ TCgetNthExprs (int n, node *exprs)
  * @return updated N_exprs chain
  ******************************************************************************/
 node *
-TCputNthExprs (int n, node *oldexprs, node *val)
+TCputNthExprs (size_t n, node *oldexprs, node *val)
 {
-    int cnt;
+    size_t cnt;
     node *exprs;
 
     DBUG_ENTER ();
 
     exprs = oldexprs;
-    DBUG_ASSERT (n >= 0, "n<0");
 
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
@@ -2417,7 +2416,7 @@ TCputNthExprs (int n, node *oldexprs, node *val)
  * @return N_node of some sort
  ******************************************************************************/
 node *
-TCgetNthExprsExpr (int n, node *exprs)
+TCgetNthExprsExpr (size_t n, node *exprs)
 {
     node *result = NULL;
 
@@ -2446,20 +2445,20 @@ TCgetNthExprsExpr (int n, node *exprs)
  * @return: N_exprs chain
  ******************************************************************************/
 node *
-TCtakeDropExprs (int takecount, int dropcount, node *exprs)
+TCtakeDropExprs (int takecount, size_t dropcount, node *exprs)
 {
     node *res = NULL;
     node *tail;
 
     DBUG_ENTER ();
-    DBUG_ASSERT ((takecount >= 0) && (dropcount >= 0),
+    DBUG_ASSERT (takecount >= 0,
                  "TCtakeDropExprs take or drop count < 0");
     DBUG_ASSERT (N_exprs == NODE_TYPE (exprs),
                  "TCtakeDropExprs disappointed at not getting N_exprs");
     if (0 != takecount) {
         /* This does too much work, but I'm not sure of a nice way to fix it. */
         res = DUPdoDupTree (TCgetNthExprsNext (dropcount, exprs));  /* do drop */
-        tail = TCgetNthExprsNext (MATHmax (0, takecount - 1), res); /* do take */
+        tail = TCgetNthExprsNext ((size_t)MATHmax (0, takecount - 1), res); /* do take */
         if ((NULL != tail) && NULL != EXPRS_NEXT (tail)) {
             FREEdoFreeTree (EXPRS_NEXT (tail));
             EXPRS_NEXT (tail) = NULL;
@@ -2767,7 +2766,7 @@ TCcreateIntVector (int length, int value, int step)
  * @return value at that position
  ******************************************************************************/
 int
-TCgetIntVectorNthValue (int pos, node *vect)
+TCgetIntVectorNthValue (size_t pos, node *vect)
 {
     node *elem;
 
@@ -2856,7 +2855,7 @@ TCcreateZeroScalar (simpletype btype)
 /******************************************************************************
  *
  * function:
- *   node *TCcreateZeroVector( int length, simpletype btype)
+ *   node *TCcreateZeroVector( size_t length, simpletype btype)
  *
  * description:
  *   Returns an N_array node with 'length' components, each 0.
@@ -2864,10 +2863,10 @@ TCcreateZeroScalar (simpletype btype)
  ******************************************************************************/
 
 node *
-TCcreateZeroVector (int length, simpletype btype)
+TCcreateZeroVector (size_t length, simpletype btype)
 {
     node *ret_node, *exprs_node;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -3539,10 +3538,10 @@ TCmakeIcm8 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
  * @return number of parts
  *
  *****************************************************************************/
-int
+size_t
 TCcountParts (node *parts)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -3695,10 +3694,10 @@ TCappendCode (node *code1, node *code2)
  ***  N_withop :
  ***/
 
-int
+size_t
 TCcountWithops (node *withop)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -3710,10 +3709,10 @@ TCcountWithops (node *withop)
     DBUG_RETURN (counter);
 }
 
-int
+size_t
 TCcountWithopsEq (node *withop, nodetype eq)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -3727,10 +3726,10 @@ TCcountWithopsEq (node *withop, nodetype eq)
     DBUG_RETURN (counter);
 }
 
-int
+size_t
 TCcountWithopsNeq (node *withop, nodetype neq)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -3756,10 +3755,10 @@ TCcountWithopsNeq (node *withop, nodetype neq)
  ***  N_wlsegs :
  ***/
 
-int
+size_t
 TCcountWlseg (node *wlseg)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -4117,10 +4116,10 @@ TCappendRange (node *range_chain, node *range)
     DBUG_RETURN (ret);
 }
 
-int
+size_t
 TCcountRanges (node *range)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 

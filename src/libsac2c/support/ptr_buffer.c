@@ -7,13 +7,13 @@
 
 struct PTR_BUF {
     void **buf;
-    int pos;
-    int size;
+    unsigned int pos;
+    unsigned int size;
 };
 
 /*****************************************************************************
  *
- * @fn  ptr_buf *PBUFcreate(int size)
+ * @fn  ptr_buf *PBUFcreate(unsigned int size)
  *
  *   @brief  creates an (unbound) pointer buffer
  *
@@ -25,7 +25,7 @@ struct PTR_BUF {
  ******************************************************************************/
 
 ptr_buf *
-PBUFcreate (int size)
+PBUFcreate (unsigned int size)
 {
     ptr_buf *res;
 
@@ -36,7 +36,7 @@ PBUFcreate (int size)
     res->pos = 0;
     res->size = size;
 
-    DBUG_PRINT ("allocating buffer size %d : %p", size, (void *)res);
+    DBUG_PRINT ("allocating buffer size %u : %p", size, (void *)res);
 
     DBUG_RETURN (res);
 }
@@ -56,15 +56,15 @@ PBUFcreate (int size)
 ptr_buf *
 PBUFadd (ptr_buf *s, void *ptr)
 {
-    int new_size;
+    unsigned int new_size;
     void **new_buf;
-    int i;
+    unsigned int i;
 
     DBUG_ENTER ();
 
     if (s->pos == s->size) {
         new_size = 2 * s->size;
-        DBUG_PRINT ("increasing buffer %p from size %d to size %d",
+        DBUG_PRINT ("increasing buffer %p from size %u to size %u",
                     (void *)s,
                     s->size,
                     new_size);
@@ -80,14 +80,14 @@ PBUFadd (ptr_buf *s, void *ptr)
     s->buf[s->pos] = ptr;
     s->pos++;
     DBUG_PRINT ("%p added to buffer %p", (void *)ptr, (void *)s);
-    DBUG_PRINT ("pos of buffer %p now is %d", (void *)s, s->pos);
+    DBUG_PRINT ("pos of buffer %p now is %u", (void *)s, s->pos);
 
     DBUG_RETURN (s);
 }
 
 /******************************************************************************
  *
- * @fn  int PBUFsize(ptr_buf *s)
+ * @fn  unsigned int PBUFsize(ptr_buf *s)
  *
  *   @brief  retrieve size of given pointer buffer
  *
@@ -95,8 +95,7 @@ PBUFadd (ptr_buf *s, void *ptr)
  *   @return size of the buffer
  *
  ******************************************************************************/
-
-int
+unsigned int
 PBUFsize (ptr_buf *s)
 {
     DBUG_ENTER ();
@@ -114,7 +113,7 @@ PBUFsize (ptr_buf *s)
  *
  ******************************************************************************/
 
-int
+unsigned int
 PBUFpos (ptr_buf *s)
 {
     DBUG_ENTER ();
@@ -123,7 +122,7 @@ PBUFpos (ptr_buf *s)
 
 /*****************************************************************************
  *
- * @fn  void *PBUFptr(ptr_buf *s, int pos)
+ * @fn  void *PBUFptr(ptr_buf *s, unsigned int pos)
  *
  *   @brief  get pointer entry at specified position
  *
@@ -134,7 +133,7 @@ PBUFpos (ptr_buf *s)
  ******************************************************************************/
 
 void *
-PBUFptr (ptr_buf *s, int pos)
+PBUFptr (ptr_buf *s, unsigned int pos)
 {
     void *res;
 
@@ -163,7 +162,7 @@ PBUFflush (ptr_buf *s)
     DBUG_ENTER ();
 
     s->pos = 0;
-    DBUG_PRINT ("pos of buffer %p reset to %d", (void *)s, s->pos);
+    DBUG_PRINT ("pos of buffer %p reset to %u", (void *)s, s->pos);
 
     DBUG_RETURN ();
 }
@@ -181,14 +180,14 @@ PBUFflush (ptr_buf *s)
  ******************************************************************************/
 
 void
-PBUFflushFrom (ptr_buf *s, int pos)
+PBUFflushFrom (ptr_buf *s, unsigned int pos)
 {
     DBUG_ENTER ();
 
     if (pos < s->size) {
         s->pos = pos;
     }
-    DBUG_PRINT ("pos of buffer %p reset to %d", (void *)s, s->pos);
+    DBUG_PRINT ("pos of buffer %p reset to %u", (void *)s, s->pos);
 
     DBUG_RETURN ();
 }

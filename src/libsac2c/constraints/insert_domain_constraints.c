@@ -231,13 +231,17 @@ CreateNewVarAndInitiateRenaming (node *id, info *arg_info)
 }
 
 static ptr_buf *
-EraseRenamings (ptr_buf *stack, int pos)
+EraseRenamings (ptr_buf *stack, unsigned int pos)
 {
     DBUG_ENTER ();
-    int i;
+    unsigned int i;
     node *avis;
-
-    for (i = PBUFpos (stack) - 1; i >= pos; i--) {
+    
+    /* 
+     * decrement after check for > 0, safe method for reverse loop ending on 0
+     * i : (PBUFpos - 1) to pos(called with 0 at times)
+     */
+    for (i = PBUFpos (stack); i-- > pos; ) {
         avis = (node *)PBUFptr (stack, i);
         AVIS_SUBST (avis) = NULL;
     }
@@ -569,7 +573,7 @@ node *
 IDCcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
-    int rename_stack_pos;
+    unsigned int rename_stack_pos;
 
     rename_stack_pos = PBUFpos (INFO_RENAME_STACK (arg_info));
 
@@ -623,7 +627,7 @@ node *
 IDCwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
-    int rename_stack_pos;
+    unsigned int rename_stack_pos;
 
     rename_stack_pos = PBUFpos (INFO_RENAME_STACK (arg_info));
 

@@ -76,7 +76,7 @@ extern node *TCshpseg2Array (shpseg *shape, int dim);
 #define TYPES_SHAPE(t, x) (SHPSEG_SHAPE (TYPES_SHPSEG (t), x))
 
 extern types *TCappendTypes (types *chain, types *item);
-extern int TCcountTypes (types *type);
+extern unsigned int TCcountTypes (types *type);
 extern types *TCgetTypesLine (types *type, size_t line);
 extern types *TCgetTypes (types *type);
 extern int TCgetShapeDim (types *type);
@@ -111,7 +111,7 @@ extern bool TCisNested (types *type);
 
 extern node *TCcreateIdsChainFromAvises (int num_avises, ...);
 extern node *TCappendIds (node *chain, node *item);
-extern int TCcountIds (node *ids_arg);
+extern size_t TCcountIds (node *ids_arg);
 extern node *TCmakeIdsFromVardecs (node *vardecs);
 extern node *TCsetSSAAssignForIdsChain (node *ids, node *assign);
 extern node *TClastIds (node *ids);
@@ -131,11 +131,11 @@ extern node *TCcreateIdsChainFromExprs (node *arg_node);
  ******************************************************************************/
 
 extern node *TClookupIds (const char *name, node *ids_chain);
-extern int TClookupIdsNode (node *ids_chain, node *idsavis);
+extern size_t TClookupIdsNode (node *ids_chain, node *idsavis, bool *isIdsMember);
 
-extern node *TCgetNthIds (int n, node *ids_chain);
+extern node *TCgetNthIds (size_t n, node *ids_chain);
 
-extern int TCcountNums (node *nums);
+extern size_t TCcountNums (node *nums);
 extern bool TCnumsContains (int val, node *nums);
 
 /*--------------------------------------------------------------------------*/
@@ -379,7 +379,7 @@ extern node *TCaddVardecs (node *fundef, node *vardecs);
 
 extern node *TCappendVardec (node *vardec_chain, node *vardec);
 
-extern int TCcountVardecs (node *vardecs);
+extern size_t TCcountVardecs (node *vardecs);
 
 /*--------------------------------------------------------------------------*/
 
@@ -400,10 +400,10 @@ extern int TCcountVardecs (node *vardecs);
 #define ARG_DIM(n) (TYPES_DIM (ARG_TYPE (n)))
 #define ARG_TNAME(n) (TYPES_NAME (ARG_TYPE (n)))
 
-extern int TCcountArgs (node *args);
-extern int TCcountArgsIgnoreArtificials (node *args);
+extern size_t TCcountArgs (node *args);
+extern size_t TCcountArgsIgnoreArtificials (node *args);
 extern node *TCappendArgs (node *arg_chain, node *arg);
-extern node *TCgetNthArg (int n, node *args);
+extern node *TCgetNthArg (size_t n, node *args);
 
 /*--------------------------------------------------------------------------*/
 
@@ -423,8 +423,8 @@ extern node *TCgetNthArg (int n, node *args);
  ***  N_ret :
  ***/
 
-extern int TCcountRets (node *rets);
-extern int TCcountRetsIgnoreArtificials (node *rets);
+extern size_t TCcountRets (node *rets);
+extern size_t TCcountRetsIgnoreArtificials (node *rets);
 extern node *TCappendRet (node *chain, node *item);
 extern node *TCcreateIdsFromRets (node *rets, node **vardecs);
 extern node *TCcreateExprsFromArgs (node *args);
@@ -636,7 +636,7 @@ extern node *TCappendAssign (node *assign_chain, node *assign);
 
 extern node *TCappendAssignIcm (node *assign, char *name, node *args);
 
-extern int TCcountAssigns (node *assigns);
+extern size_t TCcountAssigns (node *assigns);
 extern node *TCgetLastAssign (node *arg_node);
 
 /*--------------------------------------------------------------------------*/
@@ -689,19 +689,19 @@ extern node *TCmakeExprsNum (int num);
 /******************************************************************************
  *
  * function:
- *   int TCcountExprs( node *exprs)
+ *   size_t TCcountExprs( node *exprs)
  *
  * description:
  *   Computes the length of the given N_exprs chain.
  *
  ******************************************************************************/
 /* FIXME may be better to make this unsigned int in the future */
-extern int TCcountExprs (node *exprs);
+extern size_t TCcountExprs (node *exprs);
 
-extern node *TCgetNthExprs (int n, node *exprs);
-extern node *TCputNthExprs (int n, node *exprs, node *val);
-extern node *TCgetNthExprsExpr (int n, node *exprs);
-extern node *TCtakeDropExprs (int takecount, int dropcount, node *exprs);
+extern node *TCgetNthExprs (size_t n, node *exprs);
+extern node *TCputNthExprs (size_t n, node *exprs, node *val);
+extern node *TCgetNthExprsExpr (size_t n, node *exprs);
+extern node *TCtakeDropExprs (int takecount, size_t dropcount, node *exprs);
 
 extern node *TCcreateExprsFromIds (node *ids);
 extern node *TCcreateArrayFromIds (node *ids);
@@ -854,10 +854,10 @@ extern node *TCnodeBehindCast (node *arg_node);
 extern node *TCmakeVector (ntype *basetype, node *aelems);
 extern node *TCmakeIntVector (node *aelems);
 extern node *TCcreateIntVector (int length, int value, int step);
-extern int TCgetIntVectorNthValue (int pos, node *vect);
+extern int TCgetIntVectorNthValue (size_t pos, node *vect);
 
 extern node *TCcreateZeroScalar (simpletype btype);
-extern node *TCcreateZeroVector (int length, simpletype btype);
+extern node *TCcreateZeroVector (size_t length, simpletype btype);
 
 extern node *TCcreateZeroNestedScalar (ntype *btype);
 extern node *TCcreateZeroNestedVector (int length, ntype *btype);
@@ -1178,7 +1178,7 @@ extern node *TCmakeIcm8 (const char *name, node *arg1, node *arg2, node *arg3, n
 #define PART_CEXPRS(n) (CODE_CEXPRS (PART_CODE (n)))
 #define PART_CBLOCK(n) (CODE_CBLOCK (PART_CODE (n)))
 
-extern int TCcountParts (node *parts);
+extern size_t TCcountParts (node *parts);
 extern node *TCappendPart (node *parts1, node *parts2);
 extern node *TCgetNthPart (node *parts, int n);
 extern bool TCcontainsDefaultPartition (node *parts);
@@ -1220,9 +1220,9 @@ extern node *TCappendCode (node *code1, node *code2);
  ***  withop :
  ***/
 
-extern int TCcountWithops (node *withop);
-extern int TCcountWithopsEq (node *withop, nodetype eq);
-extern int TCcountWithopsNeq (node *withop, nodetype neq);
+extern size_t TCcountWithops (node *withop);
+extern size_t TCcountWithopsEq (node *withop, nodetype eq);
+extern size_t TCcountWithopsNeq (node *withop, nodetype neq);
 
 /*
  * DON'T USE THE FOLLOWING MACROS
@@ -1354,7 +1354,7 @@ extern int TCcountWithopsNeq (node *withop, nodetype neq);
 #define WITH2_ARRAY(n) (MODARRAY_ARRAY (WITH2_WITHOP (n)))
 #define WITH2_NEUTRAL(n) (FOLD_NEUTRAL (WITH2_WITHOP (n)))
 
-extern int TCcountWlseg (node *withop);
+extern size_t TCcountWlseg (node *withop);
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1704,7 +1704,7 @@ extern node *TCappendError (node *chain, node *item);
  ***/
 
 extern node *TCappendRange (node *range_chain, node *range);
-extern int TCcountRanges (node *range);
+extern size_t TCcountRanges (node *range);
 
 extern bool TCisScalar (node *arg_node);
 extern bool TCisSignedType (ntype *typ);

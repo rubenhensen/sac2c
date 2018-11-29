@@ -149,7 +149,7 @@ TBmakeAccess (node *array, node *iv, accessclass_t mclass, shpseg *offset,
 /*--------------------------------------------------------------------------*/
 
 rc_t *
-TBmakeReuseCandidate (node *array, int dim, rc_t *next)
+TBmakeReuseCandidate (node *array, size_t dim, rc_t *next)
 {
     rc_t *tmp;
     int i;
@@ -178,7 +178,7 @@ TBmakeReuseCandidate (node *array, int dim, rc_t *next)
 /*--------------------------------------------------------------------------*/
 
 cuda_index_t *
-TBmakeCudaIndex (int type, int coefficient, node *id, int looplevel,
+TBmakeCudaIndex (unsigned int type, int coefficient, node *id, size_t looplevel,
                  cuda_index_t *next)
 {
     cuda_index_t *idx;
@@ -216,7 +216,7 @@ TBfreeCudaIndex (cuda_index_t *index)
 /*--------------------------------------------------------------------------*/
 
 cuda_access_info_t *
-TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim, int cuwldim, int nestlevel)
+TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim, size_t cuwldim, size_t nestlevel)
 {
     cuda_access_info_t *info;
     int i;
@@ -267,10 +267,10 @@ TBfreeCudaAccessInfo (cuda_access_info_t *access_info)
 /*--------------------------------------------------------------------------*/
 
 argtab_t *
-TBmakeArgtab (int size)
+TBmakeArgtab (size_t size)
 {
     argtab_t *argtab;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 

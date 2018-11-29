@@ -489,7 +489,7 @@ DFCfold (node *arg_node, info *arg_info)
     ntype *arg_types = TYmakeEmptyProductType (TCcountExprs (FOLD_ARGS (arg_node)) + 2);
 
     /* fill the positions in the array, first from the FOLD_ARGS chain */
-    int a_pos = 0;
+    size_t a_pos = 0;
     for (node *pa_arg = FOLD_ARGS (arg_node); pa_arg != NULL;
          pa_arg = EXPRS_NEXT (pa_arg)) {
         arg_types = TYsetProductMember (arg_types, a_pos++,

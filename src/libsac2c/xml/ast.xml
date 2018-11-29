@@ -6477,7 +6477,7 @@ N_tfarg :
           </type>
 	</attribute>
 	<attribute name="Level" default="0" inconstructor="no">
-	  <type name="Integer">
+	  <type name="Sizet">
             <targets>
               <target mandatory="yes">
                 <any />
@@ -9431,12 +9431,13 @@ N_tfarg :
         </son>
       </sons>
       <attributes>
-        <attribute name="Parts" default="-1" inconstructor="no" >
+        <attribute name="Parts" default="0" inconstructor="no" >
           <description>
           The number of partitions in this with-loop.
-          I have no idea what the -1 indicates.
+          I have no idea what the -1 indicated. 
+          Changed to 0 since most checks look for PARTS > 0. 
           </description>
-          <type name="Integer">
+          <type name="Sizet">
             <targets>
               <target mandatory="yes">
                 <any />
@@ -10910,7 +10911,7 @@ N_tfarg :
           </type>
         </attribute>
         <attribute name="Blocks" default="0" inconstructor="no">
-          <type name="Integer">
+          <type name="Uint">
             <targets>
               <target mandatory="yes">
                 <any />
@@ -12249,7 +12250,7 @@ N_tfarg :
           </type>
         </attribute>
         <attribute name="Arity" inconstructor="yes">
-          <type name="Integer">
+          <type name="Sizet">
             <targets>
               <target mandatory="yes">
                 <any />

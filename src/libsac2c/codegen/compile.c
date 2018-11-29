@@ -1723,7 +1723,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
  ******************************************************************************/
 
 static node *
-MakeArgNode (int idx, types *arg_type, bool thread)
+MakeArgNode (size_t idx, types *arg_type, bool thread)
 {
     node *id;
     char *name;
@@ -1741,7 +1741,7 @@ MakeArgNode (int idx, types *arg_type, bool thread)
     }
 
     name = (char *)MEMmalloc (20 * sizeof (char));
-    sprintf (name, "SAC_arg_%d", idx);
+    sprintf (name, "SAC_arg_%zu", idx);
 
     if (type != NULL) {
         id = TCmakeIdCopyStringNt (name, type);
@@ -1770,8 +1770,8 @@ static node *
 MakeFunctionArgsSpmd (node *fundef)
 {
     argtab_t *argtab;
-    int size;
-    int i;
+    size_t size;
+    size_t i;
     node *icm_args = NULL;
 
     DBUG_ENTER ();
@@ -1821,7 +1821,7 @@ MakeFunctionArgsSpmd (node *fundef)
     }
 
     icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                            TBmakeExprs (TBmakeNum (size), icm_args));
+                            TBmakeExprs (TBmakeNumuint (size), icm_args));
 
     DBUG_RETURN (icm_args);
 }
@@ -1838,8 +1838,8 @@ static node *
 MakeFunctionArgsCuda (node *fundef)
 {
     argtab_t *argtab;
-    int size;
-    int i;
+    size_t size;
+    size_t i;
     node *icm_args = NULL;
 
     DBUG_ENTER ();
@@ -1895,7 +1895,7 @@ MakeFunctionArgsCuda (node *fundef)
     }
 
     icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                            TBmakeExprs (TBmakeNum (size), icm_args));
+                            TBmakeExprs (TBmakeNumuint (size), icm_args));
 
     DBUG_RETURN (icm_args);
 }
@@ -1914,7 +1914,7 @@ MakeFunctionArgs (node *fundef)
 {
     node *icm_args = NULL;
     argtab_t *argtab;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1965,9 +1965,9 @@ MakeFunctionArgs (node *fundef)
     }
 
     if (FUNDEF_HASDOTARGS (fundef) || FUNDEF_HASDOTRETS (fundef)) {
-        icm_args = TBmakeExprs (TBmakeNum (argtab->size), icm_args);
+        icm_args = TBmakeExprs (TBmakeNumuint (argtab->size), icm_args);
     } else {
-        icm_args = TBmakeExprs (TBmakeNum (argtab->size - 1), icm_args);
+        icm_args = TBmakeExprs (TBmakeNumuint (argtab->size - 1), icm_args);
     }
 
     /* return value */
@@ -2165,7 +2165,7 @@ static node *
 MakeFunApArgs (node *ap, info *arg_info)
 {
     argtab_t *argtab;
-    int i;
+    size_t i;
     node *icm_args = NULL;
     node *fundef;
     bool fundef_in_current_namespace;
@@ -2324,7 +2324,7 @@ MakeFunApArgs (node *ap, info *arg_info)
         }
     }
 
-    icm_args = TBmakeExprs (TBmakeNum (argtab->size - 1), icm_args);
+    icm_args = TBmakeExprs (TBmakeNumuint (argtab->size - 1), icm_args);
 
     if (!FUNDEF_ISSPMDFUN (fundef) && !FUNDEF_ISCUDAGLOBALFUN (fundef)
         && !FUNDEF_ISCUDASTGLOBALFUN (fundef)) {
@@ -2383,7 +2383,7 @@ MakeIcm_PROP_OBJ_OUT (node *prop_obj, node *lhs, node *assigns)
     node *exprs;
     node *icm_args;
     node *ret_node;
-    int count;
+    unsigned int count;
 
     DBUG_ENTER ();
 
@@ -2399,7 +2399,7 @@ MakeIcm_PROP_OBJ_OUT (node *prop_obj, node *lhs, node *assigns)
         exprs = EXPRS_NEXT (exprs);
     }
 
-    icm_args = TBmakeExprs (TBmakeNum (count), icm_args);
+    icm_args = TBmakeExprs (TBmakeNumuint (count), icm_args);
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_PROP_OBJ_OUT", icm_args, assigns);
 
@@ -2420,7 +2420,7 @@ MakeIcm_PROP_OBJ_IN (node *prop_obj, node *lhs, node *assigns)
     node *exprs;
     node *icm_args;
     node *ret_node;
-    int count;
+    unsigned int count;
 
     DBUG_ENTER ();
 
@@ -2436,7 +2436,7 @@ MakeIcm_PROP_OBJ_IN (node *prop_obj, node *lhs, node *assigns)
         exprs = EXPRS_NEXT (exprs);
     }
 
-    icm_args = TBmakeExprs (TBmakeNum (count), icm_args);
+    icm_args = TBmakeExprs (TBmakeNumuint (count), icm_args);
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_PROP_OBJ_IN", icm_args, assigns);
 
@@ -2545,7 +2545,7 @@ CheckAp (node *ap, info *arg_info)
     argtab_t *argtab;
     node *arg, *arg_id;
     node *let_ids;
-    int ids_idx, arg_idx;
+    size_t ids_idx, arg_idx;
     bool ok = TRUE;
 
     DBUG_ENTER ();
@@ -3025,7 +3025,7 @@ COMPFundefArgs (node *fundef, info *arg_info)
 {
     argtab_t *argtab;
     node *arg;
-    int i;
+    size_t i;
     node *assigns = NULL;
 
     DBUG_ENTER ();
@@ -3608,8 +3608,8 @@ MakeFunRetArgs (node *arg_node, info *arg_info)
     node *funargs;
     node *newid;
     node *new_args;
-    int i;
-    int ret_cnt;
+    size_t i;
+    unsigned int ret_cnt;
     node *cret_node = NULL;
     node *icm_args = NULL;
     node *last_arg = NULL;
@@ -3700,7 +3700,7 @@ MakeFunRetArgs (node *arg_node, info *arg_info)
         funargs = ARG_NEXT (funargs);
     }
 
-    icm_args = TBmakeExprs (TBmakeNum (ret_cnt), icm_args);
+    icm_args = TBmakeExprs (TBmakeNumuint (ret_cnt), icm_args);
 
     if (cret_node == NULL) {
         icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
@@ -3727,7 +3727,7 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
     node *ret_exprs;
     node *new_args;
     int ret_cnt;
-    int i;
+    size_t i;
     node *icm_args = NULL;
     node *last_arg = NULL;
     node *vardecs;
@@ -3815,7 +3815,7 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
     }
 
     icm_args = TBmakeExprs (TCmakeIdCopyString (FUNDEF_NAME (INFO_FUNDEF (arg_info))),
-                            TBmakeExprs (TBmakeNum (ret_cnt), icm_args));
+                            TBmakeExprs (TBmakeNumuint (ret_cnt), icm_args));
 
     DBUG_RETURN (icm_args);
 }
@@ -3931,7 +3931,7 @@ COMPApIds (node *ap, info *arg_info)
     argtab_t *argtab;
     argtag_t tag;
     node *let_ids;
-    int i;
+    size_t i;
     node *ret_node = NULL;
 
     DBUG_ENTER ();
@@ -3941,7 +3941,11 @@ COMPApIds (node *ap, info *arg_info)
     argtab = AP_ARGTAB (ap);
     DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
-    for (i = argtab->size - 1; i >= 0; i--) {
+    /* 
+     * decrement after check for > 0, safe method for reverse loop ending on 0
+     * i : (size - 1) to 0 
+     */
+    for (i = argtab->size; i-- > 0;) {
         if (argtab->ptr_out[i] != NULL) {
             let_ids = argtab->ptr_out[i];
             tag = argtab->tag[i];
@@ -4005,15 +4009,18 @@ COMPApArgs (node *ap, info *arg_info)
     argtab_t *argtab;
     argtag_t tag;
     node *arg;
-    int i;
+    size_t i;
     node *ret_node = NULL;
 
     DBUG_ENTER ();
 
     argtab = AP_ARGTAB (ap);
     DBUG_ASSERT (argtab != NULL, "no argtab found!");
-
-    for (i = argtab->size - 1; i >= 0; i--) {
+    /* 
+     * decrement after check for > 0, safe method for reverse loop ending on 0
+     * i : (size - 1) to 0 
+     */
+    for (i = argtab->size; i-- > 0;) {
         if (argtab->ptr_in[i] != NULL) {
             DBUG_ASSERT (NODE_TYPE (argtab->ptr_in[i]) == N_exprs,
                          "no N_exprs node found in argtab");
@@ -4613,7 +4620,7 @@ COMPap (node *arg_node, info *arg_info)
         }
 
         /* Append NT of out arguments to ICM arguments. */
-        for (int i = AP_ARGTAB (arg_node)->size - 1; i >= 1; i--) {
+        for (size_t i = AP_ARGTAB (arg_node)->size - 1; i >= 1; i--) {
             if (AP_ARGTAB (arg_node)->ptr_out[i] == NULL) {
                 /* in/inout argument, append NT. */
                 if (NODE_TYPE (EXPRS_EXPR (AP_ARGTAB (arg_node)->ptr_in[i])) == N_id) {
@@ -4632,7 +4639,7 @@ COMPap (node *arg_node, info *arg_info)
             }
         }
 
-        icm_args = TBmakeExprs (TBmakeNum (AP_ARGTAB (arg_node)->size - 1), icm_args);
+        icm_args = TBmakeExprs (TBmakeNumuint (AP_ARGTAB (arg_node)->size - 1), icm_args);
 
         icm = TBmakeIcm ("ND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS", icm_args);
     } else {
@@ -4664,6 +4671,10 @@ COMPap (node *arg_node, info *arg_info)
                                                                  TBmakeAssign (icm_post,
                                                                                NULL))));
             if (global.mt_smart_mode == 2) {
+                /* 
+                 * decrement after check for > 0, safe method for reverse loop ending on 0
+                 * i : (data_size + 1) to 0 
+                 */
                 for (size_t i = data_size + 2; i-- > 0;) {
                     arg_node = TBmakeAssign (icm_data[i], arg_node);
                 }
@@ -6281,7 +6292,7 @@ COMPprfCUDAGridBlock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm2 ("CUDA_GRID_BLOCK",
-                                 TBmakeNum (TCcountExprs (PRF_ARGS (arg_node))),
+                                 TBmakeNumuint (TCcountExprs (PRF_ARGS (arg_node))),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
@@ -8089,10 +8100,10 @@ COMPprfWrapperShapeEncode (node *arg_node, info *arg_info)
 
     if (args == NULL) {
         DBUG_PRINT_TAG ("RTSPEC", "Arguments are NULL!");
-        assigns = TCmakeAssignIcm1 ("WE_NO_SHAPE_ENCODE", TBmakeNum (0), NULL);
+        assigns = TCmakeAssignIcm1 ("WE_NO_SHAPE_ENCODE", TBmakeNumuint (0), NULL);
     } else {
         assigns = TCmakeAssignIcm1 ("WE_SHAPE_ENCODE",
-                                    TBmakeExprs (TBmakeNum (TCcountExprs (args)),
+                                    TBmakeExprs (TBmakeNumuint (TCcountExprs (args)),
                                                  DUPdupExprsNt (args)),
                                     NULL);
     }
@@ -8175,9 +8186,9 @@ COMPprfDispatchError (node *arg_node, info *arg_info)
     funname = EXPRS_EXPR (args);
     funargs = EXPRS_NEXT (args);
 
-    ret_node = TCmakeAssignIcm5 ("DISPATCH_ERROR", TBmakeNum (TCcountIds (let_ids)),
+    ret_node = TCmakeAssignIcm5 ("DISPATCH_ERROR", TBmakeNumuint (TCcountIds (let_ids)),
                                  TCids2ExprsNt (let_ids), DUPdoDupNode (funname),
-                                 TBmakeNum (TCcountExprs (funargs)),
+                                 TBmakeNumuint (TCcountExprs (funargs)),
                                  DUPdupExprsNt (funargs), NULL);
 
     DBUG_RETURN (ret_node);
@@ -10105,6 +10116,7 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
     int dims, dim;
     node *idx_min, *idx_max;
     int d;
+    size_t d_u;
     shpseg *shape;
     int icm_dim = (-1);
     node *withop;
@@ -10159,17 +10171,18 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
              */
             shape = TYPES_SHPSEG (IDS_TYPE (tmp_ids));
             d = dims - 1;
-
+            d_u = d;
             while (d >= 0) {
 
-                idx_min = TCgetNthExprs (d, ARRAY_AELEMS (WLSEG_IDXINF (wlseg)));
-                idx_max = TCgetNthExprs (d, ARRAY_AELEMS (WLSEG_IDXINF (wlseg)));
+                idx_min = TCgetNthExprs (d_u, ARRAY_AELEMS (WLSEG_IDXINF (wlseg)));
+                idx_max = TCgetNthExprs (d_u, ARRAY_AELEMS (WLSEG_IDXINF (wlseg)));
 
                 if ((NODE_TYPE (idx_min) == N_num) && (NODE_TYPE (idx_max) == N_num)
                     && (((NUM_VAL (idx_min) == 0) && (NUM_VAL (idx_max) == IDX_SHAPE))
                         || ((shape != NULL)
-                            && (NUM_VAL (idx_max) == SHPSEG_SHAPE (shape, d))))) {
+                            && (NUM_VAL (idx_max) == SHPSEG_SHAPE (shape, d_u))))) {
                     d--;
+                    d_u--;
                 } else {
                     break;
                 }

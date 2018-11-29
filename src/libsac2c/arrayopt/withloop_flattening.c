@@ -109,7 +109,7 @@
  *
  *****************************************************************************/
 struct INFO {
-    int genarrays;
+    size_t genarrays;
     node *shape;
     int idsused;
     bool isfullpartition;
@@ -678,7 +678,7 @@ WLFLTavis (node *arg_node, info *arg_info)
 node *
 WLFLTwith (node *arg_node, info *arg_info)
 {
-    int wlopsno;
+    size_t wlopsno;
     node *oldlhs;
 
     DBUG_ENTER ();

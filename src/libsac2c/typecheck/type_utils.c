@@ -221,7 +221,7 @@ ntype *
 TUmakeProductTypeFromArgs (node *args)
 {
     ntype *type = NULL;
-    int i = 0;
+    size_t i = 0;
 
     DBUG_ENTER ();
 
@@ -249,7 +249,7 @@ ntype *
 TUmakeProductTypeFromRets (node *rets)
 {
     ntype *type = NULL;
-    int i = 0;
+    size_t i = 0;
 
     DBUG_ENTER ();
 
@@ -305,7 +305,7 @@ TUreplaceRetTypes (node *rets, ntype *prodt)
 {
     ntype *type = NULL;
     node *tmp = rets;
-    int i = 0;
+    size_t i = 0;
 
     DBUG_ENTER ();
 
@@ -859,14 +859,14 @@ bool
 TUcontainsUser (ntype *type)
 {
     bool res = FALSE;
-    int cnt;
+    size_t cnt;
 
     DBUG_ENTER ();
 
     if (TYisArray (type)) {
         res = TYisUser (TYgetScalar (type));
     } else if (TYisProd (type)) {
-        int max = TYgetProductSize (type);
+        size_t max = TYgetProductSize (type);
         for (cnt = 0; cnt < max; cnt++) {
             res = res || TUcontainsUser (TYgetProductMember (type, cnt));
         }
@@ -1156,7 +1156,8 @@ ntype *
 TUactualArgs2Ntype (node *actual)
 {
     ntype *actual_type, *tmp_type, *prod_type;
-    int size, pos;
+    size_t size;
+    size_t pos;
 
     DBUG_ENTER ();
 
@@ -1192,7 +1193,7 @@ bool
 TUsignatureMatches (node *formal, ntype *actual_prod_type, bool exact)
 {
     ntype *actual_type, *formal_type;
-    int pos;
+    size_t pos;
     bool match = TRUE;
 #ifndef DBUG_OFF
     char *tmp_str = NULL, *tmp2_str = NULL;
@@ -1368,7 +1369,7 @@ ntype *
 TUcombineBottoms (ntype *prod)
 {
     ntype *res = NULL, *next = NULL;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1409,7 +1410,7 @@ ntype *
 TUspreadBottoms (ntype *prod)
 {
     ntype *result = NULL, *bottoms = NULL;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1548,7 +1549,7 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
                     if (visited == NULL) {
                         /* This is the initial call, so visited has to be initialized! */
                         num_udt = UTgetNumberOfUserTypes ();
-                        visited = (int *)MEMmalloc (sizeof (int) * num_udt);
+                        visited = (int *)MEMmalloc (sizeof (int) * (size_t)num_udt);
                         for (i = 0; i < num_udt; i++)
                             visited[i] = 0;
                     }

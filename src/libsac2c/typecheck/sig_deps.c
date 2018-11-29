@@ -155,7 +155,7 @@ SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args, bool s
 {
     sig_dep *sig;
     ntype *arg_t, *res_t;
-    int num_args, num_res, i;
+    size_t num_args, num_res, i;
     bool ok = TRUE;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;
@@ -220,7 +220,7 @@ SDhandleContradiction (sig_dep *fun_sig)
     ntype *res_vars, *res_t, *res, *args, *bottom;
     bool ok = FALSE;
     te_info *info;
-    int i;
+    size_t i;
 #ifndef DBUG_OFF
     char *tmp_str = NULL, *tmp2_str = NULL;
 #endif

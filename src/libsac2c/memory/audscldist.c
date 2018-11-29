@@ -186,7 +186,7 @@ GetLeastTypes (ntype *p1, ntype *p2)
     if ((p1 == NULL) || (p2 == NULL)) {
         res = p1 == NULL ? p2 : p1;
     } else {
-        int i;
+        size_t i;
 
         res = TYmakeEmptyProductType (TYgetProductSize (p1));
 
@@ -722,7 +722,7 @@ ASDwith2 (node *arg_node, info *arg_info)
 node *
 ASDcode (node *arg_node, info *arg_info)
 {
-    int i;
+    size_t i;
     node *cexprs, *withop;
 
     DBUG_ENTER ();

@@ -34,7 +34,7 @@
  */
 struct INFO {
     lut_t *wrapperfuns;
-    int exprets;
+    size_t exprets;
     node *module;
 };
 
@@ -143,7 +143,7 @@ RefArgMatch (node *arg1, node *arg2)
  *
  * function:
  *   node *FindWrapper( char *mod, char *name, int num_args,
- *                      int num_rets, lut_t *lut)
+ *                      size_t num_rets, lut_t *lut)
  *
  * description:
  *   Searches for a wrapper function in the given look-up-table (lut) that
@@ -165,18 +165,19 @@ RefArgMatch (node *arg1, node *arg2)
  ******************************************************************************/
 
 static node *
-FindWrapper (namespace_t *ns, char *name, int num_args, int num_rets, lut_t *lut)
+FindWrapper (namespace_t *ns, char *name, size_t num_args, size_t num_rets, lut_t *lut)
 {
     bool last_parm_is_dots;
     bool last_res_is_dots;
-    int num_parms, num_res;
+    size_t num_parms;
+    size_t num_res;
     node **wrapper_p;
     node *wrapper = NULL;
     bool found = FALSE;
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Searching for %s:%s %d args %d rets", NSgetName (ns), name, num_args,
+    DBUG_PRINT ("Searching for %s:%s %zu args %zu rets", NSgetName (ns), name, num_args,
                 num_rets);
 
     /* initial search for wrapper in LUT */
@@ -187,7 +188,7 @@ FindWrapper (namespace_t *ns, char *name, int num_args, int num_rets, lut_t *lut
         last_res_is_dots = FUNDEF_HASDOTRETS (wrapper);
         num_parms = TCcountArgsIgnoreArtificials (FUNDEF_ARGS (wrapper));
         num_res = TCcountRetsIgnoreArtificials (FUNDEF_RETS (wrapper));
-        DBUG_PRINT (" ... checking %s %s%d args %s%d rets", FUNDEF_NAME (wrapper),
+        DBUG_PRINT (" ... checking %s %s%zu args %s%zu rets", FUNDEF_NAME (wrapper),
                     (last_parm_is_dots ? ">=" : ""), num_parms,
                     (last_res_is_dots ? ">=" : ""), num_res);
         if (((num_res == num_rets) || (last_res_is_dots && (num_res <= num_rets)))
@@ -253,7 +254,7 @@ CreateWrapperFor (node *fundef, info *info)
     node *body, *wrapper;
 
     DBUG_ENTER ();
-    DBUG_PRINT ("Creating wrapper for %s %s%d args %d rets", CTIitemName (fundef),
+    DBUG_PRINT ("Creating wrapper for %s %s%zu args %zu rets", CTIitemName (fundef),
                 (FUNDEF_HASDOTARGS (fundef) ? ">=" : ""),
                 TCcountArgsIgnoreArtificials (FUNDEF_ARGS (fundef)),
                 TCcountRetsIgnoreArtificials (FUNDEF_RETS (fundef)));
@@ -346,7 +347,8 @@ CreateWrapperFor (node *fundef, info *info)
 static node *
 SpecFundef (node *arg_node, info *arg_info)
 {
-    int num_args, num_rets;
+    size_t num_args;
+    size_t num_rets;
     node *wrapper;
 
     DBUG_ENTER ();
@@ -361,7 +363,7 @@ SpecFundef (node *arg_node, info *arg_info)
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),
                       "No definition found for a function \"%s::%s\" that expects"
-                      " %i argument(s) and yields %i return value(s)",
+                      " %zu argument(s) and yields %zu return value(s)",
                       NSgetName (FUNDEF_NS (arg_node)), FUNDEF_NAME (arg_node), num_args,
                       num_rets);
 
@@ -451,7 +453,8 @@ node *
 CRTWRPfundef (node *arg_node, info *arg_info)
 {
     node *wrapper = NULL;
-    int num_args, num_rets;
+    size_t num_args; 
+    size_t num_rets;
     bool dot_args, dot_rets;
 
     DBUG_ENTER ();
@@ -525,11 +528,11 @@ CRTWRPfundef (node *arg_node, info *arg_info)
             if ((dot_args != FUNDEF_HASDOTARGS (wrapper))
                 || (dot_rets != FUNDEF_HASDOTRETS (wrapper))) {
                 CTIabortLine (global.linenum,
-                              "Trying to overload function \"%s\" that expects %s %d "
+                              "Trying to overload function \"%s\" that expects %s %zu "
                               "argument(s) "
-                              "and %s %d return value(s) with a version that expects %s "
-                              "%d argument(s) "
-                              "and %s %d return value(s)",
+                              "and %s %zu return value(s) with a version that expects %s "
+                              "%zu argument(s) "
+                              "and %s %zu return value(s)",
                               CTIitemName (wrapper),
                               (FUNDEF_HASDOTARGS (wrapper) ? ">=" : ""),
                               TCcountArgsIgnoreArtificials (FUNDEF_ARGS (wrapper)),
@@ -545,9 +548,9 @@ CRTWRPfundef (node *arg_node, info *arg_info)
          */
         if (!RefArgMatch (FUNDEF_ARGS (wrapper), FUNDEF_ARGS (arg_node))) {
             CTIabortLine (NODE_LINE (arg_node),
-                          "Trying to overload function \"%s\" that expects %d "
+                          "Trying to overload function \"%s\" that expects %zu "
                           "argument(s) and yields "
-                          "%d return value(s) with an instance that expects the same "
+                          "%zu return value(s) with an instance that expects the same "
                           "number of "
                           "arguments and yields the same number of return values but "
                           "differs in the "
@@ -618,7 +621,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
 node *
 CRTWRPlet (node *arg_node, info *arg_info)
 {
-    int old_exprets;
+    size_t old_exprets;
 
     DBUG_ENTER ();
 
@@ -646,7 +649,7 @@ CRTWRPlet (node *arg_node, info *arg_info)
 node *
 CRTWRPspap (node *arg_node, info *arg_info)
 {
-    int num_args;
+    size_t num_args;
     node *wrapper;
     node *new_node = NULL;
 
@@ -662,7 +665,7 @@ CRTWRPspap (node *arg_node, info *arg_info)
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),
                       "No definition found for a function \"%s::%s\" that expects"
-                      " %i argument(s) and yields %i return value(s)",
+                      " %zu argument(s) and yields %zu return value(s)",
                       NSgetName (SPAP_NS (arg_node)), SPAP_NAME (arg_node), num_args,
                       INFO_EXPRETS (arg_info));
     } else {
@@ -720,7 +723,7 @@ CRTWRPgenarray (node *arg_node, info *arg_info)
 node *
 CRTWRPspfold (node *arg_node, info *arg_info)
 {
-    int num_args;
+    size_t num_args;
     node *wrapper;
     node *new_node = NULL;
 
@@ -738,7 +741,7 @@ CRTWRPspfold (node *arg_node, info *arg_info)
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),
                       "No definition found for a function \"%s::%s\" that expects"
-                      " %d arguments and yields 1 return value",
+                      " %zu arguments and yields 1 return value",
                       NSgetName (SPFOLD_NS (arg_node)), SPFOLD_FUN (arg_node), num_args);
     } else {
         new_node = TBmakeFold (wrapper, SPFOLD_NEUTRAL (arg_node));

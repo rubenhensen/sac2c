@@ -39,7 +39,7 @@
 #define error_type_node ((ntype *)0x2)
 
 static ntype *Exprs2NType (ntype *, node *);
-static int CountDotsInExprs (node *);
+static size_t CountDotsInExprs (node *);
 static shape *Exprs2Shape (node *);
 
 /* Helper function to annotate a node with location and return it.  */
@@ -53,8 +53,8 @@ loc_annotated (struct location loc, node *n)
 static ntype *
 Exprs2NType (ntype *basetype, node *exprs)
 {
-    int n;
-    int dots = 0;
+    size_t n;
+    size_t dots = 0;
     shape *shp;
     ntype *result = NULL;
     struct location loc;
@@ -108,10 +108,10 @@ Exprs2NType (ntype *basetype, node *exprs)
     DBUG_RETURN (result);
 }
 
-static int
+static size_t
 CountDotsInExprs (node *exprs)
 {
-    int result = 0;
+    size_t result = 0;
 
     DBUG_ENTER ();
 
@@ -129,7 +129,7 @@ static shape *
 Exprs2Shape (node *exprs)
 {
     shape *result;
-    int n;
+    size_t n;
     int cnt = 0;
 
     DBUG_ENTER ();

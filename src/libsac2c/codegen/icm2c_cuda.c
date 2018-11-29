@@ -24,9 +24,10 @@
 #endif /* BEtest */
 
 static void
-CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
+CompileCUDA_GLOBALFUN_HEADER (char *funname, unsigned int vararg_cnt, char **vararg)
 {
-    int i, j, dim;
+    int j, dim;
+    unsigned int i;
     char *basetype;
 
     DBUG_ENTER ();
@@ -75,13 +76,13 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
  *
  * function:
  *   void ICMCompileCUDA_GLOBALFUN_DECL( char *funname,
- *                                       int vararg_cnt,
+ *                                       unsigned int vararg_cnt,
  *                                       char **vararg)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg)
+ICMCompileCUDA_GLOBALFUN_DECL (char *funname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -101,13 +102,13 @@ ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg)
  *
  * function:
  *   void ICMCompileCUDA_GLOBALFUN_DEF_BEGIN( char *funname,
- *                                            int vararg_cnt,
+ *                                            unsigned int vararg_cnt,
  *                                            char **vararg)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg)
+ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -127,13 +128,13 @@ ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg
  *
  * function:
  *   void ICMCompileCUDA_GLOBALFUN_RET( char *funname,
- *                                      int vararg_cnt,
+ *                                      unsigned int vararg_cnt,
  *                                      char **vararg)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GLOBALFUN_RET (char *funname, int vararg_cnt, char **vararg)
+ICMCompileCUDA_GLOBALFUN_RET (char *funname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -147,13 +148,13 @@ ICMCompileCUDA_GLOBALFUN_RET (char *funname, int vararg_cnt, char **vararg)
  *
  * function:
  *   void ICMCompileCUDA_GLOBALFUN_DEF_END( char *funname,
- *                                          int vararg_cnt,
+ *                                          unsigned int vararg_cnt,
  *                                          char **vararg)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GLOBALFUN_DEF_END (char *funname, int vararg_cnt, char **vararg)
+ICMCompileCUDA_GLOBALFUN_DEF_END (char *funname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -172,15 +173,16 @@ ICMCompileCUDA_GLOBALFUN_DEF_END (char *funname, int vararg_cnt, char **vararg)
  *
  * function:
  *   void ICMCompileCUDA_GLOBALFUN_AP( char *funname,
- *                                     int vararg_cnt,
+ *                                     unsigned int vararg_cnt,
  *                                     char **vararg)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
+ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vararg)
 {
-    int dim, i, j;
+    int dim, j;
+    unsigned int i; 
     char *basetype;
 
     DBUG_ENTER ();
@@ -254,12 +256,12 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileCUDA_GRID_BLOCK( int bounds_count, char **var_ANY)
+ *   void ICMCompileCUDA_GRID_BLOCK( unsigned int bounds_count, char **var_ANY)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
+ICMCompileCUDA_GRID_BLOCK (unsigned int bounds_count, char **var_ANY)
 {
     DBUG_ENTER ();
 
@@ -428,15 +430,16 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
  *
  * function:
  *   void ICMCompileCUDA_ST_GLOBALFUN_AP( char *funname,
- *                                     int vararg_cnt,
+ *                                     unsigned int vararg_cnt,
  *                                     char **vararg)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
+ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vararg)
 {
-    int dim, i, j;
+    int dim, j;
+    unsigned int i;
     char *basetype;
 
     DBUG_ENTER ();

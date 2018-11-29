@@ -510,7 +510,7 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
     node *ids;
     node *assgn;
     node *nlet;
-    int len;
+    size_t len;
     node *z;
 
     DBUG_ENTER ();

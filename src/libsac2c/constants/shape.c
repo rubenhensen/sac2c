@@ -569,11 +569,12 @@ SHtakeFromShape (int n, shape *a)
  ******************************************************************************/
 
 char *
-SHshape2String (int dots, shape *shp)
+SHshape2String (size_t dots, shape *shp)
 {
     static str_buf *buf;
     char *res;
-    int i, j, n;
+    size_t i;
+    int j, n;
 
     DBUG_ENTER ();
     DBUG_ASSERT (shp != NULL, "SHshape2String called with NULL shape!");
@@ -875,7 +876,7 @@ SHvalidArrayIntVector (node *array)
 {
     bool result = TRUE;
     node *exprs;
-    int cnt;
+    size_t cnt;
 
     DBUG_ENTER ();
 

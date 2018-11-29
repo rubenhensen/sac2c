@@ -34,22 +34,10 @@
 #include "free.h"
 #endif /* BEtest */
 
-#define ScanArglist(cnt, inc, sep_str, sep_code, code)                                   \
-    {                                                                                    \
-        int i;                                                                           \
-        for (i = 0; i < cnt * inc; i += inc) {                                           \
-            if (i > 0) {                                                                 \
-                fprintf (global.outfile, "%s", sep_str);                                 \
-                sep_code;                                                                \
-            }                                                                            \
-            code;                                                                        \
-        }                                                                                \
-    }
-
 /******************************************************************************
  *
  * function:
- *   void ICMCompileMT_SPMDFUN_DECL( char *name, int vararg_cnt, char **vararg)
+ *   void ICMCompileMT_SPMDFUN_DECL( char *name, unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -63,7 +51,7 @@
  ******************************************************************************/
 
 void
-ICMCompileFP_SLOWCLONE_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileFP_SLOWCLONE_DECL (char *name, char *rettype_NT, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -80,7 +68,7 @@ ICMCompileFP_SLOWCLONE_DECL (char *name, char *rettype_NT, int vararg_cnt, char 
 }
 
 void
-ICMCompileFP_SLOWCLONE_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
+ICMCompileFP_SLOWCLONE_DEF_BEGIN (char *name, char *rettype_NT, unsigned int vararg_cnt,
                                   char **vararg)
 {
     DBUG_ENTER ();
@@ -107,7 +95,7 @@ ICMCompileFP_SLOWCLONE_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
 }
 
 void
-ICMCompileFP_FUN_RET (char *framename, char *retname, int vararg_cnt, char **vararg)
+ICMCompileFP_FUN_RET (char *framename, char *retname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -117,9 +105,9 @@ ICMCompileFP_FUN_RET (char *framename, char *retname, int vararg_cnt, char **var
 #undef FP_FUN_RET
 
     INDENT;
-    ScanArglist (vararg_cnt, 3, "\n", INDENT,
-                 fprintf (global.outfile, "SAC_FP_SAVE_RESULT( %s, %d, %s)", framename,
-                          i / 3, vararg[i + 2]));
+    SCAN_ARG_LIST (vararg_cnt, 3, "\n", INDENT,
+                   fprintf (global.outfile, "SAC_FP_SAVE_RESULT( %s, %zu, %s)", framename,
+                            i / 3, vararg[i + 2]));
 
     if (vararg_cnt > 0) {
         fprintf (global.outfile, "\n");
@@ -132,7 +120,7 @@ ICMCompileFP_FUN_RET (char *framename, char *retname, int vararg_cnt, char **var
 }
 
 void
-ICMCompileFP_FUN_AP (char *framename, char *name, char *retname, int vararg_cnt,
+ICMCompileFP_FUN_AP (char *framename, char *name, char *retname, unsigned int vararg_cnt,
                      char **vararg)
 {
     char *tmp;
@@ -152,9 +140,9 @@ ICMCompileFP_FUN_AP (char *framename, char *name, char *retname, int vararg_cnt,
     fprintf (global.outfile, "SAC_FP_AP_CHECK_START(%s)\n", tmp);
 
     INDENT;
-    ScanArglist (vararg_cnt, 3, "\n", INDENT,
-                 fprintf (global.outfile, "SAC_FP_GET_RESULT( %s, %s, %d, %s)", tmp,
-                          framename, i / 3, vararg[i + 2]));
+    SCAN_ARG_LIST (vararg_cnt, 3, "\n", INDENT,
+                   fprintf (global.outfile, "SAC_FP_GET_RESULT( %s, %s, %zu, %s)", tmp,
+                            framename, i / 3, vararg[i + 2]));
 
     if (vararg_cnt > 0) {
         fprintf (global.outfile, "\n");

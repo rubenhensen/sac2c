@@ -707,6 +707,10 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                         /*
                          * We can build an AKD
                          */
+                        /* This warning with TCcountExprs is due to TYmakeAKD taking 'int dots' 
+                         * and TYgetDim int returns from Shape related function, COgetDim and SHgetDim,
+                         * so leaving this warning for now until new datatype is introduced
+                         */
                         crestype = TYmakeAKD (TYcopyType (TYgetScalar (deftype)),
                                               TCcountExprs (ARRAY_AELEMS (sexpr))
                                                 + ((chunksize == NULL) ? 0 : 1)

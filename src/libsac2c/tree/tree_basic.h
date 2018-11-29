@@ -154,7 +154,7 @@ extern nodelist *TBmakeNodelistNode (node *node, nodelist *next);
  ***    argtag_t   TAG[]
  ***/
 
-extern argtab_t *TBmakeArgtab (int size);
+extern argtab_t *TBmakeArgtab (size_t size);
 
 /*--------------------------------------------------------------------------*/
 
@@ -189,7 +189,7 @@ extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t mclass,
  ***
  ***/
 
-extern rc_t *TBmakeReuseCandidate (node *array, int dim, rc_t *next);
+extern rc_t *TBmakeReuseCandidate (node *array, size_t dim, rc_t *next);
 
 #define RC_ARRAY(a) (a->array)
 #define RC_ARRAYSHP(a) (a->arrayshp)
@@ -211,8 +211,8 @@ extern rc_t *TBmakeReuseCandidate (node *array, int dim, rc_t *next);
  ***
  ***/
 
-extern cuda_index_t *TBmakeCudaIndex (int type, int coefficient, node *id,
-                                      int looplevel, cuda_index_t *next);
+extern cuda_index_t *TBmakeCudaIndex (unsigned int type, int coefficient, node *id,
+                                      size_t looplevel, cuda_index_t *next);
 
 #define CUIDX_TYPE(a) (a->type)
 #define CUIDX_COEFFICIENT(a) (a->coefficient)
@@ -232,7 +232,7 @@ extern cuda_index_t *TBfreeCudaIndex (cuda_index_t *index);
  ***/
 
 extern cuda_access_info_t *TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim,
-                                                 int cuwldim, int nestlevel);
+                                                 size_t cuwldim, size_t nestlevel);
 
 #define CUAI_MATRIX(a) (a->coe_mtx)
 #define CUAI_TYPE(a) (a->type)

@@ -575,67 +575,72 @@ ${PROJECT_BINARY_DIR}/src/build.c
 # XXX (artem): For the time being we exclude the files that do not yet adhere
 #	       with -Wconversion.
 SET_SOURCE_FILES_PROPERTIES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/algebraic_wlfi.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/isl_utilities.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/ivexpropagation.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/loop_and_cond_scalarization_in.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/loop_and_cond_scalarization_out.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/pad_info.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/polyhedral_wlf.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/SSAWithloopFolding.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/SSAWLF.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/SSAWLI.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/WithloopFusion.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlswithloopification.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/compile.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/algebraic_wlfi.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/isl_utilities.c #isl_val_get_num_si is long, FUNDEF_LOOPCOUNT int
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/ivexpropagation.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/loop_and_cond_scalarization_in.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/loop_and_cond_scalarization_out.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/pad_info.c #SHPSEG_SHAPE
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/polyhedral_wlf.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/SSAWithloopFolding.c #SHgetExtent, UnrLen
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/SSAWLF.c #SHgetUnrlen for intern_gen->shape
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/SSAWLI.c #SHgetExtent
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/WithloopFusion.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlswithloopification.c #INFO_INNERDIMS
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlsbuild.c #SHtakeFromShape
+    ${CMAKE_CURRENT_SOURCE_DIR}/arrayopt/wlscheck.c #TYgetDim
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/compile.c #TBmakeNum___ and MEMmalloc
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm_icm2c.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_cuda.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_error.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_fp.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_mt.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_prf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_sched.c
     ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_std.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/regression.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/concurrent/cost_model.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/concurrent/scheduling.c       #fixed warnings in next batch
-    ${CMAKE_CURRENT_SOURCE_DIR}/constants/basecv.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/constants/constants_basic.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/constants/constants_struc_ops.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/constants/shape.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/constants/zipcv.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/cuda_cost_model.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/cuda/partial_fold.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/flatten/wlanalysis.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynarray.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynarray.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynmatrix.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynmatrix.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/lubtree.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/memory/alloc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_rtspec.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/codegen/regression.c #Matrix int with MEMmalloc
+    ${CMAKE_CURRENT_SOURCE_DIR}/concurrent/cost_model.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/concurrent/scheduling.c       #TBmakeNum warnings
+    ${CMAKE_CURRENT_SOURCE_DIR}/constants/basecv.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/constants/constants_basic.c #SHgetDim & SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/constants/constants_struc_ops.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/constants/shape.c #MEMmalloc with dim
+    ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/cuda_cost_model.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/cuda/data_access_analysis.c #TYgetDim
+    ${CMAKE_CURRENT_SOURCE_DIR}/cuda/infer_reusable_arrays.c #TYgetDim
+    ${CMAKE_CURRENT_SOURCE_DIR}/cuda/partial_fold.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/cuda/shared_memory_reuse.c #F_shmem_boundary_load TBmakeNum
+    ${CMAKE_CURRENT_SOURCE_DIR}/flatten/wlanalysis.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/flatten/wldefaultpartition.c #TYgetDim
+    ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynarray.c #DYNARRAY_TOTALELEMS (70 uses) and ALLOCELEMS linked
+    ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/dynmatrix.c #total rows and col int - MEMmalloc warning
+    ${CMAKE_CURRENT_SOURCE_DIR}/flexsub/lubtree.c #LUBINFO_NUMINTRA and LUBgetBlockId
+    ${CMAKE_CURRENT_SOURCE_DIR}/memory/alloc.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/memory/polyhedral_reuse_analysis.c #TYgetDim
+    ${CMAKE_CURRENT_SOURCE_DIR}/print/print.c                 #SHgetDim dim warning
     ${CMAKE_CURRENT_SOURCE_DIR}/print/convert.c               #CVshpseg2String dim warning
-    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/prfunroll.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSACSE.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSALUR.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSAWLUnroll.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/structural_constant_constant_folding.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/withloop_invariant_removal.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/support/int_matrix.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/support/ptr_buffer.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/support/str.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/DataFlowMask.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/LookUpTable.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/pattern_match_attribs.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/pattern_match.c          #fixed warnings in next batch
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/traverse.c               #fixed warnings in next batch
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/tree_basic.c             #fixed warnings in next batch
-    ${CMAKE_CURRENT_SOURCE_DIR}/tree/tree_utils.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ct_prf.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/new_types.c         #fixed warnings in next batch
-    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/specialization_oracle_static_shape_knowledge.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ssi.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/type_errors.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/type_utils.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/user_types.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/wltransform/wl_split_dimensions.c
-    #${CMAKE_CURRENT_SOURCE_DIR}/constraints/insert_conformity_checks.c
-    #${CMAKE_CURRENT_SOURCE_DIR}/memory/audscldist.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/precompile/functionprecompile.c #RET & ARG_LINKSIGN
+    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_dots.c       #TBmakeNum warnings
+    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/parser.c            #SHmakeShape (n) - n is size_t
+    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/resolvepragma.c     #PRAGMA_NUMPARAMS 
+    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/makedimexpr.c   #TBmakeNum with TCcountExprs
+    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/makeshapeexpr.c #TBmakeNum with TCcountExprs
+    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/prfunroll.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/SSAWLUnroll.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/saa_constant_folding.c #int COgetDataVec with TCgetNthExprsExpr
+    ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/structural_constant_constant_folding.c #SHgetUnrlen and Idx2OffsetArray
+    ${CMAKE_CURRENT_SOURCE_DIR}/support/str.c #STRstring2Array TBmakeNum (cnt)
+    ${CMAKE_CURRENT_SOURCE_DIR}/tree/pattern_match_attribs.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/tree/tree_utils.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ct_prf.c #SHgetExtent, UnrLen and COgetDataVec with TYmakeAKD
+    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/new_types.c         #DIM warnings from SH and TY
+    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/ct_with.c #SHgetExtent
+    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/specialization_oracle_static_shape_knowledge.c #SHgetExtent
+    ${CMAKE_CURRENT_SOURCE_DIR}/typecheck/type_errors.c #SHgetUnrlen
+    ${CMAKE_CURRENT_SOURCE_DIR}/wltransform/wltransform.c #TYgetDim
+    ${CMAKE_CURRENT_SOURCE_DIR}/wltransform/wl_split_dimensions.c #TYgetDim
     # Generated files
     ${CMAKE_CURRENT_BINARY_DIR}/node_basic.c
     ${CMAKE_CURRENT_BINARY_DIR}/serialize_helper.c

@@ -3,7 +3,7 @@
 
 extern int MATHlcm (int x, int y);
 extern int MATHipow (int base, int exp);
-extern int MATHnumDigits (int number);
+extern unsigned int MATHnumDigits (int number);
 
 extern int MATHmin (int x, int y);
 extern int MATHmax (int x, int y);

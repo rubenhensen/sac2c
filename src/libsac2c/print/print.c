@@ -204,6 +204,7 @@ static node *last_assignment_icm = NULL;
 #define ICM_ID(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
+#define ICM_UINT(name)
 #define ICM_BOOL(name)
 #define ICM_VARANY(dim, name)
 #define ICM_VARNT(dim, name)
@@ -218,6 +219,7 @@ static node *last_assignment_icm = NULL;
 #undef ICM_ID
 #undef ICM_STR
 #undef ICM_INT
+#undef ICM_UINT
 #undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT
@@ -309,7 +311,7 @@ FreeInfo (info *info)
 static void
 IRAprintRcs (node *arg_node, info *arg_info)
 {
-    int i, dim;
+    size_t i, dim;
     rc_t *rcs;
     node *array, *sharray;
 
@@ -454,7 +456,7 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
              CUAI_DIM (ASSIGN_ACCESS_INFO (arg_node)));
 
     INDENT;
-    fprintf (global.outfile, "     - Nest Level: %d\n",
+    fprintf (global.outfile, "     - Nest Level: %zu\n",
              CUAI_NESTLEVEL (ASSIGN_ACCESS_INFO (arg_node)));
 
     INDENT;
@@ -475,7 +477,7 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
                 fprintf (global.outfile, ")");
             }
 
-            fprintf (global.outfile, "[Type:%s, LoopLevel:%d]",
+            fprintf (global.outfile, "[Type:%s, LoopLevel:%zu]",
                      CUDA_IDX_NAMES[CUIDX_TYPE (idx)], CUIDX_LOOPLEVEL (idx));
 
             if (CUIDX_NEXT (idx) != NULL) {
@@ -813,7 +815,7 @@ printSOSSKdemand (node *arg_node, info *arg_info)
 void
 PRTprintArgtab (argtab_t *argtab, bool is_def)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -889,7 +891,7 @@ Argtab2Fundef (node *fundef)
 {
     node *new_fundef;
     argtab_t *argtab;
-    int i;
+    size_t i;
     node *rets = NULL;
     node *args = NULL;
 
@@ -944,7 +946,7 @@ Argtab2Let (node *ap)
 {
     node *new_let, *new_ap;
     argtab_t *argtab;
-    int i;
+    size_t i;
     node *ids = NULL;
     node *exprs = NULL;
     node *expr = NULL;
@@ -990,7 +992,7 @@ Argtab2Let (node *ap)
 static void
 PrintArgtags (argtab_t *argtab, bool in_comment)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -4236,6 +4238,7 @@ PRTicm (node *arg_node, info *arg_info)
 #define ICM_ID(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
+#define ICM_UINT(name)
 #define ICM_BOOL(name)
 #define ICM_VARANY(dim, name)
 #define ICM_VARNT(dim, name)
@@ -4250,6 +4253,8 @@ PRTicm (node *arg_node, info *arg_info)
 #undef ICM_NT
 #undef ICM_ID
 #undef ICM_STR
+#undef ICM_INT
+#undef ICM_UINT
 #undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT
@@ -6635,7 +6640,7 @@ PRTfunbundle (node *arg_node, info *arg_info)
                  "\n\n "
                  "/**********************************************************************"
                  "*******\n"
-                 " * Function Bundle %s::%s (%d)\n"
+                 " * Function Bundle %s::%s (%zu)\n"
                  " **********************************************************************"
                  "*******/\n\n",
                  NSgetName (FUNBUNDLE_NS (arg_node)), FUNBUNDLE_NAME (arg_node),

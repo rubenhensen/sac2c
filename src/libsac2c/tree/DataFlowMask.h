@@ -148,7 +148,7 @@ extern void DFMsetMaskOr (dfmask_t *mask, dfmask_t *mask2);
 extern void DFMsetMaskMinus (dfmask_t *mask, dfmask_t *mask2);
 extern void DFMsetMaskInv (dfmask_t *mask);
 
-extern int DFMnumIds (dfmask_base_t *mask);
+extern size_t DFMnumIds (dfmask_base_t *mask);
 extern int DFMtestMask (dfmask_t *mask);
 extern int DFMtest2Masks (dfmask_t *mask1, dfmask_t *mask2);
 extern int DFMtest3Masks (dfmask_t *mask1, dfmask_t *mask2, dfmask_t *mask3);
