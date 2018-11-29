@@ -127,8 +127,7 @@ OPTcheckPostSetupOptions (void)
 
     if (global.print_help_and_exit) {
         USGprintUsage ();
-        GLOBfinalizeGlobal ();
-        exit (EXIT_SUCCESS);
+        CTIexit (EXIT_SUCCESS);
     }
 
     DBUG_RETURN ();
@@ -648,7 +647,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("chkfreq", ARG_RANGE (global.check_frequency, 0, 4));
 
-    ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
+    ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (0));
 
     ARGS_OPTION_BEGIN ("cppI")
     {
@@ -1268,9 +1267,9 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 5));
 
-    ARGS_FLAG ("V", USGprintVersion (); exit (0));
+    ARGS_FLAG ("V", USGprintVersion (); CTIexit (0));
 
-    ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (0));
 
     /*
      * Options starting with strange symbols
@@ -1366,7 +1365,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_FIXED ("Xtc", SBUFprintf (tree_cflags_buf, " %s", ARG));
     ARGS_FIXED ("Xtl", SBUFprintf (tree_ldflags_buf, " %s", ARG));
 
-    ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
+    ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (0));
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
@@ -1408,8 +1407,8 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
      */
 
-    ARGS_FLAG ("h", USGprintUsage (); exit (0));
-    ARGS_FLAG ("help", USGprintUsage (); exit (0));
+    ARGS_FLAG ("h", USGprintUsage (); CTIexit (0));
+    ARGS_FLAG ("help", USGprintUsage (); CTIexit (0));
 
     /*
      * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
@@ -1528,9 +1527,9 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 5));
 
-    ARGS_FLAG ("V", USGprintVersion (); exit (0));
+    ARGS_FLAG ("V", USGprintVersion (); CTIexit (0));
 
-    ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (0));
 
     /*
      * DBUG options ####################################################
@@ -1618,7 +1617,7 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
      * Options starting with ccccccccccccccccccccccccccccccccccccccccccc
      */
 
-    ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
+    ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (0));
 
     ARGS_OPTION_BEGIN ("cppI")
     {
@@ -1637,8 +1636,8 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
      */
 
-    ARGS_FLAG ("h", USGprintUsage (); exit (0));
-    ARGS_FLAG ("help", USGprintUsage (); exit (0));
+    ARGS_FLAG ("h", USGprintUsage (); CTIexit (0));
+    ARGS_FLAG ("help", USGprintUsage (); CTIexit (0));
 
     /*
      * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
@@ -1692,9 +1691,9 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
 
     ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 5));
 
-    ARGS_FLAG ("V", USGprintVersion (); exit (0));
+    ARGS_FLAG ("V", USGprintVersion (); CTIexit (0));
 
-    ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (0));
 
     /*
      * DBUG options ####################################################
