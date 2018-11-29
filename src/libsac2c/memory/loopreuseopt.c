@@ -210,36 +210,7 @@ EMLRap (node *arg_node, info *arg_info)
         apargs = AP_ARGS (arg_node);
 
         while (doargs != NULL) {
-            if (AVIS_ISALLOCLIFT (ID_AVIS (EXPRS_EXPR (apargs))) == TRUE) {
-                /*
-                 * We insert an alloc instruction
-                 *
-                 * b     = do (a);
-                 *
-                 * is transformed into
-                 *
-                 * a     = alloc ( dim (a), shape (a));
-                 * b     = do (a);
-                 */
-                node *avis;
-
-                avis = ID_AVIS (EXPRS_EXPR (apargs));
-                DBUG_PRINT ("Setting avis %s", AVIS_NAME (avis));
-
-                /*
-                 * Create alloc assignment
-                 */
-                INFO_PREASSIGN (arg_info)
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                             TCmakePrf2 (F_alloc,
-                                                         TBmakeNum (TYgetDim (AVIS_TYPE (avis))),
-                                                         SHshape2Array (TYgetShape (AVIS_TYPE (avis)))
-                                                         )),
-                                  INFO_PREASSIGN (arg_info));
-                AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
-                AVIS_ISALLOCLIFT (avis) = FALSE;
-            }
-            else if (!AVIS_ISALIAS (ARG_AVIS (doargs))) {
+            if (!AVIS_ISALIAS (ARG_AVIS (doargs))) {
                 /*
                  * Insert copy instructions
                  *
