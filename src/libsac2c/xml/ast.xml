@@ -1174,6 +1174,7 @@
 		  <node name="Modarray" />
 		  <node name="Fold" />
 		  <node name="Part" />
+		  <node name="WithId" />
 		  <node name="Generator" />
 		</travuser>
 	      </traversal>

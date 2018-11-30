@@ -25,8 +25,39 @@
  *
  * Dots at boundary positions within genarray/ modarray - withloops
  * are replaced by the minimal/maximal possible value, eg. 0s and
- * the shape vector. We also 'normalize' the relations to <= for
+ * the shape vector-1. We also 'normalize' the relations to <= for
  * lower boundaries and < for the upper ones.
+ *
+ * The semantics has been refined as of Nov 2018! Now, the dots no
+ * longer are necessarily of maximum length. Instead, the length
+ * adjusts to the length of the scalar index-vector (if present)
+ * or the length of the non-dot bound (if present). 
+ * In case both are absent, the old behaviour is maintained.
+ *
+ * The reason for this extension is that it makes the resolution
+ * of LHS-dots in set expressions much easier and, at the same time,
+ * it enables the use an unconstrained(!) use of single dots in the
+ * relations of set-expressions. An example for this is:
+ *
+ * Assume m to be of type int[10,10]. An expression
+ *
+ *   { [.,i] -> m[i] | [5] <= [i] < . }
+ *
+ * with the old semantics of the dot in the constraints would have meant
+ *
+ *   { [.,i] -> m[i] | [5] <= [i] < [9,9] }
+ * 
+ * which is illegal. With the new, more flexible semantics of the dot in
+ * relations we obtain:
+ *
+ *   { [.,i] -> m[i] | [5] <= [i] < [9] }
+ *
+ * which equates to:
+ *
+ *  with {
+ *   ([0,5] <= [x,i] < [10,9]) : m[i][x];
+ *  } : genarray( [10,9], 0 );
+ *
  */
 
 /**
@@ -39,10 +70,12 @@
 /* INFO structure */
 struct INFO {
     node *dotshape;
+    node *idxlen;
 };
 
 /* access macros */
 #define INFO_HWLD_DOTSHAPE(n) ((n)->dotshape)
+#define INFO_HWLD_IDXLEN(n) ((n)->idxlen)
 
 /**
  * builds an info structure.
@@ -59,6 +92,7 @@ MakeInfo (void)
     result = (info *)MEMmalloc (sizeof (info));
 
     INFO_HWLD_DOTSHAPE (result) = NULL;
+    INFO_HWLD_IDXLEN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -130,24 +164,26 @@ HWLDwith (node *arg_node, info *arg_info)
     /*       not collected in all traversal modes!                   */
 
     node *olddotshape = INFO_HWLD_DOTSHAPE (arg_info);
+    node *oldidxlen = INFO_HWLD_IDXLEN (arg_info);
     INFO_HWLD_DOTSHAPE (arg_info) = NULL;
+    INFO_HWLD_IDXLEN (arg_info) = NULL;
 
     DBUG_ENTER ();
 
     /*
-     * by default (TravSons), withop would be traversed last, but
-     * some information from withop is needed in order to traverse
-     * the rest, so the withop is handeled first.
+     * get INFO_HWLD_DOTSHAPE from WITHOP:
      */
+    WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
 
-    if (WITH_WITHOP (arg_node) != NULL) {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
-
+    /*
+     * trigger adjustments in the parts if needed:
+     */
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     INFO_HWLD_DOTSHAPE (arg_info) = olddotshape;
+    INFO_HWLD_IDXLEN (arg_info) = oldidxlen;
 
     DBUG_RETURN (arg_node);
 }
@@ -217,7 +253,7 @@ HWLDfold (node *arg_node, info *arg_info)
 }
 
 /**
- * removes the DOTINFO within the info structure, as it is no more needed
+ * removes the DOTINFO and IDXLEN within the info structure, as it is no more needed
  * now.
  *
  * @param arg_node current node of the AST
@@ -229,15 +265,43 @@ HWLDpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    /*
+     * First, we collect INFO_HWLD_IDXLEN from WITHID_IDS:
+     */
+    PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
+    /*
+     * Now, we do the actual generator adjustment:
+     */
+    PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
+    /**
+     * INFO_HWLD_DOTSHAPE(arg_info) and INFO_HWLD_IDXLEN(arg_info) have been
+     * used now. While INFO_HWLD_IDXLEN is partition-specific and therefore
+     * freed in HWLDgenerator, INFO_HWLD_DOTSHAPE is valid for all partitions
+     * and, therefore, needs to be freed here.
+     */
     if (INFO_HWLD_DOTSHAPE (arg_info) != NULL) {
-        /**
-         * the shape info in INFO_HWLD_DOTSHAPE(arg_info) has been used now!
-         * Note here, that it may not be consumed in HWLDgenerator, as there may
-         * exist more than one generators for a single WL now!
-         */
         INFO_HWLD_DOTSHAPE (arg_info) = FREEdoFreeTree (INFO_HWLD_DOTSHAPE (arg_info));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/**
+ * inserts INFO_HWLD_IDXLEN if WITHID_IDS exists.
+ *
+ * @param arg_node current node of the AST
+ * @param arg_info info node
+ * @return current node of the AST
+ */
+node *
+HWLDwithid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (WITHID_IDS (arg_node) != NULL) {
+        INFO_HWLD_IDXLEN (arg_info) = TBmakeNum (TCcountSpids (WITHID_IDS (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -274,12 +338,53 @@ HWLDgenerator (node *arg_node, info *arg_info)
                                       "modarray with loops; ");
     }
 
+    /*
+     * Before we can use the shape we potentially have to shorten them
+     * to the length of the scalar index vector or other, non-dot
+     * generator components. Therefore, we make sure INFO_HWLD_IDXLEN
+     * is set appropriately whenever some length info is given.
+     * Note here, that we CANNOT put this info into INFO_HWLD_DOTSHAPE
+     * as that info is shared across multiple partitions while 
+     * INFO_HWLD_IDXLEN is partition specific.
+     */
+    if (INFO_HWLD_IDXLEN (arg_info) == NULL) {
+        if (!DOT_ISSINGLE (GENERATOR_BOUND1 (arg_node))) {
+            INFO_HWLD_IDXLEN (arg_info)
+                = TCmakePrf2 (F_sel_VxA,
+                              TCcreateIntVector (1, 0, 1),
+                              TCmakePrf1 (F_shape_A,
+                                          DUPdoDupTree (GENERATOR_BOUND1 (arg_node))));
+        } else if (!DOT_ISSINGLE (GENERATOR_BOUND2 (arg_node))) {
+            INFO_HWLD_IDXLEN (arg_info)
+                = TCmakePrf2 (F_sel_VxA,
+                              TCcreateIntVector (1, 0, 1),
+                              TCmakePrf1 (F_shape_A,
+                                          DUPdoDupTree (GENERATOR_BOUND2 (arg_node))));
+        } else if (GENERATOR_STEP (arg_node) != NULL) {
+            INFO_HWLD_IDXLEN (arg_info)
+                = TCmakePrf2 (F_sel_VxA,
+                              TCcreateIntVector (1, 0, 1),
+                              TCmakePrf1 (F_shape_A,
+                                          DUPdoDupTree (GENERATOR_STEP (arg_node))));
+        } else if (GENERATOR_WIDTH (arg_node) != NULL) {
+            INFO_HWLD_IDXLEN (arg_info)
+                = TCmakePrf2 (F_sel_VxA,
+                              TCcreateIntVector (1, 0, 1),
+                              TCmakePrf1 (F_shape_A,
+                                          DUPdoDupTree (GENERATOR_WIDTH (arg_node))));
+        }
+    } 
+
     if (DOT_ISSINGLE (GENERATOR_BOUND1 (arg_node))) {
         /* replace "." by "0 * shp" */
         GENERATOR_BOUND1 (arg_node) = FREEdoFreeTree (GENERATOR_BOUND1 (arg_node));
         GENERATOR_BOUND1 (arg_node)
           = TCmakePrf2 (F_mul_SxV, TBmakeNum (0),
-                        DUPdoDupTree (INFO_HWLD_DOTSHAPE (arg_info)));
+                        (INFO_HWLD_IDXLEN (arg_info) != NULL?
+                         TCmakePrf2 (F_take_SxV,
+                                     DUPdoDupTree (INFO_HWLD_IDXLEN (arg_info)),
+                                     DUPdoDupTree (INFO_HWLD_DOTSHAPE (arg_info))) :
+                         DUPdoDupTree (INFO_HWLD_DOTSHAPE (arg_info))));
     }
 
     if (GENERATOR_OP1 (arg_node) == F_wl_lt) {
@@ -295,13 +400,23 @@ HWLDgenerator (node *arg_node, info *arg_info)
             GENERATOR_OP2 (arg_node) = F_wl_lt;
             GENERATOR_BOUND2 (arg_node)
               = FREEdoFreeTree (GENERATOR_BOUND2 (arg_node));
-            GENERATOR_BOUND2 (arg_node) = DUPdoDupTree (INFO_HWLD_DOTSHAPE (arg_info));
+            GENERATOR_BOUND2 (arg_node)
+              = (INFO_HWLD_IDXLEN (arg_info) != NULL?
+                 TCmakePrf2 (F_take_SxV,
+                             DUPdoDupTree (INFO_HWLD_IDXLEN (arg_info)),
+                             DUPdoDupTree (INFO_HWLD_DOTSHAPE (arg_info))) :
+                 DUPdoDupTree (INFO_HWLD_DOTSHAPE (arg_info)));
         } else {
             /* replace "." by "shp - 1"  */
             GENERATOR_BOUND2 (arg_node)
               = FREEdoFreeTree (GENERATOR_BOUND2 (arg_node));
             GENERATOR_BOUND2 (arg_node)
-              = TCmakePrf2 (F_sub_VxS, DUPdoDupTree (INFO_HWLD_DOTSHAPE (arg_info)),
+              = TCmakePrf2 (F_sub_VxS,
+                            (INFO_HWLD_IDXLEN (arg_info) != NULL?
+                             TCmakePrf2 (F_take_SxV,
+                                         DUPdoDupTree (INFO_HWLD_IDXLEN (arg_info)),
+                                         DUPdoDupTree (INFO_HWLD_DOTSHAPE (arg_info))) :
+                             DUPdoDupTree (INFO_HWLD_DOTSHAPE (arg_info))),
                             TBmakeNum (1));
         }
     } else {
@@ -314,6 +429,10 @@ HWLDgenerator (node *arg_node, info *arg_info)
     }
 
     arg_node = TRAVcont (arg_node, arg_info);
+
+    if (INFO_HWLD_IDXLEN (arg_info) != NULL) {
+        INFO_HWLD_IDXLEN (arg_info) = FREEdoFreeTree (INFO_HWLD_IDXLEN (arg_info));
+    }
 
     DBUG_RETURN (arg_node);
 }
