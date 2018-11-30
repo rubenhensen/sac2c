@@ -387,6 +387,7 @@ void
 CTIexit (int status)
 {
     CleanUp ();
+    GLOBfinalizeGlobal ();
     exit (status);
 }
 

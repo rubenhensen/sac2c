@@ -478,6 +478,7 @@ MapParse (const char *path, const char *file, void *params)
 
     filename = STRcatn (3, path, "/", file);
     ok = RSCparseResourceFile (filename);
+    MEMfree (filename);
 
     if (!ok) {
         CTIabort ("Error while parsing '%s'.", filename);
@@ -553,6 +554,7 @@ ParseResourceFiles (void)
             /* Depending on SAC2C_POSTFIX read in all files that start with
                "sac2crc_<postfix>".  */
             FMGRforEach (filename, sac2crc_pat, NULL, MapParse);
+            MEMfree (sac2crc_pat);
         } else if (FMGRcheckExistFile (filename)) {
             DBUG_PRINT ("local resource file '%s` found", filename);
             ok = RSCparseResourceFile (filename);
@@ -830,6 +832,7 @@ RSCevaluateConfiguration ()
             if (!STReq (target, "")) { /* allow for multiple colons! */
                 EvaluateCustomTarget (target, global.target_list, global.target_list);
             }
+            MEMfree (target);
             target = STRtok (NULL, ":");
         }
     }
