@@ -23,10 +23,10 @@
  *
  * This is a helper module that helps maintaining a list of identifyers 
  * used as generator variables in set-expressions.
- * This alternative representation is need to facilitate easy searching
+ * This alternative representation is needed to facilitate easy searching
  * for shape information, particularly in the context of nested set expressions
  * The module also provides some basic AST generation abstractions for 
- * derived expressions such as .... (TB added later :-)
+ * derived expressions such as SEUTgenShape for computing the inferred upper bound.
  *
  * Each set expression either
  * case 1:  has a single vector variable { iv -> expr....} or
@@ -36,8 +36,11 @@
  * case 3: { [.,i,.,j] -> expr....} or
  * case 4: { [...,i] -> expr.....}.
  *
- * an idtable is constructed by using SEUTbuildIdTable( vec, oldscope)
- * for each set-notation generator where
+ * However, we do not record any dots here as they are irrelevant
+ * for the shape inference.
+ *
+ * SEUTbuildIdTable( vec, oldscope) takes any of the above (1-4) but internally
+ * strips away all dots.
  * vec is a node which either should be an N_exprs (cases 2,3,4), or an
  * N_spid (case 1).
  * By providing a non-NULL idtable "oldscope" idtables can be linked
@@ -46,19 +49,19 @@
  * the scoping nature is internally maintained through additional
  * links.
  * For example:
- *    { [.,l] -> { kv -> { [i,...,j] -> expr( i,j,kv, l) ....}}}
+ *    { [k,.,l] -> { kv -> { [i,...,j] -> expr( i,j,kv, l) ....}}}
  * will internally create an idtable list of the form:
  *
- *   (i,scal) -> (_dots,vec) -> (j,scal) -> (kv,vec) -> (_dot,scal) -> (l,scal) 
- *       |               |          |        ^   |       ^     |           |
- *       \---------------\----------\--------/   \-------/     \-----------\---> NULL
+ *   (i,scal) -> (j,scal) -> (kv,vec) -> (k,scal) -> (l,scal) 
+ *       |           |        ^   |       ^  |           |
+ *       \-----------\--------/   \-------/  \-----------\---> NULL
  *
  * The dual to SEUTbuildIdTable is SEUTfreeIdTable. It frees the entire top 
  * frame(!). Returning to the above example, a single call to SEUTfreeIdTable on the
  * entry (i,scal) will result in:
- *                                          (kv,vec) -> (_dot,scal) -> (l,scal) 
- *                                               |       ^     |           |
- *                                               \-------/     \-----------\---> NULL
+ *                           (kv,vec) -> (k,scal) -> (l,scal) 
+ *                                |       ^  |           |
+ *                                \-------/  \-----------\---> NULL
  *
  * Entire chains can be freed by calling SEUTfreeIdTableChain.
  *
@@ -74,12 +77,19 @@
  * in the idtable chain between from and to is referred to as N_spid within the
  * expression expr.
  *
- * SEUTcountIds counts the number of non-dot idtable entries in the topmost frame!
+ * SEUTcountIds counts the number of idtable entries in the topmost frame!
  * When applied to our example, it will return 2. AFter calling SEUTfreeIdTable
  * as explained above, the result would be 1.
  * 
  * SEUTshapeInfoComplete checks whether for all identifiers in the topmost frame
  * the shape information is non-NULL.
+ *
+ * SEUTscanSelectionForShapeInfo( idxvec, arg, scope) extracts shape info for
+ * all ids that are contained in the idxvec and which are found in the scope.
+ * Once found, the corresponding shape info from the arg-shape is inserted
+ * into the idtable.
+ *
+ * SEUTgenShape (identry) builds the shape expression that will serve as upper bound.
  */
 
 /**
@@ -149,33 +159,21 @@ SEUTbuildIdTable (node *vec, idtable *oldscope)
     if (NODE_TYPE (vec) == N_exprs) {
         while (vec != NULL) {
             node *id = EXPRS_EXPR (vec);
-            idtable *newtab = (idtable *)MEMmalloc (sizeof (idtable));
 
             if (NODE_TYPE (id) == N_spid) {
+                idtable *newtab = (idtable *)MEMmalloc (sizeof (idtable));
                 newtab->id = STRcpy (SPID_NAME (id));
                 newtab->type = ID_scalar;
-            } else if (NODE_TYPE (id) == N_dot) {
-                if (DOT_NUM (id) == 1) {
-                    newtab->id = STRcpy (".");
-                    newtab->type = ID_scalar;
-                } else {
-                    newtab->id = STRcpy (".");
-                    newtab->type = ID_vector;
-                }
-            } else {
+                newtab->shapes = NULL;
+                newtab->next = result;
+                newtab->nextframe = oldscope;
+                result = newtab;
+                DBUG_PRINT( "adding scalar id \"%s\"", newtab->id);
+            } else if (NODE_TYPE (id) != N_dot) {
                 CTIerrorLine (global.linenum, "Found neither id nor dot as index in WL set notation");
-                /* we create a dummy entry within the idtable in order */
-                /* to go on and search for further errors.             */
-                newtab->id = STRcpy ("__non_id_expr");
-                newtab->type = ID_scalar;
             }
 
-            newtab->shapes = NULL;
-            newtab->next = result;
-            newtab->nextframe = oldscope;
-            result = newtab;
             vec = EXPRS_NEXT (vec);
-            DBUG_PRINT( "adding scalar id \"%s\"", newtab->id);
         }
     } else if (NODE_TYPE (vec) == N_spid) {
         idtable *newtab = (idtable *)MEMmalloc (sizeof (idtable));
@@ -236,12 +234,6 @@ idtable *SEUTfreeIdTableChain (idtable *identry)
     DBUG_RETURN (FreeIdTable (identry, NULL));
 }
 
-bool SEUTisDot (idtable *identry)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN ( STReq (identry->id, "."));
-}
-
 bool SEUTisVector (idtable *identry)
 {
     DBUG_ENTER ();
@@ -281,18 +273,32 @@ idtable *SEUTsearchIdInTable (char *id, idtable *from, idtable *to)
     DBUG_RETURN (result);
 }
 
-struct INFO {
+struct CIFTINFO {
     bool contained;
     idtable *from;
     idtable *to;
 };
 
+struct RBZINFO {
+    node *spid;
+    node *subst;
+};
+
+struct INFO {
+    struct CIFTINFO cift;
+    struct RBZINFO rbz;
+};
+
+#define INFO_CIFT_CONTAINED(n) ((n)->cift.contained)
+#define INFO_CIFT_FROM(n) ((n)->cift.from)
+#define INFO_CIFT_TO(n) ((n)->cift.to)
+
 node *ATravCIFTspid( node * arg_node, info * arg_info)
 {
-  arg_info->contained = arg_info->contained 
+  INFO_CIFT_CONTAINED (arg_info) = INFO_CIFT_CONTAINED (arg_info)
                         || ( SEUTsearchIdInTable (SPID_NAME( arg_node),
-                                                  arg_info->from,
-                                                  arg_info->to) 
+                                                  INFO_CIFT_FROM (arg_info),
+                                                  INFO_CIFT_TO (arg_info)) 
                             != NULL );
   return arg_node;
 }
@@ -300,7 +306,7 @@ node *ATravCIFTspid( node * arg_node, info * arg_info)
 
 bool SEUTcontainsIdFromTable (node *expr, idtable *from, idtable *to)
 {
-    info arg_info = {FALSE,from,to};
+    info arg_info = {{FALSE,from,to},{NULL,NULL}};
     anontrav_t cift_trav[2]
       = {{N_spid, &ATravCIFTspid}, {(nodetype)0, NULL}};
 
@@ -312,7 +318,7 @@ bool SEUTcontainsIdFromTable (node *expr, idtable *from, idtable *to)
 
     TRAVpop ();
 
-    DBUG_RETURN (arg_info.contained);
+    DBUG_RETURN (INFO_CIFT_CONTAINED (&arg_info));
 }
 
 int SEUTcountIds (idtable *from)
@@ -323,8 +329,7 @@ int SEUTcountIds (idtable *from)
     DBUG_ENTER ();
 
     while (from != to) {
-        if (!STReq (from->id, "."))
-            res++;
+        res++;
         from = from->next;
     }
 
@@ -355,17 +360,21 @@ BuildShapeVectorMin (idtable *identry)
     vectors = identry->shapes;
     indexids = TBmakeSpids (STRcpy (SPID_NAME (index)), NULL);
 
-    shape = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (vectors->shape), NULL));
+    shape = TCmakePrf1 (F_shape_A, DUPdoDupTree (vectors->shape));
 
-    expr = MAKE_BIN_PRF (F_sel_VxA, DUPdoDupTree (index), DUPdoDupTree (vectors->shape));
+    expr = TCmakePrf2 (F_sel_VxA, DUPdoDupTree (index), DUPdoDupTree (vectors->shape));
 
     vectors = vectors->next;
 
     while (vectors != NULL) {
-        expr = MAKE_BIN_PRF (F_min_SxS,
-                             MAKE_BIN_PRF (F_sel_VxA, DUPdoDupTree (index),
-                                           DUPdoDupTree (vectors->shape)),
-                             expr);
+        shape = TCmakePrf2 (F_min_VxV,
+                            TCmakePrf1 (F_shape_A, DUPdoDupTree (vectors->shape)),
+                            shape);
+        expr = TCmakePrf2 (F_min_SxS,
+                           TCmakePrf2 (F_sel_VxA,
+                                       DUPdoDupTree (index),
+                                       DUPdoDupTree (vectors->shape)),
+                           expr);
         vectors = vectors->next;
     }
 
@@ -386,17 +395,17 @@ BuildShapeVectorMin (idtable *identry)
 
 
 /**
- * builds the shape for the withloop replacing the lamination. For each
- * identifier within the lamination vector the shape is built as the
+ * builds the shape for the set expression. For each
+ * identifier within the vector the shape is built as the
  * minimum of all shapes of arrays the identifier is used with within a
- * selection. If the lamination vector is given as a single vector,
+ * selection. If the vector is given as a single vector,
  * BuildMinShapeVector is used instead of primitive functions.
  *
  * @param table idtable structure
  * @param end first identifier within idtable not belonging to this lamination
  * @return sac code representing the shape vector
  */
-node * SEUTbuildWLShape (idtable *table)
+node * SEUTgenShape (idtable *table)
 {
     node *result = NULL;
     idtable *end;
@@ -514,107 +523,185 @@ void SEUTscanSelectionForShapeInfo( node *idxvec, node *array, idtable *scope)
     int poscnt = 0;
     int tripledotflag = 0;
     int exprslen;
+    idtable *entry;
+    node *position;
+    shpchain *chain;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("scanning for shape info in selection");
-    if ((scope != NULL) && !SEUTcontainsIdFromTable (array, scope, NULL)) {
-    if (NODE_TYPE (idxvec) == N_array) {
-        idxvec = ARRAY_AELEMS (idxvec);
-        exprslen = TCcountExprs (idxvec);
+    if ((scope != NULL) && !SEUTcontainsIdFromTable (array, scope, scope->nextframe)) {
+        if (NODE_TYPE (idxvec) == N_array) {
+            idxvec = ARRAY_AELEMS (idxvec);
+            exprslen = TCcountExprs (idxvec);
         
-        while (idxvec != NULL) {
-            if (NODE_TYPE (EXPRS_EXPR (idxvec)) == N_spid) {
-                idtable *handle = scope;
+            while (idxvec != NULL) {
+                if (NODE_TYPE (EXPRS_EXPR (idxvec)) == N_spid) {
+                    entry = SEUTsearchIdInTable (SPID_NAME (EXPRS_EXPR (idxvec)), scope, NULL);
 
-                while (handle != NULL) {
-                    if (STReq (handle->id, SPID_NAME (EXPRS_EXPR (idxvec)))) {
-                        DBUG_PRINT ("id \"%s\" found", handle->id);
-                        if (handle->type == ID_scalar) {
-                            node *position = NULL;
-                            node *shape = NULL;
-                            shpchain *chain = NULL;
+                    if (entry != NULL) {
+                        DBUG_PRINT ("id \"%s\" found", entry->id);
+
+                        if (entry->type == ID_scalar) {
 
                             if (tripledotflag) {
                                 position
-                                  = MAKE_BIN_PRF (F_sub_SxS,
-                                                  TBmakePrf (F_dim_A,
-                                                             TBmakeExprs (DUPdoDupTree (
-                                                                            array),
-                                                                          NULL)),
-                                                  TBmakeNum (exprslen - poscnt));
+                                  = TCmakePrf2 (F_sub_SxS,
+                                                TCmakePrf1 (F_dim_A,
+                                                            DUPdoDupTree ( array)),
+                                                TBmakeNum (exprslen - poscnt));
                             } else {
                                 position = TBmakeNum (poscnt);
                             }
-   
-                            shape
-                              = MAKE_BIN_PRF (F_sel_VxA,
-                                              TCmakeIntVector (TBmakeExprs (position, NULL)),
-                                              TBmakePrf (F_shape_A,
-                                                         TBmakeExprs (DUPdoDupTree (array),
-                                                                      NULL)));
                             chain = (shpchain *)MEMmalloc (sizeof (shpchain));
-
-                            chain->shape = shape;
-                            chain->next = handle->shapes;
-                            handle->shapes = chain;
-
+                            chain->shape
+                              = TCmakePrf2 (F_sel_VxA,
+                                            TCmakeIntVector (TBmakeExprs (position, NULL)),
+                                            TCmakePrf1 (F_shape_A,
+                                                        DUPdoDupTree (array)));
+                            chain->next = entry->shapes;
+                            entry->shapes = chain;
                             DBUG_PRINT ("shape added:");
-                            DBUG_EXECUTE (PRTdoPrintFile (stderr, shape));
-                            break;
-                        } else if (handle->type == ID_vector) {
-                            CTInoteLine (NODE_LINE (idxvec),
+                            DBUG_EXECUTE (PRTdoPrintFile (stderr, chain->shape));
+
+                        } else {
+                            CTIerrorLine (NODE_LINE (idxvec),
                                          "Set notation index vector '%s' is used in a scalar "
                                          "context.",
-                                         handle->id);
+                                         entry->id);
                         }
                     }
-
-                    handle = handle->next;
+                } else if ((NODE_TYPE (EXPRS_EXPR (idxvec)) == N_dot)
+                            && (DOT_NUM (EXPRS_EXPR (idxvec)) == 3)) {
+                    tripledotflag = 1;
                 }
+
+                poscnt++;
+                idxvec = EXPRS_NEXT (idxvec);
             }
+        } else if (NODE_TYPE (idxvec) == N_spid) {
 
-            /* check for occurence of '...' */
+            entry = SEUTsearchIdInTable (SPID_NAME (idxvec), scope, NULL);
+            if (entry != NULL) {
+                chain = (shpchain *)MEMmalloc (sizeof (shpchain));
+                chain->next = entry->shapes;
+                entry->shapes = chain;
+                DBUG_PRINT ("id \"%s\" found", entry->id);
 
-            if ((NODE_TYPE (EXPRS_EXPR (idxvec)) == N_dot)
-                && (DOT_NUM (EXPRS_EXPR (idxvec)) == 3)) {
-                tripledotflag = 1;
-            }
-
-            poscnt++;
-            idxvec = EXPRS_NEXT (idxvec);
-        }
-    } else if (NODE_TYPE (idxvec) == N_spid) {
-
-        while (scope != NULL) {
-            if (STReq (scope->id, SPID_NAME (idxvec))) {
-                DBUG_PRINT ("id \"%s\" found", scope->id);
-                if (scope->type == ID_vector) {
-                    node *shape
-                      = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL));
-                    shpchain *chain = (shpchain *)MEMmalloc (sizeof (shpchain));
-
-                    chain->shape = shape;
-                    chain->next = scope->shapes;
-                    scope->shapes = chain;
-    
-                    DBUG_PRINT ("shape added:");
-                    DBUG_EXECUTE (PRTdoPrintFile (stderr, shape));
-                    break;
+                if (entry->type == ID_vector) {
+                    chain->shape = TCmakePrf1 (F_shape_A, DUPdoDupTree (array));
+                } else {
+                    //scalar used in vector position, i.e., a[0] case!
+                    chain->shape = TCmakePrf2 (F_sel_VxA,
+                                               TCcreateIntVector (1, 0, 1),
+                                               TCmakePrf1 (F_shape_A, DUPdoDupTree (array)));
                 }
-            } else if (scope->type == ID_scalar) {
-                CTInoteLine (NODE_LINE (idxvec),
-                             "Set notation index scalar '%s' is used in a vector "
-                             "context.",
-                             scope->id);
+                DBUG_PRINT ("shape added:");
+                DBUG_EXECUTE (PRTdoPrintFile (stderr, chain->shape));
             }
-
-            scope = scope->next;
         }
-    }
     }
 
     DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * Below is the substitution mechanism which is needed to replace generator
+ * variables either by zeros or vectors of zeros.
+ */
+
+#define INFO_RBZ_SPID(n) ((n)->rbz.spid)
+#define INFO_RBZ_SUBST(n) ((n)->rbz.subst)
+
+static node *
+ATravRBZspid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (STReq (SPID_NAME (INFO_RBZ_SPID (arg_info)), SPID_NAME (arg_node))) {
+        arg_node = FREEdoFreeTree( arg_node);
+        arg_node = DUPdoDupTree (INFO_RBZ_SUBST (arg_info));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+static bool
+SpidInIdxs (node *spid, node *idxs)
+{
+    bool res = FALSE;
+    node * idx;
+
+    DBUG_ENTER ();
+
+    if (NODE_TYPE (idxs) == N_spid) {
+        res = STReq (SPID_NAME (spid), SPID_NAME (idxs));
+    } else {
+        do {
+            idx = EXPRS_EXPR (idxs);
+            res = res || STReq (SPID_NAME (spid), SPID_NAME (idx));
+            idxs = EXPRS_NEXT (idxs);
+        } while ((res == FALSE) && (idxs != NULL));
+    }
+
+    DBUG_RETURN (res);
+}
+
+static node *
+ATravRBZsetwl (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /*
+     * Make sure we do not replace locally bound variables!
+     */
+    if (!SpidInIdxs (INFO_RBZ_SPID (arg_info), SETWL_VEC (arg_node))) {
+        SETWL_EXPR (arg_node) = TRAVdo (SETWL_EXPR (arg_node), arg_info);
+    }
+    SETWL_GENERATOR (arg_node) = TRAVopt (SETWL_GENERATOR (arg_node), arg_info);
+    SETWL_NEXT (arg_node) = TRAVopt (SETWL_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+SubstituteSpid (node *expr, node *spid, node *subst)
+{
+    anontrav_t rbz_trav[3] = {{N_spid, &ATravRBZspid},
+                              {N_setwl, &ATravRBZsetwl},
+                              {(nodetype)0, NULL}};
+    info arg_info = {{FALSE,NULL,NULL},{spid, subst}};
+
+    DBUG_ENTER ();
+
+    TRAVpushAnonymous (rbz_trav, &TRAVsons);
+
+    expr = TRAVopt (expr, &arg_info);
+
+    TRAVpop ();
+
+    DBUG_RETURN (expr);
+}
+
+
+node *
+SEUTsubstituteIdxs (node *expr, node *idxs, node *subst)
+{
+    node *idx;
+    DBUG_ENTER ();
+
+    if (NODE_TYPE (idxs) == N_spid) {
+        expr = SubstituteSpid (expr, idxs, subst);
+    } else {
+        do {
+            idx = EXPRS_EXPR (idxs);
+            expr = SubstituteSpid (expr, idx, subst);
+            idxs = EXPRS_NEXT (idxs);
+        } while (idxs != NULL);
+    }
+
+    DBUG_RETURN (expr);
 }
 
 #undef DBUG_PREFIX

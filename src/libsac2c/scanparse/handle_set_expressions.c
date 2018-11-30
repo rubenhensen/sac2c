@@ -21,25 +21,6 @@
 /**
  * @file handle_set_expressions.c
  *
- * This file contains any code needed to eleminate dots within
- * sac source code. Dots can appear in the following positions:
- * - as boundary shortcuts in withloops
- * - to mark free dimensions within a selection
- *
- * Dots at boundary positions within withloops are replaced by the
- * minimal/maximal possible value, eg. 0 and the shape vector. As
- * a side effect, the comparison operators are 'normalized' to <= for
- * lower boundaries and < for the upper ones.
- *
- * Multi dimensional selections are transfomed to their withloop
- * representation, thus eleminating any dots.
- *
- * As well, the new set notation is transformed into its withloop
- * representation, as it usually appears near to multi dimensional
- * selections.
- *
- * After traversal, there should be no more dot nodes within the AST.
- * Otherwise a warning is generated.
  */
 
 /**
@@ -477,11 +458,11 @@ HSEsetwl (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_HSE_OUTSIDE (arg_info)) {
-        DBUG_PRINT ("looking at Set-Expression in line %d:", global.linenum);
+        DBUG_PRINT ("looking at Set-Expression in line %zu:", global.linenum);
         oldinfo = arg_info;
         arg_info = MakeInfo (oldinfo);
     } else {
-        DBUG_PRINT ("next partition of Set-Expression in line %d:", global.linenum);
+        DBUG_PRINT ("next partition of Set-Expression in line %zu:", global.linenum);
         INFO_HSE_OUTSIDE (arg_info) = TRUE;
     }
 
