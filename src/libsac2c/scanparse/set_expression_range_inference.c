@@ -24,17 +24,16 @@
  *
  */
 
-/**
- * set this to defined in order to create explanatory ids. use this only
- * for debugging as it might create very long identifier names.
- */
-#define HSE_USE_EXPLANATORY_NAMES
 
 /**
  * arg_info in this file:
- * IDS:    N_exprs list of lhs identifiers of the setwl.
- * LENTD:  an expression that computes the length of the triple-dot
- *         match (potentially at runtime)
+ * LBMISSING : boolean to indicate the presence of the lower bound
+ * UBMISSING : boolean to indicate the presence of the upper bound
+ * ISLASTPART: boolean to indicate whether we are operating on the last
+ *             partition
+ * IDTABLE   : the abstract data type in SEUT that collects, maintains
+ *             and computes bounds from the shape information found
+ * NEXT      : needed for stacking info nodes
  */
 
 /* INFO structure */
@@ -43,7 +42,6 @@ struct INFO {
     bool ubmissing;
     bool islastpart;
     idtable *idtable;
-    node *shp;
     struct INFO *next;
 };
 
@@ -52,7 +50,6 @@ struct INFO {
 #define INFO_SERI_UBMISSING(n) ((n)->ubmissing)
 #define INFO_SERI_ISLASTPART(n) ((n)->islastpart)
 #define INFO_SERI_IDTABLE(n) ((n)->idtable)
-#define INFO_SERI_SHP(n) ((n)->shp)
 #define INFO_SERI_NEXT(n) ((n)->next)
 
 /**
@@ -73,7 +70,6 @@ MakeInfo (info *oldinfo)
     INFO_SERI_UBMISSING (result) = FALSE;
     INFO_SERI_ISLASTPART (result) = FALSE;
     INFO_SERI_IDTABLE (result) = NULL;
-    INFO_SERI_SHP (result) = NULL;
     INFO_SERI_NEXT (result) = oldinfo;
 
     DBUG_RETURN (result);
@@ -96,44 +92,6 @@ FreeInfo (info *arg_info)
 
     DBUG_RETURN (next);
 }
-
-/**
- * builds an id with a free name by calling TmpVarName. If
- * HSE_USE_EXPLANATORY_NAMES is set, name is appended to the new id,
- * Use this feature only for debugging, as it might create very long
- * identifier names.
- *
- * @param name explanatory name of the identifier
- * @return a new created unique id node
- */
-static node *
-MakeTmpId (char *name)
-{
-    node *result;
-
-    DBUG_ENTER ();
-
-#ifdef HSE_USE_EXPLANATORY_NAMES
-    result = TBmakeSpid (NULL, TRAVtmpVarName (name));
-#else
-    result = TBmakeSpid (NULL, TRAVtmpVar ());
-#endif
-
-    DBUG_RETURN (result);
-}
-
-static node *
-BuildWlZeros( node *shape)
-{
-    node *result;
-
-    DBUG_ENTER ();
-    result = TBmakeWith (NULL,
-                         NULL,
-                         TBmakeGenarray (shape, TBmakeNum(0)));
-    DBUG_RETURN (result);
-}
-
 
 /**
  * hook to start the handle dots traversal of the AST.
