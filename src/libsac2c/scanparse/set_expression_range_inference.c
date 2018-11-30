@@ -22,25 +22,6 @@
 /**
  * @file set_expression_range_inference.c
  *
- * This file contains any code needed to eleminate dots within
- * sac source code. Dots can appear in the following positions:
- * - as boundary shortcuts in withloops
- * - to mark free dimensions within a selection
- *
- * Dots at boundary positions within withloops are replaced by the
- * minimal/maximal possible value, eg. 0 and the shape vector. As
- * a side effect, the comparison operators are 'normalized' to <= for
- * lower boundaries and < for the upper ones.
- *
- * Multi dimensional selections are transfomed to their withloop
- * representation, thus eleminating any dots.
- *
- * As well, the new set notation is transformed into its withloop
- * representation, as it usually appears near to multi dimensional
- * selections.
- *
- * After traversal, there should be no more dot nodes within the AST.
- * Otherwise a warning is generated.
  */
 
 /**

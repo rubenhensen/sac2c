@@ -88,19 +88,6 @@ typedef struct DOTINFO {
 typedef enum TRAVSTATE { HSE_none, HSE_scan, HSE_default } travstate;
 typedef enum IDTYPE { ID_notfound = 0, ID_vector = 1, ID_scalar = 2 } idtype;
 
-typedef struct SHPCHAIN {
-    node *shape;
-    node *code;
-    struct SHPCHAIN *next;
-} shpchain;
-
-typedef struct IDTABLE {
-    char *id;
-    idtype type;
-    shpchain *shapes;
-    struct IDTABLE *next;
-} idtable;
-
 /**
  * arg_info in this file:
  * TRAVSTATE:   this field is used to determine the current traversalmode
