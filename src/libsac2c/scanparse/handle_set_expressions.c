@@ -1,4 +1,5 @@
 #include "handle_set_expressions.h"
+#include "set_expression_utils.h"
 #include "traverse.h"
 
 #define DBUG_PREFIX "HSE"
@@ -15,66 +16,14 @@
 #include "new_types.h"
 #include "globals.h"
 #include "tree_compound.h"
+#include "pattern_match.h"
+#include "compare_tree.h"
 
 #include <strings.h>
 
 /**
  * @file handle_set_expressions.c
  *
- */
-
-/**
- * set this to defined in order to create explanatory ids. use this only
- * for debugging as it might create very long identifier names.
- */
-#define HSE_USE_EXPLANATORY_NAMES
-
-/**
- * set this to enable support for vectors as index of a set notation.
- *
- * NOTE: The implementation is far from complete:
- *       -no support of partial selection on arrays of different
- *        dimenionality
- */
-#define HSE_SETWL_VECTOR
-
-/**
- * Structures to store all information about dots occuring in select state-
- * ments that are needed to perform the transformation. These structures are
- * built by BuildDotList.
- * All int values are counted beginning with 1. The 0 value is used as
- * flag for non-existent (false).
- */
-typedef struct DOTLIST {
-    int no;               /* number of dots counted from left */
-    int position;         /* position of dot within selection */
-    int dottype;          /* type of dot; 1:'.' 3: '...' */
-    struct DOTLIST *next; /* for building up a list ;) */
-    struct DOTLIST *prev;
-} dotlist;
-
-typedef struct DOTINFO {
-    dotlist *left;  /* left end of dotlist */
-    dotlist *right; /* right end */
-    int dotcnt;     /* amount of dots found */
-    int tripledot;  /* dotno of tripledot, 0 iff none found */
-    int triplepos;  /* position of tripledot, 0 iff none found */
-    int selcnt;     /* amount of selectors at all */
-} dotinfo;
-
-/**
- * Structures to store ids and shapes during shape-scan. Filled during
- * traversal in HSE_scan mode.
- */
-typedef enum TRAVSTATE { HSE_none, HSE_scan, HSE_default } travstate;
-typedef enum IDTYPE { ID_notfound = 0, ID_vector = 1, ID_scalar = 2 } idtype;
-
-/**
- * arg_info in this file:
- * TRAVSTATE:   this field is used to determine the current traversalmode
- *              HSE_scan in shape scanning mode
- *              HSE_default to build default values for withloops
- * IDTABLE:     used to reference the current idtable.
  */
 
 /* INFO structure */
@@ -172,63 +121,6 @@ BuildSimpleWl( node *shape, node *def)
 }
 
 
-static node *
-ATravRBZspid( node *arg_node, info *arg_info)
-{
-    node *handle;
-    DBUG_ENTER ();
-
-    handle = INFO_HSE_VEC (arg_info);
-
-    if (handle != NULL) {
-        if (NODE_TYPE (handle) == N_spid) {
-            /* we are dealing with the vector variable case */
-            if (STReq (SPID_NAME (handle), SPID_NAME (arg_node))) {
-                node *gen_shape, *gen_default;
-
-                gen_shape = TCmakePrf1(
-                                F_shape_A,
-                                DUPdoDupTree (GENERATOR_BOUND2 (PART_GENERATOR (INFO_HSE_PART (arg_info)))));
-                gen_default = TBmakeNum (0);
-                arg_node = FREEdoFreeTree( arg_node);
-                arg_node = BuildSimpleWl( gen_shape, gen_default);
-            }
-            
-        } else {
-            /* we are dealing with the scalar variables case */
-            while (handle != NULL) {
-                if (STReq (SPID_NAME (EXPRS_EXPR (handle)), SPID_NAME (arg_node))) {
-                    arg_node = FREEdoFreeTree( arg_node);
-                    arg_node = TBmakeNum( 0);
-                    handle = NULL;
-                } else {
-                    handle = EXPRS_NEXT (handle);
-                }
-            }
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-
-static node *
-ReplaceByZeros( node *arg_node, info *arg_info)
-{
-    anontrav_t rbz_trav[2]
-      = {{N_spid, &ATravRBZspid}, {(nodetype)0, NULL}};
-
-    DBUG_ENTER ();
-
-    TRAVpushAnonymous (rbz_trav, &TRAVsons);
-
-    arg_node = TRAVopt (arg_node, arg_info);
-
-    TRAVpop ();
-
-    DBUG_RETURN (arg_node);
-}
-
 /**
  * builds a withloop generating an array of the same shape
  * as the shape of "expr" whose elements are all "zero( expr)" .
@@ -237,7 +129,6 @@ ReplaceByZeros( node *arg_node, info *arg_info)
  *
  * @param expr AST copy of the expression
  */
-
 static node *
 BuildDefault (node *expr)
 {
@@ -245,7 +136,7 @@ BuildDefault (node *expr)
     DBUG_ENTER ();
 
     DBUG_PRINT ("Building Default Element WL from expression:");
-    DBUG_EXECUTE (PRTdoPrint( expr));
+    DBUG_EXECUTE (PRTdoPrintFile (stderr, expr));
 
     shape = TCmakePrf1( F_shape_A, expr);
     def = TCmakeSpap1 (NSgetNamespace (global.preludename),
@@ -255,42 +146,47 @@ BuildDefault (node *expr)
 }
 
 
-
-
 /**
- * converts ID nodes within an EXPR chain to an Ids chain.
+ * recursive helper function for converting an exprs-chain of N_spid
+ * nodes into an N_spids-chain.
  *
- * @param exprs EXPR node chain containing ID nodes
- * @return ids chain corresponding to the ID nodes within the EXPR chain
+ * @param exprs to be converted
  */
 static node *
-Exprs2Ids (node *exprs)
+Exprs2Spids (node *exprs)
+{
+    node *res;
+    if (exprs == NULL) {
+        res = NULL;
+    } else {
+        res =  TBmakeSpids (STRcpy (SPID_NAME (EXPRS_EXPR (exprs))),
+                            Exprs2Spids (EXPRS_NEXT (exprs)));
+    }
+    return res;
+}
+
+/**
+ * converts the vector of a set-WL into an N_withid
+ *
+ * @param N_spid or N_exprs containing the idxvec or idxs
+ * @return newly created N_withid node
+ */
+static node *
+Idxs2Withid (node *idxs)
 {
     node *result = NULL;
-    node *handle = NULL;
 
     DBUG_ENTER ();
 
-    while (exprs != NULL) {
-        node *newid = NULL;
-
-        if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_spid) {
-            newid = TBmakeSpids (STRcpy (SPID_NAME (EXPRS_EXPR (exprs))), NULL);
-        } else {
-            /* create dummy id in order to go on until end of phase */
-            CTIerrorLine (global.linenum, "Found non-id expression in index vector");
-            newid = TBmakeSpids (STRcpy ("unknown_id"), NULL);
-        }
-
-        if (handle == NULL) {
-            result = newid;
-            handle = newid;
-        } else {
-            SPIDS_NEXT (handle) = newid;
-            handle = newid;
-        }
-
-        exprs = EXPRS_NEXT (exprs);
+    if (NODE_TYPE (idxs) == N_spid) {
+        result = TBmakeWithid (TBmakeSpids (STRcpy (SPID_NAME (idxs)),
+                                            NULL),
+                               NULL);
+    } else if (NODE_TYPE (idxs) == N_exprs) {
+        result = TBmakeWithid (NULL,
+                               Exprs2Spids (idxs));
+    } else {
+        CTIerrorLine (global.linenum, "illegal LHS in set expression!");
     }
 
     DBUG_RETURN (result);
@@ -326,80 +222,161 @@ HSEdoEliminateSetExpressions (node *arg_node)
 }
 
 /**
- * hook to handle axis control selections. Any selection found is parsed
- * for dots and if any found replaced by the matching withloop.
- * If currently scanning for selection ids, the ids of the selection are
- * passed to ScanId/ScanVector depending on the selection vector type.
- * All other AP nodes are passed without any further action.
+ * This is a local function to find out whether an expression
+ * "s_expr" denotes the shape of another expression "expr".
+ * It is needed to identify that a copy expression is used
+ * across the ENTIRE shape of the array it is copied from.
+ * We look for two pattern here.
  *
- * @param arg_node current node of the AST
- * @param arg_info info node
- * @return transformed AST
+ * Pattern 1 (implemented in pat1) is 
+ *    s_expr = _shape_ (expr)
+ *
+ * Pattern 2 is more intricate. here, we look for 
+ *    s_expr = [ _sel_VxA_ ([0], _shape_ (expr)),
+ *               _sel_VxA_ ([1], _shape_ (expr))...]
+ *
+ * Note for pattern 2, that we do not check how many components the array has.
+ * This implies that we consider a prefix of the shape acceptable!
  */
-node *
-HSEspap (node *arg_node, info *arg_info)
+static bool
+IsShapeOf (node *s_expr, node *expr)
 {
-    node *handle, *idx;
+    bool result = FALSE;
+    pattern *pat1, *pat2;
+    node *val, *exprs;
+    int pos;
+    int one = 1;
     DBUG_ENTER ();
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    DBUG_PRINT ("checking whether upper bound matches shape of copy expression");
+    DBUG_PRINT ("upper bound is:");
+    DBUG_EXECUTE (PRTdoPrintFile (stderr, s_expr));
+    DBUG_PRINT ("array copied from is:");
+    DBUG_EXECUTE (PRTdoPrintFile (stderr, expr));
 
-    handle = INFO_HSE_VEC (arg_info);
-    if (handle != NULL) {
-        INFO_HSE_COPY_FROM (arg_info) = NULL;
+    pat1 = PMprf (1, PMAisPrf (F_shape_A),
+                  1, PMany( 1, PMAgetNode( &val), 0));
+    pat2 = PMprf (1, PMAisPrf (F_sel_VxA),
+                  2, PMarray ( 1, PMAhasLen (&one),
+                               1, PMint( 1, PMAisIVal (&pos))),
+                     pat1);
 
-        if (STReq (SPID_NAME (SPAP_ID (arg_node)), "sel")
-            && (NODE_TYPE (EXPRS_EXPR2 (SPAP_ARGS (arg_node))) == N_spid) ) {
+    if (PMmatchExact (pat1, s_expr)) {
+        result =  (CMPTdoCompareTree (expr, val) == CMPT_EQ);
+    } else if (NODE_TYPE (s_expr) == N_array) {
+        exprs = ARRAY_AELEMS (s_expr);
+        pos = 0;
+        result = TRUE;
+        while ((exprs != NULL) && (result == TRUE)) {
+            result = (PMmatchExact (pat2, EXPRS_EXPR (exprs))
+                      && (CMPTdoCompareTree (expr, val) == CMPT_EQ));
+            exprs = EXPRS_NEXT (exprs);
+            pos++;
+        }
+    }
 
-            idx = EXPRS_EXPR1 (SPAP_ARGS (arg_node));
+    DBUG_PRINT ("upper bound does %s match shape of copy expression",
+                (result ? "" : "NOT"));
 
-            if ((NODE_TYPE (handle) == N_spid) && (NODE_TYPE (idx) == N_spid)
-                && STReq (SPID_NAME (handle), SPID_NAME (idx))) {
-                INFO_HSE_COPY_FROM (arg_info) = EXPRS_EXPR2 (SPAP_ARGS (arg_node));
+    pat2 = PMfree (pat2);
 
-            } else if (NODE_TYPE (idx) == N_array) {
-                idx = ARRAY_AELEMS (idx);
-                INFO_HSE_COPY_FROM (arg_info) = EXPRS_EXPR2 (SPAP_ARGS (arg_node));
-                while ((handle != NULL) && (idx != NULL)) {
-                    if ((NODE_TYPE (EXPRS_EXPR( idx)) == N_spid)
-                        && STReq (SPID_NAME (EXPRS_EXPR (handle)), SPID_NAME ( EXPRS_EXPR (idx)))) {
-                        handle = EXPRS_NEXT (handle);
-                        idx = EXPRS_NEXT (idx);
+    DBUG_RETURN (result);
+}
+
+/**
+ * This function checks whether the generator indices "idxs" are 
+ * used as indices in a given selection "array_expr"["idx_expr"].
+ * We look for the following pattern:
+ * Pattern 1:  idx_expr == idxs  (index vector case)
+ * Pattern 2:  [idx_expr] == idxs (overloaded selection sel::int x int[+] -> int[*])
+ * Pattern 3:  idx_expr == [i1,...,in] = idxs (scalar case)
+ */
+static node *
+CheckCopy (node *idxs, node *idx_expr, node *array_expr)
+{
+    node * result = NULL;
+    DBUG_ENTER ();
+
+    if (!SEUTcontainsIdxs (array_expr, idxs)) {
+
+        if ((NODE_TYPE (idxs) == N_spid) && (NODE_TYPE (idx_expr) == N_spid)
+            && STReq (SPID_NAME (idxs), SPID_NAME (idx_expr))) {
+            // pattern 1:
+            result = array_expr;
+        } else if (NODE_TYPE (idxs) == N_exprs) {
+            if (NODE_TYPE (idx_expr) == N_spid) {
+                if ((EXPRS_NEXT (idxs) == NULL)
+                    && STReq (SPID_NAME (EXPRS_EXPR (idxs)),
+                              SPID_NAME (idx_expr))) {
+                    // pattern 2:
+                    result = array_expr;
+                }
+            } else if (NODE_TYPE (idx_expr) == N_array) {
+                // pattern 3:
+                idx_expr = ARRAY_AELEMS (idx_expr);
+                result = array_expr;
+                while ((idxs != NULL) && (idx_expr != NULL)) {
+                    if ((NODE_TYPE (EXPRS_EXPR( idx_expr)) == N_spid)
+                        && STReq (SPID_NAME (EXPRS_EXPR (idxs)),
+                                  SPID_NAME ( EXPRS_EXPR (idx_expr)))) {
+                        idxs = EXPRS_NEXT (idxs);
+                        idx_expr = EXPRS_NEXT (idx_expr);
                     } else {
-                        INFO_HSE_COPY_FROM (arg_info) = NULL;
-                        handle = NULL;
+                        result = NULL;
+                        idxs = NULL;
                     }
+                }
+                if ((idxs != NULL) || (idx_expr != NULL)) {
+                    result = NULL;
                 }
             }
         }
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (result);
 }
 
 /**
- * Used to scan selections for ids found in a prior lamination.
- * Depending on the type of the selection vector, ScanId or ScanVector
- * is called.
+ * 
+ * checks whether the given expression "expr" is a selection
+ * of the form  <arr-expr>[ iv ] or
+ *              <arr-expr>[ i_1, ..., i_n]
+ * where iv/i_x are identical to the indices given in "idxs".
  *
- * @param arg_node current node of the AST
- * @param arg_info info node
- * @return current node of the AST
+ * If found, and "idxs" are not free in <arr-expr>, <arr-expr>
+ * is returned; otherwise, NULL is returned.
+ *
+ * @param expr the body term to be analysed
+ * @param idxs the index vector (spid, or exprs(spid))
+ * @return <arr-expr> or NULL
  */
-node *
-HSEprf (node *arg_node, info *arg_info)
+static node *
+IsCopyBody (node *expr, node *idxs)
 {
+    node *result = NULL;
     DBUG_ENTER ();
 
-    arg_node = TRAVcont (arg_node, arg_info);
+    if ((NODE_TYPE (expr) == N_spap)
+        && STReq (SPID_NAME (SPAP_ID (expr)), "sel")) {
+        result = CheckCopy (idxs,
+                            EXPRS_EXPR1 (SPAP_ARGS (expr)),
+                            EXPRS_EXPR2 (SPAP_ARGS (expr)));
+    } else if ((NODE_TYPE (expr) == N_prf)
+               && (PRF_PRF (expr) == F_sel_VxA)) {
+        result = CheckCopy (idxs,
+                            EXPRS_EXPR1 (PRF_ARGS (expr)),
+                            EXPRS_EXPR2 (PRF_ARGS (expr)));
+    }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (result);
 }
 
 /**
- * Used to scan selections for ids found in a prior lamination.
- * Depending on the type of the selection vector, ScanId or ScanVector
- * is called.
+ * traverse inner set-wls and infer INFO_HSE_FULLPART.
+ * FULLPART is true, iff one of the following pattern matches:
+ * Pattern 1: ( . <= ? rel ub)  (no step no width!)
+ * Pattern 2: ( F_mul_SxV ( 0, ?) <= ? rel ub) 
+ * Pattern 3: ( [0,...,0] <= ? rel ub) 
  *
  * @param arg_node current node of the AST
  * @param arg_info info node
@@ -409,18 +386,32 @@ node *
 HSEgenerator (node *arg_node, info *arg_info)
 {
     node *handle;
+    node *lb;
+    pattern *pat;
+    int zero=0;
     DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
     
+    lb = GENERATOR_BOUND1 (arg_node);
     INFO_HSE_FULLPART (arg_info) = FALSE;
+
+    pat = PMprf (1, PMAisPrf (F_mul_SxV),
+                 2, PMint (1, PMAisIVal (&zero)),
+                    PMany (0, 0));
+
     if ((GENERATOR_STEP (arg_node) == NULL)
         && (GENERATOR_WIDTH (arg_node) == NULL)
         && (GENERATOR_OP1 (arg_node) == F_wl_le)) {
-        if (NODE_TYPE( GENERATOR_BOUND1 (arg_node)) == N_dot) {
+        if (NODE_TYPE( lb) == N_dot) {
+            // pattern 1:
             INFO_HSE_FULLPART (arg_info) = TRUE;
-        } else if (NODE_TYPE( GENERATOR_BOUND1 (arg_node)) == N_array) {
-            handle = ARRAY_AELEMS (GENERATOR_BOUND1 (arg_node));
+        } else if (PMmatchExact (pat, lb)) {
+            // pattern 2:
+            INFO_HSE_FULLPART (arg_info) = TRUE;
+        } else if (NODE_TYPE( lb) == N_array) {
+            // pattern 3:
+            handle = ARRAY_AELEMS (lb);
             INFO_HSE_FULLPART (arg_info) = TRUE;
             while (handle != NULL) {
                 if ((NODE_TYPE (EXPRS_EXPR (handle)) == N_num)
@@ -434,17 +425,25 @@ HSEgenerator (node *arg_node, info *arg_info)
         }
     }
     
+    pat = PMfree (pat);
 
     DBUG_RETURN (arg_node);
 }
 
 
 /**
- * hook to handle any lamination operators. The inner expression is parsed for
- * occuriencies of ids in the lamination vector. Afterwards the lamination
- * operator is replaced by the corresponding withloop and the inner expression
- * is parsed. To distinguish between parsing for ids and normal dot
- * replacement, an entry within the info node is used.
+ * This is the centrepiece of this traversal. It generates partitions 
+ * bottom up and it tries to avoid a partition for the last set notation:
+ * { iv -> a[iv] | . <= iv < shape(a) } turns into modarray(a), and
+ * { iv -> const | . <= iv < ub } turns into genarray( up, const),
+ * otherwise, { iv -> expr | lb <= iv < ub} turns into
+ * with {
+ *    (lb <= iv < ub) : expr;
+ * } : genarray (ub, genarray (shape (expr'), zero (expr')));
+ * 
+ * where expr' = [expr]_{iv}^{0}
+ *
+ * For details see the HSE description in sacdoc/bnf/desugaring.tex.
  *
  * @param arg_node current node of the ast
  * @param arg_info info node
@@ -453,7 +452,7 @@ HSEgenerator (node *arg_node, info *arg_info)
 node *
 HSEsetwl (node *arg_node, info *arg_info)
 {
-    node *code, *part;
+    node *code, *part, *subst;
     info *oldinfo = NULL;
     DBUG_ENTER ();
 
@@ -470,25 +469,35 @@ HSEsetwl (node *arg_node, info *arg_info)
     INFO_HSE_VEC (arg_info) = SETWL_VEC (arg_node);
 
     /* traverse the generator (may contain setwls!) 
-     * This traversal also infers INFO_HSE_FULLPART
+     * This traversal infers INFO_HSE_FULLPART which is only valid
      * in case INFO_HSE_LASTPART is TRUE!
      */
     DBUG_PRINT ("traversing generator");
     SETWL_GENERATOR (arg_node) = TRAVdo (SETWL_GENERATOR (arg_node), arg_info);
-    DBUG_PRINT ("generator is %s", (INFO_HSE_FULLPART (arg_info) ? "full" : "not full"));
+    DBUG_PRINT ("generator is %s",
+                (INFO_HSE_FULLPART (arg_info) ?
+                 "full if this is the last partition." :
+                 "not full."));
 
     /* traverse the expression (may contain setwls!)
      * This traversal also infers INFO_HSE_GENREF and INFO_HSE_COPY_FROM
      * in case INFO_HSE_LASTPART is TRUE!
      */
     DBUG_PRINT ("traversing expression");
-    INFO_HSE_GENREF (arg_info) = FALSE;
     SETWL_EXPR (arg_node) = TRAVdo (SETWL_EXPR (arg_node), arg_info);
+    INFO_HSE_GENREF (arg_info) = SEUTcontainsIdxs (SETWL_EXPR (arg_node),
+                                                   SETWL_VEC (arg_node));
     DBUG_PRINT( "generator variable %s in expression!",
                 (INFO_HSE_GENREF (arg_info)? "found" : "not found"));
-    DBUG_PRINT( "expression is %s%s!",
-                (INFO_HSE_COPY_FROM (arg_info) == NULL ? "not a copy partition" : "copy of "),
-                (INFO_HSE_COPY_FROM (arg_info) == NULL ? "" : SPID_NAME (INFO_HSE_COPY_FROM (arg_info))));
+    INFO_HSE_COPY_FROM (arg_info) = IsCopyBody (SETWL_EXPR (arg_node),
+                                                SETWL_VEC (arg_node));
+    if ((INFO_HSE_COPY_FROM (arg_info) != NULL)
+        && !IsShapeOf (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node)),
+                       INFO_HSE_COPY_FROM (arg_info))) {
+        INFO_HSE_COPY_FROM (arg_info) = NULL;
+    }
+    DBUG_PRINT( "expression is %sa copy partition!",
+                (INFO_HSE_COPY_FROM (arg_info) == NULL ?  "NOT " : ""));
     
     /* We build the WLs bottom up! */
     if (SETWL_NEXT (arg_node) != NULL) {
@@ -499,8 +508,9 @@ HSEsetwl (node *arg_node, info *arg_info)
 
     /* Now, we add a new partition to arg_info, iff we are 
      *   not the last partition
-     *   or, in case we are the last part, we refer to the generator variable(s)
-     *   and do so in a way different from a copying expression (ie a[iv])
+     *   or, in case we are the last part, we have an incomplete partition,
+     *   or, in case we are the last part and complete, we refer to the generator variable(s)
+     *   and do so in a way different from a full (!) copying expression (ie a[iv])
      */
     if (!INFO_HSE_LASTPART (arg_info) || !INFO_HSE_FULLPART (arg_info)
          || (INFO_HSE_GENREF (arg_info) && (INFO_HSE_COPY_FROM (arg_info) == NULL))) {
@@ -513,39 +523,55 @@ HSEsetwl (node *arg_node, info *arg_info)
         CODE_NEXT (code) = INFO_HSE_CODE (arg_info);
         INFO_HSE_CODE (arg_info) = code;
 
-        if (NODE_TYPE (SETWL_VEC (arg_node)) == N_exprs) {
-            part = TBmakePart (code,
-                               TBmakeWithid (NULL, Exprs2Ids (DUPdoDupTree (SETWL_VEC (arg_node)))),
-                               DUPdoDupTree (SETWL_GENERATOR (arg_node)));
-        } else {
-            part = TBmakePart (code,
-                               TBmakeWithid (TBmakeSpids (STRcpy (SPID_NAME (SETWL_VEC (arg_node))), NULL), NULL),
-                               DUPdoDupTree (SETWL_GENERATOR (arg_node)));
-        }
+        part = TBmakePart (code,
+                           Idxs2Withid (SETWL_VEC (arg_node)),
+                           DUPdoDupTree (SETWL_GENERATOR (arg_node)));
+
         PART_NEXT (part) = INFO_HSE_PART (arg_info);
         INFO_HSE_PART (arg_info) = part;
         DBUG_PRINT ("partition inserted:");
-        DBUG_EXECUTE (PRTdoPrint( part));
-
+        DBUG_EXECUTE (PRTdoPrintFile(stderr, part));
     }
 
     /* if we are the last partition, we generate the operator part now: */
     if (INFO_HSE_LASTPART (arg_info)) {
         DBUG_PRINT ("building withop");
-        if (INFO_HSE_FULLPART (arg_info) && (INFO_HSE_COPY_FROM (arg_info) != NULL)) {
-            /* we can generate a modarray WL (the last partition has not been generated!) */
-            INFO_HSE_WITHOP (arg_info) = TBmakeModarray (DUPdoDupTree (INFO_HSE_COPY_FROM (arg_info)));
-        } else if (INFO_HSE_FULLPART (arg_info) && !INFO_HSE_GENREF (arg_info)) {
-            /* As there is no reference to the generator, we use the expression as default */
-            INFO_HSE_WITHOP (arg_info) = TBmakeGenarray (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
-                                                         DUPdoDupTree (SETWL_EXPR (arg_node)) );
-        } else {
+        if (INFO_HSE_FULLPART (arg_info)
+            && (INFO_HSE_COPY_FROM (arg_info) != NULL)) {
+            /*
+             * we can generate a modarray WL
+             * (the last partition has not been generated!)
+             */
             INFO_HSE_WITHOP (arg_info)
-                = TBmakeGenarray (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
-                                  BuildDefault (ReplaceByZeros (DUPdoDupTree (SETWL_EXPR (arg_node)), arg_info)) );
+              = TBmakeModarray (DUPdoDupTree (INFO_HSE_COPY_FROM (arg_info)));
+        } else if (INFO_HSE_FULLPART (arg_info) && !INFO_HSE_GENREF (arg_info)) {
+            /*
+             * As there is no reference to the generator and the partition is full,
+             * we use the expression as default.
+             * If the partition is NOT full, we have to generate a default default
+             * (see next case :-)
+             */
+            INFO_HSE_WITHOP (arg_info)
+              = TBmakeGenarray (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
+                                DUPdoDupTree (SETWL_EXPR (arg_node)) );
+        } else {
+            if (NODE_TYPE (SETWL_VEC (arg_node)) == N_spid) {
+                subst = TCmakePrf2 (F_mul_SxV,
+                                    TBmakeNum (0),
+                                    DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))));
+            } else {
+                subst = TBmakeNum (0);
+            }
+            INFO_HSE_WITHOP (arg_info)
+                = TBmakeGenarray
+                    (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
+                     BuildDefault (SEUTsubstituteIdxs (DUPdoDupTree (SETWL_EXPR (arg_node)),
+                                                       SETWL_VEC (arg_node),
+                                                       subst)));
+            subst = FREEdoFreeTree (subst);
         }
         DBUG_PRINT ("withop inserted:");
-        DBUG_EXECUTE (PRTdoPrint (INFO_HSE_WITHOP (arg_info)));
+        DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_HSE_WITHOP (arg_info)));
     }
 
     arg_node = FREEdoFreeTree (arg_node);
@@ -557,42 +583,6 @@ HSEsetwl (node *arg_node, info *arg_info)
         arg_info = FreeInfo( arg_info);
     }
 
-    DBUG_RETURN (arg_node);
-}
-
-/**
- * @brief hook to replace ids bound by setwl notation
- *        within default values.
- *
- * @param arg_node current node of the ast
- * @param arg_info info node
- *
- * @return transformed AST
- */
-node *
-HSEspid (node *arg_node, info *arg_info)
-{
-    node *handle;
-    bool found;
-    DBUG_ENTER ();
-
-    handle = INFO_HSE_VEC (arg_info);
-
-    if (handle != NULL) {
-        if (NODE_TYPE (handle) == N_spid) {
-            /* we are dealing with the vector variable case */
-            found = STReq (SPID_NAME (handle), SPID_NAME (arg_node));
-            INFO_HSE_GENREF (arg_info) = INFO_HSE_GENREF (arg_info) || found;
-        } else {
-            /* we are dealing with the scalar variables case */
-            while (handle != NULL) {
-                found = STReq (SPID_NAME (EXPRS_EXPR (handle)), SPID_NAME (arg_node));
-                INFO_HSE_GENREF (arg_info) = INFO_HSE_GENREF (arg_info) || found;
-                handle = EXPRS_NEXT (handle);
-            }
-        }
-    }
-    
     DBUG_RETURN (arg_node);
 }
 

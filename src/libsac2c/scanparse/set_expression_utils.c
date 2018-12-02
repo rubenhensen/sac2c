@@ -282,6 +282,7 @@ struct CIFTINFO {
 struct RBZINFO {
     node *spid;
     node *subst;
+    bool found;
 };
 
 struct INFO {
@@ -306,7 +307,7 @@ node *ATravCIFTspid( node * arg_node, info * arg_info)
 
 bool SEUTcontainsIdFromTable (node *expr, idtable *from, idtable *to)
 {
-    info arg_info = {{FALSE,from,to},{NULL,NULL}};
+    info arg_info = {{FALSE,from,to},{NULL,NULL,FALSE}};
     anontrav_t cift_trav[2]
       = {{N_spid, &ATravCIFTspid}, {(nodetype)0, NULL}};
 
@@ -613,6 +614,7 @@ void SEUTscanSelectionForShapeInfo( node *idxvec, node *array, idtable *scope)
 
 #define INFO_RBZ_SPID(n) ((n)->rbz.spid)
 #define INFO_RBZ_SUBST(n) ((n)->rbz.subst)
+#define INFO_RBZ_FOUND(n) ((n)->rbz.found)
 
 static node *
 ATravRBZspid (node *arg_node, info *arg_info)
@@ -671,7 +673,7 @@ SubstituteSpid (node *expr, node *spid, node *subst)
     anontrav_t rbz_trav[3] = {{N_spid, &ATravRBZspid},
                               {N_setwl, &ATravRBZsetwl},
                               {(nodetype)0, NULL}};
-    info arg_info = {{FALSE,NULL,NULL},{spid, subst}};
+    info arg_info = {{FALSE,NULL,NULL},{spid,subst,FALSE}};
 
     DBUG_ENTER ();
 
@@ -703,5 +705,67 @@ SEUTsubstituteIdxs (node *expr, node *idxs, node *subst)
 
     DBUG_RETURN (expr);
 }
+
+/******************************************************************************
+ *
+ * Below is the search mechanism which is needed to find relatively free
+ * variables in expressions. It piggy-backs on the substitution mechanism
+ * above and shares the anti-shadowing mechanism (ATravRBZsetwl)
+ */
+static node *
+ATravRBZspid2 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (STReq (SPID_NAME (INFO_RBZ_SPID (arg_info)), SPID_NAME (arg_node))) {
+        INFO_RBZ_FOUND (arg_info) = TRUE;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+static bool
+FindSpid (node *expr, node *spid)
+{
+    anontrav_t rbz_trav[3] = {{N_spid, &ATravRBZspid2},
+                              {N_setwl, &ATravRBZsetwl},
+                              {(nodetype)0, NULL}};
+    info arg_info = {{FALSE,NULL,NULL},{spid,NULL,FALSE}};
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("searching for free occurrence of variable \"%s\" in",
+                SPID_NAME (spid));
+    DBUG_EXECUTE (PRTdoPrint (expr));
+
+    TRAVpushAnonymous (rbz_trav, &TRAVsons);
+
+    expr = TRAVopt (expr, &arg_info);
+
+    TRAVpop ();
+
+    DBUG_RETURN (INFO_RBZ_FOUND (&arg_info));
+}
+
+bool
+SEUTcontainsIdxs (node *expr, node *idxs)
+{
+    node *idx;
+    bool found=FALSE;
+    DBUG_ENTER ();
+
+    if (NODE_TYPE (idxs) == N_spid) {
+        found = FindSpid (expr, idxs);
+    } else {
+        do {
+            idx = EXPRS_EXPR (idxs);
+            found = found || FindSpid (expr, idx);
+            idxs = EXPRS_NEXT (idxs);
+        } while (idxs != NULL);
+    }
+
+    DBUG_RETURN (found);
+}
+
 
 #undef DBUG_PREFIX

@@ -1,7 +1,7 @@
 #include "handle_with_loop_dots.h"
 #include "traverse.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "HWLD"
 #include "debug.h"
 
 #include "free.h"
@@ -14,6 +14,7 @@
 #include "new_types.h"
 #include "globals.h"
 #include "tree_compound.h"
+#include "print.h"
 
 #include <strings.h>
 
@@ -268,6 +269,7 @@ HWLDpart (node *arg_node, info *arg_info)
     /*
      * First, we collect INFO_HWLD_IDXLEN from WITHID_IDS:
      */
+    DBUG_PRINT ("inferring IDXLEN");
     PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
     /*
      * Now, we do the actual generator adjustment:
@@ -302,6 +304,7 @@ HWLDwithid (node *arg_node, info *arg_info)
 
     if (WITHID_IDS (arg_node) != NULL) {
         INFO_HWLD_IDXLEN (arg_info) = TBmakeNum (TCcountSpids (WITHID_IDS (arg_node)));
+        DBUG_PRINT ("IDXLEN set to index-length %d!", TCcountSpids (WITHID_IDS (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -354,26 +357,36 @@ HWLDgenerator (node *arg_node, info *arg_info)
                               TCcreateIntVector (1, 0, 1),
                               TCmakePrf1 (F_shape_A,
                                           DUPdoDupTree (GENERATOR_BOUND1 (arg_node))));
+            DBUG_PRINT ("IDXLEN set to lower-bound length!");
         } else if (!DOT_ISSINGLE (GENERATOR_BOUND2 (arg_node))) {
             INFO_HWLD_IDXLEN (arg_info)
                 = TCmakePrf2 (F_sel_VxA,
                               TCcreateIntVector (1, 0, 1),
                               TCmakePrf1 (F_shape_A,
                                           DUPdoDupTree (GENERATOR_BOUND2 (arg_node))));
+            DBUG_PRINT ("IDXLEN set to upper-bound length!");
         } else if (GENERATOR_STEP (arg_node) != NULL) {
             INFO_HWLD_IDXLEN (arg_info)
                 = TCmakePrf2 (F_sel_VxA,
                               TCcreateIntVector (1, 0, 1),
                               TCmakePrf1 (F_shape_A,
                                           DUPdoDupTree (GENERATOR_STEP (arg_node))));
+            DBUG_PRINT ("IDXLEN set to step length!");
         } else if (GENERATOR_WIDTH (arg_node) != NULL) {
             INFO_HWLD_IDXLEN (arg_info)
                 = TCmakePrf2 (F_sel_VxA,
                               TCcreateIntVector (1, 0, 1),
                               TCmakePrf1 (F_shape_A,
                                           DUPdoDupTree (GENERATOR_WIDTH (arg_node))));
+            DBUG_PRINT ("IDXLEN set to width length!");
         }
     } 
+    DBUG_PRINT ("final IDXLEN %s", ((INFO_HWLD_IDXLEN (arg_info) == NULL)?
+                                    "not set - full length!" :
+                                    "set to"));
+    DBUG_EXECUTE ( if (INFO_HWLD_IDXLEN (arg_info) != NULL) {
+                       PRTdoPrintFile (stderr, INFO_HWLD_IDXLEN (arg_info));
+                   });
 
     if (DOT_ISSINGLE (GENERATOR_BOUND1 (arg_node))) {
         /* replace "." by "0 * shp" */

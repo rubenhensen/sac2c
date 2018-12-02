@@ -1174,7 +1174,7 @@
 		  <node name="Modarray" />
 		  <node name="Fold" />
 		  <node name="Part" />
-		  <node name="WithId" />
+		  <node name="Withid" />
 		  <node name="Generator" />
 		</travuser>
 	      </traversal>
@@ -1198,11 +1198,8 @@
 	      </traversal>
 	      <traversal id="HSE" name="Handle Set Expressions" default="sons" include="handle_set_expressions.h">
 		<travuser>
-		  <node name="SPAp" />
-		  <node name="Prf" />
 		  <node name="Generator" />
 		  <node name="SetWL" />
-		  <node name="SPId" />
 		</travuser>
 	      </traversal>
 	      <traversal id="CSGD" name="Check and Simplify Generic Definitions" default="sons" include="check_and_simplify_generic_definitions.h">

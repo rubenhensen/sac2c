@@ -286,7 +286,7 @@ SERIgenerator (node *arg_node, info *arg_info)
                  *    =>   { didxs -> expr | idxs <= . ; ...}
                  *
                  */
-                CTIwarn ("Unable to infer upper bound for a partition of"
+                CTInote ("Unable to infer upper bound for a partition of"
                          " a set expression; using \".\" instead.");
                 GENERATOR_BOUND2 (arg_node) = TBmakeDot (1);
                 GENERATOR_OP2 (arg_node) = F_wl_le;

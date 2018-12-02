@@ -19,5 +19,6 @@ extern void SEUTscanSelectionForShapeInfo( node *idxvec, node *arg, idtable *sco
 extern node *SEUTgenShape (idtable *identry);
 
 extern node *SEUTsubstituteIdxs (node *expr, node *idxs, node *subst);
+extern bool SEUTcontainsIdxs (node *expr, node *idxs);
 
 #endif /* _SET_EXPRESSSION_UTILS_H_ */
