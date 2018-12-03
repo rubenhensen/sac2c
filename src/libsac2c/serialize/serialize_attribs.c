@@ -202,7 +202,7 @@ SATserializeSizet (info *info, size_t attr, node *parent)
 {
     DBUG_ENTER ();
 
-    fprintf (INFO_SER_FILE (info), "%zu", attr);
+    fprintf (INFO_SER_FILE (info), "ASSERT_TYPESIZE (size_t, (size_t)%zu)", attr);
 
     DBUG_RETURN ();
 }
@@ -245,7 +245,7 @@ SATserializeByte (info *info, char attr, node *parent)
 {
     DBUG_ENTER ();
 
-    fprintf (INFO_SER_FILE (info), "%d", attr);
+    fprintf (INFO_SER_FILE (info), "ASSERT_TYPESIZE (int, %d)", attr);
 
     DBUG_RETURN ();
 }
@@ -311,7 +311,7 @@ SATserializeLong (info *info, long attr, node *parent)
 {
     DBUG_ENTER ();
 
-    fprintf (INFO_SER_FILE (info), "%ld", attr);
+    fprintf (INFO_SER_FILE (info), "ASSERT_TYPESIZE (long, %ldL)", attr);
 
     DBUG_RETURN ();
 }
@@ -333,7 +333,7 @@ SATserializeLonglong (info *info, long long attr, node *parent)
 {
     DBUG_ENTER ();
 
-    fprintf (INFO_SER_FILE (info), "%lldLL", attr);
+    fprintf (INFO_SER_FILE (info), "ASSERT_TYPESIZE (long long, %lldLL)", attr);
 
     DBUG_RETURN ();
 }
@@ -377,7 +377,7 @@ SATserializeUshort (info *info, unsigned short attr, node *parent)
 {
     DBUG_ENTER ();
 
-    fprintf (INFO_SER_FILE (info), "%u", attr);
+    fprintf (INFO_SER_FILE (info), "ASSERT_TYPESIZE (unsigned int, %u)", attr);
 
     DBUG_RETURN ();
 }
@@ -421,7 +421,7 @@ SATserializeUlong (info *info, unsigned long attr, node *parent)
 {
     DBUG_ENTER ();
 
-    fprintf (INFO_SER_FILE (info), "%lu", attr);
+    fprintf (INFO_SER_FILE (info), "ASSERT_TYPESIZE (unsigned long, %luUL)", attr);
 
     DBUG_RETURN ();
 }
@@ -443,7 +443,7 @@ SATserializeUlonglong (info *info, unsigned long long attr, node *parent)
 {
     DBUG_ENTER ();
 
-    fprintf (INFO_SER_FILE (info), "%lluULL", attr);
+    fprintf (INFO_SER_FILE (info), "ASSERT_TYPESIZE (unsigned long long, %lluULL)", attr);
 
     DBUG_RETURN ();
 }

@@ -130,6 +130,20 @@ GenerateSerFileHead (FILE *file, node *module)
                    "#endif\n\n");
 
     fprintf (file, "#define DROP( x, y) y\n");
+    
+    /* This is an implementation of a static assert that checks the value of
+       `e` at compile time and terminates compilation in case it is 0.
+       If we ever switch to C11 or later such a funtionality is built-in.  */
+    fprintf (file, "#define STATIC_ASSERT(e, x)  "
+                   "((struct {const int junk[e ? 1 : -1];}){.junk={1}}.junk[0] ? x : x)\n");
+
+    /* Check that the size of the value `v` matches the type of the type `t`.
+       Terminate compilation if it doesn't and return `v` otherwise.
+       For example:
+
+          ASSERT_TYPESIZE (int,  5)    evaluates to 5
+          ASSERT_TYPESIZE (char, 5)    terminates the compilation  */
+    fprintf (file, "#define ASSERT_TYPESIZE(t, v) STATIC_ASSERT (sizeof (v) == sizeof (t), v)\n");
 
     DBUG_RETURN ();
 }
