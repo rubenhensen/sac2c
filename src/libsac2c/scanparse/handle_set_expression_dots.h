@@ -5,5 +5,6 @@
 
 extern node *HSEDdoEliminateSetExpressionDots (node *arg_node);
 extern node *HSEDsetwl (node *arg_node, info *arg_info);
+extern node *HSEDgenerator (node *arg_node, info *arg_info);
 
 #endif /* _HANDLE_SET_EXPRESSION_DOTS_H_ */
