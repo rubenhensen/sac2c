@@ -18,27 +18,8 @@
 #include <strings.h>
 
 /**
- * @file handle_set_expressions.c
+ * @file handle_set_expression_dots.c
  *
- * This file contains any code needed to eleminate dots within
- * sac source code. Dots can appear in the following positions:
- * - as boundary shortcuts in withloops
- * - to mark free dimensions within a selection
- *
- * Dots at boundary positions within withloops are replaced by the
- * minimal/maximal possible value, eg. 0 and the shape vector. As
- * a side effect, the comparison operators are 'normalized' to <= for
- * lower boundaries and < for the upper ones.
- *
- * Multi dimensional selections are transfomed to their withloop
- * representation, thus eleminating any dots.
- *
- * As well, the new set notation is transformed into its withloop
- * representation, as it usually appears near to multi dimensional
- * selections.
- *
- * After traversal, there should be no more dot nodes within the AST.
- * Otherwise a warning is generated.
  */
 
 /**
@@ -132,26 +113,6 @@ MakeTmpId (char *name)
  * @param ids EXPRS node containing ids
  * @return number of dots found
  *****************************************************************************/
-static int
-CountDotsInVector (node *ids, int n)
-{
-    int result = 0;
-
-    DBUG_ENTER ();
-
-    if (NODE_TYPE (ids) != N_exprs) {
-        result = 0;
-    } else {
-        while (ids != NULL) {
-            if ((NODE_TYPE (EXPRS_EXPR (ids)) == N_dot)
-                && (DOT_NUM (EXPRS_EXPR (ids)) == n))
-                result++;
-            ids = EXPRS_NEXT (ids);
-        }
-    }
-
-    DBUG_RETURN (result);
-}
 
 /** <!--********************************************************************-->
  * counts the number of triple dots contained in
@@ -160,13 +121,6 @@ CountDotsInVector (node *ids, int n)
  * @param ids EXPRS node containing ids
  * @return number of triple dots found
  *****************************************************************************/
-static int
-CountTripleDots (node *ids)
-{
-    DBUG_ENTER ();
-
-    DBUG_RETURN (CountDotsInVector (ids, 3));
-}
 
 /** <!--********************************************************************-->
  * traverses spids vector and replaces dots by new spids and creates an 
@@ -175,167 +129,115 @@ CountTripleDots (node *ids)
  * @param exprs EXPR node containing ids
  * @return N_exprs chain of new spids
  *****************************************************************************/
-static node *
-HandleSingleDots (node *exprs)
-{
-    DBUG_ENTER ();
-    node *array=NULL;
-    node *spid;
-
-    if (EXPRS_NEXT(exprs) != NULL)  {
-        array = HandleSingleDots (EXPRS_NEXT(exprs));
-    }
-    if( NODE_TYPE( EXPRS_EXPR( exprs)) == N_dot) {
-        EXPRS_EXPR( exprs) = FREEdoFreeNode (EXPRS_EXPR( exprs));
-        spid = MakeTmpId( "dot");
-        EXPRS_EXPR( exprs) = spid;
-
-        array = TBmakeExprs( DUPdoDupNode( spid), array);
-    }
-    DBUG_RETURN (array);
-}
-
-static node *
-HandleSingleDotsBeforeTriple (node *exprs, node *vec, int pos)
-{
-    DBUG_ENTER ();
-    node *array=NULL;
-
-    if (NODE_TYPE (EXPRS_EXPR (exprs)) != N_dot ) {
-        array = HandleSingleDotsBeforeTriple (EXPRS_NEXT(exprs), vec, pos+1);
-    } else if (DOT_NUM (EXPRS_EXPR (exprs)) != 3) {
-        array = HandleSingleDotsBeforeTriple (EXPRS_NEXT(exprs), vec, pos+1);
-
-        array = TBmakeExprs( TCmakePrf2 (F_sel_VxA,
-                                         TCmakeIntVector (
-                                             TBmakeExprs( TBmakeNum( pos), NULL)),
-                                         DUPdoDupNode( vec)),
-                             array);
-    }
-    DBUG_RETURN (array);
-}
-
-static node *
-HandleSingleDotsBehindTriple( node *exprs, node *vec, int pos, node *len_td)
-{
-    DBUG_ENTER ();
-    node *array=NULL;
-
-    if (EXPRS_NEXT(exprs) != NULL)  {
-        array = HandleSingleDotsBehindTriple (EXPRS_NEXT(exprs), vec, pos+1, len_td);
-    }
-    if( NODE_TYPE( EXPRS_EXPR( exprs)) == N_dot) {
-        array = TBmakeExprs( TCmakePrf2 (F_sel_VxA,
-                                         TCmakeIntVector (
-                                             TBmakeExprs (
-                                                 TCmakePrf2 (F_add_SxS,
-                                                             DUPdoDupTree (len_td),
-                                                             TBmakeNum( pos)),
-                                                 NULL)),
-                                         DUPdoDupNode( vec)),
-                             array);
-    }
-    DBUG_RETURN (array);
-}
-
-static int
-FindPos( char *name, node  *exprs)
-{
-  int pos;
-  pos = 0;
-  DBUG_ENTER();
-
-  while ((exprs!= NULL) 
-         && ((NODE_TYPE (EXPRS_EXPR (exprs)) != N_spid)
-            || !STReq( SPID_NAME (EXPRS_EXPR (exprs)), name))) {
-    pos++;
-    exprs = EXPRS_NEXT (exprs);
-  }
-  if (exprs == NULL) {
-    pos = -1;
-  }
-  DBUG_RETURN( pos);
-}
-
-static node *
-ATravSetSpidZero (node *arg_node, info *arg_info)
-{
-  int pos;
-  DBUG_ENTER ();
-  pos = FindPos (SPID_NAME (arg_node), INFO_HSED_IDS (arg_info));
-  if (pos>=0) {
-    arg_node = FREEdoFreeNode( arg_node);
-    arg_node = TBmakeNum( 0);
-  }
-  DBUG_RETURN (arg_node);
-}
-
-
-static node *
-ReplaceIdsZero( node *expr, node *ids)
-{
-    info *arg_info;
-    anontrav_t riz_trav[2] = {{N_spid, &ATravSetSpidZero}, {(nodetype)0, NULL}};
-    DBUG_ENTER ();
-
-    TRAVpushAnonymous (riz_trav, &TRAVsons);
-
-    arg_info = MakeInfo ();
-    INFO_HSED_IDS (arg_info) = ids;
-    expr = TRAVopt (expr, arg_info);
-    arg_info = FreeInfo (arg_info);
-
-    TRAVpop ();
-    DBUG_RETURN (expr);
-}
-
-static node *
-ATravSetSpidSel (node *arg_node, info *arg_info)
-{
-  int pos;
-  DBUG_ENTER ();
-  pos = FindPos (SPID_NAME (arg_node), INFO_HSED_IDS (arg_info));
-  if (pos>=0) {
-    arg_node = FREEdoFreeNode( arg_node);
-    arg_node = TBmakeNum( 0);
-  }
-  DBUG_RETURN (arg_node);
-}
-
-static node *
-ReplaceIdsSel( node *expr, node *ids, node *len_td)
-{
-    info *arg_info;
-    anontrav_t riz_trav[2] = {{N_spid, &ATravSetSpidSel}, {(nodetype)0, NULL}};
-    DBUG_ENTER ();
-
-    TRAVpushAnonymous (riz_trav, &TRAVsons);
-
-    arg_info = MakeInfo ();
-    INFO_HSED_IDS (arg_info) = ids;
-    INFO_HSED_LENTD (arg_info) = len_td;
-    expr = TRAVopt (expr, arg_info);
-    arg_info = FreeInfo (arg_info);
-
-    TRAVpop ();
-    DBUG_RETURN (expr);
-}
-
 
 /** <!--********************************************************************-->
- * counts the number of single dots contained in
- * selection vector.
+ * helper function to recursively implememt the merging of e_vals and s_vals.
+ * triple-dots are skipped here as they do not match the recursion scheme.
  *
- * @param ids EXPRS node containing ids
- * @return number of single dots found
+ * @param didxs index-vector from set-WL
+ * @param e_vals standard values
+ * @param s_vals single-dot replacements
+ * @return expr-list of merged results
  *****************************************************************************/
-static int
-CountSingleDots (node *ids)
+static node *
+RecMergeIn (node *didxs, node *e_vals, node *s_vals)
 {
+    node *res = NULL;
     DBUG_ENTER ();
 
-    DBUG_RETURN (CountDotsInVector (ids, 1));
+    if (didxs != NULL) {
+        if (NODE_TYPE (EXPRS_EXPR (didxs)) != N_dot) {
+            res = TBmakeExprs (DUPdoDupTree (EXPRS_EXPR (e_vals)),
+                               RecMergeIn (EXPRS_NEXT (didxs),
+                                           EXPRS_NEXT (e_vals),
+                                           s_vals));
+        } else {
+            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (didxs)) == N_spid),
+                         "neither N_dot nor N_spid in didxs of MergeIn");
+            if (DOT_NUM (EXPRS_EXPR (didxs)) == 1) {
+                res = TBmakeExprs (DUPdoDupTree (EXPRS_EXPR (s_vals)),
+                                   RecMergeIn (EXPRS_NEXT (didxs),
+                                               e_vals,
+                                               EXPRS_NEXT (s_vals)));
+            } else {
+                // skip triple dot here!
+                res = RecMergeIn (EXPRS_NEXT (didxs),
+                                  e_vals,
+                                  s_vals);
+            }
+        }
+    }
+
+    DBUG_RETURN (res);
 }
+
+/** <!--********************************************************************-->
+ * Implements the MergeIn function described in sacdoc/bnf/desugaring.tex
+ * It takes the index-vector that contains N_dot symbols as a blueprint
+ * to merge the entries from 3 lists: one for existing values e_vals,
+ * one for single-dot replacements s_vals, and one for the value that
+ * needs to replace a potentially contained triple-dot.
+ *
+ * @param didxs index-vector from set-WL
+ * @param e_vals standard values
+ * @param s_vals single-dot replacements
+ * @param t_val triple-dot replacement
+ * @return merged list of copies
+ *****************************************************************************/
+static node *
+MergeIn (node *didxs, node *e_vals, node *s_vals, node *t_val)
+{
+    node *res = NULL;
+    node *left,*right;
+    int m,n,k;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (didxs) == N_exprs,
+                "exprs-chain of Spid nodes expected as didxs param to MergeIn");
+    DBUG_ASSERT ((e_vals == NULL)
+                 || (NODE_TYPE (e_vals) == N_exprs)
+                 || (NODE_TYPE (e_vals) == N_dot),
+                "potentially empty exprs-chain of expression nodes or N_dot "
+                "expected as e_val param to MergeIn");
+    DBUG_ASSERT (NODE_TYPE (s_vals) == N_exprs,
+                "exprs-chain of expression nodes expected as s_val param "
+                "to MergeIn");
+    DBUG_ASSERT ((t_val == NULL) || (NODE_TYPE (t_val) == N_array),
+                "t_val is expected to be either NULL or to be an N_array node");
+
+    if ((e_vals != NULL)
+        && (NODE_TYPE (e_vals) == N_dot)
+        && (DOT_NUM (e_vals) == 1)) {
+        res = TBmakeDot (1);
+    } else {
+        m = TCcountExprs (e_vals);
+        n = TCcountExprs (s_vals);
+        k = (t_val == NULL ? 0 : TCcountExprs (ARRAY_AELEMS (t_val)));
+        DBUG_ASSERT (TCcountExprs (didxs) == m+n+k,
+                     "length of dotted generator variables expected to match the"
+                     "number of expressions to be merged, ie. we should have"
+                     "%d = %d+%d+%d", TCcountExprs (didxs), m, n, k);
+        res = RecMergeIn( didxs, e_vals, s_vals);
+        if (k==1) {
+            // insert t_val as concatenation of arrays
+            left = TCgetNthExprs (m-1, res);
+            right = EXPRS_NEXT (left);
+            EXPRS_NEXT (left) = NULL;
+            left = TCmakeIntVector (res);
+            right = TCmakeIntVector (right);
+            res = TCmakePrf2 (F_cat_VxV,
+                              left,
+                              TCmakePrf2 (F_cat_VxV,
+                                          t_val,
+                                          right));
+        } 
+    }
+    
+    DBUG_RETURN (res);
+}
+
+
+
 
 /**
  * hook to start the handle dots traversal of the AST.
@@ -360,11 +262,6 @@ HSEDdoEliminateSetExpressionDots (node *arg_node)
 }
 
 /**
- * hook to handle any lamination operators. The inner expression is parsed for
- * occuriencies of ids in the lamination vector. Afterwards the lamination
- * operator is replaced by the corresponding withloop and the inner expression
- * is parsed. To distinguish between parsing for ids and normal dot
- * replacement, an entry within the info node is used.
  *
  * @param arg_node current node of the ast
  * @param arg_info info node
@@ -374,21 +271,9 @@ node *
 HSEDsetwl (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
-    int num_sd;
-    int num_td;
-    int td_pos;
-    node *ids;
-    node *td_ids;
-    node *array;
-    node *len_td;
-    node *spid;
-    node *array1;
-    node *array2;
-    node *expr_p;
-    node *expr_pp;
-    node *index;
 
-    DBUG_PRINT ("looking at Set-Expression in line %d:", global.linenum);
+#if 0
+    DBUG_PRINT ("looking at Set-Expression in line %zu:", global.linenum);
     /* Bottom up traversal! */
     DBUG_PRINT ("handling body ... ");
     arg_node = TRAVcont (arg_node, arg_info);
@@ -487,6 +372,7 @@ HSEDsetwl (node *arg_node, info *arg_info)
     }  else {
       DBUG_PRINT (" no dots found!");
     }
+#endif
 
     DBUG_RETURN (arg_node);
 }
