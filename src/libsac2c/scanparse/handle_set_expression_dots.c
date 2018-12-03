@@ -474,6 +474,8 @@ HSEDsetwl (node *arg_node, info *arg_info)
         DBUG_EXECUTE_TAG ("HSED_STRIP", PRTdoPrintFile (stderr, idxs));
 
         nidxs = MergeIn (SETWL_VEC (arg_node), idxs, sdot_exprs, tdot_idx);
+        DBUG_PRINT ("nidxs of setWL is:");
+        DBUG_EXECUTE (PRTdoPrintFile (stderr, nidxs));
         if (INFO_HSED_K (arg_info) == 1) {
             // some voodoo needs to happen here :-)
         } else {
