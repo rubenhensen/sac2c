@@ -346,10 +346,10 @@ MergeIn (node *didxs, node *e_vals, node *s_vals, node *t_val)
 
     DBUG_ENTER ();
     DBUG_PRINT_TAG ("HSED_MERGE", "MergeIn called on:");
-    DBUG_EXECUTE_TAG ("HSED_MERGE", PRTdoPrintFile (stderr, didxs),
+    DBUG_EXECUTE_TAG ("HSED_MERGE", (PRTdoPrintFile (stderr, didxs),
                                     (e_vals != NULL? PRTdoPrintFile (stderr, e_vals):0),
                                     (s_vals != NULL? PRTdoPrintFile (stderr, s_vals):0),
-                                    (t_val != NULL? PRTdoPrintFile (stderr, t_val):0));
+                                    (t_val != NULL? PRTdoPrintFile (stderr, t_val):0)));
     DBUG_ASSERT (NODE_TYPE (didxs) == N_exprs,
                 "exprs-chain of Spid nodes expected as didxs param to MergeIn");
     DBUG_ASSERT ((e_vals == NULL)
