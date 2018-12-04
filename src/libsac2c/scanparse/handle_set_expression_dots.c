@@ -1,4 +1,5 @@
 #include "handle_set_expression_dots.h"
+#include "set_expression_utils.h"
 #include "traverse.h"
 
 #define DBUG_PREFIX "HSED"
@@ -15,6 +16,7 @@
 #include "globals.h"
 #include "tree_compound.h"
 #include "print.h"
+#include "pattern_match.h"
 
 #include <strings.h>
 
@@ -130,7 +132,16 @@ MakeTmpId (char *name)
     DBUG_RETURN (result);
 }
 
-
+/*******************************************************************************
+ * The following functions are needed for generating inputs for 
+ * MergeIn as they are needed for this traversal.
+ *
+ * CreateDotVarChain --- creates a chain of tmp vars (needed for nidxs)
+ * StripDots         --- creates a chain by copying all non-dot entries from a
+ *                       template (needed for nidxs)
+ * CreateConstChain  --- creates a chain of 0s/1s (needed for nlb,nstep,nwidth)
+ * CreateSelChain    --- creates a chain of selections into an expresion (nub)
+ */
 /** <!--********************************************************************-->
  * creates an N_exprs chain containing n N_spid temp vars.
  *
@@ -150,7 +161,6 @@ CreateDotVarChain (int n)
     DBUG_RETURN (res);
 }
 
-
 /** <!--********************************************************************-->
  * duplicates an N_exprs chain of N_spid nodes ommitting any N_dot nodes found
  * in between the N_spid nodes.
@@ -165,7 +175,7 @@ StripDots (node *didxs)
     DBUG_ENTER ();
     if (didxs != NULL) {
         if (NODE_TYPE (EXPRS_EXPR (didxs)) == N_spid) {
-            res = TBmakeExprs (DUPdoDupNode (EXPRS_EXPR (didxs)),
+            res = TBmakeExprs (DUPdoDupTree (EXPRS_EXPR (didxs)),
                                StripDots (EXPRS_NEXT (didxs)));
         } else {
             res = StripDots (EXPRS_NEXT (didxs));
@@ -176,11 +186,197 @@ StripDots (node *didxs)
 }
 
 
+/** <!--********************************************************************-->
+ * creates an N_exprs chain of N_num(val) nodes.
+ *
+ * @param n number of vals needed.
+ * @param val value to ba used.
+ * @return EXPRS chain of N_num nodes
+ *****************************************************************************/
+static node *
+CreateConstChain (int n, int val)
+{
+    node *res = NULL;
+    DBUG_ENTER ();
+
+    while (n>0) {
+        res = TBmakeExprs (TBmakeNum (val), res);
+        n--;
+    }
+    DBUG_RETURN (res);
+}
+
+
+/** <!--********************************************************************-->
+ * creates an N_exprs chain of selections. It selects nleft elements 
+ * from the left of expr and nright elements from the right side.
+ *
+ * @param nleft number of elements from the left
+ * @param nright number of elements from the right
+ * @param expr expression that the values are to be taken from
+ * @return EXPRS chain of selections
+ *****************************************************************************/
+static node *
+CreateSelChain (int nleft, int nright, node* expr, int pos)
+{
+    node *res = NULL;
+    DBUG_ENTER ();
+
+    if (nleft > 0) {
+        res = TBmakeExprs (TCmakePrf2 (F_sel_VxA,
+                                       TCcreateIntVector (1,pos,1),
+                                       DUPdoDupTree (expr)),
+                           CreateSelChain (nleft-1, nright, expr, pos+1));
+    } else if (nright > 0) {
+        res = TBmakeExprs (TCmakePrf2 (F_sel_VxA,
+                                       TCmakePrf2 (F_sub_VxS,
+                                                   TCmakePrf1 (
+                                                       F_shape_A,
+                                                       DUPdoDupTree (expr)),
+                                                   TBmakeNum (nright)),
+                                       DUPdoDupTree (expr)),
+                           CreateSelChain (nleft, nright-1, expr, pos));
+    }
+    DBUG_RETURN (res);
+}
+
+
+/** <!--********************************************************************-->
+ * Simple construction function. Given an expression expr and an integer 
+ * number n, it generates the following AST:
+ *
+ *      [ dim (expr) - n]
+ *
+ * @param nleft number of elements from the left
+ * @param nright number of elements from the right
+ * @param expr expression that the values are to be taken from
+ * @return EXPRS chain of selections
+ *****************************************************************************/
+static node *
+CreateTdotShape (node *expr, int n)
+{
+    node *res = NULL;
+    DBUG_ENTER ();
+
+    res = TCmakeIntVector (
+            TBmakeExprs ( TCmakePrf2 ( F_sub_SxS,
+                                       TCmakePrf1 ( F_dim_A,
+                                                    DUPdoDupTree (expr)),
+                                       TBmakeNum (n)),
+                          NULL));
+
+    DBUG_RETURN (res);
+}
+
+
+/** <!--********************************************************************-->
+ * ensures the result will be an n-element vector as N_array node or an N_dot.
+ *     <expr>       is turned into        [<expr>[0], ...<expr>[n-1]]
+ * Consumes its argument!
+ *
+ * @param vector value to be used.
+ * @param n length of the vector
+ * @return potentially modified vector
+ *****************************************************************************/
+static node *
+Scalarize (node *vector, int n)
+{
+    node *res;
+    DBUG_ENTER ();
+    if ((NODE_TYPE (vector) == N_array)|| (NODE_TYPE (vector) == N_dot)) {
+        res = vector;
+    } else {
+        res = TCmakeIntVector (CreateSelChain (n, 0, vector, 0));
+        vector = FREEdoFreeTree (vector);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ * This function generates the splitting of the index var which is needed for
+ * the resolution of ...-symbols within the generator. It generates an
+ * N_assign chain of the form
+ *
+ * exprl_0 = tmp[pos];
+ * ...
+ * exprl_m = tmp[pos+m];
+ * tvar = drop( m+1, drop (-(n+1), tmp));
+ * exprr_0 = tmp[shape(tmp)-(n+1)];
+ * ...
+ * exprr_n = tmp[shape(tmp)-1];
+ *
+ * @param exprl EXPRS chain of N_spid nodes before the ...-entry
+ * @param tvar N_spid node of the name of the ...-equivalent vector
+ * @param exprr EXPRS chain of N_spid nodes after the ...-entry
+ * @param tmp N_spid node of the name of the new generator variable
+ * @param pos running position, initially to be called with 0
+ * @return EXPRS chain of N_spid nodes
+ *****************************************************************************/
+static node *
+MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, int pos)
+{
+    node *assign = NULL;
+    int pos2;
+    DBUG_ENTER ();
+    DBUG_ASSERT (((exprl == NULL) || (NODE_TYPE (exprl) == N_exprs)),
+                 "N_exprs chain expected for exprl");
+    DBUG_ASSERT (((tvar == NULL) || (NODE_TYPE (tvar) == N_spid)),
+                 "N_spid expected for tvar");
+    DBUG_ASSERT (((exprr == NULL) || (NODE_TYPE (exprr) == N_exprs)),
+                 "N_exprs chain expected for exprr");
+    if (exprl != NULL) {
+        /*
+         * construct      exprl = tmp[pos];
+         */
+        assign = TBmakeAssign (
+                   TBmakeLet (
+                     TBmakeSpids (STRcpy (SPID_NAME (EXPRS_EXPR (exprl))),
+                                  NULL),
+                     TCmakePrf2 (F_sel_VxA,
+                                 TCcreateIntVector (1,pos,1),
+                                 DUPdoDupTree (tmp))),
+                   MakeTdotAssigns (EXPRS_NEXT (exprl), tvar, exprr, tmp, pos+1));
+    } else if (tvar != NULL) {
+        /*
+         * construct     tvar = drop( pos, drop( -len(exprr), tmp));
+         */
+        pos2 = TCcountExprs (exprr);
+        assign = TBmakeAssign (
+                   TBmakeLet (
+                     TBmakeSpids (STRcpy (SPID_NAME (tvar)),
+                                  NULL),
+                     TCmakePrf2 (F_drop_SxV,
+                                 TBmakeNum (pos),
+                                 TCmakePrf2 (F_drop_SxV,
+                                             TBmakeNum (-pos2),
+                                             DUPdoDupTree (tmp)))),
+                   MakeTdotAssigns (exprl, NULL, exprr, tmp, pos2));
+    } else if (exprr != NULL) {
+        /*
+         * construct     exprr = tmp[shape(tmp)-pos];
+         */
+        assign = TBmakeAssign (
+                   TBmakeLet (
+                     TBmakeSpids (STRcpy (SPID_NAME (EXPRS_EXPR (exprr))),
+                                  NULL),
+                     TCmakePrf2 (F_sel_VxA,
+                                 TCmakePrf2 (F_sub_VxS,
+                                             TCmakePrf1 (F_shape_A,
+                                                         DUPdoDupTree (tmp)),
+                                             TBmakeNum (pos)),
+                                 DUPdoDupTree (tmp))),
+                   MakeTdotAssigns (exprl, tvar, EXPRS_NEXT (exprr), tmp, pos-1));
+    }
+    DBUG_RETURN (assign);
+}
+
 
 /** <!--********************************************************************-->
  * wraps an N_exprs chain either in an N_array (in case no triple-dot)
  * or splits the N_exprs chain at position pos_tdot into left and right 
  * and creates a * concatenation (left ++ (tdot_vec ++ right))
+ * NB: this function consumes all its arguments!
  *
  * @param exprs chain
  * @param num_tdot 0/1 value indicating whether triple-dots need to be injected
@@ -330,6 +526,8 @@ RecMergeIn (node *didxs, node *e_vals, node *s_vals, int pos, int *tdot_pos)
  * to merge the entries from 3 lists: one for existing values e_vals,
  * one for single-dot replacements s_vals, and one for the value that
  * needs to replace a potentially contained triple-dot.
+ * NB: this function only inspects all its arguments but does NOT
+ *     consume them!
  *
  * @param didxs index-vector from set-WL
  * @param e_vals standard values
@@ -371,10 +569,10 @@ MergeIn (node *didxs, node *e_vals, node *s_vals, node *t_val)
         k = (t_val == NULL ? 0 : 1);
         DBUG_ASSERT (TCcountExprs (didxs) == m+n+k,
                      "length of dotted generator variables expected to match the"
-                     "number of expressions to be merged, ie. we should have"
-                     "%d = %d+%d+%d", TCcountExprs (didxs), m, n, k);
+                     " number of expressions to be merged, ie. we should have"
+                     " %d = %d+%d+%d", TCcountExprs (didxs), m, n, k);
         res = RecMergeIn( didxs, e_vals, s_vals, 0, &t_pos);
-        res = Exprs2expr (res, k, t_pos, t_val);
+        res = Exprs2expr (res, k, t_pos, DUPdoDupTree (t_val));
     }
     
     DBUG_PRINT_TAG ("HSED_MERGE", "MergeIn result:");
@@ -416,7 +614,113 @@ HSEDdoEliminateSetExpressionDots (node *arg_node)
 node *
 HSEDgenerator (node *arg_node, info *arg_info)
 {
+    node *sdot_vals,*tdot_vals;
+    node *nval, *shape_z;
     DBUG_ENTER ();
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    if ((arg_info != NULL) && INFO_HSED_HAS_DOTS (arg_info)) {
+        DBUG_PRINT ("adjusting lower bound...");
+        GENERATOR_BOUND1 (arg_node) = Scalarize (GENERATOR_BOUND1 (arg_node),
+                                                 INFO_HSED_LM (arg_info)
+                                                 +INFO_HSED_RM (arg_info));
+        sdot_vals = CreateConstChain (INFO_HSED_LN (arg_info)
+                                      +INFO_HSED_RN (arg_info), 0);
+        tdot_vals = SEUTbuildSimpleWl (
+                      CreateTdotShape (INFO_HSED_ZEXPR (arg_info),
+                                       INFO_HSED_LN (arg_info)
+                                       +INFO_HSED_RN (arg_info)),
+                      TBmakeNum (0));
+        nval = MergeIn (INFO_HSED_DIDXS (arg_info),
+                        (NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_dot?
+                         GENERATOR_BOUND1 (arg_node) :
+                         ARRAY_AELEMS (GENERATOR_BOUND1 (arg_node))),
+                        sdot_vals,
+                        (INFO_HSED_K (arg_info) == 0 ? NULL : tdot_vals));
+        sdot_vals = (sdot_vals != NULL ? FREEdoFreeTree (sdot_vals) : NULL);
+        tdot_vals = FREEdoFreeTree (tdot_vals);
+        GENERATOR_BOUND1 (arg_node) = FREEdoFreeTree (GENERATOR_BOUND1 (arg_node));
+        GENERATOR_BOUND1 (arg_node) = nval;
+        DBUG_PRINT ("new lower bound is:");
+        DBUG_EXECUTE (PRTdoPrintFile (stderr, nval));
+
+        DBUG_PRINT ("adjusting upper bound...");
+        GENERATOR_BOUND2 (arg_node) = Scalarize (GENERATOR_BOUND2 (arg_node),
+                                                 INFO_HSED_LM (arg_info)
+                                                 +INFO_HSED_RM (arg_info));
+        shape_z = TCmakePrf1 (F_shape_A,
+                              INFO_HSED_ZEXPR (arg_info));
+        sdot_vals = CreateSelChain (INFO_HSED_LN (arg_info),
+                                    INFO_HSED_RN (arg_info),
+                                    shape_z, 0);
+        tdot_vals = TCmakePrf2 (F_drop_SxV,
+                                TBmakeNum (INFO_HSED_LN (arg_info)),
+                                TCmakePrf2 (F_drop_SxV,
+                                            TBmakeNum (-INFO_HSED_RN (arg_info)),
+                                            shape_z));
+        nval = MergeIn (INFO_HSED_DIDXS (arg_info),
+                        (NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_dot?
+                         GENERATOR_BOUND2 (arg_node) :
+                         ARRAY_AELEMS (GENERATOR_BOUND2 (arg_node))),
+                        sdot_vals, 
+                        (INFO_HSED_K (arg_info) == 0 ? NULL : tdot_vals));
+        sdot_vals = (sdot_vals != NULL ? FREEdoFreeTree (sdot_vals) : NULL);
+        tdot_vals = FREEdoFreeTree (tdot_vals);
+        GENERATOR_BOUND2 (arg_node) = FREEdoFreeTree (GENERATOR_BOUND2 (arg_node));
+        GENERATOR_BOUND2 (arg_node) = nval;
+        DBUG_PRINT ("new upper bound is:");
+        DBUG_EXECUTE (PRTdoPrintFile (stderr, nval));
+
+        if (GENERATOR_STEP (arg_node) != NULL) {
+            DBUG_PRINT ("adjusting step value...");
+            GENERATOR_STEP (arg_node) = Scalarize (GENERATOR_STEP (arg_node),
+                                                   INFO_HSED_LM (arg_info)
+                                                   +INFO_HSED_RM (arg_info));
+            sdot_vals = CreateConstChain (INFO_HSED_LN (arg_info)
+                                          +INFO_HSED_RN (arg_info), 1);
+            tdot_vals = SEUTbuildSimpleWl (
+                          CreateTdotShape (INFO_HSED_ZEXPR (arg_info),
+                                           INFO_HSED_LN (arg_info)
+                                           +INFO_HSED_RN (arg_info)),
+                          TBmakeNum (1));
+            nval = MergeIn (INFO_HSED_DIDXS (arg_info),
+                            GENERATOR_STEP (arg_node),
+                            sdot_vals, 
+                            (INFO_HSED_K (arg_info) == 0 ? NULL : tdot_vals));
+            sdot_vals = (sdot_vals != NULL ? FREEdoFreeTree (sdot_vals) : NULL);
+            tdot_vals = FREEdoFreeTree (tdot_vals);
+            GENERATOR_STEP (arg_node) = FREEdoFreeTree (GENERATOR_STEP (arg_node));
+            GENERATOR_STEP (arg_node) = nval;
+            DBUG_PRINT ("new step value is:");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, nval));
+        }
+
+        if (GENERATOR_WIDTH (arg_node) != NULL) {
+            DBUG_PRINT ("adjusting width value...");
+            GENERATOR_WIDTH (arg_node) = Scalarize (GENERATOR_WIDTH (arg_node),
+                                                   INFO_HSED_LM (arg_info)
+                                                   +INFO_HSED_RM (arg_info));
+            sdot_vals = CreateConstChain (INFO_HSED_LN (arg_info)
+                                          +INFO_HSED_RN (arg_info), 1);
+            tdot_vals = SEUTbuildSimpleWl (
+                          CreateTdotShape (INFO_HSED_ZEXPR (arg_info),
+                                           INFO_HSED_LN (arg_info)
+                                           +INFO_HSED_RN (arg_info)),
+                          TBmakeNum (1));
+            nval = MergeIn (INFO_HSED_DIDXS (arg_info),
+                            GENERATOR_WIDTH (arg_node),
+                            sdot_vals, 
+                            (INFO_HSED_K (arg_info) == 0 ? NULL : tdot_vals));
+            sdot_vals = (sdot_vals != NULL ? FREEdoFreeTree (sdot_vals) : NULL);
+            tdot_vals = FREEdoFreeTree (tdot_vals);
+            GENERATOR_WIDTH (arg_node) = FREEdoFreeTree (GENERATOR_WIDTH (arg_node));
+            GENERATOR_WIDTH (arg_node) = nval;
+            DBUG_PRINT ("new width value is:");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, nval));
+        }
+    }
+    
     DBUG_RETURN (arg_node);
 }
 
@@ -431,6 +735,10 @@ HSEDsetwl (node *arg_node, info *arg_info)
 {
     node *sdot_exprs, *sdot_idxs, *tdot_idx;
     node *idxs, *nidxs;
+    node *exprl, *exprr, *tvar;
+    node *assigns;
+    bool match;
+    pattern *pat;
     DBUG_ENTER ();
 
     arg_info = MakeInfo (arg_info); //stack arg_info!
@@ -445,6 +753,18 @@ HSEDsetwl (node *arg_node, info *arg_info)
      */
     arg_info = AnalyseVec (SETWL_VEC (arg_node), arg_info);
 
+    /*
+     * set ZEXPR iff HAS_DOTS
+     */
+    if (INFO_HSED_HAS_DOTS (arg_info)) {
+        INFO_HSED_ZEXPR (arg_info) =
+          SEUTsubstituteIdxs (DUPdoDupTree (SETWL_EXPR (arg_node)),
+                              SETWL_VEC (arg_node),
+                              TBmakeNum (0));
+        DBUG_PRINT ("zexpr generated:");
+        DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_HSED_ZEXPR (arg_info)));
+    }
+
     DBUG_PRINT ("processing generator...");
     SETWL_GENERATOR (arg_node) = TRAVopt (SETWL_GENERATOR (arg_node), arg_info);
 
@@ -453,7 +773,7 @@ HSEDsetwl (node *arg_node, info *arg_info)
         sdot_exprs = CreateDotVarChain ( INFO_HSED_LN (arg_info)
                                          + INFO_HSED_RN (arg_info));
         tdot_idx = (INFO_HSED_K (arg_info) == 1 ?
-                    TBmakeExprs (MakeTmpId ("tmpv"), NULL)
+                    MakeTmpId ("tmpv")
                     : NULL);
         sdot_idxs = Exprs2expr (sdot_exprs,
                                 INFO_HSED_K (arg_info),
@@ -461,7 +781,8 @@ HSEDsetwl (node *arg_node, info *arg_info)
                                 tdot_idx);
         DBUG_PRINT ("selection index is:");
         DBUG_EXECUTE (PRTdoPrintFile (stderr, sdot_idxs));
-        SETWL_EXPR (arg_node) = TCmakePrf2 (F_sel_VxA,
+        SETWL_EXPR (arg_node) =TCmakeSpap2 (NSgetNamespace (global.preludename),
+                                            STRcpy ("sel"),
                                             sdot_idxs,
                                             SETWL_EXPR (arg_node));
         /*
@@ -476,106 +797,35 @@ HSEDsetwl (node *arg_node, info *arg_info)
         nidxs = MergeIn (SETWL_VEC (arg_node), idxs, sdot_exprs, tdot_idx);
         DBUG_PRINT ("nidxs of setWL is:");
         DBUG_EXECUTE (PRTdoPrintFile (stderr, nidxs));
+
         if (INFO_HSED_K (arg_info) == 1) {
-            // some voodoo needs to happen here :-)
+            pat = PMprf (1, PMAisPrf (F_cat_VxV),
+                         2, PMarray (0,
+                                     1, PMskip (1, PMAgetNode (&exprl),0)),
+                            PMprf (1, PMAisPrf (F_cat_VxV),
+                                   2, PMany( 1, PMAgetNode( &tvar),0 ),
+                                      PMarray (0,
+                                               1, PMskip (1, PMAgetNode (&exprr)))));
+            match = PMmatchExact (pat, nidxs);
+            pat = PMfree (pat);
+            DBUG_ASSERT (match, "built nidxs does not match the expacted pattern");
+            SETWL_VEC (arg_node) = FREEdoFreeTree (SETWL_VEC (arg_node));
+            SETWL_VEC (arg_node) = MakeTmpId ("tmp");
+            assigns = MakeTdotAssigns (exprl, tvar, exprr, SETWL_VEC (arg_node), 0);
+            SETWL_ASSIGNS (arg_node) = assigns;
+            DBUG_PRINT ("Assignments inserted:");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, assigns));
+            nidxs = FREEdoFreeTree (nidxs);
         } else {
             SETWL_VEC (arg_node) = FREEdoFreeTree (SETWL_VEC (arg_node));
-            idxs = FREEdoFreeTree (idxs);
-            //NB: sdot_idxs is absorbed by the selection! no freeing here!
-            //NB: tdot_idx is absorbed by MergeIn! no freeing here!
-            SETWL_VEC (arg_node) = nidxs;
+            SETWL_VEC (arg_node) = ARRAY_AELEMS (nidxs);
+            ARRAY_AELEMS (nidxs) = NULL;
+            nidxs = FREEdoFreeNode (nidxs);
         }
+        idxs = FREEdoFreeTree (idxs);
+        //NB: sdot_idxs is absorbed by the selection! no freeing here!
+        //NB: tdot_idx is absorbed by the Exprs2expr! no freeing here!
     }
-#if 0
-    if (num_td == 1) {
-        DBUG_PRINT (" triple dot with %d single dots found!", num_sd);
-        spid = MakeTmpId( "td_vec");
-
-        /*
-         * traverse all ids before the "..." and return an array
-         * of selections into "td_vec" according to their position
-         */
-        array1 = TCmakeIntVector
-                     (HandleSingleDotsBeforeTriple (ids, spid, 0));
-
-        /* find the "..." */
-        td_pos = 0;
-        td_ids = ids;
-        while (( NODE_TYPE (EXPRS_EXPR (td_ids)) != N_dot)
-               || (DOT_NUM (EXPRS_EXPR (td_ids)) == 1) ) {
-            td_ids = EXPRS_NEXT (td_ids);
-            td_pos++;
-        }
-
-       /*
-        * Now traverse all ids behind the "..." and return an array
-        * of selections into "td_vec" according to their position and
-        * the number of dimensions (len_td) matched by the triple dots.
-        * We have      len_td = dim( expr'') - num_sd
-        * where expr'' is expr with all references to ids replaced
-        * by scalar 0. NB: is this really safe to do?
-        */
-       expr_pp = ReplaceIdsZero (DUPdoDupTree (SETWL_EXPR (arg_node)), ids);
-       len_td = TCmakePrf2 (F_sub_SxS,
-                            TCmakePrf1 (F_dim_A, expr_pp),
-                            TBmakeNum( num_sd));
-       array2 = TCmakeIntVector
-                    (HandleSingleDotsBehindTriple
-                        (EXPRS_NEXT (td_ids), spid, td_pos, len_td));
-        
-       /*
-        * Finally, we modify the original expression expr into expr' to use selections
-        * into spid rather than scalar ids and we insert the overall selection:
-        *     expr'[ _cat_VxV_( _cat_VxV_( array1,
-        *                                  drop( td_pos+1-len_ids, drop( td_pos, spid))),
-        *                                  array2) ]
-        */
-       expr_p = ReplaceIdsSel (SETWL_EXPR (arg_node), ids, len_td);
-       index = TCmakePrf2
-                   (F_cat_VxV,
-                   TCmakePrf2
-                       (F_cat_VxV,
-                       array1,
-                       TCmakePrf2
-                           (F_drop_SxV,
-                           TBmakeNum (td_pos+1-TCcountExprs(ids)),
-                           TCmakePrf2
-                               (F_drop_SxV,
-                               TBmakeNum (td_pos),
-                               spid)) ),
-                   array2);
-       SETWL_EXPR (arg_node) = TCmakeSpap2 (NULL, strdup ("sel"),
-                                           index,
-                                           SETWL_EXPR (arg_node));
-       /*
-        * and we replace the ids by spid:
-        */
-       SETWL_VEC (arg_node) = FREEdoFreeTree (SETWL_VEC (arg_node));
-       SETWL_VEC (arg_node) = spid;
-   
-    } else if (num_td > 1) {
-      CTIerrorLine( global.linenum,
-                    " triple-dot notation used more than once in array comprehension;");
-
-    } else if (num_sd >0) {
-      /* We have at least one single dot but no triple dots! */
-      DBUG_PRINT (" no triple dots but %d single dots found!", num_sd);
-
-      /*
-       * traverse the ids, replace dots with vars and create 
-       * array of those variables.
-       */
-
-      array = HandleSingleDots( ids);
-      
-      SETWL_EXPR (arg_node) = TCmakeSpap2 (NULL, strdup ("sel"),
-                                           TCmakeIntVector (array),
-                                           SETWL_EXPR (arg_node));
-
-    }  else {
-      DBUG_PRINT (" no dots found!");
-    }
-#endif
     arg_info = FreeInfo (arg_info); //pop arg_info!
 
     DBUG_RETURN (arg_node);

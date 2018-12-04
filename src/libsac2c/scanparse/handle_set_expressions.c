@@ -97,29 +97,6 @@ FreeInfo (info *arg_info)
     DBUG_RETURN (old);
 }
 
-static node *
-BuildSimpleWl( node *shape, node *def)
-{
-    node *result = NULL;
-    DBUG_ENTER ();
-
-    result
-      = TBmakeWith (TBmakePart (NULL,
-                                TBmakeWithid (TBmakeSpids (TRAVtmpVar (), NULL), NULL),
-                                TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
-                                                 TBmakeDot (1), NULL, NULL)),
-                    TBmakeCode (MAKE_EMPTY_BLOCK (),
-                                TBmakeExprs (def, NULL)),
-                    TBmakeGenarray (shape, NULL));
-
-    GENARRAY_DEFAULT (WITH_WITHOP (result)) = DUPdoDupTree (def);
-
-    CODE_USED (WITH_CODE (result))++;
-    PART_CODE (WITH_PART (result)) = WITH_CODE (result);
-
-    DBUG_RETURN (result);
-}
-
 
 /**
  * builds a withloop generating an array of the same shape
@@ -142,7 +119,27 @@ BuildDefault (node *expr)
     def = TCmakeSpap1 (NSgetNamespace (global.preludename),
                        STRcpy ("zero"),
                        DUPdoDupTree (expr));
-    DBUG_RETURN (BuildSimpleWl (shape, def));
+    DBUG_RETURN (SEUTbuildSimpleWl (shape, def));
+}
+
+static node*
+ExtracIdsFromAssigns (node *assign)
+{
+    node *res = NULL;
+    DBUG_ENTER ();
+
+    if (assign != NULL) {
+        if (STRprefix ("_", SPIDS_NAME (ASSIGN_LHS (assign)))) {
+            res = ExtracIdsFromAssigns (ASSIGN_NEXT (assign));
+        } else {
+            res = TBmakeExprs (
+                    TBmakeSpid ( NULL, STRcpy (SPIDS_NAME (ASSIGN_LHS (assign)))),
+                    ExtracIdsFromAssigns (ASSIGN_NEXT (assign)));
+              
+        }
+    }
+
+    DBUG_RETURN (res);
 }
 
 
@@ -452,7 +449,7 @@ HSEgenerator (node *arg_node, info *arg_info)
 node *
 HSEsetwl (node *arg_node, info *arg_info)
 {
-    node *code, *part, *subst;
+    node *code, *part, *subst, *let_vars;
     info *oldinfo = NULL;
     DBUG_ENTER ();
 
@@ -516,9 +513,11 @@ HSEsetwl (node *arg_node, info *arg_info)
          || (INFO_HSE_GENREF (arg_info) && (INFO_HSE_COPY_FROM (arg_info) == NULL))) {
         DBUG_PRINT ("building code and partition");
 
-        code = TBmakeCode ( MAKE_EMPTY_BLOCK (),
-                            TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
-                                         NULL));
+        code = TBmakeCode (((SETWL_ASSIGNS (arg_node) == NULL) ?
+                            MAKE_EMPTY_BLOCK () :
+                            TBmakeBlock (DUPdoDupTree (SETWL_ASSIGNS (arg_node)), NULL)),
+                           TBmakeExprs (DUPdoDupTree (SETWL_EXPR (arg_node)),
+                                        NULL));
         CODE_USED (code)++;
         CODE_NEXT (code) = INFO_HSE_CODE (arg_info);
         INFO_HSE_CODE (arg_info) = code;
@@ -555,20 +554,55 @@ HSEsetwl (node *arg_node, info *arg_info)
               = TBmakeGenarray (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
                                 DUPdoDupTree (SETWL_EXPR (arg_node)) );
         } else {
-            if (NODE_TYPE (SETWL_VEC (arg_node)) == N_spid) {
-                subst = TCmakePrf2 (F_mul_SxV,
-                                    TBmakeNum (0),
-                                    DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))));
+            if (SETWL_ASSIGNS (arg_node) != NULL) {
+                /*
+                 * super special case! We know, that we had a ... in the original.
+                 * Unfortunately, our zero'ing approach used in all other cases
+                 * does not work here because we do not have a proper "let" with
+                 * SETWL_ASSIGNS. As a consequence, all variables defined there
+                 * are relatvely free in SETWL_EXPR (arg_node). Consequently,
+                 * we cannot lift them out! Neither for the shape nor for the
+                 * default!
+                 * However, as we have ..., we do know that the cell shape is scalar!
+                 * So all we really need is the base type, ie. a suitable argument to 
+                 * the function zero.
+                 * One might think that choosing SPAP_ARG2 (SETWL_EXPR (arg_node))
+                 * would work, as this avoids referring to all variables defined
+                 * in SETWL_ASSIGNS that stand for dot symbols in SETWL_VEC.
+                 * Unfortunately, the original non-dot symbols can still appear.
+                 * Since they are defined in SETWL_ASSIGNS as well, we need
+                 * to identify these and then replace there occurrances in
+                 * PRF_ARG2 (SETWL_EXPR (arg_node)) by zeros.
+                 */
+                let_vars = ExtracIdsFromAssigns (SETWL_ASSIGNS (arg_node));
+                INFO_HSE_WITHOP (arg_info)
+                   = TBmakeGenarray
+                       (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
+                       TCmakeSpap1 (NSgetNamespace (global.preludename),
+                                    STRcpy ("zero"),
+                                    SEUTsubstituteIdxs (
+                                      DUPdoDupTree (
+                                        SPAP_ARG2 (SETWL_EXPR (arg_node))),
+                                      let_vars,
+                                      TBmakeNum (0))));
+                let_vars = (let_vars != NULL ? FREEdoFreeTree (let_vars) : NULL);
             } else {
-                subst = TBmakeNum (0);
+                if (NODE_TYPE (SETWL_VEC (arg_node)) == N_spid) {
+                    subst = TCmakePrf2 (F_mul_SxV,
+                                        TBmakeNum (0),
+                                        DUPdoDupTree (
+                                          GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))));
+                } else {
+                    subst = TBmakeNum (0);
+                }
+                INFO_HSE_WITHOP (arg_info)
+                    = TBmakeGenarray
+                        (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
+                         BuildDefault (SEUTsubstituteIdxs (DUPdoDupTree (SETWL_EXPR (arg_node)),
+                                                           SETWL_VEC (arg_node),
+                                                           subst)));
+                subst = FREEdoFreeTree (subst);
             }
-            INFO_HSE_WITHOP (arg_info)
-                = TBmakeGenarray
-                    (DUPdoDupTree (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node))),
-                     BuildDefault (SEUTsubstituteIdxs (DUPdoDupTree (SETWL_EXPR (arg_node)),
-                                                       SETWL_VEC (arg_node),
-                                                       subst)));
-            subst = FREEdoFreeTree (subst);
         }
         DBUG_PRINT ("withop inserted:");
         DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_HSE_WITHOP (arg_info)));

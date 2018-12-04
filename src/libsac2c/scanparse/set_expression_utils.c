@@ -698,7 +698,10 @@ SEUTsubstituteIdxs (node *expr, node *idxs, node *subst)
     } else {
         do {
             idx = EXPRS_EXPR (idxs);
-            expr = SubstituteSpid (expr, idx, subst);
+            if (NODE_TYPE (idx) == N_spid) {
+                expr = SubstituteSpid (expr, idx, subst);
+            }
+            // skip N_dot expressions
             idxs = EXPRS_NEXT (idxs);
         } while (idxs != NULL);
     }
@@ -754,12 +757,17 @@ SEUTcontainsIdxs (node *expr, node *idxs)
     bool found=FALSE;
     DBUG_ENTER ();
 
+    DBUG_ASSERT (((NODE_TYPE (idxs) == N_spid) || (NODE_TYPE (idxs) == N_exprs)),
+                 "idxs arg of SEUTcontainsIdxs not legel SETWL_VEC entry!");
     if (NODE_TYPE (idxs) == N_spid) {
         found = FindSpid (expr, idxs);
     } else {
         do {
             idx = EXPRS_EXPR (idxs);
-            found = found || FindSpid (expr, idx);
+            if (NODE_TYPE (idx) == N_spid) {
+                found = found || FindSpid (expr, idx);
+            }
+            // skip N_dot expressions!
             idxs = EXPRS_NEXT (idxs);
         } while (idxs != NULL);
     }
@@ -767,5 +775,27 @@ SEUTcontainsIdxs (node *expr, node *idxs)
     DBUG_RETURN (found);
 }
 
+node *
+SEUTbuildSimpleWl (node *shape, node *def)
+{
+    node *result = NULL;
+    DBUG_ENTER ();
+
+    result
+      = TBmakeWith (TBmakePart (NULL,
+                                TBmakeWithid (TBmakeSpids (TRAVtmpVar (), NULL), NULL),
+                                TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1),
+                                                 TBmakeDot (1), NULL, NULL)),
+                    TBmakeCode (MAKE_EMPTY_BLOCK (),
+                                TBmakeExprs (def, NULL)),
+                    TBmakeGenarray (shape, NULL));
+
+    GENARRAY_DEFAULT (WITH_WITHOP (result)) = DUPdoDupTree (def);
+
+    CODE_USED (WITH_CODE (result))++;
+    PART_CODE (WITH_PART (result)) = WITH_CODE (result);
+
+    DBUG_RETURN (result);
+}
 
 #undef DBUG_PREFIX
