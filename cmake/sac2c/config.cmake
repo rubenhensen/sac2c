@@ -580,6 +580,14 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   CHECK_CC_FLAG ("-Wimplicit-fallthrough=3" GCC_FLAGS)
   CHECK_CC_FLAG ("-march=native" GCC_NATIVE_FLAGS)
   CHECK_CC_FLAG ("-mtune=native" GCC_NATIVE_FLAGS)
+  # allow for vardic macros to have zero arguments
+  CHECK_CC_FLAG ("-Wno-gnu-zero-variadic-macro-arguments" GCC_FLAGS)
+
+  # we get inconsistant warnings in older version of GCC
+  # when using `-pedantic`.
+  IF (CMAKE_C_COMPILER_VERSION VERSION_GREATER "5.4")
+    CHECK_CC_FLAG ("-pedantic" GCC_FLAGS)
+  ENDIF ()
 
   # If the BUILDGENERIC flag is on, we build a compiler with -mtune=generic
   # but we pass -march=native (if supported) to RCCCFLAGS.
@@ -607,8 +615,8 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (RCCCFLAGS    "${GCC_FLAGS} ${GCC_NATIVE_FLAGS} -std=gnu99 -pedantic -Wno-unused -fno-builtin")
   # FIXME (artem): This hack allows us to avoid propagating -Wconversion into default sac2c flags.
   STRING (REGEX REPLACE "-Wconversion" "" RCCCFLAGS ${RCCCFLAGS})
-  SET (DEV_FLAGS    "${GCC_FLAGS} ${GCC_NATIVE_OR_GENERIC} -std=gnu99 -pedantic -g ${FLAGS_LTO}")
-  SET (PROD_FLAGS   "${GCC_FLAGS} ${GCC_NATIVE_OR_GENERIC} -std=gnu99 -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
+  SET (DEV_FLAGS    "${GCC_FLAGS} ${GCC_NATIVE_OR_GENERIC} -std=gnu99 -g ${FLAGS_LTO}")
+  SET (PROD_FLAGS   "${GCC_FLAGS} ${GCC_NATIVE_OR_GENERIC} -std=gnu99 -g -O3 ${FLAGS_LTO}")
   SET (GENPIC       "-fPIC")
   SET (DEPSFLAG     "-M")
   SET (CPPFILE      "${CPP_CMD} -C -x c")
@@ -704,6 +712,9 @@ ELSEIF (MACC)
   # temporarily disabled; needs to be reactivated with doxygen:
   CHECK_CC_FLAG ("-Wno-documentation-unknown-command" MACCC_FLAGS)
 
+  # allow for vardic macros to have zero arguments
+  CHECK_CC_FLAG ("-Wno-gnu-zero-variadic-macro-arguments" GCC_FLAGS)
+
   #Turn this if you want to be cruel
   #CHECK_CC_FLAG ("-Wconversion" MACCC_FLAGS)
   CHECK_CC_FLAG ("-march=native" MACCC_NATIVE_FLAGS)
@@ -720,9 +731,9 @@ ELSEIF (MACC)
   SET (OPT_O2        "-O2")
   SET (OPT_O3        "-O3")
   SET (OPT_g         "-g")
-  SET (RCCCFLAGS    "${MACCC_FLAGS} ${MACCC_NATIVE_FLAGS} -std=c99 -pedantic -Wno-unused -fno-builtin")
-  SET (DEV_FLAGS    "${MACCC_FLAGS} ${MACCC_NATIVE_OR_GENERIC} -std=c99 -pedantic -g ${FLAGS_LTO}")
-  SET (PROD_FLAGS   "${MACCC_FLAGS} ${MACCC_NATIVE_OR_GENERIC} -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
+  SET (RCCCFLAGS    "${MACCC_FLAGS} ${MACCC_NATIVE_FLAGS} -std=gnu99 -pedantic -Wno-unused -fno-builtin")
+  SET (DEV_FLAGS    "${MACCC_FLAGS} ${MACCC_NATIVE_OR_GENERIC} -std=gnu99 -pedantic -g ${FLAGS_LTO}")
+  SET (PROD_FLAGS   "${MACCC_FLAGS} ${MACCC_NATIVE_OR_GENERIC} -std=gnu99 -pedantic -g -O3 ${FLAGS_LTO}")
   SET (GENPIC        "")
   SET (DEPSFLAG      "-M")
   SET (CPPFILE       "${CPP_CMD} -C -x c")
