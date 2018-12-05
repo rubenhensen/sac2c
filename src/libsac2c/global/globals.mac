@@ -1297,6 +1297,12 @@ GLOBAL (bool, debug_rc, FALSE, xfree_dummy, )
 GLOBAL (bool, print_help_and_exit, FALSE, xfree_dummy, )
 
 /*
+ * Whether to print targets and exit.
+ */
+
+GLOBAL (bool, print_targets_and_exit, FALSE, xfree_dummy, )
+
+/*
  * MUTC backend options
  */
 

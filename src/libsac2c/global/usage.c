@@ -12,6 +12,12 @@
 #include "config.h"
 #include "sacdirs.h"
 
+#include "resource.h"
+
+#include "types.h"
+#include <string.h>
+#include "str.h"
+
 static void
 PrintToolName (void)
 {
@@ -1146,15 +1152,14 @@ PrintCustomisationOptions (void)
       "                    installation specific file $PREFIX/share/sac2crc or\n"
       "                    from a file named .sac2crc within the user's home\n"
       "                    directory.\n"
-      "\n"
-      "                    Standard targets include the choice of a compiler backend:\n"
-      "\n"
-      "                      c99       default backend to produce C99 code\n"
-      "                      mutc      backend to produce muTC code\n"
-      "                      cuda      backend to produce Cuda code\n"
+
+      "\n                  target list can be printed with -list-targets\n"
+
       "\n");
     DBUG_RETURN ();
 }
+
+
 
 static void
 PrintEnvironmentVariables (void)
@@ -1284,7 +1289,7 @@ USGprintUsage ()
         PrintLibraryOptions ();
         PrintCCompilerOptions ();
         PrintCustomisationOptions ();
-        break;
+	break;
     case TOOL_sac4c:
         PrintDescriptionSac4c ();
         PrintOptionsSac4c ();

@@ -8,44 +8,17 @@ target MBair_32bit:
 
 CC               :=  "gcc-4.0"
 LDFLAGS          :=  "-m32"
-CCLINK           :=  "-m32"
-LIB_VARIANT      :=  "32-bit"
-
-LD_DYNAMIC       :=  "gcc-4.0 -undefined suppress -flat_namespace -dynamiclib "
-                     "-install_name '@rpath/%libname%' "
-
 
 target MBair_cuda::MBair_32bit::cuda:
-
-CCINCDIR         := "-I$(sac2c -prefix)/include/ "
-                    "-I/Developer/GPU\ Computing/C/common/inc "
-CCLIBDIR         := "-L$(sac2c -prefix)/lib/ "
-                    "-L/Developer/GPU\ Computing/C/lib"
-CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
-LD_PATH          :=  "-Xlinker -L%path% -Xlinker '-rpath %path%'"
-
 
 target MBpro_64bit:
 
 CC               :=  "llvm-gcc-4.2"
 LDFLAGS          :=  "-m64"
-CCLINK           :=  "-m64"
 
-LD_DYNAMIC       :=  "llvm-gcc-4.2 -undefined suppress -flat_namespace -dynamiclib "
-                     "-install_name '@rpath/%libname%' "
+target MBpro_cuda::MBpro_64bit::cuda:
 
-
-target MBpro_cuda::MBpro_64bit::cuda64:
-
-CCINCDIR         := "-I$(sac2c -prefix)/include/ "
-                    "-I'/Developer/GPU Computing/C/common/inc' "
-                    "-I\"$CUTIL\" -L\"$CUTIL_LIB\" "
-CCLIBDIR         := "-L$(sac2c -prefix)/lib/ "
-                    "-L'/Developer/GPU Computing/C/lib' "
-CCLINK           :=  "-lcutil_x86_64 -lcudart -lcublas"
-LD_PATH          :=  "-Xlinker -L%path% -Xlinker '-rpath %path%'"
-
-target MBpro_cudaHybrid::cudahybrid64::MBpro_cuda:
+target MBpro_cudaHybrid::MBpro_cuda:
 
 BACKEND          :=  "CudaHybrid"
 
@@ -66,5 +39,3 @@ CACHE2_MSCA      :=  0
 
 
 target powerbook_G4::mpc7450:
-
-

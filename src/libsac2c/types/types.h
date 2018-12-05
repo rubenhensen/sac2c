@@ -650,6 +650,22 @@ typedef ntype *(*ct_funptr) (te_info *, ntype *);
 typedef struct SIG_DEP sig_dep;
 
 /*
+ * built to facilitate printable_target_functions.h
+ */
+
+/*****************************************************************************
+ *
+ * type: printable_target
+ *
+ * description:
+ *
+ *  These types are used in target printing
+ *
+ ******************************************************************************/
+
+typedef struct PRINTABLE_TARGET printable_target;
+
+/*
  * moved from resource.h
  */
 

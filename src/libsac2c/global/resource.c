@@ -76,6 +76,8 @@
 #include "sacdirs.h"
 #include "filemgr.h"
 
+#include "printable_target_functions.h"
+
 //#include "sac.tab.h"
 
 /******************************************************************************
@@ -272,9 +274,10 @@ RSCmakeTargetListEntry (char *name, inheritence_list_t *super_targets,
 target_list_t *
 RSCaddTargetList (target_list_t *list1, target_list_t *list2)
 {
-    target_list_t *tmp;
 
     DBUG_ENTER ();
+
+    target_list_t *tmp;
 
     if (list1 == NULL) {
         list1 = list2;
@@ -289,6 +292,7 @@ RSCaddTargetList (target_list_t *list1, target_list_t *list2)
     }
 
     DBUG_RETURN (list1);
+
 }
 
 /******************************************************************************
@@ -591,6 +595,8 @@ FindTarget (char *target_name, target_list_t *target)
     return target;
 }
 
+
+
 /*******************************************************************************
  *
  * function:
@@ -742,6 +748,10 @@ EvaluateDefaultTarget (target_list_t *target)
  *  configuration structure config. The previous default entry is replaced
  *  and released if necessary.
  *
+ *  "Descendant" is only used when printing the targets, and exists to allow
+ *  the SBI (even if inherited) to be determined. The default "placeholder"
+ *  is a string of asterisks.
+ *
  ******************************************************************************/
 
 static void
@@ -800,7 +810,7 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
 
             resource = resource->next;
         }
-        DBUG_PRINT ("                 scanning ressources done.");
+        DBUG_PRINT ("                 scanning resources done.");
     }
 
     DBUG_RETURN ();
@@ -809,7 +819,42 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
 /******************************************************************************
  *
  * function:
- *  void RSCevaluateConfiguration(char *target)
+ *  void EvaluateConfig ()
+ *
+ * description:
+ *  This function merely facilitates RSCevaluateConfiguration.
+ *
+ ******************************************************************************/
+
+void
+EvaluateConfig (char *input, target_list_t *target_list)
+{
+    EvaluateDefaultTarget (global.target_list);
+
+    if (!STReq (input, "default")) {
+        char *target = STRtok (input, ":");
+        while (target != NULL) {
+            if (!STReq (target, "")) {
+                // this process should allow for multiple colons.
+                EvaluateCustomTarget (target, target_list, target_list);
+            }
+
+            // prevent this from cluttering up the heap.
+            target = MEMfree (target);
+
+            target = STRtok (NULL, ":");
+        }
+
+        // prevent this from cluttering up the heap.
+        target = MEMfree (target);
+
+    }
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  void RSCevaluateConfiguration ()
  *
  * description:
  *  This function triggers the whole process of evaluating the configuration
@@ -821,28 +866,42 @@ void
 RSCevaluateConfiguration ()
 {
     DBUG_ENTER ();
-    char *target;
 
     ParseResourceFiles ();
-    EvaluateDefaultTarget (global.target_list);
 
-    if (!STReq (global.target_name, "default")) {
-        target = STRtok (global.target_name, ":");
-        while (target != NULL) {
-            if (!STReq (target, "")) { /* allow for multiple colons! */
-                EvaluateCustomTarget (target, global.target_list, global.target_list);
-            }
-            MEMfree (target);
-            target = STRtok (NULL, ":");
-        }
-    }
-
-    /* PrintResources();  */
-    global.target_list = FreeTargetList (global.target_list);
+    // this target gets evaluated twice if print_tagets is active.
+    EvaluateConfig(global.target_name,global.target_list);
 
     if (global.print_resources) {
+        // this is the scenario for the user printing ONE target's data.
+        // always the target that the compiler is using.
         PrintResources ();
-        exit (0);
+        global.target_list = FreeTargetList (global.target_list);
+        exit (EXIT_SUCCESS);
+    
+    } else if (global.print_targets_and_exit) {
+        target_list_t *temp = global.target_list;
+
+        while (temp != NULL) {
+            // Some targets may be evaluated multiple times :(
+            // readability at the cost of performance.
+            EvaluateConfig (temp->name,global.target_list);
+
+            // now add this to the list of targets that will print.
+            PTFappend (
+              PTFmake
+                (temp->name, global.config.sbi,
+                    global.config.backend, global.config.target_env, NULL)
+            );
+            temp = temp->next;
+        }
+
+        // now print the target list out and free the memory.
+        PTFprint ();
+        PTFfreeAll ();
+        global.target_list = FreeTargetList (global.target_list);
+        exit (EXIT_SUCCESS);
+
     }
 
     DBUG_RETURN ();

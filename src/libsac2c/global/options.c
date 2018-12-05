@@ -880,6 +880,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("linksetsize");
 
+    ARGS_FLAG ("list-targets", global.print_targets_and_exit = TRUE);
+
     /*
      * Options starting with mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
      */
