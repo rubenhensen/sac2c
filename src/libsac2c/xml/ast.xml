@@ -1187,12 +1187,14 @@
 		<travuser>
 		  <node name="SPAp" />
 		  <node name="Prf" />
+		  <node name="With" />
 		  <node name="SetWL" />
 		  <node name="Generator" />
 		</travuser>
 	      </traversal>
 	      <traversal id="HSED" name="Handle Set Expression Dots" default="sons" include="handle_set_expression_dots.h">
 		<travuser>
+		  <node name="With" />
 		  <node name="SetWL" />
 		  <node name="Generator" />
 		</travuser>

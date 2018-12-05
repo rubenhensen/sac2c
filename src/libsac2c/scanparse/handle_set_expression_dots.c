@@ -606,6 +606,30 @@ HSEDdoEliminateSetExpressionDots (node *arg_node)
 }
 
 /**
+ * This hook is only needed to ensure N_generator traversals will see 
+ * an arg_info where INFO_HSED_HAS_DOTS (arg_info) is FALSE if the
+ * generator lives in a WL rather than a setWL!
+ * The relevant case is where a WL lives inside a setWL!
+ *
+ * @param arg_node current node of the ast
+ * @param arg_info info node
+ * @return transformed AST
+ */
+node *
+HSEDwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    arg_info = MakeInfo (arg_info); //stack arg_info!
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    arg_info = FreeInfo (arg_info); //pop arg_info!
+
+    DBUG_RETURN (arg_node);
+}
+
+/**
  *
  * @param arg_node current node of the ast
  * @param arg_info info node
@@ -620,7 +644,7 @@ HSEDgenerator (node *arg_node, info *arg_info)
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    if ((arg_info != NULL) && INFO_HSED_HAS_DOTS (arg_info)) {
+    if (INFO_HSED_HAS_DOTS (arg_info)) {
         DBUG_PRINT ("adjusting lower bound...");
         GENERATOR_BOUND1 (arg_node) = Scalarize (GENERATOR_BOUND1 (arg_node),
                                                  INFO_HSED_LM (arg_info)

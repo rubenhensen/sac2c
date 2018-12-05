@@ -6,6 +6,7 @@
 extern node *SERIdoInferRanges (node *arg_node);
 extern node *SERIprf (node *arg_node, info *arg_info);
 extern node *SERIspap (node *arg_node, info *arg_info);
+extern node *SERIwith (node *arg_node, info *arg_info);
 extern node *SERIsetwl (node *arg_node, info *arg_info);
 extern node *SERIgenerator (node *arg_node, info *arg_info);
 

@@ -173,6 +173,33 @@ SERIspap (node *arg_node, info *arg_info)
 }
 
 /**
+ * hook for with loops
+ * This hook is only needed to ensure N_generator traversals will see
+ * an arg_info where INFO_LBMISSING and friends are FALSE if the
+ * generator lives in a WL rather than a setWL!
+ * The relevant case is where a WL lives inside a setWL!
+ *
+ * @param arg_node current node of the ast
+ * @param arg_info info node
+ * @return transformed AST
+ */
+node *
+SERIwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("looking at Set-Expression in line %zu:", global.linenum);
+
+    arg_info = MakeInfo (arg_info);
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/**
  * hook for set expressions
  *
  * @param arg_node current node of the ast
