@@ -274,10 +274,9 @@ RSCmakeTargetListEntry (char *name, inheritence_list_t *super_targets,
 target_list_t *
 RSCaddTargetList (target_list_t *list1, target_list_t *list2)
 {
+    target_list_t *tmp;
 
     DBUG_ENTER ();
-
-    target_list_t *tmp;
 
     if (list1 == NULL) {
         list1 = list2;
