@@ -815,15 +815,9 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
     DBUG_RETURN ();
 }
 
-/******************************************************************************
- *
- * function:
- *  void EvaluateConfig ()
- *
- * description:
- *  This function merely facilitates RSCevaluateConfiguration.
- *
- ******************************************************************************/
+/**
+ * This function merely facilitates RSCevaluateConfiguration.
+ */
 
 void
 EvaluateConfig (char *input, target_list_t *target_list)
@@ -834,17 +828,17 @@ EvaluateConfig (char *input, target_list_t *target_list)
         char *target = STRtok (input, ":");
         while (target != NULL) {
             if (!STReq (target, "")) {
-                // this process should allow for multiple colons.
+                // This process should allow for multiple colons.
                 EvaluateCustomTarget (target, target_list, target_list);
             }
 
-            // prevent this from cluttering up the heap.
+            // Prevent this from cluttering up the heap.
             target = MEMfree (target);
 
             target = STRtok (NULL, ":");
         }
 
-        // prevent this from cluttering up the heap.
+        // Prevent this from cluttering up the heap.
         target = MEMfree (target);
 
     }
@@ -868,25 +862,25 @@ RSCevaluateConfiguration ()
 
     ParseResourceFiles ();
 
-    // this target gets evaluated twice if print_tagets is active.
+    // This target gets evaluated twice if print_tagets is active.
     EvaluateConfig(global.target_name,global.target_list);
 
     if (global.print_resources) {
-        // this is the scenario for the user printing ONE target's data.
-        // always the target that the compiler is using.
+        // This is the scenario for the user printing ONE target's data.
+        // Always the target that the compiler is using.
         PrintResources ();
         global.target_list = FreeTargetList (global.target_list);
-        exit (EXIT_SUCCESS);
+        CTIexit (EXIT_SUCCESS);
     
     } else if (global.print_targets_and_exit) {
         target_list_t *temp = global.target_list;
 
         while (temp != NULL) {
             // Some targets may be evaluated multiple times :(
-            // readability at the cost of performance.
+            // Readability at the cost of performance.
             EvaluateConfig (temp->name,global.target_list);
 
-            // now add this to the list of targets that will print.
+            // Now add this to the list of targets that will print.
             PTFappend (
               PTFmake
                 (temp->name, global.config.sbi,
@@ -895,13 +889,16 @@ RSCevaluateConfiguration ()
             temp = temp->next;
         }
 
-        // now print the target list out and free the memory.
+        // Now print the target list out and free the memory.
         PTFprint ();
         PTFfreeAll ();
         global.target_list = FreeTargetList (global.target_list);
-        exit (EXIT_SUCCESS);
+        CTIexit (EXIT_SUCCESS);
 
     }
+
+    // This should be freed even if no flags are active.
+    global.target_list = FreeTargetList (global.target_list);
 
     DBUG_RETURN ();
 }

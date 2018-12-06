@@ -1289,7 +1289,7 @@ USGprintUsage ()
         PrintLibraryOptions ();
         PrintCCompilerOptions ();
         PrintCustomisationOptions ();
-	break;
+    break;
     case TOOL_sac4c:
         PrintDescriptionSac4c ();
         PrintOptionsSac4c ();
