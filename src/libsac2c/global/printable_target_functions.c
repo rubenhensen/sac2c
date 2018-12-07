@@ -86,7 +86,7 @@ Contains (char *name)
     return false; 
 }
 
-/***
+/**
  * This facilitates sorting, by taking a single target and adding it to an
  * already-sorted list.
  */
@@ -333,17 +333,17 @@ PTFprint (void)
     printf ("Introductive targets (these targets introduce their own SBIs):\n\n");
     PartialPrint (introductive);
     printf ("\nThe total number of Introductive targets printed was: %d\n",
-        Size (introductive));
+            Size (introductive));
 
     printf ("\n\nAdditive targets (these targets modify SBIs):\n\n");
     PartialPrint (additive);
     printf ("\nThe total number of Additive targets printed was: %d\n",
-        Size (additive));
+            Size (additive));
 
     printf ("\n\nNeutral targets (these have no impact on SBIs):\n\n");
     PartialPrint (neutral);
     printf ("\nThe total number of Neutral targets printed was: %d\n",
-        Size (neutral));
+            Size (neutral));
     
     return;
 }
