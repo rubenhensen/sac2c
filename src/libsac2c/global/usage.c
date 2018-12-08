@@ -12,12 +12,6 @@
 #include "config.h"
 #include "sacdirs.h"
 
-#include "resource.h"
-
-#include "types.h"
-#include <string.h>
-#include "str.h"
-
 static void
 PrintToolName (void)
 {
