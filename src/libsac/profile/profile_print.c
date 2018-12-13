@@ -1,4 +1,5 @@
 /**
+ * @file
  * @brief Provides a set of functions to manipulate the SAC profiler.
  *
  * This file is part of the implementation of the SAC runtime library.
@@ -81,9 +82,9 @@ SAC_PF_PrintHeaderNode (const char *title, size_t rank)
  * @param lineno Line number
  */
 void
-SAC_PF_PrintSubHeader (const char *title, int lineno)
+SAC_PF_PrintSubHeader (const char *title, size_t lineno)
 {
-    fprintf (stderr, "call to `%-56.56s' in line #%d:\n", title, lineno);
+    fprintf (stderr, "call to `%-56.56s' in line #%zu:\n", title, lineno);
 }
 
 /**

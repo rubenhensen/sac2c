@@ -65,6 +65,7 @@
 #include "DupTree.h"
 #include "free.h"
 #include "globals.h"
+#include "emr_utils.h"
 
 #define DBUG_PREFIX "RI"
 #include "debug.h"
@@ -131,56 +132,6 @@ FreeInfo (info *info)
     info = MEMfree (info);
 
     DBUG_RETURN (info);
-}
-
-/**
- * @brief
- *
- * @param a
- * @param b
- *
- * @return true or false
- */
-static bool
-doIdsMatch (node * exprs, node * id)
-{
-    if (exprs == NULL) {
-        return FALSE;
-    } else {
-        if (ID_AVIS (id) == ID_AVIS (EXPRS_EXPR (exprs))) {
-            return TRUE;
-        } else {
-            return doIdsMatch (EXPRS_NEXT (exprs), id);
-        }
-    }
-}
-
-/**
- * @brief
- *
- * @param a
- * @param col
- *
- * @return node chain after filtering
- */
-static node *
-filterDuplicateIds (node * a, node ** col)
-{
-    node * filtered;
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("filtering out duplicate IDs");
-
-    filtered = TCfilterExprsArg (doIdsMatch, a, col);
-
-    /* we delete all duplicates from col */
-    if (filtered != NULL) {
-        DBUG_PRINT ("  found and removed the following duplicates:");
-        DBUG_EXECUTE (PRTdoPrintFile (stderr, filtered));
-        filtered = FREEdoFreeTree (filtered);
-    }
-
-    DBUG_RETURN (*col);
 }
 
 /**
@@ -542,22 +493,29 @@ EMRIgenarray (node *arg_node, info *arg_info)
         INFO_ALLOCATOR (arg_info) = F_unknown;
     } else {
         if (global.optimize.doemrci) {
-            DBUG_PRINT ("no candidates found; resetting RHSCAND to extended *or* partial candidates");
-            // we need to filter the chain to make sure we don't select an ERC that was already used as an RC
-            INFO_RHSCAND (arg_info) = filterDuplicateIds (INFO_USED_RCS (arg_info), &GENARRAY_ERC (arg_node));
+            DBUG_PRINT ("no candidates found; resetting RHSCAND to extended *or* partial "
+                        "candidates");
+            // we need to filter the chain to make sure we don't select an ERC that was
+            // already used as an RC
+            INFO_RHSCAND (arg_info)
+              = filterDuplicateId (INFO_USED_RCS (arg_info), &GENARRAY_ERC (arg_node));
             GENARRAY_ERC (arg_node) = NULL;
             if (INFO_RHSCAND (arg_info) != NULL) {
                 // we only want to pick the first one, so we free all the rest
                 if (EXPRS_NEXT (INFO_RHSCAND (arg_info)) != NULL) {
-                    EXPRS_NEXT (INFO_RHSCAND (arg_info)) = FREEdoFreeTree (EXPRS_NEXT (INFO_RHSCAND (arg_info)));
+                    EXPRS_NEXT (INFO_RHSCAND (arg_info))
+                      = FREEdoFreeTree (EXPRS_NEXT (INFO_RHSCAND (arg_info)));
                 }
                 using_erc = TRUE;
-                INFO_USED_RCS (arg_info) = TCappendExprs (INFO_USED_RCS (arg_info), DUPdoDupNode (INFO_RHSCAND (arg_info)));
+                INFO_USED_RCS (arg_info)
+                  = TCappendExprs (INFO_USED_RCS (arg_info),
+                                   DUPdoDupNode (INFO_RHSCAND (arg_info)));
                 INFO_TRAVMODE (arg_info) = ri_annotate;
                 INFO_ALLOCATOR (arg_info) = F_alloc_or_reuse;
-                DBUG_PRINT ("extended candidate(s) found, annotating memory allocation of \"%s\"...",
-                            IDS_NAME (LET_IDS (
-                              ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))))));
+                DBUG_PRINT ("extended candidate(s) found, annotating memory allocation "
+                            "of \"%s\"...",
+                            IDS_NAME (LET_IDS (ASSIGN_STMT (
+                              AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))))));
                 DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
                 AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))
                   = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node))), arg_info);
@@ -566,18 +524,20 @@ EMRIgenarray (node *arg_node, info *arg_info)
             }
         }
 
-        if (INFO_RHSCAND (arg_info) == NULL && !using_erc) { 
+        if (INFO_RHSCAND (arg_info) == NULL && !using_erc) {
             DBUG_PRINT ("no candidates found; resetting RHSCAND to partial candidates");
             INFO_RHSCAND (arg_info) = GENARRAY_PRC (arg_node);
             GENARRAY_PRC (arg_node) = NULL;
             if (INFO_RHSCAND (arg_info) != NULL) {
-                INFO_USED_RCS (arg_info) = TCappendExprs (INFO_USED_RCS (arg_info), DUPdoDupNode (INFO_RHSCAND (arg_info)));
+                INFO_USED_RCS (arg_info)
+                  = TCappendExprs (INFO_USED_RCS (arg_info),
+                                   DUPdoDupNode (INFO_RHSCAND (arg_info)));
                 INFO_TRAVMODE (arg_info) = ri_annotate;
                 INFO_ALLOCATOR (arg_info) = F_alloc_or_resize;
-                DBUG_PRINT (
-                  "partial candidate(s) found, annotating memory allocation of \"%s\"...",
-                  IDS_NAME (LET_IDS (
-                    ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))))));
+                DBUG_PRINT ("partial candidate(s) found, annotating memory allocation of "
+                            "\"%s\"...",
+                            IDS_NAME (LET_IDS (ASSIGN_STMT (
+                              AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))))));
                 DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
                 AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))
                   = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node))), arg_info);
@@ -631,21 +591,27 @@ EMRImodarray (node *arg_node, info *arg_info)
     } else {
         if (global.optimize.doemrci) {
             DBUG_PRINT ("no candidates found; resetting RHSCAND to extended candidates");
-            // we need to filter the chain to make sure we don't select an ERC that was already used as an RC
-            INFO_RHSCAND (arg_info) = filterDuplicateIds (INFO_USED_RCS (arg_info), &MODARRAY_ERC (arg_node));
+            // we need to filter the chain to make sure we don't select an ERC that was
+            // already used as an RC
+            INFO_RHSCAND (arg_info)
+              = filterDuplicateId (INFO_USED_RCS (arg_info), &MODARRAY_ERC (arg_node));
             MODARRAY_ERC (arg_node) = NULL;
             if (INFO_RHSCAND (arg_info) != NULL) {
                 // we only want to pick the first one, so we free all the rest
                 if (EXPRS_NEXT (INFO_RHSCAND (arg_info)) != NULL) {
-                    EXPRS_NEXT (INFO_RHSCAND (arg_info)) = FREEdoFreeTree (EXPRS_NEXT (INFO_RHSCAND (arg_info)));
+                    EXPRS_NEXT (INFO_RHSCAND (arg_info))
+                      = FREEdoFreeTree (EXPRS_NEXT (INFO_RHSCAND (arg_info)));
                 }
-                INFO_USED_RCS (arg_info) = TCappendExprs (INFO_USED_RCS (arg_info), DUPdoDupNode (INFO_RHSCAND (arg_info)));
+                INFO_USED_RCS (arg_info)
+                  = TCappendExprs (INFO_USED_RCS (arg_info),
+                                   DUPdoDupNode (INFO_RHSCAND (arg_info)));
                 DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
                 INFO_TRAVMODE (arg_info) = ri_annotate;
                 INFO_ALLOCATOR (arg_info) = F_alloc_or_reuse;
-                DBUG_PRINT ("extended candidate(s) found, annotating memory allocation of \"%s\"...",
-                            IDS_NAME (LET_IDS (
-                              ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node)))))));
+                DBUG_PRINT ("extended candidate(s) found, annotating memory allocation "
+                            "of \"%s\"...",
+                            IDS_NAME (LET_IDS (ASSIGN_STMT (
+                              AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node)))))));
                 AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node)))
                   = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node))), arg_info);
                 INFO_TRAVMODE (arg_info) = ri_default;

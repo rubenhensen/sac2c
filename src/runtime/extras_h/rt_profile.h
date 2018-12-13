@@ -85,7 +85,8 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #else /* SAC_DO_COMPILE_MODULE */
 
 #define SAC_PF_DEFINE()                                                                  \
-    SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP][SAC_PF_NUM_RECORD_TYPES];\
+    SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP]                          \
+                             [SAC_PF_NUM_RECORD_TYPES];                                  \
     int SAC_PF_cycle_tag[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                              \
                                                                                          \
     int SAC_PF_act_cycle_tag;                                                            \
@@ -95,20 +96,20 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     struct rusage SAC_PF_start_timer;                                                    \
     struct rusage SAC_PF_stop_timer;                                                     \
                                                                                          \
-    SAC_PF_MEM_DEFINE()                                                                  \
-    SAC_PF_DISTMEM_DEFINE()                                                              \
+    SAC_PF_MEM_DEFINE ()                                                                 \
+    SAC_PF_DISTMEM_DEFINE ()                                                             \
                                                                                          \
     char *SAC_PF_fun_name[SAC_SET_MAXFUN] = SAC_SET_FUN_NAMES;                           \
     int SAC_PF_maxfunap[SAC_SET_MAXFUN] = SAC_SET_FUN_APPS;                              \
-    int SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_AP_LINES;       \
-    int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_PARENTS;      \
+    size_t SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_AP_LINES;    \
+    size_t SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_PARENTS;   \
                                                                                          \
-    void SAC_PF_BeginComm (void)                                                         \
+    static void SAC_PF_BeginComm (void)                                                  \
     {                                                                                    \
         SAC_PF_BEGIN_COMM ();                                                            \
     }                                                                                    \
                                                                                          \
-    void SAC_PF_EndComm (void)                                                           \
+    static void SAC_PF_EndComm (void)                                                    \
     {                                                                                    \
         SAC_PF_END_COMM ();                                                              \
     }
@@ -380,10 +381,10 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
  */
 #define SAC_PF_DEFINE()                                                                  \
     /* Dummy definitions for when profiling is disabled */                               \
-    void SAC_PF_BeginComm (void)                                                         \
+    static void SAC_PF_BeginComm (void)                                                  \
     {                                                                                    \
     }                                                                                    \
-    void SAC_PF_EndComm (void)                                                           \
+    static void SAC_PF_EndComm (void)                                                    \
     {                                                                                    \
     }
 
@@ -764,67 +765,69 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #if SAC_DO_COMPILE_MODULE
 
-#define SAC_PF_MEM_DEFINE()                                                          \
-    SAC_C_EXTERN SAC_PF_MEMORY_RECORD **SAC_PF_memory;                               \
+#define SAC_PF_MEM_DEFINE()                                                              \
+    SAC_C_EXTERN SAC_PF_MEMORY_RECORD **SAC_PF_memory;                                   \
     SAC_C_EXTERN SAC_PF_MEMORY_RECORD *SAC_PF_memory_record;
 
 #else /* SAC_DO_COMPILE_MODULE */
 
-#define SAC_PF_MEM_DEFINE()                                                          \
-    SAC_PF_MEMORY_RECORD SAC_PF_memory[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];            \
+#define SAC_PF_MEM_DEFINE()                                                              \
+    SAC_PF_MEMORY_RECORD SAC_PF_memory[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                \
     SAC_PF_MEMORY_RECORD *SAC_PF_memory_record;
 
 #endif /* SAC_DO_COMPILE_MODULE */
 
-#define SAC_PF_MEM_INIT_RECORD(mem_record)                                           \
-    mem_record.alloc_mem_count = mem_record.free_mem_count = 0;                      \
-    mem_record.alloc_desc_count = mem_record.free_desc_count = 0;                    \
+#define SAC_PF_MEM_INIT_RECORD(mem_record)                                               \
+    mem_record.alloc_mem_count = mem_record.free_mem_count = 0;                          \
+    mem_record.alloc_desc_count = mem_record.free_desc_count = 0;                        \
     mem_record.reuse_mem_count = 0;
 
-#define SAC_PF_MEM_SETUP()                                                           \
-        for (i = 0; i < SAC_SET_MAXFUN; i++) {                                       \
-            for (j = 0; j < SAC_PF_maxfunap[i]; j++) {                               \
-                SAC_PF_MEM_INIT_RECORD (SAC_PF_memory[i][j]);                        \
-            }                                                                        \
-        }                                                                            \
-        SAC_PF_memory_record = &SAC_PF_memory[0][0];
+#define SAC_PF_MEM_SETUP()                                                               \
+    for (i = 0; i < SAC_SET_MAXFUN; i++) {                                               \
+        for (j = 0; j < SAC_PF_maxfunap[i]; j++) {                                       \
+            SAC_PF_MEM_INIT_RECORD (SAC_PF_memory[i][j]);                                \
+        }                                                                                \
+    }                                                                                    \
+    SAC_PF_memory_record = &SAC_PF_memory[0][0];
 
-#define SAC_PF_MEM_INC_ALLOC(size, typesize)                                         \
-    SAC_PF_MEM_AllocMemcnt(size, typesize);                                          \
-    SAC_PF_MEM_AddToMax(size, typesize);                                             \
+#define SAC_PF_MEM_INC_ALLOC(size)                                                       \
+    SAC_PF_MEM_AllocMemcnt (size);                                                       \
+    SAC_PF_MEM_AddToMax (size);                                                          \
     SAC_PF_memory_record->alloc_mem_count += 1;
 
-#define SAC_PF_MEM_INC_FREE(size, typesize)                                          \
-    SAC_PF_MEM_FreeMemcnt(size, typesize);                                           \
+#define SAC_PF_MEM_INC_FREE(size)                                                        \
+    SAC_PF_MEM_FreeMemcnt (size);                                                        \
     SAC_PF_memory_record->free_mem_count += 1;
 
-#define SAC_PF_MEM_INC_ALLOC_DESC(size, typesize)                                    \
-    SAC_PF_MEM_AllocDescnt(size, typesize);                                          \
+#define SAC_PF_MEM_INC_ALLOC_DESC(size)                                                  \
+    SAC_PF_MEM_AllocDescnt (size);                                                       \
     SAC_PF_memory_record->alloc_desc_count += 1;
 
-#define SAC_PF_MEM_INC_FREE_DESC(size, typesize)                                     \
-    SAC_PF_MEM_FreeDescnt(size, typesize);                                           \
+#define SAC_PF_MEM_INC_FREE_DESC(size)                                                   \
+    SAC_PF_MEM_FreeDescnt (size);                                                        \
     SAC_PF_memory_record->free_desc_count += 1;
 
-#define SAC_PF_MEM_INC_REUSE()                                                       \
-    SAC_PF_MEM_ReuseMemcnt();                                                        \
+#define SAC_PF_MEM_INC_REUSE()                                                           \
+    SAC_PF_MEM_ReuseMemcnt ();                                                           \
     SAC_PF_memory_record->reuse_mem_count += 1;
 
-#define SAC_PF_MEM_PRINT_STAT()                                                      \
-    {                                                                                \
-        int i;                                                                       \
-        SAC_PF_MEM_PrintStats ();                                                    \
-        for (i = 0; i < SAC_SET_MAXFUN; i += 1) {                                    \
-            SAC_PF_MEM_PrintFunStats (SAC_PF_fun_name[i], SAC_PF_maxfunap[i],        \
-                    SAC_PF_memory[i]);                                               \
-        }                                                                            \
+#define SAC_PF_MEM_PRINT_STAT()                                                          \
+    {                                                                                    \
+        int i;                                                                           \
+        SAC_PF_MEM_PrintStats ();                                                        \
+        for (i = 0; i < SAC_SET_MAXFUN; i += 1) {                                        \
+            SAC_PF_MEM_PrintFunStats (SAC_PF_fun_name[i], SAC_PF_maxfunap[i],            \
+                                      SAC_PF_memory[i]);                                 \
+        }                                                                                \
     }
 
-#define SAC_PF_BEGIN_MEM()                                                           \
-        SAC_PF_memory_record = &SAC_PF_memory[SAC_PF_act_record->funno][SAC_PF_act_record->funapno];
+#define SAC_PF_BEGIN_MEM()                                                               \
+    SAC_PF_memory_record                                                                 \
+      = &SAC_PF_memory[SAC_PF_act_record->funno][SAC_PF_act_record->funapno];
 
-#define SAC_PF_END_MEM()                                                             \
-        SAC_PF_memory_record = &SAC_PF_memory[SAC_PF_act_record->funno][SAC_PF_act_record->funapno];
+#define SAC_PF_END_MEM()                                                                 \
+    SAC_PF_memory_record                                                                 \
+      = &SAC_PF_memory[SAC_PF_act_record->funno][SAC_PF_act_record->funapno];
 
 #else /* SAC_DO_PROFILE_MEM */
 
@@ -835,10 +838,10 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #define SAC_PF_MEM_SETUP()
 #define SAC_PF_BEGIN_MEM()
 #define SAC_PF_END_MEM()
-#define SAC_PF_MEM_INC_ALLOC(size, typesize)
-#define SAC_PF_MEM_INC_FREE(size, typesize)
-#define SAC_PF_MEM_INC_ALLOC_DESC(size, typesize)
-#define SAC_PF_MEM_INC_FREE_DESC(size, typesize)
+#define SAC_PF_MEM_INC_ALLOC(size)
+#define SAC_PF_MEM_INC_FREE(size)
+#define SAC_PF_MEM_INC_ALLOC_DESC(size)
+#define SAC_PF_MEM_INC_FREE_DESC(size)
 #define SAC_PF_MEM_INC_REUSE()
 #define SAC_PF_MEM_PRINT_STAT()
 

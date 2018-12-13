@@ -1409,57 +1409,57 @@ EMALlet (node *arg_node, info *arg_info)
          * Wrap RHS in Fill-operation if necessary
          */
         switch (INFO_MUSTFILL (arg_info)) {
-            case EA_fill:
-                /*
-                 * a = b + c;
-                 *
-                 * is transformed into
-                 *
-                 * a' = alloc(...);
-                 * a = fill( b + c, a');
-                 */
-                avis
-                  = TBmakeAvis (TRAVtmpVarName (IDS_NAME (LET_IDS (arg_node))),
-                                TYeliminateAKV (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))));
+        case EA_fill:
+            /*
+             * a = b + c;
+             *
+             * is transformed into
+             *
+             * a' = alloc(...);
+             * a = fill( b + c, a');
+             */
+            avis
+              = TBmakeAvis (TRAVtmpVarName (IDS_NAME (LET_IDS (arg_node))),
+                            TYeliminateAKV (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))));
 
-                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-                LET_EXPR (arg_node)
-                  = TCmakePrf2 (F_fill, LET_EXPR (arg_node), TBmakeId (avis));
+            LET_EXPR (arg_node)
+              = TCmakePrf2 (F_fill, LET_EXPR (arg_node), TBmakeId (avis));
 
-                /*
-                 * Set the avis of the freshly allocated variable
-                 */
-                INFO_ALLOCLIST (arg_info)->avis = avis;
-                break;
-            case EA_fillnoop:
-                /*
-                 * b = prf (a);
-                 *
-                 * is transferred into:
-                 *
-                 * a = alloc (...)
-                 * b = fill (noop (a), a);
-                 */
-                avis = ID_AVIS (PRF_ARG1 (LET_EXPR (arg_node)));
+            /*
+             * Set the avis of the freshly allocated variable
+             */
+            INFO_ALLOCLIST (arg_info)->avis = avis;
+            break;
+        case EA_fillnoop:
+            /*
+             * b = prf (a);
+             *
+             * is transferred into:
+             *
+             * a = alloc (...)
+             * b = fill (noop (a), a);
+             */
+            avis = ID_AVIS (PRF_ARG1 (LET_EXPR (arg_node)));
 
-                /* we intentionally update the N_avis type to match the LHS type */
-                AVIS_TYPE (avis)
-                    = TYeliminateAKV (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))));
+            /* we intentionally update the N_avis type to match the LHS type */
+            AVIS_TYPE (avis) = TYeliminateAKV (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))));
 
-                /* we remove the prf operation, replace with fill */
-                LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
-                LET_EXPR (arg_node)
-                  = TCmakePrf2 (F_fill, TCmakePrf1 (F_noop, TBmakeId (avis)), TBmakeId (avis));
+            /* we remove the prf operation, replace with fill */
+            LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
+            LET_EXPR (arg_node)
+              = TCmakePrf2 (F_fill, TCmakePrf1 (F_noop, TBmakeId (avis)),
+                            TBmakeId (avis));
 
-                /* make sure to allocate N_avis */
-                INFO_ALLOCLIST (arg_info)->avis = avis;
-            case EA_nofill:
-                /* do nothing */
-                break;
-            default:
-                DBUG_UNREACHABLE ("Invalid EMAL fill mode!");
+            /* make sure to allocate N_avis */
+            INFO_ALLOCLIST (arg_info)->avis = avis;
+        case EA_nofill:
+            /* do nothing */
+            break;
+        default:
+            DBUG_UNREACHABLE ("Invalid EMAL fill mode!");
         }
         INFO_MUSTFILL (arg_info) = EA_nofill;
     }

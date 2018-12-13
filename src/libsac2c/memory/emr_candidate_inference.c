@@ -1,52 +1,55 @@
 /**
  * @file
  * @defgroup emrci Extended memory reuse candidate inference
+ * @ingroup mm
  *
- * Here, we add arrays that are of
- * the same shape and tha are defined in the current function but are not referenced
- * in WL-body at all. This may sound counter-intuitive at first, but it enables memory
- * reuse of the following kind:
+ * Here, we add arrays that are of the same shape and tha are defined in the
+ * current function but are not referenced in WL-body at all. This may sound
+ * counter-intuitive at first, but it enables memory reuse of the following
+ * kind:
  *
- *    Consider:
- *      int main( )
- *      {
- *         a = genarray( [15], 0);
+ * Consider:
  *
- *         print(a);
+ * ~~~~{.c}
+ * int main( )
+ * {
+ *    a = genarray( [15], 0);
  *
- *         b = genarray( [15], 1);
- *         print(b);
+ *    print(a);
  *
- *         return(0);
- *      }
+ *    b = genarray( [15], 1);
+ *    print(b);
  *
- * Here, we would like to reuse the memory allocated for a when compting b.
+ *    return(0);
+ * }
+ * ~~~~
+ *
+ * Here, we would like to reuse the memory allocated for a when computing b.
  *
  * @note
- * that EMR does not update the WL RC, but instead collects potnetial
- * candidates within another strucutre, ERC (extended reuse candidates),
- * on both WL-OPs and LoopFuns. The overall intention is to optimise
- * reuse candidates present within WL RC and allow for memeory reuse
- * in loops (do/for/while) by propogating reuse candidates from a higher
- * scope. More details in docs/projects/prealloc
+ * that EMR does not update the with-loop RC, but instead collects potential
+ * candidates within another structure, ERC (extended reuse candidates), on both
+ * with-loop operations and loop functions. The overall intention is to optimise
+ * reuse candidates present within with-loops and allow for memory reuse in
+ * loops (do/for/while) by propagating reuse candidates from a higher scope.
+ * More details in docs/projects/prealloc
  *
- * The ability to do such reuse is instrumental when trying to achieve a dual buffer
- * swapping solution for a loop around something like     a = relax( a);
+ * The ability to do such reuse is instrumental when trying to achieve a dual
+ * buffer swapping solution for a loop around something like `a = relax( a);`.
  *
- * Note here, that all these reuse candidate inferences potentially over-approximate the
- * set of candidates (eg arrays that are still refered to later); however, those cases are
- * being narrowed by subphases of the mem-phase, specifically SRCE and FRC, and by dynamic
- * reference count inspections at runtime :-)
+ * @note
+ * That all these reuse candidate inferences potentially over-approximate the
+ * set of candidates (e.g. arrays that are still referred to later); however,
+ * those cases are being narrowed by subphases of the mem-phase, specifically
+ * SRCE and FRC, and by dynamic reference count inspections at runtime :-)
  *
- * However, 4) does NEED to run later as we must not add reuse candidates that might have
- * been optimised away in the meantime.... For this very purpose we offer a second entry
- * point which applies EMR only and potentially adds more reuse candidates.
- *
- * @ingroup mm
+ * However EMRCI does need to run later as we must not add reuse candidates that
+ * might have been optimised away in the meantime.
  *
  * @{
  */
 #include "emr_candidate_inference.h"
+#include "emr_utils.h"
 
 #include "globals.h"
 #include "tree_basic.h"
@@ -149,18 +152,18 @@ EMRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
     arg_info = FreeInfo (arg_info);
 
     if (global.optimize.doemrcf) {
-/*
- * EMR Loop Application Arg Filtering
- *
- * This optimisation does three things: (1) it removes WL ERCs that share the same N_avis
- * in the rec-loop argument list, (2) filters out ERCs that are already RCs (as it
- * is not possible to use an existing RC later on, there is no point in keeping these
- * as ERCs. This opens further opportunities for lifting allocations out of loops. Finally,
- * (3) we filter out invalid RCs (calls FRC (Filter Reuse Candidates)
- * traversal (in mode 2) which filters away _invalid_ *RC candidates. This last
- * part is especially important as otherwise cases where EMRL (EMR Loop Memory
- * Propagation) could be applied might get missed.
- */
+        /*
+         * EMR Loop Application Arg Filtering
+         *
+         * This optimisation does three things: (1) it removes WL ERCs that share the same
+         * N_avis in the rec-loop argument list, (2) filters out ERCs that are already RCs
+         * (as it is not possible to use an existing RC later on, there is no point in
+         * keeping these as ERCs. This opens further opportunities for lifting allocations
+         * out of loops. Finally, (3) we filter out invalid RCs (calls FRC (Filter Reuse
+         * Candidates) traversal (in mode 2) which filters away _invalid_ *RC candidates.
+         * This last part is especially important as otherwise cases where EMRL (EMR Loop
+         * Memory Propagation) could be applied might get missed.
+         */
         syntax_tree = FRCdoFilterReuseCandidatesNoPrf (syntax_tree);
     }
 
@@ -214,78 +217,9 @@ static node *
 EMRid (node *id, info *arg_info)
 {
     DBUG_ENTER ();
-    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering out %s", ID_NAME (id));
+    DBUG_PRINT ("filtering out %s", ID_NAME (id));
     INFO_EMR_RC (arg_info) = ElimDupesOfAvis (ID_AVIS (id), INFO_EMR_RC (arg_info));
     DBUG_RETURN (id);
-}
-
-/**
- * @brief
- *
- * @param exprs N_exprs chain
- * @param id N_id
- *
- * @return true or false
- */
-static bool
-doAvisMatch (node * exprs, node * id)
-{
-    if (exprs == NULL) {
-        return FALSE;
-    } else {
-        if (ID_AVIS (id) == ID_AVIS (EXPRS_EXPR (exprs))) {
-            return TRUE;
-        } else {
-            return doAvisMatch (EXPRS_NEXT (exprs), id);
-        }
-    }
-}
-
-/**
- * @brief
- *
- * @param fexprs N_exprs chain of N_id that are to be found
- * @param exprs N_exprs chain of N_id that is to be filtered
- *
- * @return node N_exprs chain after filtering
- */
-static node *
-filterDuplicateArgs (node * fexprs, node ** exprs)
-{
-    node * filtered;
-    DBUG_ENTER ();
-
-    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "filtering out duplicate N_avis");
-
-    filtered = TCfilterExprsArg (doAvisMatch, fexprs, exprs);
-
-    /* we delete all duplicates from col */
-    if (filtered != NULL) {
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "  found and removed the following duplicates:");
-        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", PRTdoPrintFile (stderr, filtered));
-        filtered = FREEdoFreeTree (filtered);
-    }
-
-    DBUG_RETURN (*exprs);
-}
-
-static bool
-ShapeMatch (ntype *t1, ntype *t2)
-{
-    ntype *aks1, *aks2;
-    bool res;
-
-    DBUG_ENTER ();
-
-    aks1 = TYeliminateAKV (t1);
-    aks2 = TYeliminateAKV (t2);
-
-    res = TYisAKS (aks1) && TYeqTypes (aks1, aks2);
-
-    aks1 = TYfreeType (aks1);
-    aks2 = TYfreeType (aks2);
-
-    DBUG_RETURN (res);
 }
 
 static node *
@@ -300,30 +234,11 @@ MatchingRCs (node *rcs, node *ids, node *modarray)
     if (rcs != NULL) {
         match = MatchingRCs (EXPRS_NEXT (rcs), ids, modarray);
 
-        if (((ShapeMatch (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))
-              || TCshapeVarsMatch (ID_AVIS (EXPRS_EXPR (rcs)), IDS_AVIS (ids)))
-             && TUeqElementSize (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids)))
+        if ((TUeqElementSize (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))
+             && (ShapeMatch (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))
+                 || TCshapeVarsMatch (ID_AVIS (EXPRS_EXPR (rcs)), IDS_AVIS (ids))))
             || ((modarray != NULL)
-                && (ID_AVIS (EXPRS_EXPR (rcs)) == ID_AVIS (modarray)))) {
-            match = TBmakeExprs (TBmakeId (ID_AVIS (EXPRS_EXPR (rcs))), match);
-        }
-    }
-
-    DBUG_RETURN (match);
-}
-
-static node *
-MatchingPRCs (node *rcs, node *ids)
-{
-    node *match = NULL;
-
-    DBUG_ENTER ();
-
-    if (rcs != NULL) {
-        match = MatchingPRCs (EXPRS_NEXT (rcs), ids);
-
-        if (TUravelsHaveSameStructure (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))
-            && TUeqElementSize (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))) {
+                 && (ID_AVIS (EXPRS_EXPR (rcs)) == ID_AVIS (modarray)))) {
             match = TBmakeExprs (TBmakeId (ID_AVIS (EXPRS_EXPR (rcs))), match);
         }
     }
@@ -375,10 +290,12 @@ EMRCIap (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
-            && AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
-        FUNDEF_ERC (INFO_FUNDEF (arg_info)) = TCappendExprs (FUNDEF_ERC (INFO_FUNDEF (arg_info)), DUPdoDupTree (INFO_EMR_RC (arg_info)));
-        DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "extended reuse candidates for rec loopfun application:");
-        DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (FUNDEF_ERC (INFO_FUNDEF (arg_info)) != NULL) {
+        && AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
+        FUNDEF_ERC (INFO_FUNDEF (arg_info))
+          = TCappendExprs (FUNDEF_ERC (INFO_FUNDEF (arg_info)),
+                           DUPdoDupTree (INFO_EMR_RC (arg_info)));
+        DBUG_PRINT ("extended reuse candidates for rec loopfun application:");
+        DBUG_EXECUTE (if (FUNDEF_ERC (INFO_FUNDEF (arg_info)) != NULL) {
             PRTdoPrintFile (stderr, FUNDEF_ERC (INFO_FUNDEF (arg_info)));
         });
     }
@@ -463,7 +380,7 @@ EMRCIids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "adding emr_rc %s ids ...", IDS_NAME (arg_node));
+    DBUG_PRINT ("adding emr_rc %s ids ...", IDS_NAME (arg_node));
     INFO_EMR_RC (arg_info)
       = TBmakeExprs (TBmakeId (IDS_AVIS (arg_node)), INFO_EMR_RC (arg_info));
 
@@ -530,28 +447,29 @@ EMRCIprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("checking if N_prf references an ERC...");
 
     switch (PRF_PRF (arg_node)) {
-        case F_idx_modarray_AxSxS:
-        case F_idx_modarray_AxSxA:
-            /*
-             * We intentionally drop all referenced ERCs because from observation, the
-             * result is typically stored in the referenced array (reused). As such, we
-             * force these arrays to be used as ERCs, then we force an extra allocation
-             * *and* copy operation.
-             *
-             * XXX this is somewhat harsh as it removes a large number of possible ERCs
-             *     without regard for whether or not the actual memory is being reused
-             *     in place. Within OPT this can't be determined, we would need to move
-             *     this filtering to MEM phases.
-             */
-            INFO_EMR_RC (arg_info) = filterDuplicateArgs (PRF_ARGS (arg_node), &INFO_EMR_RC (arg_info));
-            DBUG_PRINT ("EMR RCs left after filtering out N_prf args");
-            DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
-                PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
-            });
-            break;
+    case F_idx_modarray_AxSxS:
+    case F_idx_modarray_AxSxA:
+        /*
+         * We intentionally drop all referenced ERCs because from observation, the
+         * result is typically stored in the referenced array (reused). As such, we
+         * force these arrays to be used as ERCs, then we force an extra allocation
+         * *and* copy operation.
+         *
+         * XXX this is somewhat harsh as it removes a large number of possible ERCs
+         *     without regard for whether or not the actual memory is being reused
+         *     in place. Within OPT this can't be determined, we would need to move
+         *     this filtering to MEM phases.
+         */
+        INFO_EMR_RC (arg_info)
+          = filterDuplicateId (PRF_ARGS (arg_node), &INFO_EMR_RC (arg_info));
+        DBUG_PRINT ("EMR RCs left after filtering out N_prf args");
+        DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
+            PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
+        });
+        break;
 
-        default:
-            break;
+    default:
+        break;
     }
 
     DBUG_RETURN (arg_node);
@@ -651,8 +569,8 @@ EMRCIgenarray (node *arg_node, info *arg_info)
      */
     GENARRAY_ERC (arg_node)
       = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
-    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "Genarray ERCs: ");
-    DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (GENARRAY_ERC (arg_node) != NULL) {
+    DBUG_PRINT ("Genarray ERCs: ");
+    DBUG_EXECUTE (if (GENARRAY_ERC (arg_node) != NULL) {
         PRTdoPrintFile (stderr, GENARRAY_ERC (arg_node));
     });
 
@@ -681,8 +599,8 @@ EMRCImodarray (node *arg_node, info *arg_info)
      */
     MODARRAY_ERC (arg_node)
       = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
-    DBUG_PRINT_TAG (DBUG_PREFIX "_EMR", "Modarray ERCs: ");
-    DBUG_EXECUTE_TAG (DBUG_PREFIX "_EMR", if (MODARRAY_ERC (arg_node) != NULL) {
+    DBUG_PRINT ("Modarray ERCs: ");
+    DBUG_EXECUTE (if (MODARRAY_ERC (arg_node) != NULL) {
         PRTdoPrintFile (stderr, MODARRAY_ERC (arg_node));
     });
 

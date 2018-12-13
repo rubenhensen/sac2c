@@ -5,6 +5,8 @@
 #ifndef _SAC_PROFILE_MEM_H
 #define _SAC_PROFILE_MEM_H
 
+#include "runtime/essentials_h/bool.h"
+
 #ifndef SAC_C_EXTERN
 #define SAC_C_EXTERN extern
 #endif /* SAC_C_EXTERN */
@@ -21,13 +23,14 @@ typedef struct memory_record {
 
 SAC_C_EXTERN void SAC_PF_MEM_PrintStats (void);
 SAC_C_EXTERN void SAC_PF_MEM_PrintRecordStats (SAC_PF_MEMORY_RECORD record);
-SAC_C_EXTERN void SAC_PF_MEM_PrintFunStats (const char * func_name, int num_ap, const SAC_PF_MEMORY_RECORD * records);
-SAC_C_EXTERN int  SAC_PF_MEM_IsRecordZero (SAC_PF_MEMORY_RECORD record);
-SAC_C_EXTERN void SAC_PF_MEM_AllocMemcnt (int size, int typesize);
-SAC_C_EXTERN void SAC_PF_MEM_FreeMemcnt (int size, int typesize);
-SAC_C_EXTERN void SAC_PF_MEM_AllocDescnt (int size, int typesize);
-SAC_C_EXTERN void SAC_PF_MEM_FreeDescnt (int size, int typesize);
+SAC_C_EXTERN void SAC_PF_MEM_PrintFunStats (const char *func_name, unsigned num_ap,
+                                            const SAC_PF_MEMORY_RECORD *records);
+SAC_C_EXTERN bool SAC_PF_MEM_IsRecordZero (SAC_PF_MEMORY_RECORD record);
+SAC_C_EXTERN void SAC_PF_MEM_AllocMemcnt (size_t size);
+SAC_C_EXTERN void SAC_PF_MEM_FreeMemcnt (size_t size);
+SAC_C_EXTERN void SAC_PF_MEM_AllocDescnt (size_t size);
+SAC_C_EXTERN void SAC_PF_MEM_FreeDescnt (size_t size);
 SAC_C_EXTERN void SAC_PF_MEM_ReuseMemcnt (void);
-SAC_C_EXTERN void SAC_PF_MEM_AddToMax (int size, int typesize);
+SAC_C_EXTERN void SAC_PF_MEM_AddToMax (size_t size);
 
 #endif /* _SAC_PROFILE_MEM_H */

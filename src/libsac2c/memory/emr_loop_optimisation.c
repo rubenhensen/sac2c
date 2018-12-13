@@ -24,6 +24,7 @@
  * @{
  */
 #include "emr_loop_optimisation.h"
+#include "emr_utils.h"
 
 #include "globals.h"
 #include "tree_basic.h"
@@ -131,7 +132,8 @@ stack_push (stack_node_t * stack, node * wl, node * avis)
     stack_node_t * new;
     DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (wl) == N_genarray || NODE_TYPE (wl) == N_modarray), "Second argument has wrong node_type!");
+    DBUG_ASSERT ((NODE_TYPE (wl) == N_genarray || NODE_TYPE (wl) == N_modarray),
+                 "Second argument has wrong node_type!");
     DBUG_ASSERT ((NODE_TYPE (avis) == N_avis), "Third argument has wrong node_type!");
 
     new = MEMmalloc (sizeof (stack_node_t));
@@ -179,83 +181,6 @@ stack_clear (stack_node_t * stack)
 }
 
 /**
- * @brief find matching N_avis nodes within an N_exrps of N_id
- *
- * @param exprs N_exprs chain
- * @param id N_id node
- * @return boolean
- */
-static bool
-doAvisMatch (node * exprs, node * id)
-{
-    bool ret = false;
-    DBUG_ENTER ();
-
-    if (exprs != NULL) {
-        if (ID_AVIS (id) == ID_AVIS (EXPRS_EXPR (exprs))) {
-            ret = true;
-        } else {
-            ret = doAvisMatch (EXPRS_NEXT (exprs), id);
-        }
-    }
-
-    DBUG_RETURN (ret);
-}
-
-/**
- * @brief filter out N_id in N_exprs chain based on another N_exprs chain
- *
- * @param fexprs N_exprs chain of N_id that are to be found
- * @param exprs N_exprs chain of N_id that is to be filtered
- * @return N_exprs chain after filtering
- */
-static node *
-filterDuplicateArgs (node * fexprs, node ** exprs)
-{
-    node * filtered;
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("filtering out duplicate N_avis");
-
-    filtered = TCfilterExprsArg (doAvisMatch, fexprs, exprs);
-
-    /* we delete all duplicates from col */
-    if (filtered != NULL) {
-        DBUG_PRINT ("  found and removed the following duplicates:");
-        DBUG_EXECUTE (PRTdoPrintFile (stderr, filtered));
-        filtered = FREEdoFreeTree (filtered);
-    }
-
-    DBUG_RETURN (*exprs);
-}
-
-/**
- * @brief check that two ntypes have the same shape
- *
- * @param t1
- * @param t2
- * @return boolean
- */
-static bool
-ShapeMatch (ntype *t1, ntype *t2)
-{
-    ntype *aks1, *aks2;
-    bool res;
-
-    DBUG_ENTER ();
-
-    aks1 = TYeliminateAKV (t1);
-    aks2 = TYeliminateAKV (t2);
-
-    res = TYisAKS (aks1) && TYeqTypes (aks1, aks2);
-
-    aks1 = TYfreeType (aks1);
-    aks2 = TYfreeType (aks2);
-
-    DBUG_RETURN (res);
-}
-
-/**
  * @brief Find a N_id in N_exprs chain that matches shape of an N_avis
  *
  * @param avis N_avis node to compare against
@@ -270,11 +195,10 @@ isSameShapeAvis (node * avis, node * exprs)
 
     if (exprs != NULL) {
         if ((ShapeMatch (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs)))
-              || TCshapeVarsMatch (avis, ID_AVIS (EXPRS_EXPR (exprs))))
-             && TUeqElementSize (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs)))) {
+             || TCshapeVarsMatch (avis, ID_AVIS (EXPRS_EXPR (exprs))))
+            && TUeqElementSize (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs)))) {
             ret = EXPRS_EXPR (exprs);
-        }
-        else {
+        } else {
             ret = isSameShapeAvis (avis, EXPRS_NEXT (exprs));
         }
     }
@@ -338,15 +262,15 @@ EMRLgenarray (node * arg_node, info * arg_info)
     DBUG_ENTER ();
 
     if (INFO_CONTEXT (arg_info) == EMRL_rec
-            && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
-            && GENARRAY_RC (arg_node) == NULL
-            && GENARRAY_ERC (arg_node) == NULL
-            && TYisAKS (IDS_NTYPE (INFO_LHS (arg_info)))) {
+        && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
+        && GENARRAY_RC (arg_node) == NULL
+        && GENARRAY_ERC (arg_node) == NULL
+        && TYisAKS (IDS_NTYPE (INFO_LHS (arg_info)))) {
         DBUG_PRINT (" genarray in loopfun has no RCs or ERCs, generating tmp one!");
 
         /* the new avis must have the same type/shape as genarray shape */
-        new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_tmp"),
-                TYcopyType (IDS_NTYPE (INFO_LHS (arg_info))));
+        new_avis = TBmakeAvis (TRAVtmpVarName ("emr_tmp"),
+                               TYcopyType (IDS_NTYPE (INFO_LHS (arg_info))));
         DBUG_PRINT (" created %s var", AVIS_NAME (new_avis));
 
         /* add to stack - this will be used in N_ap */
@@ -381,15 +305,15 @@ EMRLmodarray (node * arg_node, info * arg_info)
     DBUG_ENTER ();
 
     if (INFO_CONTEXT (arg_info) == EMRL_rec
-            && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
-            && MODARRAY_RC (arg_node) == NULL
-            && MODARRAY_ERC (arg_node) == NULL
-            && TYisAKS (IDS_NTYPE (INFO_LHS (arg_info)))) {
+        && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
+        && MODARRAY_RC (arg_node) == NULL
+        && MODARRAY_ERC (arg_node) == NULL
+        && TYisAKS (IDS_NTYPE (INFO_LHS (arg_info)))) {
         DBUG_PRINT (" modarray in loopfun has no RCs or ERCs, generating tmp one!");
 
         /* the new avis must have the same type/shape as modarray shape */
-        new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_tmp"),
-                TYcopyType (IDS_NTYPE (INFO_LHS (arg_info))));
+        new_avis = TBmakeAvis (TRAVtmpVarName ("emr_tmp"),
+                               TYcopyType (IDS_NTYPE (INFO_LHS (arg_info))));
         DBUG_PRINT (" created %s var", AVIS_NAME (new_avis));
 
         /* add to stack - this will be used in N_ap */
@@ -441,55 +365,72 @@ EMRLap (node * arg_node, info * arg_info)
                 DBUG_PRINT ("  have found tmp vars at application's fundef");
 
                 /* we filter out current application args */
-                rec_filt = filterDuplicateArgs (AP_ARGS (arg_node), &FUNDEF_ERC (INFO_FUNDEF (arg_info)));
+                rec_filt = filterDuplicateId (AP_ARGS (arg_node),
+                                              &FUNDEF_ERC (INFO_FUNDEF (arg_info)));
 
-                /* for each (wl, erc_avis) in the stack, find a suitable var in function free variables and replace it.
-                 * if none can be found, drop/free erc_avis. We pop the stack on each iteration.                        */
-                while (INFO_STACK (arg_info) != NULL)
-                {
+                /* for each (wl, erc_avis) in the stack, find a suitable var in function
+                 * free variables and replace it. if none can be found, drop/free
+                 * erc_avis. We pop the stack on each iteration.                        */
+                while (INFO_STACK (arg_info) != NULL) {
                     find = isSameShapeAvis (INFO_STACK (arg_info)->avis, rec_filt);
                     if (find == NULL) {
-                        DBUG_PRINT ("  no suitable free variable found for %s, dropping it", AVIS_NAME (INFO_STACK (arg_info)->avis));
-                        INFO_STACK (arg_info)->avis = FREEdoFreeTree (INFO_STACK (arg_info)->avis);
+                        DBUG_PRINT ("  no suitable free variable found for %s, dropping "
+                                    "it",
+                                    AVIS_NAME (INFO_STACK (arg_info)->avis));
+                        INFO_STACK (arg_info)->avis
+                          = FREEdoFreeTree (INFO_STACK (arg_info)->avis);
                     } else {
-                        L_WITHOP_ERC (INFO_STACK (arg_info)->wl, TBmakeExprs (TBmakeId (INFO_STACK (arg_info)->avis), NULL));
-                        INFO_ARGS (arg_info) = TCappendArgs (INFO_ARGS (arg_info), TBmakeArg (INFO_STACK (arg_info)->avis, NULL));
-                        AP_ARGS (arg_node) = TCappendExprs (AP_ARGS (arg_node), TBmakeExprs (DUPdoDupNode (find), NULL));
+                        L_WITHOP_ERC (INFO_STACK (arg_info)->wl,
+                                      TBmakeExprs (TBmakeId (INFO_STACK (arg_info)->avis),
+                                                   NULL));
+                        INFO_ARGS (arg_info)
+                          = TCappendArgs (INFO_ARGS (arg_info),
+                                          TBmakeArg (INFO_STACK (arg_info)->avis, NULL));
+                        AP_ARGS (arg_node)
+                          = TCappendExprs (AP_ARGS (arg_node),
+                                           TBmakeExprs (DUPdoDupNode (find), NULL));
                     }
                     INFO_STACK (arg_info) = stack_drop (INFO_STACK (arg_info));
                 }
 
                 /* fundef-level ERCs are no longer needed after this point */
-                FUNDEF_ERC (INFO_FUNDEF (arg_info)) = FREEdoFreeTree (FUNDEF_ERC (INFO_FUNDEF (arg_info)));
+                FUNDEF_ERC (INFO_FUNDEF (arg_info))
+                  = FREEdoFreeTree (FUNDEF_ERC (INFO_FUNDEF (arg_info)));
             }
         } else if (INFO_CONTEXT (arg_info) == EMRL_ap) { /* we are at the initial application */
-            int ap_arg_len = TCcountExprs (AP_ARGS (arg_node));
-            int fun_arg_len = TCcountArgs (FUNDEF_ARGS (AP_FUNDEF (arg_node)));
+            size_t ap_arg_len = TCcountExprs (AP_ARGS (arg_node));
+            size_t fun_arg_len = TCcountArgs (FUNDEF_ARGS (AP_FUNDEF (arg_node)));
 
             if (ap_arg_len != fun_arg_len) {
-                DBUG_PRINT ("  number args for ap do not match fundef: %d != %d", ap_arg_len, fun_arg_len);
+                DBUG_PRINT ("  number args for ap do not match fundef: %zu != %zu",
+                            ap_arg_len, fun_arg_len);
 
                 /* we *always* append new args on fundef */
-                for (; ap_arg_len < fun_arg_len; ap_arg_len++)
-                {
-                    node * tmp = TCgetNthArg (ap_arg_len, FUNDEF_ARGS (AP_FUNDEF (arg_node)));
-                    node * new_avis = NULL;
-                    node * new_vardec = NULL;
+                for (; ap_arg_len < fun_arg_len; ap_arg_len++) {
+                    node *tmp
+                      = TCgetNthArg (ap_arg_len, FUNDEF_ARGS (AP_FUNDEF (arg_node)));
+                    node *new_avis = NULL;
+                    node *new_vardec = NULL;
                     DBUG_PRINT ("  creating a new arg...");
 
                     /* we create a new variable and declare it to have the same shape as
-                     * the emr tmp variable in the fundef args. Within ELMR (loopreuseopt.c)
-                     * this variable is then allocated using that shape information.
+                     * the emr tmp variable in the fundef args. Within ELMR
+                     * (loopreuseopt.c) this variable is then allocated using that shape
+                     * information.
                      */
-                    new_avis = TBmakeAvis ( TRAVtmpVarName ("emr_lifted"),
-                            TYcopyType (ARG_NTYPE (tmp)));
+                    new_avis = TBmakeAvis (TRAVtmpVarName ("emr_lifted"),
+                                           TYcopyType (ARG_NTYPE (tmp)));
                     AVIS_ISALLOCLIFT (new_avis) = TRUE;
 
-                    AP_ARGS (arg_node) = TCappendExprs (AP_ARGS (arg_node), TBmakeExprs (TBmakeId (new_avis), NULL));
+                    AP_ARGS (arg_node)
+                      = TCappendExprs (AP_ARGS (arg_node),
+                                       TBmakeExprs (TBmakeId (new_avis), NULL));
 
                     new_vardec = TBmakeVardec (new_avis, NULL);
-                    AVIS_DECLTYPE (VARDEC_AVIS (new_vardec)) = TYcopyType (ARG_NTYPE (tmp));
-                    INFO_VARDECS (arg_info) = TCappendVardec (INFO_VARDECS (arg_info), new_vardec);
+                    AVIS_DECLTYPE (VARDEC_AVIS (new_vardec))
+                      = TYcopyType (ARG_NTYPE (tmp));
+                    INFO_VARDECS (arg_info)
+                      = TCappendVardec (INFO_VARDECS (arg_info), new_vardec);
                 }
             }
         }
@@ -536,13 +477,15 @@ EMRLfundef (node * arg_node, info * arg_info)
 
         /* append collected vardecs to fundef */
         if (INFO_VARDECS (arg_info) != NULL) {
-            FUNDEF_VARDECS (arg_node) = TCappendVardec (FUNDEF_VARDECS (arg_node), INFO_VARDECS (arg_info));
+            FUNDEF_VARDECS (arg_node)
+              = TCappendVardec (FUNDEF_VARDECS (arg_node), INFO_VARDECS (arg_info));
             INFO_VARDECS (arg_info) = NULL;
         }
 
         /* append collected args to fundef */
         if (INFO_ARGS (arg_info) != NULL) {
-            FUNDEF_ARGS (arg_node) = TCappendArgs (FUNDEF_ARGS (arg_node), INFO_ARGS (arg_info));
+            FUNDEF_ARGS (arg_node)
+              = TCappendArgs (FUNDEF_ARGS (arg_node), INFO_ARGS (arg_info));
             INFO_ARGS (arg_info) = NULL;
         }
 

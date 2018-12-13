@@ -16,7 +16,7 @@
 
 SAC_C_EXTERN void SAC_PF_PrintHeader (const char *title);
 SAC_C_EXTERN void SAC_PF_PrintHeaderNode (const char *title, size_t rank);
-SAC_C_EXTERN void SAC_PF_PrintSubHeader (const char *title, int lineno);
+SAC_C_EXTERN void SAC_PF_PrintSubHeader (const char *title, size_t lineno);
 SAC_C_EXTERN void SAC_PF_PrintSection (const char *title);
 SAC_C_EXTERN void SAC_PF_PrintTime (const char *title, const char *space, const SAC_PF_TIMER *time);
 SAC_C_EXTERN void SAC_PF_PrintCount (const char *title, const char *space, unsigned long count);

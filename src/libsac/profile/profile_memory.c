@@ -1,4 +1,5 @@
 /**
+ * @file
  * @brief This file specifies a set of functions used by profile.c to profile memory
  *        operations, specifically count and size(s).
  */
@@ -7,73 +8,72 @@
 
 #include "libsac/profile/profile_print.h"
 #include "libsac/profile/profile_memory.h"
+#include "runtime/essentials_h/bool.h"
+
+#define BYTES_TO_KBYTES(bytes) (bytes / 1024)
 
 /* Global Variables */
 
 /* these counter are for all memory operations */
-static unsigned long SAC_PF_MEM_alloc_memsize = 0; /**< Holds the total size of memory allocated in bits */
-static unsigned long SAC_PF_MEM_free_memsize = 0; /**< Holds the total size of memory freed in bits */
-static unsigned long SAC_PF_MEM_max_alloc = 0; /**< Holds max memory allocated size in bits */
+static size_t SAC_PF_MEM_alloc_memsize = 0; /**< Holds the total size of memory allocated in bytes */
+static size_t SAC_PF_MEM_free_memsize = 0; /**< Holds the total size of memory freed in bytes */
+static size_t SAC_PF_MEM_max_alloc = 0; /**< Holds max memory allocated size in bytes */
 
 /* these counters deal with arrays */
-static unsigned long SAC_PF_MEM_alloc_memcnt = 0; /**< Holds the count of calls to malloc/calloc/realloc */
-static unsigned long SAC_PF_MEM_free_memcnt = 0; /**< Holds the count of calls to free */
-static unsigned long SAC_PF_MEM_reuse_memcnt = 0; /**< Holds the count of dynamic reuses */
+static size_t SAC_PF_MEM_alloc_memcnt = 0; /**< Holds the count of calls to malloc/calloc/realloc */
+static size_t SAC_PF_MEM_free_memcnt = 0; /**< Holds the count of calls to free */
+static size_t SAC_PF_MEM_reuse_memcnt = 0; /**< Holds the count of dynamic reuses */
 
 /* these counters deal with descriptors */
-static unsigned long SAC_PF_MEM_alloc_descnt = 0; /**< Holds the count of descriptor allocations */
-static unsigned long SAC_PF_MEM_free_descnt = 0; /**< Holds the count of descriptor frees */
+static size_t SAC_PF_MEM_alloc_descnt = 0; /**< Holds the count of descriptor allocations */
+static size_t SAC_PF_MEM_free_descnt = 0; /**< Holds the count of descriptor frees */
 
 /**
  * @brief Increments the alloc counter.
  *
- * @param size Size in units
- * @param typesize Size of type in bits
+ * @param size Size in bytes
  */
 void
-SAC_PF_MEM_AllocMemcnt (int size, int typesize)
+SAC_PF_MEM_AllocMemcnt (size_t size)
 {
     SAC_PF_MEM_alloc_memcnt += 1;
-    SAC_PF_MEM_alloc_memsize += size * typesize;
+    SAC_PF_MEM_alloc_memsize += size;
 }
 
 /**
  * @brief Increments the free counter.
  *
- * @param size Size in units
- * @param typesize Size of type in bits
+ * @param size Size in bytes
  */
 void
-SAC_PF_MEM_FreeMemcnt (int size, int typesize)
+SAC_PF_MEM_FreeMemcnt (size_t size)
 {
     SAC_PF_MEM_free_memcnt += 1;
-    SAC_PF_MEM_free_memsize += size * typesize;
+    SAC_PF_MEM_free_memsize += size;
 }
 
 /**
  * @brief Increments the descriptor alloc counter.
  *
- * @param size Size in units
- * @param typesize Size of type in bits
+ * @param size Size in bytes
  */
 void
-SAC_PF_MEM_AllocDescnt (int size, int typesize)
+SAC_PF_MEM_AllocDescnt (size_t size)
 {
     SAC_PF_MEM_alloc_descnt += 1;
-    SAC_PF_MEM_alloc_memsize += size * typesize;
+    SAC_PF_MEM_alloc_memsize += size;
 }
 
 /**
  * @brief Increments the descriptor free counter.
  *
- * @param size Size in units
- * @param typesize Size of type in bits
+ * @param size Size in bytes
  */
 void
-SAC_PF_MEM_FreeDescnt (int size, int typesize)
+SAC_PF_MEM_FreeDescnt (size_t size)
 {
     SAC_PF_MEM_free_descnt += 1;
-    SAC_PF_MEM_free_memsize += size * typesize;
+    SAC_PF_MEM_free_memsize += size;
 }
 
 /**
@@ -88,14 +88,13 @@ SAC_PF_MEM_ReuseMemcnt ()
 /**
  * @brief Adds to the global maximum memory allocated value.
  *
- * @param size  unit size
- * @param typesize size of type in bits
+ * @param size Size in bytes
  */
 void
-SAC_PF_MEM_AddToMax (int size, int typesize)
+SAC_PF_MEM_AddToMax (size_t size)
 {
-    if ((unsigned long) size * typesize > SAC_PF_MEM_max_alloc)
-        SAC_PF_MEM_max_alloc = size * typesize;
+    if (size > SAC_PF_MEM_max_alloc)
+        SAC_PF_MEM_max_alloc = size;
 }
 
 /**
@@ -103,14 +102,11 @@ SAC_PF_MEM_AddToMax (int size, int typesize)
  *
  * @param record the record to check
  */
-inline int
+inline bool
 SAC_PF_MEM_IsRecordZero (SAC_PF_MEMORY_RECORD record)
 {
-    return !(record.alloc_mem_count
-        | record.free_mem_count
-        | record.reuse_mem_count
-        | record.alloc_desc_count
-        | record.free_desc_count);
+    return !(record.alloc_mem_count || record.free_mem_count || record.reuse_mem_count
+             || record.alloc_desc_count || record.free_desc_count);
 }
 
 /**
@@ -133,22 +129,27 @@ SAC_PF_MEM_PrintRecordStats (SAC_PF_MEMORY_RECORD record)
 /**
  * @brief Print statistics for given function.
  *
+ * @param func_name Name of function
+ * @param num_ap Number of applications of function
+ * @param records The records that store the statistics
  */
 void
-SAC_PF_MEM_PrintFunStats (const char * func_name, int num_ap, const SAC_PF_MEMORY_RECORD * records)
+SAC_PF_MEM_PrintFunStats (const char *func_name, unsigned num_ap,
+                          const SAC_PF_MEMORY_RECORD *records)
 {
-    int zero, i;
+    unsigned i;
+    bool zero;
 
     /* lets check that there is actually something useful to print */
-    for (i = 0, zero = 0; i < num_ap; i++) {
-        zero |= SAC_PF_MEM_IsRecordZero(records[i]);
+    for (i = 0, zero = true; i < num_ap; i++) {
+        zero &= SAC_PF_MEM_IsRecordZero (records[i]);
     }
 
     /* if at least one record is non-zero */
     if (!zero) {
         SAC_PF_PrintHeader (func_name);
         for (i = 0; i < num_ap; i++) {
-            if (!SAC_PF_MEM_IsRecordZero(records[i])) {
+            if (!SAC_PF_MEM_IsRecordZero (records[i])) {
                 if (num_ap > 1) {
                     fprintf (stderr, "--- Application %d\n", i);
                 }
@@ -176,7 +177,10 @@ SAC_PF_MEM_PrintStats ()
     SAC_PF_PrintCount ("no. calls to free", "", SAC_PF_MEM_free_descnt);
 
     fprintf (stderr, "\n*** %-72s\n", "Memory usage counters:");
-    SAC_PF_PrintSize ("total size of memory allocated", "", SAC_PF_MEM_alloc_memsize/8/1024, "Kbytes");
-    SAC_PF_PrintSize ("total size of memory freed", "", SAC_PF_MEM_free_memsize/8/1024, "Kbytes");
-    SAC_PF_PrintSize ("size of largest allocation", "", SAC_PF_MEM_max_alloc/8/1024, "Kbytes");
+    SAC_PF_PrintSize ("total size of memory allocated", "",
+                      BYTES_TO_KBYTES (SAC_PF_MEM_alloc_memsize), "Kbytes");
+    SAC_PF_PrintSize ("total size of memory freed", "",
+                      BYTES_TO_KBYTES (SAC_PF_MEM_free_memsize), "Kbytes");
+    SAC_PF_PrintSize ("size of largest allocation", "",
+                      BYTES_TO_KBYTES (SAC_PF_MEM_max_alloc), "Kbytes");
 }
