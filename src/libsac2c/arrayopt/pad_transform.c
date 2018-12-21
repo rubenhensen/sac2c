@@ -295,7 +295,7 @@ AddDummyPart (node *wl, shpseg *old_shape, shpseg *new_shape, int dims)
 
             /* generate (lower_bound <= idx < upper_bound) */
             generator
-              = TBmakeGenerator (F_le, F_lt, lbound_array, ubound_array, NULL, NULL);
+              = TBmakeGenerator (F_wl_le, F_wl_lt, lbound_array, ubound_array, NULL, NULL);
 
             /* copy reference to idx-variable from existing withid-node
              * (remember that there is only ONE idx-variable for all part-nodes
