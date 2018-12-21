@@ -311,6 +311,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/global/phase_options.c
 ${CMAKE_CURRENT_SOURCE_DIR}/global/private_heap.c
 ${CMAKE_CURRENT_SOURCE_DIR}/global/profiler.c
 ${CMAKE_CURRENT_SOURCE_DIR}/global/resource.c
+${CMAKE_CURRENT_SOURCE_DIR}/global/printable_target_functions.c
 ${CMAKE_CURRENT_SOURCE_DIR}/global/usage.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/NumLookUpTable.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/ReuseWithArrays.c
