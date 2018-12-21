@@ -113,6 +113,46 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *SHALprintPreFun( node *arg_node, info *arg_info)
+ *
+ * Printing prefun that prints informations about aliasing if the compilation
+ * is aborted during memory management.
+ *
+ *****************************************************************************/
+node *
+SHALprintPreFun (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_arg:
+        if (ARG_ISALIASING (arg_node)) {
+            fprintf (global.outfile, " /* IsAliasing */");
+        }
+        if (AVIS_ISALIAS (ARG_AVIS (arg_node))) {
+            fprintf (global.outfile, " /* IsAlias */");
+        }
+        break;
+    case N_ret:
+        if (RET_ISALIASING (arg_node)) {
+            fprintf (global.outfile, " /* IsAliasing*/");
+        }
+        break;
+    case N_vardec:
+        if (AVIS_ISALIAS (VARDEC_AVIS (arg_node))) {
+            INDENT;
+            fprintf (global.outfile, " /* IsAlias */\n");
+        }
+        break;
+    default:
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @name Entry functions
  * @{
  *

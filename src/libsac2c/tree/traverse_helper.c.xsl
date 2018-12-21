@@ -3,7 +3,7 @@
 <!--
  ***********************************************************************
  *                                                                     *
- *                      Copyright (c) 1994-2007                        *
+ *                      Copyright (c) 1994-2017                        *
  *         SAC Research Foundation (http://www.sac-home.org/)          *
  *                                                                     *
  *                        All Rights Reserved                          *
@@ -111,6 +111,7 @@ node *TRAVgetSon( int no, node *parent)
 
   DBUG_RETURN (result);
 }
+
     </xsl:text>
   </xsl:template>
 

@@ -11,6 +11,7 @@
 #include <inttypes.h>
 
 #include "config.h"
+#include "argcount-cpp.h"
 #include "types_nodetype.h"
 #include "types_trav.h"
 
@@ -120,20 +121,35 @@ typedef enum distmem_dis_t {
     distmem_dis_dsm
 } distmem_dis;
 
-#define PHASE(name, text, cond) PH_##name,
+/**
+ * @brief Create PH_* based phase name, with different structures depending on
+ *        number of passed arguments.
+ *
+ * This macro is used in several places in the libsac2c sources.
+ *
+ * @see phase_drivers.c
+ * @see phase_info.c
+ */
+#define PHASENAME(...) \
+    MACRO_GLUE(__PNARG, MACRO_ARGCOUNT(__VA_ARGS__))(__VA_ARGS__)
+#define __PNARG1(phase) PH_##phase
+#define __PNARG2(phase, name) PH_##phase##_##name
+#define __PNARG3(phase, cycle, name) PH_##phase##_##cycle##_##name
 
-#define SUBPHASE(name, text, fun, cond, phase) PH_##phase##_##name,
+#define PHASE(name, text, cond) PHASENAME(name),
 
-#define CYCLE(name, text, cond, phase, setup) PH_##phase##_##name,
+#define SUBPHASE(name, text, fun, cond, phase) PHASENAME(phase, name),
 
-#define CYCLEPHASE(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle##_##name,
+#define CYCLE(name, text, cond, phase, setup) PHASENAME(phase, name),
 
-#define FUNBEGIN(name, phase, cycle) PH_##phase##_##cycle##_##name,
+#define CYCLEPHASE(name, text, fun, cond, phase, cycle) PHASENAME(phase, cycle, name),
 
-#define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle##_##name,
+#define FUNBEGIN(name, phase, cycle) PHASENAME(phase, cycle, name),
+
+#define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle) PHASENAME(phase, cycle, name),
 
 #define CYCLEPHASEFUNOLD(name, text, fun, cond, phase, cycle)                            \
-    PH_##phase##_##cycle##_##name,
+    PHASENAME(phase, cycle, name),
 
 typedef enum {
     PH_dummy = -1, /* Prevent comparison with >= PH_initial from producing a warning */
@@ -1038,6 +1054,14 @@ typedef enum {
  * type of traversal functions
  */
 typedef node *(*travfun_p) (node *, info *);
+
+/*
+ * struct for list of pre/post traversal functions
+ */
+typedef struct TRAVFUNLIST {
+    travfun_p fun;
+    struct TRAVFUNLIST *next;
+} travfunlist_t;
 
 /*
  * type for anonymous traversal definitions

@@ -19,8 +19,6 @@ extern void TRAVpush (trav_t traversal);
 extern void TRAVpushAnonymous (anontrav_t *anontraversal, travfun_p deffun);
 extern trav_t TRAVpop (void);
 extern const char *TRAVgetName (void);
-extern void TRAVsetPreFun (trav_t traversal, travfun_p prefun);
-extern void TRAVsetPostFun (trav_t traversal, travfun_p postfun);
 
 #ifndef DBUG_OFF
 extern void TRAVprintStack (void);

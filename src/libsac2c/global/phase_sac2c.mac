@@ -3,6 +3,10 @@
 /******************************************************************************/
 PHASE (scp, "Loading SAC program", !global.runtime)
 
+ADDPREFUN (TR_cmpt, CMPTnodeType) /* Add at the earliest point,
+                                   * and removed at the end
+								   */
+
 SUBPHASE (loc, "Locating source code", SPdoLocateSource, ALWAYS, scp)
 
 SUBPHASE (cpp, "Running C preprocessor", SPdoRunPreProcessor, ALWAYS, scp)
@@ -1205,7 +1209,7 @@ SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr
 SUBPHASE (rci, "Inferring reuse candidates", EMRIdoReuseInference, global.optimize.douip,
           mem)
 
-SUBPHASE (shal, "Activating display of alias information", SHALactivate, ALWAYS, mem)
+ADDPREFUN (TR_prt, SHALprintPreFun)
 
 SUBPHASE (ia, "Interface aliasing analysis", EMIAdoInterfaceAnalysis,
           global.optimize.dosrf, mem)
@@ -1242,8 +1246,7 @@ SUBPHASE (pew3, "MUTC Prune empty with3", PEW3doPruneEmptyWith3,
 SUBPHASE (dcr2, "Removing dead code again", DCRdoDeadCodeRemoval, global.optimize.dodcr,
           mem)
 
-SUBPHASE (unshal, "Deactivating display of alias information", SHALdeactivate, ALWAYS,
-          mem)
+REMOVEPREFUN (TR_prt, SHALprintPreFun)
 
 SUBPHASE (rc, "Running reference count inference", RCIdoReferenceCounting, ALWAYS, mem)
 
@@ -1264,6 +1267,7 @@ SUBPHASE( mvsmi,
 SUBPHASE (re, "Removing reuse instructions", EMREdoReuseElimination, ALWAYS, mem)
 
 ENDPHASE (mem)
+
 
 /******************************************************************************/
 
@@ -1456,6 +1460,8 @@ SUBPHASE (pds, "Prepare distributed with-loop schedulers",
           PDSdoPrepareDistributedScheduler, global.backend == BE_cudahybrid, cg)
 
 SUBPHASE (prt, "Generating C file(s)", PRTdoPrint, ALWAYS, cg)
+
+REMOVEPREFUN (TR_cmpt, CMPTnodeType)
 
 ENDPHASE (cg)
 

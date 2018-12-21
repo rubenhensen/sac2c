@@ -3,7 +3,7 @@
 <!--
  ***********************************************************************
  *                                                                     *
- *                      Copyright (c) 1994-2007                        *
+ *                      Copyright (c) 1994-2017                        *
  *         SAC Research Foundation (http://www.sac-home.org/)          *
  *                                                                     *
  *                        All Rights Reserved                          *
@@ -40,6 +40,8 @@
     <xsl:text>
 #include "traverse_tables.h"
 #include "traverse_helper.h"
+#define DBUG_PREFIX "TRAVTABS"
+#include "debug.h"
     </xsl:text>
       <xsl:apply-templates select="/definition/traversals/traversal" mode="include" />
     <xsl:text>
@@ -77,7 +79,6 @@ const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/traver
     <xsl:text>,
     "anonymous"
 };
-
     </xsl:text>
   </xsl:template>
 
@@ -105,7 +106,7 @@ const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/traver
     <xsl:if test="@ifndef">
       <xsl:value-of select="'#ifndef '" />
       <xsl:call-template name="uppercase" >
-        <xsl:with-param name="string" select="@ifndef" />          
+        <xsl:with-param name="string" select="@ifndef" />
       </xsl:call-template>
       <xsl:text>
       </xsl:text>
@@ -174,7 +175,7 @@ const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/traver
         </xsl:otherwise>
       </xsl:choose>
     </xsl:for-each>
-    <xsl:value-of select="' }'" />  
+    <xsl:value-of select="' }'" />
     <xsl:if test="@ifndef">
       <xsl:text>
       </xsl:text>
@@ -195,7 +196,7 @@ const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/traver
     <xsl:param name="node" />
     <xsl:param name="style" />
     <xsl:param name="ifndef" />
-   
+
     <xsl:choose>
       <xsl:when test="$style = &quot;user&quot;">
         <xsl:call-template name="travfun-name">
@@ -229,54 +230,8 @@ const char *travnames[ </xsl:text><xsl:value-of select="count(/definition/traver
     <xsl:call-template name="newline" />
   </xsl:template>
 
-  <xsl:template match="traversal[@prefun]" mode="pretable">
-    <xsl:value-of select="', '" />
-    <xsl:if test="@ifndef">
-      <xsl:value-of select="$newline" />    
-      <xsl:value-of select="'#ifndef '"/>
-      <xsl:call-template name="uppercase" >
-        <xsl:with-param name="string" select="@ifndef" />          
-      </xsl:call-template>
-      <xsl:value-of select="$newline" />    
-    </xsl:if>
-    <xsl:value-of select="'&amp;'" />
-    <xsl:value-of select="@prefun" />
-    <xsl:if test="@ifndef">
-      <xsl:value-of select="$newline" />    
-      <xsl:value-of select="'#else '"/>
-      <xsl:value-of select="$newline" />    
-      <xsl:value-of select="'NULL'" />
-      <xsl:value-of select="$newline" />    
-      <xsl:value-of select="'#endif'" />
-      <xsl:value-of select="$newline" />            
-    </xsl:if>
-  </xsl:template>
- 
   <xsl:template match="traversal" mode="pretable">
     <xsl:value-of select="', NULL'" />
-  </xsl:template>
-
-  <xsl:template match="traversal[@postfun]" mode="posttable">
-    <xsl:value-of select="', '" />
-    <xsl:if test="@ifndef">
-      <xsl:value-of select="$newline" />    
-      <xsl:value-of select="'#ifndef '"/>
-      <xsl:call-template name="uppercase" >
-        <xsl:with-param name="string" select="@ifndef" />          
-      </xsl:call-template>
-      <xsl:value-of select="$newline" />    
-    </xsl:if>
-    <xsl:value-of select="'&amp;'" />
-    <xsl:value-of select="@postfun" />
-    <xsl:if test="@ifndef">
-      <xsl:value-of select="$newline" />    
-      <xsl:value-of select="'#else '"/>
-      <xsl:value-of select="$newline" />    
-      <xsl:value-of select="'NULL'" />
-      <xsl:value-of select="$newline" />    
-      <xsl:value-of select="'#endif'" /> 
-      <xsl:value-of select="$newline" />    
-    </xsl:if>
   </xsl:template>
 
   <xsl:template match="traversal" mode="posttable">
