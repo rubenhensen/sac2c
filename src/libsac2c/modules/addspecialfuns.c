@@ -104,7 +104,6 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         /*
          * prevent prelude functions from being deleted
          */
-        //syntaxtree = TagPreludeAsSticky (syntaxtree);
         last_fundef = TagPreludeAsSticky (last_fundef);
     } else {
         CTInote ("The prelude library `%s' has not been loaded.", global.preludename);

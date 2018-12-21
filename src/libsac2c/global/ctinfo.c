@@ -81,7 +81,6 @@ static int errors = 0;
 static int warnings = 0;
 
 static FILE * cti_stderr;
-//static FILE * cti_stdout = stdout;
 
 
 #define MAX_ITEM_NAME_LENGTH 255
@@ -301,7 +300,6 @@ static void
 PrintMessage (const char *header, const char *format, va_list arg_p)
 {
     char *line;
-    //char local_header[] = "=> ";
 
     DBUG_ENTER ();
 

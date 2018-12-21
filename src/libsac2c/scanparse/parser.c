@@ -262,7 +262,6 @@ handle_symbol_list (struct parser *parser, const char *modname, bool except)
         HASH_FIND_STR (parser->used_modules, modname, mod);
         if (!modname)
             return error_mark_node;
-        //assert (mod, "module `%s' has to be cached first", modname);
     } else
         parser->lex->is_read_user_op = true;
 

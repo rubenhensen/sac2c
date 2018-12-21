@@ -25,7 +25,8 @@ static struct lexer *jup_lex;
 static struct parser *jup_parser;
 static char **jup_argv;
 
-int jupyter_init (void)
+int
+jupyter_init (void)
 {
     const char * sac2crc = "sac2crc" BUILD_TYPE_POSTFIX;
 
@@ -38,18 +39,11 @@ int jupyter_init (void)
         return -1;
 
     RSCsetSac2crcLocations (global_sac2crc, build_sac2crc);
-    
-    fprintf (stderr, "global.build_sac2crc_location = %s\n", global.build_sac2crc_location);
 
-
-    // FIXME initialize this once before calling this function
-    // and maintain this state later.
-    
     // Initialse fresh compiler
     jup_argv = (char **)malloc (sizeof (char *));
     jup_argv[0] = strdup ("test");
 
-    //SetupCompiler (1, argv, TOOL_sac2c, argv[0]);
     set_debug_exit_function (CTIexit);
     CTIset_stderr (stderr);
 
@@ -60,7 +54,7 @@ int jupyter_init (void)
 
     jup_lex = (struct lexer *)malloc (sizeof (struct lexer));
     jup_parser = (struct parser *)malloc (sizeof (struct parser));
-    
+
     memset (jup_lex, 0, sizeof (*jup_lex));
     lexer_init_file (jup_lex, (FILE*)1, "<string-input>");
     parser_init (jup_parser, jup_lex);
@@ -96,7 +90,7 @@ parser_print_tables (struct parser *parser)
 
 
 char *
-parse_from_string (char *s, int num_useimports)
+jupyter_parse_from_string (char *s)
 {
     assert (jup_parser, "parser has to be initialised");
     char *local_stderr_content;
@@ -106,7 +100,7 @@ parse_from_string (char *s, int num_useimports)
 
     FILE *old_stderr = CTIget_stderr ();
     CTIset_stderr (local_stderr);
-    
+
     fprintf (local_stderr, "======= trying to parse `%s'\n", s);
 
     node *n = NULL;
@@ -147,13 +141,8 @@ parse_from_string (char *s, int num_useimports)
     do { \
         FILE *__f = __parser->lex->file; \
         struct lexer *__lex = __parser->lex; \
-        /*const char *__fname = strdup (__parser->lex->fname); \
-        lexer_finalize (__lex, false); \
-        __lex->file = NULL; \
-        __lex->fname = NULL;*/ \
         PARSER_FINALIZE (__parser); \
         rewind (__f); \
-        /*lexer_init_file (__lex, __f, __fname); */\
         LEXER_REINIT (__lex); \
         PARSER_REINIT (__parser, __lex); \
     } while (0)
@@ -171,62 +160,60 @@ parse_from_string (char *s, int num_useimports)
 
 #define HANDLE_USEIMPORTS(__parser, __num) \
     do { \
-        /*int max = __num; \
-        while (true) { \
-            node *n;*/ \
-            struct token *tok = parser_get_token (jup_parser); \
-            parser_unget (jup_parser); \
-            if (token_is_keyword (tok, USE)) \
-                n = handle_interface (jup_parser, int_use); \
-            else if (token_is_keyword (tok, IMPORT)) \
-                n = handle_interface (jup_parser, int_import); \
-            else if (token_is_keyword (tok, TYPEDEF)) \
-                n = handle_typedef (jup_parser); \
-            /*else \
-                break; \
-            if (max != -1) { printf ("max = %d\n", max); \
-                if (--max <= 0) \
-                    break;} \
-        } */ \
+        struct token *tok = parser_get_token (jup_parser); \
+        parser_unget (jup_parser); \
+        if (token_is_keyword (tok, USE)) \
+            n = handle_interface (jup_parser, int_use); \
+        else if (token_is_keyword (tok, IMPORT)) \
+            n = handle_interface (jup_parser, int_import); \
+        else if (token_is_keyword (tok, TYPEDEF)) \
+            n = handle_typedef (jup_parser); \
     } while (0)
 
-    //parser_print_tables (jup_parser);
     jup_parser->lex->file = fin;
     PARSER_RESET (jup_parser);
 
     // Is it expression we are dealing with?
     fprintf (local_stderr, "======= parsing as expression\n");
     CTIresetErrorCount ();
-    //HANDLE_USEIMPORTS (jup_parser, num_useimports);
     n = handle_expr (jup_parser);
-    RET_OR_RESET (jup_parser, n && n != error_mark_node && CTIgetErrorCount () == 0
-                          && tok_eof == token_class (parser_get_token (jup_parser)), 1);
-    
+    RET_OR_RESET (jup_parser,
+                  n
+                  && n != error_mark_node
+                  && CTIgetErrorCount () == 0
+                  && tok_eof == token_class (parser_get_token (jup_parser)), 1);
+
     // Is it statement list?
     CTIresetErrorCount ();
-    //HANDLE_USEIMPORTS (jup_parser, num_useimports);
     fprintf (local_stderr, "======= parsing as list of statements\n");
     n = handle_list_of_stmts (jup_parser);
-    RET_OR_RESET (jup_parser, n && n != error_mark_node && CTIgetErrorCount () == 0
-                          && tok_eof == token_class (parser_get_token (jup_parser)), 2);
-    
+    RET_OR_RESET (jup_parser,
+                  n
+                  && n != error_mark_node
+                  && CTIgetErrorCount () == 0
+                  && tok_eof == token_class (parser_get_token (jup_parser)), 2);
+
     // Is it a function definition?
     CTIresetErrorCount ();
-    //HANDLE_USEIMPORTS (jup_parser, num_useimports);
-    enum parsed_ftype ft; 
+    enum parsed_ftype ft;
     fprintf (local_stderr, "======= parsing as function definition\n");
     n = handle_function (jup_parser, &ft);
-    RET_OR_RESET (jup_parser, n && n != error_mark_node && CTIgetErrorCount () == 0
-                          && ft == fun_fundef
-                          && tok_eof == token_class (parser_get_token (jup_parser)), 3);
+    RET_OR_RESET (jup_parser,
+                  n
+                  && n != error_mark_node
+                  && CTIgetErrorCount () == 0
+                  && ft == fun_fundef
+                  && tok_eof == token_class (parser_get_token (jup_parser)), 3);
 
     // Is it a use/import/typedef?
     CTIresetErrorCount ();
-    //HANDLE_USEIMPORTS (jup_parser, num_useimports);
     fprintf (local_stderr, "======= parsing as use/import/typedef\n");
     HANDLE_USEIMPORTS (jup_parser, -1);
-    RET_OR_RESET (jup_parser, n && n != error_mark_node && CTIgetErrorCount () == 0
-                          && tok_eof == token_class (parser_get_token (jup_parser)), 4);
+    RET_OR_RESET (jup_parser,
+                  n
+                  && n != error_mark_node
+                  && CTIgetErrorCount () == 0
+                  && tok_eof == token_class (parser_get_token (jup_parser)), 4);
 
 cleanup:
     if (n && n != error_mark_node)
@@ -237,9 +224,7 @@ cleanup:
     fflush (local_stderr);
     fclose (local_stderr);
     CTIset_stderr (old_stderr);
-    
-    //fprintf (stderr, "local stderr sz = %zu\n", local_stderr_sz);
-    //fprintf (stderr, "accumulated stderr is:\n---\n%s\n---\n", local_stderr_content);
+
     char *ret_json = NULL;
     char *quoted_stderr = quote_string_json (local_stderr_content, NULL, 0);
 
@@ -259,15 +244,17 @@ cleanup:
 
     free (quoted_stderr);
     return ret_json;
-    
+
 }
 
 
-void jupyter_free (void *p) {
+void
+jupyter_free (void *p) {
     (void) MEMfree (p);
 }
 
-int jupyter_finalize (void)
+int
+jupyter_finalize (void)
 {
     parser_finalize (jup_parser);
 
