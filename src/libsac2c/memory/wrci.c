@@ -1,0 +1,566 @@
+/**
+ * @file
+ * @defgroup wrci With-loop reuse candidate inference
+ *
+ * This module tries to identify With-loop reuse candidates.
+ * It supports 4 kinds of reuse candidates, each of which can be
+ * turned on/off separately. These are:
+ * 1) RIP (Reuse with In-Place selection) [implemented in ReuseWithArrays.c]
+ *    WL reuse candidates are all arrays A that are accessed only
+ *    by means of selection at A[iv]i within the given WL.
+ * 2) RWO (Reuse With Offset) [implemented in reusewithoffset.c]
+ *    Looks for a WL that contains n-1 copy partitions and exactly one non-copy partition.
+ *    If that is found, it makes allows th non-copy partition to have an access into the
+ *    copy-from-source (ie potential reuse candidate) of the form A[iv +- offset] where
+ *    offset is bigger than the generator width. This guarantees accesses into the copy
+ *    partitions (at least if the accesses are legal :-)
+ * 3) PRA (Polyhedral Reuse Analysis) [implemented in polyhedral_reuse_analysis.c] Refines
+ *    RWO and uses polyhedral stuff to enable accesses of the form A[ linear_expr( iv)]
+ *    provided we can show all these accesses fall into copy partitions or non-modified
+ *    partitions...
+ * 4) EMR (Extended Memory Reuse) [See emr_inference.c for more information]
+ *
+ * Note here, that all these reuse candidate inferences potentially over-approximate the
+ * set of candidates (eg arrays that are still refered to later); however, those cases are
+ * being narrowed by subphases of the mem-phase, specifically SRCE and FRC, and by dynamic
+ * reference count inspections at runtime :-)
+ *
+ * XXX:
+ * For some reason WRCI it is run prior to Index Vector Elimination (IVE). I think the
+ * reason might initially have been so that there is no need to deal with sel and idx_sel
+ * but I am not sure about this :-( It seems that all the anylyses actually do support
+ * idx_sel now and the whole thing might be run later but I am not sure; more intensive
+ * testing would be required to do this! How far later is not entirely clear. Since it
+ * builds on N_with and not Nwith2, it definitly needs to be run before WLT (or adapted to
+ * cope with N_with2).
+ *
+ * @ingroup mm
+ *
+ * @{
+ */
+#include "wrci.h"
+
+#include "globals.h"
+#include "tree_basic.h"
+#include "tree_compound.h"
+#include "traverse.h"
+
+#define DBUG_PREFIX "WRCI"
+#include "debug.h"
+
+#include "print.h"
+#include "str.h"
+#include "memory.h"
+#include "free.h"
+#include "new_types.h"
+#include "type_utils.h"
+#include "shape.h"
+#include "ReuseWithArrays.h"
+#include "reusewithoffset.h"
+#include "compare_tree.h"
+#include "polyhedral_reuse_analysis.h"
+
+/*
+ * INFO structure
+ */
+struct INFO {
+    node *fundef;
+    node *lhs;
+    node *rc;
+};
+
+/*
+ * INFO macros
+ */
+#define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_LHS(n) ((n)->lhs)
+#define INFO_RC(n) ((n)->rc)
+
+/*
+ * INFO functions
+ */
+static info *
+MakeInfo (void)
+{
+    info *result;
+
+    DBUG_ENTER ();
+
+    result = (info *)MEMmalloc (sizeof (info));
+
+    INFO_FUNDEF (result) = NULL;
+    INFO_LHS (result) = NULL;
+    INFO_RC (result) = NULL;
+
+    DBUG_RETURN (result);
+}
+
+static info *
+FreeInfo (info *info)
+{
+    DBUG_ENTER ();
+
+    info = MEMfree (info);
+
+    DBUG_RETURN (info);
+}
+
+static void
+printRC (node *arg_node)
+{
+    DBUG_ENTER ();
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_exprs:
+        if (EXPRS_EXPR (arg_node) != NULL) {
+            printRC (EXPRS_EXPR (arg_node));
+        }
+        if (EXPRS_NEXT (arg_node) != NULL) {
+            printRC (EXPRS_NEXT (arg_node));
+        }
+        break;
+    case N_id:
+        if (ID_AVIS (arg_node) != NULL && NODE_TYPE (ID_AVIS (arg_node)) == N_avis) {
+            printRC (ID_AVIS (arg_node));
+        } else {
+            fprintf (global.outfile, " #removed#,");
+        }
+        break;
+    case N_avis:
+        fprintf (global.outfile, " %s,", AVIS_NAME (arg_node));
+        break;
+    default:
+        CTIerrorInternal("Node reference that should not be possible. Expected N_avis, "
+                "found NODE_TYPE(%d) instead.\n", NODE_TYPE (arg_node));
+        break;
+    }
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIprintRCs( node *arg_node, info* arg_info)
+ *
+ * @brief a traversal prefun that annotates the output of TR_prt with information
+ *        about RCs and ERCs associated to N_genarray and N_modarray.
+ *
+ * @param arg_node  syntax tree (specifically a N_genarray or N_modarray)
+ * @param arg_info  unused
+ *
+ * @return unmodified arg_node.
+ *
+ *****************************************************************************/
+node *
+WRCIprintRCs (node *arg_node, info *arg_info)
+{
+    node *rc = NULL, *prc = NULL;
+    DBUG_ENTER ();
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_genarray:
+        prc = GENARRAY_PRC (arg_node);
+        /* Falls through. */
+    case N_modarray:
+        rc = WITHOP_RC (arg_node);
+        break;
+    default:
+        break;
+    }
+
+    if (rc != NULL) {
+        INDENT;
+        fprintf (global.outfile, " /* RCs: ");
+        printRC (rc);
+        fprintf (global.outfile, " */\n");
+    }
+    if (prc != NULL) {
+        INDENT;
+        fprintf (global.outfile, " /* PRCs: ");
+        printRC (prc);
+        fprintf (global.outfile, " */\n");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIdoInferWithloopReuseCandidates( node *syntax_tree)
+ *
+ * @brief
+ *
+ * @param syntax_tree
+ *
+ * @return modified syntax_tree.
+ *
+ *****************************************************************************/
+node *
+WRCIdoWithloopReuseCandidateInference (node *syntax_tree)
+{
+    info *arg_info;
+
+    DBUG_ENTER ();
+
+    arg_info = MakeInfo ();
+
+    TRAVpush (TR_wrci);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/******************************************************************************
+ *
+ * Helper functions
+ *
+ *****************************************************************************/
+
+static node *
+ElimDupesOfAvis (node *avis, node *exprs)
+{
+    DBUG_ENTER ();
+
+    if (exprs != NULL) {
+        if (EXPRS_NEXT (exprs) != NULL) {
+            EXPRS_NEXT (exprs) = ElimDupesOfAvis (avis, EXPRS_NEXT (exprs));
+        }
+
+        if (ID_AVIS (EXPRS_EXPR (exprs)) == avis) {
+            exprs = FREEdoFreeNode (exprs);
+        }
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
+ElimDupes (node *exprs)
+{
+    DBUG_ENTER ();
+
+    if (exprs != NULL) {
+        EXPRS_NEXT (exprs)
+          = ElimDupesOfAvis (ID_AVIS (EXPRS_EXPR (exprs)), EXPRS_NEXT (exprs));
+
+        EXPRS_NEXT (exprs) = ElimDupes (EXPRS_NEXT (exprs));
+    }
+
+    DBUG_RETURN (exprs);
+}
+
+static bool
+ShapeMatch (ntype *t1, ntype *t2)
+{
+    ntype *aks1, *aks2;
+    bool res;
+
+    DBUG_ENTER ();
+
+    aks1 = TYeliminateAKV (t1);
+    aks2 = TYeliminateAKV (t2);
+
+    res = TYisAKS (aks1) && TYeqTypes (aks1, aks2);
+
+    aks1 = TYfreeType (aks1);
+    aks2 = TYfreeType (aks2);
+
+    DBUG_RETURN (res);
+}
+
+static node *
+MatchingRCs (node *rcs, node *ids, node *modarray)
+{
+    node *match = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("looking for matching RC -> %s", IDS_NAME (ids));
+
+    if (rcs != NULL) {
+        match = MatchingRCs (EXPRS_NEXT (rcs), ids, modarray);
+
+        if (((ShapeMatch (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))
+              || TCshapeVarsMatch (ID_AVIS (EXPRS_EXPR (rcs)), IDS_AVIS (ids)))
+             && TUeqElementSize (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids)))
+            || ((modarray != NULL)
+                && (ID_AVIS (EXPRS_EXPR (rcs)) == ID_AVIS (modarray)))) {
+            match = TBmakeExprs (TBmakeId (ID_AVIS (EXPRS_EXPR (rcs))), match);
+        }
+    }
+
+    DBUG_RETURN (match);
+}
+
+static node *
+MatchingPRCs (node *rcs, node *ids)
+{
+    node *match = NULL;
+
+    DBUG_ENTER ();
+
+    if (rcs != NULL) {
+        match = MatchingPRCs (EXPRS_NEXT (rcs), ids);
+
+        if (TUravelsHaveSameStructure (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))
+            && TUeqElementSize (ID_NTYPE (EXPRS_EXPR (rcs)), IDS_NTYPE (ids))) {
+            match = TBmakeExprs (TBmakeId (ID_AVIS (EXPRS_EXPR (rcs))), match);
+        }
+    }
+
+    DBUG_RETURN (match);
+}
+
+/******************************************************************************
+ *
+ * With-loop reuse candidate inference traversal (wrci_tab)
+ *
+ * prefix: WRCI
+ *
+ *****************************************************************************/
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIfundef( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCIfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_PRINT ("\nchecking function %s ...", FUNDEF_NAME (arg_node));
+        INFO_FUNDEF (arg_info) = arg_node;
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    }
+
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIassign( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCIassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /*
+     * Top-down traversal
+     */
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIlet( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCIlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIwith( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCIwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /*
+     * First, find all conventional reuse candidates.
+     * These are all arrays A that are accessed only by means of selection at
+     * A[iv]
+     */
+    if (global.optimize.dorip) {
+        DBUG_PRINT ("Looking for A[iv] only use...");
+        INFO_RC (arg_info) = REUSEdoGetReuseArrays (arg_node, INFO_FUNDEF (arg_info));
+        DBUG_PRINT ("candidates after conventional reuse: ");
+        DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
+            PRTdoPrintFile (stderr, INFO_RC (arg_info));
+        });
+    }
+
+    /*
+     * Find more complex reuse candidates
+     */
+    if (global.optimize.dorwo) {
+        DBUG_PRINT ("Looking for more complex reuse candidates...");
+        INFO_RC (arg_info)
+          = TCappendExprs (INFO_RC (arg_info),
+                           RWOdoOffsetAwareReuseCandidateInference (arg_node));
+        DBUG_PRINT ("candidates after reuse-with-offset: ");
+        DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
+            PRTdoPrintFile (stderr, INFO_RC (arg_info));
+        });
+    }
+
+    if (global.optimize.dopra) {
+        /*
+         * Find more complex reuse candidates
+         */
+        DBUG_PRINT ("Looking for polyhedra-analysis based reuse candidates...");
+        INFO_RC (arg_info)
+          = TCappendExprs (INFO_RC (arg_info),
+                           PRAdoPolyhedralReuseAnalysis (arg_node,
+                                                         INFO_FUNDEF (arg_info)));
+        DBUG_PRINT ("candidates after polyhedral reuse analysis: ");
+        DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
+            PRTdoPrintFile (stderr, INFO_RC (arg_info));
+        });
+    }
+
+    /*
+     * Eliminate duplicates of reuse candidates
+     */
+    INFO_RC (arg_info) = ElimDupes (INFO_RC (arg_info));
+
+    DBUG_PRINT ("final RCs after ElimDupes: ");
+    DBUG_EXECUTE (
+      if (INFO_RC (arg_info) != NULL) { PRTdoPrintFile (stderr, INFO_RC (arg_info)); });
+    /*
+     * Annotate RCs and find further reuse candidates if appropriate
+     */
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
+    /*
+     * Remove RC list
+     */
+    if (INFO_RC (arg_info) != NULL) {
+        INFO_RC (arg_info) = FREEdoFreeTree (INFO_RC (arg_info));
+    }
+
+    /*
+     * Be sure to remove all GENERATOR_GENWIDTH
+     */
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+
+    /*
+     * Continue RC inference for nested WLs
+     */
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIgenerator( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCIgenerator (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (GENERATOR_GENWIDTH (arg_node) != NULL) {
+        GENERATOR_GENWIDTH (arg_node) = FREEdoFreeTree (GENERATOR_GENWIDTH (arg_node));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIgenarray( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCIgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /*
+     * Annotate reuse candidates.
+     */
+    GENARRAY_RC (arg_node) = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), NULL);
+    DBUG_PRINT ("Genarray RCs: ");
+    DBUG_EXECUTE (if (GENARRAY_RC (arg_node) != NULL) {
+        PRTdoPrintFile (stderr, GENARRAY_RC (arg_node));
+    });
+
+    if (global.optimize.dopr) {
+        /*
+         * Annotate partial reuse candidates
+         */
+        GENARRAY_PRC (arg_node) = MatchingPRCs (INFO_RC (arg_info), INFO_LHS (arg_info));
+    }
+
+    if (GENARRAY_NEXT (arg_node) != NULL) {
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCImodarray( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCImodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /*
+     * Annotate conventional reuse candidates.
+     */
+    MODARRAY_RC (arg_node)
+      = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
+    DBUG_PRINT ("Modarray RCs: ");
+    DBUG_EXECUTE (if (MODARRAY_RC (arg_node) != NULL) {
+        PRTdoPrintFile (stderr, MODARRAY_RC (arg_node));
+    });
+
+    if (MODARRAY_NEXT (arg_node) != NULL) {
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WRCIfold( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+WRCIfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (FOLD_NEXT (arg_node) != NULL) {
+        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/* @} */
+
+#undef DBUG_PREFIX
