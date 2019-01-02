@@ -8,6 +8,7 @@
  */
 
 extern node *EMRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree);
+extern node *EMRCIprintPreFun (node *arg_node, info *arg_info);
 
 extern node *EMRCIfundef (node *arg_node, info *arg_info);
 extern node *EMRCIap (node *arg_node, info *arg_info);

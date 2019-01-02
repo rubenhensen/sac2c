@@ -788,6 +788,8 @@ SUBPHASE (wlpg2, "Generating full with-loop partitions", WLPGdoWlPartitionGenera
            */
           opt)
 
+ADDPREFUN (TR_prt, WRCIprintPreFun)
+
 SUBPHASE (wrci, "Inferencing with-loop reuse candidates",
           WRCIdoWithloopReuseCandidateInference, global.optimize.douip, opt)
 
@@ -986,6 +988,8 @@ SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls, global.d
 
 SUBPHASE (stat, "Displaying optimisation statistics", STATdoPrintStatistics,
           global.verbose_level >= 3, opt)
+
+ADDPREFUN (TR_prt, EMRCIprintPreFun)
 
 SUBPHASE (emr, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInference,
           global.optimize.doemrci, opt)
@@ -1218,6 +1222,9 @@ SUBPHASE (racc, "Removing alias results from conformity checks",
 SUBPHASE (alloc, "Introducing explicit allocation statements ", EMALdoAlloc, ALWAYS, mem)
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, mem)
+
+REMOVEPREFUN (TR_prt, WRCIprintPreFun)
+REMOVEPREFUN (TR_prt, EMRCIprintPreFun)
 
 SUBPHASE (rci, "Inferring reuse candidates", EMRIdoReuseInference, global.optimize.douip,
           mem)

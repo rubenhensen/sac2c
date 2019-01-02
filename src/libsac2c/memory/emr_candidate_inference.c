@@ -127,13 +127,49 @@ FreeInfo (info *info)
 }
 
 /**
- * @brief
+ * @brief Function is used by the Pre/Post traversal function injection. It
+ *        prints out the ERC for WITHOPs (except N_fold).
+ *
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
+node *
+EMRCIprintPreFun (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_genarray:
+        if (GENARRAY_ERC (arg_node)) {
+            INDENT;
+            fprintf (global.outfile, "/* ERC (");
+            GENARRAY_ERC (arg_node) = PRTexprs (GENARRAY_ERC (arg_node), arg_info);
+            fprintf (global.outfile, ") */\n");
+        }
+        break;
+    case N_modarray:
+        if (MODARRAY_ERC (arg_node)) {
+            INDENT;
+            fprintf (global.outfile, "/* ERC (");
+            MODARRAY_ERC (arg_node) = PRTexprs (MODARRAY_ERC (arg_node), arg_info);
+            fprintf (global.outfile, ") */\n");
+        }
+        break;
+    default:
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+
+/**
+ * @brief Entry function into EMRCI traversal
  *
  * @param syntax_tree
- *
  * @return modified syntax_tree.
- *
- *****************************************************************************/
+ */
 node *
 EMRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
 {
@@ -612,6 +648,6 @@ EMRCImodarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* @} */
+/** @} */
 
 #undef DBUG_PREFIX
