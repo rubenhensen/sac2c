@@ -80,8 +80,9 @@ SET (CPACK_DEBIAN_PACKAGE_DEPENDS "gcc, libc6 (>= 2.13), uuid-runtime (>= 2.20),
 # XXX (hans): this may not be exhaustive - does not take into account if the user
 # changes the install prefix
 SET (CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/local /usr/local/bin /usr/local/include /usr/local/lib /usr/local/libexec /usr/local/share)
+SET (CPACK_RPM_PACKAGE_AUTOREQ OFF) # XXX disable requires for the moment
 # FIXME Can we auto-generate these dependencies?
-SET (CPACK_RPM_PACKAGE_REQUIRES "gcc") # we don't need to go crazy here as rpmbuild handles most of this for us
+SET (CPACK_RPM_PACKAGE_REQUIRES "gcc, hwloc-devel, libuuid-devel")
 # rpmbuild tools is very smart, but also not smart enough. It knows
 # that sac2c has dependencies on libsac_p and libsac_d, but figure out that
 # SaC provides these, as such we get dependency issues. The real reason is
