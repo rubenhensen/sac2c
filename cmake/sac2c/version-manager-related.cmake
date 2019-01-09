@@ -38,5 +38,5 @@ ENDFOREACH ()
 SET (BUILD_TYPE_DIRECTORY_DICT "{ ${BUILD_TYPE_DIRECTORY_DICT} }")
 
 CONFIGURE_FILE (
-  "${PROJECT_SOURCE_DIR}/scripts/sac2c-version-manager.in"
+  "${SAC2C_SOURCE_DIR}/scripts/sac2c-version-manager.in"
   "${PROJECT_BINARY_DIR}/scripts/sac2c-version-manager" @ONLY)

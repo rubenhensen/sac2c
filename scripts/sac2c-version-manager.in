@@ -24,7 +24,7 @@ import argparse
 # TODO(artem) abstract common version operations into a class
 
 ## GLOBAL ATTRIBUTES ##
-__version__ = "0.2"
+__version__ = "0.3"
 
 ## GLOBAL VARIABLES ##
 
@@ -496,6 +496,8 @@ def handle_install (argv):
             'packages, or other contexts where the actual install location of SAC does not exist. If not '
             'used with care, this command can overwrite existing symlinks and cause damage to your '
             'system.')
+    parser.add_argument ('--postfix', action='store_true',
+                       help='indicate instead the BTYPE is a postfix value, and not a build type')
     parser.add_argument ('version', metavar='VERSION', help='intended sac2c version to create links for')
     parser.add_argument ('buildtype', metavar='BTYPE', help='the build type of the sac2c installation (one of {%s})'
                         % ",".join (SAC2C_BUILD_TYPE_POSTFIXES.keys()))
@@ -508,9 +510,12 @@ def handle_install (argv):
     install = os.path.expanduser (args.install)
     install = os.path.normpath (install) # so that we get clean paths
 
-    postfix = SAC2C_BUILD_TYPE_POSTFIXES.get(args.buildtype, None)
-    if not postfix:
-        error ("invalid build type `%s'" % args.buildtype)
+    if args.postfix:
+        postfix = args.buildtype
+    else:
+        postfix = SAC2C_BUILD_TYPE_POSTFIXES.get(args.buildtype, None)
+        if not postfix:
+            error ("invalid build type `%s'" % args.buildtype)
 
     try:
         info ("installing sac2c version `%s' (buildtype: `%s')" % (args.version, args.buildtype))

@@ -30,7 +30,7 @@ SET (CPACK_productbuild_COMPONENT_INSTALL ON)
 SET (CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE)
 
 # We create separate config files for different generators
-set(CPACK_PROJECT_CONFIG_FILE "${SAC2C_SOURCE_DIR}/cmake/cpack/options.cmake")
+SET (CPACK_PROJECT_CONFIG_FILE "${SAC2C_SOURCE_DIR}/cmake/cpack/options.cmake")
 
 # We need to make sure that we name the output package sanely.
 IF ("${CMAKE_BUILD_TYPE}" STREQUAL "")
@@ -59,7 +59,6 @@ SET (CPACK_RESOURCE_FILE_LICENSE "${SAC2C_SOURCE_DIR}/LICENSE.txt")
 SET (CPACK_RESOURCE_FILE_README "${SAC2C_SOURCE_DIR}/cmake/cpack/README.txt")
 SET (CPACK_RESOURCE_FILE_WELCOME "${SAC2C_SOURCE_DIR}/cmake/cpack/WELCOME.txt")
 
-#SET (CPACK_COMPONENTS_ALL applications libraries headers conf)
 # Set the displayed names for each of the components to install.
 # These will be displayed in the list of components inside the installer.
 SET (CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "SaC Binaries")
