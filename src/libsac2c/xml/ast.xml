@@ -2947,6 +2947,7 @@
         <node name="Prf" />
         <node name="Genarray" />
         <node name="Modarray" />
+        <node name="Fundef" />
       </travuser>
     </traversal>
     <traversal id="WRCI" name="With-loop reuse candidate inference" default="sons" include="wrci.h">
@@ -2954,11 +2955,36 @@
         <node name="Fundef" />
         <node name="Assign" />
         <node name="Let" />
-        <node name="With" />     
-        <node name="Genarray" />     
-        <node name="Modarray" />     
-        <node name="Fold" />     
+        <node name="With" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+        <node name="Fold" />
         <node name="Generator" />
+      </travuser>
+    </traversal>
+    <traversal id="EMRCI" name="EMR candidate inference" default="sons" include="emr_candidate_inference.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+        <node name="Cond" />
+        <node name="Arg" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="Ids" />
+        <node name="With" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+      </travuser>
+    </traversal>
+    <traversal id="EMRL" name="EMR loop optimisation" default="sons" include="emr_loop_optimisation.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+        <node name="Let" />
+        <node name="With" />
+        <node name="Genarray" />
+        <node name="Modarray" />
       </travuser>
     </traversal>
     <traversal id="RWO" name="Reuse With-loop arrays with offsets" default="sons" include="reusewithoffset.h">
@@ -5179,6 +5205,22 @@ N_tfarg :
             </target>
           </targets>
         </son>
+	    <son name="ERC" default="NULL">
+            <description>
+                Stores all WL reuse candidate found up to the initial
+                application of a loop function. These ERCs will only be
+                used to supply arguments when the fundef args have been
+                extended.
+            </description>
+            <targets>
+              <target mandatory="no" >
+                <node name="Exprs" />
+                <phases>
+                  <range from="opt_emr" to="mem_rci" />
+                </phases>
+              </target>
+            </targets>
+	    </son>
       </sons>
       <!-- Attributes for FUNDEF -->
       <attributes>
@@ -9275,6 +9317,14 @@ N_tfarg :
 	  more than once.
 	  </description>
         </flag>	 
+	<flag name="IsAllocLift" default="FALSE" >
+      <description> 
+      This flag is set when the AVIS is created in order to
+      lift a memory allocation out of a loop body. This is
+      primarily set by ELMP and later the AVIS is alloc'd
+      by LRO.
+	  </description>
+        </flag>	 
   </flags>
   <checks>
     <check name="CHKavisReflection" />
@@ -10376,6 +10426,20 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="ERC" default="NULL" >
+          <description>
+            Contains a list of Extra Reuse Candidates for WL memory reuse
+            within scope.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                  <range from="opt_emr" to="mem_rci" />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="DefShapeExpr" default="NULL">
           <description>For with3 loops, the default element is given by genarray( DefShapeExpr, Default) where default denotes the default element of the genarray. Only present if a default element is present, as well.</description>
           <targets>
@@ -10478,6 +10542,20 @@ N_tfarg :
               <node name="Exprs" />
               <phases>
                 <range from="opt_wrci" to="mem_rci" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="ERC" default="NULL" >
+          <description>
+            Contains a list of Extra Reuse Candidates for WL memory reuse
+            within scope.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                  <range from="opt_emr" to="mem_rci" />
               </phases>
             </target>
           </targets>

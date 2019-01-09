@@ -340,6 +340,7 @@ ATravGenarray (node *arg_node, info *arg_info)
     }
 
     GENARRAY_RC (arg_node) = TRAVopt (GENARRAY_RC (arg_node), arg_info);
+    GENARRAY_ERC (arg_node) = TRAVopt (GENARRAY_ERC (arg_node), arg_info);
     GENARRAY_PRC (arg_node) = TRAVopt (GENARRAY_PRC (arg_node), arg_info);
     GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
@@ -446,17 +447,19 @@ IWLMEMap (node *arg_node, info *arg_info)
 
                 /* If the avis has NOT been come across before */
                 if (avis == id_avis) {
-                    printf ("fundef %s, id %s\n", FUNDEF_NAME (AP_FUNDEF (arg_node)),
+                    DBUG_PRINT ("fundef %s, id %s", FUNDEF_NAME (AP_FUNDEF (arg_node)),
                             AVIS_NAME (avis));
                     /* If the id is NOT the one we don't want to create data transfer for
                      */
                     if (LUTsearchInLutPp (INFO_NOTRAN (arg_info), id_avis) == id_avis) {
-                        printf ("There will be transfer for %s\n", AVIS_NAME (id_avis));
+                        DBUG_PRINT ("There will be transfer for %s", AVIS_NAME (id_avis));
                         dev_type = TypeConvert (AVIS_TYPE (id_avis), N_id, arg_info);
 
                         if( dev_type != NULL /* &&
                 NODE_TYPE( AVIS_DECL( avis)) == N_arg */) {
                             new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
+                            DBUG_PRINT ("Creating host2device for %s -> %s",
+                                    AVIS_NAME (id_avis), AVIS_NAME (new_avis));
                             CreateHost2Device (&EXPRS_EXPR (ap_args), id_avis, new_avis,
                                                arg_info);
 
@@ -470,7 +473,7 @@ IWLMEMap (node *arg_node, info *arg_info)
                             AVIS_DECL (dup_avis) = fundef_args;
                         }
                     } else {
-                        printf ("There will NOT be transfer for %s\n",
+                        DBUG_PRINT ("There will NOT be transfer for %s",
                                 AVIS_NAME (id_avis));
                         /* If the N_id is the one we don't want to create host2device for,
                          * propogate that information to the traversal of LAC functions */
@@ -819,6 +822,7 @@ IWLMEMgenarray (node *arg_node, info *arg_info)
         }
 
         GENARRAY_RC (arg_node) = TRAVopt (GENARRAY_RC (arg_node), arg_info);
+        GENARRAY_ERC (arg_node) = TRAVopt (GENARRAY_ERC (arg_node), arg_info);
 
         GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
     }
@@ -845,6 +849,7 @@ IWLMEMmodarray (node *arg_node, info *arg_info)
         MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
         INFO_IS_MODARR (arg_info) = FALSE;
         MODARRAY_RC (arg_node) = TRAVopt (MODARRAY_RC (arg_node), arg_info);
+        MODARRAY_ERC (arg_node) = TRAVopt (MODARRAY_ERC (arg_node), arg_info);
         MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
     }
 
@@ -976,6 +981,8 @@ IWLMEMid (node *arg_node, info *arg_info)
                 dev_type = TypeConvert (id_type, NODE_TYPE (arg_node), arg_info);
                 if (dev_type != NULL) {
                     new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
+                    DBUG_PRINT ("Creating host2device for %s -> %s",
+                            AVIS_NAME (id_avis), AVIS_NAME (new_avis));
                     CreateHost2Device (&arg_node, id_avis, new_avis, arg_info);
                 }
             }

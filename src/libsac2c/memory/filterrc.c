@@ -1,20 +1,28 @@
-/** <!--********************************************************************-->
- *
+/**
+ * @file
  * @defgroup frc Filter Reuse Candidates
- *
  * @ingroup mm
+ *
+ * This traversal removes reuse candidates that are being referenced at a later
+ * stage and, thus, can never have an RC of 1!
+ *
+ * The traversal works in two modes: (1) scans arguments of alloc/reuse/alloc_or_*
+ * N_prf that allocate the memory of with-loops (WITHOP_MEM), or (2) scans N_with
+ * WITHOP_*RC N_id elements. These two modes exist as the traversal is used in
+ * both the Optimisations Phase and in the Memory Phase - in the former we have
+ * no N_prf dealing with allocations, while in the latter the WITHOP_*RC fields
+ * are empty.
+ *
+ * This is implemented by a bottum up traversal. Whenever an identifier is being
+ * met in an argument position (N_id), a correposnding entry in a dataflow mask
+ * is being set.
+ * When finding the argument of a _fill_ or traversing into a N_genarray or
+ * N_modarray, we simply filter out all those reuse candidates whose data
+ * flow masks are being set!
  *
  * @{
  *
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @file filterrc.c
- *
- * Prefix: FRC
- *
- *****************************************************************************/
+ */
 #include "filterrc.h"
 
 #include "globals.h"
@@ -31,18 +39,19 @@
 #include "memory.h"
 #include "free.h"
 
-/** <!--********************************************************************-->
- *
+/**
  * @name INFO structure
  * @{
- *
- *****************************************************************************/
+ */
 struct INFO {
     dfmask_t *usemask;
     dfmask_t *oldmask;
     dfmask_t *thenmask;
     dfmask_t *elsemask;
     node *condargs;
+    /* handle ERC case */
+    bool check_prf;
+    bool is_erc;
 };
 
 #define INFO_USEMASK(n) (n->usemask)
@@ -50,6 +59,8 @@ struct INFO {
 #define INFO_THENMASK(n) (n->thenmask)
 #define INFO_ELSEMASK(n) (n->elsemask)
 #define INFO_CONDARGS(n) (n->condargs)
+#define INFO_CHECK_PRF(n) (n->check_prf)
+#define INFO_IS_ERC(n) (n->is_erc)
 
 static info *
 MakeInfo (void)
@@ -65,6 +76,8 @@ MakeInfo (void)
     INFO_CONDARGS (result) = NULL;
     INFO_THENMASK (result) = NULL;
     INFO_ELSEMASK (result) = NULL;
+    INFO_CHECK_PRF (result) = TRUE;
+    INFO_IS_ERC (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -79,28 +92,21 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/** <!--********************************************************************-->
+/**
  * @}  <!-- INFO structure -->
- *****************************************************************************/
+ */
 
-/** <!--********************************************************************-->
- *
+/**
  * @name Entry functions
  * @{
- *
- *****************************************************************************/
+ */
 
-/** <!--********************************************************************-->
- *
- * @fn node *FRCdoFilterReuseCandidates( node *syntax_tree)
- *
- * @brief starting point of filter reuse candidates traversal
+/**
+ * @brief starting point of filter reuse candidates traversal (mode 1)
  *
  * @param syntax_tree
- *
  * @return modified syntax_tree.
- *
- *****************************************************************************/
+ */
 node *
 FRCdoFilterReuseCandidates (node *syntax_tree)
 {
@@ -108,7 +114,7 @@ FRCdoFilterReuseCandidates (node *syntax_tree)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Starting to filter reuse candidates...");
+    DBUG_PRINT ("Starting to filter reuse candidates (mode 1)...");
 
     info = MakeInfo ();
 
@@ -123,28 +129,57 @@ FRCdoFilterReuseCandidates (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/** <!--********************************************************************-->
- * @}  <!-- Entry functions -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
+/**
+ * @brief starting point of filter reuse candidates traversal (mode 2)
  *
+ * @param syntax_tree
+ * @return modified syntax_tree.
+ */
+node *
+FRCdoFilterReuseCandidatesNoPrf (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Starting to filter reuse candidates (mode 2)...");
+
+    info = MakeInfo ();
+    INFO_CHECK_PRF (info) = FALSE;
+
+    TRAVpush (TR_frc);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_PRINT ("Filtering of reuse candidates complete.");
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/**
+ * @}  <!-- Entry functions -->
+ */
+
+/**
  * @name Static helper funcions
  * @{
- *
- *****************************************************************************/
+ */
 
-/** <!--********************************************************************-->
+/**
+ * @brief Filter out all invalid RCs
  *
- * @fn node *FilterTrav( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node N_exprs if N_id
+ * @param arg_info Info structure with datamask pointer
+ */
 static node *
 FilterTrav (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
+
+    DBUG_ASSERT (arg_node != NULL && NODE_TYPE (arg_node) == N_exprs,
+                 "Must pass N_exprs!");
 
     if (EXPRS_NEXT (arg_node) != NULL) {
         EXPRS_NEXT (arg_node) = FilterTrav (EXPRS_NEXT (arg_node), arg_info);
@@ -156,21 +191,27 @@ FilterTrav (node *arg_node, info *arg_info)
                     ID_NAME (EXPRS_EXPR (arg_node)));
         arg_node = FREEdoFreeNode (arg_node);
     } else {
-        EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
+        /* when dealing with ERCs, we don't want to add these to the mask
+         * as we eliminate all earlier references in other WLs. Furthermore,
+         * we treat ERCs differently within EMRI (reuse.c) by eliminating them
+         * from being selected more than once within a function scope.
+         */
+        if (!INFO_IS_ERC (arg_info))
+            EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Filter out RCs in N_prf
  *
- * @fn node *FilterRCs( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node N_id from N_prf
+ * @param arg_info Info struct
+ * @return the modified N_id node
+ */
 static node *
-FilterRCs (node *arg_node, info *arg_info)
+FilterRCsInPrf (node *arg_node, info *arg_info)
 {
     node *alloc;
 
@@ -203,23 +244,23 @@ FilterRCs (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
  * @}  <!-- Static helper functions -->
- *****************************************************************************/
+ */
 
-/** <!--********************************************************************-->
- *
+/**
  * @name Traversal functions
  * @{
+ */
+
+/**
+ * @brief Collect CONDFUN arguments into info structure and traverse through
+ *        application N_fundef and arguments.
  *
- *****************************************************************************/
-/** <!--********************************************************************-->
- *
- * @fn node *FRCap( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCap (node *arg_node, info *arg_info)
 {
@@ -237,13 +278,13 @@ FRCap (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief For each argument check if it exsists in datamask, if not, add it.
  *
- * @fn node *FRCarg( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCarg (node *arg_node, info *arg_info)
 {
@@ -264,13 +305,13 @@ FRCarg (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Go bottom up through the assignments.
  *
- * @fn node *FRCassign( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCassign (node *arg_node, info *arg_info)
 {
@@ -288,13 +329,14 @@ FRCassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Traverse through conditional condition and branches, updating
+ *        datamask appropriately.
  *
- * @fn node *FRCcond( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCcond (node *arg_node, info *arg_info)
 {
@@ -328,13 +370,14 @@ FRCcond (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Traverse through conditional condition and branches, updating
+ *        datamask appropriately.
  *
- * @fn node *FRCfuncond( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCfuncond (node *arg_node, info *arg_info)
 {
@@ -356,13 +399,13 @@ FRCfuncond (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Traverse through N_fundef N_body, using a fresh datamask.
  *
- * @fn node *FRCfundef( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCfundef (node *arg_node, info *arg_info)
 {
@@ -417,13 +460,13 @@ FRCfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief If N_id does not exist in datamask, add it, thereby marking is as used.
  *
- * @fn node *FRCid( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCid (node *arg_node, info *arg_info)
 {
@@ -439,20 +482,22 @@ FRCid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Filter arguments of N_prf
  *
- * @fn node *FRCprf( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (PRF_PRF (arg_node) == F_fill) {
-        PRF_ARG2 (arg_node) = FilterRCs (PRF_ARG2 (arg_node), arg_info);
+    if (INFO_CHECK_PRF (arg_info)) {
+        if (PRF_PRF (arg_node) == F_fill) {
+            PRF_ARG2 (arg_node) = FilterRCsInPrf (PRF_ARG2 (arg_node), arg_info);
+        }
     }
 
     if (PRF_ARGS (arg_node) != NULL) {
@@ -462,13 +507,13 @@ FRCprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Traverse N_with operation, partition, and code body.
  *
- * @fn node *FRCwith( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCwith (node *arg_node, info *arg_info)
 {
@@ -481,13 +526,13 @@ FRCwith (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Traverse N_with2 operation, segments, and code body.
  *
- * @fn node *FRCwith2( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCwith2 (node *arg_node, info *arg_info)
 {
@@ -501,13 +546,13 @@ FRCwith2 (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Traverse N_with3 operation and iteration ranges.
  *
- * @fn node *FRCwith3( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCwith3 (node *arg_node, info *arg_info)
 {
@@ -519,13 +564,13 @@ FRCwith3 (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *FRCbreak( node *arg_node, info *arg_info)
- *
+/**
  * @brief
  *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCbreak (node *arg_node, info *arg_info)
 {
@@ -540,13 +585,13 @@ FRCbreak (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *FRCfold( node *arg_node, info *arg_info)
- *
+/**
  * @brief
  *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCfold (node *arg_node, info *arg_info)
 {
@@ -561,19 +606,34 @@ FRCfold (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Filter N_genarray memory and RCs (and ERCs).
  *
- * @fn node *FRCgenarray( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    GENARRAY_MEM (arg_node) = FilterRCs (GENARRAY_MEM (arg_node), arg_info);
+    if (INFO_CHECK_PRF (arg_info)) {
+        GENARRAY_MEM (arg_node) = FilterRCsInPrf (GENARRAY_MEM (arg_node), arg_info);
+    } else {
+        if (GENARRAY_RC (arg_node) != NULL) {
+            GENARRAY_RC (arg_node) = FilterTrav (GENARRAY_RC (arg_node), arg_info);
+        }
+        if (GENARRAY_PRC (arg_node) != NULL) {
+            GENARRAY_PRC (arg_node) = FilterTrav (GENARRAY_PRC (arg_node), arg_info);
+        }
+        if (GENARRAY_ERC (arg_node) != NULL) {
+            INFO_IS_ERC (arg_info) = TRUE;
+            GENARRAY_ERC (arg_node) = FilterTrav (GENARRAY_ERC (arg_node), arg_info);
+            INFO_IS_ERC (arg_info) = FALSE;
+        }
+    }
+
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
 
     if (GENARRAY_DEFAULT (arg_node) != NULL) {
@@ -587,19 +647,31 @@ FRCgenarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Filter N_modarray memory and RCs (and ERCs).
  *
- * @fn node *FRCmodarray( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCmodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    MODARRAY_MEM (arg_node) = FilterRCs (MODARRAY_MEM (arg_node), arg_info);
+    if (INFO_CHECK_PRF (arg_info)) {
+        MODARRAY_MEM (arg_node) = FilterRCsInPrf (MODARRAY_MEM (arg_node), arg_info);
+    } else {
+        if (MODARRAY_RC (arg_node) != NULL) {
+            MODARRAY_RC (arg_node) = FilterTrav (MODARRAY_RC (arg_node), arg_info);
+        }
+        if (MODARRAY_ERC (arg_node) != NULL) {
+            INFO_IS_ERC (arg_info) = TRUE;
+            MODARRAY_ERC (arg_node) = FilterTrav (MODARRAY_ERC (arg_node), arg_info);
+            INFO_IS_ERC (arg_info) = FALSE;
+        }
+    }
+
     MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
@@ -609,11 +681,13 @@ FRCmodarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief
  *
- * @fn node *FRCcode( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCcode (node *arg_node, info *arg_info)
 {
@@ -632,11 +706,13 @@ FRCcode (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief
  *
- * @fn node *FRCrange( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 FRCrange (node *arg_node, info *arg_info)
 {
@@ -658,12 +734,12 @@ FRCrange (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
  * @}  <!-- Traversal functions -->
- *****************************************************************************/
+ */
 
-/** <!--********************************************************************-->
+/**
  * @}  <!-- Filter Reuse Candidates -->
- *****************************************************************************/
+ */
 
 #undef DBUG_PREFIX

@@ -29,6 +29,7 @@
 #include "runtime/extras_h/runtimecheck.h" // SAC_ASSURE_TYPE, ...
 #include "runtime/phm_h/phm.h" // SAC_HM_MALLOC, ...
 #include "runtime/extras_h/rt_trace.h" // SAC_TR_MEM_PRINT, ...
+#include "runtime/extras_h/rt_profile.h" // SAC_PF_MEM_*, ...
 #include "runtime/extras_h/rt_cachesim.h" // SAC_CS_UNREGISTER_ARRAY, ...
 
 
@@ -1004,7 +1005,7 @@ typedef intptr_t *SAC_array_descriptor_t;
         SAC_ND_WRITE (to_NT, to_pos) = copyfun (expr);                                   \
         SAC_TR_MEM_PRINT (                                                               \
           ("new hidden object at addr: %p", SAC_ND_READ (to_NT, to_pos)))                \
-        SAC_TR_INC_HIDDEN_MEMCNT (1)                                                     \
+        SAC_TR_INC_HIDDEN_MEMCNT (0)                                                     \
     }
 
 /******************************************************************************
@@ -1507,6 +1508,7 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))     \
     }
 
 #define SAC_ND_ALLOC__DESC__FIXED_C99__DIS(var_NT, dim)                                  \
@@ -1523,6 +1525,8 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DIS_DESC (SAC_ND_A_IS_DIST (var_NT),     \
+                                                          SAC_ND_A_MIRROR_DIM (var_NT))) \
     }
 
 /* Overloaded in mutc */
@@ -1543,6 +1547,7 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DESC (dim))                              \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
 
@@ -1558,6 +1563,8 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_PF_MEM_INC_ALLOC_DESC (                                                      \
+          BYTE_SIZE_OF_DIS_DESC (SAC_ND_A_IS_DIST (var_NT), dim))                        \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
 
@@ -1631,6 +1638,8 @@ FIXME Do not initialize for the time being, as value 0                          
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
+                              * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1641,6 +1650,8 @@ FIXME Do not initialize for the time being, as value 0                          
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
+                              * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1661,6 +1672,8 @@ FIXME Do not initialize for the time being, as value 0                          
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
+                              * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1672,6 +1685,8 @@ FIXME Do not initialize for the time being, as value 0                          
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
+                              * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1689,6 +1704,7 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_TR_MEM_PRINT (("ND_ALLOC__DATA_DIS( %s) at addr: %p", NT_STR (var_NT),   \
                                SAC_ND_A_FIELD (var_NT)))                                 \
             SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_PF_MEM_INC_ALLOC (SAC_ND_A_FIRST_ELEMS (var_NT) * sizeof (basetype))     \
             SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT)                  \
               = SAC_DISTMEM_DET_OFFS (SAC_ND_A_FIELD (var_NT));                          \
             SAC_CS_REGISTER_ARRAY (var_NT)                                               \
@@ -1717,6 +1733,7 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_TR_MEM_PRINT (("ND_ALLOC__DATA_DIS( %s) at addr: %p", NT_STR (var_NT),   \
                                SAC_ND_A_FIELD (var_NT)))                                 \
             SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_PF_MEM_INC_ALLOC (SAC_ND_A_FIRST_ELEMS (var_NT) * sizeof (basetype))     \
             SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT)                  \
               = SAC_DISTMEM_DET_OFFS (SAC_ND_A_FIELD (var_NT));                          \
             SAC_CS_REGISTER_ARRAY (var_NT)                                               \
@@ -1752,6 +1769,9 @@ FIXME Do not initialize for the time being, as value 0                          
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
+                              * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
+        SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_SIZE (var_NT)))    \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1778,6 +1798,8 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_TR_MEM_PRINT (("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT),       \
                                SAC_ND_A_FIELD (var_NT)))                                 \
             SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_PF_MEM_INC_ALLOC (SAC_ND_A_FIRST_ELEMS (var_NT) * sizeof (basetype))     \
+            SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DIS_DESC (TRUE, dim))                \
             SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT)                  \
               = SAC_DISTMEM_DET_OFFS (SAC_ND_A_FIELD (var_NT));                          \
             SAC_DISTMEM_MOVE_PTR_FOR_WRITES (SAC_ND_A_FIELD (var_NT),                    \
@@ -1828,6 +1850,7 @@ FIXME Do not initialize for the time being, as value 0                          
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_FREE__DESC( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_DESC (var_NT)))   \
+        SAC_PF_MEM_INC_FREE_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_SIZE (var_NT)))     \
         SAC_HM_FREE_DESC (SAC_REAL_DESC (SAC_ND_A_DESC (var_NT)))                        \
     }
 
@@ -1853,6 +1876,7 @@ FIXME Do not initialize for the time being, as value 0                          
                                 SAC_ND_A_SIZE (var_NT)                                   \
                                   * sizeof (*SAC_ND_A_FIELD (var_NT)))                   \
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_FREE (SAC_ND_A_SIZE (var_NT) * sizeof (*SAC_ND_A_FIELD (var_NT))) \
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
     }
 
@@ -1869,6 +1893,8 @@ FIXME Do not initialize for the time being, as value 0                          
                                             SAC_ND_A_FIRST_ELEMS (var_NT)),              \
               SAC_ND_A_FIRST_ELEMS (var_NT) * sizeof (*SAC_ND_A_FIELD (var_NT)))         \
             SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_PF_MEM_INC_FREE (SAC_ND_A_FIRST_ELEMS (var_NT)                           \
+                                 * sizeof (*SAC_ND_A_FIELD (var_NT)))                    \
             SAC_CS_UNREGISTER_ARRAY (var_NT)                                             \
         } else {                                                                         \
             SAC_ND_FREE__DATA__AKS_NHD (var_NT, freefun)                                 \
@@ -1890,6 +1916,7 @@ FIXME Do not initialize for the time being, as value 0                          
                            #freefun, SAC_ND_A_FIELD (var_NT)))                           \
         SAC_HM_FREE (SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT)))                    \
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_FREE (SAC_ND_A_SIZE (var_NT) * sizeof (*SAC_ND_A_FIELD (var_NT))) \
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
     }
 
@@ -1904,6 +1931,8 @@ FIXME Do not initialize for the time being, as value 0                          
                                                            SAC_ND_A_FIELD (var_NT)),     \
                                             SAC_ND_A_FIRST_ELEMS (var_NT)))              \
             SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_PF_MEM_INC_FREE (SAC_ND_A_FIRST_ELEMS (var_NT)                           \
+                                 * sizeof (*SAC_ND_A_FIELD (var_NT)))                    \
             SAC_CS_UNREGISTER_ARRAY (var_NT)                                             \
         } else {                                                                         \
             SAC_ND_FREE__DATA__AKD_NHD (var_NT, freefun)                                 \

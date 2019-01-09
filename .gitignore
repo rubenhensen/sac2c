@@ -7,6 +7,8 @@ lib/*
 src/bin/*
 /.project
 .make_track
+a.out
+a.out.c
 
 # cmake directories
 build*/

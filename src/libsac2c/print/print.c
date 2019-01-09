@@ -5025,21 +5025,9 @@ PRTgenarray (node *arg_node, info *arg_info)
         TRAVdo (GENARRAY_MEM (arg_node), arg_info);
     }
 
-    if (GENARRAY_RC (arg_node) != NULL) {
-        fprintf (global.outfile, ", RC(");
-        TRAVdo (GENARRAY_RC (arg_node), arg_info);
-        fprintf (global.outfile, ")");
-    }
-
     if (GENARRAY_SUB (arg_node) != NULL) {
         fprintf (global.outfile, ", SUB(");
         TRAVdo (GENARRAY_SUB (arg_node), arg_info);
-        fprintf (global.outfile, ")");
-    }
-
-    if (GENARRAY_PRC (arg_node) != NULL) {
-        fprintf (global.outfile, ", PRC(");
-        TRAVdo (GENARRAY_PRC (arg_node), arg_info);
         fprintf (global.outfile, ")");
     }
 
@@ -5090,11 +5078,6 @@ PRTmodarray (node *arg_node, info *arg_info)
         TRAVdo (MODARRAY_MEM (arg_node), arg_info);
     }
 
-    if (MODARRAY_RC (arg_node) != NULL) {
-        fprintf (global.outfile, " ,RC(");
-        TRAVdo (MODARRAY_RC (arg_node), arg_info);
-        fprintf (global.outfile, ")");
-    }
     if (MODARRAY_IDX (arg_node) != NULL) {
         fprintf (global.outfile, " ,IDX(%s)", AVIS_NAME (MODARRAY_IDX (arg_node)));
     }

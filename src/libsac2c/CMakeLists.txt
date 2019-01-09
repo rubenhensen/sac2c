@@ -319,6 +319,8 @@ ${CMAKE_CURRENT_SOURCE_DIR}/memory/aliasanalysis.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/alloc.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/audscldist.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/datareuse.c
+${CMAKE_CURRENT_SOURCE_DIR}/memory/emr_candidate_inference.c
+${CMAKE_CURRENT_SOURCE_DIR}/memory/emr_loop_optimisation.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/explicitcopy.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/filter_partial_reuse_candidates.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/filterrc.c
@@ -673,7 +675,7 @@ ADD_DEFINITIONS (-DINTERNAL_MALLOC)
 
 ADD_LIBRARY (sac2cShared SHARED ${SAC2C_SRC})
 SET_TARGET_PROPERTIES (sac2cShared
-  PROPERTIES 
+  PROPERTIES
     OUTPUT_NAME sac2c
 )
 
@@ -681,7 +683,7 @@ TARGET_LINK_LIBRARIES (sac2cShared ${LIB_LIST})
 
 
 XINSTALL (TARGETS sac2cShared LIBRARY DESTINATION "${TREEPATH_INSTALL}" COMPONENT libraries)
-#ADD_CUSTOM_COMMAND (TARGET sac2cShared POST_BUILD 
-#  COMMAND "${CMAKE_COMMAND}" -E copy 
+#ADD_CUSTOM_COMMAND (TARGET sac2cShared POST_BUILD
+#  COMMAND "${CMAKE_COMMAND}" -E copy
 #	$<TARGET_FILE:sac2cShared> $<TARGET_FILE_DIR:sac2cShared>/libsac2c-local${SHARED_LIB_EXT}
 #  COMMENT "Copying libsac2c to libsac2c-local.")

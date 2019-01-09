@@ -6,7 +6,7 @@ SET (TESTS_BIN_DIR ${PROJECT_BINARY_DIR}/tests)
 
 MACRO (REGISTER_TEST sac_file)
     GET_FILENAME_COMPONENT (namewe "${sac_file}" NAME_WE)
-    SET (test_name "test-${namewe}")
+    SET (test_name "${namewe}")
 
     ADD_TEST (
         NAME ${test_name}

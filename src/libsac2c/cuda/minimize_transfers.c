@@ -26,7 +26,7 @@
 
 #include <stdlib.h>
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "MTRAN"
 #include "debug.h"
 
 #include "minimize_block_transfers2.h"

@@ -1240,30 +1240,28 @@ extern size_t TCcountWithopsNeq (node *withop, nodetype neq);
                                                     : (FOLD_NEXT (n)))
 
 #define L_WITHOP_NEXT(n, rhs)                                                            \
-    switch                                                                               \
-        NODE_TYPE (n)                                                                    \
-        {                                                                                \
-        case N_genarray:                                                                 \
-            GENARRAY_NEXT (n) = rhs;                                                     \
-            break;                                                                       \
-        case N_modarray:                                                                 \
-            MODARRAY_NEXT (n) = rhs;                                                     \
-            break;                                                                       \
-        case N_fold:                                                                     \
-            FOLD_NEXT (n) = rhs;                                                         \
-            break;                                                                       \
-        case N_break:                                                                    \
-            BREAK_NEXT (n) = rhs;                                                        \
-            break;                                                                       \
-        case N_propagate:                                                                \
-            PROPAGATE_NEXT (n) = rhs;                                                    \
-            break;                                                                       \
-        case N_spfold:                                                                   \
-            SPFOLD_NEXT (n) = rhs;                                                       \
-            break;                                                                       \
-        default:                                                                         \
-            DBUG_UNREACHABLE ("Illegal node type");                                      \
-        }
+    switch (NODE_TYPE (n)) {                                                             \
+    case N_genarray:                                                                     \
+        GENARRAY_NEXT (n) = rhs;                                                         \
+        break;                                                                           \
+    case N_modarray:                                                                     \
+        MODARRAY_NEXT (n) = rhs;                                                         \
+        break;                                                                           \
+    case N_fold:                                                                         \
+        FOLD_NEXT (n) = rhs;                                                             \
+        break;                                                                           \
+    case N_break:                                                                        \
+        BREAK_NEXT (n) = rhs;                                                            \
+        break;                                                                           \
+    case N_propagate:                                                                    \
+        PROPAGATE_NEXT (n) = rhs;                                                        \
+        break;                                                                           \
+    case N_spfold:                                                                       \
+        SPFOLD_NEXT (n) = rhs;                                                           \
+        break;                                                                           \
+    default:                                                                             \
+        DBUG_UNREACHABLE ("Illegal node type");                                          \
+    }
 
 #define WITHOP_MEM(n)                                                                    \
     ((NODE_TYPE (n) == N_genarray)                                                       \
@@ -1278,18 +1276,16 @@ extern size_t TCcountWithopsNeq (node *withop, nodetype neq);
        : (NODE_TYPE (n) == N_modarray) ? MODARRAY_IDX (n) : NULL)
 
 #define L_WITHOP_IDX(n, rhs)                                                             \
-    switch                                                                               \
-        NODE_TYPE (n)                                                                    \
-        {                                                                                \
-        case N_genarray:                                                                 \
-            GENARRAY_IDX (n) = rhs;                                                      \
-            break;                                                                       \
-        case N_modarray:                                                                 \
-            MODARRAY_IDX (n) = rhs;                                                      \
-            break;                                                                       \
-        default:                                                                         \
-            DBUG_UNREACHABLE ("Illegal node type");                                      \
-        }
+    switch (NODE_TYPE (n)) {                                                             \
+    case N_genarray:                                                                     \
+        GENARRAY_IDX (n) = rhs;                                                          \
+        break;                                                                           \
+    case N_modarray:                                                                     \
+        MODARRAY_IDX (n) = rhs;                                                          \
+        break;                                                                           \
+    default:                                                                             \
+        DBUG_UNREACHABLE ("Illegal node type");                                          \
+    }
 
 #define WITHOP_SUB(n)                                                                    \
     ((NODE_TYPE (n) == N_genarray)                                                       \
@@ -1297,18 +1293,16 @@ extern size_t TCcountWithopsNeq (node *withop, nodetype neq);
        : (NODE_TYPE (n) == N_modarray) ? MODARRAY_SUB (n) : NULL)
 
 #define L_WITHOP_SUB(n, rhs)                                                             \
-    switch                                                                               \
-        NODE_TYPE (n)                                                                    \
-        {                                                                                \
-        case N_genarray:                                                                 \
-            GENARRAY_SUB (n) = rhs;                                                      \
-            break;                                                                       \
-        case N_modarray:                                                                 \
-            MODARRAY_SUB (n) = rhs;                                                      \
-            break;                                                                       \
-        default:                                                                         \
-            DBUG_UNREACHABLE ("Illegal node type");                                      \
-        }
+    switch (NODE_TYPE (n)) {                                                             \
+    case N_genarray:                                                                     \
+        GENARRAY_SUB (n) = rhs;                                                          \
+        break;                                                                           \
+    case N_modarray:                                                                     \
+        MODARRAY_SUB (n) = rhs;                                                          \
+        break;                                                                           \
+    default:                                                                             \
+        DBUG_UNREACHABLE ("Illegal node type");                                          \
+    }
 
 #define WITHOP_RC(n)                                                                     \
     ((NODE_TYPE (n) == N_genarray)                                                       \
@@ -1316,18 +1310,33 @@ extern size_t TCcountWithopsNeq (node *withop, nodetype neq);
        : (NODE_TYPE (n) == N_modarray) ? MODARRAY_RC (n) : NULL)
 
 #define L_WITHOP_RC(n, rhs)                                                              \
-    switch                                                                               \
-        NODE_TYPE (n)                                                                    \
-        {                                                                                \
-        case N_genarray:                                                                 \
-            GENARRAY_RC (n) = rhs;                                                       \
-            break;                                                                       \
-        case N_modarray:                                                                 \
-            MODARRAY_RC (n) = rhs;                                                       \
-            break;                                                                       \
-        default:                                                                         \
-            DBUG_UNREACHABLE ("Illegal node type");                                      \
-        }
+    switch (NODE_TYPE (n)) {                                                             \
+    case N_genarray:                                                                     \
+        GENARRAY_RC (n) = rhs;                                                           \
+        break;                                                                           \
+    case N_modarray:                                                                     \
+        MODARRAY_RC (n) = rhs;                                                           \
+        break;                                                                           \
+    default:                                                                             \
+        DBUG_UNREACHABLE ("Illegal node type");                                          \
+    }
+
+#define WITHOP_ERC(n)                                                                    \
+    ((NODE_TYPE (n) == N_genarray)                                                       \
+       ? GENARRAY_ERC (n)                                                                \
+       : (NODE_TYPE (n) == N_modarray) ? MODARRAY_ERC (n) : NULL)
+
+#define L_WITHOP_ERC(n, rhs)                                                             \
+    switch (NODE_TYPE (n)) {                                                             \
+    case N_genarray:                                                                     \
+        GENARRAY_ERC (n) = rhs;                                                          \
+        break;                                                                           \
+    case N_modarray:                                                                     \
+        MODARRAY_ERC (n) = rhs;                                                          \
+        break;                                                                           \
+    default:                                                                             \
+        DBUG_UNREACHABLE ("Illegal node type");                                          \
+    }
 
 /*--------------------------------------------------------------------------*/
 

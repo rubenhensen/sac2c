@@ -26,6 +26,7 @@
 #include "debug.h"
 
 #include "print.h"
+#include "shape.h"
 #include "new_types.h"
 #include "user_types.h"
 #include "DataFlowMask.h"

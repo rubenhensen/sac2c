@@ -29,7 +29,7 @@
 #include "memory.h"
 #include "globals.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "MTRAN"
 #include "debug.h"
 
 #include "ctinfo.h"
