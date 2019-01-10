@@ -21,8 +21,8 @@ SUBARGS=()
 # Helper functions
 #
 
-msg() { echo "> ${@}"; }
-msg2() { echo "==> ${@}"; }
+msg() { echo "> ${*}"; }
+msg2() { echo "==> ${*}"; }
 usage() { echo "Usage: $0 [-h] -i INSTALL [-- [ARGS]]" 1>&2; }
 # FIXME (hans) update link in description...
 help_msg() {
@@ -110,7 +110,7 @@ for installer in ${INSTALLERS[*]}; do
   msg "Running installer \`$installer'"
   if ! bash "$installer" -i "$INSTALLDIR" -s "$PWD" "${SUBARGS[@]}"; then
     msg2 "An error occurred, aborting..." 1>&2
-    exit $?
+    exit 12
   fi
 done
 
