@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Created by the SaC Development Team (C) 2016 - 2017
+# Created by the SaC Development Team (C) 2016 - 2019
 
 # This script is a wrapper around the installer scripts, the installer
 # scripts are designed to install the SaC libraries and compile the binaries
@@ -15,14 +15,15 @@
 
 # this is left intentionally uninitialised
 INSTALLDIR=
+SUBARGS=()
 
 #
 # Helper functions
 #
 
-msg() { echo "> ${@}"; }
-msg2() { echo "==> ${@}"; }
-usage() { echo "Usage: $0 [-h] -i INSTALL" 1>&2; }
+msg() { echo "> ${*}"; }
+msg2() { echo "==> ${*}"; }
+usage() { echo "Usage: $0 [-h] -i INSTALL [-- [ARGS]]" 1>&2; }
 # FIXME (hans) update link in description...
 help_msg() {
   cat <<EOF >&2
@@ -33,6 +34,10 @@ help_msg() {
   Options:
     -h            Print this help message and exit
     -i INSTALL    Specify the installation location
+
+    -- ARGS       All arguments given here are passed on
+                  to the sub-installer-script. Check the
+                  supported options first in the script.
 
   For more information: See www.sac-home.org/downloads
 EOF
@@ -70,7 +75,12 @@ argparse()
     usage
     exit 0
   fi
+
+  # fix args position
   shift $((OPTIND-1))
+
+  # collect remaing args
+  SUBARGS+=("$@")
 
   if [[ "z$idir" = "z" ]]; then
     msg "Install directory is empty!" 1>&2
@@ -84,7 +94,7 @@ argparse()
 # Main Procedure
 #
 
-argparse ${@}
+argparse "${@}"
 
 # We assume that this script will only be used from the extracted archive
 # directory!
@@ -95,13 +105,12 @@ if [[ ! -d "$PWD/installers" ]]; then
 fi
 
 # We get the list of installers, and run them
-INSTALLERS=$PWD/installers/*.sh
-for installer in $INSTALLERS; do
+INSTALLERS=("$PWD"/installers/*.sh)
+for installer in ${INSTALLERS[*]}; do
   msg "Running installer \`$installer'"
-  bash $installer -i "$INSTALLDIR" -s "$PWD"
-  if [[ $? != 0 ]]; then
+  if ! bash "$installer" -i "$INSTALLDIR" -s "$PWD" "${SUBARGS[@]}"; then
     msg2 "An error occurred, aborting..." 1>&2
-    exit $?
+    exit 12
   fi
 done
 

@@ -16,6 +16,7 @@ INCLUDE (FeatureSummary)
 SET (RT_TARGETS seq seq_rt mt_pth mt_pth_rt mt_pth_xt)
 
 # Include config related cmake files
+SET(SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 INCLUDE ("cmake/macros.cmake")
 INCLUDE ("cmake/options.cmake")
 INCLUDE ("cmake/sac2c/config.cmake")
@@ -217,10 +218,11 @@ XINSTALL (FILES "${SAC2CRC_BUILD_CONF}"
   COMPONENT config)
 
 # install sac2c-related binaries stuff...
+# FIXME (hans) incorrect component - where do we use saccc again?
 XINSTALL (PROGRAMS "${PROJECT_BINARY_DIR}/saccc"
   DESTINATION "${TREEPATH_INSTALL}"
   RENAME "saccc${BUILD_TYPE_POSTFIX}"
-  COMPONENT applications)
+  COMPONENT rtapplications)
 
 # We need to install the runtime libraries and sacprelude into a directory
 # hiearchy that is different from the `local' hiearchy. Under out local `lib/' we
@@ -276,7 +278,8 @@ XINSTALL (FILES
   EXCLUDE_FROM_ALL)
 
 # we install readme and install script
-CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/installer.sh.in ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh @ONLY)
+CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/installer.sh.in
+                ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh @ONLY)
 XINSTALL (FILES
     ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh
   DESTINATION "${INSTALLER_INSTALL}"
@@ -330,7 +333,7 @@ ENDIF ()
 # We use the sac2c-version-manager script instead of the CMAKE's facility to
 # create symlinks because the scripts does additional checks to make sure
 # that the links are sanely done and don't accidentally overwrite anything
-# that should t be overwritten.
+# that shouldn't be overwritten.
 XINSTALL (
   CODE "EXECUTE_PROCESS(COMMAND
     ${PROJECT_BINARY_DIR}/scripts/sac2c-version-manager install
@@ -339,9 +342,7 @@ XINSTALL (
   COMPONENT symlinks)
 
 # now lets setup packaging (using CPack)
-SET(SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 INCLUDE ("${PROJECT_SOURCE_DIR}/cmake/cpack/config.cmake")
-
 
 # Here we describe what happens when we test stuff.
 ENABLE_TESTING ()

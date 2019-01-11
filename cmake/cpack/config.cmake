@@ -30,7 +30,7 @@ SET (CPACK_productbuild_COMPONENT_INSTALL ON)
 SET (CPACK_COMPONENTS_GROUPING ALL_COMPONENTS_IN_ONE)
 
 # We create separate config files for different generators
-set(CPACK_PROJECT_CONFIG_FILE "${SAC2C_SOURCE_DIR}/cmake/cpack/options.cmake")
+SET (CPACK_PROJECT_CONFIG_FILE "${SAC2C_SOURCE_DIR}/cmake/cpack/options.cmake")
 
 # We need to make sure that we name the output package sanely.
 IF ("${CMAKE_BUILD_TYPE}" STREQUAL "")
@@ -59,7 +59,6 @@ SET (CPACK_RESOURCE_FILE_LICENSE "${SAC2C_SOURCE_DIR}/LICENSE.txt")
 SET (CPACK_RESOURCE_FILE_README "${SAC2C_SOURCE_DIR}/cmake/cpack/README.txt")
 SET (CPACK_RESOURCE_FILE_WELCOME "${SAC2C_SOURCE_DIR}/cmake/cpack/WELCOME.txt")
 
-#SET (CPACK_COMPONENTS_ALL applications libraries headers conf)
 # Set the displayed names for each of the components to install.
 # These will be displayed in the list of components inside the installer.
 SET (CPACK_COMPONENT_APPLICATIONS_DISPLAY_NAME "SaC Binaries")
@@ -80,8 +79,9 @@ SET (CPACK_DEBIAN_PACKAGE_DEPENDS "gcc, libc6 (>= 2.13), uuid-runtime (>= 2.20),
 # XXX (hans): this may not be exhaustive - does not take into account if the user
 # changes the install prefix
 SET (CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION /usr/local /usr/local/bin /usr/local/include /usr/local/lib /usr/local/libexec /usr/local/share)
+SET (CPACK_RPM_PACKAGE_AUTOREQ OFF) # XXX disable requires for the moment
 # FIXME Can we auto-generate these dependencies?
-SET (CPACK_RPM_PACKAGE_REQUIRES "gcc") # we don't need to go crazy here as rpmbuild handles most of this for us
+SET (CPACK_RPM_PACKAGE_REQUIRES "gcc, hwloc-devel, libuuid-devel")
 # rpmbuild tools is very smart, but also not smart enough. It knows
 # that sac2c has dependencies on libsac_p and libsac_d, but figure out that
 # SaC provides these, as such we get dependency issues. The real reason is

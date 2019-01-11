@@ -14,6 +14,7 @@ MESSAGE (STATUS "We have set our source directory to ${SAC2C_SOURCE_DIR}.")
 
 # Include CMake config
 INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/sac2c-version-related.cmake")
+INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/sac2c/version-manager-related.cmake")
 
 # Get the sac2c repository version
 GET_SAC2C_VERSION (SAC2C_VERSION SAC2C_VERSION_MAJOR SAC2C_VERSION_MINOR SAC2C_VERSION_PATCH)
@@ -116,6 +117,10 @@ ENDFOREACH ()
 #            the last part of the path is included in the install.
 XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/sources/${CMAKE_INSTALL_PREFIX}/"
   DESTINATION "." USE_SOURCE_PERMISSIONS
+  COMPONENT sources)
+
+XINSTALL (PROGRAMS "${PROJECT_BINARY_DIR}/scripts/sac2c-version-manager"
+  DESTINATION "."
   COMPONENT sources)
 
 XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/libraries/${CMAKE_INSTALL_PREFIX}/"

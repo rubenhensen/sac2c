@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# Created by SaC Development Team (C) 2016 - 2017
+# Created by SaC Development Team (C) 2016 - 2019
 
 # This is the installer script for the SaC Compiler and Runtime libraries.
 #
 # This script takes two *required* parameters, the location of the extracted
 # tarball files, and the prefix of where to install/copy them over to.
-# 
+#
 # It does the following:
 #  - check the parameters are sane
 #   - checks that the prefix (install) location is present
@@ -21,9 +21,12 @@
 # Globals
 #
 
-VERSION="1.3"
+VERSION="1.4"
 VERBOSE=0
+# binary symlink directory `bin' is exclude as we handle
+# this seperately.
 ARCHIVEDIRS=("share" "include" "lib" "libexec")
+SYMLINK=0
 
 # these are meant to be uninitialised
 INSTALLDIR=
@@ -39,24 +42,26 @@ SAC_VERSION="@SAC2C_VERSION@"
 # Helper Functions
 #
 
-verbose() { if [[ $VERBOSE = 1 ]]; then echo -e "[VERB]: ${@}"; fi }
-verbose2() { if [[ $VERBOSE = 1 ]]; then echo -e "[VERB]: - ${@}"; fi }
-warning() { echo -e "[WARN]: ${@}" 1>&2; }
-error() { echo -e "[ERROR]: ${@}" 1>&2; }
+verbose() { if [[ $VERBOSE == 1 ]]; then echo -e "[VERB]: ${*}"; fi }
+verbose2() { if [[ $VERBOSE == 1 ]]; then echo -e "[VERB]: - ${*}"; fi }
+warning() { echo -e "[WARN]: ${*}" 1>&2; }
+error() { echo -e "[ERROR]: ${*}" 1>&2; }
 fatal_error() { error "${@}"; exit 10; }
 abspath()
 {
   if [[ -d "$1" ]]; then
     (cd "$1"; pwd)
   elif [[ -e "$1" ]]; then
-    local l=$(dirname "$1")
-    local p=$(cd "$l"; pwd)
+    local l
+    local p
+    l=$(dirname "$1")
+    p=$(cd "$l"; pwd)
     echo "$p/$(basename "$1")"
   else
     fatal_error "\`$1' does not exist"
   fi
 }
-usage() { echo "Usage: $0 [-h] [-v] [-V] [-s SOURCE] [-i INSTALL]" 1>&2; }
+usage() { echo "Usage: $0 [-h] [-v] [-V] [-S] -s SOURCE -i INSTALL" 1>&2; }
 help_msg() {
   cat <<EOF >&2
 
@@ -65,6 +70,7 @@ help_msg() {
     -v            Display verbose messages
     -V            Print version and exit
     -s SOURCE     Specify source location of SaC compiler files
+    -S            Install binary symbolic links [Unix only]
     -i INSTALL    Specify the installation location
 EOF
 }
@@ -76,7 +82,7 @@ EOF
 ## Argument Parsing
 argparse()
 {
-  while getopts "hvVs:i:" o; do
+  while getopts "hvVs:Si:" o; do
     case "${o}" in
       v) # activate verbose printing
         VERBOSE=1
@@ -87,6 +93,13 @@ argparse()
         ;;
       s)
         SOURCEDIR=${OPTARG}
+        ;;
+      S)
+        if [[ "$OSTYPE" == linux* || "$OSTYPE" == darwin* ]]; then
+          SYMLINK=1
+        else
+          error "Not on a UNIX* system, symlinks deactivated!"
+        fi
         ;;
       i)
         INSTALLDIR=${OPTARG}
@@ -105,14 +118,17 @@ argparse()
 
   # if no options were passed, we just show a message and exit
   if [[ $OPTIND == 1 ]]; then
-    echo "No options passed..." 1>&2
+    error "No options passed..."
     usage
   fi
   shift $((OPTIND-1))
 
-  local sdir=$(abspath "$SOURCEDIR")
+  local sdir
+  local idir
+
+  sdir=$(abspath "$SOURCEDIR")
   verbose "Absolute path of \`-s' is $sdir"
-  local idir=$(abspath "$INSTALLDIR")
+  idir=$(abspath "$INSTALLDIR")
   verbose "Absolute path of \`-i' is $idir"
 
   if [[ "z$sdir" = "z" || "z$idir" = "z" ]]; then
@@ -151,22 +167,23 @@ check_source()
   if [[ ! -d "$SOURCEDIR" ]]; then
     fatal_error "\`$SOURCEDIR' does not exist, is this where you extracted the tarball?"
   fi
-  
+
   verbose2 "$SOURCEDIR exists"
-  
+
   if [[ ! -d "$SOURCEDIR/src" ]]; then
     fatal_error "No source directory found"
   fi
-  
+
   verbose2 "Found source dir"
-  
-  local count=$(ls -l "$SOURCEDIR/src" | wc -l)
+
+  local count
+  count=$(ls -l "$SOURCEDIR/src" | wc -l)
   if [[ $count == 0 ]]; then
     fatal_error "No source files found in \`$SOURCEDIR/src'"
   fi
-  
+
   verbose2 "Found source files"
-  
+
 }
 
 check_source_structure()
@@ -174,7 +191,7 @@ check_source_structure()
   if [[ ! -w "$SOURCEDIR/src/sacdirs.h" ]]; then
     fatal_error "Unable to access \`sacdirs.h' file, is it missing?"
   fi
-  
+
   for dir in "${ARCHIVEDIRS[@]}"; do
     local fdir="$SOURCEDIR/$dir"
     # confirm that the dir exists and layout is correct
@@ -183,10 +200,9 @@ check_source_structure()
     elif [[ ! -d "$fdir/sac2c" ]]; then
       fatal_error "Missing \`sac2c' in $fdir"
     fi
-  
+
     # make sure we have only one dir under $fdir/sac2c
-    $(ls -l "$fdir/sac2c" | grep "$SAC_VERSION" >/dev/null)
-    if [[ $? > 0 ]]; then
+    if ! find "$fdir/sac2c" -name "$SAC_VERSION" >/dev/null 2>&1; then
       fatal_error "Wrong version found in $fdir/sac2c. Something is wrong with your tarball extraction..."
     fi
   done
@@ -196,7 +212,7 @@ check_source_structure()
 # Main Procedure
 #
 
-argparse ${@}
+argparse "${@}"
 check_install
 check_source
 check_source_structure
@@ -227,24 +243,23 @@ tmpfile=$(mktemp)
 trap "rm -f -- $tmpfile" INT TERM HUP EXIT
 stab=$'\t' # hackish way of getting tabs into heredoc
 
-# FIXME: there might be a better way of doing this... 
+# FIXME: there might be a better way of doing this...
 cat <<-WHATWHAT > "$tmpfile"
 CFLAGS+= -I. -DBUILD_TYPE_POSTFIX=\"$BINPOSTFIX\" -DSHARED_LIB_EXT=\"$SHAREDLIBEXT\"
 LDFLAGS+= -ldl
 all: sac2c$BINPOSTFIX sac4c$BINPOSTFIX sac2tex$BINPOSTFIX
 sac2c$BINPOSTFIX: sac2c.c sactools.h sacdirs.h
-$stab\$(CC) \$(CFLAGS) \$(LDFLAGS) \$< -o \$@
+$stab\$(CC) \$(CFLAGS) \$< -o \$@ \$(LDFLAGS)
 sac4c$BINPOSTFIX: sac4c.c sactools.h sacdirs.h
-$stab\$(CC) \$(CFLAGS) \$(LDFLAGS) \$< -o \$@
+$stab\$(CC) \$(CFLAGS) \$< -o \$@ \$(LDFLAGS)
 sac2tex$BINPOSTFIX: sac2tex.c sactools.h sacdirs.h
-$stab\$(CC) \$(CFLAGS) \$(LDFLAGS) \$< -o \$@
+$stab\$(CC) \$(CFLAGS) \$< -o \$@ \$(LDFLAGS)
 WHATWHAT
 
 verbose "Created temp Makefile, now building"
 
 # run make
-make -C "$SOURCEDIR/src" -f "$tmpfile"
-if [[ $? != 0 ]]; then
+if ! make -C "$SOURCEDIR/src" -f "$tmpfile"; then
   exit $?;
 fi
 verbose "Completed making binaries"
@@ -254,17 +269,23 @@ verbose "Installing binaries and libraries to \`$INSTALLDIR'"
 # first we install libraries
 for dir in "${ARCHIVEDIRS[@]}"; do
   fdir="$SOURCEDIR/$dir"
-  cp -r "$fdir" "$INSTALLDIR"
-  if [[ $? != 0 ]]; then
+  if ! cp -r "$fdir" "$INSTALLDIR"; then
     fatal_error "Copying of \`$fdir' failed"
   fi
 done
 
 # then we install binaries
-files=($SOURCEDIR/src/*_*)
-cp "${files[@]}" "$INSTALLDIR/libexec/sac2c/$SAC_VERSION"
-if [[ $? != 0 ]]; then
+if ! find "$SOURCEDIR/src" -type f -executable -exec cp {} "$INSTALLDIR/libexec/sac2c/$SAC_VERSION" \;; then
   fatal_error "Copying of binaries to \`$INSTALLDIR/libexec/sac2c/$SAC_VERSION' failed"
+fi
+
+# then we install symlinks -- we use the version script to do this for us.
+if [[ $SYMLINK == 1 ]]; then
+  verbose "Installing binary symlinks"
+  if ! "${SOURCEDIR}"/sac2c-version-manager install --postfix "${SAC_VERSION}" \
+    "${BINPOSTFIX}" "${INSTALLDIR}" "${INSTALLDIR}/bin"; then
+    fatal_error "Unable to create binary symlinks in \`$INSTALLDIR/bin'!"
+  fi
 fi
 
 echo "The install is complete"
