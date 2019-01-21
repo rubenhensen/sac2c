@@ -529,7 +529,7 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
                                   resxrho, arg2xrho);
                     CTIabort ("Compilation terminated");
                 }
-                DBUG_ASSERT (dc >= 0, "drop count cannot be < 0");
+                DBUG_ASSERT (dropcount >= 0, "drop count cannot be < 0");
                 tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2array));
                 DBUG_PRINT ("SCCFprf_drop performed ");
                 res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2array)),
