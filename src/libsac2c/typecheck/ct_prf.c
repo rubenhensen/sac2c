@@ -3299,14 +3299,18 @@ NTCCTprf_int_op_SxS (te_info *info, ntype *args)
                                 TEprfArg2Obj (TEgetNameStr (info), 2), array2);
         err_msg = TEfetchErrors ();
     }
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_SxS) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
         if (TYisAKV (array1) && TYisAKV (array2)) {
-            res = TYmakeAKV (TYmakeSimpleType (T_int), ApplyCF (info, args));
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
         } else {
-            res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+            res = TYeliminateAKV (array1);
         }
     }
 
@@ -3343,6 +3347,10 @@ NTCCTprf_int_op_SxV (te_info *info, ntype *args)
     if (err_msg == NULL) {
         TEassureSameSimpleType (TEarg2Obj (1), array1,
                                 TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_SxV) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
         err_msg = TEfetchErrors ();
     }
 
@@ -3392,6 +3400,10 @@ NTCCTprf_int_op_VxS (te_info *info, ntype *args)
                                 TEprfArg2Obj (TEgetNameStr (info), 2), array2);
         err_msg = TEfetchErrors ();
     }
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_VxS) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -3439,6 +3451,10 @@ NTCCTprf_int_op_VxV (te_info *info, ntype *args)
     if (err_msg == NULL) {
         TEassureSameSimpleType (TEarg2Obj (1), array1,
                                 TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_VxV) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
         err_msg = TEfetchErrors ();
     }
 
