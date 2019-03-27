@@ -3291,9 +3291,14 @@ NTCCTprf_int_op_SxS (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureWholeS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureWholeS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -3332,9 +3337,14 @@ NTCCTprf_int_op_SxV (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureWholeS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureWholeV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -3374,9 +3384,14 @@ NTCCTprf_int_op_VxS (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureWholeV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureWholeS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -3416,11 +3431,16 @@ NTCCTprf_int_op_VxV (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureWholeV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureWholeV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);

@@ -147,6 +147,28 @@ MatchVectLengthOne (ntype *type)
 }
 
 static bool
+MatchWholeA (ntype *type)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    res = ((TYgetConstr (TYgetScalar (type)) == TC_simple)
+           && ((TYgetSimpleType (TYgetScalar (type)) == T_byte)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_short)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_int)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_long)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_longlong)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_ubyte)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_ushort)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_uint)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_ulong)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_ulonglong)));
+
+    DBUG_RETURN (res);
+}
+
+static bool
 MatchIntA (ntype *type)
 {
     bool res;
@@ -652,6 +674,51 @@ TEassureVect (char *obj, ntype *type)
                        TYtype2String (type, FALSE, 0));
     }
 
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEassureWholeS( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+void
+TEassureWholeS (char *obj, ntype *type)
+{
+    DBUG_ENTER ();
+
+    if (!MatchScalar (type) || !MatchWholeA (type)) {
+        TEhandleError (global.linenum, global.filename,
+                       "%s should be of integer type, i.e., byte, short, int, ...; type found: %s", obj,
+                       TYtype2String (type, FALSE, 0));
+    }
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEassureWholeV( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEassureWholeV (char *obj, ntype *type)
+{
+    DBUG_ENTER ();
+
+    if (!MatchWholeA (type) || !MatchVect (type)) {
+        TEhandleError (global.linenum, global.filename,
+                       "%s should be an integer vector; type found: %s", obj,
+                       TYtype2String (type, FALSE, 0));
+    }
     DBUG_RETURN ();
 }
 
