@@ -693,7 +693,7 @@ TEassureWholeS (char *obj, ntype *type)
 
     if (!MatchScalar (type) || !MatchWholeA (type)) {
         TEhandleError (global.linenum, global.filename,
-                       "%s should be of integer type, i.e., byte, short, int, ...; type found: %s", obj,
+                       "%s must be of integral type; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
     DBUG_RETURN ();
@@ -716,7 +716,7 @@ TEassureWholeV (char *obj, ntype *type)
 
     if (!MatchWholeA (type) || !MatchVect (type)) {
         TEhandleError (global.linenum, global.filename,
-                       "%s should be an integer vector; type found: %s", obj,
+                       "%s must be of integral type vector; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
     DBUG_RETURN ();
