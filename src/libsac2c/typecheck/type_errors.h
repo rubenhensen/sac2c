@@ -20,6 +20,8 @@ extern void TEassureNumA (char *obj, ntype *type);
 extern void TEassureSimpleType (char *obj, ntype *type);
 extern void TEassureSimpleS (char *obj, ntype *type);
 extern void TEassureSimpleV (char *obj, ntype *type);
+extern void TEassureWholeS (char *obj, ntype *type);
+extern void TEassureWholeV (char *obj, ntype *type);
 extern void TEassureIntS (char *obj, ntype *type);
 extern void TEassureIntV (char *obj, ntype *type);
 extern void TEassureIntVectLengthOne (char *obj, ntype *type);
