@@ -697,3 +697,5 @@ EMRTUprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 /** @} */
+
+#undef DBUG_PREFIX
