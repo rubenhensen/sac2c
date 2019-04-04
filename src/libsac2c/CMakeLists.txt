@@ -219,6 +219,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cuda/cuda_sink_code.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/cuda_tag_executionmode.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/cuda_utils.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/data_access_analysis.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/emr_type_update.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/expand_shmem_boundary_load.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/infer_reusable_arrays.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/insert_cudast_memtran.c
@@ -627,7 +628,7 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/precompile/functionprecompile.c #RET & ARG_LINKSIGN
     ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_dots.c       #TBmakeNum warnings
     ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/parser.c            #SHmakeShape (n) - n is size_t
-    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/resolvepragma.c     #PRAGMA_NUMPARAMS 
+    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/resolvepragma.c     #PRAGMA_NUMPARAMS
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/makedimexpr.c   #TBmakeNum with TCcountExprs
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/makeshapeexpr.c #TBmakeNum with TCcountExprs
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/prfunroll.c #SHgetUnrlen

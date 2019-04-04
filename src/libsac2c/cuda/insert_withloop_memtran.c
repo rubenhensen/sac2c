@@ -63,6 +63,7 @@
 #include "types.h"
 #include "type_utils.h"
 #include "cuda_utils.h"
+#include "emr_type_update.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
 #include "remove_dfms.h"
@@ -155,7 +156,7 @@ FreeInfo (info *info)
  */
 
 /**
- * @brief Perform the IWLMEM traversal
+ * @brief Perform the IWLMEM traversal, and additionally call the EMRTU traversal.
  *
  * @param syntax_tree
  * @return syntax_tree
@@ -167,16 +168,24 @@ IWLMEMdoInsertWithloopMemtran (node *syntax_tree)
 
     DBUG_ENTER ();
 
-    info = MakeInfo ();
-
     /*
      * Infer dataflow masks
      */
     // syntax_tree = INFDFMSdoInferDfms( syntax_tree, HIDE_LOCALS_NEVER);
 
+    /* Convert EMRL allocations lifts to device type (update fundef signiture) */
+    if (global.optimize.doemrl)
+        syntax_tree = EMRTUdoEMRUpdateFun (syntax_tree);
+
+    info = MakeInfo ();
+
     TRAVpush (TR_iwlmem);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
+
+    /* Convert EMRL allocations lifts to device type (update ap arguments) */
+    if (global.optimize.doemrl)
+        syntax_tree = EMRTUdoEMRUpdateAp (syntax_tree);
 
     info = FreeInfo (info);
 
