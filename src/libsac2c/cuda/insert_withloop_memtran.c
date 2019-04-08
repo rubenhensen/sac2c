@@ -174,7 +174,9 @@ IWLMEMdoInsertWithloopMemtran (node *syntax_tree)
     // syntax_tree = INFDFMSdoInferDfms( syntax_tree, HIDE_LOCALS_NEVER);
 
     /* Convert EMRL allocations lifts to device type (update fundef signiture) */
-    if (global.optimize.doemrl)
+    if (global.optimize.doemrci
+        && global.optimize.doemrl
+        && global.optimize.doemrtu)
         syntax_tree = EMRTUdoEMRUpdateFun (syntax_tree);
 
     info = MakeInfo ();
@@ -183,11 +185,13 @@ IWLMEMdoInsertWithloopMemtran (node *syntax_tree)
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    /* Convert EMRL allocations lifts to device type (update ap arguments) */
-    if (global.optimize.doemrl)
-        syntax_tree = EMRTUdoEMRUpdateAp (syntax_tree);
-
     info = FreeInfo (info);
+
+    /* Convert EMRL allocations lifts to device type (update ap arguments) */
+    if (global.optimize.doemrci
+        && global.optimize.doemrl
+        && global.optimize.doemrtu)
+        syntax_tree = EMRTUdoEMRUpdateAp (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
