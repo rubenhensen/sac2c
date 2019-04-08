@@ -272,57 +272,41 @@ AssignInTopBlock (node *assign, info *arg_info)
 static ntype *
 TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
 {
-    ntype *scalar_type, *dev_type = NULL;
-    simpletype sty;
+    ntype *dev_type = NULL;
 
     DBUG_ENTER ();
 
     if (nty == N_id) {
-        /* If the N_id is of known dimension and is not a scalar */
-        DBUG_ASSERT (TUdimKnown (host_type), "AUD N_id found in cudarizable N_with!");
-        if (TYgetDim (host_type) > 0) {
-            /* If the scalar type is simple, e.g. int, float ... */
-            if (TYisSimple (TYgetScalar (host_type))) {
-                dev_type = TYcopyType (host_type);
-                scalar_type = TYgetScalar (dev_type);
-                /* Get the corresponding device simple type e.g. int_dev, float_dev...*/
-                sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
-                /* Set the device simple type */
-                scalar_type = TYsetSimpleType (scalar_type, sty);
-            }
-        }
+        dev_type = CUconvertHostToDeviceType (host_type);
     }
-    /* If the node to be type converted is N_ids, its original type
+    /**
+     * If the node to be type converted is N_ids, its original type
      * can be AUD as well as long as the N_with on the RHS is cudarizable.
      * The reason a cudarizbale can produce a AUD result illustrated by
      * the following example:
      *
-     *   cond_fun()
-     *   {
-     *     int[*] aa;
-     *     int bb;
+     * ~~~~
+     * cond_fun()
+     * {
+     *   int[*] aa;
+     *   int bb;
      *
-     *     if( cond) {
-     *       aa = with {}:genarray( shp); (cudarizable N_with)
-     *     }
-     *     else {
-     *       bb = 1;
-     *     }
-     *     ret = cond ? aa : bb;
+     *   if( cond) {
+     *     aa = with {}:genarray( shp); (cudarizable N_with)
      *   }
+     *   else {
+     *     bb = 1;
+     *   }
+     *   ret = cond ? aa : bb;
+     * }
+     * ~~~~
      *
      */
     else if (nty == N_ids) {
         if (NODE_TYPE (INFO_LETEXPR (arg_info)) == N_with) {
             /* If the scalar type is simple, e.g. int, float ... */
-            if (WITH_CUDARIZABLE (INFO_LETEXPR (arg_info))
-                && TYisSimple (TYgetScalar (host_type))) {
-                dev_type = TYcopyType (host_type);
-                scalar_type = TYgetScalar (dev_type);
-                /* Get the corresponding device simple type e.g. int_dev, float_dev...*/
-                sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
-                /* Set the device simple type */
-                scalar_type = TYsetSimpleType (scalar_type, sty);
+            if (WITH_CUDARIZABLE (INFO_LETEXPR (arg_info))) {
+                dev_type = CUconvertHostToDeviceType (host_type);
             }
         }
     } else {

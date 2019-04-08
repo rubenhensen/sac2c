@@ -122,7 +122,6 @@
 #include "emr_type_update.h"
 
 #include "types.h"
-#include "type_utils.h"
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -192,37 +191,6 @@ FreeInfo (info *info)
 /** @name Static helper functions
  *  @{
  */
-
-/**
- * @brief Convert from a host ntype to a device ntype, while preserving shape information.
- *
- * @param host_type The host ntype
- * @return A device ntype struct
- */
-static ntype *
-ConvertHost2DeviceType (ntype *host_type)
-{
-    ntype *scalar_type, *dev_type = NULL;
-    simpletype sty;
-
-    DBUG_ENTER ();
-
-    /* If the N_id is of known dimension and is not a scalar */
-    DBUG_ASSERT (TUdimKnown (host_type), "AUD N_id found!");
-    if (TYgetDim (host_type) > 0) {
-        /* If the scalar type is simple, e.g. int, float ... */
-        if (TYisSimple (TYgetScalar (host_type))) {
-            dev_type = TYcopyType (host_type);
-            scalar_type = TYgetScalar (dev_type);
-            /* Get the corresponding device simple type e.g. int_dev, float_dev...*/
-            sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
-            /* Set the device simple type */
-            scalar_type = TYsetSimpleType (scalar_type, sty);
-        }
-    }
-
-    DBUG_RETURN (dev_type);
-}
 
 /**
  * @brief Used as part of LUTmap operation to free LUT keys.
@@ -450,8 +418,7 @@ EMRTUap (node *arg_node, info *arg_info)
 
     /* we only traverse loop functions that were changed by the EMRL (EMR loop
      * optimisation) previously */
-    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
-        && FUNDEF_ISEMRLIFTED (AP_FUNDEF (arg_node))) {
+    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))) {
         if (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info)) { /* initial application */
             DBUG_PRINT ("...checking for lifted allocations");
 
@@ -499,7 +466,7 @@ EMRTUap (node *arg_node, info *arg_info)
                                         AVIS_NAME (id_avis), AVIS_NAME (arg_avis));
 
                             /* create new local avis (cuda device type) */
-                            dev_type = ConvertHost2DeviceType (AVIS_TYPE (id_avis));
+                            dev_type = CUconvertHostToDeviceType (AVIS_TYPE (id_avis));
                             new_avis
                               = TBmakeAvis (TRAVtmpVarName ("emr_lift_dev"), dev_type);
                             AVIS_ISALLOCLIFT (new_avis) = TRUE;
@@ -517,7 +484,7 @@ EMRTUap (node *arg_node, info *arg_info)
                             ID_AVIS (EXPRS_EXPR (ap_args)) = new_avis;
 
                             /* update function signature */
-                            dev_type = ConvertHost2DeviceType (AVIS_TYPE (arg_avis));
+                            dev_type = CUconvertHostToDeviceType (AVIS_TYPE (arg_avis));
                             new_avis
                               = TBmakeAvis (TRAVtmpVarName ("emr_tmp_dev"), dev_type);
 

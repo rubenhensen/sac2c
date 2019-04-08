@@ -6010,11 +6010,6 @@ N_tfarg :
         <flag name="Header" default="FALSE">
             <description>Indicates whether or not we need to generate a declaration within header.c when linking to an external library.</description>
         </flag>
-        <flag name="IsEMRLifted" default="FALSE">
-          <description>
-            TRUE iff this fundef has been affected by the EMRL optimisation.
-          </description>
-        </flag>
       </flags>
     <checks>
       <check name="CHKfundefVardecExtrema" />

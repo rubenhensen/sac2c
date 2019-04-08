@@ -507,9 +507,6 @@ EMRLfundef (node * arg_node, info * arg_info)
             FUNDEF_ARGS (arg_node)
               = TCappendArgs (FUNDEF_ARGS (arg_node), INFO_ARGS (arg_info));
             INFO_ARGS (arg_info) = NULL;
-
-            /* mark fundef as having been touched by EMRL - this used later in EMRTU */
-            FUNDEF_ISEMRLIFTED (arg_node) = TRUE;
         }
 
         INFO_FUNDEF (arg_info) = NULL;
