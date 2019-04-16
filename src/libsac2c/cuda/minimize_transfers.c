@@ -1,27 +1,19 @@
-/*****************************************************************************
+/**
+ * @file
+ * @defgroup mtran Minimize Transfers
+ * @ingroup cuda
  *
- * @defgroup
+ * This is a driver module for three transformations aiming at minimizing
+ * the number of host<->device memory transfers. These three transformations
+ * are applied in a cyclic fashion since one optimization might expose more
+ * opportunities for another optimization. The number of cycles is currently
+ * set at 10. However, a better approach would be to stop the cycle when no
+ * changes occur to the AST (Unfortunately, I have yet figurred out how to
+ * do it). For details of each transformation, please refer to the individual
+ * module files.
  *
- *
- *   This is a driver module for three transformations aiming at minimizing
- *   the number of host<->device memory transfers. These three transformations
- *   are applied in a cyclic fashion since one optimization might expose more
- *   opportunities for another optimization. The number of cycles is currently
- *   set at 10. However, a better approach would be to stop the cycle when no
- *   changes occur to the AST (Unfortunately, I have yet figurred out how to
- *   do it). For details of each transformation, please refer to the individual
- *   module files.
- *
- *
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @file minimize_transfers.c
- *
- * Prefix: MTRAN
- *
- *****************************************************************************/
+ * @{
+ */
 #include "minimize_transfers.h"
 
 #include <stdlib.h>
@@ -35,20 +27,22 @@
 #include "minimize_loop_transfers.h"
 #include "minimize_cond_transfers.h"
 #include "minimize_cudast_transfers.h"
+#include "loop_invariant_removal.h"
 #include "globals.h"
 #include "wl_descalarization.h"
 
-/** <!--********************************************************************-->
- *
+/**
  * @name Entry functions
  * @{
+ */
+
+/**
+ * @brief Applies various optimisation to the syntax tree, to minimize CUDA
+ *        memcpy operations.
  *
- *****************************************************************************/
-/** <!--********************************************************************-->
- *
- * @fn node *MLTRANdoMinimizeLoopTransfers( node *syntax_tree)
- *
- *****************************************************************************/
+ * @param syntax_tree
+ * @return the syntax tree
+ */
 node *
 MTRANdoMinimizeTransfers (node *syntax_tree)
 {
@@ -56,18 +50,18 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
 
     int i, j;
 
+    DBUG_PRINT ("Performaing CUDA Minimize Transfers Optimistions");
+
     if (global.backend == BE_cuda && global.optimize.doexpar) {
-        i = 0;
-        while (i < 10) {
+        DBUG_PRINT ("Performing `Expand Partitions' optimisation");
+        for (i = 0; i < 10; i++) {
             /* syntax_tree = MBTRAN2doMinimizeBlockTransfers( syntax_tree); */
             syntax_tree = ACTRANdoAnnotateCondTransfers (syntax_tree);
             syntax_tree = MCTRANdoMinimizeCudastCondTransfers (syntax_tree);
-            i++;
         }
     }
 
-    j = 0;
-    while (j < 10) {
+    for (j = 0; j < 10; j++) {
         syntax_tree = MCSTRANdoMinimizeCudastTransfers (syntax_tree);
         syntax_tree = MBTRAN2doMinimizeBlockTransfers (syntax_tree);
         syntax_tree = ACTRANdoAnnotateCondTransfers (syntax_tree);
@@ -79,7 +73,6 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
         /*********************************************************/
         syntax_tree = AMTRANdoAnnotateMemoryTransfers (syntax_tree);
         syntax_tree = MLTRANdoMinimizeLoopTransfers (syntax_tree);
-        j++;
     }
 
     /* We perform loop invariant removal here because we found out
@@ -89,13 +82,11 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
      * regard to array "features" in kmeans.sac in the CUDA Rodinia
      * benchmark suite.
      */
-    // syntax_tree = LIRdoLoopInvariantRemoval( syntax_tree);
+    // syntax_tree = DLIRdoLoopInvariantRemoval (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
 
-/** <!--********************************************************************-->
- * @}  <!-- Entry functions -->
- *****************************************************************************/
-
+/** @} */
+/** @} */
 #undef DBUG_PREFIX
