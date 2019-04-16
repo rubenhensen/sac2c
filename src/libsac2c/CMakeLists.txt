@@ -228,6 +228,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_block_transfers2.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_cond_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_cudast_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_loop_transfers.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_emr_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/partial_fold.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/prepare_forloop_generation.c

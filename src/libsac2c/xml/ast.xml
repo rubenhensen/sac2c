@@ -494,6 +494,17 @@
           <node name="Cudast" />
         </travuser>
       </traversal>
+      <traversal id="MEMRT" name="Minimise host-device data transfers that resulted from EMRL allocation lifting" default="sons" include="minimize_emr_transfers.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Id" />
+          <node name="Ap" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="SFWO" name="Set Fundef Was Optimized" default="sons" include="setfundefwasoptimized.h" >
         <travuser>
           <node name="Module" />
@@ -5999,6 +6010,11 @@ N_tfarg :
         </flag>
         <flag name="Header" default="FALSE">
             <description>Indicates whether or not we need to generate a declaration within header.c when linking to an external library.</description>
+        </flag>
+        <flag name="IsEMRLifted" default="FALSE">
+          <description>
+            TRUE iff this fundef has been affected by the EMRL optimisation.
+          </description>
         </flag>
       </flags>
     <checks>

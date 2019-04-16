@@ -27,6 +27,7 @@
 #include "minimize_loop_transfers.h"
 #include "minimize_cond_transfers.h"
 #include "minimize_cudast_transfers.h"
+#include "minimize_emr_transfers.h"
 #include "loop_invariant_removal.h"
 #include "globals.h"
 #include "wl_descalarization.h"
@@ -74,6 +75,17 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
         syntax_tree = AMTRANdoAnnotateMemoryTransfers (syntax_tree);
         syntax_tree = MLTRANdoMinimizeLoopTransfers (syntax_tree);
     }
+
+    /* For any EMR lifted allocations which are H2Ds within a do-loop,
+     * we artificially lift these out, similar to MLTRAN above. We assume
+     * that because of the buffer-swapping, there is always a suitable
+     * device type to pass in as part of recursive call within the do-loop.
+     * We apply this optimisation *after* we have completed all other
+     * transfer minimisations, this avoids a problem whereby vardecs within
+     * the do-loop are not removed, leaving dangling assigns.
+     */
+    if (global.optimize.doemrci && global.optimize.domemrt)
+        syntax_tree = MEMRTdoMinimizeEMRTransfers (syntax_tree);
 
     /* We perform loop invariant removal here because we found out
      * that that there are certained cases that are ignored by our
