@@ -529,16 +529,6 @@
           <node name="Generator" />
         </travuser>
       </traversal>
-      <traversal id="EMRTU" name="Convert all EMR loop lifts (as done by EMRL) to device-type (where appropriate)" default="sons" include="emr_type_update.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Ap" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="Let" />
-          <node name="Prf" />
-        </travuser>
-      </traversal>
       <traversal id="IWLMEM" name="Insert CUDA memory transfer primitives for withloops" default="sons" include="insert_withloop_memtran.h" >
         <travuser>
           <node name="Let" />

@@ -220,11 +220,6 @@ createTmpAvis (ntype *type)
 
     avis = TBmakeAvis (TRAVtmpVarName ("emr_tmp"), TYcopyType (type));
 
-    /* XXX setting this for a loop-fun signature could cause
-     *     problems latter in alloc.c, as we might try to create
-     *     a local allocation. We need to check this!
-     */
-    AVIS_ISALLOCLIFT (avis) = TRUE;
     DBUG_PRINT (" created %s var", AVIS_NAME (avis));
 
     return avis;

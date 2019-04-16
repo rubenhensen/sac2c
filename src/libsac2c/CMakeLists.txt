@@ -219,7 +219,6 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cuda/cuda_sink_code.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/cuda_tag_executionmode.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/cuda_utils.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/data_access_analysis.c
-${CMAKE_CURRENT_SOURCE_DIR}/cuda/emr_type_update.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/expand_shmem_boundary_load.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/infer_reusable_arrays.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/insert_cudast_memtran.c
