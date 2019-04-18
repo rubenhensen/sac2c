@@ -224,6 +224,8 @@ OPTCOUNTER (safa_expr, TRUE, "associative function argument(s) sorted")
 OPTCOUNTER (pogo_expr, FALSE, "guards removed by pogo")
 OPTCOUNTER (pwlf_expr, FALSE, "with-loops folded using polyhedra")
 OPTCOUNTER (ssawl_expr, FALSE, "with-loops converted to SSA form")
+/* optimisation counters for CUDA backend */
+OPTCOUNTER (cuda_min_trans, TRUE, "transfer primitives are out lifted")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr

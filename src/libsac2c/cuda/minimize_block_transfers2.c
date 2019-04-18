@@ -213,6 +213,7 @@ MBTRAN2prf (node *arg_node, info *arg_info)
             node *dev_avis = ID_AVIS (dev_id);
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = TBmakeId (dev_avis);
+            global.optcounters.cuda_min_trans++;
         }
         break;
     default:

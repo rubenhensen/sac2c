@@ -3,20 +3,19 @@
  * @defgroup mtran Minimize Transfers
  * @ingroup cuda
  *
- * This is a driver module for three transformations aiming at minimizing
+ * This is a driver module for several transformations aiming at minimizing
  * the number of host<->device memory transfers. These three transformations
  * are applied in a cyclic fashion since one optimization might expose more
  * opportunities for another optimization. The number of cycles is currently
- * set at 10. However, a better approach would be to stop the cycle when no
- * changes occur to the AST (Unfortunately, I have yet figurred out how to
- * do it). For details of each transformation, please refer to the individual
- * module files.
+ * set at max_optcycles (globals), but will termiate early if we've reached a
+ * fixed point.
  *
  * @{
  */
 #include "minimize_transfers.h"
 
-#include <stdlib.h>
+#include "phase.h"
+#include "traverse_optcounter.h"
 
 #define DBUG_PREFIX "MTRAN"
 #include "debug.h"
@@ -47,45 +46,81 @@
 node *
 MTRANdoMinimizeTransfers (node *syntax_tree)
 {
-    DBUG_ENTER ();
+    int i;
+    bool done = false;
 
-    int i, j;
+    TOC_SETUP(1, COUNT_TRL)
+
+    DBUG_ENTER ();
 
     DBUG_PRINT ("Performaing CUDA Minimize Transfers Optimistions");
 
-    if (global.backend == BE_cuda && global.optimize.doexpar) {
-        DBUG_PRINT ("Performing `Expand Partitions' optimisation");
-        for (i = 0; i < 10; i++) {
-            /* syntax_tree = MBTRAN2doMinimizeBlockTransfers( syntax_tree); */
-            syntax_tree = ACTRANdoAnnotateCondTransfers (syntax_tree);
-            syntax_tree = MCTRANdoMinimizeCudastCondTransfers (syntax_tree);
+    if (global.optimize.doexpar) {
+        DBUG_PRINT ("Doing expar optimisation cycle:");
+        for (i = 1; i < global.max_optcycles; i++) {
+            /* XXX disabled for some reason, further investigation needed */
+            TOC_RUNOPT ("MBTRAN2", false, COUNT_TRL,
+                    global.optcounters.cuda_min_trans,
+                    syntax_tree, MBTRAN2doMinimizeBlockTransfers)
+            TOC_RUNOPT ("ACTRAN", true, TOC_IGNORE, 0,
+                    syntax_tree, ACTRANdoAnnotateCondTransfers)
+            TOC_RUNOPT ("MCTRAN", true, COUNT_TRL,
+                    global.optcounters.cuda_min_trans,
+                    syntax_tree, MCTRANdoMinimizeCondTransfers)
+
+            TOC_COMPARE (done)
+
+            if (done) {
+                break;
+            }
         }
+        DBUG_PRINT ("Completed expar optimisation cycle after %d cycles", i);
     }
 
-    for (j = 0; j < 10; j++) {
-        syntax_tree = MCSTRANdoMinimizeCudastTransfers (syntax_tree);
-        syntax_tree = MBTRAN2doMinimizeBlockTransfers (syntax_tree);
-        syntax_tree = ACTRANdoAnnotateCondTransfers (syntax_tree);
-        syntax_tree = MCTRANdoMinimizeCondTransfers (syntax_tree);
+    /* reset counters for next cycle */
+    TOC_RESETCOUNTERS ()
+    done = false;
+
+    DBUG_PRINT ("Doing general optimisation cycle:");
+    for (i = 1; i < global.max_optcycles; i++) {
+
+        TOC_RUNOPT ("MCSTRAN", true, COUNT_TRL, global.optcounters.cuda_min_trans,
+                syntax_tree, MCSTRANdoMinimizeCudastTransfers)
+        TOC_RUNOPT ("MBTRAN2", true, COUNT_TRL, global.optcounters.cuda_min_trans,
+                syntax_tree, MBTRAN2doMinimizeBlockTransfers)
+        TOC_RUNOPT ("ACTRAN", true, TOC_IGNORE, 0,
+                syntax_tree, ACTRANdoAnnotateCondTransfers)
+        TOC_RUNOPT ("MCTRAN", true, COUNT_TRL, global.optcounters.cuda_min_trans,
+                syntax_tree, MCTRANdoMinimizeCondTransfers)
         /* make sure the lifted transfer are removed when ever
          * possible before minimizing transfers in loops.
          */
-        syntax_tree = MBTRAN2doMinimizeBlockTransfers (syntax_tree);
-        /*********************************************************/
-        syntax_tree = AMTRANdoAnnotateMemoryTransfers (syntax_tree);
-        syntax_tree = MLTRANdoMinimizeLoopTransfers (syntax_tree);
-    }
+        TOC_RUNOPT ("MBTRAN2", true, COUNT_TRL, global.optcounters.cuda_min_trans,
+                syntax_tree, MBTRAN2doMinimizeBlockTransfers)
+        TOC_RUNOPT ("AMTRAN", true, TOC_IGNORE, 0,
+                syntax_tree, AMTRANdoAnnotateMemoryTransfers)
+        TOC_RUNOPT ("MLTRAN", true, COUNT_TRL, global.optcounters.cuda_min_trans,
+                syntax_tree, MLTRANdoMinimizeLoopTransfers)
 
-    /* For any EMR lifted allocations which are H2Ds within a do-loop,
-     * we artificially lift these out, similar to MLTRAN above. We assume
-     * that because of the buffer-swapping, there is always a suitable
-     * device type to pass in as part of recursive call within the do-loop.
-     * We apply this optimisation *after* we have completed all other
-     * transfer minimisations, this avoids a problem whereby vardecs within
-     * the do-loop are not removed, leaving dangling assigns.
-     */
-    if (global.optimize.doemrci && global.optimize.domemrt)
-        syntax_tree = MEMRTdoMinimizeEMRTransfers (syntax_tree);
+        /* For any EMR lifted allocations which are H2Ds within a do-loop,
+         * we artificially lift these out, similar to MLTRAN above. We assume
+         * that because of the buffer-swapping, there is always a suitable
+         * device type to pass in as part of recursive call within the do-loop.
+         */
+        TOC_RUNOPT ("MEMRT", global.optimize.doemrci && global.optimize.domemrt,
+                COUNT_TRL, global.optcounters.cuda_min_trans,
+                syntax_tree, MEMRTdoMinimizeEMRTransfers)
+
+        TOC_COMPARE (done)
+
+        DBUG_PRINT ("Counter: Lift -> %zu",
+                    (global.optcounters.cuda_min_trans - TOC_GETCOUNTER (COUNT_TRL)));
+
+        if (done) {
+            break;
+        }
+    }
+    DBUG_PRINT ("Completed general optimisation cycle after %d cycles", i);
 
     /* We perform loop invariant removal here because we found out
      * that that there are certained cases that are ignored by our

@@ -384,7 +384,10 @@ MEMRTassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = NULL;
 
         /* add h2d in calling context before N_ap */
-        arg_node = TCappendAssign (INFO_APASSIGNS (arg_info), arg_node);
+        if (INFO_APASSIGNS (arg_info) != NULL) {
+            arg_node = TCappendAssign (INFO_APASSIGNS (arg_info), arg_node);
+            global.optcounters.cuda_min_trans++;
+        }
 
         /* add needed vardecs to calling context */
         FUNDEF_VARDECS (INFO_FUNDEF (arg_info))

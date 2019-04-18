@@ -77,6 +77,7 @@
 
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "traverse_optcounter.h"
 #include "node_basic.h"
 #include "print.h"
 
@@ -312,20 +313,17 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 {
     int i = 0;
     int ct = 0;
-    size_t countDLIR = 0;
-    size_t countWLIR = global.optcounters.wlir_expr;
-    size_t countINL = 0;
-    size_t countCSE = global.optcounters.cse_expr;
-    size_t countTUP = 0;
-    size_t countCF = 0;
-    size_t countVP = 0;
-    size_t countREA = 0;
-    size_t countAS = 0;
-    size_t countAL = 0;
-    size_t countDL = 0;
-    size_t countESD = global.optcounters.esd_expr;
-    size_t countUESD = 0;
-    size_t countDCR = 0;
+    bool done = false;
+
+    TOC_SETUP(14, COUNT_DLIR, COUNT_WLIR, COUNT_INL,
+              COUNT_CSE, COUNT_TUP, COUNT_CF,
+              COUNT_VP, COUNT_REA, COUNT_AS,
+              COUNT_AL, COUNT_DL, COUNT_ESD,
+              COUNT_UESD, COUNT_DCR)
+
+    TOC_SETCOUNTER (COUNT_WLIR, global.optcounters.wlir_expr)
+    TOC_SETCOUNTER (COUNT_CSE, global.optcounters.cse_expr)
+    TOC_SETCOUNTER (COUNT_ESD, global.optcounters.esd_expr)
 
     DBUG_ENTER ();
 
@@ -350,102 +348,75 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 #endif
 
             /* Invoke each opt */
-
-#ifndef DBUG_OFF
-            /* debug compiler */
-#define RUNCHECK(Name)                                                                   \
-    if (global.check_frequency >= 4) {                                                   \
-        DBUG_PRINT_TAG ("SSE", "Cycle iteration %d: running post-" #Name " check", i);   \
-        arg_node = PHrunConsistencyChecks (arg_node);                                    \
-    }
-#else
-            /* production compiler does not have PHrunConsistencyChecks() */
-#define RUNCHECK(Name) /*empty*/
-#endif
-
-#define RUNOPT(Name, Cond, CntStmt, PassFun)                                             \
-    if (Cond) {                                                                          \
-        DBUG_PRINT_TAG ("SSE", "Cycle iteration %d: running " #Name, i);                 \
-        CntStmt;                                                                         \
-        arg_node = PassFun (arg_node);                                                   \
-        RUNCHECK (Name)                                                                  \
-    }
-
-            RUNOPT (DLIR, global.optimize.dodlir,
-                    countDLIR = global.optcounters.dlir_expr, DLIRdoLoopInvariantRemoval);
-            RUNOPT (WLIR, global.optimize.dowlir,
-                    countWLIR = global.optcounters.wlir_expr, WLIRdoLoopInvariantRemoval);
-            RUNOPT (INL, global.optimize.doinl, countINL = global.optcounters.inl_fun,
-                    INLdoInlining);
-            RUNOPT (ISAA, global.optimize.dosaa, , ISAAdoInsertShapeVariables);
-            RUNOPT (CSE, global.optimize.docse, countCSE = global.optcounters.cse_expr,
-                    CSEdoCommonSubexpressionElimination);
-            RUNOPT (NTC, global.optimize.dotup,
-                    countTUP = global.optcounters.tup_upgrades, NTCdoNewTypeCheck);
-            RUNOPT (EAT, global.optimize.dotup, , EATdoEliminateAlphaTypes);
-            RUNOPT (EBT, global.optimize.dotup, , EBTdoEliminateBottomTypes);
-            RUNOPT (DFC, TRUE, , DFCdoDispatchFunCalls);
-            RUNOPT (CF, global.optimize.docf, countCF = global.optcounters.cf_expr,
-                    CFdoConstantFolding);
-            RUNOPT (VP, global.optimize.dovp, countVP = global.optcounters.vp_expr,
-                    VPdoVarPropagation);
-            RUNOPT (REA, global.optimize.dorea, countREA = global.optcounters.rea_expr,
-                    REAdoReorderEqualityprfArguments);
-            RUNOPT (TGTL, global.optimize.dotgtl, countREA = global.optcounters.tgtl_expr,
-                    TGTLdoTransformGtgeToLtle);
-            RUNOPT (ESD, global.optimize.dosde, countESD = global.optcounters.esd_expr,
-                    ESDdoElimSubDiv);
-            RUNOPT (AS, global.optimize.doas, countAS = global.optcounters.as_expr,
-                    ASdoArithmeticSimplification);
-            RUNOPT (CF, global.optimize.docf, countCF = global.optcounters.cf_expr,
-                    CFdoConstantFolding);
-            RUNOPT (CSE, global.optimize.docse, , CSEdoCommonSubexpressionElimination);
-            RUNOPT (AL, global.optimize.doal, countAL = global.optcounters.al_expr,
-                    ALdoAssocLawOptimization);
-            RUNOPT (DL, global.optimize.dodl, countDL = global.optcounters.dl_expr,
-                    DLdoDistributiveLawOptimization);
-            RUNOPT (UESD, global.optimize.dosde, countUESD = global.optcounters.uesd_expr,
-                    UESDdoUndoElimSubDiv);
-            RUNOPT (DCR, global.optimize.dodcr,
-                    countDCR = global.optcounters.dead_var + global.optcounters.dead_expr,
-                    DCRdoDeadCodeRemoval);
-
-#undef RUNOPT
-#undef RUNCHECK
+            TOC_RUNOPT_TAG ("SSE", "DLIR", global.optimize.dodlir, COUNT_DLIR,
+                            global.optcounters.dlir_expr, arg_node, DLIRdoLoopInvariantRemoval);
+            TOC_RUNOPT_TAG ("SSE", "WLIR", global.optimize.dowlir, COUNT_WLIR,
+                            global.optcounters.wlir_expr, arg_node, WLIRdoLoopInvariantRemoval);
+            TOC_RUNOPT_TAG ("SSE", "INL", global.optimize.doinl, COUNT_INL, global.optcounters.inl_fun,
+                            arg_node, INLdoInlining);
+            TOC_RUNOPT_TAG ("SSE", "ISAA", global.optimize.dosaa, TOC_IGNORE, 0, arg_node,
+                            ISAAdoInsertShapeVariables);
+            TOC_RUNOPT_TAG ("SSE", "CSE", global.optimize.docse, COUNT_CSE, global.optcounters.cse_expr,
+                            arg_node, CSEdoCommonSubexpressionElimination);
+            TOC_RUNOPT_TAG ("SSE", "NTC", global.optimize.dotup, COUNT_TUP, global.optcounters.tup_upgrades,
+                            arg_node, NTCdoNewTypeCheck);
+            TOC_RUNOPT_TAG ("SSE", "EAT", global.optimize.dotup, TOC_IGNORE, 0, arg_node,
+                            EATdoEliminateAlphaTypes);
+            TOC_RUNOPT_TAG ("SSE", "EBT", global.optimize.dotup, TOC_IGNORE, 0, arg_node,
+                            EBTdoEliminateBottomTypes);
+            TOC_RUNOPT_TAG ("SSE", "DFC", TRUE, TOC_IGNORE, 0,  arg_node, DFCdoDispatchFunCalls);
+            TOC_RUNOPT_TAG ("SSE", "CF", global.optimize.docf, COUNT_CF, global.optcounters.cf_expr,
+                            arg_node, CFdoConstantFolding);
+            TOC_RUNOPT_TAG ("SSE", "VP", global.optimize.dovp, COUNT_VP, global.optcounters.vp_expr,
+                            arg_node, VPdoVarPropagation);
+            TOC_RUNOPT_TAG ("SSE", "REA", global.optimize.dorea, COUNT_REA, global.optcounters.rea_expr,
+                            arg_node, REAdoReorderEqualityprfArguments);
+            TOC_RUNOPT_TAG ("SSE", "TGTL", global.optimize.dotgtl, COUNT_REA, global.optcounters.tgtl_expr,
+                            arg_node, TGTLdoTransformGtgeToLtle);
+            TOC_RUNOPT_TAG ("SSE", "ESD", global.optimize.dosde, COUNT_ESD, global.optcounters.esd_expr,
+                            arg_node, ESDdoElimSubDiv);
+            TOC_RUNOPT_TAG ("SSE", "AS", global.optimize.doas, COUNT_AS, global.optcounters.as_expr,
+                            arg_node, ASdoArithmeticSimplification);
+            TOC_RUNOPT_TAG ("SSE", "CF", global.optimize.docf, COUNT_CF, global.optcounters.cf_expr,
+                            arg_node, CFdoConstantFolding);
+            TOC_RUNOPT_TAG ("SSE", "CSE", global.optimize.docse, TOC_IGNORE, 0, arg_node,
+                            CSEdoCommonSubexpressionElimination);
+            TOC_RUNOPT_TAG ("SSE", "AL", global.optimize.doal, COUNT_AL, global.optcounters.al_expr,
+                            arg_node, ALdoAssocLawOptimization);
+            TOC_RUNOPT_TAG ("SSE", "DL", global.optimize.dodl, COUNT_DL, global.optcounters.dl_expr,
+                            arg_node, DLdoDistributiveLawOptimization);
+            TOC_RUNOPT_TAG ("SSE", "UESD", global.optimize.dosde, COUNT_UESD, global.optcounters.uesd_expr,
+                            arg_node, UESDdoUndoElimSubDiv);
+            TOC_RUNOPT_TAG ("SSE", "DCR", global.optimize.dodcr, COUNT_DCR,
+                            global.optcounters.dead_var + global.optcounters.dead_expr, arg_node,
+                            DCRdoDeadCodeRemoval);
 
             /* We do not count DCR, as it's merely for cleanup */
             DBUG_PRINT_TAG ("SSE",
                             "DLIR= %zu, WLIR= %zu, INL=%zu, CSE=%zu, TUP=%zu, CF=%zu, VP=%zu, "
                             "AS=%zu, AL=%zu, DL=%zu, "
                             "ESD=%zu, UESD=%zu, DCR=%zu",
-                            (global.optcounters.dlir_expr - countDLIR),
-                            (global.optcounters.wlir_expr - countWLIR),
-                            (global.optcounters.inl_fun - countINL),
-                            (global.optcounters.cse_expr - countCSE),
-                            (global.optcounters.tup_upgrades - countTUP),
-                            (global.optcounters.cf_expr - countCF),
-                            (global.optcounters.vp_expr - countVP),
-                            (global.optcounters.as_expr - countAS),
-                            (global.optcounters.al_expr - countAL),
-                            (global.optcounters.dl_expr - countDL),
+                            (global.optcounters.dlir_expr - TOC_GETCOUNTER (COUNT_DLIR)),
+                            (global.optcounters.wlir_expr - TOC_GETCOUNTER (COUNT_WLIR)),
+                            (global.optcounters.inl_fun - TOC_GETCOUNTER (COUNT_INL)),
+                            (global.optcounters.cse_expr - TOC_GETCOUNTER (COUNT_CSE)),
+                            (global.optcounters.tup_upgrades - TOC_GETCOUNTER (COUNT_TUP)),
+                            (global.optcounters.cf_expr - TOC_GETCOUNTER (COUNT_CF)),
+                            (global.optcounters.vp_expr - TOC_GETCOUNTER (COUNT_VP)),
+                            (global.optcounters.as_expr - TOC_GETCOUNTER (COUNT_AS)),
+                            (global.optcounters.al_expr - TOC_GETCOUNTER (COUNT_AL)),
+                            (global.optcounters.dl_expr - TOC_GETCOUNTER (COUNT_DL)),
                             /* The following are not for some reason in the fixpoint check
                                below: */
-                            (global.optcounters.esd_expr - countESD),
-                            (global.optcounters.uesd_expr - countUESD),
+                            (global.optcounters.esd_expr - TOC_GETCOUNTER (COUNT_ESD)),
+                            (global.optcounters.uesd_expr - TOC_GETCOUNTER (COUNT_UESD)),
                             ((global.optcounters.dead_var + global.optcounters.dead_expr)
-                             - countDCR));
+                             - TOC_GETCOUNTER (COUNT_DCR)));
 
-            if (/* Fix point check */
-                (countDLIR == global.optcounters.dlir_expr)
-                && (countWLIR == global.optcounters.wlir_expr)
-                && (countINL == global.optcounters.inl_fun)
-                && (countCSE == global.optcounters.cse_expr)
-                && (countTUP == global.optcounters.tup_upgrades)
-                && (countCF == global.optcounters.cf_expr)
-                && (countVP == global.optcounters.vp_expr)
-                && (countAS == global.optcounters.as_expr)
-                && (countAL == global.optcounters.al_expr)
-                && (countDL == global.optcounters.dl_expr)) {
+            /* Fix point check */
+            TOC_COMPARE_RANGE (COUNT_DLIR, COUNT_DL, done)
+
+            if (done) {
                 i = global.max_optcycles;
             }
         }
