@@ -73,28 +73,28 @@
  *  @{
  */
 struct INFO {
-    node *fundef;    /**< N_fundef node of the enclosing function */
-    bool in_cudawl;  /**< Flag indicating whether the code currently being traversed is in
-                        a cudarizable N_with */
-    bool create_d2h; /**< Flag indicating whether <device2host> needs to be created for
-                        the N_let->N_ids */
-    node *postassigns; /**< Chain of <device2host> that needs to be appended at the end of
-                          the current N_assign */
-    node *preassigns;  /**< Chain of <host2device> that needs to be prepended at the
-                          beginning of the current N_assign */
-    lut_t *lut;     /**< Lookup table storing pairs of Avis(host)->Avis(device) e.g. Given
-                       a_dev = host2device( a_host), Avis(a_host)->Avis(a_dev) will be stored
-                       into the table */
-    lut_t *notran;  /**< Lookup table storing N_avis of arrays varaibles that no data
-                       transfers should be created. */
-    node *let_expr; /**< Holds the current N_let expressions, used to check if the RHS is
-                       a with-loop */
-    node *let_ids;  /**< Holds the current N_let N_ids chain */
-    bool in_cexprs; /**< Flag indicating where are in N_code cexprs */
-    bool from_ap;   /**< Flag indicating where are coming from a N_ap */
-    node *apids;    /**< Holds LHS of current N_ap */
-    node *topblock; /**< Holds the N_block (body) of the current N_fundef */
-    nlut_t *at_nlut; /**< Used to count the number of references of N_avis */
+    node *fundef;       /**< N_fundef node of the enclosing function */
+    bool in_cudawl;     /**< Flag indicating whether the code currently being traversed is in
+                             a cudarizable N_with */
+    bool create_d2h;    /**< Flag indicating whether <device2host> needs to be created for
+                             the N_let->N_ids */
+    node *postassigns;  /**< Chain of <device2host> that needs to be appended at the end of
+                             the current N_assign */
+    node *preassigns;   /**< Chain of <host2device> that needs to be prepended at the
+                             beginning of the current N_assign */
+    lut_t *lut;         /**< Lookup table storing pairs of Avis(host)->Avis(device) e.g. Given
+                             a_dev = host2device( a_host), Avis(a_host)->Avis(a_dev) will be stored
+                             into the table */
+    lut_t *notran;      /**< Lookup table storing N_avis of arrays varaibles that no data
+                             transfers should be created. */
+    node *let_expr;     /**< Holds the current N_let expressions, used to check if the RHS is
+                             a with-loop */
+    node *let_ids;      /**< Holds the current N_let N_ids chain */
+    bool in_cexprs;     /**< Flag indicating where are in N_code cexprs */
+    bool from_ap;       /**< Flag indicating where are coming from a N_ap */
+    node *apids;        /**< Holds LHS of current N_ap */
+    node *topblock;     /**< Holds the N_block (body) of the current N_fundef */
+    nlut_t *at_nlut;    /**< Used to count the number of references of N_avis */
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
@@ -270,8 +270,7 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
     if (nty == N_id) {
         dev_type = CUconvertHostToDeviceType (host_type);
     }
-    /**
-     * If the node to be type converted is N_ids, its original type
+    /* If the node to be type converted is N_ids, its original type
      * can be AUD as well as long as the N_with on the RHS is cudarizable.
      * The reason a cudarizbale can produce a AUD result illustrated by
      * the following example:

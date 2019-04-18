@@ -84,17 +84,17 @@ enum trav_mode { bypass, inap, afterap };
  * @{
  */
 struct INFO {
-    int funargnum; /**< used to assign ordinal values to fundef args */
-    bool inemrloop; /**< flag indicating we are in a EMRL affected loop */
+    int funargnum;         /**< used to assign ordinal values to fundef args */
+    bool inemrloop;        /**< flag indicating we are in a EMRL affected loop */
     enum trav_mode apmode; /**< specifies which mode we are for the N_ap traversal */
-    node *fundef; /**< Holds current N_fundef */
-    lut_t *lut; /**< LUT is used for storing EMRL lifted h2d RHS -> LHS mappings */
-    lut_t *reclut; /**< LUT is used to store all h2d RHS -> LHS mappings */
-    node *letids;   /**< The the LHS of N_prf */
-    node *apargs;  /**< N_ap arguments */
-    node *apvardecs; /**< Used to update vardecs in N_ap calling context */
-    node *apassigns; /**< Used to update assigns in N_ap calling context */
-    node *rec_ap; /**< the recursive loopfun N_ap */
+    node *fundef;          /**< Holds current N_fundef */
+    lut_t *lut;            /**< LUT is used for storing EMRL lifted h2d RHS -> LHS mappings */
+    lut_t *reclut;         /**< LUT is used to store all h2d RHS -> LHS mappings */
+    node *letids;          /**< The the LHS of N_prf */
+    node *apargs;          /**< N_ap arguments */
+    node *apvardecs;       /**< Used to update vardecs in N_ap calling context */
+    node *apassigns;       /**< Used to update assigns in N_ap calling context */
+    node *rec_ap;          /**< the recursive loopfun N_ap */
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
