@@ -295,7 +295,8 @@ CUconvertHostToDeviceType (ntype *host_type)
     DBUG_ENTER ();
 
     /* If the host_type is of known dimension */
-    DBUG_ASSERT (TUdimKnown (host_type), "AUD type found!");
+    if (!TUdimKnown (host_type))
+        CTIerrorInternal ("AUD type found!");
 
     /* If the scalar type is simple, e.g. int, float ... */
     if (TYgetDim (host_type) > 0
