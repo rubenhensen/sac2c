@@ -38,10 +38,10 @@
  */
 #include "minimize_block_transfers2.h"
 
-#include <stdlib.h>
 #include "new_types.h"
 #include "tree_compound.h"
 #include "free.h"
+#include "globals.h"
 #include "traverse.h"
 #include "tree_basic.h"
 #include "LookUpTable.h"

@@ -70,6 +70,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
+#include "globals.h"
 
 #include "free.h"
 #include "cuda_utils.h"
