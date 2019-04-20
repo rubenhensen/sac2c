@@ -11,8 +11,15 @@
  * are not able to lift out the h2d.
  *
  * The latter point is especially important, as traversals like MLTRAN only lift out h2d/d2h
- * if there are no further references to the RHS of h2d/d2h. When using EMRL, this check fails
- * because of an extra argument in recursive loopfun application used for the buffer-swapping.
+ * if there are no further references to the RHS of h2d/d2h. When using EMRL, this check can
+ * fail because of an extra argument in the recursive loopfun application used for the
+ * buffer-swapping.
+ *
+ * A point to consider, MEMRT only works on loopfuns marked with the ISEMRLIFTED flag
+ * (on the N_fundef). If we are dealing with a series of nested loops, it will only move
+ * the h2d one-level up. This is also limited by the EMRL traversal
+ * (@see memory/emr_loop_optimisation.c) which is conservative in how many levels it will
+ * lift out allocations. Typically it lifts out allocations from only the innermost loop.
  *
  * To give a concrete example, we have:
  *

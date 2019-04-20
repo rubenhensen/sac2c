@@ -503,7 +503,7 @@ EMRLfundef (node * arg_node, info * arg_info)
               = TCappendArgs (FUNDEF_ARGS (arg_node), INFO_ARGS (arg_info));
             INFO_ARGS (arg_info) = NULL;
 
-            /* mark fundef as having been touched by EMRL - this used later in EMRTU */
+            /* mark fundef as having been touched by EMRL - this used later in CUDA MEMRT */
             FUNDEF_ISEMRLIFTED (arg_node) = TRUE;
         }
 
