@@ -557,6 +557,8 @@ PrintIncludes (void)
                              "#include <cuda.h>\n\n");
     fprintf (global.outfile, "\n"
                              "#include <cuda_runtime.h>\n\n");
+    fprintf (global.outfile, "\n"
+                             "#include <algorithm>\n\n");
     fprintf (global.outfile, "#endif\n");
 
     DBUG_RETURN ();

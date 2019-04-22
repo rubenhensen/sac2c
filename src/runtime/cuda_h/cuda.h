@@ -163,9 +163,9 @@ extern "C" {
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #else /* managed */
 #define SAC_CUDA_MEM_TRANSFER_SxA(to_NT, offset, from_NT, basetype)                      \
-    SAC_CUDA_FREE (to_NT, );                                                             \
-    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);                                   \
-    SAC_ND_INC_RC (from_NT, SAC_ND_A_RC (to_NT));
+    cudaMemcpy (SAC_ND_A_FIELD (to_NT) + offset, &from_NT, sizeof (basetype),            \
+                cudaMemcpyDefault);                                                      \
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #endif
 
 /*
@@ -193,9 +193,9 @@ extern "C" {
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #else /* managed */
 #define SAC_CUDA_MEM_TRANSFER_AxS(to_NT, offset, from_NT, basetype)                      \
-    SAC_CUDA_FREE (to_NT, );                                                             \
-    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);                                   \
-    SAC_ND_INC_RC (from_NT, SAC_ND_A_RC (to_NT));
+    cudaMemcpy (&SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT) + offset,              \
+                sizeof (basetype), cudaMemcpyDefault);                                   \
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #endif
 
 /*
@@ -206,7 +206,7 @@ extern "C" {
                 sizeof (basetype) * SAC_ND_A_SIZE (from_NT), cudaMemcpyDeviceToDevice);  \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 
-// XXX what is this for???
+// This ICM is used most often for doing cudaMemcpy
 #if !defined(SAC_DO_CUDA_ALLOC) || SAC_DO_CUDA_ALLOC == SAC_CA_system
 #define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
     cudaMemcpy (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                        \
@@ -241,10 +241,16 @@ extern "C" {
                      SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction, 0);  \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #else /* managed */
+/* We have two choices here, either we use CUDA's memcpy with cudaMemcpyDefault which
+ * fully supports UVA but is an API call, or we perform a swap of the pointers.
+ * Keep in mind that in the latter case, that from_NT will be immediately freed. Either
+ * option seems not to affect number of page-faults or have any noticable difference in
+ * performance. NOTE: with memcpy, the implementation can choose to use an actual memcpy,
+ * rather than UVA, which might affect performance. This cannot be known a-priori!
+ */
 #define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
-    SAC_CUDA_FREE (to_NT, );                                                             \
-    SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (from_NT);                                   \
-    SAC_ND_INC_RC (from_NT, SAC_ND_A_RC (to_NT));
+    std::swap (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT));                        \
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #endif
 
 #define SAC_CUDA_COPY__ARRAY(to_NT, from_NT, basetype, freefun)                          \
