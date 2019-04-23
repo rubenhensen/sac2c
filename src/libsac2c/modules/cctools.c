@@ -240,7 +240,8 @@ CCTperformTask (ccm_task_t task)
     const char *cc_subst = global.config.cc;
 
     // %cuda_arch%
-    const char *cuda_arch_subst = global.config.cuda_arch;
+    const char *cuda_arch_subst
+      = STRcat ("-arch=", global.cuda_arch_names[global.cuda_arch]);
 
     /******************* link flags ***********************/
 

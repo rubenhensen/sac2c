@@ -27,6 +27,6 @@ main ()
     struct cudaDeviceProp cuda_device_props;
     __cuda_error (cudaGetDevice (&cuda_device_id));
     __cuda_error (cudaGetDeviceProperties (&cuda_device_props, cuda_device_id));
-    printf ("-arch=sm_%d%d", cuda_device_props.major, cuda_device_props.minor);
+    printf ("sm_%d%d", cuda_device_props.major, cuda_device_props.minor);
     return EXIT_SUCCESS;
 }

@@ -725,6 +725,19 @@ PrintBackendOptions (void)
             "\n"
             "    -force_desc_size <n>\n"
             "                    Force the size of the descriptor to n bytes\n"
+            "\n"
+            "    -cuda_arch <sm>\n"
+            "                    Specify which CUDA architecture to generate code for:\n"
+            "                      sm10: for Tesla architecture\n"
+            "                      sm11: same as above\n"
+            "                      sm12: same as above\n"
+            "                      sm13: same as above\n"
+            "                      sm20: for Fermi architecture\n"
+            "                      sm35: for Kepler architecture\n"
+            "                      sm50: for Maxwell architecture\n"
+            "                      sm60: for Pascal architecture\n"
+            "                      sm70: for Volta architecture\n"
+            "                    (default: sm35)\n"
             "\n");
 
     DBUG_RETURN ();

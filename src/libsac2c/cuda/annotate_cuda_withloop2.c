@@ -107,111 +107,138 @@ InitCudaBlockSizes (void)
 {
     DBUG_ENTER ();
 
-    if (STReq (global.config.cuda_arch, "-arch=sm_10")
-        || STReq (global.config.cuda_arch, "-arch=sm_11")) {
-        global.optimal_threads = 256;
-        global.optimal_blocks = 3;
-        global.cuda_1d_block_large = 256;
-        global.cuda_1d_block_small = 64;
-        global.cuda_blocking_factor = 16;
-        global.cuda_2d_block_x = 16;
-        global.cuda_2d_block_y = 16;
-        global.cuda_max_x_grid = 65535;
-        global.cuda_max_yz_grid = 65535;
-        global.cuda_max_xy_block = 512;
-        global.cuda_max_z_block = 64;
-        global.cuda_max_threads_block = 512;
-    } else if (STReq (global.config.cuda_arch, "-arch=sm_12")
-               || STReq (global.config.cuda_arch, "-arch=sm_13")) {
-        global.optimal_threads = 256;
-        global.optimal_blocks = 4;
-        global.cuda_1d_block_large = 256;
-        global.cuda_1d_block_small = 64;
-        global.cuda_blocking_factor = 16;
-        global.cuda_2d_block_x = 16;
-        global.cuda_2d_block_y = 16;
-        global.cuda_max_x_grid = 65535;
-        global.cuda_max_yz_grid = 65535;
-        global.cuda_max_xy_block = 512;
-        global.cuda_max_z_block = 64;
-        global.cuda_max_threads_block = 512;
-    } else if (STReq (global.config.cuda_arch, "-arch=sm_20")) {
+    if (STReq (global.config.cuda_arch, "no")) {
+        CTIwarn ("Your system might no be setup for CUDA!");
+    } else if (!STReq (global.config.cuda_arch,
+                       global.cuda_arch_names[global.cuda_arch])) {
+        CTIwarn ("You are using CUDA arch `%s', but your system is setup for `%s'.",
+                 global.cuda_arch_names[global.cuda_arch], global.config.cuda_arch);
+    }
+
+    if (global.cuda_arch == CUDA_SM10 || global.cuda_arch == CUDA_SM11) {
+        global.cuda_options.optimal_threads = 256;
+        global.cuda_options.optimal_blocks = 3;
+        global.cuda_options.cuda_1d_block_large = 256;
+        global.cuda_options.cuda_1d_block_small = 64;
+        global.cuda_options.cuda_blocking_factor = 16;
+        global.cuda_options.cuda_2d_block_x = 16;
+        global.cuda_options.cuda_2d_block_y = 16;
+        global.cuda_options.cuda_max_x_grid = 65535;
+        global.cuda_options.cuda_max_yz_grid = 65535;
+        global.cuda_options.cuda_max_xy_block = 512;
+        global.cuda_options.cuda_max_z_block = 64;
+        global.cuda_options.cuda_max_threads_block = 512;
+    } else if (global.cuda_arch == CUDA_SM12 || global.cuda_arch == CUDA_SM13) {
+        global.cuda_options.optimal_threads = 256;
+        global.cuda_options.optimal_blocks = 4;
+        global.cuda_options.cuda_1d_block_large = 256;
+        global.cuda_options.cuda_1d_block_small = 64;
+        global.cuda_options.cuda_blocking_factor = 16;
+        global.cuda_options.cuda_2d_block_x = 16;
+        global.cuda_options.cuda_2d_block_y = 16;
+        global.cuda_options.cuda_max_x_grid = 65535;
+        global.cuda_options.cuda_max_yz_grid = 65535;
+        global.cuda_options.cuda_max_xy_block = 512;
+        global.cuda_options.cuda_max_z_block = 64;
+        global.cuda_options.cuda_max_threads_block = 512;
+    } else if (global.cuda_arch == CUDA_SM20) {
         /*
-            global.optimal_threads = 512;
-            global.optimal_blocks = 3;
-            global.cuda_1d_block_large = 512;
-        */
-        global.optimal_threads = 256;
-        global.optimal_blocks = 6;
-        global.cuda_1d_block_large = 256;
+         * global.cuda_options.optimal_threads = 512;
+         * global.cuda_options.optimal_blocks = 3;
+         * global.cuda_options.cuda_1d_block_large = 512;
+         */
+        global.cuda_options.optimal_threads = 256;
+        global.cuda_options.optimal_blocks = 6;
+        global.cuda_options.cuda_1d_block_large = 256;
         /*
-        1D block size was 512, but to get better performance, it's
-        now set to 64 (See above). We need mechanism to automatically
-        select the best block size
-        global.cuda_1d_block_large = 512;
-        */
-        global.cuda_1d_block_small = 64;
-        global.cuda_blocking_factor = 32;
-        global.cuda_2d_block_x = 16;
-        global.cuda_2d_block_y = 16;
-        global.cuda_max_x_grid = 65535;
-        global.cuda_max_yz_grid = 65535;
-        global.cuda_max_xy_block = 1024;
-        global.cuda_max_z_block = 64;
-        global.cuda_max_threads_block = 1024;
-    } else if (STReq (global.config.cuda_arch, "-arch=sm_35")) {
-        global.optimal_threads = 512;
-        global.optimal_blocks = 3;
-        global.cuda_1d_block_large = 1024;
+         * 1D block size was 512, but to get better performance, it's
+         * now set to 64 (See above). We need mechanism to automatically
+         * select the best block size
+         * global.cuda_options.cuda_1d_block_large = 512;
+         */
+        global.cuda_options.cuda_1d_block_small = 64;
+        global.cuda_options.cuda_blocking_factor = 32;
+        global.cuda_options.cuda_2d_block_x = 16;
+        global.cuda_options.cuda_2d_block_y = 16;
+        global.cuda_options.cuda_max_x_grid = 65535;
+        global.cuda_options.cuda_max_yz_grid = 65535;
+        global.cuda_options.cuda_max_xy_block = 1024;
+        global.cuda_options.cuda_max_z_block = 64;
+        global.cuda_options.cuda_max_threads_block = 1024;
+    } else if (global.cuda_arch == CUDA_SM35) {
+        global.cuda_options.optimal_threads = 512;
+        global.cuda_options.optimal_blocks = 3;
+        global.cuda_options.cuda_1d_block_large = 1024;
         /*
-        1D block size was 512, but to get better performance, it's
-        now set to 64 (See above). We need mechanism to automatically
-        select the best block size
-        */
-        global.cuda_1d_block_small = 64;
-        global.cuda_blocking_factor = 32;
-        global.cuda_2d_block_x = 16;
-        global.cuda_2d_block_y = 16;
-        global.cuda_max_x_grid = 2147483647;
-        global.cuda_max_yz_grid = 65535;
-        global.cuda_max_xy_block = 1024;
-        global.cuda_max_z_block = 64;
-        global.cuda_max_threads_block = 1024;
-    } else if (STReq (global.config.cuda_arch, "-arch=sm_50")) {
-        global.optimal_threads = 512;
-        global.optimal_blocks = 3;
-        global.cuda_1d_block_large = 1024;
+         * 1D block size was 512, but to get better performance, it's
+         * now set to 64 (See above). We need mechanism to automatically
+         * select the best block size
+         */
+        global.cuda_options.cuda_1d_block_small = 64;
+        global.cuda_options.cuda_blocking_factor = 32;
+        global.cuda_options.cuda_2d_block_x = 16;
+        global.cuda_options.cuda_2d_block_y = 16;
+        global.cuda_options.cuda_max_x_grid = 2147483647;
+        global.cuda_options.cuda_max_yz_grid = 65535;
+        global.cuda_options.cuda_max_xy_block = 1024;
+        global.cuda_options.cuda_max_z_block = 64;
+        global.cuda_options.cuda_max_threads_block = 1024;
+    } else if (global.cuda_arch == CUDA_SM50) {
+        global.cuda_options.optimal_threads = 512;
+        global.cuda_options.optimal_blocks = 3;
+        global.cuda_options.cuda_1d_block_large = 1024;
         /*
-        1D block size was 512, but to get better performance, it's
-        now set to 64 (See above). We need mechanism to automatically
-        select the best block size
-        */
-        global.cuda_1d_block_small = 64;
-        global.cuda_blocking_factor = 32;
-        global.cuda_2d_block_x = 32;
-        global.cuda_2d_block_y = 32;
-        global.cuda_max_x_grid = 2147483647;
-        global.cuda_max_yz_grid = 65535;
-        global.cuda_max_xy_block = 1024;
-        global.cuda_max_z_block = 64;
-        global.cuda_max_threads_block = 1024;
+         * 1D block size was 512, but to get better performance, it's
+         * now set to 64 (See above). We need mechanism to automatically
+         * select the best block size
+         */
+        global.cuda_options.cuda_1d_block_small = 64;
+        global.cuda_options.cuda_blocking_factor = 32;
+        global.cuda_options.cuda_2d_block_x = 32;
+        global.cuda_options.cuda_2d_block_y = 32;
+        global.cuda_options.cuda_max_x_grid = 2147483647;
+        global.cuda_options.cuda_max_yz_grid = 65535;
+        global.cuda_options.cuda_max_xy_block = 1024;
+        global.cuda_options.cuda_max_z_block = 64;
+        global.cuda_options.cuda_max_threads_block = 1024;
+    } else if (global.cuda_arch == CUDA_SM60) {
+        global.cuda_options.optimal_threads = 512;
+        global.cuda_options.optimal_blocks = 3;
+        global.cuda_options.cuda_1d_block_large = 1024;
+        /*
+         * 1D block size was 512, but to get better performance, it's
+         * now set to 64 (See above). We need mechanism to automatically
+         * select the best block size
+         */
+        global.cuda_options.cuda_1d_block_small = 64;
+        global.cuda_options.cuda_blocking_factor = 32;
+        global.cuda_options.cuda_2d_block_x = 32;
+        global.cuda_options.cuda_2d_block_y = 32;
+        global.cuda_options.cuda_max_x_grid = 2147483647;
+        global.cuda_options.cuda_max_yz_grid = 65535;
+        global.cuda_options.cuda_max_xy_block = 1024;
+        global.cuda_options.cuda_max_z_block = 64;
+        global.cuda_options.cuda_max_threads_block = 1024;
+    } else if (global.cuda_arch == CUDA_SM70) {
+        global.cuda_options.optimal_threads = 512;
+        global.cuda_options.optimal_blocks = 3;
+        global.cuda_options.cuda_1d_block_large = 1024;
+        /*
+         * 1D block size was 512, but to get better performance, it's
+         * now set to 64 (See above). We need mechanism to automatically
+         * select the best block size
+         */
+        global.cuda_options.cuda_1d_block_small = 64;
+        global.cuda_options.cuda_blocking_factor = 32;
+        global.cuda_options.cuda_2d_block_x = 32;
+        global.cuda_options.cuda_2d_block_y = 32;
+        global.cuda_options.cuda_max_x_grid = 2147483647;
+        global.cuda_options.cuda_max_yz_grid = 65535;
+        global.cuda_options.cuda_max_xy_block = 1024;
+        global.cuda_options.cuda_max_z_block = 64;
+        global.cuda_options.cuda_max_threads_block = 1024;
     } else {
-        if (STReq (global.config.cuda_arch, "no")) {
-            CTIwarn ("CUDA architecture was not detected during install, setting to "
-                     "default(-arch=sm_35)\n");
-            CTIwarn ("Please edit the CUDA_ARCH variable in sac2crc and set it to "
-                     "-arch=sm_xx where xx is the capability version of your CUDA card"
-                     " (ex. -arch=sm_35).\n");
-        } else {
-            CTIwarn ("CUDA architecture specified in sac2crc (%s) does not yet have "
-                     "special support,"
-                     " setting to default(-arch=sm_35)\n",
-                     global.config.cuda_arch);
-            CTIwarn ("Current set of architectures supported is: sm_10, sm_11, sm_12, "
-                     "sm_13, sm_20, sm_35, sm_50\n");
-        }
-        global.config.cuda_arch = STRcpy ("-arch=sm_35");
-        InitCudaBlockSizes ();
+        CTIerrorInternal ("Impossible option for `-cuda_arch' flag!");
     }
 
     DBUG_RETURN ();
@@ -239,12 +266,14 @@ ATravPart (node *arg_node, info *arg_info)
     if (dim == 1) {
         PART_THREADBLOCKSHAPE (arg_node)
           = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim),
-                         TBmakeExprs (TBmakeNum (global.cuda_1d_block_large), NULL));
+                         TBmakeExprs (TBmakeNum (global.cuda_options.cuda_1d_block_large),
+                                      NULL));
     } else if (dim == 2) {
         PART_THREADBLOCKSHAPE (arg_node)
           = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim),
-                         TBmakeExprs (TBmakeNum (global.cuda_2d_block_y),
-                                      TBmakeExprs (TBmakeNum (global.cuda_2d_block_x),
+                         TBmakeExprs (TBmakeNum (global.cuda_options.cuda_2d_block_y),
+                                      TBmakeExprs (TBmakeNum (
+                                                     global.cuda_options.cuda_2d_block_x),
                                                    NULL)));
     } else {
         /* For other dimensionalities, since no blocking is needed,

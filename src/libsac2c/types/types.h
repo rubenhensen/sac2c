@@ -1211,6 +1211,46 @@ typedef struct ELEMQUEUE elemqueue;
 typedef struct LUBINFO lubinfo;
 typedef struct COMPINFO compinfo;
 
+/* typdef for CUDA block sizes and other parameters */
+#define CUDA_OPTIONS_ALL                                                                 \
+    CUDA_OPTION (optimal_threads, int, num)                                              \
+    CUDA_OPTION (optimal_blocks, int, num)                                               \
+    CUDA_OPTION (cuda_1d_block_x, int, num)                                              \
+    CUDA_OPTION (cuda_1d_block_large, int, num)                                          \
+    CUDA_OPTION (cuda_1d_block_small, int, num)                                          \
+    CUDA_OPTION (cuda_2d_block_x, int, num)                                              \
+    CUDA_OPTION (cuda_2d_block_y, int, num)                                              \
+    CUDA_OPTION (cuda_blocking_factor, int, num)                                         \
+    CUDA_OPTION (cuda_max_x_grid, unsigned int, num)                                     \
+    CUDA_OPTION (cuda_max_yz_grid, unsigned int, num)                                    \
+    CUDA_OPTION (cuda_max_xy_block, unsigned int, num)                                   \
+    CUDA_OPTION (cuda_max_z_block, unsigned int, num)                                    \
+    CUDA_OPTION (cuda_max_threads_block, unsigned int, num)
+
+typedef struct {
+#define CUDA_OPTION(name, type, attr) type name;
+    CUDA_OPTIONS_ALL
+#undef CUDA_OPTION
+} cuda_options_t;
+
+#define CUDA_ARCHS_ALL                                                                   \
+    CUDA_ARCH (SM10, "sm_10")                                                            \
+    CUDA_ARCH (SM11, "sm_11")                                                            \
+    CUDA_ARCH (SM12, "sm_12")                                                            \
+    CUDA_ARCH (SM13, "sm_13")                                                            \
+    CUDA_ARCH (SM20, "sm_20")                                                            \
+    CUDA_ARCH (SM35, "sm_35")                                                            \
+    CUDA_ARCH (SM50, "sm_50")                                                            \
+    CUDA_ARCH (SM60, "sm_60")                                                            \
+    CUDA_ARCH (SM70, "sm_70")
+
+/* typdef enum for CUDA architecture setting */
+typedef enum cuda_arch_e {
+#define CUDA_ARCH(name, flagopt) CUDA_##name,
+    CUDA_ARCHS_ALL
+#undef CUDA_ARCH
+} cuda_arch_t;
+
 /******************************************************************************
  *
  * The following types are for cygwin compatibility only
@@ -1264,8 +1304,9 @@ typedef struct GLOBAL_T {
 #include "globals.mac"
 } global_t;
 
-/******************************************************************************
- * typedef for CUDA data reuse analysis
+/******************************************************************************/
+
+/* typedef for CUDA data reuse analysis
  */
 
 typedef struct sMtx {

@@ -459,8 +459,8 @@ IF (CUDA)
         MESSAGE (STATUS "Setting CUDA Device-CC: `${CUDA_R_OUTPUT}'")
         SET (CUDA_ARCH  "${CUDA_R_OUTPUT}")
       ELSEIF (CUDA_C_RESULT AND CUDA_R_RESULT) # no CUDA device
-        MESSAGE (STATUS "Unable to determine CUDA Device-CC, setting default as `-arch=sm_35'")
-        SET (CUDA_ARCH  "-arch=sm_35")
+        MESSAGE (STATUS "Unable to determine CUDA Device-CC, using `sm_35'")
+        SET (CUDA_ARCH  "sm_35")
       ENDIF ()
     ELSE () # something wrong with CUDA install
       MESSAGE (WARNING "CUDA installation is not working: ${CUDA_C_OUTPUT}")

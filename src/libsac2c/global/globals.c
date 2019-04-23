@@ -393,6 +393,20 @@ static const configuration_t config_init = {
 #undef num
 };
 
+static const cuda_options_t cuda_options_init = {
+#define num 0
+#define CUDA_OPTION(name, type, attr) attr,
+  CUDA_OPTIONS_ALL
+#undef CUDA_OPTION
+#undef num
+};
+
+static const char *cuda_arch_names_init[] = {
+#define CUDA_ARCH(name, flagopt) flagopt,
+  CUDA_ARCHS_ALL
+#undef CUDA_ARCH
+};
+
 /*
  * This is only a dirty trick to fake an a-priori initialization
  * of config, Which is not possible otherwise without a major code

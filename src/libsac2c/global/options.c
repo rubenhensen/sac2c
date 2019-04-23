@@ -711,6 +711,22 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("cc");
 
+    ARGS_OPTION_BEGIN ("cuda_arch")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("sm10", global.cuda_arch = CUDA_SM10);
+        ARG_CHOICE ("sm11", global.cuda_arch = CUDA_SM11);
+        ARG_CHOICE ("sm12", global.cuda_arch = CUDA_SM12);
+        ARG_CHOICE ("sm13", global.cuda_arch = CUDA_SM13);
+        ARG_CHOICE ("sm20", global.cuda_arch = CUDA_SM20);
+        ARG_CHOICE ("sm35", global.cuda_arch = CUDA_SM35);
+        ARG_CHOICE ("sm50", global.cuda_arch = CUDA_SM50);
+        ARG_CHOICE ("sm60", global.cuda_arch = CUDA_SM60);
+        ARG_CHOICE ("sm70", global.cuda_arch = CUDA_SM70);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("cuda_arch");
+
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
      */
