@@ -736,6 +736,7 @@ PrintBackendOptions (void)
             "                      sm35: for Kepler architecture\n"
             "                      sm50: for Maxwell architecture\n"
             "                      sm60: for Pascal architecture\n"
+            "                      sm61: same as above\n"
             "                      sm70: for Volta architecture\n"
             "                    (default: sm35)\n"
             "\n");

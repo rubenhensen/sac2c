@@ -219,6 +219,24 @@ InitCudaBlockSizes (void)
         global.cuda_options.cuda_max_xy_block = 1024;
         global.cuda_options.cuda_max_z_block = 64;
         global.cuda_options.cuda_max_threads_block = 1024;
+    } else if (global.cuda_arch == CUDA_SM61) {
+        global.cuda_options.optimal_threads = 1024;
+        global.cuda_options.optimal_blocks = 3;
+        global.cuda_options.cuda_1d_block_large = 1024;
+        /*
+         * 1D block size was 512, but to get better performance, it's
+         * now set to 64 (See above). We need mechanism to automatically
+         * select the best block size
+         */
+        global.cuda_options.cuda_1d_block_small = 64;
+        global.cuda_options.cuda_blocking_factor = 32;
+        global.cuda_options.cuda_2d_block_x = 32;
+        global.cuda_options.cuda_2d_block_y = 32;
+        global.cuda_options.cuda_max_x_grid = 2147483647;
+        global.cuda_options.cuda_max_yz_grid = 65535;
+        global.cuda_options.cuda_max_xy_block = 1024;
+        global.cuda_options.cuda_max_z_block = 64;
+        global.cuda_options.cuda_max_threads_block = 1024;
     } else if (global.cuda_arch == CUDA_SM70) {
         global.cuda_options.optimal_threads = 512;
         global.cuda_options.optimal_blocks = 3;

@@ -1242,6 +1242,7 @@ typedef struct {
     CUDA_ARCH (SM35, "sm_35")                                                            \
     CUDA_ARCH (SM50, "sm_50")                                                            \
     CUDA_ARCH (SM60, "sm_60")                                                            \
+    CUDA_ARCH (SM61, "sm_61")                                                            \
     CUDA_ARCH (SM70, "sm_70")
 
 /* typdef enum for CUDA architecture setting */
