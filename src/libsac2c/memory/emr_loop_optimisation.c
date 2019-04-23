@@ -56,7 +56,7 @@ typedef enum emrl_context {EMRL_rec, EMRL_ap} emrl_context_t;
  * node. See EMRL related functions for more info.
  */
 typedef struct stack_node_s {
-    node * wl;     /**< either a N_modarray or N_genarray */  
+    node *wl;      /**< either a N_modarray or N_genarray */
     node * avis;   /**< our new avis */
     struct stack_node_s * next;
 } stack_node_t;
@@ -207,6 +207,25 @@ isSameShapeAvis (node * avis, node * exprs)
 }
 
 /**
+ * @brief Create a new temporary avis which copies the ntype of
+ *        an existing avis
+ *
+ * @param type Some NType
+ * @return a new avis
+ */
+static inline node *
+createTmpAvis (ntype *type)
+{
+    node *avis;
+
+    avis = TBmakeAvis (TRAVtmpVarName ("emr_tmp"), TYcopyType (type));
+
+    DBUG_PRINT (" created %s var", AVIS_NAME (avis));
+
+    return avis;
+}
+
+/**
  * @brief Collect LHS of N_let and traverse the exprs
  *
  * @param arg_node
@@ -269,9 +288,7 @@ EMRLgenarray (node * arg_node, info * arg_info)
         DBUG_PRINT (" genarray in loopfun has no RCs or ERCs, generating tmp one!");
 
         /* the new avis must have the same type/shape as genarray shape */
-        new_avis = TBmakeAvis (TRAVtmpVarName ("emr_tmp"),
-                               TYcopyType (IDS_NTYPE (INFO_LHS (arg_info))));
-        DBUG_PRINT (" created %s var", AVIS_NAME (new_avis));
+        new_avis = createTmpAvis (IDS_NTYPE (INFO_LHS (arg_info)));
 
         /* add to stack - this will be used in N_ap */
         INFO_STACK (arg_info) = stack_push (INFO_STACK (arg_info), arg_node, new_avis);
@@ -312,9 +329,7 @@ EMRLmodarray (node * arg_node, info * arg_info)
         DBUG_PRINT (" modarray in loopfun has no RCs or ERCs, generating tmp one!");
 
         /* the new avis must have the same type/shape as modarray shape */
-        new_avis = TBmakeAvis (TRAVtmpVarName ("emr_tmp"),
-                               TYcopyType (IDS_NTYPE (INFO_LHS (arg_info))));
-        DBUG_PRINT (" created %s var", AVIS_NAME (new_avis));
+        new_avis = createTmpAvis (IDS_NTYPE (INFO_LHS (arg_info)));
 
         /* add to stack - this will be used in N_ap */
         INFO_STACK (arg_info) = stack_push (INFO_STACK (arg_info), arg_node, new_avis);
@@ -487,6 +502,9 @@ EMRLfundef (node * arg_node, info * arg_info)
             FUNDEF_ARGS (arg_node)
               = TCappendArgs (FUNDEF_ARGS (arg_node), INFO_ARGS (arg_info));
             INFO_ARGS (arg_info) = NULL;
+
+            /* mark fundef as having been touched by EMRL - this used later in CUDA MEMRT */
+            FUNDEF_ISEMRLIFTED (arg_node) = TRUE;
         }
 
         INFO_FUNDEF (arg_info) = NULL;

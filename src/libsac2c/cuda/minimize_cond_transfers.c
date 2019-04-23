@@ -304,10 +304,12 @@ MCTRANassign (node *arg_node, info *arg_info)
 
         if (INFO_APPOSTASSIGNS (arg_info) != NULL) {
             ASSIGN_NEXT (arg_node) = INFO_APPOSTASSIGNS (arg_info);
+            global.optcounters.cuda_min_trans++;
         }
 
         if (INFO_APPREASSIGNS (arg_info) != NULL) {
             arg_node = TCappendAssign (INFO_APPREASSIGNS (arg_info), arg_node);
+            global.optcounters.cuda_min_trans++;
         }
 
         FUNDEF_VARDECS (INFO_FUNDEF (arg_info))

@@ -1,6 +1,13 @@
-
+/**
+ * @file
+ * @defgroup cutil CUDA utils
+ * @ingroup cuda
+ *
+ * @{
+ */
 #include "cuda_utils.h"
 
+#include "type_utils.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
@@ -271,6 +278,38 @@ CUisDeviceArrayTypeNew (ntype *ty)
     res = CUisDeviceTypeNew (ty) && TYisArray (ty);
 
     DBUG_RETURN (res);
+}
+
+/**
+ * @brief Convert from a host ntype to a device ntype, while preserving shape information.
+ *
+ * @param host_type The host ntype
+ * @return A device ntype struct, or NULL if the host_type *does not* have a simpletype
+ */
+ntype *
+CUconvertHostToDeviceType (ntype *host_type)
+{
+    ntype *scalar_type, *dev_type = NULL;
+    simpletype sty;
+
+    DBUG_ENTER ();
+
+    /* If the host_type is of known dimension */
+    if (!TUdimKnown (host_type))
+        CTIerrorInternal ("AUD type found!");
+
+    /* If the scalar type is simple, e.g. int, float ... */
+    if (TYgetDim (host_type) > 0
+        && TYisSimple (TYgetScalar (host_type))) {
+        dev_type = TYcopyType (host_type);
+        scalar_type = TYgetScalar (dev_type);
+        /* Get the corresponding device simple type e.g. int_dev, float_dev...*/
+        sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
+        /* Set the device simple type */
+        scalar_type = TYsetSimpleType (scalar_type, sty);
+    }
+
+    DBUG_RETURN (dev_type);
 }
 
 #undef DBUG_PREFIX

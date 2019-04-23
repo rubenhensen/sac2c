@@ -107,6 +107,7 @@ OPTIMIZE ("pra", pra, FALSE, FALSE, "polyhedra data reuse optimization")
 OPTIMIZE ("emrci", emrci, FALSE, FALSE, "EMR candidate inference")
 OPTIMIZE ("emrcf", emrcf, TRUE, TRUE, "EMR candidate filtering")
 OPTIMIZE ("emrl", emrl, TRUE, TRUE, "EMR loop memory optimisation")
+OPTIMIZE ("memrt", memrt, TRUE, TRUE, "Minimize memcpy transfers for EMRL affected loop functions")
 OPTIMIZE ("rnb", rnb, FALSE, FALSE, "remove noop conditional branch in with-loops")
 OPTIMIZE ("rwo", rwo, TRUE, TRUE, "memory reuse with offset")
 OPTIMIZE ("rip", rip, TRUE, TRUE, "memory reuse with in place selection")
@@ -223,6 +224,8 @@ OPTCOUNTER (safa_expr, TRUE, "associative function argument(s) sorted")
 OPTCOUNTER (pogo_expr, FALSE, "guards removed by pogo")
 OPTCOUNTER (pwlf_expr, FALSE, "with-loops folded using polyhedra")
 OPTCOUNTER (ssawl_expr, FALSE, "with-loops converted to SSA form")
+/* optimisation counters for CUDA backend */
+OPTCOUNTER (cuda_min_trans, TRUE, "transfer primitives are out lifted")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr

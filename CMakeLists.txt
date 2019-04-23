@@ -91,7 +91,7 @@ IF (ENABLE_ISL AND ENABLE_BARVINOK)
     PROPERTIES COMPILE_FLAGS "${COMPILE_FLAGS} -Wno-conversion"
   )
   ADD_EXECUTABLE (sacislinterface src/tools/sacislinterface/sacislinterface.c)
-  ADD_DEPENDENCIES (sac2cShared check_repo_version)
+  ADD_DEPENDENCIES (sacislinterface check_repo_version)
   TARGET_LINK_LIBRARIES (sacislinterface ${LIB_ISL} ${LIB_BARVINOK} ${BARVINOK_LIB})
   TARGET_INCLUDE_DIRECTORIES (sacislinterface PUBLIC ${BARVINOK_INC_PATH} ${ISL_INC_PATH})
 ENDIF ()
@@ -115,7 +115,6 @@ STRING (REPLACE ";" ":" _TARGETS "${RT_TARGETS}")
 # This is where we call the build of the sac2c shared-libraries
 # This *depends* on sac2c having been build first!
 ExternalProject_Add(runtime_libraries
-    DEPENDS sac2cShared sac2c check_repo_version sac_h
     DOWNLOAD_COMMAND "" # this is to prevent any download target from being called
     INSTALL_COMMAND "" # this is to prevent any install target from being called
     PREFIX runtime_build
@@ -133,7 +132,7 @@ ExternalProject_Add(runtime_libraries
 )
 # We set dependencies on the configure step, this makes sure we propogate
 # certain values (such as from sac2crc).
-ExternalProject_Add_StepDependencies(runtime_libraries configure sac2c sac2cShared check_repo_version)
+ExternalProject_Add_StepDependencies(runtime_libraries configure sac2c sac2cShared sac_h check_repo_version)
 # Get runtime library build directory
 ExternalProject_Get_Property (runtime_libraries BINARY_DIR)
 SET (RUNTIME_BINARY_DIR ${BINARY_DIR}) # redefine name to something more useful
@@ -159,7 +158,12 @@ ADD_DEPENDENCIES (fullclean runtime_libraries-clean)
 # directly as part of e.g. target_link_libraries functions. As such we instead
 # force add target properties which we can access explicitly.
 # Expose configure step as target
-ExternalProject_Add_StepTargets (runtime_libraries configure)
+# XXX (hans) additionaly we explicitly set inter-step dependencies as this
+# facility is broken in cmake >= version 3.10,
+# - see https://gitlab.kitware.com/cmake/cmake/issues/18663
+ExternalProject_Add_StepTargets (runtime_libraries configure build install)
+ExternalProject_Add_StepDependencies (runtime_libraries install runtime_libraries-build)
+ExternalProject_Add_StepDependencies (runtime_libraries build runtime_libraries-configure)
 FOREACH (__target ${RT_TARGETS})
   ADD_CUSTOM_TARGET (libsac-${__target}
     COMMAND +${CMAKE_COMMAND} --build ${RUNTIME_BINARY_DIR} --target libsac-${__target}
@@ -202,7 +206,7 @@ ENDMACRO ()
 ADD_INSTALL_TARGET ("applications" sac2c sac4c sac2tex "${PROJECT_BINARY_DIR}/saccc")
 ADD_INSTALL_TARGET ("config" "${SAC2CRC_BUILD_CONF}")
 ADD_INSTALL_TARGET ("headers" sac_h)
-ADD_INSTALL_TARGET ("libraries" sac2cShared runtime_libraries)
+ADD_INSTALL_TARGET ("libraries" runtime_libraries)
 ADD_INSTALL_TARGET ("rtapplications" runtime_libraries)
 ADD_INSTALL_TARGET ("sources")
 ADD_INSTALL_TARGET ("symlinks")

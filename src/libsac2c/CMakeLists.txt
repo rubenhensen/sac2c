@@ -228,6 +228,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_block_transfers2.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_cond_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_cudast_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_loop_transfers.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_emr_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/partial_fold.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/prepare_forloop_generation.c
@@ -627,7 +628,7 @@ SET_SOURCE_FILES_PROPERTIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/precompile/functionprecompile.c #RET & ARG_LINKSIGN
     ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/handle_dots.c       #TBmakeNum warnings
     ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/parser.c            #SHmakeShape (n) - n is size_t
-    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/resolvepragma.c     #PRAGMA_NUMPARAMS 
+    ${CMAKE_CURRENT_SOURCE_DIR}/scanparse/resolvepragma.c     #PRAGMA_NUMPARAMS
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/makedimexpr.c   #TBmakeNum with TCcountExprs
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/makeshapeexpr.c #TBmakeNum with TCcountExprs
     ${CMAKE_CURRENT_SOURCE_DIR}/stdopt/prfunroll.c #SHgetUnrlen

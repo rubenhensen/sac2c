@@ -21,33 +21,25 @@ inline bool != (bool a, bool b) { return _neq_SxS_ (a, b); }
 
 
 // Selection functions
-inline int[*] sel(int[.] idx, int[*] array)
-{
-  new_shape = _drop_SxV_ (_sel_VxA_ ([0], _shape_A_ (idx)),
-                          _shape_A_ (array));
-  return with {
-          (. <= iv <= .) {
-            new_idx = _cat_VxV_ (idx, iv);
-          } : _sel_VxA_ (new_idx, array);
-        } : genarray (new_shape, 0);
+#define SEL_A_(typ, def)                                    \
+inline typ[*] sel(int[.] idx, typ[*] array)                 \
+{                                                           \
+  new_shape = _drop_SxV_ (_sel_VxA_ ([0], _shape_A_ (idx)), \
+                          _shape_A_ (array));               \
+  return with {                                             \
+          (. <= iv <= .) {                                  \
+            new_idx = _cat_VxV_ (idx, iv);                  \
+          } : _sel_VxA_ (new_idx, array);                   \
+        } : genarray (new_shape, def);                      \
+}                                                           \
+                                                            \
+inline typ[*] sel (int idx, typ[*] a)                       \
+{                                                           \
+  return sel ([idx], a);                                    \
 }
 
-inline int[*] sel (int idx, int[*] a)
-{
-  return sel ([idx], a);
-}
-
-inline bool[*] sel (int[.] idx, bool[*] array)
-{
-  new_shape = _drop_SxV_ (_sel_VxA_ ([0], _shape_A_ (idx)),
-                          _shape_A_ (array));
-  return with {
-          (. <= iv <= .) {
-            new_idx = _cat_VxV_ (idx, iv);
-          } : _sel_VxA_ (new_idx, array);
-        } : genarray (new_shape, false);
-}
-
+SEL_A_(int, 0)
+SEL_A_(bool, false)
 
 // Shape
 inline int[.] shape (bool[*] a) { return _shape_A_ (a); }
@@ -61,6 +53,7 @@ inline int[.] drop (int a, int[.] b) { return _drop_SxV_ (a,b); }
 
 // Increment
 inline int ++ (int a) { return _add_SxS_ (a, 1); }
+inline int -- (int a) { return _sub_SxS_ (a, 1); }
 
 // Mixed scalar-vector operations
 inline int[.] + (int a, int[.] b)    { return _add_SxV_ (a, b); }
