@@ -233,6 +233,11 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
     }
     fprintf (global.outfile, ");\n");
 
+    if (global.cuda_arch < CUDA_SM60 && STReq (global.config.cuda_alloc, "cuman")) {
+        CTIwarn ("Adding synchronisation after CUDA kernel call, as CUDA device does not fully support UVA!");
+        fprintf (global.outfile, "cudaDeviceSynchronize ();\n");
+    }
+
     fprintf (global.outfile, "SAC_CUDA_GET_LAST_KERNEL_ERROR();\n");
     /*
       fprintf( global.outfile, "cudaThreadSynchronize();\n");
