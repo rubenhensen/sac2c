@@ -29,6 +29,18 @@ extern "C" {
  *
  *****************************************************************************/
 
+
+#if SAC_DO_CUDA_FORCE_INIT
+#define SAC_CUDA_FORCE_INIT() {                                                          \
+        SAC_TR_GPU_PRINT ("forcing CUDA device/context to be initilised with "           \
+                          "dummmy call");                                                \
+        size_t force_cuda_context_init;                                                  \
+        cudaDeviceGetLimit (&force_cuda_context_init, cudaLimitMallocHeapSize);          \
+    }
+#else
+#define SAC_CUDA_FORCE_INIT() SAC_NOOP ();
+#endif /* SAC_DO_CUDA_FORCE_INIT */
+
 #if SAC_SET_CPU_BIND_STRATEGY > 0
 #define SAC_CUDA_SETUP() {                                                               \
     char _cuda_hwloc_status[1024];                                                       \
@@ -39,11 +51,13 @@ extern "C" {
     }                                                                                    \
     SAC_TR_GPU_PRINT ("(hwloc) bound to %s", _cuda_hwloc_status);                        \
 }
-
 #else
-#define SAC_CUDA_SETUP() SAC_NOOP ();
+#define SAC_CUDA_BIND_SETUP() SAC_NOOP ();
 #endif /* SAC_SET_CPU_BIND_STRATEGY */
 
+#define SAC_CUDA_SETUP()                                                                 \
+    SAC_CUDA_BIND_SETUP ();                                                              \
+    SAC_CUDA_FORCE_INIT ();
 #define SAC_CUDA_FINALIZE() SAC_NOOP ();
 
 /*****************************************************************************

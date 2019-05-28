@@ -205,6 +205,9 @@ PrintGlobalSwitches (void)
     PRINT_OPT_SWITCH (SAC_DEBUG_RC, global.debug_rc);
     fprintf (global.outfile, "\n");
 
+    /* XXX we have this always on for the moment */
+    fprintf (global.outfile, "#define SAC_DO_CUDA_FORCE_INIT 1\n");
+
     fprintf (global.outfile, "\n\n"
                              "/*\n"
                              " *  Global Settings\n */\n\n");
