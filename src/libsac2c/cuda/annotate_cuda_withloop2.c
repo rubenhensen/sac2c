@@ -251,6 +251,25 @@ InitCudaBlockSizes (void)
         CTIerrorInternal ("Impossible option for `-cuda_arch' flag!");
     }
 
+    // we override the block size at runtime through commandline argument
+    if (global.cuda_block_spec[0] != '\0') {
+        char * spec = STRtok (global.cuda_block_spec, ",");
+        global.cuda_options.cuda_1d_block_large = atoi (spec); 
+        spec = MEMfree (spec);
+        spec = STRtok (NULL, ",");
+        global.cuda_options.cuda_2d_block_x = atoi (spec); 
+        spec = MEMfree (spec);
+        spec = STRtok (NULL, ",");
+        global.cuda_options.cuda_2d_block_y = atoi (spec); 
+        spec = MEMfree (spec);
+        spec = STRtok (NULL, ",");
+        CTIwarn ("Overriding CUDA block spec with %d,%d,%d",
+                 global.cuda_options.cuda_1d_block_large,
+                 global.cuda_options.cuda_2d_block_x,
+                 global.cuda_options.cuda_2d_block_y);
+    }
+
+
     DBUG_RETURN ();
 }
 

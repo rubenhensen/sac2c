@@ -739,6 +739,13 @@ PrintBackendOptions (void)
             "                      sm61: same as above\n"
             "                      sm70: for Volta architecture\n"
             "                    (default: sm35)\n"
+            "\n"
+            "    -cuda_shape <1d>,<2d_x>,<2d_y>\n"
+            "                    Override the grid/block specification, given as:\n"
+            "                        1d: 1-dim block size\n"
+            "                      2d_x: 2-dim block size for the x-dim\n"
+            "                      2d_y: 2-dim block size for the y-dim\n"
+            "                    (default: depends on <cuda_arch> value)\n"
             "\n");
 
     DBUG_RETURN ();

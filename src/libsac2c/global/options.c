@@ -396,6 +396,15 @@ OPTcheckOptionConsistency (void)
         CTIerror ("Functional Parallelism only works when MT is enabled");
     }
 
+    if (global.cuda_block_spec[0] != '\0') {
+        unsigned count, i;
+        for (i = 0, count = 0; global.cuda_block_spec[i]; i++)
+            count += (global.cuda_block_spec[i] == ',');
+        if (count != 2)
+            CTIerror ("CUDA block shape is incorrectly given, format "
+                      "must be `1d,2d_x,2d_y`");
+    }
+
     if (global.optimize.dosaa && !global.optimize.dodcr) {
         CTIwarn ("Symbolic array attributes (SAA) require dead code"
                  "removal (DCR).\n"
@@ -727,6 +736,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("cuda_arch");
+
+    ARGS_OPTION ("cuda_shape", strncpy (global.cuda_block_spec, ARG, 1023));
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
