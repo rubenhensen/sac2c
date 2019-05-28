@@ -253,17 +253,21 @@ InitCudaBlockSizes (void)
 
     // we override the block size at runtime through commandline argument
     if (global.cuda_block_spec[0] != '\0') {
+        int old_1d = global.cuda_options.cuda_1d_block_large;
+        int old_2d_x = global.cuda_options.cuda_2d_block_x;
+        int old_2d_y = global.cuda_options.cuda_2d_block_y;
         char * spec = STRtok (global.cuda_block_spec, ",");
-        global.cuda_options.cuda_1d_block_large = atoi (spec); 
+        global.cuda_options.cuda_1d_block_large = atoi (spec);
         spec = MEMfree (spec);
         spec = STRtok (NULL, ",");
-        global.cuda_options.cuda_2d_block_x = atoi (spec); 
+        global.cuda_options.cuda_2d_block_x = atoi (spec);
         spec = MEMfree (spec);
         spec = STRtok (NULL, ",");
-        global.cuda_options.cuda_2d_block_y = atoi (spec); 
+        global.cuda_options.cuda_2d_block_y = atoi (spec);
         spec = MEMfree (spec);
         spec = STRtok (NULL, ",");
-        CTIwarn ("Overriding CUDA block spec with %d,%d,%d",
+        CTIwarn ("Overriding CUDA block spec: %d,%d,%d -> %d,%d,%d",
+                 old_1d, old_2d_x, old_2d_y,
                  global.cuda_options.cuda_1d_block_large,
                  global.cuda_options.cuda_2d_block_x,
                  global.cuda_options.cuda_2d_block_y);
