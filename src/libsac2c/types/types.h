@@ -1220,7 +1220,6 @@ typedef struct COMPINFO compinfo;
     CUDA_OPTION (cuda_1d_block_small, int, num)                                          \
     CUDA_OPTION (cuda_2d_block_x, int, num)                                              \
     CUDA_OPTION (cuda_2d_block_y, int, num)                                              \
-    CUDA_OPTION (cuda_blocking_factor, int, num)                                         \
     CUDA_OPTION (cuda_max_x_grid, unsigned int, num)                                     \
     CUDA_OPTION (cuda_max_yz_grid, unsigned int, num)                                    \
     CUDA_OPTION (cuda_max_xy_block, unsigned int, num)                                   \

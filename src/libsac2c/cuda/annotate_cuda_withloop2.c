@@ -120,7 +120,6 @@ InitCudaBlockSizes (void)
         global.cuda_options.optimal_blocks = 3;
         global.cuda_options.cuda_1d_block_large = 256;
         global.cuda_options.cuda_1d_block_small = 64;
-        global.cuda_options.cuda_blocking_factor = 16;
         global.cuda_options.cuda_2d_block_x = 16;
         global.cuda_options.cuda_2d_block_y = 16;
         global.cuda_options.cuda_max_x_grid = 65535;
@@ -133,7 +132,6 @@ InitCudaBlockSizes (void)
         global.cuda_options.optimal_blocks = 4;
         global.cuda_options.cuda_1d_block_large = 256;
         global.cuda_options.cuda_1d_block_small = 64;
-        global.cuda_options.cuda_blocking_factor = 16;
         global.cuda_options.cuda_2d_block_x = 16;
         global.cuda_options.cuda_2d_block_y = 16;
         global.cuda_options.cuda_max_x_grid = 65535;
@@ -157,7 +155,6 @@ InitCudaBlockSizes (void)
          * global.cuda_options.cuda_1d_block_large = 512;
          */
         global.cuda_options.cuda_1d_block_small = 64;
-        global.cuda_options.cuda_blocking_factor = 32;
         global.cuda_options.cuda_2d_block_x = 16;
         global.cuda_options.cuda_2d_block_y = 16;
         global.cuda_options.cuda_max_x_grid = 65535;
@@ -175,7 +172,6 @@ InitCudaBlockSizes (void)
          * select the best block size
          */
         global.cuda_options.cuda_1d_block_small = 64;
-        global.cuda_options.cuda_blocking_factor = 32;
         global.cuda_options.cuda_2d_block_x = 16;
         global.cuda_options.cuda_2d_block_y = 16;
         global.cuda_options.cuda_max_x_grid = 2147483647;
@@ -193,7 +189,6 @@ InitCudaBlockSizes (void)
          * select the best block size
          */
         global.cuda_options.cuda_1d_block_small = 64;
-        global.cuda_options.cuda_blocking_factor = 32;
         global.cuda_options.cuda_2d_block_x = 32;
         global.cuda_options.cuda_2d_block_y = 32;
         global.cuda_options.cuda_max_x_grid = 2147483647;
@@ -211,7 +206,6 @@ InitCudaBlockSizes (void)
          * select the best block size
          */
         global.cuda_options.cuda_1d_block_small = 64;
-        global.cuda_options.cuda_blocking_factor = 32;
         global.cuda_options.cuda_2d_block_x = 32;
         global.cuda_options.cuda_2d_block_y = 32;
         global.cuda_options.cuda_max_x_grid = 2147483647;
@@ -229,7 +223,6 @@ InitCudaBlockSizes (void)
          * select the best block size
          */
         global.cuda_options.cuda_1d_block_small = 64;
-        global.cuda_options.cuda_blocking_factor = 32;
         global.cuda_options.cuda_2d_block_x = 32;
         global.cuda_options.cuda_2d_block_y = 32;
         global.cuda_options.cuda_max_x_grid = 2147483647;
@@ -247,7 +240,6 @@ InitCudaBlockSizes (void)
          * select the best block size
          */
         global.cuda_options.cuda_1d_block_small = 64;
-        global.cuda_options.cuda_blocking_factor = 32;
         global.cuda_options.cuda_2d_block_x = 32;
         global.cuda_options.cuda_2d_block_y = 32;
         global.cuda_options.cuda_max_x_grid = 2147483647;
