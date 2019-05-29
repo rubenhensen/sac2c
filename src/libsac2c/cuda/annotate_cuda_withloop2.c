@@ -116,12 +116,24 @@ InitCudaBlockSizes (void)
     }
 
     if (global.cuda_arch == CUDA_SM10 || global.cuda_arch == CUDA_SM11) {
+        /* relevent only with doLB optimisation, see codegen/icm2c_cuda.c:39 */
         global.cuda_options.optimal_threads = 256;
         global.cuda_options.optimal_blocks = 3;
+
+        /* used to set partition block shape for dim=1 array */
+        /* also used as part of doSHR */
         global.cuda_options.cuda_1d_block_large = 256;
+
+        /* used only in data_access_analysis.c for doSHR */
         global.cuda_options.cuda_1d_block_small = 64;
+
+        /* used to specify partition shape for dim=2 array */
+        /* also used for doSHR for setting shared-memory size */
+        /* also used in partial-fold for setting partition shape */
         global.cuda_options.cuda_2d_block_x = 16;
         global.cuda_options.cuda_2d_block_y = 16;
+
+        /* used in icm2c_cuda.c for runtime checks of grid/block size */
         global.cuda_options.cuda_max_x_grid = 65535;
         global.cuda_options.cuda_max_yz_grid = 65535;
         global.cuda_options.cuda_max_xy_block = 512;
@@ -231,6 +243,12 @@ InitCudaBlockSizes (void)
         global.cuda_options.cuda_max_z_block = 64;
         global.cuda_options.cuda_max_threads_block = 1024;
     } else if (global.cuda_arch == CUDA_SM70) {
+        /* NVCC seems to switch the per thread register count from 20 to 24
+         * using the below settings. Further work is needed to understand why.
+         * This is coming from -maxrregcount nvcc flag, which in sac2crc is
+         * set to 20... why?
+         * XXX
+         */
         global.cuda_options.optimal_threads = 512;
         global.cuda_options.optimal_blocks = 3;
         global.cuda_options.cuda_1d_block_large = 1024;
