@@ -8391,6 +8391,7 @@ N_tfarg :
         <flag name="RefcountDots" default="FALSE" />
         <flag name="MutcThreadFun" default="FALSE" />
         <flag name="NoInline" default="FALSE" />
+        <flag name="NoCUDA" default="FALSE" />
       </flags>
     </node>
 <!--

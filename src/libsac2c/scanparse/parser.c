@@ -3191,18 +3191,21 @@ handle_with (struct parser *parser)
         else
             goto error;
 
-        if (parser_expect_tval (parser, WLCOMP))
-            parser_get_token (parser);
-        else
-            goto error;
+        tok = parser_get_token (parser);
+        if (token_is_keyword (tok, WLCOMP)) {
+            pragma_expr = handle_function_call (parser);
+            if (pragma_expr == error_mark_node)
+                goto error;
 
-        pragma_expr = handle_function_call (parser);
-        if (pragma_expr == error_mark_node)
+            t = loc_annotated (pragma_loc, TBmakePragma ());
+            PRAGMA_WLCOMP_APS (t) = expr_constructor (pragma_expr, NULL);
+            pragma_expr = t;
+        } else if (token_is_keyword (tok, NOCUDA)) {
+            t = loc_annotated (pragma_loc, TBmakePragma ());
+            PRAGMA_NOCUDA (t) = TRUE;
+            pragma_expr = t;
+        } else
             goto error;
-
-        t = loc_annotated (pragma_loc, TBmakePragma ());
-        PRAGMA_WLCOMP_APS (t) = expr_constructor (pragma_expr, NULL);
-        pragma_expr = t;
     } else
         parser_unget (parser);
 

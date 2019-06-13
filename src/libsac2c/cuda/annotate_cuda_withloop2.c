@@ -491,6 +491,12 @@ ACUWLwith (node *arg_node, info *arg_info)
                          "Body of With-Loop to complex => no cudarization!");
         }
 
+        if (WITH_PRAGMA (arg_node) != NULL && PRAGMA_NOCUDA (WITH_PRAGMA (arg_node))) {
+            INFO_CUDARIZABLE (arg_info) = FALSE;
+            CTIwarnLine (global.linenum, "Cudarization of with-loop blocked "
+                         "by pragma!");
+        }
+
         /* We only cudarize AKS N_with */
         if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold) {
             /* For fold withloop to be cudarized, it *must* be AKS */
