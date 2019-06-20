@@ -110,7 +110,7 @@ ICMCompileND_DECL_NESTED (char *var_NT, char *basetype, int sdim, int *shp)
     INDENT;
     fprintf (global.outfile, "SAC_ND_DECL_NESTED__DESC( %s, )\n", var_NT);
 
-    ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
+    ICMCompileND_DECL__MIRROR (var_NT, sdim, shp, 0);
 
     DBUG_RETURN ();
 }

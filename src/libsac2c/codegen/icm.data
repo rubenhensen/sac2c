@@ -230,7 +230,8 @@ ICM_DEF( ND_DECL, ICM_TRACE_NONE)
   ICM_ID( basetype)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
-ICM_END( ND_DECL, (var_NT, basetype, sdim, shp))
+  ICM_INT( pinned)
+ICM_END( ND_DECL, (var_NT, basetype, sdim, shp, pinned))
 #endif
 
 #if defined(ND_DSM_DECL) || defined(ICM_ALL)
@@ -259,7 +260,8 @@ ICM_DEF( ND_DECL__MIRROR, ICM_TRACE_NONE)
   ICM_NT( var_NT)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
-ICM_END( ND_DECL__MIRROR, (var_NT, sdim, shp))
+  ICM_INT( pinned)
+ICM_END( ND_DECL__MIRROR, (var_NT, sdim, shp, pinned))
 #endif
 
 #if defined(ND_DECL__MIRROR_PARAM) || defined(ICM_ALL)
@@ -267,7 +269,8 @@ ICM_DEF( ND_DECL__MIRROR_PARAM, ICM_TRACE_NONE)
   ICM_NT( var_NT)
   ICM_INT( sdim)
   ICM_VARINT( sdim, shp)
-ICM_END( ND_DECL__MIRROR_PARAM, (var_NT, sdim, shp))
+  ICM_INT( pinned)
+ICM_END( ND_DECL__MIRROR_PARAM, (var_NT, sdim, shp, pinned))
 #endif
 
 #if defined(ND_DECL__MIRROR_EXTERN) || defined(ICM_ALL)

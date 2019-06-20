@@ -25,7 +25,7 @@
 
 #include "rc_methods.h" // SAC_RCM_local, ...
 #include "icm.h" // Item0, ...
-#include "cuda_transfer_methods.h"
+#include "cuda_transfer_methods.h" // SAC_DO_CUDA_ALLOC
 #include "runtime/extras_h/runtimecheck.h" // SAC_ASSURE_TYPE, ...
 #include "runtime/phm_h/phm.h" // SAC_HM_MALLOC, ...
 #include "runtime/extras_h/rt_trace.h" // SAC_TR_MEM_PRINT, ...
@@ -146,9 +146,12 @@ typedef intptr_t *SAC_array_descriptor_t;
 /* size of dimension-independent parts of the descriptor */
 #if SAC_DO_DISTMEM
 #define FIXED_SIZE_OF_DESC 9
-#else /* SAC_DO_DISTMEM */
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define FIXED_SIZE_OF_DESC 7
+#else
+/* default */
 #define FIXED_SIZE_OF_DESC 6
-#endif /* SAC_DO_DISTMEM */
+#endif
 /* size of dimension-dependent parts of the descriptor */
 #define VAR_SIZE_OF_DESC 1
 
@@ -222,6 +225,10 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define DESC_OFFSET_SIZE 4
 #define DESC_OFFSET_HIDDEN_TYPE 5
 
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define DESC_OFFSET_CUDA_PINNED 6
+#endif /* SAC_DO_CUDA_ALLOC */
+
 #if SAC_DO_DISTMEM
 #define DESC_OFFSET_IS_DIST 6
 #define DESC_OFFSET_OFFS 7
@@ -283,6 +290,10 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define DESC_SIZE(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_SIZE)
 #define DESC_HIDDEN_TYPE(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_HIDDEN_TYPE)
 #define DESC_SHAPE(desc, pos) SAC_REAL_DESC_POINTER (desc, (DESC_OFFSET_SHAPE + (pos)))
+
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define DESC_CUDA_PINNED(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_CUDA_PINNED)
+#endif /* SAC_DO_CUDA_ALLOC */
 
 #if SAC_DO_DISTMEM
 #define DESC_IS_DIST(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_IS_DIST)
@@ -446,6 +457,10 @@ typedef intptr_t *SAC_array_descriptor_t;
  * ND_A_DESC_SHAPE( var_NT, dim) :
  *   accesses a shape component of the data object via descriptor(!)
  *
+ * === Additional ICMs for CUDA backend (for alloctors) ===
+ * ND_A_DESC_CUDA_PINNED (var_NT)
+ *   flag indicating if this memory is CUDA pinned (using either cudaHostRegister or
+ *   cudaHostAlloc().
  * ===  Additional ICMs for distributed memory backend ===
  * ND_A_DESC_IS_DIST( var_NT, dim) :
  *   accesses the is-distributed property of the data object via descriptor(!)
@@ -461,6 +476,9 @@ typedef intptr_t *SAC_array_descriptor_t;
  * ND_A_MIRROR_SHAPE( var_NT, dim) :
  *   accesses a shape component of the data object via mirror(!)
  *
+ * === Additional ICMs for CUDA backend (for alloctors) ===
+ * ND_A_MIRROR_CUDA_PINNED (var_NT)
+ *   accesses the CUDA pinned flag of the data object via mirror(!)
  * ===  Additional ICMs for distributed memory backend ===
  * ND_A_MIRROR_IS_DIST( var_NT, dim) :
  *   accesses the is-distributed property of the data object via mirror(!)
@@ -483,6 +501,9 @@ typedef intptr_t *SAC_array_descriptor_t;
  * ND_A_SHAPE( var_NT, dim) :
  *   accesses a shape component (via mirror if exists, via descriptor otherwise)
  *
+ * === Additional ICMs for CUDA backend (for alloctors) ===
+ * ND_A_CUDA_PINNED (var_NT)
+ *   accesses the CUDA pinned flag of the data object
  * ===  Additional ICMs for distributed memory backend ===
  * ND_A_IS_DIST( var_NT, dim) :
  *   accesses the is-distributed property of the data object
@@ -542,8 +563,12 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_A_DESC_SHAPE__UNDEF(var_NT, dim) SAC_ICM_UNDEF ()
 
-#if SAC_DO_DISTMEM
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define SAC_ND_A_DESC_CUDA_PINNED__DEFAULT(var_NT) DESC_CUDA_PINNED (SAC_ND_A_DESC (var_NT))
+#define SAC_ND_A_DESC_CUDA_PINNED__UNDEF(var_NT) SAC_ICM_UNDEF ()
+#endif /* SAC_DO_CUDA_ALLOC */
 
+#if SAC_DO_DISTMEM
 /*
  * SAC_ND_A_DESC_IS_DIST implementations (referenced by sac_std_gen.h)
  */
@@ -604,6 +629,11 @@ typedef intptr_t *SAC_array_descriptor_t;
     CAT12 (NT_NAME (var_NT), CAT20 (__shp, dim))
 
 #define SAC_ND_A_MIRROR_SHAPE__UNDEF(var_NT, dim) SAC_ICM_UNDEF ()
+
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define SAC_ND_A_MIRROR_CUDA_PINNED__SCL(var_NT) 0
+#define SAC_ND_A_MIRROR_CUDA_PINNED__DEFAULT(var_NT) CAT12 (NT_NAME (var_NT), __cuda_pinned)
+#endif /* SAC_DO_CUDA_ALLOC */
 
 #if SAC_DO_DISTMEM
 
@@ -716,6 +746,10 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_ND_A_SHAPE__AKS_AKD(var_NT, dim) SAC_ND_A_MIRROR_SHAPE (var_NT, dim)
 
 #define SAC_ND_A_SHAPE__AUD(var_NT, dim) SAC_ND_A_DESC_SHAPE (var_NT, dim)
+
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define SAC_ND_A_CUDA_PINNED__DEFAULT(var_NT) SAC_ND_A_MIRROR_CUDA_PINNED (var_NT)
+#endif /* SAC_DO_CUDA_ALLOC */
 
 #if SAC_DO_DISTMEM
 
@@ -1412,6 +1446,29 @@ FIXME Do not initialize for the time being, as value 0                          
  */
 
 /*
+ * CUDA allocator specifc ICM
+ */
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define SAC_ND_CUDA_PIN(var_NT, basetype)                                                \
+     if (SAC_ND_A_MIRROR_CUDA_PINNED (var_NT)) {                                         \
+        SAC_TR_GPU_PRINT ("Pinning " NT_STR (var_NT));                                   \
+        cudaHostRegister (SAC_ND_A_FIELD (var_NT),                                       \
+                          SAC_ND_A_MIRROR_SIZE (var_NT) * sizeof (basetype),             \
+                          cudaHostRegisterPortable);                                     \
+        SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
+     }
+#define SAC_ND_CUDA_UNPIN(var_NT)                                                        \
+     if (SAC_ND_A_MIRROR_CUDA_PINNED (var_NT)) {                                         \
+        SAC_TR_GPU_PRINT ("Unpinning " NT_STR (var_NT));                                 \
+        cudaHostUnregister (SAC_ND_A_FIELD (var_NT));                                    \
+        SAC_GET_CUDA_FREE_ERROR ();                                                      \
+     }
+#else
+#define SAC_ND_CUDA_PIN(var_NT, basetype) SAC_NOOP ();
+#define SAC_ND_CUDA_UNPIN(var_NT) SAC_NOOP ();
+#endif /* SAC_DO_CUDA_ALLOC */
+
+/*
  * SAC_ND_ALLOC implementations (referenced by sac_std_gen.h)
  */
 
@@ -1436,7 +1493,7 @@ FIXME Do not initialize for the time being, as value 0                          
 #define SAC_ND_ALLOC_BEGIN__DAO(var_NT, rc, dim, basetype)                               \
     {                                                                                    \
         SAC_ND_ALLOC__DESC_AND_DATA (var_NT, dim, basetype)                              \
-        SAC_ND_INIT__RC (var_NT, rc)
+        SAC_ND_INIT__RC (var_NT, rc)                                                     \
 
 #define SAC_ND_ALLOC_BEGIN__NO_DAO(var_NT, rc, dim, basetype)                            \
     {                                                                                    \
@@ -1768,6 +1825,7 @@ FIXME Do not initialize for the time being, as value 0                          
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
+        SAC_ND_CUDA_PIN (var_NT, basetype)                                               \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
                               * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
@@ -1872,6 +1930,7 @@ FIXME Do not initialize for the time being, as value 0                          
     {                                                                                    \
         SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", NT_STR (var_NT),        \
                            #freefun, SAC_ND_A_FIELD (var_NT)))                           \
+        SAC_ND_CUDA_UNPIN (var_NT)                                                       \
         SAC_HM_FREE_FIXED_SIZE (SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT)),         \
                                 SAC_ND_A_SIZE (var_NT)                                   \
                                   * sizeof (*SAC_ND_A_FIELD (var_NT)))                   \
@@ -1914,6 +1973,7 @@ FIXME Do not initialize for the time being, as value 0                          
     {                                                                                    \
         SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", NT_STR (var_NT),        \
                            #freefun, SAC_ND_A_FIELD (var_NT)))                           \
+        SAC_ND_CUDA_UNPIN (var_NT)                                                       \
         SAC_HM_FREE (SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT)))                    \
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_PF_MEM_INC_FREE (SAC_ND_A_SIZE (var_NT) * sizeof (*SAC_ND_A_FIELD (var_NT))) \

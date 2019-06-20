@@ -3216,6 +3216,17 @@
         <node name="Code" />
       </travsons>
     </traversal>
+    <traversal id="EMAPM" name="Annotate Page-locked Memory" default="sons" include="annotate_pagelocked_memory.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Funcond" />
+        <node name="Ap" />
+        <node name="Prf" />
+        <node name="Id" />
+      </travuser>
+    </traversal>
    <traversal id="MTCM" name="Multithreading cost model" default="sons" include="cost_model.h">
       <travuser>
         <node name="Module" />
@@ -9140,6 +9151,12 @@ N_tfarg :
         <flag name="IsLifted" >
           <description>Used by SpmdLift traversal in order to indicate 
             which VARDECS are no longer needed and can thus be eliminated.
+          </description>
+        </flag>
+        <flag name="IsCUDAPinned" default="FALSE" >
+            <description>XXX not sure where this needs to be set, indicates
+                that the AVIS is to be page-locked (pinned) by CUDA API
+                for accelerated transfer over the PCIe bus.
           </description>
         </flag>
 	<flag name="IsUniqueConsumed" default="FALSE" >

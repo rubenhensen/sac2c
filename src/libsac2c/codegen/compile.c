@@ -3053,9 +3053,10 @@ COMPFundefArgs (node *fundef, info *arg_info)
                  * put "ND_DECL__MIRROR_PARAM" ICMs at beginning of function block
                  *   AND IN FRONT OF THE DECLARATION ICMs!!!
                  */
-                assigns = TCmakeAssignIcm1 ("ND_DECL__MIRROR_PARAM",
+                assigns = TCmakeAssignIcm2 ("ND_DECL__MIRROR_PARAM",
                                             MakeTypeArgs (ARG_NAME (arg), ARG_TYPE (arg),
                                                           FALSE, TRUE, TRUE, NULL),
+                                            TBmakeExprs (TBmakeNum (ARG_ISCUDAPINNED (arg)), NULL),
                                             assigns);
 
                 /*
@@ -3454,9 +3455,10 @@ COMPvardec (node *arg_node, info *arg_info)
                                           TRUE, TRUE, TRUE, NULL));
         } else {
             VARDEC_ICM (arg_node)
-              = TCmakeIcm1 ("ND_DECL",
+              = TCmakeIcm2 ("ND_DECL",
                             MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
-                                          TRUE, TRUE, TRUE, NULL));
+                                          TRUE, TRUE, TRUE, NULL),
+                            TBmakeExprs (TBmakeNum (VARDEC_ISCUDAPINNED (arg_node)), NULL));
         }
     }
 

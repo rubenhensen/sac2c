@@ -43,15 +43,15 @@ extern void ICMCompileND_OBJDEF (char *var_NT, char *basetype, int sdim, int *sh
 
 extern void ICMCompileND_OBJDEF_EXTERN (char *var_NT, char *basetype, int sdim);
 
-extern void ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp);
+extern void ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp, int pinned);
 
 extern void ICMCompileND_DSM_DECL (char *var_NT, char *basetype, int sdim, int *shp);
 
 extern void ICMCompileND_DECL_EXTERN (char *var_NT, char *basetype, int sdim);
 
-extern void ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp);
+extern void ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp, int pinned);
 
-extern void ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp);
+extern void ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp, int pinned);
 
 extern void ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim);
 

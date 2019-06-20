@@ -13,6 +13,7 @@
 
 #include "runtime/essentials_h/types.h" // floatvec (through type_info.mac)
 #include "runtime/essentials_h/bool.h" // bool
+#include "runtime/essentials_h/cuda_transfer_methods.h" // SAC_DO_CUDA_ALLOC
 #include "runtime/essentials_h/std_gen.h" // SAC_ND_DECL__DESC
 #include "runtime/essentials_h/std.h" // SAC_array_descriptor_t
 
@@ -141,6 +142,9 @@ SACARGmakeDescriptorVect (int dim, int *shape)
     SAC_ND_DECL__DESC (result_nt, );
     int SAC_ND_A_MIRROR_SIZE (result_nt) = 1;
     int SAC_ND_A_MIRROR_DIM (result_nt) = dim;
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+    int SAC_ND_A_MIRROR_CUDA_PINNED (result_nt) = 0;
+#endif
 
     SAC_ND_ALLOC__DESC (result_nt, dim);
     SAC_ND_INIT__RC (result_nt, 0);
@@ -150,6 +154,9 @@ SACARGmakeDescriptorVect (int dim, int *shape)
           = shape[pos];
     }
     SAC_ND_A_DESC_SIZE (result_nt) = SAC_ND_A_MIRROR_SIZE (result_nt);
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+    SAC_ND_A_DESC_CUDA_PINNED (result_nt) = SAC_ND_A_MIRROR_CUDA_PINNED (result_nt);
+#endif
 
     return (SAC_ND_A_DESC (result_nt));
 }
@@ -224,11 +231,17 @@ SACARGfree (SACarg *arg)
     SAC_ND_DECL__DESC (data_nt, );
     int SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
     int SAC_ND_A_MIRROR_DIM (data_nt) = 0;
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+    int SAC_ND_A_MIRROR_CUDA_PINNED (data_nt) = 0;
+#endif
 
     SAC_ND_A_FIELD (data_nt) = SACARG_DATA (arg);
     SAC_ND_A_DESC (data_nt) = SACARG_DESC (arg);
     SAC_ND_A_MIRROR_SIZE (data_nt) = SAC_ND_A_DESC_SIZE (data_nt);
     SAC_ND_A_MIRROR_DIM (data_nt) = SAC_ND_A_DESC_DIM (data_nt);
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+    SAC_ND_A_MIRROR_CUDA_PINNED (data_nt) = SAC_ND_A_DESC_CUDA_PINNED (data_nt);
+#endif
 
     /*
      * Make name tuple hidden so we can control how freeing is done
@@ -301,6 +314,9 @@ SACARGextractData (SACarg *arg)
     SAC_ND_DECL__DESC (data_nt, );
     int SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
     int SAC_ND_A_MIRROR_DIM (data_nt) = 0;
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+    int SAC_ND_A_MIRROR_CUDA_PINNED (data_nt) = 0;
+#endif
     int rc = 0;
 
     SAC_ND_A_FIELD (data_nt) = SACARG_DATA (arg);
@@ -308,6 +324,9 @@ SACARGextractData (SACarg *arg)
 
     SAC_ND_A_MIRROR_SIZE (data_nt) = SAC_ND_A_DESC_SIZE (data_nt);
     SAC_ND_A_MIRROR_DIM (data_nt) = SAC_ND_A_DESC_DIM (data_nt);
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+    SAC_ND_A_MIRROR_CUDA_PINNED (data_nt) = SAC_ND_A_DESC_CUDA_PINNED (data_nt);
+#endif
 
     /** SAC_ND_A_RC will always return 1 iff it is safe to reuse the
         data associated with this descriptor */
@@ -371,11 +390,17 @@ static inline void SACARG_common_unwrap (SAC_ND_PARAM_out (out_nt, void),
     SAC_ND_DECL__DESC (data_nt, );
     int SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
     int SAC_ND_A_MIRROR_DIM (data_nt) = 0;
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+    int SAC_ND_A_MIRROR_CUDA_PINNED (data_nt) = 0;
+#endif
 
     SAC_ND_A_FIELD (data_nt) = SACARG_DATA (SAC_ND_A_FIELD (param_nt));
     SAC_ND_A_DESC (data_nt) = SACARG_DESC (SAC_ND_A_FIELD (param_nt));
     SAC_ND_A_MIRROR_SIZE (data_nt) = SAC_ND_A_DESC_SIZE (data_nt);
     SAC_ND_A_MIRROR_DIM (data_nt) = SAC_ND_A_DESC_DIM (data_nt);
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+    SAC_ND_A_MIRROR_CUDA_PINNED (data_nt) = SAC_ND_A_DESC_CUDA_PINNED (data_nt);
+#endif
     /*
      * we create a new reference to the data here, so we need to
      * increment its reference counter!
@@ -447,6 +472,11 @@ SACARG_common_wrap (SAC_ND_PARAM_out (out_nt, SACarg), basetype btype,
     SAC_ND_DECL__DESC (data_nt, );
     int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
     int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = 0;
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+    int UNUSED SAC_ND_A_MIRROR_CUDA_PINNED (data_nt) = 0;
+    int param__cuda_pinned = 0; /* FIXME something strange is happening here */
+#endif
+
     /*
      * we simply wrap it. As we consume one reference, we have
      * to decrement the rc.

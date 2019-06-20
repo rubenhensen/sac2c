@@ -1422,6 +1422,9 @@ EMALlet (node *arg_node, info *arg_info)
               = TBmakeAvis (TRAVtmpVarName (IDS_NAME (LET_IDS (arg_node))),
                             TYeliminateAKV (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))));
 
+            /* propogate page-locked flag */
+            AVIS_ISCUDAPINNED (avis) = AVIS_ISCUDAPINNED (IDS_AVIS (LET_IDS (arg_node)));
+
             FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
               = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 

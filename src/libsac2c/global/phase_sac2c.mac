@@ -1225,6 +1225,11 @@ SUBPHASE (copy, "Making copy operations explicit", EMECdoExplicitCopy, ALWAYS, m
 SUBPHASE (racc, "Removing alias results from conformity checks",
           EMRACCdoRemoveAliasResultsFromConformityChecks, ALWAYS, mem)
 
+ADDPREFUN (TR_prt, EMAPMprintPreFun)
+
+SUBPHASE (apm, "Annotate Page-locked Memory", EMAPMdoAnnotatePagelockedMem,
+ 	      global.backend == BE_cuda && global.optimize.doapm, mem)
+
 SUBPHASE (alloc, "Introducing explicit allocation statements ", EMALdoAlloc, ALWAYS, mem)
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, mem)
@@ -1291,6 +1296,8 @@ SUBPHASE( mvsmi,
 #endif
 
 SUBPHASE (re, "Removing reuse instructions", EMREdoReuseElimination, ALWAYS, mem)
+
+REMOVEPREFUN (TR_prt, EMAPMprintPreFun)
 
 ENDPHASE (mem)
 
