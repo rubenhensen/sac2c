@@ -34,6 +34,7 @@ struct INFO {
     bool lhs_pinned;
     bool in_funcond;
     bool in_ap;
+    bool topdown;
 };
 
 /**
@@ -44,6 +45,7 @@ struct INFO {
 #define INFO_LHS_PINNED(n) ((n)->lhs_pinned)
 #define INFO_IN_FUNCOND(n) ((n)->in_funcond)
 #define INFO_IN_AP(n) ((n)->in_ap)
+#define INFO_TOPDOWN(n) ((n)->topdown)
 
 
 /**
@@ -65,6 +67,7 @@ MakeInfo (void)
     INFO_LHS_PINNED (result) = FALSE;
     INFO_IN_FUNCOND (result) = FALSE;
     INFO_IN_AP (result) = FALSE;
+    INFO_TOPDOWN (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -113,6 +116,11 @@ EMAPMfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = arg_node;
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
+    INFO_TOPDOWN (arg_info) = TRUE;
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    INFO_TOPDOWN (arg_info) = FALSE;
+
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -127,8 +135,13 @@ EMAPMassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* bottom-up */
+    if (!INFO_TOPDOWN (arg_info)) {
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
+    } else {
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -173,31 +186,48 @@ EMAPMlet (node *arg_node, info *arg_info)
 node *
 EMAPMap (node *arg_node, info *arg_info)
 {
-    node * lhs, * rets, * old_fundef;
+    node *lhs, *rets, *args, *params, *old_fundef;
 
     DBUG_ENTER ();
 
     if (INFO_FUNDEF (arg_info) != AP_FUNDEF (arg_node)
         && !INFO_IN_AP (arg_info)
-        && INFO_LHS_PINNED (arg_info)) {
+        //&& INFO_LHS_PINNED (arg_info)
+        && FUNDEF_RETURN (AP_FUNDEF (arg_node)) != NULL) {
         DBUG_PRINT ("at application of %s...", FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
         /* we need to mark the N_avis in the N_return as pinned, to match the LHS of the N_ap */
         lhs = INFO_LHS (arg_info);
         rets = RETURN_EXPRS (FUNDEF_RETURN (AP_FUNDEF (arg_node)));
         while (lhs && rets) {
-            if (AVIS_ISCUDAPINNED (IDS_AVIS (lhs))) {
-                AVIS_ISCUDAPINNED (ID_AVIS (EXPRS_EXPR (rets))) = TRUE;
+            if (!INFO_TOPDOWN (arg_info)) {
+                AVIS_ISCUDAPINNED (ID_AVIS (EXPRS_EXPR (rets))) = AVIS_ISCUDAPINNED (IDS_AVIS (lhs));
+            } else {
+                AVIS_ISCUDAPINNED (IDS_AVIS (lhs)) = AVIS_ISCUDAPINNED (ID_AVIS (EXPRS_EXPR (rets)));
             }
             lhs = IDS_NEXT (lhs);
             rets = EXPRS_NEXT (rets);
         }
 
-        old_fundef = INFO_FUNDEF (arg_info);
-        INFO_IN_AP (arg_info) = TRUE;
-        AP_FUNDEF (arg_node) = TRAVopt (AP_FUNDEF (arg_node), arg_info);
-        INFO_IN_AP (arg_info) = FALSE;
-        INFO_FUNDEF (arg_info) = old_fundef;
+        if (!INFO_TOPDOWN (arg_info)) {
+            old_fundef = INFO_FUNDEF (arg_info);
+            INFO_IN_AP (arg_info) = TRUE;
+            AP_FUNDEF (arg_node) = TRAVopt (AP_FUNDEF (arg_node), arg_info);
+            INFO_IN_AP (arg_info) = FALSE;
+            INFO_FUNDEF (arg_info) = old_fundef;
+
+            /* we do this for the arguments as well */
+            args = AP_ARGS (arg_node);
+            params = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+            while (args && params) {
+                DBUG_PRINT ("  looking at %s...", ARG_NAME (params));
+                if (ARG_ISCUDAPINNED (params)) {
+                    AVIS_ISCUDAPINNED (ID_AVIS (EXPRS_EXPR (args))) = TRUE;
+                }
+                args = EXPRS_NEXT (args);
+                params = ARG_NEXT (params);
+            }
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -211,7 +241,7 @@ EMAPMfuncond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_LHS_PINNED (arg_info)) {
+    //if (INFO_LHS_PINNED (arg_info)) {
         INFO_IN_FUNCOND (arg_info) = TRUE;
         if (FUNCOND_THEN (arg_node) && NODE_TYPE (FUNCOND_THEN (arg_node)) == N_id) {
             FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
@@ -220,7 +250,7 @@ EMAPMfuncond (node *arg_node, info *arg_info)
             FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
         }
         INFO_IN_FUNCOND (arg_info) = FALSE;
-    }
+    //}
 
     DBUG_RETURN (arg_node);
 }
@@ -234,8 +264,13 @@ EMAPMid (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_IN_FUNCOND (arg_info)) {
-        DBUG_PRINT ("Marking %s as pinned...", AVIS_NAME (ID_AVIS (arg_node)));
-        AVIS_ISCUDAPINNED (ID_AVIS (arg_node)) = TRUE;
+        if (!INFO_TOPDOWN (arg_info)) {
+            DBUG_PRINT ("Marking %s as pinned...", AVIS_NAME (ID_AVIS (arg_node)));
+            AVIS_ISCUDAPINNED (ID_AVIS (arg_node)) = AVIS_ISCUDAPINNED (IDS_AVIS (INFO_LHS (arg_info)));
+        } else {
+            DBUG_PRINT ("Marking %s as pinned...", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+            AVIS_ISCUDAPINNED (IDS_AVIS (INFO_LHS (arg_info))) = AVIS_ISCUDAPINNED (ID_AVIS (arg_node));
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -248,6 +283,8 @@ node *
 EMAPMprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
+
+    if (!INFO_TOPDOWN (arg_info)) {
 
     switch (PRF_PRF (arg_node)) {
     case F_host2device:
@@ -281,6 +318,8 @@ EMAPMprf (node *arg_node, info *arg_info)
     default:
         /* do nothing */
         break;
+    }
+
     }
 
     DBUG_RETURN (arg_node);
