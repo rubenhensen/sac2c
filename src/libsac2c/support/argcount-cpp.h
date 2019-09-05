@@ -8,6 +8,13 @@
 #ifndef _SAC_LIBSAC2C_ARGCOUNT_H_
 #define _SAC_LIBSAC2C_ARGCOUNT_H_
 
+/* this hackishly safe guards use from `-pedantic` related warnings
+ * caused by our use zero-argument variadic macros.
+ */
+#ifdef __GNUC__
+#pragma GCC system_header
+#endif
+
 /**
  * @brief Static assert like macro, it causes the compiler to fail
  *        if condition is false.

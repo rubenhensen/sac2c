@@ -582,12 +582,8 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   CHECK_CC_FLAG ("-mtune=native" GCC_NATIVE_FLAGS)
   # allow for vardic macros to have zero arguments
   CHECK_CC_FLAG ("-Wno-gnu-zero-variadic-macro-arguments" GCC_FLAGS)
-
-  # we get inconsistant warnings in older version of GCC
-  # when using `-pedantic`.
-  IF (CMAKE_C_COMPILER_VERSION VERSION_GREATER "5.4")
-    CHECK_CC_FLAG ("-pedantic" GCC_FLAGS)
-  ENDIF ()
+  # give warnings if we are doing things that don't conform with C standard
+  CHECK_CC_FLAG ("-pedantic" GCC_FLAGS)
 
   # If the BUILDGENERIC flag is on, we build a compiler with -mtune=generic
   # but we pass -march=native (if supported) to RCCCFLAGS.
@@ -713,7 +709,7 @@ ELSEIF (MACC)
   CHECK_CC_FLAG ("-Wno-documentation-unknown-command" MACCC_FLAGS)
 
   # allow for vardic macros to have zero arguments
-  CHECK_CC_FLAG ("-Wno-gnu-zero-variadic-macro-arguments" GCC_FLAGS)
+  CHECK_CC_FLAG ("-Wno-gnu-zero-variadic-macro-arguments" MACCC_FLAGS)
 
   #Turn this if you want to be cruel
   #CHECK_CC_FLAG ("-Wconversion" MACCC_FLAGS)
