@@ -1,10 +1,10 @@
 # Create local variant of the SAC2C flags
 SET (SAC2C_T ${SAC2C_EXEC} -target ${TARGET})
 
-# In case of BUILDGENERIC we need to propagate the -mtune=generic flag
+# In case of BUILDGENERIC we need to propagate the -generic flag
 # to all the sac libraries.
 IF (BUILDGENERIC)
-    SET (SAC2C_T ${SAC2C_T} -Xc "\"-mtune=generic\"")
+    SET (SAC2C_T ${SAC2C_T} -generic)
 ENDIF ()
 
 SET (SAC2C ${SAC2C_T} -Xc "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"")

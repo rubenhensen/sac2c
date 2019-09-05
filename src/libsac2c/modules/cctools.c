@@ -172,21 +172,26 @@ CCTperformTask (ccm_task_t task)
 
     /******************* compilation flags ***********************/
     // %opt%
-    const char *opt_subst = "";
+    const char *p_opt_subst = "";
     switch (global.cc_optimize) {
     case 0:
-        opt_subst = global.config.opt_o0;
+        p_opt_subst = global.config.opt_o0;
         break;
     case 1:
-        opt_subst = global.config.opt_o1;
+        p_opt_subst = global.config.opt_o1;
         break;
     case 2:
-        opt_subst = global.config.opt_o2;
+        p_opt_subst = global.config.opt_o2;
         break;
     case 3:
-        opt_subst = global.config.opt_o3;
+        p_opt_subst = global.config.opt_o3;
         break;
     }
+
+    // concat the tune flags
+    char *opt_subst = global.cc_tune_generic
+                      ? STRcatn (3, p_opt_subst, " ", global.config.tune_generic)
+                      : STRcatn (3, p_opt_subst, " ", global.config.tune_native);
 
     // %dbg%
     const char *dbg_subst = global.cc_debug ? global.config.opt_g : "";
@@ -226,6 +231,7 @@ CCTperformTask (ccm_task_t task)
       = STRcatn (7, opt_subst, " ", dbg_subst, " ", cflags_subst, " ", sacincludes_subst);
 
     if (task == CCT_compileflags) {
+        MEMfree (opt_subst);
         MEMfree (cflags_subst);
         DBUG_RETURN (compileflags_subst);
     }
@@ -290,6 +296,7 @@ CCTperformTask (ccm_task_t task)
                  extlibdirs_subst, " ", saclibs_subst, " ", libs_subst);
     // Normally this should only be called by sac4c
     if (task == CCT_linkflags) {
+        MEMfree (opt_subst);
         MEMfree (cflags_subst);
         MEMfree (extlibdirs_subst);
         MEMfree (modlibdirs_subst);
@@ -522,6 +529,7 @@ CCTperformTask (ccm_task_t task)
     }
 
     // Release all non-const strings allocated
+    MEMfree (opt_subst);
     MEMfree (cflags_subst);
     MEMfree (extlibdirs_subst);
     MEMfree (modlibdirs_subst);

@@ -37,7 +37,7 @@ for arg in "$@"; do
      act=$followaction
      followaction=
      case $act in
-        ccarg)  
+        ccarg)
             if test x"$ccarg" = x; then
                 cmdline+=(-Xc "$arg" -Xl "$arg")
             else
