@@ -38,6 +38,13 @@ for arg in "$@"; do
      followaction=
      case $act in
         ccarg)
+            # when handling a C argument, we need check if the flag has an argument
+            # such as in the case of `-MF` which expects some filename or of `--param`
+            # which expects some name and value pair. If so, we append to the cmdline
+            # the flag and its argument as shown in the else-branch. If instead we have
+            # some C flag like `-install_name=name.so`, though this flag has an argument,
+            # it is not seperate from the flag given the `=`. As such we append it to
+            # cmdline as is, see the then-branch.
             if test x"$ccarg" = x; then
                 cmdline+=(-Xc "$arg" -Xl "$arg")
             else
