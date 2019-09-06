@@ -785,6 +785,8 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (OPT_O2, opt_o2, char *, str)                                           \
     DEF_RESOURCE (OPT_O3, opt_o3, char *, str)                                           \
     DEF_RESOURCE (OPT_g, opt_g, char *, str)                                             \
+    DEF_RESOURCE (TUNE_native, tune_native, char *, str)                                 \
+    DEF_RESOURCE (TUNE_generic, tune_generic, char *, str)                               \
     DEF_RESOURCE (COMPILE_MOD, compile_mod, char *, str)                                 \
     DEF_RESOURCE (COMPILE_PROG, compile_prog, char *, str)                               \
     DEF_RESOURCE (LINK_MOD, link_mod, char *, str)                                       \

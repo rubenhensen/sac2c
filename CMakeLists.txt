@@ -129,6 +129,7 @@ ExternalProject_Add(runtime_libraries
         -DSHARED_LIB_EXT=${SHARED_LIB_EXT}
         -DLINKSETSIZE=${LINKSETSIZE}
         -DRT_TARGETS:STRING=${_TARGETS}
+        -DBUILDGENERIC=${BUILDGENERIC}
 )
 # We set dependencies on the configure step, this makes sure we propogate
 # certain values (such as from sac2crc).

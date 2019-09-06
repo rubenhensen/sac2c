@@ -828,6 +828,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      */
 
     ARGS_FLAG ("g", global.cc_debug = TRUE);
+    ARGS_FLAG ("generic", global.cc_tune_generic = TRUE);
     ARGS_FLAG ("gg", global.cc_debug = TRUE; global.cc_debug_extra = TRUE);
 
     /*
