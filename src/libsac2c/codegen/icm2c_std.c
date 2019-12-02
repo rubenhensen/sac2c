@@ -1256,7 +1256,7 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp, int pinned)
         if (global.backend == BE_cuda
             && (STReq (global.config.cuda_alloc, "cureg")
                 || STReq (global.config.cuda_alloc, "cualloc"))) {
-            indout ("const int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = %d;\n", var_NT, pinned);
+            indout ("int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = %d;\n", var_NT, pinned);
         }
 
         if (global.backend == BE_distmem) {
@@ -1312,7 +1312,7 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp, int pinned)
         if (global.backend == BE_cuda
             && (STReq (global.config.cuda_alloc, "cureg")
                 || STReq (global.config.cuda_alloc, "cualloc"))) {
-            indout ("const int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = %d;\n", var_NT, pinned);
+            indout ("int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = %d;\n", var_NT, pinned);
         }
 
         if (global.backend == BE_distmem) {
@@ -1445,7 +1445,7 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp, int pinned)
         if (global.backend == BE_cuda
             && (STReq (global.config.cuda_alloc, "cureg")
                 || STReq (global.config.cuda_alloc, "cualloc"))) {
-            indout ("const int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = %d;\n", var_NT, pinned);
+            indout ("int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = %d;\n", var_NT, pinned);
         }
 
         if (global.backend == BE_distmem) {
@@ -1502,7 +1502,7 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp, int pinned)
         if (global.backend == BE_cuda
             && (STReq (global.config.cuda_alloc, "cureg")
                 || STReq (global.config.cuda_alloc, "cualloc"))) {
-            indout ("const int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = %d;\n", var_NT, pinned);
+            indout ("int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = %d;\n", var_NT, pinned);
         }
 
         if (global.backend == BE_distmem) {

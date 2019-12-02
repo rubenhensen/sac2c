@@ -1450,18 +1450,20 @@ FIXME Do not initialize for the time being, as value 0                          
  */
 #if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_ND_CUDA_PIN(var_NT, basetype)                                                \
-     if (SAC_ND_A_MIRROR_CUDA_PINNED (var_NT)) {                                         \
+     if (SAC_ND_A_MIRROR_CUDA_PINNED (var_NT) == 0) {                                    \
         SAC_TR_GPU_PRINT ("Pinning " NT_STR (var_NT));                                   \
         cudaHostRegister (SAC_ND_A_FIELD (var_NT),                                       \
                           SAC_ND_A_MIRROR_SIZE (var_NT) * sizeof (basetype),             \
                           cudaHostRegisterPortable);                                     \
-        SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
+        SAC_CUDA_GET_LAST_ERROR_COND("GPU MALLOC", cudaErrorHostMemoryAlreadyRegistered);\
+        SAC_ND_A_MIRROR_CUDA_PINNED (var_NT) = 1;                                        \
      }
 #define SAC_ND_CUDA_UNPIN(var_NT)                                                        \
-     if (SAC_ND_A_MIRROR_CUDA_PINNED (var_NT)) {                                         \
+     if (SAC_ND_A_MIRROR_CUDA_PINNED (var_NT) != 0) {                                    \
         SAC_TR_GPU_PRINT ("Unpinning " NT_STR (var_NT));                                 \
         cudaHostUnregister (SAC_ND_A_FIELD (var_NT));                                    \
-        SAC_GET_CUDA_FREE_ERROR ();                                                      \
+        SAC_CUDA_GET_LAST_ERROR_COND("GPU FREE", cudaErrorHostMemoryNotRegistered);      \
+        SAC_ND_A_MIRROR_CUDA_PINNED (var_NT) = 0;                                        \
      }
 #else
 #define SAC_ND_CUDA_PIN(var_NT, basetype) SAC_NOOP ();
@@ -1825,7 +1827,6 @@ FIXME Do not initialize for the time being, as value 0                          
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
-        SAC_ND_CUDA_PIN (var_NT, basetype)                                               \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
         SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
                               * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
