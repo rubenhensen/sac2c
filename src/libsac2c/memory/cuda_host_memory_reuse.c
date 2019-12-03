@@ -197,7 +197,8 @@ CHMRdoMemoryReuse (node *syntax_tree)
     info * arg_info;
     DBUG_ENTER ();
 
-    if (STReq (global.config.cuda_alloc, "cuman")) {
+    if (STReq (global.config.cuda_alloc, "cuman")
+        || STReq (global.config.cuda_alloc, "cumanp")) {
         CTIwarn ("disabling CHMR optimisation, as this conflicts with CUDA managed memory.");
     } else {
         DBUG_PRINT ("Starting CUDA host memory reuse");

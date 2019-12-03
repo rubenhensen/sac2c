@@ -2414,7 +2414,7 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_ND_DEC_RC_FREE__NOOP(var_NT, rc, freefun) SAC_NOOP ()
 
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman || SAC_DO_CUDA_ALLOC == SAC_CA_cumanp
 #define SAC_ND_DEC_RC_FREE__C99(var_NT, rc, freefun)                                     \
     {                                                                                    \
         cudaDeviceSynchronize (); /* FIXME This is not good! */                          \
@@ -2441,7 +2441,7 @@ FIXME Do not initialize for the time being, as value 0                          
     }
 #endif
 
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman || SAC_DO_CUDA_ALLOC == SAC_CA_cumanp
 #define SAC_DESC_DEC_RC_FREE__C99(desc, rc, q_waslast)                                   \
     {                                                                                    \
         cudaDeviceSynchronize (); /* FIXME This is not good! */                          \

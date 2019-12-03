@@ -53,9 +53,14 @@ target cuda_alloc_managed:
 SBI              +=  "-man"
 CUDA_ALLOC       :=  "cuman"
 
+target cuda_alloc_managed_prefetch:
+SBI              +=  "-man-pref"
+CUDA_ALLOC       :=  "cumanp"
+
 target cuda_reg :: cuda :: cuda_alloc_registered:
 target cuda_alloc :: cuda :: cuda_alloc_allocated:
 target cuda_man :: cuda :: cuda_alloc_managed:
+target cuda_manp :: cuda :: cuda_alloc_managed_prefetch:
 
 /*
  * These targets are only relevent for the CUDA `Hybrid' backend

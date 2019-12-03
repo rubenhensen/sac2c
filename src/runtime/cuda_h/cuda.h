@@ -84,7 +84,7 @@ extern "C" {
 #endif
 
 // Free device memory
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman || SAC_DO_CUDA_ALLOC == SAC_CA_cumanp
 #define SAC_CUDA_FREE(var_NT, freefun)                                                   \
     SAC_TR_GPU_PRINT ("Freeing CUDA device memory (managed): %s", NT_STR (var_NT));      \
     cudaDeviceSynchronize ();                                                            \
@@ -95,6 +95,18 @@ extern "C" {
     SAC_TR_GPU_PRINT ("Freeing CUDA device memory: %s", NT_STR (var_NT));                \
     cudaFree (SAC_ND_A_FIELD (var_NT));                                                  \
     SAC_GET_CUDA_FREE_ERROR ();
+#endif
+
+// perform prefetch in managed memory
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cumanp
+#define SAC_DO_CUDA_MANAGED_PREFETCH(var_NT, direction, basetype)                        \
+    SAC_TR_GPU_PRINT ("Prefetching CUDA memory: %s", NT_STR (var_NT));                   \
+    cudaMemPrefetchAsync (SAC_ND_A_FIELD (var_NT),                                       \
+                          SAC_ND_A_SIZE (var_NT) * sizeof (basetype),                    \
+                          direction == cudaMemcpyHostToDevice ? 0 : cudaCpuDeviceId, 0); \
+    SAC_CUDA_GET_LAST_ERROR ("GPU MEMORY PREFETCH")
+#else
+#define SAC_DO_CUDA_MANAGED_PREFETCH(var_NT, direction, basetype)
 #endif
 
 #define SAC_CUDA_ALLOC_BEGIN__DAO(var_NT, rc, dim, basetype)                             \
@@ -231,6 +243,7 @@ extern "C" {
  * rather than UVA, which might affect performance. This cannot be known a-priori!
  */
 #define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
+    SAC_DO_CUDA_MANAGED_PREFETCH(from_NT, direction, basetype);                          \
     std::swap (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT));                        \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #endif
