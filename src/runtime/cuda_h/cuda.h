@@ -127,7 +127,6 @@ extern "C" {
 #if SAC_DO_CUDA_ALLOC == SAC_CA_cuman
 #define SAC_CUDA_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                               \
     {                                                                                    \
-        cudaDeviceSynchronize ();                                                        \
         SAC_TR_REF_PRINT (                                                               \
           ("CUDA_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))              \
         if ((SAC_ND_A_RC (var_NT) -= rc) == 0) {                                         \
