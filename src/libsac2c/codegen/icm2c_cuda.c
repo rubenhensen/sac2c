@@ -856,10 +856,10 @@ ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype, char *d
                  ASSURE_TEXT ("cudaMemcpy: Destionation and source arrays "
                               "should have equal sizes!"));
 
-    INDENT; 
+    INDENT;
     fprintf (global.outfile,
-             "SAC_TR_GPU_PRINT (\"%s size %%d\\n\", SAC_ND_A_SIZE( %s));",
-             direction, from_NT);
+             "SAC_TR_GPU_PRINT (\"%s size %%d %s -> %s\\n\", SAC_ND_A_SIZE( %s));",
+             direction, from_NT, to_NT, from_NT);
 
     fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER(%s, %s, %s, %s)", to_NT, from_NT,
              basetype, direction);

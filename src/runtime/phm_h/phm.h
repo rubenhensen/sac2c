@@ -443,12 +443,14 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_HM_MALLOC(var, size, basetype)                                               \
     {                                                                                    \
+        SAC_TR_GPU_PRINT ("Allocating CUDA host allocated area.");                       \
         cudaHostAlloc ((void **)&var, sizeof (basetype) * size, cudaHostAllocPortable);  \
         SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
     }
 #else /* managed */
 #define SAC_HM_MALLOC(var, size, basetype)                                               \
     {                                                                                    \
+        SAC_TR_GPU_PRINT ("Allocating CUDA managed memory area.");                       \
         cudaMallocManaged ((void **)&var, sizeof (basetype) * size,                      \
                            cudaMemAttachGlobal);                                         \
         SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
@@ -476,12 +478,14 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype)                                     \
     {                                                                                    \
+        SAC_TR_GPU_PRINT ("Allocating CUDA host allocated area.");                       \
         cudaHostAlloc ((void **)&var, size, cudaHostAllocPortable);                      \
         SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
     }
 #else /* managed */
 #define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype)                                     \
     {                                                                                    \
+        SAC_TR_GPU_PRINT ("Allocating CUDA managed memory area.");                       \
         cudaMallocManaged ((void **)&var, size, cudaMemAttachGlobal);                    \
         SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
     }
@@ -756,12 +760,14 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_HM_FREE(addr)                                                                \
     do {                                                                                 \
+        SAC_TR_GPU_PRINT ("Freeing CUDA host allocated area.");                          \
         cudaFreeHost (addr);                                                             \
         SAC_GET_CUDA_FREE_ERROR ();                                                      \
     } while (0);
 #else /* managed */
 #define SAC_HM_FREE(addr)                                                                \
     do {                                                                                 \
+        SAC_TR_GPU_PRINT ("Freeing CUDA managed memory area.");                          \
         cudaDeviceSynchronize ();                                                        \
         cudaFree (addr);                                                                 \
         SAC_GET_CUDA_FREE_ERROR ();                                                      \
@@ -921,12 +927,18 @@ SAC_C_EXTERN void *SAC_HM_MallocCheck (unsigned int);
 #define SAC_HM_MALLOC(var, size, basetype) var = (basetype *)malloc (size);
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_HM_MALLOC(var, size, basetype)                                               \
-    cudaHostAlloc ((void **)&var, size, cudaHostAllocPortable);                          \
-    SAC_GET_CUDA_MALLOC_ERROR ();
+    do {                                                                                 \
+        SAC_TR_GPU_PRINT ("Allocating CUDA host allocated area.");                       \
+        cudaHostAlloc ((void **)&var, size, cudaHostAllocPortable);                      \
+        SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
+    } while (0);
 #else /* managed */
 #define SAC_HM_MALLOC(var, size, basetype)                                               \
-    cudaMallocManaged ((void **)&var, size, cudaMemAttachGlobal);                        \
-    SAC_GET_CUDA_MALLOC_ERROR ();
+    do {                                                                                 \
+        SAC_TR_GPU_PRINT ("Allocating CUDA managed memory area.");                       \
+        cudaMallocManaged ((void **)&var, size, cudaMemAttachGlobal);                    \
+        SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
+    } while (0);
 #endif
 
 #if !defined(SAC_DO_CUDA_ALLOC) || SAC_DO_CUDA_ALLOC == SAC_CA_system                    \
@@ -934,12 +946,18 @@ SAC_C_EXTERN void *SAC_HM_MallocCheck (unsigned int);
 #define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype) var = (basetype)malloc (size);
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype)                                     \
-    cudaHostAlloc ((void **)&var, size, cudaHostAllocPortable);                          \
-    SAC_GET_CUDA_MALLOC_ERROR ();
+    do {                                                                                 \
+        SAC_TR_GPU_PRINT ("Allocating CUDA host allocated area.");                       \
+        cudaHostAlloc ((void **)&var, size, cudaHostAllocPortable);                      \
+        SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
+    } while (0);
 #else /* managed */
 #define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype)                                     \
-    cudaMallocManaged ((void **)&var, size, cudaMemAttachGlobal);                        \
-    SAC_GET_CUDA_MALLOC_ERROR ();
+    do {                                                                                 \
+        SAC_TR_GPU_PRINT ("Allocating CUDA managed memory area.");                       \
+        cudaMallocManaged ((void **)&var, size, cudaMemAttachGlobal);                    \
+        SAC_GET_CUDA_MALLOC_ERROR ();                                                    \
+    } while (0);
 #endif
 #endif /* SAC_DO_CHECK_MALLOC */
 
@@ -956,9 +974,17 @@ SAC_C_EXTERN void *SAC_HM_MallocCheck (unsigned int);
   || SAC_DO_CUDA_ALLOC == SAC_CA_cureg
 #define SAC_HM_FREE(addr) free (addr);
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
-#define SAC_HM_FREE(addr) cudaFreeHost (addr);
+#define SAC_HM_FREE(addr)                                                                \
+    do {                                                                                 \
+        SAC_TR_GPU_PRINT ("Allocating CUDA host allocated area.");                       \
+        cudaFreeHost (addr);                                                             \
+    } while (0);
 #else /* managed */
-#define SAC_HM_FREE(addr) cudaFree (addr);
+#define SAC_HM_FREE(addr)                                                                \
+    do {                                                                                 \
+        SAC_TR_GPU_PRINT ("Allocating CUDA managed memory area.");                       \
+        cudaFree (addr);                                                                 \
+    } while (0);
 #endif
 
 #define SAC_HM_FREE_DESC(addr) SAC_HM_FREE (addr)

@@ -71,11 +71,13 @@ extern "C" {
 #if !defined(SAC_DO_CUDA_ALLOC) || SAC_DO_CUDA_ALLOC == SAC_CA_system                    \
   || SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_CUDA_ALLOC(var_NT, basetype)                                                 \
+    SAC_TR_GPU_PRINT ("Allocating CUDA device memory: %s", NT_STR (var_NT));             \
     cudaMalloc ((void **)&SAC_ND_A_FIELD (var_NT),                                       \
                 SAC_ND_A_SIZE (var_NT) * sizeof (basetype));                             \
     SAC_GET_CUDA_MALLOC_ERROR ();
 #else // Managed case
 #define SAC_CUDA_ALLOC(var_NT, basetype)                                                 \
+    SAC_TR_GPU_PRINT ("Allocating CUDA device memory (managed): %s", NT_STR (var_NT));   \
     cudaMallocManaged ((void **)&SAC_ND_A_FIELD (var_NT),                                \
                        SAC_ND_A_SIZE (var_NT) * sizeof (basetype));                      \
     SAC_GET_CUDA_MALLOC_ERROR ();
@@ -84,11 +86,13 @@ extern "C" {
 // Free device memory
 #if SAC_DO_CUDA_ALLOC == SAC_CA_cuman
 #define SAC_CUDA_FREE(var_NT, freefun)                                                   \
+    SAC_TR_GPU_PRINT ("Freeing CUDA device memory (managed): %s", NT_STR (var_NT));      \
     cudaDeviceSynchronize ();                                                            \
     cudaFree (SAC_ND_A_FIELD (var_NT));                                                  \
     SAC_GET_CUDA_FREE_ERROR ();
 #else
 #define SAC_CUDA_FREE(var_NT, freefun)                                                   \
+    SAC_TR_GPU_PRINT ("Freeing CUDA device memory: %s", NT_STR (var_NT));                \
     cudaFree (SAC_ND_A_FIELD (var_NT));                                                  \
     SAC_GET_CUDA_FREE_ERROR ();
 #endif
