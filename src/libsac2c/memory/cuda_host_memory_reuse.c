@@ -197,17 +197,21 @@ CHMRdoMemoryReuse (node *syntax_tree)
     info * arg_info;
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Starting CUDA host memory reuse");
+    if (STReq (global.config.cuda_alloc, "cuman")) {
+        CTIwarn ("disabling CHMR optimisation, as this conflicts with CUDA managed memory.");
+    } else {
+        DBUG_PRINT ("Starting CUDA host memory reuse");
 
-    arg_info = MakeInfo ();
+        arg_info = MakeInfo ();
 
-    TRAVpush (TR_chmr);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-    TRAVpop ();
+        TRAVpush (TR_chmr);
+        syntax_tree = TRAVdo (syntax_tree, arg_info);
+        TRAVpop ();
 
-    arg_info = FreeInfo (arg_info);
+        arg_info = FreeInfo (arg_info);
 
-    DBUG_PRINT ("CUDA host memory reuse complete");
+        DBUG_PRINT ("CUDA host memory reuse complete");
+    }
 
     DBUG_RETURN (syntax_tree);
 }
