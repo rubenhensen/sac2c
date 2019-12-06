@@ -445,6 +445,13 @@ CPprf (node *arg_node, info *arg_info)
         }
         break;
 
+    case F_cudamemprefetch:
+        INFO_PROPMODE (arg_info) = PROP_nothing;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        INFO_PROPMODE (arg_info) = PROP_scalarconst;
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+        break;
+
 #ifdef BUG437
     case F_idx_modarray_AxSxS:
     case F_idx_modarray_AxSxA:

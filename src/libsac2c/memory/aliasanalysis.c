@@ -748,6 +748,11 @@ EMAAprf (node *arg_node, info *arg_info)
         }
         break;
 
+    case F_cudamemprefetch:
+        MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
+        MarkIdAliasing (PRF_ARG1 (arg_node), INFO_MASK (arg_info));
+        break;
+
     default:
         break;
     }

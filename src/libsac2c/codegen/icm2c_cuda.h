@@ -23,6 +23,7 @@ extern void ICMCompileCUDA_WL_ASSIGN (char *val_NT, int val_sdim, char *to_NT,
                                       int to_sdim, char *off_NT);
 extern void ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype,
                                          char *direction);
+extern void ICMCompileCUDA_MEM_PREFETCH (char *var_NT, char *basetype, int device);
 extern void ICMCompileCUDA_GRID_BLOCK (unsigned int bounds_count, char **var_ANY);
 extern void ICMCompileCUDA_WL_SUBALLOC (char *sub_NT, int sub_dim, char *to_NT,
                                         int to_dim, char *off_NT);

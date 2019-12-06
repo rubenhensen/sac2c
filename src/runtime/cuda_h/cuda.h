@@ -97,18 +97,6 @@ extern "C" {
     SAC_GET_CUDA_FREE_ERROR ();
 #endif
 
-// perform prefetch in managed memory
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cumanp
-#define SAC_DO_CUDA_MANAGED_PREFETCH(var_NT, direction, basetype)                        \
-    SAC_TR_GPU_PRINT ("Prefetching CUDA memory: %s", NT_STR (var_NT));                   \
-    cudaMemPrefetchAsync (SAC_ND_A_FIELD (var_NT),                                       \
-                          SAC_ND_A_SIZE (var_NT) * sizeof (basetype),                    \
-                          direction == cudaMemcpyHostToDevice ? 0 : cudaCpuDeviceId, 0); \
-    SAC_CUDA_GET_LAST_ERROR ("GPU MEMORY PREFETCH")
-#else
-#define SAC_DO_CUDA_MANAGED_PREFETCH(var_NT, direction, basetype)
-#endif
-
 #define SAC_CUDA_ALLOC_BEGIN__DAO(var_NT, rc, dim, basetype)                             \
     {                                                                                    \
         SAC_ND_ALLOC__DESC (var_NT, dim)                                                 \
@@ -243,10 +231,16 @@ extern "C" {
  * rather than UVA, which might affect performance. This cannot be known a-priori!
  */
 #define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
-    SAC_DO_CUDA_MANAGED_PREFETCH(from_NT, direction, basetype);                          \
     std::swap (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT));                        \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #endif
+
+#define SAC_CUDA_MEM_PREFETCH(var_NT, basetype, device)                                  \
+    SAC_TR_GPU_PRINT ("Prefetching CUDA memory: %s", NT_STR (var_NT));                   \
+    cudaMemPrefetchAsync (SAC_ND_A_FIELD (var_NT),                                       \
+                          SAC_ND_A_SIZE (var_NT) * sizeof (basetype),                    \
+                          device, 0);                                                    \
+    SAC_CUDA_GET_LAST_ERROR ("GPU MEMORY PREFETCH")
 
 #define SAC_CUDA_COPY__ARRAY(to_NT, from_NT, basetype, freefun)                          \
     cudaMemcpy (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                        \

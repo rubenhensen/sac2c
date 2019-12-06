@@ -1331,6 +1331,14 @@ ICM_END( CUDA_WL_ASSIGN, (val_NT, val_sdim, to_NT, to_sdim, off_NT))
 #endif
 
 
+#if defined( CUDA_MEM_PREFETCH) || defined(ICM_ALL)
+ICM_DEF( CUDA_MEM_PREFETCH, ICM_TRACE_NONE)
+  ICM_NT( var_NT)
+  ICM_ID( basetype)
+  ICM_INT( device)
+ICM_END( CUDA_MEM_PREFETCH, (var_NT, basetype, device))
+#endif
+
 #if defined( CUDA_MEM_TRANSFER) || defined(ICM_ALL)
 ICM_DEF( CUDA_MEM_TRANSFER, ICM_TRACE_NONE)
   ICM_NT( to_NT)

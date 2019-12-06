@@ -722,6 +722,12 @@ RCIprf (node *arg_node, info *arg_info)
                       INFO_POSTASSIGN (arg_info));
         break;
 
+    case F_cudamemprefetch:
+        INFO_MODE (arg_info) = rc_apuse;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        INFO_MODE (arg_info) = rc_prfuse;
+        break;
+
     default:
         INFO_MODE (arg_info) = rc_prfuse;
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);

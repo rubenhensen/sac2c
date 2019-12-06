@@ -1960,6 +1960,12 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
+    case F_cudamemprefetch:
+        /* we perform no allocation of the lhs */
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        INFO_MUSTFILL (arg_info) = EA_nofill;
+        break;
+
     case F_host2device:
         /*
          * CUDA MLTRAN identifies what N_avis needs to be transferred to the
@@ -2041,7 +2047,6 @@ EMALprf (node *arg_node, info *arg_info)
          * its return value must not  be allocated
          */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
         INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 

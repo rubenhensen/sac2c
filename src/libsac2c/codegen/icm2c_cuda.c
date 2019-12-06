@@ -872,6 +872,30 @@ ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype, char *d
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileCUDA_MEM_PREFETCH( char *var_NT, char *basetype, int device)
+ *
+ *
+ ******************************************************************************/
+void
+ICMCompileCUDA_MEM_PREFETCH (char *var_NT, char *basetype, int device)
+{
+    DBUG_ENTER ();
+
+#define CUDA_MEM_PREFETCH
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_MEM_PREFETCH
+
+    INDENT;
+    fprintf (global.outfile, "SAC_CUDA_MEM_PREFETCH(%s, %s, %d)", var_NT,
+             basetype, device);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileCUDA_WL_SUBALLOC( char *sub_NT, int sub_dim, char *to_NT,
  *                                    int to_dim, char *off_NT)
  *
