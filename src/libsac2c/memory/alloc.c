@@ -1904,7 +1904,6 @@ EMALprf (node *arg_node, info *arg_info)
          * none of its return value must be allocated
          */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
         INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
@@ -1923,7 +1922,6 @@ EMALprf (node *arg_node, info *arg_info)
          * - v is an alias of a_i
          */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
         INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
@@ -1961,8 +1959,18 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     case F_cudamemprefetch:
-        /* we perform no allocation of the lhs */
-        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        if (AVIS_ISALLOCLIFT (ID_AVIS (PRF_ARG1 (arg_node))))
+        {
+            /* rhs EMR lifted avis is never previously assigned to,
+             * we need to explicitly allocate it.
+             */
+            als->avis = ID_AVIS (PRF_ARG1 (arg_node));
+            als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+            als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        } else {
+            /* we perform no allocation of the lhs */
+            INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        }
         INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
