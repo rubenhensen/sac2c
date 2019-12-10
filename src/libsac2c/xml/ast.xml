@@ -3224,17 +3224,6 @@
         <node name="Code" />
       </travsons>
     </traversal>
-    <traversal id="EMAPM" name="Annotate Page-locked Memory" default="sons" include="annotate_pagelocked_memory.h" >
-      <travuser>
-        <node name="Fundef" />
-        <node name="Assign" />
-        <node name="Let" />
-        <node name="Funcond" />
-        <node name="Ap" />
-        <node name="Prf" />
-        <node name="Id" />
-      </travuser>
-    </traversal>
     <traversal id="CHMR" name="CUDA host memory reuse" default="sons" include="cuda_host_memory_reuse.h" >
       <travuser>
         <node name="Fundef" />
