@@ -1088,7 +1088,7 @@ ICMCompileND_OBJDEF (char *var_NT, char *basetype, int sdim, int *shp)
     if (global.print_objdef_for_header_file) {
         ICMCompileND_DECL_EXTERN (var_NT, basetype, sdim);
     } else {
-        ICMCompileND_DECL (var_NT, basetype, sdim, shp, 0);
+        ICMCompileND_DECL (var_NT, basetype, sdim, shp);
     }
 
     DBUG_RETURN ();
@@ -1134,7 +1134,7 @@ ICMCompileND_OBJDEF_EXTERN (char *var_NT, char *basetype, int sdim)
  ******************************************************************************/
 
 void
-ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp, int pinned)
+ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp)
 {
     DBUG_ENTER ();
 
@@ -1145,7 +1145,7 @@ ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp, int pinned)
 
     indout ("SAC_ND_DECL__DATA( %s, %s, )\n", var_NT, basetype);
     indout ("SAC_ND_DECL__DESC( %s, )\n", var_NT);
-    ICMCompileND_DECL__MIRROR (var_NT, sdim, shp, pinned);
+    ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
 
     DBUG_RETURN ();
 }
@@ -1174,7 +1174,7 @@ ICMCompileND_DSM_DECL (char *var_NT, char *basetype, int sdim, int *shp)
 
     indout ("SAC_ND_DECL__DATA( %s, %s, )\n", var_NT, basetype);
     indout ("SAC_ND_DECL__DESC( %s, )\n", var_NT);
-    ICMCompileND_DECL__MIRROR (var_NT, sdim, shp, 0);
+    ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
 
     DBUG_RETURN ();
 }
@@ -1221,7 +1221,7 @@ ICMCompileND_DECL_EXTERN (char *var_NT, char *basetype, int sdim)
  ******************************************************************************/
 
 void
-ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp, int pinned)
+ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
 {
     int size, i;
     shape_class_t sc = ICUGetShapeClass (var_NT);
@@ -1252,12 +1252,6 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp, int pinned)
 
         indout ("const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", var_NT, size);
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
-
-        if (global.backend == BE_cuda
-            && (STReq (global.config.cuda_alloc, "cureg")
-                || STReq (global.config.cuda_alloc, "cualloc"))) {
-            indout ("int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = %d;\n", var_NT, pinned);
-        }
 
         if (global.backend == BE_distmem) {
             if (dc == C_distr) {
@@ -1309,12 +1303,6 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp, int pinned)
         indout ("int SAC_ND_A_MIRROR_SIZE( %s);\n", var_NT);
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
 
-        if (global.backend == BE_cuda
-            && (STReq (global.config.cuda_alloc, "cureg")
-                || STReq (global.config.cuda_alloc, "cualloc"))) {
-            indout ("int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = %d;\n", var_NT, pinned);
-        }
-
         if (global.backend == BE_distmem) {
             if (dc == C_distr) {
                 /* Array is potentially distributed. */
@@ -1350,12 +1338,6 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp, int pinned)
     case C_aud:
         indout ("int SAC_ND_A_MIRROR_SIZE( %s) = 0;\n", var_NT);
         indout ("int SAC_ND_A_MIRROR_DIM( %s) = 0;\n", var_NT);
-
-        if (global.backend == BE_cuda
-            && (STReq (global.config.cuda_alloc, "cureg")
-                || STReq (global.config.cuda_alloc, "cualloc"))) {
-            indout ("int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = 0;\n", var_NT);
-        }
 
         if (global.backend == BE_distmem) {
             if (dc == C_distr) {
@@ -1410,7 +1392,7 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp, int pinned)
  ******************************************************************************/
 
 void
-ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp, int pinned)
+ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
 {
     int size, i;
     shape_class_t sc = ICUGetShapeClass (var_NT);
@@ -1441,12 +1423,6 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp, int pinned)
 
         indout ("const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", var_NT, size);
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
-
-        if (global.backend == BE_cuda
-            && (STReq (global.config.cuda_alloc, "cureg")
-                || STReq (global.config.cuda_alloc, "cualloc"))) {
-            indout ("int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = %d;\n", var_NT, pinned);
-        }
 
         if (global.backend == BE_distmem) {
             if (dc == C_distr) {
@@ -1499,12 +1475,6 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp, int pinned)
                 var_NT, var_NT);
         indout ("const int SAC_ND_A_MIRROR_DIM( %s) = %d;\n", var_NT, dim);
 
-        if (global.backend == BE_cuda
-            && (STReq (global.config.cuda_alloc, "cureg")
-                || STReq (global.config.cuda_alloc, "cualloc"))) {
-            indout ("int SAC_ND_A_MIRROR_CUDA_PINNED( %s) = %d;\n", var_NT, pinned);
-        }
-
         if (global.backend == BE_distmem) {
             if (dc == C_distr) {
                 /* Array is potentially distributed. */
@@ -1547,13 +1517,6 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp, int pinned)
         indout ("int SAC_ND_A_MIRROR_DIM( %s)"
                 " = SAC_ND_A_DESC_DIM( %s);\n",
                 var_NT, var_NT);
-
-        if (global.backend == BE_cuda
-            && (STReq (global.config.cuda_alloc, "cureg")
-                || STReq (global.config.cuda_alloc, "cualloc"))) {
-            indout ("int SAC_ND_A_MIRROR_CUDA_PINNED( %s)"
-                    " = SAC_ND_A_DESC_CUDA_PINNED( %s);\n", var_NT, var_NT);
-        }
 
         if (global.backend == BE_distmem) {
             if (dc == C_distr) {

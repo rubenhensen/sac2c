@@ -346,7 +346,6 @@ extern node *TCremoveFundef (node *fundef_chain, node *fundef);
 
 #define VARDEC_NTYPE(n) (AVIS_TYPE (VARDEC_AVIS (n)))
 #define VARDEC_NAME(n) (AVIS_NAME (VARDEC_AVIS (n)))
-#define VARDEC_ISCUDAPINNED(n) (AVIS_ISCUDAPINNED (VARDEC_AVIS (n)))
 
 /*
  * TODO: REMOVE US CAUSE WE'RE UGLY
@@ -394,7 +393,6 @@ extern size_t TCcountVardecs (node *vardecs);
 
 #define ARG_NAME(n) (AVIS_NAME (ARG_AVIS (n)))
 #define ARG_NTYPE(n) (AVIS_TYPE (ARG_AVIS (n)))
-#define ARG_ISCUDAPINNED(n) (AVIS_ISCUDAPINNED (ARG_AVIS (n)))
 
 /*
  * TODO: REMOVE US CAUSE WE'RE UGLY

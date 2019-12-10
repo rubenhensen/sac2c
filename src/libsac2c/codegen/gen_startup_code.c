@@ -795,7 +795,7 @@ GSCprintMainC99 (void)
     tmp_type = TBmakeTypes1 (T_int);
     res_NT = NTUcreateNtTag ("SAC_res", tmp_type);
     tmp_type = FREEfreeAllTypes (tmp_type);
-    ICMCompileND_DECL (res_NT, "int", 0, NULL, 0); /* create ND_DECL icm */
+    ICMCompileND_DECL (res_NT, "int", 0, NULL); /* create ND_DECL icm */
     GSCprintMainBegin ();
 
     /*

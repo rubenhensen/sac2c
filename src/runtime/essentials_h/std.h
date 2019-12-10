@@ -146,7 +146,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 /* size of dimension-independent parts of the descriptor */
 #if SAC_DO_DISTMEM
 #define FIXED_SIZE_OF_DESC 9
-#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg
 #define FIXED_SIZE_OF_DESC 7
 #else
 /* default */
@@ -225,7 +225,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define DESC_OFFSET_SIZE 4
 #define DESC_OFFSET_HIDDEN_TYPE 5
 
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg
 #define DESC_OFFSET_CUDA_PINNED 6
 #endif /* SAC_DO_CUDA_ALLOC */
 
@@ -291,8 +291,11 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define DESC_HIDDEN_TYPE(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_HIDDEN_TYPE)
 #define DESC_SHAPE(desc, pos) SAC_REAL_DESC_POINTER (desc, (DESC_OFFSET_SHAPE + (pos)))
 
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg
 #define DESC_CUDA_PINNED(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_CUDA_PINNED)
+#define ASSIGN_DESC_CUDA_PINNED(desc, lhs) DESC_CUDA_PINNED (desc) = lhs;
+#else
+#define ASSIGN_DESC_CUDA_PINNED(desc, lhs)
 #endif /* SAC_DO_CUDA_ALLOC */
 
 #if SAC_DO_DISTMEM
@@ -563,7 +566,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_A_DESC_SHAPE__UNDEF(var_NT, dim) SAC_ICM_UNDEF ()
 
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg
 #define SAC_ND_A_DESC_CUDA_PINNED__DEFAULT(var_NT) DESC_CUDA_PINNED (SAC_ND_A_DESC (var_NT))
 #define SAC_ND_A_DESC_CUDA_PINNED__UNDEF(var_NT) SAC_ICM_UNDEF ()
 #endif /* SAC_DO_CUDA_ALLOC */
@@ -630,9 +633,9 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_A_MIRROR_SHAPE__UNDEF(var_NT, dim) SAC_ICM_UNDEF ()
 
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg
 #define SAC_ND_A_MIRROR_CUDA_PINNED__SCL(var_NT) 0
-#define SAC_ND_A_MIRROR_CUDA_PINNED__DEFAULT(var_NT) CAT12 (NT_NAME (var_NT), __cuda_pinned)
+#define SAC_ND_A_MIRROR_CUDA_PINNED__DEFAULT(var_NT) CAT12 (NT_NAME (var_NT), __pinned)
 #endif /* SAC_DO_CUDA_ALLOC */
 
 #if SAC_DO_DISTMEM
@@ -747,8 +750,8 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_A_SHAPE__AUD(var_NT, dim) SAC_ND_A_DESC_SHAPE (var_NT, dim)
 
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
-#define SAC_ND_A_CUDA_PINNED__DEFAULT(var_NT) SAC_ND_A_MIRROR_CUDA_PINNED (var_NT)
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg
+#define SAC_ND_A_CUDA_PINNED__DEFAULT(var_NT) SAC_ND_A_DESC_CUDA_PINNED (var_NT)
 #endif /* SAC_DO_CUDA_ALLOC */
 
 #if SAC_DO_DISTMEM
@@ -1448,26 +1451,26 @@ FIXME Do not initialize for the time being, as value 0                          
 /*
  * CUDA allocator specifc ICM
  */
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg
 #define SAC_ND_CUDA_PIN(var_NT, basetype)                                                \
-     if (SAC_ND_A_MIRROR_CUDA_PINNED (var_NT) == 0) {                                    \
+     if (SAC_ND_A_DESC_CUDA_PINNED (var_NT) == 0) {                                      \
         SAC_TR_GPU_PRINT ("Pinning " NT_STR (var_NT));                                   \
         cudaHostRegister (SAC_ND_A_FIELD (var_NT),                                       \
                           SAC_ND_A_MIRROR_SIZE (var_NT) * sizeof (basetype),             \
                           cudaHostRegisterPortable);                                     \
-        SAC_CUDA_GET_LAST_ERROR_COND("GPU MALLOC", cudaErrorHostMemoryAlreadyRegistered);\
-        SAC_ND_A_MIRROR_CUDA_PINNED (var_NT) = 1;                                        \
+        SAC_GET_CUDA_PIN_ERROR ();                                                       \
+        SAC_ND_A_DESC_CUDA_PINNED (var_NT) = 1;                                          \
      }
 #define SAC_ND_CUDA_UNPIN(var_NT)                                                        \
-     if (SAC_ND_A_MIRROR_CUDA_PINNED (var_NT) != 0) {                                    \
+     if (SAC_ND_A_DESC_CUDA_PINNED (var_NT) != 0) {                                      \
         SAC_TR_GPU_PRINT ("Unpinning " NT_STR (var_NT));                                 \
         cudaHostUnregister (SAC_ND_A_FIELD (var_NT));                                    \
-        SAC_CUDA_GET_LAST_ERROR_COND("GPU FREE", cudaErrorHostMemoryNotRegistered);      \
-        SAC_ND_A_MIRROR_CUDA_PINNED (var_NT) = 0;                                        \
+        SAC_GET_CUDA_UNPIN_ERROR ();                                                     \
+        SAC_ND_A_DESC_CUDA_PINNED (var_NT) = 0;                                          \
      }
 #else
-#define SAC_ND_CUDA_PIN(var_NT, basetype) SAC_NOOP ();
-#define SAC_ND_CUDA_UNPIN(var_NT) SAC_NOOP ();
+#define SAC_ND_CUDA_PIN(var_NT, basetype)
+#define SAC_ND_CUDA_UNPIN(var_NT)
 #endif /* SAC_DO_CUDA_ALLOC */
 
 /*
@@ -1565,6 +1568,7 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_RC (SAC_ND_A_DESC (var_NT)) = 0;                                            \
         DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_LOCAL;                  \
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
+        ASSIGN_DESC_CUDA_PINNED (SAC_ND_A_DESC (var_NT), 0)                              \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))     \
@@ -1604,6 +1608,7 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_RC (SAC_ND_A_DESC (var_NT)) = 0;                                            \
         DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_LOCAL;                  \
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
+        ASSIGN_DESC_CUDA_PINNED (SAC_ND_A_DESC (var_NT), 0)                              \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DESC (dim))                              \
@@ -1639,6 +1644,7 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_RC (ndesc) = 0;                                                             \
         DESC_RC_MODE (ndesc) = SAC_DESC_RC_MODE_LOCAL;                                   \
         DESC_PARENT (ndesc) = 0;                                                         \
+        ASSIGN_DESC_CUDA_PINNED (SAC_ND_A_DESC (var_NT), 0)                              \
         DESC_DIM (ndesc) = dim;                                                          \
     }
 
@@ -1823,6 +1829,7 @@ FIXME Do not initialize for the time being, as value 0                          
                                               * sizeof (*SAC_ND_A_FIELD (var_NT)),       \
                                             SAC_ND_A_MIRROR_DIM (var_NT), basetype,      \
                                             SAC_ND_DESC_BASETYPE (var_NT))               \
+        ASSIGN_DESC_CUDA_PINNED (SAC_ND_A_DESC (var_NT), 0)                              \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_TR_MEM_PRINT (                                                               \

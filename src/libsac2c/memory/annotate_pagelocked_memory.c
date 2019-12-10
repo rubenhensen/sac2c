@@ -221,9 +221,6 @@ EMAPMap (node *arg_node, info *arg_info)
             params = FUNDEF_ARGS (AP_FUNDEF (arg_node));
             while (args && params) {
                 DBUG_PRINT ("  looking at %s...", ARG_NAME (params));
-                if (ARG_ISCUDAPINNED (params)) {
-                    AVIS_ISCUDAPINNED (ID_AVIS (EXPRS_EXPR (args))) = TRUE;
-                }
                 args = EXPRS_NEXT (args);
                 params = ARG_NEXT (params);
             }

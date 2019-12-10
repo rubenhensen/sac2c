@@ -235,9 +235,6 @@ EMLRap (node *arg_node, info *arg_info)
                 memavis = TBmakeAvis (TRAVtmpVarName (ID_NAME (oldarg)),
                                       TYeliminateAKV (AVIS_TYPE (oldavis)));
 
-                /* propogate page-locked flag */
-                AVIS_ISCUDAPINNED (memavis) = AVIS_ISCUDAPINNED (ID_AVIS (oldarg));
-
                 FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
                   = TBmakeVardec (memavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
@@ -247,9 +244,6 @@ EMLRap (node *arg_node, info *arg_info)
                  */
                 valavis = TBmakeAvis (TRAVtmpVarName (ID_NAME (oldarg)),
                                       TYcopyType (AVIS_TYPE (oldavis)));
-
-                /* propogate page-locked flag */
-                AVIS_ISCUDAPINNED (valavis) = AVIS_ISCUDAPINNED (ID_AVIS (oldarg));
 
                 FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
                   = TBmakeVardec (valavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));

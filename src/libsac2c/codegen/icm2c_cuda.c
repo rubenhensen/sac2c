@@ -1012,7 +1012,7 @@ ICMCompileCUDA_DECL_KERNEL_ARRAY (char *var_NT, char *basetype, int sdim, int *s
         INDENT;
         fprintf (global.outfile, "SAC_ND_DECL__DESC( %s, )\n", var_NT);
 
-        ICMCompileND_DECL__MIRROR (var_NT, sdim, shp, 0);
+        ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
         break;
     default:
         DBUG_UNREACHABLE ("Non-AKS array found in CUDA kernel!");

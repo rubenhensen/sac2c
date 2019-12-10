@@ -214,10 +214,13 @@ extern "C" {
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
-    if (direction == cudaMemcpyHostToDevice) {                                           \
+    switch (direction) {                                                                 \
+    case cudaMemcpyHostToDevice:                                                         \
         SAC_ND_CUDA_PIN(from_NT, basetype);                                              \
-    } else if (direction == cudaMemcpyDeviceToHost) {                                    \
+        break;                                                                           \
+    case cudaMemcpyDeviceToHost:                                                         \
         SAC_ND_CUDA_PIN(to_NT, basetype);                                                \
+        break;                                                                           \
     }                                                                                    \
     cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                   \
                      SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction, 0);  \
