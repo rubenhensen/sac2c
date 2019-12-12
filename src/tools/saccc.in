@@ -26,6 +26,7 @@ outfile=
 mode=ld
 asm=
 preproc=
+tmparg=
 for arg in "$@"; do
   # if the previous option needs an argument, assign it
   if test -n "$prev_arg"; then
@@ -70,7 +71,10 @@ for arg in "$@"; do
       if [ "$arg" == "-install_name" ]; then
          followaction=ccarg; ccarg=$arg
       else
-         cmdline+=( -Xc "$arg" -Xl "$arg")
+         # install_name needs its argument to be seperate (unlike -L), otherwise
+         # clang will complain.
+         tmparg=${arg#-install_name}
+         cmdline+=( -Xc "-install_name" -Xc "$tmparg" -Xl "-install_name" -Xl "$tmparg")
       fi
       ;;
       -save-temps) cmdline+=(-d nocleanup -Xc -save-temps -Xl -save-temps) ;;
