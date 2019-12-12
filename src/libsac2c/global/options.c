@@ -733,6 +733,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE ("sm60", global.cuda_arch = CUDA_SM60);
         ARG_CHOICE ("sm61", global.cuda_arch = CUDA_SM61);
         ARG_CHOICE ("sm70", global.cuda_arch = CUDA_SM70);
+        ARG_CHOICE ("sm75", global.cuda_arch = CUDA_SM75);
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("cuda_arch");

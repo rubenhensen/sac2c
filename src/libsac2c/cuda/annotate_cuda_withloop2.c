@@ -242,7 +242,8 @@ InitCudaBlockSizes (void)
         global.cuda_options.cuda_max_xy_block = 1024;
         global.cuda_options.cuda_max_z_block = 64;
         global.cuda_options.cuda_max_threads_block = 1024;
-    } else if (global.cuda_arch == CUDA_SM70) {
+    } else if (global.cuda_arch == CUDA_SM70
+               || global.cuda_arch == CUDA_SM75) {
         /* NVCC seems to switch the per thread register count from 20 to 24
          * using the below settings. Further work is needed to understand why.
          * This is coming from -maxrregcount nvcc flag, which in sac2crc is
