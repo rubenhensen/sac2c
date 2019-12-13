@@ -169,7 +169,8 @@ extern "C" {
     SAC_ND_CUDA_PIN(from_NT, basetype);                                                  \
     cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT) + offset, &from_NT, sizeof (basetype),       \
                      cudaMemcpyHostToDevice, 0);                                         \
-    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();                                                  \
+    cudaDeviceSynchronize ();
 #else /* managed */
 #define SAC_CUDA_MEM_TRANSFER_SxA(to_NT, offset, from_NT, basetype)                      \
     cudaMemcpy (SAC_ND_A_FIELD (to_NT) + offset, &from_NT, sizeof (basetype),            \
@@ -190,7 +191,8 @@ extern "C" {
     SAC_ND_CUDA_PIN(to_NT, basetype);                                                    \
     cudaMemcpyAsync (&SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT) + offset,         \
                      sizeof (basetype), cudaMemcpyDeviceToHost, 0);                      \
-    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();                                                  \
+    cudaDeviceSynchronize ();
 #else /* managed */
 #define SAC_CUDA_MEM_TRANSFER_AxS(to_NT, offset, from_NT, basetype)                      \
     cudaMemcpy (&SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT) + offset,              \
@@ -224,7 +226,8 @@ extern "C" {
     }                                                                                    \
     cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                   \
                      SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction, 0);  \
-    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();                                                  \
+    cudaDeviceSynchronize ();
 #else /* managed */
 /* We have two choices here, either we use CUDA's memcpy with cudaMemcpyDefault which
  * fully supports UVA but is an API call, or we perform a swap of the pointers.
