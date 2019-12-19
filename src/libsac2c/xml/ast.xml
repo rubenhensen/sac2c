@@ -330,6 +330,13 @@
           <node name="Prf" />
         </travuser>
       </traversal>
+      <traversal id="CUAD" name="Delay asynchronous CUDA memory transfers" default="sons" include="async_delay.h" >
+        <travuser>
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="STKNL" name="CUDA Create single threaded CUDA kerenls" default="sons" include="single_thread_kernels.h" >
         <travuser>
           <node name="Module" />

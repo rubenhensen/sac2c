@@ -1092,6 +1092,11 @@ SUBPHASE (cumm, "Unify memory model for CUDA managed memory", CUMMdoManagedMemor
 		  && (STReq (global.config.cuda_alloc, "cuman")
 		      || STReq (global.config.cuda_alloc, "cumanp")), cuda)
 
+SUBPHASE (cuad, "Introduce delays into asynchronous memory transfers", CUADdoAsyncDelay,
+          global.optimize.docuad
+		  && (STReq (global.config.cuda_alloc, "cualloc")
+		      || STReq (global.config.cuda_alloc, "cureg")), cuda)
+
 ENDPHASE (cuda)
 
 /******************************************************************************/
