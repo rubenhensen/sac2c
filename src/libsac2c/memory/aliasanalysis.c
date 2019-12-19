@@ -748,7 +748,8 @@ EMAAprf (node *arg_node, info *arg_info)
         }
         break;
 
-    case F_cudamemprefetch:
+    case F_prefetch2device:
+    case F_prefetch2host:
         MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
         MarkIdAliasing (PRF_ARG1 (arg_node), INFO_MASK (arg_info));
         break;

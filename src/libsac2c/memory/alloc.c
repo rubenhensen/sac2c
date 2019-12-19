@@ -1955,7 +1955,8 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
-    case F_cudamemprefetch:
+    case F_prefetch2device:
+    case F_prefetch2host:
         if (AVIS_ISALLOCLIFT (ID_AVIS (PRF_ARG1 (arg_node))))
         {
             /* rhs EMR lifted avis is never previously assigned to,

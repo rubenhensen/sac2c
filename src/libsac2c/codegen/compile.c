@@ -9037,7 +9037,7 @@ COMPprfProdMatchesProdShape (node *arg_node, info *arg_info)
 }
 
 node *
-COMPprfCUDAMemPrefetch (node *arg_node, info *arg_info)
+COMPprfPrefetch2Host (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
@@ -9053,7 +9053,36 @@ COMPprfCUDAMemPrefetch (node *arg_node, info *arg_info)
     ret_node = TCmakeAssignIcm3 ("CUDA_MEM_PREFETCH",
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
-                                 DUPdoDupNode (PRF_ARG2 (arg_node)), ret_node);
+                                 TBmakeNum (-1), ret_node);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfPrefetch2Device (node *arg_node, info *arg_info)
+{
+    /**
+     * At the moment we assume that the device is *always* at
+     * ordinal 0. In a multi-GPU setup this may not be the case.
+     *
+     * Additionally, if CUDA_VISIBLE_DEVICES env var is set, then
+     * setting 0 here is the zero-th device in the env var list.
+     */
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    /* As the cudamemprefetch primitive aliases it's input,
+     * we need to perform an assignment of the lhr by the
+     * rhs, so we generate the assignment ND_ASSIGN( v, a);
+     */
+    ret_node = RhsId (PRF_ARG1 (arg_node), arg_info);
+
+    /* and precede this by the actual prefetch ICM call */
+    ret_node = TCmakeAssignIcm3 ("CUDA_MEM_PREFETCH",
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                 TBmakeNum (0), ret_node);
 
     DBUG_RETURN (ret_node);
 }

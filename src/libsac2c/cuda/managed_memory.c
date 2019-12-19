@@ -42,8 +42,7 @@
  */
 struct INFO {
     node *expr;
-    node *let;
-    int device; /*<< value -1 is CPU, 0 =< are GPU device ordinal */
+    bool device; /*<< false == Host, true == Device */
 };
 
 /**
@@ -67,7 +66,7 @@ MakeInfo (void)
     result = (info *)MEMmalloc (sizeof (info));
 
     INFO_EXPR (result) = NULL;
-    INFO_DEVICE (result) = -1;
+    INFO_DEVICE (result) = false;
 
     DBUG_RETURN (result);
 }
@@ -170,9 +169,10 @@ CUMMlet (node *arg_node, info *arg_info)
                 CTIwarn ("Compiling for CC < 6.0 (Pascal), CUDA prefetching disabled.");
             } else {
                 /* create prefetch prf */
-                LET_EXPR (arg_node) = TCmakePrf2 (F_cudamemprefetch,
-                                                  expr,
-                                                  TBmakeNum (INFO_DEVICE (arg_info)));
+                LET_EXPR (arg_node) = TCmakePrf1 (INFO_DEVICE (arg_info)
+                                                  ? F_prefetch2device
+                                                  : F_prefetch2host,
+                                                  expr);
             }
         }
     }
@@ -188,11 +188,11 @@ CUMMprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    INFO_DEVICE (arg_info) = 0; // GPU
+    INFO_DEVICE (arg_info) = true; // GPU
 
     switch (PRF_PRF (arg_node)) {
     case F_device2host:
-        INFO_DEVICE (arg_info) = -1; // CPU
+        INFO_DEVICE (arg_info) = false; // CPU
         /* fall-through */
     case F_host2device:
         INFO_EXPR (arg_info) = PRF_ARG1 (arg_node);
