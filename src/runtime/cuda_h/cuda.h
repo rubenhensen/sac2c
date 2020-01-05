@@ -55,10 +55,35 @@ extern "C" {
 #define SAC_CUDA_BIND_SETUP() SAC_NOOP ();
 #endif /* SAC_SET_CPU_BIND_STRATEGY */
 
+
+/**
+ * At the moment we assume that we are dealing with only *one* stream, the default
+ * steam (0). If want to support multple streams, we need to change this ICM.
+ */
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define SAC_CUDA_ASYNC_INIT()                                                            \
+    cudaEventCreateWithFlags (&_cuda_sync_event,                                         \
+                              cudaEventBlockingSync | cudaEventDisableTiming);           \
+    SAC_CUDA_GET_LAST_ERROR ("CREATE SYNC EVENT");
+#define SAC_CUDA_ASYNC_DEFINE()                                                          \
+    cudaEvent_t _cuda_sync_event;
+#define SAC_CUDA_ASYNC_FINISH()                                                          \
+    cudaEventDestroy (_cuda_sync_event);                                                 \
+    SAC_CUDA_GET_LAST_ERROR ("DESTROY SYNC EVENT");
+#else
+#define SAC_CUDA_ASYNC_INIT() SAC_NOOP ();
+#define SAC_CUDA_ASYNC_DEFINE()
+#define SAC_CUDA_ASYNC_FINISH() SAC_NOOP ();
+#endif /* SAC_DO_CUDA_ALLOC */
+
+#define SAC_CUDA_DEFINE()                                                                \
+    SAC_CUDA_ASYNC_DEFINE ();
 #define SAC_CUDA_SETUP()                                                                 \
     SAC_CUDA_BIND_SETUP ();                                                              \
-    SAC_CUDA_FORCE_INIT ();
-#define SAC_CUDA_FINALIZE() SAC_NOOP ();
+    SAC_CUDA_FORCE_INIT ();                                                              \
+    SAC_CUDA_ASYNC_INIT ();
+#define SAC_CUDA_FINALIZE()                                                              \
+    SAC_CUDA_ASYNC_FINISH ();
 
 /*****************************************************************************
  *
@@ -169,8 +194,7 @@ extern "C" {
     SAC_ND_CUDA_PIN(from_NT, basetype);                                                  \
     cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT) + offset, &from_NT, sizeof (basetype),       \
                      cudaMemcpyHostToDevice, 0);                                         \
-    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();                                                  \
-    cudaDeviceSynchronize ();
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #else /* managed */
 #define SAC_CUDA_MEM_TRANSFER_SxA(to_NT, offset, from_NT, basetype)                      \
     cudaMemcpy (SAC_ND_A_FIELD (to_NT) + offset, &from_NT, sizeof (basetype),            \
@@ -191,8 +215,7 @@ extern "C" {
     SAC_ND_CUDA_PIN(to_NT, basetype);                                                    \
     cudaMemcpyAsync (&SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT) + offset,         \
                      sizeof (basetype), cudaMemcpyDeviceToHost, 0);                      \
-    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();                                                  \
-    cudaDeviceSynchronize ();
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #else /* managed */
 #define SAC_CUDA_MEM_TRANSFER_AxS(to_NT, offset, from_NT, basetype)                      \
     cudaMemcpy (&SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT) + offset,              \
@@ -214,7 +237,12 @@ extern "C" {
     cudaMemcpy (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                        \
                 SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction);          \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
-#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
+    cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                   \
+                     SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction, 0);  \
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg
 #define SAC_CUDA_MEM_TRANSFER__AKS_AKD_AUD(to_NT, from_NT, basetype, direction)          \
     switch (direction) {                                                                 \
     case cudaMemcpyHostToDevice:                                                         \
@@ -226,8 +254,7 @@ extern "C" {
     }                                                                                    \
     cudaMemcpyAsync (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT),                   \
                      SAC_ND_A_MIRROR_SIZE (from_NT) * sizeof (basetype), direction, 0);  \
-    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();                                                  \
-    cudaDeviceSynchronize ();
+    SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #else /* managed */
 /* We have two choices here, either we use CUDA's memcpy with cudaMemcpyDefault which
  * fully supports UVA but is an API call, or we perform a swap of the pointers.
@@ -240,6 +267,15 @@ extern "C" {
     std::swap (SAC_ND_A_FIELD (to_NT), SAC_ND_A_FIELD (from_NT));                        \
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #endif
+
+#define SAC_CUDA_MEM_TRANSFER_SYNC_START()                                               \
+    cudaEventRecord (_cuda_sync_event, 0);                                               \
+    SAC_CUDA_GET_LAST_ERROR ("GPU SYNC START");
+
+#define SAC_CUDA_MEM_TRANSFER_SYNC_END(var_NT)                                           \
+    SAC_TR_GPU_PRINT ("Syncing for array: %s", NT_STR (var_NT));                         \
+    cudaEventSynchronize (_cuda_sync_event);                                             \
+    SAC_CUDA_GET_LAST_ERROR ("GPU SYNC END")
 
 #define SAC_CUDA_MEM_PREFETCH(var_NT, basetype, device)                                  \
     SAC_TR_GPU_PRINT ("Prefetching CUDA memory: %s", NT_STR (var_NT));                   \

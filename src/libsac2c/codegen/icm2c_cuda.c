@@ -872,6 +872,60 @@ ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype, char *d
 /******************************************************************************
  *
  * function:
+ *   void ICMCompileCUDA_MEM_TRANSFER_START( char *to_NT, char *from_NT,
+ *                                           char *basetype, char *direction)
+ *
+ *
+ ******************************************************************************/
+void
+ICMCompileCUDA_MEM_TRANSFER_START (char *to_NT, char *from_NT, char *basetype, char *direction)
+{
+
+    DBUG_ENTER ();
+
+#define CUDA_MEM_TRANSFER_START
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_MEM_TRANSFER_START
+
+    // we use existing MEM_TRANSFER ICM, we just append a new ICM.
+    ICMCompileCUDA_MEM_TRANSFER (to_NT, from_NT, basetype, direction);
+
+    fprintf (global.outfile, "\n");
+    INDENT;
+    fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER_SYNC_START()");
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_MEM_TRANSFER_END( char *to_NT, char *from_NT,
+ *                                           char *basetype, char *direction)
+ *
+ *
+ ******************************************************************************/
+void
+ICMCompileCUDA_MEM_TRANSFER_END (char *var_NT)
+{
+
+    DBUG_ENTER ();
+
+#define CUDA_MEM_TRANSFER_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_MEM_TRANSFER_END
+
+    INDENT;
+    fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER_SYNC_END(%s)", var_NT);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void ICMCompileCUDA_MEM_PREFETCH( char *var_NT, char *basetype, int device)
  *
  *

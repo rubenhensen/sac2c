@@ -5,6 +5,7 @@
 
 extern node * CUADdoAsyncDelay (node *syntax_tree);
 
+extern node * CUADfundef (node *arg_node, info *arg_info);
 extern node * CUADassign (node *arg_node, info *arg_info);
 extern node * CUADlet (node *arg_node, info *arg_info);
 extern node * CUADprf (node *arg_node, info *arg_info);

@@ -729,6 +729,17 @@ RCIprf (node *arg_node, info *arg_info)
         INFO_MODE (arg_info) = rc_prfuse;
         break;
 
+    case F_host2device_end:
+    case F_device2host_end:
+        /* the first argument is an alias, as such we do no reference counting
+         * of this N_id, the second argument does need to be reference counted.
+         */
+        INFO_MODE (arg_info) = rc_apuse;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        INFO_MODE (arg_info) = rc_prfuse;
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+        break;
+
     default:
         INFO_MODE (arg_info) = rc_prfuse;
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);

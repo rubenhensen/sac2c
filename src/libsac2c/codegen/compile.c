@@ -9124,6 +9124,82 @@ COMPprfHost2Device (node *arg_node, info *arg_info)
 }
 
 node *
+COMPprfDevice2HostStart (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("CUDA_MEM_TRANSFER_START", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                 TCmakeIdCopyString ("cudaMemcpyDeviceToHost"), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfHost2DeviceStart (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("CUDA_MEM_TRANSFER_START", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                 TCmakeIdCopyString ("cudaMemcpyHostToDevice"), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfDevice2HostEnd (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    /**
+     * This PRF aliases its second argument, meaning we need to do an assign
+     * from this to LHS.
+     */
+    ret_node = RhsId (PRF_ARG1 (arg_node), arg_info);
+
+    ret_node = TCmakeAssignIcm1 ("CUDA_MEM_TRANSFER_END",
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 ret_node);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfHost2DeviceEnd (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    /**
+     * This PRF aliases its second argument, meaning we need to do an assign
+     * from this to LHS.
+     */
+    ret_node = RhsId (PRF_ARG1 (arg_node), arg_info);
+
+    ret_node = TCmakeAssignIcm1 ("CUDA_MEM_TRANSFER_END",
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 ret_node);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
 COMPprfDevice2Device (node *arg_node, info *arg_info)
 {
     node *ret_node;

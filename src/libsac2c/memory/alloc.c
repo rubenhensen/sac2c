@@ -1973,6 +1973,7 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     case F_host2device:
+    case F_host2device_start:
         /*
          * CUDA MLTRAN identifies what N_avis needs to be transferred to the
          * CUDA device. Ordinarily its selections are sane, except when handling
@@ -1987,8 +1988,15 @@ EMALprf (node *arg_node, info *arg_info)
                                      : INFO_MUSTFILL (arg_info);
         /* Fall-through */
     case F_device2host:
+    case F_device2host_start:
         als->dim = MakeDimArg (PRF_ARG1 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        break;
+
+    case F_host2device_end:
+    case F_device2host_end:
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
     case F_cuda_threadIdx_x:

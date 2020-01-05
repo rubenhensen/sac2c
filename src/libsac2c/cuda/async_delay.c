@@ -32,6 +32,7 @@
  * INFO structure
  */
 struct INFO {
+    node *fundef;
     node *lhs;
     node *nlhs;
     node *prfs;
@@ -41,6 +42,7 @@ struct INFO {
 /**
  * INFO macros
  */
+#define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_NLHS(n) ((n)->nlhs)
 #define INFO_PRFS(n) ((n)->prfs)
@@ -60,6 +62,7 @@ MakeInfo (void)
 
     result = (info *)MEMmalloc (sizeof (info));
 
+    INFO_FUNDEF (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_NLHS (result) = NULL;
     INFO_PRFS (result) = NULL;
@@ -78,6 +81,22 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 /** @} */
+
+/**
+ *
+ */
+node *
+CUADfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    INFO_FUNDEF (arg_info) = arg_node;
+
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
 
 /**
  *
@@ -138,32 +157,31 @@ CUADlet (node *arg_node, info *arg_info)
 node *
 CUADprf (node *arg_node, info *arg_info)
 {
-    node *navis;
+    node *navis, *nvd;
 
     DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node))
     {
     case F_host2device:
-        navis = TBmakeAvis (TRAVtmpVarName ("dev"),
-                            TYcopyType (IDS_NTYPE (INFO_LHS (arg_info))));
-        INFO_NLHS (arg_info) = TBmakeIds (navis, NULL);
-        INFO_PRFS (arg_info) = TCmakePrf1 (F_host2device_start,
-                                           DUPdoDupNode (PRF_ARG1 (arg_node)));
-        INFO_PRFE (arg_info) = TCmakePrf2 (F_host2device_end,
-                                           TBmakeIds (navis, NULL),
-                                           DUPdoDupNode (PRF_ARG1 (arg_node)));
-        break;
-
     case F_device2host:
-        navis = TBmakeAvis (TRAVtmpVarName ("dev"),
+        DBUG_PRINT ("found cuda memcpy, changing N_prf");
+        navis = TBmakeAvis (TRAVtmpVarName (PRF_PRF (arg_node) == F_host2device
+                            ? "dev" : "host"),
                             TYcopyType (IDS_NTYPE (INFO_LHS (arg_info))));
+        nvd = TBmakeVardec (navis, NULL);
+        AVIS_DECL (navis) = nvd;
         INFO_NLHS (arg_info) = TBmakeIds (navis, NULL);
-        INFO_PRFS (arg_info) = TCmakePrf1 (F_device2host_start,
+        INFO_PRFS (arg_info) = TCmakePrf1 (PRF_PRF (arg_node) == F_host2device
+                                           ? F_host2device_start
+                                           : F_device2host_start,
                                            DUPdoDupNode (PRF_ARG1 (arg_node)));
-        INFO_PRFE (arg_info) = TCmakePrf2 (F_device2host_end,
-                                           TBmakeIds (navis, NULL),
+        INFO_PRFE (arg_info) = TCmakePrf2 (PRF_PRF (arg_node) == F_host2device
+                                           ? F_host2device_end
+                                           : F_device2host_end,
+                                           TBmakeId (navis),
                                            DUPdoDupNode (PRF_ARG1 (arg_node)));
+        INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), nvd);
         break;
 
     default:

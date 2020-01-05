@@ -332,6 +332,7 @@
       </traversal>
       <traversal id="CUAD" name="Delay asynchronous CUDA memory transfers" default="sons" include="async_delay.h" >
         <travuser>
+          <node name="Fundef" />
           <node name="Assign" />
           <node name="Let" />
           <node name="Prf" />

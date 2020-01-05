@@ -1345,6 +1345,21 @@ ICM_DEF( CUDA_MEM_TRANSFER, ICM_TRACE_NONE)
 ICM_END( CUDA_MEM_TRANSFER, (to_NT, from_NT, basetype, direction))
 #endif
 
+#if defined( CUDA_MEM_TRANSFER_START) || defined(ICM_ALL)
+ICM_DEF( CUDA_MEM_TRANSFER_START, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_NT( from_NT)
+  ICM_ID( basetype)
+  ICM_ID( direction)
+ICM_END( CUDA_MEM_TRANSFER_START, (to_NT, from_NT, basetype, direction))
+#endif
+
+#if defined( CUDA_MEM_TRANSFER_END) || defined(ICM_ALL)
+ICM_DEF( CUDA_MEM_TRANSFER_END, ICM_TRACE_NONE)
+  ICM_NT( var_NT)
+ICM_END( CUDA_MEM_TRANSFER_END, (var_NT))
+#endif
+
 #if defined( CUDA_GRID_BLOCK) || defined(ICM_ALL)
 ICM_DEF( CUDA_GRID_BLOCK, ICM_TRACE_NONE)
   ICM_UINT( bounds_count)
