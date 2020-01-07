@@ -1252,6 +1252,14 @@ typedef enum cuda_arch_e {
 #undef CUDA_ARCH
 } cuda_arch_t;
 
+/* typedef enum for CUDA Async Modes */
+typedef enum cuda_async_mode_e {
+    CUDA_SYNC_NONE,
+    CUDA_SYNC_DEVICE,
+    CUDA_SYNC_STREAM,
+    CUDA_SYNC_CALLBACK
+} cuda_async_mode_t;
+
 /******************************************************************************
  *
  * The following types are for cygwin compatibility only

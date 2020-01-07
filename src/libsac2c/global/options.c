@@ -738,6 +738,17 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("cuda_arch");
 
+    ARGS_OPTION_BEGIN ("cuda_async_mode")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("nosync", global.cuda_async_mode = CUDA_SYNC_NONE);
+        ARG_CHOICE ("device", global.cuda_async_mode = CUDA_SYNC_DEVICE);
+        ARG_CHOICE ("stream", global.cuda_async_mode = CUDA_SYNC_STREAM);
+        ARG_CHOICE ("callback", global.cuda_async_mode = CUDA_SYNC_CALLBACK);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("cuda_async_mode");
+
     ARGS_OPTION ("cuda_shape", strncpy (global.cuda_block_spec, ARG, 1023));
 
     /*

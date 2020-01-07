@@ -10,6 +10,7 @@ SET (LIBSAC_SRC
   cachesim/access_detailed.c
   cachesim/access_simple.c
   cachesim/basic.c
+  cuda/sync.c
   essentials/commandline.c
   essentials/message.c
   essentials/misc.c

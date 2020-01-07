@@ -20,6 +20,8 @@ extern "C" {
 #endif
 
 #include "runtime/essentials_h/cuda_transfer_methods.h"
+#include "runtime/essentials_h/cuda_sync_methods.h"
+#include "libsac/cuda/sync.h"
 #include "libsac/hwloc/cudabind.h"
 
 /*****************************************************************************
@@ -55,12 +57,18 @@ extern "C" {
 #define SAC_CUDA_BIND_SETUP() SAC_NOOP ();
 #endif /* SAC_SET_CPU_BIND_STRATEGY */
 
-
 /**
  * At the moment we assume that we are dealing with only *one* stream, the default
- * steam (0). If want to support multple streams, we need to change this ICM.
+ * steam (0). If want to support multple streams, we need to change this ICM. Additionally
+ * we *DO NOT* handle any MT use-cases!!!
  */
 #if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#if !defined(SAC_DO_CUDA_SYNC) || SAC_DO_CUDA_SYNC == SAC_CS_none                        \
+    || SAC_DO_CUDA_SYNC == SAC_CS_device
+#define SAC_CUDA_ASYNC_INIT() SAC_NOOP ();
+#define SAC_CUDA_ASYNC_DEFINE()
+#define SAC_CUDA_ASYNC_FINISH() SAC_NOOP ();
+#elif SAC_DO_CUDA_SYNC == SAC_CS_stream
 #define SAC_CUDA_ASYNC_INIT()                                                            \
     cudaEventCreateWithFlags (&_cuda_sync_event,                                         \
                               cudaEventBlockingSync | cudaEventDisableTiming);           \
@@ -70,6 +78,14 @@ extern "C" {
 #define SAC_CUDA_ASYNC_FINISH()                                                          \
     cudaEventDestroy (_cuda_sync_event);                                                 \
     SAC_CUDA_GET_LAST_ERROR ("DESTROY SYNC EVENT");
+#elif SAC_DO_CUDA_SYNC == SAC_CS_callback
+#define SAC_CUDA_ASYNC_INIT()                                                            \
+    cuda_async_spinlock_init (&cuda_sync_struct.lock, 0); 
+#define SAC_CUDA_ASYNC_DEFINE()                                                          \
+    cuda_sync_t cuda_sync_struct = {0};
+#define SAC_CUDA_ASYNC_FINISH()                                                          \
+    cuda_async_spinlock_destroy (&cuda_sync_struct.lock, 0); 
+#endif /* SAC_DO_CUDA_SYNC */
 #else
 #define SAC_CUDA_ASYNC_INIT() SAC_NOOP ();
 #define SAC_CUDA_ASYNC_DEFINE()
@@ -268,14 +284,37 @@ extern "C" {
     SAC_GET_CUDA_MEM_TRANSFER_ERROR ();
 #endif
 
+/* CUDA synchronise methods when using asynchronous transfers */
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+#if !defined(SAC_DO_CUDA_SYNC) || SAC_DO_CUDA_SYNC == SAC_CS_none
+#define SAC_CUDA_MEM_TRANSFER_SYNC_START()
+#define SAC_CUDA_MEM_TRANSFER_SYNC_END(var_NT)
+#elif SAC_DO_CUDA_SYNC == SAC_CS_device
+#define SAC_CUDA_MEM_TRANSFER_SYNC_START()
+#define SAC_CUDA_MEM_TRANSFER_SYNC_END(var_NT)                                           \
+    SAC_TR_GPU_PRINT ("Syncing for array: %s", NT_STR (var_NT));                         \
+    cudaDeviceSynchronize ();                                                            \
+    SAC_CUDA_GET_LAST_ERROR ("GPU SYNC END")
+#elif SAC_DO_CUDA_SYNC == SAC_CS_stream
 #define SAC_CUDA_MEM_TRANSFER_SYNC_START()                                               \
     cudaEventRecord (_cuda_sync_event, 0);                                               \
     SAC_CUDA_GET_LAST_ERROR ("GPU SYNC START");
-
 #define SAC_CUDA_MEM_TRANSFER_SYNC_END(var_NT)                                           \
     SAC_TR_GPU_PRINT ("Syncing for array: %s", NT_STR (var_NT));                         \
     cudaEventSynchronize (_cuda_sync_event);                                             \
     SAC_CUDA_GET_LAST_ERROR ("GPU SYNC END")
+#elif SAC_DO_CUDA_SYNC == SAC_CS_callback
+#define SAC_CUDA_MEM_TRANSFER_SYNC_START()                                               \
+    cudaLaunchHostFunc (0, cuda_rt_unlock, (void*)&cuda_sync_struct);                    \
+    SAC_CUDA_GET_LAST_ERROR ("GPU SYNC START");
+#define SAC_CUDA_MEM_TRANSFER_SYNC_END(var_NT)                                           \
+    SAC_TR_GPU_PRINT ("Syncing for array: %s", NT_STR (var_NT));                         \
+    cuda_async_spinlock_wait (&cuda_sync_struct.lock, 0);
+#endif /* SAC_DO_CUDA_SYNC */
+#else
+#define SAC_CUDA_MEM_TRANSFER_SYNC_START()
+#define SAC_CUDA_MEM_TRANSFER_SYNC_END(var_NT)
+#endif /* SAC_DO_CUDA_ALLOC */
 
 #define SAC_CUDA_MEM_PREFETCH(var_NT, basetype, device)                                  \
     SAC_TR_GPU_PRINT ("Prefetching CUDA memory: %s", NT_STR (var_NT));                   \
