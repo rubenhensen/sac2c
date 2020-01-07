@@ -23,6 +23,9 @@ void cuda_async_spinlock_init (cuda_lock_t *locks, int num_streams)
     {
         SAC_RuntimeError ("Unable to initialise the lock for CUDA synchronisation!!!");
     }
+
+    // we then lock the spinlock
+    pthread_spin_lock (locks);
 }
 
 void cuda_async_spinlock_destroy (cuda_lock_t *locks, int num_streams)
