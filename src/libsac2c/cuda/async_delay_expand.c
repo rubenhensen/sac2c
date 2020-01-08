@@ -33,7 +33,9 @@ struct INFO {
     node *curassign;
     node *preassign;
     node *setassign;
+    node *lhs;
     lut_t *h2d_lut;
+    lut_t *d2h_lut;
     bool delassign;
 };
 
@@ -43,7 +45,9 @@ struct INFO {
 #define INFO_CURASSIGN(n) ((n)->curassign)
 #define INFO_PREASSIGN(n) ((n)->preassign)
 #define INFO_SETASSIGN(n) ((n)->setassign)
+#define INFO_LHS(n) ((n)->lhs)
 #define INFO_H2D_LUT(n) ((n)->h2d_lut)
+#define INFO_D2H_LUT(n) ((n)->d2h_lut)
 #define INFO_DELASSIGN(n) ((n)->delassign)
 
 /**
@@ -63,7 +67,9 @@ MakeInfo (void)
     INFO_CURASSIGN (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_SETASSIGN (result) = NULL;
+    INFO_LHS (result) = NULL;
     INFO_H2D_LUT (result) = NULL;
+    INFO_D2H_LUT (result) = NULL;
     INFO_DELASSIGN (result) = false;
 
     DBUG_RETURN (result);
@@ -91,8 +97,10 @@ CUADEfundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node))
     {
         INFO_H2D_LUT (arg_info) = LUTgenerateLut ();
+        INFO_D2H_LUT (arg_info) = LUTgenerateLut ();
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         INFO_H2D_LUT (arg_info) = LUTremoveLut (INFO_H2D_LUT (arg_info));
+        INFO_D2H_LUT (arg_info) = LUTremoveLut (INFO_D2H_LUT (arg_info));
     }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -128,7 +136,24 @@ CUADEassign (node *arg_node, info *arg_info)
         INFO_SETASSIGN (arg_info) = NULL;
     }
 
+    /// FIXME: will break on d2h re-assign
     INFO_PREASSIGN (arg_info) = arg_node;
+
+    DBUG_RETURN (arg_node);
+}
+
+/**
+ *
+ */
+node *
+CUADElet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+
+    LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -157,10 +182,55 @@ CUADEids (node *arg_node, info *arg_info)
 
 /**
  *
+ * @param assign An N_assign node
+ * @param prf_type A valid prf
+ */
+static bool
+isAssignPrf (node *assign, prf prf_type)
+{
+    bool ret = false;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (assign != NULL, "Passed in NULL N_assign node!");
+
+    ret = NODE_TYPE (ASSIGN_STMT (assign)) == N_let
+          && NODE_TYPE (LET_EXPR (ASSIGN_STMT (assign))) == N_prf
+          && PRF_PRF (LET_EXPR (ASSIGN_STMT (assign))) == prf_type;
+
+    DBUG_RETURN (ret);
+}
+
+/**
+ *
+ */
+node *
+CUADEid (node *arg_node, info *arg_info)
+{
+    node *assign;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Checking if N_assign of N_avis %s has D2H_end on RHS...", ID_NAME (arg_node));
+    assign = AVIS_SSAASSIGN (ID_AVIS (arg_node));
+
+    if (assign != NULL && isAssignPrf (assign, F_device2host_end))
+    {
+        DBUG_PRINT ("Adding N_assign of N_avis %s to LUT...", ID_NAME (arg_node));
+        INFO_D2H_LUT (arg_info) = LUTinsertIntoLutP (INFO_D2H_LUT (arg_info), ID_AVIS (arg_node), INFO_PREASSIGN (arg_info));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/**
+ *
  */
 node *
 CUADEprf (node *arg_node, info *arg_info)
 {
+    node *res, *next;
+
     DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node))
@@ -219,6 +289,54 @@ CUADEprf (node *arg_node, info *arg_info)
 
         INFO_H2D_LUT (arg_info) = LUTinsertIntoLutP (INFO_H2D_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)), INFO_CURASSIGN (arg_info));
         INFO_DELASSIGN (arg_info) = true;
+        break;
+
+    case F_device2host_end:
+        DBUG_PRINT ("Found d2h_end...");
+        /* We want to push this down as far as possible, in order
+         * to ensure that we add sufficent delay. Are only constraint
+         * is that we cannot pass the use of our LHS.
+         *
+         * Concretely, we want:
+         *
+         * ~~~
+         * ...
+         * kernel <<<...>>> (a_dev)
+         * cuad_tmp = d2h_start (a_dev)
+         * b = d2h_end (cuad_tmp, a_dev)
+         * ...
+         * ...
+         * ...
+         * c = id (b)
+         * ...
+         * ~~~
+         *
+         * and transform this into:
+         *
+         * ~~~
+         * ...
+         * kernel <<<...>>> (a_dev)
+         * cuad_tmp = d2h_start (a_dev)
+         * ...
+         * ...
+         * ...
+         * b = d2h_end (cuad_tmp, a_dev)
+         * c = id (b)
+         * ...
+         * ~~~
+         */
+
+        DBUG_PRINT ("Searching for %s LHS of D2H_end...", IDS_NAME (INFO_LHS (arg_info)));
+        res = LUTsearchInLutPp (INFO_D2H_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
+
+        DBUG_ASSERT (res != IDS_AVIS (INFO_LHS (arg_info)) && res != NULL, "LHS is missing SSA N_assign!");
+
+        // TODO actually move d2h_end DOWN!
+        //next = ASSIGN_NEXT (res);
+        //ASSIGN_NEXT (res) = INFO_CURASSIGN (arg_info);
+        //ASSIGN_NEXT (INFO_CURASSIGN (arg_info)) = next;
+        //INFO_DELASSIGN (arg_info) = true;
+
         break;
 
     default:
