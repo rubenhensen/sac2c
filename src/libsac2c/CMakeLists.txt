@@ -206,6 +206,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/constraints/strip_conformity_checks.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/adjust_shmem_access.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/adjust_stknl_rets.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/async_delay.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/async_delay_expand.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cond_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cuda_partition.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cuda_withloop2.c

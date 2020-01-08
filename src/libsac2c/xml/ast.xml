@@ -330,11 +330,19 @@
           <node name="Prf" />
         </travuser>
       </traversal>
-      <traversal id="CUAD" name="Delay asynchronous CUDA memory transfers" default="sons" include="async_delay.h" >
+      <traversal id="CUAD" name="Introduce delayed CUDA memory transfers primitives" default="sons" include="async_delay.h" >
         <travuser>
           <node name="Fundef" />
           <node name="Assign" />
           <node name="Let" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
+      <traversal id="CUADE" name="Expand delay of CUDA memory transfer primitives" default="sons" include="async_delay_expand.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Ids" />
           <node name="Prf" />
         </travuser>
       </traversal>

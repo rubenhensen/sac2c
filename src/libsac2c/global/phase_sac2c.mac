@@ -1097,6 +1097,11 @@ SUBPHASE (cuad, "Introduce delays into asynchronous memory transfers", CUADdoAsy
 		  && (STReq (global.config.cuda_alloc, "cualloc")
 		      || STReq (global.config.cuda_alloc, "cureg")), cuda)
 
+SUBPHASE (cuade, "Expand delays of asynchronous memory transfers", CUADEdoAsyncDelayExpand,
+          global.optimize.docuade
+		  && (STReq (global.config.cuda_alloc, "cualloc")
+		      || STReq (global.config.cuda_alloc, "cureg")), cuda)
+
 ENDPHASE (cuda)
 
 /******************************************************************************/
