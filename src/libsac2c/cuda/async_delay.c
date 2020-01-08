@@ -108,17 +108,20 @@ CUADassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    /* bottom-down */
+    /* top-down */
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_PRFE (arg_info) != NULL)
     {
-       new = TBmakeAssign (TBmakeLet (INFO_LHS (arg_info),
-                                      INFO_PRFE (arg_info)),
-                           ASSIGN_NEXT (arg_node));
-       ASSIGN_NEXT (arg_node) = new;
-       INFO_PRFE (arg_info) = NULL;
-       INFO_LHS (arg_info) = NULL;
+
+        new = TBmakeAssign (TBmakeLet (INFO_LHS (arg_info),
+                    INFO_PRFE (arg_info)),
+                ASSIGN_NEXT (arg_node));
+        AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = new;
+        ASSIGN_NEXT (arg_node) = new;
+        AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)))) = arg_node;
+        INFO_PRFE (arg_info) = NULL;
+        INFO_LHS (arg_info) = NULL;
     }
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
