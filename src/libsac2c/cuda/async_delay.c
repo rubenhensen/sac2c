@@ -167,8 +167,17 @@ CUADprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node))
     {
     case F_host2device:
-    case F_device2host:
+
         DBUG_PRINT ("found cuda memcpy, changing N_prf");
+        if (AVIS_ISALLOCLIFT (ID_AVIS (PRF_ARG1 (arg_node))))
+        {
+            DBUG_PRINT ("...not changing as is EMRL allocated!");
+            break;
+        }
+        /* fall-through */
+
+    case F_device2host:
+
         navis = TBmakeAvis (TRAVtmpVarName (PRF_PRF (arg_node) == F_host2device
                             ? "dev" : "host"),
                             TYcopyType (IDS_NTYPE (INFO_LHS (arg_info))));
@@ -188,7 +197,8 @@ CUADprf (node *arg_node, info *arg_info)
         break;
 
     default:
-        /* do nothing */
+
+        // do nothing
         break;
     }
 

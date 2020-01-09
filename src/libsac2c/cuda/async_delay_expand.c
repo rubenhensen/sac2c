@@ -412,10 +412,10 @@ CUADEprf (node *arg_node, info *arg_info)
             INFO_DOWNASSIGN (arg_info) = res;
             INFO_DELASSIGN (arg_info) = true;
         }
-
         break;
 
     default:
+
         // do nothing
         break;
     }
