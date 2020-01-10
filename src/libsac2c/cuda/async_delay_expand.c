@@ -107,13 +107,27 @@ FreeInfo (info *info)
 node *
 CUADEfundef (node *arg_node, info *arg_info)
 {
+    bool olddelassign;
+
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node))
     {
         INFO_H2D_LUT (arg_info) = LUTgenerateLut ();
         INFO_D2H_LUT (arg_info) = LUTgenerateLut ();
+
+        INFO_PREASSIGN (arg_info) = NULL;
+        INFO_NEXTASSIGN (arg_info) = NULL;
+        INFO_CURASSIGN (arg_info) = NULL;
+
+        // we need to store state here as we might be coming from an N_ap
+        olddelassign = INFO_DELASSIGN (arg_info);
+        INFO_DELASSIGN (arg_info) = false;
+
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        INFO_DELASSIGN (arg_info) = olddelassign;
+
         INFO_H2D_LUT (arg_info) = LUTremoveLut (INFO_H2D_LUT (arg_info));
         INFO_D2H_LUT (arg_info) = LUTremoveLut (INFO_D2H_LUT (arg_info));
     }
