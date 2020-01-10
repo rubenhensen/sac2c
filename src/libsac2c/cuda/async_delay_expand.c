@@ -33,12 +33,14 @@ struct INFO {
     node *curassign;
     node *preassign;
     node *nextassign;
+    node *wnextassign;
     node *upassign;
     node *downassign;
     node *lhs;
     lut_t *h2d_lut;
     lut_t *d2h_lut;
     bool delassign;
+    bool inwith;
 };
 
 /**
@@ -47,12 +49,14 @@ struct INFO {
 #define INFO_CURASSIGN(n) ((n)->curassign)
 #define INFO_PREASSIGN(n) ((n)->preassign)
 #define INFO_NEXTASSIGN(n) ((n)->nextassign)
+#define INFO_W_NEXTASSIGN(n) ((n)->wnextassign)
 #define INFO_UPASSIGN(n) ((n)->upassign)
 #define INFO_DOWNASSIGN(n) ((n)->downassign)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_H2D_LUT(n) ((n)->h2d_lut)
 #define INFO_D2H_LUT(n) ((n)->d2h_lut)
 #define INFO_DELASSIGN(n) ((n)->delassign)
+#define INFO_IN_WITH(n) ((n)->inwith)
 
 /**
  * @name INFO functions
@@ -71,12 +75,14 @@ MakeInfo (void)
     INFO_CURASSIGN (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_NEXTASSIGN (result) = NULL;
+    INFO_W_NEXTASSIGN (result) = NULL;
     INFO_UPASSIGN (result) = NULL;
     INFO_DOWNASSIGN (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_H2D_LUT (result) = NULL;
     INFO_D2H_LUT (result) = NULL;
     INFO_DELASSIGN (result) = false;
+    INFO_IN_WITH (result) = false;
 
     DBUG_RETURN (result);
 }
@@ -290,8 +296,39 @@ CUADEid (node *arg_node, info *arg_info)
         DBUG_PRINT ("Adding N_assign of N_avis %s to LUT...", ID_NAME (arg_node));
         // We want to only ever use the last referenced point of N_avis, as such we
         // overwrite the mapping with the new N_assign.
-        INFO_D2H_LUT (arg_info) = LUTupdateLutP (INFO_D2H_LUT (arg_info), ID_AVIS (arg_node), INFO_NEXTASSIGN (arg_info), NULL);
+        // We have one *special* case, which is when we are in a N_with. Here we
+        // do not provide the next assign, but the next assign of the N_with.
+        INFO_D2H_LUT (arg_info) = LUTupdateLutP (INFO_D2H_LUT (arg_info),
+                                                 ID_AVIS (arg_node),
+                                                 INFO_IN_WITH (arg_info)
+                                                 ? INFO_W_NEXTASSIGN (arg_info)
+                                                 : INFO_NEXTASSIGN (arg_info),
+                                                 NULL);
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/**
+ *
+ * @param arg_node
+ * @param arg_info
+ * @return N_with
+ */
+node *
+CUADEwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+
+    INFO_IN_WITH (arg_info) = true;
+    INFO_W_NEXTASSIGN (arg_info) = INFO_NEXTASSIGN (arg_info);
+    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+    INFO_IN_WITH (arg_info) = false;
+    INFO_W_NEXTASSIGN (arg_info) = NULL;
+
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -308,6 +345,9 @@ CUADEprf (node *arg_node, info *arg_info)
     node *res;
 
     DBUG_ENTER ();
+
+    // we need to traverse through arguments here as well
+    PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
 
     switch (PRF_PRF (arg_node))
     {

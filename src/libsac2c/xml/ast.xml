@@ -343,6 +343,7 @@
           <node name="Fundef" />
           <node name="Assign" />
           <node name="Let" />
+          <node name="With" />
           <node name="Ids" />
           <node name="Id" />
           <node name="Prf" />
