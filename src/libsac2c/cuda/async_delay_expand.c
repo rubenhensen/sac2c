@@ -301,7 +301,7 @@ isAssignPrf (node *assign, prf prf_type)
 node *
 CUADEid (node *arg_node, info *arg_info)
 {
-    node *assign;
+    node *assign, *nassign;
 
     DBUG_ENTER ();
 
@@ -309,19 +309,26 @@ CUADEid (node *arg_node, info *arg_info)
     assign = AVIS_SSAASSIGN (ID_AVIS (arg_node));
 
     if (assign != NULL
-        && isAssignPrf (assign, F_device2host_end)
-        && assign != INFO_NEXTASSIGN (arg_info))
+        && isAssignPrf (assign, F_device2host_end))
     {
-        DBUG_PRINT ("Adding N_assign of N_avis %s to d2h LUT...", ID_NAME (arg_node));
+        if (assign != INFO_NEXTASSIGN (arg_info))
+        {
+            DBUG_PRINT ("...adding N_assign of N_avis to d2h LUT...");
+            nassign = INFO_IN_WITH (arg_info)
+                      ? INFO_W_NEXTASSIGN (arg_info)
+                      : INFO_NEXTASSIGN (arg_info);
+        } else {
+            DBUG_PRINT ("...assign is directly after d2h, nor performing propagation.");
+            nassign = NULL;
+        }
+
         // We want to only ever use the last referenced point of N_avis, as such we
         // overwrite the mapping with the new N_assign.
         // We have one *special* case, which is when we are in a N_with. Here we
         // do not provide the next assign, but the next assign of the N_with.
         INFO_D2H_LUT (arg_info) = LUTupdateLutP (INFO_D2H_LUT (arg_info),
                                                  ID_AVIS (arg_node),
-                                                 INFO_IN_WITH (arg_info)
-                                                 ? INFO_W_NEXTASSIGN (arg_info)
-                                                 : INFO_NEXTASSIGN (arg_info),
+                                                 nassign,
                                                  NULL);
     }
 
