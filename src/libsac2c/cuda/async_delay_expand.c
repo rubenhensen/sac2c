@@ -99,6 +99,8 @@ FreeInfo (info *info)
 /** @} */
 
 /**
+ * @brief we traverse the body of functions, we also store some state in case
+ *        we traverse by way of an N_ap.
  *
  * @param arg_node
  * @param arg_info
@@ -215,6 +217,7 @@ CUADEassign (node *arg_node, info *arg_info)
 }
 
 /**
+ * @brief we traverse both RHS and LHS, collecting the LHS
  *
  * @param arg_node
  * @param arg_info
@@ -326,6 +329,8 @@ CUADEid (node *arg_node, info *arg_info)
 }
 
 /**
+ * @brief we traverse withloop code block, creating a new info and passing the
+ *        next assign of the withloop.
  *
  * @param arg_node
  * @param arg_info
@@ -357,6 +362,7 @@ CUADEwith (node *arg_node, info *arg_info)
 }
 
 /**
+ * @brief traverse primitives h2d/d2h.
  *
  * @param arg_node
  * @param arg_info
@@ -376,7 +382,8 @@ CUADEprf (node *arg_node, info *arg_info)
     {
     case F_host2device_start:
         DBUG_PRINT ("Found h2d_start...");
-        /* In this instance we have found a H2D pair, and wish
+        /**
+         * In this instance we have found a H2D pair, and wish
          * to push the START as far up the current context as
          * possible. Our constraint is that we cannot move higher
          * then the assignment of the RHS. We do not need to move
@@ -433,7 +440,8 @@ CUADEprf (node *arg_node, info *arg_info)
 
     case F_device2host_end:
         DBUG_PRINT ("Found d2h_end...");
-        /* We want to push this down as far as possible, in order
+        /**
+         * We want to push this down as far as possible, in order
          * to ensure that we add sufficent delay. Are only constraint
          * is that we cannot pass the use of our LHS.
          *
