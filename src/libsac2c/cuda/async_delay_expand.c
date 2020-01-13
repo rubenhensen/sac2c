@@ -249,9 +249,11 @@ CUADEids (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Checking if N_avis %s is RHS of h2d...", IDS_NAME (arg_node));
     res = LUTsearchInLutPp (INFO_H2D_LUT (arg_info), IDS_AVIS (arg_node));
     if (res != IDS_AVIS (arg_node) && res != NULL)
     {
+        DBUG_PRINT ("...preparing to move h2d up...");
         INFO_UPASSIGN (arg_info) = res;
         INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info), IDS_AVIS (arg_node), NULL, NULL);
     }
@@ -307,7 +309,7 @@ CUADEid (node *arg_node, info *arg_info)
         && isAssignPrf (assign, F_device2host_end)
         && assign != INFO_NEXTASSIGN (arg_info))
     {
-        DBUG_PRINT ("Adding N_assign of N_avis %s to LUT...", ID_NAME (arg_node));
+        DBUG_PRINT ("Adding N_assign of N_avis %s to d2h LUT...", ID_NAME (arg_node));
         // We want to only ever use the last referenced point of N_avis, as such we
         // overwrite the mapping with the new N_assign.
         // We have one *special* case, which is when we are in a N_with. Here we
@@ -332,15 +334,22 @@ CUADEid (node *arg_node, info *arg_info)
 node *
 CUADEwith (node *arg_node, info *arg_info)
 {
+    info *wlinfo;
+
     DBUG_ENTER ();
 
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
-    INFO_IN_WITH (arg_info) = true;
-    INFO_W_NEXTASSIGN (arg_info) = INFO_NEXTASSIGN (arg_info);
-    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
-    INFO_IN_WITH (arg_info) = false;
-    INFO_W_NEXTASSIGN (arg_info) = NULL;
+    // we need to create a new info as we do not want to propogate
+    // any other state then NEXTASSIGN.
+    wlinfo = MakeInfo ();
+    INFO_IN_WITH (wlinfo) = true;
+    INFO_W_NEXTASSIGN (wlinfo) = INFO_NEXTASSIGN (arg_info);
+
+    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), wlinfo);
+
+    // we don't care for any values here, so we free.
+    wlinfo = FreeInfo (wlinfo);
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
@@ -417,6 +426,7 @@ CUADEprf (node *arg_node, info *arg_info)
          * is pushing START to before assignment OK?
          */
 
+        DBUG_PRINT ("Adding N_assign of N_avis %s to h2d LUT...", ID_NAME (PRF_ARG1 (arg_node)));
         INFO_H2D_LUT (arg_info) = LUTinsertIntoLutP (INFO_H2D_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)), INFO_CURASSIGN (arg_info));
         INFO_DELASSIGN (arg_info) = true;
         break;
