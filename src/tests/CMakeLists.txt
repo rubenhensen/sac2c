@@ -89,3 +89,6 @@ ADD_FUNC_TEST (test-traverse-optcounter test-traverse-optcounter.cpp)
 IF (${ENABLE_HWLOC})
     ADD_RUNTIME_FUNC_TEST (test-hwloc-runtime test-hwloc-runtime.cpp "seq" "hwloc")
 ENDIF ()
+
+# CUDA related tests
+ADD_FUNC_TEST (test-cuda-utils test-cuda-utils.cpp)
