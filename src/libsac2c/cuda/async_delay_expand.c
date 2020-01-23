@@ -309,7 +309,8 @@ CUADEid (node *arg_node, info *arg_info)
     assign = AVIS_SSAASSIGN (ID_AVIS (arg_node));
 
     if (assign != NULL
-        && isAssignPrf (assign, F_device2host_end))
+        && (isAssignPrf (assign, F_device2host_end)
+            || isAssignPrf (assign, F_prefetch2host)))
     {
         if (assign != INFO_NEXTASSIGN (arg_info))
         {
@@ -385,8 +386,12 @@ CUADEprf (node *arg_node, info *arg_info)
     // we need to traverse through arguments here as well
     PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
 
-    switch (PRF_PRF (arg_node))
-    {
+    switch (PRF_PRF (arg_node)) {
+    case F_prefetch2device:
+        /**
+         * We can handle the prefetch operations from CUDA managed memory
+         * (@see cumm).
+         */
     case F_host2device_start:
         DBUG_PRINT ("Found h2d_start...");
         /**
@@ -445,6 +450,12 @@ CUADEprf (node *arg_node, info *arg_info)
         INFO_DELASSIGN (arg_info) = true;
         break;
 
+    case F_prefetch2host:
+        /**
+         * We can handle the prefetch operations from CUDA managed memory
+         * (@see cumm). Additionally we extend CUMMid to support looking for
+         * this primitive.
+         */
     case F_device2host_end:
         DBUG_PRINT ("Found d2h_end...");
         /**
