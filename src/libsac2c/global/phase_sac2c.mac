@@ -1087,7 +1087,7 @@ SUBPHASE( wlds,
           ( global.backend == BE_cuda || global.backend == BE_cudahybrid),
           cuda)
 */
-SUBPHASE (cumm, "Unify memory model for CUDA managed memory", CUMMdoManagedMemory,
+SUBPHASE (cumm, "Unify host and device memory when using CUDA managed memory", CUMMdoManagedMemory,
           global.optimize.documm
 		  && (STReq (global.config.cuda_alloc, "cuman")
 		      || STReq (global.config.cuda_alloc, "cumanp")), cuda)

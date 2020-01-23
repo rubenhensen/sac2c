@@ -2,17 +2,51 @@
  * @file
  * @defgroup cumm
  *
- * @brief Unify host and device memory models for CUDA managed memory mechanism.
+ * @brief Remove device types throughout for CUDA managed memory mechanism.
  *
- * The memory models of the host system and a CUDA device are different, and the
- * SaC compiler deals with this through types. In this way, appropriate code is
- * generated, using ICMs associated for a particular memory model. When using CUDA
- * managed memory, this distinction in the memory model is no longer relevent.
+ * When using CUDA managed memory, we implicitly make use of UVA (universal virtual
+ * address space) provided by CUDA driver which makes all declared variables available
+ * in any context (host or device). Through manage memory, any transfers are demand drive,
+ * and occur implicitly without any explicit memcpy calls. The SaC CUDA backend normally
+ * assumes that the host and device context are distinct when it comes to variables. As
+ * such for most host types there are equivalent device types. When using managed memory,
+ * this distinction is no longer necessary (and can actually lead to complications).
  *
  * This phase removes all device types, and replaces them with their equivalent host
- * type. Additionally it removes all explicit memcpy operations (host2device and
- * device2host) as managed memory does not need to use these. Instead we replace these
- * with assignments, which should lead to aliasing of arrays.
+ * type. Additionally it replaces all explicit transfers (host2device and
+ * device2host) with assignments, as managed memory does not need to use these. This
+ * should lead to aliasing of arrays.
+ *
+ * Furthermore, if prefetching is activated (for the 'cumanp' allocation mode), then
+ * this traversal places prefhost2device, etc. in place of host2device primitives).
+ *
+ * Concretely, given some CUDA program with device types:
+ *
+ * ~~~
+ * int[100] k;
+ * int_dev a_dev;
+ * int_dev[100] b_dev;
+ *
+ * ... // allocation/genarray/etc.
+ *
+ * b_dev = h2d (k);
+ *
+ * ...
+ * ~~~
+ *
+ * becomes
+ *
+ * ~~~
+ * int[100] k;
+ * int a_dev;
+ * int[100] b_dev;
+ *
+ * ... // allocation/genarray/etc.
+ *
+ * b = k;
+ *
+ * ...
+ * ~~~
  *
  * @ingroup cuda
  *
@@ -38,18 +72,23 @@
 #include "DupTree.h"
 
 /**
+ * Typedefs
+ */
+typedef enum { CUMM_host, CUMM_device, CUMM_unknown } cumm_transfer_e;
+
+/**
  * INFO structure
  */
 struct INFO {
     node *expr;
-    bool device; /*<< false == Host, true == Device */
+    cumm_transfer_e dst; /*<< indicates the destination of the transfer */
 };
 
 /**
  * INFO macros
  */
 #define INFO_EXPR(n) ((n)->expr)
-#define INFO_DEVICE(n) ((n)->device)
+#define INFO_DST(n) ((n)->dst)
 
 /**
  * @name INFO functions
@@ -66,7 +105,7 @@ MakeInfo (void)
     result = (info *)MEMmalloc (sizeof (info));
 
     INFO_EXPR (result) = NULL;
-    INFO_DEVICE (result) = false;
+    INFO_DST (result) = CUMM_unknown;
 
     DBUG_RETURN (result);
 }
@@ -83,60 +122,25 @@ FreeInfo (info *info)
 /** @} */
 
 /**
- * translates device type (from simpletype) to host type
- *
- * @param type The new type that *is* a device type
- * @return an updated instances of type
- */
-static ntype *
-devtype2hosttype (ntype *type)
-{
-    ntype *scl_type;
-    simpletype simp;
-
-    DBUG_ENTER ();
-
-    scl_type = TYgetScalar (type);
-    simp = CUd2hSimpleTypeConversion (TYgetSimpleType (scl_type));
-    scl_type = TYsetSimpleType (scl_type, simp);
-
-    DBUG_RETURN (type);
-}
-
-/**
  *
  */
 node *
-CUMMid (node *arg_node, info *arg_info)
+CUMMavis (node *arg_node, info *arg_info)
 {
-    ntype *id_type;
+    ntype *avis_type, *new_type;
 
     DBUG_ENTER ();
 
-    id_type = ID_NTYPE (arg_node);
+    avis_type = AVIS_TYPE (arg_node);
 
-    if (CUisDeviceTypeNew (id_type))
-        ID_NTYPE (arg_node) = devtype2hosttype (id_type);
-
-    DBUG_RETURN (arg_node);
-}
-
-/**
- *
- */
-node *
-CUMMids (node *arg_node, info *arg_info)
-{
-    ntype *ids_type;
-
-    DBUG_ENTER ();
-
-    ids_type = IDS_NTYPE (arg_node);
-
-    if (CUisDeviceTypeNew (ids_type))
-        IDS_NTYPE (arg_node) = devtype2hosttype (ids_type);
-
-    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
+    if (CUisDeviceTypeNew (avis_type)) {
+        DBUG_PRINT ("Found N_avis with device type, convert to host type: %s",
+                    AVIS_NAME (arg_node));
+        new_type = CUconvertDeviceToHostType (avis_type);
+        /* we need to free the old type */
+        avis_type = TYfreeType (avis_type);
+        AVIS_TYPE (arg_node) = new_type;
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -154,26 +158,19 @@ CUMMlet (node *arg_node, info *arg_info)
     LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    if (INFO_EXPR (arg_info) != NULL)
-    {
+    if (INFO_EXPR (arg_info) != NULL) {
         /* change current let to be a simple assignment */
         expr = DUPdoDupTree (INFO_EXPR (arg_info));
         INFO_EXPR (arg_info) = NULL;
         LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
         LET_EXPR (arg_node) = expr;
 
-        if (STReq (global.config.cuda_alloc, "cumanp"))
-        {
-            if (global.cuda_arch < CUDA_SM60)
-            {
-                CTIwarn ("Compiling for CC < 6.0 (Pascal), CUDA prefetching disabled.");
-            } else {
-                /* create prefetch prf */
-                LET_EXPR (arg_node) = TCmakePrf1 (INFO_DEVICE (arg_info)
-                                                  ? F_prefetch2device
-                                                  : F_prefetch2host,
-                                                  expr);
-            }
+        if (STReq (global.config.cuda_alloc, "cumanp") && global.optimize.docuprf) {
+            DBUG_PRINT ("Adding CUDA prefetch call...");
+            LET_EXPR (arg_node) = TCmakePrf1 (INFO_DST (arg_info) == CUMM_device
+                                              ? F_prefetch2device
+                                              : F_prefetch2host,
+                                              expr);
         }
     }
 
@@ -188,11 +185,11 @@ CUMMprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    INFO_DEVICE (arg_info) = true; // GPU
+    INFO_DST (arg_info) = CUMM_device;
 
     switch (PRF_PRF (arg_node)) {
     case F_device2host:
-        INFO_DEVICE (arg_info) = false; // CPU
+        INFO_DST (arg_info) = CUMM_host;
         /* fall-through */
     case F_host2device:
         INFO_EXPR (arg_info) = PRF_ARG1 (arg_node);

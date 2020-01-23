@@ -324,8 +324,7 @@
       </traversal>
       <traversal id="CUMM" name="Unify memory model for CUDA managed memory" default="sons" include="managed_memory.h" >
         <travuser>
-          <node name="Id" />
-          <node name="Ids" />
+          <node name="Avis" />
           <node name="Let" />
           <node name="Prf" />
         </travuser>

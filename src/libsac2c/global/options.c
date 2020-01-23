@@ -396,6 +396,11 @@ OPTcheckOptionConsistency (void)
         CTIerror ("Functional Parallelism only works when MT is enabled");
     }
 
+    if (STReq (global.config.cuda_alloc, "cumanp") && global.cuda_arch < CUDA_SM60) {
+        CTIwarn ("Compiling for CC < 6.0 (Pascal), CUDA prefetching is not available. Disabling...");
+       global.optimize.docuprf = FALSE;
+    }
+
     if (global.cuda_block_spec[0] != '\0') {
         unsigned count, i;
         for (i = 0, count = 0; global.cuda_block_spec[i]; i++)
