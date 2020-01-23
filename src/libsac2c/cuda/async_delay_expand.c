@@ -2,8 +2,20 @@
  * @file
  * @defgroup cuade
  *
- * @brief
+ * @brief Given CUDA *_start and *_end primitives introduced in CUAD, move these such that
+ *        we create a synchronisation window, wherein we push h2d_start up and d2h_end
+ *        down.
  *
+ * @note Rewriting this traversal more generically could be useful, as the principle
+ *       operation here is readily applicable to various node types, not just N_prf. Being
+ *       able to move up a given node, with the only constrain being that it does not
+ *       occur before the assignment of its arguments, would be good.
+ *
+ * FIXME the way this traversal is written is, um, painfully complex. In particular our
+ *       bottom-up traversing makes for some interesting constructions. It would be nice
+ *       to simplify this, but given that there was the intention of having *one* sweep
+ *       to do everything, this is the result. We might be able to use a few anonymous
+ *       traversals to do this instead...
  *
  * @ingroup cuda
  *
