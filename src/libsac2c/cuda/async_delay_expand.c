@@ -366,11 +366,14 @@ CUADEwith (node *arg_node, info *arg_info)
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
     // we need to create a new info as we do not want to propogate
-    // any other state then NEXTASSIGN.
+    // any other state then NEXTASSIGN and the LUTs.
     wlinfo = MakeInfo ();
     INFO_IN_WITH (wlinfo) = true;
     INFO_W_NEXTASSIGN (wlinfo) = INFO_NEXTASSIGN (arg_info);
+    INFO_H2D_LUT (wlinfo) = INFO_H2D_LUT (arg_info);
+    INFO_D2H_LUT (wlinfo) = INFO_D2H_LUT (arg_info);
 
+    DBUG_PRINT ("Entering N_code of N_with...");
     WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), wlinfo);
 
     // we don't care for any values here, so we free.
