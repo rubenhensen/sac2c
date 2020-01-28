@@ -385,6 +385,44 @@ CUADEwith (node *arg_node, info *arg_info)
 }
 
 /**
+ * @brief traverse conditional
+ *
+ * @param arg_node
+ * @param arg_info
+ * @return N_cond
+ */
+node *
+CUADEcond (node *arg_node, info *arg_info)
+{
+    info *condinfo;
+
+    DBUG_ENTER ();
+
+    condinfo = MakeInfo ();
+    INFO_H2D_LUT (condinfo) = LUTgenerateLut ();
+    INFO_D2H_LUT (condinfo) = LUTgenerateLut ();
+
+    COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), condinfo);
+
+    // reset the info object
+    INFO_DELASSIGN (condinfo) = false;
+    INFO_PREASSIGN (condinfo) = NULL;
+    INFO_NEXTASSIGN (condinfo) = NULL;
+    INFO_CURASSIGN (condinfo) = NULL;
+    INFO_H2D_LUT (condinfo) = LUTremoveContentLut (INFO_H2D_LUT (condinfo));
+    INFO_D2H_LUT (condinfo) = LUTremoveContentLut (INFO_D2H_LUT (condinfo));
+
+    COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), condinfo);
+
+    // free the info and LUTs
+    INFO_H2D_LUT (condinfo) = LUTremoveLut (INFO_H2D_LUT (condinfo));
+    INFO_D2H_LUT (condinfo) = LUTremoveLut (INFO_D2H_LUT (condinfo));
+    condinfo = FreeInfo (condinfo);
+
+    DBUG_RETURN (arg_node);
+}
+
+/**
  * @brief traverse primitives h2d/d2h.
  *
  * @param arg_node
