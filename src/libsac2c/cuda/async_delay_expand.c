@@ -194,6 +194,8 @@ CUADEassign (node *arg_node, info *arg_info)
      */
     if (INFO_DELASSIGN (arg_info))
     {
+        DBUG_PRINT ("Deleting current N_assign...");
+        DBUG_EXECUTE (PRTdoPrintNode (INFO_CURASSIGN (arg_info)););
         ASSIGN_NEXT (arg_node) = ASSIGN_NEXT (INFO_PREASSIGN (arg_info));
         INFO_PREASSIGN (arg_info) = ASSIGN_NEXT (arg_node);
         INFO_DELASSIGN (arg_info) = false;
@@ -387,6 +389,10 @@ CUADEwith (node *arg_node, info *arg_info)
 /**
  * @brief traverse conditional
  *
+ * FIXME as this is currently written, we may run into problems if there are any
+ * h2d/d2h preceding/after the conditional --- this however is not likely as its
+ * within a seperate conditional function.
+ *
  * @param arg_node
  * @param arg_info
  * @return N_cond
@@ -548,8 +554,12 @@ CUADEprf (node *arg_node, info *arg_info)
         DBUG_PRINT ("Searching for %s LHS of D2H_end...", IDS_NAME (INFO_LHS (arg_info)));
         res = LUTsearchInLutPp (INFO_D2H_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
 
-        if (res != IDS_AVIS (INFO_LHS (arg_info)) && res != NULL)
+        // we must no match with the current assignment
+        if (res != IDS_AVIS (INFO_LHS (arg_info))
+            && res != INFO_CURASSIGN (arg_info)
+            && res != NULL)
         {
+            DBUG_PRINT ("...found matching");
             INFO_D2H_LUT (arg_info) = LUTupdateLutP (INFO_D2H_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)), NULL, NULL);
             DBUG_EXECUTE (PRTdoPrintNode (res););
             INFO_DOWNASSIGN (arg_info) = res;
