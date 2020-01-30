@@ -98,13 +98,13 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #define SAC_PF_DEFINE_EXTMOD()                                                           \
     SAC_C_EXTERN SAC_PF_TIMER ***SAC_PF_timer;                                           \
     SAC_C_EXTERN int **SAC_PF_cycle_tag;                                                 \
-    SAC_C_EXTERN char **SAC_PF_fun_name;                                                 \
+    SAC_C_EXTERN const char **SAC_PF_fun_name;                                           \
     SAC_C_EXTERN int *SAC_PF_maxfunap;                                                   \
     SAC_C_EXTERN size_t **SAC_PF_funapline;                                              \
     SAC_C_EXTERN int **SAC_PF_parentfunno;                                               \
                                                                                          \
     SAC_PF_MEM_DEFINE_EXTMOD()                                                           \
-    SAC_PF_OPS_DEFINE_EXTMOD() 
+    SAC_PF_OPS_DEFINE_EXTMOD()
 
 /***
  * external declarations for the main program.
@@ -114,7 +114,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     SAC_C_EXTERN SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP]             \
                              [SAC_PF_NUM_RECORD_TYPES];                                  \
     SAC_C_EXTERN int SAC_PF_cycle_tag[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                 \
-    SAC_C_EXTERN char *SAC_PF_fun_name[SAC_SET_MAXFUN];                                  \
+    SAC_C_EXTERN const char *SAC_PF_fun_name[SAC_SET_MAXFUN];                            \
     SAC_C_EXTERN int SAC_PF_maxfunap[SAC_SET_MAXFUN];                                    \
     SAC_C_EXTERN size_t SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];              \
     SAC_C_EXTERN int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];               \
@@ -143,7 +143,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     SAC_PF_OPS_DEFINE_LOC()                                                              \
     SAC_PF_DISTMEM_DEFINE_LOC()                                                          \
                                                                                          \
-    char *SAC_PF_fun_name[SAC_SET_MAXFUN] = SAC_SET_FUN_NAMES;                           \
+    const char *SAC_PF_fun_name[SAC_SET_MAXFUN] = SAC_SET_FUN_NAMES;                     \
     int SAC_PF_maxfunap[SAC_SET_MAXFUN] = SAC_SET_FUN_APPS;                              \
     size_t SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_AP_LINES;    \
     int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_PARENTS;      \
@@ -305,7 +305,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
                 if (SAC_PF_DISPLAY_FUN) {                                                \
                     for (k = 0; k < SAC_SET_MAXFUN; k += (k == (i - 1) ? 2 : 1)) {       \
                         for (j = 0; j < SAC_PF_maxfunap[k]; j++) {                       \
-                            if (SAC_PF_parentfunno[k][j] == i) {                         \
+                            if (SAC_PF_parentfunno[k][j] == (size_t)i) {                 \
                                 SAC_PF_TIMER sub_total;                                  \
                                 SAC_PF_INIT_TIMER (sub_total);                           \
                                 SAC_PF_PrintSubHeader (SAC_PF_fun_name[k],               \
