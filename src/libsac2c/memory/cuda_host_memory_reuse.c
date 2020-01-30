@@ -1,9 +1,40 @@
 /**
  * @file
  * @defgroup chmr
+ *
+ * @brief replace host memory alloc with alloc_or_reuse for CUDA h2d/d2h pair
+ *
+ * Given some code where we have a sequence of h2d, kernel, and d2h, we try to
+ * reuse the host memory that is typically freed directly after a h2d.
+ *
+ * Given this example:
+ *
+ * ~~~
+ * a_dev = alloc ()
+ * a_dev = h2d (a)
+ * free (a)
+ * ...
+ * kernel (a_dev)
+ * ...
+ * b = alloc ()
+ * b = d2h (a_dev)
+ * free (a_dev)
+ * ~~~
+ *
+ * We try to reuse the host memory such that we have:
+ *
+ * ~~~
+ * a_dev = alloc ()
+ * a_dev = h2d (a)
+ * ...
+ * kernel (a_dev)
+ * ...
+ * b = alloc_or_reuse (..., a)
+ * b = d2h (a_dev)
+ * free (a_dev)
+ * ~~~
+ *
  * @ingroup mm
- *
- *
  * @{
  */
 #include "cuda_host_memory_reuse.h"
@@ -27,8 +58,8 @@
  * INFO structure
  */
 struct INFO {
-    node *prfalloc;
-    node *fillmem;
+    node *prfalloc; /**< N_prf F_alloc that precedes a h2d/d2h */
+    node *fillmem; /**< the second argument of F_fill, which is the memory that is being filled */
     /* data masks */
     dfmask_t *h2d_avis; /**< avis found from h2d */
 };
@@ -141,6 +172,7 @@ CHMRprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
+    case F_host2device_start:
     case F_host2device:
         /* capture host memory avis */
         DBUG_PRINT ("adding avis at h2d to mask");
@@ -152,6 +184,7 @@ CHMRprf (node *arg_node, info *arg_info)
         INFO_PRFALLOC (arg_info) = arg_node;
         break;
 
+    case F_device2host_end:
     case F_device2host:
         /* check if decrc_avis contains avis that matches shape (dim?)
          * of host memory avis. If so, replace alloc with alloc_or_reuse
