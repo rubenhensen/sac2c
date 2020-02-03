@@ -859,6 +859,18 @@ ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype, char *d
                               "should have equal sizes!"));
 
     INDENT;
+    if (STReq (global.config.cuda_alloc, "cureg")) {
+        fprintf (global.outfile, "SAC_ND_CUDA_PIN(");
+        if (STReq (direction, "cudaMemcpyHostToDevice")) {
+            fprintf (global.outfile, "%s, ", from_NT);
+        } else if (STReq (direction, "cudaMemcpyDeviceToHost")) {
+            fprintf (global.outfile, "%s, ", to_NT);
+        } else {
+            CTIerrorInternal ("CUDA transfer direction is not supported: `%s`!", direction);
+        }
+        fprintf (global.outfile, "%s);", basetype);
+    }
+
     fprintf (global.outfile,
              "SAC_TR_GPU_PRINT (\"%s size %%d %s -> %s\\n\", SAC_ND_A_SIZE( %s));",
              direction, from_NT, to_NT, from_NT);
