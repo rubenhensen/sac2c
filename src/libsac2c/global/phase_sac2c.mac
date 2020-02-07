@@ -988,8 +988,14 @@ SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls, global.d
 
 ADDPREFUN (TR_prt, EMRCIprintPreFun)
 
-SUBPHASE (emr, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInference,
+SUBPHASE (emrci, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInference,
           global.optimize.doemrci, opt)
+
+SUBPHASE (emrcf, "Filter extended WL reuse candidates", FRCdoFilterReuseCandidatesNoPrf,
+          global.optimize.doemrci && global.optimize.doemrcf, opt)
+
+SUBPHASE (emrl, "Lift allocations of WL using extended reuse candidates", EMRLdoExtendLoopMemoryPropagation,
+          global.optimize.doemrci && global.optimize.doemrl, opt)
 
 SUBPHASE (ts, "Displaying type specialisation statistics", TSdoPrintTypeStatistics,
           global.feedback.type, opt)

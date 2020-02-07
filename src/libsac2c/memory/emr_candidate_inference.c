@@ -144,7 +144,9 @@ EMRCIprintPreFun (node *arg_node, info *arg_info)
         if (GENARRAY_ERC (arg_node)) {
             INDENT;
             fprintf (global.outfile, "/* ERC (");
-            GENARRAY_ERC (arg_node) = PRTexprs (GENARRAY_ERC (arg_node), arg_info);
+            if (GENARRAY_ERC (arg_node) != NULL) {
+                GENARRAY_ERC (arg_node) = PRTexprs (GENARRAY_ERC (arg_node), arg_info);
+            }
             fprintf (global.outfile, ") */\n");
         }
         break;
@@ -152,7 +154,9 @@ EMRCIprintPreFun (node *arg_node, info *arg_info)
         if (MODARRAY_ERC (arg_node)) {
             INDENT;
             fprintf (global.outfile, "/* ERC (");
-            MODARRAY_ERC (arg_node) = PRTexprs (MODARRAY_ERC (arg_node), arg_info);
+            if (MODARRAY_ERC (arg_node) != NULL) {
+                MODARRAY_ERC (arg_node) = PRTexprs (MODARRAY_ERC (arg_node), arg_info);
+            }
             fprintf (global.outfile, ") */\n");
         }
         break;
@@ -186,26 +190,6 @@ EMRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
-
-    if (global.optimize.doemrcf) {
-        /*
-         * EMR Loop Application Arg Filtering
-         *
-         * This optimisation does three things: (1) it removes WL ERCs that share the same
-         * N_avis in the rec-loop argument list, (2) filters out ERCs that are already RCs
-         * (as it is not possible to use an existing RC later on, there is no point in
-         * keeping these as ERCs. This opens further opportunities for lifting allocations
-         * out of loops. Finally, (3) we filter out invalid RCs (calls FRC (Filter Reuse
-         * Candidates) traversal (in mode 2) which filters away _invalid_ *RC candidates.
-         * This last part is especially important as otherwise cases where EMRL (EMR Loop
-         * Memory Propagation) could be applied might get missed.
-         */
-        syntax_tree = FRCdoFilterReuseCandidatesNoPrf (syntax_tree);
-    }
-
-    if (global.optimize.doemrl) {
-        syntax_tree = EMRLdoExtendLoopMemoryPropagation (syntax_tree);
-    }
 
     DBUG_RETURN (syntax_tree);
 }

@@ -20,6 +20,16 @@
  * N_modarray, we simply filter out all those reuse candidates whose data
  * flow masks are being set!
  *
+ * Extra:
+ * This optimisation does three things: (1) it removes WL ERCs that share the same
+ * N_avis in the rec-loop argument list, (2) filters out ERCs that are already RCs
+ * (as it is not possible to use an existing RC later on, there is no point in
+ * keeping these as ERCs. This opens further opportunities for lifting allocations
+ * out of loops. Finally, (3) we filter out invalid RCs (calls FRC (Filter Reuse
+ * Candidates) traversal (in mode 2) which filters away _invalid_ *RC candidates.
+ * This last part is especially important as otherwise cases where EMRL (EMR Loop
+ * Memory Propagation) could be applied might get missed.
+ *
  * @{
  *
  */
