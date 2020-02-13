@@ -26,6 +26,31 @@
 hwloc_topo_data_t *SAC_HWLOC_topo_data;
 
 /**
+ * @brief Check that we are using the same major version of HWLOC as we used
+ *        to compile the runtime libraries. Issue an error if this is not the
+ *        case.
+ *
+ * In practice we should never reach this point as system-level installs of HWLOC will
+ * indicate to ldconfig/ldd their version, meaning that at runtime, as we lookup functions from
+ * shared libraries, the linker should error out with the wrong version.
+ *
+ * We use the function for the case where a user chooses to locally install hwloc, and then use
+ * LD_LIBRARY_PATH (or even LD_PRELOAD) to point to this shared library.
+ */
+static void
+hwloc_check_version (void)
+{
+    unsigned version = hwloc_get_api_version();
+
+    if ((version >> 16) != (HWLOC_API_VERSION >> 16)) {
+        SAC_RuntimeError ("SaC compiled for hwloc API 0x%x but running on library API 0x%x. "
+                          "You may need to point LD_LIBRARY_PATH to the right hwloc library. "
+                          "Aborting since the new ABI is not backward compatible.",
+                          HWLOC_API_VERSION, version);
+    }
+}
+
+/**
  * Print out a topological tree of the system using HWLOC-derived information
  *
  * @param obj HWLOC system information structure
@@ -236,12 +261,22 @@ SAC_HWLOC_init ()
     hwloc_obj_type_t socket_obj; // FIXME(hans) What the hell is this for?
 
     /*
-     * First we grab the host's topology and store it in the global variable:
+     * Check that we are using the same version of HWLOC as we compiled with.
+     */
+    hwloc_check_version ();
+
+    /*
+     * Next we grab the host's topology and store it in the global variable:
      */
     hwloc_topology_init (&SAC_HWLOC_topology);
+#if HWLOC_API_VERSION < 0x00020000
     hwloc_topology_set_flags (SAC_HWLOC_topology,
                               HWLOC_TOPOLOGY_FLAG_IO_DEVICES); // include access to IO
                                                                // devices
+#else
+    hwloc_topology_set_io_types_filter (SAC_HWLOC_topology,
+                                        HWLOC_TYPE_FILTER_KEEP_ALL);
+#endif
     hwloc_topology_load (SAC_HWLOC_topology);
 
     /*

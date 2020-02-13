@@ -9,6 +9,7 @@
 
 extern "C" {
 #include "libsac/hwloc/cpubind.h"
+#include "libsac/hwloc/cudabind.h"
 }
 
 TEST (HWLOCRuntime, HWLOCPrintStr)
@@ -33,8 +34,10 @@ TEST (HWLOCRuntime, HWLOCPrintStr)
 
 #if HWLOC_API_VERSION < 0x00010b00
     ASSERT_STREQ (test_string, "Core #0 in Socket #0");
-#else
+#elif HWLOC_API_VERSION < 0x00020000
     ASSERT_STREQ (test_string, "Core #0 in Package #0");
+#else
+    ASSERT_STREQ (test_string, "Core #0 in NUMANode #0");
 #endif
 
     hwloc_topology_destroy (SAC_HWLOC_topology);
@@ -98,6 +101,29 @@ TEST (HWLOCRuntime, HWLOCInitAndCleanUp)
     ASSERT_FALSE (SAC_HWLOC_cpu_sets);
     ASSERT_FALSE (SAC_HWLOC_topo_data);
 }
+
+#if ENABLE_CUDA && 0
+/* this is disabled at the moment as most systems that aren't servers *do not* associated
+ * more than 1 numa node with the PCI bus. We detect this within the SAC_CUDA_HWLOC initialisation
+ * call, and error out if this is the case. Doing a unit test thus would not be practical unless
+ * we changed the implementation of the init function such that it doesn't error out immediately.
+ */
+TEST (HWLOCRuntime, CUDAHWLOCInitAndCleanUp)
+{
+    char cuda_hwloc_status[1024];
+
+    // we assume ordinal 0
+    SAC_CUDA_HWLOC_init (0, cuda_hwloc_status, sizeof (cuda_hwloc_status));
+
+    // should be allocated and set
+    ASSERT_TRUE (SAC_HWLOC_topology);
+
+    SAC_HWLOC_cleanup ();
+
+    // should have been freed (be NULL)
+    ASSERT_FALSE (SAC_HWLOC_topology);
+}
+#endif /* ENABLE_CUDA */
 
 #else /* ENABLE_HWLOC */
 
