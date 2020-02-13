@@ -483,7 +483,7 @@ LUBtreeLCAfromNodes (node *n1, node *n2, compinfo *ci)
 
         if (upperid / blocksize > lowerid / blocksize + 1) {
             //FIXME (grzegorz) There is integer log function so have to cast for now
-            jump = (int)floor (log2 (upperid / blocksize - lowerid / blocksize - 2));
+            jump = (int)+floor (log2 (upperid / blocksize - lowerid / blocksize - 2));
 
             base = lowerid / blocksize + 1;
             e = DYNARRAY_ELEMS_POS (blockmin, getMatrixValue (intermat, base, jump));
