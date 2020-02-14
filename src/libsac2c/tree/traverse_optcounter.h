@@ -91,7 +91,8 @@
  *            fixed-point
  */
 #define TOC_COMPARE_RANGE(start, end, out)                      \
-    for (size_t toc_i = start, out = true;                      \
+    out = true;                                                 \
+    for (size_t toc_i = start;                                  \
          (toc_i < end) && (toc_i < toc_optcount_size);          \
          toc_i++) {                                             \
         out = out && toc_store[toc_i] == toc_store_old[toc_i];  \
