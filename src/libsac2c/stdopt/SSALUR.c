@@ -1107,7 +1107,7 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
 
         if (Newton (ivs, loop_pred, term - cst_value, 0, tol, max_iter, &res)
             && res > 0) {
-            loopc_t iter_count = (loopc_t)+floor (res) + 1;
+            loopc_t iter_count = (loopc_t) + floor (res) + 1;
             loopc_t res_val = 0;
 
             /* Numerical methods are great of course, but we have to check
