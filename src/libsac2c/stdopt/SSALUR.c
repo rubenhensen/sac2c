@@ -1095,7 +1095,7 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
                 if (loop_pred == F_le_SxS) {
                     double res = log ((double)(ivtmp->init_value / t))
                                  / log ((double)(ivtmp->mfunc.a));
-                    DBUG_RETURN (res > 0 ? (loopc_t)+floor (res) + 1 : 1);
+                    DBUG_RETURN (res > 0 ? (loopc_t) + floor (res) + 1 : 1);
                 } else if (loop_pred == F_ge_SxS)
                     DBUG_RETURN (ivtmp->init_value / ivtmp->mfunc.a < t ? 1 : UNR_NONE);
             }
