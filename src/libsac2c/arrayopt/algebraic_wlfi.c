@@ -454,7 +454,7 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
     ;
     pattern *pat;
     size_t tcindex = 0;
-    bool isIdsMember;
+    bool isIdsMember = false;
     node *id;
 
     DBUG_ENTER ();

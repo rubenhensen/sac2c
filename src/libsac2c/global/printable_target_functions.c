@@ -125,8 +125,6 @@ AddSingleTarget (printable_target *list1, printable_target *list2)
         return list2;
 
     }
-
-    return list2;
 }
 
 /**

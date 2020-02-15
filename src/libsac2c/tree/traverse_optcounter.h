@@ -71,10 +71,9 @@
  */
 #define TOC_SETUP(num, ...)                                                             \
     enum toc_optcounter_labels { TOC_IGNORE, __VA_ARGS__ };                             \
-    __attribute__((unused)) const size_t toc_optcount_size = num+1;                     \
+    const size_t toc_optcount_size = num+1;                                             \
     size_t toc_store[num+1] = {0};                                                      \
-    size_t toc_store_old[num+1] = {0};                                                  \
-    __attribute__((unused)) size_t toc_i;
+    size_t toc_store_old[num+1] = {0};
 
 /**
  * @brief Compare current counter state with previous counter state over a
@@ -91,10 +90,13 @@
  * @param out Variable used to store boolean result: if _true_, we've reached a
  *            fixed-point
  */
-#define TOC_COMPARE_RANGE(start, end, out)                                              \
-    for (toc_i = start, out = true; toc_i < end; toc_i++) {                             \
-        out = out && toc_store[toc_i] == toc_store_old[toc_i];                          \
-        toc_store_old[toc_i] = toc_store[toc_i];                                        \
+#define TOC_COMPARE_RANGE(start, end, out)                      \
+    out = true;                                                 \
+    for (size_t toc_i = start;                                  \
+         (toc_i < end) && (toc_i < toc_optcount_size);          \
+         toc_i++) {                                             \
+        out = out && toc_store[toc_i] == toc_store_old[toc_i];  \
+        toc_store_old[toc_i] = toc_store[toc_i];                \
     }
 
 /**
@@ -128,7 +130,7 @@
  * @brief Reset all counters to default value (zero)
  */
 #define TOC_RESETCOUNTERS()                                                             \
-    for (toc_i = 0; toc_i < toc_optcount_size; toc_i++) {                               \
+    for (size_t toc_i = 0; toc_i < toc_optcount_size; toc_i++) {                        \
         toc_store[toc_i] = 0;                                                           \
         toc_store_old[toc_i] = 0;                                                       \
     }
