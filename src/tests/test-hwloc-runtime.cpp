@@ -102,18 +102,19 @@ TEST (HWLOCRuntime, HWLOCInitAndCleanUp)
     ASSERT_FALSE (SAC_HWLOC_topo_data);
 }
 
-#if ENABLE_CUDA && 0
-/* this is disabled at the moment as most systems that aren't servers *do not* associated
- * more than 1 numa node with the PCI bus. We detect this within the SAC_CUDA_HWLOC initialisation
- * call, and error out if this is the case. Doing a unit test thus would not be practical unless
- * we changed the implementation of the init function such that it doesn't error out immediately.
- */
+#if ENABLE_CUDA
 TEST (HWLOCRuntime, CUDAHWLOCInitAndCleanUp)
 {
     char cuda_hwloc_status[1024];
 
     // we assume ordinal 0
-    SAC_CUDA_HWLOC_init (0, cuda_hwloc_status, sizeof (cuda_hwloc_status));
+    if (!SAC_CUDA_HWLOC_init (0, cuda_hwloc_status,
+                              sizeof (cuda_hwloc_status))) {
+        /* on systems with no CUDA device, or with only 1
+         * NUMA node, we skip this test.
+         */
+        return;
+    }
 
     // should be allocated and set
     ASSERT_TRUE (SAC_HWLOC_topology);
