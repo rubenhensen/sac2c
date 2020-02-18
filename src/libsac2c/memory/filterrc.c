@@ -586,7 +586,12 @@ FRCbreak (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    BREAK_MEM (arg_node) = TRAVdo (BREAK_MEM (arg_node), arg_info);
+    /* NOTE: from phase mem-alloc this should not be NULL, but as we call
+     * the filtering traversal in phase opt, this node will be NULL.
+     */
+    if (BREAK_MEM (arg_node) != NULL) {
+        BREAK_MEM (arg_node) = TRAVdo (BREAK_MEM (arg_node), arg_info);
+    }
 
     if (BREAK_NEXT (arg_node) != NULL) {
         BREAK_NEXT (arg_node) = TRAVdo (BREAK_NEXT (arg_node), arg_info);
