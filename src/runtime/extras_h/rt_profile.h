@@ -811,7 +811,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     SAC_C_EXTERN SAC_PF_MEMORY_RECORD *SAC_PF_memory_record;
 
 #define SAC_PF_MEM_DEFINE_LOC()                                                          \
-    SAC_PF_MEMORY_RECORD SAC_PF_memory[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                \
+    SAC_PF_MEMORY_RECORD SAC_PF_memory[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = {0};          \
     SAC_PF_MEMORY_RECORD *SAC_PF_memory_record;
 
 #define SAC_PF_MEM_INIT_RECORD(mem_record)                                               \
@@ -820,11 +820,6 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     mem_record.reuse_mem_count = 0;
 
 #define SAC_PF_MEM_SETUP()                                                               \
-    for (i = 0; i < SAC_SET_MAXFUN; i++) {                                               \
-        for (j = 0; j < SAC_PF_maxfunap[i]; j++) {                                       \
-            SAC_PF_MEM_INIT_RECORD (SAC_PF_memory[i][j]);                                \
-        }                                                                                \
-    }                                                                                    \
     SAC_PF_memory_record = &SAC_PF_memory[0][0];
 
 #define SAC_PF_MEM_INC_ALLOC(size)                                                       \
@@ -847,6 +842,23 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #define SAC_PF_MEM_INC_REUSE()                                                           \
     SAC_PF_MEM_ReuseMemcnt ();                                                           \
     SAC_PF_memory_record->reuse_mem_count += 1;
+
+#define SAC_PF_MEM_CUDA_INC_ALLOC(size)                                                  \
+    SAC_PF_MEM_CUDA_AllocMemcnt (size);                                                  \
+    SAC_PF_MEM_CUDA_AddToMax (size);                                                     \
+    SAC_PF_memory_record->alloc_mem_cuda_count += 1;
+
+#define SAC_PF_MEM_CUDA_INC_FREE(size)                                                   \
+    SAC_PF_MEM_CUDA_FreeMemcnt (size);                                                   \
+    SAC_PF_memory_record->free_mem_cuda_count += 1;
+
+#define SAC_PF_MEM_CUDA_INC_ALLOC_DESC(size)                                             \
+    SAC_PF_MEM_CUDA_AllocDescnt (size);                                                  \
+    SAC_PF_memory_record->alloc_desc_cuda_count += 1;
+
+#define SAC_PF_MEM_CUDA_INC_FREE_DESC(size)                                              \
+    SAC_PF_MEM_CUDA_FreeDescnt (size);                                                   \
+    SAC_PF_memory_record->free_desc_cuda_count += 1;
 
 #define SAC_PF_MEM_PRINT_STAT()                                                          \
     {                                                                                    \
@@ -882,6 +894,10 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #define SAC_PF_MEM_INC_ALLOC_DESC(size)
 #define SAC_PF_MEM_INC_FREE_DESC(size)
 #define SAC_PF_MEM_INC_REUSE()
+#define SAC_PF_MEM_CUDA_INC_ALLOC(size)
+#define SAC_PF_MEM_CUDA_INC_FREE(size)
+#define SAC_PF_MEM_CUDA_INC_ALLOC_DESC(size)
+#define SAC_PF_MEM_CUDA_INC_FREE_DESC(size)
 #define SAC_PF_MEM_PRINT_STAT()
 
 #endif /* SAC_DO_PROFILE_MEM */

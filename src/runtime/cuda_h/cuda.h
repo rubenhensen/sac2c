@@ -113,12 +113,14 @@ extern "C" {
   || SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_CUDA_ALLOC(var_NT, basetype)                                                 \
     SAC_TR_GPU_PRINT ("Allocating CUDA device memory: %s", NT_STR (var_NT));             \
+    SAC_PF_MEM_CUDA_INC_ALLOC (sizeof (basetype) * SAC_ND_A_SIZE (var_NT));              \
     cudaMalloc ((void **)&SAC_ND_A_FIELD (var_NT),                                       \
                 SAC_ND_A_SIZE (var_NT) * sizeof (basetype));                             \
     SAC_GET_CUDA_MALLOC_ERROR ();
 #else // Managed case
 #define SAC_CUDA_ALLOC(var_NT, basetype)                                                 \
     SAC_TR_GPU_PRINT ("Allocating CUDA device memory (managed): %s", NT_STR (var_NT));   \
+    SAC_PF_MEM_CUDA_INC_ALLOC (sizeof (basetype) * SAC_ND_A_SIZE (var_NT));              \
     cudaMallocManaged ((void **)&SAC_ND_A_FIELD (var_NT),                                \
                        SAC_ND_A_SIZE (var_NT) * sizeof (basetype));                      \
     SAC_GET_CUDA_MALLOC_ERROR ();
@@ -129,11 +131,15 @@ extern "C" {
 #define SAC_CUDA_FREE(var_NT, freefun)                                                   \
     SAC_TR_GPU_PRINT ("Freeing CUDA device memory (managed): %s", NT_STR (var_NT));      \
     cudaDeviceSynchronize ();                                                            \
+    SAC_PF_MEM_CUDA_INC_FREE (sizeof (*SAC_ND_A_FIELD (var_NT))                          \
+                              * SAC_ND_A_SIZE (var_NT));                                 \
     cudaFree (SAC_ND_A_FIELD (var_NT));                                                  \
     SAC_GET_CUDA_FREE_ERROR ();
 #else
 #define SAC_CUDA_FREE(var_NT, freefun)                                                   \
     SAC_TR_GPU_PRINT ("Freeing CUDA device memory: %s", NT_STR (var_NT));                \
+    SAC_PF_MEM_CUDA_INC_FREE (sizeof (*SAC_ND_A_FIELD (var_NT))                          \
+                              * SAC_ND_A_SIZE (var_NT));                                 \
     cudaFree (SAC_ND_A_FIELD (var_NT));                                                  \
     SAC_GET_CUDA_FREE_ERROR ();
 #endif
@@ -141,18 +147,20 @@ extern "C" {
 #define SAC_CUDA_ALLOC_BEGIN__DAO(var_NT, rc, dim, basetype)                             \
     {                                                                                    \
         SAC_ND_ALLOC__DESC (var_NT, dim)                                                 \
+        SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))     \
         SAC_CUDA_ALLOC__DATA (var_NT, basetype)                                          \
         SAC_ND_SET__RC (var_NT, rc)
 
 #define SAC_CUDA_ALLOC_BEGIN__NO_DAO(var_NT, rc, dim, basetype)                          \
     {                                                                                    \
         SAC_ND_ALLOC__DESC (var_NT, dim)                                                 \
+        SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))     \
         SAC_ND_SET__RC (var_NT, rc)
 
 #define SAC_CUDA_ALLOC_END__DAO(var_NT, rc, dim, basetype) }
 
 #define SAC_CUDA_ALLOC_END__NO_DAO(var_NT, rc, dim, basetype)                            \
-    SAC_CUDA_ALLOC__DATA (var_NT, basetype)                                              \
+        SAC_CUDA_ALLOC__DATA (var_NT, basetype)                                          \
     }
 
 #define SAC_CUDA_ALLOC__DATA__NOOP(var_NT, basetype) SAC_NOOP ()
@@ -161,35 +169,26 @@ extern "C" {
 
 #define SAC_CUDA_ALLOC__DATA__AKD_AUD(var_NT, basetype) SAC_CUDA_ALLOC (var_NT, basetype)
 
-#define SAC_CUDA_DEC_RC_FREE__UNQ(var_NT, rc, freefun) SAC_CUDA_FREE (var_NT, freefun)
+#define SAC_CUDA_DEC_RC_FREE__UNQ(var_NT, rc, freefun)                                   \
+    {                                                                                    \
+        SAC_PF_MEM_INC_FREE_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))      \
+        SAC_CUDA_FREE (var_NT, freefun)                                                  \
+    }
 
 #define SAC_CUDA_DEC_RC_FREE__NOOP(var_NT, rc, freefun) SAC_NOOP ()
 
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman
 #define SAC_CUDA_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                               \
     {                                                                                    \
         SAC_TR_REF_PRINT (                                                               \
           ("CUDA_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))              \
         if ((SAC_ND_A_RC (var_NT) -= rc) == 0) {                                         \
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
+            SAC_PF_MEM_INC_FREE_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))  \
             SAC_CUDA_FREE (var_NT, freefun)                                              \
         } else {                                                                         \
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
         }                                                                                \
     }
-#else
-#define SAC_CUDA_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                               \
-    {                                                                                    \
-        SAC_TR_REF_PRINT (                                                               \
-          ("CUDA_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))              \
-        if ((SAC_ND_A_RC (var_NT) -= rc) == 0) {                                         \
-            SAC_TR_REF_PRINT_RC (var_NT)                                                 \
-            SAC_CUDA_FREE (var_NT, freefun)                                              \
-        } else {                                                                         \
-            SAC_TR_REF_PRINT_RC (var_NT)                                                 \
-        }                                                                                \
-    }
-#endif
 
 /*****************************************************************************
  *

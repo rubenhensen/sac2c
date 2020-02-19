@@ -10,6 +10,8 @@
 #define SAC_C_EXTERN extern
 #endif /* SAC_C_EXTERN */
 
+#define BYTES_TO_KBYTES(bytes) (bytes / 1024)
+
 /*
  * External declarations of library functions defined in libsac
  */
