@@ -983,9 +983,6 @@ SUBPHASE (xtgtl, "Transform gt and ge operators to lt and le operators",
 
 SUBPHASE (fdi, "Freeing dispatch information", FDIdoFreeDispatchInformation, ALWAYS, opt)
 
-SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls, global.doprofile,
-          opt)
-
 ADDPREFUN (TR_prt, EMRCIprintPreFun)
 
 SUBPHASE (emrci, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInference,
@@ -1318,6 +1315,14 @@ SUBPHASE (re, "Removing reuse instructions", EMREdoReuseElimination, ALWAYS, mem
 
 ENDPHASE (mem)
 
+/******************************************************************************/
+
+PHASE (iprof, "Introduce profiling instruction", !global.on_demand_lib)
+
+SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls,
+          global.doprofile, iprof)
+
+ENDPHASE (iprof)
 
 /******************************************************************************/
 
