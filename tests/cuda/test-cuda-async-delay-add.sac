@@ -1,11 +1,14 @@
 // This tests makes sure that the CUDA CUAD traversal is actually adding the *_start
-// and *_end primitives.
+// and *_end primitives. Note here that due to the EMR optimisation, whereby we annotate WLs
+// with further possible reuse candidates, causes the CUDA phase add additional h2d/d2h
+// primitives into the code. These transfers are there to satisify the SSA for the candidates
+// being _possibly_ used for a given WL. Once we complete the memory phase, these are elided.
 
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -t cuda_reg -bcuda:cuad
 // SAC_TEST|all: <file-name>
 // SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -nocuad $< | $(GREP_COMMAND_OUTPUT) '_start\|_end' 0
-// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -docuad $< | $(GREP_COMMAND_OUTPUT) '_start\|_end' 6
+// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -docuad $< | $(GREP_COMMAND_OUTPUT) '_start\|_end' 8
 #include "mini-stdlib.sac"
 
 noinline int[.] id (int[.] a) { return a; }

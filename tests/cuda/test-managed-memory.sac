@@ -4,7 +4,7 @@
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -t cuda_man -bcuda:cumm
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -nocumm $< | $(GREP_COMMAND_OUTPUT) 'int_dev' 3
+// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -nocumm $< | $(GREP_COMMAND_OUTPUT) 'int_dev' 4
 // SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -documm $< | $(GREP_COMMAND_OUTPUT) 'int_dev' 0
 #include "mini-stdlib.sac"
 
