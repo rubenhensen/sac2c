@@ -8031,6 +8031,20 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="ERC" default="NULL" >
+          <description>
+            Contains a list of Extra Reuse Candidates for WL memory reuse
+            within scope.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                  <range from="opt_emrci" to="mem_rci" />
+              </phases>
+            </target>
+          </targets>
+        </son>
       </sons>
       <attributes>
         <attribute name="Prf" inconstructor="yes" >

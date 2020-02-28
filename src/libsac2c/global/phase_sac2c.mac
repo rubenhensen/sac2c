@@ -988,7 +988,7 @@ ADDPREFUN (TR_prt, EMRCIprintPreFun)
 SUBPHASE (emrci, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInference,
           global.optimize.doemrci, opt)
 
-SUBPHASE (emrcf, "Filter extended WL reuse candidates", FRCdoFilterReuseCandidatesNoPrf,
+SUBPHASE (emrcf, "Filter extended WL reuse candidates", FRCdoFilterReuseCandidatesWL,
           global.optimize.doemrci && global.optimize.doemrcf, opt)
 
 SUBPHASE (emrl, "Lift allocations of WL using extended reuse candidates", EMRLdoExtendLoopMemoryPropagation,
@@ -1273,10 +1273,10 @@ SUBPHASE (frc, "Removing invalid reuse candidates", FRCdoFilterReuseCandidates,
           global.optimize.douip, mem)
 
 SUBPHASE (sr, "Static reuse", EMSRdoStaticReuse,
-          global.optimize.douip &&global.optimize.dosrf, mem)
+          global.optimize.douip && global.optimize.dosrf, mem)
 
 SUBPHASE (lao, "Applying loop allocation optimization", EMLAOdoLoopAllocationOptimization,
-          global.optimize.dosrf &&global.optimize.dolao, mem)
+          global.optimize.dosrf && global.optimize.dolao, mem)
 
 SUBPHASE (rb, "Introducing reuse branches", EMRBdoReuseBranching,
           global.optimize.doipc || (global.optimize.douip && global.optimize.dodr), mem)
