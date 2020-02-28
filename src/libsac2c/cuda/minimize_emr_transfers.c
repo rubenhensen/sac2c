@@ -39,7 +39,7 @@
  *   ...
  *   output = d2h (output_dev);
  *   ...
- *   intra = let_loop_LOOPFUN (..., ouput, input);
+ *   intra = let_loop_LOOPFUN (..., output, input);
  * }
  * ~~~~
  *
@@ -61,9 +61,31 @@
  *   ...
  *   output = d2h (output_dev);
  *   ...
- *   intra = let_loop_LOOPFUN (..., ouput, output_dev);
+ *   intra = let_loop_LOOPFUN (..., output, output_dev);
  * }
  * ~~~~
+ *
+ * Notice that in addition to moving the h2d out of the loop, and updating the
+ * function signiture, we also update the arguments of recursive application. For
+ * this we need to find a candidate with which to substitue the host type array
+ * (`input` in our example) with a device type array. There are several
+ * possibilities, but we need to be careful as these might be used as RCs/ERCs in
+ * WLs within the loop. We traverse through the loop function (using an anonoumous
+ * traversal) collecting all WL LHS and all d2h arguments and storing this in a chain
+ * stacking these. As we move along, we check that none of our collected arrays are
+ * a RC or ERC.
+ *
+ * When we update the arguments of the recursive call, we use the top-most candidate
+ * (which occurs last within the code/AST), assuming it has the correct shape, in
+ * our substitution.
+ *
+ * In the case where this is a d2h, we are _reasonably_ sure that this will be the last
+ * reference of the array (meaning that it would be freed directly after the d2h). If it
+ * LHS of WL, the same holds as well.
+ *
+ * FIXME (hans) what about if the array is an argument to some function application,
+ *              including the recursive loop application? At the moment I remove these
+ *              from the list, as we could have aliasing...
  *
  * @{
  */
@@ -81,9 +103,11 @@
 
 #include "free.h"
 #include "cuda_utils.h"
+#include "emr_utils.h"
 #include "LookUpTable.h"
 #include "DupTree.h"
 #include "deadcoderemoval.h"
+#include "print.h"
 
 enum trav_mode { bypass, inap, afterap };
 
@@ -97,17 +121,16 @@ struct INFO {
     enum trav_mode apmode; /**< specifies which mode we are for the N_ap traversal */
     node *fundef;          /**< Holds current N_fundef */
     lut_t *lut;            /**< LUT is used for storing EMRL lifted h2d RHS -> LHS mappings */
-    lut_t *reclut;         /**< LUT is used to store all h2d RHS -> LHS mappings */
     node *letids;          /**< The the LHS of N_prf */
     node *apargs;          /**< N_ap arguments */
     node *apvardecs;       /**< Used to update vardecs in N_ap calling context */
     node *apassigns;       /**< Used to update assigns in N_ap calling context */
     node *rec_ap;          /**< the recursive loopfun N_ap */
+    node *devs;            /**< N_exprs containing a list of device type N_avis */
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LUT(n) ((n)->lut)
-#define INFO_RECLUT(n) ((n)->reclut)
 #define INFO_LETIDS(n) ((n)->letids)
 #define INFO_FUNARGNUM(n) ((n)->funargnum)
 #define INFO_APARGS(n) ((n)->apargs)
@@ -116,6 +139,7 @@ struct INFO {
 #define INFO_REC_AP(n) ((n)->rec_ap)
 #define INFO_INEMRLOOP(n) ((n)->inemrloop)
 #define INFO_APMODE(n) ((n)->apmode)
+#define INFO_DEVS(n) ((n)->devs)
 
 static info *
 MakeInfo (void)
@@ -129,7 +153,6 @@ MakeInfo (void)
     INFO_FUNARGNUM (result) = 0;
     INFO_FUNDEF (result) = NULL;
     INFO_LUT (result) = NULL;
-    INFO_RECLUT (result) = NULL;
     INFO_LETIDS (result) = NULL;
     INFO_APARGS (result) = NULL;
     INFO_APVARDECS (result) = NULL;
@@ -137,6 +160,7 @@ MakeInfo (void)
     INFO_REC_AP (result) = NULL;
     INFO_INEMRLOOP (result) = FALSE;
     INFO_APMODE (result) = bypass;
+    INFO_DEVS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -171,6 +195,8 @@ MEMRTapAnon (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
+
     if (INFO_FUNDEF (arg_info) == AP_FUNDEF (arg_node)) {
         DBUG_PRINT ("found recursive application of %s...", FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         INFO_REC_AP (arg_info) = arg_node;
@@ -198,8 +224,7 @@ MEMRTletAnon (node *arg_node, info *arg_info)
 }
 
 /**
- * @brief If the N_prf is `F_host2device`, store the mapping of
- *        RHS to LHS in the LUT
+ * @brief If the N_prf is `F_device2host`, store its argument in INFO
  *
  * @param arg_node N_prf
  * @param arg_info info structure
@@ -208,21 +233,57 @@ MEMRTletAnon (node *arg_node, info *arg_info)
 static node *
 MEMRTprfAnon (node *arg_node, info *arg_info)
 {
-    node *arg_avis, *ret_avis;
-
     DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
-    case F_host2device:
-        arg_avis = ID_AVIS (PRF_ARG1 (arg_node));
-        ret_avis = IDS_AVIS (INFO_LETIDS (arg_info));
-        DBUG_PRINT ("found h2d, adding mapping of arg to ret: %s -> %s", AVIS_NAME (arg_avis), AVIS_NAME (ret_avis));
-        INFO_RECLUT (arg_info)
-            = LUTinsertIntoLutP (INFO_RECLUT (arg_info), arg_avis, ret_avis);
+    case F_device2host:
+        DBUG_PRINT ("found CUDA dev_type, adding %s to list", ID_NAME (PRF_ARG1 (arg_node)));
+        INFO_DEVS (arg_info) = TBmakeExprs (TBmakeId (ID_AVIS (PRF_ARG1 (arg_node))), INFO_DEVS (arg_info));
         break;
+
     default:
+        // FIXME (hans) do we need to check N_prf arguments?
         break;
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/**
+ * @brief If we encounter a N_with whose LHS is a CUDA device type array, store LHS
+ *        in INFO
+ *
+ * @param arg_node N_with
+ * @param arg_info info structure
+ * @return N_with
+ */
+static node *
+MEMRTwithAnon (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (CUisDeviceTypeNew (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
+        DBUG_PRINT ("found CUDA dev_type, adding %s to list", IDS_NAME (INFO_LETIDS (arg_info)));
+        INFO_DEVS (arg_info) = TBmakeExprs (TBmakeId (IDS_AVIS (INFO_LETIDS (arg_info))), INFO_DEVS (arg_info));
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/**
+ * @brief we scan through all INFO_DEVS N_id and check that we aren't
+ *        using it as an argument. If so, we remove it from the INFO_DEVS.
+ *
+ * @param arg_node N_id
+ * @param arg_info info structure
+ * @return N_id
+ */
+static node *
+MEMRTidAnon (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    INFO_DEVS (arg_info) = ElimDupesOfAvis (ID_AVIS (arg_node), INFO_DEVS (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -242,12 +303,11 @@ static node *
 MEMRTtravToRecAp (node *fundef, info *arg_info)
 {
     node *old_fundef, *old_letids;
-    anontrav_t trav[4] = {{N_let, &MEMRTletAnon}, {N_ap, &MEMRTapAnon}, {N_prf, &MEMRTprfAnon}, {(nodetype)0, NULL}};
+    anontrav_t trav[] = {{N_let, &MEMRTletAnon}, {N_with, &MEMRTwithAnon}, {N_ap, &MEMRTapAnon}, {N_prf, &MEMRTprfAnon}, {N_id, &MEMRTidAnon}, {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "First argument must be a N_fundef node!");
-    DBUG_ASSERT (INFO_RECLUT (arg_info) != NULL, "The recursive LUT must be created first!");
 
     old_fundef = INFO_FUNDEF (arg_info);
     old_letids = INFO_LETIDS (arg_info);
@@ -488,8 +548,8 @@ MEMRTid (node *arg_node, info *arg_info)
 node *
 MEMRTap (node *arg_node, info *arg_info)
 {
-    node *old_ap_args, *old_fundef, *old_rec_ap;
-    lut_t *old_lut, *old_reclut;
+    node *old_ap_args, *old_fundef, *old_rec_ap, *old_devs;
+    lut_t *old_lut;
 
     DBUG_ENTER ();
 
@@ -504,16 +564,16 @@ MEMRTap (node *arg_node, info *arg_info)
             /* stack info fields */
             old_fundef = INFO_FUNDEF (arg_info);
             old_ap_args = INFO_APARGS (arg_info);
+            old_devs = INFO_DEVS (arg_info);
             old_rec_ap = INFO_REC_AP (arg_info);
             old_lut = INFO_LUT (arg_info);
-            old_reclut = INFO_RECLUT (arg_info);
 
             /* initialise info fields */
             INFO_APARGS (arg_info) = AP_ARGS (arg_node);
             INFO_APASSIGNS (arg_info) = NULL;
             INFO_APVARDECS (arg_info) = NULL;
+            INFO_DEVS (arg_info) = NULL;
             INFO_LUT (arg_info) = LUTgenerateLut ();
-            INFO_RECLUT (arg_info) = LUTgenerateLut ();
 
             /* we find the recursive N_ap and fill RECLUT with h2d arg to ret mappings */
             AP_FUNDEF (arg_node) = MEMRTtravToRecAp (AP_FUNDEF (arg_node), arg_info);
@@ -525,8 +585,8 @@ MEMRTap (node *arg_node, info *arg_info)
             /* reset all the info fields */
             INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
             INFO_LUT (arg_info) = old_lut;
-            INFO_RECLUT (arg_info) = LUTremoveLut (INFO_RECLUT (arg_info));
-            INFO_RECLUT (arg_info) = old_reclut;
+            INFO_DEVS (arg_info) = FREEdoFreeTree (INFO_DEVS (arg_info));
+            INFO_DEVS (arg_info) = old_devs;
             INFO_FUNDEF (arg_info) = old_fundef;
             INFO_APARGS (arg_info) = old_ap_args;
             INFO_REC_AP (arg_info) = old_rec_ap;
@@ -541,13 +601,15 @@ MEMRTap (node *arg_node, info *arg_info)
 /**
  * @brief If we find a `F_host2device` primitive, we check if its argument
  *        was created via EMRL lifting out an allocation. If so, we lift
- *        out the primitive and update the loopfun appropriately.
+ *        out the primitive and update the loopfun arguments appropriately.
  *
  * Assuming we are in a EMRL affected loopfun, if the argument of a `F_host2device`
  * primitive is a lifted allocation, we transfer the primitive and declaration via
- * the info structure (see N_assign for application). Additionally we place into
+ * the info structure (see N_assign for application). Additionally we place into a
  * LUT the primitives RHS -> LHS, such that we update all subsequent references
- * correctly. Finally we update the correct argument in the recursive N_ap.
+ * correctly. Finally we update the argument of the recursive N_ap of the loop. Our
+ * choice of array based upon a collection of suitable candiates (see N_ap function),
+ * from which we choose the one that has the same shape.
  *
  * @param arg_node N_prf
  * @param arg_info info structure
@@ -556,7 +618,8 @@ MEMRTap (node *arg_node, info *arg_info)
 node *
 MEMRTprf (node *arg_node, info *arg_info)
 {
-    node *id, *id_decl, *aparg, *ret_avis, *recaparg, *recapexprs;
+    node *id, *id_decl, *aparg, *ret_id, *recaparg_id, *recaparg_avis,
+         *recapexprs, *dev_avis;
 
     DBUG_ENTER ();
 
@@ -608,20 +671,44 @@ MEMRTprf (node *arg_node, info *arg_info)
                     AVIS_SSAASSIGN (new_avis) = INFO_APASSIGNS (arg_info);
 
                     /* update recursive N_ap argument appropriately */
-                    recapexprs = TCgetNthExprs ((size_t)ARG_LINKSIGN (id_decl), AP_ARGS (INFO_REC_AP (arg_info)));
-                    recaparg = EXPRS_EXPR (recapexprs);
-                    ret_avis = LUTsearchInLutPp (INFO_RECLUT (arg_info), ID_AVIS (recaparg));
-                    if (ret_avis == ID_AVIS (recaparg)) {
-                        DBUG_UNREACHABLE ("%s does not exist in RECLUT!", ID_NAME (recaparg));
+                    DBUG_PRINT ("... retrieving %d argument from rec N_ap",
+                                ARG_LINKSIGN (id_decl));
+                    recapexprs = TCgetNthExprs ((size_t)ARG_LINKSIGN (id_decl),
+                                                AP_ARGS (INFO_REC_AP (arg_info)));
+
+                    recaparg_id = EXPRS_EXPR (recapexprs);
+                    recaparg_avis = ID_AVIS (recaparg_id);
+
+                    DBUG_PRINT ("... searching through candidates in DEV:");
+                    DBUG_EXECUTE (if (INFO_DEVS (arg_info) != NULL) {
+                                     PRTdoPrintFile (stderr, INFO_DEVS (arg_info));});
+
+                    // we need to translate host type to device type for comparison
+                    // FIXME (hans) can this be improved? Do we need to compare simpletype?
+                    dev_avis = DUPdoDupNode (recaparg_avis);
+                    AVIS_TYPE (dev_avis) = CUconvertHostToDeviceType (AVIS_TYPE (recaparg_avis));
+                    ret_id = isSameShapeAvis (dev_avis, INFO_DEVS (arg_info));
+                    dev_avis = FREEdoFreeTree (dev_avis);
+
+                    // check that we have found a suitable candidate
+                    if (ret_id == NULL) {
+                        CTIerrorInternal ("No suitable replacement for %s in DEVS!",
+                                          AVIS_NAME (recaparg_avis));
                     }
-                    DBUG_PRINT ("replacing %s -> %s in recursive N_ap", ID_NAME (recaparg), AVIS_NAME (ret_avis));
-                    ID_AVIS (recaparg) = ret_avis;
+
+                    // replace avis with candidate avis (we do not free old avis as it still
+                    // exists within the AST)
+                    DBUG_PRINT ("replacing %s -> %s in recursive N_ap",
+                                AVIS_NAME (recaparg_avis), ID_NAME (ret_id));
+                    ID_AVIS (recaparg_id) = ID_AVIS (ret_id);
                 }
             }
             break;
+
         default:
             PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
             break;
+
         }
     }
 
