@@ -326,6 +326,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/memory/cuda_host_memory_reuse.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/datareuse.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/emr_candidate_inference.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/emr_loop_optimisation.c
+${CMAKE_CURRENT_SOURCE_DIR}/memory/emr_utils.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/explicitcopy.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/filter_partial_reuse_candidates.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/filterrc.c

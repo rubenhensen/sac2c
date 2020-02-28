@@ -181,36 +181,6 @@ stack_clear (stack_node_t *stack)
 }
 
 /**
- * @brief Find a N_id in N_exprs chain that matches shape of an N_avis, we look
- *        last to first in the N_exprs chain.
- *
- * @param avis N_avis node to compare against
- * @param exprs N_expres chain with N_id
- * @return the N_id node that matches, or NULL
- */
-static node *
-isSameShapeAvis (node * avis, node * exprs)
-{
-    node * ret = NULL, *tmp;
-    DBUG_ENTER ();
-
-    if (exprs != NULL) {
-        /* if we found a suitable N_id, we just pass it up the recursive chain */
-        tmp = isSameShapeAvis (avis, EXPRS_NEXT (exprs));
-        if ((ShapeMatch (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs)))
-             || TCshapeVarsMatch (avis, ID_AVIS (EXPRS_EXPR (exprs))))
-            && TUeqElementSize (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs)))
-            && tmp == NULL) {
-            ret = EXPRS_EXPR (exprs);
-        } else {
-            ret = tmp;
-        }
-    }
-
-    DBUG_RETURN (ret);
-}
-
-/**
  * @brief Create a new temporary avis which copies the ntype of
  *        an existing avis
  *

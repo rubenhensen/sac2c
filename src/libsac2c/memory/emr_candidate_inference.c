@@ -250,39 +250,6 @@ EMRCIdoWithloopExtendedReuseCandidateInferencePrf (node *syntax_tree)
  *****************************************************************************/
 
 static node *
-ElimDupesOfAvis (node *avis, node *exprs)
-{
-    DBUG_ENTER ();
-
-    if (exprs != NULL) {
-        if (EXPRS_NEXT (exprs) != NULL) {
-            EXPRS_NEXT (exprs) = ElimDupesOfAvis (avis, EXPRS_NEXT (exprs));
-        }
-
-        if (ID_AVIS (EXPRS_EXPR (exprs)) == avis) {
-            exprs = FREEdoFreeNode (exprs);
-        }
-    }
-
-    DBUG_RETURN (exprs);
-}
-
-static node *
-ElimDupes (node *exprs)
-{
-    DBUG_ENTER ();
-
-    if (exprs != NULL) {
-        EXPRS_NEXT (exprs)
-          = ElimDupesOfAvis (ID_AVIS (EXPRS_EXPR (exprs)), EXPRS_NEXT (exprs));
-
-        EXPRS_NEXT (exprs) = ElimDupes (EXPRS_NEXT (exprs));
-    }
-
-    DBUG_RETURN (exprs);
-}
-
-static node *
 EMRid (node *id, info *arg_info)
 {
     DBUG_ENTER ();
