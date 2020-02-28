@@ -1083,6 +1083,12 @@ SUBPHASE (daa, "CUDA Data access analysis", DAAdoDataAccessAnalysis,
 SUBPHASE (stknl, "CUDA Create single threaded CUDA kernels", STKNLdoSingleThreadKernels,
           global.optimize.doexpar, cuda)
 
+SUBPHASE (emrci, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInferencePrf,
+          global.optimize.doemrcic, cuda)
+
+SUBPHASE (emrcf, "Filter extended WL reuse candidates", FRCdoFilterReuseCandidatesPrf,
+          global.optimize.doemrcic && global.optimize.doemrcf, cuda)
+
 /*
 SUBPHASE( wlds,
           "Unscalarize cudarizbale withloops",

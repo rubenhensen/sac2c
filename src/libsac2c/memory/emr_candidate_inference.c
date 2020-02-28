@@ -75,6 +75,15 @@
 #include "emr_loop_optimisation.h"
 
 /*
+ * Mode enum
+ */
+typedef enum {
+    EMR_all,
+    EMR_prf,
+    EMR_none
+} emr_mode_t;
+
+/*
  * INFO structure
  */
 struct INFO {
@@ -82,8 +91,8 @@ struct INFO {
     node *lhs;
     node *rc;
     /* extended reuse */
-    bool do_emr;
     node *emr_rc;
+    emr_mode_t mode;
 };
 
 /*
@@ -92,8 +101,8 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_RC(n) ((n)->rc)
-#define INFO_DO_EMR(n) ((n)->do_emr)
 #define INFO_EMR_RC(n) ((n)->emr_rc)
+#define INFO_EMR_MODE(n) ((n)->mode)
 
 /*
  * INFO functions
@@ -110,8 +119,8 @@ MakeInfo (void)
     INFO_FUNDEF (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_RC (result) = NULL;
-    INFO_DO_EMR (result) = FALSE;
     INFO_EMR_RC (result) = NULL;
+    INFO_EMR_MODE (result) = EMR_none;
 
     DBUG_RETURN (result);
 }
@@ -160,13 +169,27 @@ EMRCIprintPreFun (node *arg_node, info *arg_info)
             fprintf (global.outfile, ") */\n");
         }
         break;
+    case N_prf:
+        switch (PRF_PRF (arg_node)) {
+        case F_host2device:
+        case F_device2host:
+        case F_host2device_start:
+        case F_device2host_start:
+            fprintf (global.outfile, "/* ERC (");
+            if (PRF_ERC (arg_node) != NULL) {
+                PRF_ERC (arg_node) = PRTexprs (PRF_ERC (arg_node), arg_info);
+            }
+            fprintf (global.outfile, ") */ ");
+            break;
+        default:
+            break;
+        }
     default:
         break;
     }
 
     DBUG_RETURN (arg_node);
 }
-
 
 /**
  * @brief Entry function into EMRCI traversal
@@ -183,7 +206,33 @@ EMRCIdoWithloopExtendedReuseCandidateInference (node *syntax_tree)
 
     arg_info = MakeInfo ();
 
-    INFO_DO_EMR (arg_info) = TRUE;
+    INFO_EMR_MODE (arg_info) = EMR_all;
+
+    TRAVpush (TR_emrci);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/**
+ * @brief Entry function into EMRCI traversal, looks only at N_prf
+ *
+ * @param syntax_tree
+ * @return modified syntax_tree.
+ */
+node *
+EMRCIdoWithloopExtendedReuseCandidateInferencePrf (node *syntax_tree)
+{
+    info *arg_info;
+
+    DBUG_ENTER ();
+
+    arg_info = MakeInfo ();
+
+    INFO_EMR_MODE (arg_info) = EMR_prf;
 
     TRAVpush (TR_emrci);
     syntax_tree = TRAVdo (syntax_tree, arg_info);
@@ -425,7 +474,6 @@ EMRCIassign (node *arg_node, info *arg_info)
      * Top-down traversal
      */
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -464,7 +512,6 @@ EMRCIprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("checking if N_prf references an ERC...");
 
     switch (PRF_PRF (arg_node)) {
     case F_idx_modarray_AxSxS:
@@ -480,11 +527,23 @@ EMRCIprf (node *arg_node, info *arg_info)
          *     in place. Within OPT this can't be determined, we would need to move
          *     this filtering to MEM phases.
          */
+        DBUG_PRINT ("checking if F_idx_modarray_* references an ERC...");
         INFO_EMR_RC (arg_info)
           = filterDuplicateId (PRF_ARGS (arg_node), &INFO_EMR_RC (arg_info));
         DBUG_PRINT ("EMR RCs left after filtering out N_prf args");
         DBUG_EXECUTE (if (INFO_EMR_RC (arg_info) != NULL) {
             PRTdoPrintFile (stderr, INFO_EMR_RC (arg_info));
+        });
+        break;
+
+    case F_host2device:
+    case F_device2host:
+        DBUG_PRINT ("checking for ERCs of CUDA transfer N_prf...");
+        PRF_ERC (arg_node)
+          = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
+        DBUG_PRINT ("Found ERCs: ");
+        DBUG_EXECUTE (if (PRF_ERC (arg_node) != NULL) {
+            PRTdoPrintFile (stderr, PRF_ERC (arg_node));
         });
         break;
 
@@ -587,16 +646,18 @@ EMRCIgenarray (node *arg_node, info *arg_info)
     /*
      * Annotate extended reuse candidates.
      */
-    GENARRAY_ERC (arg_node)
-      = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
-    DBUG_PRINT ("Genarray ERCs: ");
-    DBUG_EXECUTE (if (GENARRAY_ERC (arg_node) != NULL) {
-        PRTdoPrintFile (stderr, GENARRAY_ERC (arg_node));
-    });
+    if (INFO_EMR_MODE (arg_info) == EMR_all) {
+        GENARRAY_ERC (arg_node)
+          = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), NULL);
+        DBUG_PRINT ("Genarray ERCs: ");
+        DBUG_EXECUTE (if (GENARRAY_ERC (arg_node) != NULL) {
+            PRTdoPrintFile (stderr, GENARRAY_ERC (arg_node));
+        });
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+        if (GENARRAY_NEXT (arg_node) != NULL) {
+            INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+            GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -617,16 +678,18 @@ EMRCImodarray (node *arg_node, info *arg_info)
     /*
      * Annotate extended reuse candidates.
      */
-    MODARRAY_ERC (arg_node)
-      = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
-    DBUG_PRINT ("Modarray ERCs: ");
-    DBUG_EXECUTE (if (MODARRAY_ERC (arg_node) != NULL) {
-        PRTdoPrintFile (stderr, MODARRAY_ERC (arg_node));
-    });
+    if (INFO_EMR_MODE (arg_info) == EMR_all) {
+        MODARRAY_ERC (arg_node)
+          = MatchingRCs (INFO_EMR_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
+        DBUG_PRINT ("Modarray ERCs: ");
+        DBUG_EXECUTE (if (MODARRAY_ERC (arg_node) != NULL) {
+            PRTdoPrintFile (stderr, MODARRAY_ERC (arg_node));
+        });
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+        if (MODARRAY_NEXT (arg_node) != NULL) {
+            INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
+            MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);

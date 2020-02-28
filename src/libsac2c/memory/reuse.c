@@ -416,7 +416,7 @@ EMRIprf (node *arg_node, info *arg_info)
         break;
 
     case F_fill:
-        DBUG_PRINT ("cheking fill of \"%s\"...", IDS_NAME (INFO_LHS (arg_info)));
+        DBUG_PRINT ("checking fill of \"%s\"...", IDS_NAME (INFO_LHS (arg_info)));
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
         if (INFO_RHSCAND (arg_info) != NULL) {
@@ -448,6 +448,31 @@ EMRIprf (node *arg_node, info *arg_info)
 
         rt = TYfreeType (rt);
         lt = TYfreeType (lt);
+        break;
+
+    case F_host2device:
+    case F_device2host:
+    case F_host2device_start:
+    case F_device2host_start:
+        if (global.optimize.doemrcic) {
+            DBUG_PRINT ("handling ERC for N_prf");
+            // we need to filter the chain to make sure we don't select an ERC that was
+            // already used as an RC
+            INFO_RHSCAND (arg_info)
+              = filterDuplicateId (INFO_USED_RCS (arg_info), &PRF_ERC (arg_node));
+            PRF_ERC (arg_node) = NULL;
+            if (INFO_RHSCAND (arg_info) != NULL) {
+                // we only want to pick the first one, so we free all the rest
+                if (EXPRS_NEXT (INFO_RHSCAND (arg_info)) != NULL) {
+                    EXPRS_NEXT (INFO_RHSCAND (arg_info))
+                      = FREEdoFreeTree (EXPRS_NEXT (INFO_RHSCAND (arg_info)));
+                }
+                DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
+                INFO_USED_RCS (arg_info)
+                  = TCappendExprs (INFO_USED_RCS (arg_info),
+                                   DUPdoDupNode (INFO_RHSCAND (arg_info)));
+            }
+        }
         break;
 
     default:

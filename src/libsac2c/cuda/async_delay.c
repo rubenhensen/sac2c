@@ -274,6 +274,9 @@ CUADprf (node *arg_node, info *arg_info)
                                            ? F_host2device_start
                                            : F_device2host_start,
                                            DUPdoDupNode (PRF_ARG1 (arg_node)));
+        if (PRF_ERC (arg_node) != NULL) {
+            PRF_ERC (INFO_PRFS (arg_info)) = DUPdoDupTree (PRF_ERC (arg_node));
+        }
         INFO_PRFE (arg_info) = TCmakePrf2 (PRF_PRF (arg_node) == F_host2device
                                            ? F_host2device_end
                                            : F_device2host_end,
