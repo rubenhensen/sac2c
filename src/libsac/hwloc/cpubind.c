@@ -36,12 +36,18 @@ hwloc_topo_data_t *SAC_HWLOC_topo_data;
  *
  * We use the function for the case where a user chooses to locally install hwloc, and then use
  * LD_LIBRARY_PATH (or even LD_PRELOAD) to point to this shared library.
+ *
+ * See https://www.open-mpi.org/projects/hwloc/doc/v2.0.4/a00326.php#faq_upgrade for more
+ * details.
  */
 static void
 hwloc_check_version (void)
 {
     unsigned version = hwloc_get_api_version();
 
+    // HWLOC version is encoded as a hexadecimal of a semantic version number, e.g.
+    // 1.11.6 == 0x00010b06. Here we check its major number against each other by bit
+    // shifting to the right.
     if ((version >> 16) != (HWLOC_API_VERSION >> 16)) {
         SAC_RuntimeError ("SaC compiled for hwloc API 0x%x but running on library API 0x%x. "
                           "You may need to point LD_LIBRARY_PATH to the right hwloc library. "

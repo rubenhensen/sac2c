@@ -45,38 +45,43 @@ SAC_CUDA_HWLOC_init (int cuda_ordinal, char *str, size_t str_size)
     hwloc_cpuset_t tmp_hw_cpuset;
 
     // TODO might be good to make this a separate function?
-    // cprintf(stderr, "-> Printing overall tree\n");
-    // hwloc_print_topology_tree(hwloc_get_root_obj(SAC_HWLOC_topology), 0);
-    // hwloc_print_topology_tree(hwloc_get_first_largest_obj_inside_cpuset(SAC_HWLOC_topology,
-    // tmp_hw_cpuset), 0);
+    //cprintf(stderr, "-> Printing overall tree\n");
+    //hwloc_print_topology_tree(hwloc_get_root_obj(SAC_HWLOC_topology), 0);
+    //hwloc_print_topology_tree(hwloc_get_first_largest_obj_inside_cpuset(SAC_HWLOC_topology,
+    //tmp_hw_cpuset), 0);
 
     tmp_hw_cpuset = hwloc_bitmap_alloc (); // empty map on cpuset
-    if (hwloc_cudart_get_device_cpuset (SAC_HWLOC_topology, cuda_ordinal, tmp_hw_cpuset)) {
+    if (HWLOC_IS_TRUE (hwloc_cudart_get_device_cpuset (SAC_HWLOC_topology,
+                                                       cuda_ordinal,
+                                                       tmp_hw_cpuset))) {
+        // get nearest CPU core
+        SAC_HWLOC_cpu_sets = SAC_HWLOC_get_core (tmp_hw_cpuset);
+
+        // bind current process to cpuset
+        SAC_HWLOC_bind_on_cpuset (*SAC_HWLOC_cpu_sets);
+
+        // bind all further memory allocations to the current NODE/NUMANODE
+        if (HWLOC_IS_TRUE (hwloc_set_membind (SAC_HWLOC_topology,
+                                              *SAC_HWLOC_cpu_sets,
+                                              HWLOC_MEMBIND_BIND,
+                                              HWLOC_MEMBIND_STRICT))) {
+            // get info and store in string
+            SAC_HWLOC_info_snprintf (str,
+                                     str_size,
+                                     SAC_HWLOC_topology,
+                                     tmp_hw_cpuset,
+                                     *SAC_HWLOC_cpu_sets);
+        } else {
+            ret = false;
+            SAC_RuntimeWarning (
+              "HWLOC is unable to bind all memory allocations to current NODE!");
+        }
+    } else {
         ret = false;
         SAC_RuntimeWarning ("Unable to locate HWLOC cpuset nearest to CUDA device %d!",
                             cuda_ordinal);
-        goto error;
     }
 
-    // get nearest CPU core
-    SAC_HWLOC_cpu_sets = SAC_HWLOC_get_core (tmp_hw_cpuset);
-
-    // bind current process to cpuset
-    SAC_HWLOC_bind_on_cpuset (*SAC_HWLOC_cpu_sets);
-
-    // bind all further memory allocations to the current NODE/NUMANODE
-    if (hwloc_set_membind (SAC_HWLOC_topology, *SAC_HWLOC_cpu_sets, HWLOC_MEMBIND_BIND,
-                           HWLOC_MEMBIND_STRICT)) {
-        ret = false;
-        SAC_RuntimeWarning (
-          "HWLOC is unable to bind all memory allocations to current NODE!");
-        goto error;
-    }
-
-    SAC_HWLOC_info_snprintf (str, str_size, SAC_HWLOC_topology, tmp_hw_cpuset,
-                             *SAC_HWLOC_cpu_sets);
-
-error:
     hwloc_bitmap_free (tmp_hw_cpuset);
     return ret;
 }

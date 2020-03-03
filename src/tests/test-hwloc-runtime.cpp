@@ -107,17 +107,26 @@ TEST (HWLOCRuntime, CUDAHWLOCInitAndCleanUp)
 {
     char cuda_hwloc_status[1024];
 
-    // we assume ordinal 0
+    // we need to initialise the HWLOC before checking
+    // the pinning for CUDA
+    SAC_HWLOC_init ();
+
+    // should be allocated and set
+    ASSERT_TRUE (SAC_HWLOC_topology);
+
+    // we assume GPU ordinal 0
     if (!SAC_CUDA_HWLOC_init (0, cuda_hwloc_status,
                               sizeof (cuda_hwloc_status))) {
         /* on systems with no CUDA device, or with only 1
          * NUMA node, we skip this test.
          */
-        return;
-    }
+    } else {
+        // should *still* be allocated and set
+        ASSERT_TRUE (SAC_HWLOC_topology);
 
-    // should be allocated and set
-    ASSERT_TRUE (SAC_HWLOC_topology);
+        // should not be empty
+        ASSERT_STRNE (cuda_hwloc_status, "");
+    }
 
     SAC_HWLOC_cleanup ();
 
