@@ -303,10 +303,12 @@ LINLfundef (node *arg_node, info *arg_info)
          * that INFO_ONEFUNDEF is true, this may not hold in the future.
          * Hence, we stack that value before setting it to FALSE.
          */
+        DBUG_PRINT ("traversing LaC funs of %s", CTIitemName (arg_node));
         old_onefundef = INFO_ONEFUNDEF (arg_info);
         INFO_ONEFUNDEF (arg_info) = FALSE;
         FUNDEF_LOCALFUNS (arg_node) = TRAVdo (FUNDEF_LOCALFUNS (arg_node), arg_info);
         INFO_ONEFUNDEF (arg_info) = old_onefundef;
+        DBUG_PRINT ("traversing LaC funs of %s done", CTIitemName (arg_node));
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
@@ -335,6 +337,7 @@ LINLassign (node *arg_node, info *arg_info)
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_CODE (arg_info) != NULL) {
+        DBUG_PRINT ("injecting inlined code in N_assign chain");
         ASSIGN_NEXT (arg_node)
           = TCappendAssign (INFO_CODE (arg_info), ASSIGN_NEXT (arg_node));
 
@@ -421,6 +424,9 @@ LINLap (node *arg_node, info *arg_info)
         INFO_CODE (arg_info)
           = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
                                    INFO_LETIDS (arg_info), AP_ARGS (arg_node));
+    } else {
+        DBUG_PRINT (">> ignoring application of %s",
+                    CTIitemName (AP_FUNDEF (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -448,6 +454,7 @@ LINLdoLACInlining (node *arg_node)
 
     arg_info = MakeInfo ();
 
+    DBUG_PRINT ("traversing all functions");
     TRAVpush (TR_linl);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
@@ -485,6 +492,7 @@ LINLdoLACInliningOneFundef (node *arg_node)
     arg_info = MakeInfo ();
     INFO_ONEFUNDEF (arg_info) = TRUE;
 
+    DBUG_PRINT ("traversing one function only");
     TRAVpush (TR_linl);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();

@@ -303,6 +303,8 @@ EATap (node *arg_node, info *arg_info)
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
             new_info = FreeInfo (new_info);
         }
+    } else {
+        DBUG_PRINT ("non-lac-fun %s found; no following!", CTIitemName (AP_FUNDEF (arg_node)));
     }
     argt = TYfreeType (argt);
 

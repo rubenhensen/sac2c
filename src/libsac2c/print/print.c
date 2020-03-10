@@ -2348,7 +2348,7 @@ PRTfundef (node *arg_node, info *arg_info)
                                      "\n"
                                      "/**************************************************"
                                      "**************************\n"
-                                     " * Local fundefs of %s:\n"
+                                     " * Begin local fundefs of %s:\n"
                                      " **************************************************"
                                      "**************************/"
                                      "\n",
@@ -2358,6 +2358,19 @@ PRTfundef (node *arg_node, info *arg_info)
                         INFO_NONLOCCALFUN (arg_info) = arg_node;
                         TRAVdo (FUNDEF_LOCALFUNS (arg_node), arg_info);
                         INFO_NONLOCCALFUN (arg_info) = NULL;
+
+                        if (global.break_fun_name != NULL) {
+                            fprintf (global.outfile,
+                                     "\n"
+                                     "/**************************************************"
+                                     "**************************\n"
+                                     " * End local fundefs of %s:\n"
+                                     " **************************************************"
+                                     "**************************/"
+                                     "\n",
+                                     FUNDEF_NAME (arg_node));
+                        }
+
                     }
                 }
             }
