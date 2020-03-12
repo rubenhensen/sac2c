@@ -53,9 +53,9 @@ optimisations:
 
 main 
 =>Loop_4                                              | do-loop
-  => _dup_43_main__Cond_3   /* lacinline */
+  => _dup_43_main__Cond_3    * lacinline * 
     => _dup_42_main__Loop_2                           | outer for-loop
-      => _dup_41_main__Cond_1   /* lacinline */
+      => _dup_41_main__Cond_1    * lacinline * 
         => _dup_40_main__Loop_0                       | inner for-loop
 
 As we can see, both guarding conditionals for the for loops have
@@ -70,7 +70,7 @@ So when LINL was done with Loop_4, the AST looked like this:
 main
 =>Loop_4                                            | do-loop
   => _dup_50_main__Loop_2                           | outer for-loop
-    => _dup_49_main__Cond_1   /* lacinline */
+    => _dup_49_main__Cond_1    * lacinline * 
       => _dup_48_main__Loop_0                       | inner for-loop
 
 The old functions
