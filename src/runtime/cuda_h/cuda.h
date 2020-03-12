@@ -30,12 +30,15 @@ extern "C" {
  *****************************************************************************/
 
 #if SAC_SET_CPU_BIND_STRATEGY > 0
-#define SAC_CUDA_SETUP() { \
-    char _cuda_hwloc_status[1024]; \
-    SAC_TR_GPU_PRINT ("(hwloc) init CUDA binding for card %d", SAC_SET_CPU_BIND_STRATEGY, 0); \
-    SAC_CUDA_HWLOC_init (0, _cuda_hwloc_status, sizeof(_cuda_hwloc_status)); \
-    SAC_TR_GPU_PRINT ("(hwloc) bound to %s", _cuda_hwloc_status); \
-    }
+#define SAC_CUDA_SETUP() {                                                               \
+    char _cuda_hwloc_status[1024];                                                       \
+    SAC_TR_GPU_PRINT ("(hwloc) init CPU pinning for GPU card %d",                        \
+                      SAC_SET_CPU_BIND_STRATEGY, 0);                                     \
+    if (!SAC_CUDA_HWLOC_init (0, _cuda_hwloc_status, sizeof(_cuda_hwloc_status))) {      \
+        SAC_RuntimeError ("HWLOC failure: unable to pin the closest CPU core to GPU!");  \
+    }                                                                                    \
+    SAC_TR_GPU_PRINT ("(hwloc) bound to %s", _cuda_hwloc_status);                        \
+}
 
 #else
 #define SAC_CUDA_SETUP() SAC_NOOP ();
