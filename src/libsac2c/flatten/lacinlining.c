@@ -1,3 +1,107 @@
+/*******************************************************************************
+
+This file implements the inlining of degenerate LaC functions, ie. LaC functions
+who no longer abide their special formatting requirements. This primarily
+happens when predicates can be statically decided. Since several optimisations
+can lead to such degenerations, the idea is to share this inlining by
+making it a separate traversal. The communication between the optimisations
+that modify the LaC functions and this traversal happens through flags
+at the N_fundef node.
+The optimisations set the ISCONDFUN, ISLOOPFUN, ISLACFUN to false and
+the set the flag ISLACINLINE to true! Those optimisations do *not* move the
+functions at all! This implies that in GLF mode (group local functions), after
+the other optimisations have been run, we potentially have LACINLINE functions
+within the local functions chain which in general is *not* legal!
+This traversal inlines all the LACINLINE functions and elides them from the 
+local function chains, ensuring the rules of local functions again.
+
+This temporary illegality of the AST means that this traversal should be
+run ASAP after traversals that can trigger LACINLINE!
+
+Currently (3/2020), the only traversals that trigger LACINLINE are:
+"fun2lac", "ConstantFolding", "DeadCodeRemoval", and "ElimBottomTypes".
+
+Even in GLF mode, this traversal does *not* make use of the local fundef
+chain! The reason for this is rather subtle and can be best explained at 
+an example that went wrong when going through the local fundef chain:
+
+Consider this example (credits Hans :-)
+int main()
+{
+  clusters = _reshape_VxA_([1,1],0);
+  new_centers_len = with {} : genarray([1], 0);
+
+  loop = 0;
+  do {
+
+    for (i=0; _lt_SxS_(i,1); i=_add_SxS_(i,1)) {
+      for (j=0; _lt_SxS_(j,1); j=_add_SxS_(j,1)) {
+        tmp = _sel_VxA_( [i], new_centers_len);
+        clusters = _modarray_AxVxS_(clusters, [i,j], tmp);
+      }
+    }
+
+    loop = _add_SxS_(loop,1);
+  } while (_lt_SxS_(loop,2));
+
+  return(_sel_VxA_([0,0],clusters));
+}
+
+Compilation generates a single local fundef chain, which (when compiling
+with -noprelude) looks like this when arriving at the first linl in the
+optimisations:
+
+main 
+=>Loop_4                                              | do-loop
+  => _dup_43_main__Cond_3   /* lacinline */
+    => _dup_42_main__Loop_2                           | outer for-loop
+      => _dup_41_main__Cond_1   /* lacinline */
+        => _dup_40_main__Loop_0                       | inner for-loop
+
+As we can see, both guarding conditionals for the for loops have
+been statically identified as superfluous!
+
+If we were to follow the local fun chain (and this was the case until
+now (3/2020)), the first LACINLINE function we find is that of Cond_3.
+This triggers an inlining (using PINL) which duplicates all LaC functions
+contained!
+So when LINL was done with Loop_4, the AST looked like this:
+
+main
+=>Loop_4                                            | do-loop
+  => _dup_50_main__Loop_2                           | outer for-loop
+    => _dup_49_main__Cond_1   /* lacinline */
+      => _dup_48_main__Loop_0                       | inner for-loop
+
+The old functions
+_dup_43_main__Cond_3
+_dup_42_main__Loop_2
+_dup_41_main__Cond_1
+_dup_40_main__Loop_0
+where already freed but still traversed!!!
+If that was not bad enough, the new ones, most notably _dup_49_main__Cond_1
+was *not* traversed as the idea was *not* to follow applications but
+to follow the local fundef chain :-(
+
+If we could rely on the fact that the local fundef chain is always 
+sorted according to their static call dependencies, a bottom up
+traversal of the local fundef chain would be sufficient. However,
+this imposes yet another requirement on the AST rules which I would
+rather not do.
+
+Consequently, the new implementation does *not* make use of the local 
+function chain. Instead it follows the N_ap nodes of LACFUNs and 
+LACINLINE functions! Furthermore, it the applies the actual inlining 
+in a bottom-up fashion!
+
+That way, we correctly obtain for the above example:
+main
+=>Loop_4                                            | do-loop
+  => _dup_51_main__Loop_2                           | outer for-loop
+    => _dup_50_main__Loop_0                         | inner for-loop
+
+
+*******************************************************************************/
 #include "globals.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -279,8 +383,6 @@ LINLmodule (node *arg_node, info *arg_info)
 node *
 LINLfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
-
     DBUG_ENTER ();
 
     DBUG_PRINT ("lacinlining in %s", CTIitemName (arg_node));
@@ -294,21 +396,6 @@ LINLfundef (node *arg_node, info *arg_info)
             DBUG_PRINT ("Function inlined which contained spawn");
             FUNDEF_CONTAINSSPAWN (arg_node) = TRUE;
         }
-    }
-    if (FUNDEF_LOCALFUNS (arg_node) != NULL) {
-        /**
-         * we are in glf mode. Since we want to handle all lacinlines in the
-         * chain, we need to temporarily set INFO_ONEFUNDEF to false.
-         * Although glf mode today (5/2009) implies
-         * that INFO_ONEFUNDEF is true, this may not hold in the future.
-         * Hence, we stack that value before setting it to FALSE.
-         */
-        DBUG_PRINT ("traversing LaC funs of %s", CTIitemName (arg_node));
-        old_onefundef = INFO_ONEFUNDEF (arg_info);
-        INFO_ONEFUNDEF (arg_info) = FALSE;
-        FUNDEF_LOCALFUNS (arg_node) = TRAVdo (FUNDEF_LOCALFUNS (arg_node), arg_info);
-        INFO_ONEFUNDEF (arg_info) = old_onefundef;
-        DBUG_PRINT ("traversing LaC funs of %s done", CTIitemName (arg_node));
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
@@ -404,26 +491,36 @@ LINLlet (node *arg_node, info *arg_info)
 node *
 LINLap (node *arg_node, info *arg_info)
 {
+    info *old_info;
     DBUG_ENTER ();
 
-    if (FUNDEF_ISLACINLINE (AP_FUNDEF (arg_node))) {
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)) || FUNDEF_ISLACINLINE (AP_FUNDEF (arg_node)))
+        && (INFO_FUNDEF (arg_info) != AP_FUNDEF (arg_node))) {
 
-        DBUG_PRINT (">> processing application of %s",
-                    CTIitemName (AP_FUNDEF (arg_node)));
+        old_info = arg_info;
+        arg_info = MakeInfo();
+        INFO_ONEFUNDEF (arg_info) = TRUE;
+        AP_FUNDEF (arg_node) = TRAVdo( AP_FUNDEF (arg_node), arg_info);
+        arg_info = FreeInfo( arg_info);
+        arg_info = old_info;
 
-        /*
-         * Adapt types of the concrete loop/cond arguments to meet the
-         * types of the potentially reassigned formal arguments.
-         */
-        AdaptConcreteArgs (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)),
-                           AP_FUNDEF (arg_node));
+        if (FUNDEF_ISLACINLINE (AP_FUNDEF (arg_node))) {
+            DBUG_PRINT (">> processing application of %s",
+                        CTIitemName (AP_FUNDEF (arg_node)));
+            /*
+             * Adapt types of the concrete loop/cond arguments to meet the
+             * types of the potentially reassigned formal arguments.
+             */
+            AdaptConcreteArgs (AP_ARGS (arg_node), FUNDEF_ARGS (AP_FUNDEF (arg_node)),
+                               AP_FUNDEF (arg_node));
+    
+            INFO_SPAWNED (arg_info)
+              = INFO_SPAWNED (arg_info) || FUNDEF_CONTAINSSPAWN (AP_FUNDEF (arg_node));
 
-        INFO_SPAWNED (arg_info)
-          = INFO_SPAWNED (arg_info) || FUNDEF_CONTAINSSPAWN (AP_FUNDEF (arg_node));
-
-        INFO_CODE (arg_info)
-          = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
-                                   INFO_LETIDS (arg_info), AP_ARGS (arg_node));
+            INFO_CODE (arg_info)
+              = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
+                                       INFO_LETIDS (arg_info), AP_ARGS (arg_node));
+        }
     } else {
         DBUG_PRINT (">> ignoring application of %s",
                     CTIitemName (AP_FUNDEF (arg_node)));
