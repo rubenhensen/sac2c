@@ -97,9 +97,10 @@ SAC_CUDA_HWLOC_init (int cuda_ordinal, char *str, size_t str_size)
  *            contains a human-readable description of the HWLOC topology
  * @param  str_size Size of the allocated string str
  */
-void
+bool
 SAC_CUDA_HWLOC_init (int cuda_ordinal, char *str, size_t str_size)
 {
     SAC_RuntimeError ("CUDA HWLOC binding is disabled! This function should not be called!");
+    return FALSE;
 }
 #endif /* ENABLE_HWLOC && ENABLE_CUDA */
