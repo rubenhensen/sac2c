@@ -230,7 +230,14 @@ EMRLwith (node * arg_node, info * arg_info)
 {
     DBUG_ENTER ();
 
+    /* we must traverse withops first */
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
+    /* in some instances we may 'lift' a loop which is called from within
+     * a WL. In order to update the arguments of its application we need
+     * to traverse through the N_blocks of the WL.
+     */
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
