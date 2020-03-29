@@ -8,10 +8,15 @@
 
 #include <stdlib.h>
 #include <pthread.h>
-#include <cuda_runtime.h>
 
 #include "sync.h"
 #include "libsac/essentials/message.h"    // SAC_RuntimeError,...
+
+#if ENABLE_CUDA
+#include <cuda_runtime.h>
+#else /* ENABLE_CUDA */
+#define CUDART_CB
+#endif /* ENABLE_CUDA */
 
 /* locking using spinlock */
 

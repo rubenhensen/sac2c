@@ -2,7 +2,11 @@
 #define _LIBSAC_CUDA_SYNC_H_
 
 #include <pthread.h>
+#if ENABLE_CUDA
 #include <cuda_runtime.h>
+#else /* ENABLE_CUDA */
+#define CUDART_CB
+#endif /* ENABLE_CUDA */
 
 typedef volatile pthread_spinlock_t cuda_lock_t;
 typedef struct { cuda_lock_t lock; } cuda_sync_t;
