@@ -768,7 +768,6 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
 #define SAC_HM_FREE(addr)                                                                \
     do {                                                                                 \
         SAC_TR_GPU_PRINT ("Freeing CUDA managed memory area.");                          \
-        cudaDeviceSynchronize ();                                                        \
         cudaFree (addr);                                                                 \
         SAC_GET_CUDA_FREE_ERROR ();                                                      \
     } while (0);

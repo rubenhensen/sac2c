@@ -130,7 +130,6 @@ extern "C" {
 #if SAC_DO_CUDA_ALLOC == SAC_CA_cuman || SAC_DO_CUDA_ALLOC == SAC_CA_cumanp
 #define SAC_CUDA_FREE(var_NT, freefun)                                                   \
     SAC_TR_GPU_PRINT ("Freeing CUDA device memory (managed): %s", NT_STR (var_NT));      \
-    cudaDeviceSynchronize ();                                                            \
     SAC_PF_MEM_CUDA_INC_FREE (sizeof (*SAC_ND_A_FIELD (var_NT))                          \
                               * SAC_ND_A_SIZE (var_NT));                                 \
     cudaFree (SAC_ND_A_FIELD (var_NT));                                                  \
