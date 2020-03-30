@@ -44,7 +44,7 @@ extern "C" {
 #endif /* SAC_DO_CUDA_FORCE_INIT */
 
 #if SAC_SET_CPU_BIND_STRATEGY > 0
-#define SAC_CUDA_SETUP() {                                                               \
+#define SAC_CUDA_BIND_SETUP() {                                                          \
     char _cuda_hwloc_status[1024];                                                       \
     SAC_TR_GPU_PRINT ("(hwloc) init CPU pinning for GPU card %d",                        \
                       SAC_SET_CPU_BIND_STRATEGY, 0);                                     \
