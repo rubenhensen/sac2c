@@ -543,10 +543,42 @@ CUADEprf (node *arg_node, info *arg_info)
          *
          * is pushing START to before assignment OK?
          */
+        node *assign = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node)));
 
-        DBUG_PRINT ("Adding N_assign of N_avis %s to h2d LUT...", ID_NAME (PRF_ARG1 (arg_node)));
-        INFO_H2D_LUT (arg_info) = LUTinsertIntoLutP (INFO_H2D_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)), INFO_CURASSIGN (arg_info));
-        INFO_DELASSIGN (arg_info) = true;
+        /**
+         * In some rare situations we will have a d2h followed eventually by a
+         * h2d, where the RHS is the LHS of the d2h. This happens whenever we
+         * need both the memory on the host and device. See the following:
+         *
+         * ~~~
+         * a = d2h_end (a_dev);
+         * b_dev = h2d_start (a);
+         * ...
+         * k, c_dev = some_function (a, b_dev);
+         * ~~~
+         *
+         * We must be careful to not move one of the statements, as we will
+         * loss its positition potentially leading to the statements being swapped.
+         *
+         * To prevent this, we choose to not lift the h2d, leaving it where it is.
+         * We check the RHS of the h2d, and if it is a d2h, we do not allow the h2d
+         * to be moved further up.
+         *
+         * Regarding the look of the example and its obvious optertunnity for
+         * improvement, note that in the memory phase we deal with such a situation
+         * through ERCs.
+         */
+        if (assign != NULL
+            && (isAssignPrf (assign, F_device2host_end)
+                || isAssignPrf (assign, F_prefetch2host)))
+        {
+            DBUG_PRINT ("RHS N_avis %s of h2d is LHS of d2h, we will not move this up", ID_NAME (PRF_ARG1 (arg_node)));
+        } else {
+            DBUG_PRINT ("Adding N_assign of N_avis %s to h2d LUT...", ID_NAME (PRF_ARG1 (arg_node)));
+            INFO_H2D_LUT (arg_info) = LUTinsertIntoLutP (INFO_H2D_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)), INFO_CURASSIGN (arg_info));
+            INFO_DELASSIGN (arg_info) = true;
+        }
+
         break;
 
     case F_prefetch2host:
