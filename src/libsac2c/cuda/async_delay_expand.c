@@ -42,22 +42,24 @@
  * INFO structure
  */
 struct INFO {
-    node *curassign;
-    node *preassign;
-    node *nextassign;
-    node *wnextassign;
-    node *upassign;
-    node *downassign;
-    node *lhs;
-    lut_t *h2d_lut;
-    lut_t *d2h_lut;
-    bool delassign;
-    bool inwith;
+    node *fundef;       /**< holds node to current N_fundef */
+    node *curassign;    /**< holds node to current N_assign */
+    node *preassign;    /**< holds node to next N_assign */
+    node *nextassign;   /**< holds node to previous N_assign */
+    node *wnextassign;  /**< holds next N_assign of WL */
+    node *upassign;     /**< holds N_assign with h2d, which will be pushed up */
+    node *downassign;   /**< holds N_assign with d2h, which will be pushed down */
+    node *lhs;          /**< holds N_let N_ids */
+    lut_t *h2d_lut;     /**< lut to collect h2d N_assigns */
+    lut_t *d2h_lut;     /**< lut to collect d2h N_assigns */
+    bool delassign;     /**< flag indicating that current N_assign should be deleted */
+    bool inwith;        /**< flag indicating that we are in a WL */
 };
 
 /**
  * INFO macros
  */
+#define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_CURASSIGN(n) ((n)->curassign)
 #define INFO_PREASSIGN(n) ((n)->preassign)
 #define INFO_NEXTASSIGN(n) ((n)->nextassign)
@@ -84,6 +86,7 @@ MakeInfo (void)
 
     result = (info *)MEMmalloc (sizeof (info));
 
+    INFO_FUNDEF (result) = NULL;
     INFO_CURASSIGN (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_NEXTASSIGN (result) = NULL;
@@ -122,11 +125,14 @@ node *
 CUADEfundef (node *arg_node, info *arg_info)
 {
     bool olddelassign;
+    node *oldfundef;
 
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node))
     {
+        DBUG_PRINT ("inspecting %s...", FUNDEF_NAME (arg_node));
+
         INFO_H2D_LUT (arg_info) = LUTgenerateLut ();
         INFO_D2H_LUT (arg_info) = LUTgenerateLut ();
 
@@ -136,11 +142,14 @@ CUADEfundef (node *arg_node, info *arg_info)
 
         // we need to store state here as we might be coming from an N_ap
         olddelassign = INFO_DELASSIGN (arg_info);
+        oldfundef = INFO_FUNDEF (arg_info);
         INFO_DELASSIGN (arg_info) = false;
+        INFO_FUNDEF (arg_info) = arg_node;
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         INFO_DELASSIGN (arg_info) = olddelassign;
+        INFO_FUNDEF (arg_info) = oldfundef;
 
         INFO_H2D_LUT (arg_info) = LUTremoveLut (INFO_H2D_LUT (arg_info));
         INFO_D2H_LUT (arg_info) = LUTremoveLut (INFO_D2H_LUT (arg_info));
@@ -223,6 +232,34 @@ CUADEassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (INFO_UPASSIGN (arg_info)) = INFO_PREASSIGN (arg_info);
         ASSIGN_NEXT (arg_node) = INFO_UPASSIGN (arg_info);
         INFO_UPASSIGN (arg_info) = NULL;
+    }
+
+    /* we need to handle the case where the RHS of a h2d is a argument of the
+     * current fundef. This means that we can freely place the h2d_start, as such
+     * we wait till reach the top of the N_assign chain, and add any h2d_start that
+     * is still in the LUT
+     */
+    if (INFO_NEXTASSIGN (arg_info) == NULL)
+    {
+        DBUG_PRINT ("Reached top of N_assign chain, checking if fundef arguments "
+                    "are RHS to h2d");
+        /* search for h2d using function arguments */
+        node *res = NULL, *preassign = INFO_PREASSIGN (arg_info);
+        node *args = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
+        while (args != NULL) {
+            DBUG_PRINT ("Checking if N_avis %s is RHS of h2d...", ARG_NAME (args));
+            res = LUTsearchInLutPp (INFO_H2D_LUT (arg_info), ARG_AVIS (args));
+            if (res != ARG_AVIS (args) && res != NULL)
+            {
+                DBUG_PRINT ("...placing h2d at top of N_assign chain");
+                ASSIGN_NEXT (res) = preassign;
+                ASSIGN_NEXT (arg_node) = res;
+                /* we need to update the preassign to be our new next */
+                preassign = res;
+                INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info), ARG_AVIS (args), NULL, NULL);
+            }
+            args = ARG_NEXT (args);
+        }
     }
 
     INFO_PREASSIGN (arg_info) = arg_node;
@@ -371,12 +408,14 @@ CUADEwith (node *arg_node, info *arg_info)
     // any other state then NEXTASSIGN and the LUTs.
     wlinfo = MakeInfo ();
     INFO_IN_WITH (wlinfo) = true;
+    INFO_FUNDEF (wlinfo) = INFO_FUNDEF (arg_info);
     INFO_W_NEXTASSIGN (wlinfo) = INFO_NEXTASSIGN (arg_info);
     INFO_H2D_LUT (wlinfo) = INFO_H2D_LUT (arg_info);
     INFO_D2H_LUT (wlinfo) = INFO_D2H_LUT (arg_info);
 
     DBUG_PRINT ("Entering N_code of N_with...");
     WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), wlinfo);
+    DBUG_PRINT ("Exiting N_code of N_with...");
 
     // we don't care for any values here, so we free.
     wlinfo = FreeInfo (wlinfo);
@@ -405,6 +444,7 @@ CUADEcond (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     condinfo = MakeInfo ();
+    INFO_FUNDEF (condinfo) = INFO_FUNDEF (arg_info);
     INFO_H2D_LUT (condinfo) = LUTgenerateLut ();
     INFO_D2H_LUT (condinfo) = LUTgenerateLut ();
 
@@ -476,7 +516,7 @@ CUADEprf (node *arg_node, info *arg_info)
          *   ...
          * ~~~
          *
-         * We want to transfor this into:
+         * We want to transform this into:
          *
          * ~~~
          * {
@@ -554,7 +594,7 @@ CUADEprf (node *arg_node, info *arg_info)
         DBUG_PRINT ("Searching for %s LHS of D2H_end...", IDS_NAME (INFO_LHS (arg_info)));
         res = LUTsearchInLutPp (INFO_D2H_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
 
-        // we must no match with the current assignment
+        // we must not match with the current assignment
         if (res != IDS_AVIS (INFO_LHS (arg_info))
             && res != INFO_CURASSIGN (arg_info)
             && res != NULL)
