@@ -1649,6 +1649,7 @@
       <traversal id="PF" name="Annotate Function Calls " default="sons" include="annotate_fun_calls.h">
         <travuser>
           <node name="Ap" />
+          <node name="With" />
           <node name="Assign" />
           <node name="Fundef" />
         </travuser>  
