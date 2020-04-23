@@ -324,9 +324,9 @@
       </traversal>
       <traversal id="CUMM" name="Unify memory model for CUDA managed memory" default="sons" include="managed_memory.h" >
         <travuser>
-          <node name="Avis" />
           <node name="Let" />
           <node name="Prf" />
+          <node name="Avis" />
         </travuser>
       </traversal>
       <traversal id="CUAD" name="Introduce delayed CUDA memory transfers primitives" default="sons" include="async_delay.h" >

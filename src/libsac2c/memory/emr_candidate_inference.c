@@ -173,6 +173,8 @@ EMRCIprintPreFun (node *arg_node, info *arg_info)
         switch (PRF_PRF (arg_node)) {
         case F_host2device:
         case F_device2host:
+        case F_prefetch2host:
+        case F_prefetch2device:
         case F_host2device_start:
         case F_device2host_start:
             fprintf (global.outfile, "/* ERC (");
