@@ -235,7 +235,8 @@ CUADEassign (node *arg_node, info *arg_info)
     }
 
     /* we need to handle the case where the RHS of a h2d is a argument of the
-     * current fundef. This means that we can freely place the h2d_start, as such
+     * current fundef or is a lifted variable (as is done in the EMR traversal).
+     * This means that we can freely place the h2d_start, as such
      * we wait till reach the top of the N_assign chain, and add any h2d_start that
      * is still in the LUT
      */
@@ -259,6 +260,24 @@ CUADEassign (node *arg_node, info *arg_info)
                 INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info), ARG_AVIS (args), NULL, NULL);
             }
             args = ARG_NEXT (args);
+        }
+
+        DBUG_PRINT ("Now checking for h2d RHS which are ERC lifted arguments");
+        node *vardecs = FUNDEF_VARDECS (INFO_FUNDEF (arg_info));
+        while (vardecs != NULL) {
+            DBUG_PRINT ("Checking if N_avis %s is RHS of h2d...", VARDEC_NAME (vardecs));
+            res = LUTsearchInLutPp (INFO_H2D_LUT (arg_info), VARDEC_AVIS (vardecs));
+            if (res != VARDEC_AVIS (vardecs) && res != NULL)
+            {
+                DBUG_PRINT ("...placing h2d at top of N_assign chain");
+                ASSIGN_NEXT (res) = preassign;
+                ASSIGN_NEXT (arg_node) = res;
+                /* we need to update the preassign to be our new next */
+                preassign = res;
+                INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info), VARDEC_AVIS (vardecs), NULL, NULL);
+            }
+
+            vardecs = VARDEC_NEXT (vardecs);
         }
     }
 
