@@ -381,10 +381,41 @@ CUADEid (node *arg_node, info *arg_info)
     assign = AVIS_SSAASSIGN (ID_AVIS (arg_node));
 
     if (assign != NULL
+        /* we want to avoid moving the d2h_end which is immediately
+         * followed by it RHS reference
+         */
         && (isAssignPrf (assign, F_device2host_end)
             || isAssignPrf (assign, F_prefetch2host)))
     {
-        if (assign != INFO_NEXTASSIGN (arg_info))
+        if (assign != INFO_NEXTASSIGN (arg_info)
+            /* we want to avoid the moving a d2h_end which would be placed after another
+             * d2h_end, as this might be moved. For instance:
+             *
+             * ~~~
+             * ...
+             * a = d2h_end (t_a, a_d);
+             * ...
+             * ...
+             * g = with { ... };
+             * t_b = d2h_start (b_d);
+             * b = d2h_end (t_b, b_d);
+             * k = _sel_(iv, a);
+             * ...
+             * ~~~
+             *
+             * both the d2h_end of `a` and `b` will be moved down. As we are moving bottom up,
+             * `b` gets moved down first, meaning we've change the order of the N_assigns.
+             * When we reach `a`, we move this down to before the N_assign (`b`) which is now
+             * below the first reference of `a`. This causes CP/DCI/DCR to blow up!
+             *
+             * FIXME (hans): this check prevents some d2h_end primitives from being moved
+             *               down, which is unfortunate. One solution might be to perform an
+             *               anonymous traversal to find another assign that isn't a *_start
+             *               or *_end. Given the example above, we somehow chose the N_assign
+             *               of `g` meaning we move `a` down to after `g`.
+             */
+            && !(isAssignPrf (INFO_NEXTASSIGN (arg_info), F_device2host_end)
+                || isAssignPrf (INFO_NEXTASSIGN (arg_info), F_prefetch2host)))
         {
             DBUG_PRINT ("...adding N_assign of N_avis to d2h LUT...");
             nassign = INFO_IN_WITH (arg_info)
