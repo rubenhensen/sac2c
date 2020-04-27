@@ -1,10 +1,35 @@
 /**
  * @file
- * @defgroup cuade
+ * @defgroup cuade CUDA Async-delay Expansion
  *
  * @brief Given CUDA *_start and *_end primitives introduced in CUAD, move these such that
  *        we create a synchronisation window, wherein we push h2d_start up and d2h_end
  *        down.
+ *
+ *        This traversal takes the pairing of _start/_end primitives and splits these up
+ *        to thereby create 'time' such that when _end is called at runtime, the action
+ *        of _start is already complete. In this way, we try to 'hide' the synchronisation
+ *        latency.
+ *
+ *        There are some special cases which need to handled, which we list below
+ *        - the first reference may be directly after its _end primitive, in this case
+ *          we don't need to do anything. (@see CUADEprf for details).
+ *        - the first reference of N_avis assigned from a _end can be in a WL, we need to
+ *          be careful to move the _end down to the WL call site, and *not* into its body.
+ *          (@see CUADEwith for details).
+ *        - sometimes a h2d_start host variable may not exist in the function body, as it
+ *          is an argument. In this case we 'manually' move the _start to the top of the
+ *          function body. (@see CUADEassign for details).
+ *        - by way of EMR, we might encounter a 'lifted' variable, which by its
+ *          definition is artificial - it has no assignment - which points to some
+ *          _start or _end. For the simple case of h2d/d2h we don't need to do anything
+ *          further. When doing prefetching though, we need to 'manually' move these to
+ *          some point in the function body. (@see CUADEassign for details).
+ *        - a reference immediately preceded by a _end cannot use that _end N_assign as
+ *          an anchor to move its _end down to. This is because as we move the first _end
+ *          down, we implicitly cause the next _end to move below its first reference
+ *          point, creating invalid code and causing the compiler to explode. (@see
+ *          CUADEid for details).
  *
  * @note Rewriting this traversal more generically could be useful, as the principle
  *       operation here is readily applicable to various node types, not just N_prf. Being
@@ -49,6 +74,7 @@ struct INFO {
     node *wnextassign;  /**< holds next N_assign of WL */
     node *upassign;     /**< holds N_assign with h2d, which will be pushed up */
     node *downassign;   /**< holds N_assign with d2h, which will be pushed down */
+    node *delayavis;    /**< */
     node *lhs;          /**< holds N_let N_ids */
     lut_t *h2d_lut;     /**< lut to collect h2d N_assigns */
     lut_t *d2h_lut;     /**< lut to collect d2h N_assigns */
@@ -66,6 +92,7 @@ struct INFO {
 #define INFO_W_NEXTASSIGN(n) ((n)->wnextassign)
 #define INFO_UPASSIGN(n) ((n)->upassign)
 #define INFO_DOWNASSIGN(n) ((n)->downassign)
+#define INFO_DELAYAVIS(n) ((n)->delayavis)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_H2D_LUT(n) ((n)->h2d_lut)
 #define INFO_D2H_LUT(n) ((n)->d2h_lut)
@@ -93,6 +120,7 @@ MakeInfo (void)
     INFO_W_NEXTASSIGN (result) = NULL;
     INFO_UPASSIGN (result) = NULL;
     INFO_DOWNASSIGN (result) = NULL;
+    INFO_DELAYAVIS (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_H2D_LUT (result) = NULL;
     INFO_D2H_LUT (result) = NULL;
@@ -204,7 +232,7 @@ CUADEassign (node *arg_node, info *arg_info)
     if (INFO_DELASSIGN (arg_info))
     {
         DBUG_PRINT ("Deleting current N_assign...");
-        DBUG_EXECUTE (PRTdoPrintNode (INFO_CURASSIGN (arg_info)););
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, INFO_CURASSIGN (arg_info)););
         ASSIGN_NEXT (arg_node) = ASSIGN_NEXT (INFO_PREASSIGN (arg_info));
         INFO_PREASSIGN (arg_info) = ASSIGN_NEXT (arg_node);
         INFO_DELASSIGN (arg_info) = false;
@@ -215,10 +243,25 @@ CUADEassign (node *arg_node, info *arg_info)
      */
     if (INFO_DOWNASSIGN (arg_info))
     {
+        DBUG_PRINT ("Pushing h2d_end down...");
         old_next = ASSIGN_NEXT (INFO_DOWNASSIGN (arg_info));
         ASSIGN_NEXT (INFO_DOWNASSIGN (arg_info)) = INFO_CURASSIGN (arg_info);
         ASSIGN_NEXT (INFO_CURASSIGN (arg_info)) = old_next;
         INFO_DOWNASSIGN (arg_info) = NULL;
+
+        if (INFO_DELAYAVIS (arg_info)) {
+            /* we need to capture the next-next N_assign for a given
+             * N_avis reference because otherwise we risk moving the
+             * d2h_end beyond its first reference.
+             * @see CUADEid for further details
+             */
+            DBUG_PRINT ("Updating N_assign of delayed move of N_avis");
+            INFO_D2H_LUT (arg_info) = LUTupdateLutP (INFO_D2H_LUT (arg_info),
+                                                     INFO_DELAYAVIS (arg_info),
+                                                     arg_node,
+                                                     NULL);
+            INFO_DELAYAVIS (arg_info) = NULL;
+        }
     }
 
     INFO_CURASSIGN (arg_info) = arg_node;
@@ -257,7 +300,9 @@ CUADEassign (node *arg_node, info *arg_info)
                 ASSIGN_NEXT (arg_node) = res;
                 /* we need to update the preassign to be our new next */
                 preassign = res;
-                INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info), ARG_AVIS (args), NULL, NULL);
+                INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info),
+                                                         ARG_AVIS (args),
+                                                         NULL, NULL);
             }
             args = ARG_NEXT (args);
         }
@@ -266,7 +311,8 @@ CUADEassign (node *arg_node, info *arg_info)
         node *vardecs = FUNDEF_VARDECS (INFO_FUNDEF (arg_info));
         while (vardecs != NULL) {
             if (AVIS_ISALLOCLIFT (VARDEC_AVIS (vardecs))) {
-                DBUG_PRINT ("Checking if N_avis %s is RHS of h2d...", VARDEC_NAME (vardecs));
+                DBUG_PRINT ("Checking if N_avis %s is RHS of h2d...",
+                            VARDEC_NAME (vardecs));
                 res = LUTsearchInLutPp (INFO_H2D_LUT (arg_info), VARDEC_AVIS (vardecs));
                 if (res != VARDEC_AVIS (vardecs) && res != NULL)
                 {
@@ -275,7 +321,9 @@ CUADEassign (node *arg_node, info *arg_info)
                     ASSIGN_NEXT (arg_node) = res;
                     /* we need to update the preassign to be our new next */
                     preassign = res;
-                    INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info), VARDEC_AVIS (vardecs), NULL, NULL);
+                    INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info),
+                                                             VARDEC_AVIS (vardecs),
+                                                             NULL, NULL);
                 }
             }
 
@@ -330,7 +378,8 @@ CUADEids (node *arg_node, info *arg_info)
     {
         DBUG_PRINT ("...preparing to move h2d up...");
         INFO_UPASSIGN (arg_info) = res;
-        INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info), IDS_AVIS (arg_node), NULL, NULL);
+        INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info),
+                                                 IDS_AVIS (arg_node), NULL, NULL);
     }
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -381,55 +430,69 @@ CUADEid (node *arg_node, info *arg_info)
     assign = AVIS_SSAASSIGN (ID_AVIS (arg_node));
 
     if (assign != NULL
-        /* we want to avoid moving the d2h_end which is immediately
-         * followed by it RHS reference
-         */
         && (isAssignPrf (assign, F_device2host_end)
             || isAssignPrf (assign, F_prefetch2host)))
     {
-        if (assign != INFO_NEXTASSIGN (arg_info)
-            /* we want to avoid the moving a d2h_end which would be placed after another
-             * d2h_end, as this might be moved. For instance:
-             *
-             * ~~~
-             * ...
-             * a = d2h_end (t_a, a_d);
-             * ...
-             * ...
-             * g = with { ... };
-             * t_b = d2h_start (b_d);
-             * b = d2h_end (t_b, b_d);
-             * k = _sel_(iv, a);
-             * ...
-             * ~~~
-             *
-             * both the d2h_end of `a` and `b` will be moved down. As we are moving bottom up,
-             * `b` gets moved down first, meaning we've change the order of the N_assigns.
-             * When we reach `a`, we move this down to before the N_assign (`b`) which is now
-             * below the first reference of `a`. This causes CP/DCI/DCR to blow up!
-             *
-             * FIXME (hans): this check prevents some d2h_end primitives from being moved
-             *               down, which is unfortunate. One solution might be to perform an
-             *               anonymous traversal to find another assign that isn't a *_start
-             *               or *_end. Given the example above, we somehow chose the N_assign
-             *               of `g` meaning we move `a` down to after `g`.
-             */
-            && !(isAssignPrf (INFO_NEXTASSIGN (arg_info), F_device2host_end)
-                || isAssignPrf (INFO_NEXTASSIGN (arg_info), F_prefetch2host)))
+        if (assign != INFO_NEXTASSIGN (arg_info))
         {
-            DBUG_PRINT ("...adding N_assign of N_avis to d2h LUT...");
-            nassign = INFO_IN_WITH (arg_info)
-                      ? INFO_W_NEXTASSIGN (arg_info)
-                      : INFO_NEXTASSIGN (arg_info);
+            /* we want to avoid moving the d2h_end which is immediately
+             * followed by it RHS reference
+             */
+            if (isAssignPrf (INFO_NEXTASSIGN (arg_info), F_device2host_end)
+                || isAssignPrf (INFO_NEXTASSIGN (arg_info), F_prefetch2host))
+            {
+                /* we want to avoid moving a d2h_end which would be placed after another
+                 * d2h_end, as this might be moved. For instance:
+                 *
+                 * ~~~
+                 * ...
+                 * a = d2h_end (t_a, a_d);
+                 * ...
+                 * ...
+                 * g = with { ... };
+                 * t_b = d2h_start (b_d);
+                 * b = d2h_end (t_b, b_d);
+                 * k = _sel_(iv, a);
+                 * ...
+                 * l = _sel_(iv, b);
+                 * ...
+                 * ~~~
+                 *
+                 * both the d2h_end of `a` and `b` will be moved down. As we are moving
+                 * bottom up, `b` gets moved down first, meaning we've change the order of
+                 * the N_assigns.  When we reach `a`, we move this down to before the
+                 * N_assign (`b`) which is now below the first reference of `a`. This
+                 * causes CP/DCI/DCR to blow up!
+                 *
+                 * We know that once we traverse 'up' to the N_assign of `b`, that we will
+                 * push this down. At this point we have access to the 'next' N_assign (of
+                 * `t_b`). We store the our N_id's N_avis, and after this down push update
+                 * the D2H LUT with the 'next' N_assign.
+                 *
+                 * This should be fine as all h2d are pairs of _start/_end primitives, and
+                 * the _start primitive is not moved at all, so its safe to anchor here.
+                 */
+                DBUG_PRINT ("...delaying move as anchor position is a d2h_end.");
+                INFO_DELAYAVIS (arg_info) = ID_AVIS (arg_node);
+                nassign = NULL;
+            } else {
+                DBUG_PRINT ("...adding N_assign of N_avis to d2h LUT...");
+                nassign = INFO_IN_WITH (arg_info)
+                          ? INFO_W_NEXTASSIGN (arg_info)
+                          : INFO_NEXTASSIGN (arg_info);
+                DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, nassign););
+            }
         } else {
-            DBUG_PRINT ("...assign is directly after d2h, nor performing propagation.");
+            DBUG_PRINT ("...reference of N_avis is directly after its assignment through "
+                        "d2h_end, not performing propagation.");
             nassign = NULL;
         }
 
-        // We want to only ever use the last referenced point of N_avis, as such we
-        // overwrite the mapping with the new N_assign.
-        // We have one *special* case, which is when we are in a N_with. Here we
-        // do not provide the next assign, but the next assign of the N_with.
+        /* We want to only ever use the last referenced point of N_avis, as such we
+         * overwrite the mapping with the new N_assign.
+         * We have one *special* case, which is when we are in a N_with. Here we
+         * do not provide the next assign, but the next assign of the N_with.
+         */
         INFO_D2H_LUT (arg_info) = LUTupdateLutP (INFO_D2H_LUT (arg_info),
                                                  ID_AVIS (arg_node),
                                                  nassign,
@@ -610,13 +673,13 @@ CUADEprf (node *arg_node, info *arg_info)
          * ~~~
          *
          * We must be careful to not move one of the statements, as we will
-         * loss its positition potentially leading to the statements being swapped.
+         * loss its position potentially leading to the statements being swapped.
          *
          * To prevent this, we choose to not lift the h2d, leaving it where it is.
          * We check the RHS of the h2d, and if it is a d2h, we do not allow the h2d
          * to be moved further up.
          *
-         * Regarding the look of the example and its obvious optertunnity for
+         * Regarding the look of the example and its obvious opportunity for
          * improvement, note that in the memory phase we deal with such a situation
          * through ERCs.
          */
@@ -685,7 +748,7 @@ CUADEprf (node *arg_node, info *arg_info)
         {
             DBUG_PRINT ("...found matching");
             INFO_D2H_LUT (arg_info) = LUTupdateLutP (INFO_D2H_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)), NULL, NULL);
-            DBUG_EXECUTE (PRTdoPrintNode (res););
+            DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, res););
             INFO_DOWNASSIGN (arg_info) = res;
             INFO_DELASSIGN (arg_info) = true;
         }
