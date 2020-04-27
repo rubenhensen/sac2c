@@ -72,6 +72,7 @@ struct INFO {
     node *preassign;    /**< holds node to next N_assign */
     node *nextassign;   /**< holds node to previous N_assign */
     node *wnextassign;  /**< holds next N_assign of WL */
+    node *cnextassign;  /**< holds next N_assign of Cond */
     node *upassign;     /**< holds N_assign with h2d, which will be pushed up */
     node *downassign;   /**< holds N_assign with d2h, which will be pushed down */
     node *delayavis;    /**< holds N_avis which is being delayed */
@@ -80,6 +81,7 @@ struct INFO {
     lut_t *d2h_lut;     /**< lut to collect d2h N_assigns */
     bool delassign;     /**< flag indicating that current N_assign should be deleted */
     bool inwith;        /**< flag indicating that we are in a WL */
+    bool incond;        /**< flag indicating that we are in a Cond */
 };
 
 /**
@@ -90,6 +92,7 @@ struct INFO {
 #define INFO_PREASSIGN(n) ((n)->preassign)
 #define INFO_NEXTASSIGN(n) ((n)->nextassign)
 #define INFO_W_NEXTASSIGN(n) ((n)->wnextassign)
+#define INFO_C_NEXTASSIGN(n) ((n)->cnextassign)
 #define INFO_UPASSIGN(n) ((n)->upassign)
 #define INFO_DOWNASSIGN(n) ((n)->downassign)
 #define INFO_DELAYAVIS(n) ((n)->delayavis)
@@ -98,6 +101,7 @@ struct INFO {
 #define INFO_D2H_LUT(n) ((n)->d2h_lut)
 #define INFO_DELASSIGN(n) ((n)->delassign)
 #define INFO_IN_WITH(n) ((n)->inwith)
+#define INFO_IN_COND(n) ((n)->incond)
 
 /**
  * @name INFO functions
@@ -118,6 +122,7 @@ MakeInfo (void)
     INFO_PREASSIGN (result) = NULL;
     INFO_NEXTASSIGN (result) = NULL;
     INFO_W_NEXTASSIGN (result) = NULL;
+    INFO_C_NEXTASSIGN (result) = NULL;
     INFO_UPASSIGN (result) = NULL;
     INFO_DOWNASSIGN (result) = NULL;
     INFO_DELAYAVIS (result) = NULL;
@@ -126,6 +131,7 @@ MakeInfo (void)
     INFO_D2H_LUT (result) = NULL;
     INFO_DELASSIGN (result) = false;
     INFO_IN_WITH (result) = false;
+    INFO_IN_COND (result) = false;
 
     DBUG_RETURN (result);
 }
@@ -285,7 +291,9 @@ CUADEassign (node *arg_node, info *arg_info)
      * we wait till reach the top of the N_assign chain, and add any h2d_start that
      * is still in the LUT
      */
-    if (INFO_NEXTASSIGN (arg_info) == NULL)
+    if (INFO_NEXTASSIGN (arg_info) == NULL
+        && !(INFO_IN_WITH (arg_info)
+             || INFO_IN_COND (arg_info)))
     {
         DBUG_PRINT ("Reached top of N_assign chain, checking if fundef arguments "
                     "are RHS to h2d");
@@ -480,9 +488,11 @@ CUADEid (node *arg_node, info *arg_info)
                 nassign = NULL;
             } else {
                 DBUG_PRINT ("...adding N_assign of N_avis to d2h LUT...");
-                nassign = INFO_IN_WITH (arg_info)
-                          ? INFO_W_NEXTASSIGN (arg_info)
-                          : INFO_NEXTASSIGN (arg_info);
+                nassign = INFO_IN_COND (arg_info)
+                          ? INFO_C_NEXTASSIGN (arg_info)
+                          : INFO_IN_WITH (arg_info)
+                            ? INFO_W_NEXTASSIGN (arg_info)
+                            : INFO_NEXTASSIGN (arg_info);
                 DBUG_EXECUTE (if (nassign) {PRTdoPrintNodeFile (stderr, nassign);});
             }
         } else {
@@ -562,9 +572,11 @@ CUADEcond (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     condinfo = MakeInfo ();
+    INFO_IN_COND (condinfo) = true;
     INFO_FUNDEF (condinfo) = INFO_FUNDEF (arg_info);
-    INFO_H2D_LUT (condinfo) = LUTgenerateLut ();
-    INFO_D2H_LUT (condinfo) = LUTgenerateLut ();
+    INFO_C_NEXTASSIGN (condinfo) = INFO_NEXTASSIGN (arg_info);
+    INFO_H2D_LUT (condinfo) = INFO_H2D_LUT (arg_info);
+    INFO_D2H_LUT (condinfo) = INFO_D2H_LUT (arg_info);
 
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), condinfo);
 
@@ -573,14 +585,10 @@ CUADEcond (node *arg_node, info *arg_info)
     INFO_PREASSIGN (condinfo) = NULL;
     INFO_NEXTASSIGN (condinfo) = NULL;
     INFO_CURASSIGN (condinfo) = NULL;
-    INFO_H2D_LUT (condinfo) = LUTremoveContentLut (INFO_H2D_LUT (condinfo));
-    INFO_D2H_LUT (condinfo) = LUTremoveContentLut (INFO_D2H_LUT (condinfo));
 
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), condinfo);
 
-    // free the info and LUTs
-    INFO_H2D_LUT (condinfo) = LUTremoveLut (INFO_H2D_LUT (condinfo));
-    INFO_D2H_LUT (condinfo) = LUTremoveLut (INFO_D2H_LUT (condinfo));
+    // free the info
     condinfo = FreeInfo (condinfo);
 
     DBUG_RETURN (arg_node);
