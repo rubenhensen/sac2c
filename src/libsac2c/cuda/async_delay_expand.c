@@ -438,8 +438,9 @@ CUADEid (node *arg_node, info *arg_info)
             /* we want to avoid moving the d2h_end which is immediately
              * followed by it RHS reference
              */
-            if (isAssignPrf (INFO_NEXTASSIGN (arg_info), F_device2host_end)
-                || isAssignPrf (INFO_NEXTASSIGN (arg_info), F_prefetch2host))
+            if (INFO_NEXTASSIGN (arg_info) != NULL
+                && (isAssignPrf (INFO_NEXTASSIGN (arg_info), F_device2host_end)
+                || isAssignPrf (INFO_NEXTASSIGN (arg_info), F_prefetch2host)))
             {
                 /* we want to avoid moving a d2h_end which would be placed after another
                  * d2h_end, as this might be moved. For instance:
@@ -480,7 +481,7 @@ CUADEid (node *arg_node, info *arg_info)
                 nassign = INFO_IN_WITH (arg_info)
                           ? INFO_W_NEXTASSIGN (arg_info)
                           : INFO_NEXTASSIGN (arg_info);
-                DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, nassign););
+                DBUG_EXECUTE (if (nassign) {PRTdoPrintNodeFile (stderr, nassign);});
             }
         } else {
             DBUG_PRINT ("...reference of N_avis is directly after its assignment through "
