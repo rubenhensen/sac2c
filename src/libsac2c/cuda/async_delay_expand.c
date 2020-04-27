@@ -74,7 +74,7 @@ struct INFO {
     node *wnextassign;  /**< holds next N_assign of WL */
     node *upassign;     /**< holds N_assign with h2d, which will be pushed up */
     node *downassign;   /**< holds N_assign with d2h, which will be pushed down */
-    node *delayavis;    /**< */
+    node *delayavis;    /**< holds N_avis which is being delayed */
     node *lhs;          /**< holds N_let N_ids */
     lut_t *h2d_lut;     /**< lut to collect h2d N_assigns */
     lut_t *d2h_lut;     /**< lut to collect d2h N_assigns */
@@ -243,7 +243,7 @@ CUADEassign (node *arg_node, info *arg_info)
      */
     if (INFO_DOWNASSIGN (arg_info))
     {
-        DBUG_PRINT ("Pushing h2d_end down...");
+        DBUG_PRINT ("Pushing d2h_end down...");
         old_next = ASSIGN_NEXT (INFO_DOWNASSIGN (arg_info));
         ASSIGN_NEXT (INFO_DOWNASSIGN (arg_info)) = INFO_CURASSIGN (arg_info);
         ASSIGN_NEXT (INFO_CURASSIGN (arg_info)) = old_next;
@@ -272,8 +272,10 @@ CUADEassign (node *arg_node, info *arg_info)
      */
     if (INFO_UPASSIGN (arg_info))
     {
+        DBUG_PRINT ("Pushing h2d_start up...");
         ASSIGN_NEXT (INFO_UPASSIGN (arg_info)) = INFO_PREASSIGN (arg_info);
         ASSIGN_NEXT (arg_node) = INFO_UPASSIGN (arg_info);
+        INFO_PREASSIGN (arg_info) = INFO_UPASSIGN (arg_info);
         INFO_UPASSIGN (arg_info) = NULL;
     }
 
