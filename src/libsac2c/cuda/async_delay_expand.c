@@ -366,8 +366,7 @@ CUADEassign (node *arg_node, info *arg_info)
      * is still in the LUT
      */
     if (INFO_NEXTASSIGN (arg_info) == NULL
-        && !(INFO_IN_WITH (arg_info)
-             || INFO_IN_COND (arg_info)))
+        && !INFO_IN_WITH (arg_info))
     {
         DBUG_PRINT ("Reached top of N_assign chain, checking if fundef arguments "
                     "are RHS to h2d");
@@ -394,10 +393,10 @@ CUADEassign (node *arg_node, info *arg_info)
             args = ARG_NEXT (args);
         }
 
-        DBUG_PRINT ("Now checking for h2d RHS which are ERC lifted arguments");
+        DBUG_PRINT ("Now checking for h2d RHS which are ERC lifted arguments or outside N_cond");
         node *vardecs = FUNDEF_VARDECS (INFO_FUNDEF (arg_info));
         while (vardecs != NULL) {
-            if (AVIS_ISALLOCLIFT (VARDEC_AVIS (vardecs))) {
+            if (INFO_IN_COND (arg_info) || AVIS_ISALLOCLIFT (VARDEC_AVIS (vardecs))) {
                 DBUG_PRINT ("Checking if N_avis %s is RHS of h2d...",
                             VARDEC_NAME (vardecs));
 
@@ -655,13 +654,14 @@ CUADEcond (node *arg_node, info *arg_info)
     INFO_IN_COND (condinfo) = true;
     INFO_FUNDEF (condinfo) = INFO_FUNDEF (arg_info);
     INFO_C_NEXTASSIGN (condinfo) = INFO_NEXTASSIGN (arg_info);
-    INFO_H2D_LUT (condinfo) = INFO_H2D_LUT (arg_info);
+    INFO_H2D_LUT (condinfo) = LUTgenerateLut ();
     INFO_D2H_LUT (condinfo) = INFO_D2H_LUT (arg_info);
 
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), condinfo);
 
     // reset the info object
     INFO_DELASSIGN (condinfo) = false;
+    INFO_H2D_LUT (condinfo) = LUTremoveContentLut (INFO_H2D_LUT (condinfo));
     INFO_PREASSIGN (condinfo) = NULL;
     INFO_NEXTASSIGN (condinfo) = NULL;
     INFO_CURASSIGN (condinfo) = NULL;
@@ -669,6 +669,7 @@ CUADEcond (node *arg_node, info *arg_info)
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), condinfo);
 
     // free the info
+    INFO_H2D_LUT (condinfo) = LUTremoveLut (INFO_H2D_LUT (condinfo));
     condinfo = FreeInfo (condinfo);
 
     DBUG_RETURN (arg_node);
@@ -833,9 +834,10 @@ CUADEprf (node *arg_node, info *arg_info)
         res = LUTsearchInLutPp (INFO_D2H_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
 
         // we must not match with the current assignment
-        if (res != IDS_AVIS (INFO_LHS (arg_info))
+        if (res != NULL
+            && res != IDS_AVIS (INFO_LHS (arg_info))
             && res != INFO_CURASSIGN (arg_info)
-            && res != NULL)
+            && !INFO_IN_COND (arg_info))
         {
             DBUG_PRINT ("...found matching");
             INFO_D2H_LUT (arg_info) = LUTupdateLutP (INFO_D2H_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)), NULL, NULL);
