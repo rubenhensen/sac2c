@@ -20,6 +20,10 @@
  *        - sometimes a h2d_start host variable may not exist in the function body, as it
  *          is an argument. In this case we 'manually' move the _start to the top of the
  *          function body. (@see CUADEassign for details).
+ *        - it can happen that a array is referenced by multiple h2d_start primitives. We
+ *          already collect all these in our LUT, but we must be carefully to retrieve all
+ *          of these when we encounter the initial assignment of our array. (@see CUADEids
+ *          and CUADEassign for details).
  *        - by way of EMR, we might encounter a 'lifted' variable, which by its
  *          definition is artificial - it has no assignment - which points to some
  *          _start or _end. For the simple case of h2d/d2h we don't need to do anything
@@ -146,6 +150,76 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 /** @} */
+
+/**
+ * @brief Check if N_assign node is present in an N_assign chain
+ *
+ * @param assign_chain the N_assign chain
+ * @param assign the N_assign node to search for
+ * @return true if found, otherwise false
+ */
+static bool
+isAssignDup (node *assign_chain, node *assign)
+{
+    bool res = false;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT ((assign_chain == NULL) || (NODE_TYPE (assign_chain) == N_assign),
+                 "First argument to isAssignDup is not N_assign!");
+    DBUG_ASSERT ((assign == NULL) || (NODE_TYPE (assign) == N_assign),
+                 "First argument to isAssignDup is not N_assign!");
+
+    if (assign) {
+        while (assign_chain != NULL) {
+            if (assign_chain == assign) {
+                res = true;
+                break;
+            }
+            assign_chain = ASSIGN_NEXT (assign_chain);
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/**
+ * @brief search through lut and collect all entries into an N_assign
+ *        chain.
+ *
+ * @param lut The LUT
+ * @param avis the N_avis key
+ * @return a N_assign chain or NULL
+ */
+static node *
+getLutAssignChain (lut_t *lut, node *avis)
+{
+    void **tmp;
+    node *res, *chain = NULL;
+
+    DBUG_ENTER ();
+
+    res = LUTsearchInLutPp (lut, avis);
+    while (res != NULL && res != avis)
+    {
+        /* we need to check that we haven't come across this node
+         * before otherwise we might create cyclical references.
+         *
+         * FIXME this should no be needed as the LUT should guarantee
+         *       that all key-value pairs are unique. Likely there is
+         *       something strange going on in the implementation.
+         */
+        if (!isAssignDup (chain, res)) {
+            ASSIGN_NEXT (res) = NULL;
+            chain = TCappendAssign (chain, res);
+        }
+
+        tmp = LUTsearchInLutNextP ();
+        res = (tmp == NULL) ? NULL : *tmp;
+    }
+
+    DBUG_RETURN (chain);
+}
 
 /**
  * @brief we traverse the body of functions, we also store some state in case
@@ -279,7 +353,7 @@ CUADEassign (node *arg_node, info *arg_info)
     if (INFO_UPASSIGN (arg_info))
     {
         DBUG_PRINT ("Pushing h2d_start up...");
-        ASSIGN_NEXT (INFO_UPASSIGN (arg_info)) = INFO_PREASSIGN (arg_info);
+        INFO_UPASSIGN (arg_info) = TCappendAssign (INFO_UPASSIGN (arg_info), INFO_PREASSIGN (arg_info));
         ASSIGN_NEXT (arg_node) = INFO_UPASSIGN (arg_info);
         INFO_PREASSIGN (arg_info) = INFO_UPASSIGN (arg_info);
         INFO_UPASSIGN (arg_info) = NULL;
@@ -298,18 +372,21 @@ CUADEassign (node *arg_node, info *arg_info)
         DBUG_PRINT ("Reached top of N_assign chain, checking if fundef arguments "
                     "are RHS to h2d");
         /* search for h2d using function arguments */
-        node *res = NULL, *preassign = INFO_PREASSIGN (arg_info);
+        node *chain;
         node *args = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
         while (args != NULL) {
             DBUG_PRINT ("Checking if N_avis %s is RHS of h2d...", ARG_NAME (args));
-            res = LUTsearchInLutPp (INFO_H2D_LUT (arg_info), ARG_AVIS (args));
-            if (res != ARG_AVIS (args) && res != NULL)
-            {
-                DBUG_PRINT ("...placing h2d at top of N_assign chain");
-                ASSIGN_NEXT (res) = preassign;
-                ASSIGN_NEXT (arg_node) = res;
-                /* we need to update the preassign to be our new next */
-                preassign = res;
+            chain = getLutAssignChain (INFO_H2D_LUT (arg_info), ARG_AVIS (args));
+            if (chain) {
+                DBUG_PRINT ("...placing following N_assign chain to top:");
+                DBUG_EXECUTE (PRTdoPrintFile (stderr, chain););
+
+                /* we might have more than one N_assign associated with the N_avis */
+                chain = TCappendAssign (chain, INFO_PREASSIGN (arg_info));
+                ASSIGN_NEXT (arg_node) = chain;
+                INFO_PREASSIGN (arg_info) = chain;
+
+                /* clear entry in LUT */
                 INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info),
                                                          ARG_AVIS (args),
                                                          NULL, NULL);
@@ -323,20 +400,22 @@ CUADEassign (node *arg_node, info *arg_info)
             if (AVIS_ISALLOCLIFT (VARDEC_AVIS (vardecs))) {
                 DBUG_PRINT ("Checking if N_avis %s is RHS of h2d...",
                             VARDEC_NAME (vardecs));
-                res = LUTsearchInLutPp (INFO_H2D_LUT (arg_info), VARDEC_AVIS (vardecs));
-                if (res != VARDEC_AVIS (vardecs) && res != NULL)
-                {
-                    DBUG_PRINT ("...placing h2d at top of N_assign chain");
-                    ASSIGN_NEXT (res) = preassign;
-                    ASSIGN_NEXT (arg_node) = res;
-                    /* we need to update the preassign to be our new next */
-                    preassign = res;
+
+                /* we might have more than one N_assign associated with the N_avis */
+                chain = getLutAssignChain (INFO_H2D_LUT (arg_info), VARDEC_AVIS (args));
+                if (chain) {
+                    DBUG_PRINT ("...placing following N_assign chain to top:");
+                    DBUG_EXECUTE (PRTdoPrintFile (stderr, chain););
+                    chain = TCappendAssign (chain, INFO_PREASSIGN (arg_info));
+                    ASSIGN_NEXT (arg_node) = chain;
+                    INFO_PREASSIGN (arg_info) = chain;
+
+                    /* clear entry in LUT */
                     INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info),
                                                              VARDEC_AVIS (vardecs),
                                                              NULL, NULL);
                 }
             }
-
             vardecs = VARDEC_NEXT (vardecs);
         }
     }
@@ -367,8 +446,8 @@ CUADElet (node *arg_node, info *arg_info)
 }
 
 /**
- * @brief Check if LHS N_avis is an argument to a h2d, if so collect
- *              the h2d N_assign and prepare to move it to this point
+ * @brief Check if LHS N_avis is an argument to a h2d_start, collect
+ *              the h2d_start N_assign and prepare to move it to this point
  *              in the N_assign chain.
  *
  * @param arg_node
@@ -378,19 +457,20 @@ CUADElet (node *arg_node, info *arg_info)
 node *
 CUADEids (node *arg_node, info *arg_info)
 {
-    node *res;
+    node *chain;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Checking if N_avis %s is RHS of h2d...", IDS_NAME (arg_node));
-    res = LUTsearchInLutPp (INFO_H2D_LUT (arg_info), IDS_AVIS (arg_node));
-    if (res != IDS_AVIS (arg_node) && res != NULL)
-    {
-        DBUG_PRINT ("...preparing to move h2d up...");
-        INFO_UPASSIGN (arg_info) = res;
-        INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info),
-                                                 IDS_AVIS (arg_node), NULL, NULL);
+
+    /* we might have more than one N_assign associated with the N_avis */
+    chain = getLutAssignChain (INFO_H2D_LUT (arg_info), IDS_AVIS (arg_node));
+    if (chain) {
+        INFO_UPASSIGN (arg_info) = TCappendAssign (INFO_UPASSIGN (arg_info), chain);
     }
+
+    INFO_H2D_LUT (arg_info) = LUTupdateLutP (INFO_H2D_LUT (arg_info),
+                                             IDS_AVIS (arg_node), NULL, NULL);
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
