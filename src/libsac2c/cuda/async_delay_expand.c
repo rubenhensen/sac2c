@@ -402,7 +402,7 @@ CUADEassign (node *arg_node, info *arg_info)
                             VARDEC_NAME (vardecs));
 
                 /* we might have more than one N_assign associated with the N_avis */
-                chain = getLutAssignChain (INFO_H2D_LUT (arg_info), VARDEC_AVIS (args));
+                chain = getLutAssignChain (INFO_H2D_LUT (arg_info), VARDEC_AVIS (vardecs));
                 if (chain) {
                     DBUG_PRINT ("...placing following N_assign chain to top:");
                     DBUG_EXECUTE (PRTdoPrintFile (stderr, chain););
