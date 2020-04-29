@@ -781,9 +781,13 @@ CUADEprf (node *arg_node, info *arg_info)
         {
             DBUG_PRINT ("RHS N_avis %s of h2d is LHS of d2h, we will not move this up", ID_NAME (PRF_ARG1 (arg_node)));
         } else {
-            DBUG_PRINT ("Adding N_assign of N_avis %s to h2d LUT...", ID_NAME (PRF_ARG1 (arg_node)));
-            INFO_H2D_LUT (arg_info) = LUTinsertIntoLutP (INFO_H2D_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)), INFO_CURASSIGN (arg_info));
-            INFO_DELASSIGN (arg_info) = true;
+            if (INFO_NEXTASSIGN (arg_info)) {
+                DBUG_PRINT ("Adding N_assign of N_avis %s to h2d LUT...", ID_NAME (PRF_ARG1 (arg_node)));
+                INFO_H2D_LUT (arg_info) = LUTinsertIntoLutP (INFO_H2D_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)), INFO_CURASSIGN (arg_info));
+                INFO_DELASSIGN (arg_info) = true;
+            } else {
+                DBUG_PRINT ("h2d_start is already at top of assign chain, we will not move it");
+            }
         }
 
         break;
