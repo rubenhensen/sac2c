@@ -685,11 +685,11 @@ UpdateLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key,
                       fprintf (stderr, old_format, old_item); fprintf (stderr, " -> ");
                       fprintf (stderr, new_format, new_item); fprintf (stderr, " ]\n"));
 
-        (*found_item_p) = new_item;
-
         if (found_item != NULL) {
             (*found_item) = (*found_item_p);
         }
+
+        (*found_item_p) = new_item;
     }
 
     DBUG_PRINT ("< finished");
