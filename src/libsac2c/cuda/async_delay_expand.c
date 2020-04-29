@@ -329,18 +329,25 @@ CUADEassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (INFO_CURASSIGN (arg_info)) = old_next;
         INFO_DOWNASSIGN (arg_info) = NULL;
 
-        if (INFO_DELAYAVIS (arg_info)) {
+        if (!INFO_IN_WITH (arg_info) && INFO_DELAYAVIS (arg_info)) {
             /* we need to capture the next-next N_assign for a given
              * N_avis reference because otherwise we risk moving the
-             * d2h_end beyond its first reference.
+             * d2h_end beyond its first reference. If this comes
+             * from a WL, we add the N_avis to the LUT only after we
+             * have traversed out it.
              * @see CUADEid for further details
              */
-            DBUG_PRINT ("Updating N_assign of delayed move of N_avis");
-            INFO_D2H_LUT (arg_info) = LUTupdateLutP (INFO_D2H_LUT (arg_info),
-                                                     INFO_DELAYAVIS (arg_info),
-                                                     arg_node,
-                                                     NULL);
-            INFO_DELAYAVIS (arg_info) = NULL;
+            DBUG_PRINT ("Updating N_assign of delayed move of N_avis:");
+            node *exprs = INFO_DELAYAVIS (arg_info);
+            while (exprs != NULL) {
+                DBUG_PRINT ("... updating %s", ID_NAME (EXPRS_EXPR (exprs)));
+                INFO_D2H_LUT (arg_info) = LUTupdateLutP (INFO_D2H_LUT (arg_info),
+                                                         ID_AVIS (EXPRS_EXPR (exprs)),
+                                                         arg_node,
+                                                         NULL);
+                exprs = EXPRS_NEXT (exprs);
+            }
+            INFO_DELAYAVIS (arg_info) = FREEdoFreeTree (INFO_DELAYAVIS (arg_info));
         }
     }
 
@@ -527,12 +534,17 @@ CUADEid (node *arg_node, info *arg_info)
             /* we want to avoid moving the d2h_end which is immediately
              * followed by it RHS reference
              */
-            if (INFO_NEXTASSIGN (arg_info) != NULL
-                && (isAssignPrf (INFO_NEXTASSIGN (arg_info), F_device2host_end)
-                || isAssignPrf (INFO_NEXTASSIGN (arg_info), F_prefetch2host)))
+            if ((INFO_NEXTASSIGN (arg_info) != NULL
+                 && (isAssignPrf (INFO_NEXTASSIGN (arg_info), F_device2host_end)
+                     || isAssignPrf (INFO_NEXTASSIGN (arg_info), F_prefetch2host)))
+                || (INFO_W_NEXTASSIGN (arg_info) != NULL
+                    && (isAssignPrf (INFO_W_NEXTASSIGN (arg_info), F_device2host_end)
+                        || isAssignPrf (INFO_W_NEXTASSIGN (arg_info), F_prefetch2host))))
             {
                 /* we want to avoid moving a d2h_end which would be placed after another
-                 * d2h_end, as this might be moved. For instance:
+                 * d2h_end, as this might be moved, causing the first d2h_end to be moved
+                 * down with it. We handle this for two cases, the general case and when
+                 * traversing through a WL. For instance:
                  *
                  * ~~~
                  * ...
@@ -563,7 +575,7 @@ CUADEid (node *arg_node, info *arg_info)
                  * the _start primitive is not moved at all, so its safe to anchor here.
                  */
                 DBUG_PRINT ("...delaying move as anchor position is a d2h_end.");
-                INFO_DELAYAVIS (arg_info) = ID_AVIS (arg_node);
+                INFO_DELAYAVIS (arg_info) = TCcombineExprs (DUPdoDupNode (arg_node), INFO_DELAYAVIS (arg_info));
                 nassign = NULL;
             } else {
                 DBUG_PRINT ("...adding N_assign of N_avis to d2h LUT...");
@@ -624,7 +636,7 @@ CUADEwith (node *arg_node, info *arg_info)
     WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), wlinfo);
     DBUG_PRINT ("Exiting N_code of N_with...");
 
-    // we don't care for any values here, so we free.
+    INFO_DELAYAVIS (arg_info) = INFO_DELAYAVIS (wlinfo);
     wlinfo = FreeInfo (wlinfo);
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
