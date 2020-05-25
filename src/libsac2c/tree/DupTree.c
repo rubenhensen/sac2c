@@ -1855,6 +1855,7 @@ DUPids (node *arg_node, info *arg_info)
     avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
 
     AVIS_ISALIAS (avis) = AVIS_ISALIAS (IDS_AVIS (arg_node));
+    AVIS_ISCUDALOCAL (avis) = AVIS_ISCUDALOCAL (IDS_AVIS (arg_node));
     AVIS_HASDTTHENPROXY (avis) = AVIS_HASDTTHENPROXY (IDS_AVIS (arg_node));
     AVIS_HASDTELSEPROXY (avis) = AVIS_HASDTELSEPROXY (IDS_AVIS (arg_node));
 
