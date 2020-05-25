@@ -7,11 +7,21 @@ extern "C" {
 
 class LUTTest : public ::testing::Test {
     protected:
-        void SetUp() override {
+#if __cplusplus >= 201103L
+        void SetUp() override
+#else
+        void SetUp()
+#endif
+        {
             lut_1 = LUTgenerateLut ();
             lut_2 = LUTgenerateLut ();
         }
-        void TearDown() override {
+#if __cplusplus >= 201103L
+        void TearDown() override
+#else
+        void TearDown()
+#endif
+        {
             lut_1 = LUTremoveLut (lut_1);
             lut_2 = LUTremoveLut (lut_2);
         }
