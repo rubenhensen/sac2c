@@ -1027,7 +1027,6 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     }
 
 #define SAC_PF_SUM_CUDA()                                                                \
-    SAC_PF_TIMER_CUDA_Elapsed ();                                                        \
     cuda_knl_sum = SAC_PF_TIMER_CUDA_Sum ();                                             \
     SAC_PF_TIMER_CUDA_Destroy ();
 

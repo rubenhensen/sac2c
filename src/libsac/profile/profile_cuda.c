@@ -36,11 +36,11 @@ static size_t SAC_PF_MEM_CUDA_free_descnt = 0; /**< Holds the count of descripto
 #if ENABLE_CUDA
 
 #include <cuda_runtime_api.h>
-
+    
 /* global timer struct for CUDA event timer */
-size_t cuda_timer_count = 0;
 cuda_timer_t *cuda_timer = NULL;
-cuda_timer_t *cuda_timer_head = NULL;
+static cuda_timer_t *cuda_timer_head = NULL;
+static size_t cuda_timer_count = 0;
 
 cuda_timer_t *
 SAC_PF_TIMER_CUDA_Add (cuda_timer_t *timer)
@@ -54,6 +54,8 @@ SAC_PF_TIMER_CUDA_Add (cuda_timer_t *timer)
         timer = timer->next;
         timer->next = NULL;
     }
+
+    cuda_timer_count += 1;
 
     cudaEventCreate (&timer->start);
     cudaEventCreate (&timer->stop);
@@ -76,30 +78,16 @@ SAC_PF_TIMER_CUDA_Destroy ()
     }
 }
 
-void
-SAC_PF_TIMER_CUDA_Elapsed ()
+float
+SAC_PF_TIMER_CUDA_Sum ()
 {
+    float elapsed = 0, sum = 0;
     cuda_timer_t *timer = cuda_timer_head;
 
     while (timer != NULL) {
         cudaEventSynchronize (timer->stop);
-        cudaEventElapsedTime (&timer->elapsed, timer->start, timer->stop);
-        timer = timer->next;
-    }
-}
-
-float
-SAC_PF_TIMER_CUDA_Sum ()
-{
-    float sum = 0;
-    cuda_timer_t *timer = cuda_timer_head;
-
-    while (timer != NULL) {
-        if (timer->elapsed < 0) {
-            fprintf (stderr, "Found CUDA elapsed time that is not set (or is negative!)");
-            break;
-        }
-        sum += timer->elapsed;
+        cudaEventElapsedTime (&elapsed, timer->start, timer->stop);
+        sum += elapsed;
         timer = timer->next;
     }
 
@@ -122,9 +110,9 @@ SAC_PF_TIMER_CUDA_PrintTimePercentage (const char *title, const char *space, con
                             const struct timeval *time2)
 {
     fprintf (stderr,
-             "%-40s:%s  %8.2f msec %8.2f %%\n",
+             "%-40s:%s  %8.2f msec %8.2f %%\n   - count: %-27zu\n",
              title, space, time1,
-             __PF_TIMER_PERCENTAGE (time1, (*time2)));
+             __PF_TIMER_PERCENTAGE (time1, (*time2)), cuda_timer_count);
 }
 
 /**

@@ -19,16 +19,13 @@
 typedef struct cuda_timer {
     cudaEvent_t start;
     cudaEvent_t stop;
-    float elapsed;
     struct cuda_timer *next;
 } cuda_timer_t;
 
-SAC_C_EXTERN size_t cuda_timer_count;
+
 SAC_C_EXTERN cuda_timer_t *cuda_timer;
-SAC_C_EXTERN cuda_timer_t *cuda_timer_head;
 
 SAC_C_EXTERN cuda_timer_t *SAC_PF_TIMER_CUDA_Add (cuda_timer_t *timer);
-SAC_C_EXTERN void SAC_PF_TIMER_CUDA_Elapsed (void);
 SAC_C_EXTERN float SAC_PF_TIMER_CUDA_Sum (void);
 SAC_C_EXTERN void SAC_PF_TIMER_CUDA_Destroy (void);
 
