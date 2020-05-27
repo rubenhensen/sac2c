@@ -39,15 +39,18 @@ typedef enum {
     PF_iw_genarray = 5,
     PF_iw_modarray = 6,
     PF_iw_fold = 7
+    /* Cuda profiling options */
+    ,
+    PF_cuda_knl = 8
     /* Distributed memory backend profiling options */
     ,
-    PF_distmem_exec_rep = 8,
-    PF_distmem_exec_dist = 9,
-    PF_distmem_exec_side_effects = 10,
-    PF_distmem_rep_barrier = 11,
-    PF_distmem_dist_barrier = 12,
-    PF_distmem_side_effects_barrier = 13,
-    PF_distmem_comm = 14
+    PF_distmem_exec_rep = 9,
+    PF_distmem_exec_dist = 10,
+    PF_distmem_exec_side_effects = 11,
+    PF_distmem_rep_barrier = 12,
+    PF_distmem_dist_barrier = 13,
+    PF_distmem_side_effects_barrier = 14,
+    PF_distmem_comm = 15
 
 } SAC_PF_record_type;
 

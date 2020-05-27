@@ -12,6 +12,7 @@
  *    PROFILE_LIB       for profiling even library functions
  *    PROFILE_MEM       for profiling memory operations
  *    PROFILE_OPS       for profiling arithmetic and relational operations
+ *    PROFILE_CUDA      for profiling cuda kernels (host timer)
  *    PROFILE_DISTMEM   for profiling the distributed memory backend
  *
  *   The global switch PROFILE indicates any profiling activations.
@@ -36,6 +37,8 @@
 
 #ifndef _SAC_RT_PROFILE_H
 #define _SAC_RT_PROFILE_H
+
+#include "libsac/profile/profile_cuda.h" // cuda_timer_t,...
 
 #ifndef SAC_C_EXTERN
 #define SAC_C_EXTERN extern
@@ -238,6 +241,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #define SAC_PF_PRINT_OVERALL(total)                                                      \
     {                                                                                    \
         int i, j, k;                                                                     \
+        float cuda_knl_sum = 0;                                                          \
         SAC_PF_TIMER with_total;                                                         \
                                                                                          \
         SAC_PF_INIT_TIMER (with_total);                                                  \
@@ -247,6 +251,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
             SAC_PF_ADD_TIMERS (with_total, with_total, SAC_PF_timer[0][0][k]);           \
         }                                                                                \
         SAC_PF_ADD_TIMERS (total, with_total, SAC_PF_timer[0][0][PF_ow_fun]);            \
+        SAC_PF_SUM_CUDA();                                                               \
                                                                                          \
         SAC_PF_PrintHeader ("Overall Profile");                                          \
                                                                                          \
@@ -257,17 +262,23 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
             SAC_PF_PrintTimePercentage ("   non-with-loop", "",                          \
                                         &SAC_PF_timer[0][0][PF_ow_fun], &total);         \
         }                                                                                \
+                                                                                         \
+        if (SAC_PF_DISPLAY_CUDA) {                                                       \
+            SAC_PF_TIMER_CUDA_PrintTimePercentage ("   cuda krnl", "", cuda_knl_sum,     \
+                                                   &total);                              \
+        }                                                                                \
     }
 
 #define SAC_PF_PRINT_FUNS(total_time)                                                    \
     {                                                                                    \
         int i, j, k, l;                                                                  \
-        SAC_PF_TIMER with_total, parent_with_total, non_with_total, total;               \
+        SAC_PF_TIMER with_total, parent_with_total, non_with_total, cuda_total, total;   \
                                                                                          \
         SAC_PF_PrintHeader ("Function Profiles");                                        \
                                                                                          \
         for (i = 0; i < (SAC_PF_DISPLAY_FUN ? SAC_SET_MAXFUN : 1); i++) {                \
             SAC_PF_INIT_TIMER (with_total);                                              \
+            SAC_PF_INIT_TIMER (cuda_total);                                              \
             SAC_PF_INIT_TIMER (parent_with_total);                                       \
             SAC_PF_INIT_TIMER (non_with_total);                                          \
             SAC_PF_INIT_TIMER (total);                                                   \
@@ -285,6 +296,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
             }                                                                            \
                                                                                          \
             SAC_PF_ADD_TIMERS (total, with_total, non_with_total);                       \
+            SAC_PF_ADD_TIMERS (total, total, cuda_total);                                \
             SAC_PF_ADD_TIMERS (total, total, parent_with_total);                         \
                                                                                          \
             if ((total.tv_sec != 0) || (total.tv_usec != 0)) {                           \
@@ -310,7 +322,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
                                 SAC_PF_INIT_TIMER (sub_total);                           \
                                 SAC_PF_PrintSubHeader (SAC_PF_fun_name[k],               \
                                                        SAC_PF_funapline[k][j]);          \
-                                for (l = 0; l < 8; l++) {                                \
+                                for (l = 0; l < 9; l++) {                                \
                                     SAC_PF_ADD_TIMERS (sub_total, sub_total,             \
                                                        SAC_PF_timer[k][j][l]);           \
                                 }                                                        \
@@ -487,7 +499,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #if (SAC_DO_PROFILE_DISTMEM && SAC_DO_PROFILE)
 
-#define SAC_PF_NUM_RECORD_TYPES 15
+#define SAC_PF_NUM_RECORD_TYPES 16
 
 #define SAC_PF_DISTMEM_DEFINE_EXT()                                                      \
     SAC_C_EXTERN SAC_PROFILE_RECORD SAC_PF_distmem_initial_record;                       \
@@ -678,7 +690,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #else /* SAC_DO_PROFILE_DISTMEM && SAC_DO_PROFILE */
 
-#define SAC_PF_NUM_RECORD_TYPES 8
+#define SAC_PF_NUM_RECORD_TYPES 9
 #define SAC_PF_DISTMEM_DEFINE_EXT()
 #define SAC_PF_DISTMEM_DEFINE_LOC()
 #define SAC_PF_DISTMEM_SETUP()
@@ -903,7 +915,6 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #endif /* SAC_DO_PROFILE_MEM */
 
 
-
 /*
  * Macros for profiling arithmetic and relational opertions
  */
@@ -979,6 +990,57 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #endif /* SAC_DO_PROFILE_OPS */
 
+/*
+ *  Macros for profiling CUDA kernels
+ */
+
+#if (SAC_CUDA_MACROS && SAC_DO_PROFILE_CUDA && SAC_DO_PROFILE)
+
+/* XXX
+#define SAC_PF_BEGIN_CUDA_KNL()                                                          \
+    {                                                                                    \
+        SAC_PROFILE_RECORD SAC_PF_new_record;                                            \
+        SAC_PF_STOP_CLOCK ();                                                            \
+        SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
+        SAC_PF_new_record.parent = SAC_PF_act_record;                                    \
+        SAC_PF_new_record.funno = SAC_PF_act_record->funno;                              \
+        SAC_PF_new_record.funapno = SAC_PF_act_record->funapno;                          \
+        SAC_PF_new_record.record_type = PF_cuda_knl;                                     \
+        SAC_PF_new_record.cycle_tag = SAC_PF_act_record->cycle_tag;                      \
+        SAC_PF_act_record = &SAC_PF_new_record;                                          \
+        SAC_PF_START_CLOCK ();
+
+#define SAC_PF_END_CUDA_KNL()                                                            \
+        SAC_PF_STOP_CLOCK ();                                                            \
+        SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
+        SAC_PF_act_record = SAC_PF_act_record->parent;                                   \
+        SAC_PF_START_CLOCK ();                                                           \
+    }
+*/
+#define SAC_PF_BEGIN_CUDA_KNL()                                                          \
+    {                                                                                    \
+        cuda_timer = SAC_PF_TIMER_CUDA_Add (cuda_timer);                                 \
+        cudaEventRecord (cuda_timer->start);
+
+#define SAC_PF_END_CUDA_KNL()                                                            \
+        cudaEventRecord (cuda_timer->stop);                                              \
+    }
+
+#define SAC_PF_SUM_CUDA()                                                                \
+    SAC_PF_TIMER_CUDA_Elapsed ();                                                        \
+    cuda_knl_sum = SAC_PF_TIMER_CUDA_Sum ();                                             \
+    SAC_PF_TIMER_CUDA_Destroy ();
+
+#define SAC_PF_DISPLAY_CUDA 1
+
+#else /* SAC_DO_PROFILE_CUDA */
+
+#define SAC_PF_BEGIN_CUDA_KNL()
+#define SAC_PF_END_CUDA_KNL()
+#define SAC_PF_SUM_CUDA()
+#define SAC_PF_DISPLAY_CUDA 0
+
+#endif /* SAC_DO_PROFILE_CUDA */
 
 #endif /* SAC_MUTC_MACROS */
 #endif /* _SAC_RT_PROFILE_H */

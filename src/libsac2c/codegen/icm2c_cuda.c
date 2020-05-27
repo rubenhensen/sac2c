@@ -195,8 +195,9 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
     INDENT;
     INDENT;
     fprintf (global.outfile,
-             "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");",
-             funname); 
+             "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");\n",
+             funname);
+    fprintf (global.outfile, "SAC_PF_BEGIN_CUDA_KNL ();\n");
     if (global.backend == BE_cudahybrid) {
         // on cudahybrid, we make use of streams, which have a fixed name
         fprintf (global.outfile, "%s<<<grid, block, 0, *stream>>>(", funname);
@@ -239,6 +240,7 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
         CTIwarn ("Adding synchronisation after CUDA kernel call, as CUDA device does not fully support UVA!");
         fprintf (global.outfile, "cudaDeviceSynchronize ();\n");
     }
+    fprintf (global.outfile, "SAC_PF_END_CUDA_KNL ();\n");
 
     fprintf (global.outfile, "SAC_CUDA_GET_LAST_KERNEL_ERROR();\n");
     /*
@@ -477,8 +479,9 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **v
     INDENT;
     INDENT;
     fprintf (global.outfile,
-             "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");",
+             "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");\n",
              funname); 
+    fprintf (global.outfile, "SAC_PF_BEGIN_CUDA_KNL ();\n");
     fprintf (global.outfile, "%s<<<1, 1>>>(", funname);
     for (i = 0; i < 4 * vararg_cnt; i += 4) {
         if (STReq (vararg[i + 1], "float_dev")) {
@@ -508,6 +511,13 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **v
         }
     }
     fprintf (global.outfile, ");\n");
+    if (global.cuda_arch < CUDA_SM60
+        && (STReq (global.config.cuda_alloc, "cuman")
+            || STReq (global.config.cuda_alloc, "cumanp"))) {
+        CTIwarn ("Adding synchronisation after CUDA kernel call, as CUDA device does not fully support UVA!");
+        fprintf (global.outfile, "cudaDeviceSynchronize ();\n");
+    }
+    fprintf (global.outfile, "SAC_PF_END_CUDA_KNL ();\n");
 
     /*
       fprintf( global.outfile, "cutStopTimer(timer);\n");

@@ -988,7 +988,7 @@ PrintRuntimeProfilingOptions (void)
     printf (
       "\n\nRUNTIME PROFILING OPTIONS:\n\n"
 
-      "    -profile [afilwmod]+\n"
+      "    -profile [afilwmocd]+\n"
       "                    Incorporate profiling analysis into executable program.\n"
       "                    The following flags are supported:\n"
       "                      a: Analyse all (same as filwmod).\n"
@@ -998,6 +998,7 @@ PrintRuntimeProfilingOptions (void)
       "                      w: Analyse time spent in with-loops.\n"
       "                      m: Analyse number of memory operations.\n"
       "                      o: Analyse number of primitive operations (FLOPS,INTOPS).\n"
+      "                      c: Analyse time spent in CUDA kernels.\n"
       "                      d: Analyse performance of distributed memory backend.\n");
 
     DBUG_RETURN ();

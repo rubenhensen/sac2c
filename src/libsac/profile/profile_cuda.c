@@ -3,12 +3,20 @@
  * @brief This file specifies a set of functions used by profile.c to profile memory
  *        associated with a CUDA device
  */
-#include "libsac/profile/profile_cuda.h"
+#include "config.h"
+#include "profile_cuda.h"
 
 #include <stdio.h>
 
 #include "libsac/profile/profile_print.h"
 #include "runtime/essentials_h/bool.h"
+
+#define __PF_TIMER_FORMAT "%8.2f"
+#define __PF_TIMER_PERCENTAGE(timer1, timer2)                                            \
+    ((timer2.tv_sec + timer2.tv_usec / 1000000.0) == 0                                   \
+       ? 0.0                                                                             \
+       : (timer1 / 1000.0) * 100.0                                                       \
+           / (timer2.tv_sec + (timer2.tv_usec / 1000000.0)))
 
 /* Global Variables */
 
@@ -24,6 +32,100 @@ static size_t SAC_PF_MEM_CUDA_free_memcnt = 0; /**< Holds the count of calls to 
 /* these counters deal with descriptors */
 static size_t SAC_PF_MEM_CUDA_alloc_descnt = 0; /**< Holds the count of descriptor allocations */
 static size_t SAC_PF_MEM_CUDA_free_descnt = 0; /**< Holds the count of descriptor frees */
+
+#if ENABLE_CUDA
+
+#include <cuda_runtime_api.h>
+
+/* global timer struct for CUDA event timer */
+size_t cuda_timer_count = 0;
+cuda_timer_t *cuda_timer = NULL;
+cuda_timer_t *cuda_timer_head = NULL;
+
+cuda_timer_t *
+SAC_PF_TIMER_CUDA_Add (cuda_timer_t *timer)
+{
+    if (timer == NULL) { // initilization
+        timer = malloc (sizeof (cuda_timer_t));
+        timer->next = NULL;
+        cuda_timer_head = timer;
+    } else {
+        timer->next = malloc (sizeof (cuda_timer_t));
+        timer = timer->next;
+        timer->next = NULL;
+    }
+
+    cudaEventCreate (&timer->start);
+    cudaEventCreate (&timer->stop);
+
+    return timer;
+}
+
+void
+SAC_PF_TIMER_CUDA_Destroy ()
+{
+    cuda_timer_t *timer = cuda_timer_head;
+    cuda_timer_t *next;
+
+    while (timer != NULL) {
+        next = timer->next;
+        cudaEventDestroy (timer->start);
+        cudaEventDestroy (timer->stop);
+        free (timer);
+        timer = next;
+    }
+}
+
+void
+SAC_PF_TIMER_CUDA_Elapsed ()
+{
+    cuda_timer_t *timer = cuda_timer_head;
+
+    while (timer != NULL) {
+        cudaEventSynchronize (timer->stop);
+        cudaEventElapsedTime (&timer->elapsed, timer->start, timer->stop);
+        timer = timer->next;
+    }
+}
+
+float
+SAC_PF_TIMER_CUDA_Sum ()
+{
+    float sum = 0;
+    cuda_timer_t *timer = cuda_timer_head;
+
+    while (timer != NULL) {
+        if (timer->elapsed < 0) {
+            fprintf (stderr, "Found CUDA elapsed time that is not set (or is negative!)");
+            break;
+        }
+        sum += timer->elapsed;
+        timer = timer->next;
+    }
+
+    return sum;
+}
+
+#endif /* ENABLE_CUDA */
+
+/**
+ * @brief Function for printing timing information with a percentage of
+ *        total time.
+ *
+ * @param title Title or label for field
+ * @param space Filler to modify the spacing of the string
+ * @param time1 Measured time as a time-structure
+ * @param time2 Global total measured time, used to compute percentage
+ */
+void
+SAC_PF_TIMER_CUDA_PrintTimePercentage (const char *title, const char *space, const float time1,
+                            const struct timeval *time2)
+{
+    fprintf (stderr,
+             "%-40s:%s  %8.2f msec %8.2f %%\n",
+             title, space, time1,
+             __PF_TIMER_PERCENTAGE (time1, (*time2)));
+}
 
 /**
  * @brief Increments the alloc counter.
