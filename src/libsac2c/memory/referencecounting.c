@@ -851,9 +851,10 @@ RCIwith (node *arg_node, info *arg_info)
     INFO_WITHMASK (arg_info) = DFMremoveMask (INFO_WITHMASK (arg_info));
 
     /*
-     * In AKD-IV-Withloops, the IV is always needed
+     * In AKD-IV-Withloops, the IV is always needed except in the case
+     * of CUDA WLs, where the IV is anyway lifted out.
      */
-    INFO_WITHVECNEEDED (arg_info) = TRUE;
+    INFO_WITHVECNEEDED (arg_info) = !WITH_CUDARIZABLE (arg_node);
     WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
 
     INFO_MODE (arg_info) = rc_prfuse;
