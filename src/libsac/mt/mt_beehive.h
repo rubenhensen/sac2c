@@ -21,7 +21,7 @@
 /* NOTE: SAC_DO_MT_BEEHIVE is defined only when including from mt_beehive.c */
 #if SAC_DO_MULTITHREAD && (SAC_DO_MT_BEEHIVE || SAC_DO_MT_PTHREAD || SAC_DO_MT_LPEL)
 
-#include "runtime/mt_h/schedule.h" // SAC_MT_DEFINE, ...
+#include "runtime/mt_h/schedule.h" // SAC_MT_DEFINE_*, ...
 #include "runtime/mt_h/rt_mt.h"    //SAC_MT_DECLARE_LOCK, ...
 
 struct sac_bee_common_t;
@@ -72,7 +72,14 @@ struct sac_hive_common_t {
     /* retdata: pointer to the return data array (SPMD specific) */
     void *retdata;
     /* instantiate scheduler's variables as fields in the hive */
-    SAC_MT_DEFINE ()
+    SAC_MT_SCHEDULER_FIELD_TASKLOCKS ();
+    SAC_MT_SCHEDULER_FIELD_TASKS ();
+    SAC_MT_SCHEDULER_FIELD_LAST_TASKS ();
+    SAC_MT_SCHEDULER_FIELD_REST_ITERATIONS ();
+    SAC_MT_SCHEDULER_FIELD_ACT_TASKSIZE ();
+    SAC_MT_SCHEDULER_FIELD_LAST_TASKEND ();
+    SAC_MT_SCHEDULER_FIELD_TS_TASKLOCKS ();
+    SAC_MT_SCHEDULER_FIELD_TASKCOUNT ();
 };
 
 /* Get current bee's local ID. Used for task scheduling. */

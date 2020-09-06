@@ -34,7 +34,7 @@ TEST (HWLOCRuntime, HWLOCPrintStr)
 
 #if HWLOC_API_VERSION < 0x00010b00
     ASSERT_STREQ (test_string, "Core #0 in Socket #0");
-#elif HWLOC_API_VERSION < 0x00020000
+#elif HWLOC_API_VERSION < 0x00020500
     ASSERT_STREQ (test_string, "Core #0 in Package #0");
 #else
     ASSERT_STREQ (test_string, "Core #0 in NUMANode #0");

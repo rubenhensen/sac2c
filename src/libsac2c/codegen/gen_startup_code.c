@@ -642,7 +642,6 @@ PrintDefines (void)
                              " *  Global Definitions\n"
                              " */\n\n");
 
-    fprintf (global.outfile, "SAC_MT_DEFINE()\n");
     fprintf (global.outfile, "SAC_PF_DEFINE()\n");
     fprintf (global.outfile, "SAC_HM_DEFINE()\n");
 
