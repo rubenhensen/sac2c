@@ -135,11 +135,17 @@ PrintGlobalSwitches (void)
              (global.profile.distmem) ? 1 : 0);
     fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#define SAC_DO_TRACE           %d\n",
+    fprintf (global.outfile, "#ifndef SAC_DO_TRACE\n"
+                             "#define SAC_DO_TRACE           %d\n"
+                             "#endif\n",
              (global.dotrace) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_TRACE_REF       %d\n",
+    fprintf (global.outfile, "#ifndef SAC_DO_TRACE_REF\n"
+                             "#define SAC_DO_TRACE_REF       %d\n"
+                             "#endif\n",
              (global.trace.ref) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_TRACE_MEM       %d\n",
+    fprintf (global.outfile, "#ifndef SAC_DO_TRACE_MEM\n"
+                             "#define SAC_DO_TRACE_MEM       %d\n"
+                             "#endif\n",
              (global.trace.mem) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_TRACE_PRF       %d\n",
              (global.trace.prf) ? 1 : 0);
