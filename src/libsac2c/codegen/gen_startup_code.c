@@ -80,6 +80,15 @@ CalcMasterclass (int num_threads)
  *
  ******************************************************************************/
 
+#define PRINT_SWITCH(name, value)                                        \
+    fprintf (global.outfile, "#define %-40s %d\n",                       \
+             #name, (value) ? 1 : 0)
+    
+#define PRINT_OPT_SWITCH(name, value)                                    \
+    fprintf (global.outfile, "#ifndef %s\n"                              \
+                             "#define %-40s %d\n"                        \
+                             "#endif\n", #name, #name, (value) ? 1 : 0)
+    
 static void
 PrintGlobalSwitches (void)
 {
@@ -89,205 +98,129 @@ PrintGlobalSwitches (void)
                              "/*\n"
                              " *  Global Switches\n */\n\n");
 
-    fprintf (global.outfile, "#define SAC_DO_CHECK           %d\n",
-             (global.doruntimecheck) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_TYPE      %d\n",
-             (global.runtimecheck.type) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_GPU       %d\n",
-             (global.runtimecheck.gpu) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_BOUNDARY   %d\n",
-             (global.runtimecheck.boundary) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_MALLOC     %d\n",
-             (global.runtimecheck.malloc) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_ERRNO      %d\n",
-             (global.runtimecheck.checkerrno) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_HEAP       %d\n",
-             (global.runtimecheck.heap) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_DISTMEM    %d\n",
-             (global.runtimecheck.distmem) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CHECK_DISTMEMPHM %d\n",
-             (global.runtimecheck.distmemphm) ? 1 : 0);
+    PRINT_OPT_SWITCH (SAC_DO_CHECK,            global.doruntimecheck);
+    PRINT_OPT_SWITCH (SAC_DO_CHECK_TYPE,       global.runtimecheck.type);
+    PRINT_OPT_SWITCH (SAC_DO_CHECK_GPU,        global.runtimecheck.gpu);
+    PRINT_OPT_SWITCH (SAC_DO_CHECK_BOUNDARY,   global.runtimecheck.boundary);
+    PRINT_OPT_SWITCH (SAC_DO_CHECK_MALLOC,     global.runtimecheck.malloc);
+    PRINT_OPT_SWITCH (SAC_DO_CHECK_ERRNO,      global.runtimecheck.checkerrno);
+    PRINT_OPT_SWITCH (SAC_DO_CHECK_HEAP,       global.runtimecheck.heap);
+    PRINT_OPT_SWITCH (SAC_DO_CHECK_DISTMEM,    global.runtimecheck.distmem);
+    PRINT_OPT_SWITCH (SAC_DO_CHECK_DISTMEMPHM, global.runtimecheck.distmemphm);
     fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#define SAC_DO_PHM             %d\n",
-             (global.optimize.dophm) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_APS             %d\n",
-             (global.optimize.doaps) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_DAO             %d\n",
-             (global.optimize.dodpa) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_MSCA            %d\n",
-             (global.optimize.domsca) ? 1 : 0);
+    PRINT_SWITCH (SAC_DO_PHM,            global.optimize.dophm);
+    PRINT_SWITCH (SAC_DO_APS,            global.optimize.doaps);
+    PRINT_SWITCH (SAC_DO_DAO,            global.optimize.dodpa);
+    PRINT_SWITCH (SAC_DO_MSCA,           global.optimize.domsca);
+    PRINT_SWITCH (SAC_DO_COMPILE_MODULE, ((global.filetype == FT_modimp)
+                                          || (global.filetype == FT_classimp)
+                                          || (global.filetype == FT_cmod)));
     fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#define SAC_DO_PROFILE         %d\n",
-             (global.doprofile) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_PROFILE_WITH    %d\n",
-             (global.profile.with) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_PROFILE_FUN     %d\n",
-             (global.profile.fun) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_PROFILE_INL     %d\n",
-             (global.profile.inl) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_PROFILE_LIB     %d\n",
-             (global.profile.lib) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_PROFILE_MEM     %d\n",
-             (global.profile.mem) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_PROFILE_DISTMEM %d\n",
-             (global.profile.distmem) ? 1 : 0);
+    PRINT_OPT_SWITCH (SAC_DO_PROFILE,         global.doprofile);
+    PRINT_OPT_SWITCH (SAC_DO_PROFILE_WITH,    global.profile.with);
+    PRINT_OPT_SWITCH (SAC_DO_PROFILE_FUN,     global.profile.fun);
+    PRINT_OPT_SWITCH (SAC_DO_PROFILE_INL,     global.profile.inl);
+    PRINT_OPT_SWITCH (SAC_DO_PROFILE_LIB,     global.profile.lib);
+    PRINT_OPT_SWITCH (SAC_DO_PROFILE_MEM,     global.profile.mem);
+    PRINT_OPT_SWITCH (SAC_DO_PROFILE_DISTMEM, global.profile.distmem);
     fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#ifndef SAC_DO_TRACE\n"
-                             "#define SAC_DO_TRACE           %d\n"
-                             "#endif\n",
-             (global.dotrace) ? 1 : 0);
-    fprintf (global.outfile, "#ifndef SAC_DO_TRACE_REF\n"
-                             "#define SAC_DO_TRACE_REF       %d\n"
-                             "#endif\n",
-             (global.trace.ref) ? 1 : 0);
-    fprintf (global.outfile, "#ifndef SAC_DO_TRACE_MEM\n"
-                             "#define SAC_DO_TRACE_MEM       %d\n"
-                             "#endif\n",
-             (global.trace.mem) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_TRACE_PRF       %d\n",
-             (global.trace.prf) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_TRACE_FUN       %d\n",
-             (global.trace.fun) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_TRACE_WL        %d\n",
-             (global.trace.wl) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_TRACE_AA        %d\n",
-             (global.trace.aa) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_TRACE_MT        %d\n",
-             (global.trace.mt) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_TRACE_GPU       %d\n",
-             (global.trace.gpu) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_TRACE_RTSPEC    %d\n",
-             (global.trace.rtspec) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_TRACE_DISTMEM   %d\n",
-             (global.trace.distmem) ? 1 : 0);
-
-    fprintf (global.outfile, "#define SAC_DO_CACHESIM        %d\n",
-             (global.docachesim) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CACHESIM_ADV    %d\n",
-             (global.cachesim.advanced) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CACHESIM_GLOBAL %d\n",
-             (global.cachesim.block) ? 0 : 1);
-    fprintf (global.outfile, "#define SAC_DO_CACHESIM_FILE   %d\n",
-             (global.cachesim.file) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CACHESIM_PIPE   %d\n",
-             (global.cachesim.pipe) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_DO_CACHESIM_IMDT   %d\n",
-             (global.cachesim.immediate) ? 1 : 0);
+    PRINT_OPT_SWITCH (SAC_DO_TRACE,         global.dotrace);
+    PRINT_OPT_SWITCH (SAC_DO_TRACE_REF,     global.trace.ref);
+    PRINT_OPT_SWITCH (SAC_DO_TRACE_MEM,     global.trace.mem);
+    PRINT_OPT_SWITCH (SAC_DO_TRACE_PRF,     global.trace.prf);
+    PRINT_OPT_SWITCH (SAC_DO_TRACE_FUN,     global.trace.fun);
+    PRINT_OPT_SWITCH (SAC_DO_TRACE_WL,      global.trace.wl);
+    PRINT_OPT_SWITCH (SAC_DO_TRACE_AA,      global.trace.aa);
+    PRINT_OPT_SWITCH (SAC_DO_TRACE_MT,      global.trace.mt);
+    PRINT_OPT_SWITCH (SAC_DO_TRACE_GPU,     global.trace.gpu);
+    PRINT_OPT_SWITCH (SAC_DO_TRACE_RTSPEC,  global.trace.rtspec);
+    PRINT_OPT_SWITCH (SAC_DO_TRACE_DISTMEM, global.trace.distmem);
     fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#define SAC_DO_MULTITHREAD     %d\n",
-             (global.num_threads == 1) ? 0 : 1);
 
-    fprintf (global.outfile, "#define SAC_DO_MT_PTHREAD      %d\n",
-             ((global.mtmode != MT_none) && STReq (global.config.mt_lib, "pthread")) ? 1
-                                                                                     : 0);
+    PRINT_OPT_SWITCH (SAC_DO_CACHESIM,         global.docachesim);
+    PRINT_OPT_SWITCH (SAC_DO_CACHESIM_ADV,     global.cachesim.advanced);
+    PRINT_OPT_SWITCH (SAC_DO_CACHESIM_GLOBAL, !global.cachesim.block);
+    PRINT_OPT_SWITCH (SAC_DO_CACHESIM_FILE,    global.cachesim.file);
+    PRINT_OPT_SWITCH (SAC_DO_CACHESIM_PIPE,    global.cachesim.pipe);
+    PRINT_OPT_SWITCH (SAC_DO_CACHESIM_IMDT,    global.cachesim.immediate);
+    fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#define SAC_DO_MT_LPEL         %d\n",
-             ((global.mtmode != MT_none) && STReq (global.config.mt_lib, "lpel")) ? 1
-                                                                                  : 0);
+    fprintf (global.outfile, "/*\n * Setup for Multi Threaded Data Parallelism\n */\n");
+    PRINT_SWITCH (SAC_DO_MULTITHREAD,    (global.num_threads != 1));
+    PRINT_SWITCH (SAC_DO_THREADS_STATIC, (global.num_threads != 0));
+    PRINT_SWITCH (SAC_DO_MT_CREATE_JOIN, (global.mtmode == MT_createjoin));
+    PRINT_SWITCH (SAC_DO_MT_PTHREAD,     ((global.mtmode != MT_none)
+                                          && STReq (global.config.mt_lib, "pthread")));
+    PRINT_SWITCH (SAC_DO_MT_LPEL,        ((global.mtmode != MT_none)
+                                          && STReq (global.config.mt_lib, "lpel")));
+    fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#define SAC_DO_MT_OMP          %d\n",
-             (global.backend == BE_omp) ? 1 : 0);
+    fprintf (global.outfile, "/*\n * Setup for OMP Data Parallelism\n */\n");
+    PRINT_SWITCH (SAC_DO_MT_OMP,     (global.backend == BE_omp));
+    PRINT_SWITCH (SAC_DO_OMP_MACROS, (global.backend == BE_omp));
+    fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#define SAC_DO_DISTMEM         %d\n",
-             (global.backend == BE_distmem) ? 1 : 0);
 
-    fprintf (global.outfile, "#define SAC_DO_DISTMEM_GASNET  %d\n",
-             (global.backend == BE_distmem
-              && global.distmem_commlib == DISTMEM_COMMLIB_GASNET)
-               ? 1
-               : 0);
+    fprintf (global.outfile, "/*\n * Setup for MUTC\n */\n");
+    PRINT_SWITCH (SAC_MUTC_FUNAP_AS_CREATE, global.mutc_fun_as_threads);
+    PRINT_SWITCH (SAC_MUTC_THREAD_MALLOC, global.mutc_thread_mem);
+    PRINT_SWITCH (SAC_MUTC_DISABLE_THREAD_MEM, global.mutc_disable_thread_mem);
+    PRINT_SWITCH (SAC_MUTC_BENCH, global.mutc_benchmark);
+    PRINT_SWITCH (SAC_MUTC_MACROS, (global.backend == BE_mutc));
+    PRINT_SWITCH (SAC_MUTC_RC_INDIRECT, global.mutc_rc_indirect);
+    PRINT_SWITCH (SAC_MUTC_SEQ_DATA_PARALLEL, global.mutc_seq_data_parallel);
+    fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#define SAC_DO_DISTMEM_GPI     %d\n",
-             (global.backend == BE_distmem
-              && global.distmem_commlib == DISTMEM_COMMLIB_GPI)
-               ? 1
-               : 0);
+    fprintf (global.outfile, "/*\n * Setup for GPU Data Parallelism\n */\n");
+    PRINT_SWITCH (SAC_CUDA_MACROS, (global.backend == BE_cuda || global.backend == BE_cudahybrid));
+    fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#define SAC_DO_DISTMEM_MPI     %d\n",
-             (global.backend == BE_distmem
-              && global.distmem_commlib == DISTMEM_COMMLIB_MPI)
-               ? 1
-               : 0);
+    fprintf (global.outfile, "/*\n * Setup for Distributed Memory Data Parallelism\n */\n");
+    PRINT_SWITCH (SAC_DO_DISTMEM,           (global.backend == BE_distmem));
+    PRINT_SWITCH (SAC_DO_DISTMEM_GASNET,    ((global.backend == BE_distmem)
+                                             && (global.distmem_commlib == DISTMEM_COMMLIB_GASNET)));
+    PRINT_SWITCH (SAC_DO_DISTMEM_GPI,       ((global.backend == BE_distmem)
+                                             && (global.distmem_commlib == DISTMEM_COMMLIB_GPI)));
+    PRINT_SWITCH (SAC_DO_DISTMEM_MPI,       ((global.backend == BE_distmem)
+                                             && (global.distmem_commlib == DISTMEM_COMMLIB_MPI)));
+    PRINT_SWITCH (SAC_DO_DISTMEM_ARMCI,     ((global.backend == BE_distmem)
+                                             && (global.distmem_commlib == DISTMEM_COMMLIB_ARMCI)));
+    PRINT_SWITCH (SAC_DO_DISTMEM_ALLOC_CACHE_OUTSIDE_DSM,
+                                            global.distmem_cache_outside_dsm);
+    PRINT_SWITCH (SAC_DO_DISTMEM_PTR_DESC,  global.distmem_ptrs_desc);
+    PRINT_SWITCH (SAC_DO_DISTMEM_PTR_CACHE, global.distmem_ptr_cache);
+    fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#define SAC_DO_DISTMEM_ARMCI   %d\n",
-             (global.backend == BE_distmem
-              && global.distmem_commlib == DISTMEM_COMMLIB_ARMCI)
-               ? 1
-               : 0);
 
-    fprintf (global.outfile, "#define SAC_DO_DISTMEM_ALLOC_CACHE_OUTSIDE_DSM %d\n",
-             global.distmem_cache_outside_dsm);
+    fprintf (global.outfile, "/*\n * Setup for Task Parallelism\n */\n");
+    PRINT_SWITCH (SAC_DO_FP, (global.fp));
+    fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#define SAC_DO_DISTMEM_PTR_DESC %d\n",
-             (global.backend == BE_distmem && global.distmem_ptrs_desc) ? 1 : 0);
-
-    fprintf (global.outfile, "#define SAC_DO_DISTMEM_PTR_CACHE %d\n",
-             (global.backend == BE_distmem && global.distmem_ptr_cache) ? 1 : 0);
-
-    fprintf (global.outfile, "#define SAC_DO_THREADS_STATIC  %d\n",
-             (global.num_threads == 0) ? 0 : 1);
-
-    fprintf (global.outfile, "#define SAC_DO_FP              %d\n",
-             (global.fp == 0) ? 0 : 1);
-
-    fprintf (global.outfile, "#define SAC_DO_MT_CREATE_JOIN  %d\n",
-             (global.mtmode == MT_createjoin) ? 1 : 0);
-
-    fprintf (global.outfile, "#define SAC_DEBUG_RC           %d\n",
-             global.debug_rc ? 1 : 0);
+    fprintf (global.outfile, "/*\n * Debugging Support\n */\n");
+    PRINT_OPT_SWITCH (SAC_DEBUG_RC, global.debug_rc);
+    fprintf (global.outfile, "\n");
 
     fprintf (global.outfile, "\n\n"
                              "/*\n"
                              " *  Global Settings\n */\n\n");
 
     fprintf (global.outfile, "#define SAC_FORCE_DESC_SIZE %d\n", global.force_desc_size);
+    fprintf (global.outfile, "\n");
 
-    /* MUTC Switches */
-    fprintf (global.outfile, "\n\n"
-                             "/*\n"
-                             " *  MUTC Backend Specific Switches\n */\n\n");
-
-    fprintf (global.outfile, "#define SAC_MUTC_FUNAP_AS_CREATE  %d\n",
-             (global.mutc_fun_as_threads) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_MUTC_THREAD_MALLOC %d\n",
-             (global.mutc_thread_mem) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_MUTC_DISABLE_THREAD_MEM %d\n",
-             (global.mutc_disable_thread_mem) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_MUTC_BENCH %d\n",
-             (global.mutc_benchmark) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_MUTC_MACROS  %d\n",
-             (global.backend == BE_mutc) ? 1 : 0);
+    fprintf (global.outfile, "/*\n *  MUTC Backend Specific Settings\n */\n");
     fprintf (global.outfile, "#define SAC_MUTC_RC_PLACES  %d\n", global.mutc_rc_places);
-    fprintf (global.outfile, "#define SAC_MUTC_RC_INDIRECT  %d\n",
-             (global.mutc_rc_indirect) ? 1 : 0);
-    fprintf (global.outfile, "#define SAC_MUTC_SEQ_DATA_PARALLEL  %d\n",
-             (global.mutc_seq_data_parallel) ? 1 : 0);
     if (global.mutc_force_spawn_flags != NULL) {
         fprintf (global.outfile, "#define SAC_MUTC_FORCE_SPAWN_FLAGS  %s\n",
                  global.mutc_force_spawn_flags);
     } else {
         fprintf (global.outfile, "#define SAC_MUTC_FORCE_SPAWN_FLAGS\n");
     }
-
     fprintf (global.outfile, "\n");
 
-    fprintf (global.outfile, "#define SAC_CUDA_MACROS  %d\n",
-             (global.backend == BE_cuda || global.backend == BE_cudahybrid) ? 1 : 0);
-
-    fprintf (global.outfile, "#define SAC_OMP_MACROS  %d\n",
-             (global.backend == BE_omp) ? 1 : 0);
-
-    fprintf (global.outfile, "\n");
-
-    fprintf (global.outfile, "#define SAC_DO_COMPILE_MODULE  %d\n",
-             ((global.filetype == FT_modimp) || (global.filetype == FT_classimp)
-              || (global.filetype == FT_cmod))
-               ? 1
-               : 0);
 
     fprintf (global.outfile, "#define SAC_C_EXTERN           %s\n",
              (global.backend == BE_mutc)

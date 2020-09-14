@@ -1440,8 +1440,7 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_ND_ALLOC_BEGIN__NO_DAO(var_NT, rc, dim, basetype)                            \
     {                                                                                    \
-        SAC_ND_ALLOC__DESC (var_NT, dim)                                                 \
-        SAC_ND_INIT__RC (var_NT, rc)
+        SAC_ND_ALLOC__DESC (var_NT, dim)
 
 /*
  * SAC_ND_ALLOC_END implementations (referenced by sac_std_gen.h)
@@ -1451,6 +1450,7 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_ND_ALLOC_END__NO_DAO__DEFAULT(var_NT, rc, dim, basetype)                     \
     SAC_ND_ALLOC__DATA_BASETYPE (var_NT, basetype)                                       \
+    SAC_ND_INIT__RC (var_NT, rc)                                                         \
     }
 
 /*
@@ -1467,8 +1467,7 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_ND_REALLOC_BEGIN__NO_DAO(dest_NT, src_NT, rc, dim, basetype)                 \
     {                                                                                    \
-        SAC_ND_A_DESC (dest_NT) = SAC_ND_A_DESC (src_NT);                                \
-        SAC_ND_SET__RC (dest_NT, rc)
+        SAC_ND_A_DESC (dest_NT) = SAC_ND_A_DESC (src_NT);
 
 /*
  * SAC_ND_REALLOC_END implementations (referenced by sac_std_gen.h)
@@ -1480,6 +1479,7 @@ FIXME Do not initialize for the time being, as value 0                          
     SAC_ND_A_FIELD (src_NT) = SAC_ND_A_FIELD (dest_NT)                                   \
       = realloc (SAC_ND_A_FIELD (src_NT),                                                \
                  (SAC_ND_A_SIZE (dest_NT) * sizeof (*SAC_ND_A_FIELD (dest_NT))));        \
+    SAC_ND_SET__RC (dest_NT, rc)                                                         \
     }
 
 /*
