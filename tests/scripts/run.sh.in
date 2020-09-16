@@ -28,7 +28,7 @@ base_fname_we=$(namewe "$base_fname")
      | sed 's/[^[:print:]]//g' \
      | grep "^// SAC_TEST|" \
      | sed -e 's/^\/\/ SAC_TEST|//g'\
-           -e 's/<tab>/\t/g' \
+           -e "s/<tab>/$(printf '\t')/g" \
            -e "s/<file-name>/$base_fname/g" \
            -e "s/<file-name-we>/$base_fname_we/g" \
            -e 's/<nlslash>/\\/g' > ${dir_name}/$makefile
