@@ -349,9 +349,27 @@ XINSTALL (
 # now lets setup packaging (using CPack)
 INCLUDE ("${PROJECT_SOURCE_DIR}/cmake/cpack/config.cmake")
 
-# Here we describe what happens when we test stuff.
+# Unit Testing and related
 ENABLE_TESTING ()
+# This target exists because the `test` target of CMake is not visible
+# within a CMakeLists.txt config. One cannot add target dependencies to
+# it, so instead we create our own target. This mimicks autotools' `check`
+# Makefile target. By default, we depend on the compiler being built.
+# NOTE: in general, we should only add dependencies which are (a) nessicary
+#       files for a test, (b) executables that need to be built.
+ADD_CUSTOM_TARGET (check
+  COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+  DEPENDS runtime_libraries)
+
+# The following director contains all tests which check that the compiler
+# is working correctly, e.g. code transformations make the expected changes,
+# options flags work (features are working), etc.
 ADD_SUBDIRECTORY ("tests")
+
+# This diectory contains all tests the check the compiler at the function level,
+# that modules and other compilation units are working. We by default have this
+# collection of units tests disabled, as it relies on GTest. GTest needs to be
+# installed by the user themselves.
 IF (FUNCTESTS)
   ADD_SUBDIRECTORY ("src/tests")
 ENDIF ()

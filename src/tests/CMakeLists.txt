@@ -47,6 +47,8 @@ MACRO (ADD_FUNC_TEST BIN_NAME SRC_NAME)
     # Compile the test
     ADD_EXECUTABLE (${BIN_NAME} ${SRC_NAME})
     ADD_DEPENDENCIES (${BIN_NAME} sac2cShared)
+    # Ensure that executable is built before run test
+    ADD_DEPENDENCIES (check ${BIN_NAME})
     # Link against Gtest
     TARGET_LINK_LIBRARIES (${BIN_NAME} GTest::GTest GTest::Main sac2cShared)
     # Make it a part of the global testsuite so that it is executed via ctests.
@@ -57,6 +59,8 @@ MACRO (ADD_RUNTIME_FUNC_TEST BIN_NAME SRC_NAME LIB_TARGET EXTRA_LINKS)
     # Compile the test
     ADD_EXECUTABLE (${BIN_NAME} ${SRC_NAME})
     ADD_DEPENDENCIES (${BIN_NAME} libsac-${LIB_TARGET})
+    # Ensure that executable is built before run test
+    ADD_DEPENDENCIES (check ${BIN_NAME})
     # we get properties from the utility target that we pass to the binary properties
     GET_TARGET_PROPERTY (__libpath libsac-${LIB_TARGET} OUTPUT_NAME)
     GET_TARGET_PROPERTY (__rpath libsac-${LIB_TARGET} BUILD_RPATH)
