@@ -69,7 +69,7 @@ MACRO (ADD_SAC2C_BUILD _build_type)
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/headers headers-install
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/symlinks symlinks-install
     TEST_EXCLUDE_FROM_MAIN 1
-    TEST_COMMAND ctest --output-on-failure
+    TEST_COMMAND ${CMAKE_COMMAND} --build "${PROJECT_BINARY_DIR}/sac2c-${_build_type_name}/src/sac2c-${_build_type_name}-build" --target check
     BUILD_ALWAYS 1
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${_build_type}
