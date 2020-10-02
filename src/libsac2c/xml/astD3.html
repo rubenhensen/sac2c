@@ -2,9 +2,8 @@
 <html>
 <head>
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>  
-<script src="ast.js"> </script>
 <script src="renderAST.js"> </script>
-
+<script src="xml2js.js"> </script>
 
     <style>
       
@@ -46,26 +45,16 @@
       
     </style>
 </head>
-<body>
+<body onload="XMLconvertInsertAt( &quot;ast.xml&quot; , &quot;ast2js.xsl&quot; , &quot;dynamicScript&quot; ); display()">
 
-
-<iframe src="ast.html" width="800" height="300" name="frame"></iframe>
+<iframe src="ast.xml" width="800" height="300" name="frame"></iframe>
 
   <input type= "button" value="Previous Root" onclick="previousRoot()"></input>
   <input type= "button" value="Initial Root" onclick="initialRoot()"></input>
 
 <hr>
-<script>
-    
-  var xmlObj;
-  var tree;
-     
-  xmlObj = initXMLObj();
-  tree = generateInitialDataTree(xmlObj, "Module");
-  putGraph( tree);
-    
-</script>
 
+<div id="dynamicScript"></div>
 
 </body>
 </html>
