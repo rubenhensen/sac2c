@@ -7866,7 +7866,8 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
         sprintf (prf_name, "%s%s", prf_orig_name, "_SIMD");
     }
 
-    ret_node = TCmakeAssignIcm3 ("ND_PRF_SxS__DATA", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm4 ("ND_PRF_SxS__DATA", DUPdupIdsIdNt (let_ids),
+                                 TCmakeIdCopyString ("huhu"),
                                  TCmakeIdCopyString (prf_name),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 

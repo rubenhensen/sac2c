@@ -939,14 +939,15 @@ PrintRuntimeProfilingOptions (void)
     printf (
       "\n\nRUNTIME PROFILING OPTIONS:\n\n"
 
-      "    -profile [afilwd]+\n"
+      "    -profile [afilwmod]+\n"
       "                    Incorporate profiling analysis into executable program.\n"
-      "                      a: Analyse all (same as filwd).\n"
+      "                      a: Analyse all (same as filwmod).\n"
       "                      f: Analyse time spent in non-inline functions.\n"
       "                      i: Analyse time spent in inline functions.\n"
       "                      l: Analyse time spent in library functions.\n"
       "                      w: Analyse time spent in with-loops.\n"
       "                      m: Analyse number of memory operations.\n"
+      "                      o: Analyse number of primitive operations (FLOPS,INTOPS).\n"
       "                      d: Analyse performance of distributed memory backend.\n");
 
     DBUG_RETURN ();

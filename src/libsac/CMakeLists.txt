@@ -16,6 +16,7 @@ SET (LIBSAC_SRC
   essentials/trace.c
   profile/profile_print.c
   profile/profile_memory.c
+  profile/profile_ops.c
   interface/sacarg.c
   interface/sacargconvert.c
   interface/sacmt.c

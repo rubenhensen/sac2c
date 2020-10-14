@@ -65,35 +65,65 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #if SAC_DO_COMPILE_MODULE
 
 #define SAC_PF_DEFINE()                                                                  \
-   SAC_PF_DEFINE_EXT()
+   SAC_PF_DEFINE_EXT()                                                                   \
+   SAC_PF_DEFINE_EXTMOD()
 
 #else /* SAC_DO_COMPILE_MODULE */
 
 #define SAC_PF_DEFINE()                                                                  \
    SAC_PF_DEFINE_EXT()                                                                   \
+   SAC_PF_DEFINE_EXTLOC()                                                                \
    SAC_PF_DEFINE_LOC()
 
 #endif /* SAC_DO_COMPILE_MODULE */
 
+/***
+ * external declarations shared between
+ * modules and the main
+ */
 #define SAC_PF_DEFINE_EXT()                                                              \
-    SAC_C_EXTERN SAC_PF_TIMER ***SAC_PF_timer;                                           \
-    SAC_C_EXTERN int **SAC_PF_cycle_tag;                                                 \
-                                                                                         \
     SAC_C_EXTERN int SAC_PF_act_cycle_tag;                                               \
     SAC_C_EXTERN unsigned SAC_PF_with_level;                                             \
     SAC_C_EXTERN SAC_PROFILE_RECORD *SAC_PF_act_record;                                  \
     SAC_C_EXTERN struct rusage SAC_PF_start_timer;                                       \
     SAC_C_EXTERN struct rusage SAC_PF_stop_timer;                                        \
                                                                                          \
-    SAC_PF_MEM_DEFINE_EXT()                                                              \
-    SAC_PF_DISTMEM_DEFINE_EXT()                                                          \
-                                                                                         \
+    SAC_PF_DISTMEM_DEFINE_EXT()
+
+/***
+ * external declarations for modules
+ * Here, we do not know the sizes...
+ */
+#define SAC_PF_DEFINE_EXTMOD()                                                           \
+    SAC_C_EXTERN SAC_PF_TIMER ***SAC_PF_timer;                                           \
+    SAC_C_EXTERN int **SAC_PF_cycle_tag;                                                 \
     SAC_C_EXTERN char **SAC_PF_fun_name;                                                 \
     SAC_C_EXTERN int *SAC_PF_maxfunap;                                                   \
-    SAC_C_EXTERN int **SAC_PF_funapline;                                                 \
-    SAC_C_EXTERN int **SAC_PF_parentfunno;
+    SAC_C_EXTERN size_t **SAC_PF_funapline;                                              \
+    SAC_C_EXTERN size_t **SAC_PF_parentfunno;                                            \
+                                                                                         \
+    SAC_PF_MEM_DEFINE_EXTMOD()                                                           \
+    SAC_PF_OPS_DEFINE_EXTMOD() 
 
+/***
+ * external declarations for the main
+ * Here, we do need to match the known sizes
+ */
+#define SAC_PF_DEFINE_EXTLOC()                                                           \
+    SAC_C_EXTERN SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP]             \
+                             [SAC_PF_NUM_RECORD_TYPES];                                  \
+    SAC_C_EXTERN int SAC_PF_cycle_tag[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                 \
+    SAC_C_EXTERN char *SAC_PF_fun_name[SAC_SET_MAXFUN];                                  \
+    SAC_C_EXTERN int SAC_PF_maxfunap[SAC_SET_MAXFUN];                                    \
+    SAC_C_EXTERN size_t SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];              \
+    SAC_C_EXTERN size_t SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];            \
+                                                                                         \
+    SAC_PF_MEM_DEFINE_EXTLOC()                                                           \
+    SAC_PF_OPS_DEFINE_EXTLOC()
 
+/***
+ * here the definitions for the main
+ */
 #define SAC_PF_DEFINE_LOC()                                                              \
     SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP]                          \
                              [SAC_PF_NUM_RECORD_TYPES];                                  \
@@ -101,12 +131,13 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
                                                                                          \
     int SAC_PF_act_cycle_tag;                                                            \
     unsigned SAC_PF_with_level = 0;                                                      \
-    SAC_PROFILE_RECORD SAC_PF_initial_record;                                            \
+    static SAC_PROFILE_RECORD SAC_PF_initial_record;                                     \
     SAC_PROFILE_RECORD *SAC_PF_act_record = &SAC_PF_initial_record;                      \
     struct rusage SAC_PF_start_timer;                                                    \
     struct rusage SAC_PF_stop_timer;                                                     \
                                                                                          \
     SAC_PF_MEM_DEFINE_LOC()                                                              \
+    SAC_PF_OPS_DEFINE_LOC()                                                              \
     SAC_PF_DISTMEM_DEFINE_LOC()                                                          \
                                                                                          \
     char *SAC_PF_fun_name[SAC_SET_MAXFUN] = SAC_SET_FUN_NAMES;                           \
@@ -194,6 +225,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
         }                                                                                \
                                                                                          \
         SAC_PF_MEM_PRINT_STAT();                                                         \
+        SAC_PF_OPS_PRINT_STAT();                                                         \
         SAC_PF_PRINT_FUNS (grand_total);                                                 \
     }
 
@@ -767,8 +799,12 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #define SAC_PF_DISPLAY_MEM 1
 
-#define SAC_PF_MEM_DEFINE_EXT()                                                          \
+#define SAC_PF_MEM_DEFINE_EXTMOD()                                                       \
     SAC_C_EXTERN SAC_PF_MEMORY_RECORD **SAC_PF_memory;                                   \
+    SAC_C_EXTERN SAC_PF_MEMORY_RECORD *SAC_PF_memory_record;
+
+#define SAC_PF_MEM_DEFINE_EXTLOC()                                                       \
+    SAC_C_EXTERN SAC_PF_MEMORY_RECORD SAC_PF_memory[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];   \
     SAC_C_EXTERN SAC_PF_MEMORY_RECORD *SAC_PF_memory_record;
 
 #define SAC_PF_MEM_DEFINE_LOC()                                                          \
@@ -831,7 +867,8 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #define SAC_PF_DISPLAY_MEM 0
 
-#define SAC_PF_MEM_DEFINE_EXT()
+#define SAC_PF_MEM_DEFINE_EXTMOD()
+#define SAC_PF_MEM_DEFINE_EXTLOC()
 #define SAC_PF_MEM_DEFINE_LOC()
 #define SAC_PF_MEM_INIT_RECORD(mem_record)
 #define SAC_PF_MEM_SETUP()
@@ -845,6 +882,67 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #define SAC_PF_MEM_PRINT_STAT()
 
 #endif /* SAC_DO_PROFILE_MEM */
+
+
+#if (SAC_DO_PROFILE_OPS && SAC_DO_PROFILE)
+
+#define SAC_PF_DISPLAY_OPS 1
+
+#define SAC_PF_OPS_DEFINE_EXTMOD()                                                       \
+    SAC_C_EXTERN SAC_PF_OPS_RECORD **SAC_PF_ops;                                         \
+    SAC_C_EXTERN SAC_PF_OPS_RECORD *SAC_PF_ops_record;
+
+#define SAC_PF_OPS_DEFINE_EXTLOC()                                                       \
+    SAC_C_EXTERN SAC_PF_OPS_RECORD SAC_PF_ops[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];         \
+    SAC_C_EXTERN SAC_PF_OPS_RECORD *SAC_PF_ops_record;
+
+#define SAC_PF_OPS_DEFINE_LOC()                                                          \
+    SAC_PF_OPS_RECORD SAC_PF_ops[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                      \
+    SAC_PF_OPS_RECORD *SAC_PF_ops_record;
+
+#define SAC_PF_OPS_INIT_RECORD(ops_record)                                               \
+    ops_record.ops_count[T_int] = 0;                                                     \
+    ops_record.ops_count[T_double] = 0;                                                  \
+    ops_record.ops_count[T_float] = 0;
+
+#define SAC_PF_OPS_SETUP()                                                               \
+    for (i = 0; i < SAC_SET_MAXFUN; i++) {                                               \
+        for (j = 0; j < SAC_PF_maxfunap[i]; j++) {                                       \
+            SAC_PF_OPS_INIT_RECORD (SAC_PF_ops[i][j]);                                   \
+        }                                                                                \
+    }                                                                                    \
+    SAC_PF_ops_record = &SAC_PF_ops[0][0];
+
+#define SAC_PF_OPS_PRINT_STAT()                                                          \
+    {                                                                                    \
+        size_t i;                                                                           \
+        SAC_PF_OPS_PrintStats ();                                                        \
+        for (i = 0; i < SAC_SET_MAXFUN; i += 1) {                                        \
+            SAC_PF_OPS_PrintFunStats (SAC_PF_fun_name[i], SAC_PF_maxfunap[i],            \
+                                      SAC_PF_ops[i]);                                    \
+        }                                                                                \
+    }
+
+#define SAC_PF_OPS_INC_PRF( prf, type)                                                   \
+    SAC_PF_OPS_IncPrf (T_int)
+
+
+#else /* SAC_DO_PROFILE_OPS */
+
+
+#define SAC_PF_DISPLAY_OPS 0
+
+#define SAC_PF_OPS_DEFINE_EXTMOD()
+#define SAC_PF_OPS_DEFINE_EXTLOC()
+#define SAC_PF_OPS_DEFINE_LOC()
+#define SAC_PF_OPS_INIT_RECORD(ops_record)
+#define SAC_PF_OPS_SETUP()
+#define SAC_PF_OPS_PRINT_STAT()
+
+#define SAC_PF_OPS_INC_PRF( prf, type)
+
+#endif /* SAC_DO_PROFILE_OPS */
+
 
 #endif /* SAC_MUTC_MACROS */
 #endif /* _SAC_RT_PROFILE_H */

@@ -124,6 +124,7 @@ PrintGlobalSwitches (void)
     PRINT_OPT_SWITCH (SAC_DO_PROFILE_INL,     global.profile.inl);
     PRINT_OPT_SWITCH (SAC_DO_PROFILE_LIB,     global.profile.lib);
     PRINT_OPT_SWITCH (SAC_DO_PROFILE_MEM,     global.profile.mem);
+    PRINT_OPT_SWITCH (SAC_DO_PROFILE_OPS,     global.profile.ops);
     PRINT_OPT_SWITCH (SAC_DO_PROFILE_DISTMEM, global.profile.distmem);
     fprintf (global.outfile, "\n");
 
