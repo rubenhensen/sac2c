@@ -358,7 +358,7 @@
 #define SAC_ND_PRF_SxS__DATA(to_NT, ty_str, op_macro, scl1, scl2)                        \
     SAC_TR_PRF_PRINT (                                                                   \
       ("ND_PRF_SxS__DATA( %s, %s, %s, %s)\n", NT_STR (to_NT), #op_macro, #scl1, #scl2)); \
-    SAC_PF_OPS_INC_PRF ( op_macro, ty_str);                                              \
+    SAC_PF_OPS_INC_PRF ( ty_str, P_##op_macro);                                          \
     SAC_ND_WRITE_COPY (to_NT, 0, op_macro (scl1, scl2), );
 
 #define SAC_ND_PRF_SxSxS__DATA(to_NT, op_macro, scl1, scl2, scl3)                        \

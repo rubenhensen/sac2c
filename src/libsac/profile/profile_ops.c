@@ -13,7 +13,7 @@
 /* Global Variables */
 
 /* these counter are for all memory operations */
-static size_t SAC_PF_OPS_total[T_nothing]; /**< Holds the total nmber of prfs on the given simpletype */
+static unsigned long SAC_PF_OPS_type_ops_total[T_nothing][P_undef]; /**< Holds the total nmber of prfs on the given simpletype */
 
 /**
  * @brief Increments the alloc counter.
@@ -21,9 +21,9 @@ static size_t SAC_PF_OPS_total[T_nothing]; /**< Holds the total nmber of prfs on
  * @param size Size in bytes
  */
 void
-SAC_PF_OPS_IncPrf ( enum pf_types  s)
+SAC_PF_OPS_IncPrf ( enum pf_types  s, enum pf_ops o)
 {
-    SAC_PF_OPS_total[s] += 1;
+    SAC_PF_OPS_type_ops_total[s][o] += 1;
 }
 
 /**
@@ -35,12 +35,36 @@ inline bool
 SAC_PF_OPS_IsRecordZero (SAC_PF_OPS_RECORD record)
 {
     bool res = true;
-    unsigned int i;
-    for( i=0; i<T_nothing; i++) {
-      res = res && (record.ops_count[i] == 0);
+    int i,j;
+    for( i=0; i<T_ignore; i++) {
+        for( j=0; j<P_undef; j++) {
+            res = res && (record.type_ops_count[i][j] == 0);
+        }
     }
     return res;
 }
+
+inline void
+SAC_PF_OPS_PrintOpsStats (unsigned long *p_ops)
+{
+    int i;
+    unsigned long ari_ops=0, rel_ops=0, minmax=0;
+    for(i=P_SAC_ND_PRF_ADD; i<P_SAC_ND_PRF_MIN; i++) {
+        ari_ops += p_ops[i];
+    }
+    for(; i<P_SAC_ND_PRF_EQ; i++) {
+        minmax += p_ops[i];
+    }
+    for(; i<P_undef; i++) {
+        rel_ops += p_ops[i];
+    }
+    SAC_PF_PrintCount ( "arithmetic ops:", "", ari_ops);
+    SAC_PF_PrintCount ( "relational ops:", "", rel_ops);
+    SAC_PF_PrintCount ( "minmax ops    :", "", minmax);
+    SAC_PF_PrintCount ( "total ops     :", "", ari_ops+rel_ops+minmax);
+    
+}
+
 
 /**
  * @brief Print memory profiling statistics for current record.
@@ -50,12 +74,13 @@ SAC_PF_OPS_IsRecordZero (SAC_PF_OPS_RECORD record)
 inline void
 SAC_PF_OPS_PrintRecordStats (SAC_PF_OPS_RECORD record)
 {
+    
     SAC_PF_PrintSection ("Double precision FLOPS:");
-    SAC_PF_PrintCount ("total", "", record.ops_count[T_double]);
+    SAC_PF_OPS_PrintOpsStats (&record.type_ops_count[T_double][0]);
     SAC_PF_PrintSection ("Single precision FLOPS:");
-    SAC_PF_PrintCount ("total", "", record.ops_count[T_float]);
+    SAC_PF_OPS_PrintOpsStats (&record.type_ops_count[T_float][0]);
     SAC_PF_PrintSection ("int IOPS:");
-    SAC_PF_PrintCount ("total", "", record.ops_count[T_int]);
+    SAC_PF_OPS_PrintOpsStats (&record.type_ops_count[T_int][0]);
 }
 
 /**
@@ -97,13 +122,13 @@ SAC_PF_OPS_PrintFunStats (const char *func_name, unsigned num_ap,
 void
 SAC_PF_OPS_PrintStats ()
 {
-    SAC_PF_PrintHeader ("Memory Profile");
+    SAC_PF_PrintHeader ("Operations Profile");
 
     fprintf (stderr, "\n*** %-72s\n", "Operation counters:");
-    SAC_PF_PrintSection ("Double precision FLOPS:");
-    SAC_PF_PrintCount ("total", "", SAC_PF_OPS_total[T_double]);
-    SAC_PF_PrintSection ("Single precision FLOPS:");
-    SAC_PF_PrintCount ("total", "", SAC_PF_OPS_total[T_float]);
-    SAC_PF_PrintSection ("int IOPS:");
-    SAC_PF_PrintCount ("total", "", SAC_PF_OPS_total[T_int]);
+    SAC_PF_PrintSection ("Total double precision FLOPS:");
+    SAC_PF_OPS_PrintOpsStats (&SAC_PF_OPS_type_ops_total[T_double][0]);
+    SAC_PF_PrintSection ("Total single precision FLOPS:");
+    SAC_PF_OPS_PrintOpsStats (&SAC_PF_OPS_type_ops_total[T_float][0]);
+    SAC_PF_PrintSection ("Total int IOPS:");
+    SAC_PF_OPS_PrintOpsStats (&SAC_PF_OPS_type_ops_total[T_int][0]);
 }

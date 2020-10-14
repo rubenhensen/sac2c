@@ -100,7 +100,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     SAC_C_EXTERN char **SAC_PF_fun_name;                                                 \
     SAC_C_EXTERN int *SAC_PF_maxfunap;                                                   \
     SAC_C_EXTERN size_t **SAC_PF_funapline;                                              \
-    SAC_C_EXTERN size_t **SAC_PF_parentfunno;                                            \
+    SAC_C_EXTERN int **SAC_PF_parentfunno;                                               \
                                                                                          \
     SAC_PF_MEM_DEFINE_EXTMOD()                                                           \
     SAC_PF_OPS_DEFINE_EXTMOD() 
@@ -116,7 +116,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     SAC_C_EXTERN char *SAC_PF_fun_name[SAC_SET_MAXFUN];                                  \
     SAC_C_EXTERN int SAC_PF_maxfunap[SAC_SET_MAXFUN];                                    \
     SAC_C_EXTERN size_t SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];              \
-    SAC_C_EXTERN size_t SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];            \
+    SAC_C_EXTERN int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];               \
                                                                                          \
     SAC_PF_MEM_DEFINE_EXTLOC()                                                           \
     SAC_PF_OPS_DEFINE_EXTLOC()
@@ -143,7 +143,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     char *SAC_PF_fun_name[SAC_SET_MAXFUN] = SAC_SET_FUN_NAMES;                           \
     int SAC_PF_maxfunap[SAC_SET_MAXFUN] = SAC_SET_FUN_APPS;                              \
     size_t SAC_PF_funapline[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_AP_LINES;    \
-    size_t SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_PARENTS;   \
+    int SAC_PF_parentfunno[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP] = SAC_SET_FUN_PARENTS;      \
                                                                                          \
     static void SAC_PF_BeginComm (void)                                                  \
     {                                                                                    \
@@ -170,12 +170,14 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
         SAC_PF_new_record.cycle_tag = &SAC_PF_cycle_tag[funno_in][funapno_in];           \
         SAC_PF_act_record = &SAC_PF_new_record;                                          \
         SAC_PF_BEGIN_MEM ()                                                              \
+        SAC_PF_BEGIN_OPS ()                                                              \
         SAC_PF_BEGIN_FUNCTION_END ()
 
 #define PROFILE_END_UDF(funno, funapno)                                                  \
         SAC_PF_END_FUNCTION_START ()                                                     \
         SAC_PF_act_record = SAC_PF_act_record->parent;                                   \
         SAC_PF_END_MEM ()                                                                \
+        SAC_PF_END_OPS ()                                                                \
         SAC_PF_END_FUNCTION_END ()                                                       \
     }
 
@@ -200,6 +202,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
         SAC_PF_act_cycle_tag = 0;                                                        \
                                                                                          \
         SAC_PF_MEM_SETUP ()                                                              \
+        SAC_PF_OPS_SETUP ()                                                              \
         SAC_PF_DISTMEM_SETUP ()                                                          \
                                                                                          \
         SAC_PF_START_CLOCK ();                                                           \
@@ -900,15 +903,14 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     SAC_PF_OPS_RECORD SAC_PF_ops[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP];                      \
     SAC_PF_OPS_RECORD *SAC_PF_ops_record;
 
-#define SAC_PF_OPS_INIT_RECORD(ops_record)                                               \
-    ops_record.ops_count[T_int] = 0;                                                     \
-    ops_record.ops_count[T_double] = 0;                                                  \
-    ops_record.ops_count[T_float] = 0;
-
 #define SAC_PF_OPS_SETUP()                                                               \
     for (i = 0; i < SAC_SET_MAXFUN; i++) {                                               \
         for (j = 0; j < SAC_PF_maxfunap[i]; j++) {                                       \
-            SAC_PF_OPS_INIT_RECORD (SAC_PF_ops[i][j]);                                   \
+            for (k = 0; k < P_undef; k++) {                                              \
+                SAC_PF_ops[i][j].type_ops_count[T_int][k] = 0;                           \
+                SAC_PF_ops[i][j].type_ops_count[T_double][k] = 0;                        \
+                SAC_PF_ops[i][j].type_ops_count[T_float][k] = 0;                         \
+            }                                                                            \
         }                                                                                \
     }                                                                                    \
     SAC_PF_ops_record = &SAC_PF_ops[0][0];
@@ -923,9 +925,17 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
         }                                                                                \
     }
 
-#define SAC_PF_OPS_INC_PRF( prf, type)                                                   \
-    SAC_PF_OPS_IncPrf (T_int)
+#define SAC_PF_OPS_INC_PRF( type, prf)                                                   \
+    SAC_PF_ops_record->type_ops_count[type][prf]++;                                      \
+    SAC_PF_OPS_IncPrf ( type, prf )
 
+#define SAC_PF_BEGIN_OPS()                                                               \
+    SAC_PF_ops_record                                                                    \
+      = &SAC_PF_ops[SAC_PF_act_record->funno][SAC_PF_act_record->funapno];
+
+#define SAC_PF_END_OPS()                                                                 \
+    SAC_PF_ops_record                                                                    \
+      = &SAC_PF_ops[SAC_PF_act_record->funno][SAC_PF_act_record->funapno];
 
 #else /* SAC_DO_PROFILE_OPS */
 
@@ -940,6 +950,10 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #define SAC_PF_OPS_PRINT_STAT()
 
 #define SAC_PF_OPS_INC_PRF( prf, type)
+
+#define SAC_PF_BEGIN_OPS()
+#define SAC_PF_END_OPS()
+
 
 #endif /* SAC_DO_PROFILE_OPS */
 

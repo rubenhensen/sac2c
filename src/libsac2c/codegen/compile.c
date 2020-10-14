@@ -7833,8 +7833,10 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
     node *arg1, *arg2;
     node *let_ids;
     node *ret_node;
+    simpletype stype;
     char *prf_orig_name = prf_ccode_tab[PRF_PRF (arg_node)];
     char *prf_name = prf_orig_name;
+    char *ty_str;
 
     DBUG_ENTER ();
 
@@ -7866,8 +7868,29 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
         sprintf (prf_name, "%s%s", prf_orig_name, "_SIMD");
     }
 
+    if (NODE_TYPE (arg1) == N_num) {
+        ty_str = "T_int";
+    } else if (NODE_TYPE (arg1) == N_float) {
+        ty_str = "T_float";
+    } else if (NODE_TYPE (arg1) == N_double) {
+        ty_str = "T_double";
+    } else if (NODE_TYPE (arg1) == N_id) {
+      stype = TCgetBasetype (ID_TYPE (arg1));
+      if (stype == T_int) {
+        ty_str = "T_int";
+      } else if (stype == T_float) {
+        ty_str = "T_float";
+      } else if (stype == T_double) {
+        ty_str = "T_double";
+      } else {
+        ty_str = "T_ignore";
+      }
+    } else {
+      ty_str = "T_ignore";
+    }
+
     ret_node = TCmakeAssignIcm4 ("ND_PRF_SxS__DATA", DUPdupIdsIdNt (let_ids),
-                                 TCmakeIdCopyString ("huhu"),
+                                 TCmakeIdCopyString (ty_str),
                                  TCmakeIdCopyString (prf_name),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
