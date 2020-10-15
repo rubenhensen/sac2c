@@ -304,9 +304,6 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
                 }                                                                        \
                 if (SAC_PF_DISPLAY_FUN) {                                                \
                     for (k = 0; k < SAC_SET_MAXFUN; k += (k == (i - 1) ? 2 : 1)) {       \
-                        if (k == i) {                                                    \
-                            k++;                                                         \
-                        } /* required for i==0 only! */                                  \
                         for (j = 0; j < SAC_PF_maxfunap[k]; j++) {                       \
                             if (SAC_PF_parentfunno[k][j] == i) {                         \
                                 SAC_PF_TIMER sub_total;                                  \
