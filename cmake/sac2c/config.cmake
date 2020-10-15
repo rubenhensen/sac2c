@@ -719,6 +719,21 @@ ELSEIF (MACC)
   # allow for vardic macros to have zero arguments
   CHECK_CC_FLAG ("-Wno-gnu-zero-variadic-macro-arguments" MACCC_FLAGS)
 
+  # we use alloca in the context of the MT backend which is deemed potentially
+  # unsafe. It is not clear how we can avoid this; therefore, for the time
+  # being, we silence these warnings.
+  CHECK_CC_FLAG ("-Wno-alloca" MACCC_FLAGS)
+
+  # we load stuff dynamically from /usr/local/include/sac2c/1.3.3-MijasCosta-392-gafc5c-dirty/release
+  # which limits portability; we ignore those warnings:
+  CHECK_CC_FLAG ("-Wno-poison-system-directories" MACCC_FLAGS)
+
+  # we do use __sync_add_and_fetch in mt_beehive.c which leads to the warning that
+  # implicit use of sequentially-consistent atomic may incur stronger memory barriers than necessary
+  # being conservative it is ok to ignore those warnings, however, 
+  # we SHOULD investigate this further!
+  CHECK_CC_FLAG ("-Wno-atomic-implicit-seq-cst" MACCC_FLAGS)
+
   #Turn this if you want to be cruel
   #CHECK_CC_FLAG ("-Wconversion" MACCC_FLAGS)
   CHECK_CC_FLAG ("-march=native" MACCC_NATIVE_FLAGS)

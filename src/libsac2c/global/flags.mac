@@ -164,6 +164,7 @@ PROFILE (inl, 'i', FALSE)
 PROFILE (lib, 'l', FALSE)
 PROFILE (with, 'w', FALSE)
 PROFILE (mem, 'm', FALSE)
+PROFILE (ops, 'o', FALSE)
 PROFILE (distmem, 'd', FALSE)
 
 #undef PROFILEflag
