@@ -7868,6 +7868,20 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
         sprintf (prf_name, "%s%s", prf_orig_name, "_SIMD");
     }
 
+    /*
+     * For -profile o, we need to make sure that we provide two pieces
+     * of information: the basic type the operation is working on and
+     * the operation itself.
+     * The operation itself is encoded in TCmakeIdCopyString (prf_name)
+     * already, which is used to evetually expand a macro of that name 
+     * for the actual code generation.
+     * Here, we extract the type from the first argument.
+     * NB: bear in mind, we are on the old type representation here :-(
+     * The encoding of the type here is similar BUT NOT IDENTICAL
+     * to simpletype. simpletype does not exist in the runtime system.
+     * Instead, we have a custom enum type that lives in 
+     * libsac/profile/profile_ops.h !
+     */
     if (NODE_TYPE (arg1) == N_num) {
         ty_str = "T_int";
     } else if (NODE_TYPE (arg1) == N_float) {

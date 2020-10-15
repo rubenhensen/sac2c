@@ -7,6 +7,19 @@
 
 #include "runtime/essentials_h/bool.h"
 
+/**
+ * Here the prfs that are currently supported.
+ * The funny names stem from the ICM that is
+ * generated for their applications in 
+ * codegen/compile.c
+ * It is essential to make sure that all those
+ * prf's are covered that are compiled by 
+ * COMPprfOp_SxS. To find out, please ccheck
+ * tree/prf_info.mac
+ *
+ * P_undef is unused and marks the end of
+ * them.
+ */
 enum pf_ops {
   P_SAC_ND_PRF_ADD,
   P_SAC_ND_PRF_SUB,
@@ -27,6 +40,19 @@ enum pf_ops {
   P_undef
 } ;
 
+/**
+ * Here the "simpletypes" that are currently supported.
+ * Since simpltype itself is not available at runtime, 
+ * we generate this pseudo-encoding. When extending
+ * them to further simpletypes, COMPprfOp_SxS
+ * in codegen/compile.c needs to be adjusted accordingly.
+ * In order to avoid runtime checks, we add a pseudo
+ * type T_ignore which serves as pool for all simpletypes
+ * we are currently not interested in/
+ *
+ * Similar as in simpletypes, T_nothing is unused and
+ * marks the end of them.
+ */
 enum pf_types {
   T_int,
   T_float,

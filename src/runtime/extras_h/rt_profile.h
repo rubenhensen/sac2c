@@ -11,6 +11,7 @@
  *    PROFILE_INL       for profiling even inlined functions
  *    PROFILE_LIB       for profiling even library functions
  *    PROFILE_MEM       for profiling memory operations
+ *    PROFILE_OPS       for profiling arithmetic and relational operations
  *    PROFILE_DISTMEM   for profiling the distributed memory backend
  *
  *   The global switch PROFILE indicates any profiling activations.
@@ -91,7 +92,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     SAC_PF_DISTMEM_DEFINE_EXT()
 
 /***
- * external declarations for modules
+ * external declarations for modules only.
  * Here, we do not know the sizes...
  */
 #define SAC_PF_DEFINE_EXTMOD()                                                           \
@@ -106,7 +107,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     SAC_PF_OPS_DEFINE_EXTMOD() 
 
 /***
- * external declarations for the main
+ * external declarations for the main program.
  * Here, we do need to match the known sizes
  */
 #define SAC_PF_DEFINE_EXTLOC()                                                           \
@@ -122,7 +123,9 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
     SAC_PF_OPS_DEFINE_EXTLOC()
 
 /***
- * here the definitions for the main
+ * here the definitions of global variables for the main.
+ * Note, that these cannot be static as they can be used from the 
+ * compiled library codes as well!
  */
 #define SAC_PF_DEFINE_LOC()                                                              \
     SAC_PF_TIMER SAC_PF_timer[SAC_SET_MAXFUN][SAC_SET_MAXFUNAP]                          \
@@ -887,6 +890,12 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #endif /* SAC_DO_PROFILE_MEM */
 
 
+
+/*
+ * Macros for profiling arithmetic and relational opertions
+ */
+
+
 #if (SAC_DO_PROFILE_OPS && SAC_DO_PROFILE)
 
 #define SAC_PF_DISPLAY_OPS 1
@@ -917,7 +926,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #define SAC_PF_OPS_PRINT_STAT()                                                          \
     {                                                                                    \
-        size_t i;                                                                           \
+        size_t i;                                                                        \
         SAC_PF_OPS_PrintStats ();                                                        \
         for (i = 0; i < SAC_SET_MAXFUN; i += 1) {                                        \
             SAC_PF_OPS_PrintFunStats (SAC_PF_fun_name[i], SAC_PF_maxfunap[i],            \

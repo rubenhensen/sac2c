@@ -12,13 +12,21 @@
 
 /* Global Variables */
 
-/* these counter are for all memory operations */
-static unsigned long SAC_PF_OPS_type_ops_total[T_nothing][P_undef]; /**< Holds the total nmber of prfs on the given simpletype */
+/**
+ * We keep all information about arithmetic and relational 
+ * function calls in a single two-dimensional array.
+ * The first axis denotes the different types, and the second
+ * the different operations. The values used here are the
+ * final entries in the corresponding enum types provided
+ * by libsac/profile/profile_ops.h.
+ */
+static unsigned long SAC_PF_OPS_type_ops_total[T_nothing][P_undef];
 
 /**
- * @brief Increments the alloc counter.
+ * @brief Increments the ops counters.
  *
- * @param size Size in bytes
+ * @param s simpletype as encoded in profile_ops.h
+ * @param o operation as encoded in profile_ops.h
  */
 void
 SAC_PF_OPS_IncPrf ( enum pf_types  s, enum pf_ops o)
@@ -28,6 +36,7 @@ SAC_PF_OPS_IncPrf ( enum pf_types  s, enum pf_ops o)
 
 /**
  * @brief Test if a record's fields are all zero.
+ *        This allows us to prune the output.
  *
  * @param record the record to check
  */
@@ -44,24 +53,32 @@ SAC_PF_OPS_IsRecordZero (SAC_PF_OPS_RECORD record)
     return res;
 }
 
+/**
+ * @brief Helper function which presents the
+ *        counter values for all different operations
+ *        of a single given element type.
+ *        Used globally as well as on a function level.
+ *
+ * @param p_ops pointer to the vector of counters per operation
+ */
 inline void
 SAC_PF_OPS_PrintOpsStats (unsigned long *p_ops)
 {
     int i;
     unsigned long ari_ops=0, rel_ops=0, minmax=0;
-    for(i=P_SAC_ND_PRF_ADD; i<P_SAC_ND_PRF_MIN; i++) {
+    for (i=P_SAC_ND_PRF_ADD; i<P_SAC_ND_PRF_MIN; i++) {
         ari_ops += p_ops[i];
     }
-    for(; i<P_SAC_ND_PRF_EQ; i++) {
+    for (; i<P_SAC_ND_PRF_EQ; i++) {
         minmax += p_ops[i];
     }
-    for(; i<P_undef; i++) {
+    for (; i<P_undef; i++) {
         rel_ops += p_ops[i];
     }
-    SAC_PF_PrintCount ( "arithmetic ops:", "", ari_ops);
-    SAC_PF_PrintCount ( "relational ops:", "", rel_ops);
-    SAC_PF_PrintCount ( "minmax ops    :", "", minmax);
-    SAC_PF_PrintCount ( "total ops     :", "", ari_ops+rel_ops+minmax);
+    SAC_PF_PrintCount ("arithmetic ops:", "", ari_ops);
+    SAC_PF_PrintCount ("relational ops:", "", rel_ops);
+    SAC_PF_PrintCount ("minmax ops    :", "", minmax);
+    SAC_PF_PrintCount ("total ops     :", "", ari_ops+rel_ops+minmax);
     
 }
 
@@ -117,7 +134,7 @@ SAC_PF_OPS_PrintFunStats (const char *func_name, unsigned num_ap,
 }
 
 /**
- * @brief Call to print memory profiling statistics.
+ * @brief Call to print arithmetic and relational profiling statistics.
  */
 void
 SAC_PF_OPS_PrintStats ()
