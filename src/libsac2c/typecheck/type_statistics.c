@@ -160,7 +160,7 @@ PrintStatistics (node *fundef, info *info)
     }
     if (flag) {
         tmp = SBUF2str (buf);
-        CTInote ("  %s", tmp);
+        CTItell (0, "  %s", tmp);
         tmp = MEMfree (tmp);
     }
     buf = SBUFfree (buf);
@@ -188,20 +188,27 @@ TSdoPrintTypeStatistics (node *arg_node)
 
     TRAVpush (TR_ts);
 
+    CTItell (0, " ");
+    CTItell (0, "***********************************************************");
+    CTItell (0, "** Type specialisation feedback                          **");
+    CTItell (0, "***********************************************************");
+
     arg_info = MakeInfo ();
     INFO_TS_ANY (arg_info) = FALSE;
     arg_node = TRAVdo (arg_node, arg_info);
 
     if (INFO_TS_ANY (arg_info)) {
-        CTInote ("  For all other functions %s-info has been inferred.",
+        CTItell (0, "  For all other functions %s-info has been inferred.",
                  spec_mode_str[global.spec_mode]);
     } else {
-        CTInote ("  For all functions %s-info has been inferred.",
+        CTItell (0, "  For all functions %s-info has been inferred.",
                  spec_mode_str[global.spec_mode]);
     }
     arg_info = FreeInfo (arg_info);
 
     TRAVpop ();
+
+    CTItell (0, "***********************************************************");
 
     DBUG_RETURN (arg_node);
 }
