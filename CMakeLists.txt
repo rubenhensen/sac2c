@@ -356,10 +356,12 @@ ENABLE_TESTING ()
 # it, so instead we create our own target. This mimicks autotools' `check`
 # Makefile target. By default, we depend on the compiler being built.
 # NOTE: in general, we should only add dependencies which are (a) nessicary
-#       files for a test, (b) executables that need to be built.
+#       files for a test, (b) executables that need to be built. Additionally
+#       we need the sac2crc generation target, as otherwise there could be
+#       issues with finding the correct sacprelude.
 ADD_CUSTOM_TARGET (check
   COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-  DEPENDS runtime_libraries)
+  DEPENDS copy-sac2crc-prelude-file runtime_libraries)
 
 # The following director contains all tests which check that the compiler
 # is working correctly, e.g. code transformations make the expected changes,
