@@ -12,7 +12,7 @@
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bcg
 //
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>@$(CALL_SAC2C) $<
+// SAC_TEST|<tab>$(CALL_SAC2C) $<
 // SAC_TEST|<tab>@cat a.out.cu | $(GREP_COMMAND_OUTPUT) "grid.x > [0-9]* || grid.y > [0-9]* || grid.z > [0-9]*" 1
 // SAC_TEST|<tab>@cat a.out.cu | $(GREP_COMMAND_OUTPUT) "block.x > [0-9]* || block.y > [0-9]* || block.z > [0-9]*" 1
 

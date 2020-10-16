@@ -36,7 +36,7 @@ Meta tags section below.
 Running unit tests is achieved via
 
 ```sh
-make test
+make check
 ```
 after the sac2c compiler has been built.   To run tests in parallel, which
 can become important if the number of tests increases, use
@@ -106,7 +106,7 @@ Several shell scripts are defined in scripts, to be used in `common.mk`:
 
   * `check-return-status.sh` --- runs the binary passed as a first argument
     and checks that its return status is equal to the second argument.
-    
+
   * `grep-command-output.sh` --- a wrapper around grep that counts the number
     of occurrences of the first argument is equal to the second argument.
 

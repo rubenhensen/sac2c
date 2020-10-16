@@ -7,7 +7,7 @@
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bcg
 //
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>@$(CALL_SAC2C) $<
+// SAC_TEST|<tab>$(CALL_SAC2C) $<
 // SAC_TEXT|<tab>@cat a.out.cu | $(GREP_COMMAND_OUTPUT) "__global__.*cuknl" 2
 
 int main ()

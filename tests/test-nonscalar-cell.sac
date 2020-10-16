@@ -17,10 +17,10 @@
 
 // SAC_TEST|include common.mk
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -b3 -printfun main $< | $(GREP_COMMAND_OUTPUT) iv 2
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -b3 -printfun main $< | $(GREP_COMMAND_OUTPUT) iv 2
 
 int main()
-{ 
+{
  siz = [5, 4];
  PWL = with {
         ( [0, 0] <= iv=[i,j] < [ 2, 4]) : _add_SxV_( j, [ 10, 20, 30, 40]);

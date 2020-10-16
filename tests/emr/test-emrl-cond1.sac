@@ -5,7 +5,7 @@
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -doemrci -doemrcf -doemrl -bopt:emr -printfun main__Cond_4
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) "emr_lifted" 4
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) "emr_lifted" 4
 
 #include "mini-stdlib.sac"
 

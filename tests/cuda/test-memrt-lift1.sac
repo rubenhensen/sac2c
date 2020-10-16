@@ -5,8 +5,8 @@
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -t cuda -doemrci -doemrcf -doemrl -bcuda:mtran
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -nomemrt $< | $(GREP_COMMAND_OUTPUT) '_Loop_1( .*, A, [^, ]*_emr_lifted)\|_Loop_1( .*, [^, ]*_A, A)' 2
-// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -domemrt $< | $(GREP_COMMAND_OUTPUT) '_Loop_1( .*, [^, ]*_A, [^, ]*_dev)\|_host2device_( [^, ]*_emr_lifted);' 2
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -nomemrt $< | $(GREP_COMMAND_OUTPUT) '_Loop_1( .*, A, [^, ]*_emr_lifted)\|_Loop_1( .*, [^, ]*_A, A)' 2
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -domemrt $< | $(GREP_COMMAND_OUTPUT) '_Loop_1( .*, [^, ]*_A, [^, ]*_dev)\|_host2device_( [^, ]*_emr_lifted);' 2
 #include "mini-stdlib.sac"
 
 inline

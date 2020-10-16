@@ -1,6 +1,6 @@
 // SAC_TEST|include common.mk
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>@$(SAC2C) $< && (echo "error code expected"; exit 1) || (test $$? -eq 33)
+// SAC_TEST|<tab>$(SAC2C) $< && (echo "error code expected"; exit 1) || (test $$? -eq 33)
 
 // This program used to segfault at parsing, because the
 // number of arguments to ++ are zero.  So in this test

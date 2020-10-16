@@ -66,7 +66,9 @@ FOREACH (f ${sac_test_files} ${headers} ${mk})
     LIST (APPEND _copy_depends "${TESTS_BIN_DIR}/${f}")
 ENDFOREACH ()
 
-ADD_CUSTOM_TARGET (copy-unit-tests
+# This target copies over the sources for all tests. It is attached to
+# the ALL target, so that we do this whenever we call `make` and `make check`.
+ADD_CUSTOM_TARGET (copy-unit-tests ALL
     DEPENDS ${_copy_depends}
     COMMENT "Copying over unit tests")
 ADD_DEPENDENCIES (check copy-unit-tests)

@@ -1,6 +1,6 @@
 // SAC_TEST|include common.mk
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>@$(SAC2C) $< && (echo "error code expected"; exit 1) || (test $$? -eq 1)
+// SAC_TEST|<tab>$(SAC2C) $< && (echo "error code expected"; exit 1) || (test $$? -eq 1)
 
 // This program used to segfault because of the way return types were parsed.
 // This test ensuers that compilation terminates with exit code 1, and not 134
