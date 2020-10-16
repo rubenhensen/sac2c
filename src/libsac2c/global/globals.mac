@@ -774,6 +774,10 @@ GLOBAL (bool, dotogstuff, FALSE, xfree_dummy, )
 GLOBAL (bool, insertconformitychecks, FALSE, xfree_dummy, )
 GLOBAL (bool, stripconformitychecks, FALSE, xfree_dummy, )
 
+GLOBAL (feedback_flags_t, feedback, feedback_init, xfree_dummy, )
+GLOBAL (feedback_flags_t, feedback_all, feedback_all_init, xfree_dummy, )
+GLOBAL (feedback_flags_t, feedback_none, feedback_none_init, xfree_dummy, )
+
 GLOBAL (trace_flags_t, trace, trace_init, xfree_dummy, )
 GLOBAL (trace_flags_t, trace_all, trace_all_init, xfree_dummy, )
 GLOBAL (trace_flags_t, trace_none, trace_none_init, xfree_dummy, )

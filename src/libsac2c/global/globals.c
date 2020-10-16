@@ -524,6 +524,25 @@ static print_flags_t print_none_init = {
 };
 
 /*
+ * Initialize feedback flags from flags.mac
+ */
+
+static feedback_flags_t feedback_init = {
+#define FEEDBACKdefault(default) default,
+#include "flags.mac"
+};
+
+static feedback_flags_t feedback_all_init = {
+#define FEEDBACKdefault(default) TRUE,
+#include "flags.mac"
+};
+
+static feedback_flags_t feedback_none_init = {
+#define FEEDBACKdefault(default) FALSE,
+#include "flags.mac"
+};
+
+/*
  * Initialize profile flags from flags.mac
  */
 

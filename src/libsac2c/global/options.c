@@ -1398,6 +1398,19 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      * Options starting with fffffffffffffffffffffffffffffffffffffffffff
      */
 
+    ARGS_OPTION_BEGIN ("feedback")
+    {
+        ARG_FLAGMASK_BEGIN ();
+        ARG_FLAGMASK ('a', global.feedback = global.feedback_all);
+
+#define FEEDBACK(flag, char, default)                                                       \
+    ARG_FLAGMASK (char, global.feedback.flag = TRUE);
+#include "flags.mac"
+
+        ARG_FLAGMASK_END ();
+    }
+    ARGS_OPTION_END ("feedback");
+
     ARGS_FLAG ("fortran", global.genfortran = TRUE);
 
     /*
