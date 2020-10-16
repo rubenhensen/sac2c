@@ -8,35 +8,59 @@
 extern int CTIgetErrorCount (void);
 extern void CTIexit (int) FUN_ATTR_NORETURN;
 extern void CTIinstallInterruptHandlers (void);
-extern char *CTIgetErrorMessageVA (size_t line, const char *file, const char *format,
-                                   va_list arg_p);
-extern void CTIerror (const char *format, ...) PRINTF_FORMAT (1, 2);
-extern void CTIerrorLoc (struct location loc, const char *format, ...)
-  PRINTF_FORMAT (2, 3);
-extern void CTIerrorLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
-extern void CTIerrorContinued (const char *format, ...) PRINTF_FORMAT (1, 2);
-extern void CTIerrorInternal (const char *format, ...) PRINTF_FORMAT (1, 2);
-extern size_t CTIgetErrorMessageLineLength (void);
-extern void CTIabortOnBottom (char *err_msg);
-extern void CTIabort (const char *format, ...) PRINTF_FORMAT (1, 2) FUN_ATTR_NORETURN;
-extern void CTIabortLine (size_t line, const char *format, ...)
-  PRINTF_FORMAT (2, 3) FUN_ATTR_NORETURN;
-extern void CTIabortOutOfMemory (size_t request) FUN_ATTR_NORETURN;
-extern void CTIabortOnError (void);
-extern void CTIwarn (const char *format, ...) PRINTF_FORMAT (1, 2);
-extern void CTIwarnLoc (struct location loc, const char *format, ...)
-  PRINTF_FORMAT (2, 3);
-extern void CTIwarnLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
-extern void CTIwarnContinued (const char *format, ...) PRINTF_FORMAT (1, 2);
-extern size_t CTIgetWarnMessageLineLength (void);
-extern void CTIstate (const char *format, ...) PRINTF_FORMAT (1, 2);
-extern void CTInote (const char *format, ...) PRINTF_FORMAT (1, 2);
-extern void CTInoteLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
-extern void CTItell (int level, const char *format, ...) PRINTF_FORMAT (2, 3);
+
+/**
+ * general helpers:
+ */
 extern void CTIterminateCompilation (node *syntax_tree);
 extern const char *CTIitemName (node *item);
 extern const char *CTIitemNameDivider (node *item, const char *divider);
 extern const char *CTIfunParams (node *fundef);
 extern void set_message_line_length (size_t l);
+
+
+/**
+ * verbosity level >= 0:
+ */
+extern void CTIerror (const char *format, ...) PRINTF_FORMAT (1, 2);
+extern void CTIerrorLoc (struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
+extern void CTIerrorLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
+extern void CTIerrorContinued (const char *format, ...) PRINTF_FORMAT (1, 2);
+extern void CTIerrorInternal (const char *format, ...) PRINTF_FORMAT (1, 2);
+/* helpers: */
+extern char *CTIgetErrorMessageVA (size_t line, const char *file, const char *format,
+                                   va_list arg_p);
+extern size_t CTIgetErrorMessageLineLength (void);
+extern void CTIabortOnBottom (char *err_msg);
+extern void CTIabort (const char *format, ...) PRINTF_FORMAT (1, 2) FUN_ATTR_NORETURN;
+extern void CTIabortLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3) FUN_ATTR_NORETURN;
+extern void CTIabortOutOfMemory (size_t request) FUN_ATTR_NORETURN;
+extern void CTIabortOnError (void);
+
+/**
+ * verbosity level >= 1:
+ */
+extern void CTIwarn (const char *format, ...) PRINTF_FORMAT (1, 2);
+extern void CTIwarnLoc (struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
+extern void CTIwarnLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
+extern void CTIwarnContinued (const char *format, ...) PRINTF_FORMAT (1, 2);
+/* helpers: */
+extern size_t CTIgetWarnMessageLineLength (void);
+
+/**
+ * verbosity level >= 2:
+ */
+extern void CTIstate (const char *format, ...) PRINTF_FORMAT (1, 2);
+
+/**
+ * verbosity level >= 3:
+ */
+extern void CTInote (const char *format, ...) PRINTF_FORMAT (1, 2);
+extern void CTInoteLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
+
+/**
+ * verbosity level <xxx>
+ */
+extern void CTItell (int level, const char *format, ...) PRINTF_FORMAT (2, 3);
 
 #endif /* _SAC_CTINFO_H_ */
