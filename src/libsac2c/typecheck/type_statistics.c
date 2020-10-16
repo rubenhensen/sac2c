@@ -189,9 +189,9 @@ TSdoPrintTypeStatistics (node *arg_node)
     TRAVpush (TR_ts);
 
     CTItell (0, " ");
-    CTItell (0, "***********************************************************");
-    CTItell (0, "** Type specialisation feedback                          **");
-    CTItell (0, "***********************************************************");
+    CTItell (0, "*********************************************************************");
+    CTItell (0, "** Type specialisation feedback                                    **");
+    CTItell (0, "*********************************************************************");
 
     arg_info = MakeInfo ();
     INFO_TS_ANY (arg_info) = FALSE;
@@ -208,7 +208,7 @@ TSdoPrintTypeStatistics (node *arg_node)
 
     TRAVpop ();
 
-    CTItell (0, "***********************************************************");
+    CTItell (0, "*********************************************************************");
 
     DBUG_RETURN (arg_node);
 }
