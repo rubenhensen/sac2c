@@ -2,7 +2,7 @@
 
 // SAC_TEST|include common.mk
 // SAC_TEST|all: <file-name-we>
-// SAC_TEST|<tab>@$(CHECK_RETURN_STATUS) $< 4
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 4
 
 int main ()
 {

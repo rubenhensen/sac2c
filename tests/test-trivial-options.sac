@@ -9,17 +9,13 @@
 // of the entire makefile, and the overall test.
 
 // SAC_TEST|optv:
-// SAC_TEST|<tab>@$(SAC2C) -V
+// SAC_TEST|<tab>$(SAC2C) -V
 
 // SAC_TEST|optvv:
-// SAC_TEST|<tab>@$(SAC2C) -VV
+// SAC_TEST|<tab>$(SAC2C) -VV
 
 // SAC_TEST|optc:
-// SAC_TEST|<tab>@$(SAC2C) -C CC
+// SAC_TEST|<tab>$(SAC2C) -C CC
 
 // SAC_TEST|opthelp:
-// SAC_TEST|<tab>@$(SAC2C) -help
-
-
-
-
+// SAC_TEST|<tab>$(SAC2C) -help

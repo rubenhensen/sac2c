@@ -1,9 +1,9 @@
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -trace r
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) $<
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $<
 
-noinline 
+noinline
 int[.] ravel( int[.] a)
 {
    return with {
