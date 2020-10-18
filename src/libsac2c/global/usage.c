@@ -932,6 +932,26 @@ PrintPrintingOptions (void)
 }
 
 static void
+PrintCompiletimeAnalysesOptions (void)
+{
+    DBUG_ENTER ();
+
+    printf (
+      "\n\nCOMPILETIME FEEDBACK OPTIONS:\n\n"
+
+      "    -feedback [atcor]+\n"
+      "                    Perform some compile time analyses and output some user feedback.\n"
+      "                    The following flags are supported:\n"
+      "                      a: Analyse all (same as tcor).\n"
+      "                      t: Analyse the effectiveness of function specialisation.\n"
+      "                      c: Analyse the effectveness of static constraint resolution.\n"
+      "                      o: Analyse the effectiveness of the optimisation cycle.\n"
+      "                      r: Analyse the effectiveness of reference counting.\n");
+
+    DBUG_RETURN ();
+}
+
+static void
 PrintRuntimeProfilingOptions (void)
 {
     DBUG_ENTER ();
@@ -941,6 +961,7 @@ PrintRuntimeProfilingOptions (void)
 
       "    -profile [afilwmod]+\n"
       "                    Incorporate profiling analysis into executable program.\n"
+      "                    The following flags are supported:\n"
       "                      a: Analyse all (same as filwmod).\n"
       "                      f: Analyse time spent in non-inline functions.\n"
       "                      i: Analyse time spent in inline functions.\n"
@@ -1283,6 +1304,7 @@ USGprintUsage ()
         PrintDebugOptions ();
         PrintFredFishOptions ();
 #endif /* DBUG_OFF */
+        PrintCompiletimeAnalysesOptions ();
         PrintRuntimeCheckOptions ();
         PrintRuntimeTraceOptions ();
         PrintRuntimeProfilingOptions ();

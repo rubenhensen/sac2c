@@ -986,13 +986,19 @@ SUBPHASE (fdi, "Freeing dispatch information", FDIdoFreeDispatchInformation, ALW
 SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls, global.doprofile,
           opt)
 
-SUBPHASE (stat, "Displaying optimisation statistics", STATdoPrintStatistics,
-          global.verbose_level >= 3, opt)
-
 ADDPREFUN (TR_prt, EMRCIprintPreFun)
 
 SUBPHASE (emr, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInference,
           global.optimize.doemrci, opt)
+
+SUBPHASE (ts, "Displaying type specialisation statistics", TSdoPrintTypeStatistics,
+          global.feedback.type, opt)
+
+SUBPHASE (cs, "Displaying constraint resolution statistics", CSdoPrintConstraintStatistics,
+          global.feedback.constraint, opt)
+
+SUBPHASE (stat, "Displaying optimisation statistics", STATdoPrintStatistics,
+          global.feedback.optimisation, opt)
 
 ENDPHASE (opt)
 

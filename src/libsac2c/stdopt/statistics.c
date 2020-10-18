@@ -71,7 +71,7 @@ WhyItsDone (optimize_counter_t *oc)
 
 #define OPTCOUNTER(id, redo, text)                                                       \
     if (redo && (oc->id != 0)) {                                                         \
-        CTInote ("Will redo because of %s.", text);                                      \
+        CTItell (0, "Will redo because of %s.", text);                                   \
     }
 
 #include "optimize.mac"
@@ -165,7 +165,7 @@ STATprint (optimize_counter_t *oc)
 
 #define OPTCOUNTER(id, redo, text)                                                       \
     if (oc->id > 0) {                                                                    \
-        CTInote ("  %zu %s", oc->id, text);                                               \
+        CTItell (0, "  %zu %s", oc->id, text);                                           \
     }
 #include "optimize.mac"
 #undef OPTCOUNTER
@@ -186,20 +186,14 @@ STATdoPrintStatistics (node *syntax_tree)
 {
     DBUG_ENTER ();
 
-    CTInote (" ");
-    CTInote ("***********************************************************");
+    CTItell (0, " ");
+    CTItell (0, "*********************************************************************");
+    CTItell (0, "** Optimisation Feedback                                           **");
+    CTItell (0, "*********************************************************************");
 
     STATprint (&global.optcounters);
 
-    CTInote ("***********************************************************");
-
-    syntax_tree = TSdoPrintTypeStatistics (syntax_tree);
-
-    CTInote ("***********************************************************");
-
-    syntax_tree = CSdoPrintConstraintStatistics (syntax_tree);
-
-    CTInote ("***********************************************************");
+    CTItell (0, "*********************************************************************");
 
     DBUG_RETURN (syntax_tree);
 }

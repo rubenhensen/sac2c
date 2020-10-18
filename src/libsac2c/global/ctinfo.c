@@ -218,11 +218,17 @@ Format2Buffer (const char *format, va_list arg_p)
  *
  *   @brief generates error message string
  *
- *          The message specified by format string and variable number
- *          of arguments is "printed" into the global message buffer.
- *          It is taken care of buffer overflows. Afterwards, the message
- *          is formatted to fit a certain line length and is printed to
- *          stderr.
+ *          This function allows for split-phase error messages:
+ *
+ *          str = CTIgetErrorMessageVA (line, fname, format, ...args);
+ *          CTIerror ("%s", str);
+ *
+ *          equates to
+ *
+ *          CTIerrorLine (line, format, ...args);
+ *
+ *          This allows to prepare error meassages in advnace and only
+ *          activate them when actualy needed.
  *
  *   @param line    line number to use in error message
  *   @param file    file name to use in error message
@@ -679,6 +685,16 @@ produce_header (struct location loc, const char *hdr)
     return res;
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIerrorLoc( struct location loc, const char *format, ...)
+ *
+ *   @brief   produces an error message preceded by location info
+ *
+ *   @param loc     location info
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
 void
 CTIerrorLoc (struct location loc, const char *format, ...)
 {
@@ -696,53 +712,12 @@ CTIerrorLoc (struct location loc, const char *format, ...)
     DBUG_RETURN ();
 }
 
-void
-CTIwarnLoc (struct location loc, const char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    va_start (arg_p, format);
-    fprintf (stderr, "%s\n", produce_header (loc, warn_message_header));
-    PrintMessage (second_level_header, format, arg_p);
-    va_end (arg_p);
-
-    warnings++;
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIerrorLineVA( int line, const char *format, va_list arg_p)
- *
- *   @brief  produces an error message preceded by file name and line number.
- *
- *
- *   @param line  line number
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTIerrorLineVA (int line, const char *format, va_list arg_p)
-{
-    DBUG_ENTER ();
-
-    fprintf (stderr, "%s %d ", global.filename, line);
-    PrintMessage (error_message_header, format, arg_p);
-
-    errors++;
-
-    DBUG_RETURN ();
-}
 
 /** <!--********************************************************************-->
  *
  * @fn void CTIerrorContinued( const char *format, ...)
  *
- *   @brief  continues an error message without file name and line number.
+ *   @brief  same as CTIerror BUT does not count as new error!
  *
  *   @param format  format string like in printf
  *
@@ -952,6 +927,41 @@ CTIabortOnError ()
     DBUG_RETURN ();
 }
 
+/*******************************************************************************
+ *******************************************************************************
+ *
+ * Warnings (verbosity level >= 1)
+ */
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIwarnLoc( ,struct location loc, const char *format, ...)
+ *
+ *   @brief   produces a warning message preceded by location info
+ *
+ *   @param loc     location info
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
+void
+CTIwarnLoc (struct location loc, const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ();
+
+    if (global.verbose_level >= 1) {
+        va_start (arg_p, format);
+        fprintf (stderr, "%s\n", produce_header (loc, warn_message_header));
+        PrintMessage (second_level_header, format, arg_p);
+        va_end (arg_p);
+
+        warnings++;
+    }
+
+    DBUG_RETURN ();
+}
+
 /** <!--********************************************************************-->
  *
  * @fn void CTIwarnLine( int line, const char *format, ...)
@@ -983,6 +993,7 @@ CTIwarnLine (size_t line, const char *format, ...)
 
     DBUG_RETURN ();
 }
+
 
 /** <!--********************************************************************-->
  *
@@ -1018,7 +1029,7 @@ CTIwarn (const char *format, ...)
  *
  * @fn void CTIwarnContinued( const char *format, ...)
  *
- *   @brief  continues a warning message without file name and line number.
+ *   @brief   same as CTIwarn BUT does not count as new warning.
  *
  *   @param format  format string like in printf
  *
@@ -1031,14 +1042,18 @@ CTIwarnContinued (const char *format, ...)
 
     DBUG_ENTER ();
 
-    va_start (arg_p, format);
+    if (global.verbose_level >= 1) {
+        va_start (arg_p, format);
 
-    PrintMessage (warn_message_header, format, arg_p);
+        PrintMessage (warn_message_header, format, arg_p);
 
-    va_end (arg_p);
+        va_end (arg_p);
+
+    }
 
     DBUG_RETURN ();
 }
+
 
 /** <!--********************************************************************-->
  *
@@ -1057,6 +1072,15 @@ CTIgetWarnMessageLineLength ()
 
     DBUG_RETURN (message_line_length - STRlen (warn_message_header));
 }
+
+
+
+/*******************************************************************************
+ *******************************************************************************
+ *
+ * Statements (verbosity level >= 2)
+ */
+
 
 /** <!--********************************************************************-->
  *
@@ -1085,6 +1109,13 @@ CTIstate (const char *format, ...)
 
     DBUG_RETURN ();
 }
+
+
+/*******************************************************************************
+ *******************************************************************************
+ *
+ * Notes (verbosity level >= 3)
+ */
 
 /** <!--********************************************************************-->
  *
@@ -1142,6 +1173,14 @@ CTInoteLine (size_t line, const char *format, ...)
 
     DBUG_RETURN ();
 }
+
+
+
+/*******************************************************************************
+ *******************************************************************************
+ *
+ * general output (*any* verbosity level)
+ */
 
 /** <!--********************************************************************-->
  *

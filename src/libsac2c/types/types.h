@@ -1039,6 +1039,11 @@ typedef struct PROFILE_FLAGS_T {
 #include "flags.mac"
 } profile_flags_t;
 
+typedef struct FEEDBACK_FLAGS_T {
+#define FEEDBACKflag(flag) unsigned int flag : 1;
+#include "flags.mac"
+} feedback_flags_t;
+
 typedef struct CACHESIM_FLAGS_T {
 #define CSflag(flag) unsigned int flag : 1;
 #include "flags.mac"
