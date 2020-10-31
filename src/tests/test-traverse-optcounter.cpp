@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "config.h"
+#include <cstdio>
 
 /* we safely ignore these */
 #define DBUG_PRINT(smt, ...)
@@ -65,18 +66,18 @@ TEST (MACRO_OPTCOUNTER, RunOpt)
     TOC_SETUP (2, COUNT_ONE, COUNT_TWO)
 
     TOC_RUNOPT ("Blah", true, COUNT_ONE, counter, t, testFunction)
-    ASSERT_TRUE (toc_store[COUNT_ONE] == 0);
+    ASSERT_TRUE (toc_store[COUNT_ONE] == 1);
     ASSERT_TRUE (toc_store[COUNT_TWO] == 0);
     TOC_RUNOPT ("Blah", true, COUNT_ONE, counter, t, testFunction)
-    ASSERT_TRUE (toc_store[COUNT_ONE] == 1);
+    ASSERT_TRUE (toc_store[COUNT_ONE] == 2);
     ASSERT_TRUE (toc_store[COUNT_TWO] == 0);
     TOC_RUNOPT ("Blah", true, TOC_IGNORE, 0, t, testFunction)
-    ASSERT_TRUE (toc_store[COUNT_ONE] == 1);
+    ASSERT_TRUE (toc_store[COUNT_ONE] == 2);
     ASSERT_TRUE (toc_store[COUNT_TWO] == 0);
     TOC_RUNOPT ("Blah", false, COUNT_TWO, counter, t, testFunction)
-    ASSERT_TRUE (toc_store[COUNT_ONE] == 1);
+    ASSERT_TRUE (toc_store[COUNT_ONE] == 2);
     ASSERT_TRUE (toc_store[COUNT_TWO] == 0);
     TOC_RUNOPT ("Blah", true, COUNT_TWO, counter, t, testFunction)
-    ASSERT_TRUE (toc_store[COUNT_ONE] == 1);
-    ASSERT_TRUE (toc_store[COUNT_TWO] == 3);
+    ASSERT_TRUE (toc_store[COUNT_ONE] == 2);
+    ASSERT_TRUE (toc_store[COUNT_TWO] == 4);
 }

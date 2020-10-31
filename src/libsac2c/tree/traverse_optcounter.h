@@ -170,8 +170,9 @@
 #define TOC_RUNOPT(name, cond, label, stmt, node, fun)                                   \
     if (cond) {                                                                          \
         DBUG_PRINT ("Cycle iteration %d: running " name, i);                             \
-        toc_store[label] = stmt;                                                         \
+        toc_store_old[label] = stmt;                                                     \
         node = fun (node);                                                               \
+        toc_store[label] = stmt;                                                         \
         TOC_RUNCHECK (name, node)                                                        \
     }
 
@@ -190,8 +191,9 @@
 #define TOC_RUNOPT_TAG(tag, name, cond, label, stmt, node, fun)                          \
     if (cond) {                                                                          \
         DBUG_PRINT_TAG (tag, "Cycle iteration %d: running " name, i);                    \
-        toc_store[label] = stmt;                                                         \
+        toc_store_old[label] = stmt;                                                     \
         node = fun (node);                                                               \
+        toc_store[label] = stmt;                                                         \
         TOC_RUNCHECK_TAG (tag, name, node)                                               \
     }
 
