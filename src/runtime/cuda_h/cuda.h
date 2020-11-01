@@ -23,6 +23,7 @@ extern "C" {
 #include "runtime/essentials_h/cuda_sync_methods.h"
 #include "libsac/cuda/sync.h"
 #include "libsac/hwloc/cudabind.h"
+#include "runtime/extras_h/rt_profile.h"
 
 /*****************************************************************************
  *

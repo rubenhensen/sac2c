@@ -878,11 +878,27 @@ ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype, char *d
     }
 
     fprintf (global.outfile,
-             "SAC_TR_GPU_PRINT (\"%s size %%d %s -> %s\\n\", SAC_ND_A_SIZE( %s));",
+             "SAC_TR_GPU_PRINT (\"%s size %%d %s -> %s\\n\", SAC_ND_A_SIZE( %s));\n",
              direction, from_NT, to_NT, from_NT);
 
-    fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER(%s, %s, %s, %s)", to_NT, from_NT,
+    if (STReq (direction, "cudaMemcpyHostToDevice")) {
+        fprintf (global.outfile, "SAC_PF_BEGIN_CUDA_HtoD()\n");
+    } else if (STReq (direction, "cudaMemcpyDeviceToHost")) {
+        fprintf (global.outfile, "SAC_PF_BEGIN_CUDA_DtoH()\n");
+    } else {
+        CTIerrorInternal ("CUDA transfer direction is not supported: `%s`!", direction);
+    }
+
+    fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER(%s, %s, %s, %s)\n", to_NT, from_NT,
              basetype, direction);
+
+    if (STReq (direction, "cudaMemcpyHostToDevice")) {
+        fprintf (global.outfile, "SAC_PF_END_CUDA_HtoD()\n");
+    } else if (STReq (direction, "cudaMemcpyDeviceToHost")) {
+        fprintf (global.outfile, "SAC_PF_END_CUDA_DtoH()\n");
+    } else {
+        CTIerrorInternal ("CUDA transfer direction is not supported: `%s`!", direction);
+    }
 
     DBUG_RETURN ();
 }
@@ -1180,6 +1196,8 @@ ICMCompileCUDA_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
     int from_dim;
 
     DBUG_ENTER ();
+
+    DBUG_PRINT ("create cuda assign of %s to %s", to_NT, from_NT);
 
 #define CUDA_ASSIGN
 #include "icm_comment.c"

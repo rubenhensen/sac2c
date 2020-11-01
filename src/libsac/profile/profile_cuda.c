@@ -36,26 +36,104 @@ static size_t SAC_PF_MEM_CUDA_free_descnt = 0; /**< Holds the count of descripto
 #if ENABLE_CUDA
 
 #include <cuda_runtime_api.h>
-    
+
 /* global timer struct for CUDA event timer */
-cuda_timer_t *cuda_timer = NULL;
-static cuda_timer_t *cuda_timer_head = NULL;
-static size_t cuda_timer_count = 0;
+cuda_timer_t *cuda_timer_knl = NULL;
+cuda_timer_t *cuda_timer_htod = NULL;
+cuda_timer_t *cuda_timer_dtoh = NULL;
+cuda_timer_t *cuda_timer_hmal = NULL;
+cuda_timer_t *cuda_timer_dmal = NULL;
+cuda_timer_t *cuda_timer_hfree = NULL;
+cuda_timer_t *cuda_timer_dfree = NULL;
+
+/* counter for different CUDA constructs */
+static size_t cuda_timer_knl_count = 0;
+static size_t cuda_timer_htod_count = 0;
+static size_t cuda_timer_dtoh_count = 0;
+static size_t cuda_timer_hmal_count = 0;
+static size_t cuda_timer_dmal_count = 0;
+static size_t cuda_timer_hfree_count = 0;
+static size_t cuda_timer_dfree_count = 0;
+
+size_t
+SAC_PF_TIMER_CUDA_Get_Counter (cuda_count_t type)
+{
+    size_t ret = 0;
+
+    switch (type) {
+    case pf_cuda_knl:
+        ret = cuda_timer_knl_count;
+        break;
+    case pf_cuda_htod:
+        ret = cuda_timer_htod_count;
+        break;
+    case pf_cuda_dtoh:
+        ret = cuda_timer_dtoh_count;
+        break;
+    case pf_cuda_hmal:
+        ret = cuda_timer_hmal_count;
+        break;
+    case pf_cuda_dmal:
+        ret = cuda_timer_dmal_count;
+        break;
+    case pf_cuda_hfree:
+        ret = cuda_timer_hfree_count;
+        break;
+    case pf_cuda_dfree:
+        ret = cuda_timer_dfree_count;
+        break;
+    default:
+        break;
+    }
+
+    return ret;
+}
+
+void
+SAC_PF_TIMER_CUDA_Inc_Counter (cuda_count_t type)
+{
+    switch (type) {
+    case pf_cuda_knl:
+        cuda_timer_knl_count++;
+        break;
+    case pf_cuda_htod:
+        cuda_timer_htod_count++;
+        break;
+    case pf_cuda_dtoh:
+        cuda_timer_dtoh_count++;
+        break;
+    case pf_cuda_hmal:
+        cuda_timer_hmal_count++;
+        break;
+    case pf_cuda_dmal:
+        cuda_timer_dmal_count++;
+        break;
+    case pf_cuda_hfree:
+        cuda_timer_hfree_count++;
+        break;
+    case pf_cuda_dfree:
+        cuda_timer_dfree_count++;
+        break;
+    default:
+        break;
+    }
+}
 
 cuda_timer_t *
-SAC_PF_TIMER_CUDA_Add (cuda_timer_t *timer)
+SAC_PF_TIMER_CUDA_Add (cuda_count_t type, cuda_timer_t *timer)
 {
     if (timer == NULL) { // initilization
         timer = malloc (sizeof (cuda_timer_t));
         timer->next = NULL;
-        cuda_timer_head = timer;
+        timer->parent = timer; // we are the parent
     } else {
         timer->next = malloc (sizeof (cuda_timer_t));
+        timer->next->next = NULL;
+        timer->next->parent = timer->parent;
         timer = timer->next;
-        timer->next = NULL;
     }
 
-    cuda_timer_count += 1;
+    SAC_PF_TIMER_CUDA_Inc_Counter (type);
 
     cudaEventCreate (&timer->start);
     cudaEventCreate (&timer->stop);
@@ -64,31 +142,39 @@ SAC_PF_TIMER_CUDA_Add (cuda_timer_t *timer)
 }
 
 void
-SAC_PF_TIMER_CUDA_Destroy ()
+SAC_PF_TIMER_CUDA_Destroy (cuda_timer_t *t)
 {
-    cuda_timer_t *timer = cuda_timer_head;
+    cuda_timer_t *timer;
     cuda_timer_t *next;
 
-    while (timer != NULL) {
-        next = timer->next;
-        cudaEventDestroy (timer->start);
-        cudaEventDestroy (timer->stop);
-        free (timer);
-        timer = next;
+    if (t != NULL) {
+        timer = t->parent;
+
+        while (timer != NULL) {
+            next = timer->next;
+            cudaEventDestroy (timer->start);
+            cudaEventDestroy (timer->stop);
+            free (timer);
+            timer = next;
+        }
     }
 }
 
 float
-SAC_PF_TIMER_CUDA_Sum ()
+SAC_PF_TIMER_CUDA_Sum (cuda_timer_t *t)
 {
     float elapsed = 0, sum = 0;
-    cuda_timer_t *timer = cuda_timer_head;
+    cuda_timer_t *timer;
 
-    while (timer != NULL) {
-        cudaEventSynchronize (timer->stop);
-        cudaEventElapsedTime (&elapsed, timer->start, timer->stop);
-        sum += elapsed;
-        timer = timer->next;
+    if (t != NULL) {
+        timer = t->parent;
+
+        while (timer != NULL) {
+            cudaEventSynchronize (timer->stop);
+            cudaEventElapsedTime (&elapsed, timer->start, timer->stop);
+            sum += elapsed;
+            timer = timer->next;
+        }
     }
 
     return sum;
@@ -106,13 +192,13 @@ SAC_PF_TIMER_CUDA_Sum ()
  * @param time2 Global total measured time, used to compute percentage
  */
 void
-SAC_PF_TIMER_CUDA_PrintTimePercentage (const char *title, const char *space, const float time1,
+SAC_PF_TIMER_CUDA_PrintTimePercentage (const char *title, const char *space, cuda_count_t type, const float time1,
                             const struct timeval *time2)
 {
     fprintf (stderr,
              "%-40s:%s  %8.2f msec %8.2f %%\n   - count: %-27zu\n",
              title, space, time1,
-             __PF_TIMER_PERCENTAGE (time1, (*time2)), cuda_timer_count);
+             __PF_TIMER_PERCENTAGE (time1, (*time2)), SAC_PF_TIMER_CUDA_Get_Counter (type));
 }
 
 /**

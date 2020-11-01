@@ -220,6 +220,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
         SAC_PF_STOP_CLOCK ();                                                            \
         SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
         SAC_PF_PRINT_OVERALL (grand_total);                                              \
+        SAC_PF_TIMER_CUDA_PRINT (grand_total);                                           \
                                                                                          \
         if (SAC_DO_PROFILE_DISTMEM) {                                                    \
             if (SAC_DISTMEM_rank                                                         \
@@ -241,7 +242,6 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 #define SAC_PF_PRINT_OVERALL(total)                                                      \
     {                                                                                    \
         int i, j, k;                                                                     \
-        float cuda_knl_sum = 0;                                                          \
         SAC_PF_TIMER with_total;                                                         \
                                                                                          \
         SAC_PF_INIT_TIMER (with_total);                                                  \
@@ -251,7 +251,6 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
             SAC_PF_ADD_TIMERS (with_total, with_total, SAC_PF_timer[0][0][k]);           \
         }                                                                                \
         SAC_PF_ADD_TIMERS (total, with_total, SAC_PF_timer[0][0][PF_ow_fun]);            \
-        SAC_PF_SUM_CUDA();                                                               \
                                                                                          \
         SAC_PF_PrintHeader ("Overall Profile");                                          \
                                                                                          \
@@ -261,11 +260,6 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
             SAC_PF_PrintTimePercentage ("   with-loop", "", &with_total, &total);        \
             SAC_PF_PrintTimePercentage ("   non-with-loop", "",                          \
                                         &SAC_PF_timer[0][0][PF_ow_fun], &total);         \
-        }                                                                                \
-                                                                                         \
-        if (SAC_PF_DISPLAY_CUDA) {                                                       \
-            SAC_PF_TIMER_CUDA_PrintTimePercentage ("   cuda krnl", "", cuda_knl_sum,     \
-                                                   &total);                              \
         }                                                                                \
     }
 
@@ -317,7 +311,7 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
                 if (SAC_PF_DISPLAY_FUN) {                                                \
                     for (k = 0; k < SAC_SET_MAXFUN; k += (k == (i - 1) ? 2 : 1)) {       \
                         for (j = 0; j < SAC_PF_maxfunap[k]; j++) {                       \
-                            if (SAC_PF_parentfunno[k][j] == (size_t)i) {                 \
+                            if (SAC_PF_parentfunno[k][j] == i) {                         \
                                 SAC_PF_TIMER sub_total;                                  \
                                 SAC_PF_INIT_TIMER (sub_total);                           \
                                 SAC_PF_PrintSubHeader (SAC_PF_fun_name[k],               \
@@ -996,48 +990,118 @@ SAC_C_EXTERN void SAC_PF_EndComm (void);
 
 #if (SAC_CUDA_MACROS && SAC_DO_PROFILE_CUDA && SAC_DO_PROFILE)
 
-/* XXX
 #define SAC_PF_BEGIN_CUDA_KNL()                                                          \
     {                                                                                    \
-        SAC_PROFILE_RECORD SAC_PF_new_record;                                            \
-        SAC_PF_STOP_CLOCK ();                                                            \
-        SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
-        SAC_PF_new_record.parent = SAC_PF_act_record;                                    \
-        SAC_PF_new_record.funno = SAC_PF_act_record->funno;                              \
-        SAC_PF_new_record.funapno = SAC_PF_act_record->funapno;                          \
-        SAC_PF_new_record.record_type = PF_cuda_knl;                                     \
-        SAC_PF_new_record.cycle_tag = SAC_PF_act_record->cycle_tag;                      \
-        SAC_PF_act_record = &SAC_PF_new_record;                                          \
-        SAC_PF_START_CLOCK ();
-
+        cuda_timer_knl = SAC_PF_TIMER_CUDA_Add (pf_cuda_knl, cuda_timer_knl);            \
+        cudaEventRecord (cuda_timer_knl->start);
 #define SAC_PF_END_CUDA_KNL()                                                            \
-        SAC_PF_STOP_CLOCK ();                                                            \
-        SAC_PF_ADD_TO_TIMER_CHAIN (SAC_PF_act_record);                                   \
-        SAC_PF_act_record = SAC_PF_act_record->parent;                                   \
-        SAC_PF_START_CLOCK ();                                                           \
+        cudaEventRecord (cuda_timer_knl->stop);                                          \
     }
-*/
-#define SAC_PF_BEGIN_CUDA_KNL()                                                          \
+
+#define SAC_PF_BEGIN_CUDA_HtoD()                                                         \
     {                                                                                    \
-        cuda_timer = SAC_PF_TIMER_CUDA_Add (cuda_timer);                                 \
-        cudaEventRecord (cuda_timer->start);
-
-#define SAC_PF_END_CUDA_KNL()                                                            \
-        cudaEventRecord (cuda_timer->stop);                                              \
+        cuda_timer_htod = SAC_PF_TIMER_CUDA_Add (pf_cuda_htod, cuda_timer_htod);         \
+        cudaEventRecord (cuda_timer_htod->start);
+#define SAC_PF_END_CUDA_HtoD()                                                           \
+        cudaEventRecord (cuda_timer_htod->stop);                                         \
     }
 
-#define SAC_PF_SUM_CUDA()                                                                \
-    cuda_knl_sum = SAC_PF_TIMER_CUDA_Sum ();                                             \
-    SAC_PF_TIMER_CUDA_Destroy ();
+#define SAC_PF_BEGIN_CUDA_DtoH()                                                         \
+    {                                                                                    \
+        cuda_timer_dtoh = SAC_PF_TIMER_CUDA_Add (pf_cuda_dtoh, cuda_timer_dtoh);         \
+        cudaEventRecord (cuda_timer_dtoh->start);
+#define SAC_PF_END_CUDA_DtoH()                                                           \
+        cudaEventRecord (cuda_timer_dtoh->stop);                                         \
+    }
 
-#define SAC_PF_DISPLAY_CUDA 1
+#define SAC_PF_BEGIN_CUDA_HMALLOC()                                                      \
+    {                                                                                    \
+        cuda_timer_hmal = SAC_PF_TIMER_CUDA_Add (pf_cuda_hmal, cuda_timer_hmal);         \
+        cudaEventRecord (cuda_timer_hmal->start);
+#define SAC_PF_END_CUDA_HMALLOC()                                                        \
+        cudaEventRecord (cuda_timer_hmal->stop);                                         \
+    }
+
+#define SAC_PF_BEGIN_CUDA_DMALLOC()                                                      \
+    {                                                                                    \
+        cuda_timer_dmal = SAC_PF_TIMER_CUDA_Add (pf_cuda_dmal, cuda_timer_dmal);         \
+        cudaEventRecord (cuda_timer_dmal->start);
+#define SAC_PF_END_CUDA_DMALLOC()                                                        \
+        cudaEventRecord (cuda_timer_dmal->stop);                                         \
+    }
+
+#define SAC_PF_BEGIN_CUDA_HFREE()                                                        \
+    {                                                                                    \
+        cuda_timer_hfree = SAC_PF_TIMER_CUDA_Add (pf_cuda_hfree, cuda_timer_hfree);      \
+        cudaEventRecord (cuda_timer_hfree->start);
+#define SAC_PF_END_CUDA_HFREE()                                                          \
+        cudaEventRecord (cuda_timer_hfree->stop);                                        \
+    }
+
+#define SAC_PF_BEGIN_CUDA_DFREE()                                                        \
+    {                                                                                    \
+        cuda_timer_dfree = SAC_PF_TIMER_CUDA_Add (pf_cuda_dfree, cuda_timer_dfree);      \
+        cudaEventRecord (cuda_timer_dfree->start);
+#define SAC_PF_END_CUDA_DFREE()                                                          \
+        cudaEventRecord (cuda_timer_dfree->stop);                                        \
+    }
+
+#define SAC_PF_TIMER_CUDA_PRINT(total)                                                   \
+    {                                                                                    \
+        float cuda_knl_sum = 0;                                                          \
+        float cuda_htod_sum = 0;                                                         \
+        float cuda_dtoh_sum = 0;                                                         \
+        float cuda_hmal_sum = 0;                                                         \
+        float cuda_dmal_sum = 0;                                                         \
+        float cuda_hfree_sum = 0;                                                        \
+        float cuda_dfree_sum = 0;                                                        \
+        cuda_knl_sum = SAC_PF_TIMER_CUDA_Sum (cuda_timer_knl);                           \
+        SAC_PF_TIMER_CUDA_Destroy (cuda_timer_knl);                                      \
+        cuda_htod_sum = SAC_PF_TIMER_CUDA_Sum (cuda_timer_htod);                         \
+        SAC_PF_TIMER_CUDA_Destroy (cuda_timer_htod);                                     \
+        cuda_dtoh_sum = SAC_PF_TIMER_CUDA_Sum (cuda_timer_dtoh);                         \
+        SAC_PF_TIMER_CUDA_Destroy (cuda_timer_dtoh);                                     \
+        cuda_hmal_sum = SAC_PF_TIMER_CUDA_Sum (cuda_timer_hmal);                         \
+        SAC_PF_TIMER_CUDA_Destroy (cuda_timer_hmal);                                     \
+        cuda_dmal_sum = SAC_PF_TIMER_CUDA_Sum (cuda_timer_dmal);                         \
+        SAC_PF_TIMER_CUDA_Destroy (cuda_timer_dmal);                                     \
+        cuda_hfree_sum = SAC_PF_TIMER_CUDA_Sum (cuda_timer_hfree);                       \
+        SAC_PF_TIMER_CUDA_Destroy (cuda_timer_hfree);                                    \
+        cuda_dfree_sum = SAC_PF_TIMER_CUDA_Sum (cuda_timer_dfree);                       \
+        SAC_PF_TIMER_CUDA_Destroy (cuda_timer_dfree);                                    \
+        SAC_PF_TIMER_CUDA_PrintTimePercentage ("    cuda kernel", "", pf_cuda_knl,       \
+                                               cuda_knl_sum, &total);                    \
+        SAC_PF_TIMER_CUDA_PrintTimePercentage ("    cuda h2d", "", pf_cuda_htod,         \
+                                               cuda_htod_sum, &total);                   \
+        SAC_PF_TIMER_CUDA_PrintTimePercentage ("    cuda d2h", "", pf_cuda_dtoh,         \
+                                               cuda_dtoh_sum, &total);                   \
+        SAC_PF_TIMER_CUDA_PrintTimePercentage ("    cuda host alloc", "", pf_cuda_hmal,  \
+                                               cuda_hmal_sum, &total);                   \
+        SAC_PF_TIMER_CUDA_PrintTimePercentage ("    cuda device alloc", "", pf_cuda_dmal,\
+                                               cuda_dmal_sum, &total);                   \
+        SAC_PF_TIMER_CUDA_PrintTimePercentage ("    cuda host free", "", pf_cuda_hfree,  \
+                                               cuda_hfree_sum, &total);                  \
+        SAC_PF_TIMER_CUDA_PrintTimePercentage ("    cuda device free", "", pf_cuda_dfree,\
+                                               cuda_dfree_sum, &total);                  \
+    }
 
 #else /* SAC_DO_PROFILE_CUDA */
 
 #define SAC_PF_BEGIN_CUDA_KNL()
 #define SAC_PF_END_CUDA_KNL()
-#define SAC_PF_SUM_CUDA()
-#define SAC_PF_DISPLAY_CUDA 0
+#define SAC_PF_BEGIN_CUDA_HtoD()
+#define SAC_PF_END_CUDA_HtoD()
+#define SAC_PF_BEGIN_CUDA_DtoH()
+#define SAC_PF_END_CUDA_DtoH()
+#define SAC_PF_BEGIN_CUDA_HMALLOC()
+#define SAC_PF_END_CUDA_HMALLOC()
+#define SAC_PF_BEGIN_CUDA_DMALLOC()
+#define SAC_PF_END_CUDA_DMALLOC()
+#define SAC_PF_BEGIN_CUDA_HFREE()
+#define SAC_PF_END_CUDA_HFREE()
+#define SAC_PF_BEGIN_CUDA_DFREE()
+#define SAC_PF_END_CUDA_DFREE()
+#define SAC_PF_TIMER_CUDA_PRINT(total)
 
 #endif /* SAC_DO_PROFILE_CUDA */
 
