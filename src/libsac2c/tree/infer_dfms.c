@@ -72,8 +72,8 @@
 
 #include "DupTree.h"
 #include "DataFlowMask.h"
-#include "DataFlowMaskUtils.h"
 #include "type_utils.h"
+#include "print.h"
 #include "globals.h"
 
 /*
@@ -1311,6 +1311,10 @@ InferMasks (dfmask_t **in, dfmask_t **out, dfmask_t **local, node *arg_node,
     new_in = INFO_IN (arg_info);
     new_out = INFO_OUT (arg_info);
     new_local = INFO_LOCAL (arg_info);
+
+    DBUG_ASSERT (DFMtest2MaskBases (old_in, new_in), "test1");
+    DBUG_ASSERT (DFMtest2MaskBases (old_out, new_out), "test2");
+    DBUG_ASSERT (DFMtest2MaskBases (old_local, new_local), "test3");
 
     if (INFO_ATTACHATTRIBS (arg_info)) {
         /*

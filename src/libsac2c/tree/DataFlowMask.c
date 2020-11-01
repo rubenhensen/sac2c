@@ -104,7 +104,7 @@ mask_base_t *
 DFMgenMaskBase (node *arguments, node *vardecs)
 {
     mask_base_t *base;
-    size_t cnt;
+    size_t cnt, cnt_args, cnt_decs;
     unsigned int access_mask;
     node *tmp;
 
@@ -125,7 +125,7 @@ DFMgenMaskBase (node *arguments, node *vardecs)
           = (unsigned int *)MEMmalloc (8 * sizeof (unsigned int) * sizeof (unsigned int));
         access_mask = 1;
 
-        for (cnt = 0; (size_t)cnt < 8 * sizeof (unsigned int); cnt++) {
+        for (cnt = 0; cnt < 8 * sizeof (unsigned int); cnt++) {
             DBUG_PRINT ("i %zu mask %u", cnt, access_mask);
             access_mask_table[cnt] = access_mask;
             access_mask <<= 1;
@@ -137,19 +137,26 @@ DFMgenMaskBase (node *arguments, node *vardecs)
      */
 
     tmp = arguments;
-    cnt = 0;
+    cnt_args = 0;
+    cnt_decs = 0;
 
     while (tmp != NULL) {
-        cnt += 1;
+        cnt_args += 1;
         tmp = ARG_NEXT (tmp);
     }
+
+    DBUG_PRINT ("adding %zu arguments...", cnt_args);
 
     tmp = vardecs;
 
     while (tmp != NULL) {
-        cnt += 1;
+        cnt_decs += 1;
         tmp = VARDEC_NEXT (tmp);
     }
+
+    DBUG_PRINT ("adding %zu declarations...", cnt_decs);
+
+    cnt = cnt_args + cnt_decs;
 
     /*
      * Second, a new mask data base data structure of appropriate size is allocated.
@@ -273,13 +280,13 @@ DFMupdateMaskBase (mask_base_t *mask_base, node *arguments, node *vardecs)
     MEMfree (mask_base->ids);
     MEMfree (mask_base->decls);
 
+    mask_base->ids = (char **)MEMmalloc (cnt * sizeof (char *));
+    mask_base->decls = (node **)MEMmalloc (cnt * sizeof (node *));
+
     old_num_ids = mask_base->num_ids;
     mask_base->num_ids = cnt;
 
-    mask_base->num_bitfields = (mask_base->num_ids / (sizeof (unsigned int) * 8)) + 1;
-
-    mask_base->ids = (char **)MEMmalloc ((mask_base->num_ids) * sizeof (char *));
-    mask_base->decls = (node **)MEMmalloc ((mask_base->num_ids) * sizeof (node *));
+    mask_base->num_bitfields = (cnt / (sizeof (unsigned int) * 8)) + 1;
 
     DBUG_PRINT ("number of bitfields is %zu...", mask_base->num_bitfields);
 
@@ -871,6 +878,42 @@ DFMnumIds (mask_base_t *mask)
     DBUG_RETURN (mask->num_ids);
 }
 
+size_t
+DFMnumBitFields (mask_base_t *mask)
+{
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (mask != NULL, "DFMnumBitFields() called with mask NULL");
+
+    DBUG_RETURN (mask->num_bitfields);
+}
+
+const char *
+DFMgetId (mask_base_t *mask, size_t num)
+{
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (mask != NULL, "DFMgetId() called with mask NULL");
+    DBUG_ASSERT (num <= mask->num_ids, "DFMgetId() id number out-of-bound");
+
+    DBUG_RETURN (mask->ids[num]);
+}
+
+void
+DFMprintMaskNums (FILE *handle, mask_t *mask)
+{
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (mask != NULL, "DFMprintMaskNums() called with mask NULL");
+
+    fprintf (handle, "printing mask " F_PTR ":\n", (void *)mask);
+    fprintf (handle, "     num_bitfield: %zu\n", mask->num_bitfields);
+    fprintf (handle, "        mask_base: " F_PTR "\n", (void *)mask->mask_base);
+    fprintf (handle, "  mb num_bitfield: %zu\n", mask->mask_base->num_bitfields);
+
+    DBUG_RETURN ();
+}
+
 int
 DFMtestMask (mask_t *mask)
 {
@@ -910,6 +953,14 @@ DFMtestMask (mask_t *mask)
     }
 
     DBUG_RETURN (res);
+}
+
+bool
+DFMtest2MaskBases (mask_t *mask1, mask_t *mask2)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (mask1->mask_base == mask2->mask_base);
 }
 
 int
@@ -1338,7 +1389,7 @@ DFMgetMaskEntryNameSet (mask_t *mask)
     }
 
     while ((i < store_mask->mask_base->num_ids)
-           && (!(store_mask->bitfield[i / (8 * sizeof (size_t))]
+           && (!(store_mask->bitfield[i / (8 * sizeof (unsigned int))]
                  & access_mask_table[i % (8 * sizeof (unsigned int))]))) {
         i++;
     }
@@ -1367,7 +1418,7 @@ DFMgetMaskEntryDeclClear (mask_t *mask)
     }
 
     while ((i < store_mask->mask_base->num_ids)
-           && (store_mask->bitfield[i / (8 * sizeof (size_t))]
+           && (store_mask->bitfield[i / (8 * sizeof (unsigned int))]
                & access_mask_table[i % (8 * sizeof (unsigned int))])) {
         i++;
     }

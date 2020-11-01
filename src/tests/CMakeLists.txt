@@ -98,6 +98,7 @@ ADD_FUNC_TEST (test-macros test-macros.cpp)
 ADD_FUNC_TEST (test-traverse-optcounter test-traverse-optcounter.cpp)
 ADD_FUNC_TEST (test-new-types test-new-types.cpp)
 ADD_FUNC_TEST (test-lut test-lut.cpp)
+ADD_FUNC_TEST (test-dataflowmask test-dataflowmask.cpp)
 
 # libsac + runtime tests
 # XXX (hans) we can only create one test suite, *not* per-target, due to name-clashes
