@@ -3244,15 +3244,6 @@
         <node name="Code" />
       </travsons>
     </traversal>
-    <traversal id="CHMR" name="CUDA host memory reuse" default="sons" include="cuda_host_memory_reuse.h" >
-      <travuser>
-        <node name="Fundef" />
-        <node name="Prf" />
-      </travuser>
-      <travnone>
-        <node name="Ap" />
-      </travnone>
-    </traversal>
    <traversal id="MTCM" name="Multithreading cost model" default="sons" include="cost_model.h">
       <travuser>
         <node name="Module" />

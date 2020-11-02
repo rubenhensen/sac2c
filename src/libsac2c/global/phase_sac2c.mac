@@ -1269,9 +1269,6 @@ SUBPHASE (lro, "Applying loop reuse optimization", EMLRdoLoopReuseOptimization,
 
 SUBPHASE (aa, "Aliasing analysis", EMAAdoAliasAnalysis, global.optimize.dosrf, mem)
 
-SUBPHASE (chmr, "CUDA host memory reue", CHMRdoMemoryReuse,
-		  global.backend == BE_cuda && global.optimize.dochmr, mem)
-
 SUBPHASE (srce, "Removing non-local reuse-candidates", SRCEdoRemoveReuseCandidates,
           global.optimize.douip, mem)
 
