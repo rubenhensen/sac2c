@@ -745,7 +745,7 @@ PrintBackendOptions (void)
             "                        nosync: do not synchronise at all\n"
             "                        device: synchronise the entire device\n"
             "                        stream: synchronise the stream\n"
-            "                      callback: synchronise the stream using callback\b"
+            "                      callback: synchronise the stream using callback\n"
             "                    (default: device)\n"
             "\n"
             "    -cuda_shape <1d>,<2d_x>,<2d_y>\n"

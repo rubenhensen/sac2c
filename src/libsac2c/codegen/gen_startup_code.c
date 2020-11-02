@@ -588,9 +588,6 @@ PrintDefines (void)
                              " *  Global Definitions\n"
                              " */\n\n");
 
-    if (global.backend == BE_cuda) {
-        fprintf (global.outfile, "SAC_CUDA_DEFINE()\n");
-    }
     fprintf (global.outfile, "SAC_PF_DEFINE()\n");
     fprintf (global.outfile, "SAC_HM_DEFINE()\n");
 

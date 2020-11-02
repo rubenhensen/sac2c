@@ -108,3 +108,7 @@ ENDIF ()
 
 # CUDA related tests
 ADD_FUNC_TEST (test-cuda-utils test-cuda-utils.cpp)
+
+IF (${ENABLE_CUDA}) # requires CUDA-targets
+    ADD_RUNTIME_FUNC_TEST (test-cuda-async-locks test-cuda-async-locks.cpp "cuda" "cudart")
+ENDIF ()
