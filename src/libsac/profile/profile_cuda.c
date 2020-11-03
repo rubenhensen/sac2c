@@ -180,8 +180,6 @@ SAC_PF_TIMER_CUDA_Sum (cuda_timer_t *t)
     return sum;
 }
 
-#endif /* ENABLE_CUDA */
-
 /**
  * @brief Function for printing timing information with a percentage of
  *        total time.
@@ -200,6 +198,8 @@ SAC_PF_TIMER_CUDA_PrintTimePercentage (const char *title, const char *space, cud
              title, space, time1,
              __PF_TIMER_PERCENTAGE (time1, (*time2)), SAC_PF_TIMER_CUDA_Get_Counter (type));
 }
+
+#endif /* ENABLE_CUDA */
 
 /**
  * @brief Increments the alloc counter.
