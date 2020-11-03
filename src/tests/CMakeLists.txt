@@ -75,7 +75,7 @@ MACRO (ADD_RUNTIME_FUNC_TEST BIN_NAME SRC_NAME LIB_TARGET EXTRA_LINKS)
     FOREACH (_lib ${EXTRA_LINKS})
         FIND_LIBRARY (__${_lib}
             NAMES ${_lib}
-            PATHS /opt/cuda/lib64
+            PATHS ${CUDA_TOOLKIT_ROOT_DIR}/lib64
             NO_PACKAGE_ROOT_PATH)
         IF (__${_lib})
             LIST (APPEND __extra_links "${__${_lib}}")
