@@ -38,11 +38,7 @@ stages:
             echo "!!! ERROR detected in build !!!";
             exit 1;
           fi
-        - if [ $(grep -i 'warning' build.log | wc -l) -gt 0 ]; then
-            echo "+++ ${WARN_NUM} warnings detected +++";
-            grep -i 'warning' build.log;
-            exit 1;
-          fi
+        - ../ci/fail-on-warning.sh build.log
         # we need to store the .sac2crc file for sac2c to find prelude
         - mv $HOME/.sac2crc $PWD
     # ensure we capture the build blob
@@ -92,11 +88,7 @@ stages:
             echo "!!! ERROR detected in build !!!";
             exit 1;
           fi
-        - if [ $(grep -i 'warning' build.log | wc -l) -gt 0 ]; then
-            echo "+++ ${WARN_NUM} warnings detected +++";
-            grep -i 'warning' build.log;
-            exit 1;
-          fi
+        - ../../ci/fail-on-warning.sh build.log
         # capture new sac2crcs
         - mv -f $HOME/.sac2crc ${CI_PROJECT_DIR}/build/.sac2crc
     # ensure we capture the build blob

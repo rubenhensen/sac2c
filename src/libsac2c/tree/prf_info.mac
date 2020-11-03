@@ -1024,6 +1024,12 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
   /*******************************************************************************
    * CUDA code generation:
    */
+  PRF (prefetch2device, (PA_x, PA_x, PA_x), 1, XXX, NTCCTprf_dummy, NULL, COMPprfPrefetch2Device,
+       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
+  PRF (prefetch2host, (PA_x, PA_x, PA_x), 1, XXX, NTCCTprf_dummy, NULL, COMPprfPrefetch2Host,
+       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
   PRF (device2host, (PA_x, PA_x, PA_x), 1, XXX, NTCCTprf_dummy, NULL, COMPprfDevice2Host,
        NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
@@ -1033,6 +1039,21 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
   PRF (device2device, (PA_x, PA_x, PA_x), 1, XXX, NTCCTprf_dummy, NULL,
        COMPprfDevice2Device, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
        NULL, NULL),
+
+  /**
+   * for async-like operations, where we need to delay memory access on host side.
+   */
+  PRF (host2device_start, (PA_x, PA_x, PA_x), 1, XXX, NTCCTprf_dummy, NULL, COMPprfHost2DeviceStart,
+       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
+  PRF (device2host_start, (PA_x, PA_x, PA_x), 1, XXX, NTCCTprf_dummy, NULL, COMPprfDevice2HostStart,
+       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
+  PRF (host2device_end, (PA_x, PA_x, PA_x), 2, XXX, NTCCTprf_dummy, NULL, COMPprfHost2DeviceEnd,
+       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
+  PRF (device2host_end, (PA_x, PA_x, PA_x), 2, XXX, NTCCTprf_dummy, NULL, COMPprfDevice2HostEnd,
+       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   PRF (cuda_wl_assign, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_dummy, NULL,
        COMPprfCUDAWLAssign, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,

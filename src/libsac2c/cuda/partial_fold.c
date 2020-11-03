@@ -2238,9 +2238,10 @@ ATravPart (node *arg_node, info *arg_info)
                 PART_THREADBLOCKSHAPE (arg_node)
                   = TBmakeArray (TYmakeSimpleType (T_int),
                                  SHcreateShape (1, TCcountIds (PART_IDS (arg_node))),
-                                 TBmakeExprs (TBmakeNum (global.cuda_2d_block_y),
-                                              TBmakeExprs (TBmakeNum (
-                                                             global.cuda_2d_block_x),
+                                 TBmakeExprs (TBmakeNum (
+                                                global.cuda_options.cuda_2d_block_y),
+                                              TBmakeExprs (TBmakeNum (global.cuda_options
+                                                                        .cuda_2d_block_x),
                                                            NULL)));
             }
             INFO_AT_RESDEF (arg_info) = def_withloop;

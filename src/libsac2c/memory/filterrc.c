@@ -20,6 +20,16 @@
  * N_modarray, we simply filter out all those reuse candidates whose data
  * flow masks are being set!
  *
+ * Extra:
+ * This optimisation does three things: (1) it removes WL ERCs that share the same
+ * N_avis in the rec-loop argument list, (2) filters out ERCs that are already RCs
+ * (as it is not possible to use an existing RC later on, there is no point in
+ * keeping these as ERCs. This opens further opportunities for lifting allocations
+ * out of loops. Finally, (3) we filter out invalid RCs (calls FRC (Filter Reuse
+ * Candidates) traversal (in mode 2) which filters away _invalid_ *RC candidates.
+ * This last part is especially important as otherwise cases where EMRL (EMR Loop
+ * Memory Propagation) could be applied might get missed.
+ *
  * @{
  *
  */
@@ -40,6 +50,16 @@
 #include "free.h"
 
 /**
+ * Mode enum
+ */
+typedef enum {
+    FRC_default, /**< looks used during memory phase when F_alloc, etc. are available */
+    FRC_wl, /**< looks *only* at WLs */
+    FRC_prf, /**< looks *only* at N_prf except F_alloc, etc. */
+    FRC_unknown
+} trav_mode_t;
+
+/**
  * @name INFO structure
  * @{
  */
@@ -49,8 +69,7 @@ struct INFO {
     dfmask_t *thenmask;
     dfmask_t *elsemask;
     node *condargs;
-    /* handle ERC case */
-    bool check_prf;
+    trav_mode_t mode;
     bool is_erc;
 };
 
@@ -59,7 +78,7 @@ struct INFO {
 #define INFO_THENMASK(n) (n->thenmask)
 #define INFO_ELSEMASK(n) (n->elsemask)
 #define INFO_CONDARGS(n) (n->condargs)
-#define INFO_CHECK_PRF(n) (n->check_prf)
+#define INFO_TRAV_MODE(n) (n->mode)
 #define INFO_IS_ERC(n) (n->is_erc)
 
 static info *
@@ -76,7 +95,7 @@ MakeInfo (void)
     INFO_CONDARGS (result) = NULL;
     INFO_THENMASK (result) = NULL;
     INFO_ELSEMASK (result) = NULL;
-    INFO_CHECK_PRF (result) = TRUE;
+    INFO_TRAV_MODE (result) = FRC_unknown;
     INFO_IS_ERC (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -114,9 +133,39 @@ FRCdoFilterReuseCandidates (node *syntax_tree)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Starting to filter reuse candidates (mode 1)...");
+    DBUG_PRINT ("Starting to filter reuse candidates (default mode)...");
 
     info = MakeInfo ();
+    INFO_TRAV_MODE (info) = FRC_default;
+
+    TRAVpush (TR_frc);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+
+    info = FreeInfo (info);
+
+    DBUG_PRINT ("Filtering of reuse candidates complete.");
+
+    DBUG_RETURN (syntax_tree);
+}
+
+/**
+ * @brief starting point of filter reuse candidates traversal (mode WL)
+ *
+ * @param syntax_tree
+ * @return modified syntax_tree.
+ */
+node *
+FRCdoFilterReuseCandidatesWL (node *syntax_tree)
+{
+    info *info;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Starting to filter reuse candidates (WL mode)...");
+
+    info = MakeInfo ();
+    INFO_TRAV_MODE (info) = FRC_wl;
 
     TRAVpush (TR_frc);
     syntax_tree = TRAVdo (syntax_tree, info);
@@ -136,16 +185,16 @@ FRCdoFilterReuseCandidates (node *syntax_tree)
  * @return modified syntax_tree.
  */
 node *
-FRCdoFilterReuseCandidatesNoPrf (node *syntax_tree)
+FRCdoFilterReuseCandidatesPrf (node *syntax_tree)
 {
     info *info;
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Starting to filter reuse candidates (mode 2)...");
+    DBUG_PRINT ("Starting to filter reuse candidates (Prf mode)...");
 
     info = MakeInfo ();
-    INFO_CHECK_PRF (info) = FALSE;
+    INFO_TRAV_MODE (info) = FRC_prf;
 
     TRAVpush (TR_frc);
     syntax_tree = TRAVdo (syntax_tree, info);
@@ -472,6 +521,8 @@ FRCid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("... looking at N_id %s", ID_NAME (arg_node));
+
     if (!DFMtestMaskEntry (INFO_USEMASK (arg_info), NULL, ID_AVIS (arg_node))) {
 
         DBUG_PRINT ("Used Variable: %s", ID_NAME (arg_node));
@@ -494,15 +545,29 @@ FRCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_CHECK_PRF (arg_info)) {
-        if (PRF_PRF (arg_node) == F_fill) {
+    switch (PRF_PRF (arg_node)) {
+    case F_fill:
+        if (INFO_TRAV_MODE (arg_info) == FRC_default) {
             PRF_ARG2 (arg_node) = FilterRCsInPrf (PRF_ARG2 (arg_node), arg_info);
         }
+        break;
+
+    case F_host2device:
+    case F_device2host:
+        if (PRF_ERC (arg_node) != NULL) {
+            DBUG_PRINT ("Checking CUDA transfer for valid ERCs...");
+            INFO_IS_ERC (arg_info) = TRUE;
+            PRF_ERC (arg_node) = FilterTrav (PRF_ERC (arg_node), arg_info);
+            INFO_IS_ERC (arg_info) = FALSE;
+        }
+        break;
+
+    default:
+        // do nothing
+        break;
     }
 
-    if (PRF_ARGS (arg_node) != NULL) {
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-    }
+    PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -519,9 +584,11 @@ FRCwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("filtering reuse candidates in WL");
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    DBUG_PRINT ("filtering reuse candidates in WL *complete*");
 
     DBUG_RETURN (arg_node);
 }
@@ -538,10 +605,12 @@ FRCwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("filtering reuse candidates in WL2");
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
     WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
     WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
     WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+    DBUG_PRINT ("filtering reuse candidates in WL2 *complete*");
 
     DBUG_RETURN (arg_node);
 }
@@ -558,8 +627,10 @@ FRCwith3 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("filtering reuse candidates in WL3");
     WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
     WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
+    DBUG_PRINT ("filtering reuse candidates in WL3 *complete*");
 
     DBUG_RETURN (arg_node);
 }
@@ -576,7 +647,12 @@ FRCbreak (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    BREAK_MEM (arg_node) = TRAVdo (BREAK_MEM (arg_node), arg_info);
+    /* NOTE: from phase mem-alloc this should not be NULL, but as we call
+     * the filtering traversal in phase opt, this node will be NULL.
+     */
+    if (BREAK_MEM (arg_node) != NULL) {
+        BREAK_MEM (arg_node) = TRAVdo (BREAK_MEM (arg_node), arg_info);
+    }
 
     if (BREAK_NEXT (arg_node) != NULL) {
         BREAK_NEXT (arg_node) = TRAVdo (BREAK_NEXT (arg_node), arg_info);
@@ -618,20 +694,31 @@ FRCgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_CHECK_PRF (arg_info)) {
+    switch (INFO_TRAV_MODE (arg_info)) {
+    case FRC_default:
         GENARRAY_MEM (arg_node) = FilterRCsInPrf (GENARRAY_MEM (arg_node), arg_info);
-    } else {
+        break;
+
+    case FRC_wl:
         if (GENARRAY_RC (arg_node) != NULL) {
+            DBUG_PRINT ("... we have RC");
             GENARRAY_RC (arg_node) = FilterTrav (GENARRAY_RC (arg_node), arg_info);
         }
         if (GENARRAY_PRC (arg_node) != NULL) {
+            DBUG_PRINT ("... we have PRC");
             GENARRAY_PRC (arg_node) = FilterTrav (GENARRAY_PRC (arg_node), arg_info);
         }
         if (GENARRAY_ERC (arg_node) != NULL) {
             INFO_IS_ERC (arg_info) = TRUE;
+            DBUG_PRINT ("... we have ERC");
             GENARRAY_ERC (arg_node) = FilterTrav (GENARRAY_ERC (arg_node), arg_info);
             INFO_IS_ERC (arg_info) = FALSE;
         }
+        break;
+
+    default:
+        /* do nothing */
+        break;
     }
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
@@ -659,17 +746,27 @@ FRCmodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_CHECK_PRF (arg_info)) {
+    switch (INFO_TRAV_MODE (arg_info)) {
+    case FRC_default:
         MODARRAY_MEM (arg_node) = FilterRCsInPrf (MODARRAY_MEM (arg_node), arg_info);
-    } else {
+        break;
+
+    case FRC_wl:
         if (MODARRAY_RC (arg_node) != NULL) {
+            DBUG_PRINT ("... we have RC");
             MODARRAY_RC (arg_node) = FilterTrav (MODARRAY_RC (arg_node), arg_info);
         }
         if (MODARRAY_ERC (arg_node) != NULL) {
             INFO_IS_ERC (arg_info) = TRUE;
+            DBUG_PRINT ("... we have ERC");
             MODARRAY_ERC (arg_node) = FilterTrav (MODARRAY_ERC (arg_node), arg_info);
             INFO_IS_ERC (arg_info) = FALSE;
         }
+        break;
+
+    default:
+        /* do nothing */
+        break;
     }
 
     MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);

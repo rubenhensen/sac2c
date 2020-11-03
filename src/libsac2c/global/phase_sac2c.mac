@@ -983,13 +983,16 @@ SUBPHASE (xtgtl, "Transform gt and ge operators to lt and le operators",
 
 SUBPHASE (fdi, "Freeing dispatch information", FDIdoFreeDispatchInformation, ALWAYS, opt)
 
-SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls, global.doprofile,
-          opt)
-
 ADDPREFUN (TR_prt, EMRCIprintPreFun)
 
-SUBPHASE (emr, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInference,
+SUBPHASE (emrci, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInference,
           global.optimize.doemrci, opt)
+
+SUBPHASE (emrcf, "Filter extended WL reuse candidates", FRCdoFilterReuseCandidatesWL,
+          global.optimize.doemrci && global.optimize.doemrcf, opt)
+
+SUBPHASE (emrl, "Lift allocations of WL using extended reuse candidates", EMRLdoExtendLoopMemoryPropagation,
+          global.optimize.doemrci && global.optimize.doemrl, opt)
 
 SUBPHASE (ts, "Displaying type specialisation statistics", TSdoPrintTypeStatistics,
           global.feedback.type, opt)
@@ -1080,6 +1083,12 @@ SUBPHASE (daa, "CUDA Data access analysis", DAAdoDataAccessAnalysis,
 SUBPHASE (stknl, "CUDA Create single threaded CUDA kernels", STKNLdoSingleThreadKernels,
           global.optimize.doexpar, cuda)
 
+SUBPHASE (emrci, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInferencePrf,
+          global.optimize.doemrcic, cuda)
+
+SUBPHASE (emrcf, "Filter extended WL reuse candidates", FRCdoFilterReuseCandidatesPrf,
+          global.optimize.doemrcic && global.optimize.doemrcf, cuda)
+
 /*
 SUBPHASE( wlds,
           "Unscalarize cudarizbale withloops",
@@ -1087,6 +1096,21 @@ SUBPHASE( wlds,
           ( global.backend == BE_cuda || global.backend == BE_cudahybrid),
           cuda)
 */
+SUBPHASE (cumm, "Unify host and device memory when using CUDA managed memory", CUMMdoManagedMemory,
+          global.optimize.documm
+		  && (STReq (global.config.cuda_alloc, "cuman")
+		      || STReq (global.config.cuda_alloc, "cumanp")), cuda)
+
+SUBPHASE (cuad, "Introduce delays into asynchronous memory transfers", CUADdoAsyncDelay,
+          global.optimize.docuad
+		  && (STReq (global.config.cuda_alloc, "cualloc")
+		      || STReq (global.config.cuda_alloc, "cureg")), cuda)
+
+SUBPHASE (cuade, "Expand delays of asynchronous memory transfers", CUADEdoAsyncDelayExpand,
+          global.optimize.docuade
+		  && (STReq (global.config.cuda_alloc, "cualloc")
+		      || STReq (global.config.cuda_alloc, "cureg")
+			  || STReq (global.config.cuda_alloc, "cumanp")), cuda)
 
 ENDPHASE (cuda)
 
@@ -1252,10 +1276,10 @@ SUBPHASE (frc, "Removing invalid reuse candidates", FRCdoFilterReuseCandidates,
           global.optimize.douip, mem)
 
 SUBPHASE (sr, "Static reuse", EMSRdoStaticReuse,
-          global.optimize.douip &&global.optimize.dosrf, mem)
+          global.optimize.douip && global.optimize.dosrf, mem)
 
 SUBPHASE (lao, "Applying loop allocation optimization", EMLAOdoLoopAllocationOptimization,
-          global.optimize.dosrf &&global.optimize.dolao, mem)
+          global.optimize.dosrf && global.optimize.dolao, mem)
 
 SUBPHASE (rb, "Introducing reuse branches", EMRBdoReuseBranching,
           global.optimize.doipc || (global.optimize.douip && global.optimize.dodr), mem)
@@ -1294,6 +1318,14 @@ SUBPHASE (re, "Removing reuse instructions", EMREdoReuseElimination, ALWAYS, mem
 
 ENDPHASE (mem)
 
+/******************************************************************************/
+
+PHASE (iprof, "Introduce profiling instruction", !global.on_demand_lib)
+
+SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls,
+          global.doprofile, iprof)
+
+ENDPHASE (iprof)
 
 /******************************************************************************/
 

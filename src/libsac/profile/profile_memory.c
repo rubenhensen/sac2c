@@ -3,14 +3,13 @@
  * @brief This file specifies a set of functions used by profile.c to profile memory
  *        operations, specifically count and size(s).
  */
+#include "libsac/profile/profile_memory.h"
 
 #include <stdio.h>
 
 #include "libsac/profile/profile_print.h"
-#include "libsac/profile/profile_memory.h"
+#include "libsac/profile/profile_cuda.h"
 #include "runtime/essentials_h/bool.h"
-
-#define BYTES_TO_KBYTES(bytes) (bytes / 1024)
 
 /* Global Variables */
 
@@ -106,6 +105,10 @@ inline bool
 SAC_PF_MEM_IsRecordZero (SAC_PF_MEMORY_RECORD record)
 {
     return !(record.alloc_mem_count || record.free_mem_count || record.reuse_mem_count
+#ifdef SAC_BACKEND_CUDA
+             || record.alloc_mem_cuda_count || record.free_mem_cuda_count
+             || record.alloc_desc_cuda_count || record.free_desc_cuda_count
+#endif /* SAC_BACKEND_CUDA */
              || record.alloc_desc_count || record.free_desc_count);
 }
 
@@ -117,6 +120,7 @@ SAC_PF_MEM_IsRecordZero (SAC_PF_MEMORY_RECORD record)
 inline void
 SAC_PF_MEM_PrintRecordStats (SAC_PF_MEMORY_RECORD record)
 {
+    fprintf (stderr, "\n+++ %-72s\n", "System Memory:");
     SAC_PF_PrintSection ("For Arrays");
     SAC_PF_PrintCount ("   no. calls to (m)alloc", "", record.alloc_mem_count);
     SAC_PF_PrintCount ("   no. calls to free", "", record.free_mem_count);
@@ -124,6 +128,16 @@ SAC_PF_MEM_PrintRecordStats (SAC_PF_MEMORY_RECORD record)
     SAC_PF_PrintSection ("For Descriptors");
     SAC_PF_PrintCount ("   no. calls to (m)alloc", "", record.alloc_desc_count);
     SAC_PF_PrintCount ("   no. calls to free", "", record.free_desc_count);
+#ifdef SAC_BACKEND_CUDA
+    fprintf (stderr, "\n+++ %-72s\n", "CUDA Memory:");
+    SAC_PF_PrintSection ("For Arrays");
+    SAC_PF_PrintCount ("   no. calls to (m)alloc", "", record.alloc_mem_cuda_count);
+    SAC_PF_PrintCount ("   no. calls to free", "", record.free_mem_cuda_count);
+    SAC_PF_PrintCount ("   no. reuses of memory", "", 0);
+    SAC_PF_PrintSection ("For Descriptors");
+    SAC_PF_PrintCount ("   no. calls to (m)alloc", "", record.alloc_desc_cuda_count);
+    SAC_PF_PrintCount ("   no. calls to free", "", record.free_desc_cuda_count);
+#endif /* SAC_BACKEND_CUDA */
 }
 
 /**
@@ -183,4 +197,8 @@ SAC_PF_MEM_PrintStats ()
                       BYTES_TO_KBYTES (SAC_PF_MEM_free_memsize), "Kbytes");
     SAC_PF_PrintSize ("size of largest allocation", "",
                       BYTES_TO_KBYTES (SAC_PF_MEM_max_alloc), "Kbytes");
+
+#ifdef SAC_BACKEND_CUDA
+    SAC_PF_MEM_CUDA_PrintStats ();
+#endif /* SAC_BACKEND_CUDA */
 }

@@ -1901,7 +1901,6 @@ EMALprf (node *arg_node, info *arg_info)
          * none of its return value must be allocated
          */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
         INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
@@ -1920,7 +1919,6 @@ EMALprf (node *arg_node, info *arg_info)
          * - v is an alias of a_i
          */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
         INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
@@ -1957,7 +1955,25 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
+    case F_prefetch2device:
+    case F_prefetch2host:
+        if (AVIS_ISALLOCLIFT (ID_AVIS (PRF_ARG1 (arg_node))))
+        {
+            /* rhs EMR lifted avis is never previously assigned to,
+             * we need to explicitly allocate it.
+             */
+            als->avis = ID_AVIS (PRF_ARG1 (arg_node));
+            als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+            als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        } else {
+            /* we perform no allocation of the lhs */
+            INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        }
+        INFO_MUSTFILL (arg_info) = EA_nofill;
+        break;
+
     case F_host2device:
+    case F_host2device_start:
         /*
          * CUDA MLTRAN identifies what N_avis needs to be transferred to the
          * CUDA device. Ordinarily its selections are sane, except when handling
@@ -1972,8 +1988,15 @@ EMALprf (node *arg_node, info *arg_info)
                                      : INFO_MUSTFILL (arg_info);
         /* Fall-through */
     case F_device2host:
+    case F_device2host_start:
         als->dim = MakeDimArg (PRF_ARG1 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        break;
+
+    case F_host2device_end:
+    case F_device2host_end:
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
     case F_cuda_threadIdx_x:
@@ -2038,7 +2061,6 @@ EMALprf (node *arg_node, info *arg_info)
          * its return value must not  be allocated
          */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
         INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 

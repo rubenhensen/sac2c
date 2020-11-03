@@ -1,10 +1,10 @@
 /**
  * Header file for profile_memory.c
  */
-
 #ifndef _SAC_PROFILE_MEM_H
 #define _SAC_PROFILE_MEM_H
 
+#include <stddef.h>
 #include "runtime/essentials_h/bool.h"
 
 #ifndef SAC_C_EXTERN
@@ -19,6 +19,12 @@ typedef struct memory_record {
     unsigned long alloc_desc_count;
     unsigned long free_desc_count;
     unsigned long reuse_mem_count;
+#ifdef SAC_BACKEND_CUDA
+    unsigned long alloc_mem_cuda_count;
+    unsigned long free_mem_cuda_count;
+    unsigned long alloc_desc_cuda_count;
+    unsigned long free_desc_cuda_count;
+#endif /* SAC_BACKEND_CUDA */
 } SAC_PF_MEMORY_RECORD;
 
 SAC_C_EXTERN void SAC_PF_MEM_PrintStats (void);

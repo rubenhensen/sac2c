@@ -322,6 +322,33 @@
           <node name="Ret" />
         </travuser>
       </traversal>
+      <traversal id="CUMM" name="Unify memory model for CUDA managed memory" default="sons" include="managed_memory.h" >
+        <travuser>
+          <node name="Let" />
+          <node name="Prf" />
+          <node name="Avis" />
+        </travuser>
+      </traversal>
+      <traversal id="CUAD" name="Introduce delayed CUDA memory transfers primitives" default="sons" include="async_delay.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
+      <traversal id="CUADE" name="Expand delay of CUDA memory transfer primitives" default="sons" include="async_delay_expand.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="With" />
+          <node name="Cond" />
+          <node name="Ids" />
+          <node name="Id" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="STKNL" name="CUDA Create single threaded CUDA kerenls" default="sons" include="single_thread_kernels.h" >
         <travuser>
           <node name="Module" />
@@ -1622,6 +1649,7 @@
       <traversal id="PF" name="Annotate Function Calls " default="sons" include="annotate_fun_calls.h">
         <travuser>
           <node name="Ap" />
+          <node name="With" />
           <node name="Assign" />
           <node name="Fundef" />
         </travuser>  
@@ -5227,7 +5255,7 @@ N_tfarg :
               <target mandatory="no" >
                 <node name="Exprs" />
                 <phases>
-                  <range from="opt_emr" to="mem_rci" />
+                  <range from="opt_emrci" to="mem_rci" />
                 </phases>
               </target>
             </targets>
@@ -7995,6 +8023,20 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="ERC" default="NULL" >
+          <description>
+            Contains a list of Extra Reuse Candidates for WL memory reuse
+            within scope.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                  <range from="opt_emrci" to="mem_rci" />
+              </phases>
+            </target>
+          </targets>
+        </son>
       </sons>
       <attributes>
         <attribute name="Prf" inconstructor="yes" >
@@ -8391,6 +8433,7 @@ N_tfarg :
         <flag name="RefcountDots" default="FALSE" />
         <flag name="MutcThreadFun" default="FALSE" />
         <flag name="NoInline" default="FALSE" />
+        <flag name="NoCUDA" default="FALSE" />
       </flags>
     </node>
 <!--
@@ -9139,6 +9182,12 @@ N_tfarg :
         <flag name="IsLifted" >
           <description>Used by SpmdLift traversal in order to indicate 
             which VARDECS are no longer needed and can thus be eliminated.
+          </description>
+        </flag>
+        <flag name="IsCUDAPinned" default="FALSE" >
+            <description>XXX not sure where this needs to be set, indicates
+                that the AVIS is to be page-locked (pinned) by CUDA API
+                for accelerated transfer over the PCIe bus.
           </description>
         </flag>
 	<flag name="IsUniqueConsumed" default="FALSE" >
@@ -10451,7 +10500,7 @@ N_tfarg :
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                  <range from="opt_emr" to="mem_rci" />
+                  <range from="opt_emrci" to="mem_rci" />
               </phases>
             </target>
           </targets>
@@ -10571,7 +10620,7 @@ N_tfarg :
             <target mandatory="no">
               <node name="Exprs" />
               <phases>
-                  <range from="opt_emr" to="mem_rci" />
+                  <range from="opt_emrci" to="mem_rci" />
               </phases>
             </target>
           </targets>

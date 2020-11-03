@@ -57,8 +57,8 @@ typedef enum emrl_context {EMRL_rec, EMRL_ap} emrl_context_t;
  */
 typedef struct stack_node_s {
     node *wl;      /**< either a N_modarray or N_genarray */
-    node * avis;   /**< our new avis */
-    struct stack_node_s * next;
+    node *avis;    /**< our new avis */
+    struct stack_node_s *next;
 } stack_node_t;
 
 /**
@@ -127,7 +127,7 @@ FreeInfo (info *info)
  * @return Top of the stack
  */
 static stack_node_t *
-stack_push (stack_node_t * stack, node * wl, node * avis)
+stack_push (stack_node_t *stack, node *wl, node *avis)
 {
     stack_node_t * new;
     DBUG_ENTER ();
@@ -151,7 +151,7 @@ stack_push (stack_node_t * stack, node * wl, node * avis)
  * @return Next node in stack or NULL
  */
 static stack_node_t *
-stack_drop (stack_node_t * stack)
+stack_drop (stack_node_t *stack)
 {
     stack_node_t * tmp;
     DBUG_ENTER ();
@@ -169,7 +169,7 @@ stack_drop (stack_node_t * stack)
  * @return NULL
  */
 static stack_node_t *
-stack_clear (stack_node_t * stack)
+stack_clear (stack_node_t *stack)
 {
     DBUG_ENTER ();
 
@@ -178,32 +178,6 @@ stack_clear (stack_node_t * stack)
     }
 
     DBUG_RETURN (stack);
-}
-
-/**
- * @brief Find a N_id in N_exprs chain that matches shape of an N_avis
- *
- * @param avis N_avis node to compare against
- * @param exprs N_expres chain with N_id
- * @return the N_id node that matches, or NULL
- */
-static node *
-isSameShapeAvis (node * avis, node * exprs)
-{
-    node * ret = NULL;
-    DBUG_ENTER ();
-
-    if (exprs != NULL) {
-        if ((ShapeMatch (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs)))
-             || TCshapeVarsMatch (avis, ID_AVIS (EXPRS_EXPR (exprs))))
-            && TUeqElementSize (AVIS_TYPE (avis), ID_NTYPE (EXPRS_EXPR (exprs)))) {
-            ret = EXPRS_EXPR (exprs);
-        } else {
-            ret = isSameShapeAvis (avis, EXPRS_NEXT (exprs));
-        }
-    }
-
-    DBUG_RETURN (ret);
 }
 
 /**
@@ -256,7 +230,14 @@ EMRLwith (node * arg_node, info * arg_info)
 {
     DBUG_ENTER ();
 
+    /* we must traverse withops first */
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
+    /* in some instances we may 'lift' a loop which is called from within
+     * a WL. In order to update the arguments of its application we need
+     * to traverse through the N_blocks of the WL.
+     */
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -386,8 +367,10 @@ EMRLap (node * arg_node, info * arg_info)
                 /* for each (wl, erc_avis) in the stack, find a suitable var in function
                  * free variables and replace it. if none can be found, drop/free
                  * erc_avis. We pop the stack on each iteration.                        */
+                DBUG_EXECUTE (if (rec_filt != NULL) { PRTdoPrint (rec_filt); });
                 while (INFO_STACK (arg_info) != NULL) {
                     find = isSameShapeAvis (INFO_STACK (arg_info)->avis, rec_filt);
+                    DBUG_EXECUTE (if (find != NULL) { PRTdoPrint (find);});
                     if (find == NULL) {
                         DBUG_PRINT ("  no suitable free variable found for %s, dropping "
                                     "it",
@@ -395,6 +378,7 @@ EMRLap (node * arg_node, info * arg_info)
                         INFO_STACK (arg_info)->avis
                           = FREEdoFreeTree (INFO_STACK (arg_info)->avis);
                     } else {
+                        DBUG_PRINT ("  found free variable %s for %s at loop rec-call", ID_NAME (find), AVIS_NAME (INFO_STACK (arg_info)->avis));
                         L_WITHOP_ERC (INFO_STACK (arg_info)->wl,
                                       TBmakeExprs (TBmakeId (INFO_STACK (arg_info)->avis),
                                                    NULL));

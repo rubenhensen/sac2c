@@ -1,6 +1,9 @@
 #ifndef _GDB_UTILS_H_
 #define _GDB_UTILS_H_
 
+#include <stdbool.h>
+#include "tree_basic.h"
+
 extern bool GDBbreakAtNid (node *arg_node, char *nm);
 extern void GDBwhatIs (char *nm, node *fundef);
 extern void GDBwhatAre (char *nm, node *fundef);

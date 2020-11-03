@@ -9037,6 +9037,57 @@ COMPprfProdMatchesProdShape (node *arg_node, info *arg_info)
 }
 
 node *
+COMPprfPrefetch2Host (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    /* As the cudamemprefetch primitive aliases it's input,
+     * we need to perform an assignment of the lhr by the
+     * rhs, so we generate the assignment ND_ASSIGN( v, a);
+     */
+    ret_node = RhsId (PRF_ARG1 (arg_node), arg_info);
+
+    /* and precede this by the actual prefetch ICM call */
+    ret_node = TCmakeAssignIcm3 ("CUDA_MEM_PREFETCH",
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                 TBmakeNum (-1), ret_node);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfPrefetch2Device (node *arg_node, info *arg_info)
+{
+    /**
+     * At the moment we assume that the device is *always* at
+     * ordinal 0. In a multi-GPU setup this may not be the case.
+     *
+     * Additionally, if CUDA_VISIBLE_DEVICES env var is set, then
+     * setting 0 here is the zero-th device in the env var list.
+     */
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    /* As the cudamemprefetch primitive aliases it's input,
+     * we need to perform an assignment of the lhr by the
+     * rhs, so we generate the assignment ND_ASSIGN( v, a);
+     */
+    ret_node = RhsId (PRF_ARG1 (arg_node), arg_info);
+
+    /* and precede this by the actual prefetch ICM call */
+    ret_node = TCmakeAssignIcm3 ("CUDA_MEM_PREFETCH",
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                 TBmakeNum (0), ret_node);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
 COMPprfDevice2Host (node *arg_node, info *arg_info)
 {
     node *ret_node;
@@ -9068,6 +9119,82 @@ COMPprfHost2Device (node *arg_node, info *arg_info)
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
                                  TCmakeIdCopyString ("cudaMemcpyHostToDevice"), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfDevice2HostStart (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("CUDA_MEM_TRANSFER_START", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                 TCmakeIdCopyString ("cudaMemcpyDeviceToHost"), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfHost2DeviceStart (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("CUDA_MEM_TRANSFER_START", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                 TCmakeIdCopyString ("cudaMemcpyHostToDevice"), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfDevice2HostEnd (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    /**
+     * This PRF aliases its second argument, meaning we need to do an assign
+     * from this to LHS.
+     */
+    ret_node = RhsId (PRF_ARG1 (arg_node), arg_info);
+
+    ret_node = TCmakeAssignIcm1 ("CUDA_MEM_TRANSFER_END",
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 ret_node);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfHost2DeviceEnd (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    /**
+     * This PRF aliases its second argument, meaning we need to do an assign
+     * from this to LHS.
+     */
+    ret_node = RhsId (PRF_ARG1 (arg_node), arg_info);
+
+    ret_node = TCmakeAssignIcm1 ("CUDA_MEM_TRANSFER_END",
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 ret_node);
 
     DBUG_RETURN (ret_node);
 }

@@ -7,6 +7,8 @@
 #if ENABLE_HWLOC
 
 #include <stddef.h>
+#include <errno.h>
+#include <string.h>
 #include <hwloc.h>
 
 #include "cpubind.h"
@@ -207,8 +209,6 @@ hwloc_print_topology_selection (hwloc_obj_t sel_obj, hwloc_obj_t obj, unsigned d
 void
 SAC_HWLOC_bind_on_cpuset (hwloc_cpuset_t cpuset)
 {
-    char *str;
-
 #if HWLOC_API_VERSION < 0x00010800
     // bind current process to cpuset
     if (hwloc_set_cpubind (SAC_HWLOC_topology, cpuset,
@@ -264,6 +264,7 @@ SAC_HWLOC_get_core (hwloc_cpuset_t cpuset)
 void
 SAC_HWLOC_init ()
 {
+    int err;
     hwloc_obj_type_t socket_obj; // FIXME(hans) What the hell is this for?
 
     /*
@@ -274,16 +275,36 @@ SAC_HWLOC_init ()
     /*
      * Next we grab the host's topology and store it in the global variable:
      */
-    hwloc_topology_init (&SAC_HWLOC_topology);
+    err = hwloc_topology_init (&SAC_HWLOC_topology);
+    if (err < 0) {
+        SAC_RuntimeError ("%s", strerror (errno));
+    }
 #if HWLOC_API_VERSION < 0x00020000
-    hwloc_topology_set_flags (SAC_HWLOC_topology,
-                              HWLOC_TOPOLOGY_FLAG_IO_DEVICES); // include access to IO
-                                                               // devices
+    // include access to IO devices
+    err = hwloc_topology_set_flags (SAC_HWLOC_topology,
+                                    HWLOC_TOPOLOGY_FLAG_IO_DEVICES); 
+    if (err < 0) {
+        SAC_RuntimeError ("%s", strerror (errno));
+    }
 #else
-    hwloc_topology_set_io_types_filter (SAC_HWLOC_topology,
-                                        HWLOC_TYPE_FILTER_KEEP_ALL);
+    err = hwloc_topology_set_type_filter(SAC_HWLOC_topology, HWLOC_OBJ_BRIDGE,
+                                         HWLOC_TYPE_FILTER_KEEP_IMPORTANT);
+    if (err < 0) {
+        SAC_RuntimeError ("%s", strerror (errno));
+    }
+    // include access to IO devices
+    err = hwloc_topology_set_type_filter(SAC_HWLOC_topology, HWLOC_OBJ_PCI_DEVICE,
+                                         HWLOC_TYPE_FILTER_KEEP_IMPORTANT);
+    if (err < 0) {
+        SAC_RuntimeError ("%s", strerror (errno));
+    }
 #endif
-    hwloc_topology_load (SAC_HWLOC_topology);
+    err = hwloc_topology_load (SAC_HWLOC_topology);
+    if (err < 0) {
+        // we should destroy the topology, as its memory is still allocated
+        hwloc_topology_destroy (SAC_HWLOC_topology);
+        SAC_RuntimeError ("%s", strerror (errno));
+    }
 
     /*
      * Allocate our struct to contain all the topology information for later

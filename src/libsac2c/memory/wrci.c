@@ -54,6 +54,7 @@
 #include "print.h"
 #include "str.h"
 #include "memory.h"
+#include "emr_utils.h"
 #include "free.h"
 #include "new_types.h"
 #include "type_utils.h"
@@ -180,58 +181,6 @@ WRCIdoWithloopReuseCandidateInference (node *syntax_tree)
  * Helper functions
  *
  *****************************************************************************/
-
-static node *
-ElimDupesOfAvis (node *avis, node *exprs)
-{
-    DBUG_ENTER ();
-
-    if (exprs != NULL) {
-        if (EXPRS_NEXT (exprs) != NULL) {
-            EXPRS_NEXT (exprs) = ElimDupesOfAvis (avis, EXPRS_NEXT (exprs));
-        }
-
-        if (ID_AVIS (EXPRS_EXPR (exprs)) == avis) {
-            exprs = FREEdoFreeNode (exprs);
-        }
-    }
-
-    DBUG_RETURN (exprs);
-}
-
-static node *
-ElimDupes (node *exprs)
-{
-    DBUG_ENTER ();
-
-    if (exprs != NULL) {
-        EXPRS_NEXT (exprs)
-          = ElimDupesOfAvis (ID_AVIS (EXPRS_EXPR (exprs)), EXPRS_NEXT (exprs));
-
-        EXPRS_NEXT (exprs) = ElimDupes (EXPRS_NEXT (exprs));
-    }
-
-    DBUG_RETURN (exprs);
-}
-
-static bool
-ShapeMatch (ntype *t1, ntype *t2)
-{
-    ntype *aks1, *aks2;
-    bool res;
-
-    DBUG_ENTER ();
-
-    aks1 = TYeliminateAKV (t1);
-    aks2 = TYeliminateAKV (t2);
-
-    res = TYisAKS (aks1) && TYeqTypes (aks1, aks2);
-
-    aks1 = TYfreeType (aks1);
-    aks2 = TYfreeType (aks2);
-
-    DBUG_RETURN (res);
-}
 
 static node *
 MatchingRCs (node *rcs, node *ids, node *modarray)

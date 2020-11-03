@@ -1,0 +1,21 @@
+// This tests makes sure that the CUDA minimise super-traversal MTRAN _cycles_ correctly.
+// The MTRAN traversal uses an ad-hoc traversal cycling solution through CPP macros. The
+// test here creates a situation where a CUDA memory transfer is both lifted from a loop
+// and eliminated (as part of MBTRAN2).
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -t cuda -bcuda:mtran
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) '_iwlmem_5177_dev = _iwlmem_5176_dev' 1
+#include "mini-stdlib.sac"
+
+int main ()
+{
+  a = genarray ([1000], 2);
+
+  do {
+    a = with { (. <= iv <= .) : a[iv] + 2; } : modarray (a);
+  } while (sum (a) < 10000);
+
+  return a[100];
+}

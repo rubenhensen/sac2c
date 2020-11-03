@@ -725,6 +725,35 @@ PrintBackendOptions (void)
             "\n"
             "    -force_desc_size <n>\n"
             "                    Force the size of the descriptor to n bytes\n"
+            "\n"
+            "    -cuda_arch <sm>\n"
+            "                    Specify which CUDA architecture to generate code for:\n"
+            "                      sm10: for Tesla architecture\n"
+            "                      sm11: same as above\n"
+            "                      sm12: same as above\n"
+            "                      sm13: same as above\n"
+            "                      sm20: for Fermi architecture\n"
+            "                      sm35: for Kepler architecture\n"
+            "                      sm50: for Maxwell architecture\n"
+            "                      sm60: for Pascal architecture\n"
+            "                      sm61: same as above\n"
+            "                      sm70: for Volta architecture\n"
+            "                    (default: sm35)\n"
+            "\n"
+            "    -cuda_async_mode <mode>\n"
+            "                    Specify synchronisation mode between host thread and CUDA:\n"
+            "                        nosync: do not synchronise at all\n"
+            "                        device: synchronise the entire device\n"
+            "                        stream: synchronise the stream\n"
+            "                      callback: synchronise the stream using callback\n"
+            "                    (default: device)\n"
+            "\n"
+            "    -cuda_shape <1d>,<2d_x>,<2d_y>\n"
+            "                    Override the grid/block specification, given as:\n"
+            "                        1d: 1-dim block size\n"
+            "                      2d_x: 2-dim block size for the x-dim\n"
+            "                      2d_y: 2-dim block size for the y-dim\n"
+            "                    (default: depends on <cuda_arch> value)\n"
             "\n");
 
     DBUG_RETURN ();
@@ -959,7 +988,7 @@ PrintRuntimeProfilingOptions (void)
     printf (
       "\n\nRUNTIME PROFILING OPTIONS:\n\n"
 
-      "    -profile [afilwmod]+\n"
+      "    -profile [afilwmocd]+\n"
       "                    Incorporate profiling analysis into executable program.\n"
       "                    The following flags are supported:\n"
       "                      a: Analyse all (same as filwmod).\n"
@@ -969,6 +998,7 @@ PrintRuntimeProfilingOptions (void)
       "                      w: Analyse time spent in with-loops.\n"
       "                      m: Analyse number of memory operations.\n"
       "                      o: Analyse number of primitive operations (FLOPS,INTOPS).\n"
+      "                      c: Analyse time spent in CUDA kernels.\n"
       "                      d: Analyse performance of distributed memory backend.\n");
 
     DBUG_RETURN ();

@@ -33,5 +33,6 @@ extern bool CUisDeviceTypeOld (types *ty);
 extern bool CUisShmemTypeOld (types *ty);
 extern bool CUisDeviceArrayTypeNew (ntype *ty);
 extern ntype *CUconvertHostToDeviceType (ntype *host_type);
+extern ntype *CUconvertDeviceToHostType (ntype *device_type);
 
 #endif /* _SAC_CUDA_UTILS_H_ */

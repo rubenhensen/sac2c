@@ -32,9 +32,9 @@ TEST (HWLOCRuntime, HWLOCPrintStr)
     ret = SAC_HWLOC_info_snprintf (test_string, 1023, SAC_HWLOC_topology, obj1->cpuset, obj2->cpuset);
     EXPECT_NE (ret, EXIT_FAILURE);
 
-#if HWLOC_API_VERSION < 0x00010b00
+#if HWLOC_API_VERSION < 0x00010b00 // till version 1.11.0
     ASSERT_STREQ (test_string, "Core #0 in Socket #0");
-#elif HWLOC_API_VERSION < 0x00020500
+#elif HWLOC_API_VERSION < 0x00020900 // till version 2.9.0
     ASSERT_STREQ (test_string, "Core #0 in Package #0");
 #else
     ASSERT_STREQ (test_string, "Core #0 in NUMANode #0");

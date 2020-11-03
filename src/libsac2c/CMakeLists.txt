@@ -205,6 +205,8 @@ ${CMAKE_CURRENT_SOURCE_DIR}/constraints/polyhedral_guard_optimization.c
 ${CMAKE_CURRENT_SOURCE_DIR}/constraints/strip_conformity_checks.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/adjust_shmem_access.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/adjust_stknl_rets.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/async_delay.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/async_delay_expand.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cond_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cuda_partition.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cuda_withloop2.c
@@ -230,6 +232,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_cudast_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_loop_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_emr_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/minimize_transfers.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/managed_memory.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/partial_fold.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/prepare_forloop_generation.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/prepare_kernel_generation.c
@@ -322,6 +325,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/memory/audscldist.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/datareuse.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/emr_candidate_inference.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/emr_loop_optimisation.c
+${CMAKE_CURRENT_SOURCE_DIR}/memory/emr_utils.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/explicitcopy.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/filter_partial_reuse_candidates.c
 ${CMAKE_CURRENT_SOURCE_DIR}/memory/filterrc.c

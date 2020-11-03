@@ -1,8 +1,6 @@
 #ifndef _SAC_HWLOC_LIB_H_
 #define _SAC_HWLOC_LIB_H_
 
-#if ENABLE_HWLOC
-
 #include <stddef.h>
 #include <hwloc.h>
 
@@ -24,5 +22,4 @@ extern hwloc_cpuset_t *SAC_HWLOC_get_core (hwloc_cpuset_t);
 extern void SAC_HWLOC_init (void);
 extern void SAC_HWLOC_cleanup (void);
 
-#endif /* ENABLE_HWLOC */
 #endif /* _SAC_HWLOC_LIB_H_ */

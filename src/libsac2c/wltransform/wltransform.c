@@ -3947,7 +3947,7 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
     /*
      * create pragma-dependent configuration
      */
-    if (pragma != NULL) {
+    if (pragma != NULL && PRAGMA_WLCOMP_APS (pragma) != NULL) {
         aps = PRAGMA_WLCOMP_APS (pragma);
         DBUG_PRINT_TAG ("PRAGMA", "analysing WLCOMP pragma");
         DBUG_EXECUTE_TAG ("PRAGMA", PRTdoPrint (aps););

@@ -57,7 +57,7 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
 
     if (global.optimize.doexpar) {
         DBUG_PRINT ("Doing expar optimisation cycle:");
-        for (i = 1; i < global.max_optcycles; i++) {
+        for (i = 0; i < global.max_optcycles; i++) {
             /* XXX disabled for some reason, further investigation needed */
             TOC_RUNOPT ("MBTRAN2", false, COUNT_TRL,
                     global.optcounters.cuda_min_trans,
@@ -74,7 +74,7 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
                 break;
             }
         }
-        DBUG_PRINT ("Completed expar optimisation cycle after %d cycles", i);
+        DBUG_PRINT ("Completed expar optimisation cycle after %d cycles", i + 1);
     }
 
     /* reset counters for next cycle */
@@ -82,7 +82,7 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
     done = false;
 
     DBUG_PRINT ("Doing general optimisation cycle:");
-    for (i = 1; i < global.max_optcycles; i++) {
+    for (i = 0; i < global.max_optcycles; i++) {
 
         TOC_RUNOPT ("MCSTRAN", true, COUNT_TRL, global.optcounters.cuda_min_trans,
                 syntax_tree, MCSTRANdoMinimizeCudastTransfers)
@@ -102,25 +102,24 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
         TOC_RUNOPT ("MLTRAN", true, COUNT_TRL, global.optcounters.cuda_min_trans,
                 syntax_tree, MLTRANdoMinimizeLoopTransfers)
 
-        /* For any EMR lifted allocations which are H2Ds within a do-loop,
-         * we artificially lift these out, similar to MLTRAN above. We assume
-         * that because of the buffer-swapping, there is always a suitable
-         * device type to pass in as part of recursive call within the do-loop.
-         */
-        TOC_RUNOPT ("MEMRT", global.optimize.doemrci && global.optimize.domemrt,
-                COUNT_TRL, global.optcounters.cuda_min_trans,
-                syntax_tree, MEMRTdoMinimizeEMRTransfers)
-
         TOC_COMPARE (done)
 
-        DBUG_PRINT ("Counter: Lift -> %zu",
-                    (global.optcounters.cuda_min_trans - TOC_GETCOUNTER (COUNT_TRL)));
+        DBUG_PRINT ("Counter: Lift -> %zu", TOC_GETCOUNTER (COUNT_TRL));
 
         if (done) {
             break;
         }
     }
-    DBUG_PRINT ("Completed general optimisation cycle after %d cycles", i);
+    DBUG_PRINT ("Completed general optimisation cycle after %d cycles", i + 1);
+
+    /* For any EMR lifted allocations which are H2Ds within a do-loop,
+     * we artificially lift these out, similar to MLTRAN above. We assume
+     * that because of the buffer-swapping, there is always a suitable
+     * device type to pass in as part of recursive call within the do-loop.
+     */
+    if (global.optimize.doemrci && global.optimize.domemrt) {
+        syntax_tree = MEMRTdoMinimizeEMRTransfers (syntax_tree);
+    }
 
     /* We perform loop invariant removal here because we found out
      * that that there are certained cases that are ignored by our

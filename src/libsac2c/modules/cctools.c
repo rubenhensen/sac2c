@@ -213,11 +213,13 @@ CCTperformTask (ccm_task_t task)
                 " -DSAC_MT_LIB_%s"
                 " -DSAC_MT_MODE=%d"
                 " -DSAC_DO_RTSPEC=%d"
-                " -DSAC_DO_CUDA_ALLOC=SAC_CA_%s",
+                " -DSAC_DO_CUDA_ALLOC=SAC_CA_%s"
+                " -DSAC_DO_CUDA_SYNC=%d",
                 global.target_name, global.config.modext, global.config.target_env,
                 global.config.sbi, global.config.rc_method,
                 global.backend_string[global.backend], global.config.mt_lib,
-                global.config.mt_mode, global.config.rtspec, global.config.cuda_alloc);
+                global.config.mt_mode, global.config.rtspec, global.config.cuda_alloc,
+                global.cuda_async_mode);
     char *intcflags_subst = SBUF2strAndFree (&intcflags_buf);
 
     // %cflags%
@@ -240,7 +242,8 @@ CCTperformTask (ccm_task_t task)
     const char *cc_subst = global.config.cc;
 
     // %cuda_arch%
-    const char *cuda_arch_subst = global.config.cuda_arch;
+    const char *cuda_arch_subst
+      = STRcat ("-arch=", global.cuda_arch_names[global.cuda_arch]);
 
     /******************* link flags ***********************/
 

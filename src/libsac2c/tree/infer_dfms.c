@@ -72,8 +72,8 @@
 
 #include "DupTree.h"
 #include "DataFlowMask.h"
-#include "DataFlowMaskUtils.h"
 #include "type_utils.h"
+#include "print.h"
 #include "globals.h"
 
 /*
@@ -295,6 +295,8 @@ UsedVar (info *arg_info, node *avis)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Updating mask for N_avis %s...", AVIS_NAME (avis));
+
     DBUG_ASSERT (avis != NULL,
                  "Variable declaration missing! "
                  "For the time being Lac2fun() can be used after type checking"
@@ -353,6 +355,8 @@ UsedMask (info *arg_info, dfmask_t *mask)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Updating mask...");
+
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
         arg_info = UsedVar (arg_info, avis);
@@ -377,6 +381,8 @@ static info *
 DefinedVar (info *arg_info, node *avis)
 {
     DBUG_ENTER ();
+
+    DBUG_PRINT ("Updating mask for N_avis %s...", AVIS_NAME (avis));
 
     DBUG_ASSERT (avis != NULL,
                  "Variable declaration missing! "
@@ -467,6 +473,8 @@ DefinedMask (info *arg_info, dfmask_t *mask)
     node *avis;
 
     DBUG_ENTER ();
+
+    DBUG_PRINT ("Updating mask...");
 
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
@@ -605,8 +613,8 @@ EnsureDFMbase (node *fundef)
         FUNDEF_DFM_BASE (fundef)
           = DFMgenMaskBase (FUNDEF_ARGS (fundef), FUNDEF_VARDECS (fundef));
 
-        DBUG_PRINT_TAG ("INFDFMS_ALL", "no DFM base found -> created (" F_PTR ")",
-                        (void *)FUNDEF_DFM_BASE (fundef));
+        DBUG_PRINT ("no DFM base found -> created (" F_PTR ")",
+                    (void *)FUNDEF_DFM_BASE (fundef));
     } else {
         FUNDEF_DFM_BASE (fundef) = DFMupdateMaskBase (old_dfm_base, FUNDEF_ARGS (fundef),
                                                       FUNDEF_VARDECS (fundef));
@@ -614,8 +622,8 @@ EnsureDFMbase (node *fundef)
         DBUG_ASSERT (FUNDEF_DFM_BASE (fundef) == old_dfm_base,
                      "address of DFM base has changed during update!");
 
-        DBUG_PRINT_TAG ("INFDFMS_ALL", "DFM base found -> updated (" F_PTR ")",
-                        (void *)FUNDEF_DFM_BASE (fundef));
+        DBUG_PRINT ("DFM base found -> updated (" F_PTR ")",
+                    (void *)FUNDEF_DFM_BASE (fundef));
     }
 
     DBUG_RETURN (fundef);
@@ -805,6 +813,8 @@ AdjustMasksDo_Pre (info *arg_info, node *arg_node)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Adjust mask for do-loop...");
+
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_do, "wrong node type found!");
 
     /*
@@ -942,7 +952,7 @@ InferMasksWith (node *arg_node, info *arg_info)
      */
 
     DBUG_EXECUTE (fprintf (stderr, ">>>  %s entered", NODE_TEXT (arg_node));
-                  DbugPrintMasks (arg_info));
+                  DbugPrintMasks (arg_info););
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -1261,6 +1271,8 @@ InferMasks (dfmask_t **in, dfmask_t **out, dfmask_t **local, node *arg_node,
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Infer masks for cond/loop-fun...");
+
     if (INFO_ATTACHATTRIBS (arg_info) && INFO_FIRST (arg_info)) {
         /*
          * first traversal
@@ -1299,6 +1311,10 @@ InferMasks (dfmask_t **in, dfmask_t **out, dfmask_t **local, node *arg_node,
     new_in = INFO_IN (arg_info);
     new_out = INFO_OUT (arg_info);
     new_local = INFO_LOCAL (arg_info);
+
+    DBUG_ASSERT (DFMtest2MaskBases (old_in, new_in), "test1");
+    DBUG_ASSERT (DFMtest2MaskBases (old_out, new_out), "test2");
+    DBUG_ASSERT (DFMtest2MaskBases (old_local, new_local), "test3");
 
     if (INFO_ATTACHATTRIBS (arg_info)) {
         /*
@@ -1636,6 +1652,7 @@ INFDFMSid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("inspecting N_id %s...", ID_NAME (arg_node));
     arg_info = UsedVar (arg_info, ID_AVIS (arg_node));
 
     DBUG_RETURN (arg_node);
@@ -1682,10 +1699,13 @@ INFDFMSwith2 (node *arg_node, info *arg_info)
     dfmask_t *out;
 
     DBUG_ENTER ();
+    DBUG_PRINT ("inferring masks for N_with2...");
 
     arg_node = InferMasks (&WITH2_IN_MASK (arg_node), &WITH2_OUT_MASK (arg_node),
                            &WITH2_LOCAL_MASK (arg_node), arg_node, arg_info,
                            InferMasksWith2, FALSE);
+
+    DBUG_PRINT ("done inferring masks...");
 
     out = WITH2_OUT_MASK (arg_node);
     DBUG_ASSERT (((out == NULL) || (DFMgetMaskEntryAvisSet (out) == NULL)),
@@ -1700,10 +1720,13 @@ INFDFMSwith (node *arg_node, info *arg_info)
     dfmask_t *out;
 
     DBUG_ENTER ();
+    DBUG_PRINT ("inferring masks for N_with...");
 
     arg_node = InferMasks (&WITH_IN_MASK (arg_node), &WITH_OUT_MASK (arg_node),
                            &WITH_LOCAL_MASK (arg_node), arg_node, arg_info,
                            InferMasksWith, FALSE);
+
+    DBUG_PRINT ("done inferring masks...");
 
     out = WITH_OUT_MASK (arg_node);
     DBUG_ASSERT (((out == NULL) || (DFMgetMaskEntryAvisSet (out) == NULL)),
@@ -1718,10 +1741,13 @@ INFDFMSwith3 (node *arg_node, info *arg_info)
     dfmask_t *out;
 
     DBUG_ENTER ();
+    DBUG_PRINT ("inferring masks for N_with3...");
 
     arg_node = InferMasks (&(WITH3_IN_MASK (arg_node)), &(WITH3_OUT_MASK (arg_node)),
                            &(WITH3_LOCAL_MASK (arg_node)), arg_node, arg_info,
                            InferMasksWith3, FALSE);
+
+    DBUG_PRINT ("done inferring masks...");
 
     out = WITH3_OUT_MASK (arg_node);
     DBUG_ASSERT (((out == NULL) || (DFMgetMaskEntryAvisSet (out) == NULL)),

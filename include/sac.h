@@ -109,6 +109,7 @@
 #include "libsac/profile/profile_memory.h"
 #include "libsac/profile/profile_ops.h"
 #include "libsac/profile/profile_print.h"
+#include "libsac/profile/profile_cuda.h"
 #include "libsac/hwloc/cpubind.h"
 #include "libsac/hwloc/cudabind.h"
 

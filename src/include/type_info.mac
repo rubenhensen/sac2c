@@ -183,6 +183,9 @@ TYP_IF (T_double_dev, "double_dev", "double_dev", "dd", COcv2Double, COcv2CvDoub
         COcv2StrDouble, sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT,
         unused, C_btother)
 
+TYP_IF (T_bool_shmem, "bool_shmem", "bool_shmem", "blsh", COcv2Bool, COcv2CvBool, COcv2StrBool,
+        sizeof (bool), COzipCvBool, CObaseCvBool, MUTC_SC_INT, unused, C_btother)
+
 TYP_IF (T_int_shmem, "int_shmem", "int_shmem", "ish", COcv2Num, COcv2CvInt, COcv2StrInt,
         sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused, C_btother)
 
@@ -201,6 +204,9 @@ TYP_IF (T_float_shmem, "float_shmem", "float_shmem", "fsh", COcv2Float, COcv2CvF
 TYP_IF (T_double_shmem, "double_shmem", "double_shmem", "dsh", COcv2Double, COcv2CvDouble,
         COcv2StrDouble, sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT,
         unused, C_btother)
+
+TYP_IF (T_bool_dist, "bool_dist", "bool_dist", "bldi", COcv2Bool, COcv2CvBool, COcv2StrBool,
+        sizeof (bool), COzipCvBool, CObaseCvBool, MUTC_SC_INT, unused, C_btother)
 
 TYP_IF (T_int_dist, "int_dist", "int_dist", "idi", COcv2Num, COcv2CvInt, COcv2StrInt,
         sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused, C_btother)

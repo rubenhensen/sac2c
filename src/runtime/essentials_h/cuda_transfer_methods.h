@@ -18,5 +18,6 @@
 #define SAC_CA_cureg 1
 #define SAC_CA_cualloc 2
 #define SAC_CA_cuman 3
+#define SAC_CA_cumanp 4
 
 #endif /* _SAC_CUDA_TRANSFER_METHODS_H */

@@ -125,6 +125,7 @@ PrintGlobalSwitches (void)
     PRINT_OPT_SWITCH (SAC_DO_PROFILE_LIB,     global.profile.lib);
     PRINT_OPT_SWITCH (SAC_DO_PROFILE_MEM,     global.profile.mem);
     PRINT_OPT_SWITCH (SAC_DO_PROFILE_OPS,     global.profile.ops);
+    PRINT_OPT_SWITCH (SAC_DO_PROFILE_CUDA,    global.profile.cuda);
     PRINT_OPT_SWITCH (SAC_DO_PROFILE_DISTMEM, global.profile.distmem);
     fprintf (global.outfile, "\n");
 
@@ -204,6 +205,9 @@ PrintGlobalSwitches (void)
     fprintf (global.outfile, "/*\n * Debugging Support\n */\n");
     PRINT_OPT_SWITCH (SAC_DEBUG_RC, global.debug_rc);
     fprintf (global.outfile, "\n");
+
+    /* XXX we have this always on for the moment */
+    fprintf (global.outfile, "#define SAC_DO_CUDA_FORCE_INIT 1\n");
 
     fprintf (global.outfile, "\n\n"
                              "/*\n"
@@ -557,6 +561,8 @@ PrintIncludes (void)
                              "#include <cuda.h>\n\n");
     fprintf (global.outfile, "\n"
                              "#include <cuda_runtime.h>\n\n");
+    fprintf (global.outfile, "\n"
+                             "#include <algorithm>\n\n");
     fprintf (global.outfile, "#endif\n");
 
     DBUG_RETURN ();

@@ -7,6 +7,7 @@
 #include "traverse_inject.h"
 #include "globals.h"
 #include "rtspec_modes.h"
+#include "str.h"
 
 
 /*

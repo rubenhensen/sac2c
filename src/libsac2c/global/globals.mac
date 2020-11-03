@@ -1334,19 +1334,11 @@ GLOBAL (bool, mutc_seq_data_parallel, FALSE, xfree_dummy, )
 /*
  * CUDA backend options
  */
-GLOBAL (int, optimal_threads, 0, xfree_dummy, ) /* optimal number of threads per block */
-GLOBAL (int, optimal_blocks, 0, xfree_dummy, )  /* optimal number of  blocks per SM */
-GLOBAL (int, cuda_1d_block_x, 0, xfree_dummy, )
-GLOBAL (int, cuda_1d_block_large, 0, xfree_dummy, )
-GLOBAL (int, cuda_1d_block_small, 0, xfree_dummy, )
-GLOBAL (int, cuda_2d_block_x, 0, xfree_dummy, )
-GLOBAL (int, cuda_2d_block_y, 0, xfree_dummy, )
-GLOBAL (int, cuda_blocking_factor, 0, xfree_dummy, )
-GLOBAL (unsigned int, cuda_max_x_grid, 0, xfree_dummy, )
-GLOBAL (unsigned int, cuda_max_yz_grid, 0, xfree_dummy, ) /* for both the Y and Z dimensions */
-GLOBAL (unsigned int, cuda_max_xy_block, 0, xfree_dummy, )
-GLOBAL (unsigned int, cuda_max_z_block, 0, xfree_dummy, )
-GLOBAL (unsigned int, cuda_max_threads_block, 0, xfree_dummy, )
+GLOBAL (cuda_options_t, cuda_options, cuda_options_init, xfree_dummy, )
+GLOBAL (cuda_arch_t, cuda_arch, CUDA_SM35, xfree_dummy, )
+GLOBAL (cuda_async_mode_t, cuda_async_mode, CUDA_SYNC_DEVICE, xfree_dummy, )
+GLOBAL (const char **, cuda_arch_names, cuda_arch_names_init, xfree_dummy, )
+GLOBAL (char *, cuda_block_spec, (char *)MEMmalloc (1024), xfree_char_ptr, )
 
 /*
  * DistMem backend options

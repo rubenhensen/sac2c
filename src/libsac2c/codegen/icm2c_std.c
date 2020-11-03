@@ -2098,6 +2098,8 @@ ICMCompileND_ASSIGN__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sd
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("create shape assign of %s to %s", to_NT, from_NT);
+
 #define ND_ASSIGN__SHAPE
 #include "icm_comment.c"
 #include "icm_trace.c"
