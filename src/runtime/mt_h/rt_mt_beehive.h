@@ -176,6 +176,8 @@
     memcpy (SAC_ND_A_DESC (var_NT), SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc,        \
             BYTE_SIZE_OF_DESC (                                                          \
               DESC_DIM (SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc)));
+
+//    DESC_RC (SAC_ND_A_DESC (var_NT)) = 2;
 #endif
 
 /* SCL & HID: create a new descriptor on stack */
