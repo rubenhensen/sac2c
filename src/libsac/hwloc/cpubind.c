@@ -407,6 +407,6 @@ SAC_HWLOC_cleanup ()
 #else /* ENABLE_HWLOC */
 
 // compiling an empty file causes errors to be issued, this resolves it.
-static int this_translation_unit = 0xdead;
+static const int this_translation_unit = 0xdeadbeef;
 
 #endif /* ENABLE_HWLOC */
