@@ -52,6 +52,7 @@ struct INFO {
     node *vardecs;
     node *rets;
     node *retexprs;
+    node *neutrals;
     bool collect :1;
     bool lift:1;
     bool withid :1;
@@ -71,6 +72,7 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_RETS(n) ((n)->rets)
 #define INFO_RETEXPRS(n) ((n)->retexprs)
+#define INFO_NEUTRALS(n) ((n)->neutrals)
 #define INFO_COLLECT(n) ((n)->collect)
 #define INFO_LIFT(n) ((n)->lift)
 #define INFO_WITHID(n) ((n)->withid)
@@ -98,6 +100,7 @@ MakeInfo (void)
     INFO_VARDECS (result) = NULL;
     INFO_RETS (result) = NULL;
     INFO_RETEXPRS (result) = NULL;
+    INFO_NEUTRALS (result) = NULL;
     INFO_COLLECT (result) = FALSE;
     INFO_LIFT (result) = FALSE;
     INFO_WITHID (result) = FALSE;
@@ -652,6 +655,44 @@ MTSPMDFwithid (node *arg_node, info *arg_info)
     WITHID_IDXS (arg_node) = TRAVopt (WITHID_IDXS (arg_node), arg_info);
 
     INFO_WITHID (arg_info) = FALSE;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn node *MTSPMDFfold( node *arg_node, info *arg_info)
+ *
+ *    @brief traversal function for N_fold node
+ *      Here, we need to identify the neutral element(s) and generate
+ *      _dec_rc_free( neutral) operation(s) that we collect in
+ *      INFO_NEUTRALS (arg_info).
+ *
+ *    @param arg_node
+ *    @param arg_info
+ *
+ *    @return arg_node
+ *
+ ******************************************************************************/
+
+node *
+MTSPMDFfold (node *arg_node, info *arg_info)
+{
+    node * neutr;
+    node * dec_rc;
+    DBUG_ENTER ();
+    
+    if (INFO_COLLECT (arg_info)) {
+        neutr = FOLD_NEUTRAL (arg_node);
+        DBUG_ASSERT ((NODE_TYPE (neutr) == N_id),
+                     "non N_id neutral element in fold found");
+        dec_rc = TCmakePrf2 (F_dec_rc, TBmakeId (ID_AVIS (neutr)), TBmakeNum (1));
+        INFO_NEUTRALS (arg_info) = TBmakeAssign (TBmakeLet (NULL, dec_rc),
+                                                 INFO_NEUTRALS (arg_info));
+        
+        // Finally we traverse all sons (including the neutral!)
+        arg_node = TRAVcont (arg_node, arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
