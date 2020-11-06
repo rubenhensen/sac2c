@@ -20,6 +20,110 @@
  *   The newly generated functions are inserted at the end of the fundef
  *   chain.
  *
+ *   In detail, this traversal is identifying WL assignments that will be 
+ *   parallelised and then it lifts the WL into an spmd-function. To do so,
+ *   the traversal is scanning such WLs for relatively free variables and
+ *   for local variables at the same time.
+ *   Relatively free variables are identified and collected as arguments
+ *   (INFO_ARGS) and parameters (INFO_PARAMS) for the spmd-function.
+ *   Local variables are collected for variable declarations in the new 
+ *   spmd functions (INFO_VARDECS). Note here, that it deliberately
+ *   excludes index variables (vectors, scalars, and IDXs) as these 
+ *   will be handled later: within the spmd-function during the traversal
+ *   MTRMI (restore memory instructions) and outside the spmd function 
+ *   by MTDCR (dead code removal).
+ *   Once the WL has been analysed and the relatively free and local variables
+ *   identified, the left hand side of the WL is scanned to identify the
+ *   return types (INFO_RETS) and the return variables (INFO_RETEXPRS).
+ *   Furthermore, these N_ids are also added to the VARDECS for generating 
+ *   a local variable declaration in the spmd-function body.
+ *
+ *   For example, we transform 
+ *
+ *      a = with {
+ *            ( lb <= iv < ub) {
+ *               res = max( b[iv]);
+ *            } : res;
+ *          } : genarray( [100], 0);
+ * 
+ *   into
+ *
+ *      a = spmdfun( lb, ub, b);
+ *
+ *   and a new fundtion
+ *
+ *      int[100] spmdfun( int[1] lb, int[1] ub, int[100,30] b)
+ *      {
+ *         int[100] a;
+ *         int res;
+ *    
+ *         a = with {
+ *               ( lb <= iv < ub) {
+ *                  res = max( b[iv]);
+ *               } : res;
+ *             } : genarray( [100], 0);
+ *         return a;
+ *      }
+ *
+ *   Note, that we always deal with N_with2 here and that this also ensures
+ *   that the variable holding the memory for the result is identified as 
+ *   relatively free variable :-)
+ *
+ *   Finally, this phase makes one more change. It deals with a subtle issue
+ *   that occurs in the context of fold-WLs with non-scalar neutral elements:
+ *
+ *   The memory handling is done in the mem-phase which preceeds the mt Phase.
+ *   The idea is that the choice as to whether do a WL sequential or in parallel
+ *   does not majorly effect the memory handling. Relatively free variables 
+ *   are kept alive until after the WL anyways and local variables are simply
+ *   replicated across the threads. The only way for a local variable to evade
+ *   the WL is through a fold-WL which will elide all but exactly one such 
+ *   variable and, hence, works with the same memory assumptions in both cases,
+ *   seq and mt.
+ *   Unfortunately, there is one exception: the desire to maximise reuse, the
+ *   memory management of Fold-WLs allows the neutral elements to be reused
+ *   for the accumulator whenever the fold operations permits this.
+ *   While this is certainly desireable in case of a sequential execution
+ *   (here it even would allow for suballoc within nested WLs), it breaks
+ *   in the context of mt executions. Here, the neutral element is classified
+ *   as relatively free variable, and it is assumed to survive the WL....
+ *   While our noRC in parallel WL bodies regime enables survival of the neutral
+ *   element, the non-mt aware mem phase assumes that the neutral element is
+ *   consumed *within* the WL. To avoid a space leak due to a parallel WL,
+ *   we need to inject a _dec_rc_(neutral, 1) directly after the call to the 
+ *   spmd function. This is done in this phase as well.
+ *
+ *   So, for example we transform
+ *
+ *      neutr = [0,0,0];
+ *      a = with {
+ *            ( lb <= iv < ub) {
+ *               res = foo( b[iv]);
+ *            } : res;
+ *          } : fold( +, neutr);
+ *
+ *   into
+ *
+ *      neutr = [0,0,0];
+ *      a = spmdfun (lb, ub, b);
+ *      _dec_rc_ (neutr, 1)        <<<< MT-only parallel fold mem adjustment
+ *
+ *   and a new function
+ *
+ *      int[3] spmdfun( int[1] lb, int[1] ub, int[100,3] b, int[3] neutr)
+ *      {
+ *         int[3] a;
+ *         int[3] res;
+ *
+ *         a = with {
+ *               ( lb <= iv < ub) {
+ *                  res = foo( b[iv]);
+ *               } : res;
+ *             } : fold( +, neutr);
+ *         return a;
+ *      }
+ *
+ *      
  *****************************************************************************/
 
 #include "create_spmd_funs.h"
@@ -340,6 +444,34 @@ MTSPMDFdo (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
+MTSPMDFassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+
+    if (INFO_LIFT (arg_info)) {
+        if (INFO_NEUTRALS (arg_info) != NULL) {
+           ASSIGN_NEXT (arg_node) = TCappendAssign( INFO_NEUTRALS (arg_info),
+                                                    ASSIGN_NEXT (arg_node));
+           INFO_NEUTRALS (arg_info) = NULL;
+        }
+
+        INFO_LIFT (arg_info) = FALSE;
+    }
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *MTSPMDFlet( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
 MTSPMDFlet (node *arg_node, info *arg_info)
 {
     node *spmd_fundef, *spmd_ap;
@@ -362,8 +494,6 @@ MTSPMDFlet (node *arg_node, info *arg_info)
 
         LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
         LET_EXPR (arg_node) = spmd_ap;
-
-        INFO_LIFT (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);

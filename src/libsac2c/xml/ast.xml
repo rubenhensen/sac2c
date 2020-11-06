@@ -3295,6 +3295,7 @@
         <node name="Withs" />
         <node name="With2" />
         <node name="With" />
+        <node name="Assign" />
         <node name="Let" />
         <node name="Id" />
         <node name="Ids" />
