@@ -170,23 +170,31 @@
 #define SAC_MT_RECEIVE_PARAM_in__DESC(spmdfun, num, basetype, var_NT)                    \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
     SAC_ND_A_FIELD (var_NT) = SAC_MT_SELF_FRAME (spmdfun)->in_##num;                     \
+    SAC_TR_MEM_PRINT (("shadowing desc of %s at addr: %p in MT_RECEIVE_PARAM_in",        \
+                      NT_STR (var_NT), SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc))    \
     SAC_ND_DESC_TYPE (var_NT)                                                            \
     SAC_ND_A_DESC (var_NT) = (SAC_ND_DESC_TYPE (var_NT))alloca (                         \
       BYTE_SIZE_OF_DESC (DESC_DIM (SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc)));      \
     memcpy (SAC_ND_A_DESC (var_NT), SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc,        \
             BYTE_SIZE_OF_DESC (                                                          \
-              DESC_DIM (SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc)));
-
-//    DESC_RC (SAC_ND_A_DESC (var_NT)) = 2;
+              DESC_DIM (SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc)));                 \
+    SAC_TR_MEM_PRINT (("allocating stack desc for %s at addr: %p in MT_RECEIVE_PARAM_in",\
+                      NT_STR (var_NT), SAC_ND_A_DESC (var_NT)))                          \
+    SAC_ND_INIT__RC (var_NT, 2)
 #endif
 
 /* SCL & HID: create a new descriptor on stack */
 #define SAC_MT_RECEIVE_PARAM_in__NEWDESC(spmdfun, num, basetype, var_NT)                 \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
     SAC_ND_A_FIELD (var_NT) = SAC_MT_SELF_FRAME (spmdfun)->in_##num;                     \
+    SAC_TR_MEM_PRINT (("shadowing desc of %s at addr: %p in MT_RECEIVE_PARAM_in"         \
+                       "__NEWDESC", NT_STR (var_NT),                                     \
+                       SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc))                    \
     SAC_ND_DESC_TYPE (var_NT)                                                            \
     SAC_ND_A_DESC (var_NT)                                                               \
       = (SAC_ND_DESC_TYPE (var_NT))alloca (SIZE_OF_DESC (0) * sizeof (int));             \
+    SAC_TR_MEM_PRINT (("allocating stack desc for %s at addr: %p in MT_RECEIVE_PARAM_in",\
+                      NT_STR (var_NT), SAC_ND_A_DESC (var_NT)))                          \
     SAC_ND_INIT__RC (var_NT, 2);
 
 /* no descriptor */
@@ -209,6 +217,8 @@
 #define SAC_MT_RECEIVE_PARAM_inout__DESC(spmdfun, num, basetype, var_NT)                 \
     SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
       = SAC_MT_SELF_FRAME (spmdfun)->in_##num;                                           \
+    SAC_TR_MEM_PRINT (("shadowing desc of %s at addr: %p in MT_RECEIVE_PARAM_inout",     \
+                      NT_STR (var_NT), *SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc))   \
     SAC_ND_DESC_TYPE (var_NT)                                                            \
     CAT0 (SAC_ND_A_DESC (var_NT), __s) = (SAC_ND_DESC_TYPE (var_NT))alloca (             \
       BYTE_SIZE_OF_DESC (DESC_DIM (*SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc)));     \
@@ -216,8 +226,13 @@
             *SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc,                               \
             BYTE_SIZE_OF_DESC (                                                          \
               DESC_DIM (*SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc)));                \
+    SAC_TR_MEM_PRINT (("allocating stack desc for %s at addr: %p in MT_RECEIVE_PARAM"    \
+                       "_inout", NT_STR (var_NT), CAT0 (SAC_ND_A_DESC (var_NT), __s)))   \
     SAC_ND_DESC_TYPE (var_NT) * SAC_NAMEP (SAC_ND_A_DESC (var_NT))                       \
-      = &CAT0 (SAC_ND_A_DESC (var_NT), __s);
+      = &CAT0 (SAC_ND_A_DESC (var_NT), __s);                                             \
+    DESC_RC (CAT0 (SAC_ND_A_DESC (var_NT), __s)) = 2;                                    \
+    SAC_TR_REF_PRINT (("refcnt of %s at address %p: %d",                                 \
+                       NT_STR (var_NT), CAT0 (SAC_ND_A_DESC (var_NT), __s), 2))
 #endif
 
 /* SCL & HID: create a new descriptor on stack */
