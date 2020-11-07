@@ -8,7 +8,8 @@
  *
  *   We traverse each ST function body and look for with-loops to be
  *   parallelised. Each such with-loop is then lifted into a separate
- *   function definition. These newly created fundefs are named and tagged
+ *   function definition and the with-loop itself is replaced by a 
+ *   call of that function. The newly created fundefs are named and tagged
  *   SPMD functions. These functions will later implement switching from
  *   single-threaded execution to multithreaded execution and vice versa.
  *
@@ -17,26 +18,34 @@
  *   and their types, is gathered during a full traversal of each with-loop
  *   tagged for multithreaded execution.
  *
- *   The newly generated functions are inserted at the end of the fundef
- *   chain.
+ *   The PARAMETERS/ARGS of the spmd functions are inferred by looking for
+ *   RELATIVELY FREE VARIABLES within the with-loop. This includes not only
+ *   RFVs in the code but also within the generators and operators of the
+ *   with-loop making sure that we capture things such as bounds, neutral
+ *   elements, or the memory for the result of genarray with loops.
  *
- *   In detail, this traversal is identifying WL assignments that will be 
- *   parallelised and then it lifts the WL into an spmd-function. To do so,
- *   the traversal is scanning such WLs for relatively free variables and
- *   for local variables at the same time.
- *   Relatively free variables are identified and collected as arguments
- *   (INFO_ARGS) and parameters (INFO_PARAMS) for the spmd-function.
- *   Local variables are collected for variable declarations in the new 
- *   spmd functions (INFO_VARDECS). Note here, that it deliberately
- *   excludes index variables (vectors, scalars, and IDXs) as these 
- *   will be handled later: within the spmd-function during the traversal
- *   MTRMI (restore memory instructions) and outside the spmd function 
- *   by MTDCR (dead code removal).
- *   Once the WL has been analysed and the relatively free and local variables
- *   identified, the left hand side of the WL is scanned to identify the
- *   return types (INFO_RETS) and the return variables (INFO_RETEXPRS).
- *   Furthermore, these N_ids are also added to the VARDECS for generating 
- *   a local variable declaration in the spmd-function body.
+ *   Although index variables (vectors, scalars, and IDXs) are RFVs as well
+ *   they require special treatment. They need to be thread local and are
+ *   treated as such (see below). Furthermore, their handling needs to be
+ *   shifted from the calling context into the lifted function. Code
+ *   for handling their memory will be generated in the spmd functions
+ *   through a later traversal MTRMI (restore memory instructions).
+ *   The redundant declarations of these in the calling context are being
+ *   taken care of in yet another traversal named MTDCR (dead code removal).
+ *
+ *   The RETURN VALUES and types of the spmd functions are taken from
+ *   the left hand side of the with-loops.
+ * 
+ *   For all LOCAL VARIABLES needed in the new spmd functions we collect
+ *   those variables that are being locally defined within the with loop
+ *   body. We add to these the left hand side variables of the with-loop
+ *   and, for fold with loops, we provide freshly named temporary variables
+ *   for each return value. These are needed for the fold operation within
+ *   the synchronisation barrier.
+ *
+ *   Finally, the newly generated functions are inserted at the end of the
+ *   fundef chain.
+ *
  *
  *   For example, we transform 
  *
@@ -50,12 +59,13 @@
  *
  *      a = spmdfun( lb, ub, b);
  *
- *   and a new fundtion
+ *   and a new function
  *
  *      int[100] spmdfun( int[1] lb, int[1] ub, int[100,30] b)
  *      {
  *         int[100] a;
  *         int res;
+ *         int[1] iv;
  *    
  *         a = with {
  *               ( lb <= iv < ub) {
@@ -65,33 +75,52 @@
  *         return a;
  *      }
  *
- *   Note, that we always deal with N_with2 here and that this also ensures
- *   that the variable holding the memory for the result is identified as 
- *   relatively free variable :-)
+ *   Note, that in the implementation we always deal with N_with2 here and
+ *   that this also ensures that the variable holding the memory for the
+ *   result is identified as relatively free variable :-)
  *
  *   Finally, this phase makes one more change. It deals with a subtle issue
  *   that occurs in the context of fold-WLs with non-scalar neutral elements:
  *
- *   The memory handling is done in the mem-phase which preceeds the mt Phase.
- *   The idea is that the choice as to whether do a WL sequential or in parallel
- *   does not majorly effect the memory handling. Relatively free variables 
- *   are kept alive until after the WL anyways and local variables are simply
- *   replicated across the threads. The only way for a local variable to evade
- *   the WL is through a fold-WL which will elide all but exactly one such 
- *   variable and, hence, works with the same memory assumptions in both cases,
- *   seq and mt.
- *   Unfortunately, there is one exception: the desire to maximise reuse, the
+ *   To understand the issue, we need to understand how this phase relates to
+ *   the memory management in SaC.
+ *   The memory handling is done in the mem-phase which precedes the mt phase.
+ *   The idea is that the choice as to whether we execute a WL sequentially or
+ *   in parallel does not majorly effect the memory handling.
+ *   Relatively free variables are kept alive until after the WL is completed
+ *   in both scenarios (seq and mt); so there is no need to adjust that when
+ *   switching from seq to mt.
+ *   By lifting the local variables from the calling context into the spmd
+ *   function we implicitly replicate all those across the threads.
+ *   For most of these variables, this does not change anything as WL local
+ *   variables typically cannot evade the scope of the WL and, therefore, a
+ *   replication of the entire WL body is exactly what is needed.
+ *
+ *   However, there is one potential way for such a replicated local variable
+ *   to evade the scope of the WL and that is through a fold-WL. In such a
+ *   scenario, it is still not possible for all replicas to evade but, due
+ *   to the folding operation, exactly one non-deterministically chosen replica
+ *   can evade. Given this, it may seem that the memory assumptions for fold WLs
+ *   can be carried over unchanged from seq to mt as well.
+ *
+ *   Unfortunately, this is not quite the case. In order to maximise reuse, the
  *   memory management of Fold-WLs allows the neutral elements to be reused
  *   for the accumulator whenever the fold operations permits this.
- *   While this is certainly desireable in case of a sequential execution
+ *   While this is certainly desirable in case of a sequential execution
  *   (here it even would allow for suballoc within nested WLs), it breaks
  *   in the context of mt executions. Here, the neutral element is classified
- *   as relatively free variable, and it is assumed to survive the WL....
- *   While our noRC in parallel WL bodies regime enables survival of the neutral
+ *   as relatively free variable, and it is assumed to survive the WL. (This
+ *   is inevitable since we could reuse the neutral element for one thread
+ *   at most anyways)
+ *   While our noRC-in-parallel-WL-bodies regime enables survival of the neutral
  *   element, the non-mt aware mem phase assumes that the neutral element is
- *   consumed *within* the WL. To avoid a space leak due to a parallel WL,
- *   we need to inject a _dec_rc_(neutral, 1) directly after the call to the 
- *   spmd function. This is done in this phase as well.
+ *   always consumed *within* the WL, either by reuse or by discarding.
+ *   Consequently, we cannot simply lift fold with-loops without adjusting
+ *   the memory management of the neutral element. If we did, we would 
+ *   generate a space leak on the neutral elements of parallel fold with
+ *   loops. We resolve this problem by injecting a _dec_rc_(neutral, 1)
+ *   directly after the call to the spmd function.
+ *   This is done in this phase as well.
  *
  *   So, for example we transform
  *
@@ -112,8 +141,10 @@
  *
  *      int[3] spmdfun( int[1] lb, int[1] ub, int[100,3] b, int[3] neutr)
  *      {
+ *         int[3] fresh_tmp_a;
  *         int[3] a;
  *         int[3] res;
+ *         int[1] iv;
  *
  *         a = with {
  *               ( lb <= iv < ub) {
@@ -123,7 +154,40 @@
  *         return a;
  *      }
  *
- *      
+ *
+ * implementation:
+ *   Most of the analysis is happening in MTSPMDFid and in MTSPMDFids. Here,
+ *   the RFVs and local vars are being identified, and the corresponding parts
+ *   of the new code are being created. 
+ *   RFVs are being transformed into parameters (collected in INFO_PARAMS) and
+ *   argument expressions (collected in INFO_ARGS). Local variables are 
+ *   transformed into variable declarations (collected in INFO_VARDECS).
+ *   Key to this process is the use of a LUT. Here we keep pointers to 
+ *   N_avis nodes that we have encountered already. For each such entry
+ *   we create a duplicate of the N_avis and hold that in the LUT as well.
+ *   Later, when doing the actual function creation, we exchange all 
+ *   old N_avis nodes by the new ones using that very LUT.
+ *   This also allows us to avoid unnecessary duplicates when encountering
+ *   the same variable more than once and it allows us to disambiguate
+ *   RFVs from uses of local variables.
+ *   The actual checking and code generation for the two cases
+ *   (RFVs and local vars) are being done in local helper functions
+ *      void HandleLocal( node *avis, info *arg_info)     and
+ *      void HandleUse( node *avis, info *arg_info)
+ *
+ *   We use a flag INFO_COLLECT to indicate when we are traversing a 
+ *   with loop that we want to lift out. It is being set before traversing
+ *   the body of a to be parallelised with-loops and is reset once the 
+ *   N_assign of that with-loop is being reached on the way back up.
+ *   The actual function creation is done by a helper function
+ *      node * CreateSpmdFundef (node *arg_node, info *arg_info)
+ *   which is initiated on the N_let level.
+ *
+ *   To facilitate the fold with loop memory adjustment, we generate that
+ *   code when traversing N_fold and put it into INFO_NEUTRALS.
+ *   This code is eventually inserted after the spmd function call in 
+ *   MTSPMDFassign.
+ *
  *****************************************************************************/
 
 #include "create_spmd_funs.h"
@@ -281,6 +345,68 @@ CreateAuxiliaryVardecsFromRetExprs (node *retexprs)
     TRAVpop ();
 
     DBUG_RETURN (vardecs);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static void HandleLocal( node *avis, info *arg_info)
+ *
+ * @brief checks whether the N_avis is already in the LUT;
+ *   if not, it creates a copy, inserts the pair into the LUT, and it creates
+ *   a vardec in INFO_VARDECS
+ *
+ *****************************************************************************/
+
+static void HandleLocal( node *avis, info *arg_info)
+{
+    node * new_avis;
+
+    DBUG_ENTER ();
+    if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
+        DBUG_PRINT ("  Not handled before...");
+        new_avis = DUPdoDupNode (avis);
+        INFO_VARDECS (arg_info)
+          = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
+        INFO_LUT (arg_info)
+          = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
+
+        DBUG_PRINT (">>> local %s added to LUT", AVIS_NAME (avis));
+    }
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static void HandleUse( node *avis, info *arg_info)
+ *
+ * @brief checks whether the N_avis is already in the LUT;
+ *   if not the variable is deemed RFV and it creates a copy, inserts the pair
+ *   into the LUT, and it creates an N_arg of the new avis in INFO_ARGS and
+ *    an N_id of the old one in INFO_PARAMS.
+ *
+ *****************************************************************************/
+
+static void HandleUse( node *avis, info *arg_info)
+{
+    node *new_avis;
+
+    DBUG_ENTER ();
+    if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
+        DBUG_PRINT ("  Not handled before...");
+        /*
+         * A right hand side variable that has not been handled before must be a
+         * free variable of the with-loop and that means it needs to become a
+         * parameter of the spmd function to be created.
+         */
+        new_avis = DUPdoDupNode (avis);
+
+        INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
+        INFO_PARAMS (arg_info)
+          = TBmakeExprs (TBmakeId (avis), INFO_PARAMS (arg_info));
+        INFO_LUT (arg_info)
+          = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
+    }
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -514,7 +640,7 @@ MTSPMDFlet (node *arg_node, info *arg_info)
 node *
 MTSPMDFid (node *arg_node, info *arg_info)
 {
-    node *avis, *new_avis;
+    node *avis;
 
     DBUG_ENTER ();
 
@@ -528,33 +654,9 @@ MTSPMDFid (node *arg_node, info *arg_info)
              * As a withid this N_id node actually represents a left hand side variable.
              */
             DBUG_PRINT ("...is Withid-id");
-
-            if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
-                DBUG_PRINT ("  Not handled before...");
-                new_avis = DUPdoDupNode (avis);
-                INFO_VARDECS (arg_info)
-                  = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
-                INFO_LUT (arg_info)
-                  = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
-
-                DBUG_PRINT (">>> ids %s added to LUT", ID_NAME (arg_node));
-            }
+            HandleLocal (avis, arg_info);
         } else {
-            if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
-                DBUG_PRINT ("  Not handled before...");
-                /*
-                 * A right hand side variable that has not been handled before must be a
-                 * free variable of the with-loop and that means it needs to become a
-                 * parameter of the spmd function to be created.
-                 */
-                new_avis = DUPdoDupNode (avis);
-
-                INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
-                INFO_PARAMS (arg_info)
-                  = TBmakeExprs (TBmakeId (avis), INFO_PARAMS (arg_info));
-                INFO_LUT (arg_info)
-                  = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
-            }
+            HandleUse (avis, arg_info);
         }
     }
 
@@ -582,32 +684,20 @@ MTSPMDFids (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     avis = IDS_AVIS (arg_node);
-    new_avis = NULL;
 
     DBUG_PRINT ("ENTER ids %s", IDS_NAME (arg_node));
 
     if (INFO_COLLECT (arg_info)) {
-        if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
-            new_avis = DUPdoDupNode (avis);
-            INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
-            INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
-            DBUG_PRINT (">>> ids %s added to LUT", IDS_NAME (arg_node));
-        }
+        HandleLocal (avis, arg_info);
     } else {
         if (INFO_LIFT (arg_info)) {
             /*
              * If INFO_LIFT is true, we are on the LHS of the assignment which has the
              * MT-Withloop on the RHS.
              */
-            new_avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), avis);
+            HandleLocal (avis, arg_info);
 
-            if (new_avis == avis) {
-                new_avis = DUPdoDupNode (avis);
-                INFO_LUT (arg_info)
-                  = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
-                INFO_VARDECS (arg_info)
-                  = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
-            }
+            new_avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), avis);
 
             INFO_RETS (arg_info)
               = TCappendRet (INFO_RETS (arg_info),
