@@ -1,0 +1,23 @@
+//
+// This tests makes sure that the MT backend code-generation is working.
+//
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -t mt_pth
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(CALL_SAC2C) $< -bmt -printfun main > tutu
+// SAC_TEST|<tab>cat tutu | $(GREP_COMMAND_OUTPUT) "_mtspmdf_" 1
+// SAC_TEST|<tab>cat tutu | $(GREP_COMMAND_OUTPUT) "_dec_rc_" 1
+
+#include "mini-stdlib.sac"
+
+int main ()
+{
+    a = with {
+        ([0] <= [i] < [10000]) : i;
+      } : fold (+, 0);
+
+    return a;
+}
