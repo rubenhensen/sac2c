@@ -676,23 +676,25 @@ SCHprintScheduling (FILE *outfile, sched_t *sched)
     if (sched != NULL) {
         fprintf (outfile, "%s( ", sched->discipline);
 
-        for (i = 0; i < sched->num_args - 1; i++) {
-            switch (sched->args[i].arg_type) {
-            case AT_num:
-            case AT_num_for_id:
-                fprintf (outfile, "%d, ", sched->args[i].arg.num);
-                break;
-
-            case AT_id:
-                fprintf (outfile, "%s, ", sched->args[i].arg.id);
-                break;
-
-            default:
-                break;
-            }
-        }
+        DBUG_PRINT_TAG ("PRINT", "number of args: %zu\n", sched->num_args);
 
         if (sched->num_args > 0) {
+            for (i = 0; i < sched->num_args - 1; i++) {
+                switch (sched->args[i].arg_type) {
+                case AT_num:
+                case AT_num_for_id:
+                    fprintf (outfile, "%d, ", sched->args[i].arg.num);
+                    break;
+
+                case AT_id:
+                    fprintf (outfile, "%s, ", sched->args[i].arg.id);
+                    break;
+
+                default:
+                    break;
+                }
+            }
+
             switch (sched->args[sched->num_args - 1].arg_type) {
             case AT_num:
             case AT_num_for_id:

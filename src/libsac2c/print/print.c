@@ -5486,6 +5486,7 @@ PRTwlseg (node *arg_node, info *arg_info)
             INDENT;
         }
 
+        DBUG_PRINT( "printing scheduling");
         if (WLSEG_SCHEDULING (seg) != NULL) {
             if (global.compiler_subphase < PH_mt_mtas) {
                 fprintf (global.outfile, " * preliminary annotated scheduling: ");
@@ -5497,6 +5498,7 @@ PRTwlseg (node *arg_node, info *arg_info)
             INDENT;
         }
 
+        DBUG_PRINT( "printing task slector");
         if (WLSEG_TASKSEL (seg) != NULL) {
             if (global.compiler_subphase < PH_mt_mtas) {
                 fprintf (global.outfile, " * preliminary annotated taskselector: ");

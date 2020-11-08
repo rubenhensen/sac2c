@@ -12,8 +12,41 @@
  *   parallelised with-loop. This step becomes necessary as the original
  *   memory management instructions inserted in the mem phase are now in
  *   the wrong block or even in the wrong functions. MTDCR takes care of
- *   those and removes them.
+ *   those and removes them. See mtdcr.c for details on how that is done.
  *
+ *   More precisely, for each index vaiable "var" (vector, scalar, or IDX),
+ *   we create an
+ *       var = alloc (1, dim(var), shape(var));
+ *   immediately before the with-loop-assignment and a 
+ *       free (a);
+ *   immediately thereafter.
+ *
+ *   For example, 
+ *      res = with {
+ *               (. <= iv = [i,j] (IDX: _wlidx_4790_a <= .) : ....
+ *            } : ...
+ *   turns into:
+ *      iv = _alloc_ (1, 1, [2]);
+ *      i  = _alloc_ (1, 0, []);
+ *      j  = _alloc_ (1, 0, []);
+ *      _wlidx_4790_a  = _alloc_ (1, 0, []);
+ *      res = with {
+ *               (. <= iv = [i,j] (IDX: _wlidx_4790_a <= .) : ....
+ *            } : ...
+ *      free (iv);
+ *      free (i);
+ *      free (j);
+ *      free (_wlidx_4790_a);
+ *
+ * implementation:
+ *   The alloc and free assignments are being generated in MTRMIid whenever 
+ *   INFO_ALLOCNEEDED( arg_info) is TRUE.
+ *   The only time this is the case is when traversing through the sons of
+ *   N_withid in MTRMIwithid.
+ *   The generated alloc and free assignments are being inserted around the 
+ *   with-assignment in MTRMIassign.
+ *
+ *   NB: for the distmem backend some special support on N_withs is provided.
  *****************************************************************************/
 
 #include "restore_mem_instr.h"

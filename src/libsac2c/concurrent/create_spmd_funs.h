@@ -20,9 +20,11 @@ extern node *MTSPMDFvardec (node *arg_node, info *arg_info);
 extern node *MTSPMDFwiths (node *arg_node, info *arg_info);
 extern node *MTSPMDFwith2 (node *arg_node, info *arg_info);
 extern node *MTSPMDFwith (node *arg_node, info *arg_info);
+extern node *MTSPMDFassign (node *arg_node, info *arg_info);
 extern node *MTSPMDFlet (node *arg_node, info *arg_info);
 extern node *MTSPMDFid (node *arg_node, info *arg_info);
 extern node *MTSPMDFids (node *arg_node, info *arg_info);
 extern node *MTSPMDFwithid (node *arg_node, info *arg_info);
+extern node *MTSPMDFfold (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CREATE_SPMD_FUNS_H_ */

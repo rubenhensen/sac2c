@@ -1,0 +1,19 @@
+//
+// This tests makes sure that the MT backend code-generation is working.
+//
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -t mt_pth
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bmt -printfun main
+//
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(CALL_SAC2C) $< | $(GREP_COMMAND_OUTPUT) "_mtspmdf_" 1
+
+int main ()
+{
+    a = with {
+        (. <= [iv] <= .) : iv;
+      } : genarray ([1000], 1);
+
+    return _sel_VxA_ ([100], a);
+}

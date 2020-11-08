@@ -3295,10 +3295,12 @@
         <node name="Withs" />
         <node name="With2" />
         <node name="With" />
+        <node name="Assign" />
         <node name="Let" />
         <node name="Id" />
         <node name="Ids" />
         <node name="Withid" />
+        <node name="Fold" />
       </travuser>
     </traversal>
      <traversal id="RMPR" name="Remove propagates" default="sons" include="remove_propagates.h">
