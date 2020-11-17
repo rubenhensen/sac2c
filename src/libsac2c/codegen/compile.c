@@ -314,7 +314,7 @@ With3Folds (node *ids, node *ops)
  ******************************************************************************/
 
 static const char *
-GetBasetypeStr (types *type)
+GetBasetypeStr (ntype *type)
 {
     simpletype basetype;
     const char *str;
