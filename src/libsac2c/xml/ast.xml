@@ -4982,6 +4982,7 @@ N_tfarg :
         <flag name="IsLocal" default="TRUE"/>
         <flag name="IsUnique" />
         <flag name="IsAlias" />
+        <flag name="IsExternal" />
         <flag name="IsNested" />
       </flags>
     </node>

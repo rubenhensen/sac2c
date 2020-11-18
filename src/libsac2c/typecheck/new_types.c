@@ -4297,16 +4297,6 @@ TYeliminateUser (ntype *t1)
              */
             udt = UTgetUnAliasedType (USER_TYPE (TYgetScalar (t1)));
             res = TYnestTypes (t1, UTgetBaseType (udt));
-            if (TUisHidden (res)) {
-                /**
-                 * Here, we need to make sure that we keep
-                 * the usertype for hidden types!
-                 * Note here, that we deliberately ignore the
-                 * modified return value as we want to utilize the
-                 * side effect!
-                 */
-                TYsetHiddenUserType (TYgetScalar (res), udt);
-            }
         } else {
             res = TYcopyType (t1);
         }
@@ -4775,6 +4765,7 @@ ScalarType2String (ntype *type)
 {
     static str_buf *buf = NULL;
     char *res;
+    usertype udt;
 
     DBUG_ENTER ();
 
@@ -4784,9 +4775,21 @@ ScalarType2String (ntype *type)
 
     switch (NTYPE_CON (type)) {
     case TC_simple:
-        buf = SBUFprintf (buf, "%s", global.mdb_type[SIMPLE_TYPE (type)]);
         if (SIMPLE_TYPE (type) == T_hidden) {
-            buf = SBUFprintf (buf, "(%d)", SIMPLE_HIDDEN_UDT (type));
+            udt = SIMPLE_HIDDEN_UDT (type);
+            if (udt == UT_NOT_DEFINED) {
+                buf = SBUFprintf (buf, "hidden");
+            } else {
+                if (UTgetNamespace (udt) == NULL) {
+                    buf = SBUFprintf (buf, "enclosed(%s)", UTgetName (udt));
+                } else {
+                    buf = SBUFprintf (buf, "enclosed(%s::%s)",
+                                           NSgetName (UTgetNamespace (udt)),
+                                           UTgetName (udt));
+                }
+            }
+        } else {
+            buf = SBUFprintf (buf, "%s", global.mdb_type[SIMPLE_TYPE (type)]);
         }
         break;
     case TC_symbol:

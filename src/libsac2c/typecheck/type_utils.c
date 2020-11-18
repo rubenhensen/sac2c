@@ -1500,27 +1500,25 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
     base = UTgetBaseType (udt);
     if (base == NULL) {
         base = UTgetTypedef (udt);
-        if (!TYisAKS (base)) {
+        if (UTisNested (udt)) {
             /*
-             * Try to handle non AKS UDT's
+             * Since this is a nested type, the basetype needs to
+             * be a scalar hidden type of itself!
              */
-            if (TYisAKD (base) || UTisNested (udt)) {
-                if (visited != NULL) {
-                    visited = MEMfree (visited);
-                }
-            } else {
-                CTIerrorLine (global.linenum,
-                              "Typedef of %s::%s is illegal; should be either"
-                              " scalar type or array type of fixed shape",
-                              NSgetName (UTgetNamespace (udt)), UTgetName (udt));
+            base_elem = TYmakeHiddenSimpleType (udt);
+            base = TYmakeAKS (base_elem, SHmakeShape (0));
+            if (visited != NULL) {
+                visited = MEMfree (visited);
             }
         } else {
             /*
              * Here, we know that we are either dealing with
              * AKS{ User{}}, AKS{ Symb{}}, or AKS{ Simple{}}.
              */
+            DBUG_ASSERT ((TYisAKS (base)), "non AKS type in non-nested"
+                         "typedef for \"%s\" found", UTgetName (udt));
+            base_elem = TYgetScalar (base);
             if (TYisAKSUdt (base) || TYisAKSSymb (base)) {
-                base_elem = TYgetScalar (base);
                 inner_udt = TYisAKSUdt (base)
                               ? TYgetUserType (base_elem)
                               : UTfindUserType (TYgetName (base_elem),

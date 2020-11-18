@@ -25,7 +25,7 @@
 #define UT_NOT_DEFINED -1
 
 extern usertype UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base,
-                               size_t lineno, node *tdef, bool nested);
+                               size_t lineno, node *tdef, bool nested, bool external);
 extern usertype UTaddAlias (char *name, namespace_t *ns, usertype alias, size_t lineno,
                             node *tdef);
 extern usertype UTfindUserType (const char *name, const namespace_t *ns);

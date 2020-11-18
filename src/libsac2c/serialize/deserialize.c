@@ -238,7 +238,8 @@ InsertIntoState (node *item, module_t *module)
             udt = UTaddUserType (STRcpy (TYPEDEF_NAME (item)),
                                  NSdupNamespace (TYPEDEF_NS (item)),
                                  TYcopyType (TYPEDEF_NTYPE (item)), NULL,
-                                 NODE_LINE (item), item, TYPEDEF_ISNESTED (item));
+                                 NODE_LINE (item), item, TYPEDEF_ISNESTED (item),
+                                 TYPEDEF_ISEXTERNAL (item));
         }
 
         /*

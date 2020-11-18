@@ -5346,6 +5346,7 @@ handle_typedef (struct parser *parser)
     tok = parser_get_token (parser);
     if (token_is_keyword (tok, EXTERN)) {
         extern_p = true;
+        nested = true;
         if (parser_expect_tval (parser, TYPEDEF))
             /* eat TYPEDEF and save its location.  */
             loc = token_location (parser_get_token (parser));
@@ -5397,6 +5398,9 @@ handle_typedef (struct parser *parser)
 
     if (!extern_p && !builtin_p && is_type (parser)) {
         type = handle_type (parser);
+        if (!TUshapeKnown (type)) {
+            nested = true;
+        }
         if (type == error_type_node)
             goto skip_error;
     }
@@ -5454,6 +5458,10 @@ handle_typedef (struct parser *parser)
 
         tt = TYmakeAKS (TYmakeHiddenSimpleType (UT_NOT_DEFINED), SHmakeShape (0));
         ret = TBmakeTypedef (name, NULL, component_name, tt, NULL, NULL);
+        if (nested == true) {
+            TYPEDEF_ISNESTED (ret) = true;
+        }
+        TYPEDEF_ISEXTERNAL (ret) = true;
         TYPEDEF_PRAGMA (ret) = pragmas;
     } else {
         ret = TBmakeTypedef (name, NULL, component_name, type, NULL, NULL);

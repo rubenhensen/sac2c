@@ -200,7 +200,9 @@ RSTtypedef (node *arg_node, info *arg_info)
             UTaddUserType (STRcpy (TYPEDEF_NAME (arg_node)),
                            NSdupNamespace (TYPEDEF_NS (arg_node)),
                            TYcopyType (TYPEDEF_NTYPE (arg_node)), NULL,
-                           NODE_LINE (arg_node), arg_node, TYPEDEF_ISNESTED (arg_node));
+                           NODE_LINE (arg_node), arg_node,
+                           TYPEDEF_ISNESTED (arg_node),
+                           TYPEDEF_ISEXTERNAL (arg_node));
         }
 
         DBUG_EXECUTE_TAG ("UDT", tmp_str = MEMfree (tmp_str));
@@ -370,7 +372,7 @@ RSTdoResolveSymbolTypes (node *syntax_tree)
 
     TRAVpop ();
 
-    DBUG_EXECUTE_TAG ("UDT_PRINT", UTprintRepository (stderr));
+    DBUG_EXECUTE (UTprintRepository (stderr));
 
     DBUG_RETURN (syntax_tree);
 }

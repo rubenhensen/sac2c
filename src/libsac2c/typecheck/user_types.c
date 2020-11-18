@@ -132,7 +132,7 @@ InsertIntoRepository (udt_entry *entry)
 
 usertype
 UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, size_t lineno,
-               node *tdef, bool nested)
+               node *tdef, bool nested, bool external)
 {
     udt_entry *entry;
     usertype result;
@@ -153,6 +153,10 @@ UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, size_t lin
     ENTRY_NESTED (entry) = nested;
 
     result = InsertIntoRepository (entry);
+
+    if (external) {
+        TYsetHiddenUserType (TYgetScalar (type), result);  // self ref for external types!
+    }
 
     DBUG_RETURN (result);
 }
@@ -493,23 +497,35 @@ UTisNested (usertype udt)
  *
  ******************************************************************************/
 
-#define UTPRINT_FORMAT "| %-10.10s | %-10.10s | %-20.20s | %-20.20s |"
+//                        module     name      def-type    base-type
+#define UTPRINT_FORMAT "| %-10.10s | %-10.10s | %-25.25s | %-35.35s |"
 
 void
 UTprintRepository (FILE *outfile)
 {
-    int i;
+    int i, alias;
 
     DBUG_ENTER ();
 
-    fprintf (outfile, "\n %4.4s " UTPRINT_FORMAT " %6s | %9s | %7s\n", "udt:", "module:",
-             "name:", "defining type:", "base type:", "line:", "def node:", "alias:");
+    fprintf (outfile, "\n %4.4s " UTPRINT_FORMAT " %10s | %-7s | %-7s | %-14s \n", "udt:", "module:",
+             "name:", "defining type:", "base type:", "alias udt:", "nested:", "line", "def node:");
     for (i = 0; i < udt_no; i++) {
-        fprintf (outfile, " %4d " UTPRINT_FORMAT " %6zu |  %8p | %7d\n", i,
-                 NSgetName (UTgetNamespace (i)), UTgetName (i),
-                 TYtype2String (UTgetTypedef (i), TRUE, 0),
-                 TYtype2String (UTgetBaseType (i), TRUE, 0), UTgetLine (i),
-                 (void *)UTgetTdef (i), UTgetAlias (i));
+        alias = UTgetAlias (i);
+        if (alias == UT_NOT_DEFINED) {
+            fprintf (outfile, " %4d " UTPRINT_FORMAT " %-10s | %-7s | %-7zu | %-14p \n", i,
+                     NSgetName (UTgetNamespace (i)), UTgetName (i),
+                     TYtype2String (UTgetTypedef (i), TRUE, 0),
+                     TYtype2String (UTgetBaseType (i), TRUE, 0), 
+                     "---", (UTisNested (i)?"yes":""), UTgetLine (i),
+                     (void *)UTgetTdef (i));
+        } else {
+            fprintf (outfile, " %4d " UTPRINT_FORMAT " %-10d | %-7s | %-7zu | %-14p \n", i,
+                     NSgetName (UTgetNamespace (i)), UTgetName (i),
+                     TYtype2String (UTgetTypedef (i), TRUE, 0),
+                     TYtype2String (UTgetBaseType (i), TRUE, 0), 
+                     UTgetAlias (i), (UTisNested (i)?"yes":""), UTgetLine (i),
+                     (void *)UTgetTdef (i));
+        }
     }
 
     DBUG_RETURN ();
