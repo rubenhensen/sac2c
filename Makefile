@@ -9,7 +9,7 @@ MAKE_NUMTHREADS ?= 4
 define BUILD =
   if [ -d $(1) ]; then \
     cd $(1); \
-    $(MAKE) -j$(MAKE_NUMTHREADS);
+    $(MAKE) -j$(MAKE_NUMTHREADS); \
     cd -; \
   else \
     mkdir -p $(1); \
