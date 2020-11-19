@@ -50,6 +50,7 @@ extern bool UTeq (usertype udt1, usertype udt2);
 extern bool UTisAlias (usertype udt);
 
 extern bool UTisNested (usertype udt);
+extern bool UTisExternal (usertype udt);
 
 extern void UTprintRepository (FILE *outfile);
 

@@ -5346,7 +5346,6 @@ handle_typedef (struct parser *parser)
     tok = parser_get_token (parser);
     if (token_is_keyword (tok, EXTERN)) {
         extern_p = true;
-        nested = true;
         if (parser_expect_tval (parser, TYPEDEF))
             /* eat TYPEDEF and save its location.  */
             loc = token_location (parser_get_token (parser));
