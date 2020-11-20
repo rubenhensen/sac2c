@@ -1679,7 +1679,7 @@ TUgetBaseSimpleType (ntype *type)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn int TUtype2Int( ntype *ty)
+ * @fn int TUakvScalInt2Int( ntype *ty)
  *
  * @brief: Extract integer scalar constant from an AKV integer scalar ntype
  *
@@ -1689,7 +1689,7 @@ TUgetBaseSimpleType (ntype *type)
  *
  ******************************************************************************/
 int
-TUtype2Int (ntype *ty)
+TUakvScalInt2Int (ntype *ty)
 {
     int z;
     constant *con = NULL;
@@ -1701,6 +1701,41 @@ TUtype2Int (ntype *ty)
     z = COconst2Int (con);
 
     DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn int TUgetDimEncoding( ntype *type)
+ *
+ * @brief: produces the array info encoding needed by the backend:
+ *         >= 0 : AKS with result == DIM
+ *         <  -2: AKD with result == -2 - DIM
+ *         == -1: AUSGZ
+ *         == -2: AUD
+ *         
+ *
+ * @param: type: ntype
+ *
+ * @return the encoding of the dimensionality.
+ *
+ ******************************************************************************/
+int TUgetDimEncoding (ntype *type)
+{
+    int res;
+    
+    DBUG_ENTER ();
+
+    if (TYisAUDGZ (type)) {
+        res = -1;
+    } else if (TYisAUD (type)) {
+        res = -2;
+    } else if (TYisAKD (type)) {
+        res = -2 - TYgetDim (type);
+    } else {
+        res = TYgetDim (type);
+    }
+
+    DBUG_RETURN (res);
 }
 
 #undef DBUG_PREFIX
