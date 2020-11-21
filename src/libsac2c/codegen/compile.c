@@ -323,7 +323,7 @@ GetBasetypeStr (ntype *type)
     DBUG_ENTER ();
 
     if (TUisArrayOfUser (type)) {
-        str = UTgetName (TYgetUserType (type));
+        str = UTgetName (TYgetUserType (TYgetScalar (type)));
         DBUG_ASSERT (str != NULL, "Name of user-defined type not found");
     } else {
         DBUG_ASSERT (TUisArrayOfSimple (type), "Expected either array of User or Simple type.");
