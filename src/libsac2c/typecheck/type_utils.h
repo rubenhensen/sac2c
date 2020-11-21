@@ -83,13 +83,19 @@ extern bool TUisVector (ntype *ty);
 extern bool TUhasBasetype (ntype *ty, simpletype smpl);
 extern bool TUisUniqueUserType (ntype *type);
 extern bool TUisArrayOfUser (ntype *type);
+extern bool TUisArrayOfSimple (ntype *type);
 extern bool TUcontainsUser (ntype *type);
 extern bool TUisHidden (ntype *type);
 extern bool TUisNested (ntype *type);
 extern bool TUisBoxed (ntype *type);
 extern bool TUisPolymorphic (ntype *type);
 
-extern int TUgetDimEncoding (ntype *type): // specifically needed for the backend
+/**
+ * functions mainly needed for code generation:
+ */
+extern int TUgetFullDimEncoding (ntype *type);
+extern int TUgetDimEncoding (ntype *type);
+extern simpletype TUgetSimpleImplementationType (ntype *type);
 
 /**
  * type relations:

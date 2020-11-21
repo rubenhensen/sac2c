@@ -3709,8 +3709,8 @@ DUPdupIdsIdNt (node *arg_ids)
 
     new_id = DUPdupIdsId (arg_ids);
 
-    DBUG_ASSERT (IDS_TYPE (arg_ids) != NULL, "NT_TAG: no type found!");
-    ID_NT_TAG (new_id) = NTUcreateNtTag (IDS_NAME (arg_ids), IDS_TYPE (arg_ids));
+    DBUG_ASSERT (IDS_NTYPE (arg_ids) != NULL, "NT_TAG: no type found!");
+    ID_NT_TAG (new_id) = NTUcreateNtTagFromNType (IDS_NAME (arg_ids), IDS_NTYPE (arg_ids));
 
     DBUG_RETURN (new_id);
 }
@@ -3736,19 +3736,9 @@ DUPdupIdNt (node *arg_id)
     DBUG_ASSERT (NODE_TYPE (arg_id) == N_id, "DupId_NT: no N_id node found!");
     new_id = DUPdoDupNode (arg_id);
 
-    DBUG_ASSERT (ID_TYPE (arg_id) != NULL, "NT_TAG: no type found!");
+    DBUG_ASSERT (ID_NTYPE (arg_id) != NULL, "NT_TAG: no type found!");
 
-    /*
-      if((ID_TYPE( arg_id) != NULL))
-      {
-        printf("NOT NULL\n");
-      }
-      else
-      {
-        printf("NULL\n");
-      }
-    */
-    ID_NT_TAG (new_id) = NTUcreateNtTag (ID_NAME (arg_id), ID_TYPE (arg_id));
+    ID_NT_TAG (new_id) = NTUcreateNtTagFromNType (ID_NAME (arg_id), ID_NTYPE (arg_id));
 
     DBUG_RETURN (new_id);
 }

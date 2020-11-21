@@ -847,6 +847,28 @@ TUisArrayOfUser (ntype *type)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool TUisArrayOfUser( ntype *ty)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+bool
+TUisArrayOfSimple (ntype *type)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    res = (TYisArray (type) && TYisSimple (TYgetScalar (type)));
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TUcontainsUser( ntype *ty)
  *
  *   @brief
@@ -1705,7 +1727,7 @@ TUakvScalInt2Int (ntype *ty)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn int TUgetDimEncoding( ntype *type)
+ * @fn int TUgetFullDimEncoding( ntype *type)
  *
  * @brief: produces the array info encoding needed by the backend:
  *         >= 0 : AKS with result == DIM
@@ -1719,7 +1741,7 @@ TUakvScalInt2Int (ntype *ty)
  * @return the encoding of the dimensionality.
  *
  ******************************************************************************/
-int TUgetDimEncoding (ntype *type)
+int TUgetFullDimEncoding (ntype *type)
 {
     int res;
     
@@ -1737,5 +1759,66 @@ int TUgetDimEncoding (ntype *type)
 
     DBUG_RETURN (res);
 }
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn int TUgetDimEncoding( ntype *type)
+ *
+ * @brief: produces the array info encoding needed by the backend:
+ *         >= 0 : AKS / AKD with result == DIM
+ *         == -1: AUSGZ
+ *         == -2: AUD
+ *
+ *
+ * @param: type: ntype
+ *
+ * @return the encoding of the dimensionality.
+ *
+ ******************************************************************************/
+int TUgetDimEncoding (ntype *type)
+{
+    int res;
+
+    DBUG_ENTER ();
+
+    if (TYisAUDGZ (type)) {
+        res = -1;
+    } else if (TYisAUD (type)) {
+        res = -2;
+    } else {
+        res = TYgetDim (type);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn simpletype TUgetSimpleImplementationType (ntype *type)
+ *
+ * @brief: computes the implementation type and picks the element type of
+ *         it. This should always be a SimpleType since all User-types are
+ *         being followed through to their base.
+ *
+ * @param: type: ntype
+ *
+ * @return the simpletype in the implementation (can be T-hidden if nested
+ *         or external.
+ *
+ ******************************************************************************/
+simpletype TUgetSimpleImplementationType (ntype *type)
+{
+    ntype *itype;
+    simpletype res;
+
+    DBUG_ENTER ();
+
+    itype = TUcomputeImplementationType (type);
+    res = TYgetSimpleType (TYgetScalar (itype));
+    itype = TYfreeType (itype);
+
+    DBUG_RETURN (res);
+}
+
 
 #undef DBUG_PREFIX

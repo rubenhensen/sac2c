@@ -357,6 +357,35 @@ NTUgetDistributedFromTypes (types *type)
 /******************************************************************************
  *
  * function:
+ *   distributed_class_t NTUgetDistributedFromNType( ntype *type)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+distributed_class_t
+NTUgetDistributedFromNType (ntype *type)
+{
+    distributed_class_t d;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (type != NULL, "No type found!");
+
+    if (TYgetDistributed (type) == distmem_dis_dis) {
+        d = C_distr;
+    } else if (TYgetDistributed (type) == distmem_dis_dsm) {
+        d = C_distmem;
+    } else {
+        d = C_notdistr;
+    }
+
+    DBUG_RETURN (d);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   cbasetype_class_t NTUgetCBasetypeFromTypes( types *type)
  *
  * description:
@@ -393,6 +422,42 @@ NTUgetCBasetypeFromTypes (types *type)
         if (b == C_btdouble && global.enforce_float) {
             b = C_btfloat;
         }
+    }
+
+    DBUG_RETURN (b);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   cbasetype_class_t NTUgetCBasetypeFromNType( ntype *type)
+ *
+ * description:
+ *
+ * Note:    This has to be kept in sync with GetBasetypeStr
+ *          (compile.c) !!!
+ *
+ ******************************************************************************/
+
+cbasetype_class_t
+NTUgetCBasetypeFromNType (ntype *type)
+{
+    cbasetype_class_t b;
+    simpletype basetype;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (type != NULL, "No type found!");
+
+    basetype = TUgetSimpleImplementationType (type);
+    b = global.type_cbasetype[basetype];
+
+    /*
+     * If the enforce_float flag is set,
+     * we change all doubles to floats.
+     */
+    if (b == C_btdouble && global.enforce_float) {
+        b = C_btfloat;
     }
 
     DBUG_RETURN (b);
@@ -813,6 +878,8 @@ NTUcreateNtTagFromNType (const char *name, ntype *ntype)
     mutc_scope_class_t scope;
     mutc_usage_class_t usage;
     bitarray_class_t bitarray;
+    distributed_class_t distr;
+    cbasetype_class_t cbasetype;
 
     DBUG_ENTER ();
 
@@ -828,20 +895,27 @@ NTUcreateNtTagFromNType (const char *name, ntype *ntype)
 
     bitarray = NTUgetBitarrayFromNType (ntype);
 
+    distr = NTUgetDistributedFromNType (ntype);
+
+    cbasetype = NTUgetCBasetypeFromNType (ntype);
+
     res = (char *)MEMmalloc (
       (STRlen (name) + STRlen (global.nt_shape_string[sc])
        + STRlen (global.nt_hidden_string[hc]) + STRlen (global.nt_unique_string[uc])
        + STRlen (global.nt_mutc_storage_class_string[storage])
        + STRlen (global.nt_mutc_scope_string[scope])
        + STRlen (global.nt_mutc_usage_string[usage])
-       + STRlen (global.nt_bitarray_string[bitarray]) + (8 * 4) + 1)
+       + STRlen (global.nt_bitarray_string[bitarray])
+       + STRlen (global.nt_distributed_string[distr])
+       + STRlen (global.nt_cbasetype_string[cbasetype]) + (10 * 4) + 1)
       * sizeof (char));
 
-    sprintf (res, "(%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, ))))))))", name,
+    sprintf (res, "(%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, ))))))))))", name,
              global.nt_shape_string[sc], global.nt_hidden_string[hc],
              global.nt_unique_string[uc], global.nt_mutc_storage_class_string[storage],
              global.nt_mutc_scope_string[scope], global.nt_mutc_usage_string[usage],
-             global.nt_bitarray_string[bitarray]);
+             global.nt_bitarray_string[bitarray], global.nt_distributed_string[distr],
+             global.nt_cbasetype_string[cbasetype]);
 
     DBUG_RETURN (res);
 }

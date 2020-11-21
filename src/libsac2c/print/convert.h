@@ -4,7 +4,7 @@
 #include "types.h"
 
 extern char *CVfloatvec2String (floatvec val);
-extern char *CVtype2String (types *type, int flag, bool all);
+extern char *CVtype2String (ntype *type, int flag, bool all);
 extern char *CVdouble2String (double);
 extern char *CVfloat2String (float);
 extern char *CVfloatvec2String (floatvec val);

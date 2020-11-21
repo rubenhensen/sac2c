@@ -1859,8 +1859,6 @@ PrintDispatchFun (node *fundef, void *arg_info)
 static void
 PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 {
-    types *ret_types;
-    char *type_str;
     bool print_sac = TRUE;
     bool print_c = FALSE;
     bool print_argtab = FALSE;
@@ -1939,17 +1937,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
                 /*
                  *  Print old types.
                  */
-                ret_types = FUNDEF_TYPES (arg_node);
-                while (ret_types != NULL) {
-                    type_str = CVtype2String (ret_types, 0, FALSE);
-                    fprintf (global.outfile, "%s", type_str);
-                    type_str = MEMfree (type_str);
-
-                    ret_types = TYPES_NEXT (ret_types);
-                    if (ret_types != NULL) {
-                        fprintf (global.outfile, ", ");
-                    }
-                }
+                DBUG_ASSERT( FALSE, "encountered old types on fundef!");
             } else {
                 /*
                  * We do have new types !
@@ -2479,7 +2467,8 @@ PRTarg (node *arg_node, info *arg_info)
     if (ARG_NTYPE (arg_node) != NULL) {
         type_str = TYtype2String (ARG_NTYPE (arg_node), FALSE, 0);
     } else {
-        type_str = CVtype2String (ARG_TYPE (arg_node), 0, TRUE);
+        DBUG_ASSERT (FALSE, "encountered old types on args");
+        type_str = NULL;
     }
     fprintf (global.outfile, " %s ", type_str);
     type_str = MEMfree (type_str);
@@ -2682,9 +2671,7 @@ PRTvardec (node *arg_node, info *arg_info)
         fprintf (global.outfile, "; ");
 
         if (VARDEC_TYPE (arg_node) != NULL) {
-            type_str = CVtype2String (VARDEC_TYPE (arg_node), 0, TRUE);
-            fprintf (global.outfile, "/* %s */", type_str);
-            type_str = MEMfree (type_str);
+            DBUG_ASSERT (FALSE, "encountered old types on vardec!");
         }
 
         if (AVIS_DECLTYPE (VARDEC_AVIS (arg_node)) != NULL) {
@@ -3530,6 +3517,10 @@ PRTid (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, "%s", text);
 
+    DBUG_EXECUTE_TAG ("PRINT_TAGS", if (ID_NT_TAG (arg_node) != NULL) {
+        fprintf (global.outfile, " /* tag: %s */", ID_NT_TAG (arg_node));
+    });
+
     if (global.print.avis) {
         if (ID_AVIS (arg_node) != NULL) {
             fprintf (global.outfile, "/* avis: %p */", (void *)ID_AVIS (arg_node));
@@ -4236,6 +4227,7 @@ PRTicm (node *arg_node, info *arg_info)
 
     if ((global.compiler_subphase == PH_cg_prt)
         || (global.compiler_subphase == PH_ccg_prt)) {
+
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
     if (STReq (ICM_NAME (arg_node), #prf)) {                                             \

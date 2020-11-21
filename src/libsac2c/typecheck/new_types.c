@@ -5936,10 +5936,12 @@ TYoldType2ScalarType (types *old)
         DBUG_UNREACHABLE ("TYoldType2Type applied to illegal type");
     }
 
+#if 0
     DBUG_EXECUTE (tmp = CVtype2String (old, 3, TRUE);
                   tmp2 = TYtype2DebugString (res, TRUE, 0));
     DBUG_PRINT ("base type of %s converted into : %s\n", tmp, tmp2);
     DBUG_EXECUTE (tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2));
+#endif
 
     DBUG_RETURN (res);
 }
@@ -5988,10 +5990,12 @@ TYoldType2Type (types *old)
         }
     }
 
+#if 0
     DBUG_EXECUTE (tmp = CVtype2String (old, 3, TRUE);
                   tmp2 = TYtype2DebugString (res, TRUE, 0));
     DBUG_PRINT ("%s converted into : %s\n", tmp, tmp2);
     DBUG_EXECUTE (tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2));
+#endif
 
     DBUG_RETURN (res);
 }
@@ -6168,10 +6172,12 @@ TYtype2OldType (ntype *xnew)
 
     res = Type2OldType (xnew);
 
+#if 0
     DBUG_EXECUTE (tmp_str2 = CVtype2String (res, 0, TRUE));
     DBUG_PRINT ("... result is %s", tmp_str2);
     DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
     DBUG_EXECUTE (tmp_str2 = MEMfree (tmp_str2));
+#endif
 
     DBUG_RETURN (res);
 }

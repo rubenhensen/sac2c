@@ -5389,7 +5389,7 @@ N_tfarg :
               <target mandatory="no">
                 <any />
                 <phases>
-                  <range from="cg_ctr" to="final" />
+                  <range from="final" to="final" />
                 </phases>
               </target>
             </targets>
@@ -5413,7 +5413,7 @@ N_tfarg :
               <target mandatory="no">
                 <node name="Return" />
                 <phases>
-                  <range from="ptc_l2f" to="cg_ctr"/>
+                  <range from="ptc_l2f" to="final"/>
                 </phases>
               </target>
             </targets>
@@ -6092,7 +6092,7 @@ N_tfarg :
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="cg_ctr" to="final" />
+                  <range from="final" to="final" />
                 </phases>
               </target>
             </targets>
@@ -6468,7 +6468,7 @@ N_tfarg :
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="cg_ctr" to="final" />
+                  <range from="final" to="final" />
                 </phases>
               </target>
             </targets>
@@ -8675,7 +8675,7 @@ N_tfarg :
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="initial" to="cg_ctr" />
+                  <range from="initial" to="final" />
                 </phases>
               </target>
             </targets>

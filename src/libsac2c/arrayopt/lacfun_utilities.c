@@ -932,8 +932,7 @@ LFUfindFundefReturn (node *arg_node)
 
     DBUG_ENTER ();
 
-    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (global.compiler_anyphase >= PH_ptc_l2f)
-        && (global.compiler_anyphase < PH_cg_ctr)) {
+    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (global.compiler_anyphase >= PH_ptc_l2f)) {
         assgn = FUNDEF_BODY (arg_node);
         if (NULL != assgn) { /* Some fns do not have a body. Weird... */
             assgn = BLOCK_ASSIGNS (assgn);
