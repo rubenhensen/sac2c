@@ -428,7 +428,7 @@ MakeTypeArgs (char *name, ntype *type, bool add_type, bool add_dim, bool add_sha
 
     DBUG_ENTER ();
 
-    itype = TUcomputeImplementationType(type);
+    itype = TUcomputeImplementationType (type);
     dim = TUgetFullDimEncoding (itype);
 
     /*
@@ -438,7 +438,7 @@ MakeTypeArgs (char *name, ntype *type, bool add_type, bool add_dim, bool add_sha
      * during icm2c!!
      */
     if (add_shape && (dim > 0)) { // at least AKS
-        exprs = SHshape2Exprs (TYgetShape (itype));
+        exprs = TCappendExprs (SHshape2Exprs (TYgetShape (itype)), exprs);
     }
 
     if (add_dim) {
@@ -446,10 +446,10 @@ MakeTypeArgs (char *name, ntype *type, bool add_type, bool add_dim, bool add_sha
     }
 
     if (add_type) {
-        exprs = TBmakeExprs (MakeBasetypeArg (type), exprs);
+        exprs = TBmakeExprs (MakeBasetypeArg (itype), exprs);
     }
 
-    exprs = TBmakeExprs (TCmakeIdCopyStringNtNew (name, type), exprs);
+    exprs = TBmakeExprs (TCmakeIdCopyStringNtNew (name, itype), exprs);
     itype = TYfreeType (itype);
 
     DBUG_RETURN (exprs);
@@ -2946,11 +2946,16 @@ COMPmodule (node *arg_node, info *arg_info)
 node *
 COMPtypedef (node *arg_node, info *arg_info)
 {
+#ifndef DBUG_OFF
+    char *tmp_str = NULL;
+#endif
     node *icm = NULL;
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("compiling typedef '%s'", TYPEDEF_NAME (arg_node));
+    DBUG_EXECUTE (tmp_str = TYtype2DebugString (TYPEDEF_NTYPE (arg_node), FALSE, 0); );
+    DBUG_PRINT ("compiling typedef \"%s\"::%s", TYPEDEF_NAME (arg_node), tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str););
 
     icm
       = TCmakeIcm1 ("ND_TYPEDEF", MakeTypeArgs (TYPEDEF_NAME (arg_node),
@@ -2961,6 +2966,8 @@ COMPtypedef (node *arg_node, info *arg_info)
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
         TYPEDEF_NEXT (arg_node) = TRAVdo (TYPEDEF_NEXT (arg_node), arg_info);
+    } else {
+        DBUG_EXECUTE (UTprintRepository (stderr););
     }
 
     DBUG_RETURN (arg_node);
