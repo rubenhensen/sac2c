@@ -495,7 +495,8 @@ IsGeneratorBigEnough (node *test_variables)
 {
     node *iterator;
     bool is_bigenough;
-    int var_dim, var_size; /* dimension and size of an actual variable */
+    int var_dim;
+    long long var_size;
     DBUG_ENTER ();
 
     /* some initializations */
@@ -555,7 +556,7 @@ IsMTClever (node *test_variables)
     while ((is_clever == FALSE) && (iterator != NULL)) {
 
         var_dim = TYgetDim (IDS_NTYPE (iterator));
-        var_size = SHgetUnrLen (TYgetShape (IDS_NTYPE (iterator)));
+        var_size = (double)SHgetUnrLen (TYgetShape (IDS_NTYPE (iterator)));
 
         /* add the size of the actual variable to the sum of the sizes of the
            former variables */
@@ -599,7 +600,7 @@ IsSTClever (node *test_variables)
     while ((is_clever == FALSE) && (iterator != NULL)) {
 
         var_dim = TYgetDim (IDS_NTYPE (iterator));
-        var_size = SHgetUnrLen (TYgetShape (IDS_NTYPE (iterator)));
+        var_size = (double)SHgetUnrLen (TYgetShape (IDS_NTYPE (iterator)));
 
         if (var_size >= (double)(global.max_replication_size)) {
             is_clever = TRUE;
