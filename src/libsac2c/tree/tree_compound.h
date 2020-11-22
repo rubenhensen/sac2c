@@ -66,35 +66,6 @@ extern node *TCshpseg2Array (shpseg *shape, int dim);
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  TYPES :
- ***/
-
-/*
- *  compound access macros
- */
-
-#define TYPES_SHAPE(t, x) (SHPSEG_SHAPE (TYPES_SHPSEG (t), x))
-
-extern types *TCappendTypes (types *chain, types *item);
-extern unsigned int TCcountTypes (types *type);
-extern types *TCgetTypesLine (types *type, size_t line);
-extern types *TCgetTypes (types *type);
-extern int TCgetShapeDim (types *type);
-extern int TCgetDim (types *type);
-extern simpletype TCgetBasetype (types *type);
-extern size_t TCgetBasetypeSize (types *type);
-extern int TCgetTypesLength (types *type);
-extern shpseg *TCtype2Shpseg (types *type, int *ret_dim);
-extern shape *TCtype2Shape (types *type);
-extern node *TCtype2Exprs (types *type);
-
-extern bool TCisUnique (types *type);
-extern bool TCisHidden (types *type);
-extern bool TCisNested (types *type);
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  N_ids :
  ***/
 
@@ -346,13 +317,6 @@ extern node *TCremoveFundef (node *fundef_chain, node *fundef);
 
 #define VARDEC_NTYPE(n) (AVIS_TYPE (VARDEC_AVIS (n)))
 #define VARDEC_NAME(n) (AVIS_NAME (VARDEC_AVIS (n)))
-
-/*
- * TODO: REMOVE US CAUSE WE'RE UGLY
- */
-#define VARDEC_DIM(n) (TYPES_DIM (VARDEC_TYPE (n)))
-#define VARDEC_SHAPE(n, x) (TYPES_SHAPE (VARDEC_TYPE (n), x))
-#define VARDEC_SHPSEG(n) (TYPES_SHPSEG (VARDEC_TYPE (n)))
 
 /******************************************************************************
  *

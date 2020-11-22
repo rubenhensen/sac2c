@@ -127,7 +127,7 @@ TBmakeNodelistNode (node *node, nodelist *next)
 /*--------------------------------------------------------------------------*/
 
 access_t *
-TBmakeAccess (node *array, node *iv, accessclass_t mclass, shpseg *offset,
+TBmakeAccess (node *array, node *iv, accessclass_t mclass, shape *offset,
               accessdir_t direction, access_t *next)
 {
     access_t *tmp;

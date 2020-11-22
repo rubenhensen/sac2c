@@ -322,11 +322,6 @@ extern ntype *TYnestTypes (ntype *outer, ntype *inner);
 extern ntype *TYdeNestTypeFromInner (ntype *nested, ntype *inner);
 extern ntype *TYdeNestTypeFromOuter (ntype *nested, ntype *outer);
 
-extern ntype *TYoldType2ScalarType (types *old);
-extern ntype *TYoldType2Type (types *old);
-extern types *TYtype2OldType (ntype *mnew);
-extern ntype *TYoldTypes2ProdType (types *old);
-
 /*
  * Functions for converting types into SAC code for wrapper functions
  */

@@ -6922,8 +6922,8 @@ COMPprfIdxModarray_AxSxS (node *arg_node, info *arg_info)
 
     /*
       if( global.backend == BE_cuda &&
-          ( TCgetBasetype( ID_NTYPE( arg1)) == T_float_dev ||
-            TCgetBasetype( ID_NTYPE( arg1)) == T_int_dev) &&
+          ( TUgetSimpleImplementationType (ID_NTYPE( arg1)) == T_float_dev ||
+            TUgetSimpleImplementationType (ID_NTYPE( arg1)) == T_int_dev) &&
           !FUNDEF_ISCUDAGLOBALFUN( INFO_FUNDEF( arg_info))) {
         ret_node = TCmakeAssignIcm4( "CUDA_PRF_IDX_MODARRAY_AxSxS__DATA",
                                      MakeTypeArgs( IDS_NAME( let_ids),

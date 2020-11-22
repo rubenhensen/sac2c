@@ -171,7 +171,7 @@ extern argtab_t *TBmakeArgtab (size_t size);
  ***/
 
 extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t mclass,
-                               shpseg *offset, accessdir_t direction, access_t *next);
+                               shape *offset, accessdir_t direction, access_t *next);
 
 #define ACCESS_ARRAY(a) (a->array_vardec)
 #define ACCESS_IV(a) (a->iv_vardec)

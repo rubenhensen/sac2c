@@ -48,7 +48,6 @@ extern node *SHshape2Exprs (shape *shp);
 extern node *SHshape2Array (shape *shp);
 extern shape *SHarray2Shape (node *array);
 
-extern shape *SHoldTypes2Shape (types *shpseg);
 extern shape *SHoldShpseg2Shape (int dim, shpseg *shpseg);
 extern shpseg *SHshape2OldShpseg (shape *shp);
 

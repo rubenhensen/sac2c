@@ -23,6 +23,12 @@
 #define TRUE true
 #define FALSE false
 
+/*
+ * moved from shape.h
+ */
+
+typedef struct SHAPE shape;
+
 /* Structcure to store where a token came from.  */
 struct location {
     const char *fname;
@@ -314,7 +320,7 @@ typedef struct ACCESS_T {
     struct NODE *array_vardec; /* */
     struct NODE *iv_vardec;    /* index vector */
     accessclass_t accessclass; /* */
-    shpseg *offset;            /* */
+    shape *offset;            /* */
     accessdir_t direction;     /* 0 == ADIR_read,  1 == ADIR_write */
     struct ACCESS_T *next;     /* */
 } access_t;
@@ -542,12 +548,6 @@ typedef enum {
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
 } cbasetype_class_t;
-
-/*
- * moved from shape.h
- */
-
-typedef struct SHAPE shape;
 
 /*
  * moved from constant.h
@@ -878,13 +878,13 @@ typedef struct PATTR attrib;
 
 /* structure for storing access patterns */
 typedef struct PATTERN_T {
-    shpseg *pattern;
+    shape *pattern;
     struct PATTERN_T *next;
 } pattern_t;
 
 /* structure for grouping access patterns by conflict groups */
 typedef struct CONFLICT_GROUP_T {
-    shpseg *group;
+    shape *group;
     accessdir_t direction;
     pattern_t *patterns;
     struct CONFLICT_GROUP_T *next;
@@ -894,7 +894,7 @@ typedef struct CONFLICT_GROUP_T {
 typedef struct ARRAY_TYPE_T {
     simpletype type;
     int dim;
-    shpseg *shape;
+    shape *shp;
     conflict_group_t *groups;
     struct ARRAY_TYPE_T *next;
 } array_type_t;
@@ -903,7 +903,7 @@ typedef struct ARRAY_TYPE_T {
 typedef struct UNSUPPORTED_SHAPE_T {
     simpletype type;
     int dim;
-    shpseg *shape;
+    shape *shp;
     struct UNSUPPORTED_SHAPE_T *next;
 } unsupported_shape_t;
 
@@ -911,9 +911,9 @@ typedef struct UNSUPPORTED_SHAPE_T {
 typedef struct PAD_INFO_T {
     simpletype type;
     int dim;
-    shpseg *old_shape;
-    shpseg *new_shape;
-    shpseg *padding;
+    shape *old_shape;
+    shape *new_shape;
+    shape *padding;
     node *fundef_pad;
     node *fundef_unpad;
     struct PAD_INFO_T *next;

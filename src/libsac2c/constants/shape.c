@@ -607,36 +607,6 @@ SHshape2String (size_t dots, shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @fn shape *SHoldTypes2Shape( types *types)
- *
- * @brief if types has a dim>=0 a shape structure is created which carries the same
- *        shape info as the types-node does. Otherwise, NULL is returned.
- *
- ******************************************************************************/
-shape *
-SHoldTypes2Shape (types *types)
-{
-    int dim;
-    shape *res;
-    shpseg *shpseg;
-
-    DBUG_ENTER ();
-    DBUG_ASSERT (types != NULL, "SHoldTypes2Shape called with NULL types!");
-
-    /* this function handle user defined types, too */
-    shpseg = TCtype2Shpseg (types, &dim);
-
-    res = SHoldShpseg2Shape (dim, shpseg);
-
-    if (shpseg != NULL) {
-        shpseg = FREEfreeShpseg (shpseg);
-    }
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn shape *SHoldShpseg2Shape( int dim, shpseg *shpseg)
  *
  * @brief iff dim > 0 a new shape structure is created which contains the same

@@ -583,7 +583,7 @@ FREEattribAccess (access_t *attr, node *parent)
     while (attr != NULL) {
         access_t *tmp = attr;
         attr = attr->next;
-        tmp->offset = FREEfreeShpseg (tmp->offset);
+        tmp->offset = SHfreeShape (tmp->offset);
         tmp = MEMfree (tmp);
     }
 
