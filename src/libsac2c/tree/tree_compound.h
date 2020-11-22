@@ -894,7 +894,6 @@ extern node *TCids2ExprsNt (node *ids_arg);
 #define ID_NAME_OR_ICMTEXT(n) ((ID_AVIS (n) != NULL) ? ID_NAME (n) : ID_ICMTEXT (n))
 
 extern node *TCmakeIdCopyString (const char *str);
-extern node *TCmakeIdCopyStringNt (const char *str, types *type);
 extern node *TCmakeIdCopyStringNtNew (const char *str, ntype *type);
 
 /***************************************************************************

@@ -38,6 +38,8 @@
 #include "memory.h"
 #include "renameidentifiers.h"
 #include "namespaces.h"
+#include "new_types.h"
+#include "shape.h"
 #include "rtspec_modes.h"
 
 /******************************************************************************
@@ -761,7 +763,7 @@ static void
 GSCprintMainC99 (void)
 {
     char *res_NT;
-    types *tmp_type;
+    ntype *tmp_type;
     bool print_thread_id, run_mt, run_mt_pthread, run_mt_lpel, run_mt_omp;
 
     DBUG_ENTER ();
@@ -793,9 +795,9 @@ GSCprintMainC99 (void)
         INDENT;
         fprintf (global.outfile, "SAC_MT_DECL_MYTHREAD()\n");
     }
-    tmp_type = TBmakeTypes1 (T_int);
-    res_NT = NTUcreateNtTag ("SAC_res", tmp_type);
-    tmp_type = FREEfreeAllTypes (tmp_type);
+    tmp_type = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+    res_NT = NTUcreateNtTagFromNType ("SAC_res", tmp_type);
+    tmp_type = TYfreeType (tmp_type);
     ICMCompileND_DECL (res_NT, "int", 0, NULL); /* create ND_DECL icm */
     GSCprintMainBegin ();
 
@@ -866,7 +868,7 @@ GSCprintMainMuTC (void)
 {
 #if 0
   char *res_NT;
-  types *tmp_type;
+  ntype *tmp_type;
 #endif
 
     DBUG_ENTER ();
@@ -876,9 +878,9 @@ GSCprintMainMuTC (void)
   INDENT;
   fprintf( global.outfile, "{\n");
   global.indent++;
-  tmp_type = TBmakeTypes1( T_int);
-  res_NT = NTUcreateNtTag( "SAC_res", tmp_type);
-  tmp_type = FREEfreeAllTypes( tmp_type);
+  tmp_type = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+  res_NT = NTUcreateNtTagFromNType( "SAC_res", tmp_type);
+  tmp_type = TYfreeType (tmp_type);
   ICMCompileND_DECL( res_NT, "int", 0, NULL);   /* create ND_DECL icm */
   GSCprintMainBegin();
 

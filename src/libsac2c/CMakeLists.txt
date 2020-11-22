@@ -158,7 +158,6 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cinterface/load_module_contents.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cinterface/print_ccflags.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cinterface/print_ldflags.c
 ${CMAKE_CURRENT_SOURCE_DIR}/codegen/compile.c
-${CMAKE_CURRENT_SOURCE_DIR}/codegen/convert_type_representation.c
 ${CMAKE_CURRENT_SOURCE_DIR}/codegen/gen_startup_code.c
 ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c.c
 ${CMAKE_CURRENT_SOURCE_DIR}/codegen/icm2c_basic.c

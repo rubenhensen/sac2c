@@ -3009,19 +3009,6 @@ TCmakeIdCopyString (const char *str)
     DBUG_RETURN (result);
 }
 
-node *
-TCmakeIdCopyStringNt (const char *str, types *type)
-{
-    node *result;
-
-    DBUG_ENTER ();
-
-    result = TCmakeIdCopyString (str);
-    ID_NT_TAG (result) = NTUcreateNtTag (str, type);
-
-    DBUG_RETURN (result);
-}
-
 /** <!--********************************************************************-->
  *
  * @fn node *TCmakeIdCopyStringNtNew( const char *str, ntype *type)
