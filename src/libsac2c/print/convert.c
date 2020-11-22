@@ -242,53 +242,6 @@ CVtype2String (ntype *type, int flag, bool all)
 /******************************************************************************
  *
  * function:
- *   char *CVshpseg2String(int dim, shpseg *shape)
- *
- * description:
- *   This function converts a given shpseg integer vector data structure into
- *   an allocated string. The first parameter provides the actually used length
- *   of the vector.
- *
- ******************************************************************************/
-
-char *
-CVshpseg2String (int dim, shpseg *shape)
-{
-    char *buffer;
-    char num_buffer[20];
-    int i;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (dim <= SHP_SEG_SIZE, " dimension out of range in SetVect()!");
-
-    /*
-     * Instead of accurately computing the buffer space to be allocated,
-     * we make a generous estimation.
-     */
-    buffer = (char *)MEMmalloc (dim * 20);
-
-    buffer[0] = '[';
-    buffer[1] = '\0';
-
-    for (i = 0; i < dim - 1; i++) {
-        sprintf (num_buffer, "%d", SHPSEG_SHAPE (shape, i));
-        strcat (buffer, num_buffer);
-        strcat (buffer, ", ");
-    }
-
-    if (dim > 0) {
-        sprintf (num_buffer, "%d", SHPSEG_SHAPE (shape, dim - 1));
-        strcat (buffer, num_buffer);
-    }
-    strcat (buffer, "]");
-
-    DBUG_RETURN (buffer);
-}
-
-/******************************************************************************
- *
- * function:
  *   char *CVbasetype2String(simpletype type)
  *
  * description:

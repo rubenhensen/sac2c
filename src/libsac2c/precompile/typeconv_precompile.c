@@ -178,7 +178,7 @@ LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
  *
  * Function:
  *   void LiftIds( ids *ids_arg, node *fundef,
- *                 types *new_type, node **new_assigns)
+ *                 ntype *new_type, node **new_assigns)
  *
  * Description:
  *   Lifts the given return value of a function application:

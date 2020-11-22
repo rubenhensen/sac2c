@@ -231,7 +231,7 @@ TBmakeArgtab (size_t size)
 
     argtab->size = size;
     argtab->ptr_in = (node **)MEMmalloc (argtab->size * sizeof (node *));
-    argtab->ptr_out = (node **)MEMmalloc (argtab->size * sizeof (types *));
+    argtab->ptr_out = (node **)MEMmalloc (argtab->size * sizeof (node *));
     argtab->tag = (argtag_t *)MEMmalloc (argtab->size * sizeof (argtag_t));
 
     for (i = 0; i < argtab->size; i++) {
