@@ -1509,11 +1509,6 @@ PHASE (cg, "Generating Code", !global.on_demand_lib)
 
 SUBPHASE (tp, "Tag preparation", TPdoTagPreparation, ALWAYS, cg)
 
-#if 0
-SUBPHASE (ctr, "Converting to old type representation", CTRdoConvertToOldTypes, ALWAYS,
-          cg)
-#endif
-
 SUBPHASE (cpl, "Creating intermediate code macros", COMPdoCompile, ALWAYS, cg)
 
 SUBPHASE (pds, "Prepare distributed with-loop schedulers",

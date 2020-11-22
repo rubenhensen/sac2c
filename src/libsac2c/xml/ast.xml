@@ -995,15 +995,6 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
-      <traversal id="CTR" name="Converting to old type representation" default="sons" include="convert_type_representation.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Block" />
-          <node name="Vardec" />
-          <node name="Ret" />
-        </travuser>
-      </traversal>
       <traversal id="CUD" name="Cleanup Declarations" default="sons" include="cleanup_decls.h" >
         <travuser>
           <node name="Block" />
