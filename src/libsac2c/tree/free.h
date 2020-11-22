@@ -21,9 +21,6 @@ extern node *FREEremoveAllZombies (node *arg_node);
  */
 
 extern index_info *FREEfreeIndexInfo (index_info *fr);
-extern shpseg *FREEfreeShpseg (shpseg *fr);
-extern types *FREEfreeOneTypes (types *fr);
-extern types *FREEfreeAllTypes (types *fr);
 extern nodelist *FREEfreeNodelist (nodelist *fr);
 extern nodelist *FREEfreeNodelistNode (nodelist *nl);
 extern access_t *FREEfreeOneAccess (access_t *fr);

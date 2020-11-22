@@ -428,85 +428,6 @@ DupDfmask (dfmask_t *mask, info *arg_info)
 /******************************************************************************
  *
  * Function:
- *   shpseg *DupShpseg( shpseg *arg_shpseg, info *arg_info)
- *
- * Remark:
- *   'arg_info' might be NULL, because this function is not only used by
- *   the traversal mechanism but also by DupShpseg()!
- *
- ******************************************************************************/
-
-static shpseg *
-DupShpseg (shpseg *arg_shpseg, info *arg_info)
-{
-    int i;
-    shpseg *new_shpseg;
-
-    DBUG_ENTER ();
-
-    if (arg_shpseg != NULL) {
-        new_shpseg = TBmakeShpseg (NULL);
-        for (i = 0; i < SHP_SEG_SIZE; i++) {
-            SHPSEG_SHAPE (new_shpseg, i) = SHPSEG_SHAPE (arg_shpseg, i);
-        }
-
-        SHPSEG_NEXT (new_shpseg) = DupShpseg (SHPSEG_NEXT (arg_shpseg), arg_info);
-    } else {
-        new_shpseg = NULL;
-    }
-
-    DBUG_RETURN (new_shpseg);
-}
-
-/******************************************************************************
- *
- * Function:
- *   types *DupTypes( types* source, info *arg_info)
- *
- * Remark:
- *   'arg_info' might be NULL, because this function is not only used by
- *   the traversal mechanism but also by Dup...Types()!
- *
- ******************************************************************************/
-
-static types *
-DupTypes (types *arg_types, info *arg_info)
-{
-    types *new_types;
-
-    DBUG_ENTER ();
-
-    if (arg_types != NULL) {
-        new_types
-          = TBmakeTypes (TYPES_BASETYPE (arg_types), TYPES_DIM (arg_types),
-                         DupShpseg (TYPES_SHPSEG (arg_types), arg_info),
-                         STRcpy (TYPES_NAME (arg_types)), STRcpy (TYPES_MOD (arg_types)));
-
-        TYPES_TDEF (new_types) = TYPES_TDEF (arg_types);
-        TYPES_MUTC_SCOPE (new_types) = TYPES_MUTC_SCOPE (arg_types);
-        TYPES_MUTC_USAGE (new_types) = TYPES_MUTC_USAGE (arg_types);
-
-        DBUG_PRINT_TAG ("TYPE", "new type" F_PTR ",old " F_PTR,
-                        (void *)new_types, (void *)arg_types);
-        DBUG_PRINT_TAG ("TYPE", "new name %s, old name %s",
-                        TYPES_NAME (new_types), TYPES_NAME (arg_types));
-
-        TYPES_NEXT (new_types) = DupTypes (TYPES_NEXT (arg_types), arg_info);
-
-        if (arg_info != NULL) {
-            INFO_LUT (arg_info)
-              = LUTinsertIntoLutP (INFO_LUT (arg_info), arg_types, new_types);
-        }
-    } else {
-        new_types = NULL;
-    }
-
-    DBUG_RETURN (new_types);
-}
-
-/******************************************************************************
- *
- * Function:
  *   nodelist *DupNodelist( nodelist *nl, info *arg_info)
  *
  * Remark:
@@ -1317,8 +1238,6 @@ DUParg (node *arg_node, info *arg_info)
      */
     new_node = TBmakeArg (DUPTRAV (ARG_AVIS (arg_node)), NULL);
 
-    ARG_TYPE (new_node) = DupTypes (ARG_TYPE (arg_node), arg_info);
-
     ARG_OBJDEF (new_node) = ARG_OBJDEF (arg_node);
     ARG_LINKSIGN (new_node) = ARG_LINKSIGN (arg_node);
     ARG_FLAGSTRUCTURE (new_node) = ARG_FLAGSTRUCTURE (arg_node);
@@ -1596,8 +1515,6 @@ DUPvardec (node *arg_node, info *arg_info)
     new_node
       = TBmakeVardec (DUPTRAV (VARDEC_AVIS (arg_node)), DUPCONT (VARDEC_NEXT (arg_node)));
 
-    VARDEC_TYPE (new_node) = DupTypes (VARDEC_TYPE (arg_node), arg_info);
-
     VARDEC_FLAGSTRUCTURE (new_node) = VARDEC_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
@@ -1843,10 +1760,6 @@ DUPids (node *arg_node, info *arg_info)
 
         FUNDEF_VARDECS (INFO_FUNDEFSSA (arg_info))
           = TBmakeVardec (newavis, FUNDEF_VARDECS (INFO_FUNDEFSSA (arg_info)));
-
-        if (IDS_TYPE (arg_node) != NULL) {
-            VARDEC_TYPE (AVIS_DECL (newavis)) = DUPdupOneTypes (IDS_TYPE (arg_node));
-        }
 
         INFO_LUT (arg_info)
           = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (arg_node), newavis);
@@ -2413,10 +2326,6 @@ DUPwith (node *arg_node, info *arg_info)
 
         vardec = TBmakeVardec (newavis, NULL);
 
-        if (IDS_TYPE (oldids) != NULL) {
-            VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (oldids));
-        }
-
         INFO_FUNDEFSSA (arg_info) = TCaddVardecs (INFO_FUNDEFSSA (arg_info), vardec);
 
         INFO_LUT (arg_info) = LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (oldids),
@@ -2435,10 +2344,6 @@ DUPwith (node *arg_node, info *arg_info)
                                   TYcopyType (IDS_NTYPE (oldids)));
 
             vardec = TBmakeVardec (newavis, NULL);
-
-            if (IDS_TYPE (oldids) != NULL) {
-                VARDEC_TYPE (vardec) = DUPdupOneTypes (IDS_TYPE (oldids));
-            }
 
             INFO_FUNDEFSSA (arg_info) = TCaddVardecs (INFO_FUNDEFSSA (arg_info), vardec);
 
@@ -3536,91 +3441,6 @@ DUPdoDupNodeLutType (node *arg_node, lut_t *lut, int type)
     new_node = DupTreeOrNodeLutType (TRUE, arg_node, lut, type, NULL);
 
     DBUG_RETURN (new_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   shpseg *DUPdupShpseg( shpseg *arg_shpseg)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-shpseg *
-DUPdupShpseg (shpseg *arg_shpseg)
-{
-    shpseg *new_shpseg;
-
-    DBUG_ENTER ();
-
-    new_shpseg = DupShpseg (arg_shpseg, NULL);
-
-    DBUG_RETURN (new_shpseg);
-}
-
-/******************************************************************************
- *
- * Function:
- *   types *DUPdupOneTypes( types *type)
- *
- * Description:
- *   Duplicates the first TYPES structure of the given TYPES chain.
- *
- *   This function duplicates the (real) types-structure. Unfortunately, it
- *   is *not* identical to the (virtual) TYPES-structure  8-((
- *
- *   For duplicating the (virtual) TYPES-structure only, use DupOneTypesOnly()
- *   or DupOneTypesOnly_Inplace() !!!
- *
- ******************************************************************************/
-
-types *
-DUPdupOneTypes (types *arg_types)
-{
-    types *new_types, *tmp;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (arg_types != NULL, "DUPdupOneTypes: argument is NULL!");
-
-    tmp = TYPES_NEXT (arg_types);
-    TYPES_NEXT (arg_types) = NULL;
-    new_types = DupTypes (arg_types, NULL);
-    TYPES_NEXT (arg_types) = tmp;
-
-    DBUG_RETURN (new_types);
-}
-
-/******************************************************************************
- *
- * Function:
- *   types *DUPdupAllTypes( types* type)
- *
- * Description:
- *   This function duplicates the (real) types-structure. Unfortunately, it
- *   is *not* identical to the (virtual) TYPES-structure  8-((
- *
- *   For duplicating the (virtual) TYPES-structure only, use DupAllTypesOnly()
- *   !!!
- *
- ******************************************************************************/
-
-types *
-DUPdupAllTypes (types *arg_types)
-{
-    types *new_types;
-
-    DBUG_ENTER ();
-
-    if (arg_types != NULL) {
-        new_types = DupTypes (arg_types, NULL);
-    } else {
-        new_types = NULL;
-    }
-
-    DBUG_RETURN (new_types);
 }
 
 /******************************************************************************

@@ -63,53 +63,6 @@ TBmakeShpseg (node *numsp)
 
 /*--------------------------------------------------------------------------*/
 
-types *
-TBmakeTypes1 (simpletype btype)
-{
-    types *tmp;
-
-    DBUG_ENTER ();
-
-    tmp = TBmakeTypes (btype, 0, NULL, NULL, NULL);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-types *
-TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name, char *mod)
-{
-    types *tmp;
-
-    DBUG_ENTER ();
-
-    tmp = (types *)MEMmalloc (sizeof (types));
-
-    TYPES_BASETYPE (tmp) = btype;
-    TYPES_NAME (tmp) = name;
-    TYPES_MOD (tmp) = mod;
-    TYPES_SHPSEG (tmp) = shpseg;
-    TYPES_DIM (tmp) = dim;
-    TYPES_POLY (tmp) = FALSE;
-
-    TYPES_MUTC_SCOPE (tmp) = MUTC_GLOBAL;
-    TYPES_MUTC_USAGE (tmp) = MUTC_US_DEFAULT;
-
-    TYPES_TDEF (tmp) = NULL;
-    TYPES_NEXT (tmp) = NULL;
-
-    TYPES_MUTC_SCOPE (tmp) = MUTC_GLOBAL;
-    TYPES_MUTC_USAGE (tmp) = MUTC_US_DEFAULT;
-    TYPES_UNIQUE (tmp) = FALSE;
-
-    TYPES_DISTRIBUTED (tmp) = distmem_dis_ndi;
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
 nodelist *
 TBmakeNodelistNode (node *node, nodelist *next)
 {

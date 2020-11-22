@@ -142,10 +142,6 @@ FREEattribOldType (types *attr, node *parent)
 {
     DBUG_ENTER ();
 
-    if (attr != NULL) {
-        attr = FREEfreeOneTypes (attr);
-    }
-
     DBUG_RETURN (attr);
 }
 

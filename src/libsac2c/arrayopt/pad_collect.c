@@ -273,7 +273,7 @@ CollectAccessPatterns (node *arg_node)
 
     col_ptr = collection;
     while (col_ptr != NULL) {
-        type = TYPES_BASETYPE (VARDEC_TYPE (COL_ARRAY (col_ptr)));
+        type = TUgetSimpleImplementationType (VARDEC_NTYPE (COL_ARRAY (col_ptr)));
         dim = TYgetDim (VARDEC_NTYPE (COL_ARRAY (col_ptr)));
         shp = SHcopyShape (TYgetShape (VARDEC_NTYPE (COL_ARRAY (col_ptr))));
         group_vect = AccessClass2Group (COL_CLASS (col_ptr), dim);
@@ -582,7 +582,8 @@ APCgenarray (node *arg_node, info *arg_info)
   if (INFO_APC_UNSUPPORTED(arg_info)) {
   TODO: the following assumes, genarray_shape is given by a N_array node
     /* do not add type of vector, but contents of array to unsupported shapes */
-    basetype = TYPES_BASETYPE(ID_TYPE(WITH_CEXPR(INFO_APC_WITH(arg_info))));
+    basetype = TUgetSimpleImplementationType (
+                   ID_NTYPE(WITH_CEXPR(INFO_APC_WITH(arg_info))));
 
     dim = SHPSEG_SHAPE(TYPES_SHPSEG(ARRAY_TYPE(GENARRAY_SHAPE(arg_node))),0);
 
