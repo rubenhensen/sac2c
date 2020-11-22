@@ -48,20 +48,6 @@ specific implementation of a function should remain with the source code.
 #define LIB_FUN 0x0008
 #define OVRLD_FUN 0x0010
 
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  SHPSEG :
- ***/
-
-extern int TCgetShpsegLength (int dims, shpseg *shape);
-extern shpseg *TCdiffShpseg (int dim, shpseg *shape1, shpseg *shape2);
-extern bool TCshapeVarsMatch (node *avis1, node *avis2);
-extern bool TCequalShpseg (int dim, shpseg *shape2, shpseg *shape1);
-extern shpseg *TCmergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
-
-extern shpseg *TCarray2Shpseg (node *array, int *ret_dim);
-extern node *TCshpseg2Array (shpseg *shape, int dim);
 
 /*--------------------------------------------------------------------------*/
 
@@ -1625,6 +1611,8 @@ extern size_t TCcountWlseg (node *withop);
 
 #define AVIS_SSASTACK_TOP(n) SSASTACK_AVIS (AVIS_SSASTACK (n))
 #define AVIS_SSASTACK_INUSE(n) SSASTACK_INUSE (AVIS_SSASTACK (n))
+
+extern bool TCshapeVarsMatch (node *avis1, node *avis2);
 
 /*--------------------------------------------------------------------------*/
 

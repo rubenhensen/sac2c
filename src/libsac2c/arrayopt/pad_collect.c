@@ -570,8 +570,8 @@ APCgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
 #if 0
-  shape* shape;
-  types* type;
+  shape* shp;
+  ntype* type;
   int dim;
   simpletype basetype;
 
@@ -586,13 +586,13 @@ APCgenarray (node *arg_node, info *arg_info)
 
     dim = SHPSEG_SHAPE(TYPES_SHPSEG(ARRAY_TYPE(GENARRAY_SHAPE(arg_node))),0);
 
-    shape = TCarray2Shpseg(GENARRAY_SHAPE(arg_node), NULL);
+    shp = SHarray2Shape (GENARRAY_SHAPE(arg_node));
 
-    type = TBmakeTypes(basetype,dim,shape,NULL,NULL);
+    type = TYmakeAKS (TYmakeSimple (basetype), shape);
 
     AddUnsupported(arg_info,type);
 
-    FREEfreeOneTypes( type);
+    type = TYfreeType( type);
   }
 #endif
 

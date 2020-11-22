@@ -85,8 +85,8 @@ struct INFO {
     bool prototype;
     int separate;
     int dim;
-    shpseg *shape;
-    shpseg *shapecnt;
+    shape *shp;
+    shape *shapecnt;
     bool isarray;
     /* writesib */
     bool firstError;
@@ -117,7 +117,7 @@ struct INFO {
 #define INFO_PROTOTYPE(n) ((n)->prototype)
 #define INFO_SEPARATE(n) ((n)->separate)
 #define INFO_DIM(n) ((n)->dim)
-#define INFO_SHAPE(n) ((n)->shape)
+#define INFO_SHAPE(n) ((n)->shp)
 #define INFO_ISARRAY(n) ((n)->isarray)
 #define INFO_SHAPE_COUNTER(n) ((n)->shapecnt)
 #define INFO_FIRSTERROR(n) ((n)->firstError)
@@ -514,7 +514,7 @@ WLAAprintAccesses (node *arg_node, info *arg_info)
     feature_t feature;
     int i, dim, iv;
     access_t *access;
-    shpseg *offset;
+    shape *offset;
 
     DBUG_ENTER ();
 
@@ -625,17 +625,17 @@ WLAAprintAccesses (node *arg_node, info *arg_info)
                         if (ACCESS_DIR (access) == ADIR_read) {
                             fprintf (global.outfile, "read ( %s + [ %d",
                                      VARDEC_NAME (ACCESS_IV (access)),
-                                     SHPSEG_SHAPE (offset, 0));
+                                     SHgetExtent (offset, 0));
                         } else {
                             fprintf (global.outfile, "write( %s + [ %d",
                                      VARDEC_NAME (ACCESS_IV (access)),
-                                     SHPSEG_SHAPE (offset, 0));
+                                     SHgetExtent (offset, 0));
                         }
                         for (i = 1; i < dim; i++)
-                            fprintf (global.outfile, ",%d", SHPSEG_SHAPE (offset, i));
+                            fprintf (global.outfile, ",%d", SHgetExtent (offset, i));
                         fprintf (global.outfile, " ], %s)\n",
                                  STRonNULL ("?", VARDEC_NAME (ACCESS_ARRAY (access))));
-                        offset = SHPSEG_NEXT (offset);
+                        offset = NULL;
                     } while (offset != NULL);
                 }
                 access = ACCESS_NEXT (access);
@@ -648,17 +648,17 @@ WLAAprintAccesses (node *arg_node, info *arg_info)
                     do {
                         if (ACCESS_DIR (access) == ADIR_read) {
                             fprintf (global.outfile, "read ( [ %d",
-                                     SHPSEG_SHAPE (offset, 0));
+                                     SHgetExtent (offset, 0));
                         } else {
                             fprintf (global.outfile, "write( [ %d",
-                                     SHPSEG_SHAPE (offset, 0));
+                                     SHgetExtent (offset, 0));
                         }
                         for (i = 1; i < dim; i++) {
-                            fprintf (global.outfile, ",%d", SHPSEG_SHAPE (offset, i));
+                            fprintf (global.outfile, ",%d", SHgetExtent (offset, i));
                         }
                         fprintf (global.outfile, " ], %s)\n",
                                  STRonNULL ("?", VARDEC_NAME (ACCESS_ARRAY (access))));
-                        offset = SHPSEG_NEXT (offset);
+                        offset = NULL;
                     } while (offset != NULL);
                 }
                 access = ACCESS_NEXT (access);
@@ -712,7 +712,7 @@ TSIprintInfo (node *arg_node, info *arg_info)
     } else {
         pragma = MakePragma ();
         for (i = dim - 1; i >= 0; i--) {
-            tilesize = SHPSEG_SHAPE (CODE_TSI_TILESHP (arg_node), i);
+            tilesize = SHgetExtent (CODE_TSI_TILESHP (arg_node), i);
             aelems = TBmakeExprs (MakeNum (tilesize), aelems);
         }
         ap_name = MEMmalloc (6 * sizeof (char));
@@ -3371,8 +3371,8 @@ PRTarray (node *arg_node, info *arg_info)
     int i;
     char *type_str;
     int old_print_dim = INFO_DIM (arg_info);
-    shpseg *old_print_shape = INFO_SHAPE (arg_info);
-    shpseg *old_print_shape_counter = INFO_SHAPE_COUNTER (arg_info);
+    shape *old_print_shape = INFO_SHAPE (arg_info);
+    shape *old_print_shape_counter = INFO_SHAPE_COUNTER (arg_info);
     bool old_isarray = INFO_ISARRAY (arg_info);
     node *shpcounter;
 
@@ -3385,11 +3385,11 @@ PRTarray (node *arg_node, info *arg_info)
     if (ARRAY_AELEMS (arg_node) != NULL) {
 
         INFO_DIM (arg_info) = ARRAY_FRAMEDIM (arg_node);
-        INFO_SHAPE (arg_info) = SHshape2OldShpseg (ARRAY_FRAMESHAPE (arg_node));
+        INFO_SHAPE (arg_info) = SHcopyShape (ARRAY_FRAMESHAPE (arg_node));
         INFO_ISARRAY (arg_info) = TRUE;
 
         shpcounter = TCcreateZeroVector (ARRAY_FRAMEDIM (arg_node), T_int);
-        INFO_SHAPE_COUNTER (arg_info) = TCarray2Shpseg (shpcounter, NULL);
+        INFO_SHAPE_COUNTER (arg_info) = SHarray2Shape (shpcounter);
         shpcounter = FREEdoFreeTree (shpcounter);
 
         for (i = 0; i < INFO_DIM (arg_info); i++)
@@ -3400,8 +3400,8 @@ PRTarray (node *arg_node, info *arg_info)
         for (i = 0; i < INFO_DIM (arg_info); i++)
             fprintf (global.outfile, " ]");
 
-        FREEfreeShpseg (INFO_SHAPE (arg_info));
-        FREEfreeShpseg (INFO_SHAPE_COUNTER (arg_info));
+        SHfreeShape (INFO_SHAPE (arg_info));
+        SHfreeShape (INFO_SHAPE_COUNTER (arg_info));
         INFO_ISARRAY (arg_info) = FALSE;
     } else {
         type_str = TYtype2String (ARRAY_ELEMTYPE (arg_node), FALSE, 0);
@@ -3426,6 +3426,15 @@ PRTarray (node *arg_node, info *arg_info)
  *
  *
  ******************************************************************************/
+
+static
+int ShapeInc (shape *shp, int idx)
+{
+    int res;
+    res = SHgetExtent (shp, idx);
+    SHsetExtent (shp, idx, res+1);
+    return res+1;
+}
 
 node *
 PRTexprs (node *arg_node, info *arg_info)
@@ -3452,10 +3461,10 @@ PRTexprs (node *arg_node, info *arg_info)
         if (INFO_ISARRAY (arg_info)) {
             for (i = INFO_DIM (arg_info) - 1;
                  (i >= 0)
-                 && (++SHPSEG_SHAPE (INFO_SHAPE_COUNTER (arg_info), i)
-                     >= SHPSEG_SHAPE (INFO_SHAPE (arg_info), i));
+                 && (ShapeInc (INFO_SHAPE_COUNTER (arg_info), i)
+                     >= SHgetExtent (INFO_SHAPE (arg_info), i));
                  i--)
-                SHPSEG_SHAPE (INFO_SHAPE_COUNTER (arg_info), i) = 0;
+                SHsetExtent (INFO_SHAPE_COUNTER (arg_info), i, 0);
             for (j = INFO_DIM (arg_info) - 1; j > i; j--)
                 fprintf (global.outfile, " ]");
             fprintf (global.outfile, ", ");
