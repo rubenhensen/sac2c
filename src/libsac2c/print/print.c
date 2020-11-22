@@ -1933,17 +1933,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
         if (FUNDEF_RETS (arg_node) == NULL) {
             fprintf (global.outfile, "void ");
         } else {
-            if (FUNDEF_TYPES (arg_node) != NULL) {
-                /*
-                 *  Print old types.
-                 */
-                DBUG_ASSERT( FALSE, "encountered old types on fundef!");
-            } else {
-                /*
-                 * We do have new types !
-                 */
-                TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-            }
+            TRAVdo (FUNDEF_RETS (arg_node), arg_info);
 
             if (FUNDEF_HASDOTRETS (arg_node)) {
                 fprintf (global.outfile, ", ...");
@@ -2669,10 +2659,6 @@ PRTvardec (node *arg_node, info *arg_info)
         }
 
         fprintf (global.outfile, "; ");
-
-        if (VARDEC_TYPE (arg_node) != NULL) {
-            DBUG_ASSERT (FALSE, "encountered old types on vardec!");
-        }
 
         if (AVIS_DECLTYPE (VARDEC_AVIS (arg_node)) != NULL) {
             type_str = TYtype2String (AVIS_DECLTYPE (VARDEC_AVIS (arg_node)), FALSE, 0);

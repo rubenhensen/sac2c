@@ -11,58 +11,6 @@
 /*  Make-functions for non-node structures                                  */
 /*--------------------------------------------------------------------------*/
 
-/*
- * attention: the given parameter chain of nums structs is set free here!!!
- */
-shpseg *
-TBmakeShpseg (node *numsp)
-{
-    shpseg *tmp;
-    int i;
-    node *oldnumsp;
-
-    DBUG_ENTER ();
-
-    tmp = (shpseg *)MEMmalloc (sizeof (shpseg));
-
-#ifndef DBUG_OFF
-    /*
-     * For debugging memory use with dbx, it is important
-     * that all "memory.has been initialised before reading
-     * from it. As the Shpseg is allocated in a fixed size
-     * which may not be entirely filled afterwards, we
-     * have to write an initial value! Otherwise dbx will
-     * complain that for example in DupTree uninitialised
-     * data is read.
-     */
-    for (i = 0; i < SHP_SEG_SIZE; i++) {
-        SHPSEG_SHAPE (tmp, i) = -1;
-    }
-#endif
-
-    i = 0;
-    while (numsp != NULL) {
-        if (i >= SHP_SEG_SIZE) {
-            CTIabort ("Maximum number of dimensions exceeded");
-        }
-
-        DBUG_ASSERT (NODE_TYPE (numsp) == N_nums, "found a non numsp node as argument");
-
-        SHPSEG_SHAPE (tmp, i) = NUMS_VAL (numsp);
-
-        i++;
-        oldnumsp = numsp;
-        numsp = NUMS_NEXT (numsp);
-        oldnumsp = FREEdoFreeNode (oldnumsp);
-    }
-
-    SHPSEG_NEXT (tmp) = NULL;
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
 nodelist *
 TBmakeNodelistNode (node *node, nodelist *next)
 {

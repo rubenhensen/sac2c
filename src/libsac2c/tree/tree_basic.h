@@ -42,24 +42,6 @@
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  SHPSEG :
- ***
- ***  permanent attributes:
- ***
- ***    int[SHP_SEG_SIZE]  SHAPE
- ***    shpseg*            NEXT
- ***
- ***/
-
-extern shpseg *TBmakeShpseg (node *num);
-
-#define SHPSEG_ELEMS(s) (s->shp)
-#define SHPSEG_SHAPE(s, x) (SHPSEG_ELEMS (s)[x])
-#define SHPSEG_NEXT(s) (s->next)
-
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  NODELIST :
  ***
  ***  !!! DEPRECATED !!!

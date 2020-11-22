@@ -31,8 +31,6 @@
     <type name="Double" ctype="double" init="0.0" copy="literal" />
     <type name="Char" ctype="char" vtype="int" init="'\0'" 
           copy="literal" />
-    <type name="OldType" ctype="types*" init="NULL"
-    copy="function" persist="no" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />
     <!-- a Link pointing to a node within the tree -->
     <type name="Link" ctype="node*" init="NULL" copy="hash" persist="yes" />
@@ -67,8 +65,6 @@
     copy="function" persist="no" />
     <type name="AccessFeature" ctype="feature_t" init="0"
     copy="literal"  />
-    <type name="ShpSeg" ctype="shpseg*" init="NULL"
-    copy="function" />
     <type name="Scheduling" ctype="sched_t*" init="NULL"
     copy="function" persist="no" />
     <type name="TaskSel" ctype="tasksel_t*" init="NULL"
@@ -5374,18 +5370,6 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="Types" inconstructor="no">
-          <type name="OldType">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <range from="final" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="Specs" inconstructor="no">
           <type name="Integer">
             <targets>
@@ -6077,18 +6061,6 @@ N_tfarg :
         </son>
       </sons>
       <attributes>
-        <attribute name="Type"  default="NULL" inconstructor="no">
-          <type name="OldType">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="final" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="TypeString" inconstructor="no">
           <type name="String">
             <targets>
@@ -6453,18 +6425,6 @@ N_tfarg :
          </son>
       </sons>
       <attributes>
-        <attribute name="Type" default="NULL" inconstructor="no">
-          <type name="OldType">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="final" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="Icm" inconstructor="no">
           <type name="Node">
             <targets>
@@ -10157,8 +10117,8 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="TSI_TileShp" inconstructor="no">
-          <type name="ShpSeg">
+        <attribute name="TSI_TileShp" default="NULL" inconstructor="no">
+          <type name="Shape">
             <targets>
               <target mandatory="no">
                 <any />

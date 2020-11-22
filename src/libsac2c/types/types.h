@@ -309,13 +309,6 @@ typedef struct NODELIST {
     struct NODELIST *next;
 } nodelist;
 
-#define SHP_SEG_SIZE 16
-
-typedef struct SHPSEG {
-    int shp[SHP_SEG_SIZE];
-    struct SHPSEG *next;
-} shpseg;
-
 typedef struct ACCESS_T {
     struct NODE *array_vardec; /* */
     struct NODE *iv_vardec;    /* index vector */
@@ -336,26 +329,6 @@ typedef struct ACCESS_INFO_T {
     struct NODE *indexvar;
     struct NODE *wlarray;
 } access_info_t;
-
-typedef struct TYPES {
-    simpletype msimpletype;
-    char *name;         /* only used for T_user !! */
-    char *name_mod;     /* name of modul belonging to 'name' */
-    struct NODE *tdef;  /* typedef of user-defined type */
-    int dim;            /* if (dim == 0) => simpletype */
-    bool poly;          /* only needed for type templates (newTC !) */
-    shpseg *mshpseg;    /* pointer to shape specification */
-    struct TYPES *next; /* only needed for fun-results  */
-                        /* and implementation of implicit types */
-    /* mutc backend */
-    mutcScope scope; /* the scope of the value of this var */
-    mutcUsage usage; /* where is this var used */
-
-    bool unique;             /* this variable is unique */
-    bool akv;                /* this variable is akv */
-    distmem_dis distributed; /* distributed class of this variable */
-
-} types;
 
 /*
  *  Used to store the relations of with-generators.
@@ -1323,6 +1296,9 @@ typedef struct sMtx {
     int *m_stor;
     int **mtx;
 } * IntMatrix, sMatrix;
+
+
+#define SHP_SEG_SIZE 16
 
 /* These two structs are used to annotate reusable arrays
  * in a wl. The info will be attached to N_code node */

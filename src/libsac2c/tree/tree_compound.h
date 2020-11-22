@@ -61,11 +61,6 @@ specific implementation of a function should remain with the source code.
 #define IDS_NTYPE(n) AVIS_TYPE (IDS_AVIS (n))
 #define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_DECL (n))
 
-/*
- * TODO: remove
- */
-#define IDS_TYPE(n) VARDEC_OR_ARG_TYPE (IDS_DECL (n))
-
 extern node *TCcreateIdsChainFromAvises (int num_avises, ...);
 extern node *TCappendIds (node *chain, node *item);
 extern size_t TCcountIds (node *ids_arg);
@@ -344,12 +339,6 @@ extern size_t TCcountVardecs (node *vardecs);
 #define ARG_NAME(n) (AVIS_NAME (ARG_AVIS (n)))
 #define ARG_NTYPE(n) (AVIS_TYPE (ARG_AVIS (n)))
 
-/*
- * TODO: REMOVE US CAUSE WE'RE UGLY
- */
-#define ARG_DIM(n) (TYPES_DIM (ARG_TYPE (n)))
-#define ARG_TNAME(n) (TYPES_NAME (ARG_TYPE (n)))
-
 extern size_t TCcountArgs (node *args);
 extern size_t TCcountArgsIgnoreArtificials (node *args);
 extern node *TCappendArgs (node *arg_chain, node *arg);
@@ -395,7 +384,6 @@ extern node *TCcreateExprsFromArgs (node *args);
  *          Use the L_VARDEC_OR_... macros instead!!
  */
 #define VARDEC_OR_ARG_NAME(n) (AVIS_NAME (DECL_AVIS (n)))
-#define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
 #define VARDEC_OR_ARG_STATUS(n)                                                          \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_STATUS (n)                                                                  \
@@ -460,13 +448,6 @@ extern node *TCcreateExprsFromArgs (node *args);
         VARDEC_AVIS (n) = (rhs);                                                         \
     } else {                                                                             \
         OBJDEF_AVIS (n) = (rhs);                                                         \
-    }
-
-#define L_VARDEC_OR_ARG_TYPE(n, rhs)                                                     \
-    if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_TYPE (n) = (rhs);                                                            \
-    } else {                                                                             \
-        VARDEC_TYPE (n) = (rhs);                                                         \
     }
 
 extern node *TCsearchDecl (const char *name, node *decl_node);
@@ -831,13 +812,6 @@ extern node *TCids2ExprsNt (node *ids_arg);
 #define ID_DIM(n) VARDEC_OR_ARG_DIM (ID_DECL (n))
 #define ID_DECL_NEXT(n) VARDEC_OR_ARG_NEXT (ID_DECL (n))
 #define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_DECL (n))
-
-#define ID_TYPE(n)                                                                       \
-    ((NODE_TYPE (AVIS_DECL (ID_AVIS (n))) == N_vardec)                                   \
-       ? VARDEC_TYPE (AVIS_DECL (ID_AVIS (n)))                                           \
-       : ((NODE_TYPE (AVIS_DECL (ID_AVIS (n))) == N_arg)                                 \
-            ? ARG_TYPE (AVIS_DECL (ID_AVIS (n)))                                         \
-            : NULL))
 
 #define ID_SSAASSIGN(n) (AVIS_SSAASSIGN (ID_AVIS (n)))
 

@@ -298,13 +298,21 @@ SHserializeShape (FILE *file, shape *shp)
 
     DBUG_ENTER ();
 
-    fprintf (file, "SHcreateShape( %d", SHAPE_DIM (shp));
+    if (shp == NULL) {
+        DBUG_PRINT_TAG ("SET", "Processing shape (null)");
 
-    for (cnt = 0; cnt < SHAPE_DIM (shp); cnt++) {
-        fprintf (file, ", %d", SHAPE_EXT (shp, cnt));
+        fprintf (file, "NULL");
+
+        DBUG_PRINT_TAG ("SET", "Done processing shape (null)");
+    } else {
+        fprintf (file, "SHcreateShape( %d", SHAPE_DIM (shp));
+
+        for (cnt = 0; cnt < SHAPE_DIM (shp); cnt++) {
+            fprintf (file, ", %d", SHAPE_EXT (shp, cnt));
+        }
+
+        fprintf (file, ")");
     }
-
-    fprintf (file, ")");
 
     DBUG_RETURN ();
 }

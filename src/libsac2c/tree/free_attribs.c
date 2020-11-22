@@ -125,25 +125,6 @@ FREEattribSharedString (const char *attr, node *parent)
     DBUG_RETURN ((char *)NULL);
 }
 
-/** <!--******************************************************************-->
- *
- * @fn FREEattribOldType
- *
- * @brief Frees OldType attribute
- *
- * @param attr OldType node to process
- * @param parent parent node
- *
- * @return result of Free call, usually NULL
- *
- ***************************************************************************/
-types *
-FREEattribOldType (types *attr, node *parent)
-{
-    DBUG_ENTER ();
-
-    DBUG_RETURN (attr);
-}
 
 /** <!--******************************************************************-->
  *
@@ -712,31 +693,6 @@ FREEattribCudaAccessInfo (cuda_access_info_t *attr, node *parent)
             CUAI_INDICES (attr, i) = FREEattribCudaIndex (CUAI_INDICES (attr, i), parent);
         }
 
-        attr = MEMfree (attr);
-    }
-
-    DBUG_RETURN (attr);
-}
-
-/** <!--******************************************************************-->
- *
- * @fn FREEattribShpSeg
- *
- * @brief Frees ShpSeg attribute
- *
- * @param attr ShpSeg node to process
- * @param parent parent node
- *
- * @return result of Free call, usually NULL
- *
- ***************************************************************************/
-shpseg *
-FREEattribShpSeg (shpseg *attr, node *parent)
-{
-    DBUG_ENTER ();
-
-    if (attr != NULL) {
-        SHPSEG_NEXT (attr) = FREEattribShpSeg (SHPSEG_NEXT (attr), parent);
         attr = MEMfree (attr);
     }
 
