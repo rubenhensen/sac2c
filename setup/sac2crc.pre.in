@@ -385,7 +385,7 @@ TREE_CEXT        :=  ".c"
 TREE_OBJEXT      :=  ".o"
 TREE_DLLEXT      :=  "@SHARED_LIB_EXT@"
 COMPILE_TREE     :=  "@CC@ @GENPIC@ @DEFS@ @RCCCFLAGS@ -O1 %tree_cflags% %sacincludes% -c -o %target% %source%"
-LINK_TREE        :=  "@CC@ @LD_DYNAMIC@ %tree_ldflags% -o %target% %objects%"
+LINK_TREE        :=  "@CC@ @LD_DYNAMIC@ %ldflags% %tree_ldflags% -o %target% %objects%"
 
 LIB_OUTPUTDIR    :=  "${MODPATH_CONF}"
 LIBPATH          :=  ".:"
