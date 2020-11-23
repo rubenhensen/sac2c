@@ -273,13 +273,7 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
         res = TYmakeEmptyProductType (TCcountArgs (arg));
         i = 0;
         while (arg != NULL) {
-            type = AVIS_TYPE (ARG_AVIS (arg));
-            if (type == NULL) {
-                /* not yet converted ! */
-                type = TYoldType2Type (ARG_TYPE (arg));
-            } else {
-                type = TYcopyType (type);
-            }
+            type = TYcopyType (AVIS_TYPE (ARG_AVIS (arg)));
             res = TYsetProductMember (res, i,
                                       TYlubOfTypes (TYgetProductMember (args, i), type));
             type = TYfreeType (type);

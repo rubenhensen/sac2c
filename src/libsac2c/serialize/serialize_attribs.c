@@ -579,32 +579,6 @@ SATserializeChar (info *info, char attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SATserializeOldType
- *
- * @brief generates code to serialize the given attribute
- *
- * @param info   info structure of serialize traversal
- * @param attr   the attribute itself
- * @param parent the parent node
- *
- ***************************************************************************/
-
-void
-SATserializeOldType (info *info, types *attr, node *parent)
-{
-    DBUG_ENTER ();
-
-    if (attr == NULL) {
-        fprintf (INFO_SER_FILE (info), "NULL");
-    } else {
-        fprintf (INFO_SER_FILE (info), "MakeTypes1( %d)", T_unknown);
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!--******************************************************************-->
- *
  * @fn SATserializeNode
  *
  * @brief generates code to serialize the given attribute
@@ -1099,28 +1073,6 @@ SATserializeSimpleType (info *info, simpletype attr, node *parent)
 
 void
 SATserializeAccessInfo (info *info, access_info_t *attr, node *parent)
-{
-    DBUG_ENTER ();
-
-    fprintf (INFO_SER_FILE (info), "NULL");
-
-    DBUG_RETURN ();
-}
-
-/** <!--******************************************************************-->
- *
- * @fn SATserializeShpSeg
- *
- * @brief generates code to serialize the given attribute
- *
- * @param info   info structure of serialize traversal
- * @param attr   the attribute itself
- * @param parent the parent node
- *
- ***************************************************************************/
-
-void
-SATserializeShpSeg (info *info, shpseg *attr, node *parent)
 {
     DBUG_ENTER ();
 

@@ -4297,16 +4297,6 @@ TYeliminateUser (ntype *t1)
              */
             udt = UTgetUnAliasedType (USER_TYPE (TYgetScalar (t1)));
             res = TYnestTypes (t1, UTgetBaseType (udt));
-            if (TUisHidden (res)) {
-                /**
-                 * Here, we need to make sure that we keep
-                 * the usertype for hidden types!
-                 * Note here, that we deliberately ignore the
-                 * modified return value as we want to utilize the
-                 * side effect!
-                 */
-                TYsetHiddenUserType (TYgetScalar (res), udt);
-            }
         } else {
             res = TYcopyType (t1);
         }
@@ -4775,6 +4765,7 @@ ScalarType2String (ntype *type)
 {
     static str_buf *buf = NULL;
     char *res;
+    usertype udt;
 
     DBUG_ENTER ();
 
@@ -4784,9 +4775,21 @@ ScalarType2String (ntype *type)
 
     switch (NTYPE_CON (type)) {
     case TC_simple:
-        buf = SBUFprintf (buf, "%s", global.mdb_type[SIMPLE_TYPE (type)]);
         if (SIMPLE_TYPE (type) == T_hidden) {
-            buf = SBUFprintf (buf, "(%d)", SIMPLE_HIDDEN_UDT (type));
+            udt = SIMPLE_HIDDEN_UDT (type);
+            if (udt == UT_NOT_DEFINED) {
+                buf = SBUFprintf (buf, "hidden");
+            } else {
+                if (UTgetNamespace (udt) == NULL) {
+                    buf = SBUFprintf (buf, "enclosed(%s)", UTgetName (udt));
+                } else {
+                    buf = SBUFprintf (buf, "enclosed(%s::%s)",
+                                           NSgetName (UTgetNamespace (udt)),
+                                           UTgetName (udt));
+                }
+            }
+        } else {
+            buf = SBUFprintf (buf, "%s", global.mdb_type[SIMPLE_TYPE (type)]);
         }
         break;
     case TC_symbol:
@@ -5863,315 +5866,6 @@ TYdeNestTypeFromOuter (ntype *nested, ntype *outer)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
- *
- * function:
- *    ntype * TYoldType2ScalarType( types *old)
- *
- * description:
- *    converts an old TYPES node into an ntype node for the base type.
- *
- ******************************************************************************/
-
-ntype *
-TYoldType2ScalarType (types *old)
-{
-    ntype *res;
-    usertype udt;
-
-#ifndef DBUG_OFF
-    char *tmp = NULL, *tmp2 = NULL;
-#endif
-
-    DBUG_ENTER ();
-
-    switch (TYPES_BASETYPE (old)) {
-    case T_user:
-        if (TYPES_POLY (old)) {
-            res = TYmakePolyType (TYPES_NAME (old));
-        } else {
-            udt = UTfindUserType (TYPES_NAME (old), NSgetNamespace (TYPES_MOD (old)));
-            if (udt == UT_NOT_DEFINED) {
-                res = TYmakeSymbType (STRcpy (TYPES_NAME (old)),
-                                      NSgetNamespace (TYPES_MOD (old)));
-            } else {
-                res = TYmakeUserType (udt);
-            }
-        }
-        break;
-    case T_byte:
-    case T_short:
-    case T_int:
-    case T_long:
-    case T_longlong:
-    case T_ubyte:
-    case T_ushort:
-    case T_uint:
-    case T_ulong:
-    case T_ulonglong:
-    case T_float:
-    case T_floatvec:
-    case T_double:
-    case T_longdbl:
-    case T_bool:
-    case T_str:
-    case T_char:
-    case T_hidden:
-        res = TYmakeSimpleType (TYPES_BASETYPE (old));
-        break;
-    case T_void:
-    case T_unknown:
-    case T_nothing:
-        res = NULL;
-        break;
-    case T_dots:
-        res = NULL;
-        DBUG_UNREACHABLE ("TYoldType2Type applied to T_dots");
-        break;
-    default:
-        res = NULL;
-        DBUG_UNREACHABLE ("TYoldType2Type applied to illegal type");
-    }
-
-    DBUG_EXECUTE (tmp = CVtype2String (old, 3, TRUE);
-                  tmp2 = TYtype2DebugString (res, TRUE, 0));
-    DBUG_PRINT ("base type of %s converted into : %s\n", tmp, tmp2);
-    DBUG_EXECUTE (tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2));
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *    ntype * TYoldType2Type( types *old)
- *
- * description:
- *    converts an old TYPES node into an ntype node (or - if neccessary -
- *    a nesting of ntype nodes).
- *
- ******************************************************************************/
-
-ntype *
-TYoldType2Type (types *old)
-{
-    ntype *res;
-
-#ifndef DBUG_OFF
-    char *tmp = NULL, *tmp2 = NULL;
-#endif
-
-    DBUG_ENTER ();
-
-    if (TYPES_AKV (old)) {
-        CTInote ("AKV information lost in newtype->oldtype->newtype conversion");
-    }
-
-    res = TYoldType2ScalarType (old);
-
-    if (res != NULL) {
-        if (TYPES_DIM (old) > SCALAR) {
-            res
-              = TYmakeAKS (res, SHoldShpseg2Shape (TYPES_DIM (old), TYPES_SHPSEG (old)));
-        } else if (TYPES_DIM (old) < KNOWN_DIM_OFFSET) {
-            /* the result of this subtraction is always positive so safe  */
-            res = TYmakeAKD (res, (size_t)(KNOWN_DIM_OFFSET - TYPES_DIM (old)), SHmakeShape (0));
-        } else if (TYPES_DIM (old) == UNKNOWN_SHAPE) {
-            res = TYmakeAUDGZ (res);
-        } else if (TYPES_DIM (old) == ARRAY_OR_SCALAR) {
-            res = TYmakeAUD (res);
-        } else { /* TYPES_DIM( old) == SCALAR */
-            res = TYmakeAKS (res, SHcreateShape (0));
-        }
-    }
-
-    DBUG_EXECUTE (tmp = CVtype2String (old, 3, TRUE);
-                  tmp2 = TYtype2DebugString (res, TRUE, 0));
-    DBUG_PRINT ("%s converted into : %s\n", tmp, tmp2);
-    DBUG_EXECUTE (tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2));
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *    ntype * TYoldTypes2ProdType( types *old)
- *
- * description:
- *    converts a (linked list of) old TYPES node(s) into a product type of ntypes.
- *
- ******************************************************************************/
-
-ntype *
-TYoldTypes2ProdType (types *old)
-{
-    size_t i, num_types;
-    ntype *res;
-
-    num_types = TCcountTypes (old);
-    res = TYmakeEmptyProductType (num_types);
-    for (i = 0; i < num_types; i++) {
-        res = TYsetProductMember (res, i, TYoldType2Type (old));
-        old = TYPES_NEXT (old);
-    }
-    return (res);
-}
-
-/******************************************************************************
- *
- * function:
- *    types * TYType2OldType( ntype *new)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-static types *
-Type2OldType (ntype *xnew)
-{
-    types *res = NULL;
-    types *tmp = NULL;
-    int i;
-
-    DBUG_ENTER ();
-
-    switch (NTYPE_CON (xnew)) {
-    case TC_alpha:
-        DBUG_ASSERT (TYcmpTypes (SSIgetMin (TYgetAlpha (xnew)),
-                                 SSIgetMax (TYgetAlpha (xnew)))
-                       == TY_eq,
-                     "Type2OldType applied to non-unique alpha type");
-        res = Type2OldType (SSIgetMin (TYgetAlpha (xnew)));
-        break;
-    case TC_prod:
-        if (NTYPE_ARITY (xnew) == 0) {
-            res = TBmakeTypes1 (T_void);
-        } else {
-            for (i = (int)NTYPE_ARITY (xnew) - 1; i >= 0; i--) {
-                res = Type2OldType (PROD_MEMBER (xnew, i));
-                TYPES_NEXT (res) = tmp;
-                tmp = res;
-            }
-        }
-        break;
-    case TC_akv:
-        res = Type2OldType (AKS_BASE (xnew));
-        TYPES_DIM (res) = TYgetDim (xnew);
-        TYPES_SHPSEG (res) = SHshape2OldShpseg (TYgetShape (xnew));
-        TYPES_AKV (res) = TRUE;
-        break;
-    case TC_aks:
-        res = Type2OldType (AKS_BASE (xnew));
-        TYPES_DIM (res) = SHgetDim (AKS_SHP (xnew));
-        TYPES_SHPSEG (res) = SHshape2OldShpseg (AKS_SHP (xnew));
-
-        break;
-    case TC_akd:
-        res = Type2OldType (AKD_BASE (xnew));
-        TYPES_DIM (res) = KNOWN_DIM_OFFSET - (int)AKD_DOTS (xnew);
-        break;
-    case TC_audgz:
-        res = Type2OldType (AUDGZ_BASE (xnew));
-        TYPES_DIM (res) = UNKNOWN_SHAPE;
-        break;
-    case TC_aud:
-        res = Type2OldType (AUD_BASE (xnew));
-        TYPES_DIM (res) = ARRAY_OR_SCALAR;
-        break;
-    case TC_simple:
-        if ((SIMPLE_TYPE (xnew) == T_hidden)
-            && (SIMPLE_HIDDEN_UDT (xnew) != UT_NOT_DEFINED)) {
-            res = TBmakeTypes (T_user, 0, NULL,
-                               STRcpy (UTgetName (SIMPLE_HIDDEN_UDT (xnew))),
-                               STRcpy ((UTgetNamespace (SIMPLE_HIDDEN_UDT (xnew)) == NULL)
-                                         ? NULL
-                                         : NSgetName (
-                                             UTgetNamespace (SIMPLE_HIDDEN_UDT (xnew)))));
-            TYPES_TDEF (res) = UTgetTdef (SIMPLE_HIDDEN_UDT (xnew));
-        } else {
-            res = TBmakeTypes (SIMPLE_TYPE (xnew), 0, NULL, NULL, NULL);
-        }
-        break;
-    case TC_user:
-        res = TBmakeTypes (T_user, 0, NULL, STRcpy (UTgetName (USER_TYPE (xnew))),
-                           STRcpy ((UTgetNamespace (USER_TYPE (xnew)) == NULL)
-                                     ? NULL
-                                     : NSgetName (UTgetNamespace (USER_TYPE (xnew)))));
-        TYPES_TDEF (res) = UTgetTdef (USER_TYPE (xnew));
-        break;
-    default:
-        DBUG_UNREACHABLE ("Type2OldType not yet entirely implemented!");
-        res = NULL;
-        break;
-    }
-
-    if (res != NULL && xnew != NULL) {
-        TYPES_MUTC_SCOPE (res) = NTYPE_MUTC_SCOPE (xnew);
-        TYPES_MUTC_USAGE (res) = NTYPE_MUTC_USAGE (xnew);
-        if (TYisUnique (xnew)) {
-            TYPES_UNIQUE (res) = TRUE;
-        }
-    }
-
-    /* Decide whether the type is distributable. */
-    /* TODO: This is not the best location but we only need this during code generation
-     * so at this moment we do not need this in the new type system. */
-    if (global.backend == BE_distmem) {
-        if (TYgetDistributed (xnew) == distmem_dis_dsm) {
-            TYPES_DISTRIBUTED (res) = distmem_dis_dsm;
-        }
-
-        /* It seems like the basetype is not yet supported by the distributed memory
-         * backend. Don't distribute. */
-        else if (
-          global.type_cbasetype[TYPES_BASETYPE (res)] != C_btother
-          /* To avoid problems with string functions, we do not distribute unsigned char
-             arrays. */
-          && global.type_cbasetype[TYPES_BASETYPE (res)] != C_btuchar
-          /* It doesn't make sense to distribute scalars. */
-          && TYPES_DIM (res) != SCALAR
-          /* We do not distribute hidden types. It is not practical since we would have to
-           * think about (de-)serialization. But since hidden types come from the
-           * non-distributed C world it doesn't make make sense to distribute them
-           * anyways. */
-          && !TCisHidden (res)
-          /* It doesn't make sense to distribute unique types. These are only used by the
-           * master node.
-           * TODO: TYPES_UNIQUE seems to be always FALSE. */
-          && !TYPES_UNIQUE (res)
-          /* For now we do not distribute nested types. TODO: What are these actually? */
-          && !TCisNested (res)) {
-            TYPES_DISTRIBUTED (res) = distmem_dis_dis;
-        }
-    }
-
-    DBUG_RETURN (res);
-}
-
-types *
-TYtype2OldType (ntype *xnew)
-{
-    types *res;
-#ifndef DBUG_OFF
-    char *tmp_str = NULL, *tmp_str2 = NULL;
-#endif
-
-    DBUG_ENTER ();
-
-    DBUG_EXECUTE (tmp_str = TYtype2DebugString (xnew, FALSE, 0));
-    DBUG_PRINT ("converting %s", tmp_str);
-
-    res = Type2OldType (xnew);
-
-    DBUG_EXECUTE (tmp_str2 = CVtype2String (res, 0, TRUE));
-    DBUG_PRINT ("... result is %s", tmp_str2);
-    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
-    DBUG_EXECUTE (tmp_str2 = MEMfree (tmp_str2));
-
-    DBUG_RETURN (res);
-}
 
 /**
  **  functions for creating wrapper function code

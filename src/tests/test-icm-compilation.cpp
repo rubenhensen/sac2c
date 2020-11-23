@@ -17,7 +17,6 @@ extern "C" {
 #include "constants.h"
 #include "compile.h"
 #include "functionprecompile.h"
-#include "convert_type_representation.h"
 
 #include "limits.h"
 }
@@ -70,8 +69,6 @@ TEST (CompileICM, ICM_ND_FUN_DECL)
 
     // Create a stupid argtab of the function
     fn = FPCdoFunctionPrecompile (fn);
-    // Convert new types to old types.
-    fn = CTRdoConvertToOldTypes (fn);
 
     node *fn_icm = COMPdoCompile (fn);
 

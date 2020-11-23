@@ -263,7 +263,7 @@ Node2Value (node *arg_node)
         if (NULL != z) {
             if (TYisAKV (AVIS_TYPE (z))) {
                 if (TUisIntScalar (AVIS_TYPE (z))) {
-                    z = TBmakeNum (TUtype2Int (AVIS_TYPE (z)));
+                    z = TBmakeNum (TUakvScalInt2Int (AVIS_TYPE (z)));
                 } else {
                     if (TUisBoolScalar (AVIS_TYPE (z))) {
                         con = TYgetValue (AVIS_TYPE (z)); // con is NOT a copy!
@@ -1739,7 +1739,7 @@ HandleNumber (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
     DBUG_PRINT ("HandleNumber for lhs=%s", AVIS_NAME (arg_node));
     if ((NULL == rhs) && TYisAKV (AVIS_TYPE (arg_node))) {
         AVIS_ISLCLASS (arg_node) = AVIS_ISLCLASSEXISTENTIAL;
-        rhs = TBmakeNum (TUtype2Int (AVIS_TYPE (arg_node)));
+        rhs = TBmakeNum (TUakvScalInt2Int (AVIS_TYPE (arg_node)));
     }
     z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
     res = TCappendExprs (res, z);

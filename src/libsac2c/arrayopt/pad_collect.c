@@ -27,6 +27,7 @@
 #include "str.h"
 #include "memory.h"
 #include "new_types.h"
+#include "type_utils.h"
 #include "new_typecheck.h"
 
 #include "pad_info.h"
@@ -129,7 +130,7 @@ APCdoCollect (node *arg_node)
 /*****************************************************************************
  *
  * function:
- *   static shpseg* AccessClass2Group(accessclass_t class, int dim)
+ *   static shape* AccessClass2Group(accessclass_t class, int dim)
  *
  * description:
  *   convert access class into vector of integer factors
@@ -140,11 +141,11 @@ APCdoCollect (node *arg_node)
  *
  *****************************************************************************/
 
-static shpseg *
+static shape *
 AccessClass2Group (accessclass_t xclass, int dim)
 {
 
-    shpseg *vector;
+    shape *vector;
     int element;
     int i;
 
@@ -166,10 +167,10 @@ AccessClass2Group (accessclass_t xclass, int dim)
 
         /* supported access class */
 
-        vector = TBmakeShpseg (NULL);
+        vector = SHmakeShape (dim);
 
         for (i = 0; i < dim; i++) {
-            SHPSEG_SHAPE (vector, i) = element;
+            vector = SHsetExtent (vector, i, element);
         }
     } else {
 
@@ -201,11 +202,11 @@ CollectAccessPatterns (node *arg_node)
     collection_t *col_next_ptr;
     access_t *access_ptr;
     pattern_t *pt_ptr;
-    shpseg *group_vect;
-    shpseg *offset;
+    shape *group_vect;
+    shape *offset;
     simpletype type;
     int dim;
-    shpseg *shape;
+    shape *shp;
     pattern_t *patterns;
     accessdir_t direction;
 
@@ -257,7 +258,7 @@ CollectAccessPatterns (node *arg_node)
                 col_ptr = collection;
             }
 
-            offset = DUPdupShpseg (ACCESS_OFFSET (access_ptr));
+            offset = SHcopyShape (ACCESS_OFFSET (access_ptr));
             pt_ptr = PIconcatPatterns (pt_ptr, offset);
             COL_PATTERNS (col_ptr) = pt_ptr;
             break;
@@ -272,13 +273,13 @@ CollectAccessPatterns (node *arg_node)
 
     col_ptr = collection;
     while (col_ptr != NULL) {
-        type = TYPES_BASETYPE (VARDEC_TYPE (COL_ARRAY (col_ptr)));
-        dim = TYPES_DIM (VARDEC_TYPE (COL_ARRAY (col_ptr)));
-        shape = DUPdupShpseg (TYPES_SHPSEG (VARDEC_TYPE (COL_ARRAY (col_ptr))));
+        type = TUgetSimpleImplementationType (VARDEC_NTYPE (COL_ARRAY (col_ptr)));
+        dim = TYgetDim (VARDEC_NTYPE (COL_ARRAY (col_ptr)));
+        shp = SHcopyShape (TYgetShape (VARDEC_NTYPE (COL_ARRAY (col_ptr))));
         group_vect = AccessClass2Group (COL_CLASS (col_ptr), dim);
         direction = COL_DIR (col_ptr);
         patterns = COL_PATTERNS (col_ptr);
-        PIaddAccessPattern (type, dim, shape, group_vect, direction, patterns);
+        PIaddAccessPattern (type, dim, shp, group_vect, direction, patterns);
         col_ptr = COL_NEXT (col_ptr);
     }
 
@@ -296,7 +297,7 @@ CollectAccessPatterns (node *arg_node)
 /*****************************************************************************
  *
  * function:
- *   static node* AddUnsupported(node* arg_info, types* array_type)
+ *   static node* AddUnsupported(node* arg_info, ntype* array_type)
  *
  * description:
  *   wrapper to simplify adding an unsupported shape
@@ -305,7 +306,7 @@ CollectAccessPatterns (node *arg_node)
  *****************************************************************************/
 
 static void
-AddUnsupported (info *arg_info, types *array_type)
+AddUnsupported (info *arg_info, ntype *array_type)
 {
 
     DBUG_ENTER ();
@@ -313,10 +314,10 @@ AddUnsupported (info *arg_info, types *array_type)
     INFO_APC_UNSUPPORTED (arg_info) = TRUE;
 
     /* only non-scalar types will be added to list of unsupported shapes!
-     * scalar types do not have a shpseg!
+     * scalar types do not have a shape!
      */
-    if (TYPES_DIM (array_type) > 0) {
-        if (PIaddUnsupportedShape (DUPdupAllTypes (array_type))) {
+    if (TUgetFullDimEncoding (array_type) > 0) {
+        if (PIaddUnsupportedShape (TYcopyType (array_type))) {
             INFO_APC_COUNT_CHANGES (arg_info)++;
         }
     }
@@ -338,18 +339,15 @@ node *
 APCarray (node *arg_node, info *arg_info)
 {
     ntype *atype;
-    types *otype;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("array-node detected");
 
     atype = NTCnewTypeCheck_Expr (arg_node);
-    otype = TYtype2OldType (atype);
 
-    AddUnsupported (arg_info, otype);
+    AddUnsupported (arg_info, atype);
 
-    otype = FREEfreeOneTypes (otype);
     atype = TYfreeType (atype);
 
     DBUG_RETURN (arg_node);
@@ -445,7 +443,7 @@ APCid (node *arg_node, info *arg_info)
     DBUG_PRINT ("id-node detected");
 
     if (INFO_APC_UNSUPPORTED (arg_info)) {
-        AddUnsupported (arg_info, ID_TYPE (arg_node));
+        AddUnsupported (arg_info, ID_NTYPE (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -547,7 +545,7 @@ APClet (node *arg_node, info *arg_info)
     if (INFO_APC_UNSUPPORTED (arg_info)) {
         ids_ptr = LET_IDS (arg_node);
         while (ids_ptr != NULL) {
-            AddUnsupported (arg_info, VARDEC_OR_ARG_TYPE (IDS_DECL (ids_ptr))); /* TODO */
+            AddUnsupported (arg_info, IDS_NTYPE (ids_ptr));
             ids_ptr = IDS_NEXT (ids_ptr);
         }
     }
@@ -572,8 +570,8 @@ APCgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
 #if 0
-  shpseg* shape;
-  types* type;
+  shape* shp;
+  ntype* type;
   int dim;
   simpletype basetype;
 
@@ -584,17 +582,18 @@ APCgenarray (node *arg_node, info *arg_info)
   if (INFO_APC_UNSUPPORTED(arg_info)) {
   TODO: the following assumes, genarray_shape is given by a N_array node
     /* do not add type of vector, but contents of array to unsupported shapes */
-    basetype = TYPES_BASETYPE(ID_TYPE(WITH_CEXPR(INFO_APC_WITH(arg_info))));
+    basetype = TUgetSimpleImplementationType (
+                   ID_NTYPE(WITH_CEXPR(INFO_APC_WITH(arg_info))));
 
     dim = SHPSEG_SHAPE(TYPES_SHPSEG(ARRAY_TYPE(GENARRAY_SHAPE(arg_node))),0);
 
-    shape = TCarray2Shpseg(GENARRAY_SHAPE(arg_node), NULL);
+    shp = SHarray2Shape (GENARRAY_SHAPE(arg_node));
 
-    type = TBmakeTypes(basetype,dim,shape,NULL,NULL);
+    type = TYmakeAKS (TYmakeSimple (basetype), shape);
 
     AddUnsupported(arg_info,type);
 
-    FREEfreeOneTypes( type);
+    type = TYfreeType( type);
   }
 #endif
 
@@ -621,7 +620,7 @@ APCmodarray (node *arg_node, info *arg_info)
     DBUG_PRINT (" modarray-loop");
 
     if (INFO_APC_UNSUPPORTED (arg_info)) {
-        AddUnsupported (arg_info, ID_TYPE (MODARRAY_ARRAY (arg_node)));
+        AddUnsupported (arg_info, ID_NTYPE (MODARRAY_ARRAY (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -672,9 +671,9 @@ APCcode (node *arg_node, info *arg_info)
     arg_node = CollectAccessPatterns (arg_node);
 
     /* check type of id-node */
-    if (!(ID_DIM (CODE_CEXPR (arg_node)) == 0)) {
+    if (TYgetDim (ID_NTYPE (CODE_CEXPR (arg_node))) != 0) {
         /* not a scalar type, so this with-loop is unsupported! */
-        AddUnsupported (arg_info, ID_TYPE (CODE_CEXPR (arg_node)));
+        AddUnsupported (arg_info, ID_NTYPE (CODE_CEXPR (arg_node)));
     }
 
     /* traverse code block */

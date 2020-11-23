@@ -42,75 +42,6 @@
 /*--------------------------------------------------------------------------*/
 
 /***
- ***  SHPSEG :
- ***
- ***  permanent attributes:
- ***
- ***    int[SHP_SEG_SIZE]  SHAPE
- ***    shpseg*            NEXT
- ***
- ***/
-
-extern shpseg *TBmakeShpseg (node *num);
-
-#define SHPSEG_ELEMS(s) (s->shp)
-#define SHPSEG_SHAPE(s, x) (SHPSEG_ELEMS (s)[x])
-#define SHPSEG_NEXT(s) (s->next)
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  TYPES :
- ***
- ***  permanent attributes:
- ***
- ***    simpletype         BASETYPE
- ***    int                DIM
- ***    bool               POLY                new TC indicates type vars!
- ***    shpseg*            SHPSEG    (O)
- ***    char*              NAME      (O)
- ***    char*              MOD       (O)
- ***    statustype         STATUS
- ***    types*             NEXT      (O)
- ***
- ***  temporary attributes:
- ***
- ***    node*              TDEF      (O)  (typecheck -> )
- ***/
-
-/*
- * STATUS:
- *   ST_artificial : artificial return type due to the resolution of reference
- *                   parameters and global objects.
- *   ST_crettype   : return type of a function that is compiled to the actual
- *                   return type of the resulting C function.
- *   ST_regular    : otherwise
- *
- * TDEF is a reference to the defining N_typedef node of a user-defined type.
- */
-
-extern types *TBmakeTypes1 (simpletype btype);
-
-extern types *TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name,
-                           char *mod);
-
-#define TYPES_BASETYPE(t) (t->msimpletype)
-#define TYPES_DIM(t) (t->dim)
-#define TYPES_POLY(t) (t->poly)
-#define TYPES_SHPSEG(t) (t->mshpseg)
-#define TYPES_NAME(t) (t->name)
-#define TYPES_MOD(t) (t->name_mod)
-#define TYPES_TDEF(t) (t->tdef)
-#define TYPES_NEXT(t) (t->next)
-/* mutc old type accessors */
-#define TYPES_MUTC_SCOPE(t) (t->scope)
-#define TYPES_MUTC_USAGE(t) (t->usage)
-#define TYPES_UNIQUE(t) (t->unique)
-#define TYPES_AKV(t) (t->akv)
-#define TYPES_DISTRIBUTED(t) (t->distributed)
-/*--------------------------------------------------------------------------*/
-
-/***
  ***  NODELIST :
  ***
  ***  !!! DEPRECATED !!!
@@ -171,7 +102,7 @@ extern argtab_t *TBmakeArgtab (size_t size);
  ***/
 
 extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t mclass,
-                               shpseg *offset, accessdir_t direction, access_t *next);
+                               shape *offset, accessdir_t direction, access_t *next);
 
 #define ACCESS_ARRAY(a) (a->array_vardec)
 #define ACCESS_IV(a) (a->iv_vardec)

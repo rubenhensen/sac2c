@@ -44,48 +44,6 @@ DFMUdfm2Rets (dfmask_t *mask)
 /******************************************************************************
  *
  * function:
- *   types *DFMUdfm2ReturnTypes( dfmask_t* mask)
- *
- * description:
- *   Creates a types chain based on the given DFmask.
- *
- *****************************************************************************/
-
-types *
-DFMUdfm2ReturnTypes (dfmask_t *mask)
-{
-    node *avis;
-    types *tmp;
-    types *rettypes = NULL;
-
-    DBUG_ENTER ();
-
-    /*
-     * build return types, return exprs (use SPMD_OUT).
-     */
-    avis = DFMgetMaskEntryAvisSet (mask);
-    while (avis != NULL) {
-
-        tmp = rettypes;
-        rettypes = TYtype2OldType (AVIS_TYPE (avis));
-        TYPES_NEXT (rettypes) = tmp;
-
-        avis = DFMgetMaskEntryAvisSet (NULL);
-    }
-
-    /*
-     * we must build a void-type if ('rettypes' == NULL) is hold
-     */
-    if (rettypes == NULL) {
-        rettypes = TBmakeTypes1 (T_void);
-    }
-
-    DBUG_RETURN (rettypes);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *DFMUdfm2Vardecs( dfmask_t* mask, LUT_t lut)
  *
  * description:

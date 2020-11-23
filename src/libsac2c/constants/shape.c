@@ -298,13 +298,21 @@ SHserializeShape (FILE *file, shape *shp)
 
     DBUG_ENTER ();
 
-    fprintf (file, "SHcreateShape( %d", SHAPE_DIM (shp));
+    if (shp == NULL) {
+        DBUG_PRINT_TAG ("SET", "Processing shape (null)");
 
-    for (cnt = 0; cnt < SHAPE_DIM (shp); cnt++) {
-        fprintf (file, ", %d", SHAPE_EXT (shp, cnt));
+        fprintf (file, "NULL");
+
+        DBUG_PRINT_TAG ("SET", "Done processing shape (null)");
+    } else {
+        fprintf (file, "SHcreateShape( %d", SHAPE_DIM (shp));
+
+        for (cnt = 0; cnt < SHAPE_DIM (shp); cnt++) {
+            fprintf (file, ", %d", SHAPE_EXT (shp, cnt));
+        }
+
+        fprintf (file, ")");
     }
-
-    fprintf (file, ")");
 
     DBUG_RETURN ();
 }
@@ -601,118 +609,6 @@ SHshape2String (size_t dots, shape *shp)
     buf = SBUFprintf (buf, "]");
     res = SBUF2str (buf);
     SBUFflush (buf);
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn shape *SHoldTypes2Shape( types *types)
- *
- * @brief if types has a dim>=0 a shape structure is created which carries the same
- *        shape info as the types-node does. Otherwise, NULL is returned.
- *
- ******************************************************************************/
-shape *
-SHoldTypes2Shape (types *types)
-{
-    int dim;
-    shape *res;
-    shpseg *shpseg;
-
-    DBUG_ENTER ();
-    DBUG_ASSERT (types != NULL, "SHoldTypes2Shape called with NULL types!");
-
-    /* this function handle user defined types, too */
-    shpseg = TCtype2Shpseg (types, &dim);
-
-    res = SHoldShpseg2Shape (dim, shpseg);
-
-    if (shpseg != NULL) {
-        shpseg = FREEfreeShpseg (shpseg);
-    }
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn shape *SHoldShpseg2Shape( int dim, shpseg *shpseg)
- *
- * @brief iff dim > 0 a new shape structure is created which contains the same
- *        shape info as the shpseg does. Otherwise, NULL is returned.
- *
- ******************************************************************************/
-shape *
-SHoldShpseg2Shape (int dim, shpseg *shpseg)
-{
-    int i, j;
-    shape *res;
-
-    DBUG_ENTER ();
-
-    if (dim >= 0) {
-        res = SHmakeShape (dim);
-
-        if (dim > 0) {
-            i = 0;
-            while (dim > SHP_SEG_SIZE) {
-                DBUG_ASSERT (shpseg != NULL,
-                             "SHoldShpseg2Shape called with NULL shpseg but dim >0!");
-                for (j = 0; j < SHP_SEG_SIZE; j++, i++) {
-                    SHAPE_EXT (res, i) = SHPSEG_SHAPE (shpseg, j);
-                }
-                shpseg = SHPSEG_NEXT (shpseg);
-                dim -= SHP_SEG_SIZE;
-            }
-            for (j = 0; j < dim; j++, i++) {
-                SHAPE_EXT (res, i) = SHPSEG_SHAPE (shpseg, j);
-            }
-        }
-    } else {
-        res = NULL;
-    }
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn shpseg *SHshape2OldShpseg( shape *shp)
- *
- * @brief if shp has a dim>0 a shpseg structure is created which carries the
- *        same shape info as the shp does. Otherwise, NULL is returned.
- *
- ******************************************************************************/
-
-shpseg *
-SHshape2OldShpseg (shape *shp)
-{
-    int dim, i, j;
-    shpseg *res, *curr_seg;
-
-    DBUG_ENTER ();
-    DBUG_ASSERT (shp != NULL, "SHshape2OldShpseg called with NULL shp!");
-
-    dim = SHAPE_DIM (shp);
-    if (dim > 0) {
-        i = 0;
-        res = TBmakeShpseg (NULL);
-        curr_seg = res;
-        while (dim > SHP_SEG_SIZE) {
-            for (j = 0; j < SHP_SEG_SIZE; j++, i++) {
-                SHPSEG_SHAPE (curr_seg, j) = SHAPE_EXT (shp, i);
-            }
-            SHPSEG_NEXT (curr_seg) = TBmakeShpseg (NULL);
-            curr_seg = SHPSEG_NEXT (curr_seg);
-            dim -= SHP_SEG_SIZE;
-        }
-        for (j = 0; j < dim; j++, i++) {
-            SHPSEG_SHAPE (curr_seg, j) = SHAPE_EXT (shp, i);
-        }
-    } else {
-        res = NULL;
-    }
 
     DBUG_RETURN (res);
 }

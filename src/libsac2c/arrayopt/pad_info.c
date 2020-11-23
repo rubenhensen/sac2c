@@ -9,6 +9,7 @@
 #include "globals.h"
 #include "DupTree.h"
 #include "ctinfo.h"
+#include "type_utils.h"
 #include "str.h"
 #include "memory.h"
 #include "convert.h"
@@ -19,7 +20,7 @@
 /* access macros for array_type_t */
 #define AT_TYPE(p) (p)->type
 #define AT_DIM(p) (p)->dim
-#define AT_SHAPE(p) (p)->shape
+#define AT_SHAPE(p) (p)->shp
 #define AT_GROUPS(p) (p)->groups
 #define AT_NEXT(p) (p)->next
 
@@ -36,7 +37,7 @@
 /* access macros for unsupported_shapes_t */
 #define US_TYPE(p) (p)->type
 #define US_DIM(p) (p)->dim
-#define US_SHAPE(p) (p)->shape
+#define US_SHAPE(p) (p)->shp
 #define US_NEXT(p) (p)->next
 
 /* access_macros for pad_info_t */
@@ -70,7 +71,7 @@ static unsupported_shape_t *unsupported_shape;
 /*****************************************************************************
  *
  * function:
- *   static pad_info_t *GetNewTableEntry(types *old_type)
+ *   static pad_info_t *GetNewTableEntry(ntype *old_type)
  *
  * description:
  *   returns pointer to pad_info table entry corrsponding to old_type or NULL
@@ -78,7 +79,7 @@ static unsupported_shape_t *unsupported_shape;
  *****************************************************************************/
 
 static pad_info_t *
-GetNewTableEntry (types *old_type)
+GetNewTableEntry (ntype *old_type)
 {
 
     pad_info_t *tmp;
@@ -90,10 +91,10 @@ GetNewTableEntry (types *old_type)
     matching_entry = NULL;
 
     while (tmp != NULL) {
-        if ((PI_TYPE (tmp) == TYPES_BASETYPE (old_type))
-            && (PI_DIM (tmp) == TYPES_DIM (old_type))
-            && TCequalShpseg (PI_DIM (tmp), PI_OLD_SHAPE (tmp),
-                              TYPES_SHPSEG (old_type))) {
+        if ((PI_TYPE (tmp) == TUgetSimpleImplementationType (old_type))
+            && (PI_DIM (tmp) == TYgetDim (old_type))
+            && SHcompareShapes (PI_OLD_SHAPE (tmp),
+                                TYgetShape (old_type))) {
 
             matching_entry = tmp;
             tmp = NULL;
@@ -108,7 +109,7 @@ GetNewTableEntry (types *old_type)
 /*****************************************************************************
  *
  * function:
- *   static pad_info_t *GetOldTableEntry(types* new_type)
+ *   static pad_info_t *GetOldTableEntry(ntype* new_type)
  *
  * description:
  *   returns pointer to pad_info table entry corrsponding to new_type or NULL
@@ -116,7 +117,7 @@ GetNewTableEntry (types *old_type)
  *****************************************************************************/
 
 static pad_info_t *
-GetOldTableEntry (types *new_type)
+GetOldTableEntry (ntype *new_type)
 {
 
     pad_info_t *tmp;
@@ -128,10 +129,10 @@ GetOldTableEntry (types *new_type)
     matching_entry = NULL;
 
     while (tmp != NULL) {
-        if ((PI_TYPE (tmp) == TYPES_BASETYPE (new_type))
-            && (PI_DIM (tmp) == TYPES_DIM (new_type))
-            && TCequalShpseg (PI_DIM (tmp), PI_NEW_SHAPE (tmp),
-                              TYPES_SHPSEG (new_type))) {
+        if ((PI_TYPE (tmp) == TUgetSimpleImplementationType (new_type))
+            && (PI_DIM (tmp) == TYgetDim (new_type))
+            && SHcompareShapes (PI_NEW_SHAPE (tmp),
+                                TYgetShape (new_type))) {
 
             matching_entry = tmp;
             tmp = NULL;
@@ -146,7 +147,7 @@ GetOldTableEntry (types *new_type)
 /*****************************************************************************
  *
  * function:
- *   static array_type_t* GetArrayTypeEntry(simpletype type, int dim, shpseg* shape)
+ *   static array_type_t* GetArrayTypeEntry(simpletype type, int dim, shape* shp)
  *
  * description:
  *   get entry from access_pattern with specified type and class
@@ -155,7 +156,7 @@ GetOldTableEntry (types *new_type)
  *****************************************************************************/
 
 static array_type_t *
-GetArrayTypeEntry (simpletype type, int dim, shpseg *shape)
+GetArrayTypeEntry (simpletype type, int dim, shape *shp)
 {
 
     array_type_t *array_type_ptr;
@@ -168,7 +169,7 @@ GetArrayTypeEntry (simpletype type, int dim, shpseg *shape)
 
     while ((array_type_ptr != NULL) && (!matched)) {
         if ((dim == AT_DIM (array_type_ptr)) && (type == AT_TYPE (array_type_ptr))
-            && (TCequalShpseg (dim, shape, AT_SHAPE (array_type_ptr)))) {
+            && (SHcompareShapes (shp, AT_SHAPE (array_type_ptr)))) {
             matched = TRUE;
         } else {
             array_type_ptr = AT_NEXT (array_type_ptr);
@@ -186,7 +187,7 @@ GetArrayTypeEntry (simpletype type, int dim, shpseg *shape)
  *
  * function:
  *   static unsupported_shape_t* GetUnsupportedShapeEntry(simpletype type, int dim,
- *shpseg* shape)
+ *shape* shape)
  *
  * description:
  *   get entry from unsupported_shape with specified type
@@ -195,7 +196,7 @@ GetArrayTypeEntry (simpletype type, int dim, shpseg *shape)
  *****************************************************************************/
 
 static unsupported_shape_t *
-GetUnsupportedShapeEntry (simpletype type, int dim, shpseg *shape)
+GetUnsupportedShapeEntry (simpletype type, int dim, shape *shape)
 {
 
     unsupported_shape_t *unsupported_shape_ptr;
@@ -209,7 +210,7 @@ GetUnsupportedShapeEntry (simpletype type, int dim, shpseg *shape)
     while ((unsupported_shape_ptr != NULL) && (!matched)) {
         if ((dim == US_DIM (unsupported_shape_ptr))
             && (type == US_TYPE (unsupported_shape_ptr))
-            && (TCequalShpseg (dim, shape, US_SHAPE (unsupported_shape_ptr)))) {
+            && (SHcompareShapes (shape, US_SHAPE (unsupported_shape_ptr)))) {
             matched = TRUE;
         } else {
             unsupported_shape_ptr = US_NEXT (unsupported_shape_ptr);
@@ -241,8 +242,8 @@ RemovePadInfoElement (pad_info_t *element)
 
     DBUG_ENTER ();
 
-    FREEfreeShpseg (PI_OLD_SHAPE (element));
-    FREEfreeShpseg (PI_NEW_SHAPE (element));
+    SHfreeShape (PI_OLD_SHAPE (element));
+    SHfreeShape (PI_NEW_SHAPE (element));
     pi_next_ptr = PI_NEXT (element);
     element = MEMfree (element);
 
@@ -268,7 +269,7 @@ RemoveUnsupportedShapeElement (unsupported_shape_t *element)
 
     DBUG_ENTER ();
 
-    FREEfreeShpseg (US_SHAPE (element));
+    SHfreeShape (US_SHAPE (element));
     us_next_ptr = US_NEXT (element);
     element = MEMfree (element);
 
@@ -293,7 +294,7 @@ RemoveArrayTypeElement (array_type_t *element)
 
     DBUG_ENTER ();
 
-    FREEfreeShpseg (AT_SHAPE (element));
+    SHfreeShape (AT_SHAPE (element));
     at_next_ptr = AT_NEXT (element);
     element = MEMfree (element);
 
@@ -318,7 +319,7 @@ RemoveConflictGroupElement (conflict_group_t *element)
 
     DBUG_ENTER ();
 
-    FREEfreeShpseg (CG_GROUP (element));
+    SHfreeShape (CG_GROUP (element));
     cg_next_ptr = CG_NEXT (element);
     element = MEMfree (element);
 
@@ -343,7 +344,7 @@ RemovePatternElement (pattern_t *element)
 
     DBUG_ENTER ();
 
-    FREEfreeShpseg (PT_PATTERN (element));
+    SHfreeShape (PT_PATTERN (element));
     pt_next_ptr = PT_NEXT (element);
     element = MEMfree (element);
 
@@ -547,8 +548,8 @@ RemoveDuplicateAccesses (void)
             while (pt_ptr != NULL) {
 
                 if (PT_NEXT (pt_ptr) != NULL) {
-                    if (TCequalShpseg (AT_DIM (at_ptr), PT_PATTERN (pt_ptr),
-                                       PT_PATTERN (PT_NEXT (pt_ptr)))) {
+                    if (SHcompareShapes (PT_PATTERN (pt_ptr),
+                                         PT_PATTERN (PT_NEXT (pt_ptr)))) {
                         /* remove duplicate */
                         PT_NEXT (pt_ptr) = RemovePatternElement (PT_NEXT (pt_ptr));
 
@@ -620,8 +621,8 @@ RemoveIdenticalConflictGroups (void)
 
                 while (identical && (pt_ptr != NULL) && (pt_check_ptr != NULL)) {
 
-                    if (TCequalShpseg (AT_DIM (at_ptr), PT_PATTERN (pt_ptr),
-                                       PT_PATTERN (pt_check_ptr))) {
+                    if (SHcompareShapes (PT_PATTERN (pt_ptr),
+                                         PT_PATTERN (pt_check_ptr))) {
                         pt_ptr = PT_NEXT (pt_ptr);
                         pt_check_ptr = PT_NEXT (pt_check_ptr);
                     } else {
@@ -666,15 +667,15 @@ RemoveIdenticalConflictGroups (void)
 /*****************************************************************************
  *
  * function:
- *   void PIprintShpSeg(int dim, shpseg* shape)
+ *   void PIprintShpSeg(int dim, shape* shp)
  *
  * description:
- *   print shpseg to apdiag-file
+ *   print shape to apdiag-file
  *
  *****************************************************************************/
 
 void
-PIprintShpSeg (int dim, shpseg *shape)
+PIprintShpSeg (int dim, shape *shp)
 {
 
     int i;
@@ -685,9 +686,9 @@ PIprintShpSeg (int dim, shpseg *shape)
 
     APprintDiag ("[");
     for (i = 0; i < dim - 1; i++) {
-        APprintDiag ("%3d, ", SHPSEG_SHAPE (shape, i));
+        APprintDiag ("%3d, ", SHgetExtent (shp, i));
     }
-    APprintDiag ("%3d]", SHPSEG_SHAPE (shape, dim - 1));
+    APprintDiag ("%3d]", SHgetExtent (shp, dim - 1));
 
     DBUG_RETURN ();
 }
@@ -856,7 +857,7 @@ PIinit ()
 /*****************************************************************************
  *
  * function:
- *   pattern_t* PIconcatPatterns(pattern_t* pattern, shpseg* shape)
+ *   pattern_t* PIconcatPatterns(pattern_t* pattern, shape* shp)
  *
  * description:
  *   concat existing list of patterns (pattern) and new pattern (shape)
@@ -865,7 +866,7 @@ PIinit ()
  *****************************************************************************/
 
 pattern_t *
-PIconcatPatterns (pattern_t *pattern, shpseg *shape)
+PIconcatPatterns (pattern_t *pattern, shape *shp)
 {
 
     pattern_t *result;
@@ -873,7 +874,7 @@ PIconcatPatterns (pattern_t *pattern, shpseg *shape)
     DBUG_ENTER ();
 
     result = (pattern_t *)MEMmalloc (sizeof (pattern_t));
-    PT_PATTERN (result) = shape;
+    PT_PATTERN (result) = shp;
     PT_NEXT (result) = pattern;
 
     DBUG_RETURN (result);
@@ -882,7 +883,7 @@ PIconcatPatterns (pattern_t *pattern, shpseg *shape)
 /*****************************************************************************
  *
  * function:
- *   void PIaddAccessPattern(simpletype type, int dim, shpseg* shape, shpseg* group,
+ *   void PIaddAccessPattern(simpletype type, int dim, shape* shp, shape* group,
  *accessdir_t direction, pattern_t* patterns)
  *
  * description:
@@ -893,7 +894,7 @@ PIconcatPatterns (pattern_t *pattern, shpseg *shape)
  *****************************************************************************/
 
 void
-PIaddAccessPattern (simpletype type, int dim, shpseg *shape, shpseg *group,
+PIaddAccessPattern (simpletype type, int dim, shape *shp, shape *group,
                     accessdir_t direction, pattern_t *patterns)
 {
 
@@ -907,7 +908,7 @@ PIaddAccessPattern (simpletype type, int dim, shpseg *shape, shpseg *group,
     DBUG_ASSERT (patterns != NULL, " unexpected empty access pattern!");
 
     /* check existence of array type */
-    at_ptr = GetArrayTypeEntry (type, dim, shape);
+    at_ptr = GetArrayTypeEntry (type, dim, shp);
 
     /* add new type */
     if (at_ptr == NULL) {
@@ -915,12 +916,12 @@ PIaddAccessPattern (simpletype type, int dim, shpseg *shape, shpseg *group,
         array_type = (array_type_t *)MEMmalloc (sizeof (array_type_t));
         AT_DIM (array_type) = dim;
         AT_TYPE (array_type) = type;
-        AT_SHAPE (array_type) = shape;
+        AT_SHAPE (array_type) = shp;
         AT_GROUPS (array_type) = NULL;
         AT_NEXT (array_type) = at_next_ptr;
         at_ptr = array_type;
     } else {
-        FREEfreeShpseg (shape);
+        SHfreeShape (shp);
     }
 
     /* add new conflict group with patterns to type */
@@ -985,7 +986,7 @@ PIprintAccessPatterns ()
 /*****************************************************************************
  *
  * function:
- *   bool PIaddUnsupportedShape(types* array_type)
+ *   bool PIaddUnsupportedShape(ntype * array_type)
  *
  * description:
  *   add a new entry to unsupported_shape, if no entry for specified type, class
@@ -996,7 +997,7 @@ PIprintAccessPatterns ()
  *****************************************************************************/
 
 bool
-PIaddUnsupportedShape (types *array_type)
+PIaddUnsupportedShape (ntype  *array_type)
 {
 
     unsupported_shape_t *unsupported_shape_ptr;
@@ -1007,17 +1008,18 @@ PIaddUnsupportedShape (types *array_type)
 
     /* check, if entry for array_type and class already exists */
     unsupported_shape_ptr
-      = GetUnsupportedShapeEntry (TYPES_BASETYPE (array_type), TYPES_DIM (array_type),
-                                  TYPES_SHPSEG (array_type));
+      = GetUnsupportedShapeEntry (TUgetSimpleImplementationType (array_type),
+                                  TUgetFullDimEncoding (array_type),
+                                  TYgetShape (array_type));
 
     if (unsupported_shape_ptr == NULL) {
         /* create new entry */
         us_next_ptr = unsupported_shape;
         unsupported_shape
           = (unsupported_shape_t *)MEMmalloc (sizeof (unsupported_shape_t));
-        US_DIM (unsupported_shape) = TYPES_DIM (array_type);
-        US_TYPE (unsupported_shape) = TYPES_BASETYPE (array_type);
-        US_SHAPE (unsupported_shape) = TYPES_SHPSEG (array_type);
+        US_DIM (unsupported_shape) = TUgetFullDimEncoding (array_type);
+        US_TYPE (unsupported_shape) = TUgetSimpleImplementationType (array_type);
+        US_SHAPE (unsupported_shape) = TYgetShape (array_type);
         US_NEXT (unsupported_shape) = us_next_ptr;
         added = TRUE;
     } else {
@@ -1030,7 +1032,7 @@ PIaddUnsupportedShape (types *array_type)
 /*****************************************************************************
  *
  * function:
- *   bool PIisUnsupportedShape(types* array_type)
+ *   bool PIisUnsupportedShape(ntype* array_type)
  *
  * description:
  *   check, if specified type already exists in list of unsupported shapes
@@ -1038,7 +1040,7 @@ PIaddUnsupportedShape (types *array_type)
  *****************************************************************************/
 
 bool
-PIisUnsupportedShape (types *array_type)
+PIisUnsupportedShape (ntype *array_type)
 {
 
     unsupported_shape_t *unsupported_shape_ptr;
@@ -1047,8 +1049,9 @@ PIisUnsupportedShape (types *array_type)
     DBUG_ENTER ();
 
     unsupported_shape_ptr
-      = GetUnsupportedShapeEntry (TYPES_BASETYPE (array_type), TYPES_DIM (array_type),
-                                  TYPES_SHPSEG (array_type));
+      = GetUnsupportedShapeEntry (TUgetSimpleImplementationType (array_type),
+                                  TUgetFullDimEncoding (array_type),
+                                  TYgetShape (array_type));
     if (unsupported_shape_ptr == NULL) {
         is_unsupported = FALSE;
     } else {
@@ -1091,7 +1094,7 @@ PIprintUnsupportedShapes ()
 /******************************************************************************
  *
  * function:
- *   int PIlinearizeVector (int dim, shpseg* shape, shpseg* vect)
+ *   int PIlinearizeVector (int dim, shape* shp, shape* vect)
  *
  * description
  *
@@ -1101,7 +1104,7 @@ PIprintUnsupportedShapes ()
  ******************************************************************************/
 
 int
-PIlinearizeVector (int dim, shpseg *shape, shpseg *vect)
+PIlinearizeVector (int dim, shape *shp, shape *vect)
 {
 
     int offset;
@@ -1110,10 +1113,10 @@ PIlinearizeVector (int dim, shpseg *shape, shpseg *vect)
     DBUG_ENTER ();
 
     /* Horner scheme */
-    offset = SHPSEG_SHAPE (vect, 0);
+    offset = SHgetExtent (vect, 0);
     for (i = 1; i < dim; i++) {
-        offset *= SHPSEG_SHAPE (shape, i);
-        offset += SHPSEG_SHAPE (vect, i);
+        offset *= SHgetExtent (shp, i);
+        offset += SHgetExtent (vect, i);
     }
 
     DBUG_RETURN (offset);
@@ -1194,8 +1197,8 @@ PIremoveUnsupportedShapes ()
         while (pi_ptr != NULL) {
             if ((US_TYPE (us_ptr) == PI_TYPE (pi_ptr))
                 && (US_DIM (us_ptr) == PI_DIM (pi_ptr))
-                && (TCequalShpseg (US_DIM (us_ptr), US_SHAPE (us_ptr),
-                                   PI_OLD_SHAPE (pi_ptr)))) {
+                && (SHcompareShapes (US_SHAPE (us_ptr),
+                                     PI_OLD_SHAPE (pi_ptr)))) {
                 /* unsupported shape found in pad_info */
 
                 PrintPadInfoElement (pi_ptr);
@@ -1245,14 +1248,14 @@ PIgetArrayTypeDim (array_type_t *at_ptr)
 /*****************************************************************************
  *
  * function:
- *   shpseg* PIgetArrayTypeShape(array_type_t* at_ptr)
+ *   shape* PIgetArrayTypeShape(array_type_t* at_ptr)
  *
  * description:
  *   return shape of specified array type
  *
  *****************************************************************************/
 
-shpseg *
+shape *
 PIgetArrayTypeShape (array_type_t *at_ptr)
 {
 
@@ -1287,14 +1290,14 @@ PIgetArrayTypeBasetype (array_type_t *at_ptr)
 /*****************************************************************************
  *
  * function:
- *   shpseg* PIgetPatternShape(pattern_t* pt_ptr)
+ *   shape* PIgetPatternShape(pattern_t* pt_ptr)
  *
  * description:
  *   return shape of specified pattern
  *
  *****************************************************************************/
 
-shpseg *
+shape *
 PIgetPatternShape (pattern_t *pt_ptr)
 {
 
@@ -1463,18 +1466,18 @@ PIgetNextPattern (pattern_t *pt_ptr)
  *
  * function:
  *   void PIaddInferredShape(simpletype type, int dim,
- *                           shpseg* old_shape, shpseg* new_shape
- *                           shpseg *padding)
+ *                           shape* old_shape, shape* new_shape
+ *                           shape *padding)
  *
  * description:
  *   add a new entry to the data structure for a newly inferred type
- *   attention: shpsegs are set free within pad_info.c !!!
+ *   attention: shape are set free within pad_info.c !!!
  *
  *****************************************************************************/
 
 void
-PIaddInferredShape (simpletype type, int dim, shpseg *old_shape, shpseg *new_shape,
-                    shpseg *padding)
+PIaddInferredShape (simpletype type, int dim, shape *old_shape, shape *new_shape,
+                    shape *padding)
 {
     pad_info_t *tmp;
 
@@ -1500,8 +1503,8 @@ PIaddInferredShape (simpletype type, int dim, shpseg *old_shape, shpseg *new_sha
  *
  * function:
  *   int PIpaddingOverhead(int dim,
- *                         shpseg* orig_shape,
- *                         shpseg* padding)
+ *                         shape* orig_shape,
+ *                         shape* padding)
  *
  * description
  *
@@ -1512,7 +1515,7 @@ PIaddInferredShape (simpletype type, int dim, shpseg *old_shape, shpseg *new_sha
  ******************************************************************************/
 
 int
-PIpaddingOverhead (int dim, shpseg *orig_shape, shpseg *padding)
+PIpaddingOverhead (int dim, shape *orig_shape, shape *padding)
 {
     int i, overhead;
     unsigned long int orig_size, padding_size;
@@ -1523,8 +1526,8 @@ PIpaddingOverhead (int dim, shpseg *orig_shape, shpseg *padding)
     padding_size = 1;
 
     for (i = 0; i < dim; i++) {
-        orig_size *= SHPSEG_SHAPE (orig_shape, i);
-        padding_size *= (SHPSEG_SHAPE (orig_shape, i) + SHPSEG_SHAPE (padding, i));
+        orig_size *= SHgetExtent (orig_shape, i);
+        padding_size *= (SHgetExtent (orig_shape, i) + SHgetExtent (padding, i));
     }
 
     if ((padding_size < orig_size) || (orig_size == 0)) {
@@ -1566,9 +1569,9 @@ PInoteResults ()
 
     while (pi_ptr != NULL) {
         basetype = CVbasetype2String (PI_TYPE (pi_ptr));
-        old = CVshpseg2String (PI_DIM (pi_ptr), PI_OLD_SHAPE (pi_ptr));
-        xnew = CVshpseg2String (PI_DIM (pi_ptr), PI_NEW_SHAPE (pi_ptr));
-        pad = CVshpseg2String (PI_DIM (pi_ptr), PI_PADDING (pi_ptr));
+        old = SHshape2String (PI_DIM (pi_ptr), PI_OLD_SHAPE (pi_ptr));
+        xnew = SHshape2String (PI_DIM (pi_ptr), PI_NEW_SHAPE (pi_ptr));
+        pad = SHshape2String (PI_DIM (pi_ptr), PI_PADDING (pi_ptr));
         overhead = PIpaddingOverhead (PI_DIM (pi_ptr), PI_OLD_SHAPE (pi_ptr),
                                       PI_PADDING (pi_ptr));
 
@@ -1618,7 +1621,7 @@ PIprintPadInfo ()
 /*****************************************************************************
  *
  * function:
- *   types* PIgetNewType(types* old_type)
+ *   ntype* PIgetNewType(ntype* old_type)
  *
  * description:
  *   returns type-structure with padded shape
@@ -1629,11 +1632,11 @@ PIprintPadInfo ()
  *
  *****************************************************************************/
 
-types *
-PIgetNewType (types *old_type)
+ntype *
+PIgetNewType (ntype *old_type)
 {
 
-    types *new_type;
+    ntype *new_type;
     pad_info_t *table_entry;
 
     DBUG_ENTER ();
@@ -1643,10 +1646,9 @@ PIgetNewType (types *old_type)
     table_entry = GetNewTableEntry (old_type);
 
     if (table_entry != NULL) {
-        new_type = DUPdupAllTypes (old_type);
-        FREEfreeShpseg (TYPES_SHPSEG (new_type));
-        TYPES_SHPSEG (new_type) = DUPdupShpseg (PI_NEW_SHAPE (table_entry));
-        FREEfreeOneTypes (old_type);
+        new_type = TYmakeAKS (TYcopyType (TYgetScalar( old_type)),
+                              SHcopyShape (PI_NEW_SHAPE (table_entry)));
+        TYfreeType (old_type);
     }
 
     DBUG_RETURN (new_type);
@@ -1655,7 +1657,7 @@ PIgetNewType (types *old_type)
 /*****************************************************************************
  *
  * function:
- *   types* PIgetOldType(types* new_type)
+ *   ntype* PIgetOldType(ntype* new_type)
  *
  * description:
  *   returns type-structure with unpadded shape
@@ -1666,11 +1668,11 @@ PIgetNewType (types *old_type)
  *
  *****************************************************************************/
 
-types *
-PIgetOldType (types *new_type)
+ntype *
+PIgetOldType (ntype *new_type)
 {
 
-    types *old_type;
+    ntype *old_type;
     pad_info_t *table_entry;
 
     DBUG_ENTER ();
@@ -1680,10 +1682,9 @@ PIgetOldType (types *new_type)
     table_entry = GetOldTableEntry (new_type);
 
     if (table_entry != NULL) {
-        old_type = DUPdupAllTypes (new_type);
-        FREEfreeShpseg (TYPES_SHPSEG (old_type));
-        TYPES_SHPSEG (old_type) = DUPdupShpseg (PI_OLD_SHAPE (table_entry));
-        FREEfreeOneTypes (new_type);
+        old_type = TYmakeAKS (TYcopyType (TYgetScalar( new_type)),
+                              SHcopyShape (PI_OLD_SHAPE (table_entry)));
+        TYfreeType (new_type);
     }
 
     DBUG_RETURN (old_type);
@@ -1692,7 +1693,7 @@ PIgetOldType (types *new_type)
 /*****************************************************************************
  *
  * function:
- *   node* PIgetFUndefPad(types *old_type)
+ *   node* PIgetFUndefPad(ntype *old_type)
  *
  * description:
  *   return pointer to fundef-node of padding-function
@@ -1700,7 +1701,7 @@ PIgetOldType (types *new_type)
  *****************************************************************************/
 
 node *
-PIgetFundefPad (types *old_type)
+PIgetFundefPad (ntype *old_type)
 {
 
     pad_info_t *table_entry;
@@ -1723,7 +1724,7 @@ PIgetFundefPad (types *old_type)
  *****************************************************************************/
 
 node *
-PIgetFundefUnpad (types *old_type)
+PIgetFundefUnpad (ntype *old_type)
 {
 
     pad_info_t *table_entry;

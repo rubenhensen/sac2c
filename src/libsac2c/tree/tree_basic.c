@@ -11,105 +11,6 @@
 /*  Make-functions for non-node structures                                  */
 /*--------------------------------------------------------------------------*/
 
-/*
- * attention: the given parameter chain of nums structs is set free here!!!
- */
-shpseg *
-TBmakeShpseg (node *numsp)
-{
-    shpseg *tmp;
-    int i;
-    node *oldnumsp;
-
-    DBUG_ENTER ();
-
-    tmp = (shpseg *)MEMmalloc (sizeof (shpseg));
-
-#ifndef DBUG_OFF
-    /*
-     * For debugging memory use with dbx, it is important
-     * that all "memory.has been initialised before reading
-     * from it. As the Shpseg is allocated in a fixed size
-     * which may not be entirely filled afterwards, we
-     * have to write an initial value! Otherwise dbx will
-     * complain that for example in DupTree uninitialised
-     * data is read.
-     */
-    for (i = 0; i < SHP_SEG_SIZE; i++) {
-        SHPSEG_SHAPE (tmp, i) = -1;
-    }
-#endif
-
-    i = 0;
-    while (numsp != NULL) {
-        if (i >= SHP_SEG_SIZE) {
-            CTIabort ("Maximum number of dimensions exceeded");
-        }
-
-        DBUG_ASSERT (NODE_TYPE (numsp) == N_nums, "found a non numsp node as argument");
-
-        SHPSEG_SHAPE (tmp, i) = NUMS_VAL (numsp);
-
-        i++;
-        oldnumsp = numsp;
-        numsp = NUMS_NEXT (numsp);
-        oldnumsp = FREEdoFreeNode (oldnumsp);
-    }
-
-    SHPSEG_NEXT (tmp) = NULL;
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-types *
-TBmakeTypes1 (simpletype btype)
-{
-    types *tmp;
-
-    DBUG_ENTER ();
-
-    tmp = TBmakeTypes (btype, 0, NULL, NULL, NULL);
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
-types *
-TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name, char *mod)
-{
-    types *tmp;
-
-    DBUG_ENTER ();
-
-    tmp = (types *)MEMmalloc (sizeof (types));
-
-    TYPES_BASETYPE (tmp) = btype;
-    TYPES_NAME (tmp) = name;
-    TYPES_MOD (tmp) = mod;
-    TYPES_SHPSEG (tmp) = shpseg;
-    TYPES_DIM (tmp) = dim;
-    TYPES_POLY (tmp) = FALSE;
-
-    TYPES_MUTC_SCOPE (tmp) = MUTC_GLOBAL;
-    TYPES_MUTC_USAGE (tmp) = MUTC_US_DEFAULT;
-
-    TYPES_TDEF (tmp) = NULL;
-    TYPES_NEXT (tmp) = NULL;
-
-    TYPES_MUTC_SCOPE (tmp) = MUTC_GLOBAL;
-    TYPES_MUTC_USAGE (tmp) = MUTC_US_DEFAULT;
-    TYPES_UNIQUE (tmp) = FALSE;
-
-    TYPES_DISTRIBUTED (tmp) = distmem_dis_ndi;
-
-    DBUG_RETURN (tmp);
-}
-
-/*--------------------------------------------------------------------------*/
-
 nodelist *
 TBmakeNodelistNode (node *node, nodelist *next)
 {
@@ -127,7 +28,7 @@ TBmakeNodelistNode (node *node, nodelist *next)
 /*--------------------------------------------------------------------------*/
 
 access_t *
-TBmakeAccess (node *array, node *iv, accessclass_t mclass, shpseg *offset,
+TBmakeAccess (node *array, node *iv, accessclass_t mclass, shape *offset,
               accessdir_t direction, access_t *next)
 {
     access_t *tmp;
@@ -278,7 +179,7 @@ TBmakeArgtab (size_t size)
 
     argtab->size = size;
     argtab->ptr_in = (node **)MEMmalloc (argtab->size * sizeof (node *));
-    argtab->ptr_out = (node **)MEMmalloc (argtab->size * sizeof (types *));
+    argtab->ptr_out = (node **)MEMmalloc (argtab->size * sizeof (node *));
     argtab->tag = (argtag_t *)MEMmalloc (argtab->size * sizeof (argtag_t));
 
     for (i = 0; i < argtab->size; i++) {

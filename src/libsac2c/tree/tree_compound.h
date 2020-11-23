@@ -48,49 +48,6 @@ specific implementation of a function should remain with the source code.
 #define LIB_FUN 0x0008
 #define OVRLD_FUN 0x0010
 
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  SHPSEG :
- ***/
-
-extern int TCgetShpsegLength (int dims, shpseg *shape);
-extern shpseg *TCdiffShpseg (int dim, shpseg *shape1, shpseg *shape2);
-extern bool TCshapeVarsMatch (node *avis1, node *avis2);
-extern bool TCequalShpseg (int dim, shpseg *shape2, shpseg *shape1);
-extern shpseg *TCmergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
-
-extern shpseg *TCarray2Shpseg (node *array, int *ret_dim);
-extern node *TCshpseg2Array (shpseg *shape, int dim);
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  TYPES :
- ***/
-
-/*
- *  compound access macros
- */
-
-#define TYPES_SHAPE(t, x) (SHPSEG_SHAPE (TYPES_SHPSEG (t), x))
-
-extern types *TCappendTypes (types *chain, types *item);
-extern unsigned int TCcountTypes (types *type);
-extern types *TCgetTypesLine (types *type, size_t line);
-extern types *TCgetTypes (types *type);
-extern int TCgetShapeDim (types *type);
-extern int TCgetDim (types *type);
-extern simpletype TCgetBasetype (types *type);
-extern size_t TCgetBasetypeSize (types *type);
-extern int TCgetTypesLength (types *type);
-extern shpseg *TCtype2Shpseg (types *type, int *ret_dim);
-extern shape *TCtype2Shape (types *type);
-extern node *TCtype2Exprs (types *type);
-
-extern bool TCisUnique (types *type);
-extern bool TCisHidden (types *type);
-extern bool TCisNested (types *type);
 
 /*--------------------------------------------------------------------------*/
 
@@ -103,11 +60,6 @@ extern bool TCisNested (types *type);
 #define IDS_DECL(n) AVIS_DECL (IDS_AVIS (n))
 #define IDS_NTYPE(n) AVIS_TYPE (IDS_AVIS (n))
 #define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_DECL (n))
-
-/*
- * TODO: remove
- */
-#define IDS_TYPE(n) VARDEC_OR_ARG_TYPE (IDS_DECL (n))
 
 extern node *TCcreateIdsChainFromAvises (int num_avises, ...);
 extern node *TCappendIds (node *chain, node *item);
@@ -347,13 +299,6 @@ extern node *TCremoveFundef (node *fundef_chain, node *fundef);
 #define VARDEC_NTYPE(n) (AVIS_TYPE (VARDEC_AVIS (n)))
 #define VARDEC_NAME(n) (AVIS_NAME (VARDEC_AVIS (n)))
 
-/*
- * TODO: REMOVE US CAUSE WE'RE UGLY
- */
-#define VARDEC_DIM(n) (TYPES_DIM (VARDEC_TYPE (n)))
-#define VARDEC_SHAPE(n, x) (TYPES_SHAPE (VARDEC_TYPE (n), x))
-#define VARDEC_SHPSEG(n) (TYPES_SHPSEG (VARDEC_TYPE (n)))
-
 /******************************************************************************
  *
  * Function:
@@ -393,12 +338,6 @@ extern size_t TCcountVardecs (node *vardecs);
 
 #define ARG_NAME(n) (AVIS_NAME (ARG_AVIS (n)))
 #define ARG_NTYPE(n) (AVIS_TYPE (ARG_AVIS (n)))
-
-/*
- * TODO: REMOVE US CAUSE WE'RE UGLY
- */
-#define ARG_DIM(n) (TYPES_DIM (ARG_TYPE (n)))
-#define ARG_TNAME(n) (TYPES_NAME (ARG_TYPE (n)))
 
 extern size_t TCcountArgs (node *args);
 extern size_t TCcountArgsIgnoreArtificials (node *args);
@@ -445,7 +384,6 @@ extern node *TCcreateExprsFromArgs (node *args);
  *          Use the L_VARDEC_OR_... macros instead!!
  */
 #define VARDEC_OR_ARG_NAME(n) (AVIS_NAME (DECL_AVIS (n)))
-#define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
 #define VARDEC_OR_ARG_STATUS(n)                                                          \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_STATUS (n)                                                                  \
@@ -510,13 +448,6 @@ extern node *TCcreateExprsFromArgs (node *args);
         VARDEC_AVIS (n) = (rhs);                                                         \
     } else {                                                                             \
         OBJDEF_AVIS (n) = (rhs);                                                         \
-    }
-
-#define L_VARDEC_OR_ARG_TYPE(n, rhs)                                                     \
-    if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_TYPE (n) = (rhs);                                                            \
-    } else {                                                                             \
-        VARDEC_TYPE (n) = (rhs);                                                         \
     }
 
 extern node *TCsearchDecl (const char *name, node *decl_node);
@@ -882,19 +813,11 @@ extern node *TCids2ExprsNt (node *ids_arg);
 #define ID_DECL_NEXT(n) VARDEC_OR_ARG_NEXT (ID_DECL (n))
 #define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_DECL (n))
 
-#define ID_TYPE(n)                                                                       \
-    ((NODE_TYPE (AVIS_DECL (ID_AVIS (n))) == N_vardec)                                   \
-       ? VARDEC_TYPE (AVIS_DECL (ID_AVIS (n)))                                           \
-       : ((NODE_TYPE (AVIS_DECL (ID_AVIS (n))) == N_arg)                                 \
-            ? ARG_TYPE (AVIS_DECL (ID_AVIS (n)))                                         \
-            : NULL))
-
 #define ID_SSAASSIGN(n) (AVIS_SSAASSIGN (ID_AVIS (n)))
 
 #define ID_NAME_OR_ICMTEXT(n) ((ID_AVIS (n) != NULL) ? ID_NAME (n) : ID_ICMTEXT (n))
 
 extern node *TCmakeIdCopyString (const char *str);
-extern node *TCmakeIdCopyStringNt (const char *str, types *type);
 extern node *TCmakeIdCopyStringNtNew (const char *str, ntype *type);
 
 /***************************************************************************
@@ -1662,6 +1585,8 @@ extern size_t TCcountWlseg (node *withop);
 
 #define AVIS_SSASTACK_TOP(n) SSASTACK_AVIS (AVIS_SSASTACK (n))
 #define AVIS_SSASTACK_INUSE(n) SSASTACK_INUSE (AVIS_SSASTACK (n))
+
+extern bool TCshapeVarsMatch (node *avis1, node *avis2);
 
 /*--------------------------------------------------------------------------*/
 

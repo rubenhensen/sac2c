@@ -198,20 +198,6 @@ CUisShmemTypeNew (ntype *ty)
 }
 
 bool
-CUisShmemTypeOld (types *ty)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN (CUisShmemType (TCgetBasetype (ty)));
-}
-
-bool
-CUisDeviceTypeOld (types *ty)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN (CUisDeviceType (TCgetBasetype (ty)));
-}
-
-bool
 CUisDeviceArrayTypeNew (ntype *ty)
 {
     DBUG_ENTER ();

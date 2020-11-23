@@ -3,7 +3,6 @@
 
 #include "types.h"
 
-extern types *DFMUdfm2ReturnTypes (dfmask_t *mask);
 extern node *DFMUdfm2Rets (dfmask_t *mask);
 extern node *DFMUdfm2Vardecs (dfmask_t *mask, lut_t *lut);
 extern node *DFMUdfm2Args (dfmask_t *mask, lut_t *lut);

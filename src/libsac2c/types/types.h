@@ -23,6 +23,12 @@
 #define TRUE true
 #define FALSE false
 
+/*
+ * moved from shape.h
+ */
+
+typedef struct SHAPE shape;
+
 /* Structcure to store where a token came from.  */
 struct location {
     const char *fname;
@@ -303,18 +309,11 @@ typedef struct NODELIST {
     struct NODELIST *next;
 } nodelist;
 
-#define SHP_SEG_SIZE 16
-
-typedef struct SHPSEG {
-    int shp[SHP_SEG_SIZE];
-    struct SHPSEG *next;
-} shpseg;
-
 typedef struct ACCESS_T {
     struct NODE *array_vardec; /* */
     struct NODE *iv_vardec;    /* index vector */
     accessclass_t accessclass; /* */
-    shpseg *offset;            /* */
+    shape *offset;            /* */
     accessdir_t direction;     /* 0 == ADIR_read,  1 == ADIR_write */
     struct ACCESS_T *next;     /* */
 } access_t;
@@ -330,26 +329,6 @@ typedef struct ACCESS_INFO_T {
     struct NODE *indexvar;
     struct NODE *wlarray;
 } access_info_t;
-
-typedef struct TYPES {
-    simpletype msimpletype;
-    char *name;         /* only used for T_user !! */
-    char *name_mod;     /* name of modul belonging to 'name' */
-    struct NODE *tdef;  /* typedef of user-defined type */
-    int dim;            /* if (dim == 0) => simpletype */
-    bool poly;          /* only needed for type templates (newTC !) */
-    shpseg *mshpseg;    /* pointer to shape specification */
-    struct TYPES *next; /* only needed for fun-results  */
-                        /* and implementation of implicit types */
-    /* mutc backend */
-    mutcScope scope; /* the scope of the value of this var */
-    mutcUsage usage; /* where is this var used */
-
-    bool unique;             /* this variable is unique */
-    bool akv;                /* this variable is akv */
-    distmem_dis distributed; /* distributed class of this variable */
-
-} types;
 
 /*
  *  Used to store the relations of with-generators.
@@ -542,12 +521,6 @@ typedef enum {
 #define NTIFtype(it_type) it_type
 #include "nt_info.mac"
 } cbasetype_class_t;
-
-/*
- * moved from shape.h
- */
-
-typedef struct SHAPE shape;
 
 /*
  * moved from constant.h
@@ -878,13 +851,13 @@ typedef struct PATTR attrib;
 
 /* structure for storing access patterns */
 typedef struct PATTERN_T {
-    shpseg *pattern;
+    shape *pattern;
     struct PATTERN_T *next;
 } pattern_t;
 
 /* structure for grouping access patterns by conflict groups */
 typedef struct CONFLICT_GROUP_T {
-    shpseg *group;
+    shape *group;
     accessdir_t direction;
     pattern_t *patterns;
     struct CONFLICT_GROUP_T *next;
@@ -894,7 +867,7 @@ typedef struct CONFLICT_GROUP_T {
 typedef struct ARRAY_TYPE_T {
     simpletype type;
     int dim;
-    shpseg *shape;
+    shape *shp;
     conflict_group_t *groups;
     struct ARRAY_TYPE_T *next;
 } array_type_t;
@@ -903,7 +876,7 @@ typedef struct ARRAY_TYPE_T {
 typedef struct UNSUPPORTED_SHAPE_T {
     simpletype type;
     int dim;
-    shpseg *shape;
+    shape *shp;
     struct UNSUPPORTED_SHAPE_T *next;
 } unsupported_shape_t;
 
@@ -911,9 +884,9 @@ typedef struct UNSUPPORTED_SHAPE_T {
 typedef struct PAD_INFO_T {
     simpletype type;
     int dim;
-    shpseg *old_shape;
-    shpseg *new_shape;
-    shpseg *padding;
+    shape *old_shape;
+    shape *new_shape;
+    shape *padding;
     node *fundef_pad;
     node *fundef_unpad;
     struct PAD_INFO_T *next;
@@ -1323,6 +1296,9 @@ typedef struct sMtx {
     int *m_stor;
     int **mtx;
 } * IntMatrix, sMatrix;
+
+
+#define SHP_SEG_SIZE 16
 
 /* These two structs are used to annotate reusable arrays
  * in a wl. The info will be attached to N_code node */

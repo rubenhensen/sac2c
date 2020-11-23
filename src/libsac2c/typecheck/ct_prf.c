@@ -11,6 +11,8 @@
 #include "constants.h"
 #include "ctinfo.h"
 #include "globals.h"
+#include "str.h"
+#include "memory.h"
 
 static constant *
 ApplyCF (te_info *info, ntype *args)
@@ -159,13 +161,16 @@ NTCCTprf_cast (te_info *info, ntype *elems)
     ntype *cast_t, *cast_bt, *expr_t, *expr_bt;
     ntype *res, *res_bt;
     shape *shp, *d_shp, *s_shp;
+    char *cast_str, *expr_str;
     char *err_msg;
 
     DBUG_ENTER ();
 
     cast_t = TYgetProductMember (elems, 0);
+    cast_str = TYtype2String (cast_t, FALSE, 0);
     cast_bt = TYeliminateUser (cast_t);
     expr_t = TYgetProductMember (elems, 1);
+    expr_str = TYtype2String (expr_t, FALSE, 0);
     expr_bt = TYeliminateUser (expr_t);
 
     /*
@@ -173,7 +178,10 @@ NTCCTprf_cast (te_info *info, ntype *elems)
      * instantly bail out, as we do not support ant kind of basetype
      * polymorphism and thus the program is incorrect no matter what.
      */
-    TEassureSameScalarType ("cast-type", cast_bt, "expr-type", expr_bt);
+    TEassureSameScalarType ( STRcatn (3, "the cast-type \"",
+                                         cast_str, "\""), cast_bt,
+                             STRcatn (3, "the expr-type \"",
+                                         expr_str, "\""), expr_bt);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         CTIerror ("%s", err_msg);
@@ -187,9 +195,15 @@ NTCCTprf_cast (te_info *info, ntype *elems)
      *
      * The actual error processing can be found further below...
      */
-    res_bt = TEassureSameShape ("cast-type", cast_bt, "expr-type", expr_bt);
+    res_bt = TEassureSameShape ( STRcatn (3, "the cast-type \"",
+                                         cast_str, "\""), cast_bt,
+                                 STRcatn (3, "the expr-type \"",
+                                         expr_str, "\""), expr_bt);
     cast_bt = TYfreeType (cast_bt);
     expr_bt = TYfreeType (expr_bt);
+
+    cast_str = MEMfree (cast_str);
+    expr_str = MEMfree (expr_str);
 
     /*
      * Unfortunately, this TEassureSameShape in certain situations does not detect
@@ -221,7 +235,7 @@ NTCCTprf_cast (te_info *info, ntype *elems)
             if (!SHcompareShapes (d_shp, s_shp)) {
                 CTIerrorLine (global.linenum,
                               "Cast type %s does not match expression type %s "
-                              "as \"%s\" is defined as %s",
+                              "as \"%s\" relates to %s",
                               TYtype2String (cast_t, FALSE, 0),
                               TYtype2String (expr_t, FALSE, 0),
                               UTgetName (TYgetUserType (TYgetScalar (cast_t))),
@@ -237,7 +251,7 @@ NTCCTprf_cast (te_info *info, ntype *elems)
             if (!SHcompareShapes (d_shp, s_shp)) {
                 CTIerrorLine (global.linenum,
                               "Cast type %s does not match expression type %s "
-                              "as \"%s\" is defined as %s",
+                              "as \"%s\" relates to %s",
                               TYtype2String (cast_t, FALSE, 0),
                               TYtype2String (expr_t, FALSE, 0),
                               UTgetName (TYgetUserType (TYgetScalar (expr_t))),
@@ -261,7 +275,7 @@ NTCCTprf_cast (te_info *info, ntype *elems)
                                       d_shp)) {
                 CTIerrorLine (global.linenum,
                               "Cast type %s does not match expression type %s "
-                              "as \"%s\" is defined as %s whereas \"%s\" is defined as "
+                              "as \"%s\" relates to %s whereas \"%s\" relates to "
                               "%s",
                               TYtype2String (cast_t, FALSE, 0),
                               TYtype2String (expr_t, FALSE, 0),
