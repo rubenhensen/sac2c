@@ -914,15 +914,14 @@ TYgetShape (ntype *array)
     shape *res;
 
     DBUG_ENTER ();
-    DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akv)
-                   || (NTYPE_CON (array) == TC_akd),
-                 "TYgetShape applied to other than AKV, AKS or AKD type!");
+    DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akv),
+                 "TYgetShape applied to other than AKV or AKS type!");
     if (NTYPE_CON (array) == TC_akv) {
         res = COgetShape (AKV_CONST (array));
     } else if (NTYPE_CON (array) == TC_aks) {
         res = AKS_SHP (array);
     } else {
-        res = AKD_SHP (array);
+        res = NULL;
     }
 
     DBUG_RETURN (res);

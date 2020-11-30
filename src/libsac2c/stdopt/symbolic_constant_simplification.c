@@ -879,11 +879,14 @@ static bool
 isMatchPrfShapes (node *arg_node)
 {
     bool res;
+    ntype *type1, *type2;
 
     DBUG_ENTER ();
 
-    res = TUeqShapes (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node))),
-                      AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))));
+    type1 = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
+    type2 = AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)));
+    res = TUshapeKnown (type1) && TUshapeKnown (type2) 
+          && TUeqShapes (type1, type2);
 
     DBUG_RETURN (res);
 }

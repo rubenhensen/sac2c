@@ -95,6 +95,7 @@ extern bool TUisPolymorphic (ntype *type);
  */
 extern int TUgetFullDimEncoding (ntype *type);
 extern int TUgetDimEncoding (ntype *type);
+extern int TUgetLengthEncoding (ntype *type);
 extern simpletype TUgetSimpleImplementationType (ntype *type);
 
 /**
