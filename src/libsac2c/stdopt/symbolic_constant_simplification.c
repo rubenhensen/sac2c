@@ -3362,7 +3362,7 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
     if (PMmatchFlat (pat1, arg_node)) {
         ivtype = ID_NTYPE (iv);
         arrtype = ID_NTYPE (arr);
-        if (TUdimKnown (arrtype)) {
+        if (TUshapeKnown (arrtype)) {
             arrshp = TYgetShape (arrtype);
             arrc = COmakeConstantFromShape (arrshp);
             if ((COgetExtent (ivc, 0) == COgetExtent (arrc, 0))
