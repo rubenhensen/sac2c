@@ -396,18 +396,22 @@ TUargtypes2unknownAUD (node *args)
 ntype *
 TUtype2alphaMax (ntype *type)
 {
-    ntype *xnew, *scalar;
+    ntype *xnew, *scalar, *mint;
     tvar *tv;
 
     DBUG_ENTER ();
 
     if (TYisAlpha (type)) {
         tv = TYgetAlpha (type);
+        mint = SSIgetMin (tv);
         if (SSIgetMax (tv) != NULL) {
             xnew = TYmakeAlphaType (TYcopyType (SSIgetMax (tv)));
-        } else if (SSIgetMin (tv) != NULL) {
-            xnew
-              = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMin (tv)))));
+        } else if (mint !=NULL) {
+            if (TYisBottom (mint)) {
+                xnew = TYmakeAlphaType (TYcopyType (mint));
+            } else {
+                xnew = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (mint))));
+            }
         } else {
             xnew = TYmakeAlphaType (NULL);
         }
