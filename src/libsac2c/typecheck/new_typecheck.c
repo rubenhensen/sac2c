@@ -434,6 +434,7 @@ ResetWrapperTypes (node *fundef, info *arg_info)
     if (FUNDEF_ISWRAPPERFUN (fundef) && (FUNDEF_BODY (fundef) != NULL)) {
         type = FUNDEF_WRAPPERTYPE (fundef);
 
+        DBUG_PRINT ("resetting wrapper types for %s", CTIitemName (fundef));
         if (TYisFun (type)) {
             FUNDEF_WRAPPERTYPE (fundef) = TUrebuildWrapperTypeAlpha (type);
             FUNDEF_RETS (fundef) = TUrettypes2alphaAUDMax (FUNDEF_RETS (fundef));
@@ -453,6 +454,25 @@ ResetWrapperTypes (node *fundef, info *arg_info)
     DBUG_RETURN (fundef);
 }
 
+static node *
+ResetIsolatedFunTypes (node *fundef, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (!FUNDEF_ISWRAPPERFUN (fundef) && (FUNDEF_BODY (fundef) != NULL)) {
+        /*
+         * we do not need to exclude the instances that have been done
+         * during the handling of wrappers as TUrettypes2alphaAUDMax
+         * does not modify existing alphas!
+         */
+        DBUG_PRINT ("resetting return types for %s", CTIitemName (fundef));
+        FUNDEF_RETS (fundef) = TUrettypes2alphaAUDMax (FUNDEF_RETS (fundef));
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+
 node *
 NTCdoNewReTypeCheckFromScratch (node *arg_node)
 {
@@ -467,9 +487,19 @@ NTCdoNewReTypeCheckFromScratch (node *arg_node)
 
     /*
      * open up all wrapper types
+     * this implicitly opens up the return types of all instances of
+     * that wrapper as well!
      */
     MODULE_FUNS (arg_node)
       = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetWrapperTypes);
+
+    /*
+     * finally, we need to open up the return types of all dispatched
+     * functions whose wrappers have been elided already! Otherwise,
+     * these never get improved anymore!
+     */
+    MODULE_FUNS (arg_node)
+      = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetIsolatedFunTypes);
 
     arg_node = NTCdoNewReTypeCheck (arg_node);
 

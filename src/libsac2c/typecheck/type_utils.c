@@ -101,6 +101,7 @@ buildWrapperAlphaFix (node *fundef, ntype *type)
 {
     DBUG_ENTER ();
 
+     DBUG_PRINT_TAG ("TUWRAP", "buildWrapperAlphaFix (%s, type)", CTIitemName (fundef));
     /*
      * set this instances return types to alpha[*]
      */
@@ -149,7 +150,7 @@ buildWrapperAlpha (node *fundef, ntype *type)
     /*
      * set this instances return types to alpha[*]
      */
-    DBUG_PRINT ("opening return types of %s", CTIitemName (fundef));
+    DBUG_PRINT_TAG ("TUWRAP", "opening return types of %s", CTIitemName (fundef));
     if (FUNDEF_BODY (fundef) != NULL) {
         FUNDEF_RETS (fundef) = TUrettypes2alphaAUDMax (FUNDEF_RETS (fundef));
     } else {
