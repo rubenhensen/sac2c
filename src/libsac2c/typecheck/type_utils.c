@@ -1823,7 +1823,7 @@ int TUgetLengthEncoding (ntype *type)
     } else if (TUisScalar (type)) {
         res = 0;
     } else {
-        res = SHgetUnrLen (TYgetShape (type));
+        res = (int)SHgetUnrLen (TYgetShape (type));
     }
 
     DBUG_RETURN (res);
