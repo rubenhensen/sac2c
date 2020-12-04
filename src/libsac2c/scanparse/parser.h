@@ -66,6 +66,12 @@ struct parser {
     bool buf_empty;
 
     /* Context-dependend parser variables.  */
+    /* The `in_return` flag is responsible for marking the cases where
+       a valid production could be both `expr` and `(` exprs `)`.
+       TODO As we only have two usecases for this flag, i.e. return
+            and multi-operator with-loop, we should consider inlining
+            these use-cases (or lifting them into a separate function)
+            and getting rid of state in the parser.  */
     bool in_return;
     bool in_subscript;
 
