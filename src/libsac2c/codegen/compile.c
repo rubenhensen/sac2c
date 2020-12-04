@@ -10259,8 +10259,6 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
     withop = WITH2_WITHOP (wlnode);
     idxs_exprs = WITH2_IDXS (wlnode);
 
-    DBUG_PRINT ("huhu SBS");
-
     while (withop != NULL) {
         if (WITHOP_IDX (withop) != NULL) {
             dim = WLNODE_DIM (arg_node);
