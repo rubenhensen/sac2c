@@ -101,7 +101,7 @@ buildWrapperAlphaFix (node *fundef, ntype *type)
 {
     DBUG_ENTER ();
 
-     DBUG_PRINT_TAG ("TUWRAP", "buildWrapperAlphaFix (%s, type)", CTIitemName (fundef));
+    DBUG_PRINT_TAG ("TUWRAP", "buildWrapperAlphaFix (%s, type)", CTIitemName (fundef));
     /*
      * set this instances return types to alpha[*]
      */
