@@ -1,0 +1,19 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(SAC2C) $< && (echo "error code expected"; exit 1) || (test $$? -eq 1)
+
+
+// Same problem as in `test-exprs-01.sac`, but in the multi-op with loops.
+
+noinline int, int foo () {
+  a, b = with{
+            (. <= iv <= .): ((1,1),  // this shouldn't be parsed
+                             2);
+         }: (genarray([], 0), genarray([],0));
+  return (a, b);
+}
+
+int main () {
+  a, b = foo();
+  return _add_SxS_ (a, b);
+}
