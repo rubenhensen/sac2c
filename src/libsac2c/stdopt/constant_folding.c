@@ -1123,18 +1123,21 @@ CFprf (node *arg_node, info *arg_info)
 
     /* Try symbolic constant simplification */
     if (global.optimize.doscs) {
+        DBUG_PRINT ("trying SCS...");
         res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
                                             prf_cfscs_funtab[PRF_PRF (arg_node)], res);
     }
 
     /* If that doesn't help, try structural constant constant folding */
     if (global.optimize.dosccf) {
+        DBUG_PRINT ("trying SCCF...");
         res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
                                             prf_cfsccf_funtab[PRF_PRF (arg_node)], res);
     }
 
     /* If that doesn't help, try SAA constant folding */
     if (global.optimize.dosaacf) {
+        DBUG_PRINT ("trying SAACF...");
         res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
                                             prf_cfsaa_funtab[PRF_PRF (arg_node)], res);
     }

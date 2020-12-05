@@ -572,12 +572,12 @@ GenericFun (generic_fun_t which, ntype *type)
 
     DBUG_ENTER ();
 
-    DBUG_EXECUTE (tmp = CVtype2String (type, 0, FALSE); switch (which) {
+    DBUG_EXECUTE_TAG ("COMP_GEN", tmp = CVtype2String (type, 0, FALSE); switch (which) {
         case GF_copy:
-            DBUG_PRINT ("Looking for generic copy function for type %s", tmp);
+            DBUG_PRINT_TAG ("COMP_GEN","Looking for generic copy function for type %s", tmp);
             break;
         case GF_free:
-            DBUG_PRINT ("Looking for generic free function for type %s", tmp);
+            DBUG_PRINT_TAG ("COMP_GEN","Looking for generic free function for type %s", tmp);
             break;
     } tmp = MEMfree (tmp));
 
@@ -603,7 +603,7 @@ GenericFun (generic_fun_t which, ntype *type)
         }
     }
 
-    DBUG_PRINT ("Found generic fun `%s'", STRonNull ("", ret));
+    DBUG_PRINT_TAG ("COMP_GEN","Found generic fun `%s'", STRonNull ("", ret));
 
     DBUG_RETURN (ret);
 }
@@ -3031,6 +3031,8 @@ COMPFundefArgs (node *fundef, info *arg_info)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("processing arguments of fundef %s", FUNDEF_NAME (fundef));
+
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "no N_fundef node found!");
 
     argtab = FUNDEF_ARGTAB (fundef);
@@ -3536,6 +3538,7 @@ COMPblock (node *arg_node, info *arg_info)
           = TCappendAssign (INFO_VARDEC_INIT (arg_info), BLOCK_ASSIGNS (arg_node));
         INFO_VARDEC_INIT (arg_info) = NULL;
     }
+    DBUG_PRINT ("   done...");
 
     DBUG_RETURN (arg_node);
 }
@@ -3889,6 +3892,8 @@ COMPlet (node *arg_node, info *arg_info)
     INFO_LASTIDS (arg_info) = LET_IDS (arg_node);
     INFO_LET (arg_info) = arg_node;
 
+    DBUG_PRINT ("      compiling %s, ... = \n", (LET_IDS (arg_node) != NULL ?
+                                      IDS_NAME (LET_IDS (arg_node)) : "(void)"));
     expr = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     /*
@@ -8364,13 +8369,13 @@ COMPprfArrayVect2Offset (node *arg_node, info *arg_info)
                  "First argument of F_array_vect2offset must be an N_id Node!");
 
     icm = TCmakeIcm5 ("ND_ARRAY_VECT2OFFSET_id", DUPdupIdsIdNt (let_ids),
-                      TBmakeNum (SHgetUnrLen (TYgetShape (ID_NTYPE (iv_vect)))),
+                      TBmakeNum (TUgetLengthEncoding (ID_NTYPE (iv_vect))),
                       DUPdupIdNt (iv_vect), MakeDimArg (PRF_ARG1 (arg_node), TRUE),
                       DUPdupIdNt (PRF_ARG1 (arg_node)));
     /*
         icm = TCmakeIcm5( "ND_VECT2OFFSET_id",
                           DUPdupIdsIdNt( let_ids),
-                          TBmakeNum( SHgetUnrLen (TYgetShape( ID_NTYPE( iv_vect)))),
+                          TBmakeNum( TUgetLengthEncoding (ID_NTYPE( iv_vect))),
                           DUPdupIdNt( iv_vect),
                           MakeSizeArg( PRF_ARG1( arg_node), TRUE),
                           DUPdupIdNt( PRF_ARG1( arg_node)));
@@ -8405,12 +8410,12 @@ COMPprfVect2Offset (node *arg_node, info *arg_info)
      */
     if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_array) {
         icm = TCmakeIcm5 ("ND_VECT2OFFSET_arr", DUPdupIdsIdNt (let_ids),
-                          TBmakeNum (SHgetUnrLen (TYgetShape (ID_NTYPE (iv_vect)))),
+                          TBmakeNum (TUgetLengthEncoding (ID_NTYPE (iv_vect))),
                           DUPdupIdNt (iv_vect), MakeSizeArg (PRF_ARG1 (arg_node), TRUE),
                           DupExprs_NT_AddReadIcms (ARRAY_AELEMS (PRF_ARG1 (arg_node))));
     } else if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id) {
         icm = TCmakeIcm5 ("ND_VECT2OFFSET_id", DUPdupIdsIdNt (let_ids),
-                          TBmakeNum (SHgetUnrLen (TYgetShape (ID_NTYPE (iv_vect)))),
+                          TBmakeNum (TUgetLengthEncoding (ID_NTYPE (iv_vect))),
                           DUPdupIdNt (iv_vect), MakeSizeArg (PRF_ARG1 (arg_node), TRUE),
                           DUPdupIdNt (PRF_ARG1 (arg_node)));
 #ifndef DBUG_OFF
@@ -10293,7 +10298,11 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
              * full range (== -1, if the segment's domain equals the full index
              * vector space)
              */
-            shp = TYgetShape (IDS_NTYPE (tmp_ids));
+            if (TUshapeKnown (IDS_NTYPE (tmp_ids))) {
+                shp = TYgetShape (IDS_NTYPE (tmp_ids));
+            } else {
+                shp = NULL;
+            } 
             d = dims - 1;
             d_u = d;
             while (d >= 0) {

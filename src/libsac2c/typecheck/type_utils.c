@@ -101,6 +101,7 @@ buildWrapperAlphaFix (node *fundef, ntype *type)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT_TAG ("TUWRAP", "buildWrapperAlphaFix (%s, type)", CTIitemName (fundef));
     /*
      * set this instances return types to alpha[*]
      */
@@ -149,7 +150,7 @@ buildWrapperAlpha (node *fundef, ntype *type)
     /*
      * set this instances return types to alpha[*]
      */
-    DBUG_PRINT ("opening return types of %s", CTIitemName (fundef));
+    DBUG_PRINT_TAG ("TUWRAP", "opening return types of %s", CTIitemName (fundef));
     if (FUNDEF_BODY (fundef) != NULL) {
         FUNDEF_RETS (fundef) = TUrettypes2alphaAUDMax (FUNDEF_RETS (fundef));
     } else {
@@ -396,18 +397,22 @@ TUargtypes2unknownAUD (node *args)
 ntype *
 TUtype2alphaMax (ntype *type)
 {
-    ntype *xnew, *scalar;
+    ntype *xnew, *scalar, *mint;
     tvar *tv;
 
     DBUG_ENTER ();
 
     if (TYisAlpha (type)) {
         tv = TYgetAlpha (type);
+        mint = SSIgetMin (tv);
         if (SSIgetMax (tv) != NULL) {
             xnew = TYmakeAlphaType (TYcopyType (SSIgetMax (tv)));
-        } else if (SSIgetMin (tv) != NULL) {
-            xnew
-              = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMin (tv)))));
+        } else if (mint !=NULL) {
+            if (TYisBottom (mint)) {
+                xnew = TYmakeAlphaType (TYcopyType (mint));
+            } else {
+                xnew = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (mint))));
+            }
         } else {
             xnew = TYmakeAlphaType (NULL);
         }
@@ -1766,7 +1771,7 @@ int TUgetFullDimEncoding (ntype *type)
  *
  * @brief: produces the array info encoding needed by the backend:
  *         >= 0 : AKS / AKD with result == DIM
- *         == -1: AUSGZ
+ *         == -1: AUDGZ
  *         == -2: AUD
  *
  *
@@ -1787,6 +1792,38 @@ int TUgetDimEncoding (ntype *type)
         res = -2;
     } else {
         res = TYgetDim (type);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn int TUgetLengthEncoding( ntype *type)
+ *
+ * @brief: produces the ravel info encoding needed by the backend:
+ *         >= 0 : non-scalar AKS with result == prod (shape)
+ *         == 0 : scalar
+ *         == -1: AKD, AUDGZ, or AUD
+ *
+ *
+ * @param: type: ntype
+ *
+ * @return the encoding of the dimensionality.
+ *
+ ******************************************************************************/
+int TUgetLengthEncoding (ntype *type)
+{
+    int res;
+
+    DBUG_ENTER ();
+
+    if (TYisAUDGZ (type) || TYisAUD (type) || TYisAKD (type)) {
+        res = -1;
+    } else if (TUisScalar (type)) {
+        res = 0;
+    } else {
+        res = (int)SHgetUnrLen (TYgetShape (type));
     }
 
     DBUG_RETURN (res);

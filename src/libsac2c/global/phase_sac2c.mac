@@ -1118,9 +1118,12 @@ ENDPHASE (cuda)
 
 PHASE (wlt, "Transforming with-loop representation", !global.on_demand_lib)
 
+SUBPHASE (wlbsc, "Unflattening WL-partition structural constants",
+                  WLBSCdoWlbounds2nonFlatStructConsts, ALWAYS, wlt)
+
 SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification, ALWAYS, wlt)
 /*
- * Repeating this optimisation here is necessary to avoid problems with exotic
+ * Repeating these two optimisations here is necessary to avoid problems with exotic
  * with-loops in subsequent wl-transform.
  */
 
