@@ -74,7 +74,7 @@
     copy="function" />
     <type name="MTExecMode" ctype="mtexecmode_t" init="MUTH_ANY"
     copy="literal" />
-    <type name="CudaExecMode" ctype="cudaexecmode_t" init="MUTH_ANY"
+    <type name="CudaExecMode" ctype="cudaexecmode_t" init="CUDA_HOST_SINGLE"
     copy="literal" />
     <type name="StringSet" ctype="stringset_t*" init="NULL"
     copy="function" />
@@ -6491,7 +6491,7 @@ N_tfarg :
             </targets>
           </type>
 	</attribute>
-	<attribute name="CudaExecMode" inconstructor="no">
+	<attribute name="CudaExecMode" default="CUDA_HOST_SINGLE" inconstructor="no">
 	  <type name="CudaExecMode">
             <targets>
               <target mandatory="no">
