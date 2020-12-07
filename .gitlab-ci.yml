@@ -129,6 +129,27 @@ stdlib-archlinux:
     dependencies:
         - test-archlinux
 
+### CENTOS 8 ###
+
+build-centos8:
+    <<: *build-template
+    tags:
+        - centos8
+
+test-centos8:
+    <<: *test-template
+    tags:
+        - centos8
+    dependencies:
+        - build-centos8
+
+stdlib-centos8:
+    <<: *build-stdlib-template
+    tags:
+        - centos8
+    dependencies:
+        - test-centos8
+
 ### CENTOS 7 ###
 
 build-centos7:
@@ -150,26 +171,26 @@ stdlib-centos7:
     dependencies:
         - test-centos7
 
-### CENTOS 6 ###
+### UBUNTU 18 ###
 
-build-centos6:
+build-ubuntu18:
     <<: *build-template
     tags:
-        - centos6
+        - ubuntu18
 
-test-centos6:
+test-ubuntu18:
     <<: *test-template
     tags:
-        - centos6
+        - ubuntu18
     dependencies:
-        - build-centos6
+        - build-ubuntu18
 
-stdlib-centos6:
+stdlib-ubuntu18:
     <<: *build-stdlib-template
     tags:
-        - centos6
+        - ubuntu18
     dependencies:
-        - test-centos6
+        - test-ubuntu18
 
 ### UBUNTU 16 ###
 
@@ -191,24 +212,3 @@ stdlib-ubuntu16:
         - ubuntu16
     dependencies:
         - test-ubuntu16
-
-### UBUNTU 14 ###
-
-build-ubuntu14:
-    <<: *build-template
-    tags:
-        - ubuntu14
-
-test-ubuntu14:
-    <<: *test-template
-    tags:
-        - ubuntu14
-    dependencies:
-        - build-ubuntu14
-
-stdlib-ubuntu14:
-    <<: *build-stdlib-template
-    tags:
-        - ubuntu14
-    dependencies:
-        - test-ubuntu14
