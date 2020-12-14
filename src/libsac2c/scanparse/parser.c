@@ -232,7 +232,7 @@ node *handle_with (struct parser *);
 static inline node *handle_generic_list (struct parser *parser,
                                          node *(*)(struct parser *),
                                          node *(*)(node *, node *));
-static inline node *handle_generic_list_ (struct parser *parser,
+static inline node *handle_generic_list_internal (struct parser *parser,
                                          node *(*)(struct parser *),
                                          node *(*)(node *, node *));
 node *handle_stmt_list (struct parser *, unsigned);
@@ -4165,13 +4165,13 @@ handle_generic_list (struct parser *parser, node *(*handle) (struct parser *),
     // Ensure that we avoid parsing `(` expes `)` within the list.
     bool old_ret_state = parser->in_return;
     parser->in_return = false;
-    node *res = handle_generic_list_ (parser, handle, constructor);
+    node *res = handle_generic_list_internal (parser, handle, constructor);
     parser->in_return = old_ret_state;
     return res;
 }
 
-node *
-handle_generic_list_ (struct parser *parser, node *(*handle) (struct parser *),
+static inline node *
+handle_generic_list_internal (struct parser *parser, node *(*handle) (struct parser *),
                      node *(*constructor) (node *, node *))
 {
     struct token *tok;
@@ -4187,7 +4187,7 @@ handle_generic_list_ (struct parser *parser, node *(*handle) (struct parser *),
         return constructor (res, NULL);
     }
 
-    t = handle_generic_list_ (parser, handle, constructor);
+    t = handle_generic_list_internal (parser, handle, constructor);
     if (t == NULL || t == error_mark_node) {
         error_loc (token_location (tok), "nothing follows the comma");
         return error_mark_node;
