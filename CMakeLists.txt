@@ -271,6 +271,12 @@ XINSTALL (
   DESTINATION "${INCPATH_INSTALL}"
   COMPONENT headers)
 
+# and also the build config
+XINSTALL (
+  FILES "${PROJECT_BINARY_DIR}/include/config.h"
+  DESTINATION "${INCPATH_INSTALL}"
+  COMPONENT headers)
+
 # we install sources of binaries
 XINSTALL (FILES
     ${PROJECT_SOURCE_DIR}/src/tools/sac2c/sac2c.c
