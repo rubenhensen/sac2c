@@ -229,8 +229,12 @@ struct pre_post_expr handle_cast_expr (struct parser *);
 node *handle_expr (struct parser *);
 node *handle_assign (struct parser *);
 node *handle_with (struct parser *);
-node *handle_generic_list (struct parser *parser, node *(*)(struct parser *),
-                           node *(*)(node *, node *));
+static inline node *handle_generic_list (struct parser *parser,
+                                         node *(*)(struct parser *),
+                                         node *(*)(node *, node *));
+static inline node *handle_generic_list_internal (struct parser *parser,
+                                         node *(*)(struct parser *),
+                                         node *(*)(node *, node *));
 node *handle_stmt_list (struct parser *, unsigned);
 node *handle_list_of_stmts (struct parser *);
 node *handle_stmt (struct parser *);
@@ -4154,8 +4158,20 @@ error:
 /* Read a comma-separated list of instances. To read a single
    instance the function HANDLE must be passed. To construct
    a node-list the function CONSTRUCTOR is used.  */
-node *
+static inline node *
 handle_generic_list (struct parser *parser, node *(*handle) (struct parser *),
+                     node *(*constructor) (node *, node *))
+{
+    // Ensure that we avoid parsing `(` expes `)` within the list.
+    bool old_ret_state = parser->in_return;
+    parser->in_return = false;
+    node *res = handle_generic_list_internal (parser, handle, constructor);
+    parser->in_return = old_ret_state;
+    return res;
+}
+
+static inline node *
+handle_generic_list_internal (struct parser *parser, node *(*handle) (struct parser *),
                      node *(*constructor) (node *, node *))
 {
     struct token *tok;
@@ -4171,7 +4187,7 @@ handle_generic_list (struct parser *parser, node *(*handle) (struct parser *),
         return constructor (res, NULL);
     }
 
-    t = handle_generic_list (parser, handle, constructor);
+    t = handle_generic_list_internal (parser, handle, constructor);
     if (t == NULL || t == error_mark_node) {
         error_loc (token_location (tok), "nothing follows the comma");
         return error_mark_node;

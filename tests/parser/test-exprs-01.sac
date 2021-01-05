@@ -1,0 +1,12 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(SAC2C) $< && (echo "error code expected"; exit 1) || (test $$? -eq 1)
+
+// When parsing return with multiple statements, parser enters into
+// state that lead to allowing lists of expresson at positions where
+// only a single expression is allowed.  For more details see
+// issue #2252.
+
+int id (int x) { return x; }
+int main () { return id ((1, (1, 1))); }
+

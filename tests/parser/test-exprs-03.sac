@@ -1,0 +1,19 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 3
+
+
+// While we fixed incorrect handling of returns and multi-op with-loops,
+// we want to make sure that correct cases still parse.
+
+noinline int, int foo () {
+  a, b = with{
+            (. <= iv <= .): (1, 2);
+         }: (genarray([], 0), genarray([],0));
+  return (a, b);
+}
+
+int main () {
+  a, b = foo();
+  return _add_SxS_ (a, b);
+}
