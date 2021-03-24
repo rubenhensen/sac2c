@@ -108,17 +108,17 @@ stages:
 
 build-archlinux:
     <<: *build-template
-    image: sacbuild/archlinux:1.3.0
+    image: sacbuild/archlinux:1.3.1
 
 test-archlinux:
     <<: *test-template
-    image: sacbuild/archlinux:1.3.0
+    image: sacbuild/archlinux:1.3.1
     dependencies:
         - build-archlinux
 
 stdlib-archlinux:
     <<: *build-stdlib-template
-    image: sacbuild/archlinux:1.3.0
+    image: sacbuild/archlinux:1.3.1
     dependencies:
         - test-archlinux
 
@@ -126,17 +126,17 @@ stdlib-archlinux:
 
 build-centos8:
     <<: *build-template
-    image: sacbuild/centos8:1.3.0
+    image: sacbuild/centos8:1.3.1
 
 test-centos8:
     <<: *test-template
-    image: sacbuild/centos8:1.3.0
+    image: sacbuild/centos8:1.3.1
     dependencies:
         - build-centos8
 
 stdlib-centos8:
     <<: *build-stdlib-template
-    image: sacbuild/centos8:1.3.0
+    image: sacbuild/centos8:1.3.1
     dependencies:
         - test-centos8
 
@@ -144,17 +144,17 @@ stdlib-centos8:
 
 build-centos7:
     <<: *build-template
-    image: sacbuild/centos7:1.3.0
+    image: sacbuild/centos7:1.3.1
 
 test-centos7:
     <<: *test-template
-    image: sacbuild/centos7:1.3.0
+    image: sacbuild/centos7:1.3.1
     dependencies:
         - build-centos7
 
 stdlib-centos7:
     <<: *build-stdlib-template
-    image: sacbuild/centos7:1.3.0
+    image: sacbuild/centos7:1.3.1
     dependencies:
         - test-centos7
 
@@ -162,17 +162,17 @@ stdlib-centos7:
 
 build-ubuntu18:
     <<: *build-template
-    image: sacbuild/ubuntu18:1.3.0
+    image: sacbuild/ubuntu18:1.3.1
 
 test-ubuntu18:
     <<: *test-template
-    image: sacbuild/ubuntu18:1.3.0
+    image: sacbuild/ubuntu18:1.3.1
     dependencies:
         - build-ubuntu18
 
 stdlib-ubuntu18:
     <<: *build-stdlib-template
-    image: sacbuild/ubuntu18:1.3.0
+    image: sacbuild/ubuntu18:1.3.1
     dependencies:
         - test-ubuntu18
 
@@ -180,16 +180,16 @@ stdlib-ubuntu18:
 
 build-ubuntu16:
     <<: *build-template
-    image: sacbuild/ubuntu16:1.3.0
+    image: sacbuild/ubuntu16:1.3.1
 
 test-ubuntu16:
     <<: *test-template
-    image: sacbuild/ubuntu16:1.3.0
+    image: sacbuild/ubuntu16:1.3.1
     dependencies:
         - build-ubuntu16
 
 stdlib-ubuntu16:
     <<: *build-stdlib-template
-    image: sacbuild/ubuntu16:1.3.0
+    image: sacbuild/ubuntu16:1.3.1
     dependencies:
         - test-ubuntu16
