@@ -734,22 +734,6 @@ CTIerrorLoc (struct location loc, const char *format, ...)
     DBUG_RETURN ();
 }
 
-void
-CTIwarnLoc (struct location loc, const char *format, ...)
-{
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    va_start (arg_p, format);
-    fprintf (cti_stderr, "%s\n", produce_header (loc, warn_message_header));
-    PrintMessage (second_level_header, format, arg_p);
-    va_end (arg_p);
-
-    warnings++;
-
-    DBUG_RETURN ();
-}
 
 /** <!--********************************************************************-->
  *
@@ -1015,7 +999,7 @@ CTIwarnLoc (struct location loc, const char *format, ...)
 
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
-        fprintf (stderr, "%s\n", produce_header (loc, warn_message_header));
+        fprintf (cti_stderr, "%s\n", produce_header (loc, warn_message_header));
         PrintMessage (second_level_header, format, arg_p);
         va_end (arg_p);
 
