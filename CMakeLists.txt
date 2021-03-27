@@ -5,7 +5,13 @@ PROJECT (sac2c)
 
 # CMake policy handling
 IF (POLICY CMP0075)
-  CMAKE_POLICY (SET CMP0075 OLD)
+  # CMAKE_REQUIRED_LIBRARIES usage for CHECK_INCLUDE_FILE(S) macro
+  CMAKE_POLICY (SET CMP0075 NEW)
+ENDIF ()
+
+IF (POLICY CMP0114)
+  # ExternalProject_Add() dependency handling
+  CMAKE_POLICY (SET CMP0114 OLD)
 ENDIF ()
 
 # Extra cmake packages
