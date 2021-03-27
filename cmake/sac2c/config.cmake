@@ -579,8 +579,11 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   CHECK_CC_FLAG ("-Wno-strict-overflow" GCC_FLAGS)
   # allow fall through by virtue of comment
   CHECK_CC_FLAG ("-Wimplicit-fallthrough=3" GCC_FLAGS)
-  # allow for vardic macros to have zero arguments
-  CHECK_CC_FLAG ("-Wno-gnu-zero-variadic-macro-arguments" GCC_FLAGS)
+  IF (CLANG)
+    # CLANG specific options(s)
+    # allow for vardic macros to have zero arguments
+    CHECK_CC_FLAG ("-Wno-gnu-zero-variadic-macro-arguments" GCC_FLAGS)
+  ENDIF ()
   # we use snprintf specifically in situations when we do not mind the output
   # to be truncated. Threfore, we do not even check whether truncation has
   # happened. The following option avoids warnings about the use of snprintf
