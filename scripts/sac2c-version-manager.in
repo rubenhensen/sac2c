@@ -24,7 +24,7 @@ import argparse
 # TODO(artem) abstract common version operations into a class
 
 ## GLOBAL ATTRIBUTES ##
-__version__ = "0.3"
+__version__ = "0.4"
 
 ## GLOBAL VARIABLES ##
 
@@ -53,17 +53,17 @@ SAC2C_DEFAULT_INSTALL_PREFIX = '@CMAKE_INSTALL_PREFIX@'
 ## FUNCTIONS ##
 
 def die (msg):
-    print >>sys.stderr, msg
+    print(msg, file=sys.stderr)
     sys.exit (-1)
 
 def error (msg):
     die ("error: %s" % msg)
 
 def warning (msg):
-    print >>sys.stderr, "warning: %s" %msg
+    print("warning: %s" %msg, file=sys.stderr)
 
 def info (msg):
-    print "info: %s" % msg
+    print("info: %s" % msg)
 
 def find_files_rec (d, pattern):
     l = []
@@ -98,7 +98,7 @@ def max_version (lst):
         assert re.match (r"^([0-9]+)(\.[0-9]+)*$", t[0])
         assert re.match (r"^g[0-9a-f]+$", t[-1])
 
-        l = map (int, t[0].split ('.'))
+        l = list (map (int, t[0].split ('.')))
 
         if len (t) > 2 and re.match (r"^[0-9]+$", t[-2]):
             l.append (int (t[-2]))
@@ -109,7 +109,7 @@ def max_version (lst):
     v = max (lst, key=lambda x: vertotup (x[0]))
 
     # Return all the buildtypes of the given version
-    return filter (lambda x: x[0] == v[0], lst)
+    return [x for x in lst if x[0] == v[0]]
 
 def recent_version (prefix, lst):
     "Find the most recently installed version"
@@ -192,7 +192,7 @@ def remove_version (prefix, ver_tuple):
                          "as directory `%s' is not empty" % (version, d))
                 exit (0)
 
-        print "removing directory structure for sac2c version `%s'" % version
+        print ("removing directory structure for sac2c version `%s'" % version)
         for d in dirs_to_remove:
             rmdir_rec (d)
 
@@ -209,22 +209,22 @@ def print_available_versions (prefix):
     "List available versions based on listing the content of libexec"
     versions = glob_versions (prefix, "*")
     if versions == []:
-        print "No sac2c versions are installed."
+        print ("No sac2c versions are installed.")
         exit (0)
 
-    print "sac2c versions available:"
+    print ("sac2c versions available:")
     for v, bt in versions:
-        print "\t%s [build-type = %s]" % (v, bt)
+        print ("\t%s [build-type = %s]" % (v, bt))
 
 def dry_run_delete (prefix, versions):
     "List files that will be removed"
-    print "files to be removed:"
+    print ("files to be removed:")
     l = len (versions)
     for idx, (v, bt) in enumerate (versions):
         for f in list_of_files (prefix, v, bt):
-            print "--remove `%s'" % f
+            print ("--remove `%s'" % f)
         if idx != l - 1:
-            print
+            print ()
 
 def glob_versions (prefix, glob_expr, build_type=None):
     "Expand the list of versions that matches the argument passed to the script"
@@ -260,7 +260,7 @@ def glob_versions (prefix, glob_expr, build_type=None):
 def confirm_removal (text):
     "Ask a user if he/she really wants to delete those files"
     sys.stdout.write ("%s [Y/N] " % text)
-    choice = raw_input ().lower ()
+    choice = input ().lower ()
     return choice in ["y", "ye", "yes", "aye", "i don't give shit"]
 
 
@@ -280,7 +280,7 @@ def delete_versions (prefix, glob_expr, dryrun, build_type):
         for v in versions:
             remove_version (prefix, v)
     else:
-        print "Nothing removed"
+        print ("Nothing removed")
 
 def binary_to_version (sac2c_binary):
     binary_to_build_types = {}
@@ -317,9 +317,9 @@ def current_version (prefix):
                  "sac2c installation is broken, or you need to update this script!"
                  %",".join (sac2c_real_binaries))
 
-    print """Current sac2c symlink points to:
+    print ("""Current sac2c symlink points to:
 VERSION    = `%s'
-BUILD_TYPE = `%s'""" % (os.path.split (d)[1], binary_to_version (sac2c_binary))
+BUILD_TYPE = `%s'""" % (os.path.split (d)[1], binary_to_version (sac2c_binary)))
 
 
 def create_link (link_src, link_name):
@@ -376,7 +376,7 @@ def handle_remove (argv):
                        help="list the files that will be uninstalled")
     parser.add_argument ("-b", "--build-type", dest="build_type",
             help="build type {%s} of sac2c to remove (ALL by default)"
-                 % ",".join (SAC2C_BUILD_TYPE_POSTFIXES.keys()))
+                 % ",".join (list (SAC2C_BUILD_TYPE_POSTFIXES.keys())))
 
     args = parser.parse_args (argv)
 
@@ -419,7 +419,7 @@ def handle_switch (argv):
                        % SAC2C_DEFAULT_INSTALL_PREFIX)
     parser.add_argument ("-b", "--build-type", dest="build_type",
                        help="build type {%s} of sac2c to switch to"
-                       % ",".join (SAC2C_BUILD_TYPE_POSTFIXES.keys()))
+                       % ",".join (list (SAC2C_BUILD_TYPE_POSTFIXES.keys())))
 
     parser.add_argument ("-v", "--sac2c-version", dest="sac2c_version",
                        help="version(s) of sac2c to uninstall (regexps accepted)")
@@ -500,7 +500,7 @@ def handle_install (argv):
                        help='indicate instead the BTYPE is a postfix value, and not a build type')
     parser.add_argument ('version', metavar='VERSION', help='intended sac2c version to create links for')
     parser.add_argument ('buildtype', metavar='BTYPE', help='the build type of the sac2c installation (one of {%s})'
-                        % ",".join (SAC2C_BUILD_TYPE_POSTFIXES.keys()))
+                        % ",".join (list (SAC2C_BUILD_TYPE_POSTFIXES.keys())))
     parser.add_argument ('prefix', metavar='PREFIX', help='intended install location of sac2c')
     parser.add_argument ('install', metavar='INSTALL', help='directory to place the symlinks')
 
@@ -542,13 +542,13 @@ if __name__ == "__main__":
         formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument ('command', metavar='COMMAND', help='The following commands '
             'are supported:\n {%s}\n\n'
-            'Use `--help\' to show usage information for each command.' % ', '.join(commands.keys()))
+            'Use `--help\' to show usage information for each command.' % ', '.join(list (commands.keys())))
     parser.add_argument ('-v', '--version', action='version', version=__version__)
 
     args = parser.parse_args (sys.argv[1:2])
     if args.command in commands:
         commands[args.command] (sys.argv[2:])
     else:
-        print 'Unrecognised command...'
+        print ('Unrecognised command...')
         parser.print_help()
         exit (1)

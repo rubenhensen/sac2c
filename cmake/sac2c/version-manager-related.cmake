@@ -15,8 +15,8 @@ MACRO (CHECK_PYTHON_MODULE module)
     UNSET (_module_status)
 ENDMACRO ()
 
-# The version manager requires Puthon 2.
-FIND_PACKAGE (PythonInterp 2 EXACT REQUIRED)
+# The version manager requires Puthon 3.
+FIND_PACKAGE (PythonInterp 3 EXACT REQUIRED)
 
 # make sure we have the Python argparse module available
 CHECK_PYTHON_MODULE ("argparse")
