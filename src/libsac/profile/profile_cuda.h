@@ -14,7 +14,7 @@
 #endif /* SAC_C_EXTERN */
 
 #if ENABLE_CUDA || SAC_CUDA_MACROS
-#include <cuda_runtime_api.h>
+#include "override_cuda_runtime.h"
 
 typedef enum {
     pf_cuda_knl,

@@ -20,7 +20,7 @@
 #include <limits.h> /* INT_MAX */
 
 #ifdef SAC_BACKEND_CUDA
-#include <cuda_runtime.h>
+#include "override_cuda_runtime.h"
 #endif
 
 #include "rc_methods.h" // SAC_RCM_local, ...
