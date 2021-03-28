@@ -6,6 +6,12 @@ PROJECT (sac2c-packages NONE)
 # Extra cmake packages
 INCLUDE (ExternalProject)
 
+# CMake policy handling
+IF (POLICY CMP0114)
+  # ExternalProject_Add() dependency handling
+  CMAKE_POLICY (SET CMP0114 OLD)
+ENDIF ()
+
 # XXX We assume that this CMakeLists.txt file is being called from ./cmake/cpack
 #     therefore, for simplicity we set the following variables, indicating the
 #     actual top source directory.

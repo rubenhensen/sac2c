@@ -7,7 +7,7 @@
 
 #include <pthread.h>
 #include <stdbool.h>
-#include <cuda_runtime.h>
+#include "override_cuda_runtime.h"
 
 typedef volatile pthread_spinlock_t cuda_lock_t;
 typedef struct { cuda_lock_t lock; bool locked; } cuda_sync_t;

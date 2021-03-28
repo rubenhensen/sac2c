@@ -15,7 +15,7 @@
 #include <assert.h>
 
 #if SAC_BACKEND_CUDA
-#include <cuda_runtime.h>
+#include "override_cuda_runtime.h"
 #endif
 
 #include "runtime/essentials_h/rt_misc.h" // SAC_MAX

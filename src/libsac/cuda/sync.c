@@ -43,7 +43,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <pthread.h>
-#include <cuda_runtime.h>
+#include "override_cuda_runtime.h"
 
 #include "sync.h"
 #include "libsac/essentials/message.h"    // SAC_RuntimeError,...
