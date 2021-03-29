@@ -69,6 +69,7 @@ CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xconfig.h.in" "${PROJECT_BINA
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/fun-attrs.h.in" "${PROJECT_BINARY_DIR}/include/fun-attrs.h")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xsacdirs.h.in" "${PROJECT_BINARY_DIR}/include/sacdirs.h")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/libsac2c/global/build.c.in" "${PROJECT_BINARY_DIR}/src/build.c")
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/override_cuda_runtime.h" "${PROJECT_BINARY_DIR}/include/override_cuda_runtime.h" COPYONLY)
 
 # Build sac.h
 ADD_SUBDIRECTORY (src/runtime)
@@ -279,7 +280,7 @@ XINSTALL (
 
 # and also the build config
 XINSTALL (
-  FILES "${PROJECT_BINARY_DIR}/include/config.h"
+  FILES "${PROJECT_BINARY_DIR}/include/config.h" "${PROJECT_BINARY_DIR}/include/override_cuda_runtime.h"
   DESTINATION "${INCPATH_INSTALL}"
   COMPONENT headers)
 
