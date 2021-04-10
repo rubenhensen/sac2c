@@ -3457,6 +3457,14 @@ handle_with (struct parser *parser)
             t = loc_annotated (pragma_loc, TBmakePragma ());
             PRAGMA_WLCOMP_APS (t) = expr_constructor (pragma_expr, NULL);
             pragma_expr = t;
+        } else if (token_is_keyword (tok, GPUKERNEL)) {
+            pragma_expr = handle_function_call (parser);
+            if (pragma_expr == error_mark_node)
+                goto error;
+
+            t = loc_annotated (pragma_loc, TBmakePragma ());
+            PRAGMA_GPUKERNEL_APS (t) = expr_constructor (pragma_expr, NULL);
+            pragma_expr = t;
         } else if (token_is_keyword (tok, NOCUDA)) {
             t = loc_annotated (pragma_loc, TBmakePragma ());
             PRAGMA_NOCUDA (t) = TRUE;

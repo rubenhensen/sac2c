@@ -8379,6 +8379,18 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="GpuKernel_APS" default="NULL" inconstructor="no" >
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Exprs" />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="APL" default="NULL" inconstructor="no" >
           <type name="Link">
             <targets>

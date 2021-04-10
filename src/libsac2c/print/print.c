@@ -4438,6 +4438,12 @@ PRTpragma (node *arg_node, info *arg_info)
         fprintf (global.outfile, "\n");
     }
 
+    if (PRAGMA_GPUKERNEL_APS (arg_node) != NULL) {
+        fprintf (global.outfile, "#pragma gpukernel ");
+        TRAVdo (PRAGMA_GPUKERNEL_APS (arg_node), arg_info);
+        fprintf (global.outfile, "\n");
+    }
+
     if (PRAGMA_APL (arg_node) != NULL) {
         fprintf (global.outfile, "#pragma wlcomp ");
         TRAVdo (PRAGMA_APL (arg_node), arg_info);
