@@ -145,6 +145,7 @@ struct INFO {
     node *suballoc_lhs;
     bool in_cuda_partition :1;
     node *part_tbshp;
+    node *pragma;
 };
 
 #define INFO_CUDAKERNELS(n) (n->cudakernels)
@@ -177,6 +178,7 @@ struct INFO {
 #define INFO_IN_CUDA_PARTITION(n) (n->in_cuda_partition)
 #define INFO_WITH(n) (n->with)
 #define INFO_PART_TBSHP(n) (n->part_tbshp)
+#define INFO_PRAGMA(n) (n->pragma)
 
 static info *
 MakeInfo (void)
@@ -217,6 +219,7 @@ MakeInfo (void)
     INFO_IN_CUDA_PARTITION (result) = FALSE;
     INFO_WITH (result) = NULL;
     INFO_PART_TBSHP (result) = NULL;
+    INFO_PRAGMA (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -316,7 +319,17 @@ SetLinksignInfo (node *args, info *arg_info)
  *                                             char *name,
  *                                             info *arg_info)
  *
- * @brief
+ * @param expr the AST of one of the four generator expressions
+ * @param gridblock_exprs location of an N_exprs chain of nodes that serves
+ *                        as parameters to F_cuda_grid_block, if NULL,
+ *                        the parameter is not to be insert!
+ * @param name string prefix, one of ("_lb_", "_ub_", "_step_", "_width")
+ * @param arg_info
+ *
+ * @brief 1) assembles arguments to F_cuda_grid_block in *gridblock_exprs,
+ *           PROVIDED gridblock_exprs is not NULL
+ *        2) generates N_exprs-chain for kernel function call => INFO_PARAMS
+ *        3) generates N_arg-chain for kernel function definition => INFO_ARGS
  *
  *****************************************************************************/
 static node *
@@ -326,15 +339,16 @@ HandleBoundStepWidthExprs (node *expr, node **gridblock_exprs, char *name, info 
     node *avis, *new_avis;
     char *bound_name;
     int dim = 0;
-    bool is_bound;
+    bool insert_in_grid_block;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (expr) == N_array, "Expr in not a N_array!");
 
     /* If the expression list passed in is lower/bound elements,
-     * we need to update 'gridblock_exprs' */
-    is_bound = (gridblock_exprs != NULL);
+     * we need to update 'gridblock_exprs'
+     */
+    insert_in_grid_block = (gridblock_exprs != NULL);
     elements = ARRAY_AELEMS (expr);
 
     while (elements != NULL) {
@@ -346,17 +360,20 @@ HandleBoundStepWidthExprs (node *expr, node **gridblock_exprs, char *name, info 
         } else {
             avis = ID_AVIS (EXPRS_EXPR (elements));
 
+            // add old LUSW component to the parameters in kernel call:
             INFO_PARAMS (arg_info)
               = TBmakeExprs (TBmakeId (avis), INFO_PARAMS (arg_info));
+
+            // construct fresh N_arg for the kernel function:
             new_avis = DUPdoDupNode (avis);
             AVIS_NAME (new_avis) = MEMfree (AVIS_NAME (new_avis));
             bound_name = (char *)MEMmalloc (sizeof (char) * (STRlen (name) + 2));
             sprintf (bound_name, "%s%d", name, dim);
             AVIS_NAME (new_avis) = bound_name;
-
             INFO_ARGS (arg_info) = TBmakeArg (new_avis, INFO_ARGS (arg_info));
 
-            if (is_bound) {
+            if (insert_in_grid_block) {
+                // insert LUSW component into F_cuda_grid_block arguments:
                 (*gridblock_exprs) = TBmakeExprs (TBmakeId (avis), (*gridblock_exprs));
             }
         }
@@ -641,10 +658,12 @@ CUKNLlet (node *arg_node, info *arg_info)
 node *
 CUKNLwith (node *arg_node, info *arg_info)
 {
-    node *old_with;
+    node *old_with, *old_pragma;
     DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
+        old_pragma = INFO_PRAGMA (arg_info);
+        INFO_PRAGMA (arg_info) = WITH_PRAGMA (arg_node);
         /* Start collecting data flow information */
         INFO_COLLECT (arg_info) = TRUE;
         /* Save withop. This withop will be traverse in the
@@ -654,6 +673,7 @@ CUKNLwith (node *arg_node, info *arg_info)
         INFO_WITH (arg_info) = arg_node;
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
         INFO_WITH (arg_info) = old_with;
+        INFO_PRAGMA (arg_info) = old_pragma;
         INFO_WITHOP (arg_info) = NULL;
         INFO_COLLECT (arg_info) = FALSE;
         /* Indicate to N_assign that a chain of CUDA kernel N_aps
@@ -1059,12 +1079,21 @@ CUKNLgenerator (node *arg_node, info *arg_info)
         HandleBoundStepWidthExprs (upper_bound, &gridblock_exprs, "_ub_", arg_info);
 
         if (!INFO_IN_CUDA_PARTITION (arg_info)) {
+#if 0
+            /*
+             * IMHO (sbs) this injects the block values!
+             */
             if (INFO_PART_TBSHP (arg_info) != NULL) {
                 gridblock_exprs
                   = TCappendExprs (gridblock_exprs, DUPdoDupTree (ARRAY_AELEMS (
                                                       INFO_PART_TBSHP (arg_info))));
             }
+#endif
 
+            if (INFO_PRAGMA (arg_info) != NULL) {
+                gridblock_exprs = TBmakeExprs (DUPdoDupTree (INFO_PRAGMA (arg_info)),
+                                               gridblock_exprs);
+            }
             INFO_PRFGRIDBLOCK (arg_info)
               = TBmakeAssign (TBmakeLet (NULL,
                                          TBmakePrf (F_cuda_grid_block, gridblock_exprs)),
