@@ -1,0 +1,10 @@
+/*
+ *   check_fun_name  fun_string  
+ */
+
+WLP (GKFcheckShift, "Shift")
+WLP (GKFcheckCompressGrid, "CompressGrid")
+WLP (GKFcheckPermute, "Permute")
+WLP (GKFcheckFoldLast2, "FoldLast2")
+WLP (GKFcheckSplitLast, "SplitLast")
+WLP (GKFcheckPad, "Pad")

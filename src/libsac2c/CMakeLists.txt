@@ -241,6 +241,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cuda/single_thread_kernels.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/split_cuda_fold.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/split_cuda_withloop.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/split_partitions.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/gpukernel_funs.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/change_arrays_to_dist.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/create_dist_wl_cond.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/cuda_cost_model.c
