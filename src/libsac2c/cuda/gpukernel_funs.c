@@ -1,3 +1,57 @@
+/** <!--********************************************************************-->
+ *
+ * @defgroup gpukernel pragma functions
+ *
+ *   This module implements the functions that are needed for implementing the
+ *   #pragma gpukernel. It contains the following main parts:
+ *
+ *   1) Parser checker for the gpukernel pragma
+ *
+ *   The parser checks for #pragma gpukernel <funcall>
+ *   Once that is found, the parser calls     GKFcheckGpuKernelPragma( ...) from
+ *   this module. GKFcheckGpuKernelPragma expects two parameters: an
+ *   N_spap node that represents the just parsed funcall and a location containing
+ *   the location right after the last symbol parsed so far.
+ *
+ *   GKFcheckGpuKernelPragma checks whether this is a legitimate nesting of 
+ *   gpukernel function calls. The nesting has to adhere to the following bnf:
+ *
+ *   GridBlock( <num>, <gpukernel_fun_ap>)
+ *
+ *   <gpukernel_fun_ap> -> Gen
+ *                         | Shift ( <vect>, <gpukernel_fun_ap>)
+ *                         | CompressGrid ( <gpukernel_fun_ap>)
+ *                         | Permute ( <vect>, <gpukernel_fun_ap>)
+ *                         | FoldLast2 ( <gpukernel_fun_ap>)
+ *                         | SplitLast ( [<num>,<num>], <gpukernel_fun_ap>)
+ *                         | Pad ( <vect>, <gpukernel_fun_ap>)
+ *
+ *  any non-adherence will issue CTIerrors explaining which arguments are
+ *  missing or expected in a different form.
+ *
+ *  The function specific arguments (typically the first parameters) are being
+ *  checked through function-specific check functions named GKFcheckSplit,....
+ *
+ *  IF a function <myfun> needs to be added, this requires 
+ *    1) an additional entry in the file gpukernel_funs.mac of the form:
+ *
+ *       WLP (GKFcheck<myfun>, "<myfun>")
+ *
+ *    2) an additional function definition in this file of the function
+ *       
+ *       node *GKFcheck<myfun>( node *args) 
+ *
+ *       which checks any arguments specific to <myfun>.
+ *  These two extension suffice to implement the whole extension from the
+ *  perspective of the scanner / parser.
+ *
+ *
+ *
+ * @ingroup
+ *
+ * @{
+ *
+ *****************************************************************************/
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -19,13 +73,18 @@
  **  Functions for naive-compilation pragma
  **/
 
-/******************************************************************************
+/**<!--*********************************************************************-->
  *
- * Function:
- *   bool GKFcheckGpuKernelPragma (node *spap)
+ * @fn void GKFcheckGpuKernelPragma (node *spap, struct location loc)
  *
- * Description:
+ * @param spap - N_spap node representing scanned/parsed function call
+ * @param loc - the location of the scanner/parser wight after the funcall 
  *
+ * @brief expects an N_spap node which contains a nesting of function calls
+ *        according to the syntax of the pragma gpukernel. It checks validity
+ *        up to the legitimate ordering (see top of this file or SaC BNF document)
+ *        and legitimate argument nodes of the individual functions.
+ *        If errors are being detected CTIerrors are being issued.
  *
  ******************************************************************************/
 
@@ -41,6 +100,10 @@ GKFcheckGpuKernelPragma (node *spap, struct location loc)
         CTIerrorLoc (NODE_LOCATION (spap), "expected `GridBlock' found `%s'",
                                            SPAP_NAME (spap));
     } else {
+        /*
+         * check validity of GridBlock arguments; return pointer to nested
+         * N_spap / N_spid or NULL in case of an error.
+         */
         spap = GKFcheckGridBlock (SPAP_ARGS (spap), loc);
     }
 
@@ -86,25 +149,18 @@ GKFcheckGpuKernelPragma (node *spap, struct location loc)
 }
 
 
-/******************************************************************************
- ******************************************************************************
- **
- **  Here the funs for gpukernel-pragmas are defined.
- **
- **  All gpukernel-check-funs have the signature
- **    node *GKFcheck<name>( node *args)
- **
- **  they return the last argument which either needs to be anothe N_spap, or
- **  an N_spid (in case of the inner "Gen").
- **
- **/
-
-/******************************************************************************
+/** <!--********************************************************************-->
  *
- * Function:
- *   node *GKFcheckGridBlock (node *args, struct location loc)
+ * @fn  node *GKFcheckGridBlock (node *args, struct location loc)
  *
- * Description:
+ * @param args - N_exprs node containing the first argument
+ * @param loc - location of the parser *after* the funcall has been parsed
+ *
+ * @brief checks for args GridBlock ( <num>, <inner>) where
+ *          <num> needs to be an N_num node and
+ *          <inner> needs to be either N_spap or N_spid
+ *
+ *        returns <inner> (N_spap/N_spid) if check succeeds, NULL otherwise.
  *
  ******************************************************************************/
 
@@ -144,11 +200,32 @@ GKFcheckGridBlock (node *args, struct location loc)
 }
 
 /******************************************************************************
+ ******************************************************************************
+ **
+ **  Here the funs for the generic gpukernel-pragmas are defined.
+ **
+ **  All gpukernel-check-funs have the signature
+ **    node *GKFcheck<name>( node *args)
+ **
+ **  they obtain the pointer to an N_exprs node "args" that needs to contain
+ **  the first argument of the given gpukernel function.
+ **  All they do is to check the gpukernel function specific arguments and
+ **  to progress the args pointer behind the function specific arguments.
+ **
+ **  So the returned pointer *should* be an N_exprs node containing the
+ **  inner gpu-kernel function (either N_spap or N_spid for "Gen").
+ **  However, these properties are not checked here but from the generic
+ **  calling context in GKFcheckGpuKernelPragma.
+ **
+ **/
+
+/******************************************************************************
  *
- * Function:
- *   node *GKFcheckShift (node *args)
+ * @fn node *GKFcheckShift (node *args)
  *
- * Description:
+ * @param args - N_exprs node containing the first argument to Shift
+ *
+ * @brief:
  *
  ******************************************************************************/
 
@@ -162,10 +239,12 @@ GKFcheckShift (node *args)
 
 /******************************************************************************
  *
- * Function:
- *   node *GKFcheckCompressGrid (node *args)
+ * @fn node *GKFcheckCompressGrid (node *args)
  *
- * Description:
+ * @param args - N_exprs node containing the first argument to CompressGrid
+ *
+ * @brief: as CompressGrid has no function specific arg, it simply returns its
+ *         argument!
  *
  ******************************************************************************/
 
@@ -178,10 +257,11 @@ GKFcheckCompressGrid (node *args)
 
 /******************************************************************************
  *
- * Function:
- *   node *GKFcheckPermute (node *args)
+ * @fn node *GKFcheckPermute (node *args)
  *
- * Description:
+ * @param args - N_exprs node containing the first argument to Permute
+ *
+ * @brief:
  *
  ******************************************************************************/
 
@@ -195,10 +275,12 @@ GKFcheckPermute (node *args)
 
 /******************************************************************************
  *
- * Function:
- *   node *GKFcheckFoldLast2 (node *args)
+ * @fn node *GKFcheckFoldLast2 (node *args)
  *
- * Description:
+ * @param args - N_exprs node containing the first argument to FoldLast2
+ *
+ * @brief: as FoldLast2 has no function specific arg, it simply returns its 
+ *         argument!
  *
  ******************************************************************************/
 
@@ -211,10 +293,11 @@ GKFcheckFoldLast2 (node *args)
 
 /******************************************************************************
  *
- * Function:
- *   node *GKFcheckSplitLast (node *args)
+ * @fn node *GKFcheckSplitLast (node *args)
  *
- * Description:
+ * @param args - N_exprs node containing the first argument to SplitLast
+ *
+ * @brief:
  *
  ******************************************************************************/
 
@@ -228,10 +311,11 @@ GKFcheckSplitLast (node *args)
 
 /******************************************************************************
  *
- * Function:
- *   node *GKFcheckPad (node *args)
+ * @fn  node *GKFcheckPad (node *args)
  *
- * Description:
+ * @param args - N_exprs node containing the first argument to Pad
+ *
+ * @brief:
  *
  ******************************************************************************/
 
