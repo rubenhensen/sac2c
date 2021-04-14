@@ -1096,7 +1096,7 @@ CUKNLgenerator (node *arg_node, info *arg_info)
             }
             INFO_PRFGRIDBLOCK (arg_info)
               = TBmakeAssign (TBmakeLet (NULL,
-                                         TBmakePrf (F_cuda_grid_block, gridblock_exprs)),
+                                         TBmakePrf (F_cuda_thread_space, gridblock_exprs)),
                               NULL);
         }
 

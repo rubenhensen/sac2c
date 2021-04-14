@@ -201,6 +201,7 @@ static node *last_assignment_icm = NULL;
 #define ICM_ALL
 #define ICM_DEF(prf, trf) extern void Print##prf (node *exprs, info *arg_info);
 #define ICM_ANY(name)
+#define ICM_PRAGMA_FUNS(name)
 #define ICM_ICM(name)
 #define ICM_NT(name)
 #define ICM_ID(name)
@@ -216,6 +217,7 @@ static node *last_assignment_icm = NULL;
 #include "icm.data"
 #undef ICM_DEF
 #undef ICM_ANY
+#undef ICM_PRAGMA_FUNS
 #undef ICM_ICM
 #undef ICM_NT
 #undef ICM_ID
@@ -4263,6 +4265,7 @@ PRTicm (node *arg_node, info *arg_info)
         compiled_icm = TRUE;                                                             \
     } else
 #define ICM_ANY(name)
+#define ICM_PRAGMA_FUNS(name)
 #define ICM_ICM(name)
 #define ICM_NT(name)
 #define ICM_ID(name)
@@ -4279,6 +4282,7 @@ PRTicm (node *arg_node, info *arg_info)
 #undef ICM_ALL
 #undef ICM_DEF
 #undef ICM_ANY
+#undef ICM_PRAGMA_FUNS
 #undef ICM_ICM
 #undef ICM_NT
 #undef ICM_ID

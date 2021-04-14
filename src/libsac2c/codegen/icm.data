@@ -1360,6 +1360,14 @@ ICM_DEF( CUDA_MEM_TRANSFER_END, ICM_TRACE_NONE)
 ICM_END( CUDA_MEM_TRANSFER_END, (var_NT))
 #endif
 
+#if defined( CUDA_THREAD_SPACE) || defined(ICM_ALL)
+ICM_DEF( CUDA_THREAD_SPACE, ICM_TRACE_NONE)
+  ICM_PRAGMA_FUNS( pragma)
+  ICM_UINT( bounds_count)
+  ICM_VARANY( (bounds_count), var_ANY)
+ICM_END( CUDA_THREAD_SPACE, (pragma, bounds_count, var_ANY))
+#endif
+
 #if defined( CUDA_GRID_BLOCK) || defined(ICM_ALL)
 ICM_DEF( CUDA_GRID_BLOCK, ICM_TRACE_NONE)
   ICM_UINT( bounds_count)

@@ -1,10 +1,10 @@
 /*
- *   check_fun_name  fun_string  
+ *   check_fun_name  comp_fun_name  fun_string  num_args
  */
 
-WLP (GKFcheckShift, "Shift")
-WLP (GKFcheckCompressGrid, "CompressGrid")
-WLP (GKFcheckPermute, "Permute")
-WLP (GKFcheckFoldLast2, "FoldLast2")
-WLP (GKFcheckSplitLast, "SplitLast")
-WLP (GKFcheckPad, "Pad")
+WLP (GKFcheckShift, GKFcompShift, "Shift", 1)
+WLP (GKFcheckCompressGrid, GKFcompCompressGrid, "CompressGrid", 0)
+WLP (GKFcheckPermute, GKFcompPermute, "Permute", 1)
+WLP (GKFcheckFoldLast2, GKFcompFoldLast2, "FoldLast2", 0)
+WLP (GKFcheckSplitLast, GKFcompSplitLast, "SplitLast", 1)
+WLP (GKFcheckPad, GKFcompPad, "Pad", 1)

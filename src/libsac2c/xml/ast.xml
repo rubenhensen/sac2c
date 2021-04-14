@@ -3935,6 +3935,7 @@
         <node name="Type" />
         <node name="Globobj" />
         <node name="Nested_init" />
+        <node name="Pragma" />
       </target>
     </nodeset>
 

@@ -8,8 +8,8 @@
  *   1) Parser checker for the gpukernel pragma
  *
  *   The parser checks for #pragma gpukernel <funcall>
- *   Once that is found, the parser calls     GKFcheckGpuKernelPragma( ...) from
- *   this module. GKFcheckGpuKernelPragma expects two parameters: an
+ *   Once that is found, the parser calls     GKFcheckGpuKernelPragma (spap, loc)
+ *   from this module. GKFcheckGpuKernelPragma expects two parameters: an
  *   N_spap node that represents the just parsed funcall and a location containing
  *   the location right after the last symbol parsed so far.
  *
@@ -31,6 +31,24 @@
  *
  *  The function specific arguments (typically the first parameters) are being
  *  checked through function-specific check functions named GKFcheckSplit,....
+ *
+ *
+ *
+ *  2) Compiler for the thread space
+ *
+ *  When icm2c finds the ICM CUDA_THREAD_SPACE, it extracts the the
+ *  pragma and it calls GKFcompGpuKernelPragma (spap) from this file.
+ *  GKFcompGpuKernelPragma only expects the N_spap node of the pragma.
+ *  However, it expects that create_cuda_kernel has turned the N_spid
+ *  "Gen" into an N_spap with N_id arguments for the generator bounds.
+ *
+ *  GKFcompGpuKernelPragma interprets the nesting of gpukernel function
+ *  calls and ....
+ *
+ *
+ *
+ *
+ *
  *
  *  IF a function <myfun> needs to be added, this requires 
  *    1) an additional entry in the file gpukernel_funs.mac of the form:
@@ -66,6 +84,14 @@
 #include "globals.h"
 #include "memory.h"
 #include "str.h"
+
+
+/*
+ * implementation for the type gpukernelres_t:
+ */
+struct GPUKERNELRES {
+   int dummy;
+};
 
 /******************************************************************************
  ******************************************************************************
@@ -114,7 +140,7 @@ GKFcheckGpuKernelPragma (node *spap, struct location loc)
                                          " found `%s'", SPID_NAME (spap));
             }
             spap = NULL;
-#define WLP(checkfun, str)                                                           \
+#define WLP(checkfun, compfun, str, args)                                            \
         } else if (STReq (SPAP_NAME (spap), str)) {                                  \
             if (SPAP_ARGS (spap) == NULL) {                                          \
                 CTIerrorLoc (loc,"missing argument in `%s' ()", str);                \
@@ -327,5 +353,123 @@ GKFcheckPad (node *args)
     DBUG_RETURN (args);
 }
 
+
+
+
+
+
+static
+gpukernelres_t *
+dispatch (node *spap, unsigned int bnum, char **bounds)
+{
+    gpukernelres_t *res=NULL;
+
+    DBUG_ENTER ();
+
+    if (NODE_TYPE (spap) == N_spid) {
+        res = GKFcompGen (bnum, bounds);
+
+#define ARGS( nargs) ARG##nargs
+#define ARG0
+#define ARG1 EXPRS_EXPR (SPAP_ARGS (spap)),
+#define WLP(checkfun, compfun, str, nargs)                                            \
+    } else if (STReq (SPAP_NAME (spap), str)) {                                       \
+        DBUG_ASSERT ((SPAP_ARGS (spap) != NULL), "missing argument in `%s' ()", str); \
+        res = compfun ( ARGS( nargs) dispatch (EXPRS_EXPR (SPAP_ARGS (spap)), bnum, bounds));
+#include "gpukernel_funs.mac"
+#undef WLP
+#undef ARGS
+#undef ARG0
+#undef ARG1
+
+    } else {
+        DBUG_ASSERT( 0==1, "expected gpukernel function, found `%s'", SPAP_NAME (spap));
+    }
+
+    DBUG_RETURN (res);
+}
+
+gpukernelres_t *
+GKFcompGpuKernelPragma (node *spap, unsigned int bnum, char ** bounds)
+{
+    gpukernelres_t *res;
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (spap != NULL, "NULL pointer for funcall in gpukernel pragma!");
+    DBUG_ASSERT (NODE_TYPE (spap) == N_spap, "non N_spap funcall in gpukernel pragma!");
+    DBUG_ASSERT (STReq (SPAP_NAME (spap), "GridBlock"), "expected `GridBlock' found `%s'",
+                                                                        SPAP_NAME (spap));
+
+    res = GKFcompGridBlock (EXPRS_EXPR (SPAP_ARGS (spap)),
+                            dispatch (EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (spap))), bnum, bounds));
+
+    DBUG_RETURN (res);
+}
+
+
+
+gpukernelres_t *
+GKFcompGridBlock (node *num, gpukernelres_t *inner)
+{
+    DBUG_ENTER ();
+    DBUG_PRINT ("compiling GridBlock ( %i, inner)", NUM_VAL (num));
+    DBUG_RETURN (inner);
+}
+
+gpukernelres_t *
+GKFcompGen ( unsigned int bnum, char **bounds)
+{
+    DBUG_ENTER ();
+    DBUG_PRINT ("compiling Gen ( ...)");
+    DBUG_RETURN (NULL);
+}
+
+gpukernelres_t *
+GKFcompShift (node *array, gpukernelres_t *inner)
+{
+    DBUG_ENTER ();
+    DBUG_PRINT ("compiling Shift ( nums, inner)");
+    DBUG_RETURN (inner);
+}
+
+gpukernelres_t *
+GKFcompCompressGrid ( gpukernelres_t *inner)
+{
+    DBUG_ENTER ();
+    DBUG_PRINT ("compiling CompressGrid ( inner)");
+    DBUG_RETURN (inner);
+}
+
+gpukernelres_t *
+GKFcompPermute (node *array, gpukernelres_t *inner)
+{
+    DBUG_ENTER ();
+    DBUG_PRINT ("compiling Permute ( nums, inner)");
+    DBUG_RETURN (inner);
+}
+
+gpukernelres_t *
+GKFcompFoldLast2 (gpukernelres_t *inner)
+{
+    DBUG_ENTER ();
+    DBUG_PRINT ("compiling FoldLast2 ( inner)");
+    DBUG_RETURN (inner);
+}
+
+gpukernelres_t *
+GKFcompSplitLast (node *array, gpukernelres_t *inner)
+{
+    DBUG_ENTER ();
+    DBUG_PRINT ("compiling SplitLast ( nums, inner)");
+    DBUG_RETURN (inner);
+}
+
+gpukernelres_t *
+GKFcompPad (node *array, gpukernelres_t *inner)
+{
+    DBUG_ENTER ();
+    DBUG_PRINT ("compiling Pad ( nums, inner)");
+    DBUG_RETURN (inner);
+}
 
 #undef DBUG_PREFIX

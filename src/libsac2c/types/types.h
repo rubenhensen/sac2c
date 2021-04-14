@@ -1123,6 +1123,14 @@ typedef struct SERSTACK_T serstack_t;
 
 typedef constant *(*shape_oracle_funptr) (int n);
 
+
+/******************************************************************************
+ * tyedef for gpukernel_funs
+ */
+
+typedef struct GPUKERNELRES gpukernelres_t;
+
+
 /******************************************************************************
  * typedef for cross edge reachability analysis
  */

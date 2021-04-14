@@ -14,6 +14,12 @@
         INDENT;                                                                          \
         fprintf (global.outfile, "SAC_Print( \"%s( \");\n", #prf);
 
+#define ICM_PRAGMA_FUNS(name)                                                            \
+    SEP;                                                                                 \
+    INDENT;                                                                              \
+    fprintf (global.outfile, "SAC_Print( \"%p \");\n", name);                            \
+    sep = 1;
+
 #define ICM_ANY(name)                                                                    \
     SEP;                                                                                 \
     INDENT;                                                                              \
@@ -89,6 +95,7 @@
 
 #undef ICM_DEF
 #undef ICM_ANY
+#undef ICM_PRAGMA_FUNS
 #undef ICM_ICM
 #undef ICM_NT
 #undef ICM_ID
