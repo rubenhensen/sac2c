@@ -1,0 +1,456 @@
+BREAK OPTION SPECIFIERS:
+
+    scp | 1  : Loading SAC program
+      loc      : Locating source code
+      cpp      : Running C preprocessor
+      prs      : Parsing input file
+
+    pre | 2  : Preprocessing SAC program
+      hs       : Hiding struct definitions behind typedefs and accessors
+      iotc     : Introducing user-tracing calls
+      zgwl     : Handling zero-generator with-loops
+      mgwl     : Handling multi-generator with-loops
+      mowl     : Handling multi-operator with-loops
+      acn      : Resolving axis control and dot notation
+      rsp      : Resolving pragma annotations
+      obi      : Generating object initializers
+      csgd     : Checking and simplifying generic definitions
+
+    mod | 3  : Running module system
+      prcl     : Parse runtime optimization commandline
+      rsa      : Processing use and import statements
+      ans      : Annotating namespaces
+      gdp      : Gathering dependencies
+      imp      : Retrieving imported symbols
+      uss      : Retrieving used symbols
+      asf      : Loading prelude functions
+      rtfilter : Filter unneeded functions (runtime specialization)
+
+    sim | 4  : Simplifying source code
+      w2d      : Transforming while-loops into do-loops
+      iucfb    : Insert user-defined constraint to function body
+      ece      : Eliminating conditional expressions
+      moe      : Handling multiple operator expressions
+      flt      : Flattening nested expressions
+      udt      : Processing user defined types
+      gntc     : Generating nested type conversion functions
+      ggtc     : Generating generic type conversion functions
+
+    ptc | 5  : Converting to static single assignment form
+      ivd      : Inserting variable declarations
+      dmmls    : Mark local selects for distmem backend
+      itc      : Converting type decls into type conversions
+      cwf      : Creating wrapper functions
+      gon      : Running global object analysis
+      goi      : Generating global object initialiser
+      rso      : Resolving global objects
+      rrp      : Resolving reference parameters
+      ewt      : Extending dispatch information
+      l2f      : Eliminating loops and conditionals
+      elf      : Extending LaC funs
+      ssa      : Establishing static single assignment form
+
+    tc  | 6  : Running type inference system
+      esp      : Enforcing Specializations
+      sossk    : Specialization Oracle for Static Shape Knowledge
+      ti       : Running type inference system
+      etv      : Eliminating Type Variables
+      ebt      : Eliminating Bottom Types
+      swr      : Splitting Wrappers
+
+    exp | 7  : Processing exports
+      exp      : Exporting symbols
+      dfr      : Removing dead functions
+      uid      : Set unique ids for generic functions
+      ser      : Serializing syntax tree
+
+    popt | 8  : Preparing for code optimization
+      rgd      : Removing generic function definitions
+      iif      : Restoring bodies of imported inline functions
+      cspf     : MUTC Creating spawn functions
+      cua      : Checking uniqueness annotations
+      cuq      : Checking uniqueness
+      cwb      : Creating Wrapper Bodies
+      l2f      : Eliminating conditionals in wrapper code
+      ssa      : Establishing static single assignment form in wrapper code
+      dfc      : Trying to dispatch functions statically
+      des      : Removing all structs
+      eudt     : Eliminating User-Defined Types
+      cse      : Applying common subexpression elimination
+      dcr      : Removing dead code
+      icc      : Inserting Conformity Checks
+      ti       : Running type inference system
+      etv      : Eliminating Type Variables
+      ebt      : Eliminating Bottom Types
+
+    ewl | 9  : Enhancing with-loops
+      accu     : Introducing explicit accumulators
+      adp      : Adding default partitions
+      cf       : Applying constant folding
+      cse      : Applying common subexpression elimination
+      wlpg     : Generating full with-loop partitions
+      wlbsc    : Ensuring structural constants for with-loop partition bounds
+
+    opt | 10 : Running SAC optimizations
+      dfr      : Removing dead functions
+      inl      : Applying function inlining
+      tgtl     : Transform gt and ge operators to lt and le operators
+      dfr2     : Removing dead functions
+      dcr      : Removing dead code
+      dlir     : Applying do-loop invariant removal
+      wlir     : Applying with-loop invariant removal
+      glf      : Grouping local functions
+      linl     : Inlining degenerated LaC functions
+      cyc      : Optimization cycle
+        cse      : Applying common subexpression elimination (fun based)
+        ainl     : Determine candidate functions for inlining (fun based)
+        ili      : Inferring loop invariant variables (fun based)
+        tup      : Applying type upgrade (fun based)
+        etv      : Eliminating Type Variables (fun based)
+        ebt      : Eliminating Bottom Types (fun based)
+        dfc      : Applying function call dispatch (fun based)
+        inl      : Applying inlining (fun based)
+        tgtl     : Transform gt and ge operators to lt and le operators (fun based)
+        wlprop   : Applying with-loop propagation (fun based)
+        ls       : Applying Loop Scalarization (fun based)
+        lacsi    : Applying Loop & Conditional Argument Scalarization (fun based)
+        lacso    : Applying Loop & Conditional Result Scalarization (fun based)
+        cf       : Applying constant folding (fun based)
+        linl     : Inlining degenerated LaC functions (fun based)
+        vp       : Propagating variables (fun based)
+        rea      : Reorder arguments of equality primitive function  (fun based)
+        wlpg     : Generating full with-loop partitions (fun based)
+        wlbsc    : Ensuring structural constants for with-loop partition bounds (fun based)
+        wlsimp   : Simplifying with-loops (fun based)
+        cwle     : Eliminate copy with-loops (fun based)
+        wli      : Inferring foldable with-loops (fun based)
+        wlf      : Applying with-loop folding (fun based)
+        wlfssa   : Restoring SSA form after with-loop folding (fun based)
+        dcr      : Applying dead code removal (fun based)
+        linl2    : Inlining degenerated LaC functions (fun based)
+        dlir     : Applying do-loop invariant removal (fun based)
+        wlir     : Applying with-loop invariant removal (fun based)
+        wls      : Applying with-loop scalarization (fun based)
+        prfunr   : Applying prf unrolling (fun based)
+        etc      : Eliminating typeconv primitives (fun based)
+        xvp      : Propagating variables (fun based)
+        xrea     : Reorder arguments of equality primitive function  (fun based)
+        lur      : Applying loop unrolling (fun based)
+        lurssa   : Restoring SSA form after loop unrolling (fun based)
+        wlur     : Applying withloop unrolling (fun based)
+        wlurssa  : Restoring SSA form after withloop unrolling (fun based)
+        ctzg     : Comparison to zero conversion for guards (fun based)
+        ctz      : Comparison to zero conversion (fun based)
+        esd      : Eliminating subtraction and division operators (fun based)
+        esdcf    : Applying constant folding (esd case) (fun based)
+        esdcse   : Applying common subexpression elimination (esd case) (fun based)
+        as       : Arithmetic Simplification (fun based)
+        al       : Applying associative law (fun based)
+        dl       : Applying distributive law (fun based)
+        uesd     : Reintroducing subtraction and division operators (fun based)
+        dcr2     : Applying dead code removal (fun based)
+        linl3    : Inlining degenerated LaC functions (fun based)
+        sisi     : Simplifying function signatures
+        lof      : Lifting optimization flags
+      saacyc   : Symbolic array attribute cycle 2
+        isaa     : Inserting symbolic array attributes (fun based)
+        ggs      : Generate guard solvers (fun based)
+        ivesplit : Eliminating index vectors (split selections) (fun based)
+        cse      : Eliminating common subexpressions (fun based)
+        prfunr   : Applying prf unrolling (fun based)
+        ili      : Inferring loop invariant variables (fun based)
+        tup      : Applying type upgrade (fun based)
+        etv      : Eliminating type variables (fun based)
+        ebt      : Eliminating bottom types (fun based)
+        dfc      : Applying function call dispatch (fun based)
+        inl      : Applying inlining (fun based)
+        tgtl     : Transform gt and ge operators to lt and le operators (fun based)
+        wlprop   : Applying with-loop propagation (fun based)
+        ls       : Applying Loop Scalarization (fun based)
+        lacsi    : Applying Loop & Conditional Argument Scalarization (fun based)
+        lacso    : Applying Loop & Conditional Result Scalarization (fun based)
+        cf       : Applying constant folding (fun based)
+        linl     : Inlining degenerated LaC functions (fun based)
+        vp       : Propagating variables (fun based)
+        rea      : Reorder arguments of equality primitive function  (fun based)
+        wlpg     : Generating full with-loop partitions (fun based)
+        wlbsc    : Unflattening WL-partition structural constants (fun based)
+        wlsimp   : Simplifying with-loops (fun based)
+        cwle     : Eliminate copy with-loops (fun based)
+        wli      : Inferring foldable with-loops (fun based)
+        wlf      : Applying with-loop folding (fun based)
+        wlfssa   : Restoring SSA form after with-loop folding (fun based)
+        ivexi    : Inserting index vector extrema (fun based)
+        ivexp    : Propagating index vector extrema (fun based)
+        petl     : Propagate extrema thru lacfuns (fun based)
+        dlfr     : Removing dead local functions (fun based)
+        pcse     : Eliminating common subexpressions for polyhedral optimizations (fun based)
+        pdcr     : Removing dead code for polyhedral optimizations (fun based)
+        ssawl    : Convert withids to SSA form (fun based)
+        polys    : Polyhedral analysis setup (fun based)
+        plur     : Polyhedral loop unrolling (fun based)
+        pogo     : Polyhedral guard optimization (fun based)
+        pwlf     : Polyhedral with loop folding (fun based)
+        polyt    : Polyhedral analysis tear down (fun based)
+        ussawl   : Convert withids from SSA form (fun based)
+        awlfi    : Inferring algebraically foldable with-loops (fun based)
+        cse2     : Eliminating common subexpressions (fun based)
+        wlircubsl : Applying with-loop invariant removal for CUBSL (fun based)
+        cubsl    : Slicing algebraically foldable with-loops (fun based)
+        awlf     : Applying algebraic with-loop folding (fun based)
+        dcr      : Removing dead code (fun based)
+        linl2    : Inlining degenerated LaC functions (fun based)
+        dlir     : Applying do-loop invariant removal (fun based)
+        wlir     : Applying with-loop invariant removal (fun based)
+        wls      : Applying with-loop scalarization (fun based)
+        lur      : Applying loop unrolling (fun based)
+        lurssa   : Restoring SSA form after loop unrolling (fun based)
+        wlur     : Applying withloop unrolling (fun based)
+        wlurssa  : Restoring SSA form after withloop unrolling (fun based)
+        etc      : Eliminating typeconv primitives (fun based)
+        ctzg     : Comparison to zero conversion for guards (fun based)
+        ctz      : Comparison to zero conversion (fun based)
+        esd      : Eliminating subtraction and division operators (fun based)
+        as       : Arithmetic Simplification (fun based)
+        esdcf    : Applying constant folding (esd case) (fun based)
+        esdcse   : Applying common subexpression elimination (esd case) (fun based)
+        al       : Applying associative law (fun based)
+        dl       : Applying distributive law (fun based)
+        uesd     : Reintroducing subtraction and division operators (fun based)
+        safa     : Sorting associative function arguments (fun based)
+        dcr2     : Removing dead code (fun based)
+        linl3    : Inlining degenerated LaC functions (fun based)
+        edfa     : Eliminating duplicate lacfun arguments (fun based)
+        sisi     : Simplifying function signatures
+        lof      : Lifting optimization flags
+      dfr3     : Removing dead functions
+      uctz     : Eliminating comparisons to zero
+      wlbscnf2 : Unflattening WL-partition structural constants
+      rgs      : Remove guard solvers
+      vp2      : Propagating variables
+      cse3     : Eliminating common subexpression
+      dcr3     : Removing dead code
+      uglf     : Ungrouping local functions
+      tup      : Running final type inference
+      etv      : Eliminating type variables
+      ebt      : Eliminating bottom types
+      cffinal  : Final round of constant folding
+      wlfs     : Applying with-loop fusion
+      wlfscse  : Eliminating common subexpressions after fusion
+      wlfsdcr  : Removing dead code after fusion
+      wlpg2    : Generating full with-loop partitions
+      wrci     : Inferencing with-loop reuse candidates
+      ivexc    : Cleaning up index vector extrema
+      wlidx    : Annotating offset variable at with-loops
+      ivesplit : Eliminating index vectors (split selections)
+      ivesli   : Eliminating index vectors (split loop invariants)
+      ivevp    : Propagating variables (for IVE)
+      dcr4     : Removing dead code
+      scyc     : Type stabilization cycle
+        tup      : Applying type upgrade (fun based)
+        etv      : Eliminating Type Variables (fun based)
+        ebt      : Eliminating Bottom Types (fun based)
+        cf       : Applying constant folding (fun based)
+        vp       : Propagating variables (fun based)
+        rea      : Reorder arguments of equality primitive function  (fun based)
+        dfc      : Applying function call dispatch (fun based)
+        lof      : Lifting optimization flags
+      wlflt    : Trying to flatten multi-dimensional withloops
+      esaa     : Eliminating symbolic array attributes
+      dcr5     : Removing dead code
+      scc      : Stripping conformity checks and dataflow guards
+      tup2     : Applying type upgrade
+      etv2     : Eliminating Type Variables
+      ebt2     : Eliminating Bottom Types
+      vp       : Propagating variables
+      ls       : Applying Loop Scalarization
+      lacsi    : Applying Loop & Conditional Argument Scalarization
+      lacso    : Applying Loop & Conditional Result Scalarization
+      wlsimp   : Simplifying with-loops
+      tupls    : Applying type upgrade for LS/LACS
+      etvls    : Eliminating Type Variables for LS/LACS
+      ebtls    : Eliminating Bottom Types for LS/LACS
+      cfls     : Applying constant folding for LS/LACS
+      dlirls   : Applying do-loop invariant removal for LS/LACS
+      wlirls   : Applying with-loop invariant removal for LS/LACS
+      ussai    : Undo SSAIV Transform
+      vpls     : Propagating variables for LS/LACS
+      cpive    : Propagating constants for IVE
+      cse2     : Eliminating common subexpression
+      iveras   : Eliminating index vectors (reuse WL-offsets and scalarize)
+      ivevp2   : Propagating variables (for IVERAS)
+      dcr6     : Removing dead code
+      dlir2    : Applying do-loop invariant removal
+      wlir2    : Applying with-loop invariant removal
+      fprc     : Filtering partial reuse candidates
+      wllom    : Withloop lock optimization marking
+      wllos    : Withloop lock optimization shifting
+      dfc      : Applying final function call dispatch
+      finalinl : Applying final inlining
+      xtgtl    : Transform gt and ge operators to lt and le operators
+      fdi      : Freeing dispatch information
+      emrci    : Collect extended WL reuse candidates
+      emrcf    : Filter extended WL reuse candidates
+      emrl     : Lift allocations of WL using extended reuse candidates
+      ts       : Displaying type specialisation statistics
+      cs       : Displaying constraint resolution statistics
+      stat     : Displaying optimisation statistics
+
+    cuda | 11 : Automatic parallelisation for GPUs
+      acuwl    : CUDA Annotate CUDA withloops
+      cucm     : CUDA cost model
+      pfd      : CUDA Partial folding
+      scuf     : CUDA Split CUDA fold withloops
+      cutem    : CUDA Tag execution mode
+      cuskc    : CUDA Sink scalar code
+      cucc     : CUDA Create cells
+      cadt     : Change arrays to distributed type
+      iwlmem   : CUDA Insert CUDA memory transfer primitives for withloops
+      icsmem   : CUDA Insert CUDA memory transfer primitives for cudasts
+      vp       : Propagating variables
+      cp       : Propagating constants
+      dcr      : Removing dead code
+      sptn     : CUDA Split partitions
+      acuptn   : CUDA Annotate CUDA partitions
+      mtran    : CUDA Minimise the number of device-host data transfers
+      daa      : CUDA Data access analysis
+      stknl    : CUDA Create single threaded CUDA kernels
+      emrci    : Collect extended WL reuse candidates
+      emrcf    : Filter extended WL reuse candidates
+      cumm     : Unify host and device memory when using CUDA managed memory
+      cuad     : Introduce delays into asynchronous memory transfers
+      cuade    : Expand delays of asynchronous memory transfers
+
+    wlt | 12 : Transforming with-loop representation
+      wlbsc    : Unflattening WL-partition structural constants
+      wlsimp   : Simplifying with-loops
+      wltr     : Transforming with-loop representation
+      wlsd     : Splitting withloops by dimensions
+      cse      : Applying common subexpression elimination
+      rw3      : Remove unneeded With3s
+      ass      : Add syncs
+      ms       : Move syncs
+      cudr     : CUDA Exploiting data reuse with cuda shared memory
+      vp       : Propagating variables
+      cp       : Propagating constants
+      dcr      : Removing dead code
+
+    mt3 | 13 : Running 3rd generation multithreading
+      tem      : Tagging execution modes
+      crwiw    : Creating with in with
+      pem      : Propagating execution modes
+      cdfg     : Creating data flow graph
+      asmra    : Rearringing assignments
+      crece    : Creating execution mode cells
+      cegro    : Extending execution mode cells
+      repfun   : Replicating functions
+      mtdfr    : Removing superfluous functions
+      concel   : Consolidating execution mode cells
+      abort    : Aborting MT3 compilation
+
+    tp  | 14 : Introducing task parallelization
+      syn      : Add sync statements
+      mss      : Move sync statements
+      tff      : Tag function definitions
+      tfa      : Tag function applications
+      lva      : Do live variable analysis
+      css      : Count spawns and syncs
+
+    mem | 15 : Introducing memory management instructions
+      ufiv     : Unshare index vectors in WL-folds
+      cp       : Propagating constants
+      cnstass  : CUDA Flatten generators
+      asd      : AUD/SCL distinction
+      copy     : Making copy operations explicit
+      racc     : Removing alias results from conformity checks
+      alloc    : Introducing explicit allocation statements 
+      dcr      : Removing dead code
+      rci      : Inferring reuse candidates
+      ia       : Interface aliasing analysis
+      lro      : Applying loop reuse optimization
+      aa       : Aliasing analysis
+      srce     : Removing non-local reuse-candidates
+      frc      : Removing invalid reuse candidates
+      sr       : Static reuse
+      lao      : Applying loop allocation optimization
+      rb       : Introducing reuse branches
+      ipc      : Identifying in-place updates
+      dr       : Exploiting data reuse
+      pew3     : MUTC Prune empty with3
+      dcr2     : Removing dead code again
+      rc       : Running reference count inference
+      rcm      : Reducing reference counting instructions
+      rco      : Optimizing reference counting instructions
+      re       : Removing reuse instructions
+
+    iprof | 16 : Introduce profiling instruction
+      pfap     : Profiling function applications
+
+    dm  | 17 : Preparing for distributed memory execution
+      dmisef   : Identifying functions with side effects
+
+    ussa | 18 : Converting from static single assignment form
+      ussa     : Converting from SSA form
+      f2l      : Reintroducing loops and conditionals
+      linl     : Inlining LaC functions
+      rec      : Removing external code
+      rera     : Restoring reference arguments
+      reso     : Restoring global objects
+
+    mt  | 19 : Running automatic parallelisation
+      mtcm     : Running multithreading cost model
+      mtstf    : Creating MT and ST functions
+      mtspmdf  : Creating SPMD functions
+      rmpr     : Filtering propagates
+      mtrmi    : Restoring memory instructions
+      mtdcr    : Removing dead code
+      mtas     : Annotating scheduling information
+      sspmdls  : Applying SPMD linksign pragma
+      distcond : Creating distributed with-loop conditionals
+
+    pc  | 20 : Preparing C code generation
+      uw3      : Unroll With3
+      msa      : MUTC Mark SubAlloc
+      lw3      : MUTC Lifting With-Loop bodies into threads
+      armp     : MUTC Add RC Mode PRF
+      dmui     : MUTC Dynamic memory usage inference
+      pknlg    : CUDA Prepare kernel generation
+      mmv      : Marking memval identifiers
+      rnb      : Remove noop branch
+      imemdist : Insert memory transfer primitives for distributed variables
+      ial      : Introduce availability loops for distributed variables
+      cuasr    : CUDA Adjust return ids of single threaded kernel
+      cuknl    : CUDA Create Cuda kernel functions
+      dvr      : Removing obsolete variable declarations
+      dst      : MUTC Computing static thread mapping
+      sls      : Applying linksign pragma
+      moi      : Manage object initialisers
+      rcs      : Resolving code sharing in With-Loops
+      tmft     : MUTC tag main function as thread function
+      tft      : MUTC tag functions as thread functions if needed
+      cfp      : MUTC create function pairs
+      rtspec   : Runtime Specialization create wrapper entry functions
+      msc      : Make Slow Clones
+      fpc      : Reorganising function prototypes
+      tcp      : Applying type conversions
+      mng      : Mark NoOp Grids
+      rid      : Consistently renaming identifiers
+      ofp      : OpenMP find private variables
+      mc       : Move constants to variable declaration
+      pfg      : CUDA Prepare for loop generation
+      dmisefa  : Identifying function applications with side effects for distributed memory backend
+      dmisaa   : Identify sub-allocated arrays for the distributed memory backend
+
+    cg  | 21 : Generating Code
+      tp       : Tag preparation
+      cpl      : Creating intermediate code macros
+      pds      : Prepare distributed with-loop schedulers
+      prt      : Generating C file(s)
+
+    icc | 22 : Creating binary code
+      frtr     : De-allocating syntax tree representation
+      hdep     : Handling dependencies
+      ivcc     : Invoking C compiler
+
+    prof | 23 : Profiling report
+      mem      : Generating memory reports
