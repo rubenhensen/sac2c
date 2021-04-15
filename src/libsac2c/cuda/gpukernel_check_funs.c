@@ -8,12 +8,12 @@
  *   1) Parser checker for the gpukernel pragma
  *
  *   The parser checks for #pragma gpukernel <funcall>
- *   Once that is found, the parser calls     GKFcheckGpuKernelPragma (spap, loc)
- *   from this module. GKFcheckGpuKernelPragma expects two parameters: an
+ *   Once that is found, the parser calls     GKCHcheckGpuKernelPragma (spap, loc)
+ *   from this module. GKCHcheckGpuKernelPragma expects two parameters: an
  *   N_spap node that represents the just parsed funcall and a location containing
  *   the location right after the last symbol parsed so far.
  *
- *   GKFcheckGpuKernelPragma checks whether this is a legitimate nesting of 
+ *   GKCHcheckGpuKernelPragma checks whether this is a legitimate nesting of 
  *   gpukernel function calls. The nesting has to adhere to the following bnf:
  *
  *   GridBlock( <num>, <gpukernel_fun_ap>)
@@ -30,38 +30,7 @@
  *  missing or expected in a different form.
  *
  *  The function specific arguments (typically the first parameters) are being
- *  checked through function-specific check functions named GKFcheckSplit,....
- *
- *
- *
- *  2) Compiler for the thread space
- *
- *  When icm2c finds the ICM CUDA_THREAD_SPACE, it extracts the the
- *  pragma and it calls GKFcompGpuKernelPragma (spap) from this file.
- *  GKFcompGpuKernelPragma only expects the N_spap node of the pragma.
- *  However, it expects that create_cuda_kernel has turned the N_spid
- *  "Gen" into an N_spap with N_id arguments for the generator bounds.
- *
- *  GKFcompGpuKernelPragma interprets the nesting of gpukernel function
- *  calls and ....
- *
- *
- *
- *
- *
- *
- *  IF a function <myfun> needs to be added, this requires 
- *    1) an additional entry in the file gpukernel_funs.mac of the form:
- *
- *       WLP (GKFcheck<myfun>, "<myfun>")
- *
- *    2) an additional function definition in this file of the function
- *       
- *       node *GKFcheck<myfun>( node *args) 
- *
- *       which checks any arguments specific to <myfun>.
- *  These two extension suffice to implement the whole extension from the
- *  perspective of the scanner / parser.
+ *  checked through function-specific check functions named GKCHcheckSplit,....
  *
  *
  *
@@ -74,24 +43,18 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 
-#define DBUG_PREFIX "GKF"
+#define DBUG_PREFIX "GKCH"
 #include "debug.h"
 
 #include "free.h"
 #include "DupTree.h"
-#include "gpukernel_funs.h"
+#include "gpukernel_check_funs.h"
 #include "ctinfo.h"
 #include "globals.h"
 #include "memory.h"
 #include "str.h"
 
 
-/*
- * implementation for the type gpukernelres_t:
- */
-struct GPUKERNELRES {
-   int dummy;
-};
 
 /******************************************************************************
  ******************************************************************************
@@ -101,7 +64,7 @@ struct GPUKERNELRES {
 
 /**<!--*********************************************************************-->
  *
- * @fn void GKFcheckGpuKernelPragma (node *spap, struct location loc)
+ * @fn void GKCHcheckGpuKernelPragma (node *spap, struct location loc)
  *
  * @param spap - N_spap node representing scanned/parsed function call
  * @param loc - the location of the scanner/parser wight after the funcall 
@@ -115,7 +78,7 @@ struct GPUKERNELRES {
  ******************************************************************************/
 
 void
-GKFcheckGpuKernelPragma (node *spap, struct location loc)
+GKCHcheckGpuKernelPragma (node *spap, struct location loc)
 {
     DBUG_ENTER ();
 
@@ -130,7 +93,7 @@ GKFcheckGpuKernelPragma (node *spap, struct location loc)
          * check validity of GridBlock arguments; return pointer to nested
          * N_spap / N_spid or NULL in case of an error.
          */
-        spap = GKFcheckGridBlock (SPAP_ARGS (spap), loc);
+        spap = GKCHcheckGridBlock (SPAP_ARGS (spap), loc);
     }
 
     while (spap != NULL) {
@@ -140,25 +103,25 @@ GKFcheckGpuKernelPragma (node *spap, struct location loc)
                                          " found `%s'", SPID_NAME (spap));
             }
             spap = NULL;
-#define WLP(checkfun, compfun, str, args)                                            \
-        } else if (STReq (SPAP_NAME (spap), str)) {                                  \
+#define WLP(fun, args)                                                               \
+        } else if (STReq (SPAP_NAME (spap), #fun)) {                                 \
             if (SPAP_ARGS (spap) == NULL) {                                          \
-                CTIerrorLoc (loc,"missing argument in `%s' ()", str);                \
+                CTIerrorLoc (loc,"missing argument in `%s' ()", #fun);               \
                 spap = NULL;                                                         \
             } else {                                                                 \
-                spap = checkfun (SPAP_ARGS (spap));                                  \
+                spap = GKCHcheck ## fun (SPAP_ARGS (spap));                          \
                 if (spap == NULL) {                                                  \
-                    CTIerrorLoc (loc,"missing inner gpukernel within `%s'", str);    \
+                    CTIerrorLoc (loc,"missing inner gpukernel within `%s'", #fun);   \
                 } else {                                                             \
                     if (EXPRS_NEXT (spap) != NULL) {                                 \
                         CTIerrorLoc (NODE_LOCATION (EXPRS_EXPR (EXPRS_NEXT (spap))), \
-                                     "superfluous argument within `%s'", str);       \
+                                     "superfluous argument within `%s'", #fun);      \
                     }                                                                \
                     spap = EXPRS_EXPR (spap);                                        \
                     if ((NODE_TYPE (spap) != N_spap)                                 \
                        && (NODE_TYPE (spap) != N_spid)) {                            \
                     CTIerrorLoc (NODE_LOCATION (spap), "missing inner gpukernel"     \
-                                                       " within `%s'", str);         \
+                                                       " within `%s'", #fun);        \
                     }                                                                \
                 }                                                                    \
             }
@@ -177,7 +140,7 @@ GKFcheckGpuKernelPragma (node *spap, struct location loc)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *GKFcheckGridBlock (node *args, struct location loc)
+ * @fn  node *GKCHcheckGridBlock (node *args, struct location loc)
  *
  * @param args - N_exprs node containing the first argument
  * @param loc - location of the parser *after* the funcall has been parsed
@@ -191,7 +154,7 @@ GKFcheckGpuKernelPragma (node *spap, struct location loc)
  ******************************************************************************/
 
 node *
-GKFcheckGridBlock (node *args, struct location loc)
+GKCHcheckGridBlock (node *args, struct location loc)
 {
     DBUG_ENTER ();
 
@@ -231,7 +194,7 @@ GKFcheckGridBlock (node *args, struct location loc)
  **  Here the funs for the generic gpukernel-pragmas are defined.
  **
  **  All gpukernel-check-funs have the signature
- **    node *GKFcheck<name>( node *args)
+ **    node *GKCHcheck<name>( node *args)
  **
  **  they obtain the pointer to an N_exprs node "args" that needs to contain
  **  the first argument of the given gpukernel function.
@@ -241,13 +204,13 @@ GKFcheckGridBlock (node *args, struct location loc)
  **  So the returned pointer *should* be an N_exprs node containing the
  **  inner gpu-kernel function (either N_spap or N_spid for "Gen").
  **  However, these properties are not checked here but from the generic
- **  calling context in GKFcheckGpuKernelPragma.
+ **  calling context in GKCHcheckGpuKernelPragma.
  **
  **/
 
 /******************************************************************************
  *
- * @fn node *GKFcheckShift (node *args)
+ * @fn node *GKCHcheckShift (node *args)
  *
  * @param args - N_exprs node containing the first argument to Shift
  *
@@ -256,7 +219,7 @@ GKFcheckGridBlock (node *args, struct location loc)
  ******************************************************************************/
 
 node *
-GKFcheckShift (node *args)
+GKCHcheckShift (node *args)
 {
     DBUG_ENTER ();
     args = EXPRS_NEXT (args);
@@ -265,7 +228,7 @@ GKFcheckShift (node *args)
 
 /******************************************************************************
  *
- * @fn node *GKFcheckCompressGrid (node *args)
+ * @fn node *GKCHcheckCompressGrid (node *args)
  *
  * @param args - N_exprs node containing the first argument to CompressGrid
  *
@@ -275,7 +238,7 @@ GKFcheckShift (node *args)
  ******************************************************************************/
 
 node *
-GKFcheckCompressGrid (node *args)
+GKCHcheckCompressGrid (node *args)
 {
     DBUG_ENTER ();
     DBUG_RETURN (args);
@@ -283,7 +246,7 @@ GKFcheckCompressGrid (node *args)
 
 /******************************************************************************
  *
- * @fn node *GKFcheckPermute (node *args)
+ * @fn node *GKCHcheckPermute (node *args)
  *
  * @param args - N_exprs node containing the first argument to Permute
  *
@@ -292,7 +255,7 @@ GKFcheckCompressGrid (node *args)
  ******************************************************************************/
 
 node *
-GKFcheckPermute (node *args)
+GKCHcheckPermute (node *args)
 {
     DBUG_ENTER ();
     args = EXPRS_NEXT (args);
@@ -301,7 +264,7 @@ GKFcheckPermute (node *args)
 
 /******************************************************************************
  *
- * @fn node *GKFcheckFoldLast2 (node *args)
+ * @fn node *GKCHcheckFoldLast2 (node *args)
  *
  * @param args - N_exprs node containing the first argument to FoldLast2
  *
@@ -311,7 +274,7 @@ GKFcheckPermute (node *args)
  ******************************************************************************/
 
 node *
-GKFcheckFoldLast2 (node *args)
+GKCHcheckFoldLast2 (node *args)
 {
     DBUG_ENTER ();
     DBUG_RETURN (args);
@@ -319,7 +282,7 @@ GKFcheckFoldLast2 (node *args)
 
 /******************************************************************************
  *
- * @fn node *GKFcheckSplitLast (node *args)
+ * @fn node *GKCHcheckSplitLast (node *args)
  *
  * @param args - N_exprs node containing the first argument to SplitLast
  *
@@ -328,7 +291,7 @@ GKFcheckFoldLast2 (node *args)
  ******************************************************************************/
 
 node *
-GKFcheckSplitLast (node *args)
+GKCHcheckSplitLast (node *args)
 {
     DBUG_ENTER ();
     args = EXPRS_NEXT (args);
@@ -337,7 +300,7 @@ GKFcheckSplitLast (node *args)
 
 /******************************************************************************
  *
- * @fn  node *GKFcheckPad (node *args)
+ * @fn  node *GKCHcheckPad (node *args)
  *
  * @param args - N_exprs node containing the first argument to Pad
  *
@@ -346,7 +309,7 @@ GKFcheckSplitLast (node *args)
  ******************************************************************************/
 
 node *
-GKFcheckPad (node *args)
+GKCHcheckPad (node *args)
 {
     DBUG_ENTER ();
     args = EXPRS_NEXT (args);
@@ -356,120 +319,5 @@ GKFcheckPad (node *args)
 
 
 
-
-
-static
-gpukernelres_t *
-dispatch (node *spap, unsigned int bnum, char **bounds)
-{
-    gpukernelres_t *res=NULL;
-
-    DBUG_ENTER ();
-
-    if (NODE_TYPE (spap) == N_spid) {
-        res = GKFcompGen (bnum, bounds);
-
-#define ARGS( nargs) ARG##nargs
-#define ARG0
-#define ARG1 EXPRS_EXPR (SPAP_ARGS (spap)),
-#define WLP(checkfun, compfun, str, nargs)                                            \
-    } else if (STReq (SPAP_NAME (spap), str)) {                                       \
-        DBUG_ASSERT ((SPAP_ARGS (spap) != NULL), "missing argument in `%s' ()", str); \
-        res = compfun ( ARGS( nargs) dispatch (EXPRS_EXPR (SPAP_ARGS (spap)), bnum, bounds));
-#include "gpukernel_funs.mac"
-#undef WLP
-#undef ARGS
-#undef ARG0
-#undef ARG1
-
-    } else {
-        DBUG_ASSERT( 0==1, "expected gpukernel function, found `%s'", SPAP_NAME (spap));
-    }
-
-    DBUG_RETURN (res);
-}
-
-gpukernelres_t *
-GKFcompGpuKernelPragma (node *spap, unsigned int bnum, char ** bounds)
-{
-    gpukernelres_t *res;
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (spap != NULL, "NULL pointer for funcall in gpukernel pragma!");
-    DBUG_ASSERT (NODE_TYPE (spap) == N_spap, "non N_spap funcall in gpukernel pragma!");
-    DBUG_ASSERT (STReq (SPAP_NAME (spap), "GridBlock"), "expected `GridBlock' found `%s'",
-                                                                        SPAP_NAME (spap));
-
-    res = GKFcompGridBlock (EXPRS_EXPR (SPAP_ARGS (spap)),
-                            dispatch (EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (spap))), bnum, bounds));
-
-    DBUG_RETURN (res);
-}
-
-
-
-gpukernelres_t *
-GKFcompGridBlock (node *num, gpukernelres_t *inner)
-{
-    DBUG_ENTER ();
-    DBUG_PRINT ("compiling GridBlock ( %i, inner)", NUM_VAL (num));
-    DBUG_RETURN (inner);
-}
-
-gpukernelres_t *
-GKFcompGen ( unsigned int bnum, char **bounds)
-{
-    DBUG_ENTER ();
-    DBUG_PRINT ("compiling Gen ( ...)");
-    DBUG_RETURN (NULL);
-}
-
-gpukernelres_t *
-GKFcompShift (node *array, gpukernelres_t *inner)
-{
-    DBUG_ENTER ();
-    DBUG_PRINT ("compiling Shift ( nums, inner)");
-    DBUG_RETURN (inner);
-}
-
-gpukernelres_t *
-GKFcompCompressGrid ( gpukernelres_t *inner)
-{
-    DBUG_ENTER ();
-    DBUG_PRINT ("compiling CompressGrid ( inner)");
-    DBUG_RETURN (inner);
-}
-
-gpukernelres_t *
-GKFcompPermute (node *array, gpukernelres_t *inner)
-{
-    DBUG_ENTER ();
-    DBUG_PRINT ("compiling Permute ( nums, inner)");
-    DBUG_RETURN (inner);
-}
-
-gpukernelres_t *
-GKFcompFoldLast2 (gpukernelres_t *inner)
-{
-    DBUG_ENTER ();
-    DBUG_PRINT ("compiling FoldLast2 ( inner)");
-    DBUG_RETURN (inner);
-}
-
-gpukernelres_t *
-GKFcompSplitLast (node *array, gpukernelres_t *inner)
-{
-    DBUG_ENTER ();
-    DBUG_PRINT ("compiling SplitLast ( nums, inner)");
-    DBUG_RETURN (inner);
-}
-
-gpukernelres_t *
-GKFcompPad (node *array, gpukernelres_t *inner)
-{
-    DBUG_ENTER ();
-    DBUG_PRINT ("compiling Pad ( nums, inner)");
-    DBUG_RETURN (inner);
-}
 
 #undef DBUG_PREFIX

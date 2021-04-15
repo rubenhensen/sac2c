@@ -1,10 +1,48 @@
-/*
- *   check_fun_name  comp_fun_name  fun_string  num_args
+/** <!--********************************************************************-->
+ *
+ * This table lists all currently supported gpukernel pragma functions.
+ *
+ *  IF a function <myfun> needs to be added, this requires
+ *    1) an additional entry in this file of the form:
+ *
+ *       WLP (<myfun>, n)
+ *
+ *       where n is the number of arguments that are expected before
+ *       the inner function call / symbol.
+ *
+ *    2) a function definition in gpukernel_check_funs.c is needed with
+ *       the following signature (the header file expands itself by virtue
+ *       of this file :-)
+ *
+ *       node *GKCHcheck<myfun>( node *args)
+ *
+ *       which checks the n arguments specific to <myfun>.
+ *       This extension suffices to implement the whole extension from the
+ *       perspective of the scanner / parser.
+ *
+ *    3) a function definition in gpukernel_comp_funs.c is needed with
+ *       the following signature (the header file expands itself by virtue
+ *       of this file :-)
+ *
+ *       in case of n==0:
+ *       gpukernelres_t *GKCOcomp<myfun>( gpukernelres_t *inner);
+ *
+ *       in case of n==1:
+ *       gpukernelres_t *GKCOcomp<myfun>( node *arg, gpukernelres_t *inner);
+ *
+ *       which takes an index space description provided in inner and computes
+ *       a new one as a result.
+ *
  */
 
-WLP (GKFcheckShift, GKFcompShift, "Shift", 1)
-WLP (GKFcheckCompressGrid, GKFcompCompressGrid, "CompressGrid", 0)
-WLP (GKFcheckPermute, GKFcompPermute, "Permute", 1)
-WLP (GKFcheckFoldLast2, GKFcompFoldLast2, "FoldLast2", 0)
-WLP (GKFcheckSplitLast, GKFcompSplitLast, "SplitLast", 1)
-WLP (GKFcheckPad, GKFcompPad, "Pad", 1)
+
+/*
+ *   fun  num_args
+ */
+
+WLP (Shift,        1)
+WLP (CompressGrid, 0)
+WLP (Permute,      1)
+WLP (FoldLast2,    0)
+WLP (SplitLast,    1)
+WLP (Pad,          1)

@@ -29,7 +29,7 @@
 #include "print.h"
 #include "modulemanager.h"
 #include "symboltable.h"
-#include "gpukernel_funs.h"
+#include "gpukernel_check_funs.h"
 
 #include "uthash.h"
 #include "lex.h"
@@ -3462,7 +3462,7 @@ handle_with (struct parser *parser)
             pragma_expr = handle_function_call (parser);
             if (pragma_expr == error_mark_node)
                 goto error;
-            GKFcheckGpuKernelPragma (pragma_expr, token_location (tok));
+            GKCHcheckGpuKernelPragma (pragma_expr, token_location (tok));
 
             t = loc_annotated (pragma_loc, TBmakePragma ());
             PRAGMA_GPUKERNEL_APS (t) = expr_constructor (pragma_expr, NULL);

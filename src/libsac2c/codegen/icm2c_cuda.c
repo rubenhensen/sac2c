@@ -16,7 +16,7 @@
 #include "str.h"
 #include "memory.h"
 #include "ctinfo.h"
-#include "gpukernel_funs.h"
+#include "gpukernel_comp_funs.h"
 
 #ifndef BEtest
 #include "scnprs.h"   /* for big magic access to syntax tree      */
@@ -276,7 +276,7 @@ void ICMCompileCUDA_THREAD_SPACE (node *spap, unsigned int bounds_count, char **
     
     DBUG_ASSERT ((NODE_TYPE (spap) == N_spap),
                  "N_spap expected in ICMCompileCUDA_THREAD_SPACE");
-    res = GKFcompGpuKernelPragma (spap, bounds_count, var_ANY);
+    res = GKCOcompGpuKernelPragma (spap, bounds_count, var_ANY);
 
     //   Enjoy, Niek!
 
