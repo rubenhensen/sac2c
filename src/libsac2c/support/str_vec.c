@@ -101,20 +101,6 @@ STRVECfromArray(char** array, unsigned int length) {
     DBUG_RETURN(vec);
 }
 
-/*******************************************************************************
- *
- * Description: Make a new string vector filled by calls to the generator function
- *              If the generator is NULL, empty strings are used instead
- *
- *
- * Parameters: - length: the length of the new string vector
- *             - generator: a generator function that will generate the
- *                          strings inside the new vector (optional)
- *
- * Return: - the new and filled string vector
- *
- *******************************************************************************/
-
 /**
  * Make a new string vector filled by calls to the generator function.
  * If the generator is NULL, empty strings are used instead
@@ -172,8 +158,14 @@ STRVECresize(strvec vec, unsigned int length, char* (* generator)(void)) {
     if (generator == NULL)
         generator = STRnull;
 
-    for (; vec->length < length; vec->length++)
-        vec->vec[vec->length] = generator();
+    // Generate new elements for vector growth
+    for (unsigned int i=vec->length; i<length; i++)
+        vec->vec[i] = generator();
+    // Free obsolete elements for vector shrinking
+    for (unsigned int i=length; i<vec->length; i++)
+        MEMfree(vec->vec[i]);
+
+    vec->length = length;
 
     DBUG_RETURN();
 }

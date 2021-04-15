@@ -586,7 +586,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/global/jupyter.c
 #${CMAKE_CURRENT_BINARY_DIR}/codegen/fancy_icm_vars.c
 ${XSL_DONE_FILES}
 ${PROJECT_BINARY_DIR}/src/build.c
-        support/str_vec.h)
+)
 
 
 # XXX (artem): For the time being we exclude the files that do not yet adhere
