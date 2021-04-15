@@ -497,6 +497,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/support/math_utils.c
 ${CMAKE_CURRENT_SOURCE_DIR}/support/ptr_buffer.c
 ${CMAKE_CURRENT_SOURCE_DIR}/support/str.c
 ${CMAKE_CURRENT_SOURCE_DIR}/support/str_buffer.c
+${CMAKE_CURRENT_SOURCE_DIR}/support/str_vec.c
 ${CMAKE_CURRENT_SOURCE_DIR}/support/system.c
 ${CMAKE_CURRENT_SOURCE_DIR}/tree/DataFlowMask.c
 ${CMAKE_CURRENT_SOURCE_DIR}/tree/DataFlowMaskUtils.c
@@ -585,7 +586,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/global/jupyter.c
 #${CMAKE_CURRENT_BINARY_DIR}/codegen/fancy_icm_vars.c
 ${XSL_DONE_FILES}
 ${PROJECT_BINARY_DIR}/src/build.c
-)
+        support/str_vec.h)
 
 
 # XXX (artem): For the time being we exclude the files that do not yet adhere
