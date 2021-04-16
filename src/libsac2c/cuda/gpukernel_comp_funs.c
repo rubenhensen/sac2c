@@ -57,11 +57,13 @@
  * @{
  *
  *****************************************************************************/
+#include <traverse.h>
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 
 #define DBUG_PREFIX "GKCO"
+
 #include "debug.h"
 
 #include "free.h"
@@ -71,21 +73,135 @@
 #include "globals.h"
 #include "memory.h"
 #include "str.h"
+#include "str_vec.h"
 #include "print.h"
 
 
-/*
- * implementation for the type gpukernelres_t:
+/**
+ * GPU kernel representation struct. It contains:
+ *   - A dimensionality of type size_t
+ *   - Four string vectors, containing the variable names of the index space (lowerbound, upperbound, step and width)
+ *     for each dimension
+ *
+ * IMPORTANT NOTE: The GPUKERNELRES struct is assumed to _own_ all strings inside. This means that, when freed or shrunk,
+ * the strings are freed as well.
  */
 struct GPUKERNELRES {
-   int dummy;
+    size_t dim;
+    strvec* lowerbound;
+    strvec* upperbound;
+    strvec* step;
+    strvec* width;
 };
 
+#define GKR_DIM(gkr) gkr->dim
 
+#define GKR_LB(gkr) gkr->lowerbound
+#define GKR_UB(gkr) gkr->upperbound
+#define GKR_ST(gkr) gkr->step
+#define GKR_WD(gkr) gkr->width
 
+/**
+ * Make a new gpu kernel representation struct. The vectors containing the variable names will be empty at this point.
+ * This is because the variables have to be inserted manually at GKCOcompGen.
+ *
+ * @param dim The dimensionality of the gpu kernel representation
+ * @return The newly created gpu kernel representation
+ */
+static gpukernelres_t*
+MakeGPUkernelres(size_t dim) {
+    DBUG_ENTER();
 
+    gpukernelres_t* gpukernelres = (gpukernelres_t*) MEMmalloc(sizeof(gpukernelres_t));
+
+    GKR_DIM(gpukernelres) = dim;
+    GKR_LB(gpukernelres)  = STRVECmake(0);
+    GKR_UB(gpukernelres)  = STRVECmake(0);
+    GKR_ST(gpukernelres)  = STRVECmake(0);
+    GKR_WD(gpukernelres)  = STRVECmake(0);
+
+    DBUG_RETURN(gpukernelres);
+}
+
+/**
+ * Free a gpu kernel representation struct. It will deep free all string vectors and strings, per convention that the
+ * struct owns all strings.
+ *
+ * @param gpukernelres The struct to be freed
+ * @return the null pointer
+ */
+static gpukernelres_t*
+FreeGPUkernelres(gpukernelres_t* gpukernelres) {
+    DBUG_ENTER();
+
+    STRVECfreeDeep(GKR_LB(gpukernelres));
+    STRVECfreeDeep(GKR_UB(gpukernelres));
+    STRVECfreeDeep(GKR_ST(gpukernelres));
+    STRVECfreeDeep(GKR_WD(gpukernelres));
+    MEMfree(gpukernelres);
+
+    DBUG_RETURN(NULL);
+}
+
+// TODO: Replace with actual variable name generator function
+// Used in function below
+static char*
+generateDummyVar() {
+    DBUG_ENTER();
+
+    char* dummy = "tmp_dummy_variable";
+    char* var   = STRcpy(dummy);
+
+    DBUG_RETURN(var);
+}
+
+/**
+ * Change the dimensionality of a gpu kernel representation. New variable names will automatically be generated on
+ * growth, and old variable names will automatically be freed on shrinkage.
+ *
+ * @param gpukernelres The gpu kernel representation
+ * @param new_dim The new dimensionality
+ */
+static void
+RedimGPUkernelres(gpukernelres_t* gpukernelres, size_t new_dim) {
+    DBUG_ENTER();
+
+    GKR_DIM(gpukernelres) = new_dim;
+    STRVECresizeFree(GKR_LB(gpukernelres), new_dim, &TRAVtmpVar);
+    STRVECresizeFree(GKR_UB(gpukernelres), new_dim, &TRAVtmpVar);
+    STRVECresizeFree(GKR_ST(gpukernelres), new_dim, &TRAVtmpVar);
+    STRVECresizeFree(GKR_WD(gpukernelres), new_dim, &TRAVtmpVar);
+
+    DBUG_RETURN();
+}
 
 #ifndef DBUG_OFF
+
+/**
+ * Print a GPU kernel representation. For debugging purposes only.
+ *
+ * @param gpukernelres The GPU kernelres to be printed
+ * @param stream The stream to print to
+ */
+static void
+PrintGPUkernelres(gpukernelres_t* gpukernelres, FILE* stream) {
+    DBUG_ENTER();
+
+    size_t linesize = 80;
+    fprintf(stream, "GPU kernelres (dim: %zu)\n", GKR_DIM(gpukernelres));
+    fprintf(stream, "lb = ");
+    STRVECprint(GKR_LB(gpukernelres), stream, linesize);
+    fprintf(stream, "ub = ");
+    STRVECprint(GKR_UB(gpukernelres), stream, linesize);
+    fprintf(stream, "step = ");
+    STRVECprint(GKR_ST(gpukernelres), stream, linesize);
+    fprintf(stream, "width = ");
+    STRVECprint(GKR_WD(gpukernelres), stream, linesize);
+
+    DBUG_RETURN();
+}
+
+
 /** <!-- ****************************************************************** -->
  * @fn void
  *     printNumArray (node *array)
@@ -100,27 +216,27 @@ struct GPUKERNELRES {
  ******************************************************************************/
 static
 void
-printNumArray (node *array)
-{
-    node *elems;
+printNumArray(node* array) {
+    node* elems;
 
-    elems = ARRAY_AELEMS (array);
-    if (NODE_TYPE (EXPRS_EXPR (elems)) == N_num) {
-       fprintf (stderr, "[ %d", NUM_VAL (EXPRS_EXPR (elems)));
+    elems = ARRAY_AELEMS(array);
+    if (NODE_TYPE (EXPRS_EXPR(elems)) == N_num) {
+        fprintf(stderr, "[ %d", NUM_VAL(EXPRS_EXPR(elems)));
     } else {
-        fprintf (stderr, "[ %s", ID_NAME (EXPRS_EXPR (elems)));
+        fprintf(stderr, "[ %s", ID_NAME (EXPRS_EXPR(elems)));
     }
-    elems = EXPRS_NEXT (elems);
-    while (elems!=NULL) {
-        if (NODE_TYPE (EXPRS_EXPR (elems)) == N_num) {
-            fprintf (stderr, ", %d", NUM_VAL (EXPRS_EXPR (elems)));
+    elems = EXPRS_NEXT(elems);
+    while (elems != NULL) {
+        if (NODE_TYPE (EXPRS_EXPR(elems)) == N_num) {
+            fprintf(stderr, ", %d", NUM_VAL(EXPRS_EXPR(elems)));
         } else {
-            fprintf (stderr, ", %s", ID_NAME (EXPRS_EXPR (elems)));
+            fprintf(stderr, ", %s", ID_NAME (EXPRS_EXPR(elems)));
         }
-        elems = EXPRS_NEXT (elems);
+        elems = EXPRS_NEXT(elems);
     }
-    fprintf (stderr, "]");
+    fprintf(stderr, "]");
 }
+
 #endif
 
 
@@ -140,20 +256,19 @@ printNumArray (node *array)
  * @return the result of the dispatched function call.
  ******************************************************************************/
 static
-gpukernelres_t *
-dispatch (node *spap, unsigned int bnum, char **bounds)
-{
-    gpukernelres_t *res=NULL;
+gpukernelres_t*
+dispatch(node* spap, unsigned int bnum, char** bounds) {
+    gpukernelres_t* res = NULL;
 
     DBUG_ENTER ();
 
     if (NODE_TYPE (spap) == N_spid) {
-        res = GKCOcompGen (bnum, bounds);
+        res = GKCOcompGen(bnum, bounds);
 
-#define ARGS( nargs) ARG##nargs
+#define ARGS(nargs) ARG##nargs
 #define ARG0
 #define ARG1 EXPRS_EXPR (SPAP_ARGS (spap)),
-#define SKIPS( nargs) SKIP##nargs
+#define SKIPS(nargs) SKIP##nargs
 #define SKIP0
 #define SKIP1 EXPRS_NEXT
 #define WLP(fun, nargs)                                                                   \
@@ -162,17 +277,15 @@ dispatch (node *spap, unsigned int bnum, char **bounds)
         res = GKCOcomp ## fun ( ARGS( nargs)                                              \
                                 dispatch (EXPRS_EXPR ( SKIPS( nargs) (SPAP_ARGS (spap))), \
                                           bnum, bounds));
-#include "gpukernel_funs.mac"
-#undef WLP
-#undef ARGS
-#undef ARG0
+
+#include "gpukernel_funs.mac" #undef WLP #undef ARGS #undef ARG0
 #undef ARG1
 #undef SKIPS
 #undef SKIP0
 #undef SKIP1
 
     } else {
-        DBUG_ASSERT( 0==1, "expected gpukernel function, found `%s'", SPAP_NAME (spap));
+        DBUG_ASSERT(0 == 1, "expected gpukernel function, found `%s'", SPAP_NAME(spap));
     }
 
     DBUG_RETURN (res);
@@ -194,16 +307,15 @@ dispatch (node *spap, unsigned int bnum, char **bounds)
  *
  * @return the result of the entire function nesting
  ******************************************************************************/
-gpukernelres_t *
-GKCOcompGpuKernelPragma (node *spap, unsigned int bnum, char ** bounds)
-{
-    gpukernelres_t *res;
+gpukernelres_t*
+GKCOcompGpuKernelPragma(node* spap, unsigned int bnum, char** bounds) {
+    gpukernelres_t* res;
     DBUG_ENTER ();
 
     DBUG_ASSERT (spap != NULL, "NULL pointer for funcall in gpukernel pragma!");
-    DBUG_ASSERT (NODE_TYPE (spap) == N_spap, "non N_spap funcall in gpukernel pragma!");
-    DBUG_ASSERT (STReq (SPAP_NAME (spap), "GridBlock"), "expected `GridBlock' found `%s'",
-                                                                        SPAP_NAME (spap));
+    DBUG_ASSERT (NODE_TYPE(spap) == N_spap, "non N_spap funcall in gpukernel pragma!");
+    DBUG_ASSERT (STReq(SPAP_NAME(spap), "GridBlock"), "expected `GridBlock' found `%s'",
+                 SPAP_NAME(spap));
     /*
      * we could dbug assert many more things here but the asssumption is that 
      * pragmas themselves are rather likely left untouched and since we have 
@@ -212,8 +324,8 @@ GKCOcompGpuKernelPragma (node *spap, unsigned int bnum, char ** bounds)
      * in case accessors yield unexpected things.
      */
 
-    res = GKCOcompGridBlock (EXPRS_EXPR (SPAP_ARGS (spap)),
-                            dispatch (EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (spap))), bnum, bounds));
+    res = GKCOcompGridBlock(EXPRS_EXPR(SPAP_ARGS(spap)),
+                            dispatch(EXPRS_EXPR(EXPRS_NEXT(SPAP_ARGS(spap))), bnum, bounds));
 
     DBUG_RETURN (res);
 }
@@ -232,11 +344,10 @@ GKCOcompGpuKernelPragma (node *spap, unsigned int bnum, char ** bounds)
  *
  * @return the resulting thread space from applying GridBlock (num) to it.
  ******************************************************************************/
-gpukernelres_t *
-GKCOcompGridBlock (node *num, gpukernelres_t *inner)
-{
+gpukernelres_t*
+GKCOcompGridBlock(node* num, gpukernelres_t* inner) {
     DBUG_ENTER ();
-    DBUG_PRINT ("compiling GridBlock ( %i, inner)", NUM_VAL (num));
+    DBUG_PRINT ("compiling GridBlock ( %i, inner)", NUM_VAL(num));
 
     DBUG_RETURN (inner);
 }
@@ -256,23 +367,38 @@ GKCOcompGridBlock (node *num, gpukernelres_t *inner)
  *
  * @return the resulting naive thread space.
  ******************************************************************************/
-gpukernelres_t *
-GKCOcompGen ( unsigned int bnum, char **bounds)
-{
+gpukernelres_t*
+GKCOcompGen(unsigned int bnum, char** bounds) {
 #ifndef DBUG_OFF
     unsigned int i;
 #endif
     DBUG_ENTER ();
     DBUG_EXECUTE (
-        DBUG_PRINT ("compiling Gen:");
-        fprintf (stderr, "    Gen ( %u", bnum);
-        for (i=0; i<bnum; i++) {
-            fprintf (stderr, ", %s", bounds[i]);
-        }
-        fprintf (stderr, ")\n");
+            DBUG_PRINT("compiling Gen:");
+            fprintf(stderr, "    Gen ( %u", bnum);
+            for (i = 0; i < bnum; i++) {
+                fprintf(stderr, ", %s", bounds[i]);
+            }
+            fprintf(stderr, ")\n");
     );
 
-    DBUG_RETURN (NULL);
+    // We have four variables per dimension, so the number of dimensions is the number of variables devided by 4
+    size_t dim = bnum / 4;
+    gpukernelres_t* gpukernelres = MakeGPUkernelres(dim);
+
+    for (size_t i = 0; i < dim; i++) {
+        STRVECappend(GKR_LB(gpukernelres), STRcpy(bounds[i + 0 * dim]));
+        STRVECappend(GKR_UB(gpukernelres), STRcpy(bounds[i + 1 * dim]));
+        STRVECappend(GKR_ST(gpukernelres), STRcpy(bounds[i + 2 * dim]));
+        STRVECappend(GKR_WD(gpukernelres), STRcpy(bounds[i + 3 * dim]));
+    }
+
+    DBUG_EXECUTE(
+            DBUG_PRINT("Generated GPU kernel representation:");
+            PrintGPUkernelres(gpukernelres, stderr);
+    );
+
+    DBUG_RETURN (gpukernelres);
 }
 
 
@@ -288,15 +414,14 @@ GKCOcompGen ( unsigned int bnum, char **bounds)
  *
  * @return the resulting thread space from applying Shift (array) to it.
  ******************************************************************************/
-gpukernelres_t *
-GKCOcompShift (node *array, gpukernelres_t *inner)
-{
+gpukernelres_t*
+GKCOcompShift(node* array, gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_EXECUTE (
-        DBUG_PRINT ("compiling Shift:");
-        fprintf (stderr, "    Shift (");
-        printNumArray (array);
-        fprintf (stderr, ", inner)\n");
+            DBUG_PRINT("compiling Shift:");
+            fprintf(stderr, "    Shift (");
+            printNumArray(array);
+            fprintf(stderr, ", inner)\n");
     );
 
     DBUG_RETURN (inner);
@@ -314,9 +439,8 @@ GKCOcompShift (node *array, gpukernelres_t *inner)
  *
  * @return the resulting thread space from applying CompressGrid () to it.
  ******************************************************************************/
-gpukernelres_t *
-GKCOcompCompressGrid ( gpukernelres_t *inner)
-{
+gpukernelres_t*
+GKCOcompCompressGrid(gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling CompressGrid ( inner)");
 
@@ -337,15 +461,14 @@ GKCOcompCompressGrid ( gpukernelres_t *inner)
  *
  * @return the resulting thread space from applying Permute (array) to it.
  ******************************************************************************/
-gpukernelres_t *
-GKCOcompPermute (node *array, gpukernelres_t *inner)
-{
+gpukernelres_t*
+GKCOcompPermute(node* array, gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_EXECUTE (
-        DBUG_PRINT ("compiling Permute:");
-        fprintf (stderr, "    Permute (");
-        printNumArray (array);
-        fprintf (stderr, ", inner)\n");
+            DBUG_PRINT("compiling Permute:");
+            fprintf(stderr, "    Permute (");
+            printNumArray(array);
+            fprintf(stderr, ", inner)\n");
     );
 
     DBUG_RETURN (inner);
@@ -363,9 +486,8 @@ GKCOcompPermute (node *array, gpukernelres_t *inner)
  *
  * @return the resulting thread space from applying FoldLast2 () to it.
  ******************************************************************************/
-gpukernelres_t *
-GKCOcompFoldLast2 (gpukernelres_t *inner)
-{
+gpukernelres_t*
+GKCOcompFoldLast2(gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling FoldLast2 (inner)");
 
@@ -387,15 +509,14 @@ GKCOcompFoldLast2 (gpukernelres_t *inner)
  *
  * @return the resulting thread space from applying SplitLast (array) to it.
  ******************************************************************************/
-gpukernelres_t *
-GKCOcompSplitLast (node *array, gpukernelres_t *inner)
-{
+gpukernelres_t*
+GKCOcompSplitLast(node* array, gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_EXECUTE (
-        DBUG_PRINT ("compiling SplitLast:");
-        fprintf (stderr, "    SplitLast (");
-        printNumArray (array);
-        fprintf (stderr, ", inner)\n");
+            DBUG_PRINT("compiling SplitLast:");
+            fprintf(stderr, "    SplitLast (");
+            printNumArray(array);
+            fprintf(stderr, ", inner)\n");
     );
 
     DBUG_RETURN (inner);
@@ -415,15 +536,14 @@ GKCOcompSplitLast (node *array, gpukernelres_t *inner)
  *
  * @return the resulting thread space from applying Pad (array) to it.
  ******************************************************************************/
-gpukernelres_t *
-GKCOcompPad (node *array, gpukernelres_t *inner)
-{
+gpukernelres_t*
+GKCOcompPad(node* array, gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_EXECUTE (
-        DBUG_PRINT ("compiling Pad:");
-        fprintf (stderr, "    Pad (");
-        printNumArray (array);
-        fprintf (stderr, ", inner)\n");
+            DBUG_PRINT("compiling Pad:");
+            fprintf(stderr, "    Pad (");
+            printNumArray(array);
+            fprintf(stderr, ", inner)\n");
     );
 
     DBUG_RETURN (inner);

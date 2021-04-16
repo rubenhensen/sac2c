@@ -44,7 +44,7 @@ struct STRVEC {
  * @param length the length of the new vector
  * @return a new strvec*
  */
-inline strvec*
+strvec*
 MakeStrvec(size_t length) {
     DBUG_ENTER();
 
@@ -65,14 +65,14 @@ MakeStrvec(size_t length) {
  * @param vec the vector that should be size checked
  * @param minalloc the minimum required length in the fector
  */
-inline void
+void
 ReallocStrvec(strvec* vec, size_t minalloc) {
     DBUG_ENTER();
 
-    if (STRVEC_ALLOC(vec) < minalloc) return;
-
-    STRVEC_ALLOC(vec) = (size_t) MATHmax((int) minalloc, (int) STRVEC_ALLOC(vec) * 2);
-    STRVEC_DATA(vec)  = MEMrealloc(STRVEC_DATA(vec), STRVEC_ALLOC(vec) * sizeof(char*));
+    if (STRVEC_ALLOC(vec) < minalloc) {
+        STRVEC_ALLOC(vec) = (size_t) MATHmax((int) minalloc, (int) STRVEC_ALLOC(vec) * 2);
+        STRVEC_DATA(vec)  = MEMrealloc(STRVEC_DATA(vec), STRVEC_ALLOC(vec) * sizeof(char*));
+    }
 
     DBUG_RETURN();
 }
@@ -235,7 +235,7 @@ STRVECresizeFree(strvec* vec, size_t length, char* (* generator)(void)) {
     for (size_t i = STRVEC_LENGTH(vec); i < length; i++)
         STRVEC_DATA(vec)[i] = generator();
     // Free obsolete elements for vector shrinking
-    for (size_t i     = length; i < STRVEC_LENGTH(vec); i++)
+    for (size_t i           = length; i < STRVEC_LENGTH(vec); i++)
         MEMfree(STRVEC_DATA(vec)[i]);
 
     STRVEC_LENGTH(vec) = length;
@@ -249,7 +249,7 @@ STRVECresizeFree(strvec* vec, size_t length, char* (* generator)(void)) {
  * @param vec The vector
  * @return The length
  */
-inline size_t
+size_t
 STRVEClen(strvec* vec) {
     DBUG_ENTER();
 
@@ -271,13 +271,13 @@ void
 STRVECprint(strvec* vec, FILE* stream, size_t linesize) {
     DBUG_ENTER();
 
-    fprintf(stream, "String vector (length: %u, allocated: %u) [",STRVEC_LENGTH(vec),STRVEC_ALLOC(vec));
+    fprintf(stream, "String vector (length: %zu, allocated: %zu) [", STRVEC_LENGTH(vec), STRVEC_ALLOC(vec));
 
     // Set the currentlinesize to linesize to force printing of a newline just after the opening line.
     // If we print the newline in the fprintf above, we would get a double newline when the first string is longer
     // then linesize.
-    size_t currentlinesize = linesize;
-    for (size_t i=0; i<STRVEC_LENGTH(vec); i++) {
+    size_t      currentlinesize = linesize;
+    for (size_t i               = 0; i < STRVEC_LENGTH(vec); i++) {
         char* str = STRVEC_DATA(vec)[i];
 
         // Compute length to check the linesize. Add 2 for the ", ".
@@ -341,7 +341,7 @@ STRVECcopyDeep(strvec* source) {
  * @param str The string to be appended to the vector
  * @return the appended vector.
  */
-inline strvec*
+strvec*
 STRVECappend(strvec* vec, char* str) {
     DBUG_ENTER();
 
@@ -371,7 +371,7 @@ STRVECconcat(strvec* left, strvec* right) {
         STRVEC_DATA(left)[STRVEC_LENGTH(left) + i] = STRVEC_DATA(right)[i];
     }
 
-    STRVEC_LENGTH(left)+= STRVEC_LENGTH(right);
+    STRVEC_LENGTH(left) += STRVEC_LENGTH(right);
 
     DBUG_RETURN(left);
 }
@@ -383,7 +383,7 @@ STRVECconcat(strvec* left, strvec* right) {
  * @param index The index of the string value in the vector
  * @return A shallow copy of the string value in vec on position index
  */
-inline char*
+char*
 STRVECsel(strvec* vec, size_t index) {
     DBUG_ENTER();
 
@@ -401,7 +401,7 @@ STRVECsel(strvec* vec, size_t index) {
  * @param str The string to be inserted as a shallow copy
  * @return the old string
  */
-inline char*
+char*
 STRVECswap(strvec* vec, size_t index, char* str) {
     DBUG_ENTER();
 
