@@ -1,19 +1,22 @@
 #ifndef SAC2C_STR_VEC_H
 #define SAC2C_STR_VEC_H
 
-struct STRVEC;
-typedef struct STRVEC* strvec;
+typedef struct STRVEC strvec;
 
-strvec STRVECmake(int length, ...);
-strvec STRVECfromArray(char** array, unsigned int length);
-strvec STRVECgen(unsigned int length, char* (* generator)(void));
-void STRVECfree(strvec vec);
-void STRVECresize(strvec vec, unsigned int length, char* (* generator)(void));
-strvec STRVECcopy(strvec source);
-void STRVECappend(strvec vec, char* str);
-void STRVECconcat(strvec left, strvec right);
-char* STRVECsel(strvec vec, unsigned int index);
-char* STRVECsel_shallow(strvec vec, unsigned int index);
-void STRVECput(strvec vec, unsigned int index, char* str);
+strvec* STRVECmake(size_t length, ...);
+strvec* STRVECfromArray(char** array, size_t length);
+strvec* STRVECgen(size_t length, char* (* generator)(void));
+strvec* STRVECfree(strvec* vec);
+strvec* STRVECfreeDeep(strvec* vec);
+void STRVECresize(strvec* vec, size_t length, char* (* generator)(void));
+void STRVECresizeFree(strvec* vec, size_t length, char* (* generator)(void));
+strvec* STRVECcopy(strvec* source);
+strvec* STRVECcopyDeep(strvec* source);
+inline size_t STRVEClen(strvec* vec);
+inline strvec* STRVECappend(strvec* vec, char* str);
+strvec* STRVECconcat(strvec* left, strvec* right);
+inline char* STRVECsel(strvec* vec, size_t index);
+inline char* STRVECswap(strvec* vec, size_t index, char* str);
+void STRVECprint(strvec* vec, FILE* stream, size_t linesize);
 
 #endif //SAC2C_STR_VEC_H
