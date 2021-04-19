@@ -10,13 +10,14 @@ strvec* STRVECfree(strvec* vec);
 strvec* STRVECfreeDeep(strvec* vec);
 void STRVECresize(strvec* vec, size_t length, char* (* generator)(void));
 void STRVECresizeFree(strvec* vec, size_t length, char* (* generator)(void));
+size_t STRVEClen(strvec* vec);
+void STRVECprint(strvec* vec, FILE* stream, size_t linesize);
 strvec* STRVECcopy(strvec* source);
 strvec* STRVECcopyDeep(strvec* source);
-size_t STRVEClen(strvec* vec);
 strvec* STRVECappend(strvec* vec, char* str);
 strvec* STRVECconcat(strvec* left, strvec* right);
 char* STRVECsel(strvec* vec, size_t index);
 char* STRVECswap(strvec* vec, size_t index, char* str);
-void STRVECprint(strvec* vec, FILE* stream, size_t linesize);
+char* STRVECpop(strvec* vec);
 
 #endif //SAC2C_STR_VEC_H

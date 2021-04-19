@@ -411,4 +411,14 @@ STRVECswap(strvec* vec, size_t index, char* str) {
     DBUG_RETURN(old);
 }
 
+char*
+STRVECpop(strvec* vec) {
+    DBUG_ENTER();
+
+    char* str = STRVEC_DATA(vec)[STRVEC_LENGTH(vec) - 1];
+    STRVEC_LENGTH(vec)--;
+
+    DBUG_RETURN(str);
+}
+
 #undef DBUG_PREFIX
