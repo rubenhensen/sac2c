@@ -78,6 +78,23 @@ ReallocStrvec(strvec* vec, size_t minalloc) {
 }
 
 /**
+ * Create an empty vector with a given preallocated length.
+ *
+ * @param preallocate the number of preallocated elements. They are not filled yet, so the length of the vector is
+ * still 0
+ *
+ * @return The newly created empty vector
+ */
+strvec*
+STRVECempty(size_t preallocate) {
+    DBUG_ENTER();
+
+    strvec* vec = MakeStrvec(preallocate);
+
+    DBUG_RETURN(preallocate);
+}
+
+/**
  * Make a new vector from arguments. The strings are consumed, and shallow-copied into the vector.
  *
  * @param length the number of arguments

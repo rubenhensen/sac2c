@@ -1129,7 +1129,8 @@ typedef constant *(*shape_oracle_funptr) (int n);
  */
 
 typedef struct GPUKERNELRES gpukernelres_t;
-
+typedef struct GPUKERNELOP gpukernelop_t;
+typedef enum GPUKERNELOPTYPE gpukerneloptype_t;
 
 /******************************************************************************
  * typedef for cross edge reachability analysis

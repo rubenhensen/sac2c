@@ -3,6 +3,7 @@
 
 typedef struct STRVEC strvec;
 
+strvec* STRVECempty(size_t preallocate);
 strvec* STRVECmake(size_t length, ...);
 strvec* STRVECfromArray(char** array, size_t length);
 strvec* STRVECgen(size_t length, char* (* generator)(void));

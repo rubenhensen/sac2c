@@ -76,6 +76,99 @@
 #include "str_vec.h"
 #include "print.h"
 
+/**
+ * An enum of the types of mappings. These correspond to the functions below GKCOcompGpuKernelPragma.
+ */
+enum GPUKERNELOPTYPE {
+    Gen, Permute, ShiftLB, Compress, FoldLast2, SplitLast, PadLast, GridBlock
+};
+
+/**
+ * A general struct to represent a kernel mapping operation. It contains variables for all possible mappings.
+ *
+ * Note that upon creation, we cannot yet fill in all values, so this has to be done manually. However, we can state
+ * some assertions over some of them after creation:
+ *
+ *   - type is set
+ *   - flags are all unset
+ *   - all pointers are NULL
+ *
+ *   Furthermore it is important to know that this structure does NOT own any of the strings.
+ *   However, it DOES own the next op.
+ */
+struct GPUKERNELOP {
+    enum GPUKERNELOPTYPE type;                  // The type of operation
+    int                  flags;                 // The flags, stored as bitmap
+    int                  arg;                   // The numeric argument
+    int                  arg_inverse;           // The inverse argument, if needed
+    char              * lb;                     // The lowerbound variable
+    char              * ub;                     // The upperbound variable
+    char              * nlb_st;                 // The new lowerbound, or step variable
+    char              * nub_wi;                 // The new upperbound, or width variable
+    struct GPUKERNELOP* next;                   // The next operation
+};
+
+#define GKO_TYPE(gkr) gkr->type
+#define GKO_FLAGS(gkr) gkr->flags
+#define GKO_ARG(gkr) gkr->arg
+#define GKO_ARG_INV(gkr) gkr->arg_inverse
+
+#define GKO_LB(gkr) gkr->lb
+#define GKO_UB(gkr) gkr->ub
+#define GKO_ST(gkr) gkr->nlb_st
+#define GKO_WI(gkr) gkr->nub_wi
+#define GKO_NLB(gkr) gkr->nlb_st
+#define GKO_NUB(gkr) gkr->nub_wi
+
+#define GKO_NEXT(gkr) gkr->next
+
+#define FLG_CHK_PD 1            /* Flag to check the padding */
+#define FLG_CHK_SW 2            /* Flag to check the step/width, because this cannot be done anymore in later stages */
+
+#define FLG_GET(gko, flg) GKO_FLAGS(gko) & flg
+#define FLG_SET(gko, flg) GKO_FLAGS(gko) = GKO_FLAGS(gko) | flg
+#define FLG_UNSET(gko, flg) GKO_FLAGS(gko) = GKO_FLAGS(gko) & ~flg
+
+/**
+ * Make a new GPU kernel operation. Also see the comment above the definition of the struct.
+ *
+ * @param type The type of the GPU kernel operation
+ * @return The GPU kernel operation
+ */
+static gpukernelop_t *
+MakeGPUkernelOp (gpukerneloptype_t type){
+    DBUG_ENTER();
+
+    gpukernelop_t* op = (gpukernelop_t*) MEMmalloc(sizeof(gpukernelop_t));
+
+    GKO_TYPE(op)  = type;
+    GKO_FLAGS(op) = 0;
+
+    GKO_LB(op) = NULL;
+    GKO_UB(op) = NULL;
+    GKO_ST(op) = NULL;
+    GKO_WI(op) = NULL;
+    GKO_NEXT(op)  = NULL;
+
+    DBUG_RETURN(op);
+}
+
+/**
+ * Free a GPU kernel op, according to the ownership conventions stated in the definition of the struct.
+ *
+ * @param op The operation to be freed
+ * @return A null pointer
+ */
+static gpukernelop_t *
+FreeGPUKernelOp (gpukernelop_t* op) {
+    DBUG_ENTER();
+
+    if (GKO_NEXT(op) != NULL)
+        FreeGPUKernelOp(GKO_NEXT(op));
+    MEMfree(op);
+
+    DBUG_RETURN(NULL);
+}
 
 /**
  * GPU kernel representation struct. It contains:
@@ -83,8 +176,9 @@
  *   - Four string vectors, containing the variable names of the index space (lowerbound, upperbound, step and width)
  *     for each dimension
  *
- * IMPORTANT NOTE: The GPUKERNELRES struct is assumed to _own_ all strings inside. This means that, when freed or shrunk,
- * the strings are freed as well.
+ * IMPORTANT NOTE: The GPUKERNELRES struct is assumed to own all strings it makes itself. This means that, when freed or
+ * shrunk, those strings are freed as well.
+ * GPUKERNELRES also owns all GPUKERNELOPS.
  */
 struct GPUKERNELRES {
     size_t dim;
@@ -92,6 +186,11 @@ struct GPUKERNELRES {
     strvec* upperbound;
     strvec* step;
     strvec* width;
+
+    strvec* to_alloc;
+
+    gpukernelop_t* mappingstart;
+    gpukernelop_t** mappingnext;
 };
 
 #define GKR_DIM(gkr) gkr->dim
@@ -100,6 +199,11 @@ struct GPUKERNELRES {
 #define GKR_UB(gkr) gkr->upperbound
 #define GKR_ST(gkr) gkr->step
 #define GKR_WD(gkr) gkr->width
+
+#define GKR_TA(gkr) gkr->to_alloc
+
+#define GKR_MAP_START(gkr) gkr->mappingstart
+#define GKR_MAP_NEXT(gkr) gkr->mappingnext
 
 /**
  * Make a new gpu kernel representation struct. The vectors containing the variable names will be empty at this point.
@@ -115,10 +219,13 @@ MakeGPUkernelres(size_t dim) {
     gpukernelres_t* gpukernelres = (gpukernelres_t*) MEMmalloc(sizeof(gpukernelres_t));
 
     GKR_DIM(gpukernelres) = dim;
-    GKR_LB(gpukernelres)  = STRVECmake(0);
-    GKR_UB(gpukernelres)  = STRVECmake(0);
-    GKR_ST(gpukernelres)  = STRVECmake(0);
-    GKR_WD(gpukernelres)  = STRVECmake(0);
+    GKR_LB(gpukernelres)  = STRVECempty(dim);
+    GKR_UB(gpukernelres)  = STRVECempty(dim);
+    GKR_ST(gpukernelres)  = STRVECempty(dim);
+    GKR_WD(gpukernelres)  = STRVECempty(dim);
+
+    GKR_MAP_START(gpukernelres) = NULL;
+    GKR_MAP_NEXT(gpukernelres) = &GKR_MAP_START(gpukernelres);
 
     DBUG_RETURN(gpukernelres);
 }
@@ -134,10 +241,14 @@ static gpukernelres_t*
 FreeGPUkernelres(gpukernelres_t* gpukernelres) {
     DBUG_ENTER();
 
-    STRVECfreeDeep(GKR_LB(gpukernelres));
-    STRVECfreeDeep(GKR_UB(gpukernelres));
-    STRVECfreeDeep(GKR_ST(gpukernelres));
-    STRVECfreeDeep(GKR_WD(gpukernelres));
+    STRVECfree(GKR_LB(gpukernelres));
+    STRVECfree(GKR_UB(gpukernelres));
+    STRVECfree(GKR_ST(gpukernelres));
+    STRVECfree(GKR_WD(gpukernelres));
+
+    STRVECfreeDeep(GKR_TA(gpukernelres));
+    FreeGPUKernelOp(GKR_MAP_START(gpukernelres));
+
     MEMfree(gpukernelres);
 
     DBUG_RETURN(NULL);
@@ -145,14 +256,18 @@ FreeGPUkernelres(gpukernelres_t* gpukernelres) {
 
 // TODO: Replace with actual variable name generator function
 // Used in function below
-static char*
-generateDummyVar() {
+static void
+GrowGPUkernelresDim(gpukernelres_t* gpukernelres, strvec* vec, char* postfix, size_t new_dim) {
     DBUG_ENTER();
 
-    char* dummy = "tmp_dummy_variable";
-    char* var   = STRcpy(dummy);
+    for (size_t i = STRVEClen(vec); i < new_dim; i++) {
+        char* var = TRAVtmpVarName(postfix);
+        STRVECappend(GKR_TA(gpukernelres), var);
+        STRVECappend(vec, var);
+    }
+    STRVECresize(vec, new_dim, NULL);
 
-    DBUG_RETURN(var);
+    DBUG_RETURN();
 }
 
 /**
@@ -166,13 +281,36 @@ static void
 RedimGPUkernelres(gpukernelres_t* gpukernelres, size_t new_dim) {
     DBUG_ENTER();
 
+    char* (* closure)(void);
+
     GKR_DIM(gpukernelres) = new_dim;
-    STRVECresizeFree(GKR_LB(gpukernelres), new_dim, &TRAVtmpVar);
-    STRVECresizeFree(GKR_UB(gpukernelres), new_dim, &TRAVtmpVar);
-    STRVECresizeFree(GKR_ST(gpukernelres), new_dim, &TRAVtmpVar);
-    STRVECresizeFree(GKR_WD(gpukernelres), new_dim, &TRAVtmpVar);
+    GrowGPUkernelresDim(gpukernelres, GKR_LB(gpukernelres), "_lb", new_dim);
+    GrowGPUkernelresDim(gpukernelres, GKR_UB(gpukernelres), "_ub", new_dim);
+    GrowGPUkernelresDim(gpukernelres, GKR_ST(gpukernelres), "_step", new_dim);
+    GrowGPUkernelresDim(gpukernelres, GKR_WD(gpukernelres), "_width", new_dim);
 
     DBUG_RETURN();
+}
+
+/**
+ * Create the next GPUkernelOp. It will automatically correctly added to the data structures in the GPU kernel
+ * representation. The type and flags and next will be set correctly and all pointers will be set to 0, but the rest of
+ * the values have to be set manually.
+ *
+ * @param gpukernelres The current GPU kernel representation
+ * @param type The type of the operation
+ * @return The newly created operation
+ */
+static gpukernelop_t*
+NextKernelOp(gpukernelres_t* gpukernelres, gpukerneloptype_t type) {
+    DBUG_ENTER();
+
+    gpukernelop_t *op = MakeGPUkernelOp(type);
+
+    *GKR_MAP_NEXT(gpukernelres) = op;
+    GKR_MAP_NEXT(gpukernelres) = &GKO_NEXT(op);
+
+    DBUG_RETURN(op);
 }
 
 #ifndef DBUG_OFF
