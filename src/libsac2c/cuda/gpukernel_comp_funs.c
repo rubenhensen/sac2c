@@ -76,11 +76,20 @@
 #include "str_vec.h"
 #include "print.h"
 
+#define CONST_ZERO "0"
+#define CONST_ONE "1"
+
+#define CONST_UB_POSTFIX "_ub"
+
 /**
- * An enum of the types of mappings. These correspond to the functions below GKCOcompGpuKernelPragma.
+ * An enum of the types of mappings. Most of them correspond to the functions below GKCOcompGpuKernelPragma.
  */
 enum GPUKERNELOPTYPE {
-    Gen, Permute, ShiftLB, Compress, FoldLast2, SplitLast, PadLast, GridBlock
+    // Types with a corresponding function. Note that permute is unused, as it is not a real operation
+    Gen, Permute, ShiftLB, Compress, FoldLast2, SplitLast, PadLast, GridBlock,
+    // Types without a corresponding function
+    CheckSW,                // Check the index against step/width variables
+    CheckPD,                // Check the incex against the upperbound variable, to counter padding
 };
 
 /**
@@ -98,36 +107,33 @@ enum GPUKERNELOPTYPE {
  */
 struct GPUKERNELOP {
     enum GPUKERNELOPTYPE type;                  // The type of operation
-    int                  flags;                 // The flags, stored as bitmap
-    int                  arg;                   // The numeric argument
-    int                  arg_inverse;           // The inverse argument, if needed
+    size_t               arg;                   // The numeric argument
+    size_t               arg_inverse;           // The inverse argument, if needed
+
     char              * lb;                     // The lowerbound variable
     char              * ub;                     // The upperbound variable
     char              * nlb_st;                 // The new lowerbound, or step variable
     char              * nub_wi;                 // The new upperbound, or width variable
+    strvec            * redefine_from;          // For the generate type, redefine variables
+    strvec            * redefine_to;            // For the generate type, redefine variables
     struct GPUKERNELOP* next;                   // The next operation
 };
 
-#define GKO_TYPE(gkr) gkr->type
-#define GKO_FLAGS(gkr) gkr->flags
-#define GKO_ARG(gkr) gkr->arg
-#define GKO_ARG_INV(gkr) gkr->arg_inverse
+#define GKO_TYPE(gko) gko->type
+#define GKO_ARG(gko) gko->arg
+#define GKO_ARG_INV(gko) gko->arg_inverse
 
-#define GKO_LB(gkr) gkr->lb
-#define GKO_UB(gkr) gkr->ub
-#define GKO_ST(gkr) gkr->nlb_st
-#define GKO_WI(gkr) gkr->nub_wi
-#define GKO_NLB(gkr) gkr->nlb_st
-#define GKO_NUB(gkr) gkr->nub_wi
+#define GKO_LB(gko) gko->lb
+#define GKO_UB(gko) gko->ub
+#define GKO_ST(gko) gko->nlb_st
+#define GKO_WI(gko) gko->nub_wi
+#define GKO_NLB(gko) gko->nlb_st
+#define GKO_NUB(gko) gko->nub_wi
 
-#define GKO_NEXT(gkr) gkr->next
+#define GKO_RED_FROM(gko) gko->redefine_from
+#define GKO_RED_TO(gko) gko->redefine_to
 
-#define FLG_CHK_PD 1            /* Flag to check the padding */
-#define FLG_CHK_SW 2            /* Flag to check the step/width, because this cannot be done anymore in later stages */
-
-#define FLG_GET(gko, flg) GKO_FLAGS(gko) & flg
-#define FLG_SET(gko, flg) GKO_FLAGS(gko) = GKO_FLAGS(gko) | flg
-#define FLG_UNSET(gko, flg) GKO_FLAGS(gko) = GKO_FLAGS(gko) & ~flg
+#define GKO_NEXT(gko) gko->next
 
 /**
  * Make a new GPU kernel operation. Also see the comment above the definition of the struct.
@@ -135,20 +141,21 @@ struct GPUKERNELOP {
  * @param type The type of the GPU kernel operation
  * @return The GPU kernel operation
  */
-static gpukernelop_t *
-MakeGPUkernelOp (gpukerneloptype_t type){
+static gpukernelop_t*
+MakeGPUkernelOp(gpukerneloptype_t type) {
     DBUG_ENTER();
 
     gpukernelop_t* op = (gpukernelop_t*) MEMmalloc(sizeof(gpukernelop_t));
 
-    GKO_TYPE(op)  = type;
-    GKO_FLAGS(op) = 0;
+    GKO_TYPE(op) = type;
 
-    GKO_LB(op) = NULL;
-    GKO_UB(op) = NULL;
-    GKO_ST(op) = NULL;
-    GKO_WI(op) = NULL;
-    GKO_NEXT(op)  = NULL;
+    GKO_LB(op)       = NULL;
+    GKO_UB(op)       = NULL;
+    GKO_ST(op)       = NULL;
+    GKO_WI(op)       = NULL;
+    GKO_RED_FROM(op) = NULL;
+    GKO_RED_TO(op)   = NULL;
+    GKO_NEXT(op)     = NULL;
 
     DBUG_RETURN(op);
 }
@@ -159,8 +166,8 @@ MakeGPUkernelOp (gpukerneloptype_t type){
  * @param op The operation to be freed
  * @return A null pointer
  */
-static gpukernelop_t *
-FreeGPUKernelOp (gpukernelop_t* op) {
+static gpukernelop_t*
+FreeGPUKernelOp(gpukernelop_t* op) {
     DBUG_ENTER();
 
     if (GKO_NEXT(op) != NULL)
@@ -198,7 +205,12 @@ struct GPUKERNELRES {
 #define GKR_LB(gkr) gkr->lowerbound
 #define GKR_UB(gkr) gkr->upperbound
 #define GKR_ST(gkr) gkr->step
-#define GKR_WD(gkr) gkr->width
+#define GKR_WI(gkr) gkr->width
+
+#define GKR_LB_D_READ(gkr, i) STRVECsel(GKR_LB(gkr), i)
+#define GKR_UB_D_READ(gkr, i) STRVECsel(GKR_UB(gkr), i)
+#define GKR_ST_D_READ(gkr, i) STRVECsel(GKR_ST(gkr), i)
+#define GKR_WI_D_READ(gkr, i) STRVECsel(GKR_WI(gkr), i)
 
 #define GKR_TA(gkr) gkr->to_alloc
 
@@ -222,10 +234,10 @@ MakeGPUkernelres(size_t dim) {
     GKR_LB(gpukernelres)  = STRVECempty(dim);
     GKR_UB(gpukernelres)  = STRVECempty(dim);
     GKR_ST(gpukernelres)  = STRVECempty(dim);
-    GKR_WD(gpukernelres)  = STRVECempty(dim);
+    GKR_WI(gpukernelres)  = STRVECempty(dim);
 
     GKR_MAP_START(gpukernelres) = NULL;
-    GKR_MAP_NEXT(gpukernelres) = &GKR_MAP_START(gpukernelres);
+    GKR_MAP_NEXT(gpukernelres)  = &GKR_MAP_START(gpukernelres);
 
     DBUG_RETURN(gpukernelres);
 }
@@ -234,60 +246,66 @@ MakeGPUkernelres(size_t dim) {
  * Free a gpu kernel representation struct. It will deep free all string vectors and strings, per convention that the
  * struct owns all strings.
  *
- * @param gpukernelres The struct to be freed
+ * @param gkr The struct to be freed
  * @return the null pointer
  */
 static gpukernelres_t*
-FreeGPUkernelres(gpukernelres_t* gpukernelres) {
+FreeGPUkernelres(gpukernelres_t* gkr) {
     DBUG_ENTER();
 
-    STRVECfree(GKR_LB(gpukernelres));
-    STRVECfree(GKR_UB(gpukernelres));
-    STRVECfree(GKR_ST(gpukernelres));
-    STRVECfree(GKR_WD(gpukernelres));
+    STRVECfree(GKR_LB(gkr));
+    STRVECfree(GKR_UB(gkr));
+    STRVECfree(GKR_ST(gkr));
+    STRVECfree(GKR_WI(gkr));
 
-    STRVECfreeDeep(GKR_TA(gpukernelres));
-    FreeGPUKernelOp(GKR_MAP_START(gpukernelres));
+    STRVECfreeDeep(GKR_TA(gkr));
+    FreeGPUKernelOp(GKR_MAP_START(gkr));
 
-    MEMfree(gpukernelres);
+    MEMfree(gkr);
 
     DBUG_RETURN(NULL);
 }
 
-// TODO: Replace with actual variable name generator function
-// Used in function below
+/**
+ * Add a dimension to the GPU kernel representation.
+ *
+ * Because it is a new dimension, lb will be set to 0, and step and width will be set to 1. The value for ub can be
+ * given, but this is not required. If a NULL value is given, a new variable name with postfix "_ub" will be
+ * automatically generated.
+ *
+ * @param gkr The GPU kernel representation
+ * @param ub The variable/value for the upper bound. Can be NULL
+ */
 static void
-GrowGPUkernelresDim(gpukernelres_t* gpukernelres, strvec* vec, char* postfix, size_t new_dim) {
+AddDimension(gpukernelres_t* gkr, char* ub) {
     DBUG_ENTER();
 
-    for (size_t i = STRVEClen(vec); i < new_dim; i++) {
-        char* var = TRAVtmpVarName(postfix);
-        STRVECappend(GKR_TA(gpukernelres), var);
-        STRVECappend(vec, var);
-    }
-    STRVECresize(vec, new_dim, NULL);
+    if (ub == NULL)
+        ub = TRAVtmpVarName(CONST_UB_POSTFIX);
+
+    GKR_DIM(gkr)++;
+    STRVECappend(GKR_LB(gkr), CONST_ZERO);
+    STRVECappend(GKR_UB(gkr), ub);
+    STRVECappend(GKR_ST(gkr), CONST_ONE);
+    STRVECappend(GKR_WI(gkr), CONST_ONE);
 
     DBUG_RETURN();
 }
 
 /**
- * Change the dimensionality of a gpu kernel representation. New variable names will automatically be generated on
- * growth, and old variable names will automatically be freed on shrinkage.
+ * Remove a dimension from the GPU kernel representation.
  *
- * @param gpukernelres The gpu kernel representation
- * @param new_dim The new dimensionality
+ * @param gkr The GPU kernel representation from which the dimension has to be removed
  */
 static void
-RedimGPUkernelres(gpukernelres_t* gpukernelres, size_t new_dim) {
+RemoveDimension(gpukernelres_t* gkr) {
     DBUG_ENTER();
 
-    char* (* closure)(void);
-
-    GKR_DIM(gpukernelres) = new_dim;
-    GrowGPUkernelresDim(gpukernelres, GKR_LB(gpukernelres), "_lb", new_dim);
-    GrowGPUkernelresDim(gpukernelres, GKR_UB(gpukernelres), "_ub", new_dim);
-    GrowGPUkernelresDim(gpukernelres, GKR_ST(gpukernelres), "_step", new_dim);
-    GrowGPUkernelresDim(gpukernelres, GKR_WD(gpukernelres), "_width", new_dim);
+    GKR_DIM(gkr)--;
+    STRVECpop(GKR_LB(gkr));
+    STRVECpop(GKR_UB(gkr));
+    STRVECpop(GKR_ST(gkr));
+    STRVECpop(GKR_WI(gkr));
 
     DBUG_RETURN();
 }
@@ -297,20 +315,59 @@ RedimGPUkernelres(gpukernelres_t* gpukernelres, size_t new_dim) {
  * representation. The type and flags and next will be set correctly and all pointers will be set to 0, but the rest of
  * the values have to be set manually.
  *
- * @param gpukernelres The current GPU kernel representation
+ * @param gkr The current GPU kernel representation
  * @param type The type of the operation
  * @return The newly created operation
  */
 static gpukernelop_t*
-NextKernelOp(gpukernelres_t* gpukernelres, gpukerneloptype_t type) {
+NextKernelOp(gpukernelres_t* gkr, gpukerneloptype_t type) {
     DBUG_ENTER();
 
-    gpukernelop_t *op = MakeGPUkernelOp(type);
+    gpukernelop_t* op = MakeGPUkernelOp(type);
 
-    *GKR_MAP_NEXT(gpukernelres) = op;
-    GKR_MAP_NEXT(gpukernelres) = &GKO_NEXT(op);
+    *GKR_MAP_NEXT(gkr) = op;
+    GKR_MAP_NEXT(gkr) = &GKO_NEXT(op);
 
     DBUG_RETURN(op);
+}
+
+/**
+ * For some operations the step and width are required to be "1". This function makes sure they are, in one single
+ * dimension. It will:
+ *
+ *   - Check if it already is. If it is, it skips all subsequent steps
+ *   - Inserts a check step/width operation
+ *   - Sets the step and width variables to the constant "1" in the GPU kernel representation
+ *
+ * @param gkr The current GPU kernel representation
+ * @param dim The dimension that has to be checked
+ */
+static void
+CheckGKRdestroySW(gpukernelres_t* gkr, size_t dim) {
+    DBUG_ENTER();
+
+    // The step should be 1 to continue. If it is not, the step/width variables have to be checked at this point.
+    if (!STReq(GKR_ST_D_READ(gkr, dim), "1")) {
+        gpukernelop_t* op = NextKernelOp(gkr, CheckSW);
+        GKO_ARG(op) = dim;
+        GKO_ST(op)  = GKR_ST_D_READ(gkr, dim);
+        GKO_WI(op)  = GKR_WI_D_READ(gkr, dim);
+
+        STRVECswap(GKR_ST(gkr), dim, CONST_ONE);
+        STRVECswap(GKR_WI(gkr), dim, CONST_ONE);
+    }
+
+    DBUG_RETURN();
+}
+
+static size_t
+CheckGKRpadding(gpukernelres_t* gkr, size_t dim, size_t targetlength, bool cansplit) {
+    DBUG_ENTER();
+
+    // TODO: implement this stub
+    const size_t invertedsize = 0;
+
+    DBUG_RETURN(invertedsize);
 }
 
 #ifndef DBUG_OFF
@@ -318,23 +375,23 @@ NextKernelOp(gpukernelres_t* gpukernelres, gpukerneloptype_t type) {
 /**
  * Print a GPU kernel representation. For debugging purposes only.
  *
- * @param gpukernelres The GPU kernelres to be printed
+ * @param gkr The GPU kernelres to be printed
  * @param stream The stream to print to
  */
 static void
-PrintGPUkernelres(gpukernelres_t* gpukernelres, FILE* stream) {
+PrintGPUkernelres(gpukernelres_t* gkr, FILE* stream) {
     DBUG_ENTER();
 
     size_t linesize = 80;
-    fprintf(stream, "GPU kernelres (dim: %zu)\n", GKR_DIM(gpukernelres));
+    fprintf(stream, "GPU kernelres (dim: %zu)\n", GKR_DIM(gkr));
     fprintf(stream, "lb = ");
-    STRVECprint(GKR_LB(gpukernelres), stream, linesize);
+    STRVECprint(GKR_LB(gkr), stream, linesize);
     fprintf(stream, "ub = ");
-    STRVECprint(GKR_UB(gpukernelres), stream, linesize);
+    STRVECprint(GKR_UB(gkr), stream, linesize);
     fprintf(stream, "step = ");
-    STRVECprint(GKR_ST(gpukernelres), stream, linesize);
+    STRVECprint(GKR_ST(gkr), stream, linesize);
     fprintf(stream, "width = ");
-    STRVECprint(GKR_WD(gpukernelres), stream, linesize);
+    STRVECprint(GKR_WI(gkr), stream, linesize);
 
     DBUG_RETURN();
 }
@@ -525,11 +582,13 @@ GKCOcompGen(unsigned int bnum, char** bounds) {
     gpukernelres_t* gpukernelres = MakeGPUkernelres(dim);
 
     for (size_t i = 0; i < dim; i++) {
-        STRVECappend(GKR_LB(gpukernelres), STRcpy(bounds[i + 0 * dim]));
-        STRVECappend(GKR_UB(gpukernelres), STRcpy(bounds[i + 1 * dim]));
-        STRVECappend(GKR_ST(gpukernelres), STRcpy(bounds[i + 2 * dim]));
-        STRVECappend(GKR_WD(gpukernelres), STRcpy(bounds[i + 3 * dim]));
+        STRVECappend(GKR_LB(gpukernelres), bounds[i + 0 * dim]);
+        STRVECappend(GKR_UB(gpukernelres), bounds[i + 1 * dim]);
+        STRVECappend(GKR_ST(gpukernelres), bounds[i + 2 * dim]);
+        STRVECappend(GKR_WI(gpukernelres), bounds[i + 3 * dim]);
     }
+
+    NextKernelOp(gpukernelres, Gen);
 
     DBUG_EXECUTE(
             DBUG_PRINT("Generated GPU kernel representation:");
@@ -546,21 +605,29 @@ GKCOcompGen(unsigned int bnum, char** bounds) {
  *
  * @brief
  *
- * @param array  N_array argument for Shift
+ * @param _DEPRICATED  To remove
  * @param inner  the thread space that results from applying all inner
  *               pragma functions
  *
  * @return the resulting thread space from applying Shift (array) to it.
  ******************************************************************************/
 gpukernelres_t*
-GKCOcompShift(node* array, gpukernelres_t* inner) {
+GKCOcompShift(node* _DEPRICATED, gpukernelres_t* inner) {
     DBUG_ENTER ();
-    DBUG_EXECUTE (
-            DBUG_PRINT("compiling Shift:");
-            fprintf(stderr, "    Shift (");
-            printNumArray(array);
-            fprintf(stderr, ", inner)\n");
-    );
+    DBUG_PRINT("compiling Shift (inner)\n");
+
+    for (size_t i = 0; i < GKR_DIM(inner); i++) {
+        // We only have to handle dimensions that aren't already normalized
+        if (!STReq(STRVECsel(GKR_LB(inner), i), CONST_ZERO)) {
+            // Create new kernel op to normalize the lowerbound
+            gpukernelop_t* op = NextKernelOp(inner, ShiftLB);
+            GKO_LB(op) = GKR_LB_D_READ(inner, i);
+            GKO_UB(op) = GKR_UB_D_READ(inner, i);
+
+            // We do not have to free the old constant, as they are not owned by the LB vector
+            STRVECswap(GKR_LB(inner), i, CONST_ZERO);
+        }
+    }
 
     DBUG_RETURN (inner);
 }
@@ -578,13 +645,49 @@ GKCOcompShift(node* array, gpukernelres_t* inner) {
  * @return the resulting thread space from applying CompressGrid () to it.
  ******************************************************************************/
 gpukernelres_t*
-GKCOcompCompressGrid(gpukernelres_t* inner) {
+GKCOcompCompressGrid(/*bool* dimensions, */gpukernelres_t* inner) {
     DBUG_ENTER ();
-    DBUG_PRINT ("compiling CompressGrid ( inner)");
+    DBUG_PRINT ("compiling CompressGrid (inner)\n");
+    // TODO: replace with arguments
+    bool* dimensions = (bool*) MEMmalloc(sizeof(bool) * GKR_DIM(inner));
+
+    for (size_t i = 0; i < GKR_DIM(inner); i++) {
+        if (!dimensions[i]) continue;                                           // Check the parameter toggle
+        // TODO: generate compiler error
+        if (!STReq(GKR_LB_D_READ(inner, i), CONST_ZERO)) continue;              // Check wether the lowerbound is 0
+        if (STReq(GKR_ST_D_READ(inner, i), CONST_ONE)) continue;                // Check whether the step already is 1
+
+        gpukernelop_t* op = NextKernelOp(inner, Compress);
+
+        GKO_UB(op) = GKR_UB_D_READ(inner, i);
+        GKO_ST(op) = GKR_ST_D_READ(inner, i);
+        GKO_WI(op) = GKR_WI_D_READ(inner, i);
+    }
 
     DBUG_RETURN (inner);
 }
 
+/**
+ * Create a permutation of a strvec. The original vector will be consumed.
+ *
+ * @param vec The strvec vector to be permuted
+ * @param permutation  The new order, given as an array of N_num nodes
+ * @return The new permutated strvec
+ */
+static strvec*
+GKCOcompPermuteStrvec(strvec* vec, node* permutation) {
+    DBUG_ENTER();
+
+    strvec* newvec = STRVECempty(STRVEClen(vec));
+    for (size_t i = 0; i < STRVEClen(vec); i++) {
+        size_t old_index = NUM_VAL(permutation[i]);
+        STRVECappend(newvec, STRVECsel(vec, old_index));
+    }
+
+    STRVECfree(vec);
+
+    DBUG_RETURN(newvec);
+}
 
 /** <!-- ****************************************************************** -->
  * @fn gpukernelres_t *
@@ -609,6 +712,11 @@ GKCOcompPermute(node* array, gpukernelres_t* inner) {
             fprintf(stderr, ", inner)\n");
     );
 
+    GKR_LB(inner) = GKCOcompPermuteStrvec(GKR_LB(inner), array);
+    GKR_UB(inner) = GKCOcompPermuteStrvec(GKR_UB(inner), array);
+    GKR_ST(inner) = GKCOcompPermuteStrvec(GKR_ST(inner), array);
+    GKR_WI(inner) = GKCOcompPermuteStrvec(GKR_WI(inner), array);
+
     DBUG_RETURN (inner);
 }
 
@@ -629,6 +737,27 @@ GKCOcompFoldLast2(gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling FoldLast2 (inner)");
 
+    size_t major = GKR_DIM(inner) - 2;
+    size_t minor = GKR_DIM(inner) - 1;
+
+    if (GKR_DIM(inner) < 2) {
+        // TODO: generate compiler error
+    } else if (!STReq(GKR_LB_D_READ(inner, major), CONST_ZERO)) {
+        // TODO: generate compile error
+    } else if (!STReq(GKR_LB_D_READ(inner, minor), CONST_ZERO)) {
+        // TODO: generate compile error
+    } else {
+        CheckGKRdestroySW(inner, major);
+        CheckGKRdestroySW(inner, minor);
+
+        gpukernelop_t* op = NextKernelOp(inner, FoldLast2);
+
+        GKO_UB(op)  = GKR_LB_D_READ(inner, major);
+        GKO_NUB(op) = GKR_LB_D_READ(inner, minor);
+
+        RemoveDimension(inner);
+    }
+
     DBUG_RETURN (inner);
 }
 
@@ -648,14 +777,37 @@ GKCOcompFoldLast2(gpukernelres_t* inner) {
  * @return the resulting thread space from applying SplitLast (array) to it.
  ******************************************************************************/
 gpukernelres_t*
-GKCOcompSplitLast(node* array, gpukernelres_t* inner) {
+GKCOcompSplitLast(node* _DEPRICATED, /* node* minorlength_node, */ gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_EXECUTE (
             DBUG_PRINT("compiling SplitLast:");
             fprintf(stderr, "    SplitLast (");
-            printNumArray(array);
+            printNumArray(_DEPRICATED);
             fprintf(stderr, ", inner)\n");
     );
+    // TODO: change out for argument value
+    size_t minorlength = 100;
+
+    AddDimension(inner, NULL);
+
+    size_t major = GKR_DIM(inner) - 2;
+    size_t minor = GKR_DIM(inner) - 1;
+
+    if (GKR_DIM(inner) < 2) {
+        // TODO: generate compiler error
+    } else if (!STReq(GKR_LB_D_READ(inner, major), CONST_ZERO)) {
+        // TODO: generate compile error
+    } else {
+        CheckGKRdestroySW(inner, major);
+        size_t majorlength = CheckGKRpadding(inner, major, minorlength, true);
+
+        gpukernelop_t* op = NextKernelOp(inner, FoldLast2);
+
+        GKO_ARG(op) = majorlength;
+        GKO_ARG(op) = minorlength;
+        GKO_UB(op)  = GKR_UB_D_READ(inner, major);
+        GKO_NUB(op) = GKR_UB_D_READ(inner, minor);
+    }
 
     DBUG_RETURN (inner);
 }
@@ -675,7 +827,7 @@ GKCOcompSplitLast(node* array, gpukernelres_t* inner) {
  * @return the resulting thread space from applying Pad (array) to it.
  ******************************************************************************/
 gpukernelres_t*
-GKCOcompPad(node* array, gpukernelres_t* inner) {
+GKCOcompPad(node* _DEPRICATED, /* node* dimlength, */ gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_EXECUTE (
             DBUG_PRINT("compiling Pad:");
@@ -683,6 +835,22 @@ GKCOcompPad(node* array, gpukernelres_t* inner) {
             printNumArray(array);
             fprintf(stderr, ", inner)\n");
     );
+
+    if (GKR_DIM(inner) < 2) {
+        // TODO: generate compiler error
+    } else if (!STReq(GKR_LB_D_READ(inner, major), CONST_ZERO)) {
+        // TODO: generate compile error
+    } else {
+        CheckGKRdestroySW(inner, major);
+        size_t majorlength = CheckGKRpadding(inner, major, minorlength, true);
+
+        gpukernelop_t* op = NextKernelOp(inner, FoldLast2);
+
+        GKO_ARG(op) = majorlength;
+        GKO_ARG(op) = minorlength;
+        GKO_UB(op)  = GKR_UB_D_READ(inner, major);
+        GKO_NUB(op) = GKR_UB_D_READ(inner, minor);
+    }
 
     DBUG_RETURN (inner);
 }

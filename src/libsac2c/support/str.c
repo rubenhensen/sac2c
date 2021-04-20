@@ -1356,4 +1356,56 @@ STRstrip (char *s)
     DBUG_RETURN (s);
 }
 
+/**
+ * Check if the string represents an int. It may only contain numeric characters (0-9),
+ * optionally with a leading sign (-).
+ *
+ * @param str The string to be checked
+ * @return true if the string represents a number, false otherwise
+ */
+bool
+STRisInt (const char* str) {
+    DBUG_ENTER();
+
+    bool isint = true;
+
+    for (size_t i = 0; str[i] != '\0'; i++) {
+        const char c = str[i];
+        bool charIsint = (c >= '0' && c <= '9') || (i == 0 && c == '-');
+        isint = isint && charIsint;
+    }
+
+    DBUG_RETURN(isint);
+}
+
+/**
+ * Convert the string value to an integer value. Note that this function is designed to work on strings that follow the
+ * conditions posed in STRisInt. For all other strings the behaviour of this function is undefined.
+ *
+ * @param str The string to be converted
+ * @return The integer value this string represents
+ */
+int
+STRatoi (const char* str){
+    DBUG_ENTER();
+
+    int sign   = 1;
+    int result = 0;
+    size_t i = 0;
+
+    if (str[i] == '-') {
+        i ++;
+        sign = -1;
+    }
+
+    for (; str[i] != '\0'; i++) {
+        result *= 10;
+        result += str[i] - '0';
+    }
+
+    result *= sign;
+
+    DBUG_RETURN(result);
+}
+
 #undef DBUG_PREFIX
