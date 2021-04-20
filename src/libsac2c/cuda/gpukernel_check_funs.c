@@ -19,12 +19,12 @@
  *   GridBlock( <num>, <gpukernel_fun_ap>)
  *
  *   <gpukernel_fun_ap> -> Gen
- *                         | Shift ( <vect>, <gpukernel_fun_ap>)
- *                         | CompressGrid ( <gpukernel_fun_ap>)
+ *                         | ShiftLB ( <gpukernel_fun_ap>)
+ *                         | CompressGrid ( <vect>, <gpukernel_fun_ap>)
  *                         | Permute ( <vect>, <gpukernel_fun_ap>)
  *                         | FoldLast2 ( <gpukernel_fun_ap>)
- *                         | SplitLast ( [<num>,<num>], <gpukernel_fun_ap>)
- *                         | Pad ( <vect>, <gpukernel_fun_ap>)
+ *                         | SplitLast ( <num>, <gpukernel_fun_ap>)
+ *                         | PadLast ( <num>, <gpukernel_fun_ap>)
  *
  *  any non-adherence will issue CTIerrors explaining which arguments are
  *  missing or expected in a different form.
@@ -59,8 +59,88 @@
 /******************************************************************************
  ******************************************************************************
  **
- **  Functions for naive-compilation pragma
+ **  helper functions
  **/
+
+static
+node *
+checkNone (node *args, const char *name)
+{
+    DBUG_ENTER ();
+    DBUG_RETURN (args);
+}
+
+static
+node *
+checkNumArg (node *args, const char *name)
+{
+    node *arg;
+    DBUG_ENTER ();
+
+    arg = EXPRS_EXPR (args);
+    if (NODE_TYPE (arg) != N_num) {
+        CTIerrorLoc (NODE_LOCATION (arg), "wrong first argument to %s;"
+                     " should be `%s ( <num>, <inner>)'", name, name);
+    }
+
+    args = EXPRS_NEXT (args);
+    DBUG_RETURN (args);
+}
+
+static
+node *
+checkNumsArg (node *args, const char *name)
+{
+    node *arg, *exprs;
+    DBUG_ENTER ();
+
+    arg = EXPRS_EXPR (args);
+    if (NODE_TYPE (arg) != N_array) {
+        CTIerrorLoc (NODE_LOCATION (arg), "wrong first argument to %s;"
+                     " should be `%s ( [<nums>], <inner>)'", name, name);
+    } else {
+        exprs = ARRAY_AELEMS (arg);
+        while (exprs!= NULL) {
+            arg = EXPRS_EXPR (exprs);
+            if (NODE_TYPE (arg) != N_num) {
+                CTIerrorLoc (NODE_LOCATION (arg), "wrong first argument to %s;"
+                             " should be `%s ( [<nums>], <inner>)'", name, name);
+            }
+            exprs = EXPRS_NEXT (exprs);
+        }
+    }
+
+    args = EXPRS_NEXT (args);
+    DBUG_RETURN (args);
+}
+
+static
+node *
+checkZONumsArg (node *args, const char *name)
+{
+    node *arg, *exprs;
+    DBUG_ENTER ();
+
+    arg = EXPRS_EXPR (args);
+    if (NODE_TYPE (arg) != N_array) {
+        CTIerrorLoc (NODE_LOCATION (arg), "wrong first argument to %s;"
+                     " should be `%s ( [0/1, ..., 0/1], <inner>)'", name, name);
+    } else {
+        exprs = ARRAY_AELEMS (arg);
+        while (exprs!= NULL) {
+            arg = EXPRS_EXPR (exprs);
+            if ((NODE_TYPE (arg) != N_num) 
+               || ((NUM_VAL (arg) != 0) && (NUM_VAL (arg) != 1))) {
+                CTIerrorLoc (NODE_LOCATION (arg), "wrong first argument to %s;"
+                             " should be `%s ( [0/1, ..., 0/1], <inner>)'", name, name);
+            }
+            exprs = EXPRS_NEXT (exprs);
+        }
+    }
+
+    args = EXPRS_NEXT (args);
+    DBUG_RETURN (args);
+}
 
 /**<!--*********************************************************************-->
  *
@@ -103,7 +183,7 @@ GKCHcheckGpuKernelPragma (node *spap, struct location loc)
                                          " found `%s'", SPID_NAME (spap));
             }
             spap = NULL;
-#define WLP(fun, args)                                                               \
+#define WLP(fun, args, checkfun)                                                     \
         } else if (STReq (SPAP_NAME (spap), #fun)) {                                 \
             if (SPAP_ARGS (spap) == NULL) {                                          \
                 CTIerrorLoc (loc,"missing argument in `%s' ()", #fun);               \
@@ -206,118 +286,19 @@ GKCHcheckGridBlock (node *args, struct location loc)
  **  However, these properties are not checked here but from the generic
  **  calling context in GKCHcheckGpuKernelPragma.
  **
+ **  Since all these functions are identically constructed, we auto-generate
+ **  them from our spec in gpukernel_funs.mac.
  **/
 
-/******************************************************************************
- *
- * @fn node *GKCHcheckShift (node *args)
- *
- * @param args - N_exprs node containing the first argument to Shift
- *
- * @brief:
- *
- ******************************************************************************/
-
-node *
-GKCHcheckShift (node *args)
-{
-    DBUG_ENTER ();
-    args = EXPRS_NEXT (args);
-    DBUG_RETURN (args);
+#define WLP(fun, nargs, checkfun)   \
+node *                              \
+GKCHcheck ## fun (node *args)       \
+{                                   \
+    DBUG_ENTER ();                  \
+    args = checkfun (args, #fun);   \
+    DBUG_RETURN (args);             \
 }
-
-/******************************************************************************
- *
- * @fn node *GKCHcheckCompressGrid (node *args)
- *
- * @param args - N_exprs node containing the first argument to CompressGrid
- *
- * @brief: as CompressGrid has no function specific arg, it simply returns its
- *         argument!
- *
- ******************************************************************************/
-
-node *
-GKCHcheckCompressGrid (node *args)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN (args);
-}
-
-/******************************************************************************
- *
- * @fn node *GKCHcheckPermute (node *args)
- *
- * @param args - N_exprs node containing the first argument to Permute
- *
- * @brief:
- *
- ******************************************************************************/
-
-node *
-GKCHcheckPermute (node *args)
-{
-    DBUG_ENTER ();
-    args = EXPRS_NEXT (args);
-    DBUG_RETURN (args);
-}
-
-/******************************************************************************
- *
- * @fn node *GKCHcheckFoldLast2 (node *args)
- *
- * @param args - N_exprs node containing the first argument to FoldLast2
- *
- * @brief: as FoldLast2 has no function specific arg, it simply returns its 
- *         argument!
- *
- ******************************************************************************/
-
-node *
-GKCHcheckFoldLast2 (node *args)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN (args);
-}
-
-/******************************************************************************
- *
- * @fn node *GKCHcheckSplitLast (node *args)
- *
- * @param args - N_exprs node containing the first argument to SplitLast
- *
- * @brief:
- *
- ******************************************************************************/
-
-node *
-GKCHcheckSplitLast (node *args)
-{
-    DBUG_ENTER ();
-    args = EXPRS_NEXT (args);
-    DBUG_RETURN (args);
-}
-
-/******************************************************************************
- *
- * @fn  node *GKCHcheckPad (node *args)
- *
- * @param args - N_exprs node containing the first argument to Pad
- *
- * @brief:
- *
- ******************************************************************************/
-
-node *
-GKCHcheckPad (node *args)
-{
-    DBUG_ENTER ();
-    args = EXPRS_NEXT (args);
-    DBUG_RETURN (args);
-}
-
-
-
-
+#include "gpukernel_funs.mac"
+#undef WLP
 
 #undef DBUG_PREFIX

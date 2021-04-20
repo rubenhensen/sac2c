@@ -13,7 +13,7 @@ extern gpukernelres_t * GKCOcompGen ( unsigned bnum, char **bounds);
 #define ARG0 
 #define ARG1 node *arg,
 
-#define WLP(fun, nargs)                                                          \
+#define WLP(fun, nargs, checkfun)                                                  \
     extern gpukernelres_t *GKCOcomp ## fun ( ARGS( nargs) gpukernelres_t *inner);
 #include "gpukernel_funs.mac"
 #undef WLP

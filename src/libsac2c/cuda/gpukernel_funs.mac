@@ -5,20 +5,22 @@
  *  IF a function <myfun> needs to be added, this requires
  *    1) an additional entry in this file of the form:
  *
- *       WLP (<myfun>, n)
+ *       WLP (<myfun>, n, <checkArgFun> )
  *
  *       where n is the number of arguments that are expected before
- *       the inner function call / symbol.
+ *       the inner function call / symbol and <checkArgFun> is a static
+ *       function in gpukernel_check_funs.c which checks the AST validity
+ *       of those args.
  *
- *    2) a function definition in gpukernel_check_funs.c is needed with
- *       the following signature (the header file expands itself by virtue
- *       of this file :-)
+ *    2) a new checking function <checkArgFun> might be needed in case there
+ *       is any not-yet seen constraint. A checking function of type
  *
  *       node *GKCHcheck<myfun>( node *args)
  *
- *       which checks the n arguments specific to <myfun>.
- *       This extension suffices to implement the whole extension from the
- *       perspective of the scanner / parser.
+ *       in gpukernel_check_funs.c will be auto-generated from this file :-)
+ *       It calls the checking function and it will be called from the 
+ *       parser to ensure apropriate construction of the gpukernel
+ *       pragma from the perspective of the scanner / parser.
  *
  *    3) a function definition in gpukernel_comp_funs.c is needed with
  *       the following signature (the header file expands itself by virtue
@@ -40,9 +42,9 @@
  *   fun  num_args
  */
 
-WLP (Shift,        1)
-WLP (CompressGrid, 0)
-WLP (Permute,      1)
-WLP (FoldLast2,    0)
-WLP (SplitLast,    1)
-WLP (Pad,          1)
+WLP (ShiftLB,      0, checkNone )
+WLP (CompressGrid, 1, checkZONumsArg )
+WLP (Permute,      1, checkNumsArg )
+WLP (FoldLast2,    0, checkNone )
+WLP (SplitLast,    1, checkNumArg )
+WLP (PadLast,      1, checkNumArg )

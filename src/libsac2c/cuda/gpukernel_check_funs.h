@@ -6,7 +6,7 @@
 extern void GKCHcheckGpuKernelPragma (node *spap, struct location loc);
 extern node *GKCHcheckGridBlock (node *args, struct location loc);
 
-#define WLP(fun, nargs)                     \
+#define WLP(fun, nargs, checkfun)                     \
 extern node *GKCHcheck ## fun (node *args);
 #include "gpukernel_funs.mac"
 #undef WLP
