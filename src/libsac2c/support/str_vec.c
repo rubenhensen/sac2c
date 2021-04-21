@@ -45,13 +45,13 @@ struct STRVEC {
  * @return a new strvec*
  */
 strvec*
-MakeStrvec(size_t length) {
+MakeStrvec(size_t alloc, size_t length) {
     DBUG_ENTER();
 
     strvec* vec = (strvec*) MEMmalloc(sizeof(strvec*));
     STRVEC_LENGTH(vec) = length;
-    STRVEC_ALLOC(vec)  = length;
-    STRVEC_DATA(vec)   = (char**) MEMmalloc((unsigned long) length * sizeof(char*));
+    STRVEC_ALLOC(vec)  = alloc;
+    STRVEC_DATA(vec)   = (char**) MEMmalloc((unsigned long) alloc * sizeof(char*));
 
     DBUG_RETURN(vec);
 }
@@ -89,9 +89,9 @@ strvec*
 STRVECempty(size_t preallocate) {
     DBUG_ENTER();
 
-    strvec* vec = MakeStrvec(preallocate);
+    strvec* vec = MakeStrvec(preallocate, 0);
 
-    DBUG_RETURN(preallocate);
+    DBUG_RETURN(vec);
 }
 
 /**
@@ -107,7 +107,7 @@ STRVECmake(size_t length, ...) {
 
     va_list arglist;
 
-    strvec* vec = MakeStrvec(length);
+    strvec* vec = MakeStrvec(length, length);
 
     for (size_t i = 0; i < length; i++)
         STRVEC_DATA(vec)[i] = va_arg(arglist,
@@ -128,7 +128,7 @@ strvec*
 STRVECfromArray(char** array, size_t length) {
     DBUG_ENTER();
 
-    strvec* vec = MakeStrvec(length);
+    strvec* vec = MakeStrvec(length, length);
 
     for (size_t i = 0; i < length; i++)
         STRVEC_DATA(vec)[i] = array[i];
@@ -148,7 +148,7 @@ strvec*
 STRVECgen(size_t length, char* (* generator)(void)) {
     DBUG_ENTER();
 
-    strvec* vec = MakeStrvec(length);
+    strvec* vec = MakeStrvec(length, length);
 
     if (generator == NULL)
         generator = STRnull;
@@ -308,8 +308,11 @@ STRVECprint(strvec* vec, FILE* stream, size_t linesize) {
         currentlinesize += 2;
         fprintf(stream, "%s, ", str);
 
-        DBUG_RETURN();
     }
+
+    fprintf(stream, "\n]\n");
+
+    DBUG_RETURN();
 }
 
 /**
@@ -323,7 +326,8 @@ strvec*
 STRVECcopy(strvec* source) {
     DBUG_ENTER();
 
-    strvec* vec = MakeStrvec(STRVEC_LENGTH(source));
+    size_t length = STRVEC_LENGTH(source);
+    strvec* vec = MakeStrvec(length, length);
 
     for (size_t i = 0; i < STRVEC_LENGTH(source); i++)
         STRVEC_DATA(vec)[i] = STRVEC_DATA(source)[i];
@@ -342,7 +346,8 @@ strvec*
 STRVECcopyDeep(strvec* source) {
     DBUG_ENTER();
 
-    strvec* vec = MakeStrvec(STRVEC_LENGTH(source));
+    size_t length = STRVEC_LENGTH(source);
+    strvec* vec = MakeStrvec(length, length);
 
     for (size_t i = 0; i < STRVEC_LENGTH(source); i++)
         STRVEC_DATA(vec)[i] = STRcpy(STRVEC_DATA(source)[i]);

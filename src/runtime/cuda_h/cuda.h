@@ -103,7 +103,7 @@ extern "C" {
 
 // Allocate on the device
 #if !defined(SAC_DO_CUDA_ALLOC) || SAC_DO_CUDA_ALLOC == SAC_CA_system                    \
-  || SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
+ || SAC_DO_CUDA_ALLOC == SAC_CA_cureg || SAC_DO_CUDA_ALLOC == SAC_CA_cualloc
 #define SAC_CUDA_ALLOC(var_NT, basetype)                                                 \
     SAC_TR_GPU_PRINT ("Allocating CUDA device memory: %s", NT_STR (var_NT));             \
     SAC_PF_MEM_CUDA_INC_ALLOC (sizeof (basetype) * SAC_ND_A_SIZE (var_NT));              \
@@ -404,7 +404,7 @@ extern "C" {
         return;
 
 /*********************** 1D case (With Step/Width) ***********************/
-#define SAC_CUDA_WLIDS_1D_SW_0(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
+#define SAC_CUDA_WLIDS_1D_SW_0(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var, \
                                ub_var)                                                   \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_X * BLOCKDIM_X + THREADIDX_X;       \
     if (step_var > 1                                                                     \
@@ -428,7 +428,7 @@ extern "C" {
         return;
 
 /*********************** 2D case (With Step/Width) ***********************/
-#define SAC_CUDA_WLIDS_2D_SW_0(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
+#define SAC_CUDA_WLIDS_2D_SW_0(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var, \
                                ub_var)                                                   \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_Y * BLOCKDIM_Y + THREADIDX_Y;       \
     if (step_var > 1                                                                     \
@@ -438,7 +438,7 @@ extern "C" {
     if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
         return;
 
-#define SAC_CUDA_WLIDS_2D_SW_1(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
+#define SAC_CUDA_WLIDS_2D_SW_1(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var, \
                                ub_var)                                                   \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_X * BLOCKDIM_X + THREADIDX_X;       \
     if (step_var > 1                                                                     \
@@ -465,31 +465,31 @@ extern "C" {
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = THREADIDX_Z + lb_var;
 
 /*********************** ND case (With Step/Width) ***********************/
-#define SAC_CUDA_WLIDS_ND_SW_0(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
+#define SAC_CUDA_WLIDS_ND_SW_0(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var, \
                                ub_var)                                                   \
     if (step_var > 1 && (BLOCKIDX_Y % step_var > (width_var - 1)))                       \
         return;                                                                          \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_Y + lb_var;
 
-#define SAC_CUDA_WLIDS_ND_SW_1(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
+#define SAC_CUDA_WLIDS_ND_SW_1(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var, \
                                ub_var)                                                   \
     if (step_var > 1 && (BLOCKIDX_X % step_var > (width_var - 1)))                       \
         return;                                                                          \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = BLOCKIDX_X + lb_var;
 
-#define SAC_CUDA_WLIDS_ND_SW_2(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
+#define SAC_CUDA_WLIDS_ND_SW_2(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var, \
                                ub_var)                                                   \
     if (step_var > 1 && (THREADIDX_X % step_var > (width_var - 1)))                      \
         return;                                                                          \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = THREADIDX_X + lb_var;
 
-#define SAC_CUDA_WLIDS_ND_SW_3(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
+#define SAC_CUDA_WLIDS_ND_SW_3(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var, \
                                ub_var)                                                   \
     if (step_var > 1 && (THREADIDX_Y % step_var > (width_var - 1)))                      \
         return;                                                                          \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = THREADIDX_Y + lb_var;
 
-#define SAC_CUDA_WLIDS_ND_SW_4(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var,      \
+#define SAC_CUDA_WLIDS_ND_SW_4(wlids_NT, wlids_NT_dim, step_var, width_var, lb_var, \
                                ub_var)                                                   \
     if (step_var > 1 && (THREADIDX_Z % step_var > (width_var - 1)))                      \
         return;                                                                          \
@@ -502,13 +502,13 @@ extern "C" {
  *
  *****************************************************************************/
 
-#define SAC_CUDA_WLIDS(wlids_NT, wlids_NT_dim, blockidx, blockdim, threadidx, step_var,  \
+#define SAC_CUDA_WLIDS(wlids_NT, wlids_NT_dim, blockidx, blockdim, threadidx, step_var, \
                        width_var, lb_var, ub_var)                                        \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = blockidx * blockdim + threadidx + lb_var;    \
     if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
         return;
 
-#define SAC_CUDA_WLIDS_SW(wlids_NT, wlids_NT_dim, blockidx, blockdim, threadidx,         \
+#define SAC_CUDA_WLIDS_SW(wlids_NT, wlids_NT_dim, blockidx, blockdim, threadidx, \
                           step_var, width_var, lb_var, ub_var)                           \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = blockidx * blockdim + threadidx;             \
     if (step_var > 1                                                                     \
@@ -518,7 +518,7 @@ extern "C" {
     if (SAC_ND_READ (wlids_NT, wlids_NT_dim) >= ub_var)                                  \
         return;
 
-#define SAC_CUDA_WLIDS_HD(wlids_NT, wlids_NT_dim, index, step_var, width_var, lb_var,    \
+#define SAC_CUDA_WLIDS_HD(wlids_NT, wlids_NT_dim, index, step_var, width_var, lb_var, \
                           ub_var)                                                        \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = index + lb_var;
 
@@ -527,6 +527,56 @@ extern "C" {
     if (step_var > 1 && (index % step_var > (width_var - 1)))                            \
         return;                                                                          \
     SAC_ND_WRITE (wlids_NT, wlids_NT_dim) = index + lb_var;
+
+/*****************************************************************************
+ *
+ * ICMs for CUDA kernel mappings
+ * =================
+ *
+ *****************************************************************************/
+
+#define SAC_GKCO_OPD_REDEFINE(from, to) \
+    int to = from;
+
+#define SAC_GKCO_OPD_SHIFT_LB(lb, ub) \
+    ub = ub - lb;
+
+#define SAC_GKCO_SET_GRID(max_x, max_y, max_z, max_total, ...)                                              \
+    dim3 grid (__VA_ARGS__);                                                                                \
+    SAC_TR_GPU_PRINT("CUDA XYZ grid dimension of %u x %u x %u", grid.x, grid.y, grid.z);                    \
+                                                                                                            \
+    if (grid.x <= 0)                                                                                        \
+        SAC_RuntimeError("CUDA x grid dimension must be bigger then zero. Current value is %u", grid.x);    \
+    if (grid.y <= 0)                                                                                        \
+        SAC_RuntimeError("CUDA y grid dimension must be bigger then zero. Current value is %u", grid.y);    \
+    if (grid.z <= 0)                                                                                        \
+        SAC_RuntimeError("CUDA z grid dimension must be bigger then zero. Current value is %u", grid.z);    \
+                                                                                                            \
+    if (grid.x > max_x || grid.y > max_y, || grid.z > max_z)                                                \
+        SAC_RuntimeError("CUDA XYZ grid dimension of %u x %u x %u exceeds "                                 \
+                         "the compute capability's max value of %u x %u x %u",                              \
+                         grid.x, grid.y, grid.z, max_x, max_y, max_z);
+
+#define SAC_GKCO_SET_BLOCK(max_x, max_y, max_z, max_total, ...)                                             \
+    dim3 block (__VA_ARGS__);                                                                               \
+    SAC_TR_GPU_PRINT("CUDA XYZ block dimension of %u x %u x %u", block.x, block.y, block.z);                \
+                                                                                                            \
+    if (block.x <= 0)                                                                                       \
+        SAC_RuntimeError("CUDA x block dimension must be bigger then zero. Current value is %u", block.x);  \
+    if (block.y <= 0)                                                                                       \
+        SAC_RuntimeError("CUDA y block dimension must be bigger then zero. Current value is %u", block.y);  \
+    if (block.z <= 0)                                                                                       \
+        SAC_RuntimeError("CUDA z block dimension must be bigger then zero. Current value is %u", block.z);  \
+                                                                                                            \
+    if (block.x > max_x || block.y > max_y, || block.z > max_z)                                             \
+        SAC_RuntimeError("CUDA XYZ block dimension of %u x %u x %u exceeds "                                \
+                         "the compute capability's max value of %u x %u x %u",                              \
+                         block.x, block.y, block.z, max_x, max_y, max_z);                                   \
+    if (block.x * block.y * block.z > max_total)                                                            \
+        SAC_RuntimeError("CUDA XYZ block dimension of %u x %u x %u = %u exceeds compute capability's "      \
+                         "max number of threads per block: %u",                                             \
+                         block.x, block.y, block.z, block.x * block.y * block.z, max_total);
+
 
 /*****************************************************************************
  *
