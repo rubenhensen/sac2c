@@ -106,12 +106,15 @@ STRVECmake(size_t length, ...) {
     DBUG_ENTER();
 
     va_list arglist;
+    va_start(arglist, length);
 
     strvec* vec = MakeStrvec(length, length);
 
     for (size_t i = 0; i < length; i++)
         STRVEC_DATA(vec)[i] = va_arg(arglist,
     char*);
+
+    va_end(arglist);
 
     DBUG_RETURN(vec);
 }

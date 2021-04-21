@@ -535,13 +535,25 @@ extern "C" {
  *
  *****************************************************************************/
 
-#define SAC_GKCO_OPD_REDEFINE(from, to) \
-    int to = from;
+#define SAC_GKCO_OPD_DECLARE(var)                                                                           \
+    int var;
 
-#define SAC_GKCO_OPD_SHIFT_LB(lb, ub) \
+#define SAC_GKCO_OPD_REDEFINE(from, to)                                                                     \
+    to = from;
+
+#define SAC_GKCO_HOST_OPD_SHIFT_LB(lb, ub)                                                                  \
     ub = ub - lb;
 
-#define SAC_GKCO_SET_GRID(max_x, max_y, max_z, max_total, ...)                                              \
+#define SAC_GKCO_HOST_OPD_COMPRESS_S(ub, st)                                                                \
+    ub = ub / st                                                                                            \
+            + (ub % step != 0);
+
+#define SAC_GKCO_HOST_OPD_COMPRESS_SW(ub, st, wi, tmp)                                                      \
+    tmp = ub % st;                                                                                          \
+    ub = ub / st * wi                                                                                       \
+            + (tmp < wi ? tmp : wi);
+
+#define SAC_GKCO_HOST_OPM_SET_GRID(max_x, max_y, max_z, max_total, ...)                                     \
     dim3 grid (__VA_ARGS__);                                                                                \
     SAC_TR_GPU_PRINT("CUDA XYZ grid dimension of %u x %u x %u", grid.x, grid.y, grid.z);                    \
                                                                                                             \
@@ -557,7 +569,7 @@ extern "C" {
                          "the compute capability's max value of %u x %u x %u",                              \
                          grid.x, grid.y, grid.z, max_x, max_y, max_z);
 
-#define SAC_GKCO_SET_BLOCK(max_x, max_y, max_z, max_total, ...)                                             \
+#define SAC_GKCO_HOST_OPM_SET_BLOCK(max_x, max_y, max_z, max_total, ...)                                    \
     dim3 block (__VA_ARGS__);                                                                               \
     SAC_TR_GPU_PRINT("CUDA XYZ block dimension of %u x %u x %u", block.x, block.y, block.z);                \
                                                                                                             \
