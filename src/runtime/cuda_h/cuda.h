@@ -530,7 +530,7 @@ extern "C" {
 
 /*****************************************************************************
  *
- * ICMs for CUDA kernel mappings
+ * ICMs for CUDA kernel mappings on the host
  * =================
  *
  *****************************************************************************/
@@ -589,6 +589,18 @@ extern "C" {
                          "max number of threads per block: %u",                                             \
                          block.x, block.y, block.z, block.x * block.y * block.z, max_total);
 
+/*****************************************************************************
+ *
+ * ICMs for CUDA kernel mappings on the device
+ * =================
+ *
+ *****************************************************************************/
+
+#define SAC_GKCO_GPUD_OPM_DECLARE_IV(iv_var, iv_length)                                                     \
+    int iv_var[iv_length];
+
+#define SAC_GKCO_GPUD_OPD_DEF_IV(iv_var, dimension, value_var)                                              \
+    iv_var[dimension] = value_var;
 
 /*****************************************************************************
  *

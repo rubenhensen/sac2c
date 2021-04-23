@@ -11,6 +11,7 @@ strvec* STRVECfree(strvec* vec);
 strvec* STRVECfreeDeep(strvec* vec);
 void STRVECresize(strvec* vec, size_t length, char* (* generator)(void));
 void STRVECresizeFree(strvec* vec, size_t length, char* (* generator)(void));
+bool STRVECisEmpty(strvec* vec);
 size_t STRVEClen(strvec* vec);
 void STRVECprint(strvec* vec, FILE* stream, size_t linesize);
 strvec* STRVECcopy(strvec* source);

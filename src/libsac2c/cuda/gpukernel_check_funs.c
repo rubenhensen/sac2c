@@ -44,6 +44,7 @@
 #include "tree_compound.h"
 
 #define DBUG_PREFIX "GKCH"
+
 #include "debug.h"
 
 #include "free.h"
@@ -55,7 +56,6 @@
 #include "str.h"
 
 
-
 /******************************************************************************
  ******************************************************************************
  **
@@ -63,83 +63,112 @@
  **/
 
 static
-node *
-checkNone (node *args, const char *name)
-{
+node*
+checkNone(node* args, const char* name) {
     DBUG_ENTER ();
     DBUG_RETURN (args);
 }
 
 static
-node *
-checkNumArg (node *args, const char *name)
-{
-    node *arg;
+node*
+checkNumArg(node* args, const char* name) {
+    node* arg;
     DBUG_ENTER ();
 
-    arg = EXPRS_EXPR (args);
+    arg = EXPRS_EXPR(args);
     if (NODE_TYPE (arg) != N_num) {
-        CTIerrorLoc (NODE_LOCATION (arg), "wrong first argument to %s;"
-                     " should be `%s ( <num>, <inner>)'", name, name);
+        CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
+                                         " should be `%s ( <num>, <inner>)'", name, name);
     }
 
-    args = EXPRS_NEXT (args);
+    args = EXPRS_NEXT(args);
     DBUG_RETURN (args);
 }
 
 static
-node *
-checkNumsArg (node *args, const char *name)
-{
-    node *arg, *exprs;
+node*
+checkNumsArg(node* args, const char* name) {
+    node* arg, * exprs;
     DBUG_ENTER ();
 
-    arg = EXPRS_EXPR (args);
+    arg = EXPRS_EXPR(args);
     if (NODE_TYPE (arg) != N_array) {
-        CTIerrorLoc (NODE_LOCATION (arg), "wrong first argument to %s;"
-                     " should be `%s ( [<nums>], <inner>)'", name, name);
+        CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
+                                         " should be `%s ( [<nums>], <inner>)'", name, name);
     } else {
-        exprs = ARRAY_AELEMS (arg);
-        while (exprs!= NULL) {
-            arg = EXPRS_EXPR (exprs);
+        exprs = ARRAY_AELEMS(arg);
+        while (exprs != NULL) {
+            arg = EXPRS_EXPR(exprs);
             if (NODE_TYPE (arg) != N_num) {
-                CTIerrorLoc (NODE_LOCATION (arg), "wrong first argument to %s;"
-                             " should be `%s ( [<nums>], <inner>)'", name, name);
+                CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
+                                                 " should be `%s ( [<nums>], <inner>)'", name, name);
             }
-            exprs = EXPRS_NEXT (exprs);
+            exprs = EXPRS_NEXT(exprs);
         }
     }
 
-    args = EXPRS_NEXT (args);
+    args = EXPRS_NEXT(args);
     DBUG_RETURN (args);
 }
 
 static
-node *
-checkZONumsArg (node *args, const char *name)
-{
-    node *arg, *exprs;
+node*
+checkZONumsArg(node* args, const char* name) {
+    node* arg, * exprs;
     DBUG_ENTER ();
 
-    arg = EXPRS_EXPR (args);
+    arg = EXPRS_EXPR(args);
     if (NODE_TYPE (arg) != N_array) {
-        CTIerrorLoc (NODE_LOCATION (arg), "wrong first argument to %s;"
-                     " should be `%s ( [0/1, ..., 0/1], <inner>)'", name, name);
+        CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
+                                         " should be `%s ( [0/1, ..., 0/1], <inner>)'", name, name);
     } else {
-        exprs = ARRAY_AELEMS (arg);
-        while (exprs!= NULL) {
-            arg = EXPRS_EXPR (exprs);
-            if ((NODE_TYPE (arg) != N_num) 
-               || ((NUM_VAL (arg) != 0) && (NUM_VAL (arg) != 1))) {
-                CTIerrorLoc (NODE_LOCATION (arg), "wrong first argument to %s;"
-                             " should be `%s ( [0/1, ..., 0/1], <inner>)'", name, name);
+        exprs = ARRAY_AELEMS(arg);
+        while (exprs != NULL) {
+            arg = EXPRS_EXPR(exprs);
+            if ((NODE_TYPE (arg) != N_num)
+                || ((NUM_VAL(arg) != 0) && (NUM_VAL(arg) != 1))) {
+                CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
+                                                 " should be `%s ( [0/1, ..., 0/1], <inner>)'", name, name);
             }
-            exprs = EXPRS_NEXT (exprs);
+            exprs = EXPRS_NEXT(exprs);
         }
     }
 
-    args = EXPRS_NEXT (args);
+    args = EXPRS_NEXT(args);
     DBUG_RETURN (args);
+}
+
+void
+checkArgsLength(node* arg, const size_t length, const char* name) {
+    node* exprs;
+    DBUG_ENTER ();
+
+    exprs = ARRAY_AELEMS(arg);
+    while (exprs != NULL) {
+        arg = EXPRS_EXPR(exprs);
+        if (exprs == NULL)
+            CTIerrorLoc(NODE_LOCATION(arg), "wrong first argument to %s: too short; "
+                                             "The list should be of length %zu", name, length);
+        exprs = EXPRS_NEXT(exprs);
+    }
+    if (exprs != NULL)
+        CTIerrorLoc(NODE_LOCATION(arg), "wrong first argument to %s: too long; "
+                                         "The list should be of length %zu", name, length);
+
+    DBUG_RETURN ();
+}
+
+void
+checkNumLesseqDim(node* arg, const size_t length, const char* name) {
+    DBUG_ENTER();
+
+    int num = NUM_VAL(arg);
+
+    if ((size_t) num > length)
+        CTIerrorLoc(NODE_LOCATION(arg), "wrong first argument to %s; "
+                                        "should be a positive integer less then %zu", name, length);
+
+    DBUG_RETURN();
 }
 
 /**<!--*********************************************************************-->
@@ -158,29 +187,28 @@ checkZONumsArg (node *args, const char *name)
  ******************************************************************************/
 
 void
-GKCHcheckGpuKernelPragma (node *spap, struct location loc)
-{
+GKCHcheckGpuKernelPragma(node* spap, struct location loc) {
     DBUG_ENTER ();
 
     DBUG_ASSERT (spap != NULL, "NULL pointer for funcall in gpukernel pragma!");
-    DBUG_ASSERT (NODE_TYPE (spap) == N_spap, "non N_spap funcall in gpukernel pragma!");
+    DBUG_ASSERT (NODE_TYPE(spap) == N_spap, "non N_spap funcall in gpukernel pragma!");
 
-    if (!STReq (SPAP_NAME (spap), "GridBlock")) {
-        CTIerrorLoc (NODE_LOCATION (spap), "expected `GridBlock' found `%s'",
-                                           SPAP_NAME (spap));
+    if (!STReq(SPAP_NAME (spap), "GridBlock")) {
+        CTIerrorLoc(NODE_LOCATION (spap), "expected `GridBlock' found `%s'",
+                    SPAP_NAME (spap));
     } else {
         /*
          * check validity of GridBlock arguments; return pointer to nested
          * N_spap / N_spid or NULL in case of an error.
          */
-        spap = GKCHcheckGridBlock (SPAP_ARGS (spap), loc);
+        spap = GKCHcheckGridBlock(SPAP_ARGS(spap), loc);
     }
 
     while (spap != NULL) {
         if (NODE_TYPE (spap) == N_spid) {
-            if (!STReq (SPID_NAME (spap), "Gen")) {
-                CTIerrorLoc (NODE_LOCATION (spap), "expected 'Gen`"
-                                         " found `%s'", SPID_NAME (spap));
+            if (!STReq(SPID_NAME(spap), "Gen")) {
+                CTIerrorLoc(NODE_LOCATION (spap), "expected 'Gen`"
+                                                  " found `%s'", SPID_NAME(spap));
             }
             spap = NULL;
 #define WLP(fun, args, checkfun)                                                     \
@@ -205,11 +233,14 @@ GKCHcheckGpuKernelPragma (node *spap, struct location loc)
                     }                                                                \
                 }                                                                    \
             }
+
+// @formatter:off
 #include "gpukernel_funs.mac"
 #undef WLP
+// @formatter:on
         } else {
-            CTIerrorLoc (NODE_LOCATION (spap), "expected gpukernel function,"
-                                               " found `%s'", SPAP_NAME (spap));
+            CTIerrorLoc(NODE_LOCATION (spap), "expected gpukernel function,"
+                                              " found `%s'", SPAP_NAME (spap));
             spap = NULL;
         }
     }
@@ -233,33 +264,32 @@ GKCHcheckGpuKernelPragma (node *spap, struct location loc)
  *
  ******************************************************************************/
 
-node *
-GKCHcheckGridBlock (node *args, struct location loc)
-{
+node*
+GKCHcheckGridBlock(node* args, struct location loc) {
     DBUG_ENTER ();
 
     if (args == NULL) {
-        CTIerrorLoc (loc, "missing argument in `GridBlock ()'");
+        CTIerrorLoc(loc, "missing argument in `GridBlock ()'");
     } else {
-        if (NODE_TYPE (EXPRS_EXPR (args)) != N_num) {
-            CTIerrorLoc (NODE_LOCATION (EXPRS_EXPR (args)),
-                         "wrong first argument; should be `GridBlock ( <num>, <inner>)'");
+        if (NODE_TYPE (EXPRS_EXPR(args)) != N_num) {
+            CTIerrorLoc(NODE_LOCATION (EXPRS_EXPR(args)),
+                        "wrong first argument; should be `GridBlock ( <num>, <inner>)'");
         }
-        args = EXPRS_NEXT (args);
+        args = EXPRS_NEXT(args);
         if (args == NULL) {
-            CTIerrorLoc (loc,"missing inner gpukernel; should be"
+            CTIerrorLoc(loc, "missing inner gpukernel; should be"
                              " `GridBlock ( <num>, <inner>)'");
         } else {
-            if (EXPRS_NEXT (args) != NULL) {
-                CTIerrorLoc (NODE_LOCATION (EXPRS_EXPR (EXPRS_NEXT (args))),
-                             "superfluous argument; should be"
-                             " `GridBlock ( <num>, <inner>)'");
+            if (EXPRS_NEXT(args) != NULL) {
+                CTIerrorLoc(NODE_LOCATION (EXPRS_EXPR(EXPRS_NEXT(args))),
+                            "superfluous argument; should be"
+                            " `GridBlock ( <num>, <inner>)'");
             }
-            args = EXPRS_EXPR (args);
+            args = EXPRS_EXPR(args);
             if ((NODE_TYPE (args) != N_spap)
-                 && (NODE_TYPE (args) != N_spid)) {
-                CTIerrorLoc (NODE_LOCATION (args), "wrong second argument; should be"
-                                                   " `GridBlock ( <num>, <inner>)'");
+                && (NODE_TYPE (args) != N_spid)) {
+                CTIerrorLoc(NODE_LOCATION (args), "wrong second argument; should be"
+                                                  " `GridBlock ( <num>, <inner>)'");
                 args = NULL;
             }
         }
@@ -298,7 +328,9 @@ GKCHcheck ## fun (node *args)       \
     args = checkfun (args, #fun);   \
     DBUG_RETURN (args);             \
 }
+
 #include "gpukernel_funs.mac"
+
 #undef WLP
 
 #undef DBUG_PREFIX

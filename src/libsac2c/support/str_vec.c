@@ -264,6 +264,21 @@ STRVECresizeFree(strvec* vec, size_t length, char* (* generator)(void)) {
 }
 
 /**
+ * Check whether a string vector is empty
+ *
+ * @param vec The vector
+ * @return true iff the vector is empty, false otherwise
+ */
+bool
+STRVECisEmpty(strvec* vec){
+    DBUG_ENTER();
+
+    bool result = STRVEC_LENGTH(vec) == 0;
+
+    DBUG_RETURN(result);
+}
+
+/**
  * Get the length of a string vector
  *
  * @param vec The vector
@@ -440,6 +455,7 @@ char*
 STRVECpop(strvec* vec) {
     DBUG_ENTER();
 
+    DBUG_ASSERT(STRVEC_LENGTH(vec)!=0, "Tried to pop from an empty vector!");
     char* str = STRVEC_DATA(vec)[STRVEC_LENGTH(vec) - 1];
     STRVEC_LENGTH(vec)--;
 
