@@ -221,6 +221,8 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cuda/cuda_tag_executionmode.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/cuda_utils.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/data_access_analysis.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/expand_shmem_boundary_load.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/gpukernel_check_funs.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/gpukernel_comp_funs.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/infer_reusable_arrays.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/insert_cudast_memtran.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/insert_withloop_memtran.c
@@ -241,8 +243,6 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cuda/single_thread_kernels.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/split_cuda_fold.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/split_cuda_withloop.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/split_partitions.c
-${CMAKE_CURRENT_SOURCE_DIR}/cuda/gpukernel_check_funs.c
-${CMAKE_CURRENT_SOURCE_DIR}/cuda/gpukernel_comp_funs.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/change_arrays_to_dist.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/create_dist_wl_cond.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cudahybrid/cuda_cost_model.c

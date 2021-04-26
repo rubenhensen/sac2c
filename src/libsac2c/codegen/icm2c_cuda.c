@@ -271,14 +271,11 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
  ******************************************************************************/
 void ICMCompileCUDA_THREAD_SPACE (node *spap, unsigned int bounds_count, char **var_ANY)
 {
-    gpukernelres_t *res;
     DBUG_ENTER ();
     
     DBUG_ASSERT ((NODE_TYPE (spap) == N_spap),
                  "N_spap expected in ICMCompileCUDA_THREAD_SPACE");
-    res = GKCOcompGpuKernelPragma (spap, bounds_count, var_ANY);
-
-    //   Enjoy, Niek!
+    GKCOcompHostKernelPragma(spap, bounds_count, var_ANY);
 
     DBUG_RETURN ();
 }

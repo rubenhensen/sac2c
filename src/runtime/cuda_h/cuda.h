@@ -531,6 +531,10 @@ extern "C" {
 /*****************************************************************************
  *
  * ICMs for CUDA kernel mappings on the host
+ * Note that OPD (once per dimension) ICM's operate on a single dimension, and
+ * multiple of them may be generated per pragma. OPM (once per mapping) ICM's
+ * operate at multiple dimensions at once, and generally only one of them will
+ * be generated per pragma.
  * =================
  *
  *****************************************************************************/

@@ -3,10 +3,10 @@
 
 #include "types.h"
 
-extern gpukernelres_t * GKCOcompGpuKernelPragma (node *spap,
-                                          unsigned int bnum, char **bounds);
+extern void GKCOcompHostKernelPragma (node *spap,
+                                                  unsigned int bnum, char **bounds);
 extern gpukernelres_t * GKCOcompGridBlock (node *num, gpukernelres_t *inner);
-extern gpukernelres_t * GKCOcompGen ( unsigned bnum, char **bounds);
+extern gpukernelres_t * GKCOcompGen ( unsigned bnum, char **bounds, pass_t pass);
 
 
 #define ARGS( nargs) ARG##nargs

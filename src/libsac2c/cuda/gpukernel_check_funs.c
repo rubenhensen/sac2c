@@ -202,6 +202,13 @@ checkNumLesseqDim(node* arg, const size_t length, const char* name) {
     DBUG_RETURN();
 }
 
+void
+checkLbZero(char* lb_str, node* loc, char* name, size_t dim) {
+    if (!STReq(lb_str, "0"))
+        CTIerrorLoc(NODE_LOCATION(loc), "%s cannot be executed here; "
+                                        "lowerbound is not zero for dimension %zu", name, dim);
+}
+
 /**<!--*********************************************************************-->
  *
  * @fn void GKCHcheckGpuKernelPragma (node *spap, struct location loc)
