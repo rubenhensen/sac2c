@@ -1368,13 +1368,6 @@ ICM_DEF( CUDA_THREAD_SPACE, ICM_TRACE_NONE)
 ICM_END( CUDA_THREAD_SPACE, (pragma, bounds_count, var_ANY))
 #endif
 
-#if defined( CUDA_GRID_BLOCK) || defined(ICM_ALL)
-ICM_DEF( CUDA_GRID_BLOCK, ICM_TRACE_NONE)
-  ICM_UINT( bounds_count)
-  ICM_VARANY( (bounds_count), var_ANY)
-ICM_END( CUDA_GRID_BLOCK, (bounds_count, var_ANY))
-#endif
-
 #if defined(CUDA_WL_SUBALLOC) || defined(ICM_ALL)
 ICM_DEF( CUDA_WL_SUBALLOC, ICM_TRACE_NONE)
   ICM_NT( sub_NT)
