@@ -140,6 +140,7 @@ checkPermutationArg(node* args, const char* name) {
 
     MEMfree(perm_hits);
 
+    args = EXPRS_NEXT(args);
     DBUG_RETURN(args);
 }
 
