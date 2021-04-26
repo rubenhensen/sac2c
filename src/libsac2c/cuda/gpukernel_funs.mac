@@ -44,7 +44,7 @@
 
 WLP (ShiftLB,      0, checkNone )
 WLP (CompressGrid, 1, checkZONumsArg )
-WLP (Permute,      1, checkNumsArg )
+WLP (Permute,      1, checkPermutationArg )
 WLP (FoldLast2,    0, checkNone )
 WLP (SplitLast,    1, checkNumArg )
 WLP (PadLast,      1, checkNumArg )

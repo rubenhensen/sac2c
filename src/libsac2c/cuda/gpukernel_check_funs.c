@@ -62,15 +62,13 @@
  **  helper functions
  **/
 
-static
-node*
+static node*
 checkNone(node* args, const char* name) {
     DBUG_ENTER ();
     DBUG_RETURN (args);
 }
 
-static
-node*
+static node*
 checkNumArg(node* args, const char* name) {
     node* arg;
     DBUG_ENTER ();
@@ -85,8 +83,7 @@ checkNumArg(node* args, const char* name) {
     DBUG_RETURN (args);
 }
 
-static
-node*
+static node*
 checkNumsArg(node* args, const char* name) {
     node* arg, * exprs;
     DBUG_ENTER ();
@@ -111,8 +108,42 @@ checkNumsArg(node* args, const char* name) {
     DBUG_RETURN (args);
 }
 
-static
-node*
+static node*
+checkPermutationArg(node* args, const char* name) {
+    node* arg, *exprs;
+    DBUG_ENTER();
+
+    checkNumsArg(args, name);
+
+    size_t length = 0;
+    arg = EXPRS_EXPR(args);
+    exprs = ARRAY_AELEMS(arg);
+    while (exprs != NULL){
+        length ++;
+        exprs = EXPRS_NEXT(exprs);
+    }
+
+    bool* perm_hits = (bool*) MEMmalloc(sizeof(bool*)*length);
+    for (size_t i=0; i<length; i++)
+        perm_hits[i] = false;
+
+    exprs = ARRAY_AELEMS(arg);
+    while(exprs != NULL) {
+        arg = EXPRS_EXPR(exprs);
+        int point_dim = NUM_VAL(arg);
+        if (point_dim < 0 || point_dim >= (int) length || perm_hits[point_dim])
+            CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
+                                             " should be `%s ( [<permutation>], <inner>)'", name, name);
+        perm_hits[point_dim] = true;
+        exprs = EXPRS_NEXT(exprs);
+    }
+
+    MEMfree(perm_hits);
+
+    DBUG_RETURN(args);
+}
+
+static node*
 checkZONumsArg(node* args, const char* name) {
     node* arg, * exprs;
     DBUG_ENTER ();
