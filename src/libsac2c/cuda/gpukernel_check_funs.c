@@ -125,8 +125,7 @@ checkZONumsArg(node* args, const char* name) {
         exprs = ARRAY_AELEMS(arg);
         while (exprs != NULL) {
             arg = EXPRS_EXPR(exprs);
-            if ((NODE_TYPE (arg) != N_num)
-                || ((NUM_VAL(arg) != 0) && (NUM_VAL(arg) != 1))) {
+            if ((NODE_TYPE (arg) != N_num) || ((NUM_VAL(arg) != 0) && (NUM_VAL(arg) != 1))) {
                 CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
                                                  " should be `%s ( [0/1, ..., 0/1], <inner>)'", name, name);
             }

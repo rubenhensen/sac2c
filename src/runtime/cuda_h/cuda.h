@@ -544,13 +544,13 @@ extern "C" {
 #define SAC_GKCO_HOST_OPD_SHIFT_LB(lb, ub)                                                                  \
     ub = ub - lb;
 
-#define SAC_GKCO_HOST_OPD_COMPRESS_S(ub, st)                                                                \
-    ub = ub / st                                                                                            \
-            + (ub % step != 0);
+#define SAC_GKCO_HOST_OPD_COMPRESS_S(ub_r, ub_w, st)                                                        \
+    ub_w = ub_r / st                                                                                        \
+            + (ub_r % st != 0);
 
-#define SAC_GKCO_HOST_OPD_COMPRESS_SW(ub, st, wi, tmp)                                                      \
-    tmp = ub % st;                                                                                          \
-    ub = ub / st * wi                                                                                       \
+#define SAC_GKCO_HOST_OPD_COMPRESS_SW(ub_r, ub_w, st, wi, tmp)                                              \
+    tmp = ub_r % st;                                                                                        \
+    ub_w = ub_r / st * wi                                                                                   \
             + (tmp < wi ? tmp : wi);
 
 #define SAC_GKCO_HOST_OPM_SET_GRID(max_x, max_y, max_z, max_total, ...)                                     \
@@ -596,11 +596,22 @@ extern "C" {
  *
  *****************************************************************************/
 
-#define SAC_GKCO_GPUD_OPM_DECLARE_IV(iv_var, iv_length)                                                     \
+#define SAC_GKCO_GPUD_OPD_UNSHIFT_LB(lb, idx)                                                               \
+    idx = idx + lb;
+
+#define SAC_GKCO_GPUD_OPD_UNCOMPRESS_S(st, idx)                                                             \
+    idx = idx * st;
+
+#define SAC_GKCO_GPUD_OPD_UNCOMPRESS_SW(st, wi, idx)                                                        \
+    idx = idx / wi * st                                                                                     \
+            + idx % wi;
+
+#define SAC_GKCO_GPUD_OPM_DECLARE_IV(iv_var, iv_length) \
     int iv_var[iv_length];
 
 #define SAC_GKCO_GPUD_OPD_DEF_IV(iv_var, dimension, value_var)                                              \
     iv_var[dimension] = value_var;
+
 
 /*****************************************************************************
  *
