@@ -148,7 +148,7 @@ struct INFO {
     node *pragma;
 };
 
-#define INFO_CUDAKERNELS(n) (n->cudakernels)
+#define INFO_CUDAKERNELS(n) (n->cudakernels)   // collects the new kernel fundefs
 #define INFO_CUDAAPS(n) (n->cudaaps)
 #define INFO_LETIDS(n) (n->letids)
 #define INFO_FUNDEF(n) (n->fundef)
@@ -157,7 +157,7 @@ struct INFO {
 #define INFO_VARDECS(n) (n->vardecs)
 #define INFO_RETS(n) (n->rets)
 #define INFO_RETEXPRS(n) (n->retexprs)
-#define INFO_COLLECT(n) (n->collect)
+#define INFO_IN_CUDA_WL(n) (n->collect)        // are we inside a to-be-lifted WL?
 #define INFO_ALLOCASSIGNS(n) (n->allocassigns)
 #define INFO_FREEASSIGNS(n) (n->freeassigns)
 #define INFO_PRFWLIDS(n) (n->prfwlids)
@@ -198,7 +198,7 @@ MakeInfo (void)
     INFO_VARDECS (result) = NULL;
     INFO_RETS (result) = NULL;
     INFO_RETEXPRS (result) = NULL;
-    INFO_COLLECT (result) = FALSE;
+    INFO_IN_CUDA_WL (result) = FALSE;
     INFO_ALLOCASSIGNS (result) = NULL;
     INFO_FREEASSIGNS (result) = NULL;
     INFO_PRFWLIDS (result) = NULL;
@@ -576,7 +576,7 @@ CUKNLassign (node *arg_node, info *arg_info)
 
     /* If we are not in collect mode and the RHS has been
      * lifted as a chain of CUDA kernel applications */
-    if (!INFO_COLLECT (arg_info) && INFO_LIFTDONE (arg_info)) {
+    if (!INFO_IN_CUDA_WL (arg_info) && INFO_LIFTDONE (arg_info)) {
         /* Free the current N_assign and store the
          * next N_assign in 'next' */
         next = FREEdoFreeNode (arg_node);
@@ -639,11 +639,11 @@ CUKNLlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /* Save LHS */
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
-    LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
-    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
+    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     INFO_LETIDS (arg_info) = NULL;
+
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -662,30 +662,40 @@ CUKNLwith (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
+        /*
+         * push new arg_info stuff:
+         */
+        INFO_IN_CUDA_WL (arg_info) = TRUE; // signal cudarisation!
         old_pragma = INFO_PRAGMA (arg_info);
         INFO_PRAGMA (arg_info) = WITH_PRAGMA (arg_node);
-        /* Start collecting data flow information */
-        INFO_COLLECT (arg_info) = TRUE;
-        /* Save withop. This withop will be traverse in the
-         * traversal of each N_part. See CUKNLpart */
         INFO_WITHOP (arg_info) = WITH_WITHOP (arg_node);
         old_with = INFO_WITH (arg_info);
         INFO_WITH (arg_info) = arg_node;
+
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+
+        /*
+         * restore old arg_info stuff:
+         */
         INFO_WITH (arg_info) = old_with;
         INFO_PRAGMA (arg_info) = old_pragma;
         INFO_WITHOP (arg_info) = NULL;
-        INFO_COLLECT (arg_info) = FALSE;
-        /* Indicate to N_assign that a chain of CUDA kernel N_aps
-         * has been created and needs to be inserted into the AST */
+        INFO_IN_CUDA_WL (arg_info) = FALSE; // cudarisation done!
+
+        /*
+         * Indicate to N_assign that a chain of CUDA kernel N_aps
+         * has been created and needs to be inserted into the AST
+         */
         INFO_LIFTDONE (arg_info) = TRUE;
+
     } else if (INFO_IN_CUDA_PARTITION (arg_info)) {
+
         old_with = INFO_WITH (arg_info);
         INFO_WITH (arg_info) = arg_node;
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
-        WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         INFO_WITH (arg_info) = old_with;
-        // WITH_CODE( arg_node) = TRAVdo( WITH_CODE( arg_node), arg_info);
+        // WITH_CODE( arg_node) = TRAVopt( WITH_CODE( arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -708,10 +718,10 @@ CUKNLwith2 (node *arg_node, info *arg_info)
     old_with = INFO_WITH (arg_info);
     INFO_WITH (arg_info) = arg_node;
 
-    WITH2_WITHID (arg_node) = TRAVopt (WITH2_WITHID (arg_node), arg_info);
-    WITH2_SEGS (arg_node) = TRAVopt (WITH2_SEGS (arg_node), arg_info);
+    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+    WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
     WITH2_CODE (arg_node) = TRAVopt (WITH2_CODE (arg_node), arg_info);
-    WITH2_WITHOP (arg_node) = TRAVopt (WITH2_WITHOP (arg_node), arg_info);
+    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
     INFO_WITH (arg_info) = old_with;
 
@@ -734,7 +744,7 @@ CUKNLpart (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (INFO_COLLECT (arg_info)) {
+    if (INFO_IN_CUDA_WL (arg_info)) {
         INFO_PART (arg_info) = arg_node;
         /* For each cudarizable partition, we create a CUDA kernel */
         /*
@@ -837,7 +847,7 @@ CUKNLgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_COLLECT (arg_info)) {
+    if (INFO_IN_CUDA_WL (arg_info)) {
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
             /* Shape needs to be traversed as well. */
             GENARRAY_SHAPE (arg_node) = TRAVopt (GENARRAY_SHAPE (arg_node), arg_info);
@@ -868,7 +878,7 @@ CUKNLmodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_COLLECT (arg_info)) {
+    if (INFO_IN_CUDA_WL (arg_info)) {
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
             MODARRAY_MEM (arg_node) = TRAVopt (MODARRAY_MEM (arg_node), arg_info);
             MODARRAY_IDX (arg_node)
@@ -895,7 +905,7 @@ CUKNLfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_COLLECT (arg_info)) {
+    if (INFO_IN_CUDA_WL (arg_info)) {
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
             /* Shape needs to be traversed as well. */
             FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
@@ -936,7 +946,7 @@ CUKNLwithid (node *arg_node, info *arg_info)
     wlvec = WITHID_VEC (arg_node);
     withop = INFO_WITHOP (arg_info);
 
-    if (INFO_COLLECT (arg_info)) {
+    if (INFO_IN_CUDA_WL (arg_info)) {
 
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
             WITHID_IDS (arg_node) = TRAVopt (WITHID_IDS (arg_node), arg_info);
@@ -1040,7 +1050,7 @@ CUKNLcode (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* We only traverse N_code if we are in collect mode */
-    // if( INFO_COLLECT( arg_info)) {
+    // if( INFO_IN_CUDA_WL( arg_info)) {
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
     //}
 
@@ -1071,7 +1081,7 @@ CUKNLgenerator (node *arg_node, info *arg_info)
     node *step, *width;
     node *gridblock_exprs = NULL;
 
-    if (INFO_COLLECT (arg_info)) {
+    if (INFO_IN_CUDA_WL (arg_info)) {
         lower_bound = GENERATOR_BOUND1 (arg_node);
         upper_bound = GENERATOR_BOUND2 (arg_node);
 
@@ -1132,7 +1142,7 @@ CUKNLid (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("ENTER id %s", ID_NAME (arg_node));
 
-    if (INFO_COLLECT (arg_info)) {
+    if (INFO_IN_CUDA_WL (arg_info)) {
         if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis
             && !CUisShmemTypeNew (AVIS_TYPE (avis))) {
             new_avis = DUPdoDupNode (avis);
@@ -1196,7 +1206,7 @@ CUKNLids (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("ENTER ids %s", IDS_NAME (arg_node));
 
-    if (INFO_COLLECT (arg_info)
+    if (INFO_IN_CUDA_WL (arg_info)
         && (PART_CUDARIZABLE (INFO_PART (arg_info))
             || INFO_IN_CUDA_PARTITION (arg_info))) {
         /* Not come across before */
@@ -1239,7 +1249,7 @@ CUKNLprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (INFO_COLLECT (arg_info)) {
+    if (INFO_IN_CUDA_WL (arg_info)) {
         switch (PRF_PRF (arg_node)) {
         case F_wl_assign:
             if (PART_CUDARIZABLE (INFO_PART (arg_info))
