@@ -42,6 +42,7 @@
  *   fun  num_args
  */
 
+WLP (GridBlock,    1, checkNumArg )
 WLP (ShiftLB,      0, checkNone )
 WLP (CompressGrid, 1, checkZONumsArg )
 WLP (Permute,      1, checkPermutationArg )

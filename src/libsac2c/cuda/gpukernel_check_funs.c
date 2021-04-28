@@ -234,12 +234,6 @@ GKCHcheckGpuKernelPragma(node* spap, struct location loc) {
     if (!STReq(SPAP_NAME (spap), "GridBlock")) {
         CTIerrorLoc(NODE_LOCATION (spap), "expected `GridBlock' found `%s'",
                     SPAP_NAME (spap));
-    } else {
-        /*
-         * check validity of GridBlock arguments; return pointer to nested
-         * N_spap / N_spid or NULL in case of an error.
-         */
-        spap = GKCHcheckGridBlock(SPAP_ARGS(spap), loc);
     }
 
     while (spap != NULL) {
@@ -286,56 +280,6 @@ GKCHcheckGpuKernelPragma(node* spap, struct location loc) {
     DBUG_RETURN ();
 }
 
-
-/** <!--********************************************************************-->
- *
- * @fn  node *GKCHcheckGridBlock (node *args, struct location loc)
- *
- * @param args - N_exprs node containing the first argument
- * @param loc - location of the parser *after* the funcall has been parsed
- *
- * @brief checks for args GridBlock ( <num>, <inner>) where
- *          <num> needs to be an N_num node and
- *          <inner> needs to be either N_spap or N_spid
- *
- *        returns <inner> (N_spap/N_spid) if check succeeds, NULL otherwise.
- *
- ******************************************************************************/
-
-node*
-GKCHcheckGridBlock(node* args, struct location loc) {
-    DBUG_ENTER ();
-
-    if (args == NULL) {
-        CTIerrorLoc(loc, "missing argument in `GridBlock ()'");
-    } else {
-        if (NODE_TYPE (EXPRS_EXPR(args)) != N_num) {
-            CTIerrorLoc(NODE_LOCATION (EXPRS_EXPR(args)),
-                        "wrong first argument; should be `GridBlock ( <num>, <inner>)'");
-        }
-        args = EXPRS_NEXT(args);
-        if (args == NULL) {
-            CTIerrorLoc(loc, "missing inner gpukernel; should be"
-                             " `GridBlock ( <num>, <inner>)'");
-        } else {
-            if (EXPRS_NEXT(args) != NULL) {
-                CTIerrorLoc(NODE_LOCATION (EXPRS_EXPR(EXPRS_NEXT(args))),
-                            "superfluous argument; should be"
-                            " `GridBlock ( <num>, <inner>)'");
-            }
-            args = EXPRS_EXPR(args);
-            if ((NODE_TYPE (args) != N_spap)
-                && (NODE_TYPE (args) != N_spid)) {
-                CTIerrorLoc(NODE_LOCATION (args), "wrong second argument; should be"
-                                                  " `GridBlock ( <num>, <inner>)'");
-                args = NULL;
-            }
-        }
-    }
-
-    DBUG_RETURN (args);
-}
-
 /******************************************************************************
  ******************************************************************************
  **
@@ -358,6 +302,7 @@ GKCHcheckGridBlock(node* args, struct location loc) {
  **  them from our spec in gpukernel_funs.mac.
  **/
 
+// TODO: check inner Pragma as well?
 #define WLP(fun, nargs, checkfun)   \
 node *                              \
 GKCHcheck ## fun (node *args)       \

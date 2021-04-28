@@ -5,6 +5,7 @@ typedef struct STRVEC strvec;
 
 strvec* STRVECempty(size_t preallocate);
 strvec* STRVECmake(size_t length, ...);
+strvec* STRVECconst(size_t length, char* str);
 strvec* STRVECfromArray(char** array, size_t length);
 strvec* STRVECgen(size_t length, char* (* generator)(void));
 strvec* STRVECfree(strvec* vec);
@@ -13,7 +14,7 @@ void STRVECresize(strvec* vec, size_t length, char* (* generator)(void));
 void STRVECresizeFree(strvec* vec, size_t length, char* (* generator)(void));
 bool STRVECisEmpty(strvec* vec);
 size_t STRVEClen(strvec* vec);
-void STRVECprint(strvec* vec, FILE* stream, size_t linesize);
+void STRVECprint(strvec* vec, FILE* stream, size_t linesize, size_t init_linesize);
 strvec* STRVECcopy(strvec* source);
 strvec* STRVECcopyDeep(strvec* source);
 strvec* STRVECappend(strvec* vec, char* str);

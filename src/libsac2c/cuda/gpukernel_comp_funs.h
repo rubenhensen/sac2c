@@ -3,18 +3,20 @@
 
 #include "types.h"
 
-extern void GKCOcompHostKernelPragma (node *spap,
-                                                  unsigned int bnum, char **bounds);
-extern gpukernelres_t * GKCOcompGridBlock (node *num, gpukernelres_t *inner);
-extern gpukernelres_t * GKCOcompGen ( unsigned bnum, char **bounds, pass_t pass);
+extern void GKCOcompHostKernelPragma (node *spap, unsigned int bnum, char **bounds);
+extern void GKCOcompGPUDkernelPragma (node *spap, unsigned int bnum, char **bounds);
+gpukernelres_t* GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner);
+extern gpukernelres_t * GKCOcompInvGen ( char* iv_var, gpukernelres_t* res);
 
+char* GKCOvarCreate(gpukernelres_t*gkr, char* postfix);
 
 #define ARGS( nargs) ARG##nargs
-#define ARG0 
+#define ARG0
 #define ARG1 node *arg,
 
-#define WLP(fun, nargs, checkfun)                                                  \
-    extern gpukernelres_t *GKCOcomp ## fun ( ARGS( nargs) gpukernelres_t *inner);
+#define WLP(fun, nargs, checkfun)                                                                           \
+    extern gpukernelres_t *GKCOcomp ## fun ( ARGS( nargs) gpukernelres_t *inner);                           \
+    extern gpukernelres_t *GKCOcompInv ## fun ( ARGS( nargs) gpukernelres_t *inner);
 #include "gpukernel_funs.mac"
 #undef WLP
 #undef ARGS

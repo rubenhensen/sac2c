@@ -269,6 +269,9 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
  *
  *
  ******************************************************************************/
+node* DEBUG_PRAGMA_NODE_SPAP = NULL;
+unsigned int DEBUG_BOUNDS_COUNT = 0;
+char** DEBUG_BOUNDS_ARRAY = NULL;
 void ICMCompileCUDA_THREAD_SPACE (node *spap, unsigned int bounds_count, char **var_ANY)
 {
     DBUG_ENTER ();
@@ -276,6 +279,10 @@ void ICMCompileCUDA_THREAD_SPACE (node *spap, unsigned int bounds_count, char **
     DBUG_ASSERT ((NODE_TYPE (spap) == N_spap),
                  "N_spap expected in ICMCompileCUDA_THREAD_SPACE");
     GKCOcompHostKernelPragma(spap, bounds_count, var_ANY);
+
+    DEBUG_PRAGMA_NODE_SPAP = spap;
+    DEBUG_BOUNDS_COUNT = bounds_count;
+    DEBUG_BOUNDS_ARRAY = var_ANY;
 
     DBUG_RETURN ();
 }
@@ -379,8 +386,6 @@ void
 ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids_dim_pos,
                       char *iv_NT, char *hasstepwidth)
 {
-    bool has_postfix;
-
     DBUG_ENTER ();
 
 #define CUDA_WLIDS
@@ -388,118 +393,10 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
 #include "icm_trace.c"
 #undef CUDA_WLIDS
 
-    /*
-      if( array_dim <= 2) {
-        INDENT;
-        if( STReq( hasstepwidth, "true")) {
-          fprintf( global.outfile,
-                   "SAC_CUDA_WLIDS_%dD_SW_%d( %s, %d, SACp_step_%d, SACp_width_%d,
-      SACp_lb_%d, SACp_ub_%d)\n", array_dim, wlids_dim_pos, wlids_NT, wlids_NT_dim,
-                   wlids_dim_pos, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos);
-        }
-        else {
-          fprintf( global.outfile,
-                   "SAC_CUDA_WLIDS_%dD_%d( %s, %d, SACp_lb_%d, SACp_ub_%d)\n",
-                   array_dim, wlids_dim_pos, wlids_NT, wlids_NT_dim, wlids_dim_pos,
-      wlids_dim_pos);
-        }
-      }
-      else {
-        INDENT;
-        if( STReq( hasstepwidth, "true")) {
-          fprintf( global.outfile,
-                   "SAC_CUDA_WLIDS_ND_SW_%d( %s, %d, SACp_step_%d, SACp_width_%d,
-      SACp_lb_%d, SACp_ub_%d)\n", wlids_dim_pos, wlids_NT, wlids_NT_dim, wlids_dim_pos,
-      wlids_dim_pos, wlids_dim_pos, wlids_dim_pos);
-        }
-        else {
-          fprintf( global.outfile,
-                   "SAC_CUDA_WLIDS_ND_%d( %s, %d, SACp_lb_%d, SACp_ub_%d)\n",
-                   wlids_dim_pos, wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos);
-        }
-      }
-    */
-
-    has_postfix = STReq (hasstepwidth, "true");
-
-    if (array_dim == 1) {
-        INDENT;
-        fprintf (global.outfile, "SAC_CUDA_WLIDS");
-        if (has_postfix) {
-            fprintf (global.outfile, "_SW");
-        }
-        fprintf (global.outfile,
-                 "( %s, %d, BLOCKIDX_X, BLOCKDIM_X, THREADIDX_X, SACp_step_%d, "
-                 "SACp_width_%d, SACp_lb_%d, SACp_ub_%d)\n",
-                 wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos,
-                 wlids_dim_pos);
-    } else if (array_dim == 2) {
-        INDENT;
-        fprintf (global.outfile, "SAC_CUDA_WLIDS");
-        if (has_postfix) {
-            fprintf (global.outfile, "_SW");
-        }
-        if (wlids_dim_pos == 0) {
-            fprintf (global.outfile,
-                     "( %s, %d, BLOCKIDX_Y, BLOCKDIM_Y, THREADIDX_Y, SACp_step_%d, "
-                     "SACp_width_%d, SACp_lb_%d, SACp_ub_%d)\n",
-                     wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos,
-                     wlids_dim_pos);
-        } else if (wlids_dim_pos == 1) {
-            fprintf (global.outfile,
-                     "( %s, %d, BLOCKIDX_X, BLOCKDIM_X, THREADIDX_X, SACp_step_%d, "
-                     "SACp_width_%d, SACp_lb_%d, SACp_ub_%d)\n",
-                     wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos,
-                     wlids_dim_pos);
-        } else {
-            DBUG_UNREACHABLE ("Invalid index found!");
-        }
-    } else if (array_dim >= 3) {
-        INDENT;
-        fprintf (global.outfile, "SAC_CUDA_WLIDS_HD");
-        if (has_postfix) {
-            fprintf (global.outfile, "_SW");
-        }
-        if (wlids_dim_pos == 0) {
-            fprintf (global.outfile,
-                     "( %s, %d, BLOCKIDX_Y, SACp_step_%d, SACp_width_%d, SACp_lb_%d, "
-                     "SACp_ub_%d)\n",
-                     wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos,
-                     wlids_dim_pos);
-        } else if (wlids_dim_pos == 1) {
-            fprintf (global.outfile,
-                     "( %s, %d, BLOCKIDX_X, SACp_step_%d, SACp_width_%d, SACp_lb_%d, "
-                     "SACp_ub_%d)\n",
-                     wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos,
-                     wlids_dim_pos);
-        } else if ((array_dim - wlids_dim_pos) == 1) {
-            fprintf (global.outfile,
-                     "( %s, %d, THREADIDX_X, SACp_step_%d, SACp_width_%d, SACp_lb_%d, "
-                     "SACp_ub_%d)\n",
-                     wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos,
-                     wlids_dim_pos);
-        } else if ((array_dim - wlids_dim_pos) == 2) {
-            fprintf (global.outfile,
-                     "( %s, %d, THREADIDX_Y, SACp_step_%d, SACp_width_%d, SACp_lb_%d, "
-                     "SACp_ub_%d)\n",
-                     wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos,
-                     wlids_dim_pos);
-        } else if ((array_dim - wlids_dim_pos) == 3) {
-            fprintf (global.outfile,
-                     "( %s, %d, THREADIDX_Z, SACp_step_%d, SACp_width_%d, SACp_lb_%d, "
-                     "SACp_ub_%d)\n",
-                     wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos,
-                     wlids_dim_pos);
-        } else {
-            DBUG_UNREACHABLE (
-              "Invalid combination of array dimension and dimension index!");
-        }
-    } else {
-        DBUG_UNREACHABLE ("Invalid array dimension found!");
+    // For debugging purposes: only execute once (for the 0th dimension)
+    if (wlids_dim_pos == 0) {
+        GKCOcompGPUDkernelPragma(DEBUG_PRAGMA_NODE_SPAP, DEBUG_BOUNDS_COUNT, DEBUG_BOUNDS_ARRAY);
     }
-
-    fprintf (global.outfile, "SAC_ND_WRITE( %s, %d) = SAC_ND_READ( %s, 0);\n", iv_NT,
-             wlids_dim_pos, wlids_NT);
 
     DBUG_RETURN ();
 }
@@ -523,6 +420,8 @@ ICMCompileCUDA_WLIDXS (char *wlidxs_NT, int wlidxs_NT_dim, char *array_NT, int a
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef CUDA_WLIDXS
+
+    fprintf(global.outfile, "WLIDXS         WLIDXS\n\n");
 
     if (array_dim == 1) {
         INDENT;

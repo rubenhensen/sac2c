@@ -23,6 +23,8 @@
 #include "str.h"
 #include "math_utils.h"
 
+const size_t MIN_ALLOC = 4;
+
 struct STRVEC {
     // The currently in use length of the vector
     size_t length;
@@ -47,6 +49,9 @@ struct STRVEC {
 strvec*
 MakeStrvec(size_t alloc, size_t length) {
     DBUG_ENTER();
+
+    if (alloc < MIN_ALLOC)
+        alloc = MIN_ALLOC;
 
     strvec* vec = (strvec*) MEMmalloc(sizeof(strvec*));
     STRVEC_LENGTH(vec) = length;
@@ -120,6 +125,25 @@ STRVECmake(size_t length, ...) {
 }
 
 /**
+ * Create a vector with shallow copies of the same string.
+ *
+ * @param length The length of the vector
+ * @param str The string that should be shallow-copied all over the new vector
+ * @return The newly constructed vector
+ */
+strvec*
+STRVECconst(size_t length, char* const_str) {
+    DBUG_ENTER();
+
+    strvec* vec = MakeStrvec(length, length);
+    for (size_t i = 0; i < length; i++)
+        STRVEC_DATA(vec)[i] = const_str;
+
+    DBUG_RETURN(vec);
+}
+
+
+/**
  * Create a vector from an already existing array. The strings are consumed, and shallow copied into the vector.
  * The array is _not_ consumed.
  *
@@ -139,7 +163,7 @@ STRVECfromArray(char** array, size_t length) {
     DBUG_RETURN(vec);
 }
 
-/**
+/*
  * Make a new string vector filled by calls to the generator function.
  * If the generator is NULL, empty strings are used instead
  *
@@ -270,7 +294,7 @@ STRVECresizeFree(strvec* vec, size_t length, char* (* generator)(void)) {
  * @return true iff the vector is empty, false otherwise
  */
 bool
-STRVECisEmpty(strvec* vec){
+STRVECisEmpty(strvec* vec) {
     DBUG_ENTER();
 
     bool result = STRVEC_LENGTH(vec) == 0;
@@ -303,23 +327,23 @@ STRVEClen(strvec* vec) {
  * @param linesize The maximum line size
  */
 void
-STRVECprint(strvec* vec, FILE* stream, size_t linesize) {
+STRVECprint(strvec* vec, FILE* stream, size_t linesize, size_t init_linesize) {
     DBUG_ENTER();
 
-    fprintf(stream, "String vector (length: %zu, allocated: %zu) [", STRVEC_LENGTH(vec), STRVEC_ALLOC(vec));
+    fprintf(stream, "char*[%zu (%zu)] {", STRVEC_LENGTH(vec), STRVEC_ALLOC(vec));
 
     // Set the currentlinesize to linesize to force printing of a newline just after the opening line.
     // If we print the newline in the fprintf above, we would get a double newline when the first string is longer
     // then linesize.
-    size_t      currentlinesize = linesize;
+    size_t      currentlinesize = init_linesize + 14;
     for (size_t i               = 0; i < STRVEC_LENGTH(vec); i++) {
         char* str = STRVEC_DATA(vec)[i];
 
-        // Compute length to check the linesize. Add 2 for the ", ".
+        // Compute length to check the linesize. Add 8 for the ", ".
         size_t length = STRlen(str) + 2;
 
         if (currentlinesize + length > linesize) {
-            fprintf(stream, "\n  ");
+            fprintf(stream, "\n        ");
             currentlinesize = 2; // Two indentation spaces
         }
 
@@ -328,7 +352,7 @@ STRVECprint(strvec* vec, FILE* stream, size_t linesize) {
 
     }
 
-    fprintf(stream, "\n]\n");
+    fprintf(stream, "};\n");
 
     DBUG_RETURN();
 }
@@ -455,7 +479,7 @@ char*
 STRVECpop(strvec* vec) {
     DBUG_ENTER();
 
-    DBUG_ASSERT(STRVEC_LENGTH(vec)!=0, "Tried to pop from an empty vector!");
+    DBUG_ASSERT(STRVEC_LENGTH(vec) != 0, "Tried to pop from an empty vector!");
     char* str = STRVEC_DATA(vec)[STRVEC_LENGTH(vec) - 1];
     STRVEC_LENGTH(vec)--;
 

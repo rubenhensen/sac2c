@@ -545,8 +545,11 @@ extern "C" {
 #define SAC_GKCO_OPD_REDEFINE(from, to)                                                                     \
     to = from;
 
-#define SAC_GKCO_HOST_OPD_SHIFT_LB(lb, ub)                                                                  \
-    ub = ub - lb;
+#define SAC_GKCO_HOST_OPD_PAD(ub_r, ub_w, divisibility)                                                     \
+    ub_w = ub_r + (divisibility - ub_r % divisibility) % divisibility
+
+#define SAC_GKCO_HOST_OPD_SHIFT_LB(lb, ub_r, ub_w)                                                          \
+    ub_w = ub_r - lb;
 
 #define SAC_GKCO_HOST_OPD_COMPRESS_S(ub_r, ub_w, st)                                                        \
     ub_w = ub_r / st                                                                                        \
@@ -599,6 +602,14 @@ extern "C" {
  * =================
  *
  *****************************************************************************/
+
+#define SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(st, wi, idx)                                                          \
+    if (!(idx % st < wi))                                                                                   \
+        return;
+
+#define SAC_GKCO_GPUD_OPD_UNPAD(ub, idx)                                                                    \
+    if (idx >= ub)                                                                                          \
+        return;
 
 #define SAC_GKCO_GPUD_OPD_UNSHIFT_LB(lb, idx)                                                               \
     idx = idx + lb;

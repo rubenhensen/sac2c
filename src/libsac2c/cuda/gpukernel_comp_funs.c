@@ -146,7 +146,7 @@
 		SAC_GKCO_HOST_OPD_COMPRESS_SW (SAC_gkco_prt_5653_ub, SAC_gkco_prt_5662_ub, SAC_gkco_prt_5654_st, SAC_gkco_prt_5655_wi, SAC_gkco_prt_5651_tmp)
 		SAC_GKCO_HOST_OPD_COMPRESS_SW (SAC_gkco_prt_5661_ub, SAC_gkco_prt_5663_ub, SAC_gkco_prt_5662_st, SAC_gkco_prt_5663_wi, SAC_gkco_prt_5651_tmp)
 
-	    // Pass 2: PASS_KERNEL_WLIDS
+	    // Pass 3: PASS_KERNEL_WLIDS
 
 	    // GridBlock, it's parameter determines how many dimensions are represented in the grid,
 	    // and how many in the blocks
@@ -194,13 +194,305 @@
 #include "str_vec.h"
 #include "print.h"
 
-#define CONST_ZERO "0"
-#define CONST_ONE "1"
+char* CONST_ZERO        = "0";
+char* CONST_ONE         = "1";
+char* CONST_VAR_PREFIX  = "SAC_gkco";
+char* CONST_UB_POSTFIX  = "ub";
+char* CONST_IDX_POSTFIX = "idx";
+char* CONST_TMP_POSTFIX = "tmp";
 
-#define CONST_VAR_PREFIX "SAC_gkco"
-#define CONST_UB_POSTFIX "ub"
-#define CONST_IDX_POSTFIX "idx"
-#define CONST_TMP_POSTFIX "tmp"
+/**
+ * Shorthand for a GKCOcomp-function end. Wraps up stuff nicely and automatically.
+ */
+#define COMP_FUN_DBUG_RETURN(gkr)                                                                                   \
+    fprintf(global.outfile, "\n");                                                                          \
+    DBUG_EXECUTE(PrintGPUkernelres(gkr, stderr));                                                           \
+    DBUG_EXECUTE(fprintf(stderr, "\n"));                                                                    \
+    DBUG_RETURN(gkr);
+
+/**
+ * Flag locations inside the PASS identifier variables.
+ */
+// Pass should preserve replaced variable identifiers and values, using the correct stack in the gpukernelres_t
+#define PASS_VAL_PRESERVE 1
+// Pass should consume replaced variable identifiers and values, using the correct stack in the gpukernelres_t
+#define PASS_VAL_CONSUME  2
+// Pass is handling and generating code for idx variables
+#define PASS_IDX_COMPUTE  4
+// Pass should emit code for grid/block dim3 variables
+#define PASS_GB_EMIT      8
+// Pass should generate pragma errors (to prevent duplicate errors)
+#define PASS_CHECK_PRAGMA 16
+
+/**
+ * Enum to specify a pass over the Pragma functions. These enum value toggle certain functionalities in
+ * the compile functions. It is not actually an enum, as ISO C forbids forward declarations of enums.
+ */
+// (bottom up) Create a thread space to spawn the kernels
+#define PASS_HOST               (PASS_CHECK_PRAGMA | PASS_GB_EMIT)
+// (bottom up) Recreate the intermediate thread space computation values
+#define PASS_KERNEL_THREADSPACE PASS_VAL_PRESERVE
+// (top down)  Generate the iv from the kernel coordinates and the pass above
+#define PASS_KERNEL_WLIDS       (PASS_VAL_CONSUME | PASS_IDX_COMPUTE)
+
+
+/**
+ * GPU kernel representation struct. It contains:
+ *   - A dimensionality of type size_t
+ *   - Four string vectors, containing the variable names of the index space (lowerbound, upperbound, step and width)
+ *     for each dimension
+ *
+ * IMPORTANT NOTE: In these compiling functions, the only values that we need to edit are the upperbounds and idx
+ * variables. For this this reason, we copy all upperbounds and idx's into new variables _owned by the GPU
+ * kernel res_. The other variables are all represented using strings _owned by others_.
+ */
+struct GPUKERNELRES {
+    // Current pass, contains flags for turning specific parts of the code on and off
+    pass_t currentpass;
+    // The dimensionality
+    size_t dim;
+
+    // Variable identifier storage (not idx is only initiated and used when PASS_IDX_COMPUTE flag is set)
+    strvec* lowerbound;
+    strvec* upperbound;
+    strvec* step;
+    strvec* width;
+    strvec* idx;
+
+    // Variable identifier stack, used for recovering variable identifiers when older versions of them
+    // are needed.
+    // This stack is pushed to in RemoveDimension or when GKR_XX_PUSH is called, only when PASS_VAR_PRESERVE is set
+    // This stack is popped from in AddDimension or when GKR_XX_POP is called, only when PASS_VAR_CONSUME is set
+    strvec* lowerbound_at;
+    strvec* upperbound_at;
+    strvec* step_at;
+    strvec* width_at;
+
+    // Single helper variable that was assigned. It can be used by all ICM's, as they are called one by one.
+    char* helper_a;
+
+    // Vector with all owned variables, so they can be freed when the gkr is cleaned up
+    strvec* owned_vars;
+};
+
+// Flag macro's
+#define GKR_PASS(gkr) gkr->currentpass
+#define GKR_CHANGE_PASS(gkr, pass) GKR_PASS(gkr) = pass
+#define GKR_VAL_PRESERVE(gkr) (GKR_PASS(gkr) & PASS_VAL_PRESERVE)
+#define GKR_VAL_CONSUME(gkr) (GKR_PASS(gkr) & PASS_VAL_CONSUME)
+#define GKR_IDX_COMPUTE(gkr) (GKR_PASS(gkr) & PASS_IDX_COMPUTE)
+#define GKR_GB_EMIT(gkr) (GKR_PASS(gkr) & PASS_GB_EMIT)
+#define GKR_CHECK_PRAGMA(gkr) (GKR_PASS(gkr) & PASS_CHECK_PRAGMA)
+
+// DIM getter/setter
+#define GKR_DIM(gkr) gkr->dim
+
+// Variable identifier getters/setters
+#define GKR_LB(gkr) gkr->lowerbound
+#define GKR_UB(gkr) gkr->upperbound
+#define GKR_ST(gkr) gkr->step
+#define GKR_WI(gkr) gkr->width
+#define GKR_IDX(gkr) gkr->idx
+
+// Variable identifier for specific dimension getters
+#define GKR_LB_D_READ(gkr, dim) STRVECsel(GKR_LB(gkr), dim)
+#define GKR_UB_D_READ(gkr, dim) STRVECsel(GKR_UB(gkr), dim)
+#define GKR_ST_D_READ(gkr, dim) STRVECsel(GKR_ST(gkr), dim)
+#define GKR_WI_D_READ(gkr, dim) STRVECsel(GKR_WI(gkr), dim)
+#define GKR_IDX_D_READ(gkr, dim) STRVECsel(GKR_IDX(gkr), dim)
+
+// Variable identifier for specific dimension setters
+#define GKR_LB_D_REPLACE(gkr, dim, val) STRVECswap(GKR_LB(gkr), dim, val)
+#define GKR_UB_D_REPLACE(gkr, dim, val) STRVECswap(GKR_UB(gkr), dim, val)
+#define GKR_ST_D_REPLACE(gkr, dim, val) STRVECswap(GKR_ST(gkr), dim, val)
+#define GKR_WI_D_REPLACE(gkr, dim, val) STRVECswap(GKR_WI(gkr), dim, val)
+
+// Variable identifier stack getters
+#define GKR_LB_AT(gkr) gkr->lowerbound_at
+#define GKR_UB_AT(gkr) gkr->upperbound_at
+#define GKR_ST_AT(gkr) gkr->step_at
+#define GKR_WI_AT(gkr) gkr->width_at
+
+// Create new upperbound variable, and return it
+#define GKR_UB_NEW(gkr, dim) NewUpperboundVariable(gkr, dim)
+
+char* NewUpperboundVariable(gpukernelres_t* gkr, size_t dim) {
+    DBUG_ENTER();
+    char* var;
+
+    if (GKR_VAL_PRESERVE(gkr)) {
+        var = GKCOvarCreate(gkr, CONST_UB_POSTFIX);
+        GKR_UB_D_REPLACE(gkr, dim, var);
+    } else
+        var = GKR_UB_D_READ(gkr, dim);
+
+    DBUG_RETURN(var);
+}
+
+// Variable identifier stack push functions
+#define GKR_LB_PUSH(gkr, dim)                                                                               \
+    if (GKR_VAL_PRESERVE(gkr))                                                                              \
+        STRVECappend(GKR_LB_AT(gkr), GKR_LB_D_READ(gkr, dim));
+#define GKR_UB_PUSH(gkr, dim)                                                                               \
+    if (GKR_VAL_PRESERVE(gkr))                                                                              \
+        STRVECappend(GKR_UB_AT(gkr), GKR_UB_D_READ(gkr, dim));
+#define GKR_ST_PUSH(gkr, dim)                                                                               \
+    if (GKR_VAL_PRESERVE(gkr))                                                                              \
+        STRVECappend(GKR_ST_AT(gkr), GKR_ST_D_READ(gkr, dim));
+#define GKR_WI_PUSH(gkr, dim)                                                                               \
+    if (GKR_VAL_PRESERVE(gkr))                                                                              \
+        STRVECappend(GKR_WI_AT(gkr), GKR_WI_D_READ(gkr, dim));
+
+// Variable identifier stack pop functions
+#define GKR_LB_POP(gkr, dim)                                                                                \
+    if (GKR_VAL_CONSUME(gkr))                                                                               \
+        STRVECswap(GKR_LB(gkr), dim, STRVECpop(GKR_LB_AT(gkr)));
+#define GKR_UB_POP(gkr, dim)                                                                                \
+    if (GKR_VAL_CONSUME(gkr))                                                                               \
+        STRVECswap(GKR_UB(gkr), dim, STRVECpop(GKR_UB_AT(gkr)));
+#define GKR_ST_POP(gkr, dim)                                                                                \
+    if (GKR_VAL_CONSUME(gkr))                                                                               \
+        STRVECswap(GKR_ST(gkr), dim, STRVECpop(GKR_ST_AT(gkr)));
+#define GKR_WI_POP(gkr, dim)                                                                                \
+    if (GKR_VAL_CONSUME(gkr))                                                                               \
+        STRVECswap(GKR_WI(gkr), dim, STRVECpop(GKR_WI_AT(gkr)));
+
+// Helper variable getter
+#define GKR_HELPER_A(gkr) gkr->helper_a
+
+#define GKR_OWNED_VARS(gkr) gkr->owned_vars
+
+#define LOOP_DIMENSIONS(gkr, dim) size_t dim = 0; (dim) < GKR_DIM(gkr); (dim)++
+#define LOOP_DIMENSIONS_INV(gkr, dim) size_t dim = GKR_DIM(gkr) - 1; (dim) != (size_t) -1; (dim)--
+
+/**
+ * Make a new gpu kernel representation struct. The vectors containing the variable names will be empty at this point.
+ * This is because the variables have to be inserted manually at GKCOcompGen.
+ *
+ * @param dim The dimensionality of the gpu kernel representation
+ * @return The newly created gpu kernel representation
+ */
+static gpukernelres_t*
+MakeGPUkernelres(pass_t pass) {
+    DBUG_ENTER();
+
+    gpukernelres_t* gkr = (gpukernelres_t*) MEMmalloc(sizeof(gpukernelres_t));
+
+    GKR_OWNED_VARS(gkr) = STRVECempty(0);
+
+    GKR_PASS(gkr) = pass;
+    GKR_DIM(gkr)  = 0;
+    GKR_LB(gkr)   = STRVECempty(0);
+    GKR_UB(gkr)   = STRVECempty(0);
+    GKR_ST(gkr)   = STRVECempty(0);
+    GKR_WI(gkr)   = STRVECempty(0);
+    GKR_IDX(gkr)  = STRVECempty(0);
+
+    GKR_LB_AT(gkr) = STRVECempty(0);
+    GKR_UB_AT(gkr) = STRVECempty(0);
+    GKR_ST_AT(gkr) = STRVECempty(0);
+    GKR_WI_AT(gkr) = STRVECempty(0);
+
+    GKR_HELPER_A(gkr) = GKCOvarCreate(gkr, CONST_TMP_POSTFIX);
+
+    DBUG_RETURN(gkr);
+}
+
+/**
+ * Free a GPU kernel res. Per convention, the gkr only owns all strings in the upperbound vector and the idx
+ * vector. These vectors will be deep freed, while the others will be shallow freed.
+ *
+ * @param gkr The struct to be freed
+ * @return the null pointer
+ */
+static gpukernelres_t*
+FreeGPUkernelres(gpukernelres_t* gkr) {
+    DBUG_ENTER();
+
+    STRVECfree(GKR_LB(gkr));
+    STRVECfree(GKR_UB(gkr));
+    STRVECfree(GKR_ST(gkr));
+    STRVECfree(GKR_WI(gkr));
+    STRVECfree(GKR_IDX(gkr));
+
+    STRVECfree(GKR_LB_AT(gkr));
+    STRVECfree(GKR_UB_AT(gkr));
+    STRVECfree(GKR_ST_AT(gkr));
+    STRVECfree(GKR_WI_AT(gkr));
+
+    STRVECfreeDeep(GKR_OWNED_VARS(gkr));
+
+    MEMfree(gkr);
+
+    DBUG_RETURN(NULL);
+}
+
+/**
+ * Add a dimension to the GPU kernel representation.
+ *
+ * Because it is a new dimension, lb will be set to 0, and step and width will be set to 1. The value for ub will be
+ * initiated as a new variable with postfix "_ub", but not set.
+ *
+ * @param gkr The GPU kernel representation
+ */
+static void
+AddDimension(gpukernelres_t* gkr) {
+    DBUG_ENTER();
+
+    GKR_DIM(gkr)++;
+
+    if (!GKR_VAL_CONSUME(gkr)) {
+        STRVECappend(GKR_LB(gkr), CONST_ZERO);
+        STRVECappend(GKR_UB(gkr), GKCOvarCreate(gkr, CONST_UB_POSTFIX));
+        STRVECappend(GKR_ST(gkr), CONST_ONE);
+        STRVECappend(GKR_WI(gkr), CONST_ONE);
+    } else {
+        size_t new_dim = GKR_DIM(gkr) - 1;
+        STRVECappend(GKR_LB(gkr), NULL);
+        STRVECappend(GKR_UB(gkr), NULL);
+        STRVECappend(GKR_ST(gkr), NULL);
+        STRVECappend(GKR_WI(gkr), NULL);
+        GKR_LB_POP(gkr, new_dim);
+        GKR_UB_POP(gkr, new_dim);
+        GKR_ST_POP(gkr, new_dim);
+        GKR_WI_POP(gkr, new_dim);
+    }
+
+    if (GKR_IDX_COMPUTE(gkr))
+        STRVECappend(GKR_IDX(gkr), GKCOvarCreate(gkr, CONST_IDX_POSTFIX));
+
+    DBUG_RETURN();
+}
+
+/**
+ * Remove a dimension from the GPU kernel representation.
+ *
+ * @param gkr The GPU kernel representation from which the dimension has to be removed
+ */
+static void
+RemoveDimension(gpukernelres_t* gkr) {
+    DBUG_ENTER();
+
+    if (GKR_VAL_PRESERVE(gkr)) {
+        size_t old_dim = GKR_DIM(gkr) - 1;
+        GKR_LB_PUSH(gkr, old_dim)
+        GKR_UB_PUSH(gkr, old_dim)
+        GKR_ST_PUSH(gkr, old_dim)
+        GKR_WI_PUSH(gkr, old_dim)
+    }
+
+    STRVECpop(GKR_LB(gkr));
+    STRVECpop(GKR_UB(gkr));
+    STRVECpop(GKR_ST(gkr));
+    STRVECpop(GKR_WI(gkr));
+
+    if (GKR_IDX_COMPUTE(gkr))
+        STRVECpop(GKR_UB(gkr));
+
+    GKR_DIM(gkr)--;
+
+    DBUG_RETURN();
+}
 
 /**
  * Create a new temporary variable, with proper pre- and postfixes. The prefix is fixed to CONST_PREFIX.
@@ -209,32 +501,19 @@
  * @param postfix The postfix to be added
  * @return The properly pre- and postfixed variable name.
  */
-static char*
-GKCOvarCreate(char* postfix) {
+char*
+GKCOvarCreate(gpukernelres_t* gkr, char* postfix) {
     DBUG_ENTER();
 
     char* without_prefix = TRAVtmpVarName(postfix);
     char* var            = STRcat(CONST_VAR_PREFIX, without_prefix);
+    INDENT
     fprintf(global.outfile, "SAC_GKCO_OPD_DECLARE(%s)\n", var);
 
     MEMfree(without_prefix);
+    STRVECappend(GKR_OWNED_VARS(gkr), var);
 
     DBUG_RETURN(var);
-}
-
-/**
- * Destroy a variable name. It is just an alias for MEMfree.
- *
- * @param var The variable name to be freed
- * @return NULL
- */
-static char*
-GKCOvarDestroy(char* var) {
-    DBUG_ENTER();
-
-    MEMfree(var);
-
-    DBUG_RETURN(NULL);
 }
 
 /**
@@ -265,288 +544,6 @@ getNumArrayFromNodes(node* nums_node, size_t length, char* pragma) {
     DBUG_RETURN(array);
 }
 
-/**
- * Shorthand for a GKCOcomp-function end. Wraps up stuff nicely and automatically.
- */
-#define COMP_FUN_END(gkr)                                                                                   \
-    fprintf(global.outfile, "\n");                                                                          \
-    DBUG_EXECUTE(PrintGPUkernelres(gkr, stderr));                                                           \
-    DBUG_EXECUTE(fprintf(stderr, "\n"));                                                                    \
-    DBUG_RETURN(gkr);
-
-/**
- * Flag locations inside the PASS identifier variables.
- */
-#define PASS_TS_BUILDING 1          // Pass is filling the xx_at stack in gpukernelres_t
-#define PASS_TS_CONSUMING 2         // Pass is consuming the xx_at stack in gpukernelres_t
-#define PASS_ID_COMPUTING 4         // Pass is handling and generating code for id variables
-
-/**
- * Enum to specify a pass over the Pragma functions. These enum value toggle certain functionalities in
- * the compile functions. It is not actually an enum, as ISO C forbids forward declarations of enums.
- */
-// (bottom up) Create a thread space to spawn the kernels
-#define PASS_HOST 0
-// (bottom up) Recreate the intermediate thread space computation values
-#define PASS_KERNEL_THREADSPACE PASS_TS_BUILDING
-// (top down)  Generate the iv from the kernel coordinates and the pass above
-#define PASS_KERNEL_WLIDS       PASS_TS_CONSUMING | PASS_ID_COMPUTING
-
-
-/**
- * GPU kernel representation struct. It contains:
- *   - A dimensionality of type size_t
- *   - Four string vectors, containing the variable names of the index space (lowerbound, upperbound, step and width)
- *     for each dimension
- *
- * IMPORTANT NOTE: In these compiling functions, the only values that we need to edit are the upperbounds and idx
- * variables. For this this reason, we copy all upperbounds and idx's into new variables _owned by the GPU
- * kernel res_. The other variables are all represented using strings _owned by others_.
- */
-struct GPUKERNELRES {
-    // Current pass, contains flags for turning specific parts of the code on and off
-    pass_t currentpass;
-    // The dimensionality
-    size_t dim;
-
-    // Variable identifier storage (not idx is only initiated and used when PASS_ID_COMPUTING flag is set)
-    strvec* lowerbound;
-    strvec* upperbound;
-    strvec* step;
-    strvec* width;
-    strvec* idx;
-
-    // Variable identifier stack, used for recovering variable identifiers when older versions of them
-    // are needed.
-    // This stack is pushed to in RemoveDimension or when GKR_XX_PUSH is called, only when PASS_TS_BUILDING is set
-    // This stack is popped from in AddDimension or when GKR_XX_POP is called, only when PASS_TS_CONSUMING is set
-    strvec* lowerbound_at;
-    strvec* upperbound_at;
-    strvec* step_at;
-    strvec* width_at;
-
-    // Single helper variable that was assigned. It can be used by all ICM's, as they are called one by one.
-    char* helper_a;
-};
-
-// Flag macro's
-#define GKR_PASS(gkr) gkr->currentpass
-#define GKR_CHANGE_PASS(gkr, pass) GKR_PASS(gkr) = pass
-#define GKR_IS_TS_BUILDING(gkr) (GKR_PASS(gkr) & PASS_TS_BUILDING)
-#define GKR_IS_TS_CONSUMING(gkr) (GKR_PASS(gkr) & PASS_TS_CONSUMING)
-#define GKR_IS_ID_COMPUTING(gkr) (GKR_PASS(gkr) & PASS_ID_COMPUTING)
-
-// DIM getter/setter
-#define GKR_DIM(gkr) gkr->dim
-
-// Variable identifier getters/setters
-#define GKR_LB(gkr) gkr->lowerbound
-#define GKR_UB(gkr) gkr->upperbound
-#define GKR_ST(gkr) gkr->step
-#define GKR_WI(gkr) gkr->width
-#define GKR_IDX(gkr) gkr->idx
-
-// Variable identifier for specific dimension getters
-#define GKR_LB_D_READ(gkr, i) STRVECsel(GKR_LB(gkr), i)
-#define GKR_UB_D_READ(gkr, i) STRVECsel(GKR_UB(gkr), i)
-#define GKR_ST_D_READ(gkr, i) STRVECsel(GKR_ST(gkr), i)
-#define GKR_WI_D_READ(gkr, i) STRVECsel(GKR_WI(gkr), i)
-#define GKR_IDX_D_READ(gkr, i) STRVECsel(GKR_IDX(gkr), i)
-
-// Variable identifier stack getters
-#define GKR_LB_AT(gkr) gkr->lowerbound_at
-#define GKR_UB_AT(gkr) gkr->upperbound_at
-#define GKR_ST_AT(gkr) gkr->step_at
-#define GKR_WI_AT(gkr) gkr->width_at
-
-// Variable identifier stack push functions
-#define GKR_LB_PUSH(gkr, dim, str)                                                                          \
-    if (GKR_IS_TS_BUILDING(gkr)) {                                                                          \
-        STRVECappend(GKR_LB_AT(gkr), GKR_LB_D_READ(gkr, dim));                                              \
-        STRVECswap(GKR_LB(gkr), dim, str);                                                                  \
-    }
-#define GKR_UB_PUSH(gkr, dim, str)                                                                          \
-    if (GKR_IS_TS_BUILDING(gkr)) {                                                                          \
-        STRVECappend(GKR_UB_AT(gkr), GKR_UB_D_READ(gkr, dim));                                              \
-        STRVECswap(GKR_UB(gkr), dim, str);                                                                  \
-    }
-#define GKR_ST_PUSH(gkr, dim, str)                                                                          \
-    if (GKR_IS_TS_BUILDING(gkr)) {                                                                          \
-        STRVECappend(GKR_ST_AT(gkr), GKR_ST_D_READ(gkr, dim));                                              \
-        STRVECswap(GKR_ST(gkr), dim, str);                                                                  \
-    }
-#define GKR_WI_PUSH(gkr, dim, str)                                                                          \
-    if (GKR_IS_TS_BUILDING(gkr)) {                                                                          \
-        STRVECappend(GKR_WI_AT(gkr), GKR_WI_D_READ(gkr, dim));                                              \
-        STRVECswap(GKR_WI(gkr), dim, str);                                                                  \
-    }
-
-#define GKR_UB_WRITABLE(gkr, dim) WritableUpperboundVar(gkr, dim)
-
-// Variable identifier stack pop functions
-#define GKR_LB_POP(gkr, dim)                                                                                \
-    if (GKR_IS_TS_CONSUMING(gkr)) {                                                                         \
-        STRVECswap(GKR_LB(gkr), dim, STRVECpop(GKR_LB_AT(gkr)));                                            \
-    }
-#define GKR_UB_POP(gkr, dim)                                                                                \
-    if (GKR_IS_TS_CONSUMING(gkr)) {                                                                         \
-        STRVECswap(GKR_UB(gkr), dim, STRVECpop(GKR_UB_AT(gkr)));                                            \
-    }
-#define GKR_ST_POP(gkr, dim)                                                                                \
-    if (GKR_IS_TS_CONSUMING(gkr)) {                                                                         \
-        STRVECswap(GKR_ST(gkr), dim, STRVECpop(GKR_ST_AT(gkr)));                                            \
-    }
-#define GKR_WI_POP(gkr, dim)                                                                                \
-    if (GKR_IS_TS_CONSUMING(gkr)) {                                                                         \
-        STRVECswap(GKR_WI(gkr), dim, STRVECpop(GKR_WI_AT(gkr)));                                            \
-    }
-
-// Helper variable getter
-#define GKR_HELPER_A(gkr) gkr->helper_a
-
-/**
- * Make a new gpu kernel representation struct. The vectors containing the variable names will be empty at this point.
- * This is because the variables have to be inserted manually at GKCOcompGen.
- *
- * @param dim The dimensionality of the gpu kernel representation
- * @return The newly created gpu kernel representation
- */
-static gpukernelres_t*
-MakeGPUkernelres(size_t dim, pass_t pass) {
-    DBUG_ENTER();
-
-    gpukernelres_t* gkr = (gpukernelres_t*) MEMmalloc(sizeof(gpukernelres_t));
-
-    GKR_PASS(gkr) = pass;
-    GKR_DIM(gkr)  = dim;
-    GKR_LB(gkr)   = STRVECempty(dim);
-    GKR_UB(gkr)   = STRVECempty(dim);
-    GKR_ST(gkr)   = STRVECempty(dim);
-    GKR_WI(gkr)   = STRVECempty(dim);
-    GKR_IDX(gkr)  = STRVECempty(dim);
-
-    GKR_LB_AT(gkr) = STRVECempty(0);
-    GKR_UB_AT(gkr) = STRVECempty(0);
-    GKR_ST_AT(gkr) = STRVECempty(0);
-    GKR_WI_AT(gkr) = STRVECempty(0);
-
-    GKR_HELPER_A(gkr) = GKCOvarCreate(CONST_TMP_POSTFIX);
-
-    DBUG_RETURN(gkr);
-}
-
-/**
- * Free a GPU kernel res. Per convention, the gkr only owns all strings in the upperbound vector and the idx
- * vector. These vectors will be deep freed, while the others will be shallow freed.
- *
- * @param gkr The struct to be freed
- * @return the null pointer
- */
-static gpukernelres_t*
-FreeGPUkernelres(gpukernelres_t* gkr) {
-    DBUG_ENTER();
-
-    STRVECfree(GKR_LB(gkr));
-    STRVECfreeDeep(GKR_UB(gkr));
-    STRVECfree(GKR_ST(gkr));
-    STRVECfree(GKR_WI(gkr));
-    STRVECfreeDeep(GKR_IDX(gkr));
-
-    STRVECfree(GKR_LB_AT(gkr));
-    STRVECfree(GKR_UB_AT(gkr));
-    STRVECfree(GKR_ST_AT(gkr));
-    STRVECfree(GKR_WI_AT(gkr));
-
-    MEMfree(GKR_HELPER_A(gkr));
-
-    MEMfree(gkr);
-
-    DBUG_RETURN(NULL);
-}
-
-/**
- * Add a dimension to the GPU kernel representation.
- *
- * Because it is a new dimension, lb will be set to 0, and step and width will be set to 1. The value for ub will be
- * initiated as a new variable with postfix "_ub", but not set.
- *
- * @param gkr The GPU kernel representation
- */
-static void
-AddDimension(gpukernelres_t* gkr) {
-    DBUG_ENTER();
-
-    GKR_DIM(gkr)++;
-
-    if (!GKR_IS_TS_CONSUMING(gkr)) {
-        STRVECappend(GKR_LB(gkr), CONST_ZERO);
-        STRVECappend(GKR_UB(gkr), GKCOvarCreate(CONST_UB_POSTFIX));
-        STRVECappend(GKR_ST(gkr), CONST_ONE);
-        STRVECappend(GKR_WI(gkr), CONST_ONE);
-    } else {
-        size_t new_dim = GKR_DIM(gkr) - 1;
-        GKR_LB_POP(gkr, new_dim);
-        GKR_UB_POP(gkr, new_dim);
-        GKR_ST_POP(gkr, new_dim);
-        GKR_WI_POP(gkr, new_dim);
-    }
-
-    if (GKR_IS_ID_COMPUTING(gkr))
-        STRVECappend(GKR_IDX(gkr), GKCOvarCreate(CONST_IDX_POSTFIX));
-
-    DBUG_RETURN();
-}
-
-/**
- * Remove a dimension from the GPU kernel representation.
- *
- * @param gkr The GPU kernel representation from which the dimension has to be removed
- */
-static void
-RemoveDimension(gpukernelres_t* gkr) {
-    DBUG_ENTER();
-
-    if (!GKR_IS_TS_BUILDING(gkr)) {
-        STRVECpop(GKR_LB(gkr));
-        GKCOvarDestroy(STRVECpop(GKR_UB(gkr)));
-        STRVECpop(GKR_ST(gkr));
-        STRVECpop(GKR_WI(gkr));
-    } else {
-        size_t old_dim = GKR_DIM(gkr) - 1;
-        GKR_LB_PUSH(gkr, old_dim, NULL)
-        GKR_UB_PUSH(gkr, old_dim, NULL)
-        GKR_ST_PUSH(gkr, old_dim, NULL)
-        GKR_WI_PUSH(gkr, old_dim, NULL)
-    }
-
-    if (GKR_IS_ID_COMPUTING(gkr))
-        GKCOvarDestroy(STRVECpop(GKR_UB(gkr)));
-
-    GKR_DIM(gkr)--;
-
-    DBUG_RETURN();
-}
-
-/**
- * Retrieve a writable upperbound variable for dimension dim. If the PASS_TS_BUILDING flag is set, a new
- * variable is generated and stored, and the old one is pushed to the stack. If not, the current upperbound
- * variable is returned.
- *
- * @param gkr The GPU kernel representation
- * @param dim The dimension in question
- * @return A string containing the writable upperbound variable identifier for dimension dim
- */
-static char*
-WritableUpperboundVar(gpukernelres_t* gkr, size_t dim) {
-    if (GKR_IS_TS_BUILDING(gkr)) {
-        char* new_str = GKCOvarCreate(CONST_UB_POSTFIX);
-        char* old_str = STRVECswap(GKR_UB(gkr), dim, new_str);
-        STRVECappend(GKR_UB_AT(gkr), old_str);
-        return new_str;
-    }
-    return GKR_UB_D_READ(gkr, dim);
-}
-
 #ifndef DBUG_OFF
 
 /**
@@ -559,19 +556,30 @@ static void
 PrintGPUkernelres(gpukernelres_t* gkr, FILE* stream) {
     DBUG_ENTER();
 
-    size_t linesize = 120;
-    fprintf(stream, "GPU kernelres (dim: %zu)\n", GKR_DIM(gkr));
-    fprintf(stream, "lb = ");
-    STRVECprint(GKR_LB(gkr), stream, linesize);
-    fprintf(stream, "ub = ");
-    STRVECprint(GKR_UB(gkr), stream, linesize);
-    fprintf(stream, "step = ");
-    STRVECprint(GKR_ST(gkr), stream, linesize);
-    fprintf(stream, "width = ");
-    STRVECprint(GKR_WI(gkr), stream, linesize);
-    fprintf(stream, "idx = ");
-    STRVECprint(GKR_IDX(gkr), stream, linesize);
-    fprintf(stream, "helpersa = %s\n", GKR_HELPER_A(gkr));
+    size_t linesize = 80;
+    fprintf(stream, "    GPU kernelres (dim: %zu)\n", GKR_DIM(gkr));
+    fprintf(stream, "    lb  = ");
+    STRVECprint(GKR_LB(gkr), stream, linesize, 9);
+    fprintf(stream, "    ub  = ");
+    STRVECprint(GKR_UB(gkr), stream, linesize, 9);
+    fprintf(stream, "    st  = ");
+    STRVECprint(GKR_ST(gkr), stream, linesize, 9);
+    fprintf(stream, "    wi  = ");
+    STRVECprint(GKR_WI(gkr), stream, linesize, 9);
+    fprintf(stream, "    idx = ");
+    STRVECprint(GKR_IDX(gkr), stream, linesize, 9);
+    fprintf(stream, "\n");
+    fprintf(stream, "    lbt = ");
+    STRVECprint(GKR_LB_AT(gkr), stream, linesize, 9);
+    fprintf(stream, "    ubt = ");
+    STRVECprint(GKR_UB_AT(gkr), stream, linesize, 9);
+    fprintf(stream, "    stt = ");
+    STRVECprint(GKR_ST_AT(gkr), stream, linesize, 9);
+    fprintf(stream, "    wit = ");
+    STRVECprint(GKR_WI_AT(gkr), stream, linesize, 9);
+    fprintf(stream, "    helpersa = %s\n", GKR_HELPER_A(gkr));
+    fprintf(stream, "    own = ");
+    STRVECprint(GKR_OWNED_VARS(gkr), stream, linesize, 9);
 
     DBUG_RETURN();
 }
@@ -614,10 +622,66 @@ printNumArray(node* array) {
 
 #endif
 
-
 /** <!-- ****************************************************************** -->
  * @fn gpukernelres_t *
  *     dispatch (node *spap, unsigned int bnum, char **bounds)
+ *
+ * @brief generates the actual function dispatch based on the info in
+ *        gpukernel_funs.mac. It also handles the special case of the
+ *        innermost N_spid "Gen" as a call to GKCOcompGen.
+ *
+ * @param spap   either N_spap of an outer function or N_spid for "Gen"
+ * @param bnum   number of bound elements (== number of strings in bounds)
+ * @param bounds the actual bounds as strings, these are either SAC runtime
+ *               variable reads or constants.
+ *
+ * @return the result of the dispatched function call.
+ ******************************************************************************/
+static
+gpukernelres_t*
+dispatch(node* spap, gpukernelres_t* res, unsigned int bnum, char** bounds) {
+
+    DBUG_ENTER ();
+
+    if (NODE_TYPE (spap) == N_spid) {
+        res = GKCOcompGen(bnum, bounds, res);
+    }
+
+#define ARGS(nargs) ARG##nargs
+#define ARG0
+#define ARG1 EXPRS_EXPR (SPAP_ARGS (spap)),
+#define SKIPS(nargs) SKIP##nargs
+#define SKIP0
+#define SKIP1 EXPRS_NEXT
+#define WLP(fun, nargs, checkfun)                                                         \
+    else if (STReq (SPAP_NAME (spap), #fun)) {                                            \
+        DBUG_ASSERT ((SPAP_ARGS (spap) != NULL), "missing argument in `%s' ()", #fun);    \
+        res = dispatch (EXPRS_EXPR ( SKIPS( nargs) (SPAP_ARGS (spap))),                   \
+                                          res, bnum, bounds);                             \
+        res = GKCOcomp ## fun ( ARGS( nargs) res);                                       \
+    }
+// @formatter:off
+#include "gpukernel_funs.mac"
+
+#undef WLP
+#undef ARGS
+#undef ARG0
+#undef ARG1
+#undef SKIPS
+#undef SKIP0
+#undef SKIP1
+// @formatter:on
+
+    else {
+        DBUG_ASSERT(0 == 1, "expected gpukernel function, found `%s'", SPAP_NAME(spap));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn gpukernelres_t *
+ *     dispatchInv (node *spap, gpukernelres_t* res)
  *
  * @brief generates the actual function dispatch based on the info in 
  *        gpukernel_funs.mac. It also handles the special case of the
@@ -632,13 +696,14 @@ printNumArray(node* array) {
  ******************************************************************************/
 static
 gpukernelres_t*
-dispatch(node* spap, unsigned int bnum, char** bounds, pass_t pass) {
-    gpukernelres_t* res = NULL;
+dispatchInv(node* spap, gpukernelres_t* res) {
 
     DBUG_ENTER ();
 
     if (NODE_TYPE (spap) == N_spid) {
-        res = GKCOcompGen(bnum, bounds, pass);
+        // TODO: Parametrize iv_var?
+        res = GKCOcompInvGen("iv_var", res);
+    }
 
 #define ARGS(nargs) ARG##nargs
 #define ARG0
@@ -647,11 +712,12 @@ dispatch(node* spap, unsigned int bnum, char** bounds, pass_t pass) {
 #define SKIP0
 #define SKIP1 EXPRS_NEXT
 #define WLP(fun, nargs, checkfun)                                                         \
-    } else if (STReq (SPAP_NAME (spap), #fun)) {                                          \
+    else if (STReq (SPAP_NAME (spap), #fun)) {                                            \
         DBUG_ASSERT ((SPAP_ARGS (spap) != NULL), "missing argument in `%s' ()", #fun);    \
-        res = GKCOcomp ## fun ( ARGS( nargs)                                              \
-                                dispatch (EXPRS_EXPR ( SKIPS( nargs) (SPAP_ARGS (spap))), \
-                                          bnum, bounds, pass));
+    res = GKCOcompInv ## fun (ARGS(nargs) res);                                           \
+    res = dispatchInv (EXPRS_EXPR ( SKIPS( nargs) (SPAP_ARGS (spap))),                    \
+                       res);                                                              \
+    }
 // @formatter:off
 #include "gpukernel_funs.mac"
 
@@ -664,7 +730,7 @@ dispatch(node* spap, unsigned int bnum, char** bounds, pass_t pass) {
 #undef SKIP1
 // @formatter:on
 
-    } else {
+    else {
         DBUG_ASSERT(0 == 1, "expected gpukernel function, found `%s'", SPAP_NAME(spap));
     }
 
@@ -689,7 +755,6 @@ dispatch(node* spap, unsigned int bnum, char** bounds, pass_t pass) {
  ******************************************************************************/
 void
 GKCOcompHostKernelPragma(node* spap, unsigned int bnum, char** bounds) {
-    gpukernelres_t* res;
     DBUG_ENTER ();
 
     DBUG_ASSERT (spap != NULL, "NULL pointer for funcall in gpukernel pragma!");
@@ -704,8 +769,9 @@ GKCOcompHostKernelPragma(node* spap, unsigned int bnum, char** bounds) {
      * in case accessors yield unexpected things.
      */
 
-    res = GKCOcompGridBlock(EXPRS_EXPR(SPAP_ARGS(spap)),
-                            dispatch(EXPRS_EXPR(EXPRS_NEXT(SPAP_ARGS(spap))), bnum, bounds, PASS_HOST));
+    gpukernelres_t* res = MakeGPUkernelres(PASS_HOST);
+    res = dispatch(spap, res, bnum, bounds);
+
     FreeGPUkernelres(res);
 
     DBUG_RETURN ();
@@ -745,10 +811,11 @@ GKCOcompGPUDkernelPragma(node* spap, unsigned int bnum, char** bounds) {
      * in case accessors yield unexpected things.
      */
 
-    gpukernelres_t* res = GKCOcompGridBlock(EXPRS_EXPR(SPAP_ARGS(spap)),
-                                            dispatch(EXPRS_EXPR(EXPRS_NEXT(SPAP_ARGS(spap))), bnum, bounds,
-                                                     PASS_KERNEL_THREADSPACE));
-    // TODO: inverse pragma dispatch for pass 3 PASS_KERNEL_WLIDS
+    gpukernelres_t* res = MakeGPUkernelres(PASS_KERNEL_THREADSPACE);
+    res = dispatch(spap, res, bnum, bounds);
+
+    GKR_CHANGE_PASS(res, PASS_KERNEL_WLIDS);
+    res = dispatchInv(spap, res);
 
     FreeGPUkernelres(res);
 
@@ -785,11 +852,15 @@ GKCOcompGridBlock(node* num, gpukernelres_t* inner) {
             0, global.cuda_options.cuda_max_threads_block,                               // max product (only for block)
     };
 
+    // Toggle the emitting of the grid/block variable code
+    size_t gba = GKR_GB_EMIT(inner) ? 2 : 0;
+
     // Two iterations, one for the grid and one for the block. Inside the loop, the arrays above will determine the
     // actual values that are used.
-    for (size_t gb = 0; gb < 2; gb++) {
+    for (size_t gb = 0; gb < gba; gb++) {
         // Prints the name of the macro, with the static arguments
         //                SAC_GKCO_SET_<> (max_x, max_y, max_z, max_total
+        INDENT
         fprintf(global.outfile, "%s(%u   , %u   , %u   , %u",
                 icm[gb], max_s[gb], max_s[2 + gb], max_s[4 + gb], max_s[6 + gb]);
         // Print the dynamic arguments. From and to (defined above) determine what dimensions belong to the grid/block
@@ -799,7 +870,7 @@ GKCOcompGridBlock(node* num, gpukernelres_t* inner) {
         fprintf(global.outfile, ")\n\n");
     }
 
-    COMP_FUN_END(inner)
+    COMP_FUN_DBUG_RETURN(inner)
 }
 
 /**
@@ -812,11 +883,11 @@ GKCOcompGridBlock(node* num, gpukernelres_t* inner) {
  * @return
  */
 gpukernelres_t*
-GKCOcompInvGridBlock(node* num, gpukernelres_t* outer, pass_t pass) {
+GKCOcompInvGridBlock(node* num, gpukernelres_t* outer) {
     DBUG_ENTER();
     DBUG_PRINT("compiling idx variable generation");
 
-    GKR_CHANGE_PASS(outer, pass);
+    GKR_CHANGE_PASS(outer, PASS_KERNEL_WLIDS);
 
     size_t from[2] = {0, (size_t) NUM_VAL(num)};
     size_t to[2]   = {(size_t) NUM_VAL(num), GKR_DIM(outer)};
@@ -832,13 +903,14 @@ GKCOcompInvGridBlock(node* num, gpukernelres_t* outer, pass_t pass) {
         // Print the dynamic arguments. From and to (defined above) determine what dimensions belong to the grid/block
         for (size_t i = from[gb]; i < to[gb]; i++) {
             size_t xyz_int = i - from[gb];
-            STRVECappend(GKR_IDX(outer), GKCOvarCreate(CONST_IDX_POSTFIX));
-            fprintf(global.outfile, "SAC_CUDA_OPD_REDIFINE(%s, %s)\n\n",
+            STRVECappend(GKR_IDX(outer), GKCOvarCreate(outer, CONST_IDX_POSTFIX));
+            INDENT
+            fprintf(global.outfile, "SAC_GKCO_OPD_REDEFINE(%s, %s)\n\n",
                     grid_block_var[2 * xyz_int + gb], GKR_IDX_D_READ(outer, i));
         }
     }
 
-    COMP_FUN_END(outer)
+    COMP_FUN_DBUG_RETURN(outer)
 }
 
 /**
@@ -848,25 +920,27 @@ GKCOcompInvGridBlock(node* num, gpukernelres_t* outer, pass_t pass) {
  * @return
  */
 gpukernelres_t*
-GKCOcompGenDbug(unsigned int bnum, pass_t pass) {
+GKCOcompGenDbug(unsigned int bnum, gpukernelres_t* initial) {
     DBUG_ENTER();
 
     size_t dim = bnum / 2;
-    gpukernelres_t* gkr = MakeGPUkernelres(dim, pass);
+    gpukernelres_t* gkr = MakeGPUkernelres(GKR_PASS(initial));
+    GKR_DIM(gkr) = dim;
 
     for (size_t i = 0; i < dim; i++) {
-        STRVECappend(GKR_LB(gkr), GKCOvarCreate("lb"));
-        STRVECappend(GKR_UB(gkr), GKCOvarCreate("ub"));
-        STRVECappend(GKR_ST(gkr), GKCOvarCreate("st"));
-        STRVECappend(GKR_WI(gkr), GKCOvarCreate("wi"));
+        STRVECappend(GKR_LB(gkr), GKCOvarCreate(gkr, "lb"));
+        STRVECappend(GKR_UB(gkr), GKCOvarCreate(gkr, "ub"));
+        STRVECappend(GKR_ST(gkr), GKCOvarCreate(gkr, "st"));
+        STRVECappend(GKR_WI(gkr), GKCOvarCreate(gkr, "wi"));
 
+        INDENT
         fprintf(global.outfile, "SAC_GKCO_OPD_REDEFINE(%s, %s)\n\n",
                 GKR_UB_D_READ(gkr, i), GKR_UB_D_READ(gkr, i));
     }
 
     STRVECswap(GKR_LB(gkr), 0, CONST_ZERO);
 
-    COMP_FUN_END(gkr)
+    COMP_FUN_DBUG_RETURN(gkr)
 }
 
 
@@ -885,7 +959,7 @@ GKCOcompGenDbug(unsigned int bnum, pass_t pass) {
  * @return the resulting naive thread space.
  ******************************************************************************/
 gpukernelres_t*
-GKCOcompGen(unsigned int bnum, char** bounds, pass_t pass) {
+GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner) {
 #ifndef DBUG_OFF
     unsigned int i;
 #endif
@@ -901,33 +975,34 @@ GKCOcompGen(unsigned int bnum, char** bounds, pass_t pass) {
     fprintf(global.outfile, "\n");
 
     size_t dim = bnum / 4;
-    gpukernelres_t* gkr = MakeGPUkernelres(dim, pass);
+    GKR_DIM(inner) = dim;
 
     for (i = 0; i < dim; i++) {
-        STRVECappend(GKR_LB(gkr), bounds[i + 0 * dim]);
-        STRVECappend(GKR_UB(gkr), GKCOvarCreate(CONST_UB_POSTFIX));
-        STRVECappend(GKR_ST(gkr), bounds[i + 2 * dim]);
-        STRVECappend(GKR_WI(gkr), bounds[i + 3 * dim]);
+        STRVECappend(GKR_LB(inner), bounds[i + 0 * dim]);
+        STRVECappend(GKR_UB(inner), GKCOvarCreate(inner, CONST_UB_POSTFIX));
+        STRVECappend(GKR_ST(inner), bounds[i + 2 * dim]);
+        STRVECappend(GKR_WI(inner), bounds[i + 3 * dim]);
 
+        INDENT
         fprintf(global.outfile, "SAC_GKCO_OPD_REDEFINE(%s, %s)\n\n",
-                bounds[i + 1 * dim], GKR_UB_D_READ(gkr, i));
+                bounds[i + 1 * dim], GKR_UB_D_READ(inner, i));
     }
 
     // TODO: remove once stuff works fine and uncomment line below :)
-    // COMP_FUN_END(gkr);
+    // COMP_FUN_DBUG_RETURN(gkr);
 
     fprintf(global.outfile, "\n");
 
-    DBUG_EXECUTE(PrintGPUkernelres(gkr, stderr));
+    DBUG_EXECUTE(PrintGPUkernelres(inner, stderr));
     DBUG_EXECUTE(fprintf(stderr, "\n"));
 
     DBUG_PRINT("Note, the GKR above is freed immedately again for debbugging purposes. ");
     DBUG_PRINT("Instead, the GKR below is used: \n");
 
-    FreeGPUkernelres(gkr);
-    gkr = GKCOcompGenDbug(bnum, pass);
+    gpukernelres_t* dbg_gkr = GKCOcompGenDbug(bnum, inner);
+    FreeGPUkernelres(inner);
 
-    DBUG_RETURN (gkr);
+    DBUG_RETURN (dbg_gkr);
 }
 
 /**
@@ -942,14 +1017,72 @@ GKCOcompInvGen(char* iv_var, gpukernelres_t* outer) {
     DBUG_ENTER();
     DBUG_PRINT ("compiling IV generation ():");
 
-    fprintf(global.outfile, "SAC_GKCO_GPUD_DECLARE_IV(%s, %zu)\n\n",
+    INDENT
+    fprintf(global.outfile, "SAC_GKCO_GPUD_OPM_DECLARE_IV(%s, %zu)\n\n",
             iv_var, GKR_DIM(outer));
     for (size_t i = 0; i < GKR_DIM(outer); i++) {
-        fprintf(global.outfile, "SAC_GKCO_GPUD_DEF_IV(%s, %zu, %s)\n\n",
+        INDENT
+        fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_DEF_IV(%s, %zu, %s)\n\n",
                 iv_var, i, GKR_IDX_D_READ(outer, i));
     }
 
-    COMP_FUN_END(outer);
+    COMP_FUN_DBUG_RETURN(outer);
+}
+
+gpukernelres_t*
+GKCOcompStepWidth(size_t dim, gpukernelres_t* inner) {
+    DBUG_ENTER();
+
+    GKR_ST_PUSH(inner, dim)
+    GKR_WI_PUSH(inner, dim)
+
+    GKR_ST_D_REPLACE(inner, dim, CONST_ONE);
+    GKR_WI_D_REPLACE(inner, dim, CONST_ONE);
+
+    DBUG_RETURN(inner);
+}
+
+gpukernelres_t*
+GKCOcompInvStepWidth(size_t dim, gpukernelres_t* outer) {
+    DBUG_ENTER();
+
+    GKR_ST_POP(outer, dim);
+    GKR_WI_POP(outer, dim);
+
+    if (!STReq(GKR_ST_D_READ(outer, dim), CONST_ONE)) {
+        INDENT
+        fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(%s, %s, %s)",
+                GKR_ST_D_READ(outer, dim), GKR_WI_D_READ(outer, dim), GKR_IDX_D_READ(outer, dim));
+    }
+
+    DBUG_RETURN(outer);
+}
+
+gpukernelres_t*
+GKCOcompPad(size_t dim, size_t divisiblity, gpukernelres_t* inner) {
+    DBUG_ENTER();
+
+    GKR_UB_PUSH(inner, dim)
+
+    char* ub_read  = GKR_UB_D_READ(inner, dim);
+    char* ub_write = GKR_UB_NEW(inner, dim);
+    INDENT
+    fprintf(global.outfile, "SAC_GKCO_HOST_OPD_PAD(%s, %s, %zu)",
+            ub_read, ub_write, divisiblity);
+
+    DBUG_RETURN(inner);
+}
+
+gpukernelres_t*
+GKCOcompInvPad(size_t dim, gpukernelres_t* outer) {
+    DBUG_ENTER();
+
+    GKR_UB_POP(outer, dim);
+    INDENT
+    fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNPAD(%s, %s)",
+            GKR_UB_D_READ(outer, dim), GKR_IDX_D_READ(outer, dim));
+
+    DBUG_RETURN(outer);
 }
 
 /** <!-- ****************************************************************** -->
@@ -968,20 +1101,25 @@ GKCOcompShiftLB(gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling ShiftLB (inner):");
 
-    for (size_t i = 0; i < GKR_DIM(inner); i++) {
-        // We only have to handle dimensions that aren't already normalized
-        if (!STReq(GKR_LB_D_READ(inner, i), CONST_ZERO)) {
-            // Compute the new upperbound variables
-            fprintf(global.outfile, "SAC_GKCO_HOST_OPD_SHIFT_LB(%s, %s)\n\n",
-                    GKR_LB_D_READ(inner, i), GKR_UB_D_READ(inner, i));
-        }
+    for (LOOP_DIMENSIONS(inner, dim)) {
+        // Preserve the current variable identifiers for lb and ub
+        GKR_LB_PUSH(inner, dim)
+        GKR_UB_PUSH(inner, dim)
 
-        // We push the pre-shift lb and ub variable identifiers to the stack, to be able to recover it later
-        GKR_LB_PUSH(inner, i, CONST_ZERO)
-        GKR_UB_WRITABLE(inner, i);
+        // We only have to handle dimensions that aren't already normalized
+        if (STReq(GKR_LB_D_READ(inner, dim), CONST_ZERO)) continue;
+
+        // Get the correct variable identifiers
+        char* lb       = GKR_LB_D_REPLACE(inner, dim, CONST_ZERO);
+        char* ub_read  = GKR_UB_D_READ(inner, dim);
+        char* ub_write = GKR_UB_NEW(inner, dim);
+        // Compute the new upperbound variable
+        INDENT
+        fprintf(global.outfile, "SAC_GKCO_HOST_OPD_SHIFT_LB(%s, %s, %s)\n\n",
+                lb, ub_read, ub_write);
     }
 
-    COMP_FUN_END(inner)
+    COMP_FUN_DBUG_RETURN(inner)
 }
 
 /**
@@ -992,26 +1130,27 @@ GKCOcompShiftLB(gpukernelres_t* inner) {
  * @return the newly computed GPU kernel res, with restored lb and ub variable identifiers.
  */
 gpukernelres_t*
-GKCOcompInvShiftLb(gpukernelres_t* outer) {
+GKCOcompInvShiftLB(gpukernelres_t* outer) {
     DBUG_ENTER();
     DBUG_PRINT ("compiling UnShiftLB (inner):");
 
     // To be able to pop the lb variables from the stack in the inverse order in which we pushed,
     // we need to loop the dimensions in inverse order as well
-    for (size_t i = GKR_DIM(outer) - 1; i != (size_t) -1; i--) {
-        // Pop the pre-shift lb and ub variable identifiers from the stack
-        GKR_LB_POP(outer, i)
-        GKR_UB_POP(outer, i)
+    for (LOOP_DIMENSIONS_INV(outer, dim)) {
+        // Consume the preserved variable identifiers for lb and ub
+        GKR_LB_POP(outer, dim)
+        GKR_UB_POP(outer, dim)
 
         // We only have to handle dimensions that aren't already normalized
-        if (!STReq(GKR_LB_D_READ(outer, i), CONST_ZERO)) {
-            // Compute the new
-            fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNSHIFT_LB(%s, %s)\n\n",
-                    GKR_LB_D_READ(outer, i), GKR_IDX_D_READ(outer, i));
-        }
+        if (STReq(GKR_LB_D_READ(outer, dim), CONST_ZERO)) continue;
+
+        // Compute the new index variable
+        INDENT
+        fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNSHIFT_LB(%s, %s)\n\n",
+                GKR_LB_D_READ(outer, dim), GKR_IDX_D_READ(outer, dim));
     }
 
-    COMP_FUN_END(outer)
+    COMP_FUN_DBUG_RETURN(outer)
 }
 
 
@@ -1041,34 +1180,41 @@ GKCOcompCompressGrid(node* shouldCompress_node, gpukernelres_t* inner) {
     // Get the shouldCompress variable as an array instead of AST nodes
     int* shouldCompress = getNumArrayFromNodes(shouldCompress_node, GKR_DIM(inner), "CompressGrid");
 
-    for (size_t i = 0; i < GKR_DIM(inner); i++) {
+    for (LOOP_DIMENSIONS(inner, dim)) {
+        // Preserve the current variable identifiers for ub, st and wi
+        GKR_UB_PUSH(inner, dim)
+        GKR_ST_PUSH(inner, dim)
+        GKR_WI_PUSH(inner, dim)
+
         // Skip this iteration if compress for this dimension is toggled off
-        if (!shouldCompress[i]) continue;
+        if (!shouldCompress[dim]) continue;
         // Check whether the lowerbound is indeed 0
-        checkLbZero(GKR_LB_D_READ(inner, i), shouldCompress_node, "CompressGrid", i);
-
-        // Get readable and writable variant of UB var. It automatically changes the variable identifier
-        // for us if we need to reference the old variable value later.
-        char* ub_read  = GKR_UB_WRITABLE(inner, i);
-        char* ub_write = GKR_UB_D_READ(inner, i);
-
+        if (GKR_CHECK_PRAGMA(inner))
+            checkLbZero(GKR_LB_D_READ(inner, dim), shouldCompress_node, "CompressGrid", dim);
         // If the step is 1, we don't need to compute anything
-        if (STReq(GKR_ST_D_READ(inner, i), CONST_ONE)) {}
-            // If the width is 1, we only need to handle the step
-        else if (STReq(GKR_WI_D_READ(inner, i), CONST_ONE))
-            fprintf(global.outfile, "SAC_GKCO_HOST_OPD_COMPRESS_S(%s, %s, %s)\n\n",
-                    ub_read, ub_write, GKR_ST_D_READ(inner, i));
-            // Else, we handle the case where both the step and width are relevant
-        else
-            fprintf(global.outfile, "SAC_GKCO_HOST_OPD_COMPRESS_SW(%s, %s, %s, %s, %s)\n\n",
-                    ub_read, ub_write, GKR_ST_D_READ(inner, i), GKR_WI_D_READ(inner, i), GKR_HELPER_A(inner));
+        if (STReq(GKR_ST_D_READ(inner, dim), CONST_ONE)) continue;
 
-        // Replace the step and width values with 1
-        GKR_ST_PUSH(inner, i, CONST_ONE)
-        GKR_WI_PUSH(inner, i, CONST_ONE)
+        // Get the correct variable identifiers
+        char* ub_read  = GKR_UB_D_READ(inner, dim);
+        char* ub_write = GKR_UB_NEW(inner, dim);
+        char* step     = GKR_ST_D_REPLACE(inner, dim, CONST_ONE);
+        char* width    = GKR_WI_D_REPLACE(inner, dim, CONST_ONE);
+
+        // If the width is 1, we only need to handle the step
+        if (STReq(GKR_WI_D_READ(inner, dim), CONST_ONE)) {
+            INDENT
+            fprintf(global.outfile, "SAC_GKCO_HOST_OPD_COMPRESS_S(%s, %s, %s)\n\n",
+                    ub_read, ub_write, step);
+        }
+            // Else, we handle the case where both the step and width are relevant
+        else {
+            INDENT
+            fprintf(global.outfile, "SAC_GKCO_HOST_OPD_COMPRESS_SW(%s, %s, %s, %s, %s)\n\n",
+                    ub_read, ub_write, step, width, GKR_HELPER_A(inner));
+        }
     }
 
-    COMP_FUN_END(inner)
+    COMP_FUN_DBUG_RETURN(inner)
 }
 
 /**
@@ -1093,30 +1239,34 @@ GKCOcompInvCompressGrid(node* shouldCompress_node, gpukernelres_t* outer) {
 
     // To be able to pop the UB, ST and WI variables from the stack in the inverse order in which we pushed,
     // we need to loop the dimensions in inverse order as well
-    for (size_t i = GKR_DIM(outer) - 1; i != (size_t) -1; i++) {
+    for (LOOP_DIMENSIONS_INV(outer, dim)) {
+        // Consume the preserved variable identifiers for ub, step and width
+        GKR_UB_POP(outer, dim)
+        GKR_ST_POP(outer, dim)
+        GKR_WI_POP(outer, dim)
+
         // Skip this iteration if compress for this dimension is toggled off
-        if (!shouldCompress[i]) continue;
-
-        // Pop the pre-compress ub, st and wi variable identifiers from the stack
-        GKR_UB_POP(outer, i)
-        GKR_ST_POP(outer, i)
-        GKR_WI_POP(outer, i)
-
+        if (!shouldCompress[dim]) continue;
         // If the step is 1, we don't need to compute anything
-        if (STReq(GKR_ST_D_READ(outer, i), CONST_ONE)) {}
-            // If the width is 1, we only need to handle the step
-        else if (STReq(GKR_WI_D_READ(outer, i), CONST_ONE))
-            fprintf(global.outfile, "SAC_GKCO_HOST_OPD_COMPRESS_S(%s, %s)\n\n",
-                    GKR_ST_D_READ(outer, i), GKR_IDX_D_READ(outer, i));
+        if (STReq(GKR_ST_D_READ(outer, dim), CONST_ONE)) continue;
+
+        // If the width is 1, we only need to handle the step
+        if (STReq(GKR_WI_D_READ(outer, dim), CONST_ONE)) {
+            INDENT
+            fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNCOMPRESS_S(%s, %s)\n\n",
+                    GKR_ST_D_READ(outer, dim), GKR_IDX_D_READ(outer, dim));
+        }
             // Else, we handle the case where both the step and width are relevant
-        else
-            fprintf(global.outfile, "SAC_GKCO_HOST_OPD_COMPRESS_SW(%s, %s, %s)\n\n",
-                    GKR_ST_D_READ(outer, i), GKR_WI_D_READ(outer, i), GKR_IDX_D_READ(outer, i));
+        else {
+            INDENT
+            fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNCOMPRESS_SW(%s, %s, %s)\n\n",
+                    GKR_ST_D_READ(outer, dim), GKR_WI_D_READ(outer, dim), GKR_IDX_D_READ(outer, dim));
+        }
     }
 
     fprintf(global.outfile, "\n");
 
-    COMP_FUN_END(outer)
+    COMP_FUN_DBUG_RETURN(outer)
 }
 
 /**
@@ -1173,7 +1323,7 @@ GKCOcompPermute(node* permutation_node, gpukernelres_t* inner) {
 
     MEMfree(permutation);
 
-    COMP_FUN_END(inner)
+    COMP_FUN_DBUG_RETURN(inner)
 }
 
 /**
@@ -1187,15 +1337,12 @@ static strvec*
 GKCOcompInvPermuteStrvec(strvec* vec, const int* permutation) {
     DBUG_ENTER();
 
-    char** newvecarray = (char**) MEMmalloc(sizeof(char*) * STRVEClen(vec));
+    strvec* newvec = STRVECconst(STRVEClen(vec), NULL);
     for (size_t i = 0; i < STRVEClen(vec); i++) {
         size_t old_index = (size_t) permutation[i];
-        newvecarray[old_index] = STRVECsel(vec, i);
+        STRVECswap(newvec, old_index, STRVECsel(vec, i));
     }
 
-    strvec* newvec = STRVECfromArray(newvecarray, STRVEClen(vec));
-
-    MEMfree(newvecarray);
     STRVECfree(vec);
 
     DBUG_RETURN(newvec);
@@ -1219,14 +1366,15 @@ GKCOcompInvPermute(node* permutation_node, gpukernelres_t* outer) {
 
     int* permutation = getNumArrayFromNodes(permutation_node, GKR_DIM(outer), false);
 
-    GKR_LB(outer) = GKCOcompInvPermuteStrvec(GKR_LB(outer), permutation);
-    GKR_UB(outer) = GKCOcompInvPermuteStrvec(GKR_UB(outer), permutation);
-    GKR_ST(outer) = GKCOcompInvPermuteStrvec(GKR_ST(outer), permutation);
-    GKR_WI(outer) = GKCOcompInvPermuteStrvec(GKR_WI(outer), permutation);
+    GKR_LB(outer)  = GKCOcompInvPermuteStrvec(GKR_LB(outer), permutation);
+    GKR_UB(outer)  = GKCOcompInvPermuteStrvec(GKR_UB(outer), permutation);
+    GKR_ST(outer)  = GKCOcompInvPermuteStrvec(GKR_ST(outer), permutation);
+    GKR_WI(outer)  = GKCOcompInvPermuteStrvec(GKR_WI(outer), permutation);
+    GKR_IDX(outer) = GKCOcompInvPermuteStrvec(GKR_IDX(outer), permutation);
 
     MEMfree(permutation);
 
-    COMP_FUN_END(outer)
+    COMP_FUN_DBUG_RETURN(outer)
 }
 
 /** <!-- ****************************************************************** -->
@@ -1245,7 +1393,7 @@ GKCOcompFoldLast2(gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling FoldLast2 (inner)");
 
-    COMP_FUN_END(inner)
+    COMP_FUN_DBUG_RETURN(inner)
 }
 
 gpukernelres_t*
@@ -1253,7 +1401,7 @@ GKCOcompInvFoldLast2(gpukernelres_t* outer) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling UnfoldLast2 (inner)");
 
-    COMP_FUN_END(outer)
+    COMP_FUN_DBUG_RETURN(outer)
 }
 
 /** <!-- ****************************************************************** -->
@@ -1274,7 +1422,7 @@ GKCOcompSplitLast(node* num, gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling SplitLast ( %i, inner)", NUM_VAL(num));
 
-    COMP_FUN_END(inner)
+    COMP_FUN_DBUG_RETURN(inner)
 }
 
 gpukernelres_t*
@@ -1282,7 +1430,7 @@ GKCOcompInvSplitLast(node* num, gpukernelres_t* outer) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling UnsplitLast ( %i, inner)", NUM_VAL(num));
 
-    COMP_FUN_END(outer)
+    COMP_FUN_DBUG_RETURN(outer)
 }
 
 /** <!-- ****************************************************************** -->
@@ -1303,7 +1451,7 @@ GKCOcompPadLast(node* num, gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling PadLast ( %i, inner)", NUM_VAL(num));
 
-    COMP_FUN_END(inner)
+    COMP_FUN_DBUG_RETURN(inner)
 }
 
 gpukernelres_t*
@@ -1312,7 +1460,7 @@ GKCOcompInvPadLast(node* num, gpukernelres_t* outer) {
 
     DBUG_PRINT ("compiling UnpadLast ( %i, inner)", NUM_VAL(num));
 
-    COMP_FUN_END(outer)
+    COMP_FUN_DBUG_RETURN(outer)
 }
 
 #undef DBUG_PREFIX
