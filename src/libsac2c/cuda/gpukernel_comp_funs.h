@@ -4,7 +4,7 @@
 #include "types.h"
 
 extern void GKCOcompHostKernelPragma (node *spap, unsigned int bnum, char **bounds);
-extern void GKCOcompGPUDkernelPragma (node *spap, unsigned int bnum, char **bounds);
+extern void GKCOcompGPUDkernelPragma (node *spap, char* iv_var, unsigned int bnum, char **bounds);
 gpukernelres_t* GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner);
 extern gpukernelres_t * GKCOcompInvGen ( char* iv_var, gpukernelres_t* res);
 

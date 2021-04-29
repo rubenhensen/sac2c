@@ -395,7 +395,7 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
 
     // For debugging purposes: only execute once (for the 0th dimension)
     if (wlids_dim_pos == 0) {
-        GKCOcompGPUDkernelPragma(DEBUG_PRAGMA_NODE_SPAP, DEBUG_BOUNDS_COUNT, DEBUG_BOUNDS_ARRAY);
+        GKCOcompGPUDkernelPragma(DEBUG_PRAGMA_NODE_SPAP, "iv_var", DEBUG_BOUNDS_COUNT, DEBUG_BOUNDS_ARRAY);
     }
 
     DBUG_RETURN ();

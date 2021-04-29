@@ -539,14 +539,19 @@ extern "C" {
  *
  *****************************************************************************/
 
+#define TERNARY_BL(expr, tt, ff) (expr * tt + (!expr) * ff)
+
 #define SAC_GKCO_OPD_DECLARE(var)                                                                           \
     int var;
 
 #define SAC_GKCO_OPD_REDEFINE(from, to)                                                                     \
     to = from;
 
+#define SAC_GKCO_OPM_RETURN_COL_INIT(ret_col)                                                               \
+    ret_col = 0;
+
 #define SAC_GKCO_HOST_OPD_PAD(ub_r, ub_w, divisibility)                                                     \
-    ub_w = ub_r + (divisibility - ub_r % divisibility) % divisibility
+    ub_w = ub_r + (divisibility - ub_r % divisibility) % divisibility;
 
 #define SAC_GKCO_HOST_OPD_SHIFT_LB(lb, ub_r, ub_w)                                                          \
     ub_w = ub_r - lb;
@@ -557,8 +562,20 @@ extern "C" {
 
 #define SAC_GKCO_HOST_OPD_COMPRESS_SW(ub_r, ub_w, st, wi, tmp)                                              \
     tmp = ub_r % st;                                                                                        \
+    ub_w = ub_r / st * wi + (tmp < wi ? tmp : wi);
+
+#define SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(ub_t, ub_w, st, wi, tmp_a, tmp_b)                                  \
+    tmp_a = ub_r % st;                                                                                      \
+    tmp_b = tmp_a < w;                                                                                      \
     ub_w = ub_r / st * wi                                                                                   \
-            + (tmp < wi ? tmp : wi);
+            + TERNARY_BL(tmp_b, tmp_a, wi);
+
+#define SAC_GKCO_HOST_OPM_FOLD_LAST(ub_maj_r, ub_maj_w, ub_min)                                             \
+    ub_maj_w = ub_min_w * ub_min;
+
+#define SAC_GKCO_HOST_OPM_SPLIT_LAST(ub_maj_r, ub_maj_w, ub_min, len_min)                                   \
+    ub_min = ub_maj_r % len_min;                                                                            \
+    ub_maj_w = ub_maj_r / len_min;
 
 #define SAC_GKCO_HOST_OPM_SET_GRID(max_x, max_y, max_z, max_total, ...)                                     \
     dim3 grid (__VA_ARGS__);                                                                                \
@@ -607,9 +624,15 @@ extern "C" {
     if (!(idx % st < wi))                                                                                   \
         return;
 
+#define SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL(st, wi, idx, ret_col)                                              \
+    ret_col |= !(idx % st < wi);
+
 #define SAC_GKCO_GPUD_OPD_UNPAD(ub, idx)                                                                    \
     if (idx >= ub)                                                                                          \
         return;
+
+#define SAC_GKCO_GPUD_OPD_UNPAD_BL(ub, idx, ret_col)                                                        \
+    ret_col |= idx >= ub;
 
 #define SAC_GKCO_GPUD_OPD_UNSHIFT_LB(lb, idx)                                                               \
     idx = idx + lb;
@@ -618,10 +641,20 @@ extern "C" {
     idx = idx * st;
 
 #define SAC_GKCO_GPUD_OPD_UNCOMPRESS_SW(st, wi, idx)                                                        \
-    idx = idx / wi * st                                                                                     \
-            + idx % wi;
+    idx = idx / wi * st + idx % wi;
 
-#define SAC_GKCO_GPUD_OPM_DECLARE_IV(iv_var, iv_length) \
+#define SAC_GKCO_GPUD_OPM_UNFOLD_LAST(idx_maj, idx_min, ub_min)                                             \
+    idx_min = idx_maj % ub_min;                                                                             \
+    idx_maj = idx_maj / ub_min;
+
+#define SAC_GKCO_GPUD_OPM_UNSPLIT_LAST(idx_maj, idx_min, len_min)                                           \
+    idx_maj = idx_maj * len_min + idx_min;
+
+#define SAC_GKCO_GPUD_OPM_RETURN_IF_COLLECTED(ret_col)                                                      \
+    if (ret_col)                                                                                            \
+        return;
+
+#define SAC_GKCO_GPUD_OPM_DECLARE_IV(iv_var, iv_length)                                                     \
     int iv_var[iv_length];
 
 #define SAC_GKCO_GPUD_OPD_DEF_IV(iv_var, dimension, value_var)                                              \
