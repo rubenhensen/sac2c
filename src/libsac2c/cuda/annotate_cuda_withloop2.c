@@ -484,11 +484,13 @@ ACUWLfundef (node *arg_node, info *arg_info)
 node *
 ACUWLlet (node *arg_node, info *arg_info)
 {
+    node *old_letids;
     DBUG_ENTER ();
 
+    old_letids = INFO_LETIDS (arg_info);
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
-    INFO_LETIDS (arg_info) = NULL;
+    INFO_LETIDS (arg_info) = old_letids;
 
     DBUG_RETURN (arg_node);
 }
@@ -510,14 +512,19 @@ ACUWLwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("inspecting N_with that defines \"%s\"",
+                IDS_NAME (INFO_LETIDS (arg_info)));
+
     ty = IDS_NTYPE (INFO_LETIDS (arg_info));
     base_ty = TYgetSimpleType (TYgetScalar (ty));
     is_ok_basetype = CUisSupportedHostSimpletype (base_ty);
 
     /* If the N_with is a top level withloop */
     if (!INFO_INWL (arg_info)) {        // checking condition (1)
+        DBUG_PRINT ("  outer WL => candidate!");
         INFO_CUDARIZABLE (arg_info) = TRUE;
 
+        DBUG_PRINT ("  checking base type!");
         if (!is_ok_basetype) {          // checking condition  (2)
             INFO_CUDARIZABLE (arg_info) = FALSE;
             CTIwarnLine (global.linenum,
@@ -526,23 +533,37 @@ ACUWLwith (node *arg_node, info *arg_info)
                          "Missing type: \"%s\" for the result!",
                          global.type_string[base_ty]);
         }
+        DBUG_PRINT ("  %s!",
+                    (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
 
+        DBUG_PRINT ("  checking #pragma nocuda!");
         if (WITH_PRAGMA (arg_node) != NULL
             && PRAGMA_NOCUDA (WITH_PRAGMA (arg_node))) { // checking (3)
             INFO_CUDARIZABLE (arg_info) = FALSE;
             CTIwarnLine (global.linenum, "Cudarization of with-loop blocked "
                          "by pragma!");
         }
+        DBUG_PRINT ("  %s!",
+                    (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
 
         // checking conditions (4) and (5)
+        DBUG_PRINT ("  checking code!");
         INFO_INWL (arg_info) = TRUE;
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_INWL (arg_info) = FALSE;
+        DBUG_PRINT ("  %s!",
+                    (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
 
         // checking condition (6)
+        DBUG_PRINT ("  checking withop!");
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        DBUG_PRINT ("  %s!",
+                    (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
 
         WITH_CUDARIZABLE (arg_node) = INFO_CUDARIZABLE (arg_info);
+        DBUG_PRINT ("  result: %s!",
+                    (WITH_CUDARIZABLE (arg_node) ?
+                     "cudarizable" : "not cudarizable"));
 
         INFO_CUDARIZABLE (arg_info) = FALSE;
 
@@ -552,11 +573,13 @@ ACUWLwith (node *arg_node, info *arg_info)
          * straightaway. Nevertheless, we still have to traverse through it
          * as we are still in the outermost WL!
          */
+        DBUG_PRINT ("  inner WL => NO candidate!");
         WITH_CUDARIZABLE (arg_node) = FALSE;
         CTInoteLine (NODE_LINE (arg_node), "Inner With-loop => no cudarization!");
 
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        DBUG_PRINT ("  checking body of inner WL!");
         WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
         /*
          * For the outer WL, we still ensure that the inner WL is at least
@@ -565,6 +588,8 @@ ACUWLwith (node *arg_node, info *arg_info)
         INFO_CUDARIZABLE (arg_info)
           = is_ok_basetype && TUdimKnown (ty) && INFO_CUDARIZABLE (arg_info);
     }
+    DBUG_PRINT ("done with N_with that defines \"%s\"",
+                IDS_NAME (INFO_LETIDS (arg_info)));
 
     DBUG_RETURN (arg_node);
 }
@@ -608,7 +633,7 @@ ACUWLfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-
+    DBUG_PRINT ("    checking N_fold!");
     if (!INFO_INWL (arg_info)) {
         if (global.optimize.dopfd) {
             FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
@@ -657,19 +682,27 @@ ACUWLgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("    checking N_genarray!");
     if (!INFO_INWL (arg_info)) {
+        DBUG_PRINT ("      checking single operator!");
         if (GENARRAY_NEXT (arg_node) != NULL) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
             CTIwarnLine (global.linenum,
                          "Cannot cudarize with-loop due to"
                          " multiple operators!");
         }
+        DBUG_PRINT ("      %s!",
+                    (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
+
+        DBUG_PRINT ("      checking AKD!");
         if (!TUdimKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
             CTIwarnLine (global.linenum,
                          "Cannot cudarize genarray-with-loop as genarray-"
                          "with-loops require statically known result dimensions!");
         }
+        DBUG_PRINT ("      %s!",
+                    (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
     } else {
         if (IDS_AVIS (INFO_LETIDS (arg_info))
              != ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (INFO_CODE (arg_info))))) {
@@ -680,6 +713,7 @@ ACUWLgenarray (node *arg_node, info *arg_info)
                          " position!");
         }
     }
+    DBUG_PRINT ("    %s!", (INFO_CUDARIZABLE (arg_info) ? "ok" : "not ok"));
 
     DBUG_RETURN (arg_node);
 }
@@ -697,6 +731,7 @@ ACUWLmodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("    checking N_modarray!");
     if (!INFO_INWL (arg_info)) {
         if (MODARRAY_NEXT (arg_node) != NULL) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
