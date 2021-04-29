@@ -603,6 +603,7 @@
           <node name="Break" />
           <node name="Propagate" />
           <node name="Genarray" />
+          <node name="Modarray" />
           <node name="Id" />
           <node name="Let" />
         </travuser>

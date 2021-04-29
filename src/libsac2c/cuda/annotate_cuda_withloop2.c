@@ -5,14 +5,54 @@
  *
  * description:
  *   This module annotates N_with which can be executed on the
- *   CUDA device in parallel. Currently, cudarizable N_withs are
- *   limited as follows:
- *     1) A N_with must not contain any inner N_withs.
- *     2) Fold N_with is currently not supported.
- *     3) Function applications are not allowed in a cudarizable
- *        N_with except primitive mathematical functions.
+ *   CUDA device in parallel. It set for *all* N_with nodes the
+ *   attribute WITH_CUDARIZABLE to either true or false!
+ *
+ *   Currently (April 2021), a WL is annotated as CUDARIZABLE, iff:
+ *
+ *     (1) It is an outermost WL within a function body               &&
+ *
+ *     (2) The simpletype of the result of the WL is a
+ *         SupportedHostSimpletype.                                   &&
+ *
+ *     (3) There is no #pragma nocuda at the WL                       &&
+ *
+ *     (4) all referenced variables within that WL are at least AKD
+ *         && their simpletype is a SupportedHostSimpletype!          &&
+ *
+ *     (5) The only function applications that are found in the code
+ *         are LaC funs or functions from the module "Math". NB: we 
+ *         do traverse into the LaC fun bodies here!                  &&
+ *
+ *     (6) The N_withops supported are *single operator* WLs of the kind
+ *         N_genarray, N_modarray, or N_fold; for these, we have the
+ *         following constraints:
+ *           N_genarray and N_modarray:
+ *             The WL is at least AKD, and any potential inner WL 
+ *             can only be N_genarray, N_modarray, or N_fold as well;
+ *             An inner N_genarray or N_modarray can only be in 
+ *             perfect nesting position, i.e., its LHS is the CEXPR
+ *           N_fold:
+ *             is only admissible in case partial Folds (PFD) is turned on
+ *             and the result type is AKS.
  *
  *
+ * implementation:
+ *   The implementation is driven through ACUWLwith. It keeps track whether
+ *   WL is the outermost one ( !INFO_INWL ). Once inside the outermost WL, 
+ *   INFO_CUDARIZABLE is keeping track of the permissibility of *that* very WL.
+ *   Even when traversing inner WLs, INFO_CUDARIZABLE always relates to the
+ *   outermost one.
+ *   The overall scheme is that INFO_CUDARIZABLE is initialised with TRUE and
+ *   during the traversal of all parts of the WL, including potentially nested
+ *   WLs, we check for exclusion criteria according to the above list.
+ *
+ *   ACUWLwith checks (1), (2), and (3).
+ *   ACUWLid checks for (4), and
+ *   ACUWLap checks for (5).
+ *   The criteria from (6) are checked within the individual withop functions
+ *   ACUWLgenarray, ACUWLmodarray, ACUWLfold, ACUWLbreak, ACUWLpropagate
+ *   
  *****************************************************************************/
 
 /** <!--********************************************************************-->
@@ -62,12 +102,14 @@ struct INFO {
     node *code;
 };
 
-#define INFO_INWL(n) (n->inwl)
-#define INFO_CUDARIZABLE(n) (n->cudarizable)
-#define INFO_LETIDS(n) (n->letids)
-#define INFO_FUNDEF(n) (n->fundef)
-#define INFO_FROM_AP(n) (n->from_ap)
-#define INFO_CODE(n) (n->code)
+#define INFO_INWL(n) (n->inwl)                // signals that we are within a
+                                              // candidate WL (outer one)
+#define INFO_CUDARIZABLE(n) (n->cudarizable)  // signals whether the WL under
+                                              // consideration is still permissible
+#define INFO_LETIDS(n) (n->letids)            // current LHS N_ids
+#define INFO_FUNDEF(n) (n->fundef)            // current N_fundef
+#define INFO_FROM_AP(n) (n->from_ap)          // did we enter via LaC-fun application?
+#define INFO_CODE(n) (n->code)                // current N_code
 
 static info *
 MakeInfo (void)
@@ -102,6 +144,11 @@ FreeInfo (info *info)
  * @}  <!-- INFO structure -->
  *****************************************************************************/
 
+#if 0
+
+/*   This stuff will need to go into CUKNL! it serves as basis to initialise 
+ *   the "default pragma"
+ */
 static void
 InitCudaBlockSizes (void)
 {
@@ -345,6 +392,8 @@ ATravPart (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#endif /* 0 */
+
 /** <!--********************************************************************-->
  *
  * @name Entry functions
@@ -361,8 +410,6 @@ ACUWLdoAnnotateCUDAWL (node *syntax_tree)
 {
     info *info;
     DBUG_ENTER ();
-
-    InitCudaBlockSizes ();
 
     info = MakeInfo ();
     TRAVpush (TR_acuwl);
@@ -408,10 +455,9 @@ ACUWLfundef (node *arg_node, info *arg_info)
         INFO_FUNDEF (arg_info) = NULL;
 
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
-    /* If the fundef is lac function, we check whether the traversal
-     * is initiated from the calling site. */
-    else {
+    } else {
+        /* If the fundef is lac function, we check whether the traversal
+         * is initiated from the calling site. */
         if (INFO_FROM_AP (arg_info)) {
             old_fundef = INFO_FUNDEF (arg_info);
             INFO_FUNDEF (arg_info) = arg_node;
@@ -431,7 +477,7 @@ ACUWLfundef (node *arg_node, info *arg_info)
  *
  * @fn node *ACUWLlet( node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief just injecting actual lhs N_ids into INFO_LETIDS!
  *
  *
  *****************************************************************************/
@@ -442,6 +488,7 @@ ACUWLlet (node *arg_node, info *arg_info)
 
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
+    INFO_LETIDS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -467,84 +514,56 @@ ACUWLwith (node *arg_node, info *arg_info)
     base_ty = TYgetSimpleType (TYgetScalar (ty));
     is_ok_basetype = CUisSupportedHostSimpletype (base_ty);
 
-    /* The following assignment cauese a bug when a fold wl is inside
-     * a fold wl. Usually, in such a case, the outer fold wl should not
-     * be cudarized and this is indicated when tranvering the withop.
-     * however, before we set this flag to the outer wl, we traverse
-     * the body first. And when the inner fold wl is traversed, it will
-     * set INFO_CUDARIZABLE to true here. Essentially, this overwrites
-     * the flag value set previously. So we need to move the following
-     * statment into the "if" branch. */
-    // INFO_CUDARIZABLE( arg_info) = TRUE;
-
     /* If the N_with is a top level withloop */
-    if (!INFO_INWL (arg_info)) {
+    if (!INFO_INWL (arg_info)) {        // checking condition (1)
         INFO_CUDARIZABLE (arg_info) = TRUE;
 
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-
-        INFO_INWL (arg_info) = TRUE;
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-        INFO_INWL (arg_info) = FALSE;
-
-        if (!INFO_CUDARIZABLE (arg_info)) {
-            CTInoteLine (NODE_LINE (arg_node),
-                         "Body of With-Loop to complex => no cudarization!");
+        if (!is_ok_basetype) {          // checking condition  (2)
+            INFO_CUDARIZABLE (arg_info) = FALSE;
+            CTIwarnLine (global.linenum,
+                         "Cannot cudarize with-loop due to missing base type "
+                         "implementation! "
+                         "Missing type: \"%s\" for the result!",
+                         global.type_string[base_ty]);
         }
 
-        if (WITH_PRAGMA (arg_node) != NULL && PRAGMA_NOCUDA (WITH_PRAGMA (arg_node))) {
+        if (WITH_PRAGMA (arg_node) != NULL
+            && PRAGMA_NOCUDA (WITH_PRAGMA (arg_node))) { // checking (3)
             INFO_CUDARIZABLE (arg_info) = FALSE;
             CTIwarnLine (global.linenum, "Cudarization of with-loop blocked "
                          "by pragma!");
         }
 
-        /* We only cudarize AKS N_with */
-        if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold) {
-            /* For fold withloop to be cudarized, it *must* be AKS */
-            WITH_CUDARIZABLE (arg_node) = TYisAKS (ty) && INFO_CUDARIZABLE (arg_info);
-            if (WITH_CUDARIZABLE (arg_node) && !is_ok_basetype) {
-                WITH_CUDARIZABLE (arg_node) = FALSE;
-                CTIwarnLine (global.linenum,
-                             "Cannot cudarize with-loop due to missing base type "
-                             "implementation! "
-                             "Missing type: \"%s\" for the result of fold!",
-                             global.type_string[base_ty]);
-            }
-
-            if (WITH_CUDARIZABLE (arg_node)) {
-                FOLD_ISPARTIALFOLD (WITH_WITHOP (arg_node)) = TRUE;
-            }
-        } else {
-            WITH_CUDARIZABLE (arg_node)
-              = (TYisAKS (ty) || TYisAKD (ty)) && INFO_CUDARIZABLE (arg_info);
-            if (WITH_CUDARIZABLE (arg_node) && !is_ok_basetype) {
-                WITH_CUDARIZABLE (arg_node) = FALSE;
-                CTIwarnLine (global.linenum,
-                             "Cannot cudarize with-loop due to missing base type "
-                             "implementation! "
-                             "Missing type: \"%s\" for the result!",
-                             global.type_string[base_ty]);
-            }
-        }
-
-        if (WITH_CUDARIZABLE (arg_node)) {
-            anontrav_t atrav[2] = {{N_part, &ATravPart}, {(nodetype)0, NULL}};
-
-            TRAVpushAnonymous (atrav, &TRAVsons);
-            WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), NULL);
-            TRAVpop ();
-        }
-    } else {
-        CTInoteLine (NODE_LINE (arg_node), "Inner With-loop => no cudarization!");
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        // checking conditions (4) and (5)
+        INFO_INWL (arg_info) = TRUE;
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+        INFO_INWL (arg_info) = FALSE;
 
-        /* Since we only try to cudarize outermost N_with, any
-         * inner N_with is tagged as not cudarizbale */
+        // checking condition (6)
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
+        WITH_CUDARIZABLE (arg_node) = INFO_CUDARIZABLE (arg_info);
+
+        INFO_CUDARIZABLE (arg_info) = FALSE;
+
+    } else {
+        /*
+         * we are dealing with an inner WL here. Consequently, we dismiss it 
+         * straightaway. Nevertheless, we still have to traverse through it
+         * as we are still in the outermost WL!
+         */
         WITH_CUDARIZABLE (arg_node) = FALSE;
+        CTInoteLine (NODE_LINE (arg_node), "Inner With-loop => no cudarization!");
 
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
+
+        /*
+         * For the outer WL, we still ensure that the inner WL is at least
+         * AKD and of suitable simpletype.
+         */
         INFO_CUDARIZABLE (arg_info)
-          = (TYisAKS (ty) || TYisAKD (ty)) && INFO_CUDARIZABLE (arg_info);
+          = is_ok_basetype && TUdimKnown (ty) && INFO_CUDARIZABLE (arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -554,7 +573,7 @@ ACUWLwith (node *arg_node, info *arg_info)
  *
  * @fn node *ACUWLcode( node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief just injecting actual N_code into INFO_CODE!
  *
  *
  *****************************************************************************/
@@ -580,7 +599,7 @@ ACUWLcode (node *arg_node, info *arg_info)
  *
  * @fn node *ACUWLfold( node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief checking condition (6) for N_fold
  *
  *
  *****************************************************************************/
@@ -589,18 +608,37 @@ ACUWLfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (global.optimize.dopfd) {
-        FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
-        FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
-    } else {
-        /* An outermost fold N_with is currently not cudarizable;
-         * however, if the fold is within an N_with, we do not signal
-         * uncudarizeable to the enclosing N_with. */
-        if (!INFO_INWL (arg_info)) {
-            // if(!global.optimize.doscuf) {
+
+    if (!INFO_INWL (arg_info)) {
+        if (global.optimize.dopfd) {
+            FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
+            if (FOLD_NEXT (arg_node) != NULL) {
+                INFO_CUDARIZABLE (arg_info) = FALSE;
+                CTIwarnLine (global.linenum,
+                             "Cannot cudarize with-loop due to"
+                             " multiple operators!");
+            }
+            if (!TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
+                INFO_CUDARIZABLE (arg_info) = FALSE;
+                CTIwarnLine (global.linenum,
+                             "Cannot cudarize with-loop as partial folds"
+                             " require statically known result shapes!");
+            }
+            if (INFO_CUDARIZABLE (arg_info)) {
+                FOLD_ISPARTIALFOLD (arg_node) = TRUE;
+            }
+        } else {
             INFO_CUDARIZABLE (arg_info) = FALSE;
-            //}
+            CTIwarnLine (global.linenum,
+                         "Cannot cudarize with-loop as partial"
+                         " folds are turned off! Use -doPFD to enable"
+                         " partial folds.");
         }
+    } else {
+        /* Inner with-loops themselves are dismissed in ACUWLwith; here we
+         * only check (4) of the neutral element!
+         */
+        FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -610,7 +648,7 @@ ACUWLfold (node *arg_node, info *arg_info)
  *
  * @fn node *ACUWLgenarray( node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief check conditon (6) for N_genarray
  *
  *
  *****************************************************************************/
@@ -619,12 +657,68 @@ ACUWLgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /* If there is a genarray in a withloop, the
-     * outer one cannot be cudarized */
-    if (INFO_INWL (arg_info)
-        && IDS_AVIS (INFO_LETIDS (arg_info))
+    if (!INFO_INWL (arg_info)) {
+        if (GENARRAY_NEXT (arg_node) != NULL) {
+            INFO_CUDARIZABLE (arg_info) = FALSE;
+            CTIwarnLine (global.linenum,
+                         "Cannot cudarize with-loop due to"
+                         " multiple operators!");
+        }
+        if (!TUdimKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
+            INFO_CUDARIZABLE (arg_info) = FALSE;
+            CTIwarnLine (global.linenum,
+                         "Cannot cudarize genarray-with-loop as genarray-"
+                         "with-loops require statically known result dimensions!");
+        }
+    } else {
+        if (IDS_AVIS (INFO_LETIDS (arg_info))
              != ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (INFO_CODE (arg_info))))) {
-        INFO_CUDARIZABLE (arg_info) = FALSE;
+            INFO_CUDARIZABLE (arg_info) = FALSE;
+            CTIwarnLine (global.linenum,
+                         "Cannot cudarize with-loop as inner"
+                         " genarray-with-loop is not in perfect nesting"
+                         " position!");
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ACUWLmodarray( node *arg_node, info *arg_info)
+ *
+ * @brief check conditon (6) for N_modarray
+ *
+ *
+ *****************************************************************************/
+node *
+ACUWLmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (!INFO_INWL (arg_info)) {
+        if (MODARRAY_NEXT (arg_node) != NULL) {
+            INFO_CUDARIZABLE (arg_info) = FALSE;
+            CTIwarnLine (global.linenum,
+                         "Cannot cudarize with-loop due to"
+                         " multiple operators!");
+        }
+        if (!TUdimKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
+            INFO_CUDARIZABLE (arg_info) = FALSE;
+            CTIwarnLine (global.linenum,
+                         "Cannot cudarize modarray-with-loop as modarray-"
+                         "with-loops require statically known result dimensions!");
+        }
+    } else {
+        if (IDS_AVIS (INFO_LETIDS (arg_info))
+             != ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (INFO_CODE (arg_info))))) {
+            INFO_CUDARIZABLE (arg_info) = FALSE;
+            CTIwarnLine (global.linenum,
+                         "Cannot cudarize with-loop as inner"
+                         " modarray-with-loop is not in perfect nesting"
+                         " position!");
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -643,8 +737,9 @@ ACUWLbreak (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /* Currently, we do not support break N_with */
     INFO_CUDARIZABLE (arg_info) = FALSE;
+    CTIwarnLine (global.linenum,
+                 "Cannot cudarize break-with-loop!");
 
     DBUG_RETURN (arg_node);
 }
@@ -662,8 +757,9 @@ ACUWLpropagate (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /* Currently, we do not support propagate N_with */
     INFO_CUDARIZABLE (arg_info) = FALSE;
+    CTIwarnLine (global.linenum,
+                 "Cannot cudarize propagate-with-loop!");
 
     DBUG_RETURN (arg_node);
 }
@@ -686,10 +782,12 @@ ACUWLid (node *arg_node, info *arg_info)
     type = ID_NTYPE (arg_node);
 
     if (INFO_INWL (arg_info)) {
-        /* We do not cudarize any N_with which contains arrays
-         * other than AKS arrays */
-        if (!TUisScalar (type) && !TYisAKV (type) && !TYisAKS (type) && !TYisAKD (type)) {
+        if (!TUdimKnown( type)) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
+            CTIwarnLine (global.linenum,
+                         "Cannot cudarize with-loop as the variable \"%s\""
+                         "is of statically unknown dimensionality.",
+                         ID_NAME (arg_node));
         } else if (!CUisSupportedHostSimpletype (TYgetSimpleType (TYgetScalar (type)))) {
             INFO_CUDARIZABLE (arg_info) = FALSE;
             CTIwarnLine (global.linenum,
@@ -736,28 +834,6 @@ ACUWLap (node *arg_node, info *arg_info)
      * functions. For the former, we traversal into the corresponding N_fundef
      * and for the later we need to check whether it prevents the current
      * N_with from being cudarized. */
-
-    /*
-      if( INFO_INWL( arg_info)) {
-        if( traverse_lac_fun) {
-           AP_FUNDEF( arg_node) = TRAVdo( AP_FUNDEF( arg_node), arg_info);
-        }
-        else {
-          // The only function application allowed in a cudarizbale N_with
-          // is mathematical functions. However, the check below is ugly
-          // and a better way needs to be found.
-          ns = FUNDEF_NS( AP_FUNDEF( arg_node));
-          if( ns == NULL || !STReq( NSgetModule( ns), "Math")) {
-            INFO_CUDARIZABLE( arg_info) = FALSE;
-          }
-        }
-      }
-      else {
-        if( traverse_lac_fun) {
-          AP_FUNDEF( arg_node) = TRAVdo( AP_FUNDEF( arg_node), arg_info);
-        }
-      }
-    */
 
     if (traverse_lac_fun) {
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
