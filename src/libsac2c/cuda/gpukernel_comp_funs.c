@@ -263,7 +263,7 @@ char* CONST_RETURN_COL_POSTFIX = "ret_col";
  * the compile functions. It is not actually an enum, as ISO C forbids forward declarations of enums.
  */
 // (bottom up) Create a thread space to spawn the kernels
-#define PASS_HOST               (PASS_BRANCHLESS | PASS_CHECK_PRAGMA | PASS_GB_EMIT)
+#define PASS_HOST               (PASS_CHECK_PRAGMA | PASS_GB_EMIT)
 // (bottom up) Recreate the intermediate thread space computation values
 #define PASS_KERNEL_THREADSPACE (PASS_BRANCHLESS | PASS_VAL_PRESERVE | PASS_IDX_COMPUTE)
 // (top down)  Generate the iv from the kernel coordinates and the pass above
@@ -430,24 +430,24 @@ char* NewUpperboundVariable(gpukernelres_t* gkr, size_t dim) {
  * Macro for a GKCOcomp-function end. It adds some whitespace (in the logs, as well as the generated code),
  * prints the gkr, and returns it.
  */
-#define COMP_FUN_DBUG_RETURN(gkr)                                                                                   \
+#define COMP_FUN_DBUG_RETURN(gkr)                                                                           \
     fprintf(global.outfile, "\n");                                                                          \
     DBUG_EXECUTE(PrintGPUkernelres(gkr, stderr));                                                           \
     DBUG_EXECUTE(fprintf(stderr, "\n"));                                                                    \
     DBUG_RETURN(gkr);
 
 /**
- * Make a new gpu kernel representation struct. The vectors containing the variable names will be empty at this point.
- * This is because the variables have to be inserted manually at GKCOcompGen.
+ * Make a new gpu kernel representation struct. The vectors containing the variable identifiers and constants will be
+ * empty at this point. This is because the variables have to be inserted manually at GKCOcompGen.
  *
- * @param pass The pass for which the gpu kernel representation is created.
- * @return The newly created gpu kernel representation
+ * @param pass              The pass for which the gpu kernel representation is created.
+ * @return                  The newly created gpu kernel representation
  */
 static gpukernelres_t*
 MakeGPUkernelres(pass_t pass) {
     DBUG_ENTER();
 
-    gpukernelres_t* gkr = (gpukernelres_t*) MEMmalloc(sizeof(gpukernelres_t));
+    gpukernelres_t* gkr     = (gpukernelres_t*) MEMmalloc(sizeof(gpukernelres_t));
 
     // This has to be allocated first, as some of the initialization functions below push to it already
     GKR_OWNED_VARS(gkr) = STRVECempty(0);
@@ -466,25 +466,27 @@ MakeGPUkernelres(pass_t pass) {
     GKR_WI_AT(gkr) = STRVECempty(0);
     GKR_ID_AT(gkr) = STRVECempty(0);
 
-    GKR_HELPER_A(gkr)   = GKCOvarCreate(gkr, CONST_TMP_POSTFIX);
-    GKR_HELPER_B(gkr)   = GKCOvarCreate(gkr, CONST_TMP_POSTFIX);
-    GKR_RETURN_COL(gkr) = GKCOvarCreate(gkr, CONST_RETURN_COL_POSTFIX);
+    GKR_HELPER_A(gkr) = GKCOvarCreate(gkr, CONST_TMP_POSTFIX);
+    GKR_HELPER_B(gkr) = GKCOvarCreate(gkr, CONST_TMP_POSTFIX);
+    if (GKR_BRANCHLESS(gkr))
+        GKR_RETURN_COL(gkr) = GKCOvarCreate(gkr, CONST_RETURN_COL_POSTFIX);
 
     DBUG_RETURN(gkr);
 }
 
 /**
- * Free a GPU kernel res. All owned variables are stored in the vector GKR_OWNED_VARS(gkr). This vector will be
- * deep-freed, while all other vectors are shallow freeds. The single helper variables don't have to be freed either,
- * for the same reason.
+ * Free a GPU kernel res. All variables owned by the gpu kernel res are stored in the vector GKR_OWNED_VARS(gkr).
+ * This vector will be deep-freed, while all other vectors are shallow freed. The single helper variables don't
+ * have to be freed either, for the same reason.
  *
- * @param gkr The struct to be freed
- * @return the null pointer
+ * @param gkr               The struct to be freed
+ * @return                  The null pointer
  */
 static gpukernelres_t*
 FreeGPUkernelres(gpukernelres_t* gkr) {
     DBUG_ENTER();
 
+    // Clean up the internal vectors
     STRVECfree(GKR_LB(gkr));
     STRVECfree(GKR_UB(gkr));
     STRVECfree(GKR_ST(gkr));
@@ -497,8 +499,11 @@ FreeGPUkernelres(gpukernelres_t* gkr) {
     STRVECfree(GKR_WI_AT(gkr));
 
     // We do not free the helper variables, because they are already in owned_vars
+
+    // Clean up all variables owned by the gpu kernel res, and the vector itself as well
     STRVECfreeDeep(GKR_OWNED_VARS(gkr));
 
+    // Clean up the datastructure itself
     MEMfree(gkr);
 
     DBUG_RETURN(NULL);
@@ -511,8 +516,9 @@ FreeGPUkernelres(gpukernelres_t* gkr) {
  * pop the lb, ub, st and wi values from their stacks.
  * If PASS_VAL_CONSUME is not set, lb will be set to 0, and step and width will be set to 1. A new variable for ub will
  * be created and declared in the generated code. It will not be set to a value in the generated code, however.
+ * If PASS_IDX_COMPUTE is set, we do the same for the id variable.
  *
- * @param gkr The GPU kernel representation
+ * @param gkr               The GPU kernel representation
  */
 static void
 AddDimension(gpukernelres_t* gkr) {
@@ -521,13 +527,16 @@ AddDimension(gpukernelres_t* gkr) {
     GKR_DIM(gkr)++;
 
     if (!GKR_VAL_CONSUME(gkr)) {
+        // We are not consuming the stacks, so new variables have to be created
         STRVECappend(GKR_LB(gkr), CONST_ZERO);
         STRVECappend(GKR_UB(gkr), GKCOvarCreate(gkr, CONST_UB_POSTFIX));
         STRVECappend(GKR_ST(gkr), CONST_ONE);
         STRVECappend(GKR_WI(gkr), CONST_ONE);
+        // Handle the id variable only when needed
         if (GKR_IDX_COMPUTE(gkr))
             STRVECappend(GKR_ID(gkr), GKCOvarCreate(gkr, CONST_IDX_POSTFIX));
     } else {
+        // We are consuming the stacks, so we use these variables to fill the new dimension
         size_t new_dim = GKR_DIM(gkr) - 1;
         STRVECappend(GKR_LB(gkr), NULL);
         STRVECappend(GKR_UB(gkr), NULL);
@@ -537,6 +546,7 @@ AddDimension(gpukernelres_t* gkr) {
         GKR_UB_POP(gkr, new_dim)
         GKR_ST_POP(gkr, new_dim)
         GKR_WI_POP(gkr, new_dim)
+        // Handle the id variable only when needed
         if (GKR_IDX_COMPUTE(gkr)) {
             STRVECappend(GKR_ID(gkr), NULL);
             GKR_ID_POP(gkr, new_dim);
@@ -549,28 +559,34 @@ AddDimension(gpukernelres_t* gkr) {
 /**
  * Remove a dimension from the GPU kernel representation.
  *
- * If PASS_VAL_PRESERVE is set, the variables will be pushed to their stacks. If not, they simply disappear.
+ * If PASS_VAL_PRESERVE is set, the variables lb, ub, st and wi will be pushed to their stacks.
+ * If not, they simply disappear.
+ * If PASS_IDX_COMPUTE is set, we do the same for the id variable.
  *
- * @param gkr The GPU kernel representation from which the dimension has to be removed
+ * @param gkr               The GPU kernel representation from which the dimension has to be removed
  */
 static void
 RemoveDimension(gpukernelres_t* gkr) {
     DBUG_ENTER();
 
     if (GKR_VAL_PRESERVE(gkr)) {
+        // If we preserve the variables, push them to their stacks first
         size_t old_dim = GKR_DIM(gkr) - 1;
         GKR_LB_PUSH(gkr, old_dim)
         GKR_UB_PUSH(gkr, old_dim)
         GKR_ST_PUSH(gkr, old_dim)
         GKR_WI_PUSH(gkr, old_dim)
+        // Handle the id variable only when needed
         if (GKR_IDX_COMPUTE(gkr))
             GKR_ID_PUSH(gkr, old_dim)
     }
 
+    // Remove the last dimension from all variable arrays
     STRVECpop(GKR_LB(gkr));
     STRVECpop(GKR_UB(gkr));
     STRVECpop(GKR_ST(gkr));
     STRVECpop(GKR_WI(gkr));
+    // Handle the id variable only when needed
     if (GKR_IDX_COMPUTE(gkr))
         STRVECpop(GKR_ID(gkr));
 
@@ -582,44 +598,53 @@ RemoveDimension(gpukernelres_t* gkr) {
 /**
  * Create a new temporary variable, with proper pre- and postfixes. The prefix is fixed to CONST_PREFIX.
  * The postfix is an argument, as this function can be used for different purpose variables.
+ * The variable is automatically declared in the generated code.
  *
- * @param postfix The postfix to be added
- * @return The properly pre- and postfixed variable name.
+ * @param postfix           The postfix to be added
+ * @return                  The properly pre- and postfixed variable name.
  */
 char*
 GKCOvarCreate(gpukernelres_t* gkr, char* postfix) {
     DBUG_ENTER();
 
+    // Create the new variable name
     char* without_prefix = TRAVtmpVarName(postfix);
     char* var            = STRcat(CONST_VAR_PREFIX, without_prefix);
+    // Free up the intermediate string
+    MEMfree(without_prefix);
+
+    // Declare the new variable
     INDENT
     fprintf(global.outfile, "SAC_GKCO_OPD_DECLARE(%s)\n", var);
 
-    MEMfree(without_prefix);
+    // Append the variable to the list of owned variable names
     STRVECappend(GKR_OWNED_VARS(gkr), var);
 
     DBUG_RETURN(var);
 }
 
 /**
- * Transform a node array into an integer array. Easier to work with, especially in cases where the
- * nodes cannot be accessed sequentially.
+ * Transform a node array into an integer array. An integer array is easier to work with,
+ * especially in cases where the nodes cannot be accessed sequentially in order.
  *
- * @param nums_node The node to be transformed into an array
- * @param length The expected length of the array. If the actual length of the parameter is different,
- *               a compiler error will be thrown.
- * @param pragma The pragma name, used for the error generation.
- * @return An integer array with the values from the nodes array.
+ * @param nums_node         The node to be transformed into an array
+ * @param length            The expected length of the array. If the actual length of the node is different,
+ *                          a compiler error will be thrown.
+ * @param pragma            The pragma name, used for the error generation.
+ * @return                  An integer array with the values from the nodes array.
  */
 static int*
 getNumArrayFromNodes(node* nums_node, size_t length, char* pragma) {
     DBUG_ENTER ();
 
+    // Check the expected length against the actual length
     checkArgsLength(nums_node, length, pragma);
 
+    // Get the correct AST node, and create the array
     node* exprs = ARRAY_AELEMS(nums_node);
     int * array = (int*) MEMmalloc(sizeof(int*) * length);
 
+    // Fill up the array
     for (size_t i = 0; i < length; i++) {
         node* arg = EXPRS_EXPR(exprs);
         array[i] = NUM_VAL(arg);
@@ -664,17 +689,17 @@ PrintGPUkernelres(gpukernelres_t* gkr, FILE* stream) {
     STRVECprint(GKR_WI_AT(gkr), stream, linesize, 9);
     fprintf(stream, "    idt = ");
     STRVECprint(GKR_ID_AT(gkr), stream, linesize, 9);
-    fprintf(stream, "    helper_a = %s\n", GKR_HELPER_A(gkr));
+    fprintf(stream, "    helper_a = %s", GKR_HELPER_A(gkr));
+    fprintf(stream, "\n");
     fprintf(stream, "    own = ");
     STRVECprint(GKR_OWNED_VARS(gkr), stream, linesize, 9);
+    fprintf(stream, "\n");
 
     DBUG_RETURN();
 }
 
 
 /** <!-- ****************************************************************** -->
- * @fn void
- *     printNumArray (node *array)
  *
  * @brief helper function printing N_array with N_num and N-id elems only
  *        to stderr.
@@ -718,15 +743,14 @@ printNumArray(node* array) {
 \**********************************************************************************************************************/
 
 /** <!-- ****************************************************************** -->
- * @fn gpukernelres_t *
- *     dispatch (node *spap, unsigned int bnum, char **bounds)
  *
  * @brief generates the actual function dispatch based on the info in
  *        gpukernel_funs.mac. It also handles the special case of the
  *        innermost N_spid "Gen" as a call to GKCOcompGen.
  *
  *        This version handles the bottom-up dispatch order used in
- *        the first and second passes.
+ *        the first and second passes. It calls the non-inverse versions
+ *        of the GKCOcomp-functions.
  *
  * @param spap   either N_spap of an outer function or N_spid for "Gen"
  * @param res    the gpukernelres_t that has to be passed through
@@ -742,22 +766,35 @@ dispatch(node* spap, gpukernelres_t* res, unsigned int bnum, char** bounds) {
 
     DBUG_ENTER ();
 
+    // First, we handle the gen case separately, as we stop the recursion here
     if (NODE_TYPE (spap) == N_spid) {
         res = GKCOcompGen(bnum, bounds, res);
     }
 
+// Macro's for expanding the arguments into the GKCOcomp call
 #define ARGS(nargs) ARG##nargs
 #define ARG0
 #define ARG1 EXPRS_EXPR (SPAP_ARGS (spap)),
+// Macro's for skipping the arguments when recursively calling the dispatch function
 #define SKIPS(nargs) SKIP##nargs
 #define SKIP0
 #define SKIP1 EXPRS_NEXT
-#define WLP(fun, nargs, checkfun)                                                         \
-    else if (STReq (SPAP_NAME (spap), #fun)) {                                            \
-        DBUG_ASSERT ((SPAP_ARGS (spap) != NULL), "missing argument in `%s' ()", #fun);    \
-        res = dispatch (EXPRS_EXPR ( SKIPS( nargs) (SPAP_ARGS (spap))),                   \
-                                          res, bnum, bounds);                             \
-        res = GKCOcomp ## fun ( ARGS( nargs) res);                                       \
+// We now define the else-if clause as a WLP macro. Then, below, we include the
+// "gpukernel_funs.mac" file, which calls the WLP macro for each available mapping.
+// Note that we are lacing through the res variable, containing the current
+// gpu kernel res
+#define WLP(fun, nargs, checkfun)                                                                           \
+    else if (STReq (SPAP_NAME (spap), #fun)) {                                                              \
+        DBUG_ASSERT ((SPAP_ARGS (spap) != NULL), "missing argument in `%s' ()", #fun);                      \
+        /* Because this is the bottom-up version, we do the recursive dispatch call first                   \
+         * We give it the inner pragma call to the mapping. For this we first have to                       \
+         * skip the arguments for the GKCOcomp function. We use the macros defined above                    \
+         * for this. */                                                                                     \
+        res = dispatch (EXPRS_EXPR ( SKIPS( nargs) (SPAP_ARGS (spap))),                                     \
+                                          res, bnum, bounds);                                               \
+        /* After the recursive call, we call the actual mapping function with the correct                   \
+         * number of arguments. We use the macros defined above for this. */                                \
+        res = GKCOcomp ## fun ( ARGS( nargs) res);                                                          \
     }
 // @formatter:off
 #include "gpukernel_funs.mac"
@@ -771,6 +808,7 @@ dispatch(node* spap, gpukernelres_t* res, unsigned int bnum, char** bounds) {
 #undef SKIP1
 // @formatter:on
 
+        // Finally, if none of the cases above were fired, we must have an undefined macro.
     else {
         DBUG_ASSERT(0 == 1, "expected gpukernel function, found `%s'", SPAP_NAME(spap));
     }
@@ -779,8 +817,6 @@ dispatch(node* spap, gpukernelres_t* res, unsigned int bnum, char** bounds) {
 }
 
 /** <!-- ****************************************************************** -->
- * @fn gpukernelres_t *
- *     dispatchInv (node *spap, gpukernelres_t* res)
  *
  * @brief generates the actual function dispatch based on the info in 
  *        gpukernel_funs.mac. It also handles the special case of the
@@ -803,23 +839,35 @@ dispatchInv(node* spap, char* iv_var, gpukernelres_t* res) {
 
     DBUG_ENTER ();
 
+    // First, we handle the gen case separately, as we stop the recursion here
     if (NODE_TYPE (spap) == N_spid) {
-        // TODO: Parametrize iv_var?
         res = GKCOcompInvGen(iv_var, res);
     }
 
+// Macro's for expanding the arguments into the GKCOcomp call
 #define ARGS(nargs) ARG##nargs
 #define ARG0
 #define ARG1 EXPRS_EXPR (SPAP_ARGS (spap)),
+// Macro's for skipping the arguments when recursively calling the dispatch function
 #define SKIPS(nargs) SKIP##nargs
 #define SKIP0
 #define SKIP1 EXPRS_NEXT
-#define WLP(fun, nargs, checkfun)                                                         \
-    else if (STReq (SPAP_NAME (spap), #fun)) {                                            \
-        DBUG_ASSERT ((SPAP_ARGS (spap) != NULL), "missing argument in `%s' ()", #fun);    \
-    res = GKCOcompInv ## fun (ARGS(nargs) res);                                           \
-    res = dispatchInv (EXPRS_EXPR ( SKIPS( nargs) (SPAP_ARGS (spap))),                    \
-                       iv_var, res);                                                      \
+// We now define the else-if clause as a WLP macro. Then, below, we include the
+// "gpukernel_funs.mac" file, which calls the WLP macro for each available mapping.
+// Note that we are lacing through the res variable, containing the current
+// gpu kernel res
+#define WLP(fun, nargs, checkfun)                                                                           \
+    else if (STReq (SPAP_NAME (spap), #fun)) {                                                              \
+        DBUG_ASSERT ((SPAP_ARGS (spap) != NULL), "missing argument in `%s' ()", #fun);                      \
+        /* Because this is the top-down version, we call the actual mapping function first.                 \
+         * We give it the correct number of arguments. For this, we use the macros defined                  \
+         * above */                                                                                         \
+        res = GKCOcompInv ## fun (ARGS(nargs) res);                                                         \
+        /* After the mapping function call, we do the recursive dispatch call. We give it                   \
+         * the inner pragma call to the mapping. For this, we have to skip the arguments                    \
+         * for the GKCOcomp function. We use the macros defined above for this. */                          \
+        res = dispatchInv (EXPRS_EXPR ( SKIPS( nargs) (SPAP_ARGS (spap))),                                  \
+                       iv_var, res);                                                                        \
     }
 // @formatter:off
 #include "gpukernel_funs.mac"
@@ -833,6 +881,7 @@ dispatchInv(node* spap, char* iv_var, gpukernelres_t* res) {
 #undef SKIP1
 // @formatter:on
 
+        // Finally, if none of the cases above were fired, we must have an undefined macro.
     else {
         DBUG_ASSERT(0 == 1, "expected gpukernel function, found `%s'", SPAP_NAME(spap));
     }
@@ -841,13 +890,11 @@ dispatchInv(node* spap, char* iv_var, gpukernelres_t* res) {
 }
 
 /** <!-- ****************************************************************** -->
- * @fn gpukernelres_t *
- *     GKCOcompHostKernelPragma (node *spap, unsigned int bnum, char ** bounds)
  *
- * @brief generates the actual function nesting for the PASS_HOST pass. It manually calls the
- *        mandatory outer function GKCOcompGridBlock with its parameter and
- *        it provides the innermost calls through the recursive helper function
- *        dispatch.
+ * @brief generates the actual function nesting for the PASS_HOST pass. It creates
+ *        the gpu kernel res, and stores the pass information inside it. Then it
+ *        calls the recursive helper function dispatch and cleans up the gpu
+ *        kernel res again.
  *
  * @result Prints the code necessary to compute the transformed thread space.
  *
@@ -881,14 +928,13 @@ GKCOcompHostKernelPragma(node* spap, unsigned int bnum, char** bounds) {
 }
 
 /** <!-- ****************************************************************** -->
- * @fn gpukernelres_t *
- *     GKCOcompGPUDkernelPragma (node *spap, unsigned int bnum, char ** bounds)
  *
- * @brief generates the actual function nesting for the PAST_KERNEL_* passes. It manually calls the
- *        mandatory outer function GKCOcompGridBlock with its parameter and
- *        it provides the innermost calls through the recursive helper function
- *        dispatch.
- *        // TODO: update once changed
+ * @brief generates the actual function nesting for the PAST_KERNEL_* passes.
+ *        It creates the gpu kernel res, stores the pass information inside
+ *        it and calls the recursive helper function dispatch. The GPUD version
+ *        of the pragma function needs a second pass, so it updates the pass
+ *        information in the gpu kernel res and calls the inverse dispatch
+ *        function this time. Lastly, the gpu kernel res function is freed.
  *
  * @result Prints the code necessary to compute the transformed real index vector
  *         from the grid/block coordinates
@@ -932,35 +978,52 @@ GKCOcompGPUDkernelPragma(node* spap, char* iv_var, unsigned int bnum, char** bou
 **
 **    The mappings and their inverses
 **
-**    An explanation of each mapping can be found for the non-inverse function.
-**    The inverse function has only a short explanation.
+**    An explanation of each mapping can be found for the non-inverse function. The comments
+**    for the inverse functions will be almost empty. Note that the ascii art in each
+**    comment draws pass 1 and 3. Pass 2 is the same as pass 1, but executed for each thread
+**    individually.
+**
+**    Also look at the pass configuration at the top of this file, as there are many
+**    side-effects in the low-level functions that are toggled by setting or unsetting pass
+**    flags.
 **
 ************************************************************************************************************************
 \**********************************************************************************************************************/
 
-/** <!-- ****************************************************************** -->
- * @fn gpukernelres_t *
- *     GKCOcompGridBlock (node *num, gpukernelres_t *inner)
+/**
+ * The GridBlock mapping is responsible for handing over the gpukernelres information to
+ * cuda (in the non-inverse call), and retrieving the transformed idx variables back
+ * from the kernel coordinates (in the inverse call).
  *
- * @brief 
+ *              GridBlock                                         InvGridBlock
+ *                                                   /--> Kernel      -->        id0...idn
+ * ub0...ubn       -->   Cuda grid & block --> CUDA ----> Kernel      -->        id0...idn
+ *                                                   \--> Kernel      -->        id0...idn
  *
- * @param num    N_num argument of GridBlock indicating the number of
- *               dimensions in the block specification
- * @param inner  the thread space that results from applying all inner 
- *               pragma functions
+ * Notes:
+ *   - The id variables are already defined in pass 2. More info on that in GKCOcompGen
+ *   - In pass 2, we are only interested in the lb, ub, st and wi variables, so the
+ *     GridBlock pass is disabled there (toggled with PASS_GB_EMIT)
  *
- * @return the resulting thread space from applying GridBlock (num) to it.
- ******************************************************************************/
+ * @param gridDims          N_num node indicating the number of dimensions in the grid
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma
+ *                          calls first
+ * @return                  The modified gpu kernel res
+ */
 gpukernelres_t*
-GKCOcompGridBlock(node* num, gpukernelres_t* inner) {
+GKCOcompGridBlock(node* gridDims , gpukernelres_t* inner) {
     DBUG_ENTER ();
-    DBUG_PRINT ("compiling GridBlock ( %i, inner)", NUM_VAL(num));
+    DBUG_PRINT ("compiling GridBlock ( %i, inner)", NUM_VAL(gridDims));
 
-    checkNumLesseqDim(num, GKR_DIM(inner), "GridBlock");
+    // Check that the paramter is less or equal to the number of dimensions
+    checkNumLesseqDim(gridDims, GKR_DIM(inner), "GridBlock");
 
+    // The ICM's to be used for either the grid or the block
     char* icm[2] = {"SAC_GKCO_HOST_OPM_SET_GRID", "SAC_GKCO_HOST_OPM_SET_BLOCK"};
-    size_t       from[2]  = {0, (size_t) NUM_VAL(num)};
-    size_t       to[2]    = {(size_t) NUM_VAL(num), GKR_DIM(inner)};
+    // The range of grid and block dimensions. Grid: 0 - gridDims, Block: gridDims - dimensionality
+    size_t       from[2]  = {0, (size_t) NUM_VAL(gridDims)};
+    size_t       to[2]    = {(size_t) NUM_VAL(gridDims), GKR_DIM(inner)};
+    // The maximum number of threads per dimension, and the totals
     unsigned int max_s[8] = {
             global.cuda_options.cuda_max_x_grid, global.cuda_options.cuda_max_xy_block,  // max x
             global.cuda_options.cuda_max_yz_grid, global.cuda_options.cuda_max_xy_block, // max y
@@ -990,21 +1053,21 @@ GKCOcompGridBlock(node* num, gpukernelres_t* inner) {
 }
 
 /**
- * Inverse function of GKCOcompGridBlock. This function starts the pragma chain for the ID generation. It generates
- * variables for the idx dimension variables.
- * pass PASS_KERNEL_WLIDS.
+ * Inverse function of GKCOcompGridBlock.
  *
- * @param num The number of grid dimensions
- * @param outer The GPU kernel res created by the PASS_KERNEL_THREADSPACE pass.
- * @return
+ * @param num               The number of grid dimensions
+ * @param outer             The GPU kernel res created by the PASS_KERNEL_THREADSPACE pass.
+ * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
 GKCOcompInvGridBlock(node* num, gpukernelres_t* outer) {
     DBUG_ENTER();
     DBUG_PRINT("compiling idx variable generation");
 
+    // The range of grid and block dimensions. Grid: 0 - gridDims, Block: gridDims - dimensionality
     size_t from[2] = {0, (size_t) NUM_VAL(num)};
     size_t to[2]   = {(size_t) NUM_VAL(num), GKR_DIM(outer)};
+    // The thread coordinate variables, also ICM's
     char* grid_block_var[6] = {
             "THREADIDX_X", "BLOCKIDX_X",
             "THREADIDX_Y", "BLOCKIDX_Y",
@@ -1051,17 +1114,23 @@ GKCOcompGenDbug(unsigned int bnum, gpukernelres_t* initial) {
     gpukernelres_t* gkr = MakeGPUkernelres(GKR_PASS(initial));
     GKR_DIM(gkr) = dim;
 
-    INDENT
-    fprintf(global.outfile, "SAC_GKCO_OPM_RETURN_COL_INIT(%s)\n\n",
-            GKR_RETURN_COL(gkr));
+    if (GKR_BRANCHLESS(gkr)) {
+        INDENT
+        fprintf(global.outfile, "SAC_GKCO_OPM_RETURN_COL_INIT(%s)\n\n",
+                GKR_RETURN_COL(gkr));
+    }
 
     for (size_t i = 0; i < dim; i++) {
         STRVECappend(GKR_LB(gkr), GKCOvarCreate(gkr, "lb"));
         STRVECappend(GKR_UB(gkr), GKCOvarCreate(gkr, "ub"));
         STRVECappend(GKR_ST(gkr), GKCOvarCreate(gkr, "st"));
         STRVECappend(GKR_WI(gkr), GKCOvarCreate(gkr, "wi"));
-        if (GKR_IDX_COMPUTE(gkr))
+        if (GKR_IDX_COMPUTE(gkr)) {
             STRVECappend(GKR_ID(gkr), GKCOvarCreate(gkr, "idx"));
+            INDENT
+            fprintf(global.outfile, "SAC_GKCO_OPD_DECLARE(%s)\n",
+                    GKR_ID_D_READ(gkr, i));
+        }
 
         INDENT
         fprintf(global.outfile, "SAC_GKCO_OPD_REDEFINE(%s, %s)\n\n",
@@ -1073,21 +1142,39 @@ GKCOcompGenDbug(unsigned int bnum, gpukernelres_t* initial) {
     COMP_FUN_DBUG_RETURN(gkr)
 }
 
-
-/** <!-- ****************************************************************** -->
- * @fn gpukernelres_t *
- *     GKCOcompGen ( unsigned int bnum, char **bounds)
+/**
+ * The Gen mapping is responsible for starting the pragma traversal by initiating
+ * the gpu kernel res (in the non-inverse call), and creating the IV variable
+ * (in the inverse call).
  *
- * @brief
+ *             Gen                                                 GenInv
+ *                                               ... --> id0..idn   -->    iv[n]
+ * var0..varp  -->  lb0..lbn, ub.. st.. wi.. --> ... --> id0..idn   -->    iv[n]
+ *                                               ... --> id0..idn   -->    iv[n]
  *
- * @param bnum   the number of bound strings provided in bounds. This is
- *               always a multiple of 4 as we always provide all LUSW.
- * @param bounds The actual bound strings. The order of the strings is
- *               the same as in the generators of WLs, i.e., 
- *               l_0, ...l_n, u_0, ...u_n, s_0, ...s_n, w_0, ...w_n
+ * Note:
+ *   - The id0..idn variable identifiers as they are just before GenInv are already
+ *     determined before the pragma traversal starts, as they are used later on in
+ *     the generated code. However, we need to back-compute which variables they are
+ *     in GridBlockInv. For this reason, in pass 2, we also define the id0..idn
+ *     variables in Gen already, so they can be transformed alongside the lb, ub, st
+ *     and wi.
+ *   - When running in Branchless mode (PASS_BRANCHLESS), Gen sets a Return Collector
+ *     variable. Every time a function would have a `if (expr) return;` statement,
+ *     it can just do `ret_col |= expr;`. GenInv checks this variable, and returns if
+ *     it is set to true. This eliminates all but one branch in the code.
  *
- * @return the resulting naive thread space.
- ******************************************************************************/
+ * @param bnum              The number of bound strings provided in bounds. This is
+ *                          always a multiple of 4 or 5, because we always provide
+ *                          either lb, ub, st, wi or lb, ub, st, wi, id for each o
+ *                          dimension. The id variable is enabled by a pass flag called
+ *                          PASS_IDX_COMPUTE.
+ * @param bounds            The actual bound strings. The order of the strings is:
+ *                          lb0..lbn, ub0..ubn, st0..stn, wi0..win, [id0..idn]
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma
+ *                          calls first
+ * @return                  The modified gpu kernel res
+ */
 gpukernelres_t*
 GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner) {
 #ifndef DBUG_OFF
@@ -1109,11 +1196,17 @@ GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner) {
     // For the second pass, these are 5: lb, ub, st, wi, idx
     GKR_DIM(inner) = bnum / (GKR_IDX_COMPUTE(inner) ? 5 : 4);
 
-    INDENT
-    fprintf(global.outfile, "SAC_GKCO_OPM_RETURN_COL_INIT(%s)\n\n",
-            GKR_RETURN_COL(inner));
+    // Initiate return collector when in branchless mode
+    if (GKR_BRANCHLESS(inner)) {
+        INDENT
+        fprintf(global.outfile, "SAC_GKCO_OPM_RETURN_COL_INIT(%s)\n\n",
+                GKR_RETURN_COL(inner));
+    }
 
     for (LOOP_DIMENSIONS(inner, dim)) {
+        // For each dimension, we add the lb, ub, st, wi, and if PASS_IDX_COMPUTE is set also the id variables
+        // Because we are going to change the ub variable, we introduce a new one so the old one does not get
+        // overwritten.
         STRVECappend(GKR_LB(inner), bounds[dim + 0 * GKR_DIM(inner)]);
         STRVECappend(GKR_UB(inner), GKCOvarCreate(inner, CONST_UB_POSTFIX));
         STRVECappend(GKR_ST(inner), bounds[dim + 2 * GKR_DIM(inner)]);
@@ -1121,14 +1214,23 @@ GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner) {
         if (GKR_IDX_COMPUTE(inner))
             STRVECappend(GKR_ID(inner), bounds[dim + 4 * GKR_DIM(inner)]);
 
+        // Initiate the new ub variable with the value of the old one
         INDENT
-        fprintf(global.outfile, "SAC_GKCO_OPD_REDEFINE(%s, %s)\n\n",
+        fprintf(global.outfile, "SAC_GKCO_OPD_REDEFINE(%s, %s)\n",
                 bounds[dim + 1 * GKR_DIM(inner)], GKR_UB_D_READ(inner, dim));
 
+        // If we have an idx variable, it needs to be declared.
+        if (GKR_IDX_COMPUTE(inner)) {
+            INDENT
+            fprintf(global.outfile, "SAC_GKCO_OPD_DECLARE(%s)\n",
+                    GKR_ID_D_READ(inner, dim));
+        }
+
+        fprintf(global.outfile, "\n");
     }
 
-    // TODO: remove once stuff works fine and uncomment line below :)
-    // COMP_FUN_DBUG_RETURN(gkr);
+    // COMP_FUN_DBUG_RETURN(inner);
+    // TODO: Once the bounds variable is correct, remove everything below this line, and uncomment the line above
 
     fprintf(global.outfile, "\n");
 
@@ -1145,26 +1247,30 @@ GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner) {
 }
 
 /**
- * Inverse function of GKCOcompGen. This function ends the pragma traversal for the ID generation.
- * It declares and fills the index vector, and frees the gpukernelres_t structure.
+ * Inverse function of GKCOcompGen
  *
- * @param iv_var The name of the index vector to be declared and filled
- * @param outer The outer GPU kernel res, adapted by the other pragma calls
+ * @param iv_var            The iv variable identifier
+ * @param outer             The GPU kernel res created by the PASS_KERNEL_THREADSPACE pass.
+ * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
 GKCOcompInvGen(char* iv_var, gpukernelres_t* outer) {
     DBUG_ENTER();
     DBUG_PRINT ("compiling IV generation ():");
 
+    // Check return collector if in branchless mode
     if (GKR_BRANCHLESS(outer)) {
         INDENT
         fprintf(global.outfile, "SAC_GKCO_GPUD_OPM_RETURN_IF_COLLECTED(%s)\n\n",
                 GKR_RETURN_COL(outer));
     }
 
+    // Declare the iv variable
     INDENT
     fprintf(global.outfile, "SAC_GKCO_GPUD_OPM_DECLARE_IV(%s, %zu)\n\n",
             iv_var, GKR_DIM(outer));
+
+    // Fill the iv variable
     for (LOOP_DIMENSIONS(outer, dim)) {
         INDENT
         fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_DEF_IV(%s, %zu, %s)\n\n",
@@ -1399,6 +1505,8 @@ GKCOcompCompressGrid(node* shouldCompress_node, gpukernelres_t* inner) {
                     ub_read, ub_write, step, width, GKR_HELPER_A(inner), GKR_HELPER_B(inner));
     }
 
+    MEMfree(shouldCompress);
+
     COMP_FUN_DBUG_RETURN(inner)
 }
 
@@ -1449,7 +1557,7 @@ GKCOcompInvCompressGrid(node* shouldCompress_node, gpukernelres_t* outer) {
         }
     }
 
-    fprintf(global.outfile, "\n");
+    MEMfree(shouldCompress);
 
     COMP_FUN_DBUG_RETURN(outer)
 }
