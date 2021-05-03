@@ -69,6 +69,8 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, unsigned int vararg_cnt, char **var
             fprintf (global.outfile, ", ");
         }
     }
+
+    fprintf (global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_ARG");
     fprintf (global.outfile, ")");
 
     DBUG_RETURN ();
@@ -234,6 +236,8 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
             fprintf (global.outfile, ", ");
         }
     }
+
+    fprintf (global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_ARG");
     fprintf (global.outfile, ");\n");
 
     if (STReq (global.config.cuda_alloc, "cuman")

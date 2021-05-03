@@ -361,6 +361,18 @@
         SAC_RuntimeError("The value for the %s in dimension %u has changed after the pragma calculations. " \
                          "Before: %u, after: %u", name, dim, old, nw);
 
+#define SAC_BITMASK_THREADMAPPING_CHECK_ARG , SAC_gkco_check_threadmapping_bitmask_dev
+
+#define SAC_BITMASK_THREADMAPPING_CHECK_START(size)                                                         \
+    void* SAC_gkco_check_threadmapping_bitmask_dev;                                                         \
+    cudaMalloc(SAC_gkco_check_threadmapping_bitmask_dev, size);                                             \
+    cudaMemset(SAC_gkco_check_threadmapping_bitmask_dev, 0, size);
+
+#define SAC_BITMASK_THREADMAPPING_CHECK_KERNEL(flat_expr)                                                   \
+    SAC_gkco_check_threadmapping_bitmask_dev[flat_expr] ++;
+
+#define SAC_BITMASK_THREADMAPPING_CHECK_END
+
 #else
 
 #define SAC_CUDA_GET_LAST_ERROR_COND(ERROR_MSG, cu_status)
@@ -372,6 +384,9 @@
 #define SAC_GET_CUDA_PIN_ERROR()
 #define SAC_GET_CUDA_UNPIN_ERROR()
 #define SAC_PRAGMA_KERNEL_ID_CHECK(dim, lb, ub, st, wi, id)
+#define SAC_BITMASK_THREADMAPPING_CHECK_ARG
+#define SAC_BITMASK_THREADMAPPING_CHECK_START(threaspacesize)
+#define SAC_BITMASK_THREADMAPPING_CHECK_KERNEL(flat_expr)
 
 #endif /* SAC_DO_CHECK_GPU */
 

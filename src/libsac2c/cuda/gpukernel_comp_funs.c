@@ -974,29 +974,6 @@ GKCOcompGPUDkernelPragma(node* spap, char* iv_var, unsigned int bnum, char** bou
     DBUG_RETURN ();
 }
 
-/**
- * Check the gpu kernel res at the end of all computations against the dimensionality and idx variable identifiers it
- * should contain after executing all pragma mappings
- *
- * @param bnum              number of bound elements (== number of strings in bounds)
- * @param bounds            the actual bounds as strings, these are either SAC runtime
- *                          variable reads or constants.
- */
-void
-GKCOcompCheckGPUkernelRes(unsigned int bnum, char** bounds, gpukernelres_t* res) {
-    size_t dims = (size_t) bnum / 5;
-    DBUG_ASSERT(dims == GKR_DIM(res),
-                "Dimensionality of original with loop (%zu) is not the same as "
-                "the dimensionality of the generated iv (%zu)",
-                dims, GKR_DIM(res));
-
-    for (LOOP_DIMENSIONS(res, dim)) {
-        DBUG_ASSERT(STReq(bounds[4 * dims + dim], GKR_ID_D_READ(res, dim)),
-                    "The idx variable of dimension %zu (%s) is different then the original required idx variable (%s)",
-                    dim, GKR_ID_D_READ(res, dim), bounds[4 * dims + dim]);
-    }
-}
-
 /**********************************************************************************************************************\
 ************************************************************************************************************************
 **
@@ -1211,6 +1188,8 @@ GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner) {
         fprintf(global.outfile, "\n");
     }
 
+    GKCOcompCheckStart(inner);
+
     COMP_FUN_DBUG_RETURN(inner);
 }
 
@@ -1251,6 +1230,8 @@ GKCOcompInvGen(char* iv_var, char** bounds, gpukernelres_t* outer) {
                 bounds[2 * GKR_DIM(outer) + dim],
                 bounds[3 * GKR_DIM(outer) + dim]);
     }
+
+    GKCOcompCheckKernel(outer);
 
     COMP_FUN_DBUG_RETURN(outer);
 }
@@ -1620,7 +1601,7 @@ GKCOcompPermute(node* permutation_node, gpukernelres_t* inner) {
             fprintf(stderr, ", inner)\n");
     );
 
-    int* permutation = getNumArrayFromNodes(permutation_node, GKR_DIM(inner), "Permute");
+    int* permutation  = getNumArrayFromNodes(permutation_node, GKR_DIM(inner), "Permute");
 
     GKR_LB(inner) = PermuteStrvec(GKR_LB(inner), permutation);
     GKR_UB(inner) = PermuteStrvec(GKR_UB(inner), permutation);
@@ -1898,6 +1879,88 @@ GKCOcompInvPadLast(node* divisibility_node, gpukernelres_t* outer) {
     GKCOcompInvPad(dim, outer);
 
     COMP_FUN_DBUG_RETURN(outer)
+}
+
+/**********************************************************************************************************************\
+************************************************************************************************************************
+**
+**    Runtime test functions
+**
+**    These functions perform tests enabled by the SAC_DO_CHECK_GPU flag. These are tests inside the
+**    functions themselves, as wel as test ICM's.
+**
+************************************************************************************************************************
+\**********************************************************************************************************************/
+
+/**
+ * Check the gpu kernel res at the end of all computations against the dimensionality and idx variable identifiers it
+ * should contain after executing all pragma mappings
+ *
+ * @param bnum              number of bound elements (== number of strings in bounds)
+ * @param bounds            the actual bounds as strings, these are either SAC runtime
+ *                          variable reads or constants.
+ */
+void
+GKCOcompCheckGPUkernelRes(unsigned int bnum, char** bounds, gpukernelres_t* res) {
+    DBUG_ENTER();
+
+    size_t dims = (size_t) bnum / 5;
+    DBUG_ASSERT(dims == GKR_DIM(res),
+                "Dimensionality of original with loop (%zu) is not the same as "
+                "the dimensionality of the generated iv (%zu)",
+                dims, GKR_DIM(res));
+
+    for (LOOP_DIMENSIONS(res, dim)) {
+        DBUG_ASSERT(STReq(bounds[4 * dims + dim], GKR_ID_D_READ(res, dim)),
+                    "The idx variable of dimension %zu (%s) is different then the original required idx variable (%s)",
+                    dim, GKR_ID_D_READ(res, dim), bounds[4 * dims + dim]);
+    }
+
+    DBUG_RETURN();
+}
+
+void
+GKCOcompCheckStart(gpukernelres_t* res) {
+    DBUG_ENTER();
+
+    fprintf(global.outfile, "SAC_GKCO_HOST_OPM_CHECK_START(1");
+    for (LOOP_DIMENSIONS(res, dim))
+        fprintf(global.outfile, " * %s",
+                GKR_UB_D_READ(res, dim));
+    fprintf(global.outfile, ");");
+
+    DBUG_RETURN();
+}
+
+void
+PrintComputeFlat(gpukernelres_t* res) {
+    DBUG_ENTER();
+
+    for (LOOP_DIMENSIONS(res, dim))
+        fprintf(global.outfile, "(");
+    fprintf(global.outfile, "0");
+    for (LOOP_DIMENSIONS(res, dim))
+        fprintf(global.outfile, ") * %s + %s",
+                GKR_UB_D_READ(res, dim), GKR_ID_D_READ(res, dim));
+
+    DBUG_RETURN();
+}
+
+void
+GKCOcompCheckKernel(gpukernelres_t* res) {
+    DBUG_ENTER();
+
+    fprintf(global.outfile, "SAC_GKCO_HOST_OPM_CHECK_KERNEL(");
+    PrintComputeFlat(res);
+    fprintf(global.outfile, ");");
+
+    DBUG_RETURN();
+}
+
+void
+GKCOcompCheckEnd(gpukernelres_t* res) {
+    DBUG_ENTER();
+    DBUG_RETURN();
 }
 
 #undef DBUG_PREFIX

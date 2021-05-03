@@ -613,6 +613,12 @@ extern "C" {
                          "max number of threads per block: %u",                                             \
                          block.x, block.y, block.z, block.x * block.y * block.z, max_total);
 
+#define SAC_GKCO_HOST_OPM_CHECK_START(size)                                                                 \
+    SAC_BITMASK_THREADMAPPING_CHECK_START(size)
+
+#define SAC_GKCO_HOST_OPM_CHECK_END(size)                                                                   \
+    SAC_BITMASK_THREADMAPPING_CHECK_END(size)
+
 /*****************************************************************************
  *
  * ICMs for CUDA kernel mappings on the device
@@ -664,6 +670,9 @@ extern "C" {
     SAC_PRAGMA_KERNEL_VAR_CHECK(dim, "upperbound", ub_in, ub)                                               \
     SAC_PRAGMA_KERNEL_VAR_CHECK(dim, "step", st_in, st)                                                     \
     SAC_PRAGMA_KERNEL_VAR_CHECK(dim, "width", wi_in, wi)
+
+#define SAC_GKCO_HOST_OPM_CHECK_KERNEL(flat_expr)                                                           \
+    SAC_BITMASK_THREADMAPPING_CHECK_KERNEL(flat_expr)
 
 /*****************************************************************************
  *
