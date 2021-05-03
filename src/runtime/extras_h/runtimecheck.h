@@ -345,6 +345,22 @@
 
 #define SAC_GET_CUDA_UNPIN_ERROR() SAC_CUDA_GET_LAST_ERROR ("GPU UNPINNING")
 
+#define SAC_PRAGMA_KERNEL_ID_CHECK(dim, lb, ub, st, wi, id)                                                 \
+    if (id < lb)                                                                                            \
+        SAC_RuntimeError("idx %i for dimension %u is less then lowerbound %u",                              \
+                         id, dim, lb);                                                                      \
+    if (id >= ub)                                                                                           \
+        SAC_RuntimeError("idx %i for dimension %u is greater or equal then upperbound %u",                  \
+                         id, dim, ub);                                                                      \
+    if (id % step < width)                                                                                  \
+        SAC_RuntimeError("idx %i for dimension %u is not inside grid with step: %u and width: %u",          \
+                         id, dim, step, width);
+
+#define SAC_PRAGMA_KERNEL_VAR_CHECK(dim, name, old, nw)                                                     \
+    if (old != new)                                                                                         \
+        SAC_RuntimeError("The value for the %s in dimension %u has changed after the pragma calculations. " \
+                         "Before: %u, after: %u", name, dim, old, nw);
+
 #else
 
 #define SAC_CUDA_GET_LAST_ERROR_COND(ERROR_MSG, cu_status)
@@ -355,6 +371,7 @@
 #define SAC_GET_CUDA_FREE_ERROR()
 #define SAC_GET_CUDA_PIN_ERROR()
 #define SAC_GET_CUDA_UNPIN_ERROR()
+#define SAC_PRAGMA_KERNEL_ID_CHECK(dim, lb, ub, st, wi, id)
 
 #endif /* SAC_DO_CHECK_GPU */
 

@@ -5,8 +5,9 @@
 
 extern void GKCOcompHostKernelPragma (node *spap, unsigned int bnum, char **bounds);
 extern void GKCOcompGPUDkernelPragma (node *spap, char* iv_var, unsigned int bnum, char **bounds);
+void GKCOcompCheckGPUkernelRes(unsigned int bnum, char** bounds, gpukernelres_t* res);
 gpukernelres_t* GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner);
-extern gpukernelres_t * GKCOcompInvGen ( char* iv_var, gpukernelres_t* res);
+extern gpukernelres_t * GKCOcompInvGen ( char* iv_var, char** bounds, gpukernelres_t* res);
 
 char* GKCOvarCreate(gpukernelres_t*gkr, char* postfix);
 

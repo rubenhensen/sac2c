@@ -270,19 +270,23 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
  *
  ******************************************************************************/
 node* DEBUG_PRAGMA_NODE_SPAP = NULL;
-unsigned int DEBUG_BOUNDS_COUNT = 0;
-char** DEBUG_BOUNDS_ARRAY = NULL;
+unsigned int DEBUG_BOUNDS_COUNT = 15;
+char* DEBUG_BOUNDS_ARRAY[15] = {
+        "test_lb_0", "test_lb_1", "test_lb_2",
+        "test_ub_0", "test_ub_1", "test_ub_2",
+        "test_st_0", "test_st_1", "test_st_2",
+        "test_wi_0", "test_wi_1", "test_wi_2",
+        "test_id_0", "test_id_1", "test_id_2",
+};
 void ICMCompileCUDA_THREAD_SPACE (node *spap, unsigned int bounds_count, char **var_ANY)
 {
     DBUG_ENTER ();
     
     DBUG_ASSERT ((NODE_TYPE (spap) == N_spap),
                  "N_spap expected in ICMCompileCUDA_THREAD_SPACE");
-    GKCOcompHostKernelPragma(spap, bounds_count, var_ANY);
+    GKCOcompHostKernelPragma(spap, DEBUG_BOUNDS_COUNT-3, DEBUG_BOUNDS_ARRAY);
 
     DEBUG_PRAGMA_NODE_SPAP = spap;
-    DEBUG_BOUNDS_COUNT = bounds_count;
-    DEBUG_BOUNDS_ARRAY = var_ANY;
 
     DBUG_RETURN ();
 }

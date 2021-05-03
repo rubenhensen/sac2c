@@ -657,9 +657,13 @@ extern "C" {
 #define SAC_GKCO_GPUD_OPM_DECLARE_IV(iv_var, iv_length)                                                     \
     int iv_var[iv_length];
 
-#define SAC_GKCO_GPUD_OPD_DEF_IV(iv_var, dimension, value_var)                                              \
-    iv_var[dimension] = value_var;
-
+#define SAC_GKCO_GPUD_OPD_DEF_IV(iv_var, dim, lb, ub, st, wi, id, lb_in, ub_in, st_in, wi_in)               \
+    iv_var[dim] = id;                                                                                       \
+    SAC_PRAGMA_KERNEL_ID_CHECK(dim, lb, ub, st, wi, id)                                                     \
+    SAC_PRAGMA_KERNEL_VAR_CHECK(dim, "lowerbound", lb_in, lb)                                               \
+    SAC_PRAGMA_KERNEL_VAR_CHECK(dim, "upperbound", ub_in, ub)                                               \
+    SAC_PRAGMA_KERNEL_VAR_CHECK(dim, "step", st_in, st)                                                     \
+    SAC_PRAGMA_KERNEL_VAR_CHECK(dim, "width", wi_in, wi)
 
 /*****************************************************************************
  *
