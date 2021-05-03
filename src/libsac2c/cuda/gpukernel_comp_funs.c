@@ -1147,18 +1147,18 @@ GKCOcompGenDbug(unsigned int bnum, gpukernelres_t* initial) {
  * the gpu kernel res (in the non-inverse call), and creating the IV variable
  * (in the inverse call).
  *
- *             Gen                                                 GenInv
- *                                               ... --> id0..idn   -->    iv[n]
- * var0..varp  -->  lb0..lbn, ub.. st.. wi.. --> ... --> id0..idn   -->    iv[n]
- *                                               ... --> id0..idn   -->    iv[n]
+ *                    Gen                                                 GenInv
+ *                                                      ... --> id0..idn   -->    iv[n]
+ * m, bound0..boundm  -->  lb0..lbn, ub.. st.. wi.. --> ... --> id0..idn   -->    iv[n]
+ *                                                      ... --> id0..idn   -->    iv[n]
  *
  * Note:
- *   - The id0..idn variable identifiers as they are just before GenInv are already
- *     determined before the pragma traversal starts, as they are used later on in
- *     the generated code. However, we need to back-compute which variables they are
- *     in GridBlockInv. For this reason, in pass 2, we also define the id0..idn
- *     variables in Gen already, so they can be transformed alongside the lb, ub, st
- *     and wi.
+ *   - The id0..idn variable identifiers used to store the individual components of the
+ *     iv var are used in later parts of the program. These are the variables that are
+ *     known just before GenInv starts, and are used to set the actual iv variable.
+ *     because of this, we need to back-compute what variables these are in the outer
+ *     pragma calls. We do this by defining the id0..idn variables in Gen already,
+ *     so they can be transformed alongside the lb, ub, st and wi.
  *   - When running in Branchless mode (PASS_BRANCHLESS), Gen sets a Return Collector
  *     variable. Every time a function would have a `if (expr) return;` statement,
  *     it can just do `ret_col |= expr;`. GenInv checks this variable, and returns if
@@ -1250,7 +1250,7 @@ GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner) {
  * Inverse function of GKCOcompGen
  *
  * @param iv_var            The iv variable identifier
- * @param outer             The GPU kernel res created by the PASS_KERNEL_THREADSPACE pass.
+ * @param outer             The GPU kernel res, resulting from calling all outer pragma calls first
  * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
@@ -1281,12 +1281,27 @@ GKCOcompInvGen(char* iv_var, gpukernelres_t* outer) {
 }
 
 /**
- * Set the step and width both to 1 in a certain dimension. If they are not, GKCOcompInvStepWidth will insert a check
- * to skip the id occurrences that are not part of the grid. This function will only check a single dimension.
+ * StepWidth is an implicit mapping that gets executed whenever step/width information cannot be preserved, for example
+ * when folding/splitting. It will set step and width to 1 (in the non-inverse call), restore the step/width
+ * variables and return all threads that fall outside of the grid (in the inverse call). This function will only
+ * check a single dimension.
  *
- * @param dim The dimension to check.
- * @param inner The inner GPU kernel res
- * @return The modified inner gkr
+ *          StepWidth                            InvStepWidth
+ *                             ... --> 1, 1, idj      -->     return;           // idj not in step/width
+ * stj, wij    -->    1, 1 --> ... --> 1, 1, idj      -->     stj, wij, idj     // idj in step/width
+ *                             ... --> 1, 1, idj      -->     stj, wij, idj     // idj in step/width
+ *
+ * Notes:
+ *   - When running in branchless mode (PASS_BRANCHLESS), an alternative icm for InvStepWidth is used. See CKCOcompGen
+ *     for more info.
+ *   - When step is already 1, nothing will be done. Width will be set to 1 in that case regardless.
+ *   - Resolving step/width by this method results in redundant threads. Use the CompressGrid mapping to create a dense
+ *     thread space without redundant threads.
+ *
+ * @param dim               The dimension for which step and width have to be 1
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma
+ *                          calls first
+ * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
 GKCOcompStepWidth(size_t dim, gpukernelres_t* inner) {
@@ -1302,12 +1317,11 @@ GKCOcompStepWidth(size_t dim, gpukernelres_t* inner) {
 }
 
 /**
- * Reverts the step and width set to 1 by GKCOcompInvGen in a certain dimension. If they are not still 1, insert
- * a check to skip the id occurences that are not part of the grid. This function will only check a single dimension.
+ * Inverse of GKCOcompStepWidth
  *
- * @param dim The dimension to check
- * @param outer The outer gpu kernel res
- * @return The modified outer gkr
+ * @param dim               The dimension for which step and width have to be 1
+ * @param outer             The GPU kernel res, resulting from calling all outer pragma calls first
+ * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
 GKCOcompInvStepWidth(size_t dim, gpukernelres_t* outer) {
@@ -1316,8 +1330,10 @@ GKCOcompInvStepWidth(size_t dim, gpukernelres_t* outer) {
     GKR_ST_POP(outer, dim);
     GKR_WI_POP(outer, dim);
 
+    // If the step is already 1 after popping, we don't have to do anything
     if (!STReq(GKR_ST_D_READ(outer, dim), CONST_ONE)) {
         INDENT
+        // Print out the correct ICM depending on whether we are running in branchless mode
         if (!GKR_BRANCHLESS(outer))
             fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(%s, %s, %s)\n\n",
                     GKR_ST_D_READ(outer, dim), GKR_WI_D_READ(outer, dim), GKR_ID_D_READ(outer, dim));
@@ -1331,12 +1347,20 @@ GKCOcompInvStepWidth(size_t dim, gpukernelres_t* outer) {
 }
 
 /**
- * Pad the upperbound in a certain dimension to a multiple of some positive integer.
+ * Pad is an implicit mapping that gets executed whenever a dimension should have a certain length, for example for the
+ * SplitLast mapping. It will extend the upperbound to a multiple of the division parameter (in the non-inverted call),
+ * restore the upperbound variables and return all threads that fall outside of the upperbound. This function will only
+ * check a single dimension.
  *
- * @param dim The dimension to pad
- * @param divisiblity The integer which should be able to divide the padded upperbound
- * @param inner The inner gpu kernel res
- * @return The modified outer gkr
+ *    Pad                     InvPad
+   *                ... --> ubj', idj   -->  return;    // idj >= ubj
+ * ubj --> ubj' --> ... --> ubj', idj   -->  ubj, idj   // idj < ubj
+   *                ... --> ubj', idj   -->  ubj, idj   // idj < ubj
+ *
+ * @param dim               The dimension for which the upperbound should be divisible by `divisibility`
+ * @param divisiblity       The integer which should be able to divide the padded upperbound
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma calls first
+ * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
 GKCOcompPad(size_t dim, size_t divisiblity, gpukernelres_t* inner) {
@@ -1354,11 +1378,11 @@ GKCOcompPad(size_t dim, size_t divisiblity, gpukernelres_t* inner) {
 }
 
 /**
- * Reverts the padding done by GKCOcompPad.
+ * Inverse of GKCOcompPad
  *
- * @param dim The dimension to check
- * @param outer The outer gpu kernel res
- * @return The modified outer gkr
+ * @param dim               The dimension for which the upperbound should be divisible by `divisibility`
+ * @param outer             The GPU kernel res, resulting from calling all outer pragma calls first
+ * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
 GKCOcompInvPad(size_t dim, gpukernelres_t* outer) {
@@ -1376,17 +1400,21 @@ GKCOcompInvPad(size_t dim, gpukernelres_t* outer) {
     DBUG_RETURN(outer);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn gpukernelres_t *
- *     GKCOcompShiftLB (gpukernelres_t *inner)
+/**
+ * The ShiftLB mapping shifts the index space so that all lowerbounds are 0 (for the non-inverted call), and shifts it
+ * back to its original position (for the inverted call). It does do so for all dimensions where the lowerbound is not
+ * already set to 0.
  *
- * @brief
+ * For each dimension j:
+ *          ShiftLB                                            InvShiftLB
+ *                                 ... --> 0, ubj-lbj, idj-lbj     -->    lbj, ubj, idj
+ * lbj, ubj   -->   0, ubj-lbj --> ... --> 0, ubj-lbj, idj-lbj     -->    lbj, ubj, idj
+ *                                 ... --> 0, ubj-lbj, idj-lbj     -->    lbj, ubj, idj
  *
- * @param inner  the thread space that results from applying all inner
- *               pragma functions
- *
- * @return the resulting thread space from applying ShiftLB (array) to it.
- ******************************************************************************/
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma
+ *                          calls first
+ * @return                  The modified gpu kernel res
+ */
 gpukernelres_t*
 GKCOcompShiftLB(gpukernelres_t* inner) {
     DBUG_ENTER ();
@@ -1414,11 +1442,10 @@ GKCOcompShiftLB(gpukernelres_t* inner) {
 }
 
 /**
- * Inverse function of GKCOcompShiftLB. This function assumes that the function GKCOcompShiftLB has pushed the
- * lb and ub variable identifiers to the corresponding stacks for all dimensions
+ * Inverse function of GKCOcompShiftLB.
  *
- * @param outer the outer GPU kernel res, resulting from applying the other pragmas
- * @return the newly computed GPU kernel res, with restored lb and ub variable identifiers.
+ * @param outer             The GPU kernel res, resulting from calling all outer pragma calls first
+ * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
 GKCOcompInvShiftLB(gpukernelres_t* outer) {
@@ -1444,20 +1471,31 @@ GKCOcompInvShiftLB(gpukernelres_t* outer) {
     COMP_FUN_DBUG_RETURN(outer)
 }
 
-
-/** <!-- ****************************************************************** -->
- * @fn gpukernelres_t *
- *     GKCOcompCompressGrid ( node *array, gpukernelres_t *inner)
+/**
+ * The CompressGrid mapping compresses the grid inside the index space, so it becomes dense. This means that after
+ * calling the CompressGrid mapping, no redundant threads resulting from the step/width grid will be spawned. Redundant
+ * threads may still be spawned for other reasons, though. It sets step and width to 1 (for the non-inverted call) and
+ * restores the step/width/idx variables (in the inverse call).
  *
- * @brief
+ * For each dimension j, for which `shouldCompress_node[j] == true:
+ *               CompressGrid                                         InvCompressGrid
+ *                                           ... --> 1, 1, ubj', idj'       -->       stj, wij, ubj, idj
+ * stj, wij, ubj     -->      1, 1, ubj' --> ... --> 1, 1, ubj', idj'       -->       stj, wij, ubj, idj
+ *                                           ... --> 1, 1, ubj', idj'       -->       stj, wij, ubj, idj
  *
- * @param array  N_array argument indicating for each axis whether it should
- *               be compressed or not 1 => do comrpress 0 => do not!
- * @param inner  the thread space that results from applying all inner
- *               pragma functions
+ * Note:
+ *   - The lowerbound should be 0, otherwise a compile error will be thrown.
+ *   - It only compresses dimensions enabled by the `shouldCompress_node` argument.
+ *   - It only compresses dimensions where the step is not already 1.
+ *   - The SAC_GKCO_HOST_OPD_COMPRESS_SW ICM contains a ternary expression. A branchless version exists, which is
+ *     enabled when in branchless mode (PASS_BRANCHLESS)
+ *   - Resolving step/width by this method may be computationally heavy, but will result in no redundant threads. Use
+ *     StepWidth (implicit) for a computationally cheaper alterantive, that may spawn redundant threads.
  *
- * @return the resulting thread space from applying CompressGrid (array) to it.
- ******************************************************************************/
+ * @param shouldCompress_node The node containing a boolean array, telling which dimensions have to be compressed.
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma calls first
+ * @return                  The modified gpu kernel res
+ */
 gpukernelres_t*
 GKCOcompCompressGrid(node* shouldCompress_node, gpukernelres_t* inner) {
     DBUG_ENTER ();
@@ -1511,11 +1549,11 @@ GKCOcompCompressGrid(node* shouldCompress_node, gpukernelres_t* inner) {
 }
 
 /**
- * Inverse function of GKCOcompCompressGrid. This function assumes that the function GKCOcompCompressGrid has pushed the
- * ub, st and wi variable identifiers to the corresponding stacks for all dimensions
+ * Inverse function of GKCOcompCompressGrid.
  *
- * @param outer the outer GPU kernel res, resulting from applying the other pragmas
- * @return the newly computed GPU kernel res, with restored ub, st and wi variable identifiers.
+ * @param shouldCompress_node The node containing a boolean array, telling which dimensions have to be compressed.
+ * @param outer             The GPU kernel res, resulting from calling all outer pragma calls first
+ * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
 GKCOcompInvCompressGrid(node* shouldCompress_node, gpukernelres_t* outer) {
@@ -1565,12 +1603,12 @@ GKCOcompInvCompressGrid(node* shouldCompress_node, gpukernelres_t* outer) {
 /**
  * Create a permutation of a strvec. The original vector will be consumed.
  *
- * @param vec The strvec vector to be permuted
- * @param permutation  The new order, given as an array of N_num nodes
- * @return The new permutated strvec
+ * @param vec               The strvec vector to be permuted
+ * @param permutation       The new order, given as an array of integers nodes
+ * @return The new          The permutated strvec
  */
 static strvec*
-GKCOcompPermuteStrvec(strvec* vec, const int* permutation) {
+PermuteStrvec(strvec* vec, const int* permutation) {
     DBUG_ENTER();
 
     strvec* newvec = STRVECempty(STRVEClen(vec));
@@ -1584,19 +1622,19 @@ GKCOcompPermuteStrvec(strvec* vec, const int* permutation) {
     DBUG_RETURN(newvec);
 }
 
-/** <!-- ****************************************************************** -->
- * @fn gpukernelres_t *
- *     GKCOcompPermute (node *array, gpukernelres_t *inner)
+/**
+ * The permute mapping changes the order of the dimensions in the non-inverted call, and changes them back in the
+ * inverted call.
  *
- * @brief
+ * Note:
+ *   - This mapping does not generate any code. It only changes the gpukernelres_t, so it changes how all code inbetween
+ *     Permute and InvPermute is generated.
  *
- * @param num    N_array argument indicating for each axis where it should
- *               come from. All elements have to be N_num here.
- * @param inner  the thread space that results from applying all inner
- *               pragma functions
- *
- * @return the resulting thread space from applying Permute (array) to it.
- ******************************************************************************/
+ * @param permutation_node  The permutation, as an AST node of a list of integer expressions
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma
+ *                          calls first
+ * @return                  The modified gpu kernel res
+ */
 gpukernelres_t*
 GKCOcompPermute(node* permutation_node, gpukernelres_t* inner) {
     DBUG_ENTER ();
@@ -1609,10 +1647,10 @@ GKCOcompPermute(node* permutation_node, gpukernelres_t* inner) {
 
     int* permutation = getNumArrayFromNodes(permutation_node, GKR_DIM(inner), "Permute");
 
-    GKR_LB(inner) = GKCOcompPermuteStrvec(GKR_LB(inner), permutation);
-    GKR_UB(inner) = GKCOcompPermuteStrvec(GKR_UB(inner), permutation);
-    GKR_ST(inner) = GKCOcompPermuteStrvec(GKR_ST(inner), permutation);
-    GKR_WI(inner) = GKCOcompPermuteStrvec(GKR_WI(inner), permutation);
+    GKR_LB(inner) = PermuteStrvec(GKR_LB(inner), permutation);
+    GKR_UB(inner) = PermuteStrvec(GKR_UB(inner), permutation);
+    GKR_ST(inner) = PermuteStrvec(GKR_ST(inner), permutation);
+    GKR_WI(inner) = PermuteStrvec(GKR_WI(inner), permutation);
 
     MEMfree(permutation);
 
@@ -1622,12 +1660,12 @@ GKCOcompPermute(node* permutation_node, gpukernelres_t* inner) {
 /**
  * Create an inverse permutation of a strvec. The original vector will be consumed.
  *
- * @param vec The strvec vector to be permuted
- * @param permutation  The new order (inversed), given as an array of N_num nodes
- * @return The new permutated strvec
+ * @param vec               The strvec vector to be permuted
+ * @param permutation       The new order (inversed), given as an array of integers nodes
+ * @return The new          The permutated strvec
  */
 static strvec*
-GKCOcompInvPermuteStrvec(strvec* vec, const int* permutation) {
+InvPermuteStrvec(strvec* vec, const int* permutation) {
     DBUG_ENTER();
 
     strvec* newvec = STRVECconst(STRVEClen(vec), NULL);
@@ -1642,10 +1680,11 @@ GKCOcompInvPermuteStrvec(strvec* vec, const int* permutation) {
 }
 
 /**
+ * Inverse function of CKCOcompPermute
  *
- * @param array
- * @param outer
- * @return
+ * @param permutation_node  The permutation, as an AST node of a list of integer expressions
+ * @param outer             The GPU kernel res, resulting from calling all outer pragma calls first
+ * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
 GKCOcompInvPermute(node* permutation_node, gpukernelres_t* outer) {
@@ -1659,28 +1698,39 @@ GKCOcompInvPermute(node* permutation_node, gpukernelres_t* outer) {
 
     int* permutation = getNumArrayFromNodes(permutation_node, GKR_DIM(outer), false);
 
-    GKR_LB(outer) = GKCOcompInvPermuteStrvec(GKR_LB(outer), permutation);
-    GKR_UB(outer) = GKCOcompInvPermuteStrvec(GKR_UB(outer), permutation);
-    GKR_ST(outer) = GKCOcompInvPermuteStrvec(GKR_ST(outer), permutation);
-    GKR_WI(outer) = GKCOcompInvPermuteStrvec(GKR_WI(outer), permutation);
-    GKR_ID(outer) = GKCOcompInvPermuteStrvec(GKR_ID(outer), permutation);
+    GKR_LB(outer) = InvPermuteStrvec(GKR_LB(outer), permutation);
+    GKR_UB(outer) = InvPermuteStrvec(GKR_UB(outer), permutation);
+    GKR_ST(outer) = InvPermuteStrvec(GKR_ST(outer), permutation);
+    GKR_WI(outer) = InvPermuteStrvec(GKR_WI(outer), permutation);
+    GKR_ID(outer) = InvPermuteStrvec(GKR_ID(outer), permutation);
 
     MEMfree(permutation);
 
     COMP_FUN_DBUG_RETURN(outer)
 }
 
-/** <!-- ****************************************************************** -->
- * @fn gpukernelres_t *
- *     GKCOcompFoldLast2 (gpukernelres_t *inner)
+/**
+ * The FoldLast2 mapping folds the last two dimensions into one, reducing the dimensionality by 1. It multiplies the
+ * last two upperbounds together to create a new upperbound that can accommodate all indexes of those two dimensions
+ * combined in the non-inverted function call, and it splits these into two dimensions again (including the idx
+ * variable) in the inverted function call. Dimensions j = n-2 and k = n-1 will be the major and minor dimensions
+ * respectively. This means that we get the new dimension will accommodate the indexes in the order:
  *
- * @brief
+ *   j=0 k=0..k=n, j=1 k=0..k=n, ...
  *
- * @param inner  the thread space that results from applying all inner
- *               pragma functions
+ * For dimension j (n-2) and k(n-1):
+ *          FoldLast2                                   InvFoldLast2
+ *                                ... --> ubj*ubk, idj'      -->     ubj, ubk, idj, idk
+ * ubj, ubk    -->    ubj*ubk --> ... --> ubj*ubk, idj'      -->     ubj, ubk, idj, idk
+ *                                ... --> ubj*ubk, idj'      -->     ubj, ubk, idj, idk
  *
- * @return the resulting thread space from applying FoldLast2 () to it.
- ******************************************************************************/
+ * Note:
+ *   - lb, st and wi have to be 0, 1 and 1 respectively. The lowerbound should be set to 0 manually (with ShiftLB),
+ *     but the step and width will be set to 1 and 1 automatically if needed.
+ *
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma calls first
+ * @return                  The modified gpu kernel res
+ */
 gpukernelres_t*
 GKCOcompFoldLast2(gpukernelres_t* inner) {
     DBUG_ENTER ();
@@ -1693,7 +1743,7 @@ GKCOcompFoldLast2(gpukernelres_t* inner) {
     GKCOcompStepWidth(minordim, inner);
     if (GKR_CHECK_PRAGMA(inner)) {
         checkLbZero(GKR_LB_D_READ(inner, majordim), NULL, "SplitLast", majordim);
-        checkLbZero(GKR_LB_D_READ(inner, minordim), NULL, "SplitLast", majordim);
+        checkLbZero(GKR_LB_D_READ(inner, minordim), NULL, "SplitLast", minordim);
     }
 
     GKR_UB_PUSH(inner, majordim)
@@ -1711,6 +1761,12 @@ GKCOcompFoldLast2(gpukernelres_t* inner) {
     COMP_FUN_DBUG_RETURN(inner)
 }
 
+/**
+ * Inverse function of GKCOcompFoldLast2.
+ *
+ * @param outer             The GPU kernel res, resulting from calling all outer pragma calls first
+ * @return                  The modified gpu kernel res
+ */
 gpukernelres_t*
 GKCOcompInvFoldLast2(gpukernelres_t* outer) {
     DBUG_ENTER ();
@@ -1736,19 +1792,26 @@ GKCOcompInvFoldLast2(gpukernelres_t* outer) {
     COMP_FUN_DBUG_RETURN(outer)
 }
 
-/** <!-- ****************************************************************** -->
- * @fn gpukernelres_t *
- *     GKCOcompSplitLast (node *majorlen_node, gpukernelres_t *inner)
+/**
+ * The SplitLast mapping splits the last dimension into 2, increasing the dimensionality by 1. It divides the upperbound
+ * of the last dimension by minorlen_node, and adds a dimension with length minorlen_node for the non-inverse function
+ * call, and restores the old upperbound and computes the accompanying index variable in the inverse call. The notion of
+ * the major and minor dimensions are the same as in then CKCOcompFoldLast2 mapping. o
  *
- * @brief
+ * For dimension j (n-1):
+ *     SplitLast                                               InvSplitLast
+ *                              ... --> ubj', ubk', idj', idk'      -->     ubj, idj
+ * ubj    -->    ubj', ubk' --> ... --> ubj', ubk', idj', idk'      -->     ubj, idj
+ *                              ... --> ubj', ubk', idj', idk'      -->     ubj, idj
  *
- * @param array  N_num argument containing the two length of the last
- *               dimension after splitting it up.
- * @param inner  the thread space that results from applying all inner
- *               pragma functions
+ * Note:
+ *   - lb, st and wi have to be 0, 1 and 1 respectively. The lowerbound should be set to 0 manually (with ShiftLB),
+ *     but the step and width will be set to 1 and 1 automatically if needed.
  *
- * @return the resulting thread space from applying SplitLast (majorlen_node) to it.
- ******************************************************************************/
+ * @param minorlen_node     The length of the minor dimension, as an N_num node
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma calls first
+ * @return                  The modified gpu kernel res
+ */
 gpukernelres_t*
 GKCOcompSplitLast(node* minorlen_node, gpukernelres_t* inner) {
     DBUG_ENTER ();
@@ -1777,6 +1840,13 @@ GKCOcompSplitLast(node* minorlen_node, gpukernelres_t* inner) {
     COMP_FUN_DBUG_RETURN(inner)
 }
 
+/**
+ * Inverse function of GKCOcompSplitLast.
+ *
+ * @param minorlen_node     The length of the minor dimension, as an N_num node
+ * @param outer             The GPU kernel res, resulting from calling all outer pragma calls first
+ * @return                  The modified gpu kernel res
+ */
 gpukernelres_t*
 GKCOcompInvSplitLast(node* minorlen_node, gpukernelres_t* outer) {
     DBUG_ENTER ();
@@ -1802,19 +1872,14 @@ GKCOcompInvSplitLast(node* minorlen_node, gpukernelres_t* outer) {
     COMP_FUN_DBUG_RETURN(outer)
 }
 
-/** <!-- ****************************************************************** -->
- * @fn gpukernelres_t *
- *     GKCOcompPadLast (node *divisibility_node, gpukernelres_t *inner)
+/**
+ * Currently, this is a function that just exposes GKCOcompPad. It only pads the last dimension. See GKCOcompPad for
+ * more information.
  *
- * @brief
- *
- * @param array  N_num argument defining the padding size
- *               for the last axis
- * @param inner  the thread space that results from applying all inner
- *               pragma functions
- *
- * @return the resulting thread space from applying Pad (divisibility_node) to it.
- ******************************************************************************/
+ * @param divisibility_node The number by which the last upperbound should be divisible.
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma calls first
+ * @return                  The modified gpu kernel res
+ */
 gpukernelres_t*
 GKCOcompPadLast(node* divisibility_node, gpukernelres_t* inner) {
     DBUG_ENTER ();
@@ -1827,6 +1892,13 @@ GKCOcompPadLast(node* divisibility_node, gpukernelres_t* inner) {
     COMP_FUN_DBUG_RETURN(inner)
 }
 
+/**
+ * Inverse function of GKCOcompPadLast.
+ *
+ * @param divisibility_node The number by which the last upperbound should be divisible.
+ * @param outer             The GPU kernel res, resulting from calling all outer pragma calls first
+ * @return                  The modified gpu kernel res
+ */
 gpukernelres_t*
 GKCOcompInvPadLast(node* divisibility_node, gpukernelres_t* outer) {
     DBUG_ENTER();
