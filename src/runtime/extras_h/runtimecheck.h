@@ -366,12 +366,40 @@
 #define SAC_BITMASK_THREADMAPPING_CHECK_START(size)                                                         \
     void* SAC_gkco_check_threadmapping_bitmask_dev;                                                         \
     cudaMalloc(SAC_gkco_check_threadmapping_bitmask_dev, size);                                             \
-    cudaMemset(SAC_gkco_check_threadmapping_bitmask_dev, 0, size);
+    cudaMemset(SAC_gkco_check_threadmapping_bitmask_dev, 0, size);                                          \
 
 #define SAC_BITMASK_THREADMAPPING_CHECK_KERNEL(flat_expr)                                                   \
     SAC_gkco_check_threadmapping_bitmask_dev[flat_expr] ++;
 
-#define SAC_BITMASK_THREADMAPPING_CHECK_END
+#define SAC_BITMASK_THREADMAPPING_CHECK_END(size)                                                           \
+    byte* SAC_gkco_check_threadmapping_bitmask = (byte*) malloc(sizeof(byte) * size);                       \
+    cudaMemcpy(SAC_gkco_check_threadmapping_bitmask, SAC_gkco_threadmapping_bitmask_dev,                    \
+               size, cudaMemcpyDeviceToHost);
+
+#define SAC_BITMASK_THREADMAPPING_CHECK_END_START(chk)                                                      \
+    bool chk = true;
+
+#define SAC_BITMASK_THREADMAPPING_CHECK_END_INNER(chk, val, flat_expr)                                      \
+    val = SAC_gkco_check_threadmapping_bitmask[flat_expr];                                                  \
+    if (chk == false) {                                                                                     \
+        if (val == 1)                                                                                       \
+            SAC_RuntimeError("Index outside of grid was executed inside the kernel!");                      \
+        if (val >= 2)                                                                                       \
+            SAC_RuntimeError("Index outside of grid was executed inside the kernel multiple times!");       \
+    } else {                                                                                                \
+        if (val == 0)                                                                                       \
+            SAC_RuntimeError("Index inside of grid was not executed inside the kernel!");                   \
+        if (val >= 2)                                                                                       \
+            SAC_RuntimeError("Index inside of grid was executed multiple times!");                          \
+    }
+
+#define SAC_BITMASK_THREADMAPPING_CHECK_END_LOOP(start, inner, lb, ub, st, wi, id, chk)                     \
+    for (size_t id=lb; id<ub; id++) {                                                                       \
+        start;                                                                                              \
+        if ((ub - lb) % st >= wi)                                                                           \
+            chk = false;                                                                                    \
+        inner;                                                                                              \
+    }
 
 #else
 
@@ -387,6 +415,7 @@
 #define SAC_BITMASK_THREADMAPPING_CHECK_ARG
 #define SAC_BITMASK_THREADMAPPING_CHECK_START(threaspacesize)
 #define SAC_BITMASK_THREADMAPPING_CHECK_KERNEL(flat_expr)
+#define SAC_BITMASK_THREADMAPPING_CHECK_END(inner)
 
 #endif /* SAC_DO_CHECK_GPU */
 

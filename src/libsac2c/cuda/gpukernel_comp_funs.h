@@ -12,7 +12,7 @@ char* GKCOvarCreate(gpukernelres_t*gkr, char* postfix);
 
 void GKCOcompCheckStart(gpukernelres_t* res);
 void GKCOcompCheckKernel(gpukernelres_t* res);
-void GKCOcompCheckEnd(gpukernelres_t* res);
+extern void GKCOcompCheckEnd(void);
 void GKCOcompCheckGPUkernelRes(unsigned int bnum, char** bounds, gpukernelres_t* res);
 
 #define ARGS( nargs) ARG##nargs

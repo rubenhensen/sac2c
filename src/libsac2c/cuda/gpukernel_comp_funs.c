@@ -596,15 +596,14 @@ RemoveDimension(gpukernelres_t* gkr) {
 }
 
 /**
- * Create a new temporary variable, with proper pre- and postfixes. The prefix is fixed to CONST_PREFIX.
- * The postfix is an argument, as this function can be used for different purpose variables.
- * The variable is automatically declared in the generated code.
+ * Helper function for var creation. This version can also be used when no gpu kernel res is available, but variable
+ * string memory management is not handled implicitly.
  *
  * @param postfix           The postfix to be added
  * @return                  The properly pre- and postfixed variable name.
  */
 char*
-GKCOvarCreate(gpukernelres_t* gkr, char* postfix) {
+VarCreate(char* postfix) {
     DBUG_ENTER();
 
     // Create the new variable name
@@ -616,6 +615,24 @@ GKCOvarCreate(gpukernelres_t* gkr, char* postfix) {
     // Declare the new variable
     INDENT
     fprintf(global.outfile, "SAC_GKCO_OPD_DECLARE(%s)\n", var);
+
+    DBUG_RETURN(var);
+}
+
+/**
+ * Create a new temporary variable, with proper pre- and postfixes. The prefix is fixed to CONST_PREFIX.
+ * The postfix is an argument, as this function can be used for different purpose variables.
+ * The variable is automatically declared in the generated code.
+ *
+ * @param gkr               The gpu kernel res used for string variable management
+ * @param postfix           The postfix to be added
+ * @return                  The properly pre- and postfixed variable name.
+ */
+char*
+GKCOvarCreate(gpukernelres_t* gkr, char* postfix) {
+    DBUG_ENTER();
+
+    char* var = VarCreate(postfix);
 
     // Append the variable to the list of owned variable names
     STRVECappend(GKR_OWNED_VARS(gkr), var);
@@ -1038,9 +1055,9 @@ GKCOcompGridBlock(node* gridDims, gpukernelres_t* inner) {
     // Two iterations, one for the grid and one for the block. Inside the loop, the arrays above will determine the
     // actual values that are used.
     for (size_t gb = 0; gb < gba; gb++) {
+        INDENT
         // Prints the name of the macro, with the static arguments
         //                SAC_GKCO_SET_<> (max_x, max_y, max_z, max_total
-        INDENT
         fprintf(global.outfile, "%s(%u   , %u   , %u   , %u",
                 icm[gb], max_s[gb], max_s[2 + gb], max_s[4 + gb], max_s[6 + gb]);
         // Print the dynamic arguments. From and to (defined above) determine what dimensions belong to the grid/block
@@ -1892,6 +1909,12 @@ GKCOcompInvPadLast(node* divisibility_node, gpukernelres_t* outer) {
 ************************************************************************************************************************
 \**********************************************************************************************************************/
 
+size_t TS_DIM;
+strvec* TS_LB;
+strvec* TS_UB;
+strvec* TS_ST;
+strvec* TS_WI;
+
 /**
  * Check the gpu kernel res at the end of all computations against the dimensionality and idx variable identifiers it
  * should contain after executing all pragma mappings
@@ -1920,28 +1943,43 @@ GKCOcompCheckGPUkernelRes(unsigned int bnum, char** bounds, gpukernelres_t* res)
 }
 
 void
-GKCOcompCheckStart(gpukernelres_t* res) {
+PrintComputeFlat(size_t dims, strvec* ub, strvec* id) {
     DBUG_ENTER();
 
-    fprintf(global.outfile, "SAC_GKCO_HOST_OPM_CHECK_START(1");
-    for (LOOP_DIMENSIONS(res, dim))
-        fprintf(global.outfile, " * %s",
-                GKR_UB_D_READ(res, dim));
-    fprintf(global.outfile, ");");
+    for (size_t dim = 0; dim < dims; dim++)
+        fprintf(global.outfile, "(");
+    fprintf(global.outfile, "0");
+    for (size_t dim = 0; dim < dims; dim++)
+        fprintf(global.outfile, ") * %s + %s",
+                STRVECsel(ub, dim), STRVECsel(id, dim));
 
     DBUG_RETURN();
 }
 
 void
-PrintComputeFlat(gpukernelres_t* res) {
+PrintComputeSize(size_t dims, strvec* ub) {
     DBUG_ENTER();
 
-    for (LOOP_DIMENSIONS(res, dim))
-        fprintf(global.outfile, "(");
-    fprintf(global.outfile, "0");
-    for (LOOP_DIMENSIONS(res, dim))
-        fprintf(global.outfile, ") * %s + %s",
-                GKR_UB_D_READ(res, dim), GKR_ID_D_READ(res, dim));
+    fprintf(global.outfile, "1");
+    for (size_t dim = 0; dim < dims; dim++)
+        fprintf(global.outfile, " * %s", STRVECsel(ub, dim));
+
+    DBUG_RETURN();
+}
+
+void
+GKCOcompCheckStart(gpukernelres_t* res) {
+    DBUG_ENTER();
+
+    fprintf(global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_START(");
+    PrintComputeSize(GKR_DIM(res), GKR_UB(res));
+    fprintf(global.outfile, ");\n\n\n");
+
+    TS_DIM = GKR_DIM(res);
+    TS_LB  = STRVECcopyDeep(GKR_LB(res));
+    TS_UB  = STRVECcopyDeep(GKR_UB(res));
+    TS_ST  = STRVECcopyDeep(GKR_ST(res));
+    TS_WI  = STRVECcopyDeep(GKR_WI(res));
 
     DBUG_RETURN();
 }
@@ -1950,16 +1988,65 @@ void
 GKCOcompCheckKernel(gpukernelres_t* res) {
     DBUG_ENTER();
 
-    fprintf(global.outfile, "SAC_GKCO_HOST_OPM_CHECK_KERNEL(");
-    PrintComputeFlat(res);
-    fprintf(global.outfile, ");");
+    fprintf(global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_KERNEL(");
+    PrintComputeFlat(GKR_DIM(res), GKR_UB(res), GKR_ID(res));
+    fprintf(global.outfile, ");\n\n\n");
 
     DBUG_RETURN();
 }
 
 void
-GKCOcompCheckEnd(gpukernelres_t* res) {
+CheckEndRecursiveHelper(size_t dim, size_t dims,
+                        strvec* lb, strvec* ub,
+                        strvec* st, strvec* wi,
+                        strvec* id, char* chk) {
     DBUG_ENTER();
+
+    if (dim < dims) {
+        fprintf(global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_END_LOOP(");
+        if (dim == 0) fprintf(global.outfile, "\nSAC_BITMASK_THREADMAPPING_CHECK_END_START(%s), \n", chk);
+        else fprintf(global.outfile, ", \n");
+        CheckEndRecursiveHelper(dim + 1, dims, lb, ub, st, wi, id, chk);
+        fprintf(global.outfile, ", %s, %s, %s, %s, %s, %s)\n",
+                STRVECsel(lb, dim), STRVECsel(ub, dim), STRVECsel(st, dim), STRVECsel(wi, dim),
+                STRVECsel(id, dim), chk);
+    } else {
+        char* val = VarCreate(CONST_TMP_POSTFIX);
+
+        fprintf(global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_END_INNER(%s, %s, \n",
+                chk, val);
+        PrintComputeFlat(dims, ub, id);
+        fprintf(global.outfile, ");\n");
+
+        free(val);
+    }
+
+    DBUG_RETURN();
+}
+
+void
+GKCOcompCheckEnd() {
+    DBUG_ENTER();
+
+    DBUG_EXECUTE(
+            char  * chk   = VarCreate(CONST_TMP_POSTFIX);
+            strvec* TS_ID = STRVECempty(TS_DIM);
+            for (size_t dim = 0; dim < TS_DIM; dim++)
+                STRVECappend(TS_ID, VarCreate(CONST_IDX_POSTFIX));
+
+            fprintf(global.outfile, "\nSAC_BITMASK_THREADMAPPING_CHECK_END(");
+            PrintComputeSize(TS_DIM, TS_UB);
+            fprintf(global.outfile, ")\n\n");
+            CheckEndRecursiveHelper(0, TS_DIM, TS_LB, TS_UB, TS_ST, TS_WI, TS_ID, chk);
+
+            free(chk);
+            STRVECfreeDeep(TS_LB);
+            STRVECfreeDeep(TS_UB);
+            STRVECfreeDeep(TS_ST);
+            STRVECfreeDeep(TS_WI);
+            STRVECfreeDeep(TS_ID);
+    );
+
     DBUG_RETURN();
 }
 

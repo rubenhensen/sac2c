@@ -260,6 +260,10 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
       fprintf( global.outfile, "cutilCheckMsg(\"%s failed!\\n\");\n", funname);
     */
 
+    fprintf(global.outfile, "\n\n");
+    INDENT;
+    GKCOcompCheckEnd();
+
     INDENT;
     fprintf (global.outfile, "}\n");
 
