@@ -1831,6 +1831,12 @@ PRTret (node *arg_node, info *arg_info)
             fprintf (global.outfile, " *");
         }
 
+        DBUG_EXECUTE_TAG ("PRINT_LINKSIGN",
+            if (RET_HASLINKSIGNINFO (arg_node)) {
+                fprintf (global.outfile, "/* linksign %d */",
+                                         RET_LINKSIGN (arg_node));
+            });
+
         if (RET_NEXT (arg_node) != NULL) {
             fprintf (global.outfile, ", ");
             RET_NEXT (arg_node) = TRAVdo (RET_NEXT (arg_node), arg_info);
@@ -2487,6 +2493,12 @@ PRTarg (node *arg_node, info *arg_info)
     if (ARG_ISCUDADEFINED (arg_node)) {
         fprintf (global.outfile, "[CD]");
     }
+
+    DBUG_EXECUTE_TAG ("PRINT_LINKSIGN",
+        if (ARG_HASLINKSIGNINFO (arg_node)) {
+            fprintf (global.outfile, "/* linksign %d */",
+                                     ARG_LINKSIGN (arg_node));
+        });
 
     if ((global.tool != TOOL_sac2tex) && (global.compiler_phase > PH_scp)) {
 

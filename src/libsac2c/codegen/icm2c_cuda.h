@@ -28,6 +28,7 @@ extern void ICMCompileCUDA_MEM_TRANSFER_START (char *to_NT, char *from_NT, char 
 extern void ICMCompileCUDA_MEM_TRANSFER_END (char *var_NT);
 extern void ICMCompileCUDA_MEM_PREFETCH (char *var_NT, char *basetype, int device);
 extern void ICMCompileCUDA_THREAD_SPACE (node *spap, unsigned int bnum, char **bounds);
+extern void ICMCompileCUDA_INDEX_SPACE (node *spap, unsigned int bnum, char **bounds);
 extern void ICMCompileCUDA_WL_SUBALLOC (char *sub_NT, int sub_dim, char *to_NT,
                                         int to_dim, char *off_NT);
 extern void ICMCompileCUDA_PRF_IDX_MODARRAY_AxSxA__DATA (char *to_NT, int to_sdim,

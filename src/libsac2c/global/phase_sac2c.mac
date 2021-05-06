@@ -1263,8 +1263,24 @@ SUBPHASE (ufiv, "Unshare index vectors in WL-folds", UFIVdoUnshareFoldIV,
 
 SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.docp, mem)
 
+#if 0
 SUBPHASE (cnstass, "CUDA Flatten generators", CNSTASSdoCUDAconstantAssignment,
           (global.backend == BE_cuda), mem)
+For now (2021) I (sbs) leave this in uncommented form here. This phase does
+two things: (1) It makes sure that all gen-vars are structural constants 
+        and (2) It lifts all N_num into N_id nodes.
+It seems that (1) is redundant and even broken(!).
+(2) inhibits known constants to make their way to pc:cuknl! The problem is 
+    that SSAASSIGN is gone after ussa and AKV types disappear until pc:cuknl :
+    mem:alloc introduces explicit memory, and, in doing so elides all AKV types.
+    This makes conceptual sense as we switch to a stateful representation here.
+    pc:mmv later replaces the value variables by their (AKV-less) memory.
+    Consequently, the AKV info is gone in pc:cuknl. Even if we were to make 
+    the AKVs survive mem, theuy surely must not survive ussa, since we can 
+    not guarantee that there is not more than one assignment per variable.
+
+For now, we try whether we can safely leave out this phase....
+#endif
 
 SUBPHASE (asd, "AUD/SCL distinction", ASDdoAudSclDistinction, ALWAYS, mem)
 

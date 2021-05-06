@@ -6446,6 +6446,21 @@ COMPprfCUDAThreadSpace (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+static node *
+COMPprfCUDAIndexSpace (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+
+    DBUG_ENTER ();
+
+    ret_node = TCmakeAssignIcm3 ("CUDA_INDEX_SPACE",
+                                 DUPdoDupTree( PRF_ARG1 (arg_node)),
+                                 TBmakeNumuint (TCcountExprs (EXPRS_NEXT (PRF_ARGS (arg_node)))),
+                                 DupExprs_NT_AddReadIcms (EXPRS_NEXT (PRF_ARGS (arg_node))), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node COMPprfWLBreak( node *arg_node, info *arg_info)
