@@ -1051,6 +1051,7 @@ GKCOcompGridBlock(node* gridDims, gpukernelres_t* inner) {
 
     // Toggle the emitting of the grid/block variable code
     size_t gba = GKR_GB_EMIT(inner) ? 2 : 0;
+    if (GKR_GB_EMIT(inner))
 
     // Two iterations, one for the grid and one for the block. Inside the loop, the arrays above will determine the
     // actual values that are used.
@@ -1942,31 +1943,74 @@ GKCOcompCheckGPUkernelRes(unsigned int bnum, char** bounds, gpukernelres_t* res)
     DBUG_RETURN();
 }
 
+/**
+ * Print an expression to compute the flat index from a vector of upperbounds and a vector of ids. For an input of
+ * dims: 3, ub: [ub1, ub2, ub3], id: [id1, id2, id3], it will print:
+ *
+ * ((((0) * ub1 + id1) * ub2 + id2) * ub3 + id3);
+ *
+ * @param dims              The dimensionality of the computation
+ * @param ub                The upperbound identifiers as a strvec
+ * @param id                The id identifiers as a strvec
+ */
 void
 PrintComputeFlat(size_t dims, strvec* ub, strvec* id) {
     DBUG_ENTER();
 
     for (size_t dim = 0; dim < dims; dim++)
         fprintf(global.outfile, "(");
-    fprintf(global.outfile, "0");
+    fprintf(global.outfile, "(0");
     for (size_t dim = 0; dim < dims; dim++)
         fprintf(global.outfile, ") * %s + %s",
                 STRVECsel(ub, dim), STRVECsel(id, dim));
+    fprintf(global.outfile, ")");
 
     DBUG_RETURN();
 }
 
+/**
+ * Print an expression to compute the flat size from a vector of upperbounds. For an input of dims: 3,
+ * ub: [ub1, ub2, ub3], it will print:
+ *
+ * (1 * ub1 * ub2 * ub3)
+ *
+ * @param dims              The dimensionality of the computation
+ * @param ub                The upperbound identifiers as a strvec
+ */
 void
 PrintComputeSize(size_t dims, strvec* ub) {
     DBUG_ENTER();
 
-    fprintf(global.outfile, "1");
+    fprintf(global.outfile, "(1");
     for (size_t dim = 0; dim < dims; dim++)
         fprintf(global.outfile, " * %s", STRVECsel(ub, dim));
+    fprintf(global.outfile, ")");
 
     DBUG_RETURN();
 }
 
+/**
+ * The three functions below belong to the threadmapping bitmask check. This check will operate on a few parts of the
+ * code, and is enabled by passing -D CHECK_GPU to the compiler.
+ *
+ * The purpose of this check is to test whether the new
+ * index space is mapped to the original index space correctly. It does so by creating a new array with the same size
+ * as the with loop partition, initiated to all zeros. Each kernel will then increase the corresponding index of the
+ * array by one. After all kernels are executed, we will check all numbers in the array. If we are inside the grid, the
+ * value at that position should be exactly 1. If we are outside the grid, the value at that position should be exactly
+ * 0.
+ *
+ * In the file codegen/icm2c_cuda, the CompileCUDA_GLOBALFUN_HEADER and CompileCUDA_GLOBALFUN_AP ICM's have been adapted
+ * to support the pointer to the bitmask array on the GPU.
+ */
+
+/**
+ * Start the threadmapping bitmask check. The dimensionality and variable identifiers are stored in global variables
+ * temporary, because otherwise we cannot access them after the kernels have completed. The ICM
+ * SAC_BITMASK_THREADMAPPING_CHECK_START will allocate a block of gpu memory initiated with zeros.
+ *
+ * @param res               The GPU kernel res just after initiation
+ */
 void
 GKCOcompCheckStart(gpukernelres_t* res) {
     DBUG_ENTER();
@@ -1984,6 +2028,12 @@ GKCOcompCheckStart(gpukernelres_t* res) {
     DBUG_RETURN();
 }
 
+/**
+ * Kernel check call. The ICM SAC_BITMASK_THREADMAPPING_CHECK_KERNEL increases the value of the bitmask array on
+ * the corresponding index with 1.
+ *
+ * @param res               The GPU kernel res after all pragma mapping has been done.
+ */
 void
 GKCOcompCheckKernel(gpukernelres_t* res) {
     DBUG_ENTER();
@@ -1995,6 +2045,20 @@ GKCOcompCheckKernel(gpukernelres_t* res) {
     DBUG_RETURN();
 }
 
+/**
+ * A recursive helper function that creates loops over the length of a dimension using ICM's. The loops will be nested,
+ * and there will be exactly one loop per dimension. For more information, see the documentation of GKCOcompCheckEnd
+ * below, and the documentation in the function body.
+ *
+ * @param dim               The current dimension
+ * @param dims              The number of dimensions
+ * @param lb                The lowerbound variable identifiers
+ * @param ub                The upperbound variable identifiers
+ * @param st                The step variable identifiers
+ * @param wi                The width variable identifiers
+ * @param id                The idx variable identifiers
+ * @param chk               The variable identifier for the helper variable
+ */
 void
 CheckEndRecursiveHelper(size_t dim, size_t dims,
                         strvec* lb, strvec* ub,
@@ -2002,17 +2066,26 @@ CheckEndRecursiveHelper(size_t dim, size_t dims,
                         strvec* id, char* chk) {
     DBUG_ENTER();
 
+    // If the current dimension is smaller then the dimensionality, we create an extra inner loop.
+    // If not, we end the recursion and print the actual checking code
     if (dim < dims) {
+        // Start ICM
         fprintf(global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_END_LOOP(");
+        // If it is the outermost loop, we reset the helper variable to false each time
         if (dim == 0) fprintf(global.outfile, "\nSAC_BITMASK_THREADMAPPING_CHECK_END_START(%s), \n", chk);
         else fprintf(global.outfile, ", \n");
+        // Recursive call to create the inner code
         CheckEndRecursiveHelper(dim + 1, dims, lb, ub, st, wi, id, chk);
+        // Print all variables we need for this loop.
         fprintf(global.outfile, ", %s, %s, %s, %s, %s, %s)\n",
-                STRVECsel(lb, dim), STRVECsel(ub, dim), STRVECsel(st, dim), STRVECsel(wi, dim),
+                STRVECsel(lb, dim), STRVECsel(ub, dim),
+                STRVECsel(st, dim), STRVECsel(wi, dim),
                 STRVECsel(id, dim), chk);
     } else {
+        // Create a second temporary variable to temporary store the value at the current index
         char* val = VarCreate(CONST_TMP_POSTFIX);
 
+        // Perform the actual checks on this index
         fprintf(global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_END_INNER(%s, %s, \n",
                 chk, val);
         PrintComputeFlat(dims, ub, id);
@@ -2024,21 +2097,58 @@ CheckEndRecursiveHelper(size_t dim, size_t dims,
     DBUG_RETURN();
 }
 
+/**
+ * End of the threadmapping bitmask check. This function generates code for the actual check. It creates nested loops
+ * (one for each dimension), checks for each dimension if the index is inside or outside of the grid, and actually
+ * checks the index in the innermost loop. The generated ICM's for a dimensionality of three look something like this:
+ *
+ *  // Copy array from GPU memory to RAM
+ *  ICM_BITMASK_THREADMAPPING_CHECK_END(size);
+ *  // Nested loops
+ *  SAC_BITMASK_THREADMAPPING_CHECK_END(
+ *      SAC_BITMASK_THREADMAPPING_CHECK_END_START(var);
+ *      SAC_BITMASK_THREADMAPPING_CHECK_END(,
+ *          SAC_BITMASK_THREADMAPPING_CHECK_END(,
+ *              SAC_BITMASK_THREADMAPPING_CHECK_END_INNER(..vars),
+ *              ..vars),
+ *          ..vars),
+ *      ..vars);
+ *
+ *  Which expands to (pseudocode)
+ *
+ *  for (id1 in [0..ub1]) {
+ *      int ingrid = true;
+ *      if (id1 outside grid) ingrid = false;
+ *      for (id2 in [0..ub2]) {
+ *          if (id2 outside grid) ingrid = false;
+ *          for (id3 in [0..ub3]) {
+ *              if (id3 outside grid) ingrid = false;
+ *              int val = bitmask[iv];
+ *              Check val with ingrid
+ *          }
+ *      }
+ *  }
+ */
 void
 GKCOcompCheckEnd() {
     DBUG_ENTER();
 
     DBUG_EXECUTE(
+            // Create necessary variables
             char  * chk   = VarCreate(CONST_TMP_POSTFIX);
             strvec* TS_ID = STRVECempty(TS_DIM);
             for (size_t dim = 0; dim < TS_DIM; dim++)
                 STRVECappend(TS_ID, VarCreate(CONST_IDX_POSTFIX));
 
+            // Generate memory copy code
             fprintf(global.outfile, "\nSAC_BITMASK_THREADMAPPING_CHECK_END(");
             PrintComputeSize(TS_DIM, TS_UB);
             fprintf(global.outfile, ")\n\n");
+
+            // Generate checking code
             CheckEndRecursiveHelper(0, TS_DIM, TS_LB, TS_UB, TS_ST, TS_WI, TS_ID, chk);
 
+            // FREE ALL THE THINGS
             free(chk);
             STRVECfreeDeep(TS_LB);
             STRVECfreeDeep(TS_UB);

@@ -579,7 +579,7 @@ extern "C" {
 
 #define SAC_GKCO_HOST_OPM_SET_GRID(max_x, max_y, max_z, max_total, ...)                                     \
     dim3 grid (__VA_ARGS__);                                                                                \
-    SAC_TR_GPU_PRINT("CUDA XYZ grid dimension of %u x %u x %u", grid.x, grid.y, grid.z);                    \
+    SAC_TR_GPU_PRINT("    CUDA XYZ grid dimension of %u x %u x %u", grid.x, grid.y, grid.z);                \
                                                                                                             \
     if (grid.x <= 0)                                                                                        \
         SAC_RuntimeError("CUDA x grid dimension must be bigger then zero. Current value is %u", grid.x);    \
@@ -595,7 +595,7 @@ extern "C" {
 
 #define SAC_GKCO_HOST_OPM_SET_BLOCK(max_x, max_y, max_z, max_total, ...)                                    \
     dim3 block (__VA_ARGS__);                                                                               \
-    SAC_TR_GPU_PRINT("CUDA XYZ block dimension of %u x %u x %u", block.x, block.y, block.z);                \
+    SAC_TR_GPU_PRINT("    CUDA XYZ block dimension of %u x %u x %u", block.x, block.y, block.z);            \
                                                                                                             \
     if (block.x <= 0)                                                                                       \
         SAC_RuntimeError("CUDA x block dimension must be bigger then zero. Current value is %u", block.x);  \
