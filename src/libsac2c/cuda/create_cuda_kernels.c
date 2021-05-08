@@ -887,8 +887,9 @@ CUKNLpart (node *arg_node, info *arg_info)
 
     if (INFO_IN_CUDA_WL (arg_info)) {
         INFO_PART (arg_info) = arg_node;
-        if (!(WITH_HASRC (INFO_WITH (arg_info)) && PART_ISCOPY (arg_node))
-            && PART_CUDARIZABLE (arg_node)) {
+        if (WITH_HASRC (INFO_WITH (arg_info)) && PART_ISCOPY (arg_node)) {
+            DBUG_PRINT ("  copy partition => dismissing!");
+        } else if (PART_CUDARIZABLE (arg_node)) {
             DBUG_PRINT ("  start cudarizing partition");
             /* We create a lookup table for the traversal of each partition */
             INFO_LUT (arg_info) = LUTgenerateLut ();
@@ -948,11 +949,13 @@ CUKNLpart (node *arg_node, info *arg_info)
             DBUG_PRINT ("  done cudarizing partition");
 
         } else if (INFO_IN_CUDA_PARTITION (arg_info)) {
+            DBUG_PRINT ("  traversing inner partition");
 
             PART_WITHID (arg_node) = TRAVopt (PART_WITHID (arg_node), arg_info);
             PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);
 
         } else {
+            DBUG_ASSERT ((0==1), "   device2decvice not yet properly supported!");
             /* For non-cudarizable partition, we traverse its code
              * and create a <device2device>. Note that we only traverse
              * the first non-cudarizable partition encountered since
