@@ -3,8 +3,33 @@
  *
  * file:   annotate_cond_transfers.c
  *
- * prefix: AMTRAN
+ * prefix: ACTRAN
  *
+ * brief:
+ *    overall, we attempt to move _host2device_ calls up and _device2host_
+ *    calls down. This phase looks at conditional functions and annotates
+ *    the assignments of all prf-calls to _host2device_ or _device2host_ as
+ *    follows:
+ *    _host2device_ calls are annotated as ASSIGN_ISNOTALLOWEDTOBEMOVEDUP iff
+ *     
+ *    _device2host_ calls are annotated as ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN iff
+ *
+ *    Cond-Functions have the general form:
+ *
+ *    rt1, ..., rtn Cond( bool p, a1, ..., am)
+ *    {
+ *       if (p) {
+ *          ti = _host2device_(ak); //ASSIGN_ISNOTALLOWEDTOBEMOVEDUP!
+ *          ... ak ...
+ *       } else {
+ *          ej = _device2host_(a_dev); // ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN!
+ *          ... ej ...
+ *       }
+ *       r1 = ( p ? t1 : e1);   // occurrences here are being counted too!
+ *       ...
+ *       rn = ( p ? tn : en);
+ *       return (r1, ..., rn);
+ *    }
  *
  *****************************************************************************/
 
@@ -14,7 +39,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "ACTRAN"
 #include "debug.h"
 
 #include "traverse.h"

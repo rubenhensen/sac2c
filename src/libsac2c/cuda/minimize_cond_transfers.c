@@ -4,9 +4,9 @@
  *
  *
  *   This module implements the transformation of lifting memory transfers
- *   (<host2device>/<device2host>) out of a do-fun. Memory transfers that
+ *   (<host2device>/<device2host>) out of a cond-fun. Memory transfers that
  *   are allowed to be moved out were tagged in the previous phase, i.e.
- *   Annotate Memory Transfer (AMTRAN).
+ *   Annotate Memory Transfer (ACTRAN).
  *
  *
  *****************************************************************************/
@@ -29,7 +29,7 @@
 #include "memory.h"
 #include "globals.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "MCTRAN"
 #include "debug.h"
 
 #include "ctinfo.h"
