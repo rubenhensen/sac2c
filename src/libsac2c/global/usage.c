@@ -838,6 +838,8 @@ PrintDebugOptions (void)
             "    -d treecheck    Check syntax tree for consistency with xml "
             "specification.\n"
             "    -d memcheck     Check syntax tree for memory consistency.\n"
+            "    -d gpukernel    Check CUDA index-space to thread-space mapping "
+            "and back.\n"
             "    -d nofree       Don't free any memory.\n"
             "    -d noclean      Don't initialize or clean memory before freeing.\n"
             "    -d sancheck     Check syntax tree for structural consistency.\n"

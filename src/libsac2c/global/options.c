@@ -809,6 +809,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE ("lacfuncheck", global.lacfuncheck = TRUE);
         ARG_CHOICE ("sancheck", global.sancheck = TRUE);
         ARG_CHOICE ("memcheck", global.memcheck = TRUE);
+        ARG_CHOICE ("gpukernel", global.gpukernel = TRUE);
         ARG_CHOICE ("nofree", global.nofree = TRUE);
         ARG_CHOICE ("noclean", global.memclean = FALSE);
         ARG_CHOICE ("nolacinline", global.lacinline = FALSE);

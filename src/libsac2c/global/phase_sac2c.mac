@@ -1026,7 +1026,7 @@ PHASE (cuda, "Automatic parallelisation for GPUs",
 
 SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL, ALWAYS, cuda)
 
-SUBPHASE (cucm, "CUDA cost model", CUCMdoCUDACostModel, global.backend == BE_cudahybrid,
+SUBPHASE (cucm, "CUDA cost model (hybrid only)", CUCMdoCUDACostModel, global.backend == BE_cudahybrid,
           cuda)
 
 SUBPHASE (pfd, "CUDA Partial folding", PFDdoPartialFold, global.optimize.dopfd, cuda)
@@ -1049,13 +1049,13 @@ SUBPHASE( scuwl,
           cuda)
 #endif
 
-SUBPHASE (cadt, "Change arrays to distributed type", CADTdoChangeArraysToDistributedType,
+SUBPHASE (cadt, "Change arrays to distributed type (hybrid only)", CADTdoChangeArraysToDistributedType,
           global.backend == BE_cudahybrid, cuda)
 
-SUBPHASE (iwlmem, "CUDA Insert CUDA memory transfer primitives for withloops",
+SUBPHASE (iwlmem, "CUDA Insert CUDA memory transfer primitives for withloops (non-hybrid only)",
           IWLMEMdoInsertWithloopMemtran, global.backend == BE_cuda, cuda)
 
-SUBPHASE (icsmem, "CUDA Insert CUDA memory transfer primitives for cudasts",
+SUBPHASE (icsmem, "CUDA Insert CUDA memory transfer primitives for cudasts (non-hybrid only)",
           ICSMEMdoInsertCudastMemtran,
           (global.optimize.doexpar && global.backend == BE_cuda), cuda)
 
@@ -1086,7 +1086,7 @@ SUBPHASE (sptn, "CUDA Split partitions", SPTNdoSplitPartitions,
 SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition, ALWAYS,
           cuda)
 
-SUBPHASE (mtran, "CUDA Minimise the number of device-host data transfers",
+SUBPHASE (mtran, "CUDA Minimise the number of device-host data transfers (non-hybrid only)",
           MTRANdoMinimizeTransfers, global.optimize.domemopt &&global.backend == BE_cuda,
           cuda)
 

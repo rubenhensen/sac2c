@@ -845,6 +845,12 @@ GLOBAL (int, profile_funapmax, 1, xfree_dummy, )
  * Compile time options
  */
 
+GLOBAL (bool, gpukernel, FALSE, xfree_dummy, )
+/*
+ * relevant for debugging CUDA code only! Extensive checks whether the
+ * index-space to thread-space mapping works correctly.
+ */
+
 GLOBAL (bool, treecheck, FALSE, xfree_dummy, )
 /*
  * check syntax tree for consistency with xml specification
