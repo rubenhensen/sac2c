@@ -11,11 +11,19 @@
  *       has been dropped (as CUDA no longer develops this).
  */
 
-target cuda :: default_sbi:
+target arch_:
+CUDA_ARCH        := ""
+
+target arch_sm10:
+CUDA_ARCH        := "sm10"
+
+target cuda_sm10 :: cuda_core :: arch_sm10:
+
+target cuda :: cuda_core :: arch_@CUDA_ARCH@:
+
+target cuda_core :: default_sbi :
 SBI              :=  "cuda"
 BACKEND          :=  "Cuda"
-
-CUDA_ARCH        :=  "@CUDA_ARCH@"
 
 USE_PHM_API      :=  0
 CCP_CEXT         :=  ".cu"
