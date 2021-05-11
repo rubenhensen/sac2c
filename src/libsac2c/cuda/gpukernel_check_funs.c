@@ -190,14 +190,25 @@ checkArgsLength(node* arg, const size_t length, const char* name) {
 }
 
 void
-checkNumLesseqDim(node* arg, const size_t length, const char* name) {
+checkDimensionSettings(node* gridDims_node, size_t dims) {
     DBUG_ENTER();
 
-    int num = NUM_VAL(arg);
+    size_t gridDims  = (size_t) NUM_VAL(gridDims_node);
+    size_t blockDims = dims - gridDims;
 
-    if ((size_t) num > length)
-        CTIerrorLoc(NODE_LOCATION(arg), "wrong first argument to %s; "
-                                        "should be a positive integer less then %zu", name, length);
+    // TODO: parametrize these two variables
+    size_t max_block_dims = 3;
+    size_t max_grid_dims  = 3;
+
+    // < 0 check is not necessary, as we have unsigned numbers
+    if (gridDims > max_grid_dims)
+        CTIerrorLoc (NODE_LOCATION(gridDims_node), "Number of grid dimensions too high! "
+                                                   "Should be 0-%zu, currently %zu", max_grid_dims, gridDims);
+    // < 0 check is not necessary, as we have unsigned numbers
+    if (blockDims > max_block_dims)
+        CTIerrorLoc (NODE_LOCATION(gridDims_node), "Number of block dimensions too high! "
+                                                   "Should be 0-%zu, currently %zu (%zu - %zu)",
+                                                   max_block_dims, blockDims, dims, gridDims);
 
     DBUG_RETURN();
 }

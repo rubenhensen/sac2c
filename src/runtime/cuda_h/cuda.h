@@ -564,14 +564,14 @@ extern "C" {
     tmp = ub_r % st;                                                                                        \
     ub_w = ub_r / st * wi + (tmp < wi ? tmp : wi);
 
-#define SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(ub_t, ub_w, st, wi, tmp_a, tmp_b)                                  \
+#define SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(ub_r, ub_w, st, wi, tmp_a, tmp_b)                                  \
     tmp_a = ub_r % st;                                                                                      \
     tmp_b = tmp_a < w;                                                                                      \
     ub_w = ub_r / st * wi                                                                                   \
             + TERNARY_BL(tmp_b, tmp_a, wi);
 
 #define SAC_GKCO_HOST_OPM_FOLD_LAST(ub_maj_r, ub_maj_w, ub_min)                                             \
-    ub_maj_w = ub_min_w * ub_min;
+    ub_maj_w = ub_maj_r * ub_min;
 
 #define SAC_GKCO_HOST_OPM_SPLIT_LAST(ub_maj_r, ub_maj_w, ub_min, len_min)                                   \
     ub_min = ub_maj_r % len_min;                                                                            \
@@ -580,38 +580,12 @@ extern "C" {
 #define SAC_GKCO_HOST_OPM_SET_GRID(max_x, max_y, max_z, max_total, ...)                                     \
     dim3 grid (__VA_ARGS__);                                                                                \
     SAC_TR_GPU_PRINT("    CUDA XYZ grid dimension of %u x %u x %u", grid.x, grid.y, grid.z);                \
-                                                                                                            \
-    if (grid.x <= 0)                                                                                        \
-        SAC_RuntimeError("CUDA x grid dimension must be bigger then zero. Current value is %u", grid.x);    \
-    if (grid.y <= 0)                                                                                        \
-        SAC_RuntimeError("CUDA y grid dimension must be bigger then zero. Current value is %u", grid.y);    \
-    if (grid.z <= 0)                                                                                        \
-        SAC_RuntimeError("CUDA z grid dimension must be bigger then zero. Current value is %u", grid.z);    \
-                                                                                                            \
-    if (grid.x > max_x || grid.y > max_y, || grid.z > max_z)                                                \
-        SAC_RuntimeError("CUDA XYZ grid dimension of %u x %u x %u exceeds "                                 \
-                         "the compute capability's max value of %u x %u x %u",                              \
-                         grid.x, grid.y, grid.z, max_x, max_y, max_z);
+    SAC_PRAGMA_GRID_CHECK(max_x, max_y, max_z, max_total)
 
 #define SAC_GKCO_HOST_OPM_SET_BLOCK(max_x, max_y, max_z, max_total, ...)                                    \
     dim3 block (__VA_ARGS__);                                                                               \
     SAC_TR_GPU_PRINT("    CUDA XYZ block dimension of %u x %u x %u", block.x, block.y, block.z);            \
-                                                                                                            \
-    if (block.x <= 0)                                                                                       \
-        SAC_RuntimeError("CUDA x block dimension must be bigger then zero. Current value is %u", block.x);  \
-    if (block.y <= 0)                                                                                       \
-        SAC_RuntimeError("CUDA y block dimension must be bigger then zero. Current value is %u", block.y);  \
-    if (block.z <= 0)                                                                                       \
-        SAC_RuntimeError("CUDA z block dimension must be bigger then zero. Current value is %u", block.z);  \
-                                                                                                            \
-    if (block.x > max_x || block.y > max_y, || block.z > max_z)                                             \
-        SAC_RuntimeError("CUDA XYZ block dimension of %u x %u x %u exceeds "                                \
-                         "the compute capability's max value of %u x %u x %u",                              \
-                         block.x, block.y, block.z, max_x, max_y, max_z);                                   \
-    if (block.x * block.y * block.z > max_total)                                                            \
-        SAC_RuntimeError("CUDA XYZ block dimension of %u x %u x %u = %u exceeds compute capability's "      \
-                         "max number of threads per block: %u",                                             \
-                         block.x, block.y, block.z, block.x * block.y * block.z, max_total);
+    SAC_PRAGMA_BLOCK_CHECK(max_x, max_y, max_z, max_total)
 
 /*****************************************************************************
  *
@@ -620,11 +594,18 @@ extern "C" {
  *
  *****************************************************************************/
 
-#define SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(st, wi, idx)                                                          \
+#define SAC_GKCO_GPUD_OPD_UNLB(lb, idx)                                                                     \
+    if (!(idx >= lb))                                                                                       \
+        return;
+
+#define SAC_GKCO_GPUD_OPD_UNLB_BL(lb, idx, ret_col)                                                         \
+    ret_col |= !(idx >= lb);
+
+#define SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(lb, st, wi, idx)                                                      \
     if (!(idx % st < wi))                                                                                   \
         return;
 
-#define SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL(st, wi, idx, ret_col)                                              \
+#define SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL(lb, st, wi, idx, ret_col)                                          \
     ret_col |= !(idx % st < wi);
 
 #define SAC_GKCO_GPUD_OPD_UNPAD(ub, idx)                                                                    \
@@ -657,13 +638,8 @@ extern "C" {
 #define SAC_GKCO_GPUD_OPM_DECLARE_IV(iv_var, iv_length)                                                     \
     int iv_var[iv_length];
 
-#define SAC_GKCO_GPUD_OPD_DEF_IV(iv_var, dim, lb, ub, st, wi, id, lb_in, ub_in, st_in, wi_in)               \
+#define SAC_GKCO_GPUD_OPD_DEF_IV(iv_var, dim, id)                                                           \
     iv_var[dim] = id;                                                                                       \
-    SAC_PRAGMA_KERNEL_ID_CHECK(dim, lb, ub, st, wi, id)                                                     \
-    SAC_PRAGMA_KERNEL_VAR_CHECK(dim, "lowerbound", lb_in, lb)                                               \
-    SAC_PRAGMA_KERNEL_VAR_CHECK(dim, "upperbound", ub_in, ub)                                               \
-    SAC_PRAGMA_KERNEL_VAR_CHECK(dim, "step", st_in, st)                                                     \
-    SAC_PRAGMA_KERNEL_VAR_CHECK(dim, "width", wi_in, wi)
 
 /*****************************************************************************
  *

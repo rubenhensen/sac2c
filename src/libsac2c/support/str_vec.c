@@ -23,7 +23,7 @@
 #include "str.h"
 #include "math_utils.h"
 
-const size_t MIN_ALLOC = 4;
+static const size_t MIN_ALLOC = 4;
 
 struct STRVEC {
     // The currently in use length of the vector

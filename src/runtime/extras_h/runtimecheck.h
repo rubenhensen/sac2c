@@ -345,6 +345,51 @@
 
 #define SAC_GET_CUDA_UNPIN_ERROR() SAC_CUDA_GET_LAST_ERROR ("GPU UNPINNING")
 
+#define SAC_PRAGMA_GRID_CHECK(max_x, max_y, max_z, max_total)                                               \
+    if (grid.x <= 0)                                                                                        \
+        SAC_RuntimeError("CUDA x grid dimension must be bigger then zero. Current value is %u", grid.x);    \
+    if (grid.y <= 0)                                                                                        \
+        SAC_RuntimeError("CUDA y grid dimension must be bigger then zero. Current value is %u", grid.y);    \
+    if (grid.z <= 0)                                                                                        \
+        SAC_RuntimeError("CUDA z grid dimension must be bigger then zero. Current value is %u", grid.z);    \
+                                                                                                            \
+    if (grid.x > max_x || grid.y > max_y || grid.z > max_z)                                                 \
+        SAC_RuntimeError("CUDA XYZ grid dimension of %u x %u x %u exceeds "                                 \
+                         "the compute capability's max value of %u x %u x %u",                              \
+                         grid.x, grid.y, grid.z, max_x, max_y, max_z);
+
+#define SAC_PRAGMA_BLOCK_CHECK(max_x, max_y, max_z, max_total)                                              \
+    if (block.x <= 0)                                                                                       \
+        SAC_RuntimeError("CUDA x block dimension must be bigger then zero. Current value is %u", block.x);  \
+    if (block.y <= 0)                                                                                       \
+        SAC_RuntimeError("CUDA y block dimension must be bigger then zero. Current value is %u", block.y);  \
+    if (block.z <= 0)                                                                                       \
+        SAC_RuntimeError("CUDA z block dimension must be bigger then zero. Current value is %u", block.z);  \
+                                                                                                            \
+    if (block.x > max_x || block.y > max_y || block.z > max_z)                                              \
+        SAC_RuntimeError("CUDA XYZ block dimension of %u x %u x %u exceeds "                                \
+                         "the compute capability's max value of %u x %u x %u",                              \
+                         block.x, block.y, block.z, max_x, max_y, max_z);                                   \
+    if (block.x * block.y * block.z > max_total)                                                            \
+        SAC_RuntimeError("CUDA XYZ block dimension of %u x %u x %u = %u exceeds compute capability's "      \
+                         "max number of threads per block: %u",                                             \
+                         block.x, block.y, block.z, block.x * block.y * block.z, max_total);
+
+#else
+
+#define SAC_CUDA_GET_LAST_ERROR_COND(ERROR_MSG, cu_status)
+#define SAC_CUDA_GET_LAST_ERROR(ERROR_MSG)
+#define SAC_CUDA_GET_LAST_KERNEL_ERROR()
+#define SAC_GET_CUDA_MEM_TRANSFER_ERROR()
+#define SAC_GET_CUDA_MALLOC_ERROR()
+#define SAC_GET_CUDA_FREE_ERROR()
+#define SAC_GET_CUDA_PIN_ERROR()
+#define SAC_GET_CUDA_UNPIN_ERROR()
+#define SAC_PRAGMA_GRID_CHECK(max_x, max_y, max_z, max_total)
+#define SAC_PRAGMA_BLOCK_CHECK(max_x, max_y, max_z, max_total)
+
+#endif /* SAC_DO_CHECK_GPU */
+
 #define SAC_PRAGMA_KERNEL_ID_CHECK(dim, lb, ub, st, wi, id)                                                 \
     if (id < lb)                                                                                            \
         SAC_RuntimeError("idx %i for dimension %u is less then lowerbound %u",                              \
@@ -352,32 +397,9 @@
     if (id >= ub)                                                                                           \
         SAC_RuntimeError("idx %i for dimension %u is greater or equal then upperbound %u",                  \
                          id, dim, ub);                                                                      \
-    if (id % step < width)                                                                                  \
+    if (id % st < wi)                                                                                       \
         SAC_RuntimeError("idx %i for dimension %u is not inside grid with step: %u and width: %u",          \
-                         id, dim, step, width);
-
-#define SAC_PRAGMA_KERNEL_VAR_CHECK(dim, name, old, nw)                                                     \
-    if (old != new)                                                                                         \
-        SAC_RuntimeError("The value for the %s in dimension %u has changed after the pragma calculations. " \
-                         "Before: %u, after: %u", name, dim, old, nw);
-
-#define SAC_BITMASK_THREADMAPPING_CHECK_ARG , SAC_gkco_check_threadmapping_bitmask_dev
-
-#define SAC_BITMASK_THREADMAPPING_CHECK_START(size)                                                         \
-    void* SAC_gkco_check_threadmapping_bitmask_dev;                                                         \
-    cudaMalloc(SAC_gkco_check_threadmapping_bitmask_dev, size);                                             \
-    cudaMemset(SAC_gkco_check_threadmapping_bitmask_dev, 0, size);                                          \
-
-#define SAC_BITMASK_THREADMAPPING_CHECK_KERNEL(flat_expr)                                                   \
-    SAC_gkco_check_threadmapping_bitmask_dev[flat_expr] ++;
-
-#define SAC_BITMASK_THREADMAPPING_CHECK_END(size)                                                           \
-    byte* SAC_gkco_check_threadmapping_bitmask = (byte*) malloc(sizeof(byte) * size);                       \
-    cudaMemcpy(SAC_gkco_check_threadmapping_bitmask, SAC_gkco_threadmapping_bitmask_dev,                    \
-               size, cudaMemcpyDeviceToHost);
-
-#define SAC_BITMASK_THREADMAPPING_CHECK_END_START(chk)                                                      \
-    bool chk = true;
+                         id, dim, st, wi);
 
 #define SAC_BITMASK_THREADMAPPING_CHECK_END_INNER(chk, val, flat_expr)                                      \
     val = SAC_gkco_check_threadmapping_bitmask[flat_expr];                                                  \
@@ -393,30 +415,36 @@
             SAC_RuntimeError("Index inside of grid was executed multiple times!");                          \
     }
 
-#define SAC_BITMASK_THREADMAPPING_CHECK_END_LOOP(start, inner, lb, ub, st, wi, id, chk)                     \
-    for (size_t id=lb; id<ub; id++) {                                                                       \
-        start;                                                                                              \
-        if ((ub - lb) % st >= wi)                                                                           \
-            chk = false;                                                                                    \
-        inner;                                                                                              \
+#define SAC_PRAGMA_BITMASK_CHECK(is, ig, val, bitmask, flat, fmt, ...)                                      \
+    val = bitmask[flat];                                                                                    \
+    if (is && ig) {                                                                                         \
+        if (val == 0)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") inside grid was not hit inside the kernel!",                  \
+                             __VA_ARGS__);                                                                  \
+        if (val == 2)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") inside grid was hit multiple times inside the kernel!",       \
+                             __VA_ARGS__);                                                                  \
+    }                                                                                                       \
+    else if (is) {                                                                                          \
+        if (val == 1)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") outside the grid was hit inside the kernel!",                 \
+                             __VA_ARGS__);                                                                  \
+        if (val == 2)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") outside the grid was hit multiple times inside the kernel!",  \
+                             __VA_ARGS__);                                                                  \
+    }                                                                                                       \
+    else {                                                                                                  \
+        if (val >= 1)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") below lowerbound was hit inside the kernel!",                 \
+                             __VA_ARGS__);                                                                  \
+        if (val == 2)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") below lowerbound was hit multiple times inside the kernel!",  \
+                             __VA_ARGS__);                                                                  \
     }
 
-#else
-
-#define SAC_CUDA_GET_LAST_ERROR_COND(ERROR_MSG, cu_status)
-#define SAC_CUDA_GET_LAST_ERROR(ERROR_MSG)
-#define SAC_CUDA_GET_LAST_KERNEL_ERROR()
-#define SAC_GET_CUDA_MEM_TRANSFER_ERROR()
-#define SAC_GET_CUDA_MALLOC_ERROR()
-#define SAC_GET_CUDA_FREE_ERROR()
-#define SAC_GET_CUDA_PIN_ERROR()
-#define SAC_GET_CUDA_UNPIN_ERROR()
-#define SAC_PRAGMA_KERNEL_ID_CHECK(dim, lb, ub, st, wi, id)
-#define SAC_BITMASK_THREADMAPPING_CHECK_ARG
-#define SAC_BITMASK_THREADMAPPING_CHECK_START(threaspacesize)
-#define SAC_BITMASK_THREADMAPPING_CHECK_KERNEL(flat_expr)
-#define SAC_BITMASK_THREADMAPPING_CHECK_END(inner)
-
-#endif /* SAC_DO_CHECK_GPU */
+#define SAC_PRAGMA_BITMASK_UB_CHECK(val, bitmask, size)                                                     \
+    val = *((unsigned long long int*) &bitmask[size]);                                                      \
+    if (val >= 1)                                                                                           \
+        SAC_RuntimeError("%u indexes above upperbound have been hit inside the kernel!", val);
 
 #endif /* _SAC_RUNTIMECHECK_H_ */

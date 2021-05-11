@@ -70,7 +70,9 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, unsigned int vararg_cnt, char **var
         }
     }
 
-    fprintf (global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_ARG");
+    // TODO: replace if (true) with something else
+    if (true)
+        fprintf (global.outfile, ", unsigned short* SAC_gkco_check_threadmapping_bitmask_dev");
     fprintf (global.outfile, ")");
 
     DBUG_RETURN ();
@@ -237,7 +239,9 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
         }
     }
 
-    fprintf (global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_ARG");
+    // TODO: replace if (true) with something else
+    if (true)
+        fprintf (global.outfile, ", SAC_gkco_check_threadmapping_bitmask_dev");
     fprintf (global.outfile, ");\n");
 
     if (STReq (global.config.cuda_alloc, "cuman")
@@ -261,11 +265,10 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
     */
 
     fprintf(global.outfile, "\n\n");
-    INDENT;
     GKCOcompCheckEnd();
 
-    INDENT;
-    fprintf (global.outfile, "}\n");
+    INDENT
+    fprintf(global.outfile, "}\n");
 
     DBUG_RETURN ();
 }
@@ -277,24 +280,16 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
  *
  *
  ******************************************************************************/
-node* DEBUG_PRAGMA_NODE_SPAP = NULL;
-unsigned int DEBUG_BOUNDS_COUNT = 15;
-char* DEBUG_BOUNDS_ARRAY[15] = {
-        "test_lb_0", "test_lb_1", "test_lb_2",
-        "test_ub_0", "test_ub_1", "test_ub_2",
-        "test_st_0", "test_st_1", "test_st_2",
-        "test_wi_0", "test_wi_1", "test_wi_2",
-        "test_id_0", "test_id_1", "test_id_2",
-};
 void ICMCompileCUDA_THREAD_SPACE (node *spap, unsigned int bounds_count, char **var_ANY)
 {
     DBUG_ENTER ();
     
     DBUG_ASSERT ((NODE_TYPE (spap) == N_spap),
                  "N_spap expected in ICMCompileCUDA_THREAD_SPACE");
-    GKCOcompHostKernelPragma(spap, DEBUG_BOUNDS_COUNT-3, DEBUG_BOUNDS_ARRAY);
 
-    DEBUG_PRAGMA_NODE_SPAP = spap;
+    INDENT
+    fprintf(global.outfile, "\n{\n\n");
+    GKCOcompHostKernelPragma(spap, bounds_count, var_ANY);
 
     DBUG_RETURN ();
 }
@@ -313,7 +308,7 @@ void ICMCompileCUDA_INDEX_SPACE (node *spap, unsigned int bounds_count, char **v
     DBUG_ASSERT ((NODE_TYPE (spap) == N_spap),
                  "N_spap expected in ICMCompileCUDA_INDEX_SPACE");
 
-    //   Enjoy, Niek!
+    GKCOcompGPUDkernelPragma(spap, bounds_count, var_ANY);
 
     DBUG_RETURN ();
 }
@@ -580,38 +575,11 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **v
       "cutResetTimer(timer);\n");
     */
     INDENT;
-    fprintf (global.outfile, "}\n");
+    fprintf (global.outfile, "\n}\n\n");
 
     DBUG_RETURN ();
 }
 
-/******************************************************************************
- *
- * function:
- *   void ICMCompileCUDA_WLIDS( char *wlids_NT, int wlids_NT_dim,
- *                              int array_dim, int wlids_dim,
- *                              char *iv_NT, char *hasstepwidth)
- *
- *
- ******************************************************************************/
-void
-ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids_dim_pos,
-                      char *iv_NT, char *hasstepwidth)
-{
-    DBUG_ENTER ();
-
-#define CUDA_WLIDS
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef CUDA_WLIDS
-
-    // For debugging purposes: only execute once (for the 0th dimension)
-    if (wlids_dim_pos == 0) {
-        GKCOcompGPUDkernelPragma(DEBUG_PRAGMA_NODE_SPAP, "iv_var", DEBUG_BOUNDS_COUNT, DEBUG_BOUNDS_ARRAY);
-    }
-
-    DBUG_RETURN ();
-}
 
 /******************************************************************************
  *

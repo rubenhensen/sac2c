@@ -233,14 +233,17 @@
 \**********************************************************************************************************************/
 
 #define BRANCHLESS_IMPLEMENTATION true
+// TODO: replace by command line argument
+#define INTERNAL_COMPILER_CHECKS true
 
-char* CONST_ZERO               = "0";
-char* CONST_ONE                = "1";
-char* CONST_VAR_PREFIX         = "SAC_gkco";
-char* CONST_UB_POSTFIX         = "ub";
-char* CONST_IDX_POSTFIX        = "idx";
-char* CONST_TMP_POSTFIX        = "tmp";
-char* CONST_RETURN_COL_POSTFIX = "ret_col";
+static char* CONST_ZERO               = "0";
+static char* CONST_ONE                = "1";
+static char* CONST_VAR_PREFIX         = "SAC_gkco";
+static char* CONST_UB_POSTFIX         = "ub";
+static char* CONST_IDX_POSTFIX        = "idx";
+static char* CONST_TMP_POSTFIX        = "tmp";
+static char* CONST_RETURN_COL_POSTFIX = "ret_col";
+static char* CONST_DBUG_PASS_SEP      = "----------------------------------------------------------------";
 
 /**
  * Flag locations inside the PASS identifier variables.
@@ -432,6 +435,7 @@ char* NewUpperboundVariable(gpukernelres_t* gkr, size_t dim) {
  */
 #define COMP_FUN_DBUG_RETURN(gkr)                                                                           \
     fprintf(global.outfile, "\n");                                                                          \
+    DBUG_EXECUTE(fprintf(stderr, "\n\n"));                                                                  \
     DBUG_EXECUTE(PrintGPUkernelres(gkr, stderr));                                                           \
     DBUG_EXECUTE(fprintf(stderr, "\n"));                                                                    \
     DBUG_RETURN(gkr);
@@ -603,7 +607,7 @@ RemoveDimension(gpukernelres_t* gkr) {
  * @return                  The properly pre- and postfixed variable name.
  */
 char*
-VarCreate(char* postfix) {
+VarCreate(char* postfix, bool declare) {
     DBUG_ENTER();
 
     // Create the new variable name
@@ -613,8 +617,10 @@ VarCreate(char* postfix) {
     MEMfree(without_prefix);
 
     // Declare the new variable
-    INDENT
-    fprintf(global.outfile, "SAC_GKCO_OPD_DECLARE(%s)\n", var);
+    if (declare) {
+        INDENT
+        fprintf(global.outfile, "SAC_GKCO_OPD_DECLARE(%s)\n", var);
+    }
 
     DBUG_RETURN(var);
 }
@@ -632,7 +638,7 @@ char*
 GKCOvarCreate(gpukernelres_t* gkr, char* postfix) {
     DBUG_ENTER();
 
-    char* var = VarCreate(postfix);
+    char* var = VarCreate(postfix, true);
 
     // Append the variable to the list of owned variable names
     STRVECappend(GKR_OWNED_VARS(gkr), var);
@@ -852,13 +858,13 @@ dispatch(node* spap, gpukernelres_t* res, unsigned int bnum, char** bounds) {
  ******************************************************************************/
 static
 gpukernelres_t*
-dispatchInv(node* spap, char* iv_var, char** bounds, gpukernelres_t* res) {
+dispatchInv(node* spap, char** bounds, gpukernelres_t* res) {
 
     DBUG_ENTER ();
 
     // First, we handle the gen case separately, as we stop the recursion here
     if (NODE_TYPE (spap) == N_spid) {
-        res = GKCOcompInvGen(iv_var, bounds, res);
+        res = GKCOcompInvGen(bounds, res);
     }
 
 // Macro's for expanding the arguments into the GKCOcomp call
@@ -884,7 +890,7 @@ dispatchInv(node* spap, char* iv_var, char** bounds, gpukernelres_t* res) {
          * the inner pragma call to the mapping. For this, we have to skip the arguments                    \
          * for the GKCOcomp function. We use the macros defined above for this. */                          \
         res = dispatchInv (EXPRS_EXPR ( SKIPS( nargs) (SPAP_ARGS (spap))),                                  \
-                       iv_var, bounds, res);                                                          \
+                       bounds, res);                                                                        \
     }
 // @formatter:off
 #include "gpukernel_funs.mac"
@@ -936,6 +942,9 @@ GKCOcompHostKernelPragma(node* spap, unsigned int bnum, char** bounds) {
      * in case accessors yield unexpected things.
      */
 
+    DBUG_PRINT(CONST_DBUG_PASS_SEP);
+    DBUG_PRINT("Pass 1");
+    DBUG_PRINT(CONST_DBUG_PASS_SEP);
     gpukernelres_t* res = MakeGPUkernelres(PASS_HOST);
     res = dispatch(spap, res, bnum, bounds);
 
@@ -964,7 +973,7 @@ GKCOcompHostKernelPragma(node* spap, unsigned int bnum, char** bounds) {
  *                          variable reads or constants.
  ******************************************************************************/
 void
-GKCOcompGPUDkernelPragma(node* spap, char* iv_var, unsigned int bnum, char** bounds) {
+GKCOcompGPUDkernelPragma(node* spap, unsigned int bnum, char** bounds) {
     DBUG_ENTER ();
 
     DBUG_ASSERT (spap != NULL, "NULL pointer for funcall in gpukernel pragma!");
@@ -979,11 +988,17 @@ GKCOcompGPUDkernelPragma(node* spap, char* iv_var, unsigned int bnum, char** bou
      * in case accessors yield unexpected things.
      */
 
+    DBUG_PRINT(CONST_DBUG_PASS_SEP);
+    DBUG_PRINT("Pass 2");
+    DBUG_PRINT(CONST_DBUG_PASS_SEP);
     gpukernelres_t* res = MakeGPUkernelres(PASS_KERNEL_THREADSPACE);
     res = dispatch(spap, res, bnum, bounds);
 
+    DBUG_PRINT(CONST_DBUG_PASS_SEP);
+    DBUG_PRINT("Pass 3");
+    DBUG_PRINT(CONST_DBUG_PASS_SEP);
     GKR_CHANGE_PASS(res, PASS_KERNEL_WLIDS);
-    res = dispatchInv(spap, iv_var, bounds, res);
+    res = dispatchInv(spap, bounds, res);
 
     DBUG_EXECUTE(GKCOcompCheckGPUkernelRes(bnum, bounds, res););
     FreeGPUkernelres(res);
@@ -1033,8 +1048,10 @@ GKCOcompGridBlock(node* gridDims, gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling GridBlock ( %i, inner)", NUM_VAL(gridDims));
 
-    // Check that the paramter is less or equal to the number of dimensions
-    checkNumLesseqDim(gridDims, GKR_DIM(inner), "GridBlock");
+    // Check the number of dimensions, the number of grid dimensions, and the number of thread dimensions against the
+    // GPU capabilities
+    if (GKR_CHECK_PRAGMA(inner))
+        checkDimensionSettings(gridDims, GKR_DIM(inner));
 
     // The ICM's to be used for either the grid or the block
     char* icm[2] = {"SAC_GKCO_HOST_OPM_SET_GRID", "SAC_GKCO_HOST_OPM_SET_BLOCK"};
@@ -1050,23 +1067,28 @@ GKCOcompGridBlock(node* gridDims, gpukernelres_t* inner) {
     };
 
     // Toggle the emitting of the grid/block variable code
-    size_t gba = GKR_GB_EMIT(inner) ? 2 : 0;
-    if (GKR_GB_EMIT(inner))
-
-    // Two iterations, one for the grid and one for the block. Inside the loop, the arrays above will determine the
-    // actual values that are used.
-    for (size_t gb = 0; gb < gba; gb++) {
-        INDENT
-        // Prints the name of the macro, with the static arguments
-        //                SAC_GKCO_SET_<> (max_x, max_y, max_z, max_total
-        fprintf(global.outfile, "%s(%u   , %u   , %u   , %u",
-                icm[gb], max_s[gb], max_s[2 + gb], max_s[4 + gb], max_s[6 + gb]);
-        // Print the dynamic arguments. From and to (defined above) determine what dimensions belong to the grid/block
-        for (size_t i = from[gb]; i < to[gb]; i++)
-            fprintf(global.outfile, ", %s", GKR_UB_D_READ(inner, i));
-        // Close off the macro
-        fprintf(global.outfile, ")\n\n");
+    if (GKR_GB_EMIT(inner)) {
+        // Two iterations, one for the grid and one for the block. Inside the loop, the arrays above will determine the
+        // actual values that are used.
+        for (size_t gb = 0; gb < 2; gb++) {
+            INDENT
+            // Prints the name of the macro, with the static arguments
+            //                SAC_GKCO_SET_<> (max_x, max_y, max_z, max_total
+            fprintf(global.outfile, "%s(%u   , %u   , %u   , %u",
+                    icm[gb], max_s[gb], max_s[2 + gb], max_s[4 + gb], max_s[6 + gb]);
+            // Print the dynamic arguments. From and to (defined above) determine what dimensions belong to the grid/block
+            for (size_t dim = from[gb]; dim < to[gb]; dim++)
+                fprintf(global.outfile, ", %s", GKR_UB_D_READ(inner, dim));
+            // The grid/block declaration should have at least 1 declaration, otherwise it fails
+            if (from[gb] == to[gb])
+                fprintf(global.outfile, ", 1");
+            // Close off the macro
+            fprintf(global.outfile, ")\n\n");
+        }
     }
+
+    for (LOOP_DIMENSIONS(inner, dim))
+        GKCOcompStepWidthLB(dim, inner);
 
     COMP_FUN_DBUG_RETURN(inner)
 }
@@ -1097,22 +1119,13 @@ GKCOcompInvGridBlock(node* num, gpukernelres_t* outer) {
     // actual values that are used.
     for (size_t gb = 0; gb < 2; gb++) {
         // Print the dynamic arguments. From and to (defined above) determine what dimensions belong to the grid/block
-        for (size_t dim = from[gb]; dim < to[gb]; dim++) {
+        for (size_t dim = to[gb] - 1; dim != from[gb] - 1; dim--) {
             size_t xyz_int = dim - from[gb];
             INDENT
             fprintf(global.outfile, "SAC_GKCO_OPD_REDEFINE(%s, %s)\n\n",
                     grid_block_var[2 * xyz_int + gb], GKR_ID_D_READ(outer, dim));
 
-            if (!STReq(GKR_ST_D_READ(outer, dim), CONST_ONE)) {
-                INDENT
-                if (!GKR_BRANCHLESS(outer))
-                    fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(%s, %s, %s)\n\n",
-                            GKR_ST_D_READ(outer, dim), GKR_WI_D_READ(outer, dim), GKR_ID_D_READ(outer, dim));
-                else
-                    fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL(%s, %s, %s, %s)\n\n",
-                            GKR_ST_D_READ(outer, dim), GKR_WI_D_READ(outer, dim),
-                            GKR_ID_D_READ(outer, dim), GKR_RETURN_COL(outer));
-            }
+            GKCOcompInvStepWidthLB(dim, outer);
         }
     }
 
@@ -1167,6 +1180,12 @@ GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner) {
     );
     fprintf(global.outfile, "\n");
 
+    // If we are in pass 3 (compute), we skip the first element of the bounds variable
+    // (the iv_var identifier)
+    if (GKR_IDX_COMPUTE(inner)) {
+        bounds += 1;
+        bnum--;
+    }
 
     // Divide the number of arguments by the number of variables per dimension.
     // For the first  pass, these are 4: lb, ub, st, wi
@@ -1181,29 +1200,27 @@ GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner) {
     }
 
     for (LOOP_DIMENSIONS(inner, dim)) {
-        // For each dimension, we add the lb, ub, st, wi, and if PASS_IDX_COMPUTE is set also the id variables
-        // Because we are going to change the ub variable, we introduce a new one so the old one does not get
-        // overwritten.
+        // For each dimension, we handle the lb, ub, st, wi and id variables.
         STRVECappend(GKR_LB(inner), bounds[dim + 0 * GKR_DIM(inner)]);
-        STRVECappend(GKR_UB(inner), GKCOvarCreate(inner, CONST_UB_POSTFIX));
         STRVECappend(GKR_ST(inner), bounds[dim + 2 * GKR_DIM(inner)]);
         STRVECappend(GKR_WI(inner), bounds[dim + 3 * GKR_DIM(inner)]);
+
+        if (!GKR_VAL_PRESERVE(inner)) {
+            // If PASS_VAL_PRESERVE is not set, we will update the ub variables. Because we cannot overwrite
+            // the original ub variables, we have to make copies of them first.
+            STRVECappend(GKR_UB(inner), GKCOvarCreate(inner, CONST_UB_POSTFIX));
+            INDENT
+            fprintf(global.outfile, "SAC_GKCO_OPD_REDEFINE(%s, %s)\n\n",
+                    bounds[dim + 1 * GKR_DIM(inner)], GKR_UB_D_READ(inner, dim));
+        } else
+            // If not, we will make new variables anyway, so we can just use the original ub variables
+            STRVECappend(GKR_UB(inner), bounds[dim + 1 * GKR_DIM(inner)]);
+
+
+        // The ID variables are only needed (and available in the bounds variable) when we have to compute them
+        // and the PASS_IDX_COMPUTE variable is set.
         if (GKR_IDX_COMPUTE(inner))
             STRVECappend(GKR_ID(inner), bounds[dim + 4 * GKR_DIM(inner)]);
-
-        // Initiate the new ub variable with the value of the old one
-        INDENT
-        fprintf(global.outfile, "SAC_GKCO_OPD_REDEFINE(%s, %s)\n",
-                bounds[dim + 1 * GKR_DIM(inner)], GKR_UB_D_READ(inner, dim));
-
-        // If we have an idx variable, it needs to be declared.
-        if (GKR_IDX_COMPUTE(inner)) {
-            INDENT
-            fprintf(global.outfile, "SAC_GKCO_OPD_DECLARE(%s)\n",
-                    GKR_ID_D_READ(inner, dim));
-        }
-
-        fprintf(global.outfile, "\n");
     }
 
     GKCOcompCheckStart(inner);
@@ -1219,9 +1236,11 @@ GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner) {
  * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
-GKCOcompInvGen(char* iv_var, char** bounds, gpukernelres_t* outer) {
+GKCOcompInvGen(char** bounds, gpukernelres_t* outer) {
     DBUG_ENTER();
     DBUG_PRINT ("compiling IV generation ():");
+
+    char* iv_var = bounds[0];
 
     // Check return collector if in branchless mode
     if (GKR_BRANCHLESS(outer)) {
@@ -1230,28 +1249,75 @@ GKCOcompInvGen(char* iv_var, char** bounds, gpukernelres_t* outer) {
                 GKR_RETURN_COL(outer));
     }
 
-    // Declare the iv variable
-    INDENT
-    fprintf(global.outfile, "SAC_GKCO_GPUD_OPM_DECLARE_IV(%s, %zu)\n\n",
-            iv_var, GKR_DIM(outer));
-
     // Fill the iv variable
     for (LOOP_DIMENSIONS(outer, dim)) {
         INDENT
-        fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_DEF_IV(%s, %zu, %s, %s, %s, %s, %s, %s, %s, %s, %s)\n\n",
-                iv_var, dim,
-                GKR_LB_D_READ(outer, dim), GKR_UB_D_READ(outer, dim),
-                GKR_ST_D_READ(outer, dim), GKR_WI_D_READ(outer, dim),
-                GKR_ID_D_READ(outer, dim),
-                bounds[0 * GKR_DIM(outer) + dim],
-                bounds[1 * GKR_DIM(outer) + dim],
-                bounds[2 * GKR_DIM(outer) + dim],
-                bounds[3 * GKR_DIM(outer) + dim]);
+        fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_DEF_IV(%s, %zu, %s)\n\n",
+                iv_var, dim, GKR_ID_D_READ(outer, dim));
     }
 
     GKCOcompCheckKernel(outer);
 
     COMP_FUN_DBUG_RETURN(outer);
+}
+
+/**
+ * handleLB is an implicit mapping that gets executed whenever lowerbound information cannot be preserved, for example
+ * when folding/splitting. It will set the lowerbound to 0 (in the non-inverse call), restore the lowerbound variable
+ * and return all threads that fall outside of the lowerbound (in the reverse call). This function will only check a
+ * single dimension.
+ *
+ *           handleLB                            invHandleLB
+ *                          --> 0...0, id0...idn     -->     return;        // id <  lb
+ * lb0...lbn    -->   0...0 --> 0...0, id0...idn     -->     id0...idn      // id >= lb
+ *                          --> 0...0, id0...idn     -->     id0...idn      // id >= lb
+ *
+ *   - When running in branchless mode (PASS_BRANCHLESS), an alternative icm for InvHandleLB is used. See CKCOcompGen
+ *     for more info.
+ *   - When the lowerbound is already 0, nothing will be done.
+ *   - Resolving the lowerbound by this method results in redundant threads. Use the ShiftLB mapping to create a dense
+ *     thread space without redundant threads.
+ *
+ * @param dim               The dimension for which the lowerbound has to be 0
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma
+ *                          calls first
+ * @return                  The modified gpu kernel res
+ */
+gpukernelres_t*
+handleLB(size_t dim, gpukernelres_t* inner) {
+    DBUG_ENTER();
+
+    GKR_LB_PUSH(inner, dim)
+    GKR_LB_D_REPLACE(inner, dim, CONST_ZERO);
+
+    DBUG_RETURN(inner);
+}
+
+/**
+ * Inverse of handleLB
+ *
+ * @param dim               The dimension for which the lowerbound has to be 0
+ * @param outer             The GPU kernel res, resulting from calling all outer pragma calls first
+ * @return                  The modified gpu kernel res
+ */
+gpukernelres_t*
+handleInvLB(size_t dim, gpukernelres_t* outer) {
+    DBUG_ENTER();
+
+    GKR_LB_POP(outer, dim)
+
+    if (!STReq(GKR_LB_D_READ(outer, dim), CONST_ZERO)) {
+        INDENT
+        if (!GKR_BRANCHLESS(outer))
+            fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNLB(%s, %s)",
+                    GKR_LB_D_READ(outer, dim), GKR_ID_D_READ(outer, dim));
+        else
+            fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNLB_BL(%s, %s, %s)",
+                    GKR_LB_D_READ(outer, dim), GKR_ID_D_READ(outer, dim),
+                    GKR_RETURN_COL(outer));
+    }
+
+    DBUG_RETURN(outer);
 }
 
 /**
@@ -1278,7 +1344,7 @@ GKCOcompInvGen(char* iv_var, char** bounds, gpukernelres_t* outer) {
  * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
-GKCOcompStepWidth(size_t dim, gpukernelres_t* inner) {
+handleSW(size_t dim, gpukernelres_t* inner) {
     DBUG_ENTER();
 
     GKR_ST_PUSH(inner, dim)
@@ -1291,31 +1357,67 @@ GKCOcompStepWidth(size_t dim, gpukernelres_t* inner) {
 }
 
 /**
- * Inverse of GKCOcompStepWidth
+ * Inverse of GKCOcompStepWidthLB
  *
  * @param dim               The dimension for which step and width have to be 1
  * @param outer             The GPU kernel res, resulting from calling all outer pragma calls first
  * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
-GKCOcompInvStepWidth(size_t dim, gpukernelres_t* outer) {
+handleInvSW(size_t dim, gpukernelres_t* outer) {
     DBUG_ENTER();
 
-    GKR_ST_POP(outer, dim);
-    GKR_WI_POP(outer, dim);
+    GKR_ST_POP(outer, dim)
+    GKR_WI_POP(outer, dim)
 
-    // If the step is already 1 after popping, we don't have to do anything
+    // If the step is still 1 after popping, we don't have to do anything
     if (!STReq(GKR_ST_D_READ(outer, dim), CONST_ONE)) {
         INDENT
         // Print out the correct ICM depending on whether we are running in branchless mode
         if (!GKR_BRANCHLESS(outer))
-            fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(%s, %s, %s)\n\n",
-                    GKR_ST_D_READ(outer, dim), GKR_WI_D_READ(outer, dim), GKR_ID_D_READ(outer, dim));
+            fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(%s, %s, %s, %s)\n\n",
+                    GKR_LB_D_READ(outer, dim), GKR_ST_D_READ(outer, dim), GKR_WI_D_READ(outer, dim),
+                    GKR_ID_D_READ(outer, dim));
         else
-            fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL(%s, %s, %s, %s)\n\n",
-                    GKR_ST_D_READ(outer, dim), GKR_WI_D_READ(outer, dim),
+            fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL(%s, %s, %s, %s, %s)\n\n",
+                    GKR_LB_D_READ(outer, dim), GKR_ST_D_READ(outer, dim), GKR_WI_D_READ(outer, dim),
                     GKR_ID_D_READ(outer, dim), GKR_RETURN_COL(outer));
     }
+
+    DBUG_RETURN(outer);
+}
+
+/**
+ * Shorthand method to execute both the handleLB and handleSW implicit mappings.
+ *
+ * @param dim               The dimension for which step and width have to be 1, and lowerbound has to be 0
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma
+ *                          calls first
+ * @return                  The modified gpu kernel res
+ */
+gpukernelres_t*
+GKCOcompStepWidthLB(size_t dim, gpukernelres_t* inner) {
+    DBUG_ENTER();
+
+    handleLB(dim, inner);
+    handleSW(dim, inner);
+
+    DBUG_RETURN(inner);
+}
+
+/**
+ * Inverse of GKCOcompStepWidthLB
+ *
+ * @param dim               The dimension for which step and width have to be 1, and lowerbound has to be 0
+ * @param outer             The GPU kernel res, resulting from calling all outer pragma calls first
+ * @return                  The modified gpu kernel res
+ */
+gpukernelres_t*
+GKCOcompInvStepWidthLB(size_t dim, gpukernelres_t* outer) {
+    DBUG_ENTER();
+
+    handleInvSW(dim, outer);
+    handleInvLB(dim, outer);
 
     DBUG_RETURN(outer);
 }
@@ -1491,7 +1593,8 @@ GKCOcompCompressGrid(node* shouldCompress_node, gpukernelres_t* inner) {
 
         // Skip this iteration if compress for this dimension is toggled off
         if (!shouldCompress[dim]) continue;
-        // Check whether the lowerbound is indeed 0
+        // Check whether the lowerbound is indeed 0. When compressing, shifting is required. Just inserting a lowerbound
+        // check with GKCOcompLB and GKCOcompInvLB is not enough, because then the computations get skewered.
         if (GKR_CHECK_PRAGMA(inner))
             checkLbZero(GKR_LB_D_READ(inner, dim), shouldCompress_node, "CompressGrid", dim);
         // If the step is 1, we don't need to compute anything
@@ -1717,12 +1820,8 @@ GKCOcompFoldLast2(gpukernelres_t* inner) {
 
     // Check lowerbound, step and width variables. Step and width will be set to 1, but if lowerbound is not
     // set to 0, we throw a compiler error.
-    GKCOcompStepWidth(majordim, inner);
-    GKCOcompStepWidth(minordim, inner);
-    if (GKR_CHECK_PRAGMA(inner)) {
-        checkLbZero(GKR_LB_D_READ(inner, majordim), NULL, "SplitLast", majordim);
-        checkLbZero(GKR_LB_D_READ(inner, minordim), NULL, "SplitLast", minordim);
-    }
+    GKCOcompStepWidthLB(majordim, inner);
+    GKCOcompStepWidthLB(minordim, inner);
 
     // Preserve the upperbound variable. The minor dim upperbound variable is automarically stored using
     // RemoveDimension and AddDimension
@@ -1768,8 +1867,8 @@ GKCOcompInvFoldLast2(gpukernelres_t* outer) {
             idx_major, idx_minor, ub_minor);
 
     // We may have set the step and width to 1, so we have to invert that change.
-    GKCOcompInvStepWidth(minordim, outer);
-    GKCOcompInvStepWidth(majordim, outer);
+    GKCOcompInvStepWidthLB(minordim, outer);
+    GKCOcompInvStepWidthLB(majordim, outer);
 
     COMP_FUN_DBUG_RETURN(outer)
 }
@@ -1778,7 +1877,7 @@ GKCOcompInvFoldLast2(gpukernelres_t* outer) {
  * The SplitLast mapping splits the last dimension into 2, increasing the dimensionality by 1. It divides the upperbound
  * of the last dimension by minorlen_node, and adds a dimension with length minorlen_node for the non-inverse function
  * call, and restores the old upperbound and computes the accompanying index variable in the inverse call. The notion of
- * the major and minor dimensions are the same as in then CKCOcompFoldLast2 mapping. o
+ * the major and minor dimensions are the same as in then CKCOcompFoldLast2 mapping.
  *
  * For dimension j (n-1):
  *     SplitLast                                               InvSplitLast
@@ -1806,10 +1905,8 @@ GKCOcompSplitLast(node* minorlen_node, gpukernelres_t* inner) {
 
     // Check lowerbound, upperbound, step and width variables. Step and width will be set to 1, but if lowerbound is not
     // set to 0, we throw a compiler error. The upperbound should be padded so the split is possible.
-    GKCOcompStepWidth(majordim, inner);
+    GKCOcompStepWidthLB(majordim, inner);
     GKCOcompPad(majordim, minorlen, inner);
-    if (GKR_CHECK_PRAGMA(inner))
-        checkLbZero(GKR_LB_D_READ(inner, majordim), minorlen_node, "SplitLast", majordim);
 
     // Preserve the upperbound variable.
     GKR_UB_PUSH(inner, majordim)
@@ -1854,7 +1951,7 @@ GKCOcompInvSplitLast(node* minorlen_node, gpukernelres_t* outer) {
     // We may have set the step and width to 1 and we may have padded the upperbound,
     // so we have to invert those changes.
     GKCOcompInvPad(majordim, outer);
-    GKCOcompInvStepWidth(majordim, outer);
+    GKCOcompInvStepWidthLB(majordim, outer);
 
     RemoveDimension(outer);
 
@@ -1910,12 +2007,6 @@ GKCOcompInvPadLast(node* divisibility_node, gpukernelres_t* outer) {
 ************************************************************************************************************************
 \**********************************************************************************************************************/
 
-size_t TS_DIM;
-strvec* TS_LB;
-strvec* TS_UB;
-strvec* TS_ST;
-strvec* TS_WI;
-
 /**
  * Check the gpu kernel res at the end of all computations against the dimensionality and idx variable identifiers it
  * should contain after executing all pragma mappings
@@ -1928,69 +2019,43 @@ void
 GKCOcompCheckGPUkernelRes(unsigned int bnum, char** bounds, gpukernelres_t* res) {
     DBUG_ENTER();
 
+    // TODO: remove once iv_var bug is resolved
+    if (GKR_IDX_COMPUTE(res)) {
+        bounds += 1;
+        bnum--;
+    }
+
+    // Check whether dimensionality is the same as before
     size_t dims = (size_t) bnum / 5;
     DBUG_ASSERT(dims == GKR_DIM(res),
                 "Dimensionality of original with loop (%zu) is not the same as "
                 "the dimensionality of the generated iv (%zu)",
                 dims, GKR_DIM(res));
 
+    // Check whether the idx variables are as they should be
     for (LOOP_DIMENSIONS(res, dim)) {
         DBUG_ASSERT(STReq(bounds[4 * dims + dim], GKR_ID_D_READ(res, dim)),
                     "The idx variable of dimension %zu (%s) is different then the original required idx variable (%s)",
                     dim, GKR_ID_D_READ(res, dim), bounds[4 * dims + dim]);
     }
 
-    DBUG_RETURN();
-}
-
-/**
- * Print an expression to compute the flat index from a vector of upperbounds and a vector of ids. For an input of
- * dims: 3, ub: [ub1, ub2, ub3], id: [id1, id2, id3], it will print:
- *
- * ((((0) * ub1 + id1) * ub2 + id2) * ub3 + id3);
- *
- * @param dims              The dimensionality of the computation
- * @param ub                The upperbound identifiers as a strvec
- * @param id                The id identifiers as a strvec
- */
-void
-PrintComputeFlat(size_t dims, strvec* ub, strvec* id) {
-    DBUG_ENTER();
-
-    for (size_t dim = 0; dim < dims; dim++)
-        fprintf(global.outfile, "(");
-    fprintf(global.outfile, "(0");
-    for (size_t dim = 0; dim < dims; dim++)
-        fprintf(global.outfile, ") * %s + %s",
-                STRVECsel(ub, dim), STRVECsel(id, dim));
-    fprintf(global.outfile, ")");
+    // Check whether all variable identifier stacks are emtpy
+    DBUG_ASSERT(STRVEClen(GKR_LB_AT(res)) == 0,
+                "The lowerbound variable stack is not 0 at after kernel code generation");
+    DBUG_ASSERT(STRVEClen(GKR_UB_AT(res)) == 0,
+                "The upperbound variable stack is not 0 at after kernel code generation");
+    DBUG_ASSERT(STRVEClen(GKR_ST_AT(res)) == 0,
+                "The step variable stack is not 0 at after kernel code generation");
+    DBUG_ASSERT(STRVEClen(GKR_WI_AT(res)) == 0,
+                "The width variable stack is not 0 at after kernel code generation");
+    DBUG_ASSERT(STRVEClen(GKR_ID_AT(res)) == 0,
+                "The idx variable stack is not 0 at after kernel code generation");
 
     DBUG_RETURN();
 }
 
 /**
- * Print an expression to compute the flat size from a vector of upperbounds. For an input of dims: 3,
- * ub: [ub1, ub2, ub3], it will print:
- *
- * (1 * ub1 * ub2 * ub3)
- *
- * @param dims              The dimensionality of the computation
- * @param ub                The upperbound identifiers as a strvec
- */
-void
-PrintComputeSize(size_t dims, strvec* ub) {
-    DBUG_ENTER();
-
-    fprintf(global.outfile, "(1");
-    for (size_t dim = 0; dim < dims; dim++)
-        fprintf(global.outfile, " * %s", STRVECsel(ub, dim));
-    fprintf(global.outfile, ")");
-
-    DBUG_RETURN();
-}
-
-/**
- * The three functions below belong to the threadmapping bitmask check. This check will operate on a few parts of the
+ * The functions below belong to the threadmapping bitmask check. This check will operate on a few parts of the
  * code, and is enabled by passing -D CHECK_GPU to the compiler.
  *
  * The purpose of this check is to test whether the new
@@ -2004,10 +2069,65 @@ PrintComputeSize(size_t dims, strvec* ub) {
  * to support the pointer to the bitmask array on the GPU.
  */
 
+static size_t TS_DIM;
+static strvec* TS_LB;
+static strvec* TS_UB;
+static strvec* TS_ST;
+static strvec* TS_WI;
+static char  * TS_FLAT;
+static char  * TS_SIZE;
+
+/**
+ * Print a statement to compute the flat index from a vector of upperbounds and a vector of ids. For an input of
+ * dims: 3, ub: [ub1, ub2, ub3], id: [id1, id2, id3], it will print:
+ *
+ * <TS_FLAT> = ((((0) * ub1 + id1) * ub2 + id2) * ub3 + id3);
+ *
+ * @param dims              The dimensionality of the computation
+ * @param ub                The upperbound identifiers as a strvec
+ * @param id                The id identifiers as a strvec
+ */
+void
+PrintComputeFlat(size_t dims, strvec* ub, strvec* id) {
+    DBUG_ENTER();
+
+    fprintf(global.outfile, "%s = ", TS_FLAT);
+    for (size_t dim = 0; dim < dims; dim++)
+        fprintf(global.outfile, "(");
+    fprintf(global.outfile, "(0");
+    for (size_t dim = 0; dim < dims; dim++)
+        fprintf(global.outfile, ") * %s + %s",
+                STRVECsel(ub, dim), STRVECsel(id, dim));
+    fprintf(global.outfile, ");\n");
+
+    DBUG_RETURN();
+}
+
+/**
+ * Print a statement to compute the flat size from a vector of upperbounds. For an input of dims: 3,
+ * ub: [ub1, ub2, ub3], it will print:
+ *
+ * <TS_SIZE> = (1 * ub1 * ub2 * ub3)
+ *
+ * @param dims              The dimensionality of the computation
+ * @param ub                The upperbound identifiers as a strvec
+ */
+void
+PrintComputeSize(size_t dims, strvec* ub) {
+    DBUG_ENTER();
+
+    fprintf(global.outfile, "%s = (1", TS_SIZE);
+    for (size_t dim = 0; dim < dims; dim++)
+        fprintf(global.outfile, " * %s", STRVECsel(ub, dim));
+    fprintf(global.outfile, ");\n");
+
+    DBUG_RETURN();
+}
+
 /**
  * Start the threadmapping bitmask check. The dimensionality and variable identifiers are stored in global variables
- * temporary, because otherwise we cannot access them after the kernels have completed. The ICM
- * SAC_BITMASK_THREADMAPPING_CHECK_START will allocate a block of gpu memory initiated with zeros.
+ * temporary, because otherwise we cannot access them after the kernels have completed and the gpukernelres_t has been
+ * freed. Then, a cuda array will be created to store information about what kernels have been executed.
  *
  * @param res               The GPU kernel res just after initiation
  */
@@ -2015,21 +2135,38 @@ void
 GKCOcompCheckStart(gpukernelres_t* res) {
     DBUG_ENTER();
 
-    fprintf(global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_START(");
-    PrintComputeSize(GKR_DIM(res), GKR_UB(res));
-    fprintf(global.outfile, ");\n\n\n");
+    if (INTERNAL_COMPILER_CHECKS) {
+        TS_DIM  = GKR_DIM(res);
+        TS_LB   = STRVECcopyDeep(GKR_LB(res));
+        TS_UB   = STRVECcopyDeep(GKR_UB(res));
+        TS_ST   = STRVECcopyDeep(GKR_ST(res));
+        TS_WI   = STRVECcopyDeep(GKR_WI(res));
+        TS_FLAT = VarCreate("flat", true);
+        TS_SIZE = VarCreate("size", true);
 
-    TS_DIM = GKR_DIM(res);
-    TS_LB  = STRVECcopyDeep(GKR_LB(res));
-    TS_UB  = STRVECcopyDeep(GKR_UB(res));
-    TS_ST  = STRVECcopyDeep(GKR_ST(res));
-    TS_WI  = STRVECcopyDeep(GKR_WI(res));
+        PrintComputeSize(TS_DIM, TS_UB);
+        fprintf(global.outfile,
+                "unsigned short* SAC_gkco_check_threadmapping_bitmask_dev = NULL;\n"
+                "cudaMalloc(&SAC_gkco_check_threadmapping_bitmask_dev, sizeof(unsigned short) * %s + 8);\n"
+                "cudaMemset(SAC_gkco_check_threadmapping_bitmask_dev, 0, sizeof(unsigned short) * %s + 8);\n\n",
+                TS_SIZE, TS_SIZE);
+    }
 
     DBUG_RETURN();
 }
 
 /**
- * Kernel check call. The ICM SAC_BITMASK_THREADMAPPING_CHECK_KERNEL increases the value of the bitmask array on
+ * Kernel check call. It performs an index vector validity check, and stores information about the kernel index vector
+ * in the datastructure defined above. Let us call this datastructure threadmap. Because the threadmap can only
+ * accommodate iv's < ub, all iv's !< ub get a single index at the end of the threadmap (at index size).
+ *
+ *   - The kernel validity check will check that:
+ *     - lb <= id < ub
+ *     - (id - lb) % step < width
+ *   - To store information about the kernel being executed, it will:
+ *     - Iff id  < ub && threadmap[id] < 2    threadmap[id] ++;
+ *     - Iff id !< ub                         threadmap[size] ++;
+ * The ICM SAC_BITMASK_THREADMAPPING_CHECK_KERNEL increases the value of the bitmask array on
  * the corresponding index with 1.
  *
  * @param res               The GPU kernel res after all pragma mapping has been done.
@@ -2038,124 +2175,178 @@ void
 GKCOcompCheckKernel(gpukernelres_t* res) {
     DBUG_ENTER();
 
-    fprintf(global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_KERNEL(");
-    PrintComputeFlat(GKR_DIM(res), GKR_UB(res), GKR_ID(res));
-    fprintf(global.outfile, ");\n\n\n");
+    if (INTERNAL_COMPILER_CHECKS) {
+        for (LOOP_DIMENSIONS(res, dim))
+            fprintf(global.outfile, "SAC_PRAGMA_KERNEL_ID_CHECK(%zu, %s, %s, %s, %s, %s)\n\n",
+                    GKR_DIM(res), GKR_LB_D_READ(res, dim), GKR_UB_D_READ(res, dim),
+                    GKR_ST_D_READ(res, dim), GKR_WI_D_READ(res, dim), GKR_ID_D_READ(res, dim));
 
-    DBUG_RETURN();
-}
-
-/**
- * A recursive helper function that creates loops over the length of a dimension using ICM's. The loops will be nested,
- * and there will be exactly one loop per dimension. For more information, see the documentation of GKCOcompCheckEnd
- * below, and the documentation in the function body.
- *
- * @param dim               The current dimension
- * @param dims              The number of dimensions
- * @param lb                The lowerbound variable identifiers
- * @param ub                The upperbound variable identifiers
- * @param st                The step variable identifiers
- * @param wi                The width variable identifiers
- * @param id                The idx variable identifiers
- * @param chk               The variable identifier for the helper variable
- */
-void
-CheckEndRecursiveHelper(size_t dim, size_t dims,
-                        strvec* lb, strvec* ub,
-                        strvec* st, strvec* wi,
-                        strvec* id, char* chk) {
-    DBUG_ENTER();
-
-    // If the current dimension is smaller then the dimensionality, we create an extra inner loop.
-    // If not, we end the recursion and print the actual checking code
-    if (dim < dims) {
-        // Start ICM
-        fprintf(global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_END_LOOP(");
-        // If it is the outermost loop, we reset the helper variable to false each time
-        if (dim == 0) fprintf(global.outfile, "\nSAC_BITMASK_THREADMAPPING_CHECK_END_START(%s), \n", chk);
-        else fprintf(global.outfile, ", \n");
-        // Recursive call to create the inner code
-        CheckEndRecursiveHelper(dim + 1, dims, lb, ub, st, wi, id, chk);
-        // Print all variables we need for this loop.
-        fprintf(global.outfile, ", %s, %s, %s, %s, %s, %s)\n",
-                STRVECsel(lb, dim), STRVECsel(ub, dim),
-                STRVECsel(st, dim), STRVECsel(wi, dim),
-                STRVECsel(id, dim), chk);
-    } else {
-        // Create a second temporary variable to temporary store the value at the current index
-        char* val = VarCreate(CONST_TMP_POSTFIX);
-
-        // Perform the actual checks on this index
-        fprintf(global.outfile, "SAC_BITMASK_THREADMAPPING_CHECK_END_INNER(%s, %s, \n",
-                chk, val);
-        PrintComputeFlat(dims, ub, id);
-        fprintf(global.outfile, ");\n");
-
-        free(val);
+        // If ID < UB
+        fprintf(global.outfile, "if (false");
+        for (LOOP_DIMENSIONS(res, dim))
+            fprintf(global.outfile, " && %s < %s",
+                    GKR_ID_D_READ(res, dim), GKR_UB_D_READ(res, dim));
+        // Then, compute the flat variable and set it correctly using 2 atomicCAS calls
+        fprintf(global.outfile, ") {\n");
+        fprintf(global.outfile, "SAC_GKCO_OPD_DECLARE(%s)\n", TS_FLAT);
+        PrintComputeFlat(GKR_DIM(res), GKR_UB(res), GKR_ID(res));
+        fprintf(global.outfile,
+                "atomicCAS((unsigned short*) &SAC_gkco_check_threadmapping_bitmask_dev[%s], "
+                "(unsigned short) 1, (unsigned short) 2);\n"
+                "atomicCAS(&SAC_gkco_check_threadmapping_bitmask_dev[%s], "
+                "(unsigned short) 0, (unsigned short) 1);\n",
+                TS_FLAT, TS_FLAT);
+        // Else, increase the unsigned long long int variable at the end of the bytearray
+        fprintf(global.outfile, "} else {\n");
+        fprintf(global.outfile, "SAC_GKCO_OPD_DECLARE(%s)\n", TS_SIZE);
+        PrintComputeSize(GKR_DIM(res), GKR_UB(res));
+        fprintf(global.outfile,
+                "atomicAdd((unsigned long long int*) &SAC_gkco_check_threadmapping_bitmask_dev[%s], "
+                "(unsigned long long int) 1);\n",
+                TS_SIZE);
+        fprintf(global.outfile, "}\n\n");
     }
 
     DBUG_RETURN();
 }
 
 /**
- * End of the threadmapping bitmask check. This function generates code for the actual check. It creates nested loops
- * (one for each dimension), checks for each dimension if the index is inside or outside of the grid, and actually
- * checks the index in the innermost loop. The generated ICM's for a dimensionality of three look something like this:
+ * Print code that checks the threadmap at the current IV. It does so with the help of an ICM.
+ * It will handle the different cases for when:
+ *   - iv is inside the grid
+ *   - iv is outside the grid
+ *   - iv < lb
+ *   - threadmap[iv] == 0
+ *   - threadmap[iv] == 1
+ *   - threadmap[iv] >= 2
  *
- *  // Copy array from GPU memory to RAM
- *  ICM_BITMASK_THREADMAPPING_CHECK_END(size);
- *  // Nested loops
- *  SAC_BITMASK_THREADMAPPING_CHECK_END(
- *      SAC_BITMASK_THREADMAPPING_CHECK_END_START(var);
- *      SAC_BITMASK_THREADMAPPING_CHECK_END(,
- *          SAC_BITMASK_THREADMAPPING_CHECK_END(,
- *              SAC_BITMASK_THREADMAPPING_CHECK_END_INNER(..vars),
- *              ..vars),
- *          ..vars),
- *      ..vars);
+ * @param TS_ID             The vector with iv variable identifiers
+ * @param TS_IN_SPACE       A boolean variable identifier, true if lb <= iv < ub
+ * @param TS_IN_GRID        A boolean variable identifier, true if (iv - lb) % step < width
+ * @param TS_VAL_AT         A variable identifier that can be used to store the value in the threadmap at iv
+ * @param TS_BITMASK        The threadmap variable identifier
+ */
+void
+CheckEndPrintInnerCheck(strvec* TS_ID,
+                        char* TS_IN_SPACE, char* TS_IN_GRID,
+                        char* TS_VAL_AT, char* TS_BITMASK) {
+    DBUG_ENTER();
+
+    fprintf(global.outfile, "SAC_PRAGMA_BITMASK_CHECK(%s, %s, %s, %s, %s, \"",
+            TS_IN_SPACE, TS_IN_GRID, TS_VAL_AT, TS_BITMASK, TS_FLAT);
+    for (size_t i = 0; i < TS_DIM; i++)
+        fprintf(global.outfile, "%%s");
+    fprintf(global.outfile, "\"");
+    for (size_t i = 0; i < TS_DIM; i++)
+        fprintf(global.outfile, ", %s", STRVECsel(TS_ID, i));
+    fprintf(global.outfile, ")\n");
+
+    DBUG_RETURN();
+}
+
+/**
+ * Print the nested loop structure to check all iv's in the threadmap. For each dimension, it will check if
+ * lb <= id < ub (TS_IN_SPACE) and if (id - lb) % step < width (TS_IN_GRID). At the innermost loop, it will check if the
+ * threadmap variable is set correctly. At the end, it will check the threadmap at index size, to check if any threads
+ * went above the upperbound.
  *
- *  Which expands to (pseudocode)
- *
- *  for (id1 in [0..ub1]) {
- *      int ingrid = true;
- *      if (id1 outside grid) ingrid = false;
- *      for (id2 in [0..ub2]) {
- *          if (id2 outside grid) ingrid = false;
- *          for (id3 in [0..ub3]) {
- *              if (id3 outside grid) ingrid = false;
- *              int val = bitmask[iv];
- *              Check val with ingrid
- *          }
- *      }
- *  }
+ * @param TS_ID             The vector with iv variable identifiers
+ * @param TS_IN_SPACE       A boolean variable identifier, true if lb <= iv < ub
+ * @param TS_IN_GRID        A boolean variable identifier, true if (iv - lb) % step < width
+ * @param TS_VAL_AT         A variable identifier that can be used to store the value in the threadmap at iv
+ * @param TS_BITMASK        The threadmap variable identifier
+ */
+void
+CheckEndPrint(strvec* TS_ID, char* TS_IN_SPACE, char* TS_IN_GRID, char* TS_VAL_AT, char* TS_BITMASK) {
+    DBUG_ENTER();
+
+    // Loop over the dimensions
+    for (size_t dim = 0; dim <= TS_DIM; dim++) {
+        // We handle all dimensions
+        if (dim < TS_DIM) {
+            char* lb = STRVECsel(TS_LB, dim);
+            char* ub = STRVECsel(TS_UB, dim);
+            char* st = STRVECsel(TS_ST, dim);
+            char* wi = STRVECsel(TS_WI, dim);
+            char* id = STRVECsel(TS_ID, dim);
+            // For each dimension, open a new (nested) loop
+            fprintf(global.outfile, "for (%s = 0; %s < %s; %s ++) {\n", id, id, ub, id);
+
+            // In the first loop, we have to reset the temporary variables TS_IN_SPACE and TS_IN_GRID
+            if (dim == 0) {
+                INDENT
+                fprintf(global.outfile, "%s = true;\n", TS_IN_SPACE);
+                INDENT
+                fprintf(global.outfile, "%s = true;\n", TS_IN_GRID);
+            }
+
+            // Test whether the TS_IN_SPACE and TS_IN_GRID predicates hold for this dimension
+            INDENT
+            fprintf(global.outfile, "%s &= %s >= %s;\n", TS_IN_SPACE, id, lb);
+            INDENT
+            fprintf(global.outfile, "%s &= (%s - %s) %% %s < %s;\n\n", TS_IN_GRID, id, lb, st, wi);
+        } else
+            // If we have the last call of the loop (so we have generated all nested loops, and we are at the innermost
+            // level), we print the actual checks.
+            CheckEndPrintInnerCheck(TS_ID, TS_IN_SPACE, TS_IN_GRID, TS_VAL_AT, TS_BITMASK);
+    }
+    // Close off all loops
+    for (size_t dim = 0; dim < TS_DIM; dim++)
+        fprintf(global.outfile, "}\n");
+    fprintf(global.outfile, "\n");
+
+    // Insert an extra check for the threadmap value at index size (the number of threads >= ub)
+    char* TS_VAL_UB = VarCreate("val_ub", false);
+    fprintf(global.outfile, "unsigned long long int %s;\n", TS_VAL_UB);
+    fprintf(global.outfile, "SAC_PRAGMA_BITMASK_UB_CHECK(%s, %s, %s)\n\n", TS_VAL_UB, TS_BITMASK, TS_SIZE);
+    MEMfree(TS_VAL_UB);
+
+    DBUG_RETURN();
+}
+
+/**
+ * Function to check all index vectors < ub, and compare whether they should be hit with how many times (0, 1, >1) they
+ * have been hit. It uses an array that maps an index vector to the number of times this iv has been computed inside a
+ * kernel. It does this by computing the flat iv using the function PrintComputeFlat. The function GKCOcompCheckStart
+ * should already have created generated code to create this array, and each kernel has executed the code generated in
+ * GKCOcompCheckKernel to increase the value of its iv by one.
  */
 void
 GKCOcompCheckEnd() {
     DBUG_ENTER();
 
-    DBUG_EXECUTE(
-            // Create necessary variables
-            char  * chk   = VarCreate(CONST_TMP_POSTFIX);
-            strvec* TS_ID = STRVECempty(TS_DIM);
-            for (size_t dim = 0; dim < TS_DIM; dim++)
-                STRVECappend(TS_ID, VarCreate(CONST_IDX_POSTFIX));
+    if (INTERNAL_COMPILER_CHECKS) {
+        char  * TS_IN_SPACE = VarCreate("in_space", true);
+        char  * TS_IN_GRID  = VarCreate("in_grid", true);
+        char  * TS_VAL_AT   = VarCreate("val", false);
+        char  * TS_BITMASK  = VarCreate("bitmask", false);
+        strvec* TS_ID       = STRVECempty(TS_DIM);
+        for (size_t dim = 0; dim < TS_DIM; dim++)
+            STRVECappend(TS_ID, VarCreate(CONST_IDX_POSTFIX, true));
 
-            // Generate memory copy code
-            fprintf(global.outfile, "\nSAC_BITMASK_THREADMAPPING_CHECK_END(");
-            PrintComputeSize(TS_DIM, TS_UB);
-            fprintf(global.outfile, ")\n\n");
+        fprintf(global.outfile, "unsigned short %s;\n", TS_VAL_AT);
+        fprintf(global.outfile, "\n");
+        fprintf(global.outfile, "unsigned short* %s = (unsigned short*) "
+                                "malloc (sizeof(unsigned short) * %s + 8);\n",
+                                TS_BITMASK, TS_SIZE);
+        fprintf(global.outfile, "cudaMemcpy(%s, SAC_gkco_threadmapping_bitmask_dev, "
+                                "sizeof(unsigned short) * %s + 8, cudaMemcpyDeviceToHost);\n\n",
+                TS_BITMASK, TS_SIZE);
 
-            // Generate checking code
-            CheckEndRecursiveHelper(0, TS_DIM, TS_LB, TS_UB, TS_ST, TS_WI, TS_ID, chk);
+        CheckEndPrint(TS_ID, TS_IN_SPACE, TS_IN_GRID, TS_VAL_AT, TS_BITMASK);
 
-            // FREE ALL THE THINGS
-            free(chk);
-            STRVECfreeDeep(TS_LB);
-            STRVECfreeDeep(TS_UB);
-            STRVECfreeDeep(TS_ST);
-            STRVECfreeDeep(TS_WI);
-            STRVECfreeDeep(TS_ID);
-    );
+        STRVECfreeDeep(TS_LB);
+        STRVECfreeDeep(TS_UB);
+        STRVECfreeDeep(TS_ST);
+        STRVECfreeDeep(TS_WI);
+        STRVECfreeDeep(TS_ID);
+        MEMfree(TS_FLAT);
+        MEMfree(TS_SIZE);
+        MEMfree(TS_IN_SPACE);
+        MEMfree(TS_IN_GRID);
+        MEMfree(TS_VAL_AT);
+        MEMfree(TS_BITMASK);
+    }
 
     DBUG_RETURN();
 }

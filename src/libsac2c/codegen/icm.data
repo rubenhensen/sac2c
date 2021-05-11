@@ -1280,17 +1280,6 @@ ICM_DEF( CUDA_GLOBALFUN_DEF_END, ICM_TRACE_NONE)
 ICM_END( CUDA_GLOBALFUN_DEF_END, (funname, vararg_cnt, vararg))
 #endif
 
-#if defined(CUDA_WLIDS) || defined(ICM_ALL)
-ICM_DEF( CUDA_WLIDS, ICM_TRACE_NONE)
-  ICM_NT( wlids_NT)
-  ICM_INT( wlids_NT_dim)
-  ICM_INT( array_dim)
-  ICM_INT( wlids_dim_pos)
-  ICM_NT( iv_NT)
-  ICM_ANY( hasstepwidth)
-ICM_END( CUDA_WLIDS, (wlids_NT, wlids_NT_dim, array_dim, wlids_dim_pos, iv_NT, hasstepwidth))
-#endif
-
 #if defined(CUDA_THREADIDX) || defined(ICM_ALL)
 ICM_DEF( CUDA_THREADIDX, ICM_TRACE_NONE)
   ICM_NT( to_NT)

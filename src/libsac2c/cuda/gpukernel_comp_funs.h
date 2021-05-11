@@ -4,9 +4,9 @@
 #include "types.h"
 
 extern void GKCOcompHostKernelPragma (node *spap, unsigned int bnum, char **bounds);
-extern void GKCOcompGPUDkernelPragma (node *spap, char* iv_var, unsigned int bnum, char **bounds);
+extern void GKCOcompGPUDkernelPragma (node *spap, unsigned int bnum, char **bounds);
 gpukernelres_t* GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner);
-gpukernelres_t * GKCOcompInvGen ( char* iv_var, char** bounds, gpukernelres_t* res);
+gpukernelres_t * GKCOcompInvGen ( char** bounds, gpukernelres_t* res);
 
 char* GKCOvarCreate(gpukernelres_t*gkr, char* postfix);
 
@@ -15,12 +15,15 @@ void GKCOcompCheckKernel(gpukernelres_t* res);
 extern void GKCOcompCheckEnd(void);
 void GKCOcompCheckGPUkernelRes(unsigned int bnum, char** bounds, gpukernelres_t* res);
 
+gpukernelres_t* GKCOcompStepWidthLB(size_t dim, gpukernelres_t* inner);
+gpukernelres_t* GKCOcompInvStepWidthLB(size_t dim, gpukernelres_t* outer);
+
 #define ARGS( nargs) ARG##nargs
 #define ARG0
 #define ARG1 node *arg,
 
 #define WLP(fun, nargs, checkfun)                                                                           \
-    gpukernelres_t *GKCOcomp ## fun ( ARGS( nargs) gpukernelres_t *inner);                           \
+    gpukernelres_t *GKCOcomp ## fun ( ARGS( nargs) gpukernelres_t *inner);                                  \
     gpukernelres_t *GKCOcompInv ## fun ( ARGS( nargs) gpukernelres_t *inner);
 #include "gpukernel_funs.mac"
 #undef WLP
