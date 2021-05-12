@@ -1321,9 +1321,6 @@ GKCOcompInvGen(char** bounds, gpukernelres_t* outer) {
 gpukernelres_t*
 handleLB(size_t dim, gpukernelres_t* inner) {
     DBUG_ENTER();
-    if (GKR_CHECK_PRAGMA(inner)) {
-        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping handleLB(dim %zu)\");\n", dim);
-    }
 
     GKR_LB_PUSH(inner, dim)
     GKR_LB_D_REPLACE(inner, dim, CONST_ZERO);
@@ -1384,9 +1381,6 @@ handleInvLB(size_t dim, gpukernelres_t* outer) {
 gpukernelres_t*
 handleSW(size_t dim, gpukernelres_t* inner) {
     DBUG_ENTER();
-    if (GKR_CHECK_PRAGMA(inner)) {
-        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping handleSW(dim %zu)\");\n", dim);
-    }
 
     GKR_ST_PUSH(inner, dim)
     GKR_WI_PUSH(inner, dim)
@@ -1482,9 +1476,6 @@ GKCOcompInvStepWidthLB(size_t dim, gpukernelres_t* outer) {
 gpukernelres_t*
 GKCOcompPad(size_t dim, size_t divisibility, gpukernelres_t* inner) {
     DBUG_ENTER();
-    if (GKR_CHECK_PRAGMA(inner)) {
-        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping Pad(dim %zu, div %zu)\");\n", dim, divisibility);
-    }
 
     GKR_UB_PUSH(inner, dim)
 

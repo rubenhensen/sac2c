@@ -574,7 +574,7 @@ extern "C" {
     ub_maj_w = ub_maj_r * ub_min;
 
 #define SAC_GKCO_HOST_OPM_SPLIT_LAST(ub_maj_r, ub_maj_w, ub_min, len_min)                                   \
-    ub_min = ub_maj_r % len_min;                                                                            \
+    ub_min = len_min;                                                                            \
     ub_maj_w = ub_maj_r / len_min;
 
 #define SAC_GKCO_HOST_OPM_SET_GRID(max_x, max_y, max_z, max_total, ...)                                     \
