@@ -14,10 +14,13 @@
 target arch_:
 CUDA_ARCH        := ""
 
+target cuda_sm10 :: cuda_core :: arch_sm10:
 target arch_sm10:
 CUDA_ARCH        := "sm10"
 
-target cuda_sm10 :: cuda_core :: arch_sm10:
+target cuda_sm_61 :: cuda_core :: arch_sm_61:
+target arch_sm_61:
+CUDA_ARCH        := "sm61"
 
 target cuda :: cuda_core :: arch_@CUDA_ARCH@:
 

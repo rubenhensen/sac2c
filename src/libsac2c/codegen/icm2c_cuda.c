@@ -72,7 +72,7 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, unsigned int vararg_cnt, char **var
 
     // TODO: replace if (true) with something else
     if (true)
-        fprintf (global.outfile, ", unsigned short* SAC_gkco_check_threadmapping_bitmask_dev");
+        fprintf (global.outfile, ", unsigned int* SAC_gkco_check_threadmapping_bitmask_dev");
     fprintf (global.outfile, ")");
 
     DBUG_RETURN ();

@@ -390,61 +390,36 @@
 
 #endif /* SAC_DO_CHECK_GPU */
 
-#define SAC_PRAGMA_KERNEL_ID_CHECK(dim, lb, ub, st, wi, id)                                                 \
-    if (id < lb)                                                                                            \
-        SAC_RuntimeError("idx %i for dimension %u is less then lowerbound %u",                              \
-                         id, dim, lb);                                                                      \
-    if (id >= ub)                                                                                           \
-        SAC_RuntimeError("idx %i for dimension %u is greater or equal then upperbound %u",                  \
-                         id, dim, ub);                                                                      \
-    if (id % st < wi)                                                                                       \
-        SAC_RuntimeError("idx %i for dimension %u is not inside grid with step: %u and width: %u",          \
-                         id, dim, st, wi);
-
-#define SAC_BITMASK_THREADMAPPING_CHECK_END_INNER(chk, val, flat_expr)                                      \
-    val = SAC_gkco_check_threadmapping_bitmask[flat_expr];                                                  \
-    if (chk == false) {                                                                                     \
-        if (val == 1)                                                                                       \
-            SAC_RuntimeError("Index outside of grid was executed inside the kernel!");                      \
-        if (val >= 2)                                                                                       \
-            SAC_RuntimeError("Index outside of grid was executed inside the kernel multiple times!");       \
-    } else {                                                                                                \
-        if (val == 0)                                                                                       \
-            SAC_RuntimeError("Index inside of grid was not executed inside the kernel!");                   \
-        if (val >= 2)                                                                                       \
-            SAC_RuntimeError("Index inside of grid was executed multiple times!");                          \
-    }
-
-#define SAC_PRAGMA_BITMASK_CHECK(is, ig, val, bitmask, flat, fmt, ...)                                      \
+#define SAC_PRAGMA_BITMASK_CHECK(krnl, is, ig, val, bitmask, flat, fmt, ...)                                \
     val = bitmask[flat];                                                                                    \
     if (is && ig) {                                                                                         \
         if (val == 0)                                                                                       \
-            SAC_RuntimeError("Index (" fmt ") inside grid was not hit inside the kernel!",                  \
-                             __VA_ARGS__);                                                                  \
-        if (val == 2)                                                                                       \
-            SAC_RuntimeError("Index (" fmt ") inside grid was hit multiple times inside the kernel!",       \
-                             __VA_ARGS__);                                                                  \
+            SAC_RuntimeError("Index (" fmt ") inside grid was not hit inside kernel %u!",                   \
+                             __VA_ARGS__, krnl);                                                            \
+        if (val >= 2)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") inside grid was hit %u times inside kernel %u!",              \
+                             __VA_ARGS__, val, krnl);                                                       \
     }                                                                                                       \
     else if (is) {                                                                                          \
         if (val == 1)                                                                                       \
-            SAC_RuntimeError("Index (" fmt ") outside the grid was hit inside the kernel!",                 \
-                             __VA_ARGS__);                                                                  \
-        if (val == 2)                                                                                       \
-            SAC_RuntimeError("Index (" fmt ") outside the grid was hit multiple times inside the kernel!",  \
-                             __VA_ARGS__);                                                                  \
+            SAC_RuntimeError("Index (" fmt ") outside the grid was hit inside kernel %u!",                  \
+                             __VA_ARGS__, krnl);                                                            \
+        if (val >= 2)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") outside the grid was hit %u times inside kernel %u!",         \
+                             __VA_ARGS__, val, krnl);                                                       \
     }                                                                                                       \
     else {                                                                                                  \
-        if (val >= 1)                                                                                       \
-            SAC_RuntimeError("Index (" fmt ") below lowerbound was hit inside the kernel!",                 \
-                             __VA_ARGS__);                                                                  \
-        if (val == 2)                                                                                       \
-            SAC_RuntimeError("Index (" fmt ") below lowerbound was hit multiple times inside the kernel!",  \
-                             __VA_ARGS__);                                                                  \
+        if (val == 1)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") below lowerbound was hit inside kernel %u!",                  \
+                             __VA_ARGS__, krnl);                                                            \
+        if (val >= 2)                                                                                       \
+            SAC_RuntimeError("Index (" fmt ") below lowerbound was hit %u times inside kernel %u!",         \
+                             __VA_ARGS__, val, krnl);                                                       \
     }
 
-#define SAC_PRAGMA_BITMASK_UB_CHECK(val, bitmask, size)                                                     \
-    val = *((unsigned long long int*) &bitmask[size]);                                                      \
+#define SAC_PRAGMA_BITMASK_UB_CHECK(krnl, val, bitmask, size)                                               \
+    val = bitmask[size];                                                                                    \
     if (val >= 1)                                                                                           \
-        SAC_RuntimeError("%u indexes above upperbound have been hit inside the kernel!", val);
+        SAC_RuntimeError("%u indexes above upperbound have been hit inside kernel %u!", val, krnl);
 
 #endif /* _SAC_RUNTIMECHECK_H_ */

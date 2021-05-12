@@ -639,7 +639,7 @@ extern "C" {
     int iv_var[iv_length];
 
 #define SAC_GKCO_GPUD_OPD_DEF_IV(iv_var, dim, id)                                                           \
-    iv_var[dim] = id;                                                                                       \
+    SAC_ND_WRITE(iv_var, dim) = id;
 
 /*****************************************************************************
  *

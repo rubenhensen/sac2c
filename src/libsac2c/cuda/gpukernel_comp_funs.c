@@ -2076,6 +2076,7 @@ static strvec* TS_ST;
 static strvec* TS_WI;
 static char  * TS_FLAT;
 static char  * TS_SIZE;
+static size_t TS_KERNEL = 0;
 
 /**
  * Print a statement to compute the flat index from a vector of upperbounds and a vector of ids. For an input of
@@ -2135,7 +2136,7 @@ void
 GKCOcompCheckStart(gpukernelres_t* res) {
     DBUG_ENTER();
 
-    if (INTERNAL_COMPILER_CHECKS) {
+    if (INTERNAL_COMPILER_CHECKS && GKR_CHECK_PRAGMA(res)) {
         TS_DIM  = GKR_DIM(res);
         TS_LB   = STRVECcopyDeep(GKR_LB(res));
         TS_UB   = STRVECcopyDeep(GKR_UB(res));
@@ -2146,9 +2147,11 @@ GKCOcompCheckStart(gpukernelres_t* res) {
 
         PrintComputeSize(TS_DIM, TS_UB);
         fprintf(global.outfile,
-                "unsigned short* SAC_gkco_check_threadmapping_bitmask_dev = NULL;\n"
-                "cudaMalloc(&SAC_gkco_check_threadmapping_bitmask_dev, sizeof(unsigned short) * %s + 8);\n"
-                "cudaMemset(SAC_gkco_check_threadmapping_bitmask_dev, 0, sizeof(unsigned short) * %s + 8);\n\n",
+                "unsigned int* SAC_gkco_check_threadmapping_bitmask_dev = NULL;\n"
+                "cudaError_t cuda_error = cudaMalloc(&SAC_gkco_check_threadmapping_bitmask_dev, sizeof(unsigned int) * (%s + 1));\n"
+                "if (cuda_error != cudaSuccess) SAC_RuntimeError(\"CUDA error at malloc: %%i\", cuda_error);\n"
+                "cuda_error = cudaMemset(SAC_gkco_check_threadmapping_bitmask_dev, 0, sizeof(unsigned int) * (%s + 1));\n\n"
+                "if (cuda_error != cudaSuccess) SAC_RuntimeError(\"CUDA error at memset\");\n\n",
                 TS_SIZE, TS_SIZE);
     }
 
@@ -2176,33 +2179,24 @@ GKCOcompCheckKernel(gpukernelres_t* res) {
     DBUG_ENTER();
 
     if (INTERNAL_COMPILER_CHECKS) {
-        for (LOOP_DIMENSIONS(res, dim))
-            fprintf(global.outfile, "SAC_PRAGMA_KERNEL_ID_CHECK(%zu, %s, %s, %s, %s, %s)\n\n",
-                    GKR_DIM(res), GKR_LB_D_READ(res, dim), GKR_UB_D_READ(res, dim),
-                    GKR_ST_D_READ(res, dim), GKR_WI_D_READ(res, dim), GKR_ID_D_READ(res, dim));
-
         // If ID < UB
-        fprintf(global.outfile, "if (false");
+        fprintf(global.outfile, "if (true");
         for (LOOP_DIMENSIONS(res, dim))
             fprintf(global.outfile, " && %s < %s",
                     GKR_ID_D_READ(res, dim), GKR_UB_D_READ(res, dim));
-        // Then, compute the flat variable and set it correctly using 2 atomicCAS calls
+        // Then, compute the flat variable and increase it by 1 using an atomicAdd call
         fprintf(global.outfile, ") {\n");
         fprintf(global.outfile, "SAC_GKCO_OPD_DECLARE(%s)\n", TS_FLAT);
         PrintComputeFlat(GKR_DIM(res), GKR_UB(res), GKR_ID(res));
         fprintf(global.outfile,
-                "atomicCAS((unsigned short*) &SAC_gkco_check_threadmapping_bitmask_dev[%s], "
-                "(unsigned short) 1, (unsigned short) 2);\n"
-                "atomicCAS(&SAC_gkco_check_threadmapping_bitmask_dev[%s], "
-                "(unsigned short) 0, (unsigned short) 1);\n",
-                TS_FLAT, TS_FLAT);
-        // Else, increase the unsigned long long int variable at the end of the bytearray
+                "atomicAdd(&SAC_gkco_check_threadmapping_bitmask_dev[%s], (unsigned int) 1);\n",
+                TS_FLAT);
+        // Else, increase the variable at the end of the array
         fprintf(global.outfile, "} else {\n");
         fprintf(global.outfile, "SAC_GKCO_OPD_DECLARE(%s)\n", TS_SIZE);
         PrintComputeSize(GKR_DIM(res), GKR_UB(res));
         fprintf(global.outfile,
-                "atomicAdd((unsigned long long int*) &SAC_gkco_check_threadmapping_bitmask_dev[%s], "
-                "(unsigned long long int) 1);\n",
+                "atomicAdd(&SAC_gkco_check_threadmapping_bitmask_dev[%s], (unsigned int) 1);\n",
                 TS_SIZE);
         fprintf(global.outfile, "}\n\n");
     }
@@ -2232,10 +2226,12 @@ CheckEndPrintInnerCheck(strvec* TS_ID,
                         char* TS_VAL_AT, char* TS_BITMASK) {
     DBUG_ENTER();
 
-    fprintf(global.outfile, "SAC_PRAGMA_BITMASK_CHECK(%s, %s, %s, %s, %s, \"",
-            TS_IN_SPACE, TS_IN_GRID, TS_VAL_AT, TS_BITMASK, TS_FLAT);
+
+    PrintComputeFlat(TS_DIM, TS_UB, TS_ID);
+    fprintf(global.outfile, "SAC_PRAGMA_BITMASK_CHECK(%zu, %s, %s, %s, %s, %s, \"",
+            TS_KERNEL, TS_IN_SPACE, TS_IN_GRID, TS_VAL_AT, TS_BITMASK, TS_FLAT);
     for (size_t i = 0; i < TS_DIM; i++)
-        fprintf(global.outfile, "%%s");
+        fprintf(global.outfile, "%%u, ");
     fprintf(global.outfile, "\"");
     for (size_t i = 0; i < TS_DIM; i++)
         fprintf(global.outfile, ", %s", STRVECsel(TS_ID, i));
@@ -2257,7 +2253,7 @@ CheckEndPrintInnerCheck(strvec* TS_ID,
  * @param TS_BITMASK        The threadmap variable identifier
  */
 void
-CheckEndPrint(strvec* TS_ID, char* TS_IN_SPACE, char* TS_IN_GRID, char* TS_VAL_AT, char* TS_BITMASK) {
+CheckEndPrint(strvec* TS_ID, strvec* TS_IN_SPACE, strvec* TS_IN_GRID, char* TS_VAL_AT, char* TS_BITMASK) {
     DBUG_ENTER();
 
     // Loop over the dimensions
@@ -2272,23 +2268,18 @@ CheckEndPrint(strvec* TS_ID, char* TS_IN_SPACE, char* TS_IN_GRID, char* TS_VAL_A
             // For each dimension, open a new (nested) loop
             fprintf(global.outfile, "for (%s = 0; %s < %s; %s ++) {\n", id, id, ub, id);
 
-            // In the first loop, we have to reset the temporary variables TS_IN_SPACE and TS_IN_GRID
-            if (dim == 0) {
-                INDENT
-                fprintf(global.outfile, "%s = true;\n", TS_IN_SPACE);
-                INDENT
-                fprintf(global.outfile, "%s = true;\n", TS_IN_GRID);
-            }
-
-            // Test whether the TS_IN_SPACE and TS_IN_GRID predicates hold for this dimension
+            // Test whether the TS_IN_SPACE and TS_IN_GRID predicates hold for this dimension, and for all outer
+            // dimensions
             INDENT
-            fprintf(global.outfile, "%s &= %s >= %s;\n", TS_IN_SPACE, id, lb);
+            fprintf(global.outfile, "%s = %s && %s >= %s;\n",
+                    STRVECsel(TS_IN_SPACE, dim + 1), STRVECsel(TS_IN_SPACE, dim), id, lb);
             INDENT
-            fprintf(global.outfile, "%s &= (%s - %s) %% %s < %s;\n\n", TS_IN_GRID, id, lb, st, wi);
+            fprintf(global.outfile, "%s = %s && (%s - %s) %% %s < %s;\n\n",
+                    STRVECsel(TS_IN_GRID, dim+1), STRVECsel(TS_IN_GRID, dim), id, lb, st, wi);
         } else
             // If we have the last call of the loop (so we have generated all nested loops, and we are at the innermost
             // level), we print the actual checks.
-            CheckEndPrintInnerCheck(TS_ID, TS_IN_SPACE, TS_IN_GRID, TS_VAL_AT, TS_BITMASK);
+            CheckEndPrintInnerCheck(TS_ID, STRVECsel(TS_IN_SPACE, dim), STRVECsel(TS_IN_GRID, dim), TS_VAL_AT, TS_BITMASK);
     }
     // Close off all loops
     for (size_t dim = 0; dim < TS_DIM; dim++)
@@ -2297,8 +2288,9 @@ CheckEndPrint(strvec* TS_ID, char* TS_IN_SPACE, char* TS_IN_GRID, char* TS_VAL_A
 
     // Insert an extra check for the threadmap value at index size (the number of threads >= ub)
     char* TS_VAL_UB = VarCreate("val_ub", false);
-    fprintf(global.outfile, "unsigned long long int %s;\n", TS_VAL_UB);
-    fprintf(global.outfile, "SAC_PRAGMA_BITMASK_UB_CHECK(%s, %s, %s)\n\n", TS_VAL_UB, TS_BITMASK, TS_SIZE);
+    fprintf(global.outfile, "unsigned int %s;\n", TS_VAL_UB);
+    fprintf(global.outfile, "SAC_PRAGMA_BITMASK_UB_CHECK(%zu, %s, %s, %s)\n\n",
+            TS_KERNEL, TS_VAL_UB, TS_BITMASK, TS_SIZE);
     MEMfree(TS_VAL_UB);
 
     DBUG_RETURN();
@@ -2316,36 +2308,43 @@ GKCOcompCheckEnd() {
     DBUG_ENTER();
 
     if (INTERNAL_COMPILER_CHECKS) {
-        char  * TS_IN_SPACE = VarCreate("in_space", true);
-        char  * TS_IN_GRID  = VarCreate("in_grid", true);
+        // Create extra variables
         char  * TS_VAL_AT   = VarCreate("val", false);
         char  * TS_BITMASK  = VarCreate("bitmask", false);
         strvec* TS_ID       = STRVECempty(TS_DIM);
-        for (size_t dim = 0; dim < TS_DIM; dim++)
+        // Note: we call a STRVECfreeDeep at the end to free all created variables. Because of this, we have to create
+        // heap-allocated copies of "true".
+        strvec*TS_IN_SPACE = STRVECmake(1, STRcpy("true"));
+        strvec*TS_IN_GRID = STRVECmake(1, STRcpy("true"));
+        for (size_t dim = 0; dim < TS_DIM; dim++) {
             STRVECappend(TS_ID, VarCreate(CONST_IDX_POSTFIX, true));
+            STRVECappend(TS_IN_SPACE, VarCreate("in_space", true));
+            STRVECappend(TS_IN_GRID, VarCreate("in_grid", true));
+        }
 
-        fprintf(global.outfile, "unsigned short %s;\n", TS_VAL_AT);
+        fprintf(global.outfile, "unsigned int %s;\n", TS_VAL_AT);
         fprintf(global.outfile, "\n");
-        fprintf(global.outfile, "unsigned short* %s = (unsigned short*) "
-                                "malloc (sizeof(unsigned short) * %s + 8);\n",
-                                TS_BITMASK, TS_SIZE);
-        fprintf(global.outfile, "cudaMemcpy(%s, SAC_gkco_threadmapping_bitmask_dev, "
-                                "sizeof(unsigned short) * %s + 8, cudaMemcpyDeviceToHost);\n\n",
+        fprintf(global.outfile, "unsigned int* %s = (unsigned int*) malloc (sizeof(unsigned int) * (%s + 1));\n",
+                TS_BITMASK, TS_SIZE);
+        fprintf(global.outfile, "cudaMemcpy(%s, SAC_gkco_check_threadmapping_bitmask_dev, "
+                                "sizeof(unsigned int) * (%s + 1), cudaMemcpyDeviceToHost);\n\n",
                 TS_BITMASK, TS_SIZE);
 
         CheckEndPrint(TS_ID, TS_IN_SPACE, TS_IN_GRID, TS_VAL_AT, TS_BITMASK);
 
-        STRVECfreeDeep(TS_LB);
-        STRVECfreeDeep(TS_UB);
-        STRVECfreeDeep(TS_ST);
-        STRVECfreeDeep(TS_WI);
+        //STRVECfreeDeep(TS_LB);
+        //STRVECfreeDeep(TS_UB);
+        //STRVECfreeDeep(TS_ST);
+        //STRVECfreeDeep(TS_WI);
         STRVECfreeDeep(TS_ID);
-        MEMfree(TS_FLAT);
-        MEMfree(TS_SIZE);
-        MEMfree(TS_IN_SPACE);
-        MEMfree(TS_IN_GRID);
+        //MEMfree(TS_FLAT);
+        //MEMfree(TS_SIZE);
+        STRVECfreeDeep(TS_IN_SPACE);
+        STRVECfreeDeep(TS_IN_GRID);
         MEMfree(TS_VAL_AT);
         MEMfree(TS_BITMASK);
+
+        TS_KERNEL++;
     }
 
     DBUG_RETURN();
