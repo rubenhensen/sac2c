@@ -233,8 +233,6 @@
 \**********************************************************************************************************************/
 
 #define BRANCHLESS_IMPLEMENTATION true
-// TODO: replace by command line argument
-#define INTERNAL_COMPILER_CHECKS true
 
 static char* CONST_ZERO               = "0";
 static char* CONST_ONE                = "1";
@@ -256,7 +254,7 @@ static char* CONST_DBUG_PASS_SEP      = "---------------------------------------
 #define PASS_IDX_COMPUTE  4
 // Pass should emit code for grid/block dim3 variables
 #define PASS_GB_EMIT      8
-// Pass should generate pragma errors (to prevent duplicate errors)
+// Pass should generate pragma errors (to prevent duplicate errors), and trace calls
 #define PASS_CHECK_PRAGMA 16
 // Pass should execute branchless. It will be interesting to see how much difference it makes.
 #define PASS_BRANCHLESS  (32 * BRANCHLESS_IMPLEMENTATION)
@@ -429,11 +427,38 @@ char* NewUpperboundVariable(gpukernelres_t* gkr, size_t dim) {
 #define LOOP_DIMENSIONS(gkr, dim) size_t dim = 0; (dim) < GKR_DIM(gkr); (dim)++
 #define LOOP_DIMENSIONS_INV(gkr, dim) size_t dim = GKR_DIM(gkr) - 1; (dim) != (size_t) -1; (dim)--
 
+void
+PrintDebugTrace(gpukernelres_t* gkr) {
+    DBUG_ENTER();
+
+    fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"    Index space (LUSW) = ( ");
+    for (int i = 0; i < 4; i++) {
+        fprintf(global.outfile, "[");
+        for (LOOP_DIMENSIONS(gkr, dim))
+            fprintf(global.outfile, "%%i, ");
+        fprintf(global.outfile, "], ");
+    }
+    fprintf(global.outfile, ")%%s\", \n");
+    for (LOOP_DIMENSIONS(gkr, dim) )
+        fprintf(global.outfile, "%s, ", GKR_LB_D_READ(gkr, dim));
+    for (LOOP_DIMENSIONS(gkr, dim) )
+        fprintf(global.outfile, "%s, ", GKR_UB_D_READ(gkr, dim));
+    for (LOOP_DIMENSIONS(gkr, dim) )
+        fprintf(global.outfile, "%s, ", GKR_ST_D_READ(gkr, dim));
+    for (LOOP_DIMENSIONS(gkr, dim) )
+        fprintf(global.outfile, "%s, ", GKR_WI_D_READ(gkr, dim));
+    fprintf(global.outfile, "\"\");\n");
+
+    DBUG_RETURN();
+}
+
 /**
  * Macro for a GKCOcomp-function end. It adds some whitespace (in the logs, as well as the generated code),
  * prints the gkr, and returns it.
  */
 #define COMP_FUN_DBUG_RETURN(gkr)                                                                           \
+    if (GKR_CHECK_PRAGMA(gkr))                                                                              \
+        PrintDebugTrace(gkr);                                                                               \
     fprintf(global.outfile, "\n");                                                                          \
     DBUG_EXECUTE(fprintf(stderr, "\n\n"));                                                                  \
     DBUG_EXECUTE(PrintGPUkernelres(gkr, stderr));                                                           \
@@ -1047,11 +1072,21 @@ gpukernelres_t*
 GKCOcompGridBlock(node* gridDims, gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling GridBlock ( %i, inner)", NUM_VAL(gridDims));
+    if (GKR_CHECK_PRAGMA(inner)) {
+        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping GridBlock (%i)\");\n",
+                NUM_VAL(gridDims));
+    }
+
+    // Make sure all steps, widths and lowerbounds have been handled
+    for (LOOP_DIMENSIONS(inner, dim))
+        GKCOcompStepWidthLB(dim, inner);
 
     // Check the number of dimensions, the number of grid dimensions, and the number of thread dimensions against the
     // GPU capabilities
-    if (GKR_CHECK_PRAGMA(inner))
+    if (GKR_CHECK_PRAGMA(inner)) {
         checkDimensionSettings(gridDims, GKR_DIM(inner));
+        PrintDebugTrace(inner);
+    }
 
     // The ICM's to be used for either the grid or the block
     char* icm[2] = {"SAC_GKCO_HOST_OPM_SET_GRID", "SAC_GKCO_HOST_OPM_SET_BLOCK"};
@@ -1086,9 +1121,6 @@ GKCOcompGridBlock(node* gridDims, gpukernelres_t* inner) {
             fprintf(global.outfile, ")\n\n");
         }
     }
-
-    for (LOOP_DIMENSIONS(inner, dim))
-        GKCOcompStepWidthLB(dim, inner);
 
     COMP_FUN_DBUG_RETURN(inner)
 }
@@ -1179,6 +1211,9 @@ GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner) {
             fprintf(stderr, ")\n");
     );
     fprintf(global.outfile, "\n");
+    if (GKR_CHECK_PRAGMA(inner)) {
+        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping Gen\");\n");
+    }
 
     // If we are in pass 3 (compute), we skip the first element of the bounds variable
     // (the iv_var identifier)
@@ -1286,6 +1321,9 @@ GKCOcompInvGen(char** bounds, gpukernelres_t* outer) {
 gpukernelres_t*
 handleLB(size_t dim, gpukernelres_t* inner) {
     DBUG_ENTER();
+    if (GKR_CHECK_PRAGMA(inner)) {
+        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping handleLB(dim %zu)\");\n", dim);
+    }
 
     GKR_LB_PUSH(inner, dim)
     GKR_LB_D_REPLACE(inner, dim, CONST_ZERO);
@@ -1346,6 +1384,9 @@ handleInvLB(size_t dim, gpukernelres_t* outer) {
 gpukernelres_t*
 handleSW(size_t dim, gpukernelres_t* inner) {
     DBUG_ENTER();
+    if (GKR_CHECK_PRAGMA(inner)) {
+        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping handleSW(dim %zu)\");\n", dim);
+    }
 
     GKR_ST_PUSH(inner, dim)
     GKR_WI_PUSH(inner, dim)
@@ -1439,8 +1480,11 @@ GKCOcompInvStepWidthLB(size_t dim, gpukernelres_t* outer) {
  * @return                  The modified gpu kernel res
  */
 gpukernelres_t*
-GKCOcompPad(size_t dim, size_t divisiblity, gpukernelres_t* inner) {
+GKCOcompPad(size_t dim, size_t divisibility, gpukernelres_t* inner) {
     DBUG_ENTER();
+    if (GKR_CHECK_PRAGMA(inner)) {
+        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping Pad(dim %zu, div %zu)\");\n", dim, divisibility);
+    }
 
     GKR_UB_PUSH(inner, dim)
 
@@ -1448,7 +1492,7 @@ GKCOcompPad(size_t dim, size_t divisiblity, gpukernelres_t* inner) {
     char* ub_write = GKR_UB_NEW(inner, dim);
     INDENT
     fprintf(global.outfile, "SAC_GKCO_HOST_OPD_PAD(%s, %s, %zu)\n\n",
-            ub_read, ub_write, divisiblity);
+            ub_read, ub_write, divisibility);
 
     DBUG_RETURN(inner);
 }
@@ -1495,6 +1539,9 @@ gpukernelres_t*
 GKCOcompShiftLB(gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling ShiftLB (inner):");
+    if (GKR_CHECK_PRAGMA(inner)) {
+        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping ShiftLB\");\n");
+    }
 
     for (LOOP_DIMENSIONS(inner, dim)) {
         // Preserve the current variable identifiers for lb and ub
@@ -1584,6 +1631,13 @@ GKCOcompCompressGrid(node* shouldCompress_node, gpukernelres_t* inner) {
 
     // Get the shouldCompress variable as an array instead of AST nodes
     int* shouldCompress = getNumArrayFromNodes(shouldCompress_node, GKR_DIM(inner), "CompressGrid");
+
+    if (GKR_CHECK_PRAGMA(inner)) {
+        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping CompressGrid([");
+        for (LOOP_DIMENSIONS(inner, dim))
+            fprintf(global.outfile, "%i, ", shouldCompress[dim]);
+        fprintf(global.outfile, "])\");\n");
+    }
 
     for (LOOP_DIMENSIONS(inner, dim)) {
         // Preserve the current variable identifiers for ub, st and wi
@@ -1723,6 +1777,12 @@ GKCOcompPermute(node* permutation_node, gpukernelres_t* inner) {
     );
 
     int* permutation  = getNumArrayFromNodes(permutation_node, GKR_DIM(inner), "Permute");
+    if (GKR_CHECK_PRAGMA(inner)) {
+        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping Permute([");
+        for (LOOP_DIMENSIONS(inner, dim))
+            fprintf(global.outfile, "%i, ", permutation[dim]);
+        fprintf(global.outfile, "])\");\n");
+    }
 
     GKR_LB(inner) = PermuteStrvec(GKR_LB(inner), permutation);
     GKR_UB(inner) = PermuteStrvec(GKR_UB(inner), permutation);
@@ -1815,6 +1875,10 @@ GKCOcompFoldLast2(gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling FoldLast2 (inner)");
 
+    if (GKR_CHECK_PRAGMA(inner)) {
+        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping FoldLast2\");\n");
+    }
+
     size_t majordim = GKR_DIM(inner) - 2;
     size_t minordim = GKR_DIM(inner) - 1;
 
@@ -1897,6 +1961,9 @@ gpukernelres_t*
 GKCOcompSplitLast(node* minorlen_node, gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling SplitLast ( %i, inner)", NUM_VAL(minorlen_node));
+    if (GKR_CHECK_PRAGMA(inner)) {
+        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping SplitLast(len %i)\");\n", NUM_VAL(minorlen_node));
+    }
 
     AddDimension(inner);
     size_t majordim = GKR_DIM(inner) - 2;
@@ -1970,6 +2037,9 @@ gpukernelres_t*
 GKCOcompPadLast(node* divisibility_node, gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling PadLast ( %i, inner)", NUM_VAL(divisibility_node));
+    if (GKR_CHECK_PRAGMA(inner)) {
+        fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Mapping PadLast(len %i)\");\n", NUM_VAL(divisibility_node));
+    }
 
     size_t dim          = GKR_DIM(inner) - 1;
     size_t divisibility = (size_t) NUM_VAL(divisibility_node);
@@ -2136,7 +2206,7 @@ void
 GKCOcompCheckStart(gpukernelres_t* res) {
     DBUG_ENTER();
 
-    if (INTERNAL_COMPILER_CHECKS && GKR_CHECK_PRAGMA(res)) {
+    if (global.gpukernel && GKR_CHECK_PRAGMA(res)) {
         TS_DIM  = GKR_DIM(res);
         TS_LB   = STRVECcopyDeep(GKR_LB(res));
         TS_UB   = STRVECcopyDeep(GKR_UB(res));
@@ -2178,7 +2248,7 @@ void
 GKCOcompCheckKernel(gpukernelres_t* res) {
     DBUG_ENTER();
 
-    if (INTERNAL_COMPILER_CHECKS) {
+    if (global.gpukernel) {
         // If ID < UB
         fprintf(global.outfile, "if (true");
         for (LOOP_DIMENSIONS(res, dim))
@@ -2275,11 +2345,12 @@ CheckEndPrint(strvec* TS_ID, strvec* TS_IN_SPACE, strvec* TS_IN_GRID, char* TS_V
                     STRVECsel(TS_IN_SPACE, dim + 1), STRVECsel(TS_IN_SPACE, dim), id, lb);
             INDENT
             fprintf(global.outfile, "%s = %s && (%s - %s) %% %s < %s;\n\n",
-                    STRVECsel(TS_IN_GRID, dim+1), STRVECsel(TS_IN_GRID, dim), id, lb, st, wi);
+                    STRVECsel(TS_IN_GRID, dim + 1), STRVECsel(TS_IN_GRID, dim), id, lb, st, wi);
         } else
             // If we have the last call of the loop (so we have generated all nested loops, and we are at the innermost
             // level), we print the actual checks.
-            CheckEndPrintInnerCheck(TS_ID, STRVECsel(TS_IN_SPACE, dim), STRVECsel(TS_IN_GRID, dim), TS_VAL_AT, TS_BITMASK);
+            CheckEndPrintInnerCheck(TS_ID, STRVECsel(TS_IN_SPACE, dim), STRVECsel(TS_IN_GRID, dim), TS_VAL_AT,
+                                    TS_BITMASK);
     }
     // Close off all loops
     for (size_t dim = 0; dim < TS_DIM; dim++)
@@ -2307,15 +2378,15 @@ void
 GKCOcompCheckEnd() {
     DBUG_ENTER();
 
-    if (INTERNAL_COMPILER_CHECKS) {
+    if (global.gpukernel) {
         // Create extra variables
         char  * TS_VAL_AT   = VarCreate("val", false);
         char  * TS_BITMASK  = VarCreate("bitmask", false);
         strvec* TS_ID       = STRVECempty(TS_DIM);
         // Note: we call a STRVECfreeDeep at the end to free all created variables. Because of this, we have to create
         // heap-allocated copies of "true".
-        strvec*TS_IN_SPACE = STRVECmake(1, STRcpy("true"));
-        strvec*TS_IN_GRID = STRVECmake(1, STRcpy("true"));
+        strvec* TS_IN_SPACE = STRVECmake(1, STRcpy("true"));
+        strvec* TS_IN_GRID  = STRVECmake(1, STRcpy("true"));
         for (size_t dim = 0; dim < TS_DIM; dim++) {
             STRVECappend(TS_ID, VarCreate(CONST_IDX_POSTFIX, true));
             STRVECappend(TS_IN_SPACE, VarCreate("in_space", true));

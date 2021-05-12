@@ -70,8 +70,7 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, unsigned int vararg_cnt, char **var
         }
     }
 
-    // TODO: replace if (true) with something else
-    if (true)
+    if (global.gpukernel)
         fprintf (global.outfile, ", unsigned int* SAC_gkco_check_threadmapping_bitmask_dev");
     fprintf (global.outfile, ")");
 
@@ -239,8 +238,7 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
         }
     }
 
-    // TODO: replace if (true) with something else
-    if (true)
+    if (global.gpukernel)
         fprintf (global.outfile, ", SAC_gkco_check_threadmapping_bitmask_dev");
     fprintf (global.outfile, ");\n");
 
