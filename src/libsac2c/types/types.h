@@ -731,6 +731,15 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (RC_METHOD, rc_method, char *, str)                                     \
     DEF_RESOURCE (CUDA_ALLOC, cuda_alloc, char *, str)                                   \
     DEF_RESOURCE (CUDA_ARCH, cuda_arch, char *, str)                                     \
+    DEF_RESOURCE (CUDA_MAX_X_GRID, cuda_max_x_grid, int, num)                            \
+    DEF_RESOURCE (CUDA_MAX_Y_GRID, cuda_max_y_grid, int, num)                            \
+    DEF_RESOURCE (CUDA_MAX_Z_GRID, cuda_max_z_grid, int, num)                            \
+    DEF_RESOURCE (CUDA_MAX_X_BLOCK, cuda_max_x_block, int, num)                          \
+    DEF_RESOURCE (CUDA_MAX_Y_BLOCK, cuda_max_y_block, int, num)                          \
+    DEF_RESOURCE (CUDA_MAX_Z_BLOCK, cuda_max_z_block, int, num)                          \
+    DEF_RESOURCE (CUDA_MAX_BLOCK, cuda_max_block, int, num)                              \
+    DEF_RESOURCE (CUDA_DIM_GRID, cuda_dim_grid, int, num)                                \
+    DEF_RESOURCE (CUDA_DIM_BLOCK, cuda_dim_block, int, num)                              \
     DEF_RESOURCE (USE_PHM_API, use_phm_api, int, num)                                    \
     DEF_RESOURCE (RTSPEC, rtspec, int, num)                                              \
     DEF_RESOURCE (MT_LIB, mt_lib, char *, str)                                           \

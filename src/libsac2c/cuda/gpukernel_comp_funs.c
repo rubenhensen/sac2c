@@ -241,7 +241,6 @@ static char* CONST_UB_POSTFIX         = "ub";
 static char* CONST_IDX_POSTFIX        = "idx";
 static char* CONST_TMP_POSTFIX        = "tmp";
 static char* CONST_RETURN_COL_POSTFIX = "ret_col";
-static char* CONST_DBUG_PASS_SEP      = "----------------------------------------------------------------";
 
 /**
  * Flag locations inside the PASS identifier variables.
@@ -427,6 +426,8 @@ char* NewUpperboundVariable(gpukernelres_t* gkr, size_t dim) {
 #define LOOP_DIMENSIONS(gkr, dim) size_t dim = 0; (dim) < GKR_DIM(gkr); (dim)++
 #define LOOP_DIMENSIONS_INV(gkr, dim) size_t dim = GKR_DIM(gkr) - 1; (dim) != (size_t) -1; (dim)--
 
+#define CONST_DBUG_PASS_SEP DBUG_PRINT("----------------------------------------------------------------")
+
 void
 PrintDebugTrace(gpukernelres_t* gkr) {
     DBUG_ENTER();
@@ -439,13 +440,13 @@ PrintDebugTrace(gpukernelres_t* gkr) {
         fprintf(global.outfile, "], ");
     }
     fprintf(global.outfile, ")%%s\", \n");
-    for (LOOP_DIMENSIONS(gkr, dim) )
+    for (LOOP_DIMENSIONS(gkr, dim))
         fprintf(global.outfile, "%s, ", GKR_LB_D_READ(gkr, dim));
-    for (LOOP_DIMENSIONS(gkr, dim) )
+    for (LOOP_DIMENSIONS(gkr, dim))
         fprintf(global.outfile, "%s, ", GKR_UB_D_READ(gkr, dim));
-    for (LOOP_DIMENSIONS(gkr, dim) )
+    for (LOOP_DIMENSIONS(gkr, dim))
         fprintf(global.outfile, "%s, ", GKR_ST_D_READ(gkr, dim));
-    for (LOOP_DIMENSIONS(gkr, dim) )
+    for (LOOP_DIMENSIONS(gkr, dim))
         fprintf(global.outfile, "%s, ", GKR_WI_D_READ(gkr, dim));
     fprintf(global.outfile, "\"\");\n");
 
@@ -967,9 +968,9 @@ GKCOcompHostKernelPragma(node* spap, unsigned int bnum, char** bounds) {
      * in case accessors yield unexpected things.
      */
 
-    DBUG_PRINT(CONST_DBUG_PASS_SEP);
+    CONST_DBUG_PASS_SEP;
     DBUG_PRINT("Pass 1");
-    DBUG_PRINT(CONST_DBUG_PASS_SEP);
+    CONST_DBUG_PASS_SEP;
     gpukernelres_t* res = MakeGPUkernelres(PASS_HOST);
     res = dispatch(spap, res, bnum, bounds);
 
@@ -1013,15 +1014,15 @@ GKCOcompGPUDkernelPragma(node* spap, unsigned int bnum, char** bounds) {
      * in case accessors yield unexpected things.
      */
 
-    DBUG_PRINT(CONST_DBUG_PASS_SEP);
+    CONST_DBUG_PASS_SEP;
     DBUG_PRINT("Pass 2");
-    DBUG_PRINT(CONST_DBUG_PASS_SEP);
+    CONST_DBUG_PASS_SEP;
     gpukernelres_t* res = MakeGPUkernelres(PASS_KERNEL_THREADSPACE);
     res = dispatch(spap, res, bnum, bounds);
 
-    DBUG_PRINT(CONST_DBUG_PASS_SEP);
+    CONST_DBUG_PASS_SEP;
     DBUG_PRINT("Pass 3");
-    DBUG_PRINT(CONST_DBUG_PASS_SEP);
+    CONST_DBUG_PASS_SEP;
     GKR_CHANGE_PASS(res, PASS_KERNEL_WLIDS);
     res = dispatchInv(spap, bounds, res);
 
@@ -1091,14 +1092,14 @@ GKCOcompGridBlock(node* gridDims, gpukernelres_t* inner) {
     // The ICM's to be used for either the grid or the block
     char* icm[2] = {"SAC_GKCO_HOST_OPM_SET_GRID", "SAC_GKCO_HOST_OPM_SET_BLOCK"};
     // The range of grid and block dimensions. Grid: 0 - gridDims, Block: gridDims - dimensionality
-    size_t       from[2]  = {0, (size_t) NUM_VAL(gridDims)};
-    size_t       to[2]    = {(size_t) NUM_VAL(gridDims), GKR_DIM(inner)};
+    size_t from[2]  = {0, (size_t) NUM_VAL(gridDims)};
+    size_t to[2]    = {(size_t) NUM_VAL(gridDims), GKR_DIM(inner)};
     // The maximum number of threads per dimension, and the totals
-    unsigned int max_s[8] = {
-            global.cuda_options.cuda_max_x_grid, global.cuda_options.cuda_max_xy_block,  // max x
-            global.cuda_options.cuda_max_yz_grid, global.cuda_options.cuda_max_xy_block, // max y
-            global.cuda_options.cuda_max_yz_grid, global.cuda_options.cuda_max_z_block,  // max z
-            0, global.cuda_options.cuda_max_threads_block,                               // max product (only for block)
+    int    max_s[8] = {
+            global.config.cuda_max_x_grid, global.config.cuda_max_x_block,  // max x
+            global.config.cuda_max_y_grid, global.config.cuda_max_y_block,  // max y
+            global.config.cuda_max_z_grid, global.config.cuda_max_z_block,  // max z
+            0, global.config.cuda_max_block,                                // max product (only for block)
     };
 
     // Toggle the emitting of the grid/block variable code
@@ -1109,7 +1110,7 @@ GKCOcompGridBlock(node* gridDims, gpukernelres_t* inner) {
             INDENT
             // Prints the name of the macro, with the static arguments
             //                SAC_GKCO_SET_<> (max_x, max_y, max_z, max_total
-            fprintf(global.outfile, "%s(%u   , %u   , %u   , %u",
+            fprintf(global.outfile, "%s(%i   , %i   , %i   , %i",
                     icm[gb], max_s[gb], max_s[2 + gb], max_s[4 + gb], max_s[6 + gb]);
             // Print the dynamic arguments. From and to (defined above) determine what dimensions belong to the grid/block
             for (size_t dim = from[gb]; dim < to[gb]; dim++)
@@ -1156,10 +1157,11 @@ GKCOcompInvGridBlock(node* num, gpukernelres_t* outer) {
             INDENT
             fprintf(global.outfile, "SAC_GKCO_OPD_REDEFINE(%s, %s)\n\n",
                     grid_block_var[2 * xyz_int + gb], GKR_ID_D_READ(outer, dim));
-
-            GKCOcompInvStepWidthLB(dim, outer);
         }
     }
+
+    for (LOOP_DIMENSIONS_INV(outer, dim))
+        GKCOcompInvStepWidthLB(dim, outer);
 
     COMP_FUN_DBUG_RETURN(outer)
 }

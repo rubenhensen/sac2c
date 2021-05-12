@@ -110,25 +110,25 @@ checkNumsArg(node* args, const char* name) {
 
 static node*
 checkPermutationArg(node* args, const char* name) {
-    node* arg, *exprs;
+    node* arg, * exprs;
     DBUG_ENTER();
 
     checkNumsArg(args, name);
 
     size_t length = 0;
-    arg = EXPRS_EXPR(args);
+    arg   = EXPRS_EXPR(args);
     exprs = ARRAY_AELEMS(arg);
-    while (exprs != NULL){
-        length ++;
+    while (exprs != NULL) {
+        length++;
         exprs = EXPRS_NEXT(exprs);
     }
 
-    bool* perm_hits = (bool*) MEMmalloc(sizeof(bool*)*length);
-    for (size_t i=0; i<length; i++)
+    bool* perm_hits = (bool*) MEMmalloc(sizeof(bool*) * length);
+    for (size_t i = 0; i < length; i++)
         perm_hits[i] = false;
 
     exprs = ARRAY_AELEMS(arg);
-    while(exprs != NULL) {
+    while (exprs != NULL) {
         arg = EXPRS_EXPR(exprs);
         int point_dim = NUM_VAL(arg);
         if (point_dim < 0 || point_dim >= (int) length || perm_hits[point_dim])
@@ -179,12 +179,12 @@ checkArgsLength(node* arg, const size_t length, const char* name) {
         arg = EXPRS_EXPR(exprs);
         if (exprs == NULL)
             CTIerrorLoc(NODE_LOCATION(arg), "wrong first argument to %s: too short; "
-                                             "The list should be of length %zu", name, length);
+                                            "The list should be of length %zu", name, length);
         exprs = EXPRS_NEXT(exprs);
     }
     if (exprs != NULL)
         CTIerrorLoc(NODE_LOCATION(arg), "wrong first argument to %s: too long; "
-                                         "The list should be of length %zu", name, length);
+                                        "The list should be of length %zu", name, length);
 
     DBUG_RETURN ();
 }
@@ -196,19 +196,17 @@ checkDimensionSettings(node* gridDims_node, size_t dims) {
     size_t gridDims  = (size_t) NUM_VAL(gridDims_node);
     size_t blockDims = dims - gridDims;
 
-    // TODO: parametrize these two variables
-    size_t max_block_dims = 3;
-    size_t max_grid_dims  = 3;
 
     // < 0 check is not necessary, as we have unsigned numbers
-    if (gridDims > max_grid_dims)
-        CTIerrorLoc (NODE_LOCATION(gridDims_node), "Number of grid dimensions too high! "
-                                                   "Should be 0-%zu, currently %zu", max_grid_dims, gridDims);
+    if (gridDims > (size_t) global.config.cuda_dim_grid)
+        CTIerrorLoc(NODE_LOCATION(gridDims_node),
+                    "Number of grid dimensions too high! Should be 0-%i, currently %zu",
+                    global.config.cuda_dim_grid, gridDims);
     // < 0 check is not necessary, as we have unsigned numbers
-    if (blockDims > max_block_dims)
-        CTIerrorLoc (NODE_LOCATION(gridDims_node), "Number of block dimensions too high! "
-                                                   "Should be 0-%zu, currently %zu (%zu - %zu)",
-                                                   max_block_dims, blockDims, dims, gridDims);
+    if (blockDims > (size_t) global.config.cuda_dim_block)
+        CTIerrorLoc(NODE_LOCATION(gridDims_node),
+                    "Number of block dimensions too high! Should be 0-%i, currently %zu (%zu - %zu)",
+                    global.config.cuda_dim_block, blockDims, dims, gridDims);
 
     DBUG_RETURN();
 }
@@ -326,7 +324,6 @@ GKCHcheck ## fun (node *args)       \
 #include "gpukernel_funs.mac"
 
 #undef WLP
-
 
 
 #undef DBUG_PREFIX
