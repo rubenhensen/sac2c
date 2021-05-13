@@ -396,6 +396,11 @@
 
 #endif /* SAC_DO_CHECK_GPU */
 
+#if false
+#define SAC_PRAGMA_BITMASK_CHECK(krnl, is, ig, val, bitmask, flat, fmt, ...)                                \
+    val = bitmask[flat];                                                                                    \
+    fprintf(stderr, "%u ", val);
+#else
 #define SAC_PRAGMA_BITMASK_CHECK(krnl, is, ig, val, bitmask, flat, fmt, ...)                                \
     val = bitmask[flat];                                                                                    \
     if (is && ig) {                                                                                         \
@@ -422,10 +427,11 @@
             SAC_GPU_ERROR("Index (" fmt ") below lowerbound was hit %u times inside kernel %u!",            \
                              __VA_ARGS__, val, krnl);                                                       \
     }
+#endif
 
 #define SAC_PRAGMA_BITMASK_UB_CHECK(krnl, val, bitmask, size)                                               \
     val = bitmask[size];                                                                                    \
     if (val >= 1)                                                                                           \
-        SAC_RuntimeError("%u indexes above upperbound have been hit inside kernel %u!", val, krnl);
+        SAC_GPU_ERROR("%u indexes above upperbound have been hit inside kernel %u!", val, krnl);
 
 #endif /* _SAC_RUNTIMECHECK_H_ */

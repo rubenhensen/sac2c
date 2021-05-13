@@ -566,7 +566,7 @@ extern "C" {
 
 #define SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(ub_r, ub_w, st, wi, tmp_a, tmp_b)                                  \
     tmp_a = ub_r % st;                                                                                      \
-    tmp_b = tmp_a < w;                                                                                      \
+    tmp_b = tmp_a < wi;                                                                                      \
     ub_w = ub_r / st * wi                                                                                   \
             + TERNARY_BL(tmp_b, tmp_a, wi);
 

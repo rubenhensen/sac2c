@@ -1113,8 +1113,13 @@ GKCOcompGridBlock(node* gridDims, gpukernelres_t* inner) {
             fprintf(global.outfile, "%s(%i   , %i   , %i   , %i",
                     icm[gb], max_s[gb], max_s[2 + gb], max_s[4 + gb], max_s[6 + gb]);
             // Print the dynamic arguments. From and to (defined above) determine what dimensions belong to the grid/block
-            for (size_t dim = from[gb]; dim < to[gb]; dim++)
-                fprintf(global.outfile, ", %s", GKR_UB_D_READ(inner, dim));
+            for (size_t dim = from[gb]; dim < to[gb]; dim++) {
+                // CUDA becomes faster if we reverse the dimensions inside the grid/block. So, for 2 grid dimensions and
+                // 2 block dimensions, we would order the dimensions as GY, GX, BY, BX. rev_dim contains the reversed
+                // dimension.
+                size_t rev_dim = to[gb] - dim - 1 + from[gb];
+                fprintf(global.outfile, ", %s", GKR_UB_D_READ(inner, rev_dim));
+            }
             // The grid/block declaration should have at least 1 declaration, otherwise it fails
             if (from[gb] == to[gb])
                 fprintf(global.outfile, ", 1");
@@ -1143,20 +1148,25 @@ GKCOcompInvGridBlock(node* num, gpukernelres_t* outer) {
     size_t to[2]   = {(size_t) NUM_VAL(num), GKR_DIM(outer)};
     // The thread coordinate variables, also ICM's
     char* grid_block_var[6] = {
-            "THREADIDX_X", "BLOCKIDX_X",
-            "THREADIDX_Y", "BLOCKIDX_Y",
-            "THREADIDX_Z", "BLOCKIDX_Z",
+            "BLOCKIDX_X", "THREADIDX_X",
+            "BLOCKIDX_Y", "THREADIDX_Y",
+            "BLOCKIDX_Z", "THREADIDX_Z",
     };
 
     // Two iterations, one for the grid and one for the block. Inside the loop, the arrays above will determine the
     // actual values that are used.
-    for (size_t gb = 0; gb < 2; gb++) {
+    for (size_t gb = 1; gb != (size_t) -1; gb--) {
         // Print the dynamic arguments. From and to (defined above) determine what dimensions belong to the grid/block
         for (size_t dim = to[gb] - 1; dim != from[gb] - 1; dim--) {
+            // CUDA becomes faster if we reverse the dimensions inside the grid/block. So, for 2 grid dimensions and
+            // 2 block dimensions, we would order the dimensions as GY, GX, BY, BX. rev_dim contains the reversed
+            // dimension.
+            size_t rev_dim = to[gb] - dim - 1 + from[gb];
+            // xyz_dim contains the dimension x/y/z (respectively 0/1/2) we have to read from.
             size_t xyz_int = dim - from[gb];
             INDENT
             fprintf(global.outfile, "SAC_GKCO_OPD_REDEFINE(%s, %s)\n\n",
-                    grid_block_var[2 * xyz_int + gb], GKR_ID_D_READ(outer, dim));
+                    grid_block_var[2 * xyz_int + gb], GKR_ID_D_READ(outer, rev_dim));
         }
     }
 
@@ -1206,7 +1216,7 @@ GKCOcompGen(unsigned int bnum, char** bounds, gpukernelres_t* inner) {
     DBUG_ENTER ();
     DBUG_PRINT ("compiling Gen:");
     DBUG_EXECUTE (
-            fprintf(stderr, "\n    Gen ( %u", bnum);
+            fprintf(stderr, "    Gen ( %u", bnum);
             for (unsigned int i = 0; i < bnum; i++) {
                 fprintf(stderr, ", %s", bounds[i]);
             }
@@ -1287,7 +1297,7 @@ GKCOcompInvGen(char** bounds, gpukernelres_t* outer) {
     }
 
     // Fill the iv variable
-    for (LOOP_DIMENSIONS(outer, dim)) {
+    for (LOOP_DIMENSIONS_INV(outer, dim)) {
         INDENT
         fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_DEF_IV(%s, %zu, %s)\n\n",
                 iv_var, dim, GKR_ID_D_READ(outer, dim));
@@ -2188,6 +2198,21 @@ PrintComputeSize(size_t dims, strvec* ub) {
     DBUG_RETURN();
 }
 
+strvec*
+CopyStrvecNewVars(strvec* original, char* postfix) {
+    DBUG_ENTER();
+
+    strvec* newvec = STRVECcopy(original);
+
+    for (size_t i = 0; i < STRVEClen(newvec); i++) {
+        char* new_var = VarCreate(postfix, true);
+        char* old_var = STRVECswap(newvec, i, new_var);
+        fprintf(global.outfile, "SAC_GKCO_OPD_REDEFINE(%s, %s);\n", old_var, new_var);
+    }
+
+    DBUG_RETURN(newvec);
+}
+
 /**
  * Start the threadmapping bitmask check. The dimensionality and variable identifiers are stored in global variables
  * temporary, because otherwise we cannot access them after the kernels have completed and the gpukernelres_t has been
@@ -2201,10 +2226,10 @@ GKCOcompCheckStart(gpukernelres_t* res) {
 
     if (global.gpukernel && GKR_CHECK_PRAGMA(res)) {
         TS_DIM  = GKR_DIM(res);
-        TS_LB   = STRVECcopyDeep(GKR_LB(res));
-        TS_UB   = STRVECcopyDeep(GKR_UB(res));
-        TS_ST   = STRVECcopyDeep(GKR_ST(res));
-        TS_WI   = STRVECcopyDeep(GKR_WI(res));
+        TS_LB   = CopyStrvecNewVars(GKR_LB(res), "lb");
+        TS_UB   = CopyStrvecNewVars(GKR_UB(res), "ub");
+        TS_ST   = CopyStrvecNewVars(GKR_ST(res), "st");
+        TS_WI   = CopyStrvecNewVars(GKR_WI(res), "wi");
         TS_FLAT = VarCreate("flat", true);
         TS_SIZE = VarCreate("size", true);
 
@@ -2339,6 +2364,9 @@ CheckEndPrint(strvec* TS_ID, strvec* TS_IN_SPACE, strvec* TS_IN_GRID, char* TS_V
             INDENT
             fprintf(global.outfile, "%s = %s && (%s - %s) %% %s < %s;\n\n",
                     STRVECsel(TS_IN_GRID, dim + 1), STRVECsel(TS_IN_GRID, dim), id, lb, st, wi);
+
+            if (dim == 0)
+                fprintf(global.outfile, "fprintf(stderr, \"\\n\");\n");
         } else
             // If we have the last call of the loop (so we have generated all nested loops, and we are at the innermost
             // level), we print the actual checks.
@@ -2396,10 +2424,10 @@ GKCOcompCheckEnd() {
 
         CheckEndPrint(TS_ID, TS_IN_SPACE, TS_IN_GRID, TS_VAL_AT, TS_BITMASK);
 
-        //STRVECfreeDeep(TS_LB);
-        //STRVECfreeDeep(TS_UB);
-        //STRVECfreeDeep(TS_ST);
-        //STRVECfreeDeep(TS_WI);
+        STRVECfreeDeep(TS_LB);
+        STRVECfreeDeep(TS_UB);
+        STRVECfreeDeep(TS_ST);
+        STRVECfreeDeep(TS_WI);
         STRVECfreeDeep(TS_ID);
         //MEMfree(TS_FLAT);
         //MEMfree(TS_SIZE);
