@@ -467,31 +467,31 @@ ProcessRelFreeVariable (node *avis, char *new_name, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn static node *HandleBoundStepWidthExprs( node *expr,
- *                                             node **gridblock_exprs,
+ * @fn static node *HandleBoundStepWidthExprs( node *array,
+ *                                             size_t dims,
  *                                             char *name,
  *                                             info *arg_info)
  *
- * @param expr the AST of one of the four generator expressions
- * @param gridblock_exprs location of an N_exprs chain of nodes that serves
- *                        as parameters to F_cuda_grid_block, if NULL,
- *                        the parameter is not to be insert!
+ * @param array the AST of one of the four generator expressions
+ * @param dims number of elemens that should be in the bound
  * @param name string prefix, one of ("_lb_", "_ub_", "_step_", "_width")
  * @param arg_info
  *
- * @brief 1) assembles arguments to F_cuda_grid_block in *gridblock_exprs,
- *           PROVIDED gridblock_exprs is not NULL
+ * @brief 1) assembles arguments to F_thread_space in INFO_THREADSPACE
+ *           and for F_index_space in INFO_INDEXSPACE. If array == NULL,
+ *           dims many 1s are being inserted.
  *        2) generates N_exprs-chain for kernel function call => INFO_PARAMS
  *        3) generates N_arg-chain for kernel function definition => INFO_ARGS
  *
  *****************************************************************************/
 static void
-HandleBoundStepWidthExprs (node *array, int dims, char *name, info *arg_info)
+HandleBoundStepWidthExprs (node *array, size_t dims, char *name, info *arg_info)
 {
     node *elements;
     node *avis, *new_avis;
     char *bound_name;
-    int dim = 0, val;
+    size_t dim = 0;
+    int val;
 
     DBUG_ENTER ();
 
@@ -517,7 +517,7 @@ HandleBoundStepWidthExprs (node *array, int dims, char *name, info *arg_info)
                 avis = ID_AVIS (EXPRS_EXPR (elements));
                 bound_name = (char *)MEMmalloc (sizeof (char)
                                                 * (STRlen (name) + 3));
-                sprintf (bound_name, "%s%02d", name, dim);
+                sprintf (bound_name, "%s%02zu", name, dim);
                 new_avis = ProcessRelFreeVariable (avis, bound_name, arg_info);
     
                 INFO_THREADSPACE (arg_info) =
@@ -1189,7 +1189,7 @@ node *
 CUKNLgenerator (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
-    int dims;
+    size_t dims;
 
     if (INFO_IN_CUDA_WL (arg_info)) {
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
