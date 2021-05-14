@@ -7,7 +7,51 @@
  *   (<host2device>/<device2host>) out of a cond-fun. Memory transfers that
  *   are allowed to be moved out were tagged in the previous phase, i.e.
  *   Annotate Memory Transfer (ACTRAN).
+ *   The annotations are attached to the corresponding assignments:
+ *    - host2device : ASSIGN_ISNOTALLOWEDTOBEMOVEDUP
+ *    - device2host : ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN
  *
+ *   The transformations perform the following:
+ *
+ *   for host2device: (can be in either branch, once or multiple times! :-)
+ *
+ *    rt1, ..., rtn Cond( bool p, a1, ..., type ak, ... am)
+ *    {
+ *       ...
+ *       type_dev ti;
+ *       ...
+ *       if (p) {
+ *          ...
+ *          ti = _host2device_(ak); // !ASSIGN_ISNOTALLOWEDTOBEMOVEDUP
+ *          ... 
+ *       } else {
+ *          ...
+ *       }
+ *       r1 = ( p ? t1 : e1);
+ *       ...
+ *       rn = ( p ? tn : en);
+ *       return (r1, ..., rn);
+ *    }
+ *
+ *   is transformed into:
+ *
+ *    rt1, ..., rtn Cond( bool p, a1, ..., type_dev ti, ... am)
+ *    {
+ *       ...
+ *       type_dev ti;
+ *       ...
+ *       if (p) {
+ *          ...
+ *          ti = ti;
+ *          ...
+ *       } else {
+ *          ...
+ *       }
+ *       r1 = ( p ? t1 : e1);
+ *       ...
+ *       rn = ( p ? tn : en);
+ *       return (r1, ..., rn);
+ *    }
  *
  *****************************************************************************/
 
@@ -163,8 +207,6 @@ MCTRANdoMinimizeCondTransfers (node *syntax_tree)
     TRAVpop ();
 
     info = FreeInfo (info);
-
-    syntax_tree = DCRdoDeadCodeRemoval (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -650,7 +692,8 @@ MCTRANprf (node *arg_node, info *arg_info)
                 node *arg = ID_DECL (id);
 
                 if (CUisDeviceTypeNew (AVIS_TYPE (ARG_AVIS (arg)))) {
-                    arg_node = FREEdoFreeNode (arg_node);
+                    // arg has been converted already!
+                    arg_node = FREEdoFreeTree (arg_node);
                     arg_node = TBmakeId (ARG_AVIS (arg));
                 } else {
                     node *vardec = IDS_DECL (INFO_LETIDS (arg_info));

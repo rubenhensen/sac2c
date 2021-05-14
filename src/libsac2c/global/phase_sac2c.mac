@@ -1085,10 +1085,61 @@ SUBPHASE (sptn, "CUDA Split partitions", SPTNdoSplitPartitions,
 
 SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition, ALWAYS,
           cuda)
+#if 1
+CYCLE (mtranexp, "Optimise memory transfers for expar cycle (non-hybrid only)",
+       global.optimize.doexpar && global.optimize.domemopt && (global.backend == BE_cuda),
+       cuda, RESET)
 
+CYCLEPHASE (mbtran, "Minimise transfers within blocks", MBTRAN2doMinimizeBlockTransfers,
+            ALWAYS, cuda, mtranexp)
+
+CYCLEPHASE (actran, "Annotate Cond Funs", ACTRANdoAnnotateCondTransfers,
+            ALWAYS, cuda, mtranexp)
+
+CYCLEPHASE (mctran, "Lift transfers out of Cond funs", MCTRANdoMinimizeCondTransfers,
+            ALWAYS, cuda, mtranexp)
+
+CYCLEPHASE (dcr, "Dead Code Removal", DCRdoDeadCodeRemoval, ALWAYS, cuda, mtranexp)
+
+ENDCYCLE (mtranexp)
+
+CYCLE (mtran, "Optimise memory transfers cycle (non-hybrid only)",
+       global.optimize.domemopt && (global.backend == BE_cuda), cuda, RESET) 
+
+CYCLEPHASE (mcstran, "Minimise transfers within blocks", MBTRAN2doMinimizeBlockTransfers,
+            ALWAYS, cuda, mtran)
+
+CYCLEPHASE (mbtran, "Minimise transfers within blocks", MBTRAN2doMinimizeBlockTransfers,
+            ALWAYS, cuda, mtran)
+
+CYCLEPHASE (actran, "Annotate Cond Funs", ACTRANdoAnnotateCondTransfers,
+            ALWAYS, cuda, mtran)
+
+CYCLEPHASE (mctran, "Lift transfers out of Cond funs", MCTRANdoMinimizeCondTransfers,
+            ALWAYS, cuda, mtran)
+
+CYCLEPHASE (dcr, "Dead Code Removal", DCRdoDeadCodeRemoval, ALWAYS, cuda, mtran)
+
+CYCLEPHASE (mbtran2, "Minimise transfers within blocks", MBTRAN2doMinimizeBlockTransfers,
+            ALWAYS, cuda, mtran)
+
+CYCLEPHASE (amtran, "Annotate Memory Transfers", AMTRANdoAnnotateMemoryTransfers,
+            ALWAYS, cuda, mtran)
+
+CYCLEPHASE (mltran, "Lift transfers out of Loop funs", MLTRANdoMinimizeLoopTransfers,
+            ALWAYS, cuda, mtran)
+
+ENDCYCLE (mtran)
+
+SUBPHASE (memrt, "Lift emr allocations out of Loop funs", MEMRTdoMinimizeEMRTransfers,
+          global.optimize.doemrci && global.optimize.domemrt && global.optimize.domemopt
+          && (global.backend == BE_cuda), cuda)
+
+#else
 SUBPHASE (mtran, "CUDA Minimise the number of device-host data transfers (non-hybrid only)",
           MTRANdoMinimizeTransfers, global.optimize.domemopt &&global.backend == BE_cuda,
           cuda)
+#endif
 
 SUBPHASE (daa, "CUDA Data access analysis", DAAdoDataAccessAnalysis,
           global.optimize.doshr, cuda)
