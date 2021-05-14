@@ -309,12 +309,6 @@
  * ========================
  *
  ******************************************************************************/
-#if SAC_DO_TRACE_GPU
-#define SAC_GPU_ERROR(...) SAC_TR_GPU_PRINT(__VA_ARGS__)
-#else
-#define SAC_PRAGMA_BITMASK_ERROR(...) SAC_RuntimeError(__VA_ARGS__)
-#endif
-
 #if SAC_DO_CHECK_GPU
 
 #define SAC_CUDA_GET_LAST_ERROR_COND(ERROR_MSG, cu_status)                               \
@@ -353,31 +347,31 @@
 
 #define SAC_PRAGMA_GRID_CHECK(max_x, max_y, max_z, max_total)                                               \
     if (grid.x <= 0)                                                                                        \
-        SAC_GPU_ERROR("CUDA x grid dimension must be bigger then zero. Current value is %u", grid.x);       \
+        SAC_RuntimeError("CUDA x grid dimension must be bigger then zero. Current value is %u", grid.x);    \
     if (grid.y <= 0)                                                                                        \
-        SAC_GPU_ERROR("CUDA y grid dimension must be bigger then zero. Current value is %u", grid.y);       \
+        SAC_RuntimeError("CUDA y grid dimension must be bigger then zero. Current value is %u", grid.y);    \
     if (grid.z <= 0)                                                                                        \
-        SAC_GPU_ERROR("CUDA z grid dimension must be bigger then zero. Current value is %u", grid.z);       \
+        SAC_RuntimeError("CUDA z grid dimension must be bigger then zero. Current value is %u", grid.z);    \
                                                                                                             \
     if (grid.x > max_x || grid.y > max_y || grid.z > max_z)                                                 \
-        SAC_GPU_ERROR("CUDA XYZ grid dimension of %u x %u x %u exceeds "                                    \
+        SAC_RuntimeError("CUDA XYZ grid dimension of %u x %u x %u exceeds "                                 \
                          "the compute capability's max value of %u x %u x %u",                              \
                          grid.x, grid.y, grid.z, max_x, max_y, max_z);
 
 #define SAC_PRAGMA_BLOCK_CHECK(max_x, max_y, max_z, max_total)                                              \
     if (block.x <= 0)                                                                                       \
-        SAC_GPU_ERROR("CUDA x block dimension must be bigger then zero. Current value is %u", block.x);     \
+        SAC_RuntimeError("CUDA x block dimension must be bigger then zero. Current value is %u", block.x);  \
     if (block.y <= 0)                                                                                       \
-        SAC_GPU_ERROR("CUDA y block dimension must be bigger then zero. Current value is %u", block.y);     \
+        SAC_RuntimeError("CUDA y block dimension must be bigger then zero. Current value is %u", block.y);  \
     if (block.z <= 0)                                                                                       \
-        SAC_GPU_ERROR("CUDA z block dimension must be bigger then zero. Current value is %u", block.z);     \
+        SAC_RuntimeError("CUDA z block dimension must be bigger then zero. Current value is %u", block.z);  \
                                                                                                             \
     if (block.x > max_x || block.y > max_y || block.z > max_z)                                              \
-        SAC_GPU_ERROR("CUDA XYZ block dimension of %u x %u x %u exceeds "                                   \
+        SAC_RuntimeError("CUDA XYZ block dimension of %u x %u x %u exceeds "                                \
                          "the compute capability's max value of %u x %u x %u",                              \
                          block.x, block.y, block.z, max_x, max_y, max_z);                                   \
     if (block.x * block.y * block.z > max_total)                                                            \
-        SAC_GPU_ERROR("CUDA XYZ block dimension of %u x %u x %u = %u exceeds compute capability's "         \
+        SAC_RuntimeError("CUDA XYZ block dimension of %u x %u x %u = %u exceeds compute capability's "      \
                          "max number of threads per block: %u",                                             \
                          block.x, block.y, block.z, block.x * block.y * block.z, max_total);
 
@@ -396,42 +390,44 @@
 
 #endif /* SAC_DO_CHECK_GPU */
 
-#if false
+#if SAC_DO_TRACE_GPU
 #define SAC_PRAGMA_BITMASK_CHECK(krnl, is, ig, val, bitmask, flat, fmt, ...)                                \
     val = bitmask[flat];                                                                                    \
     fprintf(stderr, "%u ", val);
+#define SAC_PRAGMA_BITMASK_CHECK_NL fprintf(stderr, "\n");
 #else
 #define SAC_PRAGMA_BITMASK_CHECK(krnl, is, ig, val, bitmask, flat, fmt, ...)                                \
     val = bitmask[flat];                                                                                    \
     if (is && ig) {                                                                                         \
         if (val == 0)                                                                                       \
-            SAC_GPU_ERROR("Index (" fmt ") inside grid was not hit inside kernel %u!",                      \
+            SAC_RuntimeError("Index (" fmt ") inside grid was not hit inside kernel %u!",                   \
                              __VA_ARGS__, krnl);                                                            \
         if (val >= 2)                                                                                       \
-            SAC_GPU_ERROR("Index (" fmt ") inside grid was hit %u times inside kernel %u!",                 \
+            SAC_RuntimeError("Index (" fmt ") inside grid was hit %u times inside kernel %u!",              \
                              __VA_ARGS__, val, krnl);                                                       \
     }                                                                                                       \
     else if (is) {                                                                                          \
         if (val == 1)                                                                                       \
-            SAC_GPU_ERROR("Index (" fmt ") outside the grid was hit inside kernel %u!",                     \
+            SAC_RuntimeError("Index (" fmt ") outside the grid was hit inside kernel %u!",                  \
                              __VA_ARGS__, krnl);                                                            \
         if (val >= 2)                                                                                       \
-            SAC_GPU_ERROR("Index (" fmt ") outside the grid was hit %u times inside kernel %u!",            \
+            SAC_RuntimeError("Index (" fmt ") outside the grid was hit %u times inside kernel %u!",         \
                              __VA_ARGS__, val, krnl);                                                       \
     }                                                                                                       \
     else {                                                                                                  \
         if (val == 1)                                                                                       \
-            SAC_GPU_ERROR("Index (" fmt ") below lowerbound was hit inside kernel %u!",                     \
+            SAC_RuntimeError("Index (" fmt ") below lowerbound was hit inside kernel %u!",                  \
                              __VA_ARGS__, krnl);                                                            \
         if (val >= 2)                                                                                       \
-            SAC_GPU_ERROR("Index (" fmt ") below lowerbound was hit %u times inside kernel %u!",            \
+            SAC_RuntimeError("Index (" fmt ") below lowerbound was hit %u times inside kernel %u!",         \
                              __VA_ARGS__, val, krnl);                                                       \
     }
+#define SAC_PRAGMA_BITMASK_CHECK_NL
 #endif
 
 #define SAC_PRAGMA_BITMASK_UB_CHECK(krnl, val, bitmask, size)                                               \
     val = bitmask[size];                                                                                    \
     if (val >= 1)                                                                                           \
-        SAC_GPU_ERROR("%u indexes above upperbound have been hit inside kernel %u!", val, krnl);
+        SAC_RuntimeError("%u indexes above upperbound have been hit inside kernel %u!", val, krnl);
 
 #endif /* _SAC_RUNTIMECHECK_H_ */

@@ -198,6 +198,7 @@
  *   - Definition of gpukernelres_t, it's getters and setters, and helper functions/defines
  *   - The pragma traversal loop and the entry functions to this code
  *   - The mappings and their inverses
+ *   - Implementation correctness tests
  *
  * @ingroup
  *
@@ -2366,7 +2367,7 @@ CheckEndPrint(strvec* TS_ID, strvec* TS_IN_SPACE, strvec* TS_IN_GRID, char* TS_V
                     STRVECsel(TS_IN_GRID, dim + 1), STRVECsel(TS_IN_GRID, dim), id, lb, st, wi);
 
             if (dim == 0)
-                fprintf(global.outfile, "fprintf(stderr, \"\\n\");\n");
+                fprintf(global.outfile, "SAC_PRAGMA_BITMASK_CHECK_NL\n");
         } else
             // If we have the last call of the loop (so we have generated all nested loops, and we are at the innermost
             // level), we print the actual checks.
@@ -2384,6 +2385,8 @@ CheckEndPrint(strvec* TS_ID, strvec* TS_IN_SPACE, strvec* TS_IN_GRID, char* TS_V
     fprintf(global.outfile, "SAC_PRAGMA_BITMASK_UB_CHECK(%zu, %s, %s, %s)\n\n",
             TS_KERNEL, TS_VAL_UB, TS_BITMASK, TS_SIZE);
     MEMfree(TS_VAL_UB);
+    fprintf(global.outfile, "fprintf(stderr, \"\\n\");\n");
+    fprintf(global.outfile, "SAC_PRAGMA_BITMASK_CHECK_NL\n");
 
     DBUG_RETURN();
 }
