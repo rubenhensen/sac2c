@@ -311,7 +311,7 @@ PrintBreakoptionSpecifierSac2c (void)
     DBUG_ENTER ();
 
     printf ("\n\nBREAK OPTION SPECIFIERS: %s\n", (global.verbose_help ?
-                                                  "(all, including disabled phases)" :
+                                                  "(all, * indicates enabled phases)" :
                                                   "(only enabled phases)"));
 
     PHOprintPhasesSac2c ();
@@ -417,7 +417,7 @@ PrintOptimisationOptions (void)
 #else
 #define OPTIMIZE(str, abbr, devl, prod, name)                                            \
     printf ("      %s%s %-8s%s\n", global.optimize.do ## abbr ? "*" : " ",               \
-                                   devl ? "*" : " ", str, name);
+                                   devl ? "|*" : "  ", str, name);
 #endif
 #include "optimize.mac"
 
@@ -748,22 +748,11 @@ PrintMultithreadOptions (void)
 }
 
 static void
-PrintBackendOptions (void)
+PrintCudaOptions (void)
 {
     DBUG_ENTER ();
 
-    printf ("\n\nBACKEND OPTIONS:\n"
-            "\n"
-            "    -minarrayrep <class>\n"
-            "                    Specify the minimum array representation class used:\n"
-            "                      s: use all (SCL, AKS, AKD, AUD) representations,\n"
-            "                      d: use SCL, AKD, AUD representations only,\n"
-            "                      +: use SCL, AUD representations only,\n"
-            "                      *: use AUD representation only.\n"
-            "                    (default: s)\n"
-            "\n"
-            "    -force_desc_size <n>\n"
-            "                    Force the size of the descriptor to n bytes\n"
+    printf ("\n\nCUDA OPTIONS:\n"
             "\n"
             "    -cuda_arch <sm>\n"
             "                    Specify which CUDA architecture to generate code for:\n"
@@ -793,6 +782,28 @@ PrintBackendOptions (void)
             "                      2d_x: 2-dim block size for the x-dim\n"
             "                      2d_y: 2-dim block size for the y-dim\n"
             "                    (default: depends on <cuda_arch> value)\n"
+            "\n");
+
+    DBUG_RETURN ();
+}
+
+static void
+PrintBackendOptions (void)
+{
+    DBUG_ENTER ();
+
+    printf ("\n\nBACKEND OPTIONS:\n"
+            "\n"
+            "    -minarrayrep <class>\n"
+            "                    Specify the minimum array representation class used:\n"
+            "                      s: use all (SCL, AKS, AKD, AUD) representations,\n"
+            "                      d: use SCL, AKD, AUD representations only,\n"
+            "                      +: use SCL, AUD representations only,\n"
+            "                      *: use AUD representation only.\n"
+            "                    (default: s)\n"
+            "\n"
+            "    -force_desc_size <n>\n"
+            "                    Force the size of the descriptor to n bytes\n"
             "\n");
 
     DBUG_RETURN ();
@@ -1341,11 +1352,13 @@ USGprintUsage ()
         if (global.verbose_help)
             PrintTypeInferenceOptions ();
         PrintOptimisationOptions ();
-        if (global.verbose_help)
+        if (global.verbose_help || (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop))
             PrintMultithreadOptions ();
-        if (global.verbose_help)
+        if (global.verbose_help || (global.backend == BE_cuda) || (global.backend == BE_cudahybrid))
+            PrintCudaOptions ();
+        if (global.verbose_help||(global.backend == BE_distmem))
             PrintDistMemOptions ();
-        if (global.verbose_help)
+        if (global.verbose_help||(global.backend == BE_mutc))
             PrintMutcOptions ();
         if (global.verbose_help)
             PrintBackendOptions ();

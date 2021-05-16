@@ -297,14 +297,6 @@ SUBPHASE (dfr2, "Removing dead functions", DFRdoDeadFunctionRemoval,
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, opt)
 
-SUBPHASE (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
-          FALSE, // global.optimize.dodlir,
-          opt)
-
-SUBPHASE (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
-          FALSE, // global.optimize.dowlir,
-          opt)
-
 SUBPHASE (glf, "Grouping local functions", GLFdoGroupLocalFuns, ALWAYS, opt)
 
 SUBPHASE (linl, "Inlining degenerated LaC functions", LINLdoLACInlining, global.lacinline,
@@ -836,7 +828,7 @@ SUBPHASE (dcr4, "Removing dead code", DCRdoDeadCodeRemoval,
  */
 
 CYCLE (scyc, "Type stabilization cycle",
-       global.run_stabilization_cycle &&global.optimize.doscyc, opt, !RESET)
+       global.optimize.doscyc, opt, !RESET)
 
 FUNBEGIN (scyc, opt, scyc)
 
