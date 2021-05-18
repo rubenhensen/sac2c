@@ -782,6 +782,13 @@ PrintCudaOptions (void)
             "                      2d_x: 2-dim block size for the x-dim\n"
             "                      2d_y: 2-dim block size for the y-dim\n"
             "                    (default: depends on <cuda_arch> value)\n"
+            "\n"
+            "    -cuda_gpu_branching\n"
+            "                    Switch to branching implementation of the CUDA kernel mappings.\n"
+            "                    Branchless implementations should be faster in 99%% of the cases,\n"
+            "                    but in some complex cases where many kernels can be discarded\n"
+            "                    early on in the process, the branching implementation may be faster. \n"
+            "                    (default: branchless implementation)\n"
             "\n");
 
     DBUG_RETURN ();

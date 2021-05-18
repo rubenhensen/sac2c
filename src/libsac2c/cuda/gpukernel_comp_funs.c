@@ -233,8 +233,6 @@
 ************************************************************************************************************************
 \**********************************************************************************************************************/
 
-#define BRANCHLESS_IMPLEMENTATION true
-
 static char* CONST_ZERO               = "0";
 static char* CONST_ONE                = "1";
 static char* CONST_VAR_PREFIX         = "SAC_gkco";
@@ -257,7 +255,7 @@ static char* CONST_RETURN_COL_POSTFIX = "ret_col";
 // Pass should generate pragma errors (to prevent duplicate errors), and trace calls
 #define PASS_CHECK_PRAGMA 16
 // Pass should execute branchless. It will be interesting to see how much difference it makes.
-#define PASS_BRANCHLESS  (32 * BRANCHLESS_IMPLEMENTATION)
+#define PASS_BRANCHLESS  (32 * (size_t) !global.cuda_gpu_branching)
 
 /**
  * Enum to specify a pass over the Pragma functions. These enum value toggle certain functionalities in

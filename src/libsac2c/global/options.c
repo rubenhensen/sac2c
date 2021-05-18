@@ -753,6 +753,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("cuda_shape", strncpy (global.cuda_block_spec, ARG, 1023));
 
+    ARGS_FLAG("cuda_gpu_branching", global.cuda_gpu_branching = 1);
+
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
      */
