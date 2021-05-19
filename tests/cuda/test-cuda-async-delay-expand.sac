@@ -4,7 +4,7 @@
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -t cuda_reg -docuad -bcuda:cuade
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -nocuade $< | grep -A1 '_iwlmem_5485_dev =' | $(GREP_COMMAND_OUTPUT) '_start_( a)' 1
+// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -nocuade $< | grep -A1 '_iwlmem_[0-9]*_dev =' | $(GREP_COMMAND_OUTPUT) '_start_( a)' 1
 // SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -nocuade $< | grep -A1 '_cuad_.*_host =' | $(GREP_COMMAND_OUTPUT) 'k =.*_end_( _cuad_.*_host,' 1
 // SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -docuade $< | grep -A1 'a = _MAIN' | $(GREP_COMMAND_OUTPUT) '_cuad_.*_dev =.*_start_( a)' 1
 #include "mini-stdlib.sac"
