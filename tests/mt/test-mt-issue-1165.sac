@@ -3,12 +3,10 @@
 //
 
 // SAC_TEST|include common.mk
-// SAC_TEST|SAC2C_FLAGS += -t mt_pth -minmtsize 5
-// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -trace m
+// SAC_TEST|SAC2C_FLAGS += -t mt_pth -minmtsize 5 -trace m
 //
-// SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>$(CALL_SAC2C) $<
-// SAC_TEST|<tab>./a.out -mt 4 2>&1 | fgrep "now" | tail -n 1 | $(GREP_COMMAND_OUTPUT) "now: 0" 1
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>./$< -mt 4 2>&1 | fgrep "now" | tail -n 1 | $(GREP_COMMAND_OUTPUT) "now: 0" 1
 
 noinline
 int[.] ++( int[.] arr_a, int[.] arr_b)
