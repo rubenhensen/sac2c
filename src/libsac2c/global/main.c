@@ -59,6 +59,8 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
        process.  */
     set_debug_exit_function (CTIexit);
 
+    CTIset_stderr (stderr);
+
     setlocale (LC_ALL, "en_US");
     CTIinstallInterruptHandlers ();
     OPTcheckPreSetupOptions (argc, argv);

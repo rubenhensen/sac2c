@@ -572,6 +572,8 @@ ${CMAKE_CURRENT_SOURCE_DIR}/wltransform/wl_split_dimensions.c
 ${CMAKE_CURRENT_SOURCE_DIR}/wltransform/wlidxs.c
 ${CMAKE_CURRENT_SOURCE_DIR}/wltransform/wlpragma_funs.c
 ${CMAKE_CURRENT_SOURCE_DIR}/wltransform/wltransform.c
+# Jupyter interface
+${CMAKE_CURRENT_SOURCE_DIR}/global/jupyter.c
 # Generated files now
 #${CMAKE_CURRENT_BINARY_DIR}/codegen/fancy_icm_vars.c
 ${XSL_DONE_FILES}

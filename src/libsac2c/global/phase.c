@@ -588,8 +588,10 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
         fundef = PHIphaseFun (cyclephase) (fundef);
         TIMEend (cyclephase);
 
-        DBUG_ASSERT (FUNDEF_NEXT (fundef) == NULL,
-                     "Fun-based cycle phase returned more than one fundef.");
+        // Allow a phase to return multiple functions.
+        // Iterate through the chain towards the last function.
+        while (FUNDEF_NEXT (fundef))
+          fundef = FUNDEF_NEXT (fundef);
         FUNDEF_NEXT (fundef) = fundef_next;
 
         CTIabortOnError ();

@@ -72,8 +72,10 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         DSinitDeserialize (syntaxtree);
 
         DSaddSymbolByName ("sel", SET_wrapperhead, global.preludename);
+#if ENABLE_DISTMEM
         DSaddSymbolByName ("_selVxADistmemLocal", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("_selSxADistmemLocal", SET_wrapperhead, global.preludename);
+#endif
         DSaddSymbolByName ("zero", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("eq", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("adjustLacFunParams", SET_wrapperhead, global.preludename);
@@ -93,12 +95,16 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         DSaddSymbolByName ("gridFiller", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("++", SET_wrapperhead, global.preludename);
 
+        node *last_fundef = MODULE_FUNS (syntaxtree);
+        while (last_fundef && FUNDEF_NEXT (last_fundef))
+          last_fundef = FUNDEF_NEXT (last_fundef);
+
         DSfinishDeserialize (syntaxtree);
 
         /*
          * prevent prelude functions from being deleted
          */
-        syntaxtree = TagPreludeAsSticky (syntaxtree);
+        last_fundef = TagPreludeAsSticky (last_fundef);
     } else {
         CTInote ("The prelude library `%s' has not been loaded.", global.preludename);
     }

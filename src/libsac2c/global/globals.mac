@@ -75,6 +75,11 @@ GLOBAL (const char *, preludename, SAC_PRELUDE_NAME, xfree_dummy, )
  */
 GLOBAL (bool, loadprelude, TRUE, xfree_dummy, )
 
+/* This triggers whether to load libsac, libphm, and friends.
+   We use this when compiling sacprelude.  This flag can be possibly
+   avoided if libsacprelude would depend on libsac, libphm, etc.  */
+GLOBAL (bool, loadsaclibs, TRUE, xfree_dummy, )
+
 /*
  *  File handling
  */

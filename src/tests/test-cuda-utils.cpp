@@ -7,6 +7,7 @@ extern "C" {
 #include "debug.h"
 #include "new_types.h"
 #include "shape.h"
+#include "ctinfo.h"
 }
 
 TEST (CUDA_UTILS, SupportedHostType)
@@ -77,6 +78,7 @@ TEST (CUDA_UTILS, IsShmemType)
 
 TEST (CUDA_UTILS, ConvertH2DSimpleType)
 {
+    CTIset_stderr (stderr);
     ASSERT_TRUE (CUh2dSimpleTypeConversion (T_int) == T_int_dev);
     ASSERT_TRUE (CUh2dSimpleTypeConversion (T_float) == T_float_dev);
 
@@ -86,6 +88,7 @@ TEST (CUDA_UTILS, ConvertH2DSimpleType)
 
 TEST (CUDA_UTILS, ConvertD2HSimpleType)
 {
+    CTIset_stderr (stderr);
     ASSERT_TRUE (CUd2hSimpleTypeConversion (T_int_dev) == T_int);
     ASSERT_TRUE (CUd2hSimpleTypeConversion (T_float_dev) == T_float);
 
@@ -95,6 +98,7 @@ TEST (CUDA_UTILS, ConvertD2HSimpleType)
 
 TEST (CUDA_UTILS, ConvertH2SHSimpleType)
 {
+    CTIset_stderr (stderr);
     ASSERT_TRUE (CUh2shSimpleTypeConversion (T_int) == T_int_shmem);
     ASSERT_TRUE (CUh2shSimpleTypeConversion (T_float) == T_float_shmem);
 
@@ -104,6 +108,7 @@ TEST (CUDA_UTILS, ConvertH2SHSimpleType)
 
 TEST (CUDA_UTILS, ConvertD2SHSimpleType)
 {
+    CTIset_stderr (stderr);
     ASSERT_TRUE (CUd2shSimpleTypeConversion (T_int_dev) == T_int_shmem);
     ASSERT_TRUE (CUd2shSimpleTypeConversion (T_float_dev) == T_float_shmem);
 
