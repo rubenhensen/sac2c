@@ -6,12 +6,15 @@
 // SAC_TEST|SAC2C_FLAGS += -t mt_pth
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 //
+// SAC_TEST|TMP := $(shell mktemp)
+//
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>$(CALL_SAC2C) -bmt -printfun main $< > tutu
-// SAC_TEST|<tab>cat tutu | $(GREP_COMMAND_OUTPUT) "_mtspmdf_" 1
-// SAC_TEST|<tab>cat tutu | $(GREP_COMMAND_OUTPUT) "_dec_rc_" 2
-// SAC_TEST|<tab>$(CALL_SAC2C) -trace rm $<
-// SAC_TEST|<tab>./a.out -mt 4 2>&1 | fgrep "now" | tail -n 1 | $(GREP_COMMAND_OUTPUT) "now: 0" 1
+// SAC_TEST|<tab>$(CALL_SAC2C) -bmt -printfun main $< > $(TMP)
+// SAC_TEST|<tab>cat $(TMP) | $(GREP_COMMAND_OUTPUT) "_mtspmdf_" 1
+// SAC_TEST|<tab>cat $(TMP) | $(GREP_COMMAND_OUTPUT) "_dec_rc_" 2
+// SAC_TEST|<tab>$(RM) $(TMP)
+// SAC_TEST|<tab>$(CALL_SAC2C) -trace rm $< -o <file-name-we>
+// SAC_TEST|<tab>./<file-name-we> -mt 4 2>&1 | fgrep "now" | tail -n 1 | $(GREP_COMMAND_OUTPUT) "now: 0" 1
 
 #include "mini-stdlib.sac"
 

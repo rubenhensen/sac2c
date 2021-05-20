@@ -6,10 +6,13 @@
 // SAC_TEST|SAC2C_FLAGS += -t mt_pth
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
 //
+// SAC_TEST|TMP := $(shell mktemp)
+//
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>$(CALL_SAC2C) $< -bmt -printfun main > tutu
-// SAC_TEST|<tab>cat tutu | $(GREP_COMMAND_OUTPUT) "_mtspmdf_" 1
-// SAC_TEST|<tab>cat tutu | $(GREP_COMMAND_OUTPUT) "_dec_rc_" 1
+// SAC_TEST|<tab>$(CALL_SAC2C) $< -bmt -printfun main > $(TMP)
+// SAC_TEST|<tab>cat $(TMP)   | $(GREP_COMMAND_OUTPUT) "_mtspmdf_" 1
+// SAC_TEST|<tab>cat $(TMP)   | $(GREP_COMMAND_OUTPUT) "_dec_rc_" 1
+// SAC_TEST|<tab>$(RM) $(TMP)
 
 #include "mini-stdlib.sac"
 
