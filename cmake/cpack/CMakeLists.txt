@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.10)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.17)
 
 # Name of the project - we intentionally do not indicate any language
 PROJECT (sac2c-packages NONE)
