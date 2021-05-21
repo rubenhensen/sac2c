@@ -105,11 +105,11 @@ struct INFO {
     bool hd;
     node *didxs;
     node *zexpr;
-    int lm;
-    int ln;
-    int rm;
-    int rn;
-    int k;
+    size_t lm;
+    size_t ln;
+    size_t rm;
+    size_t rn;
+    size_t k;
     struct INFO *next;
 };
 
@@ -529,7 +529,7 @@ AnalyseVec (node *vec, info *arg_info)
             vec = EXPRS_NEXT (vec);
         }
     }
-    DBUG_PRINT ("Vec analyses yields: lm = %d, ln = %d | k = %d | rm = %d, rn = %d\n",
+    DBUG_PRINT ("Vec analyses yields: lm = %zu, ln = %zu | k = %zu | rm = %zu, rn = %zu\n",
                 INFO_HSED_LM (arg_info), INFO_HSED_LN (arg_info), INFO_HSED_K (arg_info),
                 INFO_HSED_RM (arg_info), INFO_HSED_RN (arg_info));
 

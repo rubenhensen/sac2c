@@ -310,7 +310,7 @@ FreeDotInfo (dotinfo *node)
  *
  * @return the position of the given dot within the selection vector
  */
-static int
+static size_t
 LDot2Pos (int dot, dotinfo *info)
 {
     dotlist *dots = info->left;
@@ -331,7 +331,7 @@ LDot2Pos (int dot, dotinfo *info)
  *
  * @return the position of the given dot within the selection vector
  */
-static int
+static size_t
 RDot2Pos (int dot, dotinfo *info)
 {
     dotlist *dots = info->right;
@@ -495,8 +495,8 @@ BuildConcat (node *a, node *b)
 static node *
 BuildLeftShape (node *array, dotinfo *info)
 {
-    int cnt;
-    int maxdot;
+    size_t cnt;
+    size_t maxdot;
     node *result = NULL;
 
     DBUG_ENTER ();
@@ -509,7 +509,7 @@ BuildLeftShape (node *array, dotinfo *info)
     for (cnt = maxdot; cnt > 0; cnt--) {
         result = TBmakeExprs (MAKE_BIN_PRF (F_sel_VxA,
                                             TCmakeIntVector (
-                                              TBmakeExprs (TBmakeNum (LDot2Pos (cnt, info)
+                                              TBmakeExprs (TBmakeNum ((int)LDot2Pos (cnt, info)
                                                                       - 1),
                                                            NULL)),
                                             TBmakePrf (F_shape_A,
@@ -548,7 +548,7 @@ BuildMiddleShape (node *array, dotinfo *info)
 
     shape = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL));
 
-    left = TBmakeNum (info->triplepos - 1);
+    left = TBmakeNum ((int)info->triplepos - 1);
 
     right = TBmakeNum (info->selcnt - info->triplepos);
 
@@ -570,8 +570,8 @@ BuildMiddleShape (node *array, dotinfo *info)
 static node *
 BuildRightShape (node *array, dotinfo *info)
 {
-    int cnt;
-    int maxdot;
+    size_t cnt;
+    size_t maxdot;
     node *result = NULL;
 
     DBUG_ENTER ();
@@ -593,7 +593,7 @@ BuildRightShape (node *array, dotinfo *info)
                                                                                 array),
                                                                               NULL)),
                                                       NULL))),
-                TBmakeNum (RDot2Pos (cnt, info))),
+                TBmakeNum ((int)RDot2Pos (cnt, info))),
               NULL)),
             TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL))),
           result);
@@ -728,8 +728,8 @@ BuildMiddleIndex (node *args, node *iv, dotinfo *info)
 
     DBUG_ENTER ();
 
-    left = TBmakeNum (info->tripledot - 1);
-    right = TBmakeNum (info->dotcnt - info->tripledot);
+    left = TBmakeNum ((int)info->tripledot - 1);
+    right = TBmakeNum ((int)info->dotcnt - info->tripledot);
 
     result = BuildDrop (left, right, DUPdoDupTree (iv));
 
@@ -772,7 +772,7 @@ BuildRightIndex (node *args, node *iv, dotinfo *info)
                                               TBmakePrf (F_shape_A,
                                                          TBmakeExprs (DUPdoDupTree (iv),
                                                                       NULL))),
-                                TBmakeNum (RIsDot (cnt, info))),
+                                TBmakeNum ((int)RIsDot (cnt, info))),
                   NULL)),
                 DUPdoDupTree (iv)),
               result);
@@ -930,7 +930,7 @@ BuildSelectionElementShape (node *array, dotinfo *info)
     DBUG_ENTER ();
 
     shape
-      = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (info->selcnt),
+      = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum ((int)info->selcnt),
                       TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL)));
 
     DBUG_RETURN (shape);
