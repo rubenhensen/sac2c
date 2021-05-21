@@ -5,11 +5,18 @@
 bin/*
 lib/*
 src/bin/*
-/.project
 .make_track
+a.out
+a.out.c
+Session.vim
 
-# cmake directories
+# ide/clangd
+/.project
+/.clangd
+
+# cmake
 build*/
+compile_commands.json
 
 # SaC generated files.
 src/doc/ast.html

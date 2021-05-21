@@ -125,9 +125,9 @@ OPTcheckPostSetupOptions (void)
     CHECKDEFAULT (dodpa, global.config.use_phm_api);
     CHECKDEFAULT (domsca, global.config.use_phm_api);
 
-    if (global.print_help_and_exit == TRUE) {
+    if (global.print_help_and_exit) {
         USGprintUsage ();
-        exit (0);
+        CTIexit (EXIT_SUCCESS);
     }
 
     DBUG_RETURN ();
@@ -396,6 +396,20 @@ OPTcheckOptionConsistency (void)
         CTIerror ("Functional Parallelism only works when MT is enabled");
     }
 
+    if (STReq (global.config.cuda_alloc, "cumanp") && global.cuda_arch < CUDA_SM60) {
+        CTIwarn ("Compiling for CC < 6.0 (Pascal), CUDA prefetching is not available. Disabling...");
+       global.optimize.docuprf = FALSE;
+    }
+
+    if (global.cuda_block_spec[0] != '\0') {
+        unsigned count, i;
+        for (i = 0, count = 0; global.cuda_block_spec[i]; i++)
+            count += (global.cuda_block_spec[i] == ',');
+        if (count != 2)
+            CTIerror ("CUDA block shape is incorrectly given, format "
+                      "must be `1d,2d_x,2d_y`");
+    }
+
     if (global.optimize.dosaa && !global.optimize.dodcr) {
         CTIwarn ("Symbolic array attributes (SAA) require dead code"
                  "removal (DCR).\n"
@@ -647,7 +661,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("chkfreq", ARG_RANGE (global.check_frequency, 0, 4));
 
-    ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
+    ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (0));
 
     ARGS_OPTION_BEGIN ("cppI")
     {
@@ -710,6 +724,37 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("cc");
+
+    ARGS_OPTION_BEGIN ("cuda_arch")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("sm10", global.cuda_arch = CUDA_SM10);
+        ARG_CHOICE ("sm11", global.cuda_arch = CUDA_SM11);
+        ARG_CHOICE ("sm12", global.cuda_arch = CUDA_SM12);
+        ARG_CHOICE ("sm13", global.cuda_arch = CUDA_SM13);
+        ARG_CHOICE ("sm20", global.cuda_arch = CUDA_SM20);
+        ARG_CHOICE ("sm35", global.cuda_arch = CUDA_SM35);
+        ARG_CHOICE ("sm50", global.cuda_arch = CUDA_SM50);
+        ARG_CHOICE ("sm60", global.cuda_arch = CUDA_SM60);
+        ARG_CHOICE ("sm61", global.cuda_arch = CUDA_SM61);
+        ARG_CHOICE ("sm70", global.cuda_arch = CUDA_SM70);
+        ARG_CHOICE ("sm75", global.cuda_arch = CUDA_SM75);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("cuda_arch");
+
+    ARGS_OPTION_BEGIN ("cuda_async_mode")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("nosync", global.cuda_async_mode = CUDA_SYNC_NONE);
+        ARG_CHOICE ("device", global.cuda_async_mode = CUDA_SYNC_DEVICE);
+        ARG_CHOICE ("stream", global.cuda_async_mode = CUDA_SYNC_STREAM);
+        ARG_CHOICE ("callback", global.cuda_async_mode = CUDA_SYNC_CALLBACK);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("cuda_async_mode");
+
+    ARGS_OPTION ("cuda_shape", strncpy (global.cuda_block_spec, ARG, 1023));
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
@@ -815,6 +860,19 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with fffffffffffffffffffffffffffffffffffffffffff
      */
 
+    ARGS_OPTION_BEGIN ("feedback")
+    {
+        ARG_FLAGMASK_BEGIN ();
+        ARG_FLAGMASK ('a', global.feedback = global.feedback_all);
+
+#define FEEDBACK(flag, char, default)                                                       \
+    ARG_FLAGMASK (char, global.feedback.flag = TRUE);
+#include "flags.mac"
+
+        ARG_FLAGMASK_END ();
+    }
+    ARGS_OPTION_END ("feedback");
+
     ARGS_FLAG ("force_naive", global.force_naive_with2 = TRUE);
     ARGS_OPTION ("force_desc_size", ARG_NUM (global.force_desc_size));
 
@@ -828,6 +886,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      */
 
     ARGS_FLAG ("g", global.cc_debug = TRUE);
+    ARGS_FLAG ("generic", global.cc_tune_generic = TRUE);
     ARGS_FLAG ("gg", global.cc_debug = TRUE; global.cc_debug_extra = TRUE);
 
     /*
@@ -879,6 +938,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         }
     }
     ARGS_OPTION_END ("linksetsize");
+
+    ARGS_FLAG ("list-targets", global.print_targets_and_exit = TRUE);
 
     /*
      * Options starting with mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
@@ -1014,6 +1075,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_FLAG ("nofoldparallel", global.no_fold_parallel = TRUE);
 
     ARGS_FLAG ("noprelude", global.loadprelude = FALSE);
+    ARGS_FLAG ("nosaclibs", global.loadsaclibs = FALSE);
 
     ARGS_OPTION_BEGIN ("numthreads")
     {
@@ -1267,9 +1329,9 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 5));
 
-    ARGS_FLAG ("V", USGprintVersion (); exit (0));
+    ARGS_FLAG ("V", USGprintVersion (); CTIexit (0));
 
-    ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (0));
 
     /*
      * Options starting with strange symbols
@@ -1365,7 +1427,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_FIXED ("Xtc", SBUFprintf (tree_cflags_buf, " %s", ARG));
     ARGS_FIXED ("Xtl", SBUFprintf (tree_ldflags_buf, " %s", ARG));
 
-    ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
+    ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (0));
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
@@ -1407,8 +1469,8 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
      */
 
-    ARGS_FLAG ("h", USGprintUsage (); exit (0));
-    ARGS_FLAG ("help", USGprintUsage (); exit (0));
+    ARGS_FLAG ("h", USGprintUsage (); CTIexit (0));
+    ARGS_FLAG ("help", USGprintUsage (); CTIexit (0));
 
     /*
      * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
@@ -1527,9 +1589,9 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 5));
 
-    ARGS_FLAG ("V", USGprintVersion (); exit (0));
+    ARGS_FLAG ("V", USGprintVersion (); CTIexit (0));
 
-    ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (0));
 
     /*
      * DBUG options ####################################################
@@ -1617,7 +1679,7 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
      * Options starting with ccccccccccccccccccccccccccccccccccccccccccc
      */
 
-    ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
+    ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (0));
 
     ARGS_OPTION_BEGIN ("cppI")
     {
@@ -1636,8 +1698,8 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
      */
 
-    ARGS_FLAG ("h", USGprintUsage (); exit (0));
-    ARGS_FLAG ("help", USGprintUsage (); exit (0));
+    ARGS_FLAG ("h", USGprintUsage (); CTIexit (0));
+    ARGS_FLAG ("help", USGprintUsage (); CTIexit (0));
 
     /*
      * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
@@ -1691,9 +1753,9 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
 
     ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 5));
 
-    ARGS_FLAG ("V", USGprintVersion (); exit (0));
+    ARGS_FLAG ("V", USGprintVersion (); CTIexit (0));
 
-    ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (0));
 
     /*
      * DBUG options ####################################################

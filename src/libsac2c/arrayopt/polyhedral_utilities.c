@@ -224,8 +224,8 @@ PHUTisFundefKludge (node *arg_node)
 void
 PHUTprintIslAffineFunctionTree (node *arg_node)
 {
-    int n;
-    int j;
+    size_t n;
+    size_t j;
 
     DBUG_ENTER ();
     n = TCcountExprs (arg_node);
@@ -263,7 +263,7 @@ Node2Value (node *arg_node)
         if (NULL != z) {
             if (TYisAKV (AVIS_TYPE (z))) {
                 if (TUisIntScalar (AVIS_TYPE (z))) {
-                    z = TBmakeNum (TUtype2Int (AVIS_TYPE (z)));
+                    z = TBmakeNum (TUakvScalInt2Int (AVIS_TYPE (z)));
                 } else {
                     if (TUisBoolScalar (AVIS_TYPE (z))) {
                         con = TYgetValue (AVIS_TYPE (z)); // con is NOT a copy!
@@ -283,7 +283,7 @@ Node2Value (node *arg_node)
                 break;
 
             case N_bool:
-                z = TBmakeNum ((int)BOOL_VAL (arg_node));
+                z = TBmakeNum ((int)BOOL_VAL (arg_node)); //FIXME there may be a better solution, but this temporarily fixes the warning
                 break;
 
             default:
@@ -692,7 +692,7 @@ BuildIslStrideConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
 
 /** <!-- ****************************************************************** -->
  *
- * @fn node *findBoundEl( node *arg_node, node *bnd, int k...)
+ * @fn node *findBoundEl( node *arg_node, node *bnd, size_t k...)
  *
  * @brief arg_node may represent a WITHID element for a WL.
  *        If so, generate an ISL constraint of:
@@ -709,16 +709,14 @@ BuildIslStrideConstraint (node *ids, prf nprf1, node *arg1, prf nprf2, node *arg
  *
  ******************************************************************************/
 static node *
-findBoundEl (node *arg_node, node *bnd, int k)
+findBoundEl (node *arg_node, node *bnd, size_t k)
 {
     node *z = NULL;
 
     DBUG_ENTER ();
 
     if ((NULL != AVIS_NPART (arg_node)) && (NULL != bnd)) {
-        if (-1 != k) {
-            z = TCgetNthExprsExpr (k, ARRAY_AELEMS (bnd));
-        }
+        z = TCgetNthExprsExpr (k, ARRAY_AELEMS (bnd));
     }
 
     DBUG_RETURN (z);
@@ -803,7 +801,8 @@ PHUTcollectWlGenerator (node *arg_node, node *fundef, lut_t *varlut, node *res,
     node *lbel;
     node *ubel;
     node *ivavis;
-    int k;
+    size_t k;
+    bool isIdsMember;
     node *lb;
     node *ub;
     node *stp;
@@ -819,8 +818,8 @@ PHUTcollectWlGenerator (node *arg_node, node *fundef, lut_t *varlut, node *res,
 
     partn = AVIS_NPART (arg_node);
     if ((NULL != partn)) {
-        k = LFUindexOfMemberIds (arg_node, WITHID_IDS (PART_WITHID (partn)));
-        if (-1 != k) {
+        k = LFUindexOfMemberIds (arg_node, WITHID_IDS (PART_WITHID (partn)), &isIdsMember);
+        if (isIdsMember) {
             DBUG_PRINT ("Generating generator constraints for %s", AVIS_NAME (arg_node));
             ivavis = TCgetNthIds (k, WITHID_IDS (PART_WITHID (partn)));
             lb = WLUTfindArrayForBound (GENERATOR_BOUND1 (PART_GENERATOR (partn)));
@@ -936,8 +935,8 @@ CountVariablesInIslclass (node *idlist, int islclass)
 
     node *avis;
     char *fn;
-    int n;
-    int i;
+    size_t n;
+    size_t i;
     int z = 0;
 
     DBUG_ENTER ();
@@ -962,8 +961,8 @@ static void
 WriteSetVariables (FILE *handle, node *idlist, lut_t *varlut)
 {
     node *avis;
-    int i;
-    int n;
+    size_t i;
+    size_t n;
     int inclass;
     int numleft;
     char *funname;
@@ -1022,8 +1021,8 @@ WriteExistsSetVariables (FILE *handle, node *idlist, lut_t *varlut)
 {
     node *avis;
     char *funname;
-    int i;
-    int n;
+    size_t i;
+    size_t n;
     bool z;
 
     DBUG_ENTER ();
@@ -1061,8 +1060,8 @@ static void
 WriteParameterVariables (FILE *handle, node *idlist, lut_t *varlut)
 {
     node *avis;
-    int i;
-    int n;
+    size_t i;
+    size_t n;
     int inclass;
     int numleft;
 
@@ -1147,10 +1146,10 @@ printIslArg (FILE *handle, node *expr, lut_t *varlut)
 }
 
 static void
-EmitOneConstraint (FILE *handle, int mone, node *exprsone, lut_t *varlut)
+EmitOneConstraint (FILE *handle, size_t mone, node *exprsone, lut_t *varlut)
 { // Bog-standard constraints
     node *expr;
-    int k;
+    size_t k;
     bool wasor;
 
     DBUG_ENTER ();
@@ -1200,10 +1199,10 @@ void
 PHUTwriteUnionSet (FILE *handle, node *exprs, lut_t *varlut, char *tag, bool isunionset,
                    char *lhsname)
 {
-    int j;
-    int m;
-    int mone;
-    int n;
+    size_t j;
+    size_t m;
+    size_t mone;
+    size_t n;
     node *idlist;
     node *exprsone;
     node *avis;
@@ -1740,7 +1739,7 @@ HandleNumber (node *arg_node, node *rhs, node *fundef, lut_t *varlut, node *res)
     DBUG_PRINT ("HandleNumber for lhs=%s", AVIS_NAME (arg_node));
     if ((NULL == rhs) && TYisAKV (AVIS_TYPE (arg_node))) {
         AVIS_ISLCLASS (arg_node) = AVIS_ISLCLASSEXISTENTIAL;
-        rhs = TBmakeNum (TUtype2Int (AVIS_TYPE (arg_node)));
+        rhs = TBmakeNum (TUakvScalInt2Int (AVIS_TYPE (arg_node)));
     }
     z = BuildIslSimpleConstraint (arg_node, F_eq_SxS, rhs, NOPRFOP, NULL);
     res = TCappendExprs (res, z);
@@ -1865,7 +1864,8 @@ HandleSelectWithIota (node *ids, node *q, node *fundef, lut_t *varlut, int loopc
     node *ub = NULL;
     node *lbub = NULL;
     node *withidids = NULL;
-    int idsidx;
+    size_t idsidx;
+    bool isIdsMember;
 
     DBUG_ENTER ();
 
@@ -1876,8 +1876,8 @@ HandleSelectWithIota (node *ids, node *q, node *fundef, lut_t *varlut, int loopc
         if (N_with == NODE_TYPE (wl)) {
             // Find generator elements for LB and UB.
             withidids = WITHID_IDS (PART_WITHID (WITH_PART (wl)));
-            idsidx = TClookupIdsNode (withidids, s);
-            DBUG_ASSERT (-1 != idsidx, "Could not find withidids element");
+            idsidx = TClookupIdsNode (withidids, s, &isIdsMember);
+            DBUG_ASSERT (isIdsMember, "Could not find withidids element");
             lbub = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (wl)));
             if (N_array == NODE_TYPE (lbub)) {
                 // Emit lb <= s
@@ -2290,6 +2290,7 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
     node *npart = NULL;
     node *nid;
     int cls;
+    bool isIdsMember;
 
     DBUG_ENTER ();
 
@@ -2338,9 +2339,8 @@ PHUTcollectAffineExprsLocal (node *arg_node, node *fundef, lut_t *varlut, node *
                         npart = AVIS_NPART (avis);
                         if ((NULL != npart)
                             && (avis != IDS_AVIS (WITHID_VEC (PART_WITHID (npart))))) {
-                            if (-1
-                                != LFUindexOfMemberIds (avis, WITHID_IDS (
-                                                                PART_WITHID (npart)))) {
+                            LFUindexOfMemberIds (avis, WITHID_IDS (PART_WITHID (npart)), &isIdsMember);
+                            if (isIdsMember) {
                                 // arg_node is a withid element.
                                 res3 = PHUTcollectWlGenerator (avis, fundef, varlut, NULL,
                                                                loopcount);
@@ -2681,7 +2681,7 @@ PHUTfindLoopDependentVarinAft (node *arg_node, node *aft, node *fundef)
 {
     node *res = NULL;
     node *aftone;
-    int cnt;
+    size_t cnt;
 
     DBUG_ENTER ();
 

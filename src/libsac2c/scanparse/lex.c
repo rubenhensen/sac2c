@@ -324,10 +324,8 @@ lexer_read_line_comment (struct lexer *lex, char **buf, size_t *size)
     while (true) {
         int c = lexer_getch (lex);
         if (c == EOF) {
-            error_loc (lex->loc, "unexpected end of file in the "
-                                 "middle of line comment");
-            buffer_add_char (buf, &index, size, 0);
-            return tok_unknown;
+            warning_loc (lex->loc, "unexpected end of file in line comment");
+            break;
         }
 
         buffer_add_char (buf, &index, size, c);
@@ -539,7 +537,7 @@ lexer_is_user_op (struct lexer *lex, struct token *tok, char **buf, size_t *size
 }
 
 char *
-quote_string (const char *s, char *res, size_t pos)
+_quote_string (const char *s, char *res, size_t pos, bool json_p)
 {
 #define BUF_SIZE 512
 
@@ -550,7 +548,10 @@ quote_string (const char *s, char *res, size_t pos)
     while (*ptr != '\0' && count < BUF_SIZE - 5) {
         switch (*ptr) {
         case '\a':
-            buffer[count++] = '\\'; buffer[count++] = 'a';
+            if (!json_p) {
+                buffer[count++] = '\\'; buffer[count++] = 'a';
+            } else
+                buffer[count++] = ' ';
             break;
         case '\b':
             buffer[count++] = '\\'; buffer[count++] = 'b';
@@ -568,13 +569,22 @@ quote_string (const char *s, char *res, size_t pos)
             buffer[count++] = '\\'; buffer[count++] = 't';
             break;
         case '\v':
-            buffer[count++] = '\\'; buffer[count++] = 'v';
+            if (!json_p) {
+                buffer[count++] = '\\'; buffer[count++] = 'v';
+            } else
+                buffer[count++] = ' ';
             break;
         case '\"':
             buffer[count++] = '\\'; buffer[count++] = '\"';
             break;
         case '\'':
-            buffer[count++] = '\\'; buffer[count++] = '\'';
+            if (!json_p) {
+                buffer[count++] = '\\'; buffer[count++] = '\'';
+            } else
+                buffer[count++] = '\'';
+            break;
+        case '\\':
+            buffer[count++] = '\\'; buffer[count++] = '\\';
             break;
         default: {
             int x1, x2;
@@ -604,11 +614,23 @@ quote_string (const char *s, char *res, size_t pos)
         res[pos + count] = '\0';
         return res;
     } else
-        res = quote_string (ptr, res, pos + count);
+        res = _quote_string (ptr, res, pos + count, json_p);
 
     memcpy (&res[pos], buffer, count);
     return res;
 }
+
+char *
+quote_string (const char *s, char *res, size_t pos) {
+    return _quote_string (s, res, pos, false);
+}
+
+char *
+quote_string_json (const char *s, char *res, size_t pos) {
+    return _quote_string (s, res, pos, true);
+}
+
+
 
 static int
 lexer_read_escape_char (struct lexer *lex, bool *error)
@@ -639,6 +661,8 @@ lexer_read_escape_char (struct lexer *lex, bool *error)
         return '\'';
     case '\"':
         return '\"';
+    case '\\':
+        return '\\';
     case '0':
     case '1':
     case '2':

@@ -24,11 +24,11 @@ makefile=${base_fname}.mk
 base_fname_we=$(namewe "$base_fname")
 
 # Generate the Makefile form a sac test:
-@CMAKE_C_COMPILER@ -E -C -x c $SAC_FILE \
+@CMAKE_C_COMPILER@ -E -C -I$TOP_DIR -x c $SAC_FILE \
      | sed 's/[^[:print:]]//g' \
      | grep "^// SAC_TEST|" \
      | sed -e 's/^\/\/ SAC_TEST|//g'\
-           -e 's/<tab>/\t/g' \
+           -e "s/<tab>/$(printf '\t')/g" \
            -e "s/<file-name>/$base_fname/g" \
            -e "s/<file-name-we>/$base_fname_we/g" \
            -e 's/<nlslash>/\\/g' > ${dir_name}/$makefile

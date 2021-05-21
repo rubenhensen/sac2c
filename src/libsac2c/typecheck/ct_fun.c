@@ -172,7 +172,7 @@ NTCCTudf (te_info *info, ntype *args)
     dft_res *dft_res;
     te_info *old_info_chn;
     char *tmp, *tmp2, *err_args, *err_msg;
-    int i;
+    size_t i;
     bool dispatcherror = FALSE;
 
     DBUG_ENTER ();

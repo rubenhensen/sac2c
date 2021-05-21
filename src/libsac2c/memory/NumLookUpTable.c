@@ -48,7 +48,7 @@ NLUTgenerateNlut (node *args, node *vardecs)
 
     nlut = (nlut_t *)MEMmalloc (sizeof (nlut_t));
 
-    NLUT_SIZE (nlut) = (size_t)(TCcountArgs (args) + TCcountVardecs (vardecs));
+    NLUT_SIZE (nlut) = TCcountArgs (args) + TCcountVardecs (vardecs);
     NLUT_NUMS (nlut) = (int *)MEMmalloc (NLUT_SIZE (nlut) * sizeof (int));
     NLUT_AVIS (nlut) = (node **)MEMmalloc (NLUT_SIZE (nlut) * sizeof (node *));
 

@@ -7,7 +7,7 @@
 extern char *TEprfArg2Obj (const char *prf_str, int pos);
 extern char *TEarg2Obj (int pos);
 extern char *TEanotherArg2Obj (int pos);
-extern char *TEarrayElem2Obj (int pos);
+extern char *TEarrayElem2Obj (size_t pos);
 
 extern void TEassureScalar (char *obj, ntype *type);
 extern void TEassureVect (char *obj, ntype *type);
@@ -20,13 +20,15 @@ extern void TEassureNumA (char *obj, ntype *type);
 extern void TEassureSimpleType (char *obj, ntype *type);
 extern void TEassureSimpleS (char *obj, ntype *type);
 extern void TEassureSimpleV (char *obj, ntype *type);
+extern void TEassureWholeS (char *obj, ntype *type);
+extern void TEassureWholeV (char *obj, ntype *type);
 extern void TEassureIntS (char *obj, ntype *type);
 extern void TEassureIntV (char *obj, ntype *type);
 extern void TEassureIntVectLengthOne (char *obj, ntype *type);
 extern void TEassureNonNegativeValues_S (char *obj, ntype *type);
 extern void TEassureNonNegativeValues_V (char *obj, ntype *type);
 extern void TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2);
-extern void TEassureShpMatchesInt (char *obj1, ntype *shp, int len);
+extern void TEassureShpMatchesInt (char *obj1, ntype *shp, size_t len);
 extern void TEassureShpPlusDimMatchesDim (char *obj1, ntype *type1, char *obj2,
                                           ntype *type2, char *obj3, ntype *type3);
 extern void TEassureShpIsPostfixOfShp (char *obj1, ntype *type1, char *obj2,
@@ -51,13 +53,13 @@ extern te_info *TEmakeInfoUdf (size_t linenum, const char *file, te_kind_t kind,
                                const char *mod_str, const char *name_str, node *wrapper,
                                node *assign, te_info *parent);
 extern te_info *TEmakeInfoPrf (size_t linenum, const char *file, te_kind_t kind,
-                               const char *name_str, prf prf_no, int num_rets);
-extern int TEone (ntype *args);
-extern int TEtwo (ntype *args);
-extern int TEthree (ntype *args);
-extern int TEnMinusOne (ntype *args);
-extern int TEn (ntype *args);
-extern int TEval (ntype *args);
+                               const char *name_str, prf prf_no, size_t num_rets);
+extern size_t TEone (ntype *args);
+extern size_t TEtwo (ntype *args);
+extern size_t TEthree (ntype *args);
+extern size_t TEnMinusOne (ntype *args);
+extern size_t TEn (ntype *args);
+extern size_t TEval (ntype *args);
 
 extern void TEfreeAllTypeErrorInfos (void);
 
@@ -72,7 +74,7 @@ extern te_kind_t TEgetKind (te_info *info);
 extern const char *TEgetModStr (te_info *info);
 extern const char *TEgetNameStr (te_info *info);
 extern node *TEgetWrapper (te_info *info);
-extern int TEgetNumRets (te_info *info);
+extern size_t TEgetNumRets (te_info *info);
 extern node *TEgetAssign (te_info *info);
 extern prf TEgetPrf (te_info *info);
 extern constant *(*TEgetCFFun (te_info *info)) (constant *, constant *, constant *);

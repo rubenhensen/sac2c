@@ -1,0 +1,30 @@
+// Test EMRL traversal for correctly identifiying and _invalid_ lifting
+// opertunnity. It is invalid as at the recursive call of the loop function
+// there are no free variables to use as an argument to match the lifted
+// allocation. We should gracefully fail by eliding the lifting.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -doemrci -doemrcf -doemrl -bopt:emrl -printfun main__Cond_4
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) "emr_lifted" 0
+
+#include "mini-stdlib.sac"
+
+noinline
+int[.] test_loop (int[.] a, int[.] b)
+{
+  return with { (. <= iv < shape(a)): a[iv] + b[0]; } : genarray (shape(a)+1, 1);
+}
+
+int main()
+{
+  k = genarray ([1], -1);
+  kk = genarray ([2], -2);
+
+  for (i = 0; i < 10000; i++) {
+    kk = test_loop (kk, k);
+    k = with { (. <= iv < shape(kk)): kk[iv]; } : genarray ([100], 1);
+  }
+
+  return sum(kk);
+}

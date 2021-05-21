@@ -26,6 +26,7 @@ outfile=
 mode=ld
 asm=
 preproc=
+tmparg=
 for arg in "$@"; do
   # if the previous option needs an argument, assign it
   if test -n "$prev_arg"; then
@@ -37,7 +38,20 @@ for arg in "$@"; do
      act=$followaction
      followaction=
      case $act in
-        ccarg)  cmdline+=(-Xc "$ccarg" -Xc "$arg" -Xl "$ccarg" -Xl "$arg"); continue;;
+        ccarg)
+            # when handling a C argument, we need check if the flag has an argument
+            # such as in the case of `-MF` which expects some filename or of `--param`
+            # which expects some name and value pair. If so, we append to the cmdline
+            # the flag and its argument as shown in the else-branch. If instead we have
+            # some C flag like `-install_name=name.so`, though this flag has an argument,
+            # it is not seperate from the flag given the `=`. As such we append it to
+            # cmdline as is, see the then-branch.
+            if test x"$ccarg" = x; then
+                cmdline+=(-Xc "$arg" -Xl "$arg")
+            else
+                cmdline+=(-Xc "$ccarg" -Xc "$arg" -Xl "$ccarg" -Xl "$arg")
+            fi
+            continue;;
         ldarg)  cmdline+=(-Xl "$arg"); continue;;
         sacarg) cmdline+=("$arg"); continue;;
      esac
@@ -57,7 +71,10 @@ for arg in "$@"; do
       if [ "$arg" == "-install_name" ]; then
          followaction=ccarg; ccarg=$arg
       else
-         cmdline+=( -Xc "$arg" -Xl "$arg")
+         # install_name needs its argument to be seperate (unlike -L), otherwise
+         # clang will complain.
+         tmparg=${arg#-install_name}
+         cmdline+=( -Xc "-install_name" -Xc "$tmparg" -Xl "-install_name" -Xl "$tmparg")
       fi
       ;;
       -save-temps) cmdline+=(-d nocleanup -Xc -save-temps -Xl -save-temps) ;;
@@ -79,7 +96,7 @@ done
 if test -n "${prev_arg:-}"; then die "argument to \`$arg' is missing"; fi
 
 
-cmdline=("$sac2c" -v0 -target "$target" -noprelude -cc $mode$kind ${cmdline[@]})
+cmdline=("$sac2c" -v0 -target "$target" -noprelude -nosaclibs -cc $mode$kind ${cmdline[@]})
 
 if test -n "$outfile"; then
    cmdline+=(-o "$outfile")

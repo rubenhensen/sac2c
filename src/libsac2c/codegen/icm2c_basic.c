@@ -66,6 +66,8 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("checking mirror of %s", to_NT);
+
     DBUG_ASSERT (shp1_read_fun != NULL, "1st shape-read-fun not found!");
     if (shp2 == NULL) {
         DBUG_ASSERT (shp2_size == 0, "inconsistant 2nd shape found!");
@@ -204,6 +206,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
     distributed_class_t to_dc = ICUGetDistributedClass (to_NT);
 
     DBUG_ENTER ();
+    DBUG_PRINT ("setting shape of %s", to_NT);
     DBUG_ASSERT (shp1_read_fun != NULL, "1st shape-read-fun not found!");
 
     if (shp2 == NULL) {

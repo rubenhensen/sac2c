@@ -224,11 +224,13 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
     DBUG_ENTER ();
 
     if (branches == NULL) {
+        DBUG_PRINT ("No branches to process, duplicating the tree...");
         res = DUPdoDupTreeLutSsa (ass, lut, fundef);
     } else {
         if (EXPRS_EXPR (branches) == NULL) {
             res = BuildCondTree (ass, EXPRS_NEXT (branches), EXPRS_NEXT (memvars), fundef,
                                  root_funname, inmask, lut);
+            DBUG_PRINT ("Finished processing branches...");
         } else {
             node *condfun;
             node *cond;
@@ -249,6 +251,8 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             node *cfrets;
             node *cfargs;
             lut_t *cflut, *tmplut;
+
+            DBUG_PRINT ("Building conditional tree...");
 
             /*
              * Create condfun return types
@@ -381,6 +385,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             FUNDEF_RETURN (condfun) = ret;
             res = NULL;
 
+            DBUG_PRINT ("Created conditional function:");
             DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, condfun));
 
             /*
@@ -436,6 +441,8 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
 
             res = TBmakeAssign (TBmakeLet (cfids, cfap), res);
 
+            DBUG_PRINT ("Created N_assign for conditional");
+
             while (cfids != NULL) {
                 AVIS_SSAASSIGN (IDS_AVIS (cfids)) = res;
                 cfids = IDS_NEXT (cfids);
@@ -456,6 +463,8 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
               res);
             AVIS_SSAASSIGN (IDS_AVIS (valids)) = res;
 
+            DBUG_PRINT ("Created N_assign for fill N_prt");
+
             /*
              * Create c' = alloc( 0, []);
              */
@@ -465,7 +474,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
                                 res);
             AVIS_SSAASSIGN (IDS_AVIS (memids)) = res;
 
-            DBUG_EXECUTE (PRTdoPrintFile (stderr, res));
+            DBUG_PRINT ("Created N_assign for alloc N_prt");
         }
     }
 
@@ -505,15 +514,21 @@ EMRBassign (node *arg_node, info *arg_info)
      * with-loop, ASSIGN_STMT can be empty
      */
     if (ASSIGN_STMT (arg_node) == NULL) {
+        DBUG_PRINT ("Encountered empty N_assign statement, freeing N_assign...");
         arg_node = FREEdoFreeNode (arg_node);
     } else {
+        DBUG_PRINT ("Inspecting assign statement...");
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, ASSIGN_STMT (arg_node)););
         ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+        DBUG_PRINT ("Done inspecting assign statement...");
 
         if (INFO_BRANCHES (arg_info) != NULL) {
             node *next, *newass, *lastass;
             node *lhs;
             dfmask_t *inmask;
             lut_t *lut;
+
+            DBUG_PRINT ("Found reuse branches, building a cond tree...");
 
             next = ASSIGN_NEXT (arg_node);
             ASSIGN_NEXT (arg_node) = NULL;
@@ -1019,6 +1034,8 @@ StealLet (node *assign)
     node *res;
 
     DBUG_ENTER ();
+
+    DBUG_ASSERT (NODE_TYPE (ASSIGN_STMT (assign)) == N_let, "N_assign does not contain N_let!");
 
     let = ASSIGN_STMT (assign);
     ASSIGN_STMT (assign) = NULL;

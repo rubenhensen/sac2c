@@ -7,8 +7,6 @@ stages:
     - build   # the omnibus (debug + release versions) of the compiler
     - test    # run unit-tests
     - stdlib  # build the stdlib
-    - package # package both sac2c and stdlib       - only through schedule
-    - release # deploy the packages to sac-home.org - only through schedule
 
 # The templates are generic enough that they are applicable on *all* build
 # OSs (it is assumed that various tools and commands are the same across
@@ -16,13 +14,6 @@ stages:
 
 # VARIABLES
 #
-#  - DO_SCHEDULE:  if set, we *ignore* warnings. Is useful for when we want
-#                  to do packaging, as for nightly/weekly release we don't
-#                  really mind.
-#  - DO_LIMITED:   when creating a release, either weekly or tagged, we indicate
-#                  that we want to build sac2c with different options.
-#  - CPACK_BUILD:  specifies to CPack what type of package we want to generate
-#  - RELEASE_FILE: the Glob for selecting the CPack generate package
 #  - STDLIB_URL:   the git-pull URL for the repo, defaults to `sacbase/StdLib'
 #  - SAC2CP_EXEC:  location of product version of sac2c - for building stdlib
 #  - SAC2CD_EXEC:  location of debug version of sac2c - for building stdlib
@@ -41,21 +32,13 @@ stages:
     script:
         - mkdir $HOME/.sac2crc
         - mkdir build && cd build
-        - if [ -z "${DO_LIMITED}" ]; then
-            cmake -DBUILD_OPTIONS="-DFUNCTESTS=ON" ../cmake/cpack;
-          else
-            cmake -DBUILD_OPTIONS="-DFUNCTESTS=ON -DISL=OFF -DBARVINOK=OFF" ../cmake/cpack;
-          fi
+        - cmake -DBUILD_OPTIONS="-DFUNCTESTS=ON" ../cmake/cpack;
         - make -j2 2>&1 | tee build.log
         - if [ ${PIPESTATUS[0]} -ne 0 ]; then
             echo "!!! ERROR detected in build !!!";
             exit 1;
           fi
-        - if [ $(grep -i 'warning' build.log | wc -l) -gt 0 ]; then
-            echo "+++ ${WARN_NUM} warnings detected +++";
-            grep -i 'warning' build.log;
-            if [ -z "${DO_SCHEDULE}" ]; then exit 1; fi;
-          fi
+        - ../ci/fail-on-warning.sh build.log
         # we need to store the .sac2crc file for sac2c to find prelude
         - mv $HOME/.sac2crc $PWD
     # ensure we capture the build blob
@@ -63,12 +46,8 @@ stages:
         expire_in: 24 hrs
         untracked: true
     only:
-        # we use the trigger mechanism as this is currently the only
-        # feasible way of actually having stuff build via merge-requests.
-        - triggers
-        - schedules
+        - merge_requests
         - web
-        - tags
 
 .test-template: &test-template
     stage: test
@@ -81,12 +60,8 @@ stages:
         expire_in: 24 hrs
         untracked: true
     only:
-        # we use the trigger mechanism as this is currently the only
-        # feasible way of actually having stuff build via merge-requests.
-        - triggers
-        - schedules
+        - merge_requests
         - web
-        - tags
 
 .build-stdlib-template: &build-stdlib-template
     stage: stdlib
@@ -113,11 +88,7 @@ stages:
             echo "!!! ERROR detected in build !!!";
             exit 1;
           fi
-        - if [ $(grep -i 'warning' build.log | wc -l) -gt 0 ]; then
-            echo "+++ ${WARN_NUM} warnings detected +++";
-            grep -i 'warning' build.log;
-            if [ -z "${DO_SCHEDULE}" ]; then exit 1; fi;
-          fi
+        - ../../ci/fail-on-warning.sh build.log
         # capture new sac2crcs
         - mv -f $HOME/.sac2crc ${CI_PROJECT_DIR}/build/.sac2crc
     # ensure we capture the build blob
@@ -127,65 +98,8 @@ stages:
         paths:
             - stdlib/
     only:
-        # we use the trigger mechanism as this is currently the only
-        # feasible way of actually having stuff build via merge-requests.
-        - triggers
-        - schedules
+        - merge_requests
         - web
-        - tags
-
-.package-template: &package-template
-    stage: package
-    script:
-        - cp -r build/.sac2crc $HOME
-        - cd build
-        - echo "+++ building sac2c package +++";
-        - cpack -G ${CPACK_BUILD}
-        - echo "+++ installing sac2c package +++";
-        - ../ci/install-package.sh ${RELEASE_FILE}
-        - cd ../stdlib-build
-        - echo "+++ building stdlib package +++";
-        - cpack -G ${CPACK_BUILD}
-        - echo "+++ installing stdlib package +++";
-        - ../ci/install-package.sh -S ${RELEASE_FILE}
-    artifacts:
-        expire_in: 24 hrs
-        paths:
-            - build/${RELEASE_FILE}
-            - stdlib-build/${RELEASE_FILE}
-    only:
-        - schedules
-        - tags
-
-.tag-release-template: &tag-release-template
-    stage: release
-    script:
-        # skip if we don't want to ship the release
-        - if [ ! -d ${HOME}/.ssh ]; then mkdir ${HOME}/.ssh; fi
-        - chmod 700 ${HOME}/.ssh
-        - echo "${SSH_RELEASE_KEY}" > $HOME/.ssh/release
-        - chmod 600 ${HOME}/.ssh/release
-        - if [ ! -d build ] || [ ! -d stdlib-build ]; then echo "Unable to find artifacts"; exit 1; fi
-        - scp -p -i ${HOME}/.ssh/release -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no
-          build/${RELEASE_FILE} stdlib-build/${RELEASE_FILE} ${RELEASE_URL}:${RELEASE_TOPDIR}/${INNER_PATH}
-        - echo "Tag release has been sent, have a look at the sac-home.org download page :)"
-    only:
-        - tags
-
-.weekly-release-template: &weekly-release-template
-    stage: release
-    script:
-        # skip if we don't want to ship the release
-        - if [ ! -d ${HOME}/.ssh ]; then mkdir ${HOME}/.ssh; fi
-        - chmod 700 ${HOME}/.ssh
-        - echo "${SSH_RELEASE_KEY}" > $HOME/.ssh/release
-        - chmod 600 ${HOME}/.ssh/release
-        - if [ ! -d build ] || [ ! -d stdlib-build ]; then echo "Unable to find artifacts"; exit 1; fi
-        - scp -p -i ${HOME}/.ssh/release -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no
-          build/${RELEASE_FILE} stdlib-build/${RELEASE_FILE} ${RELEASE_URL}:${RELEASE_TOPDIR}/${INNER_PATH}
-        - echo "Weekly release has been sent, have a look at the sac-home.org download page :)"
-    only:
-        - schedules
 
 # Here we define the actual jobs - we must specify each build OS separately as GitLab-CI
 # does not support launch a job on all OSs as such.
@@ -194,267 +108,88 @@ stages:
 
 build-archlinux:
     <<: *build-template
-    # ensure that we build on the correct docker container (there should
-    # only be one tag listed below!)
-    tags:
-        - archlinux
+    image: sacbuild/archlinux:1.3.1
 
 test-archlinux:
     <<: *test-template
-    # ensure that we build on the correct docker container (there should
-    # only be one tag listed below!)
-    tags:
-        - archlinux
+    image: sacbuild/archlinux:1.3.1
     dependencies:
         - build-archlinux
 
 stdlib-archlinux:
     <<: *build-stdlib-template
-    tags:
-        - archlinux
+    image: sacbuild/archlinux:1.3.1
     dependencies:
         - test-archlinux
 
-package-archlinux:
-    variables:
-        CPACK_BUILD: "TGZ"
-        RELEASE_FILE: "*.tar.gz"
-    <<: *package-template
-    tags:
-        - archlinux
-    dependencies:
-        - stdlib-archlinux
+### CENTOS 8 ###
 
-release-tag-archlinux:
-    variables:
-        INNER_PATH: "release/Linux"
-        RELEASE_FILE: "*.tar.gz"
-        GIT_STRATEGY: none
-    <<: *tag-release-template
-    tags:
-        - archlinux
-    dependencies:
-        - package-archlinux
+build-centos8:
+    <<: *build-template
+    image: sacbuild/centos8:1.3.1
 
-release-weekly-archlinux:
-    variables:
-        INNER_PATH: "weekly/Linux"
-        RELEASE_FILE: "*.tar.gz"
-        GIT_STRATEGY: none
-    <<: *weekly-release-template
-    tags:
-        - archlinux
+test-centos8:
+    <<: *test-template
+    image: sacbuild/centos8:1.3.1
     dependencies:
-        - package-archlinux
+        - build-centos8
+
+stdlib-centos8:
+    <<: *build-stdlib-template
+    image: sacbuild/centos8:1.3.1
+    dependencies:
+        - test-centos8
 
 ### CENTOS 7 ###
 
 build-centos7:
     <<: *build-template
-    tags:
-        - centos7
+    image: sacbuild/centos7:1.3.1
 
 test-centos7:
     <<: *test-template
-    tags:
-        - centos7
+    image: sacbuild/centos7:1.3.1
     dependencies:
         - build-centos7
 
 stdlib-centos7:
     <<: *build-stdlib-template
-    tags:
-        - centos7
+    image: sacbuild/centos7:1.3.1
     dependencies:
         - test-centos7
 
-package-centos7:
-    variables:
-        CPACK_BUILD: "RPM"
-        RELEASE_FILE: "*.rpm"
-    <<: *package-template
-    tags:
-        - centos7
-    dependencies:
-        - stdlib-centos7
+### UBUNTU 18 ###
 
-release-tag-centos7:
-    variables:
-        INNER_PATH: "release/RHEL7"
-        RELEASE_FILE: "*.rpm"
-        GIT_STRATEGY: none
-    <<: *tag-release-template
-    tags:
-        - centos7
-    dependencies:
-        - package-centos7
-
-release-weekly-centos7:
-    variables:
-        INNER_PATH: "weekly/RHEL7"
-        RELEASE_FILE: "*.rpm"
-        GIT_STRATEGY: none
-    <<: *weekly-release-template
-    tags:
-        - centos7
-    dependencies:
-        - package-centos7
-
-### CENTOS 6 ###
-
-build-centos6:
+build-ubuntu18:
     <<: *build-template
-    tags:
-        - centos6
+    image: sacbuild/ubuntu18:1.3.1
 
-test-centos6:
+test-ubuntu18:
     <<: *test-template
-    tags:
-        - centos6
+    image: sacbuild/ubuntu18:1.3.1
     dependencies:
-        - build-centos6
+        - build-ubuntu18
 
-stdlib-centos6:
+stdlib-ubuntu18:
     <<: *build-stdlib-template
-    tags:
-        - centos6
+    image: sacbuild/ubuntu18:1.3.1
     dependencies:
-        - test-centos6
-
-package-centos6:
-    variables:
-        CPACK_BUILD: "RPM"
-        RELEASE_FILE: "*.rpm"
-    <<: *package-template
-    tags:
-        - centos6
-    dependencies:
-        - stdlib-centos6
-
-release-tag-centos6:
-    variables:
-        INNER_PATH: "release/RHEL6"
-        RELEASE_FILE: "*.rpm"
-        GIT_STRATEGY: none
-    <<: *tag-release-template
-    tags:
-        - centos6
-    dependencies:
-        - package-centos6
-
-release-weekly-centos6:
-    variables:
-        INNER_PATH: "release/RHEL6"
-        RELEASE_FILE: "*.rpm"
-        GIT_STRATEGY: none
-    <<: *weekly-release-template
-    tags:
-        - centos6
-    dependencies:
-        - package-centos6
+        - test-ubuntu18
 
 ### UBUNTU 16 ###
 
 build-ubuntu16:
     <<: *build-template
-    tags:
-        - ubuntu16
+    image: sacbuild/ubuntu16:1.3.1
 
 test-ubuntu16:
     <<: *test-template
-    tags:
-        - ubuntu16
+    image: sacbuild/ubuntu16:1.3.1
     dependencies:
         - build-ubuntu16
 
 stdlib-ubuntu16:
     <<: *build-stdlib-template
-    tags:
-        - ubuntu16
+    image: sacbuild/ubuntu16:1.3.1
     dependencies:
         - test-ubuntu16
-
-package-ubuntu16:
-    variables:
-        CPACK_BUILD: "DEB"
-        RELEASE_FILE: "*.deb"
-    <<: *package-template
-    tags:
-        - ubuntu16
-    dependencies:
-        - stdlib-ubuntu16
-
-release-tag-ubuntu16:
-    variables:
-        INNER_PATH: "release/Ubl16"
-        RELEASE_FILE: "*.deb"
-        GIT_STRATEGY: none
-    <<: *tag-release-template
-    tags:
-        - ubuntu16
-    dependencies:
-        - package-ubuntu16
-
-release-weekly-ubuntu16:
-    variables:
-        INNER_PATH: "weekly/Ubl16"
-        RELEASE_FILE: "*.deb"
-        GIT_STRATEGY: none
-    <<: *weekly-release-template
-    tags:
-        - ubuntu16
-    dependencies:
-        - package-ubuntu16
-
-### UBUNTU 14 ###
-
-build-ubuntu14:
-    <<: *build-template
-    tags:
-        - ubuntu14
-
-test-ubuntu14:
-    <<: *test-template
-    tags:
-        - ubuntu14
-    dependencies:
-        - build-ubuntu14
-
-stdlib-ubuntu14:
-    <<: *build-stdlib-template
-    tags:
-        - ubuntu14
-    dependencies:
-        - test-ubuntu14
-
-package-ubuntu14:
-    variables:
-        CPACK_BUILD: "DEB"
-        RELEASE_FILE: "*.deb"
-    <<: *package-template
-    tags:
-        - ubuntu14
-    dependencies:
-        - stdlib-ubuntu14
-
-release-tag-ubuntu14:
-    variables:
-        INNER_PATH: "release/Ubl14"
-        RELEASE_FILE: "*.deb"
-        GIT_STRATEGY: none
-    <<: *tag-release-template
-    tags:
-        - ubuntu14
-    dependencies:
-        - package-ubuntu14
-
-release-weekly-ubuntu14:
-    variables:
-        INNER_PATH: "weekly/Ubl14"
-        RELEASE_FILE: "*.deb"
-        GIT_STRATEGY: none
-    <<: *weekly-release-template
-    tags:
-        - ubuntu14
-    dependencies:
-        - package-ubuntu14

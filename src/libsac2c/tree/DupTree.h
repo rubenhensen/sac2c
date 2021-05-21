@@ -31,11 +31,6 @@ extern node *DUPdoDupNodeLutType (node *arg_node, lut_t *lut, int type);
 /*
  * Functions for duplicating non-node parts of the AST
  */
-extern shpseg *DUPdupShpseg (shpseg *arg_shpseg);
-
-extern types *DUPdupOneTypes (types *arg_types);
-extern types *DUPdupAllTypes (types *arg_types);
-
 extern nodelist *DUPdupNodelist (nodelist *arg_nl);
 
 /*

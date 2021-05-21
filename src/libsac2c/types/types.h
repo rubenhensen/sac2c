@@ -11,6 +11,7 @@
 #include <inttypes.h>
 
 #include "config.h"
+#include "argcount-cpp.h"
 #include "types_nodetype.h"
 #include "types_trav.h"
 
@@ -21,6 +22,12 @@
 #include <stdbool.h>
 #define TRUE true
 #define FALSE false
+
+/*
+ * moved from shape.h
+ */
+
+typedef struct SHAPE shape;
 
 /* Structcure to store where a token came from.  */
 struct location {
@@ -120,20 +127,35 @@ typedef enum distmem_dis_t {
     distmem_dis_dsm
 } distmem_dis;
 
-#define PHASE(name, text, cond) PH_##name,
+/**
+ * @brief Create PH_* based phase name, with different structures depending on
+ *        number of passed arguments.
+ *
+ * This macro is used in several places in the libsac2c sources.
+ *
+ * @see phase_drivers.c
+ * @see phase_info.c
+ */
+#define PHASENAME(...) \
+    MACRO_GLUE(__PNARG, MACRO_ARGCOUNT(__VA_ARGS__))(__VA_ARGS__)
+#define __PNARG1(phase) PH_##phase
+#define __PNARG2(phase, name) PH_##phase##_##name
+#define __PNARG3(phase, cycle, name) PH_##phase##_##cycle##_##name
 
-#define SUBPHASE(name, text, fun, cond, phase) PH_##phase##_##name,
+#define PHASE(name, text, cond) PHASENAME(name),
 
-#define CYCLE(name, text, cond, phase, setup) PH_##phase##_##name,
+#define SUBPHASE(name, text, fun, cond, phase) PHASENAME(phase, name),
 
-#define CYCLEPHASE(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle##_##name,
+#define CYCLE(name, text, cond, phase, setup) PHASENAME(phase, name),
 
-#define FUNBEGIN(name, phase, cycle) PH_##phase##_##cycle##_##name,
+#define CYCLEPHASE(name, text, fun, cond, phase, cycle) PHASENAME(phase, cycle, name),
 
-#define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle##_##name,
+#define FUNBEGIN(name, phase, cycle) PHASENAME(phase, cycle, name),
+
+#define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle) PHASENAME(phase, cycle, name),
 
 #define CYCLEPHASEFUNOLD(name, text, fun, cond, phase, cycle)                            \
-    PH_##phase##_##cycle##_##name,
+    PHASENAME(phase, cycle, name),
 
 typedef enum {
     PH_dummy = -1, /* Prevent comparison with >= PH_initial from producing a warning */
@@ -287,18 +309,11 @@ typedef struct NODELIST {
     struct NODELIST *next;
 } nodelist;
 
-#define SHP_SEG_SIZE 16
-
-typedef struct SHPSEG {
-    int shp[SHP_SEG_SIZE];
-    struct SHPSEG *next;
-} shpseg;
-
 typedef struct ACCESS_T {
     struct NODE *array_vardec; /* */
     struct NODE *iv_vardec;    /* index vector */
     accessclass_t accessclass; /* */
-    shpseg *offset;            /* */
+    shape *offset;            /* */
     accessdir_t direction;     /* 0 == ADIR_read,  1 == ADIR_write */
     struct ACCESS_T *next;     /* */
 } access_t;
@@ -314,26 +329,6 @@ typedef struct ACCESS_INFO_T {
     struct NODE *indexvar;
     struct NODE *wlarray;
 } access_info_t;
-
-typedef struct TYPES {
-    simpletype msimpletype;
-    char *name;         /* only used for T_user !! */
-    char *name_mod;     /* name of modul belonging to 'name' */
-    struct NODE *tdef;  /* typedef of user-defined type */
-    int dim;            /* if (dim == 0) => simpletype */
-    bool poly;          /* only needed for type templates (newTC !) */
-    shpseg *mshpseg;    /* pointer to shape specification */
-    struct TYPES *next; /* only needed for fun-results  */
-                        /* and implementation of implicit types */
-    /* mutc backend */
-    mutcScope scope; /* the scope of the value of this var */
-    mutcUsage usage; /* where is this var used */
-
-    bool unique;             /* this variable is unique */
-    bool akv;                /* this variable is akv */
-    distmem_dis distributed; /* distributed class of this variable */
-
-} types;
 
 /*
  *  Used to store the relations of with-generators.
@@ -448,7 +443,7 @@ typedef enum {
 } argtag_t;
 
 typedef struct ARGTAB_T {
-    int size;
+    size_t size;
     node **ptr_in;  /* N_arg or N_exprs node */
     node **ptr_out; /* N_ret or N_ids node */
     argtag_t *tag;
@@ -528,12 +523,6 @@ typedef enum {
 } cbasetype_class_t;
 
 /*
- * moved from shape.h
- */
-
-typedef struct SHAPE shape;
-
-/*
  * moved from constant.h
  */
 
@@ -564,7 +553,7 @@ typedef node *(*cv2scalarfunptr) (void *, size_t);
  * moved from cv2internal_lib.h
  */
 
-typedef char *(*cv2strfunptr) (void *, size_t, size_t, int);
+typedef char *(*cv2strfunptr) (void *, size_t, size_t, size_t);
 
 /*
  * moved from zipcv.h
@@ -646,7 +635,7 @@ typedef enum {
 } te_kind_t;
 
 typedef struct TE_INFO te_info;
-typedef int (*te_funptr) (ntype *args);
+typedef size_t (*te_funptr) (ntype *args);
 
 /*******************************************************************************
  *
@@ -655,6 +644,16 @@ typedef int (*te_funptr) (ntype *args);
 
 typedef ntype *(*ct_funptr) (te_info *, ntype *);
 typedef struct SIG_DEP sig_dep;
+
+/*
+ * built to facilitate printable_target_functions.h
+ */
+
+/**
+ * These types are used in target printing
+ */
+
+typedef struct PRINTABLE_TARGET printable_target;
 
 /*
  * moved from resource.h
@@ -766,6 +765,8 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (OPT_O2, opt_o2, char *, str)                                           \
     DEF_RESOURCE (OPT_O3, opt_o3, char *, str)                                           \
     DEF_RESOURCE (OPT_g, opt_g, char *, str)                                             \
+    DEF_RESOURCE (TUNE_native, tune_native, char *, str)                                 \
+    DEF_RESOURCE (TUNE_generic, tune_generic, char *, str)                               \
     DEF_RESOURCE (COMPILE_MOD, compile_mod, char *, str)                                 \
     DEF_RESOURCE (COMPILE_PROG, compile_prog, char *, str)                               \
     DEF_RESOURCE (LINK_MOD, link_mod, char *, str)                                       \
@@ -857,13 +858,13 @@ typedef struct PATTR attrib;
 
 /* structure for storing access patterns */
 typedef struct PATTERN_T {
-    shpseg *pattern;
+    shape *pattern;
     struct PATTERN_T *next;
 } pattern_t;
 
 /* structure for grouping access patterns by conflict groups */
 typedef struct CONFLICT_GROUP_T {
-    shpseg *group;
+    shape *group;
     accessdir_t direction;
     pattern_t *patterns;
     struct CONFLICT_GROUP_T *next;
@@ -873,7 +874,7 @@ typedef struct CONFLICT_GROUP_T {
 typedef struct ARRAY_TYPE_T {
     simpletype type;
     int dim;
-    shpseg *shape;
+    shape *shp;
     conflict_group_t *groups;
     struct ARRAY_TYPE_T *next;
 } array_type_t;
@@ -882,7 +883,7 @@ typedef struct ARRAY_TYPE_T {
 typedef struct UNSUPPORTED_SHAPE_T {
     simpletype type;
     int dim;
-    shpseg *shape;
+    shape *shp;
     struct UNSUPPORTED_SHAPE_T *next;
 } unsupported_shape_t;
 
@@ -890,9 +891,9 @@ typedef struct UNSUPPORTED_SHAPE_T {
 typedef struct PAD_INFO_T {
     simpletype type;
     int dim;
-    shpseg *old_shape;
-    shpseg *new_shape;
-    shpseg *padding;
+    shape *old_shape;
+    shape *new_shape;
+    shape *padding;
     node *fundef_pad;
     node *fundef_unpad;
     struct PAD_INFO_T *next;
@@ -974,7 +975,7 @@ typedef enum {
  */
 
 typedef struct OPTIMIZE_COUNTER_T {
-#define OPTCOUNTERid(id) int id;
+#define OPTCOUNTERid(id) size_t id;
 #include "optimize.mac"
 } optimize_counter_t;
 
@@ -1018,6 +1019,11 @@ typedef struct PROFILE_FLAGS_T {
 #include "flags.mac"
 } profile_flags_t;
 
+typedef struct FEEDBACK_FLAGS_T {
+#define FEEDBACKflag(flag) unsigned int flag : 1;
+#include "flags.mac"
+} feedback_flags_t;
+
 typedef struct CACHESIM_FLAGS_T {
 #define CSflag(flag) unsigned int flag : 1;
 #include "flags.mac"
@@ -1045,6 +1051,14 @@ typedef enum {
  * type of traversal functions
  */
 typedef node *(*travfun_p) (node *, info *);
+
+/*
+ * struct for list of pre/post traversal functions
+ */
+typedef struct TRAVFUNLIST {
+    travfun_p fun;
+    struct TRAVFUNLIST *next;
+} travfunlist_t;
 
 /*
  * type for anonymous traversal definitions
@@ -1177,6 +1191,55 @@ typedef struct ELEMQUEUE elemqueue;
 typedef struct LUBINFO lubinfo;
 typedef struct COMPINFO compinfo;
 
+/* typdef for CUDA block sizes and other parameters */
+#define CUDA_OPTIONS_ALL                                                                 \
+    CUDA_OPTION (optimal_threads, int, num)                                              \
+    CUDA_OPTION (optimal_blocks, int, num)                                               \
+    CUDA_OPTION (cuda_1d_block_x, int, num)                                              \
+    CUDA_OPTION (cuda_1d_block_large, int, num)                                          \
+    CUDA_OPTION (cuda_1d_block_small, int, num)                                          \
+    CUDA_OPTION (cuda_2d_block_x, int, num)                                              \
+    CUDA_OPTION (cuda_2d_block_y, int, num)                                              \
+    CUDA_OPTION (cuda_max_x_grid, unsigned int, num)                                     \
+    CUDA_OPTION (cuda_max_yz_grid, unsigned int, num)                                    \
+    CUDA_OPTION (cuda_max_xy_block, unsigned int, num)                                   \
+    CUDA_OPTION (cuda_max_z_block, unsigned int, num)                                    \
+    CUDA_OPTION (cuda_max_threads_block, unsigned int, num)
+
+typedef struct {
+#define CUDA_OPTION(name, type, attr) type name;
+    CUDA_OPTIONS_ALL
+#undef CUDA_OPTION
+} cuda_options_t;
+
+#define CUDA_ARCHS_ALL                                                                   \
+    CUDA_ARCH (SM10, "sm_10")                                                            \
+    CUDA_ARCH (SM11, "sm_11")                                                            \
+    CUDA_ARCH (SM12, "sm_12")                                                            \
+    CUDA_ARCH (SM13, "sm_13")                                                            \
+    CUDA_ARCH (SM20, "sm_20")                                                            \
+    CUDA_ARCH (SM35, "sm_35")                                                            \
+    CUDA_ARCH (SM50, "sm_50")                                                            \
+    CUDA_ARCH (SM60, "sm_60")                                                            \
+    CUDA_ARCH (SM61, "sm_61")                                                            \
+    CUDA_ARCH (SM70, "sm_70")                                                            \
+    CUDA_ARCH (SM75, "sm_75")
+
+/* typdef enum for CUDA architecture setting */
+typedef enum cuda_arch_e {
+#define CUDA_ARCH(name, flagopt) CUDA_##name,
+    CUDA_ARCHS_ALL
+#undef CUDA_ARCH
+} cuda_arch_t;
+
+/* typedef enum for CUDA Async Modes */
+typedef enum cuda_async_mode_e {
+    CUDA_SYNC_NONE,
+    CUDA_SYNC_DEVICE,
+    CUDA_SYNC_STREAM,
+    CUDA_SYNC_CALLBACK
+} cuda_async_mode_t;
+
 /******************************************************************************
  *
  * The following types are for cygwin compatibility only
@@ -1230,15 +1293,19 @@ typedef struct GLOBAL_T {
 #include "globals.mac"
 } global_t;
 
-/******************************************************************************
- * typedef for CUDA data reuse analysis
+/******************************************************************************/
+
+/* typedef for CUDA data reuse analysis
  */
 
 typedef struct sMtx {
-    int dim_x, dim_y;
+    unsigned int dim_x, dim_y;
     int *m_stor;
     int **mtx;
 } * IntMatrix, sMatrix;
+
+
+#define SHP_SEG_SIZE 16
 
 /* These two structs are used to annotate reusable arrays
  * in a wl. The info will be attached to N_code node */
@@ -1247,7 +1314,7 @@ typedef struct RC_T {
     node *arrayshp;
     node *sharray;
     node *sharrayshp;
-    int dim;
+    size_t dim;
     bool selfref;
     int posoffset[SHP_SEG_SIZE];
     int negoffset[SHP_SEG_SIZE];
@@ -1279,7 +1346,7 @@ typedef struct CUDA_INDEX_T {
     unsigned int type;
     int coefficient;
     node *id;
-    int looplevel; /* This attribute is only meaningful if type is LOOPIDX */
+    size_t looplevel; /* This attribute is only meaningful if type is LOOPIDX */
     struct CUDA_INDEX_T *next;
 } cuda_index_t;
 
@@ -1287,7 +1354,7 @@ typedef struct CUDA_ACCESS_INFO_T {
     IntMatrix coe_mtx;
     unsigned int type; /* Type of this access: either reuse or coalescing */
     int dim;
-    int nestlevel;
+    size_t nestlevel;
     node *array;
     node *arrayshp;
     node *sharray;
@@ -1295,7 +1362,7 @@ typedef struct CUDA_ACCESS_INFO_T {
     node
       *sharrayshp_log; /* Logical shape of the sahred memory(smaller than the physical
                           one) */
-    int cuwldim;       /* Dimesion of the containing cuda withloop */
+    size_t cuwldim;       /* Dimesion of the containing cuda withloop */
     node *tbshp;       /* shape of the thread block */
     cuda_index_t *indices[MAX_REUSE_DIM];
     bool isconstant[MAX_REUSE_DIM]; /* whether a dimension is constant, i.e. consists of

@@ -529,8 +529,8 @@ CHKapArgCount (node *arg_node)
 {
     node *fundef_args;
     node *ap_args;
-    int numapargs;
-    int numfundefargs;
+    size_t numapargs;
+    size_t numfundefargs;
 
     DBUG_ENTER ();
 
@@ -545,7 +545,7 @@ CHKapArgCount (node *arg_node)
             NODE_ERROR (arg_node)
               = CHKinsertError (NODE_ERROR (arg_node),
                                 "Function parameter/argument count mismatch");
-            DBUG_PRINT ("Offender %s has %d parameters, call has %d arguments",
+            DBUG_PRINT ("Offender %s has %zu parameters, call has %zu arguments",
                         FUNDEF_NAME (AP_FUNDEF (arg_node)), numfundefargs, numapargs);
         }
 
@@ -559,7 +559,7 @@ CHKapArgCount (node *arg_node)
                   = CHKinsertError (NODE_ERROR (arg_node), "Loopfun recursive call "
                                                            "parameter/argument count "
                                                            "mismatch");
-                DBUG_PRINT ("Offender %s has %d parameters, call has %d arguments",
+                DBUG_PRINT ("Offender %s has %zu parameters, call has %zu arguments",
                             FUNDEF_NAME (AP_FUNDEF (arg_node)), numfundefargs, numapargs);
             }
         }
@@ -593,8 +593,7 @@ CHKfundefReturn (node *arg_node)
 
     DBUG_ENTER ();
 
-    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (global.compiler_anyphase >= PH_ptc_l2f)
-        && (global.compiler_anyphase < PH_cg_ctr)) {
+    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (global.compiler_anyphase >= PH_ptc_l2f)) {
         assgn = FUNDEF_BODY (arg_node);
         if (NULL != assgn) { /* Some fns do not have a body. Weird... */
             assgn = BLOCK_ASSIGNS (assgn);

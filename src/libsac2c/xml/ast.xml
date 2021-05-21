@@ -31,8 +31,6 @@
     <type name="Double" ctype="double" init="0.0" copy="literal" />
     <type name="Char" ctype="char" vtype="int" init="'\0'" 
           copy="literal" />
-    <type name="OldType" ctype="types*" init="NULL"
-    copy="function" persist="no" />
     <type name="Node" ctype="node*" init="NULL" copy="function" />
     <!-- a Link pointing to a node within the tree -->
     <type name="Link" ctype="node*" init="NULL" copy="hash" persist="yes" />
@@ -67,8 +65,6 @@
     copy="function" persist="no" />
     <type name="AccessFeature" ctype="feature_t" init="0"
     copy="literal"  />
-    <type name="ShpSeg" ctype="shpseg*" init="NULL"
-    copy="function" />
     <type name="Scheduling" ctype="sched_t*" init="NULL"
     copy="function" persist="no" />
     <type name="TaskSel" ctype="tasksel_t*" init="NULL"
@@ -78,7 +74,7 @@
     copy="function" />
     <type name="MTExecMode" ctype="mtexecmode_t" init="MUTH_ANY"
     copy="literal" />
-    <type name="CudaExecMode" ctype="cudaexecmode_t" init="MUTH_ANY"
+    <type name="CudaExecMode" ctype="cudaexecmode_t" init="CUDA_HOST_SINGLE"
     copy="literal" />
     <type name="StringSet" ctype="stringset_t*" init="NULL"
     copy="function" />
@@ -322,6 +318,33 @@
           <node name="Ret" />
         </travuser>
       </traversal>
+      <traversal id="CUMM" name="Unify memory model for CUDA managed memory" default="sons" include="managed_memory.h" >
+        <travuser>
+          <node name="Let" />
+          <node name="Prf" />
+          <node name="Avis" />
+        </travuser>
+      </traversal>
+      <traversal id="CUAD" name="Introduce delayed CUDA memory transfers primitives" default="sons" include="async_delay.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
+      <traversal id="CUADE" name="Expand delay of CUDA memory transfer primitives" default="sons" include="async_delay_expand.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="With" />
+          <node name="Cond" />
+          <node name="Ids" />
+          <node name="Id" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="STKNL" name="CUDA Create single threaded CUDA kerenls" default="sons" include="single_thread_kernels.h" >
         <travuser>
           <node name="Module" />
@@ -492,6 +515,17 @@
           <node name="Let" />
           <node name="Prf" />
           <node name="Cudast" />
+        </travuser>
+      </traversal>
+      <traversal id="MEMRT" name="Minimise host-device data transfers that resulted from EMRL allocation lifting" default="sons" include="minimize_emr_transfers.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Id" />
+          <node name="Ap" />
+          <node name="Prf" />
         </travuser>
       </traversal>
       <traversal id="SFWO" name="Set Fundef Was Optimized" default="sons" include="setfundefwasoptimized.h" >
@@ -955,15 +989,6 @@
         <travuser>
           <node name="Arg" />
           <node name="Fundef" />
-        </travuser>
-      </traversal>
-      <traversal id="CTR" name="Converting to old type representation" default="sons" include="convert_type_representation.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Arg" />
-          <node name="Block" />
-          <node name="Vardec" />
-          <node name="Ret" />
         </travuser>
       </traversal>
       <traversal id="CUD" name="Cleanup Declarations" default="sons" include="cleanup_decls.h" >
@@ -1632,6 +1657,7 @@
       <traversal id="PF" name="Annotate Function Calls " default="sons" include="annotate_fun_calls.h">
         <travuser>
           <node name="Ap" />
+          <node name="With" />
           <node name="Assign" />
           <node name="Fundef" />
         </travuser>  
@@ -2968,6 +2994,7 @@
         <node name="Prf" />
         <node name="Genarray" />
         <node name="Modarray" />
+        <node name="Fundef" />
       </travuser>
     </traversal>
     <traversal id="WRCI" name="With-loop reuse candidate inference" default="sons" include="wrci.h">
@@ -2975,11 +3002,36 @@
         <node name="Fundef" />
         <node name="Assign" />
         <node name="Let" />
-        <node name="With" />     
-        <node name="Genarray" />     
-        <node name="Modarray" />     
-        <node name="Fold" />     
+        <node name="With" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+        <node name="Fold" />
         <node name="Generator" />
+      </travuser>
+    </traversal>
+    <traversal id="EMRCI" name="EMR candidate inference" default="sons" include="emr_candidate_inference.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+        <node name="Cond" />
+        <node name="Arg" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="Ids" />
+        <node name="With" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+      </travuser>
+    </traversal>
+    <traversal id="EMRL" name="EMR loop optimisation" default="sons" include="emr_loop_optimisation.h">
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+        <node name="Let" />
+        <node name="With" />
+        <node name="Genarray" />
+        <node name="Modarray" />
       </travuser>
     </traversal>
     <traversal id="RWO" name="Reuse With-loop arrays with offsets" default="sons" include="reusewithoffset.h">
@@ -3251,10 +3303,12 @@
         <node name="Withs" />
         <node name="With2" />
         <node name="With" />
+        <node name="Assign" />
         <node name="Let" />
         <node name="Id" />
         <node name="Ids" />
         <node name="Withid" />
+        <node name="Fold" />
       </travuser>
     </traversal>
      <traversal id="RMPR" name="Remove propagates" default="sons" include="remove_propagates.h">
@@ -4936,6 +4990,7 @@ N_tfarg :
         <flag name="IsLocal" default="TRUE"/>
         <flag name="IsUnique" />
         <flag name="IsAlias" />
+        <flag name="IsExternal" />
         <flag name="IsNested" />
       </flags>
     </node>
@@ -5200,6 +5255,22 @@ N_tfarg :
             </target>
           </targets>
         </son>
+	    <son name="ERC" default="NULL">
+            <description>
+                Stores all WL reuse candidate found up to the initial
+                application of a loop function. These ERCs will only be
+                used to supply arguments when the fundef args have been
+                extended.
+            </description>
+            <targets>
+              <target mandatory="no" >
+                <node name="Exprs" />
+                <phases>
+                  <range from="opt_emrci" to="mem_rci" />
+                </phases>
+              </target>
+            </targets>
+	    </son>
       </sons>
       <!-- Attributes for FUNDEF -->
       <attributes>
@@ -5320,18 +5391,6 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="Types" inconstructor="no">
-          <type name="OldType">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <range from="cg_ctr" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="Specs" inconstructor="no">
           <type name="Integer">
             <targets>
@@ -5350,7 +5409,7 @@ N_tfarg :
               <target mandatory="no">
                 <node name="Return" />
                 <phases>
-                  <range from="ptc_l2f" to="cg_ctr"/>
+                  <range from="ptc_l2f" to="final"/>
                 </phases>
               </target>
             </targets>
@@ -5979,6 +6038,11 @@ N_tfarg :
         <flag name="Header" default="FALSE">
             <description>Indicates whether or not we need to generate a declaration within header.c when linking to an external library.</description>
         </flag>
+        <flag name="IsEMRLifted" default="FALSE">
+          <description>
+            TRUE iff this fundef has been affected by the EMRL optimisation.
+          </description>
+        </flag>
       </flags>
     <checks>
       <check name="CHKfundefVardecExtrema" />
@@ -6018,18 +6082,6 @@ N_tfarg :
         </son>
       </sons>
       <attributes>
-        <attribute name="Type"  default="NULL" inconstructor="no">
-          <type name="OldType">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="cg_ctr" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="TypeString" inconstructor="no">
           <type name="String">
             <targets>
@@ -6394,18 +6446,6 @@ N_tfarg :
          </son>
       </sons>
       <attributes>
-        <attribute name="Type" default="NULL" inconstructor="no">
-          <type name="OldType">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <range from="cg_ctr" to="final" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="Icm" inconstructor="no">
           <type name="Node">
             <targets>
@@ -6472,7 +6512,7 @@ N_tfarg :
             </targets>
           </type>
 	</attribute>
-	<attribute name="CudaExecMode" inconstructor="no">
+	<attribute name="CudaExecMode" default="CUDA_HOST_SINGLE" inconstructor="no">
 	  <type name="CudaExecMode">
             <targets>
               <target mandatory="no">
@@ -6498,7 +6538,7 @@ N_tfarg :
           </type>
 	</attribute>
 	<attribute name="Level" default="0" inconstructor="no">
-	  <type name="Integer">
+	  <type name="Sizet">
             <targets>
               <target mandatory="yes">
                 <any />
@@ -7958,6 +7998,20 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="ERC" default="NULL" >
+          <description>
+            Contains a list of Extra Reuse Candidates for WL memory reuse
+            within scope.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                  <range from="opt_emrci" to="mem_rci" />
+              </phases>
+            </target>
+          </targets>
+        </son>
       </sons>
       <attributes>
         <attribute name="Prf" inconstructor="yes" >
@@ -8384,6 +8438,7 @@ N_tfarg :
         <flag name="RefcountDots" default="FALSE" />
         <flag name="MutcThreadFun" default="FALSE" />
         <flag name="NoInline" default="FALSE" />
+        <flag name="NoCUDA" default="FALSE" />
       </flags>
     </node>
 <!--
@@ -8622,7 +8677,7 @@ N_tfarg :
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="initial" to="cg_ctr" />
+                  <range from="initial" to="final" />
                 </phases>
               </target>
             </targets>
@@ -9134,6 +9189,12 @@ N_tfarg :
             which VARDECS are no longer needed and can thus be eliminated.
           </description>
         </flag>
+        <flag name="IsCUDAPinned" default="FALSE" >
+            <description>XXX not sure where this needs to be set, indicates
+                that the AVIS is to be page-locked (pinned) by CUDA API
+                for accelerated transfer over the PCIe bus.
+          </description>
+        </flag>
 	<flag name="IsUniqueConsumed" default="FALSE" >
 	  <description>Used by the uniqueness checker to determine whether
 	  a unique type has been consumed earlier on.
@@ -9326,6 +9387,14 @@ N_tfarg :
 	  more than once.
 	  </description>
         </flag>	 
+	<flag name="IsAllocLift" default="FALSE" >
+      <description> 
+      This flag is set when the AVIS is created in order to
+      lift a memory allocation out of a loop body. This is
+      primarily set by ELMP and later the AVIS is alloc'd
+      by LRO.
+	  </description>
+        </flag>	 
   </flags>
   <checks>
     <check name="CHKavisReflection" />
@@ -9482,12 +9551,13 @@ N_tfarg :
         </son>
       </sons>
       <attributes>
-        <attribute name="Parts" default="-1" inconstructor="no" >
+        <attribute name="Parts" default="0" inconstructor="no" >
           <description>
           The number of partitions in this with-loop.
-          I have no idea what the -1 indicates.
+          I have no idea what the -1 indicated. 
+          Changed to 0 since most checks look for PARTS > 0. 
           </description>
-          <type name="Integer">
+          <type name="Sizet">
             <targets>
               <target mandatory="yes">
                 <any />
@@ -10098,8 +10168,8 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="TSI_TileShp" inconstructor="no">
-          <type name="ShpSeg">
+        <attribute name="TSI_TileShp" default="NULL" inconstructor="no">
+          <type name="Shape">
             <targets>
               <target mandatory="no">
                 <any />
@@ -10426,6 +10496,20 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="ERC" default="NULL" >
+          <description>
+            Contains a list of Extra Reuse Candidates for WL memory reuse
+            within scope.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                  <range from="opt_emrci" to="mem_rci" />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="DefShapeExpr" default="NULL">
           <description>For with3 loops, the default element is given by genarray( DefShapeExpr, Default) where default denotes the default element of the genarray. Only present if a default element is present, as well.</description>
           <targets>
@@ -10528,6 +10612,20 @@ N_tfarg :
               <node name="Exprs" />
               <phases>
                 <range from="opt_wrci" to="mem_rci" />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="ERC" default="NULL" >
+          <description>
+            Contains a list of Extra Reuse Candidates for WL memory reuse
+            within scope.
+          </description>
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                  <range from="opt_emrci" to="mem_rci" />
               </phases>
             </target>
           </targets>
@@ -10961,7 +11059,7 @@ N_tfarg :
           </type>
         </attribute>
         <attribute name="Blocks" default="0" inconstructor="no">
-          <type name="Integer">
+          <type name="Uint">
             <targets>
               <target mandatory="yes">
                 <any />
@@ -12300,7 +12398,7 @@ N_tfarg :
           </type>
         </attribute>
         <attribute name="Arity" inconstructor="yes">
-          <type name="Integer">
+          <type name="Sizet">
             <targets>
               <target mandatory="yes">
                 <any />

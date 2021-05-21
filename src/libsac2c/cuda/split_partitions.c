@@ -28,7 +28,7 @@ typedef struct seg {
 } seg_t;
 
 typedef struct partition {
-    int segs_cnt;
+    size_t segs_cnt;
     int extents[3];
     seg_t *segs[3];
 } partition_t;
@@ -62,7 +62,7 @@ static const int optimal_seg_extents[3]
 struct INFO {
     node *part;
     node *new_parts;
-    int wl_dim;
+    size_t wl_dim;
 };
 
 /**
@@ -198,15 +198,15 @@ FreeSeg (seg_t *seg)
  *
  *****************************************************************************/
 static partition_t *
-MakePartition (int segs_cnt)
+MakePartition (size_t segs_cnt)
 {
     partition_t *new_part;
 
     DBUG_ENTER ();
 
     new_part = (partition_t *)MEMmalloc (sizeof (partition_t));
-
-    new_part->segs_cnt = segs_cnt;
+    // FIXME grzegorz: may be good to use macros here to be consistent 
+    PARTITION_SEGS_CNT (new_part) = segs_cnt;
 
     new_part->segs[0] = NULL;
     new_part->segs[1] = NULL;
@@ -234,7 +234,7 @@ FreePartition (partition_t *part)
     DBUG_ENTER ();
 
     if (part != NULL) {
-        int i = 0;
+        size_t i = 0;
         while (i < PARTITION_SEGS_CNT (part)) {
             part->segs[i] = FreeSeg (part->segs[i]);
             i++;
@@ -259,7 +259,7 @@ static bool
 PartitionNeedsSplit (partition_t *part)
 {
     int total_volume = 1;
-    int i = 0;
+    size_t i = 0;
     bool res;
 
     DBUG_ENTER ();
@@ -285,7 +285,7 @@ PartitionNeedsSplit (partition_t *part)
  *
  *****************************************************************************/
 static partition_t *
-CreatePartitionsAndSegs (node *lb, node *ub, node *step, node *width, int dims)
+CreatePartitionsAndSegs (node *lb, node *ub, node *step, node *width, size_t dims)
 {
     partition_t *part;
     seg_t *segs = NULL;

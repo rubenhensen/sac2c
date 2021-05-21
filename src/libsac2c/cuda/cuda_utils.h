@@ -1,4 +1,3 @@
-
 #ifndef _SAC_CUDA_UTILS_H_
 #define _SAC_CUDA_UTILS_H_
 
@@ -30,8 +29,8 @@ extern simpletype CUd2shSimpleTypeConversion (simpletype sty);
 extern simpletype CUh2shSimpleTypeConversion (simpletype sty);
 extern bool CUisDeviceTypeNew (ntype *ty);
 extern bool CUisShmemTypeNew (ntype *ty);
-extern bool CUisDeviceTypeOld (types *ty);
-extern bool CUisShmemTypeOld (types *ty);
 extern bool CUisDeviceArrayTypeNew (ntype *ty);
+extern ntype *CUconvertHostToDeviceType (ntype *host_type);
+extern ntype *CUconvertDeviceToHostType (ntype *device_type);
 
-#endif
+#endif /* _SAC_CUDA_UTILS_H_ */

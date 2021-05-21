@@ -7,6 +7,8 @@
 #if ENABLE_HWLOC
 
 #include <stddef.h>
+#include <errno.h>
+#include <string.h>
 #include <hwloc.h>
 
 #include "cpubind.h"
@@ -18,6 +20,43 @@
 
 #define SAC_PULIST_EMPTY_CHAR '-'
 #define SAC_PULIST_FULL_CHAR '*'
+
+/**
+ * Topology information for CPU-binding is stored here.
+ * This var is also accessed in mt/hwloc_data.c
+ */
+hwloc_topo_data_t *SAC_HWLOC_topo_data;
+
+/**
+ * @brief Check that we are using the same major version of HWLOC as we used
+ *        to compile the runtime libraries. Issue an error if this is not the
+ *        case.
+ *
+ * In practice we should never reach this point as system-level installs of HWLOC will
+ * indicate to ldconfig/ldd their version, meaning that at runtime, as we lookup functions from
+ * shared libraries, the linker should error out with the wrong version.
+ *
+ * We use the function for the case where a user chooses to locally install hwloc, and then use
+ * LD_LIBRARY_PATH (or even LD_PRELOAD) to point to this shared library.
+ *
+ * See https://www.open-mpi.org/projects/hwloc/doc/v2.0.4/a00326.php#faq_upgrade for more
+ * details.
+ */
+static void
+hwloc_check_version (void)
+{
+    unsigned version = hwloc_get_api_version();
+
+    // HWLOC version is encoded as a hexadecimal of a semantic version number, e.g.
+    // 1.11.6 == 0x00010b06. Here we check its major number against each other by bit
+    // shifting to the right.
+    if ((version >> 16) != (HWLOC_API_VERSION >> 16)) {
+        SAC_RuntimeError ("SaC compiled for hwloc API 0x%x but running on library API 0x%x. "
+                          "You may need to point LD_LIBRARY_PATH to the right hwloc library. "
+                          "Aborting since the new ABI is not backward compatible.",
+                          HWLOC_API_VERSION, version);
+    }
+}
 
 /**
  * Print out a topological tree of the system using HWLOC-derived information
@@ -170,8 +209,6 @@ hwloc_print_topology_selection (hwloc_obj_t sel_obj, hwloc_obj_t obj, unsigned d
 void
 SAC_HWLOC_bind_on_cpuset (hwloc_cpuset_t cpuset)
 {
-    char *str;
-
 #if HWLOC_API_VERSION < 0x00010800
     // bind current process to cpuset
     if (hwloc_set_cpubind (SAC_HWLOC_topology, cpuset,
@@ -227,16 +264,47 @@ SAC_HWLOC_get_core (hwloc_cpuset_t cpuset)
 void
 SAC_HWLOC_init ()
 {
+    int err;
     hwloc_obj_type_t socket_obj; // FIXME(hans) What the hell is this for?
 
     /*
-     * First we grab the host's topology and store it in the global variable:
+     * Check that we are using the same version of HWLOC as we compiled with.
      */
-    hwloc_topology_init (&SAC_HWLOC_topology);
-    hwloc_topology_set_flags (SAC_HWLOC_topology,
-                              HWLOC_TOPOLOGY_FLAG_IO_DEVICES); // include access to IO
-                                                               // devices
-    hwloc_topology_load (SAC_HWLOC_topology);
+    hwloc_check_version ();
+
+    /*
+     * Next we grab the host's topology and store it in the global variable:
+     */
+    err = hwloc_topology_init (&SAC_HWLOC_topology);
+    if (err < 0) {
+        SAC_RuntimeError ("%s", strerror (errno));
+    }
+#if HWLOC_API_VERSION < 0x00020000
+    // include access to IO devices
+    err = hwloc_topology_set_flags (SAC_HWLOC_topology,
+                                    HWLOC_TOPOLOGY_FLAG_IO_DEVICES); 
+    if (err < 0) {
+        SAC_RuntimeError ("%s", strerror (errno));
+    }
+#else
+    err = hwloc_topology_set_type_filter(SAC_HWLOC_topology, HWLOC_OBJ_BRIDGE,
+                                         HWLOC_TYPE_FILTER_KEEP_IMPORTANT);
+    if (err < 0) {
+        SAC_RuntimeError ("%s", strerror (errno));
+    }
+    // include access to IO devices
+    err = hwloc_topology_set_type_filter(SAC_HWLOC_topology, HWLOC_OBJ_PCI_DEVICE,
+                                         HWLOC_TYPE_FILTER_KEEP_IMPORTANT);
+    if (err < 0) {
+        SAC_RuntimeError ("%s", strerror (errno));
+    }
+#endif
+    err = hwloc_topology_load (SAC_HWLOC_topology);
+    if (err < 0) {
+        // we should destroy the topology, as its memory is still allocated
+        hwloc_topology_destroy (SAC_HWLOC_topology);
+        SAC_RuntimeError ("%s", strerror (errno));
+    }
 
     /*
      * Allocate our struct to contain all the topology information for later
@@ -339,6 +407,6 @@ SAC_HWLOC_cleanup ()
 #else /* ENABLE_HWLOC */
 
 // compiling an empty file causes errors to be issued, this resolves it.
-static int this_translation_unit = 0xdead;
+static const int this_translation_unit = 0xdeadbeef;
 
 #endif /* ENABLE_HWLOC */

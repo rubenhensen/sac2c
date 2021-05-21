@@ -722,6 +722,24 @@ RCIprf (node *arg_node, info *arg_info)
                       INFO_POSTASSIGN (arg_info));
         break;
 
+    case F_prefetch2device:
+    case F_prefetch2host:
+        INFO_MODE (arg_info) = rc_apuse;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        INFO_MODE (arg_info) = rc_prfuse;
+        break;
+
+    case F_host2device_end:
+    case F_device2host_end:
+        /* the first argument is an alias, as such we do no reference counting
+         * of this N_id, the second argument does need to be reference counted.
+         */
+        INFO_MODE (arg_info) = rc_apuse;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        INFO_MODE (arg_info) = rc_prfuse;
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
+        break;
+
     default:
         INFO_MODE (arg_info) = rc_prfuse;
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
@@ -833,9 +851,10 @@ RCIwith (node *arg_node, info *arg_info)
     INFO_WITHMASK (arg_info) = DFMremoveMask (INFO_WITHMASK (arg_info));
 
     /*
-     * In AKD-IV-Withloops, the IV is always needed
+     * In AKD-IV-Withloops, the IV is always needed except in the case
+     * of CUDA WLs, where the IV is anyway lifted out.
      */
-    INFO_WITHVECNEEDED (arg_info) = TRUE;
+    INFO_WITHVECNEEDED (arg_info) = !WITH_CUDARIZABLE (arg_node);
     WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
 
     INFO_MODE (arg_info) = rc_prfuse;

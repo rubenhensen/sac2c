@@ -704,6 +704,7 @@ STRtok (const char *first, const char *sep)
     }
 
     if (current == NULL) {
+        keep_string = MEMfree (keep_string);
         ret = NULL;
     } else {
         i = 0;
@@ -1208,7 +1209,10 @@ STRstring2Array (const char *str)
     new_exprs = TBmakeExprs (TBmakeChar ('\0'), NULL);
 
     cnt = 0;
-
+    /* 
+     * decrement after check for > 0, safe method for reverse loop ending on 0
+     * i : (STRlen - 1) to 0
+     */    
     for (i = STRlen (str); i-- > 0; ) {
         if ((i > 0) && (str[i - 1] == '\\')) {
             switch (str[i]) {
@@ -1260,8 +1264,8 @@ STRstring2Array (const char *str)
     }
 
     //This modifies the 'length' arg in String::to_string for Stdlib
-    //FIXME grzegorz: update to_string to accept unsigned long arg
-    //before changing to TBmakeNumulong
+    // FIXME grzegorz: update to_string to accept unsigned long arg
+    // before changing to TBmakeNumulong
     len_expr = TBmakeNum (cnt);
     array
       = TCmakeVector (TYmakeAKS (TYmakeSimpleType (T_char), SHmakeShape (0)), new_exprs);

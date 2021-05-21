@@ -554,7 +554,7 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IVEXItmpIds( node *arg_node, info *arg_info, node* oldavis, int k)
+ * @fn node *IVEXItmpIds( node *arg_node, info *arg_info, node* oldavis, size_t k)
  *
  * @brief:  Same as IVEXItmpVec, except this one handles one
  *          of the WITHID_IDS scalar variables i,j,k in
@@ -571,7 +571,7 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
  *
  *****************************************************************************/
 node *
-IVEXItmpIds (node *curpart, node *iavis, int k, node **preassignspart, node **vardecs)
+IVEXItmpIds (node *curpart, node *iavis, size_t k, node **preassignspart, node **vardecs)
 {
     node *avisp;
     node *avispp;
@@ -626,7 +626,7 @@ populateLUTVars (node *arg_node, info *arg_info)
     node *oldavis;
     node *navis;
     node *ids;
-    int k = 0;
+    size_t k = 0;
 
     DBUG_ENTER ();
 
@@ -1135,18 +1135,19 @@ IVEXIap (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 node *
-IVEXIwithidsKludge (int offset, node *withidids, node *curpart, node **preassignspart,
+IVEXIwithidsKludge (size_t offset, node *withidids, node *curpart, node **preassignspart,
                     node **vardecs)
 {
     node *z = NULL;
     node *ijk;
+    bool isIdsMember;
 
     DBUG_ENTER ();
 
     ijk = TCgetNthExprsExpr (offset, ARRAY_AELEMS (withidids));
     if (NULL != curpart) {
-        offset = LFUindexOfMemberIds (ID_AVIS (ijk), WITHID_IDS (PART_WITHID (curpart)));
-        if (-1 != offset) {
+        offset = LFUindexOfMemberIds (ID_AVIS (ijk), WITHID_IDS (PART_WITHID (curpart)), &isIdsMember);
+        if (isIdsMember) {
             z = TCgetNthIds (offset, WITHID_IDS (PART_WITHID (curpart)));
             if (IVEXIisExtremaActive ()) {
                 z = IVEXItmpIds (curpart, z, offset, preassignspart, vardecs);

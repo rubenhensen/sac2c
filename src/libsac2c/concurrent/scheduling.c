@@ -95,7 +95,7 @@ struct SCHED_T {
     char *discipline;
     sched_class_t mclass;
     size_t line;
-    int num_args;
+    size_t num_args;
     sched_arg_t *args;
 };
 
@@ -137,7 +137,7 @@ static struct {
     sched_class_t mclass;
     int adjust_flag;
     int max_sched_dim;
-    int num_args;
+    size_t num_args;
     char *arg_spec;
 } scheduler_table[] = {
   /* Name            Class          Adjust Dim  Args  ArgTypes */
@@ -171,7 +171,7 @@ static struct {
 static sched_t *
 CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, size_t line)
 {
-    int i;
+    size_t i;
     char *arg_spec;
     node *expr;
 
@@ -184,7 +184,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, size_t line)
 
         if (exprs == NULL) {
             CTIabortLine (line,
-                          "Scheduling discipline '%s` expects %d arguments "
+                          "Scheduling discipline '%s` expects %zu arguments "
                           "(too few specified)",
                           sched->discipline, sched->num_args);
         }
@@ -197,7 +197,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, size_t line)
             case 'n':
                 if (NODE_TYPE (expr) != N_num) {
                     CTIabortLine (line,
-                                  "Argument %d of scheduling discipline '%s` must be"
+                                  "Argument %zu of scheduling discipline '%s` must be"
                                   " a number",
                                   i, sched->discipline);
                 }
@@ -208,7 +208,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, size_t line)
             case 'i':
                 if (NODE_TYPE (expr) != N_spid) {
                     CTIabortLine (line,
-                                  "Argument %d of scheduling discipline '%s` must be"
+                                  "Argument %zu of scheduling discipline '%s` must be"
                                   " an identifier",
                                   i, sched->discipline);
                 }
@@ -228,7 +228,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, size_t line)
                     break;
                 default:
                     CTIabortLine (line,
-                                  "Argument %d of scheduling discipline '%s` must be"
+                                  "Argument %zu of scheduling discipline '%s` must be"
                                   " an identifier or a number",
                                   i, sched->discipline);
                 }
@@ -255,7 +255,7 @@ CheckSchedulingArgs (sched_t *sched, char *spec, node *exprs, size_t line)
 
     if (exprs != NULL) {
         CTIabortLine (line,
-                      "Scheduling discipline '%s` expects %d arguments "
+                      "Scheduling discipline '%s` expects %zu arguments "
                       "(too many specified)",
                       sched->discipline, sched->num_args);
     }
@@ -287,8 +287,9 @@ SCHmakeScheduling (char *discipline, ...)
     va_list args;
     char *arg_spec, *tmp_id;
     sched_t *sched;
-    int i, disc_no, tmp_num;
-
+    int disc_no, tmp_num;
+    size_t i;
+    
     DBUG_ENTER ();
 
     va_start (args, discipline);
@@ -443,7 +444,7 @@ SCHmakeSchedulingByPragma (node *ap_node, size_t line)
 sched_t *
 SCHremoveScheduling (sched_t *sched)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -492,7 +493,7 @@ SCHremoveScheduling (sched_t *sched)
 void
 SCHtouchScheduling (sched_t *sched, info *arg_info)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -541,7 +542,7 @@ SCHtouchScheduling (sched_t *sched, info *arg_info)
 sched_t *
 SCHcopyScheduling (sched_t *sched)
 {
-    int i;
+    size_t i;
     sched_t *new_sched;
 
     DBUG_ENTER ();
@@ -601,7 +602,7 @@ SCHcopyScheduling (sched_t *sched)
 sched_t *
 SCHprecompileScheduling (sched_t *sched)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -629,7 +630,7 @@ SCHprecompileScheduling (sched_t *sched)
 sched_t *
 SCHmarkmemvalsScheduling (sched_t *sched, lut_t *lut)
 {
-    int i;
+    size_t i;
     char *new_name;
 
     DBUG_ENTER ();
@@ -660,7 +661,7 @@ SCHmarkmemvalsScheduling (sched_t *sched, lut_t *lut)
 void
 SCHprintScheduling (FILE *outfile, sched_t *sched)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -675,23 +676,25 @@ SCHprintScheduling (FILE *outfile, sched_t *sched)
     if (sched != NULL) {
         fprintf (outfile, "%s( ", sched->discipline);
 
-        for (i = 0; i < sched->num_args - 1; i++) {
-            switch (sched->args[i].arg_type) {
-            case AT_num:
-            case AT_num_for_id:
-                fprintf (outfile, "%d, ", sched->args[i].arg.num);
-                break;
-
-            case AT_id:
-                fprintf (outfile, "%s, ", sched->args[i].arg.id);
-                break;
-
-            default:
-                break;
-            }
-        }
+        DBUG_PRINT_TAG ("PRINT", "number of args: %zu\n", sched->num_args);
 
         if (sched->num_args > 0) {
+            for (i = 0; i < sched->num_args - 1; i++) {
+                switch (sched->args[i].arg_type) {
+                case AT_num:
+                case AT_num_for_id:
+                    fprintf (outfile, "%d, ", sched->args[i].arg.num);
+                    break;
+
+                case AT_id:
+                    fprintf (outfile, "%s, ", sched->args[i].arg.id);
+                    break;
+
+                default:
+                    break;
+                }
+            }
+
             switch (sched->args[sched->num_args - 1].arg_type) {
             case AT_num:
             case AT_num_for_id:
@@ -831,7 +834,7 @@ static node *
 CompileSchedulingArgs (int seg_id, sched_t *sched, node *args)
 {
     node *new_arg;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1112,7 +1115,7 @@ SCHcompileSchedulingInit (int seg_id, node *wl_ids, sched_t *sched, node *arg_no
 struct TASKSEL_T {
     char *discipline;
     size_t line;
-    int num_args;
+    size_t num_args;
     int *arg;
     int dims;
 };
@@ -1130,7 +1133,7 @@ struct TASKSEL_T {
 
 static struct {
     char *discipline;
-    int num_args;
+    size_t num_args;
     int dims;
 } taskselector_table[] = {
   /* Name           num_args,  dims*/
@@ -1154,7 +1157,7 @@ static struct {
 static tasksel_t *
 CheckTaskselArgs (tasksel_t *tasksel, node *exprs, size_t line)
 {
-    int i;
+    size_t i;
     node *expr;
 
     DBUG_ENTER ();
@@ -1163,7 +1166,7 @@ CheckTaskselArgs (tasksel_t *tasksel, node *exprs, size_t line)
 
         if (exprs == NULL) {
             CTIabortLine (line,
-                          "Taskselector discipline '%s` expects %d arguments "
+                          "Taskselector discipline '%s` expects %zu arguments "
                           "(too few specified)",
                           tasksel->discipline, tasksel->num_args);
         }
@@ -1172,7 +1175,7 @@ CheckTaskselArgs (tasksel_t *tasksel, node *exprs, size_t line)
 
         if (NODE_TYPE (expr) != N_num) {
             CTIabortLine (line,
-                          "Argument %d of taskselector discipline '%s` must be"
+                          "Argument %zu of taskselector discipline '%s` must be"
                           " a number",
                           i, tasksel->discipline);
         }
@@ -1184,7 +1187,7 @@ CheckTaskselArgs (tasksel_t *tasksel, node *exprs, size_t line)
 
     if (exprs != NULL) {
         CTIabortLine (line,
-                      "Taskselector discipline '%s` expects %d arguments "
+                      "Taskselector discipline '%s` expects %zu arguments "
                       "(too many specified)",
                       tasksel->discipline, tasksel->num_args);
     }
@@ -1211,7 +1214,8 @@ SCHmakeTasksel (char *discipline, ...)
 {
     va_list args;
     tasksel_t *tasksel;
-    int i, disc_no;
+    int disc_no;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1370,7 +1374,7 @@ SCHtouchTasksel (tasksel_t *tasksel, info *arg_info)
 tasksel_t *
 SCHcopyTasksel (tasksel_t *tasksel)
 {
-    int i;
+    size_t i;
     tasksel_t *new_tasksel;
 
     DBUG_ENTER ();
@@ -1449,7 +1453,7 @@ SCHmarkmemvalsTasksel (tasksel_t *tasksel, lut_t *lut)
 void
 SCHprintTasksel (FILE *outfile, tasksel_t *tasksel)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1498,7 +1502,7 @@ CompileSchedulingWithTaskselArgs (int seg_id, sched_t *sched, tasksel_t *tasksel
                                   node *args)
 {
     node *new_arg;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 

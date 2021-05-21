@@ -23,6 +23,68 @@
 /**
  * @file handle_set_expression_dots.c
  *
+ * description:
+ *   This module implements the desugaring of dots in tensor comprehensions
+ *   (also referred to as "set expressions"). A detailed high-level
+ *   description can be found in the desugaring document (bnf/desugaring.tex) in 
+ *   >>>    gitolite@sac-home.org:docs.git     <<<
+ *
+ *   In essence, it elides single dots and triple dots within the index
+ *   variable descriptions of all partitions. Here, we look at an example
+ *   of both cases:
+ *
+ *   1) Single Dot:
+ *
+ *   { ...;
+ *     [ i, ., j, ., .] -> expr | lb <= [i,j] < ub;
+ *     ...; }
+ *
+ *   is translated into:
+ *
+ *   { ...;
+ *     [ i, t1, j, t2, t3] -> expr[[t1, t2, t3]] 
+ *         | [lb[[0]], 0, lb[[1]], 0, 0] <= [i,t1,j,t2,t3]
+ *           < [ub[[0]], shape (SUBST(i,0, SUBST(j,0,expr)))[0],
+ *              ub[[1]], shape (SUBST(i,0, SUBST(j,0,expr)))[1],
+ *                       shape (SUBST(i,0, SUBST(j,0,expr)))[2]];
+ *     ...; }
+ *
+ *   Note here, that the expression SUBST(i,0, SUBST(j,0,expr))
+ *   potentially contains an out-of bounds access due to the cell
+ *   shape having an empty component. The Tensor Comprehension paper
+ *   at IFL explains how this *should* be avoided using the inference
+ *   of the specialisation oracle. In practice, this is (a) very rare
+ *   and (b) our optimiser often elides the code  anyways due to
+ *   structural constant folding.... it should be changed at some
+ *   point though....!
+ *
+ *   2) Triple Dots (can occur max once! per index description):
+ *   
+ *   { ...;
+ *     [ i, ..., j] -> expr | lb <= [i,j] < ub;
+ *     ...; }
+ *
+ *   is translated into:
+ *
+ *   { ...;
+ *     tv -> { i = tv[0];
+ *             iv = drop (1, drop (-1, tv));
+ *             j = tv[shape(tv)-1];
+ *           } : expr[[]++iv++[]]           // <- empties here for s-dots
+ *         | [lb[[0]]]
+ *            ++ genarray ([dim (SUBST(i,0, SUBST(j,0,expr))) - 0], 0)  // <- subtraction here for s-dots
+ *            ++ [lb[[1]]]
+ *           <= [i,t1,j,t2,t3]
+ *           <  [ub[[0]]]
+ *               ++ drop (0, drop (-0, shape (SUBST(i,0, SUBST(j,0,expr))))) // <- drops here for the s-dots
+ *               ++ [ub[[1]]];
+ *     ...; }
+ *
+ *   Again, we have the potential out-of-bounds problem with
+ *   SUBST(i,0, SUBST(j,0,expr)) as explained above!
+ *
+ * implementation:
+ *    needs to be described here ....
  */
 
 /**
@@ -539,7 +601,7 @@ static node *
 MergeIn (node *didxs, node *e_vals, node *s_vals, node *t_val)
 {
     node *res = NULL;
-    int m,n,k;
+    size_t m,n,k;
     int t_pos;
 
     DBUG_ENTER ();
@@ -570,7 +632,7 @@ MergeIn (node *didxs, node *e_vals, node *s_vals, node *t_val)
         DBUG_ASSERT (TCcountExprs (didxs) == m+n+k,
                      "length of dotted generator variables expected to match the"
                      " number of expressions to be merged, ie. we should have"
-                     " %d = %d+%d+%d", TCcountExprs (didxs), m, n, k);
+                     " %zu = %zu+%zu+%zu", TCcountExprs (didxs), m, n, k);
         res = RecMergeIn( didxs, e_vals, s_vals, 0, &t_pos);
         res = Exprs2expr (res, k, t_pos, DUPdoDupTree (t_val));
     }

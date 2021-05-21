@@ -36,9 +36,9 @@ typedef enum {
 
 /* Essential information of a WL partition */
 typedef struct PART_INFO {
-    int dim;           /* How many ids */
+    size_t dim;           /* How many ids */
     unsigned int type; /* ThreadIdx or LoopIdx */
-    int nth; /* Position of a particularly searching id. See function SearchIndex */
+    unsigned nth; /* Position of a particularly searching id. See function SearchIndex */
     node *wlids;
     node *step;
     node *width;
@@ -49,7 +49,7 @@ typedef struct PART_INFO {
  * INFO structure
  */
 struct INFO {
-    int nest_level;
+    unsigned int nest_level;
     travmode_t travmode;
     node *fundef;
     node *wlidxs;
@@ -58,8 +58,8 @@ struct INFO {
     node *lastassign;
     bool is_affine;
     int coefficient;
-    int idxdim;
-    int cuwldim;
+    unsigned int idxdim;
+    unsigned int cuwldim;
     node *pragma;
     cuda_access_info_t *access_info;
     lut_t *lut; /* For lac-fun in cuda wl, provide fundef arg->ap arg mappings */
@@ -139,7 +139,7 @@ FreeInfo (info *info)
 }
 
 static part_info_t *
-CreatePartInfo (int dim, unsigned int type, node *wlids, node *step, node *width)
+CreatePartInfo (size_t dim, unsigned int type, node *wlids, node *step, node *width)
 {
     part_info_t *info;
 
@@ -199,7 +199,7 @@ PopPartInfo (part_info_t *infos)
 static part_info_t *
 SearchIndex (part_info_t *infos, node *avis)
 {
-    int nth = 0;
+    unsigned int nth = 0;
     node *wlids;
     part_info_t *res = NULL;
 
@@ -221,12 +221,14 @@ SearchIndex (part_info_t *infos, node *avis)
     DBUG_RETURN (res);
 }
 
-static int
-DecideThreadIdx (node *ids, int dim, node *avis)
+static unsigned int
+DecideThreadIdx (node *ids, size_t dim, node *avis, bool *isValidWithids)
 {
-    int res = -1;
+    unsigned int res;
 
     DBUG_ENTER ();
+    
+    *isValidWithids = true;
 
     if (dim == 1) {
         DBUG_ASSERT (IDS_AVIS (ids) == avis, "Unknown wl ids found!");
@@ -237,9 +239,11 @@ DecideThreadIdx (node *ids, int dim, node *avis)
         } else if (IDS_AVIS (IDS_NEXT (ids)) == avis) {
             res = IDX_THREADIDX_X;
         } else {
+            *isValidWithids = false;
             DBUG_UNREACHABLE ("Found withids with more than 2 ids!");
         }
     } else {
+        *isValidWithids = false;
         DBUG_UNREACHABLE ("Found withids with more than 2 ids!");
     }
 
@@ -247,7 +251,7 @@ DecideThreadIdx (node *ids, int dim, node *avis)
 }
 
 static void
-AddIndex (int type, int coefficient, node *idx, int looplevel, int dim,
+AddIndex (unsigned int type, int coefficient, node *idx, size_t looplevel, size_t dim,
           info *arg_info)
 {
     DBUG_ENTER ();
@@ -307,14 +311,16 @@ ActOnId (node *avis, info *arg_info)
         }
         /* This is a withloop ids. We search for the exact ids */
         else if ((part_info = SearchIndex (INFO_PART_INFO (arg_info), avis)) != NULL) {
-            int type = IDX_LOOPIDX;
+            unsigned int type = IDX_LOOPIDX;
             DBUG_ASSERT ((PART_INFO_TYPE (part_info) == IDX_THREADIDX
                           || PART_INFO_TYPE (part_info) == IDX_LOOPIDX),
                          "Index is neither thread index nor loop index!");
 
             if (PART_INFO_TYPE (part_info) == IDX_THREADIDX) {
+                bool validWithids = false;
                 type = DecideThreadIdx (PART_INFO_WLIDS (part_info),
-                                        PART_INFO_DIM (part_info), avis);
+                                        PART_INFO_DIM (part_info), avis, &validWithids);
+                DBUG_ASSERT (validWithids, "Invalid withids detected");
             }
 
             /*
@@ -389,8 +395,9 @@ CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
 {
     int i, coefficient, shmem_size, dim;
     cuda_index_t *index;
-    int DIMS[2][2] = {{1, global.cuda_1d_block_large},
-                      {global.cuda_2d_block_y, global.cuda_2d_block_x}};
+    int DIMS[2][2]
+      = {{1, global.cuda_options.cuda_1d_block_large},
+         {global.cuda_options.cuda_2d_block_y, global.cuda_options.cuda_2d_block_x}};
     node *sharray_shp = NULL;
 
     DBUG_ENTER ();
@@ -448,7 +455,7 @@ CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
                 if (dim == 2) { /* X dimension */
                     shmem_size = DIMS[dim - 1][i];
                 } else if (dim == 1) { /* Y dimension */
-                    shmem_size = global.cuda_2d_block_y;
+                    shmem_size = global.cuda_options.cuda_2d_block_y;
                 }
             }
 
@@ -495,10 +502,12 @@ CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
 static cuda_access_info_t *
 CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info)
 {
-    int i, coefficient, shmem_size, dim, cuwl_dim;
+    int i, coefficient, shmem_size, dim;
+    size_t cuwl_dim;
     cuda_index_t *index;
-    int block_sizes_2d[2] = {global.cuda_2d_block_y, global.cuda_2d_block_x};
-    int blocking_factor = global.cuda_2d_block_x;
+    int block_sizes_2d[2]
+      = {global.cuda_options.cuda_2d_block_y, global.cuda_options.cuda_2d_block_x};
+    int blocking_factor = global.cuda_options.cuda_2d_block_x;
     node *sharray_shp_log = NULL, *sharray_shp_phy = NULL;
 
     DBUG_ENTER ();
@@ -559,12 +568,13 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
                      * of the thread block to make sure that we have enough
                      * space to accomodate the shared memory allocated.
                      */
-                    shmem_size += (coefficient * global.cuda_1d_block_small);
+                    shmem_size += (coefficient * global.cuda_options.cuda_1d_block_small);
                     PART_THREADBLOCKSHAPE (INFO_CUWLPART (arg_info))
                       = FREEdoFreeNode (PART_THREADBLOCKSHAPE (INFO_CUWLPART (arg_info)));
                     PART_THREADBLOCKSHAPE (INFO_CUWLPART (arg_info))
                       = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim),
-                                     TBmakeExprs (TBmakeNum (global.cuda_1d_block_small),
+                                     TBmakeExprs (TBmakeNum (global.cuda_options
+                                                               .cuda_1d_block_small),
                                                   NULL));
                 } else if (cuwl_dim == 2) {
                     shmem_size += (coefficient * block_sizes_2d[1]);
@@ -749,12 +759,12 @@ DAAap (node *arg_node, info *arg_info)
 node *
 DAAwith (node *arg_node, info *arg_info)
 {
-    int dim;
+    unsigned int dim;
     travmode_t old_mode;
 
     DBUG_ENTER ();
 
-    dim = TCcountIds (WITH_IDS (arg_node));
+    dim = (unsigned int)TCcountIds (WITH_IDS (arg_node));
 
     if ((WITH_CUDARIZABLE (arg_node) && dim <= 2) || INFO_NEST_LEVEL (arg_info) > 0) {
 
@@ -789,7 +799,7 @@ DAAwith (node *arg_node, info *arg_info)
 }
 
 static node *
-CreateBlockingPragma (node *ids, int dim, info *arg_info)
+CreateBlockingPragma (node *ids, size_t dim, info *arg_info)
 {
     node *pragma, *array, *wlcomp_aps, *block_exprs = NULL;
     /* bool needblocked = FALSE; */
@@ -855,7 +865,7 @@ CreateBlockingPragma (node *ids, int dim, info *arg_info)
 node *
 DAApart (node *arg_node, info *arg_info)
 {
-    int dim;
+    size_t dim;
     unsigned int ids_type;
     part_info_t *p_info;
     node *old_wlidx, *ids;
@@ -1090,7 +1100,7 @@ DAAprf (node *arg_node, info *arg_info)
         case F_idxs2offset:
             if (INFO_TRAVMODE (arg_info) == trav_collect) {
                 node *ids, *avis, *shape;
-                int rank;
+                size_t rank;
 
                 ids = PRF_EXPRS2 (arg_node);
                 shape = PRF_ARG1 (arg_node);

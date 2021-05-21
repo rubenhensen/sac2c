@@ -97,69 +97,6 @@ FREEfreeIndexInfo (index_info *fr)
 
 /*--------------------------------------------------------------------------*/
 
-shpseg *
-FREEfreeShpseg (shpseg *fr)
-{
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("Removing shpseg");
-
-    DBUG_ASSERT (fr != NULL, "cannot free a NULL shpseg!");
-
-    if (SHPSEG_NEXT (fr) != NULL) {
-        SHPSEG_NEXT (fr) = FREEfreeShpseg (SHPSEG_NEXT (fr));
-    }
-
-    fr = MEMfree (fr);
-
-    DBUG_RETURN (fr);
-}
-
-/*--------------------------------------------------------------------------*/
-
-types *
-FREEfreeOneTypes (types *fr)
-{
-    types *tmp;
-
-    DBUG_ENTER ();
-
-    if (fr != NULL) {
-        DBUG_PRINT ("Removing types: %s",
-                    (TYPES_NAME (fr) == NULL) ? "<simple>" : TYPES_NAME (fr));
-        tmp = fr;
-        fr = TYPES_NEXT (fr);
-
-        if (TYPES_DIM (tmp) > 0) {
-            DBUG_ASSERT (TYPES_SHPSEG (tmp) != NULL,
-                         "SHPSEG not found although DIM is greater 0");
-            TYPES_SHPSEG (tmp) = FREEfreeShpseg (TYPES_SHPSEG (tmp));
-        }
-        TYPES_NAME (tmp) = MEMfree (TYPES_NAME (tmp));
-        TYPES_MOD (tmp) = MEMfree (TYPES_MOD (tmp));
-
-        tmp = MEMfree (tmp);
-    }
-
-    DBUG_RETURN (fr);
-}
-
-/*--------------------------------------------------------------------------*/
-
-types *
-FREEfreeAllTypes (types *fr)
-{
-    DBUG_ENTER ();
-
-    while (fr != NULL) {
-        fr = FREEfreeOneTypes (fr);
-    }
-
-    DBUG_RETURN (fr);
-}
-
-/*--------------------------------------------------------------------------*/
-
 /*
  *  FREEfreeNodelist always frees entire list.
  */
@@ -394,10 +331,6 @@ FreeZombie (node *fundef)
         FUNDEF_NAME (fundef) = MEMfree (FUNDEF_NAME (fundef));
         FUNDEF_NS (fundef) = NSfreeNamespace (FUNDEF_NS (fundef));
         FUNDEF_IMPL (fundef) = NULL;
-
-        if (FUNDEF_TYPES (fundef) != NULL) {
-            FUNDEF_TYPES (fundef) = FREEfreeAllTypes (FUNDEF_TYPES (fundef));
-        }
 
         if (FUNDEF_WRAPPERTYPE (fundef) != NULL) {
             FUNDEF_WRAPPERTYPE (fundef) = TYfreeType (FUNDEF_WRAPPERTYPE (fundef));

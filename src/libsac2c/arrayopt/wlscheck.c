@@ -176,7 +176,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn int WLSCdoCheck( node *with, node *nassign)
+ * @fn size_t WLSCdoCheck( node *with, node *nassign)
  *
  * @brief starting function of the WLSCheck traversal.
  *
@@ -186,12 +186,12 @@ FreeInfo (info *info)
  *         in particular: WLSCheck( w) == 0 means, WLS is not applicable.
  *
  *****************************************************************************/
-int
+size_t
 WLSCdoCheck (node *with, node *nassign)
 {
     info *arg_info;
     node *lhs;
-    int res;
+    size_t res;
     ntype *typ;
 
     DBUG_ENTER ();

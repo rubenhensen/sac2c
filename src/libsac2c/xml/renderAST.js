@@ -1,3 +1,14 @@
+function display()
+{
+  var xmlObj;
+  var tree;
+
+  xmlObj = initXMLObj();
+  tree = generateInitialDataTree(xmlObj, "Module");
+  putGraph( tree);
+}
+
+
 function initXMLObj(){
   
   var xmlhttp;
@@ -313,7 +324,7 @@ function click(d) {
 
 function mouseover(d) {
   if( !d.set) {
-    var target = "ast.html#"+d.name;
+    var target = "ast.xml#"+d.name;
     window.frames["frame"].location=target;
   }
 }

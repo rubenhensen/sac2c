@@ -1,0 +1,21 @@
+// This is a test that makes sure that we are not segfaulting
+// when calling a trivial option -V, -VV, -help, -C CC.
+
+// SAC_TEST|include common.mk
+// SAC_TEST|all: optv optvv optc opthelp
+
+
+// Failure in any of the following options will cause failure
+// of the entire makefile, and the overall test.
+
+// SAC_TEST|optv:
+// SAC_TEST|<tab>$(SAC2C) -V
+
+// SAC_TEST|optvv:
+// SAC_TEST|<tab>$(SAC2C) -VV
+
+// SAC_TEST|optc:
+// SAC_TEST|<tab>$(SAC2C) -C CC
+
+// SAC_TEST|opthelp:
+// SAC_TEST|<tab>$(SAC2C) -help

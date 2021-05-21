@@ -86,8 +86,8 @@ struct INFO {
     bool in_setwl;
     int separate;
     int dim;
-    shpseg *shape;
-    shpseg *shapecnt;
+    shape *shp;
+    shape *shapecnt;
     bool isarray;
     /* writesib */
     bool firstError;
@@ -119,7 +119,7 @@ struct INFO {
 #define INFO_INSETWL(n) ((n)->in_setwl)
 #define INFO_SEPARATE(n) ((n)->separate)
 #define INFO_DIM(n) ((n)->dim)
-#define INFO_SHAPE(n) ((n)->shape)
+#define INFO_SHAPE(n) ((n)->shp)
 #define INFO_ISARRAY(n) ((n)->isarray)
 #define INFO_SHAPE_COUNTER(n) ((n)->shapecnt)
 #define INFO_FIRSTERROR(n) ((n)->firstError)
@@ -206,6 +206,7 @@ static node *last_assignment_icm = NULL;
 #define ICM_ID(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
+#define ICM_UINT(name)
 #define ICM_BOOL(name)
 #define ICM_VARANY(dim, name)
 #define ICM_VARNT(dim, name)
@@ -220,6 +221,7 @@ static node *last_assignment_icm = NULL;
 #undef ICM_ID
 #undef ICM_STR
 #undef ICM_INT
+#undef ICM_UINT
 #undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT
@@ -312,7 +314,7 @@ FreeInfo (info *info)
 static void
 IRAprintRcs (node *arg_node, info *arg_info)
 {
-    int i, dim;
+    size_t i, dim;
     rc_t *rcs;
     node *array, *sharray;
 
@@ -457,7 +459,7 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
              CUAI_DIM (ASSIGN_ACCESS_INFO (arg_node)));
 
     INDENT;
-    fprintf (global.outfile, "     - Nest Level: %d\n",
+    fprintf (global.outfile, "     - Nest Level: %zu\n",
              CUAI_NESTLEVEL (ASSIGN_ACCESS_INFO (arg_node)));
 
     INDENT;
@@ -478,7 +480,7 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
                 fprintf (global.outfile, ")");
             }
 
-            fprintf (global.outfile, "[Type:%s, LoopLevel:%d]",
+            fprintf (global.outfile, "[Type:%s, LoopLevel:%zu]",
                      CUDA_IDX_NAMES[CUIDX_TYPE (idx)], CUIDX_LOOPLEVEL (idx));
 
             if (CUIDX_NEXT (idx) != NULL) {
@@ -515,7 +517,7 @@ WLAAprintAccesses (node *arg_node, info *arg_info)
     feature_t feature;
     int i, dim, iv;
     access_t *access;
-    shpseg *offset;
+    shape *offset;
 
     DBUG_ENTER ();
 
@@ -626,17 +628,17 @@ WLAAprintAccesses (node *arg_node, info *arg_info)
                         if (ACCESS_DIR (access) == ADIR_read) {
                             fprintf (global.outfile, "read ( %s + [ %d",
                                      VARDEC_NAME (ACCESS_IV (access)),
-                                     SHPSEG_SHAPE (offset, 0));
+                                     SHgetExtent (offset, 0));
                         } else {
                             fprintf (global.outfile, "write( %s + [ %d",
                                      VARDEC_NAME (ACCESS_IV (access)),
-                                     SHPSEG_SHAPE (offset, 0));
+                                     SHgetExtent (offset, 0));
                         }
                         for (i = 1; i < dim; i++)
-                            fprintf (global.outfile, ",%d", SHPSEG_SHAPE (offset, i));
+                            fprintf (global.outfile, ",%d", SHgetExtent (offset, i));
                         fprintf (global.outfile, " ], %s)\n",
                                  STRonNULL ("?", VARDEC_NAME (ACCESS_ARRAY (access))));
-                        offset = SHPSEG_NEXT (offset);
+                        offset = NULL;
                     } while (offset != NULL);
                 }
                 access = ACCESS_NEXT (access);
@@ -649,17 +651,17 @@ WLAAprintAccesses (node *arg_node, info *arg_info)
                     do {
                         if (ACCESS_DIR (access) == ADIR_read) {
                             fprintf (global.outfile, "read ( [ %d",
-                                     SHPSEG_SHAPE (offset, 0));
+                                     SHgetExtent (offset, 0));
                         } else {
                             fprintf (global.outfile, "write( [ %d",
-                                     SHPSEG_SHAPE (offset, 0));
+                                     SHgetExtent (offset, 0));
                         }
                         for (i = 1; i < dim; i++) {
-                            fprintf (global.outfile, ",%d", SHPSEG_SHAPE (offset, i));
+                            fprintf (global.outfile, ",%d", SHgetExtent (offset, i));
                         }
                         fprintf (global.outfile, " ], %s)\n",
                                  STRonNULL ("?", VARDEC_NAME (ACCESS_ARRAY (access))));
-                        offset = SHPSEG_NEXT (offset);
+                        offset = NULL;
                     } while (offset != NULL);
                 }
                 access = ACCESS_NEXT (access);
@@ -713,7 +715,7 @@ TSIprintInfo (node *arg_node, info *arg_info)
     } else {
         pragma = MakePragma ();
         for (i = dim - 1; i >= 0; i--) {
-            tilesize = SHPSEG_SHAPE (CODE_TSI_TILESHP (arg_node), i);
+            tilesize = SHgetExtent (CODE_TSI_TILESHP (arg_node), i);
             aelems = TBmakeExprs (MakeNum (tilesize), aelems);
         }
         ap_name = MEMmalloc (6 * sizeof (char));
@@ -816,7 +818,7 @@ printSOSSKdemand (node *arg_node, info *arg_info)
 void
 PRTprintArgtab (argtab_t *argtab, bool is_def)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -892,7 +894,7 @@ Argtab2Fundef (node *fundef)
 {
     node *new_fundef;
     argtab_t *argtab;
-    int i;
+    size_t i;
     node *rets = NULL;
     node *args = NULL;
 
@@ -947,7 +949,7 @@ Argtab2Let (node *ap)
 {
     node *new_let, *new_ap;
     argtab_t *argtab;
-    int i;
+    size_t i;
     node *ids = NULL;
     node *exprs = NULL;
     node *expr = NULL;
@@ -993,7 +995,7 @@ Argtab2Let (node *ap)
 static void
 PrintArgtags (argtab_t *argtab, bool in_comment)
 {
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1860,8 +1862,6 @@ PrintDispatchFun (node *fundef, void *arg_info)
 static void
 PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 {
-    types *ret_types;
-    char *type_str;
     bool print_sac = TRUE;
     bool print_c = FALSE;
     bool print_argtab = FALSE;
@@ -1936,27 +1936,7 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
         if (FUNDEF_RETS (arg_node) == NULL) {
             fprintf (global.outfile, "void ");
         } else {
-            if (FUNDEF_TYPES (arg_node) != NULL) {
-                /*
-                 *  Print old types.
-                 */
-                ret_types = FUNDEF_TYPES (arg_node);
-                while (ret_types != NULL) {
-                    type_str = CVtype2String (ret_types, 0, FALSE);
-                    fprintf (global.outfile, "%s", type_str);
-                    type_str = MEMfree (type_str);
-
-                    ret_types = TYPES_NEXT (ret_types);
-                    if (ret_types != NULL) {
-                        fprintf (global.outfile, ", ");
-                    }
-                }
-            } else {
-                /*
-                 * We do have new types !
-                 */
-                TRAVdo (FUNDEF_RETS (arg_node), arg_info);
-            }
+            TRAVdo (FUNDEF_RETS (arg_node), arg_info);
 
             if (FUNDEF_HASDOTRETS (arg_node)) {
                 fprintf (global.outfile, ", ...");
@@ -2349,7 +2329,7 @@ PRTfundef (node *arg_node, info *arg_info)
                                      "\n"
                                      "/**************************************************"
                                      "**************************\n"
-                                     " * Local fundefs of %s:\n"
+                                     " * Begin local fundefs of %s:\n"
                                      " **************************************************"
                                      "**************************/"
                                      "\n",
@@ -2359,6 +2339,19 @@ PRTfundef (node *arg_node, info *arg_info)
                         INFO_NONLOCCALFUN (arg_info) = arg_node;
                         TRAVdo (FUNDEF_LOCALFUNS (arg_node), arg_info);
                         INFO_NONLOCCALFUN (arg_info) = NULL;
+
+                        if (global.break_fun_name != NULL) {
+                            fprintf (global.outfile,
+                                     "\n"
+                                     "/**************************************************"
+                                     "**************************\n"
+                                     " * End local fundefs of %s:\n"
+                                     " **************************************************"
+                                     "**************************/"
+                                     "\n",
+                                     FUNDEF_NAME (arg_node));
+                        }
+
                     }
                 }
             }
@@ -2467,7 +2460,8 @@ PRTarg (node *arg_node, info *arg_info)
     if (ARG_NTYPE (arg_node) != NULL) {
         type_str = TYtype2String (ARG_NTYPE (arg_node), FALSE, 0);
     } else {
-        type_str = CVtype2String (ARG_TYPE (arg_node), 0, TRUE);
+        DBUG_ASSERT (FALSE, "encountered old types on args");
+        type_str = NULL;
     }
     fprintf (global.outfile, " %s ", type_str);
     type_str = MEMfree (type_str);
@@ -2668,12 +2662,6 @@ PRTvardec (node *arg_node, info *arg_info)
         }
 
         fprintf (global.outfile, "; ");
-
-        if (VARDEC_TYPE (arg_node) != NULL) {
-            type_str = CVtype2String (VARDEC_TYPE (arg_node), 0, TRUE);
-            fprintf (global.outfile, "/* %s */", type_str);
-            type_str = MEMfree (type_str);
-        }
 
         if (AVIS_DECLTYPE (VARDEC_AVIS (arg_node)) != NULL) {
             type_str = TYtype2String (AVIS_DECLTYPE (VARDEC_AVIS (arg_node)), FALSE, 0);
@@ -3372,8 +3360,8 @@ PRTarray (node *arg_node, info *arg_info)
     int i;
     char *type_str;
     int old_print_dim = INFO_DIM (arg_info);
-    shpseg *old_print_shape = INFO_SHAPE (arg_info);
-    shpseg *old_print_shape_counter = INFO_SHAPE_COUNTER (arg_info);
+    shape *old_print_shape = INFO_SHAPE (arg_info);
+    shape *old_print_shape_counter = INFO_SHAPE_COUNTER (arg_info);
     bool old_isarray = INFO_ISARRAY (arg_info);
     node *shpcounter;
 
@@ -3386,11 +3374,11 @@ PRTarray (node *arg_node, info *arg_info)
     if (ARRAY_AELEMS (arg_node) != NULL) {
 
         INFO_DIM (arg_info) = ARRAY_FRAMEDIM (arg_node);
-        INFO_SHAPE (arg_info) = SHshape2OldShpseg (ARRAY_FRAMESHAPE (arg_node));
+        INFO_SHAPE (arg_info) = SHcopyShape (ARRAY_FRAMESHAPE (arg_node));
         INFO_ISARRAY (arg_info) = TRUE;
 
         shpcounter = TCcreateZeroVector (ARRAY_FRAMEDIM (arg_node), T_int);
-        INFO_SHAPE_COUNTER (arg_info) = TCarray2Shpseg (shpcounter, NULL);
+        INFO_SHAPE_COUNTER (arg_info) = SHarray2Shape (shpcounter);
         shpcounter = FREEdoFreeTree (shpcounter);
 
         for (i = 0; i < INFO_DIM (arg_info); i++)
@@ -3401,8 +3389,8 @@ PRTarray (node *arg_node, info *arg_info)
         for (i = 0; i < INFO_DIM (arg_info); i++)
             fprintf (global.outfile, " ]");
 
-        FREEfreeShpseg (INFO_SHAPE (arg_info));
-        FREEfreeShpseg (INFO_SHAPE_COUNTER (arg_info));
+        SHfreeShape (INFO_SHAPE (arg_info));
+        SHfreeShape (INFO_SHAPE_COUNTER (arg_info));
         INFO_ISARRAY (arg_info) = FALSE;
     } else {
         type_str = TYtype2String (ARRAY_ELEMTYPE (arg_node), FALSE, 0);
@@ -3427,6 +3415,15 @@ PRTarray (node *arg_node, info *arg_info)
  *
  *
  ******************************************************************************/
+
+static
+int ShapeInc (shape *shp, int idx)
+{
+    int res;
+    res = SHgetExtent (shp, idx);
+    SHsetExtent (shp, idx, res+1);
+    return res+1;
+}
 
 node *
 PRTexprs (node *arg_node, info *arg_info)
@@ -3453,10 +3450,10 @@ PRTexprs (node *arg_node, info *arg_info)
         if (INFO_ISARRAY (arg_info)) {
             for (i = INFO_DIM (arg_info) - 1;
                  (i >= 0)
-                 && (++SHPSEG_SHAPE (INFO_SHAPE_COUNTER (arg_info), i)
-                     >= SHPSEG_SHAPE (INFO_SHAPE (arg_info), i));
+                 && (ShapeInc (INFO_SHAPE_COUNTER (arg_info), i)
+                     >= SHgetExtent (INFO_SHAPE (arg_info), i));
                  i--)
-                SHPSEG_SHAPE (INFO_SHAPE_COUNTER (arg_info), i) = 0;
+                SHsetExtent (INFO_SHAPE_COUNTER (arg_info), i, 0);
             for (j = INFO_DIM (arg_info) - 1; j > i; j--)
                 fprintf (global.outfile, " ]");
             fprintf (global.outfile, ", ");
@@ -3517,6 +3514,10 @@ PRTid (node *arg_node, info *arg_info)
     }
 
     fprintf (global.outfile, "%s", text);
+
+    DBUG_EXECUTE_TAG ("PRINT_TAGS", if (ID_NT_TAG (arg_node) != NULL) {
+        fprintf (global.outfile, " /* tag: %s */", ID_NT_TAG (arg_node));
+    });
 
     if (global.print.avis) {
         if (ID_AVIS (arg_node) != NULL) {
@@ -4247,6 +4248,7 @@ PRTicm (node *arg_node, info *arg_info)
 
     if ((global.compiler_subphase == PH_cg_prt)
         || (global.compiler_subphase == PH_ccg_prt)) {
+
 #define ICM_ALL
 #define ICM_DEF(prf, trf)                                                                \
     if (STReq (ICM_NAME (arg_node), #prf)) {                                             \
@@ -4262,6 +4264,7 @@ PRTicm (node *arg_node, info *arg_info)
 #define ICM_ID(name)
 #define ICM_STR(name)
 #define ICM_INT(name)
+#define ICM_UINT(name)
 #define ICM_BOOL(name)
 #define ICM_VARANY(dim, name)
 #define ICM_VARNT(dim, name)
@@ -4276,6 +4279,8 @@ PRTicm (node *arg_node, info *arg_info)
 #undef ICM_NT
 #undef ICM_ID
 #undef ICM_STR
+#undef ICM_INT
+#undef ICM_UINT
 #undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT
@@ -5054,21 +5059,9 @@ PRTgenarray (node *arg_node, info *arg_info)
         TRAVdo (GENARRAY_MEM (arg_node), arg_info);
     }
 
-    if (GENARRAY_RC (arg_node) != NULL) {
-        fprintf (global.outfile, ", RC(");
-        TRAVdo (GENARRAY_RC (arg_node), arg_info);
-        fprintf (global.outfile, ")");
-    }
-
     if (GENARRAY_SUB (arg_node) != NULL) {
         fprintf (global.outfile, ", SUB(");
         TRAVdo (GENARRAY_SUB (arg_node), arg_info);
-        fprintf (global.outfile, ")");
-    }
-
-    if (GENARRAY_PRC (arg_node) != NULL) {
-        fprintf (global.outfile, ", PRC(");
-        TRAVdo (GENARRAY_PRC (arg_node), arg_info);
         fprintf (global.outfile, ")");
     }
 
@@ -5119,11 +5112,6 @@ PRTmodarray (node *arg_node, info *arg_info)
         TRAVdo (MODARRAY_MEM (arg_node), arg_info);
     }
 
-    if (MODARRAY_RC (arg_node) != NULL) {
-        fprintf (global.outfile, " ,RC(");
-        TRAVdo (MODARRAY_RC (arg_node), arg_info);
-        fprintf (global.outfile, ")");
-    }
     if (MODARRAY_IDX (arg_node) != NULL) {
         fprintf (global.outfile, " ,IDX(%s)", AVIS_NAME (MODARRAY_IDX (arg_node)));
     }
@@ -5519,6 +5507,7 @@ PRTwlseg (node *arg_node, info *arg_info)
             INDENT;
         }
 
+        DBUG_PRINT( "printing scheduling");
         if (WLSEG_SCHEDULING (seg) != NULL) {
             if (global.compiler_subphase < PH_mt_mtas) {
                 fprintf (global.outfile, " * preliminary annotated scheduling: ");
@@ -5530,6 +5519,7 @@ PRTwlseg (node *arg_node, info *arg_info)
             INDENT;
         }
 
+        DBUG_PRINT( "printing task slector");
         if (WLSEG_TASKSEL (seg) != NULL) {
             if (global.compiler_subphase < PH_mt_mtas) {
                 fprintf (global.outfile, " * preliminary annotated taskselector: ");
@@ -6669,7 +6659,7 @@ PRTfunbundle (node *arg_node, info *arg_info)
                  "\n\n "
                  "/**********************************************************************"
                  "*******\n"
-                 " * Function Bundle %s::%s (%d)\n"
+                 " * Function Bundle %s::%s (%zu)\n"
                  " **********************************************************************"
                  "*******/\n\n",
                  NSgetName (FUNBUNDLE_NS (arg_node)), FUNBUNDLE_NAME (arg_node),

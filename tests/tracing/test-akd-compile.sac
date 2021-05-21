@@ -1,0 +1,22 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -trace r
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $<
+
+noinline
+int[.] ravel( int[.] a)
+{
+   return with {
+          } : genarray( [_sel_VxA_( [0], _shape_A_(a))], _sel_VxA_( [0], a));
+}
+
+
+int main()
+{
+
+   a = _hideShape_SxA_( 1, [1,2,3,4,5,6,7,8,9,10,11,12]);
+
+   b = ravel( a);
+
+   return _sel_VxA_([0], b);
+}

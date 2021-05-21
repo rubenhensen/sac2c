@@ -12,7 +12,7 @@ SET (LIBSAC_SRC
 
 ADD_CUSTOM_COMMAND (
     OUTPUT "${LIBSAC_MOD}" "${LIBSAC_TREE}"
-    COMMAND ${SAC2C} -v0 -linksetsize ${LINKSETSIZE} -noprelude -o ${PRELUDE_DIR} ${LIBSAC_SRC}
+    COMMAND ${SAC2C} -v0 -linksetsize ${LINKSETSIZE} -noprelude -nosaclibs -o ${PRELUDE_DIR} ${LIBSAC_SRC}
     DEPENDS ${LIBSAC_SRC} ${LIB_SAC2C}
     COMMENT "Generating libsacprelude for target `${TARGET}'")
 ADD_CUSTOM_TARGET (libsacprelude-${TARGET} ALL DEPENDS "${LIBSAC_MOD}" "${LIBSAC_TREE}")

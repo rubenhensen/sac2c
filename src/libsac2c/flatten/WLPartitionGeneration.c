@@ -635,7 +635,8 @@ node *
 WLPGwith (node *arg_node, info *arg_info)
 {
     node *parts, *withop, *ub_avis, *res;
-    int num_parts, fdim;
+    int fdim;
+    size_t num_parts;
 
     DBUG_ENTER ();
 

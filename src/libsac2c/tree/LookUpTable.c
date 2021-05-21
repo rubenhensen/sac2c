@@ -242,7 +242,7 @@ GetHashKey_String (void *data)
     hash_key = 0;
     if (data != NULL) {
         for (str = (char *)data; ((*str) != '\0'); str++) {
-            hash_key += (*str);
+            hash_key += (hash_key_t)(*str);
         }
         hash_key %= (HASH_KEYS_STRING);
     }
@@ -349,7 +349,7 @@ ComputeHashStat (lut_t *lut, char *note, hash_key_t min_key, hash_key_t max_key)
             }
         }
         diff_size = max_size - min_size;
-        mean_size = ((double)sum_size) / (max_key - min_key);
+        mean_size = ((double)sum_size) / (double)(max_key - min_key);
 
         /*
          * compute sdev_size
@@ -359,7 +359,7 @@ ComputeHashStat (lut_t *lut, char *note, hash_key_t min_key, hash_key_t max_key)
             double diff_size = lut[k].size - mean_size;
             sdev_size += (diff_size * diff_size);
         }
-        sdev_size = sqrt (sdev_size / (max_key - min_key));
+        sdev_size = sqrt (sdev_size / (double)(max_key - min_key));
         sdev_mean = (sum_size > 0) ? (sdev_size / mean_size) : 0;
 
         DBUG_EXECUTE (
@@ -685,11 +685,11 @@ UpdateLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key,
                       fprintf (stderr, old_format, old_item); fprintf (stderr, " -> ");
                       fprintf (stderr, new_format, new_item); fprintf (stderr, " ]\n"));
 
-        (*found_item_p) = new_item;
-
         if (found_item != NULL) {
             (*found_item) = (*found_item_p);
         }
+
+        (*found_item_p) = new_item;
     }
 
     DBUG_PRINT ("< finished");

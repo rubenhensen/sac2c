@@ -38,11 +38,17 @@
     fprintf (global.outfile, "SAC_Print( \"%d \");\n", name);                            \
     sep = 1;
 
+#define ICM_UINT(name)                                                                    \
+    SEP;                                                                                 \
+    INDENT;                                                                              \
+    fprintf (global.outfile, "SAC_Print( \"%u \");\n", name);                            \
+    sep = 1;
+
 #define ICM_BOOL(name) ICM_INT (name)
 
 #define ICM_VARANY(dim, name)                                                            \
     {                                                                                    \
-        int i;                                                                           \
+        int i;                                                                        \
         for (i = 0; i < dim; i++) {                                                      \
             ICM_ANY (name[i])                                                            \
         }                                                                                \
@@ -50,7 +56,7 @@
 
 #define ICM_VARNT(dim, name)                                                             \
     {                                                                                    \
-        int i;                                                                           \
+        int i;                                                                        \
         for (i = 0; i < dim; i++) {                                                      \
             ICM_NT (name[i])                                                             \
         }                                                                                \
@@ -88,6 +94,7 @@
 #undef ICM_ID
 #undef ICM_STR
 #undef ICM_INT
+#undef ICM_UINT
 #undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT

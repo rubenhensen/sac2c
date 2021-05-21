@@ -20,15 +20,16 @@
 #include <limits.h> /* INT_MAX */
 
 #ifdef SAC_BACKEND_CUDA
-#include <cuda_runtime.h>
+#include "override_cuda_runtime.h"
 #endif
 
 #include "rc_methods.h" // SAC_RCM_local, ...
 #include "icm.h" // Item0, ...
-#include "cuda_transfer_methods.h"
+#include "cuda_transfer_methods.h" // SAC_DO_CUDA_ALLOC
 #include "runtime/extras_h/runtimecheck.h" // SAC_ASSURE_TYPE, ...
 #include "runtime/phm_h/phm.h" // SAC_HM_MALLOC, ...
 #include "runtime/extras_h/rt_trace.h" // SAC_TR_MEM_PRINT, ...
+#include "runtime/extras_h/rt_profile.h" // SAC_PF_MEM_*, ...
 #include "runtime/extras_h/rt_cachesim.h" // SAC_CS_UNREGISTER_ARRAY, ...
 
 
@@ -145,9 +146,12 @@ typedef intptr_t *SAC_array_descriptor_t;
 /* size of dimension-independent parts of the descriptor */
 #if SAC_DO_DISTMEM
 #define FIXED_SIZE_OF_DESC 9
-#else /* SAC_DO_DISTMEM */
+#elif SAC_DO_CUDA_ALLOC == SAC_CA_cureg
+#define FIXED_SIZE_OF_DESC 7
+#else
+/* default */
 #define FIXED_SIZE_OF_DESC 6
-#endif /* SAC_DO_DISTMEM */
+#endif
 /* size of dimension-dependent parts of the descriptor */
 #define VAR_SIZE_OF_DESC 1
 
@@ -221,6 +225,10 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define DESC_OFFSET_SIZE 4
 #define DESC_OFFSET_HIDDEN_TYPE 5
 
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg
+#define DESC_OFFSET_CUDA_PINNED 6
+#endif /* SAC_DO_CUDA_ALLOC */
+
 #if SAC_DO_DISTMEM
 #define DESC_OFFSET_IS_DIST 6
 #define DESC_OFFSET_OFFS 7
@@ -282,6 +290,13 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define DESC_SIZE(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_SIZE)
 #define DESC_HIDDEN_TYPE(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_HIDDEN_TYPE)
 #define DESC_SHAPE(desc, pos) SAC_REAL_DESC_POINTER (desc, (DESC_OFFSET_SHAPE + (pos)))
+
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg
+#define DESC_CUDA_PINNED(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_CUDA_PINNED)
+#define ASSIGN_DESC_CUDA_PINNED(desc, lhs) DESC_CUDA_PINNED (desc) = lhs;
+#else
+#define ASSIGN_DESC_CUDA_PINNED(desc, lhs)
+#endif /* SAC_DO_CUDA_ALLOC */
 
 #if SAC_DO_DISTMEM
 #define DESC_IS_DIST(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_IS_DIST)
@@ -445,6 +460,10 @@ typedef intptr_t *SAC_array_descriptor_t;
  * ND_A_DESC_SHAPE( var_NT, dim) :
  *   accesses a shape component of the data object via descriptor(!)
  *
+ * === Additional ICMs for CUDA backend (for alloctors) ===
+ * ND_A_DESC_CUDA_PINNED (var_NT)
+ *   flag indicating if this memory is CUDA pinned (using either cudaHostRegister or
+ *   cudaHostAlloc().
  * ===  Additional ICMs for distributed memory backend ===
  * ND_A_DESC_IS_DIST( var_NT, dim) :
  *   accesses the is-distributed property of the data object via descriptor(!)
@@ -460,6 +479,9 @@ typedef intptr_t *SAC_array_descriptor_t;
  * ND_A_MIRROR_SHAPE( var_NT, dim) :
  *   accesses a shape component of the data object via mirror(!)
  *
+ * === Additional ICMs for CUDA backend (for alloctors) ===
+ * ND_A_MIRROR_CUDA_PINNED (var_NT)
+ *   accesses the CUDA pinned flag of the data object via mirror(!)
  * ===  Additional ICMs for distributed memory backend ===
  * ND_A_MIRROR_IS_DIST( var_NT, dim) :
  *   accesses the is-distributed property of the data object via mirror(!)
@@ -482,6 +504,9 @@ typedef intptr_t *SAC_array_descriptor_t;
  * ND_A_SHAPE( var_NT, dim) :
  *   accesses a shape component (via mirror if exists, via descriptor otherwise)
  *
+ * === Additional ICMs for CUDA backend (for alloctors) ===
+ * ND_A_CUDA_PINNED (var_NT)
+ *   accesses the CUDA pinned flag of the data object
  * ===  Additional ICMs for distributed memory backend ===
  * ND_A_IS_DIST( var_NT, dim) :
  *   accesses the is-distributed property of the data object
@@ -541,8 +566,12 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_A_DESC_SHAPE__UNDEF(var_NT, dim) SAC_ICM_UNDEF ()
 
-#if SAC_DO_DISTMEM
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg
+#define SAC_ND_A_DESC_CUDA_PINNED__DEFAULT(var_NT) DESC_CUDA_PINNED (SAC_ND_A_DESC (var_NT))
+#define SAC_ND_A_DESC_CUDA_PINNED__UNDEF(var_NT) SAC_ICM_UNDEF ()
+#endif /* SAC_DO_CUDA_ALLOC */
 
+#if SAC_DO_DISTMEM
 /*
  * SAC_ND_A_DESC_IS_DIST implementations (referenced by sac_std_gen.h)
  */
@@ -603,6 +632,11 @@ typedef intptr_t *SAC_array_descriptor_t;
     CAT12 (NT_NAME (var_NT), CAT20 (__shp, dim))
 
 #define SAC_ND_A_MIRROR_SHAPE__UNDEF(var_NT, dim) SAC_ICM_UNDEF ()
+
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg
+#define SAC_ND_A_MIRROR_CUDA_PINNED__SCL(var_NT) 0
+#define SAC_ND_A_MIRROR_CUDA_PINNED__DEFAULT(var_NT) CAT12 (NT_NAME (var_NT), __pinned)
+#endif /* SAC_DO_CUDA_ALLOC */
 
 #if SAC_DO_DISTMEM
 
@@ -715,6 +749,10 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_ND_A_SHAPE__AKS_AKD(var_NT, dim) SAC_ND_A_MIRROR_SHAPE (var_NT, dim)
 
 #define SAC_ND_A_SHAPE__AUD(var_NT, dim) SAC_ND_A_DESC_SHAPE (var_NT, dim)
+
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg
+#define SAC_ND_A_CUDA_PINNED__DEFAULT(var_NT) SAC_ND_A_DESC_CUDA_PINNED (var_NT)
+#endif /* SAC_DO_CUDA_ALLOC */
 
 #if SAC_DO_DISTMEM
 
@@ -1004,7 +1042,7 @@ typedef intptr_t *SAC_array_descriptor_t;
         SAC_ND_WRITE (to_NT, to_pos) = copyfun (expr);                                   \
         SAC_TR_MEM_PRINT (                                                               \
           ("new hidden object at addr: %p", SAC_ND_READ (to_NT, to_pos)))                \
-        SAC_TR_INC_HIDDEN_MEMCNT (1)                                                     \
+        SAC_TR_INC_HIDDEN_MEMCNT (0)                                                     \
     }
 
 /******************************************************************************
@@ -1411,6 +1449,31 @@ FIXME Do not initialize for the time being, as value 0                          
  */
 
 /*
+ * CUDA allocator specifc ICM
+ */
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cureg
+#define SAC_ND_CUDA_PIN(var_NT, basetype)                                                \
+     if (SAC_ND_A_DESC_CUDA_PINNED (var_NT) == 0) {                                      \
+        SAC_TR_GPU_PRINT ("Pinning " NT_STR (var_NT));                                   \
+        cudaHostRegister (SAC_ND_A_FIELD (var_NT),                                       \
+                          SAC_ND_A_MIRROR_SIZE (var_NT) * sizeof (basetype),             \
+                          cudaHostRegisterPortable);                                     \
+        SAC_GET_CUDA_PIN_ERROR ();                                                       \
+        SAC_ND_A_DESC_CUDA_PINNED (var_NT) = 1;                                          \
+     }
+#define SAC_ND_CUDA_UNPIN(var_NT)                                                        \
+     if (SAC_ND_A_DESC_CUDA_PINNED (var_NT) != 0) {                                      \
+        SAC_TR_GPU_PRINT ("Unpinning " NT_STR (var_NT));                                 \
+        cudaHostUnregister (SAC_ND_A_FIELD (var_NT));                                    \
+        SAC_GET_CUDA_UNPIN_ERROR ();                                                     \
+        SAC_ND_A_DESC_CUDA_PINNED (var_NT) = 0;                                          \
+     }
+#else
+#define SAC_ND_CUDA_PIN(var_NT, basetype)
+#define SAC_ND_CUDA_UNPIN(var_NT)
+#endif /* SAC_DO_CUDA_ALLOC */
+
+/*
  * SAC_ND_ALLOC implementations (referenced by sac_std_gen.h)
  */
 
@@ -1435,12 +1498,11 @@ FIXME Do not initialize for the time being, as value 0                          
 #define SAC_ND_ALLOC_BEGIN__DAO(var_NT, rc, dim, basetype)                               \
     {                                                                                    \
         SAC_ND_ALLOC__DESC_AND_DATA (var_NT, dim, basetype)                              \
-        SAC_ND_INIT__RC (var_NT, rc)
+        SAC_ND_INIT__RC (var_NT, rc)                                                     \
 
 #define SAC_ND_ALLOC_BEGIN__NO_DAO(var_NT, rc, dim, basetype)                            \
     {                                                                                    \
-        SAC_ND_ALLOC__DESC (var_NT, dim)                                                 \
-        SAC_ND_INIT__RC (var_NT, rc)
+        SAC_ND_ALLOC__DESC (var_NT, dim)
 
 /*
  * SAC_ND_ALLOC_END implementations (referenced by sac_std_gen.h)
@@ -1450,6 +1512,7 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_ND_ALLOC_END__NO_DAO__DEFAULT(var_NT, rc, dim, basetype)                     \
     SAC_ND_ALLOC__DATA_BASETYPE (var_NT, basetype)                                       \
+    SAC_ND_INIT__RC (var_NT, rc)                                                         \
     }
 
 /*
@@ -1466,8 +1529,7 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_ND_REALLOC_BEGIN__NO_DAO(dest_NT, src_NT, rc, dim, basetype)                 \
     {                                                                                    \
-        SAC_ND_A_DESC (dest_NT) = SAC_ND_A_DESC (src_NT);                                \
-        SAC_ND_SET__RC (dest_NT, rc)
+        SAC_ND_A_DESC (dest_NT) = SAC_ND_A_DESC (src_NT);
 
 /*
  * SAC_ND_REALLOC_END implementations (referenced by sac_std_gen.h)
@@ -1479,6 +1541,7 @@ FIXME Do not initialize for the time being, as value 0                          
     SAC_ND_A_FIELD (src_NT) = SAC_ND_A_FIELD (dest_NT)                                   \
       = realloc (SAC_ND_A_FIELD (src_NT),                                                \
                  (SAC_ND_A_SIZE (dest_NT) * sizeof (*SAC_ND_A_FIELD (dest_NT))));        \
+    SAC_ND_SET__RC (dest_NT, rc)                                                         \
     }
 
 /*
@@ -1505,8 +1568,10 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_RC (SAC_ND_A_DESC (var_NT)) = 0;                                            \
         DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_LOCAL;                  \
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
+        ASSIGN_DESC_CUDA_PINNED (SAC_ND_A_DESC (var_NT), 0)                              \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)))     \
     }
 
 #define SAC_ND_ALLOC__DESC__FIXED_C99__DIS(var_NT, dim)                                  \
@@ -1523,6 +1588,8 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DIS_DESC (SAC_ND_A_IS_DIST (var_NT),     \
+                                                          SAC_ND_A_MIRROR_DIM (var_NT))) \
     }
 
 /* Overloaded in mutc */
@@ -1541,8 +1608,10 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_RC (SAC_ND_A_DESC (var_NT)) = 0;                                            \
         DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_LOCAL;                  \
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
+        ASSIGN_DESC_CUDA_PINNED (SAC_ND_A_DESC (var_NT), 0)                              \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DESC (dim))                              \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
 
@@ -1558,6 +1627,8 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
+        SAC_PF_MEM_INC_ALLOC_DESC (                                                      \
+          BYTE_SIZE_OF_DIS_DESC (SAC_ND_A_IS_DIST (var_NT), dim))                        \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
 
@@ -1573,6 +1644,7 @@ FIXME Do not initialize for the time being, as value 0                          
         DESC_RC (ndesc) = 0;                                                             \
         DESC_RC_MODE (ndesc) = SAC_DESC_RC_MODE_LOCAL;                                   \
         DESC_PARENT (ndesc) = 0;                                                         \
+        ASSIGN_DESC_CUDA_PINNED (SAC_ND_A_DESC (var_NT), 0)                              \
         DESC_DIM (ndesc) = dim;                                                          \
     }
 
@@ -1631,6 +1703,8 @@ FIXME Do not initialize for the time being, as value 0                          
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
+                              * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1641,6 +1715,8 @@ FIXME Do not initialize for the time being, as value 0                          
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
+                              * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1661,6 +1737,8 @@ FIXME Do not initialize for the time being, as value 0                          
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
+                              * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1672,6 +1750,8 @@ FIXME Do not initialize for the time being, as value 0                          
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
+                              * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1689,6 +1769,7 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_TR_MEM_PRINT (("ND_ALLOC__DATA_DIS( %s) at addr: %p", NT_STR (var_NT),   \
                                SAC_ND_A_FIELD (var_NT)))                                 \
             SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_PF_MEM_INC_ALLOC (SAC_ND_A_FIRST_ELEMS (var_NT) * sizeof (basetype))     \
             SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT)                  \
               = SAC_DISTMEM_DET_OFFS (SAC_ND_A_FIELD (var_NT));                          \
             SAC_CS_REGISTER_ARRAY (var_NT)                                               \
@@ -1717,6 +1798,7 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_TR_MEM_PRINT (("ND_ALLOC__DATA_DIS( %s) at addr: %p", NT_STR (var_NT),   \
                                SAC_ND_A_FIELD (var_NT)))                                 \
             SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_PF_MEM_INC_ALLOC (SAC_ND_A_FIRST_ELEMS (var_NT) * sizeof (basetype))     \
             SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT)                  \
               = SAC_DISTMEM_DET_OFFS (SAC_ND_A_FIELD (var_NT));                          \
             SAC_CS_REGISTER_ARRAY (var_NT)                                               \
@@ -1747,11 +1829,15 @@ FIXME Do not initialize for the time being, as value 0                          
                                               * sizeof (*SAC_ND_A_FIELD (var_NT)),       \
                                             SAC_ND_A_MIRROR_DIM (var_NT), basetype,      \
                                             SAC_ND_DESC_BASETYPE (var_NT))               \
+        ASSIGN_DESC_CUDA_PINNED (SAC_ND_A_DESC (var_NT), 0)                              \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_FIELD (var_NT))) \
         SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_ALLOC (SAC_ND_A_SIZE (var_NT)                                     \
+                              * sizeof (*SAC_ND_A_FIELD (var_NT)))                       \
+        SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_SIZE (var_NT)))    \
         SAC_CS_REGISTER_ARRAY (var_NT)                                                   \
     }
 
@@ -1778,6 +1864,8 @@ FIXME Do not initialize for the time being, as value 0                          
             SAC_TR_MEM_PRINT (("ND_ALLOC__DATA( %s) at addr: %p", NT_STR (var_NT),       \
                                SAC_ND_A_FIELD (var_NT)))                                 \
             SAC_TR_INC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_PF_MEM_INC_ALLOC (SAC_ND_A_FIRST_ELEMS (var_NT) * sizeof (basetype))     \
+            SAC_PF_MEM_INC_ALLOC_DESC (BYTE_SIZE_OF_DIS_DESC (TRUE, dim))                \
             SAC_ND_A_DESC_OFFS (var_NT) = SAC_ND_A_MIRROR_OFFS (var_NT)                  \
               = SAC_DISTMEM_DET_OFFS (SAC_ND_A_FIELD (var_NT));                          \
             SAC_DISTMEM_MOVE_PTR_FOR_WRITES (SAC_ND_A_FIELD (var_NT),                    \
@@ -1828,6 +1916,7 @@ FIXME Do not initialize for the time being, as value 0                          
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_FREE__DESC( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_DESC (var_NT)))   \
+        SAC_PF_MEM_INC_FREE_DESC (BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_SIZE (var_NT)))     \
         SAC_HM_FREE_DESC (SAC_REAL_DESC (SAC_ND_A_DESC (var_NT)))                        \
     }
 
@@ -1849,10 +1938,12 @@ FIXME Do not initialize for the time being, as value 0                          
     {                                                                                    \
         SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", NT_STR (var_NT),        \
                            #freefun, SAC_ND_A_FIELD (var_NT)))                           \
+        SAC_ND_CUDA_UNPIN (var_NT)                                                       \
         SAC_HM_FREE_FIXED_SIZE (SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT)),         \
                                 SAC_ND_A_SIZE (var_NT)                                   \
                                   * sizeof (*SAC_ND_A_FIELD (var_NT)))                   \
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_FREE (SAC_ND_A_SIZE (var_NT) * sizeof (*SAC_ND_A_FIELD (var_NT))) \
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
     }
 
@@ -1869,6 +1960,8 @@ FIXME Do not initialize for the time being, as value 0                          
                                             SAC_ND_A_FIRST_ELEMS (var_NT)),              \
               SAC_ND_A_FIRST_ELEMS (var_NT) * sizeof (*SAC_ND_A_FIELD (var_NT)))         \
             SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_PF_MEM_INC_FREE (SAC_ND_A_FIRST_ELEMS (var_NT)                           \
+                                 * sizeof (*SAC_ND_A_FIELD (var_NT)))                    \
             SAC_CS_UNREGISTER_ARRAY (var_NT)                                             \
         } else {                                                                         \
             SAC_ND_FREE__DATA__AKS_NHD (var_NT, freefun)                                 \
@@ -1888,8 +1981,10 @@ FIXME Do not initialize for the time being, as value 0                          
     {                                                                                    \
         SAC_TR_MEM_PRINT (("ND_FREE__DATA( %s, %s) at addr: %p", NT_STR (var_NT),        \
                            #freefun, SAC_ND_A_FIELD (var_NT)))                           \
+        SAC_ND_CUDA_UNPIN (var_NT)                                                       \
         SAC_HM_FREE (SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT)))                    \
         SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_SIZE (var_NT))                                 \
+        SAC_PF_MEM_INC_FREE (SAC_ND_A_SIZE (var_NT) * sizeof (*SAC_ND_A_FIELD (var_NT))) \
         SAC_CS_UNREGISTER_ARRAY (var_NT)                                                 \
     }
 
@@ -1904,6 +1999,8 @@ FIXME Do not initialize for the time being, as value 0                          
                                                            SAC_ND_A_FIELD (var_NT)),     \
                                             SAC_ND_A_FIRST_ELEMS (var_NT)))              \
             SAC_TR_DEC_ARRAY_MEMCNT (SAC_ND_A_FIRST_ELEMS (var_NT))                      \
+            SAC_PF_MEM_INC_FREE (SAC_ND_A_FIRST_ELEMS (var_NT)                           \
+                                 * sizeof (*SAC_ND_A_FIELD (var_NT)))                    \
             SAC_CS_UNREGISTER_ARRAY (var_NT)                                             \
         } else {                                                                         \
             SAC_ND_FREE__DATA__AKD_NHD (var_NT, freefun)                                 \
@@ -2324,10 +2421,9 @@ FIXME Do not initialize for the time being, as value 0                          
 
 #define SAC_ND_DEC_RC_FREE__NOOP(var_NT, rc, freefun) SAC_NOOP ()
 
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman || SAC_DO_CUDA_ALLOC == SAC_CA_cumanp
 #define SAC_ND_DEC_RC_FREE__C99(var_NT, rc, freefun)                                     \
     {                                                                                    \
-        cudaDeviceSynchronize (); /* FIXME This is not good! */                          \
         SAC_TR_REF_PRINT (                                                               \
           ("ND_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))                \
         if ((SAC_ND_A_RC__C99 (var_NT) -= rc) == 0) {                                    \
@@ -2351,10 +2447,9 @@ FIXME Do not initialize for the time being, as value 0                          
     }
 #endif
 
-#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman
+#if SAC_DO_CUDA_ALLOC == SAC_CA_cuman || SAC_DO_CUDA_ALLOC == SAC_CA_cumanp
 #define SAC_DESC_DEC_RC_FREE__C99(desc, rc, q_waslast)                                   \
     {                                                                                    \
-        cudaDeviceSynchronize (); /* FIXME This is not good! */                          \
         q_waslast = ((DESC_RC (desc) -= rc) == 0);                                       \
         if (q_waslast) {                                                                 \
             SAC_FREE (desc);                                                             \

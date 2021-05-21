@@ -48,49 +48,6 @@ specific implementation of a function should remain with the source code.
 #define LIB_FUN 0x0008
 #define OVRLD_FUN 0x0010
 
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  SHPSEG :
- ***/
-
-extern int TCgetShpsegLength (int dims, shpseg *shape);
-extern shpseg *TCdiffShpseg (int dim, shpseg *shape1, shpseg *shape2);
-extern bool TCshapeVarsMatch (node *avis1, node *avis2);
-extern bool TCequalShpseg (int dim, shpseg *shape2, shpseg *shape1);
-extern shpseg *TCmergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2);
-
-extern shpseg *TCarray2Shpseg (node *array, int *ret_dim);
-extern node *TCshpseg2Array (shpseg *shape, int dim);
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  TYPES :
- ***/
-
-/*
- *  compound access macros
- */
-
-#define TYPES_SHAPE(t, x) (SHPSEG_SHAPE (TYPES_SHPSEG (t), x))
-
-extern types *TCappendTypes (types *chain, types *item);
-extern int TCcountTypes (types *type);
-extern types *TCgetTypesLine (types *type, size_t line);
-extern types *TCgetTypes (types *type);
-extern int TCgetShapeDim (types *type);
-extern int TCgetDim (types *type);
-extern simpletype TCgetBasetype (types *type);
-extern size_t TCgetBasetypeSize (types *type);
-extern int TCgetTypesLength (types *type);
-extern shpseg *TCtype2Shpseg (types *type, int *ret_dim);
-extern shape *TCtype2Shape (types *type);
-extern node *TCtype2Exprs (types *type);
-
-extern bool TCisUnique (types *type);
-extern bool TCisHidden (types *type);
-extern bool TCisNested (types *type);
 
 /*--------------------------------------------------------------------------*/
 
@@ -104,14 +61,9 @@ extern bool TCisNested (types *type);
 #define IDS_NTYPE(n) AVIS_TYPE (IDS_AVIS (n))
 #define IDS_DIM(n) VARDEC_OR_ARG_DIM (IDS_DECL (n))
 
-/*
- * TODO: remove
- */
-#define IDS_TYPE(n) VARDEC_OR_ARG_TYPE (IDS_DECL (n))
-
 extern node *TCcreateIdsChainFromAvises (int num_avises, ...);
 extern node *TCappendIds (node *chain, node *item);
-extern int TCcountIds (node *ids_arg);
+extern size_t TCcountIds (node *ids_arg);
 extern node *TCmakeIdsFromVardecs (node *vardecs);
 extern node *TCsetSSAAssignForIdsChain (node *ids, node *assign);
 extern node *TClastIds (node *ids);
@@ -131,11 +83,11 @@ extern node *TCcreateIdsChainFromExprs (node *arg_node);
  ******************************************************************************/
 
 extern node *TClookupIds (const char *name, node *ids_chain);
-extern int TClookupIdsNode (node *ids_chain, node *idsavis);
+extern size_t TClookupIdsNode (node *ids_chain, node *idsavis, bool *isIdsMember);
 
-extern node *TCgetNthIds (int n, node *ids_chain);
+extern node *TCgetNthIds (size_t n, node *ids_chain);
 
-extern int TCcountNums (node *nums);
+extern size_t TCcountNums (node *nums);
 extern bool TCnumsContains (int val, node *nums);
 
 /*--------------------------------------------------------------------------*/
@@ -347,13 +299,6 @@ extern node *TCremoveFundef (node *fundef_chain, node *fundef);
 #define VARDEC_NTYPE(n) (AVIS_TYPE (VARDEC_AVIS (n)))
 #define VARDEC_NAME(n) (AVIS_NAME (VARDEC_AVIS (n)))
 
-/*
- * TODO: REMOVE US CAUSE WE'RE UGLY
- */
-#define VARDEC_DIM(n) (TYPES_DIM (VARDEC_TYPE (n)))
-#define VARDEC_SHAPE(n, x) (TYPES_SHAPE (VARDEC_TYPE (n), x))
-#define VARDEC_SHPSEG(n) (TYPES_SHPSEG (VARDEC_TYPE (n)))
-
 /******************************************************************************
  *
  * Function:
@@ -379,7 +324,7 @@ extern node *TCaddVardecs (node *fundef, node *vardecs);
 
 extern node *TCappendVardec (node *vardec_chain, node *vardec);
 
-extern int TCcountVardecs (node *vardecs);
+extern size_t TCcountVardecs (node *vardecs);
 
 /*--------------------------------------------------------------------------*/
 
@@ -394,16 +339,10 @@ extern int TCcountVardecs (node *vardecs);
 #define ARG_NAME(n) (AVIS_NAME (ARG_AVIS (n)))
 #define ARG_NTYPE(n) (AVIS_TYPE (ARG_AVIS (n)))
 
-/*
- * TODO: REMOVE US CAUSE WE'RE UGLY
- */
-#define ARG_DIM(n) (TYPES_DIM (ARG_TYPE (n)))
-#define ARG_TNAME(n) (TYPES_NAME (ARG_TYPE (n)))
-
-extern int TCcountArgs (node *args);
-extern int TCcountArgsIgnoreArtificials (node *args);
+extern size_t TCcountArgs (node *args);
+extern size_t TCcountArgsIgnoreArtificials (node *args);
 extern node *TCappendArgs (node *arg_chain, node *arg);
-extern node *TCgetNthArg (int n, node *args);
+extern node *TCgetNthArg (size_t n, node *args);
 
 /*--------------------------------------------------------------------------*/
 
@@ -423,8 +362,8 @@ extern node *TCgetNthArg (int n, node *args);
  ***  N_ret :
  ***/
 
-extern int TCcountRets (node *rets);
-extern int TCcountRetsIgnoreArtificials (node *rets);
+extern size_t TCcountRets (node *rets);
+extern size_t TCcountRetsIgnoreArtificials (node *rets);
 extern node *TCappendRet (node *chain, node *item);
 extern node *TCcreateIdsFromRets (node *rets, node **vardecs);
 extern node *TCcreateExprsFromArgs (node *args);
@@ -445,7 +384,6 @@ extern node *TCcreateExprsFromArgs (node *args);
  *          Use the L_VARDEC_OR_... macros instead!!
  */
 #define VARDEC_OR_ARG_NAME(n) (AVIS_NAME (DECL_AVIS (n)))
-#define VARDEC_OR_ARG_TYPE(n) ((NODE_TYPE (n) == N_arg) ? ARG_TYPE (n) : VARDEC_TYPE (n))
 #define VARDEC_OR_ARG_STATUS(n)                                                          \
     ((NODE_TYPE (n) == N_arg)                                                            \
        ? ARG_STATUS (n)                                                                  \
@@ -510,13 +448,6 @@ extern node *TCcreateExprsFromArgs (node *args);
         VARDEC_AVIS (n) = (rhs);                                                         \
     } else {                                                                             \
         OBJDEF_AVIS (n) = (rhs);                                                         \
-    }
-
-#define L_VARDEC_OR_ARG_TYPE(n, rhs)                                                     \
-    if (NODE_TYPE (n) == N_arg) {                                                        \
-        ARG_TYPE (n) = (rhs);                                                            \
-    } else {                                                                             \
-        VARDEC_TYPE (n) = (rhs);                                                         \
     }
 
 extern node *TCsearchDecl (const char *name, node *decl_node);
@@ -636,7 +567,7 @@ extern node *TCappendAssign (node *assign_chain, node *assign);
 
 extern node *TCappendAssignIcm (node *assign, char *name, node *args);
 
-extern int TCcountAssigns (node *assigns);
+extern size_t TCcountAssigns (node *assigns);
 extern node *TCgetLastAssign (node *arg_node);
 
 /*--------------------------------------------------------------------------*/
@@ -689,19 +620,19 @@ extern node *TCmakeExprsNum (int num);
 /******************************************************************************
  *
  * function:
- *   int TCcountExprs( node *exprs)
+ *   size_t TCcountExprs( node *exprs)
  *
  * description:
  *   Computes the length of the given N_exprs chain.
  *
  ******************************************************************************/
 /* FIXME may be better to make this unsigned int in the future */
-extern int TCcountExprs (node *exprs);
+extern size_t TCcountExprs (node *exprs);
 
-extern node *TCgetNthExprs (int n, node *exprs);
-extern node *TCputNthExprs (int n, node *exprs, node *val);
-extern node *TCgetNthExprsExpr (int n, node *exprs);
-extern node *TCtakeDropExprs (int takecount, int dropcount, node *exprs);
+extern node *TCgetNthExprs (size_t n, node *exprs);
+extern node *TCputNthExprs (size_t n, node *exprs, node *val);
+extern node *TCgetNthExprsExpr (size_t n, node *exprs);
+extern node *TCtakeDropExprs (int takecount, size_t dropcount, node *exprs);
 
 extern node *TCcreateExprsFromIds (node *ids);
 extern node *TCcreateArrayFromIds (node *ids);
@@ -854,10 +785,10 @@ extern node *TCnodeBehindCast (node *arg_node);
 extern node *TCmakeVector (ntype *basetype, node *aelems);
 extern node *TCmakeIntVector (node *aelems);
 extern node *TCcreateIntVector (int length, int value, int step);
-extern int TCgetIntVectorNthValue (int pos, node *vect);
+extern int TCgetIntVectorNthValue (size_t pos, node *vect);
 
 extern node *TCcreateZeroScalar (simpletype btype);
-extern node *TCcreateZeroVector (int length, simpletype btype);
+extern node *TCcreateZeroVector (size_t length, simpletype btype);
 
 extern node *TCcreateZeroNestedScalar (ntype *btype);
 extern node *TCcreateZeroNestedVector (int length, ntype *btype);
@@ -882,19 +813,11 @@ extern node *TCids2ExprsNt (node *ids_arg);
 #define ID_DECL_NEXT(n) VARDEC_OR_ARG_NEXT (ID_DECL (n))
 #define ID_PADDED(n) VARDEC_OR_ARG_PADDED (ID_DECL (n))
 
-#define ID_TYPE(n)                                                                       \
-    ((NODE_TYPE (AVIS_DECL (ID_AVIS (n))) == N_vardec)                                   \
-       ? VARDEC_TYPE (AVIS_DECL (ID_AVIS (n)))                                           \
-       : ((NODE_TYPE (AVIS_DECL (ID_AVIS (n))) == N_arg)                                 \
-            ? ARG_TYPE (AVIS_DECL (ID_AVIS (n)))                                         \
-            : NULL))
-
 #define ID_SSAASSIGN(n) (AVIS_SSAASSIGN (ID_AVIS (n)))
 
 #define ID_NAME_OR_ICMTEXT(n) ((ID_AVIS (n) != NULL) ? ID_NAME (n) : ID_ICMTEXT (n))
 
 extern node *TCmakeIdCopyString (const char *str);
-extern node *TCmakeIdCopyStringNt (const char *str, types *type);
 extern node *TCmakeIdCopyStringNtNew (const char *str, ntype *type);
 
 /***************************************************************************
@@ -1178,7 +1101,7 @@ extern node *TCmakeIcm8 (const char *name, node *arg1, node *arg2, node *arg3, n
 #define PART_CEXPRS(n) (CODE_CEXPRS (PART_CODE (n)))
 #define PART_CBLOCK(n) (CODE_CBLOCK (PART_CODE (n)))
 
-extern int TCcountParts (node *parts);
+extern size_t TCcountParts (node *parts);
 extern node *TCappendPart (node *parts1, node *parts2);
 extern node *TCgetNthPart (node *parts, int n);
 extern bool TCcontainsDefaultPartition (node *parts);
@@ -1220,9 +1143,9 @@ extern node *TCappendCode (node *code1, node *code2);
  ***  withop :
  ***/
 
-extern int TCcountWithops (node *withop);
-extern int TCcountWithopsEq (node *withop, nodetype eq);
-extern int TCcountWithopsNeq (node *withop, nodetype neq);
+extern size_t TCcountWithops (node *withop);
+extern size_t TCcountWithopsEq (node *withop, nodetype eq);
+extern size_t TCcountWithopsNeq (node *withop, nodetype neq);
 
 /*
  * DON'T USE THE FOLLOWING MACROS
@@ -1240,30 +1163,28 @@ extern int TCcountWithopsNeq (node *withop, nodetype neq);
                                                     : (FOLD_NEXT (n)))
 
 #define L_WITHOP_NEXT(n, rhs)                                                            \
-    switch                                                                               \
-        NODE_TYPE (n)                                                                    \
-        {                                                                                \
-        case N_genarray:                                                                 \
-            GENARRAY_NEXT (n) = rhs;                                                     \
-            break;                                                                       \
-        case N_modarray:                                                                 \
-            MODARRAY_NEXT (n) = rhs;                                                     \
-            break;                                                                       \
-        case N_fold:                                                                     \
-            FOLD_NEXT (n) = rhs;                                                         \
-            break;                                                                       \
-        case N_break:                                                                    \
-            BREAK_NEXT (n) = rhs;                                                        \
-            break;                                                                       \
-        case N_propagate:                                                                \
-            PROPAGATE_NEXT (n) = rhs;                                                    \
-            break;                                                                       \
-        case N_spfold:                                                                   \
-            SPFOLD_NEXT (n) = rhs;                                                       \
-            break;                                                                       \
-        default:                                                                         \
-            DBUG_UNREACHABLE ("Illegal node type");                                      \
-        }
+    switch (NODE_TYPE (n)) {                                                             \
+    case N_genarray:                                                                     \
+        GENARRAY_NEXT (n) = rhs;                                                         \
+        break;                                                                           \
+    case N_modarray:                                                                     \
+        MODARRAY_NEXT (n) = rhs;                                                         \
+        break;                                                                           \
+    case N_fold:                                                                         \
+        FOLD_NEXT (n) = rhs;                                                             \
+        break;                                                                           \
+    case N_break:                                                                        \
+        BREAK_NEXT (n) = rhs;                                                            \
+        break;                                                                           \
+    case N_propagate:                                                                    \
+        PROPAGATE_NEXT (n) = rhs;                                                        \
+        break;                                                                           \
+    case N_spfold:                                                                       \
+        SPFOLD_NEXT (n) = rhs;                                                           \
+        break;                                                                           \
+    default:                                                                             \
+        DBUG_UNREACHABLE ("Illegal node type");                                          \
+    }
 
 #define WITHOP_MEM(n)                                                                    \
     ((NODE_TYPE (n) == N_genarray)                                                       \
@@ -1278,18 +1199,16 @@ extern int TCcountWithopsNeq (node *withop, nodetype neq);
        : (NODE_TYPE (n) == N_modarray) ? MODARRAY_IDX (n) : NULL)
 
 #define L_WITHOP_IDX(n, rhs)                                                             \
-    switch                                                                               \
-        NODE_TYPE (n)                                                                    \
-        {                                                                                \
-        case N_genarray:                                                                 \
-            GENARRAY_IDX (n) = rhs;                                                      \
-            break;                                                                       \
-        case N_modarray:                                                                 \
-            MODARRAY_IDX (n) = rhs;                                                      \
-            break;                                                                       \
-        default:                                                                         \
-            DBUG_UNREACHABLE ("Illegal node type");                                      \
-        }
+    switch (NODE_TYPE (n)) {                                                             \
+    case N_genarray:                                                                     \
+        GENARRAY_IDX (n) = rhs;                                                          \
+        break;                                                                           \
+    case N_modarray:                                                                     \
+        MODARRAY_IDX (n) = rhs;                                                          \
+        break;                                                                           \
+    default:                                                                             \
+        DBUG_UNREACHABLE ("Illegal node type");                                          \
+    }
 
 #define WITHOP_SUB(n)                                                                    \
     ((NODE_TYPE (n) == N_genarray)                                                       \
@@ -1297,18 +1216,16 @@ extern int TCcountWithopsNeq (node *withop, nodetype neq);
        : (NODE_TYPE (n) == N_modarray) ? MODARRAY_SUB (n) : NULL)
 
 #define L_WITHOP_SUB(n, rhs)                                                             \
-    switch                                                                               \
-        NODE_TYPE (n)                                                                    \
-        {                                                                                \
-        case N_genarray:                                                                 \
-            GENARRAY_SUB (n) = rhs;                                                      \
-            break;                                                                       \
-        case N_modarray:                                                                 \
-            MODARRAY_SUB (n) = rhs;                                                      \
-            break;                                                                       \
-        default:                                                                         \
-            DBUG_UNREACHABLE ("Illegal node type");                                      \
-        }
+    switch (NODE_TYPE (n)) {                                                             \
+    case N_genarray:                                                                     \
+        GENARRAY_SUB (n) = rhs;                                                          \
+        break;                                                                           \
+    case N_modarray:                                                                     \
+        MODARRAY_SUB (n) = rhs;                                                          \
+        break;                                                                           \
+    default:                                                                             \
+        DBUG_UNREACHABLE ("Illegal node type");                                          \
+    }
 
 #define WITHOP_RC(n)                                                                     \
     ((NODE_TYPE (n) == N_genarray)                                                       \
@@ -1316,18 +1233,33 @@ extern int TCcountWithopsNeq (node *withop, nodetype neq);
        : (NODE_TYPE (n) == N_modarray) ? MODARRAY_RC (n) : NULL)
 
 #define L_WITHOP_RC(n, rhs)                                                              \
-    switch                                                                               \
-        NODE_TYPE (n)                                                                    \
-        {                                                                                \
-        case N_genarray:                                                                 \
-            GENARRAY_RC (n) = rhs;                                                       \
-            break;                                                                       \
-        case N_modarray:                                                                 \
-            MODARRAY_RC (n) = rhs;                                                       \
-            break;                                                                       \
-        default:                                                                         \
-            DBUG_UNREACHABLE ("Illegal node type");                                      \
-        }
+    switch (NODE_TYPE (n)) {                                                             \
+    case N_genarray:                                                                     \
+        GENARRAY_RC (n) = rhs;                                                           \
+        break;                                                                           \
+    case N_modarray:                                                                     \
+        MODARRAY_RC (n) = rhs;                                                           \
+        break;                                                                           \
+    default:                                                                             \
+        DBUG_UNREACHABLE ("Illegal node type");                                          \
+    }
+
+#define WITHOP_ERC(n)                                                                    \
+    ((NODE_TYPE (n) == N_genarray)                                                       \
+       ? GENARRAY_ERC (n)                                                                \
+       : (NODE_TYPE (n) == N_modarray) ? MODARRAY_ERC (n) : NULL)
+
+#define L_WITHOP_ERC(n, rhs)                                                             \
+    switch (NODE_TYPE (n)) {                                                             \
+    case N_genarray:                                                                     \
+        GENARRAY_ERC (n) = rhs;                                                          \
+        break;                                                                           \
+    case N_modarray:                                                                     \
+        MODARRAY_ERC (n) = rhs;                                                          \
+        break;                                                                           \
+    default:                                                                             \
+        DBUG_UNREACHABLE ("Illegal node type");                                          \
+    }
 
 /*--------------------------------------------------------------------------*/
 
@@ -1354,7 +1286,7 @@ extern int TCcountWithopsNeq (node *withop, nodetype neq);
 #define WITH2_ARRAY(n) (MODARRAY_ARRAY (WITH2_WITHOP (n)))
 #define WITH2_NEUTRAL(n) (FOLD_NEUTRAL (WITH2_WITHOP (n)))
 
-extern int TCcountWlseg (node *withop);
+extern size_t TCcountWlseg (node *withop);
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1654,6 +1586,8 @@ extern int TCcountWlseg (node *withop);
 #define AVIS_SSASTACK_TOP(n) SSASTACK_AVIS (AVIS_SSASTACK (n))
 #define AVIS_SSASTACK_INUSE(n) SSASTACK_INUSE (AVIS_SSASTACK (n))
 
+extern bool TCshapeVarsMatch (node *avis1, node *avis2);
+
 /*--------------------------------------------------------------------------*/
 
 /***
@@ -1712,7 +1646,7 @@ extern int TCcountSpids (node *spids);
  ***/
 
 extern node *TCappendRange (node *range_chain, node *range);
-extern int TCcountRanges (node *range);
+extern size_t TCcountRanges (node *range);
 
 extern bool TCisScalar (node *arg_node);
 extern bool TCisSignedType (ntype *typ);

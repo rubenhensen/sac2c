@@ -1901,9 +1901,9 @@ ICMCompileND_PRF_CAT_VxV__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int f
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_PROP_OBJ_IN (int vararg_cnt, char **vararg)
+ICMCompileND_PRF_PROP_OBJ_IN (unsigned int vararg_cnt, char **vararg)
 {
-    int i;
+    unsigned int i;
     DBUG_ENTER ();
 
 #define ND_PRF_PROP_OBJ_IN
@@ -1935,9 +1935,9 @@ ICMCompileND_PRF_PROP_OBJ_IN (int vararg_cnt, char **vararg)
  ******************************************************************************/
 
 void
-ICMCompileND_PRF_PROP_OBJ_OUT (int vararg_cnt, char **vararg)
+ICMCompileND_PRF_PROP_OBJ_OUT (unsigned int vararg_cnt, char **vararg)
 {
-    int i;
+    unsigned int i;
     DBUG_ENTER ();
 
 #define ND_PRF_PROP_OBJ_OUT

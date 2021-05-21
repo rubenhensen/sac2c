@@ -28,7 +28,7 @@ struct TE_INFO_UDF {
 
 struct TE_INFO_PRF {
     prf prf_no;   /* pointer to the CF function of the prf */
-    int num_rets; /* number of return values (depends on #args!) */
+    size_t num_rets; /* number of return values (depends on #args!) */
 };
 
 struct TE_INFO {
@@ -147,6 +147,28 @@ MatchVectLengthOne (ntype *type)
 }
 
 static bool
+MatchWholeA (ntype *type)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    res = ((TYgetConstr (TYgetScalar (type)) == TC_simple)
+           && ((TYgetSimpleType (TYgetScalar (type)) == T_byte)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_short)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_int)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_long)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_longlong)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_ubyte)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_ushort)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_uint)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_ulong)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_ulonglong)));
+
+    DBUG_RETURN (res);
+}
+
+static bool
 MatchIntA (ntype *type)
 {
     bool res;
@@ -256,7 +278,7 @@ TEmakeInfoUdf (size_t linenum, const char *file, te_kind_t kind, const char *mod
 
 te_info *
 TEmakeInfoPrf (size_t linenum, const char *file, te_kind_t kind, const char *name_str,
-               prf prf_no, int num_rets)
+               prf prf_no, size_t num_rets)
 {
     te_info *res;
 
@@ -354,10 +376,10 @@ TEgetParent (te_info *info)
     DBUG_RETURN (TI_CHN (info));
 }
 
-int
+size_t
 TEgetNumRets (te_info *info)
 {
-    int num_res;
+    size_t num_res;
     node *wrapper;
 
     DBUG_ENTER ();
@@ -588,14 +610,14 @@ TEanotherArg2Obj (int pos)
  ******************************************************************************/
 
 char *
-TEarrayElem2Obj (int pos)
+TEarrayElem2Obj (size_t pos)
 {
     static char buffer[64];
     char *tmp = &buffer[0];
 
     DBUG_ENTER ();
 
-    tmp += sprintf (tmp, "array element #%d", pos);
+    tmp += sprintf (tmp, "array element #%zu", pos);
 
     DBUG_RETURN (&buffer[0]);
 }
@@ -652,6 +674,51 @@ TEassureVect (char *obj, ntype *type)
                        TYtype2String (type, FALSE, 0));
     }
 
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEassureWholeS( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+void
+TEassureWholeS (char *obj, ntype *type)
+{
+    DBUG_ENTER ();
+
+    if (!MatchScalar (type) || !MatchWholeA (type)) {
+        TEhandleError (global.linenum, global.filename,
+                       "%s must be of integral type; type found: %s", obj,
+                       TYtype2String (type, FALSE, 0));
+    }
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEassureWholeV( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEassureWholeV (char *obj, ntype *type)
+{
+    DBUG_ENTER ();
+
+    if (!MatchWholeA (type) || !MatchVect (type)) {
+        TEhandleError (global.linenum, global.filename,
+                       "%s must be of integral type vector; type found: %s", obj,
+                       TYtype2String (type, FALSE, 0));
+    }
     DBUG_RETURN ();
 }
 
@@ -1610,47 +1677,47 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
  * argument types (for prfs needed)
  */
 
-int
+size_t
 TEone (ntype *args)
 {
     DBUG_ENTER ();
     DBUG_RETURN (1);
 }
 
-int
+size_t
 TEtwo (ntype *args)
 {
     DBUG_ENTER ();
     DBUG_RETURN (2);
 }
 
-int
+size_t
 TEthree (ntype *args)
 {
     DBUG_ENTER ();
     DBUG_RETURN (3);
 }
 
-int
+size_t
 TEnMinusOne (ntype *args)
 {
     DBUG_ENTER ();
     DBUG_RETURN (TYgetProductSize (args) - 1);
 }
 
-int
+size_t
 TEn (ntype *args)
 {
     DBUG_ENTER ();
     DBUG_RETURN (TYgetProductSize (args));
 }
 
-int
+size_t
 TEval (ntype *args)
 {
     ntype *num_rets_t;
     constant *co;
-    int num_rets;
+    unsigned int num_rets;
 
     DBUG_ENTER ();
 
@@ -1662,7 +1729,9 @@ TEval (ntype *args)
                                           " first argument not an integer");
     DBUG_ASSERT (COgetDim (co) == 0, "illegal construction of _dispatch_error_:"
                                      " first argument not a scalar");
-    num_rets = ((int *)COgetDataVec (co))[0];
+    DBUG_ASSERT (((int *)COgetDataVec (co))[0] >= 0, "illegal number of returns:"
+                                                     " first argument cannot be negative" );
+    num_rets = ((unsigned int *)COgetDataVec (co))[0];
 
     DBUG_RETURN (num_rets);
 }
@@ -1678,9 +1747,9 @@ TEval (ntype *args)
  ******************************************************************************/
 
 void
-TEassureShpMatchesInt (char *obj, ntype *shp, int len)
+TEassureShpMatchesInt (char *obj, ntype *shp, size_t len)
 {
-    int shpel;
+    size_t shpel;
 
     DBUG_ENTER ();
 
@@ -1688,7 +1757,7 @@ TEassureShpMatchesInt (char *obj, ntype *shp, int len)
         shpel = SHgetUnrLen (TYgetShape (shp));
         if (len != shpel) {
             TEhandleError (global.linenum, global.filename,
-                           "%s should be %d elements, but is %d elements.",
+                           "%s should be %zu elements, but is %zu elements.",
                            TYtype2String (shp, FALSE, 0),
                            shpel,
                            len);

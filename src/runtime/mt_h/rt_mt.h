@@ -142,8 +142,6 @@ SAC_C_EXTERN unsigned int SAC_RTSPEC_controller_threads;
 #define SAC_MT_SETUP()
 #define SAC_MT_SETUP_INITIAL()
 
-#define SAC_MT_DEFINE()
-
 #define SAC_MT_STATIC 
 
 #define SAC_MT_DEFINE_LOCK(name)

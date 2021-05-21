@@ -77,6 +77,7 @@
 
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "traverse_optcounter.h"
 #include "node_basic.h"
 #include "print.h"
 
@@ -312,20 +313,17 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 {
     int i = 0;
     int ct = 0;
-    int countDLIR = 0;
-    int countWLIR = global.optcounters.wlir_expr;
-    int countINL = 0;
-    int countCSE = global.optcounters.cse_expr;
-    int countTUP = 0;
-    int countCF = 0;
-    int countVP = 0;
-    int countREA = 0;
-    int countAS = 0;
-    int countAL = 0;
-    int countDL = 0;
-    int countESD = global.optcounters.esd_expr;
-    int countUESD = 0;
-    int countDCR = 0;
+    bool done = false;
+
+    TOC_SETUP(14, COUNT_DLIR, COUNT_WLIR, COUNT_INL,
+              COUNT_CSE, COUNT_TUP, COUNT_CF,
+              COUNT_VP, COUNT_REA, COUNT_AS,
+              COUNT_AL, COUNT_DL, COUNT_ESD,
+              COUNT_UESD, COUNT_DCR)
+
+    TOC_SETCOUNTER (COUNT_WLIR, global.optcounters.wlir_expr)
+    TOC_SETCOUNTER (COUNT_CSE, global.optcounters.cse_expr)
+    TOC_SETCOUNTER (COUNT_ESD, global.optcounters.esd_expr)
 
     DBUG_ENTER ();
 
@@ -350,102 +348,75 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 #endif
 
             /* Invoke each opt */
-
-#ifndef DBUG_OFF
-            /* debug compiler */
-#define RUNCHECK(Name)                                                                   \
-    if (global.check_frequency >= 4) {                                                   \
-        DBUG_PRINT_TAG ("SSE", "Cycle iteration %d: running post-" #Name " check", i);   \
-        arg_node = PHrunConsistencyChecks (arg_node);                                    \
-    }
-#else
-            /* production compiler does not have PHrunConsistencyChecks() */
-#define RUNCHECK(Name) /*empty*/
-#endif
-
-#define RUNOPT(Name, Cond, CntStmt, PassFun)                                             \
-    if (Cond) {                                                                          \
-        DBUG_PRINT_TAG ("SSE", "Cycle iteration %d: running " #Name, i);                 \
-        CntStmt;                                                                         \
-        arg_node = PassFun (arg_node);                                                   \
-        RUNCHECK (Name)                                                                  \
-    }
-
-            RUNOPT (DLIR, global.optimize.dodlir,
-                    countDLIR = global.optcounters.dlir_expr, DLIRdoLoopInvariantRemoval);
-            RUNOPT (WLIR, global.optimize.dowlir,
-                    countWLIR = global.optcounters.wlir_expr, WLIRdoLoopInvariantRemoval);
-            RUNOPT (INL, global.optimize.doinl, countINL = global.optcounters.inl_fun,
-                    INLdoInlining);
-            RUNOPT (ISAA, global.optimize.dosaa, , ISAAdoInsertShapeVariables);
-            RUNOPT (CSE, global.optimize.docse, countCSE = global.optcounters.cse_expr,
-                    CSEdoCommonSubexpressionElimination);
-            RUNOPT (NTC, global.optimize.dotup,
-                    countTUP = global.optcounters.tup_upgrades, NTCdoNewTypeCheck);
-            RUNOPT (EAT, global.optimize.dotup, , EATdoEliminateAlphaTypes);
-            RUNOPT (EBT, global.optimize.dotup, , EBTdoEliminateBottomTypes);
-            RUNOPT (DFC, TRUE, , DFCdoDispatchFunCalls);
-            RUNOPT (CF, global.optimize.docf, countCF = global.optcounters.cf_expr,
-                    CFdoConstantFolding);
-            RUNOPT (VP, global.optimize.dovp, countVP = global.optcounters.vp_expr,
-                    VPdoVarPropagation);
-            RUNOPT (REA, global.optimize.dorea, countREA = global.optcounters.rea_expr,
-                    REAdoReorderEqualityprfArguments);
-            RUNOPT (TGTL, global.optimize.dotgtl, countREA = global.optcounters.tgtl_expr,
-                    TGTLdoTransformGtgeToLtle);
-            RUNOPT (ESD, global.optimize.dosde, countESD = global.optcounters.esd_expr,
-                    ESDdoElimSubDiv);
-            RUNOPT (AS, global.optimize.doas, countAS = global.optcounters.as_expr,
-                    ASdoArithmeticSimplification);
-            RUNOPT (CF, global.optimize.docf, countCF = global.optcounters.cf_expr,
-                    CFdoConstantFolding);
-            RUNOPT (CSE, global.optimize.docse, , CSEdoCommonSubexpressionElimination);
-            RUNOPT (AL, global.optimize.doal, countAL = global.optcounters.al_expr,
-                    ALdoAssocLawOptimization);
-            RUNOPT (DL, global.optimize.dodl, countDL = global.optcounters.dl_expr,
-                    DLdoDistributiveLawOptimization);
-            RUNOPT (UESD, global.optimize.dosde, countUESD = global.optcounters.uesd_expr,
-                    UESDdoUndoElimSubDiv);
-            RUNOPT (DCR, global.optimize.dodcr,
-                    countDCR = global.optcounters.dead_var + global.optcounters.dead_expr,
-                    DCRdoDeadCodeRemoval);
-
-#undef RUNOPT
-#undef RUNCHECK
+            TOC_RUNOPT_TAG ("SSE", "DLIR", global.optimize.dodlir, COUNT_DLIR,
+                            global.optcounters.dlir_expr, arg_node, DLIRdoLoopInvariantRemoval);
+            TOC_RUNOPT_TAG ("SSE", "WLIR", global.optimize.dowlir, COUNT_WLIR,
+                            global.optcounters.wlir_expr, arg_node, WLIRdoLoopInvariantRemoval);
+            TOC_RUNOPT_TAG ("SSE", "INL", global.optimize.doinl, COUNT_INL, global.optcounters.inl_fun,
+                            arg_node, INLdoInlining);
+            TOC_RUNOPT_TAG ("SSE", "ISAA", global.optimize.dosaa, TOC_IGNORE, 0, arg_node,
+                            ISAAdoInsertShapeVariables);
+            TOC_RUNOPT_TAG ("SSE", "CSE", global.optimize.docse, COUNT_CSE, global.optcounters.cse_expr,
+                            arg_node, CSEdoCommonSubexpressionElimination);
+            TOC_RUNOPT_TAG ("SSE", "NTC", global.optimize.dotup, COUNT_TUP, global.optcounters.tup_upgrades,
+                            arg_node, NTCdoNewTypeCheck);
+            TOC_RUNOPT_TAG ("SSE", "EAT", global.optimize.dotup, TOC_IGNORE, 0, arg_node,
+                            EATdoEliminateAlphaTypes);
+            TOC_RUNOPT_TAG ("SSE", "EBT", global.optimize.dotup, TOC_IGNORE, 0, arg_node,
+                            EBTdoEliminateBottomTypes);
+            TOC_RUNOPT_TAG ("SSE", "DFC", TRUE, TOC_IGNORE, 0,  arg_node, DFCdoDispatchFunCalls);
+            TOC_RUNOPT_TAG ("SSE", "CF", global.optimize.docf, COUNT_CF, global.optcounters.cf_expr,
+                            arg_node, CFdoConstantFolding);
+            TOC_RUNOPT_TAG ("SSE", "VP", global.optimize.dovp, COUNT_VP, global.optcounters.vp_expr,
+                            arg_node, VPdoVarPropagation);
+            TOC_RUNOPT_TAG ("SSE", "REA", global.optimize.dorea, COUNT_REA, global.optcounters.rea_expr,
+                            arg_node, REAdoReorderEqualityprfArguments);
+            TOC_RUNOPT_TAG ("SSE", "TGTL", global.optimize.dotgtl, COUNT_REA, global.optcounters.tgtl_expr,
+                            arg_node, TGTLdoTransformGtgeToLtle);
+            TOC_RUNOPT_TAG ("SSE", "ESD", global.optimize.dosde, COUNT_ESD, global.optcounters.esd_expr,
+                            arg_node, ESDdoElimSubDiv);
+            TOC_RUNOPT_TAG ("SSE", "AS", global.optimize.doas, COUNT_AS, global.optcounters.as_expr,
+                            arg_node, ASdoArithmeticSimplification);
+            TOC_RUNOPT_TAG ("SSE", "CF", global.optimize.docf, COUNT_CF, global.optcounters.cf_expr,
+                            arg_node, CFdoConstantFolding);
+            TOC_RUNOPT_TAG ("SSE", "CSE", global.optimize.docse, TOC_IGNORE, 0, arg_node,
+                            CSEdoCommonSubexpressionElimination);
+            TOC_RUNOPT_TAG ("SSE", "AL", global.optimize.doal, COUNT_AL, global.optcounters.al_expr,
+                            arg_node, ALdoAssocLawOptimization);
+            TOC_RUNOPT_TAG ("SSE", "DL", global.optimize.dodl, COUNT_DL, global.optcounters.dl_expr,
+                            arg_node, DLdoDistributiveLawOptimization);
+            TOC_RUNOPT_TAG ("SSE", "UESD", global.optimize.dosde, COUNT_UESD, global.optcounters.uesd_expr,
+                            arg_node, UESDdoUndoElimSubDiv);
+            TOC_RUNOPT_TAG ("SSE", "DCR", global.optimize.dodcr, COUNT_DCR,
+                            global.optcounters.dead_var + global.optcounters.dead_expr, arg_node,
+                            DCRdoDeadCodeRemoval);
 
             /* We do not count DCR, as it's merely for cleanup */
             DBUG_PRINT_TAG ("SSE",
-                            "DLIR= %d, WLIR= %d, INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, "
-                            "AS=%d, AL=%d, DL=%d, "
-                            "ESD=%d, UESD=%d, DCR=%d",
-                            (global.optcounters.dlir_expr - countDLIR),
-                            (global.optcounters.wlir_expr - countWLIR),
-                            (global.optcounters.inl_fun - countINL),
-                            (global.optcounters.cse_expr - countCSE),
-                            (global.optcounters.tup_upgrades - countTUP),
-                            (global.optcounters.cf_expr - countCF),
-                            (global.optcounters.vp_expr - countVP),
-                            (global.optcounters.as_expr - countAS),
-                            (global.optcounters.al_expr - countAL),
-                            (global.optcounters.dl_expr - countDL),
+                            "DLIR= %zu, WLIR= %zu, INL=%zu, CSE=%zu, TUP=%zu, CF=%zu, VP=%zu, "
+                            "AS=%zu, AL=%zu, DL=%zu, "
+                            "ESD=%zu, UESD=%zu, DCR=%zu",
+                            (global.optcounters.dlir_expr - TOC_GETCOUNTER (COUNT_DLIR)),
+                            (global.optcounters.wlir_expr - TOC_GETCOUNTER (COUNT_WLIR)),
+                            (global.optcounters.inl_fun - TOC_GETCOUNTER (COUNT_INL)),
+                            (global.optcounters.cse_expr - TOC_GETCOUNTER (COUNT_CSE)),
+                            (global.optcounters.tup_upgrades - TOC_GETCOUNTER (COUNT_TUP)),
+                            (global.optcounters.cf_expr - TOC_GETCOUNTER (COUNT_CF)),
+                            (global.optcounters.vp_expr - TOC_GETCOUNTER (COUNT_VP)),
+                            (global.optcounters.as_expr - TOC_GETCOUNTER (COUNT_AS)),
+                            (global.optcounters.al_expr - TOC_GETCOUNTER (COUNT_AL)),
+                            (global.optcounters.dl_expr - TOC_GETCOUNTER (COUNT_DL)),
                             /* The following are not for some reason in the fixpoint check
                                below: */
-                            (global.optcounters.esd_expr - countESD),
-                            (global.optcounters.uesd_expr - countUESD),
+                            (global.optcounters.esd_expr - TOC_GETCOUNTER (COUNT_ESD)),
+                            (global.optcounters.uesd_expr - TOC_GETCOUNTER (COUNT_UESD)),
                             ((global.optcounters.dead_var + global.optcounters.dead_expr)
-                             - countDCR));
+                             - TOC_GETCOUNTER (COUNT_DCR)));
 
-            if (/* Fix point check */
-                (countDLIR == global.optcounters.dlir_expr)
-                && (countWLIR == global.optcounters.wlir_expr)
-                && (countINL == global.optcounters.inl_fun)
-                && (countCSE == global.optcounters.cse_expr)
-                && (countTUP == global.optcounters.tup_upgrades)
-                && (countCF == global.optcounters.cf_expr)
-                && (countVP == global.optcounters.vp_expr)
-                && (countAS == global.optcounters.as_expr)
-                && (countAL == global.optcounters.al_expr)
-                && (countDL == global.optcounters.dl_expr)) {
+            /* Fix point check */
+            TOC_COMPARE_RANGE (COUNT_DLIR, COUNT_DL, done)
+
+            if (done) {
                 i = global.max_optcycles;
             }
         }
@@ -482,7 +453,8 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
     node *arg = NULL;
     ;
     pattern *pat;
-    int tcindex = -1;
+    size_t tcindex = 0;
+    bool isIdsMember = false;
     node *id;
 
     DBUG_ENTER ();
@@ -494,8 +466,8 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
         case N_prf:
 
             if (NULL != PRF_EXPRS2 (arg_node)) {
-                tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG2 (arg_node)));
-                if (-1 != tcindex) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG2 (arg_node)), &isIdsMember);
+                if (isIdsMember) {
                     z = 2;
                 }
             }
@@ -504,8 +476,8 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
                                        * as PRF_ARG1.
                                        */
             if (N_id == NODE_TYPE (id)) {
-                tcindex = TClookupIdsNode (withidids, ID_AVIS (id));
-                if (-1 != tcindex) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (id), &isIdsMember);
+                if (isIdsMember) {
                     z = 1;
                 }
             }
@@ -523,8 +495,8 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
         case N_id:
             if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
                 if (N_id == NODE_TYPE (arg)) {
-                    tcindex = TClookupIdsNode (withidids, ID_AVIS (arg));
-                    if (-1 != tcindex) {
+                    tcindex = TClookupIdsNode (withidids, ID_AVIS (arg), &isIdsMember);
+                    if (isIdsMember) {
                         z = 1;
                     }
                 } else {
@@ -537,7 +509,7 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
             break;
         }
 
-        if ((NULL != withid) && (z != 0) && (-1 != tcindex)) {
+        if ((NULL != withid) && (z != 0) && (isIdsMember)) {
             *withid = TCgetNthIds (tcindex, withidids);
         }
 
@@ -635,8 +607,8 @@ bool
 AWLFIisValidNoteintersect (node *arg_node, node *pwlid)
 {
     bool z;
-    int nexprs;
-    int npart;
+    size_t nexprs;
+    size_t npart;
 
     DBUG_ENTER ();
 
@@ -842,8 +814,8 @@ bool
 AWLFIisHasAllInverseProjections (node *arg_node)
 {
     bool z = TRUE;
-    int intersectListLim;
-    int intersectListNo;
+    size_t intersectListLim;
+    size_t intersectListNo;
     node *proj1;
     node *proj2;
 
@@ -926,7 +898,7 @@ AWLFIisHasInverseProjection (node *arg_node)
  *****************************************************************************/
 
 static node *
-FlattenLbubel (node *lbub, int ivindx, info *arg_info)
+FlattenLbubel (node *lbub, size_t ivindx, info *arg_info)
 {
     node *lbubelavis;
     node *lbubel;
@@ -950,7 +922,7 @@ FlattenLbubel (node *lbub, int ivindx, info *arg_info)
 }
 
 static node *
-BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivindx)
+BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, size_t ivindx)
 {
     node *z = NULL;
     int markiv;
@@ -965,7 +937,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
     node *rhs;
     node *withidids;
     node *ipavis;
-    int tcindex;
+    size_t tcindex;
+    bool isIdsMember;
     prf nprf;
 
     pattern *pat;
@@ -1000,8 +973,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
 
             switch (NODE_TYPE (idx)) {
             case N_id:
-                tcindex = TClookupIdsNode (withidids, ID_AVIS (idx));
-                if (-1 != tcindex) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (idx), &isIdsMember);
+                if (isIdsMember) {
                     DBUG_PRINT ("Found %s as source of iv'=%s", AVIS_NAME (ID_AVIS (idx)),
                                 AVIS_NAME (ipavis));
                     INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
@@ -1245,7 +1218,7 @@ AWLFIflattenScalarNode (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 static node *
-BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnum,
+BuildAxisConfluence (node *zarr, size_t idx, node *zelnew, node *bndel, int boundnum,
                      info *arg_info)
 {
 
@@ -1324,17 +1297,18 @@ static node *
 PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundnum)
 {
     node *ids;
-    int shpz;
-    int shpids;
-    int shpzelu;
-    int i;
-    int idx;
+    size_t shpz;
+    size_t shpids;
+    size_t shpzelu;
+    size_t i;
+    size_t idx;
+    bool isIdsMember;
     pattern *pat;
     node *bndarr = NULL;
     node *zarr;
     node *z;
     node *zelnew;
-    int xrho = -1;
+    size_t xrho = 0;
     node *bndel;
     ntype *typ;
 
@@ -1389,8 +1363,8 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
         shpzelu = TCcountExprs (zelu);
 
         for (i = 0; i < shpzelu; i++) {
-            idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids));
-            if (-1 != idx) { /* skip places where idx is a constant, etc. */
+            idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids), &isIdsMember);
+            if (isIdsMember) { /* skip places where idx is a constant, etc. */
                              /* E.g., sel( [ JJ, 2], PWL);                */
                 zelnew = TCgetNthExprsExpr (i, zelu);
                 bndel = TCgetNthExprsExpr (idx, ARRAY_AELEMS (bndarr));
@@ -1463,9 +1437,9 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *arriv, node *lb
     node *zw = NULL;
     node *iprime;
     node *ziavis;
-    int dim;
+    size_t dim;
 
-    int ivindx;
+    size_t ivindx;
     DBUG_ENTER ();
 
     dim = SHgetUnrLen (ARRAY_FRAMESHAPE (lbub));
@@ -1554,10 +1528,10 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
-    int numpart;
-    int curpart;
-    int curelidxlb;
-    int curelidxub;
+    size_t numpart;
+    size_t curpart;
+    size_t curelidxlb;
+    size_t curelidxub;
     bool swaplb = FALSE;
     bool swapub = FALSE;
     node *tmp;
@@ -1591,7 +1565,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
         for (curpart = 0; curpart < numpart; curpart++) {
             curelidxlb = WLPROJECTION1 (curpart);
             curelidxub = WLPROJECTION2 (curpart);
-            DBUG_PRINT ("Building inverse projection for %s, partition #%d",
+            DBUG_PRINT ("Building inverse projection for %s, partition #%zu",
                         AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), curpart);
             intrlb = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
             intrub = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
@@ -1655,7 +1629,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                         zeu = tmp;
                     }
 
-                    DBUG_PRINT ("Building axis permute & confluence for %s, partn #%d",
+                    DBUG_PRINT ("Building axis permute & confluence for %s, partn #%zu",
                                 AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), curpart);
                     zlb = PermuteIntersectElements (zel, zwlb, arg_info, 0);
 
@@ -1805,7 +1779,7 @@ noDefaultPartition (node *arg_node)
  *
  ******************************************************************************/
 node *
-AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
+AWLFItakeDropIv (int takect, size_t dropct, node *arg_node, node **vardecs,
                  node **preassigns)
 {
     node *z;
@@ -2637,7 +2611,7 @@ AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel)
 node *
 AWLFIfundef (node *arg_node, info *arg_info)
 {
-    int optctr;
+    size_t optctr;
 
     DBUG_ENTER ();
 
@@ -2648,7 +2622,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
                     FUNDEF_NAME (arg_node));
 
         optctr = global.optcounters.awlfi_expr;
-        DBUG_PRINT ("At AWLFIfundef entry, global.optcounters.awlfi_expr is %d", optctr);
+        DBUG_PRINT ("At AWLFIfundef entry, global.optcounters.awlfi_expr is %zu", optctr);
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             arg_node = SWLDdoSetWithloopDepth (arg_node);
@@ -2663,7 +2637,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
             }
 
             if (global.optcounters.awlfi_expr != optctr) {
-                DBUG_PRINT ("optcounters was %d; is now %d", optctr,
+                DBUG_PRINT ("optcounters was %zu; is now %zu", optctr,
                             global.optcounters.awlfi_expr);
                 arg_node = SimplifySymbioticExpression (arg_node, arg_info);
             }

@@ -15,8 +15,8 @@ MACRO (CHECK_PYTHON_MODULE module)
     UNSET (_module_status)
 ENDMACRO ()
 
-# The version manager requires Puthon 2.
-FIND_PACKAGE (PythonInterp 2 EXACT REQUIRED)
+# The version manager requires Puthon 3.
+FIND_PACKAGE (Python3 REQUIRED)
 
 # make sure we have the Python argparse module available
 CHECK_PYTHON_MODULE ("argparse")
@@ -38,5 +38,5 @@ ENDFOREACH ()
 SET (BUILD_TYPE_DIRECTORY_DICT "{ ${BUILD_TYPE_DIRECTORY_DICT} }")
 
 CONFIGURE_FILE (
-  "${PROJECT_SOURCE_DIR}/scripts/sac2c-version-manager.in"
+  "${SAC2C_SOURCE_DIR}/scripts/sac2c-version-manager.in"
   "${PROJECT_BINARY_DIR}/scripts/sac2c-version-manager" @ONLY)

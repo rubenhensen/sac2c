@@ -1,57 +1,47 @@
-/** <!--********************************************************************-->
+/**
+ * @file
+ * @defgroup iwlmem Insert CUDA memory transfer primitives
+ * @ingroup cuda
  *
- * @defgroup Insert CUDA memory transfer primitives
+ * This module inserts CUDA type conversion primitives before and after
+ * each cudarizable N_with. The two primitives are <host2device> and
+ * <device2host>. They are used to trasfer the data of a host(device) array
+ * variable to a device(host) array variable. This is essentially
+ * compiled into host<->device memory transfers in the backend. As an
+ * example:
  *
+ * ~~~~
+ * a_host = with
+ *          {
+ *            ... = b_host;
+ *            ... = c_host;
+ *            ... = d_host;
+ *          }:genarray( shp);
+ * ~~~~
  *
- *   This module inserts CUDA type conversion primitives before and after
- *   each cudarizable N_with. The two primitives are <host2device> and
- *   <device2host>. They are used to trasfer the data of a host(device) array
- *   variable to a device(host) array variable. This is essentially
- *   compiled into host<->device memory transfers in the backend. As an
- *   example:
+ * is transformed into:
  *
- *   a_host = with
- *            {
- *              ... = b_host;
- *              ... = c_host;
- *              ... = d_host;
- *            }:genarray( shp);
+ * ~~~~
+ * b_dev = host2device( b_host);
+ * c_dev = host2device( c_host);
+ * d_dev = host2device( d_host);
+ * a_dev = with
+ *          {
+ *            ... = b_dev;
+ *            ... = c_dev;
+ *            ... = d_dev;
+ *          }:genarray( shp);
+ * a_host = device2host( a_dev);
+ * ~~~~
  *
- *   is transformed into:
+ * @note
+ * Simple scalar variables need not be type converted since they
+ * can be passed as function parameters directly to CUDA kernels.
  *
- *   b_dev = host2device( b_host);
- *   c_dev = host2device( c_host);
- *   d_dev = host2device( d_host);
- *   a_dev = with
- *            {
- *              ... = b_dev;
- *              ... = c_dev;
- *              ... = d_dev;
- *            }:genarray( shp);
- *   a_host = device2host( a_dev);
- *
- *   Note that simple scalar variables need not be type converted since they
- *   can be passed as function parameters directly to CUDA kernels.
- *
- * @ingroup
- *
- * @{ASSIGN_STMT( arg_node)
- *
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @file cuda_type_conversion.c
- *
- * Prefix: IWLMEM
- *
- *****************************************************************************/
+ * @{
+ */
 #include "insert_withloop_memtran.h"
 
-/*
- * Other includes go here
- */
-#include <stdlib.h>
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
@@ -79,53 +69,33 @@
 #include "infer_dfms.h"
 #include "NumLookUpTable.h"
 
-/** <!--********************************************************************-->
- *
- * @name INFO structure
- * @{
- *
- *****************************************************************************/
-struct INFO {
-    node *fundef;
-    bool in_cudawl;
-    bool create_d2h;
-    node *postassigns;
-    node *preassigns;
-    lut_t *lut;
-    lut_t *notran;
-    node *let_expr;
-    bool is_modarr;
-    bool in_cexprs;
-    bool from_ap;
-    node *letids;
-    node *apids;
-    node *topblock;
-    nlut_t *at_nlut;
-};
-
-/*
- * INFO_FUNDEF        N_fundef node of the enclosing function
- *
- * INFO_INCUDAWL      Flag indicating whether the code currently being
- *                    traversed is in a cudarizable N_with
- *
- * INFO_CREATE_D2H    Flag indicating whether <device2host> needs to be
- *                    created for the N_let->N_ids
- *
- * INFO_POSTASSIGNS   Chain of <device2host> that needs to be appended
- *                    at the end of the current N_assign
- *
- * INFO_PREASSIGNS    Chain of <host2device> that needs to be prepended
- *                    at the beginning of the current N_assign
- *
- * INFO_LUT           Lookup table storing pairs of Avis(host)->Avis(device)
- *                    e.g. Given a_dev = host2device( a_host),
- *                    Avis(a_host)->Avis(a_dev) will be stored into the table
- *
- * INFO_NOTRAN        Lookup table storing N_avis of arrays varaibles that
- *                    no data transfers should be created.
- *
+/** @name INFO structure
+ *  @{
  */
+struct INFO {
+    node *fundef;       /**< N_fundef node of the enclosing function */
+    bool in_cudawl;     /**< Flag indicating whether the code currently being traversed is in
+                             a cudarizable N_with */
+    bool create_d2h;    /**< Flag indicating whether <device2host> needs to be created for
+                             the N_let->N_ids */
+    node *postassigns;  /**< Chain of <device2host> that needs to be appended at the end of
+                             the current N_assign */
+    node *preassigns;   /**< Chain of <host2device> that needs to be prepended at the
+                             beginning of the current N_assign */
+    lut_t *lut;         /**< Lookup table storing pairs of Avis(host)->Avis(device) e.g. Given
+                             a_dev = host2device( a_host), Avis(a_host)->Avis(a_dev) will be stored
+                             into the table */
+    lut_t *notran;      /**< Lookup table storing N_avis of arrays varaibles that no data
+                             transfers should be created. */
+    node *let_expr;     /**< Holds the current N_let expressions, used to check if the RHS is
+                             a with-loop */
+    node *let_ids;      /**< Holds the current N_let N_ids chain */
+    bool in_cexprs;     /**< Flag indicating where are in N_code cexprs */
+    bool from_ap;       /**< Flag indicating where are coming from a N_ap */
+    node *apids;        /**< Holds LHS of current N_ap */
+    node *topblock;     /**< Holds the N_block (body) of the current N_fundef */
+    nlut_t *at_nlut;    /**< Used to count the number of references of N_avis */
+};
 
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_INCUDAWL(n) (n->in_cudawl)
@@ -135,10 +105,9 @@ struct INFO {
 #define INFO_LUT(n) (n->lut)
 #define INFO_NOTRAN(n) (n->notran)
 #define INFO_LETEXPR(n) (n->let_expr)
-#define INFO_IS_MODARR(n) (n->is_modarr)
+#define INFO_LETIDS(n) (n->let_ids)
 #define INFO_IN_CEXPRS(n) (n->in_cexprs)
 #define INFO_FROM_AP(n) (n->from_ap)
-#define INFO_LETIDS(n) (n->letids)
 #define INFO_APIDS(n) (n->apids)
 #define INFO_TOPBLOCK(n) (n->topblock)
 #define INFO_AT_NLUT(n) (n->at_nlut)
@@ -159,7 +128,6 @@ MakeInfo (void)
     INFO_PREASSIGNS (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_NOTRAN (result) = NULL;
-    INFO_IS_MODARR (result) = FALSE;
     INFO_IN_CEXPRS (result) = FALSE;
     INFO_FROM_AP (result) = FALSE;
     INFO_LETIDS (result) = NULL;
@@ -180,25 +148,18 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/** <!--********************************************************************-->
- * @}  <!-- INFO structure -->
- *****************************************************************************/
+/** @} */
 
-static void CreateHost2Device (node **id, node *host_avis, node *dev_avis,
-                               info *arg_info);
-static bool AssignInTopBlock (node *assign, info *arg_info);
+/** @name Entry functions
+ *  @{
+ */
 
-/** <!--********************************************************************-->
+/**
+ * @brief Perform the IWLMEM traversal, and additionally call the EMRTU traversal.
  *
- * @name Entry functions
- * @{
- *
- *****************************************************************************/
-/** <!--********************************************************************-->
- *
- * @fn node *IWLMEMdoInsertWithloopMemtran( node *syntax_tree)
- *
- *****************************************************************************/
+ * @param syntax_tree
+ * @return syntax_tree
+ */
 node *
 IWLMEMdoInsertWithloopMemtran (node *syntax_tree)
 {
@@ -206,12 +167,12 @@ IWLMEMdoInsertWithloopMemtran (node *syntax_tree)
 
     DBUG_ENTER ();
 
-    info = MakeInfo ();
-
     /*
      * Infer dataflow masks
      */
     // syntax_tree = INFDFMSdoInferDfms( syntax_tree, HIDE_LOCALS_NEVER);
+
+    info = MakeInfo ();
 
     TRAVpush (TR_iwlmem);
     syntax_tree = TRAVdo (syntax_tree, info);
@@ -222,78 +183,120 @@ IWLMEMdoInsertWithloopMemtran (node *syntax_tree)
     DBUG_RETURN (syntax_tree);
 }
 
-/** <!--********************************************************************-->
- * @}  <!-- Entry functions -->
- *****************************************************************************/
+/** @} */
 
-/** <!--********************************************************************-->
- *
- * @name Static helper functions
- * @{
- *
- *****************************************************************************/
+/** @name Static helper functions
+ *  @{
+ */
 
-/** <!--********************************************************************-->
+/**
+ * @brief Create host2device call, and add to the info struct to be added to
+ *        the syntax tree later.
  *
- * @fn node* TypeConvert( node *host_avis)
+ * @param id The argument position to place the device N_avis
+ * @param host_avis The host N_avis
+ * @param dev_avis The new device N_avis
+ * @param info The info struct
+ * @return
+ */
+static void
+CreateHost2Device (node **id, node *host_avis, node *dev_avis, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    ID_AVIS (*id) = dev_avis;
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (dev_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+
+    INFO_PREASSIGNS (arg_info)
+      = TBmakeAssign (TBmakeLet (TBmakeIds (dev_avis, NULL),
+                                 TBmakePrf (F_host2device,
+                                            TBmakeExprs (TBmakeId (host_avis), NULL))),
+                      INFO_PREASSIGNS (arg_info));
+
+    /* Maintain SSA property */
+    AVIS_SSAASSIGN (dev_avis) = INFO_PREASSIGNS (arg_info);
+
+    /* Insert pair host_avis->dev_avis into lookup table. */
+    INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), host_avis, dev_avis);
+
+    DBUG_RETURN ();
+}
+
+/**
+ * @brief Search through N_block (passed in via the info struct) for a specific
+ *        assignment.
  *
- * @brief
+ * @param assign The N_assign to search for
+ * @param info The info struct (which holds link to the N_block)
+ * @return True if the N_assign was found, False otherwise
+ */
+static bool
+AssignInTopBlock (node *assign, info *arg_info)
+{
+    bool res = FALSE;
+    node *assign_chain;
+
+    DBUG_ENTER ();
+
+    assign_chain = BLOCK_ASSIGNS (INFO_TOPBLOCK (arg_info));
+
+    while (assign_chain != NULL) {
+        if (assign_chain == assign) {
+            res = TRUE;
+            break;
+        }
+        assign_chain = ASSIGN_NEXT (assign_chain);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/**
+ * @brief Convert from a host ntype to a device ntype, while preserving shape information.
  *
- *****************************************************************************/
+ * @param host_type The host ntype
+ * @param nty The nodetype of the node being converted (support N_id and N_ids)
+ * @param info The info struct
+ * @return A device ntype struct
+ */
 static ntype *
 TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
 {
-    ntype *scalar_type, *dev_type = NULL;
-    simpletype sty;
+    ntype *dev_type = NULL;
 
     DBUG_ENTER ();
 
     if (nty == N_id) {
-        /* If the N_id is of known dimension and is not a scalar */
-        DBUG_ASSERT (TUdimKnown (host_type), "AUD N_id found in cudarizable N_with!");
-        if (TYgetDim (host_type) > 0) {
-            /* If the scalar type is simple, e.g. int, float ... */
-            if (TYisSimple (TYgetScalar (host_type))) {
-                dev_type = TYcopyType (host_type);
-                scalar_type = TYgetScalar (dev_type);
-                /* Get the corresponding device simple type e.g. int_dev, float_dev...*/
-                sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
-                /* Set the device simple type */
-                scalar_type = TYsetSimpleType (scalar_type, sty);
-            }
-        }
+        dev_type = CUconvertHostToDeviceType (host_type);
     }
     /* If the node to be type converted is N_ids, its original type
      * can be AUD as well as long as the N_with on the RHS is cudarizable.
      * The reason a cudarizbale can produce a AUD result illustrated by
      * the following example:
      *
-     *   cond_fun()
-     *   {
-     *     int[*] aa;
-     *     int bb;
+     * ~~~~
+     * cond_fun()
+     * {
+     *   int[*] aa;
+     *   int bb;
      *
-     *     if( cond) {
-     *       aa = with {}:genarray( shp); (cudarizable N_with)
-     *     }
-     *     else {
-     *       bb = 1;
-     *     }
-     *     ret = cond ? aa : bb;
+     *   if( cond) {
+     *     aa = with {}:genarray( shp); (cudarizable N_with)
      *   }
+     *   else {
+     *     bb = 1;
+     *   }
+     *   ret = cond ? aa : bb;
+     * }
+     * ~~~~
      *
      */
     else if (nty == N_ids) {
         if (NODE_TYPE (INFO_LETEXPR (arg_info)) == N_with) {
             /* If the scalar type is simple, e.g. int, float ... */
-            if (WITH_CUDARIZABLE (INFO_LETEXPR (arg_info))
-                && TYisSimple (TYgetScalar (host_type))) {
-                dev_type = TYcopyType (host_type);
-                scalar_type = TYgetScalar (dev_type);
-                /* Get the corresponding device simple type e.g. int_dev, float_dev...*/
-                sty = CUh2dSimpleTypeConversion (TYgetSimpleType (scalar_type));
-                /* Set the device simple type */
-                scalar_type = TYsetSimpleType (scalar_type, sty);
+            if (WITH_CUDARIZABLE (INFO_LETEXPR (arg_info))) {
+                dev_type = CUconvertHostToDeviceType (host_type);
             }
         }
     } else {
@@ -303,6 +306,13 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
     DBUG_RETURN (dev_type);
 }
 
+/**
+ * @brief Anonymouse traversal function (N_with)
+ *
+ * @param arg_node N_with
+ * @param arg_info info struct
+ * @return N_with
+ */
 static node *
 ATravWith (node *arg_node, info *arg_info)
 {
@@ -315,6 +325,13 @@ ATravWith (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**
+ * @brief Anonymouse traversal function (N_id). For every N_avis, increment a counter.
+ *
+ * @param arg_node N_id
+ * @param arg_info info struct
+ * @return N_id
+ */
 static node *
 ATravId (node *arg_node, info *arg_info)
 {
@@ -325,6 +342,13 @@ ATravId (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/**
+ * @brief Anonymouse traversal function (N_genarray). Traverse through all N_id sons.
+ *
+ * @param arg_node N_genarray
+ * @param arg_info info struct
+ * @return N_genarray
+ */
 static node *
 ATravGenarray (node *arg_node, info *arg_info)
 {
@@ -340,30 +364,31 @@ ATravGenarray (node *arg_node, info *arg_info)
     }
 
     GENARRAY_RC (arg_node) = TRAVopt (GENARRAY_RC (arg_node), arg_info);
+    GENARRAY_ERC (arg_node) = TRAVopt (GENARRAY_ERC (arg_node), arg_info);
     GENARRAY_PRC (arg_node) = TRAVopt (GENARRAY_PRC (arg_node), arg_info);
+
     GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- * @}  <!-- Static helper functions -->
- *****************************************************************************/
+/** @} */
 
-/** <!--********************************************************************-->
- *
- * @name Traversal functions
- * @{
- *
- *****************************************************************************/
+/** @name Traversal functions
+ *  @{
+ */
 
-/** <!--********************************************************************-->
+/**
+ * @brief Traverse N_fundef
  *
- * @fn node *IWLMEMfundef( node *arg_node, info *arg_info)
+ * If the current N_fundef is not a LaC function, traverse the body and next. Otherwise,
+ * if we are coming from a N_ap that is a LaC function, traverse *only* the body, passing
+ * a link to the body. Otherwise, we go to the next N_fundef.
  *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node N_fundef
+ * @param arg_info info struct
+ * @return N_fundef node
+ */
 node *
 IWLMEMfundef (node *arg_node, info *arg_info)
 {
@@ -372,15 +397,21 @@ IWLMEMfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("at %s", FUNDEF_NAME (arg_node));
+
     /* During the main traversal, we only look at non-lac functions */
     if (!FUNDEF_ISLACFUN (arg_node)) {
+        DBUG_PRINT ("...inspecting body");
         INFO_FUNDEF (arg_info) = arg_node;
         INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     } else {
+        DBUG_PRINT ("...inspecting LAC body");
         if (INFO_FROM_AP (arg_info)) {
+            DBUG_PRINT ("...from application");
+
             old_fundef = INFO_FUNDEF (arg_info);
             old_topblock = INFO_TOPBLOCK (arg_info);
             INFO_FUNDEF (arg_info) = arg_node;
@@ -397,32 +428,37 @@ IWLMEMfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Traverse N_ap which is a LaC function, and *not* the recursive call.
  *
- * @fn node *IWLMEMap( node *arg_node, info *arg_info)
+ * If the application is outside a CUDA withloop, we traverse into its N_fundef.
+ * If its from within a CUDA withloop, we check all its arguments against the LUT and if
+ * we find a match and its not marked for NOTRAN (no transfer), we create a host2device
+ * call.
  *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node N_ap
+ * @param arg_info info struct
+ * @return N_ap node
+ */
 node *
 IWLMEMap (node *arg_node, info *arg_info)
 {
     bool traverse_lac_fun, old_from_ap;
-    node *ap_args, *fundef_args;
-    node *avis, *id_avis, *new_avis, *dup_avis;
+    node *ap_args, *fundef_args, *avis, *new_avis, *dup_avis, *id_avis;
     ntype *dev_type;
     node *fundef, *old_apids;
 
     DBUG_ENTER ();
 
     fundef = AP_FUNDEF (arg_node);
+    DBUG_PRINT ("ap_fun %s", FUNDEF_NAME (fundef));
 
     /* For us to traverse a function from calling site, it must be a
      * condictional function or a loop function and must not be the
      * recursive function call in the loop function. */
     traverse_lac_fun = (FUNDEF_ISLACFUN (fundef) && fundef != INFO_FUNDEF (arg_info));
 
-    if (traverse_lac_fun) {
+    if (traverse_lac_fun) { /* inside loop or conditional */
         old_from_ap = INFO_FROM_AP (arg_info);
         INFO_FROM_AP (arg_info) = TRUE;
 
@@ -430,10 +466,13 @@ IWLMEMap (node *arg_node, info *arg_info)
         INFO_APIDS (arg_info) = INFO_LETIDS (arg_info);
 
         if (!INFO_INCUDAWL (arg_info)) {
+            DBUG_PRINT ("...not in CUDAWL");
+
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
         } else {
+            /* Used to add h2d transfers for applications within WL N_code */
             ap_args = AP_ARGS (arg_node);
-            fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+            fundef_args = FUNDEF_ARGS (fundef);
 
             while (ap_args != NULL) {
                 DBUG_ASSERT (fundef_args != NULL, "# of Ap args != # of Fundef args!");
@@ -446,17 +485,19 @@ IWLMEMap (node *arg_node, info *arg_info)
 
                 /* If the avis has NOT been come across before */
                 if (avis == id_avis) {
-                    printf ("fundef %s, id %s\n", FUNDEF_NAME (AP_FUNDEF (arg_node)),
-                            AVIS_NAME (avis));
+                    DBUG_PRINT ("new arg for ap_fun %s, id %s", FUNDEF_NAME (fundef),
+                                AVIS_NAME (avis));
                     /* If the id is NOT the one we don't want to create data transfer for
                      */
                     if (LUTsearchInLutPp (INFO_NOTRAN (arg_info), id_avis) == id_avis) {
-                        printf ("There will be transfer for %s\n", AVIS_NAME (id_avis));
+                        DBUG_PRINT ("There will be transfer for %s", AVIS_NAME (id_avis));
                         dev_type = TypeConvert (AVIS_TYPE (id_avis), N_id, arg_info);
 
                         if( dev_type != NULL /* &&
                 NODE_TYPE( AVIS_DECL( avis)) == N_arg */) {
                             new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
+                            DBUG_PRINT ("Creating host2device for %s -> %s",
+                                    AVIS_NAME (id_avis), AVIS_NAME (new_avis));
                             CreateHost2Device (&EXPRS_EXPR (ap_args), id_avis, new_avis,
                                                arg_info);
 
@@ -470,7 +511,7 @@ IWLMEMap (node *arg_node, info *arg_info)
                             AVIS_DECL (dup_avis) = fundef_args;
                         }
                     } else {
-                        printf ("There will NOT be transfer for %s\n",
+                        DBUG_PRINT ("There will NOT be transfer for %s",
                                 AVIS_NAME (id_avis));
                         /* If the N_id is the one we don't want to create host2device for,
                          * propogate that information to the traversal of LAC functions */
@@ -479,6 +520,8 @@ IWLMEMap (node *arg_node, info *arg_info)
                                                ARG_AVIS (fundef_args), NULL);
                     }
                 } else {
+                    DBUG_PRINT ("existing arg on ap_fun %s, id %s", FUNDEF_NAME (fundef),
+                                AVIS_NAME (avis));
                     /* If the N_avis has been come across before, replace its
                      * N_avis by the device N_avis */
                     ID_AVIS (EXPRS_EXPR (ap_args)) = avis;
@@ -521,14 +564,14 @@ IWLMEMap (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *IWLMEMassign( node *arg_node, info *arg_info)
- *
+/**
  * @brief  Add newly created <host2device> and <device2host> to
  *         the assign chain.
  *
- *****************************************************************************/
+ * @param arg_node N_assign
+ * @param arg_info info struct
+ * @return N_assign node
+ */
 node *
 IWLMEMassign (node *arg_node, info *arg_info)
 {
@@ -574,13 +617,13 @@ IWLMEMassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Traverse N_let, carrying both the LHS and RHS.
  *
- * @fn node *IWLMEMlet( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node N_let
+ * @param arg_info info struct
+ * @return N_let node
+ */
 node *
 IWLMEMlet (node *arg_node, info *arg_info)
 {
@@ -595,13 +638,14 @@ IWLMEMlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Traverse N_funcond that are within a CUDA withloop and change N_avis basetypes
+ *        to device types.
  *
- * @fn node *IWLMEMfuncond( node *arg_node, info *arg_info)
- *
- * @brief
- *
- *****************************************************************************/
+ * @param arg_node N_funcond
+ * @param arg_info info struct
+ * @return N_funcond node
+ */
 node *
 IWLMEMfuncond (node *arg_node, info *arg_info)
 {
@@ -680,13 +724,13 @@ IWLMEMfuncond (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *IWLMEMwith( node *arg_node, info *arg_info)
- *
+/**
  * @brief Traverse both withop and N_code of a cudarizable N_with
  *
- *****************************************************************************/
+ * @param arg_node N_with
+ * @param arg_info info struct
+ * @return N_with node
+ */
 node *
 IWLMEMwith (node *arg_node, info *arg_info)
 {
@@ -694,6 +738,8 @@ IWLMEMwith (node *arg_node, info *arg_info)
     info *anon_info;
 
     DBUG_ENTER ();
+
+    DBUG_PRINT ("at WL");
 
     /* If the N_with is cudarizable */
     if (WITH_CUDARIZABLE (arg_node)) {
@@ -771,13 +817,13 @@ IWLMEMwith (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Traverse N_code of withloop.
  *
- * @fn node *IWLMEMcode( node *arg_node, info *arg_info)
- *
- * @brief Traverse the code block
- *
- *****************************************************************************/
+ * @param arg_node N_code
+ * @param arg_info info struct
+ * @return N_code node
+ */
 node *
 IWLMEMcode (node *arg_node, info *arg_info)
 {
@@ -794,13 +840,13 @@ IWLMEMcode (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *IWLMEMgenarray( node *arg_node, info *arg_info)
- *
+/**
  * @brief Traverse default element of a N_genarray
  *
- *****************************************************************************/
+ * @param arg_node N_genarray
+ * @param arg_info info struct
+ * @return N_genarray node
+ */
 node *
 IWLMEMgenarray (node *arg_node, info *arg_info)
 {
@@ -819,6 +865,7 @@ IWLMEMgenarray (node *arg_node, info *arg_info)
         }
 
         GENARRAY_RC (arg_node) = TRAVopt (GENARRAY_RC (arg_node), arg_info);
+        GENARRAY_ERC (arg_node) = TRAVopt (GENARRAY_ERC (arg_node), arg_info);
 
         GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
     }
@@ -826,13 +873,13 @@ IWLMEMgenarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *IWLMEMmodarray( node *arg_node, info *arg_info)
- *
+/**
  * @brief Traverse default element of a N_modarray
  *
- *****************************************************************************/
+ * @param arg_node N_modarray
+ * @param arg_info info struct
+ * @return N_modarray node
+ */
 node *
 IWLMEMmodarray (node *arg_node, info *arg_info)
 {
@@ -841,23 +888,26 @@ IWLMEMmodarray (node *arg_node, info *arg_info)
     if (INFO_INCUDAWL (arg_info)) {
         DBUG_ASSERT (NODE_TYPE (MODARRAY_ARRAY (arg_node)) == N_id,
                      "Non N_id modified array found in N_modarray!");
-        INFO_IS_MODARR (arg_info) = TRUE;
         MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
-        INFO_IS_MODARR (arg_info) = FALSE;
+
         MODARRAY_RC (arg_node) = TRAVopt (MODARRAY_RC (arg_node), arg_info);
+        MODARRAY_ERC (arg_node) = TRAVopt (MODARRAY_ERC (arg_node), arg_info);
+
         MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief For N_ids on the LHS of CUDA-WLs, create a new LHS avis with device type, and
+ *        create a <device2host> assign to be placed after the WL. If the N_ids is in a
+ *        CUDA-WL, add it to the NOTRAN LUT.
  *
- * @fn node *IWLMEMids( node *arg_node, info *arg_info)
- *
- * @brief For N_ids needed to be type converted, create <device2host>.
- *
- *****************************************************************************/
+ * @param arg_node N_ids
+ * @param arg_info info struct
+ * @return N_ids node
+ */
 node *
 IWLMEMids (node *arg_node, info *arg_info)
 {
@@ -868,6 +918,8 @@ IWLMEMids (node *arg_node, info *arg_info)
 
     ids_avis = IDS_AVIS (arg_node);
     ids_type = AVIS_TYPE (ids_avis);
+
+    DBUG_PRINT ("at IDS of %s", AVIS_NAME (ids_avis));
 
     /* If the array is defined in cuda withloop, we do not create
      * a host2device transfer for it */
@@ -885,26 +937,40 @@ IWLMEMids (node *arg_node, info *arg_info)
                                    TYgetSimpleType (TYgetScalar (ids_type))));
             }
         }
-    } else {
+    } else { /* not in CUDAWL */
         if (INFO_CREATE_D2H (arg_info)) {
+            /* if we come this this point after a CUDAWL, we probably need to
+             * create a device2host transfer. */
             dev_type = TypeConvert (ids_type, NODE_TYPE (arg_node), arg_info);
             if (dev_type != NULL) {
+
+                /* create new avis for WL return */
                 new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
                 IDS_AVIS (arg_node) = new_avis;
+                DBUG_PRINT ("...replacing WL return %s -> %s", AVIS_NAME (ids_avis),
+                            AVIS_NAME (new_avis));
+
+                /* add to fundef vardecs */
                 FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
                   = TBmakeVardec (new_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
+                /* create device2host */
                 INFO_POSTASSIGNS (arg_info)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (ids_avis, NULL),
                                              TBmakePrf (F_device2host,
                                                         TBmakeExprs (TBmakeId (new_avis),
                                                                      NULL))),
                                   INFO_POSTASSIGNS (arg_info));
-                /* Maintain SSA property */
+                DBUG_PRINT ("Creating device2host for %s -> %s", AVIS_NAME (new_avis),
+                            AVIS_NAME (ids_avis));
+
+                /* maintain SSA property */
                 AVIS_SSAASSIGN (new_avis) = AVIS_SSAASSIGN (ids_avis);
                 AVIS_SSAASSIGN (ids_avis) = INFO_POSTASSIGNS (arg_info);
             }
-            // IDS_NEXT( arg_node) = TRAVopt( IDS_NEXT( arg_node), arg_info);
+
+            /* We stop creating any further device2host assigns */
+            /* XXX what about multi-operator WLs? */
             INFO_CREATE_D2H (arg_info) = FALSE;
         }
     }
@@ -914,16 +980,16 @@ IWLMEMids (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *IWLMEMid( node *arg_node, info *arg_info)
- *
+/**
  * @brief For each host array N_id in the cudarizable N_with, either create
  *        type conversion for it (i.e. <host2device>) or set its N_avis to
  *        that of an already converted device array N_id depending on whether
  *        the N_id is encountered for the first time or not.
  *
- *****************************************************************************/
+ * @param arg_node N_id
+ * @param arg_info info struct
+ * @return N_id node
+ */
 node *
 IWLMEMid (node *arg_node, info *arg_info)
 {
@@ -938,7 +1004,9 @@ IWLMEMid (node *arg_node, info *arg_info)
 
     /* if we are in cudarizable N_with */
     if (INFO_INCUDAWL (arg_info)) {
-        avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
+        DBUG_PRINT ("inspecting %s", AVIS_NAME (id_avis));
+
+        avis = LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
 
         /* If the N_avis node hasn't been come across before AND the id is
          * NOT in cexprs. This is because we don't want to create a host2device
@@ -971,11 +1039,13 @@ IWLMEMid (node *arg_node, info *arg_info)
             if (((INFO_IN_CEXPRS (arg_info) && ssaassign != NULL
                   && AssignInTopBlock (ssaassign, arg_info))
                  || !INFO_IN_CEXPRS (arg_info))
-                && !CUisShmemTypeNew (id_type)
+                && !CUisDeviceTypeNew (id_type) && !CUisShmemTypeNew (id_type)
                 && LUTsearchInLutPp (INFO_NOTRAN (arg_info), id_avis) == id_avis) {
                 dev_type = TypeConvert (id_type, NODE_TYPE (arg_node), arg_info);
                 if (dev_type != NULL) {
                     new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
+                    DBUG_PRINT ("Creating host2device for %s -> %s",
+                            AVIS_NAME (id_avis), AVIS_NAME (new_avis));
                     CreateHost2Device (&arg_node, id_avis, new_avis, arg_info);
                 }
             }
@@ -987,58 +1057,7 @@ IWLMEMid (node *arg_node, info *arg_info)
     }
     DBUG_RETURN (arg_node);
 }
-
-static void
-CreateHost2Device (node **id, node *host_avis, node *dev_avis, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    ID_AVIS (*id) = dev_avis;
-    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (dev_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
-
-    INFO_PREASSIGNS (arg_info)
-      = TBmakeAssign (TBmakeLet (TBmakeIds (dev_avis, NULL),
-                                 TBmakePrf (F_host2device,
-                                            TBmakeExprs (TBmakeId (host_avis), NULL))),
-                      INFO_PREASSIGNS (arg_info));
-
-    /* Maintain SSA property */
-    AVIS_SSAASSIGN (dev_avis) = INFO_PREASSIGNS (arg_info);
-
-    /* Insert pair host_avis->dev_avis into lookup table. */
-    INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), host_avis, dev_avis);
-
-    DBUG_RETURN ();
-}
-
-static bool
-AssignInTopBlock (node *assign, info *arg_info)
-{
-    bool res = FALSE;
-    node *assign_chain;
-
-    DBUG_ENTER ();
-
-    assign_chain = BLOCK_ASSIGNS (INFO_TOPBLOCK (arg_info));
-
-    while (assign_chain != NULL) {
-        if (assign_chain == assign) {
-            res = TRUE;
-            break;
-        }
-        assign_chain = ASSIGN_NEXT (assign_chain);
-    }
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- * @}  <!-- Traversal functions -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- * @}  <!-- Traversal template -->
- *****************************************************************************/
+/** @} */
+/** @} */
 
 #undef DBUG_PREFIX

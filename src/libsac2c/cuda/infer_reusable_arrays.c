@@ -165,7 +165,8 @@ static rc_t *
 ConsolidateRcs (rc_t *rc_list, info *arg_info)
 {
     rc_t *rc;
-    int dim, i, negoff, posoff, block_sz = -1, extent, shmem_sz = 1;
+    int negoff, posoff, block_sz = -1, extent, shmem_sz = 1;
+    size_t dim, i;
     node *shmem_shp = NULL;
 
     DBUG_ENTER ();
@@ -183,7 +184,11 @@ ConsolidateRcs (rc_t *rc_list, info *arg_info)
             DBUG_UNREACHABLE ("Reusable array with dimension greater than 2!");
         }
 
-        for (i = dim - 1; i >= 0; i--) {
+        /* 
+         * decrement after check for > 0, safe method for reverse loop ending on 0
+         * i : (dim - 1) to 0
+         */
+        for (i = dim; i-- > 0;) {
             negoff = RC_NEGOFFSET (rc, i);
             posoff = RC_POSOFFSET (rc, i);
             extent = negoff + posoff + block_sz;
@@ -368,7 +373,7 @@ IRAprf (node *arg_node, info *arg_info)
             node *idx = PRF_ARG1 (arg_node);
             node *arr = PRF_ARG2 (arg_node);
             rc_t *rc = NULL;
-            int dim;
+            size_t dim;
 
             DBUG_ASSERT (NODE_TYPE (idx) == N_id,
                          "Non-id node found in the first argument of idx_sel!");

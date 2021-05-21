@@ -311,6 +311,17 @@
  ******************************************************************************/
 #if SAC_DO_CHECK_GPU
 
+#define SAC_CUDA_GET_LAST_ERROR_COND(ERROR_MSG, cu_status)                               \
+    do {                                                                                 \
+        cudaError_t error = cudaGetLastError ();                                         \
+        if (error == cudaSuccess) {                                                      \
+            SAC_NOOP ();                                                                 \
+        } else if (error != cu_status) {                                                 \
+            SAC_RuntimeError ("%s::%s(%d) [%s ERROR]: %s\n", __FILE__, __func__,         \
+                              __LINE__, ERROR_MSG, cudaGetErrorString (error));          \
+        }                                                                                \
+    } while (0)
+
 #define SAC_CUDA_GET_LAST_ERROR(ERROR_MSG)                                               \
     do {                                                                                 \
         cudaError_t error = cudaGetLastError ();                                         \
@@ -328,15 +339,22 @@
 
 #define SAC_GET_CUDA_MALLOC_ERROR() SAC_CUDA_GET_LAST_ERROR ("GPU MALLOC")
 
-#define SAC_GET_CUDA_FREE_ERROR() SAC_CUDA_GET_LAST_ERROR ("GPU CUDA FREE")
+#define SAC_GET_CUDA_FREE_ERROR() SAC_CUDA_GET_LAST_ERROR ("GPU FREE")
+
+#define SAC_GET_CUDA_PIN_ERROR() SAC_CUDA_GET_LAST_ERROR ("GPU PINNING")
+
+#define SAC_GET_CUDA_UNPIN_ERROR() SAC_CUDA_GET_LAST_ERROR ("GPU UNPINNING")
 
 #else
 
+#define SAC_CUDA_GET_LAST_ERROR_COND(ERROR_MSG, cu_status)
 #define SAC_CUDA_GET_LAST_ERROR(ERROR_MSG)
 #define SAC_CUDA_GET_LAST_KERNEL_ERROR()
 #define SAC_GET_CUDA_MEM_TRANSFER_ERROR()
 #define SAC_GET_CUDA_MALLOC_ERROR()
 #define SAC_GET_CUDA_FREE_ERROR()
+#define SAC_GET_CUDA_PIN_ERROR()
+#define SAC_GET_CUDA_UNPIN_ERROR()
 
 #endif /* SAC_DO_CHECK_GPU */
 

@@ -72,6 +72,13 @@ MACRO (ADD_LIBSAC_TARGET SRC_DIR VARIANT_TARGET)
     # NOTE (hans) we use the `rmod` target which uses compiler and linker specified
     # through the RCC and RLD sac2crc variables (additionally we use
     SET (SACCC "${SAC2C_BUILD_DIR}/saccc ${SAC2C_EXEC} rmod ${TARGET}")
+
+    # In case we are using BUILDGENERIC, we need propogate the sac2c `-generic`
+    # flag to all the C files that we compile.
+    IF (BUILDGENERIC)
+        SET (SACCC "${SACCC} -Xs '-generic'")
+    ENDIF ()
+
     SET (CMAKE_C_COMPILE_OBJECT
          "${SACCC} <DEFINES> <INCLUDES> -o <OBJECT>   -c <SOURCE>")
      #     <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT>   -c <SOURCE>")

@@ -13,6 +13,7 @@
 
 #include "runtime/essentials_h/types.h" // floatvec (through type_info.mac)
 #include "runtime/essentials_h/bool.h" // bool
+#include "runtime/essentials_h/cuda_transfer_methods.h" // SAC_DO_CUDA_ALLOC
 #include "runtime/essentials_h/std_gen.h" // SAC_ND_DECL__DESC
 #include "runtime/essentials_h/std.h" // SAC_array_descriptor_t
 
@@ -447,6 +448,7 @@ SACARG_common_wrap (SAC_ND_PARAM_out (out_nt, SACarg), basetype btype,
     SAC_ND_DECL__DESC (data_nt, );
     int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
     int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = 0;
+
     /*
      * we simply wrap it. As we consume one reference, we have
      * to decrement the rc.

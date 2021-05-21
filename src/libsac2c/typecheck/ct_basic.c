@@ -45,7 +45,7 @@ static ntype *
 ComputeType (ct_funptr CtFun, te_info *info, ntype *args, bool strict)
 {
     ntype *res, *bottom;
-    int i, num_res;
+    size_t i, num_res;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;
 #endif

@@ -219,11 +219,13 @@ MCSTRANassign (node *arg_node, info *arg_info)
             ASSIGN_NEXT (arg_node) = NULL;
             arg_node = TCappendAssign (arg_node, assigns);
             INFO_POSTASSIGNS (arg_info) = NULL;
+            global.optcounters.cuda_min_trans++;
         }
 
         if (INFO_PREASSIGNS (arg_info) != NULL) {
             arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
             INFO_PREASSIGNS (arg_info) = NULL;
+            global.optcounters.cuda_min_trans++;
         }
     }
 

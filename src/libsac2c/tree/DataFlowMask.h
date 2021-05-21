@@ -148,7 +148,10 @@ extern void DFMsetMaskOr (dfmask_t *mask, dfmask_t *mask2);
 extern void DFMsetMaskMinus (dfmask_t *mask, dfmask_t *mask2);
 extern void DFMsetMaskInv (dfmask_t *mask);
 
-extern int DFMnumIds (dfmask_base_t *mask);
+extern size_t DFMnumIds (dfmask_base_t *mask);
+extern size_t DFMnumBitFields (dfmask_base_t *mask);
+extern const char *DFMgetId (dfmask_base_t *mask, size_t num);
+extern bool DFMtest2MaskBases (dfmask_t *mask1, dfmask_t *mask2);
 extern int DFMtestMask (dfmask_t *mask);
 extern int DFMtest2Masks (dfmask_t *mask1, dfmask_t *mask2);
 extern int DFMtest3Masks (dfmask_t *mask1, dfmask_t *mask2, dfmask_t *mask3);
@@ -156,6 +159,7 @@ extern int DFMtest3Masks (dfmask_t *mask1, dfmask_t *mask2, dfmask_t *mask3);
 extern dfmask_t *DFMremoveMask (dfmask_t *mask);
 extern void DFMtouchMask (dfmask_t *mask, info *arg_info);
 
+extern void DFMprintMaskNums (FILE *handle, dfmask_t *mask);
 extern void DFMprintMask (FILE *handle, const char *format, dfmask_t *mask);
 extern void DFMprintMaskDetailed (FILE *handle, dfmask_t *mask);
 

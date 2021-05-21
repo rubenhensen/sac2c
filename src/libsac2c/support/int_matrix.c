@@ -31,9 +31,9 @@
  *
  *******************************************************************************/
 static void
-MatrixMulAndAddRows (IntMatrix m, int ixrdest, int ixrsrc, int mplr)
+MatrixMulAndAddRows (IntMatrix m, unsigned int ixrdest, unsigned int ixrsrc, int mplr)
 {
-    int ix;
+    unsigned int ix;
     int *drow, *srow;
 
     DBUG_ENTER ();
@@ -57,10 +57,10 @@ MatrixMulAndAddRows (IntMatrix m, int ixrdest, int ixrsrc, int mplr)
  *
  *******************************************************************************/
 static void
-MatrixSwapRows (IntMatrix m, int rix1, int rix2)
+MatrixSwapRows (IntMatrix m, unsigned int rix1, unsigned int rix2)
 {
     int *r1, *r2, temp;
-    int ix;
+    unsigned int ix;
 
     DBUG_ENTER ();
 
@@ -87,9 +87,9 @@ MatrixSwapRows (IntMatrix m, int rix1, int rix2)
  *
  *******************************************************************************/
 static void
-MatrixNormalizeRow (IntMatrix m, int rix, int lead)
+MatrixNormalizeRow (IntMatrix m, unsigned int rix, unsigned int lead)
 {
-    int ix;
+    unsigned ix;
     int *drow;
     int lv;
 
@@ -113,12 +113,12 @@ MatrixNormalizeRow (IntMatrix m, int rix, int lead)
  * Return:g
  *
  *******************************************************************************/
-static int
+static unsigned int
 NumOfZeroRows (IntMatrix m)
 {
-    int rows, cols;
-    int i, j, count = 0;
-    int nzr;
+    unsigned int rows, cols;
+    unsigned int i, j, count = 0;
+    bool nzr;
 
     DBUG_ENTER ();
 
@@ -150,9 +150,9 @@ NumOfZeroRows (IntMatrix m)
  *
  *******************************************************************************/
 IntMatrix
-NewMatrix (int dim_x, int dim_y)
+NewMatrix (unsigned int dim_x, unsigned int dim_y)
 {
-    int n, i, j;
+    unsigned int n, i, j;
     IntMatrix m;
 
     DBUG_ENTER ();
@@ -187,7 +187,7 @@ NewMatrix (int dim_x, int dim_y)
 IntMatrix
 DupMatrix (IntMatrix m)
 {
-    int n, i, j;
+    unsigned int n, i, j;
     IntMatrix new_m;
 
     DBUG_ENTER ();
@@ -244,7 +244,7 @@ FreeMatrix (IntMatrix m)
  *
  *******************************************************************************/
 void
-MatrixSetEntry (IntMatrix m, int x, int y, int elem)
+MatrixSetEntry (IntMatrix m, unsigned int x, unsigned int y, int elem)
 {
     DBUG_ENTER ();
 
@@ -263,7 +263,7 @@ MatrixSetEntry (IntMatrix m, int x, int y, int elem)
  *
  *******************************************************************************/
 int
-MatrixGetEntry (IntMatrix m, int x, int y)
+MatrixGetEntry (IntMatrix m, unsigned int x, unsigned int y)
 {
     int elem;
 
@@ -286,10 +286,10 @@ MatrixGetEntry (IntMatrix m, int x, int y)
 void
 MatrixToReducedREForm (IntMatrix m)
 {
-    int lead;
-    int rix, iix;
+    unsigned int lead;
+    unsigned int rix, iix;
     int lv;
-    int rowCount = m->dim_y;
+    unsigned int rowCount = m->dim_y;
 
     DBUG_ENTER ();
 
@@ -330,11 +330,11 @@ MatrixToReducedREForm (IntMatrix m)
  * Return:g
  *
  *******************************************************************************/
-int
+unsigned int
 MatrixRank (IntMatrix m)
 {
     IntMatrix tmp;
-    int rank;
+    unsigned int rank;
 
     DBUG_ENTER ();
 
@@ -361,7 +361,7 @@ MatrixRank (IntMatrix m)
 void
 MatrixDisplay (IntMatrix m, FILE *file)
 {
-    int iy, ix;
+    unsigned int iy, ix;
     const char *sc;
 
     DBUG_ENTER ();
@@ -397,11 +397,11 @@ MatrixDisplay (IntMatrix m, FILE *file)
 void
 MatrixToFile (IntMatrix m, FILE *file)
 {
-    int iy, ix;
+    unsigned int iy, ix;
 
     DBUG_ENTER ();
 
-    fprintf (file, "%d %d\n", MatrixRows (m), MatrixCols (m));
+    fprintf (file, "%u %u\n", MatrixRows (m), MatrixCols (m));
     for (iy = 0; iy < m->dim_y; iy++) {
         for (ix = 0; ix < m->dim_x; ix++) {
             fprintf (file, "%d ", m->mtx[iy][ix]);
@@ -421,10 +421,10 @@ MatrixToFile (IntMatrix m, FILE *file)
  * Return:g
  *
  *******************************************************************************/
-int
+unsigned int
 MatrixRows (IntMatrix m)
 {
-    int rows;
+    unsigned int rows;
 
     DBUG_ENTER ();
 
@@ -442,10 +442,10 @@ MatrixRows (IntMatrix m)
  * Return:g
  *
  *******************************************************************************/
-int
+unsigned int
 MatrixCols (IntMatrix m)
 {
-    int cols;
+    unsigned int cols;
 
     DBUG_ENTER ();
 
@@ -466,7 +466,7 @@ MatrixCols (IntMatrix m)
 bool
 MatrixEqual (IntMatrix m1, IntMatrix m2)
 {
-    int iy, ix;
+    unsigned int iy, ix;
     bool equal = TRUE;
 
     DBUG_ENTER ();
@@ -499,9 +499,9 @@ MatrixEqual (IntMatrix m1, IntMatrix m2)
  *
  *******************************************************************************/
 void
-MatrixClearRow (IntMatrix m, int row)
+MatrixClearRow (IntMatrix m, unsigned int row)
 {
-    int ix;
+    unsigned int ix;
 
     DBUG_ENTER ();
 

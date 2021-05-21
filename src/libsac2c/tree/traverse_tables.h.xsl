@@ -47,7 +47,7 @@ typedef travfun_p travfunarray_t [ </xsl:text><xsl:value-of select="count(//synt
 
 typedef travfunarray_t travtables_t [</xsl:text><xsl:value-of select="count(//traversal)+2" /><xsl:text>] ;
 
-typedef travfun_p preposttable_t [</xsl:text><xsl:value-of select="count(//traversal)+2" /><xsl:text>] ;
+typedef travfunlist_t *preposttable_t [</xsl:text><xsl:value-of select="count(//traversal)+2" /><xsl:text>] ;
 
 extern travtables_t travtables;
 extern preposttable_t pretable;

@@ -17,7 +17,7 @@ extern node *LFUfindAssignOfType (node *assigns, nodetype n);
 extern bool LFUisLURPredicate (node *arg_node);
 extern bool LFUisAvisMemberIds (node *arg_node, node *ids);
 extern bool LFUisAvisMemberArg (node *arg_node, node *arg);
-extern int LFUindexOfMemberIds (node *arg_node, node *ids);
+extern size_t LFUindexOfMemberIds (node *arg_node, node *ids, bool *isIdsMember);
 extern bool LFUisAvisMemberExprs (node *arg_node, node *exprs);
 extern node *LFUinsertAssignIntoLacfun (node *arg_node, node *assign, node *oldavis);
 extern int LFUisLoopInvariantArg (node *arg, node *fundef);

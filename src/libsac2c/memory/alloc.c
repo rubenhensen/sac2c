@@ -45,25 +45,24 @@
  */
 #define USEAKS
 
-/** <!--******************************************************************-->
- *
- *  Enumeration of the different traversal modes for WITHOPs
- *
- ***************************************************************************/
+/**
+ * Enumeration of the different traversal modes for WITHOPs
+ */
 typedef enum { EA_memname, EA_shape } ea_withopmode;
 
-/** <!--******************************************************************-->
- *
- *  Enumeration of the different traversal modes for RANGESs
- *
- ***************************************************************************/
+/**
+ * Enumeration of the different traversal modes for RANGESs
+ */
 typedef enum { EA_body, EA_index } ea_rangemode;
 
-/** <!--******************************************************************-->
- *
- *  Structure used for ALLOCLIST.
- *
- ***************************************************************************/
+/**
+ * Enumeration of the different allocation/fill modes for ALLOCLIST
+ */
+typedef enum { EA_nofill, EA_fill, EA_fillnoop } ea_fillmode;
+
+/**
+ * Structure used for ALLOCLIST.
+ */
 typedef struct ALLOCLIST_STRUCT {
     node *avis;
     node *dim;
@@ -81,10 +80,10 @@ struct INFO {
     node *fundef;
     node *withops;
     node *indexvector;
-    bool mustfill;
     bool inwiths;
     ea_withopmode withopmode;
     ea_rangemode rangemode;
+    ea_fillmode mustfill;
 };
 
 /**
@@ -94,10 +93,10 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_WITHOPS(n) ((n)->withops)
 #define INFO_INDEXVECTOR(n) ((n)->indexvector)
-#define INFO_MUSTFILL(n) ((n)->mustfill)
 #define INFO_INWITHS(n) ((n)->inwiths)
 #define INFO_WITHOPMODE(n) ((n)->withopmode)
 #define INFO_RANGEMODE(n) ((n)->rangemode)
+#define INFO_MUSTFILL(n) ((n)->mustfill)
 
 /**
  * @name INFO functions
@@ -117,7 +116,7 @@ MakeInfo (void)
     INFO_FUNDEF (result) = NULL;
     INFO_WITHOPS (result) = NULL;
     INFO_INDEXVECTOR (result) = NULL;
-    INFO_MUSTFILL (result) = FALSE;
+    INFO_MUSTFILL (result) = EA_nofill;
     INFO_INWITHS (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -707,6 +706,10 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                         /*
                          * We can build an AKD
                          */
+                        /* This warning with TCcountExprs is due to TYmakeAKD taking 'int dots' 
+                         * and TYgetDim int returns from Shape related function, COgetDim and SHgetDim,
+                         * so leaving this warning for now until new datatype is introduced
+                         */
                         crestype = TYmakeAKD (TYcopyType (TYgetScalar (deftype)),
                                               TCcountExprs (ARRAY_AELEMS (sexpr))
                                                 + ((chunksize == NULL) ? 0 : 1)
@@ -1004,7 +1007,10 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
  *  @brief removes all elements from ALLOCLIST.
  *
  *  Function applications return MemVals so we don't need to
- *  allocatate memory which must be filled.
+ *  allocate memory which must be filled. When we encounter a loop function
+ *  we interate through all its arguments looking for any N_avis which was
+ *  added with the EMR loop optimisation phase - when we find one, we add it
+ *  to the ALLOCLIST.
  *
  *  @param arg_node the function application
  *  @param arg_info containing ALLOCLIST
@@ -1015,9 +1021,41 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
 node *
 EMALap (node *arg_node, info *arg_info)
 {
+    node * args;
+
     DBUG_ENTER ();
 
+    /* we do not allocate the LHS */
     INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+
+    if (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))) {
+        /*
+         * With EMR loop optimisation, we lift WL array allocations out of
+         * the loop function body. Giving us:
+         *
+         * type[SIZE] emr_lift;
+         *
+         * LHS = loopfun (a, b, ..., emr_lift);
+         *
+         * We need to transform it into:
+         *
+         * type[SIZE] emr_lift;
+         *
+         * emr_lift = alloc (dim (a), shape (a));
+         * LHS = loopfun (a, b, ..., emr_lift);
+         */
+        args = AP_ARGS (arg_node);
+
+        while (args != NULL) {
+            if (AVIS_ISALLOCLIFT (ID_AVIS (EXPRS_EXPR (args)))) {
+                INFO_ALLOCLIST (arg_info)
+                    = MakeALS (INFO_ALLOCLIST (arg_info), ID_AVIS (EXPRS_EXPR (args)),
+                               MakeDimArg (EXPRS_EXPR (args)), MakeShapeArg (EXPRS_EXPR (args)));
+                AVIS_ISALLOCLIFT (ID_AVIS (EXPRS_EXPR (args))) = FALSE;
+            }
+            args = EXPRS_NEXT (args);
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1097,7 +1135,7 @@ EMALarray (node *arg_node, info *arg_info)
     /*
      * Signal EMALlet to wrap this RHS in a fill-operation
      */
-    INFO_MUSTFILL (arg_info) = TRUE;
+    INFO_MUSTFILL (arg_info) = EA_fill;
 
     DBUG_RETURN (arg_node);
 }
@@ -1228,7 +1266,7 @@ EMALcode (node *arg_node, info *arg_info)
             /*                                                                           \
              * Signal EMALlet to wrap this RHS in a fill operation                       \
              */                                                                          \
-            INFO_MUSTFILL (arg_info) = TRUE;                                             \
+            INFO_MUSTFILL (arg_info) = EA_fill;                                          \
         }                                                                                \
                                                                                          \
         DBUG_RETURN (arg_node);                                                          \
@@ -1370,7 +1408,8 @@ EMALlet (node *arg_node, info *arg_info)
         /*
          * Wrap RHS in Fill-operation if necessary
          */
-        if (INFO_MUSTFILL (arg_info)) {
+        switch (INFO_MUSTFILL (arg_info)) {
+        case EA_fill:
             /*
              * a = b + c;
              *
@@ -1393,8 +1432,36 @@ EMALlet (node *arg_node, info *arg_info)
              * Set the avis of the freshly allocated variable
              */
             INFO_ALLOCLIST (arg_info)->avis = avis;
+            break;
+        case EA_fillnoop:
+            /*
+             * b = prf (a);
+             *
+             * is transferred into:
+             *
+             * a = alloc (...)
+             * b = fill (noop (a), a);
+             */
+            avis = ID_AVIS (PRF_ARG1 (LET_EXPR (arg_node)));
+
+            /* we intentionally update the N_avis type to match the LHS type */
+            AVIS_TYPE (avis) = TYeliminateAKV (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))));
+
+            /* we remove the prf operation, replace with fill */
+            LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
+            LET_EXPR (arg_node)
+              = TCmakePrf2 (F_fill, TCmakePrf1 (F_noop, TBmakeId (avis)),
+                            TBmakeId (avis));
+
+            /* make sure to allocate N_avis */
+            INFO_ALLOCLIST (arg_info)->avis = avis;
+        case EA_nofill:
+            /* do nothing */
+            break;
+        default:
+            DBUG_UNREACHABLE ("Invalid EMAL fill mode!");
         }
-        INFO_MUSTFILL (arg_info) = FALSE;
+        INFO_MUSTFILL (arg_info) = EA_nofill;
     }
 
     DBUG_RETURN (arg_node);
@@ -1425,7 +1492,7 @@ EMALprf (node *arg_node, info *arg_info)
     /*
      * Signal EMALlet to wrap this prf in a fill-operation
      */
-    INFO_MUSTFILL (arg_info) = TRUE;
+    INFO_MUSTFILL (arg_info) = EA_fill;
 
 #if 0
   /* to be done */
@@ -1834,8 +1901,7 @@ EMALprf (node *arg_node, info *arg_info)
          * none of its return value must be allocated
          */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
-        INFO_MUSTFILL (arg_info) = FALSE;
+        INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
     case F_guard:
@@ -1853,8 +1919,7 @@ EMALprf (node *arg_node, info *arg_info)
          * - v is an alias of a_i
          */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
-        INFO_MUSTFILL (arg_info) = FALSE;
+        INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
     case F_type_constraint:
@@ -1890,10 +1955,48 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
+    case F_prefetch2device:
+    case F_prefetch2host:
+        if (AVIS_ISALLOCLIFT (ID_AVIS (PRF_ARG1 (arg_node))))
+        {
+            /* rhs EMR lifted avis is never previously assigned to,
+             * we need to explicitly allocate it.
+             */
+            als->avis = ID_AVIS (PRF_ARG1 (arg_node));
+            als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+            als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        } else {
+            /* we perform no allocation of the lhs */
+            INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        }
+        INFO_MUSTFILL (arg_info) = EA_nofill;
+        break;
+
     case F_host2device:
+    case F_host2device_start:
+        /*
+         * CUDA MLTRAN identifies what N_avis needs to be transferred to the
+         * CUDA device. Ordinarily its selections are sane, except when handling
+         * EMR loop optimisation lifted N_avis. These are not assigned to in the
+         * calling context, meaning that EMAL does not handle these (no alloc
+         * materialises). We need to handle this separately, and do so by using
+         * the alternative fill/alloc insertion in EMALlet (see EA_fillnoop). This
+         * elides the host2device prf, instead using fill (noop (...), ...).
+         */
+        INFO_MUSTFILL (arg_info) = AVIS_ISALLOCLIFT (ID_AVIS (PRF_ARG1 (arg_node)))
+                                     ? EA_fillnoop
+                                     : INFO_MUSTFILL (arg_info);
+        /* Fall-through */
     case F_device2host:
+    case F_device2host_start:
         als->dim = MakeDimArg (PRF_ARG1 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        break;
+
+    case F_host2device_end:
+    case F_device2host_end:
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
     case F_cuda_threadIdx_x:
@@ -1917,7 +2020,7 @@ EMALprf (node *arg_node, info *arg_info)
 
     case F_cond_wl_assign:
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-        INFO_MUSTFILL (arg_info) = FALSE;
+        INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
     case F_shmem_boundary_load:
@@ -1958,8 +2061,7 @@ EMALprf (node *arg_node, info *arg_info)
          * its return value must not  be allocated
          */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
-        INFO_MUSTFILL (arg_info) = FALSE;
+        INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
     /*
@@ -1968,7 +2070,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_enclose:
     case F_disclose:
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-        INFO_MUSTFILL (arg_info) = FALSE;
+        INFO_MUSTFILL (arg_info) = EA_nofill;
         break;
 
     default:

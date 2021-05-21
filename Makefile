@@ -8,7 +8,9 @@ MAKE_NUMTHREADS ?= 4
 
 define BUILD =
   if [ -d $(1) ]; then \
-    cd $(1); make -j$(MAKE_NUMTHREADS); cd -; \
+    cd $(1); \
+    $(MAKE) -j$(MAKE_NUMTHREADS); \
+    cd -; \
   else \
     mkdir -p $(1); \
     cd $(1); \
@@ -18,7 +20,7 @@ define BUILD =
   fi
 endef
 
-
+.PHONY: all release debug clean clean-release clean-debug install install-release install-debug
 
 all: release debug
 

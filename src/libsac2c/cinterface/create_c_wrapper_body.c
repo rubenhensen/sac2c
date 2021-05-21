@@ -189,14 +189,14 @@ CCWBdoCreateCWrapperBody (node *syntax_tree)
 node *
 CCWBfunbundle (node *arg_node, info *arg_info)
 {
-    int noargs;
-    int norets;
-    int pos;
+    size_t noargs;
+    size_t norets;
+    size_t pos;
 
     DBUG_ENTER ();
 
     noargs = FUNBUNDLE_ARITY (arg_node);
-    norets = TCcountRets (FUNDEF_RETS (FUNBUNDLE_FUNDEF (arg_node)));
+    norets = TCcountRets (FUNDEF_RETS (FUNBUNDLE_FUNDEF (arg_node))); 
 
     /* we only use non-{x,s}t funbundle here and manually do a dispatch between
        the versions to call */
@@ -206,13 +206,14 @@ CCWBfunbundle (node *arg_node, info *arg_info)
          */
         fprintf (INFO_FILE (arg_info), "void %s(", FUNBUNDLE_EXTNAME (arg_node));
 
+        //norets - pos + noargs > 1 ==> norets + noargs > pos + 1 
         for (pos = 0; pos < norets; pos++) {
-            fprintf (INFO_FILE (arg_info), "void **ret%d%s", pos,
-                     (norets - pos + noargs > 1) ? ", " : "");
+            fprintf (INFO_FILE (arg_info), "void **ret%zu%s", pos,
+                     (norets + noargs > pos + 1) ? ", " : "");
         }
         for (pos = 0; pos < noargs; pos++) {
-            fprintf (INFO_FILE (arg_info), "void *arg%d%s", pos,
-                     (noargs - pos > 1) ? ", " : "");
+            fprintf (INFO_FILE (arg_info), "void *arg%zu%s", pos,
+                     (noargs > pos + 1) ? ", " : "");
         }
 
         fprintf (INFO_FILE (arg_info), ")\n{\n");
@@ -222,10 +223,10 @@ CCWBfunbundle (node *arg_node, info *arg_info)
          */
         for (pos = 0; pos < noargs; pos++) {
             fprintf (INFO_FILE (arg_info),
-                     "  SAC_array_descriptor_t arg%d_desc = makeScalarDesc();\n", pos);
+                     "  SAC_array_descriptor_t arg%zu_desc = makeScalarDesc();\n", pos);
         }
         for (pos = 0; pos < norets; pos++) {
-            fprintf (INFO_FILE (arg_info), "  SAC_array_descriptor_t ret%d_desc;\n", pos);
+            fprintf (INFO_FILE (arg_info), "  SAC_array_descriptor_t ret%zu_desc;\n", pos);
         }
 
         /*
@@ -264,13 +265,13 @@ CCWBfunbundle (node *arg_node, info *arg_info)
 
         /* print function's arguments */
         for (pos = 0; pos < norets; pos++) {
-            fprintf (INFO_FILE (arg_info), "ret%d, &ret%d_desc%s", pos, pos,
-                     (norets - pos + noargs > 1) ? ", " : "");
+            fprintf (INFO_FILE (arg_info), "ret%zu, &ret%zu_desc%s", pos, pos,
+                     (norets + noargs > pos + 1) ? ", " : "");
         }
 
         for (pos = 0; pos < noargs; pos++) {
-            fprintf (INFO_FILE (arg_info), "arg%d, arg%d_desc%s", pos, pos,
-                     (noargs - pos > 1) ? ", " : "");
+            fprintf (INFO_FILE (arg_info), "arg%zu, arg%zu_desc%s", pos, pos,
+                     (noargs > pos + 1) ? ", " : "");
         }
 
         fprintf (INFO_FILE (arg_info), ");\n");
@@ -287,7 +288,7 @@ CCWBfunbundle (node *arg_node, info *arg_info)
          * free return descs
          */
         for (pos = 0; pos < norets; pos++) {
-            fprintf (INFO_FILE (arg_info), "  freeScalarDesc( ret%d_desc);\n", pos);
+            fprintf (INFO_FILE (arg_info), "  freeScalarDesc( ret%zu_desc);\n", pos);
         }
 
         fprintf (INFO_FILE (arg_info), "}\n\n");

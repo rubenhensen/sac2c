@@ -1,6 +1,8 @@
 #ifndef _SAC_HWLOC_LIB_H_
 #define _SAC_HWLOC_LIB_H_
 
+#include "config.h"
+
 #if ENABLE_HWLOC
 
 #include <stddef.h>
@@ -13,7 +15,7 @@ typedef struct hwloc_topo_data {
     int num_pus_available;
 } hwloc_topo_data_t;
 
-hwloc_topo_data_t *SAC_HWLOC_topo_data;
+extern hwloc_topo_data_t *SAC_HWLOC_topo_data;
 extern hwloc_cpuset_t *SAC_HWLOC_cpu_sets;
 extern hwloc_topology_t SAC_HWLOC_topology;
 
@@ -25,4 +27,5 @@ extern void SAC_HWLOC_init (void);
 extern void SAC_HWLOC_cleanup (void);
 
 #endif /* ENABLE_HWLOC */
+
 #endif /* _SAC_HWLOC_LIB_H_ */

@@ -759,30 +759,34 @@ LFUisAvisMemberExprs (node *arg_node, node *exprs)
  * @brief: Function for finding the index of an N_avis node
  *         in an N_ids chain.
  *
- * @param: arg_node - an N_avis node.
- *         ids      - an N_ids chain.
+ * @param: arg_node    - an N_avis node.
+ *         ids         - an N_ids chain.
+ *         isIdsMember - pointer passing back result of search for 
+ *                       whether arg_node is a member of the ids chain.
  *
- * @result: 0...(length of idschain -1) if arg_node is a member of the ids chain.
- *          -1 if arg_node is not a member of the ids chain.
+ * @result: 0...(length of idschain -1). 
+ *          .
  *
  *****************************************************************************/
-int
-LFUindexOfMemberIds (node *arg_node, node *ids)
+size_t
+LFUindexOfMemberIds (node *arg_node, node *ids, bool *isIdsMember)
 {
-    int z = -1;
-    int j = 0;
+    size_t z = 0;
+    size_t j = 0;
+    *isIdsMember = FALSE;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (N_avis == NODE_TYPE (arg_node), "Expected N_avis node");
-    while ((NULL != ids) && (-1 == z)) {
+    while ((NULL != ids) && (FALSE == *isIdsMember)) {
         if (arg_node == IDS_AVIS (ids)) {
             z = j;
+            *isIdsMember = TRUE;
         }
         ids = IDS_NEXT (ids);
         j++;
     }
-
+    
     DBUG_RETURN (z);
 }
 
@@ -928,8 +932,7 @@ LFUfindFundefReturn (node *arg_node)
 
     DBUG_ENTER ();
 
-    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (global.compiler_anyphase >= PH_ptc_l2f)
-        && (global.compiler_anyphase < PH_cg_ctr)) {
+    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (global.compiler_anyphase >= PH_ptc_l2f)) {
         assgn = FUNDEF_BODY (arg_node);
         if (NULL != assgn) { /* Some fns do not have a body. Weird... */
             assgn = BLOCK_ASSIGNS (assgn);

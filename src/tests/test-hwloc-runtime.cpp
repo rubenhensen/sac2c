@@ -9,6 +9,7 @@
 
 extern "C" {
 #include "libsac/hwloc/cpubind.h"
+#include "libsac/hwloc/cudabind.h"
 }
 
 TEST (HWLOCRuntime, HWLOCPrintStr)
@@ -31,10 +32,12 @@ TEST (HWLOCRuntime, HWLOCPrintStr)
     ret = SAC_HWLOC_info_snprintf (test_string, 1023, SAC_HWLOC_topology, obj1->cpuset, obj2->cpuset);
     EXPECT_NE (ret, EXIT_FAILURE);
 
-#if HWLOC_API_VERSION < 0x00010b00
+#if HWLOC_API_VERSION < 0x00010b00 // till version 1.11.0
     ASSERT_STREQ (test_string, "Core #0 in Socket #0");
-#else
+#elif HWLOC_API_VERSION < 0x00020900 // till version 2.9.0
     ASSERT_STREQ (test_string, "Core #0 in Package #0");
+#else
+    ASSERT_STREQ (test_string, "Core #0 in NUMANode #0");
 #endif
 
     hwloc_topology_destroy (SAC_HWLOC_topology);
@@ -98,6 +101,39 @@ TEST (HWLOCRuntime, HWLOCInitAndCleanUp)
     ASSERT_FALSE (SAC_HWLOC_cpu_sets);
     ASSERT_FALSE (SAC_HWLOC_topo_data);
 }
+
+#if ENABLE_CUDA
+TEST (HWLOCRuntime, CUDAHWLOCInitAndCleanUp)
+{
+    char cuda_hwloc_status[1024];
+
+    // we need to initialise the HWLOC before checking
+    // the pinning for CUDA
+    SAC_HWLOC_init ();
+
+    // should be allocated and set
+    ASSERT_TRUE (SAC_HWLOC_topology);
+
+    // we assume GPU ordinal 0
+    if (!SAC_CUDA_HWLOC_init (0, cuda_hwloc_status,
+                              sizeof (cuda_hwloc_status))) {
+        /* on systems with no CUDA device, or with only 1
+         * NUMA node, we skip this test.
+         */
+    } else {
+        // should *still* be allocated and set
+        ASSERT_TRUE (SAC_HWLOC_topology);
+
+        // should not be empty
+        ASSERT_STRNE (cuda_hwloc_status, "");
+    }
+
+    SAC_HWLOC_cleanup ();
+
+    // should have been freed (be NULL)
+    ASSERT_FALSE (SAC_HWLOC_topology);
+}
+#endif /* ENABLE_CUDA */
 
 #else /* ENABLE_HWLOC */
 

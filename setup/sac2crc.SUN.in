@@ -133,7 +133,7 @@ CACHE2_ASSOC    :=  1
 CACHE2_WRITEPOL :=  "write_around"
 
 
-target ultrat3 :: suncc:
+target ultrat3 :: cc_sun:
 
 VARIANT         +=  "-t3"
 
@@ -146,7 +146,3 @@ CACHE2_SIZE     :=  6144
 CACHE2_LINE     :=  64
 CACHE2_ASSOC    :=  24
 CACHE2_WRITEPOL :=  "write_around"
-
-CCFLAGS         += " -xtarget=ultraT3"
-
-

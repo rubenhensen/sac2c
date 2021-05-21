@@ -29,29 +29,29 @@ extern node *PMmultiExprs (int num_nodes, ...);
 /**
  * Pattern-DSL:
  */
-extern pattern *PMvar (int num_attribs, ...);
+extern pattern *PMvar (unsigned int num_attribs, ...);
 
-extern pattern *PMparam (int num_attribs, ...);
-extern pattern *PMany (int num_attribs, ...);
-extern pattern *PMtrue (int num_attribs, ...);
-extern pattern *PMfalse (int num_attribs, ...);
-extern pattern *PMconst (int num_attribs, ...);
-extern pattern *PMint (int num_attribs, ...);
-extern pattern *PMarray (int num_attribs, ...);
-extern pattern *PMprf (int num_attribs, ...);
-extern pattern *PMretryAny (int *i, int *l, int num_pats, ...);
-extern pattern *PMretryAll (int *i, int *l, int num_pats, ...);
-extern pattern *PMskip (int num_attribs, ...);
-extern pattern *PMskipN (int *n, int num_attribs, ...);
-extern pattern *PMmulti (int num_pats, ...);
-extern pattern *PMwith (int num_attribs, ...);
-extern pattern *PMwith3 (int num_attribs, ...);
-extern pattern *PMrange (int num_attribs, ...);
-extern pattern *PMlink (int num_attribs, ...);
+extern pattern *PMparam (unsigned int num_attribs, ...);
+extern pattern *PMany (unsigned int num_attribs, ...);
+extern pattern *PMtrue (unsigned int num_attribs, ...);
+extern pattern *PMfalse (unsigned int num_attribs, ...);
+extern pattern *PMconst (unsigned int num_attribs, ...);
+extern pattern *PMint (unsigned int num_attribs, ...);
+extern pattern *PMarray (unsigned int num_attribs, ...);
+extern pattern *PMprf (unsigned int num_attribs, ...);
+extern pattern *PMretryAny (int *i, int *l, unsigned int num_pats, ...);
+extern pattern *PMretryAll (int *i, int *l, unsigned int num_pats, ...);
+extern pattern *PMskip (unsigned int num_attribs, ...);
+extern pattern *PMskipN (int *n, unsigned int num_attribs, ...);
+extern pattern *PMmulti (unsigned int num_pats, ...);
+extern pattern *PMwith (unsigned int num_attribs, ...);
+extern pattern *PMwith3 (unsigned int num_attribs, ...);
+extern pattern *PMrange (unsigned int num_attribs, ...);
+extern pattern *PMlink (unsigned int num_attribs, ...);
 /**
  * selectors
  */
-extern pattern *PMSrange (int num_attribs, ...);
+extern pattern *PMSrange (unsigned int num_attribs, ...);
 
 /**
  * utils:

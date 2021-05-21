@@ -16,6 +16,18 @@ extern int print_comment; /* bool */
         out (__VA_ARGS__);                                                               \
     } while (0)
 
+#define SCAN_ARG_LIST(cnt, inc, sep_str, sep_code, code)                                 \
+    do {                                                                                    \
+        size_t i;                                                                        \
+        for (i = 0; i < cnt * inc; i += inc) {                                           \
+            if (i > 0) {                                                                 \
+                out ("%s", sep_str);                                                     \
+                sep_code;                                                                \
+            }                                                                            \
+            code;                                                                        \
+        }                                                                                \
+    } while (0)
+
 /*
  * ASSURE_TYPE is implemented using helpers ASSURE_COND and
  * ASSURE_TEXT to pass va_args in conditional and message

@@ -24,36 +24,11 @@
 #define DBUG_PREFIX "UNDEFINED"
 #include "debug.h"
 
-// this is used for RTSPEC_MODE_SIMPLE
-#define ScanArglist(cnt, inc, sep_str, sep_code, code)                                   \
-    {                                                                                    \
-        int i;                                                                           \
-        for (i = 0; i < cnt * inc; i += inc) {                                           \
-            if (i > 0) {                                                                 \
-                fprintf (global.outfile, "%s", sep_str);                                 \
-                sep_code;                                                                \
-            }                                                                            \
-            code;                                                                        \
-        }                                                                                \
-    }
-
-// this is used for all other modes
-#define SCAN_ARG_LIST(cnt, inc, sep_str, sep_code, code)                                 \
-    do {                                                                                 \
-        for (int i = 0; i < cnt * inc; i += inc) {                                       \
-            if (i > 0) {                                                                 \
-                out ("%s", sep_str);                                                     \
-                sep_code;                                                                \
-            }                                                                            \
-            code;                                                                        \
-        }                                                                                \
-    } while (0)
-
 /******************************************************************************
  *
  * function:
  *   void ICMCompileND_FUN_DEF_BEGIN( char *name, char *rettype_NT,
- *                                    int vararg_cnt, char **vararg)
+ *                                    unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -64,7 +39,7 @@
  *
  ******************************************************************************/
 void
-ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -86,9 +61,9 @@ ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
     }
 
     if (vararg_cnt > 0) {
-        ScanArglist (vararg_cnt, 3, ",", ,
-                     fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
-                              vararg[i + 2], vararg[i + 1]));
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                       fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                                vararg[i + 2], vararg[i + 1]));
     } else {
         fprintf (global.outfile, "void");
     }
@@ -107,7 +82,7 @@ ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
 /** <!--*******************************************************************-->
  *
  * @fn ICMCompileRTSPEC_FUN_AP( char *modname, char *name, char *srcname, char *uuid
- *                              char *rettype_NT, char *retname, int vararg_cnt,
+ *                              char *rettype_NT, char *retname, unsigned int vararg_cnt,
  *                              char **vararg)
  *
  * @brief Implements the ICM for the function application with runtime
@@ -116,7 +91,7 @@ ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
  ****************************************************************************/
 void
 ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
-                         char *rettype_NT, char *retname, int vararg_cnt, char **vararg)
+                         char *rettype_NT, char *retname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -150,7 +125,7 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
          */
         size_t type_string_size = 1;
 
-        int i = 0;
+        unsigned int i = 0;
         int arg_cnt = 0;
 
         i = 0;
@@ -245,7 +220,7 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
 
 /** <!--*******************************************************************-->
  *
- * @fn ICMCompileWE_FUN_AP( char *name, char *retname, int vararg_cnt,
+ * @fn ICMCompileWE_FUN_AP( char *name, char *retname, unsigned int vararg_cnt,
  *                          char **vararg)
  *
  * @brief Implements the ICM for the function application of an indirect wrapper
@@ -254,7 +229,7 @@ ICMCompileRTSPEC_FUN_AP (char *modname, char *name, char *srcname, char *uuid,
  *
  ****************************************************************************/
 void
-ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, int vararg_cnt,
+ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, unsigned int vararg_cnt,
                      char **vararg)
 {
     DBUG_ENTER ();
@@ -275,7 +250,7 @@ ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, int vararg_cnt
          */
         size_t type_string_size = 1;
 
-        int i = 0;
+        unsigned int i = 0;
         for (; i < vararg_cnt * 3; i += 3) {
             if (STReq (vararg[i], "in")) {
                 type_string_size += STRlen (vararg[i + 1]) + 1;
@@ -310,16 +285,16 @@ ICMCompileWE_FUN_AP (char *name, char *rettype_NT, char *retname, int vararg_cnt
             fprintf (global.outfile, "void, ");
         }
 
-        ScanArglist (vararg_cnt, 3, ",", ,
-                     fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
-                              vararg[i + 2], vararg[i + 1]));
+        SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                       fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                                vararg[i + 2], vararg[i + 1]));
 
         fprintf (global.outfile, ")(");
     }
 
-    ScanArglist (vararg_cnt, 3, ",", ,
-                 fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
-                          vararg[i + 2], vararg[i + 1]));
+    SCAN_ARG_LIST (vararg_cnt, 3, ",", ,
+                   fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
+                            vararg[i + 2], vararg[i + 1]));
 
     fprintf (global.outfile, ");\n");
 
@@ -363,23 +338,23 @@ ICMCompileWE_MODFUN_INFO (char *name, char *modname)
 
 /** <!--*******************************************************************-->
  *
- * @fn ICMCompileWE_SHAPE_ENCODE( int arg_cnt, char **arg)
+ * @fn ICMCompileWE_SHAPE_ENCODE( unsigned int arg_cnt, char **arg)
  *
  * @brief Implements the ICM that prints the necessary code for the wrapper
  * entry function to encode its arguments shape information at runtime.
  *
  ****************************************************************************/
 void
-ICMCompileWE_SHAPE_ENCODE (int arg_cnt, char **arg)
+ICMCompileWE_SHAPE_ENCODE (unsigned int arg_cnt, char **arg)
 {
     DBUG_ENTER ();
 
     fprintf (global.outfile, "SAC_WE_DECL_I_J()\n");
 
     INDENT;
-    fprintf (global.outfile, "SAC_WE_CALC_SIZE( %d", arg_cnt);
+    fprintf (global.outfile, "SAC_WE_CALC_SIZE( %u", arg_cnt);
 
-    int i = 0;
+    unsigned int i = 0;
     for (; i < arg_cnt; i++) {
         fprintf (global.outfile, " + SAC_WE_GET_DIM( %s)", arg[i]);
     }
@@ -390,7 +365,7 @@ ICMCompileWE_SHAPE_ENCODE (int arg_cnt, char **arg)
     fprintf (global.outfile, "SAC_WE_ALLOC_SHAPE_ARRAY()\n");
 
     INDENT;
-    fprintf (global.outfile, "SAC_WE_SET_NUM_ARGS( %d)\n", arg_cnt);
+    fprintf (global.outfile, "SAC_WE_SET_NUM_ARGS( %u)\n", arg_cnt);
 
     i = 0;
     for (; i < arg_cnt; i++) {
@@ -412,7 +387,7 @@ ICMCompileWE_SHAPE_ENCODE (int arg_cnt, char **arg)
  *
  ****************************************************************************/
 void
-ICMCompileWE_NO_SHAPE_ENCODE (int arg_cnt)
+ICMCompileWE_NO_SHAPE_ENCODE (unsigned int arg_cnt)
 {
     DBUG_ENTER ();
 
@@ -425,7 +400,7 @@ ICMCompileWE_NO_SHAPE_ENCODE (int arg_cnt)
  *
  * function:
  *   void ICMCompileWE_FUN_DEF_END( char *name, char *rettype_NT,
- *                                  int vararg_cnt, char **vararg)
+ *                                  unsigned int vararg_cnt, char **vararg)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -439,7 +414,7 @@ ICMCompileWE_NO_SHAPE_ENCODE (int arg_cnt)
  ******************************************************************************/
 
 void
-ICMCompileWE_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+ICMCompileWE_FUN_DEF_END (char *name, char *rettype_NT, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 

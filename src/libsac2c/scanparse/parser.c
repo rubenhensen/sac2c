@@ -35,11 +35,12 @@
 #include "parser.h"
 #include "compat.h"
 
-#define error_mark_node ((node *)0x1)
-#define error_type_node ((ntype *)0x2)
+
+static node *handle_generator_body (struct parser *parser, bool array_comprehension_p,
+                                    struct array_comp_ctxt *ctxt);
 
 static ntype *Exprs2NType (ntype *, node *);
-static int CountDotsInExprs (node *);
+static size_t CountDotsInExprs (node *);
 static shape *Exprs2Shape (node *);
 
 /* Helper function to annotate a node with location and return it.  */
@@ -53,8 +54,8 @@ loc_annotated (struct location loc, node *n)
 static ntype *
 Exprs2NType (ntype *basetype, node *exprs)
 {
-    int n;
-    int dots = 0;
+    size_t n;
+    size_t dots = 0;
     shape *shp;
     ntype *result = NULL;
     struct location loc;
@@ -108,10 +109,10 @@ Exprs2NType (ntype *basetype, node *exprs)
     DBUG_RETURN (result);
 }
 
-static int
+static size_t
 CountDotsInExprs (node *exprs)
 {
-    int result = 0;
+    size_t result = 0;
 
     DBUG_ENTER ();
 
@@ -129,7 +130,7 @@ static shape *
 Exprs2Shape (node *exprs)
 {
     shape *result;
-    int n;
+    size_t n;
     int cnt = 0;
 
     DBUG_ENTER ();
@@ -169,88 +170,6 @@ SetClassType (node *module, ntype *type, node *pragmas)
 
     DBUG_RETURN (module);
 }
-
-/* Non sac part of the parser.  */
-
-/* Wrapper for FREEdoFreeNode -- original name is disgusting.  */
-static inline node *
-free_node (node *nd)
-{
-    if (nd != NULL && nd != error_mark_node)
-        return FREEdoFreeNode (nd);
-    else
-        return nd;
-}
-
-/* Wrapper for FREEdoFreeTree -- original name is disgusting.  */
-static inline node *
-free_tree (node *nd)
-{
-    if (nd != NULL && nd != error_mark_node)
-        return FREEdoFreeTree (nd);
-    else
-        return nd;
-}
-
-/* Wrapper for TYfreeType -- original name is disgusting.  */
-static inline ntype *
-free_type (ntype *nt)
-{
-    if (nt != NULL && nt != error_type_node)
-        return TYfreeType (nt);
-    else
-        return nt;
-}
-
-/* FIXME everything except parse () should become static at some point.
-   For the time being functions have a global scope for simplier
-   debugging in gdb.  */
-struct token *parser_get_token (struct parser *);
-void parser_unget (struct parser *);
-struct token *parser_get_until_tval (struct parser *, enum token_kind);
-struct token *parser_get_until_tclass (struct parser *, enum token_class);
-bool parser_expect_tval (struct parser *, enum token_kind);
-bool parser_expect_tclass (struct parser *, enum token_class);
-bool parser_init (struct parser *, struct lexer *);
-bool parser_finalize (struct parser *);
-
-bool is_type (struct parser *);
-bool is_allowed_operation (struct token *);
-bool token_is_reserved (struct token *tok);
-
-ntype *make_simple_type (enum token_kind);
-ntype *handle_type (struct parser *);
-node *handle_id (struct parser *);
-node *handle_id_or_funcall (struct parser *);
-node *handle_primary_expr (struct parser *);
-node *handle_postfix_expr (struct parser *);
-struct pre_post_expr handle_unary_expr (struct parser *);
-struct pre_post_expr handle_cast_expr (struct parser *);
-node *handle_expr (struct parser *);
-node *handle_assign (struct parser *);
-node *handle_with (struct parser *);
-node *handle_generic_list (struct parser *parser, node *(*)(struct parser *),
-                           node *(*)(node *, node *));
-node *handle_stmt_list (struct parser *, unsigned);
-node *handle_list_of_stmts (struct parser *);
-node *handle_stmt (struct parser *);
-node *handle_pragmas (struct parser *, enum pragma_type);
-static node *handle_generator_body (struct parser *parser, bool array_comprehension_p,
-                                    struct array_comp_ctxt *ctxt);
-
-void cache_module (struct parser *, const char *);
-
-/* Set of flags to deffirentiate between the list of statments used
-   within the statements (allows single statemen without braces and
-   semicolon) and within functions (allows variable definitions and
-   return statement at the end).  */
-#define STMT_BLOCK_SEMICOLON_F (1 << 0)
-#define STMT_BLOCK_RETURN_F (1 << 1)
-#define STMT_BLOCK_VAR_DECLS_F (1 << 2)
-#define STMT_BLOCK_SINGLE_STMT_F (1 << 3)
-
-#define STMT_BLOCK_FUNCTION_FLAGS (STMT_BLOCK_RETURN_F | STMT_BLOCK_VAR_DECLS_F)
-#define STMT_BLOCK_STMT_FLAGS (STMT_BLOCK_SEMICOLON_F | STMT_BLOCK_SINGLE_STMT_F)
 
 /* Here we define a set of wrappers for handle_generic_list, to give
    a little bit more meaning to the function names.  When function has
@@ -342,9 +261,11 @@ handle_symbol_list (struct parser *parser, const char *modname, bool except)
     struct token *tok;
     node *ret = NULL;
 
+
     if (modname) {
         HASH_FIND_STR (parser->used_modules, modname, mod);
-        assert (mod, "module `%s' has to be cached first", modname);
+        if (!modname)
+            return error_mark_node;
     } else
         parser->lex->is_read_user_op = true;
 
@@ -915,6 +836,7 @@ parser_finalize (struct parser *parser)
     /* Free the known symbols hash-table.  */
     HASH_ITER (hh, parser->known_symbols, elem, tmp) {
         HASH_DEL (parser->known_symbols, elem);
+        free (elem->name);
         free (elem);
     }
 
@@ -3413,18 +3335,21 @@ handle_with (struct parser *parser)
         else
             goto error;
 
-        if (parser_expect_tval (parser, WLCOMP))
-            parser_get_token (parser);
-        else
-            goto error;
+        tok = parser_get_token (parser);
+        if (token_is_keyword (tok, WLCOMP)) {
+            pragma_expr = handle_function_call (parser);
+            if (pragma_expr == error_mark_node)
+                goto error;
 
-        pragma_expr = handle_function_call (parser);
-        if (pragma_expr == error_mark_node)
+            t = loc_annotated (pragma_loc, TBmakePragma ());
+            PRAGMA_WLCOMP_APS (t) = expr_constructor (pragma_expr, NULL);
+            pragma_expr = t;
+        } else if (token_is_keyword (tok, NOCUDA)) {
+            t = loc_annotated (pragma_loc, TBmakePragma ());
+            PRAGMA_NOCUDA (t) = TRUE;
+            pragma_expr = t;
+        } else
             goto error;
-
-        t = loc_annotated (pragma_loc, TBmakePragma ());
-        PRAGMA_WLCOMP_APS (t) = expr_constructor (pragma_expr, NULL);
-        pragma_expr = t;
     } else
         parser_unget (parser);
 
@@ -4373,8 +4298,20 @@ error:
 /* Read a comma-separated list of instances. To read a single
    instance the function HANDLE must be passed. To construct
    a node-list the function CONSTRUCTOR is used.  */
-node *
+static inline node *
 handle_generic_list (struct parser *parser, node *(*handle) (struct parser *),
+                     node *(*constructor) (node *, node *))
+{
+    // Ensure that we avoid parsing `(` expes `)` within the list.
+    bool old_ret_state = parser->in_return;
+    parser->in_return = false;
+    node *res = handle_generic_list_internal (parser, handle, constructor);
+    parser->in_return = old_ret_state;
+    return res;
+}
+
+static inline node *
+handle_generic_list_internal (struct parser *parser, node *(*handle) (struct parser *),
                      node *(*constructor) (node *, node *))
 {
     struct token *tok;
@@ -4390,7 +4327,7 @@ handle_generic_list (struct parser *parser, node *(*handle) (struct parser *),
         return constructor (res, NULL);
     }
 
-    t = handle_generic_list (parser, handle, constructor);
+    t = handle_generic_list_internal (parser, handle, constructor);
     if (t == NULL || t == error_mark_node) {
         error_loc (token_location (tok), "nothing follows the comma");
         return error_mark_node;
@@ -5233,6 +5170,12 @@ cache_module (struct parser *parser, const char *modname)
              (which may be fine, as potentially we have
               a problem with user-defined symbols).
          2)  The parser-internals would not be freed.  */
+    if (!MODMmoduleExists (modname)) {
+        struct location loc = token_location (parser_get_token (parser));
+        parser_unget (parser);
+        error_loc (loc, "cannot load module `%s'", modname);
+        return;
+    }
     module = MODMloadModule (modname);
     table = STcopy (MODMgetSymbolTable (module));
     iterator = STsymbolIteratorGet (table);
@@ -5616,6 +5559,9 @@ handle_typedef (struct parser *parser)
 
     if (!extern_p && !builtin_p && is_type (parser)) {
         type = handle_type (parser);
+        if (!TUshapeKnown (type)) {
+            nested = true;
+        }
         if (type == error_type_node)
             goto skip_error;
     }
@@ -5673,6 +5619,10 @@ handle_typedef (struct parser *parser)
 
         tt = TYmakeAKS (TYmakeHiddenSimpleType (UT_NOT_DEFINED), SHmakeShape (0));
         ret = TBmakeTypedef (name, NULL, component_name, tt, NULL, NULL);
+        if (nested == true) {
+            TYPEDEF_ISNESTED (ret) = true;
+        }
+        TYPEDEF_ISEXTERNAL (ret) = true;
         TYPEDEF_PRAGMA (ret) = pragmas;
     } else {
         ret = TBmakeTypedef (name, NULL, component_name, type, NULL, NULL);
@@ -6628,14 +6578,18 @@ cleanup:
         HASH_ITER (hh, lex->file_names, f, tmp)
             sz++;
 
-        global.file_table = (char **)malloc (sz * sizeof (char *));
-        global.file_table_size = sz;
+        /* We need this table to ensure that FILE* fields
+           in the locations in the AST are valid.  So here we
+           are simply extending this table, even though we may have
+           repeated filenames.  */
+        global.file_table = (char **)realloc (global.file_table,
+                                              (global.file_table_size + sz)
+                                              * sizeof (char *));
 
         /* Fill global.file_table and remove the filenams from lexer's
            hash table to avoid freeing.  */
-        sz = 0;
         HASH_ITER (hh, lex->file_names, f, tmp) {
-            global.file_table[sz++] = f->name;
+            global.file_table[global.file_table_size++] = f->name;
             HASH_DEL (lex->file_names, f);
             free (f);
         }

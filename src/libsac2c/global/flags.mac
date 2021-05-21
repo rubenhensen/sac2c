@@ -139,6 +139,38 @@ PRINT (avis, 'v', FALSE)
 /*************************************************************/
 
 /*
+ * Feedback flags
+ */
+
+#ifndef FEEDBACKflag
+#define FEEDBACKflag(flag)
+#endif
+
+#ifndef FEEDBACKchar
+#define FEEDBACKchar(char)
+#endif
+
+#ifndef FEEDBACKdefault
+#define FEEDBACKdefault(default)
+#endif
+
+#ifndef FEEDBACK
+#define FEEDBACK(flag, char, default)                                                     \
+    FEEDBACKflag (flag) FEEDBACKchar (char) FEEDBACKdefault (default)
+#endif
+
+FEEDBACK (type, 't', FALSE)
+FEEDBACK (constraint, 'c', FALSE)
+FEEDBACK (optimisation, 'o', FALSE)
+FEEDBACK (refcnt, 'r', FALSE)
+
+#undef FEEDBACKflag
+#undef FEEDBACKchar
+#undef FEEDBACKdefault
+#undef FEEDBACK
+/*************************************************************/
+
+/*
  * Profile flags
  */
 
@@ -163,6 +195,9 @@ PROFILE (fun, 'f', FALSE)
 PROFILE (inl, 'i', FALSE)
 PROFILE (lib, 'l', FALSE)
 PROFILE (with, 'w', FALSE)
+PROFILE (mem, 'm', FALSE)
+PROFILE (ops, 'o', FALSE)
+PROFILE (cuda, 'c', FALSE)
 PROFILE (distmem, 'd', FALSE)
 
 #undef PROFILEflag

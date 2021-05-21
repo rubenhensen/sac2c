@@ -230,6 +230,14 @@ EnsureStructConstant (node *bound, ntype *type, info *arg_info)
         pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
     }
 
+    DBUG_EXECUTE ( if (NODE_TYPE (bound) == N_id) {
+                       DBUG_PRINT ("ensuring structural constant for \"%s\"", ID_NAME (bound));
+                   } else if (NODE_TYPE (bound) == N_array) {
+                       DBUG_PRINT ("ensuring structural constant ...");
+                   } else {
+                       DBUG_ASSERT (FALSE, "found neither N_id nor N_array in generator/shape position");
+                   } );
+
     if (PMmatchFlat (pat, bound)) {
         /* this is somehow defined as an array */
 
@@ -262,6 +270,8 @@ EnsureStructConstant (node *bound, ntype *type, info *arg_info)
         new_bound = CreateArrayOfShapeSels (ID_AVIS (bound), dim, arg_info);
         bound = FREEdoFreeTree (bound);
         bound = new_bound;
+    } else {
+        DBUG_PRINT ("neither array nor AKS/AKV");
     }
 
     DBUG_RETURN (bound);

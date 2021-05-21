@@ -396,11 +396,15 @@ node *
 CFcreateConstExprsFromType (ntype *type)
 {
     node *res = NULL;
-    int i;
+    size_t i;
     DBUG_ENTER ();
 
     if (TYisProd (type)) {
-        for (i = TYgetProductSize (type) - 1; i >= 0; i--) {
+        /* 
+         * decrement after check for > 0, safe method for reverse loop ending on 0
+         * i : (ProductSize - 1) to 0
+         */
+        for (i = TYgetProductSize (type); i-- > 0; ) {
             res = TBmakeExprs (CFcreateConstExprsFromType (TYgetProductMember (type, i)),
                                res);
         }
@@ -465,7 +469,7 @@ CreateAssignsFromIdsExprs (node *ids, node *exprs, ntype *restypes)
     node *cexpr = NULL;
     node *tmp;
     node *expr;
-    int pos = 0;
+    size_t pos = 0;
 
     DBUG_ENTER ();
 
@@ -1119,18 +1123,21 @@ CFprf (node *arg_node, info *arg_info)
 
     /* Try symbolic constant simplification */
     if (global.optimize.doscs) {
+        DBUG_PRINT ("trying SCS...");
         res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
                                             prf_cfscs_funtab[PRF_PRF (arg_node)], res);
     }
 
     /* If that doesn't help, try structural constant constant folding */
     if (global.optimize.dosccf) {
+        DBUG_PRINT ("trying SCCF...");
         res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
                                             prf_cfsccf_funtab[PRF_PRF (arg_node)], res);
     }
 
     /* If that doesn't help, try SAA constant folding */
     if (global.optimize.dosaacf) {
+        DBUG_PRINT ("trying SAACF...");
         res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
                                             prf_cfsaa_funtab[PRF_PRF (arg_node)], res);
     }

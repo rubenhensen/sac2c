@@ -110,7 +110,7 @@ FreeAllRcs (rc_t *rcs)
 }
 
 static node *
-CreateShmemBoundaryLoadPrf (node *cond, node *shmem, rc_t *rc, int dim, node *shmem_ids,
+CreateShmemBoundaryLoadPrf (node *cond, node *shmem, rc_t *rc, size_t dim, node *shmem_ids,
                             node *withids, node *offsets, node **vardecs_p,
                             node **assigns_p)
 {
@@ -187,7 +187,7 @@ CreatePrf (char *name, simpletype sty, shape *shp, prf pfun, node *args, node **
 static node *
 CreateSharedMemoryAccessCode (rc_t *rc, info *arg_info)
 {
-    int dim;
+    size_t dim;
     node *assigns = NULL, *vardecs = NULL;
     node *tx, *ty, *tx_shmem, *ty_shmem, *b_dim_x, *b_dim_y, *b_dim_x_m1, *b_dim_y_m1,
       *idx_shmem, *idx_dev, *elem, *A_shmem, *withids;

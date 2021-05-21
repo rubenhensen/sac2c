@@ -31,7 +31,7 @@ extern node *IVEXIids (node *arg_node, info *arg_info);
 extern node *IVEXIid (node *arg_node, info *arg_info);
 
 extern node *IVEXImakeIntScalar (int k, node **vardecs, node **preassigns);
-extern node *IVEXIwithidsKludge (int offset, node *withidvec, node *curpart,
+extern node *IVEXIwithidsKludge (size_t offset, node *withidvec, node *curpart,
                                  node **preassignspart, node **vardecs);
 extern node *IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs,
                                  node **preassigns, prf nprf);

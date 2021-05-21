@@ -1,0 +1,50 @@
+// This is only for the CUDA-backend, to test the MEMRT traversal, which in effect
+// translates an existing transformation by the EMRL traversal (to lift out allocations
+// from loops) into something more suitable for CUDA execution.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -t cuda -doemrci -doemrcf -doemrl -bcuda:mtran
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -nomemrt $< | $(GREP_COMMAND_OUTPUT) '_Loop_1( .*, A, [^, ]*_emr_lifted)\|_Loop_1( .*, [^, ]*_A, A)' 2
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -domemrt $< | $(GREP_COMMAND_OUTPUT) '_Loop_1( .*, [^, ]*_A, [^, ]*_dev)\|_host2device_( [^, ]*_emr_lifted);' 2
+#include "mini-stdlib.sac"
+
+inline
+int[+] onestep (int[+] B)
+{
+  A = with {
+        (. < x < .)  : 2 * (B[x+[1,0]]
+                         +  B[x-[1,0]]
+                         +  B[x+[0,1]]
+                         +  B[x-[0,1]]);
+      } : modarray (B);
+
+  return(A);
+}
+
+noinline
+int[+] operation (int[+] A)
+{
+  steps = 100;
+
+  do {
+    B = A;
+    A = onestep (B);
+    steps--;
+  } while ((sum (A) > sum (B)) && (steps > 0));
+
+  return (A);
+}
+
+int main ()
+{
+  A = with {
+        ([0,1] <= x <= .) : 0;
+      } : genarray ([1000,1000], 500);
+
+  A = operation (A);
+
+  return _toi_S_ (A[100,100]);
+}
+
+

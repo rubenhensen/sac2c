@@ -84,8 +84,8 @@ struct INFO {
     node *partshp;
     node *partialshp;
     node *withids;
-    int dim;
-    int innerdim;
+    size_t dim;
+    size_t innerdim;
     node *fundef;
     node *lastassign;
     node *partialarr;
@@ -110,7 +110,7 @@ struct INFO {
     node *at_code;
     node *at_assign;
     node *at_vecassigns;
-    int at_innerdim;
+    size_t at_innerdim;
     node *at_arrayelems;
     res_def at_resdef;
 };
@@ -258,7 +258,7 @@ CreatePrfOrConst (bool isprf, char *name, simpletype sty, shape *shp, prf pfun,
 static node *
 BuildInitializationAssigns (node *part, info *arg_info)
 {
-    int dim;
+    size_t dim;
     cuidx_set_t *cis;
     cudim_set_t *cds;
     node *assigns = NULL, *fundef;
@@ -445,7 +445,8 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
     node *zero_indices = NULL;
     node *shmem_len, *remain_len = NULL, *partial_bound;
     node *shape_array;
-    int i, iter, loops_required = 0;
+    int iter, loops_required = 0;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1377,7 +1378,8 @@ PFDwithid (node *arg_node, info *arg_info)
 node *
 PFDpart (node *arg_node, info *arg_info)
 {
-    int reduce_dim = -1, dim, tbshp_len, partshp_len, partialshp_len;
+    int tbshp_len, partshp_len, partialshp_len;
+    size_t reduce_dim = 0, dim;
     node *tbshp_elems = NULL, *partshp_elems = NULL, *partialshp_elems = NULL;
     node *init_assigns, *load_assigns, *reduce_assigns, *store_assigns;
 
@@ -1548,7 +1550,7 @@ PFDpart (node *arg_node, info *arg_info)
 static node *
 BuildFoldWithloop (node *old_foldwl, info *arg_info)
 {
-    int dim;
+    size_t dim;
     node *new_foldwl = NULL, *avis;
     node *part, *new_code, *withop;
     node *withid, *generator;
@@ -1814,7 +1816,7 @@ BuildFoldWithloop (node *old_foldwl, info *arg_info)
         WITH_REFERENCED (new_foldwl) = WITH_REFERENCED (old_foldwl);
         WITH_ISFOLDABLE (new_foldwl) = WITH_ISFOLDABLE (old_foldwl);
     } else if (INFO_RESDEF (arg_info) == def_withloop) {
-        int outer_dim, inner_dim;
+        size_t outer_dim, inner_dim;
         node *partialshp_elems, *outer_ub_elems = NULL, *inner_ub_elems = NULL;
         node *outer_bound1, *inner_bound1, *outer_bound2, *inner_bound2;
         node *outer_withid, *inner_withid, *outer_generator, *inner_generator;
@@ -2162,7 +2164,7 @@ node *
 ATravPart (node *arg_node, info *arg_info)
 {
     node *cexpr, *ssa_assign, *defining_rhs;
-    int cat_dim;
+    size_t cat_dim;
 
     DBUG_ENTER ();
 
@@ -2236,9 +2238,10 @@ ATravPart (node *arg_node, info *arg_info)
                 PART_THREADBLOCKSHAPE (arg_node)
                   = TBmakeArray (TYmakeSimpleType (T_int),
                                  SHcreateShape (1, TCcountIds (PART_IDS (arg_node))),
-                                 TBmakeExprs (TBmakeNum (global.cuda_2d_block_y),
-                                              TBmakeExprs (TBmakeNum (
-                                                             global.cuda_2d_block_x),
+                                 TBmakeExprs (TBmakeNum (
+                                                global.cuda_options.cuda_2d_block_y),
+                                              TBmakeExprs (TBmakeNum (global.cuda_options
+                                                                        .cuda_2d_block_x),
                                                            NULL)));
             }
             INFO_AT_RESDEF (arg_info) = def_withloop;

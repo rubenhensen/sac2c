@@ -47,70 +47,6 @@
 
 /*--------------------------------------------------------------------------*/
 
-/***
- ***  SHPSEG :
- ***/
-
-/******************************************************************************
- *
- * Function:
- *   int TCgetShpsegLength( int dims, shpseg *shape)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-int
-TCgetShpsegLength (int dims, shpseg *shape)
-{
-    int length, i;
-
-    DBUG_ENTER ();
-
-    if (dims > 0) {
-        length = 1;
-        for (i = 0; i < dims; i++) {
-            length *= SHPSEG_SHAPE (shape, i);
-        }
-    } else if (dims == 0) {
-        length = 0;
-    } else {
-        length = (-1);
-    }
-
-    DBUG_RETURN (length);
-}
-
-/*****************************************************************************
- *
- * function:
- *   shpseg *TCdiffShpseg( int dim, shpseg *shape1, shpseg *shape2)
- *
- * description:
- *   calculate shape1 - shape2
- *
- *****************************************************************************/
-
-shpseg *
-TCdiffShpseg (int dim, shpseg *shape1, shpseg *shape2)
-{
-
-    shpseg *shape_diff;
-    int i;
-
-    DBUG_ENTER ();
-
-    shape_diff = TBmakeShpseg (NULL);
-
-    for (i = 0; i < dim; i++) {
-        SHPSEG_SHAPE (shape_diff, i)
-          = SHPSEG_SHAPE (shape1, i) - SHPSEG_SHAPE (shape2, i);
-    }
-
-    DBUG_RETURN (shape_diff);
-}
-
 /*****************************************************************************
  *
  * function:
@@ -138,624 +74,6 @@ TCshapeVarsMatch (node *avis1, node *avis2)
     DBUG_RETURN (res);
 }
 
-/*****************************************************************************
- *
- * function:
- *   bool TCequalShpseg( int dim, shpseg *shape2, shpseg *shape1)
- *
- * description:
- *   compares two shapes, result is TRUE, if shapes are equal
- *
- *****************************************************************************/
-
-bool
-TCequalShpseg (int dim, shpseg *shape2, shpseg *shape1)
-{
-
-    bool equal_shapes;
-    int i;
-
-    DBUG_ENTER ();
-
-    equal_shapes = TRUE;
-
-    i = 0;
-    while (i < dim && equal_shapes) {
-        if (SHPSEG_SHAPE (shape1, i) != SHPSEG_SHAPE (shape2, i)) {
-            equal_shapes = FALSE;
-        }
-        i++;
-    }
-
-    DBUG_RETURN (equal_shapes);
-}
-
-shpseg *
-TCmergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
-{
-    shpseg *xnew;
-    int i;
-
-    DBUG_ENTER ();
-
-    xnew = TBmakeShpseg (NULL);
-
-    for (i = 0; i < dim1; i++) {
-        SHPSEG_SHAPE (xnew, i) = SHPSEG_SHAPE (first, i);
-    }
-
-    for (i = 0; i < dim2; i++) {
-        SHPSEG_SHAPE (xnew, i + dim1) = SHPSEG_SHAPE (second, i);
-    }
-
-    DBUG_RETURN (xnew);
-}
-
-/*****************************************************************************
- *
- * function:
- *   shpseg *TCarray2Shpseg( node *array, int *ret_dim)
- *
- * description:
- *   Convert 'array' into a shpseg (requires int-array!!!).
- *   If 'dim' is != NULL the dimensionality is stored there.
- *
- *****************************************************************************/
-
-shpseg *
-TCarray2Shpseg (node *array, int *ret_dim)
-{
-
-    node *tmp;
-    shpseg *shape;
-    int i;
-
-    DBUG_ENTER ();
-
-    shape = TBmakeShpseg (NULL);
-
-    tmp = ARRAY_AELEMS (array);
-    i = 0;
-    while (tmp != NULL) {
-        DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (tmp)) == N_num, "integer array expected!");
-        SHPSEG_SHAPE (shape, i) = NUM_VAL (EXPRS_EXPR (tmp));
-        i++;
-        tmp = EXPRS_NEXT (tmp);
-    }
-
-    if (ret_dim != NULL) {
-        (*ret_dim) = i;
-    }
-
-    DBUG_RETURN (shape);
-}
-
-/*****************************************************************************
- *
- * function:
- *   node *TCshpseg2Array( shpseg *shape, int dim)
- *
- * description:
- *   convert shpseg with given dimension into array with simpletype T_int
- *
- *****************************************************************************/
-
-node *
-TCshpseg2Array (shpseg *shape, int dim)
-{
-    int i;
-    node *next;
-    node *array_node;
-
-    DBUG_ENTER ();
-
-    next = NULL;
-    for (i = dim - 1; i >= 0; i--) {
-        next = TBmakeExprs (TBmakeNum (SHPSEG_SHAPE (shape, i)), next);
-    }
-
-    array_node = TCmakeIntVector (next);
-
-    DBUG_RETURN (array_node);
-}
-
-/*--------------------------------------------------------------------------*/
-
-/***
- ***  TYPES :
- ***/
-
-/******************************************************************************
- *
- * function:
- *   types *TCappendTypes( types *chain, types *item)
- *
- * description:
- *   append item to list of types
- *
- ******************************************************************************/
-
-types *
-TCappendTypes (types *chain, types *item)
-{
-    types *ret;
-
-    DBUG_ENTER ();
-
-    APPEND (ret, types *, TYPES, chain, item);
-
-    DBUG_RETURN (ret);
-}
-
-/******************************************************************************
- *
- * function:
- *   int TCcountTypes( types *type)
- *
- * description:
- *   Counts the number of types.
- *
- ******************************************************************************/
-
-int
-TCcountTypes (types *type)
-{
-    int count = 0;
-
-    DBUG_ENTER ();
-
-    while (type != NULL) {
-        if (TYPES_BASETYPE (type) != T_void) {
-            count++;
-        }
-        type = TYPES_NEXT (type);
-    }
-
-    DBUG_RETURN (count);
-}
-
-/******************************************************************************
- *
- * Function:
- *   type *TCgetTypesLine( types* type, size_t line)
- *
- * Description:
- *   line > 0:  generate an error message if error occurs.
- *   otherwise: DBUG assert.
- *
- ******************************************************************************/
-
-types *
-TCgetTypesLine (types *type, size_t line)
-{
-    node *tdef;
-    types *res_type = NULL;
-
-    DBUG_ENTER ();
-
-    if (TYPES_BASETYPE (type) == T_user) {
-        tdef = TYPES_TDEF (type);
-
-        if ((tdef == NULL) && (global.compiler_phase <= PH_tc)) {
-            tdef = NULL;
-        }
-
-        if (line > 0) {
-            if (tdef == NULL) {
-                CTIabortLine (line, "Type '%s:%s' is unknown", TYPES_MOD (type),
-                              TYPES_NAME (type));
-            }
-        } else {
-            DBUG_ASSERT (tdef != NULL, "typedef not found!");
-        }
-
-        /*
-         * we have to switch to ntypes here, as the typedefs do
-         * not hold any old types anymore. maybe the backend
-         * will move to newtypes one day so this hybrid function
-         * can be removed.
-         */
-
-        if (TUisHidden (TYPEDEF_NTYPE (tdef))) {
-            /*
-             * Basic type is hidden therefore we have to use the original type
-             * structure and rely on the belonging typedef!!
-             */
-            res_type = type;
-        } else {
-            /*
-             * ok, we can resolve the type to the corresponding basetype
-             */
-            res_type = TYtype2OldType (TYPEDEF_NTYPE (tdef));
-        }
-    } else {
-        res_type = type;
-    }
-
-    DBUG_RETURN (res_type);
-}
-
-/******************************************************************************
- *
- * Function:
- *   type *TCgetTypes( types* type)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-types *
-TCgetTypes (types *type)
-{
-    types *res_type;
-
-    DBUG_ENTER ();
-
-    res_type = TCgetTypesLine (type, 0);
-
-    DBUG_RETURN (res_type);
-}
-
-/******************************************************************************
- *
- * Function:
- *   int TCgetShapeDim( types* type)
- *
- * Description:
- *   returns encoded dimension (DIM) of 'type'
- *   ('encoded' means, that it contains also some shape information):
- *     >= 0 : dimension == DIM             and    known shape
- *     <  -2: dimension == -2 - DIM        and  unknown shape
- *     == -1: dimension unknown (but > 0)
- *     == -2: dimension unknown (>= 0)
- *
- ******************************************************************************/
-
-int
-TCgetShapeDim (types *type)
-{
-    types *impl_type;
-    int dim, base_dim, impl_dim;
-
-    DBUG_ENTER ();
-
-    base_dim = TYPES_DIM (type);
-
-    impl_type = TCgetTypes (type);
-
-    if (impl_type != type) {
-        /*
-         * user-defined type
-         */
-        impl_dim = TYPES_DIM (impl_type);
-
-        if (TYPEDEF_ISNESTED (TYPES_TDEF (type))) {
-            dim = base_dim;
-        } else if ((UNKNOWN_SHAPE == impl_dim) || (UNKNOWN_SHAPE == base_dim)) {
-            dim = UNKNOWN_SHAPE;
-        } else if ((ARRAY_OR_SCALAR == impl_dim) && (ARRAY_OR_SCALAR == base_dim)) {
-            dim = ARRAY_OR_SCALAR;
-        } else if ((ARRAY_OR_SCALAR == impl_dim) && (SCALAR == base_dim)) {
-            dim = ARRAY_OR_SCALAR;
-        } else if ((SCALAR == impl_dim) && (ARRAY_OR_SCALAR == base_dim)) {
-            dim = ARRAY_OR_SCALAR;
-        } else if ((ARRAY_OR_SCALAR == impl_dim) || (ARRAY_OR_SCALAR == base_dim)) {
-            dim = UNKNOWN_SHAPE;
-        } else if (KNOWN_SHAPE (impl_dim) && KNOWN_SHAPE (base_dim)) {
-            dim = impl_dim + base_dim;
-        } else if (KNOWN_SHAPE (impl_dim) && KNOWN_DIMENSION (base_dim)) {
-            dim = base_dim - impl_dim;
-        } else if (KNOWN_DIMENSION (impl_dim) && KNOWN_SHAPE (base_dim)) {
-            dim = impl_dim - base_dim;
-        } else if (KNOWN_DIMENSION (impl_dim) && KNOWN_DIMENSION (base_dim)) {
-            dim = impl_dim + base_dim - KNOWN_DIM_OFFSET;
-        } else {
-            dim = 0;
-            DBUG_UNREACHABLE ("illegal shape/dim information found!");
-        }
-    } else {
-        /*
-         * basic type
-         */
-        dim = base_dim;
-    }
-
-    DBUG_RETURN (dim);
-}
-
-/******************************************************************************
- *
- * Function:
- *   int TCgetDim( types* type)
- *
- * Description:
- *   returns dimension of 'type':
- *     >= 0 : dimension known
- *     == -1: dimension unknown (but > 0)
- *     == -2: dimension unknown (>= 0)
- *
- ******************************************************************************/
-
-int
-TCgetDim (types *type)
-{
-    int dim;
-
-    DBUG_ENTER ();
-
-    dim = TCgetShapeDim (type);
-    dim = DIM_NO_OFFSET (dim);
-
-    DBUG_RETURN (dim);
-}
-
-/******************************************************************************
- *
- * Function:
- *   simpletype TCgetBasetype( types* type)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-simpletype
-TCgetBasetype (types *type)
-{
-    simpletype res;
-
-    DBUG_ENTER ();
-
-    res = TYPES_BASETYPE (TCgetTypes (type));
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * Function:
- *   int TCgetBasetypeSize(types *type)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-size_t
-TCgetBasetypeSize (types *type)
-{
-    size_t size;
-
-    DBUG_ENTER ();
-
-    size = global.basetype_size[TCgetBasetype (type)];
-
-    DBUG_RETURN (size);
-}
-
-/******************************************************************************
- *
- * Function:
- *   int GetTypesLength( types *type)
- *
- * Description:
- *   If 'type' is an array type the number of array elements is returned.
- *   Otherwise the return value is 0.
- *
- ******************************************************************************/
-
-int
-TCgetTypesLength (types *type)
-{
-    shpseg *shape;
-    int dim, length;
-
-    DBUG_ENTER ();
-
-    shape = TCtype2Shpseg (type, &dim);
-
-    length = TCgetShpsegLength (dim, shape);
-
-    if (shape != NULL) {
-        shape = FREEfreeShpseg (shape);
-    }
-
-    DBUG_RETURN (length);
-}
-
-/******************************************************************************
- *
- * Function:
- *   shpseg *TCtype2Shpseg( types *type, int *ret_dim)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-shpseg *
-TCtype2Shpseg (types *type, int *ret_dim)
-{
-    int dim, base_dim, i;
-    types *impl_type;
-    shpseg *new_shpseg = NULL;
-
-    DBUG_ENTER ();
-
-    dim = TCgetShapeDim (type);
-
-    DBUG_ASSERT (dim < SHP_SEG_SIZE, "shape is out of range");
-
-    if (dim > SCALAR) {
-        new_shpseg = TBmakeShpseg (NULL);
-        impl_type = TCgetTypes (type);
-
-        base_dim = TYPES_DIM (type);
-        for (i = 0; i < base_dim; i++) {
-            SHPSEG_SHAPE (new_shpseg, i) = TYPES_SHAPE (type, i);
-        }
-
-        if (impl_type != type) {
-            /*
-             * user-defined type
-             */
-            for (i = 0; i < TYPES_DIM (impl_type); i++) {
-                SHPSEG_SHAPE (new_shpseg, base_dim + i) = TYPES_SHAPE (impl_type, i);
-            }
-        }
-    } else {
-        new_shpseg = NULL;
-    }
-
-    if (ret_dim != NULL) {
-        (*ret_dim) = dim;
-    }
-
-    DBUG_RETURN (new_shpseg);
-}
-
-/******************************************************************************
- *
- * Function:
- *   shape *TCtype2Shape( types *type)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-shape *
-TCtype2Shape (types *type)
-{
-    shape *shp = NULL;
-    shpseg *new_shpseg = NULL;
-    int dim;
-
-    DBUG_ENTER ();
-
-    dim = TCgetShapeDim (type);
-    new_shpseg = TCtype2Shpseg (type, NULL);
-
-    if (new_shpseg != NULL) {
-        shp = SHoldShpseg2Shape (dim, new_shpseg);
-        new_shpseg = MEMfree (new_shpseg);
-    } else {
-        DBUG_ASSERT (dim <= 0, "shape inconsistency");
-    }
-
-    DBUG_RETURN (shp);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *TCtype2Exprs( types *type)
- *
- * Description:
- *   Computes the shape of corresponding type and stores it as N_exprs chain.
- *
- ******************************************************************************/
-
-node *
-TCtype2Exprs (types *type)
-{
-    node *tmp;
-    types *impl_type;
-    int dim, i;
-    node *ret_node = NULL;
-
-    DBUG_ENTER ();
-
-    /* create a dummy node to append the shape items to */
-    ret_node = TBmakeExprs (NULL, NULL);
-
-    dim = TCgetShapeDim (type);
-
-    if (dim > SCALAR) {
-        tmp = ret_node;
-        impl_type = TCgetTypes (type);
-
-        for (i = 0; i < TYPES_DIM (type); i++) {
-            EXPRS_NEXT (tmp) = TBmakeExprs (TBmakeNum (TYPES_SHAPE (type, i)), NULL);
-            tmp = EXPRS_NEXT (tmp);
-        }
-
-        if (impl_type != type) {
-            /*
-             * user-defined type
-             */
-            for (i = 0; i < TYPES_DIM (impl_type); i++) {
-                EXPRS_NEXT (tmp)
-                  = TBmakeExprs (TBmakeNum (TYPES_SHAPE (impl_type, i)), NULL);
-                tmp = EXPRS_NEXT (tmp);
-            }
-        }
-    }
-
-    /* remove dummy node at head of chain */
-    ret_node = FREEdoFreeNode (ret_node);
-
-    DBUG_RETURN (ret_node);
-}
-
-bool
-TCisHidden (types *type)
-{
-    node *tdef;
-    bool ret = FALSE;
-
-    DBUG_ENTER ();
-
-    if (TYPES_BASETYPE (type) == T_hidden) {
-        ret = TRUE;
-    } else if (TYPES_BASETYPE (type) == T_user) {
-        tdef = TYPES_TDEF (type);
-        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
-
-        /*
-         * we have to move to the new types here, as the typedef does
-         * not hold any old types anymore
-         */
-        if (TYisSimple (TYgetScalar (TYPEDEF_NTYPE (tdef)))) {
-            ret = (TYgetSimpleType (TYgetScalar (TYPEDEF_NTYPE (tdef))) == T_hidden);
-        }
-    }
-
-    DBUG_RETURN (ret);
-}
-
-bool
-TCisUnique (types *type)
-{
-    bool ret = FALSE;
-
-    DBUG_ENTER ();
-
-    if (TYPES_BASETYPE (type) == T_user) {
-        ret = TUisUniqueUserType (TYoldType2Type (type));
-    }
-
-    DBUG_RETURN (ret);
-}
-
-bool
-TCisNested (types *type)
-{
-    node *tdef;
-    bool ret = FALSE;
-
-    DBUG_ENTER ();
-
-    if (TYPES_BASETYPE (type) == T_user) {
-        tdef = TYPES_TDEF (type);
-        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
-
-        ret = TYPEDEF_ISNESTED (tdef);
-    }
-
-    DBUG_RETURN (ret);
-}
 
 /*--------------------------------------------------------------------------*/
 
@@ -787,20 +105,22 @@ TClookupIds (const char *name, node *ids_chain)
     DBUG_RETURN (ids_chain);
 }
 
-int
-TClookupIdsNode (node *ids_chain, node *idsavis)
+/* isIdsMember - pointer passing back result of search for 
+*                whether arg_node is a member of the ids chain */
+size_t
+TClookupIdsNode (node *ids_chain, node *idsavis, bool *isIdsMember)
 {
-    int z;
+    size_t z;
 
     DBUG_ENTER ();
-
+    *isIdsMember = TRUE;
     z = 0;
     while ((ids_chain != NULL) && (IDS_AVIS (ids_chain) != idsavis)) {
         ids_chain = IDS_NEXT (ids_chain);
         z++;
     }
 
-    z = (NULL != ids_chain) ? z : -1;
+    *isIdsMember = (NULL != ids_chain) ? TRUE : FALSE;
 
     DBUG_RETURN (z);
 }
@@ -815,10 +135,10 @@ TClookupIdsNode (node *ids_chain, node *idsavis)
  *
  ******************************************************************************/
 node *
-TCgetNthIds (int n, node *ids_chain)
+TCgetNthIds (size_t n, node *ids_chain)
 {
     DBUG_ENTER ();
-    int i = 0;
+    size_t i = 0;
 
     while ((ids_chain != NULL) && (i != n)) {
         ids_chain = IDS_NEXT (ids_chain);
@@ -829,10 +149,10 @@ TCgetNthIds (int n, node *ids_chain)
     DBUG_RETURN (ids_chain);
 }
 
-int
+size_t
 TCcountIds (node *ids_arg)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -904,10 +224,10 @@ TCconvertIds2Exprs (node *ids)
  ***  NUMS :
  ***/
 
-int
+size_t
 TCcountNums (node *nums)
 {
-    int cnt = 0;
+    size_t cnt = 0;
 
     DBUG_ENTER ();
 
@@ -1284,17 +604,17 @@ TCappendVardec (node *vardec_chain, node *vardec)
 /******************************************************************************
  *
  * function:
- *   int TCcountVardecs( node *vardecs)
+ *   size_t TCcountVardecs( node *vardecs)
  *
  * description:
  *   Counts the number of N_vardec nodes.
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountVardecs (node *vardecs)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -1316,17 +636,17 @@ TCcountVardecs (node *vardecs)
 /******************************************************************************
  *
  * function:
- *   int TCcountArgs( node *args)
+ *   size_t TCcountArgs( node *args)
  *
  * description:
  *   Counts the number of N_arg nodes.
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountArgs (node *args)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -1342,7 +662,7 @@ TCcountArgs (node *args)
 /******************************************************************************
  *
  * function:
- *   int TCcountArgsIgnoreArtificials( node *args)
+ *   size_t TCcountArgsIgnoreArtificials( node *args)
  *
  * description:
  *   Counts the number of N_arg nodes, ignoring those that are marked
@@ -1350,10 +670,10 @@ TCcountArgs (node *args)
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountArgsIgnoreArtificials (node *args)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -1407,14 +727,13 @@ TCappendArgs (node *arg_chain, node *arg)
  * @return N_arg node
  ******************************************************************************/
 node *
-TCgetNthArg (int n, node *args)
+TCgetNthArg (size_t n, node *args)
 {
-    int cnt;
+    size_t cnt;
     node *result = NULL;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (n >= 0, "n<0");
     for (cnt = 0; cnt < n; cnt++) {
         if (NULL == args) {
             DBUG_UNREACHABLE ("n > N_arg chain length.");
@@ -1463,17 +782,17 @@ TCappendRet (node *ret_chain, node *item)
 /******************************************************************************
  *
  * function:
- *   int TCcountRets( node *rets)
+ *   size_t TCcountRets( node *rets)
  *
  * description:
  *   Counts the number of N_arg nodes.
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountRets (node *rets)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -1489,7 +808,7 @@ TCcountRets (node *rets)
 /******************************************************************************
  *
  * function:
- *   int TCcountRetsIgnoreArtificials( node *rets)
+ *   size_t TCcountRetsIgnoreArtificials( node *rets)
  *
  * description:
  *   Counts the number of N_arg nodes, ignoring those that are marked as
@@ -1497,10 +816,10 @@ TCcountRets (node *rets)
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountRetsIgnoreArtificials (node *rets)
 {
-    int count = 0;
+    size_t count = 0;
 
     DBUG_ENTER ();
 
@@ -1629,13 +948,13 @@ TCmakeAssignInstr (node *instr, node *next)
 
 /** <!--********************************************************************-->
  *
- * @fn int TCcountAssigns( node *arg_node)
+ * @fn size_t TCcountAssigns( node *arg_node)
  *
  *****************************************************************************/
-int
+size_t
 TCcountAssigns (node *arg_node)
 {
-    int res = 0;
+    size_t res = 0;
 
     DBUG_ENTER ();
 
@@ -2169,17 +1488,17 @@ TCmakeExprsNum (int num)
 /******************************************************************************
  *
  * function:
- *   int TCcountExprs( node *exprs)
+ *   size_t TCcountExprs( node *exprs)
  *
  * description:
  *   Computes the length of the given N_exprs chain.
  *
  ******************************************************************************/
 
-int
+size_t
 TCcountExprs (node *exprs)
 {
-    int count;
+    size_t count;
 
     DBUG_ENTER ();
 
@@ -2345,9 +1664,9 @@ TCcreateExprsFromArgs (node *args)
  * @return N_exprs node
  ******************************************************************************/
 node *
-TCgetNthExprsNext (int n, node *exprs)
+TCgetNthExprsNext (size_t n, node *exprs)
 {
-    int cnt;
+    size_t cnt;
     node *result;
 
     DBUG_ENTER ();
@@ -2376,14 +1695,13 @@ TCgetNthExprsNext (int n, node *exprs)
  * @return N_exprs node
  ******************************************************************************/
 node *
-TCgetNthExprs (int n, node *exprs)
+TCgetNthExprs (size_t n, node *exprs)
 {
-    int cnt;
+    size_t cnt;
     node *result = NULL;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (n >= 0, "n<0");
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
             DBUG_UNREACHABLE ("n > N_exprs chain length.");
@@ -2408,15 +1726,14 @@ TCgetNthExprs (int n, node *exprs)
  * @return updated N_exprs chain
  ******************************************************************************/
 node *
-TCputNthExprs (int n, node *oldexprs, node *val)
+TCputNthExprs (size_t n, node *oldexprs, node *val)
 {
-    int cnt;
+    size_t cnt;
     node *exprs;
 
     DBUG_ENTER ();
 
     exprs = oldexprs;
-    DBUG_ASSERT (n >= 0, "n<0");
 
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
@@ -2444,7 +1761,7 @@ TCputNthExprs (int n, node *oldexprs, node *val)
  * @return N_node of some sort
  ******************************************************************************/
 node *
-TCgetNthExprsExpr (int n, node *exprs)
+TCgetNthExprsExpr (size_t n, node *exprs)
 {
     node *result = NULL;
 
@@ -2473,20 +1790,20 @@ TCgetNthExprsExpr (int n, node *exprs)
  * @return: N_exprs chain
  ******************************************************************************/
 node *
-TCtakeDropExprs (int takecount, int dropcount, node *exprs)
+TCtakeDropExprs (int takecount, size_t dropcount, node *exprs)
 {
     node *res = NULL;
     node *tail;
 
     DBUG_ENTER ();
-    DBUG_ASSERT ((takecount >= 0) && (dropcount >= 0),
+    DBUG_ASSERT (takecount >= 0,
                  "TCtakeDropExprs take or drop count < 0");
     DBUG_ASSERT (N_exprs == NODE_TYPE (exprs),
                  "TCtakeDropExprs disappointed at not getting N_exprs");
     if (0 != takecount) {
         /* This does too much work, but I'm not sure of a nice way to fix it. */
         res = DUPdoDupTree (TCgetNthExprsNext (dropcount, exprs));  /* do drop */
-        tail = TCgetNthExprsNext (MATHmax (0, takecount - 1), res); /* do take */
+        tail = TCgetNthExprsNext ((size_t)MATHmax (0, takecount - 1), res); /* do take */
         if ((NULL != tail) && NULL != EXPRS_NEXT (tail)) {
             FREEdoFreeTree (EXPRS_NEXT (tail));
             EXPRS_NEXT (tail) = NULL;
@@ -2794,7 +2111,7 @@ TCcreateIntVector (int length, int value, int step)
  * @return value at that position
  ******************************************************************************/
 int
-TCgetIntVectorNthValue (int pos, node *vect)
+TCgetIntVectorNthValue (size_t pos, node *vect)
 {
     node *elem;
 
@@ -2883,7 +2200,7 @@ TCcreateZeroScalar (simpletype btype)
 /******************************************************************************
  *
  * function:
- *   node *TCcreateZeroVector( int length, simpletype btype)
+ *   node *TCcreateZeroVector( size_t length, simpletype btype)
  *
  * description:
  *   Returns an N_array node with 'length' components, each 0.
@@ -2891,10 +2208,10 @@ TCcreateZeroScalar (simpletype btype)
  ******************************************************************************/
 
 node *
-TCcreateZeroVector (int length, simpletype btype)
+TCcreateZeroVector (size_t length, simpletype btype)
 {
     node *ret_node, *exprs_node;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -3033,19 +2350,6 @@ TCmakeIdCopyString (const char *str)
     result = TBmakeId (NULL);
 
     ID_ICMTEXT (result) = STRcpy (str);
-
-    DBUG_RETURN (result);
-}
-
-node *
-TCmakeIdCopyStringNt (const char *str, types *type)
-{
-    node *result;
-
-    DBUG_ENTER ();
-
-    result = TCmakeIdCopyString (str);
-    ID_NT_TAG (result) = NTUcreateNtTag (str, type);
 
     DBUG_RETURN (result);
 }
@@ -3566,10 +2870,10 @@ TCmakeIcm8 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
  * @return number of parts
  *
  *****************************************************************************/
-int
+size_t
 TCcountParts (node *parts)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -3722,10 +3026,10 @@ TCappendCode (node *code1, node *code2)
  ***  N_withop :
  ***/
 
-int
+size_t
 TCcountWithops (node *withop)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -3737,10 +3041,10 @@ TCcountWithops (node *withop)
     DBUG_RETURN (counter);
 }
 
-int
+size_t
 TCcountWithopsEq (node *withop, nodetype eq)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -3754,10 +3058,10 @@ TCcountWithopsEq (node *withop, nodetype eq)
     DBUG_RETURN (counter);
 }
 
-int
+size_t
 TCcountWithopsNeq (node *withop, nodetype neq)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -3783,10 +3087,10 @@ TCcountWithopsNeq (node *withop, nodetype neq)
  ***  N_wlsegs :
  ***/
 
-int
+size_t
 TCcountWlseg (node *wlseg)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 
@@ -4144,10 +3448,10 @@ TCappendRange (node *range_chain, node *range)
     DBUG_RETURN (ret);
 }
 
-int
+size_t
 TCcountRanges (node *range)
 {
-    int counter = 0;
+    size_t counter = 0;
 
     DBUG_ENTER ();
 

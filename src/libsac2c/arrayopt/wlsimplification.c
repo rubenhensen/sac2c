@@ -59,6 +59,11 @@
  *           If it was not AKS, either there would be a default partition,
  *           or partition generation would have inserted a second partition
  *           which depends on the unknown lower / upper limit!
+ *           Well, in case we have a partition [0,0] -> [0,a], we can 
+ *           decide that it is empty despite not knowing the exact shape!
+ *           in that case, we generate more complex code:
+ *         ====>    res = _reshape_VxA_ (_cat_VxV_ (shape, _shape_A_ (default)),
+ *                                       []);
  *
  *   res = with {                    ===>     res = a;
  *         } modarray( a );
@@ -438,8 +443,15 @@ WLSIMPwith (node *arg_node, info *arg_info)
  * @fn node *WLSIMPgenarray( node *arg_node, info *arg_info)
  *
  * @brief  creates an assignment of the form:
- *        lhs = [:lhstype];
- *        where INFO_LHS == lhs  and the type of lhs is lhstype!
+ *        lhs = [:lhstype];                \
+ *        where INFO_LHS == lhs            | iff lhstype is AKS!
+ *        and the type of lhs is lhstype!  /
+ *
+ *        tmp = shp;                        \
+ *        tmp2 = _shape_A_ (default);       |
+ *        tmp3 = _cat_VxV_ (tmp, tmp2);     | otherwise
+ *        tmp4 = [lhsscal];                 |
+ *        lhs = _reshape_VxA_ (tmp3, tmp4); /
  *
  *****************************************************************************/
 node *
@@ -447,6 +459,8 @@ WLSIMPgenarray (node *arg_node, info *arg_info)
 {
     node *lhs, *empty;
     ntype *lhstype;
+    node *avis, *avis2, *avis3, *avis4;
+    node *shp, *shpdef, *cat, *rhs;
 
     DBUG_ENTER ();
 
@@ -455,16 +469,56 @@ WLSIMPgenarray (node *arg_node, info *arg_info)
     lhs = INFO_LHS (arg_info);
     lhstype = IDS_NTYPE (lhs);
 
-    empty = TBmakeArray (TYmakeAKS (TYcopyType (TYgetScalar (lhstype)), SHmakeShape (0)),
-                         SHcopyShape (TYgetShape (lhstype)), NULL);
-    INFO_PREASSIGN (arg_info)
-      = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs), empty), INFO_PREASSIGN (arg_info));
-    AVIS_SSAASSIGN (IDS_AVIS (lhs)) = INFO_PREASSIGN (arg_info);
+    if (TUshapeKnown (lhstype)) {
+        empty = TBmakeArray (TYmakeAKS (TYcopyType (TYgetScalar (lhstype)), SHmakeShape (0)),
+                             SHcopyShape (TYgetShape (lhstype)), NULL);
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs), empty), INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (IDS_AVIS (lhs)) = INFO_PREASSIGN (arg_info);
+    } else {
+        avis = TBmakeAvis (TRAVtmpVar (), TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
+        avis2 = TBmakeAvis (TRAVtmpVar (), TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
+        avis3 = TBmakeAvis (TRAVtmpVar (), TYmakeAKD (TYmakeSimpleType (T_int), 1, SHmakeShape (0)));
+        avis4 = TBmakeAvis (TRAVtmpVar (), TYmakeAKD (TYcopyType (TYgetScalar (lhstype)), 1, SHmakeShape (0)));
+                            
+        shp = DUPdoDupNode (GENARRAY_SHAPE (arg_node));
+        shpdef = TCmakePrf1 (F_shape_A, DUPdoDupNode (GENARRAY_DEFAULT (arg_node)));
+        cat = TCmakePrf2 (F_cat_VxV, TBmakeId (avis), TBmakeId (avis2));
+        empty = TBmakeArray (TYmakeAKS (TYcopyType (TYgetScalar (lhstype)), SHmakeShape (0)),
+                             SHcreateShape (1,0), NULL);
+        rhs = TCmakePrf2 (F_reshape_VxA, TBmakeId (avis3), TBmakeId (avis4));
+
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs), rhs), INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (IDS_AVIS (lhs)) = INFO_PREASSIGN (arg_info);
+
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avis4, NULL), empty), INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (avis4) = INFO_PREASSIGN (arg_info);
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis4, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avis3, NULL), cat), INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (avis3) = INFO_PREASSIGN (arg_info);
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis3, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avis2, NULL), shpdef), INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (avis2) = INFO_PREASSIGN (arg_info);
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis2, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+
+        INFO_PREASSIGN (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), shp), INFO_PREASSIGN (arg_info));
+        AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+
+    }
 
     INFO_REPLACE (arg_info) = TRUE;
-
-    DBUG_ASSERT (TUshapeKnown (lhstype),
-                 "all partitions of genarray WL are gone but lhs shape unknown!");
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -630,9 +684,7 @@ WLSIMPpart (node *arg_node, info *arg_info)
 
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
-    if ((INFO_ZEROTRIP (arg_info))
-        && ((1 != INFO_NUM_GENPARTS (arg_info))
-            || (TUshapeKnown (IDS_NTYPE (INFO_LHS (arg_info)))))) {
+    if (INFO_ZEROTRIP (arg_info)) {
         DBUG_PRINT ("eliminating zero-trip generator");
         /**
          * The following free implicitly decrements CODE_USED.

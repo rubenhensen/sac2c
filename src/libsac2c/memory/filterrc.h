@@ -11,6 +11,8 @@
  *
  *****************************************************************************/
 extern node *FRCdoFilterReuseCandidates (node *syntax_tree);
+extern node *FRCdoFilterReuseCandidatesWL (node *syntax_tree);
+extern node *FRCdoFilterReuseCandidatesPrf (node *syntax_tree);
 
 extern node *FRCap (node *arg_node, info *arg_info);
 extern node *FRCarg (node *arg_node, info *arg_info);

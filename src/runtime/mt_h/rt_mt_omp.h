@@ -35,8 +35,6 @@
 
 #define SAC_MT_SETUP()
 
-#define SAC_MT_DEFINE()
-
 #define SAC_MT_FINALIZE()
 
 #endif /* SAC_DO_MT_OMP */

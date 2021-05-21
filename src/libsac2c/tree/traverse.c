@@ -44,6 +44,7 @@ node *
 TRAVdo (node *arg_node, info *arg_info)
 {
     nodetype arg_node_type;
+    travfunlist_t *tmpfunlist = NULL;
     size_t old_linenum = global.linenum;
     size_t old_colnum = global.colnum;
     char *old_filename = global.filename;
@@ -86,13 +87,21 @@ TRAVdo (node *arg_node, info *arg_info)
     }
 
     if (pretable[travstack->traversal] != NULL) {
-        arg_node = pretable[travstack->traversal](arg_node, arg_info);
+        tmpfunlist = pretable[travstack->traversal];
+        while (tmpfunlist != NULL) {
+            arg_node = (*tmpfunlist->fun) (arg_node, arg_info);
+            tmpfunlist = tmpfunlist->next;
+        }
     }
 
     arg_node = (travstack->funs[arg_node_type]) (arg_node, arg_info);
 
     if (posttable[travstack->traversal] != NULL) {
-        arg_node = posttable[travstack->traversal](arg_node, arg_info);
+        tmpfunlist = posttable[travstack->traversal];
+        while (tmpfunlist != NULL) {
+            arg_node = (*tmpfunlist->fun) (arg_node, arg_info);
+            tmpfunlist = tmpfunlist->next;
+        }
     }
 
     global.linenum = old_linenum;
@@ -435,26 +444,6 @@ TRAVgetName ()
 #undef MAX_VAR_BUFFER_SIZE
 
 #endif /* DO_NOT_ADD_SUFFIX_IN_ANONYMOUS_TRAVERSAL */
-
-void
-TRAVsetPreFun (trav_t traversal, travfun_p prefun)
-{
-    DBUG_ENTER ();
-
-    pretable[traversal] = prefun;
-
-    DBUG_RETURN ();
-}
-
-void
-TRAVsetPostFun (trav_t traversal, travfun_p postfun)
-{
-    DBUG_ENTER ();
-
-    posttable[traversal] = postfun;
-
-    DBUG_RETURN ();
-}
 
 /******************************************************************************
  *

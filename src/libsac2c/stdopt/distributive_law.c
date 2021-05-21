@@ -1285,7 +1285,7 @@ node *
 DLprf (node *arg_node, info *arg_info)
 {
     ntype *ltype;
-    int oldoptcounter;
+    size_t oldoptcounter;
     node *mop;
     prf prf;
 

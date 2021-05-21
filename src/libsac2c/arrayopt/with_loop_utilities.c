@@ -82,15 +82,17 @@ WLUTisIdsMemberPartition (node *arg_node, node *partn)
 {
     bool z = FALSE;
     node *nassgns;
+    bool isIdsMember;
 
     DBUG_ENTER ();
 
     if (NULL != partn) {
         nassgns = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (partn)));
         while ((NULL != nassgns) && (!z)) {
-            if (-1
-                != LFUindexOfMemberIds (ID_AVIS (arg_node),
-                                        LET_IDS (ASSIGN_STMT (nassgns)))) {
+            LFUindexOfMemberIds (ID_AVIS (arg_node),
+                                 LET_IDS (ASSIGN_STMT (nassgns)),
+                                 &isIdsMember);
+            if (isIdsMember) {
                 z = TRUE;
             }
             nassgns = ASSIGN_NEXT (nassgns);
@@ -612,8 +614,7 @@ WLUTgetGenarrayScalar (node *arg_node, bool nowithid)
 
         // We are almost there. We have to ensure that res [IS/ IS NOT]
         // a member of WITHID_IDS.
-        memberwithids
-          = -1 != TClookupIdsNode (WITHID_IDS (PART_WITHID (WITH_PART (wl))), res);
+        TClookupIdsNode (WITHID_IDS (PART_WITHID (WITH_PART (wl))), res, &memberwithids);
         z = memberwithids ^ nowithid; // XOR corrects value
         res = z ? res : NULL;
     }

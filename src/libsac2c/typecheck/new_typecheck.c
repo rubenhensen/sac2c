@@ -87,13 +87,13 @@ struct INFO {
     ntype *type;
     ntype *gen_type;
     ntype *bodies_type;
-    int num_exprs_sofar;
+    size_t num_exprs_sofar;
     node *last_assign;
     node *ptr_return;
     node *wl_ops;
     ntype *accu;
     ntype *prop_objs;
-    int prop_cnt;
+    size_t prop_cnt;
     bool is_type_upgrade;
 };
 
@@ -434,6 +434,7 @@ ResetWrapperTypes (node *fundef, info *arg_info)
     if (FUNDEF_ISWRAPPERFUN (fundef) && (FUNDEF_BODY (fundef) != NULL)) {
         type = FUNDEF_WRAPPERTYPE (fundef);
 
+        DBUG_PRINT ("resetting wrapper types for %s", CTIitemName (fundef));
         if (TYisFun (type)) {
             FUNDEF_WRAPPERTYPE (fundef) = TUrebuildWrapperTypeAlpha (type);
             FUNDEF_RETS (fundef) = TUrettypes2alphaAUDMax (FUNDEF_RETS (fundef));
@@ -453,6 +454,25 @@ ResetWrapperTypes (node *fundef, info *arg_info)
     DBUG_RETURN (fundef);
 }
 
+static node *
+ResetIsolatedFunTypes (node *fundef, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (!FUNDEF_ISWRAPPERFUN (fundef) && (FUNDEF_BODY (fundef) != NULL)) {
+        /*
+         * we do not need to exclude the instances that have been done
+         * during the handling of wrappers as TUrettypes2alphaAUDMax
+         * does not modify existing alphas!
+         */
+        DBUG_PRINT ("resetting return types for %s", CTIitemName (fundef));
+        FUNDEF_RETS (fundef) = TUrettypes2alphaAUDMax (FUNDEF_RETS (fundef));
+    }
+
+    DBUG_RETURN (fundef);
+}
+
+
 node *
 NTCdoNewReTypeCheckFromScratch (node *arg_node)
 {
@@ -467,9 +487,19 @@ NTCdoNewReTypeCheckFromScratch (node *arg_node)
 
     /*
      * open up all wrapper types
+     * this implicitly opens up the return types of all instances of
+     * that wrapper as well!
      */
     MODULE_FUNS (arg_node)
       = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetWrapperTypes);
+
+    /*
+     * finally, we need to open up the return types of all dispatched
+     * functions whose wrappers have been elided already! Otherwise,
+     * these never get improved anymore!
+     */
+    MODULE_FUNS (arg_node)
+      = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetIsolatedFunTypes);
 
     arg_node = NTCdoNewReTypeCheck (arg_node);
 
@@ -532,7 +562,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
 {
     ntype *spec_type, *inf_type;
     ntype *stype, *itype;
-    int i, inf_n, spec_n;
+    size_t i, inf_n, spec_n;
     bool ok;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;
@@ -631,7 +661,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
 
         if (!ok) {
             CTIabortLine (NODE_LINE (fundef),
-                          "Function %s: Component #%d of inferred return type (%s) is "
+                          "Function %s: Component #%zu of inferred return type (%s) is "
                           "not within %s",
                           FUNDEF_NAME (fundef), i, TYtype2String (itype, FALSE, 0),
                           TYtype2String (stype, FALSE, 0));
@@ -669,7 +699,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
         if ((global.act_info_chn == NULL) && TYisAlpha (stype)
             && (SSIgetMin (TYgetAlpha (stype)) == NULL)) {
             CTIabortLine (NODE_LINE (fundef),
-                          "Function %s: Component #%d of inferred return type (%s) has "
+                          "Function %s: Component #%zu of inferred return type (%s) has "
                           "no lower bound;"
                           " an application of \"%s\" will not terminate",
                           FUNDEF_NAME (fundef), i, TYtype2String (stype, FALSE, 0),
@@ -987,7 +1017,7 @@ NTClet (node *arg_node, info *arg_info)
 {
     ntype *rhs_type, *existing_type, *declared_type, *inferred_type, *max;
     node *lhs;
-    int i;
+    size_t i;
     bool ok;
 
 #ifndef DBUG_OFF
@@ -1024,15 +1054,15 @@ NTClet (node *arg_node, info *arg_info)
             if ((PRF_PRF (LET_EXPR (arg_node)) != F_type_error)
                 && (TCcountIds (lhs) != TYgetProductSize (rhs_type))) {
                 CTIabortLine (global.linenum,
-                              "%s yields %d instead of %d return value(s)",
+                              "%s yields %zu instead of %zu return value(s)",
                               global.prf_name[PRF_PRF (LET_EXPR (arg_node))],
                               TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
         } else {
             if (TCcountIds (lhs) != TYgetProductSize (rhs_type)) {
                 CTIabortLine (global.linenum,
-                              "with loop returns %d value(s)"
-                              " but %d variable(s) specified on the lhs",
+                              "with loop returns %zu value(s)"
+                              " but %zu variable(s) specified on the lhs",
                               TYgetProductSize (rhs_type), TCcountIds (lhs));
             }
         }
@@ -1055,7 +1085,7 @@ NTClet (node *arg_node, info *arg_info)
                     ok = SSInewTypeRel (inferred_type, existing_type);
                     if (!ok) {
                         CTIabortLine (NODE_LINE (arg_node),
-                                      "Component #%d of inferred RHS type (%s) does not "
+                                      "Component #%zu of inferred RHS type (%s) does not "
                                       "match %s",
                                       i, TYtype2String (inferred_type, FALSE, 0),
                                       TYtype2String (existing_type, FALSE, 0));
@@ -1123,7 +1153,7 @@ NTClet (node *arg_node, info *arg_info)
         /* lhs must be one ids only since rhs is not a function application! */
         if (TCcountIds (lhs) != 1) {
             CTIabortLine (global.linenum,
-                          "rhs yields one value, %d vars specified on the lhs",
+                          "rhs yields one value, %zu vars specified on the lhs",
                           TCcountIds (lhs));
         }
 
@@ -1293,7 +1323,7 @@ NTCprf (node *arg_node, info *arg_info)
 {
     ntype *args, *res;
     node *argexprs;
-    int pos;
+    size_t pos;
     prf prf;
     te_info *info;
     ntype *alpha, *def_obj;
@@ -1414,7 +1444,7 @@ NTCexprs (node *arg_node, info *arg_info)
 node *
 NTCarray (node *arg_node, info *arg_info)
 {
-    int old_num_exprs;
+    size_t old_num_exprs;
     ntype *type, *elems;
     te_info *info;
 #ifndef DBUG_OFF
@@ -1777,7 +1807,7 @@ NTCcast (node *arg_node, info *arg_info)
          */
         if (TYgetProductSize (expr_t) != 1) {
             CTIabortLine (global.linenum,
-                          "Cast used for a function application with %d return values",
+                          "Cast used for a function application with %zu return values",
                           TYgetProductSize (expr_t));
         } else {
             expr_t = TYgetProductMember (expr_t, 0);
@@ -1881,8 +1911,8 @@ NTCwith (node *arg_node, info *arg_info)
 
     if (TYgetProductSize (body) != TCcountWithops (WITH_WITHOP (arg_node))) {
         CTIabortLine (global.linenum,
-                      "Inconsistent with loop: %d operator(s) "
-                      "but %d value(s) specified in the body",
+                      "Inconsistent with loop: %zu operator(s) "
+                      "but %zu value(s) specified in the body",
                       TCcountWithops (WITH_WITHOP (arg_node)), TYgetProductSize (body));
     }
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
@@ -1917,7 +1947,7 @@ NTCpart (node *arg_node, info *arg_info)
     node *idxs;
     ntype *idx, *this_idx, *remaining_idx;
     te_info *info;
-    int num_ids;
+    size_t num_ids;
 
     DBUG_ENTER ();
 
@@ -2103,7 +2133,7 @@ node *
 NTCcode (node *arg_node, info *arg_info)
 {
     ntype *remaining_blocks, *this_block, *blocks, *res_i, *res;
-    int num_ops, i;
+    size_t num_ops, i;
     te_info *info;
     node *wl_ops;
 
@@ -2291,8 +2321,7 @@ NTCfold (node *arg_node, info *arg_info)
 {
     ntype *gen, *body, *res, *elems, *acc;
     ntype *neutr, *args, *pargs;
-    int num_pargs;
-    int i;
+    size_t i, num_pargs;
     node *wrapper;
     te_info *info;
     bool ok;

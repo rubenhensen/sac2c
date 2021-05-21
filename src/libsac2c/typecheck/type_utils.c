@@ -101,6 +101,7 @@ buildWrapperAlphaFix (node *fundef, ntype *type)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT_TAG ("TUWRAP", "buildWrapperAlphaFix (%s, type)", CTIitemName (fundef));
     /*
      * set this instances return types to alpha[*]
      */
@@ -149,7 +150,7 @@ buildWrapperAlpha (node *fundef, ntype *type)
     /*
      * set this instances return types to alpha[*]
      */
-    DBUG_PRINT ("opening return types of %s", CTIitemName (fundef));
+    DBUG_PRINT_TAG ("TUWRAP", "opening return types of %s", CTIitemName (fundef));
     if (FUNDEF_BODY (fundef) != NULL) {
         FUNDEF_RETS (fundef) = TUrettypes2alphaAUDMax (FUNDEF_RETS (fundef));
     } else {
@@ -221,7 +222,7 @@ ntype *
 TUmakeProductTypeFromArgs (node *args)
 {
     ntype *type = NULL;
-    int i = 0;
+    size_t i = 0;
 
     DBUG_ENTER ();
 
@@ -249,7 +250,7 @@ ntype *
 TUmakeProductTypeFromRets (node *rets)
 {
     ntype *type = NULL;
-    int i = 0;
+    size_t i = 0;
 
     DBUG_ENTER ();
 
@@ -305,7 +306,7 @@ TUreplaceRetTypes (node *rets, ntype *prodt)
 {
     ntype *type = NULL;
     node *tmp = rets;
-    int i = 0;
+    size_t i = 0;
 
     DBUG_ENTER ();
 
@@ -396,18 +397,22 @@ TUargtypes2unknownAUD (node *args)
 ntype *
 TUtype2alphaMax (ntype *type)
 {
-    ntype *xnew, *scalar;
+    ntype *xnew, *scalar, *mint;
     tvar *tv;
 
     DBUG_ENTER ();
 
     if (TYisAlpha (type)) {
         tv = TYgetAlpha (type);
+        mint = SSIgetMin (tv);
         if (SSIgetMax (tv) != NULL) {
             xnew = TYmakeAlphaType (TYcopyType (SSIgetMax (tv)));
-        } else if (SSIgetMin (tv) != NULL) {
-            xnew
-              = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMin (tv)))));
+        } else if (mint !=NULL) {
+            if (TYisBottom (mint)) {
+                xnew = TYmakeAlphaType (TYcopyType (mint));
+            } else {
+                xnew = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (mint))));
+            }
         } else {
             xnew = TYmakeAlphaType (NULL);
         }
@@ -847,6 +852,28 @@ TUisArrayOfUser (ntype *type)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool TUisArrayOfUser( ntype *ty)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+bool
+TUisArrayOfSimple (ntype *type)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    res = (TYisArray (type) && TYisSimple (TYgetScalar (type)));
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TUcontainsUser( ntype *ty)
  *
  *   @brief
@@ -859,14 +886,14 @@ bool
 TUcontainsUser (ntype *type)
 {
     bool res = FALSE;
-    int cnt;
+    size_t cnt;
 
     DBUG_ENTER ();
 
     if (TYisArray (type)) {
         res = TYisUser (TYgetScalar (type));
     } else if (TYisProd (type)) {
-        int max = TYgetProductSize (type);
+        size_t max = TYgetProductSize (type);
         for (cnt = 0; cnt < max; cnt++) {
             res = res || TUcontainsUser (TYgetProductMember (type, cnt));
         }
@@ -1156,7 +1183,8 @@ ntype *
 TUactualArgs2Ntype (node *actual)
 {
     ntype *actual_type, *tmp_type, *prod_type;
-    int size, pos;
+    size_t size;
+    size_t pos;
 
     DBUG_ENTER ();
 
@@ -1192,7 +1220,7 @@ bool
 TUsignatureMatches (node *formal, ntype *actual_prod_type, bool exact)
 {
     ntype *actual_type, *formal_type;
-    int pos;
+    size_t pos;
     bool match = TRUE;
 #ifndef DBUG_OFF
     char *tmp_str = NULL, *tmp2_str = NULL;
@@ -1368,7 +1396,7 @@ ntype *
 TUcombineBottoms (ntype *prod)
 {
     ntype *res = NULL, *next = NULL;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1409,7 +1437,7 @@ ntype *
 TUspreadBottoms (ntype *prod)
 {
     ntype *result = NULL, *bottoms = NULL;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -1499,27 +1527,25 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
     base = UTgetBaseType (udt);
     if (base == NULL) {
         base = UTgetTypedef (udt);
-        if (!TYisAKS (base)) {
+        if (UTisNested (udt)) {
             /*
-             * Try to handle non AKS UDT's
+             * Since this is a nested type, the basetype needs to
+             * be a scalar hidden type of itself!
              */
-            if (TYisAKD (base) || UTisNested (udt)) {
-                if (visited != NULL) {
-                    visited = MEMfree (visited);
-                }
-            } else {
-                CTIerrorLine (global.linenum,
-                              "Typedef of %s::%s is illegal; should be either"
-                              " scalar type or array type of fixed shape",
-                              NSgetName (UTgetNamespace (udt)), UTgetName (udt));
+            base_elem = TYmakeHiddenSimpleType (udt);
+            base = TYmakeAKS (base_elem, SHmakeShape (0));
+            if (visited != NULL) {
+                visited = MEMfree (visited);
             }
         } else {
             /*
              * Here, we know that we are either dealing with
              * AKS{ User{}}, AKS{ Symb{}}, or AKS{ Simple{}}.
              */
+            DBUG_ASSERT ((TYisAKS (base)), "non AKS type in non-nested"
+                         "typedef for \"%s\" found", UTgetName (udt));
+            base_elem = TYgetScalar (base);
             if (TYisAKSUdt (base) || TYisAKSSymb (base)) {
-                base_elem = TYgetScalar (base);
                 inner_udt = TYisAKSUdt (base)
                               ? TYgetUserType (base_elem)
                               : UTfindUserType (TYgetName (base_elem),
@@ -1548,7 +1574,7 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
                     if (visited == NULL) {
                         /* This is the initial call, so visited has to be initialized! */
                         num_udt = UTgetNumberOfUserTypes ();
-                        visited = (int *)MEMmalloc (sizeof (int) * num_udt);
+                        visited = (int *)MEMmalloc (sizeof (int) * (size_t)num_udt);
                         for (i = 0; i < num_udt; i++)
                             visited[i] = 0;
                     }
@@ -1680,7 +1706,7 @@ TUgetBaseSimpleType (ntype *type)
 
 /** <!-- ****************************************************************** -->
  *
- * @fn int TUtype2Int( ntype *ty)
+ * @fn int TUakvScalInt2Int( ntype *ty)
  *
  * @brief: Extract integer scalar constant from an AKV integer scalar ntype
  *
@@ -1690,7 +1716,7 @@ TUgetBaseSimpleType (ntype *type)
  *
  ******************************************************************************/
 int
-TUtype2Int (ntype *ty)
+TUakvScalInt2Int (ntype *ty)
 {
     int z;
     constant *con = NULL;
@@ -1703,5 +1729,133 @@ TUtype2Int (ntype *ty)
 
     DBUG_RETURN (z);
 }
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn int TUgetFullDimEncoding( ntype *type)
+ *
+ * @brief: produces the array info encoding needed by the backend:
+ *         >= 0 : AKS with result == DIM
+ *         <  -2: AKD with result == -2 - DIM
+ *         == -1: AUSGZ
+ *         == -2: AUD
+ *         
+ *
+ * @param: type: ntype
+ *
+ * @return the encoding of the dimensionality.
+ *
+ ******************************************************************************/
+int TUgetFullDimEncoding (ntype *type)
+{
+    int res;
+    
+    DBUG_ENTER ();
+
+    if (TYisAUDGZ (type)) {
+        res = -1;
+    } else if (TYisAUD (type)) {
+        res = -2;
+    } else if (TYisAKD (type)) {
+        res = -2 - TYgetDim (type);
+    } else {
+        res = TYgetDim (type);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn int TUgetDimEncoding( ntype *type)
+ *
+ * @brief: produces the array info encoding needed by the backend:
+ *         >= 0 : AKS / AKD with result == DIM
+ *         == -1: AUDGZ
+ *         == -2: AUD
+ *
+ *
+ * @param: type: ntype
+ *
+ * @return the encoding of the dimensionality.
+ *
+ ******************************************************************************/
+int TUgetDimEncoding (ntype *type)
+{
+    int res;
+
+    DBUG_ENTER ();
+
+    if (TYisAUDGZ (type)) {
+        res = -1;
+    } else if (TYisAUD (type)) {
+        res = -2;
+    } else {
+        res = TYgetDim (type);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn int TUgetLengthEncoding( ntype *type)
+ *
+ * @brief: produces the ravel info encoding needed by the backend:
+ *         >= 0 : non-scalar AKS with result == prod (shape)
+ *         == 0 : scalar
+ *         == -1: AKD, AUDGZ, or AUD
+ *
+ *
+ * @param: type: ntype
+ *
+ * @return the encoding of the dimensionality.
+ *
+ ******************************************************************************/
+int TUgetLengthEncoding (ntype *type)
+{
+    int res;
+
+    DBUG_ENTER ();
+
+    if (TYisAUDGZ (type) || TYisAUD (type) || TYisAKD (type)) {
+        res = -1;
+    } else if (TUisScalar (type)) {
+        res = 0;
+    } else {
+        res = (int)SHgetUnrLen (TYgetShape (type));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * @fn simpletype TUgetSimpleImplementationType (ntype *type)
+ *
+ * @brief: computes the implementation type and picks the element type of
+ *         it. This should always be a SimpleType since all User-types are
+ *         being followed through to their base.
+ *
+ * @param: type: ntype
+ *
+ * @return the simpletype in the implementation (can be T-hidden if nested
+ *         or external.
+ *
+ ******************************************************************************/
+simpletype TUgetSimpleImplementationType (ntype *type)
+{
+    ntype *itype;
+    simpletype res;
+
+    DBUG_ENTER ();
+
+    itype = TUcomputeImplementationType (type);
+    res = TYgetSimpleType (TYgetScalar (itype));
+    itype = TYfreeType (itype);
+
+    DBUG_RETURN (res);
+}
+
 
 #undef DBUG_PREFIX

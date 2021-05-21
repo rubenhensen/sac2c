@@ -367,7 +367,7 @@ WLSfundef (node *arg_node, info *arg_info)
 node *
 WLSwith (node *arg_node, info *arg_info)
 {
-    int innerdims;
+    size_t innerdims;
 
     DBUG_ENTER ();
 

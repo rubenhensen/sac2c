@@ -367,6 +367,8 @@ RSPfundef (node *arg_node, info *arg_info)
         PRAGMA_NUMPARAMS (pragma)
           = TCcountArgs (FUNDEF_ARGS (arg_node)) + TCcountRets (FUNDEF_RETS (arg_node));
 
+        DBUG_PRINT ("number of arguments: %d", PRAGMA_NUMPARAMS (pragma));
+
         if (PRAGMA_COPYFUN (pragma) != NULL) {
             CTIwarnLoc (NODE_LOCATION (arg_node),
                         "Pragma 'copyfun` has no effect on function");

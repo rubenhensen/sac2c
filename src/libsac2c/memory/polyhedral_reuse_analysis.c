@@ -100,7 +100,7 @@ typedef enum { RO_any, RO_eq, RO_lt, RO_gt, RO_le, RO_ge } relational_op_t;
 typedef enum { LO_any, LO_and, LO_or, LO_not } logical_op_t;
 
 typedef struct INDEX_EXPRS_T {
-    int nr_entries;
+    unsigned int nr_entries;
     logical_op_t lop;
     relational_op_t rops[MAX_ENTRIES];
     cuda_index_t *exprs[MAX_ENTRIES];
@@ -112,7 +112,7 @@ typedef struct INDEX_EXPRS_T {
 #define IE_EXPRS(n, i) ((n->exprs)[i])
 
 static index_exprs_t *
-CreateIndexExprs (int nr)
+CreateIndexExprs (unsigned int nr)
 {
     int i;
     index_exprs_t *res;
@@ -135,7 +135,7 @@ CreateIndexExprs (int nr)
 static void
 FreeIndexExprs (index_exprs_t *ie)
 {
-    int i;
+    unsigned int i;
     cuda_index_t *exprs;
 
     DBUG_ENTER ();
@@ -252,12 +252,12 @@ struct INFO {
     node *rc;
     dfmask_t *mask; /* Mask for external N_ids and withloop ids */
     nlut_t *nlut; /* Used to provide mapping between withloop ids and its nesting level */
-    int nest_level;
+    unsigned int nest_level;
     int coefficient;
-    int nr_extids; /* Total number external N_ids found during TR_normal traversal */
+    unsigned int nr_extids; /* Total number external N_ids found during TR_normal traversal */
     bool is_affine;
     node *ivids;  /* borrow from ReuseWithArray.c ;-) */
-    int writedim; /* This is essentially the dimensionality of the horpart */
+    unsigned int writedim; /* This is essentially the dimensionality of the horpart */
     int laclevel; /* Nesting level of the funap. This can be used to get the actual N_ap
                      node from the fap_list */
     funap_list_t *fap_list;
@@ -397,7 +397,7 @@ FindApargFromFunarg (node *funargs, node *apargs, node *funarg)
  *
  *****************************************************************************/
 static void
-AddIndex (int type, int coefficient, node *idx, int looplevel, int dim,
+AddIndex (unsigned int type, int coefficient, node *idx, size_t looplevel, int dim,
           info *arg_info)
 {
     DBUG_ENTER ();
@@ -522,10 +522,10 @@ ActOnId (node *avis, info *arg_info)
  *
  *
  *****************************************************************************/
-static int
-GetColumn (cuda_index_t *idx, int cols, info *arg_info)
+static unsigned int
+GetColumn (cuda_index_t *idx, unsigned int cols, info *arg_info)
 {
-    int col = -1;
+    unsigned int col = 0;
 
     DBUG_ENTER ();
 
@@ -535,11 +535,11 @@ GetColumn (cuda_index_t *idx, int cols, info *arg_info)
         col = cols - 1;
         break;
     case IDX_WITHIDS:
-        col = NLUTgetNum (INFO_NLUT (arg_info), CUIDX_ID (idx));
+        col = (unsigned int)NLUTgetNum (INFO_NLUT (arg_info), CUIDX_ID (idx));
         break;
     case IDX_EXTID:
         col = INFO_NEST_LEVEL (arg_info)
-              + NLUTgetNum (INFO_NLUT (arg_info), CUIDX_ID (idx));
+              + (unsigned int)NLUTgetNum (INFO_NLUT (arg_info), CUIDX_ID (idx));
         break;
     default:
         DBUG_ASSERT ((0), "Unknown index type found!");
@@ -559,12 +559,12 @@ GetColumn (cuda_index_t *idx, int cols, info *arg_info)
  *****************************************************************************/
 static IntMatrix
 InitConstraints (IntMatrix constraints, bool compute_bound, index_exprs_t *cond_ie,
-                 int nr_bounds, int cond_nr, info *arg_info)
+                 unsigned int nr_bounds, unsigned int cond_nr, info *arg_info)
 {
     node *ivids, *ids;
     index_exprs_t *ie;
     cuda_index_t *lb, *ub, *cond;
-    int i, cols, x, y;
+    unsigned int i, cols, x, y;
 
     DBUG_ENTER ();
 
@@ -586,7 +586,7 @@ InitConstraints (IntMatrix constraints, bool compute_bound, index_exprs_t *cond_
                 ub = IE_EXPRS (ie, UPPER_BOUND);
 
                 /* Initialize the constraint for lower bound */
-                x = NLUTgetNum (INFO_NLUT (arg_info), IDS_AVIS (ids));
+                x = (unsigned int)NLUTgetNum (INFO_NLUT (arg_info), IDS_AVIS (ids));
                 y = i * 2;
                 MatrixSetEntry (constraints, x, y, 1);
                 /* All constraints are inequality */
@@ -601,7 +601,7 @@ InitConstraints (IntMatrix constraints, bool compute_bound, index_exprs_t *cond_
                 }
 
                 /* Initialize the constraint for upper bound */
-                x = NLUTgetNum (INFO_NLUT (arg_info), IDS_AVIS (ids));
+                x = (unsigned int)NLUTgetNum (INFO_NLUT (arg_info), IDS_AVIS (ids));
                 y = i * 2 + 1;
                 MatrixSetEntry (constraints, x, y, -1);
                 /* All constraints are inequality */
@@ -657,9 +657,9 @@ InitConstraints (IntMatrix constraints, bool compute_bound, index_exprs_t *cond_
  *
  *****************************************************************************/
 static IntMatrix
-InitWriteFas (IntMatrix fas, int write_dim, info *arg_info)
+InitWriteFas (IntMatrix fas, unsigned int write_dim, info *arg_info)
 {
-    int i, j, rows, cols;
+    unsigned int i, j, rows, cols;
 
     DBUG_ENTER ();
 
@@ -722,11 +722,11 @@ InitWriteFas (IntMatrix fas, int write_dim, info *arg_info)
  *
  *****************************************************************************/
 static IntMatrix
-InitReadFas (IntMatrix fas, int read_dim, node *arr, info *arg_info)
+InitReadFas (IntMatrix fas, unsigned int read_dim, node *arr, info *arg_info)
 {
     index_exprs_t *ie;
-    cuda_index_t *indices;
-    int i, j, rows, cols, x = -1, y;
+    cuda_index_t *indices; 
+    unsigned int i, j, rows, cols, x =0, y = 0;
 
     DBUG_ENTER ();
 
@@ -771,11 +771,11 @@ InitReadFas (IntMatrix fas, int read_dim, node *arr, info *arg_info)
                 x = cols - 1;
                 break;
             case IDX_WITHIDS:
-                x = NLUTgetNum (INFO_NLUT (arg_info), CUIDX_ID (indices)) - 1;
+                x = (unsigned int)NLUTgetNum (INFO_NLUT (arg_info), CUIDX_ID (indices)) - 1;
                 break;
             case IDX_EXTID:
                 x = INFO_NEST_LEVEL (arg_info)
-                    + NLUTgetNum (INFO_NLUT (arg_info), CUIDX_ID (indices)) - 1;
+                    + (unsigned int)NLUTgetNum (INFO_NLUT (arg_info), CUIDX_ID (indices)) - 1;
                 break;
             default:
                 DBUG_ASSERT ((0), "Unknown index type found!");
@@ -859,7 +859,7 @@ CheckIntersection (IntMatrix constraints, IntMatrix write_fas, IntMatrix read_fa
 static index_exprs_t *
 ComputeElseCondition (index_exprs_t *ie)
 {
-    int i;
+    unsigned int i;
     cuda_index_t *idx_exprs;
     index_exprs_t *new_ie;
 
@@ -1047,7 +1047,7 @@ PRAwith (node *arg_node, info *arg_info)
 node *
 PRApart (node *arg_node, info *arg_info)
 {
-    int dim, i;
+    unsigned int dim, i;
     node *ids_iter, *ids, *lb, *ub;
 
     DBUG_ENTER ();
@@ -1059,7 +1059,7 @@ PRApart (node *arg_node, info *arg_info)
     DBUG_ASSERT ((NODE_TYPE (lb) == N_array), "Lower bound is not an N_array!");
     DBUG_ASSERT ((NODE_TYPE (ub) == N_array), "Uower bound is not an N_array!");
 
-    dim = TCcountIds (ids);
+    dim = (unsigned int)TCcountIds (ids);
     lb = ARRAY_AELEMS (lb);
     ub = ARRAY_AELEMS (ub);
 
@@ -1354,7 +1354,8 @@ PRAprf (node *arg_node, info *arg_info)
             node *iv = PRF_ARG1 (arg_node);
             node *arr = PRF_ARG2 (arg_node);
             node *iv_ssaassign, *ids, *avis;
-            int dim, valid = TRUE;
+            unsigned int dim;
+            bool valid = TRUE;
 
             DBUG_ASSERT (NODE_TYPE (iv) == N_id,
                          "Non-id node found in the first argument of F_sel_VxA!");
@@ -1407,7 +1408,8 @@ PRAprf (node *arg_node, info *arg_info)
                 /* It is only valid if the array subscript expression in
                  * each dimension is affine. */
                 if (valid) {
-                    int i, read_dim, write_dim, level, extids, nr_conds = 0;
+                    unsigned int i, extids, nr_conds = 0;
+                    unsigned int level,write_dim, read_dim;
                     bool intersected = FALSE;
                     index_exprs_t *ie = NULL;
 
@@ -1497,7 +1499,7 @@ PRAprf (node *arg_node, info *arg_info)
                             constraints
                               = NewMatrix (level + extids + 2, level * 2 + nr_conds);
                             constraints = InitConstraints (constraints, TRUE, NULL,
-                                                           level * 2, -1, arg_info);
+                                                           level * 2, 0, arg_info);
                             for (i = 0; i < nr_conds; i++) {
                                 constraints = InitConstraints (constraints, FALSE, ie,
                                                                level * 2, i, arg_info);
@@ -1517,7 +1519,7 @@ PRAprf (node *arg_node, info *arg_info)
                              */
                             constraints = NewMatrix (level + extids + 2, level * 2 + 1);
                             constraints = InitConstraints (constraints, TRUE, NULL,
-                                                           level * 2, -1, arg_info);
+                                                           level * 2, 0, arg_info);
                             for (i = 0; i < nr_conds; i++) {
                                 constraints = InitConstraints (constraints, FALSE, ie,
                                                                level * 2, i, arg_info);

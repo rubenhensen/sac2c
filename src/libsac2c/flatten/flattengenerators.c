@@ -296,7 +296,7 @@ FLATGflattenBound (node *arg_node, info *arg_info)
     node *nas;
     node *res;
     shape *shp;
-    int xrho;
+    size_t xrho;
 
     DBUG_ENTER ();
 
@@ -317,7 +317,7 @@ FLATGflattenBound (node *arg_node, info *arg_info)
 
             res = TBmakeId (avis);
             FREEdoFreeTree (arg_node);
-            DBUG_PRINT ("Generated avis for: %s, of shape %d", AVIS_NAME (avis), xrho);
+            DBUG_PRINT ("Generated avis for: %s, of shape %zu", AVIS_NAME (avis), xrho);
             break;
         case N_id:
             break;

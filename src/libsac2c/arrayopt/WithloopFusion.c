@@ -1437,7 +1437,7 @@ BuildNewGens (node *current_wl, node *fusionable_wl)
     if (new_parts_fwl != NULL) {
         successful = TRUE;
 
-        DBUG_PRINT ("%d new generators created", TCcountParts (new_parts_fwl));
+        DBUG_PRINT ("%zu new generators created", TCcountParts (new_parts_fwl));
 
         WITH_PART (fusionable_wl) = FREEdoFreeTree (WITH_PART (fusionable_wl));
         WITH_PART (fusionable_wl) = new_parts_fwl;

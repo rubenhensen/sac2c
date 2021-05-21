@@ -109,7 +109,7 @@ node *
 TPfundef (node *arg_node, info *arg_info)
 {
     argtab_t *argtab;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 

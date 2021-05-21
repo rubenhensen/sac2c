@@ -1,23 +1,17 @@
-/*****************************************************************************
+/**
+ * @file
+ * @defgroup mltran Minimize Loop Transfers
+ * @ingroup cuda
  *
- * @defgroup Lift memory transfers in loops whenever possible
+ * @brief Lift memory transfers in loops whenever possible
  *
+ * This module implements the transformation of lifting memory transfers
+ * (<host2device>/<device2host>) out of a do-fun. Memory transfers that
+ * are allowed to be moved out were tagged in the previous phase, i.e.
+ * Annotate Memory Transfer (AMTRAN).
  *
- *   This module implements the transformation of lifting memory transfers
- *   (<host2device>/<device2host>) out of a do-fun. Memory transfers that
- *   are allowed to be moved out were tagged in the previous phase, i.e.
- *   Annotate Memory Transfer (AMTRAN).
- *
- *
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @file minimize_loop_transfers.c
- *
- * Prefix: MLTRAN
- *
- *****************************************************************************/
+ * @{
+ */
 #include "minimize_loop_transfers.h"
 
 #include <stdlib.h>
@@ -29,7 +23,7 @@
 #include "memory.h"
 #include "globals.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "MLTRAN"
 #include "debug.h"
 
 #include "ctinfo.h"
@@ -54,12 +48,10 @@
 
 enum traverse_mode { trav_normalfun, trav_dofun };
 
-/** <!--********************************************************************-->
- *
+/**
  * @name INFO structure
  * @{
- *
- *****************************************************************************/
+ */
 struct INFO {
     bool indofun;
     node *letids;
@@ -135,21 +127,18 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/** <!--********************************************************************-->
- * @}  <!-- INFO structure -->
- *****************************************************************************/
+/** @} */
 
-/** <!--********************************************************************-->
- *
+/**
  * @name Entry functions
  * @{
- *
- *****************************************************************************/
-/** <!--********************************************************************-->
- *
- * @fn node *MLTRANdoMinimizeLoopTransfers( node *syntax_tree)
- *
- *****************************************************************************/
+ */
+
+/**
+ * @brief
+ * @param syntax_tree
+ * @return syntax tree
+ */
 node *
 MLTRANdoMinimizeLoopTransfers (node *syntax_tree)
 {
@@ -164,29 +153,26 @@ MLTRANdoMinimizeLoopTransfers (node *syntax_tree)
 
     info = FreeInfo (info);
 
+    DBUG_PRINT ("invoking DCR");
     syntax_tree = DCRdoDeadCodeRemoval (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }
 
-/** <!--********************************************************************-->
- * @}  <!-- Entry functions -->
- *****************************************************************************/
+/** @} */
 
-/** <!--********************************************************************-->
- *
+/**
  * @name Traversal functions
  * @{
- *
- *****************************************************************************/
+ */
 
-/** <!--********************************************************************-->
- *
- * @fn node *MLTRANfundef( node *arg_node, info *arg_info)
- *
+/**
  * @brief
  *
- *****************************************************************************/
+ * @param arg_node N_fundef
+ * @param arg_info info structure
+ * @return N_fundef
+ */
 node *
 MLTRANfundef (node *arg_node, info *arg_info)
 {
@@ -198,6 +184,7 @@ MLTRANfundef (node *arg_node, info *arg_info)
 
     /* If the function is not a do-fun, we traverse as normal */
     if (!FUNDEF_ISLOOPFUN (arg_node)) {
+        DBUG_PRINT ("(not LOOP) Entering %s...", FUNDEF_NAME (arg_node));
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     } else {
@@ -205,6 +192,8 @@ MLTRANfundef (node *arg_node, info *arg_info)
          * otherwise we traverse the next N_fundef.
          */
         if (INFO_TRAVMODE (arg_info) == trav_dofun) {
+            DBUG_PRINT ("(LOOP) Entering %s...", FUNDEF_NAME (arg_node));
+
             /* We assign a sequential number (starting from 0)
              * to each argument of the do-fun */
             INFO_FUNARGNUM (arg_info) = 0;
@@ -222,14 +211,13 @@ MLTRANfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *MLTRANarg( node *arg_node, info *arg_info)
- *
+/**
  * @brief
  *
- *
- *****************************************************************************/
+ * @param arg_node N_arg
+ * @param arg_info info structure
+ * @return N_arg
+ */
 node *
 MLTRANarg (node *arg_node, info *arg_info)
 {
@@ -243,14 +231,13 @@ MLTRANarg (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *MLTRANassign( node *arg_node, info *arg_info)
- *
+/**
  * @brief
  *
- *
- *****************************************************************************/
+ * @param arg_node N_assign
+ * @param arg_info info structure
+ * @return N_assign
+ */
 node *
 MLTRANassign (node *arg_node, info *arg_info)
 {
@@ -279,10 +266,12 @@ MLTRANassign (node *arg_node, info *arg_info)
 
         if (INFO_APPOSTASSIGNS (arg_info) != NULL) {
             ASSIGN_NEXT (arg_node) = INFO_APPOSTASSIGNS (arg_info);
+            global.optcounters.cuda_min_trans+=1;
         }
 
         if (INFO_APPREASSIGNS (arg_info) != NULL) {
             arg_node = TCappendAssign (INFO_APPREASSIGNS (arg_info), arg_node);
+            global.optcounters.cuda_min_trans+=1;
         }
 
         FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
@@ -310,14 +299,13 @@ MLTRANassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *MLTRANlet( node *arg_node, info *arg_info)
- *
+/**
  * @brief
  *
- *
- *****************************************************************************/
+ * @param arg_node N_let
+ * @param arg_info info structure
+ * @return N_let
+ */
 node *
 MLTRANlet (node *arg_node, info *arg_info)
 {
@@ -330,14 +318,13 @@ MLTRANlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *MLTRANap( node *arg_node, info *arg_info)
- *
+/**
  * @brief
  *
- *
- *****************************************************************************/
+ * @param arg_node N_ap
+ * @param arg_info info structure
+ * @return N_ap
+ */
 node *
 MLTRANap (node *arg_node, info *arg_info)
 {
@@ -348,10 +335,14 @@ MLTRANap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("ap %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
+
     /* If the N_ap->N_fundef is a do-fun */
     if (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))) {
         /* If this is NOT a recursive application of the enclosing do-fun */
         if (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info)) {
+            DBUG_PRINT ("...non-recursive application");
+
             /* Traverse the N_ap arguments first */
             AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
@@ -389,6 +380,7 @@ MLTRANap (node *arg_node, info *arg_info)
         }
         /* If this is a recursive application of the enclosing do-fun. */
         else {
+            DBUG_PRINT ("...recursive application");
             INFO_ISRECURSIVEAPARGS (arg_info) = TRUE;
             INFO_RECURSIVEAPARGS (arg_info) = AP_ARGS (arg_node);
             AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
@@ -401,14 +393,13 @@ MLTRANap (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *MLTRANid( node *arg_node, info *arg_info)
- *
+/**
  * @brief
  *
- *
- *****************************************************************************/
+ * @param arg_node N_id
+ * @param arg_info info structure
+ * @return N_id
+ */
 node *
 MLTRANid (node *arg_node, info *arg_info)
 {
@@ -482,14 +473,13 @@ MLTRANid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *MLTRANfuncond( node *syntax_tree)
- *
+/**
  * @brief
  *
- *
- *****************************************************************************/
+ * @param arg_node N_funcond
+ * @param arg_info info structure
+ * @return N_funcond
+ */
 node *
 MLTRANfuncond (node *arg_node, info *arg_info)
 {
@@ -566,14 +556,13 @@ MLTRANfuncond (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *MLTRANreturn( node *arg_node, info *arg_info)
- *
+/**
  * @brief
  *
- *
- *****************************************************************************/
+ * @param arg_node N_return
+ * @param arg_info info structure
+ * @return N_return
+ */
 node *
 MLTRANreturn (node *arg_node, info *arg_info)
 {
@@ -634,14 +623,13 @@ MLTRANreturn (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *MLTRANprf( node *arg_node, info *arg_info)
- *
+/**
  * @brief
  *
- *
- *****************************************************************************/
+ * @param arg_node N_prf
+ * @param arg_info info structure
+ * @return N_prf
+ */
 node *
 MLTRANprf (node *arg_node, info *arg_info)
 {
@@ -652,10 +640,12 @@ MLTRANprf (node *arg_node, info *arg_info)
     if (INFO_INDOFUN (arg_info)) {
         switch (PRF_PRF (arg_node)) {
         case F_host2device:
+            id = PRF_ARG1 (arg_node);
+            DBUG_PRINT ("prf host2device %s -> %s", ID_NAME (id), IDS_NAME (INFO_LETIDS (arg_info)));
             if (!ASSIGN_ISNOTALLOWEDTOBEMOVEDUP ((INFO_LASTASSIGN (arg_info)))) {
-                id = PRF_ARG1 (arg_node);
+                DBUG_PRINT ("...can be moved up");
                 DBUG_ASSERT (NODE_TYPE (ID_DECL (id)) == N_arg,
-                             "Host variable of is not declared as an N_arg!");
+                             "Host variable of H2D is not declared as an N_arg!");
                 /* If the <host2device> is allowed to be moved out of the do-fun,
                  * the host variable argument can be replaced by the device variable.
                  * Note that if <host2device> can be moved out, the host variable
@@ -722,7 +712,9 @@ MLTRANprf (node *arg_node, info *arg_info)
             }
             break;
         case F_device2host:
+            DBUG_PRINT ("prf device2host");
             if (!ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN ((INFO_LASTASSIGN (arg_info)))) {
+                DBUG_PRINT ("...can be moved down");
                 /* We insert the pair [N_id(host)->avis] -> [N_id(device)->avis]
                  * into D2H table. */
                 INFO_D2HLUT (arg_info)
@@ -739,12 +731,6 @@ MLTRANprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- * @}  <!-- Traversal functions -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- * @}  <!-- Traversal template -->
- *****************************************************************************/
-
+/** @} */
+/** @} */
 #undef DBUG_PREFIX

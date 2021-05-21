@@ -504,7 +504,8 @@ PopDim (info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (TCcountIds (INFO_INDICES (arg_info)) > INFO_DIM_FRAME (arg_info),
+    //INFO_DIM_FRAME is set to -1 at times, so casting to fix sign-compare warning
+    DBUG_ASSERT ((ssize_t)TCcountIds (INFO_INDICES (arg_info)) > INFO_DIM_FRAME (arg_info),
                  "Stack eroding into frame");
     node *index = INFO_INDICES (arg_info);
     INFO_INDICES (arg_info) = IDS_NEXT (INFO_INDICES (arg_info));
@@ -1433,7 +1434,7 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
 {
     node *set, *inner, *sarray, *exprs, *lhs;
     shape *shape;
-    int outerdims;
+    size_t outerdims;
     bool match;
     pattern *pat;
 
@@ -1524,6 +1525,7 @@ ATravCDLmodarray (node *arg_node, info *arg_info)
     set = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
     INFO_WITH2_LHS (arg_info) = lhs;
 
+    // FIXME grzegorz: outerdim should be changed to size_t but not yet as this is shape related
     outerdims = TCcountIds (INFO_WITH2_ISCLS (arg_info));
     /*
      * We need to figure out the size of the inner elements. For

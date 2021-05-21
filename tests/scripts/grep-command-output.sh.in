@@ -9,7 +9,7 @@ what=$1
 num=$2
 
 # We read output from stdin
-count=$(grep "$what" | wc -l)
+count=$(grep -c "$what")
 
 if [ $count -ne $num ]; then
     die "expected to find $num instances of '$what', found $count instead"

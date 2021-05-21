@@ -604,7 +604,7 @@ WLDSgenerator (node *arg_node, info *arg_info)
     node *old_withids;
     node *inner_withids;
 
-    int inner_dim;
+    size_t inner_dim;
 
     constant *inner_lb_const, *inner_ub_const;
 

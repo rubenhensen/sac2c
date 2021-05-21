@@ -37,6 +37,8 @@
 #include "debug.h"
 
 #include "globals.h"
+#include "new_types.h"
+#include "shape.h"
 #include "type_utils.h"
 
 /*
@@ -493,9 +495,8 @@ IsGeneratorBigEnough (node *test_variables)
 {
     node *iterator;
     bool is_bigenough;
-    int var_dim, var_size; /* dimension and size of an actual variable */
-    int i;
-    node *vardec;
+    int var_dim;
+    long long var_size;
     DBUG_ENTER ();
 
     /* some initializations */
@@ -506,12 +507,8 @@ IsGeneratorBigEnough (node *test_variables)
     /* TODO handling of AUD and AKD arrays */
     while (iterator != NULL) {
 
-        vardec = IDS_DECL (iterator);
-        var_dim = VARDEC_DIM (vardec);
-        var_size = 1;
-        for (i = 0; i < var_dim; i++) {
-            var_size *= VARDEC_SHAPE (vardec, i);
-        }
+        var_dim = TYgetDim (IDS_NTYPE (iterator));
+        var_size = SHgetUnrLen (TYgetShape (IDS_NTYPE (iterator)));
 
         if (var_size >= global.max_threads) {
             is_bigenough = TRUE;
@@ -545,10 +542,10 @@ static bool
 IsMTClever (node *test_variables)
 {
     bool is_clever;
-    int i, var_dim;  /* dimension and size of an actual variable */
-    double var_size; /* size of an actual variable */
-    double carry;
-    node *iterator, *vardec;
+    int var_dim;  /* dimension and size of an actual variable */
+    long long var_size; /* size of an actual variable */
+    long long carry;
+    node *iterator;
     DBUG_ENTER ();
 
     /* some initialization */
@@ -558,17 +555,14 @@ IsMTClever (node *test_variables)
 
     while ((is_clever == FALSE) && (iterator != NULL)) {
 
-        vardec = IDS_DECL (iterator);
-        var_dim = VARDEC_DIM (vardec);
-        var_size = 1.0;
-        for (i = 0; i < var_dim; i++) {
-            var_size *= (double)VARDEC_SHAPE (vardec, i);
-        }
+        var_dim = TYgetDim (IDS_NTYPE (iterator));
+        var_size = SHgetUnrLen (TYgetShape (IDS_NTYPE (iterator)));
+
         /* add the size of the actual variable to the sum of the sizes of the
            former variables */
         carry += var_size;
 
-        if (carry >= (double)(global.min_parallel_size_per_thread * global.max_threads)) {
+        if (carry >= (global.min_parallel_size_per_thread * global.max_threads)) {
             is_clever = TRUE;
             DBUG_PRINT ("Found a variable, big enough for parallel execution");
         }
@@ -594,9 +588,9 @@ IsSTClever (node *test_variables)
 {
     /* implementation is like IsMTClever, except of the absence carry-variable */
     bool is_clever;
-    int i, var_dim;  /* dimension and size of an actual variable */
-    double var_size; /* size of an actual variable */
-    node *iterator, *vardec;
+    int var_dim;  /* dimension and size of an actual variable */
+    long long var_size; /* size of an actual variable */
+    node *iterator;
     DBUG_ENTER ();
 
     /* some initialization */
@@ -605,13 +599,10 @@ IsSTClever (node *test_variables)
 
     while ((is_clever == FALSE) && (iterator != NULL)) {
 
-        vardec = IDS_DECL (iterator);
-        var_dim = VARDEC_DIM (vardec);
-        var_size = 1.0;
-        for (i = 0; i < var_dim; i++) {
-            var_size *= (double)VARDEC_SHAPE (vardec, i);
-        }
-        if (var_size >= (double)(global.max_replication_size)) {
+        var_dim = TYgetDim (IDS_NTYPE (iterator));
+        var_size = SHgetUnrLen (TYgetShape (IDS_NTYPE (iterator)));
+
+        if (var_size >= (global.max_replication_size)) {
             is_clever = TRUE;
             DBUG_PRINT ("Found variable, #elements > max_replication_size");
         }

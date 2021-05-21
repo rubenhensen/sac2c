@@ -807,8 +807,8 @@ IVEXPadjustExtremaBound (node *arg_node, int k, node **vardecs, node **preassign
     node *aelems = NULL;
     node *argid;
     pattern *pat;
-    int i;
-    int lim;
+    size_t i;
+    size_t lim;
     node *el;
     node *zarr;
     node *z;

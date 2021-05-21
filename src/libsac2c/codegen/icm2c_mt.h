@@ -35,25 +35,25 @@ extern void ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_CxC (char *inf, char *sup,
                                                       int operation);
 extern void ICMCompileMT_SMART_EXPR_PROBLEM_SIZE_END (int operation);
 
-extern void ICMCompileMT_SPMDFUN_DECL (char *funname, int vararg_cnt, char **vararg);
-extern void ICMCompileMT_SPMDFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg);
-extern void ICMCompileMT_SPMDFUN_DEF_END (char *funname, int vararg_cnt, char **vararg);
-extern void ICMCompileMT_SPMDFUN_RET (char *funname, int vararg_cnt, char **vararg);
-extern void ICMCompileMT_SPMDFUN_AP (char *funname, int vararg_cnt, char **vararg);
+extern void ICMCompileMT_SPMDFUN_DECL (char *funname, unsigned int vararg_cnt, char **vararg);
+extern void ICMCompileMT_SPMDFUN_DEF_BEGIN (char *funname, unsigned int vararg_cnt, char **vararg);
+extern void ICMCompileMT_SPMDFUN_DEF_END (char *funname, unsigned int vararg_cnt, char **vararg);
+extern void ICMCompileMT_SPMDFUN_RET (char *funname, unsigned int vararg_cnt, char **vararg);
+extern void ICMCompileMT_SPMDFUN_AP (char *funname, unsigned int vararg_cnt, char **vararg);
 
-extern void ICMCompileMT_MTFUN_DECL (char *funname, char *rettype_NT, int vararg_cnt,
+extern void ICMCompileMT_MTFUN_DECL (char *funname, char *rettype_NT, unsigned int vararg_cnt,
                                      char **vararg);
-extern void ICMCompileMT_MTFUN_DEF_BEGIN (char *funname, char *rettype_NT, int vararg_cnt,
+extern void ICMCompileMT_MTFUN_DEF_BEGIN (char *funname, char *rettype_NT, unsigned int vararg_cnt,
                                           char **vararg);
-extern void ICMCompileMT_MTFUN_DEF_END (char *funname, char *rettype_NT, int vararg_cnt,
+extern void ICMCompileMT_MTFUN_DEF_END (char *funname, char *rettype_NT, unsigned int vararg_cnt,
                                         char **vararg);
-extern void ICMCompileMT_MTFUN_RET (char *retname_NT, int vararg_cnt, char **vararg);
-extern void ICMCompileMT_MTFUN_AP (char *funname, char *retname_NT, int vararg_cnt,
+extern void ICMCompileMT_MTFUN_RET (char *retname_NT, unsigned int vararg_cnt, char **vararg);
+extern void ICMCompileMT_MTFUN_AP (char *funname, char *retname_NT, unsigned int vararg_cnt,
                                    char **vararg);
 
-extern void ICMCompileMT_SPMD_FRAME_ELEMENT (char *funname, int vararg_cnt,
+extern void ICMCompileMT_SPMD_FRAME_ELEMENT (char *funname, unsigned int vararg_cnt,
                                              char **vararg);
-extern void ICMCompileMT_SPMD_BARRIER_ELEMENT (char *funname, int vararg_cnt,
+extern void ICMCompileMT_SPMD_BARRIER_ELEMENT (char *funname, unsigned int vararg_cnt,
                                                char **vararg);
 
 #endif /* _SAC_ICM2C_MT_H_ */

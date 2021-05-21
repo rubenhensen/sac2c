@@ -178,7 +178,7 @@ LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
  *
  * Function:
  *   void LiftIds( ids *ids_arg, node *fundef,
- *                 types *new_type, node **new_assigns)
+ *                 ntype *new_type, node **new_assigns)
  *
  * Description:
  *   Lifts the given return value of a function application:
@@ -341,7 +341,7 @@ TCPap (node *arg_node, info *arg_info)
     argtab_t *fun_argtab, *ap_argtab;
     node *ids, *id;
     node *ret, *arg;
-    int idx;
+    size_t idx;
     shape_class_t actual_cls, formal_cls;
 
     DBUG_ENTER ();
@@ -367,7 +367,7 @@ TCPap (node *arg_node, info *arg_info)
                 && (global.argtag_has_shp[fun_argtab->tag[idx]] || (actual_cls == C_scl)
                     || (formal_cls == C_scl))) {
                 DBUG_PRINT ("Return value with inappropriate shape class found:");
-                DBUG_PRINT ("   ... %s ... = %s( ... ), index %d, %s instead of %s",
+                DBUG_PRINT ("   ... %s ... = %s( ... ), index %zu, %s instead of %s",
                             CTIitemName (AP_FUNDEF (arg_node)), IDS_NAME (ids), idx,
                             global.nt_shape_string[actual_cls],
                             global.nt_shape_string[formal_cls]);
@@ -403,7 +403,7 @@ TCPap (node *arg_node, info *arg_info)
                 && (global.argtag_has_shp[fun_argtab->tag[idx]] || (actual_cls == C_scl)
                     || (formal_cls == C_scl))) {
                 DBUG_PRINT ("Argument with inappropriate shape class found:");
-                DBUG_PRINT ("   ... = %s( ... %s ...), index %d, %s instead of %s",
+                DBUG_PRINT ("   ... = %s( ... %s ...), index %zu, %s instead of %s",
                             CTIitemName (AP_FUNDEF (arg_node)), ID_NAME (id), idx,
                             global.nt_shape_string[actual_cls],
                             global.nt_shape_string[formal_cls]);

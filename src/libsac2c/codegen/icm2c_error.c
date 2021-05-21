@@ -14,8 +14,8 @@
 /******************************************************************************
  *
  * function:
- *   void ICMCompileDISPATCH_ERROR( int cnt_to,   char **to_ANY,
- *                                  int cnt_from, char **from_ANY)
+ *   void ICMCompileDISPATCH_ERROR( unsigned int cnt_to,   char **to_ANY,
+ *                                  unsigned int cnt_from, char **from_ANY)
  *
  * description:
  *   implements the compilation of the following ICM:
@@ -26,10 +26,10 @@
  ******************************************************************************/
 
 void
-ICMCompileDISPATCH_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from,
+ICMCompileDISPATCH_ERROR (unsigned int cnt_to, char **to_ANY, char *funname, unsigned int cnt_from,
                           char **from_ANY)
 {
-    int i;
+    unsigned int i;
 
     DBUG_ENTER ();
 

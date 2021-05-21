@@ -1,18 +1,45 @@
 /**
+ * @file
  * @defgroup wrci With-loop reuse candidate inference
  *
- * WL reuse candidates are all arrays A that are accessed only
- * by means of selection at A[iv]
+ * This module tries to identify With-loop reuse candidates.  It supports 4
+ * kinds of reuse candidates, each of which can be turned on/off separately.
+ * These are:
+ * 1. RIP (Reuse with In-Place selection) [implemented in ReuseWithArrays.c]
+ *    WL reuse candidates are all arrays A that are accessed only
+ *    by means of selection at A[iv]i within the given WL.
+ * 2. RWO (Reuse With Offset) [implemented in reusewithoffset.c]
+ *    Looks for a WL that contains n-1 copy partitions and exactly one non-copy
+ *    partition.  If that is found, it makes allows th non-copy partition to
+ *    have an access into the copy-from-source (ie potential reuse candidate) of
+ *    the form A[iv +- offset] where offset is bigger than the generator width.
+ *    This guarantees accesses into the copy partitions (at least if the
+ *    accesses are legal :-)
+ * 3. PRA (Polyhedral Reuse Analysis) [implemented in polyhedral_reuse_analysis.c]
+ *    Refines RWO and uses polyhedral stuff to enable accesses of the form A[
+ *    linear_expr( iv)] provided we can show all these accesses fall into copy
+ *    partitions or non-modified partitions...
+ * 4. EMR (Extended Memory Reuse) [Implemented in emr_inference.c]
+ *
+ * @note
+ * All these reuse candidate inferences potentially over-approximate the set of
+ * candidates (e.g. arrays that are still refered to later); however, those cases
+ * are being narrowed by subphases of the mem-phase, specifically SRCE and FRC,
+ * and by dynamic reference count inspections at runtime.
+ *
+ * @note
+ * For some reason WRCI it is run prior to Index Vector Elimination (IVE). I
+ * think the reason might initially have been so that there is no need to deal
+ * with sel and idx_sel but I am not sure about this. It seems that all the
+ * anylyses actually do support idx_sel now and the whole thing might be run
+ * later but I am not sure; more intensive testing would be required to do this!
+ * How far later is not entirely clear. Since it builds on N_with and not
+ * Nwith2, it definitly needs to be run before WLT (or adapted to cope with
+ * N_with2).
  *
  * @ingroup mm
  *
  * @{
- */
-
-/**
- * @file wrci.c
- *
- * Prefix: WRCI
  */
 #include "wrci.h"
 
@@ -27,6 +54,7 @@
 #include "print.h"
 #include "str.h"
 #include "memory.h"
+#include "emr_utils.h"
 #include "free.h"
 #include "new_types.h"
 #include "type_utils.h"
@@ -81,17 +109,55 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief Function is used by the Pre/Post traversal function injection. It
+ *        prints out the RC/PRC for WITHOPs (except N_fold).
  *
- * @fn node *WRCIdoInferWithloopReuseCandidates( node *syntax_tree)
- *
- * @brief
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
+node *
+WRCIprintPreFun (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    switch (NODE_TYPE (arg_node)) {
+    case N_genarray:
+        if (GENARRAY_RC (arg_node)) {
+            INDENT;
+            fprintf (global.outfile, "/* RC (");
+            GENARRAY_RC (arg_node) = PRTexprs (GENARRAY_RC (arg_node), arg_info);
+            fprintf (global.outfile, ") */\n");
+        }
+        if (GENARRAY_PRC (arg_node)) {
+            INDENT;
+            fprintf (global.outfile, "/* PRC (");
+            GENARRAY_PRC (arg_node) = PRTexprs (GENARRAY_PRC (arg_node), arg_info);
+            fprintf (global.outfile, ") */\n");
+        }
+        break;
+    case N_modarray:
+        if (MODARRAY_RC (arg_node)) {
+            INDENT;
+            fprintf (global.outfile, "/* RC (");
+            MODARRAY_RC (arg_node) = PRTexprs (MODARRAY_RC (arg_node), arg_info);
+            fprintf (global.outfile, ") */\n");
+        }
+        break;
+    default:
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/**
+ * @brief Entry function into WRCI traversal
  *
  * @param syntax_tree
- *
  * @return modified syntax_tree.
- *
- *****************************************************************************/
+ */
 node *
 WRCIdoWithloopReuseCandidateInference (node *syntax_tree)
 {
@@ -115,57 +181,6 @@ WRCIdoWithloopReuseCandidateInference (node *syntax_tree)
  * Helper functions
  *
  *****************************************************************************/
-static node *
-ElimDupesOfAvis (node *avis, node *exprs)
-{
-    DBUG_ENTER ();
-
-    if (exprs != NULL) {
-        if (EXPRS_NEXT (exprs) != NULL) {
-            EXPRS_NEXT (exprs) = ElimDupesOfAvis (avis, EXPRS_NEXT (exprs));
-        }
-
-        if (ID_AVIS (EXPRS_EXPR (exprs)) == avis) {
-            exprs = FREEdoFreeNode (exprs);
-        }
-    }
-
-    DBUG_RETURN (exprs);
-}
-
-static node *
-ElimDupes (node *exprs)
-{
-    DBUG_ENTER ();
-
-    if (exprs != NULL) {
-        EXPRS_NEXT (exprs)
-          = ElimDupesOfAvis (ID_AVIS (EXPRS_EXPR (exprs)), EXPRS_NEXT (exprs));
-
-        EXPRS_NEXT (exprs) = ElimDupes (EXPRS_NEXT (exprs));
-    }
-
-    DBUG_RETURN (exprs);
-}
-
-static bool
-ShapeMatch (ntype *t1, ntype *t2)
-{
-    ntype *aks1, *aks2;
-    bool res;
-
-    DBUG_ENTER ();
-
-    aks1 = TYeliminateAKV (t1);
-    aks2 = TYeliminateAKV (t2);
-
-    res = TYisAKS (aks1) && TYeqTypes (aks1, aks2);
-
-    aks1 = TYfreeType (aks1);
-    aks2 = TYfreeType (aks2);
-
-    DBUG_RETURN (res);
-}
 
 static node *
 MatchingRCs (node *rcs, node *ids, node *modarray)
@@ -173,6 +188,8 @@ MatchingRCs (node *rcs, node *ids, node *modarray)
     node *match = NULL;
 
     DBUG_ENTER ();
+
+    DBUG_PRINT ("looking for matching RC -> %s", IDS_NAME (ids));
 
     if (rcs != NULL) {
         match = MatchingRCs (EXPRS_NEXT (rcs), ids, modarray);
@@ -208,18 +225,13 @@ MatchingPRCs (node *rcs, node *ids)
     DBUG_RETURN (match);
 }
 
-/******************************************************************************
+/**
+ * @brief traverse N_fundef body
  *
- * With-loop reuse candidate inference traversal (wrci_tab)
- *
- * prefix: WRCI
- *
- *****************************************************************************/
-/** <!--********************************************************************-->
- *
- * @fn node *WRCIfundef( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 WRCIfundef (node *arg_node, info *arg_info)
 {
@@ -231,18 +243,18 @@ WRCIfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_assign top-down
  *
- * @fn node *WRCIassign( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 WRCIassign (node *arg_node, info *arg_info)
 {
@@ -258,11 +270,13 @@ WRCIassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_let expressions and store the LHS of the N_let
  *
- * @fn node *WRCIlet( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 WRCIlet (node *arg_node, info *arg_info)
 {
@@ -274,11 +288,18 @@ WRCIlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_with and apply reuse candidate inferences. Reuse
+ *        candidates are stored in INFO structure.
  *
- * @fn node *WRCIwith( node *arg_node, info *arg_info)
+ * @see ReuseWithArrays.c
+ * @see reusewithoffset.c
+ * @see polyhedral_reuse_analysis.c
  *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 WRCIwith (node *arg_node, info *arg_info)
 {
@@ -332,6 +353,9 @@ WRCIwith (node *arg_node, info *arg_info)
      */
     INFO_RC (arg_info) = ElimDupes (INFO_RC (arg_info));
 
+    DBUG_PRINT ("final RCs after ElimDupes: ");
+    DBUG_EXECUTE (
+      if (INFO_RC (arg_info) != NULL) { PRTdoPrintFile (stderr, INFO_RC (arg_info)); });
     /*
      * Annotate RCs and find further reuse candidates if appropriate
      */
@@ -357,11 +381,13 @@ WRCIwith (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_generator of with-loop and remove generator width
  *
- * @fn node *WRCIgenerator( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 WRCIgenerator (node *arg_node, info *arg_info)
 {
@@ -374,11 +400,13 @@ WRCIgenerator (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_genarray and add infered reuse candidates to node
  *
- * @fn node *WRCIgenarray( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 WRCIgenarray (node *arg_node, info *arg_info)
 {
@@ -388,6 +416,10 @@ WRCIgenarray (node *arg_node, info *arg_info)
      * Annotate reuse candidates.
      */
     GENARRAY_RC (arg_node) = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), NULL);
+    DBUG_PRINT ("Genarray RCs: ");
+    DBUG_EXECUTE (if (GENARRAY_RC (arg_node) != NULL) {
+        PRTdoPrintFile (stderr, GENARRAY_RC (arg_node));
+    });
 
     if (global.optimize.dopr) {
         /*
@@ -404,11 +436,13 @@ WRCIgenarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_modarray and add infered reuse candidates to node
  *
- * @fn node *WRCImodarray( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 WRCImodarray (node *arg_node, info *arg_info)
 {
@@ -419,6 +453,10 @@ WRCImodarray (node *arg_node, info *arg_info)
      */
     MODARRAY_RC (arg_node)
       = MatchingRCs (INFO_RC (arg_info), INFO_LHS (arg_info), MODARRAY_ARRAY (arg_node));
+    DBUG_PRINT ("Modarray RCs: ");
+    DBUG_EXECUTE (if (MODARRAY_RC (arg_node) != NULL) {
+        PRTdoPrintFile (stderr, MODARRAY_RC (arg_node));
+    });
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -428,11 +466,13 @@ WRCImodarray (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief traverse N_fold
  *
- * @fn node *WRCIfold( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
 node *
 WRCIfold (node *arg_node, info *arg_info)
 {
@@ -446,6 +486,6 @@ WRCIfold (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/* @} */
+/** @} */
 
 #undef DBUG_PREFIX

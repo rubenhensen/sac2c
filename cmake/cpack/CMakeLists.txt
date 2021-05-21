@@ -6,6 +6,12 @@ PROJECT (sac2c-packages NONE)
 # Extra cmake packages
 INCLUDE (ExternalProject)
 
+# CMake policy handling
+IF (POLICY CMP0114)
+  # ExternalProject_Add() dependency handling
+  CMAKE_POLICY (SET CMP0114 OLD)
+ENDIF ()
+
 # XXX We assume that this CMakeLists.txt file is being called from ./cmake/cpack
 #     therefore, for simplicity we set the following variables, indicating the
 #     actual top source directory.
@@ -14,6 +20,7 @@ MESSAGE (STATUS "We have set our source directory to ${SAC2C_SOURCE_DIR}.")
 
 # Include CMake config
 INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/sac2c-version-related.cmake")
+INCLUDE ("${SAC2C_SOURCE_DIR}/cmake/sac2c/version-manager-related.cmake")
 
 # Get the sac2c repository version
 GET_SAC2C_VERSION (SAC2C_VERSION SAC2C_VERSION_MAJOR SAC2C_VERSION_MINOR SAC2C_VERSION_PATCH)
@@ -68,7 +75,7 @@ MACRO (ADD_SAC2C_BUILD _build_type)
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/headers headers-install
       COMMAND $(MAKE) DESTDIR=${PROJECT_BINARY_DIR}/toplevel/symlinks symlinks-install
     TEST_EXCLUDE_FROM_MAIN 1
-    TEST_COMMAND ctest --output-on-failure
+    TEST_COMMAND ${CMAKE_COMMAND} --build "${PROJECT_BINARY_DIR}/sac2c-${_build_type_name}/src/sac2c-${_build_type_name}-build" --target check
     BUILD_ALWAYS 1
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${_build_type}
@@ -116,6 +123,10 @@ ENDFOREACH ()
 #            the last part of the path is included in the install.
 XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/sources/${CMAKE_INSTALL_PREFIX}/"
   DESTINATION "." USE_SOURCE_PERMISSIONS
+  COMPONENT sources)
+
+XINSTALL (PROGRAMS "${PROJECT_BINARY_DIR}/scripts/sac2c-version-manager"
+  DESTINATION "."
   COMPONENT sources)
 
 XINSTALL (DIRECTORY "${PROJECT_BINARY_DIR}/toplevel/libraries/${CMAKE_INSTALL_PREFIX}/"

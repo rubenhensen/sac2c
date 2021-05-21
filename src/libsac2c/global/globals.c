@@ -393,6 +393,20 @@ static const configuration_t config_init = {
 #undef num
 };
 
+static const cuda_options_t cuda_options_init = {
+#define num 0
+#define CUDA_OPTION(name, type, attr) attr,
+  CUDA_OPTIONS_ALL
+#undef CUDA_OPTION
+#undef num
+};
+
+static const char *cuda_arch_names_init[] = {
+#define CUDA_ARCH(name, flagopt) flagopt,
+  CUDA_ARCHS_ALL
+#undef CUDA_ARCH
+};
+
 /*
  * This is only a dirty trick to fake an a-priori initialization
  * of config, Which is not possible otherwise without a major code
@@ -520,6 +534,25 @@ static print_flags_t print_all_init = {
 
 static print_flags_t print_none_init = {
 #define PRINTdefault(default) FALSE,
+#include "flags.mac"
+};
+
+/*
+ * Initialize feedback flags from flags.mac
+ */
+
+static feedback_flags_t feedback_init = {
+#define FEEDBACKdefault(default) default,
+#include "flags.mac"
+};
+
+static feedback_flags_t feedback_all_init = {
+#define FEEDBACKdefault(default) TRUE,
+#include "flags.mac"
+};
+
+static feedback_flags_t feedback_none_init = {
+#define FEEDBACKdefault(default) FALSE,
 #include "flags.mac"
 };
 
@@ -652,6 +685,7 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, const char *toolname)
     global.cachesim_host[0] = '\0';
     global.cachesim_file[0] = '\0';
     global.cachesim_dir[0] = '\0';
+    global.cuda_block_spec[0] = '\0';
 
     memset (global.profile_funnme, 0, sizeof (char *) * PF_MAXFUN);
     memset (global.profile_funapcntr, 0, sizeof (int) * PF_MAXFUN);

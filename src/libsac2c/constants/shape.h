@@ -42,15 +42,11 @@ extern bool SHcompareShapes (shape *a, shape *b);
 extern shape *SHappendShapes (shape *a, shape *b);
 extern shape *SHdropFromShape (int n, shape *a);
 extern shape *SHtakeFromShape (int n, shape *a);
-extern char *SHshape2String (int dots, shape *shp);
+extern char *SHshape2String (size_t dots, shape *shp);
 extern int *SHshape2IntVec (shape *shp);
 extern node *SHshape2Exprs (shape *shp);
 extern node *SHshape2Array (shape *shp);
 extern shape *SHarray2Shape (node *array);
-
-extern shape *SHoldTypes2Shape (types *shpseg);
-extern shape *SHoldShpseg2Shape (int dim, shpseg *shpseg);
-extern shpseg *SHshape2OldShpseg (shape *shp);
 
 extern bool SHcompareWithCArray (shape *shp, int *shpdata, int dim);
 extern bool SHcompareWithArguments (shape *shp, int dim, ...);

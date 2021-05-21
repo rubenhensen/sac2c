@@ -1,18 +1,27 @@
+/**
+ * @file
+ * @brief Utility functions useful when using GDB/DDD
+ *
+ * These function can be called within a GDB/DDD session. They
+ * make it easier to either 'break' at certain points in a traversal,
+ * or view the content of some group of nodes.
+ *
+ * Further things are possible as well, please look at the function
+ * descriptions for more information.
+ */
+#include "gdb_utils.h"
+
+#include <str.h>
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "new_types.h"
 #include "print.h"
 #include "tree_compound.h"
 #include "polyhedral_utilities.h"
-#include <str.h>
 
-#include "gdb_utils.h"
-
-/******************************************************************************
- *
- * function: GDBbreakAtNid( node *arg_node, char *nm)
- *
- * description:
+/**
+ * @brief Stop at a particular node
  *
  * This function is intended to assist users of ddd/gdb in
  * making the sac2c compiler stop when a particular node appears
@@ -21,14 +30,19 @@
  *
  * Do this in gdb/ddd:
  *
+ * ~~~
  *     break CFlet
  * Breakpoint 3 at ...
  *     condition 3  BreakAtNid( arg_node, "res")
+ * ~~~
  *
  * The gdb break will be ignored until the first LET_IDS
- * is "res", at which point the break will be honored.
+ * is "res", at which point the break will be honoured.
  *
- ******************************************************************************/
+ * @param arg_node The syntax tree
+ * @param nm Text to search for
+ * @return indicates found or not found
+ */
 bool
 GDBbreakAtNid (node *arg_node, char *nm)
 {
@@ -86,19 +100,20 @@ GDBbreakAtNid (node *arg_node, char *nm)
     return (z);
 }
 
-/******************************************************************************
- *
- * function: GDBwhatIs( char *nm, node *fundef)
- *
- * description:
+/**
+ * @brief Show the value of a variable within a function
  *
  * This function is intended to assist users of ddd/gdb in
  * making the sac2c compiler display the value of a variable.
  *
  * Typical usage:
+ * ~~~
  *   GDBwhatIs( "foo", arg_info->fundef)
+ * ~~~
  *
- ******************************************************************************/
+ * @param nm Text to search for, name of variable
+ * @param fundef A N_fundef node
+ */
 void
 GDBwhatIs (char *nm, node *fundef)
 {
@@ -123,19 +138,18 @@ GDBwhatIs (char *nm, node *fundef)
     return;
 }
 
-/******************************************************************************
- *
- * function: GDBwhatIsNid( node *nid, node *fundef)
- *
- * description:
- *
- * This function is intended to assist users of ddd/gdb in
- * making the sac2c compiler display the value of a variable.
+/**
+ * @brief This function is intended to assist users of ddd/gdb in making
+ *        the sac2c compiler display the value of a variable.
  *
  * Typical usage:
+ * ~~~
  *   GDBwhatIsNid( arg_node, arg_info->fundef)
+ * ~~~
  *
- ******************************************************************************/
+ * @param arg_node
+ * @param fundef
+ */
 void
 GDBwhatIsNid (node *arg_node, node *fundef)
 {
@@ -167,22 +181,21 @@ GDBwhatIsNid (node *arg_node, node *fundef)
     return;
 }
 
-/******************************************************************************
- *
- * function: GDBwhatAreNid( node *arg_node, node *fundef)
- *
- * description:
- *
- * This function is intended to assist users of ddd/gdb in
- * making the sac2c compiler display the value of the arguments
- * of an N_prf or an N_exprs chain
+/**
+ * @brief This function is intended to assist users of ddd/gdb in
+ *        making the sac2c compiler display the value of the arguments
+ *        of an N_prf or an N_exprs chain
  *
  * This will display all elements of an N_prf/ EXPRS chain.
  *
  * Typical usage:
+ * ~~~
  *   GDBwhatAre( "foo", arg_info->fundef)
+ * ~~~
  *
- ******************************************************************************/
+ * @param arg_node
+ * @param fundef
+ */
 void
 GDBwhatAreNid (node *arg_node, node *fundef)
 {
@@ -210,20 +223,21 @@ GDBwhatAreNid (node *arg_node, node *fundef)
     return;
 }
 
-/******************************************************************************
- *
- * function: GDBwhatAre( char *nm, node *fundef)
- *
- * description: Like GDBwhatAreNid, except it takes a character
- *              string, instead of an N_id, as PRF_ARG1.
+/**
+ * @brief Like GDBwhatAreNid, except it takes a character
+ *        string, instead of an N_id, as PRF_ARG1.
  *
  * This will display all elements of an N_prf EXPRS chain.
  *
  * Typical usage:
- *
+ * ~~~
  *   GDBwhatAre( "foo", arg_info->fundef)
+ * ~~~
  *
- ******************************************************************************/
+ * @param nm
+ * @param fundef
+ *
+ */
 void
 GDBwhatAre (char *nm, node *fundef)
 {
@@ -252,17 +266,16 @@ GDBwhatAre (char *nm, node *fundef)
     return;
 }
 
-/******************************************************************************
- *
- * function: GDBprintAvisName( node *avis)
- *
- * description: Print avis name.
- *
+/**
+ * @brief Print avis name.
  *
  * Typical usage:
+ * ~~~
  *    GDBprintAvisName( N_avisNode)
+ * ~~~
  *
- ******************************************************************************/
+ * @param avis
+ */
 void
 GDBprintAvisName (node *avis)
 {
@@ -276,14 +289,11 @@ GDBprintAvisName (node *avis)
     return;
 }
 
-/******************************************************************************
+/**
+ * @brief Print avis names and addresses for fundef.
  *
- * function: GDBprintAvisForFundef( node *fundef)
- *
- * description: Print avis names and addresses for fundef.
- *
- *
- ******************************************************************************/
+ * @param fundef
+ */
 void
 GDBprintAvisForFundef (node *fundef)
 {
@@ -307,14 +317,12 @@ GDBprintAvisForFundef (node *fundef)
     return;
 }
 
-/******************************************************************************
+/**
+ * @brief Print fundef names from fundef, onwards
+ *        If argument is module, print all fundefs
  *
- * function: GDBprintFundefChain( node *fundef)
- *
- * description: Print fundef names from fundef, onwards
- *              If argument is module, print all fundefs
- *
- ******************************************************************************/
+ * @param fundef
+ */
 void
 GDBprintFundefChain (node *fundef)
 {
@@ -324,7 +332,9 @@ GDBprintFundefChain (node *fundef)
     }
 
     if (NULL != fundef) {
-        printf ("Fundef:%s\n", FUNDEF_NAME (fundef));
+        printf ("Fundef: %s, lacfun: %s, lacinline: %s\n", FUNDEF_NAME (fundef),
+                FUNDEF_ISLACFUN (fundef) ? "yes" : "no",
+                FUNDEF_ISLACINLINE (fundef) ? "yes" : "no");
         if (NULL != FUNDEF_LOCALFUNS (fundef)) {
             printf ("Local functions: [ ");
             GDBprintFundefChain (FUNDEF_LOCALFUNS (fundef));

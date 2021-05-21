@@ -104,8 +104,12 @@
 #include "libsac/essentials/commandline.h"
 #include "libsac/essentials/message.h"
 #include "libsac/essentials/misc.h"
-#include "libsac/essentials/profile.h"
 #include "libsac/essentials/trace.h"
+#include "libsac/profile/profile.h"
+#include "libsac/profile/profile_memory.h"
+#include "libsac/profile/profile_ops.h"
+#include "libsac/profile/profile_print.h"
+#include "libsac/profile/profile_cuda.h"
 #include "libsac/hwloc/cpubind.h"
 #include "libsac/hwloc/cudabind.h"
 

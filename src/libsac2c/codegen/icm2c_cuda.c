@@ -24,9 +24,10 @@
 #endif /* BEtest */
 
 static void
-CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
+CompileCUDA_GLOBALFUN_HEADER (char *funname, unsigned int vararg_cnt, char **vararg)
 {
-    int i, j, dim;
+    int j, dim;
+    unsigned int i;
     char *basetype;
 
     DBUG_ENTER ();
@@ -34,8 +35,8 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "__global__ void");
     if (global.optimize.dolb) {
-        fprintf (global.outfile, " __launch_bounds__(%d, %d) ", global.optimal_threads,
-                 global.optimal_blocks);
+        fprintf (global.outfile, " __launch_bounds__(%d, %d) ",
+                 global.cuda_options.optimal_threads, global.cuda_options.optimal_blocks);
     }
     fprintf (global.outfile, " %s(", funname);
 
@@ -75,13 +76,13 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
  *
  * function:
  *   void ICMCompileCUDA_GLOBALFUN_DECL( char *funname,
- *                                       int vararg_cnt,
+ *                                       unsigned int vararg_cnt,
  *                                       char **vararg)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg)
+ICMCompileCUDA_GLOBALFUN_DECL (char *funname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -101,13 +102,13 @@ ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg)
  *
  * function:
  *   void ICMCompileCUDA_GLOBALFUN_DEF_BEGIN( char *funname,
- *                                            int vararg_cnt,
+ *                                            unsigned int vararg_cnt,
  *                                            char **vararg)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg)
+ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -127,13 +128,13 @@ ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg
  *
  * function:
  *   void ICMCompileCUDA_GLOBALFUN_RET( char *funname,
- *                                      int vararg_cnt,
+ *                                      unsigned int vararg_cnt,
  *                                      char **vararg)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GLOBALFUN_RET (char *funname, int vararg_cnt, char **vararg)
+ICMCompileCUDA_GLOBALFUN_RET (char *funname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -147,13 +148,13 @@ ICMCompileCUDA_GLOBALFUN_RET (char *funname, int vararg_cnt, char **vararg)
  *
  * function:
  *   void ICMCompileCUDA_GLOBALFUN_DEF_END( char *funname,
- *                                          int vararg_cnt,
+ *                                          unsigned int vararg_cnt,
  *                                          char **vararg)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GLOBALFUN_DEF_END (char *funname, int vararg_cnt, char **vararg)
+ICMCompileCUDA_GLOBALFUN_DEF_END (char *funname, unsigned int vararg_cnt, char **vararg)
 {
     DBUG_ENTER ();
 
@@ -172,15 +173,16 @@ ICMCompileCUDA_GLOBALFUN_DEF_END (char *funname, int vararg_cnt, char **vararg)
  *
  * function:
  *   void ICMCompileCUDA_GLOBALFUN_AP( char *funname,
- *                                     int vararg_cnt,
+ *                                     unsigned int vararg_cnt,
  *                                     char **vararg)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
+ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vararg)
 {
-    int dim, i, j;
+    int dim, j;
+    unsigned int i; 
     char *basetype;
 
     DBUG_ENTER ();
@@ -193,8 +195,9 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     INDENT;
     fprintf (global.outfile,
-             "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");",
-             funname); 
+             "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");\n",
+             funname);
+    fprintf (global.outfile, "SAC_PF_BEGIN_CUDA_KNL ();\n");
     if (global.backend == BE_cudahybrid) {
         // on cudahybrid, we make use of streams, which have a fixed name
         fprintf (global.outfile, "%s<<<grid, block, 0, *stream>>>(", funname);
@@ -231,6 +234,12 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     }
     fprintf (global.outfile, ");\n");
 
+    if (STReq (global.config.cuda_alloc, "cuman")
+        || STReq (global.config.cuda_alloc, "cumanp")) {
+        fprintf (global.outfile, "cudaDeviceSynchronize ();\n");
+    }
+    fprintf (global.outfile, "SAC_PF_END_CUDA_KNL ();\n");
+
     fprintf (global.outfile, "SAC_CUDA_GET_LAST_KERNEL_ERROR();\n");
     /*
       fprintf( global.outfile, "cudaThreadSynchronize();\n");
@@ -254,12 +263,12 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
 /******************************************************************************
  *
  * function:
- *   void ICMCompileCUDA_GRID_BLOCK( int bounds_count, char **var_ANY)
+ *   void ICMCompileCUDA_GRID_BLOCK( unsigned int bounds_count, char **var_ANY)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
+ICMCompileCUDA_GRID_BLOCK (unsigned int bounds_count, char **var_ANY)
 {
     DBUG_ENTER ();
 
@@ -271,24 +280,27 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
 #define CUDA_SET_GRID(fmt, ...)                                                          \
     fprintf (global.outfile, "dim3 grid(" fmt ");\n", __VA_ARGS__);                      \
     INDENT;                                                                              \
-    fprintf (global.outfile,                                                             \
-             "SAC_TR_GPU_PRINT (\"   CUDA XYZ grid dimension of "                        \
-             "%%u x %%u x %%u\", grid.x , grid.y , grid.z );\n");                        \
+    fprintf (global.outfile, "SAC_TR_GPU_PRINT (\"   CUDA XYZ grid dimension of "        \
+                             "%%u x %%u x %%u\", grid.x , grid.y , grid.z );\n");        \
     INDENT;                                                                              \
     fprintf (global.outfile, "if (grid.x <= 0 ) {\n"                                     \
-             "SAC_RuntimeError(\"CUDA X grid dimension must be bigger than zero. Current"\
-             " value is %%u\", grid.x);");                                               \
+                             "SAC_RuntimeError(\"CUDA X grid dimension must be bigger "  \
+                             "than zero. Current"                                        \
+                             " value is %%u\", grid.x);");                               \
     fprintf (global.outfile, "}\n");                                                     \
     fprintf (global.outfile, "if (grid.y <= 0 ) {\n"                                     \
-             "SAC_RuntimeError(\"CUDA Y grid dimension must be bigger than zero. Current"\
-             " value is %%u\", grid.y);");                                               \
+                             "SAC_RuntimeError(\"CUDA Y grid dimension must be bigger "  \
+                             "than zero. Current"                                        \
+                             " value is %%u\", grid.y);");                               \
     fprintf (global.outfile, "}\n");                                                     \
     fprintf (global.outfile, "if (grid.z <= 0 ) {\n"                                     \
-             "SAC_RuntimeError(\"CUDA Z grid dimension must be bigger than zero. Current"\
-             " value is %%u\", grid.z);");                                               \
+                             "SAC_RuntimeError(\"CUDA Z grid dimension must be bigger "  \
+                             "than zero. Current"                                        \
+                             " value is %%u\", grid.z);");                               \
     fprintf (global.outfile, "}\n");                                                     \
     fprintf (global.outfile, "if (grid.x > %u || grid.y > %u || grid.z > %u) {\n",       \
-             global.cuda_max_x_grid, global.cuda_max_yz_grid, global.cuda_max_yz_grid);  \
+             global.cuda_options.cuda_max_x_grid, global.cuda_options.cuda_max_yz_grid,  \
+             global.cuda_options.cuda_max_yz_grid);                                      \
     INDENT;                                                                              \
     INDENT;                                                                              \
     INDENT;                                                                              \
@@ -296,7 +308,8 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
              "SAC_RuntimeError(\"CUDA XYZ grid dimension of %%u x %%u x %%u exceeds "    \
              "the compute capability's max value: %u x %u x %u\","                       \
              " grid.x, grid.y, grid.z );\n",                                             \
-             global.cuda_max_x_grid, global.cuda_max_yz_grid, global.cuda_max_yz_grid);  \
+             global.cuda_options.cuda_max_x_grid, global.cuda_options.cuda_max_yz_grid,  \
+             global.cuda_options.cuda_max_yz_grid);                                      \
     INDENT;                                                                              \
     INDENT;                                                                              \
     fprintf (global.outfile, "}\n");
@@ -304,25 +317,28 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
 #define CUDA_SET_BLOCK(fmt, ...)                                                         \
     fprintf (global.outfile, "dim3 block(" fmt ");", __VA_ARGS__);                       \
     INDENT;                                                                              \
-    fprintf (global.outfile,                                                             \
-             "SAC_TR_GPU_PRINT (\"   CUDA XYZ block dimension of "                       \
-             "%%u x %%u x %%u\", block.x , block.y , block.z );\n");                     \
+    fprintf (global.outfile, "SAC_TR_GPU_PRINT (\"   CUDA XYZ block dimension of "       \
+                             "%%u x %%u x %%u\", block.x , block.y , block.z );\n");     \
     INDENT;                                                                              \
-    fprintf (global.outfile, "if (block.x <= 0 ) {\n"                                    \
+    fprintf (global.outfile,                                                             \
+             "if (block.x <= 0 ) {\n"                                                    \
              "SAC_RuntimeError(\"CUDA X block dimension must be bigger than zero. "      \
              "Current value is %%u\", block.x);");                                       \
     fprintf (global.outfile, "}\n");                                                     \
-    fprintf (global.outfile, "if (block.y <= 0 ) {\n"                                    \
+    fprintf (global.outfile,                                                             \
+             "if (block.y <= 0 ) {\n"                                                    \
              "SAC_RuntimeError(\"CUDA Y block dimension must be bigger than zero. "      \
              "Current value is %%u\", block.y);");                                       \
     fprintf (global.outfile, "}\n");                                                     \
-    fprintf (global.outfile, "if (block.z <= 0 ) {\n"                                    \
+    fprintf (global.outfile,                                                             \
+             "if (block.z <= 0 ) {\n"                                                    \
              "SAC_RuntimeError(\"CUDA Z block dimension must be bigger than zero. "      \
              "Current value is %%u\", block.z);");                                       \
     fprintf (global.outfile, "}\n");                                                     \
     fprintf (global.outfile, "if (block.x > %u || block.y > %u || block.z > %u) {\n",    \
-             global.cuda_max_xy_block, global.cuda_max_xy_block,                         \
-             global.cuda_max_z_block);                                                   \
+             global.cuda_options.cuda_max_xy_block,                                      \
+             global.cuda_options.cuda_max_xy_block,                                      \
+             global.cuda_options.cuda_max_z_block);                                      \
     INDENT;                                                                              \
     INDENT;                                                                              \
     INDENT;                                                                              \
@@ -330,15 +346,16 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
              "SAC_RuntimeError(\"CUDA XYZ block dimension of %%u x %%u x %%u exceeds "   \
              "the compute capability's max value: %u x %u x %u\", "                      \
              "block.x, block.y, block.z);\n",                                            \
-             global.cuda_max_xy_block, global.cuda_max_xy_block,                         \
-             global.cuda_max_z_block);                                                   \
+             global.cuda_options.cuda_max_xy_block,                                      \
+             global.cuda_options.cuda_max_xy_block,                                      \
+             global.cuda_options.cuda_max_z_block);                                      \
     INDENT;                                                                              \
     INDENT;                                                                              \
     fprintf (global.outfile, "}\n");                                                     \
     INDENT;                                                                              \
     INDENT;                                                                              \
     fprintf (global.outfile, "if (block.x * block.y *block.z > %u ) {\n",                \
-             global.cuda_max_threads_block);                                             \
+             global.cuda_options.cuda_max_threads_block);                                \
     INDENT;                                                                              \
     INDENT;                                                                              \
     INDENT;                                                                              \
@@ -346,7 +363,7 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
              "SAC_RuntimeError(\"CUDA XYZ block dimension of %%u x %%u x %%u = %%u "     \
              "exceeds compute capability's max number of threads per block: %u\", "      \
              "block.x, block.y, block.z, block.x * block.y * block.z);\n",               \
-             global.cuda_max_threads_block);                                             \
+             global.cuda_options.cuda_max_threads_block);                                \
     INDENT;                                                                              \
     INDENT;                                                                              \
     fprintf (global.outfile, "}\n");
@@ -428,15 +445,16 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
  *
  * function:
  *   void ICMCompileCUDA_ST_GLOBALFUN_AP( char *funname,
- *                                     int vararg_cnt,
+ *                                     unsigned int vararg_cnt,
  *                                     char **vararg)
  *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
+ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vararg)
 {
-    int dim, i, j;
+    int dim, j;
+    unsigned int i;
     char *basetype;
 
     DBUG_ENTER ();
@@ -459,8 +477,9 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     INDENT;
     fprintf (global.outfile,
-             "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");",
+             "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");\n",
              funname); 
+    fprintf (global.outfile, "SAC_PF_BEGIN_CUDA_KNL ();\n");
     fprintf (global.outfile, "%s<<<1, 1>>>(", funname);
     for (i = 0; i < 4 * vararg_cnt; i += 4) {
         if (STReq (vararg[i + 1], "float_dev")) {
@@ -490,6 +509,11 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
         }
     }
     fprintf (global.outfile, ");\n");
+    if (STReq (global.config.cuda_alloc, "cuman")
+        || STReq (global.config.cuda_alloc, "cumanp")) {
+        fprintf (global.outfile, "cudaDeviceSynchronize ();\n");
+    }
+    fprintf (global.outfile, "SAC_PF_END_CUDA_KNL ();\n");
 
     /*
       fprintf( global.outfile, "cutStopTimer(timer);\n");
@@ -840,13 +864,119 @@ ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype, char *d
                  ASSURE_TEXT ("cudaMemcpy: Destionation and source arrays "
                               "should have equal sizes!"));
 
-    INDENT; 
-    fprintf (global.outfile,
-             "SAC_TR_GPU_PRINT (\"%s size %%d\\n\", SAC_ND_A_SIZE( %s));",
-             direction, from_NT);
+    INDENT;
+    if (STReq (global.config.cuda_alloc, "cureg")) {
+        fprintf (global.outfile, "SAC_ND_CUDA_PIN(");
+        if (STReq (direction, "cudaMemcpyHostToDevice")) {
+            fprintf (global.outfile, "%s, ", from_NT);
+        } else if (STReq (direction, "cudaMemcpyDeviceToHost")) {
+            fprintf (global.outfile, "%s, ", to_NT);
+        } else {
+            CTIerrorInternal ("CUDA transfer direction is not supported: `%s`!", direction);
+        }
+        fprintf (global.outfile, "%s);", basetype);
+    }
 
-    fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER(%s, %s, %s, %s)", to_NT, from_NT,
+    fprintf (global.outfile,
+             "SAC_TR_GPU_PRINT (\"%s size %%d %s -> %s\\n\", SAC_ND_A_SIZE( %s));\n",
+             direction, from_NT, to_NT, from_NT);
+
+    if (STReq (direction, "cudaMemcpyHostToDevice")) {
+        fprintf (global.outfile, "SAC_PF_BEGIN_CUDA_HtoD()\n");
+    } else if (STReq (direction, "cudaMemcpyDeviceToHost")) {
+        fprintf (global.outfile, "SAC_PF_BEGIN_CUDA_DtoH()\n");
+    } else {
+        CTIerrorInternal ("CUDA transfer direction is not supported: `%s`!", direction);
+    }
+
+    fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER(%s, %s, %s, %s)\n", to_NT, from_NT,
              basetype, direction);
+
+    if (STReq (direction, "cudaMemcpyHostToDevice")) {
+        fprintf (global.outfile, "SAC_PF_END_CUDA_HtoD()\n");
+    } else if (STReq (direction, "cudaMemcpyDeviceToHost")) {
+        fprintf (global.outfile, "SAC_PF_END_CUDA_DtoH()\n");
+    } else {
+        CTIerrorInternal ("CUDA transfer direction is not supported: `%s`!", direction);
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_MEM_TRANSFER_START( char *to_NT, char *from_NT,
+ *                                           char *basetype, char *direction)
+ *
+ *
+ ******************************************************************************/
+void
+ICMCompileCUDA_MEM_TRANSFER_START (char *to_NT, char *from_NT, char *basetype, char *direction)
+{
+
+    DBUG_ENTER ();
+
+#define CUDA_MEM_TRANSFER_START
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_MEM_TRANSFER_START
+
+    // we use existing MEM_TRANSFER ICM, we just append a new ICM.
+    ICMCompileCUDA_MEM_TRANSFER (to_NT, from_NT, basetype, direction);
+
+    fprintf (global.outfile, "\n");
+    INDENT;
+    fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER_SYNC_START()");
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_MEM_TRANSFER_END( char *to_NT, char *from_NT,
+ *                                           char *basetype, char *direction)
+ *
+ *
+ ******************************************************************************/
+void
+ICMCompileCUDA_MEM_TRANSFER_END (char *var_NT)
+{
+
+    DBUG_ENTER ();
+
+#define CUDA_MEM_TRANSFER_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_MEM_TRANSFER_END
+
+    INDENT;
+    fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER_SYNC_END(%s)", var_NT);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_MEM_PREFETCH( char *var_NT, char *basetype, int device)
+ *
+ *
+ ******************************************************************************/
+void
+ICMCompileCUDA_MEM_PREFETCH (char *var_NT, char *basetype, int device)
+{
+    DBUG_ENTER ();
+
+#define CUDA_MEM_PREFETCH
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_MEM_PREFETCH
+
+    INDENT;
+    fprintf (global.outfile, "SAC_CUDA_MEM_PREFETCH(%s, %s, %d)", var_NT,
+             basetype, device);
 
     DBUG_RETURN ();
 }
@@ -1066,6 +1196,8 @@ ICMCompileCUDA_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
     int from_dim;
 
     DBUG_ENTER ();
+
+    DBUG_PRINT ("create cuda assign of %s to %s", to_NT, from_NT);
 
 #define CUDA_ASSIGN
 #include "icm_comment.c"

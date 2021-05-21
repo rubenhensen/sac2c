@@ -112,7 +112,7 @@ CBLdoConstructBundles (node *syntax_tree)
  *****************************************************************************/
 
 static char *
-GenerateFunbundleName (char *name, namespace_t *ns, int arity)
+GenerateFunbundleName (char *name, namespace_t *ns, size_t arity)
 {
     char *result, *safens, *safename;
     str_buf *buffer;
@@ -143,7 +143,7 @@ GenerateFunbundleName (char *name, namespace_t *ns, int arity)
  *
  *****************************************************************************/
 static node *
-InsertIntoBundles (node *fundef, int arity, node *bundles)
+InsertIntoBundles (node *fundef, size_t arity, node *bundles)
 {
     DBUG_ENTER ();
 
@@ -198,7 +198,7 @@ node *
 CBLfundef (node *arg_node, info *arg_info)
 {
     node *old_node = NULL;
-    int arity;
+    size_t arity;
 
     DBUG_ENTER ();
 
@@ -210,7 +210,7 @@ CBLfundef (node *arg_node, info *arg_info)
 
             arity = TCcountArgs (FUNDEF_ARGS (old_node));
 
-            DBUG_PRINT ("Adding function %s (%d) to bundle.", CTIitemName (old_node),
+            DBUG_PRINT ("Adding function %s (%zu) to bundle.", CTIitemName (old_node),
                         arity);
 
             INFO_BUNDLES (arg_info)

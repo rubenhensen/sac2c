@@ -450,7 +450,7 @@ IF (CUDA)
     IF (CUDA_C_RESULT)
       SET (ENABLE_CUDA ON)
       # add further RT lib build targets
-      LIST (APPEND RT_TARGETS cuda cuda_reg cuda_alloc cuda_man)
+      LIST (APPEND RT_TARGETS cuda cuda_reg cuda_alloc cuda_man cuda_manp)
       LIST (APPEND SAC2CRC_LIBS_PATHS "${CUDA_TOOLKIT_ROOT_DIR}/lib64")
       LIST (APPEND SAC2CRC_INCS "${CUDA_INCLUDE_DIRS}")
       LIST (APPEND SAC2CRC_LIBS "-lcudart" "-lcublas")
@@ -459,8 +459,8 @@ IF (CUDA)
         MESSAGE (STATUS "Setting CUDA Device-CC: `${CUDA_R_OUTPUT}'")
         SET (CUDA_ARCH  "${CUDA_R_OUTPUT}")
       ELSEIF (CUDA_C_RESULT AND CUDA_R_RESULT) # no CUDA device
-        MESSAGE (STATUS "Unable to determine CUDA Device-CC, setting default as `-arch=sm_35'")
-        SET (CUDA_ARCH  "-arch=sm_35")
+        MESSAGE (STATUS "Unable to determine CUDA Device-CC, using `sm_35'")
+        SET (CUDA_ARCH  "sm_35")
       ENDIF ()
     ELSE () # something wrong with CUDA install
       MESSAGE (WARNING "CUDA installation is not working: ${CUDA_C_OUTPUT}")
@@ -560,6 +560,7 @@ SET (INCS        "${SAC2CRC_INCS_STR}:") # all variables need to be colon separa
 IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (GCC_FLAGS   "")
   SET (GCC_NATIVE_FLAGS  "")
+  SET (GCC_GENERIC_FLAGS  "")
   CHECK_CC_FLAG ("-Wall" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wextra" GCC_FLAGS)
   CHECK_CC_FLAG ("-Wstrict-prototypes" GCC_FLAGS)
@@ -578,15 +579,23 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   CHECK_CC_FLAG ("-Wno-strict-overflow" GCC_FLAGS)
   # allow fall through by virtue of comment
   CHECK_CC_FLAG ("-Wimplicit-fallthrough=3" GCC_FLAGS)
+  IF (CLANG)
+    # CLANG specific options(s)
+    # allow for vardic macros to have zero arguments
+    CHECK_CC_FLAG ("-Wno-gnu-zero-variadic-macro-arguments" GCC_FLAGS)
+  ENDIF ()
+  # we use snprintf specifically in situations when we do not mind the output
+  # to be truncated. Threfore, we do not even check whether truncation has
+  # happened. The following option avoids warnings about the use of snprintf
+  # without checking the result:
+  CHECK_CC_FLAG ("-Wno-format-truncation" GCC_FLAGS)
+  # give warnings if we are doing things that don't conform with C standard
+  CHECK_CC_FLAG ("-pedantic" GCC_FLAGS)
+
+  # check that this tune flags work
   CHECK_CC_FLAG ("-march=native" GCC_NATIVE_FLAGS)
   CHECK_CC_FLAG ("-mtune=native" GCC_NATIVE_FLAGS)
-
-  # If the BUILDGENERIC flag is on, we build a compiler with -mtune=generic
-  # but we pass -march=native (if supported) to RCCCFLAGS.
-  SET (GCC_NATIVE_OR_GENERIC  "${GCC_NATIVE_FLAGS}")
-  IF (BUILDGENERIC)
-    SET (GCC_NATIVE_OR_GENERIC "-mtune=generic")
-  ENDIF ()
+  CHECK_CC_FLAG ("-mtune=generic" GCC_GENERIC_FLAGS)
 
   # FIXME(artem) Can we get these flags from the Pthread checking macro?
   EXECUTE_PROCESS (
@@ -602,13 +611,18 @@ IF ((CMAKE_COMPILER_IS_GNUCC OR CLANG) AND (NOT MACC))
   SET (OPT_O2       "-O2")
   SET (OPT_O3       "-O3")
   SET (OPT_g        "-g")
-  # FIXME (hans): we currently are using these flags for building the compiler as well as
-  #               the SAC sources - which it not optimal for packaging
-  SET (RCCCFLAGS    "${GCC_FLAGS} ${GCC_NATIVE_FLAGS} -std=gnu99 -pedantic -Wno-unused -fno-builtin")
+  SET (TUNE_native  "${GCC_NATIVE_FLAGS}")
+  SET (TUNE_generic "${GCC_GENERIC_FLAGS}")
+  SET (RCCCFLAGS    "${GCC_FLAGS} -std=gnu99 -pedantic -Wno-unused -fno-builtin")
   # FIXME (artem): This hack allows us to avoid propagating -Wconversion into default sac2c flags.
   STRING (REGEX REPLACE "-Wconversion" "" RCCCFLAGS ${RCCCFLAGS})
-  SET (DEV_FLAGS    "${GCC_FLAGS} ${GCC_NATIVE_OR_GENERIC} -std=gnu99 -pedantic -g ${FLAGS_LTO}")
-  SET (PROD_FLAGS   "${GCC_FLAGS} ${GCC_NATIVE_OR_GENERIC} -std=gnu99 -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
+  IF (BUILDGENERIC)
+    SET (DEV_FLAGS    "${GCC_FLAGS} ${GCC_GENERIC_FLAGS} -std=gnu99 -g ${FLAGS_LTO}")
+    SET (PROD_FLAGS   "${GCC_FLAGS} ${GCC_GENERIC_FLAGS} -std=gnu99 -g -O3 ${FLAGS_LTO}")
+  ELSE ()
+    SET (DEV_FLAGS    "${GCC_FLAGS} ${GCC_NATIVE_FLAGS} -std=gnu99 -g ${FLAGS_LTO}")
+    SET (PROD_FLAGS   "${GCC_FLAGS} ${GCC_NATIVE_FLAGS} -std=gnu99 -g -O3 ${FLAGS_LTO}")
+  ENDIF ()
   SET (GENPIC       "-fPIC")
   SET (DEPSFLAG     "-M")
   SET (CPPFILE      "${CPP_CMD} -C -x c")
@@ -621,6 +635,8 @@ ELSEIF (SUNC)
   SET (OPT_O2        "-xO4")
   SET (OPT_O3        "-xO5")
   SET (OPT_g         "-g")
+  SET (TUNE_native   "")
+  SET (TUNE_generic  "")
   SET (RCLDFLAGS     "")
   SET (RCCCFLAGS     "-dalign -fsimple -xsafe=mem -xc99=all")
   SET (DEV_FLAGS     "-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xc99=all")
@@ -637,6 +653,8 @@ ELSEIF (DECC)
   SET (OPT_O2        "-O2")
   SET (OPT_O3        "-O3")
   SET (OPT_g         "-g")
+  SET (TUNE_native   "")
+  SET (TUNE_generic  "")
   SET (RCLDFLAGS     "")
   SET (RCCCFLAGS     "")
   SET (DEV_FLAGS     "-g")
@@ -649,11 +667,15 @@ ELSEIF (DECC)
   SET (CCDLLINK      "-ldl")
 ELSEIF (MACC)
   SET (MACCC_FLAGS   "")
+  SET (MACLD_FLAGS   "")
   SET (MACCC_NATIVE_FLAGS  "")
+  SET (MACCC_GENERIC_FLAGS  "")
   # TODO(artem) Check whether this helps to handle the bracket error!
   IF ("${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
     CHECK_CC_FLAG ("-fbracket-depth=4096" MACCC_FLAGS)
   ENDIF ()
+  CHECK_CC_FLAG ("-isysroot ${CMAKE_OSX_SYSROOT}" MACCC_FLAGS)
+  CHECK_CC_FLAG ("-isysroot ${CMAKE_OSX_SYSROOT}" MACLD_FLAGS)
   CHECK_CC_FLAG ("-Wall" MACCC_FLAGS)
   CHECK_CC_FLAG ("-Wextra" MACCC_FLAGS)
   CHECK_CC_FLAG ("-Weverything" MACCC_FLAGS)
@@ -704,25 +726,45 @@ ELSEIF (MACC)
   # temporarily disabled; needs to be reactivated with doxygen:
   CHECK_CC_FLAG ("-Wno-documentation-unknown-command" MACCC_FLAGS)
 
+  # allow for vardic macros to have zero arguments
+  CHECK_CC_FLAG ("-Wno-gnu-zero-variadic-macro-arguments" MACCC_FLAGS)
+
+  # we use alloca in the context of the MT backend which is deemed potentially
+  # unsafe. It is not clear how we can avoid this; therefore, for the time
+  # being, we silence these warnings.
+  CHECK_CC_FLAG ("-Wno-alloca" MACCC_FLAGS)
+
+  # we load stuff dynamically from /usr/local/include/sac2c/1.3.3-MijasCosta-392-gafc5c-dirty/release
+  # which limits portability; we ignore those warnings:
+  CHECK_CC_FLAG ("-Wno-poison-system-directories" MACCC_FLAGS)
+
+  # we do use __sync_add_and_fetch in mt_beehive.c which leads to the warning that
+  # implicit use of sequentially-consistent atomic may incur stronger memory barriers than necessary
+  # being conservative it is ok to ignore those warnings, however, 
+  # we SHOULD investigate this further!
+  CHECK_CC_FLAG ("-Wno-atomic-implicit-seq-cst" MACCC_FLAGS)
+
   #Turn this if you want to be cruel
   #CHECK_CC_FLAG ("-Wconversion" MACCC_FLAGS)
   CHECK_CC_FLAG ("-march=native" MACCC_NATIVE_FLAGS)
   CHECK_CC_FLAG ("-mtune=native" MACCC_NATIVE_FLAGS)
-
-  # but we pass -march=native (if supported) to RCCCFLAGS.
-  SET (MACCC_NATIVE_OR_GENERIC  "${MACCC_NATIVE_FLAGS}")
-  IF (BUILDGENERIC)
-    SET (MACCC_NATIVE_OR_GENERIC "-mtune=generic")
-  ENDIF ()
+  CHECK_CC_FLAG ("-mtune=generic" MACCC_GENERIC_FLAGS)
 
   SET (OPT_O0        "")
   SET (OPT_O1        "-O1")
   SET (OPT_O2        "-O2")
   SET (OPT_O3        "-O3")
   SET (OPT_g         "-g")
-  SET (RCCCFLAGS    "${MACCC_FLAGS} ${MACCC_NATIVE_FLAGS} -std=c99 -pedantic -Wno-unused -fno-builtin")
-  SET (DEV_FLAGS    "${MACCC_FLAGS} ${MACCC_NATIVE_OR_GENERIC} -std=c99 -pedantic -g ${FLAGS_LTO}")
-  SET (PROD_FLAGS   "${MACCC_FLAGS} ${MACCC_NATIVE_OR_GENERIC} -pedantic -g -O3 -std=c99 ${FLAGS_LTO}")
+  SET (TUNE_native   "${MACCC_NATIVE_FLAGS}")
+  SET (TUNE_generic  "${MACCC_GENERIC_FLAGS}")
+  SET (RCCCFLAGS     "${MACCC_FLAGS} -std=gnu99 -pedantic -Wno-unused -fno-builtin")
+  IF (BUILDGENERIC)
+    SET (DEV_FLAGS     "${MACCC_FLAGS} ${MACCC_GENERIC_FLAGS} -std=gnu99 -pedantic -g ${FLAGS_LTO}")
+    SET (PROD_FLAGS    "${MACCC_FLAGS} ${MACCC_GENERIC_FLAGS} -std=gnu99 -pedantic -g -O3 ${FLAGS_LTO}")
+  ELSE ()
+    SET (DEV_FLAGS     "${MACCC_FLAGS} ${MACCC_NATIVE_FLAGS} -std=gnu99 -pedantic -g ${FLAGS_LTO}")
+    SET (PROD_FLAGS    "${MACCC_FLAGS} ${MACCC_NATIVE_FLAGS} -std=gnu99 -pedantic -g -O3 ${FLAGS_LTO}")
+  ENDIF ()
   SET (GENPIC        "")
   SET (DEPSFLAG      "-M")
   SET (CPPFILE       "${CPP_CMD} -C -x c")
@@ -761,7 +803,7 @@ ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   SET (DEFS         "-D_DARWIN_C_SOURCE")
   SET (LD_DYNAMIC   "-Qunused-arguments -undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%.dylib' ")
   SET (LD_PATH      "-L%path% -Wl,-rpath,%path%")
-  SET (LD_FLAGS     "")
+  SET (LD_FLAGS     "${MACLD_FLAGS}")
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES ".*bsd")
   SET (OSFLAGS      "-fPIC")
   SET (LD_DYNAMIC   "-shared -Wl,-allow-shlib-undefined ${FLAGS_LTO}")

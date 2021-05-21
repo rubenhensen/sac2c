@@ -1,0 +1,13 @@
+
+/* a mapping between host and device types */
+#ifndef CUTypesMap
+#define CUTypesMap(host, device, shmem, dist)
+#endif
+CUTypeMap (T_bool, T_bool_dev, T_bool_shmem, T_bool_dist)
+CUTypeMap (T_int, T_int_dev, T_int_shmem, T_int_dist)
+CUTypeMap (T_long, T_long_dev, T_long_shmem, T_long_dist)
+CUTypeMap (T_longlong, T_longlong_dev, T_longlong_shmem, T_longlong_dist)
+CUTypeMap (T_float, T_float_dev, T_float_shmem, T_float_dist)
+CUTypeMap (T_double, T_double_dev, T_double_shmem, T_double_dist)
+
+#undef CUTypeMape

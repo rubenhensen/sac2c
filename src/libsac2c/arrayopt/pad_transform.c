@@ -288,14 +288,14 @@ AddDummyPart (node *wl, shpseg *old_shape, shpseg *new_shape, int dims)
         if (SHPSEG_SHAPE (old_shape, i) != SHPSEG_SHAPE (new_shape, i)) {
             lbound_shape = LBound (old_shape, dims, i);
             ubound_shape = UBound (old_shape, new_shape, dims, i);
-            lbound_array = TCshpseg2Array (lbound_shape, dims);
-            ubound_array = TCshpseg2Array (ubound_shape, dims);
+            lbound_array = SHshape2Array (lbound_shape);
+            ubound_array = SHshape2Array (ubound_shape);
             FREEfreeShpseg (lbound_shape);
             FREEfreeShpseg (ubound_shape);
 
             /* generate (lower_bound <= idx < upper_bound) */
             generator
-              = TBmakeGenerator (F_le, F_lt, lbound_array, ubound_array, NULL, NULL);
+              = TBmakeGenerator (F_wl_le, F_wl_lt, lbound_array, ubound_array, NULL, NULL);
 
             /* copy reference to idx-variable from existing withid-node
              * (remember that there is only ONE idx-variable for all part-nodes
@@ -328,7 +328,7 @@ AddDummyCode (node *wl)
 {
 
     node *vardec;
-    types *type;
+    ntype *type;
 
     node *expr;
     node *ids_attrib;
@@ -468,7 +468,7 @@ AddDummyCode (node *wl)
 /*****************************************************************************
  *
  * function:
- *   static void InsertWithLoopGenerator(types* oldtype, types* newtype, node* wl)
+ *   static void InsertWithLoopGenerator(ntype* oldtype, ntype* newtype, node* wl)
  *
  * description:
  *   insert new part-nodes and code-node into withloop to apply padding
@@ -476,7 +476,7 @@ AddDummyCode (node *wl)
  *****************************************************************************/
 
 static void
-InsertWithLoopGenerator (types *oldtype, types *newtype, node *wl)
+InsertWithLoopGenerator (ntype *oldtype, ntype *newtype, node *wl)
 {
 
     shpseg *shape_diff;
@@ -486,24 +486,14 @@ InsertWithLoopGenerator (types *oldtype, types *newtype, node *wl)
 
     DBUG_ENTER ();
 
-    /* calculate shape difference */
-    shape_diff = TCdiffShpseg (TYPES_DIM (oldtype), TYPES_SHPSEG (newtype),
-                               TYPES_SHPSEG (oldtype));
-    for (i = 0; i < TYPES_DIM (oldtype); i++) {
-        if (SHPSEG_SHAPE (shape_diff, i) > 0) {
-            different = TRUE;
-        }
-        DBUG_ASSERT (SHPSEG_SHAPE (shape_diff, i) >= 0, "negative shape difference");
-    }
-
-    if (different) {
+    if (!SHcompareShapes (TYgetType(oldtype), TYgetShape (newtype))) {
 
         /* add code block */
         assignment_vardec = AddDummyCode (wl);
 
         /* add nodes to part */
-        wl = AddDummyPart (wl, TYPES_SHPSEG (oldtype), TYPES_SHPSEG (newtype),
-                           TYPES_DIM (oldtype));
+        wl = AddDummyPart (wl, TYgetShape (oldtype), TYgetShape (newtype),
+                           TYgetDim (oldtype));
     }
 
     DBUG_RETURN ();
@@ -523,7 +513,7 @@ node *
 APTarg (node *arg_node, info *arg_info)
 {
 
-    types *new_type;
+    ntype *new_type;
 
     DBUG_ENTER ();
 
@@ -564,7 +554,7 @@ node *
 APTvardec (node *arg_node, info *arg_info)
 {
 
-    types *new_type;
+    ntype *new_type;
     node *original_vardec;
 
     DBUG_ENTER ();
@@ -797,11 +787,11 @@ node *
 APTgenarray (node *arg_node, info *arg_info)
 {
 
-    shpseg *shpseg;
+    shape *shp;
     int dim;
     int simpletype;
-    types *oldtype = NULL;
-    types *newtype = NULL;
+    ntype *oldtype = NULL;
+    ntype *newtype = NULL;
 
     DBUG_ENTER ();
 
@@ -814,9 +804,9 @@ APTgenarray (node *arg_node, info *arg_info)
 
     DBUG_PRINT (" genarray-loop");
 
-    shpseg = TCarray2Shpseg (GENARRAY_SHAPE (arg_node), NULL);
+    shp = SHarray2Shape (GENARRAY_SHAPE (arg_node), NULL);
     /* constant array has dim=1
-     * => number of elements is stored in shpseg[0]
+     * => number of elements is stored in shp[0]
      */
     dim = SHgetUnrLen (ARRAY_SHAPE (GENARRAY_SHAPE (arg_node)));
     /* all elements have the same type
@@ -827,8 +817,8 @@ APTgenarray (node *arg_node, info *arg_info)
     /* infer result of with-loop
        Attention: only elements with scalar types are supported yet !!!
     */
-    oldtype = TBmakeTypes (simpletype, dim, shpseg, NULL, NULL);
-    newtype = PIgetNewType (DUPdupAllTypes (oldtype));
+    oldtype = TYmakeAKS (TYmakeSimple (simpletype), shp);
+    newtype = PIgetNewType (TYcopyType (oldtype));
 
     if (newtype != NULL) {
         /* apply padding (genarray-specific)*/
@@ -837,7 +827,7 @@ APTgenarray (node *arg_node, info *arg_info)
 
         FREEdoFreeNode (GENARRAY_SHAPE (arg_node));
         GENARRAY_SHAPE (arg_node)
-          = TCshpseg2Array (TYPES_SHPSEG (newtype), TYPES_DIM (newtype));
+          = SHshape2Array (TYgetShape (newtype));
 
         INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
     }
@@ -876,8 +866,8 @@ node *
 APTmodarray (node *arg_node, info *arg_info)
 {
 
-    types *oldtype = NULL;
-    types *newtype = NULL;
+    ntype *oldtype = NULL;
+    ntype *newtype = NULL;
 
     DBUG_ENTER ();
 
@@ -933,8 +923,8 @@ node *
 APTfold (node *arg_node, info *arg_info)
 {
 
-    types *oldtype = NULL;
-    types *newtype = NULL;
+    ntype *oldtype = NULL;
+    ntype *newtype = NULL;
 
     DBUG_ENTER ();
 
@@ -1102,11 +1092,11 @@ APTprf (node *arg_node, info *arg_info)
         if (ID_PADDED (PRF_ARG1 (arg_node))) {
             /* substitute paddable argument with reference to constant vector
                containing padded shape */
-            types *old_type;
+            ntype *old_type;
 
             old_type = PIgetOldType (
               DUPdupAllTypes (VARDEC_TYPE (ID_DECL (PRF_ARG1 (arg_node)))));
-            arg_node = TCshpseg2Array (TYPES_SHPSEG (old_type), TYPES_DIM (old_type));
+            arg_node = SHshape2Array (TYgetShape (old_type));
             old_type = MEMfree (old_type);
         }
         /* even if PRF_ARG1 is padded, the result of PRF will have an

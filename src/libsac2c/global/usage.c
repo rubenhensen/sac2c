@@ -725,6 +725,35 @@ PrintBackendOptions (void)
             "\n"
             "    -force_desc_size <n>\n"
             "                    Force the size of the descriptor to n bytes\n"
+            "\n"
+            "    -cuda_arch <sm>\n"
+            "                    Specify which CUDA architecture to generate code for:\n"
+            "                      sm10: for Tesla architecture\n"
+            "                      sm11: same as above\n"
+            "                      sm12: same as above\n"
+            "                      sm13: same as above\n"
+            "                      sm20: for Fermi architecture\n"
+            "                      sm35: for Kepler architecture\n"
+            "                      sm50: for Maxwell architecture\n"
+            "                      sm60: for Pascal architecture\n"
+            "                      sm61: same as above\n"
+            "                      sm70: for Volta architecture\n"
+            "                    (default: sm35)\n"
+            "\n"
+            "    -cuda_async_mode <mode>\n"
+            "                    Specify synchronisation mode between host thread and CUDA:\n"
+            "                        nosync: do not synchronise at all\n"
+            "                        device: synchronise the entire device\n"
+            "                        stream: synchronise the stream\n"
+            "                      callback: synchronise the stream using callback\n"
+            "                    (default: device)\n"
+            "\n"
+            "    -cuda_shape <1d>,<2d_x>,<2d_y>\n"
+            "                    Override the grid/block specification, given as:\n"
+            "                        1d: 1-dim block size\n"
+            "                      2d_x: 2-dim block size for the x-dim\n"
+            "                      2d_y: 2-dim block size for the y-dim\n"
+            "                    (default: depends on <cuda_arch> value)\n"
             "\n");
 
     DBUG_RETURN ();
@@ -932,6 +961,26 @@ PrintPrintingOptions (void)
 }
 
 static void
+PrintCompiletimeAnalysesOptions (void)
+{
+    DBUG_ENTER ();
+
+    printf (
+      "\n\nCOMPILETIME FEEDBACK OPTIONS:\n\n"
+
+      "    -feedback [atcor]+\n"
+      "                    Perform some compile time analyses and output some user feedback.\n"
+      "                    The following flags are supported:\n"
+      "                      a: Analyse all (same as tcor).\n"
+      "                      t: Analyse the effectiveness of function specialisation.\n"
+      "                      c: Analyse the effectveness of static constraint resolution.\n"
+      "                      o: Analyse the effectiveness of the optimisation cycle.\n"
+      "                      r: Analyse the effectiveness of reference counting.\n");
+
+    DBUG_RETURN ();
+}
+
+static void
 PrintRuntimeProfilingOptions (void)
 {
     DBUG_ENTER ();
@@ -939,13 +988,17 @@ PrintRuntimeProfilingOptions (void)
     printf (
       "\n\nRUNTIME PROFILING OPTIONS:\n\n"
 
-      "    -profile [afilwd]+\n"
+      "    -profile [afilwmocd]+\n"
       "                    Incorporate profiling analysis into executable program.\n"
-      "                      a: Analyse all (same as filwd).\n"
+      "                    The following flags are supported:\n"
+      "                      a: Analyse all (same as filwmod).\n"
       "                      f: Analyse time spent in non-inline functions.\n"
       "                      i: Analyse time spent in inline functions.\n"
       "                      l: Analyse time spent in library functions.\n"
       "                      w: Analyse time spent in with-loops.\n"
+      "                      m: Analyse number of memory operations.\n"
+      "                      o: Analyse number of primitive operations (FLOPS,INTOPS).\n"
+      "                      c: Analyse time spent in CUDA kernels.\n"
       "                      d: Analyse performance of distributed memory backend.\n");
 
     DBUG_RETURN ();
@@ -1114,16 +1167,21 @@ PrintCCompilerOptions (void)
             "                      3: full C compiler optimizations.\n"
             "                    (default: %d)\n"
             "\n"
+            "    -generic        Specify that the generated C code should be compiled\n"
+            "                    without any architecture specific optimisations. This\n"
+            "                    is useful when compiling for other systems.\n"
+            "                    NOTE: if this flag is not given, the C code will be\n"
+            "                          aggresively optimised to take advantage of the\n"
+            "                          current architecture.\n"
+            "\n"
             "                    NOTE:\n"
-            "                    The actual effects of these options are specific to "
-            "the\n"
-            "                    C compiler used for code generation. Both the choice "
-            "of\n"
-            "                    a C compiler as well as the mapping of these generic\n"
-            "                    options to compiler-specific optimization options are\n"
-            "                    are determined via the sac2crc configuration file.\n"
-            "                    For details concerning sac2crc files see below under\n"
-            "                    \"customization\".\n",
+            "                    The actual effects of these options are specific to\n"
+            "                    the C compiler used for code generation. Both the\n"
+            "                    choice of a C compiler as well as the mapping of these\n"
+            "                    generic options to compiler-specific optimization\n"
+            "                    options are determined via the sac2crc configuration\n"
+            "                    file. For details concerning sac2crc files see below\n"
+            "                    under \"customization\".\n",
             global.cc_optimize);
 
     DBUG_RETURN ();
@@ -1146,15 +1204,14 @@ PrintCustomisationOptions (void)
       "                    installation specific file $PREFIX/share/sac2crc or\n"
       "                    from a file named .sac2crc within the user's home\n"
       "                    directory.\n"
-      "\n"
-      "                    Standard targets include the choice of a compiler backend:\n"
-      "\n"
-      "                      c99       default backend to produce C99 code\n"
-      "                      mutc      backend to produce muTC code\n"
-      "                      cuda      backend to produce Cuda code\n"
+
+      "\n                  target list can be printed with -list-targets\n"
+
       "\n");
     DBUG_RETURN ();
 }
+
+
 
 static void
 PrintEnvironmentVariables (void)
@@ -1277,6 +1334,7 @@ USGprintUsage ()
         PrintDebugOptions ();
         PrintFredFishOptions ();
 #endif /* DBUG_OFF */
+        PrintCompiletimeAnalysesOptions ();
         PrintRuntimeCheckOptions ();
         PrintRuntimeTraceOptions ();
         PrintRuntimeProfilingOptions ();

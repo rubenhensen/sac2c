@@ -11,6 +11,8 @@
 #include "constants.h"
 #include "ctinfo.h"
 #include "globals.h"
+#include "str.h"
+#include "memory.h"
 
 static constant *
 ApplyCF (te_info *info, ntype *args)
@@ -101,9 +103,9 @@ NTCCTprf_array (te_info *info, ntype *elems)
     ntype *outer, *elem, *elem2, *res;
     constant *val, *tmp;
     shape *shp;
-    int num_elems;
+    size_t num_elems;
     char *err_msg;
-    int i;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -159,13 +161,16 @@ NTCCTprf_cast (te_info *info, ntype *elems)
     ntype *cast_t, *cast_bt, *expr_t, *expr_bt;
     ntype *res, *res_bt;
     shape *shp, *d_shp, *s_shp;
+    char *cast_str, *expr_str;
     char *err_msg;
 
     DBUG_ENTER ();
 
     cast_t = TYgetProductMember (elems, 0);
+    cast_str = TYtype2String (cast_t, FALSE, 0);
     cast_bt = TYeliminateUser (cast_t);
     expr_t = TYgetProductMember (elems, 1);
+    expr_str = TYtype2String (expr_t, FALSE, 0);
     expr_bt = TYeliminateUser (expr_t);
 
     /*
@@ -173,7 +178,10 @@ NTCCTprf_cast (te_info *info, ntype *elems)
      * instantly bail out, as we do not support ant kind of basetype
      * polymorphism and thus the program is incorrect no matter what.
      */
-    TEassureSameScalarType ("cast-type", cast_bt, "expr-type", expr_bt);
+    TEassureSameScalarType ( STRcatn (3, "the cast-type \"",
+                                         cast_str, "\""), cast_bt,
+                             STRcatn (3, "the expr-type \"",
+                                         expr_str, "\""), expr_bt);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         CTIerror ("%s", err_msg);
@@ -187,9 +195,15 @@ NTCCTprf_cast (te_info *info, ntype *elems)
      *
      * The actual error processing can be found further below...
      */
-    res_bt = TEassureSameShape ("cast-type", cast_bt, "expr-type", expr_bt);
+    res_bt = TEassureSameShape ( STRcatn (3, "the cast-type \"",
+                                         cast_str, "\""), cast_bt,
+                                 STRcatn (3, "the expr-type \"",
+                                         expr_str, "\""), expr_bt);
     cast_bt = TYfreeType (cast_bt);
     expr_bt = TYfreeType (expr_bt);
+
+    cast_str = MEMfree (cast_str);
+    expr_str = MEMfree (expr_str);
 
     /*
      * Unfortunately, this TEassureSameShape in certain situations does not detect
@@ -221,7 +235,7 @@ NTCCTprf_cast (te_info *info, ntype *elems)
             if (!SHcompareShapes (d_shp, s_shp)) {
                 CTIerrorLine (global.linenum,
                               "Cast type %s does not match expression type %s "
-                              "as \"%s\" is defined as %s",
+                              "as \"%s\" relates to %s",
                               TYtype2String (cast_t, FALSE, 0),
                               TYtype2String (expr_t, FALSE, 0),
                               UTgetName (TYgetUserType (TYgetScalar (cast_t))),
@@ -237,7 +251,7 @@ NTCCTprf_cast (te_info *info, ntype *elems)
             if (!SHcompareShapes (d_shp, s_shp)) {
                 CTIerrorLine (global.linenum,
                               "Cast type %s does not match expression type %s "
-                              "as \"%s\" is defined as %s",
+                              "as \"%s\" relates to %s",
                               TYtype2String (cast_t, FALSE, 0),
                               TYtype2String (expr_t, FALSE, 0),
                               UTgetName (TYgetUserType (TYgetScalar (expr_t))),
@@ -261,7 +275,7 @@ NTCCTprf_cast (te_info *info, ntype *elems)
                                       d_shp)) {
                 CTIerrorLine (global.linenum,
                               "Cast type %s does not match expression type %s "
-                              "as \"%s\" is defined as %s whereas \"%s\" is defined as "
+                              "as \"%s\" relates to %s whereas \"%s\" relates to "
                               "%s",
                               TYtype2String (cast_t, FALSE, 0),
                               TYtype2String (expr_t, FALSE, 0),
@@ -407,7 +421,7 @@ NTCCTprf_dispatch_error (te_info *info, ntype *args)
 {
     ntype *num_rets_t, *res;
     constant *co;
-    int num_rets, i;
+    unsigned int num_rets, i;
 
     DBUG_ENTER ();
 
@@ -419,7 +433,7 @@ NTCCTprf_dispatch_error (te_info *info, ntype *args)
                                           " first argument not an integer");
     DBUG_ASSERT (COgetDim (co) == 0, "illegal construction of _dispatch_error_:"
                                      " first argument not a scalar");
-    num_rets = ((int *)COgetDataVec (co))[0];
+    num_rets = ((unsigned int *)COgetDataVec (co))[0];
 
     res = TYmakeEmptyProductType (num_rets);
     for (i = 0; i < num_rets; i++) {
@@ -448,8 +462,8 @@ NTCCTprf_guard (te_info *info, ntype *args)
     ntype *res;
     char *err_msg;
     ntype *pred;
-    int num_rets;
-    int i;
+    size_t num_rets;
+    size_t i;
 
     DBUG_ENTER ();
 
@@ -516,7 +530,7 @@ NTCCTprf_afterguard (te_info *info, ntype *args)
     ntype *arg;
     ntype *res = NULL, *pred;
     char *err_msg;
-    int i;
+    size_t i;
     bool all_true = TRUE;
 
     DBUG_ENTER ();
@@ -3291,17 +3305,26 @@ NTCCTprf_int_op_SxS (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureWholeS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureWholeS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_SxS) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
         if (TYisAKV (array1) && TYisAKV (array2)) {
-            res = TYmakeAKV (TYmakeSimpleType (T_int), ApplyCF (info, args));
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
         } else {
-            res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+            res = TYeliminateAKV (array1);
         }
     }
 
@@ -3332,9 +3355,18 @@ NTCCTprf_int_op_SxV (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureWholeS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureWholeV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_SxV) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -3374,9 +3406,18 @@ NTCCTprf_int_op_VxS (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureWholeV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureWholeS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_VxS) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -3416,11 +3457,20 @@ NTCCTprf_int_op_VxV (te_info *info, ntype *args)
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
 
-    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
-    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+    TEassureWholeV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
+    TEassureWholeV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
     err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_VxV) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -3892,8 +3942,7 @@ NTCCTprf_idxs2offset (te_info *info, ntype *args)
 {
     ntype *res = NULL;
     ntype *idx, *shp;
-    int len;
-    int i;
+    size_t i, len;
     char *err_msg;
 
     DBUG_ENTER ();

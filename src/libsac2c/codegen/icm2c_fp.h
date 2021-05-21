@@ -17,13 +17,13 @@
 
 #include "types.h"
 
-extern void ICMCompileFP_SLOWCLONE_DECL (char *name, char *rettype_NT, int vararg_cnt,
+extern void ICMCompileFP_SLOWCLONE_DECL (char *name, char *rettype_NT, unsigned int vararg_cnt,
                                          char **vararg);
 extern void ICMCompileFP_SLOWCLONE_DEF_BEGIN (char *name, char *rettype_NT,
-                                              int vararg_cnt, char **vararg);
-extern void ICMCompileFP_FUN_RET (char *framename, char *retname, int vararg_cnt,
+                                              unsigned int vararg_cnt, char **vararg);
+extern void ICMCompileFP_FUN_RET (char *framename, char *retname, unsigned int vararg_cnt,
                                   char **vararg);
 
 extern void ICMCompileFP_FUN_AP (char *framename, char *name, char *retname,
-                                 int vararg_cnt, char **vararg);
+                                 unsigned int vararg_cnt, char **vararg);
 #endif /* _SAC_ICM2C_FP_H_ */

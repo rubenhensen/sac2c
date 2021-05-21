@@ -5,7 +5,13 @@ PROJECT (sac2c)
 
 # CMake policy handling
 IF (POLICY CMP0075)
-  CMAKE_POLICY (SET CMP0075 OLD)
+  # CMAKE_REQUIRED_LIBRARIES usage for CHECK_INCLUDE_FILE(S) macro
+  CMAKE_POLICY (SET CMP0075 NEW)
+ENDIF ()
+
+IF (POLICY CMP0114)
+  # ExternalProject_Add() dependency handling
+  CMAKE_POLICY (SET CMP0114 OLD)
 ENDIF ()
 
 # Extra cmake packages
@@ -16,6 +22,7 @@ INCLUDE (FeatureSummary)
 SET (RT_TARGETS seq seq_rt mt_pth mt_pth_rt mt_pth_xt)
 
 # Include config related cmake files
+SET(SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 INCLUDE ("cmake/macros.cmake")
 INCLUDE ("cmake/options.cmake")
 INCLUDE ("cmake/sac2c/config.cmake")
@@ -62,6 +69,7 @@ CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xconfig.h.in" "${PROJECT_BINA
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/fun-attrs.h.in" "${PROJECT_BINARY_DIR}/include/fun-attrs.h")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/xsacdirs.h.in" "${PROJECT_BINARY_DIR}/include/sacdirs.h")
 CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/libsac2c/global/build.c.in" "${PROJECT_BINARY_DIR}/src/build.c")
+CONFIGURE_FILE ("${PROJECT_SOURCE_DIR}/src/include/override_cuda_runtime.h" "${PROJECT_BINARY_DIR}/include/override_cuda_runtime.h" COPYONLY)
 
 # Build sac.h
 ADD_SUBDIRECTORY (src/runtime)
@@ -90,7 +98,7 @@ IF (ENABLE_ISL AND ENABLE_BARVINOK)
     PROPERTIES COMPILE_FLAGS "${COMPILE_FLAGS} -Wno-conversion"
   )
   ADD_EXECUTABLE (sacislinterface src/tools/sacislinterface/sacislinterface.c)
-  ADD_DEPENDENCIES (sac2cShared check_repo_version)
+  ADD_DEPENDENCIES (sacislinterface check_repo_version)
   TARGET_LINK_LIBRARIES (sacislinterface ${LIB_ISL} ${LIB_BARVINOK} ${BARVINOK_LIB})
   TARGET_INCLUDE_DIRECTORIES (sacislinterface PUBLIC ${BARVINOK_INC_PATH} ${ISL_INC_PATH})
 ENDIF ()
@@ -114,7 +122,6 @@ STRING (REPLACE ";" ":" _TARGETS "${RT_TARGETS}")
 # This is where we call the build of the sac2c shared-libraries
 # This *depends* on sac2c having been build first!
 ExternalProject_Add(runtime_libraries
-    DEPENDS sac2cShared sac2c check_repo_version sac_h
     DOWNLOAD_COMMAND "" # this is to prevent any download target from being called
     INSTALL_COMMAND "" # this is to prevent any install target from being called
     PREFIX runtime_build
@@ -129,10 +136,11 @@ ExternalProject_Add(runtime_libraries
         -DSHARED_LIB_EXT=${SHARED_LIB_EXT}
         -DLINKSETSIZE=${LINKSETSIZE}
         -DRT_TARGETS:STRING=${_TARGETS}
+        -DBUILDGENERIC=${BUILDGENERIC}
 )
 # We set dependencies on the configure step, this makes sure we propogate
 # certain values (such as from sac2crc).
-ExternalProject_Add_StepDependencies(runtime_libraries configure sac2c sac2cShared check_repo_version)
+ExternalProject_Add_StepDependencies(runtime_libraries configure sac2c sac2cShared sac_h check_repo_version)
 # Get runtime library build directory
 ExternalProject_Get_Property (runtime_libraries BINARY_DIR)
 SET (RUNTIME_BINARY_DIR ${BINARY_DIR}) # redefine name to something more useful
@@ -158,7 +166,12 @@ ADD_DEPENDENCIES (fullclean runtime_libraries-clean)
 # directly as part of e.g. target_link_libraries functions. As such we instead
 # force add target properties which we can access explicitly.
 # Expose configure step as target
-ExternalProject_Add_StepTargets (runtime_libraries configure)
+# XXX (hans) additionaly we explicitly set inter-step dependencies as this
+# facility is broken in cmake >= version 3.10,
+# - see https://gitlab.kitware.com/cmake/cmake/issues/18663
+ExternalProject_Add_StepTargets (runtime_libraries configure build install)
+ExternalProject_Add_StepDependencies (runtime_libraries install runtime_libraries-build)
+ExternalProject_Add_StepDependencies (runtime_libraries build runtime_libraries-configure)
 FOREACH (__target ${RT_TARGETS})
   ADD_CUSTOM_TARGET (libsac-${__target}
     COMMAND +${CMAKE_COMMAND} --build ${RUNTIME_BINARY_DIR} --target libsac-${__target}
@@ -201,7 +214,7 @@ ENDMACRO ()
 ADD_INSTALL_TARGET ("applications" sac2c sac4c sac2tex "${PROJECT_BINARY_DIR}/saccc")
 ADD_INSTALL_TARGET ("config" "${SAC2CRC_BUILD_CONF}")
 ADD_INSTALL_TARGET ("headers" sac_h)
-ADD_INSTALL_TARGET ("libraries" sac2cShared runtime_libraries)
+ADD_INSTALL_TARGET ("libraries" runtime_libraries)
 ADD_INSTALL_TARGET ("rtapplications" runtime_libraries)
 ADD_INSTALL_TARGET ("sources")
 ADD_INSTALL_TARGET ("symlinks")
@@ -217,10 +230,11 @@ XINSTALL (FILES "${SAC2CRC_BUILD_CONF}"
   COMPONENT config)
 
 # install sac2c-related binaries stuff...
+# FIXME (hans) incorrect component - where do we use saccc again?
 XINSTALL (PROGRAMS "${PROJECT_BINARY_DIR}/saccc"
   DESTINATION "${TREEPATH_INSTALL}"
   RENAME "saccc${BUILD_TYPE_POSTFIX}"
-  COMPONENT applications)
+  COMPONENT rtapplications)
 
 # We need to install the runtime libraries and sacprelude into a directory
 # hiearchy that is different from the `local' hiearchy. Under out local `lib/' we
@@ -264,6 +278,12 @@ XINSTALL (
   DESTINATION "${INCPATH_INSTALL}"
   COMPONENT headers)
 
+# and also the build config
+XINSTALL (
+  FILES "${PROJECT_BINARY_DIR}/include/config.h" "${PROJECT_BINARY_DIR}/include/override_cuda_runtime.h"
+  DESTINATION "${INCPATH_INSTALL}"
+  COMPONENT headers)
+
 # we install sources of binaries
 XINSTALL (FILES
     ${PROJECT_SOURCE_DIR}/src/tools/sac2c/sac2c.c
@@ -276,7 +296,8 @@ XINSTALL (FILES
   EXCLUDE_FROM_ALL)
 
 # we install readme and install script
-CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/installer.sh.in ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh @ONLY)
+CONFIGURE_FILE (${PROJECT_SOURCE_DIR}/cmake/cpack/dists/archive/installer.sh.in
+                ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh @ONLY)
 XINSTALL (FILES
     ${PROJECT_BINARY_DIR}/archive/installer-${BUILD_TYPE_NAME}.sh
   DESTINATION "${INSTALLER_INSTALL}"
@@ -330,7 +351,7 @@ ENDIF ()
 # We use the sac2c-version-manager script instead of the CMAKE's facility to
 # create symlinks because the scripts does additional checks to make sure
 # that the links are sanely done and don't accidentally overwrite anything
-# that should t be overwritten.
+# that shouldn't be overwritten.
 XINSTALL (
   CODE "EXECUTE_PROCESS(COMMAND
     ${PROJECT_BINARY_DIR}/scripts/sac2c-version-manager install
@@ -339,13 +360,31 @@ XINSTALL (
   COMPONENT symlinks)
 
 # now lets setup packaging (using CPack)
-SET(SAC2C_SOURCE_DIR "${PROJECT_SOURCE_DIR}")
 INCLUDE ("${PROJECT_SOURCE_DIR}/cmake/cpack/config.cmake")
 
-
-# Here we describe what happens when we test stuff.
+# Unit Testing and related
 ENABLE_TESTING ()
+# This target exists because the `test` target of CMake is not visible
+# within a CMakeLists.txt config. One cannot add target dependencies to
+# it, so instead we create our own target. This mimicks autotools' `check`
+# Makefile target. By default, we depend on the compiler being built.
+# NOTE: in general, we should only add dependencies which are (a) nessicary
+#       files for a test, (b) executables that need to be built. Additionally
+#       we need the sac2crc generation target, as otherwise there could be
+#       issues with finding the correct sacprelude.
+ADD_CUSTOM_TARGET (check
+  COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+  DEPENDS copy-sac2crc-prelude-file runtime_libraries)
+
+# The following director contains all tests which check that the compiler
+# is working correctly, e.g. code transformations make the expected changes,
+# options flags work (features are working), etc.
 ADD_SUBDIRECTORY ("tests")
+
+# This diectory contains all tests the check the compiler at the function level,
+# that modules and other compilation units are working. We by default have this
+# collection of units tests disabled, as it relies on GTest. GTest needs to be
+# installed by the user themselves.
 IF (FUNCTESTS)
   ADD_SUBDIRECTORY ("src/tests")
 ENDIF ()

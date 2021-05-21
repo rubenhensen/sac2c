@@ -54,7 +54,7 @@ typedef struct RANGE_SET_T {
     range_info_t *last_nonblocked_range;
     range_info_t *blocked_ranges;
     range_info_t *nonblocked_ranges;
-    int blocked_ranges_count;
+    size_t blocked_ranges_count;
     int nonblocked_ranges_count;
     struct RANGE_SET_T *prev;
     struct RANGE_SET_T *next;
@@ -369,7 +369,7 @@ nonblocked_ranges)))));
 typedef struct RANGE_PAIR_T {
     node *outer;
     node *inner;
-    int outerlevel;
+    size_t outerlevel;
     struct RANGE_PAIR_T *next;
 } range_pair_t;
 
@@ -418,12 +418,12 @@ FreeRangePair (range_pair_t *pairs)
 }
 
 static range_pair_t *
-GetNthRangePair (int nth)
+GetNthRangePair (size_t nth)
 {
     range_pair_t *pair = NULL;
     range_set_t *sets;
     range_info_t *blocked, *nonblocked;
-    int cnt = 1, old_nth;
+    size_t cnt = 1, old_nth;
 
     DBUG_ENTER ();
 
@@ -517,12 +517,12 @@ FreeSharedGlobalInfo (shared_global_info_t *sg_infos)
  * INFO structure
  */
 struct INFO {
-    int level;
+    size_t level;
     node *fundef;
     node *lastassign;
     range_set_t *range_sets;
     node *with3;
-    int cuwldim;
+    size_t cuwldim;
     cuidx_set_t *cis;
     node *preassigns;
     node *g2s_assigns;
@@ -812,7 +812,7 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
 static node *
 CreateCudaIndexInitCode (node *part, info *arg_info)
 {
-    int dim;
+    size_t dim;
     cuidx_set_t *cis;
     node *assigns = NULL, *vardecs = NULL;
 
@@ -847,7 +847,7 @@ static range_pair_t *
 GetInnermostRangePair (shared_global_info_t *sg_info)
 {
     range_pair_t *pairs, *innermost = NULL;
-    int level = -1;
+    ssize_t level = -1;
 
     DBUG_ENTER ();
 
@@ -855,9 +855,9 @@ GetInnermostRangePair (shared_global_info_t *sg_info)
         pairs = SG_INFO_RANGE_PAIRS (sg_info);
 
         while (pairs != NULL) {
-            if (RP_OUTERLEVEL (pairs) > level) {
+            if ((ssize_t)RP_OUTERLEVEL (pairs) > level) {
                 innermost = pairs;
-                level = RP_OUTERLEVEL (pairs);
+                level = (ssize_t)RP_OUTERLEVEL (pairs);
             }
             pairs = RP_NEXT (pairs);
         }
@@ -1642,7 +1642,7 @@ CUDRwith (node *arg_node, info *arg_info)
 node *
 CUDRpart (node *arg_node, info *arg_info)
 {
-    int dim;
+    size_t dim;
     node *init_assigns;
 
     DBUG_ENTER ();

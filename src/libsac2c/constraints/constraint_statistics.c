@@ -126,7 +126,7 @@ PrintStatistics (node *fundef, info *info)
             }
         }
         tmp = SBUF2str (buf);
-        CTInote ("  %s", tmp);
+        CTItell (0, "  %s", tmp);
         tmp = MEMfree (tmp);
 
         buf = SBUFfree (buf);
@@ -154,18 +154,30 @@ CSdoPrintConstraintStatistics (node *arg_node)
 
     TRAVpush (TR_cs);
 
+    CTItell (0, " ");
+    CTItell (0, "*********************************************************************");
+    CTItell (0, "** Constraint resolution feedback                                  **");
+    CTItell (0, "*********************************************************************");
+
     arg_info = MakeInfo ();
 
     arg_node = TRAVdo (arg_node, arg_info);
 
     if (INFO_ALL_GONE (arg_info)) {
-        CTInote ("  For all functions all constraints were statically resolved.");
+        if (!global.insertconformitychecks) {
+            CTItell (0, "  No constraints to resolve as none have been injected.");
+            CTItell (0, "  Either use -check c or -ecc to turn constraint injection on.");
+        } else {
+            CTItell (0, "  For all functions all constraints were statically resolved.");
+        }
     } else {
-        CTInote ("  For all other functions all constraints were statically resolved.");
+        CTItell (0, "  For all other functions all constraints were statically resolved.");
     }
     arg_info = FreeInfo (arg_info);
 
     TRAVpop ();
+
+    CTItell (0, "*********************************************************************");
 
     DBUG_RETURN (arg_node);
 }

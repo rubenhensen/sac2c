@@ -1,0 +1,24 @@
+// Test both the inference of extended reuse candidates and the filtering of
+// invalid ones.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -doemrci -noemrl -bopt:emrl -printfun main
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -noemrcf $< | $(GREP_COMMAND_OUTPUT) "ERC (b, a)" 1
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -doemrcf $< | $(GREP_COMMAND_OUTPUT) "ERC (b)" 1
+#include "mini-stdlib.sac"
+
+noinline int[*] id (int[*] a) { return a; }
+
+int main ()
+{
+  a = with { (. <= [iv] <= .): iv; } : genarray ([1001], 2);
+
+  b = id (a);
+
+  c = with { (. <= [iv] <= .): iv; } : genarray ([1001], sum(b));
+
+  d = id (c);
+
+  return sum (d) + sum (a);
+}

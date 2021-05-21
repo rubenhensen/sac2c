@@ -58,7 +58,7 @@ static node *specialized_fundefs = NULL;
  ******************************************************************************/
 
 node *
-InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
+InsertTypeConv (node *fundef, size_t pos_of_ret, ntype *spec_type)
 {
     node *last_assign, *ret, *id, *avis, *new_avis;
 
@@ -101,7 +101,7 @@ InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
 }
 
 node *
-InsertHideInfo (node *fundef, int pos_of_ret, ntype *spec_type)
+InsertHideInfo (node *fundef, size_t pos_of_ret, ntype *spec_type)
 {
     node *last_assign, *ret, *id, *avis, *new_avis;
 
@@ -162,13 +162,15 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
      * becomes AKS but the return type should also become AKS. Or at least a type
      * conversion should be inserted.  */
     node *ret;
-    int i;
+    size_t i;
+    size_t j;
     ntype *spec_type, *inherited_type, *new_type;
 
     DBUG_ENTER ();
 
     ret = FUNDEF_RETS (fundef);
     i = 0;
+    j = 0;
     while (ret != NULL) {
         spec_type = TYgetProductMember (rets, i);
         inherited_type = SSIgetMax (TYgetAlpha (RET_TYPE (ret)));
@@ -178,7 +180,7 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
             if (global.runtime && STReq (FUNDEF_NAME (fundef), global.rt_fun_name)) {
                 if (TYisAUD (inherited_type) || TYisAUDGZ (inherited_type)
                     || TYisAKD (inherited_type)) {
-                    fundef = InsertHideInfo (fundef, i, inherited_type);
+                    fundef = InsertHideInfo (fundef, j, inherited_type);
                 }
             }
             break;
@@ -187,7 +189,7 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
              * the specialisation claims to return a more specific
              * type which remains to be proved. Hence, we insert a type conv!
              */
-            fundef = InsertTypeConv (fundef, i, spec_type);
+            fundef = InsertTypeConv (fundef, j, spec_type);
             /**
              * Now, we inherit the return type:
              */
@@ -196,7 +198,7 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
             if (global.runtime && STReq (FUNDEF_NAME (fundef), global.rt_fun_name)) {
                 if (TYisAUD (inherited_type) || TYisAUDGZ (inherited_type)
                     || TYisAKD (inherited_type)) {
-                    fundef = InsertHideInfo (fundef, i, inherited_type);
+                    fundef = InsertHideInfo (fundef, j, inherited_type);
                 }
             }
 
@@ -218,6 +220,7 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
 
         ret = RET_NEXT (ret);
         i++;
+        j++;
     }
     DBUG_RETURN (fundef);
 }
@@ -250,7 +253,7 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
 {
     ntype *type, *res;
     node *arg;
-    int i;
+    size_t i;
 #ifndef DBUG_OFF
     char *tmp_str = NULL;
 #endif
@@ -270,13 +273,7 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
         res = TYmakeEmptyProductType (TCcountArgs (arg));
         i = 0;
         while (arg != NULL) {
-            type = AVIS_TYPE (ARG_AVIS (arg));
-            if (type == NULL) {
-                /* not yet converted ! */
-                type = TYoldType2Type (ARG_TYPE (arg));
-            } else {
-                type = TYcopyType (type);
-            }
+            type = TYcopyType (AVIS_TYPE (ARG_AVIS (arg)));
             res = TYsetProductMember (res, i,
                                       TYlubOfTypes (TYgetProductMember (args, i), type));
             type = TYfreeType (type);
@@ -318,7 +315,7 @@ UpdateFixSignature (node *fundef, ntype *arg_ts, ntype *ret_ts)
 {
     node *args, *rets;
     ntype *type, *old_type, *new_type;
-    int i = 0;
+    size_t i = 0;
 
     DBUG_ENTER ();
     DBUG_ASSERT (TCcountArgs (FUNDEF_ARGS (fundef)) == TYgetProductSize (arg_ts),
@@ -401,7 +398,7 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
 {
     node *args;
     ntype *type, *old_type, *new_type;
-    int i = 0;
+    size_t i = 0;
     bool ok = TRUE;
 
     DBUG_ENTER ();

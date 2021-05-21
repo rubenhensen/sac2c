@@ -25,7 +25,7 @@ extern node *WLSmodule (node *arg_node, info *arg_info);
  * prefix: WLSC
  *
  *****************************************************************************/
-extern int WLSCdoCheck (node *with, node *nassign);
+extern size_t WLSCdoCheck (node *with, node *nassign);
 
 extern node *WLSCblock (node *arg_node, info *arg_info);
 extern node *WLSCcode (node *arg_node, info *arg_info);
@@ -47,7 +47,7 @@ extern node *WLSCpropagate (node *arg_node, info *arg_info);
  * prefix: WLSW
  *
  *****************************************************************************/
-extern node *WLSWdoWithloopify (node *arg_node, node *fundef, int innerdims);
+extern node *WLSWdoWithloopify (node *arg_node, node *fundef, size_t innerdims);
 
 extern node *WLSWcode (node *arg_node, info *arg_info);
 extern node *WLSWid (node *arg_node, info *arg_info);

@@ -1,5 +1,30 @@
 /**
  * @defgroup scre Scope-Based Reuse Candidate Elimination
+ *
+ * This phase eliminates some illegitimate reuse candidates from _alloc_or_reuse_ /
+ * _alloc_or_reshape_, and _alloc_or_resize_ t. In case all resuse candidates are
+ * filtered out, the operation is reverted to an _alloc_.
+ *
+ * The reuse candidates that are filtered out are reuse candidates that stem
+ * from references to variables defined outside a surrounding with-loop and, thus,
+ * cannot serve as a reuse candidate for an inner with loop. For example:
+ *
+
+  a = [1,2,3,4,5,6,7,8,9,10];
+
+  b = with {
+        ( . <= iv <= [10]) {
+           c = with {
+              (. <= jv <= .) : a[iv]+1;
+               } : modarray(a);
+           } : c[5];
+      } : genarray( [100], 0);
+
+ * will identify "a" to be a reuse candidate for "c".
+ * This optimisation identifies that "a" was defined outside of the
+ * current (definition of c) with-loop level and, therefore, cannot
+ * be reused for more than one instance. Hence, it is dismissed!
+ *
  * @ingroup mm
  *
  * <pre>

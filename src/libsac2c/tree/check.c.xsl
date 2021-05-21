@@ -699,7 +699,7 @@ node *CHKdoTreeCheck( node *arg_node)
     <xsl:value-of select="'PH_'"/>
     <xsl:value-of select="@from"/>
     <xsl:value-of select="')'"/>
-    <xsl:value-of select="' &amp;&amp; ( global.compiler_anyphase &lt; '"/>
+    <xsl:value-of select="' &amp;&amp; ( global.compiler_anyphase &lt;= '"/>
     <xsl:value-of select="'PH_'"/>
     <xsl:value-of select="@to"/>
     <xsl:value-of select="'))'"/>

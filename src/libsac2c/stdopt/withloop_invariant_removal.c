@@ -679,8 +679,10 @@ WLIRassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_ASSERT (ASSIGN_STMT (arg_node), "missing instruction in assignment");
+    
+    DBUG_ASSERT (INFO_WITHDEPTH (arg_info) >= 0, "With Loop Depth is invalid.");
 
-    new_dmask_buf = (bool *)MEMmalloc ((INFO_WITHDEPTH (arg_info) + 1) * sizeof (bool));
+    new_dmask_buf = (bool *)MEMmalloc ((size_t)(INFO_WITHDEPTH (arg_info) + 1) * sizeof (bool));
 
     /* init traversal flags */
     INFO_PREASSIGN (arg_info) = NULL;
@@ -901,9 +903,9 @@ WLIRwith (node *arg_node, info *arg_info)
     bool *old_dmask;
 
     DBUG_ENTER ();
-
+    DBUG_ASSERT ((INFO_WITHDEPTH (arg_info) + 2) > 0, "With Loop Depth is invalid.");
     larger_dmask_buf
-      = (bool *)MEMmalloc ((INFO_WITHDEPTH (arg_info) + 2) * sizeof (bool));
+      = (bool *)MEMmalloc ((size_t)(INFO_WITHDEPTH (arg_info) + 2) * sizeof (bool));
     DBUG_PRINT ("Looking at %s=with...", AVIS_NAME (INFO_LHSAVIS (arg_info)));
     /* clear current InsertListFrame */
     INFO_INSLIST (arg_info)

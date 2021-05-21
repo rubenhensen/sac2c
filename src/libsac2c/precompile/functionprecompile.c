@@ -114,8 +114,8 @@ FreeInfo (info *info)
 static argtab_t *
 CompressArgtab (argtab_t *argtab)
 {
-    int pos, idx;
-    int old_size;
+    size_t pos, idx;
+    size_t old_size;
 
     DBUG_ENTER ();
 
@@ -184,7 +184,7 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
 {
     struct location loc = NODE_LOCATION (fundef);
     argtag_t argtag;
-    int idx;
+    size_t idx;
 
     DBUG_ENTER ();
 
@@ -194,7 +194,7 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
      */
     idx = RET_LINKSIGN (ret);
 
-    DBUG_PRINT ("out(%d)", idx);
+    DBUG_PRINT ("out(%zu)", idx);
 
     /* We do not pass descriptors for non-refcounted parameters. */
     if (!RET_ISREFCOUNTED (ret)) {
@@ -253,10 +253,10 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
     }
 
     /* Check for illegal index values. */
-    if ((idx < 0) || (idx >= argtab->size)) {
+    if (idx >= argtab->size) {
         CTIerrorLoc (loc,
                      "Pragma 'linksign' illegal: "
-                     "entry contains illegal value %d",
+                     "entry contains illegal value %zu",
                      idx);
         DBUG_RETURN (argtab);
     }
@@ -265,7 +265,7 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
     if (argtab->ptr_out[idx] != NULL) {
         CTIerrorLoc (loc,
                      "Pragma 'linksign' illegal: "
-                     "out-parameter at position %d found twice in function %s",
+                     "out-parameter at position %zu found twice in function %s",
                      idx, FUNDEF_NAME (fundef));
         DBUG_RETURN (argtab);
     }
@@ -292,7 +292,7 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
     argtab->ptr_out[idx] = ret;
     argtab->tag[idx] = argtag;
 
-    DBUG_PRINT ("%s(): out-arg inserted at position %d with tag %s.",
+    DBUG_PRINT ("%s(): out-arg inserted at position %zu with tag %s.",
                 FUNDEF_NAME (fundef), idx, global.argtag_string[argtag]);
 
     DBUG_RETURN (argtab);
@@ -312,7 +312,7 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
 {
     struct location loc = NODE_LOCATION (fundef);
     argtag_t argtag;
-    int idx;
+    size_t idx;
 
     DBUG_ENTER ();
 
@@ -349,13 +349,13 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
      */
     idx = ARG_LINKSIGN (arg);
 
-    DBUG_PRINT ("in(%d): %s", idx, AVIS_NAME (ARG_AVIS (arg)));
+    DBUG_PRINT ("in(%zu): %s", idx, AVIS_NAME (ARG_AVIS (arg)));
 
     /* Check for illegal index values. */
-    if ((idx < 0) || (idx >= argtab->size)) {
+    if (idx >= argtab->size) {
         CTIerrorLoc (loc,
                      "Pragma 'linksign' illegal: "
-                     "entry contains illegal value %d",
+                     "entry contains illegal value %zu",
                      idx);
         DBUG_RETURN (argtab);
     }
@@ -371,7 +371,7 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
     if (argtab->ptr_in[idx] != NULL) {
         CTIerrorLoc (loc,
                      "Pragma 'linksign' illegal: "
-                     "in-parameter at position %d found twice in function %s",
+                     "in-parameter at position %zu found twice in function %s",
                      idx, FUNDEF_NAME (fundef));
         DBUG_RETURN (argtab);
     }
@@ -387,7 +387,7 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
         argtab->ptr_in[idx] = arg;
         argtab->tag[idx] = argtag;
 
-        DBUG_PRINT ("%s(): in-arg %s at position %d with tag %s.", FUNDEF_NAME (fundef),
+        DBUG_PRINT ("%s(): in-arg %s at position %zu with tag %s.", FUNDEF_NAME (fundef),
                     AVIS_NAME (ARG_AVIS (arg)), idx, global.argtag_string[argtag]);
     } else {
         /*
@@ -441,7 +441,7 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
         argtab->ptr_in[idx] = arg;
         argtab->tag[idx] = argtag;
 
-        DBUG_PRINT ("%s(): in-arg %s merged with out-arg %d with tag %s.",
+        DBUG_PRINT ("%s(): in-arg %s merged with out-arg %zu with tag %s.",
                     FUNDEF_NAME (fundef), AVIS_NAME (ARG_AVIS (arg)), idx,
                     global.argtag_string[argtag]);
     }
@@ -459,10 +459,10 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
  *
  ******************************************************************************/
 
-static int
+static size_t
 GetArgtabIndexOut (node *ret, argtab_t *argtab)
 {
-    int idx;
+    size_t idx;
 
     DBUG_ENTER ();
 
@@ -487,10 +487,10 @@ GetArgtabIndexOut (node *ret, argtab_t *argtab)
  *
  ******************************************************************************/
 
-static int
+static size_t
 GetArgtabIndexIn (node *arg, argtab_t *argtab)
 {
-    int idx;
+    size_t idx;
 
     DBUG_ENTER ();
 
@@ -524,8 +524,8 @@ BuildApArgtab (node *ap, node *lhs)
     node *args;
     argtab_t *ap_argtab;
     argtab_t *argtab;
-    int idx = 0;
-    int dots_offset = 0;
+    size_t idx = 0;
+    size_t dots_offset = 0;
 
     DBUG_ENTER ();
 
@@ -705,10 +705,14 @@ FPCfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = arg_node;
 
     if ((INFO_TRAVMODE (arg_info) == FPC_fundef) && !FUNDEF_ISZOMBIE (arg_node)) {
-        int argtabsize
+        size_t argtabsize
           = TCcountRets (FUNDEF_RETS (arg_node)) + TCcountArgs (FUNDEF_ARGS (arg_node));
 
-        argtabsize = MATHmax (argtabsize, HighestLinksign (FUNDEF_ARGS (arg_node)));
+        /* FIXME This causes a warning of conversion between size_t and int so cast for the meantime to ensure safety
+           Linksign is int and this fun may ret -1 if arg_node = NULL. 
+           Not changing Linksign to size_t for the time being incase it may ever be negative.
+        */
+        argtabsize = MATHmax ((int)argtabsize, HighestLinksign (FUNDEF_ARGS (arg_node)));
         INFO_ARGTAB (arg_info) = TBmakeArgtab (argtabsize + 1);
 
         FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);

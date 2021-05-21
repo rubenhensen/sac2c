@@ -1,0 +1,33 @@
+// Test the EMR loop memory optimisation that it correctly identifies
+// two opertunnities to lift allocations out of the loop and into
+// the N_cond. For this we create two new variables (`*_emr_lifted`).
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -doemrci -doemrcf -doemrl -bopt:emrl -printfun main__Cond_4
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) "emr_lifted" 4
+
+#include "mini-stdlib.sac"
+
+/* prevent WL fusing */
+noinline int[*] id (int[*] a) { return a; }
+
+int main ()
+{
+  a = with { (. <= [iv] <= .): iv; } : genarray ([1001], 2);
+  b = with { (. <= [iv] <= .): iv; } : genarray ([1001], 20);
+
+  t = 0;
+
+  if (id(0) >= id (10)) {
+    for (i = 0; i < 100; i++) {
+      t += sum (id (with { (. <= iv <= .): a[iv] - i; } : genarray ([1001], i)));
+    }
+  } else {
+    for (j = 0; j < 100; j++) {
+      t += sum (id (with { (. <= iv <= .): a[iv] - j; } : genarray ([1001], j)));
+    }
+  }
+
+  return t;
+}

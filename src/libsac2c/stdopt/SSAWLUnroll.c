@@ -1145,11 +1145,15 @@ DoUnrollWithloop (node *wln, info *arg_info)
 static bool
 CheckUnrollWithloop (node *wln, info *arg_info)
 {
-    int ok = TRUE;
+    bool ok = TRUE;
+    bool b1, b2, idx;
     node *partn;
     node *genn;
     node *op;
     node *lhs;
+#ifndef DBUG_OFF
+    int p=0;
+#endif
 
     DBUG_ENTER ();
 
@@ -1158,12 +1162,17 @@ CheckUnrollWithloop (node *wln, info *arg_info)
     /* Everything constant? */
     while (ok && (partn != NULL)) {
         genn = PART_GENERATOR (partn);
-        ok = (NODE_TYPE (genn) == N_generator && COisConstant (GENERATOR_BOUND1 (genn))
-              && COisConstant (GENERATOR_BOUND2 (genn))
-              && TYisAKS (IDS_NTYPE (PART_VEC (partn)))
+        DBUG_ASSERT (NODE_TYPE (genn) == N_generator, "non N_generator partition found!");
+        b1 = COisConstant (GENERATOR_BOUND1 (genn));
+        b2 = COisConstant (GENERATOR_BOUND2 (genn));
+        idx = TYisAKS (IDS_NTYPE (PART_VEC (partn)));
+        DBUG_PRINT ("   Bound1: %s", (b1 ? "is const" : "not const"));
+        DBUG_PRINT ("   Bound2: %s", (b2 ? "is const" : "not const"));
+        DBUG_PRINT ("   idx-vec: %s", (idx ? "is AKS" : "is not AKS"));
+        ok = (b1 && b2 && idx
               && ((GENERATOR_STEP (genn) == NULL) || COisConstant (GENERATOR_STEP (genn)))
-              && ((GENERATOR_WIDTH (genn) == NULL)
-                  || COisConstant (GENERATOR_WIDTH (genn))));
+              && ((GENERATOR_WIDTH (genn) == NULL) || COisConstant (GENERATOR_WIDTH (genn))));
+        DBUG_PRINT ("   => partition %d: %s", p++, (ok? "ok" : "not ok"));
         partn = PART_NEXT (partn);
     }
 

@@ -5,6 +5,9 @@
 #include "uthash.h"
 #include "compat.h"
 
+#define error_mark_node ((node *)0x1)
+#define error_type_node ((ntype *)0x2)
+
 #define F_SYMBOL_IS_TYPE (1 << 0)
 #define F_SYMBOL_IS_UNARY (1 << 1)
 #define F_SYMBOL_IS_BINARY (1 << 2)
@@ -66,6 +69,12 @@ struct parser {
     bool buf_empty;
 
     /* Context-dependend parser variables.  */
+    /* The `in_return` flag is responsible for marking the cases where
+       a valid production could be both `expr` and `(` exprs `)`.
+       TODO As we only have two usecases for this flag, i.e. return
+            and multi-operator with-loop, we should consider inlining
+            these use-cases (or lifting them into a separate function)
+            and getting rid of state in the parser.  */
     bool in_return;
     bool in_subscript;
     bool in_arraycomp_expr;
@@ -212,5 +221,93 @@ parser_peek_token (struct parser *parser)
     parser_unget (parser);
     return t;
 }
+
+/* Set of flags to deffirentiate between the list of statments used
+   within the statements (allows single statemen without braces and
+   semicolon) and within functions (allows variable definitions and
+   return statement at the end).  */
+#define STMT_BLOCK_SEMICOLON_F (1 << 0)
+#define STMT_BLOCK_RETURN_F (1 << 1)
+#define STMT_BLOCK_VAR_DECLS_F (1 << 2)
+#define STMT_BLOCK_SINGLE_STMT_F (1 << 3)
+
+#define STMT_BLOCK_FUNCTION_FLAGS (STMT_BLOCK_RETURN_F | STMT_BLOCK_VAR_DECLS_F)
+#define STMT_BLOCK_STMT_FLAGS (STMT_BLOCK_SEMICOLON_F | STMT_BLOCK_SINGLE_STMT_F)
+
+
+/* FIXME everything except parse () should become static at some point.
+   For the time being functions have a global scope for simplier
+   debugging in gdb.  */
+struct token *parser_get_token (struct parser *);
+void parser_unget (struct parser *);
+struct token *parser_get_until_tval (struct parser *, enum token_kind);
+struct token *parser_get_until_tclass (struct parser *, enum token_class);
+bool parser_expect_tval (struct parser *, enum token_kind);
+bool parser_expect_tclass (struct parser *, enum token_class);
+bool parser_init (struct parser *, struct lexer *);
+bool parser_finalize (struct parser *);
+
+bool is_type (struct parser *);
+bool is_allowed_operation (struct token *);
+bool token_is_reserved (struct token *tok);
+
+ntype *make_simple_type (enum token_kind);
+ntype *handle_type (struct parser *);
+node *handle_id (struct parser *);
+node *handle_id_or_funcall (struct parser *);
+node *handle_primary_expr (struct parser *);
+node *handle_postfix_expr (struct parser *);
+struct pre_post_expr handle_unary_expr (struct parser *);
+struct pre_post_expr handle_cast_expr (struct parser *);
+node *handle_expr (struct parser *);
+node *handle_assign (struct parser *);
+node *handle_with (struct parser *);
+static inline node *handle_generic_list (struct parser *parser,
+                                         node *(*)(struct parser *),
+                                         node *(*)(node *, node *));
+static inline node *handle_generic_list_internal (struct parser *parser,
+                                         node *(*)(struct parser *),
+                                         node *(*)(node *, node *));
+node *handle_stmt_list (struct parser *, unsigned);
+node *handle_list_of_stmts (struct parser *);
+node *handle_stmt (struct parser *);
+node *handle_pragmas (struct parser *, enum pragma_type);
+node *handle_typedef (struct parser *);
+node *handle_assign (struct parser *);
+node *handle_interface (struct parser *, enum interface_kind);
+node *handle_function (struct parser *, enum parsed_ftype *);
+void cache_module (struct parser *, const char *);
+
+
+/* Wrapper for FREEdoFreeNode -- original name is disgusting.  */
+static inline node *
+free_node (node *nd)
+{
+    if (nd != NULL && nd != error_mark_node)
+        return FREEdoFreeNode (nd);
+    else
+        return nd;
+}
+
+/* Wrapper for FREEdoFreeTree -- original name is disgusting.  */
+static inline node *
+free_tree (node *nd)
+{
+    if (nd != NULL && nd != error_mark_node)
+        return FREEdoFreeTree (nd);
+    else
+        return nd;
+}
+
+/* Wrapper for TYfreeType -- original name is disgusting.  */
+static inline ntype *
+free_type (ntype *nt)
+{
+    if (nt != NULL && nt != error_type_node)
+        return TYfreeType (nt);
+    else
+        return nt;
+}
+
 
 #endif /* __PARSER_H__  */

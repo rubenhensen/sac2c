@@ -1,0 +1,39 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>./$<
+
+// This tests makes sure that _mod_SxS_ primitive functions correctly and
+// handles all of the whole number types (byte, short, int, ...) correctly.
+
+#define MOD_SXS_TEST(type, postfix) \
+  bool mod_##type () { return (_eq_SxS_ (_mod_SxS_ (10##postfix, 2##postfix), 0##postfix)); }
+
+MOD_SXS_TEST(byte, b)
+MOD_SXS_TEST(short, s)
+MOD_SXS_TEST(int, i)
+MOD_SXS_TEST(long, l)
+MOD_SXS_TEST(longlong, ll)
+MOD_SXS_TEST(ubyte, ub)
+MOD_SXS_TEST(ushort, us)
+MOD_SXS_TEST(uint, ui)
+MOD_SXS_TEST(ulong, ul)
+MOD_SXS_TEST(ulonglong, ull)
+
+int main ()
+{
+    /* convert bool into int */
+    return _toi_S_ (
+      _not_S_ (
+        mod_byte ()
+        && mod_short ()
+        && mod_int ()
+        && mod_long ()
+        && mod_longlong ()
+        && mod_ubyte ()
+        && mod_ushort ()
+        && mod_uint ()
+        && mod_ulong ()
+        && mod_ulonglong ()
+      ));
+}
+

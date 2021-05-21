@@ -879,11 +879,14 @@ static bool
 isMatchPrfShapes (node *arg_node)
 {
     bool res;
+    ntype *type1, *type2;
 
     DBUG_ENTER ();
 
-    res = TUeqShapes (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node))),
-                      AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))));
+    type1 = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
+    type2 = AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)));
+    res = TUshapeKnown (type1) && TUshapeKnown (type2) 
+          && TUeqShapes (type1, type2);
 
     DBUG_RETURN (res);
 }
@@ -2147,6 +2150,8 @@ SCSprf_mod (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    CTIabort ("Modulo using vectors is not supported!");
+
     DBUG_RETURN (res);
 }
 
@@ -3357,7 +3362,7 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
     if (PMmatchFlat (pat1, arg_node)) {
         ivtype = ID_NTYPE (iv);
         arrtype = ID_NTYPE (arr);
-        if (TUdimKnown (arrtype)) {
+        if (TUshapeKnown (arrtype)) {
             arrshp = TYgetShape (arrtype);
             arrc = COmakeConstantFromShape (arrshp);
             if ((COgetExtent (ivc, 0) == COgetExtent (arrc, 0))

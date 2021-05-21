@@ -3,6 +3,10 @@
 /******************************************************************************/
 PHASE (scp, "Loading SAC program", !global.runtime)
 
+ADDPREFUN (TR_cmpt, CMPTnodeType) /* Add at the earliest point,
+                                   * and removed at the end
+								   */
+
 SUBPHASE (loc, "Locating source code", SPdoLocateSource, ALWAYS, scp)
 
 SUBPHASE (cpp, "Running C preprocessor", SPdoRunPreProcessor, ALWAYS, scp)
@@ -760,7 +764,7 @@ SUBPHASE (vp2, "Propagating variables", VPdoVarPropagation, global.optimize.dovp
 SUBPHASE (cse3, "Eliminating common subexpression", CSEdoCommonSubexpressionElimination,
           global.optimize.docse, opt)
 
-SUBPHASE (dcr5, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, opt)
+SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, opt)
 
 SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
 
@@ -795,6 +799,8 @@ SUBPHASE (wlpg2, "Generating full with-loop partitions", WLPGdoWlPartitionGenera
            * with-loops to arrive at wltransform
            */
           opt)
+
+ADDPREFUN (TR_prt, WRCIprintPreFun)
 
 SUBPHASE (wrci, "Inferencing with-loop reuse candidates",
           WRCIdoWithloopReuseCandidateInference, global.optimize.douip, opt)
@@ -865,6 +871,17 @@ SUBPHASE (wlflt, "Trying to flatten multi-dimensional withloops",
 
 SUBPHASE (esaa, "Eliminating symbolic array attributes", ESVdoEliminateShapeVariables,
           global.optimize.dosaa, opt)
+
+/*
+ * Deadcode removal should be done after ESV to make
+ * sure we don't keep carrying around ssa-variables and
+ * -functions, which are no longer used for anything.
+ */
+
+SUBPHASE (dcr5, "Removing dead code", DCRdoDeadCodeRemoval,
+          (global.optimize.dosaa || !global.runtimecheck.conformity)
+            && global.optimize.dodcr,
+          opt)
 
 SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
           SCCdoStripConformityChecks,
@@ -947,9 +964,8 @@ SUBPHASE (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
 SUBPHASE (ivevp2, "Propagating variables (for IVERAS)", VPdoVarPropagation,
           global.optimize.doive &&global.optimize.dovp, opt)
 
-SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemoval,
-          (global.optimize.dosaa || global.optimize.doive
-           || !global.runtimecheck.conformity)
+SUBPHASE (dcr6, "Removing dead code", DCRdoDeadCodeRemoval,
+          (global.optimize.doive || !global.runtimecheck.conformity)
             && global.optimize.dodcr,
           opt)
 
@@ -979,11 +995,25 @@ SUBPHASE (xtgtl, "Transform gt and ge operators to lt and le operators",
 
 SUBPHASE (fdi, "Freeing dispatch information", FDIdoFreeDispatchInformation, ALWAYS, opt)
 
-SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls, global.doprofile,
-          opt)
+ADDPREFUN (TR_prt, EMRCIprintPreFun)
+
+SUBPHASE (emrci, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInference,
+          global.optimize.doemrci, opt)
+
+SUBPHASE (emrcf, "Filter extended WL reuse candidates", FRCdoFilterReuseCandidatesWL,
+          global.optimize.doemrci && global.optimize.doemrcf, opt)
+
+SUBPHASE (emrl, "Lift allocations of WL using extended reuse candidates", EMRLdoExtendLoopMemoryPropagation,
+          global.optimize.doemrci && global.optimize.doemrl, opt)
+
+SUBPHASE (ts, "Displaying type specialisation statistics", TSdoPrintTypeStatistics,
+          global.feedback.type, opt)
+
+SUBPHASE (cs, "Displaying constraint resolution statistics", CSdoPrintConstraintStatistics,
+          global.feedback.constraint, opt)
 
 SUBPHASE (stat, "Displaying optimisation statistics", STATdoPrintStatistics,
-          global.verbose_level >= 3, opt)
+          global.feedback.optimisation, opt)
 
 ENDPHASE (opt)
 
@@ -1065,6 +1095,12 @@ SUBPHASE (daa, "CUDA Data access analysis", DAAdoDataAccessAnalysis,
 SUBPHASE (stknl, "CUDA Create single threaded CUDA kernels", STKNLdoSingleThreadKernels,
           global.optimize.doexpar, cuda)
 
+SUBPHASE (emrci, "Collect extended WL reuse candidates", EMRCIdoWithloopExtendedReuseCandidateInferencePrf,
+          global.optimize.doemrcic, cuda)
+
+SUBPHASE (emrcf, "Filter extended WL reuse candidates", FRCdoFilterReuseCandidatesPrf,
+          global.optimize.doemrcic && global.optimize.doemrcf, cuda)
+
 /*
 SUBPHASE( wlds,
           "Unscalarize cudarizbale withloops",
@@ -1072,6 +1108,21 @@ SUBPHASE( wlds,
           ( global.backend == BE_cuda || global.backend == BE_cudahybrid),
           cuda)
 */
+SUBPHASE (cumm, "Unify host and device memory when using CUDA managed memory", CUMMdoManagedMemory,
+          global.optimize.documm
+		  && (STReq (global.config.cuda_alloc, "cuman")
+		      || STReq (global.config.cuda_alloc, "cumanp")), cuda)
+
+SUBPHASE (cuad, "Introduce delays into asynchronous memory transfers", CUADdoAsyncDelay,
+          global.optimize.docuad
+		  && (STReq (global.config.cuda_alloc, "cualloc")
+		      || STReq (global.config.cuda_alloc, "cureg")), cuda)
+
+SUBPHASE (cuade, "Expand delays of asynchronous memory transfers", CUADEdoAsyncDelayExpand,
+          global.optimize.docuade
+		  && (STReq (global.config.cuda_alloc, "cualloc")
+		      || STReq (global.config.cuda_alloc, "cureg")
+			  || STReq (global.config.cuda_alloc, "cumanp")), cuda)
 
 ENDPHASE (cuda)
 
@@ -1079,9 +1130,12 @@ ENDPHASE (cuda)
 
 PHASE (wlt, "Transforming with-loop representation", !global.on_demand_lib)
 
+SUBPHASE (wlbsc, "Unflattening WL-partition structural constants",
+                  WLBSCdoWlbounds2nonFlatStructConsts, ALWAYS, wlt)
+
 SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification, ALWAYS, wlt)
 /*
- * Repeating this optimisation here is necessary to avoid problems with exotic
+ * Repeating these two optimisations here is necessary to avoid problems with exotic
  * with-loops in subsequent wl-transform.
  */
 
@@ -1214,10 +1268,13 @@ SUBPHASE (alloc, "Introducing explicit allocation statements ", EMALdoAlloc, ALW
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, mem)
 
+REMOVEPREFUN (TR_prt, WRCIprintPreFun)
+REMOVEPREFUN (TR_prt, EMRCIprintPreFun)
+
 SUBPHASE (rci, "Inferring reuse candidates", EMRIdoReuseInference, global.optimize.douip,
           mem)
 
-SUBPHASE (shal, "Activating display of alias information", SHALactivate, ALWAYS, mem)
+ADDPREFUN (TR_prt, SHALprintPreFun)
 
 SUBPHASE (ia, "Interface aliasing analysis", EMIAdoInterfaceAnalysis,
           global.optimize.dosrf, mem)
@@ -1234,10 +1291,10 @@ SUBPHASE (frc, "Removing invalid reuse candidates", FRCdoFilterReuseCandidates,
           global.optimize.douip, mem)
 
 SUBPHASE (sr, "Static reuse", EMSRdoStaticReuse,
-          global.optimize.douip &&global.optimize.dosrf, mem)
+          global.optimize.douip && global.optimize.dosrf, mem)
 
 SUBPHASE (lao, "Applying loop allocation optimization", EMLAOdoLoopAllocationOptimization,
-          global.optimize.dosrf &&global.optimize.dolao, mem)
+          global.optimize.dosrf && global.optimize.dolao, mem)
 
 SUBPHASE (rb, "Introducing reuse branches", EMRBdoReuseBranching,
           global.optimize.doipc || (global.optimize.douip && global.optimize.dodr), mem)
@@ -1254,8 +1311,7 @@ SUBPHASE (pew3, "MUTC Prune empty with3", PEW3doPruneEmptyWith3,
 SUBPHASE (dcr2, "Removing dead code again", DCRdoDeadCodeRemoval, global.optimize.dodcr,
           mem)
 
-SUBPHASE (unshal, "Deactivating display of alias information", SHALdeactivate, ALWAYS,
-          mem)
+REMOVEPREFUN (TR_prt, SHALprintPreFun)
 
 SUBPHASE (rc, "Running reference count inference", RCIdoReferenceCounting, ALWAYS, mem)
 
@@ -1276,6 +1332,15 @@ SUBPHASE( mvsmi,
 SUBPHASE (re, "Removing reuse instructions", EMREdoReuseElimination, ALWAYS, mem)
 
 ENDPHASE (mem)
+
+/******************************************************************************/
+
+PHASE (iprof, "Introduce profiling instruction", !global.on_demand_lib)
+
+SUBPHASE (pfap, "Profiling function applications", PFdoProfileFunCalls,
+          global.doprofile, iprof)
+
+ENDPHASE (iprof)
 
 /******************************************************************************/
 
@@ -1459,15 +1524,14 @@ PHASE (cg, "Generating Code", !global.on_demand_lib)
 
 SUBPHASE (tp, "Tag preparation", TPdoTagPreparation, ALWAYS, cg)
 
-SUBPHASE (ctr, "Converting to old type representation", CTRdoConvertToOldTypes, ALWAYS,
-          cg)
-
 SUBPHASE (cpl, "Creating intermediate code macros", COMPdoCompile, ALWAYS, cg)
 
 SUBPHASE (pds, "Prepare distributed with-loop schedulers",
           PDSdoPrepareDistributedScheduler, global.backend == BE_cudahybrid, cg)
 
 SUBPHASE (prt, "Generating C file(s)", PRTdoPrint, ALWAYS, cg)
+
+REMOVEPREFUN (TR_cmpt, CMPTnodeType)
 
 ENDPHASE (cg)
 

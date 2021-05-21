@@ -613,7 +613,8 @@ static intern_gen *
 FinalTransformations (intern_gen *substig, index_info *transformations, int target_dim)
 {
     intern_gen *tmpig, *newig, *rootig;
-    int ok, i, *help;
+    int ok, i,*help;
+    size_t j;
 
     DBUG_ENTER ();
     DBUG_ASSERT (transformations->vector == substig->shape, "wrong parameters");
@@ -627,9 +628,9 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
        iv=[i,j,k]
        subst array A[42,i,k]
        help: [2,0,3] */
-    i = sizeof (int) * target_dim;
-    help = (int *)MEMmalloc (i);
-    help = (int *)memset (help, 0, i);
+    j = sizeof (int) * target_dim;
+    help = (int *)MEMmalloc (j);
+    help = (int *)memset (help, 0, j);
     for (i = 0; i < transformations->vector; i++) {
         if (transformations->permutation[i]) {
             help[transformations->permutation[i] - 1] = i + 1;
@@ -1001,13 +1002,14 @@ static intern_gen *
 RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
 {
     int *found, i, act_dim, dim, fdim;
+    size_t j;
     intern_gen *act_ig;
 
     DBUG_ENTER ();
 
-    i = sizeof (int) * SHP_SEG_SIZE; /* max number of dimensions */
-    found = (int *)MEMmalloc (i);
-    found = (int *)memset (found, 0, i);
+    j = sizeof (int) * SHP_SEG_SIZE; /* max number of dimensions */
+    found = (int *)MEMmalloc (j);
+    found = (int *)memset (found, 0, j);
 
     for (act_dim = 0; act_dim < transformations->vector; act_dim++)
         if (transformations->permutation[act_dim] != 0) { /* ==0: constant */

@@ -1,0 +1,21 @@
+// Check that partial array reuse is working. The second WL should reuse
+// b for c.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -douip -dopr
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bopt:wrci -printfun main
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< | $(GREP_COMMAND_OUTPUT) "PRC (_.*b)" 1
+
+#include "mini-stdlib.sac"
+
+noinline int[*] id (int[*] a) { return a; }
+
+int main ()
+{
+  a = with { (. <= [iv] <= .): iv; } : genarray ([500], 2);
+  b = id (a); // prevent WL fusing
+  c = with { (. <= [iv] <= .): b[iv] + 2; } : genarray ([500], 20);
+
+  return c[300];
+}

@@ -78,7 +78,8 @@
  *
  * %cc%            Current value of CC
  *
- * %opt%           Which OPT_Ox  value was selected with -O on the sac2c command line
+ * %opt%           Which OPT_Ox value was selected with -O on the sac2c command line,
+ *                 additionally the TUNE_x flags are appended here.
  *
  * %dbg%           OPT_g if -g was provided on the sac2c command line, empty otherwise
  *
@@ -310,6 +311,16 @@
  *                  into the generated machine code for later usage by a debugger.
  *                  This is triggered by the sac2c option -g.
  *
+ *  TUNE_native     The flag here instructs the C compiler to aggressively optimise
+ *                  the program, making use of extensions that are typically unique
+ *                  to the underlying architecture. Code compiled this way can typically
+ *                  not be run on other systems!
+ *
+ *  TUNE_generic    The flag here instructs the C compiler to apply optimisations that
+ *                  are applicable to most x86_64 architectures. Vectorisation and
+ *                  other architecture specific optimisations are not applied by the
+ *                  C compiler.
+ *
  *  CEXT            File name extension for generated Module/Program C source files.
  *
  *  OBJEXT          File name extension for Module/Program object files.
@@ -374,7 +385,7 @@ TREE_CEXT        :=  ".c"
 TREE_OBJEXT      :=  ".o"
 TREE_DLLEXT      :=  "@SHARED_LIB_EXT@"
 COMPILE_TREE     :=  "@CC@ @GENPIC@ @DEFS@ @RCCCFLAGS@ -O1 %tree_cflags% %sacincludes% -c -o %target% %source%"
-LINK_TREE        :=  "@CC@ @LD_DYNAMIC@ %tree_ldflags% -o %target% %objects%"
+LINK_TREE        :=  "@CC@ @LD_DYNAMIC@ %ldflags% %tree_ldflags% -o %target% %objects%"
 
 LIB_OUTPUTDIR    :=  "${MODPATH_CONF}"
 LIBPATH          :=  ".:"
@@ -448,6 +459,8 @@ OPT_O1           :=  "XXXXX"
 OPT_O2           :=  "XXXXX"
 OPT_O3           :=  "XXXXX"
 OPT_g            :=  "XXXXX"
+TUNE_native      :=  "XXXXX"
+TUNE_generic     :=  "XXXXX"
 LDPATH           :=  "XXXXX"
 LINK_MOD         :=  "XXXXX"
 LINK_RMOD        :=  "XXXXX"
@@ -487,6 +500,8 @@ OPT_O1           :=  "@OPT_O1@"
 OPT_O2           :=  "@OPT_O2@"
 OPT_O3           :=  "@OPT_O3@"
 OPT_g            :=  "@OPT_g@"
+TUNE_native      :=  "@TUNE_native@"
+TUNE_generic     :=  "@TUNE_generic@"
 
 LINK_MOD         :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %target%"
 LINK_RMOD        :=  "%ld% %objects% %linkflags% @LD_DYNAMIC@ @LD_PATH@ -o %target%"

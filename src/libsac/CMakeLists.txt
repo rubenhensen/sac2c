@@ -10,11 +10,15 @@ SET (LIBSAC_SRC
   cachesim/access_detailed.c
   cachesim/access_simple.c
   cachesim/basic.c
+  cuda/sync.c
   essentials/commandline.c
   essentials/message.c
   essentials/misc.c
-  essentials/profile.c
   essentials/trace.c
+  profile/profile_print.c
+  profile/profile_memory.c
+  profile/profile_cuda.c
+  profile/profile_ops.c
   interface/sacarg.c
   interface/sacargconvert.c
   interface/sacmt.c

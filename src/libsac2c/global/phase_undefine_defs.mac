@@ -1,3 +1,33 @@
+#ifdef ADDPREFUN__defined
+#undef ADDPREFUN
+#undef ADDPREFUN__defined
+#endif
+
+#ifdef ADDPREFUNfun__defined
+#undef ADDPREFUNfun
+#undef ADDPREFUNfun__defined
+#endif
+
+#ifdef REMOVEPREFUN__defined
+#undef REMOVEPREFUN
+#undef REMOVEPREFUN__defined
+#endif
+
+#ifdef ADDPOSTFUN__defined
+#undef ADDPOSTFUN
+#undef ADDPOSTFUN__defined
+#endif
+
+#ifdef ADDPOSTFUNfun__defined
+#undef ADDPOSTFUNfun
+#undef ADDPOSTFUNfun__defined
+#endif
+
+#ifdef REMOVEPOSTFUN__defined
+#undef REMOVEPOSTFUN
+#undef REMOVEPOSTFUN__defined
+#endif
+
 #ifdef PHASE__defined
 #undef PHASE
 #undef PHASE__defined

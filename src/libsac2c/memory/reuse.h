@@ -17,5 +17,7 @@ extern node *EMRIlet (node *arg_node, info *arg_info);
 extern node *EMRIprf (node *arg_node, info *arg_info);
 extern node *EMRIgenarray (node *arg_node, info *arg_info);
 extern node *EMRImodarray (node *arg_node, info *arg_info);
+extern node *EMRIap (node *arg_node, info *arg_info);
+extern node *EMRIfundef (node *arg_node, info *arg_info);
 
 #endif /* _SAC_REUSE_H_ */

@@ -434,7 +434,7 @@ isNotInt1Part (node *arg_node)
  *
  *****************************************************************************/
 static void
-SetWLProjections (node *noteint, int intersectListNo, info *arg_info)
+SetWLProjections (node *noteint, size_t intersectListNo, info *arg_info)
 {
 
     DBUG_ENTER ();
@@ -451,18 +451,18 @@ SetWLProjections (node *noteint, int intersectListNo, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn static GetNthPart( int partno, node *npart)
+ * @fn static GetNthPart( size_t partno, node *npart)
  *
  * @brief Get npart[partno] for npart.
  *
- * @param  partno: non_negative integer partition index
+ * @param  partno: non_negative size_t partition index
  * @param  npart: A WITH_PART node.
  *
  * @result: The partno'th N_part of npart.
  *
  *****************************************************************************/
 static node *
-GetNthPart (int partno, node *npart)
+GetNthPart (size_t partno, node *npart)
 {
     node *z;
 
@@ -507,8 +507,8 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     node *proj2 = NULL;
     node *noteint;
     pattern *pat;
-    int intersectListNo;
-    int intersectListLim;
+    size_t intersectListNo;
+    size_t intersectListLim;
     node *cwlpb1;
     node *cwlpb2;
     bool cwlpstepok;
@@ -549,7 +549,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     while (((INTERSECT_unknown == z) || (INTERSECT_null == z))
            && (intersectListNo < intersectListLim)) {
 
-        DBUG_PRINT ("Started check of partition #%d", intersectListNo);
+        DBUG_PRINT ("Started check of partition #%zu", intersectListNo);
 
         proj1 = TCgetNthExprsExpr (WLPROJECTION1 (intersectListNo), PRF_ARGS (noteint));
         proj2 = TCgetNthExprsExpr (WLPROJECTION2 (intersectListNo), PRF_ARGS (noteint));
@@ -620,7 +620,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
             DBUG_PRINT ("Generator field(s) changed underfoot");
             z = INTERSECT_null;
         }
-        DBUG_PRINT ("Finished check of partition #%d", intersectListNo);
+        DBUG_PRINT ("Finished check of partition #%zu", intersectListNo);
         intersectListNo++;
     }
     pat = PMfree (pat);
@@ -1029,7 +1029,7 @@ FindMarkedSelAssignParent (node *assgn)
  *
  *****************************************************************************/
 static node *
-performFold (node *cwlpart, int partno, info *arg_info)
+performFold (node *cwlpart, size_t partno, info *arg_info)
 {
     node *pwlblock;
     node *newpblock;
@@ -1190,8 +1190,8 @@ BuildSubcubes (node *arg_node, info *arg_info)
 {
     node *newpartns = NULL;
     node *newcwlpart;
-    int partno;
-    int partlim;
+    size_t partno;
+    size_t partlim;
     node *lb;
     node *ub;
     node *noteintersect;
@@ -1219,7 +1219,7 @@ BuildSubcubes (node *arg_node, info *arg_info)
     if (partlim == 1) { // Do not slice simple compositions
         newpartns = performFold (DUPdoDupNode (arg_node), partno, arg_info);
     } else {
-        DBUG_PRINT ("Slicing partition %s into %d pieces",
+        DBUG_PRINT ("Slicing partition %s into %zu pieces",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), partlim);
         while (partno < partlim) {
             PMmatchFlat (patlb, TCgetNthExprsExpr (WLPROJECTION1 (partno),

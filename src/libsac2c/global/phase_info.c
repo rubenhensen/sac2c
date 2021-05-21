@@ -178,17 +178,17 @@ PHIphaseName (compiler_phase_t phase)
 
 #define PHASE(name, text, cond) PH_initial,
 
-#define SUBPHASE(name, text, fun, cond, phase) PH_##phase,
+#define SUBPHASE(name, text, fun, cond, phase) PHASENAME(phase),
 
-#define CYCLE(name, text, cond, phase, setup) PH_##phase,
+#define CYCLE(name, text, cond, phase, setup) PHASENAME(phase),
 
-#define CYCLEPHASE(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle,
+#define CYCLEPHASE(name, text, fun, cond, phase, cycle) PHASENAME(phase, cycle),
 
-#define FUNBEGIN(name, phase, cycle) PH_##phase##_##cycle,
+#define FUNBEGIN(name, phase, cycle) PHASENAME(phase, cycle),
 
-#define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle,
+#define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle) PHASENAME(phase, cycle),
 
-#define CYCLEPHASEFUNOLD(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle,
+#define CYCLEPHASEFUNOLD(name, text, fun, cond, phase, cycle) PHASENAME(phase, cycle),
 
 compiler_phase_t
 PHIphaseParent (compiler_phase_t phase)

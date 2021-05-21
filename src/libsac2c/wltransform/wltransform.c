@@ -3947,7 +3947,7 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
     /*
      * create pragma-dependent configuration
      */
-    if (pragma != NULL) {
+    if (pragma != NULL && PRAGMA_WLCOMP_APS (pragma) != NULL) {
         aps = PRAGMA_WLCOMP_APS (pragma);
         DBUG_PRINT_TAG ("PRAGMA", "analysing WLCOMP pragma");
         DBUG_EXECUTE_TAG ("PRAGMA", PRTdoPrint (aps););
@@ -4029,7 +4029,8 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
 static void
 CheckParams (node *seg)
 {
-    int d, b;
+    int d;
+    unsigned int b;
     node *tmp1, *tmp2, *last;
     node *first_block = NULL, *first_sv, *first_ubv;
     int inner_block_pos = 0, inner_unr_block_pos;
@@ -6534,7 +6535,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * hierarchical blocking
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            int b;
+            unsigned int b;
             DBUG_EXECUTE (CTInote ("step 6: hierarchical blocking"));
             for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
                 DBUG_EXECUTE (

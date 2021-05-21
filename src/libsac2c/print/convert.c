@@ -29,6 +29,10 @@ static char *rename_type[] = {
 #include "free.h"
 #include "constants_internal.h"
 #include "globals.h"
+#include "new_types.h"
+#include "user_types.h"
+#include "type_utils.h"
+#include "namespaces.h"
 #include "str.h"
 #include "memory.h"
 
@@ -135,9 +139,10 @@ CVdouble2String (double val)
  */
 
 char *
-CVtype2String (types *type, int flag, bool all)
+CVtype2String (ntype *type, int flag, bool all)
 {
     char *tmp_string;
+    usertype udt;
 
     DBUG_ENTER ();
 
@@ -147,156 +152,91 @@ CVtype2String (types *type, int flag, bool all)
     if (type == NULL) {
         strcat (tmp_string, "(null)");
     } else {
-        do {
-            if (TYPES_BASETYPE (type) == T_user) {
-                if ((flag != 3) && (TYPES_MOD (type) != NULL)) {
-                    strcat (tmp_string, TYPES_MOD (type));
-                    if (global.compiler_phase >= PH_pc) {
-                        strcat (tmp_string, "__");
-                    } else {
-                        strcat (tmp_string, ":");
-                    }
-                }
-                strcat (tmp_string, TYPES_NAME (type));
-            } else {
-                if (flag == 2) {
-                    strcat (tmp_string, rename_type[TYPES_BASETYPE (type)]);
+        if (TUisArrayOfUser (type)) {
+            udt = TYgetUserType (TYgetScalar (type));
+            if ((flag != 3) && (UTgetNamespace (udt) != NULL)) {
+                strcat (tmp_string, NSgetModule (UTgetNamespace (udt)));
+                if (global.compiler_phase >= PH_pc) {
+                    strcat (tmp_string, "__");
                 } else {
-                    strcat (tmp_string, type_string[TYPES_BASETYPE (type)]);
+                    strcat (tmp_string, ":");
                 }
             }
+            strcat (tmp_string, UTgetName (udt));
+        } else {
+            if (flag == 2) {
+                strcat (tmp_string, rename_type[TYgetSimpleType (TYgetScalar (type))]);
+            } else {
+                strcat (tmp_string, type_string[TYgetSimpleType (TYgetScalar (type))]);
+            }
+        }
 
-            if (TYPES_DIM (type) != 0) {
-                if (TYPES_DIM (type) == UNKNOWN_SHAPE) {
-                    if (flag == 2) {
-                        strcat (tmp_string, "_P");
-                    } else {
-                        strcat (tmp_string, "[+]");
-                    }
+        if (!TUisScalar (type)) {
+            if (TYisAUDGZ (type)) {
+                if (flag == 2) {
+                    strcat (tmp_string, "_P");
                 } else {
-                    if (ARRAY_OR_SCALAR == TYPES_DIM (type)) {
-                        if (flag == 2) {
-                            strcat (tmp_string, "_S");
-                        } else {
-                            strcat (tmp_string, "[*]");
-                        }
-                    } else {
-                        int i, dim;
-                        static char int_string[INT_STRING_LENGTH];
-                        int known_shape = 1;
-                        if (flag == 2) {
-                            strcat (tmp_string, "_");
-                        } else {
-                            strcat (tmp_string, "[");
-                        }
-                        if (KNOWN_DIM_OFFSET > TYPES_DIM (type)) {
-                            dim = KNOWN_DIM_OFFSET - TYPES_DIM (type);
-                            known_shape = 0;
-                        } else {
-                            dim = TYPES_DIM (type);
-                        }
+                    strcat (tmp_string, "[+]");
+                }
+            } else if (TYisAUD (type)) {
+                if (flag == 2) {
+                    strcat (tmp_string, "_S");
+                } else {
+                    strcat (tmp_string, "[*]");
+                }
+            } else {
+                int i, dim;
+                static char int_string[INT_STRING_LENGTH];
+                if (flag == 2) {
+                    strcat (tmp_string, "_");
+                } else {
+                    strcat (tmp_string, "[");
+                }
+                dim = TYgetDim (type);
 
-                        for (i = 0; i < dim; i++) {
-                            if (i != (dim - 1)) {
-                                if (flag == 2) {
-                                    if (known_shape == 1) {
-                                        sprintf (int_string, "%d_",
-                                                 TYPES_SHAPE (type, i));
-                                    } else {
-                                        sprintf (int_string, "X_");
-                                    }
-                                } else {
-                                    if (known_shape == 1) {
-                                        sprintf (int_string, "%d,",
-                                                 TYPES_SHAPE (type, i));
-                                    } else {
-                                        sprintf (int_string, ".,");
-                                    }
-                                }
-                                strcat (tmp_string, int_string);
+                for (i = 0; i < dim; i++) {
+                    if (i != (dim - 1)) {
+                        if (flag == 2) {
+                            if (TYisAKS (type)) {
+                                sprintf (int_string, "%d_",
+                                         SHgetExtent (TYgetShape (type), i));
                             } else {
-                                if (flag == 2) {
-                                    if (known_shape == 1) {
-                                        sprintf (int_string, "%d", TYPES_SHAPE (type, i));
-                                    } else {
-                                        sprintf (int_string, "X");
-                                    }
-                                } else {
-                                    if (1 == known_shape) {
-                                        sprintf (int_string, "%d]",
-                                                 TYPES_SHAPE (type, i));
-                                    } else {
-                                        sprintf (int_string, ".]");
-                                    }
-                                }
-
-                                strcat (tmp_string, int_string);
+                                sprintf (int_string, "X_");
+                            }
+                        } else {
+                            if (TYisAKS (type)) {
+                                sprintf (int_string, "%d,",
+                                         SHgetExtent (TYgetShape (type), i));
+                            } else {
+                                sprintf (int_string, ".,");
                             }
                         }
+                        strcat (tmp_string, int_string);
+                    } else {
+                        if (flag == 2) {
+                            if (TYisAKS (type)) {
+                                sprintf (int_string, "%d",
+                                SHgetExtent (TYgetShape (type), i));
+                            } else {
+                                sprintf (int_string, "X");
+                            }
+                        } else {
+                            if (TYisAKS (type)) {
+                                sprintf (int_string, "%d]",
+                                         SHgetExtent (TYgetShape (type), i));
+                            } else {
+                                sprintf (int_string, ".]");
+                            }
+                        }
+
+                        strcat (tmp_string, int_string);
                     }
                 }
             }
-
-            type = TYPES_NEXT (type);
-
-            if (!all) { /* break after first type in list */
-                type = NULL;
-            }
-
-            if (type != NULL) {
-                strcat (tmp_string, ", ");
-            }
-        } while (type != NULL);
+        }
     }
 
     DBUG_RETURN (tmp_string);
-}
-
-/******************************************************************************
- *
- * function:
- *   char *CVshpseg2String(int dim, shpseg *shape)
- *
- * description:
- *   This function converts a given shpseg integer vector data structure into
- *   an allocated string. The first parameter provides the actually used length
- *   of the vector.
- *
- ******************************************************************************/
-
-char *
-CVshpseg2String (int dim, shpseg *shape)
-{
-    char *buffer;
-    char num_buffer[20];
-    int i;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (dim <= SHP_SEG_SIZE, " dimension out of range in SetVect()!");
-
-    /*
-     * Instead of accurately computing the buffer space to be allocated,
-     * we make a generous estimation.
-     */
-    buffer = (char *)MEMmalloc (dim * 20);
-
-    buffer[0] = '[';
-    buffer[1] = '\0';
-
-    for (i = 0; i < dim - 1; i++) {
-        sprintf (num_buffer, "%d", SHPSEG_SHAPE (shape, i));
-        strcat (buffer, num_buffer);
-        strcat (buffer, ", ");
-    }
-
-    if (dim > 0) {
-        sprintf (num_buffer, "%d", SHPSEG_SHAPE (shape, dim - 1));
-        strcat (buffer, num_buffer);
-    }
-    strcat (buffer, "]");
-
-    DBUG_RETURN (buffer);
 }
 
 /******************************************************************************

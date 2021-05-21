@@ -148,7 +148,7 @@ SCCdoStripConformityChecks (node *syntax_tree)
  * @return new lhs ids
  ******************************************************************************/
 static node *
-RenameOrReplaceRets (int skip, int no, node *ids, node *args, node **assigns)
+RenameOrReplaceRets (int skip, size_t no, node *ids, node *args, node **assigns)
 {
     node *tmp;
 

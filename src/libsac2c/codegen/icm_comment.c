@@ -29,8 +29,17 @@
     fprintf (global.outfile, "%d", name);                                                \
     sep = 1;
 
+#define ICM_UINT(name)                                                                    \
+    SEP;                                                                                 \
+    fprintf (global.outfile, "%u", name);                                                \
+    sep = 1;
+
 #define ICM_BOOL(name) ICM_INT (name)
 
+/* dim and i needs to be signed due to function in tree_compound.c
+   called TUgetFullDimEncoding as it uses negatives to encode other
+   shape information.
+ */
 #define ICM_VARANY(dim, name)                                                            \
     {                                                                                    \
         int i;                                                                           \
@@ -80,6 +89,7 @@
 #undef ICM_ID
 #undef ICM_STR
 #undef ICM_INT
+#undef ICM_UINT
 #undef ICM_BOOL
 #undef ICM_VARANY
 #undef ICM_VARNT

@@ -131,7 +131,7 @@ StructOpSelHelper (node *prfarg1, node *prfarg2, info *arg_info)
     constant *con1 = NULL;
     constant *con2 = NULL;
     constant *arg2fs = NULL;
-    int offset;
+    size_t offset;
     node *tmpivid = NULL;
     node *tmpivval = NULL;
     node *tmpivavis = NULL;
@@ -300,6 +300,7 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
                     && (N_array == NODE_TYPE (arg2)) /* a WITHID_IDS? */
                     && (1 == iv_len)) {              /* Vector index */
                     offset = COconst2Int (con1);     /* Offset into ravel */
+                    DBUG_ASSERT (offset >= 0, "offset cannot be < 0");
                     result = IVEXIwithidsKludge (offset, arg2, INFO_PART (arg_info),
                                                  &INFO_PREASSIGN (arg_info),
                                                  &INFO_VARDECS (arg_info));
@@ -443,6 +444,7 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
             resxrho = abs (takecount);
             DBUG_ASSERT (resxrho <= argxrho, "Attempted overtake");
             dropcount = (takecount >= 0) ? 0 : argxrho + takecount;
+            DBUG_ASSERT (dropcount >= 0, "drop count cannot be < 0");
             tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2array));
             DBUG_PRINT ("Undertake performed ");
             res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2array)),
@@ -527,6 +529,7 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
                                   resxrho, arg2xrho);
                     CTIabort ("Compilation terminated");
                 }
+                DBUG_ASSERT (dropcount >= 0, "drop count cannot be < 0");
                 tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2array));
                 DBUG_PRINT ("SCCFprf_drop performed ");
                 res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2array)),
@@ -678,7 +681,7 @@ ModarrayModarray_AxVxS (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 static node *
-ReplaceNarrayElementHelper (node *X, int offset, node *val, info *arg_info)
+ReplaceNarrayElementHelper (node *X, size_t offset, node *val, info *arg_info)
 {
     node *z;
     node *exprs;
@@ -688,7 +691,7 @@ ReplaceNarrayElementHelper (node *X, int offset, node *val, info *arg_info)
     z = DUPdoDupNode (X);
     ARRAY_AELEMS (z) = FLATGflattenExprsChain (ARRAY_AELEMS (z), &INFO_VARDECS (arg_info),
                                                &INFO_PREASSIGN (arg_info), NULL);
-    if ((offset < 0) || (offset >= TCcountExprs (ARRAY_AELEMS (z)))) {
+    if (offset >= TCcountExprs (ARRAY_AELEMS (z))) {
         DBUG_PRINT ("index error performing indexed assign into %s",
                     AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
         DBUG_UNREACHABLE ("Index error performing indexed assign into N_array");
@@ -770,6 +773,7 @@ SCCFprf_idx_modarray_AxSxS (node *arg_node, info *arg_info)
             && // PRF_ARG1 is vector
             (TUisScalar (AVIS_TYPE (ID_AVIS (val))))) {
             offset = COconst2Int (coiv);
+            DBUG_ASSERT (offset >= 0, "offset cannot be < 0");
             z = ReplaceNarrayElementHelper (X, offset, PRF_ARG3 (arg_node), arg_info);
             DBUG_PRINT ("_idx_modarray_AxSxS (structcon, [..], val) eliminated");
         }
@@ -866,6 +870,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
             && (SHcompareShapes (COgetShape (fsX), COgetShape (coiv)))) {
             offsetcon = COvect2offset (fsX, coiv, NULL);
             offset = COconst2Int (offsetcon);
+            DBUG_ASSERT (offset >= 0, "offset cannot be < 0");
             z = ReplaceNarrayElementHelper (X, offset, PRF_ARG3 (arg_node), arg_info);
             DBUG_PRINT ("_modarray_AxVxS (structcon, [..], val) eliminated");
         }
@@ -1008,6 +1013,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                         offsetcon = COvect2offset (fsX, coiv, NULL);
                         offset = COconst2Int (offsetcon);
                         res = DUPdoDupNode (X);
+                        DBUG_ASSERT (offset >= 0, "offset cannot be < 0");
                         exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
                         val_exprs = ARRAY_AELEMS (val);
                         while (val_exprs != NULL) {
@@ -1030,6 +1036,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                  */
                 offsetcon = COvect2offset (fsX, coiv, NULL);
                 offset = COconst2Int (offsetcon);
+                DBUG_ASSERT (offset >= 0, "offset cannot be < 0");
                 res = ReplaceNarrayElementHelper (X, offset, val, arg_info);
             }
         }
@@ -1914,7 +1921,8 @@ SelProxyArray (node *arg_node, info *arg_info)
     shape *fs_P_shp;
     shape *iter_shp;
     node *iv_avis;
-    int pos, tlen, flen;
+    int pos;
+    size_t tlen, flen;
     pattern *pat;
 
     node *res = NULL;
@@ -2053,7 +2061,8 @@ IdxselProxyArray (node *arg_node, info *arg_info)
     shape *fs_P_shp;
     shape *iter_shp;
     node *iv_avis;
-    int pos, tlen, flen;
+    int pos;
+    size_t tlen, flen;
     pattern *pat;
     node *offset = NULL;
 
@@ -2883,7 +2892,7 @@ node *
 SCCFprf_idxs2offset (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    int n;
+    size_t n;
 
     DBUG_ENTER ();
 

@@ -8,7 +8,7 @@
 #include "renameidentifiers.h"
 #include "tree_basic.h"
 
-#define DBUG_PREFIX "PREC"
+#define DBUG_PREFIX "RID"
 #include "debug.h"
 
 #include "traverse.h"
@@ -401,11 +401,15 @@ RIDfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("processing function \"%s\"", CTIitemName (arg_node));
+
     if (FUNDEF_ARGS (arg_node) != NULL) {
+        DBUG_PRINT ("   processing args ...");
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_PRINT ("   processing body ...");
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
@@ -431,7 +435,7 @@ RIDfundef (node *arg_node, info *arg_info)
 node *
 RIDarg (node *arg_node, info *arg_info)
 {
-    types *ot;
+    ntype *type;
 
     DBUG_ENTER ();
 
@@ -444,13 +448,12 @@ RIDarg (node *arg_node, info *arg_info)
      */
 
     if (AVIS_DECLTYPE (ARG_AVIS (arg_node)) != NULL) {
-        ot = TYtype2OldType (AVIS_DECLTYPE (ARG_AVIS (arg_node)));
+        type = AVIS_DECLTYPE (ARG_AVIS (arg_node));
     } else {
-        ot = TYtype2OldType (AVIS_TYPE (ARG_AVIS (arg_node)));
+        type = AVIS_TYPE (ARG_AVIS (arg_node));
     }
 
-    ARG_TYPESTRING (arg_node) = CVtype2String (ot, 2, TRUE);
-    ot = FREEfreeOneTypes (ot);
+    ARG_TYPESTRING (arg_node) = CVtype2String (type, 2, TRUE);
 
     arg_node = TRAVcont (arg_node, arg_info);
 

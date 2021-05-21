@@ -1,43 +1,43 @@
 #ifndef _SAC_ICM2C_STD_H_
 #define _SAC_ICM2C_STD_H_
 
-extern void ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
+extern void ICMCompileND_FUN_DECL (char *name, char *rettype_NT, unsigned int vararg_cnt,
                                    char **vararg);
 
 extern void ICMCompileND_DISTMEM_FUN_DECL_WITH_SIDE_EFFECTS (char *name, char *rettype_NT,
-                                                             int vararg_cnt,
+                                                             unsigned int vararg_cnt,
                                                              char **vararg);
 
-extern void ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
+extern void ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, unsigned int vararg_cnt,
                                         char **vararg);
 
-extern void ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt,
+extern void ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, unsigned int vararg_cnt,
                                       char **vararg);
-extern void ICMCompileMUTC_THREADFUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
+extern void ICMCompileMUTC_THREADFUN_DECL (char *name, char *rettype_NT, unsigned int vararg_cnt,
                                            char **vararg);
-extern void ICMCompileMUTC_SPAWNFUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
+extern void ICMCompileMUTC_SPAWNFUN_DECL (char *name, char *rettype_NT, unsigned int vararg_cnt,
                                           char **vararg);
 extern void ICMCompileMUTC_THREADFUN_DEF_BEGIN (char *name, char *rettype_NT,
-                                                int vararg_cnt, char **vararg);
+                                                unsigned int vararg_cnt, char **vararg);
 extern void ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT,
-                                               int vararg_cnt, char **vararg);
-extern void ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt,
+                                               unsigned int vararg_cnt, char **vararg);
+extern void ICMCompileND_FUN_AP (char *name, char *retname, unsigned int vararg_cnt,
                                  char **vararg);
 
-extern void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (int vararg_NT_cnt,
+extern void ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS (unsigned int vararg_NT_cnt,
                                                            char **vararg_NT,
                                                            char *rettype, char *ret_NT,
                                                            char *name, char *retname,
-                                                           int vararg_cnt, char **vararg);
-extern void ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt,
+                                                           unsigned int vararg_cnt, char **vararg);
+extern void ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, unsigned int vararg_cnt,
                                          char **vararg);
 extern void ICMCompileMUTC_SPAWNFUN_AP (char *syncid, char *place, char *name,
-                                        char *retname, int vararg_cnt, char **vararg);
-extern void ICMCompileMUTC_FUNTHREADFUN_AP (char *name, char *retname, int vararg_cnt,
+                                        char *retname, unsigned int vararg_cnt, char **vararg);
+extern void ICMCompileMUTC_FUNTHREADFUN_AP (char *name, char *retname, unsigned int vararg_cnt,
                                             char **vararg);
-extern void ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg);
+extern void ICMCompileND_FUN_RET (char *retname, unsigned int vararg_cnt, char **vararg);
 
-extern void ICMCompileMUTC_THREADFUN_RET (char *retname, int vararg_cnt, char **vararg);
+extern void ICMCompileMUTC_THREADFUN_RET (char *retname, unsigned int vararg_cnt, char **vararg);
 
 extern void ICMCompileND_OBJDEF (char *var_NT, char *basetype, int sdim, int *shp);
 
