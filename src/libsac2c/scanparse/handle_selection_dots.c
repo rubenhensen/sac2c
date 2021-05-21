@@ -303,7 +303,7 @@ FreeDotInfo (dotinfo *node)
 }
 
 /**
- * @fn int LDot2Pos(int dot, dotinfo* info)
+ * @fn int LDot2Pos(size_t dot, dotinfo* info)
  *
  * transforms a given number of a dot (counted from the left) into its
  * position within the selection vector. Counting starts at 1.
@@ -311,10 +311,10 @@ FreeDotInfo (dotinfo *node)
  * @return the position of the given dot within the selection vector
  */
 static size_t
-LDot2Pos (int dot, dotinfo *info)
+LDot2Pos (size_t dot, dotinfo *info)
 {
     dotlist *dots = info->left;
-    int cnt;
+    size_t cnt;
 
     DBUG_ENTER ();
 
@@ -332,10 +332,10 @@ LDot2Pos (int dot, dotinfo *info)
  * @return the position of the given dot within the selection vector
  */
 static size_t
-RDot2Pos (int dot, dotinfo *info)
+RDot2Pos (size_t dot, dotinfo *info)
 {
     dotlist *dots = info->right;
-    int cnt;
+    size_t cnt;
 
     DBUG_ENTER ();
 
@@ -550,7 +550,7 @@ BuildMiddleShape (node *array, dotinfo *info)
 
     left = TBmakeNum ((int)info->triplepos - 1);
 
-    right = TBmakeNum (info->selcnt - info->triplepos);
+    right = TBmakeNum ((int)(info->selcnt - info->triplepos));
 
     result = BuildDrop (left, right, shape);
 
@@ -729,7 +729,7 @@ BuildMiddleIndex (node *args, node *iv, dotinfo *info)
     DBUG_ENTER ();
 
     left = TBmakeNum ((int)info->tripledot - 1);
-    right = TBmakeNum ((int)info->dotcnt - info->tripledot);
+    right = TBmakeNum ((int)(info->dotcnt - info->tripledot));
 
     result = BuildDrop (left, right, DUPdoDupTree (iv));
 
@@ -750,8 +750,8 @@ BuildMiddleIndex (node *args, node *iv, dotinfo *info)
 static node *
 BuildRightIndex (node *args, node *iv, dotinfo *info)
 {
-    int cnt;
-    int maxcnt;
+    size_t cnt;
+    size_t maxcnt;
     node *result = NULL;
 
     DBUG_ENTER ();

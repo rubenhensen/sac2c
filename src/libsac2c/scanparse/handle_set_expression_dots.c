@@ -211,7 +211,7 @@ MakeTmpId (char *name)
  * @return EXPRS chain of N_spid nodes
  *****************************************************************************/
 static node *
-CreateDotVarChain (int n)
+CreateDotVarChain (size_t n)
 {
     node *res = NULL;
     DBUG_ENTER ();
@@ -256,7 +256,7 @@ StripDots (node *didxs)
  * @return EXPRS chain of N_num nodes
  *****************************************************************************/
 static node *
-CreateConstChain (int n, int val)
+CreateConstChain (size_t n, int val)
 {
     node *res = NULL;
     DBUG_ENTER ();
@@ -341,7 +341,7 @@ CreateTdotShape (node *expr, int n)
  * @return potentially modified vector
  *****************************************************************************/
 static node *
-Scalarize (node *vector, int n)
+Scalarize (node *vector, size_t n)
 {
     node *res;
     DBUG_ENTER ();
@@ -376,7 +376,7 @@ Scalarize (node *vector, int n)
  * @return EXPRS chain of N_spid nodes
  *****************************************************************************/
 static node *
-MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, int pos)
+MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, size_t pos)
 {
     node *assign = NULL;
     size_t pos2;
@@ -409,7 +409,7 @@ MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, int pos)
                      TBmakeSpids (STRcpy (SPID_NAME (tvar)),
                                   NULL),
                      TCmakePrf2 (F_drop_SxV,
-                                 TBmakeNum (pos),
+                                 TBmakeNum ((int)pos),
                                  TCmakePrf2 (F_drop_SxV,
                                              TBmakeNum (-(int)pos2),
                                              DUPdoDupTree (tmp)))),
@@ -426,7 +426,7 @@ MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, int pos)
                                  TCmakePrf2 (F_sub_VxS,
                                              TCmakePrf1 (F_shape_A,
                                                          DUPdoDupTree (tmp)),
-                                             TBmakeNum (pos)),
+                                             TBmakeNum ((int)pos)),
                                  DUPdoDupTree (tmp))),
                    MakeTdotAssigns (exprl, tvar, EXPRS_NEXT (exprr), tmp, pos-1));
     }
@@ -741,7 +741,7 @@ HSEDgenerator (node *arg_node, info *arg_info)
                                     INFO_HSED_RN (arg_info),
                                     shape_z, 0);
         tdot_vals = TCmakePrf2 (F_drop_SxV,
-                                TBmakeNum (INFO_HSED_LN (arg_info)),
+                                TBmakeNum ((int)INFO_HSED_LN (arg_info)),
                                 TCmakePrf2 (F_drop_SxV,
                                             TBmakeNum (-INFO_HSED_RN (arg_info)),
                                             shape_z));
