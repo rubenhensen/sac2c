@@ -379,7 +379,7 @@ static node *
 MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, int pos)
 {
     node *assign = NULL;
-    int pos2;
+    size_t pos2;
     DBUG_ENTER ();
     DBUG_ASSERT (((exprl == NULL) || (NODE_TYPE (exprl) == N_exprs)),
                  "N_exprs chain expected for exprl");
@@ -411,9 +411,9 @@ MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, int pos)
                      TCmakePrf2 (F_drop_SxV,
                                  TBmakeNum (pos),
                                  TCmakePrf2 (F_drop_SxV,
-                                             TBmakeNum (-pos2),
+                                             TBmakeNum (-(int)pos2),
                                              DUPdoDupTree (tmp)))),
-                   MakeTdotAssigns (exprl, NULL, exprr, tmp, pos2));
+                   MakeTdotAssigns (exprl, NULL, exprr, tmp, (int)pos2));
     } else if (exprr != NULL) {
         /*
          * construct     exprr = tmp[shape(tmp)-pos];
@@ -447,7 +447,7 @@ MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, int pos)
  * @return expression that represents the vector
  *****************************************************************************/
 static node *
-Exprs2expr (node *exprs, int num_tdot, int pos_tdot, node *tdot_vec)
+Exprs2expr (node *exprs, size_t num_tdot, size_t pos_tdot, node *tdot_vec)
 {
     node *vec;
     node *left, *right;
@@ -547,7 +547,7 @@ AnalyseVec (node *vec, info *arg_info)
  * @return expr-list of merged results
  *****************************************************************************/
 static node *
-RecMergeIn (node *didxs, node *e_vals, node *s_vals, int pos, int *tdot_pos)
+RecMergeIn (node *didxs, node *e_vals, node *s_vals, size_t pos, size_t *tdot_pos)
 {
     node *res = NULL;
     DBUG_ENTER ();
@@ -602,7 +602,7 @@ MergeIn (node *didxs, node *e_vals, node *s_vals, node *t_val)
 {
     node *res = NULL;
     size_t m,n,k;
-    int t_pos;
+    size_t t_pos;
 
     DBUG_ENTER ();
     DBUG_PRINT_TAG ("HSED_MERGE", "MergeIn called on:");

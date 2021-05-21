@@ -110,20 +110,20 @@
  * flag for non-existent (false).
  */
 typedef struct DOTLIST {
-    int no;               /* number of dots counted from left */
-    int position;         /* position of dot within selection */
-    int dottype;          /* type of dot; 1:'.' 3: '...' */
-    struct DOTLIST *next; /* for building up a list ;) */
+    size_t no;               /* number of dots counted from left */
+    size_t position;         /* position of dot within selection */
+    int dottype;             /* type of dot; 1:'.' 3: '...' */
+    struct DOTLIST *next;    /* for building up a list ;) */
     struct DOTLIST *prev;
 } dotlist;
 
 typedef struct DOTINFO {
-    dotlist *left;  /* left end of dotlist */
-    dotlist *right; /* right end */
-    int dotcnt;     /* amount of dots found */
-    int tripledot;  /* dotno of tripledot, 0 iff none found */
-    int triplepos;  /* position of tripledot, 0 iff none found */
-    int selcnt;     /* amount of selectors at all */
+    dotlist *left;     /* left end of dotlist */
+    dotlist *right;    /* right end */
+    size_t dotcnt;     /* amount of dots found */
+    size_t tripledot;  /* dotno of tripledot, 0 iff none found */
+    size_t triplepos;  /* position of tripledot, 0 iff none found */
+    size_t selcnt;     /* amount of selectors at all */
 } dotinfo;
 
 /**
@@ -353,10 +353,10 @@ RDot2Pos (int dot, dotinfo *info)
  *
  * @return dot position counted from left or zero if not a dot
  */
-static int
-LIsDot (int dot, dotinfo *info)
+static size_t
+LIsDot (size_t dot, dotinfo *info)
 {
-    int result = 0;
+    size_t result = 0;
     dotlist *list = info->left;
 
     DBUG_ENTER ();
@@ -380,10 +380,10 @@ LIsDot (int dot, dotinfo *info)
  *
  * @return position counted from the right or zero
  */
-static int
-RIsDot (int dot, dotinfo *info)
+static size_t
+RIsDot (size_t dot, dotinfo *info)
 {
-    int result = 0;
+    size_t result = 0;
 
     DBUG_ENTER ();
 
@@ -675,8 +675,8 @@ BuildShape (node *array, dotinfo *info)
 static node *
 BuildLeftIndex (node *args, node *iv, dotinfo *info)
 {
-    int cnt;
-    int maxcnt;
+    size_t cnt;
+    size_t maxcnt;
     node *result = NULL;
 
     DBUG_ENTER ();
@@ -693,7 +693,7 @@ BuildLeftIndex (node *args, node *iv, dotinfo *info)
             result = TBmakeExprs (MAKE_BIN_PRF (F_sel_VxA,
                                                 TCmakeIntVector (
                                                   TBmakeExprs (TBmakeNum (
-                                                                 LIsDot (cnt, info) - 1),
+                                                                 (int)LIsDot (cnt, info) - 1),
                                                                NULL)),
                                                 DUPdoDupTree (iv)),
                                   result);

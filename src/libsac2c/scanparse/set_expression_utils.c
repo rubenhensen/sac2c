@@ -523,7 +523,7 @@ void SEUTscanSelectionForShapeInfo( node *idxvec, node *array, idtable *scope)
 {
     int poscnt = 0;
     int tripledotflag = 0;
-    int exprslen;
+    size_t exprslen;
     idtable *entry;
     node *position;
     shpchain *chain;
@@ -550,7 +550,7 @@ void SEUTscanSelectionForShapeInfo( node *idxvec, node *array, idtable *scope)
                                   = TCmakePrf2 (F_sub_SxS,
                                                 TCmakePrf1 (F_dim_A,
                                                             DUPdoDupTree ( array)),
-                                                TBmakeNum (exprslen - poscnt));
+                                                TBmakeNum ((int)exprslen - poscnt));
                             } else {
                                 position = TBmakeNum (poscnt);
                             }
