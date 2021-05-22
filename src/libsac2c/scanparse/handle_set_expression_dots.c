@@ -295,7 +295,7 @@ CreateSelChain (size_t nleft, size_t nright, node* expr, size_t pos)
                                                    TCmakePrf1 (
                                                        F_shape_A,
                                                        DUPdoDupTree (expr)),
-                                                   TBmakeNum (nright)),
+                                                   TBmakeNum ((int)nright)),
                                        DUPdoDupTree (expr)),
                            CreateSelChain (nleft, nright-1, expr, pos));
     }
@@ -315,7 +315,7 @@ CreateSelChain (size_t nleft, size_t nright, node* expr, size_t pos)
  * @return EXPRS chain of selections
  *****************************************************************************/
 static node *
-CreateTdotShape (node *expr, int n)
+CreateTdotShape (node *expr, size_t n)
 {
     node *res = NULL;
     DBUG_ENTER ();
@@ -324,7 +324,7 @@ CreateTdotShape (node *expr, int n)
             TBmakeExprs ( TCmakePrf2 ( F_sub_SxS,
                                        TCmakePrf1 ( F_dim_A,
                                                     DUPdoDupTree (expr)),
-                                       TBmakeNum (n)),
+                                       TBmakeNum ((int)n)),
                           NULL));
 
     DBUG_RETURN (res);
