@@ -2,13 +2,28 @@
  *
  * @file signature_simplification.c
  *
- * This module based optimization removes all unused input arguments of
- * non-exported, non-provided and non-lac functions of a module.
- * Also, all constant and scalar return types of that functions are removed
- * from the function signature and inserted directly in the calling context.
+ * description:
+ *   This optimization can be called from a module or function context In 
+ *   case of the latter INFO_ONEFUNDEF is set to TRUE.
+ *   The overall aim is to remove unused arguments of of functions as well
+ *   as constant return values.
  *
- * I am amending this to handle lacfuns. I do not understand the
- * rationale for the above filtering of sheep vs. goats.
+ *   Initially, the idea was to use that for all functions that are local,
+ *   i.e. not provided and not exported. However, that is a tricky business.
+ *   Non-LaC-funs potentially have multiple call sites and they can be
+ *   overloaded which is why they are always connected to their wrapper function.
+ *   These wrapper functions assume a fixed number of arguments to be used
+ *   for all instances. So changing just a single instance, while being 
+ *   conceptually imaginable, would render these wrapoper functions non-expandable
+ *   as all the code-generation assumes that all instances have the same number of
+ *   arguments.
+ *   Even if we restrict ourselves to function instances that have been
+ *   statically dispatched, we would need to detach them from their wrappers
+ *   and as such create a new breed of detached functions.
+ *
+ *   Given all these difficulties, we restrict ourselves to LaC funs.
+ *   Cond-funs have exactly one call site, Loop funs have two. Furthermore,
+ *   all LaC-funs are not overloadable, i.e., they have no wrappers.
  *
  * First, while traversing through the function body, all unused function
  * arguments are removed from the signature of the calling contexts and
@@ -240,7 +255,7 @@ SISIfundef (node *arg_node, info *arg_info)
                     && (!NSequals (NSgetRootNamespace (), FUNDEF_NS (arg_node)))
                     && (!FUNDEF_ISEXPORTED (arg_node))
                     && (!FUNDEF_ISPROVIDED (arg_node)))) {
-#endif // FIXME
+#endif // FIXME  }
                 FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
             }
 
@@ -251,7 +266,7 @@ SISIfundef (node *arg_node, info *arg_info)
                         || ((!FUNDEF_ISEXPORTED (arg_node))
                             && (!FUNDEF_ISPROVIDED (arg_node))))) {
                     FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
-#endif // FIXME
+#endif // FIXME  }
                 }
             } else {
                 DBUG_UNREACHABLE ("Unexpected traversal phase!");
@@ -417,7 +432,7 @@ SISIfundef (node *arg_node, info *arg_info)
             if ((FUNDEF_ISLACFUN (fundef))
                 || ((!FUNDEF_ISPROVIDED (fundef)) && (!FUNDEF_ISEXPORTED (fundef))
                     && (!FUNDEF_ISOBJINITFUN (fundef)) && (!FUNDEF_ISEXTERN (fundef)))) {
-#endif // FIXME
+#endif // FIXME }
                 if ((FUNDEF_ISLACFUN (fundef))) {
 
                     INFO_APFUNRETS (arg_info) = FUNDEF_RETS (AP_FUNDEF (arg_node));
