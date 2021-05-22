@@ -279,14 +279,14 @@ CreateConstChain (size_t n, int val)
  * @return EXPRS chain of selections
  *****************************************************************************/
 static node *
-CreateSelChain (int nleft, int nright, node* expr, int pos)
+CreateSelChain (size_t nleft, size_t nright, node* expr, size_t pos)
 {
     node *res = NULL;
     DBUG_ENTER ();
 
     if (nleft > 0) {
         res = TBmakeExprs (TCmakePrf2 (F_sel_VxA,
-                                       TCcreateIntVector (1,pos,1),
+                                       TCcreateIntVector (1,(int)pos,1),
                                        DUPdoDupTree (expr)),
                            CreateSelChain (nleft-1, nright, expr, pos+1));
     } else if (nright > 0) {
@@ -396,7 +396,7 @@ MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, size_t pos)
                      TBmakeSpids (STRcpy (SPID_NAME (EXPRS_EXPR (exprl))),
                                   NULL),
                      TCmakePrf2 (F_sel_VxA,
-                                 TCcreateIntVector (1,pos,1),
+                                 TCcreateIntVector (1,(int)pos,1),
                                  DUPdoDupTree (tmp))),
                    MakeTdotAssigns (EXPRS_NEXT (exprl), tvar, exprr, tmp, pos+1));
     } else if (tvar != NULL) {
@@ -413,7 +413,7 @@ MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, size_t pos)
                                  TCmakePrf2 (F_drop_SxV,
                                              TBmakeNum (-(int)pos2),
                                              DUPdoDupTree (tmp)))),
-                   MakeTdotAssigns (exprl, NULL, exprr, tmp, (int)pos2));
+                   MakeTdotAssigns (exprl, NULL, exprr, tmp, pos2));
     } else if (exprr != NULL) {
         /*
          * construct     exprr = tmp[shape(tmp)-pos];
@@ -743,7 +743,7 @@ HSEDgenerator (node *arg_node, info *arg_info)
         tdot_vals = TCmakePrf2 (F_drop_SxV,
                                 TBmakeNum ((int)INFO_HSED_LN (arg_info)),
                                 TCmakePrf2 (F_drop_SxV,
-                                            TBmakeNum (-INFO_HSED_RN (arg_info)),
+                                            TBmakeNum (-(int)INFO_HSED_RN (arg_info)),
                                             shape_z));
         nval = MergeIn (INFO_HSED_DIDXS (arg_info),
                         (NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_dot?
