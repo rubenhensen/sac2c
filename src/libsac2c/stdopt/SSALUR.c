@@ -1873,7 +1873,7 @@ GetLoopIdentifiers (node *targetvar, node *predicate, struct prf_expr_queue *sta
                        type conversions presented in the form of primitive
                        functions.  */
                     if (PRF_PRF (new_pred) == F_type_conv) {
-                        if (TYeqTypes (TYPE_TYPE (ID_AVIS (var)),
+                        if (TYeqTypes (ID_NTYPE (var),
                                        ID_NTYPE (PRF_ARG2 (new_pred)))
                             && TYeqTypes (ID_NTYPE (PRF_ARG2 (new_pred)),
                                           TYPE_TYPE (PRF_ARG1 (new_pred)))) {
