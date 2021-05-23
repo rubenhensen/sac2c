@@ -27,21 +27,21 @@
  *
  *
  * are semantically equivalent to
- *                                                 fun( tmp, fun( tmp2, tmp3));
- *     with {                    with {                    tmp3 = with {
- *       ( <p3> ) : e3;            ( <p3> ) : e3;            ( <p3> ) : e3;
+ *                                                 fun( tmp1, fun( tmp2, tmp3));
+ *     with {                    with {                    tmp1 = with {
+ *       ( <p1> ) : e1;            ( <p1> ) : e1;            ( <p1> ) : e1;
  *     } modarray( tmp)          } modarray( tmp)          } fold( fun, neutr)
  *
  * provided the variable tmp is defined as
  *
- * tmp = with {                  tmp = with {              tmp = with {
- *         ( <p2> ) : e2;                ( <p2> ) : e2;            ( <p2> ) : e2;
- *       } modarray( tmp2);            } modarray( tmp2);        } fold( fun, neutr);
+ * tmp = with {                  tmp = with {              tmp2 = with {
+ *         ( <p2> ) : e2;                ( <p2> ) : e2;             ( <p2> ) : e2;
+ *       } modarray( tmp2);            } modarray( tmp2);         } fold( fun, neutr);
  *
  * and tmp2 is defined as
  *
- * tmp2 = with {                 tmp2 = with {             tmp2 = with {
- *          ( <p1> ) : e1;                ( <p1> ) : e1;            ( <p1> ) : e1;
+ * tmp3 = with {                 tmp3 = with {             tmp3 = with {
+ *          ( <p3> ) : e3;                ( <p3> ) : e3;            ( <p3> ) : e3;
  *        } genarray( shp, def);        } modarray( a);           } fold( fun, neutr);
  *
  * Note here, that
@@ -67,7 +67,7 @@
  * turn into
  *
  *     with {                               with {
- *       ( <p3> ) : e3;                       ( <p3> ) : e3;
+ *       ( <p1> ) : e1;                       ( <p1> ) : e1;
  *     } foldfix( fun, tmp, fix)            } propagate( x)
  *
  * where
@@ -79,7 +79,7 @@
  * and
  *
  * tmp2 = with {                            x = with {
- *          ( <p1> ) : e1;                        ( <p1> ) : e1;
+ *          ( <p3> ) : e3;                        ( <p3> ) : e3;
  *        } foldfix( fun, neutr, fix);          } propagate( x);
  *
  * While the foldfix very closely resembles the standard fold, the most striking
@@ -400,7 +400,7 @@ HWLGlet (node *arg_node, info *arg_info)
 static node *
 SplitWith (node *arg_node, info *arg_info)
 {
-    node *part, *code, *withop, *first_wl, *first_let;
+    node *part, *code, *first_wl, *lhs_rest, *wl_rest, *assign_rest;
 
     DBUG_ENTER ();
 
@@ -427,15 +427,6 @@ SplitWith (node *arg_node, info *arg_info)
         CODE_NEXT (code) = NULL;
 
         /**
-         * steal the withop(s)!
-         */
-        withop = WITH_WITHOP (arg_node);
-        /**
-         * and create the new first WL:
-         */
-        first_wl = TBmakeWith (part, code, withop);
-
-        /**
          * Traversing the withops yields:
          *   a modifed withop chain in INFO_NEW_WITHOPS and
          *   a list of lhs variables (N_spids) for the first WL in INFO_HWLG_LHS
@@ -448,16 +439,20 @@ SplitWith (node *arg_node, info *arg_info)
             INFO_HWLG_MODE (arg_info) = T_traverse;
         }
 
-        WITH_WITHOP (arg_node) = INFO_HWLG_NEW_WITHOPS (arg_info);
+        first_wl = TBmakeWith (part, code, INFO_HWLG_NEW_WITHOPS (arg_info));
         INFO_HWLG_NEW_WITHOPS (arg_info) = NULL;
 
-        first_let = TBmakeLet (INFO_HWLG_LHS (arg_info), first_wl);
+        lhs_rest = INFO_HWLG_LHS (arg_info);
         INFO_HWLG_LHS (arg_info) = NULL;
 
-        arg_node = SplitWith (arg_node, arg_info);
+        assign_rest = TBmakeAssign (TBmakeLet (lhs_rest, NULL), INFO_HWLG_LASTASSIGN (arg_info));
+        INFO_HWLG_LASTASSIGN (arg_info) = assign_rest;
 
-        INFO_HWLG_LASTASSIGN (arg_info)
-          = TBmakeAssign (first_let, INFO_HWLG_LASTASSIGN (arg_info));
+        wl_rest = SplitWith (arg_node, arg_info);
+
+        LET_EXPR (ASSIGN_STMT (assign_rest)) = wl_rest;
+
+        arg_node = first_wl;
         /**
          * Now the extracted part can be traversed as the new With-Loop has been
          * inserted already. This preserves the data dependency in case we have to

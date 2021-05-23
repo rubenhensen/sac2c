@@ -2,13 +2,7 @@
 #include "regex.h"
 
 #include <string>
-
-extern "C" {
-int jupyter_init (void);
-char *jupyter_parse_from_string (const char *s);
-int jupyter_finalize (void);
-
-}
+#include "jupyter.h"
 
 
 bool

@@ -1595,6 +1595,33 @@ TCcreateArrayFromIdsDrop (int dropcount, node *ids)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn int TCcountSpids (node *spids)
+ *
+ * @brief counts the number of N_spid nodes in the N_spids chain.
+ *
+ * @param args N_spids chain
+ *
+ * @return number of N_spid nodes
+ ******************************************************************************/
+int
+TCcountSpids (node *spids)
+{
+    int count;
+
+    DBUG_ENTER ();
+
+    count = 0;
+    while (spids != NULL) {
+        DBUG_ASSERT (NODE_TYPE (spids) == N_spids, "no N_spids node found!");
+        count++;
+        spids = SPIDS_NEXT (spids);
+    }
+
+    DBUG_RETURN (count);
+}
+
+
+/** <!-- ****************************************************************** -->
  * @fn node *TCcreateExprsFromArgs( node *args)
  *
  * @brief Creates a N_exprs chain containing N_id nodes corresponding to the

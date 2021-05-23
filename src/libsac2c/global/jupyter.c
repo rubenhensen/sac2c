@@ -17,8 +17,9 @@
 
 #include "uthash.h"
 #include "lex.h"
-#include "parser.h"
 #include "compat.h"
+#include "jupyter.h"
+#include "parser.h"
 
 
 static struct lexer *jup_lex;
@@ -90,12 +91,12 @@ parser_print_tables (struct parser *parser)
 
 
 char *
-jupyter_parse_from_string (char *s)
+jupyter_parse_from_string (const char *s)
 {
     assert (jup_parser, "parser has to be initialised");
     char *local_stderr_content;
     size_t local_stderr_sz;
-    FILE *fin = fmemopen (s, strlen (s), "r");
+    FILE *fin = fmemopen ((void *)s, strlen (s), "r");
     FILE *local_stderr = open_memstream (&local_stderr_content, &local_stderr_sz);
 
     FILE *old_stderr = CTIget_stderr ();

@@ -614,6 +614,13 @@ typedef enum { TY_symb, TY_user } type_conversion_flag;
 
 /*******************************************************************************
  *
+ * for set_expression_utils.h:
+ */
+
+typedef struct IDTABLE idtable;
+
+/*******************************************************************************
+ *
  * moved from type_errors.h
  */
 

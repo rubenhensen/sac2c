@@ -1,0 +1,20 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bscp
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< >/dev/null
+
+#include "mini-stdlib.sac"
+
+// We test that array comprehensions with lists of dots or
+// ids can be parsed:
+//      { [(id | '.') list] -> expr }
+int main ()
+{
+    a = [1,2,3,4,5];
+    b = [a, a];
+    c = { [.] -> 5 };
+    d = { [i,.] -> b[[i,0]] };
+    e = { [.,i] -> b[[i,0]] };
+    f = { [.,.] -> b[[0,0]] };
+    return 0;
+}

@@ -77,6 +77,7 @@ struct parser {
             and getting rid of state in the parser.  */
     bool in_return;
     bool in_subscript;
+    bool in_arraycomp_expr;
 
     /* In case we are parsing a module.  */
     bool in_module;
@@ -179,6 +180,47 @@ struct pre_post_expr {
     node *parent_exprs;
 };
 
+
+/* A data structure to pass the array comprehension context.  */
+struct array_comp_ctxt {
+    /* Whether we have a comprehension:
+            { iv -> ... }                   (true)
+            { [(iv | ',') list] -> ... }    (false)  */
+    bool single_bound_variable;  
+
+    /* The number of bound variables.  */
+    size_t bound_sz;
+
+    /* A list of N_spid nodes, each of which repesents a bound
+       variable, preserving an order they came at the left hand
+       side of the `->'.  */
+    node **bound;
+};
+
+
+/* Create versions to unget several tokens.  */
+#define parser_unget2(parser)                                                            \
+    do {                                                                                 \
+        parser_unget (parser);                                                           \
+        parser_unget (parser);                                                           \
+    } while (0)
+
+#define parser_unget3(parser)                                                            \
+    do {                                                                                 \
+        parser_unget2 (parser);                                                          \
+        parser_unget (parser);                                                           \
+    } while (0)
+
+struct token *parser_get_token (struct parser *parser);
+void parser_unget (struct parser *parser);
+
+static inline struct token *
+parser_peek_token (struct parser *parser)
+{
+    struct token *t = parser_get_token (parser);
+    parser_unget (parser);
+    return t;
+}
 
 /* Set of flags to deffirentiate between the list of statments used
    within the statements (allows single statemen without braces and

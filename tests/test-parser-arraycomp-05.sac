@@ -1,0 +1,39 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bscp
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< >/dev/null
+
+#include "mini-stdlib.sac"
+
+// This test makes sure that the extended form of array
+// comprehensions with id/dot listcan be parsed:
+//
+//      { [(id | '.') list] -> expr '|' gen-expr step-width-expr? }
+//      gen-expr ::= lb ('<' | '<=') [id list]
+//                |                  [id list] ('<' | '<=') ub
+//                |  lb ('<' | '<=') [id list] ('<' | '<=') ub
+// 
+// the generator id list must consist of the variables that can be found
+// within the list on the left hand side of the `<-'.
+//
+//     step-width-expr ::= ('step' expr ) ('width' expr)?
+//
+int main ()
+{
+    a = [1,2,3,4,5];
+    b = [a, a];
+    b = { [i,j] -> a[iv] + 1 | [0,0] <  [i,j]};
+    b = { [i,j] -> a[iv] + 1 | [0,0] <= [i,j]};
+    b = { [i,j] -> a[iv] + 1 | [i,j] < [5,5]};
+    b = { [i,j] -> a[iv] + 1 | [i,j] <= [5]};
+    b = { [i,j] -> a[iv] + 1 | [0,0] < [i,j]  <  [5,5]};
+    b = { [i,j] -> a[iv] + 1 | [0,0] <= [i,j] <  [5,5]};
+    b = { [i,j] -> a[iv] + 1 | [0,0] <  [i,j] <= [5,5]};
+    b = { [i,j] -> a[iv] + 1 | [0,0] <= [i,j] <= [5,5]};
+    b = { [i,j] -> a[iv] + 1 | [0,0] <  [i,j] step [2,2] width [1,1] };
+    b = { [i,j] -> a[iv] + 1 | [0,0] <  [i,j] < [5,5] step [2,1]};
+    b = { [i,j] -> a[iv] + 1 | [0,0] <  [i,j] < [5,5] step [1,2] width [1,1]};
+    b = { [i,j] -> a[iv] + 1 | [0,0] <  [i,j] < [5,5] step [2,2] };
+    c = { [i,j] -> 5 };
+    return 0;
+}

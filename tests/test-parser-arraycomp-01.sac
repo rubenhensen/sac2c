@@ -1,0 +1,18 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bscp
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< >/dev/null
+
+#include "mini-stdlib.sac"
+
+
+// This test makes sure that the primitive form of array
+// comprehension can be parsed:
+//      { id -> expr }
+int main ()
+{
+    a = [1,2,3,4,5];
+    b = { iv -> a[iv] + 1 };
+    c = { iv -> 5 };
+    return 0;
+}

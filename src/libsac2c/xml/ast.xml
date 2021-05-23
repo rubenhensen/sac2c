@@ -1192,21 +1192,42 @@
 		  <node name="Withid" />
 		</travnone>
 	      </traversal>
-	      <traversal id="HD" name="Handle Dots" default="sons" include="handle_dots.h">
+	      <traversal id="HWLD" name="Handle With Loop Dots" default="sons" include="handle_with_loop_dots.h">
 		<travuser>
-		  <node name="SPId" />
 		  <node name="With" />
 		  <node name="Genarray" />
 		  <node name="Modarray" />
 		  <node name="Fold" />
 		  <node name="Part" />
+		  <node name="Withid" />
 		  <node name="Generator" />
-		  <node name="Dot" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HSD" name="Handle Selection Dots" default="sons" include="handle_selection_dots.h">
+		<travuser>
+		  <node name="SPAp" />
+		</travuser>
+	      </traversal>
+	      <traversal id="SERI" name="Set Expression Range Inference" default="sons" include="set_expression_range_inference.h">
+		<travuser>
 		  <node name="SPAp" />
 		  <node name="Prf" />
-		  <node name="Assign" />
+		  <node name="With" />
 		  <node name="SetWL" />
-		  <node name="SPId" />
+		  <node name="Generator" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HSED" name="Handle Set Expression Dots" default="sons" include="handle_set_expression_dots.h">
+		<travuser>
+		  <node name="With" />
+		  <node name="SetWL" />
+		  <node name="Generator" />
+		</travuser>
+	      </traversal>
+	      <traversal id="HSE" name="Handle Set Expressions" default="sons" include="handle_set_expressions.h">
+		<travuser>
+		  <node name="Generator" />
+		  <node name="SetWL" />
 		</travuser>
 	      </traversal>
 	      <traversal id="CSGD" name="Check and Simplify Generic Definitions" default="sons" include="check_and_simplify_generic_definitions.h">
@@ -8114,10 +8135,40 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="Assigns" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Assign" />
+              <phases>
+                <range from="pre_hsed" to="pre_hse" />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="Expr">
           <targets>
             <target mandatory="yes">
               <set name="Expr" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Generator" default="NULL" >
+          <targets>
+            <target mandatory="no">
+              <node name="Generator" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next" default="NULL" >
+          <targets>
+            <target mandatory="no">
+              <node name="SetWL" />
               <phases>
                 <all />
               </phases>
@@ -9910,7 +9961,7 @@ N_tfarg :
             <target mandatory="yes">
               <node name="Dot" />
               <phases>
-                <range from="scp_prs" to="pre_acn" />
+                <range from="scp_prs" to="pre_hwld" />
               </phases>
             </target>
           </targets>
@@ -9928,7 +9979,7 @@ N_tfarg :
             <target mandatory="yes">
               <node name="Dot" />
               <phases>
-                <range from="scp_prs" to="pre_acn" />
+                <range from="scp_prs" to="pre_hwld" />
               </phases>
             </target>
           </targets>

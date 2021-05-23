@@ -2,24 +2,24 @@
 
 # minor macro that checks to see if a python module is available or not
 MACRO (CHECK_PYTHON_MODULE module)
-    EXECUTE_PROCESS (COMMAND "${PYTHON_EXECUTABLE}" "-c"
+    EXECUTE_PROCESS (COMMAND "${Python3_EXECUTABLE}" "-c"
         "import ${module}"
         RESULT_VARIABLE _module_status
         ERROR_QUIET)
 
     IF (_module_status) # not found
-        MESSAGE (FATAL_ERROR "Python module `${module}' is missing!")
+        MESSAGE (FATAL_ERROR "Python3 module `${module}' is missing!")
     ELSE ()
-        MESSAGE (STATUS "Python module `${module}' found")
+        MESSAGE (STATUS "Python3 module `${module}' found")
     ENDIF ()
     UNSET (_module_status)
 ENDMACRO ()
 
 # The version manager requires Puthon 3.
-FIND_PACKAGE (PythonInterp 3 EXACT REQUIRED)
+FIND_PACKAGE (Python3 REQUIRED)
 
 # make sure we have the Python argparse module available
-CHECK_PYTHON_MODULE ("argparse")
+# CHECK_PYTHON_MODULE ("argparse") as of Python3 this is built-in!
 
 # create a dictionary that relates build type and the build postfix
 SET (BUILD_TYPE_POSTFIX_DICT)

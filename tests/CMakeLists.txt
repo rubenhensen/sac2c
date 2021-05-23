@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.10)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.17)
 
 # Unit testing is done here through a collection of
 # scripts, with `run.sh` being the main execution script.

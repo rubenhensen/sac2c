@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!@Python3_EXECUTABLE@
 
 # This scripts makes it possible to manage multiple installations
 # of sac2c on the system.  The scripts provide the following

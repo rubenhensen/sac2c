@@ -672,7 +672,7 @@ ELSEIF (MACC)
   SET (MACCC_GENERIC_FLAGS  "")
   # TODO(artem) Check whether this helps to handle the bracket error!
   IF ("${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
-    CHECK_CC_FLAG ("-fbracket-depth=2048" MACCC_FLAGS)
+    CHECK_CC_FLAG ("-fbracket-depth=4096" MACCC_FLAGS)
   ENDIF ()
   CHECK_CC_FLAG ("-isysroot ${CMAKE_OSX_SYSROOT}" MACCC_FLAGS)
   CHECK_CC_FLAG ("-isysroot ${CMAKE_OSX_SYSROOT}" MACLD_FLAGS)

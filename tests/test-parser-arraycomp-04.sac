@@ -1,0 +1,38 @@
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bscp
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< >/dev/null
+
+#include "mini-stdlib.sac"
+
+// This test makes sure that the extended form of array
+// comprehensions can be parsed:
+//      { id -> expr '|' gen-expr step-width-expr? }
+//      gen-expr ::= lb ('<' | '<=') id
+//                |                  id ('<' | '<=') ub
+//                |  lb ('<' | '<=') id ('<' | '<=') ub
+// 
+// the generator id must be the identical to the one bound on
+// the left hand side of the `<-'.
+//
+//     step-width-expr ::= ('step' expr ) ('width' expr)?
+//
+int main ()
+{
+    a = [1,2,3,4,5];
+    b = [a, a];
+    b = { iv -> a[iv] + 1 | [0] < iv};
+    b = { iv -> a[iv] + 1 | [0] <= iv};
+    b = { iv -> a[iv] + 1 | iv < [5]};
+    b = { iv -> a[iv] + 1 | iv <= [5]};
+    b = { iv -> a[iv] + 1 | [0] < iv < [5]};
+    b = { iv -> a[iv] + 1 | [0] <= iv < [5]};
+    b = { iv -> a[iv] + 1 | [0] < iv <= [5]};
+    b = { iv -> a[iv] + 1 | [0] <= iv <= [5]};
+    b = { iv -> a[iv] + 1 | [0] < iv step [2] width [1] };
+    b = { iv -> a[iv] + 1 | [0] < iv < [5] step [2]};
+    b = { iv -> a[iv] + 1 | [0] < iv < [5] step [2] width [1]};
+    b = { iv -> a[iv] + 1 | [0] < iv < [5] step [2] };
+    c = { iv -> 5 };
+    return 0;
+}
