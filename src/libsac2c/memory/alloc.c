@@ -1118,7 +1118,7 @@ EMALarray (node *arg_node, info *arg_info)
              * [ a, ... ]
              * alloc( outer_dim + dim(a), shape( [a, ...]))
              */
-            if (NODE_TYPE (ARRAY_AELEMS (arg_node)) == N_id) {
+            if (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (arg_node))) == N_id) {
                 als->dim = TCmakePrf2 (F_add_SxS, MakeDimArg (arg_node),
                                        MakeDimArg (EXPRS_EXPR (ARRAY_AELEMS (arg_node))));
             } else {
