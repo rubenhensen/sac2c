@@ -15,7 +15,7 @@ extern bool SEUTcontainsIdFromTable (node *expr, idtable *from, idtable *to);
 extern int SEUTcountIds (idtable *table);
 extern bool SEUTshapeInfoComplete (idtable *table);
 
-extern void SEUTscanSelectionForShapeInfo( node *idxvec, node *arg, idtable *scope);
+extern void SEUTscanSelectionForShapeInfo (node *idxvec, node *arg, idtable *scope);
 extern node *SEUTgenShape (idtable *identry);
 
 extern node *SEUTsubstituteIdxs (node *expr, node *idxs, node *subst);

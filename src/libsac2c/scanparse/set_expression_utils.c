@@ -17,6 +17,7 @@
 #include "print.h"
 
 #include <strings.h>
+#include <limits.h>
 
 /**
  * @file set_expression_utils.c
@@ -39,7 +40,7 @@
  * However, we do not record any dots here as they are irrelevant
  * for the shape inference.
  *
- * SEUTbuildIdTable( vec, oldscope) takes any of the above (1-4) but internally
+ * SEUTbuildIdTable (vec, oldscope) takes any of the above (1-4) but internally
  * strips away all dots.
  * vec is a node which either should be an N_exprs (cases 2,3,4), or an
  * N_spid (case 1).
@@ -68,12 +69,12 @@
  * The attributes (scal/vec) can be accessed through SEUTisVector and SEUTisScalar,
  * respectively.
  *
- * SEUTsearchIdInTable( id, from, to) searches for a given id (string) within a
+ * SEUTsearchIdInTable (id, from, to) searches for a given id (string) within a
  * given segment of an idtable chain (from->to). It will return the *first* matching
  * identifier! Assuming that the innermost scope is first in the chain, this 
  * matches the binding scope!
  *
- * SEUTcontainsIdFromTable( expr, from, to) checks whether any identifier contained
+ * SEUTcontainsIdFromTable (expr, from, to) checks whether any identifier contained
  * in the idtable chain between from and to is referred to as N_spid within the
  * expression expr.
  *
@@ -84,7 +85,7 @@
  * SEUTshapeInfoComplete checks whether for all identifiers in the topmost frame
  * the shape information is non-NULL.
  *
- * SEUTscanSelectionForShapeInfo( idxvec, arg, scope) extracts shape info for
+ * SEUTscanSelectionForShapeInfo (idxvec, arg, scope) extracts shape info for
  * all ids that are contained in the idxvec and which are found in the scope.
  * Once found, the corresponding shape info from the arg-shape is inserted
  * into the idtable.
@@ -140,6 +141,21 @@ struct IDTABLE {
 };
 
 /**
+ * As we change the element ranges from int to size_t we have several values
+ * that are of size_t but still need to go into an N_num, ie. need to be
+ * int. While the cases in this particular file denote dimensionalities
+ * as they occur in shape strings and should never be that high, we want
+ * to capture cases if values get out of bound. Hence we wrap downcasts
+ * into DBUG_ASSERTS.
+ */
+static inline int
+ConvSI (size_t x) {
+ DBUG_ASSERT (x < INT_MAX, "size_t-to-int convertion failed");
+ return (int)x;
+}
+
+
+/**
  * appends all ids within ids to the idtable appendto. The gathered
  * information is used to collect shapes of arrays these ids are
  * used on within a selection. New ids are appended on top in order
@@ -168,7 +184,7 @@ SEUTbuildIdTable (node *vec, idtable *oldscope)
                 newtab->next = result;
                 newtab->nextframe = oldscope;
                 result = newtab;
-                DBUG_PRINT( "adding scalar id \"%s\"", newtab->id);
+                DBUG_PRINT ("adding scalar id \"%s\"", newtab->id);
             } else if (NODE_TYPE (id) != N_dot) {
                 CTIerrorLine (global.linenum, "Found neither id nor dot as index in WL set notation");
             }
@@ -183,7 +199,7 @@ SEUTbuildIdTable (node *vec, idtable *oldscope)
         newtab->next = result;
         newtab->nextframe = oldscope;
         result = newtab;
-        DBUG_PRINT( "adding vector id \"%s\"", newtab->id);
+        DBUG_PRINT ("adding vector id \"%s\"", newtab->id);
     } else {
         CTIabortLine (global.linenum, "Malformed index vector in WL set notation");
     }
@@ -294,13 +310,14 @@ struct INFO {
 #define INFO_CIFT_FROM(n) ((n)->cift.from)
 #define INFO_CIFT_TO(n) ((n)->cift.to)
 
-node *ATravCIFTspid( node * arg_node, info * arg_info)
+node *ATravCIFTspid (node * arg_node, info * arg_info)
 {
-  INFO_CIFT_CONTAINED (arg_info) = INFO_CIFT_CONTAINED (arg_info)
-                        || ( SEUTsearchIdInTable (SPID_NAME( arg_node),
-                                                  INFO_CIFT_FROM (arg_info),
-                                                  INFO_CIFT_TO (arg_info)) 
-                            != NULL );
+  INFO_CIFT_CONTAINED (arg_info)
+      = INFO_CIFT_CONTAINED (arg_info)
+        || ( SEUTsearchIdInTable (SPID_NAME (arg_node),
+                                  INFO_CIFT_FROM (arg_info),
+                                  INFO_CIFT_TO (arg_info)) 
+             != NULL );
   return arg_node;
 }
   
@@ -315,7 +332,7 @@ bool SEUTcontainsIdFromTable (node *expr, idtable *from, idtable *to)
 
     TRAVpushAnonymous (cift_trav, &TRAVsons);
 
-    expr = TRAVopt (expr, & arg_info);
+    expr = TRAVopt (expr, &arg_info);
 
     TRAVpop ();
 
@@ -325,7 +342,7 @@ bool SEUTcontainsIdFromTable (node *expr, idtable *from, idtable *to)
 int SEUTcountIds (idtable *from)
 {
     int res=0;
-    idtable *to = from ->nextframe;
+    idtable *to = from->nextframe;
 
     DBUG_ENTER ();
 
@@ -482,23 +499,23 @@ bool SEUTshapeInfoComplete (idtable *table)
     end = table->nextframe;
     if (table->type == ID_scalar) {
         while (table != end) {
-            DBUG_PRINT( "info for \"%s\"...", table->id);
+            DBUG_PRINT ("info for \"%s\"...", table->id);
             if (table->shapes == NULL) {
                 result = FALSE;
-                DBUG_PRINT("   ... missing");
+                DBUG_PRINT ("   ... missing");
             } else {
-                DBUG_PRINT("   ... found");
+                DBUG_PRINT ("   ... found");
             }
             table = table->next;
         }
 
     } else if (table->type == ID_vector) {
-        DBUG_PRINT( "info for \"%s\"...", table->id);
+        DBUG_PRINT ("info for \"%s\"...", table->id);
         if (table->shapes == NULL) {
             result = FALSE;
-            DBUG_PRINT("   ... missing");
+            DBUG_PRINT ("   ... missing");
         } else {
-            DBUG_PRINT("   ... found");
+            DBUG_PRINT ("   ... found");
         }
     }
 
@@ -519,7 +536,7 @@ bool SEUTshapeInfoComplete (idtable *table)
  * @param array array the selection operates on
  * @param arg_info info node containing ids to scan
  */
-void SEUTscanSelectionForShapeInfo( node *idxvec, node *array, idtable *scope)
+void SEUTscanSelectionForShapeInfo (node *idxvec, node *array, idtable *scope)
 {
     int poscnt = 0;
     int tripledotflag = 0;
@@ -549,8 +566,8 @@ void SEUTscanSelectionForShapeInfo( node *idxvec, node *array, idtable *scope)
                                 position
                                   = TCmakePrf2 (F_sub_SxS,
                                                 TCmakePrf1 (F_dim_A,
-                                                            DUPdoDupTree ( array)),
-                                                TBmakeNum ((int)exprslen - poscnt));
+                                                            DUPdoDupTree (array)),
+                                                TBmakeNum (ConvSI (exprslen) - poscnt));
                             } else {
                                 position = TBmakeNum (poscnt);
                             }
@@ -622,7 +639,7 @@ ATravRBZspid (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (STReq (SPID_NAME (INFO_RBZ_SPID (arg_info)), SPID_NAME (arg_node))) {
-        arg_node = FREEdoFreeTree( arg_node);
+        arg_node = FREEdoFreeTree (arg_node);
         arg_node = DUPdoDupTree (INFO_RBZ_SUBST (arg_info));
     }
 

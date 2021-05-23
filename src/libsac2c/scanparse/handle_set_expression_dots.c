@@ -19,6 +19,7 @@
 #include "pattern_match.h"
 
 #include <strings.h>
+#include <limits.h>
 
 /**
  * @file handle_set_expression_dots.c
@@ -170,6 +171,21 @@ FreeInfo (info *arg_node)
 }
 
 /**
+ * As we change the element ranges from int to size_t we have several values
+ * that are of size_t but still need to go into an N_num, ie. need to be
+ * int. While the cases in this particular file denote dimensionalities
+ * as they occur in shape strings and should never be that high, we want
+ * to capture cases if values get out of bound. Hence we wrap downcasts
+ * into DBUG_ASSERTS.
+ */
+static inline int
+ConvSI (size_t x) {
+ DBUG_ASSERT (x < INT_MAX, "size_t-to-int convertion failed");
+ return (int)x;
+}
+
+
+/**
  * builds an id with a free name by calling TmpVarName. If
  * HSE_USE_EXPLANATORY_NAMES is set, name is appended to the new id,
  * Use this feature only for debugging, as it might create very long
@@ -286,7 +302,7 @@ CreateSelChain (size_t nleft, size_t nright, node* expr, size_t pos)
 
     if (nleft > 0) {
         res = TBmakeExprs (TCmakePrf2 (F_sel_VxA,
-                                       TCcreateIntVector (1,(int)pos,1),
+                                       TCcreateIntVector (1,ConvSI (pos),1),
                                        DUPdoDupTree (expr)),
                            CreateSelChain (nleft-1, nright, expr, pos+1));
     } else if (nright > 0) {
@@ -295,7 +311,7 @@ CreateSelChain (size_t nleft, size_t nright, node* expr, size_t pos)
                                                    TCmakePrf1 (
                                                        F_shape_A,
                                                        DUPdoDupTree (expr)),
-                                                   TBmakeNum ((int)nright)),
+                                                   TBmakeNum (ConvSI (nright))),
                                        DUPdoDupTree (expr)),
                            CreateSelChain (nleft, nright-1, expr, pos));
     }
@@ -324,7 +340,7 @@ CreateTdotShape (node *expr, size_t n)
             TBmakeExprs ( TCmakePrf2 ( F_sub_SxS,
                                        TCmakePrf1 ( F_dim_A,
                                                     DUPdoDupTree (expr)),
-                                       TBmakeNum ((int)n)),
+                                       TBmakeNum (ConvSI (n))),
                           NULL));
 
     DBUG_RETURN (res);
@@ -396,7 +412,7 @@ MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, size_t pos)
                      TBmakeSpids (STRcpy (SPID_NAME (EXPRS_EXPR (exprl))),
                                   NULL),
                      TCmakePrf2 (F_sel_VxA,
-                                 TCcreateIntVector (1,(int)pos,1),
+                                 TCcreateIntVector (1,ConvSI (pos),1),
                                  DUPdoDupTree (tmp))),
                    MakeTdotAssigns (EXPRS_NEXT (exprl), tvar, exprr, tmp, pos+1));
     } else if (tvar != NULL) {
@@ -409,9 +425,9 @@ MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, size_t pos)
                      TBmakeSpids (STRcpy (SPID_NAME (tvar)),
                                   NULL),
                      TCmakePrf2 (F_drop_SxV,
-                                 TBmakeNum ((int)pos),
+                                 TBmakeNum (ConvSI (pos)),
                                  TCmakePrf2 (F_drop_SxV,
-                                             TBmakeNum (-(int)pos2),
+                                             TBmakeNum (-ConvSI(pos2)),
                                              DUPdoDupTree (tmp)))),
                    MakeTdotAssigns (exprl, NULL, exprr, tmp, pos2));
     } else if (exprr != NULL) {
@@ -426,7 +442,7 @@ MakeTdotAssigns (node *exprl, node *tvar, node *exprr, node *tmp, size_t pos)
                                  TCmakePrf2 (F_sub_VxS,
                                              TCmakePrf1 (F_shape_A,
                                                          DUPdoDupTree (tmp)),
-                                             TBmakeNum ((int)pos)),
+                                             TBmakeNum (ConvSI (pos))),
                                  DUPdoDupTree (tmp))),
                    MakeTdotAssigns (exprl, tvar, EXPRS_NEXT (exprr), tmp, pos-1));
     }
@@ -741,9 +757,9 @@ HSEDgenerator (node *arg_node, info *arg_info)
                                     INFO_HSED_RN (arg_info),
                                     shape_z, 0);
         tdot_vals = TCmakePrf2 (F_drop_SxV,
-                                TBmakeNum ((int)INFO_HSED_LN (arg_info)),
+                                TBmakeNum (ConvSI (INFO_HSED_LN (arg_info))),
                                 TCmakePrf2 (F_drop_SxV,
-                                            TBmakeNum (-(int)INFO_HSED_RN (arg_info)),
+                                            TBmakeNum (-ConvSI (INFO_HSED_RN (arg_info))),
                                             shape_z));
         nval = MergeIn (INFO_HSED_DIDXS (arg_info),
                         (NODE_TYPE (GENERATOR_BOUND2 (arg_node)) == N_dot?

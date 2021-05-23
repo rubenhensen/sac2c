@@ -218,20 +218,20 @@ SERIsetwl (node *arg_node, info *arg_info)
     /*
      * First, we check which ranges are missing
      */
-    INFO_SERI_LBMISSING( arg_info) = 
+    INFO_SERI_LBMISSING (arg_info) = 
         ( (SETWL_GENERATOR (arg_node) == NULL)
           || (GENERATOR_BOUND1 (SETWL_GENERATOR (arg_node)) == NULL) );
-    DBUG_PRINT( " lower bound is %s!", (INFO_SERI_LBMISSING( arg_info)? "missing" : "present"));
+    DBUG_PRINT (" lower bound is %s!", (INFO_SERI_LBMISSING (arg_info)? "missing" : "present"));
 
-    INFO_SERI_UBMISSING( arg_info) = 
+    INFO_SERI_UBMISSING (arg_info) = 
         ( (SETWL_GENERATOR (arg_node) == NULL)
           || (GENERATOR_BOUND2 (SETWL_GENERATOR (arg_node)) == NULL) );
-    DBUG_PRINT( " upper bound is %s!", (INFO_SERI_UBMISSING( arg_info)? "missing" : "present"));
+    DBUG_PRINT (" upper bound is %s!", (INFO_SERI_UBMISSING (arg_info)? "missing" : "present"));
 
-    DBUG_PRINT( "adding new ids to idtable");
+    DBUG_PRINT ("adding new ids to idtable");
     INFO_SERI_IDTABLE (arg_info) = SEUTbuildIdTable (SETWL_VEC (arg_node),
                                                      INFO_SERI_IDTABLE (INFO_SERI_NEXT (arg_info)));
-    DBUG_PRINT( "traversing expression...");
+    DBUG_PRINT ("traversing expression...");
     SETWL_EXPR (arg_node) = TRAVdo (SETWL_EXPR (arg_node), arg_info);
     if (SETWL_GENERATOR (arg_node) == NULL) {
         SETWL_GENERATOR (arg_node) = TBmakeGenerator (F_noop, F_noop, NULL, NULL, NULL, NULL);
@@ -286,7 +286,7 @@ SERIgenerator (node *arg_node, info *arg_info)
                 GENERATOR_BOUND2 (arg_node)
                     = TCmakePrf2 (F_take_SxV,
                                   TCmakePrf2 (F_sel_VxA,
-                                              TCcreateIntVector( 1, 0, 0),
+                                              TCcreateIntVector (1, 0, 0),
                                               TCmakePrf1 (F_shape_A,
                                                           DUPdoDupTree (GENERATOR_BOUND1 (arg_node)))),
                                   SEUTgenShape (INFO_SERI_IDTABLE (arg_info)));

@@ -16,6 +16,7 @@
 #include "tree_compound.h"
 
 #include <strings.h>
+#include <limits.h>
 
 /**
  * @file handle_selection_dots.c
@@ -168,6 +169,20 @@ FreeInfo (info *info)
     info = MEMfree (info);
 
     DBUG_RETURN (info);
+}
+
+/**
+ * As we change the element ranges from int to size_t we have several values
+ * that are of size_t but still need to go into an N_num, ie. need to be 
+ * int. While the cases in this particular file denote dimensionalities
+ * as they occur in shape strings and should never be that high, we want 
+ * to capture cases if values get out of bound. Hence we wrap downcasts
+ * into DBUG_ASSERTS.
+ */
+static inline int
+ConvSI (size_t x) {
+ DBUG_ASSERT (x < INT_MAX, "size_t-to-int convertion failed");
+ return (int)x;
 }
 
 /**
@@ -509,8 +524,9 @@ BuildLeftShape (node *array, dotinfo *info)
     for (cnt = maxdot; cnt > 0; cnt--) {
         result = TBmakeExprs (MAKE_BIN_PRF (F_sel_VxA,
                                             TCmakeIntVector (
-                                              TBmakeExprs (TBmakeNum ((int)LDot2Pos (cnt, info)
-                                                                      - 1),
+                                              TBmakeExprs (
+                                                TBmakeNum (ConvSI (
+                                                  LDot2Pos (cnt, info) - 1)),
                                                            NULL)),
                                             TBmakePrf (F_shape_A,
                                                        TBmakeExprs (DUPdoDupTree (array),
@@ -548,9 +564,9 @@ BuildMiddleShape (node *array, dotinfo *info)
 
     shape = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL));
 
-    left = TBmakeNum ((int)info->triplepos - 1);
+    left = TBmakeNum (ConvSI (info->triplepos - 1));
 
-    right = TBmakeNum ((int)(info->selcnt - info->triplepos));
+    right = TBmakeNum (ConvSI (info->selcnt - info->triplepos));
 
     result = BuildDrop (left, right, shape);
 
@@ -593,7 +609,7 @@ BuildRightShape (node *array, dotinfo *info)
                                                                                 array),
                                                                               NULL)),
                                                       NULL))),
-                TBmakeNum ((int)RDot2Pos (cnt, info))),
+                TBmakeNum (ConvSI (RDot2Pos (cnt, info)))),
               NULL)),
             TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL))),
           result);
@@ -692,9 +708,10 @@ BuildLeftIndex (node *args, node *iv, dotinfo *info)
             /* Make selection iv[ldot(cnt)-1] */
             result = TBmakeExprs (MAKE_BIN_PRF (F_sel_VxA,
                                                 TCmakeIntVector (
-                                                  TBmakeExprs (TBmakeNum (
-                                                                 (int)LIsDot (cnt, info) - 1),
-                                                               NULL)),
+                                                  TBmakeExprs (
+                                                    TBmakeNum ( ConvSI (
+                                                      LIsDot (cnt, info) - 1)),
+                                                  NULL)),
                                                 DUPdoDupTree (iv)),
                                   result);
         } else {
@@ -728,8 +745,8 @@ BuildMiddleIndex (node *args, node *iv, dotinfo *info)
 
     DBUG_ENTER ();
 
-    left = TBmakeNum ((int)info->tripledot - 1);
-    right = TBmakeNum ((int)(info->dotcnt - info->tripledot));
+    left = TBmakeNum (ConvSI (info->tripledot - 1));
+    right = TBmakeNum (ConvSI (info->dotcnt - info->tripledot));
 
     result = BuildDrop (left, right, DUPdoDupTree (iv));
 
@@ -772,7 +789,7 @@ BuildRightIndex (node *args, node *iv, dotinfo *info)
                                               TBmakePrf (F_shape_A,
                                                          TBmakeExprs (DUPdoDupTree (iv),
                                                                       NULL))),
-                                TBmakeNum ((int)RIsDot (cnt, info))),
+                                TBmakeNum (ConvSI (RIsDot (cnt, info)))),
                   NULL)),
                 DUPdoDupTree (iv)),
               result);
@@ -930,7 +947,7 @@ BuildSelectionElementShape (node *array, dotinfo *info)
     DBUG_ENTER ();
 
     shape
-      = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum ((int)info->selcnt),
+      = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (ConvSI (info->selcnt)),
                       TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL)));
 
     DBUG_RETURN (shape);
