@@ -3242,13 +3242,17 @@ PRTfuncond (node *arg_node, info *arg_info)
 node *
 PRTap (node *arg_node, info *arg_info)
 {
+    node *fundef;
     DBUG_ENTER ();
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    if (LEXERisOperator (FUNDEF_NAME (AP_FUNDEF (arg_node)))) {
+    fundef = AP_FUNDEF (arg_node);
+
+    if (LEXERisOperator (FUNDEF_NAME (fundef))
+        && !(FUNDEF_ISLOOPFUN (fundef) || FUNDEF_ISCONDFUN (fundef))) {
         PrintOperatorAp (arg_node, NULL, arg_info);
     } else {
         PrintFunAp (arg_node, NULL, arg_info);
