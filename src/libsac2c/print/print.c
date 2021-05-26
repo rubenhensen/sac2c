@@ -1338,7 +1338,7 @@ PRTmodule (node *arg_node, info *arg_info)
         fclose (global.outfile);
 
         global.outfile
-          = FMGRwriteOpen ("%s/globals%s", global.tmp_dirname, global.config.cext);
+          = FMGRwriteOpen ("%s/globals%s", global.tmp_dirname, global.config.ccp_cext);
         fprintf (global.outfile, "#include \"header.h\"\n\n");
         fprintf (global.outfile,
                  "static int SAC__%s__dummy_value_which_is_completely_useless"
@@ -2099,7 +2099,7 @@ PRTfundef (node *arg_node, info *arg_info)
              */
 
             if (!FUNDEF_ISZOMBIE (arg_node)) {
-                if (((FUNDEF_BODY (arg_node) == NULL) && !FUNDEF_HEADER (arg_node))
+                if ((FUNDEF_BODY (arg_node) == NULL)
                     || ((FUNDEF_RETURN (arg_node) != NULL)
                         && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
                     fprintf (global.outfile, "%s ", PRINT_EXTERN);
@@ -2174,7 +2174,7 @@ PRTfundef (node *arg_node, info *arg_info)
                     if (INFO_SEPARATE (arg_info) && (INFO_FUNCOUNTER (arg_info) == 0)) {
                         global.outfile = FMGRwriteOpen ("%s/fun%d%s", global.tmp_dirname,
                                                         INFO_FILECOUNTER (arg_info),
-                                                        global.config.cext);
+                                                        global.config.ccp_cext);
                         INFO_FILECOUNTER (arg_info) += 1;
                         global.num_fun_files += 1;
                         fprintf (global.outfile, "#include \"header.h\"\n\n");
@@ -6081,9 +6081,9 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
              * Therefore, the C file is generated within the target directory.
              */
             global.outfile = FMGRwriteOpen ("%s/%s%s", global.targetdir,
-                                            global.outfilename, global.config.cext);
+                                            global.outfilename, global.config.ccp_cext);
             CTInote ("Writing file \"%s/%s%s\"", global.targetdir, global.outfilename,
-                     global.config.cext);
+                     global.config.ccp_cext);
 
             GSCprintFileHeader (syntax_tree);
             syntax_tree = TRAVdo (syntax_tree, arg_info);

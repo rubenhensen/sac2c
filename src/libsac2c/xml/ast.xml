@@ -8421,8 +8421,8 @@ N_tfarg :
           </type>
         </attribute>
         <attribute name="Header" default="NULL" inconstructor="no" >
-          <description>Declare that we wish to use an external declaration/header file instead.</description>
-          <type name="String">
+          <description>Declare that we wish to use an external declaration/header file in addition to the compiler generated one.</description>
+          <type name="StringSet">
             <targets>
               <target mandatory="no">
                 <any />

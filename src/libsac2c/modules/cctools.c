@@ -199,11 +199,12 @@ CCTperformTask (ccm_task_t task)
     // %sacincludes%
     const char *sacincludes_subst = global.config.sacincludes;
 
-    // %intcflags%
-    str_buf *intcflags_buf = SBUFcreate (1);
-    FMGRmapPath (PK_inc_path, AddIncPath, intcflags_buf);
-    SBUFprintf (intcflags_buf, " %s", global.cflags);
-    SBUFprintf (intcflags_buf,
+    // %cppflags%
+    str_buf *cppflags_buf = SBUFcreate (1);
+    FMGRmapPath (PK_inc_path, AddIncPath, cppflags_buf);
+    SBUFprintf (cppflags_buf, " %s", global.cppflags);
+    SBUFprintf (cppflags_buf, " %s", global.config.sacincludes);
+    SBUFprintf (cppflags_buf,
                 " -DSAC_TARGET_STRING=\\\"%s\\\""
                 " -DSAC_MODEXT_STRING=\\\"%s\\\""
                 " -DSAC_TARGET_ENV_STRING=\\\"%s\\\""
@@ -220,20 +221,21 @@ CCTperformTask (ccm_task_t task)
                 global.backend_string[global.backend], global.config.mt_lib,
                 global.config.mt_mode, global.config.rtspec, global.config.cuda_alloc,
                 global.cuda_async_mode);
-    char *intcflags_subst = SBUF2strAndFree (&intcflags_buf);
+    char *cppflags_subst = SBUF2strAndFree (&cppflags_buf);
 
     // %cflags%
-    char *cflags_subst = STRcatn (3, global.config.cflags, " ", intcflags_subst);
+    char *cflags_subst = STRcatn (3, global.config.cflags, " ", global.cflags);
 
     // %tree_cflags%
     char *tree_cflags_subst = global.tree_cflags;
 
     // %compileflags%
     char *compileflags_subst
-      = STRcatn (7, opt_subst, " ", dbg_subst, " ", cflags_subst, " ", sacincludes_subst);
+      = STRcatn (5, opt_subst, " ", dbg_subst, " ", cflags_subst);
 
     if (task == CCT_compileflags) {
         MEMfree (opt_subst);
+        MEMfree (cppflags_subst);
         MEMfree (cflags_subst);
         DBUG_RETURN (compileflags_subst);
     }
@@ -242,7 +244,7 @@ CCTperformTask (ccm_task_t task)
     const char *cc_subst = global.config.cc;
 
     // %cuda_arch%
-    const char *cuda_arch_subst
+    char *cuda_arch_subst
       = STRcat ("-arch=", global.cuda_arch_names[global.cuda_arch]);
 
     /******************* link flags ***********************/
@@ -300,7 +302,8 @@ CCTperformTask (ccm_task_t task)
     // Normally this should only be called by sac4c
     if (task == CCT_linkflags) {
         MEMfree (opt_subst);
-        MEMfree (cflags_subst);
+        MEMfree (cppflags_subst);
+        MEMfree (cuda_arch_subst);
         MEMfree (extlibdirs_subst);
         MEMfree (modlibdirs_subst);
         MEMfree (modlibs_subst);
@@ -347,11 +350,30 @@ CCTperformTask (ccm_task_t task)
 #define DO_SUBST(CommandString)                                                          \
     STRsubstTokens (CommandString, 23, SUBST (cc), SUBST (ld), SUBST (opt), SUBST (dbg), \
                     SUBST (cuda_arch), SUBST (sacincludes), SUBST (tree_cflags),         \
-                    SUBST (intcflags), SUBST (cflags), SUBST (compileflags),             \
+                    SUBST (cppflags), SUBST (cflags), SUBST (compileflags),              \
                     SUBST (extlibdirs), SUBST (modlibdirs), SUBST (modlibs),             \
                     SUBST (saclibs), SUBST (libs), SUBST (ldflags), SUBST (tree_ldflags),\
                     SUBST (linkflags), SUBST (path), SUBST (target), SUBST (libname),    \
                     SUBST (objects), SUBST (source))
+
+#define DO_CPP(CompileString, SourceDir, Source, Kind)                                   \
+    do {                                                                                 \
+        const char *path_subst = "";                                                     \
+        char *source_subst                                                               \
+          = STRcatn (4, SourceDir, "/", Source, global.config.Kind##cext);               \
+        char *target_subst                                                               \
+          = STRcatn (4, SourceDir, "/", Source, global.config.Kind##objext);             \
+        SBUFprintf (Kind##objs_buf, " %s", target_subst);                                \
+        const char *objects_subst = "";                                                  \
+        char *compile_cmd = DO_SUBST (CompileString);                                    \
+        source_subst = MEMfree (source_subst);                                           \
+        target_subst = MEMfree (target_subst);                                           \
+                                                                                         \
+        CTInote ("Preprocessing C source \"%s%s\"", Source, global.config.Kind##cext);   \
+        DBUG_PRINT ("compile command: %s", compile_cmd);                                 \
+        SYScall ("%s", compile_cmd);                                                     \
+        compile_cmd = MEMfree (compile_cmd);                                             \
+    } while (0)
 
 #define DO_COMPILE(CompileString, SourceDir, Source, Kind)                               \
     do {                                                                                 \
@@ -366,7 +388,7 @@ CCTperformTask (ccm_task_t task)
         source_subst = MEMfree (source_subst);                                           \
         target_subst = MEMfree (target_subst);                                           \
                                                                                          \
-        CTInote ("Compiling C source \"%s\"", Source);                                   \
+        CTInote ("Compiling C source \"%s%s\"", Source, global.config.Kind##cext);       \
         DBUG_PRINT ("compile command: %s", compile_cmd);                                 \
         SYScall ("%s", compile_cmd);                                                     \
         compile_cmd = MEMfree (compile_cmd);                                             \
@@ -400,6 +422,9 @@ CCTperformTask (ccm_task_t task)
         char *cmd;
 
         if (task == CCT_ccompileonly) {
+            char *old_compileflags_subst = compileflags_subst;
+            compileflags_subst = STRcatn (3, cppflags_subst, " ", compileflags_subst);
+            MEMfree( old_compileflags_subst);
             source_subst = global.sacfilename;
             objects_subst = "";
             cmd = global.do_ccompile == DO_C_rmod ? global.config.compile_rmod :
@@ -424,10 +449,13 @@ CCTperformTask (ccm_task_t task)
         // Compile phase: run each compiler command, and accumulate the name
         // of generate objects in objects_buf.
 
+        str_buf *ccp_objs_buf = SBUFcreate (1);
         str_buf *objs_buf = SBUFcreate (1);
         str_buf *tree_objs_buf = SBUFcreate (1);
 
         if (global.filetype == FT_prog) {
+            DO_CPP (global.config.ccp_prog, global.targetdir,
+                    global.outfilename, ccp_);
             DO_COMPILE (global.config.compile_prog, global.targetdir,
                         global.outfilename, );
         } else {
@@ -435,16 +463,21 @@ CCTperformTask (ccm_task_t task)
             char *source = MEMmalloc (20);
             for (i = 1; i <= global.num_fun_files; ++i) {
                 snprintf (source, 20, "fun%d", i);
+                DO_CPP (global.config.ccp_mod, global.tmp_dirname, source, ccp_);
                 DO_COMPILE (global.config.compile_mod, global.tmp_dirname, source, );
             }
             MEMfree (source);
 
+            DO_CPP (global.config.ccp_mod, global.tmp_dirname, "globals", ccp_);
             DO_COMPILE (global.config.compile_mod, global.tmp_dirname, "globals", );
 
             if (global.filetype == FT_cmod) {
+                DO_CPP (global.config.ccp_mod, global.tmp_dirname, "interface", ccp_);
                 DO_COMPILE (global.config.compile_mod, global.tmp_dirname, "interface", );
+                DO_CPP (global.config.ccp_mod, global.tmp_dirname, "sacargcopy", ccp_);
                 DO_COMPILE (global.config.compile_mod, global.tmp_dirname,
                             "sacargcopy", );
+                DO_CPP (global.config.ccp_mod, global.tmp_dirname, "sacargfree", ccp_);
                 DO_COMPILE (global.config.compile_mod, global.tmp_dirname,
                             "sacargfree", );
             } else if (!global.notree) {
@@ -533,7 +566,9 @@ CCTperformTask (ccm_task_t task)
 
     // Release all non-const strings allocated
     MEMfree (opt_subst);
-    MEMfree (cflags_subst);
+    MEMfree (cppflags_subst);
+    MEMfree (compileflags_subst);
+    MEMfree (cuda_arch_subst);
     MEMfree (extlibdirs_subst);
     MEMfree (modlibdirs_subst);
     MEMfree (modlibs_subst);

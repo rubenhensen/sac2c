@@ -7,8 +7,8 @@ IF (BUILDGENERIC)
     SET (SAC2C_T ${SAC2C_T} -generic)
 ENDIF ()
 
-SET (SAC2C ${SAC2C_T} -Xc "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"")
-SET (SAC2C_NT ${SAC2C_EXEC} -Xc "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"") # defaults to SEQ
+SET (SAC2C ${SAC2C_T} -Xp "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"")
+SET (SAC2C_NT ${SAC2C_EXEC} -Xp "\"${SAC2C_EXTRA_INC}\"" -Xtc "\"${SAC2C_EXTRA_INC}\"") # defaults to SEQ
 
 # set environment vars - these are only used during configuration and are lost there after
 # we them because EXECUTE_PROCESS does not support passing in vars via the command.

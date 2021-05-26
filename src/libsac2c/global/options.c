@@ -613,6 +613,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     DBUG_ENTER ();
 
+    str_buf *cppflags_buf = SBUFcreate (1);
     str_buf *cflags_buf = SBUFcreate (1);
     str_buf *ldflags_buf = SBUFcreate (1);
     str_buf *tree_cflags_buf = SBUFcreate (1);
@@ -703,10 +704,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("ccflag", CTIwarn ("Option -ccflag has been replaced by -Xc");
                  SBUFprintf (cflags_buf, " %s", ARG));
-    ARGS_FIXED ("Xc", SBUFprintf (cflags_buf, " %s", ARG));
-    ARGS_FIXED ("Xl", SBUFprintf (ldflags_buf, " %s", ARG));
-    ARGS_FIXED ("Xtc", SBUFprintf (tree_cflags_buf, " %s", ARG));
-    ARGS_FIXED ("Xtl", SBUFprintf (tree_ldflags_buf, " %s", ARG));
 
     ARGS_FLAG ("cs", global.docachesim = FALSE);
 
@@ -1334,6 +1331,16 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (0));
 
     /*
+     * Options starting with xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+     */
+
+    ARGS_FIXED ("Xp", SBUFprintf (cppflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xc", SBUFprintf (cflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xl", SBUFprintf (ldflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xtc", SBUFprintf (tree_cflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xtl", SBUFprintf (tree_ldflags_buf, " %s", ARG));
+
+    /*
      * Options starting with strange symbols
      */
 
@@ -1381,6 +1388,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_END ();
 
+    global.cppflags = SBUF2strAndFree (&cppflags_buf);
     global.cflags = SBUF2strAndFree (&cflags_buf);
     global.ldflags = SBUF2strAndFree (&ldflags_buf);
     global.tree_cflags = SBUF2strAndFree (&tree_cflags_buf);
@@ -1394,6 +1402,7 @@ static void
 AnalyseCommandlineSac4c (int argc, char *argv[])
 {
     int store_num_threads = 0;
+    str_buf *cppflags_buf = SBUFcreate (1);
     str_buf *cflags_buf = SBUFcreate (1);
     str_buf *ldflags_buf = SBUFcreate (1);
     str_buf *tree_cflags_buf = SBUFcreate (1);
@@ -1422,10 +1431,6 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_OPTION ("ccflag",
                  CTIwarn ("Option -ccflag is deprecated, consider using -Xc instead.");
                  SBUFprintf (cflags_buf, " %s", ARG));
-    ARGS_FIXED ("Xc", SBUFprintf (cflags_buf, " %s", ARG));
-    ARGS_FIXED ("Xl", SBUFprintf (ldflags_buf, " %s", ARG));
-    ARGS_FIXED ("Xtc", SBUFprintf (tree_cflags_buf, " %s", ARG));
-    ARGS_FIXED ("Xtl", SBUFprintf (tree_ldflags_buf, " %s", ARG));
 
     ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (0));
 
@@ -1594,6 +1599,16 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (0));
 
     /*
+     * Options starting with xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+     */
+
+    ARGS_FIXED ("Xp", SBUFprintf (cppflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xc", SBUFprintf (cflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xl", SBUFprintf (ldflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xtc", SBUFprintf (tree_cflags_buf, " %s", ARG));
+    ARGS_FIXED ("Xtl", SBUFprintf (tree_ldflags_buf, " %s", ARG));
+
+    /*
      * DBUG options ####################################################
      */
 
@@ -1630,6 +1645,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_END ();
 
+    global.cppflags = SBUF2strAndFree (&cppflags_buf);
     global.cflags = SBUF2strAndFree (&cflags_buf);
     global.ldflags = SBUF2strAndFree (&ldflags_buf);
     global.tree_cflags = SBUF2strAndFree (&tree_cflags_buf);

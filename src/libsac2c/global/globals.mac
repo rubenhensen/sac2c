@@ -203,6 +203,11 @@ GLOBAL (int, sac4c_udt_offset, 20, xfree_dummy, )
  * sac4c udt offset, needs to be greater than max( usertype)
  */
 
+GLOBAL (char *, cppflags, NULL, xfree_char_ptr, )
+/*
+ * Additional C preprocessor flags for program/module code
+ */
+
 GLOBAL (char *, cflags, NULL, xfree_char_ptr, )
 /*
  * Additional compiler flags for program/module code
