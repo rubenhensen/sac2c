@@ -750,6 +750,8 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (CACHE3_ASSOC, cache3_assoc, int, num)                                  \
     DEF_RESOURCE (CACHE3_WRITEPOL, cache3_writepol, char *, str)                         \
     DEF_RESOURCE (CACHE3_MSCA, cache3_msca_factor, int, num)                             \
+    DEF_RESOURCE (CCP_CEXT, ccp_cext, char *, str)                                       \
+    DEF_RESOURCE (CCP_OBJEXT, ccp_objext, char *, str)                                     \
     DEF_RESOURCE (CEXT, cext, char *, str)                                               \
     DEF_RESOURCE (OBJEXT, objext, char *, str)                                           \
     DEF_RESOURCE (MODEXT, modext, char *, str)                                           \
@@ -767,6 +769,8 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (OPT_g, opt_g, char *, str)                                             \
     DEF_RESOURCE (TUNE_native, tune_native, char *, str)                                 \
     DEF_RESOURCE (TUNE_generic, tune_generic, char *, str)                               \
+    DEF_RESOURCE (CCP_MOD, ccp_mod, char *, str)                                         \
+    DEF_RESOURCE (CCP_PROG, ccp_prog, char *, str)                                       \
     DEF_RESOURCE (COMPILE_MOD, compile_mod, char *, str)                                 \
     DEF_RESOURCE (COMPILE_PROG, compile_prog, char *, str)                               \
     DEF_RESOURCE (LINK_MOD, link_mod, char *, str)                                       \

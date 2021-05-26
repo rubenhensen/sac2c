@@ -48,7 +48,7 @@
  *
  ******************************************************************************
  *
- * The entries COMPILE_xxx and LINK_xxx below undergo a string substition
+ * The entries CCP_xxx, COMPILE_xxx and LINK_xxx below undergo a string substition
  * before they are executed during compilation.
  *
  * The following substitutions are relevant in all cases:
@@ -85,14 +85,15 @@
  *
  * %cuda_arch%     Current value of CUDA_ARCH
  *
- * %intcflags%     Contains flags generated internally by the compiler, includes:
+ * %cppflags%      Contains all cpp specific flags, including:
  *                 - "-I<D>" for each <D> in INCPATH
- *                 - value(s) of -ccflag / -Xc on the command-line
+ *                 - value(s) of -Xp on the command-line
  *                 - additional macro definitions for SAC_RC_METHOD, SAC_BACKEND_xxx, SAC_MT_LIB_xxx
+ *                 - the %sacincludes%
  *
- * %cflags%        Concatenation of current CFLAGS and %intcflags%
+ * %cflags%        Current value of CFLAGS and values of -Xc on the command line.
  *
- * %compileflags%  Same as: %opt% %dbg% %cflags% %sacincludes%
+ * %compileflags%  Same as: %opt% %dbg% %cflags%
  *
  * The following substitutions are relevant when linking Module or
  * Program objects (ie not Tree dynamically loadable modules):
@@ -321,6 +322,10 @@
  *                  other architecture specific optimisations are not applied by the
  *                  C compiler.
  *
+ *  CCP_CEXT        File name extension for generated preprocessed Module/Program C source files.
+ *
+ *  CCP_OBJEXT      File name extension for generated preprocessed Module/Program object files.
+ *
  *  CEXT            File name extension for generated Module/Program C source files.
  *
  *  OBJEXT          File name extension for Module/Program object files.
@@ -343,6 +348,11 @@
  *                  for systems with dynamic libraries and run-time paths.
  *
  *  LDFLAGS         Additional flags to pass to the linker (via %ldflags%).
+ *
+ *  CCP_MOD         Command line to pre-process a Module C source to object binary. Performs
+ *                  string substitutions as documented above.
+ *  CCP_PROG        Command line to pre-process a Program C source to object binary. Performs
+ *                  string substitutions as documented above.
  *
  *  COMPILE_MOD     Command line to compile a Module C source to object binary. Performs
  *                  string substitutions as documented above.
@@ -426,7 +436,9 @@ CACHE3_ASSOC     :=  0
 CACHE3_WRITEPOL  :=  "default"
 CACHE3_MSCA      :=  0
 
-CEXT             :=  ".c"
+CCP_CEXT         :=  ".c"
+CCP_OBJEXT       :=  ".i"
+CEXT             :=  ".i"
 OBJEXT           :=  ".o"
 
 VARIANT          :=  ""
@@ -434,9 +446,11 @@ CUDA_ARCH        :=  ""
 MT_LIB           :=  ""
 MT_MODE          :=  0
 
+CCP_MOD          := "%cc% %cppflags% %compileflags% -E -o %target% %source%"
+CCP_PROG         := "%cc% %cppflags% %compileflags% -E -o %target% %source%"
 COMPILE_MOD      := "%cc% %compileflags% -c -o %target% %source%"
 COMPILE_PROG     := "%cc% %compileflags% -c -o %target% %source%"
-COMPILE_RMOD     := "%cc% %compileflags% -c -o %target% %source%"
+COMPILE_RMOD     := "%cc% %cppflags% %compileflags% -c -o %target% %source%"
 LINK_PROG        := "%ld% %objects% %linkflags% -o %target%"
 
 CFLAGS           :=  ""

@@ -427,8 +427,7 @@ RSPfundef (node *arg_node, info *arg_info)
 
         if (PRAGMA_HEADER (pragma)) {
             MODULE_HEADERS (INFO_MODULE (arg_info))
-              = STRSadd (PRAGMA_HEADER (pragma), STRS_headers,
-                         MODULE_HEADERS (INFO_MODULE (arg_info)));
+              = STRSjoin (PRAGMA_HEADER (pragma), MODULE_HEADERS (INFO_MODULE (arg_info)));
 
             FUNDEF_HEADER (arg_node) = TRUE;
             PRAGMA_HEADER (pragma) = NULL;

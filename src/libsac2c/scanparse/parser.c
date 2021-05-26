@@ -4598,6 +4598,7 @@ handle_pragmas (struct parser *parser, enum pragma_type ptype)
     } while (0)
 
     struct token *tok;
+    const char *stok;
     node *pragmas = NULL;
     bool parse_error = false;
 
@@ -4794,7 +4795,15 @@ handle_pragmas (struct parser *parser, enum pragma_type ptype)
 
             CHECK_PRAGMA (HEADER, ptype != pragma_fundec && ptype != pragma_fundef,
                           false);
-            PRAGMA_HEADER (pragmas) = strdup (token_as_string (tok));
+            
+            stok = token_as_string (tok);
+            if (stok[0] == '<') {
+               PRAGMA_HEADER (pragmas) = STRSadd (strdup (stok),
+                                                  STRS_headers, PRAGMA_HEADER (pragmas));
+            } else {
+               PRAGMA_HEADER (pragmas) = STRSadd (STRcatn (3, "\"", stok, "\""),
+                                                  STRS_headers, PRAGMA_HEADER (pragmas));
+            }
         } else {
             error_loc (loc, "undefined pragma `%s' found", token_as_string (tok));
             goto error;

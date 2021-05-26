@@ -79,7 +79,7 @@ for arg in "$@"; do
       ;;
       -save-temps) cmdline+=(-d nocleanup -Xc -save-temps -Xl -save-temps) ;;
       -i*|-MF|-MT|-MQ)    followaction=ccarg; ccarg=$arg ;;
-      -W*|-d*|-pedantic*|-ansi|-std*|-S|-E|-I*|-P|-A*|-D*|-U*|-C*|-H|-M*) cmdline+=(-Xc "$arg" -Xl "$arg") ;;
+      -W*|-d*|-pedantic*|-ansi|-std*|-S|-E|-P|-A*|-U*|-C*|-H|-M*) cmdline+=(-Xc "$arg" -Xl "$arg") ;;
       -L*|-Wl,*|-l*)      cmdline+=(-Xl "$arg");;
       -Xs)    followaction=sacarg ;;
       -Xc)    followaction=ccarg ; ccarg= ;;
@@ -87,6 +87,7 @@ for arg in "$@"; do
       -)     ;;
       -c)    ;;
       --version|-v|-V|-qversion)  "$sac2c" -v0 -target "$target" -cc ccprog -o /dev/stdout /dev/stdin -Xc "$arg"; exit 0 ;;
+      -I*|-D*)    cmdline+=(-Xp "$arg") ;;
       -*)    cmdline+=(-Xc "$arg") ;;
 
       *.c)  if test x"$firstfile" = x; then firstfile=$arg; fi; cmdline+=("$arg") ;;
