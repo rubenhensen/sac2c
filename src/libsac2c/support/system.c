@@ -137,7 +137,7 @@ SYScall (char *format, ...)
      * This allows for easy C-code patches.
      */
     if (global.show_syscall) {
-        CTInote ("System call:\n %s", SBUF2str (syscall));
+        CTItell (0, "System call:\n %s", SBUF2str (syscall));
     }
 
     char *syscall_str = SBUF2str (syscall);
@@ -201,7 +201,7 @@ SYScallNoErr (char *format, ...)
      * This allows for easy C-code patches.
      */
     if (global.show_syscall) {
-        CTInote ("System call:\n%s", SBUF2str (syscall));
+        CTItell (0, "System call:\n%s", SBUF2str (syscall));
     }
 
     TrackSystemCall (SBUF2str (syscall));
