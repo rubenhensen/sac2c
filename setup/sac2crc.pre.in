@@ -451,7 +451,7 @@ CCP_PROG         := "%cc% %cppflags% %compileflags% -E -o %target% %source%"
 COMPILE_MOD      := "%cc% %compileflags% -c -o %target% %source%"
 COMPILE_PROG     := "%cc% %compileflags% -c -o %target% %source%"
 COMPILE_RMOD     := "%cc% %cppflags% %compileflags% -c -o %target% %source%"
-LINK_PROG        := "%ld% %objects% %linkflags% -o %target%"
+LINK_PROG        := "%ld% %objects% %linkflags% -o %path%/%target%"
 
 CFLAGS           :=  ""
 LIBS             :=  "@LIBS@"
