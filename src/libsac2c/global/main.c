@@ -70,9 +70,9 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
 
     RSCevaluateConfiguration ();
 
-    OPTcheckPostSetupOptions ();
-
     GLOBsetupBackend ();
+
+    OPTcheckPostSetupOptions ();
 
     /* For the distributed memory backend
        determine the communication library setting. */

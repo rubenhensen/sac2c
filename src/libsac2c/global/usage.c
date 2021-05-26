@@ -36,32 +36,36 @@ PrintDescriptionSac2c (void)
 {
     DBUG_ENTER ();
 
-    printf (
-      "\n\nDESCRIPTION:\n\n"
+    if (global.verbose_help) {
+        printf (
+          "\n\nDESCRIPTION:\n\n"
 
-      "    The sac2c compiler transforms SAC source code into executable programs\n"
-      "    (SAC programs) or into a SAC specific library format (SAC module and\n"
-      "    class implementations), respectively.\n"
-      "    \n"
-      "    The compilation process is performed in 4 separate stages:\n"
-      "      1. sac2c uses any C preprocessor to preprocess the given SAC source;\n"
-      "      2. sac2c itself transforms preprocessed SAC source code into C code;\n"
-      "      3. sac2c uses any C compiler to generate target machine code;\n"
-      "      4. sac2c uses any C linker to create an executable program\n"
-      "         or sac2c itself creates a SAC library file.\n"
-      "    \n"
-      "    When compiling a SAC program, sac2c stores the corresponding\n"
-      "    intermediate C code either in the file a.out.c in the current directory\n"
-      "    (default) or in the file <file>.c if <file> is specified using the -o\n"
-      "    option. Here, any absolute or relative path name may be used.\n"
-      "    The executable program is either written to the file a.out or to any\n"
-      "    file specified using the -o option.\n"
-      "    \n"
-      "    However, when compiling a SAC module/class implementation, the\n"
-      "    resulting SAC library is stored in the files <mod/class name>.a\n"
-      "    and  <mod/class name>.so in the current directory.\n"
-      "    In this case, the -o option may be used to specify a\n"
-      "    different directory but not a different file name.\n");
+          "    The sac2c compiler transforms SAC source code into executable programs\n"
+          "    (SAC programs) or into a SAC specific library format (SAC module and\n"
+          "    class implementations), respectively.\n"
+          "    \n"
+          "    The compilation process is performed in 4 separate stages:\n"
+          "      1. sac2c uses any C preprocessor to preprocess the given SAC source;\n"
+          "      2. sac2c itself transforms preprocessed SAC source code into C code;\n"
+          "      3. sac2c uses any C compiler to generate target machine code;\n"
+          "      4. sac2c uses any C linker to create an executable program\n"
+          "         or sac2c itself creates a SAC library file.\n"
+          "    \n"
+          "    When compiling a SAC program, sac2c stores the corresponding\n"
+          "    intermediate C code either in the file a.out.c in the current directory\n"
+          "    (default) or in the file <file>.c if <file> is specified using the -o\n"
+          "    option. Here, any absolute or relative path name may be used.\n"
+          "    The executable program is either written to the file a.out or to any\n"
+          "    file specified using the -o option.\n"
+          "    \n"
+          "    However, when compiling a SAC module/class implementation, the\n"
+          "    resulting SAC library is stored in the files <mod/class name>.a\n"
+          "    and  <mod/class name>.so in the current directory.\n"
+          "    In this case, the -o option may be used to specify a\n"
+          "    different directory but not a different file name.\n");
+    } else {
+        printf ( "\n\nDESCRIPTION: sac2c transforms SAC source code into executable programs.\n");
+    }
 
     DBUG_RETURN ();
 }
@@ -129,10 +133,19 @@ PrintSpecialOptions (void)
     DBUG_ENTER ();
 
     printf (
-      "\n\nSPECIAL OPTIONS:\n\n"
+      "\n\nSPECIAL OPTIONS:\n\n");
 
+    if (global.verbose_help) {
+        printf (
+      "    -h              Display very condensed helptext.\n"
+      "    -help           Display this helptext.\n");
+    } else {
+        printf (
       "    -h              Display this helptext.\n"
-      "    -help           Display this helptext.\n"
+      "    -help           Display much more helptext.\n");
+    }
+
+    printf (
       "    -copyright      Display copyright/disclaimer.\n"
       "    -V              Display version identification.\n"
       "    -VV             Display verbose version identification.\n"
@@ -145,11 +158,14 @@ PrintSpecialOptions (void)
       "                    will be needed to compile the given file: use/imports,\n"
       "                    arguments of linkobj and linkwith pragmas.\n"
       "\n"
-      "    -C <name>       Print out a configuration parameter\n"
+      "    -C <name>       Print out a configuration parameter\n");
+    if (global.verbose_help) {
+        printf (
       "\n"
       "    NOTE:\n"
       "    When called with one of these options, sac2c does not perform\n"
       "    any compilation steps.\n");
+    }
 
     DBUG_RETURN ();
 }
@@ -256,8 +272,10 @@ PrintBreakOptions (void)
 {
     DBUG_ENTER ();
 
-    printf ("\n\nBREAK OPTIONS:\n\n"
+    printf ("\n\nBREAK OPTIONS:\n\n");
 
+    if (global.verbose_help) {
+        printf (
             "    Break options allow you to stop the compilation process\n"
             "    after a particular phase, subphase or cycle optimisation.\n"
             "    By default the intermediate programm will be printed. You\n"
@@ -273,7 +291,9 @@ PrintBreakOptions (void)
             "                    <format> must be supported by your dot installation,\n"
             "                    run \"dot -Tv\" for a list of available formats.\n"
 
-            "\n"
+            "\n");
+    }
+    printf (
             "    -b<spec>        Break after the compilation stage given\n"
             "                    by <spec>, where <spec> follows the pattern\n"
             "                    <phase>:<subphase>:<cyclephase>:<pass>.\n"
@@ -290,7 +310,9 @@ PrintBreakoptionSpecifierSac2c (void)
 {
     DBUG_ENTER ();
 
-    printf ("\n\nBREAK OPTION SPECIFIERS:\n");
+    printf ("\n\nBREAK OPTION SPECIFIERS: %s\n", (global.verbose_help ?
+                                                  "(all, including disabled phases)" :
+                                                  "(only enabled phases)"));
 
     PHOprintPhasesSac2c ();
 
@@ -343,7 +365,9 @@ PrintOptimisationOptions (void)
       "                      - disable parallel execution of fold-with-loops.\n"
       "                    Currently implemented for:\n"
       "                      - associative law optimization,\n"
-      "                      - segmentation and tiling of fold-with-loops.\n"
+      "                      - segmentation and tiling of fold-with-loops.\n");
+    if (global.verbose_help) {
+        printf (
       "\n"
       "    -noreuse        Disable reuse inference in emm.\n"
       "\n"
@@ -366,23 +390,27 @@ PrintOptimisationOptions (void)
       "                    use optimizations based on index variable extrema;\n"
       "                    i.e., the minimum and maximum value that index variables\n"
       "                    may take on. This option is deprecated.\n"
-      "\n"
+      "\n");
+    }
+    printf (
       "    -no <opt>       Disable optimization technique <opt>.\n"
       "\n"
       "    -do <opt>       Enable optimization technique <opt>.\n"
       "\n\n"
       "    The following optimization techniques are currently supported:\n"
       "\n"
-      "     (A leading * identifies optimization enabled by default.)\n"
+      "     (A leading * identifies enabled optimizations, |* indicates enabled by default.)\n"
       "\n");
 
 #define DELAYPHM global.config.use_phm_api
 #ifdef PRODUCTION
 #define OPTIMIZE(str, abbr, devl, prod, name)                                            \
-    printf ("      %s %-8s%s\n", prod ? "*" : " ", str, name);
+    printf ("      %s%s %-8s%s\n", global.optimize.do ## abbr ? "*" : " ",               \
+                                   prod ? "|*" : "  ", str, name);
 #else
 #define OPTIMIZE(str, abbr, devl, prod, name)                                            \
-    printf ("      %s %-8s%s\n", devl ? "*" : " ", str, name);
+    printf ("      %s%s %-8s%s\n", global.optimize.do ## abbr ? "*" : " ",               \
+                                   devl ? "*" : " ", str, name);
 #endif
 #include "optimize.mac"
 
@@ -1322,18 +1350,34 @@ USGprintUsage ()
     switch (global.tool) {
     case TOOL_sac2c:
         PrintDescriptionSac2c ();
-        PrintFeatureSet ();
+        if (global.verbose_help)
+            PrintFeatureSet ();
         PrintSpecialOptions ();
         PrintGeneralOptions ();
+#ifndef DBUG_OFF
         PrintBreakOptions ();
         PrintBreakoptionSpecifierSac2c ();
-        PrintPrintingOptions ();
-        PrintTypeInferenceOptions ();
+#else
+        if (global.verbose_help) {
+            global.verbose_help = FALSE;
+            PrintBreakOptions ();
+            PrintBreakoptionSpecifierSac2c ();
+            global.verbose_help = TRUE;
+        }
+#endif
+        if (global.verbose_help)
+            PrintPrintingOptions ();
+        if (global.verbose_help)
+            PrintTypeInferenceOptions ();
         PrintOptimisationOptions ();
-        PrintMultithreadOptions ();
-        PrintDistMemOptions ();
-        PrintMutcOptions ();
-        PrintBackendOptions ();
+        if (global.verbose_help)
+            PrintMultithreadOptions ();
+        if (global.verbose_help)
+            PrintDistMemOptions ();
+        if (global.verbose_help)
+            PrintMutcOptions ();
+        if (global.verbose_help)
+            PrintBackendOptions ();
 #ifndef DBUG_OFF
         PrintDebugOptions ();
         PrintFredFishOptions ();
@@ -1342,8 +1386,10 @@ USGprintUsage ()
         PrintRuntimeCheckOptions ();
         PrintRuntimeTraceOptions ();
         PrintRuntimeProfilingOptions ();
-        PrintCacheSimulationOptions ();
-        PrintLibraryOptions ();
+        if (global.verbose_help)
+            PrintCacheSimulationOptions ();
+        if (global.verbose_help)
+            PrintLibraryOptions ();
         PrintCCompilerOptions ();
         PrintCustomisationOptions ();
         break;
@@ -1366,8 +1412,10 @@ USGprintUsage ()
     }
 
     PrintEnvironmentVariables ();
-    PrintAuthors ();
-    PrintContact ();
+    if (global.verbose_help)
+        PrintAuthors ();
+    if (global.verbose_help)
+        PrintContact ();
 
     printf ("\n\n");
 

@@ -890,8 +890,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
      */
 
-    ARGS_FLAG ("h", global.print_help_and_exit = TRUE);
-    ARGS_FLAG ("help", global.print_help_and_exit = TRUE);
+    ARGS_FLAG ("h", global.print_help_and_exit = TRUE; global.verbose_help = FALSE);
+    ARGS_FLAG ("help", global.print_help_and_exit = TRUE; global.verbose_help = TRUE);
 
     /*
      * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
