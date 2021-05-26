@@ -45,11 +45,11 @@ ctests -j5
 ```
 
 For each test, cmake generates a call to a script
-`<cmake-build-dir>/tests/scripts/run.sh <sac-test-file>`.  For debugging
-purposes, this process can be done manually:
+`<cmake-build-dir>/tests/scripts/run.sh <sac-test-file> <path-to-test-dir>`.
+For debugging purposes, this process can be done manually:
 ```
 cd build/tests
-./scripts/run.sh test-trivial.sac
+./scripts/run.sh test-trivial.sac .
 ```
 To inspect the makefile generated for the test, see `<sac-filename>.mk`
 file, e.g. for the above example that would be `test-trivial.sac.mk`.
@@ -102,7 +102,8 @@ The following variables are defined: `SAC2C_FLAGS`, `GREP_COMMAND_OUTPUT`,
 `CHECK_RETURN_STATUS` and a generic rule to build sac programs from sac sources.
 For explanation see comments in `common.mk`.
 
-Several shell scripts are defined in scripts, to be used in `common.mk`:
+Several shell scripts are provided in the `scripts/` directory, some of these
+can be used as part of the test operation:
 
   * `check-return-status.sh` --- runs the binary passed as a first argument
     and checks that its return status is equal to the second argument.
@@ -110,8 +111,12 @@ Several shell scripts are defined in scripts, to be used in `common.mk`:
   * `grep-command-output.sh` --- a wrapper around grep that counts the number
     of occurrences of the first argument is equal to the second argument.
 
-  * `runttest:
+The tests themselves are defined inline with the test code, using the `TEST_SAC`
+tag. The following script scans the test file for this tags, and converts it into
+a Makefile which is ultimately used to run the test(s):
 
+  * `run.sh` --- the script which generates the Makefile and runs the
+    specified tests. Can be called directly to run individual tests for debugging.
 
 ## Meta tags
 

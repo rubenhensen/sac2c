@@ -8,12 +8,9 @@
 // SAC_TEST|<tab>./$< 2>&1 | $(GREP_COMMAND_OUTPUT) "no. calls to (m)alloc.*:.*2" 4
 // SAC_TEST|<tab>./$< 2>&1 | $(GREP_COMMAND_OUTPUT) "no. calls to free.*:.*2" 4
 
-noinline
-int[*] id (int[*] a) { return a; }
-
 int main ()
 {
     a = genarray ([1000], 10);
     b = genarray ([1000], 12);
-    return sum(a + b);
+    return sum (a + b);
 }
