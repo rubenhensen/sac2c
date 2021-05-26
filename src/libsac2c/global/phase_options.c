@@ -620,7 +620,7 @@ PHOinterpretDbugOption (char *option)
 #define SUBPHASEtext(text) text_str = text;
 
 #define SUBPHASEcond(cond)                                                              \
-    if (global.verbose_help || (phase_on && cond)) {                                    \
+    if (global.verbose_help || (phase_on && (cond))) {                                  \
         printf ("      %-8s : %s\n", name_str, text_str);                               \
     }
 
@@ -639,7 +639,7 @@ PHOinterpretDbugOption (char *option)
 #define CYCLEPHASEtext(text) text_str = text;
 
 #define CYCLEPHASEcond(cond)                                                            \
-    if (global.verbose_help || (phase_on && cycle_on && cond)) {                        \
+    if (global.verbose_help || (phase_on && cycle_on && (cond))) {                      \
         printf ("        %-8s : %s\n", name_str, text_str);                             \
     }
 
@@ -648,7 +648,7 @@ PHOinterpretDbugOption (char *option)
 #define CYCLEPHASEFUNtext(text) text_str = text;
 
 #define CYCLEPHASEFUNcond(cond)                                                         \
-    if (global.verbose_help || (phase_on && cycle_on && cond)) {                        \
+    if (global.verbose_help || (phase_on && cycle_on && (cond))) {                      \
         printf ("        %-8s : %s (fun based)\n", name_str, text_str);                 \
     }
 
