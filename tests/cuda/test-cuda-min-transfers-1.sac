@@ -6,7 +6,8 @@
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -t cuda -bcuda:mtran
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) '_iwlmem_[0-9]*_dev = _iwlmem_[0-9]*_dev' 1
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -noMEMOPT $< | grep -B1 'main__Loop_0(' | $(GREP_COMMAND_OUTPUT) 'device2host' 1
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) $< | $(GREP_COMMAND_OUTPUT) '_iwlmem_.*_dev = _iwlmem_.*_dev' 1
 #include "mini-stdlib.sac"
 
 int main ()

@@ -7,8 +7,8 @@
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -t cuda_reg -bcuda:cuad
 // SAC_TEST|all: <file-name>
-// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -nocuad $< | $(GREP_COMMAND_OUTPUT) '_start\|_end' 0
-// SAC_TEST|<tab>@$(SAC2C) $(SAC2C_FLAGS) -docuad $< | $(GREP_COMMAND_OUTPUT) '_start\|_end' 8
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -nocuad $< | $(GREP_COMMAND_OUTPUT) '_start\|_end' 0
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -docuad $< | $(GREP_COMMAND_OUTPUT) '_start\|_end' 8
 #include "mini-stdlib.sac"
 
 noinline int[.] id (int[.] a) { return a; }
