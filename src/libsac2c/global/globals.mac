@@ -1056,6 +1056,8 @@ GLOBAL (int, verbose_level, 3, xfree_dummy, )
         * Verbosity of compile time output
         */
 
+GLOBAL (bool, verbose_help, FALSE, xfree_dummy, )
+
 GLOBAL (compiler_phase_t, compiler_phase, PH_initial, xfree_dummy, )
 /*
  * Counter for compilation phases

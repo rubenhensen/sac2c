@@ -18,6 +18,7 @@
 #include "globals.h"
 #include "memory.h"
 #include "phase_info.h"
+#include "rtspec_modes.h"
 
 #ifdef __cplusplus
 static inline void
@@ -604,30 +605,60 @@ PHOinterpretDbugOption (char *option)
 
 #define PHASEname(name)                                                                  \
     cnt += 1;                                                                            \
-    printf ("\n    %-3s | %-2d", #name, cnt);
+    name_str = #name;
 
-#define PHASEtext(text) printf (" : " text "\n");
+#define PHASEtext(text) text_str = text;
 
-#define SUBPHASEname(name) printf ("      %-8s", #name);
+#define PHASEcond(cond)                                                                 \
+    phase_on = cond;                                                                    \
+    if (global.verbose_help || phase_on) {                                              \
+        printf ("\n    %-3s | %-2d : %s\n", name_str, cnt, text_str);                   \
+    }
 
-#define SUBPHASEtext(text) printf (" : " text "\n");
+#define SUBPHASEname(name) name_str = #name;
 
-#define CYCLEname(name) printf ("      %-8s", #name);
+#define SUBPHASEtext(text) text_str = text;
 
-#define CYCLEtext(text) printf (" : " text "\n");
+#define SUBPHASEcond(cond)                                                              \
+    if (global.verbose_help || (phase_on && (cond))) {                                  \
+        printf ("      %-8s : %s\n", name_str, text_str);                               \
+    }
 
-#define CYCLEPHASEname(name) printf ("        %-8s", #name);
+#define CYCLEname(name) name_str = #name;
 
-#define CYCLEPHASEtext(text) printf (" : " text "\n");
+#define CYCLEtext(text) text_str = text;
 
-#define CYCLEPHASEFUNname(name) printf ("        %-8s", #name);
+#define CYCLEcond(cond)                                                                 \
+    cycle_on = cond;                                                                    \
+    if (global.verbose_help || (phase_on && cycle_on)) {                                \
+        printf ("      %-8s : %s\n", name_str, text_str);                               \
+    }
 
-#define CYCLEPHASEFUNtext(text) printf (" : " text " (fun based)\n");
+#define CYCLEPHASEname(name) name_str = #name;
+
+#define CYCLEPHASEtext(text) text_str = text;
+
+#define CYCLEPHASEcond(cond)                                                            \
+    if (global.verbose_help || (phase_on && cycle_on && (cond))) {                      \
+        printf ("        %-8s : %s\n", name_str, text_str);                             \
+    }
+
+#define CYCLEPHASEFUNname(name) name_str = #name;
+
+#define CYCLEPHASEFUNtext(text) text_str = text;
+
+#define CYCLEPHASEFUNcond(cond)                                                         \
+    if (global.verbose_help || (phase_on && cycle_on && (cond))) {                      \
+        printf ("        %-8s : %s (fun based)\n", name_str, text_str);                 \
+    }
+
 
 void
 PHOprintPhasesSac2c (void)
 {
     int cnt = 0;
+    char *name_str, *text_str;
+    bool phase_on, cycle_on;
 
     DBUG_ENTER ();
 
@@ -640,6 +671,8 @@ void
 PHOprintPhasesSac4c (void)
 {
     int cnt = 0;
+    char *name_str, *text_str;
+    bool phase_on;
 
     DBUG_ENTER ();
 
