@@ -20,7 +20,7 @@ CUDA_ARCH        := "sm10"
 
 target cuda_sm_61 :: cuda_core :: arch_sm_61:
 target arch_sm_61:
-CUDA_ARCH        := "sm61"
+CUDA_ARCH        := "sm_61"
 CUDA_MAX_X_GRID  := 2147483647
 CUDA_MAX_Y_GRID  := 65535
 CUDA_MAX_Z_GRID  := 65535
