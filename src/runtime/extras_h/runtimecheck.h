@@ -346,26 +346,12 @@
 #define SAC_GET_CUDA_UNPIN_ERROR() SAC_CUDA_GET_LAST_ERROR ("GPU UNPINNING")
 
 #define SAC_PRAGMA_GRID_CHECK(max_x, max_y, max_z, max_total)                                               \
-    if (grid.x <= 0)                                                                                        \
-        SAC_RuntimeError("CUDA x grid dimension must be bigger then zero. Current value is %u", grid.x);    \
-    if (grid.y <= 0)                                                                                        \
-        SAC_RuntimeError("CUDA y grid dimension must be bigger then zero. Current value is %u", grid.y);    \
-    if (grid.z <= 0)                                                                                        \
-        SAC_RuntimeError("CUDA z grid dimension must be bigger then zero. Current value is %u", grid.z);    \
-                                                                                                            \
     if (grid.x > max_x || grid.y > max_y || grid.z > max_z)                                                 \
         SAC_RuntimeError("CUDA XYZ grid dimension of %u x %u x %u exceeds "                                 \
                          "the compute capability's max value of %u x %u x %u",                              \
                          grid.x, grid.y, grid.z, max_x, max_y, max_z);
 
 #define SAC_PRAGMA_BLOCK_CHECK(max_x, max_y, max_z, max_total)                                              \
-    if (block.x <= 0)                                                                                       \
-        SAC_RuntimeError("CUDA x block dimension must be bigger then zero. Current value is %u", block.x);  \
-    if (block.y <= 0)                                                                                       \
-        SAC_RuntimeError("CUDA y block dimension must be bigger then zero. Current value is %u", block.y);  \
-    if (block.z <= 0)                                                                                       \
-        SAC_RuntimeError("CUDA z block dimension must be bigger then zero. Current value is %u", block.z);  \
-                                                                                                            \
     if (block.x > max_x || block.y > max_y || block.z > max_z)                                              \
         SAC_RuntimeError("CUDA XYZ block dimension of %u x %u x %u exceeds "                                \
                          "the compute capability's max value of %u x %u x %u",                              \

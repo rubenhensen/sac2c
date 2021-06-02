@@ -184,8 +184,7 @@ ICMCompileCUDA_GLOBALFUN_DEF_END (char *funname, unsigned int vararg_cnt, char *
  *
  ******************************************************************************/
 void
-ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vararg)
-{
+ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vararg) {
     int dim, j;
     unsigned int i;
     char *basetype;
@@ -193,62 +192,69 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
     DBUG_ENTER ();
 
 #define CUDA_GLOBALFUN_AP
+
 #include "icm_comment.c"
+
 #include "icm_trace.c"
 #undef CUDA_GLOBALFUN_AP
 
+    fprintf(global.outfile, "if (block.x * block.y * block.z * grid.x * grid.y * grid.z > 0) {\n");
     INDENT;
     INDENT;
-    fprintf (global.outfile,
-             "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");\n",
-             funname);
-    fprintf (global.outfile, "SAC_PF_BEGIN_CUDA_KNL ();\n");
+    fprintf(global.outfile,
+            "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");\n",
+            funname);
+    fprintf(global.outfile, "SAC_PF_BEGIN_CUDA_KNL ();\n");
     if (global.backend == BE_cudahybrid) {
         // on cudahybrid, we make use of streams, which have a fixed name
-        fprintf (global.outfile, "%s<<<grid, block, 0, *stream>>>(", funname);
+        fprintf(global.outfile, "%s<<<grid, block, 0, *stream>>>(", funname);
     } else {
-        fprintf (global.outfile, "%s<<<grid, block>>>(", funname);
+        fprintf(global.outfile, "%s<<<grid, block>>>(", funname);
     }
 
     for (i = 0; i < 4 * vararg_cnt; i += 4) {
-        if (STReq (vararg[i + 1], "float_dev")) {
+        if (STReq(vararg[i + 1], "float_dev")) {
             basetype = "float";
-        } else if (STReq (vararg[i + 1], "int_dev")) {
+        } else if (STReq(vararg[i + 1], "int_dev")) {
             basetype = "int";
         } else {
             basetype = vararg[i + 1];
         }
 
         INDENT;
-        fprintf (global.outfile, "SAC_CUDA_ARG_%s( %s, %s)", vararg[i], vararg[i + 3],
-                 basetype);
+        fprintf(global.outfile, "SAC_CUDA_ARG_%s( %s, %s)", vararg[i], vararg[i + 3],
+                basetype);
 
-        dim = DIM_NO_OFFSET (atoi (vararg[i + 2]));
+        dim = DIM_NO_OFFSET (atoi(vararg[i + 2]));
         if (dim > 0) {
-            fprintf (global.outfile, ", ");
+            fprintf(global.outfile, ", ");
             for (j = 0; j < dim; j++) {
-                fprintf (global.outfile, "SAC_ND_A_MIRROR_SHAPE(%s, %d), ", vararg[i + 3],
-                         j);
+                fprintf(global.outfile, "SAC_ND_A_MIRROR_SHAPE(%s, %d), ", vararg[i + 3],
+                        j);
             }
-            fprintf (global.outfile, "SAC_ND_A_MIRROR_SIZE(%s), ", vararg[i + 3]);
-            fprintf (global.outfile, "SAC_ND_A_MIRROR_DIM(%s)", vararg[i + 3]);
+            fprintf(global.outfile, "SAC_ND_A_MIRROR_SIZE(%s), ", vararg[i + 3]);
+            fprintf(global.outfile, "SAC_ND_A_MIRROR_DIM(%s)", vararg[i + 3]);
         }
         if (i != 4 * (vararg_cnt - 1)) {
-            fprintf (global.outfile, ", ");
+            fprintf(global.outfile, ", ");
         }
     }
 
     if (global.gpukernel)
-        fprintf (global.outfile, ", SAC_gkco_check_threadmapping_bitmask_dev");
-    fprintf (global.outfile, ");\n");
+        fprintf(global.outfile, ", SAC_gkco_check_threadmapping_bitmask_dev");
+    fprintf(global.outfile, ");\n");
 
-    if (STReq (global.config.cuda_alloc, "cuman")
-        || STReq (global.config.cuda_alloc, "cumanp")) {
-        fprintf (global.outfile, "cudaDeviceSynchronize ();\n");
+    if (STReq(global.config.cuda_alloc, "cuman")
+        || STReq(global.config.cuda_alloc, "cumanp")) {
+        fprintf(global.outfile, "cudaDeviceSynchronize ();\n");
     }
-    fprintf (global.outfile, "SAC_PF_END_CUDA_KNL ();\n");
+    fprintf(global.outfile, "SAC_PF_END_CUDA_KNL ();\n");
 
-    fprintf (global.outfile, "SAC_CUDA_GET_LAST_KERNEL_ERROR();\n");
+    fprintf(global.outfile, "SAC_CUDA_GET_LAST_KERNEL_ERROR();\n");
+    fprintf(global.outfile, "} else {\n");
+    fprintf(global.outfile, "SAC_TR_GPU_PRINT(\"Skipping kernel because it has no elements\");\n");
+    fprintf(global.outfile, "SAC_PRAGMA_BITMASK_CHECK_NL\n");
+    fprintf(global.outfile, "}\n");
     /*
       fprintf( global.outfile, "cudaThreadSynchronize();\n");
       fprintf( global.outfile, "cutStopTimer(timer);\n");
