@@ -396,7 +396,7 @@ OPTcheckOptionConsistency (void)
         CTIerror ("Functional Parallelism only works when MT is enabled");
     }
 
-    if (STReq (global.config.cuda_alloc, "cumanp") && global.cuda_arch < CUDA_SM60) {
+    if (STReq (global.config.cuda_alloc, "cumanp") && STRgt("SM_60", global.config.cuda_arch)) {
         CTIwarn ("Compiling for CC < 6.0 (Pascal), CUDA prefetching is not available. Disabling...");
        global.optimize.docuprf = FALSE;
     }
@@ -721,24 +721,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("cc");
-
-    ARGS_OPTION_BEGIN ("cuda_arch")
-    {
-        ARG_CHOICE_BEGIN ();
-        ARG_CHOICE ("sm10", global.cuda_arch = CUDA_SM10);
-        ARG_CHOICE ("sm11", global.cuda_arch = CUDA_SM11);
-        ARG_CHOICE ("sm12", global.cuda_arch = CUDA_SM12);
-        ARG_CHOICE ("sm13", global.cuda_arch = CUDA_SM13);
-        ARG_CHOICE ("sm20", global.cuda_arch = CUDA_SM20);
-        ARG_CHOICE ("sm35", global.cuda_arch = CUDA_SM35);
-        ARG_CHOICE ("sm50", global.cuda_arch = CUDA_SM50);
-        ARG_CHOICE ("sm60", global.cuda_arch = CUDA_SM60);
-        ARG_CHOICE ("sm61", global.cuda_arch = CUDA_SM61);
-        ARG_CHOICE ("sm70", global.cuda_arch = CUDA_SM70);
-        ARG_CHOICE ("sm75", global.cuda_arch = CUDA_SM75);
-        ARG_CHOICE_END ();
-    }
-    ARGS_OPTION_END ("cuda_arch");
 
     ARGS_OPTION_BEGIN ("cuda_async_mode")
     {

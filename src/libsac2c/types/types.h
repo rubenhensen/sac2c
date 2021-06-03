@@ -1233,26 +1233,6 @@ typedef struct {
 #undef CUDA_OPTION
 } cuda_options_t;
 
-#define CUDA_ARCHS_ALL                                                                   \
-    CUDA_ARCH (SM10, "sm_10")                                                            \
-    CUDA_ARCH (SM11, "sm_11")                                                            \
-    CUDA_ARCH (SM12, "sm_12")                                                            \
-    CUDA_ARCH (SM13, "sm_13")                                                            \
-    CUDA_ARCH (SM20, "sm_20")                                                            \
-    CUDA_ARCH (SM35, "sm_35")                                                            \
-    CUDA_ARCH (SM50, "sm_50")                                                            \
-    CUDA_ARCH (SM60, "sm_60")                                                            \
-    CUDA_ARCH (SM61, "sm_61")                                                            \
-    CUDA_ARCH (SM70, "sm_70")                                                            \
-    CUDA_ARCH (SM75, "sm_75")
-
-/* typdef enum for CUDA architecture setting */
-typedef enum cuda_arch_e {
-#define CUDA_ARCH(name, flagopt) CUDA_##name,
-    CUDA_ARCHS_ALL
-#undef CUDA_ARCH
-} cuda_arch_t;
-
 /* typedef enum for CUDA Async Modes */
 typedef enum cuda_async_mode_e {
     CUDA_SYNC_NONE,
