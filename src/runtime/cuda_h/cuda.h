@@ -353,6 +353,7 @@ extern "C" {
  */
 #define BLOCKIDX_X blockIdx.x
 #define BLOCKIDX_Y blockIdx.y
+#define BLOCKIDX_Z blockIdx.z
 
 #define BLOCKDIM_X blockDim.x
 #define BLOCKDIM_Y blockDim.y
