@@ -5025,6 +5025,11 @@ PRTpart (node *arg_node, info *arg_info)
     INDENT; /* each gen in a new line. */
     TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
+    if (PART_PRAGMA (arg_node) != NULL) {
+        INDENT;
+        TRAVdo (PART_PRAGMA (arg_node), arg_info);
+    }
+
     DBUG_ASSERT (PART_CODE (arg_node) != NULL,
                  "part within WL without pointer to N_code");
 

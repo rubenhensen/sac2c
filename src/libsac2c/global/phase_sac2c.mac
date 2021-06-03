@@ -1077,6 +1077,10 @@ SUBPHASE (sptn, "CUDA Split partitions", SPTNdoSplitPartitions,
 
 SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition, ALWAYS,
           cuda)
+
+SUBPHASE (acp, "CUDA Annotate CUDA partitions with pragmas", ACPdoAnnotateCUDAPragmas, ALWAYS,
+          cuda)
+
 #if 1
 CYCLE (mtranexp, "Optimise memory transfers for expar cycle (non-hybrid only)",
        global.optimize.doexpar && global.optimize.domemopt && (global.backend == BE_cuda),

@@ -208,6 +208,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/cuda/async_delay.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/async_delay_expand.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cond_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cuda_partition.c
+${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cuda_pragmas.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_cuda_withloop2.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/annotate_memory_transfers.c
 ${CMAKE_CURRENT_SOURCE_DIR}/cuda/create_cond_fun.c

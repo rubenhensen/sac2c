@@ -449,6 +449,13 @@
           <node name="Generator" />
         </travuser>
       </traversal>
+      <traversal id="ACP" name="Annotate CUDA partitions with pragmas" default="sons" include="annotate_cuda_pragmas.h" >
+        <travuser>
+          <node name="With" />
+          <node name="Part" />
+          <node name="Generator" />
+        </travuser>
+      </traversal>
       <traversal id="ACTRAN" name="Annoate memory transfers in conditional function" default="sons" include="annotate_cond_transfers.h" >
         <travuser>
           <node name="Assign" />
@@ -9876,6 +9883,18 @@ N_tfarg :
                 <any />
                 <phases>
                   <range from="cuda_acuwl" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Pragma" inconstructor="no" >
+          <type name="Node">
+            <targets>
+              <target mandatory="no">
+                <node name="Pragma" />
+                <phases>
+                  <range from="scp_prs" to="final" />
                 </phases>
               </target>
             </targets>
