@@ -19,8 +19,19 @@ target arch_sm10:
 CUDA_ARCH        := "sm10"
 
 target cuda_sm_35 :: cuda_core :: arch_sm_35:
-target arch_sm_35:
+target arch_sm_35 :: arch_sm_super:
 CUDA_ARCH        := "sm_35"
+CUDA_2D_BLOCK_X  := 16
+CUDA_2D_BLOCK_Y  := 16
+
+target cuda_sm_61 :: cuda_core :: arch_sm_61:
+target arch_sm_61 :: arch_sm_super:
+CUDA_ARCH        := "sm_61"
+
+target arch_sm_super:
+CUDA_1D_BLOCK_X  := 64
+CUDA_2D_BLOCK_X  := 32
+CUDA_2D_BLOCK_Y  := 32
 CUDA_MAX_X_GRID  := 2147483647
 CUDA_MAX_Y_GRID  := 65535
 CUDA_MAX_Z_GRID  := 65535
@@ -31,18 +42,6 @@ CUDA_MAX_BLOCK   := 1024
 CUDA_DIM_GRID    := 3
 CUDA_DIM_BLOCK   := 3
 
-target cuda_sm_61 :: cuda_core :: arch_sm_61:
-target arch_sm_61:
-CUDA_ARCH        := "sm_61"
-CUDA_MAX_X_GRID  := 2147483647
-CUDA_MAX_Y_GRID  := 65535
-CUDA_MAX_Z_GRID  := 65535
-CUDA_MAX_X_BLOCK := 1024
-CUDA_MAX_Y_BLOCK := 1024
-CUDA_MAX_Z_BLOCK := 64
-CUDA_MAX_BLOCK   := 1024
-CUDA_DIM_GRID    := 3
-CUDA_DIM_BLOCK   := 3
 
 target cuda :: cuda_core :: arch_@CUDA_ARCH@:
 

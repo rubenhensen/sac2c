@@ -731,6 +731,9 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (RC_METHOD, rc_method, char *, str)                                     \
     DEF_RESOURCE (CUDA_ALLOC, cuda_alloc, char *, str)                                   \
     DEF_RESOURCE (CUDA_ARCH, cuda_arch, char *, str)                                     \
+    DEF_RESOURCE (CUDA_1D_BLOCK_X, cuda_1d_block_x, int, num)                            \
+    DEF_RESOURCE (CUDA_2D_BLOCK_X, cuda_2d_block_x, int, num)                            \
+    DEF_RESOURCE (CUDA_2D_BLOCK_Y, cuda_2d_block_y, int, num)                            \
     DEF_RESOURCE (CUDA_MAX_X_GRID, cuda_max_x_grid, int, num)                            \
     DEF_RESOURCE (CUDA_MAX_Y_GRID, cuda_max_y_grid, int, num)                            \
     DEF_RESOURCE (CUDA_MAX_Z_GRID, cuda_max_z_grid, int, num)                            \
@@ -1139,6 +1142,12 @@ typedef constant *(*shape_oracle_funptr) (int n);
 
 typedef struct GPUKERNELRES gpukernelres_t;
 typedef size_t pass_t;
+
+enum gpu_mapping_strategy_t {
+    Jings_method,
+    Jings_method_ext,
+    Foldall
+};
 
 /******************************************************************************
  * typedef for cross edge reachability analysis

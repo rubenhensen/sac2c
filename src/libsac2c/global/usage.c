@@ -775,6 +775,19 @@ PrintCudaOptions (void)
             "                    but in some complex cases where many kernels can be discarded\n"
             "                    early on in the process, the branching implementation may be faster. \n"
             "                    (default: branchless implementation)\n"
+            "\n"
+            "    -gpu_mapping_strategy <strategy>\n"
+            "                    Choose the strategy with which index spaces are mapped onto the GPU \n"
+            "                    kernels. Options are: \n"
+            "                      jings_method         : Use the original heuristics Jing used in his\n"
+            "                                             implementation of mappings with-loops to the\n"
+            "                                             GPU. \n"
+            "                      jings_method_ext     : Similar to Jing's method, but also works for\n"
+            "                                             higher dimensionalities. \n"
+            "                      foldall              : First fold all dimensions together, and then\n"
+            "                                             unfold them all again onto a pre-determined \n"
+            "                                             shape and a \"rest\" dimension. \n"
+            "                    (default: foldall)\n"
             "\n");
 
     DBUG_RETURN ();

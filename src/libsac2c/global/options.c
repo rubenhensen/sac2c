@@ -737,6 +737,16 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG("cuda_gpu_branching", global.cuda_gpu_branching = 1);
 
+    ARGS_OPTION_BEGIN("gpu_mapping_strategy")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("jings_method", global.gpu_mapping_strategy = Jings_method);
+        ARG_CHOICE ("jings_method_ext", global.gpu_mapping_strategy = Jings_method_ext);
+        ARG_CHOICE ("foldall", global.gpu_mapping_strategy = Foldall);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("cuda_mapping_strategy");
+
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
      */

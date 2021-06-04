@@ -1213,7 +1213,7 @@ CUKNLgenerator (node *arg_node, info *arg_info)
             HandleBoundStepWidthExprs (GENERATOR_WIDTH (arg_node),
                                        dims, "_width_", arg_info);
 
-            DBUG_ASSERT (INFO_PRAGMA (arg_info) != NULL, "missing gpukernel pragma");
+            //DBUG_ASSERT (INFO_PRAGMA (arg_info) != NULL, "missing gpukernel pragma");
             INFO_THREADSPACE (arg_info) =
                 TBmakeAssign (
                     TBmakeLet (
