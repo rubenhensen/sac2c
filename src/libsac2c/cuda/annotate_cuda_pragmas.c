@@ -509,7 +509,7 @@ ACPjingGeneratePragma(bool ext, info* inner) {
                 // If the dimensionality is too high and extended mode is enabled,
                 // reduce the dimensionality and try again.
                 inner = ACPreduceDimensionality(inner);
-                inner = ACPjingGeneratePragma(inner, ext);
+                inner = ACPjingGeneratePragma(ext, inner);
             } else
                 // If the dimensionality is too high and extended mode is disabled, throw an error.
                 CTIerrorLoc(NODE_LOCATION(INFO_WITH(inner)),
