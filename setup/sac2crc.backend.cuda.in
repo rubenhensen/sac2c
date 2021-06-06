@@ -14,7 +14,7 @@
 target arch_:
 CUDA_ARCH        := ""
 
-target cuda_sm_10 :: cuda_core :: arch_sm10:
+target cuda_sm_10 :: cuda_core :: arch_sm_10:
 target arch_sm_10 :: arch_sm_super:
 CUDA_ARCH        := "sm_10"
 CUDA_OPT_THREADS := 256
@@ -27,21 +27,21 @@ CUDA_MAX_X_BLOCK := 512
 CUDA_MAX_Y_BLOCK := 512
 CUDA_MAX_BLOCK   := 512
 
-target cuda_sm_11 :: cuda_core :: arch_sm11:
-target arch_sm_11 :: arc_sm_10:
+target cuda_sm_11 :: cuda_core :: arch_sm_11:
+target arch_sm_11 :: arch_sm_10:
 CUDA_ARCH        := "sm_11"
 
-target cuda_sm_12 :: cuda_core :: arch_sm12:
-target arch_sm_12 :: arc_sm_10:
+target cuda_sm_12 :: cuda_core :: arch_sm_12:
+target arch_sm_12 :: arch_sm_10:
 CUDA_ARCH        := "sm_12"
 CUDA_OPT_BLOCKS  := 4
 
-target cuda_sm_13 :: cuda_core :: arch_sm13:
-target arch_sm_13 :: arc_sm_10:
+target cuda_sm_13 :: cuda_core :: arch_sm_13:
+target arch_sm_13 :: arch_sm_10:
 CUDA_ARCH        := "sm_13"
 CUDA_OPT_BLOCKS  := 4
 
-target cuda_sm_20 :: cuda_core :: arch_sm20:
+target cuda_sm_20 :: cuda_core :: arch_sm_20:
 target arch_sm_20 :: arch_sm_super:
 CUDA_ARCH        := "sm_20"
 CUDA_OPT_THREADS := 256

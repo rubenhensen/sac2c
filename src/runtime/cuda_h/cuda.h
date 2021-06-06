@@ -419,16 +419,23 @@ extern "C" {
     ub_w = ub_r - lb;
 
 #define SAC_GKCO_HOST_OPD_COMPRESS_S(ub_r, ub_w, st)                                                        \
-    ub_w = ub_r / st                                                                                        \
-            + (ub_r % st != 0);
+    ub_w = (ub_r + st - 1) / st;                                                                            \
 
+// The last ternary if exists because of the following situation:
+// st    wi    st    wi ub  st
+// |     |     |     |  |   |
+// ABCDEFGHIJKLMNOPQRSTUVWXYZ
+// In this case, (ub / st * wi) should result in enough space to house
+// all data until M. Now we should only add enough space to house the
+// data in M - S. This is exactly (wi). If we simply add (ub % st), our
+// upperbound is too high, hence the (ub % st < wi ? ub % st ? wi).
 #define SAC_GKCO_HOST_OPD_COMPRESS_SW(ub_r, ub_w, st, wi, tmp)                                              \
     tmp = ub_r % st;                                                                                        \
     ub_w = ub_r / st * wi + (tmp < wi ? tmp : wi);
 
 #define SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(ub_r, ub_w, st, wi, tmp_a, tmp_b)                                  \
     tmp_a = ub_r % st;                                                                                      \
-    tmp_b = tmp_a < wi;                                                                                      \
+    tmp_b = tmp_a < wi;                                                                                     \
     ub_w = ub_r / st * wi                                                                                   \
             + TERNARY_BL(tmp_b, tmp_a, wi);
 
@@ -436,7 +443,7 @@ extern "C" {
     ub_maj_w = ub_maj_r * ub_min;
 
 #define SAC_GKCO_HOST_OPM_SPLIT_LAST(ub_maj_r, ub_maj_w, ub_min, len_min)                                   \
-    ub_min = len_min;                                                                            \
+    ub_min = len_min;                                                                                       \
     ub_maj_w = ub_maj_r / len_min;
 
 #define SAC_GKCO_HOST_OPM_SET_GRID(max_x, max_y, max_z, max_total, ...)                                     \
