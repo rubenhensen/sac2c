@@ -65,14 +65,14 @@
 
 #include "debug.h"
 
-static char* GEN          = "Gen";
-static char* GRIDBLOCK    = "GridBlock";
-static char* SHIFTLB      = "ShiftLB";
-static char* COMPRESSGRID = "CompressGrid";
-static char* PERMUTE      = "Permute";
-static char* SPLITLAST    = "SplitLast";
-static char* FOLDLAST2    = "FoldLast2";
-static char* PADLAST      = "PadLast";
+static char *GEN = "Gen";
+static char *GRIDBLOCK = "GridBlock";
+static char *SHIFTLB = "ShiftLB";
+static char *COMPRESSGRID = "CompressGrid";
+static char *PERMUTE = "Permute";
+static char *SPLITLAST = "SplitLast";
+static char *FOLDLAST2 = "FoldLast2";
+static char *PADLAST = "PadLast";
 
 /** <!--********************************************************************-->
  * INFO structure
@@ -80,12 +80,12 @@ static char* PADLAST      = "PadLast";
 struct INFO {
     // The nodes for the with-loop, the partition, and the generator are stored
     // here, so the strategies can extract info from them.
-    node* with;
-    node* part;
-    node* gen;
+    node *with;
+    node *part;
+    node *gen;
 
     // The currently generated pragma
-    node* pragma;
+    node *pragma;
     // The current dimensionality
     size_t dims;
 };
@@ -102,18 +102,19 @@ struct INFO {
  *
  * @return                  The newly generated info datastructure.
  */
-static info*
-MakeInfo(void) {
-    info* result;
+static info *
+MakeInfo (void)
+{
+    info *result;
 
     DBUG_ENTER ();
 
-    result = (info*) MEMmalloc(sizeof(info));
-    INFO_WITH (result)   = NULL;
-    INFO_PART (result)   = NULL;
-    INFO_GEN (result)    = NULL;
+    result = (info *)MEMmalloc (sizeof (info));
+    INFO_WITH (result) = NULL;
+    INFO_PART (result) = NULL;
+    INFO_GEN (result) = NULL;
     INFO_PRAGMA (result) = NULL;
-    INFO_DIMS(result)    = 0;
+    INFO_DIMS (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -125,17 +126,17 @@ MakeInfo(void) {
  * @param info              The info datastructure to be freed.
  * @return                  NULL
  */
-static info*
-FreeInfo(info* info) {
+static info *
+FreeInfo (info *info)
+{
     DBUG_ENTER ();
 
-    info = MEMfree(info);
+    info = MEMfree (info);
 
     DBUG_RETURN (info);
 }
 
-#define MK_CONST(...) COmakeConstantFromDynamicArguments(T_int, 1, __VA_ARGS__)
-
+#define MK_CONST(...) COmakeConstantFromDynamicArguments (T_int, 1, __VA_ARGS__)
 
 /** <!--********************************************************************-->
  * Entry functions
@@ -147,16 +148,17 @@ FreeInfo(info* info) {
  * @param syntax_tree
  * @return
  */
-node*
-ACPdoAnnotateCUDAPragmas(node* syntax_tree) {
-    info* info;
+node *
+ACPdoAnnotateCUDAPragmas (node *syntax_tree)
+{
+    info *info;
     DBUG_ENTER ();
 
-    info = MakeInfo();
-    TRAVpush(TR_acp);
-    syntax_tree = TRAVdo(syntax_tree, info);
-    TRAVpop();
-    info = FreeInfo(info);
+    info = MakeInfo ();
+    TRAVpush (TR_acp);
+    syntax_tree = TRAVdo (syntax_tree, info);
+    TRAVpop ();
+    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }
@@ -172,15 +174,16 @@ ACPdoAnnotateCUDAPragmas(node* syntax_tree) {
  * @param arg_info          The info datastructure with the Generator node set
  * @return                  The dimensionality of the generator AST node
  */
-info*
-ACPcomputeDimensionality(info* arg_info) {
-    DBUG_ENTER();
+info *
+ACPcomputeDimensionality (info *arg_info)
+{
+    DBUG_ENTER ();
 
-    INFO_DIMS(arg_info) = (size_t) SHgetExtent(
-            ARRAY_FRAMESHAPE(GENERATOR_BOUND1(INFO_GEN(arg_info))),
-            0);
+    INFO_DIMS (arg_info)
+            = (size_t)SHgetExtent (ARRAY_FRAMESHAPE (GENERATOR_BOUND1 (INFO_GEN (arg_info))),
+                                   0);
 
-    DBUG_RETURN(arg_info);
+    DBUG_RETURN (arg_info);
 }
 
 /**
@@ -198,19 +201,18 @@ ACPcomputeDimensionality(info* arg_info) {
  * @return                  The updated info node, where the SPAP node has been
  *                          inserted.
  */
-info*
-ACPmakeSpap(info* arg_info, char* staticName, size_t nargs, node** args) {
-    DBUG_ENTER();
+info *
+ACPmakeSpap (info *arg_info, char *staticName, size_t nargs, node **args)
+{
+    DBUG_ENTER ();
 
-    node* exprs = TBmakeExprs(INFO_PRAGMA(arg_info), NULL);
-    for (size_t i = nargs - 1; i != (size_t) -1; i--)
-        exprs = TBmakeExprs(args[i], exprs);
+    node *exprs = TBmakeExprs (INFO_PRAGMA (arg_info), NULL);
+    for (size_t i = nargs - 1; i != (size_t)-1; i--)
+        exprs = TBmakeExprs (args[i], exprs);
 
-    INFO_PRAGMA(arg_info) = TBmakeSpap(
-            TBmakeSpid(NULL, STRcpy(staticName)),
-            exprs);
+    INFO_PRAGMA (arg_info) = TBmakeSpap (TBmakeSpid (NULL, STRcpy (staticName)), exprs);
 
-    DBUG_RETURN(arg_info);
+    DBUG_RETURN (arg_info);
 }
 
 /**
@@ -219,15 +221,14 @@ ACPmakeSpap(info* arg_info, char* staticName, size_t nargs, node** args) {
  * @param arg_info          The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPmakeGen(info* arg_info) {
-    DBUG_ENTER();
+info *
+ACPmakeGen (info *arg_info)
+{
+    DBUG_ENTER ();
 
-    INFO_PRAGMA(arg_info) = TBmakeSpap(
-            TBmakeSpid(NULL, STRcpy(GEN)),
-            NULL);
+    INFO_PRAGMA (arg_info) = TBmakeSpap (TBmakeSpid (NULL, STRcpy (GEN)), NULL);
 
-    DBUG_RETURN(arg_info);
+    DBUG_RETURN (arg_info);
 }
 
 /**
@@ -239,17 +240,19 @@ ACPmakeGen(info* arg_info) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPmakeGridBlock(int block_dims, info* inner) {
-    DBUG_ENTER();
-    DBUG_ASSERT(0 <= block_dims && block_dims < (int) INFO_DIMS(inner),
-                "block_dims (%i) should be between 0 and the current dimensionality (%zu)",
-                block_dims, INFO_DIMS(inner));
+info *
+ACPmakeGridBlock (int block_dims, info *inner)
+{
+    DBUG_ENTER ();
+    DBUG_ASSERT (0 <= block_dims && block_dims < (int)INFO_DIMS (inner),
+                 "block_dims (%i) should be between 0 and the current dimensionality "
+                 "(%zu)",
+                 block_dims, INFO_DIMS (inner));
 
-    node* args[1] = {TBmakeNum(block_dims)};
-    inner = ACPmakeSpap(inner, GRIDBLOCK, 1, args);
+    node *args[1] = {TBmakeNum (block_dims)};
+    inner = ACPmakeSpap (inner, GRIDBLOCK, 1, args);
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /**
@@ -258,13 +261,14 @@ ACPmakeGridBlock(int block_dims, info* inner) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPmakeShiftLB(info* inner) {
-    DBUG_ENTER();
+info *
+ACPmakeShiftLB (info *inner)
+{
+    DBUG_ENTER ();
 
-    inner = ACPmakeSpap(inner, SHIFTLB, 0, NULL);
+    inner = ACPmakeSpap (inner, SHIFTLB, 0, NULL);
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /**
@@ -277,20 +281,22 @@ ACPmakeShiftLB(info* inner) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPmakeCompressGrid(constant* compressDims, info* inner) {
-    DBUG_ENTER();
-    DBUG_ASSERT(COgetDim(compressDims) == 1,
-                "Dimensionality of compressDims array (%i) should be 1",
-                COgetDim(compressDims));
-    DBUG_ASSERT(COgetExtent(compressDims, 0) == (int) INFO_DIMS(inner),
-                "Length of compressDims array (%i) should be equal to the dimensionality (%zu)",
-                COgetExtent(compressDims, 0), INFO_DIMS(inner));
+info *
+ACPmakeCompressGrid (constant *compressDims, info *inner)
+{
+    DBUG_ENTER ();
+    DBUG_ASSERT (COgetDim (compressDims) == 1,
+                 "Dimensionality of compressDims array (%i) should be 1",
+                 COgetDim (compressDims));
+    DBUG_ASSERT (COgetExtent (compressDims, 0) == (int)INFO_DIMS (inner),
+                 "Length of compressDims array (%i) should be equal to the "
+                 "dimensionality (%zu)",
+                 COgetExtent (compressDims, 0), INFO_DIMS (inner));
 
-    node* args[1] = {COconstant2AST(compressDims)};
-    inner = ACPmakeSpap(inner, COMPRESSGRID, 1, args);
+    node *args[1] = {COconstant2AST (compressDims)};
+    inner = ACPmakeSpap (inner, COMPRESSGRID, 1, args);
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /**
@@ -301,14 +307,15 @@ ACPmakeCompressGrid(constant* compressDims, info* inner) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPmakeCompressAll(info* inner) {
-    DBUG_ENTER();
+info *
+ACPmakeCompressAll (info *inner)
+{
+    DBUG_ENTER ();
 
-    constant* compressDims = COmakeOne(T_int, SHcreateShape(1, (int) INFO_DIMS(inner)));
-    inner = ACPmakeCompressGrid(compressDims, inner);
+    constant *compressDims = COmakeOne (T_int, SHcreateShape (1, (int)INFO_DIMS (inner)));
+    inner = ACPmakeCompressGrid (compressDims, inner);
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /**
@@ -321,20 +328,22 @@ ACPmakeCompressAll(info* inner) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPmakePermute(constant* permutation, info* inner) {
-    DBUG_ENTER();
-    DBUG_ASSERT(COgetDim(permutation) == 1,
-                "Dimensionality of permutation array (%i) should be 1",
-                COgetDim(permutation));
-    DBUG_ASSERT(COgetExtent(permutation, 0) == (int) INFO_DIMS(inner),
-                "Length of permutation array (%i) should be equal to the dimensionality (%zu)",
-                COgetExtent(permutation, 0), INFO_DIMS(inner));
+info *
+ACPmakePermute (constant *permutation, info *inner)
+{
+    DBUG_ENTER ();
+    DBUG_ASSERT (COgetDim (permutation) == 1,
+                 "Dimensionality of permutation array (%i) should be 1",
+                 COgetDim (permutation));
+    DBUG_ASSERT (COgetExtent (permutation, 0) == (int)INFO_DIMS (inner),
+                 "Length of permutation array (%i) should be equal to the dimensionality "
+                 "(%zu)",
+                 COgetExtent (permutation, 0), INFO_DIMS (inner));
 
-    node* args[2] = {COconstant2AST(permutation)};
-    inner = ACPmakeSpap(inner, PERMUTE, 1, args);
+    node *args[2] = {COconstant2AST (permutation)};
+    inner = ACPmakeSpap (inner, PERMUTE, 1, args);
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /**
@@ -344,18 +353,18 @@ ACPmakePermute(constant* permutation, info* inner) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPmakeSplitLast(int innersize, info* inner) {
-    DBUG_ENTER();
-    DBUG_ASSERT(INFO_DIMS(inner) >= 1,
-                "Dimensionality (%zu) should be at least 1",
-                INFO_DIMS(inner));
+info *
+ACPmakeSplitLast (int innersize, info *inner)
+{
+    DBUG_ENTER ();
+    DBUG_ASSERT (INFO_DIMS (inner) >= 1, "Dimensionality (%zu) should be at least 1",
+                 INFO_DIMS (inner));
 
-    node* args[1] = {TBmakeNum(innersize)};
-    inner = ACPmakeSpap(inner, SPLITLAST, 1, args);
-    INFO_DIMS(inner)++;
+    node *args[1] = {TBmakeNum (innersize)};
+    inner = ACPmakeSpap (inner, SPLITLAST, 1, args);
+    INFO_DIMS (inner)++;
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /**
@@ -364,17 +373,17 @@ ACPmakeSplitLast(int innersize, info* inner) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPmakeFoldLast2(info* inner) {
-    DBUG_ENTER();
-    DBUG_ASSERT(INFO_DIMS(inner) >= 2,
-                "Dimensionality (%zu) should be at least 2",
-                INFO_DIMS(inner));
+info *
+ACPmakeFoldLast2 (info *inner)
+{
+    DBUG_ENTER ();
+    DBUG_ASSERT (INFO_DIMS (inner) >= 2, "Dimensionality (%zu) should be at least 2",
+                 INFO_DIMS (inner));
 
-    inner = ACPmakeSpap(inner, FOLDLAST2, 0, NULL);
-    INFO_DIMS(inner)--;
+    inner = ACPmakeSpap (inner, FOLDLAST2, 0, NULL);
+    INFO_DIMS (inner)--;
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /**
@@ -386,19 +395,18 @@ ACPmakeFoldLast2(info* inner) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPmakePadLast(int paddedsize, info* inner) {
-    DBUG_ENTER();
-    DBUG_ASSERT(INFO_DIMS(inner) >= 1,
-                "Dimensionality (%zu) should be at least 1",
-                INFO_DIMS(inner));
+info *
+ACPmakePadLast (int paddedsize, info *inner)
+{
+    DBUG_ENTER ();
+    DBUG_ASSERT (INFO_DIMS (inner) >= 1, "Dimensionality (%zu) should be at least 1",
+                 INFO_DIMS (inner));
 
-    node* args[1] = {TBmakeNum(paddedsize)};
-    inner = ACPmakeSpap(inner, PADLAST, 1, args);
+    node *args[1] = {TBmakeNum (paddedsize)};
+    inner = ACPmakeSpap (inner, PADLAST, 1, args);
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
-
 
 /** <!--********************************************************************-->
  * @}  <!-- Strategy helper functions -->
@@ -413,21 +421,22 @@ ACPmakePadLast(int paddedsize, info* inner) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPpermuteRotate(int offset, info* inner) {
-    DBUG_ENTER();
+info *
+ACPpermuteRotate (int offset, info *inner)
+{
+    DBUG_ENTER ();
 
-    int dims = (int) INFO_DIMS(inner);
+    int dims = (int)INFO_DIMS (inner);
 
     // Note: ownership of permutation is transfered to the constant
-    int* permutation = (int*) MEMmalloc(sizeof(int) * (size_t) dims);
+    int *permutation = (int *)MEMmalloc (sizeof (int) * (size_t)dims);
     for (int i = 0; i < dims; i++)
         permutation[i] = (i - offset + dims) % dims;
 
-    constant* permConst = COmakeConstant(T_int, SHcreateShape(1, dims), permutation);
-    inner = ACPmakePermute(permConst, inner);
+    constant *permConst = COmakeConstant (T_int, SHcreateShape (1, dims), permutation);
+    inner = ACPmakePermute (permConst, inner);
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /**
@@ -438,20 +447,21 @@ ACPpermuteRotate(int offset, info* inner) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPreduceDimensionality(info* inner) {
-    DBUG_ENTER();
+info *
+ACPreduceDimensionality (info *inner)
+{
+    DBUG_ENTER ();
 
-    if (INFO_DIMS(inner) % 2 == 1)
-        ACPpermuteRotate(1, inner);
+    if (INFO_DIMS (inner) % 2 == 1)
+        ACPpermuteRotate (1, inner);
 
-    size_t      nr_folds = INFO_DIMS(inner) / 2;
-    for (size_t i        = 0; i < nr_folds; i++) {
-        inner = ACPmakeFoldLast2(inner);
-        inner = ACPpermuteRotate(1, inner);
+    size_t nr_folds = INFO_DIMS (inner) / 2;
+    for (size_t i = 0; i < nr_folds; i++) {
+        inner = ACPmakeFoldLast2 (inner);
+        inner = ACPpermuteRotate (1, inner);
     }
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /** <!--********************************************************************-->
@@ -459,7 +469,8 @@ ACPreduceDimensionality(info* inner) {
  *
  * This strategy resembles Jing's original method. If the boolean ext is set
  * to true, the dimensionality is reduced to 3-5 until Jings method can be
- * applied. Note that for 3, 4 or 5 dimensions, the innermost 2 dimensions can be at most 32.
+ * applied. Note that for 3, 4 or 5 dimensions, the innermost 2 dimensions can be at
+ *most 32.
  *
  * Jing's method handles 1-5 dimensions:
  *  note: read the dimension specs as
@@ -480,47 +491,52 @@ ACPreduceDimensionality(info* inner) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPjingGeneratePragma(bool ext, info* inner) {
-    DBUG_ENTER();
+info *
+ACPjingGeneratePragma (bool ext, info *inner)
+{
+    DBUG_ENTER ();
 
-    switch (INFO_DIMS(inner)) {
+    switch (INFO_DIMS (inner)) {
         case 0:
-            inner = ACPmakeGridBlock(0, inner);
+            inner = ACPmakeGridBlock (0, inner);
             break;
         case 1:
-            inner = ACPmakeSplitLast(global.config.cuda_1d_block_x, inner);
-            inner = ACPmakeGridBlock(1, inner);
+            inner = ACPmakeSplitLast (global.config.cuda_1d_block_x, inner);
+            inner = ACPmakeGridBlock (1, inner);
             break;
         case 2:
-            inner = ACPmakeSplitLast(global.config.cuda_2d_block_x, inner);
-            inner = ACPmakePermute(MK_CONST(3, 1, 2, 0), inner);
-            inner = ACPmakeSplitLast(global.config.cuda_2d_block_y, inner);
-            inner = ACPmakePermute(MK_CONST(4, 2, 0, 3, 1), inner);
-            inner = ACPmakeGridBlock(2, inner);
+            inner = ACPmakeSplitLast (global.config.cuda_2d_block_x, inner);
+            inner = ACPmakePermute (MK_CONST (3, 1, 2, 0), inner);
+            inner = ACPmakeSplitLast (global.config.cuda_2d_block_y, inner);
+            inner = ACPmakePermute (MK_CONST (4, 2, 0, 3, 1), inner);
+            inner = ACPmakeGridBlock (2, inner);
             break;
         case 3:
         case 4:
         case 5:
-            inner = ACPmakeGridBlock((int) INFO_DIMS(inner) - 2, inner);
+            inner = ACPmakeGridBlock ((int)INFO_DIMS (inner) - 2, inner);
             break;
         default:
             if (ext) {
                 // If the dimensionality is too high and extended mode is enabled,
                 // reduce the dimensionality and try again.
-                inner = ACPreduceDimensionality(inner);
-                inner = ACPjingGeneratePragma(ext, inner);
+                inner = ACPreduceDimensionality (inner);
+                inner = ACPjingGeneratePragma (ext, inner);
             } else
-                // If the dimensionality is too high and extended mode is disabled, throw an error.
-                CTIerrorLoc(NODE_LOCATION(INFO_WITH(inner)),
-                            "Dimensionality of with loop (%zu) too high for gpu mapping strategy \"Jing's method\""
-                            "(-gpu_mapping_strategy jings_method) can be at most 5. For higher dimensionalities, "
-                            "use the extended Jing's method (-gpu_mapping_strategy jings_method_ext).",
-                            INFO_DIMS(inner));
+                // If the dimensionality is too high and extended mode is disabled, throw an
+                // error.
+                CTIerrorLoc (NODE_LOCATION (INFO_WITH (inner)),
+                             "Dimensionality of with loop (%zu) too high for gpu mapping "
+                             "strategy \"Jing's method\""
+                             "(-gpu_mapping_strategy jings_method) can be at most 5. For "
+                             "higher dimensionalities, "
+                             "use the extended Jing's method (-gpu_mapping_strategy "
+                             "jings_method_ext).",
+                             INFO_DIMS (inner));
             break;
     }
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /** <!--********************************************************************-->
@@ -547,36 +563,38 @@ ACPjingGeneratePragma(bool ext, info* inner) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPfoldallGeneratePragma(info* inner) {
-    DBUG_ENTER();
+info *
+ACPfoldallGeneratePragma (info *inner)
+{
+    DBUG_ENTER ();
 
-    // The dims variable changes when we fold the dimensions together, so we have to back it up
-    size_t dims = INFO_DIMS(inner);
+    // The dims variable changes when we fold the dimensions together, so we have to back
+    // it up
+    size_t dims = INFO_DIMS (inner);
 
-    while (INFO_DIMS(inner) > 1)
-        inner = ACPmakeFoldLast2(inner);
+    while (INFO_DIMS (inner) > 1)
+        inner = ACPmakeFoldLast2 (inner);
 
     // Split first dimension to (1/32 | 32)
-    inner = ACPmakeSplitLast(global.config.cuda_2d_block_x, inner);
+    inner = ACPmakeSplitLast (global.config.cuda_2d_block_x, inner);
 
     // Split second dimension to (1/1024 | 32, 32)
     if (dims >= 2) {
-        inner = ACPmakePermute(MK_CONST(2, 1, 0), inner);
-        inner = ACPmakeSplitLast(global.config.cuda_2d_block_y, inner);
-        inner = ACPmakePermute(MK_CONST(3, 1, 2, 0), inner);
+        inner = ACPmakePermute (MK_CONST (2, 1, 0), inner);
+        inner = ACPmakeSplitLast (global.config.cuda_2d_block_y, inner);
+        inner = ACPmakePermute (MK_CONST (3, 1, 2, 0), inner);
     }
 
     // Split third dimension to (2048, 1/2048/1024 | 32, 32)
     if (dims >= 3) {
-        inner = ACPmakePermute(MK_CONST(3, 1, 2, 0), inner);
-        inner = ACPmakeSplitLast(global.config.cuda_3d_thread_y, inner);
-        inner = ACPmakePermute(MK_CONST(4, 3, 2, 0, 1), inner);
+        inner = ACPmakePermute (MK_CONST (3, 1, 2, 0), inner);
+        inner = ACPmakeSplitLast (global.config.cuda_3d_thread_y, inner);
+        inner = ACPmakePermute (MK_CONST (4, 3, 2, 0, 1), inner);
     }
 
-    inner = ACPmakeGridBlock(dims == 1 ? 1 : 2, inner);
+    inner = ACPmakeGridBlock (dims == 1 ? 1 : 2, inner);
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /** <!--********************************************************************-->
@@ -589,29 +607,30 @@ ACPfoldallGeneratePragma(info* inner) {
  * @param inner             The info datastructure to be updated
  * @return                  The updated info datastructure
  */
-info*
-ACPgeneratePragma(info* arg_info) {
-    DBUG_ENTER();
+info *
+ACPgeneratePragma (info *arg_info)
+{
+    DBUG_ENTER ();
 
-    arg_info     = ACPmakeShiftLB(ACPmakeGen(arg_info));
+    arg_info = ACPmakeShiftLB (ACPmakeGen (arg_info));
     if (global.gpu_mapping_compress)
-        arg_info = ACPmakeCompressAll(arg_info);
+        arg_info = ACPmakeCompressAll (arg_info);
 
     switch (global.gpu_mapping_strategy) {
         case Jings_method:
-            arg_info = ACPjingGeneratePragma(FALSE, arg_info);
+            arg_info = ACPjingGeneratePragma (FALSE, arg_info);
             break;
         case Jings_method_ext:
-            arg_info = ACPjingGeneratePragma(TRUE, arg_info);
+            arg_info = ACPjingGeneratePragma (TRUE, arg_info);
             break;
         case Foldall:
-            arg_info = ACPfoldallGeneratePragma(arg_info);
+            arg_info = ACPfoldallGeneratePragma (arg_info);
             break;
         default:
-            DBUG_UNREACHABLE("Invalid cuda mapping strategy");
+            DBUG_UNREACHABLE ("Invalid cuda mapping strategy");
     }
 
-    DBUG_RETURN(arg_info);
+    DBUG_RETURN (arg_info);
 }
 
 /** <!--********************************************************************-->
@@ -626,15 +645,16 @@ ACPgeneratePragma(info* arg_info) {
  *
  *
  *****************************************************************************/
-node*
-ACPwith(node* arg_node, info* arg_info) {
+node *
+ACPwith (node *arg_node, info *arg_info)
+{
     DBUG_ENTER ();
 
-    if (WITH_CUDARIZABLE(arg_node)) {
-        INFO_WITH(arg_info) = arg_node;
-        WITH_PART(arg_node) = TRAVdo(WITH_PART(arg_node), arg_info);
+    if (WITH_CUDARIZABLE (arg_node)) {
+        INFO_WITH (arg_info) = arg_node;
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     } else {
-        WITH_CODE(arg_node) = TRAVopt(WITH_CODE(arg_node), arg_info);
+        WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -648,20 +668,21 @@ ACPwith(node* arg_node, info* arg_info) {
  *
  *
  *****************************************************************************/
-node*
-ACPpart(node* arg_node, info* arg_info) {
+node *
+ACPpart (node *arg_node, info *arg_info)
+{
     DBUG_ENTER ();
 
-    if (PART_PRAGMA(arg_node) == NULL) {
-        INFO_PART(arg_info) = arg_node;
-        PART_GENERATOR(arg_node) = TRAVdo(PART_GENERATOR(arg_node), arg_info);
-        DBUG_ASSERT (INFO_PRAGMA(arg_info) != NULL, "failed to generate pragma "
-                                                    "for partition");
-        PART_PRAGMA(arg_node) = INFO_PRAGMA (arg_info);
+    if (PART_PRAGMA (arg_node) == NULL) {
+        INFO_PART (arg_info) = arg_node;
+        PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
+        DBUG_ASSERT (INFO_PRAGMA (arg_info) != NULL, "failed to generate pragma "
+                                                     "for partition");
+        PART_PRAGMA (arg_node) = INFO_PRAGMA (arg_info);
         INFO_PRAGMA (arg_info) = NULL;
     }
 
-    PART_NEXT(arg_node) = TRAVopt(PART_NEXT(arg_node), arg_info);
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -674,16 +695,17 @@ ACPpart(node* arg_node, info* arg_info) {
  *
  *
  *****************************************************************************/
-node*
-ACPgenerator(node* arg_node, info* arg_info) {
+node *
+ACPgenerator (node *arg_node, info *arg_info)
+{
     DBUG_ENTER ();
 
-    INFO_GEN(arg_info) = arg_node;
-    arg_info = ACPcomputeDimensionality(arg_info);
+    INFO_GEN (arg_info) = arg_node;
+    arg_info = ACPcomputeDimensionality (arg_info);
 
-    arg_info = ACPgeneratePragma(arg_info);
-    node* pragma = TBmakePragma();
-    PRAGMA_GPUKERNEL_APS(pragma) = INFO_PRAGMA(arg_info);
+    arg_info = ACPgeneratePragma (arg_info);
+    node *pragma = TBmakePragma ();
+    PRAGMA_GPUKERNEL_APS (pragma) = INFO_PRAGMA (arg_info);
     INFO_PRAGMA (arg_info) = pragma;
 
     DBUG_RETURN (arg_node);

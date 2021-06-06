@@ -15,7 +15,6 @@
 #include "tree_basic.h"
 #include "str.h"
 #include "memory.h"
-#include "ctinfo.h"
 #include "gpukernel_comp_funs.h"
 
 #ifndef BEtest
@@ -359,8 +358,7 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **v
     */
     INDENT;
     INDENT;
-    fprintf (global.outfile,
-             "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");\n",
+    fprintf (global.outfile, "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");\n",
              funname);
     fprintf (global.outfile, "SAC_PF_BEGIN_CUDA_KNL ();\n");
     fprintf (global.outfile, "%s<<<1, 1>>>(", funname);
@@ -834,26 +832,26 @@ ICMCompileCUDA_DECL_KERNEL_ARRAY (char *var_NT, char *basetype, int sdim, int *s
     dim = DIM_NO_OFFSET (sdim);
 
     switch (sc) {
-        case C_aks:
+    case C_aks:
         INDENT;
-            DBUG_ASSERT (dim >= 0, "illegal dimension found!");
-            fprintf (global.outfile, "%s SAC_ND_A_FIELD( %s)[", basetype, var_NT);
-            for (i = 0; i < dim; i++) {
-                fprintf (global.outfile, "%d", shp[i]);
-                if (i != dim - 1) {
-                    fprintf (global.outfile, ", ");
-                }
+        DBUG_ASSERT (dim >= 0, "illegal dimension found!");
+        fprintf (global.outfile, "%s SAC_ND_A_FIELD( %s)[", basetype, var_NT);
+        for (i = 0; i < dim; i++) {
+            fprintf (global.outfile, "%d", shp[i]);
+            if (i != dim - 1) {
+                fprintf (global.outfile, ", ");
             }
-            fprintf (global.outfile, "];\n");
+        }
+        fprintf (global.outfile, "];\n");
 
-            INDENT;
-            fprintf (global.outfile, "SAC_ND_DECL__DESC( %s, )\n", var_NT);
+        INDENT;
+        fprintf (global.outfile, "SAC_ND_DECL__DESC( %s, )\n", var_NT);
 
-            ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
-            break;
-        default:
-            DBUG_UNREACHABLE ("Non-AKS array found in CUDA kernel!");
-            break;
+        ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
+        break;
+    default:
+        DBUG_UNREACHABLE ("Non-AKS array found in CUDA kernel!");
+        break;
     }
 
     DBUG_RETURN ();
@@ -884,19 +882,19 @@ ICMCompileCUDA_DECL_SHMEM_ARRAY (char *var_NT, char *basetype, int sdim, int *sh
     dim = DIM_NO_OFFSET (sdim);
 
     switch (sc) {
-        case C_aks:
+    case C_aks:
         INDENT;
-            DBUG_ASSERT (dim >= 0, "illegal dimension found!");
+        DBUG_ASSERT (dim >= 0, "illegal dimension found!");
 
-            for (i = 0; i < dim; i++) {
-                size *= shp[i];
-            }
-            fprintf (global.outfile, "__shared__ %s SAC_ND_A_FIELD( %s)[%d];\n", basetype,
-                     var_NT, size);
-            break;
-        default:
-            DBUG_UNREACHABLE ("Non-AKS shared memory array found in CUDA kernel!");
-            break;
+        for (i = 0; i < dim; i++) {
+            size *= shp[i];
+        }
+        fprintf (global.outfile, "__shared__ %s SAC_ND_A_FIELD( %s)[%d];\n", basetype,
+                 var_NT, size);
+        break;
+    default:
+        DBUG_UNREACHABLE ("Non-AKS shared memory array found in CUDA kernel!");
+        break;
     }
 
     DBUG_RETURN ();

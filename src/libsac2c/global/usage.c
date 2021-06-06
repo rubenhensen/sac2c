@@ -789,6 +789,7 @@ PrintCudaOptions (void)
             "                                             unfold them all again onto a pre-determined \n"
             "                                             shape and a \"rest\" dimension. \n"
             "                    (default: foldall)\n"
+            "\n"
             "    -gpu_mapping_nocompress\n"
             "                    Disable index space compression for mapping with-loops onto the GPU. \n"
             "\n");

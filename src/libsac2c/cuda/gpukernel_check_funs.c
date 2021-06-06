@@ -13,7 +13,7 @@
  *   N_spap node that represents the just parsed funcall and a location containing
  *   the location right after the last symbol parsed so far.
  *
- *   GKCHcheckGpuKernelPragma checks whether this is a legitimate nesting of 
+ *   GKCHcheckGpuKernelPragma checks whether this is a legitimate nesting of
  *   gpukernel function calls. The nesting has to adhere to the following bnf:
  *
  *   GridBlock( <num>, <gpukernel_fun_ap>)
@@ -55,167 +55,193 @@
 #include "memory.h"
 #include "str.h"
 
-
 /******************************************************************************
  ******************************************************************************
  **
  **  helper functions
  **/
 
-static node*
-checkNone(node* args, const char* name) {
+static node *
+checkNone (node *args, const char *name)
+{
     DBUG_ENTER ();
     DBUG_RETURN (args);
 }
 
-static node*
-checkNumArg(node* args, const char* name) {
-    node* arg;
+static node *
+checkNumArg (node *args, const char *name)
+{
+    node *arg;
     DBUG_ENTER ();
 
-    arg = EXPRS_EXPR(args);
+    arg = EXPRS_EXPR (args);
     if (NODE_TYPE (arg) != N_num) {
-        CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
-                                         " should be `%s ( <num>, <inner>)'", name, name);
+        CTIerrorLoc (NODE_LOCATION (arg),
+                     "wrong first argument to %s;"
+                     " should be `%s ( <num>, <inner>)'",
+                     name, name);
     }
 
-    args = EXPRS_NEXT(args);
+    args = EXPRS_NEXT (args);
     DBUG_RETURN (args);
 }
 
-static node*
-checkNumsArg(node* args, const char* name) {
-    node* arg, * exprs;
+static node *
+checkNumsArg (node *args, const char *name)
+{
+    node *arg, *exprs;
     DBUG_ENTER ();
 
-    arg = EXPRS_EXPR(args);
+    arg = EXPRS_EXPR (args);
     if (NODE_TYPE (arg) != N_array) {
-        CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
-                                         " should be `%s ( [<nums>], <inner>)'", name, name);
+        CTIerrorLoc (NODE_LOCATION (arg),
+                     "wrong first argument to %s;"
+                     " should be `%s ( [<nums>], <inner>)'",
+                     name, name);
     } else {
-        exprs = ARRAY_AELEMS(arg);
+        exprs = ARRAY_AELEMS (arg);
         while (exprs != NULL) {
-            arg = EXPRS_EXPR(exprs);
+            arg = EXPRS_EXPR (exprs);
             if (NODE_TYPE (arg) != N_num) {
-                CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
-                                                 " should be `%s ( [<nums>], <inner>)'", name, name);
+                CTIerrorLoc (NODE_LOCATION (arg),
+                             "wrong first argument to %s;"
+                             " should be `%s ( [<nums>], <inner>)'",
+                             name, name);
             }
-            exprs = EXPRS_NEXT(exprs);
+            exprs = EXPRS_NEXT (exprs);
         }
     }
 
-    args = EXPRS_NEXT(args);
+    args = EXPRS_NEXT (args);
     DBUG_RETURN (args);
 }
 
-static node*
-checkPermutationArg(node* args, const char* name) {
-    node* arg, * exprs;
-    DBUG_ENTER();
+static node *
+checkPermutationArg (node *args, const char *name)
+{
+    node *arg, *exprs;
+    DBUG_ENTER ();
 
-    checkNumsArg(args, name);
+    checkNumsArg (args, name);
 
     size_t length = 0;
-    arg   = EXPRS_EXPR(args);
-    exprs = ARRAY_AELEMS(arg);
+    arg = EXPRS_EXPR (args);
+    exprs = ARRAY_AELEMS (arg);
     while (exprs != NULL) {
         length++;
-        exprs = EXPRS_NEXT(exprs);
+        exprs = EXPRS_NEXT (exprs);
     }
 
-    bool* perm_hits = (bool*) MEMmalloc(sizeof(bool*) * length);
+    bool *perm_hits = (bool *)MEMmalloc (sizeof (bool *) * length);
     for (size_t i = 0; i < length; i++)
         perm_hits[i] = false;
 
-    exprs = ARRAY_AELEMS(arg);
+    exprs = ARRAY_AELEMS (arg);
     while (exprs != NULL) {
-        arg = EXPRS_EXPR(exprs);
-        int point_dim = NUM_VAL(arg);
-        if (point_dim < 0 || point_dim >= (int) length || perm_hits[point_dim])
-            CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
-                                             " should be `%s ( [<permutation>], <inner>)'", name, name);
+        arg = EXPRS_EXPR (exprs);
+        int point_dim = NUM_VAL (arg);
+        if (point_dim < 0 || point_dim >= (int)length || perm_hits[point_dim])
+            CTIerrorLoc (NODE_LOCATION (arg),
+                         "wrong first argument to %s;"
+                         " should be `%s ( [<permutation>], <inner>)'",
+                         name, name);
         perm_hits[point_dim] = true;
-        exprs = EXPRS_NEXT(exprs);
+        exprs = EXPRS_NEXT (exprs);
     }
 
-    MEMfree(perm_hits);
+    MEMfree (perm_hits);
 
-    args = EXPRS_NEXT(args);
-    DBUG_RETURN(args);
+    args = EXPRS_NEXT (args);
+    DBUG_RETURN (args);
 }
 
-static node*
-checkZONumsArg(node* args, const char* name) {
-    node* arg, * exprs;
+static node *
+checkZONumsArg (node *args, const char *name)
+{
+    node *arg, *exprs;
     DBUG_ENTER ();
 
-    arg = EXPRS_EXPR(args);
+    arg = EXPRS_EXPR (args);
     if (NODE_TYPE (arg) != N_array) {
-        CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
-                                         " should be `%s ( [0/1, ..., 0/1], <inner>)'", name, name);
+        CTIerrorLoc (NODE_LOCATION (arg),
+                     "wrong first argument to %s;"
+                     " should be `%s ( [0/1, ..., 0/1], <inner>)'",
+                     name, name);
     } else {
-        exprs = ARRAY_AELEMS(arg);
+        exprs = ARRAY_AELEMS (arg);
         while (exprs != NULL) {
-            arg = EXPRS_EXPR(exprs);
-            if ((NODE_TYPE (arg) != N_num) || ((NUM_VAL(arg) != 0) && (NUM_VAL(arg) != 1))) {
-                CTIerrorLoc(NODE_LOCATION (arg), "wrong first argument to %s;"
-                                                 " should be `%s ( [0/1, ..., 0/1], <inner>)'", name, name);
+            arg = EXPRS_EXPR (exprs);
+            if ((NODE_TYPE (arg) != N_num)
+                || ((NUM_VAL (arg) != 0) && (NUM_VAL (arg) != 1))) {
+                CTIerrorLoc (NODE_LOCATION (arg),
+                             "wrong first argument to %s;"
+                             " should be `%s ( [0/1, ..., 0/1], <inner>)'",
+                             name, name);
             }
-            exprs = EXPRS_NEXT(exprs);
+            exprs = EXPRS_NEXT (exprs);
         }
     }
 
-    args = EXPRS_NEXT(args);
+    args = EXPRS_NEXT (args);
     DBUG_RETURN (args);
 }
 
 void
-checkArgsLength(node* arg, const size_t length, const char* name) {
-    node* exprs;
+checkArgsLength (node *arg, const size_t length, const char *name)
+{
+    node *exprs;
     DBUG_ENTER ();
 
-    exprs = ARRAY_AELEMS(arg);
+    exprs = ARRAY_AELEMS (arg);
     while (exprs != NULL) {
-        arg = EXPRS_EXPR(exprs);
+        arg = EXPRS_EXPR (exprs);
         if (exprs == NULL)
-            CTIerrorLoc(NODE_LOCATION(arg), "wrong first argument to %s: too short; "
-                                            "The list should be of length %zu", name, length);
-        exprs = EXPRS_NEXT(exprs);
+            CTIerrorLoc (NODE_LOCATION (arg),
+                         "wrong first argument to %s: too short; "
+                         "The list should be of length %zu",
+                         name, length);
+        exprs = EXPRS_NEXT (exprs);
     }
     if (exprs != NULL)
-        CTIerrorLoc(NODE_LOCATION(arg), "wrong first argument to %s: too long; "
-                                        "The list should be of length %zu", name, length);
+        CTIerrorLoc (NODE_LOCATION (arg),
+                     "wrong first argument to %s: too long; "
+                     "The list should be of length %zu",
+                     name, length);
 
     DBUG_RETURN ();
 }
 
 void
-checkDimensionSettings(node* gridDims_node, size_t dims) {
-    DBUG_ENTER();
+checkDimensionSettings (node *gridDims_node, size_t dims)
+{
+    DBUG_ENTER ();
 
-    size_t gridDims  = (size_t) NUM_VAL(gridDims_node);
+    size_t gridDims = (size_t)NUM_VAL (gridDims_node);
     size_t blockDims = dims - gridDims;
 
-
     // < 0 check is not necessary, as we have unsigned numbers
-    if (gridDims > (size_t) global.config.cuda_dim_grid)
-        CTIerrorLoc(NODE_LOCATION(gridDims_node),
-                    "Number of grid dimensions too high! Should be 0-%i, currently %zu",
-                    global.config.cuda_dim_grid, gridDims);
+    if (gridDims > (size_t)global.config.cuda_dim_grid)
+        CTIerrorLoc (NODE_LOCATION (gridDims_node),
+                     "Number of grid dimensions too high! Should be 0-%i, currently %zu",
+                     global.config.cuda_dim_grid, gridDims);
     // < 0 check is not necessary, as we have unsigned numbers
-    if (blockDims > (size_t) global.config.cuda_dim_block)
-        CTIerrorLoc(NODE_LOCATION(gridDims_node),
-                    "Number of block dimensions too high! Should be 0-%i, currently %zu (%zu - %zu)",
-                    global.config.cuda_dim_block, blockDims, dims, gridDims);
+    if (blockDims > (size_t)global.config.cuda_dim_block)
+        CTIerrorLoc (NODE_LOCATION (gridDims_node),
+                     "Number of block dimensions too high! Should be 0-%i, currently %zu "
+                     "(%zu - %zu)",
+                     global.config.cuda_dim_block, blockDims, dims, gridDims);
 
-    DBUG_RETURN();
+    DBUG_RETURN ();
 }
 
 void
-checkLbZero(char* lb_str, node* loc, char* name, size_t dim) {
-    if (!STReq(lb_str, "0"))
-        CTIerrorLoc(NODE_LOCATION(loc), "%s cannot be executed here; "
-                                        "lowerbound is not zero for dimension %zu", name, dim);
+checkLbZero (char *lb_str, node *loc, char *name, size_t dim)
+{
+    if (!STReq (lb_str, "0"))
+        CTIerrorLoc (NODE_LOCATION (loc),
+                     "%s cannot be executed here; "
+                     "lowerbound is not zero for dimension %zu",
+                     name, dim);
 }
 
 /**<!--*********************************************************************-->
@@ -223,7 +249,7 @@ checkLbZero(char* lb_str, node* loc, char* name, size_t dim) {
  * @fn void GKCHcheckGpuKernelPragma (node *spap, struct location loc)
  *
  * @param spap - N_spap node representing scanned/parsed function call
- * @param loc - the location of the scanner/parser wight after the funcall 
+ * @param loc - the location of the scanner/parser wight after the funcall
  *
  * @brief expects an N_spap node which contains a nesting of function calls
  *        according to the syntax of the pragma gpukernel. It checks validity
@@ -234,54 +260,62 @@ checkLbZero(char* lb_str, node* loc, char* name, size_t dim) {
  ******************************************************************************/
 
 void
-GKCHcheckGpuKernelPragma(node* spap, struct location loc) {
+GKCHcheckGpuKernelPragma (node *spap, struct location loc)
+{
     DBUG_ENTER ();
 
     DBUG_ASSERT (spap != NULL, "NULL pointer for funcall in gpukernel pragma!");
-    DBUG_ASSERT (NODE_TYPE(spap) == N_spap, "non N_spap funcall in gpukernel pragma!");
+    DBUG_ASSERT (NODE_TYPE (spap) == N_spap, "non N_spap funcall in gpukernel pragma!");
 
-    if (!STReq(SPAP_NAME (spap), "GridBlock")) {
-        CTIerrorLoc(NODE_LOCATION (spap), "expected `GridBlock' found `%s'",
-                    SPAP_NAME (spap));
+    if (!STReq (SPAP_NAME (spap), "GridBlock")) {
+        CTIerrorLoc (NODE_LOCATION (spap), "expected `GridBlock' found `%s'",
+                     SPAP_NAME (spap));
     }
 
     while (spap != NULL) {
         if (NODE_TYPE (spap) == N_spid) {
-            if (!STReq(SPID_NAME(spap), "Gen")) {
-                CTIerrorLoc(NODE_LOCATION (spap), "expected 'Gen`"
-                                                  " found `%s'", SPID_NAME(spap));
+            if (!STReq (SPID_NAME (spap), "Gen")) {
+                CTIerrorLoc (NODE_LOCATION (spap),
+                             "expected 'Gen`"
+                             " found `%s'",
+                             SPID_NAME (spap));
             }
             spap = NULL;
-#define WLP(fun, args, checkfun)                                                     \
-        } else if (STReq (SPAP_NAME (spap), #fun)) {                                 \
-            if (SPAP_ARGS (spap) == NULL) {                                          \
-                CTIerrorLoc (loc,"missing argument in `%s' ()", #fun);               \
-                spap = NULL;                                                         \
-            } else {                                                                 \
-                spap = GKCHcheck ## fun (SPAP_ARGS (spap));                          \
-                if (spap == NULL) {                                                  \
-                    CTIerrorLoc (loc,"missing inner gpukernel within `%s'", #fun);   \
-                } else {                                                             \
-                    if (EXPRS_NEXT (spap) != NULL) {                                 \
-                        CTIerrorLoc (NODE_LOCATION (EXPRS_EXPR (EXPRS_NEXT (spap))), \
-                                     "superfluous argument within `%s'", #fun);      \
-                    }                                                                \
-                    spap = EXPRS_EXPR (spap);                                        \
-                    if ((NODE_TYPE (spap) != N_spap)                                 \
-                       && (NODE_TYPE (spap) != N_spid)) {                            \
-                    CTIerrorLoc (NODE_LOCATION (spap), "missing inner gpukernel"     \
-                                                       " within `%s'", #fun);        \
-                    }                                                                \
-                }                                                                    \
-            }
+#define WLP(fun, args, checkfun)                                                         \
+    }                                                                                    \
+    else if (STReq (SPAP_NAME (spap), #fun))                                             \
+    {                                                                                    \
+        if (SPAP_ARGS (spap) == NULL) {                                                  \
+            CTIerrorLoc (loc, "missing argument in `%s' ()", #fun);                      \
+            spap = NULL;                                                                 \
+        } else {                                                                         \
+            spap = GKCHcheck##fun (SPAP_ARGS (spap));                                    \
+            if (spap == NULL) {                                                          \
+                CTIerrorLoc (loc, "missing inner gpukernel within `%s'", #fun);          \
+            } else {                                                                     \
+                if (EXPRS_NEXT (spap) != NULL) {                                         \
+                    CTIerrorLoc (NODE_LOCATION (EXPRS_EXPR (EXPRS_NEXT (spap))),         \
+                                 "superfluous argument within `%s'", #fun);              \
+                }                                                                        \
+                spap = EXPRS_EXPR (spap);                                                \
+                if ((NODE_TYPE (spap) != N_spap) && (NODE_TYPE (spap) != N_spid)) {      \
+                    CTIerrorLoc (NODE_LOCATION (spap),                                   \
+                                 "missing inner gpukernel"                               \
+                                 " within `%s'",                                         \
+                                 #fun);                                                  \
+                }                                                                        \
+            }                                                                            \
+        }
 
 // @formatter:off
 #include "gpukernel_funs.mac"
 #undef WLP
-// @formatter:on
+            // @formatter:on
         } else {
-            CTIerrorLoc(NODE_LOCATION (spap), "expected gpukernel function,"
-                                              " found `%s'", SPAP_NAME (spap));
+            CTIerrorLoc (NODE_LOCATION (spap),
+                         "expected gpukernel function,"
+                         " found `%s'",
+                         SPAP_NAME (spap));
             spap = NULL;
         }
     }
@@ -312,18 +346,16 @@ GKCHcheckGpuKernelPragma(node* spap, struct location loc) {
  **/
 
 // TODO: check inner Pragma as well?
-#define WLP(fun, nargs, checkfun)   \
-node *                              \
-GKCHcheck ## fun (node *args)       \
-{                                   \
-    DBUG_ENTER ();                  \
-    args = checkfun (args, #fun);   \
-    DBUG_RETURN (args);             \
-}
+#define WLP(fun, nargs, checkfun)                                                        \
+    node *GKCHcheck##fun (node *args)                                                    \
+    {                                                                                    \
+        DBUG_ENTER ();                                                                   \
+        args = checkfun (args, #fun);                                                    \
+        DBUG_RETURN (args);                                                              \
+    }
 
 #include "gpukernel_funs.mac"
 
 #undef WLP
-
 
 #undef DBUG_PREFIX
