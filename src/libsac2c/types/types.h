@@ -731,7 +731,10 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (RC_METHOD, rc_method, char *, str)                                     \
     DEF_RESOURCE (CUDA_ALLOC, cuda_alloc, char *, str)                                   \
     DEF_RESOURCE (CUDA_ARCH, cuda_arch, char *, str)                                     \
-    DEF_RESOURCE (CUDA_1D_BLOCK_X, cuda_1d_block_x, int, num)                            \
+    DEF_RESOURCE (CUDA_OPT_THREADS, cuda_opt_threads, int, num)                          \
+    DEF_RESOURCE (CUDA_OPT_BLOCKS, cuda_opt_blocks, int, num)                            \
+    DEF_RESOURCE (CUDA_1D_BLOCK_SM, cuda_1d_block_sm, int, num)                          \
+    DEF_RESOURCE (CUDA_1D_BLOCK_LG, cuda_1d_block_lg, int, num)                          \
     DEF_RESOURCE (CUDA_2D_BLOCK_X, cuda_2d_block_x, int, num)                            \
     DEF_RESOURCE (CUDA_2D_BLOCK_Y, cuda_2d_block_y, int, num)                            \
     DEF_RESOURCE (CUDA_3D_THREAD_Y, cuda_3d_thread_y, int, num)                          \
@@ -1221,27 +1224,6 @@ typedef struct ELEMLIST elemlist;
 typedef struct ELEMQUEUE elemqueue;
 typedef struct LUBINFO lubinfo;
 typedef struct COMPINFO compinfo;
-
-/* typdef for CUDA block sizes and other parameters */
-#define CUDA_OPTIONS_ALL                                                                 \
-    CUDA_OPTION (optimal_threads, int, num)                                              \
-    CUDA_OPTION (optimal_blocks, int, num)                                               \
-    CUDA_OPTION (cuda_1d_block_x, int, num)                                              \
-    CUDA_OPTION (cuda_1d_block_large, int, num)                                          \
-    CUDA_OPTION (cuda_1d_block_small, int, num)                                          \
-    CUDA_OPTION (cuda_2d_block_x, int, num)                                              \
-    CUDA_OPTION (cuda_2d_block_y, int, num)                                              \
-    CUDA_OPTION (cuda_max_x_grid, unsigned int, num)                                     \
-    CUDA_OPTION (cuda_max_yz_grid, unsigned int, num)                                    \
-    CUDA_OPTION (cuda_max_xy_block, unsigned int, num)                                   \
-    CUDA_OPTION (cuda_max_z_block, unsigned int, num)                                    \
-    CUDA_OPTION (cuda_max_threads_block, unsigned int, num)
-
-typedef struct {
-#define CUDA_OPTION(name, type, attr) type name;
-    CUDA_OPTIONS_ALL
-#undef CUDA_OPTION
-} cuda_options_t;
 
 /* typedef enum for CUDA Async Modes */
 typedef enum cuda_async_mode_e {

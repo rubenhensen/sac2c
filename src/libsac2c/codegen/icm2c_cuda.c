@@ -38,7 +38,7 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, unsigned int vararg_cnt, char **var
     fprintf (global.outfile, "__global__ void");
     if (global.optimize.dolb) {
         fprintf (global.outfile, " __launch_bounds__(%d, %d) ",
-                 global.cuda_options.optimal_threads, global.cuda_options.optimal_blocks);
+                 global.config.cuda_opt_threads, global.config.cuda_opt_blocks);
     }
     fprintf (global.outfile, " %s(", funname);
 

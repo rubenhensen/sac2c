@@ -892,7 +892,6 @@ dispatch (node *spap, gpukernelres_t *res, unsigned int bnum, char **bounds)
          * correct number of arguments. We use the macros defined above for this. */                       \
         res = GKCOcomp##fun (ARGS (nargs) res);                                          \
     }
-// @formatter:off
 #include "gpukernel_funs.mac"
 
 #undef WLP
@@ -902,7 +901,6 @@ dispatch (node *spap, gpukernelres_t *res, unsigned int bnum, char **bounds)
 #undef SKIPS
 #undef SKIP0
 #undef SKIP1
-        // @formatter:on
 
         // Finally, if none of the cases above were fired, we must have an undefined macro.
     else {
@@ -966,7 +964,6 @@ dispatchInv (node *spap, char **bounds, gpukernelres_t *res)
          * this. */                                                                      \
         res = dispatchInv (EXPRS_EXPR (SKIPS (nargs) (SPAP_ARGS (spap))), bounds, res);  \
     }
-// @formatter:off
 #include "gpukernel_funs.mac"
 
 #undef WLP
@@ -976,7 +973,6 @@ dispatchInv (node *spap, char **bounds, gpukernelres_t *res)
 #undef SKIPS
 #undef SKIP0
 #undef SKIP1
-        // @formatter:on
 
         // Finally, if none of the cases above were fired, we must have an undefined macro.
     else {

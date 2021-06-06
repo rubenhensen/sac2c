@@ -307,10 +307,8 @@ GKCHcheckGpuKernelPragma (node *spap, struct location loc)
             }                                                                            \
         }
 
-// @formatter:off
 #include "gpukernel_funs.mac"
 #undef WLP
-            // @formatter:on
         } else {
             CTIerrorLoc (NODE_LOCATION (spap),
                          "expected gpukernel function,"

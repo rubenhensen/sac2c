@@ -501,7 +501,7 @@ ACPjingGeneratePragma (bool ext, info *inner)
             inner = ACPmakeGridBlock (0, inner);
             break;
         case 1:
-            inner = ACPmakeSplitLast (global.config.cuda_1d_block_x, inner);
+            inner = ACPmakeSplitLast (global.config.cuda_1d_block_sm, inner);
             inner = ACPmakeGridBlock (1, inner);
             break;
         case 2:
