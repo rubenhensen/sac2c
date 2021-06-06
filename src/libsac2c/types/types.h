@@ -734,6 +734,7 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (CUDA_1D_BLOCK_X, cuda_1d_block_x, int, num)                            \
     DEF_RESOURCE (CUDA_2D_BLOCK_X, cuda_2d_block_x, int, num)                            \
     DEF_RESOURCE (CUDA_2D_BLOCK_Y, cuda_2d_block_y, int, num)                            \
+    DEF_RESOURCE (CUDA_3D_THREAD_Y, cuda_3d_thread_y, int, num)                          \
     DEF_RESOURCE (CUDA_MAX_X_GRID, cuda_max_x_grid, int, num)                            \
     DEF_RESOURCE (CUDA_MAX_Y_GRID, cuda_max_y_grid, int, num)                            \
     DEF_RESOURCE (CUDA_MAX_Z_GRID, cuda_max_z_grid, int, num)                            \

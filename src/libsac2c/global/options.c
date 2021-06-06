@@ -747,6 +747,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("cuda_mapping_strategy");
 
+    ARGS_FLAG("cuda_mapping_nocompress", global.gpu_mapping_compress = FALSE);
+
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
      */

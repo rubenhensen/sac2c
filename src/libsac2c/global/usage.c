@@ -781,13 +781,16 @@ PrintCudaOptions (void)
             "                    kernels. Options are: \n"
             "                      jings_method         : Use the original heuristics Jing used in his\n"
             "                                             implementation of mappings with-loops to the\n"
-            "                                             GPU. \n"
+            "                                             GPU. Note that -gpu_mapping_nocompress should\n"
+            "                                             be set manually to have exactly Jing's method.\n"
             "                      jings_method_ext     : Similar to Jing's method, but also works for\n"
             "                                             higher dimensionalities. \n"
             "                      foldall              : First fold all dimensions together, and then\n"
             "                                             unfold them all again onto a pre-determined \n"
             "                                             shape and a \"rest\" dimension. \n"
             "                    (default: foldall)\n"
+            "    -gpu_mapping_nocompress\n"
+            "                    Disable index space compression for mapping with-loops onto the GPU. \n"
             "\n");
 
     DBUG_RETURN ();
