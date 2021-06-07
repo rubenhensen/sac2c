@@ -1,14 +1,3 @@
-/* FIXME:
- *  This optimization apparently fails to catch single-trip WLs,
- *  which arise from generator expressions of the form:
- *
- *         ( [:int] <= iv < [:int] ) ...
- *
- *  Adding this case would be a good thing. At present, WLSIMP
- *  does it, but it really belongs here, according to the
- *  wisdom of the ages (aka Bodo).
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -28,6 +17,7 @@
 #include "traverse.h"
 #include "constants.h"
 #include "new_types.h"
+#include "new_typecheck.h"
 #include "user_types.h"
 #include "shape.h"
 #include "math_utils.h"
@@ -705,9 +695,11 @@ isWithidVec (node *ivoroffset, node *partn)
  *
  * description:
  *   Checks if this modarray-WL can be unrolled.
- *   Multiple N_part nodes, which are not the identity of the base array,
- *   may be unrolled simultaneously. These N_part nodes are marked in
- *   NPART_COPY
+ *   In contrast to genarray, we neither need to know the shape of the result
+ *   as we do have a template, nor do we require the total sum of all elements
+ *   to be smaller than wlurnum. Here, it suffices if the sum of elements of
+ *   all non-copy partitions are smaller than wlurnum.
+ *   We mark all copy partitions as ISCOPY.
  *
  ******************************************************************************/
 
@@ -729,7 +721,7 @@ CheckUnrollModarray (node *wln, node *lhs, info *arg_info)
     partn = WITH_PART (wln);
     elts = 0;
 
-    ok = (TYisAKS (IDS_NTYPE (lhs)) || TYisAKV (IDS_NTYPE (lhs)));
+    ok = TRUE;
 
     while (ok && (partn != NULL)) {
         genn = PART_GENERATOR (partn);
@@ -776,10 +768,12 @@ CheckUnrollModarray (node *wln, node *lhs, info *arg_info)
         partn = PART_NEXT (partn);
     }
 
+    DBUG_PRINT ("   modarray: %d indices in non-copy partitions; maxwlur %d",
+                elts, global.wlunrnum);
     if (ok && (elts > global.wlunrnum)) {
         ok = FALSE;
         if (elts <= 32) {
-            CTInote ("WLUR: -maxwlur %d would unroll fold with-loop", elts);
+            CTInote ("WLUR: -maxwlur %d would unroll modarray with-loop", elts);
         }
     }
 
@@ -819,8 +813,10 @@ FinalizeModarray (node *bodycode, node *withop, node *lhs, info *arg_info)
  *
  * description:
  *   Checks whether the given genarray-wl can be unrolled.
- *   Unrolling of arrays is done if number of array elements is smaller
- *   than wlunrnum.
+ *   This requires:
+ *   a) the shape expression to be AKV
+ *   b) the product of shape to be <= maxwlur
+ *   c) a defaultexpression to exist
  *
  ******************************************************************************/
 
@@ -829,26 +825,38 @@ CheckUnrollGenarray (node *wln, node *lhs, info *arg_info)
 {
     bool ok;
     long long length;
+    constant *shp;
+    shape *shshp;
+    node *def;
 
     DBUG_ENTER ();
 
-    if (TYisAKS (IDS_NTYPE (lhs)) || TYisAKV (IDS_NTYPE (lhs))) {
-        length = SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)));
-    } else {
-        length = -1;
-    }
+    ok = TRUE;
+    shp = COaST2Constant (GENARRAY_SHAPE (WITH_WITHOP (wln)));
 
-    /*
-     * Everything constant?
-     */
-    ok = (length >= 0);
+    if (shp!=NULL) {
+        DBUG_PRINT ("   genarray: shape is const");
+        shshp = COconstant2Shape (shp);
+        length = SHgetUnrLen (shshp);
+        shp = COfreeConstant (shp);
+        shshp = SHfreeShape (shshp);
 
-    if (ok && (length > global.wlunrnum)) {
-        ok = FALSE;
-        if (length <= 32) {
-            CTInote ("WLUR: -maxwlur %lld would unroll genarray with-loop", length);
+        DBUG_PRINT ("   genarray: %lld elements; maxwlur %d", length, global.wlunrnum);
+        if (length > global.wlunrnum) {
+            ok = FALSE;
+            if (length <= 32) {
+                CTInote ("WLUR: -maxwlur %lld would unroll genarray with-loop", length);
+            }
         }
+    } else {
+        DBUG_PRINT ("   genarray: shape is not const");
+        ok = FALSE;
     }
+    def = GENARRAY_DEFAULT (WITH_WITHOP (wln));
+    DBUG_PRINT ("   genarray: default expression %s",
+                 def != NULL ? "exists" : "does not exist");
+
+    ok = ok && (def != NULL);
 
     DBUG_RETURN (ok);
 }
@@ -861,61 +869,168 @@ CheckUnrollGenarray (node *wln, node *lhs, info *arg_info)
  *
  * description:
  *   Adds final code to the unrolled with-loop for the genarray op.
+ *   This indeed is more challenging than what one may think.
+ *   The main challenge is that we want to be able to handle cases
+ *   where the shape expression is constant, but the overall array
+ *   may still be aud! This means that we have to create the "template"
+ *   array from the default element and the shape expression.
+ *   Assuming     genarray( [s0, ..., sn], def_id) ;
+ *   we distinguish 3 cases:
+ *
+ *   1) the straight-forward case is an array with the frameshape
+ *      [s0, ..., sn] whose elements are the default element, i.e.:
+ *
+ *         tmp1 = [def_id, ..., def_id];              // prod(si) many def_id
+ *         <array> = _type_conv_( <lhs-type>, tmp1);
+ *
+ *      The type conv guarantees that we are not loosing potential type
+ *      information gained from partitions.
+ *
+ *   2) if the shape (frameshape) contains a zero, we cannot use the same code
+ *      as in 1), since we would loose the inner shape information 
+ *      completely in case def_id is not AKS. Instead, we generate
+ *
+ *         tmp1 = [:<basetype>];
+ *         tmp2 = [s0, ..., sn];
+ *         tmp3 = _shape_A_ (def_id);
+ *         tmp4 = _cat_VxV_(tmp2, tmp3);
+ *         tmp5 = _reshape_VxA_(tmp4, tmp1);
+ *         <array> = _type_conv_( <lhs-type>, tmp5);
+ *
+ *   3) If the frameshape is [:int] we have the same problem. While we could
+ *      use the same code as in 2), we can short-cut the code into:
+ *         <array> = _type_conv_( <lhs-type>, def_id);
  *
  ******************************************************************************/
 
 static node *
 FinalizeGenarray (node *bodycode, node *withop, node *lhs, info *arg_info)
 {
-    ntype *type;
-    simpletype btype;
-    int length;
-    node *shp, *shpavis;
-    node *vect, *vectavis;
-    node *vardecs = NULL;
-    node *reshape;
-    node *res;
+    node *shp, *def, *expr, *avis, *vardecs=NULL, *assigns=NULL, *res;
+    node *elems, *tmp1, *tmp2, *tmp3, *tmp4;
+    ntype *def_type, *lhs_type, *expr_type;
+    constant *shp_co;
+    shape *shp_sh;
+    long long num_elems;
+    int i;
 
     DBUG_ENTER ();
 
+    shp = GENARRAY_SHAPE (withop);
+    shp_co = COaST2Constant (GENARRAY_SHAPE (withop));
+    shp_sh = COconstant2Shape (shp_co);
+    def = GENARRAY_DEFAULT (withop);
+    def_type = ID_NTYPE (def);
+    num_elems = SHgetUnrLen (shp_sh);
+    lhs_type = IDS_NTYPE (lhs);
+
     /*
-     * Prepend:
-     *
-     * <tmp1> = <shape>;
-     * <tmp2> = [0,...,0];
-     * <array> = _reshape_( <tmp1>, <tmp2>)
+     * NB: WLSIMP elides all generators and even WLs with empty shape.
+     *     This means that case 2) in principle is redundant!
+     *     However, WLSIMP can be turned off and WLT does not like
+     *     empty WLs. WLUR can not be turned off entirely just
+     *     to ensure WLT compatability! Therefore, we leave case 2)
+     *     in here.
      */
-    type = IDS_NTYPE (lhs);
-    btype = TYgetSimpleType (TYgetScalar (type));
-    length = SHgetUnrLen (TYgetShape (type));
+    if (num_elems == 0) {
+        DBUG_PRINT ("frameshape contains 0 components: building variant 2");
+        /*
+         * Version 2:
+         *    tmp1 = [:<basetype>];
+         *    tmp2 = [s0, ..., sn];
+         *    tmp3 = _shape_A_ (def_id);
+         *    tmp4 = _cat_VxV_(tmp2, tmp3);
+         *    tmp5 = _reshape_VxA_(tmp4, tmp1);
+         *    <array> = _type_conv_( <lhs-type>, tmp5);
+         */
+        expr = TBmakeArray (TYmakeAKS (
+                                TYmakeSimpleType (TUgetBaseSimpleType (def_type)),
+                                SHmakeShape (0)),
+                            SHcreateShape (1, 0),
+                            NULL);
+        avis = TBmakeAvis (TRAVtmpVar (), NTCnewTypeCheck_Expr (expr));
+        vardecs = TBmakeVardec (avis, vardecs);
+        assigns = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), expr), NULL);
+        tmp1 = TBmakeId (avis);
 
-    shp = SHshape2Array (TYgetShape (type));
-    shpavis = TBmakeAvis (TRAVtmpVar (),
-                          TYmakeAKS (TYmakeSimpleType (T_int),
-                                     SHcreateShape (1, SHgetDim (TYgetShape (type)))));
-    vardecs = TBmakeVardec (shpavis, vardecs);
+        expr = DUPdoDupTree (shp);
+        avis = TBmakeAvis (TRAVtmpVar (), TYmakeAKV (TYmakeSimpleType (T_int), shp_co));
+        vardecs = TBmakeVardec (avis, vardecs);
+        assigns = TCappendAssign (
+                      assigns,
+                      TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), expr), NULL));
+        tmp2 = TBmakeId (avis);
 
-    if (btype == T_hidden) {
-        vect = TCcreateZeroNestedVector (length, TYgetScalar (type));
-        vectavis = TBmakeAvis (TRAVtmpVar (),
-                               TYmakeAKS (TYgetScalar (type), SHcreateShape (1, length)));
+        expr = TCmakePrf1 (F_shape_A, DUPdoDupNode (def));
+        expr_type = NTCnewTypeCheck_Expr (expr);
+        avis = TBmakeAvis (TRAVtmpVar (), TYgetProductMember (expr_type, 0));
+        expr_type = TYfreeTypeConstructor (expr_type);
+        vardecs = TBmakeVardec (avis, vardecs);
+        assigns = TCappendAssign (
+                      assigns,
+                      TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), expr), NULL));
+        tmp3 = TBmakeId (avis);
+
+        expr = TCmakePrf2 (F_cat_VxV, tmp2, tmp3);
+        expr_type = NTCnewTypeCheck_Expr (expr);
+        avis = TBmakeAvis (TRAVtmpVar (), TYgetProductMember (expr_type, 0));
+        expr_type = TYfreeTypeConstructor (expr_type);
+        vardecs = TBmakeVardec (avis, vardecs);
+        assigns = TCappendAssign (
+                      assigns,
+                      TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), expr), NULL));
+        tmp4 = TBmakeId (avis);
+
+        expr = TCmakePrf2 (F_reshape_VxA, tmp4, tmp1);
+        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (lhs_type));
+        vardecs = TBmakeVardec (avis, vardecs);
+        assigns = TCappendAssign (
+                      assigns,
+                      TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), expr), NULL));
+        res = TBmakeId (avis);
+        shp_sh = SHfreeShape (shp_sh);
+
+    } else if (SHgetDim (shp_sh) > 0) {
+        DBUG_PRINT ("frameshape contains %lld components: building variant 1", num_elems);
+        /*
+         * Version 1:
+         *    tmp1 = [def_id, ..., def_id];
+         *    <array> = _type_conv_( <lhs-type>, tmp1);
+         */
+
+        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (lhs_type));
+        vardecs = TBmakeVardec (avis, vardecs);
+
+        elems = NULL;
+        for (i = 0; i < num_elems; i++) {
+            elems = TBmakeExprs ( DUPdoDupNode (def), elems);
+        }
+        assigns = TBmakeAssign (
+                      TBmakeLet (
+                          TBmakeIds (avis, NULL),
+                          TBmakeArray ( TYeliminateAKV (def_type), shp_sh, elems)),
+                      NULL);
+        res = TBmakeId (avis);
+        shp_co = COfreeConstant (shp_co);
+
     } else {
-        vect = TCcreateZeroVector (length, btype);
-        vectavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (btype),
-                                                         SHcreateShape (1, length)));
-    }
-    vardecs = TBmakeVardec (vectavis, vardecs);
-
-    reshape = TCmakePrf2 (F_reshape_VxA, TBmakeId (shpavis), TBmakeId (vectavis));
-
-    if (TYisAKV (type)) {
-        IDS_NTYPE (lhs) = TYeliminateAKV (type);
-        type = TYfreeType (type);
+        DBUG_PRINT ("frameshape is [:int]: building variant 3");
+        /*
+         * Version 3:
+         *    <array> = _type_conv_( <lhs-type>, def_id);
+         */
+        assigns = NULL;
+        res = DUPdoDupNode (def);
+        shp_sh = SHfreeShape (shp_sh);
+        shp_co = COfreeConstant (shp_co);
     }
 
-    res = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs), reshape), bodycode);
-    res = TBmakeAssign (TBmakeLet (TBmakeIds (vectavis, NULL), vect), res);
-    res = TBmakeAssign (TBmakeLet (TBmakeIds (shpavis, NULL), shp), res);
+    res = TBmakeAssign (
+              TBmakeLet (
+                  DUPdoDupNode (lhs),
+                  TCmakePrf2 (F_type_conv, TBmakeType (TYcopyType (lhs_type)), res)),
+              bodycode);
+    res = TCappendAssign (assigns, res);
 
     INFO_FUNDEF (arg_info) = TCaddVardecs (INFO_FUNDEF (arg_info), vardecs);
 

@@ -41,15 +41,15 @@ make check
 after the sac2c compiler has been built.   To run tests in parallel, which
 can become important if the number of tests increases, use
 ```sh
-ctests -j5
+ctest -j5
 ```
 
 For each test, cmake generates a call to a script
-`<cmake-build-dir>/tests/scripts/run.sh <sac-test-file> <path-to-test-dir>`.
+`<cmake-build-dir>/tests/scripts/run.sh <sac-test-file> <cmake-build-dir>/tests`.
 For debugging purposes, this process can be done manually:
 ```
-cd build/tests
-./scripts/run.sh test-trivial.sac .
+cd build/tests/<rel-path-to-test>
+<cmake-build-dir>/tests/scripts/run.sh test-trivial.sac <cmake-build-dir>/tests
 ```
 To inspect the makefile generated for the test, see `<sac-filename>.mk`
 file, e.g. for the above example that would be `test-trivial.sac.mk`.
@@ -58,6 +58,11 @@ file, e.g. for the above example that would be `test-trivial.sac.mk`.
 
 To add a new unit test add a file that is named `test-\*.sac` in tests
 directory.
+Thereafter, make sure you run
+```sh
+make rebuild_cache
+```
+before triggering new checks!
 
 ## A structure of a unit test
 
