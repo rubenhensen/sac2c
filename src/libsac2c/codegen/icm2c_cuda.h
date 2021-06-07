@@ -13,10 +13,6 @@ extern void ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt,
 extern void ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vararg);
 extern void ICMCompileCUDA_GLOBALFUN_RET (char *funname, unsigned int vararg_cnt, char **vararg);
 
-extern void ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim,
-                                  int wlids_dim, char *iv_NT, char *hasstepwith);
-extern void ICMCompileCUDA_WLIDXS (char *wlidxs_NT, int wlidxs_NT_dim, char *array_NT,
-                                   int array_dim, char **var_ANY);
 extern void ICMCompileCUDA_THREADIDX (char *to_NT, int dim, int dim_pos);
 extern void ICMCompileCUDA_BLOCKDIM (char *to_NT, int dim, int dim_pos);
 extern void ICMCompileCUDA_WL_ASSIGN (char *val_NT, int val_sdim, char *to_NT,

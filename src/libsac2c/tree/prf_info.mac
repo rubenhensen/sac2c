@@ -1063,12 +1063,6 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NTCCTprf_tobool_S, COtobool, COMPp
        COMPprfCondWLAssign, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (cuda_wlids, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_dummy, NULL, COMPprfCUDAWLIds,
-       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
-
-  PRF (cuda_wlidxs, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_dummy, NULL, COMPprfCUDAWLIdxs,
-       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
-
   PRF (cuda_thread_space, (PA_x, PA_x, PA_x), 0, XXX, NTCCTprf_dummy, NULL,
        COMPprfCUDAThreadSpace, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
        NULL, NULL),

@@ -1296,16 +1296,6 @@ ICM_DEF( CUDA_BLOCKDIM, ICM_TRACE_NONE)
 ICM_END( CUDA_BLOCKDIM, ( to_NT, dim, dim_pos))
 #endif
 
-#if defined(CUDA_WLIDXS) || defined(ICM_ALL)
-ICM_DEF( CUDA_WLIDXS, ICM_TRACE_NONE)
-  ICM_NT( wlidxs_NT)
-  ICM_INT( wlidxs_NT_dim)
-  ICM_NT( array_NT)
-  ICM_INT( array_dim)
-  ICM_VARANY( (array_dim), var_ANY)
-ICM_END( CUDA_WLIDXS, (wlidxs_NT, wlidxs_NT_dim, array_NT, array_dim, var_ANY))
-#endif
-
 #if defined(CUDA_WL_ASSIGN) || defined(ICM_ALL)
 ICM_DEF( CUDA_WL_ASSIGN, ICM_TRACE_NONE)
   ICM_NT( val_NT)

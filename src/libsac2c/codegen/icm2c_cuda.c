@@ -413,56 +413,6 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **v
 /******************************************************************************
  *
  * function:
- *   void ICMCompileCUDA_WLIDXS( char *wlidxs_NT, char *array_NT,
- *                               int array_dim, char **var_ANY)
- *
- * description:
- *
- ******************************************************************************/
-void
-ICMCompileCUDA_WLIDXS (char *wlidxs_NT, int wlidxs_NT_dim, char *array_NT, int array_dim,
-                       char **var_ANY)
-{
-    DBUG_ENTER ();
-
-#define CUDA_WLIDXS
-#include "icm_comment.c"
-#include "icm_trace.c"
-#undef CUDA_WLIDXS
-
-    fprintf (global.outfile, "WLIDXS         WLIDXS\n\n");
-
-    if (array_dim == 1) {
-        INDENT;
-        fprintf (global.outfile, "SAC_ND_WRITE( %s, %d) = %s;\n", wlidxs_NT,
-                 wlidxs_NT_dim, var_ANY[0]);
-    } else if (array_dim == 2) {
-        INDENT;
-        fprintf (global.outfile,
-                 "SAC_ND_WRITE( %s, %d) = %s * SAC_ND_A_MIRROR_SHAPE(%s, 1) + %s;\n",
-                 wlidxs_NT, wlidxs_NT_dim, var_ANY[0], array_NT, var_ANY[1]);
-    } else {
-        int i, j;
-        INDENT;
-        fprintf (global.outfile, "SAC_ND_WRITE( %s, %d) = ", wlidxs_NT, wlidxs_NT_dim);
-        for (i = 0; i < array_dim; i++) {
-            fprintf (global.outfile, "%s", var_ANY[i]);
-            for (j = i + 1; j < array_dim; j++) {
-                fprintf (global.outfile, "*SAC_ND_A_MIRROR_SHAPE(%s, %d)", array_NT, j);
-            }
-            if (i != array_dim - 1) {
-                fprintf (global.outfile, "+");
-            }
-        }
-        fprintf (global.outfile, ";\n");
-    }
-
-    DBUG_RETURN ();
-}
-
-/******************************************************************************
- *
- * function:
  *   void ICMCompileCUDA_THREADIDX( char *to_NT, int dim, int dim_pos)
  *
  *

@@ -576,33 +576,6 @@ RIDavis (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/*
-node *RIDprf(node * arg_node, info * arg_info)
-{
-  DBUG_ENTER("RIDprf");
-
-  switch( PRF_PRF( arg_node))
-  {
-    case F_cuda_wlidxs:
-      INFO_RID_WLIDXS(arg_info) = TRUE;
-      PRF_ARGS( arg_node) = TRAVdo( PRF_ARGS( arg_node), arg_info);
-      INFO_RID_WLIDXS(arg_info) = FALSE;
-      break;
-    case F_cuda_wlids:
-      INFO_RID_WLIDS(arg_info) = TRUE;
-      PRF_ARGS( arg_node) = TRAVdo( PRF_ARGS( arg_node), arg_info);
-      INFO_RID_WLIDS(arg_info) = FALSE;
-      break;
-    default:
-      if( PRF_ARGS( arg_node) != NULL)
-        PRF_ARGS( arg_node) = TRAVdo( PRF_ARGS( arg_node), arg_info);
-      break;
-  }
-
-  DBUG_RETURN(arg_node);
-}
-*/
-
 /******************************************************************************
  *
  * function:
