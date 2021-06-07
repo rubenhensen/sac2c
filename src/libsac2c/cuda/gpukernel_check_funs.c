@@ -192,21 +192,24 @@ checkArgsLength (node *arg, const size_t length, const char *name)
     node *exprs;
     DBUG_ENTER ();
 
+    size_t computedlen = 0;
     exprs = ARRAY_AELEMS (arg);
     while (exprs != NULL) {
-        arg = EXPRS_EXPR (exprs);
-        if (exprs == NULL)
-            CTIerrorLoc (NODE_LOCATION (arg),
-                         "wrong first argument to %s: too short; "
-                         "The list should be of length %zu",
-                         name, length);
         exprs = EXPRS_NEXT (exprs);
+        computedlen++;
     }
-    if (exprs != NULL)
+
+    if (computedlen < length)
         CTIerrorLoc (NODE_LOCATION (arg),
-                     "wrong first argument to %s: too long; "
+                     "wrong first argument to %s: too short (%zu); "
                      "The list should be of length %zu",
-                     name, length);
+                     name, computedlen, length);
+
+    if (computedlen > length)
+        CTIerrorLoc (NODE_LOCATION (arg),
+                     "wrong first argument to %s: too long (%zu); "
+                     "The list should be of length %zu",
+                     name, computedlen, length);
 
     DBUG_RETURN ();
 }

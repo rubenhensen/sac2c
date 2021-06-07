@@ -12,11 +12,6 @@
  *  pragma and it calls GKCOcompHostKernelPragma (spap, nbounds, bounds)
  *  from this file.
  *
- *  // TODO: which ICM?
- *  When icm2c finds the ICM ???, it extracts the
- *  pragma again and it calls GKCOcompGPUDkernelPragma(spap, nbounds, bounds)
- *  from this file.
- *
  *  It is the purpose of the pragma functions to generate transformations for
  *  the thread space (GKCOcompHostKernelPragma) and for the inexes within the
  *  kernel function (GKCOcompGPUDkernelPragma). The information about the
@@ -86,8 +81,7 @@
  *      ...
  *
  *      // Pass 1: PASS_HOST
- *      // Declare some helper variables. The ret_col variable is used for some
- optimizations
+ *      // Declare some helper variables. The ret_col variable is used for some optimizations
  *      // (almost branchless implementation).
         SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5653_tmp)
         SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5654_tmp)
@@ -95,7 +89,7 @@
         SAC_GKCO_OPM_RETURN_COL_INIT(SAC_gkco_prt_5655_ret_col)
 
  *      // Declare and redefine upperbound variables, as we cannot modify the original
- upperbound variables SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5657_ub)
+ *      // upperbound variables SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5657_ub)
         SAC_GKCO_OPD_REDEFINE(..., SAC_gkco_prt_5657_ub)
 
         SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5661_ub)
@@ -106,18 +100,17 @@
 
 
         // Handle step and width for the first and third dimension (determined by the
- parameter [1, 0, 1]) SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(SAC_gkco_prt_5657_ub,
- SAC_gkco_prt_5657_ub, SAC_gkco_prt_5658_st, SAC_gkco_prt_5659_wi, SAC_gkco_prt_5653_tmp,
- SAC_gkco_prt_5654_tmp)
+        // parameter [1, 0, 1]) SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(SAC_gkco_prt_5657_ub,
+        SAC_gkco_prt_5657_ub, SAC_gkco_prt_5658_st, SAC_gkco_prt_5659_wi, SAC_gkco_prt_5653_tmp,
+        SAC_gkco_prt_5654_tmp)
 
         SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(SAC_gkco_prt_5665_ub, SAC_gkco_prt_5665_ub,
- SAC_gkco_prt_5666_st, SAC_gkco_prt_5667_wi, SAC_gkco_prt_5653_tmp, SAC_gkco_prt_5654_tmp)
+        SAC_gkco_prt_5666_st, SAC_gkco_prt_5667_wi, SAC_gkco_prt_5653_tmp, SAC_gkco_prt_5654_tmp)
 
 
         // Make the grid and block spaces
-        SAC_GKCO_HOST_OPM_SET_GRID(2147483647   , 65535   , 65535   , 0,
- SAC_gkco_prt_5657_ub, SAC_gkco_prt_5661_ub) SAC_GKCO_HOST_OPM_SET_BLOCK(1024   , 1024   ,
- 64   , 1024, SAC_gkco_prt_5665_ub)
+        SAC_GKCO_HOST_OPM_SET_GRID(2147483647, 65535, 65535, 0, SAC_gkco_prt_5657_ub, SAC_gkco_prt_5661_ub)
+        SAC_GKCO_HOST_OPM_SET_BLOCK(1024, 1024, 64, 1024, SAC_gkco_prt_5665_ub)
 
                 // End pass
 
@@ -147,7 +140,7 @@
         SAC_GKCO_OPM_RETURN_COL_INIT(SAC_gkco_prt_5674_ret_col)
 
  *      // Declare and redefine upperbound variables, as we cannot modify the original
- upperbound variables SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5676_ub)
+        // upperbound variables SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5676_ub)
         SAC_GKCO_OPD_REDEFINE(SAC_gkco_prt_5676_ub, SAC_gkco_prt_5676_ub)
 
         SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5680_ub)
@@ -158,50 +151,50 @@
 
 
         // Handle step and width for the first and third dimension (determined by the
- parameter [1, 0, 1]) SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5687_ub)
+        // parameter [1, 0, 1]) SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5687_ub)
         SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(SAC_gkco_prt_5676_ub, SAC_gkco_prt_5687_ub,
- SAC_gkco_prt_5677_st, SAC_gkco_prt_5678_wi, SAC_gkco_prt_5672_tmp, SAC_gkco_prt_5673_tmp)
+        SAC_gkco_prt_5677_st, SAC_gkco_prt_5678_wi, SAC_gkco_prt_5672_tmp, SAC_gkco_prt_5673_tmp)
 
         SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5688_ub)
         SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(SAC_gkco_prt_5684_ub, SAC_gkco_prt_5688_ub,
- SAC_gkco_prt_5685_st, SAC_gkco_prt_5686_wi, SAC_gkco_prt_5672_tmp, SAC_gkco_prt_5673_tmp)
+        SAC_gkco_prt_5685_st, SAC_gkco_prt_5686_wi, SAC_gkco_prt_5672_tmp, SAC_gkco_prt_5673_tmp)
 
-            // Pass 3: PASS_KERNEL_WLIDS
+        // Pass 3: PASS_KERNEL_WLIDS
 
-            // GridBlock, it's parameter determines how many dimensions are represented in
- the grid,
-            // and how many in the blocks. As we did not compress the second dimension,
- the idx var
-            // will be checked against the step and width variables here (in a branchless
- way) SAC_GKCO_OPD_DECLARE (SAC_gkco_prt_5689_idx) SAC_GKCO_OPD_REDEFINE (THREADIDX_X,
- SAC_gkco_prt_5689_idx)
+        // GridBlock, it's parameter determines how many dimensions are represented in
+        //the grid,
+        // and how many in the blocks. As we did not compress the second dimension,
+        // the idx var
+        // will be checked against the step and width variables here (in a branchless way)
+        SAC_GKCO_OPD_DECLARE (SAC_gkco_prt_5689_idx)
+        SAC_GKCO_OPD_REDEFINE (THREADIDX_X, SAC_gkco_prt_5689_idx)
 
-                SAC_GKCO_OPD_DECLARE (SAC_gkco_prt_5690_idx)
-                SAC_GKCO_OPD_REDEFINE (THREADIDX_Y, SAC_gkco_prt_5690_idx)
+        SAC_GKCO_OPD_DECLARE (SAC_gkco_prt_5690_idx)
+        SAC_GKCO_OPD_REDEFINE (THREADIDX_Y, SAC_gkco_prt_5690_idx)
 
-                SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL (SAC_gkco_prt_5681_st,
- SAC_gkco_prt_5682_wi, SAC_gkco_prt_5690_idx, SAC_gkco_prt_5674_ret_col)
 
-                SAC_GKCO_OPD_DECLARE (SAC_gkco_prt_5691_idx)
-                SAC_GKCO_OPD_REDEFINE (BLOCKIDX_X, SAC_gkco_prt_5691_idx)
+        SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL (SAC_gkco_prt_5681_st,
+            SAC_gkco_prt_5682_wi, SAC_gkco_prt_5690_idx, SAC_gkco_prt_5674_ret_col)
 
-                // CompressGrid
-                SAC_GKCO_GPUD_OPD_COMPRESS_SW (SAC_gkco_prt_5654_st, SAC_gkco_prt_5655_wi,
- SAC_gkco_prt_5664_idx) SAC_GKCO_GPUD_OPD_COMPRESS_SW (SAC_gkco_prt_5662_st,
- SAC_gkco_prt_5663_wi, SAC_gkco_prt_5666_idx)
+        SAC_GKCO_OPD_DECLARE (SAC_gkco_prt_5691_idx)
+        SAC_GKCO_OPD_REDEFINE (BLOCKIDX_X, SAC_gkco_prt_5691_idx)
 
-                // Gen. All if statements that return are collected and executed at once
- here, in a single if.
-                // This way we have less branches in our code.
-                SAC_GKCO_GPUD_OPM_RETURN_IF_COLLECTED (SAC_gkco_prt_5674_ret_col)
+        // CompressGrid
+        SAC_GKCO_GPUD_OPD_COMPRESS_SW (SAC_gkco_prt_5654_st, SAC_gkco_prt_5655_wi, SAC_gkco_prt_5664_idx)
+        SAC_GKCO_GPUD_OPD_COMPRESS_SW (SAC_gkco_prt_5662_st, SAC_gkco_prt_5663_wi, SAC_gkco_prt_5666_idx)
+
+        // Gen. All if statements that return are collected and executed at once
+        // here, in a single if.
+        // This way we have less branches in our code.
+        SAC_GKCO_GPUD_OPM_RETURN_IF_COLLECTED (SAC_gkco_prt_5674_ret_col)
 
         // Declare the index vector
-                SAC_GKCO_GPUD_DECLARE_IV(iv_var, 3)
-                SAC_GKCO_GPUD_DEF_IV(iv_var, 0, SAC_gcko_prt_5664_idx)
-                SAC_GKCO_GPUD_DEF_IV(iv_var, 1, SAC_gcko_prt_5665_idx)
-                SAC_GKCO_GPUD_DEF_IV(iv_var, 2, SAC_gcko_prt_5666_idx)
+        SAC_GKCO_GPUD_DECLARE_IV(iv_var, 3)
+        SAC_GKCO_GPUD_DEF_IV(iv_var, 0, SAC_gcko_prt_5664_idx)
+        SAC_GKCO_GPUD_DEF_IV(iv_var, 1, SAC_gcko_prt_5665_idx)
+        SAC_GKCO_GPUD_DEF_IV(iv_var, 2, SAC_gcko_prt_5666_idx)
 
-                // End pass
+        // End pass
 
                 ...
  *  }
@@ -209,8 +202,7 @@
  * CODE FILE INDEX:
  *
  *   - Definitions of constants, including the pass constants and flags
- *   - Definition of gpukernelres_t, it's getters and setters, and helper
- functions/defines
+ *   - Definition of gpukernelres_t, it's getters and setters, and helper functions/defines
  *   - The pragma traversal loop and the entry functions to this code
  *   - The mappings and their inverses
  *   - Implementation correctness tests
@@ -1441,11 +1433,9 @@ handleInvLB (size_t dim, gpukernelres_t *outer)
  * single dimension.
  *
  *          StepWidth                            InvStepWidth
- *                             ... --> 1, 1, idj      -->     return;           // idj not
- * in step/width stj, wij    -->    1, 1 --> ... --> 1, 1, idj      -->     stj, wij, idj
- * // idj in step/width
- *                             ... --> 1, 1, idj      -->     stj, wij, idj     // idj in
- * step/width
+ *                             ... --> 1, 1, idj      -->     return;           // idj not in step/width
+ * stj, wij    -->    1, 1 --> ... --> 1, 1, idj      -->     stj, wij, idj     // idj in step/width
+ *                             ... --> 1, 1, idj      -->     stj, wij, idj     // idj in * step/width
  *
  * Notes:
  *   - When running in branchless mode (PASS_BRANCHLESS), an alternative icm for
@@ -1557,17 +1547,17 @@ GKCOcompInvStepWidthLB (size_t dim, gpukernelres_t *outer)
  * variables and return all threads that fall outside of the upperbound. This function
  * will only check a single dimension.
  *
- *    Pad                     InvPad
- *                ... --> ubj', idj   -->  return;    // idj >= ubj
+ *     Pad                            InvPad
+ *                  ... --> ubj', idj   -->  return;    // idj >= ubj
  * ubj --> ubj' --> ... --> ubj', idj   -->  ubj, idj   // idj < ubj
- *                ... --> ubj', idj   -->  ubj, idj   // idj < ubj
+ *                  ... --> ubj', idj   -->  ubj, idj   // idj < ubj
  *
  * @param dim               The dimension for which the upperbound should be divisible by
- * `divisibility`
+ *                          `divisibility`
  * @param divisiblity       The integer which should be able to divide the padded
- * upperbound
+ *                          upperbound
  * @param inner             The gpu kernel res, resulting from calling all inner pragma
- * calls first
+ *                          calls first
  * @return                  The modified gpu kernel res
  */
 gpukernelres_t *
@@ -1590,9 +1580,9 @@ GKCOcompPad (size_t dim, size_t divisibility, gpukernelres_t *inner)
  * Inverse of GKCOcompPad
  *
  * @param dim               The dimension for which the upperbound should be divisible by
- * `divisibility`
+ * `                        divisibility`
  * @param outer             The GPU kernel res, resulting from calling all outer pragma
- * calls first
+ *                          calls first
  * @return                  The modified gpu kernel res
  */
 gpukernelres_t *
@@ -1663,7 +1653,7 @@ GKCOcompShiftLB (gpukernelres_t *inner)
  * Inverse function of GKCOcompShiftLB.
  *
  * @param outer             The GPU kernel res, resulting from calling all outer pragma
- * calls first
+ *                          calls first
  * @return                  The modified gpu kernel res
  */
 gpukernelres_t *
@@ -1701,11 +1691,9 @@ GKCOcompInvShiftLB (gpukernelres_t *outer)
  *
  * For each dimension j, for which `shouldCompress_node[j] == true:
  *               CompressGrid                                         InvCompressGrid
- *                                           ... --> 1, 1, ubj', idj'       -->       stj,
- * wij, ubj, idj stj, wij, ubj     -->      1, 1, ubj' --> ... --> 1, 1, ubj', idj' -->
- * stj, wij, ubj, idj
- *                                           ... --> 1, 1, ubj', idj'       -->       stj,
- * wij, ubj, idj
+ *                                           ... --> 1, 1, ubj', idj'       -->       stj, wij, ubj, idj
+ * stj, wij, ubj     -->      1, 1, ubj' --> ... --> 1, 1, ubj', idj'       -->       stj, wij, ubj, idj
+ *                                           ... --> 1, 1, ubj', idj'       -->       stj, wij, ubj, idj
  *
  * Note:
  *   - The lowerbound should be 0, otherwise a compile error will be thrown.

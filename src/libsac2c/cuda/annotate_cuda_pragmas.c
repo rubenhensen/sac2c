@@ -210,7 +210,8 @@ ACPmakeSpap (info *arg_info, char *staticName, size_t nargs, node **args)
     for (size_t i = nargs - 1; i != (size_t)-1; i--)
         exprs = TBmakeExprs (args[i], exprs);
 
-    INFO_PRAGMA (arg_info) = TBmakeSpap (TBmakeSpid (NULL, STRcpy (staticName)), exprs);
+    node* spid = TBmakeSpid (NULL, STRcpy (staticName));
+    INFO_PRAGMA (arg_info) = TBmakeSpap (spid, exprs);
 
     DBUG_RETURN (arg_info);
 }
@@ -295,25 +296,6 @@ ACPmakeCompressGrid (constant *compressDims, info *inner)
 
     node *args[1] = {COconstant2AST (compressDims)};
     inner = ACPmakeSpap (inner, COMPRESSGRID, 1, args);
-
-    DBUG_RETURN (inner);
-}
-
-/**
- * Create a CompressGrid mapping and store it in the info node. This is an
- * alternative to the CompressGrid function above that just compresses
- * all dimensions.
- *
- * @param inner             The info datastructure to be updated
- * @return                  The updated info datastructure
- */
-info *
-ACPmakeCompressAll (info *inner)
-{
-    DBUG_ENTER ();
-
-    constant *compressDims = COmakeOne (T_int, SHcreateShape (1, (int)INFO_DIMS (inner)));
-    inner = ACPmakeCompressGrid (compressDims, inner);
 
     DBUG_RETURN (inner);
 }
@@ -413,6 +395,25 @@ ACPmakePadLast (int paddedsize, info *inner)
  *****************************************************************************/
 
 /**
+ * Create a CompressGrid mapping and store it in the info node. This is an
+ * alternative to the CompressGrid function above that just compresses
+ * all dimensions.
+ *
+ * @param inner             The info datastructure to be updated
+ * @return                  The updated info datastructure
+ */
+info *
+ACPmakeCompressAll (info *inner)
+{
+    DBUG_ENTER ();
+
+    constant *compressDims = COmakeOne (T_int, SHcreateShape (1, (int)INFO_DIMS (inner)));
+    inner = ACPmakeCompressGrid (compressDims, inner);
+
+    DBUG_RETURN (inner);
+}
+
+/**
  * Create a permutation that rotates the dimensions with a given offset to the
  * right. A negative offset can be used to rotate left, but it should be bigger
  * then (-current dimensionality).
@@ -468,20 +469,23 @@ ACPreduceDimensionality (info *inner)
  * @}  <!-- Jings method Strategy -->
  *
  * This strategy resembles Jing's original method. If the boolean ext is set
- * to true, the dimensionality is reduced to 3-5 until Jings method can be
- * applied. Note that for 3, 4 or 5 dimensions, the innermost 2 dimensions can be at
- *most 32.
+ * to true, the dimensionality is reduced by pairwise folding to 3-5 dimensions,
+ * so Jings method can be applied. For more info about the pairwise folding, see
+ * ACPreduceDimensionality. Note that for 3, 4 or 5 dimensions, the
+ * innermost 2 dimensions can be at most 32.
  *
  * Jing's method handles 1-5 dimensions:
- *  note: read the dimension specs as
- *        (thread dimensions z-x | block dimensions z-x)
- *  note: read the constant variables as constants defined in global.config.
- *        The currently used values are for the sm_61 architecture.
+ * note: read the dimension specs as
+ *       (thread dimensions z-x | block dimensions z-x)
+ * note: The constant values used here are actually constant variables
+ *       defined in global.config. The currently used values are the values
+ *       defined for the sm_61 architecture.
  *   - 1: (1/32 | 32)
  *   - 2: (2/32, 1/32 | 32, 32)
  *   - 3: (3 | 2, 1)
  *   - 4: (4, 3 | 2, 1)
  *   - 5: (5, 4, 3 | 2, 1)
+ *
  *****************************************************************************/
 
 /**
@@ -497,9 +501,6 @@ ACPjingGeneratePragma (bool ext, info *inner)
     DBUG_ENTER ();
 
     switch (INFO_DIMS (inner)) {
-        case 0:
-            inner = ACPmakeGridBlock (0, inner);
-            break;
         case 1:
             inner = ACPmakeSplitLast (global.config.cuda_1d_block_sm, inner);
             inner = ACPmakeGridBlock (1, inner);
@@ -514,7 +515,7 @@ ACPjingGeneratePragma (bool ext, info *inner)
         case 3:
         case 4:
         case 5:
-            inner = ACPmakeGridBlock ((int)INFO_DIMS (inner) - 2, inner);
+            inner = ACPmakeGridBlock (2, inner);
             break;
         default:
             if (ext) {
@@ -548,10 +549,11 @@ ACPjingGeneratePragma (bool ext, info *inner)
  * heuristic is required in future versions.
  *
  * The Foldall strategy handles 1-5 dimensions:
- *  note: read the dimension specs as
- *        (thread dimensions z-x | block dimensions z-x)
- *  note: read the constant variables as constants defined in global.config.
- *        The currently used values are for the sm_61 architecture.
+ * note: read the dimension specs as
+ *       (thread dimensions z-x | block dimensions z-x)
+ * note: The constant values used here are actually constant variables
+ *       defined in global.config. The currently used values are the values
+ *       defined for the sm_61 architecture.
  *   - 1: (1/32 | 32)
  *   - 2: (1/1024 | 32, 32)
  *   - >2: (2048, 1/2048/1024 | 32, 32)
