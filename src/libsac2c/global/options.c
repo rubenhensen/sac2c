@@ -734,9 +734,9 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE ("foldall", global.gpu_mapping_strategy = Foldall);
         ARG_CHOICE_END ();
     }
-    ARGS_OPTION_END ("cuda_mapping_strategy");
+    ARGS_OPTION_END ("gpu_mapping_strategy");
 
-    ARGS_FLAG("cuda_mapping_nocompress", global.gpu_mapping_compress = FALSE);
+    ARGS_FLAG("gpu_mapping_nocompress", global.gpu_mapping_compress = FALSE);
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
