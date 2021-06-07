@@ -671,7 +671,6 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, const char *toolname)
     global.cachesim_host[0] = '\0';
     global.cachesim_file[0] = '\0';
     global.cachesim_dir[0] = '\0';
-    global.cuda_block_spec[0] = '\0';
 
     memset (global.profile_funnme, 0, sizeof (char *) * PF_MAXFUN);
     memset (global.profile_funapcntr, 0, sizeof (int) * PF_MAXFUN);
