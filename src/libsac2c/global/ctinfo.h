@@ -36,6 +36,7 @@ extern char *CTIgetErrorMessageVA (size_t line, const char *file, const char *fo
 extern size_t CTIgetErrorMessageLineLength (void);
 extern void CTIabortOnBottom (char *err_msg);
 extern void CTIabort (const char *format, ...) PRINTF_FORMAT (1, 2) FUN_ATTR_NORETURN;
+extern void CTIabortLoc (struct location loc, const char *format, ...);
 extern void CTIabortLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3) FUN_ATTR_NORETURN;
 extern void CTIabortOutOfMemory (size_t request) FUN_ATTR_NORETURN;
 extern void CTIabortOnError (void);

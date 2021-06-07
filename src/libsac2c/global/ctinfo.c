@@ -898,6 +898,31 @@ CTIabort (const char *format, ...)
 
 /** <!--********************************************************************-->
  *
+ * @fn void CTIabortLoc( struct location loc, const char *format, ...)
+ *
+ *   @brief   produces an error message preceded by location info
+ *            and terminates the compilation process
+ *
+ *   @param loc     location info
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
+void
+CTIabortLoc (struct location loc, const char *format, ...)
+{
+    va_list arg_p;
+
+    va_start (arg_p, format);
+    fprintf (cti_stderr, "%s\n", produce_header (loc, error_message_header));
+    PrintMessage (second_level_header, format, arg_p);
+    va_end (arg_p);
+
+    AbortCompilation ();
+}
+
+
+/** <!--********************************************************************-->
+ *
  * @fn void CTIabortLine( int line, const char *format, ...)
  *
  *   @brief   produces an error message preceded by file name and line number
