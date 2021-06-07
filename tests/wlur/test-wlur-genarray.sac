@@ -1,0 +1,21 @@
+// Test wlur for normal genarray WLs.
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -noWLSIMP -bopt -printfun main
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -noopt $< | $(GREP_COMMAND_OUTPUT) "with" 1
+// SAC_TEST|<tab>$(SAC2C) $(SAC2C_FLAGS) -doWLUR $< | $(GREP_COMMAND_OUTPUT) "with" 0
+
+noinline
+int foo( int[.] a)
+{
+   return _sel_VxA_([0], a);
+}
+
+int main()
+{
+   a = with {
+        ([0] <= iv < [1]) : foo(iv);
+       } : genarray( [8], 0);
+   return foo(a);
+}

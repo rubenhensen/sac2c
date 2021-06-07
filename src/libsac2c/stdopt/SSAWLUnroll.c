@@ -854,9 +854,9 @@ CheckUnrollGenarray (node *wln, node *lhs, info *arg_info)
     }
     def = GENARRAY_DEFAULT (WITH_WITHOP (wln));
     DBUG_PRINT ("   genarray: default expression %s",
-                 def!=NULL ? "exists" : "does not exist");
+                 def != NULL ? "exists" : "does not exist");
 
-    ok = ok && (def!=NULL);
+    ok = ok && (def != NULL);
 
     DBUG_RETURN (ok);
 }
@@ -1002,7 +1002,7 @@ FinalizeGenarray (node *bodycode, node *withop, node *lhs, info *arg_info)
         vardecs = TBmakeVardec (avis, vardecs);
 
         elems = NULL;
-        for( i=0; i<num_elems; i++) {
+        for (i = 0; i < num_elems; i++) {
             elems = TBmakeExprs ( DUPdoDupNode (def), elems);
         }
         assigns = TBmakeAssign (
