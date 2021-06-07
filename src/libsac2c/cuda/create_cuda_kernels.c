@@ -805,7 +805,7 @@ CUKNLlet (node *arg_node, info *arg_info)
 node *
 CUKNLwith (node *arg_node, info *arg_info)
 {
-    node *old_with, *old_pragma;
+    node *old_with;
     DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
@@ -814,8 +814,6 @@ CUKNLwith (node *arg_node, info *arg_info)
          */
         DBUG_PRINT ("start cudarizing with-loop");
         INFO_IN_CUDA_WL (arg_info) = TRUE; // signal cudarisation!
-        old_pragma = INFO_PRAGMA (arg_info);
-        INFO_PRAGMA (arg_info) = WITH_PRAGMA (arg_node);
         INFO_WITHOP (arg_info) = WITH_WITHOP (arg_node);
         old_with = INFO_WITH (arg_info);
         INFO_WITH (arg_info) = arg_node;
@@ -826,7 +824,6 @@ CUKNLwith (node *arg_node, info *arg_info)
          * restore old arg_info stuff:
          */
         INFO_WITH (arg_info) = old_with;
-        INFO_PRAGMA (arg_info) = old_pragma;
         INFO_WITHOP (arg_info) = NULL;
         INFO_IN_CUDA_WL (arg_info) = FALSE; // cudarisation done!
 
@@ -880,6 +877,7 @@ CUKNLwith2 (node *arg_node, info *arg_info)
 node *
 CUKNLpart (node *arg_node, info *arg_info)
 {
+    node *old_pragma;
     node *cuda_kernel, *cuda_funap;
     node *dup_code;
 
@@ -917,7 +915,11 @@ CUKNLpart (node *arg_node, info *arg_info)
             INFO_IN_CUDA_PARTITION (arg_info) = FALSE;
 
             DBUG_PRINT ("    traversing generator:");
+     
+            old_pragma = INFO_PRAGMA (arg_info);
+            INFO_PRAGMA (arg_info) = PART_PRAGMA (arg_node);
             PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);
+            INFO_PRAGMA (arg_info) = old_pragma;
 
             /********** End traversal of N_part Sons/Attributes **********/
 
@@ -1213,7 +1215,7 @@ CUKNLgenerator (node *arg_node, info *arg_info)
             HandleBoundStepWidthExprs (GENERATOR_WIDTH (arg_node),
                                        dims, "_width_", arg_info);
 
-            //DBUG_ASSERT (INFO_PRAGMA (arg_info) != NULL, "missing gpukernel pragma");
+            DBUG_ASSERT (INFO_PRAGMA (arg_info) != NULL, "missing gpukernel pragma");
             INFO_THREADSPACE (arg_info) =
                 TBmakeAssign (
                     TBmakeLet (
