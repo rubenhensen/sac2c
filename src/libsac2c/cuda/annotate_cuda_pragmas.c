@@ -227,7 +227,7 @@ ACPmakeGen (info *arg_info)
 {
     DBUG_ENTER ();
 
-    INFO_PRAGMA (arg_info) = TBmakeSpap (TBmakeSpid (NULL, STRcpy (GEN)), NULL);
+    INFO_PRAGMA (arg_info) = TBmakeSpid (NULL, STRcpy (GEN));
 
     DBUG_RETURN (arg_info);
 }
@@ -707,7 +707,7 @@ ACPgenerator (node *arg_node, info *arg_info)
 
     arg_info = ACPgeneratePragma (arg_info);
     node *pragma = TBmakePragma ();
-    PRAGMA_GPUKERNEL_APS (pragma) = INFO_PRAGMA (arg_info);
+    PRAGMA_GPUKERNEL_APS (pragma) = TBmakeExprs(INFO_PRAGMA (arg_info), NULL);
     INFO_PRAGMA (arg_info) = pragma;
 
     DBUG_RETURN (arg_node);
