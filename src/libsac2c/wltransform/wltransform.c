@@ -3122,9 +3122,11 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
 
     if (i_stride1 != NULL) {
         trav_i_stride1 = *i_stride1 = DUPdoDupNode (stride1);
+        WLSTRIDE_ISMODIFIED ((*i_stride1)) = FALSE;
     }
     if (i_stride2 != NULL) {
         trav_i_stride2 = *i_stride2 = DUPdoDupNode (stride2);
+        WLSTRIDE_ISMODIFIED ((*i_stride2)) = FALSE;
     }
 
     while (stride1 != NULL) {
@@ -4885,6 +4887,9 @@ IntersectGrid (node *grid1, node *grid2, int step, node **i_grid1, node **i_grid
     bound12 = NUM_VAL (WLGRID_BOUND1 (grid2));
     bound22 = NUM_VAL (WLGRID_BOUND2 (grid2));
 
+    DBUG_PRINT_TAG ("WLTmerge", "IntersectGrid ( %d -> %d,  %d -> %d, ...)", 
+                    bound11, bound21, bound12, bound22);
+
     /* compute bounds of intersection */
     i_bound1 = MATHmax (bound11, bound12);
     i_bound2 = MATHmin (bound21, bound22);
@@ -4893,14 +4898,20 @@ IntersectGrid (node *grid1, node *grid2, int step, node **i_grid1, node **i_grid
 
         if ((i_bound1 != bound11) || (i_bound2 != bound21)) {
             *i_grid1 = DUPdoDupNode (grid1);
+            WLGRID_ISMODIFIED ((*i_grid1)) = FALSE;
             NUM_VAL (WLGRID_BOUND1 ((*i_grid1))) = i_bound1;
             NUM_VAL (WLGRID_BOUND2 ((*i_grid1))) = i_bound2;
+            DBUG_PRINT_TAG ("WLTmerge", "    yields new left: %d -> %d",
+                            i_bound1, i_bound2);
         }
 
         if ((i_bound1 != bound12) || (i_bound2 != bound22)) {
             *i_grid2 = DUPdoDupNode (grid2);
+            WLGRID_ISMODIFIED ((*i_grid2)) = FALSE;
             NUM_VAL (WLGRID_BOUND1 ((*i_grid2))) = i_bound1;
             NUM_VAL (WLGRID_BOUND2 ((*i_grid2))) = i_bound2;
+            DBUG_PRINT_TAG ("WLTmerge", "    yields new right: %d -> %d",
+                            i_bound1, i_bound2);
         }
     }
 
