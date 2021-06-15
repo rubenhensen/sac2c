@@ -3,21 +3,19 @@
  * @defgroup gpukernel pragma compile functions
  *
  *   This module implements the functions that are needed for implementing the
- *   #pragma gpukernel. It contains the following functionality:
- *
- *  Compiler for the thread space transformation pragmas
- *  Compiler for the index vector transformation pragmas
+ *   #pragma gpukernel. It contains functionality to transform the index space
+ *   according to the pragma functions, and then recompute the index vectors
+ *   back from the thread and block coordinates.
  *
  *  When icm2c finds the ICM CUDA_THREAD_SPACE, it extracts the
  *  pragma and it calls GKCOcompHostKernelPragma (spap, nbounds, bounds)
- *  from this file.
+ *  from this file. When icm2c finds the ICM CUDA_INDEX_SPACE, it calls
+ *  GKCOcompGPUDkernelPragma(spap, nbounds, bounds) instead.
  *
  *  It is the purpose of the pragma functions to generate transformations for
  *  the thread space (GKCOcompHostKernelPragma) and for the inexes within the
- *  kernel function (GKCOcompGPUDkernelPragma). The information about the
- *  threadspace is kept in a structure internal to this file of type
- *
- *  gpukernelres_t == struct GPUKERNELRES;
+ *  kernel function (GKCOcompGPUDkernelPragma). These transformations make sure
+ *  that the resulting thread space is valid to be executed on the GPU device.
  *
  *  The pragma functions expect the N_spap node of the pragma
  *  and it obtains a vector of strings (preceeded by its length) as
@@ -26,14 +24,14 @@
  *  The strings are either variable reads (as .hr-icms) or, in case
  *  the compiler knows, constants.
  *
- *  From these arguments, the pragma functions generate a nesting
+ *  From these arguments, the entry functions generate a nesting
  *  of function calls that reflects the nesting and arguments of the
  *  pragma's functions. How exactly this happens is specific for each
- *  pragma function. The two pragma functions together generate three
+ *  entry function. The two entry functions together generate three
  *  nestings of function calls, called passes. Each pass is identified
- *  with a parameter in gen, or a statement in GKCOcompInvGridBlock.
- *  This pass parameter is stored in gpukernelres_t, so all operations
- *  can directly determine what mode to execute in.
+ *  by a variable in the gpukernelres_t datastructure, which is set
+ *  inside the entry function.
+ *
  *  Let us take an example:
  *
  *  #pragma GridBlock (2, CompressGrid ([1, 0, 1], Gen))
@@ -86,7 +84,6 @@
         SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5653_tmp)
         SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5654_tmp)
         SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5655_ret_col)
-        SAC_GKCO_OPM_RETURN_COL_INIT(SAC_gkco_prt_5655_ret_col)
 
  *      // Declare and redefine upperbound variables, as we cannot modify the original
  *      // upperbound variables SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5657_ub)
