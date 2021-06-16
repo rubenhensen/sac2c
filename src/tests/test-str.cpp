@@ -130,24 +130,24 @@ TEST (StringOperations, testStrip)
 
 TEST (StringOperations, testIsIntFalse)
 {
-    bool t = STRisInt("3a");
+    bool t = STRisInt ("3a");
     EXPECT_FALSE (t);
 }
 
-TEST (StringOperations, testIsIntFalse)
+TEST (StringOperations, testIsIntTrue)
 {
-    bool t = STRisInt("3");
+    bool t = STRisInt ("3");
     EXPECT_TRUE (t);
 }
 
 TEST (StringOperations, testIsIntPlusSign)
 {
-    bool t = STRisInt("+3");
+    bool t = STRisInt ("+3");
     EXPECT_TRUE (t);
 }
 
 TEST (StringOperations, testIsIntDash)
 {
-    bool t = STRisInt("-3");
+    bool t = STRisInt ("-3");
     EXPECT_TRUE (t);
 }
