@@ -1371,7 +1371,7 @@ STRisInt (const char* str) {
 
     for (size_t i = 0; str[i] != '\0'; i++) {
         const char c = str[i];
-        bool charIsint = (c >= '0' && c <= '9') || (i == 0 && c == '-');
+        bool charIsint = (c >= '0' && c <= '9') || (i == 0 && (c == '-' || c == '+'));
         isint = isint && charIsint;
     }
 
