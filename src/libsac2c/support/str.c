@@ -1365,7 +1365,7 @@ STRstrip (char *s)
  */
 bool
 STRisInt (const char* str) {
-    DBUG_ENTER();
+    DBUG_ENTER ();
 
     bool isint = true;
 
@@ -1375,7 +1375,7 @@ STRisInt (const char* str) {
         isint = isint && charIsint;
     }
 
-    DBUG_RETURN(isint);
+    DBUG_RETURN (isint);
 }
 
 /**
@@ -1387,25 +1387,11 @@ STRisInt (const char* str) {
  */
 int
 STRatoi (const char* str){
-    DBUG_ENTER();
+    DBUG_ENTER ();
 
-    int sign   = 1;
-    int result = 0;
-    size_t i = 0;
+    int result = atoi(str);
 
-    if (str[i] == '-') {
-        i ++;
-        sign = -1;
-    }
-
-    for (; str[i] != '\0'; i++) {
-        result *= 10;
-        result += str[i] - '0';
-    }
-
-    result *= sign;
-
-    DBUG_RETURN(result);
+    DBUG_RETURN (result);
 }
 
 #undef DBUG_PREFIX

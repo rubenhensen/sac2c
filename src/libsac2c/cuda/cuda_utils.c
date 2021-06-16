@@ -224,7 +224,7 @@ CUconvertHostToDeviceType (ntype *host_type)
 
     dev_type = TYcopyType (host_type);
     /* If the scalar type is simple, e.g. int, float ... */
-    if (TYgetDim (host_type) >0
+    if (TYgetDim (host_type) > 0
         && TYisSimple (TYgetScalar (host_type))) {
         scalar_type = TYgetScalar (dev_type);
         /* Get the corresponding device simple type e.g. int_dev, float_dev...*/
@@ -256,7 +256,7 @@ CUconvertDeviceToHostType (ntype *device_type)
 
     h_type = TYcopyType (device_type);
     /* If the scalar type is simple, e.g. int, float ... */
-    if (TYgetDim (device_type) >0
+    if (TYgetDim (device_type) > 0
         && TYisSimple (TYgetScalar (device_type))) {
         scalar_type = TYgetScalar (h_type);
         /* Get the corresponding device simple type e.g. int_dev, float_dev...*/

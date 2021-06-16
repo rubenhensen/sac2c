@@ -269,7 +269,7 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
 
     if (nty == N_id) {
         dev_type = CUconvertHostToDeviceType (host_type);
-        if (!(TYgetDim (host_type) >0)
+        if (!(TYgetDim (host_type) > 0)
             || !TYisSimple (TYgetScalar (host_type))) {
             dev_type = TYfreeType (dev_type);
         }
@@ -301,7 +301,7 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
             /* If the scalar type is simple, e.g. int, float ... */
             if (WITH_CUDARIZABLE (INFO_LETEXPR (arg_info))) {
                 dev_type = CUconvertHostToDeviceType (host_type);
-                if (!(TYgetDim (host_type) >0)
+                if (!(TYgetDim (host_type) > 0)
                     || !TYisSimple (TYgetScalar (host_type))) {
                     dev_type = TYfreeType (dev_type);
                 }
