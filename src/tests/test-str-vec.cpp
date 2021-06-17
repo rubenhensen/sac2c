@@ -4,119 +4,165 @@
 
 extern "C" {
 #include "memory.h"
-#include "str.h"
+#include "str_vec.h"
 }
 
-TEST (StringOperations, testToUpper)
+char* constStr = (char*) "const";
+char* helloStr = (char*) "Hello";
+char* worldStr = (char*) "world!";
+char* emptyStr = (char*) "";
+
+TEST (StringVectorOperations, testMake)
 {
-    char *t = strdup ("test");
-    STRtoupper (t, 0, 1);
-    EXPECT_STREQ ("Test", t);
+    strvec* vec = STRVECmake (2, helloStr, worldStr);
 
-    STRtoupper (t, 0, 2);
-    EXPECT_STREQ ("TEst", t);
+    EXPECT_STREQ (STRVECsel (vec, 0), helloStr);
+    EXPECT_STREQ (STRVECsel (vec, 1), worldStr);
+    EXPECT_EQ (STRVEClen (vec), 2);
 
-    MEMfree (t);
+    STRVECfree (vec);
 }
 
-// The code is total shite, it overruns the buffer
-// FIXME This test shows a problem in the code.  Fix it in str.c,
-//       uncomment the test and write a few more.
-//TEST (StringOperations, testToUpperDoNotSegfault)
-//{
-//    char *t = strdup ("test");
-//    EXPECT_NO_THROW (STRtoupper (t, 0, 1000000));
-//    EXPECT_STREQ ("TEST", t);
-//    MEMfree (t);
-//}
-
-TEST (StringOperations, testStrCpy)
+TEST (StringVectorOperations, testConst)
 {
-    char *t = STRcpy ("test");
-    EXPECT_STREQ ("test", t);
-    MEMfree (t);
+    strvec* vec = STRVECconst (2, constStr);
 
-    char *tt = STRcpy (NULL);
-    EXPECT_EQ (tt, (void *)NULL);
+    EXPECT_STREQ (STRVECsel (vec, 0), constStr);
+    EXPECT_STREQ (STRVECsel (vec, 1), constStr);
+    EXPECT_EQ (STRVEClen (vec), 2);
+
+    STRVECfree (vec);
+}
+
+TEST (StringVectorOperations, testFromArray)
+{
+    char* strarray[2] = { helloStr, worldStr };
+    strvec* vec = STRVECfromArray (strarray, 2);
+
+    EXPECT_STREQ (STRVECsel (vec, 0), helloStr);
+    EXPECT_STREQ (STRVECsel (vec, 1), worldStr);
+    EXPECT_EQ (STRVEClen (vec), 2);
+
+    STRVECfree (vec);
+}
+
+char* StrVecGenerator () {
+    return constStr;
+}
+
+TEST (StringVectorOperations, testGen)
+{
+    strvec* vec = STRVECgen (2, StrVecGenerator);
+
+    EXPECT_STREQ (STRVECsel (vec, 0), constStr);
+    EXPECT_STREQ (STRVECsel (vec, 1), constStr);
+    EXPECT_EQ (STRVEClen (vec), 2);
+
+    STRVECfree (vec);
+}
+
+TEST (StringVectorOperations, testResize)
+{
+    strvec* vec = STRVECmake (2, helloStr, worldStr);
+    STRVECresize (vec, 3, StrVecGenerator);
+    STRVECresize (vec, 4, NULL);
+
+    EXPECT_STREQ (STRVECsel (vec, 0), helloStr);
+    EXPECT_STREQ (STRVECsel (vec, 1), worldStr);
+    EXPECT_STREQ (STRVECsel (vec, 2), constStr);
+    EXPECT_STREQ (STRVECsel (vec, 3), emptyStr);
+    EXPECT_EQ (STRVEClen (vec), 4);
+
+    STRVECresize (vec, 2, NULL);
+    EXPECT_EQ (STRVEClen (vec), 2);
+
+    STRVECfree (vec);
+}
+
+TEST (StringVectorOperations, testIsEmpty)
+{
+    strvec* vec = STRVECmake (0);
+    EXPECT_TRUE (STRVECisEmpty (vec));
+
+    STRVECresize(vec, 2, NULL);
+    EXPECT_FALSE (STRVECisEmpty (vec));
+
+    STRVECfree (vec);
+}
+
+TEST (StringVectorOperations, testCopy)
+{
+    strvec* vec = STRVECmake (2, helloStr, worldStr);
+    strvec* scopy = STRVECcopy (vec);
+    strvec* dcopy = STRVECcopyDeep (vec);
+
+    EXPECT_EQ (STRVEClen (scopy), 2);
+    EXPECT_EQ (STRVEClen (dcopy), 2);
+
+    EXPECT_EQ (STRVECsel (vec, 0), STRVECsel (scopy, 0));
+    EXPECT_NE (STRVECsel (vec, 0), STRVECsel (dcopy, 0));
+    EXPECT_EQ (STRVECsel (vec, 1), STRVECsel (scopy, 1));
+    EXPECT_NE (STRVECsel (vec, 1), STRVECsel (dcopy, 1));
+
+    EXPECT_STREQ (STRVECsel (vec, 0), STRVECsel (scopy, 0));
+    EXPECT_STREQ (STRVECsel (vec, 0), STRVECsel (dcopy, 0));
+    EXPECT_STREQ (STRVECsel (vec, 1), STRVECsel (scopy, 1));
+    EXPECT_STREQ (STRVECsel (vec, 1), STRVECsel (dcopy, 1));
+
+    STRVECfree (vec);
+    STRVECfree (scopy);
+    STRVECfreeDeep (dcopy);
+}
+
+TEST (StringVectorOperations, testAppend)
+{
+    strvec* vec = STRVECmake (1, helloStr);
+    STRVECappend (vec, worldStr);
+
+    EXPECT_STREQ (STRVECsel (vec, 0), helloStr);
+    EXPECT_STREQ (STRVECsel (vec, 1), worldStr);
+    EXPECT_EQ (STRVEClen (vec), 2);
+
+    STRVECfree (vec);
+}
+
+TEST (StringVectorOperations, testConcat)
+{
+    strvec* vec = STRVECmake(1, helloStr);
+    strvec* vec2 = STRVECmake (1, worldStr);
+    STRVECconcat (vec, vec2);
+
+    EXPECT_STREQ (STRVECsel (vec, 0), helloStr);
+    EXPECT_STREQ (STRVECsel (vec, 1), worldStr);
+    EXPECT_EQ (STRVEClen (vec), 2);
+
+    STRVECfree (vec);
+    STRVECfree (vec2);
+}
+
+TEST (StringVectorOperations, testSwap)
+{
+    strvec* vec = STRVECmake (2, helloStr, helloStr);
+    char* str = STRVECswap (vec, 1, worldStr);
+
+    EXPECT_STREQ (STRVECsel (vec, 0), helloStr);
+    EXPECT_STREQ (STRVECsel (vec, 1), worldStr);
+    EXPECT_EQ (STRVEClen (vec), 2);
+    EXPECT_STREQ (helloStr, str);
+
+    STRVECfree (vec);
 }
 
 
-TEST (StringOperations, testStrNCpy)
+TEST (StringVectorOperations, testPop)
 {
-    char *t = STRncpy ("test", 2);
-    EXPECT_STREQ ("te", t);
-    MEMfree (t);
-}
+    strvec* vec = STRVECmake (3, helloStr, worldStr, constStr);
+    char* str = STRVECpop (vec);
 
-// This code is shite too, as it declares the size as int and doesn't check
-// for negative sizes.
-//
-// FIXME These tests demonstrates errors in the existing imdplementation of
-//       String functions.  Adjust str.c, uncomment these, and write more.
-//TEST (StringOperations, testStrNCpyDie)
-//{
-//    ::testing::FLAGS_gtest_death_test_style = "threadsafe";
-//    char *tt;
-//    ASSERT_DEATH (tt = STRncpy ("test", -1), "Assertion");
-//}
-//
-//// Again, what the hell we are supposed to do with negative lengths?
-//TEST (StringOperations, testSubStr01)
-//{
-//    char *t = STRsubStr ("test01", -1, 1);
-//    EXPECT_STREQ ("1", t);
-//    MEMfree (t);
-//}
-//
-//
-//TEST (StringOperations, testSubStr02)
-//{
-//    char *t = STRsubStr ("test01", -10000, 1);
-//    EXPECT_STREQ ("t", t);
-//    MEMfree (t);
-//}
+    EXPECT_STREQ (STRVECsel (vec, 0), helloStr);
+    EXPECT_STREQ (STRVECsel (vec, 1), worldStr);
+    EXPECT_EQ (STRVEClen (vec), 2);
+    EXPECT_STREQ (constStr, str);
 
-TEST (StringOperations, testSubStr03)
-{
-    char *t = STRsubStr ("test01", 1, 1);
-    EXPECT_STREQ ("e", t);
-    MEMfree (t);
-}
-
-TEST (StringOperations, testSubStr04)
-{
-    char *t = STRsubStr ("test01", 100, 1);
-    EXPECT_STREQ ("", t);
-    MEMfree (t);
-}
-
-TEST (StringOperations, testSubStr05)
-{
-    char *t = STRsubStr ("test01", 2, -100);
-    EXPECT_STREQ ("", t);
-    MEMfree (t);
-}
-
-TEST (StringOperations, testIsIntFalse)
-{
-    bool t = STRisInt("3a");
-    EXPECT_EQ (t, FALSE);
-}
-
-TEST (StringOperations, testIsIntFalse)
-{
-    bool t = STRisInt("3");
-    EXPECT_EQ (t, TRUE);
-}
-
-TEST (StringOperations, testIsIntPlusSign)
-{
-    bool t = STRisInt("+3");
-    EXPECT_EQ (t, TRUE);
-}
-
-TEST (StringOperations, testIsIntDash)
-{
-    bool t = STRisInt("-3");
-    EXPECT_EQ (t, TRUE);
+    STRVECfree (vec);
 }

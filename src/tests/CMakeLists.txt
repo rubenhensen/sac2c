@@ -102,6 +102,7 @@ ENDMACRO ()
 
 # libsac2c tests
 ADD_FUNC_TEST (test-string test-str.cpp)
+ADD_FUNC_TEST (test-string-vec test-str-vec.cpp)
 ADD_FUNC_TEST (test-assoc-law test-assoc-law.cpp)
 ADD_FUNC_TEST (test-icm-compilation test-icm-compilation.cpp)
 ADD_FUNC_TEST (test-macros test-macros.cpp)
