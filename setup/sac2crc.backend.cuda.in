@@ -11,9 +11,6 @@
  *       has been dropped (as CUDA no longer develops this).
  */
 
-target arch_:
-CUDA_ARCH        := ""
-
 target cuda_sm_10 :: cuda_core :: arch_sm_10:
 target arch_sm_10 :: arch_sm_super:
 CUDA_ARCH        := "sm_10"

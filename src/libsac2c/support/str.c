@@ -133,7 +133,7 @@ STRsubStr (const char *string, size_t start, ssize_t len)
         l = strlen < start ? 0 : strlen - start;
     }
 
-    if (start > l) {
+    if (l == 0) {
         ret = STRnull ();
     } else {
         ret = memcpy (MEMmalloc (sizeof (char) * (l + 1)),
