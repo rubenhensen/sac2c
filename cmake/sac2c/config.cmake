@@ -798,7 +798,10 @@ ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES ".*osf.*")
   SET (LD_PATH      "-L%path%")
   SET (LD_FLAGS     "")
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  SET (ENABLE_PHM   OFF)
+  SET (PHM          OFF)
+  SET (CAN_USE_PHM  "0")
+  SET (SBRK_T)
+  MESSAGE (NOTICE   "PHM has been disabled for Darwin-based systems!")
   SET (RANLIB       "$RANLIB -c")
   SET (DEFS         "-D_DARWIN_C_SOURCE")
   SET (LD_DYNAMIC   "-Qunused-arguments -undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%.dylib' ")
@@ -929,7 +932,7 @@ SET (BUILD_STATUS "
 *
 * Run-time specialization: ${ENABLE_RTSPEC}
 * Private heap manager:    ${PHM}
-* Polyhedral optional packages: 
+* Polyhedral optional packages:
 * - ISL:                   ${ENABLE_ISL}
 * - BARVINOK:              ${ENABLE_BARVINOK}
 * Back ends:
