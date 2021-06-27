@@ -78,8 +78,8 @@ for arg in "$@"; do
       fi
       ;;
       -save-temps) cmdline+=(-d nocleanup -Xc -save-temps -Xl -save-temps) ;;
-      -i*|-MF|-MT|-MQ)    followaction=ccarg; ccarg=$arg ;;
-      -W*|-d*|-pedantic*|-ansi|-std*|-S|-E|-P|-A*|-U*|-C*|-H|-M*) cmdline+=(-Xc "$arg" -Xl "$arg") ;;
+      -i*|-arch|-MF|-MT|-MQ)    followaction=ccarg; ccarg=$arg ;;
+      -W*|-d*|-m*|-pedantic*|-ansi|-std*|-S|-E|-P|-A*|-U*|-C*|-H|-M*) cmdline+=(-Xc "$arg" -Xl "$arg") ;;
       -L*|-Wl,*|-l*)      cmdline+=(-Xl "$arg");;
       -Xs)    followaction=sacarg ;;
       -Xc)    followaction=ccarg ; ccarg= ;;
