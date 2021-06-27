@@ -13,7 +13,7 @@ function join_by { local d=$1; shift; echo -n "$1"; shift; printf "%s" "${@/#/$d
 FILE="${1:-/dev/stdin}"
 
 # construct exclude array
-EXCLUDES=('Compiling for CC' 'Disabling')
+EXCLUDES=('Compiling for CC' 'Disabling' 'was built for newer macOS version')
 TEXCLUDES="$(join_by '|' "${EXCLUDES[@]}")"
 
 # general search
