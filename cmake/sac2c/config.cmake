@@ -265,6 +265,10 @@ ENDIF ()
 
 # check for HWLOC (relevant for runtime system)
 SET (ENABLE_HWLOC OFF)
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  SET (HWLOC OFF)
+  MESSAGE (NOTICE   "HWLOC has been disabled for Darwin-based systems!")
+ENDIF ()
 IF (HWLOC)
     FIND_LIBRARY (LIB_HWLOC NAMES "hwloc")
     CHECK_INCLUDE_FILES (hwloc.h HAVE_HWLOC_H)
@@ -326,6 +330,10 @@ ENDIF ()
 # Check if sbrk exists which yields ENABLE_PHM
 SET (CAN_USE_PHM "0")
 SET (SBRK_T)
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  SET (PHM OFF)
+  MESSAGE (NOTICE   "PHM has been disabled for Darwin-based systems!")
+ENDIF ()
 IF (PHM)
   CHECK_FUNCTION_EXISTS ("sbrk" HAVE_SBRK)
   IF (HAVE_SBRK)
@@ -798,7 +806,6 @@ ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES ".*osf.*")
   SET (LD_PATH      "-L%path%")
   SET (LD_FLAGS     "")
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  SET (ENABLE_PHM   OFF)
   SET (RANLIB       "$RANLIB -c")
   SET (DEFS         "-D_DARWIN_C_SOURCE")
   SET (LD_DYNAMIC   "-Qunused-arguments -undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%.dylib' ")
@@ -929,7 +936,7 @@ SET (BUILD_STATUS "
 *
 * Run-time specialization: ${ENABLE_RTSPEC}
 * Private heap manager:    ${PHM}
-* Polyhedral optional packages: 
+* Polyhedral optional packages:
 * - ISL:                   ${ENABLE_ISL}
 * - BARVINOK:              ${ENABLE_BARVINOK}
 * Back ends:
