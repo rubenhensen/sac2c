@@ -79,7 +79,8 @@
  *      ...
  *
  *      // Pass 1: PASS_HOST
- *      // Declare some helper variables. The ret_col variable is used for some optimizations
+ *      // Declare some helper variables. The ret_col variable is used for some
+ optimizations
  *      // (almost branchless implementation).
         SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5653_tmp)
         SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5654_tmp)
@@ -98,16 +99,18 @@
 
         // Handle step and width for the first and third dimension (determined by the
         // parameter [1, 0, 1]) SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(SAC_gkco_prt_5657_ub,
-        SAC_gkco_prt_5657_ub, SAC_gkco_prt_5658_st, SAC_gkco_prt_5659_wi, SAC_gkco_prt_5653_tmp,
-        SAC_gkco_prt_5654_tmp)
+        SAC_gkco_prt_5657_ub, SAC_gkco_prt_5658_st, SAC_gkco_prt_5659_wi,
+ SAC_gkco_prt_5653_tmp, SAC_gkco_prt_5654_tmp)
 
         SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(SAC_gkco_prt_5665_ub, SAC_gkco_prt_5665_ub,
-        SAC_gkco_prt_5666_st, SAC_gkco_prt_5667_wi, SAC_gkco_prt_5653_tmp, SAC_gkco_prt_5654_tmp)
+        SAC_gkco_prt_5666_st, SAC_gkco_prt_5667_wi, SAC_gkco_prt_5653_tmp,
+ SAC_gkco_prt_5654_tmp)
 
 
         // Make the grid and block spaces
-        SAC_GKCO_HOST_OPM_SET_GRID(2147483647, 65535, 65535, 0, SAC_gkco_prt_5657_ub, SAC_gkco_prt_5661_ub)
-        SAC_GKCO_HOST_OPM_SET_BLOCK(1024, 1024, 64, 1024, SAC_gkco_prt_5665_ub)
+        SAC_GKCO_HOST_OPM_SET_GRID(2147483647, 65535, 65535, 0, SAC_gkco_prt_5657_ub,
+ SAC_gkco_prt_5661_ub) SAC_GKCO_HOST_OPM_SET_BLOCK(1024, 1024, 64, 1024,
+ SAC_gkco_prt_5665_ub)
 
                 // End pass
 
@@ -150,11 +153,13 @@
         // Handle step and width for the first and third dimension (determined by the
         // parameter [1, 0, 1]) SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5687_ub)
         SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(SAC_gkco_prt_5676_ub, SAC_gkco_prt_5687_ub,
-        SAC_gkco_prt_5677_st, SAC_gkco_prt_5678_wi, SAC_gkco_prt_5672_tmp, SAC_gkco_prt_5673_tmp)
+        SAC_gkco_prt_5677_st, SAC_gkco_prt_5678_wi, SAC_gkco_prt_5672_tmp,
+ SAC_gkco_prt_5673_tmp)
 
         SAC_GKCO_OPD_DECLARE(SAC_gkco_prt_5688_ub)
         SAC_GKCO_HOST_OPD_COMPRESS_SW_BL(SAC_gkco_prt_5684_ub, SAC_gkco_prt_5688_ub,
-        SAC_gkco_prt_5685_st, SAC_gkco_prt_5686_wi, SAC_gkco_prt_5672_tmp, SAC_gkco_prt_5673_tmp)
+        SAC_gkco_prt_5685_st, SAC_gkco_prt_5686_wi, SAC_gkco_prt_5672_tmp,
+ SAC_gkco_prt_5673_tmp)
 
         // Pass 3: PASS_KERNEL_WLIDS
 
@@ -177,8 +182,9 @@
         SAC_GKCO_OPD_REDEFINE (BLOCKIDX_X, SAC_gkco_prt_5691_idx)
 
         // CompressGrid
-        SAC_GKCO_GPUD_OPD_COMPRESS_SW (SAC_gkco_prt_5654_st, SAC_gkco_prt_5655_wi, SAC_gkco_prt_5664_idx)
-        SAC_GKCO_GPUD_OPD_COMPRESS_SW (SAC_gkco_prt_5662_st, SAC_gkco_prt_5663_wi, SAC_gkco_prt_5666_idx)
+        SAC_GKCO_GPUD_OPD_COMPRESS_SW (SAC_gkco_prt_5654_st, SAC_gkco_prt_5655_wi,
+ SAC_gkco_prt_5664_idx) SAC_GKCO_GPUD_OPD_COMPRESS_SW (SAC_gkco_prt_5662_st,
+ SAC_gkco_prt_5663_wi, SAC_gkco_prt_5666_idx)
 
         // Gen. All if statements that return are collected and executed at once
         // here, in a single if.
@@ -199,7 +205,8 @@
  * CODE FILE INDEX:
  *
  *   - Definitions of constants, including the pass constants and flags
- *   - Definition of gpukernelres_t, it's getters and setters, and helper functions/defines
+ *   - Definition of gpukernelres_t, it's getters and setters, and helper
+ functions/defines
  *   - The pragma traversal loop and the entry functions to this code
  *   - The mappings and their inverses
  *   - Implementation correctness tests
@@ -334,7 +341,7 @@ struct GPUKERNELRES {
     strvec *owned_vars;
 
     // Current spap. Can be used to generated better error messages.
-    node* spap;
+    node *spap;
 };
 
 // Flag macro's
@@ -884,7 +891,7 @@ dispatch (node *spap, gpukernelres_t *res, unsigned int bnum, char **bounds)
           = dispatch (EXPRS_EXPR (SKIPS (nargs) (SPAP_ARGS (spap))), res, bnum, bounds); \
         /* After the recursive call, we call the actual mapping function with the        \
          * correct number of arguments. We use the macros defined above for this. */     \
-        GKR_SPAP(res) = spap;                                                            \
+        GKR_SPAP (res) = spap;                                                           \
         res = GKCOcomp##fun (ARGS (nargs) res);                                          \
     }
 #include "gpukernel_funs.mac"
@@ -897,7 +904,7 @@ dispatch (node *spap, gpukernelres_t *res, unsigned int bnum, char **bounds)
 #undef SKIP0
 #undef SKIP1
 
-        // Finally, if none of the cases above were fired, we must have an undefined macro.
+    // Finally, if none of the cases above were fired, we must have an undefined macro.
     else {
         DBUG_ASSERT (0 == 1, "expected gpukernel function, found `%s'", SPAP_NAME (spap));
     }
@@ -952,7 +959,7 @@ dispatchInv (node *spap, char **bounds, gpukernelres_t *res)
         /* Because this is the top-down version, we call the actual mapping function     \
          * first. We give it the correct number of arguments. For this, we use the       \
          * macros defined above */                                                       \
-        GKR_SPAP(res) = spap;                                                            \
+        GKR_SPAP (res) = spap;                                                           \
         res = GKCOcompInv##fun (ARGS (nargs) res);                                       \
         /* After the mapping function call, we do the recursive dispatch call. We give   \
          * it the inner pragma call to the mapping. For this, we have to skip the        \
@@ -970,7 +977,7 @@ dispatchInv (node *spap, char **bounds, gpukernelres_t *res)
 #undef SKIP0
 #undef SKIP1
 
-        // Finally, if none of the cases above were fired, we must have an undefined macro.
+    // Finally, if none of the cases above were fired, we must have an undefined macro.
     else {
         DBUG_ASSERT (0 == 1, "expected gpukernel function, found `%s'", SPAP_NAME (spap));
     }
@@ -1126,7 +1133,7 @@ GKCOcompGridBlock (node *gridDims, gpukernelres_t *inner)
 
     // Make sure all steps, widths and lowerbounds have been handled
     for (LOOP_DIMENSIONS (inner, dim))
-        GKCOcompAssertNormalized("GridBlock", dim, inner);
+        GKCOcompAssertNormalized ("GridBlock", dim, inner);
 
     // Check the number of dimensions, the number of grid dimensions, and the number of
     // thread dimensions against the GPU capabilities
@@ -1143,14 +1150,14 @@ GKCOcompGridBlock (node *gridDims, gpukernelres_t *inner)
     size_t to[2] = {(size_t)NUM_VAL (gridDims), GKR_DIM (inner)};
     // The maximum number of threads per dimension, and the totals
     int max_s[8] = {
-            global.config.cuda_max_x_grid,
-            global.config.cuda_max_x_block, // max x
-            global.config.cuda_max_y_grid,
-            global.config.cuda_max_y_block, // max y
-            global.config.cuda_max_z_grid,
-            global.config.cuda_max_z_block, // max z
-            0,
-            global.config.cuda_max_block, // max product (only for block)
+      global.config.cuda_max_x_grid,
+      global.config.cuda_max_x_block, // max x
+      global.config.cuda_max_y_grid,
+      global.config.cuda_max_y_block, // max y
+      global.config.cuda_max_z_grid,
+      global.config.cuda_max_z_block, // max z
+      0,
+      global.config.cuda_max_block, // max product (only for block)
     };
 
     // Toggle the emitting of the grid/block variable code
@@ -1204,8 +1211,8 @@ GKCOcompInvGridBlock (node *num, gpukernelres_t *outer)
     size_t to[2] = {(size_t)NUM_VAL (num), GKR_DIM (outer)};
     // The thread coordinate variables, also ICM's
     char *grid_block_var[6] = {
-            "BLOCKIDX_X",  "THREADIDX_X", "BLOCKIDX_Y",
-            "THREADIDX_Y", "BLOCKIDX_Z",  "THREADIDX_Z",
+      "BLOCKIDX_X",  "THREADIDX_X", "BLOCKIDX_Y",
+      "THREADIDX_Y", "BLOCKIDX_Z",  "THREADIDX_Z",
     };
 
     // Two iterations, one for the grid and one for the block. Inside the loop, the arrays
@@ -1271,9 +1278,9 @@ GKCOcompGen (unsigned int bnum, char **bounds, gpukernelres_t *inner)
     DBUG_ENTER ();
     DBUG_PRINT ("compiling Gen:");
     DBUG_EXECUTE (fprintf (stderr, "    Gen ( %u", bnum);
-                          for (unsigned int i = 0; i < bnum; i++) {
-                              fprintf (stderr, ", %s", bounds[i]);
-                          } fprintf (stderr, ")\n"););
+                  for (unsigned int i = 0; i < bnum; i++) {
+                      fprintf (stderr, ", %s", bounds[i]);
+                  } fprintf (stderr, ")\n"););
     fprintf (global.outfile, "\n");
     if (GKR_CHECK_PRAGMA (inner)) {
         fprintf (global.outfile, "SAC_TR_GPU_PRINT(\"Mapping Gen\");\n");
@@ -1366,35 +1373,38 @@ GKCOcompInvGen (char **bounds, gpukernelres_t *outer)
 /**
  * Check whether the current index space is normalized in dimension "dim".
  */
-gpukernelres_t*
-GKCOcompAssertNormalized(char* mapping, size_t dim, gpukernelres_t* inner) {
-    DBUG_ENTER();
+gpukernelres_t *
+GKCOcompAssertNormalized (char *mapping, size_t dim, gpukernelres_t *inner)
+{
+    DBUG_ENTER ();
 
-    if (!STReq(GKR_LB_D_READ(inner, dim), CONST_ZERO))
-        CTIabortLoc(NODE_LOCATION(GKR_SPAP(inner)),
-                    "Mapping %s requires lowerbound to be 0 in dimension %zu. "
-                    "Consider running the mapping 'ShiftLB' first. ",
-                    mapping, dim);
+    if (!STReq (GKR_LB_D_READ (inner, dim), CONST_ZERO))
+        CTIabortLoc (NODE_LOCATION (GKR_SPAP (inner)),
+                     "Mapping %s requires lowerbound to be 0 in dimension %zu. "
+                     "Consider running the mapping 'ShiftLB' first. ",
+                     mapping, dim);
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /**
  * Check whether the current index space is dense in dimension "dim".
  */
 gpukernelres_t *
-GKCOcompAssertDense(char* mapping, size_t dim, gpukernelres_t* inner) {
-    DBUG_ENTER();
+GKCOcompAssertDense (char *mapping, size_t dim, gpukernelres_t *inner)
+{
+    DBUG_ENTER ();
 
-    GKCOcompAssertNormalized(mapping, dim, inner);
+    GKCOcompAssertNormalized (mapping, dim, inner);
 
-    if (!STReq(GKR_ST_D_READ(inner, dim), GKR_WI_D_READ(inner, dim)))
-        CTIabortLoc(NODE_LOCATION(GKR_SPAP(inner)),
-                    "Mapping %s requires the step and width to be equal in dimension %zu. "
-                    "Consider running the mapping 'CompressGrid' or 'PruneGrid' first. ",
-                    mapping, dim);
+    if (!STReq (GKR_ST_D_READ (inner, dim), GKR_WI_D_READ (inner, dim)))
+        CTIabortLoc (NODE_LOCATION (GKR_SPAP (inner)),
+                     "Mapping %s requires the step and width to be equal in dimension "
+                     "%zu. "
+                     "Consider running the mapping 'CompressGrid' or 'PruneGrid' first. ",
+                     mapping, dim);
 
-    DBUG_RETURN(inner);
+    DBUG_RETURN (inner);
 }
 
 /**
@@ -1548,9 +1558,11 @@ GKCOcompInvShiftLB (gpukernelres_t *outer)
  *
  * For each dimension j, for which `shouldCompress_node[j] == true:
  *               CompressGrid                                         InvCompressGrid
- *                                           ... --> 1, 1, ubj', idj'       -->       stj, wij, ubj, idj
- * stj, wij, ubj     -->      1, 1, ubj' --> ... --> 1, 1, ubj', idj'       -->       stj, wij, ubj, idj
- *                                           ... --> 1, 1, ubj', idj'       -->       stj, wij, ubj, idj
+ *                                           ... --> 1, 1, ubj', idj'       -->       stj,
+ * wij, ubj, idj stj, wij, ubj     -->      1, 1, ubj' --> ... --> 1, 1, ubj', idj' -->
+ * stj, wij, ubj, idj
+ *                                           ... --> 1, 1, ubj', idj'       -->       stj,
+ * wij, ubj, idj
  *
  * Note:
  *   - The lowerbound should be 0, otherwise a compile error will be thrown.
@@ -1574,11 +1586,11 @@ GKCOcompCompressGrid (node *shouldCompress_node, gpukernelres_t *inner)
     DBUG_ENTER ();
     DBUG_PRINT ("compiling CompressGrid:");
     DBUG_EXECUTE (fprintf (stderr, "    CompressGrid (");
-                          printNumArray (shouldCompress_node); fprintf (stderr, ", inner)\n"););
+                  printNumArray (shouldCompress_node); fprintf (stderr, ", inner)\n"););
 
     // Get the shouldCompress variable as an array instead of AST nodes
     int *shouldCompress
-                = getNumArrayFromNodes (shouldCompress_node, GKR_DIM (inner), "CompressGrid");
+      = getNumArrayFromNodes (shouldCompress_node, GKR_DIM (inner), "CompressGrid");
 
     if (GKR_CHECK_PRAGMA (inner)) {
         fprintf (global.outfile, "SAC_TR_GPU_PRINT(\"Mapping CompressGrid([");
@@ -1599,7 +1611,7 @@ GKCOcompCompressGrid (node *shouldCompress_node, gpukernelres_t *inner)
         // Check whether the lowerbound is indeed 0. When compressing, this is
         // required, otherwise the computations are not valid.
         if (GKR_CHECK_PRAGMA (inner))
-            GKCOcompAssertNormalized("CompressGrid", dim, inner);
+            GKCOcompAssertNormalized ("CompressGrid", dim, inner);
 
         // If the step is 1, we don't need to compute anything
         if (STReq (GKR_ST_D_READ (inner, dim), CONST_ONE))
@@ -1616,7 +1628,7 @@ GKCOcompCompressGrid (node *shouldCompress_node, gpukernelres_t *inner)
         if (STReq (width, CONST_ONE))
             fprintf (global.outfile, "SAC_GKCO_HOST_OPD_COMPRESS_S(%s, %s, %s)\n\n",
                      ub_read, ub_write, step);
-            // Else, we handle the case where both the step and width are relevant
+        // Else, we handle the case where both the step and width are relevant
         else if (!GKR_BRANCHLESS (inner))
             fprintf (global.outfile,
                      "SAC_GKCO_HOST_OPD_COMPRESS_SW(%s, %s, %s, %s, %s)\n\n", ub_read,
@@ -1648,11 +1660,11 @@ GKCOcompInvCompressGrid (node *shouldCompress_node, gpukernelres_t *outer)
     DBUG_ENTER ();
     DBUG_PRINT ("compiling UnCompressGrid:");
     DBUG_EXECUTE (fprintf (stderr, "    UnCompressGrid (");
-                          printNumArray (shouldCompress_node); fprintf (stderr, ", inner)\n"););
+                  printNumArray (shouldCompress_node); fprintf (stderr, ", inner)\n"););
 
     // Get the shouldCompress variable as an array instead of AST nodes
     int *shouldCompress
-                = getNumArrayFromNodes (shouldCompress_node, GKR_DIM (outer), "CompressGrid");
+      = getNumArrayFromNodes (shouldCompress_node, GKR_DIM (outer), "CompressGrid");
 
     // To be able to pop the UB, ST and WI variables from the stack in the inverse order
     // in which we pushed, we need to loop the dimensions in inverse order as well
@@ -1675,7 +1687,7 @@ GKCOcompInvCompressGrid (node *shouldCompress_node, gpukernelres_t *outer)
             fprintf (global.outfile, "SAC_GKCO_GPUD_OPD_UNCOMPRESS_S(%s, %s)\n\n",
                      GKR_ST_D_READ (outer, dim), GKR_ID_D_READ (outer, dim));
         }
-            // Else, we handle the case where both the step and width are relevant
+        // Else, we handle the case where both the step and width are relevant
         else {
             INDENT
             fprintf (global.outfile, "SAC_GKCO_GPUD_OPD_UNCOMPRESS_SW(%s, %s, %s)\n\n",
@@ -1696,9 +1708,11 @@ GKCOcompInvCompressGrid (node *shouldCompress_node, gpukernelres_t *outer)
  * that fall outside of the grid (in the inverse call).
  *
  *          StepWidth                            InvStepWidth
- *                             ... --> 1, 1, idj      -->     return;           // idj not in step/width
- * stj, wij    -->    1, 1 --> ... --> 1, 1, idj      -->     stj, wij, idj     // idj in step/width
- *                             ... --> 1, 1, idj      -->     stj, wij, idj     // idj in * step/width
+ *                             ... --> 1, 1, idj      -->     return;           // idj not
+ * in step/width stj, wij    -->    1, 1 --> ... --> 1, 1, idj      -->     stj, wij, idj
+ * // idj in step/width
+ *                             ... --> 1, 1, idj      -->     stj, wij, idj     // idj in
+ * * step/width
  *
  * Notes:
  *   - When running in branchless mode (PASS_BRANCHLESS), an alternative icm for
@@ -1713,7 +1727,8 @@ GKCOcompInvCompressGrid (node *shouldCompress_node, gpukernelres_t *outer)
  * @return                  The modified gpu kernel res
  */
 gpukernelres_t *
-GKCOcompPruneGrid (gpukernelres_t *inner) {
+GKCOcompPruneGrid (gpukernelres_t *inner)
+{
     DBUG_ENTER ();
     DBUG_PRINT ("compiling CompressGrid:");
     DBUG_EXECUTE (fprintf (stderr, "    CompressGrid (inner)\n"));
@@ -1722,7 +1737,7 @@ GKCOcompPruneGrid (gpukernelres_t *inner) {
         // Check whether the lowerbound is indeed 0. When compressing, this is
         // required, otherwise the computations are not valid.
         if (GKR_CHECK_PRAGMA (inner))
-            GKCOcompAssertNormalized("CompressGrid", dim, inner);
+            GKCOcompAssertNormalized ("CompressGrid", dim, inner);
 
         // Preserve the current variable identifiers for step and width
         GKR_ST_PUSH (inner, dim)
@@ -1759,20 +1774,21 @@ GKCOcompInvPruneGrid (gpukernelres_t *outer)
         GKR_WI_POP (outer, dim)
 
         // If the step is still 1 after popping, we don't have to do anything
-        if (!STReq(GKR_ST_D_READ (outer, dim), CONST_ONE)) {
+        if (!STReq (GKR_ST_D_READ (outer, dim), CONST_ONE)) {
             INDENT
             // Print out the correct ICM depending on whether we are running in branchless
             // mode
             if (!GKR_BRANCHLESS (outer))
-                fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(%s, %s, %s, %s)\n\n",
-                        GKR_LB_D_READ (outer, dim), GKR_ST_D_READ (outer, dim),
-                        GKR_WI_D_READ (outer, dim), GKR_ID_D_READ (outer, dim));
+                fprintf (global.outfile,
+                         "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(%s, %s, %s, %s)\n\n",
+                         GKR_LB_D_READ (outer, dim), GKR_ST_D_READ (outer, dim),
+                         GKR_WI_D_READ (outer, dim), GKR_ID_D_READ (outer, dim));
             else
-                fprintf(global.outfile,
-                        "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL(%s, %s, %s, %s, %s)\n\n",
-                        GKR_LB_D_READ (outer, dim), GKR_ST_D_READ (outer, dim),
-                        GKR_WI_D_READ (outer, dim), GKR_ID_D_READ (outer, dim),
-                        GKR_RETURN_COL (outer));
+                fprintf (global.outfile,
+                         "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL(%s, %s, %s, %s, %s)\n\n",
+                         GKR_LB_D_READ (outer, dim), GKR_ST_D_READ (outer, dim),
+                         GKR_WI_D_READ (outer, dim), GKR_ID_D_READ (outer, dim),
+                         GKR_RETURN_COL (outer));
         }
     }
 
@@ -1822,10 +1838,10 @@ GKCOcompPermute (node *permutation_node, gpukernelres_t *inner)
     DBUG_ENTER ();
     DBUG_PRINT ("compiling Permute:");
     DBUG_EXECUTE (fprintf (stderr, "    Permute ("); printNumArray (permutation_node);
-                          fprintf (stderr, ", inner)\n"););
+                  fprintf (stderr, ", inner)\n"););
 
     int *permutation
-                       = getNumArrayFromNodes (permutation_node, GKR_DIM (inner), "Permute");
+      = getNumArrayFromNodes (permutation_node, GKR_DIM (inner), "Permute");
     if (GKR_CHECK_PRAGMA (inner)) {
         fprintf (global.outfile, "SAC_TR_GPU_PRINT(\"Mapping Permute([");
         for (LOOP_DIMENSIONS (inner, dim))
@@ -1883,7 +1899,7 @@ GKCOcompInvPermute (node *permutation_node, gpukernelres_t *outer)
     DBUG_ENTER ();
     DBUG_PRINT ("compiling inverse Permute:");
     DBUG_EXECUTE (fprintf (stderr, "    InvPermute ("); printNumArray (permutation_node);
-                          fprintf (stderr, ", outer)\n"););
+                  fprintf (stderr, ", outer)\n"););
 
     int *permutation = getNumArrayFromNodes (permutation_node, GKR_DIM (outer), false);
 
@@ -1939,8 +1955,8 @@ GKCOcompFoldLast2 (gpukernelres_t *inner)
 
     // Check whether the index space is dense (lb=0, st=wi). If this is not
     // true, this function cannot provide a valid index space.
-    GKCOcompAssertDense("FoldLast2", majordim, inner);
-    GKCOcompAssertDense("FoldLast2", minordim, inner);
+    GKCOcompAssertDense ("FoldLast2", majordim, inner);
+    GKCOcompAssertDense ("FoldLast2", minordim, inner);
 
     // Preserve the upperbound variable. The minor dim upperbound variable is
     // automarically stored using RemoveDimension and AddDimension
@@ -2032,7 +2048,7 @@ GKCOcompSplitLast (node *minorlen_node, gpukernelres_t *inner)
     // Check lowerbound, upperbound, step and width variables. Step and width will be set
     // to 1, but if lowerbound is not set to 0, we throw a compiler error. The upperbound
     // should be padded so the split is possible.
-    GKCOcompAssertDense("SplitLast", majordim, inner);
+    GKCOcompAssertDense ("SplitLast", majordim, inner);
     GKCOcompPad (majordim, minorlen, inner);
 
     // Preserve the upperbound variable.

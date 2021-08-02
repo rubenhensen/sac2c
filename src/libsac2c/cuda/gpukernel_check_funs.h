@@ -6,7 +6,6 @@
 extern void GKCHcheckGpuKernelPragma (node *spap, struct location loc);
 extern void checkArgsLength(node* args, size_t length, const char* name) ;
 extern void checkDimensionSettings(node* gridDims, size_t dimensions);
-extern void checkLbZero(char* lb_str, node* loc, char* name, size_t dim);
 
 #define WLP(fun, nargs, checkfun)                     \
 extern node *GKCHcheck ## fun (node *args);

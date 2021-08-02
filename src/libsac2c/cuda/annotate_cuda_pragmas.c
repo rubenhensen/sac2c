@@ -181,8 +181,8 @@ ACPcomputeDimensionality (info *arg_info)
     DBUG_ENTER ();
 
     INFO_DIMS (arg_info)
-            = (size_t)SHgetExtent (ARRAY_FRAMESHAPE (GENERATOR_BOUND1 (INFO_GEN (arg_info))),
-                                   0);
+      = (size_t)SHgetExtent (ARRAY_FRAMESHAPE (GENERATOR_BOUND1 (INFO_GEN (arg_info))),
+                             0);
 
     DBUG_RETURN (arg_info);
 }
@@ -211,7 +211,7 @@ ACPmakeSpap (info *arg_info, char *staticName, size_t nargs, node **args)
     for (size_t i = nargs - 1; i != (size_t)-1; i--)
         exprs = TBmakeExprs (args[i], exprs);
 
-    node* spid = TBmakeSpid (NULL, STRcpy (staticName));
+    node *spid = TBmakeSpid (NULL, STRcpy (staticName));
     INFO_PRAGMA (arg_info) = TBmakeSpap (spid, exprs);
 
     DBUG_RETURN (arg_info);
@@ -301,8 +301,8 @@ ACPmakeCompressGrid (constant *compressDims, info *inner)
     DBUG_RETURN (inner);
 }
 
-info*
-ACPmakePruneGrid(info* inner)
+info *
+ACPmakePruneGrid (info *inner)
 {
     DBUG_ENTER ();
 
@@ -512,40 +512,40 @@ ACPjingGeneratePragma (bool ext, info *inner)
     DBUG_ENTER ();
 
     switch (INFO_DIMS (inner)) {
-        case 1:
-            inner = ACPmakeSplitLast (global.config.cuda_1d_block_sm, inner);
-            inner = ACPmakeGridBlock (1, inner);
-            break;
-        case 2:
-            inner = ACPmakeSplitLast (global.config.cuda_2d_block_x, inner);
-            inner = ACPmakePermute (MK_CONST (3, 1, 2, 0), inner);
-            inner = ACPmakeSplitLast (global.config.cuda_2d_block_y, inner);
-            inner = ACPmakePermute (MK_CONST (4, 2, 0, 3, 1), inner);
-            inner = ACPmakeGridBlock (2, inner);
-            break;
-        case 3:
-        case 4:
-        case 5:
-            inner = ACPmakeGridBlock (2, inner);
-            break;
-        default:
-            if (ext) {
-                // If the dimensionality is too high and extended mode is enabled,
-                // reduce the dimensionality and try again.
-                inner = ACPreduceDimensionality (inner);
-                inner = ACPjingGeneratePragma (ext, inner);
-            } else
-                // If the dimensionality is too high and extended mode is disabled, throw an
-                // error.
-                CTIerrorLoc (NODE_LOCATION (INFO_WITH (inner)),
-                             "Dimensionality of with loop (%zu) too high for gpu mapping "
-                             "strategy \"Jing's method\""
-                             "(-gpu_mapping_strategy jings_method) can be at most 5. For "
-                             "higher dimensionalities, "
-                             "use the extended Jing's method (-gpu_mapping_strategy "
-                             "jings_method_ext).",
-                             INFO_DIMS (inner));
-            break;
+    case 1:
+        inner = ACPmakeSplitLast (global.config.cuda_1d_block_sm, inner);
+        inner = ACPmakeGridBlock (1, inner);
+        break;
+    case 2:
+        inner = ACPmakeSplitLast (global.config.cuda_2d_block_x, inner);
+        inner = ACPmakePermute (MK_CONST (3, 1, 2, 0), inner);
+        inner = ACPmakeSplitLast (global.config.cuda_2d_block_y, inner);
+        inner = ACPmakePermute (MK_CONST (4, 2, 0, 3, 1), inner);
+        inner = ACPmakeGridBlock (2, inner);
+        break;
+    case 3:
+    case 4:
+    case 5:
+        inner = ACPmakeGridBlock (2, inner);
+        break;
+    default:
+        if (ext) {
+            // If the dimensionality is too high and extended mode is enabled,
+            // reduce the dimensionality and try again.
+            inner = ACPreduceDimensionality (inner);
+            inner = ACPjingGeneratePragma (ext, inner);
+        } else
+            // If the dimensionality is too high and extended mode is disabled, throw an
+            // error.
+            CTIerrorLoc (NODE_LOCATION (INFO_WITH (inner)),
+                         "Dimensionality of with loop (%zu) too high for gpu mapping "
+                         "strategy \"Jing's method\""
+                         "(-gpu_mapping_strategy jings_method) can be at most 5. For "
+                         "higher dimensionalities, "
+                         "use the extended Jing's method (-gpu_mapping_strategy "
+                         "jings_method_ext).",
+                         INFO_DIMS (inner));
+        break;
     }
 
     DBUG_RETURN (inner);
@@ -632,17 +632,17 @@ ACPgeneratePragma (info *arg_info)
         arg_info = ACPmakePruneGrid (arg_info);
 
     switch (global.gpu_mapping_strategy) {
-        case Jings_method:
-            arg_info = ACPjingGeneratePragma (FALSE, arg_info);
-            break;
-        case Jings_method_ext:
-            arg_info = ACPjingGeneratePragma (TRUE, arg_info);
-            break;
-        case Foldall:
-            arg_info = ACPfoldallGeneratePragma (arg_info);
-            break;
-        default:
-            DBUG_UNREACHABLE ("Invalid cuda mapping strategy");
+    case Jings_method:
+        arg_info = ACPjingGeneratePragma (FALSE, arg_info);
+        break;
+    case Jings_method_ext:
+        arg_info = ACPjingGeneratePragma (TRUE, arg_info);
+        break;
+    case Foldall:
+        arg_info = ACPfoldallGeneratePragma (arg_info);
+        break;
+    default:
+        DBUG_UNREACHABLE ("Invalid cuda mapping strategy");
     }
 
     DBUG_RETURN (arg_info);
@@ -720,7 +720,7 @@ ACPgenerator (node *arg_node, info *arg_info)
 
     arg_info = ACPgeneratePragma (arg_info);
     node *pragma = TBmakePragma ();
-    PRAGMA_GPUKERNEL_APS (pragma) = TBmakeExprs(INFO_PRAGMA (arg_info), NULL);
+    PRAGMA_GPUKERNEL_APS (pragma) = TBmakeExprs (INFO_PRAGMA (arg_info), NULL);
     INFO_PRAGMA (arg_info) = pragma;
 
     DBUG_RETURN (arg_node);

@@ -237,16 +237,6 @@ checkDimensionSettings (node *gridDims_node, size_t dims)
     DBUG_RETURN ();
 }
 
-void
-checkLbZero (char *lb_str, node *loc, char *name, size_t dim)
-{
-    if (!STReq (lb_str, "0"))
-        CTIabortLoc (NODE_LOCATION (loc),
-                     "%s cannot be executed here; "
-                     "lowerbound is not zero for dimension %zu",
-                     name, dim);
-}
-
 /**<!--*********************************************************************-->
  *
  * @fn void GKCHcheckGpuKernelPragma (node *spap, struct location loc)
