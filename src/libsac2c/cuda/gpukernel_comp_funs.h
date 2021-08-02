@@ -15,8 +15,8 @@ void GKCOcompCheckKernel(gpukernelres_t* res);
 extern void GKCOcompCheckEnd(void);
 void GKCOcompCheckGPUkernelRes(unsigned int bnum, char** bounds, gpukernelres_t* res);
 
-gpukernelres_t* GKCOcompStepWidthLB(size_t dim, gpukernelres_t* inner);
-gpukernelres_t* GKCOcompInvStepWidthLB(size_t dim, gpukernelres_t* outer);
+gpukernelres_t* GKCOcompAssertNormalized(char* mapping, size_t dim, gpukernelres_t* inner);
+gpukernelres_t* GKCOcompAssertDense(char* mapping, size_t dim, gpukernelres_t* inner);
 
 #define ARGS( nargs) ARG##nargs
 #define ARG0

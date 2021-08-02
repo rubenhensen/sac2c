@@ -332,6 +332,9 @@ struct GPUKERNELRES {
     // Vector with all owned variables, so they can be freed when this struct is cleaned
     // up
     strvec *owned_vars;
+
+    // Current spap. Can be used to generated better error messages.
+    node* spap;
 };
 
 // Flag macro's
@@ -432,6 +435,8 @@ NewUpperboundVariable (gpukernelres_t *gkr, size_t dim)
 #define GKR_ID_POP(gkr, dim)                                                             \
     if (GKR_VAL_CONSUME (gkr))                                                           \
         STRVECswap (GKR_ID (gkr), dim, STRVECpop (GKR_ID_AT (gkr)));
+
+#define GKR_SPAP(gkr) gkr->spap
 
 // Inner loop code for looping over dimensions of a gpukernelres_t. Note that, in order to
 // pop in inverse order in which variable identifiers are pushed, the loop should be
@@ -872,13 +877,14 @@ dispatch (node *spap, gpukernelres_t *res, unsigned int bnum, char **bounds)
     {                                                                                    \
         DBUG_ASSERT ((SPAP_ARGS (spap) != NULL), "missing argument in `%s' ()", #fun);   \
         /* Because this is the bottom-up version, we do the recursive dispatch call      \
-         * first We give it the inner pragma call to the mapping. For this we first have                 \
-         * to skip the arguments for the GKCOcomp function. We use the macros defined                 \
-         * above for this. */                                                                            \
+         * first We give it the inner pragma call to the mapping. For this we first have \
+         * to skip the arguments for the GKCOcomp function. We use the macros defined    \
+         * above for this. */                                                            \
         res                                                                              \
           = dispatch (EXPRS_EXPR (SKIPS (nargs) (SPAP_ARGS (spap))), res, bnum, bounds); \
         /* After the recursive call, we call the actual mapping function with the        \
-         * correct number of arguments. We use the macros defined above for this. */                       \
+         * correct number of arguments. We use the macros defined above for this. */     \
+        GKR_SPAP(res) = spap;                                                            \
         res = GKCOcomp##fun (ARGS (nargs) res);                                          \
     }
 #include "gpukernel_funs.mac"
@@ -944,12 +950,13 @@ dispatchInv (node *spap, char **bounds, gpukernelres_t *res)
     {                                                                                    \
         DBUG_ASSERT ((SPAP_ARGS (spap) != NULL), "missing argument in `%s' ()", #fun);   \
         /* Because this is the top-down version, we call the actual mapping function     \
-         * first. We give it the correct number of arguments. For this, we use the                        \
-         * macros defined above */                                                                                \
+         * first. We give it the correct number of arguments. For this, we use the       \
+         * macros defined above */                                                       \
+        GKR_SPAP(res) = spap;                                                            \
         res = GKCOcompInv##fun (ARGS (nargs) res);                                       \
         /* After the mapping function call, we do the recursive dispatch call. We give   \
-         * it the inner pragma call to the mapping. For this, we have to skip the                     \
-         * arguments for the GKCOcomp function. We use the macros defined above for                          \
+         * it the inner pragma call to the mapping. For this, we have to skip the        \
+         * arguments for the GKCOcomp function. We use the macros defined above for      \
          * this. */                                                                      \
         res = dispatchInv (EXPRS_EXPR (SKIPS (nargs) (SPAP_ARGS (spap))), bounds, res);  \
     }
@@ -1119,7 +1126,7 @@ GKCOcompGridBlock (node *gridDims, gpukernelres_t *inner)
 
     // Make sure all steps, widths and lowerbounds have been handled
     for (LOOP_DIMENSIONS (inner, dim))
-        GKCOcompStepWidthLB (dim, inner);
+        GKCOcompAssertNormalized("GridBlock", dim, inner);
 
     // Check the number of dimensions, the number of grid dimensions, and the number of
     // thread dimensions against the GPU capabilities
@@ -1219,9 +1226,6 @@ GKCOcompInvGridBlock (node *num, gpukernelres_t *outer)
                      grid_block_var[2 * xyz_int + gb], GKR_ID_D_READ (outer, rev_dim));
         }
     }
-
-    for (LOOP_DIMENSIONS_INV (outer, dim))
-        GKCOcompInvStepWidthLB (dim, outer);
 
     COMP_FUN_DBUG_RETURN (outer)
 }
@@ -1360,181 +1364,37 @@ GKCOcompInvGen (char **bounds, gpukernelres_t *outer)
 }
 
 /**
- * handleLB is an implicit mapping that gets executed whenever lowerbound information
- * cannot be preserved, for example when folding/splitting. It will set the lowerbound to
- * 0 (in the non-inverse call), restore the lowerbound variable and return all threads
- * that fall outside of the lowerbound (in the reverse call). This function will only
- * check a single dimension.
- *
- *           handleLB                            invHandleLB
- *                          --> 0...0, id0...idn     -->     return;        // id <  lb
- * lb0...lbn    -->   0...0 --> 0...0, id0...idn     -->     id0...idn      // id >= lb
- *                          --> 0...0, id0...idn     -->     id0...idn      // id >= lb
- *
- *   - When running in branchless mode (PASS_BRANCHLESS), an alternative icm for
- * InvHandleLB is used. See CKCOcompGen for more info.
- *   - When the lowerbound is already 0, nothing will be done.
- *   - Resolving the lowerbound by this method results in redundant threads. Use the
- * ShiftLB mapping to create a dense thread space without redundant threads.
- *
- * @param dim               The dimension for which the lowerbound has to be 0
- * @param inner             The gpu kernel res, resulting from calling all inner pragma
- *                          calls first
- * @return                  The modified gpu kernel res
+ * Check whether the current index space is normalized in dimension "dim".
  */
-gpukernelres_t *
-handleLB (size_t dim, gpukernelres_t *inner)
-{
-    DBUG_ENTER ();
+gpukernelres_t*
+GKCOcompAssertNormalized(char* mapping, size_t dim, gpukernelres_t* inner) {
+    DBUG_ENTER();
 
-    GKR_LB_PUSH (inner, dim)
-    GKR_LB_D_REPLACE (inner, dim, CONST_ZERO);
+    if (!STReq(GKR_LB_D_READ(inner, dim), CONST_ZERO))
+        CTIabortLoc(NODE_LOCATION(GKR_SPAP(inner)),
+                    "Mapping %s requires lowerbound to be 0 in dimension %zu. "
+                    "Consider running the mapping 'ShiftLB' first. ",
+                    mapping, dim);
 
-    DBUG_RETURN (inner);
+    DBUG_RETURN(inner);
 }
 
 /**
- * Inverse of handleLB
- *
- * @param dim               The dimension for which the lowerbound has to be 0
- * @param outer             The GPU kernel res, resulting from calling all outer pragma
- * calls first
- * @return                  The modified gpu kernel res
+ * Check whether the current index space is dense in dimension "dim".
  */
 gpukernelres_t *
-handleInvLB (size_t dim, gpukernelres_t *outer)
-{
-    DBUG_ENTER ();
+GKCOcompAssertDense(char* mapping, size_t dim, gpukernelres_t* inner) {
+    DBUG_ENTER();
 
-    GKR_LB_POP (outer, dim)
+    GKCOcompAssertNormalized(mapping, dim, inner);
 
-    if (!STReq (GKR_LB_D_READ (outer, dim), CONST_ZERO)) {
-        INDENT
-        if (!GKR_BRANCHLESS (outer))
-            fprintf (global.outfile, "SAC_GKCO_GPUD_OPD_UNLB(%s, %s)",
-                     GKR_LB_D_READ (outer, dim), GKR_ID_D_READ (outer, dim));
-        else
-            fprintf (global.outfile, "SAC_GKCO_GPUD_OPD_UNLB_BL(%s, %s, %s)",
-                     GKR_LB_D_READ (outer, dim), GKR_ID_D_READ (outer, dim),
-                     GKR_RETURN_COL (outer));
-    }
+    if (!STReq(GKR_ST_D_READ(inner, dim), GKR_WI_D_READ(inner, dim)))
+        CTIabortLoc(NODE_LOCATION(GKR_SPAP(inner)),
+                    "Mapping %s requires the step and width to be equal in dimension %zu. "
+                    "Consider running the mapping 'CompressGrid' or 'PruneGrid' first. ",
+                    mapping, dim);
 
-    DBUG_RETURN (outer);
-}
-
-/**
- * StepWidth is an implicit mapping that gets executed whenever step/width information
- * cannot be preserved, for example when folding/splitting. It will set step and width to
- * 1 (in the non-inverse call), restore the step/width variables and return all threads
- * that fall outside of the grid (in the inverse call). This function will only check a
- * single dimension.
- *
- *          StepWidth                            InvStepWidth
- *                             ... --> 1, 1, idj      -->     return;           // idj not in step/width
- * stj, wij    -->    1, 1 --> ... --> 1, 1, idj      -->     stj, wij, idj     // idj in step/width
- *                             ... --> 1, 1, idj      -->     stj, wij, idj     // idj in * step/width
- *
- * Notes:
- *   - When running in branchless mode (PASS_BRANCHLESS), an alternative icm for
- * InvStepWidth is used. See CKCOcompGen for more info.
- *   - When step is already 1, nothing will be done. Width will be set to 1 in that case
- * regardless.
- *   - Resolving step/width by this method results in redundant threads. Use the
- * CompressGrid mapping to create a dense thread space without redundant threads.
- *
- * @param dim               The dimension for which step and width have to be 1
- * @param inner             The gpu kernel res, resulting from calling all inner pragma
- *                          calls first
- * @return                  The modified gpu kernel res
- */
-gpukernelres_t *
-handleSW (size_t dim, gpukernelres_t *inner)
-{
-    DBUG_ENTER ();
-
-    GKR_ST_PUSH (inner, dim)
-    GKR_WI_PUSH (inner, dim)
-
-    GKR_ST_D_REPLACE (inner, dim, CONST_ONE);
-    GKR_WI_D_REPLACE (inner, dim, CONST_ONE);
-
-    DBUG_RETURN (inner);
-}
-
-/**
- * Inverse of GKCOcompStepWidthLB
- *
- * @param dim               The dimension for which step and width have to be 1
- * @param outer             The GPU kernel res, resulting from calling all outer pragma
- * calls first
- * @return                  The modified gpu kernel res
- */
-gpukernelres_t *
-handleInvSW (size_t dim, gpukernelres_t *outer)
-{
-    DBUG_ENTER ();
-
-    GKR_ST_POP (outer, dim)
-    GKR_WI_POP (outer, dim)
-
-    // If the step is still 1 after popping, we don't have to do anything
-    if (!STReq (GKR_ST_D_READ (outer, dim), CONST_ONE)) {
-        INDENT
-        // Print out the correct ICM depending on whether we are running in branchless
-        // mode
-        if (!GKR_BRANCHLESS (outer))
-            fprintf (global.outfile, "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(%s, %s, %s, %s)\n\n",
-                     GKR_LB_D_READ (outer, dim), GKR_ST_D_READ (outer, dim),
-                     GKR_WI_D_READ (outer, dim), GKR_ID_D_READ (outer, dim));
-        else
-            fprintf (global.outfile,
-                     "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL(%s, %s, %s, %s, %s)\n\n",
-                     GKR_LB_D_READ (outer, dim), GKR_ST_D_READ (outer, dim),
-                     GKR_WI_D_READ (outer, dim), GKR_ID_D_READ (outer, dim),
-                     GKR_RETURN_COL (outer));
-    }
-
-    DBUG_RETURN (outer);
-}
-
-/**
- * Shorthand method to execute both the handleLB and handleSW implicit mappings.
- *
- * @param dim               The dimension for which step and width have to be 1, and
- * lowerbound has to be 0
- * @param inner             The gpu kernel res, resulting from calling all inner pragma
- *                          calls first
- * @return                  The modified gpu kernel res
- */
-gpukernelres_t *
-GKCOcompStepWidthLB (size_t dim, gpukernelres_t *inner)
-{
-    DBUG_ENTER ();
-
-    handleLB (dim, inner);
-    handleSW (dim, inner);
-
-    DBUG_RETURN (inner);
-}
-
-/**
- * Inverse of GKCOcompStepWidthLB
- *
- * @param dim               The dimension for which step and width have to be 1, and
- * lowerbound has to be 0
- * @param outer             The GPU kernel res, resulting from calling all outer pragma
- * calls first
- * @return                  The modified gpu kernel res
- */
-gpukernelres_t *
-GKCOcompInvStepWidthLB (size_t dim, gpukernelres_t *outer)
-{
-    DBUG_ENTER ();
-
-    handleInvSW (dim, outer);
-    handleInvLB (dim, outer);
-
-    DBUG_RETURN (outer);
+    DBUG_RETURN(inner);
 }
 
 /**
@@ -1736,12 +1596,11 @@ GKCOcompCompressGrid (node *shouldCompress_node, gpukernelres_t *inner)
         // Skip this iteration if compress for this dimension is toggled off
         if (!shouldCompress[dim])
             continue;
-        // Check whether the lowerbound is indeed 0. When compressing, shifting is
-        // required. Just inserting a lowerbound check with GKCOcompLB and GKCOcompInvLB
-        // is not enough, because then the computations get skewered.
+        // Check whether the lowerbound is indeed 0. When compressing, this is
+        // required, otherwise the computations are not valid.
         if (GKR_CHECK_PRAGMA (inner))
-            checkLbZero (GKR_LB_D_READ (inner, dim), shouldCompress_node, "CompressGrid",
-                         dim);
+            GKCOcompAssertNormalized("CompressGrid", dim, inner);
+
         // If the step is 1, we don't need to compute anything
         if (STReq (GKR_ST_D_READ (inner, dim), CONST_ONE))
             continue;
@@ -1828,6 +1687,96 @@ GKCOcompInvCompressGrid (node *shouldCompress_node, gpukernelres_t *outer)
     MEMfree (shouldCompress);
 
     COMP_FUN_DBUG_RETURN (outer)
+}
+
+/**
+ * The PruneGrid mapping prunes all index vectors outside of the grid. After this mapping,
+ * the index space can be considered dense. It will set step and width to
+ * 1 (in the non-inverse call), restore the step/width variables and return all threads
+ * that fall outside of the grid (in the inverse call).
+ *
+ *          StepWidth                            InvStepWidth
+ *                             ... --> 1, 1, idj      -->     return;           // idj not in step/width
+ * stj, wij    -->    1, 1 --> ... --> 1, 1, idj      -->     stj, wij, idj     // idj in step/width
+ *                             ... --> 1, 1, idj      -->     stj, wij, idj     // idj in * step/width
+ *
+ * Notes:
+ *   - When running in branchless mode (PASS_BRANCHLESS), an alternative icm for
+ * InvStepWidth is used. See CKCOcompGen for more info.
+ *   - When step is already 1, nothing will be done. Width will be set to 1 in that case
+ * regardless.
+ *   - Resolving step/width by this method results in redundant threads. Use the
+ * CompressGrid mapping to create a dense thread space without redundant threads.
+ *
+ * @param inner             The gpu kernel res, resulting from calling all inner pragma
+ *                          calls first
+ * @return                  The modified gpu kernel res
+ */
+gpukernelres_t *
+GKCOcompPruneGrid (gpukernelres_t *inner) {
+    DBUG_ENTER ();
+    DBUG_PRINT ("compiling CompressGrid:");
+    DBUG_EXECUTE (fprintf (stderr, "    CompressGrid (inner)\n"));
+
+    for (LOOP_DIMENSIONS (inner, dim)) {
+        // Check whether the lowerbound is indeed 0. When compressing, this is
+        // required, otherwise the computations are not valid.
+        if (GKR_CHECK_PRAGMA (inner))
+            GKCOcompAssertNormalized("CompressGrid", dim, inner);
+
+        // Preserve the current variable identifiers for step and width
+        GKR_ST_PUSH (inner, dim)
+        GKR_WI_PUSH (inner, dim)
+
+        // Replace them with the constant "1", as the index space is now
+        // considered dense.
+        GKR_ST_D_REPLACE (inner, dim, CONST_ONE);
+        GKR_WI_D_REPLACE (inner, dim, CONST_ONE);
+    }
+
+    DBUG_RETURN (inner);
+}
+
+/**
+ * Inverse of GKCOcompStepWidthLB
+ *
+ * @param outer             The GPU kernel res, resulting from calling all outer pragma
+ * calls first
+ * @return                  The modified gpu kernel res
+ */
+gpukernelres_t *
+GKCOcompInvPruneGrid (gpukernelres_t *outer)
+{
+    DBUG_ENTER ();
+    DBUG_PRINT ("compiling UncompressGrid:");
+    DBUG_EXECUTE (fprintf (stderr, "    UncompressGrid (inner)\n"));
+
+    // To be able to pop the ST and WI variables from the stack in the inverse order
+    // in which we pushed, we need to loop the dimensions in inverse order as well
+    for (LOOP_DIMENSIONS_INV (outer, dim)) {
+        // Consume the preserved variable identifiers for step and width
+        GKR_ST_POP (outer, dim)
+        GKR_WI_POP (outer, dim)
+
+        // If the step is still 1 after popping, we don't have to do anything
+        if (!STReq(GKR_ST_D_READ (outer, dim), CONST_ONE)) {
+            INDENT
+            // Print out the correct ICM depending on whether we are running in branchless
+            // mode
+            if (!GKR_BRANCHLESS (outer))
+                fprintf(global.outfile, "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH(%s, %s, %s, %s)\n\n",
+                        GKR_LB_D_READ (outer, dim), GKR_ST_D_READ (outer, dim),
+                        GKR_WI_D_READ (outer, dim), GKR_ID_D_READ (outer, dim));
+            else
+                fprintf(global.outfile,
+                        "SAC_GKCO_GPUD_OPD_UNSTEPWIDTH_BL(%s, %s, %s, %s, %s)\n\n",
+                        GKR_LB_D_READ (outer, dim), GKR_ST_D_READ (outer, dim),
+                        GKR_WI_D_READ (outer, dim), GKR_ID_D_READ (outer, dim),
+                        GKR_RETURN_COL (outer));
+        }
+    }
+
+    DBUG_RETURN (outer);
 }
 
 /**
@@ -1988,10 +1937,10 @@ GKCOcompFoldLast2 (gpukernelres_t *inner)
     size_t majordim = GKR_DIM (inner) - 2;
     size_t minordim = GKR_DIM (inner) - 1;
 
-    // Check lowerbound, step and width variables. Step and width will be set to 1, but if
-    // lowerbound is not set to 0, we throw a compiler error.
-    GKCOcompStepWidthLB (majordim, inner);
-    GKCOcompStepWidthLB (minordim, inner);
+    // Check whether the index space is dense (lb=0, st=wi). If this is not
+    // true, this function cannot provide a valid index space.
+    GKCOcompAssertDense("FoldLast2", majordim, inner);
+    GKCOcompAssertDense("FoldLast2", minordim, inner);
 
     // Preserve the upperbound variable. The minor dim upperbound variable is
     // automarically stored using RemoveDimension and AddDimension
@@ -2038,10 +1987,6 @@ GKCOcompInvFoldLast2 (gpukernelres_t *outer)
     fprintf (global.outfile, "SAC_GKCO_GPUD_OPM_UNFOLD_LAST(%s, %s, %s)\n\n", idx_major,
              idx_minor, ub_minor);
 
-    // We may have set the step and width to 1, so we have to invert that change.
-    GKCOcompInvStepWidthLB (minordim, outer);
-    GKCOcompInvStepWidthLB (majordim, outer);
-
     COMP_FUN_DBUG_RETURN (outer)
 }
 
@@ -2087,7 +2032,7 @@ GKCOcompSplitLast (node *minorlen_node, gpukernelres_t *inner)
     // Check lowerbound, upperbound, step and width variables. Step and width will be set
     // to 1, but if lowerbound is not set to 0, we throw a compiler error. The upperbound
     // should be padded so the split is possible.
-    GKCOcompStepWidthLB (majordim, inner);
+    GKCOcompAssertDense("SplitLast", majordim, inner);
     GKCOcompPad (majordim, minorlen, inner);
 
     // Preserve the upperbound variable.
@@ -2135,7 +2080,6 @@ GKCOcompInvSplitLast (node *minorlen_node, gpukernelres_t *outer)
     // We may have set the step and width to 1 and we may have padded the upperbound,
     // so we have to invert those changes.
     GKCOcompInvPad (majordim, outer);
-    GKCOcompInvStepWidthLB (majordim, outer);
 
     RemoveDimension (outer);
 

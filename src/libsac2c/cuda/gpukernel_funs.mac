@@ -45,6 +45,7 @@
 WLP (GridBlock,    1, checkNumArg )
 WLP (ShiftLB,      0, checkNone )
 WLP (CompressGrid, 1, checkZONumsArg )
+WLP (PruneGrid,    0, checkNone )
 WLP (Permute,      1, checkPermutationArg )
 WLP (FoldLast2,    0, checkNone )
 WLP (SplitLast,    1, checkNumArg )

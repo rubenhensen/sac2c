@@ -69,6 +69,7 @@ static char *GEN = "Gen";
 static char *GRIDBLOCK = "GridBlock";
 static char *SHIFTLB = "ShiftLB";
 static char *COMPRESSGRID = "CompressGrid";
+static char *PRUNEGRID = "PruneGrid";
 static char *PERMUTE = "Permute";
 static char *SPLITLAST = "SplitLast";
 static char *FOLDLAST2 = "FoldLast2";
@@ -296,6 +297,16 @@ ACPmakeCompressGrid (constant *compressDims, info *inner)
 
     node *args[1] = {COconstant2AST (compressDims)};
     inner = ACPmakeSpap (inner, COMPRESSGRID, 1, args);
+
+    DBUG_RETURN (inner);
+}
+
+info*
+ACPmakePruneGrid(info* inner)
+{
+    DBUG_ENTER ();
+
+    inner = ACPmakeSpap (inner, PRUNEGRID, 0, NULL);
 
     DBUG_RETURN (inner);
 }
@@ -617,6 +628,8 @@ ACPgeneratePragma (info *arg_info)
     arg_info = ACPmakeShiftLB (ACPmakeGen (arg_info));
     if (global.gpu_mapping_compress)
         arg_info = ACPmakeCompressAll (arg_info);
+    else
+        arg_info = ACPmakePruneGrid (arg_info);
 
     switch (global.gpu_mapping_strategy) {
         case Jings_method:
