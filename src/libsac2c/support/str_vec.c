@@ -57,7 +57,7 @@ MakeStrvec (size_t alloc, size_t length)
     if (alloc < MIN_ALLOC)
         alloc = MIN_ALLOC;
 
-    strvec *vec = (strvec *)MEMmalloc (sizeof (strvec *));
+    strvec *vec = (strvec *)MEMmalloc (sizeof (strvec));
     STRVEC_LENGTH (vec) = length;
     STRVEC_ALLOC (vec) = alloc;
     STRVEC_DATA (vec) = (char **)MEMmalloc ((unsigned long)alloc * sizeof (char *));
