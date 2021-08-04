@@ -525,6 +525,28 @@ extern "C" {
 
 #define SAC_CUDA_FORLOOP_END() }
 
+/*****************************************************************************
+ *
+ * ICMs for CUDA kernel time measurements
+ * =================
+ *
+ *****************************************************************************/
+
+#define SAC_CUDA_MEASURE_KERNEL_TIME_GETTIME(var)                                                           \
+    cudaDeviceSynchronize();                                                                                \
+    timespec var;                                                                                           \
+    clock_gettime(CLOCK_MONOTONIC, &var);
+
+#define SAC_CUDA_MEASURE_KERNEL_TIME_START                                                                  \
+    SAC_CUDA_MEASURE_KERNEL_TIME_GETTIME(time_start)
+
+#define SAC_CUDA_MEASURE_KERNEL_TIME_END                                                                    \
+    SAC_CUDA_MEASURE_KERNEL_TIME_GETTIME(time_end)                                                          \
+    signed long long time_passed_ms =                                                                       \
+            (signed long) time_end.tv_nsec / 1000 - (signed long) time_start.tv_nsec / 1000;                \
+    time_passed_ms += (signed long) ((time_end.tv_sec - time_start.tv_sec) * 1000000);                      \
+    fprintf(stderr, "%ld\n", time_passed_ms);
+
 #ifdef __cplusplus
 }
 #endif

@@ -738,6 +738,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG("gpu_mapping_nocompress", global.gpu_mapping_compress = FALSE);
 
+    ARGS_FLAG("gpu_measure_kernel_time", global.gpu_measure_kernel_time = TRUE);
+
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
      */

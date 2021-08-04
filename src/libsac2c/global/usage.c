@@ -785,6 +785,10 @@ PrintCudaOptions (void)
             "\n"
             "    -gpu_mapping_nocompress\n"
             "                    Disable index space compression for mapping with-loops onto the GPU. \n"
+            "\n"
+            "    -gpu_measure_kernel_time\n"
+            "                    Measure the time spent in cuda kernels. Every kernel gets measured\n"
+            "                    separately, and the time is printed in microseconds on it's own line. \n"
             "\n");
 
     DBUG_RETURN ();

@@ -1350,6 +1350,7 @@ GLOBAL (cuda_async_mode_t, cuda_async_mode, CUDA_SYNC_DEVICE, xfree_dummy, )
 GLOBAL (size_t, cuda_gpu_branching, 0, xfree_dummy, )
 GLOBAL (enum gpu_mapping_strategy_t, gpu_mapping_strategy, Foldall, xfree_dummy, )
 GLOBAL (bool, gpu_mapping_compress, TRUE, xfree_dummy, )
+GLOBAL (bool, gpu_measure_kernel_time, FALSE, xfree_dummy, )
 
 /*
  * DistMem backend options

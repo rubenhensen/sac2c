@@ -202,11 +202,18 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
 
     fprintf (global.outfile,
              "if (block.x * block.y * block.z * grid.x * grid.y * grid.z > 0) {\n");
+
     INDENT;
     INDENT;
     fprintf (global.outfile, "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");\n",
              funname);
     fprintf (global.outfile, "SAC_PF_BEGIN_CUDA_KNL ();\n");
+
+    if (global.gpu_measure_kernel_time) {
+        fprintf(global.outfile,
+                "SAC_CUDA_MEASURE_KERNEL_TIME_START\n");
+    }
+
     if (global.backend == BE_cudahybrid) {
         // on cudahybrid, we make use of streams, which have a fixed name
         fprintf (global.outfile, "%s<<<grid, block, 0, *stream>>>(", funname);
@@ -245,6 +252,11 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vara
     if (global.gpukernel)
         fprintf (global.outfile, ", SAC_gkco_check_threadmapping_bitmask_dev");
     fprintf (global.outfile, ");\n");
+
+    if (global.gpu_measure_kernel_time) {
+        fprintf(global.outfile,
+                "SAC_CUDA_MEASURE_KERNEL_TIME_END\n");
+    }
 
     if (STReq (global.config.cuda_alloc, "cuman")
         || STReq (global.config.cuda_alloc, "cumanp")) {
