@@ -1,6 +1,6 @@
 #include "tree_basic.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "WLIDX"
 #include "debug.h"
 
 #include "tree_compound.h"
@@ -11,6 +11,7 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "DupTree.h"
+#include "free.h"
 #include "wlidxs.h"
 
 /*
@@ -189,42 +190,52 @@ WLIDXwithid (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_WITHID (arg_info) == NULL) {
-        node *withop, *ids;
+        node *withop, *ids, *idsidx;
 
         withop = INFO_WITHOP (arg_info);
         ids = INFO_LHS (arg_info);
+        idsidx = NULL;
 
         while (ids != NULL) {
             if ((NODE_TYPE (withop) == N_genarray)
                 || (NODE_TYPE (withop) == N_modarray)) {
                 node *avis;
-                node *ids2, *withop2, *idxs;
+                node *idxs, *ids2;
 
                 /*
-                 * Try to reuse one of the already existing index variables
+                 * Try to reuse one of the already existing index variables.
+                 * To do this, we need pointers to the wlidx's and their corresponding
+                 * lhs variables (as these do hold the result types).
+                 * We hold these in 'idxs' and in 'ids2', respectively.
+                 * Originally, ids2 was simply using INFO_LHS. However, that is not 
+                 * possible as issue 2270 demonstrates! The problem is that idxs can be shorter
+                 * than INFO_LHS in case of re-uses! We can only guarantee a 1-1 correspondence
+                 * between the two if we create a new ids-chain for ids2 that leaves out
+                 * duplicates.
                  */
+                DBUG_PRINT ("trying to identify suitable index variable for lhs \"%s\"",
+                            IDS_NAME (ids));
                 avis = NULL;
-                ids2 = INFO_LHS (arg_info);
-                withop2 = INFO_WITHOP (arg_info);
                 idxs = WITHID_IDXS (arg_node);
+                ids2 = idsidx;
 
-                while (ids2 != ids) {
-                    if ((NODE_TYPE (withop2) == N_genarray)
-                        || (NODE_TYPE (withop2) == N_modarray)) {
-                        ntype *t1, *t2;
+                while ((ids2 != NULL) && (avis == NULL)) {
+                    ntype *t1, *t2;
 
-                        t1 = IDS_NTYPE (ids);
-                        t2 = IDS_NTYPE (ids2);
+                    t1 = IDS_NTYPE (ids);
+                    t2 = IDS_NTYPE (ids2);
 
-                        if (TUshapeKnown (t1) && TUshapeKnown (t2)
-                            && SHcompareShapes (TYgetShape (t1), TYgetShape (t2))) {
-                            avis = IDS_AVIS (idxs);
-                            break;
-                        }
-                        idxs = IDS_NEXT (idxs);
+                    if (TUshapeKnown (t1) && TUshapeKnown (t2)
+                        && SHcompareShapes (TYgetShape (t1), TYgetShape (t2))) {
+                        DBUG_PRINT ("   re-using idx variable of lhs \"%s\": \"%s\"",
+                                    IDS_NAME (ids2), IDS_NAME (idxs));
+                        avis = IDS_AVIS (idxs);
+                    } else {
+                        DBUG_PRINT ("   skipping idx variable of lhs \"%s\": \"%s\"",
+                                    IDS_NAME (ids2), IDS_NAME (idxs));
                     }
+                    idxs = IDS_NEXT (idxs);
                     ids2 = IDS_NEXT (ids2);
-                    withop2 = WITHOP_NEXT (withop2);
                 }
 
                 /*
@@ -236,6 +247,7 @@ WLIDXwithid (node *arg_node, info *arg_info)
                     avis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (ids)),
                                        TYmakeAKS (TYmakeSimpleType (T_int),
                                                   SHmakeShape (0)));
+                    DBUG_PRINT ("   creating new idx variable \"%s\"", AVIS_NAME (avis));
 
                     vardec
                       = TBmakeVardec (avis, BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
@@ -243,6 +255,8 @@ WLIDXwithid (node *arg_node, info *arg_info)
 
                     WITHID_IDXS (arg_node)
                       = TCappendIds (WITHID_IDXS (arg_node), TBmakeIds (avis, NULL));
+
+                    idsidx = TCappendIds (idsidx, TBmakeIds (IDS_AVIS (ids), NULL));
                 }
 
                 if (NODE_TYPE (withop) == N_genarray) {
@@ -257,6 +271,9 @@ WLIDXwithid (node *arg_node, info *arg_info)
         }
 
         INFO_WITHID (arg_info) = arg_node;
+        if (idsidx != NULL) {
+            idsidx = FREEdoFreeTree (idsidx);
+        }
     } else {
         WITHID_IDXS (arg_node) = DUPdoDupTree (WITHID_IDXS (INFO_WITHID (arg_info)));
     }
