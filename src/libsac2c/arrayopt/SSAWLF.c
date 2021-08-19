@@ -66,6 +66,7 @@
 #include "DupTree.h"
 #include "globals.h"
 #include "ctinfo.h"
+#include "print.h"
 
 #define DBUG_PREFIX "WLF"
 #include "debug.h"
@@ -717,6 +718,11 @@ CreateCode (node *target, node *subst)
     DBUG_ASSERT (N_code == NODE_TYPE (target), "wrong target Parameter");
     DBUG_ASSERT (N_code == NODE_TYPE (subst), "wrong subst Parameter");
 
+    DBUG_PRINT ("Creating code now...");
+    DBUG_EXECUTE_TAG ("WLF_CC", fprintf (stderr, " target code:");
+                                PRTdoPrintFile (stderr, target);
+                                fprintf (stderr, " subst code:");
+                                PRTdoPrintFile (stderr, subst); );
     wlf_mode = wlfm_replace;
 
     /* create new arg_info to avoid modifications of the old one and copy
@@ -870,6 +876,10 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
     DBUG_ENTER ();
     DBUG_ASSERT (target_ig->shape == subst_ig->shape, "wrong parameters");
 
+    DBUG_EXECUTE_TAG ("WLF_IGEN", fprintf (stderr, "target_ig: ");
+                                  WLFprintfInternGen (stderr, target_ig, true, true);
+                                  fprintf (stderr, "\n\n subst_ig: ");
+                                  WLFprintfInternGen (stderr, subst_ig, true, true); );
     max_dim = target_ig->shape;
     new_gen_step = NULL;
     new_gen_nostep = NULL;
@@ -895,11 +905,17 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
             }
 
             /* here we have to intersect target_ig and sig */
+            DBUG_EXECUTE_TAG ("WLF_IGEN", fprintf (stderr, "\ntrying to intersect ");
+                                          WLFprintfInternGen (stderr, target_ig, false, false);
+                                          fprintf (stderr, " with ");
+                                          WLFprintfInternGen (stderr, sig, false, false);
+                                          fprintf (stderr, "\n"); );
             /* first the bounds, ignore step/width */
             for (d = 0; d < max_dim; d++) {
                 l = MATHmax (target_ig->l[d], sig->l[d]);
                 u = MATHmin (target_ig->u[d], sig->u[d]);
                 if (l >= u) {
+                    DBUG_EXECUTE_TAG ("WLF_IGEN", fprintf (stderr, " empty!\n"); );
                     break; /* empty intersection */
                 } else {
                     new_gen->l[d] = l;
@@ -910,6 +926,7 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
             if (d == max_dim) {
                 /* we have a new ig. Maybe. Because if both generators are
                    grids they may still be disjuct. */
+                DBUG_EXECUTE_TAG ("WLF_IGEN", fprintf (stderr, " possible intersection!\n"); );
                 if (create_steps) {
                     /* prepare parameters for recursive function IntersectGrids().
                        Global pointers are used to speed up function call. */
@@ -963,6 +980,8 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
                         CODE_NEXT (coden) = new_codes;
                         new_codes = coden;
                     }
+                    DBUG_EXECUTE_TAG ("WLF_IGEN", fprintf (stderr, " new generator:");
+                                                  WLFprintfInternGen (stderr, new_gen, true, true); );
 
                     /* add new generator to intersect_intern_gen list. */
                     new_gen->next = intersect_intern_gen;
@@ -1623,7 +1642,11 @@ WLFid (node *arg_node, info *arg_info)
             coden = INFO_SUBST (arg_info);
 
             /* keep original name */
-            INFO_NEW_ID (arg_info) = DUPdoDupTree (CODE_CEXPR (coden));
+            /* This is the name of the var in CODE_CEXPR (coden) whose position
+               corresponds to the position of arg_node in the LHS of the assignment
+               where it is defined (found in ID_WL). */
+            INFO_NEW_ID (arg_info) = DUPdoDupTree (FindCExpr (CODE_CEXPR (coden),
+                                                              ID_WL (arg_node)));
 
             /* Create substitution code. */
             substn = DUPdoDupTree (CODE_CBLOCK_ASSIGNS (coden));

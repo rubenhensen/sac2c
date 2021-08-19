@@ -29,6 +29,8 @@ extern intern_gen *WLFappendInternGen (intern_gen *, int, node *, int);
 extern intern_gen *WLFcopyInternGen (intern_gen *source);
 extern intern_gen *WLFfreeInternGen (intern_gen *tmp);
 extern intern_gen *WLFfreeInternGenChain (intern_gen *ig);
+extern void WLFprintfInternGen (FILE *file, intern_gen *ig,
+                                bool with_code, bool whole_chain);
 
 /******************************************************************************
  *
