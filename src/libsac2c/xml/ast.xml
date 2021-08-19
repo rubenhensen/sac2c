@@ -7484,14 +7484,18 @@ N_tfarg :
         <attribute name="WL" inconstructor="no" >
           <type name="Link">
             <targets>
-              <target mandatory="yes">
-                <unknown />
+              <target mandatory="no">
+                <node name="Assign" />
                 <phases>
-                  <phase name="wlf" />
+                  <range from="opt_cyc_wli"     to="opt_cyc_wlf" />
+                  <range from="opt_saacyc_awlfi" to="opt_saacyc_awlf" />
                 </phases>
               </target>
             </targets>
           </type>
+          <description>
+            points to the assignment of a defining wl if it is defined by a wl, NULL otherwise.
+          </description>
         </attribute>
         <attribute name="ICMtext" default="NULL" inconstructor="no" >
           <type name="String">
@@ -9631,7 +9635,7 @@ N_tfarg :
               <target mandatory="yes">
                 <any />
                 <phases>
-                  <range from="opt_cyc_wlf"     to="opt_cyc_wlf" />
+                  <range from="opt_cyc_wli"     to="opt_cyc_wlf" />
                   <range from="opt_saacyc_awlfi" to="opt_saacyc_awlf" />
                 </phases>
               </target>

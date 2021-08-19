@@ -216,6 +216,36 @@ static intern_gen *intersect_intern_gen; /* resulting igs of IntersectInternGen.
 /******************************************************************************
  *
  * function:
+ *   node * FindCExpr (node *cexprs, node *avis, node *wlassign)
+ *
+ * description:
+ *   expects avis to be defined on the LHS of wlassign and searches for the 
+ *   corresponding position in the exprs-chain cexprs.
+ *   This is crucial for folding MO-WLs (see issue 2271 for details)
+ *
+ ******************************************************************************/
+
+static node *
+FindCExpr (node *cexprs, node *avis, node *wlassign)
+{
+    node *ids;
+    DBUG_ENTER ();
+
+    ids = ASSIGN_LHS (wlassign);
+    while ((ids!=NULL) && (IDS_AVIS (ids) != avis)) {
+        DBUG_ASSERT (cexprs != NULL, "inconsistent multi-operator WL in WLF");
+        ids = IDS_NEXT (ids);
+        cexprs = EXPRS_NEXT (cexprs);
+    }
+    DBUG_ASSERT (ids != NULL, "LHS variable in WL assignment not found!");
+    DBUG_ASSERT (cexprs != NULL, "inconsistent multi-operator WL in WLF");
+
+    DBUG_RETURN (EXPRS_EXPR (cexprs));
+}
+
+/******************************************************************************
+ *
+ * function:
  *   void AddCC(node *targetn, node *substn, node *resultn)
  *
  * description:
@@ -1643,10 +1673,12 @@ WLFid (node *arg_node, info *arg_info)
 
             /* keep original name */
             /* This is the name of the var in CODE_CEXPR (coden) whose position
-               corresponds to the position of arg_node in the LHS of the assignment
-               where it is defined (found in ID_WL). */
-            INFO_NEW_ID (arg_info) = DUPdoDupTree (FindCExpr (CODE_CEXPR (coden),
-                                                              ID_WL (arg_node)));
+               corresponds to the position of the N_id arg_node in the LHS of
+               the assignment where it is defined (ID_WL here points to the N_id). */
+            INFO_NEW_ID (arg_info)
+                = DUPdoDupTree (FindCExpr (CODE_CEXPRS (coden),
+                                           ID_AVIS (arg_node),
+                                           AVIS_SSAASSIGN (ID_AVIS (ID_WL (arg_node)))));
 
             /* Create substitution code. */
             substn = DUPdoDupTree (CODE_CBLOCK_ASSIGNS (coden));
