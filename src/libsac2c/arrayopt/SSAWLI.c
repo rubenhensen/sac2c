@@ -19,7 +19,7 @@
 
    WITH_REFERENCED(wl)    (int)
      this is the number of identifiers that reference this withloop
-     [ initialized in WLIwith; incremented in WLIidi; top-down traversal
+     [ initialized in WLIwith; incremented in WLIid; top-down traversal
        ensures initialisation before incrments!]
 
    WITH_FOLDABLE(wl)      (bool)
@@ -41,7 +41,8 @@
 --------------------------------------------------------------------------------
 
    ID_WL(id)
-     points to a defining wl if id is defined by a wl, NULL otherwise
+     points to the assignment of a defining wl if id is defined by a wl,
+     NULL otherwise.
      [ set in WLIid ]
 
 --------------------------------------------------------------------------------

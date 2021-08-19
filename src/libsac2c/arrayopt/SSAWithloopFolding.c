@@ -47,6 +47,7 @@
 #include "DupTree.h"
 #include "globals.h"
 #include "ctinfo.h"
+#include "print.h"
 
 #define DBUG_PREFIX "WLF"
 #include "debug.h"
@@ -405,6 +406,61 @@ WLFcopyInternGen (intern_gen *source)
     }
 
     DBUG_RETURN (ig);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void WLFprintfInternGen (FILE *file, intern_gen *ig, bool with_code,
+ *                            bool whole_chain)
+ *
+ * description:
+ *   used for debugging purposes only.
+ *   This function prints the given intern_gen structure ig to file.
+ *   The argument with_code indicates whether to include the code and
+ *   the argument whole_chain indicates whether to print the first generator
+ *   only or all of them.
+ *
+ ******************************************************************************/
+void
+WLFprintfInternGen (FILE *file, intern_gen *ig, bool with_code, bool whole_chain)
+{
+    int i;
+    DBUG_ENTER ();
+
+    fprintf (file, "(L=[");
+    for (i = 0; i < ig->shape; i++) {
+        fprintf (file, "%d,", ig->l[i]);
+    }
+    fprintf (file, "], U=[");
+    for (i = 0; i < ig->shape; i++) {
+        fprintf (file, "%d,", ig->u[i]);
+    }
+    if (ig->step) {
+        fprintf (file, "], S=[");
+        for (i = 0; i < ig->shape; i++) {
+            fprintf (file, "%d,", ig->step[i]);
+        }
+    }
+    if (ig->width) {
+        fprintf (file, "], W=[");
+        for (i = 0; i < ig->shape; i++) {
+            fprintf (file, "%d,", ig->width[i]);
+        }
+    }
+    fprintf (file, "])");
+
+    if (with_code) {
+        fprintf (file, " code:");
+        PRTdoPrintFile (file, ig->code);
+    }
+
+   if (whole_chain && (ig->next != NULL)) {
+       fprintf (file, " followed by ");
+       WLFprintfInternGen (file, ig->next, with_code, whole_chain);
+   }
+
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
