@@ -31,8 +31,17 @@
  * We implement a check in the local function IsLegitimateMoWl (node *withop, info*)
  * which is being used in HWLOwith to prevent splitting.
  *
- * To understand the basic principle, let us consider Multi-Operator With-Loops
- * that contain standard operators only, i.e., they do NOT contain propagates.
+ * As of 21.8.2021, we try to extend the capabilities for keeping Multi-Operator
+ * With-Loops even further. This time, we want to support With-Loops that contain
+ * several modarray operators provided they modify the same array and we want to
+ * support multiple fold-operators. These should be straight forward as single generator 
+ * fold with-loops solely iterate over the generator guaranteeing identical ranges.
+ * We extend IsLegitimateMoWl accordingly.
+ *
+ *
+ * To understand the basic principle of splitting Multi-Operator With-Loops,
+ * let us consider Multi-Operator With-Loops that contain standard operators
+ * only, i.e., they do NOT contain propagates.
  * In these cases, we can split the operators into individual ones by simply
  * copying the entire With-Lopp body and by splitting the body-returns and
  * left hand sides accordingly. An assignment of the form
@@ -110,7 +119,7 @@
  *               } : ( x, file);
  *             } ( genarray( shp), propagate( file));
  *
- *   Splitting -up this With-Loop in exactly the same manor as indicated
+ *   Splitting-up this With-Loop in exactly the same manor as indicated
  *   before, we would obtain:
  *
  *   tmp_a = with {
@@ -202,6 +211,7 @@ struct INFO {
     node *withops;
     bool legal;
     node *range;
+    nodetype opkind;
 };
 
 /**
@@ -216,6 +226,7 @@ struct INFO {
 #define INFO_HWLO_NEW_WITHOPS(n) (n->withops)
 #define INFO_HWLO_LEGAL_MOWL(n) (n->legal)
 #define INFO_HWLO_RANGE(n) (n->range)
+#define INFO_HWLO_OPKIND(n) (n->opkind)
 
 /**
  * INFO functions
@@ -239,6 +250,7 @@ MakeInfo (void)
 
     INFO_HWLO_LEGAL_MOWL (result) = TRUE;
     INFO_HWLO_RANGE (result) = NULL;
+    INFO_HWLO_OPKIND (result) = N_with;
 
     DBUG_RETURN (result);
 }
@@ -259,20 +271,63 @@ ATravILMOWLgenarray (node *genarray, info *arg_info)
     DBUG_ENTER ();
 
     // We know that (INFO_HWLO_LEGAL_MOWL (arg_info) == TRUE)!
-    if (INFO_HWLO_RANGE (arg_info) == NULL) {
-        // We see the first N_genarray!
+    if (INFO_HWLO_OPKIND (arg_info) == N_with) { // first genarray/modarray/fold!
+        INFO_HWLO_OPKIND (arg_info) = N_genarray;
         INFO_HWLO_RANGE (arg_info) = GENARRAY_SHAPE (genarray);
         GENARRAY_NEXT (genarray) = TRAVopt (GENARRAY_NEXT (genarray), arg_info);
-    } else {
+    } else if (INFO_HWLO_OPKIND (arg_info) == N_genarray) {
         if ( CMPTdoCompareTree (INFO_HWLO_RANGE (arg_info),
                                 GENARRAY_SHAPE (genarray)) == CMPT_EQ) {
             GENARRAY_NEXT (genarray) = TRAVopt (GENARRAY_NEXT (genarray), arg_info);
         } else {
             INFO_HWLO_LEGAL_MOWL (arg_info) = FALSE;
         }
+    } else {
+        INFO_HWLO_LEGAL_MOWL (arg_info) = FALSE;
     }
 
     DBUG_RETURN (genarray);
+}
+
+static node *
+ATravILMOWLmodarray (node *modarray, info *arg_info)
+{
+    DBUG_ENTER ();
+    
+    // We know that (INFO_HWLO_LEGAL_MOWL (arg_info) == TRUE)!
+    if (INFO_HWLO_OPKIND (arg_info) == N_with) { // first genarray/modarray/fold!
+        INFO_HWLO_OPKIND (arg_info) = N_modarray;
+        INFO_HWLO_RANGE (arg_info) = MODARRAY_ARRAY (modarray);
+        MODARRAY_NEXT (modarray) = TRAVopt (MODARRAY_NEXT (modarray), arg_info);
+    } else if (INFO_HWLO_OPKIND (arg_info) == N_modarray) {
+        if ( CMPTdoCompareTree (INFO_HWLO_RANGE (arg_info),
+                                MODARRAY_ARRAY (modarray)) == CMPT_EQ) {
+            MODARRAY_NEXT (modarray) = TRAVopt (MODARRAY_NEXT (modarray), arg_info);
+        } else {
+            INFO_HWLO_LEGAL_MOWL (arg_info) = FALSE;
+        }
+    } else {
+        INFO_HWLO_LEGAL_MOWL (arg_info) = FALSE;
+    }
+
+    DBUG_RETURN (modarray);
+}
+
+static node *
+ATravILMOWLspfold (node *fold, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    // We know that (INFO_HWLO_LEGAL_MOWL (arg_info) == TRUE)!
+    if ((INFO_HWLO_OPKIND (arg_info) == N_with) ||
+        (INFO_HWLO_OPKIND (arg_info) == N_fold)) {
+        INFO_HWLO_OPKIND (arg_info) = N_fold;
+        SPFOLD_NEXT (fold) = TRAVopt (SPFOLD_NEXT (fold), arg_info);
+    } else {
+        INFO_HWLO_LEGAL_MOWL (arg_info) = FALSE;
+    }
+
+    DBUG_RETURN (fold);
 }
 
 static node *
@@ -283,21 +338,13 @@ ATravILMOWLpropagate (node *propagate, info *arg_info)
     DBUG_RETURN (propagate);
 }
 
-static node *
-ATravILMOWLother (node *operator, info *arg_info)
-{
-    DBUG_ENTER ();
-    INFO_HWLO_LEGAL_MOWL (arg_info) = FALSE;
-    DBUG_RETURN (operator);
-}
-
 static bool
 IsLegitimateMoWl (node *withop, info *arg_info)
 {
     anontrav_t ilmowl_trav[5]
       = {{N_genarray, &ATravILMOWLgenarray},
-         {N_modarray, &ATravILMOWLother},
-         {N_spfold, &ATravILMOWLother},
+         {N_modarray, &ATravILMOWLmodarray},
+         {N_spfold, &ATravILMOWLspfold},
          {N_propagate, &ATravILMOWLpropagate},
          {(nodetype)0, NULL}};
 
@@ -309,6 +356,7 @@ IsLegitimateMoWl (node *withop, info *arg_info)
 
     INFO_HWLO_LEGAL_MOWL (arg_info) = TRUE;
     INFO_HWLO_RANGE (arg_info) = NULL;
+    INFO_HWLO_OPKIND (arg_info) = N_with;
 
     withop = TRAVopt (withop, arg_info);
 
