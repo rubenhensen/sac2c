@@ -319,8 +319,8 @@ ATravILMOWLspfold (node *fold, info *arg_info)
     DBUG_ENTER ();
 
     // We know that (INFO_HWLO_LEGAL_MOWL (arg_info) == TRUE)!
-    if ((INFO_HWLO_OPKIND (arg_info) == N_with) ||
-        (INFO_HWLO_OPKIND (arg_info) == N_fold)) {
+    if (((INFO_HWLO_OPKIND (arg_info) == N_with) || (INFO_HWLO_OPKIND (arg_info) == N_fold))
+         && (SPFOLD_GUARD (fold) == NULL)) {
         INFO_HWLO_OPKIND (arg_info) = N_fold;
         SPFOLD_NEXT (fold) = TRAVopt (SPFOLD_NEXT (fold), arg_info);
     } else {
