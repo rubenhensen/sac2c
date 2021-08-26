@@ -2,55 +2,126 @@
  *
  * @file ExplicitAccumulate.c
  *
- * In this traversal fold functions of fold withloops
- * are become explicit and a new function F_accu is inserted
+ * Summary
+ * =======
+ *
+ * In this traversal applications of fold functions of fold withloops
+ * are made explicit in the WL-bodies and a new function F_accu is inserted
  * in code.
  *
  * Ex.:
- *    A = with(iv)
- *          gen:{ val = ...;
- *              }: val
- *        fold( op, n);
+ *    A = with {
+ *          gen (iv) { val = ...;
+ *              } : val;
+ *        } : fold (op, n);
  *
  * is transformed into
  *
- *    A = with(iv)
- *          gen:{ acc   = accu( iv);
- *                val = ...;
- *                res = op( acc, val);
- *              }: res
- *        fold( op, n);
+ *    A = with {
+ *          gen (iv) { acc   = accu( iv, n);
+ *                     val = ...;
+ *                     res = op( acc, val);
+ *              } : res;
+ *        } : fold (op, n);
+ *
+ * Multi-generator WLs are not supported.
+ * In case of multi-operator fold-with-loops, accu needs to return 
+ * as many values as we have fold-operators and we need folding function
+ * applications for all folding operations, e.g.:
+ *
+ *    A,B = with {
+ *             gen (iv) { acc,acc2   = accu( iv, n, n2);
+ *                        val = ...;
+ *                        val2 = ...;
+ *                        res = op (acc, val);
+ *                        res2 = op2 (acc2, val2);
+ *                 }: (res, res2);
+ *           } : (fold (op, n), fold (op2, n2));
+ *
+ *
  *
  * The function F_accu is used to get the correct
- * accumulation value but is only pseudo syntax and is kicked
- * off the code in compile. The only argument is the index vector
- * of the surrounding withloop to disable LIR.
+ * accumulation values but it is only pseudo syntax and is elided
+ * during compile. The index vector argument is introduced
+ * to disable LIR lifting the application of accu out. The neutral
+ * arguments are needed in order to allow type inference to predict
+ * the number of return values.
+ *
+ * Besides this basic transformation, we need to support two special 
+ * cases:
+ *
+ * I) partial fold function applications:
+ * 
+ * If the fold operation <op> actually is a partial application, e.g.
+ *
+ * <op> == foo (a, b), then we generate
+ *
+ * foo (a, b, acc, val) instead of
+ * foo (acc, val)
+ *
+ * Such partial applications have the arguments stored in FOLD_ARGS!
  *
  *
- * Furthermore, we make the fix-break comparison (if present) explicit.
- * I.e., we introduce a variable new_s of type bool[] which replaces
- * the CODE_GUARD value. It is computed by using sacprelude::eq
+ * II) foldfix:
+ *
+ * If we have a foldfix instead of a fold (FOLD_GUARD exists!), we make
+ * the termination criterion explicit, switch the foldfix into a fold
+ * (elide the FOLD_GUARD), and we insert an N_break operator, i.e., we introduce
+ * a variable new_s of type bool[] which is computed by using sacprelude::eq
+ * and returned for the break operator position:
  *
  * Ex.:
- *    A = with(iv)
- *          gen:{ val = ...;
- *              }: val break s;
- *        fold( op, n);
+ *    A = with {
+ *          gen (iv) { val = ...;
+ *              }: val;
+ *        } : foldfix (op, n, s);
  *
  * is transformed into
  *
- *    A = with(iv)
- *          gen:{ acc   = accu( iv);
- *                val = ...;
- *                res = op( acc, val);
- *                new_s = sacprelude::eq( res, s);
- *              }: res break new_s;
- *        fold( op, n );
+ *    A, tmp = with {
+ *               gen (iv) { acc   = accu( iv, n);
+ *                          val = ...;
+ *                          res = op( acc, val);
+ *                          new_s = sacprelude::eq( res, s);
+ *                   }: (res, new_s);
+ *             } : (fold (op, n), break ());
  *
  * NB: All this needs to happen correctly even if the fold operator is
  * "surrounded" by propagate operators! Therefore we have to be carefull
  * when dealing with FOLD_LHS and FOLD_CEXPR! (cf.bug 376!)
  *
+ *
+ * Implementation
+ * ==============
+ *
+ * When traversing a with-loop, we first traverse through the WITHOPs.
+ * While doing so, EAfold ensures that the relevant code pieces are being
+ * constructed:
+ * I) INFO_FOLD_ACCU_ASSIGN holds the accu assignment, and
+ * II) INFO_FOLD_ASSIGNS holds the actual folding operation applications
+ *     as well as a potential break predicate computation
+ * These code snippets are being inserted through EAcode and EAassign during
+ * a subsequent traversal of the with-loop code.
+ *
+ * The construction of INFO_FOLD_ACCU_ASSIGN happens in several steps.
+ * The initial construction is done in EAfold when looking at the last
+ * fold-operator. Once that has happened, EAfold calls
+ *       InjectAccuIds (lhs, arg_info)    for every fold operator.
+ * It creates a new accu variable and injects it into INFO_FOLD_ACCU_ASSIGN,
+ * relying on INFO_FUNDEF for the insertion of the variable declaration.
+ * It also relies on INFO_FOLD to inject the neutral element as additional 
+ * argument to _accu_.
+ *
+ * The construction of INFO_FOLD_ASSIGNS happens through 
+ *       InjectFoldFunAssign (avis, cexpr, arg_info)    for every fold operator.
+ * Given the accu variable's avis and the body's result in cexpr (N_id node),
+ * this function constructs the explicit fold function call. While doing so, it
+ * relies on INFO_FUNDEF for the insertion of the variable declaration, on
+ * INFO_FOLD for checking whether we have a partial application
+ * (FOLD_ARGS != NULL) and for potentially dealing with a foldfix 
+ * (FOLD_GUARD != NULL). 
+ *
+ * The required adjustments of the cexprs are done in EAfold as well!
  */
 
 #include <stdio.h>
@@ -83,21 +154,17 @@ struct INFO {
     node *fundef;
     node *wl;
     node *fold;
-    node *fold_ids;
     node *accu;
-    node *guard;
+    node *assigns;
     node *cexprs;
-    node *expr;
     node *ids;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_WL(n) (n->wl)
 #define INFO_FOLD(n) (n->fold)
-#define INFO_FOLD_LHS(n) (n->fold_ids)
-#define INFO_FOLD_ACCU(n) (n->accu)
-#define INFO_FOLD_GUARD(n) (n->guard)
-#define INFO_FOLD_CEXPR(n) (n->expr)
+#define INFO_FOLD_ACCU_ASSIGN(n) (n->accu)
+#define INFO_FOLD_ASSIGNS(n) (n->assigns)
 #define INFO_CEXPRS(n) (n->cexprs)
 #define INFO_LHS_IDS(n) (n->ids)
 
@@ -116,10 +183,9 @@ MakeInfo (void)
     INFO_FUNDEF (result) = NULL;
     INFO_WL (result) = NULL;
     INFO_FOLD (result) = NULL;
-    INFO_FOLD_LHS (result) = NULL;
-    INFO_FOLD_ACCU (result) = NULL;
-    INFO_FOLD_GUARD (result) = NULL;
-    INFO_FOLD_CEXPR (result) = NULL;
+    INFO_FOLD_ACCU_ASSIGN (result) = NULL;
+    INFO_FOLD_ASSIGNS (result) = NULL;
+    INFO_CEXPRS (result) = NULL;
     INFO_LHS_IDS (result) = NULL;
 
     DBUG_RETURN (result);
@@ -137,62 +203,80 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeAccuAssign( node *code, info *arg_info)
+ * @fn void InjectVardecFor( node *avis, info *arg_info)
  *
- *   @brief creates new assignment containing prf F_accu
+ *   @brief creates new vardec for the given avis and inserts it into the
+ *          vardec-chain of INFO_FUNDEF( arg_info)
  *
- *   @param  node *code     :  code block
+ *   @param  node *avis     :  new variable
  *           info *arg_info :  context info
- *   @return node *         :  updated code node
+ *   @return void
  ******************************************************************************/
-static node *
-MakeAccuAssign (node *code, info *arg_info)
+static void
+InjectVardec (node *avis, info *arg_info)
 {
-    node *lhs_ids, *avis, *assign;
-
     DBUG_ENTER ();
 
-    assign = BLOCK_ASSIGNS (CODE_CBLOCK (code));
-
-    /* create avis */
-    lhs_ids = INFO_FOLD_LHS (arg_info);
-    INFO_FOLD_LHS (arg_info) = NULL;
-    avis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (lhs_ids)),
-                       TYeliminateAKV (AVIS_TYPE (IDS_AVIS (lhs_ids))));
-    INFO_FOLD_ACCU (arg_info) = avis;
-
-    /* insert vardec */
     FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+        = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-    /* create <avis> = F_accu( <idx-varname>) */
-
-    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                      TCmakePrf1 (F_accu, DUPdupIdsId (WITH_VEC (
-                                                            INFO_WL (arg_info))))),
-                           assign);
-
-    /* set correct backref to defining assignment */
-    AVIS_SSAASSIGN (avis) = assign;
-
-    /* put back assign */
-    BLOCK_ASSIGNS (CODE_CBLOCK (code)) = assign;
-
-    DBUG_RETURN (code);
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *MakeFoldFunAssign( info *arg_info);
+ * @fn node *InjectAccuIds( node *ids, info *arg_info)
+ *
+ *   @brief creates a new accu variable based on the given N_ids name and
+ *          inject an N_ids into INFO_FOLD_ACCU_ASSIGN. Adds neutral element
+ *          of INFO_FOLD as additional argument as well.
+ *
+ *   @param  node *ids      :  old N_ids node to derive the name from
+ *           info *arg_info :  context info
+ *   @return node *         :  new N_avis node for the fresh accu variable
+ ******************************************************************************/
+static node *
+InjectAccuIds (node *ids, info *arg_info)
+{
+    node *avis, *lhs, *neutral;
+
+    DBUG_ENTER ();
+    DBUG_PRINT ("   injecting netral argument into INFO_FOLD_ACCU_ASSIGN");
+    neutral = FOLD_NEUTRAL (INFO_FOLD (arg_info));
+    PRF_ARGS (LET_EXPR (ASSIGN_STMT (INFO_FOLD_ACCU_ASSIGN (arg_info))))
+        = TCappendExprs (
+              PRF_ARGS (LET_EXPR (ASSIGN_STMT (INFO_FOLD_ACCU_ASSIGN (arg_info)))),
+              TBmakeExprs (DUPdoDupTree (neutral), NULL));
+    
+    DBUG_PRINT ("   injecting new ids into INFO_FOLD_ACCU_ASSIGN");
+    avis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (ids)),
+                       TYeliminateAKV (AVIS_TYPE (IDS_AVIS (ids))));
+    InjectVardec (avis, arg_info);
+    AVIS_SSAASSIGN (avis) = INFO_FOLD_ACCU_ASSIGN (arg_info);
+
+    lhs = LET_IDS (ASSIGN_STMT (INFO_FOLD_ACCU_ASSIGN (arg_info)));
+    LET_IDS (ASSIGN_STMT (INFO_FOLD_ACCU_ASSIGN (arg_info)))
+        = TBmakeIds (avis, lhs);
+
+    DBUG_RETURN (avis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *InjectFoldFunAssign (node *acc_avis, node *cexpr_id, info *arg_info);
  *
  *   @brief  creates new assignment containing fold function of withloop
  *
+ *   @param  node *acc_avis  :  avis of the accu
+ *   @param  node *cexpr_id  :  old cexpr
  *   @param  info *arg_info  :  fold WL context
  *   @return node *          :  new N_assign node
  ******************************************************************************/
 static node *
-MakeFoldFunAssign (info *arg_info)
+InjectFoldFunAssign (node *acc_avis, node *cexpr_id, info *arg_info)
 {
+    node *avis, *assign, *args;
+    node *guard, *eq_funap, *fixavis, *fixassign;
     DBUG_ENTER ();
 
     /*
@@ -203,78 +287,62 @@ MakeFoldFunAssign (info *arg_info)
      *    <fun>   is the name of the (artificially introduced) folding-fun
      *    <cexpr> is the expression in the operation part
      */
+    DBUG_PRINT ("   creating fold-fun ap");
 
     /* create new cexpr id: */
-    node *old_cexpr_id = EXPRS_EXPR1 (INFO_FOLD_CEXPR (arg_info));
-    node *avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (old_cexpr_id)),
-                             TYcopyType (AVIS_TYPE (INFO_FOLD_ACCU (arg_info))));
+    avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (cexpr_id)),
+                       TYcopyType (AVIS_TYPE (acc_avis)));
+    InjectVardec (avis, arg_info);
 
-    /* replace old_cexpr_id with new one: */
-    EXPRS_EXPR1 (INFO_FOLD_CEXPR (arg_info)) = TBmakeId (avis);
-
-    /* insert vardec */
-    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
-
-    /* create <avis> = <fun>( <accu>, old_cexpr_id); */
-    node *assign;
-
+    /* create <avis> = <fun>( <accu>, cexpr_id); */
+    args = TBmakeExprs (TBmakeId (acc_avis), TBmakeExprs (cexpr_id, NULL));
     if (FOLD_ARGS (INFO_FOLD (arg_info))) {
-        /* Partial ap. */
-        /* duplicate the partial args exprs from FOLD_ARGS */
-        node *args = DUPdoDupTree (FOLD_ARGS (INFO_FOLD (arg_info)));
-        /* and append the two automatic args to it: acc, val */
-        node *last_arg = args;
-        while (EXPRS_NEXT (last_arg)) {
-            last_arg = EXPRS_NEXT (last_arg);
-        }
-        EXPRS_NEXT (last_arg) = TBmakeExprs (TBmakeId (INFO_FOLD_ACCU (arg_info)),
-                                             TBmakeExprs (old_cexpr_id, NULL));
-        /* construct the ap node and then the assignment */
-        node *ap = TBmakeAp (FOLD_FUNDEF (INFO_FOLD (arg_info)), args);
-
-        assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), ap), NULL);
-    } else {
-        /* Full ap. */
-        assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                          TCmakeAp2 (FOLD_FUNDEF (INFO_FOLD (arg_info)),
-                                                     TBmakeId (INFO_FOLD_ACCU (arg_info)),
-                                                     old_cexpr_id)),
-                               NULL);
+        /* Partial ap! Duplicate the partial args exprs from FOLD_ARGS 
+         * and prepand them to the args:
+         */
+        DBUG_PRINT ("   injecting args from partial fold-fun ap");
+        args = TCappendExprs (DUPdoDupTree (FOLD_ARGS (INFO_FOLD (arg_info))),
+                              args);
     }
+    assign = TBmakeAssign (
+                 TBmakeLet (
+                     TBmakeIds (avis, NULL),
+                     TBmakeAp (FOLD_FUNDEF (INFO_FOLD (arg_info)),
+                               args)),
+                 INFO_FOLD_ASSIGNS (arg_info));
+    INFO_FOLD_ASSIGNS (arg_info) = assign;
 
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (avis) = assign;
 
-    if (INFO_FOLD_GUARD (arg_info) != NULL) {
+    guard = FOLD_GUARD (INFO_FOLD (arg_info));
+    if (guard != NULL) {
         /*
          * create an assignment <fixbool> = sacprelude::eq( <avis>, fixval);
          */
-        node *args
-          = TBmakeExprs (TBmakeId (avis),
-                         TBmakeExprs (DUPdoDupNode (INFO_FOLD_GUARD (arg_info)), NULL));
+        DBUG_PRINT ("   creating explicit foldfix check");
+        args = TBmakeExprs (TBmakeId (avis),
+                            TBmakeExprs (guard, NULL));
 
-        node *eq_funap
-          = DSdispatchFunCall (NSgetNamespace (global.preludename), "eq", args);
+        eq_funap = DSdispatchFunCall (NSgetNamespace (global.preludename), "eq", args);
         DBUG_ASSERT (eq_funap != NULL, "%s::eq not found", global.preludename);
 
-        avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (INFO_FOLD_GUARD (arg_info))),
-                           TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
+        fixavis = TBmakeAvis (TRAVtmpVarName (ID_NAME (guard)),
+                              TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
 
-        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+        InjectVardec (fixavis, arg_info);
 
-        node *fixassign
-          = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), eq_funap), NULL);
+        fixassign = TBmakeAssign (TBmakeLet (TBmakeIds (fixavis, NULL), eq_funap),
+                                  ASSIGN_NEXT (assign));
 
-        AVIS_SSAASSIGN (avis) = fixassign;
+        AVIS_SSAASSIGN (fixavis) = fixassign;
         ASSIGN_NEXT (assign) = fixassign;
 
-        EXPRS_NEXT (INFO_FOLD_CEXPR (arg_info))
-          = TBmakeExprs (TBmakeId (avis), EXPRS_NEXT (INFO_FOLD_CEXPR (arg_info)));
+        // Finally, we replace the guard by the new one!
+        FOLD_GUARD (INFO_FOLD (arg_info)) = TBmakeId (fixavis);
     }
 
-    DBUG_RETURN (assign);
+    DBUG_RETURN (avis);
 }
 
 /**
@@ -356,11 +424,13 @@ EAassign (node *arg_node, info *arg_info)
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
+    
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     } else {
-        if (INFO_FOLD_ACCU (arg_info) != NULL) {
-            ASSIGN_NEXT (arg_node) = MakeFoldFunAssign (arg_info);
+        if (INFO_FOLD_ASSIGNS (arg_info) != NULL) {
+            ASSIGN_NEXT (arg_node) = INFO_FOLD_ASSIGNS (arg_info);
+            INFO_FOLD_ASSIGNS (arg_info) = NULL;
         }
     }
 
@@ -421,10 +491,6 @@ EAwith (node *arg_node, info *arg_info)
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-    if (INFO_FOLD_GUARD (arg_info) != NULL) {
-        INFO_FOLD_GUARD (arg_info) = FREEdoFreeNode (INFO_FOLD_GUARD (arg_info));
-    }
-
     /* pop arg_info */
     arg_info = FreeInfo (arg_info);
     arg_info = tmp;
@@ -469,24 +535,58 @@ EApropagate (node *arg_node, info *arg_info)
 node *
 EAfold (node *arg_node, info *arg_info)
 {
+    node *lhs, *cexprs;
+    node *avis;
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Fold WL found, inserting F_Accu...");
+    DBUG_PRINT ("Fold WL found ...");
 
     INFO_FOLD (arg_info) = arg_node;
-    INFO_FOLD_LHS (arg_info) = INFO_LHS_IDS (arg_info);
-    INFO_FOLD_CEXPR (arg_info) = INFO_CEXPRS (arg_info);
+    lhs = INFO_LHS_IDS (arg_info);
+    cexprs = INFO_CEXPRS (arg_info);
+
+    if (FOLD_NEXT (arg_node) != NULL) {
+        INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
+        INFO_LHS_IDS (arg_info) = IDS_NEXT (INFO_LHS_IDS (arg_info));
+        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
+    }
+
+    if (INFO_FOLD_ACCU_ASSIGN (arg_info) == NULL) {
+        DBUG_PRINT ("   generating empty accu assign");
+        INFO_FOLD_ACCU_ASSIGN (arg_info)
+            = TBmakeAssign (
+                  TBmakeLet (
+                      NULL,
+                      TCmakePrf1 (
+                          F_accu,
+                          DUPdupIdsId (WITH_VEC (INFO_WL (arg_info))))),
+                  NULL);
+    }
+
+    // create a new accu var and inject it into INFO_FOLD_ACCU_ASSIGN:
+    avis = InjectAccuIds (lhs, arg_info);
+
+    // create a new fold function assignment and inject it ito INFO_FOLD_ASSIGNS:
+    avis = InjectFoldFunAssign (avis, EXPRS_EXPR1 (cexprs), arg_info);
+
+    // replace the old cexpr with the new one:
+    DBUG_PRINT ("   new cexpr: '%s'", AVIS_NAME (avis));
+    EXPRS_EXPR1 (cexprs) = TBmakeId (avis);
 
     if (FOLD_GUARD (arg_node) != NULL) {
         node *avis;
         node *brk;
-        node *ids;
+        node *pred;
 
         /*
-         * Transcribe Guard into info node and remove guard from fold
+         * InjectFoldFunAssign left the boolean cexpr in FOLD_GUARD.
+         * Now, we move it into the cexprs!
          */
-        INFO_FOLD_GUARD (arg_info) = FOLD_GUARD (arg_node);
+        pred = FOLD_GUARD (arg_node);
         FOLD_GUARD (arg_node) = NULL;
+        DBUG_PRINT ("   additional break cexpr: '%s'", ID_NAME (pred));
+        EXPRS_NEXT (cexprs) = TBmakeExprs (pred,
+                                           EXPRS_NEXT (cexprs));
 
         /*
          * Append break withop
@@ -498,17 +598,11 @@ EAfold (node *arg_node, info *arg_info)
         /*
          * Append IDS to LHS of assignment
          */
-        avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (INFO_FOLD_GUARD (arg_info))),
+        avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (pred)),
                            TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
-
-        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
-
-        AVIS_SSAASSIGN (avis) = AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS_IDS (arg_info)));
-
-        ids = TBmakeIds (avis, NULL);
-        IDS_NEXT (ids) = IDS_NEXT (INFO_LHS_IDS (arg_info));
-        IDS_NEXT (INFO_LHS_IDS (arg_info)) = ids;
+        InjectVardec (avis, arg_info);
+        AVIS_SSAASSIGN (avis) = AVIS_SSAASSIGN (IDS_AVIS (lhs));
+        IDS_NEXT (lhs) = TBmakeIds (avis, IDS_NEXT (lhs));
     }
 
     DBUG_RETURN (arg_node);
@@ -530,8 +624,15 @@ EAcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_FOLD_LHS (arg_info) != NULL) {
-        arg_node = MakeAccuAssign (arg_node, arg_info);
+    /* insertion of INFO_FOLD_ACCU_ASSIGN has to happen here as the block can
+     * be empty!
+     */
+    if (INFO_FOLD_ACCU_ASSIGN (arg_info) != NULL) {
+        ASSIGN_NEXT (INFO_FOLD_ACCU_ASSIGN (arg_info))
+            = BLOCK_ASSIGNS (CODE_CBLOCK (arg_node));
+        BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
+            = INFO_FOLD_ACCU_ASSIGN (arg_info);
+        INFO_FOLD_ACCU_ASSIGN (arg_info) = NULL;
     }
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);

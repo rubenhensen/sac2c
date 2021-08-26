@@ -3164,6 +3164,7 @@
         <node name="Arg" />
         <node name="Assign" />
         <node name="Code" />
+        <node name="Fold" />
         <node name="Cond" />
         <node name="Funcond" />
         <node name="Fundef" />

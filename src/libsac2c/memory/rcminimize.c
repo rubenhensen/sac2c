@@ -327,6 +327,24 @@ RCMcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @node *RCMfold( node *arg_node, info *arg_info)
+ *
+ * @brief avoid counting FOLD_ARGS should they exist!
+ *
+ *****************************************************************************/
+node *
+RCMfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
+    FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @node *RCMrange( node *arg_node, info *arg_info)
  *
  * @brief

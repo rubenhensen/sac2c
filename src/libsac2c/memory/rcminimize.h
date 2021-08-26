@@ -20,6 +20,7 @@ extern node *RCMap (node *arg_node, info *arg_info);
 extern node *RCMarg (node *arg_node, info *arg_info);
 extern node *RCMassign (node *arg_node, info *arg_info);
 extern node *RCMcode (node *arg_node, info *arg_info);
+extern node *RCMfold (node *arg_node, info *arg_info);
 extern node *RCMrange (node *arg_node, info *arg_info);
 extern node *RCMcond (node *arg_node, info *arg_info);
 extern node *RCMfuncond (node *arg_node, info *arg_info);
