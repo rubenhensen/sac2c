@@ -18,7 +18,7 @@
  * is transformed into
  *
  *    A = with {
- *          gen (iv) { acc   = accu( iv);
+ *          gen (iv) { acc   = accu( iv, n);
  *                     val = ...;
  *                     res = op( acc, val);
  *              } : res;
@@ -30,7 +30,7 @@
  * applications for all folding operations, e.g.:
  *
  *    A,B = with {
- *             gen (iv) { acc,acc2   = accu( iv);
+ *             gen (iv) { acc,acc2   = accu( iv, n, n2);
  *                        val = ...;
  *                        val2 = ...;
  *                        res = op (acc, val);
@@ -43,7 +43,9 @@
  * The function F_accu is used to get the correct
  * accumulation values but it is only pseudo syntax and is elided
  * during compile. The index vector argument is introduced
- * to disable LIR lifting the application of accu out.
+ * to disable LIR lifting the application of accu out. The neutral
+ * arguments are needed in order to allow type inference to predict
+ * the number of return values.
  *
  * Besides this basic transformation, we need to support two special 
  * cases:
@@ -77,7 +79,7 @@
  * is transformed into
  *
  *    A, tmp = with {
- *               gen (iv) { acc   = accu( iv);
+ *               gen (iv) { acc   = accu( iv, n);
  *                          val = ...;
  *                          res = op( acc, val);
  *                          new_s = sacprelude::eq( res, s);
@@ -98,8 +100,8 @@
  * I) INFO_FOLD_ACCU_ASSIGN holds the accu assignment, and
  * II) INFO_FOLD_ASSIGNS holds the actual folding operation applications
  *     as well as a potential break predicate computation
- * These code snippets are being inserted through EAassign during a subsequent
- * traversal of the with-loop code.
+ * These code snippets are being inserted through EAcode and EAassign during
+ * a subsequent traversal of the with-loop code.
  *
  * The construction of INFO_FOLD_ACCU_ASSIGN happens in several steps.
  * The initial construction is done in EAfold when looking at the last
@@ -107,6 +109,8 @@
  *       InjectAccuIds (lhs, arg_info)    for every fold operator.
  * It creates a new accu variable and injects it into INFO_FOLD_ACCU_ASSIGN,
  * relying on INFO_FUNDEF for the insertion of the variable declaration.
+ * It also relies on INFO_FOLD to inject the neutral element as additional 
+ * argument to _accu_.
  *
  * The construction of INFO_FOLD_ASSIGNS happens through 
  *       InjectFoldFunAssign (avis, cexpr, arg_info)    for every fold operator.
@@ -224,7 +228,8 @@ InjectVardec (node *avis, info *arg_info)
  * @fn node *InjectAccuIds( node *ids, info *arg_info)
  *
  *   @brief creates a new accu variable based on the given N_ids name and
- *          inject an N_ids into INFO_FOLD_ACCU_ASSIGN
+ *          inject an N_ids into INFO_FOLD_ACCU_ASSIGN. Adds neutral element
+ *          of INFO_FOLD as additional argument as well.
  *
  *   @param  node *ids      :  old N_ids node to derive the name from
  *           info *arg_info :  context info
@@ -233,9 +238,16 @@ InjectVardec (node *avis, info *arg_info)
 static node *
 InjectAccuIds (node *ids, info *arg_info)
 {
-    node *avis, *lhs;
+    node *avis, *lhs, *neutral;
 
     DBUG_ENTER ();
+    DBUG_PRINT ("   injecting netral argument into INFO_FOLD_ACCU_ASSIGN");
+    neutral = FOLD_NEUTRAL (INFO_FOLD (arg_info));
+    PRF_ARGS (LET_EXPR (ASSIGN_STMT (INFO_FOLD_ACCU_ASSIGN (arg_info))))
+        = TCappendExprs (
+              PRF_ARGS (LET_EXPR (ASSIGN_STMT (INFO_FOLD_ACCU_ASSIGN (arg_info)))),
+              TBmakeExprs (DUPdoDupTree (neutral), NULL));
+    
     DBUG_PRINT ("   injecting new ids into INFO_FOLD_ACCU_ASSIGN");
     avis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (ids)),
                        TYeliminateAKV (AVIS_TYPE (IDS_AVIS (ids))));
@@ -410,12 +422,6 @@ EAassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_FOLD_ACCU_ASSIGN (arg_info) != NULL) {
-        ASSIGN_NEXT (INFO_FOLD_ACCU_ASSIGN (arg_info)) = arg_node;
-        arg_node = INFO_FOLD_ACCU_ASSIGN (arg_info);
-        INFO_FOLD_ACCU_ASSIGN (arg_info) = NULL;
-    }
-
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     
@@ -535,6 +541,7 @@ EAfold (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("Fold WL found ...");
 
+    INFO_FOLD (arg_info) = arg_node;
     lhs = INFO_LHS_IDS (arg_info);
     cexprs = INFO_CEXPRS (arg_info);
 
@@ -560,7 +567,6 @@ EAfold (node *arg_node, info *arg_info)
     avis = InjectAccuIds (lhs, arg_info);
 
     // create a new fold function assignment and inject it ito INFO_FOLD_ASSIGNS:
-    INFO_FOLD (arg_info) = arg_node;
     avis = InjectFoldFunAssign (avis, EXPRS_EXPR1 (cexprs), arg_info);
 
     // replace the old cexpr with the new one:
@@ -617,6 +623,17 @@ node *
 EAcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
+
+    /* insertion of INFO_FOLD_ACCU_ASSIGN has to happen here as the block can
+     * be empty!
+     */
+    if (INFO_FOLD_ACCU_ASSIGN (arg_info) != NULL) {
+        ASSIGN_NEXT (INFO_FOLD_ACCU_ASSIGN (arg_info))
+            = BLOCK_ASSIGNS (CODE_CBLOCK (arg_node));
+        BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
+            = INFO_FOLD_ACCU_ASSIGN (arg_info);
+        INFO_FOLD_ACCU_ASSIGN (arg_info) = NULL;
+    }
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 

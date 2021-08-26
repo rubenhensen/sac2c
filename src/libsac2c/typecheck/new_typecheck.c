@@ -92,6 +92,7 @@ struct INFO {
     node *ptr_return;
     node *wl_ops;
     ntype *accu;
+    size_t fold_cnt;
     ntype *prop_objs;
     size_t prop_cnt;
     bool is_type_upgrade;
@@ -108,6 +109,7 @@ struct INFO {
 #define INFO_RETURN(n) (n->ptr_return)
 #define INFO_WL_OPS(n) (n->wl_ops)
 #define INFO_EXP_ACCU(n) (n->accu)
+#define INFO_ACT_FOLD_POS(n) (n->fold_cnt)
 #define INFO_PROP_OBJS(n) (n->prop_objs)
 #define INFO_ACT_PROP_OBJ(n) (n->prop_cnt)
 #define INFO_IS_TYPE_UPGRADE(n) (n->is_type_upgrade)
@@ -132,6 +134,7 @@ MakeInfo (void)
     INFO_RETURN (result) = NULL;
     INFO_WL_OPS (result) = NULL;
     INFO_EXP_ACCU (result) = NULL;
+    INFO_ACT_FOLD_POS (result) = 0;
     INFO_PROP_OBJS (result) = NULL;
     INFO_ACT_PROP_OBJ (result) = 0;
     INFO_IS_TYPE_UPGRADE (result) = FALSE;
@@ -1338,10 +1341,21 @@ NTCprf (node *arg_node, info *arg_info)
             /**
              * we are dealing with a non-first partition of a MG-WL here!
              */
-            res = TYmakeProductType (1, TYcopyType (INFO_EXP_ACCU (arg_info)));
+            res = TYcopyType (INFO_EXP_ACCU (arg_info));
         } else {
-            INFO_EXP_ACCU (arg_info) = TYmakeAlphaType (NULL);
-            res = TYmakeProductType (1, INFO_EXP_ACCU (arg_info));
+            argexprs = PRF_EXPRS2 (arg_node); /* skip iv! */
+            pos = 0;
+
+            res = TYmakeEmptyProductType (TCcountExprs (argexprs));
+
+            while (argexprs != NULL) {
+                alpha = TYmakeAlphaType (NULL);
+                res = TYsetProductMember (res, pos, alpha);
+                pos++;
+                argexprs = EXPRS_NEXT (argexprs);
+            }
+
+            INFO_EXP_ACCU (arg_info) = TYcopyType (res);
         }
     } else if (prf == F_prop_obj_in) {
         if (INFO_PROP_OBJS (arg_info) != NULL) {
@@ -1863,7 +1877,7 @@ NTCwith (node *arg_node, info *arg_info)
      * Then, we infer the type of the WL body:
      *
      * Since this may yield an explicit accu type in INFO_EXP_ACCU and
-     * an new types for propagated objects in INFO_PROP_OBJS,
+     * a new types for propagated objects in INFO_PROP_OBJS,
      * and fold-wls / propagate-wls may be nested, we need to stack these
      * pointers before traversing the code of this WL.
      */
@@ -1908,6 +1922,7 @@ NTCwith (node *arg_node, info *arg_info)
     INFO_BODIES_TYPE (arg_info) = body;
     INFO_NUM_EXPRS_SOFAR (arg_info) = 0;
     INFO_ACT_PROP_OBJ (arg_info) = 0;
+    INFO_ACT_FOLD_POS (arg_info) = 0;
 
     if (TYgetProductSize (body) != TCcountWithops (WITH_WITHOP (arg_node))) {
         CTIabortLine (global.linenum,
@@ -2321,7 +2336,7 @@ NTCfold (node *arg_node, info *arg_info)
 {
     ntype *gen, *body, *res, *elems, *acc;
     ntype *neutr, *args, *pargs;
-    size_t i, num_pargs;
+    size_t i, num_pargs, exprs_so_far;
     node *wrapper;
     te_info *info;
     bool ok;
@@ -2383,8 +2398,11 @@ NTCfold (node *arg_node, info *arg_info)
          * fun( a, e) ), and then make the type of 'val' a subtype of
          * the alpha type again in order to ensure the fix-point calculation.
          */
-        acc = TYcopyType (INFO_EXP_ACCU (arg_info));
-        INFO_EXP_ACCU (arg_info) = NULL;
+        acc = TYcopyType (
+                  TYgetProductMember (
+                      INFO_EXP_ACCU (arg_info),
+                      INFO_ACT_FOLD_POS (arg_info)));
+        INFO_ACT_FOLD_POS (arg_info)++;
 
         res = TYmakeProductType (1, elems);
 
@@ -2403,10 +2421,12 @@ NTCfold (node *arg_node, info *arg_info)
          * arguments and then add the types of acc and elems:
          */
         if (FOLD_ARGS (arg_node) != NULL) {
+            exprs_so_far = INFO_NUM_EXPRS_SOFAR (arg_info);
             INFO_NUM_EXPRS_SOFAR (arg_info) = 0;
             FOLD_ARGS (arg_node) = TRAVdo (FOLD_ARGS (arg_node), arg_info);
             pargs = INFO_TYPE (arg_info);
             INFO_TYPE (arg_info) = NULL;
+            INFO_NUM_EXPRS_SOFAR (arg_info) = exprs_so_far;
 
             num_pargs = TYgetProductSize (pargs);
             args = TYmakeEmptyProductType (num_pargs + 2);
@@ -2488,6 +2508,7 @@ NTCpropagate (node *arg_node, info *arg_info)
     bool ok;
 
     DBUG_ENTER ();
+
     body
       = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
 
