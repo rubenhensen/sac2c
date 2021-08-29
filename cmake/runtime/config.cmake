@@ -1,5 +1,11 @@
 # file include checks to find sac2c, etc.
 
+# add some default value for some additional macOS variable
+# note that those variables are ignored on other systems
+IF (NOT CMAKE_OSX_ARCHITECTURES)
+  SET (CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "macOS architecture to build; 64-bit X86 and ARM is expected" FORCE)
+ENDIF ()
+
 # Make sure that sac2c is available and is located in the build directory.
 # Note the 'NO_DEFAULT_PATH' specifier to the following FIND_PROGRAM command
 # which makes sure that any sac2c on the PATH is not considered.

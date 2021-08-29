@@ -72,6 +72,12 @@ ENDMACRO ()
 SET (OS       "${CMAKE_SYSTEM}")
 SET (ARCH     "${CMAKE_SYSTEM_PROCESSOR}")
 
+# add some default value for some additional macOS variable
+# note that those variables are ignored on other systems
+IF (NOT CMAKE_OSX_ARCHITECTURES)
+  SET (CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "macOS architecture to build; 64-bit X86 and ARM is expected" FORCE)
+ENDIF ()
+
 # Sac2c variables
 SET (LINKSETSIZE "0" CACHE STRING "Set a value for -linksetsize parameter of sac2c")
 
