@@ -1,0 +1,19 @@
+// Errorneous b4:ece HandleConditionalExpressions
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS +=
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -b4  -printfun main
+//
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< 
+
+
+
+int main()
+{
+    bodies = [1,2,3,4,5,6,7];
+
+    accs = {[i] -> {[j] -> (_eq_SxS_(i,j) ? _sel_VxA_([i], bodies) : _sel_VxA_([j], bodies)) } };
+
+    return(0);
+}
