@@ -101,8 +101,8 @@ stages:
         - merge_requests
         - web
 
-# Here we define the actual jobs - we must specify each build OS separately as GitLab-CI
-# does not support launch a job on all OSs as such.
+# Here we define the actual jobs - we must specify each build OS separately as
+# GitLab-CI does not support launch a job on all OSs as such.
 
 ### ARCHLINUX ###
 
@@ -113,14 +113,16 @@ build-archlinux:
 test-archlinux:
     <<: *test-template
     image: sacbuild/archlinux:1.3.1
-    dependencies:
-        - build-archlinux
+    needs:
+        - job: build-archlinux
+          artifacts: true
 
 stdlib-archlinux:
     <<: *build-stdlib-template
     image: sacbuild/archlinux:1.3.1
-    dependencies:
-        - test-archlinux
+    needs:
+        - job: test-archlinux
+          artifacts: true
 
 ### CENTOS 8 ###
 
@@ -131,14 +133,16 @@ build-centos8:
 test-centos8:
     <<: *test-template
     image: sacbuild/centos8:1.3.1
-    dependencies:
-        - build-centos8
+    needs:
+        - job: build-centos8
+          artifacts: true
 
 stdlib-centos8:
     <<: *build-stdlib-template
     image: sacbuild/centos8:1.3.1
-    dependencies:
-        - test-centos8
+    needs:
+        - job: test-centos8
+          artifacts: true
 
 ### CENTOS 7 ###
 
@@ -149,14 +153,16 @@ build-centos7:
 test-centos7:
     <<: *test-template
     image: sacbuild/centos7:1.3.1
-    dependencies:
-        - build-centos7
+    needs:
+        - job: build-centos7
+          artifacts: true
 
 stdlib-centos7:
     <<: *build-stdlib-template
     image: sacbuild/centos7:1.3.1
-    dependencies:
-        - test-centos7
+    needs:
+        - job: test-centos7
+          artifacts: true
 
 ### UBUNTU 18 ###
 
@@ -167,14 +173,16 @@ build-ubuntu18:
 test-ubuntu18:
     <<: *test-template
     image: sacbuild/ubuntu18:1.3.1
-    dependencies:
-        - build-ubuntu18
+    needs:
+        - job: build-ubuntu18
+          artifacts: true
 
 stdlib-ubuntu18:
     <<: *build-stdlib-template
     image: sacbuild/ubuntu18:1.3.1
-    dependencies:
-        - test-ubuntu18
+    needs:
+        - job: test-ubuntu18
+          artifacts: true
 
 ### UBUNTU 16 ###
 
@@ -185,14 +193,16 @@ build-ubuntu16:
 test-ubuntu16:
     <<: *test-template
     image: sacbuild/ubuntu16:1.3.1
-    dependencies:
-        - build-ubuntu16
+    needs:
+        - job: build-ubuntu16
+          artifacts: true
 
 stdlib-ubuntu16:
     <<: *build-stdlib-template
     image: sacbuild/ubuntu16:1.3.1
-    dependencies:
-        - test-ubuntu16
+    needs:
+        - job: test-ubuntu16
+          artifacts: true
 
 ### MacOS Apple Silicon (ARM) ###
 
@@ -209,12 +219,14 @@ test-macosARM:
     # only be one tag listed below!)
     tags:
         - macosARM
-    dependencies:
-        - build-macosARM
+    needs:
+        - job: build-macosARM
+          artifacts: true
 
 stdlib-macosARM:
     <<: *build-stdlib-template
     tags:
         - macosARM
-    dependencies:
-        - test-macosARM
+    needs:
+        - job: test-macosARM
+          artifacts: true
