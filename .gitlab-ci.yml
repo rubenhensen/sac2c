@@ -44,7 +44,8 @@ stages:
     # ensure we capture the build blob
     artifacts:
         expire_in: 24 hrs
-        untracked: true
+        paths:
+            - build/
     only:
         - merge_requests
         - web
@@ -55,10 +56,15 @@ stages:
         - cp -r build/.sac2crc $HOME
         - cd build
         - make fulltest
-        - ctest -j2 --output-on-failure
     artifacts:
         expire_in: 24 hrs
-        untracked: true
+        paths:
+            - build/
+        when: always
+        reports:
+            junit:
+                - build/sac2c-debug/src/sac2c-debug-build/sac2c_DEBUG_tests.xml
+                - build/sac2c-release/src/sac2c-release-build/sac2c_RELEASE_tests.xml
     only:
         - merge_requests
         - web
@@ -94,8 +100,8 @@ stages:
     # ensure we capture the build blob
     artifacts:
         expire_in: 24 hrs
-        untracked: true
         paths:
+            - build/
             - stdlib/
     only:
         - merge_requests
