@@ -114,18 +114,18 @@ stages:
 
 build-archlinux:
     <<: *build-template
-    image: sacbuild/archlinux:1.3.1
+    image: sacbuild/archlinux:1.4.1
 
 test-archlinux:
     <<: *test-template
-    image: sacbuild/archlinux:1.3.1
+    image: sacbuild/archlinux:1.4.1
     needs:
         - job: build-archlinux
           artifacts: true
 
 stdlib-archlinux:
     <<: *build-stdlib-template
-    image: sacbuild/archlinux:1.3.1
+    image: sacbuild/archlinux:1.4.1
     needs:
         - job: test-archlinux
           artifacts: true
@@ -134,18 +134,18 @@ stdlib-archlinux:
 
 build-centos8:
     <<: *build-template
-    image: sacbuild/centos8:1.3.1
+    image: sacbuild/centos8:1.4.1
 
 test-centos8:
     <<: *test-template
-    image: sacbuild/centos8:1.3.1
+    image: sacbuild/centos8:1.4.1
     needs:
         - job: build-centos8
           artifacts: true
 
 stdlib-centos8:
     <<: *build-stdlib-template
-    image: sacbuild/centos8:1.3.1
+    image: sacbuild/centos8:1.4.1
     needs:
         - job: test-centos8
           artifacts: true
@@ -154,18 +154,18 @@ stdlib-centos8:
 
 build-centos7:
     <<: *build-template
-    image: sacbuild/centos7:1.3.1
+    image: sacbuild/centos7:1.4.1
 
 test-centos7:
     <<: *test-template
-    image: sacbuild/centos7:1.3.1
+    image: sacbuild/centos7:1.4.1
     needs:
         - job: build-centos7
           artifacts: true
 
 stdlib-centos7:
     <<: *build-stdlib-template
-    image: sacbuild/centos7:1.3.1
+    image: sacbuild/centos7:1.4.1
     needs:
         - job: test-centos7
           artifacts: true
@@ -174,18 +174,18 @@ stdlib-centos7:
 
 build-ubuntu18:
     <<: *build-template
-    image: sacbuild/ubuntu18:1.3.1
+    image: sacbuild/ubuntu18:1.4.1
 
 test-ubuntu18:
     <<: *test-template
-    image: sacbuild/ubuntu18:1.3.1
+    image: sacbuild/ubuntu18:1.4.1
     needs:
         - job: build-ubuntu18
           artifacts: true
 
 stdlib-ubuntu18:
     <<: *build-stdlib-template
-    image: sacbuild/ubuntu18:1.3.1
+    image: sacbuild/ubuntu18:1.4.1
     needs:
         - job: test-ubuntu18
           artifacts: true
@@ -194,18 +194,18 @@ stdlib-ubuntu18:
 
 build-ubuntu16:
     <<: *build-template
-    image: sacbuild/ubuntu16:1.3.1
+    image: sacbuild/ubuntu16:1.4.1
 
 test-ubuntu16:
     <<: *test-template
-    image: sacbuild/ubuntu16:1.3.1
+    image: sacbuild/ubuntu16:1.4.1
     needs:
         - job: build-ubuntu16
           artifacts: true
 
 stdlib-ubuntu16:
     <<: *build-stdlib-template
-    image: sacbuild/ubuntu16:1.3.1
+    image: sacbuild/ubuntu16:1.4.1
     needs:
         - job: test-ubuntu16
           artifacts: true
