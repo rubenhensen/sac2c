@@ -170,6 +170,26 @@ stdlib-centos7:
         - job: test-centos7
           artifacts: true
 
+### UBUNTU 20 ###
+
+build-ubuntu20:
+    <<: *build-template
+    image: sacbuild/ubuntu20:1.4.1
+
+test-ubuntu20:
+    <<: *test-template
+    image: sacbuild/ubuntu20:1.4.1
+    needs:
+        - job: build-ubuntu20
+          artifacts: true
+
+stdlib-ubuntu20:
+    <<: *build-stdlib-template
+    image: sacbuild/ubuntu20:1.4.1
+    needs:
+        - job: test-ubuntu20
+          artifacts: true
+
 ### UBUNTU 18 ###
 
 build-ubuntu18:
@@ -188,26 +208,6 @@ stdlib-ubuntu18:
     image: sacbuild/ubuntu18:1.4.1
     needs:
         - job: test-ubuntu18
-          artifacts: true
-
-### UBUNTU 16 ###
-
-build-ubuntu16:
-    <<: *build-template
-    image: sacbuild/ubuntu16:1.4.1
-
-test-ubuntu16:
-    <<: *test-template
-    image: sacbuild/ubuntu16:1.4.1
-    needs:
-        - job: build-ubuntu16
-          artifacts: true
-
-stdlib-ubuntu16:
-    <<: *build-stdlib-template
-    image: sacbuild/ubuntu16:1.4.1
-    needs:
-        - job: test-ubuntu16
           artifacts: true
 
 ### MacOS Apple Silicon (ARM) ###
