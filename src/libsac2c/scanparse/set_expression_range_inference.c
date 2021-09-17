@@ -164,7 +164,8 @@ SERIspap (node *arg_node, info *arg_info)
 
     SPAP_ARGS (arg_node) = TRAVopt (SPAP_ARGS (arg_node), arg_info);
 
-    if (STReq (SPAP_NAME (arg_node), "sel") && (SPAP_NS (arg_node) == NULL)) {
+    if (STReq (SPAP_NAME (arg_node), "sel") && (SPAP_NS (arg_node) == NULL)
+        && (TCcountExprs (SPAP_ARGS (arg_node)) == 2)) {
         DBUG_PRINT_TAG ("SERI_SEUT", "Spap selection found; scanning for genvars..." );
         SEUTscanSelectionForShapeInfo (SPAP_ARG1 (arg_node), SPAP_ARG2 (arg_node), INFO_SERI_IDTABLE (arg_info));
     } 
