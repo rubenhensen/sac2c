@@ -373,7 +373,7 @@ ENABLE_TESTING ()
 #       we need the sac2crc generation target, as otherwise there could be
 #       issues with finding the correct sacprelude.
 ADD_CUSTOM_TARGET (check
-  COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+  COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --output-junit sac2c_${CMAKE_BUILD_TYPE}_tests.xml
   DEPENDS copy-sac2crc-prelude-file runtime_libraries)
 
 # The following director contains all tests which check that the compiler

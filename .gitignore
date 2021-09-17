@@ -13,6 +13,8 @@ Session.vim
 # ide/clangd
 /.project
 /.clangd
+/.cache
+/.ccls-cache
 
 # cmake
 build*/
