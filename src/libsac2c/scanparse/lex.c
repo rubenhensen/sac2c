@@ -1012,7 +1012,7 @@ read_postfix:
         if (isreal || saw_dot || saw_exp)
             tclass = tok_number_double;
         else
-            if (unsigned_p) 
+            if (unsigned_p)
                 tclass = tok_number_uint;
             else
                 tclass = tok_number;

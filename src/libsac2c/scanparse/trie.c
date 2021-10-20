@@ -5,6 +5,10 @@
 
 #include "trie.h"
 
+#ifndef LEXER_BINARY
+#  include "compat.h"
+#endif
+
 /* Allocate a new empty trie.  */
 struct trie *
 trie_new ()

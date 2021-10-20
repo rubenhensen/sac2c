@@ -1,8 +1,9 @@
 #ifndef __LEX_H__
 #define __LEX_H__
 
-#ifdef LEXER_BINARY
 #include <stdio.h>
+
+#ifdef LEXER_BINARY
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -90,6 +91,9 @@ extern int warning_count;
 #define true 1
 #define false 0
 
+#ifndef LEXER_BINARY
+#  include "compat.h"
+#endif
 #include "uthash.h"
 #include "trie.h"
 
@@ -172,7 +176,7 @@ struct token {
 
 struct file_name {
     char *name;
-    UT_hash_handle hh;
+    struct UT_hash_handle hh;
 };
 
 struct lexer {
