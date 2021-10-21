@@ -70,6 +70,7 @@
 #include "cuda_utils.h"
 #include "new_types.h"
 #include "DupTree.h"
+#include "str.h"
 
 /**
  * Typedefs

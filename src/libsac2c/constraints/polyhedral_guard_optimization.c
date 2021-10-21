@@ -56,6 +56,7 @@
 #include "lacfun_utilities.h"
 #include "symbolic_constant_simplification.h"
 #include "with_loop_utilities.h"
+#include "ctinfo.h"
 
 /** <!--********************************************************************-->
  *

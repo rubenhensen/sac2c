@@ -60,6 +60,7 @@
 #include "new_types.h"
 #include "new_typecheck.h"
 #include "check_mem.h"
+#include "ctinfo.h"
 
 /*
  * Now, we include the own interface! The reason fot this is twofold:
@@ -882,9 +883,9 @@ COconstant2AST (constant *a)
     } else {
         /* First, we build the exprs! */
         exprs = NULL;
-        /* 
+        /*
          * decrement after check for > 0, safe method for reverse loop ending on 0
-         * i : (CONSTANT_VLEN - 1) to 0 
+         * i : (CONSTANT_VLEN - 1) to 0
          */
         for (i = CONSTANT_VLEN (a) ; i-- > 0; ) {
             exprs

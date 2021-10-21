@@ -25,6 +25,7 @@
 #include "namespaces.h"
 #include "globals.h"
 #include "rtspec_modes.h"
+#include "ctinfo.h"
 
 /*
  * INFO structure

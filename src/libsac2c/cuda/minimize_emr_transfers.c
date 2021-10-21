@@ -108,6 +108,7 @@
 #include "DupTree.h"
 #include "deadcoderemoval.h"
 #include "print.h"
+#include "ctinfo.h"
 
 enum trav_mode { bypass, inap, afterap };
 

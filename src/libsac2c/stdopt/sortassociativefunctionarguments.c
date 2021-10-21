@@ -59,6 +59,7 @@
 #include "memory.h"
 #include "new_typecheck.h"
 #include "globals.h"
+#include "str.h"
 
 /*
  * INFO structure
