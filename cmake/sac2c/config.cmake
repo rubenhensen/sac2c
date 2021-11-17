@@ -951,7 +951,6 @@ SET (BUILD_STATUS "
 * - MT/LPEL:               ${ENABLE_MT_LPEL}
 * - CUDA:                  ${ENABLE_CUDA}
 * - OpenMP:                ${ENABLE_OMP}
-* - SL:                    ${ENABLE_SL}
 * - HWLOC:                 ${ENABLE_HWLOC}
 * - Distributed memory:    ${ENABLE_DISTMEM}
 * - CC:                    ${CMAKE_C_COMPILER} (${CMAKE_C_COMPILER_ID})
