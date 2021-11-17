@@ -114,10 +114,14 @@ stages:
 
 build-archlinux:
     <<: *build-template
+    before_script:
+        - source /etc/profile
     image: sacbuild/archlinux:1.4.1
 
 test-archlinux:
     <<: *test-template
+    before_script:
+        - source /etc/profile
     image: sacbuild/archlinux:1.4.1
     needs:
         - job: build-archlinux
@@ -125,6 +129,8 @@ test-archlinux:
 
 stdlib-archlinux:
     <<: *build-stdlib-template
+    before_script:
+        - source /etc/profile
     image: sacbuild/archlinux:1.4.1
     needs:
         - job: test-archlinux

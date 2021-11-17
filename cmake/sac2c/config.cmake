@@ -225,7 +225,7 @@ ENABLE_VAR_IF (ENABLE_DL  HAVE_DLFCN_H AND DL_LIB)
 # Decide whether to use uuid or not inside the RTspec
 SET (ENABLE_UUID OFF)
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # MacOSX (BSD in general) includes UUID as part of libc. 
+  # MacOSX (BSD in general) includes UUID as part of libc.
   FIND_PROGRAM (UUID_PROG NAMES "uuidgen")
   IF (UUID_PROG)
     SET (UUID_FOUND TRUE)
@@ -243,7 +243,7 @@ ENABLE_VAR_IF (ENABLE_UUID  UUID_FOUND AND HAVE_UUID_H)
 
 SET (ENABLE_HASH OFF)
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # MacOSX (BSD in general) include crypt as part of libc. 
+  # MacOSX (BSD in general) include crypt as part of libc.
   SET (CRYPT_LIB TRUE)
   CHECK_INCLUDE_FILES ("unistd.h" HAVE_CRYPT_H)
 ELSE ()
@@ -439,8 +439,8 @@ ENDIF ()
 SET (ENABLE_CUDA OFF)
 SET (CUDA_ARCH)
 IF (CUDA)
-  FIND_PACKAGE (CUDA)
-  IF (CUDA_FOUND)
+  FIND_PACKAGE (CUDAToolkit)
+  IF (CUDAToolkit_FOUND)
     MESSAGE (STATUS "Testing CUDA Device...")
     # the TRY_RUN uses the system CC to compile a program that
     # probes the system for a CUDA device and determines the
@@ -455,8 +455,8 @@ IF (CUDA)
     TRY_RUN (CUDA_R_RESULT CUDA_C_RESULT
       ${CMAKE_BINARY_DIR} ${PROJECT_SOURCE_DIR}/cmake/sac2c/cuda_get_compute_com.c
       CMAKE_FLAGS
-        -DINCLUDE_DIRECTORIES:STRING=${CUDA_TOOLKIT_INCLUDE}
-        -DLINK_LIBRARIES:STRING=${CUDA_CUDART_LIBRARY}
+        -DINCLUDE_DIRECTORIES:STRING=${CUDAToolkit_INCLUDE_DIRS}
+      LINK_LIBRARIES CUDA::cudart
       COMPILE_OUTPUT_VARIABLE CUDA_C_OUTPUT
       RUN_OUTPUT_VARIABLE CUDA_R_OUTPUT)
     # C_RESULT it TRUE when compilation works
@@ -465,10 +465,10 @@ IF (CUDA)
       SET (ENABLE_CUDA ON)
       # add further RT lib build targets
       LIST (APPEND RT_TARGETS cuda cuda_reg cuda_alloc cuda_man cuda_manp)
-      LIST (APPEND SAC2CRC_LIBS_PATHS "${CUDA_TOOLKIT_ROOT_DIR}/lib64")
-      LIST (APPEND SAC2CRC_INCS "${CUDA_INCLUDE_DIRS}")
+      LIST (APPEND SAC2CRC_LIBS_PATHS "${CUDAToolkit_LIBRARY_DIR}")
+      LIST (APPEND SAC2CRC_INCS "${CUDAToolkit_INCLUDE_DIRS}")
       LIST (APPEND SAC2CRC_LIBS "-lcudart" "-lcublas")
-      SET (NVCC_PATH  "${CUDA_TOOLKIT_ROOT_DIR}/bin")
+      SET (NVCC_PATH  "${CUDAToolkit_BIN_DIR}")
       IF (NOT CUDA_R_RESULT)
         MESSAGE (STATUS "Setting CUDA Device-CC: `${CUDA_R_OUTPUT}'")
         SET (CUDA_ARCH  "${CUDA_R_OUTPUT}")
@@ -727,8 +727,8 @@ ELSEIF (MACC)
 
   # needed for SPMD_BEGIN when compiling sac programs -tmt_pth!
   CHECK_CC_FLAG ("-Wno-vla" MACCC_FLAGS)
-  # we want to ensure all access macros for <xyz>.mac files are always defined 
-  # even if some of them are not actually used in one particular use of the 
+  # we want to ensure all access macros for <xyz>.mac files are always defined
+  # even if some of them are not actually used in one particular use of the
   # mac file!
   CHECK_CC_FLAG ("-Wno-unused-macros" MACCC_FLAGS)
 
@@ -754,7 +754,7 @@ ELSEIF (MACC)
 
   # we do use __sync_add_and_fetch in mt_beehive.c which leads to the warning that
   # implicit use of sequentially-consistent atomic may incur stronger memory barriers than necessary
-  # being conservative it is ok to ignore those warnings, however, 
+  # being conservative it is ok to ignore those warnings, however,
   # we SHOULD investigate this further!
   CHECK_CC_FLAG ("-Wno-atomic-implicit-seq-cst" MACCC_FLAGS)
 
@@ -843,7 +843,7 @@ IF (NOT CMAKE_BUILD_TYPE)
 ENDIF ()
 
 # Prepare C flags for the debug version of the compiler
-SET (CMAKE_C_FLAGS_DEBUG 
+SET (CMAKE_C_FLAGS_DEBUG
      "${CMAKE_C_FLAGS_DEBUG} -DSANITYCHECKS -DWLAA_DEACTIVATED \
       -DAE_DEACTIVATED -DTSI_DEACTIVATED -DPADT_DEACTIVATED \
       -DCHECK_NODE_ACCESS -DINLINE_MACRO_CHECKS ${DEV_FLAGS}")
