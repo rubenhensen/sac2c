@@ -116,13 +116,13 @@ build-archlinux:
     <<: *build-template
     before_script:
         - source /etc/profile
-    image: sacbuild/archlinux:1.4.1
+    image: sacbuild/archlinux:1.5.0
 
 test-archlinux:
     <<: *test-template
     before_script:
         - source /etc/profile
-    image: sacbuild/archlinux:1.4.1
+    image: sacbuild/archlinux:1.5.0
     needs:
         - job: build-archlinux
           artifacts: true
@@ -131,7 +131,7 @@ stdlib-archlinux:
     <<: *build-stdlib-template
     before_script:
         - source /etc/profile
-    image: sacbuild/archlinux:1.4.1
+    image: sacbuild/archlinux:1.5.0
     needs:
         - job: test-archlinux
           artifacts: true
@@ -140,18 +140,18 @@ stdlib-archlinux:
 
 build-centos8:
     <<: *build-template
-    image: sacbuild/centos8:1.4.1
+    image: sacbuild/centos8:1.5.0
 
 test-centos8:
     <<: *test-template
-    image: sacbuild/centos8:1.4.1
+    image: sacbuild/centos8:1.5.0
     needs:
         - job: build-centos8
           artifacts: true
 
 stdlib-centos8:
     <<: *build-stdlib-template
-    image: sacbuild/centos8:1.4.1
+    image: sacbuild/centos8:1.5.0
     needs:
         - job: test-centos8
           artifacts: true
@@ -160,38 +160,58 @@ stdlib-centos8:
 
 build-centos7:
     <<: *build-template
-    image: sacbuild/centos7:1.4.1
+    image: sacbuild/centos7:1.5.0
 
 test-centos7:
     <<: *test-template
-    image: sacbuild/centos7:1.4.1
+    image: sacbuild/centos7:1.5.0
     needs:
         - job: build-centos7
           artifacts: true
 
 stdlib-centos7:
     <<: *build-stdlib-template
-    image: sacbuild/centos7:1.4.1
+    image: sacbuild/centos7:1.5.0
     needs:
         - job: test-centos7
+          artifacts: true
+
+### UBUNTU 21 ###
+
+build-ubuntu21:
+    <<: *build-template
+    image: sacbuild/ubuntu21:1.5.0
+
+test-ubuntu21:
+    <<: *test-template
+    image: sacbuild/ubuntu21:1.5.0
+    needs:
+        - job: build-ubuntu21
+          artifacts: true
+
+stdlib-ubuntu21:
+    <<: *build-stdlib-template
+    image: sacbuild/ubuntu21:1.5.0
+    needs:
+        - job: test-ubuntu21
           artifacts: true
 
 ### UBUNTU 20 ###
 
 build-ubuntu20:
     <<: *build-template
-    image: sacbuild/ubuntu20:1.4.1
+    image: sacbuild/ubuntu20:1.5.0
 
 test-ubuntu20:
     <<: *test-template
-    image: sacbuild/ubuntu20:1.4.1
+    image: sacbuild/ubuntu20:1.5.0
     needs:
         - job: build-ubuntu20
           artifacts: true
 
 stdlib-ubuntu20:
     <<: *build-stdlib-template
-    image: sacbuild/ubuntu20:1.4.1
+    image: sacbuild/ubuntu20:1.5.0
     needs:
         - job: test-ubuntu20
           artifacts: true
@@ -200,18 +220,18 @@ stdlib-ubuntu20:
 
 build-ubuntu18:
     <<: *build-template
-    image: sacbuild/ubuntu18:1.4.1
+    image: sacbuild/ubuntu18:1.5.0
 
 test-ubuntu18:
     <<: *test-template
-    image: sacbuild/ubuntu18:1.4.1
+    image: sacbuild/ubuntu18:1.5.0
     needs:
         - job: build-ubuntu18
           artifacts: true
 
 stdlib-ubuntu18:
     <<: *build-stdlib-template
-    image: sacbuild/ubuntu18:1.4.1
+    image: sacbuild/ubuntu18:1.5.0
     needs:
         - job: test-ubuntu18
           artifacts: true
