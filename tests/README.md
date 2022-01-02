@@ -57,8 +57,12 @@ file, e.g. for the above example that would be `test-trivial.sac.mk`.
 ### Adding new unit tests
 
 To add a new unit test add a file that is named `test-\*.sac` in tests
-directory.
-Thereafter, make sure you run
+directory. The test should include build/run instructions using the `SAC_TEST`
+keyword. Tests can depend on specific features being available in sac2c, you
+can use the `REQFEATURES` keyword to marks these. See in the next section for
+further details.
+
+Once you've added your test, make sure you run
 ```sh
 make rebuild_cache
 ```
@@ -68,11 +72,11 @@ before triggering new checks!
 
 When writing a unit test we rely on a few conventions.  First, we keep
 the size of each unit test as small as possible.  For that reason, unit tests
-do not use standard library.  Common functionality, like basic wrappers around
+do not use the standard library. Common functionality, like basic wrappers around
 builtin functions are defined in `mini-stdlib.sac` that should be used via
 `#include "mini-stdlib.sac"`.
 
-Secondly, we want to abstract generic functionality.  Therefore, we provide
+Secondly, we want to abstract generic functionality. Therefore, we provide
 a file called `common.mk` that contains convenient makefile definitions that
 are often used.  It is very likely that every unit test should start with 
 ```
@@ -84,6 +88,7 @@ tests can be abstracted in the header files and sed via includes.  For example:
 ```sh
 $ cat set-size-1024.h
 // SAC_TEST|SAC2C_FLAGS += -DSIZE=1024
+
 $ cat test-size.sac
 // SAC_TEST|include common.mk
 #include "set-size-1024.h"
@@ -98,14 +103,26 @@ int main ()
 This works, because when generating a makefile, we run a C preprocessor with
 `-C` command, that preserves comments.
 
+Tests sometimes depend on certain sac2c features; if a feature isn't compiled in,
+we shouldn't run the test. Feature dependencies are given using the `REQFEATURES`
+keyword, which contains a list of (space seperated) `ENABLE_*` terms relating to
+a specfic feature. For example, if you have some test that depends on CUDA being
+available, you would place this into your test file:
+
+```c
+// REQFEATURES|ENABLE_CUDA
+// SAC_TEST|include common.mk
+// ... more build/run specification here ...
+```
+
 ## Description of common.mk and scripts
 
 The `common.mk` file gets correct path to `sac2c` via CMake and keeps it in
 `SAC2C` variable.
 
 The following variables are defined: `SAC2C_FLAGS`, `GREP_COMMAND_OUTPUT`,
-`CHECK_RETURN_STATUS` and a generic rule to build sac programs from sac sources.
-For explanation see comments in `common.mk`.
+`CHECK_RETURN_STATUS`, `ISALLOPTIONSON`, and a generic rule to build sac programs
+from SaC sources. For explanation see comments in `common.mk`.
 
 Several shell scripts are provided in the `scripts/` directory, some of these
 can be used as part of the test operation:
@@ -115,6 +132,10 @@ can be used as part of the test operation:
 
   * `grep-command-output.sh` --- a wrapper around grep that counts the number
     of occurrences of the first argument is equal to the second argument.
+
+  * `isalloptionson.sh` --- checks the output of `sac2c -VV` for feature flags,
+    and returns TRUE iff all arguments are marked as ON. This script is useful
+    for changinge behaviour of a test at runtime.
 
 The tests themselves are defined inline with the test code, using the `TEST_SAC`
 tag. The following script scans the test file for this tags, and converts it into
