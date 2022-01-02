@@ -4,6 +4,7 @@
 // primitives into the code. These transfers are there to satisify the SSA for the candidates
 // being _possibly_ used for a given WL. Once we complete the memory phase, these are elided.
 
+// REQFEATURES|ENABLE_CUDA
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -t cuda_reg -bcuda:cuad
 // SAC_TEST|all: <file-name>

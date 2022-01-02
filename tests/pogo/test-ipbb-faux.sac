@@ -1,5 +1,6 @@
 // gitlab unit test boilerplate
 
+// REQFEATURES|ENABLE_ISL ENABLE_BARVINOK
 #include "ut-flags.mk"
 // SAC_TEST|GREP_STR=val_l
 // SAC_TEST|GREP_COUNT=0
@@ -34,7 +35,7 @@ int[+] ordotandBBBSTARLIKE(int[+]x, int[+]y)
 
 inline
 int ipbbXII(int siz)
-{ 
+{
  ipt = reshape([siz, siz], iota(siz*siz));
  ipt2 = { [i,j] -> ipt[j,i] }; // Transpose
  mres = ordotandBBBSTARLIKE(ipt2, ipt);
@@ -43,7 +44,7 @@ int ipbbXII(int siz)
 }
 
 int main()
-{ 
+{
  z = ipbbXII( 10);
  z2 = z == 49455;
  zz = 1 - _toi_S_(z2);

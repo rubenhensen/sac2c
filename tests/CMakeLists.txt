@@ -24,6 +24,7 @@ SET (TESTS_BIN_DIR ${PROJECT_BINARY_DIR}/tests)
 MACRO (REGISTER_TEST sac_file)
     GET_FILENAME_COMPONENT (test_name "${sac_file}" NAME_WE)
 
+    MESSAGE (DEBUG "Adding test ${test_name}")
     ADD_TEST (
         NAME ${test_name}
         COMMAND
@@ -77,6 +78,32 @@ ADD_DEPENDENCIES (check copy-unit-tests)
 FILE (GLOB_RECURSE tests
       RELATIVE "${TESTS_SRC_DIR}" "test-*.sac")
 
+# We check for the "REQFEATURES|" keyword in each unit file, and
+# iff all ENABLE_* features are ON, do we add the test. If no features
+# are required, the test is added by default.
+SET (activated_tests)
 FOREACH (test ${tests})
+    FILE (STRINGS ${test} featuresstr REGEX "REQFEATURES\\|.*")
+    IF (featuresstr)
+        STRING (REGEX MATCHALL "ENABLE_[A-Za-z]+" features ${featuresstr})
+        MESSAGE (DEBUG "require ${features} features for ${test}")
+        SET (_isalloptionson TRUE)
+        FOREACH (feature ${features})
+            IF (NOT ${feature})
+                MESSAGE (DEBUG "feature ${feature} is OFF, not adding ${test}")
+                SET (_isalloptionson FALSE)
+                BREAK ()
+            ENDIF ()
+        ENDFOREACH ()
+        IF (${_isalloptionson})
+            LIST (APPEND activated_tests ${test})
+        ENDIF ()
+    ELSE ()
+        # add the test as there are no strict feature requirements
+        LIST (APPEND activated_tests ${test})
+    ENDIF ()
+ENDFOREACH ()
+
+FOREACH (test ${activated_tests})
     REGISTER_TEST ("${test}")
 ENDFOREACH ()

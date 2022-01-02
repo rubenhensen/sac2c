@@ -1,3 +1,0 @@
-ISL
-BARVINOK
-

@@ -1,6 +1,7 @@
 // This tests makes sure that the CUDA CUAD traversal is actually adding the *_start
 // and *_end primitives.
 
+// REQFEATURES|ENABLE_CUDA
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -t cuda_reg -docuad -bcuda:cuade
 // SAC_TEST|all: <file-name>
