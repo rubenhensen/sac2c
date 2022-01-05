@@ -452,8 +452,8 @@ InternalCompilerErrorBreak (int sig)
 
     fprintf (cti_stderr, "\n\n"
                      "OOOOOOOPS, your program crashed the compiler 8-((\n\n"
-                     "Please, send a bug report to bugs@sac-home.org,\n"
-                     "or file a bug in the SaC-Zilla bug management system.\n\n");
+                     "Please, submit the bug report online at\n"
+                     "https://gitlab.sac-home.org/sac-group/sac2c/-/issues.\n\n");
 
     error_file_name[0] = '\0';
 
@@ -560,13 +560,13 @@ InternalCompilerErrorBreak (int sig)
                  "usage it contains the specified source file.\n\n"
                  "If you want to send that bug report to us, you may simply type\n"
                  "  mail bugs@sac-home.org < %s\n\n"
-                 "If you decide to file a bug in SaC-Zilla, please go to\n"
-                 "  http://bugs.sac-home.org/.\n\n",
+                 "If you decide to file a bug on our bug-tracker, please go to\n"
+                 "  https://gitlab.sac-home.org/sac-group/sac2c/-/issues.\n\n",
                  error_file_name, error_file_name);
         fprintf (cti_stderr, "When filing a bug report, please copy/paste the initial "
                          "comment section of\n"
                          "the bug report into the plain text comment section of "
-                         "SaC-Zilla, and add\n"
+                         "the bug-tracker, and add\n"
                          "the whole bug report file as an attachment.\n\n");
     } else {
         fprintf (cti_stderr, "Sorry, but sac2c is unable to create a bug report file.\n\n"

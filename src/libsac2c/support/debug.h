@@ -37,7 +37,7 @@ exit_func (int status)
         fprintf (f, __VA_ARGS__);                                                        \
         fprintf (f, "\n");                                                               \
         fprintf (f, "Please file a bug at: "                                             \
-                    "http://bugs.sac-home.org\n");                                       \
+                    "https://gitlab.sac-home.org/sac-group/sac2c/-/issues\n");           \
         exit_func (EXIT_FAILURE);                                                        \
         /* Use abort to ensure non-return nature of the macro.  */                       \
         abort ();                                                                        \
@@ -56,7 +56,7 @@ exit_func (int status)
                                 strcond, __FILE__, __LINE__),                            \
                        fprintf (f, __VA_ARGS__), fprintf (f, "\n"),                      \
                        fprintf (f, "Please file a bug at: "                              \
-                                   "http://bugs.sac-home.org\n"),                        \
+                                   "https://gitlab.sac-home.org/sac-group/sac2c/-/issues\n"), \
                        exit_func (EXIT_FAILURE), 0)                                      \
                     : 0))
 
