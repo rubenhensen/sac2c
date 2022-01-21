@@ -1012,7 +1012,10 @@ read_postfix:
         if (isreal || saw_dot || saw_exp)
             tclass = tok_number_double;
         else
-            tclass = tok_number;
+            if (unsigned_p) 
+                tclass = tok_number_uint;
+            else
+                tclass = tok_number;
         lexer_ungetch (lex, c);
     }
 
