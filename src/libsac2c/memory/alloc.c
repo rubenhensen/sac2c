@@ -80,6 +80,7 @@ struct INFO {
     node *fundef;
     node *withops;
     node *indexvector;
+    node *assign;
     bool inwiths;
     ea_withopmode withopmode;
     ea_rangemode rangemode;
@@ -93,6 +94,7 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_WITHOPS(n) ((n)->withops)
 #define INFO_INDEXVECTOR(n) ((n)->indexvector)
+#define INFO_ASSIGN(n) ((n)->assign)
 #define INFO_INWITHS(n) ((n)->inwiths)
 #define INFO_WITHOPMODE(n) ((n)->withopmode)
 #define INFO_RANGEMODE(n) ((n)->rangemode)
@@ -115,6 +117,7 @@ MakeInfo (void)
     INFO_ALLOCLIST (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_WITHOPS (result) = NULL;
+    INFO_ASSIGN (result) = NULL;
     INFO_INDEXVECTOR (result) = NULL;
     INFO_MUSTFILL (result) = EA_nofill;
     INFO_INWITHS (result) = FALSE;
@@ -706,7 +709,7 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                         /*
                          * We can build an AKD
                          */
-                        /* This warning with TCcountExprs is due to TYmakeAKD taking 'int dots' 
+                        /* This warning with TCcountExprs is due to TYmakeAKD taking 'int dots'
                          * and TYgetDim int returns from Shape related function, COgetDim and SHgetDim,
                          * so leaving this warning for now until new datatype is introduced
                          */
@@ -1004,13 +1007,10 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
  *
  * @fn node *EMALap( node *arg_node, info *arg_info)
  *
- *  @brief removes all elements from ALLOCLIST.
+ *  @brief removes all elements from ALLOCLIST that are LHS of N_ap.
  *
  *  Function applications return MemVals so we don't need to
- *  allocate memory which must be filled. When we encounter a loop function
- *  we interate through all its arguments looking for any N_avis which was
- *  added with the EMR loop optimisation phase - when we find one, we add it
- *  to the ALLOCLIST.
+ *  allocate memory which must be filled.
  *
  *  @param arg_node the function application
  *  @param arg_info containing ALLOCLIST
@@ -1021,41 +1021,10 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
 node *
 EMALap (node *arg_node, info *arg_info)
 {
-    node * args;
-
     DBUG_ENTER ();
 
     /* we do not allocate the LHS */
     INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
-    if (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))) {
-        /*
-         * With EMR loop optimisation, we lift WL array allocations out of
-         * the loop function body. Giving us:
-         *
-         * type[SIZE] emr_lift;
-         *
-         * LHS = loopfun (a, b, ..., emr_lift);
-         *
-         * We need to transform it into:
-         *
-         * type[SIZE] emr_lift;
-         *
-         * emr_lift = alloc (dim (a), shape (a));
-         * LHS = loopfun (a, b, ..., emr_lift);
-         */
-        args = AP_ARGS (arg_node);
-
-        while (args != NULL) {
-            if (AVIS_ISALLOCLIFT (ID_AVIS (EXPRS_EXPR (args)))) {
-                INFO_ALLOCLIST (arg_info)
-                    = MakeALS (INFO_ALLOCLIST (arg_info), ID_AVIS (EXPRS_EXPR (args)),
-                               MakeDimArg (EXPRS_EXPR (args)), MakeShapeArg (EXPRS_EXPR (args)));
-                AVIS_ISALLOCLIFT (ID_AVIS (EXPRS_EXPR (args))) = FALSE;
-            }
-            args = EXPRS_NEXT (args);
-        }
-    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1167,9 +1136,11 @@ EMALassign (node *arg_node, info *arg_info)
      */
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
+
     /*
      * Traverse RHS of assignment
      */
+    INFO_ASSIGN (arg_info) = arg_node;
     ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     /*
@@ -1439,7 +1410,7 @@ EMALlet (node *arg_node, info *arg_info)
              *
              * is transferred into:
              *
-             * a = alloc (...)
+             * a = alloc (...);
              * b = fill (noop (a), a);
              */
             avis = ID_AVIS (PRF_ARG1 (LET_EXPR (arg_node)));
@@ -1455,6 +1426,7 @@ EMALlet (node *arg_node, info *arg_info)
 
             /* make sure to allocate N_avis */
             INFO_ALLOCLIST (arg_info)->avis = avis;
+            break;
         case EA_nofill:
             /* do nothing */
             break;
@@ -2037,6 +2009,34 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
 
+    case F_noop:
+        /*
+         * Special case for EMRL optimisation
+         *
+         * a = noop ();
+         *
+         *   =>
+         *
+         * a = alloc (...);
+         *
+         * a is *always* AKS, so shape and dim can be static evaluated.
+         *
+         */
+        if (AVIS_ISALLOCLIFT (als->avis))
+        {
+            new_node = TCmakePrf2 (F_alloc, TBmakeNum (TYgetDim (AVIS_TYPE (als->avis))),
+                                   SHshape2Array (TYgetShape (AVIS_TYPE (als->avis))));
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node = new_node;
+            AVIS_SSAASSIGN (als->avis) = INFO_ASSIGN (arg_info);
+            //AVIS_ISALLOCLIFT (als->avis) = FALSE;
+
+            /* we've changed the prf to an alloc, so we don't need another alloc */
+            INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+            INFO_MUSTFILL (arg_info) = EA_nofill;
+            break;
+        }
+        /* fall-through */
     case F_alloc:
     case F_suballoc:
     case F_fill:

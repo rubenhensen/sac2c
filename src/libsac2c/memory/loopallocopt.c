@@ -215,7 +215,7 @@ EMLAOap (node *arg_node, info *arg_info)
             if (ARG_AVIS (doargs) != ID_AVIS (EXPRS_EXPR (recargs))
                 && !TUisScalar (AVIS_TYPE (ARG_AVIS (doargs)))
                 && !AVIS_ISALIAS (ARG_AVIS (doargs))) {
-                printf ("start back tracing...\n");
+                DBUG_PRINT ("start back tracing...\n");
                 /*
                  * Track which fundef arg we are currently examing
                  * and the corresponding argument at the external
@@ -558,7 +558,7 @@ EMLAOprf (node *arg_node, info *arg_info)
     if (INFO_CONTEXT (arg_info) == LAO_backtrace) {
         switch (PRF_PRF (arg_node)) {
         case F_reuse:
-            printf ("starting backtracing from F_reuse...\n");
+            DBUG_PRINT ("starting backtracing from F_reuse...\n");
             AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node)))
               = TRAVopt (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node))), arg_info);
             break;

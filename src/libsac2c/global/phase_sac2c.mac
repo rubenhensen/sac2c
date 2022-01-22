@@ -418,7 +418,7 @@ CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimi
 CYCLEPHASEFUNOLD (lurssa, "Restoring SSA form after loop unrolling", SSATdoTransform,
                   global.optimize.dolur || global.optimize.doplur, opt, cyc)
 
-CYCLEPHASEFUNOLD (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
+CYCLEPHASEFUNOLD (wlur, "Applying withloop unrolling", WLURdoWithloopUnrollingFundef,
                   global.optimize.dowlur, opt, cyc)
 
 CYCLEPHASEFUNOLD (wlurssa, "Restoring SSA form after withloop unrolling", SSATdoTransform,
@@ -671,7 +671,7 @@ CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling,
 CYCLEPHASEFUNOLD (lurssa, "Restoring SSA form after loop unrolling", SSATdoTransform,
                   global.optimize.dolur || global.optimize.doplur, opt, saacyc)
 
-CYCLEPHASEFUNOLD (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
+CYCLEPHASEFUNOLD (wlur, "Applying withloop unrolling", WLURdoWithloopUnrollingFundef,
                   global.optimize.dowlur, opt, saacyc)
 
 CYCLEPHASEFUNOLD (wlurssa, "Restoring SSA form after withloop unrolling", SSATdoTransform,
@@ -1138,6 +1138,14 @@ SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification, ALWA
  * Repeating these two optimisations here is necessary to avoid problems with exotic
  * with-loops in subsequent wl-transform.
  */
+
+// Issue #2281 shows that, at least with -noopt, we can get here with
+// one-trip WLs. Those will kill WLTR, so we remove them here.
+SUBPHASE (wlur, "Applying withloop unrolling", WLURdoWithloopUnrollingModule,
+                  ALWAYS, wlt)
+
+SUBPHASE (wlurssa, "Restoring SSA form after withloop unrolling", SSATdoTransform,
+                  ALWAYS, wlt)
 
 SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALWAYS, wlt)
 

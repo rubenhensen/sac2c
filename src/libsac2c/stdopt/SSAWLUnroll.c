@@ -1454,9 +1454,19 @@ WLURfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Looking at N_fundef for %s", FUNDEF_NAME( arg_node));
     if (!FUNDEF_ISLACFUN (arg_node)) {
         INFO_FUNDEF (arg_info) = arg_node;
-        /* traverse block of fundef */
+        /*
+         * New code is created in non-SSA form and later on transformed into
+         * SSA form using the standard transformation module
+         * ssa_transform. Therefore, we clear a global control flag, to force
+         * SSAT to run.
+         *
+         * NB. I don't like this: We should only clear ssaform if WLUR actually
+         *     changes any code.
+         */
+        global.valid_ssaform = FALSE;
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
     }
@@ -1508,35 +1518,64 @@ WLURwith (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *WLURdoWithloopUnrolling( node *syntax_tree)
+ *   node *WLURdoWithloopUnrollingModule( node *arg_node)
  *
  * description:
- *   Starts the with-loop unrolling traversal for the given arg_node.
+ *   Starts the with-loop unrolling traversal for the N_module arg_node
+ *    
+ *   This is called only in the post-optimization stage of compilation.
+ *   NB. If the compiler is running with limited optimizations, such
+ *   as -noopt, WLUR may leave the ast in a less-than-optimal
+ *   state, due to removing a one-trip WL that would otherwise crash WLT,
+ *   as described in gitlab Issue #2280.
+ *   
+ *   If this becomes problematic, then fix the WLT problem.
  *
  ******************************************************************************/
 
 node *
-WLURdoWithloopUnrolling (node *arg_node)
+WLURdoWithloopUnrollingModule (node *arg_node)
 {
-    info *info;
+    info *myinfo;
 
     DBUG_ENTER ();
 
     TRAVpush (TR_wlur);
+    myinfo = MakeInfo ();
 
-    info = MakeInfo ();
+    MODULE_FUNS(arg_node) = TRAVsons (MODULE_FUNS( arg_node), myinfo);
 
-    global.valid_ssaform = FALSE;
-    /*
-     * New code is created in non-SSA form and later on transformed into
-     * SSA form using the standard transformation module
-     * ssa_transform. Therefore, we adjust the global control flag.
-     */
+    FreeInfo (myinfo);
+    TRAVpop ();
 
-    arg_node = TRAVdo (arg_node, info);
+    DBUG_RETURN (arg_node);
+}
 
-    FreeInfo (info);
+/******************************************************************************
+ *
+ * function:
+ *   node *WLURdoWithloopUnrollingFundef( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Starts the with-loop unrolling traversal for the N_fundef arg_node
+ *    
+ *   This is called only during the optimization stage of compilation.
+ *
+ ******************************************************************************/
 
+node *
+WLURdoWithloopUnrollingFundef (node *arg_node, info *arg_info)
+{
+    info *myinfo;
+    
+    DBUG_ENTER ();
+
+    TRAVpush (TR_wlur);
+    myinfo = MakeInfo ();
+
+    arg_node = WLURfundef(arg_node, myinfo);
+
+    FreeInfo (myinfo);
     TRAVpop ();
 
     DBUG_RETURN (arg_node);

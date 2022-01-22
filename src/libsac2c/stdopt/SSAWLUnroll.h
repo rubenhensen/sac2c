@@ -16,6 +16,7 @@ extern node *WLURassign (node *arg_node, info *arg_info);
 extern node *WLURfundef (node *arg_node, info *arg_info);
 extern node *WLURwith (node *arg_node, info *arg_info);
 
-extern node *WLURdoWithloopUnroll (node *syntax_tree);
+extern node *WLURdoWithloopUnrollingModule (node *arg_node);
+extern node *WLURdoWithloopUnrollingFundef (node *arg_node, info *arg_info);
 
 #endif /* _SAC_SSAWLUNROLL_H_ */
