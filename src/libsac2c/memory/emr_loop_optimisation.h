@@ -7,6 +7,7 @@
  * EMR Loop Memory Propogation
  */
 extern node *EMRLfundef (node *arg_node, info *arg_info);
+extern node *EMRLassign (node *arg_node, info *arg_info);
 extern node *EMRLap (node *arg_node, info *arg_info);
 extern node *EMRLlet (node *arg_node, info *arg_info);
 extern node *EMRLwith (node *arg_node, info *arg_info);

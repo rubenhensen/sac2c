@@ -279,7 +279,7 @@ SYSexec_and_read_output (char *cmd)
         b = bb;
     }
     b[curpos] = 0;
-    fclose (f);
+    pclose (f);
     return b;
 }
 

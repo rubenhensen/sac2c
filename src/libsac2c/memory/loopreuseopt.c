@@ -210,7 +210,13 @@ EMLRap (node *arg_node, info *arg_info)
         apargs = AP_ARGS (arg_node);
 
         while (doargs != NULL) {
-            if (!AVIS_ISALIAS (ARG_AVIS (doargs))) {
+            /*
+             * We don't want to affect aliased N_avis or any N_avis that
+             * is a result of the EMRL optimisation which lifts memory
+             * out of loops (as this is redundent here).
+             */
+            if (!AVIS_ISALIAS (ARG_AVIS (doargs))
+                && !AVIS_ISALLOCLIFT (ID_AVIS (EXPRS_EXPR (apargs)))) {
                 /*
                  * Insert copy instructions
                  *

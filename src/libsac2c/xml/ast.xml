@@ -3027,6 +3027,7 @@
     <traversal id="EMRL" name="EMR loop optimisation" default="sons" include="emr_loop_optimisation.h">
       <travuser>
         <node name="Fundef" />
+        <node name="Assign" />
         <node name="Ap" />
         <node name="Let" />
         <node name="With" />

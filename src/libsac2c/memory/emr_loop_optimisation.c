@@ -68,6 +68,7 @@ struct INFO {
     node *fundef;           /**< current fundef */
     node *args;             /**< new args for current fundef */
     node *vardecs;          /**< new vardecs for current fundef */
+    node *assigns;          /**< new let statement for lifted N_avis */
     node *lhs;              /**< LHS of N_let */
     emrl_context_t context; /**< traversal context/mode */
     stack_node_t *stack;    /**< stack for (N_withop, N_avis) pairs */
@@ -79,6 +80,7 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_ARGS(n) ((n)->args)
 #define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_ASSIGNS(n) ((n)->assigns)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_CONTEXT(n) ((n)->context)
 #define INFO_STACK(n) ((n)->stack)
@@ -98,6 +100,7 @@ MakeInfo (void)
     INFO_FUNDEF (result) = NULL;
     INFO_ARGS (result) = NULL;
     INFO_VARDECS (result) = NULL;
+    INFO_ASSIGNS (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_CONTEXT (result) = EMRL_rec;
     INFO_STACK (result) = NULL;
@@ -197,6 +200,38 @@ createTmpAvis (ntype *type)
     DBUG_PRINT (" created %s var", AVIS_NAME (avis));
 
     return avis;
+}
+
+/**
+ * @brief Traverse through N_assign and prepend a lifted N_assign
+ *        if available.
+ *
+ * @param arg_node
+ * @param arg_info
+ * @return
+ */
+node *
+EMRLassign (node * arg_node, info * arg_info)
+{
+    node *old_next;
+
+    DBUG_ENTER ();
+
+    /* Bottom-down traversal */
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
+
+    /* prepend the lets to the assign chain */
+    if (INFO_ASSIGNS (arg_info) != NULL) {
+        old_next = ASSIGN_NEXT (arg_node);
+        arg_node = TCappendAssign (INFO_ASSIGNS (arg_info), arg_node);
+        INFO_ASSIGNS (arg_info) = NULL;
+
+        old_next = TRAVopt (old_next, arg_info);
+    } else {
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /**
@@ -410,6 +445,7 @@ EMRLap (node * arg_node, info * arg_info)
                       = TCgetNthArg (ap_arg_len, FUNDEF_ARGS (AP_FUNDEF (arg_node)));
                     node *new_avis = NULL;
                     node *new_vardec = NULL;
+                    node *new_let = NULL;
                     DBUG_PRINT ("  creating a new arg...");
 
                     /* we create a new variable and declare it to have the same shape as
@@ -426,10 +462,14 @@ EMRLap (node * arg_node, info * arg_info)
                                        TBmakeExprs (TBmakeId (new_avis), NULL));
 
                     new_vardec = TBmakeVardec (new_avis, NULL);
+                    new_let = TBmakeLet (TBmakeIds (new_avis, NULL),
+                                         TBmakePrf (F_noop, NULL));
                     AVIS_DECLTYPE (VARDEC_AVIS (new_vardec))
                       = TYcopyType (ARG_NTYPE (tmp));
                     INFO_VARDECS (arg_info)
                       = TCappendVardec (INFO_VARDECS (arg_info), new_vardec);
+                    INFO_ASSIGNS (arg_info)
+                      = TBmakeAssign (new_let, INFO_ASSIGNS (arg_info));
                 }
             }
         }
