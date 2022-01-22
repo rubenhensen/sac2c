@@ -334,6 +334,7 @@ ELSE ()
 ENDIF ()
 
 # Check if sbrk exists which yields ENABLE_PHM
+SET (ENABLE_PHM OFF)
 SET (CAN_USE_PHM "0")
 SET (SBRK_T)
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -343,6 +344,7 @@ ENDIF ()
 IF (PHM)
   CHECK_FUNCTION_EXISTS ("sbrk" HAVE_SBRK)
   IF (HAVE_SBRK)
+    SET (ENABLE_PHM ON)
     SET (CAN_USE_PHM "1")
     # FIXME Select the right type from "intptr_t ptrdiff_t ssize_t int"
     # currently this is just a hack.
@@ -942,7 +944,7 @@ SET (BUILD_STATUS "
 * CMake Variant:           ${CMAKE_BUILD_TYPE}
 *
 * Run-time specialization: ${ENABLE_RTSPEC}
-* Private heap manager:    ${PHM}
+* Private heap manager:    ${ENABLE_PHM}
 * Polyhedral optional packages:
 * - ISL:                   ${ENABLE_ISL}
 * - BARVINOK:              ${ENABLE_BARVINOK}
