@@ -7706,10 +7706,17 @@ COMPprfOp_S (node *arg_node, info *arg_info)
                                      TCmakeIdCopyString (prf_ccode_tab[F_tof_S]),
                                      DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
     } else {
-        ret_node
-          = TCmakeAssignIcm3 ("ND_PRF_S__DATA", DUPdupIdsIdNt (let_ids),
-                              TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
-                              DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+        if (PRF_PRF (arg_node) == F_abs_S && TUisUnsigned (ID_NTYPE (arg))) {
+            ret_node
+              = TCmakeAssignIcm3 ("ND_PRF_S__DATA", DUPdupIdsIdNt (let_ids),
+                                  TCmakeIdCopyString ("SAC_ND_PRF_ID"),
+                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+        } else {
+            ret_node
+              = TCmakeAssignIcm3 ("ND_PRF_S__DATA", DUPdupIdsIdNt (let_ids),
+                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+        }
     }
 
     DBUG_RETURN (ret_node);

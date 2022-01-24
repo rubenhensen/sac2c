@@ -53,6 +53,7 @@
     ((0 == (arg2)) ? (arg1) : (arg1) - ((arg2) * ((arg1) / (arg2))))
 
 #define SAC_ND_PRF_NEG(arg) -(arg)
+#define SAC_ND_PRF_ID(arg) (arg + 0)
 #define SAC_ND_PRF_ABS(arg) ((arg) < 0) ? SAC_ND_PRF_NEG (arg) : (arg)
 #define SAC_ND_PRF_MIN(arg1, arg2) (arg1) < (arg2) ? (arg1) : (arg2)
 #define SAC_ND_PRF_MAX(arg1, arg2) (arg1) > (arg2) ? (arg1) : (arg2)
