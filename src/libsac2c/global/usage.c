@@ -365,7 +365,14 @@ PrintOptimisationOptions (void)
       "                      - disable parallel execution of fold-with-loops.\n"
       "                    Currently implemented for:\n"
       "                      - associative law optimization,\n"
-      "                      - segmentation and tiling of fold-with-loops.\n");
+      "                      - distributive law optimization,\n"
+      "                      - comparison to zero conversion,\n"
+      "                      - segmentation and tiling of fold-with-loops.\n"
+      "                    This option also inhibits these optimisations for all\n"
+      "                    integer operations. The finiteness of the integer\n"
+      "                    numbers can lead to changes in the semantics due to\n"
+      "                    overflows or underflows that may occur in one version\n"
+      "                    but not the other\n" );
     if (global.verbose_help) {
         printf (
       "\n"
