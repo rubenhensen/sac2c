@@ -5822,6 +5822,7 @@ node *
 PRTavis (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
+    char * type_str;
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
@@ -5834,6 +5835,11 @@ PRTavis (node *arg_node, info *arg_info)
 
         fprintf (global.outfile, " TYPE   = %s,",
                  TYtype2String (AVIS_TYPE (arg_node), FALSE, 0));
+        if (AVIS_DECLTYPE (arg_node) != NULL) {
+            type_str = TYtype2String (AVIS_DECLTYPE (arg_node), FALSE, 0);
+            fprintf (global.outfile, " DECLTYPE = %s,", type_str);
+            type_str = MEMfree (type_str);
+        }
         fprintf (global.outfile, " SSACNT = ");
         PRINT_POINTER_BRACKETS (global.outfile, (void *)AVIS_SSACOUNT (arg_node));
 
