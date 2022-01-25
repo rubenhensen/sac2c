@@ -80,6 +80,8 @@ extern bool TUisEmptyVect (ntype *ty);
 extern bool TUisScalar (ntype *ty);
 extern bool TUisVector (ntype *ty);
 
+extern bool TUisUnsigned (ntype *ty);
+
 extern bool TUhasBasetype (ntype *ty, simpletype smpl);
 extern bool TUisUniqueUserType (ntype *type);
 extern bool TUisArrayOfUser (ntype *type);

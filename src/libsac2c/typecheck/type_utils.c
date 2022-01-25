@@ -749,6 +749,33 @@ TUisEmptyVect (ntype *ty)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool TUisUnsigned( ntype *ty)
+ *
+ *   @brief Predicate for array of unsigned integer (int/long/etc ) type.
+ *   @param an ntype
+ *   @return boolean true if it is an untyped integer type
+ *
+ ******************************************************************************/
+
+bool
+TUisUnsigned (ntype *ty)
+{
+    bool res;
+    simpletype st;
+
+    DBUG_ENTER ();
+    st = TYgetSimpleType (TYgetScalar (ty));
+    res = ((st == T_ubyte)
+           || (st == T_ushort)
+           || (st == T_uint)
+           || (st == T_ulong)
+           || (st == T_ulonglong));
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TUisUniqueUserType( ntype *ty)
  *
  *   @brief

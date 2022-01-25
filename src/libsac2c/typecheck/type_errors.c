@@ -220,6 +220,26 @@ MatchNumA (ntype *type)
 }
 
 static bool
+MatchSignedNumA (ntype *type)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    res = ((TYgetConstr (TYgetScalar (type)) == TC_simple)
+           && ((TYgetSimpleType (TYgetScalar (type)) == T_byte)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_short)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_int)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_long)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_longlong)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_float)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_floatvec)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_double)));
+
+    DBUG_RETURN (res);
+}
+
+static bool
 MatchSimpleA (ntype *type)
 {
     bool res;
@@ -840,6 +860,29 @@ TEassureBoolA (char *obj, ntype *type)
 /******************************************************************************
  *
  * function:
+ *    void TEassureSignedNumS( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEassureSignedNumS (char *obj, ntype *type)
+{
+    DBUG_ENTER ();
+
+    if (!MatchScalar (type) || !MatchSignedNumA (type)) {
+        TEhandleError (global.linenum, global.filename,
+                       "%s should be of a signed numerical type (int, ..., float, double); type found: %s", obj,
+                       TYtype2String (type, FALSE, 0));
+    }
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
  *    void TEassureNumS( char *obj, ntype *type)
  *
  * description:
@@ -854,8 +897,32 @@ TEassureNumS (char *obj, ntype *type)
 
     if (!MatchScalar (type) || !MatchNumA (type)) {
         TEhandleError (global.linenum, global.filename,
-                       "%s should be of type int / float / double; type found: %s", obj,
+                       "%s should be of a numerical type (int, uint, ..., float, double); type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
+    }
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    void TEassureSignedNumV( char *obj, ntype *type)
+ *
+ * description:
+ *
+ *
+ ******************************************************************************/
+
+void
+TEassureSignedNumV (char *obj, ntype *type)
+{
+    DBUG_ENTER ();
+
+    if (!MatchVect (type) || !MatchSignedNumA (type)) {
+        TEhandleError (global.linenum, global.filename,
+                       "%s should be a vector of a signed numerical type (int, ..., float, double); type found: "
+                       "%s",
+                       obj, TYtype2String (type, FALSE, 0));
     }
     DBUG_RETURN ();
 }
@@ -877,7 +944,7 @@ TEassureNumV (char *obj, ntype *type)
 
     if (!MatchVect (type) || !MatchNumA (type)) {
         TEhandleError (global.linenum, global.filename,
-                       "%s should be a vector of type int / float / double; type found: "
+                       "%s should be a vector of a numerical type (int, uint, ..., float, double); type found: "
                        "%s",
                        obj, TYtype2String (type, FALSE, 0));
     }

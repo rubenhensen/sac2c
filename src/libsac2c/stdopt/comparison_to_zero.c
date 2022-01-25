@@ -18,6 +18,23 @@
  *   finally the undo comparison to zero optimization will later transform
  *   the statement back to a > b.
  *
+ *   As issue #2284 exposes, this operation, in general is not semantics
+ *   preserving for any integer types!
+ *
+ *   Consider unsigned integers.
+ *     1 > 2   is false
+ *     (1-2) == MAX_UINT > 0 is true!
+ *
+ *   So for unisgned numbers this transformation almost always is illegal!
+ *   Consequently, we do not apply to unsigned numbers at all!
+ *
+ *   Unfortunately, a similar problem exists for signed integers.
+ *     MIN_INT > 1  is flase
+ *     MIN_INT-1 == MAX_INT > 0 is true!
+ *
+ *   Here, we may argue that this is a rather rare situation. This is
+ *   similar to the way we treat associative law and distributive law....
+ *   so we only supress CTZ in case enforceIEEE is set.
  *
  * @ingroup opt
  *
@@ -29,7 +46,7 @@
  *
  * @file comparison_to_zero.c
  *
- * Prefix: CZC
+ * Prefix: CTZ
  *
  *****************************************************************************/
 #include "comparison_to_zero.h"
@@ -113,13 +130,15 @@ CTZdoComparisonToZero (node *argnode)
     info *info;
     DBUG_ENTER ();
 
-    info = MakeInfo ();
+    if (!global.enforce_ieee) {
+        info = MakeInfo ();
 
-    TRAVpush (TR_ctz);
-    argnode = TRAVdo (argnode, info);
-    TRAVpop ();
+        TRAVpush (TR_ctz);
+        argnode = TRAVdo (argnode, info);
+        TRAVpop ();
 
-    info = FreeInfo (info);
+        info = FreeInfo (info);
+    }
 
     DBUG_RETURN (argnode);
 }
@@ -241,8 +260,7 @@ HasSuitableType (node *node)
     simple = TYgetSimpleType (type);
 
     result = simple == T_int || simple == T_byte || simple == T_short || simple == T_long
-             || simple == T_longlong || simple == T_ubyte || simple == T_ushort
-             || simple == T_uint || simple == T_ulong || simple == T_ulonglong
+             || simple == T_longlong 
              || simple == T_double || simple == T_float;
 
     if (result) {
@@ -605,26 +623,6 @@ CTZprf (node *arg_node, info *arg_info)
         case T_longlong:
             DBUG_PRINT ("Type is longlong");
             n_zero = TBmakeNumlonglong (0);
-            break;
-        case T_ubyte:
-            DBUG_PRINT ("Type is ubyte");
-            n_zero = TBmakeNumubyte (0);
-            break;
-        case T_ushort:
-            DBUG_PRINT ("Type is ushort");
-            n_zero = TBmakeNumushort (0);
-            break;
-        case T_uint:
-            DBUG_PRINT ("Type is uint");
-            n_zero = TBmakeNumuint (0);
-            break;
-        case T_ulong:
-            DBUG_PRINT ("Type is ulong");
-            n_zero = TBmakeNumulong (0);
-            break;
-        case T_ulonglong:
-            DBUG_PRINT ("Type is ulonglong");
-            n_zero = TBmakeNumulonglong (0);
             break;
         case T_double:
             DBUG_PRINT ("Type is double");

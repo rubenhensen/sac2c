@@ -2746,7 +2746,11 @@ NTCCTprf_ari_op_S (te_info *info, ntype *args)
 
     array = TYgetProductMember (args, 0);
 
-    TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    if (TEgetPrf (info) == F_neg_S) {
+        TEassureSignedNumS (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    } else {
+        TEassureNumS (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    }
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -2785,7 +2789,11 @@ NTCCTprf_ari_op_V (te_info *info, ntype *args)
 
     array = TYgetProductMember (args, 0);
 
-    TEassureNumV (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    if (TEgetPrf (info) == F_neg_V) {
+        TEassureSignedNumV (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    } else {
+        TEassureNumV (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    }
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
