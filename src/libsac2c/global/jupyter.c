@@ -95,6 +95,7 @@ jupyter_parse_from_string (const char *s)
 {
     assert (jup_parser, "parser has to be initialised");
     char *local_stderr_content;
+    char *symb = NULL;
     size_t local_stderr_sz;
     FILE *fin = fmemopen ((void *)s, strlen (s), "r");
     FILE *local_stderr = open_memstream (&local_stderr_content, &local_stderr_sz);
@@ -149,10 +150,11 @@ jupyter_parse_from_string (const char *s)
     } while (0)
 
 
-#define RET_OR_RESET(__parser, __cond, __ret_val) \
+#define RET_OR_RESET(__parser, __cond, __ret_val, __symb) \
     do {  \
         if (__cond) { \
             ret = __ret_val; \
+            symb = __symb; \
             goto cleanup; \
         } else { \
             PARSER_RESET (__parser); \
@@ -182,7 +184,7 @@ jupyter_parse_from_string (const char *s)
                   n
                   && n != error_mark_node
                   && CTIgetErrorCount () == 0
-                  && tok_eof == token_class (parser_get_token (jup_parser)), 1);
+                  && tok_eof == token_class (parser_get_token (jup_parser)), 1, "");
 
     // Is it statement list?
     CTIresetErrorCount ();
@@ -192,19 +194,38 @@ jupyter_parse_from_string (const char *s)
                   n
                   && n != error_mark_node
                   && CTIgetErrorCount () == 0
-                  && tok_eof == token_class (parser_get_token (jup_parser)), 2);
+                  && tok_eof == token_class (parser_get_token (jup_parser)), 2, "");
 
     // Is it a function definition?
     CTIresetErrorCount ();
     enum parsed_ftype ft;
     fprintf (local_stderr, "======= parsing as function definition\n");
     n = handle_function (jup_parser, &ft);
+    if (n && (n != error_mark_node) && (CTIgetErrorCount () == 0) && (ft == fun_fundef)) {
+        ret = 3;
+        symb = STRcpy (FUNDEF_NAME (n));
+        while ((ret == 3) && (tok_eof != token_class (parser_get_token (jup_parser)))) {
+            parser_unget (jup_parser);
+            n = handle_function (jup_parser, &ft);
+            if (n && (n != error_mark_node) && (CTIgetErrorCount () == 0) && (ft == fun_fundef)) {
+                if (!STReq (symb, FUNDEF_NAME (n))) {
+                    ret = -1;
+                    fprintf (local_stderr, "======= more than one function symbol defined in one cell is not supported!\n");
+                }
+            } else {
+                ret = -1;
+            }
+        }
+        goto cleanup;
+    } else {
+        PARSER_RESET (jup_parser);
+    }
     RET_OR_RESET (jup_parser,
                   n
                   && n != error_mark_node
                   && CTIgetErrorCount () == 0
                   && ft == fun_fundef
-                  && tok_eof == token_class (parser_get_token (jup_parser)), 3);
+                  && tok_eof == token_class (parser_get_token (jup_parser)), 3, STRcpy (FUNDEF_NAME (n)));
 
     // Is it a use/import/typedef?
     CTIresetErrorCount ();
@@ -214,7 +235,7 @@ jupyter_parse_from_string (const char *s)
                   n
                   && n != error_mark_node
                   && CTIgetErrorCount () == 0
-                  && tok_eof == token_class (parser_get_token (jup_parser)), 4);
+                  && tok_eof == token_class (parser_get_token (jup_parser)), 4, "");
 
 cleanup:
     if (n && n != error_mark_node)
@@ -235,10 +256,12 @@ cleanup:
                         "{\n"
                         "   \"status\": \"%s\",\n"
                         "   \"ret\": %d,\n"
+                        "   \"symbol\": \"%s\",\n"
                         "   \"stderr\": \"%s\"\n"
                         "}",
                         ret == -1 ? "fail" : "ok",
                         ret,
+                        symb,
                         quoted_stderr))
         ret_json = strdup ("{ \"status\": \"fail\","
                            "   \"stderr\": \"asprintf failed\" }");
