@@ -1,46 +1,129 @@
 #!@BASH@
-source $(dirname $0)/common.sh
 
+## Argument parsing & checking
+
+usage() { echo "Usage: $0 [-r] PATH TESTDIR
+
+  -r
+        Run all tests (recursively) in PATH.
+        Requires PATH to point to a directory." 1>&2; }
+
+rflag= 
+while getopts "hr" options; do
+    case $options in
+        h)  usage 
+            exit 0;;
+        r)  rflag=1;;
+        ?)  usage
+            exit 1;;
+    esac
+done
+shift $((OPTIND-1))
+
+# If not exactly two arguments are given, we exit.
+if [ -z $2 ] || [ ! -z $3 ]; then 
+    usage
+    exit 1
+fi
+
+# IPATH (Input Path) of the file or directory that is being tested.
+IPATH=$1
+
+# Location of the toplevel tests directory.
+TOP_TEST_DIR=$2
+
+# Check whether PATH is of the correct type based on rflag.
+if [ ! -z $rflag ]; 
+then
+    if [ ! -d "$IPATH" ]; then
+        echo "The flag -r demands that the argument PATH '$IPATH' is a directory!" 1>&2
+        usage
+        exit 1
+    fi
+else
+    # Source file that we are about to run tests on.
+    IPATH=$1
+    if [ ! -f "$IPATH" ]; then
+        if [ -d "$IPATH" ]; then
+            echo "Argument PATH '$IPATH' should be a file but is a directory! If you want to run all tests in a directory, use -r." 1>&2
+        else
+            echo "Argument PATH '$IPATH' should be a file!"
+        fi
+        usage
+        exit 1
+    fi
+fi
+
+
+if [ ! -d "$TOP_TEST_DIR" ]; then
+    echo "TESTDIR '$TOP_TEST_DIR' should be a valid directory!"
+    usage
+    exit 1
+fi
+
+# Make sure we can fail multiple tests without immediately exiting
+EXIT_CODE=0
+delayed_die () {
+    echo "error: $*" 1>&2
+    EXIT_CODE=1
+}
+
+# Remove the extension from a filename
 function namewe () {
     local filename="$1"
     echo "$filename" | cut -f 1 -d '.'
 }
 
-# Source file that we are about to run tests on.
-SAC_FILE=$1
+## Actual function of interest
+runtest() {
+    local IPATH=$1
+    
+    # Cut the path off.
+    base_fname=$(basename "$IPATH")
 
-# Location of the toplevel tests directory.
-TOP_DIR=$2
+    # Cut the filename off.
+    dir_name=$(dirname "$IPATH")
 
-# Cut the path off.
-base_fname=$(basename $SAC_FILE)
+    # Generate the name for the extracted makefile.
+    makefile=${base_fname}.mk
 
-# Cut the filename off.
-dir_name=$(dirname $SAC_FILE)
+    base_fname_we=$(namewe "$base_fname")
 
-# Generate the name for the extracted makefile.
-makefile=${base_fname}.mk
+    # Generate the Makefile form a sac test:
+    @CMAKE_C_COMPILER@ -E -C -I"$TOP_TEST_DIR" -x c "$IPATH" \
+        | sed 's/[^[:print:]]//g' \
+        | grep "^// SAC_TEST|" \
+        | sed -e 's/^\/\/ SAC_TEST|//g'\
+            -e "s/<tab>/$(printf '\t')/g" \
+            -e "s/<file-name>/$base_fname/g" \
+            -e "s/<file-name-we>/$base_fname_we/g" \
+            -e 's/<nlslash>/\\/g' > "${dir_name}/$makefile"
 
-base_fname_we=$(namewe "$base_fname")
+    if test $? -ne 0; then
+        delayed_die "cannot parse SAC_TEST specification in $IPATH"
+        return
+    fi
 
-# Generate the Makefile form a sac test:
-@CMAKE_C_COMPILER@ -E -C -I$TOP_DIR -x c $SAC_FILE \
-     | sed 's/[^[:print:]]//g' \
-     | grep "^// SAC_TEST|" \
-     | sed -e 's/^\/\/ SAC_TEST|//g'\
-           -e "s/<tab>/$(printf '\t')/g" \
-           -e "s/<file-name>/$base_fname/g" \
-           -e "s/<file-name-we>/$base_fname_we/g" \
-           -e 's/<nlslash>/\\/g' > ${dir_name}/$makefile
+    if ! (cd ${dir_name}; make -I"$TOP_TEST_DIR" -f "$makefile"); then
+        delayed_die "test $IPATH failed"
+    fi
+}
 
-if test $? -ne 0; then
-    die "cannot parse SAC_TEST specification in $SAC_FILE"
+
+if [ -z $rflag ]; 
+then
+    # Normal call - a single sac file is tested.
+    runtest $IPATH
+    exit $EXIT_CODE
+else
+    # Recursive call - Run this script for all test files in the given directory and subdirectories.
+    echo "Running tests in ./$IPATH"
+
+    # This fails if there is a newline in a filename, but who has ever put a newline in their file?
+    find $IPATH -type f -iname "test-*.sac" -print0 | while read -d $'\0' file
+    do
+        echo Running $file
+        runtest $file
+    done
+    exit $EXIT_CODE
 fi
-
-if ! (cd ${dir_name}; make -I$TOP_DIR -f $makefile); then
-    die "test $SAC_FILE failed"
-fi
-
-# else
-#     echo "test $SAC_FILE passed"
-# fi
