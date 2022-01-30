@@ -75,8 +75,6 @@ ICMCompileDISPATCH_ERROR (unsigned int cnt_to, char **to_ANY, char *funname, uns
      * Current attempt: we tell the C compiler that SAC_RuntimeError_Mult
      * does not return. Now, we MUST NOT have a return as we get a warning otherwise!
      */
-    // INDENT;
-    // fprintf (global.outfile, "return; /* dummy; is this really a good idea??? */\n");
 
     DBUG_RETURN ();
 }
