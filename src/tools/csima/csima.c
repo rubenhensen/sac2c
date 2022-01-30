@@ -63,7 +63,7 @@ AnalyserSetup (int argc, char *argv[])
     case SAC_CS_file:
         SAC_RuntimeError ("Command line argument -cs f is illegal for external "
                           "cache simulator");
-        break;
+        // break; will never be executed!
     default:
         break;
     }

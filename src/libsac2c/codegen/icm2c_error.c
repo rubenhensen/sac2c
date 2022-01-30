@@ -71,9 +71,12 @@ ICMCompileDISPATCH_ERROR (unsigned int cnt_to, char **to_ANY, char *funname, uns
      * It seems, that a dummy 'break' instruction prevents such warnings, too.
      * But I am not quite sure whether this is bad or good news. What if this
      * instruction simply prevents some optimizations of the c compiler???
+     * 
+     * Current attempt: we tell the C compiler that SAC_RuntimeError_Mult
+     * does not return. Now, we MUST NOT have a return as we get a warning otherwise!
      */
-    INDENT;
-    fprintf (global.outfile, "return; /* dummy; is this really a good idea??? */\n");
+    // INDENT;
+    // fprintf (global.outfile, "return; /* dummy; is this really a good idea??? */\n");
 
     DBUG_RETURN ();
 }

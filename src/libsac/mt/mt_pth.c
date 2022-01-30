@@ -530,7 +530,6 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
         /* there is a queen! */
         SAC_RuntimeError ("SAC_MT_ReleaseHive: Cannot release a hive with a queen."
                           " Call DetachHive() first.");
-        return;
     }
 
     struct sac_hive_pth_t *const hive = CAST_HIVE_COMMON_TO_PTH (h);
@@ -710,7 +709,6 @@ SAC_MT_AttachHive (struct sac_hive_common_t *h)
 
     if (!h) {
         SAC_RuntimeError ("SAC_MT_AttachHive called with a NULL hive!");
-        return;
     }
 
     /* allocate a bee for the current thread, if needed */
