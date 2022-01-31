@@ -15,6 +15,7 @@
 #include "free.h"
 #include "str.h"
 #include "memory.h"
+#include "ctinfo.h"
 
 #ifdef BEtest
 #define MEMfree(x)                                                                       \

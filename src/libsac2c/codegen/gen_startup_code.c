@@ -41,6 +41,7 @@
 #include "new_types.h"
 #include "shape.h"
 #include "rtspec_modes.h"
+#include "ctinfo.h"
 
 /******************************************************************************
  *
@@ -85,12 +86,12 @@ CalcMasterclass (int num_threads)
 #define PRINT_SWITCH(name, value)                                        \
     fprintf (global.outfile, "#define %-40s %d\n",                       \
              #name, (value) ? 1 : 0)
-    
+
 #define PRINT_OPT_SWITCH(name, value)                                    \
     fprintf (global.outfile, "#ifndef %s\n"                              \
                              "#define %-40s %d\n"                        \
                              "#endif\n", #name, #name, (value) ? 1 : 0)
-    
+
 static void
 PrintGlobalSwitches (void)
 {

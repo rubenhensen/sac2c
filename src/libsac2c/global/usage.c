@@ -1316,9 +1316,11 @@ PrintAuthors (void)
             "      Roeland Douma\n"
             "      Oscar Leijendekker\n"
             "      Miguel Diogo\n"
+            "      Artem Shinkarov\n"
             "      Jaroslav Sykora\n"
             "      Edward Michniak\n"
-            "      Martin Hawes\n");
+            "      Martin Hawes\n"
+            "      Hans-Nikolai Viessmann\n");
 
     DBUG_RETURN ();
 }
@@ -1330,7 +1332,7 @@ PrintContact (void)
 
     printf ("\n\nCONTACT:\n\n"
 
-            "    WWW:    http://www.sac-home.org/\n"
+            "    WWW:    https://www.sac-home.org/\n"
             "    E-Mail: info@sac-home.org\n");
 
     printf ("\n\nBUGS:\n\n"
@@ -1453,19 +1455,19 @@ USGprintVersionVerbose ()
     PrintToolName ();
 
     printf ("Build-type:              %s\n"
-            "Date:                    %s\n"
-            "User:                    %s\n"
-            "Host:                    %s\n",
+            "Built-by:                %s\n"
+            "Host:                    %s\n"
+            "Date:                    %s\n",
             (build_style[0] == '\0') ? "" : build_style,
-            (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user,
-            (build_host[0] == '\0') ? "???" : build_host);
+            (build_host[0] == '\0') ? "???" : build_host,
+            (build_date[0] == '\0') ? "???" : build_date);
 
     printf ("%s\n", BUILD_STATUS);
 
-    printf ("Homepage: http://www.sac-home.org\n"
+    printf ("Homepage: https://www.sac-home.org\n"
             "Email: info@sac-home.org\n\n"
-            "Copyright (c) 1994-2017 SAC Development Team\n\n");
+            "Copyright (c) 1994-2022 SAC Development Team\n\n");
 
     DBUG_RETURN ();
 }
@@ -1483,12 +1485,12 @@ USGprintCopyright ()
       "\n"
       "COPYRIGHT NOTICE, LICENSE AND DISCLAIMER\n"
       "\n"
-      "(c) Copyright 1994 - 2015 by\n"
+      "(c) Copyright 1994 - 2022 by\n"
       "\n"
       "  SAC Development Team\n"
       "\n"
-      "  http://www.sac-home.org\n"
-      "  email:info@sac-home.org\n"
+      "    web: https://www.sac-home.org\n"
+      "  email: info@sac-home.org\n"
       "\n"
       "---------------------------------------------------------------------------\n"
       "\n");

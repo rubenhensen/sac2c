@@ -2,6 +2,7 @@
 // This tests makes sure that the CUDA backend code-generation is working.
 //
 
+// REQFEATURES|ENABLE_CUDA
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -t cuda
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -bcg

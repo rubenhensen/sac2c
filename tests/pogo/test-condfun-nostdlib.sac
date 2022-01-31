@@ -1,4 +1,5 @@
 
+// REQFEATURES|ENABLE_ISL ENABLE_BARVINOK
 #include "ut-flags.mk"
 // SAC_TEST|GREP_STR=_val_
 // SAC_TEST|GREP_COUNT=0
@@ -14,12 +15,12 @@
  * It also requires -ecc or -doawlf.
  *
  * PWLF note:
- * As of sac2c Build #18548 (or earlier), without -doawlf 
+ * As of sac2c Build #18548 (or earlier), without -doawlf
  * (for our purposes, -doivext would suffice, were it an option)
  * one guard is not removed, because we need extrema information
  * about N within the N_cond. If we want to eliminate the need
  * to drag extrema around with us, we might want to make
- * PHUT treat LACFUNs better. I.e., make it do interprocedural 
+ * PHUT treat LACFUNs better. I.e., make it do interprocedural
  * analysis. This might also supplant the need for -dolacsi/-dolacso.
  *
  * The above PHUT extension should work.
@@ -29,12 +30,12 @@
 /* RESULT: _val_ 5 0 */
 
 int[*] id( int[*] y)
-{ 
+{
   return(y);
 }
 
-bool[*] cond( bool[*]y) 
-{ 
+bool[*] cond( bool[*]y)
+{
   return(y);
 }
 

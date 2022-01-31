@@ -3,10 +3,6 @@
 
 #include <sys/types.h>
 
-#ifndef LEXER_BINARY
-#  include "compat.h"
-#endif
-
 #ifdef TRIE_MAIN
   typedef int bool;
 #endif

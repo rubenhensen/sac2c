@@ -8,7 +8,7 @@ MACRO (SUBST_SAC2CRC_FILE f var)
 ENDMACRO ()
 
 SUBST_SAC2CRC_FILE ("sac2crc.backend.mutc" RCMUTC)
-IF (CUDA)
+IF (ENABLE_CUDA)
     SUBST_SAC2CRC_FILE ("sac2crc.backend.cuda" RCCUDA)
 ENDIF ()
 SUBST_SAC2CRC_FILE ("sac2crc.modifiers.cc" RCCC)

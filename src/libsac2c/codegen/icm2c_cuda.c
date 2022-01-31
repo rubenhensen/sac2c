@@ -15,6 +15,7 @@
 #include "tree_basic.h"
 #include "str.h"
 #include "memory.h"
+#include "ctinfo.h"
 
 #ifndef BEtest
 #include "scnprs.h"   /* for big magic access to syntax tree      */
@@ -182,7 +183,7 @@ void
 ICMCompileCUDA_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **vararg)
 {
     int dim, j;
-    unsigned int i; 
+    unsigned int i;
     char *basetype;
 
     DBUG_ENTER ();
@@ -405,7 +406,7 @@ ICMCompileCUDA_GRID_BLOCK (unsigned int bounds_count, char **var_ANY)
 
     fprintf (global.outfile,
              "SAC_TR_GPU_PRINT (\"launching kernel for %dD With-Loop\");",
-             bounds_count/3); 
+             bounds_count/3);
     INDENT;
     if (bounds_count == 3) { /* 1D CUDA withloop */
         INDENT;
@@ -478,7 +479,7 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, unsigned int vararg_cnt, char **v
     INDENT;
     fprintf (global.outfile,
              "SAC_TR_GPU_PRINT (\"   kernel name \\\"%s\\\"\\n\");\n",
-             funname); 
+             funname);
     fprintf (global.outfile, "SAC_PF_BEGIN_CUDA_KNL ();\n");
     fprintf (global.outfile, "%s<<<1, 1>>>(", funname);
     for (i = 0; i < 4 * vararg_cnt; i += 4) {
