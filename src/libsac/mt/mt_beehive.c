@@ -235,7 +235,6 @@ SAC_MT_Generic_AttachHive (struct sac_hive_common_t *hive, struct sac_bee_common
     if (hive->bees[0]) {
         SAC_RuntimeError ("AttachHive: Cannot attach a hive which is already attached!"
                           " Call DetachHive() first.");
-        return;
     }
 
     if (queen->hive) {

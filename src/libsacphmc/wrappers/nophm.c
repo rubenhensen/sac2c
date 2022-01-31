@@ -155,7 +155,9 @@ SAC_HM_CurrentThreadId (void)
     /* This should never be called as no PHM is installed and the MT should assign ID
      * itself. */
     SAC_RuntimeError ("SAC_HM_CurrentThreadId: in -nophm this should not be called!");
-    return 0xdeadbeef;
+    /* there is no need to havee a return statement here, as SAC_RuntimeError actually
+     * calls exit. The C compiler should not complain about it, as SAC_RuntimeError
+     * has been declared FUN_ATTR_NORETURN (defined by cmake in fun-attrs.h). */
 }
 
 int

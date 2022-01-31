@@ -18,11 +18,12 @@
 #endif /* SAC_C_EXTERN */
 
 #include "runtime/essentials_h/std.h"
+#include "fun-attrs.h"
 
 SAC_C_EXTERN void (*SAC_MessageExtensionCallback) (void);
-SAC_C_EXTERN void SAC_RuntimeError (const char *format, ...);
-SAC_C_EXTERN void SAC_RuntimeError_Mult (int cnt, ...);
-SAC_C_EXTERN void SAC_RuntimeErrorLine (int line, const char *format, ...);
+SAC_C_EXTERN void SAC_RuntimeError (const char *format, ...) FUN_ATTR_NORETURN;
+SAC_C_EXTERN void SAC_RuntimeError_Mult (int cnt, ...) FUN_ATTR_NORETURN;
+SAC_C_EXTERN void SAC_RuntimeErrorLine (int line, const char *format, ...) FUN_ATTR_NORETURN;
 SAC_C_EXTERN void SAC_RuntimeWarning (const char *format, ...);
 SAC_C_EXTERN void SAC_RuntimeWarningMaster (const char *format, ...);
 SAC_C_EXTERN const char *SAC_PrintShape (SAC_array_descriptor_t desc);

@@ -1,0 +1,39 @@
+// missing no-return attribute of SAC_RuntimeError
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS +=
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -noprelude -v0
+//
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< 2>&1 | $(GREP_COMMAND_OUTPUT) "warning" 0
+
+
+
+int[*] sel( int[1] iv, int[.,.] a)
+{
+    return { [i] -> _sel_VxA_([_sel_VxA_([0], iv), i], a) };
+}
+
+noinline
+int[2] scanR (int[2] a)
+{
+    return a;
+}
+
+noinline
+int[*] scanR (int[*] a)
+{
+    a = { [i] -> scanR (sel([i], a)) };
+    return a;
+}
+
+noinline
+int[*] hide (int[.] shp, int[.] data)
+{
+    return _reshape_VxA_( shp, data);
+}
+
+int main () {
+    return _sel_VxA_([0,0],  scanR (hide([2,2], [1,2,3,4])));
+}
+
