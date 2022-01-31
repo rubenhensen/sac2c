@@ -186,7 +186,7 @@ struct array_comp_ctxt {
     /* Whether we have a comprehension:
             { iv -> ... }                   (true)
             { [(iv | ',') list] -> ... }    (false)  */
-    bool single_bound_variable;  
+    bool single_bound_variable;
 
     /* The number of bound variables.  */
     size_t bound_sz;

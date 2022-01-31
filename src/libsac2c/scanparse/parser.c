@@ -4795,7 +4795,7 @@ handle_pragmas (struct parser *parser, enum pragma_type ptype)
 
             CHECK_PRAGMA (HEADER, ptype != pragma_fundec && ptype != pragma_fundef,
                           false);
-            
+
             stok = token_as_string (tok);
             if (stok[0] == '<') {
                PRAGMA_HEADER (pragmas) = STRSadd (strdup (stok),
@@ -5292,7 +5292,7 @@ handle_symbol_set (struct parser *parser)
     return __handle_symbol_set (parser, NULL, false);
 }
 
-void
+static int
 update_all_known_symbols (struct parser *parser, const char *modname)
 {
     struct used_module *mod;
@@ -5300,7 +5300,11 @@ update_all_known_symbols (struct parser *parser, const char *modname)
     struct known_symbol *t;
 
     HASH_FIND_STR (parser->used_modules, modname, mod);
-    assert (mod, "module `%s' not cached", modname);
+    if (!mod)
+    {
+        error("module `%s' not cached", modname);
+        return -1;
+    }
 
     HASH_ITER (hh, mod->symbols, symb, t) {
         if (symbol_is_binary (symb) || symbol_is_unary (symb) || symbol_is_type (symb)) {
@@ -5322,6 +5326,8 @@ update_all_known_symbols (struct parser *parser, const char *modname)
             trie_add_word (parser->lex->trie, symb->name, strlen (symb->name),
                            TRIE_USEROP);
     }
+
+    return 0;
 }
 
 /* 'import' id : ( ( 'all' ( 'except'? symbol-list )? ) | symbol-list ) ';'
@@ -5408,8 +5414,10 @@ handle_interface (struct parser *parser, enum interface_kind interface)
         } else {
             /* If we use/import all, then parser->symbols must
                be updated with all the symbols from module.  */
-            if (interface == int_import || interface == int_use)
-                update_all_known_symbols (parser, modname);
+            if (interface == int_import || interface == int_use) {
+                if (update_all_known_symbols (parser, modname) < 0)
+                    goto skip_error;
+            }
             parser_unget (parser);
         }
     } else {

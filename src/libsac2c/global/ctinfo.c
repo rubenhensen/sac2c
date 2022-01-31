@@ -408,6 +408,8 @@ AbortCompilation (void)
 
     (void)fprintf (cti_stderr, ".\n");
 
+    fflush (cti_stderr);
+
     exit (ecode);
 }
 
