@@ -1,10 +1,52 @@
 /** <!--********************************************************************-->
  *
- * @defgroup icp Inplace Computation
+ * @defgroup ipc Inplace Computation
  *
  * @ingroup mm
  *
  * @{
+ *     Concept:
+ *    
+ *     This traversal tries to propagate upwards suballoc operations to
+ *     get rid of copy operations whenever possible
+ *
+ *     We look for patterns like this:
+ *
+ *     a = with {
+ *           ( lb <= iv < ub) {
+ *              assigns;
+ *              res_mem = alloc (rc, def-shp);
+ *              res = fill (expr, res_mem);  || ...res... = with {}:
+ *                                           || (..., gen/modarray(res_mem), ...);
+ *              inner_mem = suballoc (a_mem, iv, d);
+ *              inner = fill (copy (res), inner_mem);
+ *           } : inner;
+ *         } : genarray( shp, def, a_mem);
+ *
+ *     and replace it with
+ *
+ *     a = with {
+ *           ( lb <= iv < ub) {
+ *              IPC [[ assigns ]] ;
+ *              res_mem = suballoc (a_mem, iv, d);         <<<< change!
+ *              res = fill (expr, res_mem); || ...
+ *              //  inner_mem = suballoc (a_mem, iv, d);   <<<< delete!
+ *              //  inner = fill (copy (res), inner_mem);  <<<< delete!
+ *           } : res;                                      <<<< change!
+ *         } : genarray( shp, def, a_mem);
+ *     
+ *     We can also deal with res_mem being a reuse of some other array!
+ *     In that case, we simply follow the reused identifier further up.
+ *
+ *     Implementation:
+ *
+ *     The entire search and replacement is implemented in the function
+ *     HandleBlock:
+ *     It starts from the return expression of WL code in search for
+ *     the above pattern. Once a suitable candidate is found (res_mem from
+ *     above), its defining assignment is stored in INFO_LASTSAFE!
+ *     If that is the case ModifyBlock is being called to actually perform
+ *     the changes explained above.
  *
  *****************************************************************************/
 
@@ -22,7 +64,7 @@
 #include "tree_compound.h"
 #include "traverse.h"
 
-#define DBUG_PREFIX "EMIP"
+#define DBUG_PREFIX "IPC"
 #include "debug.h"
 
 #include "print.h"
@@ -114,7 +156,7 @@ FreeInfo (info *info)
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPdoInplaceComputation( node *syntax_tree)
+ * @fn node *IPCdoInplaceComputation( node *syntax_tree)
  *
  * @brief starting point of Inplace Computation traversal
  *
@@ -124,13 +166,13 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-EMIPdoInplaceComputation (node *syntax_tree)
+IPCdoInplaceComputation (node *syntax_tree)
 {
     DBUG_ENTER ();
 
     DBUG_PRINT ("Inplace Computation  optimization...");
 
-    TRAVpush (TR_emip);
+    TRAVpush (TR_ipc);
     syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
 
@@ -152,9 +194,15 @@ EMIPdoInplaceComputation (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *copyOrArray(node *arg_node)
+ * @fn node *copyOrArray(node *val, int *depth)
  *
- * @brief Get id in first place of prf
+ * @brief expects to obtain either 
+ *        F_copy ( N_id)     or
+ *        [...[ N_id ]...]   (all arrays are singletons!)
+ *        as first argument.
+ * @param val 
+ * @return returns N_id node and increments depth by the nesting of the N_array
+ *         nodes (if val is an N_array)
  *
  *****************************************************************************/
 
@@ -187,7 +235,9 @@ copyOrArray (node *val, int *depth)
  *
  * @fn node *idArray(node *arg_node)
  *
- * @brief Is this an array containing an id?
+ * @brief accepts arbitrary nodes. Returns true, iff the argument is either
+ *        N_id     or
+ *        [...[N_id]...]    (all arrays are singletons!)
  *
  *****************************************************************************/
 
@@ -213,9 +263,15 @@ idArray (node *array)
 }
 /** <!--********************************************************************-->
  *
- * @fn node *removeArrayIndirectionFromSuballoc( node *node, int *depth)
+ * @fn node *removeArrayIndirectionFromSuballoc( node *suballoc, int depth)
  *
  * @brief Remove the array indirection from suballoc.
+ *        It expects to obtain
+ *        F_suballoc (arg1, ..., argn)
+ *        If (n >= 4), it expects either
+ *        suballoc ( _, _, _, F_shape ( F_genarray ( array, _)))   (pat) or
+ *        suballoc ( _, _, _, F_shape ( array))                    (pat2)
+ *        Then, we elide depth-many elements of that array!
  *
  *****************************************************************************/
 static node *
@@ -261,6 +317,75 @@ removeArrayIndirectionFromSuballoc (node *suballoc, int depth)
 
 /** <!--********************************************************************-->
  *
+ * @fn void ModifyBlock (node *alloc_ass, node *suballoc_ass, node *fill_ass,
+ *                       node *new_ret, node *old_rets)
+ *
+ * @brief performs the 4 modifications on the assignment chain staring with 
+ *        the assignment that is to be changed into a suballoc:
+ *        1) change alloc_ass RHS into ia copy of suballoc_ass
+ *        2) delete suballoc_ass
+ *        3) delete fill_ass
+ *        4) change the ret in old_rets into new_ret
+ *
+ *        This also does some weird stuff that I (sbs) do not understand:
+ *        - it strips suballoc_ass of potential extra arguments?!
+ *        - in case the allocated value is a scalar, it turns it into a 
+ *          one element vector?????!
+ *
+ *****************************************************************************/
+static void
+ModifyBlock (node *alloc_ass, node *suballoc_ass, node *fill_ass,
+                  node *new_ret, node *old_rets, int depth)
+{
+    DBUG_ENTER ();
+
+    int changed = 0;
+    ntype *type = NULL;
+    /*
+     * Replace some alloc or reuse or alloc_or_reuse with suballoc
+     */
+    DBUG_PRINT ("  changing allocation of '%s` to suballoc",
+                IDS_NAME (ASSIGN_LHS (alloc_ass)));
+    ASSIGN_RHS (alloc_ass) = FREEdoFreeNode (ASSIGN_RHS (alloc_ass));
+    ASSIGN_RHS (alloc_ass) = removeArrayIndirectionFromSuballoc (
+                               DUPdoDupNode (ASSIGN_RHS (suballoc_ass)),
+                               depth);
+
+    /*
+     * Are we suballocing a scaler?
+     * If so make it a [1] array.
+     */
+    type = AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (alloc_ass)));
+    if (TUisScalar (type)) {
+        AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (alloc_ass)))
+          = TYmakeAKS (TYgetScalar (type), SHcreateShape (1, 1));
+    }
+
+    /*
+     * Replace CEXPR
+     */
+    EXPRS_EXPR (old_rets) = FREEdoFreeNode (EXPRS_EXPR (old_rets));
+    EXPRS_EXPR (old_rets) = DUPdoDupNode (new_ret);
+
+    /*
+     * Remove old suballoc/fill(copy) combination
+     */
+    while (alloc_ass != NULL) {
+        if ((ASSIGN_NEXT (alloc_ass) == suballoc_ass)
+            || (ASSIGN_NEXT (alloc_ass) == fill_ass)) {
+            ASSIGN_NEXT (alloc_ass) = FREEdoFreeNode (ASSIGN_NEXT (alloc_ass));
+            changed++;
+        } else {
+            alloc_ass = ASSIGN_NEXT (alloc_ass);
+        }
+    }
+    DBUG_ASSERT (changed==2, "ModifyBlock failed; found %d of 2 assignments"
+                             " to delete", changed);
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *HandleBlock(node *arg_node)
  *
  * @brief The main part of this traversal
@@ -302,21 +427,21 @@ HandleBlock (node *block, node *rets, info *arg_info)
                  * {...
                  *   a  = ...
                  *   m' = suballoc( A, iv);
-                 *   m  = fill( copy( a), m');
+                 *   m  = fill( copy( a), m');  <- checked so far!
                  * }: m
                  *
                  * or (as appears in with3 loops:
                  *
                  *   a  = ...
                  *   m' = suballoc( A, iv);
-                 *   m  = fill( [ a], m');
+                 *   m  = fill( [ a], m');  <- checked so far!
                  */
-                val = PRF_ARG1 (rhs);
-                mem = PRF_ARG2 (rhs);
-                cval = copyOrArray (val, &depth);
-                avis = ID_AVIS (cval);
-                memass = AVIS_SSAASSIGN (ID_AVIS (mem));
-                memop = LET_EXPR (ASSIGN_STMT (memass));
+                val = PRF_ARG1 (rhs);                      // copy(a) or [a]
+                mem = PRF_ARG2 (rhs);                      // m'
+                cval = copyOrArray (val, &depth);          // a
+                avis = ID_AVIS (cval);                     // avis of a
+                memass = AVIS_SSAASSIGN (ID_AVIS (mem));   // m' = <suballoc?>
+                memop = LET_EXPR (ASSIGN_STMT (memass));   // <suballoc?>
 
                 /*
                  * a must be assigned inside the current block in order to
@@ -338,7 +463,17 @@ HandleBlock (node *block, node *rets, info *arg_info)
                     /*
                      * Situation recognized, find highest position for suballoc
                      */
-                    node *def = AVIS_SSAASSIGN (ID_AVIS (cval));
+                    DBUG_PRINT ("found  %s = suballoc( %s /*outer*/, %s /*idx*/, %d /*depth*/);",
+                                IDS_NAME (LET_IDS (ASSIGN_STMT (memass))),
+                                ID_NAME (PRF_ARG1 (memop)),
+                                ID_NAME (PRF_ARG2 (memop)),
+                                NUM_VAL (PRF_ARG3 (memop)));
+                    DBUG_PRINT ("       %s = fill( copy (%s), %s);",
+                                ID_NAME (cid),
+                                AVIS_NAME (avis),
+                                IDS_NAME (LET_IDS (ASSIGN_STMT (memass))));
+
+                    node *def = AVIS_SSAASSIGN (avis);
                     INFO_LASTSAFE (arg_info) = NULL;
                     INFO_NOUSE (arg_info)
                       = (node *)LUTsearchInLutPp (INFO_REUSELUT (arg_info),
@@ -357,7 +492,9 @@ HandleBlock (node *block, node *rets, info *arg_info)
                     INFO_OK (arg_info) = TRUE;
 
                     while (INFO_OK (arg_info)) {
-                        TRAVpush (TR_emiph);
+                        DBUG_PRINT ("  checking definition of '%s`:",
+                                    AVIS_NAME (avis));
+                        TRAVpush (TR_ipch);
                         ASSIGN_NEXT (def) = TRAVdo (ASSIGN_NEXT (def), arg_info);
                         TRAVpop ();
 
@@ -375,14 +512,22 @@ HandleBlock (node *block, node *rets, info *arg_info)
                                         || (PRF_PRF (memop) == F_alloc_or_reuse)) {
                                         INFO_LASTSAFE (arg_info) = memass;
                                         if (PRF_PRF (memop) == F_reuse) {
+                                            DBUG_PRINT ("  found  %s = reuse (%s);",
+                                                        ID_NAME (PRF_ARG2 (defrhs)),
+                                                        ID_NAME (PRF_ARG1 (memop)));
                                             avis = ID_AVIS (PRF_ARG1 (memop));
                                             def = AVIS_SSAASSIGN (
                                               ID_AVIS (PRF_ARG1 (memop)));
                                             INFO_NOAP (arg_info)
                                               = ID_AVIS (PRF_ARG1 (memop));
                                         } else {
+                                            DBUG_PRINT ("  found  %s = alloc / alloc_or_reuse (...);",
+                                                        ID_NAME (PRF_ARG2 (defrhs)));
                                             INFO_OK (arg_info) = FALSE;
                                         }
+                                        DBUG_PRINT ("         %s = fill ( _, %s);",
+                                                    AVIS_NAME (avis),
+                                                    ID_NAME (PRF_ARG2 (defrhs)));
                                     } else {
                                         INFO_OK (arg_info) = FALSE;
                                     }
@@ -410,14 +555,22 @@ HandleBlock (node *block, node *rets, info *arg_info)
                                         || (PRF_PRF (memop) == F_alloc_or_reuse)) {
                                         INFO_LASTSAFE (arg_info) = memass;
                                         if (PRF_PRF (memop) == F_reuse) {
+                                            DBUG_PRINT ("  found  %s = reuse (%s);",
+                                                        ID_NAME (WITHOP_MEM (withop)),
+                                                        ID_NAME (PRF_ARG1 (memop)));
                                             avis = ID_AVIS (PRF_ARG1 (memop));
                                             def = AVIS_SSAASSIGN (
                                               ID_AVIS (PRF_ARG1 (memop)));
                                             INFO_NOAP (arg_info)
                                               = ID_AVIS (PRF_ARG1 (memop));
                                         } else {
+                                            DBUG_PRINT ("  found  %s = alloc / alloc_or_reuse (...);",
+                                                        ID_NAME (WITHOP_MEM (withop)));
                                             INFO_OK (arg_info) = FALSE;
                                         }
+                                        DBUG_PRINT ("         ...,%s,... = with {...} :(..., gen/modarray(%s), ...);",
+                                                    AVIS_NAME (avis),
+                                                    ID_NAME (WITHOP_MEM (withop)));
                                     } else {
                                         INFO_OK (arg_info) = FALSE;
                                     }
@@ -434,44 +587,12 @@ HandleBlock (node *block, node *rets, info *arg_info)
                     }
 
                     if (INFO_LASTSAFE (arg_info) != NULL) {
-                        node *n;
-                        ntype *type = NULL;
-                        /*
-                         * Replace some alloc or reuse or alloc_or_reuse with
-                         * suballoc
-                         */
-                        ASSIGN_RHS (INFO_LASTSAFE (arg_info))
-                          = FREEdoFreeNode (ASSIGN_RHS (INFO_LASTSAFE (arg_info)));
-                        ASSIGN_RHS (INFO_LASTSAFE (arg_info))
-                          = removeArrayIndirectionFromSuballoc (DUPdoDupNode (memop),
-                                                                depth);
-
-                        /*
-                         * Are we suballocing a scaler?
-                         * If so make it a [1] array.
-                         */
-                        type
-                          = AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (INFO_LASTSAFE (arg_info))));
-                        if (TUisScalar (type)) {
-                            AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (INFO_LASTSAFE (arg_info))))
-                              = TYmakeAKS (TYgetScalar (type), SHcreateShape (1, 1));
-                        }
-
-                        /*
-                         * Replace CEXPR
-                         */
-                        EXPRS_EXPR (rets) = FREEdoFreeNode (EXPRS_EXPR (rets));
-                        EXPRS_EXPR (rets) = DUPdoDupNode (cval);
-
-                        /*
-                         * Remove old suballoc/fill(copy) combination
-                         */
-                        n = BLOCK_ASSIGNS (block);
-                        while (ASSIGN_NEXT (n) != memass) {
-                            n = ASSIGN_NEXT (n);
-                        }
-                        ASSIGN_NEXT (n) = FREEdoFreeNode (ASSIGN_NEXT (n));
-                        ASSIGN_NEXT (n) = FREEdoFreeNode (ASSIGN_NEXT (n));
+                        ModifyBlock (INFO_LASTSAFE (arg_info), // alloc_ass to be modified
+                                     memass,                   // original suballoc_ass
+                                     wlass,                    // original fill_ass
+                                     cval,                     // originally copied now returned
+                                     rets,                     // rets holding the old returned
+                                     depth);                   // weird depth value....
                         INFO_CHANGED (arg_info) = TRUE;
                     }
                 }
@@ -497,13 +618,13 @@ HandleBlock (node *block, node *rets, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPap( node *arg_node, info *arg_info)
+ * @fn node *IPCap( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPap (node *arg_node, info *arg_info)
+IPCap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -544,13 +665,13 @@ EMIPap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPcond( node *arg_node, info *arg_info)
+ * @fn node *IPCcond( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPcond (node *arg_node, info *arg_info)
+IPCcond (node *arg_node, info *arg_info)
 {
     lut_t *oldlut;
 
@@ -581,13 +702,13 @@ EMIPcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPcode( node *arg_node, info *arg_info)
+ * @fn node *IPCcode( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPcode (node *arg_node, info *arg_info)
+IPCcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -608,13 +729,13 @@ EMIPcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPrange( node *arg_node, info *arg_info)
+ * @fn node *IPCrange( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPrange (node *arg_node, info *arg_info)
+IPCrange (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -633,13 +754,13 @@ EMIPrange (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPfundef( node *arg_node, info *arg_info)
+ * @fn node *IPCfundef( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPfundef (node *arg_node, info *arg_info)
+IPCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -681,13 +802,13 @@ EMIPfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPlet( node *arg_node, info *arg_info)
+ * @fn node *IPClet( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPlet (node *arg_node, info *arg_info)
+IPClet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -699,13 +820,13 @@ EMIPlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPprf( node *arg_node, info *arg_info)
+ * @fn node *IPCprf( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPprf (node *arg_node, info *arg_info)
+IPCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -761,17 +882,24 @@ EMIPprf (node *arg_node, info *arg_info)
  * @name IPC helper traversal
  *
  * @{
+ *     This traversal checks wether the N_avis given in
+ *       INFO_NOUSE or the N_avis given in 
+ *       INFO_NOAP appear on the RHS of the given N_assign chain.
+ *     The search for INFO_NOAP is restricted to udf function arguments,
+ *     and that of INFO_NOUSE is restricted to uses outside of udf
+ *     function arguments!
+ *     if any of these two is found, INFO_OK is set to FALSE!
  *
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPHap( node *arg_node, info *arg_info)
+ * @fn node *IPCHap( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPHap (node *arg_node, info *arg_info)
+IPCHap (node *arg_node, info *arg_info)
 {
     node *tmp;
 
@@ -791,13 +919,13 @@ EMIPHap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPHassign( node *arg_node, info *arg_info)
+ * @fn node *IPCHassign( node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief top-down traversal
  *
  *****************************************************************************/
 node *
-EMIPHassign (node *arg_node, info *arg_info)
+IPCHassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -814,13 +942,13 @@ EMIPHassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPHid( node *arg_node, info *arg_info)
+ * @fn node *IPCHid( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPHid (node *arg_node, info *arg_info)
+IPCHid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 

@@ -1307,7 +1307,7 @@ SUBPHASE (lao, "Applying loop allocation optimization", EMLAOdoLoopAllocationOpt
 SUBPHASE (rb, "Introducing reuse branches", EMRBdoReuseBranching,
           global.optimize.doipc || (global.optimize.douip && global.optimize.dodr), mem)
 
-SUBPHASE (ipc, "Identifying in-place updates", EMIPdoInplaceComputation,
+SUBPHASE (ipc, "Identifying in-place updates", IPCdoInplaceComputation,
           global.optimize.doipc, mem)
 
 SUBPHASE (dr, "Exploiting data reuse", EMDRdoDataReuse,
