@@ -5,6 +5,185 @@
  * This effectively converts functional SAC programs into imperative programs
  * that perform state changes.
  *
+ * In principle, every assignment (including scalar assignments) 
+ *
+ *    a = expr;
+ *
+ * is transformed into
+ *
+ *    a_mem = alloc ( <dim(expr)> , <shape(expr)>);
+ *    a = fill (expr, a_mem);
+ *
+ * However, depending on the RHS expr, slightly different things need to happen:
+ *
+ * 1) function calls: here, the allocation happens inside the function. So, 
+ *
+ *        a = fun (...);
+ *
+ *    translates into
+ *
+ *        a = fun (...);
+ *
+ *  2) constants / primitive functions: here, we partially evaluate <dim(expr)>
+ *     and <shape(expr)>. In case we cannot compute the shape statically due to
+ *     missing shape/dim info we construct expressions using prfs such as _dim_A_
+ *     or _shape_A_. For example:
+ *
+ *         a = [aud, aud];     where aud::int[*]
+ *
+ *     translates into
+ *
+ *         a_mem = alloc ( _add_SxS_( 1, _dim_A_( aud)), _shape_A_( [ aud, aud ]));
+ *         a = _fill_( [ aud, aud ], a_mem); 
+ *
+ *  3) gen/modarray with-loops with scalar cells:
+ *
+ *         a = with { (iv) : val; } : genarray ( akv, def);    where akv::int[2]{2,3}, def::int
+ *
+ *     translates into
+ *
+ *         a_mem = alloc (2, [2,3]);
+ *         a = with { (iv) {
+ *                             res = wl_assign( val, a_mem, iv, idx);
+ *                         } : res; } : genarray ( akv, def, a_mem, idx);
+ *
+ *     Again, in case dim/shape info goes amiss, the alloc arguments become more involved:
+ *
+ *        a = with { (iv) : val; } : genarray ( aks, def);    where aks::int[2], def::int
+ *
+ *     translates into
+ *
+ *         a_mem = alloc (2, _cat_VxV_( aks, [:int]));
+ *         a = with { (iv) {
+ *                             res = wl_assign( val, a_mem, iv, idx);
+ *                         } : res; } : genarray ( aks, def, a_mem, idx);
+ *
+ *     or:
+ *
+ *        a = with { (iv) : val; } : genarray ( akd, def);    where akd::int[.], def::int
+ *
+ *     translates into
+ *
+ *         a_mem = alloc (_add_SxS_( _sel_VxA_( [0], _shape_A_( akd)), 0), _cat_VxV_( akd, [:int]));
+ *         a = with { (iv) {
+ *                             res = wl_assign( val, a_mem, iv, idx);
+ *                         } : res; } : genarray ( akd, def, a_mem, idx);
+ *
+ *  4) gen/modarray with-loops with non-scalar cells: in essence, this is the same as above.
+ *     BUT, the expressions in alloc become more involved and instead of wl_assign, we now
+ *     create a suballoc followed by a fill. Again, a few examples;
+ *
+ *         a = with { (iv) : val; } : genarray ( akv, def);    where akv::int[2]{2,3}, def::int[4]
+ *
+ *     translates into
+ *
+ *         a_mem = alloc (3, [2,3,4]);
+ *         a = with { (iv) {
+ *                             res_mem = suballoc (a_mem, idx, 1);
+ *                             res = fill (copy (val), res_mem);
+ *                         } : res; } : genarray ( akv, def, a_mem, idx);
+ *
+ *     or:
+ *
+ *        a = with { (iv) : val; } : genarray ( aks, def);    where aks::int[2], def::int[4]
+ *
+ *     translates into
+ *
+ *         a_mem = alloc (3, _cat_VxV_( aks, [4]));
+ *         a = with { (iv) {
+ *                             res_mem = suballoc (a_mem, idx, 1);
+ *                             res = fill (copy (val), res_mem);
+ *                         } : res; } : genarray ( aks, def, a_mem, idx);
+ *
+ *     or:
+ *
+ *        a = with { (iv) : val; } : genarray ( akd, def);    where akd::int[.], def::int[.]
+ *
+ *     translates into
+ *
+ *         a_mem = alloc (_add_SxS_ (_sel_VxA_ ([0], _shape_A_( akd)), 1),
+ *                        _shape_A_ (_genarray_ (akd, def)));
+ *         a = with { (iv) {
+ *                             res_mem = suballoc (a_mem, idx, 1, _shape_A_ (def));
+ *                             res = fill (copy (val), res_mem);
+ *                         } : res; } : genarray ( akd, def, a_mem, idx);
+ *
+ *     NOTICE here, that suballoc has obtained an extra argument! It carries the shape of the
+ *     "allocated" memory.
+ *
+ *
+ *  if you want to experiment with the actual compiler to see what happens, you can get 
+ *  started using this code:
+ *
+ *
+ * compile with : -b15:alloc -noprelude -maxwlur 2 -noWLS -printfun main
+ *
+
+noinline
+int[*] genType( int[.] a, int[*] b)
+{
+    if (_eq_SxS_ (_sel_VxA_ ([0], a), 1)) {
+        res = a;
+    } else {
+        res = b;
+    }
+    return res;
+}
+
+int main()
+{
+    // AKV
+    akv_x = 0;
+    akv_a = [1,2];
+    akv_b = [1,2,3];
+    akv_c = [akv_a,akv_a,akv_a];
+
+    // AKS
+    aks_d = genType (akv_a, akv_a);
+    aks_l = [aks_d,aks_d];
+
+    // AKD
+    akd_e = genType (akv_a, akv_b);
+    akd_l = [akd_e, akd_e];
+
+    // AUD
+    aud_f = genType (akv_b, akv_x);
+    aud_l = [aud_f, aud_f];
+
+    wls_akv = with {} : genarray ( akv_b, akv_x);
+
+    wls_aks = with {} : genarray ( aks_d, akv_x);
+
+    wls_akd = with {} : genarray ( akd_e, akv_x);
+
+    wls_aud = with {} : genarray ( aud_f, akv_x);
+
+    wls_akv_ns = with {} : genarray ( akv_b, akv_b);
+
+    wls_aks_ns = with {} : genarray ( aks_d, aks_d);
+
+    wls_akd_ns = with {} : genarray ( akd_e, aud_f);
+
+    wls_aud_ns = with {} : genarray ( aud_f, aud_f);
+
+    alive = genType( aud_f, akv_c);
+    alive = genType( alive, aks_l);
+    alive = genType( alive, akd_l);
+    alive = genType( alive, aud_l);
+    alive = genType( alive, wls_akv);
+    alive = genType( alive, wls_aks);
+    alive = genType( alive, wls_akd);
+    alive = genType( alive, wls_aud);
+    alive = genType( alive, wls_akv_ns);
+    alive = genType( alive, wls_aks_ns);
+    alive = genType( alive, wls_akd_ns);
+    alive = genType( alive, wls_aud_ns);
+    return alive;  //wrong but we run b15:alloc only :-)
+}
+
+ *
+ *
+ *
  * @ingroup mm
  *
  * @{
