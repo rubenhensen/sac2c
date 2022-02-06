@@ -280,7 +280,8 @@ XINSTALL (
 
 # and also the build config
 XINSTALL (
-  FILES "${PROJECT_BINARY_DIR}/include/config.h" "${PROJECT_BINARY_DIR}/include/override_cuda_runtime.h"
+  FILES "${PROJECT_BINARY_DIR}/include/config.h" "${PROJECT_BINARY_DIR}/include/fun-attrs.h"
+        "${PROJECT_BINARY_DIR}/include/override_cuda_runtime.h"
   DESTINATION "${INCPATH_INSTALL}"
   COMPONENT headers)
 
