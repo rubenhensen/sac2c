@@ -4,6 +4,11 @@
  *
  * Annotes reference counting instructions throughout the syntax tree.
  *
+ * This phase injects an rc initialisation as first argument into the following prfs:
+ *
+ *     F_alloc, F_alloc_or_reuse, F_reshape_VxA, F_alloc_or_reshape, F_reuse,
+ *     F_alloc_or_resize, F_resize, and F_suballoc
+ *
  * @ingroup mm
  *
  * @{
@@ -694,11 +699,17 @@ RCIprf (node *arg_node, info *arg_info)
         /*
          * a_mem = suballoc( mem, idx)
          *
+         * - initialize rc with 1
+         */
+        if (INFO_ASSIGN (arg_info) != NULL) {
+            PRF_ARGS (arg_node) = TBmakeExprs (TBmakeNum (1), PRF_ARGS (arg_node));
+        }
+        /*
          * Do not visit the memory variable (to pretend its only
          * referenced once) but the index!
          */
         INFO_MODE (arg_info) = rc_prfuse;
-        PRF_EXPRS2 (arg_node) = TRAVopt (PRF_EXPRS2 (arg_node), arg_info);
+        PRF_EXPRS3 (arg_node) = TRAVopt (PRF_EXPRS3 (arg_node), arg_info);
         break;
 
     case F_syncout:
