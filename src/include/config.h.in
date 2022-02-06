@@ -1,197 +1,82 @@
-/* src/include/config.h.in.  Generated from configure.ac by autoheader.  */
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
 
-/* CPU architecture string */
-#undef ARCH
+/* Here is a script to verify if all the symbols defined in the original
+   config.h.in that are being used in the code are available here.
 
-/* ARMCI installation */
-#undef ARMCI_DIR
+   for s in $(cat /tmp/confsymb.txt); do
+        if find ./src \( -iname '*.[ch]' -o -iname '*.mac' -o -iname '*.m4' \) \
+                -exec grep $s {} \+ >/dev/null; then
+            echo "YES - $s";
+        else
+            echo " NO - $s";
+        fi
+    done | sort  */
 
-/* Available GASNet conduits. */
+#define OS                      "@CMAKE_SYSTEM_NAME@"
+#define OSVER                   "@CMAKE_SYSTEM_VERSION@"
+#define ARCH                    "@CMAKE_SYSTEM_PROCESSOR@"
+
+// FIXME define this later
 #undef DISTMEM_GASNET_CONDUITS
 
-/* Define to the command to use to invoke graphviz/dot, followed by a space.
-   */
-#undef DOT_CMD
+// Dot-related configuration
+#define DOT_CMD                 "@DOT_CMD@"
+#cmakedefine01 DOT_FLAG
 
-/* Define to 1 to enable graphviz visualization, otherwise 0. */
-#undef DOT_FLAG
+#cmakedefine01 ENABLE_CUDA
 
-/* Define to 1 if distributed memory support is enabled, otherwise 0. */
+// FIXME distmem-related stuff
 #undef ENABLE_DISTMEM
-
-/* Define to 1 if ARMCI conduit is supported, otherwise 0. */
 #undef ENABLE_DISTMEM_ARMCI
-
-/* Define to 1 if GASNet conduit is supported, otherwise 0. */
 #undef ENABLE_DISTMEM_GASNET
-
-/* Define to 1 if GPI conduit is supported, otherwise 0. */
 #undef ENABLE_DISTMEM_GPI
-
-/* Define to 1 if MPI conduit is supported, otherwise 0. */
 #undef ENABLE_DISTMEM_MPI
 
-/* Define to 1 if libcrypt is available, otherwise 0. */
-#undef ENABLE_HASH
 
-/* Define to 1 if runtime specialization is enabled, otherwise 0. */
-#undef ENABLE_RTSPEC
+#cmakedefine01 ENABLE_MT
+#cmakedefine01 ENABLE_MT_LPEL
+#cmakedefine01 ENABLE_MUTC
+#cmakedefine01 ENABLE_OMP
+#cmakedefine01 ENABLE_HWLOC
+#cmakedefine01 ENABLE_HASH
+#cmakedefine01 ENABLE_RTSPEC
+#cmakedefine01 ENABLE_UUID
+#cmakedefine01 HAVE_GCC_SIMD_OPERATIONS
+#cmakedefine01 ENABLE_GETTIME
 
-/* Define to 1 if libuuid is available, otherwise 0. */
-#undef ENABLE_UUID
-
-/* GPI installation */
-#undef GPI_DIR
-
-/* Set to 1 if compiler supports GNU vector syntax, otherwise 0. */
-#undef HAVE_GCC_SIMD_OPERATIONS
-
-/* Define if clock_gettime and CLOCK_MONOTONIC from POSIX RT are available. */
-#undef HAVE_GETTIME
-
-/* Define to 1 if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
-
-/* Define to 1 if you have the <isl/ctx.h> header file. */
-#undef HAVE_ISL_CTX_H
-
-/* Define to 1 if you have the `isl' library (-lisl). */
-#undef HAVE_LIBISL
-
-/* Define to 1 if you have the `polylib64' library (-lpolylib64). */
-#undef HAVE_LIBPOLYLIB64
-
-/* Define to 1 if you have the <malloc.h> header file. */
-#undef HAVE_MALLOC_H
-
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
-/* Define to 1 if you have the `mkdtemp' function. */
-#undef HAVE_MKDTEMP
-
-/* Define if OpenMP is enabled */
-#undef HAVE_OPENMP
-
-/* Define if you have POSIX threads libraries and header files. */
-#undef HAVE_PTHREAD
-
-/* Have PTHREAD_PRIO_INHERIT. */
-#undef HAVE_PTHREAD_PRIO_INHERIT
-
-/* Define to 1 if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
-
-/* Define to 1 if you have the <stdlib.h> header file. */
-#undef HAVE_STDLIB_H
-
-/* Define to 1 if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
-
-/* Define to 1 if you have the <string.h> header file. */
-#undef HAVE_STRING_H
-
-/* Define to 1 if you have the `strrchr' function. */
-#undef HAVE_STRRCHR
-
-/* Define to 1 if you have the `strtok' function. */
-#undef HAVE_STRTOK
-
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
-
-/* Define to 1 if you have the <sys/types.h> header file. */
-#undef HAVE_SYS_TYPES_H
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
-
-/* Set to 1 if target is Cygwin, otherwise 0. */
-#undef IS_CYGWIN
-
-/* Define if printf does not print a leading 0x in %p formats. */
-#undef NEED_PTR_PREFIX
-
-/* OS string */
-#undef OS
-
-/* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
-
-/* Define to the full name of this package. */
-#undef PACKAGE_NAME
-
-/* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
-
-/* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
-
-/* Define to the home page for this package. */
-#undef PACKAGE_URL
-
-/* Define to the version of this package. */
-#undef PACKAGE_VERSION
-
-/* set to maximum number of sac functions for profiling */
-#undef PF_MAXFUN
-
-/* set to maximum number of sac function applications for profiling */
-#undef PF_MAXFUNAP
-
-/* set to maximum length of sac function names for profiling */
-#undef PF_MAXFUNNAMELEN
-
-/* Define to necessary symbol if this constant uses a non-standard name on
-   your system. */
-#undef PTHREAD_CREATE_JOINABLE
-
-/* Name of the sac prelude module. */
-#undef SAC_PRELUDE_NAME
-
-/* Type of the argument of sbrk(). */
-#undef SBRK_T
-
-/* File extension used for shared library files. */
-#undef SHARED_LIB_EXT
-
-/* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
-
-/* Define if stderr is a constant. */
-#undef STDERR_IS_CONSTANT
-
-/* define macro for unused variables */
-#undef UNUSED
-
-/* Enable extensions on AIX 3, Interix.  */
-#ifndef _ALL_SOURCE
-# undef _ALL_SOURCE
+#cmakedefine01 ENABLE_ISL
+#cmakedefine01 ENABLE_BARVINOK
+#if ENABLE_GETTIME
+#  define HAVE_GETTIME 1
+#else
+#  undef HAVE_GETTIME
 #endif
-/* Enable GNU extensions on systems that have them.  */
-#ifndef _GNU_SOURCE
-# undef _GNU_SOURCE
+#cmakedefine01 HAVE_MALLOC_H
+#if HAVE_MALLOC_H == 0
+#  undef HAVE_MALLOC_H
 #endif
-/* Enable threading extensions on Solaris.  */
-#ifndef _POSIX_PTHREAD_SEMANTICS
-# undef _POSIX_PTHREAD_SEMANTICS
-#endif
-/* Enable extensions on HP NonStop.  */
-#ifndef _TANDEM_SOURCE
-# undef _TANDEM_SOURCE
-#endif
-/* Enable general extensions on Solaris.  */
-#ifndef __EXTENSIONS__
-# undef __EXTENSIONS__
-#endif
+#cmakedefine01 HAVE_MKDTEMP
+#cmakedefine01 HAVE_OPENMP
+#cmakedefine01 HAVE_STRRCHR
+#cmakedefine01 HAVE_STRTOK
+
+// FIXME the source could be updated to use CYGWIN instead of IS_CYGWIN
+#cmakedefine01 IS_CYGWIN
 
 
-/* Define to 1 if on MINIX. */
-#undef _MINIX
+#cmakedefine01 NEED_PTR_PREFIX
 
-/* Define to 2 if the system does not provide POSIX.1 features except with
-   this defined. */
-#undef _POSIX_1_SOURCE
 
-/* Define to 1 if you need to in order for `stat' and other things to work. */
-#undef _POSIX_SOURCE
+
+#define PF_MAXFUN               @PF_MAXFUN@
+#define PF_MAXFUNAP             @PF_MAXFUNAP@
+#define PF_MAXFUNNAMELEN        @PF_MAXFUNNAMELEN@
+#define SAC_PRELUDE_NAME        "@SAC_PRELUDE_NAME@"
+#define SBRK_T                  @SBRK_T@
+
+// XXX we do not define SHARED_LIB_EXT here, as it is used only when building tools
+
+#cmakedefine STDERR_IS_CONSTANT
+
+#endif /* __CONFIG_H__  */

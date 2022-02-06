@@ -8,3 +8,5 @@ char build_os[]    = "@CMAKE_SYSTEM_NAME@";
 char build_rev[]   = "@SAC2C_VERSION@";
 char build_srev[]  = "@SAC2C_VERSION_PATCH@";
 char build_ast[]   = "@AST_MD5@";
+char build_lic[]   = "@LICENSETXT@";
+char build_author[]= "@AUTHORTXT@";
