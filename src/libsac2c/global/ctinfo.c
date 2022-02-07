@@ -71,8 +71,9 @@ static size_t message_buffer_size = 0;
 static size_t message_line_length = 80;
 
 static char *abort_message_header = "abort: ";
-static char *error_message_header = "error: ";
+static char *error_message_header = "Error:";
 static char *warn_message_header = "warning: ";
+static char *indent_message_header = "  ";
 static char *second_level_header = "=> ";
 static char *state_message_header = "";
 static char *note_message_header = "  ";
@@ -730,8 +731,8 @@ CTIerrorLoc (struct location loc, const char *format, ...)
     DBUG_ENTER ();
 
     va_start (arg_p, format);
-    fprintf (cti_stderr, "%s\n", produce_header (loc, error_message_header));
-    PrintMessage (second_level_header, format, arg_p);
+    fprintf (cti_stderr, "%s:%zu:%zu %s\n", loc.fname, loc.line, loc.col, error_message_header);
+    PrintMessage (indent_message_header, format, arg_p);
     va_end (arg_p);
 
     errors++;

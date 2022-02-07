@@ -1,0 +1,13 @@
+// Example of a test 
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -check tc -b 1:prs
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(CALL_SAC2C) $(SAC2C_FLAGS) $< 2>&1 | grep -Pi "^.*:\d+:\d+ Error:$$" | $(GREP_COMMAND_OUTPUT) "" 3
+// This asserts syntax errors are printed as `filename:line:column error:`
+
+int main () {
+  return 0; This text leads to a syntax error
+}
