@@ -649,7 +649,8 @@ CTIerror (const char *format, ...)
 
     va_start (arg_p, format);
 
-    PrintMessage (error_message_header, format, arg_p);
+    fprintf (cti_stderr, "%s\n", error_message_header);
+    PrintMessage (indent_message_header, format, arg_p);
 
     va_end (arg_p);
 
