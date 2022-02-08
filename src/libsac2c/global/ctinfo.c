@@ -70,9 +70,9 @@ static char *message_buffer = NULL;
 static size_t message_buffer_size = 0;
 static size_t message_line_length = 80;
 
-static char *abort_message_header = "abort: ";
+static char *abort_message_header = "Abort: ";
 static char *error_message_header = "Error:";
-static char *warn_message_header = "warning: ";
+static char *warn_message_header = "Warning: ";
 static char *indent_message_header = "  ";
 static char *second_level_header = "=> ";
 static char *state_message_header = "";
@@ -680,8 +680,8 @@ CTIerrorLine (size_t line, const char *format, ...)
 
     va_start (arg_p, format);
 
-    fprintf (cti_stderr, "%s %zu ", global.filename, line);
-    PrintMessage (error_message_header, format, arg_p);
+    fprintf (cti_stderr, "%s:%zu %s\n", global.filename, line, error_message_header);
+    PrintMessage (indent_message_header, format, arg_p);    
 
     va_end (arg_p);
 
@@ -901,7 +901,8 @@ CTIabort (const char *format, ...)
 
     va_start (arg_p, format);
 
-    PrintMessage (abort_message_header, format, arg_p);
+    fprintf (cti_stderr, "%s\n", abort_message_header);
+    PrintMessage (indent_message_header, format, arg_p);
 
     va_end (arg_p);
 
@@ -952,8 +953,8 @@ CTIabortLine (size_t line, const char *format, ...)
 
     va_start (arg_p, format);
 
-    fprintf (cti_stderr, "%s %zu ", global.filename, line);
-    PrintMessage (abort_message_header, format, arg_p);
+    fprintf (cti_stderr, "%s:%zu %s\n", global.filename, line, abort_message_header);
+    PrintMessage (indent_message_header, format, arg_p);
 
     va_end (arg_p);
 
