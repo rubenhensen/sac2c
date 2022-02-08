@@ -425,12 +425,12 @@ EMREprf (node *arg_node, info *arg_info)
          * Replace memory variable with reused variable
          */
         avis
-          = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)));
+          = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (PRF_ARG2 (arg_node)));
 
-        if (avis != ID_AVIS (PRF_ARG1 (arg_node))) {
+        if (avis != ID_AVIS (PRF_ARG2 (arg_node))) {
 
-            PRF_ARG1 (arg_node) = FREEdoFreeNode (PRF_ARG1 (arg_node));
-            PRF_ARG1 (arg_node) = TBmakeId (avis);
+            PRF_ARG2 (arg_node) = FREEdoFreeNode (PRF_ARG2 (arg_node));
+            PRF_ARG2 (arg_node) = TBmakeId (avis);
         }
         break;
 

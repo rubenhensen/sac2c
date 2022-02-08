@@ -41,12 +41,45 @@
  *     Implementation:
  *
  *     The entire search and replacement is implemented in the function
- *     HandleBlock:
- *     It starts from the return expression of WL code in search for
- *     the above pattern. Once a suitable candidate is found (res_mem from
- *     above), its defining assignment is stored in INFO_LASTSAFE!
- *     If that is the case ModifyBlock is being called to actually perform
- *     the changes explained above.
+ *     HandleBlock. It starts from a WL return expression and follows the definition
+ *     chain upwards. First it checks whether we have a pattern like this:
+ *
+ *     {...
+ *       a  = ...
+ *       m' = suballoc( A, iv);
+ *       m  = fill( copy( a), m');  <- checked so far!
+ *     }: m
+ *
+ *     or (as appears in with3 loops):
+ *
+ *       a  = ...
+ *       m' = suballoc( A, iv);
+ *       m  = fill( [ a], m');  <- checked so far!
+ *
+ *     This is implemented in IsSuballocFill.
+ *
+ *     Then, we try to get rid of the copy instruction by looking at the
+ *     allocation for the variable to be copied: 'a`.
+ *
+ *     Here, we are looking for
+ *
+ *        c  = ...
+ *        m' = alloc / reuse / alloc_or_reuse (c);
+ *        a  = fill( copy( b), m');
+ *
+ *      or :
+ *
+ *        c  = ...
+ *        m' = alloc / reuse / alloc_or_reuse (c);
+ *        ..., a, ...  = = with {...} :(..., gen/modarray(m`), ...);
+ *
+ *     This is implemented in IsAllocReuseFill.
+ *     However, this search needs to be applied recusively iff we have a reuse here!
+ *     This loop is implemented in FindSuballocAlternative.
+ *
+ *     Finally, if a suitable alternative is found, ModifyBlock make the necessary
+ *     modifications in the WL operation block.
+ *
  *
  *****************************************************************************/
 
@@ -318,7 +351,7 @@ removeArrayIndirectionFromSuballoc (node *suballoc, int depth)
 /** <!--********************************************************************-->
  *
  * @fn void ModifyBlock (node *alloc_ass, node *suballoc_ass, node *fill_ass,
- *                       node *new_ret, node *old_rets)
+ *                       node *new_ret_avis, node *old_rets)
  *
  * @brief performs the 4 modifications on the assignment chain staring with 
  *        the assignment that is to be changed into a suballoc:
@@ -335,7 +368,7 @@ removeArrayIndirectionFromSuballoc (node *suballoc, int depth)
  *****************************************************************************/
 static void
 ModifyBlock (node *alloc_ass, node *suballoc_ass, node *fill_ass,
-                  node *new_ret, node *old_rets, int depth)
+                  node *new_ret_avis, node *old_rets, int depth)
 {
     DBUG_ENTER ();
 
@@ -365,7 +398,7 @@ ModifyBlock (node *alloc_ass, node *suballoc_ass, node *fill_ass,
      * Replace CEXPR
      */
     EXPRS_EXPR (old_rets) = FREEdoFreeNode (EXPRS_EXPR (old_rets));
-    EXPRS_EXPR (old_rets) = DUPdoDupNode (new_ret);
+    EXPRS_EXPR (old_rets) = TBmakeId (new_ret_avis);
 
     /*
      * Remove old suballoc/fill(copy) combination
@@ -384,6 +417,234 @@ ModifyBlock (node *alloc_ass, node *suballoc_ass, node *fill_ass,
     DBUG_RETURN ();
 }
 
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool IsAllocReuseFill (node *copy_avis, node **new_copy_avis, node **mem_ass)
+ *
+ * @brief check whether the given copy_avis points to an assignment as the one
+ *        to "a" in the following pattern:
+ *
+ *    c  = ...
+ *    m' = alloc / reuse / alloc_or_reuse (c);
+ *    a  = fill( copy( b), m');
+ *
+ *  or :
+ *
+ *    c  = ...
+ *    m' = alloc / reuse / alloc_or_reuse (c);
+ *    ..., a, ...  = = with {...} :(..., gen/modarray(m`), ...);
+ *
+ *  if found, it returns true and it fills the other return values
+ *     *new_copy_avis  =>  N_avis of "c"   iff  reuse   NULL otherwise
+ *     *mem_ass        =>  "m' = alloc / reuse/ alloc_or_reuse ( ...)
+ *****************************************************************************/
+bool IsAllocReuseFill (node *copy_avis, node **new_copy_avis, node **mem_ass)
+{
+    DBUG_ENTER ();
+
+    bool found = FALSE;
+    node *rhs;
+    node *mem_ass_l = NULL;
+    node *mem_op = NULL;
+    node *withop = NULL;
+    node *ids;
+
+    rhs = ASSIGN_RHS (AVIS_SSAASSIGN (copy_avis));
+    switch (NODE_TYPE (rhs)) {
+    case N_prf:
+        if (PRF_PRF (rhs) == F_fill) {
+            mem_ass_l = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (rhs)));
+            mem_op = ASSIGN_RHS (mem_ass_l);
+        }
+        break;
+
+    case N_with:
+    case N_with2:
+    case N_with3:
+        withop = WITH_OR_WITH2_OR_WITH3_WITHOP (rhs);
+        ids = ASSIGN_LHS (AVIS_SSAASSIGN (copy_avis));
+        while (IDS_AVIS (ids) != copy_avis) {
+            ids = IDS_NEXT (ids);
+            withop = WITHOP_NEXT (withop);
+        }
+        if ((NODE_TYPE (withop) == N_genarray)
+            || (NODE_TYPE (withop) == N_modarray)) {
+            mem_ass_l = AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (withop)));
+            mem_op = ASSIGN_RHS (mem_ass_l);
+        }
+        break;
+    default:
+        break;
+    }
+
+    if ((mem_op != NULL) && 
+        ((PRF_PRF (mem_op) == F_alloc)
+         || (PRF_PRF (mem_op) == F_reuse)
+         || (PRF_PRF (mem_op) == F_alloc_or_reuse))) {
+        found = TRUE;
+        *mem_ass = mem_ass_l;
+        if (PRF_PRF (mem_op) == F_reuse) {
+            DBUG_PRINT ("  found  %s = reuse (%s);",
+                        IDS_NAME (ASSIGN_LHS (*mem_ass)),
+                        ID_NAME (PRF_ARG1 (mem_op)));
+            *new_copy_avis = ID_AVIS (PRF_ARG1 (mem_op));
+        } else {
+            DBUG_PRINT ("  found  %s = alloc / alloc_or_reuse (...);",
+                        IDS_NAME (ASSIGN_LHS (*mem_ass)));
+            *new_copy_avis = NULL;
+        }
+
+        if (withop == NULL) {
+            DBUG_PRINT ("         %s = fill ( _, %s);",
+                        AVIS_NAME (copy_avis),
+                        ID_NAME (PRF_ARG2 (rhs)));
+        } else {
+            DBUG_PRINT ("         ...,%s,... = with {...} :(..., gen/modarray(%s), ...);",
+                        AVIS_NAME (copy_avis),
+                        ID_NAME (WITHOP_MEM (withop)));
+        }
+    }
+    DBUG_RETURN (found);
+}
+
+
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool IsSuballocFill (node * block, node *avis,
+ *                          node **copy_avis, node **mem_ass, int *depth)
+ *
+ * @brief check whether the given wl_ass points to an assignment as the one
+ *        to "m" in the following pattern:
+ *  {...
+ *    a  = ...
+ *    m' = suballoc( A, iv);
+ *    m  = fill( copy( a), m');
+ *  }: m
+ *
+ *  or (as appears in with3 loops):
+ *
+ *    a  = ...
+ *    m' = suballoc( A, iv);
+ *    m  = fill( [ a], m');
+ *
+ *  if found, it returns true and it fills the other return values
+ *     *copy_avis  =>  N_avis of "a"
+ *     *mem_ass    =>  "m' = suballoc( ...);"
+ *     *depth      =>  0 / nesting depth of singleton array in "fill" (with3)
+ *****************************************************************************/
+bool IsSuballocFill (node *block, node *avis,
+                     node **copy_avis, node **mem_ass, int *depth)
+{
+    DBUG_ENTER ();
+
+    node *rhs;
+    node *assigns;
+    bool isinblock = FALSE;
+
+    rhs = ASSIGN_RHS (AVIS_SSAASSIGN (avis));
+
+    if ((NODE_TYPE (rhs) == N_prf) && (PRF_PRF (rhs) == F_fill)
+        && ((((NODE_TYPE (PRF_ARG1 (rhs)) == N_prf)
+              && (PRF_PRF (PRF_ARG1 (rhs)) == F_copy)))
+            || ((NODE_TYPE (PRF_ARG1 (rhs)) == N_array)
+                && idArray (PRF_ARG1 (rhs))))) {
+
+        *depth = 0;
+        *copy_avis = ID_AVIS (copyOrArray (PRF_ARG1 (rhs), depth));
+        *mem_ass = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (rhs)));
+
+        /*
+         * copy_id must be assigned inside the current block in order to
+         * move suballoc in front of a.
+         */
+        if (AVIS_SSAASSIGN (*copy_avis) != NULL) {
+            assigns = BLOCK_ASSIGNS (block);
+            while (assigns != NULL) {
+                if (assigns == AVIS_SSAASSIGN (avis)) {
+                    isinblock = TRUE;
+                    break;
+                }
+                assigns = ASSIGN_NEXT (assigns);
+            }
+        }
+        isinblock = isinblock
+                    && (PRF_PRF (LET_EXPR (ASSIGN_STMT (*mem_ass))) == F_suballoc);
+    }
+    DBUG_RETURN (isinblock);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *FindSuballocAlternative (node *copy_avis, node *sub_ass,
+ *                                    info* arg_info)
+ *
+ * @brief try to push the suballoc further up by inspecting the copy_avis.
+ *        If its memory is locally allocated (IsAllocReuseFill) update
+ *        copy_ass and sub_ass accordingly (done by IsAllocReuseFill),
+ *        try pushing recursively further, provided the new allocation
+ *        happens through reuse which is signalled by a non-NULL new copy_info.
+ *
+ *****************************************************************************/
+node *FindSuballocAlternative (node *copy_avis, node *sub_ass, info* arg_info)
+{
+    DBUG_ENTER ();
+
+    bool found;
+    node *def;
+    node *suballoc;
+
+    suballoc = ASSIGN_RHS (sub_ass);
+
+    INFO_LASTSAFE (arg_info) = NULL;
+    INFO_NOUSE (arg_info) = (node *)LUTsearchInLutPp (
+                                        INFO_REUSELUT (arg_info),
+                                        ID_AVIS (PRF_ARG1 (suballoc)));
+    if (INFO_NOUSE (arg_info) == ID_AVIS (PRF_ARG1 (suballoc))) {
+        INFO_NOUSE (arg_info) = NULL;
+        DBUG_PRINT ("  NOUSE set to NULL.");
+    } else {
+        DBUG_PRINT ("  NOUSE set to %s.", AVIS_NAME (INFO_NOUSE (arg_info)));
+    }
+    INFO_NOAP (arg_info) = NULL;
+
+    INFO_OK (arg_info) = TRUE;
+    while (INFO_OK (arg_info)) {
+        DBUG_PRINT ("  checking definition of '%s`:",
+                    AVIS_NAME (copy_avis));
+        def = AVIS_SSAASSIGN (copy_avis);
+        /*
+         * BETWEEN def and LASTSAFE:
+         *
+         * NOUSE must not be used at all!!!
+         * NOAP must not be used in function applications
+         */
+        TRAVpush (TR_ipch);
+        ASSIGN_NEXT (def) = TRAVdo (ASSIGN_NEXT (def), arg_info);
+        TRAVpop ();
+
+        if (INFO_OK (arg_info)) {
+            found = IsAllocReuseFill (copy_avis, &copy_avis, &sub_ass);
+            if (found) {
+                INFO_LASTSAFE (arg_info) = sub_ass;
+                if (copy_avis != NULL) {
+                    INFO_NOAP (arg_info) = copy_avis;
+                    DBUG_PRINT ("  NOAP set to %s.",
+                                 AVIS_NAME (INFO_NOAP (arg_info)));
+                } else {
+                    INFO_OK (arg_info) = FALSE;
+                }
+            } else {
+                INFO_OK (arg_info) = FALSE;
+            }
+        }
+    }
+
+   DBUG_RETURN (sub_ass);
+}
+
+
 /** <!--********************************************************************-->
  *
  * @fn node *HandleBlock(node *arg_node)
@@ -395,208 +656,51 @@ ModifyBlock (node *alloc_ass, node *suballoc_ass, node *fill_ass,
 static node *
 HandleBlock (node *block, node *rets, info *arg_info)
 {
+    node *avis;
+    node *cavis;
+    node *sub_ass, *new_sub_ass;
+    node *suballoc;
     int depth = 0;
     DBUG_ENTER ();
 
     while (rets != NULL) {
-        node *cid;
-        node *wlass;
-        node *rhs;
-        node *mem;
-        node *val;
-        node *cval;
-        node *memass;
-        node *memop;
-        node *avis;
-        bool isinblock;
-        node *assigns;
 
-        cid = EXPRS_EXPR (rets);
-        wlass = AVIS_SSAASSIGN (ID_AVIS (cid));
+        avis = ID_AVIS (EXPRS_EXPR (rets));
 
-        if (wlass != NULL) {
-            rhs = ASSIGN_RHS (wlass);
+        if ((AVIS_SSAASSIGN (avis) != NULL) 
+            && IsSuballocFill (block, avis, &cavis, &sub_ass, &depth)) {
+            /*
+             * we found:
+             *  {...
+             *    a  = ...
+             *    m' = suballoc( A, iv);        sub_ass: this assignment
+             *    m  = fill( copy( a), m');     cavis: N_avis of 'a`
+             *  }: m
+             */
+            suballoc = ASSIGN_RHS (sub_ass);
 
-            if ((NODE_TYPE (rhs) == N_prf) && (PRF_PRF (rhs) == F_fill)
-                && ((((NODE_TYPE (PRF_ARG1 (rhs)) == N_prf)
-                      && (PRF_PRF (PRF_ARG1 (rhs)) == F_copy)))
-                    || ((NODE_TYPE (PRF_ARG1 (rhs)) == N_array)
-                        && idArray (PRF_ARG1 (rhs))))) {
-                /*
-                 * Search for suballoc situation
-                 * {...
-                 *   a  = ...
-                 *   m' = suballoc( A, iv);
-                 *   m  = fill( copy( a), m');  <- checked so far!
-                 * }: m
-                 *
-                 * or (as appears in with3 loops:
-                 *
-                 *   a  = ...
-                 *   m' = suballoc( A, iv);
-                 *   m  = fill( [ a], m');  <- checked so far!
-                 */
-                val = PRF_ARG1 (rhs);                      // copy(a) or [a]
-                mem = PRF_ARG2 (rhs);                      // m'
-                cval = copyOrArray (val, &depth);          // a
-                avis = ID_AVIS (cval);                     // avis of a
-                memass = AVIS_SSAASSIGN (ID_AVIS (mem));   // m' = <suballoc?>
-                memop = LET_EXPR (ASSIGN_STMT (memass));   // <suballoc?>
+            DBUG_PRINT ("found  %s = suballoc( %s /*outer*/, %s /*idx*/, %d /*depth*/);",
+                        IDS_NAME (ASSIGN_LHS (sub_ass)),
+                        ID_NAME (PRF_ARG1 (suballoc)),
+                        ID_NAME (PRF_ARG2 (suballoc)),
+                        NUM_VAL (PRF_ARG3 (suballoc)));
+            DBUG_PRINT ("       %s = fill( copy (%s), %s);",
+                        ID_NAME (EXPRS_EXPR (rets)),
+                        AVIS_NAME (cavis),
+                        IDS_NAME (ASSIGN_LHS (sub_ass)));
 
-                /*
-                 * a must be assigned inside the current block in order to
-                 * move suballoc in front of a.
-                 */
-                isinblock = FALSE;
-                if (AVIS_SSAASSIGN (avis) != NULL) {
-                    assigns = BLOCK_ASSIGNS (block);
-                    while (assigns != NULL) {
-                        if (assigns == AVIS_SSAASSIGN (avis)) {
-                            isinblock = TRUE;
-                            break;
-                        }
-                        assigns = ASSIGN_NEXT (assigns);
-                    }
-                }
-
-                if ((isinblock) && (PRF_PRF (memop) == F_suballoc)) {
-                    /*
-                     * Situation recognized, find highest position for suballoc
-                     */
-                    DBUG_PRINT ("found  %s = suballoc( %s /*outer*/, %s /*idx*/, %d /*depth*/);",
-                                IDS_NAME (LET_IDS (ASSIGN_STMT (memass))),
-                                ID_NAME (PRF_ARG1 (memop)),
-                                ID_NAME (PRF_ARG2 (memop)),
-                                NUM_VAL (PRF_ARG3 (memop)));
-                    DBUG_PRINT ("       %s = fill( copy (%s), %s);",
-                                ID_NAME (cid),
-                                AVIS_NAME (avis),
-                                IDS_NAME (LET_IDS (ASSIGN_STMT (memass))));
-
-                    node *def = AVIS_SSAASSIGN (avis);
-                    INFO_LASTSAFE (arg_info) = NULL;
-                    INFO_NOUSE (arg_info)
-                      = (node *)LUTsearchInLutPp (INFO_REUSELUT (arg_info),
-                                                  ID_AVIS (PRF_ARG1 (memop)));
-                    if (INFO_NOUSE (arg_info) == ID_AVIS (PRF_ARG1 (memop))) {
-                        INFO_NOUSE (arg_info) = NULL;
-                    }
-                    INFO_NOAP (arg_info) = NULL;
-
-                    /*
-                     * BETWEEN def and LASTSAFE:
-                     *
-                     * NOUSE must not be used at all!!!
-                     * NOAP must not be used in function applications
-                     */
-                    INFO_OK (arg_info) = TRUE;
-
-                    while (INFO_OK (arg_info)) {
-                        DBUG_PRINT ("  checking definition of '%s`:",
-                                    AVIS_NAME (avis));
-                        TRAVpush (TR_ipch);
-                        ASSIGN_NEXT (def) = TRAVdo (ASSIGN_NEXT (def), arg_info);
-                        TRAVpop ();
-
-                        if (INFO_OK (arg_info)) {
-                            node *defrhs = ASSIGN_RHS (def);
-                            node *withop, *ids;
-                            switch (NODE_TYPE (defrhs)) {
-                            case N_prf:
-                                if (PRF_PRF (defrhs) == F_fill) {
-                                    node *memass
-                                      = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (defrhs)));
-                                    node *memop = ASSIGN_RHS (memass);
-                                    if ((PRF_PRF (memop) == F_alloc)
-                                        || (PRF_PRF (memop) == F_reuse)
-                                        || (PRF_PRF (memop) == F_alloc_or_reuse)) {
-                                        INFO_LASTSAFE (arg_info) = memass;
-                                        if (PRF_PRF (memop) == F_reuse) {
-                                            DBUG_PRINT ("  found  %s = reuse (%s);",
-                                                        ID_NAME (PRF_ARG2 (defrhs)),
-                                                        ID_NAME (PRF_ARG1 (memop)));
-                                            avis = ID_AVIS (PRF_ARG1 (memop));
-                                            def = AVIS_SSAASSIGN (
-                                              ID_AVIS (PRF_ARG1 (memop)));
-                                            INFO_NOAP (arg_info)
-                                              = ID_AVIS (PRF_ARG1 (memop));
-                                        } else {
-                                            DBUG_PRINT ("  found  %s = alloc / alloc_or_reuse (...);",
-                                                        ID_NAME (PRF_ARG2 (defrhs)));
-                                            INFO_OK (arg_info) = FALSE;
-                                        }
-                                        DBUG_PRINT ("         %s = fill ( _, %s);",
-                                                    AVIS_NAME (avis),
-                                                    ID_NAME (PRF_ARG2 (defrhs)));
-                                    } else {
-                                        INFO_OK (arg_info) = FALSE;
-                                    }
-                                } else {
-                                    INFO_OK (arg_info) = FALSE;
-                                }
-                                break;
-
-                            case N_with:
-                            case N_with2:
-                            case N_with3:
-                                withop = WITH_OR_WITH2_OR_WITH3_WITHOP (defrhs);
-                                ids = ASSIGN_LHS (def);
-                                while (IDS_AVIS (ids) != avis) {
-                                    ids = IDS_NEXT (ids);
-                                    withop = WITHOP_NEXT (withop);
-                                }
-                                if ((NODE_TYPE (withop) == N_genarray)
-                                    || (NODE_TYPE (withop) == N_modarray)) {
-                                    node *memass
-                                      = AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (withop)));
-                                    node *memop = ASSIGN_RHS (memass);
-                                    if ((PRF_PRF (memop) == F_alloc)
-                                        || (PRF_PRF (memop) == F_reuse)
-                                        || (PRF_PRF (memop) == F_alloc_or_reuse)) {
-                                        INFO_LASTSAFE (arg_info) = memass;
-                                        if (PRF_PRF (memop) == F_reuse) {
-                                            DBUG_PRINT ("  found  %s = reuse (%s);",
-                                                        ID_NAME (WITHOP_MEM (withop)),
-                                                        ID_NAME (PRF_ARG1 (memop)));
-                                            avis = ID_AVIS (PRF_ARG1 (memop));
-                                            def = AVIS_SSAASSIGN (
-                                              ID_AVIS (PRF_ARG1 (memop)));
-                                            INFO_NOAP (arg_info)
-                                              = ID_AVIS (PRF_ARG1 (memop));
-                                        } else {
-                                            DBUG_PRINT ("  found  %s = alloc / alloc_or_reuse (...);",
-                                                        ID_NAME (WITHOP_MEM (withop)));
-                                            INFO_OK (arg_info) = FALSE;
-                                        }
-                                        DBUG_PRINT ("         ...,%s,... = with {...} :(..., gen/modarray(%s), ...);",
-                                                    AVIS_NAME (avis),
-                                                    ID_NAME (WITHOP_MEM (withop)));
-                                    } else {
-                                        INFO_OK (arg_info) = FALSE;
-                                    }
-                                } else {
-                                    INFO_OK (arg_info) = FALSE;
-                                }
-                                break;
-
-                            default:
-                                INFO_OK (arg_info) = FALSE;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (INFO_LASTSAFE (arg_info) != NULL) {
-                        ModifyBlock (INFO_LASTSAFE (arg_info), // alloc_ass to be modified
-                                     memass,                   // original suballoc_ass
-                                     wlass,                    // original fill_ass
-                                     cval,                     // originally copied now returned
-                                     rets,                     // rets holding the old returned
-                                     depth);                   // weird depth value....
-                        INFO_CHANGED (arg_info) = TRUE;
-                    }
-                }
-                break;
+            /*
+             * Situation recognized, find highest position for suballoc
+             */
+            new_sub_ass = FindSuballocAlternative (cavis, sub_ass, arg_info);
+            if (new_sub_ass != sub_ass) {
+                ModifyBlock (new_sub_ass,           // alloc_ass to be modified
+                             sub_ass,                // original suballoc_ass (del!)
+                             AVIS_SSAASSIGN (avis),  // original fill_ass (del!)
+                             cavis,                  // originally copied now returned
+                             rets,                   // rets holding the old returned
+                             depth);                 // weird depth value....
+                INFO_CHANGED (arg_info) = TRUE;
             }
         }
         rets = EXPRS_NEXT (rets);
@@ -954,6 +1058,7 @@ IPCHid (node *arg_node, info *arg_info)
 
     if (ID_AVIS (arg_node) == INFO_NOUSE (arg_info)) {
         INFO_OK (arg_info) = FALSE;
+        DBUG_PRINT ("  found a use of %s; aborting search!", ID_NAME (arg_node));
     }
 
     DBUG_RETURN (arg_node);
