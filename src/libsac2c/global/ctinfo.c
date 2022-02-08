@@ -70,9 +70,9 @@ static char *message_buffer = NULL;
 static size_t message_buffer_size = 0;
 static size_t message_line_length = 80;
 
-static char *abort_message_header = "Abort: ";
+static char *abort_message_header = "Abort:";
 static char *error_message_header = "Error:";
-static char *warn_message_header = "Warning: ";
+static char *warn_message_header = "Warning:";
 static char *indent_message_header = "  ";
 static char *second_level_header = "=> ";
 static char *state_message_header = "";
@@ -403,7 +403,7 @@ AbortCompilation (void)
 
     CleanUp ();
 
-    (void)fprintf (cti_stderr, "compilation failed while %s",
+    (void)fprintf (cti_stderr, "Compilation failed while %s",
                    PHIphaseText (global.compiler_phase));
     if (errors > 0)
         (void)fprintf (cti_stderr, ", %d error(s)", errors);
@@ -1038,8 +1038,9 @@ CTIwarnLoc (struct location loc, const char *format, ...)
 
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
-        fprintf (cti_stderr, "%s\n", produce_header (loc, warn_message_header));
-        PrintMessage (second_level_header, format, arg_p);
+
+        fprintf (cti_stderr, "%s:%zu:%zu %s\n", loc.fname, loc.line, loc.col, warn_message_header);
+        PrintMessage (indent_message_header, format, arg_p);
         va_end (arg_p);
 
         warnings++;
@@ -1069,8 +1070,8 @@ CTIwarnLine (size_t line, const char *format, ...)
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
-        fprintf (cti_stderr, "%s %zu ", global.filename, line);
-        PrintMessage (warn_message_header, format, arg_p);
+        fprintf (cti_stderr, "%s:%zu %s\n", global.filename, line, warn_message_header);
+        PrintMessage (indent_message_header, format, arg_p);
 
         va_end (arg_p);
 
@@ -1100,8 +1101,9 @@ CTIwarn (const char *format, ...)
 
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
-
-        PrintMessage (warn_message_header, format, arg_p);
+        
+        fprintf (cti_stderr, "%s\n", warn_message_header);
+        PrintMessage (indent_message_header, format, arg_p);
 
         va_end (arg_p);
 

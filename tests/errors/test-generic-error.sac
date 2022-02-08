@@ -1,4 +1,4 @@
-// This test asserts syntax errors are printed as `Error:`
+// This test asserts that syntax errors are printed as `Error:`
 // SAC_TEST|include common.mk
 // SAC_TEST|SAC2C_FLAGS += -check tc -b 1:loc -printstart 1:loc
 // SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
