@@ -5993,8 +5993,12 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (arg_node)) == N_num),
+                 "first arg of suballoc should be rc-value introduced in phase rc;"
+                 " node type found: %s", global.mdb_nodetype[NODE_TYPE (PRF_ARG1 (arg_node))]);
+
     let_ids = INFO_LASTIDS (arg_info);
-    mem_id = PRF_ARG1 (arg_node);
+    mem_id = PRF_ARG2 (arg_node);
     sc = NTUgetShapeClassFromNType (IDS_NTYPE (let_ids));
 
     DBUG_ASSERT (sc != C_scl, "scalars cannot be suballocated\n");
@@ -6003,17 +6007,17 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
         ret_node
           = TCmakeAssignIcm5 ("CUDA_WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
                               TBmakeNum (TUgetFullDimEncoding (IDS_NTYPE (let_ids))),
-                              DUPdupIdNt (PRF_ARG1 (arg_node)),
+                              DUPdupIdNt (PRF_ARG2 (arg_node)),
                               TBmakeNum (TUgetFullDimEncoding (ID_NTYPE (PRF_ARG1 (arg_node)))),
-                              DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+                              DUPdupIdNt (PRF_ARG3 (arg_node)), NULL);
     } else if (global.backend == BE_distmem) {
         ret_node = TCmakeAssignIcm3 ("WL_DISTMEM_SUBALLOC", DUPdupIdsIdNt (let_ids),
-                                     DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                     DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+                                     DUPdupIdNt (PRF_ARG2 (arg_node)),
+                                     DUPdupIdNt (PRF_ARG3 (arg_node)), NULL);
     } else {
         ret_node = TCmakeAssignIcm3 ("WL_SUBALLOC", DUPdupIdsIdNt (let_ids),
-                                     DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                     DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+                                     DUPdupIdNt (PRF_ARG2 (arg_node)),
+                                     DUPdupIdNt (PRF_ARG3 (arg_node)), NULL);
     }
 
     if ((global.backend == BE_mutc)
@@ -6029,10 +6033,10 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
          *    the dimensionality of the memvar. The third arg
          *    of the suballoc holds this information.
          */
-        if (TCcountExprs (PRF_ARGS (arg_node)) >= 3) {
+        if (TCcountExprs (PRF_ARGS (arg_node)) >= 4) {
             sub_get_dim = TCmakeIcm2 (prf_ccode_tab[F_sub_SxS],
                                       TCmakeIcm1 ("ND_A_DIM", DUPdupIdNt (mem_id)),
-                                      DUPdoDupNode (PRF_ARG3 (arg_node)));
+                                      DUPdoDupNode (PRF_ARG4 (arg_node)));
         }
         /*
          * 2) annotate shape for suballoc, if information present and
@@ -6040,13 +6044,13 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
          *    TODO MUTC: As we only support genarray for now, this
          *               information always has to be present!
          */
-        if (TCcountExprs (PRF_ARGS (arg_node)) >= 4) {
+        if (TCcountExprs (PRF_ARGS (arg_node)) >= 5) {
             if (!KNOWN_SHAPE (TUgetFullDimEncoding (IDS_NTYPE (let_ids)))) {
 #if 0 /* Still may be present if not canonical */
-        DBUG_ASSERT (PRF_ARG4( arg_node) != NULL, "missing shape information for suballoc");
+        DBUG_ASSERT (PRF_ARG5( arg_node) != NULL, "missing shape information for suballoc");
 #endif
 
-                ret_node = TBmakeAssign (MakeSetShapeIcm (PRF_ARG4 (arg_node), let_ids),
+                ret_node = TBmakeAssign (MakeSetShapeIcm (PRF_ARG5 (arg_node), let_ids),
                                          ret_node);
             }
         }

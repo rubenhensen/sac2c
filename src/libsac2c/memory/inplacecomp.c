@@ -1,10 +1,85 @@
 /** <!--********************************************************************-->
  *
- * @defgroup icp Inplace Computation
+ * @defgroup ipc Inplace Computation
  *
  * @ingroup mm
  *
  * @{
+ *     Concept:
+ *    
+ *     This traversal tries to propagate upwards suballoc operations to
+ *     get rid of copy operations whenever possible
+ *
+ *     We look for patterns like this:
+ *
+ *     a = with {
+ *           ( lb <= iv < ub) {
+ *              assigns;
+ *              res_mem = alloc (rc, def-shp);
+ *              res = fill (expr, res_mem);  || ...res... = with {}:
+ *                                           || (..., gen/modarray(res_mem), ...);
+ *              inner_mem = suballoc (a_mem, iv, d);
+ *              inner = fill (copy (res), inner_mem);
+ *           } : inner;
+ *         } : genarray( shp, def, a_mem);
+ *
+ *     and replace it with
+ *
+ *     a = with {
+ *           ( lb <= iv < ub) {
+ *              IPC [[ assigns ]] ;
+ *              res_mem = suballoc (a_mem, iv, d);         <<<< change!
+ *              res = fill (expr, res_mem); || ...
+ *              //  inner_mem = suballoc (a_mem, iv, d);   <<<< delete!
+ *              //  inner = fill (copy (res), inner_mem);  <<<< delete!
+ *           } : res;                                      <<<< change!
+ *         } : genarray( shp, def, a_mem);
+ *     
+ *     We can also deal with res_mem being a reuse of some other array!
+ *     In that case, we simply follow the reused identifier further up.
+ *
+ *     Implementation:
+ *
+ *     The entire search and replacement is implemented in the function
+ *     HandleBlock. It starts from a WL return expression and follows the definition
+ *     chain upwards. First it checks whether we have a pattern like this:
+ *
+ *     {...
+ *       a  = ...
+ *       m' = suballoc( A, iv);
+ *       m  = fill( copy( a), m');  <- checked so far!
+ *     }: m
+ *
+ *     or (as appears in with3 loops):
+ *
+ *       a  = ...
+ *       m' = suballoc( A, iv);
+ *       m  = fill( [ a], m');  <- checked so far!
+ *
+ *     This is implemented in IsSuballocFill.
+ *
+ *     Then, we try to get rid of the copy instruction by looking at the
+ *     allocation for the variable to be copied: 'a`.
+ *
+ *     Here, we are looking for
+ *
+ *        c  = ...
+ *        m' = alloc / reuse / alloc_or_reuse (c);
+ *        a  = fill( copy( b), m');
+ *
+ *      or :
+ *
+ *        c  = ...
+ *        m' = alloc / reuse / alloc_or_reuse (c);
+ *        ..., a, ...  = = with {...} :(..., gen/modarray(m`), ...);
+ *
+ *     This is implemented in IsAllocReuseFill.
+ *     However, this search needs to be applied recusively iff we have a reuse here!
+ *     This loop is implemented in FindSuballocAlternative.
+ *
+ *     Finally, if a suitable alternative is found, ModifyBlock make the necessary
+ *     modifications in the WL operation block.
+ *
  *
  *****************************************************************************/
 
@@ -22,7 +97,7 @@
 #include "tree_compound.h"
 #include "traverse.h"
 
-#define DBUG_PREFIX "EMIP"
+#define DBUG_PREFIX "IPC"
 #include "debug.h"
 
 #include "print.h"
@@ -114,7 +189,7 @@ FreeInfo (info *info)
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPdoInplaceComputation( node *syntax_tree)
+ * @fn node *IPCdoInplaceComputation( node *syntax_tree)
  *
  * @brief starting point of Inplace Computation traversal
  *
@@ -124,13 +199,13 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-EMIPdoInplaceComputation (node *syntax_tree)
+IPCdoInplaceComputation (node *syntax_tree)
 {
     DBUG_ENTER ();
 
     DBUG_PRINT ("Inplace Computation  optimization...");
 
-    TRAVpush (TR_emip);
+    TRAVpush (TR_ipc);
     syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
 
@@ -152,9 +227,15 @@ EMIPdoInplaceComputation (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *copyOrArray(node *arg_node)
+ * @fn node *copyOrArray(node *val, int *depth)
  *
- * @brief Get id in first place of prf
+ * @brief expects to obtain either 
+ *        F_copy ( N_id)     or
+ *        [...[ N_id ]...]   (all arrays are singletons!)
+ *        as first argument.
+ * @param val 
+ * @return returns N_id node and increments depth by the nesting of the N_array
+ *         nodes (if val is an N_array)
  *
  *****************************************************************************/
 
@@ -187,7 +268,9 @@ copyOrArray (node *val, int *depth)
  *
  * @fn node *idArray(node *arg_node)
  *
- * @brief Is this an array containing an id?
+ * @brief accepts arbitrary nodes. Returns true, iff the argument is either
+ *        N_id     or
+ *        [...[N_id]...]    (all arrays are singletons!)
  *
  *****************************************************************************/
 
@@ -213,9 +296,15 @@ idArray (node *array)
 }
 /** <!--********************************************************************-->
  *
- * @fn node *removeArrayIndirectionFromSuballoc( node *node, int *depth)
+ * @fn node *removeArrayIndirectionFromSuballoc( node *suballoc, int depth)
  *
  * @brief Remove the array indirection from suballoc.
+ *        It expects to obtain
+ *        F_suballoc (arg1, ..., argn)
+ *        If (n >= 4), it expects either
+ *        suballoc ( _, _, _, F_shape ( F_genarray ( array, _)))   (pat) or
+ *        suballoc ( _, _, _, F_shape ( array))                    (pat2)
+ *        Then, we elide depth-many elements of that array!
  *
  *****************************************************************************/
 static node *
@@ -261,6 +350,305 @@ removeArrayIndirectionFromSuballoc (node *suballoc, int depth)
 
 /** <!--********************************************************************-->
  *
+ * @fn void ModifyBlock (node *alloc_ass, node *suballoc_ass, node *fill_ass,
+ *                       node *new_ret_avis, node *old_rets)
+ *
+ * @brief performs the 4 modifications on the assignment chain staring with 
+ *        the assignment that is to be changed into a suballoc:
+ *        1) change alloc_ass RHS into ia copy of suballoc_ass
+ *        2) delete suballoc_ass
+ *        3) delete fill_ass
+ *        4) change the ret in old_rets into new_ret
+ *
+ *        This also does some weird stuff that I (sbs) do not understand:
+ *        - it strips suballoc_ass of potential extra arguments?!
+ *        - in case the allocated value is a scalar, it turns it into a 
+ *          one element vector?????!
+ *
+ *****************************************************************************/
+static void
+ModifyBlock (node *alloc_ass, node *suballoc_ass, node *fill_ass,
+                  node *new_ret_avis, node *old_rets, int depth)
+{
+    DBUG_ENTER ();
+
+    int changed = 0;
+    ntype *type = NULL;
+    /*
+     * Replace some alloc or reuse or alloc_or_reuse with suballoc
+     */
+    DBUG_PRINT ("  changing allocation of '%s` to suballoc",
+                IDS_NAME (ASSIGN_LHS (alloc_ass)));
+    ASSIGN_RHS (alloc_ass) = FREEdoFreeNode (ASSIGN_RHS (alloc_ass));
+    ASSIGN_RHS (alloc_ass) = removeArrayIndirectionFromSuballoc (
+                               DUPdoDupNode (ASSIGN_RHS (suballoc_ass)),
+                               depth);
+
+    /*
+     * Are we suballocing a scaler?
+     * If so make it a [1] array.
+     */
+    type = AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (alloc_ass)));
+    if (TUisScalar (type)) {
+        AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (alloc_ass)))
+          = TYmakeAKS (TYgetScalar (type), SHcreateShape (1, 1));
+    }
+
+    /*
+     * Replace CEXPR
+     */
+    EXPRS_EXPR (old_rets) = FREEdoFreeNode (EXPRS_EXPR (old_rets));
+    EXPRS_EXPR (old_rets) = TBmakeId (new_ret_avis);
+
+    /*
+     * Remove old suballoc/fill(copy) combination
+     */
+    while (alloc_ass != NULL) {
+        if ((ASSIGN_NEXT (alloc_ass) == suballoc_ass)
+            || (ASSIGN_NEXT (alloc_ass) == fill_ass)) {
+            ASSIGN_NEXT (alloc_ass) = FREEdoFreeNode (ASSIGN_NEXT (alloc_ass));
+            changed++;
+        } else {
+            alloc_ass = ASSIGN_NEXT (alloc_ass);
+        }
+    }
+    DBUG_ASSERT (changed==2, "ModifyBlock failed; found %d of 2 assignments"
+                             " to delete", changed);
+    DBUG_RETURN ();
+}
+
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool IsAllocReuseFill (node *copy_avis, node **new_copy_avis, node **mem_ass)
+ *
+ * @brief check whether the given copy_avis points to an assignment as the one
+ *        to "a" in the following pattern:
+ *
+ *    c  = ...
+ *    m' = alloc / reuse / alloc_or_reuse (c);
+ *    a  = fill( copy( b), m');
+ *
+ *  or :
+ *
+ *    c  = ...
+ *    m' = alloc / reuse / alloc_or_reuse (c);
+ *    ..., a, ...  = = with {...} :(..., gen/modarray(m`), ...);
+ *
+ *  if found, it returns true and it fills the other return values
+ *     *new_copy_avis  =>  N_avis of "c"   iff  reuse   NULL otherwise
+ *     *mem_ass        =>  "m' = alloc / reuse/ alloc_or_reuse ( ...)
+ *****************************************************************************/
+bool IsAllocReuseFill (node *copy_avis, node **new_copy_avis, node **mem_ass)
+{
+    DBUG_ENTER ();
+
+    bool found = FALSE;
+    node *rhs;
+    node *mem_ass_l = NULL;
+    node *mem_op = NULL;
+    node *withop = NULL;
+    node *ids;
+
+    rhs = ASSIGN_RHS (AVIS_SSAASSIGN (copy_avis));
+    switch (NODE_TYPE (rhs)) {
+    case N_prf:
+        if (PRF_PRF (rhs) == F_fill) {
+            mem_ass_l = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (rhs)));
+            mem_op = ASSIGN_RHS (mem_ass_l);
+        }
+        break;
+
+    case N_with:
+    case N_with2:
+    case N_with3:
+        withop = WITH_OR_WITH2_OR_WITH3_WITHOP (rhs);
+        ids = ASSIGN_LHS (AVIS_SSAASSIGN (copy_avis));
+        while (IDS_AVIS (ids) != copy_avis) {
+            ids = IDS_NEXT (ids);
+            withop = WITHOP_NEXT (withop);
+        }
+        if ((NODE_TYPE (withop) == N_genarray)
+            || (NODE_TYPE (withop) == N_modarray)) {
+            mem_ass_l = AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (withop)));
+            mem_op = ASSIGN_RHS (mem_ass_l);
+        }
+        break;
+    default:
+        break;
+    }
+
+    if ((mem_op != NULL) && 
+        ((PRF_PRF (mem_op) == F_alloc)
+         || (PRF_PRF (mem_op) == F_reuse)
+         || (PRF_PRF (mem_op) == F_alloc_or_reuse))) {
+        found = TRUE;
+        *mem_ass = mem_ass_l;
+        if (PRF_PRF (mem_op) == F_reuse) {
+            DBUG_PRINT ("  found  %s = reuse (%s);",
+                        IDS_NAME (ASSIGN_LHS (*mem_ass)),
+                        ID_NAME (PRF_ARG1 (mem_op)));
+            *new_copy_avis = ID_AVIS (PRF_ARG1 (mem_op));
+        } else {
+            DBUG_PRINT ("  found  %s = alloc / alloc_or_reuse (...);",
+                        IDS_NAME (ASSIGN_LHS (*mem_ass)));
+            *new_copy_avis = NULL;
+        }
+
+        if (withop == NULL) {
+            DBUG_PRINT ("         %s = fill ( _, %s);",
+                        AVIS_NAME (copy_avis),
+                        ID_NAME (PRF_ARG2 (rhs)));
+        } else {
+            DBUG_PRINT ("         ...,%s,... = with {...} :(..., gen/modarray(%s), ...);",
+                        AVIS_NAME (copy_avis),
+                        ID_NAME (WITHOP_MEM (withop)));
+        }
+    }
+    DBUG_RETURN (found);
+}
+
+
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool IsSuballocFill (node * block, node *avis,
+ *                          node **copy_avis, node **mem_ass, int *depth)
+ *
+ * @brief check whether the given wl_ass points to an assignment as the one
+ *        to "m" in the following pattern:
+ *  {...
+ *    a  = ...
+ *    m' = suballoc( A, iv);
+ *    m  = fill( copy( a), m');
+ *  }: m
+ *
+ *  or (as appears in with3 loops):
+ *
+ *    a  = ...
+ *    m' = suballoc( A, iv);
+ *    m  = fill( [ a], m');
+ *
+ *  if found, it returns true and it fills the other return values
+ *     *copy_avis  =>  N_avis of "a"
+ *     *mem_ass    =>  "m' = suballoc( ...);"
+ *     *depth      =>  0 / nesting depth of singleton array in "fill" (with3)
+ *****************************************************************************/
+bool IsSuballocFill (node *block, node *avis,
+                     node **copy_avis, node **mem_ass, int *depth)
+{
+    DBUG_ENTER ();
+
+    node *rhs;
+    node *assigns;
+    bool isinblock = FALSE;
+
+    rhs = ASSIGN_RHS (AVIS_SSAASSIGN (avis));
+
+    if ((NODE_TYPE (rhs) == N_prf) && (PRF_PRF (rhs) == F_fill)
+        && ((((NODE_TYPE (PRF_ARG1 (rhs)) == N_prf)
+              && (PRF_PRF (PRF_ARG1 (rhs)) == F_copy)))
+            || ((NODE_TYPE (PRF_ARG1 (rhs)) == N_array)
+                && idArray (PRF_ARG1 (rhs))))) {
+
+        *depth = 0;
+        *copy_avis = ID_AVIS (copyOrArray (PRF_ARG1 (rhs), depth));
+        *mem_ass = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (rhs)));
+
+        /*
+         * copy_avis must be assigned inside the current block in order to
+         * move suballoc in front of a.
+         */
+        if (AVIS_SSAASSIGN (*copy_avis) != NULL) {
+            assigns = BLOCK_ASSIGNS (block);
+            while (assigns != NULL) {
+                if (assigns == AVIS_SSAASSIGN (*copy_avis)) {
+                    isinblock = TRUE;
+                    break;
+                }
+                assigns = ASSIGN_NEXT (assigns);
+            }
+        }
+        isinblock = isinblock
+                    && (PRF_PRF (LET_EXPR (ASSIGN_STMT (*mem_ass))) == F_suballoc);
+    }
+    DBUG_RETURN (isinblock);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *FindSuballocAlternative (node *copy_avis, node *sub_ass,
+ *                                    info* arg_info)
+ *
+ * @brief try to push the suballoc further up by inspecting the copy_avis.
+ *        If its memory is locally allocated (IsAllocReuseFill) update
+ *        copy_ass and sub_ass accordingly (done by IsAllocReuseFill),
+ *        try pushing recursively further, provided the new allocation
+ *        happens through reuse which is signalled by a non-NULL new copy_info.
+ *
+ *****************************************************************************/
+node *FindSuballocAlternative (node *copy_avis, node *sub_ass, info* arg_info)
+{
+    DBUG_ENTER ();
+
+    bool found;
+    node *def;
+    node *suballoc;
+#ifndef DBUG_OFF
+    node *old_sub_ass = sub_ass;
+#endif
+
+    suballoc = ASSIGN_RHS (sub_ass);
+
+    INFO_LASTSAFE (arg_info) = NULL;
+    INFO_NOUSE (arg_info) = (node *)LUTsearchInLutPp (
+                                        INFO_REUSELUT (arg_info),
+                                        ID_AVIS (PRF_ARG1 (suballoc)));
+    if (INFO_NOUSE (arg_info) == ID_AVIS (PRF_ARG1 (suballoc))) {
+        INFO_NOUSE (arg_info) = NULL;
+        DBUG_PRINT ("  NOUSE set to NULL.");
+    } else {
+        DBUG_PRINT ("  NOUSE set to %s.", AVIS_NAME (INFO_NOUSE (arg_info)));
+    }
+
+    INFO_OK (arg_info) = TRUE;
+    while (INFO_OK (arg_info)) {
+        DBUG_PRINT ("  checking definition of '%s`:",
+                    AVIS_NAME (copy_avis));
+        def = AVIS_SSAASSIGN (copy_avis);
+        INFO_NOAP (arg_info) = copy_avis;
+        DBUG_PRINT ("  NOAP set to %s.", AVIS_NAME (INFO_NOAP (arg_info)));
+        /*
+         * BETWEEN def and LASTSAFE:
+         *
+         * NOUSE must not be used at all!!!
+         * NOAP must not be used in function applications
+         */
+        TRAVpush (TR_ipch);
+        ASSIGN_NEXT (def) = TRAVdo (ASSIGN_NEXT (def), arg_info);
+        TRAVpop ();
+
+        if (INFO_OK (arg_info)) {
+            found = IsAllocReuseFill (copy_avis, &copy_avis, &sub_ass);
+            if (found) {
+                INFO_LASTSAFE (arg_info) = sub_ass;
+                INFO_OK (arg_info) = (copy_avis != NULL);;
+            } else {
+                INFO_OK (arg_info) = FALSE;
+            }
+        }
+    }
+
+#ifndef DBUG_OFF
+    DBUG_EXECUTE (if (sub_ass == old_sub_ass)
+                      DBUG_PRINT ("  no alternative found!"););
+#endif
+    DBUG_RETURN (sub_ass);
+}
+
+
+/** <!--********************************************************************-->
+ *
  * @fn node *HandleBlock(node *arg_node)
  *
  * @brief The main part of this traversal
@@ -270,212 +658,51 @@ removeArrayIndirectionFromSuballoc (node *suballoc, int depth)
 static node *
 HandleBlock (node *block, node *rets, info *arg_info)
 {
+    node *avis;
+    node *cavis;
+    node *sub_ass, *new_sub_ass;
+    node *suballoc;
     int depth = 0;
     DBUG_ENTER ();
 
     while (rets != NULL) {
-        node *cid;
-        node *wlass;
-        node *rhs;
-        node *mem;
-        node *val;
-        node *cval;
-        node *memass;
-        node *memop;
-        node *avis;
-        bool isinblock;
-        node *assigns;
 
-        cid = EXPRS_EXPR (rets);
-        wlass = AVIS_SSAASSIGN (ID_AVIS (cid));
+        avis = ID_AVIS (EXPRS_EXPR (rets));
 
-        if (wlass != NULL) {
-            rhs = ASSIGN_RHS (wlass);
+        if ((AVIS_SSAASSIGN (avis) != NULL) 
+            && IsSuballocFill (block, avis, &cavis, &sub_ass, &depth)) {
+            /*
+             * we found:
+             *  {...
+             *    a  = ...
+             *    m' = suballoc( A, iv);        sub_ass: this assignment
+             *    m  = fill( copy( a), m');     cavis: N_avis of 'a`
+             *  }: m
+             */
+            suballoc = ASSIGN_RHS (sub_ass);
 
-            if ((NODE_TYPE (rhs) == N_prf) && (PRF_PRF (rhs) == F_fill)
-                && ((((NODE_TYPE (PRF_ARG1 (rhs)) == N_prf)
-                      && (PRF_PRF (PRF_ARG1 (rhs)) == F_copy)))
-                    || ((NODE_TYPE (PRF_ARG1 (rhs)) == N_array)
-                        && idArray (PRF_ARG1 (rhs))))) {
-                /*
-                 * Search for suballoc situation
-                 * {...
-                 *   a  = ...
-                 *   m' = suballoc( A, iv);
-                 *   m  = fill( copy( a), m');
-                 * }: m
-                 *
-                 * or (as appears in with3 loops:
-                 *
-                 *   a  = ...
-                 *   m' = suballoc( A, iv);
-                 *   m  = fill( [ a], m');
-                 */
-                val = PRF_ARG1 (rhs);
-                mem = PRF_ARG2 (rhs);
-                cval = copyOrArray (val, &depth);
-                avis = ID_AVIS (cval);
-                memass = AVIS_SSAASSIGN (ID_AVIS (mem));
-                memop = LET_EXPR (ASSIGN_STMT (memass));
+            DBUG_PRINT ("found  %s = suballoc( %s /*outer*/, %s /*idx*/, %d /*depth*/);",
+                        IDS_NAME (ASSIGN_LHS (sub_ass)),
+                        ID_NAME (PRF_ARG1 (suballoc)),
+                        ID_NAME (PRF_ARG2 (suballoc)),
+                        NUM_VAL (PRF_ARG3 (suballoc)));
+            DBUG_PRINT ("       %s = fill( copy (%s), %s);",
+                        ID_NAME (EXPRS_EXPR (rets)),
+                        AVIS_NAME (cavis),
+                        IDS_NAME (ASSIGN_LHS (sub_ass)));
 
-                /*
-                 * a must be assigned inside the current block in order to
-                 * move suballoc in front of a.
-                 */
-                isinblock = FALSE;
-                if (AVIS_SSAASSIGN (avis) != NULL) {
-                    assigns = BLOCK_ASSIGNS (block);
-                    while (assigns != NULL) {
-                        if (assigns == AVIS_SSAASSIGN (avis)) {
-                            isinblock = TRUE;
-                            break;
-                        }
-                        assigns = ASSIGN_NEXT (assigns);
-                    }
-                }
-
-                if ((isinblock) && (PRF_PRF (memop) == F_suballoc)) {
-                    /*
-                     * Situation recognized, find highest position for suballoc
-                     */
-                    node *def = AVIS_SSAASSIGN (ID_AVIS (cval));
-                    INFO_LASTSAFE (arg_info) = NULL;
-                    INFO_NOUSE (arg_info)
-                      = (node *)LUTsearchInLutPp (INFO_REUSELUT (arg_info),
-                                                  ID_AVIS (PRF_ARG1 (memop)));
-                    if (INFO_NOUSE (arg_info) == ID_AVIS (PRF_ARG1 (memop))) {
-                        INFO_NOUSE (arg_info) = NULL;
-                    }
-                    INFO_NOAP (arg_info) = NULL;
-
-                    /*
-                     * BETWEEN def and LASTSAFE:
-                     *
-                     * NOUSE must not be used at all!!!
-                     * NOAP must not be used in function applications
-                     */
-                    INFO_OK (arg_info) = TRUE;
-
-                    while (INFO_OK (arg_info)) {
-                        TRAVpush (TR_emiph);
-                        ASSIGN_NEXT (def) = TRAVdo (ASSIGN_NEXT (def), arg_info);
-                        TRAVpop ();
-
-                        if (INFO_OK (arg_info)) {
-                            node *defrhs = ASSIGN_RHS (def);
-                            node *withop, *ids;
-                            switch (NODE_TYPE (defrhs)) {
-                            case N_prf:
-                                if (PRF_PRF (defrhs) == F_fill) {
-                                    node *memass
-                                      = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (defrhs)));
-                                    node *memop = ASSIGN_RHS (memass);
-                                    if ((PRF_PRF (memop) == F_alloc)
-                                        || (PRF_PRF (memop) == F_reuse)
-                                        || (PRF_PRF (memop) == F_alloc_or_reuse)) {
-                                        INFO_LASTSAFE (arg_info) = memass;
-                                        if (PRF_PRF (memop) == F_reuse) {
-                                            avis = ID_AVIS (PRF_ARG1 (memop));
-                                            def = AVIS_SSAASSIGN (
-                                              ID_AVIS (PRF_ARG1 (memop)));
-                                            INFO_NOAP (arg_info)
-                                              = ID_AVIS (PRF_ARG1 (memop));
-                                        } else {
-                                            INFO_OK (arg_info) = FALSE;
-                                        }
-                                    } else {
-                                        INFO_OK (arg_info) = FALSE;
-                                    }
-                                } else {
-                                    INFO_OK (arg_info) = FALSE;
-                                }
-                                break;
-
-                            case N_with:
-                            case N_with2:
-                            case N_with3:
-                                withop = WITH_OR_WITH2_OR_WITH3_WITHOP (defrhs);
-                                ids = ASSIGN_LHS (def);
-                                while (IDS_AVIS (ids) != avis) {
-                                    ids = IDS_NEXT (ids);
-                                    withop = WITHOP_NEXT (withop);
-                                }
-                                if ((NODE_TYPE (withop) == N_genarray)
-                                    || (NODE_TYPE (withop) == N_modarray)) {
-                                    node *memass
-                                      = AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (withop)));
-                                    node *memop = ASSIGN_RHS (memass);
-                                    if ((PRF_PRF (memop) == F_alloc)
-                                        || (PRF_PRF (memop) == F_reuse)
-                                        || (PRF_PRF (memop) == F_alloc_or_reuse)) {
-                                        INFO_LASTSAFE (arg_info) = memass;
-                                        if (PRF_PRF (memop) == F_reuse) {
-                                            avis = ID_AVIS (PRF_ARG1 (memop));
-                                            def = AVIS_SSAASSIGN (
-                                              ID_AVIS (PRF_ARG1 (memop)));
-                                            INFO_NOAP (arg_info)
-                                              = ID_AVIS (PRF_ARG1 (memop));
-                                        } else {
-                                            INFO_OK (arg_info) = FALSE;
-                                        }
-                                    } else {
-                                        INFO_OK (arg_info) = FALSE;
-                                    }
-                                } else {
-                                    INFO_OK (arg_info) = FALSE;
-                                }
-                                break;
-
-                            default:
-                                INFO_OK (arg_info) = FALSE;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (INFO_LASTSAFE (arg_info) != NULL) {
-                        node *n;
-                        ntype *type = NULL;
-                        /*
-                         * Replace some alloc or reuse or alloc_or_reuse with
-                         * suballoc
-                         */
-                        ASSIGN_RHS (INFO_LASTSAFE (arg_info))
-                          = FREEdoFreeNode (ASSIGN_RHS (INFO_LASTSAFE (arg_info)));
-                        ASSIGN_RHS (INFO_LASTSAFE (arg_info))
-                          = removeArrayIndirectionFromSuballoc (DUPdoDupNode (memop),
-                                                                depth);
-
-                        /*
-                         * Are we suballocing a scaler?
-                         * If so make it a [1] array.
-                         */
-                        type
-                          = AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (INFO_LASTSAFE (arg_info))));
-                        if (TUisScalar (type)) {
-                            AVIS_TYPE (IDS_AVIS (ASSIGN_LHS (INFO_LASTSAFE (arg_info))))
-                              = TYmakeAKS (TYgetScalar (type), SHcreateShape (1, 1));
-                        }
-
-                        /*
-                         * Replace CEXPR
-                         */
-                        EXPRS_EXPR (rets) = FREEdoFreeNode (EXPRS_EXPR (rets));
-                        EXPRS_EXPR (rets) = DUPdoDupNode (cval);
-
-                        /*
-                         * Remove old suballoc/fill(copy) combination
-                         */
-                        n = BLOCK_ASSIGNS (block);
-                        while (ASSIGN_NEXT (n) != memass) {
-                            n = ASSIGN_NEXT (n);
-                        }
-                        ASSIGN_NEXT (n) = FREEdoFreeNode (ASSIGN_NEXT (n));
-                        ASSIGN_NEXT (n) = FREEdoFreeNode (ASSIGN_NEXT (n));
-                        INFO_CHANGED (arg_info) = TRUE;
-                    }
-                }
-                break;
+            /*
+             * Situation recognized, find highest position for suballoc
+             */
+            new_sub_ass = FindSuballocAlternative (cavis, sub_ass, arg_info);
+            if (new_sub_ass != sub_ass) {
+                ModifyBlock (new_sub_ass,           // alloc_ass to be modified
+                             sub_ass,                // original suballoc_ass (del!)
+                             AVIS_SSAASSIGN (avis),  // original fill_ass (del!)
+                             cavis,                  // originally copied now returned
+                             rets,                   // rets holding the old returned
+                             depth);                 // weird depth value....
+                INFO_CHANGED (arg_info) = TRUE;
             }
         }
         rets = EXPRS_NEXT (rets);
@@ -497,13 +724,13 @@ HandleBlock (node *block, node *rets, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPap( node *arg_node, info *arg_info)
+ * @fn node *IPCap( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPap (node *arg_node, info *arg_info)
+IPCap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -544,13 +771,13 @@ EMIPap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPcond( node *arg_node, info *arg_info)
+ * @fn node *IPCcond( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPcond (node *arg_node, info *arg_info)
+IPCcond (node *arg_node, info *arg_info)
 {
     lut_t *oldlut;
 
@@ -581,13 +808,13 @@ EMIPcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPcode( node *arg_node, info *arg_info)
+ * @fn node *IPCcode( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPcode (node *arg_node, info *arg_info)
+IPCcode (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -608,13 +835,13 @@ EMIPcode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPrange( node *arg_node, info *arg_info)
+ * @fn node *IPCrange( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPrange (node *arg_node, info *arg_info)
+IPCrange (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -633,13 +860,13 @@ EMIPrange (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPfundef( node *arg_node, info *arg_info)
+ * @fn node *IPCfundef( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPfundef (node *arg_node, info *arg_info)
+IPCfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -681,13 +908,13 @@ EMIPfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPlet( node *arg_node, info *arg_info)
+ * @fn node *IPClet( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPlet (node *arg_node, info *arg_info)
+IPClet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -699,13 +926,13 @@ EMIPlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPprf( node *arg_node, info *arg_info)
+ * @fn node *IPCprf( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPprf (node *arg_node, info *arg_info)
+IPCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -761,17 +988,24 @@ EMIPprf (node *arg_node, info *arg_info)
  * @name IPC helper traversal
  *
  * @{
+ *     This traversal checks wether the N_avis given in
+ *       INFO_NOUSE or the N_avis given in 
+ *       INFO_NOAP appear on the RHS of the given N_assign chain.
+ *     The search for INFO_NOAP is restricted to udf function arguments,
+ *     and that of INFO_NOUSE is restricted to uses outside of udf
+ *     function arguments!
+ *     if any of these two is found, INFO_OK is set to FALSE!
  *
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPHap( node *arg_node, info *arg_info)
+ * @fn node *IPCHap( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPHap (node *arg_node, info *arg_info)
+IPCHap (node *arg_node, info *arg_info)
 {
     node *tmp;
 
@@ -791,13 +1025,13 @@ EMIPHap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPHassign( node *arg_node, info *arg_info)
+ * @fn node *IPCHassign( node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief top-down traversal
  *
  *****************************************************************************/
 node *
-EMIPHassign (node *arg_node, info *arg_info)
+IPCHassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -814,18 +1048,19 @@ EMIPHassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *EMIPHid( node *arg_node, info *arg_info)
+ * @fn node *IPCHid( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-EMIPHid (node *arg_node, info *arg_info)
+IPCHid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
     if (ID_AVIS (arg_node) == INFO_NOUSE (arg_info)) {
         INFO_OK (arg_info) = FALSE;
+        DBUG_PRINT ("  found a use of %s; aborting search!", ID_NAME (arg_node));
     }
 
     DBUG_RETURN (arg_node);

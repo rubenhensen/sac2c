@@ -630,11 +630,11 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /*
-     * a = suballoc( A, idx)
+     * a = suballoc( rc, A, idx)
      *
      * -or-
      *
-     * a = suballoc( A, idx, def)
+     * a = suballoc( rc, A, idx, def)
      */
 
     /*
@@ -680,10 +680,10 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
                   = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (ids_wl));
             }
 
-            if ((newavis == ID_AVIS (PRF_ARG1 (arg_node)))
+            if ((newavis == ID_AVIS (PRF_ARG2 (arg_node)))
                 || ((INFO_WITH (arg_info) == 3)
                     && (STReq (AVIS_NAME (newavis),
-                               AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))))))) {
+                               AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))))))) {
                 /*
                  * Set a as new subarray identifier if none is set yet
                  */
@@ -725,8 +725,8 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
          */
         if (global.backend == BE_c99 || global.backend == BE_cuda
             || global.backend == BE_cudahybrid) {
-            if (PRF_EXPRS3 (arg_node) != NULL) {
-                PRF_EXPRS3 (arg_node) = FREEdoFreeTree (PRF_EXPRS3 (arg_node));
+            if (PRF_EXPRS4 (arg_node) != NULL) {
+                PRF_EXPRS4 (arg_node) = FREEdoFreeTree (PRF_EXPRS4 (arg_node));
             }
         }
     }

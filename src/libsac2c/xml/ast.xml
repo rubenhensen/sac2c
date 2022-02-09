@@ -3104,7 +3104,7 @@
         <node name="Cond" />
       </travsons>
     </traversal>
-    <traversal id="EMIP" name="Inplace Computation" default="sons" include="inplacecomp.h">
+    <traversal id="IPC" name="Inplace Computation" default="sons" include="inplacecomp.h">
       <travuser>
         <node name="Ap" />
         <node name="Code" />
@@ -3118,7 +3118,7 @@
         <node name="Objdef" />
       </travnone>
     </traversal>
-    <traversal id="EMIPH" name="Inplace Computation helper" default="sons" include="inplacecomp.h">
+    <traversal id="IPCH" name="Inplace Computation helper" default="sons" include="inplacecomp.h">
       <travuser>
         <node name="Ap" />
         <node name="Assign" />
