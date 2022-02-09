@@ -1,0 +1,36 @@
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -trace rm
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -noprelude -v0
+//
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>@./$< 2>&1 | $(GREP_COMMAND_OUTPUT) " allocated" 13
+// SAC_TEST|<tab>@./$< 2>&1 | $(GREP_COMMAND_OUTPUT) " deallocated" 13
+
+/*
+ * This example forces a function call on the inner computation
+ * and, with it, a DECRC on inner within "bar".
+ * In the current implementation this inhibits the propagation of
+ * suballoc and thus leads to an allocation of inner and a copy 
+ * into the result.
+ * Note here that this could be changed provided we would introduce
+ * some reference counting on sub-allocated objects (cf comments on
+ * issue 2288).
+ *
+ * Compile with -noprelude -mem:ipc to see
+ */
+
+noinline
+int bar( int[.] a)
+{ return _sel_VxA_([0], a); }
+
+int main()
+{
+    res = with {
+            ([0] <= [i] < [11]) {
+                   inner = [i,i,i,i,i,i,i,i,i,i,i];
+                   inner = _modarray_AxVxS_( inner, [i], bar(inner));
+               } : inner;
+          } : genarray( [11], [1,2,3,4,5,6,7,8,9,10,11]);
+    return _sel_VxA_([0,0], res);
+}
