@@ -556,13 +556,13 @@ bool IsSuballocFill (node *block, node *avis,
         *mem_ass = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (rhs)));
 
         /*
-         * copy_id must be assigned inside the current block in order to
+         * copy_avis must be assigned inside the current block in order to
          * move suballoc in front of a.
          */
         if (AVIS_SSAASSIGN (*copy_avis) != NULL) {
             assigns = BLOCK_ASSIGNS (block);
             while (assigns != NULL) {
-                if (assigns == AVIS_SSAASSIGN (avis)) {
+                if (assigns == AVIS_SSAASSIGN (*copy_avis)) {
                     isinblock = TRUE;
                     break;
                 }
