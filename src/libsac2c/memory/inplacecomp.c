@@ -607,13 +607,14 @@ node *FindSuballocAlternative (node *copy_avis, node *sub_ass, info* arg_info)
     } else {
         DBUG_PRINT ("  NOUSE set to %s.", AVIS_NAME (INFO_NOUSE (arg_info)));
     }
-    INFO_NOAP (arg_info) = NULL;
 
     INFO_OK (arg_info) = TRUE;
     while (INFO_OK (arg_info)) {
         DBUG_PRINT ("  checking definition of '%s`:",
                     AVIS_NAME (copy_avis));
         def = AVIS_SSAASSIGN (copy_avis);
+        INFO_NOAP (arg_info) = copy_avis;
+        DBUG_PRINT ("  NOAP set to %s.", AVIS_NAME (INFO_NOAP (arg_info)));
         /*
          * BETWEEN def and LASTSAFE:
          *
@@ -628,13 +629,7 @@ node *FindSuballocAlternative (node *copy_avis, node *sub_ass, info* arg_info)
             found = IsAllocReuseFill (copy_avis, &copy_avis, &sub_ass);
             if (found) {
                 INFO_LASTSAFE (arg_info) = sub_ass;
-                if (copy_avis != NULL) {
-                    INFO_NOAP (arg_info) = copy_avis;
-                    DBUG_PRINT ("  NOAP set to %s.",
-                                 AVIS_NAME (INFO_NOAP (arg_info)));
-                } else {
-                    INFO_OK (arg_info) = FALSE;
-                }
+                INFO_OK (arg_info) = (copy_avis != NULL);;
             } else {
                 INFO_OK (arg_info) = FALSE;
             }
