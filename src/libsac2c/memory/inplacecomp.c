@@ -594,6 +594,9 @@ node *FindSuballocAlternative (node *copy_avis, node *sub_ass, info* arg_info)
     bool found;
     node *def;
     node *suballoc;
+#ifndef DBUG_OFF
+    node *old_sub_ass = sub_ass;
+#endif
 
     suballoc = ASSIGN_RHS (sub_ass);
 
@@ -636,7 +639,11 @@ node *FindSuballocAlternative (node *copy_avis, node *sub_ass, info* arg_info)
         }
     }
 
-   DBUG_RETURN (sub_ass);
+#ifndef DBUG_OFF
+    DBUG_EXECUTE (if (sub_ass == old_sub_ass)
+                      DBUG_PRINT ("  no alternative found!"););
+#endif
+    DBUG_RETURN (sub_ass);
 }
 
 
