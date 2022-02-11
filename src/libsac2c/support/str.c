@@ -1,3 +1,8 @@
+/**
+ * @file
+ *
+ * @brief A collection of functions for string manipulation.
+ */
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
@@ -17,51 +22,48 @@
 #include "shape.h"
 #include "namespaces.h"
 
-/*******************************************************************************
+/**
+ * @brief Modify string by turning all characters from start to stop-1
+ *        into upper case.
  *
- * Description: Modify string by turning all characters from start to stop-1
- *              into upper case.
- *
- * Parameters: - source, start and stop index
- *
- *******************************************************************************/
-
+ * @param source source string
+ * @param start index to start at
+ * @param stop index to stop at
+ */
 void
 STRtoupper (char *source, size_t start, size_t stop)
 {
     size_t i;
 
     DBUG_ENTER ();
-    
+
     if (source != NULL) {
         for (i = start; i < stop; i++) {
-            source[i] = (char)toupper (source[i]);
+            source[i] = toupper (source[i]);
         }
     }
 
     DBUG_RETURN ();
 }
 
-/*******************************************************************************
+/**
+ * @brief Copy string and allocate memory for new string.
  *
- * Description: Copy string and allocate memory for new string.
- *
- * Parameters: - source, string to copy
- *
- * Return: - new copied string
- *
- *******************************************************************************/
-
+ * @param source string to copy
+ * @return new copied string
+ */
 char *
 STRcpy (const char *source)
 {
+    size_t len;
     char *ret;
 
     DBUG_ENTER ();
 
     if (source != NULL) {
-        ret = (char *)MEMmalloc (sizeof (char) * (STRlen (source) + 1));
-        strcpy (ret, source);
+        len = STRlen (source) + 1; // including null char
+        ret = MEMmalloc (sizeof (char) * len);
+        strncpy (ret, source, len);
     } else {
         ret = NULL;
     }
@@ -69,18 +71,14 @@ STRcpy (const char *source)
     DBUG_RETURN (ret);
 }
 
-/*******************************************************************************
+/**
+ * @brief Copy string and allocate memory for new string. Copy only maxlen
+ *        characters.
  *
- * Description: Copy string and allocate memory for new string.
- *              Copy only maxlen characters.
- *
- * Parameters: - source, string to copy
- *             - maxlen, number of characters to copy
- *
- * Return: - new copied string
- *
- *******************************************************************************/
-
+ * @param source string to copy
+ * @param maxlen number of characters to copy
+ * @return new copied string
+ */
 char *
 STRncpy (const char *source, size_t maxlen)
 {
@@ -95,7 +93,7 @@ STRncpy (const char *source, size_t maxlen)
             max = maxlen;
         }
 
-        ret = (char *)MEMmalloc (sizeof (char) * (max + 1));
+        ret = MEMmalloc (sizeof (char) * (max + 1));
         strncpy (ret, source, max);
 
         /* make sure string ends with 0 */
@@ -107,14 +105,15 @@ STRncpy (const char *source, size_t maxlen)
     DBUG_RETURN (ret);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn char *STRsubStr( const char *string, int start, int len)
- *
+/**
  * @brief copy part of a string from start to start + len.
  *        if len is <0 then len is relative to the length of the string.
  *
- *****************************************************************************/
+ * @param string string to copy from
+ * @param start index to start from
+ * @param len total length to take
+ * @return copied part of string
+ */
 char *
 STRsubStr (const char *string, size_t start, ssize_t len)
 {
@@ -126,9 +125,9 @@ STRsubStr (const char *string, size_t start, ssize_t len)
     strlen = STRlen (string);
 
     // Normalizing len against the length of `str`.
-    size_t l = len < 0 
-               ? (size_t)MATH_MAX (0, (ssize_t)strlen + len)
-               : (size_t)len;
+    size_t l = len < 0
+               ? MATH_MAX (0, (ssize_t)strlen + len)
+               : len;
 
     if ((start + l) > strlen) { /* to long take what we can */
         l = strlen < start ? 0 : strlen - start;
@@ -137,42 +136,38 @@ STRsubStr (const char *string, size_t start, ssize_t len)
     if (start > l) {
         ret = STRnull ();
     } else {
-        ret = (char *)memcpy (MEMmalloc (sizeof (char) * (l + 1)),
-                              string + start, /* move to start of sub string */
-                              l);
+        ret = memcpy (MEMmalloc (sizeof (char) * (l + 1)),
+                      string + start, /* move to start of sub string */
+                      l);
         ret[l] = '\0';
     }
 
     DBUG_RETURN (ret);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn char *STRnull( )
- *
+/**
  * @brief return an empty string
  *
- *****************************************************************************/
+ * @return empty "" string
+ */
 char *
 STRnull ()
 {
     char *ret = NULL;
     DBUG_ENTER ();
 
-    ret = (char *)MEMmalloc (sizeof (char) * 1);
+    ret = MEMmalloc (sizeof (char) * 1);
     ret[0] = '\0';
 
     DBUG_RETURN (ret);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn char *STRsizeInt( )
- *
+/**
  * @brief return the size of an int when the int is a string.
  *        does not count the sine (+-)!!
  *
- *****************************************************************************/
+ * @return size of int in string
+ */
 size_t
 STRsizeInt ()
 {
@@ -203,17 +198,14 @@ STRsizeInt ()
     DBUG_RETURN (size);
 }
 
-/*******************************************************************************
+/**
+ * @brief Concatenate two strings and allocate memory for new string.
  *
- * Description: Concatenate two strings and allocate memory for new string.
+ * @param first first string
+ * @param second second string
  *
- * Parameters: - first, first string
- *             - second, second string
- *
- * Return: - new concatenated string
- *
- *******************************************************************************/
-
+ * @return new concatenated string
+ */
 char *
 STRcat (const char *first, const char *second)
 {
@@ -226,7 +218,7 @@ STRcat (const char *first, const char *second)
     } else if (second == NULL) {
         result = STRcpy (first);
     } else {
-        result = (char *)MEMmalloc (STRlen (first) + STRlen (second) + 1);
+        result = MEMmalloc (STRlen (first) + STRlen (second) + 1);
 
         strcpy (result, first);
         strcat (result, second);
@@ -235,17 +227,14 @@ STRcat (const char *first, const char *second)
     DBUG_RETURN (result);
 }
 
-/*******************************************************************************
+/**
+ * @brief Concatenate N strings and allocate memory for new string.
  *
- * Description: Concatenate N strings and allocate memory for new string.
+ * @param n number of strings
+ * @param ... n amount of "const char *"-type strings
  *
- * Parameters: - n, number of strings
- *             - ..., n amount of "const char *"-type strings
- *
- * Return: - new concatenated string
- *
- *******************************************************************************/
-
+ * @return new concatenated string
+ */
 char *
 STRcatn (int n, ...)
 {
@@ -275,7 +264,7 @@ STRcatn (int n, ...)
     if (length == 0) {
         result = NULL;
     } else {
-        result = (char *)MEMmalloc (length + 1);
+        result = MEMmalloc (length + 1);
         result[0] = '\0';
 
         va_start (arg_list, n);
@@ -293,18 +282,15 @@ STRcatn (int n, ...)
     DBUG_RETURN (result);
 }
 
-/*******************************************************************************
+/**
+ * @brief Compare two strings.
  *
- * Description: Compare two strings.
+ * @param first first string to compare
+ * @param second second string to compare
  *
- * Parameters: - first, first string to compare
- *             - second, second string to compare
- *
- * Return: - TRUE, string contents are equal
- *         - FALSE, string contents are not equal
- *
- *******************************************************************************/
-
+ * @return TRUE, string contents are equal or
+ *         FALSE, string contents are not equal
+ */
 bool
 STReq (const char *first, const char *second)
 {
@@ -317,24 +303,21 @@ STReq (const char *first, const char *second)
     } else if ((first == NULL) || (second == NULL)) {
         res = FALSE;
     } else {
-        res = (0 == strcmp (first, second));
+        res = (strcmp (first, second) == 0);
     }
 
     DBUG_RETURN (res);
 }
 
-/*******************************************************************************
+/**
+ * @brief Compare two strings.
  *
- * Description: Compare two strings.
+ * @param first first string to compare
+ * @param second second string to compare
  *
- * Parameters: - first, first string to compare
- *             - second, second string to compare
- *
- * Return: - TRUE, string contents are equal
- *         - FALSE, string contents are not equal
- *
- *******************************************************************************/
-
+ * @return TRUE, string contents are equal or
+ *         FALSE, string contents are not equal
+ */
 bool
 STRgt (const char *first, const char *second)
 {
@@ -353,18 +336,13 @@ STRgt (const char *first, const char *second)
     DBUG_RETURN (res);
 }
 
-/*******************************************************************************
+/**
+ * @brief Compare two strings for referring to the same hexadecimal number
  *
- * Description: Compare two strings for referring to the same hexadecimal number
- *
- * Parameters: - first, first string to compare
- *             - second, second string to compare
- *
- * Return: - TRUE, string contents are equal
- *         - FALSE, string contents are not equal
- *
- *******************************************************************************/
-
+ * @param first first string to compare
+ * @param second second string to compare
+ * @return TRUE if string contents are equal, otherwise FALSE
+ */
 bool
 STReqhex (const char *first, const char *second)
 {
@@ -403,18 +381,13 @@ STReqhex (const char *first, const char *second)
     DBUG_RETURN (res);
 }
 
-/*******************************************************************************
+/**
+ * @brief Compare two strings for referring to the same octal number
  *
- * Description: Compare two strings for referring to the same octal number
- *
- * Parameters: - first, first string to compare
- *             - second, second string to compare
- *
- * Return: - TRUE, string contents are equal
- *         - FALSE, string contents are not equal
- *
- *******************************************************************************/
-
+ * @param first first string to compare
+ * @param second second string to compare
+ * @return TRUE if string contents are equal, otherwise FALSE
+ */
 bool
 STReqoct (const char *first, const char *second)
 {
@@ -453,18 +426,13 @@ STReqoct (const char *first, const char *second)
     DBUG_RETURN (res);
 }
 
-/*******************************************************************************
+/**
+ * @brief Compare two strings in a case insensitive way.
  *
- * Description: Compare two strings in a case insensitive way.
- *
- * Parameters: - first, first string to compare
- *             - second, second string to compare
- *
- * Return: - TRUE, string contents are equal
- *         - FALSE, string contents are not equal
- *
- *******************************************************************************/
-
+ * @param first first string to compare
+ * @param second second string to compare
+ * @return TRUE if string contents are equal, otherwise FALSE
+ */
 bool
 STReqci (const char *first, const char *second)
 {
@@ -493,19 +461,15 @@ STReqci (const char *first, const char *second)
     DBUG_RETURN (res);
 }
 
-/*******************************************************************************
+/**
+ * @brief Compare two strings.
  *
- * Description: Compare two strings.
- *
- * Parameters: - first, first string to compare
- *             - second, second string to compare
- *             - n, number of relevant characters
- *
- * Return: - TRUE, relevant prefixes of strings are equal
- *         - FALSE, relevant prefixes of strings are not equal
- *
- *******************************************************************************/
-
+ * @param first first string to compare
+ * @param second second string to compare
+ * @param n number of relevant characters
+ * @return TRUE if relevant prefixes of strings are equal, or FALSE if
+ *         relevant prefixes of strings are not equal
+ */
 bool
 STReqn (const char *first, const char *second, size_t n)
 {
@@ -528,18 +492,13 @@ STReqn (const char *first, const char *second, size_t n)
     DBUG_RETURN (res);
 }
 
-/*******************************************************************************
+/**
+ * @brief Checks if prefix is prefix of str
  *
- * Description: Checks if prefix is prefix of str
- *
- * Parameters: - prefix, first string to compare
- *             - str, second string to compare
- *
- * Return: - TRUE, prefix is prefix of str
- *         - FALSE, otherwise
- *
- *******************************************************************************/
-
+ * @param prefix first string to compare
+ * @param str second string to compare
+ * @return TRUE if prefix is prefix of str, otherwise FALSE
+ */
 bool
 STRprefix (const char *prefix, const char *str)
 {
@@ -566,13 +525,13 @@ STRprefix (const char *prefix, const char *str)
     DBUG_RETURN (res);
 }
 
-/** <!--********************************************************************-->
+/**
+ * @brief check if suffix is present in string
  *
- * @fn bool *STRsuffix( const char *suffix, const char *str)
- *
- * @brief return true if suffix is the end of str, else return false.
- *
- *****************************************************************************/
+ * @param suffix string to find
+ * @param str string being scanned through
+ * @return TRUE if suffix is the end of str, otherwise FALSE
+ */
 bool
 STRsuffix (const char *suffix, const char *str)
 {
@@ -590,18 +549,13 @@ STRsuffix (const char *suffix, const char *str)
     DBUG_RETURN (res);
 }
 
-/*******************************************************************************
+/**
+ * @brief Checks if prefix is prefix of str
  *
- * Description: Checks if prefix is prefix of str
- *
- * Parameters: - sub, first string to compare
- *             - str, second string to compare
- *
- * Return: - TRUE, sub is substring of str
- *         - FALSE, otherwise
- *
- *******************************************************************************/
-
+ * @param sub first string to compare
+ * @parma str second string to compare
+ * @return TRUE if sub is substring of str, or FALSE otherwise
+ */
 bool
 STRsub (const char *sub, const char *str)
 {
@@ -622,15 +576,15 @@ STRsub (const char *sub, const char *str)
     DBUG_RETURN (res);
 }
 
-/*******************************************************************************
+/**
+ * @brief Yield length of string
  *
- * Description: Yield length of string
+ * Mostly to provide a complete interface and to avoid using standard
+ * string facilities throughout the compiler.
  *
- *  Mostly to provide a complete interface and to avoid using standard
- *  string facilities throughout the compiler.
- *
- *******************************************************************************/
-
+ * @param s string to calculate length
+ * @return length of string, or 0 when NULL or ""
+ */
 size_t
 STRlen (const char *s)
 {
@@ -640,29 +594,14 @@ STRlen (const char *s)
 
     if (s == NULL) {
         len = 0;
+    } else if (*s == '\0') {
+        len = 0;
     } else {
         len = strlen (s);
     }
 
     DBUG_RETURN (len);
 }
-
-/*******************************************************************************
- *
- * Description: Tokenize string. On first call the str will be copied to internal
- *              static variable, next calls str should be NULL. With last call the
- *              allocated memory of the copy will be freed.
- *
- *              In contrast to strtok, STRtok leaves the argument string untouched
- *              and always allocates the tokens in fresh memory.
- *
- * Parameters: - str, string to tokenize
- *             - tok, tokenizer
- *
- * Return: - pointer to the next token
- *         - NULL, no more tokens
- *
- *******************************************************************************/
 
 static bool
 CharInString (char c, const char *str)
@@ -685,6 +624,20 @@ CharInString (char c, const char *str)
     DBUG_RETURN (res);
 }
 
+/**
+ * @brief Tokenize string.
+ *
+ * On first call the str will be copied to internal static variable, next calls
+ * str should be NULL. With last call the allocated memory of the copy will be
+ * freed.
+ *
+ * In contrast to strtok, STRtok leaves the argument string untouched and always
+ * allocates the tokens in fresh memory.
+ *
+ * @param str string to tokenize
+ * @param tok tokenizer
+ * @return pointer to the next token, or NULL iff no more tokens
+ */
 char *
 STRtok (const char *first, const char *sep)
 {
@@ -725,18 +678,17 @@ STRtok (const char *first, const char *sep)
     DBUG_RETURN (ret);
 }
 
-/*******************************************************************************
- *
- * Description:
- *
- *  yields either the argument string if it is not NULL or an empty constant
- *  string otherwise.
+/**
+ * @brief Yields either the argument string if it is not NULL or an empty constant
+ *        string otherwise.
  *
  * This is helpful for instance when printing strings with the %s conversion
  * specifier and the string to print may be NULL.
  *
- *******************************************************************************/
-
+ * @param alt alternative string to return
+ * @param str string to check for NULL
+ * @return str or alt iff str is NULL
+ */
 char *
 STRonNull (char *alt, char *str)
 {
@@ -753,16 +705,12 @@ STRonNull (char *alt, char *str)
     DBUG_RETURN (res);
 }
 
-/*******************************************************************************
+/**
+ * @brief Convert integer to string in decimal representation.
  *
- * Description: Convert integer to string in decimal representation.
- *
- * Parameters: - number to convert
- *
- * Return: - new allocated string representation of number
- *
- *******************************************************************************/
-
+ * @param number number to convert
+ * @return new allocated string representation of number
+ */
 char *
 STRitoa (int number)
 {
@@ -771,23 +719,19 @@ STRitoa (int number)
 
     DBUG_ENTER ();
 
-    str = (char *)MEMmalloc (sizeof (int) * 4);
+    str = MEMmalloc (sizeof (int) * 4);
     num = snprintf (str, (sizeof (int) * 4) - 1, "%d", number);
     DBUG_ASSERT ((unsigned)num < (sizeof (int) * 4) - 1, "Trouble in STRitoa");
 
     DBUG_RETURN (str);
 }
 
-/*******************************************************************************
+/**
+ * @brief Convert integer to string in octal representation.
  *
- * Description: Convert integer to string in octal representation.
- *
- * Parameters: - number to convert
- *
- * Return: - new allocated string representation of number
- *
- *******************************************************************************/
-
+ * @param number number to convert
+ * @return new allocated string representation of number
+ */
 char *
 STRitoa_oct (int number)
 {
@@ -805,23 +749,19 @@ STRitoa_oct (int number)
         length++;
     }
 
-    str = (char *)MEMmalloc (sizeof (char) * length + 3UL);
+    str = MEMmalloc (sizeof (char) * length + 3);
 
     sprintf (str, "0%o", number);
 
     DBUG_RETURN (str);
 }
 
-/*******************************************************************************
+/**
+ * @brief Convert integer to string in hexadecimal representation.
  *
- * Description: Convert integer to string in hexadecimal representation.
- *
- * Parameters: - number to convert
- *
- * Return: - new allocated string representation of number
- *
- *******************************************************************************/
-
+ * @param number number to convert
+ * @return new allocated string representation of number
+ */
 char *
 STRitoa_hex (int number)
 {
@@ -839,30 +779,17 @@ STRitoa_hex (int number)
         length++;
     }
 
-    str = (char *)MEMmalloc (sizeof (char) * length + 3UL);
+    str = MEMmalloc (sizeof (char) * length + 3);
 
     sprintf (str, "0x%x", number);
 
     DBUG_RETURN (str);
 }
 
-/*******************************************************************************
- *
- * Description: Convert hex-string to byte array.
- *
- * Parameters: - array, converted byte array
- *               memory must be allocated before calling this function
- *             - string, string to convert
- *
- * Return: - converted byte array
- *
- *******************************************************************************/
-
 static unsigned char
 Hex2Dig (const char x)
 {
-    int res; /* char literals and arithmetic operations with char => int
-                chosen for the smallest impact to original code */
+    unsigned char res;
 
     DBUG_ENTER ();
 
@@ -872,9 +799,17 @@ Hex2Dig (const char x)
         res = 10 + x - 'A';
     }
 
-    DBUG_RETURN ((unsigned char) res);
+    DBUG_RETURN (res);
 }
 
+/**
+ * @brief Convert hex-string to byte array.
+ *
+ * @param array converted byte array memory must be allocated before
+ *              calling this function
+ * @param string string to convert
+ * @return converted byte array
+ */
 unsigned char *
 STRhex2Bytes (unsigned char *array, const char *string)
 {
@@ -889,28 +824,17 @@ STRhex2Bytes (unsigned char *array, const char *string)
         low = Hex2Dig (string[pos * 2 + 1]);
         high = Hex2Dig (string[pos * 2]);
 
-        array[pos] = (unsigned char)(high * 16 + low);
+        array[pos] = high * 16 + low;
         pos++;
     }
 
     DBUG_RETURN (array);
 }
 
-/*******************************************************************************
- *
- * Description: Convert byte array to hex-string.
- *
- * Parameters: - len, length of byte array
- *             - array, array to convert
- *
- * Return: - new allocated string representation of byte array
- *
- *******************************************************************************/
-
 static char
 Dig2Hex (unsigned char x)
 {
-    int res;
+    char res;
 
     DBUG_ENTER ();
 
@@ -920,9 +844,16 @@ Dig2Hex (unsigned char x)
         res = 'A' + x - 10;
     }
 
-    DBUG_RETURN ((char) res);
+    DBUG_RETURN (res);
 }
 
+/**
+ * @brief Convert byte array to hex-string.
+ *
+ * @param len length of byte array
+ * @param array array to convert
+ * @return new allocated string representation of byte array
+ */
 char *
 STRbytes2Hex (size_t len, unsigned char *array)
 {
@@ -932,7 +863,7 @@ STRbytes2Hex (size_t len, unsigned char *array)
 
     DBUG_ENTER ();
 
-    result = (char *)MEMmalloc ((1 + len * 2) * sizeof (char));
+    result = MEMmalloc ((1 + len * 2) * sizeof (char));
 
     for (pos = 0; pos < len; pos++) {
         low = array[pos] % 16;
@@ -947,17 +878,13 @@ STRbytes2Hex (size_t len, unsigned char *array)
     DBUG_RETURN (result);
 }
 
-/******************************************************************************
+/**
+ * @brief Replaces special characters such that they can be used as identifiers
+ *        in a C program.
  *
- * function:
- *   char *STRreplaceSpecialCharacters( const char *name)
- *
- * description:
- *   Replaces special characters such that they can be used as identifiers
- *   in a C program.
- *
- *****************************************************************************/
-
+ * @param name string to be scanned
+ * @return string with special characters replaced
+ */
 char *
 STRreplaceSpecialCharacters (const char *name)
 {
@@ -971,7 +898,7 @@ STRreplaceSpecialCharacters (const char *name)
         new_name = NULL;
     } else {
 
-        new_name = (char *)MEMmalloc (1 + (3 * STRlen (name)) * sizeof (char));
+        new_name = MEMmalloc (1 + (3 * STRlen (name)) * sizeof (char));
         new_name[0] = '\0';
 
         for (i = 0, j = 0; i < STRlen (name); i++, j++) {
@@ -1112,18 +1039,14 @@ STRreplaceSpecialCharacters (const char *name)
     DBUG_RETURN (new_name);
 }
 
-/** <!-- ****************************************************************** -->
- *
+/**
  * @brief Converts its argument into a string that can be safely used when
  *        printing C code. It does so by replacing all occurences of '"'
  *        by '\"' and of '\' by '\\'.
  *
  * @param string a string.
- *
  * @return a safe string
- *
- ******************************************************************************/
-
+ */
 char *
 STRstring2SafeCEncoding (const char *string)
 {
@@ -1137,7 +1060,7 @@ STRstring2SafeCEncoding (const char *string)
     } else {
         len = STRlen (string);
 
-        result = (char *)MEMmalloc (len * 2 + 1);
+        result = MEMmalloc (len * 2 + 1);
         tmp = result;
 
         for (i = 0; i < len; i++) {
@@ -1161,6 +1084,12 @@ STRstring2SafeCEncoding (const char *string)
     DBUG_RETURN (result);
 }
 
+/**
+ * @brief Format string to be C-style multiline comment.
+ *
+ * @param string to commentify
+ * @return commented string
+ */
 char *
 STRcommentify (const char *string)
 {
@@ -1187,14 +1116,13 @@ STRcommentify (const char *string)
     DBUG_RETURN (result);
 }
 
-/** <!-- ****************************************************************** -->
+/**
  * @brief Converts the given string into the corresponding synatx tree
  *        from.
  *
  * @param str a string
- *
  * @return non-flattened syntax tree.
- ******************************************************************************/
+ */
 node *
 STRstring2Array (const char *str)
 {
@@ -1209,10 +1137,10 @@ STRstring2Array (const char *str)
     new_exprs = TBmakeExprs (TBmakeChar ('\0'), NULL);
 
     cnt = 0;
-    /* 
+    /*
      * decrement after check for > 0, safe method for reverse loop ending on 0
      * i : (STRlen - 1) to 0
-     */    
+     */
     for (i = STRlen (str); i-- > 0; ) {
         if ((i > 0) && (str[i - 1] == '\\')) {
             switch (str[i]) {
@@ -1279,7 +1207,7 @@ STRstring2Array (const char *str)
     DBUG_RETURN (res);
 }
 
-/** <!-- ****************************************************************** -->
+/**
  * @brief Substitute all occurrences of token in str with subst
  *
  * @param str The string in which to make substitutions
@@ -1287,7 +1215,7 @@ STRstring2Array (const char *str)
  * @param subst a string to substitute tokens with
  *
  * @return A new String
- ******************************************************************************/
+ */
 char *
 STRsubstToken (const char *str, const char *token, const char *subst)
 {
@@ -1310,8 +1238,10 @@ STRsubstToken (const char *str, const char *token, const char *subst)
     }
 
     /* Make substitutions */
-    result = (char *)MEMmalloc (
-      (STRlen (str) + (occurrences * (STRlen (subst) - tlen)) + 1) * sizeof (char));
+    result = MEMmalloc (sizeof (char)
+                        * (STRlen (str)
+                           + (occurrences * (STRlen (subst) - tlen))
+                           + 1));
 
     pos = result;
     while (*str != '\0') {
@@ -1328,7 +1258,15 @@ STRsubstToken (const char *str, const char *token, const char *subst)
     DBUG_RETURN (result);
 }
 
-// Same as STRsubstTokend, but deallocate the first argument after substitution.
+/**
+ * @brief Same as STRsubstTokend, but deallocate the first argument after substitution.
+ *
+ * @param str The string in which to make substitutions
+ * @param token a string to substitute occurrences of in str
+ * @param subst a string to substitute tokens with
+ *
+ * @return A new String
+ */
 char *
 STRsubstTokend (char *str, const char *token, const char *subst)
 {
@@ -1337,14 +1275,14 @@ STRsubstTokend (char *str, const char *token, const char *subst)
     return nstr;
 }
 
-/** <!-- ****************************************************************** -->
+/**
  * @brief Substitute multiple patterns in a string
  *
  * @param str The string in which to make substitutions
  * @param n  The number of substitutions
  *
  * @return A new String or NULL if str is NULL
- ******************************************************************************/
+ */
 char *
 STRsubstTokens (const char *str, size_t n, ...)
 {
@@ -1357,9 +1295,9 @@ STRsubstTokens (const char *str, size_t n, ...)
 
     DBUG_ENTER ();
 
-    patterns = (const char **)MEMmalloc (n * sizeof (char *));
-    values = (const char **)MEMmalloc (n * sizeof (char *));
-    sizes = (size_t *)MEMmalloc (n * sizeof (size_t));
+    patterns = MEMmalloc (n * sizeof (char *));
+    values = MEMmalloc (n * sizeof (char *));
+    sizes = MEMmalloc (n * sizeof (size_t));
 
     va_start (arg_list, n);
 
@@ -1389,6 +1327,33 @@ STRsubstTokens (const char *str, size_t n, ...)
     buf = SBUFfree (buf);
 
     DBUG_RETURN (result);
+}
+
+/**
+ * @brief Strip all space characters (space, newline, carrage return, and tab)
+ *        from both the front and back of the given string.
+ *
+ * @param s string to be stripped
+ * @return stripped string, using the same pointer as input
+ */
+char *
+STRstrip (char *s)
+{
+    char *cp, *ft;
+
+    DBUG_ENTER ();
+
+    if (s != NULL && *s != '\0')
+    {
+        ft = cp = s;
+
+        while (isspace (*ft)) ft++;
+        while (*ft != '\0') *cp++ = *ft++;
+        *cp = '\0';
+        while (cp > s && isspace (*--cp)) *cp = '\0';
+    }
+
+    DBUG_RETURN (s);
 }
 
 #undef DBUG_PREFIX

@@ -38,7 +38,7 @@ AddLibPath (const char *path, void *buf)
     char *abspath = FMGRabsName (path);
 
     /* only include the path if the the path does actually exist.
-     * This is needed for picky linkers that issue warnings for 
+     * This is needed for picky linkers that issue warnings for
      * paths that do not exist such as OSX's clang.
      */
     if (FMGRcheckExistDir (abspath)) {
@@ -65,7 +65,7 @@ AddModLibPath (const char *path, void *buf)
     char *absfpath = FMGRabsName (fpath);
 
     /* only include the path if the the path does actually exist.
-     * This is needed for picky linkers that issue warnings for 
+     * This is needed for picky linkers that issue warnings for
      * paths that do not exist such as OSX's clang.
      */
     if (FMGRcheckExistDir (absfpath)) {
@@ -230,8 +230,7 @@ CCTperformTask (ccm_task_t task)
     char *tree_cflags_subst = global.tree_cflags;
 
     // %compileflags%
-    char *compileflags_subst
-      = STRcatn (5, opt_subst, " ", dbg_subst, " ", cflags_subst);
+    char *compileflags_subst = STRcatn (5, opt_subst, " ", dbg_subst, " ", cflags_subst);
 
     if (task == CCT_compileflags) {
         MEMfree (opt_subst);
@@ -251,16 +250,12 @@ CCTperformTask (ccm_task_t task)
 
     // %extlibdirs%
     str_buf *extlibdirs_buf = SBUFcreate (1);
-
     FMGRmapPath (PK_extlib_path, AddLibPath, extlibdirs_buf);
-
     char *extlibdirs_subst = SBUF2strAndFree (&extlibdirs_buf);
 
     // %modlibdirs%
     str_buf *modlibdirs_buf = SBUFcreate (1);
-
     FMGRmapPath (PK_lib_path, AddModLibPath, modlibdirs_buf);
-
     char *modlibdirs_subst = SBUF2strAndFree (&modlibdirs_buf);
 
     // %modlibs%
@@ -424,7 +419,7 @@ CCTperformTask (ccm_task_t task)
         if (task == CCT_ccompileonly) {
             char *old_compileflags_subst = compileflags_subst;
             compileflags_subst = STRcatn (3, cppflags_subst, " ", compileflags_subst);
-            MEMfree( old_compileflags_subst);
+            MEMfree (old_compileflags_subst);
             source_subst = global.sacfilename;
             objects_subst = "";
             cmd = global.do_ccompile == DO_C_rmod ? global.config.compile_rmod :

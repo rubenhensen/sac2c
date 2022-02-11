@@ -392,6 +392,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/objects/restore_objects.c
 ${CMAKE_CURRENT_SOURCE_DIR}/objects/restore_reference_args.c
 ${CMAKE_CURRENT_SOURCE_DIR}/objects/spmdfun_fix.c
 ${CMAKE_CURRENT_SOURCE_DIR}/objects/strip_external_signatures.c
+${CMAKE_CURRENT_SOURCE_DIR}/platform/macos.c
 ${CMAKE_CURRENT_SOURCE_DIR}/precompile/dead_vardec_removal.c
 ${CMAKE_CURRENT_SOURCE_DIR}/precompile/distribute_threads.c
 ${CMAKE_CURRENT_SOURCE_DIR}/precompile/dynamic_memory_usage_inference.c

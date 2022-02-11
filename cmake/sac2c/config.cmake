@@ -68,16 +68,6 @@ MACRO (ENABLE_VAR_IF  FLAG)
   ENDIF ()
 ENDMACRO ()
 
-# System-dependent variables.
-SET (OS       "${CMAKE_SYSTEM}")
-SET (ARCH     "${CMAKE_SYSTEM_PROCESSOR}")
-
-# add some default value for some additional macOS variable
-# note that those variables are ignored on other systems
-IF (NOT CMAKE_OSX_ARCHITECTURES)
-  SET (CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "macOS architecture to build; 64-bit X86 and ARM is expected" FORCE)
-ENDIF ()
-
 # Sac2c variables
 SET (LINKSETSIZE "0" CACHE STRING "Set a value for -linksetsize parameter of sac2c")
 
@@ -94,8 +84,12 @@ SET (CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${CMAKE_INCLUDE_PATH})
 
 # Search paths for libraries
 SET (CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /opt/local/lib /opt/local/lib64)
-IF (DEFINED ENV{LD_LIBRARY_PATH}) #FIXME (hans) : DYLD_... on darwin
+IF (DEFINED ENV{LD_LIBRARY_PATH})
   STRING (REPLACE ":" ";" ldpathList $ENV{LD_LIBRARY_PATH})
+  SET (CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${ldpathList})
+  UNSET (ldpathList)
+ELSEIF (DEFINED ENV{DYLD_LIBRARY_PATH})
+  STRING (REPLACE ":" ";" ldpathList $ENV{DYLD_LIBRARY_PATH})
   SET (CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${ldpathList})
   UNSET (ldpathList)
 ENDIF ()
@@ -683,16 +677,36 @@ ELSEIF (DECC)
   SET (CCMTLINK      "-pthread")
   SET (CCDLLINK      "-ldl")
 ELSEIF (MACC)
-  SET (MACCC_FLAGS   "")
-  SET (MACLD_FLAGS   "")
+  SET (MACCC_FLAGS "")
+  SET (MACLD_FLAGS "")
   SET (MACCC_NATIVE_FLAGS  "")
   SET (MACCC_GENERIC_FLAGS  "")
+  # affix specific architecture we want to build for (default is current one)
+  IF (CMAKE_OSX_ARCHITECTURES)
+    LIST (LENGTH CMAKE_OSX_ARCHITECTURES _osx_arch_len)
+    LIST (GET CMAKE_OSX_ARCHITECTURES 0 _osx_arch)
+    IF (NOT (_osx_arch_len EQUAL 1))
+      MESSAGE (WARNING "FAT binary compilation is not supported, selecting ${_osx_arch}!")
+    ENDIF ()
+    CHECK_CC_FLAG ("-arch ${_osx_arch}" MACCC_FLAGS)
+    CHECK_CC_FLAG ("-arch ${_osx_arch}" MACLD_FLAGS)
+  ELSE ()
+    CHECK_CC_FLAG ("-arch ${CMAKE_HOST_SYSTEM_PROCESSOR}" MACCC_FLAGS)
+    CHECK_CC_FLAG ("-arch ${CMAKE_HOST_SYSTEM_PROCESSOR}" MACLD_FLAGS)
+  ENDIF ()
+  # correctly set the min platform version supported (determined by CMake)
+  IF ("${CMAKE_OSX_DEPLOYMENT_TARGET}")
+    # XXX (hans) CHECK_CC_FLAG can't check this one due to behaviour of check_c_source_compiles()
+    #            creating a macro of the flag... C macros can't contain dots (.) in them.
+    SET (MACCC_FLAGS "${MACCC_FLAGS} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
+    SET (MACLD_FLAGS "${MACLD_FLAGS} -mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
+  ELSE ()
+    MESSAGE (WARNING "No MacOS SDK min-version specified!")
+  ENDIF ()
   # TODO(artem) Check whether this helps to handle the bracket error!
   IF ("${CMAKE_C_COMPILER_ID}" STREQUAL "AppleClang")
     CHECK_CC_FLAG ("-fbracket-depth=4096" MACCC_FLAGS)
   ENDIF ()
-  CHECK_CC_FLAG ("-isysroot ${CMAKE_OSX_SYSROOT}" MACCC_FLAGS)
-  CHECK_CC_FLAG ("-isysroot ${CMAKE_OSX_SYSROOT}" MACLD_FLAGS)
   CHECK_CC_FLAG ("-Wall" MACCC_FLAGS)
   CHECK_CC_FLAG ("-Wextra" MACCC_FLAGS)
   CHECK_CC_FLAG ("-Weverything" MACCC_FLAGS)
@@ -842,6 +856,7 @@ ENDIF ()
 # variables CMAKE_<build-type>_POSTFIX and CMAKE_C_FLAGS_<build-type>
 SET (KNOWN_BUILD_TYPES "DEBUG;RELEASE")
 IF (NOT CMAKE_BUILD_TYPE)
+  MESSAGE (NOTICE "Build type not set, setting to DEBUG.")
   SET (CMAKE_BUILD_TYPE "DEBUG")
 ENDIF ()
 
@@ -942,6 +957,7 @@ SET (BUILD_STATUS "
 *
 * CMake Generator:         ${CMAKE_GENERATOR}
 * CMake Variant:           ${CMAKE_BUILD_TYPE}
+* Build Generic:           ${BUILDGENERIC}
 *
 * Run-time specialization: ${ENABLE_RTSPEC}
 * Private heap manager:    ${ENABLE_PHM}

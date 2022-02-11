@@ -751,7 +751,7 @@ typedef struct TARGET_LIST_T {
     DEF_RESOURCE (CACHE3_WRITEPOL, cache3_writepol, char *, str)                         \
     DEF_RESOURCE (CACHE3_MSCA, cache3_msca_factor, int, num)                             \
     DEF_RESOURCE (CCP_CEXT, ccp_cext, char *, str)                                       \
-    DEF_RESOURCE (CCP_OBJEXT, ccp_objext, char *, str)                                     \
+    DEF_RESOURCE (CCP_OBJEXT, ccp_objext, char *, str)                                   \
     DEF_RESOURCE (CEXT, cext, char *, str)                                               \
     DEF_RESOURCE (OBJEXT, objext, char *, str)                                           \
     DEF_RESOURCE (MODEXT, modext, char *, str)                                           \

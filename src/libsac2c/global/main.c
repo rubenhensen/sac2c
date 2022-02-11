@@ -5,6 +5,7 @@
 #include "phase_drivers.h"
 #include "options.h"
 #include "ctinfo.h"
+#include "memory.h"
 #include "cctools.h"
 #include "globals.h"
 #include "resource.h"
@@ -13,6 +14,8 @@
 
 #define DBUG_PREFIX "SAC"
 #include "debug.h"
+
+#include "config.h"
 
 #include <stdlib.h>
 #include <locale.h>

@@ -1,9 +1,21 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.17)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.19)
 
 # Name of the project
-PROJECT (sac2c_runtime C)
+PROJECT (sac2c_runtime NONE)
 
+# On macOS after Mojave and Catalina, the compilers in /usr/bin
+# are the ones that include the correct C standard library system headers/libs (sysroot)
+IF (CMAKE_SYSTEM_NAME MATCHES Darwin)
+  IF ( (NOT DEFINED CMAKE_C_COMPILER) AND (NOT DEFINED ENV{CC}) AND (EXISTS /usr/bin/cc) )
+    SET (CMAKE_C_COMPILER /usr/bin/cc)
+  ENDIF ()
+  IF ( (NOT DEFINED CMAKE_CXX_COMPILER) AND (NOT DEFINED ENV{CXX}) AND (EXISTS /usr/bin/c++) )
+    SET (CMAKE_CXX_COMPILER /usr/bin/c++)
+  ENDIF()
+ENDIF()
 
+ENABLE_LANGUAGE (C)
+ENABLE_LANGUAGE (CXX)
 
 IF (NOT SAC2C_BUILD_DIR)
     MESSAGE (FATAL_ERROR "The SAC2C_BUILD_DIR is not set!")

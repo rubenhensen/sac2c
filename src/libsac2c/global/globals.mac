@@ -180,12 +180,12 @@ GLOBAL (bool, printccflags, FALSE, xfree_dummy, )
 
 GLOBAL (do_c_type_t, do_clink, DO_C_none, xfree_dummy, )
 /*
- * enables just compiling a C source in sac2c
+ * enables just linking a bunch of C objects in sac2c
  */
 
 GLOBAL (do_c_type_t, do_ccompile, DO_C_none, xfree_dummy, )
 /*
- * enables just linking a bunch of C objects in sac2c
+ * enables just compiling a C source in sac2c
  */
 
 GLOBAL (char *, lib_dirname, NULL, xfree_char_ptr, )

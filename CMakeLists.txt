@@ -1,7 +1,11 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.17)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.19)
 
 # Name of the project
-PROJECT (sac2c)
+# We intentionally do not set the project language
+# as we want to handle MacOS C/C++ compiler settings
+# which can only be done if no language is set --- it
+# is set to C/C++ later on.
+PROJECT (sac2c NONE)
 
 # CMake policy handling
 IF (POLICY CMP0075)
@@ -13,6 +17,20 @@ IF (POLICY CMP0114)
   # ExternalProject_Add() dependency handling
   CMAKE_POLICY (SET CMP0114 OLD)
 ENDIF ()
+
+# On macOS after Mojave and Catalina, the compilers in /usr/bin
+# are the ones that include the correct C standard library system headers/libs (sysroot)
+IF (CMAKE_SYSTEM_NAME MATCHES Darwin)
+  IF ( (NOT DEFINED CMAKE_C_COMPILER) AND (NOT DEFINED ENV{CC}) AND (EXISTS /usr/bin/cc) )
+    SET (CMAKE_C_COMPILER /usr/bin/cc)
+  ENDIF ()
+  IF ( (NOT DEFINED CMAKE_CXX_COMPILER) AND (NOT DEFINED ENV{CXX}) AND (EXISTS /usr/bin/c++) )
+    SET (CMAKE_CXX_COMPILER /usr/bin/c++)
+  ENDIF()
+ENDIF()
+
+ENABLE_LANGUAGE (C)
+ENABLE_LANGUAGE (CXX)
 
 # Extra cmake packages
 INCLUDE (ExternalProject)
