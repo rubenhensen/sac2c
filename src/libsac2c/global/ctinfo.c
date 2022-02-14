@@ -70,12 +70,13 @@ static char *message_buffer = NULL;
 static size_t message_buffer_size = 0;
 static size_t message_line_length = 80;
 
-static char *abort_message_header = "Abort:";
-static char *error_message_header = "Error:";
-static char *warn_message_header = "Warning:";
-static char *indent_message_header = "  ";
-static char *state_message_header = "";
-static char *note_message_header = "  ";
+static const char *abort_message_header = "Abort:";
+static const char *error_message_header = "Error:";
+static const char *warn_message_header = "Warning:";
+static const char *note_message_header = "Note:";
+static const char *indent_message_header = "  ";
+static const char *state_message_header = "";
+
 
 static int errors = 0;
 static int warnings = 0;
@@ -120,13 +121,13 @@ CTIget_stderr ()
  *
  * @fn void ProcessMessage( char *buffer, int line_length)
  *
- *   @brief  formats message according to line length
+ *   @brief  Formats message according to the line length.
  *
  *           '@' characters are inserted into the buffer to represent line
  *           breaks.
  *
- *   @param buffer  message buffer
- *   @param line_length maximum line length
+ *   @param buffer       message buffer
+ *   @param line_length  maximum line length
  *
  ******************************************************************************/
 
@@ -177,7 +178,7 @@ ProcessMessage (char *buffer, size_t line_length)
  *
  *   @brief The message specified by format string and variable number
  *          of arguments is "printed" into the global message buffer.
- *          It is taken care of buffer overflows.
+ *          It takes care of buffer overflows.
  *
  *   @param format  format string like in printf family of functions
  *
@@ -238,19 +239,19 @@ Format2Buffer (const char *format, va_list arg_p)
  * @fn char *CTIgetErrorMessageVA( int line, const char* file,
  *                                 const char *format, va_list arg_p)
  *
- *   @brief generates error message string
+ *   @brief Generates an error message string.
  *
  *          This function allows for split-phase error messages:
  *
  *          str = CTIgetErrorMessageVA (line, fname, format, ...args);
- *          CTIerror ("%s", str);
+ *          CTIabortOnBottom (str);
  *
  *          equates to
  *
  *          CTIerrorLine (line, format, ...args);
  *
- *          This allows to prepare error meassages in advnace and only
- *          activate them when actualy needed.
+ *          This allows preparing error messages in advance and activating
+ *          them when needed.
  *
  *   @param line    line number to use in error message
  *   @param file    file name to use in error message
@@ -288,11 +289,11 @@ CTIgetErrorMessageVA (size_t line, const char *file, const char *format, va_list
  *
  * @fn void PrintMessage( const char *header, const char *format, va_list arg_p)
  *
- *   @brief prints message
+ *   @brief Prints message.
  *
  *          The message specified by format string and variable number
  *          of arguments is "printed" into the global message buffer.
- *          It is taken care of buffer overflows. Afterwards, the message
+ *          It takes care of buffer overflows. Afterwards, the message
  *          is formatted to fit a certain line length and is printed to
  *          stderr.
  *
@@ -326,7 +327,7 @@ PrintMessage (const char *header, const char *format, va_list arg_p)
  *
  * @fn static void CleanUp()
  *
- *   @brief  does som clean up upon termination
+ *   @brief  Does some cleanup upon termination.
  *
  *
  ******************************************************************************/
@@ -349,10 +350,10 @@ CleanUp (void)
  *
  * @fn static void CleanUpInterrupted()
  *
- *   @brief  does som clean up upon termination
+ *   @brief  Does some clean up upon termination.
  *           This function is used by interrupt signal handlers.
  *           In contrast to CleanUp() above it avoids calling the usual
- *           function and aims at terminating as quickly as possible.
+ *           function and aims to terminate as quickly as possible.
  *
  ******************************************************************************/
 static void
@@ -392,7 +393,7 @@ CleanUpInterrupted (void)
  *
  * @fn void AbortCompilation()
  *
- *   @brief  terminates the compilation process with a suitable error message.
+ *   @brief  Terminates the compilation process with a suitable error message.
  *
  ******************************************************************************/
 
@@ -435,12 +436,12 @@ CTIexit (int status)
  *
  * @fn void InternalCompilerErrorBreak( int sig)
  *
- *   @brief  interrupt handler for segmentation faults and bus errors
+ *   @brief  Interrupt handler for segmentation faults and bus errors.
  *
  *           An error message is produced and a bug report is created which
- *           may be sent via email to an appropriate address.
+ *           the user can send in to have us fix it.
  *           Temporary files are deleted and the compilation process
- *           terminated.
+ *           terminates.
  *
  *           DBUG_ENTER/RETURN are omitted on purpose to reduce risk of
  *           creating more errors during error handling.
@@ -596,10 +597,10 @@ InternalCompilerErrorBreak (int sig)
  *
  * @fn void UserForcedBreak( int sig)
  *
- *   @brief  interrupt handler for user-forced breaks like CTRL-C
+ *   @brief  Interrupt handler for user-forced breaks like CTRL-C.
  *
  *           Temporary files are deleted and the compilation process
- *           terminated.
+ *           terminates.
  *
  *           DBUG_ENTER/RETURN are omitted on purpose to reduce risk of
  *           creating more errors during error handling.
@@ -619,7 +620,7 @@ UserForcedBreak (int sig)
  *
  * @fn void CTIinstallInterruptHandlers()
  *
- *   @brief  installs interrupt handlers
+ *   @brief  Installs interrupt handlers.
  *
  ******************************************************************************/
 
@@ -635,11 +636,109 @@ CTIinstallInterruptHandlers ()
     DBUG_RETURN ();
 }
 
+
+/** <!--********************************************************************-->
+ * 
+ * @fn void CTIprintMessage( const char *message_header, const char *format, ... )
+ * 
+ * @brief  Takes care of printing the message without file name, 
+ *         line number or location.
+ * 
+ *         NOTE: Do not confuse this function and its siblings CTIprintMessageLine
+ *               and CTIprintMessageLoc with PrintMessage.
+ *               PrintMessage handles printing, preventing buffer overflows and 
+ *               prefixing each line with the message header, whereas this function
+ *               just handles the general format that should be printed in.
+ * 
+ * @param message_header  The header associated with the type of message, 
+ *                        i.e. error_message_header for errors.
+ * @param format          format string like in printf
+ * 
+ * ****************************************************************************/
+
+void
+CTIprintMessage( const char *message_header, const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ();
+
+    va_start (arg_p, format);
+
+    fprintf (cti_stderr, "%s\n", message_header);
+    PrintMessage (indent_message_header, format, arg_p);
+
+    va_end (arg_p);
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIprintMessageLine( const char *message_header, const int line, 
+ *                               const char *format, ...)
+ *
+ *   @brief  Takes care of printing the message with a file name and line number.
+ *
+ *   @param message_header  The header associated with the type of message, 
+ *                          e.g. error_message_header for errors.
+ *   @param line            line number
+ *   @param format          format string like in printf
+ *
+ ******************************************************************************/
+
+void
+CTIprintMessageLine (const char *message_header, const size_t line, const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ();
+
+    va_start (arg_p, format);
+
+    fprintf (cti_stderr, "%s:%zu %s\n", global.filename, line, message_header);
+    PrintMessage (indent_message_header, format, arg_p);    
+
+    va_end (arg_p);
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIprintMessageLoc( const char *message_header, const struct location loc, 
+ *                              const char *format, ...)
+ *
+ *   @brief  Take care of printing the message with a file name, line number and column.
+ *
+ *   @param message_header  The header associated with the type of message, 
+ *                          e.g. error_message_header for errors.
+ *   @param loc             location info
+ *   @param format          format string like in printf
+ *
+ ******************************************************************************/
+void
+CTIprintMessageLoc (const char *message_header, const struct location loc, const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ();
+
+    va_start (arg_p, format);
+
+    fprintf (cti_stderr, "%s:%zu:%zu %s\n", loc.fname, loc.line, loc.col, message_header);
+    PrintMessage (indent_message_header, format, arg_p);
+
+    va_end (arg_p);
+
+    DBUG_RETURN ();
+}
+
 /** <!--********************************************************************-->
  *
  * @fn void CTIerror( const char *format, ...)
  *
- *   @brief  produces an error message without file name and line number.
+ *   @brief  Produces an error message without file name and line number.
  *
  *   @param format  format string like in printf
  *
@@ -654,8 +753,7 @@ CTIerror (const char *format, ...)
 
     va_start (arg_p, format);
 
-    fprintf (cti_stderr, "%s\n", error_message_header);
-    PrintMessage (indent_message_header, format, arg_p);
+    CTIprintMessage (error_message_header, format, arg_p);
 
     va_end (arg_p);
 
@@ -668,10 +766,10 @@ CTIerror (const char *format, ...)
  *
  * @fn void CTIerrorLine( int line, const char *format, ...)
  *
- *   @brief  produces an error message preceded by file name and line number.
+ *   @brief  Produces an error message preceded by file name and line number.
  *
  *
- *   @param line  line number
+ *   @param line    line number
  *   @param format  format string like in printf
  *
  ******************************************************************************/
@@ -685,8 +783,7 @@ CTIerrorLine (size_t line, const char *format, ...)
 
     va_start (arg_p, format);
 
-    fprintf (cti_stderr, "%s:%zu %s\n", global.filename, line, error_message_header);
-    PrintMessage (indent_message_header, format, arg_p);    
+    CTIprintMessageLine (error_message_header, line, format, arg_p);
 
     va_end (arg_p);
 
@@ -695,35 +792,11 @@ CTIerrorLine (size_t line, const char *format, ...)
     DBUG_RETURN ();
 }
 
-static inline char *
-produce_header (struct location loc, const char *hdr)
-{
-    char *res;
-    str_buf *buffer;
-
-    buffer = SBUFcreate (128);
-    SBUFprintf (buffer, "%s:", loc.fname);
-    if (loc.line == 0)
-        SBUFprint (buffer, "??:");
-    else
-        SBUFprintf (buffer, "%zd:", loc.line);
-
-    if (loc.col > 0)
-        SBUFprintf (buffer, "%zd: ", loc.col);
-    else
-        SBUFprint (buffer, " ");
-
-    SBUFprintf (buffer, "%s", hdr);
-    res = SBUF2strAndFree (&buffer);
-
-    return res;
-}
-
 /** <!--********************************************************************-->
  *
  * @fn void CTIerrorLoc( struct location loc, const char *format, ...)
  *
- *   @brief   produces an error message preceded by location info
+ *   @brief   Produces an error message preceded by location info.
  *
  *   @param loc     location info
  *   @param format  format string like in printf
@@ -737,8 +810,9 @@ CTIerrorLoc (struct location loc, const char *format, ...)
     DBUG_ENTER ();
 
     va_start (arg_p, format);
-    fprintf (cti_stderr, "%s:%zu:%zu %s\n", loc.fname, loc.line, loc.col, error_message_header);
-    PrintMessage (indent_message_header, format, arg_p);
+    
+    CTIprintMessageLoc (error_message_header, loc, format, arg_p);
+    
     va_end (arg_p);
 
     errors++;
@@ -750,7 +824,7 @@ CTIerrorLoc (struct location loc, const char *format, ...)
  *
  * @fn void CTIerrorContinued( const char *format, ...)
  *
- *   @brief  same as CTIerror BUT does not count as new error!
+ *   @brief  Same as CTIerror BUT does not count as new error!
  *
  *   @param format  format string like in printf
  *
@@ -765,7 +839,7 @@ CTIerrorContinued (const char *format, ...)
 
     va_start (arg_p, format);
 
-    PrintMessage (error_message_header, format, arg_p);
+    PrintMessage (indent_message_header, format, arg_p);
 
     va_end (arg_p);
 
@@ -780,7 +854,6 @@ CTIerrorContinued (const char *format, ...)
  *           specifies the phase where the compiler failed.
  *           This function does not respect all cti command-line arguments
  *           to avoid potential crashes or hangs during error handling.
- *           
  *
  *   @param format  format string like in printf
  *
@@ -820,7 +893,7 @@ CTIerrorInternal (const char *format, ...)
  *
  * @fn size_t CTIgetErrorMessageLineLength( )
  *
- *   @brief  yields useful line length for error messages
+ *   @brief  Yields useful line length for error messages.
  *
  *   @return line length
  *
@@ -838,8 +911,9 @@ CTIgetErrorMessageLineLength ()
  *
  * @fn void CTIabortOnBottom( const char *err_msg)
  *
- *   @brief   produces an error message from preprocessed error message
- *            containing @ symbols as line breaks.
+ *   @brief   Produces an error message from preprocessed error messages
+ *            obtained from CTIgetErrorMessageVA containing @ symbols as
+ *             line breaks.
  *
  *   @param err_msg  pre-processed error message
  *
@@ -871,7 +945,7 @@ CTIabortOnBottom (char *err_msg)
  *
  * @fn void CTIabort( const char *format, ...)
  *
- *   @brief   produces an error message without file name and line number
+ *   @brief   Produces an error message without file name and line number
  *            and terminates the compilation process.
  *
  *   @param format  format string like in printf
@@ -885,8 +959,7 @@ CTIabort (const char *format, ...)
 
     va_start (arg_p, format);
 
-    fprintf (cti_stderr, "%s\n", abort_message_header);
-    PrintMessage (indent_message_header, format, arg_p);
+    CTIprintMessage (abort_message_header, format, arg_p);
 
     va_end (arg_p);
 
@@ -922,10 +995,10 @@ CTIabortLoc (struct location loc, const char *format, ...)
  *
  * @fn void CTIabortLine( int line, const char *format, ...)
  *
- *   @brief   produces an error message preceded by file name and line number
+ *   @brief   Produces an error message preceded by file name and line number
  *            and terminates the compilation process.
  *
- *   @param line  line number
+ *   @param line    line number
  *   @param format  format string like in printf
  *
  ******************************************************************************/
@@ -937,8 +1010,7 @@ CTIabortLine (size_t line, const char *format, ...)
 
     va_start (arg_p, format);
 
-    fprintf (cti_stderr, "%s:%zu %s\n", global.filename, line, abort_message_header);
-    PrintMessage (indent_message_header, format, arg_p);
+    CTIprintMessageLine (abort_message_header, line, format, arg_p);
 
     va_end (arg_p);
 
@@ -949,7 +1021,7 @@ CTIabortLine (size_t line, const char *format, ...)
  *
  * @fn void CTIabortOutOfMemory( size_t request)
  *
- *   @brief   produces a specific "out of memory" error message
+ *   @brief   Produces a specific "out of memory" error message
  *            without file name and line number and terminates the
  *            compilation process.
  *
@@ -967,11 +1039,11 @@ void
 CTIabortOutOfMemory (size_t request)
 {
     fprintf (cti_stderr,
-             "%sOut of memory:\n"
-             "%s %zu bytes requested\n",
-             abort_message_header, abort_message_header, request);
+             "%s\n"
+             "%sOut of memory: %zu bytes requested\n",
+             abort_message_header, indent_message_header, request);
 
-    fprintf (cti_stderr, "%s %zu bytes already allocated\n", abort_message_header,
+    fprintf (cti_stderr, "%s%zu bytes already allocated\n", indent_message_header,
              global.current_allocated_mem);
 
     AbortCompilation ();
@@ -981,7 +1053,7 @@ CTIabortOutOfMemory (size_t request)
  *
  * @fn void CTIabortOnError()
  *
- *   @brief  terminates compilation process if errors have occurred.
+ *   @brief  Terminates compilation process if errors have occurred.
  *
  ******************************************************************************/
 
@@ -1007,7 +1079,7 @@ CTIabortOnError ()
  *
  * @fn void CTIwarnLoc( ,struct location loc, const char *format, ...)
  *
- *   @brief   produces a warning message preceded by location info
+ *   @brief   Produces a warning message preceded by location info.
  *
  *   @param loc     location info
  *   @param format  format string like in printf
@@ -1023,8 +1095,8 @@ CTIwarnLoc (struct location loc, const char *format, ...)
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
-        fprintf (cti_stderr, "%s:%zu:%zu %s\n", loc.fname, loc.line, loc.col, warn_message_header);
-        PrintMessage (indent_message_header, format, arg_p);
+        CTIprintMessageLoc (warn_message_header, loc, format, arg_p);
+
         va_end (arg_p);
 
         warnings++;
@@ -1037,9 +1109,9 @@ CTIwarnLoc (struct location loc, const char *format, ...)
  *
  * @fn void CTIwarnLine( int line, const char *format, ...)
  *
- *   @brief   produces a warning message preceded by file name and line number.
+ *   @brief   Produces a warning message preceded by file name and line number.
  *
- *   @param line  line number
+ *   @param line    line number
  *   @param format  format string like in printf
  *
  ******************************************************************************/
@@ -1054,8 +1126,7 @@ CTIwarnLine (size_t line, const char *format, ...)
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
-        fprintf (cti_stderr, "%s:%zu %s\n", global.filename, line, warn_message_header);
-        PrintMessage (indent_message_header, format, arg_p);
+        CTIprintMessageLine (warn_message_header, line, format, arg_p);
 
         va_end (arg_p);
 
@@ -1070,7 +1141,7 @@ CTIwarnLine (size_t line, const char *format, ...)
  *
  * @fn void CTIwarn( const char *format, ...)
  *
- *   @brief   produces a warning message without file name and line number.
+ *   @brief   Produces a warning message without file name and line number.
  *
  *   @param format  format string like in printf
  *
@@ -1086,8 +1157,7 @@ CTIwarn (const char *format, ...)
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
         
-        fprintf (cti_stderr, "%s\n", warn_message_header);
-        PrintMessage (indent_message_header, format, arg_p);
+        CTIprintMessage (warn_message_header, format, arg_p);
 
         va_end (arg_p);
 
@@ -1101,7 +1171,7 @@ CTIwarn (const char *format, ...)
  *
  * @fn void CTIwarnContinued( const char *format, ...)
  *
- *   @brief   same as CTIwarn BUT does not count as new warning.
+ *   @brief   Same as CTIwarn BUT does not count as new warning.
  *
  *   @param format  format string like in printf
  *
@@ -1117,7 +1187,7 @@ CTIwarnContinued (const char *format, ...)
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
-        PrintMessage (warn_message_header, format, arg_p);
+        PrintMessage (indent_message_header, format, arg_p);
 
         va_end (arg_p);
 
@@ -1131,7 +1201,7 @@ CTIwarnContinued (const char *format, ...)
  *
  * @fn size_t CTIgetWarnMessageLineLength( )
  *
- *   @brief  yields useful line length for warning messages
+ *   @brief  Yields useful line length for warning messages.
  *
  *   @return line length
  *
@@ -1158,7 +1228,7 @@ CTIgetWarnMessageLineLength ()
  *
  * @fn void CTIstate( const char *format, ...)
  *
- *   @brief  produces full compile time information output (verbose level 3)
+ *   @brief  Produces basic compile time information output (verbosity level 2)
  *
  *   @param format  format string like in printf
  *
@@ -1193,7 +1263,7 @@ CTIstate (const char *format, ...)
  *
  * @fn void CTInote( const char *format, ...)
  *
- *   @brief  produces basic compile time information output (verbose level 2)
+ *   @brief  Produces full compile time information output (verbosity level 3)
  *
  *   @param format  format string like in printf
  *
@@ -1209,7 +1279,10 @@ CTInote (const char *format, ...)
     if (global.verbose_level >= 3) {
         va_start (arg_p, format);
 
-        PrintMessage (note_message_header, format, arg_p);
+        // Note (pun not intended) that we should not use CTIprintMessage or
+        // note_message_header here because 17 years worth of code is specifically
+        // formatted to only be prefixed with 2 spaces.
+        PrintMessage (indent_message_header, format, arg_p);
 
         va_end (arg_p);
     }
@@ -1221,8 +1294,10 @@ CTInote (const char *format, ...)
  *
  * @fn void CTInoteLine( int line, const char *format, ...)
  *
- *   @brief  produces basic compile time information output (verbose level 2)
+ *   @brief  Produces full compile time information output, preceded by 
+ *           file name and line number at verbosity level 3.
  *
+ *   @param line    line number
  *   @param format  format string like in printf
  *
  ******************************************************************************/
@@ -1237,8 +1312,7 @@ CTInoteLine (size_t line, const char *format, ...)
     if (global.verbose_level >= 3) {
         va_start (arg_p, format);
 
-        fprintf (cti_stderr, "%s %zu ", global.filename, line);
-        PrintMessage (note_message_header, format, arg_p);
+        CTIprintMessageLine (note_message_header, line, format, arg_p);
 
         va_end (arg_p);
     }
@@ -1258,7 +1332,7 @@ CTInoteLine (size_t line, const char *format, ...)
  *
  * @fn void CTItell( int verbose_level, const char *format, ...)
  *
- *   @brief produces compile time information at given verbosity level
+ *   @brief Produces compile time information at the given verbosity level.
  *
  *   @param format  format string like in printf
  *
@@ -1274,7 +1348,7 @@ CTItell (int verbose_level, const char *format, ...)
     if (global.verbose_level >= verbose_level) {
         va_start (arg_p, format);
 
-        PrintMessage (note_message_header, format, arg_p);
+        PrintMessage (indent_message_header, format, arg_p);
 
         va_end (arg_p);
     }
@@ -1286,7 +1360,7 @@ CTItell (int verbose_level, const char *format, ...)
  *
  * @fn void CTIterminateCompilation()
  *
- *   @brief  terminates successful compilation process
+ *   @brief  Terminates successful compilation process.
  *
  ******************************************************************************/
 
@@ -1400,10 +1474,10 @@ CTIterminateCompilation (node *syntax_tree)
 /**
  * @fn const char *CTIitemName(node *item)
  *
- * @brief creates a string containing the module and name of
+ * @brief Creates a string containing the module and name of
  *        the given item. As this function uses an internal
  *        buffer, the returned string should only be used to
- *        print one single message.
+ *        print a single message.
  *
  * @param item a N_fundef, N_objdef or N_typedef
  *
