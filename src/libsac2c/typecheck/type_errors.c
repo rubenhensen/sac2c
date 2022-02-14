@@ -459,11 +459,6 @@ TEhandleError (size_t line, const char *file, const char *format, ...)
 
     va_start (arg_p, format);
 
-    /**
-     * CTIerrorLineVA( line, format, arg_p);
-     * TEextendedAbort( );
-     */
-
     if (errors == NULL) {
         errors = CTIgetErrorMessageVA (line, file, format, arg_p);
     } else {

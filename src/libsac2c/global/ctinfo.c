@@ -74,7 +74,6 @@ static char *abort_message_header = "Abort:";
 static char *error_message_header = "Error:";
 static char *warn_message_header = "Warning:";
 static char *indent_message_header = "  ";
-static char *second_level_header = "=> ";
 static char *state_message_header = "";
 static char *note_message_header = "  ";
 
@@ -270,8 +269,14 @@ CTIgetErrorMessageVA (size_t line, const char *file, const char *format, va_list
     ProcessMessage (message_buffer, message_line_length - STRlen (error_message_header));
 
     buffer = SBUFcreate (255);
-    SBUFprintf (buffer, "line %d in file %s:@", line, file);
+
+    // We deliberately provide both \n and @ to store the information that this line
+    // already has a message header.
+    // This is necessary to print the message properly in CTIabortOnBottom without
+    // major refactoring.
+    SBUFprintf (buffer, "%s:%zu %s\n@", file, line, error_message_header);
     SBUFprint (buffer, message_buffer);
+
     res = SBUF2str (buffer);
 
     buffer = SBUFfree (buffer);
@@ -741,32 +746,6 @@ CTIerrorLoc (struct location loc, const char *format, ...)
     DBUG_RETURN ();
 }
 
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIerrorLineVA( int line, const char *format, va_list arg_p)
- *
- *   @brief  produces an error message preceded by file name and line number.
- *
- *
- *   @param line  line number
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTIerrorLineVA (int line, const char *format, va_list arg_p)
-{
-    DBUG_ENTER ();
-
-    fprintf (cti_stderr, "%s %d ", global.filename, line);
-    PrintMessage (error_message_header, format, arg_p);
-
-    errors++;
-
-    DBUG_RETURN ();
-}
-
 /** <!--********************************************************************-->
  *
  * @fn void CTIerrorContinued( const char *format, ...)
@@ -871,12 +850,17 @@ CTIabortOnBottom (char *err_msg)
 {
     char *line;
 
-    fprintf (cti_stderr, "\n");
-
     line = strtok (err_msg, "@");
-
+    
     while (line != NULL) {
-        fprintf (cti_stderr, "%s%s\n", error_message_header, line);
+        // As per CTIgetErrorMessageVA, we don't add the indent header when the end
+        // of the line already contains '\n' because this indicates that an error
+        // message header is already in place.
+        if (line[strlen(line)-1] == '\n') {
+            fprintf (cti_stderr, line);
+        } else {
+            fprintf (cti_stderr, "%s%s\n", indent_message_header, line);
+        }
         line = strtok (NULL, "@");
     }
 
