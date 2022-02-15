@@ -1,0 +1,34 @@
+// free on argument of function call that is replaced by F_type_error
+//
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS +=
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS) -noprelude -v0
+//
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< -bmem 2>&1 | $(GREP_COMMAND_OUTPUT) "_dec_rc_( a, 1)" 3
+
+
+int foo( int[.,.] a)
+{
+    return 0;
+}
+
+int foo( int[.] a)
+{
+    return _div_SxS_(1,0);
+}
+
+noinline
+int[*] hide( int a)
+{
+   if ( _eq_SxS_( a , 0))
+     res = [1,2,3];
+   else
+     res = [[1,2],[3,4]];
+   return res;
+}
+
+int main()
+{
+   return foo(hide(0));
+}

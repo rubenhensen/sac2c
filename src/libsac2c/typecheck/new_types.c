@@ -6689,14 +6689,16 @@ BuildDispatchErrorAssign (char *funname, node *args, node *rets, node *vardecs)
 }
 
 static node *
-BuildTypeErrorAssign (ntype *bottom, node *vardecs)
+BuildTypeErrorAssign (ntype *bottom, node *args, node *vardecs)
 {
     node *assigns;
+    node *exprs;
 
     DBUG_ENTER ();
 
+    exprs = TBmakeExprs (TBmakeType (bottom), Args2Exprs (args));
     assigns = TBmakeAssign (TBmakeLet (TCmakeIdsFromVardecs (vardecs),
-                                       TCmakePrf1 (F_type_error, TBmakeType (bottom))),
+                                       TBmakePrf (F_type_error, exprs)),
                             NULL);
 
     DBUG_RETURN (assigns);
@@ -6913,7 +6915,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             } else if (FUNDEF_ISTYPEERROR (fundef)) {
                 ntype *bottom = TUcombineBottomsFromRets (FUNDEF_RETS (fundef));
 
-                assigns = BuildTypeErrorAssign (bottom, vardecs);
+                assigns = BuildTypeErrorAssign (bottom, args, vardecs);
             } else {
                 assigns = BuildApAssign (fundef, args, vardecs, new_vardecs);
             }
