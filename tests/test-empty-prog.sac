@@ -1,4 +1,4 @@
-// This is a special test, don't through it away!
+// This is a special test, don't throw it away!
 
 // Pass an empty source file to sac2c, it should
 // still generate C-code and then cause the C
