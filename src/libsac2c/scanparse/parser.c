@@ -42,6 +42,7 @@ static node *handle_generator_body (struct parser *parser, bool array_comprehens
 static ntype *Exprs2NType (ntype *, node *);
 static size_t CountDotsInExprs (node *);
 static shape *Exprs2Shape (node *);
+static unsigned main_count;
 
 /* Helper function to annotate a node with location and return it.  */
 static inline node *
@@ -5134,8 +5135,10 @@ pragmas:
     MEMfree (fname);
     FUNDEF_PRAGMA (ret) = pragmas;
 
-    if (is_main)
+    if (is_main) {
         FUNDEF_ISMAIN (ret) = true;
+        main_count++;
+    }
 
     if (fundef_p) {
         /* FIXME ALLOWSINFIX is deprecated and is not used anywhere elese.  */
@@ -6236,6 +6239,7 @@ parse (struct parser *parser)
     struct token *tok;
 
     // error_count = warning_count = 0;
+    main_count = 0;
     tok = parser_get_token (parser);
 
     if (token_is_keyword (tok, MODULE)) {
@@ -6400,6 +6404,12 @@ parse (struct parser *parser)
             MODULE_NAMESPACE (defs) = NSgetRootNamespace ();
             MODULE_FILETYPE (defs) = FT_prog;
             global.syntax_tree = defs;
+        }
+
+        if (main_count < 1) {
+            error ("No main function is given!");
+        } else if (main_count > 1) {
+            error ("More then one main function parsed!");
         }
     }
 
