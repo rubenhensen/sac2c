@@ -13,7 +13,9 @@
         fi
     done | sort  */
 
-#define ARCH                    "@ARCH@"
+#define OS                      "@CMAKE_SYSTEM_NAME@"
+#define OSVER                   "@CMAKE_SYSTEM_VERSION@"
+#define ARCH                    "@CMAKE_SYSTEM_PROCESSOR@"
 
 // FIXME define this later
 #undef DISTMEM_GASNET_CONDUITS
@@ -66,7 +68,6 @@
 #cmakedefine01 NEED_PTR_PREFIX
 
 
-#define OS                      "@OS@"
 
 #define PF_MAXFUN               @PF_MAXFUN@
 #define PF_MAXFUNAP             @PF_MAXFUNAP@

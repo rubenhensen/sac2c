@@ -662,7 +662,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("chkfreq", ARG_RANGE (global.check_frequency, 0, 4));
 
-    ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (0));
+    ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (EXIT_SUCCESS));
 
     ARGS_OPTION_BEGIN ("cppI")
     {
@@ -1326,9 +1326,9 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 5));
 
-    ARGS_FLAG ("V", USGprintVersion (); CTIexit (0));
+    ARGS_FLAG ("V", USGprintVersion (); CTIexit (EXIT_SUCCESS));
 
-    ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (0));
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (EXIT_SUCCESS));
 
     /*
      * Options starting with xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -1432,7 +1432,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
                  CTIwarn ("Option -ccflag is deprecated, consider using -Xc instead.");
                  SBUFprintf (cflags_buf, " %s", ARG));
 
-    ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (0));
+    ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (EXIT_SUCCESS));
 
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
@@ -1474,8 +1474,8 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
      */
 
-    ARGS_FLAG ("h", USGprintUsage (); CTIexit (0));
-    ARGS_FLAG ("help", USGprintUsage (); CTIexit (0));
+    ARGS_FLAG ("h", USGprintUsage (); CTIexit (EXIT_SUCCESS));
+    ARGS_FLAG ("help", USGprintUsage (); CTIexit (EXIT_SUCCESS));
 
     /*
      * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
@@ -1594,9 +1594,9 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 5));
 
-    ARGS_FLAG ("V", USGprintVersion (); CTIexit (0));
+    ARGS_FLAG ("V", USGprintVersion (); CTIexit (EXIT_SUCCESS));
 
-    ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (0));
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (EXIT_SUCCESS));
 
     /*
      * Options starting with xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -1695,7 +1695,7 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
      * Options starting with ccccccccccccccccccccccccccccccccccccccccccc
      */
 
-    ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (0));
+    ARGS_FLAG ("copyright", USGprintCopyright (); CTIexit (EXIT_SUCCESS));
 
     ARGS_OPTION_BEGIN ("cppI")
     {
@@ -1714,8 +1714,8 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
      */
 
-    ARGS_FLAG ("h", USGprintUsage (); CTIexit (0));
-    ARGS_FLAG ("help", USGprintUsage (); CTIexit (0));
+    ARGS_FLAG ("h", USGprintUsage (); CTIexit (EXIT_SUCCESS));
+    ARGS_FLAG ("help", USGprintUsage (); CTIexit (EXIT_SUCCESS));
 
     /*
      * Options starting with iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
@@ -1769,9 +1769,9 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
 
     ARGS_OPTION ("v", ARG_RANGE (global.verbose_level, 0, 5));
 
-    ARGS_FLAG ("V", USGprintVersion (); CTIexit (0));
+    ARGS_FLAG ("V", USGprintVersion (); CTIexit (EXIT_SUCCESS));
 
-    ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (0));
+    ARGS_FLAG ("VV", USGprintVersionVerbose (); CTIexit (EXIT_SUCCESS));
 
     /*
      * DBUG options ####################################################

@@ -3,13 +3,15 @@
 #include "gtest/gtest.h"
 
 extern "C" {
+#define DBUG_PREFIX "TEST-STR"
+#include "debug.h"
 #include "memory.h"
 #include "str.h"
 }
 
 TEST (StringOperations, testToUpper)
 {
-    char *t = strdup ("test");
+    char *t = STRcpy ("test");
     STRtoupper (t, 0, 1);
     EXPECT_STREQ ("Test", t);
 
@@ -46,6 +48,20 @@ TEST (StringOperations, testStrNCpy)
     char *t = STRncpy ("test", 2);
     EXPECT_STREQ ("te", t);
     MEMfree (t);
+}
+
+TEST (StringOperations, testStrLen)
+{
+    char *t = STRcpy ("test");
+    EXPECT_EQ (4, STRlen (t));
+    MEMfree (t);
+
+    t = STRcpy ("");
+    EXPECT_EQ (0, STRlen (t));
+    MEMfree (t);
+
+    t = NULL;
+    EXPECT_EQ (0, STRlen (t));
 }
 
 // This code is shite too, as it declares the size as int and doesn't check
@@ -97,3 +113,17 @@ TEST (StringOperations, testSubStr05)
     MEMfree (t);
 }
 
+TEST (StringOperations, testStrip)
+{
+    char *t = STRcpy ("    hello world     \n");
+    t = STRstrip (t);
+    size_t len = STRlen (t);
+    EXPECT_STREQ ("hello world", t);
+    EXPECT_EQ (STRlen ("hello world"), len);
+    MEMfree (t);
+
+    t = STRcpy ("       ");
+    t = STRstrip (t);
+    EXPECT_STREQ ("", t);
+    MEMfree (t);
+}

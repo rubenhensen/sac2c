@@ -254,12 +254,12 @@ SYStest (char *format, ...)
     DBUG_RETURN (exit_code);
 }
 
-char *
-SYSexec_and_read_output (char *cmd)
+int
+SYSexec_and_read_output (char *cmd, char **out)
 {
-    const size_t bs = 128;
-    char *b;
-    size_t sz, curpos = 0, bufsz = 0;
+    int ret;
+    str_buf *outp;
+    char buffer[1024] = "";
 
     FILE *f = popen (cmd, "r");
     if (!f) {
@@ -267,20 +267,15 @@ SYSexec_and_read_output (char *cmd)
         CTIabort ("system call '%s' failed", cmd);
     }
 
-    b = MEMmalloc (bs);
-    while ((sz = fread (b + curpos, 1, bs, f)) > 0) {
-        char *bb;
-        bufsz += sz;
-        curpos += sz;
-        /* We don't have bloody realloc! :(  */
-        bb = MEMmalloc (bufsz + bs + 1);
-        memcpy (bb, b, bufsz);
-        MEMfree (b);
-        b = bb;
+    outp = SBUFcreate (1024);
+
+    while (fread (buffer, sizeof (char), 1024, f) > 0) {
+       SBUFprint (outp, buffer);
     }
-    b[curpos] = 0;
-    pclose (f);
-    return b;
+
+    *out = SBUF2strAndFree (&outp);
+    ret = pclose (f);
+    return ret;
 }
 
 #undef DBUG_PREFIX
