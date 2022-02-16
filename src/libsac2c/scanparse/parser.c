@@ -5004,6 +5004,10 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
         fname = loc_annotated (token_location (tok),
                                TBmakeSpid (NULL, strdup (token_as_string (tok))));
 
+        if (main_count > 1)
+            error_loc (token_location (tok), "main function cannot be overloaded");
+        main_count++;
+
         is_main = true;
     } else {
         if (token_is_reserved (tok) || token_class (tok) == tok_user_op)
@@ -6406,11 +6410,8 @@ parse (struct parser *parser)
             global.syntax_tree = defs;
         }
 
-        if (main_count < 1) {
-            error ("No main function is given!");
-        } else if (main_count > 1) {
-            error ("More then one main function parsed!");
-        }
+        if (main_count < 1)
+            error ("No declaration of module, class, or main function given");
     }
 
     return 0;
