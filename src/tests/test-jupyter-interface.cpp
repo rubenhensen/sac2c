@@ -5,7 +5,7 @@
 #include "jupyter.h"
 
 
-bool
+static bool
 parsed_ok (char * s, int status) {
     regex_t regex_status;
     regex_t regex_ret;
@@ -29,7 +29,7 @@ TEST (JupyterInterface, Simple)
     char *s;
 
     jupyter_init ();
-    
+
     s = jupyter_parse_from_string (std::string ("2 + 2").c_str ());
     ASSERT_TRUE (parsed_ok (s, 1));
 

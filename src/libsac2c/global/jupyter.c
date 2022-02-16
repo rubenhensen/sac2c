@@ -89,7 +89,6 @@ parser_print_tables (struct parser *parser)
     return true;
 }
 
-
 char *
 jupyter_parse_from_string (const char *s)
 {
@@ -118,6 +117,7 @@ jupyter_parse_from_string (const char *s)
         __parser->in_return = false; \
         __parser->in_subscript = false; \
         __parser->in_module = false; \
+        __parser->main_count = 0; \
         __parser->current_module = NULL; \
     } while (0)
 
@@ -270,7 +270,6 @@ cleanup:
     return ret_json;
 
 }
-
 
 void
 jupyter_free (void *p) {
