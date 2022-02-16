@@ -5655,6 +5655,7 @@ COMPprfDecRC (node *arg_node, info *arg_info)
         ret_node = MakeDecRcIcm (name, type, num, NULL);
 
         type = TYfreeType (type);
+
         break;
     default:
         DBUG_UNREACHABLE ("1. Argument of dec_rc has wrong node type.");

@@ -567,6 +567,30 @@ EBTap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *EBTprf( node *arg_node, info *arg_info)
+ *
+ * @brief iff this is F_type_error_ we signal this to EBTassign by putting
+ *        a copy of it into INFO_TYPEERROR. This is needed to preserve the
+ *        extra arguments at the end that arise from wrapper functions.
+ *        Cf. issue 2294 for details.
+ * @return original node
+ *
+ *****************************************************************************/
+node *
+EBTprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (PRF_PRF (arg_node) == F_type_error) {
+        DBUG_PRINT ("F_type_error found, duplicating for argument preservation");
+        INFO_TYPEERROR (arg_info) = DUPdoDupTree (arg_node);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *EBTcond( node *arg_node, info *arg_info)
  *
  *   @brief
