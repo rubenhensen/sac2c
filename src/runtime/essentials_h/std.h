@@ -1171,6 +1171,9 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_ND_DECL__DATA_extern(var_NT, basetype, decoration)                           \
     decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT);
 
+#define SAC_ND_DECL__DATA_static(var_NT, basetype, decoration)                           \
+    decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT);
+
 #define SAC_ND_DECL__DATA_(var_NT, basetype, decoration)                                 \
     decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT); /*                \
 FIXME Do not initialize for the time being, as value 0                                   \

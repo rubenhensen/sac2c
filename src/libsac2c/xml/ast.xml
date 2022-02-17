@@ -5155,10 +5155,31 @@ N_tfarg :
         </attribute>
       </attributes>
       <flags>
-        <flag name="IsExported" />
-        <flag name="IsProvided" />
-        <flag name="IsLocal" default="TRUE"/>
-        <flag name="IsExtern" />
+        <flag name="IsExported">
+          <description>
+            Indicates whether the objdef was declared exported.
+            An indirect export through an exported function that
+            relies on it is *not* captured here.
+          </description>
+        </flag>
+        <flag name="IsProvided">
+          <description>
+            Indicates whether the objdef is provided, ie. it was
+            either declared exported or provided. An indirect provision through an
+            exported/provided function that
+            relies on it is *not* captured here.
+          </description>
+        </flag>
+        <flag name="IsLocal" default="TRUE">
+          <description>
+            Indicates whether the objdef lives in this file or not.
+          </description>
+        </flag>
+        <flag name="IsExtern">
+          <description>
+            Indicates whether the objdef was declared external in the source.
+          </description>
+        </flag>
         <flag name="IsAlias" /> 
         <flag name="IsNeeded" default="TRUE" />
      </flags>
