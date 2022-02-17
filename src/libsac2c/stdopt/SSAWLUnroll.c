@@ -887,7 +887,7 @@ CheckUnrollGenarray (node *wln, node *lhs, info *arg_info)
  *      information gained from partitions.
  *
  *   2) if the shape (frameshape) contains a zero, we cannot use the same code
- *      as in 1), since we would loose the inner shape information 
+ *      as in 1), since we would loose the inner shape information
  *      completely in case def_id is not AKS. Instead, we generate
  *
  *         tmp1 = [:<basetype>];
@@ -1522,13 +1522,13 @@ WLURwith (node *arg_node, info *arg_info)
  *
  * description:
  *   Starts the with-loop unrolling traversal for the N_module arg_node
- *    
+ *
  *   This is called only in the post-optimization stage of compilation.
  *   NB. If the compiler is running with limited optimizations, such
  *   as -noopt, WLUR may leave the ast in a less-than-optimal
  *   state, due to removing a one-trip WL that would otherwise crash WLT,
  *   as described in gitlab Issue #2280.
- *   
+ *
  *   If this becomes problematic, then fix the WLT problem.
  *
  ******************************************************************************/
@@ -1543,7 +1543,8 @@ WLURdoWithloopUnrollingModule (node *arg_node)
     TRAVpush (TR_wlur);
     myinfo = MakeInfo ();
 
-    MODULE_FUNS(arg_node) = TRAVsons (MODULE_FUNS( arg_node), myinfo);
+    if (MODULE_FUNS (arg_node) != NULL)
+        MODULE_FUNS (arg_node) = TRAVsons (MODULE_FUNS (arg_node), myinfo);
 
     FreeInfo (myinfo);
     TRAVpop ();
@@ -1558,7 +1559,7 @@ WLURdoWithloopUnrollingModule (node *arg_node)
  *
  * description:
  *   Starts the with-loop unrolling traversal for the N_fundef arg_node
- *    
+ *
  *   This is called only during the optimization stage of compilation.
  *
  ******************************************************************************/
@@ -1567,7 +1568,7 @@ node *
 WLURdoWithloopUnrollingFundef (node *arg_node, info *arg_info)
 {
     info *myinfo;
-    
+
     DBUG_ENTER ();
 
     TRAVpush (TR_wlur);

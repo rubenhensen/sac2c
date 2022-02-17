@@ -92,6 +92,9 @@ struct parser {
     int paren_count;
     int square_count;
     int brace_count;
+
+    /* Count number of 'main' functions parsed */
+    int main_count;
 };
 
 /* Check if parser is not in any parenthesis/bracket expression.  */

@@ -758,6 +758,8 @@ parser_init (struct parser *parser, struct lexer *lex)
     parser->in_module = false;
     parser->current_module = NULL;
 
+    parser->main_count = 0;
+
     add_symbol (symb, "!");
     symbol_set_unary (symb);
     add_symbol (symb, "~");
@@ -5003,6 +5005,10 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
         fname = loc_annotated (token_location (tok),
                                TBmakeSpid (NULL, strdup (token_as_string (tok))));
 
+        if (parser->main_count > 1)
+            error_loc (token_location (tok), "main function cannot be overloaded");
+        parser->main_count++;
+
         is_main = true;
     } else {
         if (token_is_reserved (tok) || token_class (tok) == tok_user_op)
@@ -6401,6 +6407,9 @@ parse (struct parser *parser)
             MODULE_FILETYPE (defs) = FT_prog;
             global.syntax_tree = defs;
         }
+
+        if (parser->main_count < 1)
+            error ("No declaration of module, class, or main function given");
     }
 
     return 0;

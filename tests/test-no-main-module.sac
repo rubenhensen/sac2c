@@ -1,0 +1,13 @@
+// There can be no main function in a module, this
+// test should error out.
+
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(CALL_SAC2C) $< 2>&1 | $(GREP_COMMAND_OUTPUT) "main function cannot be defined inside the module" 1
+module test;
+
+export all;
+
+int main () { return 0; }
