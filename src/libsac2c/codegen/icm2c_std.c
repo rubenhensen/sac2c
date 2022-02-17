@@ -1089,7 +1089,9 @@ ICMCompileND_OBJDEF (char *var_NT, char *basetype, int sdim, int *shp)
     if (global.print_objdef_for_header_file) {
         ICMCompileND_DECL_EXTERN (var_NT, basetype, sdim);
     } else {
-        ICMCompileND_DECL (var_NT, basetype, sdim, shp);
+        indout ("SAC_ND_DECL__DATA( %s, %s, static)\n", var_NT, basetype);
+        indout ("SAC_ND_DECL__DESC( %s, static)\n", var_NT);
+        ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
     }
 
     DBUG_RETURN ();
