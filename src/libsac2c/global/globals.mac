@@ -178,6 +178,31 @@ GLOBAL (bool, printccflags, FALSE, xfree_dummy, )
  * enables printing of ccflags in sac4c
  */
 
+GLOBAL (int, cti_message_length, MAX (40, get_terminal_size ()), xfree_dummy, )
+/*
+ * wrapping length of cti messages (0 = no wrapping)
+ */
+
+GLOBAL (bool, cti_no_color, FALSE, xfree_dummy, )
+/*
+ * inhibits color in cti messages
+ */
+
+GLOBAL (bool, cti_single_line, FALSE, xfree_dummy, )
+/*
+ * suppresses newlines in cti messages
+ */
+
+GLOBAL (char *, cti_header_format, STRcpy ("%s: @"), xfree_char_ptr, )
+/*
+ * header spec for messages
+ */
+
+GLOBAL (char *, cti_multi_line_format, STRcpy ("%.0s   "), xfree_char_ptr, )
+/*
+ *  spec for the beginning of trailing lines of multi-line messages
+ */
+
 GLOBAL (do_c_type_t, do_clink, DO_C_none, xfree_dummy, )
 /*
  * enables just linking a bunch of C objects in sac2c

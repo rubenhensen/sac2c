@@ -1040,6 +1040,38 @@ PrintCompiletimeAnalysesOptions (void)
 }
 
 static void
+PrintCompiletimeMessagingOptions (void)
+{
+    DBUG_ENTER ();
+
+    printf (
+      "\n\nCOMPILETIME MESSAGING OPTIONS:\n\n"
+
+      "    -cti-message-length <n>\n"
+      "                    Insert extra line breaks for messages with lines that are longer\n"
+      "                    than <n> characters. The value 0 implies no extra line breaks.\n"
+      "                    (default: max(40, terminal-width) == %d)\n"
+      "    -cti-no-color   Disables all color output\n"
+      "    -cti-single-line\n"
+      "                    Elides all line breaks within messages and sets -cti-message-length 0\n"
+      "    -cti-header-format <string>\n"
+      "                    Customize the header of all messages. The string must contain exactly\n"
+      "                    one '%%s` which will be replaced by the message type (error, warning,\n"
+      "                    note, ...). It may also contain '@` to indicate desired line breaks.\n"
+      "                    (default: \"%s\")\n"
+      "    -cti-multi-line-format <string>\n"
+      "                    Customize how multi-line messages should start the new lines.\n"
+      "                    The string must contain exactly one '%%s` which will be replaced by the\n"
+      "                    message type (error, warning, note, ...). Note here that actual output of\n"
+      "                    the message type can be achieved by using \"%%.0s\". The string may also\n"
+      "                    contain '@` to indicate desired line breaks.\n"
+      "                    (default: \"%s\")\n",
+      global.cti_message_length, global.cti_header_format, global.cti_multi_line_format);
+
+    DBUG_RETURN ();
+}
+
+static void
 PrintRuntimeProfilingOptions (void)
 {
     DBUG_ENTER ();
@@ -1374,6 +1406,8 @@ USGprintUsage ()
         PrintFredFishOptions ();
 #endif /* DBUG_OFF */
         PrintCompiletimeAnalysesOptions ();
+        if (global.verbose_help)
+            PrintCompiletimeMessagingOptions ();
         PrintRuntimeCheckOptions ();
         PrintRuntimeTraceOptions ();
         PrintRuntimeProfilingOptions ();
