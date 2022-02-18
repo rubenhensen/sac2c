@@ -703,9 +703,8 @@ produce_header (struct location loc, const char *hdr)
         SBUFprint (buffer, " ");
 
     SBUFprintf (buffer, "%s", hdr);
-    res = SBUF2str (buffer);
+    res = SBUF2strAndFree (&buffer);
 
-    buffer = SBUFfree (buffer);
     return res;
 }
 

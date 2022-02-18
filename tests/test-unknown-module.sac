@@ -1,0 +1,30 @@
+// This test intentionally causes the compiler to error out on
+// uses of modules that *do not exist*, in use/import and inline
+// via namespace declarations.
+
+// SAC_TEST|include common.mk
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+//
+// SAC_TEST|all: <file-name>
+// SAC_TEST|<tab>$(CALL_SAC2C) -DUSEM $< 2>&1 | $(GREP_COMMAND_OUTPUT) "cannot load module \`VoidModule'" 1
+// SAC_TEST|<tab>$(CALL_SAC2C) -DIMPORTM $< 2>&1 | $(GREP_COMMAND_OUTPUT) "cannot load module \`VoidModule'" 1
+// SAC_TEST|<tab>$(CALL_SAC2C) -DNSM $< 2>&1 | $(GREP_COMMAND_OUTPUT) "cannot load module \`VoidModule'" 1
+
+#if defined(USEM)
+use VoidModule: all;
+#elif defined(IMPORTM)
+import VoidModule: all;
+#endif
+
+#include "mini-stdlib.sac"
+
+int main ()
+{
+#if defined(NSM)
+  a = VoidModule::hahaha ();
+#else
+  a = [1,2,3,4];
+#endif
+
+  return a[0];
+}

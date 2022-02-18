@@ -264,7 +264,7 @@ handle_symbol_list (struct parser *parser, const char *modname, bool except)
 
     if (modname) {
         HASH_FIND_STR (parser->used_modules, modname, mod);
-        if (!modname)
+        if (!mod)
             return error_mark_node;
     } else
         parser->lex->is_read_user_op = true;
@@ -974,7 +974,8 @@ is_type (struct parser *parser)
             struct known_symbol *symb;
 
             HASH_FIND_STR (parser->used_modules, tval, mod);
-            assert (mod, "module `%s' must be cached first", tval);
+            if (!mod)
+                goto cleanup;
 
             HASH_FIND_STR (mod->symbols, token_as_string (tok), symb);
             ret = symb && !!symbol_is_type (symb);
@@ -988,6 +989,7 @@ is_type (struct parser *parser)
             parser_unget2 (parser);
     }
 
+cleanup:
     parser_unget (parser);
     return ret;
 }
@@ -1122,7 +1124,11 @@ parser_get_namespace_token (struct parser *parser, const char *modname)
         return parser_get_token (parser);
 
     cache_module (parser, modname);
+
     HASH_FIND_STR (parser->used_modules, modname, mod);
+    if (!mod) {
+        return NULL;
+    }
 
     parser->lex->trie_user = mod->user_ops;
 
@@ -1209,14 +1215,14 @@ is_ext_id (struct parser *parser)
             const char *modname = token_as_string (tok);
 
             tok = parser_get_namespace_token (parser, modname);
-            parser_unget3 (parser);
-            if (token_is_reserved (tok) || token_class (tok) == tok_user_op)
+            if (tok != NULL && (token_is_reserved (tok) || token_class (tok) == tok_user_op)) {
+                parser_unget3 (parser);
                 return identifier_new (strdup (modname), strdup (token_as_string (tok)),
                                        /* if something is not a c-identifier,
                                           assume it is an operation.  */
                                        token_class (tok) == tok_operator
                                          || token_class (tok) == tok_user_op);
-            else
+            } else
                 return NULL;
         } else {
             parser_unget2 (parser);
@@ -2640,7 +2646,7 @@ handle_conditional_expr (struct parser *parser, bool no_relop)
 
 out:
     if (cond == error_mark_node || cond == NULL || ifexp == error_mark_node
-        || cond == NULL || elseexp == error_mark_node || elseexp == NULL) {
+        || elseexp == error_mark_node || elseexp == NULL) {
         free_node (cond);
         free_node (ifexp);
         free_node (elseexp);
@@ -5188,7 +5194,7 @@ cache_module (struct parser *parser, const char *modname)
     if (!MODMmoduleExists (modname)) {
         struct location loc = token_location (parser_get_token (parser));
         parser_unget (parser);
-        error_loc (loc, "cannot load module `%s'", modname);
+        error_loc (loc, "cannot load module `%s', does it exist?", modname);
         return;
     }
     module = MODMloadModule (modname);
@@ -5307,10 +5313,7 @@ update_all_known_symbols (struct parser *parser, const char *modname)
 
     HASH_FIND_STR (parser->used_modules, modname, mod);
     if (!mod)
-    {
-        error("module `%s' not cached", modname);
         return -1;
-    }
 
     HASH_ITER (hh, mod->symbols, symb, t) {
         if (symbol_is_binary (symb) || symbol_is_unary (symb) || symbol_is_type (symb)) {
@@ -6406,10 +6409,10 @@ parse (struct parser *parser)
             MODULE_NAMESPACE (defs) = NSgetRootNamespace ();
             MODULE_FILETYPE (defs) = FT_prog;
             global.syntax_tree = defs;
-        }
 
-        if (parser->main_count < 1)
-            error ("No declaration of module, class, or main function given");
+            if (parser->main_count < 1)
+                error ("No declaration of module, class, or main function given");
+        }
     }
 
     return 0;
