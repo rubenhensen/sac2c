@@ -1,6 +1,8 @@
 The Single-Assignment C Compiler
 ================================
 
+[![ISC License](https://img.shields.io/badge/license-ISC-green.svg)](https://gitlab.sac-home.org/sac-group/sac2c/-/blob/develop/LICENSE.md) [![Latest release](https://img.shields.io/gitlab/v/release/sac-group/sac-packages?gitlab_url=https%3A%2F%2Fgitlab.sac-home.org&include_prereleases&sort=date)](https://gitlab.sac-home.org/sac-group/sac-packages/-/releases)
+
 The project encompasses the Single-Assignment C Compiler (called _sac2c_) sources.
 
 Building
