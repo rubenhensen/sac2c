@@ -720,6 +720,10 @@ ELSEIF (MACC)
   CHECK_CC_FLAG ("-Wno-conversion" MACCC_FLAGS)
   CHECK_CC_FLAG ("-Wno-missing-prototypes" MACCC_FLAGS)
 
+  # explicit propagates do generate self-assignments (see 
+  # test-mowl-SE.sac for an example).
+  CHECK_CC_FLAG("-Wno-self-assign" MACCC_FLAGS)
+
   # we have some functions that are only for debug purposes;
   # they are not called anywhere in the individual versions but
   # come in handy when using a debugger.

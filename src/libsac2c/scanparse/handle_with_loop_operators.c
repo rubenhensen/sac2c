@@ -194,8 +194,32 @@
  *
  *
  *
- * TO BE DONE:
- * the renaming as mentioned above is not yet implemented!
+ * IMPLEMENTATION:
+ *
+ * Note here, that we are very early in the phases. We have neither SSA,
+ * nor is the code flattened yet! This implies that we have to be able
+ * to deal with even more possible nestings!
+ *
+ * The transformation is guided by HWLOwith. It identifies the MOWLs
+ * that require transformation with the help of    IsLegitimateMoWl.
+ * Once a to-be-modified MOWL is found, the WITHOPs are being traversed.
+ *
+ * During that traversal, we identify whether we need to split off at least
+ * one WL that has 1 standard operator and potentially copied propagates
+ * (see discussion about alternatives above).
+ * If so, the rlevant LHS, CEXPR, and WITHOPS are being collected and taken
+ * out of the existing chains.
+ *
+ * Renamings are performed when we split off and the corresponding renaming
+ * assignments are being put into INFO_HWLO_RENASSIGNS for later insertion.
+ * Both these renaming related operations happen in the function 
+ * RenameLHSandCreateRanamingAssign.
+ * 
+ * Upon return to HWLOwith, the split-off WL is generated and put into
+ * INFO_HWLO_NEWASSIGNS for later insertion. 
+ *
+ * HWLOwith subsequently is applied recursively to the remaining WL again
+ * to make sure all split-offs that are needed are actually being performed.
  */
 
 /**
@@ -203,6 +227,7 @@
  */
 struct INFO {
     node *lastassign;
+    node *renassign;
     int numops;
     node *cexprs;
     node *ncexprs;
@@ -217,7 +242,8 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_HWLO_LASTASSIGN(n) (n->lastassign)
+#define INFO_HWLO_NEWASSIGNS(n) (n->lastassign)
+#define INFO_HWLO_RENASSIGNS(n) (n->renassign)
 #define INFO_HWLO_NUM_STD_OPS(n) (n->numops)
 #define INFO_HWLO_LHS(n) (n->lhs)
 #define INFO_HWLO_NEW_LHS(n) (n->nlhs)
@@ -240,7 +266,8 @@ MakeInfo (void)
 
     result = (info *)MEMmalloc (sizeof (info));
 
-    INFO_HWLO_LASTASSIGN (result) = NULL;
+    INFO_HWLO_NEWASSIGNS (result) = NULL;
+    INFO_HWLO_RENASSIGNS (result) = NULL;
     INFO_HWLO_NUM_STD_OPS (result) = 0;
     INFO_HWLO_CEXPRS (result) = NULL;
     INFO_HWLO_NEW_CEXPRS (result) = NULL;
@@ -350,7 +377,8 @@ IsLegitimateMoWl (node *withop, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("checking multi-operator WL for splitting...\n");
+    DBUG_PRINT ("checking multi-operator WL in line %zu for splitting...",
+                NODE_LINE (withop));
 
     TRAVpushAnonymous (ilmowl_trav, &TRAVsons);
 
@@ -362,9 +390,31 @@ IsLegitimateMoWl (node *withop, info *arg_info)
 
     TRAVpop ();
 
-    DBUG_PRINT ("... splitting is %s required\n",
+    DBUG_PRINT ("... splitting is %s required",
                 (INFO_HWLO_LEGAL_MOWL (arg_info) ?  "not" : "")); 
     DBUG_RETURN (INFO_HWLO_LEGAL_MOWL (arg_info));
+}
+
+static node *
+RenameLHSandCreateRanamingAssign (node *my_lhs, info *arg_info)
+{
+    char *old_name;
+    char *new_name;
+
+    DBUG_ENTER ();
+
+    old_name = SPIDS_NAME (my_lhs);
+    new_name = TRAVtmpVarName (old_name);
+
+    SPIDS_NAME (my_lhs) = new_name;
+
+    DBUG_PRINT ("  building 1 renaming assignment");
+    INFO_HWLO_RENASSIGNS (arg_info)
+        = TBmakeAssign (TBmakeLet (TBmakeSpids (old_name, NULL),
+                                   TBmakeSpid (NULL, STRcpy (new_name))),
+                        INFO_HWLO_RENASSIGNS (arg_info));
+
+    DBUG_RETURN (my_lhs);
 }
 
 /** <!--**********************************************************************
@@ -412,29 +462,37 @@ HWLOdoHandleWithLoops (node *arg_node)
 node *
 HWLOassign (node *arg_node, info *arg_info)
 {
-    node *mem_last_assign, *return_node;
+    node *return_node;
 
     DBUG_ENTER ();
 
-    mem_last_assign = INFO_HWLO_LASTASSIGN (arg_info);
-    INFO_HWLO_LASTASSIGN (arg_info) = arg_node;
-    DBUG_PRINT ("LASTASSIGN set to %p!", (void *)arg_node);
-
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     /*
-     * newly inserted abstractions are prepanded in front of
-     * INFO_HWLO_LASTASSIGN(arg_info). To properly insert these nodes,
-     * that pointer has to be returned:
+     * newly generated assignments for LHS renamings are collected in
+     * INFO_HWLO_RENASSIGNS(arg_info). They have to be inserted *after*
+     * the current assignment
      */
-    return_node = INFO_HWLO_LASTASSIGN (arg_info);
-
-    if (return_node != arg_node) {
-        DBUG_PRINT ("node %p will be inserted instead of %p",
-                    (void *)return_node,
-                    (void *)arg_node);
+    if (INFO_HWLO_RENASSIGNS(arg_info) != NULL) {
+        DBUG_PRINT ("  injecting %zu renaming assignments",
+                    TCcountAssigns (INFO_HWLO_RENASSIGNS (arg_info)));
+        ASSIGN_NEXT (arg_node) = TCappendAssign (INFO_HWLO_RENASSIGNS(arg_info),
+                                                 ASSIGN_NEXT (arg_node));
+        INFO_HWLO_RENASSIGNS(arg_info) = NULL;
     }
-    INFO_HWLO_LASTASSIGN (arg_info) = mem_last_assign;
-    DBUG_PRINT ("LASTASSIGN (re)set to %p!", (void *)mem_last_assign);
+    /*
+     * newly generated assignments of split-off-WLs are collected in 
+     * INFO_HWLO_NEWASSIGNS(arg_info). To properly insert these nodes,
+     * they have to be prepanded to arg_node.
+     */
+    if (INFO_HWLO_NEWASSIGNS (arg_info) != NULL) {
+        DBUG_PRINT ("  injecting %zu splitted-off WLs",
+                    TCcountAssigns (INFO_HWLO_NEWASSIGNS (arg_info)));
+        return_node = TCappendAssign (INFO_HWLO_NEWASSIGNS (arg_info),
+                                      arg_node);
+        INFO_HWLO_NEWASSIGNS (arg_info) = NULL;
+    } else {
+        return_node = arg_node;
+    }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -495,6 +553,7 @@ node *
 HWLOwith (node *arg_node, info *arg_info)
 {
     node *new_let, *new_part, *new_code;
+    node *new_assigns, *ren_assigns;
 
     DBUG_ENTER ();
 
@@ -522,6 +581,7 @@ HWLOwith (node *arg_node, info *arg_info)
          *       derived from INFO_HWLO_CEXPRS in INFO_HWLO_NEW_CEXPRS
          *     - a new list of (extracted (stdwlop) / copied (propagate)) lhs
          *       variables (N_spids) derived from INFO_HWLO_LHS in INFO_HWLO_NEW_LHS
+         *     - renaming assignments in INFO_HWLO_RENASSIGNS.
          *     Note here, that the existing chaines are being modified!!!
          */
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
@@ -532,7 +592,12 @@ HWLOwith (node *arg_node, info *arg_info)
             new_part = DUPdoDupTree (WITH_PART (arg_node));
             new_code = TBmakeCode (DUPdoDupTree (CODE_CBLOCK (WITH_CODE (arg_node))),
                                    INFO_HWLO_NEW_CEXPRS (arg_info));
+
+            ren_assigns = INFO_HWLO_RENASSIGNS (arg_info);
+            INFO_HWLO_RENASSIGNS (arg_info) = NULL;
             new_code = TRAVdo (new_code, arg_info);
+            INFO_HWLO_RENASSIGNS (arg_info) = ren_assigns;
+
             PART_CODE (new_part) = new_code;
             CODE_USED (new_code)++;
 
@@ -547,14 +612,21 @@ HWLOwith (node *arg_node, info *arg_info)
 
             arg_node = TRAVdo (arg_node, arg_info);
 
-            INFO_HWLO_LASTASSIGN (arg_info)
-              = TBmakeAssign (new_let, INFO_HWLO_LASTASSIGN (arg_info));
+            DBUG_PRINT ("  building 1 split-off WL");
+            INFO_HWLO_NEWASSIGNS (arg_info)
+              = TBmakeAssign (new_let, INFO_HWLO_NEWASSIGNS (arg_info));
         } else {
             INFO_HWLO_NUM_STD_OPS (arg_info) = 0;
         }
     } else {
         if (WITH_CODE (arg_node) != NULL) {
+            new_assigns = INFO_HWLO_NEWASSIGNS (arg_info);
+            INFO_HWLO_NEWASSIGNS (arg_info) = NULL;
+            ren_assigns = INFO_HWLO_RENASSIGNS (arg_info);
+            INFO_HWLO_RENASSIGNS (arg_info) = NULL;
             WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+            INFO_HWLO_NEWASSIGNS (arg_info) = new_assigns;
+            INFO_HWLO_RENASSIGNS (arg_info) = ren_assigns;
         }
     }
 
@@ -578,6 +650,10 @@ StdWithOp (node *arg_node, info *arg_info)
     INFO_HWLO_CEXPRS (arg_info) = EXPRS_NEXT (my_cexprs);
     INFO_HWLO_LHS (arg_info) = SPIDS_NEXT (my_lhs);
 
+    /*
+     * Traverse the operators bottom up and check matching arities
+     * of LHS, CEXPRS, and operators!
+     */
     if (WITHOP_NEXT (arg_node) != NULL) {
         if (EXPRS_NEXT (my_cexprs) == NULL) {
             CTIerrorLine (global.linenum,
@@ -602,11 +678,16 @@ StdWithOp (node *arg_node, info *arg_info)
         CTIabortOnError ();
     }
 
+    /*
+     * Here the actual action starts! We only split-off the first withop
+     * if we have to split-ff at all, ie., INFO_HWLO_NUM_STD_OPS (arg_info) > 1).
+     */
     if ((INFO_HWLO_NUM_STD_OPS (arg_info) > 1) && (my_pos == 1)) {
         EXPRS_NEXT (my_cexprs) = INFO_HWLO_NEW_CEXPRS (arg_info);
         INFO_HWLO_NEW_CEXPRS (arg_info) = my_cexprs;
 
         SPIDS_NEXT (my_lhs) = INFO_HWLO_NEW_LHS (arg_info);
+        my_lhs = RenameLHSandCreateRanamingAssign (my_lhs, arg_info);
         INFO_HWLO_NEW_LHS (arg_info) = my_lhs;
 
         return_node = WITHOP_NEXT (arg_node);
@@ -741,6 +822,10 @@ HWLOpropagate (node *arg_node, info *arg_info)
         DBUG_ASSERT (NODE_TYPE (PROPAGATE_DEFAULT (arg_node)) == N_spid,
                      "propgate defaults should be N_spid!");
         tmp = STRcpy (SPID_NAME (PROPAGATE_DEFAULT (arg_node)));
+        CTIwarnLoc (NODE_LOCATION (arg_node), "effect on \"%s\" in multi-operator-"
+                                              "with-loop will be repeated %d times due "
+                                              "to splitting of the with-loop.",
+                                              tmp, INFO_HWLO_NUM_STD_OPS (arg_info));
 
         new_withop = TBmakePropagate (TBmakeSpid (NULL, tmp));
         PROPAGATE_NEXT (new_withop) = INFO_HWLO_NEW_WITHOPS (arg_info);
