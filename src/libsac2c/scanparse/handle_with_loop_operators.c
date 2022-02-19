@@ -226,7 +226,7 @@
  * INFO structure
  */
 struct INFO {
-    node *lastassign;
+    node *newassign;
     node *renassign;
     int numops;
     node *cexprs;
