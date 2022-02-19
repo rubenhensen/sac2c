@@ -242,7 +242,7 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_HWLO_NEWASSIGNS(n) (n->lastassign)
+#define INFO_HWLO_NEWASSIGNS(n) (n->newassign)
 #define INFO_HWLO_RENASSIGNS(n) (n->renassign)
 #define INFO_HWLO_NUM_STD_OPS(n) (n->numops)
 #define INFO_HWLO_LHS(n) (n->lhs)
