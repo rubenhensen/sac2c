@@ -1,0 +1,76 @@
+// check duplication of side-effect on global object
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -DCLASSNAME=Class<file-name-strip>
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 16
+
+// SAC_TEST|<file-name-we>: Class<file-name-strip>
+
+// source code of the class that is needed:
+//
+// SAC_TEST|define CLASS_SAC
+// SAC_TEST|  class Class<file-name-strip>;
+// SAC_TEST|
+// SAC_TEST|  classtype int;
+// SAC_TEST|
+// SAC_TEST|  export all;
+// SAC_TEST|
+// SAC_TEST|  objdef Class<file-name-strip> theCounter = miniCounter (0);
+// SAC_TEST|
+// SAC_TEST|  Class<file-name-strip> miniCounter (int x)
+// SAC_TEST|  {
+// SAC_TEST|      return to_Class<file-name-strip> (x);
+// SAC_TEST|  }
+// SAC_TEST|
+// SAC_TEST|  void inc (Class<file-name-strip>& c)
+// SAC_TEST|  {
+// SAC_TEST|      x = from_Class<file-name-strip> (c);
+// SAC_TEST|      c = to_Class<file-name-strip> (_add_SxS_(x,1));
+// SAC_TEST|  }
+// SAC_TEST|
+// SAC_TEST|  void inc ()
+// SAC_TEST|  {
+// SAC_TEST|      inc (theCounter);
+// SAC_TEST|  }
+// SAC_TEST|
+// SAC_TEST|  int getValue (Class<file-name-strip>& c)
+// SAC_TEST|  {
+// SAC_TEST|      x = from_Class<file-name-strip> (c);
+// SAC_TEST|      c = to_Class<file-name-strip> (x);
+// SAC_TEST|      return x;
+// SAC_TEST|  }
+// SAC_TEST|  
+// SAC_TEST|  int getValue ()
+// SAC_TEST|  {
+// SAC_TEST|      return getValue (theCounter);
+// SAC_TEST|  }
+// SAC_TEST|  
+// SAC_TEST|endef
+// SAC_TEST|export CLASS_SAC
+
+// generate class
+// SAC_TEST|Class<file-name-strip>.sac:
+// SAC_TEST|<tab>$(RM) $@
+// SAC_TEST|<tab>echo "$$CLASS_SAC" > $@
+
+// compile class
+// SAC_TEST|Class<file-name-strip>: Class<file-name-strip>.sac
+// SAC_TEST|<tab>@$(CALL_SAC2C) $< 2>&1 | $(GREP_COMMAND_OUTPUT) "arning\|rror\|bort" 0
+
+use CLASSNAME: all;
+
+int main()
+{
+    a = [1,2,3,4,5,6,7,8,9,10,11,12];
+
+    a, b = with {
+                  ([0] <= iv < [8]) { inc (); } : ( _add_SxS_(_sel_VxA_(iv, a), 1),
+                                                       _sel_VxA_(iv, a) );
+                } : (genarray( [12], 0),
+                     genarray( [11], 0) );
+
+    return getValue (); // should yield 16 !
+}

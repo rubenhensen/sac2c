@@ -74,6 +74,12 @@ function namewe () {
     echo "$filename" | cut -f 1 -d '.'
 }
 
+# Remove any characters that are allowed in filenames but not in identifiers
+function namestrip () {
+    local filename="$1"
+    echo "$filename" | sed -e 's/-//g'
+}
+
 ## Actual function of interest
 runtest() {
     local IPATH=$1
@@ -89,6 +95,8 @@ runtest() {
 
     base_fname_we=$(namewe "$base_fname")
 
+    base_fname_strip=$(namestrip "$base_fname_we")
+
     # Generate the Makefile form a sac test:
     @CMAKE_C_COMPILER@ -E -C -I"$TOP_TEST_DIR" -x c "$IPATH" \
         | sed 's/[^[:print:]]//g' \
@@ -97,6 +105,7 @@ runtest() {
             -e "s/<tab>/$(printf '\t')/g" \
             -e "s/<file-name>/$base_fname/g" \
             -e "s/<file-name-we>/$base_fname_we/g" \
+            -e "s/<file-name-strip>/$base_fname_strip/g" \
             -e 's/<nlslash>/\\/g' > "${dir_name}/$makefile"
 
     if test $? -ne 0; then

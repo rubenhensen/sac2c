@@ -152,6 +152,10 @@ a Makefile which is ultimately used to run the test(s):
   * `<file-name-we>` --- current file name **without the path** without
     extension, e.g. for /tmp/test-feature.sac this will be `test-feature`.
 
+  * `<file-name-strip>` --- current file name **without the path** without
+    extension, and without non-identifier-friendly characters, e.g. for
+    /tmp/test-feature.sac this will be `testfeature`.
+
   * `<tab>` --- a tab symbol.  This is usefule for generating makefile rule.
 
   * `<nlslash>` --- expands to `\` followed by a newline.  This is needed if

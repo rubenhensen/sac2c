@@ -1050,7 +1050,7 @@ GLOBAL (te_info *, act_info_chn, NULL, xfree_dummy, )
 #ifdef PRODUCTION
 GLOBAL (int, verbose_level, 1, xfree_dummy, )
 #else  /* PRODUCTION */
-GLOBAL (int, verbose_level, 3, xfree_dummy, )
+GLOBAL (int, verbose_level, 2, xfree_dummy, )
 #endif /* PRODUCTION */
        /*
         * Verbosity of compile time output
