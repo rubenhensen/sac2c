@@ -549,13 +549,17 @@ STRsuffix (const char *suffix, const char *str)
     DBUG_RETURN (res);
 }
 
-/**
- * @brief Checks if prefix is prefix of str
+/*******************************************************************************
  *
- * @param sub first string to compare
- * @parma str second string to compare
- * @return TRUE if sub is substring of str, or FALSE otherwise
- */
+ * @fn void STRsub( const char *sub, const char *str)
+ * 
+ *   @brief  Checks is sub is a substring of str.
+ *
+ *   @param  sub the substring to look for
+ *   @param  str the string to find substrings in
+ * 
+ *   @return TRUE if sub is substring of str or sub is NULL, FALSE otherwise
+ ******************************************************************************/
 bool
 STRsub (const char *sub, const char *str)
 {

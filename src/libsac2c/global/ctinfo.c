@@ -70,10 +70,10 @@ static char *message_buffer = NULL;
 static size_t message_buffer_size = 0;
 static size_t message_line_length = 80;
 
-static const char *abort_message_header = "Abort:";
-static const char *error_message_header = "Error:";
-static const char *warn_message_header = "Warning:";
-static const char *note_message_header = "Note:";
+static const char *abort_message_header = "Abort";
+static const char *error_message_header = "Error";
+static const char *warn_message_header = "Warning";
+static const char *note_message_header = "Note";
 static const char *indent_message_header = "  ";
 static const char *state_message_header = "";
 
@@ -639,36 +639,32 @@ CTIinstallInterruptHandlers ()
 
 /** <!--********************************************************************-->
  * 
- * @fn void CTIprintMessage( const char *message_header, const char *format, ... )
+ * @fn void CTIprintMessage( const char *message_header, const char *format,
+ *                           va_list arg_p)
  * 
- * @brief  Takes care of printing the message without file name, 
- *         line number or location.
- * 
- *         NOTE: Do not confuse this function and its siblings CTIprintMessageLine
- *               and CTIprintMessageLoc with PrintMessage.
- *               PrintMessage handles printing, preventing buffer overflows and 
- *               prefixing each line with the message header, whereas this function
- *               just handles the general format that should be printed in.
- * 
- * @param message_header  The header associated with the type of message, 
- *                        i.e. error_message_header for errors.
- * @param format          format string like in printf
+ *   @brief  Takes care of printing the message without file name, 
+ *           line number or location.
+ *   
+ *           NOTE: Do not confuse this function and its siblings CTIprintMessageLine
+ *                 and CTIprintMessageLoc with PrintMessage.
+ *                 PrintMessage handles printing, preventing buffer overflows and 
+ *                 prefixing each line with the message header, whereas this function
+ *                 just handles the general format that should be printed in.
+ *   
+ *   @param message_header  The header associated with the type of message, 
+ *                          i.e. error_message_header for errors.
+ *   @param format          format string like in printf
+ *   @param arg_p           arguments for the format string
  * 
  * ****************************************************************************/
 
 void
-CTIprintMessage( const char *message_header, const char *format, ...)
+CTIprintMessage( const char *message_header, const char *format, va_list arg_p)
 {
-    va_list arg_p;
-
     DBUG_ENTER ();
 
-    va_start (arg_p, format);
-
-    fprintf (cti_stderr, "%s\n", message_header);
-    PrintMessage (indent_message_header, format, arg_p);
-
-    va_end (arg_p);
+    fprintf (cti_stderr, STRsubstToken(global.cti_header_format, "@", "\n"), message_header); // Message header in user format
+    PrintMessage (indent_message_header, format, arg_p); // Message contents
 
     DBUG_RETURN ();
 }
@@ -676,7 +672,7 @@ CTIprintMessage( const char *message_header, const char *format, ...)
 /** <!--********************************************************************-->
  *
  * @fn void CTIprintMessageLine( const char *message_header, const int line, 
- *                               const char *format, ...)
+ *                               const char *format, va_list arg_p)
  *
  *   @brief  Takes care of printing the message with a file name and line number.
  *
@@ -684,22 +680,18 @@ CTIprintMessage( const char *message_header, const char *format, ...)
  *                          e.g. error_message_header for errors.
  *   @param line            line number
  *   @param format          format string like in printf
+ *   @param arg_p           arguments for the format string
  *
  ******************************************************************************/
 
 void
-CTIprintMessageLine (const char *message_header, const size_t line, const char *format, ...)
+CTIprintMessageLine (const char *message_header, const size_t line, const char *format, va_list arg_p)
 {
-    va_list arg_p;
-
     DBUG_ENTER ();
 
-    va_start (arg_p, format);
-
-    fprintf (cti_stderr, "%s:%zu %s\n", global.filename, line, message_header);
-    PrintMessage (indent_message_header, format, arg_p);    
-
-    va_end (arg_p);
+    fprintf (cti_stderr, "%s:%zu: ", global.filename, line); // Gnu format path + line
+    fprintf (cti_stderr, STRsubstToken(global.cti_header_format, "@", "\n"), message_header); // Message header in user format
+    PrintMessage (indent_message_header, format, arg_p); // Message contents
 
     DBUG_RETURN ();
 }
@@ -707,7 +699,7 @@ CTIprintMessageLine (const char *message_header, const size_t line, const char *
 /** <!--********************************************************************-->
  *
  * @fn void CTIprintMessageLoc( const char *message_header, const struct location loc, 
- *                              const char *format, ...)
+ *                              const char *format, va_list arg_p)
  *
  *   @brief  Take care of printing the message with a file name, line number and column.
  *
@@ -715,21 +707,17 @@ CTIprintMessageLine (const char *message_header, const size_t line, const char *
  *                          e.g. error_message_header for errors.
  *   @param loc             location info
  *   @param format          format string like in printf
+ *   @param arg_p           arguments for the format string
  *
  ******************************************************************************/
 void
-CTIprintMessageLoc (const char *message_header, const struct location loc, const char *format, ...)
+CTIprintMessageLoc (const char *message_header, const struct location loc, const char *format, va_list arg_p)
 {
-    va_list arg_p;
-
     DBUG_ENTER ();
 
-    va_start (arg_p, format);
-
-    fprintf (cti_stderr, "%s:%zu:%zu %s\n", loc.fname, loc.line, loc.col, message_header);
-    PrintMessage (indent_message_header, format, arg_p);
-
-    va_end (arg_p);
+    fprintf (cti_stderr, "%s:%zu:%zu: ", loc.fname, loc.line, loc.col); // GNU format location
+    fprintf (cti_stderr, STRsubstToken(global.cti_header_format, "@", "\n"), message_header); // Message header in user format
+    PrintMessage (indent_message_header, format, arg_p); // Message contents
 
     DBUG_RETURN ();
 }
@@ -1039,7 +1027,7 @@ void
 CTIabortOutOfMemory (size_t request)
 {
     fprintf (cti_stderr,
-             "%s\n"
+             "%s:\n"
              "%sOut of memory: %zu bytes requested\n",
              abort_message_header, indent_message_header, request);
 

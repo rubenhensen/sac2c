@@ -150,6 +150,27 @@ OPTcheckOptionConsistency (void)
 {
     DBUG_ENTER ();
 
+    // TODO add proper check for the validity of cti_header_format and cti_multi_line_format
+    // On failing the check, restore the default 
+    // Not sure if we can get the default from globals.mac back or if 
+    // we have to define it in a duplicate manner here
+
+    if (global.cti_single_line) {
+        if (global.cti_message_length != 0) {
+            printf("%d\n", global.cti_message_length);
+            CTIwarn ("Option -cti-single-line implies option -cti-message-length 0.\n"
+                    "Option -cti-message-length will be ignored.");
+            global.cti_message_length = 0;
+        }
+        // TODO:
+        // If cti_header_format is not the default and contains an enter, warn that the enter is
+        // redundant as it will be replaced by a space.
+
+        // TODO:
+        // If cti_multiline_format is not the default, warn that it will be completely ignored.
+        // Same issue as above - not sure how to detect whether it is the default option.
+    }
+
     if (global.optimize.dophm && !global.config.use_phm_api) {
         CTIerror ("Private heap management disabled for this SBI.");
     }
