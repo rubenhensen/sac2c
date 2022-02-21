@@ -931,7 +931,7 @@ CTIabortOnBottom (char *err_msg)
         // of the line already contains '\n' because this indicates that an error
         // message header is already in place.
         if (line[strlen(line)-1] == '\n') {
-            fprintf (cti_stderr, line);
+            fprintf (cti_stderr, "%s", line);
         } else {
             fprintf (cti_stderr, "%s%s\n", indent_message_header, line);
         }
