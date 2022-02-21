@@ -17,7 +17,7 @@ EXCLUDES=('Compiling for CC' 'Disabling' 'was built for newer macOS version')
 TEXCLUDES="$(join_by '|' "${EXCLUDES[@]}")"
 
 # general search
-WARN_NUM=$(grep -i -P -A 1 '^warning:$' "$FILE" | grep -i -v -P "^warning:$" | grep -i -c -v -E "${TEXCLUDES}")
+WARN_NUM=$(grep -i -F 'warning:' "$FILE" | grep -i -c -v -E "${TEXCLUDES}")
 if [ "${WARN_NUM}" -gt 0 ]; then
   echo "+++ ${WARN_NUM} warnings detected +++";
   exit 1
