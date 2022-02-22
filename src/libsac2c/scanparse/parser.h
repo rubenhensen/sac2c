@@ -279,7 +279,6 @@ node *handle_typedef (struct parser *);
 node *handle_assign (struct parser *);
 node *handle_interface (struct parser *, enum interface_kind);
 node *handle_function (struct parser *, enum parsed_ftype *);
-void cache_module (struct parser *, const char *);
 
 
 /* Wrapper for FREEdoFreeNode -- original name is disgusting.  */

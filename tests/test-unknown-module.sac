@@ -8,7 +8,7 @@
 // SAC_TEST|all: <file-name>
 // SAC_TEST|<tab>$(CALL_SAC2C) -DUSEM $< 2>&1 | $(GREP_COMMAND_OUTPUT) "cannot load module \`VoidModule'" 1
 // SAC_TEST|<tab>$(CALL_SAC2C) -DIMPORTM $< 2>&1 | $(GREP_COMMAND_OUTPUT) "cannot load module \`VoidModule'" 1
-// SAC_TEST|<tab>$(CALL_SAC2C) -DNSM $< 2>&1 | $(GREP_COMMAND_OUTPUT) "cannot load module \`VoidModule'" 1
+// SAC_TEST|<tab>$(CALL_SAC2C) -DNSM $< 2>&1 | $(GREP_COMMAND_OUTPUT) "cannot load module \`VoidModule'" 3
 
 #if defined(USEM)
 use VoidModule: all;

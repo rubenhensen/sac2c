@@ -708,6 +708,94 @@ parser_expect_tval (struct parser *parser, enum token_kind tkind)
 }
 #endif
 
+static void
+cache_module (struct parser *parser, const char *modname)
+{
+    struct used_module *used_module;
+    module_t *module;
+    sttable_t *table;
+    stsymboliterator_t *iterator;
+
+    /* Do not cache the module in case it is the
+       module we are parsing right now.  */
+    if (parser->in_module && !strcmp (parser->current_module, modname))
+        return;
+
+    HASH_FIND_STR (parser->used_modules, modname, used_module);
+    if (used_module)
+        return;
+
+    /* XXX Stupid module-manager will die in case the module
+       is not found, which means that:
+         1)  The rest of the program would not be parsed
+             (which may be fine, as potentially we have
+              a problem with user-defined symbols).
+         2)  The parser-internals would not be freed.  */
+    if (!MODMmoduleExists (modname)) {
+        struct location loc = token_location (parser_get_token (parser));
+        parser_unget (parser);
+        error_loc (loc, "cannot load module `%s'!", modname);
+        return;
+    }
+    module = MODMloadModule (modname);
+    table = STcopy (MODMgetSymbolTable (module));
+    iterator = STsymbolIteratorGet (table);
+
+    used_module = (struct used_module *)malloc (sizeof (struct used_module));
+    used_module->name = strdup (modname);
+    used_module->user_ops = trie_new ();
+    used_module->symbols = NULL;
+
+    /* Iterate throught the symol table of MODULE_NAME
+       and import the types that we meet first time.  */
+    while (STsymbolIteratorHasMore (iterator)) {
+        bool arity1 = STsymbolIteratorSymbolArityIs (iterator, 1);
+        bool arity2 = STsymbolIteratorSymbolArityIs (iterator, 2);
+        bool istype;
+        const char *symbol_name;
+        struct known_symbol *ks;
+
+        stsymbol_t *symb = STsymbolIteratorNext (iterator);
+        istype = STsymbolGetEntryType (symb) == SET_typedef;
+        symbol_name = STsymbolName (symb);
+
+        if (!is_normal_id (symbol_name)
+            && trie_search (parser->lex->trie, symbol_name, strlen (symbol_name))
+                 == TRIE_NOT_LAST)
+            trie_add_word (used_module->user_ops, symbol_name, strlen (symbol_name),
+                           TRIE_USEROP);
+
+        HASH_FIND_STR (used_module->symbols, symbol_name, ks);
+        if (ks) {
+            warning ("module `%s' imports symbol `%s' twice", modname, symbol_name);
+            if (arity1)
+                symbol_set_unary (ks);
+            if (arity2)
+                symbol_set_binary (ks);
+            if (istype)
+                symbol_set_type (ks);
+        } else {
+            ks = (struct known_symbol *)malloc (sizeof (struct known_symbol));
+            ks->name = strdup (symbol_name);
+            ks->flags = 0;
+            if (arity1)
+                symbol_set_unary (ks);
+            if (arity2)
+                symbol_set_binary (ks);
+            if (istype)
+                symbol_set_type (ks);
+            HASH_ADD_KEYPTR (hh, used_module->symbols, ks->name, strlen (ks->name), ks);
+        }
+    }
+
+    HASH_ADD_KEYPTR (hh, parser->used_modules, used_module->name,
+                     strlen (used_module->name), used_module);
+
+    iterator = STsymbolIteratorRelease (iterator);
+    table = STdestroy (table);
+    module = MODMunLoadModule (module);
+}
+
 /* Check if the next token returned by parser_get_token would be
    token of class TCLASS, in case the class is different,
    the error_loc would be called.
@@ -974,8 +1062,10 @@ is_type (struct parser *parser)
             struct known_symbol *symb;
 
             HASH_FIND_STR (parser->used_modules, tval, mod);
-            if (!mod)
+            if (!mod) {
+                parser_unget2 (parser);
                 goto cleanup;
+            }
 
             HASH_FIND_STR (mod->symbols, token_as_string (tok), symb);
             ret = symb && !!symbol_is_type (symb);
@@ -1112,22 +1202,24 @@ out:
     return error_type_node;
 }
 
-struct token *
-parser_get_namespace_token (struct parser *parser, const char *modname)
+static int
+parser_get_namespace_token (struct parser *parser, const char *modname, struct token **tok)
 {
     struct used_module *mod;
-    struct token *tok;
 
     /* Do not cache the module in case it is the module
        we are currently parsing.  */
-    if (parser->in_module && !strcmp (parser->current_module, modname))
-        return parser_get_token (parser);
+    if (parser->in_module && !strcmp (parser->current_module, modname)) {
+        *tok = parser_get_token (parser);
+        return TRUE;
+    }
 
     cache_module (parser, modname);
 
     HASH_FIND_STR (parser->used_modules, modname, mod);
     if (!mod) {
-        return NULL;
+        *tok = NULL;
+        return FALSE;
     }
 
     parser->lex->trie_user = mod->user_ops;
@@ -1135,10 +1227,10 @@ parser_get_namespace_token (struct parser *parser, const char *modname)
     if (parser->unget_idx != 0)
         parser_unlex_token_buffer (parser);
 
-    tok = parser_get_token (parser);
+    *tok = parser_get_token (parser);
     parser->lex->trie_user = NULL;
 
-    return tok;
+    return TRUE;
 }
 
 /* Check if the following token is id.  */
@@ -1214,16 +1306,18 @@ is_ext_id (struct parser *parser)
         if (token_is_operator (parser_get_token (parser), tv_dcolon)) {
             const char *modname = token_as_string (tok);
 
-            tok = parser_get_namespace_token (parser, modname);
-            if (tok != NULL && (token_is_reserved (tok) || token_class (tok) == tok_user_op)) {
+            if (parser_get_namespace_token (parser, modname, &tok)
+                && (token_is_reserved (tok) || token_class (tok) == tok_user_op)) {
                 parser_unget3 (parser);
                 return identifier_new (strdup (modname), strdup (token_as_string (tok)),
                                        /* if something is not a c-identifier,
                                           assume it is an operation.  */
                                        token_class (tok) == tok_operator
                                          || token_class (tok) == tok_user_op);
-            } else
+            } else {
+                parser_unget2 (parser);
                 return NULL;
+            }
         } else {
             parser_unget2 (parser);
             return identifier_new (NULL, strdup (token_as_string (tok)), false);
@@ -2646,7 +2740,7 @@ handle_conditional_expr (struct parser *parser, bool no_relop)
 
 out:
     if (cond == error_mark_node || cond == NULL || ifexp == error_mark_node
-        || elseexp == error_mark_node || elseexp == NULL) {
+        || ifexp == NULL || elseexp == error_mark_node || elseexp == NULL) {
         free_node (cond);
         free_node (ifexp);
         free_node (elseexp);
@@ -5168,94 +5262,6 @@ pragmas:
     return ret;
 }
 
-void
-cache_module (struct parser *parser, const char *modname)
-{
-    struct used_module *used_module;
-    module_t *module;
-    sttable_t *table;
-    stsymboliterator_t *iterator;
-
-    /* Do not cache the module in case it is the
-       module we are parsing right now.  */
-    if (parser->in_module && !strcmp (parser->current_module, modname))
-        return;
-
-    HASH_FIND_STR (parser->used_modules, modname, used_module);
-    if (used_module)
-        return;
-
-    /* XXX Stupid module-manager will die in case the module
-       is not found, which means that:
-         1)  The rest of the program would not be parsed
-             (which may be fine, as potentially we have
-              a problem with user-defined symbols).
-         2)  The parser-internals would not be freed.  */
-    if (!MODMmoduleExists (modname)) {
-        struct location loc = token_location (parser_get_token (parser));
-        parser_unget (parser);
-        error_loc (loc, "cannot load module `%s', does it exist?", modname);
-        return;
-    }
-    module = MODMloadModule (modname);
-    table = STcopy (MODMgetSymbolTable (module));
-    iterator = STsymbolIteratorGet (table);
-
-    used_module = (struct used_module *)malloc (sizeof (struct used_module));
-    used_module->name = strdup (modname);
-    used_module->user_ops = trie_new ();
-    used_module->symbols = NULL;
-
-    /* Iterate throught the symol table of MODULE_NAME
-       and import the types that we meet first time.  */
-    while (STsymbolIteratorHasMore (iterator)) {
-        bool arity1 = STsymbolIteratorSymbolArityIs (iterator, 1);
-        bool arity2 = STsymbolIteratorSymbolArityIs (iterator, 2);
-        bool istype;
-        const char *symbol_name;
-        struct known_symbol *ks;
-
-        stsymbol_t *symb = STsymbolIteratorNext (iterator);
-        istype = STsymbolGetEntryType (symb) == SET_typedef;
-        symbol_name = STsymbolName (symb);
-
-        if (!is_normal_id (symbol_name)
-            && trie_search (parser->lex->trie, symbol_name, strlen (symbol_name))
-                 == TRIE_NOT_LAST)
-            trie_add_word (used_module->user_ops, symbol_name, strlen (symbol_name),
-                           TRIE_USEROP);
-
-        HASH_FIND_STR (used_module->symbols, symbol_name, ks);
-        if (ks) {
-            warning ("module `%s' imports symbol `%s' twice", modname, symbol_name);
-            if (arity1)
-                symbol_set_unary (ks);
-            if (arity2)
-                symbol_set_binary (ks);
-            if (istype)
-                symbol_set_type (ks);
-        } else {
-            ks = (struct known_symbol *)malloc (sizeof (struct known_symbol));
-            ks->name = strdup (symbol_name);
-            ks->flags = 0;
-            if (arity1)
-                symbol_set_unary (ks);
-            if (arity2)
-                symbol_set_binary (ks);
-            if (istype)
-                symbol_set_type (ks);
-            HASH_ADD_KEYPTR (hh, used_module->symbols, ks->name, strlen (ks->name), ks);
-        }
-    }
-
-    HASH_ADD_KEYPTR (hh, parser->used_modules, used_module->name,
-                     strlen (used_module->name), used_module);
-
-    iterator = STsymbolIteratorRelease (iterator);
-    table = STdestroy (table);
-    module = MODMunLoadModule (module);
-}
-
 /* symbols-set ::= '{' symbol-list '}'  */
 node *
 __handle_symbol_set (struct parser *parser, const char *modname, bool except)
@@ -6004,8 +6010,7 @@ handle_definitions (struct parser *parser)
         } else if (token_is_keyword (tok, EXTERN)) {
             parser_get_token (parser);
             tok = parser_get_token (parser);
-            parser_unget (parser);
-            parser_unget (parser);
+            parser_unget2 (parser);
 
             if (token_is_keyword (tok, TYPEDEF)) {
                 exp = handle_typedef (parser);
