@@ -213,23 +213,23 @@ createTmpAvis (ntype *type)
 node *
 EMRLassign (node * arg_node, info * arg_info)
 {
-    node *old_next;
-
     DBUG_ENTER ();
 
-    /* Bottom-down traversal */
+    /* Top-down traversal */
     ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     /* prepend the lets to the assign chain */
     if (INFO_ASSIGNS (arg_info) != NULL) {
-        old_next = ASSIGN_NEXT (arg_node);
+        DBUG_PRINT ("Adding the following new assign(s):");
+        DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_ASSIGNS (arg_info)););
+
+        node *old_node = arg_node;
         arg_node = TCappendAssign (INFO_ASSIGNS (arg_info), arg_node);
         INFO_ASSIGNS (arg_info) = NULL;
 
-        old_next = TRAVopt (old_next, arg_info);
-    } else {
+        ASSIGN_NEXT (old_node) = TRAVopt (ASSIGN_NEXT (old_node), arg_info);
+    } else
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-    }
 
     DBUG_RETURN (arg_node);
 }

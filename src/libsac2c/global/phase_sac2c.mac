@@ -220,7 +220,7 @@ SUBPHASE (cwb, "Creating Wrapper Bodies", CWCdoCreateWrapperCode, ALWAYS, popt)
 SUBPHASE (l2f, "Eliminating conditionals in wrapper code", L2FdoLac2Fun, ALWAYS, popt)
 
 SUBPHASE (ssa, "Establishing static single assignment form in wrapper code",
-          SSATdoTransformAllowGOs, ALWAYS popt)
+          SSATdoTransformAllowGOs, ALWAYS, popt)
 
 #else /*  CG_STRUCT_TRY */
 
@@ -1043,7 +1043,7 @@ SUBPHASE (cucc, "CUDA Create cells", CUCCdoCreateCells, global.optimize.doexpar,
 #if 0
 SUBPHASE( scuwl,
           "Split cudarizable withloop",
-          SCUWLdoSplitCudaWithloops, 
+          SCUWLdoSplitCudaWithloops,
           ( global.backend == BE_cuda || global.backend == BE_cudahybrid),
           cuda)
 #endif
@@ -1065,13 +1065,13 @@ SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, ALWAYS, cuda)
 #if 0
 SUBPHASE( ira,
           "CUDA Infer reusable arrays in withloops",
-          IRAdoInterReusableArrays, 
+          IRAdoInterReusableArrays,
           ( global.backend == BE_cuda || global.backend == BE_cudahybrid) && global.optimize.doshr,
           cuda)
 
 SUBPHASE( shmem,
           "CUDA Exploiting data reuse with shared memory",
-          SHMEMdoSharedMemoryReuse, 
+          SHMEMdoSharedMemoryReuse,
           ( global.backend == BE_cuda || global.backend == BE_cudahybrid) && global.optimize.doshr,
           cuda)
 #endif
@@ -1332,7 +1332,7 @@ SUBPHASE (rco, "Optimizing reference counting instructions", EMRCOdoRefCountOpt,
 #if 0
 SUBPHASE( mvsmi,
           "Moving shared memory management instructions out of SPMD functions",
-          MVSMIdoMoveSharedMemoryManagementInstructions, 
+          MVSMIdoMoveSharedMemoryManagementInstructions,
           (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop),
           mem)
 #endif
@@ -1372,9 +1372,9 @@ SUBPHASE (linl, "Inlining LaC functions", LINLdoLACInlining, ALWAYS, ussa)
 SUBPHASE (rec, "Removing external code", RECdoRemoveExternalCode, ALWAYS, ussa)
 
 #if 0
-SUBPHASE( spmdfix, 
+SUBPHASE( spmdfix,
           "Fixing SPMD function signatures",
-          FSFSdoFixSpmdFunctionSignatures, 
+          FSFSdoFixSpmdFunctionSignatures,
           ALWAYS,
           ussa)
 #endif
