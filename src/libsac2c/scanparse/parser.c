@@ -5430,8 +5430,10 @@ handle_interface (struct parser *parser, enum interface_kind interface)
             /* If we use/import all, then parser->symbols must
                be updated with all the symbols from module.  */
             if (interface == int_import || interface == int_use) {
-                if (update_all_known_symbols (parser, modname) < 0)
+                if (update_all_known_symbols (parser, modname) < 0) {
+                    parser_unget (parser);
                     goto skip_error;
+                }
             }
             parser_unget (parser);
         }
