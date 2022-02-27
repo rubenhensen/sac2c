@@ -10657,6 +10657,8 @@ COMPwith (node *arg_node, info *arg_info)
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     body_icms = DUPdoDupTree (BLOCK_ASSIGNS (WITH_CBLOCK (arg_node)));
+    // just in case we need the label. Stupid C compilers complain otherwise :-)
+    break_label_str = TRAVtmpVarName (LABEL_POSTFIX);
 
     if (isfull) {
         if (CODE_NEXT (WITH_CODE (arg_node)) == NULL) {
@@ -10674,7 +10676,6 @@ COMPwith (node *arg_node, info *arg_info)
     } else {
         // create label iff CheckAUDOperators found an N_break:
         if (break_id != NULL) {
-            break_label_str = TRAVtmpVarName (LABEL_POSTFIX);
             icm_chain = TCmakeAssignIcm1 ("ND_LABEL",
                             TCmakeIdCopyString ( break_label_str),
                             icm_chain);
@@ -10776,6 +10777,7 @@ COMPwith (node *arg_node, info *arg_info)
                         icm_chain);
     }
 
+    break_label_str = MEMfree (break_label_str);
     INFO_WITHLOOP (arg_info) = old_withloop;
 
     DBUG_RETURN (icm_chain);
