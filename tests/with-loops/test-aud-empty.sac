@@ -1,0 +1,36 @@
+// test AUD genarray WL with default elements only.
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -noprelude
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 3
+
+noinline
+int[.] hide( int x)
+{
+   if (_eq_SxS_(x, 1))
+      res = [3];
+   else 
+      res = [3,3];
+   return res;
+}
+
+noinline
+int consume( int[*] a)
+{
+   return _sel_VxA_([0],_shape_A_ (a));
+}
+
+
+int main()
+{
+    shp = hide (1);
+
+    a = with {
+        } : genarray( shp, 1);
+
+    // should return 3
+    return consume (a);
+}

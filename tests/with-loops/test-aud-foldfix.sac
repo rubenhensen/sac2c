@@ -1,0 +1,38 @@
+// test AUD genarray WL with foldfix!
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -noprelude
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 1
+
+noinline
+int[*] hide( int x, int[*] a)
+{
+   if (_eq_SxS_(x, 1))
+      res = [4];
+   else 
+      res = a;
+   return res;
+}
+
+noinline
+int consume( int[*] a)
+{
+   return ( _eq_SxS_ (_dim_A_(a), 0) ? a : hide (0, _sel_VxA_([0], _shape_A_(a))));
+}
+
+noinline
+int[*] add ( int[*] a, int[*] b)
+{  return _add_SxS_ ( a, _sel_VxA_([0], b)); }
+
+int main()
+{
+    shp = hide (1, 0);
+    a = with {
+          (_mul_SxV_(0,shp) <= iv < shp) : iv;
+        } : foldfix( add, 0, 1);
+// the correct answer is 1 and not 6!
+    return consume (a);
+}
