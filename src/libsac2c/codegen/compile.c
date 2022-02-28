@@ -92,7 +92,7 @@ struct INFO {
     node *lowervec;
     node *uppervec;
     node *icmchain;
-    bool isfold;
+    bool isfull;
     node *spmdframe;
     node *spmdbarrier;
     char *break_label;
@@ -128,7 +128,7 @@ struct INFO {
 #define INFO_LOWERVEC(n) ((n)->lowervec)
 #define INFO_UPPERVEC(n) ((n)->uppervec)
 #define INFO_ICMCHAIN(n) ((n)->icmchain)
-#define INFO_ISFOLD(n) ((n)->isfold)
+#define INFO_ISFULL_AUDWL(n) ((n)->isfull)
 #define INFO_SPMDFRAME(n) ((n)->spmdframe)
 #define INFO_SPMDBARRIER(n) ((n)->spmdbarrier)
 #define INFO_BREAKLABEL(n) ((n)->break_label)
@@ -171,7 +171,7 @@ MakeInfo (void)
     INFO_LOWERVEC (result) = NULL;
     INFO_UPPERVEC (result) = NULL;
     INFO_ICMCHAIN (result) = NULL;
-    INFO_ISFOLD (result) = FALSE;
+    INFO_ISFULL_AUDWL (result) = FALSE;
     INFO_SPMDFRAME (result) = NULL;
     INFO_SPMDBARRIER (result) = NULL;
     INFO_FOLDLUT (result) = NULL;
@@ -2821,6 +2821,170 @@ COMPdoFinalizeSmart (info *info)
     MEMfree (INFO_LINE_COUNT (info));
 
     DBUG_RETURN ();
+}
+
+static bool
+CheckAUDOperators (node *withop, node **break_id)
+{
+    bool isfull = FALSE;
+    bool hasmod=FALSE, hasgen=FALSE, hasfold=FALSE, hasbreak=FALSE;
+    int numfold=0;
+    DBUG_ENTER ();
+
+    DBUG_ASSERT ((withop != NULL), "AUD with-loop without operator found");
+    while (withop != NULL) {
+        if (NODE_TYPE (withop) == N_genarray) {
+            isfull = TRUE;
+            hasgen = TRUE;
+        } else if (NODE_TYPE (withop) == N_modarray) {
+            isfull = TRUE;
+            hasmod = TRUE;
+        } else if (NODE_TYPE (withop) == N_fold) {
+            hasfold = TRUE;
+            numfold++;
+        } else if (NODE_TYPE (withop) == N_break) {
+            DBUG_ASSERT (!hasbreak, "more than one break operator in AUD WL");
+            hasbreak = TRUE;
+            *break_id = BREAK_MEM (withop);
+        } else {
+            DBUG_ASSERT( (NODE_TYPE (withop) == N_propagate),
+                         "illegal operator in AUDWL found");
+        }
+        withop = WITHOP_NEXT (withop);
+    }
+    DBUG_ASSERT ((isfull && !hasfold && !hasbreak && !(hasgen && hasmod))
+                 || (!hasgen && !hasmod), "illegal mix of operators in AUD WL");
+    DBUG_ASSERT (isfull || !hasbreak || (numfold == 1), "illegal AUD WL operators: "
+                                          "more than one fold and a single break!");
+    
+    DBUG_RETURN (isfull);
+}
+
+static node *
+CreateAUDInitAccus (node *withop, node *res_ids)
+{
+    node *icm_chain = NULL;
+    node *neutral, *let_neutral;
+
+    DBUG_ENTER ();
+    while (withop != NULL) {
+        if (NODE_TYPE (withop) == N_fold) {
+            neutral = FOLD_NEUTRAL (withop);
+            let_neutral = TBmakeLet (DUPdoDupNode (res_ids), DUPdoDupNode (neutral));
+
+            icm_chain = TCappendAssign (COMPdoCompile (let_neutral), icm_chain);
+            res_ids = IDS_NEXT (res_ids);
+        }
+        withop = WITHOP_NEXT (withop);
+    }
+    DBUG_RETURN (icm_chain);
+}
+
+static node *
+CreateAUDSuballocDescAllocChain (node *withop, node *res_ids, node *idx_id)
+{
+    node *icm_chain = NULL;
+    node *sub_id;
+    node *sub_get_dim;
+    node *sub_set_shape;
+
+    DBUG_ENTER ();
+    while (withop != NULL) {
+        if (((NODE_TYPE (withop) == N_modarray)
+              || (NODE_TYPE (withop) == N_genarray))
+            && (WITHOP_SUB (withop) != NULL)) {
+            sub_id = WITHOP_SUB (withop);
+            /*
+             * Calculate dimension of subarray
+             *
+             * dim( A_sub) = dim( A) - size( iv)
+             */
+            sub_get_dim
+              = TCmakeIcm2 (prf_ccode_tab[F_sub_SxS],
+                            TCmakeIcm1 ("ND_A_DIM",
+                                        TCmakeIdCopyStringNtNew (IDS_NAME (res_ids),
+                                                              IDS_NTYPE (res_ids))),
+                            TCmakeIcm1 ("ND_A_SIZE",
+                                        TCmakeIdCopyStringNtNew (ID_NAME (idx_id),
+                                                              ID_NTYPE (idx_id))));
+            /*
+             * Annotate shape of subarray if default present
+             * (genarray only)
+             */
+            if ((NODE_TYPE (withop) == N_genarray)
+                && (!KNOWN_SHAPE (TUgetFullDimEncoding (ID_NTYPE (sub_id))))) {
+                if (GENARRAY_DEFAULT (withop) != NULL) {
+                    DBUG_PRINT ("creating COPY__SHAPE for SUBALLOC var");
+                    /*
+                     * copy shape
+                     */
+                    sub_set_shape
+                      = TCmakeIcm1 ("ND_COPY__SHAPE",
+                                    MakeTypeArgs (ID_NAME (sub_id), ID_NTYPE (sub_id),
+                                                  FALSE, TRUE, FALSE,
+                                                  MakeTypeArgs (ID_NAME (
+                                                                  GENARRAY_DEFAULT (
+                                                                    withop)),
+                                                                ID_NTYPE (
+                                                                  GENARRAY_DEFAULT (
+                                                                    withop)),
+                                                                FALSE, TRUE, FALSE,
+                                                                NULL)));
+
+                    icm_chain = TBmakeAssign (sub_set_shape, icm_chain);
+                } else {
+                    DBUG_UNREACHABLE ("no default value found! "
+                                      "cannot create subvar shape");
+                }
+            } else if ((NODE_TYPE (withop) == N_modarray)
+                       && (!KNOWN_SHAPE (TUgetFullDimEncoding (ID_NTYPE (sub_id))))) {
+                DBUG_PRINT ("creating WL_MODARRAY_SUBSHAPE for SUBALLOC var");
+                /*
+                 * set shape in modarray case based upon result
+                 * and index vector
+                 */
+                sub_set_shape
+                  = TCmakeIcm4 ("WL_MODARRAY_SUBSHAPE",
+                                TCmakeIdCopyStringNtNew (ID_NAME (sub_id), ID_NTYPE (sub_id)),
+                                DUPdupIdNt (idx_id),
+                                TBmakeNum (TUgetDimEncoding (ID_NTYPE (sub_id))),
+                                DUPdupIdsIdNt (res_ids));
+                icm_chain = TBmakeAssign (sub_set_shape, icm_chain);
+            }
+
+            /*
+             * Allocate descriptor of subarray
+             */
+            icm_chain = MakeAllocDescIcm (ID_NAME (sub_id), ID_NTYPE (sub_id), 1,
+                                          sub_get_dim, icm_chain);
+            res_ids = IDS_NEXT (res_ids);
+        }
+        withop = WITHOP_NEXT (withop);
+    }
+    DBUG_RETURN (icm_chain);
+}
+
+static node *
+CreateAUDSuballocDescFreeChain (node *withop)
+{
+    node *icm_chain = NULL;
+    node *sub_id;
+
+    DBUG_ENTER ();
+    while (withop != NULL) {
+        if (((NODE_TYPE (withop) == N_modarray)
+             || (NODE_TYPE (withop) == N_genarray))
+            && (WITHOP_SUB (withop) != NULL)) {
+
+            sub_id = WITHOP_SUB (withop);
+            icm_chain = TCmakeAssignIcm1 ("ND_FREE__DESC",
+                                          TCmakeIdCopyStringNtNew (ID_NAME (sub_id),
+                                                                   ID_NTYPE (sub_id)),
+                                          icm_chain);
+        }
+        withop = WITHOP_NEXT (withop);
+    }
+    DBUG_RETURN (icm_chain);
 }
 
 /******************************************************************************
@@ -10386,13 +10550,15 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
 node *
 COMPwith (node *arg_node, info *arg_info)
 {
-    node *icm_chain = NULL, *body_icms, *default_icms;
+    node *icm_chain = NULL, *body_icms, *default_icms = NULL;
     node *generator_icms;
-    node *let_neutral, *neutral;
-    node *res_ids, *idx_id, *lower_id, *upper_id;
-    node *offs_id = NULL;
-    bool isfold;
+    node *res_ids, *ids, *idx_id, *lower_id, *upper_id;
+    node *break_id = NULL;
+    node *offs_exprs, *exprs;
+    bool isfull;
     node *old_withloop;
+    char *break_label_str;
+    int i;
 
     DBUG_ENTER ();
 
@@ -10402,205 +10568,216 @@ COMPwith (node *arg_node, info *arg_info)
     INFO_WITHLOOP (arg_info) = arg_node;
 
     /**
+     * This is an aud WL! We assume the following here:
+     * 1) There is exactly 1 partition (fold/propagate)
+     *                  or 2 partitions (genarray/modarray)
+     * 2) We can have multiple operators. If we do, the following 
+     *    restrictions apply:
+     *    a) we do NOT have a mix between fold, genarray, or modarray
+     *    b) if we have multiple genarrays, they all have the same shape
+     *    c) if we have multiple modarrays, they all modify the same array
+     *       NB: identical shapes might suffice, but currently (2022) 
+     *       these cannot arrive here...
+     *    d) propagate operators are allowed both, as a stand-alone WL
+     *       or in accompanyment of genarray, modarray, or fold WLs.
+     *    e) not sure, we can deal with break- operators????
+     * 
+     * For the code generation, we have to distinguish two cases:
+     * 1) isfull: we are dealing with modarray or genarray
+     *            and need to iterate over the entire shape
+     * 2) ! isfull: we are iterating from lower bound to upper
+     *              bound of the generator only.
+     *
+     * First we DBUG_ASSERT the restrictions explained above, then we
+     * set isfull appropriately. The checks regarding the MOWls
+     * happen in the helper function CheckAUDOperators.
+     */
+    DBUG_PRINT ("generating code for AUD with-loop...");
+    DBUG_ASSERT (WITH_PART (arg_node) != NULL, "missing part in AUD with loop!");
+
+    isfull = CheckAUDOperators (WITH_WITHOP (arg_node), &break_id);
+    if (isfull) {
+        DBUG_PRINT ("  genarray/modarray WL found => FULL range");
+        DBUG_ASSERT (TCcountParts (WITH_PART (arg_node)) == 2,
+                     "AUD genarray / modarray WL does not have"
+                     " partition and default partition only");
+    } else {
+        DBUG_PRINT ("  fold/propagate only WL found => partition range");
+        DBUG_ASSERT (TCcountParts (WITH_PART (arg_node)) == 1,
+                     "AUD fold / propagate WL does not have"
+                     " exactly one partition");
+    }
+
+    /*
+     * XXX not sure what this does (SBS 2022):
+     */
+    WITH_WITHOP (arg_node) = RemoveIdxDuplicates (WITH_WITHOP (arg_node));
+
+    /**
      * First, we traverse the partition.
-     * This will yield the index vector var in INFO_IDXVEC (cf. COMPwithid)
+     * This will yield the index vector var in INFO_IDXVEC (cf. COMPwithid),
+     * the offsets for all operators in INFO_OFFSETS (cf. COMPwithid),
+     * the lower and upper bounds in INFO_LOWERVEC, INFO_UPPERVEC
+     * (cf. COMPgenerator),
      * and the generator-check icms in INFO_ICMCHAIN (cf. COMPgenerator).
-     * Whereas the former is a back-link only (and thus has to be copied!), the
+     * Whereas the former are back-links only (and thus has to be copied!), the
      * latter has been produced for insertion here and thus can be used as is!.
      * Furthermore, note that the index vector comes as N_id as we are
      * after EMM!!
      * Another aspect to be noticed here is that COMPpart relies on
-     * INFO_ISFOLD to be set properly since for With-Loops different code
-     * has to be created.
+     * INFO_ISFULL_AUDWL to be set properly since for genarray and modarray 
+     * With-Loops require checks against the lower and upper bounds whereas
+     * fold-WLs do not!
      * For single propagates, i.e., withloops that have only a propagate
      * operator, we use the fold compilation scheme, as well.
      */
-    DBUG_ASSERT (WITH_PARTS (arg_node) < 2,
-                 "with-loop with non-AKS withid and multiple generators found!");
+    INFO_ISFULL_AUDWL (arg_info) = isfull;
 
-    isfold = ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold)
-              || (NODE_TYPE (WITH_WITHOP (arg_node)) == N_propagate));
-    INFO_ISFOLD (arg_info) = isfold;
-    DBUG_ASSERT (WITH_PART (arg_node) != NULL, "missing part in AUD with loop!");
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
-    WITH_WITHOP (arg_node) = RemoveIdxDuplicates (WITH_WITHOP (arg_node));
-
-    /*
-     * save the icm_chain for the generators in a local variable
-     * to prevent it from being overwritten by nested with-loops
-     * when traversing the code block
-     */
     generator_icms = INFO_ICMCHAIN (arg_info);
-    INFO_ICMCHAIN (arg_info) = NULL;
-
     idx_id = INFO_IDXVEC (arg_info);
-    if (!isfold) {
-        offs_id = EXPRS_EXPR (INFO_OFFSETS (arg_info));
-    }
+    offs_exprs = INFO_OFFSETS (arg_info);
     lower_id = INFO_LOWERVEC (arg_info);
     upper_id = INFO_UPPERVEC (arg_info);
 
+    INFO_ICMCHAIN (arg_info) = NULL;
     INFO_IDXVEC (arg_info) = NULL;
     INFO_OFFSETS (arg_info) = NULL;
+    INFO_IDXVEC (arg_info) = NULL;
+    INFO_LOWERVEC (arg_info) = NULL;
+    INFO_UPPERVEC (arg_info) = NULL;
 
+
+    /**
+     * Now, we compile the actual code and put a copy of the resulting icms
+     * into body_icm and (in case of isfull) into default_icms.
+     */
     DBUG_ASSERT (WITH_CODE (arg_node) != NULL, "missing code in AUD with loop!");
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     body_icms = DUPdoDupTree (BLOCK_ASSIGNS (WITH_CBLOCK (arg_node)));
+    // just in case we need the label. Stupid C compilers complain otherwise :-)
+    break_label_str = TRAVtmpVarName (LABEL_POSTFIX);
 
-    if (isfold) {
-        icm_chain
-          = TCmakeAssignIcm3 ("AUD_WL_FOLD_END",
-                              TCmakeIdCopyStringNtNew (ID_NAME (idx_id), ID_NTYPE (idx_id)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (lower_id),
-                                                    ID_NTYPE (lower_id)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (upper_id),
-                                                    ID_NTYPE (upper_id)),
-                              icm_chain);
-        icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_END", icm_chain);
-        icm_chain = TCappendAssign (body_icms, icm_chain);
-        icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_BODY", icm_chain);
-        icm_chain = TCappendAssign (generator_icms, icm_chain);
-        icm_chain
-          = TCmakeAssignIcm3 ("AUD_WL_FOLD_BEGIN",
-                              TCmakeIdCopyStringNtNew (ID_NAME (idx_id), ID_NTYPE (idx_id)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (lower_id),
-                                                    ID_NTYPE (lower_id)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (upper_id),
-                                                    ID_NTYPE (upper_id)),
-                              icm_chain);
-
-        if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold) {
-            /*
-             * only fold withloops need this initialisation. For
-             * propagate WLs, the object system enfores that res
-             * and default are the same identifier.
-             */
-            neutral = FOLD_NEUTRAL (WITH_WITHOP (arg_node));
-            let_neutral = TBmakeLet (DUPdoDupNode (res_ids), DUPdoDupNode (neutral));
-
-            icm_chain = TCappendAssign (COMPdoCompile (let_neutral), icm_chain);
-        }
-    } else {
-
-        /*
-         * Free descriptor of subarray (IF it exists)
-         */
-        if (WITHOP_SUB (WITH_WITHOP (arg_node)) != NULL) {
-            node *sub_id = WITHOP_SUB (WITH_WITHOP (arg_node));
-            icm_chain = TCmakeAssignIcm1 ("ND_FREE__DESC",
-                                          TCmakeIdCopyStringNtNew (ID_NAME (sub_id),
-                                                                ID_NTYPE (sub_id)),
-                                          icm_chain);
-        }
-
+    if (isfull) {
         if (CODE_NEXT (WITH_CODE (arg_node)) == NULL) {
-            CTIabortLine (NODE_LINE (arg_node),
-                          "cannot infer default element for with-loop");
+                CTIabortLine (NODE_LINE (arg_node),
+                              "cannot infer default element for with-loop");
         }
-
         default_icms
           = DUPdoDupTree (BLOCK_ASSIGNS (CODE_CBLOCK (CODE_NEXT (WITH_CODE (arg_node)))));
 
-        icm_chain
-          = TCmakeAssignIcm3 ("AUD_WL_END",
-                              TCmakeIdCopyStringNtNew (ID_NAME (idx_id), ID_NTYPE (idx_id)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (offs_id), ID_NTYPE (offs_id)),
-                              TCmakeIdCopyStringNtNew (IDS_NAME (res_ids),
-                                                    IDS_NTYPE (res_ids)),
-                              icm_chain);
-        icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_END", icm_chain);
-        icm_chain = TCappendAssign (default_icms, icm_chain);
-        icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_DEFAULT", icm_chain);
-        icm_chain = TCappendAssign (body_icms, icm_chain);
-        icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_BODY", icm_chain);
-        icm_chain = TCappendAssign (generator_icms, icm_chain);
-        icm_chain
-          = TCmakeAssignIcm3 ("AUD_WL_BEGIN",
-                              TCmakeIdCopyStringNtNew (ID_NAME (idx_id), ID_NTYPE (idx_id)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (offs_id), ID_NTYPE (offs_id)),
-                              TCmakeIdCopyStringNtNew (IDS_NAME (res_ids),
-                                                    IDS_NTYPE (res_ids)),
-                              icm_chain);
-
-        if (WITHOP_SUB (WITH_WITHOP (arg_node)) != NULL) {
-            node *sub_get_dim;
-            node *sub_set_shape;
-            node *sub_id;
-
-            sub_id = WITHOP_SUB (WITH_WITHOP (arg_node));
-
-            /*
-             * Calculate dimension of subarray
-             *
-             * dim( A_sub) = dim( A) - size( iv)
-             */
-            sub_get_dim
-              = TCmakeIcm2 (prf_ccode_tab[F_sub_SxS],
-                            TCmakeIcm1 ("ND_A_DIM",
-                                        TCmakeIdCopyStringNtNew (IDS_NAME (res_ids),
-                                                              IDS_NTYPE (res_ids))),
-                            TCmakeIcm1 ("ND_A_SIZE",
-                                        TCmakeIdCopyStringNtNew (ID_NAME (idx_id),
-                                                              ID_NTYPE (idx_id))));
-
-            /*
-             * Annotate shape of subarray if default present
-             * (genarray only)
-             */
-            if ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray)
-                && (!KNOWN_SHAPE (TUgetFullDimEncoding (ID_NTYPE (sub_id))))) {
-                if (GENARRAY_DEFAULT (WITH_WITHOP (arg_node)) != NULL) {
-                    DBUG_PRINT ("creating COPY__SHAPE for SUBALLOC var");
-                    /*
-                     * copy shape
-                     */
-                    sub_set_shape
-                      = TCmakeIcm1 ("ND_COPY__SHAPE",
-                                    MakeTypeArgs (ID_NAME (sub_id), ID_NTYPE (sub_id),
-                                                  FALSE, TRUE, FALSE,
-                                                  MakeTypeArgs (ID_NAME (
-                                                                  GENARRAY_DEFAULT (
-                                                                    WITH_WITHOP (
-                                                                      arg_node))),
-                                                                ID_NTYPE (
-                                                                  GENARRAY_DEFAULT (
-                                                                    WITH_WITHOP (
-                                                                      arg_node))),
-                                                                FALSE, TRUE, FALSE,
-                                                                NULL)));
-
-                    icm_chain = TBmakeAssign (sub_set_shape, icm_chain);
-
-                } else {
-                    DBUG_UNREACHABLE ("no default value found! "
-                                      "cannot create subvar shape");
-                }
-            } else if ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_modarray)
-                       && (!KNOWN_SHAPE (TUgetFullDimEncoding (ID_NTYPE (sub_id))))) {
-                DBUG_PRINT ("creating WL_MODARRAY_SUBSHAPE for SUBALLOC var");
-                /*
-                 * set shape in modarray case based upon result
-                 * and index vector
-                 */
-                sub_set_shape
-                  = TCmakeIcm4 ("WL_MODARRAY_SUBSHAPE",
-                                TCmakeIdCopyStringNtNew (ID_NAME (sub_id), ID_NTYPE (sub_id)),
-                                DUPdupIdNt (WITHID_VEC (WITH_WITHID (arg_node))),
-                                TBmakeNum (TUgetDimEncoding (ID_NTYPE (sub_id))),
-                                DUPdupIdsIdNt (res_ids));
-                icm_chain = TBmakeAssign (sub_set_shape, icm_chain);
-            }
-
-            /*
-             * Allocate descriptor of subarray
-             */
-            icm_chain = MakeAllocDescIcm (ID_NAME (sub_id), ID_NTYPE (sub_id), 1,
-                                          sub_get_dim, icm_chain);
+        /*
+         * After the AUD-WL, we need to free any potential suballoc descriptors.
+         * This code is generated in CreateAUDSuballocDescFreeChain.
+         */
+        icm_chain = CreateAUDSuballocDescFreeChain (WITH_WITHOP (arg_node));
+    } else {
+        // create label iff CheckAUDOperators found an N_break:
+        if (break_id != NULL) {
+            icm_chain = TCmakeAssignIcm1 ("ND_LABEL",
+                            TCmakeIdCopyString ( break_label_str),
+                            icm_chain);
         }
     }
 
+    /**
+     * Finally, we generate the code for this with-loop. Note that we build
+     * the code bottom up to avoid appending assign chains all the time.
+     */
+    icm_chain = TCmakeAssignIcm0 ("SAC_AUD_WL_END", icm_chain);
+    icm_chain = TCmakeAssignIcm0 ("SAC_AUD_WL_END_ITERATE", icm_chain);
+    if (isfull) {
+        icm_chain
+          = TCmakeAssignIcm2 ("SAC_AUD_WL_INC_IDX_VEC_FULL",
+                TCmakeIdCopyStringNtNew (ID_NAME (idx_id), ID_NTYPE (idx_id)),
+                TCmakeIdCopyStringNtNew (IDS_NAME (res_ids), IDS_NTYPE (res_ids)),
+                icm_chain);
+        i = 0;
+        exprs = offs_exprs;
+        while (exprs != NULL) {
+            icm_chain
+              = TCmakeAssignIcm2 ("SAC_AUD_WL_INC_OFFSET",
+                    TCmakeIdCopyStringNtNew (ID_NAME (EXPRS_EXPR (exprs)),
+                                             ID_NTYPE (EXPRS_EXPR (exprs))),
+                    TBmakeNum (i),
+                    icm_chain);
+            i++;
+            exprs = EXPRS_NEXT (exprs);
+        }
+    } else {
+        icm_chain
+          = TCmakeAssignIcm3 ("SAC_AUD_WL_INC_IDX_VEC_LOWER",
+                TCmakeIdCopyStringNtNew (ID_NAME (idx_id), ID_NTYPE (idx_id)),
+                TCmakeIdCopyStringNtNew (ID_NAME (lower_id), ID_NTYPE (lower_id)),
+                TCmakeIdCopyStringNtNew (ID_NAME (upper_id), ID_NTYPE (upper_id)),
+                icm_chain);
+    }
+    icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_END", icm_chain);
+    if (isfull) {
+        icm_chain = TCappendAssign (default_icms, icm_chain);
+        icm_chain = TCmakeAssignIcm0 ("AUD_WL_COND_DEFAULT", icm_chain);
+    }
+    // create exit iff CheckAUDOperators found an N_break:
+    if (break_id != NULL) {
+        icm_chain = TCmakeAssignIcm2 ("BREAK_ON_GUARD",
+                        TCmakeIdCopyString ( ID_NAME (break_id)),
+                        TCmakeIdCopyString ( break_label_str),
+                        icm_chain);
+    }
+    icm_chain = TCappendAssign (body_icms, icm_chain);
+    icm_chain = TCmakeAssignIcm1 ("AUD_WL_COND_BODY",
+                    TCmakeIdCopyStringNtNew (ID_NAME (idx_id), ID_NTYPE (idx_id)),
+                    icm_chain);
+    icm_chain = TCappendAssign (generator_icms, icm_chain);
+    icm_chain = TCmakeAssignIcm0 ("AUD_WL_START_ITERATE", icm_chain);
+    
+    if (isfull) {
+        i = 0;
+        exprs = offs_exprs;
+        ids = res_ids;
+        while (exprs != NULL) {
+            icm_chain
+              = TCmakeAssignIcm3 ("SAC_AUD_WL_INIT_OFFSET",
+                    TCmakeIdCopyStringNtNew (ID_NAME (EXPRS_EXPR (exprs)),
+                                             ID_NTYPE (EXPRS_EXPR (exprs))),
+                    TCmakeIdCopyStringNtNew (IDS_NAME (ids), IDS_NTYPE (ids)),
+                    TBmakeNum (i),
+                    icm_chain);
+            i++;
+            exprs = EXPRS_NEXT (exprs);
+            ids = IDS_NEXT (ids);
+        }
+        icm_chain
+          = TCmakeAssignIcm2 ("SAC_AUD_WL_INIT_IDX_VEC_FULL",
+                TCmakeIdCopyStringNtNew (ID_NAME (idx_id), ID_NTYPE (idx_id)),
+                TCmakeIdCopyStringNtNew (IDS_NAME (res_ids), IDS_NTYPE (res_ids)),
+                icm_chain);
+    } else {
+        icm_chain
+          = TCmakeAssignIcm3 ("SAC_AUD_WL_INIT_IDX_VEC_LOWER",
+                TCmakeIdCopyStringNtNew (ID_NAME (idx_id), ID_NTYPE (idx_id)),
+                TCmakeIdCopyStringNtNew (ID_NAME (lower_id), ID_NTYPE (lower_id)),
+                TCmakeIdCopyStringNtNew (ID_NAME (upper_id), ID_NTYPE (upper_id)),
+                icm_chain);
+    }
+    icm_chain = TCmakeAssignIcm1 ("AUD_WL_BEGIN",
+                                  TCmakeIdCopyStringNtNew (ID_NAME (idx_id), ID_NTYPE (idx_id)),
+                                  icm_chain);
+
+    if (isfull) {
+        icm_chain = TCappendAssign (
+                        CreateAUDSuballocDescAllocChain (WITH_WITHOP (arg_node),
+                                                         res_ids, idx_id),
+                        icm_chain);
+    } else {
+        icm_chain = TCappendAssign (
+                        CreateAUDInitAccus (WITH_WITHOP (arg_node), res_ids),
+                        icm_chain);
+    }
+
+    break_label_str = MEMfree (break_label_str);
     INFO_WITHLOOP (arg_info) = old_withloop;
 
     DBUG_RETURN (icm_chain);
@@ -10661,7 +10838,7 @@ COMPwithid (node *arg_node, info *arg_info)
  *     creates an ICM for the generator-check and returns it via
  *     INFO_ICMCHAIN. returns lower and upper bound in INFO_LOWERVEC
  *     and INFO_UPPERVEC, respectively.
- *     expects INFO_IDXVEC and INFO_ISFOLD to be set properly!
+ *     expects INFO_IDXVEC and INFO_ISFULL_AUDWL to be set properly!
  *     ATTENTION: this is used in case of AUD only! i.e. when being called
  *     from N_with but NOT from N_with2!
  *
@@ -10682,33 +10859,33 @@ COMPgenerator (node *arg_node, info *arg_info)
     INFO_LOWERVEC (arg_info) = lower;
     INFO_UPPERVEC (arg_info) = upper;
 
-    if (step == NULL) {
+    if (INFO_ISFULL_AUDWL (arg_info)) {
         INFO_ICMCHAIN (arg_info)
-          = TCmakeAssignIcm3 ((INFO_ISFOLD (arg_info) ? "AUD_WL_FOLD_LU_GEN"
-                                                      : "AUD_WL_LU_GEN"),
-                              TCmakeIdCopyStringNtNew (ID_NAME (lower), ID_NTYPE (lower)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (idx), ID_NTYPE (idx)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (upper), ID_NTYPE (upper)),
-                              NULL);
-    } else if (width == NULL) {
-        INFO_ICMCHAIN (arg_info)
-          = TCmakeAssignIcm4 ((INFO_ISFOLD (arg_info) ? "AUD_WL_FOLD_LUS_GEN"
-                                                      : "AUD_WL_LUS_GEN"),
-                              TCmakeIdCopyStringNtNew (ID_NAME (lower), ID_NTYPE (lower)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (idx), ID_NTYPE (idx)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (upper), ID_NTYPE (upper)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (step), ID_NTYPE (step)),
-                              NULL);
+          = TCmakeAssignIcm3 ("SAC_AUD_WL_CHECK_LU",
+                TCmakeIdCopyStringNtNew (ID_NAME (idx), ID_NTYPE (idx)),
+                TCmakeIdCopyStringNtNew (ID_NAME (lower), ID_NTYPE (lower)),
+                TCmakeIdCopyStringNtNew (ID_NAME (upper), ID_NTYPE (upper)),
+                NULL);
     } else {
-        INFO_ICMCHAIN (arg_info)
-          = TCmakeAssignIcm5 ((INFO_ISFOLD (arg_info) ? "AUD_WL_FOLD_LUSW_GEN"
-                                                      : "AUD_WL_LUSW_GEN"),
-                              TCmakeIdCopyStringNtNew (ID_NAME (lower), ID_NTYPE (lower)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (idx), ID_NTYPE (idx)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (upper), ID_NTYPE (upper)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (step), ID_NTYPE (step)),
-                              TCmakeIdCopyStringNtNew (ID_NAME (width), ID_NTYPE (width)),
-                              NULL);
+        INFO_ICMCHAIN (arg_info) = NULL;
+    }
+    if (step != NULL) {
+        if (width == NULL) {
+            INFO_ICMCHAIN (arg_info)
+              = TCmakeAssignIcm3 ("SAC_AUD_WL_CHECK_STEP",
+                    TCmakeIdCopyStringNtNew (ID_NAME (idx), ID_NTYPE (idx)),
+                    TCmakeIdCopyStringNtNew (ID_NAME (lower), ID_NTYPE (lower)),
+                    TCmakeIdCopyStringNtNew (ID_NAME (step), ID_NTYPE (step)),
+                    INFO_ICMCHAIN (arg_info));
+        } else {
+            INFO_ICMCHAIN (arg_info)
+              = TCmakeAssignIcm4 ("SAC_AUD_WL_CHECK_STEPWIDTH",
+                                  TCmakeIdCopyStringNtNew (ID_NAME (idx), ID_NTYPE (idx)),
+                                  TCmakeIdCopyStringNtNew (ID_NAME (lower), ID_NTYPE (lower)),
+                                  TCmakeIdCopyStringNtNew (ID_NAME (step), ID_NTYPE (step)),
+                                  TCmakeIdCopyStringNtNew (ID_NAME (width), ID_NTYPE (width)),
+                                  INFO_ICMCHAIN (arg_info));
+        }
     }
     DBUG_RETURN (arg_node);
 }

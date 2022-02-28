@@ -1,0 +1,42 @@
+// test AUD genarray WL with 2 operators
+
+// SAC_TEST|include common.mk
+// SAC_TEST|SAC2C_FLAGS += -v0 -noprelude
+// SAC_TEST|CALL_SAC2C := $(SAC2C) $(SAC2C_FLAGS)
+
+// SAC_TEST|all: <file-name-we>
+// SAC_TEST|<tab>$(CHECK_RETURN_STATUS) $< 64
+
+noinline
+int[.] hide( int x)
+{
+   if (_eq_SxS_(x, 1))
+      res = [7];
+   else 
+      res = [3,3];
+   return res;
+}
+
+noinline
+int consume( int[*] a, int[*] b)
+{
+   return _add_SxS_ ( _sel_VxA_([0],(a)),
+          _add_SxS_ ( _sel_VxA_([2],(a)),
+          _add_SxS_ ( _sel_VxA_([0],(b)),
+                      _sel_VxA_([2],(b)))));
+}
+
+
+int main()
+{
+    shp = hide (1);
+
+    a,b = with {
+              (_mul_SxV_(0,shp) <= iv < shp step _add_SxV_(4, _mul_SxV_(0,shp))
+                                            width _add_SxV_(2, _mul_SxV_(0,shp))) : (21, 42);
+          } : (genarray (shp, 0),
+               genarray (shp, 1));
+
+    // should return 64!
+    return consume (a,b);
+}
