@@ -247,7 +247,7 @@ Format2Buffer (const char *format, va_list arg_p)
  ******************************************************************************/
 
 static void
-Format2BufferDynamic (const char* format, ...)
+Format2BufferDynamic (const char *format, ...)
 {
     va_list arg_p;
 
@@ -682,12 +682,12 @@ CTIfinalizeMessage(const char *location_buffer, const char *message_header,
     message_header_multiline = STRcpy (message_buffer);
 
     // CONSTRUCTING MESSAGE CONTENT
-    
+
     Format2Buffer (format, arg_p);
     accumulator = STRcatMessageBuffer (message_header_first_line); // frees message_header_first_line
     ProcessMessage (accumulator, message_line_length - STRlen (message_header_multiline));
 
-    // REPLACING '@' WITH CONCAT("\n", message_header_multiline)
+    // REPLACING '@' WITH STRcat("\n", message_header_multiline)
     
     message_header_multiline_with_newline = STRcat("\n", message_header_multiline);
     accumulator = STRsubstTokend (accumulator, "@", message_header_multiline_with_newline);
@@ -730,7 +730,7 @@ CTIcreateMessage( const char *message_header, const char *format, va_list arg_p)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIcreateMessageLine( const char *message_header, const int line, 
+ * @fn void CTIcreateMessageLine( const char *message_header, size_t line, 
  *                                const char *format, va_list arg_p)
  *
  *   @brief  Takes care of creating the message with a file name and line number.
@@ -744,7 +744,7 @@ CTIcreateMessage( const char *message_header, const char *format, va_list arg_p)
  ******************************************************************************/
 
 char *
-CTIcreateMessageLine (const char *message_header, const size_t line, const char *format, va_list arg_p)
+CTIcreateMessageLine (const char *message_header, size_t line, const char *format, va_list arg_p)
 {
     char *ret;
     DBUG_ENTER ();
@@ -852,7 +852,7 @@ CTIerrorLine (size_t line, const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn char *CTIgetErrorMessageVA( int line, const char* file,
+ * @fn char *CTIgetErrorMessageVA( int line, const char *file,
  *                                 const char *format, va_list arg_p)
  *
  *   @brief Generates an error message string.
