@@ -10609,7 +10609,7 @@ COMPwith (node *arg_node, info *arg_info)
     }
 
     /*
-     * not sure what this does (SBS 2022):
+     * XXX not sure what this does (SBS 2022):
      */
     WITH_WITHOP (arg_node) = RemoveIdxDuplicates (WITH_WITHOP (arg_node));
 
@@ -10696,7 +10696,7 @@ COMPwith (node *arg_node, info *arg_info)
                 icm_chain);
         i = 0;
         exprs = offs_exprs;
-        while(exprs != NULL) {
+        while (exprs != NULL) {
             icm_chain
               = TCmakeAssignIcm2 ("SAC_AUD_WL_INC_OFFSET",
                     TCmakeIdCopyStringNtNew (ID_NAME (EXPRS_EXPR (exprs)),
@@ -10737,7 +10737,7 @@ COMPwith (node *arg_node, info *arg_info)
         i = 0;
         exprs = offs_exprs;
         ids = res_ids;
-        while(exprs != NULL) {
+        while (exprs != NULL) {
             icm_chain
               = TCmakeAssignIcm3 ("SAC_AUD_WL_INIT_OFFSET",
                     TCmakeIdCopyStringNtNew (ID_NAME (EXPRS_EXPR (exprs)),
