@@ -631,16 +631,16 @@ CharInString (char c, const char *str)
 /**
  * @brief Tokenize string.
  *
- * On first call the str will be copied to internal static variable, next calls
- * str should be NULL. With last call the allocated memory of the copy will be
- * freed.
+ * For the first call, the str will be copied to internal static variable.
+ * For further calls, str should be NULL. 
+ * The last call frees the copy that was made during the first call.
  *
  * In contrast to strtok, STRtok leaves the argument string untouched and always
  * allocates the tokens in fresh memory.
  *
  * @param str string to tokenize
  * @param tok tokenizer
- * @return pointer to the next token, or NULL iff no more tokens
+ * @return A pointer to the next token, or NULL iff there are no more tokens.
  */
 char *
 STRtok (const char *first, const char *sep)
