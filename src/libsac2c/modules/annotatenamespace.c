@@ -644,17 +644,19 @@ ANSlet (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /*
-     * first traverse all defining ids
-     */
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
-
-    /*
-     * then the RHS
+     * first traverse the RHS; this ensures that global
+     * objects on the RHS are being found even if the
+     * LHS re-difines them!
      */
     if (LET_EXPR (arg_node) != NULL) {
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    }
+
+    /*
+     * then traverse all defining ids
+     */
+    if (LET_IDS (arg_node) != NULL) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
