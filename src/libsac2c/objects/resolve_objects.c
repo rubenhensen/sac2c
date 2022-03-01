@@ -1,10 +1,18 @@
 /*
- * Analyzes the set of objects used by functions, then adds them as
- * reference arguments to the function applications. Also adds propagate()
- * calls to with-loops for objects added in this way.
+ * This module relies on gon (OANdoObjectAnalysis object_analysis.c) and
+ * goi (OIdoObjectInit in object_init.c) to have initialised FUNDEF_OBJECTS
+ * apropriately.
+ * Furthermore, it assumes that ivd (INSVDdoInsertVardec in insert_vardec.c)
+ * has replaced all N_spid/N_spids by N_id / N_globobj or N_ids, respectively.
+ *
+ * Based on that information, this phase adds the global objects as
+ * reference arguments to the function applications.
+ * Furthermore, this phase adds propagate()
+ * calls to with-loops for objects added in this way as well.
  */
 
 /*
+ * 
  * The task of the withloop object analysis is to adjust with-loops
  * that reference objects in their body, and make sure the objects are
  * returned from the bodies to the surrounding code, as follows:
@@ -31,6 +39,25 @@
  *     } : b, stdout'
  *     genarray ( shp ( b ), ... )
  *     propagate ( stdout );
+ *
+ *
+ * Implementation:
+ * ---------------
+ * When traversing a function we first adjust the formal parameters:
+ * objects from FUNDEF_OBJECTS are being added as reference parameters.
+ * This happens in AppendObjdefsToArgs.
+ * Here, we also create temporary links from the N_objdef to the 
+ * corresponding N_avis; it is stored in OBJDEF_ARGAVIS.
+ * These are later being used when encountering function applications 
+ * in RSOap. Here we call AppendObjdefsToArgExprs to inject
+ * additional arguments as needed. Note here, that all this can be
+ * done locally to individual functions, as the analyses that have been
+ * run before have computed the fix-point of objects needed!
+ * Finally, we also replace all occurrances of N_globobj's by N_id
+ * nodes that refer to the new reference parameters, again, making
+ * use of OBJDEF_ARGAVIS.
+ *
+ * The handling of with-loops is more complex.....
  */
 
 #include "resolve_objects.h"
@@ -763,6 +790,9 @@ RSOpropagate (node *arg_node, info *arg_info)
     node *block;
 
     DBUG_ENTER ();
+
+    // in case we propagate a global object.... see issue 2303!
+    PROPAGATE_DEFAULT (arg_node) = TRAVdo (PROPAGATE_DEFAULT (arg_node), arg_info);
 
     block = CODE_CBLOCK (WITH_CODE (INFO_WL (arg_info)));
     if (INFO_PROPOBJ_IN (arg_info) == NULL) {

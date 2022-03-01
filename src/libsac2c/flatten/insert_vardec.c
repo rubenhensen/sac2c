@@ -7,18 +7,16 @@
  * description:
  *
  *   This compiler module inserts vardecs for all identifyers that do not have
- *   one yet and adds proper backrefs to them.
- *   It is needed for running InferDFMS prior to type checking.
+ *   one yet and it replaces all N_spids by N_ids, and all N_spid by either 
+ *   N_id or N_globobj.
  *
- *   For all other identifyers the backref is set to the according N_vardec,
- *   Narg, or N_objdef node !!!
+ *   All this is needed for running InferDFMS prior to type checking.
  *
- *   Afterwards, the SPxxx values are cleared.
  *
- *   While doing so, all references to global objects are tagged as such, i.e.,
- *   the    IS_GLOBAL flag of N_id nodes is set accordingly(!), and the name of
- *   N_id nodes that refer to global objects is extended by the module name
- *   of the object.
+ *   Implementation:
+ *   While traversing top-down, it introduces new N_avis / N_vardec for every
+ *   new name encountered in N_spids. 
+ *   N_spid nodes are transformed into N_id or N_globobj nodes when being met.
  *
  *
  *
@@ -341,7 +339,7 @@ INSVDspid (node *arg_node, info *arg_info)
         }
     } else {
         /*
-         * this id is a global object
+         * this id must be a global object since a namespace has been given!
          */
 
         vardec = SearchForNameInObjs (SPID_NS (arg_node), SPID_NAME (arg_node),
@@ -562,7 +560,7 @@ INSVDcode (node *arg_node, info *arg_info)
  *
  * description:
  *   Traverses through all functions and inserts vardecs for all identifyers
- *   that do not have one yet. Whenever an N_id node is met, we simply look for
+ *   that do not have one yet. Whenever an N_spid node is met, we simply look for
  *   its declaration. If found, a backref to it is inserted (ID_VARDEC).
  *   Otherwise, a new vardec is inserted and a backref is inserted.
  *   The same holds for the ids found at N_let nodes.
