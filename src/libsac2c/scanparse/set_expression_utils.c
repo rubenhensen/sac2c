@@ -201,7 +201,7 @@ SEUTbuildIdTable (node *vec, idtable *oldscope)
         result = newtab;
         DBUG_PRINT ("adding vector id \"%s\"", newtab->id);
     } else {
-        CTIabortLine (global.linenum, "Malformed index vector in WL set notation");
+        CTIabort (LINE_TO_LOC (global.linenum), "Malformed index vector in WL set notation");
     }
 
     DBUG_RETURN (result);

@@ -793,13 +793,13 @@ WLAgenerator (node *arg_node, info *arg_info)
     switch (WLPGnormalizeStepWidth( &GENERATOR_STEP( arg_node),
                                     &GENERATOR_WIDTH( arg_node))) {
     case 1:
-      CTIabortLine( NODE_LINE(wln), "Component of width greater than step");
+      CTIabort (NODE_LOCATION (wln), "Component of width greater than step");
       break;
     case 2:
-      CTIabortLine( NODE_LINE(wln), "Component of width less than zero");
+      CTIabort (NODE_LOCATION (wln), "Component of width less than zero");
       break;
     case 3:
-      CTIabortLine( NODE_LINE(wln), "Width vector without step vector");
+      CTIabort (NODE_LOCATION (wln), "Width vector without step vector");
       break;
     }
   }

@@ -1876,7 +1876,7 @@ SCSprf_div_SxX (node *arg_node, info *arg_info)
     pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
     if (SCSisConstantZero (PRF_ARG2 (arg_node))) { /* S / 0 */
-        CTIabortLine (NODE_LINE (arg_node),
+        CTIabort (NODE_LOCATION (arg_node),
                       "SCSprf_div_SxX: Division by zero encountered");
 
         /* Scalar extension case:      S / [1,1,...1]  --> [S,S,..,S] */
@@ -1932,7 +1932,7 @@ SCSprf_div_XxS (node *arg_node, info *arg_info)
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
 
     } else if (SCSisConstantZero (PRF_ARG2 (arg_node))) { /* X / 0 */
-        CTIabortLine (NODE_LINE (arg_node),
+        CTIabort (NODE_LOCATION (arg_node),
                       "SCSprf_div_XxS: Division by zero encountered");
     }
 

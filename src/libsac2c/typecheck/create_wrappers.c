@@ -361,7 +361,7 @@ SpecFundef (node *arg_node, info *arg_info)
     wrapper = FindWrapper (FUNDEF_NS (arg_node), FUNDEF_NAME (arg_node), num_args,
                            num_rets, INFO_WRAPPERFUNS (arg_info));
     if (wrapper == NULL) {
-        CTIabortLine (NODE_LINE (arg_node),
+        CTIabort (NODE_LOCATION (arg_node),
                       "No definition found for a function \"%s::%s\" that expects"
                       " %zu argument(s) and yields %zu return value(s)",
                       NSgetName (FUNDEF_NS (arg_node)), FUNDEF_NAME (arg_node), num_args,
@@ -527,7 +527,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
         } else {
             if ((dot_args != FUNDEF_HASDOTARGS (wrapper))
                 || (dot_rets != FUNDEF_HASDOTRETS (wrapper))) {
-                CTIabortLine (global.linenum,
+                CTIabort (LINE_TO_LOC (global.linenum),
                               "Trying to overload function \"%s\" that expects %s %zu "
                               "argument(s) "
                               "and %s %zu return value(s) with a version that expects %s "
@@ -547,7 +547,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
          * check whether the signatures match wrt reference args
          */
         if (!RefArgMatch (FUNDEF_ARGS (wrapper), FUNDEF_ARGS (arg_node))) {
-            CTIabortLine (NODE_LINE (arg_node),
+            CTIabort (NODE_LOCATION (arg_node),
                           "Trying to overload function \"%s\" that expects %zu "
                           "argument(s) and yields "
                           "%zu return value(s) with an instance that expects the same "
@@ -663,7 +663,7 @@ CRTWRPspap (node *arg_node, info *arg_info)
                 NSgetName (SPAP_NS (arg_node)), SPAP_NAME (arg_node), (void *)wrapper);
 
     if (wrapper == NULL) {
-        CTIabortLine (NODE_LINE (arg_node),
+        CTIabort (NODE_LOCATION (arg_node),
                       "No definition found for a function \"%s::%s\" that expects"
                       " %zu argument(s) and yields %zu return value(s)",
                       NSgetName (SPAP_NS (arg_node)), SPAP_NAME (arg_node), num_args,
@@ -739,7 +739,7 @@ CRTWRPspfold (node *arg_node, info *arg_info)
                            INFO_WRAPPERFUNS (arg_info));
 
     if (wrapper == NULL) {
-        CTIabortLine (NODE_LINE (arg_node),
+        CTIabort (NODE_LOCATION (arg_node),
                       "No definition found for a function \"%s::%s\" that expects"
                       " %zu arguments and yields 1 return value",
                       NSgetName (SPFOLD_NS (arg_node)), SPFOLD_FUN (arg_node), num_args);

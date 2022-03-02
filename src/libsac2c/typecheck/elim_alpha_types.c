@@ -209,7 +209,7 @@ EATfundef (node *arg_node, info *arg_info)
         if (TYcountNoMinAlpha (ftype) > 0) {
 
             if (FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
-                CTIabortLine (NODE_LINE (arg_node),
+                CTIabort (NODE_LOCATION (arg_node),
                               "One component of inferred return type (%s) has no lower "
                               "bound;"
                               " an application of \"%s\" will not terminate",

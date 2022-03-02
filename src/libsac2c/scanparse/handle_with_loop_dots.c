@@ -337,7 +337,7 @@ HWLDgenerator (node *arg_node, info *arg_info)
     if ((INFO_HWLD_DOTSHAPE (arg_info) == NULL)
         && (DOT_ISSINGLE (GENERATOR_BOUND1 (arg_node))
             || DOT_ISSINGLE (GENERATOR_BOUND2 (arg_node)))) {
-        CTIabortLine (global.linenum, "Dot notation is only allowed in genarray and "
+        CTIabort (LINE_TO_LOC (global.linenum), "Dot notation is only allowed in genarray and "
                                       "modarray with loops; ");
     }
 

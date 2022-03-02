@@ -1963,7 +1963,7 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
 
     if ((fun1 != NULL) && (NTYPE_CON (fun1) != TC_fun) && (fun2 != NULL)
         && (NTYPE_CON (fun2) != TC_fun)) {
-        CTIabortLine (global.linenum, "Cannot overload functions of arity 0");
+        CTIabort (LINE_TO_LOC (global.linenum), "Cannot overload functions of arity 0");
     }
 
     res = MakeOverloadedFunType (fun1, fun2);
@@ -2110,7 +2110,7 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
                     lub = TYlubOfTypes (SSIgetMax (ALPHA_SSI (fun1)),
                                         SSIgetMax (ALPHA_SSI (fun2)));
                     if (lub == NULL) {
-                        CTIabortLine (global.linenum,
+                        CTIabort (LINE_TO_LOC (global.linenum),
                                       "Cannot overload functions with disjoint result "
                                       "type;"
                                       " types found: \"%s\" and \"%s\"",
@@ -3037,7 +3037,7 @@ TYdispatchFunType (ntype *fun, ntype *args)
             ires = DispatchOneArg (&lower, fun, arg);
             if (ires == NULL) {
                 fundef = IRES_FUNDEF (IBASE_GEN (FUN_IBASE (fun, 0)), 0);
-                CTIabortLine (global.linenum,
+                CTIabort (LINE_TO_LOC (global.linenum),
                               "No definition found for a function \"%s\" that"
                               " accepts an argument of type \"%s\" as parameter"
                               " no %zu. Full argument types are \"%s\".",
