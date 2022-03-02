@@ -1126,20 +1126,23 @@ CFprf (node *arg_node, info *arg_info)
         DBUG_PRINT ("trying SCS...");
         res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
                                             prf_cfscs_funtab[PRF_PRF (arg_node)], res);
+        DBUG_PRINT ("   %s", (res == NULL) ? "not applicable" : "optimized!");
     }
 
     /* If that doesn't help, try structural constant constant folding */
     if (global.optimize.dosccf) {
-        DBUG_PRINT ("trying SCCF...");
+        DBUG_PRINT ("%s SCCF...", (res == NULL) ? "trying" : "skipping");
         res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
                                             prf_cfsccf_funtab[PRF_PRF (arg_node)], res);
+        DBUG_PRINT ("   %s", (res == NULL) ? "not applicable" : "optimized!");
     }
 
     /* If that doesn't help, try SAA constant folding */
     if (global.optimize.dosaacf) {
-        DBUG_PRINT ("trying SAACF...");
+        DBUG_PRINT ("%s SAACF...", (res == NULL) ? "trying" : "skipping");
         res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
                                             prf_cfsaa_funtab[PRF_PRF (arg_node)], res);
+        DBUG_PRINT ("   %s", (res == NULL) ? "not applicable" : "optimized!");
     }
 
     if (res != NULL) {

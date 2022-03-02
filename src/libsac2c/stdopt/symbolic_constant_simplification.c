@@ -2026,18 +2026,23 @@ SCSprf_and_SxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
     if (SCSisConstantOne (PRF_ARG2 (arg_node))) { /* X & 1 */
+        DBUG_PRINT ("found _and_SxS_ (x, true)");
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
 
     } else if (SCSisConstantOne (PRF_ARG1 (arg_node))) { /* 1 & X */
+        DBUG_PRINT ("found _and_SxS_ (true, x)");
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
 
     } else if (SCSisConstantZero (PRF_ARG2 (arg_node))) { /* X & 0 */
+        DBUG_PRINT ("found _and_SxS_ (x, false)");
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
 
     } else if (SCSisConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
+        DBUG_PRINT ("found _and_SxS_ (false, x)");
         res = SCSmakeFalse (PRF_ARG2 (arg_node));
 
     } else if (SCSisMatchPrfargs (arg_node, arg_info)) { /* X & X */
+        DBUG_PRINT ("found _and_SxS_ (x, x)");
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
