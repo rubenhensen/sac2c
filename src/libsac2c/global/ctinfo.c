@@ -63,6 +63,8 @@
 #include "stringset.h"
 #include "new_types.h" /* for TYtype2String */
 
+#define LINE_TO_LOC (line) ((location) {.fname = global.filename, .line = line, .col = NULL})
+
 #include "cppcompat.h"
 #undef exit
 
@@ -313,6 +315,39 @@ STRcatMessageBuffer (char *first)
     MEMfree (first);
 
     DBUG_RETURN (ret);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void loc2str( const location *loc)
+ *
+ *   @brief  Produces a GNU format string representing the location.
+ *           When NULL is given or the location is invalid, an empty string is returned.
+ *
+ *   @param loc  A node representing the location of the error.
+ *               If no location is available or appropriate, NULL should be supplied.
+ *
+ ******************************************************************************/
+
+char *
+loc2str (const location *loc) 
+{
+    DBUG_ENTER ();
+
+    if (loc == NULL || loc.fname == NULL) {
+        DBUG_RETURN (STRcpy(""));
+    }
+
+    if (loc.fname != NULL && loc.line != NULL) { // This might always be available, idk
+        if (loc.col != NULL) {
+            Format2BufferDynamic ("%s:%zu:%zu: ", loc.fname, loc.line, loc.col);
+        } else {
+            Format2BufferDynamic ("%s:%zu: ", loc.fname, loc.line);
+        }
+    } else {
+        Format2BufferDynamic("%s: ", loc.fname);
+    }
+    DBUG_RETURN (STRcpy (message_buffer));
 }
 
 /** <!--********************************************************************-->
@@ -700,6 +735,7 @@ CTIfinalizeMultiline (char *first_line_overflow, const char *format, va_list arg
  *                           "" (empty but not null) for generic messages
  *                           "<filepath>:line: " for messages with line info
  *                           "<filepath:line:column: " for messages with location info
+ *                           Location_buffer is deallocated during execution.
  *   @param message_header   The header associated with the type of message, 
  *                           e.g. error_message_header for errors.
  *   @param format           format string like in printf
@@ -708,7 +744,7 @@ CTIfinalizeMultiline (char *first_line_overflow, const char *format, va_list arg
  ******************************************************************************/
 
 char *
-CTIfinalizeMessageBegin (const char *location_buffer, const char *message_header,
+CTIfinalizeMessageBegin (char *location_buffer, const char *message_header,
                          const char *format, va_list arg_p)
 {
     char *ret;
@@ -750,6 +786,7 @@ CTIfinalizeMessageBegin (const char *location_buffer, const char *message_header
         ret = STRsubstTokend (accumulator, "@", message_header_multiline);
     }
 
+    MEMfree (location_buffer);
     MEMfree (message_header_base);
     MEMfree (message_header_multiline);
     DBUG_RETURN (ret);
@@ -767,6 +804,7 @@ CTIfinalizeMessageBegin (const char *location_buffer, const char *message_header
  *                           "" (empty but not null) for generic messages
  *                           "<filepath>:line: " for messages with line info
  *                           "<filepath:line:column: " for messages with location info
+ *                           Location_buffer is deallocated during execution.
  *   @param message_header   The header associated with the type of message, 
  *                           e.g. error_message_header for errors.
  *   @param format           format string like in printf
@@ -775,7 +813,7 @@ CTIfinalizeMessageBegin (const char *location_buffer, const char *message_header
  ******************************************************************************/
 
 char *
-CTIfinalizeMessage (const char *location_buffer, const char *message_header, 
+CTIfinalizeMessage (char *location_buffer, const char *message_header, 
                     const char *format, va_list arg_p)
 {
     char *tmp;
@@ -789,9 +827,8 @@ CTIfinalizeMessage (const char *location_buffer, const char *message_header,
     DBUG_RETURN (ret);
 }
 
-
 /** <!--********************************************************************-->
- * 
+ *
  * @fn void CTIcreateMessage( const char *message_header, const char *format,
  *                            va_list arg_p)
  * 
@@ -880,6 +917,27 @@ CTIcreateMessageLoc (const char *message_header, const struct location loc, cons
 
     MEMfree (tmp);
     DBUG_RETURN (ret);
+}
+
+void
+CTIerrorBasic(const location *loc, ...)
+{
+    char *error_msg;
+    va_list arg_p;
+
+    DBUG_ENTER ();
+
+    va_start (arg_p, format);
+
+    error_msg = CTIfinalizeMessage (loc2str (loc), error_message_header, format, arg_p);
+    fprintf (cti_stderr, "%s", error_msg);
+    MEMfree (error_msg);
+
+    va_end (arg_p);
+
+    errors++;
+
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1027,17 +1085,6 @@ CTIerrorBegin (const char *format, ...)
     // • Same as CTIerror but without a trailing newline
     // If cti-single-line is inactive:
     // • Same as CTIerror
-    return NULL;
-}
-
-char *
-CTIerrorLineBegin (size_t line, const char *format, ...)
-{
-    // Goal:
-    // If cti-single-line is active:
-    // • Same as CTIerrorLine but without a trailing newline
-    // If cti-single-line is inactive:
-    // • Same as CTIerrorLine
     return NULL;
 }
 
@@ -1521,9 +1568,10 @@ CTInote (const char *format, ...)
     if (global.verbose_level >= 3) {
         va_start (arg_p, format);
 
-        // Note (pun not intended) that we should not use CTIcreateMessage or
+        // Note (pun not intended) that we should not use CTIfinalizeMessage or
         // note_message_header here because 17 years worth of code is specifically
         // formatted to only be prefixed with 2 spaces.
+        // TODO: Check if it can be done now with an indent header twice or something
         PrintMessage (indent_message_header, format, arg_p);
 
         va_end (arg_p);
