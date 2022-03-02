@@ -563,13 +563,14 @@ MMVprfAccu (node *arg_node, info *arg_info)
 {
     node *withop;
     node *ids_assign, *ids_wl;
+    node *argexprs;
 
     DBUG_ENTER ();
 
     /*
      * A,B = with(iv)
      *        gen:{
-     *             a = accu( iv);
+     *             a = accu( iv, b);
      *             ...
      *             }...
      *            fold( op1, n1)
@@ -586,6 +587,10 @@ MMVprfAccu (node *arg_node, info *arg_info)
         withop = INFO_WITHOP (arg_info);
 
         DBUG_ASSERT (withop != NULL, "F_accu without withloop");
+
+        // check neutral arguments
+        argexprs = PRF_EXPRS2 (arg_node); // skip iv
+        argexprs = TRAVdo (argexprs, arg_info);
 
         while (withop != NULL) {
             if (NODE_TYPE (withop) == N_fold) {

@@ -23,13 +23,14 @@
 
 #include "dead_vardec_removal.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "DVR"
 #include "debug.h"
 
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
 #include "free.h"
+#include "print.h"
 #include "memory.h"
 
 /**
@@ -59,7 +60,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = (info *)MEMmalloc (sizeof (info));
+    result = MEMmalloc (sizeof (info));
 
     INFO_RESET (result) = FALSE;
     INFO_KILL (result) = FALSE;
@@ -149,6 +150,8 @@ DVRvardec (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_RESET (arg_info)) {
+        DBUG_PRINT ("Marking as dead:");
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node););
         AVIS_ISDEAD (VARDEC_AVIS (arg_node)) = TRUE;
     }
 
@@ -156,6 +159,8 @@ DVRvardec (node *arg_node, info *arg_info)
 
     if (INFO_KILL (arg_info)) {
         if (!VARDEC_ISSTICKY (arg_node) && AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
+            DBUG_PRINT ("Removing:");
+            DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node););
             arg_node = FREEdoFreeNode (arg_node);
         }
     }
