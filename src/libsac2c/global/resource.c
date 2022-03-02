@@ -148,7 +148,7 @@ RSCprintConfigEntry (char *config)
         }
     }
     if (resource_table[i].name[0] == '\0') {
-        CTIerror ("Resource %s unknown", config);
+        CTIerror (EMPTY_LOC, "Resource %s unknown", config);
     }
 
     DBUG_RETURN ();
@@ -718,7 +718,7 @@ EvaluateDefaultTarget (target_list_t *target)
         resource = FindResource (resource_table[i].name, target->resource_list);
 
         if (resource == NULL) {
-            CTIerror ("Default target specification of resource '%s` missing",
+            CTIerror (EMPTY_LOC, "Default target specification of resource '%s` missing",
                       resource_table[i].name);
         } else {
             UpdateResourceTable (i, "default", resource, FALSE);

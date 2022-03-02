@@ -14,8 +14,9 @@
 #include "debug.h"
 
 #include "str.h"
-#include "ctinfo.h"
+#include "types.h"
 #include "globals.h"
+#include "ctinfo.h"
 #include "memory.h"
 #include "phase_info.h"
 #include "rtspec_modes.h"
@@ -172,34 +173,38 @@ CheckStartStopPhase (void)
             || (global.prtphafun_start_cycle != PH_undefined
                 && global.prtphafun_stop_cycle == PH_undefined)) {
 
-            CTIerror ("Illegal compiler phase specification in options: \n"
-                      "  -printstart and -printstop\n"
-                      "Start or Stop cycle specified without the other.\n"
-                      "Both options must specify the same cycle." );
+            CTIerror (EMPTY_LOC, "Illegal compiler phase specification in options: \n");
+                    //   "  -printstart and -printstop\n"
+                    //   "Start or Stop cycle specified without the other.\n"
+                    //   "Both options must specify the same cycle." );
         }
         /* PHASE */
         else if (global.prtphafun_start_phase > global.prtphafun_stop_phase) {
-            CTIerror ("Illegal compiler phase specification in options: \n"
+            CTIerror (EMPTY_LOC, 
+                      "Illegal compiler phase specification in options: \n"
                       "  -printstart and -printstop\n"
                       "Start phase occurs after stop phase." );
         } else if (global.prtphafun_start_phase == global.prtphafun_stop_phase) {
             /* SUBPHASE*/
             if (global.prtphafun_start_subphase > global.prtphafun_stop_subphase) {
-                CTIerror ("Illegal compiler phase specification in options: \n"
+                CTIerror (EMPTY_LOC, 
+                         "Illegal compiler phase specification in options: \n"
                           "  -printstart and -printstop\n"
                           "Start subphase occurs after stop subphase." );
             } else if (global.prtphafun_start_subphase
                        == global.prtphafun_stop_subphase) {
                 /* CYCLE PHASE */
                 if (global.prtphafun_start_cycle != global.prtphafun_stop_cycle) {
-                    CTIerror ("Illegal compiler phase specification in options: \n"
+                    CTIerror (EMPTY_LOC, 
+                              "Illegal compiler phase specification in options: \n"
                               "  -printstart and -printstop\n"
                               "Start cycle and stop cycle must be the same." );
                 } else {
                     /* CYCLE PASS */
                     if (global.prtphafun_start_cycle_specifier
                         > global.prtphafun_stop_cycle_specifier + 1) {
-                        CTIerror ("Illegal compiler phase specification in options: \n"
+                        CTIerror (EMPTY_LOC, 
+                                  "Illegal compiler phase specification in options: \n"
                                   "  -printstart and -printstop\n"
                                   "Start cycle pass occurs after stop cycle pass." );
                     }
@@ -255,13 +260,15 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
     if (phase == PHIlastPhase ()) {
         switch (mode) {
         case START:
-            CTIerror ("Illegal compiler phase specification in option: \n"
+            CTIerror (EMPTY_LOC, 
+                      "Illegal compiler phase specification in option: \n"
                       "  -printstart %s\n"
                       "See %s -h for a list of legal break options.",
                       option, global.toolname);
             break;
         case STOP:
-            CTIerror ("Illegal compiler phase specification in option: \n"
+            CTIerror (EMPTY_LOC, 
+                      "Illegal compiler phase specification in option: \n"
                       "  -printstop %s\n"
                       "See %s -h for a list of legal break options.",
                       option, global.toolname);
@@ -291,13 +298,15 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
         if (subphase == PHIlastPhase ()) {
             switch (mode) {
             case START:
-                CTIerror ("Illegal compiler phase specification in option: \n"
+                CTIerror (EMPTY_LOC, 
+                          "Illegal compiler phase specification in option: \n"
                           "  -printstart %s\n"
                           "See %s -h for a list of legal break options.",
                           option, global.toolname);
                 break;
             case STOP:
-                CTIerror ("Illegal compiler phase specification in option: \n"
+                CTIerror (EMPTY_LOC, 
+                          "Illegal compiler phase specification in option: \n"
                           "  -printstop %s\n"
                           "See %s -h for a list of legal break options.",
                           option, global.toolname);
@@ -326,13 +335,15 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
             if (cyclephase == PHIlastPhase ()) {
                 switch (mode) {
                 case START:
-                    CTIerror ("Illegal compiler phase specification in option: \n"
+                    CTIerror (EMPTY_LOC, 
+                              "Illegal compiler phase specification in option: \n"
                               "  -printstart %s\n"
                               "See %s -h for a list of legal break options.",
                               option, global.toolname);
                     break;
                 case STOP:
-                    CTIerror ("Illegal compiler phase specification in option: \n"
+                    CTIerror (EMPTY_LOC, 
+                              "Illegal compiler phase specification in option: \n"
                               "  -printstop %s\n"
                               "See %s -h for a list of legal break options.",
                               option, global.toolname);
@@ -369,18 +380,18 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
                 } else {
                     switch (mode) {
                     case START:
-                        CTIerror (
-                          "Illegal compiler cycle pass specification in break option: \n"
-                          "  -printstart %s\n"
-                          "See %s -h for a list of legal break options.",
-                          option, global.toolname);
+                        CTIerror (EMPTY_LOC,
+                                  "Illegal compiler cycle pass specification in break option: \n"
+                                  "  -printstart %s\n"
+                                  "See %s -h for a list of legal break options.",
+                                  option, global.toolname);
                         break;
                     case STOP:
-                        CTIerror (
-                          "Illegal compiler cycle pass specification in break option: \n"
-                          "  -printstop %s\n"
-                          "See %s -h for a list of legal break options.",
-                          option, global.toolname);
+                        CTIerror (EMPTY_LOC,
+                                  "Illegal compiler cycle pass specification in break option: \n"
+                                  "  -printstop %s\n"
+                                  "See %s -h for a list of legal break options.",
+                                  option, global.toolname);
                         break;
                     }
                 }
@@ -444,7 +455,8 @@ PHOinterpretBreakOption (char *option)
     }
 
     if (phase == PHIlastPhase ()) {
-        CTIerror ("Illegal compiler phase specification in break option: \n"
+        CTIerror (EMPTY_LOC, 
+                  "Illegal compiler phase specification in break option: \n"
                   "  -b %s\n"
                   "See %s -h for a list of legal break options.",
                   option, global.toolname);
@@ -460,7 +472,8 @@ PHOinterpretBreakOption (char *option)
         subphase = SearchSubPhase (phase, break_subphase);
 
         if (subphase == PHIlastPhase ()) {
-            CTIerror ("Illegal compiler subphase specification in break option:\n"
+            CTIerror (EMPTY_LOC, 
+                      "Illegal compiler subphase specification in break option:\n"
                       "  -b %s\n"
                       "See sac2c -h for a list of legal break options.",
                       option);
@@ -476,7 +489,8 @@ PHOinterpretBreakOption (char *option)
             cyclephase = SearchCyclePhase (subphase, break_cyclephase);
 
             if (cyclephase == PHIlastPhase ()) {
-                CTIerror ("Illegal compiler cycle phase specification in break option: \n"
+                CTIerror (EMPTY_LOC, 
+                          "Illegal compiler cycle phase specification in break option: \n"
                           "  -b %s\n"
                           "See sac2c -h for a list of legal break options.",
                           option);
@@ -494,11 +508,11 @@ PHOinterpretBreakOption (char *option)
                 if ((rest[0] == '\0') && (num >= 1)) {
                     global.break_cycle_specifier = num;
                 } else {
-                    CTIerror (
-                      "Illegal compiler cycle pass specification in break option: \n"
-                      "  -b %s\n"
-                      "See sac2c -h for a list of legal break options.",
-                      option);
+                    CTIerror (EMPTY_LOC,
+                              "Illegal compiler cycle pass specification in break option: \n"
+                              "  -b %s\n"
+                              "See sac2c -h for a list of legal break options.",
+                              option);
                 }
 
                 break_cyclepass = MEMfree (break_cyclepass);
@@ -546,7 +560,8 @@ PHOinterpretDbugOption (char *option)
         phase = SearchPhaseIdent (tok);
 
         if (phase == PHIlastPhase ()) {
-            CTIerror ("Illegal start compiler phase specification in dbug option: \n"
+            CTIerror (EMPTY_LOC, 
+                      "Illegal start compiler phase specification in dbug option: \n"
                       "  -# %s\n"
                       "See %s -h for a list of legal break options.",
                       option, global.toolname);
@@ -560,7 +575,8 @@ PHOinterpretDbugOption (char *option)
     tok = STRtok (NULL, "/");
 
     if (tok == NULL) {
-        CTIerror ("Missing stop compiler phase specification in dbug option: \n"
+        CTIerror (EMPTY_LOC, 
+                  "Missing stop compiler phase specification in dbug option: \n"
                   "  -# %s\n"
                   "See %s -h for a list of legal break options.",
                   option, global.toolname);
@@ -569,12 +585,14 @@ PHOinterpretDbugOption (char *option)
             phase = SearchPhaseIdent (tok);
 
             if (phase == PHIlastPhase ()) {
-                CTIerror ("Illegal start compiler phase specification in dbug option: \n"
+                CTIerror (EMPTY_LOC, 
+                          "Illegal start compiler phase specification in dbug option: \n"
                           "  -# %s\n"
                           "See %s -h for a list of legal break options.",
                           option, global.toolname);
             } else if (phase < global.my_dbug_from) {
-                CTIerror ("Stop phase is before start phase in dbug option: \n"
+                CTIerror (EMPTY_LOC, 
+                          "Stop phase is before start phase in dbug option: \n"
                           "  -# %s\n"
                           "See %s -h for sequence of phases.",
                           option, global.toolname);
@@ -588,7 +606,8 @@ PHOinterpretDbugOption (char *option)
         tok = STRtok (NULL, "/");
 
         if (tok == NULL) {
-            CTIerror ("Missing dbug string in dbug option: \n"
+            CTIerror (EMPTY_LOC, 
+                      "Missing dbug string in dbug option: \n"
                       "  -# %s\n"
                       "See %s -h for syntac of dbug option.",
                       option, global.toolname);

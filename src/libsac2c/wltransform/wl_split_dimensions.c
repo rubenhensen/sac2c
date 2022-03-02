@@ -1490,7 +1490,7 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
          */
         inner = NULL;
 
-        CTIerror ("Default element required in genarray with-loop.");
+        CTIerror (EMPTY_LOC, "Default element required in genarray with-loop.");
     }
 
     exprs = ComputeOneLengthVector (ARRAY_AELEMS (sarray), inner, arg_info);

@@ -19,7 +19,7 @@ CheckForObjdefs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    CTIerror ("Wrapper cannot be built due to global object `%s'.",
+    CTIerror (EMPTY_LOC, "Wrapper cannot be built due to global object `%s'.",
               CTIitemName (arg_node));
 
     if (OBJDEF_NEXT (arg_node) != NULL) {

@@ -93,7 +93,7 @@ CheckUseUnique (sttable_t *table)
             stentry_t *entry = STentryIteratorNext (entries);
 
             if (STentryIteratorHasMore (entries)) {
-                CTIerror ("Symbol `%s' used more than once", STsymbolName (symbol));
+                CTIerror (EMPTY_LOC, "Symbol `%s' used more than once", STsymbolName (symbol));
                 CTIerrorContinued ("... from module `%s'", STentryName (entry));
 
                 while (STentryIteratorHasMore (entries)) {
@@ -121,7 +121,7 @@ CheckImportNameClash (const char *symbol, const char *module, sttable_t *table)
     if (STcontains (symbol, table)) {
         iterator = STentryIteratorGet (symbol, table);
 
-        CTIerror ("Symbol `%s' imported from module '%s' and", symbol, module);
+        CTIerror (EMPTY_LOC, "Symbol `%s' imported from module '%s' and", symbol, module);
 
         while (STentryIteratorHasMore (iterator)) {
             CTIerrorContinued ("...used from module '%s'",

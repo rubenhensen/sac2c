@@ -152,7 +152,7 @@ AddObjDependency (const char *lib, strstype_t kind, void *buf)
             }
         }
 
-        CTIerror ("Unable to find external object: %s", lib);
+        CTIerror (EMPTY_LOC, "Unable to find external object: %s", lib);
 
         break;
     default:

@@ -908,8 +908,24 @@ CTIcreateMessageLoc (const char *message_header, const struct location loc, cons
     DBUG_RETURN (ret);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIerror( const struct location loc, const char *format, ...)
+ *
+ *   @brief  Produces an error message with the file name, line number and
+ *           column if they are available.
+ *
+ *   @param loc     If no location is available or relevant, you can provide
+ *                  the macro EMPTY_LOC.
+ *                  If the file name and line numbers are available, but the
+ *                  column is unknown, use the macro LINE_TO_LOC (line).
+ *                  If all information is available, just provide a location
+ *                  struct as normal.
+ *   @param format  format string like in printf
+ *
+ ******************************************************************************/
 void
-CTIerrorBasic(const struct location loc, const char *format, ...)
+CTIerror(const struct location loc, const char *format, ...)
 {
     char *error_msg;
     va_list arg_p;
@@ -929,36 +945,36 @@ CTIerrorBasic(const struct location loc, const char *format, ...)
     DBUG_RETURN ();
 }
 
-/** <!--********************************************************************-->
- *
- * @fn void CTIerror( const char *format, ...)
- *
- *   @brief  Produces an error message without file name and line number.
- *
- *   @param format  format string like in printf
- *
- ******************************************************************************/
+// /** <!--********************************************************************-->
+//  *
+//  * @fn void CTIerror( const char *format, ...)
+//  *
+//  *   @brief  Produces an error message without file name and line number.
+//  *
+//  *   @param format  format string like in printf
+//  *
+//  ******************************************************************************/
 
-void
-CTIerror (const char *format, ...)
-{
-    char *error_msg;
-    va_list arg_p;
+// void
+// CTIerror (const char *format, ...)
+// {
+//     char *error_msg;
+//     va_list arg_p;
 
-    DBUG_ENTER ();
+//     DBUG_ENTER ();
 
-    va_start (arg_p, format);
+//     va_start (arg_p, format);
 
-    error_msg = CTIcreateMessage (error_message_header, format, arg_p);
-    fprintf (cti_stderr, "%s", error_msg);
-    MEMfree (error_msg);
+//     error_msg = CTIcreateMessage (error_message_header, format, arg_p);
+//     fprintf (cti_stderr, "%s", error_msg);
+//     MEMfree (error_msg);
 
-    va_end (arg_p);
+//     va_end (arg_p);
 
-    errors++;
+//     errors++;
 
-    DBUG_RETURN ();
-}
+//     DBUG_RETURN ();
+// }
 
 /** <!--********************************************************************-->
  *

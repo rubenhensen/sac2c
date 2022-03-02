@@ -184,7 +184,7 @@ NTCCTprf_cast (te_info *info, ntype *elems)
                                          expr_str, "\""), expr_bt);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
-        CTIerror ("%s", err_msg);
+        CTIerror (EMPTY_LOC, "%s", err_msg);
         TEextendedAbort ();
     }
 

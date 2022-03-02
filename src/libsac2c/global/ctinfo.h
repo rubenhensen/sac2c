@@ -28,8 +28,7 @@ extern void set_message_line_length (size_t l);
 /**
  * verbosity level >= 0:
  */
-extern void CTIerrorBasic (const struct location loc, const char *format, ...);
-extern void CTIerror (const char *format, ...) PRINTF_FORMAT (1, 2);
+extern void CTIerror (const struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern void CTIerrorLoc (struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern void CTIerrorLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern void CTIerrorContinued (const char *format, ...) PRINTF_FORMAT (1, 2);

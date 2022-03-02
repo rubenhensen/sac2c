@@ -14,7 +14,7 @@
 static inline int xfprintf (FILE *f, const char *fmt, ...);
 
 #ifndef LEXER_BINARY
-#define error(...) CTIerror (__VA_ARGS__)
+#define error(...) CTIerror (EMPTY_LOC, __VA_ARGS__)
 #define error_loc(...) CTIerrorLoc (__VA_ARGS__)
 #define warning(...) CTIwarn (__VA_ARGS__)
 #define warning_loc(...) CTIwarnLoc (__VA_ARGS__)

@@ -185,7 +185,8 @@ MergeNewExprs (node **preassigns, node **postassigns, node *with, node **exprs,
 
     if (*exprs != NULL) {
         if ((lhs == NULL) || (*lhs == NULL)) {
-            CTIerror ("Number of left-hand-side expression does not match "
+            CTIerror (EMPTY_LOC, 
+                      "Number of left-hand-side expression does not match "
                       "number of With-Loop operators.");
         } else {
             /*
@@ -281,7 +282,7 @@ HZGWLwith (node *arg_node, info *arg_info)
              * this wl is in expression position
              */
             if (TCcountExprs (INFO_NEWRES (arg_info)) != 1) {
-                CTIerror ("Multi-Operator With-Loop used in expression position.");
+                CTIerror (EMPTY_LOC, "Multi-Operator With-Loop used in expression position.");
             }
 
             switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
@@ -335,9 +336,9 @@ HZGWLwith (node *arg_node, info *arg_info)
      * position or has return values, we throw an error
      */
     if (INFO_DELETE (arg_info) && INFO_EXPRPOS (arg_info)) {
-        CTIerror ("Void With-Loop used in expression position.");
+        CTIerror (EMPTY_LOC, "Void With-Loop used in expression position.");
     } else if (INFO_DELETE (arg_info) && (INFO_LHS (arg_info) != NULL)) {
-        CTIerror ("Void With-Loops do not yield any return values.");
+        CTIerror (EMPTY_LOC, "Void With-Loops do not yield any return values.");
     }
 
     DBUG_RETURN (arg_node);
@@ -356,7 +357,7 @@ HZGWLgenarray (node *arg_node, info *arg_info)
         }
 
         if (GENARRAY_DEFAULT (arg_node) == NULL) {
-            CTIerror ("Missing default value for zero-generator withloop.");
+            CTIerror (EMPTY_LOC, "Missing default value for zero-generator withloop.");
         } else {
             INFO_NEWRES (arg_info)
               = TBmakeExprs (DUPdoDupTree (GENARRAY_DEFAULT (arg_node)),

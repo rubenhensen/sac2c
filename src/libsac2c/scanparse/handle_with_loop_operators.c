@@ -797,10 +797,10 @@ HWLOpropagate (node *arg_node, info *arg_info)
 
     if (PROPAGATE_NEXT (arg_node) != NULL) {
         if (EXPRS_NEXT (my_cexprs) == NULL) {
-            CTIerror ("more operator parts than body expressions in with loop");
+            CTIerror (EMPTY_LOC, "more operator parts than body expressions in with loop");
         }
         if (SPIDS_NEXT (my_lhs) == NULL) {
-            CTIerror ("more operator parts in with loop than left hand side variables");
+            CTIerror (EMPTY_LOC, "more operator parts in with loop than left hand side variables");
         }
         CTIabortOnError ();
 

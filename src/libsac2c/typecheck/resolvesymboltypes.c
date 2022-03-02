@@ -68,7 +68,7 @@ RSTntype (ntype *arg_type, info *arg_info)
         udt = UTfindUserType (TYgetName (arg_type), TYgetNamespace (arg_type));
 
         if (udt == UT_NOT_DEFINED) {
-            CTIerror ("unknown user defined type `%s::%s'.",
+            CTIerror (EMPTY_LOC, "unknown user defined type `%s::%s'.",
                       NSgetName (TYgetNamespace (arg_type)), TYgetName (arg_type));
         } else {
             DBUG_PRINT ("resolved symbol type %s:%s.",
