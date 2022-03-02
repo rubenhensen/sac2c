@@ -72,8 +72,8 @@ stages:
 .build-stdlib-template: &build-stdlib-template
     stage: stdlib
     variables:
-        SAC2CP_EXEC: "${CI_PROJECT_DIR}/build/sac2c-release/src/sac2c-release-build/sac2c_p -cti-single-line"
-        SAC2CD_EXEC: "${CI_PROJECT_DIR}/build/sac2c-debug/src/sac2c-debug-build/sac2c_d -cti-single-line"
+        SAC2CP_EXEC: "${CI_PROJECT_DIR}/build/sac2c-release/src/sac2c-release-build/sac2c_p"
+        SAC2CD_EXEC: "${CI_PROJECT_DIR}/build/sac2c-debug/src/sac2c-debug-build/sac2c_d"
     script:
         - cp -r build/.sac2crc $HOME
         # get latest release of stdlib
