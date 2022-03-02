@@ -319,7 +319,7 @@ STRcatMessageBuffer (char *first)
 
 /** <!--********************************************************************-->
  *
- * @fn void loc2str( const location *loc)
+ * @fn void loc2str( const struct location *loc)
  *
  *   @brief  Produces a GNU format string representing the location.
  *           When NULL is given or the location is invalid, an empty string is returned.
@@ -330,22 +330,22 @@ STRcatMessageBuffer (char *first)
  ******************************************************************************/
 
 char *
-loc2str (const location *loc) 
+loc2str (const struct location *loc) 
 {
     DBUG_ENTER ();
 
-    if (loc == NULL || loc.fname == NULL) {
+    if (loc == NULL || loc->fname == NULL) {
         DBUG_RETURN (STRcpy(""));
     }
 
-    if (loc.fname != NULL && loc.line != NULL) { // This might always be available, idk
-        if (loc.col != NULL) {
-            Format2BufferDynamic ("%s:%zu:%zu: ", loc.fname, loc.line, loc.col);
+    if (loc->fname != 0 && loc->line != 0) {
+        if (loc->col != 0) {
+            Format2BufferDynamic ("%s:%zu:%zu: ", loc->fname, loc->line, loc->col);
         } else {
-            Format2BufferDynamic ("%s:%zu: ", loc.fname, loc.line);
+            Format2BufferDynamic ("%s:%zu: ", loc->fname, loc->line);
         }
     } else {
-        Format2BufferDynamic("%s: ", loc.fname);
+        Format2BufferDynamic("%s: ", loc->fname);
     }
     DBUG_RETURN (STRcpy (message_buffer));
 }
@@ -920,7 +920,7 @@ CTIcreateMessageLoc (const char *message_header, const struct location loc, cons
 }
 
 void
-CTIerrorBasic(const location *loc, ...)
+CTIerrorBasic(const struct location *loc, const char *format, ...)
 {
     char *error_msg;
     va_list arg_p;
