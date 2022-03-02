@@ -454,7 +454,7 @@ EXPdoExport (node *syntax_tree)
 
     if (MODULE_FILETYPE (syntax_tree) != FT_prog) {
         if (!global.optimize.dodfr) {
-            CTIwarn ("Dead Function Removal is disabled. This will lead to "
+            CTIwarn (EMPTY_LOC, "Dead Function Removal is disabled. This will lead to "
                      "bigger modules.");
         }
     }

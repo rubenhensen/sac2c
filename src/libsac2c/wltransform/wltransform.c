@@ -4076,7 +4076,7 @@ CheckParams (node *seg)
                              "blocking vectors with differing lengths found");
 
                 if (NUM_VAL (EXPRS_EXPR (last)) < NUM_VAL (EXPRS_EXPR (tmp2))) {
-                    CTIabortLine (global.linenum,
+                    CTIabort (LINE_TO_LOC (global.linenum),
                                   "Inner Blocking step (%i) is smaller than outer one"
                                   " (%i). Please check parameters of functions in"
                                   " wlcomp-pragma",
@@ -4093,7 +4093,7 @@ CheckParams (node *seg)
 
         while (last != NULL) {
             if (NUM_VAL (EXPRS_EXPR (last)) < 1) {
-                CTIabortLine (global.linenum,
+                CTIabort (LINE_TO_LOC (global.linenum),
                               "Blocking step (%i) is smaller than 1."
                               " Please check parameters of functions in"
                               " wlcomp-pragma",
@@ -4107,7 +4107,7 @@ CheckParams (node *seg)
         tmp1 = ARRAY_AELEMS (WLSEG_UBV (seg));
         while (tmp1 != NULL) {
             if (NUM_VAL (EXPRS_EXPR (tmp1)) < 1) {
-                CTIabortLine (global.linenum,
+                CTIabort (LINE_TO_LOC (global.linenum),
                               "Unrolling-blocking step (%i) is smaller than 1."
                               " Please check parameters of functions in"
                               " wlcomp-pragma",
@@ -4149,7 +4149,7 @@ CheckParams (node *seg)
                     if (NUM_VAL (EXPRS_EXPR (first_block))
                         < MATHmax (NUM_VAL (EXPRS_EXPR (first_sv)),
                                    NUM_VAL (EXPRS_EXPR (first_ubv)))) {
-                        CTIabortLine (global.linenum,
+                        CTIabort (LINE_TO_LOC (global.linenum),
                                       "Blocking step (%i) is greater than 1 but smaller"
                                       " than stride step (%i) or unrolling-blocking step"
                                       " (%i) respectively. "
@@ -4192,7 +4192,7 @@ CheckParams (node *seg)
         }
 
         if (inner_block_pos > inner_unr_block_pos) {
-            CTIabortLine (global.linenum,
+            CTIabort (LINE_TO_LOC (global.linenum),
                           "Unrolling-blocking step (%i) is greater than"
                           " most inner blocking step (%i). "
                           "Please check parameters of functions in wlcomp-pragma",
@@ -4202,7 +4202,7 @@ CheckParams (node *seg)
 
         while (tmp1 != NULL) {
             if ((NUM_VAL (EXPRS_EXPR (tmp1)) % NUM_VAL (EXPRS_EXPR (tmp2))) != 0) {
-                CTIabortLine (global.linenum,
+                CTIabort (LINE_TO_LOC (global.linenum),
                               "Unrolling-blocking step (%i) is not a multiple of"
                               " stride step (%i). "
                               "Please check parameters of functions in"
@@ -6849,7 +6849,7 @@ CheckWith (node *arg_node, node *res_ids)
             if ((!(TYisAKV (res_type) || TYisAKS (res_type)))
                 && (!(TYisAKV (cexpr_type) || TYisAKS (cexpr_type)))
                 && (GENARRAY_DEFAULT (withop) == NULL)) {
-                CTIabortLine (global.linenum,
+                CTIabort (LINE_TO_LOC (global.linenum),
                               "Genarray with-loop with missing default expression found."
                               " Unfortunately, a default expression is necessary here"
                               " to compute the shape of the result");

@@ -683,7 +683,7 @@ FMGRsetFileNames (node *module)
             buffer = STRcat (NSgetName (MODULE_NAMESPACE (module)), ".sac");
 
             if (!STReq (buffer, global.puresacfilename)) {
-                CTIwarn ("Module/class '%s` should be in a file named \"%s\" "
+                CTIwarn (EMPTY_LOC, "Module/class '%s` should be in a file named \"%s\" "
                          "instead of \"%s\"",
                          NSgetName (MODULE_NAMESPACE (module)), buffer,
                          global.sacfilename);

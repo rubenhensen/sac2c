@@ -389,7 +389,7 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
         STATcopyCounters (&global.optcounters, &oc_global);
 
         if (go_on && (global.cycle_counter == global.max_optcycles)) {
-            CTIwarn ("Maximum number of optimization cycles reached");
+            CTIwarn (EMPTY_LOC, "Maximum number of optimization cycles reached");
             global.run_stabilization_cycle = TRUE;
         }
 

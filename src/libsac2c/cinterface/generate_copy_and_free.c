@@ -244,7 +244,7 @@ GCFtypedef (node *arg_node, info *arg_info)
                      "%s.\");\n",
                      CTIitemName (arg_node));
 
-            CTIwarn ("No copy function defined for type `%s'. Copying SACargs "
+            CTIwarn (EMPTY_LOC, "No copy function defined for type `%s'. Copying SACargs "
                      "containing data of such type will fail at runtime.",
                      CTIitemName (arg_node));
         } else {
@@ -260,7 +260,7 @@ GCFtypedef (node *arg_node, info *arg_info)
                      "%s.\");\n",
                      CTIitemName (arg_node));
 
-            CTIwarn ("No free function defined for type `%s'. Freeing SACargs "
+            CTIwarn (EMPTY_LOC, "No free function defined for type `%s'. Freeing SACargs "
                      "containing data of such type will fail at runtime.",
                      CTIitemName (arg_node));
         } else {

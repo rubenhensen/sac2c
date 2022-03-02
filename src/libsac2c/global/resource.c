@@ -831,7 +831,7 @@ EvaluateCustomTarget (char *target, target_list_t *remaining_list,
             }
 
             if (resource_table[i].name[0] == '\0') {
-                CTIwarn (
+                CTIwarn (EMPTY_LOC, 
                   "Specification of target '%s` contains unrecognized resource '%s`",
                   target, resource->name);
             } else {

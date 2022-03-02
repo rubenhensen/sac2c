@@ -34,7 +34,7 @@ CHKinsertError (node *arg_node, char *string)
         if (global.memcheck) {
             fprintf (stderr, "WARNING: %s\n", string);
         } else {
-            CTIwarn ("%s", string);
+            CTIwarn (EMPTY_LOC, "%s", string);
         }
 
         arg_node = TBmakeError (STRcpy (string), global.compiler_anyphase, arg_node);

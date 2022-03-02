@@ -4145,7 +4145,7 @@ COMPApIds (node *ap, info *arg_info)
                       IDS_NTYPE (((node *)argtab->ptr_out[i])));
                     DBUG_ASSERT (sc != C_unknowns, "illegal data class found!");
                     if ((sc == C_akd) || (sc == C_aud)) {
-                        CTIabortLine (global.linenum,
+                        CTIabort (LINE_TO_LOC (global.linenum),
                                       "Return value with undefined shape/dimension found."
                                       " Non-AKS return values in external functions are "
                                       "only allowed when the corresponding refcounting"
@@ -11105,7 +11105,7 @@ COMPwith2 (node *arg_node, info *arg_info)
         withop = WITH2_WITHOP (wlnode);
 
         if (num_with_ops > 1) {
-            CTIwarn ("The distributed memory backend does not yet support distributed "
+            CTIwarn (EMPTY_LOC, "The distributed memory backend does not yet support distributed "
                      "multi-operator with-loops "
                      "(first target: %s, first operator: %s, number of operators: %d).",
                      IDS_NAME (wlids), profile_name, num_with_ops);

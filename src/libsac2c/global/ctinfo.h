@@ -37,14 +37,13 @@ extern char *CTIgetErrorMessageVA (size_t line, const char *file, const char *fo
 extern size_t CTIgetErrorMessageLineLength (void);
 extern void CTIabortOnBottom (char *err_msg);
 extern void CTIabort (const struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3) FUN_ATTR_NORETURN;
-extern void CTIabortLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3) FUN_ATTR_NORETURN;
 extern void CTIabortOutOfMemory (size_t request) FUN_ATTR_NORETURN;
 extern void CTIabortOnError (void);
 
 /**
  * verbosity level >= 1:
  */
-extern void CTIwarn (const char *format, ...) PRINTF_FORMAT (1, 2);
+extern void CTIwarn (const struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern void CTIwarnLoc (struct location loc, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern void CTIwarnLine (size_t line, const char *format, ...) PRINTF_FORMAT (2, 3);
 extern void CTIwarnContinued (const char *format, ...) PRINTF_FORMAT (1, 2);

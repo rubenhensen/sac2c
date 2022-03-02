@@ -1154,7 +1154,7 @@ CTIabortOnBottom (char *err_msg)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIabort( const char *format, ...)
+ * @fn void CTIabort( const struct location loc, const char *format, ...)
  *
  *   @brief   Aborts with an abort message with the file name, line number and
  *            column if they are available.
@@ -1180,62 +1180,6 @@ CTIabort (const struct location loc, const char *format, ...)
     va_start (arg_p, format);
 
     abort_msg = CTIfinalizeMessage (loc2str (loc), abort_message_header, format, arg_p);
-    fprintf (cti_stderr, "%s", abort_msg);
-    MEMfree (abort_msg);
-
-    va_end (arg_p);
-
-    AbortCompilation ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIabortLoc( struct location loc, const char *format, ...)
- *
- *   @brief   produces an error message preceded by location info
- *            and terminates the compilation process
- *
- *   @param loc     location info
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-void
-CTIabortLoc (struct location loc, const char *format, ...)
-{
-    va_list arg_p;
-
-    va_start (arg_p, format);
-    fprintf (cti_stderr, "%s\n", produce_header (loc, error_message_header));
-    PrintMessage (second_level_header, format, arg_p);
-    va_end (arg_p);
-
-    AbortCompilation ();
-}
-
-
-/** <!--********************************************************************-->
- *
- * @fn void CTIabortLine( int line, const char *format, ...)
- *
- *   @brief   Produces an error message preceded by file name and line number
- *            and terminates the compilation process.
- *
- *   @param line    line number
- *   @param format  format string like in printf
- *
- ******************************************************************************/
-
-void
-CTIabortLine (size_t line, const char *format, ...)
-{
-    char *abort_msg;
-    va_list arg_p;
-
-    DBUG_ENTER ();
-
-    va_start (arg_p, format);
-
-    abort_msg = CTIcreateMessageLine (abort_message_header, line, format, arg_p);
     fprintf (cti_stderr, "%s", abort_msg);
     MEMfree (abort_msg);
 
@@ -1372,16 +1316,23 @@ CTIwarnLine (size_t line, const char *format, ...)
 
 /** <!--********************************************************************-->
  *
- * @fn void CTIwarn( const char *format, ...)
+ * @fn void CTIwarn( const struct location loc, const char *format, ...)
+ * 
+ *   @brief   Produces a warning message with the file name, line number and
+ *            column if they are available.
  *
- *   @brief   Produces a warning message without file name and line number.
- *
+ *   @param loc     If no location is available or relevant, you can provide
+ *                  the macro EMPTY_LOC.
+ *                  If the file name and line numbers are available, but the
+ *                  column is unknown, use the macro LINE_TO_LOC (line).
+ *                  If all information is available, just provide a location
+ *                  struct as normal.
  *   @param format  format string like in printf
  *
  ******************************************************************************/
 
 void
-CTIwarn (const char *format, ...)
+CTIwarn (const struct location loc, const char *format, ...)
 {
     char *warn_msg;
     va_list arg_p;
@@ -1391,7 +1342,7 @@ CTIwarn (const char *format, ...)
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
-        warn_msg = CTIcreateMessage (warn_message_header, format, arg_p);
+        warn_msg = CTIfinalizeMessage (loc2str (loc), warn_message_header, format, arg_p);
         fprintf (cti_stderr, "%s", warn_msg);
         MEMfree (warn_msg);
 
@@ -1631,7 +1582,7 @@ CTIterminateCompilation (node *syntax_tree)
 
     if (global.visual_after_break && (syntax_tree != NULL)) {
         if (!DOT_FLAG) {
-            CTIwarn ("If you want to visualize syntax tree. Please install dot. \n");
+            CTIwarn (EMPTY_LOC, "If you want to visualize syntax tree. Please install dot. \n");
         } else {
             if (!global.dovisualizefunsets) {
                 global.dovisualizefunsets

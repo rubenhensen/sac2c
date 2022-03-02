@@ -205,7 +205,7 @@ checkWhetherDeprecated (module_t *module)
 
     msg = dfun.f ();
     if (msg != NULL)
-        CTIwarn ("The module '%s' (%s) is deprecated: %s", module->name, module->sofile,
+        CTIwarn (EMPTY_LOC, "The module '%s' (%s) is deprecated: %s", module->name, module->sofile,
                  msg);
 
     DBUG_RETURN ();

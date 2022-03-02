@@ -184,7 +184,7 @@ ResolveAllFlag (char *module, node *symbols, bool exportedonly)
     }
 
     if (result == NULL) {
-        CTIwarn ("All flag resolved to empty set of symbols.");
+        CTIwarn (EMPTY_LOC, "All flag resolved to empty set of symbols.");
     }
 
     DBUG_RETURN (result);

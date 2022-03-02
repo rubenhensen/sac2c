@@ -95,7 +95,7 @@ version="1.0">
     <xsl:with-param name="self" select="$self" />
   </xsl:apply-templates>
   <!-- a reasonable errormessage -->
-  <xsl:value-of select="') { CTIwarn( &quot;Field '" />
+  <xsl:value-of select="') { CTIwarn (EMPTY_LOC, &quot;Field '" />
   <xsl:value-of select="@name" />
   <xsl:value-of select="' of node N_'" />
   <xsl:value-of select="../../@name" />

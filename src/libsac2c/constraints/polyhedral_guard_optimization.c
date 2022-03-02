@@ -578,7 +578,7 @@ POGOprf (node *arg_node, info *arg_info)
                 resp = TBmakeBool (resval);
                 if (TUisPrfGuard (arg_node)) { // Guard needs two results
                     if (!resval) {
-                        CTIwarn ("Guard failure detected for result %s",
+                        CTIwarn (EMPTY_LOC, "Guard failure detected for result %s",
                                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
                     }
                     res = DUPdoDupNode (PRF_ARG1 (arg_node));

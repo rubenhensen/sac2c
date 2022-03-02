@@ -413,7 +413,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (char *name, char *r
      * by the master node), initialize it to NULL at the worker nodes and raise a compile
      * time warning. */
     if (!STReq (retname, "") && ICUGetHiddenClass (ret_NT) == C_hid) {
-        CTIwarn (
+        CTIwarn (EMPTY_LOC, 
           "The distributed memory backend does not support hidden non-unique return "
           "values in function applications with side-effects (application of function: "
           "%s). "
@@ -430,7 +430,7 @@ ICMCompileND_DISTMEM_FUN_AP_WITH_SIDE_EFFECTS_HID_UNQ_CHECK (char *name, char *r
 #define SELECTtextoutinout(it_text, it_out, it_inout)                                    \
     if (STReq (it_text, vararg[i]) && it_out                                             \
         && ICUGetHiddenClass (vararg_NT[i / 3]) == C_hid) {                              \
-        CTIwarn ("The distributed memory backend does not support hidden non-unique "    \
+        CTIwarn (EMPTY_LOC, "The distributed memory backend does not support hidden non-unique "    \
                  "out arguments in function applications with side-effects (argument "   \
                  "%s of function %s). "                                                  \
                  "We assume that the out argument is unique and initialize it to NULL. " \

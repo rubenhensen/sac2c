@@ -370,7 +370,7 @@ ComputeHashStat (lut_t *lut, char *note, hash_key_t min_key, hash_key_t max_key)
                    min_k, min_size, max_k, max_size, mean_size, sdev_size, sdev_mean));
 
         if ((diff_size > LUT_SIZE) && (sdev_mean > 0.8)) {
-            CTIwarn ("LUT: unbalanced lut (%s) detected:\n"
+            CTIwarn (EMPTY_LOC, "LUT: unbalanced lut (%s) detected:\n"
                      "(range = %i..%i,\n"
                      " mean = %1.1f, sdev = %1.1f, sdev/mean^2 = %1.2f)",
                      note, min_size, max_size, mean_size, sdev_size, sdev_mean);

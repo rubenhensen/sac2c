@@ -1712,7 +1712,7 @@ PRTtypedef (node *arg_node, info *arg_info)
      *
      * The following warning was issued when a discard happened:
      *
-     *   CTIwarn("Discarding copy fun for %s\n", TYPEDEF_NAME( arg_node));
+     *   CTIwarn (EMPTY_LOC,"Discarding copy fun for %s\n", TYPEDEF_NAME( arg_node));
      *
      */
     if (TYPEDEF_COPYFUN (arg_node) != NULL) {
